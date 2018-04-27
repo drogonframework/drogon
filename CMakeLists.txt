@@ -1,0 +1,16 @@
+cmake_minimum_required (VERSION 2.6)
+EXEC_PROGRAM(gcc ARGS "--version | grep "^gcc"|awk '{print $3}' | sed s'/)//g'" OUTPUT_VARIABLE version)
+MESSAGE(STATUS "This is gcc version:: " ${version})
+
+project (DROGON)
+
+if (version LESS 6.0.0)
+    MESSAGE(STATUS "old gcc")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fpermissive -g -ggdb")
+else()
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -fpermissive -g -ggdb")
+    MESSAGE(STATUS "new gcc")
+endif()
+add_subdirectory(trantor)
+SET(CMAKE_INSTALL_PREFIX /usr/local/drogon)
+#INSTALL(FILES trantor.cfg DESTINATION conf)
