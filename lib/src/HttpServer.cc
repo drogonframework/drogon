@@ -18,8 +18,8 @@
 
 #include <trantor/utils/Logger.h>
 #include "HttpContext.h"
-#include "HttpRequest.h"
-#include "HttpResponse.h"
+#include <drogon/HttpRequest.h>
+#include <drogon/HttpResponse.h>
 #include <functional>
 
 using namespace std::placeholders;

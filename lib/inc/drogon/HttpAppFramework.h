@@ -1,7 +1,13 @@
+//
+// Copyright 2018, An Tao.  All rights reserved.
+//
+// Use of this source code is governed by a MIT license
+// that can be found in the License file.
+
 #pragma once
 
-#include <HttpRequest.h>
-#include <HttpResponse.h>
+#include <drogon/HttpRequest.h>
+#include <drogon/HttpResponse.h>
 #include <trantor/utils/NonCopyable.h>
 #include <string>
 #include <set>
@@ -30,7 +36,7 @@ namespace drogon
 
 
 
-        //tool funs
+        //tool funcs
 #ifdef USE_UUID
         std::string getUuid();
         std::string stringToHex(unsigned char* ptr, long long length);
