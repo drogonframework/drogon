@@ -28,6 +28,7 @@ namespace drogon
         void readSendFile(const std::string& filePath,const HttpRequest& req, HttpResponse* resp);
 #ifdef USE_UUID
         //if uuid package found,we can use a uuid string as session id;
+        //set _sessionTimeout=0 to disable location session control based on cookies;
         uint _sessionTimeout=0;
 #endif
         bool _enableLastModify=true;

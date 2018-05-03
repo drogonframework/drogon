@@ -65,19 +65,20 @@ public:
 	enum Version {
         kHttp10, kHttp11
     };
-
-    explicit HttpResponse(bool close)
+/*
+    explicit HttpResponse()
             : statusCode_(kUnknown),
               closeConnection_(close),
 			left_body_length_(0),
 			current_chunk_length_(0)
     {
     }
-
-	explicit HttpResponse()
+*/
+    explicit HttpResponse()
             : statusCode_(kUnknown),
               closeConnection_(false),
-			left_body_length_(0)
+              left_body_length_(0),
+              current_chunk_length_(0)
     {
     }
 

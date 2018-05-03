@@ -30,27 +30,27 @@ void HttpAppFramework::run()
 
 void HttpAppFramework::onAsyncRequest(const HttpRequest& req,std::function<void (HttpResponse &)>callback)
 {
-    std::cout << "Headers " << req.methodString() << " " << req.path() << std::endl;
+    LOG_TRACE << "Headers " << req.methodString() << " " << req.path();
 
 #if 1
         const std::map<std::string, std::string>& headers = req.headers();
         for (std::map<std::string, std::string>::const_iterator it = headers.begin();
              it != headers.end();
              ++it) {
-            std::cout << it->first << ": " << it->second << std::endl;
+            LOG_TRACE << it->first << ": " << it->second;
         }
 
-        std::cout<<"cookies:"<<std::endl;
+        LOG_TRACE<<"cookies:";
         auto cookies = req.cookies();
         for(auto it=cookies.begin();it!=cookies.end();++it)
         {
-            std::cout<<it->first<<"="<<it->second<<std::endl;
+            LOG_TRACE<<it->first<<"="<<it->second;
         }
 #endif
 
 
-    LOG_INFO << "http path=" << req.path();
-    LOG_INFO << "query: " << req.query() ;
+    LOG_TRACE << "http path=" << req.path();
+    LOG_TRACE << "query: " << req.query() ;
 #ifdef USE_UUID
     std::string session_id=req.getCookie("JSESSIONID");
     bool needSetJsessionid=false;
@@ -79,7 +79,7 @@ void HttpAppFramework::onAsyncRequest(const HttpRequest& req,std::function<void 
         if(_fileTypeSet.find(filetype) != _fileTypeSet.end()) {
             LOG_INFO << "file query!";
             std::string filePath = _rootPath + path;
-            HttpResponse resp(true);
+            HttpResponse resp;
 #ifdef USE_UUID
             if(needSetJsessionid)
                 resp.addCookie("JSESSIONID",session_id);
@@ -154,7 +154,7 @@ void HttpAppFramework::onAsyncRequest(const HttpRequest& req,std::function<void 
 
         LOG_ERROR<<"can't find controller "<<ctrlName;
         */
-        HttpResponse resp(true);
+        HttpResponse resp;
 
         resp.setStatusCode(HttpResponse::k404NotFound);
         //resp.setCloseConnection(true);
@@ -182,10 +182,10 @@ void HttpAppFramework::readSendFile(const std::string& filePath,const HttpReques
     if(_enableLastModify)
     {
         struct stat fileStat;
-        LOG_DEBUG<<"enabled LastModify";
+        LOG_TRACE<<"enabled LastModify";
         if(stat(filePath.c_str(),&fileStat)>=0)
         {
-            std::cout<<"last modify time:"<<fileStat.st_mtime<<std::endl;
+            LOG_TRACE<<"last modify time:"<<fileStat.st_mtime;
             struct tm tm1;
             gmtime_r(&fileStat.st_mtime,&tm1);
             char timeBuf[64];

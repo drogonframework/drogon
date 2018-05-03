@@ -108,7 +108,7 @@ bool HttpContext::parseRequest(MsgBuffer *buf)
                 {
                     // empty line, end of header
                     std::string len = request_.getHeader("Content-Length");
-                    LOG_INFO << "content len=" << len;
+                    LOG_TRACE << "content len=" << len;
                     if (len != "")
                     {
                         request_.contentLen = atoi(len.c_str());
@@ -154,9 +154,9 @@ bool HttpContext::parseRequest(MsgBuffer *buf)
             if (request_.contentLen <= 0)
             {
                 state_ = kGotAll;
-                LOG_INFO << "post got all:len=" << request_.content_.length();
+                LOG_TRACE << "post got all:len=" << request_.content_.length();
                 //LOG_INFO<<"content:"<<request_.content_;
-                LOG_INFO << "content(END)";
+                LOG_TRACE << "content(END)";
                 hasMore = false;
             }
         }
@@ -170,7 +170,7 @@ bool HttpContext::processResponseLine(const char *begin, const char *end)
     const char *space = std::find(start, end, ' ');
     if (space != end)
     {
-        LOG_DEBUG << *(space - 1);
+        LOG_TRACE << *(space - 1);
         if (*(space - 1) == '1')
         {
             response_.setVersion(HttpResponse::kHttp11);
@@ -191,7 +191,7 @@ bool HttpContext::processResponseLine(const char *begin, const char *end)
     {
         std::string status_code(start, space - start);
         std::string status_message(space + 1, end - space - 1);
-        LOG_DEBUG << status_code << " " << status_message;
+        LOG_TRACE << status_code << " " << status_message;
         switch (atoi(status_code.c_str()))
         {
         case 200:
@@ -225,11 +225,8 @@ bool HttpContext::parseResponse(MsgBuffer *buf)
 {
     bool ok = true;
     bool hasMore = true;
-    //  std::cout<<std::string(buf->peek(),buf->readableBytes())<<std::endl;
-    //LOG_INFO<<"response message:"<<std::string(buf->peek(),buf->readableBytes());
     while (hasMore)
     {
-        //LOG_DEBUG<<"res_state_: "<<(int)res_state_;
         if (res_state_ == HttpResponseParseState::kExpectResponseLine)
         {
             const char *crlf = buf->findCRLF();
@@ -322,9 +319,9 @@ bool HttpContext::parseResponse(MsgBuffer *buf)
             if (response_.left_body_length_ <= 0)
             {
                 res_state_ = HttpResponseParseState::kGotAll;
-                LOG_INFO << "post got all:len=" << response_.left_body_length_;
+                LOG_TRACE << "post got all:len=" << response_.left_body_length_;
                 //LOG_INFO<<"content:"<<request_.content_;
-                LOG_INFO << "content(END)";
+                LOG_TRACE << "content(END)";
                 hasMore = false;
             }
         }
@@ -343,7 +340,7 @@ bool HttpContext::parseResponse(MsgBuffer *buf)
                 std::string len(buf->peek(), crlf - buf->peek());
                 char *end;
                 response_.current_chunk_length_ = strtol(len.c_str(), &end, 16);
-                LOG_DEBUG << "chun length : " << response_.current_chunk_length_;
+                LOG_TRACE << "chun length : " << response_.current_chunk_length_;
                 if (response_.current_chunk_length_ != 0)
                 {
                     res_state_ = HttpResponseParseState::kExpectChunkBody;

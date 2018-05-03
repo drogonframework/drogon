@@ -29,7 +29,7 @@ using namespace trantor;
 
 static void defaultHttpAsyncCallback(const HttpRequest&, std::function<void( HttpResponse& resp)>callback)
 {
-    HttpResponse resp(true);
+    HttpResponse resp;
     resp.setStatusCode(HttpResponse::k404NotFound);
     resp.setCloseConnection(true);
     callback(resp);
@@ -89,14 +89,14 @@ void HttpServer::onMessage(const TcpConnectionPtr& conn,
 void HttpServer::onRequest(const TcpConnectionPtr& conn, const HttpRequest& req)
 {
     const std::string& connection = req.getHeader("Connection");
-    bool close = connection == "close" ||
+    bool _close = connection == "close" ||
                  (req.getVersion() == HttpRequest::kHttp10 && connection != "Keep-Alive");
 
 
 
     httpAsyncCallback_(req, [ = ](HttpResponse & response) {
         MsgBuffer buf;
-        response.setCloseConnection(close);
+        response.setCloseConnection(_close);
         response.appendToBuffer(&buf);
         conn->send(buf.peek(),buf.readableBytes());
         if (response.closeConnection()) {
