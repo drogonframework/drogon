@@ -6,8 +6,10 @@ project (DROGON CXX)
 
 EXEC_PROGRAM (gcc ARGS "--version | grep '^gcc'|awk '{print $3}' | sed s'/)//g'" OUTPUT_VARIABLE version)
 MESSAGE(STATUS "This is gcc version:: " ${version})
-
-if (version LESS 6.0.0)
+if(version LESS 4.7.0)
+    MESSAGE(STATUS "gcc is too old")
+    stop()
+elseif (version LESS 6.1.0)
     MESSAGE(STATUS "c++11")
     set(CMAKE_CXX_STD_FLAGS c++11)
 elseif(version LESS 7.1.0)
@@ -15,13 +17,10 @@ elseif(version LESS 7.1.0)
     MESSAGE(STATUS "c++14")
 else()
     set(CMAKE_CXX_STD_FLAGS c++17)
-    add_definitions(-DUSE_C++17)
+    add_definitions(-DUSE_STD_ANY)
     MESSAGE(STATUS "c++17")
+
 endif()
-
-set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} -std=${CMAKE_CXX_STD_FLAGS} -fpermissive -g -ggdb)
-
-string(REPLACE ";" " " CMAKE_CXX_FLAGS "${CXX_FLAGS}")
 
 
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake_modules/)
@@ -36,10 +35,18 @@ if(UUID_FOUND)
 endif()
 
 find_package(Boost)
-if(BOOST_FOUND)
+if(Boost_FOUND)
     add_definitions(-DUSE_BOOST)
     include_directories(${Boost_INCLUDE_DIRS})
 endif()
+
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=${CMAKE_CXX_STD_FLAGS} -fpermissive -g -ggdb")
+
+#string(REPLACE ";" " " CMAKE_CXX_FLAGS "${CXX_FLAGS}")
+
+MESSAGE(STATUS ${CMAKE_CXX_FLAGS})
+
 add_subdirectory(trantor)
 
 include_directories(${PROJECT_SOURCE_DIR}/trantor ${PROJECT_SOURCE_DIR}/lib/inc)

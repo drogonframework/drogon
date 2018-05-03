@@ -66,6 +66,15 @@ void HttpServer::onConnection(const TcpConnectionPtr& conn)
     if (conn->connected()) {
         conn->setContext(new HttpContext());
     }
+    else if(conn->disconnected())
+    {
+        HttpContext* context = (HttpContext*)(conn->getContext());
+        if(context)
+        {
+            delete context;
+        }
+        LOG_TRACE<<"conn disconnected!";
+    }
 }
 
 void HttpServer::onMessage(const TcpConnectionPtr& conn,

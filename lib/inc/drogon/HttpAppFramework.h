@@ -8,6 +8,7 @@
 
 #include <drogon/HttpRequest.h>
 #include <drogon/HttpResponse.h>
+#include <drogon/CacheMap.h>
 #include <trantor/utils/NonCopyable.h>
 #include <string>
 #include <set>
