@@ -66,4 +66,8 @@ install(FILES ${trantor_net_headers} DESTINATION include/drogon)
 
 add_dependencies(drogon trantor)
 
+if (MAKETEST STREQUAL YES)
+    ADD_SUBDIRECTORY(tests)
+endif ()
+
 #target_link_libraries(drogon trantor pthread)

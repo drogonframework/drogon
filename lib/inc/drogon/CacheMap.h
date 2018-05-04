@@ -13,6 +13,10 @@
 #include <vector>
 #include <set>
 
+namespace drogon
+{
+
+
 class CallbackEntry
 {
 public:
@@ -197,3 +201,4 @@ protected:
         }
     }
 };
+}
