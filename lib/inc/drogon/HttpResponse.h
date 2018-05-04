@@ -188,6 +188,10 @@ public:
     {
         body_ = body;
     }
+    void setBody(std::string&& body)
+    {
+        body_ = std::move(body);
+    }
     void redirect(const std::string& url)
     {
         headers_["Location"] = url;

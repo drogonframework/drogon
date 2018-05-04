@@ -50,7 +50,7 @@ public:
             CallbackBucket tmp;
             {
                 std::lock_guard<std::mutex> lock(bucketMutex_);
-                //use tmp to make this critical area as short as possible.
+                //use tmp val to make this critical area as short as possible.
                 event_bucket_queue_.front().swap(tmp);
                 event_bucket_queue_.pop_front();
                 event_bucket_queue_.push_back(CallbackBucket());
@@ -89,7 +89,7 @@ public:
         {
             timeout=map_[key].timeout;
         }
-        if(timeout)
+        if(timeout>0)
             eraseAfter(timeout,key);
 
 
@@ -105,7 +105,7 @@ public:
             timeout=map_[key].timeout;
             flag=true;
         }
-        if(timeout)
+        if(timeout>0)
             eraseAfter(timeout,key);
 
 
