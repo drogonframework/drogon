@@ -20,7 +20,7 @@
 #include "HttpContext.h"
 #include <iostream>
 using namespace trantor;
-
+using namespace drogon;
 bool HttpContext::processRequestLine(const char *begin, const char *end)
 {
     bool succeed = false;
@@ -161,6 +161,7 @@ bool HttpContext::parseRequest(MsgBuffer *buf)
             }
         }
     }
+
     return ok;
 }
 

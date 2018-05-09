@@ -14,9 +14,10 @@
 // Use of this source code is governed by a MIT license
 // that can be found in the License file.
 
-#include <drogon/HttpRequest.h>
+#include "HttpRequestImpl.h"
 //解url编码实现
 #include <iostream>
+using namespace drogon;
 static int urldecode(const char* encd,char* decd)
 {
     int j;
@@ -49,7 +50,7 @@ static int urldecode(const char* encd,char* decd)
     decd[j] = 0;
     return j;
 }
-void HttpRequest::parsePremeter()
+void HttpRequestImpl::parsePremeter()
 {
     const std::string &type=getHeader("Content-Type");
     const std::string &input=query();
@@ -111,7 +112,7 @@ void HttpRequest::parsePremeter()
 
 }
 
-void HttpRequest::appendToBuffer(MsgBuffer* output) const
+void HttpRequestImpl::appendToBuffer(MsgBuffer* output) const
 {
 	switch(method_)
 	{

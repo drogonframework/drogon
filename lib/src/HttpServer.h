@@ -8,11 +8,13 @@
 #include <functional>
 #include <string>
 
-class HttpRequest;
-class HttpResponse;
+
+
 using namespace trantor;
 namespace drogon
 {
+    class HttpRequest;
+    class HttpResponse;
     class HttpServer : trantor::NonCopyable
     {
     public:

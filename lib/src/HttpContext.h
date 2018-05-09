@@ -17,103 +17,112 @@
 
 #ifndef MUDUO_NET_HTTP_HTTPCONTEXT_H
 #define MUDUO_NET_HTTP_HTTPCONTEXT_H
-#include <drogon/HttpRequest.h>
+#include "HttpRequestImpl.h"
 #include <drogon/HttpResponse.h>
 #include <trantor/utils/MsgBuffer.h>
 
 using namespace trantor;
-class HttpContext
+namespace drogon
 {
-public:
-  enum HttpRequestParseState
-  {
-    kExpectRequestLine,
-    kExpectHeaders,
-    kExpectBody,
-    kGotAll,
-  };
+    class HttpContext
+    {
+    public:
+        enum HttpRequestParseState
+        {
+            kExpectRequestLine,
+            kExpectHeaders,
+            kExpectBody,
+            kGotAll,
+        };
 
-  enum class HttpResponseParseState
-  {
-    kExpectResponseLine,
-    kExpectHeaders,
-    kExpectBody,
-    kExpectChunkLen,
-    kExpectChunkBody,
-    kExpectLastEmptyChunk,
-    kExpectClose,
-    kGotAll,
-  };
+        enum class HttpResponseParseState
+        {
+            kExpectResponseLine,
+            kExpectHeaders,
+            kExpectBody,
+            kExpectChunkLen,
+            kExpectChunkBody,
+            kExpectLastEmptyChunk,
+            kExpectClose,
+            kGotAll,
+        };
 
-  HttpContext()
-      : state_(kExpectRequestLine),
-        res_state_(HttpResponseParseState::kExpectResponseLine)
-  {
-  }
+        HttpContext()
+                : state_(kExpectRequestLine),
+                  res_state_(HttpResponseParseState::kExpectResponseLine)
+        {
+        }
 
-  // default copy-ctor, dtor and assignment are fine
+        // default copy-ctor, dtor and assignment are fine
 
-  // return false if any error
-  bool parseRequest(MsgBuffer *buf);
-  bool parseResponse(MsgBuffer *buf);
+        // return false if any error
+        bool parseRequest(MsgBuffer *buf);
+        bool parseResponse(MsgBuffer *buf);
 
-  bool gotAll() const
-  {
-    return state_ == kGotAll;
-  }
+        bool gotAll() const
+        {
+          return state_ == kGotAll;
+        }
 
-  bool resGotAll() const
-  {
-    return res_state_ == HttpResponseParseState::kGotAll;
-  }
+        bool resGotAll() const
+        {
+          return res_state_ == HttpResponseParseState::kGotAll;
+        }
 
-  bool resExpectResponseLine() const
-  {
-    return res_state_ == HttpResponseParseState::kExpectResponseLine;
-  }
+        bool resExpectResponseLine() const
+        {
+          return res_state_ == HttpResponseParseState::kExpectResponseLine;
+        }
 
-  void reset()
-  {
-    state_ = kExpectRequestLine;
-    HttpRequest dummy;
-    request_.swap(dummy);
-  }
+        void reset()
+        {
+          state_ = kExpectRequestLine;
+          HttpRequestImpl dummy;
+          request_.swap(dummy);
+        }
 
-  void resetRes()
-  {
-    res_state_ = HttpResponseParseState::kExpectResponseLine;
-    response_.clear();
-  }
+        void resetRes()
+        {
+          res_state_ = HttpResponseParseState::kExpectResponseLine;
+          response_.clear();
+        }
 
-  const HttpRequest &request() const
-  {
-    return request_;
-  }
+        const HttpRequest &request() const
+        {
+          return request_;
+        }
 
-  HttpRequest &request()
-  {
-    return request_;
-  }
+        HttpRequest &request()
+        {
+          return request_;
+        }
 
-  const HttpResponse &response() const
-  {
-    return response_;
-  }
+        HttpRequestImpl &requestImpl()
+        {
+            return request_;
+        }
 
-  HttpResponse &response()
-  {
-    return response_;
-  }
+        const HttpResponse &response() const
+        {
+          return response_;
+        }
 
-private:
-  bool processRequestLine(const char *begin, const char *end);
-  bool processResponseLine(const char *begin, const char *end);
+        HttpResponse &response()
+        {
+          return response_;
+        }
 
-  HttpRequestParseState state_;
-  HttpRequest request_;
+    private:
+        bool processRequestLine(const char *begin, const char *end);
+        bool processResponseLine(const char *begin, const char *end);
 
-  HttpResponseParseState res_state_;
-  HttpResponse response_;
-};
+        HttpRequestParseState state_;
+        HttpRequestImpl request_;
+
+        HttpResponseParseState res_state_;
+        HttpResponse response_;
+    };
+
+}
 
 #endif // MUDUO_NET_HTTP_HTTPCONTEXT_H

@@ -89,7 +89,7 @@ void HttpServer::onMessage(const TcpConnectionPtr& conn,
     }
 
     if (context->gotAll()) {
-        context->request().parsePremeter();
+        context->requestImpl().parsePremeter();
         onRequest(conn, context->request());
         context->reset();
     }
@@ -99,7 +99,7 @@ void HttpServer::onRequest(const TcpConnectionPtr& conn, const HttpRequest& req)
 {
     const std::string& connection = req.getHeader("Connection");
     bool _close = connection == "close" ||
-                 (req.getVersion() == HttpRequest::kHttp10 && connection != "Keep-Alive");
+                 (req.getVersion() == HttpRequestImpl::kHttp10 && connection != "Keep-Alive");
 
 
 

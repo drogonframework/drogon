@@ -20,6 +20,7 @@
 #include <stdio.h>
 
 using namespace trantor;
+using namespace drogon;
 const std::string HttpResponse::web_content_type_to_string(uint8_t contenttype)
 {
     switch(contenttype) {
