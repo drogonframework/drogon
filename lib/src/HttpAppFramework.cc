@@ -12,9 +12,8 @@
 #include <sys/stat.h>
 #include <iostream>
 #include <fstream>
-#ifdef USE_UUID
 #include <uuid/uuid.h>
-#endif
+
 
 namespace drogon
 {
@@ -29,11 +28,15 @@ namespace drogon
         uint16_t _port;
         void onAsyncRequest(const HttpRequest& req,std::function<void (HttpResponse &)>callback);
         void readSendFile(const std::string& filePath,const HttpRequest& req, HttpResponse* resp);
-#ifdef USE_UUID
+
         //if uuid package found,we can use a uuid string as session id;
         //set _sessionTimeout=0 to disable location session control based on cookies;
         uint _sessionTimeout=0;
-#endif
+        typedef std::shared_ptr<Session> SessionPtr;
+        std::unique_ptr<CacheMap<std::string,SessionPtr>> _sessionMapPtr;
+
+
+
         bool _enableLastModify=true;
         std::set<std::string> _fileTypeSet={"html","jpg"};
         std::string _rootPath;
@@ -41,10 +44,10 @@ namespace drogon
 
 
         //tool funcs
-#ifdef USE_UUID
+
         std::string getUuid();
         std::string stringToHex(unsigned char* ptr, long long length);
-#endif
+
     };
 }
 
@@ -63,6 +66,7 @@ void HttpAppFrameworkImpl::run()
     trantor::EventLoop loop;
     HttpServer httpServer(&loop,InetAddress(_ip,_port),"");
     httpServer.setHttpAsyncCallback(std::bind(&HttpAppFrameworkImpl::onAsyncRequest,this,_1,_2));
+    _sessionMapPtr=std::unique_ptr<CacheMap<std::string,SessionPtr>>(new CacheMap<std::string,SessionPtr>(&loop,1,1200));
     httpServer.start();
     loop.loop();
 }
@@ -91,7 +95,7 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequest& req,std::function<v
 
     LOG_TRACE << "http path=" << req.path();
     LOG_TRACE << "query: " << req.query() ;
-#ifdef USE_UUID
+
     std::string session_id=req.getCookie("JSESSIONID");
     bool needSetJsessionid=false;
     if(_sessionTimeout>0)
@@ -100,17 +104,17 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequest& req,std::function<v
         {
             session_id=getUuid().c_str();
             needSetJsessionid=true;
-            //_sessionMap.insert(session_id,std::make_shared< Session >(),_sessionTimeout);
+            _sessionMapPtr->insert(session_id,std::make_shared< Session >(),_sessionTimeout);
         }
         else
         {
-//            if(_sessionMap.find(session_id)==false)
-//            {
-//                _sessionMap.insert(session_id,std::make_shared< Session >(),_sessionTimeout);
-//            }
+            if(_sessionMapPtr->find(session_id)==false)
+            {
+                _sessionMapPtr->insert(session_id,std::make_shared< Session >(),_sessionTimeout);
+            }
         }
     }
-#endif
+
     std::string path = req.path().c_str();
     auto pos = path.rfind(".");
     if(pos != std::string::npos) {
@@ -120,10 +124,10 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequest& req,std::function<v
             LOG_INFO << "file query!";
             std::string filePath = _rootPath + path;
             HttpResponse resp;
-#ifdef USE_UUID
+
             if(needSetJsessionid)
                 resp.addCookie("JSESSIONID",session_id);
-#endif
+
             // pick a Content-Type for the file
             if(filetype=="html")	resp.setContentTypeCode(CT_TEXT_HTML);
             else if(filetype=="js")  resp.setContentTypeCode(CT_APPLICATION_X_JAVASCRIPT);
@@ -198,10 +202,10 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequest& req,std::function<v
 
     resp.setStatusCode(HttpResponse::k404NotFound);
     //resp.setCloseConnection(true);
-#ifdef USE_UUID
+
     if(needSetJsessionid)
             resp.addCookie("JSESSIONID",session_id);
-#endif
+
     callback(resp);
     // }
 
@@ -263,7 +267,7 @@ void HttpAppFrameworkImpl::readSendFile(const std::string& filePath,const HttpRe
     resp->setBody(str);
     delete contents;
 }
-#ifdef USE_UUID
+
 std::string HttpAppFrameworkImpl::getUuid()
 {
     uuid_t uu;
@@ -296,7 +300,7 @@ std::string HttpAppFrameworkImpl::stringToHex(unsigned char* ptr, long long leng
     }
     return idString;
 }
-#endif
+
 
 
 

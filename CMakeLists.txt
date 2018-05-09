@@ -28,11 +28,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake_modules/)
 find_package (jsoncpp REQUIRED)
 include_directories(${JSONCPP_INCLUDE_DIRS})
 link_directories(${JSONCPP_LIBRARY_DIRS})
-find_package (UUID)
-
-if(UUID_FOUND)
-    add_definitions(-DUSE_UUID)
-endif()
+find_package (UUID REQUIRED)
 
 find_package(Boost)
 if(Boost_FOUND)
