@@ -41,7 +41,7 @@ if(Boost_FOUND)
 endif()
 
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=${CMAKE_CXX_STD_FLAGS} -fpermissive -g -ggdb")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=${CMAKE_CXX_STD_FLAGS} -g -ggdb -Wall")
 
 #string(REPLACE ";" " " CMAKE_CXX_FLAGS "${CXX_FLAGS}")
 

@@ -1,5 +1,6 @@
-#include <drogon/HttpAppFramework.h>
 #include <iostream>
+#include <drogon/HttpAppFramework.h>
+#include <trantor/utils/Logger.h>
 static const char banner[]="     _                             \n"
                            "  __| |_ __ ___   __ _  ___  _ __  \n"
                            " / _` | '__/ _ \\ / _` |/ _ \\| '_ \\ \n"

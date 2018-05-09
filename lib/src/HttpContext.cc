@@ -361,7 +361,7 @@ bool HttpContext::parseResponse(MsgBuffer *buf)
             const char *crlf = buf->findCRLF();
             if (crlf)
             {
-                if (response_.current_chunk_length_ == crlf - buf->peek())
+                if (response_.current_chunk_length_ == (size_t)(crlf - buf->peek()))
                 {
                     //current chunk end crlf
                     response_.body_ += std::string(buf->peek(), response_.current_chunk_length_);
@@ -369,7 +369,7 @@ bool HttpContext::parseResponse(MsgBuffer *buf)
                     response_.current_chunk_length_ = 0;
                     res_state_ = HttpResponseParseState::kExpectChunkLen;
                 }
-                else if (response_.current_chunk_length_ > crlf - buf->peek())
+                else if (response_.current_chunk_length_ > (size_t)(crlf - buf->peek()))
                 {
                     //current chunk body crlf
                     response_.body_ += std::string(buf->peek(), crlf - buf->peek() + 1);

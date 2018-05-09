@@ -6,42 +6,25 @@
 
 #pragma once
 
-#include <drogon/HttpRequest.h>
-#include <drogon/HttpResponse.h>
-#include <drogon/CacheMap.h>
+//#include <drogon/HttpRequest.h>
+//#include <drogon/HttpResponse.h>
+//#include <drogon/CacheMap.h>
+//#include <drogon/Session.h>
 #include <trantor/utils/NonCopyable.h>
+
+
+#include <memory>
 #include <string>
-#include <set>
 namespace drogon
 {
     class HttpAppFramework:public trantor::NonCopyable
     {
     public:
-        HttpAppFramework()= delete;
         HttpAppFramework(const std::string &ip,uint16_t port);
         void run();
-
+        ~HttpAppFramework();
     private:
-
-        std::string _ip;
-        uint16_t _port;
-        void onAsyncRequest(const HttpRequest& req,std::function<void (HttpResponse &)>callback);
-        void readSendFile(const std::string& filePath,const HttpRequest& req, HttpResponse* resp);
-#ifdef USE_UUID
-        //if uuid package found,we can use a uuid string as session id;
-        //set _sessionTimeout=0 to disable location session control based on cookies;
-        uint _sessionTimeout=0;
-#endif
-        bool _enableLastModify=true;
-        std::set<std::string> _fileTypeSet={"html","jpg"};
-        std::string _rootPath;
-
-
-
-        //tool funcs
-#ifdef USE_UUID
-        std::string getUuid();
-        std::string stringToHex(unsigned char* ptr, long long length);
-#endif
+        bool _run;
+        std::unique_ptr<class HttpAppFrameworkImpl>  _implPtr;
     };
 }

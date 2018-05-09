@@ -4,6 +4,10 @@
 // that can be found in the License file.
 
 #include <drogon/HttpAppFramework.h>
+#include <drogon/HttpRequest.h>
+#include <drogon/HttpResponse.h>
+#include <drogon/CacheMap.h>
+#include <drogon/Session.h>
 #include "HttpServer.h"
 #include <sys/stat.h>
 #include <iostream>
@@ -11,41 +15,77 @@
 #ifdef USE_UUID
 #include <uuid/uuid.h>
 #endif
+
+namespace drogon
+{
+    class HttpAppFrameworkImpl
+    {
+    public:
+        HttpAppFrameworkImpl(const std::string &ip,uint16_t port);
+        void run();
+        ~HttpAppFrameworkImpl(){}
+    private:
+        std::string _ip;
+        uint16_t _port;
+        void onAsyncRequest(const HttpRequest& req,std::function<void (HttpResponse &)>callback);
+        void readSendFile(const std::string& filePath,const HttpRequest& req, HttpResponse* resp);
+#ifdef USE_UUID
+        //if uuid package found,we can use a uuid string as session id;
+        //set _sessionTimeout=0 to disable location session control based on cookies;
+        uint _sessionTimeout=0;
+#endif
+        bool _enableLastModify=true;
+        std::set<std::string> _fileTypeSet={"html","jpg"};
+        std::string _rootPath;
+
+
+
+        //tool funcs
+#ifdef USE_UUID
+        std::string getUuid();
+        std::string stringToHex(unsigned char* ptr, long long length);
+#endif
+    };
+}
+
 using namespace drogon;
 using namespace std::placeholders;
-HttpAppFramework::HttpAppFramework(const std::string &ip,uint16_t port):
-_ip(ip),
-_port(port)
+
+HttpAppFrameworkImpl::HttpAppFrameworkImpl(const std::string &ip,uint16_t port):
+        _ip(ip),
+        _port(port)
 {
 
 }
-void HttpAppFramework::run()
+
+void HttpAppFrameworkImpl::run()
 {
     trantor::EventLoop loop;
     HttpServer httpServer(&loop,InetAddress(_ip,_port),"");
-    httpServer.setHttpAsyncCallback(std::bind(&HttpAppFramework::onAsyncRequest,this,_1,_2));
+    httpServer.setHttpAsyncCallback(std::bind(&HttpAppFrameworkImpl::onAsyncRequest,this,_1,_2));
     httpServer.start();
     loop.loop();
 }
 
-void HttpAppFramework::onAsyncRequest(const HttpRequest& req,std::function<void (HttpResponse &)>callback)
+
+void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequest& req,std::function<void (HttpResponse &)>callback)
 {
     LOG_TRACE << "Headers " << req.methodString() << " " << req.path();
 
 #if 1
-        const std::map<std::string, std::string>& headers = req.headers();
-        for (std::map<std::string, std::string>::const_iterator it = headers.begin();
-             it != headers.end();
-             ++it) {
-            LOG_TRACE << it->first << ": " << it->second;
-        }
+    const std::map<std::string, std::string>& headers = req.headers();
+    for (std::map<std::string, std::string>::const_iterator it = headers.begin();
+         it != headers.end();
+         ++it) {
+        LOG_TRACE << it->first << ": " << it->second;
+    }
 
-        LOG_TRACE<<"cookies:";
-        auto cookies = req.cookies();
-        for(auto it=cookies.begin();it!=cookies.end();++it)
-        {
-            LOG_TRACE<<it->first<<"="<<it->second;
-        }
+    LOG_TRACE<<"cookies:";
+    auto cookies = req.cookies();
+    for(auto it=cookies.begin();it!=cookies.end();++it)
+    {
+        LOG_TRACE<<it->first<<"="<<it->second;
+    }
 #endif
 
 
@@ -154,20 +194,20 @@ void HttpAppFramework::onAsyncRequest(const HttpRequest& req,std::function<void 
 
         LOG_ERROR<<"can't find controller "<<ctrlName;
         */
-        HttpResponse resp;
+    HttpResponse resp;
 
-        resp.setStatusCode(HttpResponse::k404NotFound);
-        //resp.setCloseConnection(true);
+    resp.setStatusCode(HttpResponse::k404NotFound);
+    //resp.setCloseConnection(true);
 #ifdef USE_UUID
-        if(needSetJsessionid)
+    if(needSetJsessionid)
             resp.addCookie("JSESSIONID",session_id);
 #endif
-        callback(resp);
-   // }
+    callback(resp);
+    // }
 
 }
 
-void HttpAppFramework::readSendFile(const std::string& filePath,const HttpRequest& req, HttpResponse* resp)
+void HttpAppFrameworkImpl::readSendFile(const std::string& filePath,const HttpRequest& req, HttpResponse* resp)
 {
 //If-Modified-Since: Wed Jun 15 08:57:30 2016 GMT
     std::ifstream infile(filePath, std::ifstream::binary);
@@ -223,16 +263,15 @@ void HttpAppFramework::readSendFile(const std::string& filePath,const HttpReques
     resp->setBody(str);
     delete contents;
 }
-
 #ifdef USE_UUID
-std::string HttpAppFramework::getUuid()
+std::string HttpAppFrameworkImpl::getUuid()
 {
     uuid_t uu;
     uuid_generate(uu);
     return stringToHex(uu, 16);
 }
 
-std::string HttpAppFramework::stringToHex(unsigned char* ptr, long long length)
+std::string HttpAppFrameworkImpl::stringToHex(unsigned char* ptr, long long length)
 {
     std::string idString;
     for (long long i = 0; i < length; i++)
@@ -258,3 +297,26 @@ std::string HttpAppFramework::stringToHex(unsigned char* ptr, long long length)
     return idString;
 }
 #endif
+
+
+
+HttpAppFramework::HttpAppFramework(const std::string &ip,uint16_t port):
+        _implPtr(new HttpAppFrameworkImpl(ip,port))
+{
+
+}
+
+
+
+void HttpAppFramework::run()
+{
+    _implPtr->run();
+}
+
+HttpAppFramework::~HttpAppFramework()
+{
+
+}
+
+
+

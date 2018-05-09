@@ -19,13 +19,13 @@
 #include <iostream>
 static int urldecode(const char* encd,char* decd)
 {
-    int j,i;
+    int j;
     char *cd =(char*) encd;
     char p[2];
-    unsigned int num;
+
     j=0;
 
-    for( i = 0; i < strlen(cd); i++ )
+    for( size_t i = 0; i < strlen(cd); i++ )
     {
         memset( p,0,2);
         if( cd[i] != '%' )
