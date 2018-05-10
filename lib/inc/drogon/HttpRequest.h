@@ -10,6 +10,9 @@
 
 namespace drogon
 {
+    /*
+     * abstract class for webapp developer to get Http client request;
+     * */
     class HttpRequest
     {
     public:
