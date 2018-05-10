@@ -18,6 +18,7 @@ public:
 int main()
 {
     drogon::DrObjectBase *p=drogon::DrClassMap::newObject("HHH");
+
     std::cout<<banner<<std::endl;
     drogon::HttpAppFramework framework("0.0.0.0",12345);
     trantor::Logger::setLogLevel(trantor::Logger::TRACE);
