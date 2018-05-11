@@ -3,6 +3,7 @@
 // Use of this source code is governed by a MIT license
 // that can be found in the License file.
 
+#include <drogon/DrClassMap.h>
 #include <drogon/HttpAppFramework.h>
 #include <drogon/HttpRequest.h>
 #include <drogon/HttpResponse.h>
@@ -13,15 +14,19 @@
 #include <iostream>
 #include <fstream>
 #include <uuid/uuid.h>
-
+#include <unordered_map>
+#include <drogon/HttpSimpleController.h>
 
 namespace drogon
 {
-    class HttpAppFrameworkImpl
+
+    class HttpAppFrameworkImpl:public HttpAppFramework
     {
     public:
-        HttpAppFrameworkImpl(const std::string &ip,uint16_t port);
-        void run();
+        virtual void setListening(const std::string &ip,uint16_t port) override;
+        virtual void run() override ;
+        virtual void registerHttpSimpleController(const std::string &pathName,const std::string &crtlName,const std::vector<std::string> &filters=
+        std::vector<std::string>())override ;
         ~HttpAppFrameworkImpl(){}
     private:
         std::string _ip;
@@ -35,7 +40,14 @@ namespace drogon
         typedef std::shared_ptr<Session> SessionPtr;
         std::unique_ptr<CacheMap<std::string,SessionPtr>> _sessionMapPtr;
 
-
+        //
+        struct ControllerAndFiltersName
+        {
+            std::string controllerName;
+            std::vector<std::string> filtersName;
+        };
+        std::unordered_map<std::string,ControllerAndFiltersName>_simpCtrlMap;
+        std::mutex _simpCtrlMutex;
 
         bool _enableLastModify=true;
         std::set<std::string> _fileTypeSet={"html","jpg"};
@@ -53,12 +65,22 @@ namespace drogon
 
 using namespace drogon;
 using namespace std::placeholders;
+HttpAppFrameworkImpl * HttpAppFramework::_implPtr= nullptr;
+std::once_flag HttpAppFramework::_once;
 
-HttpAppFrameworkImpl::HttpAppFrameworkImpl(const std::string &ip,uint16_t port):
-        _ip(ip),
-        _port(port)
+void HttpAppFrameworkImpl::registerHttpSimpleController(const std::string &pathName,const std::string &crtlName,const std::vector<std::string> &filters)
 {
+    assert(!pathName.empty());
+    assert(!crtlName.empty());
 
+    std::lock_guard<std::mutex> guard(_simpCtrlMutex);
+    _simpCtrlMap[pathName].controllerName=crtlName;
+    _simpCtrlMap[pathName].filtersName=filters;
+}
+void HttpAppFrameworkImpl::setListening(const std::string &ip,uint16_t port)
+{
+    _ip=ip;
+    _port=port;
 }
 
 void HttpAppFrameworkImpl::run()
@@ -178,26 +200,30 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequest& req,std::function<v
         LOG_INFO<<"can't find filter "<<filterClassName;
     }
      */
-    /*find controller
-    std::string ctrlName = (*_controllerMap)[req.path().c_str()];
+    /*find controller*/
+    if(_simpCtrlMap.find(req.path())!=_simpCtrlMap.end())
+    {
+        std::string ctrlName = _simpCtrlMap[req.path().c_str()].controllerName;
 
-    TRObject *_object = TRClassMap::newObject(ctrlName);
+        auto _object = std::shared_ptr<DrObjectBase>(DrClassMap::newObject(ctrlName));
 
-    HttpController *controller = dynamic_cast<HttpController*>(_object);
+        auto controller = std::dynamic_pointer_cast<HttpSimpleControllerBase>(_object);
 
-    if(controller) {
-        controller->setSession(_sessionMap[session_id]);
-        controller->setEnvironment(this);
-        controller->handleHttpAsyncRequest(req, [=](HttpResponse& resp){
-            if(needSetJsessionid)
-                resp.addCookie("JSESSIONID",session_id);
-            callback(resp);
-        });
-        delete controller;
-    } else {
+        if(controller) {
+//            controller->setSession((*_sessionMapPtr)[session_id]);
+//            controller->setEnvironment(this);
+            controller->asyncHandleHttpRequest(req, [=](HttpResponse& resp){
+                if(needSetJsessionid)
+                    resp.addCookie("JSESSIONID",session_id);
+                callback(resp);
+            });
+            return;
+        } else {
 
-        LOG_ERROR<<"can't find controller "<<ctrlName;
-        */
+            LOG_ERROR << "can't find controller " << ctrlName;
+        }
+    }
+
     HttpResponse resp;
 
     resp.setStatusCode(HttpResponse::k404NotFound);
@@ -303,18 +329,11 @@ std::string HttpAppFrameworkImpl::stringToHex(unsigned char* ptr, long long leng
 
 
 
-
-HttpAppFramework::HttpAppFramework(const std::string &ip,uint16_t port):
-        _implPtr(new HttpAppFrameworkImpl(ip,port))
-{
-
-}
-
-
-
-void HttpAppFramework::run()
-{
-    _implPtr->run();
+HttpAppFramework& HttpAppFramework::instance() {
+    std::call_once(_once,[]{
+        _implPtr=new HttpAppFrameworkImpl;
+    });
+    return *_implPtr;
 }
 
 HttpAppFramework::~HttpAppFramework()

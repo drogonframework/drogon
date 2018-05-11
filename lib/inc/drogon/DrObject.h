@@ -27,14 +27,16 @@ namespace drogon
     * implement the reflection function of creating the class object by class name
     * */
     template <typename T>
-    class DrObject:public DrObjectBase
+    class DrObject:public virtual DrObjectBase
     {
     public:
 
         virtual const std::string & className()const override {
             return _alloc.className();
         }
-
+        static const std::string & classTypeName(){
+            return _alloc.className();
+        }
     protected:
         //protect constructor to make this class only inheritable
         DrObject(){}

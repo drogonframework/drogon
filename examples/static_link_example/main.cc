@@ -9,7 +9,7 @@ static const char banner[]="     _                             \n"
                            "| (_| | | | (_) | (_| | (_) | | | |\n"
                            " \\__,_|_|  \\___/ \\__, |\\___/|_| |_|\n"
                            "                 |___/             \n";
-
+using namespace drogon;
 class HHH:public drogon::DrObject<HHH>
 {
 public:
@@ -20,7 +20,22 @@ class TestController:public drogon::HttpSimpleController<TestController>
 {
 public:
     TestController(){}
+    virtual void asyncHandleHttpRequest(const HttpRequest& req,std::function<void (HttpResponse &)>callback)override
+    {
+        HttpResponse resp;
+        LOG_DEBUG<<"!!!!!!!!!!1";
+        resp.setStatusCode(HttpResponse::k200Ok);
+
+        resp.setContentTypeCode(CT_TEXT_HTML);
+
+        resp.setBody("hello!!!");
+        callback(resp);
+    }
     void ttt(){}
+    PATH_LIST_BEGIN
+    PATH_ADD(/);
+    PATH_ADD(/test);
+    PATH_LIST_END
 };
 
 
@@ -34,7 +49,7 @@ int main()
     //std::cout<<haha.good()<<std::endl;
     HHH hh;
     std::cout<<banner<<std::endl;
-    drogon::HttpAppFramework framework("0.0.0.0",12345);
+    drogon::HttpAppFramework::instance().setListening("0.0.0.0",12345);
     trantor::Logger::setLogLevel(trantor::Logger::TRACE);
-    framework.run();
+    drogon::HttpAppFramework::instance().run();
 }
