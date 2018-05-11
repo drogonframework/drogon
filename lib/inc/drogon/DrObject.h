@@ -36,9 +36,10 @@ namespace drogon
         }
 
     protected:
-        //protect constructor to make the class only be inherited
+        //protect constructor to make this class only inheritable
         DrObject(){}
     private:
+
         class DrAllocator
         {
         public:
@@ -61,7 +62,7 @@ namespace drogon
                         __cxxabiv1::__cxa_demangle( mangled_name, nullptr, &len, &status ), &std::free ) ;
                 return ptr.get() ;
             }
-            std::string _className;
+            const std::string _className;
         };
 
         //use static val to register allocator function for class T;
