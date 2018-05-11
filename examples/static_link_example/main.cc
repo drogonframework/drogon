@@ -47,7 +47,7 @@ int main()
     //drogon::DrObjectBase *p=drogon::DrClassMap::newObject("HHH");
     //TestController haha;
     //std::cout<<haha.good()<<std::endl;
-    HHH hh;
+
     std::cout<<banner<<std::endl;
     drogon::HttpAppFramework::instance().setListening("0.0.0.0",12345);
     trantor::Logger::setLogLevel(trantor::Logger::TRACE);

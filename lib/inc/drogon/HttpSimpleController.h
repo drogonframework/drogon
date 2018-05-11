@@ -27,24 +27,26 @@ namespace drogon
     class HttpSimpleController:public DrObject<T>,public HttpSimpleControllerBase
     {
     public:
-        HttpSimpleController(){}
+
         virtual ~HttpSimpleController(){}
 
+    protected:
+
+        HttpSimpleController(){}
+
     private:
-        //virtual std::vector<std::string> paths()=0;
+
         class pathRegister {
         public:
-        pathRegister(){
-                std::cout<<"pathRegister!!"<<HttpSimpleController<T>::classTypeName()<<std::endl;
-//            _register("hahaha",{std::string((char *)PATH)...});
-//            auto ctl= static_cast<HttpSimpleController<T>*>(new T);
+        pathRegister()
+        {
             auto vPaths=T::paths();
-            //delete ctl;
+
             for(auto path:vPaths)
             {
+                LOG_DEBUG<<"register simple controller("<<HttpSimpleController<T>::classTypeName()<<") on path:"<<path;
                 HttpAppFramework::instance().registerHttpSimpleController(path,HttpSimpleController<T>::classTypeName());
             }
-
 
         }
 
