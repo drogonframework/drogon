@@ -280,6 +280,16 @@ namespace drogon
         }
 
         void appendToBuffer(MsgBuffer* output) const;
+
+        virtual SessionPtr session() const override
+        {
+            return _sessionPtr;
+        }
+
+        void setSession(const SessionPtr &session)
+        {
+            _sessionPtr=session;
+        }
     private:
         Method method_;
         Version version_;
@@ -290,6 +300,8 @@ namespace drogon
         std::map<std::string, std::string> headers_;
         std::map<std::string, std::string> cookies_;
         std::map<std::string, std::string> premeter_;
+
+        SessionPtr _sessionPtr;
     protected:
         std::string content_;
         size_t contentLen;

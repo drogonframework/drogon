@@ -2,6 +2,7 @@
 //
 // Use of this source code is governed by a MIT license
 // that can be found in the License file.
+#include "HttpRequestImpl.h"
 
 #include <drogon/DrClassMap.h>
 #include <drogon/HttpAppFramework.h>
@@ -178,6 +179,7 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequest& req,std::function<v
         }
 
     }
+    ((HttpRequestImpl &)req).setSession((*_sessionMapPtr)[session_id]);
     /*filters
     std::vector<std::string> filters=(*_filterMap)[req.path().c_str()];
     for(std::string filterClassName:filters)

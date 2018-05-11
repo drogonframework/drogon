@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include <drogon/Session.h>
 #include <map>
 #include <string>
 
@@ -28,6 +29,7 @@ namespace drogon
         virtual const std::string& query() const=0;
         virtual const std::string& path() const=0;
         virtual Version getVersion() const=0;
+        virtual SessionPtr session() const=0;
         virtual ~HttpRequest(){}
     };
 }

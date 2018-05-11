@@ -237,7 +237,7 @@ namespace drogon
         std::string body_;
         size_t left_body_length_;
         size_t current_chunk_length_;
-        uint8_t contentType_;
+        uint8_t contentType_=CT_TEXT_HTML;
         //trantor::Date receiveTime_;
 
         void setContentType(const std::string& contentType)

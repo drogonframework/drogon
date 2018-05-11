@@ -11,8 +11,8 @@
 #include <string>
 #include <vector>
 #include <iostream>
-#define PATH_LIST_BEGIN private:\
-virtual std::vector<std::string> paths() override \
+#define PATH_LIST_BEGIN public:\
+static std::vector<std::string> paths() \
 {\
     std::vector<std::string> vet;
 
@@ -31,15 +31,15 @@ namespace drogon
         virtual ~HttpSimpleController(){}
 
     private:
-        virtual std::vector<std::string> paths()=0;
+        //virtual std::vector<std::string> paths()=0;
         class pathRegister {
         public:
         pathRegister(){
                 std::cout<<"pathRegister!!"<<HttpSimpleController<T>::classTypeName()<<std::endl;
 //            _register("hahaha",{std::string((char *)PATH)...});
-            auto ctl= static_cast<HttpSimpleController<T>*>(new T);
-            auto vPaths=ctl->paths();
-            delete ctl;
+//            auto ctl= static_cast<HttpSimpleController<T>*>(new T);
+            auto vPaths=T::paths();
+            //delete ctl;
             for(auto path:vPaths)
             {
                 HttpAppFramework::instance().registerHttpSimpleController(path,HttpSimpleController<T>::classTypeName());
