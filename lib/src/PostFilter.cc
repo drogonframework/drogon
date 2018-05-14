@@ -4,6 +4,7 @@
 // Use of this source code is governed by a MIT license
 // that can be found in the License file.
 #include <drogon/PostFilter.h>
+#include "HttpResponseImpl.h"
 using namespace drogon;
 std::shared_ptr<HttpResponse> PostFilter::doFilter(const HttpRequest& req)
 {
@@ -11,5 +12,12 @@ std::shared_ptr<HttpResponse> PostFilter::doFilter(const HttpRequest& req)
     {
         return nullptr;
     }
-    return nullptr;
+    auto res=std::shared_ptr<HttpResponse>(HttpResponse::newHttpResponse());
+    if(res)
+    {
+        res->setStatusCode(HttpResponse::k404NotFound);
+        res->setCloseConnection(true);
+    }
+
+    return res;
 }

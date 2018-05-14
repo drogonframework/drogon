@@ -18,7 +18,7 @@
 #ifndef MUDUO_NET_HTTP_HTTPCONTEXT_H
 #define MUDUO_NET_HTTP_HTTPCONTEXT_H
 #include "HttpRequestImpl.h"
-#include <drogon/HttpResponse.h>
+#include "HttpResponseImpl.h"
 #include <trantor/utils/MsgBuffer.h>
 
 using namespace trantor;
@@ -120,7 +120,7 @@ namespace drogon
         HttpRequestImpl request_;
 
         HttpResponseParseState res_state_;
-        HttpResponse response_;
+        HttpResponseImpl response_;
     };
 
 }

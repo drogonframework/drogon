@@ -3,7 +3,7 @@
 // Use of this source code is governed by a MIT license
 // that can be found in the License file.
 #include "HttpRequestImpl.h"
-
+#include "HttpResponseImpl.h"
 #include <drogon/DrClassMap.h>
 #include <drogon/HttpAppFramework.h>
 #include <drogon/HttpRequest.h>
@@ -149,7 +149,7 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequest& req,std::function<v
         if(_fileTypeSet.find(filetype) != _fileTypeSet.end()) {
             LOG_INFO << "file query!";
             std::string filePath = _rootPath + path;
-            HttpResponse resp;
+            HttpResponseImpl resp;
 
             if(needSetJsessionid)
                 resp.addCookie("JSESSIONID",session_id);
@@ -215,6 +215,20 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequest& req,std::function<v
         for(auto filter:filters)
         {
             LOG_TRACE<<"filters in path("<<pathLower<<"):"<<filter;
+            auto _object=std::shared_ptr<DrObjectBase>(DrClassMap::newObject(filter));
+            auto _filter = std::dynamic_pointer_cast<HttpFilterBase>(_object);
+            if(_filter)
+            {
+                auto resPtr=_filter->doFilter(req);
+                if(resPtr)
+                {
+                    callback(*resPtr);
+                    return;
+                }
+            } else
+            {
+                LOG_ERROR<<"filter "<<filter<<" not found";
+            }
         }
         std::string ctrlName = _simpCtrlMap[pathLower].controllerName;
 
@@ -237,7 +251,7 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequest& req,std::function<v
         }
     }
 
-    HttpResponse resp;
+    HttpResponseImpl resp;
 
     resp.setStatusCode(HttpResponse::k404NotFound);
     //resp.setCloseConnection(true);

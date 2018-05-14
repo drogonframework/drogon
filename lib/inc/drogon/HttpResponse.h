@@ -20,10 +20,6 @@
 
 #pragma once
 
-
-#include <trantor/utils/MsgBuffer.h>
-#include <map>
-
 #include <string>
 using std::string;
 #define CT_APPLICATION_JSON				1
@@ -47,12 +43,11 @@ using std::string;
 #define CT_IMAGE_XICON					19
 #define CT_IMAGE_ICNS					20
 #define CT_IMAGE_BMP					21
-using namespace trantor;
+
 namespace drogon
 {
     class HttpResponse
     {
-        friend class HttpContext;
     public:
         enum HttpStatusCode {
             kUnknown,
@@ -67,187 +62,43 @@ namespace drogon
         enum Version {
             kHttp10, kHttp11
         };
-/*
-    explicit HttpResponse()
-            : statusCode_(kUnknown),
-              closeConnection_(close),
-			left_body_length_(0),
-			current_chunk_length_(0)
-    {
-    }
-*/
+
         explicit HttpResponse()
-                : statusCode_(kUnknown),
-                  closeConnection_(false),
-                  left_body_length_(0),
-                  current_chunk_length_(0)
         {
         }
 
-        void setStatusCode(HttpStatusCode code)
-        {
-            statusCode_ = code;
-            setStatusMessage(web_response_code_to_string(code));
-        }
+        virtual void setStatusCode(HttpStatusCode code)=0;
 
-        void setStatusCode(HttpStatusCode code, const std::string& status_message)
-        {
-            statusCode_ = code;
-            setStatusMessage(status_message);
-        }
+        virtual void setStatusCode(HttpStatusCode code, const std::string& status_message)=0;
 
-        void setVersion(const Version v)
-        {
-            v_ = v;
-        }
+        virtual void setVersion(const Version v)=0;
 
+        virtual void setCloseConnection(bool on)=0;
 
-        void setCloseConnection(bool on)
-        {
-            closeConnection_ = on;
-        }
+        virtual bool closeConnection() const =0;
 
-        bool closeConnection() const
-        {
-            return closeConnection_;
-        }
+        virtual void setContentTypeCode(uint8_t type)=0;
 
-        void setContentTypeCode(uint8_t type)
-        {
-            contentType_=type;
-            setContentType(web_content_type_to_string(type));
-        }
+        virtual std::string getHeader(const std::string& key)=0;
 
+        virtual void addHeader(const std::string& key, const std::string& value)=0;
 
-        std::string getHeader(const std::string& key)
-        {
-            if(headers_.find(key) == headers_.end())
-            {
-                return "";
-            }
-            else
-            {
-                return headers_[key];
-            }
-        }
-        void addHeader(const std::string& key, const std::string& value)
-        {
-            headers_[key] = value;
-        }
+        virtual void addHeader(const char* start, const char* colon, const char* end)=0;
 
-        void addHeader(const char* start, const char* colon, const char* end)
-        {
-            std::string field(start, colon);
-            ++colon;
-            while (colon < end && isspace(*colon)) {
-                ++colon;
-            }
-            std::string value(colon, end);
-            while (!value.empty() && isspace(value[value.size() - 1])) {
-                value.resize(value.size() - 1);
-            }
-            headers_[field] = value;
-            transform(field.begin(), field.end(), field.begin(), ::tolower);
-            if(field == "cookie") {
-                //LOG_INFO<<"cookies!!!:"<<value;
-                std::string::size_type pos;
-                while((pos = value.find(";")) != std::string::npos) {
-                    std::string coo = value.substr(0, pos);
-                    auto epos = coo.find("=");
-                    if(epos != std::string::npos) {
-                        std::string cookie_name = coo.substr(0, epos);
-                        std::string::size_type cpos=0;
-                        while(isspace(cookie_name[cpos])&&cpos<cookie_name.length())
-                            cpos++;
-                        cookie_name=cookie_name.substr(cpos);
-                        std::string cookie_value = coo.substr(epos + 1);
-                        cookies_[cookie_name] = cookie_value;
-                    }
-                    value=value.substr(pos+1);
-                }
-                if(value.length()>0)
-                {
-                    std::string &coo = value;
-                    auto epos = coo.find("=");
-                    if(epos != std::string::npos) {
-                        std::string cookie_name = coo.substr(0, epos);
-                        std::string::size_type cpos=0;
-                        while(isspace(cookie_name[cpos])&&cpos<cookie_name.length())
-                            cpos++;
-                        cookie_name=cookie_name.substr(cpos);
-                        std::string cookie_value = coo.substr(epos + 1);
-                        cookies_[cookie_name] = cookie_value;
-                    }
-                }
-            }
-        }
+        virtual void addCookie(const std::string& key, const std::string& value)=0;
 
-        void addCookie(const std::string& key, const std::string& value)
-        {
-            cookies_[key] = value;
-        }
-        void setBody(const std::string& body)
-        {
-            body_ = body;
-        }
-        void setBody(std::string&& body)
-        {
-            body_ = std::move(body);
-        }
-        void redirect(const std::string& url)
-        {
-            headers_["Location"] = url;
-        }
-        void appendToBuffer(MsgBuffer* output) const;
+        virtual void setBody(const std::string& body)=0;
 
-        void clear()
-        {
-            statusCode_ = kUnknown;
-            v_ = kHttp11;
-            statusMessage_.clear();
-            headers_.clear();
-            cookies_.clear();
-            body_.clear();
-            left_body_length_ = 0;
-            current_chunk_length_ = 0;
-        }
+        virtual void setBody(std::string&& body)=0;
 
-//	void setReceiveTime(trantor::Date t)
-//    {
-//        receiveTime_ = t;
-//    }
+        virtual void redirect(const std::string& url)=0;
 
-        std::string getBody() const
-        {
-            return body_;
-        }
+        virtual void clear()=0;
 
-    protected:
-        static const std::string web_content_type_to_string(uint8_t contenttype);
-        static const std::string web_response_code_to_string(int code);
+        virtual std::string getBody() const=0;
 
-    private:
-        std::map<std::string, std::string> headers_;
-        std::map<std::string, std::string> cookies_;
-        HttpStatusCode statusCode_;
-        // FIXME: add http version
-        Version v_;
-        std::string statusMessage_;
-        bool closeConnection_;
-        std::string body_;
-        size_t left_body_length_;
-        size_t current_chunk_length_;
-        uint8_t contentType_=CT_TEXT_HTML;
-        //trantor::Date receiveTime_;
+        static HttpResponse* newHttpResponse();
 
-        void setContentType(const std::string& contentType)
-        {
-            addHeader("Content-Type", contentType);
-        }
-        void setStatusMessage(const std::string& message)
-        {
-            statusMessage_ = message;
-        }
     };
 
 }

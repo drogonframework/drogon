@@ -25,20 +25,20 @@ public:
     TestController(){}
     virtual void asyncHandleHttpRequest(const HttpRequest& req,std::function<void (HttpResponse &)>callback)override
     {
-        HttpResponse resp;
+        std::unique_ptr<HttpResponse> resp=std::unique_ptr<HttpResponse>(HttpResponse::newHttpResponse());
         LOG_DEBUG<<"!!!!!!!!!!1";
-        resp.setStatusCode(HttpResponse::k200Ok);
+        resp->setStatusCode(HttpResponse::k200Ok);
 
-        resp.setContentTypeCode(CT_TEXT_HTML);
+        resp->setContentTypeCode(CT_TEXT_HTML);
 
-        resp.setBody("hello!!!");
-        callback(resp);
+        resp->setBody("hello!!!");
+        callback(*resp);
     }
     void ttt(){}
     PATH_LIST_BEGIN
     PATH_ADD("/");
-    PATH_ADD("/Test");
-    PATH_ADD("/tpost","post","login");
+    PATH_ADD("/Test","nonFilter");
+    PATH_ADD("/tpost","drogon::PostFilter");
     PATH_LIST_END
 };
 

@@ -14,14 +14,19 @@
 // Use of this source code is governed by a MIT license
 // that can be found in the License file.
 
-#include <drogon/HttpResponse.h>
+#include "HttpResponseImpl.h"
 
 #include <trantor/utils/Logger.h>
 #include <stdio.h>
 
 using namespace trantor;
 using namespace drogon;
-const std::string HttpResponse::web_content_type_to_string(uint8_t contenttype)
+
+static HttpResponse* HttpResponse::newHttpResponse()
+{
+    return new HttpResponseImpl;
+}
+const std::string HttpResponseImpl::web_content_type_to_string(uint8_t contenttype)
 {
     switch(contenttype) {
         case CT_TEXT_HTML:
@@ -91,7 +96,7 @@ const std::string HttpResponse::web_content_type_to_string(uint8_t contenttype)
 }
 
 
-const std::string HttpResponse::web_response_code_to_string(int code)
+const std::string HttpResponseImpl::web_response_code_to_string(int code)
 {
     switch(code) {
         case 200:
@@ -133,7 +138,7 @@ const std::string HttpResponse::web_response_code_to_string(int code)
             return "Undefined Error";
     }
 }
-void HttpResponse::appendToBuffer(MsgBuffer* output) const
+void HttpResponseImpl::appendToBuffer(MsgBuffer* output) const
 {
     char buf[32];
     snprintf(buf, sizeof buf, "HTTP/1.1 %d ", statusCode_);
