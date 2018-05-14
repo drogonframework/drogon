@@ -25,6 +25,14 @@ return vet;\
 }
 namespace drogon
 {
+    class HttpSimpleControllerBase:public virtual DrObjectBase
+    {
+    public:
+        virtual void asyncHandleHttpRequest(const HttpRequest& req,std::function<void (HttpResponse &)>callback)=0;
+        virtual ~HttpSimpleControllerBase(){}
+    };
+
+
     template <typename T>
     class HttpSimpleController:public DrObject<T>,public HttpSimpleControllerBase
     {
