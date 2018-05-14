@@ -20,8 +20,11 @@ namespace drogon
         enum Version {
             kUnknown, kHttp10, kHttp11
         };
-
+        enum Method {
+            kInvalid, kGet, kPost, kHead, kPut, kDelete
+        };
         virtual const char* methodString() const=0;
+        virtual Method method() const=0;
         virtual std::string getHeader(const std::string& field) const=0;
         virtual std::string getCookie(const std::string& field) const=0;
         virtual const std::map<std::string, std::string>& headers() const=0;

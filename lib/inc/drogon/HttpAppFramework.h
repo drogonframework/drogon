@@ -14,6 +14,7 @@
 #include <drogon/DrObject.h>
 #include <drogon/HttpRequest.h>
 #include <drogon/HttpResponse.h>
+#include <drogon/PostFilter.h>
 #include <memory>
 #include <string>
 #include <functional>

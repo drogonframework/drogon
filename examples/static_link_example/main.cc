@@ -3,6 +3,7 @@
 #include <drogon/HttpAppFramework.h>
 #include <trantor/utils/Logger.h>
 #include <drogon/HttpSimpleController.h>
+
 static const char banner[]="     _                             \n"
                            "  __| |_ __ ___   __ _  ___  _ __  \n"
                            " / _` | '__/ _ \\ / _` |/ _ \\| '_ \\ \n"
@@ -10,6 +11,8 @@ static const char banner[]="     _                             \n"
                            " \\__,_|_|  \\___/ \\__, |\\___/|_| |_|\n"
                            "                 |___/             \n";
 using namespace drogon;
+
+
 class HHH:public drogon::DrObject<HHH>
 {
 public:

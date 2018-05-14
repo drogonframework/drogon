@@ -36,9 +36,6 @@ namespace drogon
     {
     public:
         friend class HttpContext;
-        enum Method {
-            kInvalid, kGet, kPost, kHead, kPut, kDelete
-        };
 
 
         HttpRequestImpl()
@@ -97,7 +94,7 @@ namespace drogon
             return true;
         }
 
-        Method method() const
+        Method method() const override
         {
             return method_;
         }
