@@ -8,6 +8,7 @@
 
 #include <drogon/DrObject.h>
 #include <drogon/HttpAppFramework.h>
+#include <trantor/utils/Logger.h>
 #include <string>
 #include <vector>
 #include <iostream>

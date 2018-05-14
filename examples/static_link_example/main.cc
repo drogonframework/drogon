@@ -19,28 +19,6 @@ public:
    // HHH(){std::cout<<"class HHH constr,name="<<className()<<std::endl;}
 };
 
-class TestController:public drogon::HttpSimpleController<TestController>
-{
-public:
-    TestController(){}
-    virtual void asyncHandleHttpRequest(const HttpRequest& req,std::function<void (HttpResponse &)>callback)override
-    {
-        std::unique_ptr<HttpResponse> resp=std::unique_ptr<HttpResponse>(HttpResponse::newHttpResponse());
-        LOG_DEBUG<<"!!!!!!!!!!1";
-        resp->setStatusCode(HttpResponse::k200Ok);
-
-        resp->setContentTypeCode(CT_TEXT_HTML);
-
-        resp->setBody("hello!!!");
-        callback(*resp);
-    }
-    void ttt(){}
-    PATH_LIST_BEGIN
-    PATH_ADD("/");
-    PATH_ADD("/Test","nonFilter");
-    PATH_ADD("/tpost","drogon::PostFilter");
-    PATH_LIST_END
-};
 
 
 
@@ -48,9 +26,6 @@ public:
 
 int main()
 {
-    //drogon::DrObjectBase *p=drogon::DrClassMap::newObject("HHH");
-    //TestController haha;
-    //std::cout<<haha.good()<<std::endl;
 
     std::cout<<banner<<std::endl;
     drogon::HttpAppFramework::instance().setListening("0.0.0.0",12345);
