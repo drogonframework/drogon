@@ -16,6 +16,7 @@
 #include <fstream>
 #include <uuid/uuid.h>
 #include <unordered_map>
+#include <algorithm>
 #include <drogon/HttpSimpleController.h>
 
 namespace drogon
@@ -74,9 +75,11 @@ void HttpAppFrameworkImpl::registerHttpSimpleController(const std::string &pathN
     assert(!pathName.empty());
     assert(!crtlName.empty());
 
+    std::string path(pathName);
+    std::transform(pathName.begin(),pathName.end(),path.begin(),tolower);
     std::lock_guard<std::mutex> guard(_simpCtrlMutex);
-    _simpCtrlMap[pathName].controllerName=crtlName;
-    _simpCtrlMap[pathName].filtersName=filters;
+    _simpCtrlMap[path].controllerName=crtlName;
+    _simpCtrlMap[path].filtersName=filters;
 }
 void HttpAppFrameworkImpl::setListening(const std::string &ip,uint16_t port)
 {
@@ -138,7 +141,7 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequest& req,std::function<v
         }
     }
 
-    std::string path = req.path().c_str();
+    std::string path = req.path();
     auto pos = path.rfind(".");
     if(pos != std::string::npos) {
         std::string filetype = path.substr(pos + 1, path.length());
@@ -203,9 +206,17 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequest& req,std::function<v
     }
      */
     /*find controller*/
-    if(_simpCtrlMap.find(req.path())!=_simpCtrlMap.end())
+    std::string pathLower(req.path());
+    std::transform(pathLower.begin(),pathLower.end(),pathLower.begin(),tolower);
+    if(_simpCtrlMap.find(pathLower)!=_simpCtrlMap.end())
     {
-        std::string ctrlName = _simpCtrlMap[req.path().c_str()].controllerName;
+        auto filters=_simpCtrlMap[pathLower].filtersName;
+        LOG_TRACE<<"filters count:"<<filters.size();
+        for(auto filter:filters)
+        {
+            LOG_TRACE<<"filters in path("<<pathLower<<"):"<<filter;
+        }
+        std::string ctrlName = _simpCtrlMap[pathLower].controllerName;
 
         auto _object = std::shared_ptr<DrObjectBase>(DrClassMap::newObject(ctrlName));
 

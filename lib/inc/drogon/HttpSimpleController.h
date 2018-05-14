@@ -12,11 +12,12 @@
 #include <vector>
 #include <iostream>
 #define PATH_LIST_BEGIN public:\
-static std::vector<std::string> paths() \
+static std::vector<std::pair<std::string,std::vector<std::string>>> paths() \
 {\
-    std::vector<std::string> vet;
+    std::vector<std::pair<std::string,std::vector<std::string>>> vet;
 
-#define PATH_ADD(path) vet.push_back(#path)
+#define PATH_ADD(path,filters...) \
+    vet.push_back({path,{filters}})
 
 #define PATH_LIST_END \
 return vet;\
@@ -44,8 +45,8 @@ namespace drogon
 
             for(auto path:vPaths)
             {
-                LOG_DEBUG<<"register simple controller("<<HttpSimpleController<T>::classTypeName()<<") on path:"<<path;
-                HttpAppFramework::instance().registerHttpSimpleController(path,HttpSimpleController<T>::classTypeName());
+                LOG_DEBUG<<"register simple controller("<<HttpSimpleController<T>::classTypeName()<<") on path:"<<path.first;
+                HttpAppFramework::instance().registerHttpSimpleController(path.first,HttpSimpleController<T>::classTypeName(),path.second);
             }
 
         }

@@ -33,8 +33,9 @@ public:
     }
     void ttt(){}
     PATH_LIST_BEGIN
-    PATH_ADD(/);
-    PATH_ADD(/test);
+    PATH_ADD("/");
+    PATH_ADD("/Test");
+    PATH_ADD("/tpost","post","login");
     PATH_LIST_END
 };
 
