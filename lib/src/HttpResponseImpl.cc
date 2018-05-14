@@ -22,7 +22,7 @@
 using namespace trantor;
 using namespace drogon;
 
-static HttpResponse* HttpResponse::newHttpResponse()
+HttpResponse* HttpResponse::newHttpResponse()
 {
     return new HttpResponseImpl;
 }
