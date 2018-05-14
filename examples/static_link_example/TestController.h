@@ -9,7 +9,6 @@ public:
     //TestController(){}
     virtual void asyncHandleHttpRequest(const HttpRequest& req,std::function<void (HttpResponse &)>callback)override;
 
-    void ttt(){}
     PATH_LIST_BEGIN
     PATH_ADD("/");
     PATH_ADD("/Test","nonFilter");

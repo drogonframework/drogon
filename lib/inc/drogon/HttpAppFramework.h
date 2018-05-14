@@ -15,6 +15,9 @@
 #include <drogon/HttpRequest.h>
 #include <drogon/HttpResponse.h>
 #include <drogon/PostFilter.h>
+#include <drogon/GetFilter.h>
+#include <drogon/PutFilter.h>
+#include <drogon/DeleteFilter.h>
 #include <memory>
 #include <string>
 #include <functional>
