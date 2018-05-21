@@ -21,6 +21,7 @@
 #include <memory>
 #include <string>
 #include <functional>
+#include <vector>
 
 namespace drogon
 {
