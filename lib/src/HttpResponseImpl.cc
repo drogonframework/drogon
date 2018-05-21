@@ -26,6 +26,18 @@ HttpResponse* HttpResponse::newHttpResponse()
 {
     return new HttpResponseImpl;
 }
+
+HttpResponse* HttpResponse::newHttpResponse(const Json::Value &data)
+{
+    auto res=new HttpResponseImpl;
+    res->setStatusCode(HttpResponse::k200Ok);
+    res->setContentTypeCode(CT_APPLICATION_JSON);
+    Json::StreamWriterBuilder builder;
+    builder["commentStyle"] = "None";
+    builder["indentation"] = "";
+    res->setBody(writeString(builder, data));
+    return res;
+}
 const std::string HttpResponseImpl::web_content_type_to_string(uint8_t contenttype)
 {
     switch(contenttype) {

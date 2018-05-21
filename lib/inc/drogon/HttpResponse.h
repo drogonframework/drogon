@@ -21,6 +21,8 @@
 #pragma once
 
 #include <string>
+#include <json/json.h>
+
 using std::string;
 #define CT_APPLICATION_JSON				1
 #define CT_TEXT_PLAIN					2
@@ -98,6 +100,7 @@ namespace drogon
         virtual std::string getBody() const=0;
 
         static HttpResponse* newHttpResponse();
+        static HttpResponse* newHttpResponse(const Json::Value &data);
 
     };
 
