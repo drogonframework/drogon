@@ -24,7 +24,10 @@ using namespace drogon;
 
 HttpResponse* HttpResponse::newHttpResponse()
 {
-    return new HttpResponseImpl;
+    auto res = new HttpResponseImpl;
+    res->setStatusCode(HttpResponse::k200Ok);
+    res->setContentTypeCode(CT_TEXT_HTML);
+    return res;
 }
 
 HttpResponse* HttpResponse::newHttpResponse(const Json::Value &data)

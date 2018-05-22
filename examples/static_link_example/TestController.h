@@ -13,5 +13,6 @@ public:
     PATH_ADD("/");
     PATH_ADD("/Test","nonFilter");
     PATH_ADD("/tpost","drogon::PostFilter");
+    PATH_ADD("/slow","TimeFilter");
     PATH_LIST_END
 };

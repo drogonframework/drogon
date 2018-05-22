@@ -38,7 +38,7 @@ namespace drogon
 
         //if uuid package found,we can use a uuid string as session id;
         //set _sessionTimeout=0 to disable location session control based on cookies;
-        uint _sessionTimeout=0;
+        uint _sessionTimeout=1200;
         typedef std::shared_ptr<Session> SessionPtr;
         std::unique_ptr<CacheMap<std::string,SessionPtr>> _sessionMapPtr;
 
@@ -222,6 +222,8 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequest& req,std::function<v
                 auto resPtr=_filter->doFilter(req);
                 if(resPtr)
                 {
+                    if(needSetJsessionid)
+                        resPtr->addCookie("JSESSIONID",session_id);
                     callback(*resPtr);
                     return;
                 }
@@ -237,8 +239,6 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequest& req,std::function<v
         auto controller = std::dynamic_pointer_cast<HttpSimpleControllerBase>(_object);
 
         if(controller) {
-//            controller->setSession((*_sessionMapPtr)[session_id]);
-//            controller->setEnvironment(this);
             controller->asyncHandleHttpRequest(req, [=](HttpResponse& resp){
                 if(needSetJsessionid)
                     resp.addCookie("JSESSIONID",session_id);
