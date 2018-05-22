@@ -51,6 +51,11 @@ namespace drogon
             std::lock_guard<std::mutex> lck(mutex_);
             sessionMap_[key]=obj;
         };
+        void insert(const std::string& key,Any &&obj)
+        {
+            std::lock_guard<std::mutex> lck(mutex_);
+            sessionMap_[key]=std::move(obj);
+        }
         void erase(const std::string& key)
         {
             std::lock_guard<std::mutex> lck(mutex_);
