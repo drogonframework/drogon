@@ -29,6 +29,6 @@ int main()
 
     std::cout<<banner<<std::endl;
     drogon::HttpAppFramework::instance().setListening("0.0.0.0",12345);
-    trantor::Logger::setLogLevel(trantor::Logger::TRACE);
+    trantor::Logger::setLogLevel(trantor::Logger::INFO);
     drogon::HttpAppFramework::instance().run();
 }

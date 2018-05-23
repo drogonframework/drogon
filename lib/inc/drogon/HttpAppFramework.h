@@ -36,7 +36,8 @@ namespace drogon
         virtual ~HttpAppFramework();
         virtual void registerHttpSimpleController(const std::string &pathName,const std::string &crtlName,const std::vector<std::string> &filters=
                 std::vector<std::string>())=0;
-
+        virtual void enableSession(const size_t timeout=0)=0;
+        virtual void disableSession()=0;
     private:
         static std::once_flag _once;
         static class HttpAppFrameworkImpl *_implPtr;

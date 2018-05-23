@@ -29,6 +29,8 @@ namespace drogon
         virtual void run() override ;
         virtual void registerHttpSimpleController(const std::string &pathName,const std::string &crtlName,const std::vector<std::string> &filters=
         std::vector<std::string>())override ;
+        virtual void enableSession(const size_t timeout) override { _useSession=true;_sessionTimeout=timeout;}
+        virtual void disableSession() override { _useSession=false;}
         ~HttpAppFrameworkImpl(){}
     private:
         std::string _ip;
@@ -37,8 +39,9 @@ namespace drogon
         void readSendFile(const std::string& filePath,const HttpRequest& req, HttpResponse* resp);
 
         //if uuid package found,we can use a uuid string as session id;
-        //set _sessionTimeout=0 to disable location session control based on cookies;
-        uint _sessionTimeout=1200;
+        //set _sessionTimeout=0 to make location session valid forever based on cookies;
+        size_t _sessionTimeout=1200;
+        bool _useSession=true;
         typedef std::shared_ptr<Session> SessionPtr;
         std::unique_ptr<CacheMap<std::string,SessionPtr>> _sessionMapPtr;
 
@@ -124,7 +127,7 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequest& req,std::function<v
 
     std::string session_id=req.getCookie("JSESSIONID");
     bool needSetJsessionid=false;
-    if(_sessionTimeout>0)
+    if(_useSession)
     {
         if(session_id=="")
         {
@@ -139,6 +142,7 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequest& req,std::function<v
                 _sessionMapPtr->insert(session_id,std::make_shared< Session >(),_sessionTimeout);
             }
         }
+        ((HttpRequestImpl &)req).setSession((*_sessionMapPtr)[session_id]);
     }
 
     std::string path = req.path();
@@ -182,29 +186,8 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequest& req,std::function<v
         }
 
     }
-    ((HttpRequestImpl &)req).setSession((*_sessionMapPtr)[session_id]);
-    /*filters
-    std::vector<std::string> filters=(*_filterMap)[req.path().c_str()];
-    for(std::string filterClassName:filters)
-    {
-        TRObject *_obj=TRClassMap::newObject(filterClassName);
-        HttpFilter *filter= dynamic_cast<HttpFilter*>(_obj);
-        int filter_flag=0;
-        if(filter)
-        {
-            LOG_INFO<<filterClassName<<".doFilter()";
-            filter->setSession(_sessionMap[session_id]);
-            filter->doFilter(req,[=,&filter_flag]( HttpResponse &resp){
-                callback(resp);
-                filter_flag=1;
-            });
-            if(filter_flag)
-                return;
-        }
-        else
-        LOG_INFO<<"can't find filter "<<filterClassName;
-    }
-     */
+
+
     /*find controller*/
     std::string pathLower(req.path());
     std::transform(pathLower.begin(),pathLower.end(),pathLower.begin(),tolower);

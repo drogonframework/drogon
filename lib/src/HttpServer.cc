@@ -108,9 +108,9 @@ void HttpServer::onRequest(const TcpConnectionPtr& conn, const HttpRequest& req)
         response.setCloseConnection(_close);
         ((HttpResponseImpl &)response).appendToBuffer(&buf);
         conn->send(buf.peek(),buf.readableBytes());
-        if (response.closeConnection()) {
-            conn->shutdown();
-        }
+//        if (response.closeConnection()) {
+//            conn->shutdown();
+//        }
     });
 
 
