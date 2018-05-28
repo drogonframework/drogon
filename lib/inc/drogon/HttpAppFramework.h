@@ -26,7 +26,8 @@
 namespace drogon
 {
 
-
+    inline std::string getVersion();
+    inline std::string getGitCommit();
     class HttpAppFramework:public trantor::NonCopyable
     {
     public:

@@ -43,11 +43,19 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=${CMAKE_CXX_STD_FLAGS} -g -ggdb -Wa
 
 MESSAGE(STATUS ${CMAKE_CXX_FLAGS})
 
-add_subdirectory(trantor)
 
+
+add_subdirectory(trantor)
 include_directories(${PROJECT_SOURCE_DIR}/trantor ${PROJECT_SOURCE_DIR}/lib/inc)
 
+add_custom_target(makeVersion)
+add_custom_command(TARGET makeVersion
+        COMMAND ${PROJECT_SOURCE_DIR}/get_version.sh
+        ARGS ${PROJECT_SOURCE_DIR}/lib/inc/drogon/version.h
+        VERBATIM )
+
 add_subdirectory(examples)
+add_subdirectory(drogon_ctl)
 
 aux_source_directory(${PROJECT_SOURCE_DIR}/lib/src DIR_SRCS)
 
@@ -61,6 +69,7 @@ file(GLOB trantor_net_headers "${CMAKE_CURRENT_SOURCE_DIR}/lib/inc/drogon/*.h")
 install(FILES ${trantor_net_headers} DESTINATION include/drogon)
 
 add_dependencies(drogon trantor)
+add_dependencies(drogon makeVersion)
 
 if (MAKETEST STREQUAL YES)
     ADD_SUBDIRECTORY(tests)

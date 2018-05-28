@@ -18,7 +18,7 @@
 #include <unordered_map>
 #include <algorithm>
 #include <drogon/HttpSimpleController.h>
-
+#include <drogon/version.h>
 namespace drogon
 {
 
@@ -351,5 +351,13 @@ HttpAppFramework::~HttpAppFramework()
 
 }
 
+inline std::string getVersion()
+{
+    return VERSION;
+}
+inline std::string getGitCommit()
+{
+    return VERSION_MD5;
+}
 
 

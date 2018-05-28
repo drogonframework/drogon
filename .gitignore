@@ -34,3 +34,4 @@
 build
 cmake-build-debug
 .idea
+version.h
