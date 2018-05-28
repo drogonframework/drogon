@@ -34,4 +34,4 @@
 build
 cmake-build-debug
 .idea
-version.h
+lib/inc/drogon/version.h

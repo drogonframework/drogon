@@ -1,14 +1,10 @@
-#include <drogon/version.h>
+#include "CommandHandler.h"
+#include <drogon/DrClassMap.h>
 #include <string>
 #include <vector>
 #include <iostream>
-static const char banner[]="     _                             \n"
-                           "  __| |_ __ ___   __ _  ___  _ __  \n"
-                           " / _` | '__/ _ \\ / _` |/ _ \\| '_ \\ \n"
-                           "| (_| | | | (_) | (_| | (_) | | | |\n"
-                           " \\__,_|_|  \\___/ \\__, |\\___/|_| |_|\n"
-                           "                 |___/             \n";
-
+#include <memory>
+using namespace drogon;
 int main(int argc, char* argv[])
 {
     if(argc<2)
@@ -17,12 +13,31 @@ int main(int argc, char* argv[])
         return 0;
     }
     std::string command=argv[1];
-    if(command=="version")
+
+    std::string handlerName=std::string("drogon_ctl::").append(command);
+
+    //new controller
+    auto obj=std::shared_ptr<DrObjectBase>(drogon::DrClassMap::newObject(handlerName));
+    if(obj)
     {
-        std::cout<<banner<<std::endl;
-        std::cout<<"drogon ctl tools"<<std::endl;
-        std::cout<<"version:"<<VERSION<<std::endl;
-        std::cout<<"git commit:"<<VERSION_MD5<<std::endl;
+        auto ctl=std::dynamic_pointer_cast<CommandHandler>(obj);
+        if(ctl)
+        {
+            std::vector<std::string> args;
+            for(int i=2;i<argc;i++)
+            {
+                args.push_back(argv[i]);
+            }
+            ctl->handleCommand(args);
+        }
+        else
+        {
+            std::cout<<"command not found!"<<std::endl;
+        }
+    }
+    else
+    {
+        std::cout<<"command error!"<<std::endl;
     }
     return 0;
 }

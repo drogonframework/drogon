@@ -28,8 +28,8 @@ public:
     static void registerClass(const std::string &className,const DrAllocFunc &func);
     static DrObjectBase* newObject(const std::string &className);
 protected:
-    static std::map <std::string,DrAllocFunc> *classMap;
-    static std::once_flag flag;
+
+    static std::map <std::string,DrAllocFunc> &getMap();
 };
 }
 #endif /* DrClassMap_hpp */
