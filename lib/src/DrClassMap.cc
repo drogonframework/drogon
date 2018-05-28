@@ -27,7 +27,15 @@ DrObjectBase* DrClassMap::newObject(const std::string &className)
     else
         return nullptr;
 }
-
+std::vector<std::string> DrClassMap::getAllClassName()
+{
+    std::vector<std::string> ret;
+    for(auto iter:getMap())
+    {
+        ret.push_back(iter.first);
+    }
+    return ret;
+}
 std::map <std::string,DrAllocFunc> & DrClassMap::getMap() {
     static std::map <std::string,DrAllocFunc> map;
     return map;
