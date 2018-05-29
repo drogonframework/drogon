@@ -20,6 +20,7 @@
 
 #pragma once
 
+#include <drogon/HttpViewData.h>
 #include <string>
 #include <json/json.h>
 
@@ -100,8 +101,10 @@ namespace drogon
         virtual std::string getBody() const=0;
 
         static HttpResponse* newHttpResponse();
-        static HttpResponse* newHttpResponse(const Json::Value &data);
-
+        static HttpResponse* notFoundResponse();
+        static HttpResponse* newHttpJsonResponse(const Json::Value &data);
+        static HttpResponse* newHttpViewResponse(const std::string &viewName,const HttpViewData& data);
+        static HttpResponse* locationRedirectResponse(std::string path);
     };
 
 }

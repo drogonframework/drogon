@@ -15,6 +15,9 @@
 // that can be found in the License file.
 
 #include "HttpResponseImpl.h"
+#include "HttpViewBase.h"
+
+#include <drogon/HttpViewData.h>
 
 #include <trantor/utils/Logger.h>
 #include <stdio.h>
@@ -30,7 +33,7 @@ HttpResponse* HttpResponse::newHttpResponse()
     return res;
 }
 
-HttpResponse* HttpResponse::newHttpResponse(const Json::Value &data)
+HttpResponse* HttpResponse::newHttpJsonResponse(const Json::Value &data)
 {
     auto res=new HttpResponseImpl;
     res->setStatusCode(HttpResponse::k200Ok);
@@ -40,6 +43,26 @@ HttpResponse* HttpResponse::newHttpResponse(const Json::Value &data)
     builder["indentation"] = "";
     res->setBody(writeString(builder, data));
     return res;
+}
+HttpResponse* HttpResponse::notFoundResponse()
+{
+    auto res=new HttpResponseImpl;
+    res->setStatusCode(HttpResponse::k404NotFound);
+    res->setCloseConnection(true);
+
+    return res;
+}
+HttpResponse* HttpResponse::locationRedirectResponse(std::string path)
+{
+    auto res=new HttpResponseImpl;
+    res->setStatusCode(HttpResponse::k302Found);
+    res->redirect(path.c_str());
+    return res;
+}
+
+newHttpViewResponse(const std::string &viewName,const HttpViewData& data)
+{
+
 }
 const std::string HttpResponseImpl::web_content_type_to_string(uint8_t contenttype)
 {
