@@ -15,6 +15,7 @@ namespace drogon_ctl
     {
     public:
         virtual void handleCommand(std::vector<std::string> &parameters) override;
-        std::string script(){return "create controller or view class files";}
+        virtual std::string script() override {return "create controller or view class files";}
+        virtual bool isTopCommand() override {return true;}
     };
 }

@@ -15,8 +15,8 @@
 // that can be found in the License file.
 
 #include "HttpResponseImpl.h"
-#include "HttpViewBase.h"
 
+#include <drogon/HttpViewBase.h>
 #include <drogon/HttpViewData.h>
 
 #include <trantor/utils/Logger.h>
@@ -60,9 +60,9 @@ HttpResponse* HttpResponse::locationRedirectResponse(std::string path)
     return res;
 }
 
-newHttpViewResponse(const std::string &viewName,const HttpViewData& data)
+HttpResponse* HttpResponse::newHttpViewResponse(const std::string &viewName,const HttpViewData& data)
 {
-
+    return HttpViewBase::genHttpResponse(viewName,data);
 }
 const std::string HttpResponseImpl::web_content_type_to_string(uint8_t contenttype)
 {

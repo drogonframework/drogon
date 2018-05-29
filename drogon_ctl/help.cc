@@ -21,6 +21,8 @@ void help::handleCommand(std::vector<std::string> &parameters)
             auto cmdHdlPtr=std::dynamic_pointer_cast<CommandHandler>(classPtr);
             if(cmdHdlPtr)
             {
+                if(!cmdHdlPtr->isTopCommand())
+                    continue;
                 auto pos=className.rfind("::");
                 if(pos!=std::string::npos)
                 {

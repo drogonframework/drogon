@@ -9,7 +9,8 @@ namespace drogon_ctl
     {
     public:
         virtual void handleCommand(std::vector<std::string> &parameters) override;
-        std::string script(){return "display version of this tool";}
+        virtual std::string script() override {return "display version of this tool";}
+        virtual bool isTopCommand() override {return true;}
         version(){}
     };
 }
