@@ -3,7 +3,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-
+#include <algorithm>
 static const std::string cxx_include="<%inc";
 static const std::string cxx_end="%>";
 static const std::string cxx_lang="<%c++";

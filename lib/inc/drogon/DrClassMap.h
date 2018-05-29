@@ -17,6 +17,7 @@
 
 #include <thread>
 #include <mutex>
+#include <vector>
 
 namespace drogon
 {
