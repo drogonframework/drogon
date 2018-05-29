@@ -8,7 +8,7 @@ namespace drogon_ctl
     class version:public DrObject<version>,public CommandHandler
     {
     public:
-        void handleCommand(const std::vector<std::string> &parameters);
+        virtual void handleCommand(std::vector<std::string> &parameters) override;
         std::string script(){return "display version of this tool";}
         version(){}
     };

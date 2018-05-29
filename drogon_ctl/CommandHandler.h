@@ -7,7 +7,7 @@
 class CommandHandler:public virtual drogon::DrObjectBase {
 public:
 
-    virtual void handleCommand(const std::vector<std::string> &parameters)=0;
+    virtual void handleCommand(std::vector<std::string> &parameters)=0;
     virtual std::string script(){return "";}
     virtual ~CommandHandler(){}
 };

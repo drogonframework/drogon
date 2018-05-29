@@ -11,10 +11,10 @@
 using namespace drogon;
 namespace drogon_ctl
 {
-    class help:public DrObject<help>,public CommandHandler
+    class create:public DrObject<create>,public CommandHandler
     {
     public:
         virtual void handleCommand(std::vector<std::string> &parameters) override;
-        std::string script(){return "display this message";}
+        std::string script(){return "create controller or view class files";}
     };
 }

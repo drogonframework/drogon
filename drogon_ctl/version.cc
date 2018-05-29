@@ -10,7 +10,7 @@ static const char banner[]="     _                             \n"
                            " \\__,_|_|  \\___/ \\__, |\\___/|_| |_|\n"
                            "                 |___/             \n";
 
-void version::handleCommand(const std::vector<std::string> &parameters)
+void version::handleCommand(std::vector<std::string> &parameters)
 {
     std::cout<<banner<<std::endl;
     std::cout<<"drogon ctl tools"<<std::endl;
