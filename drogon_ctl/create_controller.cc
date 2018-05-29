@@ -113,19 +113,22 @@ void create_controller::newSimpleControllerHeaderFile(std::ofstream &file,const 
     file<<"#pragma once\n";
     file<<"#include <drogon/HttpSimpleController.h>\n";
     file<<"using namespace drogon;\n";
-    if(namespaceName!="")
-        file<<"namespace "<<namespaceName<<"{\n";
-    file<<"    class "<<ctlName<<":public drogon::HttpSimpleController<"<<ctlName<<">\n";
-    file<<"    {\n";
-    file<<"    public:\n";
+    std::string indent="";
+    if(namespaceName!="") {
+        file << "namespace " << namespaceName << "{\n";
+        indent="    ";
+    }
+    file<<indent<<"class "<<ctlName<<":public drogon::HttpSimpleController<"<<ctlName<<">\n";
+    file<<indent<<"{\n";
+    file<<indent<<"public:\n";
         //TestController(){}
-    file<<"        virtual void asyncHandleHttpRequest(const HttpRequest& req,std::function<void (HttpResponse &)>callback)override;\n";
+    file<<indent<<"    virtual void asyncHandleHttpRequest(const HttpRequest& req,std::function<void (HttpResponse &)>callback)override;\n";
 
-    file<<"        PATH_LIST_BEGIN\n";
-    file<<"        //list path definations here;\n";
-    file<<"        //PATH_ADD(\"/path\",\"filter1\",\"filter2\",...);\n";
-    file<<"        PATH_LIST_END\n";
-    file<<"    };\n";
+    file<<indent<<"    PATH_LIST_BEGIN\n";
+    file<<indent<<"    //list path definations here;\n";
+    file<<indent<<"    //PATH_ADD(\"/path\",\"filter1\",\"filter2\",...);\n";
+    file<<indent<<"    PATH_LIST_END\n";
+    file<<indent<<"};\n";
     if(namespaceName!="")
         file<<"}\n";
 }
