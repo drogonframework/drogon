@@ -13,7 +13,7 @@ using namespace drogon;
 //std::once_flag DrClassMap::flag;
 void DrClassMap::registerClass(const std::string &className,const DrAllocFunc &func)
 {
-    std::cout<<"register class:"<<className<<std::endl;
+    //std::cout<<"register class:"<<className<<std::endl;
 
     getMap().insert(std::make_pair(className, func));
 }
