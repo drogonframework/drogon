@@ -36,7 +36,7 @@ std::vector<std::string> DrClassMap::getAllClassName()
     }
     return ret;
 }
-std::map <std::string,DrAllocFunc> & DrClassMap::getMap() {
-    static std::map <std::string,DrAllocFunc> map;
+std::unordered_map <std::string,DrAllocFunc> & DrClassMap::getMap() {
+    static std::unordered_map <std::string,DrAllocFunc> map;
     return map;
 }

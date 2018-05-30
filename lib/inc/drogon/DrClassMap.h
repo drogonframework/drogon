@@ -11,7 +11,7 @@
 
 
 #include <stdio.h>
-#include <map>
+#include <unordered_map>
 #include <memory>
 #include <functional>
 
@@ -30,7 +30,7 @@ public:
     static DrObjectBase* newObject(const std::string &className);
     static std::vector<std::string> getAllClassName();
 protected:
-    static std::map <std::string,DrAllocFunc> &getMap();
+    static std::unordered_map <std::string,DrAllocFunc> &getMap();
 
 };
 }
