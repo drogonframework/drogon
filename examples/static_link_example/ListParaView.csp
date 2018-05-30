@@ -6,6 +6,8 @@
 <head>
     <meta charset="UTF-8">
     <title><%c++ $$<<title;%> </title>
+</head>
+<body>
     <%c++ if(para.size()>0){%>
     <H1>Parameters</H1>
     <table border="1">
@@ -23,10 +25,5 @@
     <%c++ }else{%>
     <H1>no parameter</H1>
     <%c++}%>
-</head>
-<body>
-<footer>
-    <span>CopyRight@2017 All Rights Reserved</span>
-</footer>
 </body>
 </html>

@@ -12,6 +12,14 @@ using namespace drogon;
 HttpResponse* HttpViewBase::genHttpResponse(std::string viewName,const HttpViewData &data)
 {
     LOG_TRACE<<"http view name="<<viewName;
+    auto pos=viewName.find(".csp");
+    if(pos!=std::string::npos)
+    {
+        if(pos==viewName.length()-4)
+        {
+            viewName=viewName.substr(0,pos);
+        }
+    }
     auto obj=std::shared_ptr<DrObjectBase>(drogon::DrClassMap::newObject(viewName));
     if(obj)
     {
