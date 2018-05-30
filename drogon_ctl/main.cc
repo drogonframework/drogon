@@ -10,7 +10,8 @@ int main(int argc, char* argv[])
 {
     if(argc<2)
     {
-        std::cout<<"usage:"<<std::endl;
+        std::vector<std::string> args={"help"};
+        exeCommand(args);
         return 0;
     }
     std::vector<std::string> args;

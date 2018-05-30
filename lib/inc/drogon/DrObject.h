@@ -20,7 +20,13 @@ namespace drogon
             static std::string _name="DrObjectBase";
             return _name;
         }
+        virtual bool isClass(const std::string &className_) const{
+            if(className()==className_)
+                return true;
+            return false;
+        }
     };
+
 
     /*
     * a class template to
@@ -36,6 +42,12 @@ namespace drogon
         }
         static const std::string & classTypeName(){
             return _alloc.className();
+        }
+
+        virtual bool isClass(const std::string &className_) const override {
+            if(className()==className_)
+                return true;
+            return false;
         }
     protected:
         //protect constructor to make this class only inheritable
