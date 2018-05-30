@@ -17,4 +17,5 @@ endforeach()
 AUX_SOURCE_DIRECTORY(static_link_example DIR_STATIC)
 
 add_executable(webapp ${DIR_STATIC} ${VIEWSRC})
+add_dependencies(webapp drogon_ctl)
 

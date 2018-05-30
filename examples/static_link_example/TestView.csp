@@ -1,3 +1,9 @@
+<%inc
+#include <iostream>
+%>
+<%c++
+std::cout<<"this is a Http backend rendering Test"<<std::endl;
+%>
 <!DOCTYPE html>
 <html>
 <%c++ std::string title=@@.get<std::string>("title");%>
