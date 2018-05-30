@@ -5,6 +5,6 @@ void ListParaCtl::asyncHandleHttpRequest(const HttpRequest& req,std::function<vo
     HttpViewData data;
     data.insert("title",std::string("list parameters"));
     data.insert("parameters",req.getPremeter());
-    auto res=std::unique_ptr<drogon::HttpResponse>(drogon::HttpResponse::newHttpViewResponse("ListParaView.csp",data));
+    auto res=drogon::HttpResponse::newHttpViewResponse("ListParaView.csp",data);
     callback(*res);
 }

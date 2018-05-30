@@ -14,6 +14,6 @@ void JsonTestController::asyncHandleHttpRequest(const HttpRequest& req,std::func
         array.append(user);
     }
     json["rows"]=array;
-    auto resp=std::unique_ptr<HttpResponse>(HttpResponse::newHttpJsonResponse(json));
+    auto resp=HttpResponse::newHttpJsonResponse(json);
     callback(*resp);
 }

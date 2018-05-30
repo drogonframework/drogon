@@ -234,7 +234,7 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequest& req,std::function<v
         }
     }
 
-    auto res=std::unique_ptr<drogon::HttpResponse>(drogon::HttpResponse::notFoundResponse());
+    auto res=drogon::HttpResponse::notFoundResponse();
 
     if(needSetJsessionid)
             res->addCookie("JSESSIONID",session_id);
@@ -298,7 +298,7 @@ void HttpAppFrameworkImpl::readSendFile(const std::string& filePath,const HttpRe
     resp->setStatusCode(HttpResponse::k200Ok);
     LOG_INFO << "file len:" << str.length();
     resp->setBody(str);
-    delete contents;
+    delete [] contents;
 }
 
 std::string HttpAppFrameworkImpl::getUuid()

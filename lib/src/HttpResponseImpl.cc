@@ -25,17 +25,17 @@
 using namespace trantor;
 using namespace drogon;
 
-HttpResponse* HttpResponse::newHttpResponse()
+HttpResponsePtr HttpResponse::newHttpResponse()
 {
-    auto res = new HttpResponseImpl;
+    auto res = std::make_shared<HttpResponseImpl>();
     res->setStatusCode(HttpResponse::k200Ok);
     res->setContentTypeCode(CT_TEXT_HTML);
     return res;
 }
 
-HttpResponse* HttpResponse::newHttpJsonResponse(const Json::Value &data)
+HttpResponsePtr HttpResponse::newHttpJsonResponse(const Json::Value &data)
 {
-    auto res=new HttpResponseImpl;
+    auto res=std::make_shared<HttpResponseImpl>();
     res->setStatusCode(HttpResponse::k200Ok);
     res->setContentTypeCode(CT_APPLICATION_JSON);
     Json::StreamWriterBuilder builder;
@@ -44,7 +44,7 @@ HttpResponse* HttpResponse::newHttpJsonResponse(const Json::Value &data)
     res->setBody(writeString(builder, data));
     return res;
 }
-HttpResponse* HttpResponse::notFoundResponse()
+HttpResponsePtr HttpResponse::notFoundResponse()
 {
     HttpViewData data;
     data.insert("version",getVersion());
@@ -54,15 +54,15 @@ HttpResponse* HttpResponse::notFoundResponse()
 
     return res;
 }
-HttpResponse* HttpResponse::locationRedirectResponse(std::string path)
+HttpResponsePtr HttpResponse::locationRedirectResponse(std::string path)
 {
-    auto res=new HttpResponseImpl;
+    auto res=std::make_shared<HttpResponseImpl>();
     res->setStatusCode(HttpResponse::k302Found);
     res->redirect(path.c_str());
     return res;
 }
 
-HttpResponse* HttpResponse::newHttpViewResponse(const std::string &viewName,const HttpViewData& data)
+HttpResponsePtr HttpResponse::newHttpViewResponse(const std::string &viewName,const HttpViewData& data)
 {
     return HttpViewBase::genHttpResponse(viewName,data);
 }

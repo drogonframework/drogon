@@ -150,7 +150,7 @@ void create_view::newViewHeaderFile(std::ofstream &file,const std::string &class
     file<<"using namespace drogon;\n";
     file<<"class "<<className<<":public HttpView<"<<className<<">\n";
     file<<"{\npublic:\n\t"<<className<<"(){};\n\tvirtual ~"<<className<<"(){};\nprotected:\n\t"
-			"virtual HttpResponse* genHttpResponse(const HttpViewData&) override;\n};";
+			"virtual HttpResponsePtr genHttpResponse(const HttpViewData&) override;\n};";
 }
 
 void create_view::newViewSourceFile(std::ofstream &file,const std::string &className,std::ifstream &infile)
@@ -227,7 +227,7 @@ void create_view::newViewSourceFile(std::ofstream &file,const std::string &class
     //std::cout<<"file pos:"<<infile.tellg()<<std::endl;
 
     std::string viewDataName=className+"_view_data";
-    file <<"HttpResponse* "<<className<<"::genHttpResponse(const HttpViewData& "<<viewDataName<<")\n{\n";
+    file <<"HttpResponsePtr "<<className<<"::genHttpResponse(const HttpViewData& "<<viewDataName<<")\n{\n";
     //std::string bodyName=className+"_bodystr";
     std::string streamName=className+"_tmp_stream";
 

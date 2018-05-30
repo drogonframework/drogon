@@ -9,7 +9,7 @@
 #include <trantor/utils/Logger.h>
 #include <memory>
 using namespace drogon;
-HttpResponse* HttpViewBase::genHttpResponse(std::string viewName,const HttpViewData &data)
+HttpResponsePtr HttpViewBase::genHttpResponse(std::string viewName,const HttpViewData &data)
 {
     LOG_TRACE<<"http view name="<<viewName;
     auto pos=viewName.find(".csp");

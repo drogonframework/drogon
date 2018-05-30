@@ -18,13 +18,13 @@ namespace drogon
     {
     public:
 
-        static HttpResponse* genHttpResponse(std::string viewName,const HttpViewData &data);
+        static HttpResponsePtr genHttpResponse(std::string viewName,const HttpViewData &data);
 
         virtual ~HttpViewBase(){};
         HttpViewBase(){};
     protected:
 
-        virtual HttpResponse* genHttpResponse(const HttpViewData&)=0;
+        virtual HttpResponsePtr genHttpResponse(const HttpViewData&)=0;
     };
 }
 

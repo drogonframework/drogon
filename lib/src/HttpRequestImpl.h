@@ -187,7 +187,7 @@ namespace drogon
             headers_[field] = value;
             transform(field.begin(), field.end(), field.begin(), ::tolower);
             if(field == "cookie") {
-                LOG_INFO<<"cookies!!!:"<<value;
+                LOG_TRACE<<"cookies!!!:"<<value;
                 std::string::size_type pos;
                 while((pos = value.find(";")) != std::string::npos) {
                     std::string coo = value.substr(0, pos);

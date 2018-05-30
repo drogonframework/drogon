@@ -6,7 +6,7 @@
 #include <vector>
 #include <set>
 using namespace std;
-HttpResponse* NotFound::genHttpResponse(const HttpViewData& NotFound_view_data)
+HttpResponsePtr NotFound::genHttpResponse(const HttpViewData& NotFound_view_data)
 {
 	std::stringstream NotFound_tmp_stream;
 	NotFound_tmp_stream << "<html>\n";

@@ -21,8 +21,9 @@
 #pragma once
 
 #include <drogon/HttpViewData.h>
-#include <string>
 #include <json/json.h>
+#include <string>
+#include <memory>
 
 using std::string;
 #define CT_APPLICATION_JSON				1
@@ -49,6 +50,8 @@ using std::string;
 
 namespace drogon
 {
+    class HttpResponse;
+    typedef std::shared_ptr<HttpResponse> HttpResponsePtr;
     class HttpResponse
     {
     public:
@@ -100,11 +103,11 @@ namespace drogon
 
         virtual std::string getBody() const=0;
 
-        static HttpResponse* newHttpResponse();
-        static HttpResponse* notFoundResponse();
-        static HttpResponse* newHttpJsonResponse(const Json::Value &data);
-        static HttpResponse* newHttpViewResponse(const std::string &viewName,const HttpViewData& data);
-        static HttpResponse* locationRedirectResponse(std::string path);
+        static HttpResponsePtr newHttpResponse();
+        static HttpResponsePtr notFoundResponse();
+        static HttpResponsePtr newHttpJsonResponse(const Json::Value &data);
+        static HttpResponsePtr newHttpViewResponse(const std::string &viewName,const HttpViewData& data);
+        static HttpResponsePtr locationRedirectResponse(std::string path);
     };
 
 }

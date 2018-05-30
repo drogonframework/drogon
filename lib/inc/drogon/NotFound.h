@@ -6,6 +6,6 @@ class NotFound:public HttpView<NotFound>
 public:
 	NotFound(){};
 	virtual ~NotFound(){};
-	protected:
-				virtual HttpResponse* genHttpResponse(const HttpViewData&)override;
+protected:
+	HttpResponsePtr genHttpResponse(const HttpViewData&) override;
 };
