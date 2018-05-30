@@ -6,10 +6,6 @@
 
 #pragma once
 
-//#include <drogon/HttpRequest.h>
-//#include <drogon/HttpResponse.h>
-//#include <drogon/CacheMap.h>
-//#include <drogon/Session.h>
 #include <trantor/utils/NonCopyable.h>
 #include <drogon/DrObject.h>
 #include <drogon/HttpRequest.h>
@@ -18,6 +14,8 @@
 #include <drogon/GetFilter.h>
 #include <drogon/PutFilter.h>
 #include <drogon/DeleteFilter.h>
+#include <drogon/version.h>
+#include <drogon/NotFound.h>
 #include <memory>
 #include <string>
 #include <functional>
@@ -26,8 +24,14 @@
 namespace drogon
 {
 
-    inline std::string getVersion();
-    inline std::string getGitCommit();
+    inline std::string getVersion()
+    {
+        return VERSION;
+    }
+    inline std::string getGitCommit()
+    {
+        return VERSION_MD5;
+    }
     class HttpAppFramework:public trantor::NonCopyable
     {
     public:

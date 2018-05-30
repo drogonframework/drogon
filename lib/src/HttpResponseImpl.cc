@@ -18,7 +18,7 @@
 
 #include <drogon/HttpViewBase.h>
 #include <drogon/HttpViewData.h>
-
+#include <drogon/HttpAppFramework.h>
 #include <trantor/utils/Logger.h>
 #include <stdio.h>
 
@@ -46,9 +46,11 @@ HttpResponse* HttpResponse::newHttpJsonResponse(const Json::Value &data)
 }
 HttpResponse* HttpResponse::notFoundResponse()
 {
-    auto res=new HttpResponseImpl;
+    HttpViewData data;
+    data.insert("version",getVersion());
+    auto res=HttpResponse::newHttpViewResponse("NotFound",data);
     res->setStatusCode(HttpResponse::k404NotFound);
-    res->setCloseConnection(true);
+    //res->setCloseConnection(true);
 
     return res;
 }

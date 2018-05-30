@@ -234,15 +234,12 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequest& req,std::function<v
         }
     }
 
-    HttpResponseImpl resp;
-
-    resp.setStatusCode(HttpResponse::k404NotFound);
-    //resp.setCloseConnection(true);
+    auto res=std::unique_ptr<drogon::HttpResponse>(drogon::HttpResponse::notFoundResponse());
 
     if(needSetJsessionid)
-            resp.addCookie("JSESSIONID",session_id);
+            res->addCookie("JSESSIONID",session_id);
 
-    callback(resp);
+    callback(*res);
     // }
 
 }
@@ -351,13 +348,6 @@ HttpAppFramework::~HttpAppFramework()
 
 }
 
-inline std::string getVersion()
-{
-    return VERSION;
-}
-inline std::string getGitCommit()
-{
-    return VERSION_MD5;
-}
+
 
 
