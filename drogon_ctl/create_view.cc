@@ -149,8 +149,8 @@ void create_view::newViewHeaderFile(std::ofstream &file,const std::string &class
     file<<"#include <drogon/HttpView.h>\n";
     file<<"using namespace drogon;\n";
     file<<"class "<<className<<":public HttpView<"<<className<<">\n";
-    file<<"{\npublic:\n\t"<<className<<"(){};\n\tvirtual ~"<<className<<"(){};\n\tprotected:\n\t\
-			virtual HttpResponse* genHttpResponse(const HttpViewData&)override;\n};";
+    file<<"{\npublic:\n\t"<<className<<"(){};\n\tvirtual ~"<<className<<"(){};\nprotected:\n\t"
+			"virtual HttpResponse* genHttpResponse(const HttpViewData&) override;\n};";
 }
 
 void create_view::newViewSourceFile(std::ofstream &file,const std::string &className,std::ifstream &infile)
