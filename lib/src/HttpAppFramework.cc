@@ -244,7 +244,6 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequest& req,std::function<v
             res->addCookie("JSESSIONID",session_id);
 
     callback(*res);
-    // }
 
 }
 
@@ -291,18 +290,17 @@ void HttpAppFrameworkImpl::readSendFile(const std::string& filePath,const HttpRe
     std::streambuf * pbuf = infile.rdbuf();
     std::streamsize size = pbuf->pubseekoff(0,infile.end);
     pbuf->pubseekoff(0,infile.beg);       // rewind
-    char *contents = new char [size];
-    pbuf->sgetn (contents,size);
+
+    std::string str;
+    str.reserve(size);
+    pbuf->sgetn (&str[0],size);
+    str.resize(size);
     infile.close();
-    std::string str(contents,size);
-
-
-
 
     resp->setStatusCode(HttpResponse::k200Ok);
     LOG_INFO << "file len:" << str.length();
-    resp->setBody(str);
-    delete [] contents;
+    resp->setBody(std::move(str));
+
 }
 
 std::string HttpAppFrameworkImpl::getUuid()
