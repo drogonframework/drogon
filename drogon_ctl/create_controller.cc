@@ -63,11 +63,11 @@ void create_controller::handleCommand(std::vector<std::string> &parameters)
             {
                 if(*iter=="-n"||*iter=="--namespace")
                 {
-                    parameters.erase(iter);
+                    iter=parameters.erase(iter);
                     if(iter!=parameters.end())
                     {
                         namespaceName=*iter;
-                        parameters.erase(iter);
+                        iter=parameters.erase(iter);
                         break;
                     }
                     else
