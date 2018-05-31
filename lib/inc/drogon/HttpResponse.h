@@ -8,13 +8,19 @@
 //
 // This is a public header file, it must only include public header files.
 
-
-//taken from muduo and modified
-//
-// Copyright 2018, An Tao.  All rights reserved.
-//
-// Use of this source code is governed by a MIT license
-// that can be found in the License file.
+/**
+ *  taken from muduo and modified
+ *  @file
+ *  @author An Tao
+ *  @section LICENSE
+ *
+ *  Copyright 2018, An Tao.  All rights reserved.
+ *  Use of this source code is governed by a MIT license
+ *  that can be found in the License file.
+ *
+ *  @section DESCRIPTION
+ *
+ */
 
 
 

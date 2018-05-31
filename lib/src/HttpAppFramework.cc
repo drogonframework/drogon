@@ -1,7 +1,17 @@
-// Copyright 2018, An Tao.  All rights reserved.
-//
-// Use of this source code is governed by a MIT license
-// that can be found in the License file.
+/**
+ *
+ *  @file
+ *  @author An Tao
+ *  @section LICENSE
+ *
+ *  Copyright 2018, An Tao.  All rights reserved.
+ *  Use of this source code is governed by a MIT license
+ *  that can be found in the License file.
+ *
+ *  @section DESCRIPTION
+ *
+ */
+
 #include "HttpRequestImpl.h"
 #include "HttpResponseImpl.h"
 #include <drogon/DrClassMap.h>
@@ -100,7 +110,21 @@ void HttpAppFrameworkImpl::run()
         serverPtr->start();
         servers.push_back(serverPtr);
     }
-    _sessionMapPtr=std::unique_ptr<CacheMap<std::string,SessionPtr>>(new CacheMap<std::string,SessionPtr>(&loop,1,1200));
+    int interval,limit;
+    if(_sessionTimeout==0)
+    {
+        interval=1;
+        limit=1200;
+    }else if(_sessionTimeout<1000)
+    {
+        interval=1;
+        limit=_sessionTimeout;
+    } else
+    {
+        interval=_sessionTimeout/1000;
+        limit=_sessionTimeout;
+    }
+    _sessionMapPtr=std::unique_ptr<CacheMap<std::string,SessionPtr>>(new CacheMap<std::string,SessionPtr>(&loop,interval,limit));
     loop.loop();
 }
 

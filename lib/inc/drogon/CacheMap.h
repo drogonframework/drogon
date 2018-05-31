@@ -1,8 +1,16 @@
-//
-// Copyright 2018, An Tao.  All rights reserved.
-//
-// Use of this source code is governed by a MIT license
-// that can be found in the License file.
+/**
+ *
+ *  @file
+ *  @author An Tao
+ *  @section LICENSE
+ *
+ *  Copyright 2018, An Tao.  All rights reserved.
+ *  Use of this source code is governed by a MIT license
+ *  that can be found in the License file.
+ *
+ *  @section DESCRIPTION
+ *
+ */
 
 #pragma once
 
@@ -39,6 +47,13 @@ template <typename T1,typename T2>
 class CacheMap
 {
 public:
+    /// constructor
+    /// @param loop
+    /// eventloop pointer
+    /// @param interval
+    /// timer step（seconds）
+    /// @param limit
+    /// tht max timeout value of the cache (seconds)
     CacheMap(trantor::EventLoop *loop,int interval,int limit)
     :timeInterval_(interval),
      _limit(limit),
