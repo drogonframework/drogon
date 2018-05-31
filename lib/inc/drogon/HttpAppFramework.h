@@ -36,7 +36,7 @@ namespace drogon
     {
     public:
         static HttpAppFramework &instance();
-        virtual void setListening(const std::string &ip,uint16_t port)=0;
+        virtual void addListener(const std::string &ip,uint16_t port)=0;
         virtual void run()=0;
         virtual ~HttpAppFramework();
         virtual void registerHttpSimpleController(const std::string &pathName,const std::string &crtlName,const std::vector<std::string> &filters=

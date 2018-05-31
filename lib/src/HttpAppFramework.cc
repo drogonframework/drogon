@@ -19,13 +19,14 @@
 #include <algorithm>
 #include <drogon/HttpSimpleController.h>
 #include <drogon/version.h>
+#include <memory>
 namespace drogon
 {
 
     class HttpAppFrameworkImpl:public HttpAppFramework
     {
     public:
-        virtual void setListening(const std::string &ip,uint16_t port) override;
+        virtual void addListener(const std::string &ip,uint16_t port) override;
         virtual void run() override ;
         virtual void registerHttpSimpleController(const std::string &pathName,const std::string &crtlName,const std::vector<std::string> &filters=
         std::vector<std::string>())override ;
@@ -33,8 +34,7 @@ namespace drogon
         virtual void disableSession() override { _useSession=false;}
         ~HttpAppFrameworkImpl(){}
     private:
-        std::string _ip;
-        uint16_t _port;
+        std::vector<std::pair<std::string,uint16_t>> _listeners;
         void onAsyncRequest(const HttpRequest& req,std::function<void (HttpResponse &)>callback);
         void readSendFile(const std::string& filePath,const HttpRequest& req, HttpResponse* resp);
 
@@ -84,19 +84,23 @@ void HttpAppFrameworkImpl::registerHttpSimpleController(const std::string &pathN
     _simpCtrlMap[path].controllerName=crtlName;
     _simpCtrlMap[path].filtersName=filters;
 }
-void HttpAppFrameworkImpl::setListening(const std::string &ip,uint16_t port)
+void HttpAppFrameworkImpl::addListener(const std::string &ip, uint16_t port)
 {
-    _ip=ip;
-    _port=port;
+    _listeners.push_back(std::make_pair(ip,port));
 }
 
 void HttpAppFrameworkImpl::run()
 {
     trantor::EventLoop loop;
-    HttpServer httpServer(&loop,InetAddress(_ip,_port),"");
-    httpServer.setHttpAsyncCallback(std::bind(&HttpAppFrameworkImpl::onAsyncRequest,this,_1,_2));
+    std::vector<std::shared_ptr<HttpServer>> servers;
+    for(auto listener:_listeners)
+    {
+        auto serverPtr=std::make_shared<HttpServer>(&loop,InetAddress(listener.first,listener.second),"drogon");
+        serverPtr->setHttpAsyncCallback(std::bind(&HttpAppFrameworkImpl::onAsyncRequest,this,_1,_2));
+        serverPtr->start();
+        servers.push_back(serverPtr);
+    }
     _sessionMapPtr=std::unique_ptr<CacheMap<std::string,SessionPtr>>(new CacheMap<std::string,SessionPtr>(&loop,1,1200));
-    httpServer.start();
     loop.loop();
 }
 
