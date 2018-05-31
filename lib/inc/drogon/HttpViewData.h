@@ -5,6 +5,8 @@
 // that can be found in the License file.
 
 #pragma once
+
+#include <trantor/utils/Logger.h>
 #ifdef USE_STD_ANY
 
 #include <any>
@@ -22,10 +24,10 @@ typedef boost::any Any;
 #endif
 
 
-#include <map>
+#include <unordered_map>
 #include <string>
 
-typedef std::map<std::string,Any> ViewData;
+typedef std::unordered_map<std::string,Any> ViewDataMap;
 namespace drogon
 {
 class HttpViewData
@@ -37,7 +39,13 @@ public:
         auto it=viewData_.find(key);
         if(it!=viewData_.end())
         {
-            return Any_cast<T>(it->second);
+            try {
+                return Any_cast<T>(it->second);
+            }
+            catch (std::exception& e)
+            {
+                LOG_ERROR << e.what();
+            }
         }
         T tmp;
         return tmp;
@@ -51,6 +59,6 @@ public:
         viewData_[key]=obj;
     }
 protected:
-    ViewData viewData_;
+    ViewDataMap viewData_;
 };
 }

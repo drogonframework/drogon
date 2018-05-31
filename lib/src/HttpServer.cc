@@ -64,15 +64,10 @@ void HttpServer::start()
 void HttpServer::onConnection(const TcpConnectionPtr& conn)
 {
     if (conn->connected()) {
-        conn->setContext(new HttpContext());
+        conn->setContext(HttpContext());
     }
     else if(conn->disconnected())
     {
-        HttpContext* context = (HttpContext*)(conn->getContext());
-        if(context)
-        {
-            delete context;
-        }
         LOG_TRACE<<"conn disconnected!";
     }
 }
@@ -80,7 +75,7 @@ void HttpServer::onConnection(const TcpConnectionPtr& conn)
 void HttpServer::onMessage(const TcpConnectionPtr& conn,
                            MsgBuffer* buf)
 {
-    HttpContext* context = (HttpContext*)(conn->getContext());
+    HttpContext* context = Any_cast<HttpContext>(conn->getMutableContext());
 
     // LOG_INFO << "###:" << string(buf->peek(), buf->readableBytes());
     if (!context->parseRequest(buf)) {
