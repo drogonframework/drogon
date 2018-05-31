@@ -23,7 +23,13 @@
 
 namespace drogon
 {
-
+    //the drogon banner
+    const char banner[]=       "     _                             \n"
+                               "  __| |_ __ ___   __ _  ___  _ __  \n"
+                               " / _` | '__/ _ \\ / _` |/ _ \\| '_ \\ \n"
+                               "| (_| | | | (_) | (_| | (_) | | | |\n"
+                               " \\__,_|_|  \\___/ \\__, |\\___/|_| |_|\n"
+                               "                 |___/             \n";
     inline std::string getVersion()
     {
         return VERSION;
