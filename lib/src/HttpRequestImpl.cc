@@ -78,7 +78,7 @@ void HttpRequestImpl::parsePremeter()
             if(epos != std::string::npos) {
                 std::string key = coo.substr(0, epos);
                 std::string::size_type cpos=0;
-                while(isspace(key[cpos])&&cpos<key.length())
+                while(cpos<key.length()&&isspace(key[cpos]))
                     cpos++;
                 key=key.substr(cpos);
                 std::string pvalue = coo.substr(epos + 1);
@@ -99,7 +99,7 @@ void HttpRequestImpl::parsePremeter()
             if(epos != std::string::npos) {
                 std::string key = coo.substr(0, epos);
                 std::string::size_type cpos=0;
-                while(isspace(key[cpos])&&cpos<key.length())
+                while(cpos<key.length()&&isspace(key[cpos]))
                     cpos++;
                 key=key.substr(cpos);
                 std::string pvalue = coo.substr(epos + 1);

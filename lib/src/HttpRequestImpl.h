@@ -48,7 +48,8 @@ namespace drogon
 
         HttpRequestImpl()
                 : method_(kInvalid),
-                  version_(kUnknown)
+                  version_(kUnknown),
+                  contentLen(0)
         {
         }
 
@@ -203,7 +204,7 @@ namespace drogon
                     if(epos != std::string::npos) {
                         std::string cookie_name = coo.substr(0, epos);
                         std::string::size_type cpos=0;
-                        while(isspace(cookie_name[cpos])&&cpos<cookie_name.length())
+                        while(cpos<cookie_name.length()&&isspace(cookie_name[cpos]))
                             cpos++;
                         cookie_name=cookie_name.substr(cpos);
                         std::string cookie_value = coo.substr(epos + 1);
@@ -218,7 +219,7 @@ namespace drogon
                     if(epos != std::string::npos) {
                         std::string cookie_name = coo.substr(0, epos);
                         std::string::size_type cpos=0;
-                        while(isspace(cookie_name[cpos])&&cpos<cookie_name.length())
+                        while(cpos<cookie_name.length()&&isspace(cookie_name[cpos]))
                             cpos++;
                         cookie_name=cookie_name.substr(cpos);
                         std::string cookie_value = coo.substr(epos + 1);
@@ -309,7 +310,7 @@ namespace drogon
         SessionPtr _sessionPtr;
     protected:
         std::string content_;
-        size_t contentLen;
+        ssize_t contentLen;
 
     };
 

@@ -44,7 +44,7 @@ static std::string&   replace_all(std::string&   str,const   std::string&   old_
     }
     return   str;
 }
-static void parseCxxLine(std::ofstream &oSrcFile,const std::string line,const std::string streamName,const std::string viewDataName)
+static void parseCxxLine(std::ofstream &oSrcFile,const std::string& line,const std::string& streamName,const std::string& viewDataName)
 {
 
     if(line.length()>0)

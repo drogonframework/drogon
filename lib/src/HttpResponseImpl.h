@@ -146,7 +146,7 @@ namespace drogon
                     if(epos != std::string::npos) {
                         std::string cookie_name = coo.substr(0, epos);
                         std::string::size_type cpos=0;
-                        while(isspace(cookie_name[cpos])&&cpos<cookie_name.length())
+                        while(cpos<cookie_name.length()&&isspace(cookie_name[cpos]))
                             cpos++;
                         cookie_name=cookie_name.substr(cpos);
                         std::string cookie_value = coo.substr(epos + 1);
@@ -161,7 +161,7 @@ namespace drogon
                     if(epos != std::string::npos) {
                         std::string cookie_name = coo.substr(0, epos);
                         std::string::size_type cpos=0;
-                        while(isspace(cookie_name[cpos])&&cpos<cookie_name.length())
+                        while(cpos<cookie_name.length()&&isspace(cookie_name[cpos]))
                             cpos++;
                         cookie_name=cookie_name.substr(cpos);
                         std::string cookie_value = coo.substr(epos + 1);
@@ -224,8 +224,8 @@ namespace drogon
         std::string statusMessage_;
         bool closeConnection_;
         std::string body_;
-        size_t left_body_length_;
-        size_t current_chunk_length_;
+        ssize_t left_body_length_;
+        ssize_t current_chunk_length_;
         uint8_t contentType_=CT_TEXT_HTML;
         //trantor::Date receiveTime_;
 
