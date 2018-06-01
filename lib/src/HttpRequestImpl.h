@@ -310,7 +310,7 @@ namespace drogon
         SessionPtr _sessionPtr;
     protected:
         std::string content_;
-        ssize_t contentLen;
+        size_t contentLen;
 
     };
 

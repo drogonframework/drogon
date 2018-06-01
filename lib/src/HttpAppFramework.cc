@@ -80,8 +80,6 @@ namespace drogon
 
 using namespace drogon;
 using namespace std::placeholders;
-HttpAppFrameworkImpl * HttpAppFramework::_implPtr= nullptr;
-std::once_flag HttpAppFramework::_once;
 
 void HttpAppFrameworkImpl::registerHttpSimpleController(const std::string &pathName,const std::string &crtlName,const std::vector<std::string> &filters)
 {
@@ -363,10 +361,8 @@ std::string HttpAppFrameworkImpl::stringToHex(unsigned char* ptr, long long leng
 
 
 HttpAppFramework& HttpAppFramework::instance() {
-    std::call_once(_once,[]{
-        _implPtr=new HttpAppFrameworkImpl;
-    });
-    return *_implPtr;
+    static HttpAppFrameworkImpl _instance;
+    return _instance;
 }
 
 HttpAppFramework::~HttpAppFramework()

@@ -142,7 +142,7 @@ bool HttpContext::parseRequest(MsgBuffer *buf)
             //LOG_INFO << "expectBody:buf=" << buf;
             if (buf->readableBytes() == 0)
             {
-                if (request_.contentLen <= 0)
+                if (request_.contentLen == 0)
                 {
                     state_ = kGotAll;
                 }
@@ -160,7 +160,7 @@ bool HttpContext::parseRequest(MsgBuffer *buf)
                 buf->retrieve(request_.contentLen);
                 request_.contentLen = 0;
             }
-            if (request_.contentLen <= 0)
+            if (request_.contentLen == 0)
             {
                 state_ = kGotAll;
                 LOG_TRACE << "post got all:len=" << request_.content_.length();
@@ -308,7 +308,7 @@ bool HttpContext::parseResponse(MsgBuffer *buf)
             //LOG_INFO << "expectBody:buf=" << buf;
             if (buf->readableBytes() == 0)
             {
-                if (response_.left_body_length_ <= 0)
+                if (response_.left_body_length_ == 0)
                 {
                     res_state_ = HttpResponseParseState::kGotAll;
                 }
@@ -326,7 +326,7 @@ bool HttpContext::parseResponse(MsgBuffer *buf)
                 buf->retrieve(request_.contentLen);
                 response_.left_body_length_ = 0;
             }
-            if (response_.left_body_length_ <= 0)
+            if (response_.left_body_length_ == 0)
             {
                 res_state_ = HttpResponseParseState::kGotAll;
                 LOG_TRACE << "post got all:len=" << response_.left_body_length_;

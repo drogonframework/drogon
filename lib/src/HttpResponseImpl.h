@@ -224,8 +224,8 @@ namespace drogon
         std::string statusMessage_;
         bool closeConnection_;
         std::string body_;
-        ssize_t left_body_length_;
-        ssize_t current_chunk_length_;
+        size_t left_body_length_;
+        size_t current_chunk_length_;
         uint8_t contentType_=CT_TEXT_HTML;
         //trantor::Date receiveTime_;
 
