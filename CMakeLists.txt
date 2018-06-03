@@ -25,7 +25,7 @@ endif()
 
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake_modules/)
 
-find_package (jsoncpp REQUIRED)
+find_package (Jsoncpp REQUIRED)
 include_directories(${JSONCPP_INCLUDE_DIRS})
 link_directories(${JSONCPP_LIBRARY_DIRS})
 find_package (UUID REQUIRED)
