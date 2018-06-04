@@ -34,9 +34,10 @@ namespace drogon{
                 ReturnType(ClassType::*)(Arguments...)
         > : FunctionTraits<ReturnType(*)(Arguments...)> {
             static const bool isClassFunction=true;
+            typedef ClassType class_type;
         };
 
-
+        //class function
         template <
                 typename    ClassType,
                 typename    ReturnType,
@@ -44,10 +45,32 @@ namespace drogon{
         >
         struct FunctionTraits<
                 ReturnType(ClassType::*)(const HttpRequest& req,std::function<void (HttpResponse &)>callback,Arguments...)
+        > : FunctionTraits<ReturnType(ClassType::*)(Arguments...)> {
+            static const bool isHTTPApiFunction=true;
+
+            };
+        //std::function
+        template <
+                typename    ReturnType,
+                typename... Arguments
+        >
+        struct FunctionTraits<
+                ReturnType(*)(const HttpRequest& req,std::function<void (HttpResponse &)>callback,Arguments...)
         > : FunctionTraits<ReturnType(*)(Arguments...)> {
             static const bool isHTTPApiFunction=true;
-            typedef ClassType class_type;
-            };
+
+        };
+        //normal function
+        template <
+                typename    ReturnType,
+                typename... Arguments
+        >
+        struct FunctionTraits<std::function<
+                ReturnType(const HttpRequest& req,std::function<void (HttpResponse &)>callback,Arguments...)>>
+                :FunctionTraits<ReturnType(*)(Arguments...)> {
+            static const bool isHTTPApiFunction=true;
+
+        };
 
         template <
                 typename    ReturnType,
@@ -67,6 +90,7 @@ namespace drogon{
             static const std::size_t arity = sizeof...(Arguments);
 
             static const bool isHTTPApiFunction=false;
+            static const bool isClassFunction=false;
         };
 
     }

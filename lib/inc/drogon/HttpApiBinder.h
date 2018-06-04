@@ -36,13 +36,14 @@ namespace drogon{
     class HttpApiBinder:public HttpApiBinderBase
     {
     public:
+        typedef FUNCTION FunctionType;
         virtual void handleHttpApiRequest(std::list<std::string> &pathParameter,
                                           const HttpRequest& req,std::function<void (HttpResponse &)>callback) override
         {
             run(pathParameter,req,callback);
         }
-        HttpApiBinder(FUNCTION func):
-        _func(func)
+        HttpApiBinder(FUNCTION &&func):
+        _func(std::forward<FUNCTION>(func))
         {
             static_assert(traits::isHTTPApiFunction,"Your API handler function interface is wrong!");
         }
@@ -94,9 +95,25 @@ namespace drogon{
                 Values&&...      values
         )
         {
+            callFunction(req,callback,std::move(values)...);
+        }
+        template <typename... Values,
+                bool isClassFunction = traits::isClassFunction>
+        typename std::enable_if<isClassFunction,void>::type callFunction(
+                const HttpRequest& req,std::function<void (HttpResponse &)>callback,
+                Values&&... values)
+        {
             //new object per time or create a object in constructor???
             std::unique_ptr<typename traits::class_type> ptr(new typename traits::class_type);
             (ptr.get()->*_func)(req,callback,std::move(values)...);
-        }
+        };
+        template <typename... Values,
+                bool isClassFunction = traits::isClassFunction>
+        typename std::enable_if<!isClassFunction,void>::type callFunction(
+                const HttpRequest& req,std::function<void (HttpResponse &)>callback,
+                Values&&... values)
+        {
+            _func(req,callback,std::move(values)...);
+        };
     };
 }
