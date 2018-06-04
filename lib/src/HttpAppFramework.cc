@@ -40,6 +40,10 @@ namespace drogon
         virtual void run() override ;
         virtual void registerHttpSimpleController(const std::string &pathName,const std::string &crtlName,const std::vector<std::string> &filters=
         std::vector<std::string>())override ;
+        virtual void registerHttpApiController(const std::string &pathName,
+                                           const std::string &parameterPattern,
+                                           const HttpApiBinderBasePtr &binder,
+                                           const std::vector<std::string> &filters=std::vector<std::string>()) override ;
         virtual void enableSession(const size_t timeout) override { _useSession=true;_sessionTimeout=timeout;}
         virtual void disableSession() override { _useSession=false;}
         ~HttpAppFrameworkImpl(){}
@@ -63,6 +67,15 @@ namespace drogon
         };
         std::unordered_map<std::string,ControllerAndFiltersName>_simpCtrlMap;
         std::mutex _simpCtrlMutex;
+
+        struct ApiBinder
+        {
+            std::string parameterPattern;
+            HttpApiBinderBasePtr binderPtr;
+            std::vector<std::string> filtersName;
+        };
+        std::unordered_map<std::string,ApiBinder>_apiCtrlMap;
+        std::mutex _apiCtrlMutex;
 
         bool _enableLastModify=true;
         std::set<std::string> _fileTypeSet={"html","jpg"};
@@ -91,6 +104,21 @@ void HttpAppFrameworkImpl::registerHttpSimpleController(const std::string &pathN
     std::lock_guard<std::mutex> guard(_simpCtrlMutex);
     _simpCtrlMap[path].controllerName=crtlName;
     _simpCtrlMap[path].filtersName=filters;
+}
+void HttpAppFrameworkImpl::registerHttpApiController(const std::string &pathName,
+                                       const std::string &parameterPattern,
+                                       const HttpApiBinderBasePtr &binder,
+                                       const std::vector<std::string> &filters)
+{
+    assert(!pathName.empty());
+    assert(binder);
+    std::string path(pathName);
+    std::transform(pathName.begin(),pathName.end(),path.begin(),tolower);
+    std::lock_guard<std::mutex> guard(_apiCtrlMutex);
+
+    _apiCtrlMap[path].parameterPattern=parameterPattern;
+    _apiCtrlMap[path].binderPtr=binder;
+    _apiCtrlMap[path].filtersName=filters;
 }
 void HttpAppFrameworkImpl::addListener(const std::string &ip, uint16_t port)
 {
@@ -217,6 +245,7 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequest& req,std::function<v
     /*find controller*/
     std::string pathLower(req.path());
     std::transform(pathLower.begin(),pathLower.end(),pathLower.begin(),tolower);
+    //fix me!need mutex;
     if(_simpCtrlMap.find(pathLower)!=_simpCtrlMap.end())
     {
         auto filters=_simpCtrlMap[pathLower].filtersName;
@@ -259,7 +288,17 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequest& req,std::function<v
             LOG_ERROR << "can't find controller " << ctrlName;
         }
     }
-
+//find api controller
+    //fix me!need mutex;
+    if(_apiCtrlMap.find(pathLower)!=_apiCtrlMap.end())
+    {
+        //for test;
+        LOG_DEBUG<<"got api controller";
+        std::list<std::string> para={"1","2","3","4.5","5"};
+        auto binder=_apiCtrlMap[pathLower];
+        binder.binderPtr->handleHttpApiRequest(para,req,callback);
+        return;
+    }
     auto res=drogon::HttpResponse::notFoundResponse();
 
     if(needSetJsessionid)

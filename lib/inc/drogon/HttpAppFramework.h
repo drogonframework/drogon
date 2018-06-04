@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <drogon/HttpApiBinder.h>
 #include <trantor/utils/NonCopyable.h>
 #include <drogon/DrObject.h>
 #include <drogon/HttpRequest.h>
@@ -28,7 +29,6 @@
 #include <string>
 #include <functional>
 #include <vector>
-
 namespace drogon
 {
     //the drogon banner
@@ -53,8 +53,13 @@ namespace drogon
         virtual void addListener(const std::string &ip,uint16_t port)=0;
         virtual void run()=0;
         virtual ~HttpAppFramework();
-        virtual void registerHttpSimpleController(const std::string &pathName,const std::string &crtlName,const std::vector<std::string> &filters=
-                std::vector<std::string>())=0;
+        virtual void registerHttpSimpleController(const std::string &pathName,
+                                                  const std::string &crtlName,
+                                                  const std::vector<std::string> &filters=std::vector<std::string>())=0;
+        virtual void registerHttpApiController(const std::string &pathName,
+                                               const std::string &parameterPattern,
+                                               const HttpApiBinderBasePtr &binder,
+                                               const std::vector<std::string> &filters=std::vector<std::string>())=0;
         virtual void enableSession(const size_t timeout=0)=0;
         virtual void disableSession()=0;
     };
