@@ -1,5 +1,5 @@
 #include "ListParaCtl.h"
-void ListParaCtl::asyncHandleHttpRequest(const HttpRequest& req,std::function<void (HttpResponse &)>callback)
+void ListParaCtl::asyncHandleHttpRequest(const HttpRequest& req,const std::function<void (HttpResponse &)>&callback)
 {
     //write your application logic here
     HttpViewData data;

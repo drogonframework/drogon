@@ -35,7 +35,7 @@ using namespace drogon;
 using namespace trantor;
 
 
-static void defaultHttpAsyncCallback(const HttpRequest&, std::function<void( HttpResponse& resp)>callback)
+static void defaultHttpAsyncCallback(const HttpRequest&,const std::function<void( HttpResponse& resp)> & callback)
 {
     HttpResponseImpl resp;
     resp.setStatusCode(HttpResponse::k404NotFound);

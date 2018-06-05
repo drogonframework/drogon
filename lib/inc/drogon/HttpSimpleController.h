@@ -36,7 +36,7 @@ namespace drogon
     class HttpSimpleControllerBase:public virtual DrObjectBase
     {
     public:
-        virtual void asyncHandleHttpRequest(const HttpRequest& req,std::function<void (HttpResponse &)>callback)=0;
+        virtual void asyncHandleHttpRequest(const HttpRequest& req,const std::function<void (HttpResponse &)> &callback)=0;
         virtual ~HttpSimpleControllerBase(){}
     };
 

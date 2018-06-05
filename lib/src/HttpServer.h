@@ -31,7 +31,7 @@ namespace drogon
     {
     public:
 
-        typedef std::function< void (const HttpRequest&,std::function<void (HttpResponse &)>)> HttpAsyncCallback;
+        typedef std::function< void (const HttpRequest&,const std::function<void (HttpResponse &)>&)> HttpAsyncCallback;
         HttpServer(EventLoop* loop,
                    const InetAddress& listenAddr,
                    const std::string& name);

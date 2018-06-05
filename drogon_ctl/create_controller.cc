@@ -130,7 +130,7 @@ void create_controller::newSimpleControllerHeaderFile(std::ofstream &file,const 
     file<<indent<<"{\n";
     file<<indent<<"public:\n";
         //TestController(){}
-    file<<indent<<"    virtual void asyncHandleHttpRequest(const HttpRequest& req,std::function<void (HttpResponse &)>callback)override;\n";
+    file<<indent<<"    virtual void asyncHandleHttpRequest(const HttpRequest& req,const std::function<void (HttpResponse &)> & callback)override;\n";
 
     file<<indent<<"    PATH_LIST_BEGIN\n";
     file<<indent<<"    //list path definations here;\n";
@@ -145,7 +145,7 @@ void create_controller::newSimpleControllerSourceFile(std::ofstream &file,const 
     file<<"#include \""<<ctlName<<".h\"\n";
     if(namespaceName!="")
         file<<"using namespace "<<namespaceName<<";\n";
-    file<<"void "<<ctlName<<"::asyncHandleHttpRequest(const HttpRequest& req,std::function<void (HttpResponse &)>callback)\n";
+    file<<"void "<<ctlName<<"::asyncHandleHttpRequest(const HttpRequest& req,const std::function<void (HttpResponse &)> & callback)\n";
     file<<"{\n";
     file<<"    //write your application logic here\n";
     file<<"}";

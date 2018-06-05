@@ -49,7 +49,7 @@ namespace drogon
         ~HttpAppFrameworkImpl(){}
     private:
         std::vector<std::pair<std::string,uint16_t>> _listeners;
-        void onAsyncRequest(const HttpRequest& req,std::function<void (HttpResponse &)>callback);
+        void onAsyncRequest(const HttpRequest& req,const std::function<void (HttpResponse &)> & callback);
         void readSendFile(const std::string& filePath,const HttpRequest& req, HttpResponse* resp);
 
         //if uuid package found,we can use a uuid string as session id;
@@ -155,7 +155,7 @@ void HttpAppFrameworkImpl::run()
 }
 
 
-void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequest& req,std::function<void (HttpResponse &)>callback)
+void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequest& req,const std::function<void (HttpResponse &)> & callback)
 {
     LOG_TRACE << "Headers " << req.methodString() << " " << req.path();
 
