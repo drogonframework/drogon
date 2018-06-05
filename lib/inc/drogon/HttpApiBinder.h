@@ -45,7 +45,7 @@ namespace drogon{
         HttpApiBinder(FUNCTION &&func):
         _func(std::forward<FUNCTION>(func))
         {
-            LOG_DEBUG<<"traits name:"<<traits::name();
+            //LOG_DEBUG<<"traits name:"<<traits::name();
             static_assert(traits::isHTTPApiFunction,"Your API handler function interface is wrong!");
         }
         void test(){
