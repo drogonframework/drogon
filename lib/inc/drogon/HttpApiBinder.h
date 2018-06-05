@@ -71,7 +71,9 @@ namespace drogon{
                 std::list<std::string> &pathParameter,
                 const HttpRequest& req,std::function<void (HttpResponse &)>callback,
                 Values&&...      values
-        ) {
+        )
+        {
+            //call this function recursively until parameter's count equals to the count of target function parameters
             typedef typename std::remove_cv<typename std::remove_reference<nth_argument_type<sizeof...(Values)>>::type>::type ValueType;
             ValueType value;
             if(!pathParameter.empty())
