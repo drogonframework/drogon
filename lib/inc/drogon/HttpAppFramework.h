@@ -66,10 +66,23 @@ namespace drogon
                                    FUNCTION && function,
                                    const std::vector<std::string> &filters=std::vector<std::string>())
         {
-            static_assert(!std::is_bind_expression<FUNCTION>::value);
-            HttpApiBinderBasePtr binder=std::make_shared<
-                    HttpApiBinder<FUNCTION>
-            >(std::forward<FUNCTION>(function));
+            HttpApiBinderBasePtr binder;
+
+            if(std::is_bind_expression<FUNCTION>::value)
+            {
+                //out of std::bind
+//                typedef decltype(&std::remove_reference<FUNCTION>::type::operator ()) OperType;
+//                binder=std::make_shared<
+//                        HttpApiBinder<OperType>
+//                >(std::forward<FUNCTION>(function));
+            }
+            else
+            {
+                binder=std::make_shared<
+                        HttpApiBinder<FUNCTION>
+                >(std::forward<FUNCTION>(function));
+            }
+
             instance().registerHttpApiController(pathName,parameterPattern,binder,filters);
         }
 //        template <typename FUNCTION>

@@ -7,12 +7,23 @@ using namespace drogon;
 class A
 {
 public:
-    void handle(const HttpRequest& req,std::function<void (HttpResponse &)>callback,int aa,const std::string &a,const std::string &b,int haha)
+    void handle(const HttpRequest& req,
+                const std::function<void (HttpResponse &)>&callback,
+                int aa,const std::string &a,const std::string &b,int haha) const
     {
         LOG_DEBUG<<"int aa="<<aa;
         LOG_DEBUG<<"string a="<<a;
         LOG_DEBUG<<"string b="<<b;
         LOG_DEBUG<<"int haha="<<haha;
+    }
+};
+class B
+{
+public:
+    void operator ()(const HttpRequest& req,const std::function<void (HttpResponse &)>&callback,int p1,int p2)
+    {
+        LOG_DEBUG<<"int p1="<<p1;
+        LOG_DEBUG<<"int p2="<<p2;
     }
 };
 using namespace std::placeholders;
@@ -21,21 +32,26 @@ int main()
 
     std::cout<<banner<<std::endl;
 
-    auto bindPtr=std::make_shared<drogon::HttpApiBinder<decltype(&A::handle)>>(&A::handle);
-
     drogon::HttpAppFramework::instance().addListener("0.0.0.0",12345);
     drogon::HttpAppFramework::instance().addListener("0.0.0.0",8080);
     trantor::Logger::setLogLevel(trantor::Logger::TRACE);
+    //class function
     drogon::HttpAppFramework::registerHttpApiMethod("/api/v1/handle1","",&A::handle);
-
-    drogon::HttpAppFramework::registerHttpApiMethod("/api/v1/handle2","",[](const HttpRequest&req,std::function<void (HttpResponse &)>callback,int a,float b){
+    //lambda
+    drogon::HttpAppFramework::registerHttpApiMethod("/api/v1/handle2","",[](const HttpRequest&req,const std::function<void (HttpResponse &)>&callback,int a,float b){
         LOG_DEBUG<<"int a="<<a;
         LOG_DEBUG<<"flaot b="<<b;
     });
-   // A tmp;
-  //  std::function<void(const HttpRequest&,std::function<void (HttpResponse &)>,int,const std::string &,const std::string &,int)>
-  //           func();
-  //  drogon::HttpAppFramework::registerHttpApiMethod("/api/v1/handle3","",std::bind(&A::handle,&tmp,_1,_2,_3,_4,_5,_6));
+
+    B b;
+    //functor
+    drogon::HttpAppFramework::registerHttpApiMethod("/api/v1/handle3","",b);
+//
+    A tmp;
+    std::function<void(const HttpRequest&,const std::function<void (HttpResponse &)>&,int,const std::string &,const std::string &,int)>
+            func=std::bind(&A::handle,&tmp,_1,_2,_3,_4,_5,_6);
+    //std::function
+    drogon::HttpAppFramework::registerHttpApiMethod("/api/v1/handle4","",func);
     drogon::HttpAppFramework::instance().run();
 
 }
