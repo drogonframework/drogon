@@ -1,8 +1,10 @@
 #include <iostream>
 #include <drogon/HttpAppFramework.h>
+#include <drogon/HttpApiController.h>
 #include <trantor/utils/Logger.h>
 #include <vector>
 #include <string>
+
 using namespace drogon;
 class A
 {
@@ -26,6 +28,29 @@ public:
         LOG_DEBUG<<"int p2="<<p2;
     }
 };
+namespace api
+{
+    namespace v1
+    {
+        class Test:public HttpApiController<Test>
+        {
+            METHOD_LIST_BEGIN
+            METHOD_ADD(Test::get,"","drogon::GetFilter");
+            METHOD_ADD(Test::list,"","drogon::GetFilter");
+            METHOD_LIST_END
+            void get(const HttpRequest& req,const std::function<void (HttpResponse &)>&callback,int p1,int p2) const
+            {
+                LOG_DEBUG<<"int p1="<<p1;
+                LOG_DEBUG<<"int p2="<<p2;
+            }
+            void list(const HttpRequest& req,const std::function<void (HttpResponse &)>&callback,int p1,int p2) const
+            {
+                LOG_DEBUG<<"int p1="<<p1;
+                LOG_DEBUG<<"int p2="<<p2;
+            }
+        };
+    }
+}
 using namespace std::placeholders;
 int main()
 {
@@ -52,6 +77,7 @@ int main()
             func=std::bind(&A::handle,&tmp,_1,_2,_3,_4,_5,_6);
     //std::function
     drogon::HttpAppFramework::registerHttpApiMethod("/api/v1/handle4","",func);
+            LOG_DEBUG<<drogon::DrObjectBase::demangle(typeid(func).name());
     drogon::HttpAppFramework::instance().run();
 
 }

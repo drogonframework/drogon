@@ -33,7 +33,16 @@ namespace drogon
                 return true;
             return false;
         }
+        static const std::string demangle( const char* mangled_name ) {
+
+            std::size_t len = 0 ;
+            int status = 0 ;
+            std::unique_ptr< char, decltype(&std::free) > ptr(
+                    __cxxabiv1::__cxa_demangle( mangled_name, nullptr, &len, &status ), &std::free ) ;
+            return ptr.get() ;
+        }
     };
+
 
 
     /*
@@ -76,14 +85,7 @@ namespace drogon
             const std::string & className() const {return _className;}
 
         private:
-            std::string demangle( const char* mangled_name ) {
 
-                std::size_t len = 0 ;
-                int status = 0 ;
-                std::unique_ptr< char, decltype(&std::free) > ptr(
-                        __cxxabiv1::__cxa_demangle( mangled_name, nullptr, &len, &status ), &std::free ) ;
-                return ptr.get() ;
-            }
             const std::string _className;
         };
 

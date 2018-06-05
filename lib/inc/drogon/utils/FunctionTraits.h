@@ -18,6 +18,7 @@ namespace drogon{
             {return std::string("Functor");}
         };
 
+
         template <
                 typename    ClassType,
                 typename    ReturnType,
