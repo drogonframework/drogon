@@ -64,6 +64,7 @@ namespace drogon
         {
             std::string controllerName;
             std::vector<std::string> filtersName;
+            std::shared_ptr<HttpSimpleControllerBase> controller;
         };
         std::unordered_map<std::string,ControllerAndFiltersName>_simpCtrlMap;
         std::mutex _simpCtrlMutex;
@@ -270,11 +271,18 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequest& req,const std::func
                 LOG_ERROR<<"filter "<<filter<<" not found";
             }
         }
+        auto controller=_simpCtrlMap[pathLower].controller;
         std::string ctrlName = _simpCtrlMap[pathLower].controllerName;
+        if(!controller)
+        {
 
-        auto _object = std::shared_ptr<DrObjectBase>(DrClassMap::newObject(ctrlName));
 
-        auto controller = std::dynamic_pointer_cast<HttpSimpleControllerBase>(_object);
+            auto _object = std::shared_ptr<DrObjectBase>(DrClassMap::newObject(ctrlName));
+
+            controller = std::dynamic_pointer_cast<HttpSimpleControllerBase>(_object);
+
+            _simpCtrlMap[pathLower].controller=controller;
+        }
 
         if(controller) {
             controller->asyncHandleHttpRequest(req, [=](HttpResponse& resp){

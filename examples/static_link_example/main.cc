@@ -35,8 +35,8 @@ namespace api
         class Test:public HttpApiController<Test>
         {
             METHOD_LIST_BEGIN
-            METHOD_ADD(Test::get,"","drogon::GetFilter");
-            METHOD_ADD(Test::list,"","drogon::GetFilter");
+            METHOD_ADD(Test::get,"","drogon::GetFilter");//path will be /api/v1/test/get
+            METHOD_ADD(Test::list,"","drogon::GetFilter");//path will be /api/v1/test/list
             METHOD_LIST_END
             void get(const HttpRequest& req,const std::function<void (HttpResponse &)>&callback,int p1,int p2) const
             {
