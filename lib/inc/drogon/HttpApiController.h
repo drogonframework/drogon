@@ -24,19 +24,23 @@
 #define METHOD_LIST_BEGIN public:\
 static void initMethods() \
 {
-#define METHOD_ADD(method,pattern,filters...) \
-{\
-std::string methodName=std::string(#method);\
-auto pos=methodName.find("::");\
-if(pos!=std::string::npos)\
-{\
-  methodName=methodName.substr(pos+2);\
-}\
-registerMethod(methodName,pattern,&method,{filters});\
-}
+  #define METHOD_ADD(method,pattern,isMethodNameInPath,filters...) \
+  {\
+    std::string methodName="";\
+    if(isMethodNameInPath)\
+    {\
+      methodName=std::string(#method);\
+      auto pos=methodName.find("::");\
+      if(pos!=std::string::npos)\
+      {\
+        methodName=methodName.substr(pos+2);\
+      }\
+    }\
+    registerMethod(methodName,pattern,&method,{filters});\
+  }
 
-#define METHOD_LIST_END \
-return;\
+  #define METHOD_LIST_END \
+  return;\
 }
 namespace drogon
 {
