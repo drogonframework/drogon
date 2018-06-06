@@ -150,7 +150,45 @@ void create_controller::newSimpleControllerSourceFile(std::ofstream &file,const 
     file<<"    //write your application logic here\n";
     file<<"}";
 }
-void create_controller::createApiController(std::vector<std::string> &apiPaths)
+void create_controller::createApiController(std::vector<std::string> &apiClasses)
+{
+    for(auto iter=apiClasses.begin();iter!=apiClasses.end();iter++)
+    {
+        if ((*iter)[0] == '-')
+        {
+            std::cout<<ARGS_ERROR_STR<<std::endl;
+            return;
+        }
+    }
+    for(auto className:apiClasses)
+    {
+        createApiController(className);
+    }
+}
+void create_controller::createApiController(const std::string &className)
+{
+    std::string ctlName=className;
+    auto pos=ctlName.rfind("::");
+    if(pos!=std::string::npos)
+    {
+        ctlName=ctlName.substr(pos+2);
+    }
+    std::cout<<"create api controller:"<<className<<std::endl;
+    std::string headFileName=ctlName+".h";
+    std::string sourceFilename=ctlName+".cc";
+    std::ofstream oHeadFile(headFileName.c_str(),std::ofstream::out);
+    std::ofstream oSourceFile(sourceFilename.c_str(),std::ofstream::out);
+    if(!oHeadFile||!oSourceFile)
+        return;
+    newApiControllerHeaderFile(oHeadFile,className);
+    newApiControllerSourceFile(oSourceFile,className);
+}
+
+void create_controller::newApiControllerHeaderFile(std::ofstream &file,const std::string &className)
+{
+
+}
+void create_controller::newApiControllerSourceFile(std::ofstream &file,const std::string &className)
 {
 
 }

@@ -70,12 +70,12 @@ int main()
 
     B b;
     //functor
-    drogon::HttpAppFramework::registerHttpApiMethod("/api/v1/handle3","",b);
+    drogon::HttpAppFramework::registerHttpApiMethod("/api/v1/handle3","/{1}/{2}",b);
 
     A tmp;
     std::function<void(const HttpRequest&,const std::function<void (HttpResponse &)>&,int,const std::string &,const std::string &,int)>
             func=std::bind(&A::handle,&tmp,_1,_2,_3,_4,_5,_6);
-    //std::function
+    //api example for std::function
     drogon::HttpAppFramework::registerHttpApiMethod("/api/v1/handle4","",func);
             LOG_DEBUG<<drogon::DrObjectBase::demangle(typeid(func).name());
     drogon::HttpAppFramework::instance().run();

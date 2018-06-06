@@ -68,34 +68,12 @@ namespace drogon
         {
             HttpApiBinderBasePtr binder;
 
-            if(std::is_bind_expression<FUNCTION>::value)
-            {
-                //out of std::bind
-//                typedef decltype(&std::remove_reference<FUNCTION>::type::operator ()) OperType;
-//                binder=std::make_shared<
-//                        HttpApiBinder<OperType>
-//                >(std::forward<FUNCTION>(function));
-            }
-            else
-            {
-                binder=std::make_shared<
-                        HttpApiBinder<FUNCTION>
-                >(std::forward<FUNCTION>(function));
-            }
+            binder=std::make_shared<
+                    HttpApiBinder<FUNCTION>
+            >(std::forward<FUNCTION>(function));
 
             instance().registerHttpApiController(pathName,parameterPattern,binder,filters);
         }
-//        template <typename FUNCTION>
-//        static void registerHttpApiBind(const std::string &pathName,
-//                                          const std::string &parameterPattern,
-//                                          const std::function<FUNCTION> & function,
-//                                          const std::vector<std::string> &filters=std::vector<std::string>())
-//        {
-//            HttpApiBinderBasePtr binder=std::make_shared<
-//                    HttpApiBinder<decltype(function)>
-//            >(std::forward<decltype(function)>(function));
-//            instance().registerHttpApiController(pathName,parameterPattern,binder,filters);
-//        }
         virtual void enableSession(const size_t timeout=0)=0;
         virtual void disableSession()=0;
     };
