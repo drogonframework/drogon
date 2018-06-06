@@ -30,6 +30,8 @@
 #include <drogon/HttpSimpleController.h>
 #include <drogon/version.h>
 #include <memory>
+#include <regex>
+
 namespace drogon
 {
 
@@ -51,7 +53,10 @@ namespace drogon
         std::vector<std::pair<std::string,uint16_t>> _listeners;
         void onAsyncRequest(const HttpRequest& req,const std::function<void (HttpResponse &)> & callback);
         void readSendFile(const std::string& filePath,const HttpRequest& req, HttpResponse* resp);
-
+        void addApiPath(const std::string &path,
+                        const HttpApiBinderBasePtr &binder,
+                        const std::vector<std::string> &filters);
+        void initRegex();
         //if uuid package found,we can use a uuid string as session id;
         //set _sessionTimeout=0 to make location session valid forever based on cookies;
         size_t _sessionTimeout=1200;
@@ -71,13 +76,16 @@ namespace drogon
 
         struct ApiBinder
         {
-            std::string parameterPattern;
+            std::string pathParameterPattern;
+            std::vector<int> parameterPlaces;
             HttpApiBinderBasePtr binderPtr;
             std::vector<std::string> filtersName;
         };
-        std::unordered_map<std::string,ApiBinder>_apiCtrlMap;
+        //std::unordered_map<std::string,ApiBinder>_apiCtrlMap;
+        std::vector<ApiBinder>_apiCtrlVector;
         std::mutex _apiCtrlMutex;
 
+        std::regex _apiRegex;
         bool _enableLastModify=true;
         std::set<std::string> _fileTypeSet={"html","jpg"};
         std::string _rootPath;
@@ -94,7 +102,19 @@ namespace drogon
 
 using namespace drogon;
 using namespace std::placeholders;
-
+void HttpAppFrameworkImpl::initRegex() {
+    std::string regString;
+    for(auto binder:_apiCtrlVector)
+    {
+        std::regex reg("\\(\\.\\*\\)");
+        std::string tmp=std::regex_replace(binder.pathParameterPattern,reg,".*");
+        regString.append("(").append(tmp).append(")|");
+    }
+    if(regString.length()>0)
+        regString.resize(regString.length()-1);//remove last '|'
+    LOG_DEBUG<<"regex string:"<<regString;
+    _apiRegex=std::regex(regString);
+}
 void HttpAppFrameworkImpl::registerHttpSimpleController(const std::string &pathName,const std::string &crtlName,const std::vector<std::string> &filters)
 {
     assert(!pathName.empty());
@@ -106,6 +126,37 @@ void HttpAppFrameworkImpl::registerHttpSimpleController(const std::string &pathN
     _simpCtrlMap[path].controllerName=crtlName;
     _simpCtrlMap[path].filtersName=filters;
 }
+void HttpAppFrameworkImpl::addApiPath(const std::string &path,
+                const HttpApiBinderBasePtr &binder,
+                const std::vector<std::string> &filters)
+{
+    //path will be like /api/v1/service/method/{1}/{2}/xxx...
+    std::vector<int> places;
+    std::string tmpPath=path;
+    std::regex regex=std::regex("\\{([0-9]*)\\}");
+    std::smatch results;
+    while(std::regex_search(tmpPath,results,regex))
+    {
+        if(results.size()>1)
+        {
+            size_t place=(size_t)std::stoi(results[1].str());
+            if(place>binder->paramCount())
+            {
+                LOG_ERROR<<"parameter placeholder(value="<<place<<") out of range "<<binder->paramCount();
+                exit(0);
+            }
+            places.push_back(place);
+        }
+        tmpPath=results.suffix();
+    }
+    struct ApiBinder _binder;
+    _binder.parameterPlaces=std::move(places);
+    _binder.binderPtr=binder;
+    _binder.filtersName=filters;
+    _binder.pathParameterPattern=std::regex_replace(path,regex,"(.*)");
+    std::lock_guard<std::mutex> guard(_apiCtrlMutex);
+    _apiCtrlVector.push_back(std::move(_binder));
+}
 void HttpAppFrameworkImpl::registerHttpApiController(const std::string &pathName,
                                        const std::string &parameterPattern,
                                        const HttpApiBinderBasePtr &binder,
@@ -114,12 +165,25 @@ void HttpAppFrameworkImpl::registerHttpApiController(const std::string &pathName
     assert(!pathName.empty());
     assert(binder);
     std::string path(pathName);
-    std::transform(pathName.begin(),pathName.end(),path.begin(),tolower);
-    std::lock_guard<std::mutex> guard(_apiCtrlMutex);
 
-    _apiCtrlMap[path].parameterPattern=parameterPattern;
-    _apiCtrlMap[path].binderPtr=binder;
-    _apiCtrlMap[path].filtersName=filters;
+    if(parameterPattern[0]=='/')
+    {
+        if(path[path.length()-1]=='/')
+            path.resize(path.length()-1);
+        path.append(parameterPattern);
+    }
+    else
+    {
+        if(path[path.length()-1]!='/')
+            path.append("/");
+        path.append(parameterPattern);
+    }
+    if(path[path.length()-1]=='/')
+        path.resize(path.length()-1);
+
+    std::transform(path.begin(),path.end(),path.begin(),tolower);
+    addApiPath(path,binder,filters);
+
 }
 void HttpAppFrameworkImpl::addListener(const std::string &ip, uint16_t port)
 {
@@ -130,6 +194,7 @@ void HttpAppFrameworkImpl::run()
 {
     trantor::EventLoop loop;
     std::vector<std::shared_ptr<HttpServer>> servers;
+    initRegex();
     for(auto listener:_listeners)
     {
         auto serverPtr=std::make_shared<HttpServer>(&loop,InetAddress(listener.first,listener.second),"drogon");
@@ -298,14 +363,45 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequest& req,const std::func
     }
 //find api controller
     //fix me!need mutex;
-    if(_apiCtrlMap.find(pathLower)!=_apiCtrlMap.end())
+    if(_apiRegex.mark_count()>0)
     {
-        //for test;
-        LOG_DEBUG<<"got api controller";
-        std::list<std::string> para={"1","2","3","4.5","5"};
-        auto binder=_apiCtrlMap[pathLower];
-        binder.binderPtr->handleHttpApiRequest(para,req,callback);
-        return;
+        std::smatch result;
+        if(std::regex_match(req.path(),result,_apiRegex))
+        {
+            for(size_t i=1;i<result.size();i++)
+            {
+                if(result[i].str().empty())
+                    continue;
+                if(result[i].str()==req.path()&&i<=_apiCtrlVector.size())
+                {
+                    size_t ctlIndex=i-1;
+                    auto &binder=_apiCtrlVector[ctlIndex];
+                    LOG_DEBUG<<"got api access,regex="<<binder.pathParameterPattern;
+                    std::vector<std::string> params(binder.parameterPlaces.size());
+                    std::smatch r;
+                    if(std::regex_match(req.path(),r,std::regex(binder.pathParameterPattern)))
+                    {
+                        for(size_t j=1;j<r.size();j++)
+                        {
+                            size_t place=binder.parameterPlaces[j-1];
+                            if(place>params.size())
+                                params.resize(place);
+                            params[place-1]=r[j].str();
+                            LOG_DEBUG<<"place="<<place<<" para:"<<params[place-1];
+                        }
+                    }
+                    std::list<std::string> paraList;
+                    for(auto p:params)
+                    {
+                        LOG_DEBUG<<p;
+                        paraList.push_back(std::move(p));
+                    }
+
+                    binder.binderPtr->handleHttpApiRequest(paraList,req,callback);
+                    return;
+                }
+            }
+        }
     }
     auto res=drogon::HttpResponse::notFoundResponse();
 

@@ -22,6 +22,27 @@
 #include <sstream>
 #include <memory>
 namespace drogon{
+    //we only accept value type or const lreference type as handle method parameters type
+    template <typename T>
+    struct BinderArgTypeTraits{
+        static const bool isValid=true;
+    };
+    template <typename T>
+    struct BinderArgTypeTraits<T*>{
+        static const bool isValid=false;
+    };
+    template <typename T>
+    struct BinderArgTypeTraits<T &>{
+        static const bool isValid=false;
+    };
+    template <typename T>
+    struct BinderArgTypeTraits<T &&>{
+        static const bool isValid=false;
+    };
+    template <typename T>
+    struct BinderArgTypeTraits<const T &>{
+        static const bool isValid=true;
+    };
 
     class HttpApiBinderBase
     {
@@ -29,6 +50,7 @@ namespace drogon{
         virtual void handleHttpApiRequest(std::list<std::string> &pathParameter,
                                           const HttpRequest& req,std::function<void (HttpResponse &)>callback)
         =0;
+        virtual size_t paramCount()=0;
         virtual ~HttpApiBinderBase(){}
     };
     typedef std::shared_ptr<HttpApiBinderBase> HttpApiBinderBasePtr;
@@ -41,6 +63,10 @@ namespace drogon{
                                           const HttpRequest& req,std::function<void (HttpResponse &)>callback) override
         {
             run(pathParameter,req,callback);
+        }
+        virtual size_t paramCount() override
+        {
+            return traits::arity;
         }
         HttpApiBinder(FUNCTION &&func):
         _func(std::forward<FUNCTION>(func))
@@ -74,16 +100,20 @@ namespace drogon{
         )
         {
             //call this function recursively until parameter's count equals to the count of target function parameters
+            static_assert(BinderArgTypeTraits<nth_argument_type<sizeof...(Values)>>::isValid,
+                          "your handler argument type must be value type or const left reference type"
+                          );
             typedef typename std::remove_cv<typename std::remove_reference<nth_argument_type<sizeof...(Values)>>::type>::type ValueType;
-            ValueType value;
+            ValueType value=ValueType();
             if(!pathParameter.empty())
             {
                 std::string v=std::move(pathParameter.front());
                 pathParameter.pop_front();
-
-                std::stringstream ss(std::move(v));
-                ss>>value;
-
+                if(!v.empty())
+                {
+                    std::stringstream ss(std::move(v));
+                    ss>>value;
+                }
             }
 
             run(pathParameter,req,callback, std::forward<Values>(values)..., std::move(value));
