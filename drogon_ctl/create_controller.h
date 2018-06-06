@@ -37,7 +37,7 @@ namespace drogon_ctl
         void newSimpleControllerHeaderFile(std::ofstream &file,const std::string &ctlName,const std::string &namespaceName="");
         void newSimpleControllerSourceFile(std::ofstream &file,const std::string &ctlName,const std::string &namespaceName="");
         void newApiControllerHeaderFile(std::ofstream &file,const std::string &className);
-        void newApiControllerSourceFile(std::ofstream &file,const std::string &className);
+        void newApiControllerSourceFile(std::ofstream &file,const std::string &className,const std::string &filename);
 
     };
 }

@@ -16,6 +16,8 @@
 #include "cmd.h"
 #include <iostream>
 #include <fstream>
+#include <regex>
+
 using namespace drogon_ctl;
 
 void create_controller::handleCommand(std::vector<std::string> &parameters)
@@ -167,12 +169,9 @@ void create_controller::createApiController(std::vector<std::string> &apiClasses
 }
 void create_controller::createApiController(const std::string &className)
 {
-    std::string ctlName=className;
-    auto pos=ctlName.rfind("::");
-    if(pos!=std::string::npos)
-    {
-        ctlName=ctlName.substr(pos+2);
-    }
+    std::regex regex("::");
+    std::string ctlName=std::regex_replace(className,regex,"_");
+
     std::cout<<"create api controller:"<<className<<std::endl;
     std::string headFileName=ctlName+".h";
     std::string sourceFilename=ctlName+".cc";
@@ -181,14 +180,65 @@ void create_controller::createApiController(const std::string &className)
     if(!oHeadFile||!oSourceFile)
         return;
     newApiControllerHeaderFile(oHeadFile,className);
-    newApiControllerSourceFile(oSourceFile,className);
+    newApiControllerSourceFile(oSourceFile,className,ctlName);
 }
 
 void create_controller::newApiControllerHeaderFile(std::ofstream &file,const std::string &className)
 {
-
+    file<<"#pragma once\n";
+    file<<"#include <drogon/HttpApiController.h>\n";
+    file<<"using namespace drogon;\n";
+    std::string indent="";
+    std::string class_name=className;
+    std::string namepace_path="/";
+    auto pos=class_name.find("::");
+    while(pos!=std::string::npos)
+    {
+        auto namespaceName=class_name.substr(0,pos);
+        class_name=class_name.substr(pos+2);
+        file<<indent<<"namespace "<<namespaceName<<"\n";
+        namepace_path.append(namespaceName).append("/");
+        file<<indent<<"{\n";
+        indent.append("    ");
+        pos=class_name.find("::");
+    }
+    file<<indent<<"class "<<class_name<<":public drogon::HttpApiController<"<<class_name<<">\n";
+    file<<indent<<"{\n";
+    file<<indent<<"public:\n";
+    indent.append("    ");
+    file<<indent<<"METHOD_LIST_BEGIN\n";
+    file<<indent<<"//use METHOD_ADD to add your custom processing function here;\n";
+    file<<indent<<"//METHOD_ADD("<<class_name<<"::get,\"/{2}/{1}\",1,\"drogon::GetFilter\");"
+                                "//path will be "<<namepace_path<<class_name<<"/get/{arg2}/{arg1}\n";
+    file<<indent<<"//METHOD_ADD("<<class_name<<"::your_method_name,\"/{1}/{2}/list\",0,\"drogon::GetFilter\");"
+                  "//path will be "<<namepace_path<<class_name<<"/{arg1}/{arg2}/list\n";
+    file<<indent<<"\n";
+    file<<indent<<"METHOD_LIST_END\n";
+    file<<indent<<"//your declaration of processing function maybe like this:\n";
+    file<<indent<<"//void get(const HttpRequest& req,"
+                  "const std::function<void (HttpResponse &)>&callback,int p1,std::string p2);\n";
+    file<<indent<<"//void your_method_name(const HttpRequest& req,"
+                  "const std::function<void (HttpResponse &)>&callback,double p1,int p2) const;\n";
+    indent.resize(indent.length()-4);
+    file<<indent<<"};\n";
+    if(indent=="")
+        return;
+    do {
+       indent.resize(indent.length()-4);
+       file<<indent<<"}\n";
+    } while(indent!="");
 }
-void create_controller::newApiControllerSourceFile(std::ofstream &file,const std::string &className)
+void create_controller::newApiControllerSourceFile(std::ofstream &file,const std::string &className,const std::string &filename)
 {
+    file<<"#include \""<<filename<<".h\"\n";
+    auto pos=className.rfind("::");
+    auto class_name=className;
+    if(pos!=std::string::npos)
+    {
+        auto namespacename=className.substr(0,pos);
+        file<<"using namespace "<<namespacename<<";\n";
+        class_name=className.substr(pos+2);
+    }
 
+    file<<"//add defination of your processing function here\n";
 }
