@@ -1,6 +1,6 @@
 #include "api_v1_ApiTest.h"
 using namespace api::v1;
-//add defination of your processing function here
+//add definition of your processing function here
 void ApiTest::get(const HttpRequest& req,const std::function<void (HttpResponse &)>&callback,int p1,std::string p2)
 {
     HttpViewData data;

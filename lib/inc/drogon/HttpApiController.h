@@ -63,7 +63,14 @@ namespace drogon
             {
                 path.replace(pos,2,"/");
             }
-            HttpAppFramework::registerHttpApiMethod(path+pattern,std::forward<FUNCTION>(function),filters);
+            if(pattern[0]=='/')
+                HttpAppFramework::registerHttpApiMethod(path+pattern,
+                                                        std::forward<FUNCTION>(function),
+                                                                filters);
+            else
+                HttpAppFramework::registerHttpApiMethod(path+"/"+pattern,
+                                                        std::forward<FUNCTION>(function),
+                                                        filters);
         }
     private:
 

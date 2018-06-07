@@ -13,10 +13,6 @@ public:
                 const std::function<void (HttpResponse &)>&callback,
                 int p1,const std::string &p2,const std::string &p3,int p4) const
     {
-        LOG_DEBUG<<"int p1="<<p1;
-        LOG_DEBUG<<"string p2="<<p2;
-        LOG_DEBUG<<"string p3="<<p3;
-        LOG_DEBUG<<"int p4="<<p4;
         HttpViewData data;
         data.insert("title",std::string("ApiTest::get"));
         std::map<std::string,std::string> para;
@@ -35,8 +31,6 @@ class B
 public:
     void operator ()(const HttpRequest& req,const std::function<void (HttpResponse &)>&callback,int p1,int p2)
     {
-        LOG_DEBUG<<"int p1="<<p1;
-        LOG_DEBUG<<"int p2="<<p2;
         HttpViewData data;
         data.insert("title",std::string("ApiTest::get"));
         std::map<std::string,std::string> para;
@@ -59,8 +53,6 @@ namespace api
             METHOD_LIST_END
             void get(const HttpRequest& req,const std::function<void (HttpResponse &)>&callback,int p1,int p2) const
             {
-                LOG_DEBUG<<"int p1="<<p1;
-                LOG_DEBUG<<"int p2="<<p2;
                 HttpViewData data;
                 data.insert("title",std::string("ApiTest::get"));
                 std::map<std::string,std::string> para;
@@ -72,10 +64,6 @@ namespace api
             }
             void list(const HttpRequest& req,const std::function<void (HttpResponse &)>&callback,int p1,int p2) const
             {
-                LOG_DEBUG<<"int p1="<<p1;
-                LOG_DEBUG<<"int p2="<<p2;
-                LOG_DEBUG<<"int p1="<<p1;
-                LOG_DEBUG<<"int p2="<<p2;
                 HttpViewData data;
                 data.insert("title",std::string("ApiTest::get"));
                 std::map<std::string,std::string> para;

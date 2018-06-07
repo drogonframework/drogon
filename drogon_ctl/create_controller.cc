@@ -240,5 +240,5 @@ void create_controller::newApiControllerSourceFile(std::ofstream &file,const std
         class_name=className.substr(pos+2);
     }
 
-    file<<"//add defination of your processing function here\n";
+    file<<"//add definition of your processing function here\n";
 }
