@@ -88,7 +88,7 @@ void HttpServer::onMessage(const TcpConnectionPtr& conn,
     // LOG_INFO << "###:" << string(buf->peek(), buf->readableBytes());
     if (!context->parseRequest(buf)) {
         conn->send("HTTP/1.1 400 Bad Request\r\n\r\n");
-        conn->shutdown();
+        //conn->shutdown();
     }
 
     if (context->gotAll()) {
