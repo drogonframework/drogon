@@ -23,8 +23,7 @@ namespace drogon_ctl
     {
     public:
         virtual void handleCommand(std::vector<std::string> &parameters) override;
-        std::string script(){return "create controller files";}
-
+        virtual std::string script() override {return "create controller files";}
     protected:
         enum ControllerType{
             Simple=0,
