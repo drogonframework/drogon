@@ -64,6 +64,11 @@ namespace drogon
         typedef std::shared_ptr<Session> SessionPtr;
         std::unique_ptr<CacheMap<std::string,SessionPtr>> _sessionMapPtr;
 
+        bool doFilters(const std::vector<std::string> &filters,
+                       const HttpRequest& req,
+                       const std::function<void (HttpResponse &)> & callback,
+                       bool needSetJsessionid,
+                       const std::string &session_id);
         //
         struct ControllerAndFiltersName
         {
@@ -221,6 +226,34 @@ void HttpAppFrameworkImpl::run()
     loop.loop();
 }
 
+bool HttpAppFrameworkImpl::doFilters(const std::vector<std::string> &filters,
+                                     const HttpRequest& req,
+                                     const std::function<void (HttpResponse &)> & callback,
+                                     bool needSetJsessionid,
+                                     const std::string &session_id)
+{
+    LOG_TRACE<<"filters count:"<<filters.size();
+    for(auto filter:filters)
+    {
+        auto _object=std::shared_ptr<DrObjectBase>(DrClassMap::newObject(filter));
+        auto _filter = std::dynamic_pointer_cast<HttpFilterBase>(_object);
+        if(_filter)
+        {
+            auto resPtr=_filter->doFilter(req);
+            if(resPtr)
+            {
+                if(needSetJsessionid)
+                    resPtr->addCookie("JSESSIONID",session_id);
+                callback(*resPtr);
+                return true;
+            }
+        } else
+        {
+            LOG_ERROR<<"filter "<<filter<<" not found";
+        }
+    }
+    return false;
+}
 
 void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequest& req,const std::function<void (HttpResponse &)> & callback)
 {
@@ -315,28 +348,9 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequest& req,const std::func
     //fix me!need mutex;
     if(_simpCtrlMap.find(pathLower)!=_simpCtrlMap.end())
     {
-        auto filters=_simpCtrlMap[pathLower].filtersName;
-        LOG_TRACE<<"filters count:"<<filters.size();
-        for(auto filter:filters)
-        {
-            LOG_TRACE<<"filters in path("<<pathLower<<"):"<<filter;
-            auto _object=std::shared_ptr<DrObjectBase>(DrClassMap::newObject(filter));
-            auto _filter = std::dynamic_pointer_cast<HttpFilterBase>(_object);
-            if(_filter)
-            {
-                auto resPtr=_filter->doFilter(req);
-                if(resPtr)
-                {
-                    if(needSetJsessionid)
-                        resPtr->addCookie("JSESSIONID",session_id);
-                    callback(*resPtr);
-                    return;
-                }
-            } else
-            {
-                LOG_ERROR<<"filter "<<filter<<" not found";
-            }
-        }
+        auto &filters=_simpCtrlMap[pathLower].filtersName;
+        if(doFilters(filters,req,callback,needSetJsessionid,session_id))
+            return;
         auto controller=_simpCtrlMap[pathLower].controller;
         std::string ctrlName = _simpCtrlMap[pathLower].controllerName;
         if(!controller)
@@ -378,6 +392,9 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequest& req,const std::func
                     size_t ctlIndex=i-1;
                     auto &binder=_apiCtrlVector[ctlIndex];
                     LOG_DEBUG<<"got api access,regex="<<binder.pathParameterPattern;
+                    auto &filters=binder.filtersName;
+                    if(doFilters(filters,req,callback,needSetJsessionid,session_id))
+                        return;
                     std::vector<std::string> params(binder.parameterPlaces.size());
                     std::smatch r;
                     if(std::regex_match(req.path(),r,std::regex(binder.pathParameterPattern)))

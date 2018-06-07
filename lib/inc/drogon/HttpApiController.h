@@ -71,6 +71,7 @@ namespace drogon
                 T::initMethods();
             }
         };
+        //use static value to register controller method in framework before main();
         static methodRegister _register;
         virtual void* touch()
         {

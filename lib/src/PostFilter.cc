@@ -21,12 +21,7 @@ std::shared_ptr<HttpResponse> PostFilter::doFilter(const HttpRequest& req)
     {
         return nullptr;
     }
-    auto res=std::shared_ptr<HttpResponse>(HttpResponse::newHttpResponse());
-    if(res)
-    {
-        res->setStatusCode(HttpResponse::k404NotFound);
-        res->setCloseConnection(true);
-    }
+    auto res=drogon::HttpResponse::notFoundResponse();
 
     return res;
 }
