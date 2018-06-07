@@ -98,9 +98,9 @@ int main()
     drogon::HttpAppFramework::instance().addListener("0.0.0.0",8080);
     trantor::Logger::setLogLevel(trantor::Logger::TRACE);
     //class function
-    drogon::HttpAppFramework::registerHttpApiMethod("/api/v1/handle1","/{1}/{2}/{3}/{4}",&A::handle);
+    drogon::HttpAppFramework::registerHttpApiMethod("/api/v1/handle1/{1}/{2}/{3}/{4}",&A::handle);
     //lambda example
-    drogon::HttpAppFramework::registerHttpApiMethod("/api/v1/handle2","/{1}/{2}",[](const HttpRequest&req,const std::function<void (HttpResponse &)>&callback,int a,float b){
+    drogon::HttpAppFramework::registerHttpApiMethod("/api/v1/handle2/{1}/{2}",[](const HttpRequest&req,const std::function<void (HttpResponse &)>&callback,int a,float b){
         LOG_DEBUG<<"int a="<<a;
         LOG_DEBUG<<"flaot b="<<b;
         HttpViewData data;
@@ -115,13 +115,13 @@ int main()
 
     B b;
     //functor example
-    drogon::HttpAppFramework::registerHttpApiMethod("/api/v1/handle3","/{1}/{2}",b);
+    drogon::HttpAppFramework::registerHttpApiMethod("/api/v1/handle3/{1}/{2}",b);
 
     A tmp;
     std::function<void(const HttpRequest&,const std::function<void (HttpResponse &)>&,int,const std::string &,const std::string &,int)>
             func=std::bind(&A::handle,&tmp,_1,_2,_3,_4,_5,_6);
     //api example for std::function
-    drogon::HttpAppFramework::registerHttpApiMethod("/api/v1/handle4","/{4}/{3}/{1}",func);
+    drogon::HttpAppFramework::registerHttpApiMethod("/api/v1/handle4/{4}/{3}/{1}",func);
             LOG_DEBUG<<drogon::DrObjectBase::demangle(typeid(func).name());
     drogon::HttpAppFramework::instance().run();
 

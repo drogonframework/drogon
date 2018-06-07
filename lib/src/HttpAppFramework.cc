@@ -11,7 +11,7 @@
  *  @section DESCRIPTION
  *
  */
-
+#include "Utilities.h"
 #include "HttpRequestImpl.h"
 #include "HttpResponseImpl.h"
 #include <drogon/DrClassMap.h>
@@ -42,8 +42,7 @@ namespace drogon
         virtual void run() override ;
         virtual void registerHttpSimpleController(const std::string &pathName,const std::string &crtlName,const std::vector<std::string> &filters=
         std::vector<std::string>())override ;
-        virtual void registerHttpApiController(const std::string &pathName,
-                                           const std::string &parameterPattern,
+        virtual void registerHttpApiController(const std::string &pathPattern,
                                            const HttpApiBinderBasePtr &binder,
                                            const std::vector<std::string> &filters=std::vector<std::string>()) override ;
         virtual void enableSession(const size_t timeout) override { _useSession=true;_sessionTimeout=timeout;}
@@ -163,29 +162,13 @@ void HttpAppFrameworkImpl::addApiPath(const std::string &path,
     std::lock_guard<std::mutex> guard(_apiCtrlMutex);
     _apiCtrlVector.push_back(std::move(_binder));
 }
-void HttpAppFrameworkImpl::registerHttpApiController(const std::string &pathName,
-                                       const std::string &parameterPattern,
+void HttpAppFrameworkImpl::registerHttpApiController(const std::string &pathPattern,
                                        const HttpApiBinderBasePtr &binder,
                                        const std::vector<std::string> &filters)
 {
-    assert(!pathName.empty());
+    assert(!pathPattern.empty());
     assert(binder);
-    std::string path(pathName);
-
-    if(parameterPattern[0]=='/')
-    {
-        if(path[path.length()-1]=='/')
-            path.resize(path.length()-1);
-        path.append(parameterPattern);
-    }
-    else
-    {
-        if(path[path.length()-1]!='/')
-            path.append("/");
-        path.append(parameterPattern);
-    }
-    if(path[path.length()-1]=='/')
-        path.resize(path.length()-1);
+    std::string path(pathPattern);
 
     std::transform(path.begin(),path.end(),path.begin(),tolower);
     addApiPath(path,binder,filters);

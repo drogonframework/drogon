@@ -56,23 +56,22 @@ namespace drogon
         virtual void registerHttpSimpleController(const std::string &pathName,
                                                   const std::string &crtlName,
                                                   const std::vector<std::string> &filters=std::vector<std::string>())=0;
-        virtual void registerHttpApiController(const std::string &pathName,
-                                               const std::string &parameterPattern,
+        virtual void registerHttpApiController(const std::string &pathPattern,
                                                const HttpApiBinderBasePtr &binder,
                                                const std::vector<std::string> &filters=std::vector<std::string>())=0;
         template <typename FUNCTION>
-        static void registerHttpApiMethod(const std::string &pathName,
-                                   const std::string &parameterPattern,
-                                   FUNCTION && function,
-                                   const std::vector<std::string> &filters=std::vector<std::string>())
+        static void registerHttpApiMethod(const std::string &pathPattern,
+                                          FUNCTION && function,
+                                          const std::vector<std::string> &filters=std::vector<std::string>())
         {
+            LOG_DEBUG<<"pathPattern:"<<pathPattern;
             HttpApiBinderBasePtr binder;
 
             binder=std::make_shared<
                     HttpApiBinder<FUNCTION>
             >(std::forward<FUNCTION>(function));
 
-            instance().registerHttpApiController(pathName,parameterPattern,binder,filters);
+            instance().registerHttpApiController(pathPattern,binder,filters);
         }
         virtual void enableSession(const size_t timeout=0)=0;
         virtual void disableSession()=0;

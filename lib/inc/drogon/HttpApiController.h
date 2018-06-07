@@ -52,15 +52,18 @@ namespace drogon
         static void registerMethod(const std::string &methodName,const std::string &pattern,FUNCTION &&function,const std::vector<std::string> &filters)
         {
             std::string path=std::string("/")+HttpApiController<T>::classTypeName();
-            path.append("/");
-            path.append(methodName);
+            if(!methodName.empty())
+            {
+                path.append("/");
+                path.append(methodName);
+            }
             transform(path.begin(), path.end(), path.begin(), tolower);
             std::string::size_type pos;
             while((pos=path.find("::"))!=std::string::npos)
             {
                 path.replace(pos,2,"/");
             }
-            HttpAppFramework::registerHttpApiMethod(path,pattern,std::forward<FUNCTION>(function),filters);
+            HttpAppFramework::registerHttpApiMethod(path+pattern,std::forward<FUNCTION>(function),filters);
         }
     private:
 

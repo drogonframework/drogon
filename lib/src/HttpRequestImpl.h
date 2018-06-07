@@ -25,6 +25,7 @@
 
 #pragma once
 
+#include "Utilities.h"
 #include <drogon/HttpRequest.h>
 
 #include <trantor/utils/NonCopyable.h>
@@ -136,11 +137,15 @@ namespace drogon
         void setPath(const char* start, const char* end)
         {
             path_.assign(start, end);
+
+            std::string decodePath=path_;
+            int ret=urldecode((char *)path_.c_str(),(char *)decodePath.c_str());
+            path_=decodePath.substr(0,ret);
         }
-        void setPath(const std::string& path)
-        {
-            path_ = path;
-        }
+//        void setPath(const std::string& path)
+//        {
+//            path_ = path;
+//        }
 
         std::map<std::string,std::string > getPremeter() const override
         {
