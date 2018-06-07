@@ -106,8 +106,8 @@ void HttpAppFrameworkImpl::initRegex() {
     std::string regString;
     for(auto binder:_apiCtrlVector)
     {
-        std::regex reg("\\(\\.\\*\\)");
-        std::string tmp=std::regex_replace(binder.pathParameterPattern,reg,".*");
+        std::regex reg("\\(\\[\\^/\\]\\*\\)");
+        std::string tmp=std::regex_replace(binder.pathParameterPattern,reg,"[^/]*");
         regString.append("(").append(tmp).append(")|");
     }
     if(regString.length()>0)
@@ -140,9 +140,10 @@ void HttpAppFrameworkImpl::addApiPath(const std::string &path,
         if(results.size()>1)
         {
             size_t place=(size_t)std::stoi(results[1].str());
-            if(place>binder->paramCount())
+            if(place>binder->paramCount()||place==0)
             {
-                LOG_ERROR<<"parameter placeholder(value="<<place<<") out of range "<<binder->paramCount();
+                LOG_ERROR<<"parameter placeholder(value="<<place<<") out of range (1 to "
+                                                                  <<binder->paramCount()<<")";
                 exit(0);
             }
             places.push_back(place);
@@ -153,7 +154,7 @@ void HttpAppFrameworkImpl::addApiPath(const std::string &path,
     _binder.parameterPlaces=std::move(places);
     _binder.binderPtr=binder;
     _binder.filtersName=filters;
-    _binder.pathParameterPattern=std::regex_replace(path,regex,"(.*)");
+    _binder.pathParameterPattern=std::regex_replace(path,regex,"([^/]*)");
     std::lock_guard<std::mutex> guard(_apiCtrlMutex);
     _apiCtrlVector.push_back(std::move(_binder));
 }
