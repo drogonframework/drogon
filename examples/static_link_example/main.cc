@@ -90,7 +90,7 @@ int main()
     //lambda example
     drogon::HttpAppFramework::registerHttpApiMethod("/api/v1/handle2/{1}/{2}",[](const HttpRequest&req,const std::function<void (HttpResponse &)>&callback,int a,float b){
         LOG_DEBUG<<"int a="<<a;
-        LOG_DEBUG<<"flaot b="<<b;
+        LOG_DEBUG<<"float b="<<b;
         HttpViewData data;
         data.insert("title",std::string("ApiTest::get"));
         std::map<std::string,std::string> para;
