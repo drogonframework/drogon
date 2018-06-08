@@ -81,7 +81,8 @@ namespace drogon
         struct ApiBinder
         {
             std::string pathParameterPattern;
-            std::vector<int> parameterPlaces;
+            std::vector<size_t> parameterPlaces;
+            std::map<std::string,size_t> queryParametersPlaces;
             HttpApiBinderBasePtr binderPtr;
             std::vector<std::string> filtersName;
         };
@@ -135,10 +136,18 @@ void HttpAppFrameworkImpl::addApiPath(const std::string &path,
                 const std::vector<std::string> &filters)
 {
     //path will be like /api/v1/service/method/{1}/{2}/xxx...
-    std::vector<int> places;
+    std::vector<size_t> places;
     std::string tmpPath=path;
-    std::regex regex=std::regex("\\{([0-9]*)\\}");
+    std::string paras="";
+    std::regex regex=std::regex("\\{([0-9]+)\\}");
     std::smatch results;
+    auto pos=tmpPath.find("?");
+    if(pos!=std::string::npos)
+    {
+        paras=tmpPath.substr(pos+1);
+        tmpPath=tmpPath.substr(0,pos);
+    }
+    std::string originPath=tmpPath;
     while(std::regex_search(tmpPath,results,regex))
     {
         if(results.size()>1)
@@ -154,11 +163,33 @@ void HttpAppFrameworkImpl::addApiPath(const std::string &path,
         }
         tmpPath=results.suffix();
     }
+    std::map<std::string,size_t> parametersPlaces;
+    if(!paras.empty())
+    {
+
+        std::regex pregex("([^&]*)=\\{([0-9]+)\\}&*");
+        while(std::regex_search(paras,results,pregex))
+        {
+            if(results.size()>2)
+            {
+                size_t place=(size_t)std::stoi(results[2].str());
+                if(place>binder->paramCount()||place==0)
+                {
+                    LOG_ERROR<<"parameter placeholder(value="<<place<<") out of range (1 to "
+                             <<binder->paramCount()<<")";
+                    exit(0);
+                }
+                parametersPlaces[results[1].str()]=place;
+            }
+            paras=results.suffix();
+        }
+    }
     struct ApiBinder _binder;
     _binder.parameterPlaces=std::move(places);
+    _binder.queryParametersPlaces=std::move(parametersPlaces);
     _binder.binderPtr=binder;
     _binder.filtersName=filters;
-    _binder.pathParameterPattern=std::regex_replace(path,regex,"([^/]*)");
+    _binder.pathParameterPattern=std::regex_replace(originPath,regex,"([^/]*)");
     std::lock_guard<std::mutex> guard(_apiCtrlMutex);
     _apiCtrlVector.push_back(std::move(_binder));
 }
@@ -389,6 +420,21 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequest& req,const std::func
                                 params.resize(place);
                             params[place-1]=r[j].str();
                             LOG_DEBUG<<"place="<<place<<" para:"<<params[place-1];
+                        }
+                    }
+                    if(binder.queryParametersPlaces.size()>0)
+                    {
+                        auto qureyPara=req.getParameters();
+                        for(auto parameter:qureyPara)
+                        {
+                            if(binder.queryParametersPlaces.find(parameter.first)!=
+                                    binder.queryParametersPlaces.end())
+                            {
+                                auto place=binder.queryParametersPlaces[parameter.first];
+                                if(place>params.size())
+                                    params.resize(place);
+                                params[place-1]=parameter.second;
+                            }
                         }
                     }
                     std::list<std::string> paraList;

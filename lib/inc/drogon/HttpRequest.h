@@ -42,7 +42,7 @@ namespace drogon
         virtual const std::string& path() const=0;
         virtual Version getVersion() const=0;
         virtual SessionPtr session() const=0;
-        virtual std::map<std::string,std::string > getPremeter() const=0;
+        virtual const std::map<std::string,std::string > & getParameters() const=0;
         virtual ~HttpRequest(){}
     };
 }

@@ -147,7 +147,7 @@ namespace drogon
 //            path_ = path;
 //        }
 
-        std::map<std::string,std::string > getPremeter() const override
+        const std::map<std::string,std::string > & getParameters() const override
         {
             return premeter_;
         }

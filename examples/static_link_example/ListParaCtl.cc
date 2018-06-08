@@ -4,7 +4,7 @@ void ListParaCtl::asyncHandleHttpRequest(const HttpRequest& req,const std::funct
     //write your application logic here
     HttpViewData data;
     data.insert("title",std::string("list parameters"));
-    data.insert("parameters",req.getPremeter());
+    data.insert("parameters",req.getParameters());
     auto res=drogon::HttpResponse::newHttpViewResponse("ListParaView.csp",data);
     callback(*res);
 }

@@ -86,7 +86,7 @@ int main()
     drogon::HttpAppFramework::instance().addListener("0.0.0.0",8080);
     trantor::Logger::setLogLevel(trantor::Logger::TRACE);
     //class function
-    drogon::HttpAppFramework::registerHttpApiMethod("/api/v1/handle1/{1}/{2}/{3}/{4}",&A::handle);
+    drogon::HttpAppFramework::registerHttpApiMethod("/api/v1/handle1/{1}/{2}/?p3={3}&p4={4}",&A::handle);
     //lambda example
     drogon::HttpAppFramework::registerHttpApiMethod("/api/v1/handle2/{1}/{2}",[](const HttpRequest&req,const std::function<void (HttpResponse &)>&callback,int a,float b){
         LOG_DEBUG<<"int a="<<a;

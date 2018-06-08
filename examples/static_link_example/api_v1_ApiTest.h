@@ -10,7 +10,7 @@ namespace api
         METHOD_LIST_BEGIN
         //use METHOD_ADD to add your custom processing function here;
         METHOD_ADD(ApiTest::get,"/{2}/{1}",1,"drogon::GetFilter");//path will be /api/v1/ApiTest/get/{arg2}/{arg1}
-        METHOD_ADD(ApiTest::your_method_name,"/{1}/{2}/list",0,"drogon::GetFilter");//path will be /api/v1/ApiTest/{arg1}/{arg2}/list
+        METHOD_ADD(ApiTest::your_method_name,"/{1}/list?p2={2}",0,"drogon::GetFilter");//path will be /api/v1/ApiTest/{arg1}/list
         
         METHOD_LIST_END
         //your declaration of processing function maybe like this:
