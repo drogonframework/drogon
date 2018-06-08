@@ -84,6 +84,7 @@ int main()
 
     drogon::HttpAppFramework::instance().addListener("0.0.0.0",12345);
     drogon::HttpAppFramework::instance().addListener("0.0.0.0",8080);
+    drogon::HttpAppFramework::instance().setThreadNum(4);
     trantor::Logger::setLogLevel(trantor::Logger::TRACE);
     //class function
     drogon::HttpAppFramework::registerHttpApiMethod("/api/v1/handle1/{1}/{2}/?p3={3}&p4={4}",&A::handle);

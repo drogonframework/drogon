@@ -39,6 +39,7 @@ namespace drogon
     {
     public:
         virtual void addListener(const std::string &ip,uint16_t port) override;
+        virtual void setThreadNum(size_t threadNum) override;
         virtual void run() override ;
         virtual void registerHttpSimpleController(const std::string &pathName,const std::string &crtlName,const std::vector<std::string> &filters=
         std::vector<std::string>())override ;
@@ -102,6 +103,8 @@ namespace drogon
         std::string getUuid();
         std::string stringToHex(unsigned char* ptr, long long length);
 
+
+        size_t _threadNum=1;
     };
 }
 
@@ -205,6 +208,11 @@ void HttpAppFrameworkImpl::registerHttpApiController(const std::string &pathPatt
     addApiPath(path,binder,filters);
 
 }
+void HttpAppFrameworkImpl::setThreadNum(size_t threadNum)
+{
+    assert(threadNum>=1);
+    _threadNum=threadNum;
+}
 void HttpAppFrameworkImpl::addListener(const std::string &ip, uint16_t port)
 {
     _listeners.push_back(std::make_pair(ip,port));
@@ -212,15 +220,23 @@ void HttpAppFrameworkImpl::addListener(const std::string &ip, uint16_t port)
 
 void HttpAppFrameworkImpl::run()
 {
-    trantor::EventLoop loop;
+    //
     std::vector<std::shared_ptr<HttpServer>> servers;
+    std::vector<std::shared_ptr<EventLoopThread>> loopThreads;
     initRegex();
     for(auto listener:_listeners)
     {
-        auto serverPtr=std::make_shared<HttpServer>(&loop,InetAddress(listener.first,listener.second),"drogon");
-        serverPtr->setHttpAsyncCallback(std::bind(&HttpAppFrameworkImpl::onAsyncRequest,this,_1,_2));
-        serverPtr->start();
-        servers.push_back(serverPtr);
+        LOG_DEBUG<<"thread num="<<_threadNum;
+        for(size_t i=0;i<_threadNum;i++)
+        {
+            auto loopThreadPtr=std::make_shared<EventLoopThread>();
+            loopThreadPtr->run();
+            loopThreads.push_back(loopThreadPtr);
+            auto serverPtr=std::make_shared<HttpServer>(loopThreadPtr->getLoop(),InetAddress(listener.first,listener.second),"drogon");
+            serverPtr->setHttpAsyncCallback(std::bind(&HttpAppFrameworkImpl::onAsyncRequest,this,_1,_2));
+            serverPtr->start();
+            servers.push_back(serverPtr);
+        }
     }
     int interval,limit;
     if(_sessionTimeout==0)
@@ -236,6 +252,7 @@ void HttpAppFrameworkImpl::run()
         interval=_sessionTimeout/1000;
         limit=_sessionTimeout;
     }
+    trantor::EventLoop loop;
     _sessionMapPtr=std::unique_ptr<CacheMap<std::string,SessionPtr>>(new CacheMap<std::string,SessionPtr>(&loop,interval,limit));
     loop.loop();
 }
