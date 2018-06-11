@@ -1,5 +1,5 @@
+#include "Utilities.h"
 #include <drogon/FileUpload.h>
-#include "Funcs.h"
 #include <openssl/md5.h>
 #include <iostream>
 #include <fstream>
@@ -137,5 +137,5 @@ const std::string HttpFile::getMd5() const
     MD5_Init(&c);
     MD5_Update(&c, fileContent_.c_str(), fileContent_.size());
     MD5_Final(md5, &c);
-    return StringToHex(md5, 16);
+    return stringToHex(md5, 16);
 }

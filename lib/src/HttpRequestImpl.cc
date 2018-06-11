@@ -52,12 +52,8 @@ void HttpRequestImpl::parsePremeter()
                     cpos++;
                 key=key.substr(cpos);
                 std::string pvalue = coo.substr(epos + 1);
-                std::string pdecode=pvalue;
-                std::string keydecode=key;
-                int ret=urldecode((char *)key.c_str(),(char *)keydecode.c_str());
-                keydecode=keydecode.substr(0,ret);
-                ret=urldecode((char *)pvalue.c_str(),(char *)pdecode.c_str());
-                pdecode=pdecode.substr(0,ret);
+                std::string pdecode=urlDecode(pvalue);
+                std::string keydecode=urlDecode(key);
                 premeter_[keydecode] = pdecode;
             }
             value=value.substr(pos+1);
@@ -73,12 +69,8 @@ void HttpRequestImpl::parsePremeter()
                     cpos++;
                 key=key.substr(cpos);
                 std::string pvalue = coo.substr(epos + 1);
-                std::string pdecode=pvalue;
-                std::string keydecode=key;
-                int ret=urldecode((char *)key.c_str(),(char *)keydecode.c_str());
-                keydecode=keydecode.substr(0,ret);
-                ret=urldecode((char *)pvalue.c_str(),(char *)pdecode.c_str());
-                pdecode=pdecode.substr(0,ret);
+                std::string pdecode=urlDecode(pvalue);
+                std::string keydecode=urlDecode(key);
                 premeter_[keydecode] = pdecode;
             }
         }

@@ -136,11 +136,7 @@ namespace drogon
 
         void setPath(const char* start, const char* end)
         {
-            path_.assign(start, end);
-
-            std::string decodePath=path_;
-            int ret=urldecode((char *)path_.c_str(),(char *)decodePath.c_str());
-            path_=decodePath.substr(0,ret);
+            path_=urlDecode(std::string(start,end));
         }
 //        void setPath(const std::string& path)
 //        {
