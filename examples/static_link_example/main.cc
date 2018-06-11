@@ -111,7 +111,8 @@ int main()
             func=std::bind(&A::handle,&tmp,_1,_2,_3,_4,_5,_6);
     //api example for std::function
     drogon::HttpAppFramework::registerHttpApiMethod("/api/v1/handle4/{4}/{3}/{1}",func);
-            LOG_DEBUG<<drogon::DrObjectBase::demangle(typeid(func).name());
+
+    //start app framework
     drogon::HttpAppFramework::instance().run();
 
 }

@@ -48,6 +48,9 @@ namespace drogon
                                            const std::vector<std::string> &filters=std::vector<std::string>()) override ;
         virtual void enableSession(const size_t timeout) override { _useSession=true;_sessionTimeout=timeout;}
         virtual void disableSession() override { _useSession=false;}
+        virtual const std::string & getDocumentRoot() const override {return _rootPath;}
+        virtual void setDocumentRoot(const std::string &rootPath) override {_rootPath=rootPath;}
+        virtual void setFileTypes(const std::vector<std::string> &types) override;
         ~HttpAppFrameworkImpl(){}
     private:
         std::vector<std::pair<std::string,uint16_t>> _listeners;
@@ -95,7 +98,7 @@ namespace drogon
         std::regex _apiRegex;
         bool _enableLastModify=true;
         std::set<std::string> _fileTypeSet={"html","jpg"};
-        std::string _rootPath;
+        std::string _rootPath=".";
 
 
 
@@ -111,6 +114,13 @@ namespace drogon
 
 using namespace drogon;
 using namespace std::placeholders;
+void HttpAppFrameworkImpl::setFileTypes(const std::vector<std::string> &types)
+{
+    for(auto type : types)
+    {
+        _fileTypeSet.insert(type);
+    }
+}
 void HttpAppFrameworkImpl::initRegex() {
     std::string regString;
     for(auto binder:_apiCtrlVector)
@@ -334,7 +344,7 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequest& req,const std::func
     std::string path = req.path();
     auto pos = path.rfind(".");
     if(pos != std::string::npos) {
-        std::string filetype = path.substr(pos + 1, path.length());
+        std::string filetype = path.substr(pos + 1);
         transform(filetype.begin(), filetype.end(), filetype.begin(), tolower);
         if(_fileTypeSet.find(filetype) != _fileTypeSet.end()) {
             LOG_INFO << "file query!";

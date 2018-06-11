@@ -76,5 +76,8 @@ namespace drogon
         }
         virtual void enableSession(const size_t timeout=0)=0;
         virtual void disableSession()=0;
+        virtual const std::string & getDocumentRoot() const =0;
+        virtual void setDocumentRoot(const std::string &rootPath)=0;
+        virtual void setFileTypes(const std::vector<std::string> &types)=0;
     };
 }
