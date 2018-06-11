@@ -30,6 +30,12 @@ include_directories(${JSONCPP_INCLUDE_DIRS})
 link_directories(${JSONCPP_LIBRARY_DIRS})
 find_package (UUID REQUIRED)
 
+find_package (OpenSSL REQUIRED)
+message(STATUS "openssl inc path:" ${OPENSSL_INCLUDE_DIR})
+include_directories(${OPENSSL_INCLUDE_DIR})
+link_directories(${OPENSSL_SSL_LIBRARY})
+link_directories(${OPENSSL_CRYPTO_LIBRARY})
+
 find_package(Boost)
 if(Boost_FOUND)
     add_definitions(-DUSE_BOOST)

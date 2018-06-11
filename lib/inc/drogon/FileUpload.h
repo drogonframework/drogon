@@ -12,7 +12,7 @@
  *
  */
 
-#pragma
+#pragma once
 
 #include "HttpRequest.h"
 #include <string>

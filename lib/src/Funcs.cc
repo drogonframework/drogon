@@ -22,7 +22,7 @@ bool isInteger(const std::string &str)
 }
 std::string genRandomString(int length)
 {
-    int flag, i;
+    int i;
     char str[length + 1];
 
     timespec tp;
@@ -95,7 +95,7 @@ std::string getuuid()
 std::string stringPreProcess(const std::string& str)
 {
     std::string ret;
-    for(int i = 0; i < str.length(); i++)
+    for(std::string::size_type i = 0; i < str.length(); i++)
     {
         if(str[i] == '\'')
         {
