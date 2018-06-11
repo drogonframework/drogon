@@ -75,6 +75,7 @@ namespace drogon
             std::string controllerName;
             std::vector<std::string> filtersName;
             std::shared_ptr<HttpSimpleControllerBase> controller;
+            std::mutex _mutex;
         };
         std::unordered_map<std::string,ControllerAndFiltersName>_simpCtrlMap;
         std::mutex _simpCtrlMutex;
@@ -373,27 +374,29 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequest& req,const std::func
     }
 
 
-    /*find controller*/
+    /*find simple controller*/
     std::string pathLower(req.path());
     std::transform(pathLower.begin(),pathLower.end(),pathLower.begin(),tolower);
-    //fix me!need mutex;
+
     if(_simpCtrlMap.find(pathLower)!=_simpCtrlMap.end())
     {
         auto &filters=_simpCtrlMap[pathLower].filtersName;
         if(doFilters(filters,req,callback,needSetJsessionid,session_id))
             return;
-        auto controller=_simpCtrlMap[pathLower].controller;
-        std::string ctrlName = _simpCtrlMap[pathLower].controllerName;
-        if(!controller)
+        const std::string &ctrlName = _simpCtrlMap[pathLower].controllerName;
+        std::shared_ptr<HttpSimpleControllerBase> controller;
         {
-
-
-            auto _object = std::shared_ptr<DrObjectBase>(DrClassMap::newObject(ctrlName));
-
-            controller = std::dynamic_pointer_cast<HttpSimpleControllerBase>(_object);
-
-            _simpCtrlMap[pathLower].controller=controller;
+            //maybe update controller,so we use lock_guard to protect;
+            std::lock_guard<std::mutex> guard(_simpCtrlMap[pathLower]._mutex);
+            controller=_simpCtrlMap[pathLower].controller;
+            if(!controller)
+            {
+                auto _object = std::shared_ptr<DrObjectBase>(DrClassMap::newObject(ctrlName));
+                controller = std::dynamic_pointer_cast<HttpSimpleControllerBase>(_object);
+                _simpCtrlMap[pathLower].controller=controller;
+            }
         }
+
 
         if(controller) {
             controller->asyncHandleHttpRequest(req, [=](HttpResponse& resp){
@@ -407,8 +410,7 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequest& req,const std::func
             LOG_ERROR << "can't find controller " << ctrlName;
         }
     }
-//find api controller
-    //fix me!need mutex;
+    //find api controller
     if(_apiRegex.mark_count()>0)
     {
         std::smatch result;
