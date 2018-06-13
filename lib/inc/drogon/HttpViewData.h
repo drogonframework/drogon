@@ -18,14 +18,14 @@
 #ifdef USE_STD_ANY
 
 #include <any>
-typedef std::any Any;
-#define Any_cast std::any_cast
+using std::any;
+using std::any_cast;
 
 #elif USE_BOOST
 
 #include <boost/any.hpp>
-typedef boost::any Any;
-#define Any_cast boost::any_cast
+using boost::any;
+using boost::any_cast;
 
 #else
 #error,must use c++17 or boost
@@ -35,7 +35,7 @@ typedef boost::any Any;
 #include <unordered_map>
 #include <string>
 
-typedef std::unordered_map<std::string,Any> ViewDataMap;
+typedef std::unordered_map<std::string,any> ViewDataMap;
 namespace drogon
 {
 class HttpViewData
@@ -48,7 +48,7 @@ public:
         if(it!=viewData_.end())
         {
             try {
-                return Any_cast<T>(it->second);
+                return any_cast<T>(it->second);
             }
             catch (std::exception& e)
             {
@@ -58,11 +58,11 @@ public:
         T tmp;
         return tmp;
     }
-    void insert(const std::string& key,Any &&obj)
+    void insert(const std::string& key,any &&obj)
     {
         viewData_[key]=std::move(obj);
     }
-    void insert(const std::string& key,const Any &obj)
+    void insert(const std::string& key,const any &obj)
     {
         viewData_[key]=obj;
     }

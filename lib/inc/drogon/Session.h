@@ -21,20 +21,20 @@
 #ifdef USE_STD_ANY
 
 #include <any>
-typedef std::any Any;
-#define Any_cast std::any_cast
+using std::any;
+using std::any_cast;
 
 #elif USE_BOOST
 
 #include <boost/any.hpp>
-typedef boost::any Any;
-#define Any_cast boost::any_cast
+using boost::any;
+using boost::any_cast;
 
 #else
 #error,must use c++17 or boost
 #endif
 
-typedef std::map<std::string,Any> SessionMap;
+typedef std::map<std::string,any> SessionMap;
 namespace drogon
 {
     class Session
@@ -45,21 +45,21 @@ namespace drogon
             auto it=sessionMap_.find(key);
             if(it!=sessionMap_.end())
             {
-                return Any_cast<T>(it->second);
+                return any_cast<T>(it->second);
             }
             T tmp;
             return tmp;
         };
-        Any &operator[](const std::string &key){
+        any &operator[](const std::string &key){
             std::lock_guard<std::mutex> lck(mutex_);
             return sessionMap_[key];
         };
-        void insert(const std::string& key,const Any &obj)
+        void insert(const std::string& key,const any &obj)
         {
             std::lock_guard<std::mutex> lck(mutex_);
             sessionMap_[key]=obj;
         };
-        void insert(const std::string& key,Any &&obj)
+        void insert(const std::string& key,any &&obj)
         {
             std::lock_guard<std::mutex> lck(mutex_);
             sessionMap_[key]=std::move(obj);

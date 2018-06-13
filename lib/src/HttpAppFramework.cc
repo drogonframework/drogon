@@ -11,6 +11,7 @@
  *  @section DESCRIPTION
  *
  */
+#include "SharedLibManager.h"
 #include "Utilities.h"
 #include "HttpRequestImpl.h"
 #include "HttpResponseImpl.h"
@@ -51,6 +52,7 @@ namespace drogon
         virtual const std::string & getDocumentRoot() const override {return _rootPath;}
         virtual void setDocumentRoot(const std::string &rootPath) override {_rootPath=rootPath;}
         virtual void setFileTypes(const std::vector<std::string> &types) override;
+        virtual void enableDynamicSharedLibLoading(const std::string &viewPth="views") override;
         ~HttpAppFrameworkImpl(){}
     private:
         std::vector<std::pair<std::string,uint16_t>> _listeners;
@@ -100,7 +102,7 @@ namespace drogon
         std::set<std::string> _fileTypeSet={"html","jpg"};
         std::string _rootPath=".";
 
-
+        std::atomic_bool _running=false;
 
         //tool funcs
 
@@ -109,11 +111,25 @@ namespace drogon
 
 
         size_t _threadNum=1;
+        std::string _viewFilePath;
+
+        std::unique_ptr<SharedLibManager>_sharedLibManagerPtr;
+
+        trantor::EventLoop _loop;
     };
 }
 
 using namespace drogon;
 using namespace std::placeholders;
+void HttpAppFrameworkImpl::enableDynamicSharedLibLoading(const std::string &viewPath)
+{
+    assert(!_running);
+    if(_viewFilePath.empty())
+    {
+        _viewFilePath=_rootPath+"/"+viewPath;
+        _sharedLibManagerPtr=std::unique_ptr<SharedLibManager>(new SharedLibManager(&_loop,_viewFilePath));
+    }
+}
 void HttpAppFrameworkImpl::setFileTypes(const std::vector<std::string> &types)
 {
     for(auto type : types)
@@ -226,12 +242,14 @@ void HttpAppFrameworkImpl::setThreadNum(size_t threadNum)
 }
 void HttpAppFrameworkImpl::addListener(const std::string &ip, uint16_t port)
 {
+    assert(!_running);
     _listeners.push_back(std::make_pair(ip,port));
 }
 
 void HttpAppFrameworkImpl::run()
 {
     //
+    _running=true;
     std::vector<std::shared_ptr<HttpServer>> servers;
     std::vector<std::shared_ptr<EventLoopThread>> loopThreads;
     initRegex();
@@ -263,9 +281,9 @@ void HttpAppFrameworkImpl::run()
         interval=_sessionTimeout/1000;
         limit=_sessionTimeout;
     }
-    trantor::EventLoop loop;
-    _sessionMapPtr=std::unique_ptr<CacheMap<std::string,SessionPtr>>(new CacheMap<std::string,SessionPtr>(&loop,interval,limit));
-    loop.loop();
+
+    _sessionMapPtr=std::unique_ptr<CacheMap<std::string,SessionPtr>>(new CacheMap<std::string,SessionPtr>(&_loop,interval,limit));
+    _loop.loop();
 }
 
 bool HttpAppFrameworkImpl::doFilters(const std::vector<std::string> &filters,
