@@ -14,6 +14,7 @@
 
 #include "version.h"
 #include <drogon/version.h>
+#include <drogon/config.h>
 #include <iostream>
 
 using namespace drogon_ctl;
@@ -30,4 +31,5 @@ void version::handleCommand(std::vector<std::string> &parameters)
     std::cout<<"drogon ctl tools"<<std::endl;
     std::cout<<"version:"<<VERSION<<std::endl;
     std::cout<<"git commit:"<<VERSION_MD5<<std::endl;
+    std::cout<<"compile config:"<<definitions<<compileFlags<<includeDirs<<std::endl;
 }

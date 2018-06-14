@@ -43,7 +43,7 @@ if(Boost_FOUND)
 endif()
 
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=${CMAKE_CXX_STD_FLAGS} -g -ggdb -Wall -fpermissive")
+set(CMAKE_CXX_FLAGS "-std=${CMAKE_CXX_STD_FLAGS} -g -Wall -fpermissive ${CMAKE_CXX_FLAGS}")
 
 #string(REPLACE ";" " " CMAKE_CXX_FLAGS "${CXX_FLAGS}")
 
@@ -73,9 +73,25 @@ install(TARGETS drogon DESTINATION lib)
 
 file(GLOB trantor_net_headers "${CMAKE_CURRENT_SOURCE_DIR}/lib/inc/drogon/*.h")
 install(FILES ${trantor_net_headers} DESTINATION include/drogon)
-
+file(WRITE "./config.h" "const char definitions[]=\"")
 add_dependencies(drogon trantor)
 add_dependencies(drogon makeVersion)
+
+get_directory_property(DEFS COMPILE_DEFINITIONS)
+foreach(loop_var ${DEFS})
+message(STATUS "definitions " ${loop_var})
+    file(APPEND "./config.h" "-D" ${loop_var} " ")
+endforeach(loop_var)
+file(APPEND "./config.h" "\";")
+file(APPEND "./config.h" "\n" "const char compileFlags[]=\"" ${CMAKE_CXX_FLAGS} "\";")
+
+get_target_property(INS drogon INCLUDE_DIRECTORIES)
+file(APPEND "./config.h" "\nconst char includeDirs[]=\"")
+foreach(loop_var ${INS})
+file(APPEND "./config.h" "-I" ${loop_var} " ")
+endforeach(loop_var)
+file(APPEND "./config.h" "\";\n")
+EXEC_PROGRAM(${PROJECT_SOURCE_DIR}/update_config.sh ARGS "${PROJECT_SOURCE_DIR}/config.h ${PROJECT_SOURCE_DIR}/lib/inc/drogon/config.h")
 
 if (MAKETEST STREQUAL YES)
     ADD_SUBDIRECTORY(tests)

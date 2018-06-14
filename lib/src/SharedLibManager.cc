@@ -18,7 +18,9 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <dirent.h>
+#include <dlfcn.h>
 
+void *dlopen(const char *filename, int flag);
 static void forEachFileIn(const std::string &path,const std::function<void (const std::string &filename)> &cb)
 {
     DIR* dp;
@@ -53,7 +55,7 @@ static void forEachFileIn(const std::string &path,const std::function<void (cons
         /* if dirent is a directory, continue */
         if(S_ISDIR(st.st_mode))
             continue;
-        cb(dirp->d_name);
+        cb(fullname);
 
     }
     return;
@@ -70,8 +72,30 @@ _viewPath(viewPath)
 }
 void SharedLibManager::managerLibs()
 {
-    //LOG_DEBUG<<"manager .so libs in path "<<_viewPath;
-    forEachFileIn("./",[](const std::string &filename){
+    LOG_DEBUG<<"manager .so libs in path "<<_viewPath;
+    forEachFileIn(_viewPath,[=](const std::string &filename){
         LOG_DEBUG<<filename;
+        auto pos=filename.rfind(".");
+        if(pos!=std::string::npos)
+        {
+            auto exName=filename.substr(pos+1);
+            if(exName=="so")
+            {
+                //loading so file;
+                if(_dlMap.find(filename)!=_dlMap.end())
+                    return;
+                auto Handle=dlopen(filename.c_str(),RTLD_NOW);
+                if(!Handle)
+                {
+                    LOG_ERROR<<"load "<<filename<<" error!";
+                    LOG_ERROR<<dlerror();
+                }
+                else
+                {
+                    LOG_DEBUG<<"Successfully loaded library file "<<filename;
+                    _dlMap[filename]=Handle;
+                }
+            }
+        }
     });
 }
