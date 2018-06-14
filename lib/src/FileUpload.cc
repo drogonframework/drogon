@@ -1,6 +1,12 @@
 #include "Utilities.h"
 #include <drogon/FileUpload.h>
+#ifdef USE_OPENSSL
 #include <openssl/md5.h>
+#else
+namespace drogon{
+    //Implement MD5 function here if OpenSSL lib not found
+}
+#endif
 #include <iostream>
 #include <fstream>
 using namespace drogon;
