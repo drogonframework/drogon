@@ -103,9 +103,20 @@ static void parseLine(std::ofstream &oSrcFile,std::string& line,const std::strin
 
 void create_view::handleCommand(std::vector<std::string> &parameters)
 {
-    for(auto file:parameters)
+    for(auto iter=parameters.begin();iter!=parameters.end();iter++)
     {
-        if(file[0]=='-')
+        auto file=*iter;
+        if(file=="-o"||file=="--output")
+        {
+            iter=parameters.erase(iter);
+            if(iter!=parameters.end())
+            {
+                _outputPath=*iter;
+                iter=parameters.erase(iter);
+            }
+            break;
+        }
+        else if(file[0]=='-')
         {
             std::cout<<ARGS_ERROR_STR<<std::endl;
             return;
@@ -137,8 +148,8 @@ int create_view::createViewFile(const std::string &script_filename)
                 className=className.substr(pos+1);
             }
             std::cout<<"className="<<className<<std::endl;
-            std::string headFileName=className+".h";
-            std::string sourceFilename=className+".cc";
+            std::string headFileName=_outputPath+"/"+className+".h";
+            std::string sourceFilename=_outputPath+"/"+className+".cc";
             std::ofstream oHeadFile(headFileName.c_str(),std::ofstream::out);
             std::ofstream oSourceFile(sourceFilename.c_str(),std::ofstream::out);
             if(!oHeadFile||!oSourceFile)
@@ -176,7 +187,12 @@ void create_view::newViewSourceFile(std::ofstream &file,const std::string &class
     file <<"#include <map>\n";
     file <<"#include <vector>\n";
     file <<"#include <set>\n";
+    file <<"#include <iostream>\n";
     file <<"using namespace std;\n";
+//    file <<"void __attribute__((constructor)) startup()\n";
+//    file <<"{std::cout<<\"dynamic lib start to load!\"<<std::endl;}\n";
+//    file <<"void __attribute__((destructor)) shutdown()\n";
+//    file <<"{std::cout<<\"dynamic lib start to unload!\"<<std::endl;}\n";
     std::string buffer;
     char line[8192];
     int import_flag=0;

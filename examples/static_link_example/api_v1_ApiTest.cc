@@ -9,7 +9,7 @@ void ApiTest::get(const HttpRequest& req,const std::function<void (HttpResponse 
     para["p1"]=std::to_string(p1);
     para["p2"]=p2;
     data.insert("parameters",para);
-    auto res=HttpResponse::newHttpViewResponse("ListParaView",data);
+    auto res=HttpResponse::newHttpViewResponse("DynamicListParaView.csp",data);
     callback(*res);
 }
 void ApiTest::your_method_name(const HttpRequest& req,const std::function<void (HttpResponse &)>&callback,double p1,int p2) const

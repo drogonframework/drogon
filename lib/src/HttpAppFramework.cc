@@ -52,7 +52,7 @@ namespace drogon
         virtual const std::string & getDocumentRoot() const override {return _rootPath;}
         virtual void setDocumentRoot(const std::string &rootPath) override {_rootPath=rootPath;}
         virtual void setFileTypes(const std::vector<std::string> &types) override;
-        virtual void enableDynamicSharedLibLoading(const std::string &viewPth="views") override;
+        virtual void enableDynamicSharedLibLoading(const std::vector<std::string> &libPaths) override;
         ~HttpAppFrameworkImpl(){}
     private:
         std::vector<std::pair<std::string,uint16_t>> _listeners;
@@ -111,7 +111,7 @@ namespace drogon
 
 
         size_t _threadNum=1;
-        std::string _viewFilePath;
+        std::vector<std::string> _libFilePaths;
 
         std::unique_ptr<SharedLibManager>_sharedLibManagerPtr;
 
@@ -121,13 +121,21 @@ namespace drogon
 
 using namespace drogon;
 using namespace std::placeholders;
-void HttpAppFrameworkImpl::enableDynamicSharedLibLoading(const std::string &viewPath)
+void HttpAppFrameworkImpl::enableDynamicSharedLibLoading(const std::vector<std::string> &libPaths)
 {
     assert(!_running);
-    if(_viewFilePath.empty())
+    if(_libFilePaths.empty())
     {
-        _viewFilePath=_rootPath+"/"+viewPath;
-        _sharedLibManagerPtr=std::unique_ptr<SharedLibManager>(new SharedLibManager(&_loop,_viewFilePath));
+        for(auto libpath:libPaths)
+        {
+            if(libpath[0]!='/')
+            {
+                _libFilePaths.push_back(_rootPath+"/"+libpath);
+            } else
+                _libFilePaths.push_back(libpath);
+        }
+
+        _sharedLibManagerPtr=std::unique_ptr<SharedLibManager>(new SharedLibManager(&_loop,_libFilePaths));
     }
 }
 void HttpAppFrameworkImpl::setFileTypes(const std::vector<std::string> &types)

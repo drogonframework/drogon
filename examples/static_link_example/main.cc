@@ -113,7 +113,7 @@ int main()
     drogon::HttpAppFramework::registerHttpApiMethod("/api/v1/handle4/{4}/{3}/{1}",func);
 
     //start app framework
-    //drogon::HttpAppFramework::instance().enableDynamicSharedLibLoading();
+    drogon::HttpAppFramework::instance().enableDynamicSharedLibLoading({"/tmp/views"});
     drogon::HttpAppFramework::instance().run();
 
 }

@@ -26,7 +26,7 @@ namespace drogon_ctl
         virtual std::string script() override {return "create view class files";}
 
     protected:
-
+        std::string _outputPath=".";
         void createViewFiles(std::vector<std::string> &cspFileNames);
         int createViewFile(const std::string &script_filename);
         void newViewHeaderFile(std::ofstream &file,const std::string &className);

@@ -16,16 +16,22 @@
 #include <trantor/utils/NonCopyable.h>
 #include <trantor/net/EventLoop.h>
 #include <unordered_map>
+#include <vector>
 namespace drogon{
     class SharedLibManager:public trantor::NonCopyable
     {
     public:
-        SharedLibManager(trantor::EventLoop *loop,const std::string viewPath);
+        SharedLibManager(trantor::EventLoop *loop,const std::vector<std::string> & libPaths);
         ~SharedLibManager(){}
     private:
         void managerLibs();
         trantor::EventLoop *_loop;
-        std::string _viewPath;
-        std::unordered_map<std::string,void *> _dlMap;
+        std::vector<std::string> _libPaths;
+        struct DLStat{
+            void * handle;
+            struct	timespec mTime;
+        };
+        std::unordered_map<std::string,DLStat> _dlMap;
+        void* loadLibs(const std::string &sourceFile);
     };
 }
