@@ -3,9 +3,7 @@
 #ifdef USE_OPENSSL
 #include <openssl/md5.h>
 #else
-namespace drogon{
-    //Implement MD5 function here if OpenSSL lib not found
-}
+#include "Md5.h"
 #endif
 #include <iostream>
 #include <fstream>
@@ -138,10 +136,15 @@ int HttpFile::saveAs(const std::string &filename)
 }
 const std::string HttpFile::getMd5() const
 {
+#ifdef USE_OPENSSL
     MD5_CTX c;
     unsigned char md5[16] = {0};
     MD5_Init(&c);
     MD5_Update(&c, fileContent_.c_str(), fileContent_.size());
     MD5_Final(md5, &c);
     return stringToHex(md5, 16);
+#else
+    Md5Encode encode;
+    return encode.Encode(fileContent_);
+#endif
 }
