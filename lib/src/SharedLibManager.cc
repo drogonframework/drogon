@@ -89,18 +89,13 @@ void SharedLibManager::managerLibs()
                         return;
                     }
 
-
+                    void *oldHandle= nullptr;
                     if(_dlMap.find(filename)!=_dlMap.end())
                     {
                         if(st.st_mtim.tv_sec>_dlMap[filename].mTime.tv_sec)
                         {
                             LOG_DEBUG<<"new csp file:"<<filename;
-                            if(dlclose(_dlMap[filename].handle)==0)
-                            {
-                                LOG_DEBUG<<"close dynamic lib successfully:"<<_dlMap[filename].handle;
-                            }
-                            else
-                            LOG_DEBUG<<dlerror();
+                            oldHandle=_dlMap[filename].handle;
                         }
                         else
                             return;
@@ -116,9 +111,17 @@ void SharedLibManager::managerLibs()
                     auto srcFile=filename.substr(0,pos);
                     srcFile.append(".cc");
                     DLStat dlStat;
-                    dlStat.handle=loadLibs(srcFile);
+                    dlStat.handle=loadLibs(srcFile,oldHandle);
                     dlStat.mTime=st.st_mtim;
-                    _dlMap[filename]=dlStat;
+                    if(dlStat.handle)
+                    {
+                        _dlMap[filename]=dlStat;
+                    }
+                    else
+                    {
+                        dlStat.handle=_dlMap[filename].handle;
+                        _dlMap[filename]=dlStat;
+                    }
                     _loop->runAfter(3.5,[=](){
                         LOG_DEBUG<<"remove file "<<lockFile;
                         if(unlink(lockFile.c_str())==-1)
@@ -131,7 +134,7 @@ void SharedLibManager::managerLibs()
     }
 
 }
-void* SharedLibManager::loadLibs(const std::string &sourceFile) {
+void* SharedLibManager::loadLibs(const std::string &sourceFile,void *oldHld) {
     LOG_DEBUG<<"src:"<<sourceFile;
     std::string cmd="g++ ";
     cmd.append(sourceFile).append(" ")
@@ -144,6 +147,18 @@ void* SharedLibManager::loadLibs(const std::string &sourceFile) {
     if(system(cmd.c_str())==0)
     {
         LOG_DEBUG<<"Compiled successfully";
+        if(oldHld)
+        {
+            if(dlclose(oldHld)==0)
+            {
+                LOG_DEBUG<<"close dynamic lib successfully:"<<oldHld;
+            }
+            else
+            {
+                LOG_DEBUG<<dlerror();
+            }
+        }
+
         //loading so file;
         Handle=dlopen(soFile.c_str(),RTLD_LAZY);
         if(!Handle)

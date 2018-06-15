@@ -28,10 +28,10 @@ namespace drogon{
         trantor::EventLoop *_loop;
         std::vector<std::string> _libPaths;
         struct DLStat{
-            void * handle;
-            struct	timespec mTime;
+            void * handle= nullptr;
+            struct	timespec mTime={0};
         };
         std::unordered_map<std::string,DLStat> _dlMap;
-        void* loadLibs(const std::string &sourceFile);
+        void* loadLibs(const std::string &sourceFile,void *oldHld);
     };
 }
