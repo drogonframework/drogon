@@ -75,6 +75,21 @@ void HttpRequestImpl::parsePremeter()
             }
         }
     }
+    if(type.find("application/json")!=std::string::npos)
+    {
+        //parse json data in request
+        _jsonPtr=std::make_shared<Json::Value>();
+        Json::CharReaderBuilder builder;
+        builder["collectComments"] = false;
+        JSONCPP_STRING errs;
+        std::unique_ptr<Json::CharReader> reader(builder.newCharReader());
+        if (!reader->parse(input.data(), input.data() + input.size(), _jsonPtr.get() , &errs))
+        {
+            LOG_ERROR<<errs;
+            _jsonPtr.reset();
+        }
+
+    }
     LOG_DEBUG<<"premeter:";
     for(auto iter:premeter_)
     {

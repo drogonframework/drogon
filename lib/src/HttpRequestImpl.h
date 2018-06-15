@@ -297,6 +297,11 @@ namespace drogon
         {
             _sessionPtr=session;
         }
+
+        virtual const std::shared_ptr<Json::Value> getJsonObject() const override
+        {
+            return _jsonPtr;
+        }
     private:
         Method method_;
         Version version_;
@@ -307,7 +312,7 @@ namespace drogon
         std::map<std::string, std::string> headers_;
         std::map<std::string, std::string> cookies_;
         std::map<std::string, std::string> premeter_;
-
+        std::shared_ptr<Json::Value> _jsonPtr;
         SessionPtr _sessionPtr;
     protected:
         std::string content_;

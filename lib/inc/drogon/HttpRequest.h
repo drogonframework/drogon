@@ -15,9 +15,10 @@
 #pragma once
 
 #include <drogon/Session.h>
+#include <json/json.h>
 #include <map>
 #include <string>
-
+#include <memory>
 namespace drogon
 {
     /*
@@ -44,5 +45,6 @@ namespace drogon
         virtual SessionPtr session() const=0;
         virtual const std::map<std::string,std::string > & getParameters() const=0;
         virtual ~HttpRequest(){}
+        virtual const std::shared_ptr<Json::Value> getJsonObject() const=0;
     };
 }
