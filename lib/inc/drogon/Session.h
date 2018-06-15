@@ -18,6 +18,8 @@
 #include <map>
 #include <mutex>
 #include <thread>
+#include <drogon/config.h>
+
 #ifdef USE_STD_ANY
 
 #include <any>

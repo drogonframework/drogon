@@ -15,6 +15,7 @@
 
 #pragma once
 
+#include <drogon/config.h>
 #include <trantor/net/TcpServer.h>
 #include <trantor/utils/NonCopyable.h>
 #include <functional>

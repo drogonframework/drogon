@@ -134,7 +134,7 @@ void SharedLibManager::managerLibs()
 void* SharedLibManager::loadLibs(const std::string &sourceFile) {
     LOG_DEBUG<<"src:"<<sourceFile;
     std::string cmd="g++ ";
-    cmd.append(sourceFile).append(" ").append(definitions)
+    cmd.append(sourceFile).append(" ")
             .append(compileFlags).append(includeDirs).append(" -shared -fPIC --no-gnu-unique -o ");
     auto pos=sourceFile.rfind(".");
     auto soFile=sourceFile.substr(0,pos);

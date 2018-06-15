@@ -15,6 +15,8 @@
 #pragma once
 
 #include <trantor/utils/Logger.h>
+#include <drogon/config.h>
+
 #ifdef USE_STD_ANY
 
 #include <any>

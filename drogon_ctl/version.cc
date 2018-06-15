@@ -31,5 +31,5 @@ void version::handleCommand(std::vector<std::string> &parameters)
     std::cout<<"drogon ctl tools"<<std::endl;
     std::cout<<"version:"<<VERSION<<std::endl;
     std::cout<<"git commit:"<<VERSION_MD5<<std::endl;
-    std::cout<<"compile config:"<<definitions<<compileFlags<<includeDirs<<std::endl;
+    std::cout<<"compile config:"<<compileFlags<<includeDirs<<std::endl;
 }
