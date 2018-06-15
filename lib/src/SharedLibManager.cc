@@ -105,7 +105,7 @@ void SharedLibManager::managerLibs()
                         else
                             return;
                     }
-                    
+
                     {
                         std::ofstream fout(lockFile);
                     }
