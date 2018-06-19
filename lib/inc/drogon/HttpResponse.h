@@ -27,6 +27,7 @@
 #pragma once
 
 #include <drogon/HttpViewData.h>
+#include <drogon/Cookie.h>
 #include <json/json.h>
 #include <string>
 #include <memory>
@@ -98,6 +99,8 @@ namespace drogon
         virtual void addHeader(const char* start, const char* colon, const char* end)=0;
 
         virtual void addCookie(const std::string& key, const std::string& value)=0;
+
+        virtual void addCookie(const Cookie &cookie)=0;
 
         virtual void setBody(const std::string& body)=0;
 

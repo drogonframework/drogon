@@ -150,7 +150,7 @@ namespace drogon
                             cpos++;
                         cookie_name=cookie_name.substr(cpos);
                         std::string cookie_value = coo.substr(epos + 1);
-                        cookies_[cookie_name] = cookie_value;
+                        cookies_.insert(std::make_pair(cookie_name,Cookie(cookie_name,cookie_value)));
                     }
                     value=value.substr(pos+1);
                 }
@@ -165,7 +165,7 @@ namespace drogon
                             cpos++;
                         cookie_name=cookie_name.substr(cpos);
                         std::string cookie_value = coo.substr(epos + 1);
-                        cookies_[cookie_name] = cookie_value;
+                        cookies_.insert(std::make_pair(cookie_name,Cookie(cookie_name,cookie_value)));
                     }
                 }
             }
@@ -173,8 +173,14 @@ namespace drogon
 
         virtual void addCookie(const std::string& key, const std::string& value) override
         {
-            cookies_[key] = value;
+            cookies_.insert(std::make_pair(key,Cookie(key,value)));
         }
+
+        virtual void addCookie(const Cookie &cookie) override
+        {
+            cookies_.insert(std::make_pair(cookie.key(),cookie));
+        }
+
         virtual void setBody(const std::string& body) override
         {
             body_ = body;
@@ -217,7 +223,7 @@ namespace drogon
 
     private:
         std::map<std::string, std::string> headers_;
-        std::map<std::string, std::string> cookies_;
+        std::map<std::string, Cookie> cookies_;
         HttpStatusCode statusCode_;
         // FIXME: add http version
         Version v_;

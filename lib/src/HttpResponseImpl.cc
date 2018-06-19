@@ -209,15 +209,10 @@ void HttpResponseImpl::appendToBuffer(MsgBuffer* output) const
         output->append("\r\n");
     }
     if(cookies_.size() > 0) {
-        output->append("Set-Cookie: ");
         for(auto it = cookies_.begin(); it != cookies_.end(); it++) {
-            output->append(it->first);
-            output->append("= ");
-            output->append(it->second);
-            output->append(";");
+
+             output->append(it->second.cookieString());
         }
-        output->unwrite(1);//delete last ';'
-        output->append("\r\n");
     }
 
     output->append("\r\n");
