@@ -277,7 +277,7 @@ bool HttpContext::parseResponse(MsgBuffer *buf)
                     LOG_INFO << "content len=" << len;
                     if (len != "")
                     {
-                        response_.left_body_length_ = atoi(len.c_str());
+                        response_._left_body_length = atoi(len.c_str());
                         res_state_ = HttpResponseParseState::kExpectBody;
                     }
                     else
@@ -308,28 +308,28 @@ bool HttpContext::parseResponse(MsgBuffer *buf)
             //LOG_INFO << "expectBody:buf=" << buf;
             if (buf->readableBytes() == 0)
             {
-                if (response_.left_body_length_ == 0)
+                if (response_._left_body_length == 0)
                 {
                     res_state_ = HttpResponseParseState::kGotAll;
                 }
                 break;
             }
-            if (response_.left_body_length_ >= buf->readableBytes())
+            if (response_._left_body_length >= buf->readableBytes())
             {
-                response_.left_body_length_ -= buf->readableBytes();
-                response_.body_ += std::string(buf->peek(), buf->readableBytes());
+                response_._left_body_length -= buf->readableBytes();
+                response_._body += std::string(buf->peek(), buf->readableBytes());
                 buf->retrieveAll();
             }
             else
             {
-                response_.body_ += std::string(buf->peek(), response_.left_body_length_);
+                response_._body += std::string(buf->peek(), response_._left_body_length);
                 buf->retrieve(request_.contentLen);
-                response_.left_body_length_ = 0;
+                response_._left_body_length = 0;
             }
-            if (response_.left_body_length_ == 0)
+            if (response_._left_body_length == 0)
             {
                 res_state_ = HttpResponseParseState::kGotAll;
-                LOG_TRACE << "post got all:len=" << response_.left_body_length_;
+                LOG_TRACE << "post got all:len=" << response_._left_body_length;
                 //LOG_INFO<<"content:"<<request_.content_;
                 LOG_TRACE << "content(END)";
                 hasMore = false;
@@ -337,7 +337,7 @@ bool HttpContext::parseResponse(MsgBuffer *buf)
         }
         else if (res_state_ == HttpResponseParseState::kExpectClose)
         {
-            response_.body_ += std::string(buf->peek(), buf->readableBytes());
+            response_._body += std::string(buf->peek(), buf->readableBytes());
             buf->retrieveAll();
             break;
         }
@@ -349,9 +349,9 @@ bool HttpContext::parseResponse(MsgBuffer *buf)
                 //chunk length line
                 std::string len(buf->peek(), crlf - buf->peek());
                 char *end;
-                response_.current_chunk_length_ = strtol(len.c_str(), &end, 16);
-                LOG_TRACE << "chun length : " << response_.current_chunk_length_;
-                if (response_.current_chunk_length_ != 0)
+                response_._current_chunk_length = strtol(len.c_str(), &end, 16);
+                LOG_TRACE << "chun length : " << response_._current_chunk_length;
+                if (response_._current_chunk_length != 0)
                 {
                     res_state_ = HttpResponseParseState::kExpectChunkBody;
                 }
@@ -371,20 +371,20 @@ bool HttpContext::parseResponse(MsgBuffer *buf)
             const char *crlf = buf->findCRLF();
             if (crlf)
             {
-                if (response_.current_chunk_length_ == (size_t)(crlf - buf->peek()))
+                if (response_._current_chunk_length == (size_t)(crlf - buf->peek()))
                 {
                     //current chunk end crlf
-                    response_.body_ += std::string(buf->peek(), response_.current_chunk_length_);
+                    response_._body += std::string(buf->peek(), response_._current_chunk_length);
                     buf->retrieveUntil(crlf + 2);
-                    response_.current_chunk_length_ = 0;
+                    response_._current_chunk_length = 0;
                     res_state_ = HttpResponseParseState::kExpectChunkLen;
                 }
-                else if (response_.current_chunk_length_ > (size_t)(crlf - buf->peek()))
+                else if (response_._current_chunk_length > (size_t)(crlf - buf->peek()))
                 {
                     //current chunk body crlf
-                    response_.body_ += std::string(buf->peek(), crlf - buf->peek() + 1);
+                    response_._body += std::string(buf->peek(), crlf - buf->peek() + 1);
                     buf->retrieveUntil(crlf + 2);
-                    response_.current_chunk_length_ -= (crlf - buf->peek() + 2);
+                    response_._current_chunk_length -= (crlf - buf->peek() + 2);
                 }
             }
             else

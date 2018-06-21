@@ -187,29 +187,29 @@ const std::string HttpResponseImpl::web_response_code_to_string(int code)
 void HttpResponseImpl::appendToBuffer(MsgBuffer* output) const
 {
     char buf[32];
-    snprintf(buf, sizeof buf, "HTTP/1.1 %d ", statusCode_);
+    snprintf(buf, sizeof buf, "HTTP/1.1 %d ", _statusCode);
     output->append(buf);
-    output->append(statusMessage_);
+    output->append(_statusMessage);
     output->append("\r\n");
-    snprintf(buf, sizeof buf, "Content-Length: %lu\r\n", body_.size());
+    snprintf(buf, sizeof buf, "Content-Length: %lu\r\n", _body.size());
     output->append(buf);
-    if (closeConnection_) {
+    if (_closeConnection) {
         output->append("Connection: close\r\n");
     } else {
 
         output->append("Connection: Keep-Alive\r\n");
     }
 
-    for (std::map<std::string, std::string>::const_iterator it = headers_.begin();
-         it != headers_.end();
+    for (auto it = _headers.begin();
+         it != _headers.end();
          ++it) {
         output->append(it->first);
         output->append(": ");
         output->append(it->second);
         output->append("\r\n");
     }
-    if(cookies_.size() > 0) {
-        for(auto it = cookies_.begin(); it != cookies_.end(); it++) {
+    if(_cookies.size() > 0) {
+        for(auto it = _cookies.begin(); it != _cookies.end(); it++) {
 
              output->append(it->second.cookieString());
         }
@@ -218,6 +218,6 @@ void HttpResponseImpl::appendToBuffer(MsgBuffer* output) const
     output->append("\r\n");
 
 	LOG_TRACE<<"reponse(no body):"<<output->peek();
-	output->append(body_);
+	output->append(_body);
 	
 }

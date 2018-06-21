@@ -66,62 +66,62 @@ namespace drogon
     public:
 
         explicit HttpResponseImpl()
-                : statusCode_(kUnknown),
-                  closeConnection_(false),
-                  left_body_length_(0),
-                  current_chunk_length_(0)
+                : _statusCode(kUnknown),
+                  _closeConnection(false),
+                  _left_body_length(0),
+                  _current_chunk_length(0)
         {
         }
 
         virtual void setStatusCode(HttpStatusCode code) override
         {
-            statusCode_ = code;
+            _statusCode = code;
             setStatusMessage(web_response_code_to_string(code));
         }
 
         virtual void setStatusCode(HttpStatusCode code, const std::string& status_message) override
         {
-            statusCode_ = code;
+            _statusCode = code;
             setStatusMessage(status_message);
         }
 
         virtual void setVersion(const Version v) override
         {
-            v_ = v;
+            _v = v;
         }
 
 
         virtual void setCloseConnection(bool on) override
         {
-            closeConnection_ = on;
+            _closeConnection = on;
         }
 
         virtual bool closeConnection() const override
         {
-            return closeConnection_;
+            return _closeConnection;
         }
 
         virtual void setContentTypeCode(uint8_t type) override
         {
-            contentType_=type;
+            _contentType=type;
             setContentType(web_content_type_to_string(type));
         }
 
 
         virtual std::string getHeader(const std::string& key) override
         {
-            if(headers_.find(key) == headers_.end())
+            if(_headers.find(key) == _headers.end())
             {
                 return "";
             }
             else
             {
-                return headers_[key];
+                return _headers[key];
             }
         }
         virtual void addHeader(const std::string& key, const std::string& value) override
         {
-            headers_[key] = value;
+            _headers[key] = value;
         }
 
         virtual void addHeader(const char* start, const char* colon, const char* end) override
@@ -135,7 +135,7 @@ namespace drogon
             while (!value.empty() && isspace(value[value.size() - 1])) {
                 value.resize(value.size() - 1);
             }
-            headers_[field] = value;
+            _headers[field] = value;
             transform(field.begin(), field.end(), field.begin(), ::tolower);
             if(field == "cookie") {
                 //LOG_INFO<<"cookies!!!:"<<value;
@@ -150,7 +150,7 @@ namespace drogon
                             cpos++;
                         cookie_name=cookie_name.substr(cpos);
                         std::string cookie_value = coo.substr(epos + 1);
-                        cookies_.insert(std::make_pair(cookie_name,Cookie(cookie_name,cookie_value)));
+                        _cookies.insert(std::make_pair(cookie_name,Cookie(cookie_name,cookie_value)));
                     }
                     value=value.substr(pos+1);
                 }
@@ -165,7 +165,7 @@ namespace drogon
                             cpos++;
                         cookie_name=cookie_name.substr(cpos);
                         std::string cookie_value = coo.substr(epos + 1);
-                        cookies_.insert(std::make_pair(cookie_name,Cookie(cookie_name,cookie_value)));
+                        _cookies.insert(std::make_pair(cookie_name,Cookie(cookie_name,cookie_value)));
                     }
                 }
             }
@@ -173,38 +173,38 @@ namespace drogon
 
         virtual void addCookie(const std::string& key, const std::string& value) override
         {
-            cookies_.insert(std::make_pair(key,Cookie(key,value)));
+            _cookies.insert(std::make_pair(key,Cookie(key,value)));
         }
 
         virtual void addCookie(const Cookie &cookie) override
         {
-            cookies_.insert(std::make_pair(cookie.key(),cookie));
+            _cookies.insert(std::make_pair(cookie.key(),cookie));
         }
 
         virtual void setBody(const std::string& body) override
         {
-            body_ = body;
+            _body = body;
         }
         virtual void setBody(std::string&& body) override
         {
-            body_ = std::move(body);
+            _body = std::move(body);
         }
         virtual void redirect(const std::string& url) override
         {
-            headers_["Location"] = url;
+            _headers["Location"] = url;
         }
         void appendToBuffer(MsgBuffer* output) const;
 
         virtual void clear() override
         {
-            statusCode_ = kUnknown;
-            v_ = kHttp11;
-            statusMessage_.clear();
-            headers_.clear();
-            cookies_.clear();
-            body_.clear();
-            left_body_length_ = 0;
-            current_chunk_length_ = 0;
+            _statusCode = kUnknown;
+            _v = kHttp11;
+            _statusMessage.clear();
+            _headers.clear();
+            _cookies.clear();
+            _body.clear();
+            _left_body_length = 0;
+            _current_chunk_length = 0;
         }
 
 //	void setReceiveTime(trantor::Date t)
@@ -214,7 +214,7 @@ namespace drogon
 
         virtual std::string getBody() const override
         {
-            return body_;
+            return _body;
         }
 
     protected:
@@ -222,17 +222,17 @@ namespace drogon
         static const std::string web_response_code_to_string(int code);
 
     private:
-        std::map<std::string, std::string> headers_;
-        std::map<std::string, Cookie> cookies_;
-        HttpStatusCode statusCode_;
+        std::map<std::string, std::string> _headers;
+        std::map<std::string, Cookie> _cookies;
+        HttpStatusCode _statusCode;
         // FIXME: add http version
-        Version v_;
-        std::string statusMessage_;
-        bool closeConnection_;
-        std::string body_;
-        size_t left_body_length_;
-        size_t current_chunk_length_;
-        uint8_t contentType_=CT_TEXT_HTML;
+        Version _v;
+        std::string _statusMessage;
+        bool _closeConnection;
+        std::string _body;
+        size_t _left_body_length;
+        size_t _current_chunk_length;
+        uint8_t _contentType=CT_TEXT_HTML;
         //trantor::Date receiveTime_;
 
         void setContentType(const std::string& contentType)
@@ -241,7 +241,7 @@ namespace drogon
         }
         void setStatusMessage(const std::string& message)
         {
-            statusMessage_ = message;
+            _statusMessage = message;
         }
     };
 
