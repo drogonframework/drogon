@@ -557,11 +557,9 @@ void HttpAppFrameworkImpl::readSendFile(const std::string& filePath,const HttpRe
     std::streambuf * pbuf = infile.rdbuf();
     std::streamsize size = pbuf->pubseekoff(0,infile.end);
     pbuf->pubseekoff(0,infile.beg);       // rewind
-
     std::string str;
-    str.reserve(size);
-    pbuf->sgetn (&str[0],size);
     str.resize(size);
+    pbuf->sgetn (&str[0],size);
     infile.close();
 
     resp->setStatusCode(HttpResponse::k200Ok);
