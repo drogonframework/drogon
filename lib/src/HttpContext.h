@@ -121,6 +121,7 @@ namespace drogon
           return response_;
         }
 
+
     private:
         bool processRequestLine(const char *begin, const char *end);
         bool processResponseLine(const char *begin, const char *end);

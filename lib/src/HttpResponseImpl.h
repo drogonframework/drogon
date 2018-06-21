@@ -31,6 +31,7 @@
 
 #include <drogon/HttpResponse.h>
 #include <trantor/utils/MsgBuffer.h>
+#include <trantor/net/InetAddress.h>
 #include <map>
 
 #include <string>
@@ -189,6 +190,7 @@ namespace drogon
         {
             _body = std::move(body);
         }
+
         virtual void redirect(const std::string& url) override
         {
             _headers["Location"] = url;
@@ -233,6 +235,7 @@ namespace drogon
         size_t _left_body_length;
         size_t _current_chunk_length;
         uint8_t _contentType=CT_TEXT_HTML;
+
         //trantor::Date receiveTime_;
 
         void setContentType(const std::string& contentType)

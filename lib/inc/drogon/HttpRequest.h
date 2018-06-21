@@ -15,6 +15,8 @@
 #pragma once
 
 #include <drogon/Session.h>
+#include <trantor/net/InetAddress.h>
+#include <trantor/utils/Date.h>
 #include <json/json.h>
 #include <map>
 #include <string>
@@ -44,6 +46,9 @@ namespace drogon
         virtual Version getVersion() const=0;
         virtual SessionPtr session() const=0;
         virtual const std::map<std::string,std::string > & getParameters() const=0;
+        virtual const trantor::InetAddress & peerAddr() const=0;
+        virtual const trantor::InetAddress & localAddr() const=0;
+        virtual const trantor::Date & receiveDate() const=0;
         virtual ~HttpRequest(){}
         virtual const std::shared_ptr<Json::Value> getJsonObject() const=0;
     };

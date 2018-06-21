@@ -325,6 +325,7 @@ bool HttpAppFrameworkImpl::doFilters(const std::vector<std::string> &filters,
 
 void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequest& req,const std::function<void (HttpResponse &)> & callback)
 {
+    LOG_TRACE << "new request:"<<req.peerAddr().toIpPort()<<"->"<<req.localAddr().toIpPort();
     LOG_TRACE << "Headers " << req.methodString() << " " << req.path();
 
 #if 1

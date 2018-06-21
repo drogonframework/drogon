@@ -31,7 +31,7 @@
 #include <trantor/utils/NonCopyable.h>
 #include <trantor/utils/Logger.h>
 #include <trantor/utils/MsgBuffer.h>
-
+#include <trantor/net/InetAddress.h>
 #include <map>
 #include <assert.h>
 #include <stdio.h>
@@ -48,71 +48,71 @@ namespace drogon
 
 
         HttpRequestImpl()
-                : method_(kInvalid),
-                  version_(kUnknown),
+                : _method(kInvalid),
+                  _version(kUnknown),
                   contentLen(0)
         {
         }
 
         void setVersion(Version v)
         {
-            version_ = v;
+            _version = v;
         }
 
         Version getVersion() const override
         {
-            return version_;
+            return _version;
         }
         void parsePremeter();
         bool setMethod(const char* start, const char* end)
         {
 
-            assert(method_ == kInvalid);
+            assert(_method == kInvalid);
             std::string m(start, end);
             if (m == "GET") {
-                method_ = kGet;
+                _method = kGet;
             } else if (m == "POST") {
-                method_ = kPost;
+                _method = kPost;
             } else if (m == "HEAD") {
-                method_ = kHead;
+                _method = kHead;
             } else if (m == "PUT") {
-                method_ = kPut;
+                _method = kPut;
             } else if (m == "DELETE") {
-                method_ = kDelete;
+                _method = kDelete;
             } else {
-                method_ = kInvalid;
+                _method = kInvalid;
             }
-            if(method_!=kInvalid)
+            if(_method!=kInvalid)
             {
                 content_="";
-                query_="";
-                cookies_.clear();
-                premeter_.clear();
-                headers_.clear();
+                _query="";
+                _cookies.clear();
+                _parameters.clear();
+                _headers.clear();
             }
-            return method_ != kInvalid;
+            return _method != kInvalid;
         }
 
         bool setMethod(const Method method)
         {
-            method_ = method;
+            _method = method;
             content_="";
-            query_="";
-            cookies_.clear();
-            premeter_.clear();
-            headers_.clear();
+            _query="";
+            _cookies.clear();
+            _parameters.clear();
+            _headers.clear();
             return true;
         }
 
         Method method() const override
         {
-            return method_;
+            return _method;
         }
 
         const char* methodString() const override
         {
             const char* result = "UNKNOWN";
-            switch(method_) {
+            switch(_method) {
                 case kGet:
                     result = "GET";
                     break;
@@ -136,29 +136,29 @@ namespace drogon
 
         void setPath(const char* start, const char* end)
         {
-            path_=urlDecode(std::string(start,end));
+            _path=urlDecode(std::string(start,end));
         }
 //        void setPath(const std::string& path)
 //        {
-//            path_ = path;
+//            _path = path;
 //        }
 
         const std::map<std::string,std::string > & getParameters() const override
         {
-            return premeter_;
+            return _parameters;
         }
         const std::string& path() const override
         {
-            return path_;
+            return _path;
         }
 
         void setQuery(const char* start, const char* end)
         {
-            query_.assign(start, end);
+            _query.assign(start, end);
         }
         void setQuery(const std::string& query)
         {
-            query_ = query;
+            _query = query;
         }
 //            const string& content() const
 //            {
@@ -166,22 +166,44 @@ namespace drogon
 //            }
         const std::string& query() const override
         {
-            if(query_!="")
-                return query_;
-            if(method_==kPost)
+            if(_query!="")
+                return _query;
+            if(_method==kPost)
                 return content_;
-            return query_;
+            return _query;
         }
 
-//    void setReceiveTime(Timestamp t)
-//    {
-//        receiveTime_ = t;
-//    }
+
 //
 //    Timestamp receiveTime() const
 //    {
 //        return receiveTime_;
 //    }
+
+        virtual const trantor::InetAddress & peerAddr() const override
+        {
+            return _peer;
+        }
+        virtual const trantor::InetAddress & localAddr() const override
+        {
+            return _local;
+        }
+        virtual const trantor::Date & receiveDate() const override
+        {
+            return _date;
+        }
+        void setReceiveDate(const trantor::Date &date)
+        {
+            _date=date;
+        }
+        void setPeerAddr(const trantor::InetAddress &peer)
+        {
+            _peer=peer;
+        }
+        void setLocalAddr(const trantor::InetAddress &local)
+        {
+            _local=local;
+        }
 
         void addHeader(const char* start, const char* colon, const char* end)
         {
@@ -194,7 +216,7 @@ namespace drogon
             while (!value.empty() && isspace(value[value.size() - 1])) {
                 value.resize(value.size() - 1);
             }
-            headers_[field] = value;
+            _headers[field] = value;
             transform(field.begin(), field.end(), field.begin(), ::tolower);
             if(field == "cookie") {
                 LOG_TRACE<<"cookies!!!:"<<value;
@@ -209,7 +231,7 @@ namespace drogon
                             cpos++;
                         cookie_name=cookie_name.substr(cpos);
                         std::string cookie_value = coo.substr(epos + 1);
-                        cookies_[cookie_name] = cookie_value;
+                        _cookies[cookie_name] = cookie_value;
                     }
                     value=value.substr(pos+1);
                 }
@@ -224,7 +246,7 @@ namespace drogon
                             cpos++;
                         cookie_name=cookie_name.substr(cpos);
                         std::string cookie_value = coo.substr(epos + 1);
-                        cookies_[cookie_name] = cookie_value;
+                        _cookies[cookie_name] = cookie_value;
                     }
                 }
             }
@@ -234,8 +256,8 @@ namespace drogon
         std::string getHeader(const std::string& field) const
         {
             std::string result;
-            std::map<std::string, std::string>::const_iterator it = headers_.find(field);
-            if (it != headers_.end()) {
+            std::map<std::string, std::string>::const_iterator it = _headers.find(field);
+            if (it != _headers.end()) {
                 result = it->second;
             }
             return result;
@@ -244,20 +266,20 @@ namespace drogon
         std::string getCookie(const std::string& field) const
         {
             std::string result;
-            std::map<std::string, std::string>::const_iterator it = cookies_.find(field);
-            if (it != cookies_.end()) {
+            std::map<std::string, std::string>::const_iterator it = _cookies.find(field);
+            if (it != _cookies.end()) {
                 result = it->second;
             }
             return result;
         }
         const std::map<std::string, std::string>& headers() const override
         {
-            return headers_;
+            return _headers;
         }
 
         const std::map<std::string, std::string>& cookies() const override
         {
-            return cookies_;
+            return _cookies;
         }
 
         const std::string& getContent() const
@@ -266,11 +288,22 @@ namespace drogon
         }
         void swap(HttpRequestImpl& that)
         {
-            std::swap(method_, that.method_);
-            path_.swap(that.path_);
-            query_.swap(that.query_);
-            //receiveTime_.swap(that.receiveTime_);
-            headers_.swap(that.headers_);
+            std::swap(_method, that._method);
+            std::swap(_version,that._version);
+            _path.swap(that._path);
+            _query.swap(that._query);
+
+            _headers.swap(that._headers);
+            _cookies.swap(that._cookies);
+            _parameters.swap(that._parameters);
+            _jsonPtr.swap(that._jsonPtr);
+            _sessionPtr.swap(that._sessionPtr);
+
+            std::swap(_peer,that._peer);
+            std::swap(_local,that._local);
+            _date.swap(that._date);
+            content_.swap(that.content_);
+            std::swap(contentLen,that.contentLen);
         }
 
         void setContent(const std::string& content)
@@ -279,11 +312,11 @@ namespace drogon
         }
         void addHeader(const std::string& key, const std::string& value)
         {
-            headers_[key] = value;
+            _headers[key] = value;
         }
         void addCookie(const std::string& key, const std::string& value)
         {
-            cookies_[key] = value;
+            _cookies[key] = value;
         }
 
         void appendToBuffer(MsgBuffer* output) const;
@@ -303,17 +336,20 @@ namespace drogon
             return _jsonPtr;
         }
     private:
-        Method method_;
-        Version version_;
-        std::string path_;
-        std::string query_;
+        Method _method;
+        Version _version;
+        std::string _path;
+        std::string _query;
 
         //trantor::Date receiveTime_;
-        std::map<std::string, std::string> headers_;
-        std::map<std::string, std::string> cookies_;
-        std::map<std::string, std::string> premeter_;
+        std::map<std::string, std::string> _headers;
+        std::map<std::string, std::string> _cookies;
+        std::map<std::string, std::string> _parameters;
         std::shared_ptr<Json::Value> _jsonPtr;
         SessionPtr _sessionPtr;
+        trantor::InetAddress _peer;
+        trantor::InetAddress _local;
+        trantor::Date _date;
     protected:
         std::string content_;
         size_t contentLen;

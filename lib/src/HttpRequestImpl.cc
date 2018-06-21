@@ -33,7 +33,7 @@ void HttpRequestImpl::parsePremeter()
 {
     const std::string &type=getHeader("Content-Type");
     const std::string &input=query();
-    if(method_==kGet||(method_==kPost&&(type==""||type.find("application/x-www-form-urlencoded")!=std::string::npos)))
+    if(_method==kGet||(_method==kPost&&(type==""||type.find("application/x-www-form-urlencoded")!=std::string::npos)))
     {
 
         std::string::size_type pos=0;
@@ -54,7 +54,7 @@ void HttpRequestImpl::parsePremeter()
                 std::string pvalue = coo.substr(epos + 1);
                 std::string pdecode=urlDecode(pvalue);
                 std::string keydecode=urlDecode(key);
-                premeter_[keydecode] = pdecode;
+                _parameters[keydecode] = pdecode;
             }
             value=value.substr(pos+1);
         }
@@ -71,7 +71,7 @@ void HttpRequestImpl::parsePremeter()
                 std::string pvalue = coo.substr(epos + 1);
                 std::string pdecode=urlDecode(pvalue);
                 std::string keydecode=urlDecode(key);
-                premeter_[keydecode] = pdecode;
+                _parameters[keydecode] = pdecode;
             }
         }
     }
@@ -90,8 +90,8 @@ void HttpRequestImpl::parsePremeter()
         }
 
     }
-    LOG_DEBUG<<"premeter:";
-    for(auto iter:premeter_)
+    LOG_DEBUG<<"_parameters:";
+    for(auto iter:_parameters)
     {
         LOG_DEBUG<<iter.first<<"="<<iter.second;
     }
@@ -100,7 +100,7 @@ void HttpRequestImpl::parsePremeter()
 
 void HttpRequestImpl::appendToBuffer(MsgBuffer* output) const
 {
-	switch(method_)
+	switch(_method)
 	{
 	case kDelete:
 		output->append("DELETE ");
@@ -121,9 +121,9 @@ void HttpRequestImpl::appendToBuffer(MsgBuffer* output) const
 		return;
 	}
 
-	if(path_.size() != 0)
+	if(_path.size() != 0)
 	{
-		output->append(path_);
+		output->append(_path);
 		output->append(" ");
 	}
 	else
@@ -131,11 +131,11 @@ void HttpRequestImpl::appendToBuffer(MsgBuffer* output) const
 		output->append("/ ");
 	}
 
-	if(version_ == kHttp11)
+	if(_version == kHttp11)
 	{
 		output->append("HTTP/1.1");
 	}
-	else if(version_ == kHttp10)
+	else if(_version == kHttp10)
 	{
 		output->append("HTTP/1.0");
 	}
@@ -145,17 +145,17 @@ void HttpRequestImpl::appendToBuffer(MsgBuffer* output) const
 	}
     output->append("\r\n");
 
-    for (std::map<std::string, std::string>::const_iterator it = headers_.begin();
-         it != headers_.end();
+    for (std::map<std::string, std::string>::const_iterator it = _headers.begin();
+         it != _headers.end();
          ++it) {
         output->append(it->first);
         output->append(": ");
         output->append(it->second);
         output->append("\r\n");
     }
-    if(cookies_.size() > 0) {
+    if(_cookies.size() > 0) {
         output->append("Set-Cookie: ");
-        for(auto it = cookies_.begin(); it != cookies_.end(); it++) {
+        for(auto it = _cookies.begin(); it != _cookies.end(); it++) {
             output->append(it->first);
             output->append("= ");
             output->append(it->second);
