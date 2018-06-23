@@ -4,9 +4,9 @@ project (DROGON CXX)
 
 
 
-EXEC_PROGRAM (gcc ARGS "--version | grep '^gcc'|awk '{print $3}' | sed s'/)//g'" OUTPUT_VARIABLE version)
+EXEC_PROGRAM (gcc ARGS "--version | grep '^gcc'|awk '{print $3}' | sed s'/)//g' | sed s'/-.*//g'" OUTPUT_VARIABLE version)
 MESSAGE(STATUS "This is gcc version:: " ${version})
-if(version LESS 4.7.0)
+if(version LESS 4.9.0)
     MESSAGE(STATUS "gcc is too old")
     stop()
 elseif (version LESS 6.1.0)
