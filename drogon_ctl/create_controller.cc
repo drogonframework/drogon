@@ -170,7 +170,7 @@ void create_controller::createApiController(std::vector<std::string> &apiClasses
 void create_controller::createApiController(const std::string &className)
 {
     std::regex regex("::");
-    std::string ctlName=std::regex_replace(className,regex,"_");
+    std::string ctlName=std::regex_replace(className,regex,std::string("_"));
 
     std::cout<<"create api controller:"<<className<<std::endl;
     std::string headFileName=ctlName+".h";

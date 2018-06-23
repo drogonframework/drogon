@@ -1,5 +1,7 @@
-link_libraries(drogon trantor uuid pthread jsoncpp ssl crypto dl)
-
+link_libraries(drogon trantor uuid pthread jsoncpp dl)
+if(OpenSSL_FOUND)
+link_libraries(ssl crypto)
+endif()
 FILE(GLOB SCP_LIST ${CMAKE_CURRENT_SOURCE_DIR}/static_link_example/*.csp)
 foreach(cspFile ${SCP_LIST})
     message(STATUS "cspFile:" ${cspFile})

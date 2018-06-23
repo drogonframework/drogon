@@ -19,18 +19,20 @@
 
 #ifdef USE_STD_ANY
 
-#include <any>
-using std::any;
-using std::any_cast;
+  #include <any>
+  using std::any;
+  using std::any_cast;
 
-#elif USE_BOOST
+#else 
+  #ifdef USE_BOOST
 
-#include <boost/any.hpp>
-using boost::any;
-using boost::any_cast;
+    #include <boost/any.hpp>
+    using boost::any;
+    using boost::any_cast;
 
-#else
-#error,must use c++17 or boost
+  #else
+    #error,must use c++17 or boost
+  #endif
 #endif
 
 

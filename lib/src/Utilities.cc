@@ -1,7 +1,8 @@
 #include "Utilities.h"
 #include <string.h>
+#ifdef USE_OPENSSL
 #include <openssl/sha.h>
-
+#endif
 static const std::string base64_chars =
         "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                 "abcdefghijklmnopqrstuvwxyz"

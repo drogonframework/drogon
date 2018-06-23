@@ -102,7 +102,7 @@ namespace drogon
         std::set<std::string> _fileTypeSet={"html","jpg"};
         std::string _rootPath=".";
 
-        std::atomic_bool _running=false;
+        std::atomic_bool _running;
 
         //tool funcs
 
@@ -150,7 +150,7 @@ void HttpAppFrameworkImpl::initRegex() {
     for(auto binder:_apiCtrlVector)
     {
         std::regex reg("\\(\\[\\^/\\]\\*\\)");
-        std::string tmp=std::regex_replace(binder.pathParameterPattern,reg,"[^/]*");
+        std::string tmp=std::regex_replace(binder.pathParameterPattern,reg,std::string("[^/]*"));
         regString.append("(").append(tmp).append(")|");
     }
     if(regString.length()>0)
@@ -227,7 +227,7 @@ void HttpAppFrameworkImpl::addApiPath(const std::string &path,
     _binder.queryParametersPlaces=std::move(parametersPlaces);
     _binder.binderPtr=binder;
     _binder.filtersName=filters;
-    _binder.pathParameterPattern=std::regex_replace(originPath,regex,"([^/]*)");
+    _binder.pathParameterPattern=std::regex_replace(originPath,regex,std::string("([^/]*)"));
     std::lock_guard<std::mutex> guard(_apiCtrlMutex);
     _apiCtrlVector.push_back(std::move(_binder));
 }
