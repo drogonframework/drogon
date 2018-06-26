@@ -6,7 +6,7 @@ project (DROGON CXX)
 
 EXEC_PROGRAM (gcc ARGS "--version | grep '^gcc'|awk '{print $3}' | sed s'/)//g' | sed s'/-.*//g'" OUTPUT_VARIABLE version)
 MESSAGE(STATUS "This is gcc version:: " ${version})
-if(version LESS 4.9.0)
+if(version LESS 4.8.5)
     MESSAGE(STATUS "gcc is too old")
     stop()
 elseif (version LESS 6.1.0)
@@ -25,10 +25,20 @@ endif()
 
 
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake_modules/)
-
+#jsoncpp
 find_package (Jsoncpp REQUIRED)
 include_directories(${JSONCPP_INCLUDE_DIRS})
-link_directories(${JSONCPP_LIBRARY_DIRS})
+#message(STATUS ${JSONCPP_LIBRARIES})
+if(NOT EXISTS ${JSONCPP_INCLUDE_DIRS}/json/version.h)
+message(STATUS "jsoncpp lib is too old.....stop")
+stop()
+endif()
+EXEC_PROGRAM(cat ARGS "${JSONCPP_INCLUDE_DIRS}/json/version.h |grep JSONCPP_VERSION_STRING|sed s'/.*define/define/'|awk '{printf $3}'|sed s'/\"//g'" OUTPUT_VARIABLE jsoncpp_ver)
+message(STATUS "jsoncpp verson:" ${jsoncpp_ver})
+if(jsoncpp_ver LESS 1.8)
+MESSAGE(STATUS "jsoncpp lib is too old,please get new version from https://github.com/open-source-parsers/jsoncpp")
+stop()
+endif()
 find_package (UUID REQUIRED)
 
 find_package (OpenSSL)
