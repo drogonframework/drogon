@@ -27,6 +27,8 @@ namespace drogon{
         struct FunctionTraits<
                 ReturnType(ClassType::*)(Arguments...) const
         > : FunctionTraits<ReturnType(*)(Arguments...)> {
+            static const bool isClassFunction=true;
+            typedef ClassType class_type;
             static const std::string name(){return std::string("Class Function");}
             };
 
