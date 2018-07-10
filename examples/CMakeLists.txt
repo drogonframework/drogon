@@ -2,7 +2,7 @@ link_libraries(drogon trantor uuid pthread jsoncpp dl)
 if(OpenSSL_FOUND)
 link_libraries(ssl crypto)
 endif()
-FILE(GLOB SCP_LIST ${CMAKE_CURRENT_SOURCE_DIR}/static_link_example/*.csp)
+FILE(GLOB SCP_LIST ${CMAKE_CURRENT_SOURCE_DIR}/simple_example/*.csp)
 foreach(cspFile ${SCP_LIST})
     message(STATUS "cspFile:" ${cspFile})
     EXEC_PROGRAM(basename ARGS "-s .csp ${cspFile}" OUTPUT_VARIABLE classname)
@@ -16,7 +16,7 @@ foreach(cspFile ${SCP_LIST})
 endforeach()
 
 
-AUX_SOURCE_DIRECTORY(static_link_example DIR_STATIC)
+AUX_SOURCE_DIRECTORY(simple_example DIR_STATIC)
 
 add_executable(webapp ${DIR_STATIC} ${VIEWSRC})
 add_dependencies(webapp drogon_ctl)

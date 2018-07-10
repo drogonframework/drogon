@@ -35,7 +35,7 @@ stop()
 endif()
 EXEC_PROGRAM(cat ARGS "${JSONCPP_INCLUDE_DIRS}/json/version.h |grep JSONCPP_VERSION_STRING|sed s'/.*define/define/'|awk '{printf $3}'|sed s'/\"//g'" OUTPUT_VARIABLE jsoncpp_ver)
 message(STATUS "jsoncpp verson:" ${jsoncpp_ver})
-if(jsoncpp_ver LESS 1.8)
+if(jsoncpp_ver LESS 1.7)
 MESSAGE(STATUS "jsoncpp lib is too old,please get new version from https://github.com/open-source-parsers/jsoncpp")
 stop()
 endif()
@@ -89,8 +89,7 @@ install(TARGETS drogon DESTINATION lib)
 
 file(GLOB trantor_net_headers "${CMAKE_CURRENT_SOURCE_DIR}/lib/inc/drogon/*.h")
 install(FILES ${trantor_net_headers} DESTINATION include/drogon)
-add_dependencies(drogon trantor)
-add_dependencies(drogon makeVersion)
+add_dependencies(drogon trantor makeVersion)
 
 
 SET(CONFIG_HEADER "${PROJECT_SOURCE_DIR}/config.h")
