@@ -92,7 +92,11 @@ void SharedLibManager::managerLibs()
                     void *oldHandle= nullptr;
                     if(_dlMap.find(filename)!=_dlMap.end())
                     {
+#ifdef __linux__
                         if(st.st_mtim.tv_sec>_dlMap[filename].mTime.tv_sec)
+#else
+                        if(st.st_mtimespec.tv_sec>_dlMap[filename].mTime.tv_sec)
+#endif
                         {
                             LOG_DEBUG<<"new csp file:"<<filename;
                             oldHandle=_dlMap[filename].handle;
@@ -112,7 +116,11 @@ void SharedLibManager::managerLibs()
                     srcFile.append(".cc");
                     DLStat dlStat;
                     dlStat.handle=loadLibs(srcFile,oldHandle);
+#ifdef __linux__
                     dlStat.mTime=st.st_mtim;
+#else
+                    dlStat.mTime=st.st_mtimespec;
+#endif
                     if(dlStat.handle)
                     {
                         _dlMap[filename]=dlStat;

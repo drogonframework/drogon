@@ -2,8 +2,7 @@ cmake_minimum_required (VERSION 2.6)
 
 project (DROGON CXX)
 
-
-
+IF (CMAKE_SYSTEM_NAME MATCHES "Linux")
 EXEC_PROGRAM (gcc ARGS "--version | grep '^gcc'|awk '{print $3}' | sed s'/)//g' | sed s'/-.*//g'" OUTPUT_VARIABLE version)
 MESSAGE(STATUS "This is gcc version:: " ${version})
 if(version LESS 4.8.5)
@@ -22,7 +21,9 @@ else()
     MESSAGE(STATUS "c++17")
 
 endif()
-
+else()
+    set(CMAKE_CXX_STD_FLAGS c++11)
+endif()
 
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake_modules/)
 #jsoncpp

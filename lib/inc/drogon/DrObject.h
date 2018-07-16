@@ -18,7 +18,7 @@
 #include <drogon/DrClassMap.h>
 
 #include <cxxabi.h>
-
+#include <string>
 namespace drogon
 {
     class DrObjectBase

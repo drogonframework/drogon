@@ -253,7 +253,7 @@ namespace drogon
         }
 
 
-        std::string getHeader(const std::string& field) const
+        std::string getHeader(const std::string& field) const override
         {
             std::string result;
             std::map<std::string, std::string>::const_iterator it = _headers.find(field);
@@ -263,7 +263,7 @@ namespace drogon
             return result;
         }
 
-        std::string getCookie(const std::string& field) const
+        std::string getCookie(const std::string& field) const override
         {
             std::string result;
             std::map<std::string, std::string>::const_iterator it = _cookies.find(field);
