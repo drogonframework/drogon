@@ -47,8 +47,6 @@ if(OpenSSL_FOUND)
 #add_definitions(-DUSE_OPENSSL)
 set(DEFS "USE_OPENSSL;${DEFS}")
 include_directories(${OPENSSL_INCLUDE_DIR})
-link_directories(${OPENSSL_SSL_LIBRARY})
-link_directories(${OPENSSL_CRYPTO_LIBRARY})
 endif()
 message(STATUS "openssl inc path:" ${OPENSSL_INCLUDE_DIR})
 
