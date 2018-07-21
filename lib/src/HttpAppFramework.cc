@@ -32,6 +32,8 @@
 #include <drogon/version.h>
 #include <memory>
 #include <regex>
+#include <tuple>
+#include <utility>
 
 namespace drogon
 {
@@ -39,8 +41,10 @@ namespace drogon
     class HttpAppFrameworkImpl:public HttpAppFramework
     {
     public:
-        virtual void addListener(const std::string &ip,uint16_t port) override;
+        virtual void addListener(const std::string &ip,uint16_t port,bool useSSL=false) override;
         virtual void setThreadNum(size_t threadNum) override;
+        virtual void setSSLFiles(const std::string &certPath,
+                                 const std::string &keyPath) override;
         virtual void run() override ;
         virtual void registerHttpSimpleController(const std::string &pathName,const std::string &crtlName,const std::vector<std::string> &filters=
         std::vector<std::string>())override ;
@@ -55,7 +59,7 @@ namespace drogon
         virtual void enableDynamicSharedLibLoading(const std::vector<std::string> &libPaths) override;
         ~HttpAppFrameworkImpl(){}
     private:
-        std::vector<std::pair<std::string,uint16_t>> _listeners;
+        std::vector<std::tuple<std::string,uint16_t,bool>> _listeners;
         void onAsyncRequest(const HttpRequest& req,const std::function<void (HttpResponse &)> & callback);
         void readSendFile(const std::string& filePath,const HttpRequest& req, HttpResponse* resp);
         void addApiPath(const std::string &path,
@@ -116,6 +120,9 @@ namespace drogon
         std::unique_ptr<SharedLibManager>_sharedLibManagerPtr;
 
         trantor::EventLoop _loop;
+
+        std::string _sslCertPath;
+        std::string _sslKeyPath;
     };
 }
 
@@ -248,10 +255,21 @@ void HttpAppFrameworkImpl::setThreadNum(size_t threadNum)
     assert(threadNum>=1);
     _threadNum=threadNum;
 }
-void HttpAppFrameworkImpl::addListener(const std::string &ip, uint16_t port)
+void HttpAppFrameworkImpl::setSSLFiles(const std::string &certPath,
+                 const std::string &keyPath)
+{
+    _sslCertPath=certPath;
+    _sslKeyPath=keyPath;
+}
+void HttpAppFrameworkImpl::addListener(const std::string &ip, uint16_t port,bool useSSL)
 {
     assert(!_running);
-    _listeners.push_back(std::make_pair(ip,port));
+
+#ifndef USE_OPENSSL
+    assert(!useSSL);
+#endif
+
+    _listeners.push_back(std::make_tuple(ip,port,useSSL));
 }
 
 void HttpAppFrameworkImpl::run()
@@ -264,16 +282,47 @@ void HttpAppFrameworkImpl::run()
     for(auto listener:_listeners)
     {
         LOG_DEBUG<<"thread num="<<_threadNum;
+#ifdef __linux__
         for(size_t i=0;i<_threadNum;i++)
         {
             auto loopThreadPtr=std::make_shared<EventLoopThread>();
             loopThreadPtr->run();
             loopThreads.push_back(loopThreadPtr);
-            auto serverPtr=std::make_shared<HttpServer>(loopThreadPtr->getLoop(),InetAddress(listener.first,listener.second),"drogon");
+            auto serverPtr=std::make_shared<HttpServer>(loopThreadPtr->getLoop(),
+                    InetAddress(std::get<0>(listener),std::get<1>(listener)),"drogon");
+            if(std::get<2>(listener))
+            {
+                //enable ssl;
+#ifdef USE_OPENSSL
+                assert(!_sslCertPath.empty());
+                assert(!_sslKeyPath.empty());
+                serverPtr->enableSSL(_sslCertPath,_sslKeyPath);
+#endif
+            }
             serverPtr->setHttpAsyncCallback(std::bind(&HttpAppFrameworkImpl::onAsyncRequest,this,_1,_2));
             serverPtr->start();
             servers.push_back(serverPtr);
         }
+#else
+        auto loopThreadPtr=std::make_shared<EventLoopThread>();
+        loopThreadPtr->run();
+        loopThreads.push_back(loopThreadPtr);
+        auto serverPtr=std::make_shared<HttpServer>(loopThreadPtr->getLoop(),
+                                                    InetAddress(std::get<0>(listener),std::get<1>(listener)),"drogon");
+        if(std::get<2>(listener))
+        {
+            //enable ssl;
+#ifdef USE_OPENSSL
+            assert(!_sslCertPath.empty());
+            assert(!_sslKeyPath.empty());
+            serverPtr->enableSSL(_sslCertPath,_sslKeyPath);
+#endif
+        }
+        serverPtr->setIoLoopNum(_threadNum);
+        serverPtr->setHttpAsyncCallback(std::bind(&HttpAppFrameworkImpl::onAsyncRequest,this,_1,_2));
+        serverPtr->start();
+        servers.push_back(serverPtr);
+#endif
     }
     int interval,limit;
     if(_sessionTimeout==0)

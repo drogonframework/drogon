@@ -51,7 +51,9 @@ namespace drogon
     public:
         static HttpAppFramework &instance();
         virtual void setThreadNum(size_t threadNum)=0;
-        virtual void addListener(const std::string &ip,uint16_t port)=0;
+        virtual void setSSLFiles(const std::string &certPath,
+                                 const std::string &keyPath)=0;
+        virtual void addListener(const std::string &ip,uint16_t port,bool useSSL=false)=0;
         virtual void run()=0;
         virtual ~HttpAppFramework();
         virtual void registerHttpSimpleController(const std::string &pathName,

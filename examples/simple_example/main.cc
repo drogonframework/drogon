@@ -84,6 +84,10 @@ int main()
 
     drogon::HttpAppFramework::instance().addListener("0.0.0.0",12345);
     drogon::HttpAppFramework::instance().addListener("0.0.0.0",8080);
+    //https
+    drogon::HttpAppFramework::instance().setSSLFiles("server.pem","server.pem");
+    drogon::HttpAppFramework::instance().addListener("0.0.0.0",4430,true);
+    drogon::HttpAppFramework::instance().addListener("0.0.0.0",4431,true);
     drogon::HttpAppFramework::instance().setThreadNum(4);
     trantor::Logger::setLogLevel(trantor::Logger::TRACE);
     //class function

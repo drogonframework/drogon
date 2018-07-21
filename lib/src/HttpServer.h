@@ -53,6 +53,12 @@ namespace drogon
 
         void start();
 
+#ifdef USE_OPENSSL
+        void enableSSL(const std::string &certPath,const std::string &keyPath){
+            server_.enableSSL(certPath,keyPath);
+        }
+#endif
+
     private:
         void onConnection(const TcpConnectionPtr& conn);
         void onMessage(const TcpConnectionPtr&,
