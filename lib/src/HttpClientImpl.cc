@@ -65,7 +65,7 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req, const 
     {
         //send request;
         auto connPtr=_tcpClient->connection();
-        if(connPtr->connected())
+        if(connPtr&&connPtr->connected())
         {
             if(_reqAndCallbacks.empty())
             {
