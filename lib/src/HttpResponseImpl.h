@@ -219,6 +219,19 @@ namespace drogon
             return _body;
         }
 
+        void swap(HttpResponseImpl &that)
+        {
+            _headers.swap(that._headers);
+            _cookies.swap(that._cookies);
+            std::swap(_statusCode,that._statusCode);
+            std::swap(_v,that._v);
+            _statusMessage.swap(that._statusMessage);
+            std::swap(_closeConnection,that._closeConnection);
+            _body.swap(that._body);
+            std::swap(_left_body_length,that._left_body_length);
+            std::swap(_current_chunk_length,that._current_chunk_length);
+            std::swap(_contentType,that._contentType);
+        }
     protected:
         static const std::string web_content_type_to_string(uint8_t contenttype);
         static const std::string web_response_code_to_string(int code);

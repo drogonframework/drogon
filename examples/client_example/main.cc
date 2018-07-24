@@ -19,11 +19,14 @@ int main()
         auto client=HttpAppFramework::instance().newHttpClient(netaddr.toIp(),80);
         auto req=HttpAppFramework::instance().newHttpRequest();
         req->setMethod(drogon::HttpRequest::kGet);
+        int count=0;
         for(int i=0;i<10;i++)
-            client->sendRequest(req,[](ReqResult result,const HttpResponse &response){
+            client->sendRequest(req,[&](ReqResult result,const HttpResponse &response){
                 std::cout<<"receive response!"<<std::endl;
                 //auto headers=response.
+                count++;
                 std::cout<<response.getBody()<<std::endl;
+                std::cout<<"count="<<count<<std::endl;
             });
         HttpAppFramework::instance().run();
     } else {
