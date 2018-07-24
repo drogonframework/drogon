@@ -77,7 +77,7 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req, const 
 
 }
 
-void HttpClientImpl::sendReq(const trantor::TcpConnectionPtr &connectorPtr,const HttpRequestPtr &req)
+void HttpClientImpl::sendReq(const trantor::TcpConnectionPtr &connPtr,const HttpRequestPtr &req)
 {
 
     trantor::MsgBuffer buffer;
@@ -85,14 +85,14 @@ void HttpClientImpl::sendReq(const trantor::TcpConnectionPtr &connectorPtr,const
     assert(implPtr);
     implPtr->appendToBuffer(&buffer);
     LOG_TRACE<<"Send request:"<<std::string(buffer.peek(),buffer.readableBytes());
-    connectorPtr->send(buffer.peek(),buffer.readableBytes());
+    connPtr->send(buffer.peek(),buffer.readableBytes());
 }
 
 void HttpClientImpl::onRecvMessage(const trantor::TcpConnectionPtr &connPtr,trantor::MsgBuffer *msg)
 {
     HttpContext* context = any_cast<HttpContext>(connPtr->getMutableContext());
 
-    // LOG_INFO << "###:" << string(buf->peek(), buf->readableBytes());
+    LOG_TRACE << "###:" << msg->readableBytes();
     if (!context->parseResponse(msg)) {
         assert(!_reqAndCallbacks.empty());
         auto cb=_reqAndCallbacks.front().second;
@@ -110,6 +110,7 @@ void HttpClientImpl::onRecvMessage(const trantor::TcpConnectionPtr &connPtr,tran
         cb(ReqResult::Ok,resp);
         _reqAndCallbacks.pop();
 
+        LOG_TRACE<<"req buffer size="<<_reqAndCallbacks.size();
         if(!_reqAndCallbacks.empty())
         {
             auto req=_reqAndCallbacks.front().first;
