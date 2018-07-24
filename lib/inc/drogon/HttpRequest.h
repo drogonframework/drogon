@@ -51,5 +51,8 @@ namespace drogon
         virtual const trantor::Date & receiveDate() const=0;
         virtual ~HttpRequest(){}
         virtual const std::shared_ptr<Json::Value> getJsonObject() const=0;
+
+        virtual void setMethod(const Method method)=0;
     };
+    typedef std::shared_ptr<HttpRequest> HttpRequestPtr;
 }

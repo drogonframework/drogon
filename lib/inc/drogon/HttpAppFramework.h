@@ -25,6 +25,7 @@
 #include <drogon/DeleteFilter.h>
 #include <drogon/version.h>
 #include <drogon/NotFound.h>
+#include <drogon/HttpClient.h>
 #include <memory>
 #include <string>
 #include <functional>
@@ -82,5 +83,7 @@ namespace drogon
         virtual void setDocumentRoot(const std::string &rootPath)=0;
         virtual void setFileTypes(const std::vector<std::string> &types)=0;
         virtual void enableDynamicSharedLibLoading(const std::vector<std::string> &libPaths)=0;
+        virtual HttpClientPtr newHttpClient(const std::string &ip,uint16_t port,bool useSSL=false)=0;
+        virtual HttpRequestPtr newHttpRequest()=0;
     };
 }

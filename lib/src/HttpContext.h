@@ -120,7 +120,10 @@ namespace drogon
         {
           return response_;
         }
-
+        HttpResponseImpl &responseImpl()
+        {
+            return response_;
+        }
 
     private:
         bool processRequestLine(const char *begin, const char *end);

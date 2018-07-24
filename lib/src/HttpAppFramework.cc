@@ -15,6 +15,7 @@
 #include "Utilities.h"
 #include "HttpRequestImpl.h"
 #include "HttpResponseImpl.h"
+#include "HttpClientImpl.h"
 #include <drogon/DrClassMap.h>
 #include <drogon/HttpAppFramework.h>
 #include <drogon/HttpRequest.h>
@@ -57,6 +58,8 @@ namespace drogon
         virtual void setDocumentRoot(const std::string &rootPath) override {_rootPath=rootPath;}
         virtual void setFileTypes(const std::vector<std::string> &types) override;
         virtual void enableDynamicSharedLibLoading(const std::vector<std::string> &libPaths) override;
+        virtual HttpClientPtr newHttpClient(const std::string &ip,uint16_t port,bool useSSL=false) override;
+        virtual HttpRequestPtr newHttpRequest() override ;
         ~HttpAppFrameworkImpl(){}
     private:
         std::vector<std::tuple<std::string,uint16_t,bool>> _listeners;
@@ -651,8 +654,16 @@ std::string HttpAppFrameworkImpl::stringToHex(unsigned char* ptr, long long leng
     return idString;
 }
 
-
-
+HttpClientPtr HttpAppFrameworkImpl::newHttpClient(const std::string &ip,uint16_t port,bool useSSL)
+{
+    return std::make_shared<HttpClientImpl>(&_loop,trantor::InetAddress(ip,port),useSSL);
+}
+HttpRequestPtr HttpAppFrameworkImpl::newHttpRequest() {
+    auto req= std::make_shared<HttpRequestImpl>();
+    req->setMethod(drogon::HttpRequest::kGet);
+    req->setVersion(drogon::HttpRequest::kHttp11);
+    return req;
+}
 HttpAppFramework& HttpAppFramework::instance() {
     static HttpAppFrameworkImpl _instance;
     return _instance;

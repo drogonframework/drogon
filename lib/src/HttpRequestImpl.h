@@ -93,7 +93,7 @@ namespace drogon
             return _method != kInvalid;
         }
 
-        bool setMethod(const Method method)
+        virtual void setMethod(const Method method) override
         {
             _method = method;
             content_="";
@@ -101,7 +101,7 @@ namespace drogon
             _cookies.clear();
             _parameters.clear();
             _headers.clear();
-            return true;
+            return;
         }
 
         Method method() const override
@@ -336,8 +336,8 @@ namespace drogon
             return _jsonPtr;
         }
     private:
-        Method _method;
-        Version _version;
+        Method _method=kGet;
+        Version _version=kHttp11;
         std::string _path;
         std::string _query;
 
