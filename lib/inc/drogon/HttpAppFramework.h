@@ -26,6 +26,7 @@
 #include <drogon/version.h>
 #include <drogon/NotFound.h>
 #include <drogon/HttpClient.h>
+#include <trantor/net/EventLoop.h>
 #include <memory>
 #include <string>
 #include <functional>
@@ -83,7 +84,6 @@ namespace drogon
         virtual void setDocumentRoot(const std::string &rootPath)=0;
         virtual void setFileTypes(const std::vector<std::string> &types)=0;
         virtual void enableDynamicSharedLibLoading(const std::vector<std::string> &libPaths)=0;
-        virtual HttpClientPtr newHttpClient(const std::string &ip,uint16_t port,bool useSSL=false)=0;
-        virtual HttpClientPtr newHttpClient(const trantor::InetAddress &addr,bool useSSL=false)=0;
+        virtual trantor::EventLoop *loop()=0;
     };
 }

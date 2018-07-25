@@ -1,6 +1,7 @@
 #include "HttpClientImpl.h"
 #include "HttpRequestImpl.h"
 #include "HttpContext.h"
+#include <drogon/HttpAppFramework.h>
 using namespace drogon;
 using namespace std::placeholders;
 HttpClientImpl::HttpClientImpl(trantor::EventLoop *loop,
@@ -125,4 +126,14 @@ void HttpClientImpl::onRecvMessage(const trantor::TcpConnectionPtr &connPtr,tran
         }
 
     }
+}
+
+HttpClientPtr HttpClient::newHttpClient(const std::string &ip,uint16_t port,bool useSSL)
+{
+    return std::make_shared<HttpClientImpl>(HttpAppFramework::instance().loop(),trantor::InetAddress(ip,port),useSSL);
+}
+
+HttpClientPtr HttpClient::newHttpClient(const trantor::InetAddress &addr,bool useSSL)
+{
+    return std::make_shared<HttpClientImpl>(HttpAppFramework::instance().loop(),addr,useSSL);
 }

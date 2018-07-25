@@ -58,9 +58,10 @@ namespace drogon
         virtual void setDocumentRoot(const std::string &rootPath) override {_rootPath=rootPath;}
         virtual void setFileTypes(const std::vector<std::string> &types) override;
         virtual void enableDynamicSharedLibLoading(const std::vector<std::string> &libPaths) override;
-        virtual HttpClientPtr newHttpClient(const std::string &ip,uint16_t port,bool useSSL=false) override;
-        virtual HttpClientPtr newHttpClient(const trantor::InetAddress &addr,bool useSSL=false) override;
+
         ~HttpAppFrameworkImpl(){}
+
+        virtual trantor::EventLoop *loop() override;
     private:
         std::vector<std::tuple<std::string,uint16_t,bool>> _listeners;
         void onAsyncRequest(const HttpRequest& req,const std::function<void (HttpResponse &)> & callback);
@@ -654,14 +655,9 @@ std::string HttpAppFrameworkImpl::stringToHex(unsigned char* ptr, long long leng
     return idString;
 }
 
-HttpClientPtr HttpAppFrameworkImpl::newHttpClient(const std::string &ip,uint16_t port,bool useSSL)
+trantor::EventLoop *HttpAppFrameworkImpl::loop()
 {
-    return std::make_shared<HttpClientImpl>(&_loop,trantor::InetAddress(ip,port),useSSL);
-}
-
-HttpClientPtr HttpAppFrameworkImpl::newHttpClient(const trantor::InetAddress &addr,bool useSSL)
-{
-    return std::make_shared<HttpClientImpl>(&_loop,addr,useSSL);
+    return &_loop;
 }
 
 HttpAppFramework& HttpAppFramework::instance() {
