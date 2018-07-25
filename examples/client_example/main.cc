@@ -17,7 +17,7 @@ int main()
         ad.sin_addr=addr;
         trantor::InetAddress netaddr(ad);
         auto client=HttpAppFramework::instance().newHttpClient(netaddr.toIp(),80);
-        auto req=HttpAppFramework::instance().newHttpRequest();
+        auto req=HttpRequest::newHttpRequest();
         req->setMethod(drogon::HttpRequest::kGet);
         int count=0;
         for(int i=0;i<10;i++)

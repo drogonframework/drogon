@@ -23,6 +23,8 @@
 #include <memory>
 namespace drogon
 {
+    class HttpRequest;
+    typedef std::shared_ptr<HttpRequest> HttpRequestPtr;
     /*
      * abstract class for webapp developer to get Http client request;
      * */
@@ -53,6 +55,8 @@ namespace drogon
         virtual const std::shared_ptr<Json::Value> getJsonObject() const=0;
 
         virtual void setMethod(const Method method)=0;
+
+        static HttpRequestPtr newHttpRequest();
     };
-    typedef std::shared_ptr<HttpRequest> HttpRequestPtr;
+
 }

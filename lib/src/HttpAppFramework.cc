@@ -59,7 +59,7 @@ namespace drogon
         virtual void setFileTypes(const std::vector<std::string> &types) override;
         virtual void enableDynamicSharedLibLoading(const std::vector<std::string> &libPaths) override;
         virtual HttpClientPtr newHttpClient(const std::string &ip,uint16_t port,bool useSSL=false) override;
-        virtual HttpRequestPtr newHttpRequest() override ;
+        virtual HttpClientPtr newHttpClient(const trantor::InetAddress &addr,bool useSSL=false) override;
         ~HttpAppFrameworkImpl(){}
     private:
         std::vector<std::tuple<std::string,uint16_t,bool>> _listeners;
@@ -658,12 +658,12 @@ HttpClientPtr HttpAppFrameworkImpl::newHttpClient(const std::string &ip,uint16_t
 {
     return std::make_shared<HttpClientImpl>(&_loop,trantor::InetAddress(ip,port),useSSL);
 }
-HttpRequestPtr HttpAppFrameworkImpl::newHttpRequest() {
-    auto req= std::make_shared<HttpRequestImpl>();
-    req->setMethod(drogon::HttpRequest::kGet);
-    req->setVersion(drogon::HttpRequest::kHttp11);
-    return req;
+
+HttpClientPtr HttpAppFrameworkImpl::newHttpClient(const trantor::InetAddress &addr,bool useSSL)
+{
+    return std::make_shared<HttpClientImpl>(&_loop,addr,useSSL);
 }
+
 HttpAppFramework& HttpAppFramework::instance() {
     static HttpAppFrameworkImpl _instance;
     return _instance;

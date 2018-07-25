@@ -170,3 +170,10 @@ void HttpRequestImpl::appendToBuffer(MsgBuffer* output) const
 	//LOG_INFO<<"request(no body):"<<output->peek();
 	output->append(content_);
 }
+
+HttpRequestPtr HttpRequest::newHttpRequest() {
+    auto req= std::make_shared<HttpRequestImpl>();
+    req->setMethod(drogon::HttpRequest::kGet);
+    req->setVersion(drogon::HttpRequest::kHttp11);
+    return req;
+}
