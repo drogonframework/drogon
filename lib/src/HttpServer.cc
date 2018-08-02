@@ -35,7 +35,7 @@ using namespace drogon;
 using namespace trantor;
 
 
-static void defaultHttpAsyncCallback(const HttpRequest&,const std::function<void( HttpResponse& resp)> & callback)
+static void defaultHttpAsyncCallback(const HttpRequestPtr&,const std::function<void( HttpResponse& resp)> & callback)
 {
     HttpResponseImpl resp;
     resp.setStatusCode(HttpResponse::k404NotFound);
@@ -92,21 +92,21 @@ void HttpServer::onMessage(const TcpConnectionPtr& conn,
     }
 
     if (context->gotAll()) {
-        context->requestImpl().parsePremeter();
-        context->requestImpl().setPeerAddr(conn->peerAddr());
-        context->requestImpl().setLocalAddr(conn->lobalAddr());
-        context->requestImpl().setReceiveDate(trantor::Date::date());
+        context->requestImpl()->parsePremeter();
+        context->requestImpl()->setPeerAddr(conn->peerAddr());
+        context->requestImpl()->setLocalAddr(conn->lobalAddr());
+        context->requestImpl()->setReceiveDate(trantor::Date::date());
 
         onRequest(conn, context->request());
         context->reset();
     }
 }
 
-void HttpServer::onRequest(const TcpConnectionPtr& conn, const HttpRequest& req)
+void HttpServer::onRequest(const TcpConnectionPtr& conn, const HttpRequestPtr& req)
 {
-    const std::string& connection = req.getHeader("Connection");
+    const std::string& connection = req->getHeader("Connection");
     bool _close = connection == "close" ||
-                 (req.getVersion() == HttpRequestImpl::kHttp10 && connection != "Keep-Alive");
+                 (req->getVersion() == HttpRequestImpl::kHttp10 && connection != "Keep-Alive");
 
 
 

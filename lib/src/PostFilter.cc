@@ -15,13 +15,16 @@
 #include <drogon/PostFilter.h>
 #include "HttpResponseImpl.h"
 using namespace drogon;
-std::shared_ptr<HttpResponse> PostFilter::doFilter(const HttpRequest& req)
+void PostFilter::doFilter(const HttpRequestPtr& req,
+                               const FilterCallback &fcb,
+                               const FilterChainCallback &fccb)
 {
-    if(req.method()==HttpRequest::kPost)
+    if(req->method()==HttpRequest::kPost)
     {
-        return nullptr;
+        fccb();
+        return;
     }
     auto res=drogon::HttpResponse::notFoundResponse();
 
-    return res;
+    fcb(res);
 }

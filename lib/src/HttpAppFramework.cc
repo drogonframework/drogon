@@ -64,8 +64,8 @@ namespace drogon
         virtual trantor::EventLoop *loop() override;
     private:
         std::vector<std::tuple<std::string,uint16_t,bool>> _listeners;
-        void onAsyncRequest(const HttpRequest& req,const std::function<void (HttpResponse &)> & callback);
-        void readSendFile(const std::string& filePath,const HttpRequest& req, HttpResponse* resp);
+        void onAsyncRequest(const HttpRequestPtr& req,const std::function<void (HttpResponse &)> & callback);
+        void readSendFile(const std::string& filePath,const HttpRequestPtr& req, HttpResponse* resp);
         void addApiPath(const std::string &path,
                         const HttpApiBinderBasePtr &binder,
                         const std::vector<std::string> &filters);
@@ -77,11 +77,18 @@ namespace drogon
         typedef std::shared_ptr<Session> SessionPtr;
         std::unique_ptr<CacheMap<std::string,SessionPtr>> _sessionMapPtr;
 
-        bool doFilters(const std::vector<std::string> &filters,
-                       const HttpRequest& req,
+        void doFilters(const std::vector<std::string> &filters,
+                       const HttpRequestPtr& req,
                        const std::function<void (HttpResponse &)> & callback,
                        bool needSetJsessionid,
-                       const std::string &session_id);
+                       const std::string &session_id,
+                       const std::function<void ()> &missCallback);
+        void doFilterChain(const std::shared_ptr<std::queue<std::shared_ptr<HttpFilterBase>>> &chain,
+                           const HttpRequestPtr& req,
+                           const std::function<void (HttpResponse &)> & callback,
+                           bool needSetJsessionid,
+                           const std::string &session_id,
+                           const std::function<void ()> &missCallback);
         //
         struct ControllerAndFiltersName
         {
@@ -347,42 +354,56 @@ void HttpAppFrameworkImpl::run()
     _loop.loop();
 }
 
-bool HttpAppFrameworkImpl::doFilters(const std::vector<std::string> &filters,
-                                     const HttpRequest& req,
+void HttpAppFrameworkImpl::doFilterChain(const std::shared_ptr<std::queue<std::shared_ptr<HttpFilterBase>>> &chain,
+                                         const HttpRequestPtr& req,
+                                         const std::function<void (HttpResponse &)> & callback,
+                                         bool needSetJsessionid,
+                                         const std::string &session_id,
+                                         const std::function<void ()> &missCallback)
+{
+    if(chain->size()>0) {
+        auto filter = chain->front();
+        chain->pop();
+        filter->doFilter(req, [=](HttpResponsePtr res) {
+            if (needSetJsessionid)
+                res->addCookie("JSESSIONID", session_id);
+            callback(*res);
+        }, [=](){
+            doFilterChain(chain,req,callback,needSetJsessionid,session_id,missCallback);
+        });
+    }else{
+        missCallback();
+    }
+}
+void HttpAppFrameworkImpl::doFilters(const std::vector<std::string> &filters,
+                                     const HttpRequestPtr& req,
                                      const std::function<void (HttpResponse &)> & callback,
                                      bool needSetJsessionid,
-                                     const std::string &session_id)
+                                     const std::string &session_id,
+                                     const std::function<void ()> &missCallback)
 {
     LOG_TRACE<<"filters count:"<<filters.size();
-    for(auto filter:filters)
-    {
-        auto _object=std::shared_ptr<DrObjectBase>(DrClassMap::newObject(filter));
+    std::shared_ptr<std::queue<std::shared_ptr<HttpFilterBase>>> filterPtrs=
+            std::make_shared<std::queue<std::shared_ptr<HttpFilterBase>>>();
+    for(auto filter:filters) {
+        auto _object = std::shared_ptr<DrObjectBase>(DrClassMap::newObject(filter));
         auto _filter = std::dynamic_pointer_cast<HttpFilterBase>(_object);
         if(_filter)
-        {
-            auto resPtr=_filter->doFilter(req);
-            if(resPtr)
-            {
-                if(needSetJsessionid)
-                    resPtr->addCookie("JSESSIONID",session_id);
-                callback(*resPtr);
-                return true;
-            }
-        } else
-        {
+            filterPtrs->push(_filter);
+        else {
             LOG_ERROR<<"filter "<<filter<<" not found";
         }
     }
-    return false;
+    doFilterChain(filterPtrs,req,callback,needSetJsessionid,session_id,missCallback);
 }
 
-void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequest& req,const std::function<void (HttpResponse &)> & callback)
+void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestPtr& req,const std::function<void (HttpResponse &)> & callback)
 {
-    LOG_TRACE << "new request:"<<req.peerAddr().toIpPort()<<"->"<<req.localAddr().toIpPort();
-    LOG_TRACE << "Headers " << req.methodString() << " " << req.path();
+    LOG_TRACE << "new request:"<<req->peerAddr().toIpPort()<<"->"<<req->localAddr().toIpPort();
+    LOG_TRACE << "Headers " << req->methodString() << " " << req->path();
 
 #if 1
-    const std::map<std::string, std::string>& headers = req.headers();
+    const std::map<std::string, std::string>& headers = req->headers();
     for (std::map<std::string, std::string>::const_iterator it = headers.begin();
          it != headers.end();
          ++it) {
@@ -390,7 +411,7 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequest& req,const std::func
     }
 
     LOG_TRACE<<"cookies:";
-    auto cookies = req.cookies();
+    auto cookies = req->cookies();
     for(auto it=cookies.begin();it!=cookies.end();++it)
     {
         LOG_TRACE<<it->first<<"="<<it->second;
@@ -398,10 +419,10 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequest& req,const std::func
 #endif
 
 
-    LOG_TRACE << "http path=" << req.path();
-    LOG_TRACE << "query: " << req.query() ;
+    LOG_TRACE << "http path=" << req->path();
+    LOG_TRACE << "query: " << req->query() ;
 
-    std::string session_id=req.getCookie("JSESSIONID");
+    std::string session_id=req->getCookie("JSESSIONID");
     bool needSetJsessionid=false;
     if(_useSession)
     {
@@ -421,7 +442,7 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequest& req,const std::func
         ((HttpRequestImpl &)req).setSession((*_sessionMapPtr)[session_id]);
     }
 
-    std::string path = req.path();
+    std::string path = req->path();
     auto pos = path.rfind(".");
     if(pos != std::string::npos) {
         std::string filetype = path.substr(pos + 1);
@@ -465,96 +486,98 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequest& req,const std::func
 
 
     /*find simple controller*/
-    std::string pathLower(req.path());
+    std::string pathLower(req->path());
     std::transform(pathLower.begin(),pathLower.end(),pathLower.begin(),tolower);
 
     if(_simpCtrlMap.find(pathLower)!=_simpCtrlMap.end())
     {
         auto &filters=_simpCtrlMap[pathLower].filtersName;
-        if(doFilters(filters,req,callback,needSetJsessionid,session_id))
-            return;
-        const std::string &ctrlName = _simpCtrlMap[pathLower].controllerName;
-        std::shared_ptr<HttpSimpleControllerBase> controller;
-        {
-            //maybe update controller,so we use lock_guard to protect;
-            std::lock_guard<std::mutex> guard(_simpCtrlMap[pathLower]._mutex);
-            controller=_simpCtrlMap[pathLower].controller;
-            if(!controller)
+        doFilters(filters,req,callback,needSetJsessionid,session_id,[=](){
+            const std::string &ctrlName = _simpCtrlMap[pathLower].controllerName;
+            std::shared_ptr<HttpSimpleControllerBase> controller;
             {
-                auto _object = std::shared_ptr<DrObjectBase>(DrClassMap::newObject(ctrlName));
-                controller = std::dynamic_pointer_cast<HttpSimpleControllerBase>(_object);
-                _simpCtrlMap[pathLower].controller=controller;
+                //maybe update controller,so we use lock_guard to protect;
+                std::lock_guard<std::mutex> guard(_simpCtrlMap[pathLower]._mutex);
+                controller=_simpCtrlMap[pathLower].controller;
+                if(!controller)
+                {
+                    auto _object = std::shared_ptr<DrObjectBase>(DrClassMap::newObject(ctrlName));
+                    controller = std::dynamic_pointer_cast<HttpSimpleControllerBase>(_object);
+                    _simpCtrlMap[pathLower].controller=controller;
+                }
             }
-        }
 
 
-        if(controller) {
-            controller->asyncHandleHttpRequest(req, [=](HttpResponse& resp){
-                if(needSetJsessionid)
-                    resp.addCookie("JSESSIONID",session_id);
-                callback(resp);
-            });
-            return;
-        } else {
+            if(controller) {
+                controller->asyncHandleHttpRequest(req, [=](HttpResponse& resp){
+                    if(needSetJsessionid)
+                        resp.addCookie("JSESSIONID",session_id);
+                    callback(resp);
+                });
+                return;
+            } else {
 
-            LOG_ERROR << "can't find controller " << ctrlName;
-        }
+                LOG_ERROR << "can't find controller " << ctrlName;
+            }
+        });
+
     }
     //find api controller
     if(_apiRegex.mark_count()>0)
     {
         std::smatch result;
-        if(std::regex_match(req.path(),result,_apiRegex))
+        if(std::regex_match(req->path(),result,_apiRegex))
         {
             for(size_t i=1;i<result.size();i++)
             {
                 if(result[i].str().empty())
                     continue;
-                if(result[i].str()==req.path()&&i<=_apiCtrlVector.size())
+                if(result[i].str()==req->path()&&i<=_apiCtrlVector.size())
                 {
                     size_t ctlIndex=i-1;
                     auto &binder=_apiCtrlVector[ctlIndex];
                     LOG_DEBUG<<"got api access,regex="<<binder.pathParameterPattern;
                     auto &filters=binder.filtersName;
-                    if(doFilters(filters,req,callback,needSetJsessionid,session_id))
-                        return;
-                    std::vector<std::string> params(binder.parameterPlaces.size());
-                    std::smatch r;
-                    if(std::regex_match(req.path(),r,std::regex(binder.pathParameterPattern)))
-                    {
-                        for(size_t j=1;j<r.size();j++)
+                    doFilters(filters,req,callback,needSetJsessionid,session_id,[=](){
+                        std::vector<std::string> params(binder.parameterPlaces.size());
+                        std::smatch r;
+                        if(std::regex_match(req->path(),r,std::regex(binder.pathParameterPattern)))
                         {
-                            size_t place=binder.parameterPlaces[j-1];
-                            if(place>params.size())
-                                params.resize(place);
-                            params[place-1]=r[j].str();
-                            LOG_DEBUG<<"place="<<place<<" para:"<<params[place-1];
-                        }
-                    }
-                    if(binder.queryParametersPlaces.size()>0)
-                    {
-                        auto qureyPara=req.getParameters();
-                        for(auto parameter:qureyPara)
-                        {
-                            if(binder.queryParametersPlaces.find(parameter.first)!=
-                                    binder.queryParametersPlaces.end())
+                            for(size_t j=1;j<r.size();j++)
                             {
-                                auto place=binder.queryParametersPlaces[parameter.first];
+                                size_t place=binder.parameterPlaces[j-1];
                                 if(place>params.size())
                                     params.resize(place);
-                                params[place-1]=parameter.second;
+                                params[place-1]=r[j].str();
+                                LOG_DEBUG<<"place="<<place<<" para:"<<params[place-1];
                             }
                         }
-                    }
-                    std::list<std::string> paraList;
-                    for(auto p:params)
-                    {
-                        LOG_DEBUG<<p;
-                        paraList.push_back(std::move(p));
-                    }
+                        if(binder.queryParametersPlaces.size()>0)
+                        {
+                            auto qureyPara=req->getParameters();
+                            for(auto parameter:qureyPara)
+                            {
+                                if(binder.queryParametersPlaces.find(parameter.first)!=
+                                   binder.queryParametersPlaces.end())
+                                {
+                                    auto place=binder.queryParametersPlaces.find(parameter.first)->second;
+                                    if(place>params.size())
+                                        params.resize(place);
+                                    params[place-1]=parameter.second;
+                                }
+                            }
+                        }
+                        std::list<std::string> paraList;
+                        for(auto p:params)
+                        {
+                            LOG_DEBUG<<p;
+                            paraList.push_back(std::move(p));
+                        }
 
-                    binder.binderPtr->handleHttpApiRequest(paraList,req,callback);
-                    return;
+                        binder.binderPtr->handleHttpApiRequest(paraList,req,callback);
+                        return;
+                    });
+
                 }
             }
         }
@@ -568,7 +591,7 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequest& req,const std::func
 
 }
 
-void HttpAppFrameworkImpl::readSendFile(const std::string& filePath,const HttpRequest& req, HttpResponse* resp)
+void HttpAppFrameworkImpl::readSendFile(const std::string& filePath,const HttpRequestPtr& req, HttpResponse* resp)
 {
 //If-Modified-Since: Wed Jun 15 08:57:30 2016 GMT
     std::ifstream infile(filePath, std::ifstream::binary);
@@ -595,7 +618,7 @@ void HttpAppFrameworkImpl::readSendFile(const std::string& filePath,const HttpRe
             std::string::size_type len=timeStr.length();
             std::string lastModified =timeStr.substr(0,len-1)+" GMT";
 
-            std::string modiStr=req.getHeader("If-Modified-Since");
+            std::string modiStr=req->getHeader("If-Modified-Since");
             if(modiStr!=""&&modiStr==lastModified)
             {
                 LOG_DEBUG<<"not Modified!";

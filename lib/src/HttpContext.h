@@ -56,11 +56,8 @@ namespace drogon
             kGotAll,
         };
 
-        HttpContext()
-                : state_(kExpectRequestLine),
-                  res_state_(HttpResponseParseState::kExpectResponseLine)
-        {
-        }
+        HttpContext();
+
 
         // default copy-ctor, dtor and assignment are fine
 
@@ -87,8 +84,7 @@ namespace drogon
         {
           state_ = kExpectRequestLine;
           res_state_ = HttpResponseParseState::kExpectResponseLine;
-          HttpRequestImpl dummy;
-          request_.swap(dummy);
+          request_.reset(new HttpRequestImpl);
           HttpResponseImpl dummy_res;
           response_.swap(dummy_res);
         }
@@ -99,17 +95,17 @@ namespace drogon
           response_.clear();
         }
 
-        const HttpRequest &request() const
+        const HttpRequestPtr request() const
         {
           return request_;
         }
 
-        HttpRequest &request()
+        HttpRequestPtr request()
         {
           return request_;
         }
 
-        HttpRequestImpl &requestImpl()
+        HttpRequestImplPtr requestImpl()
         {
             return request_;
         }
@@ -133,7 +129,7 @@ namespace drogon
         bool processResponseLine(const char *begin, const char *end);
 
         HttpRequestParseState state_;
-        HttpRequestImpl request_;
+        HttpRequestImplPtr request_;
 
         HttpResponseParseState res_state_;
         HttpResponseImpl response_;

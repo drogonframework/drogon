@@ -132,7 +132,7 @@ void create_controller::newSimpleControllerHeaderFile(std::ofstream &file,const 
     file<<indent<<"{\n";
     file<<indent<<"public:\n";
         //TestController(){}
-    file<<indent<<"    virtual void asyncHandleHttpRequest(const HttpRequest& req,const std::function<void (HttpResponse &)> & callback)override;\n";
+    file<<indent<<"    virtual void asyncHandleHttpRequest(const HttpRequestPtr& req,const std::function<void (HttpResponse &)> & callback)override;\n";
 
     file<<indent<<"    PATH_LIST_BEGIN\n";
     file<<indent<<"    //list path definations here;\n";
@@ -147,7 +147,7 @@ void create_controller::newSimpleControllerSourceFile(std::ofstream &file,const 
     file<<"#include \""<<ctlName<<".h\"\n";
     if(namespaceName!="")
         file<<"using namespace "<<namespaceName<<";\n";
-    file<<"void "<<ctlName<<"::asyncHandleHttpRequest(const HttpRequest& req,const std::function<void (HttpResponse &)> & callback)\n";
+    file<<"void "<<ctlName<<"::asyncHandleHttpRequest(const HttpRequestPtr& req,const std::function<void (HttpResponse &)> & callback)\n";
     file<<"{\n";
     file<<"    //write your application logic here\n";
     file<<"}";
@@ -215,9 +215,9 @@ void create_controller::newApiControllerHeaderFile(std::ofstream &file,const std
     file<<indent<<"\n";
     file<<indent<<"METHOD_LIST_END\n";
     file<<indent<<"//your declaration of processing function maybe like this:\n";
-    file<<indent<<"//void get(const HttpRequest& req,"
+    file<<indent<<"//void get(const HttpRequestPtr& req,"
                   "const std::function<void (HttpResponse &)>&callback,int p1,std::string p2);\n";
-    file<<indent<<"//void your_method_name(const HttpRequest& req,"
+    file<<indent<<"//void your_method_name(const HttpRequestPtr& req,"
                   "const std::function<void (HttpResponse &)>&callback,double p1,int p2) const;\n";
     indent.resize(indent.length()-4);
     file<<indent<<"};\n";

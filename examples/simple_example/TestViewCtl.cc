@@ -1,5 +1,5 @@
 #include "TestViewCtl.h"
-void TestViewCtl::asyncHandleHttpRequest(const HttpRequest& req,const std::function<void (HttpResponse &)>&callback)
+void TestViewCtl::asyncHandleHttpRequest(const HttpRequestPtr& req,const std::function<void (HttpResponse &)>&callback)
 {
     //write your application logic here
     drogon::HttpViewData data;

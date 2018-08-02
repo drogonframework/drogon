@@ -356,6 +356,7 @@ namespace drogon
 
     };
 
+    typedef std::shared_ptr<HttpRequestImpl> HttpRequestImplPtr;
 }
 
 

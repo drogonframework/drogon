@@ -5,6 +5,7 @@
 namespace drogon{
     class HttpRequest;
     class HttpResponse;
+    typedef std::shared_ptr<HttpRequest> HttpRequestPtr;
     namespace utility {
 
         template<typename> struct FunctionTraits;
@@ -54,7 +55,7 @@ namespace drogon{
                 typename... Arguments
         >
         struct FunctionTraits<
-                ReturnType(ClassType::*)(const HttpRequest& req,const std::function<void (HttpResponse &)>&callback,Arguments...) const
+                ReturnType(ClassType::*)(const HttpRequestPtr& req,const std::function<void (HttpResponse &)>&callback,Arguments...) const
         > : FunctionTraits<ReturnType(ClassType::*)(Arguments...)> {
             static const bool isHTTPApiFunction=true;
             static const std::string name(){return std::string("Class Const Api Function");}
@@ -66,7 +67,7 @@ namespace drogon{
                 typename... Arguments
         >
         struct FunctionTraits<
-                ReturnType(ClassType::*)(const HttpRequest& req,const std::function<void (HttpResponse &)>&callback,Arguments...)
+                ReturnType(ClassType::*)(const HttpRequestPtr& req,const std::function<void (HttpResponse &)>&callback,Arguments...)
         > : FunctionTraits<ReturnType(ClassType::*)(Arguments...)> {
             static const bool isHTTPApiFunction=true;
             static const std::string name(){return std::string("Class Api Function");}
@@ -77,7 +78,7 @@ namespace drogon{
                 typename... Arguments
         >
         struct FunctionTraits<
-                ReturnType(*)(const HttpRequest& req,const std::function<void (HttpResponse &)>&callback,Arguments...)
+                ReturnType(*)(const HttpRequestPtr& req,const std::function<void (HttpResponse &)>&callback,Arguments...)
         > : FunctionTraits<ReturnType(*)(Arguments...)> {
             static const bool isHTTPApiFunction=true;
 

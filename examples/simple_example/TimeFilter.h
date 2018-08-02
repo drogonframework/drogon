@@ -9,7 +9,9 @@ using namespace drogon;
 
 class TimeFilter: public drogon::HttpFilter<TimeFilter> {
 public:
-    virtual std::shared_ptr<HttpResponse> doFilter(const HttpRequest& req) override;
+    virtual void doFilter(const HttpRequestPtr& req,
+    const FilterCallback &cb,
+    const FilterChainCallback &ccb) override;
 };
 
 

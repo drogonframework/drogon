@@ -1,6 +1,6 @@
 #include "TestController.h"
 using namespace example;
-void TestController::asyncHandleHttpRequest(const HttpRequest& req,const std::function<void (HttpResponse &)>&callback)
+void TestController::asyncHandleHttpRequest(const HttpRequestPtr& req,const std::function<void (HttpResponse &)>&callback)
 {
     //write your application logic here
     auto resp=HttpResponse::newHttpResponse();

@@ -28,11 +28,12 @@ namespace drogon
 {
     class HttpRequest;
     class HttpResponse;
+    typedef std::shared_ptr<HttpRequest> HttpRequestPtr;
     class HttpServer : trantor::NonCopyable
     {
     public:
 
-        typedef std::function< void (const HttpRequest&,const std::function<void (HttpResponse &)>&)> HttpAsyncCallback;
+        typedef std::function< void (const HttpRequestPtr&,const std::function<void (HttpResponse &)>&)> HttpAsyncCallback;
         HttpServer(EventLoop* loop,
                    const InetAddress& listenAddr,
                    const std::string& name);
@@ -63,7 +64,7 @@ namespace drogon
         void onConnection(const TcpConnectionPtr& conn);
         void onMessage(const TcpConnectionPtr&,
                        MsgBuffer*);
-        void onRequest(const TcpConnectionPtr&, const HttpRequest&);
+        void onRequest(const TcpConnectionPtr&, const HttpRequestPtr &);
         trantor::TcpServer server_;
         HttpAsyncCallback httpAsyncCallback_;
 

@@ -22,6 +22,8 @@ namespace drogon
     {
     public:
         DeleteFilter(){}
-        virtual std::shared_ptr<HttpResponse> doFilter(const HttpRequest& req) override ;
+        virtual void doFilter(const HttpRequestPtr& req,
+                              const FilterCallback &fcb,
+                              const FilterChainCallback &fccb) override ;
     };
 }

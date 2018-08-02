@@ -15,14 +15,15 @@
 #include <drogon/DeleteFilter.h>
 #include "HttpResponseImpl.h"
 using namespace drogon;
-std::shared_ptr<HttpResponse> DeleteFilter::doFilter(const HttpRequest& req)
+void DeleteFilter::doFilter(const HttpRequestPtr& req,
+                                 const FilterCallback &fcb,
+                                 const FilterChainCallback &fccb)
 {
-    if(req.method()==HttpRequest::kDelete)
+    if(req->method()==HttpRequest::kDelete)
     {
-        return nullptr;
+        fccb();
+        return;
     }
     auto res=drogon::HttpResponse::notFoundResponse();
-
-
-    return res;
+    fcb(res);
 }

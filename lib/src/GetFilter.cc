@@ -15,14 +15,15 @@
 #include <drogon/GetFilter.h>
 #include "HttpResponseImpl.h"
 using namespace drogon;
-std::shared_ptr<HttpResponse> GetFilter::doFilter(const HttpRequest& req)
+void GetFilter::doFilter(const HttpRequestPtr& req,
+                         const FilterCallback &fcb,
+                         const FilterChainCallback &fccb)
 {
-    if(req.method()==HttpRequest::kGet)
+    if(req->method()==HttpRequest::kGet)
     {
-        return nullptr;
+        fccb();
+        return;
     }
     auto res=drogon::HttpResponse::notFoundResponse();
-
-
-    return res;
+    fcb(res);
 }

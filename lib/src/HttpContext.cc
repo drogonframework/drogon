@@ -30,12 +30,18 @@
 #include <iostream>
 using namespace trantor;
 using namespace drogon;
+HttpContext::HttpContext()
+        : state_(kExpectRequestLine),
+          res_state_(HttpResponseParseState::kExpectResponseLine),
+          request_(new HttpRequestImpl)
+{
+}
 bool HttpContext::processRequestLine(const char *begin, const char *end)
 {
     bool succeed = false;
     const char *start = begin;
     const char *space = std::find(start, end, ' ');
-    if (space != end && request_.setMethod(start, space))
+    if (space != end && request_->setMethod(start, space))
     {
         start = space + 1;
         space = std::find(start, end, ' ');
@@ -44,12 +50,12 @@ bool HttpContext::processRequestLine(const char *begin, const char *end)
             const char *question = std::find(start, space, '?');
             if (question != space)
             {
-                request_.setPath(start, question);
-                request_.setQuery(question + 1, space);
+                request_->setPath(start, question);
+                request_->setQuery(question + 1, space);
             }
             else
             {
-                request_.setPath(start, space);
+                request_->setPath(start, space);
             }
             start = space + 1;
             succeed = end - start == 8 && std::equal(start, end - 1, "HTTP/1.");
@@ -57,11 +63,11 @@ bool HttpContext::processRequestLine(const char *begin, const char *end)
             {
                 if (*(end - 1) == '1')
                 {
-                    request_.setVersion(HttpRequest::kHttp11);
+                    request_->setVersion(HttpRequest::kHttp11);
                 }
                 else if (*(end - 1) == '0')
                 {
-                    request_.setVersion(HttpRequest::kHttp10);
+                    request_->setVersion(HttpRequest::kHttp10);
                 }
                 else
                 {
@@ -89,7 +95,7 @@ bool HttpContext::parseRequest(MsgBuffer *buf)
                 ok = processRequestLine(buf->peek(), crlf);
                 if (ok)
                 {
-                    //request_.setReceiveTime(receiveTime);
+                    //request_->setReceiveTime(receiveTime);
                     buf->retrieveUntil(crlf + 2);
                     state_ = kExpectHeaders;
                 }
@@ -111,16 +117,16 @@ bool HttpContext::parseRequest(MsgBuffer *buf)
                 const char *colon = std::find(buf->peek(), crlf, ':');
                 if (colon != crlf)
                 {
-                    request_.addHeader(buf->peek(), colon, crlf);
+                    request_->addHeader(buf->peek(), colon, crlf);
                 }
                 else
                 {
                     // empty line, end of header
-                    std::string len = request_.getHeader("Content-Length");
+                    std::string len = request_->getHeader("Content-Length");
                     LOG_TRACE << "content len=" << len;
                     if (len != "")
                     {
-                        request_.contentLen = atoi(len.c_str());
+                        request_->contentLen = atoi(len.c_str());
                         state_ = kExpectBody;
                     }
                     else
@@ -138,33 +144,33 @@ bool HttpContext::parseRequest(MsgBuffer *buf)
         }
         else if (state_ == kExpectBody)
         {
-            //LOG_INFO << "expectBody:len=" << request_.contentLen;
+            //LOG_INFO << "expectBody:len=" << request_->contentLen;
             //LOG_INFO << "expectBody:buf=" << buf;
             if (buf->readableBytes() == 0)
             {
-                if (request_.contentLen == 0)
+                if (request_->contentLen == 0)
                 {
                     state_ = kGotAll;
                 }
                 break;
             }
-            if (request_.contentLen >= buf->readableBytes())
+            if (request_->contentLen >= buf->readableBytes())
             {
-                request_.contentLen -= buf->readableBytes();
-                request_.content_ += std::string(buf->peek(), buf->readableBytes());
+                request_->contentLen -= buf->readableBytes();
+                request_->content_ += std::string(buf->peek(), buf->readableBytes());
                 buf->retrieveAll();
             }
             else
             {
-                request_.content_ += std::string(buf->peek(), request_.contentLen);
-                buf->retrieve(request_.contentLen);
-                request_.contentLen = 0;
+                request_->content_ += std::string(buf->peek(), request_->contentLen);
+                buf->retrieve(request_->contentLen);
+                request_->contentLen = 0;
             }
-            if (request_.contentLen == 0)
+            if (request_->contentLen == 0)
             {
                 state_ = kGotAll;
-                LOG_TRACE << "post got all:len=" << request_.content_.length();
-                //LOG_INFO<<"content:"<<request_.content_;
+                LOG_TRACE << "post got all:len=" << request_->content_.length();
+                //LOG_INFO<<"content:"<<request_->content_;
                 LOG_TRACE << "content(END)";
                 hasMore = false;
             }
@@ -304,7 +310,7 @@ bool HttpContext::parseResponse(MsgBuffer *buf)
         }
         else if (res_state_ == HttpResponseParseState::kExpectBody)
         {
-            //LOG_INFO << "expectBody:len=" << request_.contentLen;
+            //LOG_INFO << "expectBody:len=" << request_->contentLen;
             //LOG_INFO << "expectBody:buf=" << buf;
             if (buf->readableBytes() == 0)
             {
@@ -323,14 +329,14 @@ bool HttpContext::parseResponse(MsgBuffer *buf)
             else
             {
                 response_._body += std::string(buf->peek(), response_._left_body_length);
-                buf->retrieve(request_.contentLen);
+                buf->retrieve(request_->contentLen);
                 response_._left_body_length = 0;
             }
             if (response_._left_body_length == 0)
             {
                 res_state_ = HttpResponseParseState::kGotAll;
                 LOG_TRACE << "post got all:len=" << response_._left_body_length;
-                //LOG_INFO<<"content:"<<request_.content_;
+                //LOG_INFO<<"content:"<<request_->content_;
                 LOG_TRACE << "content(END)";
                 hasMore = false;
             }
