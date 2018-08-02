@@ -439,7 +439,7 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestPtr& req,const std::f
                 _sessionMapPtr->insert(session_id,std::make_shared< Session >(),_sessionTimeout);
             }
         }
-        ((HttpRequestImpl &)req).setSession((*_sessionMapPtr)[session_id]);
+        (std::dynamic_pointer_cast<HttpRequestImpl>(req))->setSession((*_sessionMapPtr)[session_id]);
     }
 
     std::string path = req->path();
