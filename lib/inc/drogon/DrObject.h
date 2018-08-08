@@ -34,7 +34,6 @@ namespace drogon
             return false;
         }
         static const std::string demangle( const char* mangled_name ) {
-
             std::size_t len = 0 ;
             int status = 0 ;
             std::unique_ptr< char, decltype(&std::free) > ptr(
@@ -74,19 +73,18 @@ namespace drogon
         class DrAllocator
         {
         public:
-            DrAllocator():
-                    _className(demangle(typeid(T).name()))
+            DrAllocator()
             {
                 DrClassMap::registerClass(className(),[]()->DrObjectBase*{
                     T* p=new T;
                     return static_cast<DrObjectBase*>(p);
                 });
             }
-            const std::string & className() const {return _className;}
+            const std::string & className() const {
+                static std::string className=demangle(typeid(T).name());
+                return className;
+            }
 
-        private:
-
-            const std::string _className;
         };
 
         //use static val to register allocator function for class T;
