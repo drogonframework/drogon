@@ -88,6 +88,8 @@ install(TARGETS drogon DESTINATION lib)
 
 file(GLOB trantor_net_headers "${CMAKE_CURRENT_SOURCE_DIR}/lib/inc/drogon/*.h")
 install(FILES ${trantor_net_headers} DESTINATION include/drogon)
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/lib/inc/drogon/utils/FunctionTraits.h
+        DESTINATION include/drogon/utils)
 add_dependencies(drogon trantor makeVersion)
 
 
