@@ -32,8 +32,9 @@ using namespace trantor;
 using namespace drogon;
 HttpContext::HttpContext()
         : state_(kExpectRequestLine),
-          res_state_(HttpResponseParseState::kExpectResponseLine),
-          request_(new HttpRequestImpl)
+          request_(new HttpRequestImpl),
+          res_state_(HttpResponseParseState::kExpectResponseLine)
+
 {
 }
 bool HttpContext::processRequestLine(const char *begin, const char *end)

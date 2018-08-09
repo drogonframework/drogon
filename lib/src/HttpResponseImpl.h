@@ -236,8 +236,9 @@ namespace drogon
             std::swap(_left_body_length,that._left_body_length);
             std::swap(_current_chunk_length,that._current_chunk_length);
             std::swap(_contentType,that._contentType);
+            _jsonPtr.swap(that._jsonPtr);
         }
-        void parseJson()
+        void parseJson() const
         {
             //parse json data in reponse
             _jsonPtr=std::make_shared<Json::Value>();
@@ -253,6 +254,9 @@ namespace drogon
         }
         virtual const std::shared_ptr<Json::Value> getJsonObject() const override
         {
+            if(!_jsonPtr){
+                parseJson();
+            }
             return _jsonPtr;
         }
     protected:
@@ -272,7 +276,7 @@ namespace drogon
         size_t _current_chunk_length;
         uint8_t _contentType=CT_TEXT_HTML;
 
-        std::shared_ptr<Json::Value> _jsonPtr;
+        mutable std::shared_ptr<Json::Value> _jsonPtr;
         //trantor::Date receiveTime_;
 
         void setContentType(const std::string& contentType)
