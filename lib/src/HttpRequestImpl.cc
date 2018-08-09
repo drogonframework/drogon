@@ -24,7 +24,6 @@
  */
 
 #include "HttpRequestImpl.h"
-#include "Utilities.h"
 
 #include <iostream>
 using namespace drogon;

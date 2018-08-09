@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <drogon/utils/Utilities.h>
 #include <drogon/HttpApiBinder.h>
 #include <trantor/utils/NonCopyable.h>
 #include <drogon/DrObject.h>
@@ -27,6 +28,7 @@
 #include <drogon/NotFound.h>
 #include <drogon/HttpClient.h>
 #include <trantor/net/EventLoop.h>
+#include <drogon/CacheMap.h>
 #include <memory>
 #include <string>
 #include <functional>

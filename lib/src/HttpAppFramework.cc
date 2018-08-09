@@ -12,10 +12,10 @@
  *
  */
 #include "SharedLibManager.h"
-#include "Utilities.h"
 #include "HttpRequestImpl.h"
 #include "HttpResponseImpl.h"
 #include "HttpClientImpl.h"
+#include <drogon/utils/Utilities.h>
 #include <drogon/DrClassMap.h>
 #include <drogon/HttpAppFramework.h>
 #include <drogon/HttpRequest.h>
@@ -120,9 +120,6 @@ namespace drogon
         std::atomic_bool _running;
 
         //tool funcs
-
-        std::string getUuid();
-        std::string stringToHex(unsigned char* ptr, long long length);
 
 
         size_t _threadNum=1;
@@ -428,7 +425,7 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestPtr& req,const std::f
     {
         if(session_id=="")
         {
-            session_id=getUuid().c_str();
+            session_id=getuuid().c_str();
             needSetJsessionid=true;
             _sessionMapPtr->insert(session_id,std::make_shared< Session >(),_sessionTimeout);
         }
@@ -643,39 +640,6 @@ void HttpAppFrameworkImpl::readSendFile(const std::string& filePath,const HttpRe
     LOG_INFO << "file len:" << str.length();
     resp->setBody(std::move(str));
 
-}
-
-std::string HttpAppFrameworkImpl::getUuid()
-{
-    uuid_t uu;
-    uuid_generate(uu);
-    return stringToHex(uu, 16);
-}
-
-std::string HttpAppFrameworkImpl::stringToHex(unsigned char* ptr, long long length)
-{
-    std::string idString;
-    for (long long i = 0; i < length; i++)
-    {
-        int value = (ptr[i] & 0xf0)>>4;
-        if (value < 10)
-        {
-            idString.append(1, char(value + 48));
-        } else
-        {
-            idString.append(1, char(value + 55));
-        }
-
-        value = (ptr[i] & 0x0f);
-        if (value < 10)
-        {
-            idString.append(1, char(value + 48));
-        } else
-        {
-            idString.append(1, char(value + 55));
-        }
-    }
-    return idString;
 }
 
 trantor::EventLoop *HttpAppFrameworkImpl::loop()
