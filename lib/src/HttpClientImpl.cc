@@ -110,6 +110,11 @@ void HttpClientImpl::onRecvMessage(const trantor::TcpConnectionPtr &connPtr,tran
         auto cb=_reqAndCallbacks.front().second;
         cb(ReqResult::Ok,resp);
         _reqAndCallbacks.pop();
+        auto type=resp.getHeader("Content-Type");
+        if(type.find("application/json")!=std::string::npos)
+        {
+            resp.parseJson();
+        }
         context->reset();
         LOG_TRACE<<"req buffer size="<<_reqAndCallbacks.size();
         if(!_reqAndCallbacks.empty())

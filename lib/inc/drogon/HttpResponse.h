@@ -92,7 +92,7 @@ namespace drogon
 
         virtual void setContentTypeCode(uint8_t type)=0;
 
-        virtual std::string getHeader(const std::string& key)=0;
+        virtual std::string getHeader(const std::string& key) const =0;
 
         virtual void addHeader(const std::string& key, const std::string& value)=0;
 
@@ -112,6 +112,7 @@ namespace drogon
 
         virtual std::string getBody() const=0;
 
+        virtual const std::shared_ptr<Json::Value> getJsonObject() const =0;
         static HttpResponsePtr newHttpResponse();
         static HttpResponsePtr notFoundResponse();
         static HttpResponsePtr newHttpJsonResponse(const Json::Value &data);

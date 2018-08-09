@@ -108,16 +108,21 @@ namespace drogon
             setContentType(web_content_type_to_string(type));
         }
 
+//        virtual uint8_t contentTypeCode() override
+//        {
+//            return _contentType;
+//        }
 
-        virtual std::string getHeader(const std::string& key) override
+        virtual std::string getHeader(const std::string& key) const override
         {
-            if(_headers.find(key) == _headers.end())
+            auto iter=_headers.find(key);
+            if(iter == _headers.end())
             {
                 return "";
             }
             else
             {
-                return _headers[key];
+                return iter->second;
             }
         }
         virtual void addHeader(const std::string& key, const std::string& value) override
@@ -232,6 +237,24 @@ namespace drogon
             std::swap(_current_chunk_length,that._current_chunk_length);
             std::swap(_contentType,that._contentType);
         }
+        void parseJson()
+        {
+            //parse json data in reponse
+            _jsonPtr=std::make_shared<Json::Value>();
+            Json::CharReaderBuilder builder;
+            builder["collectComments"] = false;
+            JSONCPP_STRING errs;
+            std::unique_ptr<Json::CharReader> reader(builder.newCharReader());
+            if (!reader->parse(_body.data(), _body.data() + _body.size(), _jsonPtr.get() , &errs))
+            {
+                LOG_ERROR<<errs;
+                _jsonPtr.reset();
+            }
+        }
+        virtual const std::shared_ptr<Json::Value> getJsonObject() const override
+        {
+            return _jsonPtr;
+        }
     protected:
         static const std::string web_content_type_to_string(uint8_t contenttype);
         static const std::string web_response_code_to_string(int code);
@@ -249,6 +272,7 @@ namespace drogon
         size_t _current_chunk_length;
         uint8_t _contentType=CT_TEXT_HTML;
 
+        std::shared_ptr<Json::Value> _jsonPtr;
         //trantor::Date receiveTime_;
 
         void setContentType(const std::string& contentType)
