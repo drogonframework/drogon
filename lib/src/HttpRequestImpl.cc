@@ -124,13 +124,26 @@ void HttpRequestImpl::appendToBuffer(MsgBuffer* output) const
 	if(_path.size() != 0)
 	{
 		output->append(_path);
-		output->append(" ");
 	}
 	else
 	{
-		output->append("/ ");
+		output->append("/");
 	}
 
+	if(_parameters.size()!=0)
+    {
+        output->append("?");
+        for(auto p:_parameters)
+        {
+            output->append(p.first);
+            output->append("=");
+            output->append(p.second);
+            output->append("&");
+        }
+        output->unwrite(1);
+    }
+
+    output->append(" ");
 	if(_version == kHttp11)
 	{
 		output->append("HTTP/1.1");

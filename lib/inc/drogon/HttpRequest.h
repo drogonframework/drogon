@@ -55,7 +55,8 @@ namespace drogon
         virtual const std::shared_ptr<Json::Value> getJsonObject() const=0;
 
         virtual void setMethod(const Method method)=0;
-
+        virtual void setPath(const std::string &path)=0;
+        virtual void setParameter(const std::string &key,const std::string &value)=0;
         static HttpRequestPtr newHttpRequest();
     };
 

@@ -19,6 +19,8 @@ int main()
         auto client=HttpClient::newHttpClient(netaddr.toIp(),80);
         auto req=HttpRequest::newHttpRequest();
         req->setMethod(drogon::HttpRequest::kGet);
+        req->setPath("/s");
+        req->setParameter("wd","weixin");
         int count=0;
         for(int i=0;i<10;i++)
             client->sendRequest(req,[&](ReqResult result,const HttpResponse &response){

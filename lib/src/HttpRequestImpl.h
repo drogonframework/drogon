@@ -138,10 +138,10 @@ namespace drogon
         {
             _path=urlDecode(std::string(start,end));
         }
-//        void setPath(const std::string& path)
-//        {
-//            _path = path;
-//        }
+        virtual void setPath(const std::string& path) override
+        {
+            _path = path;
+        }
 
         const std::map<std::string,std::string > & getParameters() const override
         {
@@ -281,7 +281,10 @@ namespace drogon
         {
             return _cookies;
         }
-
+        virtual void setParameter(const std::string &key,const std::string &value) override
+        {
+            _parameters[key]=value;
+        }
         const std::string& getContent() const
         {
             return content_;
