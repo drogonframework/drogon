@@ -579,13 +579,15 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestPtr& req,const std::f
             }
         }
     }
-    auto res=drogon::HttpResponse::notFoundResponse();
+    else{
+        //No controller found
+        auto res=drogon::HttpResponse::notFoundResponse();
 
-    if(needSetJsessionid)
+        if(needSetJsessionid)
             res->addCookie("JSESSIONID",session_id);
 
-    callback(*res);
-
+        callback(*res);
+    }
 }
 
 void HttpAppFrameworkImpl::readSendFile(const std::string& filePath,const HttpRequestPtr& req, HttpResponse* resp)
