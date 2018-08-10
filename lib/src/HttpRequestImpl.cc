@@ -30,7 +30,11 @@ using namespace drogon;
 
 void HttpRequestImpl::parsePremeter()
 {
-    const std::string &type=getHeader("Content-Type");
+    std::string type=getHeader("Content-Type");
+    if(type.empty())
+    {
+        type=getHeader("content-type");
+    }
     const std::string &input=query();
     if(_method==kGet||(_method==kPost&&(type==""||type.find("application/x-www-form-urlencoded")!=std::string::npos)))
     {
