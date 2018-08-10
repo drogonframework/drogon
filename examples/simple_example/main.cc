@@ -6,7 +6,7 @@
 #include <string>
 
 using namespace drogon;
-class A
+class A:public DrObjectBase
 {
 public:
     void handle(const HttpRequestPtr& req,
@@ -26,7 +26,7 @@ public:
         callback(*res);
     }
 };
-class B
+class B:public DrObjectBase
 {
 public:
     void operator ()(const HttpRequestPtr& req,const std::function<void (HttpResponse &)>&callback,int p1,int p2)

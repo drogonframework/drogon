@@ -38,7 +38,8 @@
 
 namespace drogon
 {
-
+    std::map<std::string,std::shared_ptr<drogon::DrObjectBase>> HttpApiBinderBase::_objMap;
+    std::mutex HttpApiBinderBase::_objMutex;
     class HttpAppFrameworkImpl:public HttpAppFramework
     {
     public:

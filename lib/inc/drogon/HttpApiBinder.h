@@ -17,6 +17,7 @@
 #include <drogon/HttpRequest.h>
 #include <drogon/HttpResponse.h>
 #include <drogon/utils/FunctionTraits.h>
+#include <drogon/DrObject.h>
 #include <list>
 #include <string>
 #include <sstream>
@@ -52,6 +53,12 @@ namespace drogon{
         =0;
         virtual size_t paramCount()=0;
         virtual ~HttpApiBinderBase(){}
+
+    protected:
+
+        static std::map<std::string,std::shared_ptr<drogon::DrObjectBase>> _objMap;
+        static std::mutex _objMutex;
+
     };
     typedef std::shared_ptr<HttpApiBinderBase> HttpApiBinderBasePtr;
     template <typename FUNCTION>
@@ -136,8 +143,22 @@ namespace drogon{
                 const HttpRequestPtr& req,std::function<void (HttpResponse &)>callback,
                 Values&&... values)
         {
-            static typename traits::class_type obj;
-            (obj.*_func)(req,callback,std::move(values)...);
+            static auto className=drogon::DrObjectBase::demangle(typeid(typename traits::class_type).name());
+            std::shared_ptr<typename traits::class_type> obj;
+            {
+                std::lock_guard<std::mutex> guard(_objMutex);
+                if(_objMap.find(className)==_objMap.end())
+                {
+                    obj=std::shared_ptr<typename traits::class_type>(new typename traits::class_type);
+                    _objMap[className]=obj;
+                }
+                else
+                {
+                    obj=std::dynamic_pointer_cast<typename traits::class_type>(_objMap[className]);
+                }
+            }
+            assert(obj);
+            ((*obj).*_func)(req,callback,std::move(values)...);
         };
         template <typename... Values,
                 bool isClassFunction = traits::isClassFunction>
