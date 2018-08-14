@@ -579,6 +579,14 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestPtr& req,const std::f
                 }
             }
         }
+        else{
+            //No controller found
+            auto res=drogon::HttpResponse::notFoundResponse();
+            if(needSetJsessionid)
+                res->addCookie("JSESSIONID",session_id);
+
+            callback(*res);
+        }
     }
     else{
         //No controller found

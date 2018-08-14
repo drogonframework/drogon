@@ -21,7 +21,7 @@
 #include <vector>
 #include <iostream>
 
-#define METHOD_LIST_BEGIN public:\
+#define METHOD_LIST_BEGIN \
 static void initMethods() \
 {
   #define METHOD_ADD(method,pattern,isMethodNameInPath,filters...) \
@@ -41,7 +41,9 @@ static void initMethods() \
 
   #define METHOD_LIST_END \
   return;\
-}
+}\
+protected:
+
 namespace drogon
 {
     template <typename T>

@@ -47,6 +47,7 @@ namespace api
     {
         class Test:public HttpApiController<Test>
         {
+        public:
             METHOD_LIST_BEGIN
             METHOD_ADD(Test::get,"/{2}/{1}",1,"drogon::GetFilter");//path will be /api/v1/test/get/{arg2}/{arg1}
             METHOD_ADD(Test::list,"/{2}/info",0,"drogon::GetFilter");//path will be /api/v1/test/{arg2}/info
