@@ -13,6 +13,10 @@ HttpClientImpl::HttpClientImpl(trantor::EventLoop *loop,
 {
 
 }
+HttpClientImpl::~HttpClientImpl()
+{
+    LOG_TRACE<<"Deconstruction HttpClient";
+}
 void HttpClientImpl::sendRequest(const drogon::HttpRequestPtr &req, const drogon::HttpReqCallback &callback)
 {
     _loop->runInLoop([=](){

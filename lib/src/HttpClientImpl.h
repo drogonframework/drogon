@@ -21,17 +21,18 @@
 namespace drogon{
 class HttpClientImpl:public HttpClient,public std::enable_shared_from_this<HttpClientImpl>
     {
-    public:
-        HttpClientImpl(trantor::EventLoop *loop,const trantor::InetAddress &addr,bool useSSL=false);
-        virtual void sendRequest(const HttpRequestPtr &req,const HttpReqCallback &callback) override;
-    private:
-        std::shared_ptr<trantor::TcpClient> _tcpClient;
-        trantor::EventLoop *_loop;
-        trantor::InetAddress _server;
-        bool _useSSL;
-        void sendReq(const trantor::TcpConnectionPtr &connectorPtr,const HttpRequestPtr &req);
-        void sendRequestInLoop(const HttpRequestPtr &req,const HttpReqCallback &callback);
-        std::queue<std::pair<HttpRequestPtr,HttpReqCallback>> _reqAndCallbacks;
-        void onRecvMessage(const trantor::TcpConnectionPtr&,trantor::MsgBuffer*);
-    };
+public:
+    HttpClientImpl(trantor::EventLoop *loop,const trantor::InetAddress &addr,bool useSSL=false);
+    virtual void sendRequest(const HttpRequestPtr &req,const HttpReqCallback &callback) override;
+    ~HttpClientImpl();
+private:
+    std::shared_ptr<trantor::TcpClient> _tcpClient;
+    trantor::EventLoop *_loop;
+    trantor::InetAddress _server;
+    bool _useSSL;
+    void sendReq(const trantor::TcpConnectionPtr &connectorPtr,const HttpRequestPtr &req);
+    void sendRequestInLoop(const HttpRequestPtr &req,const HttpReqCallback &callback);
+    std::queue<std::pair<HttpRequestPtr,HttpReqCallback>> _reqAndCallbacks;
+    void onRecvMessage(const trantor::TcpConnectionPtr&,trantor::MsgBuffer*);
+};
 }
