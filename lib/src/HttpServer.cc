@@ -50,7 +50,8 @@ HttpServer::HttpServer(EventLoop* loop,
                        const InetAddress& listenAddr,
                        const std::string& name)
         : server_(loop, listenAddr, name.c_str()),
-          httpAsyncCallback_(defaultHttpAsyncCallback)
+          httpAsyncCallback_(defaultHttpAsyncCallback),
+          newWebsocketCallback_(defaultHttpAsyncCallback)
 {
     server_.setConnectionCallback(
             std::bind(&HttpServer::onConnection, this, _1));
@@ -86,6 +87,11 @@ void HttpServer::onMessage(const TcpConnectionPtr& conn,
     HttpContext* context = any_cast<HttpContext>(conn->getMutableContext());
 
     // LOG_INFO << "###:" << string(buf->peek(), buf->readableBytes());
+    if(context->isWebsock())
+    {
+        //websocket payload,we shouldn't parse it
+        return;
+    }
     if (!context->parseRequest(buf)) {
         conn->send("HTTP/1.1 400 Bad Request\r\n\r\n");
         //conn->shutdown();
@@ -96,17 +102,40 @@ void HttpServer::onMessage(const TcpConnectionPtr& conn,
         context->requestImpl()->setPeerAddr(conn->peerAddr());
         context->requestImpl()->setLocalAddr(conn->lobalAddr());
         context->requestImpl()->setReceiveDate(trantor::Date::date());
-
-        onRequest(conn, context->request());
+        if(context->firstReq()&&isWebSocket(conn,context->request()))
+        {
+            newWebsocketCallback_(context->request(),[=](HttpResponse &resp) mutable
+            {
+                if(resp.statusCode()==HttpResponse::k101)
+                {
+                    context->setIsWebsock(true);
+                }
+                MsgBuffer buffer;
+                ((HttpResponseImpl &)resp).appendToBuffer(&buffer);
+                conn->send(buffer.peek(),buffer.readableBytes());
+            });
+        }
+        else
+            onRequest(conn, context->request());
         context->reset();
     }
 }
+bool HttpServer::isWebSocket(const TcpConnectionPtr& conn, const HttpRequestPtr& req)
+{
+    if(req->getHeader("Connection")=="Upgrade"&&
+       req->getHeader("Upgrade")=="websocket")
+    {
+        LOG_TRACE<<"new websocket request";
 
+        return true;
+    }
+    return false;
+}
 void HttpServer::onRequest(const TcpConnectionPtr& conn, const HttpRequestPtr& req)
 {
     const std::string& connection = req->getHeader("Connection");
     bool _close = connection == "close" ||
-                 (req->getVersion() == HttpRequestImpl::kHttp10 && connection != "Keep-Alive");
+                  (req->getVersion() == HttpRequestImpl::kHttp10 && connection != "Keep-Alive");
 
 
 

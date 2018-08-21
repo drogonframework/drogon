@@ -123,7 +123,23 @@ namespace drogon
         {
             return response_;
         }
-
+        bool firstReq()
+        {
+            if(_firstRequest)
+            {
+                _firstRequest=false;
+                return true;
+            }
+            return false;
+        }
+        bool isWebsock()
+        {
+            return _isWebsock;
+        }
+        void setIsWebsock(bool val)
+        {
+            _isWebsock=val;
+        }
     private:
         bool processRequestLine(const char *begin, const char *end);
         bool processResponseLine(const char *begin, const char *end);
@@ -133,6 +149,8 @@ namespace drogon
 
         HttpResponseParseState res_state_;
         HttpResponseImpl response_;
+        bool _firstRequest=true;
+        bool _isWebsock=false;
     };
 
 }

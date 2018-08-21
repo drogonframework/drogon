@@ -42,7 +42,7 @@ stop()
 endif()
 find_package (UUID REQUIRED)
 
-find_package (OpenSSL)
+find_package (OpenSSL REQUIRED)
 if(OpenSSL_FOUND)
 #add_definitions(-DUSE_OPENSSL)
 set(DEFS "USE_OPENSSL;${DEFS}")

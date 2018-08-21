@@ -46,7 +46,10 @@ namespace drogon
         {
             httpAsyncCallback_= cb;
         }
-
+        void setNewWebsocketCallback(const HttpAsyncCallback& cb)
+        {
+            newWebsocketCallback_=cb;
+        }
         void setIoLoopNum(int numThreads)
         {
             server_.setIoLoopNum(numThreads);
@@ -65,8 +68,10 @@ namespace drogon
         void onMessage(const TcpConnectionPtr&,
                        MsgBuffer*);
         void onRequest(const TcpConnectionPtr&, const HttpRequestPtr &);
+        bool isWebSocket(const TcpConnectionPtr& conn, const HttpRequestPtr& req);
         trantor::TcpServer server_;
         HttpAsyncCallback httpAsyncCallback_;
+        HttpAsyncCallback newWebsocketCallback_;
 
     };
 

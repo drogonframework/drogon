@@ -73,7 +73,10 @@ namespace drogon
                   _current_chunk_length(0)
         {
         }
-
+        virtual HttpStatusCode statusCode() override
+        {
+            return _statusCode;
+        }
         virtual void setStatusCode(HttpStatusCode code) override
         {
             _statusCode = code;

@@ -64,6 +64,7 @@ namespace drogon
     public:
         enum HttpStatusCode {
             kUnknown,
+            k101 = 101,
             k200Ok = 200,
             k301MovedPermanently = 301,
             k302Found = 302,
@@ -80,6 +81,7 @@ namespace drogon
         {
         }
 
+        virtual HttpStatusCode statusCode()=0;
         virtual void setStatusCode(HttpStatusCode code)=0;
 
         virtual void setStatusCode(HttpStatusCode code, const std::string& status_message)=0;

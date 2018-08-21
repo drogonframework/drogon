@@ -1,8 +1,12 @@
 #include <drogon/utils/Utilities.h>
+#include <drogon/config.h>
 #include <string.h>
-#ifdef USE_OPENSSL
-#include <openssl/sha.h>
-#endif
+//#ifdef USE_OPENSSL
+//#include <openssl/sha.h>
+////#include <openssl/pem.h>
+////#include <openssl/bio.h>
+////#include <openssl/evp.h>
+//#endif
 namespace drogon{
     static const std::string base64_chars =
             "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -223,5 +227,24 @@ namespace drogon{
         return result;
     }
 
-
+//    std::string base64Encode(char *in_str, int in_len)
+//    {
+//        BIO *b64, *bio;
+//        BUF_MEM *bptr = NULL;
+//        size_t size = 0;
+//
+//        assert(in_str);
+//
+//        b64 = BIO_new(BIO_f_base64());
+//        bio = BIO_new(BIO_s_mem());
+//        bio = BIO_push(b64, bio);
+//
+//        BIO_write(bio, in_str, in_len);
+//        BIO_flush(bio);
+//
+//        BIO_get_mem_ptr(bio, &bptr);
+//        std::string ret(bptr->data,bptr->length);
+//        BIO_free_all(bio);
+//        return ret;
+//    }
 }
