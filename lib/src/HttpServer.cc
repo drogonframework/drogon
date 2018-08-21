@@ -78,6 +78,14 @@ void HttpServer::onConnection(const TcpConnectionPtr& conn)
     else if(conn->disconnected())
     {
         LOG_TRACE<<"conn disconnected!";
+        HttpContext* context = any_cast<HttpContext>(conn->getMutableContext());
+
+        // LOG_INFO << "###:" << string(buf->peek(), buf->readableBytes());
+        if(context->isWebsock())
+        {
+            //TODO websock disconnect !
+        }
+        conn->setContext(std::string("None"));
     }
 }
 
@@ -90,6 +98,7 @@ void HttpServer::onMessage(const TcpConnectionPtr& conn,
     if(context->isWebsock())
     {
         //websocket payload,we shouldn't parse it
+        //TODO websock message callback;
         return;
     }
     if (!context->parseRequest(buf)) {
@@ -100,7 +109,7 @@ void HttpServer::onMessage(const TcpConnectionPtr& conn,
     if (context->gotAll()) {
         context->requestImpl()->parsePremeter();
         context->requestImpl()->setPeerAddr(conn->peerAddr());
-        context->requestImpl()->setLocalAddr(conn->lobalAddr());
+        context->requestImpl()->setLocalAddr(conn->localAddr());
         context->requestImpl()->setReceiveDate(trantor::Date::date());
         if(context->firstReq()&&isWebSocket(conn,context->request()))
         {
