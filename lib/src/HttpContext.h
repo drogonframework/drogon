@@ -29,6 +29,7 @@
 #include "HttpRequestImpl.h"
 #include "HttpResponseImpl.h"
 #include <trantor/utils/MsgBuffer.h>
+#include <drogon/WebSocketConnection.h>
 
 using namespace trantor;
 namespace drogon
@@ -132,13 +133,13 @@ namespace drogon
             }
             return false;
         }
-        bool isWebsock()
+        WebSocketConnectionPtr webSocketConn()
         {
-            return _isWebsock;
+            return _websockConnPtr;
         }
-        void setIsWebsock(bool val)
+        void setWebsockConnection(const WebSocketConnectionPtr &conn)
         {
-            _isWebsock=val;
+            _websockConnPtr=conn;
         }
     private:
         bool processRequestLine(const char *begin, const char *end);
@@ -150,7 +151,7 @@ namespace drogon
         HttpResponseParseState res_state_;
         HttpResponseImpl response_;
         bool _firstRequest=true;
-        bool _isWebsock=false;
+        WebSocketConnectionPtr _websockConnPtr;
     };
 
 }

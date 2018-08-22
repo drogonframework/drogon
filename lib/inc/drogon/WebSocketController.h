@@ -16,6 +16,7 @@
 
 #include <drogon/DrObject.h>
 #include <drogon/HttpAppFramework.h>
+#include <drogon/WebSocketConnection.h>
 #include <trantor/utils/Logger.h>
 #include <trantor/net/TcpConnection.h>
 #include <string>
@@ -38,8 +39,11 @@ namespace drogon
     class WebSocketControllerBase:public virtual DrObjectBase
     {
     public:
-        virtual void handleNewMessage(const TcpConnectionPtr&,
-                                      MsgBuffer*)=0;
+        //on new data received
+        virtual void handleNewMessage(const WebSocketConnectionPtr&,
+                                      trantor::MsgBuffer*)=0;
+        //on new connection or after disconnect
+        virtual void handleConnection(const WebSocketConnectionPtr&)=0;
         virtual ~WebSocketControllerBase(){}
     };
 

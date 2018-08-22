@@ -27,14 +27,21 @@ namespace drogon_ctl
     protected:
         enum ControllerType{
             Simple=0,
-            API
+            API,
+            WebSocket
         };
         void createSimpleController(std::vector<std::string> &ctlNames,const std::string &namespaceName="");
         void createSimpleController(const std::string &ctlName,const std::string &namespaceName="");
+        void createWebsockController(std::vector<std::string> &ctlNames,const std::string &namespaceName="");
+        void createWebsockController(const std::string &ctlName,const std::string &namespaceName="");
+
         void createApiController(std::vector<std::string> &apiClasses);
         void createApiController(const std::string &className);
         void newSimpleControllerHeaderFile(std::ofstream &file,const std::string &ctlName,const std::string &namespaceName="");
         void newSimpleControllerSourceFile(std::ofstream &file,const std::string &ctlName,const std::string &namespaceName="");
+        void newWebsockControllerHeaderFile(std::ofstream &file,const std::string &ctlName,const std::string &namespaceName="");
+        void newWebsockControllerSourceFile(std::ofstream &file,const std::string &ctlName,const std::string &namespaceName="");
+
         void newApiControllerHeaderFile(std::ofstream &file,const std::string &className);
         void newApiControllerSourceFile(std::ofstream &file,const std::string &className,const std::string &filename);
 

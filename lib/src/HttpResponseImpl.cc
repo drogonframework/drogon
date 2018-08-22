@@ -193,12 +193,16 @@ void HttpResponseImpl::appendToBuffer(MsgBuffer* output) const
     output->append("\r\n");
     snprintf(buf, sizeof buf, "Content-Length: %lu\r\n", _body.size());
     output->append(buf);
-    if (_closeConnection) {
-        output->append("Connection: close\r\n");
-    } else {
+    if(_headers.find("Connection")==_headers.end())
+    {
+        if (_closeConnection) {
+            output->append("Connection: close\r\n");
+        } else {
 
-        output->append("Connection: Keep-Alive\r\n");
+            output->append("Connection: Keep-Alive\r\n");
+        }
     }
+
 
     for (auto it = _headers.begin();
          it != _headers.end();

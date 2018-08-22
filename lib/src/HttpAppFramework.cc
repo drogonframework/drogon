@@ -15,8 +15,8 @@
 #include "HttpRequestImpl.h"
 #include "HttpResponseImpl.h"
 #include "HttpClientImpl.h"
+#include "WebSockectConnectionImpl.h"
 #include <drogon/utils/Utilities.h>
-#include <drogon/WebSocketController.h>
 #include <drogon/DrClassMap.h>
 #include <drogon/HttpAppFramework.h>
 #include <drogon/HttpRequest.h>
@@ -69,7 +69,11 @@ namespace drogon
     private:
         std::vector<std::tuple<std::string,uint16_t,bool>> _listeners;
         void onAsyncRequest(const HttpRequestPtr& req,const std::function<void (HttpResponse &)> & callback);
-        void onNewWebsockRequest(const HttpRequestPtr& req,const std::function<void (HttpResponse &)> & callback);
+        void onNewWebsockRequest(const HttpRequestPtr& req,
+                                 const std::function<void (HttpResponse &)> & callback,
+                                 const WebSocketConnectionPtr &wsConnPtr);
+        void onWebsockMessage(const WebSocketConnectionPtr &wsConnPtr,trantor::MsgBuffer *buffer);
+        void onWebsockDisconnect(const WebSocketConnectionPtr &wsConnPtr);
         void readSendFile(const std::string& filePath,const HttpRequestPtr& req, HttpResponse* resp);
         void addApiPath(const std::string &path,
                         const HttpApiBinderBasePtr &binder,
@@ -349,8 +353,9 @@ void HttpAppFrameworkImpl::run()
         }
         serverPtr->setIoLoopNum(_threadNum);
         serverPtr->setHttpAsyncCallback(std::bind(&HttpAppFrameworkImpl::onAsyncRequest,this,_1,_2));
-        serverPtr->setNewWebsocketCallback(std::bind(&HttpAppFrameworkImpl::onNewWebsockRequest,this,_1,_2));
-
+        serverPtr->setNewWebsocketCallback(std::bind(&HttpAppFrameworkImpl::onNewWebsockRequest,this,_1,_2,_3));
+        serverPtr->setWebsocketMessageCallback(std::bind(&HttpAppFrameworkImpl::onWebsockMessage,this,_1,_2));
+        serverPtr->setDisconnectWebsocketCallback(std::bind(&HttpAppFrameworkImpl::onWebsockDisconnect,this,_1));
         serverPtr->start();
         servers.push_back(serverPtr);
 #endif
@@ -416,32 +421,69 @@ void HttpAppFrameworkImpl::doFilters(const std::vector<std::string> &filters,
     }
     doFilterChain(filterPtrs,req,callback,needSetJsessionid,session_id,missCallback);
 }
-void HttpAppFrameworkImpl::onNewWebsockRequest(const HttpRequestPtr& req,const std::function<void (HttpResponse &)> & callback)
+void HttpAppFrameworkImpl::onWebsockDisconnect(const WebSocketConnectionPtr &wsConnPtr)
 {
-//    magic = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11'
-//    sha1 = hashlib.sha1()
-//    sha1.update(ws_key + magic)
-//    return base64.b64encode(sha1.digest())
+    auto wsConnImplPtr=std::dynamic_pointer_cast<WebSocketConnectionImpl>(wsConnPtr);
+    assert(wsConnImplPtr);
+    auto ctrl=wsConnImplPtr->controller();
+    if(ctrl)
+    {
+        ctrl->handleConnection(wsConnPtr);
+        wsConnImplPtr->setController(WebSocketControllerBasePtr());
+    }
+
+}
+void HttpAppFrameworkImpl::onWebsockMessage(const WebSocketConnectionPtr &wsConnPtr,
+                                            trantor::MsgBuffer *buffer)
+{
+    auto wsConnImplPtr=std::dynamic_pointer_cast<WebSocketConnectionImpl>(wsConnPtr);
+    assert(wsConnImplPtr);
+    auto ctrl=wsConnImplPtr->controller();
+    if(ctrl)
+        ctrl->handleNewMessage(wsConnPtr,buffer);
+}
+void HttpAppFrameworkImpl::onNewWebsockRequest(const HttpRequestPtr& req,
+                                               const std::function<void (HttpResponse &)> & callback,
+                                               const WebSocketConnectionPtr &wsConnPtr)
+{
     std::string wsKey=req->getHeader("Sec-WebSocket-Key");
     if(!wsKey.empty())
     {
         // magic="258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
-        wsKey.append("258EAFA5-E914-47DA-95CA-C5AB0DC85B11");
-        unsigned char accKey[SHA_DIGEST_LENGTH];
-        SHA1(reinterpret_cast<const unsigned char *>(wsKey.c_str()), wsKey.length(), accKey);
-        auto base64Key=base64_encode(accKey,SHA_DIGEST_LENGTH);
-        auto resp=HttpResponse::newHttpResponse();
-        resp->setStatusCode(HttpResponse::k101,"Switching Protocols");
-        resp->addHeader("Upgrade","websocket");
-        resp->addHeader("Connection","Upgrade");
-        resp->addHeader("Sec-WebSocket-Accept",base64Key);
-        callback(*resp);
-    } else{
-        HttpResponseImpl resp;
-        resp.setStatusCode(HttpResponse::k404NotFound);
-        resp.setCloseConnection(true);
-        callback(resp);
+        WebSocketControllerBasePtr ctrlPtr;
+        {
+            std::string pathLower(req->path());
+            std::transform(pathLower.begin(),pathLower.end(),pathLower.begin(),tolower);
+            std::lock_guard<std::mutex> guard(_websockCtrlMutex);
+            if(_websockCtrlMap.find(pathLower)!=_websockCtrlMap.end())
+            {
+                ctrlPtr=_websockCtrlMap[pathLower];
+            }
+        }
+        if(ctrlPtr)
+        {
+            wsKey.append("258EAFA5-E914-47DA-95CA-C5AB0DC85B11");
+            unsigned char accKey[SHA_DIGEST_LENGTH];
+            SHA1(reinterpret_cast<const unsigned char *>(wsKey.c_str()), wsKey.length(), accKey);
+            auto base64Key=base64_encode(accKey,SHA_DIGEST_LENGTH);
+            auto resp=HttpResponse::newHttpResponse();
+            resp->setStatusCode(HttpResponse::k101,"Switching Protocols");
+            resp->addHeader("Upgrade","websocket");
+            resp->addHeader("Connection","Upgrade");
+            resp->addHeader("Sec-WebSocket-Accept",base64Key);
+            callback(*resp);
+            auto wsConnImplPtr=std::dynamic_pointer_cast<WebSocketConnectionImpl>(wsConnPtr);
+            assert(wsConnImplPtr);
+            wsConnImplPtr->setController(ctrlPtr);
+            ctrlPtr->handleConnection(wsConnPtr);
+            return;
+        }
     }
+    HttpResponseImpl resp;
+    resp.setStatusCode(HttpResponse::k404NotFound);
+    resp.setCloseConnection(true);
+    callback(resp);
+
 }
 void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestPtr& req,const std::function<void (HttpResponse &)> & callback)
 {

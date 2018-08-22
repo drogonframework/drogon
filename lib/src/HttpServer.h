@@ -15,6 +15,7 @@
 
 #pragma once
 
+#include "WebSockectConnectionImpl.h"
 #include <drogon/config.h>
 #include <trantor/net/TcpServer.h>
 #include <trantor/utils/NonCopyable.h>
@@ -34,6 +35,15 @@ namespace drogon
     public:
 
         typedef std::function< void (const HttpRequestPtr&,const std::function<void (HttpResponse &)>&)> HttpAsyncCallback;
+        typedef std::function< void (const HttpRequestPtr&,
+                                     const std::function<void (HttpResponse &)>&,
+                                     const WebSocketConnectionPtr &)>
+                WebSocketNewAsyncCallback;
+        typedef std::function< void (const WebSocketConnectionPtr &)>
+                WebSocketDisconnetCallback;
+        typedef std::function< void (const WebSocketConnectionPtr &,trantor::MsgBuffer *)>
+                WebSocketMessageCallback;
+
         HttpServer(EventLoop* loop,
                    const InetAddress& listenAddr,
                    const std::string& name);
@@ -46,9 +56,17 @@ namespace drogon
         {
             httpAsyncCallback_= cb;
         }
-        void setNewWebsocketCallback(const HttpAsyncCallback& cb)
+        void setNewWebsocketCallback(const WebSocketNewAsyncCallback& cb)
         {
             newWebsocketCallback_=cb;
+        }
+        void setDisconnectWebsocketCallback(const WebSocketDisconnetCallback& cb)
+        {
+            disconnectWebsocketCallback_=cb;
+        }
+        void setWebsocketMessageCallback(const WebSocketMessageCallback& cb)
+        {
+            webSocketMessageCallback_=cb;
         }
         void setIoLoopNum(int numThreads)
         {
@@ -71,8 +89,9 @@ namespace drogon
         bool isWebSocket(const TcpConnectionPtr& conn, const HttpRequestPtr& req);
         trantor::TcpServer server_;
         HttpAsyncCallback httpAsyncCallback_;
-        HttpAsyncCallback newWebsocketCallback_;
-
+        WebSocketNewAsyncCallback newWebsocketCallback_;
+        WebSocketDisconnetCallback disconnectWebsocketCallback_;
+        WebSocketMessageCallback webSocketMessageCallback_;
     };
 
 

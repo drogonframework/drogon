@@ -43,6 +43,16 @@ static void defaultHttpAsyncCallback(const HttpRequestPtr&,const std::function<v
     callback(resp);
 }
 
+static void defaultWebSockAsyncCallback(const HttpRequestPtr&,
+                                        const std::function<void( HttpResponse& resp)> & callback,
+                                        const WebSocketConnectionPtr& wsConnPtr)
+{
+    HttpResponseImpl resp;
+    resp.setStatusCode(HttpResponse::k404NotFound);
+    resp.setCloseConnection(true);
+    callback(resp);
+}
+
 
 
 
@@ -51,7 +61,7 @@ HttpServer::HttpServer(EventLoop* loop,
                        const std::string& name)
         : server_(loop, listenAddr, name.c_str()),
           httpAsyncCallback_(defaultHttpAsyncCallback),
-          newWebsocketCallback_(defaultHttpAsyncCallback)
+          newWebsocketCallback_(defaultWebSockAsyncCallback)
 {
     server_.setConnectionCallback(
             std::bind(&HttpServer::onConnection, this, _1));
@@ -81,9 +91,9 @@ void HttpServer::onConnection(const TcpConnectionPtr& conn)
         HttpContext* context = any_cast<HttpContext>(conn->getMutableContext());
 
         // LOG_INFO << "###:" << string(buf->peek(), buf->readableBytes());
-        if(context->isWebsock())
+        if(context->webSocketConn())
         {
-            //TODO websock disconnect !
+            disconnectWebsocketCallback_(context->webSocketConn());
         }
         conn->setContext(std::string("None"));
     }
@@ -95,10 +105,10 @@ void HttpServer::onMessage(const TcpConnectionPtr& conn,
     HttpContext* context = any_cast<HttpContext>(conn->getMutableContext());
 
     // LOG_INFO << "###:" << string(buf->peek(), buf->readableBytes());
-    if(context->isWebsock())
+    if(context->webSocketConn())
     {
         //websocket payload,we shouldn't parse it
-        //TODO websock message callback;
+        webSocketMessageCallback_(context->webSocketConn(),buf);
         return;
     }
     if (!context->parseRequest(buf)) {
@@ -113,16 +123,17 @@ void HttpServer::onMessage(const TcpConnectionPtr& conn,
         context->requestImpl()->setReceiveDate(trantor::Date::date());
         if(context->firstReq()&&isWebSocket(conn,context->request()))
         {
+            auto wsConn=std::make_shared<WebSocketConnectionImpl>(conn);
             newWebsocketCallback_(context->request(),[=](HttpResponse &resp) mutable
             {
                 if(resp.statusCode()==HttpResponse::k101)
                 {
-                    context->setIsWebsock(true);
+                    context->setWebsockConnection(wsConn);
                 }
                 MsgBuffer buffer;
                 ((HttpResponseImpl &)resp).appendToBuffer(&buffer);
                 conn->send(buffer.peek(),buffer.readableBytes());
-            });
+            },wsConn);
         }
         else
             onRequest(conn, context->request());

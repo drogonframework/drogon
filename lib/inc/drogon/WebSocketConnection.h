@@ -20,7 +20,7 @@
 #include <string>
 #include <memory>
 namespace drogon{
-    class WebSocketConnection:public trantor::NonCopyable
+    class WebSocketConnection
     {
     public:
         WebSocketConnection()= default;
