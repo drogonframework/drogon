@@ -11,6 +11,7 @@ WebSocketConnectionImpl::WebSocketConnectionImpl(const trantor::TcpConnectionPtr
 }
 void WebSocketConnectionImpl::send(const char *msg,uint64_t len)
 {
+    LOG_TRACE<<"send "<<len<<" bytes";
     auto conn=_tcpConn.lock();
     if(conn)
     {
@@ -30,29 +31,30 @@ void WebSocketConnectionImpl::send(const char *msg,uint64_t len)
         else if(len>= 126 && len <= 65535)
         {
             bytesFormatted[1] = 126;
-            bytesFormatted[2] = ( len >> 8 ) & 255;
-            bytesFormatted[3] = ( len      ) & 255;
+            bytesFormatted[2] = (( len >> 8 ) & 255);
+            bytesFormatted[3] = (( len      ) & 255);
 
             indexStartRawData = 4;
         }
         else
         {
             bytesFormatted[1] = 127;
-            bytesFormatted[2] = ( len >> 56 ) & 255;
-            bytesFormatted[3] = ( len >> 48 ) & 255;
-            bytesFormatted[4] = ( len >> 40 ) & 255;
-            bytesFormatted[5] = ( len >> 32 ) & 255;
-            bytesFormatted[6] = ( len >> 24 ) & 255;
-            bytesFormatted[7] = ( len >> 16 ) & 255;
-            bytesFormatted[8] = ( len >>  8 ) & 255;
-            bytesFormatted[9] = ( len       ) & 255;
+            bytesFormatted[2] = (( len >> 56 ) & 255);
+            bytesFormatted[3] = (( len >> 48 ) & 255);
+            bytesFormatted[4] = (( len >> 40 ) & 255);
+            bytesFormatted[5] = (( len >> 32 ) & 255);
+            bytesFormatted[6] = (( len >> 24 ) & 255);
+            bytesFormatted[7] = (( len >> 16 ) & 255);
+            bytesFormatted[8] = (( len >>  8 ) & 255);
+            bytesFormatted[9] = (( len       ) & 255);
 
             indexStartRawData = 10;
         }
 
         bytesFormatted.resize(indexStartRawData);
+        LOG_TRACE<<"fheadlen="<<bytesFormatted.length();
         bytesFormatted.append(msg,len);
-        LOG_TRACE<<"send formatted frame len="<<bytesFormatted.length();
+        LOG_TRACE<<"send formatted frame len="<<len<<" flen="<<bytesFormatted.length();
         conn->send(bytesFormatted);
     }
 }

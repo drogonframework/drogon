@@ -438,7 +438,13 @@ std::string parseWebsockFrame(trantor::MsgBuffer *buffer)
     if(buffer->readableBytes()>=2)
     {
         auto secondByte=(*buffer)[1];
-        int length=secondByte & 127;
+        unsigned int length=secondByte & 127;
+        int isMasked=(secondByte & 0x80);
+        if(isMasked!=0)
+        {
+            LOG_TRACE<<"data encoded!";
+        } else
+            LOG_TRACE<<"plain data";
         int indexFirstMask = 2;
 
         if (length == 126)
@@ -453,22 +459,23 @@ std::string parseWebsockFrame(trantor::MsgBuffer *buffer)
         {
             if(indexFirstMask==4)
             {
-                length=(*buffer)[2];
-                length=(length<<8)+(*buffer)[3];
+                length=(unsigned int)(*buffer)[2];
+                length=(length<<8)+(unsigned int)(*buffer)[3];
             } else if(indexFirstMask==10)
             {
-                length=(*buffer)[2];
-                length=(length<<8)+(*buffer)[3];
-                length=(length<<8)+(*buffer)[4];
-                length=(length<<8)+(*buffer)[5];
-                length=(length<<8)+(*buffer)[6];
-                length=(length<<8)+(*buffer)[7];
-                length=(length<<8)+(*buffer)[8];
-                length=(length<<8)+(*buffer)[9];
+                length=(unsigned int)(*buffer)[2];
+                length=(length<<8)+(unsigned int)(*buffer)[3];
+                length=(length<<8)+(unsigned int)(*buffer)[4];
+                length=(length<<8)+(unsigned int)(*buffer)[5];
+                length=(length<<8)+(unsigned int)(*buffer)[6];
+                length=(length<<8)+(unsigned int)(*buffer)[7];
+                length=(length<<8)+(unsigned int)(*buffer)[8];
+                length=(length<<8)+(unsigned int)(*buffer)[9];
             } else{
                 assert(0);
             }
         }
+        LOG_TRACE<<"websocket message len="<<length;
         if(buffer->readableBytes()>=(indexFirstMask+4+length))
         {
             auto masks=buffer->peek()+indexFirstMask;
@@ -478,9 +485,10 @@ std::string parseWebsockFrame(trantor::MsgBuffer *buffer)
             message.resize(length);
             for(int i=0;i<length;i++)
             {
-                message[i]=rawData[i]^masks[i%4];
+                message[i]=(rawData[i]^masks[i%4]);
             }
             buffer->retrieve(indexFirstMask+4+length);
+            LOG_TRACE<<"got message len="<<message.length();
             return message;
         }
     }
