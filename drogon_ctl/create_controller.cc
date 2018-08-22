@@ -122,7 +122,7 @@ void create_controller::handleCommand(std::vector<std::string> &parameters)
             }
 
         }
-        createSimpleController(parameters,namespaceName);
+        createWebsockController(parameters,namespaceName);
     }
     else
         createApiController(parameters);
@@ -241,7 +241,7 @@ void create_controller::newSimpleControllerSourceFile(std::ofstream &file,const 
 void create_controller::newWebsockControllerHeaderFile(std::ofstream &file,const std::string &ctlName,const std::string &namespaceName)
 {
     file<<"#pragma once\n";
-    file<<"#include <drogon/HttpWebsocketController.h>\n";
+    file<<"#include <drogon/WebsocketController.h>\n";
     file<<"using namespace drogon;\n";
     std::string indent="";
     auto namespace_name=namespaceName;
@@ -263,7 +263,7 @@ void create_controller::newWebsockControllerHeaderFile(std::ofstream &file,const
             indent.append("    ");
         }
     }
-    file<<indent<<"class "<<ctlName<<":public drogon::HttpWebsocketController<"<<ctlName<<">\n";
+    file<<indent<<"class "<<ctlName<<":public drogon::WebSocketController<"<<ctlName<<">\n";
     file<<indent<<"{\n";
     file<<indent<<"public:\n";
     //TestController(){}
