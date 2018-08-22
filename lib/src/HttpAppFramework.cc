@@ -433,6 +433,59 @@ void HttpAppFrameworkImpl::onWebsockDisconnect(const WebSocketConnectionPtr &wsC
     }
 
 }
+std::string parseWebsockFrame(trantor::MsgBuffer *buffer)
+{
+    if(buffer->readableBytes()>=2)
+    {
+        auto secondByte=(*buffer)[1];
+        int length=secondByte & 127;
+        int indexFirstMask = 2;
+
+        if (length == 126)
+        {
+            indexFirstMask = 4;
+        }
+        else if (length == 127)
+        {
+            indexFirstMask = 10;
+        }
+        if(indexFirstMask>2&&buffer->readableBytes()>=indexFirstMask)
+        {
+            if(indexFirstMask==4)
+            {
+                length=(*buffer)[2];
+                length=(length<<8)+(*buffer)[3];
+            } else if(indexFirstMask==10)
+            {
+                length=(*buffer)[2];
+                length=(length<<8)+(*buffer)[3];
+                length=(length<<8)+(*buffer)[4];
+                length=(length<<8)+(*buffer)[5];
+                length=(length<<8)+(*buffer)[6];
+                length=(length<<8)+(*buffer)[7];
+                length=(length<<8)+(*buffer)[8];
+                length=(length<<8)+(*buffer)[9];
+            } else{
+                assert(0);
+            }
+        }
+        if(buffer->readableBytes()>=(indexFirstMask+4+length))
+        {
+            auto masks=buffer->peek()+indexFirstMask;
+            int indexFirstDataByte = indexFirstMask + 4;
+            auto rawData=buffer->peek()+indexFirstDataByte;
+            std::string message;
+            message.resize(length);
+            for(int i=0;i<length;i++)
+            {
+                message[i]=rawData[i]^masks[i%4];
+            }
+            buffer->retrieve(indexFirstMask+4+length);
+            return message;
+        }
+    }
+    return std::string();
+}
 void HttpAppFrameworkImpl::onWebsockMessage(const WebSocketConnectionPtr &wsConnPtr,
                                             trantor::MsgBuffer *buffer)
 {
@@ -440,7 +493,14 @@ void HttpAppFrameworkImpl::onWebsockMessage(const WebSocketConnectionPtr &wsConn
     assert(wsConnImplPtr);
     auto ctrl=wsConnImplPtr->controller();
     if(ctrl)
-        ctrl->handleNewMessage(wsConnPtr,buffer);
+    {
+        std::string message;
+        while(!(message=parseWebsockFrame(buffer)).empty())
+        {
+            LOG_TRACE<<"Got websock message:"<<message;
+            ctrl->handleNewMessage(wsConnPtr,message);
+        }
+    }
 }
 void HttpAppFrameworkImpl::onNewWebsockRequest(const HttpRequestPtr& req,
                                                const std::function<void (HttpResponse &)> & callback,

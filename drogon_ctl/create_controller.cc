@@ -241,7 +241,7 @@ void create_controller::newSimpleControllerSourceFile(std::ofstream &file,const 
 void create_controller::newWebsockControllerHeaderFile(std::ofstream &file,const std::string &ctlName,const std::string &namespaceName)
 {
     file<<"#pragma once\n";
-    file<<"#include <drogon/WebsocketController.h>\n";
+    file<<"#include <drogon/WebSocketController.h>\n";
     file<<"using namespace drogon;\n";
     std::string indent="";
     auto namespace_name=namespaceName;
@@ -272,7 +272,7 @@ void create_controller::newWebsockControllerHeaderFile(std::ofstream &file,const
 //    //on new connection or after disconnect
 //    virtual void handleConnection(const WebSocketConnectionPtr&)=0;
     file<<indent<<"    virtual void handleNewMessage(const WebSocketConnectionPtr&,\n";
-    file<<indent<<"                                  trantor::MsgBuffer*)override;\n";
+    file<<indent<<"                                  const std::string &)override;\n";
     file<<indent<<"    virtual void handleConnection(const WebSocketConnectionPtr&)override;\n";
     file<<indent<<"    WS_PATH_LIST_BEGIN\n";
     file<<indent<<"    //list path definations here;\n";
@@ -291,7 +291,7 @@ void create_controller::newWebsockControllerSourceFile(std::ofstream &file,const
     file<<"#include \""<<ctlName<<".h\"\n";
     if(namespaceName!="")
         file<<"using namespace "<<namespaceName<<";\n";
-    file<<"void "<<ctlName<<"::handleNewMessage(const WebSocketConnectionPtr& wsConnPtr,trantor::MsgBuffer* buffer)\n";
+    file<<"void "<<ctlName<<"::handleNewMessage(const WebSocketConnectionPtr& wsConnPtr,const std::string &message)\n";
     file<<"{\n";
     file<<"    //write your application logic here\n";
     file<<"}";

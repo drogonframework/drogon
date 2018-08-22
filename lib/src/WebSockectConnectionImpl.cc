@@ -14,16 +14,51 @@ void WebSocketConnectionImpl::send(const char *msg,uint64_t len)
     auto conn=_tcpConn.lock();
     if(conn)
     {
-        conn->send(msg,len);
+        //format the frame
+        std::string bytesFormatted;
+        bytesFormatted.resize(len+10);
+        bytesFormatted[0] = char(129);
+
+        int indexStartRawData = -1;
+        // set here - it will be set now:
+
+        if (len<=125) {
+            bytesFormatted[1] = len;
+
+            indexStartRawData = 2;
+        }
+        else if(len>= 126 && len <= 65535)
+        {
+            bytesFormatted[1] = 126;
+            bytesFormatted[2] = ( len >> 8 ) & 255;
+            bytesFormatted[3] = ( len      ) & 255;
+
+            indexStartRawData = 4;
+        }
+        else
+        {
+            bytesFormatted[1] = 127;
+            bytesFormatted[2] = ( len >> 56 ) & 255;
+            bytesFormatted[3] = ( len >> 48 ) & 255;
+            bytesFormatted[4] = ( len >> 40 ) & 255;
+            bytesFormatted[5] = ( len >> 32 ) & 255;
+            bytesFormatted[6] = ( len >> 24 ) & 255;
+            bytesFormatted[7] = ( len >> 16 ) & 255;
+            bytesFormatted[8] = ( len >>  8 ) & 255;
+            bytesFormatted[9] = ( len       ) & 255;
+
+            indexStartRawData = 10;
+        }
+
+        bytesFormatted.resize(indexStartRawData);
+        bytesFormatted.append(msg,len);
+        LOG_TRACE<<"send formatted frame len="<<bytesFormatted.length();
+        conn->send(bytesFormatted);
     }
 }
 void WebSocketConnectionImpl::send(const std::string &msg)
 {
-    auto conn=_tcpConn.lock();
-    if(conn)
-    {
-        conn->send(msg);
-    }
+    send(msg.data(),msg.length());
 }
 const trantor::InetAddress& WebSocketConnectionImpl::localAddr() const
 {
