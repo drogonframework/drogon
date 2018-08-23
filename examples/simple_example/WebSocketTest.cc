@@ -1,6 +1,6 @@
 #include "WebSocketTest.h"
 using namespace example;
-void WebSocketTest::handleNewMessage(const WebSocketConnectionPtr& wsConnPtr,const std::string &message)
+void WebSocketTest::handleNewMessage(const WebSocketConnectionPtr& wsConnPtr,std::string &&message)
 {
     //write your application logic here
     LOG_TRACE<<"new websocket message:"<<message;

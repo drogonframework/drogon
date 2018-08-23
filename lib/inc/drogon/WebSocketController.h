@@ -41,7 +41,7 @@ namespace drogon
     public:
         //on new data received
         virtual void handleNewMessage(const WebSocketConnectionPtr&,
-                                      const std::string &message)=0;
+                                      std::string &&message)=0;
         //on new connection or after disconnect
         virtual void handleConnection(const WebSocketConnectionPtr&)=0;
         virtual ~WebSocketControllerBase(){}

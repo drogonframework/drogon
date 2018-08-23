@@ -272,7 +272,7 @@ void create_controller::newWebsockControllerHeaderFile(std::ofstream &file,const
 //    //on new connection or after disconnect
 //    virtual void handleConnection(const WebSocketConnectionPtr&)=0;
     file<<indent<<"    virtual void handleNewMessage(const WebSocketConnectionPtr&,\n";
-    file<<indent<<"                                  const std::string &)override;\n";
+    file<<indent<<"                                  std::string &&)override;\n";
     file<<indent<<"    virtual void handleConnection(const WebSocketConnectionPtr&)override;\n";
     file<<indent<<"    WS_PATH_LIST_BEGIN\n";
     file<<indent<<"    //list path definations here;\n";
@@ -291,10 +291,10 @@ void create_controller::newWebsockControllerSourceFile(std::ofstream &file,const
     file<<"#include \""<<ctlName<<".h\"\n";
     if(namespaceName!="")
         file<<"using namespace "<<namespaceName<<";\n";
-    file<<"void "<<ctlName<<"::handleNewMessage(const WebSocketConnectionPtr& wsConnPtr,const std::string &message)\n";
+    file<<"void "<<ctlName<<"::handleNewMessage(const WebSocketConnectionPtr& wsConnPtr,std::string &&message)\n";
     file<<"{\n";
     file<<"    //write your application logic here\n";
-    file<<"}";
+    file<<"}\n";
     file<<"void "<<ctlName<<"::handleConnection(const WebSocketConnectionPtr& wsConnPtr)\n";
     file<<"{\n";
     file<<"    //write your application logic here\n";

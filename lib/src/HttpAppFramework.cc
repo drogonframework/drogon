@@ -489,12 +489,10 @@ std::string parseWebsockFrame(trantor::MsgBuffer *buffer)
             message.resize(length);
             LOG_TRACE<<"rawData[0]="<<(unsigned char)rawData[0];
             LOG_TRACE<<"masks[0]="<<(unsigned char)masks[0];
-            for(int i=0;i<length;i++)
+            for(size_t i=0;i<length;i++)
             {
                 message[i]=(rawData[i]^masks[i%4]);
             }
-            LOG_TRACE<<"message[0]="<<message[0];
-            LOG_TRACE<<"message[1]="<<message[1];
             buffer->retrieve(indexFirstMask+4+length);
             LOG_TRACE<<"got message len="<<message.length();
             return message;
@@ -514,7 +512,7 @@ void HttpAppFrameworkImpl::onWebsockMessage(const WebSocketConnectionPtr &wsConn
         while(!(message=parseWebsockFrame(buffer)).empty())
         {
             LOG_TRACE<<"Got websock message:"<<message;
-            ctrl->handleNewMessage(wsConnPtr,message);
+            ctrl->handleNewMessage(wsConnPtr,std::move(message));
         }
     }
 }
@@ -684,7 +682,7 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestPtr& req,const std::f
                 LOG_ERROR << "can't find controller " << ctrlName;
             }
         });
-
+        return;
     }
     //find api controller
     if(_apiRegex.mark_count()>0)

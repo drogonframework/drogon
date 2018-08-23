@@ -7,7 +7,7 @@ namespace example
     {
     public:
         virtual void handleNewMessage(const WebSocketConnectionPtr&,
-                                      const std::string &)override;
+                                      std::string &&)override;
         virtual void handleConnection(const WebSocketConnectionPtr&)override;
         WS_PATH_LIST_BEGIN
         //list path definations here;
