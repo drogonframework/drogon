@@ -33,7 +33,8 @@ void WebSocketConnectionImpl::send(const char *msg,uint64_t len)
             bytesFormatted[1] = 126;
             bytesFormatted[2] = (( len >> 8 ) & 255);
             bytesFormatted[3] = (( len      ) & 255);
-
+            LOG_TRACE<<"bytes[2]="<<(size_t)bytesFormatted[2];
+            LOG_TRACE<<"bytes[3]="<<(size_t)bytesFormatted[3];
             indexStartRawData = 4;
         }
         else
