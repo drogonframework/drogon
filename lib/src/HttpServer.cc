@@ -163,10 +163,10 @@ void HttpServer::onRequest(const TcpConnectionPtr& conn, const HttpRequestPtr& r
         MsgBuffer buf;
         response.setCloseConnection(_close);
         ((HttpResponseImpl &)response).appendToBuffer(&buf);
-        conn->send(buf.peek(),buf.readableBytes());
-//        if (response.closeConnection()) {
-//            conn->shutdown();
-//        }
+        conn->send(std::move(buf));
+        if (_close) {
+            conn->shutdown();
+        }
     });
 
 
