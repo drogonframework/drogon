@@ -447,7 +447,7 @@ std::string parseWebsockFrame(trantor::MsgBuffer *buffer)
             LOG_TRACE<<"data encoded!";
         } else
             LOG_TRACE<<"plain data";
-        int indexFirstMask = 2;
+        size_t indexFirstMask = 2;
 
         if (length == 126)
         {
