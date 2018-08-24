@@ -119,6 +119,7 @@ int main()
     //api example for std::function
     drogon::HttpAppFramework::registerHttpApiMethod("/api/v1/handle4/{4}/{3}/{1}",func);
 
+    drogon::HttpAppFramework::instance().setDocumentRoot("./");
     //start app framework
     drogon::HttpAppFramework::instance().enableDynamicSharedLibLoading({"/tmp/views"});
     drogon::HttpAppFramework::instance().run();

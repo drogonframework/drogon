@@ -126,7 +126,9 @@ namespace drogon
 
         std::regex _apiRegex;
         bool _enableLastModify=true;
-        std::set<std::string> _fileTypeSet={"html","jpg"};
+        std::set<std::string> _fileTypeSet={"html","js","css","xml","xsl","txt","svg","ttf",
+                                            "otf","woff2","woff","eot","png","jpg","jpeg",
+                                            "gif","bmp","ico","icns"};
         std::string _rootPath=".";
 
         std::atomic_bool _running;
