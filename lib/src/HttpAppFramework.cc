@@ -738,7 +738,12 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestPtr& req,const std::f
                             paraList.push_back(std::move(p));
                         }
 
-                        binder.binderPtr->handleHttpApiRequest(paraList,req,callback);
+                        binder.binderPtr->handleHttpApiRequest(paraList,req,[=](HttpResponse& resp){
+                            LOG_TRACE<<"api resp:needSetJsessionid="<<needSetJsessionid<<";JSESSIONID="<<session_id;
+                            if(needSetJsessionid)
+                                resp.addCookie("JSESSIONID",session_id);
+                            callback(resp);
+                        });
                         return;
                     });
 
