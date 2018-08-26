@@ -15,8 +15,8 @@ namespace api
 
             METHOD_LIST_END
             //your declaration of processing function maybe like this:
-            void get(const HttpRequestPtr& req,const std::function<void (HttpResponse &)>&callback,int p1,std::string p2);
-            void your_method_name(const HttpRequestPtr& req,const std::function<void (HttpResponse &)>&callback,double p1,int p2) const;
+            void get(const HttpRequestPtr& req,const std::function<void (const HttpResponsePtr &)>&callback,int p1,std::string p2);
+            void your_method_name(const HttpRequestPtr& req,const std::function<void (const HttpResponsePtr &)>&callback,double p1,int p2) const;
         };
     }
 }

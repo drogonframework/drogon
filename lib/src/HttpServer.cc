@@ -35,21 +35,19 @@ using namespace drogon;
 using namespace trantor;
 
 
-static void defaultHttpAsyncCallback(const HttpRequestPtr&,const std::function<void( HttpResponse& resp)> & callback)
+static void defaultHttpAsyncCallback(const HttpRequestPtr&,const std::function<void(const HttpResponsePtr & resp)> & callback)
 {
-    HttpResponseImpl resp;
-    resp.setStatusCode(HttpResponse::k404NotFound);
-    resp.setCloseConnection(true);
+    auto resp=HttpResponse::notFoundResponse();
+    resp->setCloseConnection(true);
     callback(resp);
 }
 
 static void defaultWebSockAsyncCallback(const HttpRequestPtr&,
-                                        const std::function<void( HttpResponse& resp)> & callback,
+                                        const std::function<void( const HttpResponsePtr & resp)> & callback,
                                         const WebSocketConnectionPtr& wsConnPtr)
 {
-    HttpResponseImpl resp;
-    resp.setStatusCode(HttpResponse::k404NotFound);
-    resp.setCloseConnection(true);
+    auto resp=HttpResponse::notFoundResponse();
+    resp->setCloseConnection(true);
     callback(resp);
 }
 
@@ -124,15 +122,15 @@ void HttpServer::onMessage(const TcpConnectionPtr& conn,
         if(context->firstReq()&&isWebSocket(conn,context->request()))
         {
             auto wsConn=std::make_shared<WebSocketConnectionImpl>(conn);
-            newWebsocketCallback_(context->request(),[=](HttpResponse &resp) mutable
+            newWebsocketCallback_(context->request(),[=](const HttpResponsePtr &resp) mutable
             {
-                if(resp.statusCode()==HttpResponse::k101)
+                if(resp->statusCode()==HttpResponse::k101)
                 {
                     context->setWebsockConnection(wsConn);
                 }
                 MsgBuffer buffer;
-                ((HttpResponseImpl &)resp).appendToBuffer(&buffer);
-                conn->send(buffer.peek(),buffer.readableBytes());
+                std::dynamic_pointer_cast<HttpRequestImpl>(resp)->appendToBuffer(&buffer);
+                conn->send(std::move(buffer));
             },wsConn);
         }
         else
@@ -159,10 +157,12 @@ void HttpServer::onRequest(const TcpConnectionPtr& conn, const HttpRequestPtr& r
 
 
 
-    httpAsyncCallback_(req, [ = ](HttpResponse & response) {
+    httpAsyncCallback_(req, [ = ](const HttpResponsePtr &response) {
         MsgBuffer buf;
-        response.setCloseConnection(_close);
-        ((HttpResponseImpl &)response).appendToBuffer(&buf);
+        if(!response)
+            return;
+        response->setCloseConnection(_close);
+        std::dynamic_pointer_cast<HttpResponseImpl>(response)->appendToBuffer(&buf);
         conn->send(std::move(buf));
         if (_close) {
             conn->shutdown();

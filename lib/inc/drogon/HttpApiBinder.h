@@ -49,7 +49,7 @@ namespace drogon{
     {
     public:
         virtual void handleHttpApiRequest(std::list<std::string> &pathParameter,
-                                          const HttpRequestPtr& req,std::function<void (HttpResponse &)>callback)
+                                          const HttpRequestPtr& req,std::function<void (const HttpResponsePtr &)>callback)
         =0;
         virtual size_t paramCount()=0;
         virtual ~HttpApiBinderBase(){}
@@ -67,7 +67,7 @@ namespace drogon{
     public:
         typedef FUNCTION FunctionType;
         virtual void handleHttpApiRequest(std::list<std::string> &pathParameter,
-                                          const HttpRequestPtr& req,std::function<void (HttpResponse &)>callback) override
+                                          const HttpRequestPtr& req,std::function<void (const HttpResponsePtr &)>callback) override
         {
             run(pathParameter,req,callback);
         }
@@ -102,7 +102,7 @@ namespace drogon{
         >
         typename std::enable_if<(sizeof...(Values) < Boundary), void>::type run(
                 std::list<std::string> &pathParameter,
-                const HttpRequestPtr& req,std::function<void (HttpResponse &)>callback,
+                const HttpRequestPtr& req,std::function<void (const HttpResponsePtr &)>callback,
                 Values&&...      values
         )
         {
@@ -131,7 +131,7 @@ namespace drogon{
         >
         typename std::enable_if<(sizeof...(Values) == Boundary), void>::type run(
                 std::list<std::string> &pathParameter,
-                const HttpRequestPtr& req,std::function<void (HttpResponse &)>callback,
+                const HttpRequestPtr& req,std::function<void (const HttpResponsePtr &)>callback,
                 Values&&...      values
         )
         {
@@ -140,7 +140,7 @@ namespace drogon{
         template <typename... Values,
                 bool isClassFunction = traits::isClassFunction>
         typename std::enable_if<isClassFunction,void>::type callFunction(
-                const HttpRequestPtr& req,std::function<void (HttpResponse &)>callback,
+                const HttpRequestPtr& req,std::function<void (const HttpResponsePtr &)>callback,
                 Values&&... values)
         {
             static auto className=drogon::DrObjectBase::demangle(typeid(typename traits::class_type).name());
@@ -163,7 +163,7 @@ namespace drogon{
         template <typename... Values,
                 bool isClassFunction = traits::isClassFunction>
         typename std::enable_if<!isClassFunction,void>::type callFunction(
-                const HttpRequestPtr& req,std::function<void (HttpResponse &)>callback,
+                const HttpRequestPtr& req,std::function<void (const HttpResponsePtr &)>callback,
                 Values&&... values)
         {
             _func(req,callback,std::move(values)...);

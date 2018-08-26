@@ -1,6 +1,6 @@
 #include "JsonTestController.h"
 #include <json/json.h>
-void JsonTestController::asyncHandleHttpRequest(const HttpRequestPtr& req,const std::function<void (HttpResponse &)>&callback)
+void JsonTestController::asyncHandleHttpRequest(const HttpRequestPtr& req,const std::function<void (const HttpResponsePtr &)>&callback)
 {
     Json::Value json;
     json["path"]="json";
@@ -15,5 +15,5 @@ void JsonTestController::asyncHandleHttpRequest(const HttpRequestPtr& req,const 
     }
     json["rows"]=array;
     auto resp=HttpResponse::newHttpJsonResponse(json);
-    callback(*resp);
+    callback(resp);
 }

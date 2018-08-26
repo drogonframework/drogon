@@ -34,9 +34,9 @@ namespace drogon
     {
     public:
 
-        typedef std::function< void (const HttpRequestPtr&,const std::function<void (HttpResponse &)>&)> HttpAsyncCallback;
+        typedef std::function< void (const HttpRequestPtr&,const std::function<void (const HttpResponsePtr &)>&)> HttpAsyncCallback;
         typedef std::function< void (const HttpRequestPtr&,
-                                     const std::function<void (HttpResponse &)>&,
+                                     const std::function<void (const HttpResponsePtr &)>&,
                                      const WebSocketConnectionPtr &)>
                 WebSocketNewAsyncCallback;
         typedef std::function< void (const WebSocketConnectionPtr &)>

@@ -55,7 +55,7 @@ namespace drogon{
                 typename... Arguments
         >
         struct FunctionTraits<
-                ReturnType(ClassType::*)(const HttpRequestPtr& req,const std::function<void (HttpResponse &)>&callback,Arguments...) const
+                ReturnType(ClassType::*)(const HttpRequestPtr& req,const std::function<void (const HttpResponsePtr &)>&callback,Arguments...) const
         > : FunctionTraits<ReturnType(ClassType::*)(Arguments...)> {
             static const bool isHTTPApiFunction=true;
             static const std::string name(){return std::string("Class Const Api Function");}
@@ -67,7 +67,7 @@ namespace drogon{
                 typename... Arguments
         >
         struct FunctionTraits<
-                ReturnType(ClassType::*)(const HttpRequestPtr& req,const std::function<void (HttpResponse &)>&callback,Arguments...)
+                ReturnType(ClassType::*)(const HttpRequestPtr& req,const std::function<void (const HttpResponsePtr &)>&callback,Arguments...)
         > : FunctionTraits<ReturnType(ClassType::*)(Arguments...)> {
             static const bool isHTTPApiFunction=true;
             static const std::string name(){return std::string("Class Api Function");}
@@ -78,7 +78,7 @@ namespace drogon{
                 typename... Arguments
         >
         struct FunctionTraits<
-                ReturnType(*)(const HttpRequestPtr& req,const std::function<void (HttpResponse &)>&callback,Arguments...)
+                ReturnType(*)(const HttpRequestPtr& req,const std::function<void (const HttpResponsePtr &)>&callback,Arguments...)
         > : FunctionTraits<ReturnType(*)(Arguments...)> {
             static const bool isHTTPApiFunction=true;
 
@@ -89,7 +89,7 @@ namespace drogon{
 //                typename... Arguments
 //        >
 //        struct FunctionTraits<std::function<
-//                ReturnType(const HttpRequest& req,const std::function<void (HttpResponse &)>& callback,Arguments...)>>
+//                ReturnType(const HttpRequest& req,const std::function<void (const HttpResponsePtr &)>& callback,Arguments...)>>
 //                :FunctionTraits<ReturnType(*)(Arguments...)> {
 //            static const bool isHTTPApiFunction=true;
 //            static const std::string name(){return std::string("std::function");}

@@ -68,13 +68,13 @@ namespace drogon
         virtual trantor::EventLoop *loop() override;
     private:
         std::vector<std::tuple<std::string,uint16_t,bool>> _listeners;
-        void onAsyncRequest(const HttpRequestPtr& req,const std::function<void (HttpResponse &)> & callback);
+        void onAsyncRequest(const HttpRequestPtr& req,const std::function<void (const HttpResponsePtr &)> & callback);
         void onNewWebsockRequest(const HttpRequestPtr& req,
-                                 const std::function<void (HttpResponse &)> & callback,
+                                 const std::function<void (const HttpResponsePtr &)> & callback,
                                  const WebSocketConnectionPtr &wsConnPtr);
         void onWebsockMessage(const WebSocketConnectionPtr &wsConnPtr,trantor::MsgBuffer *buffer);
         void onWebsockDisconnect(const WebSocketConnectionPtr &wsConnPtr);
-        void readSendFile(const std::string& filePath,const HttpRequestPtr& req, HttpResponse* resp);
+        void readSendFile(const std::string& filePath,const HttpRequestPtr& req,const HttpResponsePtr resp);
         void addApiPath(const std::string &path,
                         const HttpApiBinderBasePtr &binder,
                         const std::vector<std::string> &filters);
@@ -88,13 +88,13 @@ namespace drogon
 
         void doFilters(const std::vector<std::string> &filters,
                        const HttpRequestPtr& req,
-                       const std::function<void (HttpResponse &)> & callback,
+                       const std::function<void (const HttpResponsePtr &)> & callback,
                        bool needSetJsessionid,
                        const std::string &session_id,
                        const std::function<void ()> &missCallback);
         void doFilterChain(const std::shared_ptr<std::queue<std::shared_ptr<HttpFilterBase>>> &chain,
                            const HttpRequestPtr& req,
-                           const std::function<void (HttpResponse &)> & callback,
+                           const std::function<void (const HttpResponsePtr &)> & callback,
                            bool needSetJsessionid,
                            const std::string &session_id,
                            const std::function<void ()> &missCallback);
@@ -383,7 +383,7 @@ void HttpAppFrameworkImpl::run()
 
 void HttpAppFrameworkImpl::doFilterChain(const std::shared_ptr<std::queue<std::shared_ptr<HttpFilterBase>>> &chain,
                                          const HttpRequestPtr& req,
-                                         const std::function<void (HttpResponse &)> & callback,
+                                         const std::function<void (const HttpResponsePtr &)> & callback,
                                          bool needSetJsessionid,
                                          const std::string &session_id,
                                          const std::function<void ()> &missCallback)
@@ -394,7 +394,7 @@ void HttpAppFrameworkImpl::doFilterChain(const std::shared_ptr<std::queue<std::s
         filter->doFilter(req, [=](HttpResponsePtr res) {
             if (needSetJsessionid)
                 res->addCookie("JSESSIONID", session_id);
-            callback(*res);
+            callback(res);
         }, [=](){
             doFilterChain(chain,req,callback,needSetJsessionid,session_id,missCallback);
         });
@@ -404,7 +404,7 @@ void HttpAppFrameworkImpl::doFilterChain(const std::shared_ptr<std::queue<std::s
 }
 void HttpAppFrameworkImpl::doFilters(const std::vector<std::string> &filters,
                                      const HttpRequestPtr& req,
-                                     const std::function<void (HttpResponse &)> & callback,
+                                     const std::function<void (const HttpResponsePtr &)> & callback,
                                      bool needSetJsessionid,
                                      const std::string &session_id,
                                      const std::function<void ()> &missCallback)
@@ -519,7 +519,7 @@ void HttpAppFrameworkImpl::onWebsockMessage(const WebSocketConnectionPtr &wsConn
     }
 }
 void HttpAppFrameworkImpl::onNewWebsockRequest(const HttpRequestPtr& req,
-                                               const std::function<void (HttpResponse &)> & callback,
+                                               const std::function<void (const HttpResponsePtr &)> & callback,
                                                const WebSocketConnectionPtr &wsConnPtr)
 {
     std::string wsKey=req->getHeader("Sec-WebSocket-Key");
@@ -547,7 +547,7 @@ void HttpAppFrameworkImpl::onNewWebsockRequest(const HttpRequestPtr& req,
             resp->addHeader("Upgrade","websocket");
             resp->addHeader("Connection","Upgrade");
             resp->addHeader("Sec-WebSocket-Accept",base64Key);
-            callback(*resp);
+            callback(resp);
             auto wsConnImplPtr=std::dynamic_pointer_cast<WebSocketConnectionImpl>(wsConnPtr);
             assert(wsConnImplPtr);
             wsConnImplPtr->setController(ctrlPtr);
@@ -555,13 +555,12 @@ void HttpAppFrameworkImpl::onNewWebsockRequest(const HttpRequestPtr& req,
             return;
         }
     }
-    HttpResponseImpl resp;
-    resp.setStatusCode(HttpResponse::k404NotFound);
-    resp.setCloseConnection(true);
+    auto resp=drogon::HttpResponse::notFoundResponse();
+    resp->setCloseConnection(true);
     callback(resp);
 
 }
-void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestPtr& req,const std::function<void (HttpResponse &)> & callback)
+void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestPtr& req,const std::function<void (const HttpResponsePtr &)> & callback)
 {
     LOG_TRACE << "new request:"<<req->peerAddr().toIpPort()<<"->"<<req->localAddr().toIpPort();
     LOG_TRACE << "Headers " << req->methodString() << " " << req->path();
@@ -614,34 +613,34 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestPtr& req,const std::f
         if(_fileTypeSet.find(filetype) != _fileTypeSet.end()) {
             LOG_INFO << "file query!";
             std::string filePath = _rootPath + path;
-            HttpResponseImpl resp;
+            std::shared_ptr<HttpResponseImpl> resp=std::make_shared<HttpResponseImpl>();
 
             if(needSetJsessionid)
-                resp.addCookie("JSESSIONID",session_id);
+                resp->addCookie("JSESSIONID",session_id);
 
             // pick a Content-Type for the file
-            if(filetype=="html")	resp.setContentTypeCode(CT_TEXT_HTML);
-            else if(filetype=="js")  resp.setContentTypeCode(CT_APPLICATION_X_JAVASCRIPT);
-            else if(filetype=="css")  resp.setContentTypeCode(CT_TEXT_CSS);
-            else if(filetype=="xml")  resp.setContentTypeCode(CT_TEXT_XML);
-            else if(filetype=="xsl") resp.setContentTypeCode(CT_TEXT_XSL);
-            else if(filetype=="txt")  resp.setContentTypeCode(CT_TEXT_PLAIN);
-            else if(filetype=="svg")  resp.setContentTypeCode(CT_IMAGE_SVG_XML);
-            else if(filetype=="ttf")  resp.setContentTypeCode(CT_APPLICATION_X_FONT_TRUETYPE);
-            else if(filetype=="otf")  resp.setContentTypeCode(CT_APPLICATION_X_FONT_OPENTYPE);
-            else if(filetype=="woff2")resp.setContentTypeCode(CT_APPLICATION_FONT_WOFF2);
-            else if(filetype=="woff") resp.setContentTypeCode(CT_APPLICATION_FONT_WOFF);
-            else if(filetype=="eot")  resp.setContentTypeCode(CT_APPLICATION_VND_MS_FONTOBJ);
-            else if(filetype=="png")  resp.setContentTypeCode(CT_IMAGE_PNG);
-            else if(filetype=="jpg")  resp.setContentTypeCode(CT_IMAGE_JPG);
-            else if(filetype=="jpeg") resp.setContentTypeCode(CT_IMAGE_JPG);
-            else if(filetype=="gif")  resp.setContentTypeCode(CT_IMAGE_GIF);
-            else if(filetype=="bmp")  resp.setContentTypeCode(CT_IMAGE_BMP);
-            else if(filetype=="ico")  resp.setContentTypeCode(CT_IMAGE_XICON);
-            else if(filetype=="icns") resp.setContentTypeCode(CT_IMAGE_ICNS);
-            else resp.setContentTypeCode(CT_APPLICATION_OCTET_STREAM);
+            if(filetype=="html")	resp->setContentTypeCode(CT_TEXT_HTML);
+            else if(filetype=="js")  resp->setContentTypeCode(CT_APPLICATION_X_JAVASCRIPT);
+            else if(filetype=="css")  resp->setContentTypeCode(CT_TEXT_CSS);
+            else if(filetype=="xml")  resp->setContentTypeCode(CT_TEXT_XML);
+            else if(filetype=="xsl") resp->setContentTypeCode(CT_TEXT_XSL);
+            else if(filetype=="txt")  resp->setContentTypeCode(CT_TEXT_PLAIN);
+            else if(filetype=="svg")  resp->setContentTypeCode(CT_IMAGE_SVG_XML);
+            else if(filetype=="ttf")  resp->setContentTypeCode(CT_APPLICATION_X_FONT_TRUETYPE);
+            else if(filetype=="otf")  resp->setContentTypeCode(CT_APPLICATION_X_FONT_OPENTYPE);
+            else if(filetype=="woff2")resp->setContentTypeCode(CT_APPLICATION_FONT_WOFF2);
+            else if(filetype=="woff") resp->setContentTypeCode(CT_APPLICATION_FONT_WOFF);
+            else if(filetype=="eot")  resp->setContentTypeCode(CT_APPLICATION_VND_MS_FONTOBJ);
+            else if(filetype=="png")  resp->setContentTypeCode(CT_IMAGE_PNG);
+            else if(filetype=="jpg")  resp->setContentTypeCode(CT_IMAGE_JPG);
+            else if(filetype=="jpeg") resp->setContentTypeCode(CT_IMAGE_JPG);
+            else if(filetype=="gif")  resp->setContentTypeCode(CT_IMAGE_GIF);
+            else if(filetype=="bmp")  resp->setContentTypeCode(CT_IMAGE_BMP);
+            else if(filetype=="ico")  resp->setContentTypeCode(CT_IMAGE_XICON);
+            else if(filetype=="icns") resp->setContentTypeCode(CT_IMAGE_ICNS);
+            else resp->setContentTypeCode(CT_APPLICATION_OCTET_STREAM);
 
-            readSendFile(filePath,req, &resp);
+            readSendFile(filePath,req, resp);
             callback(resp);
             return;
         }
@@ -673,9 +672,9 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestPtr& req,const std::f
 
 
             if(controller) {
-                controller->asyncHandleHttpRequest(req, [=](HttpResponse& resp){
+                controller->asyncHandleHttpRequest(req, [=](const HttpResponsePtr& resp){
                     if(needSetJsessionid)
-                        resp.addCookie("JSESSIONID",session_id);
+                        resp->addCookie("JSESSIONID",session_id);
                     callback(resp);
                 });
                 return;
@@ -738,10 +737,10 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestPtr& req,const std::f
                             paraList.push_back(std::move(p));
                         }
 
-                        binder.binderPtr->handleHttpApiRequest(paraList,req,[=](HttpResponse& resp){
+                        binder.binderPtr->handleHttpApiRequest(paraList,req,[=](const HttpResponsePtr& resp){
                             LOG_TRACE<<"api resp:needSetJsessionid="<<needSetJsessionid<<";JSESSIONID="<<session_id;
                             if(needSetJsessionid)
-                                resp.addCookie("JSESSIONID",session_id);
+                                resp->addCookie("JSESSIONID",session_id);
                             callback(resp);
                         });
                         return;
@@ -756,7 +755,7 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestPtr& req,const std::f
             if(needSetJsessionid)
                 res->addCookie("JSESSIONID",session_id);
 
-            callback(*res);
+            callback(res);
         }
     }
     else{
@@ -766,11 +765,11 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestPtr& req,const std::f
         if(needSetJsessionid)
             res->addCookie("JSESSIONID",session_id);
 
-        callback(*res);
+        callback(res);
     }
 }
 
-void HttpAppFrameworkImpl::readSendFile(const std::string& filePath,const HttpRequestPtr& req, HttpResponse* resp)
+void HttpAppFrameworkImpl::readSendFile(const std::string& filePath,const HttpRequestPtr& req, const HttpResponsePtr resp)
 {
 //If-Modified-Since: Wed Jun 15 08:57:30 2016 GMT
     std::ifstream infile(filePath, std::ifstream::binary);
