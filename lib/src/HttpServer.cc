@@ -129,7 +129,7 @@ void HttpServer::onMessage(const TcpConnectionPtr& conn,
                     context->setWebsockConnection(wsConn);
                 }
                 MsgBuffer buffer;
-                std::dynamic_pointer_cast<HttpRequestImpl>(resp)->appendToBuffer(&buffer);
+                std::dynamic_pointer_cast<HttpResponseImpl>(resp)->appendToBuffer(&buffer);
                 conn->send(std::move(buffer));
             },wsConn);
         }
