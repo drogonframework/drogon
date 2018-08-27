@@ -23,7 +23,7 @@
 #include <vector>
 #include <iostream>
 #include <memory>
-#define WS_PATH_LIST_BEGIN public:\
+#define WS_PATH_LIST_BEGIN \
 static std::vector<std::pair<std::string,std::vector<std::string>>> paths() \
 {\
     std::vector<std::pair<std::string,std::vector<std::string>>> vet;

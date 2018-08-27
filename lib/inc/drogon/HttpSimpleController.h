@@ -20,7 +20,7 @@
 #include <string>
 #include <vector>
 #include <iostream>
-#define PATH_LIST_BEGIN public:\
+#define PATH_LIST_BEGIN \
 static std::vector<std::pair<std::string,std::vector<std::string>>> paths() \
 {\
     std::vector<std::pair<std::string,std::vector<std::string>>> vet;

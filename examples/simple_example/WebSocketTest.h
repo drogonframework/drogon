@@ -10,7 +10,7 @@ namespace example
                                       std::string &&)override;
         virtual void handleConnectionClosed(const WebSocketConnectionPtr&)override;
         virtual void handleNewConnection(const HttpRequestPtr &,const WebSocketConnectionPtr&)override;
-    WS_PATH_LIST_BEGIN
+        WS_PATH_LIST_BEGIN
             //list path definations here;
             WS_PATH_ADD("/chat");
         WS_PATH_LIST_END
