@@ -11,14 +11,9 @@
  *  @section DESCRIPTION
  *
  */
-#include "SharedLibManager.h"
-#include "HttpRequestImpl.h"
-#include "HttpResponseImpl.h"
-#include "HttpClientImpl.h"
-#include "WebSockectConnectionImpl.h"
+#include "HttpAppFrameworkImpl.h"
 #include <drogon/utils/Utilities.h>
 #include <drogon/DrClassMap.h>
-#include <drogon/HttpAppFramework.h>
 #include <drogon/HttpRequest.h>
 #include <drogon/HttpResponse.h>
 #include <drogon/CacheMap.h>
@@ -30,123 +25,10 @@
 #include <uuid/uuid.h>
 #include <unordered_map>
 #include <algorithm>
-#include <drogon/HttpSimpleController.h>
-#include <drogon/version.h>
-#include <openssl/sha.h>
 #include <memory>
-#include <regex>
 #include <tuple>
 #include <utility>
-namespace drogon
-{
-    std::map<std::string,std::shared_ptr<drogon::DrObjectBase>> HttpApiBinderBase::_objMap;
-    std::mutex HttpApiBinderBase::_objMutex;
-    class HttpAppFrameworkImpl:public HttpAppFramework
-    {
-    public:
-        virtual void addListener(const std::string &ip,uint16_t port,bool useSSL=false) override;
-        virtual void setThreadNum(size_t threadNum) override;
-        virtual void setSSLFiles(const std::string &certPath,
-                                 const std::string &keyPath) override;
-        virtual void run() override ;
-        virtual void registerWebSocketController(const std::string &pathName,
-                                                 const std::string &crtlName)override ;
-        virtual void registerHttpSimpleController(const std::string &pathName,const std::string &crtlName,const std::vector<std::string> &filters=
-        std::vector<std::string>())override ;
-        virtual void registerHttpApiController(const std::string &pathPattern,
-                                           const HttpApiBinderBasePtr &binder,
-                                           const std::vector<std::string> &filters=std::vector<std::string>()) override ;
-        virtual void enableSession(const size_t timeout) override { _useSession=true;_sessionTimeout=timeout;}
-        virtual void disableSession() override { _useSession=false;}
-        virtual const std::string & getDocumentRoot() const override {return _rootPath;}
-        virtual void setDocumentRoot(const std::string &rootPath) override {_rootPath=rootPath;}
-        virtual void setFileTypes(const std::vector<std::string> &types) override;
-        virtual void enableDynamicSharedLibLoading(const std::vector<std::string> &libPaths) override;
 
-        ~HttpAppFrameworkImpl(){}
-
-        virtual trantor::EventLoop *loop() override;
-    private:
-        std::vector<std::tuple<std::string,uint16_t,bool>> _listeners;
-        void onAsyncRequest(const HttpRequestPtr& req,const std::function<void (const HttpResponsePtr &)> & callback);
-        void onNewWebsockRequest(const HttpRequestPtr& req,
-                                 const std::function<void (const HttpResponsePtr &)> & callback,
-                                 const WebSocketConnectionPtr &wsConnPtr);
-        void onWebsockMessage(const WebSocketConnectionPtr &wsConnPtr,trantor::MsgBuffer *buffer);
-        void onWebsockDisconnect(const WebSocketConnectionPtr &wsConnPtr);
-        void readSendFile(const std::string& filePath,const HttpRequestPtr& req,const HttpResponsePtr resp);
-        void addApiPath(const std::string &path,
-                        const HttpApiBinderBasePtr &binder,
-                        const std::vector<std::string> &filters);
-        void initRegex();
-        //if uuid package found,we can use a uuid string as session id;
-        //set _sessionTimeout=0 to make location session valid forever based on cookies;
-        size_t _sessionTimeout=1200;
-        bool _useSession=true;
-        typedef std::shared_ptr<Session> SessionPtr;
-        std::unique_ptr<CacheMap<std::string,SessionPtr>> _sessionMapPtr;
-
-        void doFilters(const std::vector<std::string> &filters,
-                       const HttpRequestPtr& req,
-                       const std::function<void (const HttpResponsePtr &)> & callback,
-                       bool needSetJsessionid,
-                       const std::string &session_id,
-                       const std::function<void ()> &missCallback);
-        void doFilterChain(const std::shared_ptr<std::queue<std::shared_ptr<HttpFilterBase>>> &chain,
-                           const HttpRequestPtr& req,
-                           const std::function<void (const HttpResponsePtr &)> & callback,
-                           bool needSetJsessionid,
-                           const std::string &session_id,
-                           const std::function<void ()> &missCallback);
-        //
-        struct ControllerAndFiltersName
-        {
-            std::string controllerName;
-            std::vector<std::string> filtersName;
-            std::shared_ptr<HttpSimpleControllerBase> controller;
-            std::mutex _mutex;
-        };
-        std::unordered_map<std::string,ControllerAndFiltersName>_simpCtrlMap;
-        std::mutex _simpCtrlMutex;
-
-        std::unordered_map<std::string,WebSocketControllerBasePtr> _websockCtrlMap;
-        std::mutex _websockCtrlMutex;
-
-        struct ApiBinder
-        {
-            std::string pathParameterPattern;
-            std::vector<size_t> parameterPlaces;
-            std::map<std::string,size_t> queryParametersPlaces;
-            HttpApiBinderBasePtr binderPtr;
-            std::vector<std::string> filtersName;
-        };
-        //std::unordered_map<std::string,ApiBinder>_apiCtrlMap;
-        std::vector<ApiBinder>_apiCtrlVector;
-        std::mutex _apiCtrlMutex;
-
-        std::regex _apiRegex;
-        bool _enableLastModify=true;
-        std::set<std::string> _fileTypeSet={"html","js","css","xml","xsl","txt","svg","ttf",
-                                            "otf","woff2","woff","eot","png","jpg","jpeg",
-                                            "gif","bmp","ico","icns"};
-        std::string _rootPath=".";
-
-        std::atomic_bool _running;
-
-        //tool funcs
-
-
-        size_t _threadNum=1;
-        std::vector<std::string> _libFilePaths;
-
-        std::unique_ptr<SharedLibManager>_sharedLibManagerPtr;
-
-        trantor::EventLoop _loop;
-
-        std::string _sslCertPath;
-        std::string _sslKeyPath;
-    };
-}
 
 using namespace drogon;
 using namespace std::placeholders;
@@ -188,7 +70,8 @@ void HttpAppFrameworkImpl::initRegex() {
     _apiRegex=std::regex(regString);
 }
 void HttpAppFrameworkImpl::registerWebSocketController(const std::string &pathName,
-                                         const std::string &ctrlName)
+                                                       const std::string &ctrlName,
+                                                       const std::vector<std::string> &filters)
 {
     assert(!pathName.empty());
     assert(!ctrlName.empty());
@@ -198,9 +81,13 @@ void HttpAppFrameworkImpl::registerWebSocketController(const std::string &pathNa
     auto ctrlPtr=std::dynamic_pointer_cast<WebSocketControllerBase>(objPtr);
     assert(ctrlPtr);
     std::lock_guard<std::mutex> guard(_websockCtrlMutex);
-    _websockCtrlMap[path]=ctrlPtr;
+
+    _websockCtrlMap[path].controller=ctrlPtr;
+    _websockCtrlMap[path].filtersName=filters;
 }
-void HttpAppFrameworkImpl::registerHttpSimpleController(const std::string &pathName,const std::string &ctrlName,const std::vector<std::string> &filters)
+void HttpAppFrameworkImpl::registerHttpSimpleController(const std::string &pathName,
+                                                        const std::string &ctrlName,
+                                                        const std::vector<std::string> &filters)
 {
     assert(!pathName.empty());
     assert(!ctrlName.empty());
@@ -430,7 +317,7 @@ void HttpAppFrameworkImpl::onWebsockDisconnect(const WebSocketConnectionPtr &wsC
     auto ctrl=wsConnImplPtr->controller();
     if(ctrl)
     {
-        ctrl->handleConnection(wsConnPtr);
+        ctrl->handleConnectionClosed(wsConnPtr);
         wsConnImplPtr->setController(WebSocketControllerBasePtr());
     }
 
@@ -527,31 +414,37 @@ void HttpAppFrameworkImpl::onNewWebsockRequest(const HttpRequestPtr& req,
     {
         // magic="258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
         WebSocketControllerBasePtr ctrlPtr;
+        std::vector<std::string> filtersName;
         {
             std::string pathLower(req->path());
             std::transform(pathLower.begin(),pathLower.end(),pathLower.begin(),tolower);
             std::lock_guard<std::mutex> guard(_websockCtrlMutex);
             if(_websockCtrlMap.find(pathLower)!=_websockCtrlMap.end())
             {
-                ctrlPtr=_websockCtrlMap[pathLower];
+                ctrlPtr=_websockCtrlMap[pathLower].controller;
+                filtersName=_websockCtrlMap[pathLower].filtersName;
             }
         }
         if(ctrlPtr)
         {
-            wsKey.append("258EAFA5-E914-47DA-95CA-C5AB0DC85B11");
-            unsigned char accKey[SHA_DIGEST_LENGTH];
-            SHA1(reinterpret_cast<const unsigned char *>(wsKey.c_str()), wsKey.length(), accKey);
-            auto base64Key=base64_encode(accKey,SHA_DIGEST_LENGTH);
-            auto resp=HttpResponse::newHttpResponse();
-            resp->setStatusCode(HttpResponse::k101,"Switching Protocols");
-            resp->addHeader("Upgrade","websocket");
-            resp->addHeader("Connection","Upgrade");
-            resp->addHeader("Sec-WebSocket-Accept",base64Key);
-            callback(resp);
-            auto wsConnImplPtr=std::dynamic_pointer_cast<WebSocketConnectionImpl>(wsConnPtr);
-            assert(wsConnImplPtr);
-            wsConnImplPtr->setController(ctrlPtr);
-            ctrlPtr->handleConnection(wsConnPtr);
+            doFilters(filtersName,req,callback,false,"",[=]() mutable
+            {
+                wsKey.append("258EAFA5-E914-47DA-95CA-C5AB0DC85B11");
+                unsigned char accKey[SHA_DIGEST_LENGTH];
+                SHA1(reinterpret_cast<const unsigned char *>(wsKey.c_str()), wsKey.length(), accKey);
+                auto base64Key=base64_encode(accKey,SHA_DIGEST_LENGTH);
+                auto resp=HttpResponse::newHttpResponse();
+                resp->setStatusCode(HttpResponse::k101,"Switching Protocols");
+                resp->addHeader("Upgrade","websocket");
+                resp->addHeader("Connection","Upgrade");
+                resp->addHeader("Sec-WebSocket-Accept",base64Key);
+                callback(resp);
+                auto wsConnImplPtr=std::dynamic_pointer_cast<WebSocketConnectionImpl>(wsConnPtr);
+                assert(wsConnImplPtr);
+                wsConnImplPtr->setController(ctrlPtr);
+                ctrlPtr->handleNewConnection(req,wsConnPtr);
+                return;
+            });
             return;
         }
     }

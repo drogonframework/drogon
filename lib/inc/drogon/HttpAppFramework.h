@@ -61,7 +61,9 @@ namespace drogon
         virtual void run()=0;
         virtual ~HttpAppFramework();
         virtual void registerWebSocketController(const std::string &pathName,
-                                                  const std::string &crtlName)=0;
+                                                  const std::string &crtlName,
+                                                 const std::vector<std::string> &filters=
+                                                 std::vector<std::string>())=0;
         virtual void registerHttpSimpleController(const std::string &pathName,
                                                   const std::string &crtlName,
                                                   const std::vector<std::string> &filters=std::vector<std::string>())=0;

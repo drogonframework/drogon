@@ -8,10 +8,11 @@ namespace example
     public:
         virtual void handleNewMessage(const WebSocketConnectionPtr&,
                                       std::string &&)override;
-        virtual void handleConnection(const WebSocketConnectionPtr&)override;
-        WS_PATH_LIST_BEGIN
-        //list path definations here;
-        WS_PATH_ADD("/chat");
+        virtual void handleConnectionClosed(const WebSocketConnectionPtr&)override;
+        virtual void handleNewConnection(const HttpRequestPtr &,const WebSocketConnectionPtr&)override;
+    WS_PATH_LIST_BEGIN
+            //list path definations here;
+            WS_PATH_ADD("/chat");
         WS_PATH_LIST_END
     };
 }

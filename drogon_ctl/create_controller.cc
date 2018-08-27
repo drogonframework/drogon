@@ -216,7 +216,7 @@ void create_controller::newSimpleControllerHeaderFile(std::ofstream &file,const 
     file<<indent<<"    virtual void asyncHandleHttpRequest(const HttpRequestPtr& req,const std::function<void (const HttpResponsePtr &)> & callback)override;\n";
 
     file<<indent<<"    PATH_LIST_BEGIN\n";
-    file<<indent<<"    //list path definations here;\n";
+    file<<indent<<"    //list path definitions here;\n";
     file<<indent<<"    //PATH_ADD(\"/path\",\"filter1\",\"filter2\",...);\n";
     file<<indent<<"    PATH_LIST_END\n";
     file<<indent<<"};\n";
@@ -273,10 +273,12 @@ void create_controller::newWebsockControllerHeaderFile(std::ofstream &file,const
 //    virtual void handleConnection(const WebSocketConnectionPtr&)=0;
     file<<indent<<"    virtual void handleNewMessage(const WebSocketConnectionPtr&,\n";
     file<<indent<<"                                  std::string &&)override;\n";
-    file<<indent<<"    virtual void handleConnection(const WebSocketConnectionPtr&)override;\n";
+    file<<indent<<"    virtual void handleNewConnection(const HttpRequestPtr &,\n";
+    file<<indent<<"                                     const WebSocketConnectionPtr&)override;\n";
+    file<<indent<<"    virtual void handleConnectionClosed(const WebSocketConnectionPtr&)override;\n";
     file<<indent<<"    WS_PATH_LIST_BEGIN\n";
-    file<<indent<<"    //list path definations here;\n";
-    file<<indent<<"    //WS_PATH_ADD(\"/path\");\n";
+    file<<indent<<"    //list path definitions here;\n";
+    file<<indent<<"    //WS_PATH_ADD(\"/path\",\"filter1\",\"filter2\",...);\n";
     file<<indent<<"    WS_PATH_LIST_END\n";
     file<<indent<<"};\n";
     if(indent=="")
@@ -295,10 +297,14 @@ void create_controller::newWebsockControllerSourceFile(std::ofstream &file,const
     file<<"{\n";
     file<<"    //write your application logic here\n";
     file<<"}\n";
-    file<<"void "<<ctlName<<"::handleConnection(const WebSocketConnectionPtr& wsConnPtr)\n";
+    file<<"void "<<ctlName<<"::handleNewConnection(const HttpRequestPtr &req,const WebSocketConnectionPtr& wsConnPtr)\n";
     file<<"{\n";
     file<<"    //write your application logic here\n";
-    file<<"}";
+    file<<"}\n";
+    file<<"void "<<ctlName<<"::handleConnectionClosed(const WebSocketConnectionPtr& wsConnPtr)\n";
+    file<<"{\n";
+    file<<"    //write your application logic here\n";
+    file<<"}\n";
 }
 
 void create_controller::createApiController(std::vector<std::string> &apiClasses)

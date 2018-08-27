@@ -4,8 +4,13 @@ void WebSocketTest::handleNewMessage(const WebSocketConnectionPtr& wsConnPtr,std
 {
     //write your application logic here
     LOG_TRACE<<"new websocket message:"<<message;
-}void WebSocketTest::handleConnection(const WebSocketConnectionPtr& wsConnPtr) {
-    //write your application logic here
-
-    wsConnPtr->send("Hello!!");
+}
+void WebSocketTest::handleConnectionClosed(const WebSocketConnectionPtr &)
+{
+    LOG_TRACE<<"websocket closed!";
+}
+void WebSocketTest::handleNewConnection(const HttpRequestPtr &,
+                                        const WebSocketConnectionPtr &)
+{
+    LOG_TRACE<<"new websocket connection!";
 }

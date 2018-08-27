@@ -24,12 +24,12 @@
 #include <iostream>
 #include <memory>
 #define WS_PATH_LIST_BEGIN public:\
-static std::vector<std::string> paths() \
+static std::vector<std::pair<std::string,std::vector<std::string>>> paths() \
 {\
-    std::vector<std::string> vet;
+    std::vector<std::pair<std::string,std::vector<std::string>>> vet;
 
-#define WS_PATH_ADD(path) \
-    vet.push_back(path)
+#define WS_PATH_ADD(path,filters...) \
+    vet.push_back({path,{filters}})
 
 #define WS_PATH_LIST_END \
 return vet;\
@@ -41,9 +41,12 @@ namespace drogon
     public:
         //on new data received
         virtual void handleNewMessage(const WebSocketConnectionPtr&,
-                                      std::string &&message)=0;
-        //on new connection or after disconnect
-        virtual void handleConnection(const WebSocketConnectionPtr&)=0;
+                                      std::string &&)=0;
+        //after new websocket connection established
+        virtual void handleNewConnection(const HttpRequestPtr &,
+                                         const WebSocketConnectionPtr&)=0;
+        //after connection closed
+        virtual void handleConnectionClosed(const WebSocketConnectionPtr&)=0;
         virtual ~WebSocketControllerBase(){}
     };
 
@@ -69,8 +72,10 @@ namespace drogon
 
             for(auto path:vPaths)
             {
-                LOG_DEBUG<<"register websocket controller ("<<WebSocketController<T>::classTypeName()<<") on path:"<<path;
-                HttpAppFramework::instance().registerWebSocketController(path,WebSocketController<T>::classTypeName());
+                LOG_DEBUG<<"register websocket controller ("<<WebSocketController<T>::classTypeName()<<") on path:"<<path.first;
+                HttpAppFramework::instance().registerWebSocketController(path.first,
+                                                                         WebSocketController<T>::classTypeName(),
+                                                                         path.second);
             }
 
         }
