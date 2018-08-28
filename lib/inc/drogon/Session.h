@@ -20,23 +20,6 @@
 #include <thread>
 #include <drogon/config.h>
 
-#ifdef USE_STD_ANY
-
-  #include <any>
-  using std::any;
-  using std::any_cast;
-
-#else
-  #ifdef USE_BOOST
-
-    #include <boost/any.hpp>
-    using boost::any;
-    using boost::any_cast;
-
-  #else
-    #error,must use c++17 or boost
-  #endif
-#endif
 
 typedef std::map<std::string,any> SessionMap;
 namespace drogon

@@ -127,7 +127,7 @@ namespace drogon
         std::set<std::string> _fileTypeSet={"html","js","css","xml","xsl","txt","svg","ttf",
                                             "otf","woff2","woff","eot","png","jpg","jpeg",
                                             "gif","bmp","ico","icns"};
-        std::string _rootPath=".";
+        std::string _rootPath="./";
 
         std::atomic_bool _running;
 

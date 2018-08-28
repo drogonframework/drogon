@@ -1,6 +1,6 @@
 #!/bin/sh
 
-GIT_VER=`git log|grep commit|wc -l`
+GIT_VER=`git log|grep commit|wc -l|sed -e "s/^ *//"`
 MD5=`git log|head -1|awk '{printf $2}'`
 TMP_FILE=/tmp/version
 echo "#define VERSION \"0.9.0.$GIT_VER\"" > $TMP_FILE
