@@ -38,6 +38,10 @@ namespace drogon{
     };
     template <typename T>
     struct BinderArgTypeTraits<T &&>{
+        static const bool isValid=true;
+    };
+    template <typename T>
+    struct BinderArgTypeTraits<const T &&>{
         static const bool isValid=false;
     };
     template <typename T>
@@ -108,7 +112,7 @@ namespace drogon{
         {
             //call this function recursively until parameter's count equals to the count of target function parameters
             static_assert(BinderArgTypeTraits<nth_argument_type<sizeof...(Values)>>::isValid,
-                          "your handler argument type must be value type or const left reference type"
+                          "your handler argument type must be value type or const left reference type or right reference type"
                           );
             typedef typename std::remove_cv<typename std::remove_reference<nth_argument_type<sizeof...(Values)>>::type>::type ValueType;
             ValueType value=ValueType();
