@@ -24,7 +24,6 @@ void PostFilter::doFilter(const HttpRequestPtr& req,
         fccb();
         return;
     }
-    auto res=drogon::HttpResponse::notFoundResponse();
-
+    auto res=drogon::HttpResponse::newNotFoundResponse();
     fcb(res);
 }

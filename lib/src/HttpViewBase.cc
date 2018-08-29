@@ -36,5 +36,5 @@ HttpResponsePtr HttpViewBase::genHttpResponse(std::string viewName,const HttpVie
             return view->genHttpResponse(data);
         }
     }
-    return drogon::HttpResponse::notFoundResponse();
+    return drogon::HttpResponse::newNotFoundResponse();
 }

@@ -37,7 +37,7 @@ using namespace trantor;
 
 static void defaultHttpAsyncCallback(const HttpRequestPtr&,const std::function<void(const HttpResponsePtr & resp)> & callback)
 {
-    auto resp=HttpResponse::notFoundResponse();
+    auto resp=HttpResponse::newNotFoundResponse();
     resp->setCloseConnection(true);
     callback(resp);
 }
@@ -46,7 +46,7 @@ static void defaultWebSockAsyncCallback(const HttpRequestPtr&,
                                         const std::function<void( const HttpResponsePtr & resp)> & callback,
                                         const WebSocketConnectionPtr& wsConnPtr)
 {
-    auto resp=HttpResponse::notFoundResponse();
+    auto resp=HttpResponse::newNotFoundResponse();
     resp->setCloseConnection(true);
     callback(resp);
 }

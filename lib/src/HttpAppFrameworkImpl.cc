@@ -448,7 +448,7 @@ void HttpAppFrameworkImpl::onNewWebsockRequest(const HttpRequestPtr& req,
             return;
         }
     }
-    auto resp=drogon::HttpResponse::notFoundResponse();
+    auto resp=drogon::HttpResponse::newNotFoundResponse();
     resp->setCloseConnection(true);
     callback(resp);
 
@@ -644,7 +644,7 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestPtr& req,const std::f
         }
         else{
             //No controller found
-            auto res=drogon::HttpResponse::notFoundResponse();
+            auto res=drogon::HttpResponse::newNotFoundResponse();
             if(needSetJsessionid)
                 res->addCookie("JSESSIONID",session_id);
 
@@ -653,7 +653,7 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestPtr& req,const std::f
     }
     else{
         //No controller found
-        auto res=drogon::HttpResponse::notFoundResponse();
+        auto res=drogon::HttpResponse::newNotFoundResponse();
 
         if(needSetJsessionid)
             res->addCookie("JSESSIONID",session_id);

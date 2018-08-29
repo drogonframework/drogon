@@ -116,10 +116,10 @@ namespace drogon
 
         virtual const std::shared_ptr<Json::Value> getJsonObject() const =0;
         static HttpResponsePtr newHttpResponse();
-        static HttpResponsePtr notFoundResponse();
+        static HttpResponsePtr newNotFoundResponse();
         static HttpResponsePtr newHttpJsonResponse(const Json::Value &data);
         static HttpResponsePtr newHttpViewResponse(const std::string &viewName,const HttpViewData& data);
-        static HttpResponsePtr locationRedirectResponse(std::string path);
+        static HttpResponsePtr newLocationRedirectResponse(const std::string &path);
     };
 
 }

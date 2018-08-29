@@ -50,7 +50,7 @@ HttpResponsePtr HttpResponse::newHttpJsonResponse(const Json::Value &data)
     res->setBody(writeString(builder, data));
     return res;
 }
-HttpResponsePtr HttpResponse::notFoundResponse()
+HttpResponsePtr HttpResponse::newNotFoundResponse()
 {
     HttpViewData data;
     data.insert("version",getVersion());
@@ -60,7 +60,7 @@ HttpResponsePtr HttpResponse::notFoundResponse()
 
     return res;
 }
-HttpResponsePtr HttpResponse::locationRedirectResponse(std::string path)
+HttpResponsePtr HttpResponse::newLocationRedirectResponse(const std::string &path)
 {
     auto res=std::make_shared<HttpResponseImpl>();
     res->setStatusCode(HttpResponse::k302Found);
