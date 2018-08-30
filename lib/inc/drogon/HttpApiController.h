@@ -24,18 +24,9 @@
 #define METHOD_LIST_BEGIN \
 static void initMethods() \
 {
-  #define METHOD_ADD(method,pattern,isMethodNameInPath,filters...) \
+  #define METHOD_ADD(method,pattern,filters...) \
   {\
     std::string methodName="";\
-    if(isMethodNameInPath)\
-    {\
-      methodName=std::string(#method);\
-      auto pos=methodName.find("::");\
-      if(pos!=std::string::npos)\
-      {\
-        methodName=methodName.substr(pos+2);\
-      }\
-    }\
     registerMethod(methodName,pattern,&method,{filters});\
   }
 

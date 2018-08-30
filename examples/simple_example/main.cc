@@ -49,8 +49,8 @@ namespace api
         {
         public:
             METHOD_LIST_BEGIN
-            METHOD_ADD(Test::get,"/{2}/{1}",1,"drogon::GetFilter");//path will be /api/v1/test/get/{arg2}/{arg1}
-            METHOD_ADD(Test::list,"/{2}/info",0,"drogon::GetFilter");//path will be /api/v1/test/{arg2}/info
+            METHOD_ADD(Test::get,"get/{2}/{1}","drogon::GetFilter");//path will be /api/v1/test/get/{arg2}/{arg1}
+            METHOD_ADD(Test::list,"/{2}/info","drogon::GetFilter");//path will be /api/v1/test/{arg2}/info
             METHOD_LIST_END
             void get(const HttpRequestPtr& req,const std::function<void (const HttpResponsePtr &)>&callback,int p1,int p2) const
             {
