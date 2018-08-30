@@ -75,7 +75,7 @@ namespace drogon
                                           FUNCTION && function,
                                           const std::vector<std::string> &filters=std::vector<std::string>())
         {
-            LOG_DEBUG<<"pathPattern:"<<pathPattern;
+            LOG_TRACE<<"pathPattern:"<<pathPattern;
             HttpApiBinderBasePtr binder;
 
             binder=std::make_shared<

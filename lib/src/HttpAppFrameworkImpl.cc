@@ -66,7 +66,7 @@ void HttpAppFrameworkImpl::initRegex() {
     }
     if(regString.length()>0)
         regString.resize(regString.length()-1);//remove last '|'
-    LOG_DEBUG<<"regex string:"<<regString;
+    LOG_TRACE<<"regex string:"<<regString;
     _apiRegex=std::regex(regString);
 }
 void HttpAppFrameworkImpl::registerWebSocketController(const std::string &pathName,
@@ -203,7 +203,7 @@ void HttpAppFrameworkImpl::run()
     initRegex();
     for(auto listener:_listeners)
     {
-        LOG_DEBUG<<"thread num="<<_threadNum;
+        LOG_TRACE<<"thread num="<<_threadNum;
 #ifdef __linux__
         for(size_t i=0;i<_threadNum;i++)
         {
@@ -592,7 +592,7 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestPtr& req,const std::f
                 {
                     size_t ctlIndex=i-1;
                     auto &binder=_apiCtrlVector[ctlIndex];
-                    LOG_DEBUG<<"got api access,regex="<<binder.pathParameterPattern;
+                    LOG_TRACE<<"got api access,regex="<<binder.pathParameterPattern;
                     auto &filters=binder.filtersName;
                     doFilters(filters,req,callback,needSetJsessionid,session_id,[=](){
                         std::vector<std::string> params(binder.parameterPlaces.size());
@@ -605,7 +605,7 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestPtr& req,const std::f
                                 if(place>params.size())
                                     params.resize(place);
                                 params[place-1]=r[j].str();
-                                LOG_DEBUG<<"place="<<place<<" para:"<<params[place-1];
+                                LOG_TRACE<<"place="<<place<<" para:"<<params[place-1];
                             }
                         }
                         if(binder.queryParametersPlaces.size()>0)
@@ -626,7 +626,7 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestPtr& req,const std::f
                         std::list<std::string> paraList;
                         for(auto p:params)
                         {
-                            LOG_DEBUG<<p;
+                            LOG_TRACE<<p;
                             paraList.push_back(std::move(p));
                         }
 
@@ -692,7 +692,7 @@ void HttpAppFrameworkImpl::readSendFile(const std::string& filePath,const HttpRe
             std::string modiStr=req->getHeader("If-Modified-Since");
             if(modiStr!=""&&modiStr==lastModified)
             {
-                LOG_DEBUG<<"not Modified!";
+                LOG_TRACE<<"not Modified!";
                 resp->setStatusCode(HttpResponse::k304NotModified);
                 return;
             }

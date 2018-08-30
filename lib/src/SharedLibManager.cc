@@ -75,7 +75,6 @@ void SharedLibManager::managerLibs()
     for(auto libPath:_libPaths)
     {
         forEachFileIn(libPath,[=](const std::string &filename,const struct stat &st){
-            //LOG_DEBUG<<filename;
             auto pos=filename.rfind(".");
             if(pos!=std::string::npos)
             {
@@ -98,7 +97,7 @@ void SharedLibManager::managerLibs()
                         if(st.st_mtimespec.tv_sec>_dlMap[filename].mTime.tv_sec)
 #endif
                         {
-                            LOG_DEBUG<<"new csp file:"<<filename;
+                            LOG_TRACE<<"new csp file:"<<filename;
                             oldHandle=_dlMap[filename].handle;
                         }
                         else
@@ -110,7 +109,7 @@ void SharedLibManager::managerLibs()
                     }
                     std::string cmd="drogon_ctl create view ";
                     cmd.append(filename).append(" -o ").append(libPath);
-                    LOG_DEBUG<<cmd;
+                    LOG_TRACE<<cmd;
                     system(cmd.c_str());
                     auto srcFile=filename.substr(0,pos);
                     srcFile.append(".cc");
@@ -131,7 +130,7 @@ void SharedLibManager::managerLibs()
                         _dlMap[filename]=dlStat;
                     }
                     _loop->runAfter(3.5,[=](){
-                        LOG_DEBUG<<"remove file "<<lockFile;
+                        LOG_TRACE<<"remove file "<<lockFile;
                         if(unlink(lockFile.c_str())==-1)
                             perror("");
                     });
@@ -143,7 +142,7 @@ void SharedLibManager::managerLibs()
 
 }
 void* SharedLibManager::loadLibs(const std::string &sourceFile,void *oldHld) {
-    LOG_DEBUG<<"src:"<<sourceFile;
+    LOG_TRACE<<"src:"<<sourceFile;
     std::string cmd="g++ ";
     cmd.append(sourceFile).append(" ")
             .append(compileFlags).append(includeDirs).append(" -shared -fPIC --no-gnu-unique -o ");
@@ -154,16 +153,16 @@ void* SharedLibManager::loadLibs(const std::string &sourceFile,void *oldHld) {
     void *Handle = nullptr;
     if(system(cmd.c_str())==0)
     {
-        LOG_DEBUG<<"Compiled successfully";
+        LOG_TRACE<<"Compiled successfully";
         if(oldHld)
         {
             if(dlclose(oldHld)==0)
             {
-                LOG_DEBUG<<"close dynamic lib successfully:"<<oldHld;
+                LOG_TRACE<<"close dynamic lib successfully:"<<oldHld;
             }
             else
             {
-                LOG_DEBUG<<dlerror();
+                LOG_TRACE<<dlerror();
             }
         }
 
@@ -176,7 +175,7 @@ void* SharedLibManager::loadLibs(const std::string &sourceFile,void *oldHld) {
         }
         else
         {
-            LOG_DEBUG<<"Successfully loaded library file "<<soFile;
+            LOG_TRACE<<"Successfully loaded library file "<<soFile;
         }
     }
     return Handle;

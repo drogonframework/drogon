@@ -45,7 +45,7 @@ namespace drogon
         static void registerMethod(const std::string &methodName,const std::string &pattern,FUNCTION &&function,const std::vector<std::string> &filters)
         {
             std::string path=std::string("/")+HttpApiController<T>::classTypeName();
-            LOG_DEBUG<<"classname:"<<HttpApiController<T>::classTypeName();
+            LOG_TRACE<<"classname:"<<HttpApiController<T>::classTypeName();
             if(!methodName.empty())
             {
                 path.append("/");

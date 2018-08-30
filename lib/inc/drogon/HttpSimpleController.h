@@ -62,7 +62,7 @@ namespace drogon
 
             for(auto path:vPaths)
             {
-                LOG_DEBUG<<"register simple controller("<<HttpSimpleController<T>::classTypeName()<<") on path:"<<path.first;
+                LOG_TRACE<<"register simple controller("<<HttpSimpleController<T>::classTypeName()<<") on path:"<<path.first;
                 HttpAppFramework::instance().registerHttpSimpleController(path.first,HttpSimpleController<T>::classTypeName(),path.second);
             }
 

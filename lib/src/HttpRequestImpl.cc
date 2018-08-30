@@ -93,10 +93,10 @@ void HttpRequestImpl::parsePremeter()
         }
 
     }
-    LOG_DEBUG<<"_parameters:";
+    LOG_TRACE<<"_parameters:";
     for(auto iter:_parameters)
     {
-        LOG_DEBUG<<iter.first<<"="<<iter.second;
+        LOG_TRACE<<iter.first<<"="<<iter.second;
     }
 
 }

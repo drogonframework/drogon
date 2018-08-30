@@ -72,7 +72,7 @@ namespace drogon
 
             for(auto path:vPaths)
             {
-                LOG_DEBUG<<"register websocket controller ("<<WebSocketController<T>::classTypeName()<<") on path:"<<path.first;
+                LOG_TRACE<<"register websocket controller ("<<WebSocketController<T>::classTypeName()<<") on path:"<<path.first;
                 HttpAppFramework::instance().registerWebSocketController(path.first,
                                                                          WebSocketController<T>::classTypeName(),
                                                                          path.second);
