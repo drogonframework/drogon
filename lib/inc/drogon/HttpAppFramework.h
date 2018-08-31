@@ -24,6 +24,7 @@
 #include <drogon/GetFilter.h>
 #include <drogon/PutFilter.h>
 #include <drogon/DeleteFilter.h>
+#include <drogon/LocalHostFilter.h>
 #include <drogon/version.h>
 #include <drogon/NotFound.h>
 #include <drogon/HttpClient.h>
