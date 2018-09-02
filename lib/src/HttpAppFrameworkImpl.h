@@ -55,7 +55,7 @@ namespace drogon
         virtual const std::string & getDocumentRoot() const override {return _rootPath;}
         virtual void setDocumentRoot(const std::string &rootPath) override {_rootPath=rootPath;}
         virtual void setFileTypes(const std::vector<std::string> &types) override;
-        virtual void enableDynamicSharedLibLoading(const std::vector<std::string> &libPaths) override;
+        virtual void enableDynamicViewsLoading(const std::vector<std::string> &libPaths) override;
 
         ~HttpAppFrameworkImpl(){}
 

@@ -17,24 +17,6 @@
 #include <trantor/utils/Logger.h>
 #include <drogon/config.h>
 
-#ifdef USE_STD_ANY
-
-  #include <any>
-  using std::any;
-  using std::any_cast;
-
-#else 
-  #ifdef USE_BOOST
-
-    #include <boost/any.hpp>
-    using boost::any;
-    using boost::any_cast;
-
-  #else
-    #error,must use c++17 or boost
-  #endif
-#endif
-
 
 #include <unordered_map>
 #include <string>

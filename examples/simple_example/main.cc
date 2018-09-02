@@ -121,7 +121,7 @@ int main()
 
     drogon::HttpAppFramework::instance().setDocumentRoot("./");
     //start app framework
-    drogon::HttpAppFramework::instance().enableDynamicSharedLibLoading({"/tmp/views"});
+    drogon::HttpAppFramework::instance().enableDynamicViewsLoading({"/tmp/views"});
     drogon::HttpAppFramework::instance().run();
 
 }

@@ -32,7 +32,7 @@
 
 using namespace drogon;
 using namespace std::placeholders;
-void HttpAppFrameworkImpl::enableDynamicSharedLibLoading(const std::vector<std::string> &libPaths)
+void HttpAppFrameworkImpl::enableDynamicViewsLoading(const std::vector<std::string> &libPaths)
 {
     assert(!_running);
     if(_libFilePaths.empty())
