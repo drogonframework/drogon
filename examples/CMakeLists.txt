@@ -1,4 +1,4 @@
-link_libraries(drogon trantor uuid pthread jsoncpp dl)
+link_libraries(drogon trantor uuid pthread jsoncpp dl z)
 if(OpenSSL_FOUND)
 link_libraries(ssl crypto)
 endif()

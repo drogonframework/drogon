@@ -28,6 +28,7 @@
 #include "HttpContext.h"
 #include <drogon/HttpRequest.h>
 #include <drogon/HttpResponse.h>
+#include <drogon/utils/Utilities.h>
 #include <functional>
 
 using namespace std::placeholders;
@@ -162,11 +163,31 @@ void HttpServer::onRequest(const TcpConnectionPtr& conn, const HttpRequestPtr& r
         if(!response)
             return;
         response->setCloseConnection(_close);
+
+        if(response->getContentTypeCode()<CT_APPLICATION_OCTET_STREAM&&
+           response->getBody().length()>4096&&
+           req->getHeader("Accept-Encoding").find("gzip")!=std::string::npos)
+        {
+            //use gzip
+            LOG_TRACE<<"Use gzip to compress the body";
+            char zbuf[response->getBody().length()];
+            size_t zlen;
+            if(gzcompress(response->getBody().data(),
+                          response->getBody().length(),
+            zbuf,&zlen)>=0)
+            {
+                response->setBody(std::string(zbuf,zlen));
+                response->addHeader("Content-Encoding","gzip");
+            }
+        }
+
         std::dynamic_pointer_cast<HttpResponseImpl>(response)->appendToBuffer(&buf);
         conn->send(std::move(buf));
         if (_close) {
             conn->shutdown();
         }
+
+
     });
 
 

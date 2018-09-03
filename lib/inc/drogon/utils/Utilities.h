@@ -26,7 +26,11 @@ namespace drogon{
     std::string base64_encode(unsigned char const* bytes_to_encode, unsigned int in_len);
     std::string base64_decode(std::string const& encoded_string);
     std::string urlDecode(const std::string& szToDecode);
-  //  std::string base64Encode(char *in_str, int in_len)
+    int gzcompress(const  char *data, const size_t ndata,
+                    char *zdata, size_t *nzdata);
+    int gzdecompress(const  char *zdata, const size_t nzdata,
+                      char *data, size_t *ndata);
+
 }
 
 

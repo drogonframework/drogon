@@ -110,7 +110,10 @@ namespace drogon
             _contentType=type;
             setContentType(web_content_type_to_string(type));
         }
-
+        virtual uint8_t getContentTypeCode() override
+        {
+            return _contentType;
+        }
 //        virtual uint8_t contentTypeCode() override
 //        {
 //            return _contentType;
@@ -222,11 +225,14 @@ namespace drogon
 //        receiveTime_ = t;
 //    }
 
-        virtual std::string getBody() const override
+        virtual const std::string & getBody() const override
         {
             return _body;
         }
-
+        virtual std::string & getBody() override
+        {
+            return _body;
+        }
         void swap(HttpResponseImpl &that)
         {
             _headers.swap(that._headers);
