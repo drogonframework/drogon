@@ -170,15 +170,23 @@ void HttpServer::onRequest(const TcpConnectionPtr& conn, const HttpRequestPtr& r
         {
             //use gzip
             LOG_TRACE<<"Use gzip to compress the body";
-            char zbuf[response->getBody().length()];
+            char *zbuf=new char[response->getBody().length()];
             size_t zlen;
             if(gzcompress(response->getBody().data(),
                           response->getBody().length(),
             zbuf,&zlen)>=0)
             {
-                response->setBody(std::string(zbuf,zlen));
-                response->addHeader("Content-Encoding","gzip");
+                if(zlen>0)
+                {
+                    response->setBody(std::string(zbuf,zlen));
+                    response->addHeader("Content-Encoding","gzip");
+                }
+                else
+                {
+                    LOG_ERROR<<"gzip got 0 length result";
+                }
             }
+            delete [] zbuf;
         }
 
         std::dynamic_pointer_cast<HttpResponseImpl>(response)->appendToBuffer(&buf);
