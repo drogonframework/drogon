@@ -23,6 +23,7 @@
 * Support websocket (server side);
 * Support Json format request and response;
 * Support file download and upload;
+* Support gzip compression transmission;
 * Provides a lightweight command line tool, drogon_ctl, to simplify the creation of various classes in Drogon and the generation of view code;
 
 
