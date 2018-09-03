@@ -1,5 +1,6 @@
 #include <drogon/utils/Utilities.h>
 #include <drogon/config.h>
+#include <trantor/utils/Logger.h>
 #include <string.h>
 #include <zlib.h>
 namespace drogon{
@@ -245,7 +246,11 @@ int gzcompress(const  char *data, const size_t ndata,
         c_stream.next_out = (Bytef *)zdata;
         c_stream.avail_out  = *nzdata;
         while(c_stream.avail_in != 0 && c_stream.total_out < *nzdata) {
-            if(deflate(&c_stream, Z_NO_FLUSH) != Z_OK) return-1;
+            if(deflate(&c_stream, Z_NO_FLUSH) != Z_OK) 
+	    {
+		LOG_ERROR<<"compress err:"<<c_stream.msg;
+		return -1;
+	    }
         }
         if(c_stream.avail_in != 0) return c_stream.avail_in;
         for(;;) {
