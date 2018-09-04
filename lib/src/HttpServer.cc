@@ -172,7 +172,7 @@ void HttpServer::onRequest(const TcpConnectionPtr& conn, const HttpRequestPtr& r
             LOG_TRACE<<"Use gzip to compress the body";
             char *zbuf=new char[response->getBody().length()];
             size_t zlen=response->getBody().length();
-            if(gzcompress(response->getBody().data(),
+            if(gzipCompress(response->getBody().data(),
                           response->getBody().length(),
             zbuf,&zlen)>=0)
             {

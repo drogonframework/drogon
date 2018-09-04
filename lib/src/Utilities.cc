@@ -95,7 +95,7 @@ namespace drogon{
         return stringToHex(uu, 16);
     }
 
-    std::string base64_encode(unsigned char const* bytes_to_encode, unsigned int in_len) {
+    std::string base64Encode(unsigned char const* bytes_to_encode, unsigned int in_len) {
         std::string ret;
         int i = 0;
         int j = 0;
@@ -138,7 +138,7 @@ namespace drogon{
 
     }
 
-    std::string base64_decode(std::string const& encoded_string) {
+    std::string base64Decode(std::string const& encoded_string) {
         int in_len = encoded_string.size();
         int i = 0;
         int j = 0;
@@ -227,7 +227,7 @@ namespace drogon{
 /* Compress gzip data */
 /* data 原数据 ndata 原数据长度 zdata 压缩后数据 nzdata 压缩后长度 */
 
-    int gzcompress(const  char *data, const size_t ndata,
+    int gzipCompress(const  char *data, const size_t ndata,
                    char *zdata, size_t *nzdata)
     {
 
@@ -267,7 +267,7 @@ namespace drogon{
 
 /* Uncompress gzip data */
 /* zdata 数据 nzdata 原数据长度 data 解压后数据 ndata 解压后长度 */
-    int gzdecompress(const char *zdata, const size_t nzdata,
+    int gzipDecompress(const char *zdata, const size_t nzdata,
                      char *data, size_t *ndata)
     {
         int err = 0;
