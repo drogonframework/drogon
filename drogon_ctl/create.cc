@@ -29,7 +29,10 @@ std::string create::detail()
            "drogon_ctl create controller -a <[namespace::]class_name> //"
            "create HttpApiController source files\n"
            "drogon_ctl create controller -w [-n <namespace>] <class_name> //"
-           "create WebSocketController source files\n";
+           "create WebSocketController source files\n"
+           "drogon_ctl create project <project_name> //"
+           "create a project named project_name\n";
+
 }
 
 void create::handleCommand(std::vector<std::string> &parameters)
