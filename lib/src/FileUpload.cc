@@ -39,7 +39,7 @@ int FileUpload::parse(const HttpRequest &req)
     std::cout << "boundary[" << boundary << "]" << std::endl;
     std::string content = req.query();
     std::string::size_type pos1, pos2;
-    pos1 = pos2 = 0;
+    pos1 = 0;
     pos2 = content.find(boundary);
     while (1)
     {

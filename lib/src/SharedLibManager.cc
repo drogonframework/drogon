@@ -104,9 +104,9 @@ void SharedLibManager::managerLibs()
                             return;
                     }
 
-                    {
-                        std::ofstream fout(lockFile);
-                    }
+//                    {
+//                        std::ofstream fout(lockFile);
+//                    }
                     std::string cmd="drogon_ctl create view ";
                     cmd.append(filename).append(" -o ").append(libPath);
                     LOG_TRACE<<cmd;

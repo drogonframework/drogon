@@ -70,7 +70,7 @@ namespace drogon{
     {
         std::vector<std::string> ret;
         std::string::size_type pos1, pos2;
-        pos1 = pos2 = 0;
+        pos2 = 0;
         pos1 = str.find(separator);
         while (pos1 != std::string::npos)
         {

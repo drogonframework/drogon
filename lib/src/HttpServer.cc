@@ -165,7 +165,7 @@ void HttpServer::onRequest(const TcpConnectionPtr& conn, const HttpRequestPtr& r
         response->setCloseConnection(_close);
 
         if(response->getContentTypeCode()<CT_APPLICATION_OCTET_STREAM&&
-           response->getBody().length()>4096&&
+           response->getBody().length()>1024&&
            req->getHeader("Accept-Encoding").find("gzip")!=std::string::npos)
         {
             //use gzip
@@ -194,7 +194,6 @@ void HttpServer::onRequest(const TcpConnectionPtr& conn, const HttpRequestPtr& r
         if (_close) {
             conn->shutdown();
         }
-
 
     });
 

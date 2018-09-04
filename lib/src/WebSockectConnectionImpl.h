@@ -6,7 +6,7 @@ namespace drogon{
     class WebSocketConnectionImpl:public WebSocketConnection
     {
     public:
-        WebSocketConnectionImpl(const trantor::TcpConnectionPtr &conn);
+        explicit WebSocketConnectionImpl(const trantor::TcpConnectionPtr &conn);
 
         virtual void send(const char *msg,uint64_t len) override;
         virtual void send(const std::string &msg) override;

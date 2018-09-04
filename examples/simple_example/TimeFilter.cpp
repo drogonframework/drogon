@@ -3,8 +3,6 @@
 //
 
 #include "TimeFilter.h"
-#include <trantor/utils/Date.h>
-#include <trantor/utils/Logger.h>
 #define VDate "visitDate"
 void TimeFilter::doFilter(const HttpRequestPtr& req,
                                                    const FilterCallback &cb,
@@ -26,8 +24,10 @@ void TimeFilter::doFilter(const HttpRequestPtr& req,
         }
         else
         {
-            auto res=std::shared_ptr<HttpResponse>(drogon::HttpResponse::newHttpResponse());
-            res->setBody("Visit interval should be at least 10 seconds");
+            Json::Value json;
+            json["result"]="error";
+            json["message"]="Visit interval should be at least 10 seconds";
+            auto res=HttpResponse::newHttpJsonResponse(json);
             cb(res);
             return;
         }
