@@ -94,6 +94,8 @@ namespace drogon
 
         virtual void setContentTypeCode(uint8_t type)=0;
 
+        virtual void setContentTypeCodeAndCharacterSet(uint8_t type,const std::string charSet="utf-8")=0;
+
         virtual uint8_t getContentTypeCode()=0;
 
         virtual std::string getHeader(const std::string& key) const =0;

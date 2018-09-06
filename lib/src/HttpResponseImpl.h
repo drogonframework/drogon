@@ -110,6 +110,13 @@ namespace drogon
             _contentType=type;
             setContentType(web_content_type_to_string(type));
         }
+
+        virtual void setContentTypeCodeAndCharacterSet(uint8_t type,const std::string charSet="utf-8") override
+        {
+            _contentType=type;
+            setContentType(web_content_type_and_charset_to_string(type,charSet));
+        }
+
         virtual uint8_t getContentTypeCode() override
         {
             return _contentType;
@@ -270,6 +277,9 @@ namespace drogon
         }
     protected:
         static const std::string web_content_type_to_string(uint8_t contenttype);
+        static const std::string web_content_type_and_charset_to_string(uint8_t contenttype,
+                                                                        const std::string &charSet);
+
         static const std::string web_response_code_to_string(int code);
 
     private:
