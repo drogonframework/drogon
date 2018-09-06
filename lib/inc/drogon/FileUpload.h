@@ -41,7 +41,7 @@ namespace drogon
         ~FileUpload(){};
         const std::vector<HttpFile> getFiles();
         const std::map<std::string,std::string>& getPremeter() const;
-        int parse(const HttpRequest& req);
+        int parse(const HttpRequestPtr& req);
 
     protected:
         std::vector<HttpFile> files_;

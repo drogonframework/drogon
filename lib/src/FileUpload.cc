@@ -17,19 +17,21 @@ const std::map<std::string, std::string> &FileUpload::getPremeter() const
 {
     return premeter_;
 };
-int FileUpload::parse(const HttpRequest &req)
+int FileUpload::parse(const HttpRequestPtr &req)
 {
-    if (req.method() != HttpRequest::kPost)
+    if (req->method() != HttpRequest::kPost)
         return -1;
-    std::map<std::string, std::string> headers = req.headers();
-    if (headers.find("Content-Type") == headers.end())
+    std::string contentType = req->getHeader("Content-Type");
+    if(contentType.empty())
+    {
         return -1;
-    std::string &contentType = headers["Content-Type"];
+    }
     std::string::size_type pos = contentType.find(";");
     if (pos == std::string::npos)
         return -1;
 
     std::string type = contentType.substr(0, pos);
+    std::transform(type.begin(),type.end(),type.begin(),tolower);
     if (type != "multipart/form-data")
         return -1;
     pos = contentType.find("boundary=");
@@ -37,7 +39,7 @@ int FileUpload::parse(const HttpRequest &req)
         return -1;
     std::string boundary = contentType.substr(pos + 9);
     std::cout << "boundary[" << boundary << "]" << std::endl;
-    std::string content = req.query();
+    std::string content = req->query();
     std::string::size_type pos1, pos2;
     pos1 = 0;
     pos2 = content.find(boundary);

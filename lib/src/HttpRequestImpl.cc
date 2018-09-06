@@ -31,10 +31,8 @@ using namespace drogon;
 void HttpRequestImpl::parsePremeter()
 {
     std::string type=getHeader("Content-Type");
-    if(type.empty())
-    {
-        type=getHeader("content-type");
-    }
+
+    std::transform(type.begin(),type.end(),type.begin(),tolower);
     const std::string &input=query();
     if(_method==kGet||(_method==kPost&&(type==""||type.find("application/x-www-form-urlencoded")!=std::string::npos)))
     {
@@ -170,7 +168,7 @@ void HttpRequestImpl::appendToBuffer(MsgBuffer* output) const
         output->append("\r\n");
     }
     if(_cookies.size() > 0) {
-        output->append("Set-Cookie: ");
+        output->append("Cookie: ");
         for(auto it = _cookies.begin(); it != _cookies.end(); it++) {
             output->append(it->first);
             output->append("= ");

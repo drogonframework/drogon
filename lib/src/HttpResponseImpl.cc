@@ -286,8 +286,9 @@ void HttpResponseImpl::appendToBuffer(MsgBuffer* output) const
              output->append(it->second.cookieString());
         }
     }
-
-    output->append("\r\n");
+    output->append("Server: drogon/");
+    output->append(drogon::getVersion());
+    output->append("\r\n\r\n");
 
 	LOG_TRACE<<"reponse(no body):"<<output->peek();
 	output->append(_body);

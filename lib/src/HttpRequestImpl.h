@@ -208,6 +208,8 @@ namespace drogon
         void addHeader(const char* start, const char* colon, const char* end)
         {
             std::string field(start, colon);
+            //field name is case-insensitive.so we transform it to lower;
+            std::transform(field.begin(),field.end(),field.begin(),::tolower);
             ++colon;
             while (colon < end && isspace(*colon)) {
                 ++colon;
@@ -217,7 +219,6 @@ namespace drogon
                 value.resize(value.size() - 1);
             }
             _headers[field] = value;
-            transform(field.begin(), field.end(), field.begin(), ::tolower);
             if(field == "cookie") {
                 LOG_TRACE<<"cookies!!!:"<<value;
                 std::string::size_type pos;
@@ -256,7 +257,9 @@ namespace drogon
         std::string getHeader(const std::string& field) const override
         {
             std::string result;
-            std::map<std::string, std::string>::const_iterator it = _headers.find(field);
+            auto lowField=field;
+            std::transform(lowField.begin(),lowField.end(),lowField.begin(),tolower);
+            std::map<std::string, std::string>::const_iterator it = _headers.find(lowField);
             if (it != _headers.end()) {
                 result = it->second;
             }
