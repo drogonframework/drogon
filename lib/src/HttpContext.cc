@@ -209,29 +209,9 @@ bool HttpContext::processResponseLine(const char *begin, const char *end)
         std::string status_code(start, space - start);
         std::string status_message(space + 1, end - space - 1);
         LOG_TRACE << status_code << " " << status_message;
-        switch (atoi(status_code.c_str()))
-        {
-        case 200:
-            response_.setStatusCode(HttpResponse::k200Ok, status_message);
-            break;
-        case 301:
-            response_.setStatusCode(HttpResponse::k301MovedPermanently, status_message);
-            break;
-        case 302:
-            response_.setStatusCode(HttpResponse::k302Found, status_message);
-            break;
-        case 304:
-            response_.setStatusCode(HttpResponse::k304NotModified, status_message);
-            break;
-        case 400:
-            response_.setStatusCode(HttpResponse::k400BadRequest, status_message);
-            break;
-        case 404:
-            response_.setStatusCode(HttpResponse::k404NotFound, status_message);
-            break;
-        default:
-            return false;
-        }
+        auto code=atoi(status_code.c_str());
+        response_.setStatusCode(HttpResponse::HttpStatusCode(code),status_message);
+
         return true;
     }
     return false;

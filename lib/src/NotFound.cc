@@ -25,7 +25,7 @@ HttpResponsePtr NotFound::genHttpResponse(const HttpViewData& NotFound_view_data
 	NotFound_tmp_stream << "<!-- a padding to disable MSIE and Chrome friendly error page -->\n";
 	NotFound_tmp_stream << "<!-- a padding to disable MSIE and Chrome friendly error page -->\n";
 	auto res = HttpResponse::newHttpResponse();
-	res->setStatusCode(HttpResponse::k200Ok);
+	res->setStatusCode(HttpResponse::k200OK);
 #ifdef CONTENT_TYPE
 	res->setContentTypeCode(CONTENT_TYPE);
 #else

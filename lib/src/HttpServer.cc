@@ -125,7 +125,7 @@ void HttpServer::onMessage(const TcpConnectionPtr& conn,
             auto wsConn=std::make_shared<WebSocketConnectionImpl>(conn);
             newWebsocketCallback_(context->request(),[=](const HttpResponsePtr &resp) mutable
             {
-                if(resp->statusCode()==HttpResponse::k101)
+                if(resp->statusCode()==HttpResponse::k101SwitchingProtocols)
                 {
                     context->setWebsockConnection(wsConn);
                 }
@@ -166,7 +166,7 @@ void HttpServer::onRequest(const TcpConnectionPtr& conn, const HttpRequestPtr& r
         if(!response)
             return;
         response->setCloseConnection(_close);
-        //if the request method is HEAD,remove the body of response
+        //if the request method is HEAD,remove the body of response(rfc2616-9.4)
         if(_isHeadMethod)
             response->setBody(std::string());
         if(response->getContentTypeCode()<CT_APPLICATION_OCTET_STREAM&&

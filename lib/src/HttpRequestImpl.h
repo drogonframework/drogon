@@ -208,7 +208,7 @@ namespace drogon
         void addHeader(const char* start, const char* colon, const char* end)
         {
             std::string field(start, colon);
-            //field name is case-insensitive.so we transform it to lower;
+            //field name is case-insensitive.so we transform it to lower;(rfc2616-4.2)
             std::transform(field.begin(),field.end(),field.begin(),::tolower);
             ++colon;
             while (colon < end && isspace(*colon)) {

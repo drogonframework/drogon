@@ -271,7 +271,7 @@ void create_view::newViewSourceFile(std::ofstream &file,const std::string &class
     }
 
     file<<"\tauto res = HttpResponse::newHttpResponse();\n";
-    file<<"\tres->setStatusCode(HttpResponse::k200Ok);\n";
+    file<<"\tres->setStatusCode(HttpResponse::k200OK);\n";
     file<<"#ifdef CONTENT_TYPE\n";
     file<<"\tres->setContentTypeCode(CONTENT_TYPE);\n";
     file<<"#else\n";

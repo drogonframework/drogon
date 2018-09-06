@@ -434,7 +434,7 @@ void HttpAppFrameworkImpl::onNewWebsockRequest(const HttpRequestPtr& req,
                 SHA1(reinterpret_cast<const unsigned char *>(wsKey.c_str()), wsKey.length(), accKey);
                 auto base64Key=base64Encode(accKey,SHA_DIGEST_LENGTH);
                 auto resp=HttpResponse::newHttpResponse();
-                resp->setStatusCode(HttpResponse::k101,"Switching Protocols");
+                resp->setStatusCode(HttpResponse::k101SwitchingProtocols);
                 resp->addHeader("Upgrade","websocket");
                 resp->addHeader("Connection","Upgrade");
                 resp->addHeader("Sec-WebSocket-Accept",base64Key);
@@ -710,7 +710,7 @@ void HttpAppFrameworkImpl::readSendFile(const std::string& filePath,const HttpRe
     pbuf->sgetn (&str[0],size);
     infile.close();
 
-    resp->setStatusCode(HttpResponse::k200Ok);
+    resp->setStatusCode(HttpResponse::k200OK);
     LOG_INFO << "file len:" << str.length();
     resp->setBody(std::move(str));
 
