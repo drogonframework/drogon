@@ -156,14 +156,19 @@ void HttpServer::onRequest(const TcpConnectionPtr& conn, const HttpRequestPtr& r
     bool _close = connection == "close" ||
                   (req->getVersion() == HttpRequestImpl::kHttp10 && connection != "Keep-Alive");
 
-
-
+    bool _isHeadMethod=(req->method()==HttpRequest::kHead);
+    if(_isHeadMethod)
+    {
+        req->setMethod(HttpRequest::kGet);
+    }
     httpAsyncCallback_(req, [ = ](const HttpResponsePtr &response) {
         MsgBuffer buf;
         if(!response)
             return;
         response->setCloseConnection(_close);
-
+        //if the request method is HEAD,remove the body of response
+        if(_isHeadMethod)
+            response->setBody(std::string());
         if(response->getContentTypeCode()<CT_APPLICATION_OCTET_STREAM&&
            response->getBody().length()>1024&&
            req->getHeader("Accept-Encoding").find("gzip")!=std::string::npos)
@@ -196,7 +201,5 @@ void HttpServer::onRequest(const TcpConnectionPtr& conn, const HttpRequestPtr& r
         }
 
     });
-
-
 }
 

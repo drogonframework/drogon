@@ -66,11 +66,13 @@ namespace drogon
             kUnknown,
             k101 = 101,
             k200Ok = 200,
+            k204NoContent = 204,
             k301MovedPermanently = 301,
             k302Found = 302,
             k304NotModified = 304,
             k400BadRequest = 400,
             k404NotFound = 404,
+            k405MethodNotAllowed = 405,
         };
 
         enum Version {

@@ -24,6 +24,7 @@ void PostFilter::doFilter(const HttpRequestPtr& req,
         fccb();
         return;
     }
-    auto res=drogon::HttpResponse::newNotFoundResponse();
+    auto res=drogon::HttpResponse::newHttpResponse();
+    res->setStatusCode(HttpResponse::k405MethodNotAllowed);
     fcb(res);
 }

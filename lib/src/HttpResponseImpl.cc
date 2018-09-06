@@ -216,8 +216,12 @@ const std::string HttpResponseImpl::web_response_code_to_string(int code)
         case 200:
             return "OK";
 
+        case 204:
+            return "No Content";
+
         case 304:
             return "Not Modified";
+
         case 307:
             return "Temporary Redirect";
 
@@ -229,6 +233,9 @@ const std::string HttpResponseImpl::web_response_code_to_string(int code)
 
         case 404:
             return "Not Found";
+
+        case 405:
+            return "Method Not Allowed";
 
         case 412:
             return "Preconditions Failed";
