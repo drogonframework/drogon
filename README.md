@@ -8,7 +8,7 @@
                  |___/
 ```
 
-**Drogon** is a C++11-based Http application framework. Drogon can be used to easily build various types of web application server programs using C++. Drogon's main application platform is Linux. For debugging purposes, it also supports Mac OS. There is no plan to support Windows. Its main features are as follows:
+**Drogon** is a C++11-based HTTP application framework. Drogon can be used to easily build various types of web application server programs using C++. Drogon's main application platform is Linux. For debugging purposes, it also supports Mac OS. There is no plan to support Windows. Its main features are as follows:
 
 * The network layer uses a NIO framework based on epoll (poll under MacOS) to provide high-concurrency, high-performance network IO;
 * Full asynchronous programming mode;
