@@ -1,12 +1,4 @@
-## Overview
-```
- ____
-|  _ \ _ __ ___   __ _  ___  _ __
-| | | | '__/ _ \ / _` |/ _ \| '_ \
-| |_| | | | (_) | (_| | (_) | | | |
-|____/|_|  \___/ \__, |\___/|_| |_|
-                 |___/
-```
+![](https://github.com/an-tao/drogon/wiki/images/drogon-white.jpg)
 
 **Drogon** is a C++11-based HTTP application framework. Drogon can be used to easily build various types of web application server programs using C++. Drogon's main application platform is Linux. For debugging purposes, it also supports Mac OS. There is no plan to support Windows. Its main features are as follows:
 
@@ -28,5 +20,3 @@
 
 
 ### For more information, please visit the [wiki](https://github.com/an-tao/drogon/wiki)
-
-![](https://github.com/an-tao/drogon/wiki/images/drogon-white.jpg)
