@@ -161,8 +161,11 @@ void HttpServer::onRequest(const TcpConnectionPtr& conn, const HttpRequestPtr& r
     {
         req->setMethod(HttpRequest::kGet);
     }
+    HttpContext* context = any_cast<HttpContext>(conn->getMutableContext());
+    //request will be received in same thread,so we don't need mutex;
+    context->pushRquestToPipeLine(req);
     httpAsyncCallback_(req, [ = ](const HttpResponsePtr &response) {
-        MsgBuffer buf;
+
         if(!response)
             return;
         response->setCloseConnection(_close);
@@ -193,13 +196,46 @@ void HttpServer::onRequest(const TcpConnectionPtr& conn, const HttpRequestPtr& r
             }
             delete [] zbuf;
         }
-
-        std::dynamic_pointer_cast<HttpResponseImpl>(response)->appendToBuffer(&buf);
-        conn->send(std::move(buf));
-        if (_close) {
-            conn->shutdown();
+        {
+            /*
+             * A client that supports persistent connections MAY “pipeline”
+             * its requests (i.e., send multiple requests without waiting
+             * for each response). A server MUST send its responses to those
+             * requests in the same order that the requests were received.
+             *                                             rfc2616-8.1.1.2
+             */
+            std::lock_guard<std::mutex> guard(context->getPipeLineMutex());
+            if(context->getFirstRequest()==req)
+            {
+                context->popFirstRequest();
+                sendResponse(conn,response);
+                while(1)
+                {
+                    auto resp=context->getFirstResponse();
+                    if(resp)
+                    {
+                        context->popFirstRequest();
+                        sendResponse(conn,resp);
+                    } else
+                        return;
+                }
+            }
+            else
+            {
+                //some earlier requests are waiting for responses;
+                context->pushResponseToPipeLine(req,response);
+            }
         }
 
     });
 }
-
+void HttpServer::sendResponse(const TcpConnectionPtr& conn,
+                              const HttpResponsePtr &response)
+{
+    MsgBuffer buf;
+    std::dynamic_pointer_cast<HttpResponseImpl>(response)->appendToBuffer(&buf);
+    conn->send(std::move(buf));
+    if (response->closeConnection()) {
+        conn->shutdown();
+    }
+}

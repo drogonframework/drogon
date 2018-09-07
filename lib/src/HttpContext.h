@@ -30,7 +30,8 @@
 #include "HttpResponseImpl.h"
 #include <trantor/utils/MsgBuffer.h>
 #include <drogon/WebSocketConnection.h>
-
+#include <list>
+#include <mutex>
 using namespace trantor;
 namespace drogon
 {
@@ -141,7 +142,14 @@ namespace drogon
         {
             _websockConnPtr=conn;
         }
-    private:
+        //to support request pipelining(rfc2616-8.1.2.2)
+        std::mutex & getPipeLineMutex();
+        void pushRquestToPipeLine(const HttpRequestPtr &req);
+        HttpRequestPtr getFirstRequest() const;
+        HttpResponsePtr getFirstResponse() const;
+        void popFirstRequest();
+        void pushResponseToPipeLine(const HttpRequestPtr &req,const HttpResponsePtr &resp);
+        private:
         bool processRequestLine(const char *begin, const char *end);
         bool processResponseLine(const char *begin, const char *end);
 
@@ -152,6 +160,9 @@ namespace drogon
         HttpResponseImpl response_;
         bool _firstRequest=true;
         WebSocketConnectionPtr _websockConnPtr;
+
+        std::list<std::pair<HttpRequestPtr,HttpResponsePtr>> _requestPipeLine;
+        std::shared_ptr<std::mutex> _pipeLineMutex;
     };
 
 }

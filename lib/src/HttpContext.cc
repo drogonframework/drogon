@@ -33,8 +33,8 @@ using namespace drogon;
 HttpContext::HttpContext()
         : state_(kExpectRequestLine),
           request_(new HttpRequestImpl),
-          res_state_(HttpResponseParseState::kExpectResponseLine)
-
+          res_state_(HttpResponseParseState::kExpectResponseLine),
+          _pipeLineMutex(std::make_shared<std::mutex>())
 {
 }
 bool HttpContext::processRequestLine(const char *begin, const char *end)
@@ -397,3 +397,48 @@ bool HttpContext::parseResponse(MsgBuffer *buf)
     }
     return ok;
 }
+
+void HttpContext::pushRquestToPipeLine(const HttpRequestPtr &req)
+{
+    std::pair<HttpRequestPtr,HttpResponsePtr> reqPair(req,HttpResponseImplPtr());
+
+    _requestPipeLine.push_back(std::move(reqPair));
+}
+HttpRequestPtr HttpContext::getFirstRequest() const
+{
+    if(_requestPipeLine.size()>0)
+    {
+        return _requestPipeLine.front().first;
+    }
+    return HttpRequestImplPtr();
+}
+HttpResponsePtr HttpContext::getFirstResponse() const
+{
+    if(_requestPipeLine.size()>0)
+    {
+        return _requestPipeLine.front().second;
+    }
+    return HttpResponseImplPtr();
+}
+void HttpContext::popFirstRequest()
+{
+    _requestPipeLine.pop_front();
+}
+void HttpContext::pushResponseToPipeLine(const HttpRequestPtr &req,
+                                         const HttpResponsePtr &resp)
+{
+    for(auto &iter:_requestPipeLine)
+    {
+        if(iter.first==req)
+        {
+            iter.second=resp;
+            return;
+        }
+    }
+}
+
+std::mutex & HttpContext::getPipeLineMutex()
+{
+    return *_pipeLineMutex;
+}
+

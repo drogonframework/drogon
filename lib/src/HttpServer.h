@@ -87,6 +87,7 @@ namespace drogon
                        MsgBuffer*);
         void onRequest(const TcpConnectionPtr&, const HttpRequestPtr &);
         bool isWebSocket(const TcpConnectionPtr& conn, const HttpRequestPtr& req);
+        void sendResponse(const TcpConnectionPtr&,const HttpResponsePtr &);
         trantor::TcpServer server_;
         HttpAsyncCallback httpAsyncCallback_;
         WebSocketNewAsyncCallback newWebsocketCallback_;

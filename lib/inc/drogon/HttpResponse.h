@@ -63,6 +63,7 @@ namespace drogon
     {
     public:
         enum HttpStatusCode {
+            //rfc2616-6.1.1
             kUnknown=0,
             k100Continue=100,
             k101SwitchingProtocols=101,

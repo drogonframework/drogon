@@ -18,7 +18,7 @@ const std::string Cookie::cookieString() const
 {
     std::string ret="Set-Cookie: ";
     ret.append(_key).append("= ").append(_value).append("; ");
-    if(_expiresDate>=trantor::Date())
+    if(_expiresDate.microSecondsSinceEpoch()>0)
     {
         //add expiresDate string
         struct tm tm1=_expiresDate.tmStruct();

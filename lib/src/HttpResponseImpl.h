@@ -307,7 +307,7 @@ namespace drogon
             _statusMessage = message;
         }
     };
-
+    typedef std::shared_ptr<HttpResponseImpl> HttpResponseImplPtr;
 }
 
 

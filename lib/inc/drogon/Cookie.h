@@ -33,7 +33,7 @@ namespace drogon{
         const std::string &key() const {return _key;}
         const std::string &value() const {return _value;}
     private:
-        trantor::Date _expiresDate=trantor::Date();
+        trantor::Date _expiresDate;
         bool _httpOnly=true;
         bool _ensure=false;
         std::string _domain;
