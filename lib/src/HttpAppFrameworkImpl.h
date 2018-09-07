@@ -29,8 +29,6 @@
 
 namespace drogon
 {
-    std::map<std::string,std::shared_ptr<drogon::DrObjectBase>> HttpApiBinderBase::_objMap;
-    std::mutex HttpApiBinderBase::_objMutex;
     class HttpAppFrameworkImpl:public HttpAppFramework
     {
     public:
@@ -59,7 +57,7 @@ namespace drogon
 
         ~HttpAppFrameworkImpl(){}
 
-        virtual trantor::EventLoop *loop() override;
+        trantor::EventLoop *loop();
     private:
         std::vector<std::tuple<std::string,uint16_t,bool>> _listeners;
         void onAsyncRequest(const HttpRequestPtr& req,const std::function<void (const HttpResponsePtr &)> & callback);

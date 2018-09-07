@@ -32,6 +32,8 @@
 
 using namespace drogon;
 using namespace std::placeholders;
+std::map<std::string,std::shared_ptr<drogon::DrObjectBase>> HttpApiBinderBase::_objMap;
+std::mutex HttpApiBinderBase::_objMutex;
 void HttpAppFrameworkImpl::enableDynamicViewsLoading(const std::vector<std::string> &libPaths)
 {
     assert(!_running);
