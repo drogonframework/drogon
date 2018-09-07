@@ -7,6 +7,8 @@
 #endif
 #include <iostream>
 #include <fstream>
+#include <algorithm>
+
 using namespace drogon;
 
 const std::vector<HttpFile> FileUpload::getFiles()

@@ -23,9 +23,8 @@
  *  @section DESCRIPTION
  *
  */
+#pragma once
 
-#ifndef MUDUO_NET_HTTP_HTTPCONTEXT_H
-#define MUDUO_NET_HTTP_HTTPCONTEXT_H
 #include "HttpRequestImpl.h"
 #include "HttpResponseImpl.h"
 #include <trantor/utils/MsgBuffer.h>
@@ -167,8 +166,8 @@ namespace drogon
         std::shared_ptr<std::mutex> _pipeLineMutex;
 
         std::weak_ptr<trantor::TcpConnection> _conn;
+
     };
 
 }
 
-#endif // MUDUO_NET_HTTP_HTTPCONTEXT_H

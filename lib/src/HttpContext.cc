@@ -159,7 +159,10 @@ bool HttpContext::parseRequest(MsgBuffer *buf)
                                 std::dynamic_pointer_cast<HttpResponseImpl>(resp)
                                         ->appendToBuffer(&buffer);
                                 connPtr->send(std::move(buffer));
-                                connPtr->shutdown();
+                                buf->retrieveAll();
+                                connPtr->forceClose();
+
+                                //return false;
                             }
 
                         }
