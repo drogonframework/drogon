@@ -29,6 +29,7 @@
 #include <drogon/version.h>
 #include <drogon/NotFound.h>
 #include <drogon/HttpClient.h>
+#include <drogon/FileUpload.h>
 #include <trantor/net/EventLoop.h>
 #include <drogon/CacheMap.h>
 #include <memory>

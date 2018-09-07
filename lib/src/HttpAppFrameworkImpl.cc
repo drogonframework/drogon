@@ -476,7 +476,7 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestPtr& req,const std::f
 
 
     LOG_TRACE << "http path=" << req->path();
-    LOG_TRACE << "query: " << req->query() ;
+   // LOG_TRACE << "query: " << req->query() ;
 
     std::string session_id=req->getCookie("JSESSIONID");
     bool needSetJsessionid=false;

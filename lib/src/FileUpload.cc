@@ -38,7 +38,7 @@ int FileUpload::parse(const HttpRequestPtr &req)
     if (pos == std::string::npos)
         return -1;
     std::string boundary = contentType.substr(pos + 9);
-    std::cout << "boundary[" << boundary << "]" << std::endl;
+    //std::cout << "boundary[" << boundary << "]" << std::endl;
     std::string content = req->query();
     std::string::size_type pos1, pos2;
     pos1 = 0;
