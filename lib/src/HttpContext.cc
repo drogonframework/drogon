@@ -30,11 +30,12 @@
 #include <iostream>
 using namespace trantor;
 using namespace drogon;
-HttpContext::HttpContext()
+HttpContext::HttpContext(const trantor::TcpConnectionPtr &connPtr)
         : state_(kExpectRequestLine),
           request_(new HttpRequestImpl),
           res_state_(HttpResponseParseState::kExpectResponseLine),
-          _pipeLineMutex(std::make_shared<std::mutex>())
+          _pipeLineMutex(std::make_shared<std::mutex>()),
+          _conn(connPtr)
 {
 }
 bool HttpContext::processRequestLine(const char *begin, const char *end)
@@ -129,6 +130,39 @@ bool HttpContext::parseRequest(MsgBuffer *buf)
                     {
                         request_->contentLen = atoi(len.c_str());
                         state_ = kExpectBody;
+                        auto expect=request_->getHeader("Expect");
+                        if(expect=="100-continue"&&
+                           request_->getVersion()>=HttpRequest::kHttp11)
+                        {
+                            //rfc2616-8.2.3
+                            //TODO:here we can add content-length limitation
+                            auto connPtr=_conn.lock();
+                            if(connPtr)
+                            {
+                                auto resp=HttpResponse::newHttpResponse();
+                                resp->setStatusCode(HttpResponse::k100Continue);
+                                MsgBuffer buffer;
+                                std::dynamic_pointer_cast<HttpResponseImpl>(resp)
+                                        ->appendToBuffer(&buffer);
+                                connPtr->send(std::move(buffer));
+                            }
+                        }
+                        else if(!expect.empty())
+                        {
+                            LOG_WARN<<"417ExpectationFailed for \""<<expect<<"\"";
+                            auto connPtr=_conn.lock();
+                            if(connPtr)
+                            {
+                                auto resp=HttpResponse::newHttpResponse();
+                                resp->setStatusCode(HttpResponse::k417ExpectationFailed);
+                                MsgBuffer buffer;
+                                std::dynamic_pointer_cast<HttpResponseImpl>(resp)
+                                        ->appendToBuffer(&buffer);
+                                connPtr->send(std::move(buffer));
+                                connPtr->shutdown();
+                            }
+
+                        }
                     }
                     else
                     {

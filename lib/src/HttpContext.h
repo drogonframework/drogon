@@ -32,6 +32,8 @@
 #include <drogon/WebSocketConnection.h>
 #include <list>
 #include <mutex>
+#include <trantor/net/TcpConnection.h>
+
 using namespace trantor;
 namespace drogon
 {
@@ -58,7 +60,7 @@ namespace drogon
             kGotAll,
         };
 
-        HttpContext();
+        HttpContext(const trantor::TcpConnectionPtr &connPtr);
 
 
         // default copy-ctor, dtor and assignment are fine
@@ -163,6 +165,8 @@ namespace drogon
 
         std::list<std::pair<HttpRequestPtr,HttpResponsePtr>> _requestPipeLine;
         std::shared_ptr<std::mutex> _pipeLineMutex;
+
+        std::weak_ptr<trantor::TcpConnection> _conn;
     };
 
 }

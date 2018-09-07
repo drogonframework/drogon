@@ -82,7 +82,7 @@ void HttpServer::start()
 void HttpServer::onConnection(const TcpConnectionPtr& conn)
 {
     if (conn->connected()) {
-        conn->setContext(HttpContext());
+        conn->setContext(HttpContext(conn));
     }
     else if(conn->disconnected())
     {

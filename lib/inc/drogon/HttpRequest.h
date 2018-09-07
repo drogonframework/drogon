@@ -32,7 +32,9 @@ namespace drogon
     {
     public:
         enum Version {
-            kUnknown, kHttp10, kHttp11
+            kUnknown=0,
+            kHttp10=1,
+            kHttp11=2
         };
         enum Method {
             kInvalid, kGet, kPost, kHead, kPut, kDelete

@@ -45,7 +45,7 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req, const 
             LOG_TRACE<<"connection callback";
             if(connPtr->connected())
             {
-                connPtr->setContext(HttpContext());
+                connPtr->setContext(HttpContext(connPtr));
                 //send request;
                 LOG_TRACE<<"Connection established!";
                 auto req=thisPtr->_reqAndCallbacks.front().first;
