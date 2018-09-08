@@ -23,6 +23,7 @@ class HttpClientImpl:public HttpClient,public std::enable_shared_from_this<HttpC
     {
 public:
     HttpClientImpl(trantor::EventLoop *loop,const trantor::InetAddress &addr,bool useSSL=false);
+    HttpClientImpl(trantor::EventLoop *loop,const std::string & hostString);
     virtual void sendRequest(const HttpRequestPtr &req,const HttpReqCallback &callback) override;
     ~HttpClientImpl();
 private:
@@ -34,5 +35,6 @@ private:
     void sendRequestInLoop(const HttpRequestPtr &req,const HttpReqCallback &callback);
     std::queue<std::pair<HttpRequestPtr,HttpReqCallback>> _reqAndCallbacks;
     void onRecvMessage(const trantor::TcpConnectionPtr&,trantor::MsgBuffer*);
+    std::string _domain;
 };
 }

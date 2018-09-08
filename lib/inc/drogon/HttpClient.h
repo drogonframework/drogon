@@ -23,6 +23,7 @@ namespace drogon{
         Ok,
         BadResponse,
         NetworkFailure,
+        BadServerAddress,
         Timeout
     };
     typedef std::function<void(ReqResult,const HttpResponse &response)> HttpReqCallback;
@@ -35,6 +36,7 @@ namespace drogon{
         virtual ~HttpClient(){}
         static HttpClientPtr newHttpClient(const std::string &ip,uint16_t port,bool useSSL=false) ;
         static HttpClientPtr newHttpClient(const trantor::InetAddress &addr,bool useSSL=false) ;
+        static HttpClientPtr newHttpClient(const std::string &hostString);
     protected:
         HttpClient()= default;
     };
