@@ -57,10 +57,10 @@ if(Boost_FOUND)
     include_directories(${Boost_INCLUDE_DIRS})
 endif()
 
-if (RELEASE STREQUAL YES)
-    set(CMAKE_CXX_FLAGS "-std=${CMAKE_CXX_STD_FLAGS} -O2 -Wall -fpermissive ${CMAKE_CXX_FLAGS}")
-else()
+if (DEBUG STREQUAL YES)
     set(CMAKE_CXX_FLAGS "-std=${CMAKE_CXX_STD_FLAGS} -g -Wall -fpermissive ${CMAKE_CXX_FLAGS}")
+else()
+    set(CMAKE_CXX_FLAGS "-std=${CMAKE_CXX_STD_FLAGS} -O2 -Wall -fpermissive ${CMAKE_CXX_FLAGS}")
 endif()
 #string(REPLACE ";" " " CMAKE_CXX_FLAGS "${CXX_FLAGS}")
 
