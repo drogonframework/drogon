@@ -18,6 +18,7 @@
 #include "WebSockectConnectionImpl.h"
 #include <drogon/config.h>
 #include <trantor/net/TcpServer.h>
+#include <trantor/net/callbacks.h>
 #include <trantor/utils/NonCopyable.h>
 #include <functional>
 #include <string>
@@ -68,6 +69,10 @@ namespace drogon
         {
             webSocketMessageCallback_=cb;
         }
+        void setConnectionCallback(const ConnectionCallback &cb)
+        {
+            _connectionCallback=cb;
+        }
         void setIoLoopNum(int numThreads)
         {
             server_.setIoLoopNum(numThreads);
@@ -93,6 +98,7 @@ namespace drogon
         WebSocketNewAsyncCallback newWebsocketCallback_;
         WebSocketDisconnetCallback disconnectWebsocketCallback_;
         WebSocketMessageCallback webSocketMessageCallback_;
+        trantor::ConnectionCallback _connectionCallback;
     };
 
 

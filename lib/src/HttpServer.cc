@@ -53,14 +53,18 @@ static void defaultWebSockAsyncCallback(const HttpRequestPtr&,
 }
 
 
-
+static void defaultConnectionCallback(const trantor::TcpConnectionPtr & conn)
+{
+    return;
+}
 
 HttpServer::HttpServer(EventLoop* loop,
                        const InetAddress& listenAddr,
                        const std::string& name)
         : server_(loop, listenAddr, name.c_str()),
           httpAsyncCallback_(defaultHttpAsyncCallback),
-          newWebsocketCallback_(defaultWebSockAsyncCallback)
+          newWebsocketCallback_(defaultWebSockAsyncCallback),
+          _connectionCallback(defaultConnectionCallback)
 {
     server_.setConnectionCallback(
             std::bind(&HttpServer::onConnection, this, _1));
@@ -96,6 +100,7 @@ void HttpServer::onConnection(const TcpConnectionPtr& conn)
         }
         conn->setContext(std::string("None"));
     }
+    _connectionCallback(conn);
 }
 
 void HttpServer::onMessage(const TcpConnectionPtr& conn,

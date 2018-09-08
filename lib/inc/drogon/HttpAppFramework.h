@@ -93,5 +93,7 @@ namespace drogon
         virtual void setDocumentRoot(const std::string &rootPath)=0;
         virtual void setFileTypes(const std::vector<std::string> &types)=0;
         virtual void enableDynamicViewsLoading(const std::vector<std::string> &libPaths)=0;
+
+        virtual void setMaxConnectionNum(size_t maxConnections)=0;
     };
 }

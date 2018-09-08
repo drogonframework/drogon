@@ -179,6 +179,10 @@ void HttpAppFrameworkImpl::setThreadNum(size_t threadNum)
     assert(threadNum>=1);
     _threadNum=threadNum;
 }
+void HttpAppFrameworkImpl::setMaxConnectionNum(size_t maxConnections)
+{
+    _maxConnectionNum=maxConnections;
+}
 void HttpAppFrameworkImpl::setSSLFiles(const std::string &certPath,
                  const std::string &keyPath)
 {
@@ -224,6 +228,7 @@ void HttpAppFrameworkImpl::run()
 #endif
             }
             serverPtr->setHttpAsyncCallback(std::bind(&HttpAppFrameworkImpl::onAsyncRequest,this,_1,_2));
+            serverPtr->setConnectionCallback(std::bind(&HttpAppFrameworkImpl::onConnection,this,_1));
             serverPtr->start();
             servers.push_back(serverPtr);
         }
@@ -247,6 +252,7 @@ void HttpAppFrameworkImpl::run()
         serverPtr->setNewWebsocketCallback(std::bind(&HttpAppFrameworkImpl::onNewWebsockRequest,this,_1,_2,_3));
         serverPtr->setWebsocketMessageCallback(std::bind(&HttpAppFrameworkImpl::onWebsockMessage,this,_1,_2));
         serverPtr->setDisconnectWebsocketCallback(std::bind(&HttpAppFrameworkImpl::onWebsockDisconnect,this,_1));
+        serverPtr->setConnectionCallback(std::bind(&HttpAppFrameworkImpl::onConnection,this,_1));
         serverPtr->start();
         servers.push_back(serverPtr);
 #endif
@@ -323,6 +329,20 @@ void HttpAppFrameworkImpl::onWebsockDisconnect(const WebSocketConnectionPtr &wsC
         wsConnImplPtr->setController(WebSocketControllerBasePtr());
     }
 
+}
+void HttpAppFrameworkImpl::onConnection(const TcpConnectionPtr &conn)
+{
+    if(conn->connected())
+    {
+        if(_connectionNum.fetch_add(1)>=_maxConnectionNum)
+        {
+            conn->forceClose();
+        }
+    }
+    else
+    {
+        _connectionNum--;
+    }
 }
 std::string parseWebsockFrame(trantor::MsgBuffer *buffer)
 {

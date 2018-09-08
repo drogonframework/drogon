@@ -32,6 +32,10 @@ namespace drogon
     class HttpAppFrameworkImpl:public HttpAppFramework
     {
     public:
+        HttpAppFrameworkImpl():
+        _connectionNum(0)
+        {
+        }
         virtual void addListener(const std::string &ip,uint16_t port,bool useSSL=false) override;
         virtual void setThreadNum(size_t threadNum) override;
         virtual void setSSLFiles(const std::string &certPath,
@@ -54,7 +58,7 @@ namespace drogon
         virtual void setDocumentRoot(const std::string &rootPath) override {_rootPath=rootPath;}
         virtual void setFileTypes(const std::vector<std::string> &types) override;
         virtual void enableDynamicViewsLoading(const std::vector<std::string> &libPaths) override;
-
+        virtual void setMaxConnectionNum(size_t maxConnections) override;
         ~HttpAppFrameworkImpl(){}
 
         trantor::EventLoop *loop();
@@ -66,6 +70,7 @@ namespace drogon
                                  const WebSocketConnectionPtr &wsConnPtr);
         void onWebsockMessage(const WebSocketConnectionPtr &wsConnPtr,trantor::MsgBuffer *buffer);
         void onWebsockDisconnect(const WebSocketConnectionPtr &wsConnPtr);
+        void onConnection(const TcpConnectionPtr &conn);
         void readSendFile(const std::string& filePath,const HttpRequestPtr& req,const HttpResponsePtr resp);
         void addApiPath(const std::string &path,
                         const HttpApiBinderBasePtr &binder,
@@ -141,5 +146,8 @@ namespace drogon
 
         std::string _sslCertPath;
         std::string _sslKeyPath;
+
+        size_t _maxConnectionNum=100000;
+        std::atomic_uint64_t _connectionNum;
     };
 }
