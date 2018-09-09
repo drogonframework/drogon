@@ -148,6 +148,6 @@ namespace drogon
         std::string _sslKeyPath;
 
         size_t _maxConnectionNum=100000;
-        std::atomic_uint64_t _connectionNum;
+        std::atomic<uint64_t> _connectionNum;
     };
 }
