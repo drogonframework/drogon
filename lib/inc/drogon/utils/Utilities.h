@@ -14,7 +14,7 @@
 
 #pragma once
 
-#include <uuid/uuid.h>
+#include <uuid.h>
 #include <string>
 #include <vector>
 namespace drogon{

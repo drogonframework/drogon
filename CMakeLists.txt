@@ -40,6 +40,7 @@ if(jsoncpp_ver LESS 1.7)
     stop()
 endif()
 find_package (UUID REQUIRED)
+include_directories(${UUID_INCLUDE_DIR})
 
 find_package (OpenSSL REQUIRED)
 if(OpenSSL_FOUND)
