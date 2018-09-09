@@ -136,6 +136,16 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
                     thisPtr->_tcpClient.reset();
                 }
             });
+            _tcpClient->setConnectionErrorCallback([=](){
+                //can't connect to server
+                while(!(thisPtr->_reqAndCallbacks.empty()))
+                {
+                    auto reqCallback=_reqAndCallbacks.front().second;
+                    _reqAndCallbacks.pop();
+                    reqCallback(ReqResult::BadServerAddress,HttpResponseImpl());
+                }
+                thisPtr->_tcpClient.reset();
+            });
             _tcpClient->setMessageCallback(std::bind(&HttpClientImpl::onRecvMessage,shared_from_this(),_1,_2));
             _tcpClient->connect();
         }
