@@ -74,11 +74,11 @@ public:
     };
     typedef struct MapValue
     {
-        int timeout=0;
+        size_t timeout=0;
         T2 value;
         std::function<void()> _timeoutCallback;
     }MapValue;
-    void insert(const T1& key,T2&& value,int timeout=0,std::function<void()> timeoutCallback=std::function<void()>())
+    void insert(const T1& key,T2&& value,size_t timeout=0,std::function<void()> timeoutCallback=std::function<void()>())
     {
         if(timeout>0)
         {

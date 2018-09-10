@@ -286,5 +286,5 @@ void create_view::newViewSourceFile(std::ofstream &file,const std::string &class
     file<<"#else\n";
     file<<"\tres->setContentTypeCode(CT_TEXT_HTML);\n";
     file<<"#endif\n";
-    file<<"\tres->setBody("<<streamName<<".str().c_str());\n\treturn res;\n}\n";
+    file<<"\tres->setBody("<<streamName<<".str());\n\treturn res;\n}\n";
 }
