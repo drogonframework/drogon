@@ -374,7 +374,7 @@ bool HttpContext::parseResponse(MsgBuffer *buf)
                 std::string len(buf->peek(), crlf - buf->peek());
                 char *end;
                 response_._current_chunk_length = strtol(len.c_str(), &end, 16);
-                LOG_TRACE << "chun length : " << response_._current_chunk_length;
+                //LOG_TRACE << "chun length : " << response_._current_chunk_length;
                 if (response_._current_chunk_length != 0)
                 {
                     res_state_ = HttpResponseParseState::kExpectChunkBody;
@@ -392,28 +392,27 @@ bool HttpContext::parseResponse(MsgBuffer *buf)
         }
         else if (res_state_ == HttpResponseParseState::kExpectChunkBody)
         {
-            const char *crlf = buf->findCRLF();
-            if (crlf)
+            //LOG_TRACE<<"expect chunk len="<<response_._current_chunk_length;
+            if(buf->readableBytes()>=(response_._current_chunk_length+2))
             {
-                if (response_._current_chunk_length == (size_t)(crlf - buf->peek()))
+                if(*(buf->peek()+response_._current_chunk_length)=='\r'&&
+                        *(buf->peek()+response_._current_chunk_length+1)=='\n' )
                 {
-                    //current chunk end crlf
                     response_._body += std::string(buf->peek(), response_._current_chunk_length);
-                    buf->retrieveUntil(crlf + 2);
+                    buf->retrieve(response_._current_chunk_length+2);
                     response_._current_chunk_length = 0;
                     res_state_ = HttpResponseParseState::kExpectChunkLen;
                 }
-                else if (response_._current_chunk_length > (size_t)(crlf - buf->peek()))
+                else
                 {
-                    //current chunk body crlf
-                    response_._body += std::string(buf->peek(), crlf - buf->peek() + 1);
-                    buf->retrieveUntil(crlf + 2);
-                    response_._current_chunk_length -= (crlf - buf->peek() + 2);
+                    //error!
+                    buf->retrieveAll();
+                    return false;
                 }
             }
             else
             {
-                hasMore = false;
+                hasMore=false;
             }
         }
         else if (res_state_ == HttpResponseParseState::kExpectLastEmptyChunk)

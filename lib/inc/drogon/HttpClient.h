@@ -35,7 +35,7 @@ namespace drogon{
         virtual void sendRequest(const HttpRequestPtr &req,const HttpReqCallback &callback)=0;
         virtual ~HttpClient(){}
         static HttpClientPtr newHttpClient(const std::string &ip,uint16_t port,bool useSSL=false) ;
-        static HttpClientPtr newHttpClient(const trantor::InetAddress &addr,bool useSSL=false) ;
+//        static HttpClientPtr newHttpClient(const trantor::InetAddress &addr,bool useSSL=false) ;
         static HttpClientPtr newHttpClient(const std::string &hostString);
     protected:
         HttpClient()= default;

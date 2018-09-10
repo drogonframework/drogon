@@ -128,7 +128,9 @@ namespace drogon
 
         virtual std::string getHeader(const std::string& key) const override
         {
-            auto iter=_headers.find(key);
+            auto field=key;
+            transform(field.begin(), field.end(), field.begin(), ::tolower);
+            auto iter=_headers.find(field);
             if(iter == _headers.end())
             {
                 return "";
@@ -140,12 +142,15 @@ namespace drogon
         }
         virtual void addHeader(const std::string& key, const std::string& value) override
         {
-            _headers[key] = value;
+            auto field=key;
+            transform(field.begin(), field.end(), field.begin(), ::tolower);
+            _headers[field] = value;
         }
 
         virtual void addHeader(const char* start, const char* colon, const char* end) override
         {
             std::string field(start, colon);
+            transform(field.begin(), field.end(), field.begin(), ::tolower);
             ++colon;
             while (colon < end && isspace(*colon)) {
                 ++colon;
@@ -155,7 +160,8 @@ namespace drogon
                 value.resize(value.size() - 1);
             }
             _headers[field] = value;
-            transform(field.begin(), field.end(), field.begin(), ::tolower);
+
+            //FIXME:reponse cookie should be "Set-Cookie:...."
             if(field == "cookie") {
                 //LOG_INFO<<"cookies!!!:"<<value;
                 std::string::size_type pos;

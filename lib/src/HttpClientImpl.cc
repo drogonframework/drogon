@@ -187,7 +187,7 @@ void HttpClientImpl::onRecvMessage(const trantor::TcpConnectionPtr &connPtr,tran
 {
     HttpContext* context = any_cast<HttpContext>(connPtr->getMutableContext());
 
-    LOG_TRACE << "###:" << msg->readableBytes();
+    //LOG_TRACE << "###:" << msg->readableBytes();
     if (!context->parseResponse(msg)) {
         assert(!_reqAndCallbacks.empty());
         auto cb=_reqAndCallbacks.front().second;
@@ -231,11 +231,10 @@ HttpClientPtr HttpClient::newHttpClient(const std::string &ip,uint16_t port,bool
 {
     return std::make_shared<HttpClientImpl>(((HttpAppFrameworkImpl &)(HttpAppFramework::instance())).loop(),trantor::InetAddress(ip,port),useSSL);
 }
-
-HttpClientPtr HttpClient::newHttpClient(const trantor::InetAddress &addr,bool useSSL)
-{
-    return std::make_shared<HttpClientImpl>(((HttpAppFrameworkImpl &)(HttpAppFramework::instance())).loop(),addr,useSSL);
-}
+//HttpClientPtr HttpClient::newHttpClient(const trantor::InetAddress &addr,bool useSSL)
+//{
+//    return std::make_shared<HttpClientImpl>(((HttpAppFrameworkImpl &)(HttpAppFramework::instance())).loop(),addr,useSSL);
+//}
 HttpClientPtr HttpClient::newHttpClient(const std::string &hostString)
 {
     return std::make_shared<HttpClientImpl>(((HttpAppFrameworkImpl &)(HttpAppFramework::instance())).loop(),hostString);
