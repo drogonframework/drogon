@@ -96,6 +96,8 @@ public:
             std::lock_guard<std::mutex> lock(mtx_);
             map_[key].value=std::forward<T2>(value);
             map_[key].timeout=timeout;
+            map_[key]._timeoutCallback=std::function<void()>();
+            map_[key]._weakEntryPtr=WeakCallbackEntryPtr();
         }
     }
     T2& operator [](const T1& key){

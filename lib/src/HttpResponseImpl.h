@@ -32,32 +32,10 @@
 #include <drogon/HttpResponse.h>
 #include <trantor/utils/MsgBuffer.h>
 #include <trantor/net/InetAddress.h>
+#include <trantor/utils/Date.h>
 #include <map>
-
 #include <string>
-using std::string;
-//#define CT_APPLICATION_JSON				1
-//#define CT_TEXT_PLAIN					2
-//#define CT_TEXT_HTML					3
-//#define CT_APPLICATION_X_JAVASCRIPT		4
-//#define CT_TEXT_CSS						5
-//#define CT_TEXT_XML						6
-//#define CT_APPLICATION_XML				7
-//#define CT_TEXT_XSL						8
-//#define CT_APPLICATION_OCTET_STREAM		9
-//#define CT_APPLICATION_X_FONT_TRUETYPE	10
-//#define CT_APPLICATION_X_FONT_OPENTYPE	11
-//#define CT_APPLICATION_FONT_WOFF		12
-//#define CT_APPLICATION_FONT_WOFF2		13
-//#define CT_APPLICATION_VND_MS_FONTOBJ	14
-//#define CT_IMAGE_SVG_XML				15
-//#define CT_IMAGE_PNG					16
-//#define CT_IMAGE_JPG					17
-//#define CT_IMAGE_GIF					18
-//#define CT_IMAGE_XICON					19
-//#define CT_IMAGE_ICNS					20
-//#define CT_IMAGE_BMP					21
-#include <trantor/utils/MsgBuffer.h>
+
 using namespace trantor;
 namespace drogon
 {
@@ -72,6 +50,13 @@ namespace drogon
                   _left_body_length(0),
                   _current_chunk_length(0)
         {
+            struct tm tm1=trantor::Date::date().tmStruct();
+            char timeBuf[64];
+            asctime_r(&tm1,timeBuf);
+            std::string timeStr(timeBuf);
+            std::string::size_type len=timeStr.length();
+            timeStr =timeStr.substr(0,len-1)+" GMT";
+            addHeader("Date",timeStr);
         }
         virtual HttpStatusCode statusCode() override
         {
