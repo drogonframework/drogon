@@ -336,6 +336,7 @@ void HttpAppFrameworkImpl::onConnection(const TcpConnectionPtr &conn)
     {
         if(_connectionNum.fetch_add(1)>=_maxConnectionNum)
         {
+            LOG_ERROR<<"too much connections!force close!";
             conn->forceClose();
         }
     }
