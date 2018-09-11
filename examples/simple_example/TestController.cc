@@ -4,9 +4,6 @@ void TestController::asyncHandleHttpRequest(const HttpRequestPtr& req,const std:
 {
     //write your application logic here
     auto resp=HttpResponse::newHttpResponse();
-    LOG_DEBUG<<"!!!!!!!!!!1";
-    resp->setStatusCode(HttpResponse::k200OK);
-    resp->setContentTypeCode(CT_TEXT_HTML);
-    resp->setBody("hello!!!");
+    resp->setBody("<p>Hello, world!</p>");
     callback(resp);
 }
