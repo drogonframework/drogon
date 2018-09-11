@@ -77,5 +77,6 @@ int main()
 
     });
     thread1.join();
-
+    getchar();
+    loopThread.stop();
 }
