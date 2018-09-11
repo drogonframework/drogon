@@ -115,7 +115,6 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
             assert(_reqAndCallbacks.empty());
             _reqAndCallbacks.push(std::make_pair(req,callback));
             _tcpClient->setConnectionCallback([=](const trantor::TcpConnectionPtr& connPtr){
-                LOG_TRACE<<"connection callback";
                 if(connPtr->connected())
                 {
                     connPtr->setContext(HttpContext(connPtr));
@@ -127,6 +126,7 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
                 }
                 else
                 {
+                    LOG_TRACE<<"connection disconnect";
                     while(!(thisPtr->_reqAndCallbacks.empty()))
                     {
                         auto reqCallback=_reqAndCallbacks.front().second;
