@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <assert.h>
 #include <map>
 #include <trantor/net/EventLoop.h>
 #include <mutex>
