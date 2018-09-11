@@ -3,6 +3,7 @@
 #include <trantor/utils/Logger.h>
 #include <string.h>
 #include <zlib.h>
+#include <uuid.h>
 namespace drogon{
     static const std::string base64_chars =
             "ABCDEFGHIJKLMNOPQRSTUVWXYZ"

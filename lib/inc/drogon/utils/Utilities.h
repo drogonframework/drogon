@@ -15,7 +15,6 @@
 #pragma once
 
 #include <trantor/utils/Date.h>
-#include <uuid.h>
 #include <string>
 #include <vector>
 
