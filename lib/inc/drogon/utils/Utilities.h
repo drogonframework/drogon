@@ -14,9 +14,11 @@
 
 #pragma once
 
+#include <trantor/utils/Date.h>
 #include <uuid.h>
 #include <string>
 #include <vector>
+
 namespace drogon{
     bool isInteger(const std::string &str);
     std::string genRandomString(int length);
@@ -30,6 +32,7 @@ namespace drogon{
                     char *zdata, size_t *nzdata);
     int gzipDecompress(const  char *zdata, const size_t nzdata,
                       char *data, size_t *ndata);
+    std::string getHttpFullDate(const trantor::Date &date);
 
 }
 

@@ -13,6 +13,7 @@
  */
 
 #include <drogon/Cookie.h>
+#include <drogon/utils/Utilities.h>
 using namespace drogon;
 const std::string Cookie::cookieString() const
 {
@@ -21,14 +22,14 @@ const std::string Cookie::cookieString() const
     if(_expiresDate.microSecondsSinceEpoch()>0)
     {
         //add expiresDate string
-        struct tm tm1=_expiresDate.tmStruct();
-        char timeBuf[64];
-        asctime_r(&tm1,timeBuf);
-        std::string timeStr(timeBuf);
-        std::string::size_type len=timeStr.length();
-        timeStr =timeStr.substr(0,len-1)+" GMT";
+//        struct tm tm1=_expiresDate.tmStruct();
+//        char timeBuf[64];
+//        asctime_r(&tm1,timeBuf);
+//        std::string timeStr(timeBuf);
+//        std::string::size_type len=timeStr.length();
+//        timeStr =timeStr.substr(0,len-1)+" GMT";
 
-        ret.append("Expires= ").append(timeStr).append("; ");
+        ret.append("Expires= ").append(getHttpFullDate(_expiresDate)).append("; ");
     }
     if(!_domain.empty())
     {

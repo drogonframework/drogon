@@ -303,5 +303,12 @@ namespace drogon{
         *ndata = d_stream.total_out;
         return 0;
     }
+    std::string getHttpFullDate(const trantor::Date &date)
+    {
+        //rfc2616-3.3.1
+        //Full Date format like this:Sun, 06 Nov 1994 08:49:37 GMT
+        //                           Wed, 12 Sep 2018 09:22:40 GMT
+        return date.toCustomedFormattedString("%a, %d %b %Y %T GMT");
+    }
 
 }

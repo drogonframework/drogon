@@ -33,6 +33,7 @@
 #include <trantor/utils/MsgBuffer.h>
 #include <trantor/net/InetAddress.h>
 #include <trantor/utils/Date.h>
+#include <drogon/utils/Utilities.h>
 #include <map>
 #include <string>
 
@@ -50,13 +51,7 @@ namespace drogon
                   _left_body_length(0),
                   _current_chunk_length(0)
         {
-            struct tm tm1=trantor::Date::date().tmStruct();
-            char timeBuf[64];
-            asctime_r(&tm1,timeBuf);
-            std::string timeStr(timeBuf);
-            std::string::size_type len=timeStr.length();
-            timeStr =timeStr.substr(0,len-1)+" GMT";
-            addHeader("Date",timeStr);
+            _headers["Date"]=getHttpFullDate(trantor::Date::date());
         }
         virtual HttpStatusCode statusCode() override
         {
