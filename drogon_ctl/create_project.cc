@@ -118,8 +118,13 @@ static void newGitIgFile(std::ofstream &gitFile)
 }
 void create_project::createProject(const std::string &projectName)
 {
-    std::cout<<"create a project named "<<projectName<<std::endl;
 
+    if(access(projectName.data(),0)==0)
+    {
+        std::cerr<<"The directory already exists, please use another project name!"<<std::endl;
+        exit(1);
+    }
+    std::cout<<"create a project named "<<projectName<<std::endl;
     mkdir(projectName.data(),0755);
     //1.create CMakeLists.txt
     chdir(projectName.data());
