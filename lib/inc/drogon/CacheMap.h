@@ -14,14 +14,17 @@
 
 #pragma once
 
-#include <assert.h>
-#include <map>
+
+
 #include <trantor/net/EventLoop.h>
+#include <map>
 #include <mutex>
 #include <deque>
 #include <vector>
 #include <set>
-
+#include <unordered_map>
+#include <unordered_set>
+#include <assert.h>
 namespace drogon
 {
 
@@ -41,7 +44,7 @@ private:
 typedef std::shared_ptr<CallbackEntry> CallbackEntryPtr;
 typedef std::weak_ptr<CallbackEntry> WeakCallbackEntryPtr;
 
-typedef std::set<CallbackEntryPtr> CallbackBucket;
+typedef std::unordered_set<CallbackEntryPtr> CallbackBucket;
 typedef std::deque<CallbackBucket> CallbackBucketQueue;
 
 template <typename T1,typename T2>
@@ -86,28 +89,28 @@ public:
         {
 
             std::lock_guard<std::mutex> lock(mtx_);
-            map_[key].value=std::forward<T2>(value);
-            map_[key].timeout=timeout;
-            map_[key]._timeoutCallback=std::move(timeoutCallback);
+            _map[key].value=std::forward<T2>(value);
+            _map[key].timeout=timeout;
+            _map[key]._timeoutCallback=std::move(timeoutCallback);
 
             eraseAfter(timeout,key);
         }
         else
         {
             std::lock_guard<std::mutex> lock(mtx_);
-            map_[key].value=std::forward<T2>(value);
-            map_[key].timeout=timeout;
-            map_[key]._timeoutCallback=std::function<void()>();
-            map_[key]._weakEntryPtr=WeakCallbackEntryPtr();
+            _map[key].value=std::forward<T2>(value);
+            _map[key].timeout=timeout;
+            _map[key]._timeoutCallback=std::function<void()>();
+            _map[key]._weakEntryPtr=WeakCallbackEntryPtr();
         }
     }
     T2& operator [](const T1& key){
         int timeout=0;
 
         std::lock_guard<std::mutex> lock(mtx_);
-        if(map_.find(key)!=map_.end())
+        if(_map.find(key)!=_map.end())
         {
-            timeout=map_[key].timeout;
+            timeout=_map[key].timeout;
         }
 
 
@@ -115,7 +118,7 @@ public:
             eraseAfter(timeout,key);
 
 
-        return map_[key].value;
+        return _map[key].value;
     }
     bool find(const T1& key)
     {
@@ -123,9 +126,9 @@ public:
         bool flag=false;
 
         std::lock_guard<std::mutex> lock(mtx_);
-        if(map_.find(key)!=map_.end())
+        if(_map.find(key)!=_map.end())
         {
-            timeout=map_[key].timeout;
+            timeout=_map[key].timeout;
             flag=true;
         }
 
@@ -141,11 +144,11 @@ public:
         //in this case,we don't evoke the timeout callback;
 
         std::lock_guard<std::mutex> lock(mtx_);
-        map_.erase(key);
+        _map.erase(key);
 
     }
 protected:
-    std::map< T1,MapValue > map_;
+    std::unordered_map< T1,MapValue > _map;
     CallbackBucketQueue event_bucket_queue_;
 
     std::mutex mtx_;
@@ -157,7 +160,7 @@ protected:
 
     void eraseAfter(int delay,const T1& key)
     {
-        assert(map_.find(key)!=map_.end());
+        assert(_map.find(key)!=_map.end());
 
         size_t bucketIndexToPush;
         size_t bucketNum = size_t(delay / timeInterval_) + 1;
@@ -175,9 +178,9 @@ protected:
 
         CallbackEntryPtr entryPtr;
 
-        if(map_.find(key)!=map_.end())
+        if(_map.find(key)!=_map.end())
         {
-            entryPtr=map_[key]._weakEntryPtr.lock();
+            entryPtr=_map[key]._weakEntryPtr.lock();
         }
 
         if(entryPtr)
@@ -189,23 +192,23 @@ protected:
         {
             std::function<void ()>cb=[=](){
                 std::lock_guard<std::mutex> lock(mtx_);
-                if(map_.find(key)!=map_.end())
+                if(_map.find(key)!=_map.end())
                 {
-                    auto & value=map_[key];
+                    auto & value=_map[key];
                     if(value.timeout>0)
                     {
                         if(value._timeoutCallback)
                         {
                             value._timeoutCallback();
                         }
-                        map_.erase(key);
+                        _map.erase(key);
                     }
                 }
 
             };
 
             entryPtr=std::make_shared<CallbackEntry>(cb);
-            map_[key]._weakEntryPtr=entryPtr;
+            _map[key]._weakEntryPtr=entryPtr;
 
             {
                 std::lock_guard<std::mutex> lock(bucketMutex_);
