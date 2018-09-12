@@ -52,7 +52,7 @@ namespace drogon
         virtual void registerHttpApiController(const std::string &pathPattern,
                                                const HttpApiBinderBasePtr &binder,
                                                const std::vector<std::string> &filters=std::vector<std::string>()) override ;
-        virtual void enableSession(const size_t timeout) override { _useSession=true;_sessionTimeout=timeout;}
+        virtual void enableSession(const size_t timeout=0) override { _useSession=true;_sessionTimeout=timeout;}
         virtual void disableSession() override { _useSession=false;}
         virtual const std::string & getDocumentRoot() const override {return _rootPath;}
         virtual void setDocumentRoot(const std::string &rootPath) override {_rootPath=rootPath;}
@@ -78,8 +78,8 @@ namespace drogon
         void initRegex();
         //if uuid package found,we can use a uuid string as session id;
         //set _sessionTimeout=0 to make location session valid forever based on cookies;
-        size_t _sessionTimeout=1200;
-        bool _useSession=true;
+        size_t _sessionTimeout= 0;
+        bool _useSession= false;
         typedef std::shared_ptr<Session> SessionPtr;
         std::unique_ptr<CacheMap<std::string,SessionPtr>> _sessionMapPtr;
 
