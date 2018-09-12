@@ -58,12 +58,12 @@ if(Boost_FOUND)
     include_directories(${Boost_INCLUDE_DIRS})
 endif()
 
-if (DEBUG STREQUAL YES)
-    set(CMAKE_CXX_FLAGS "-std=${CMAKE_CXX_STD_FLAGS} -g -Wall -fpermissive ${CMAKE_CXX_FLAGS}")
-else()
-    set(CMAKE_CXX_FLAGS "-std=${CMAKE_CXX_STD_FLAGS} -O2 -Wall -fpermissive ${CMAKE_CXX_FLAGS}")
+if(CMAKE_BUILD_TYPE STREQUAL "")
+    set(CMAKE_BUILD_TYPE Release)
 endif()
-#string(REPLACE ";" " " CMAKE_CXX_FLAGS "${CXX_FLAGS}")
+
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -std=${CMAKE_CXX_STD_FLAGS}")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall -std=${CMAKE_CXX_STD_FLAGS}")
 
 MESSAGE(STATUS ${CMAKE_CXX_FLAGS})
 
@@ -121,9 +121,12 @@ file(APPEND "${CONFIG_HEADER}" "#else\n")
 file(APPEND "${CONFIG_HEADER}" "#error,must use c++17 or boost to support any\n")
 file(APPEND "${CONFIG_HEADER}" "#endif\n")
 file(APPEND "${CONFIG_HEADER}" "#endif\n")
-
-file(APPEND "${CONFIG_HEADER}" "\n" "const char compileFlags[]=\"" ${CMAKE_CXX_FLAGS} "\";")
-
+string(TOLOWER ${CMAKE_BUILD_TYPE} CMAKE_BUILD_TYPE_LOWER)
+if(CMAKE_BUILD_TYPE_LOWER STREQUAL release)
+    file(APPEND "${CONFIG_HEADER}" "\n" "const char compileFlags[]=\"" ${CMAKE_CXX_FLAGS_RELEASE} "\";")
+else()
+    file(APPEND "${CONFIG_HEADER}" "\n" "const char compileFlags[]=\"" ${CMAKE_CXX_FLAGS_DEBUG} "\";")
+endif()
 get_target_property(INS drogon INCLUDE_DIRECTORIES)
 file(APPEND "${CONFIG_HEADER}" "\nconst char includeDirs[]=\"")
 foreach(loop_var ${INS})

@@ -120,6 +120,7 @@ int main()
     drogon::HttpAppFramework::registerHttpApiMethod("/api/v1/handle4/{4}/{3}/{1}",func);
 
     drogon::HttpAppFramework::instance().setDocumentRoot("./");
+    drogon::HttpAppFramework::instance().enableSession(1200);
     //start app framework
     drogon::HttpAppFramework::instance().enableDynamicViewsLoading({"/tmp/views"});
     drogon::HttpAppFramework::instance().run();
