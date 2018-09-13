@@ -60,7 +60,11 @@ namespace drogon
         virtual void setThreadNum(size_t threadNum)=0;
         virtual void setSSLFiles(const std::string &certPath,
                                  const std::string &keyPath)=0;
-        virtual void addListener(const std::string &ip,uint16_t port,bool useSSL=false)=0;
+        virtual void addListener(const std::string &ip,
+                                 uint16_t port,
+                                 bool useSSL=false,
+                                 const std::string & certFile="",
+                                 const std::string & keyFile="")=0;
         virtual void run()=0;
         virtual ~HttpAppFramework();
         virtual void registerWebSocketController(const std::string &pathName,
@@ -95,5 +99,14 @@ namespace drogon
         virtual void enableDynamicViewsLoading(const std::vector<std::string> &libPaths)=0;
 
         virtual void setMaxConnectionNum(size_t maxConnections)=0;
+
+        virtual void loadConfigFile(const std::string &fileName)=0;
+
+        virtual void enableRunAsDaemon()=0;
+        virtual void enableRelaunchOnError()=0;
+
+        virtual void setLogPath(const std::string &logPath,
+                                const std::string &logfileBaseName="",
+                                size_t logSize=100000000)=0;
     };
 }

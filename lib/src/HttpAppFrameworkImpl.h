@@ -36,7 +36,11 @@ namespace drogon
         _connectionNum(0)
         {
         }
-        virtual void addListener(const std::string &ip,uint16_t port,bool useSSL=false) override;
+        virtual void addListener(const std::string &ip,
+                                 uint16_t port,
+                                 bool useSSL=false,
+                                 const std::string & certFile="",
+                                 const std::string & keyFile="") override;
         virtual void setThreadNum(size_t threadNum) override;
         virtual void setSSLFiles(const std::string &certPath,
                                  const std::string &keyPath) override;
@@ -59,11 +63,17 @@ namespace drogon
         virtual void setFileTypes(const std::vector<std::string> &types) override;
         virtual void enableDynamicViewsLoading(const std::vector<std::string> &libPaths) override;
         virtual void setMaxConnectionNum(size_t maxConnections) override;
+        virtual void loadConfigFile(const std::string &fileName) override;
+        virtual void enableRunAsDaemon() override {_runAsDaemon=true;}
+        virtual void enableRelaunchOnError() override {_relaunchOnError=true;}
+        virtual void setLogPath(const std::string &logPath,
+                                const std::string &logfileBaseName="",
+                                size_t logfileSize=100000000) override;
         ~HttpAppFrameworkImpl(){}
 
         trantor::EventLoop *loop();
     private:
-        std::vector<std::tuple<std::string,uint16_t,bool>> _listeners;
+        std::vector<std::tuple<std::string,uint16_t,bool,std::string,std::string>> _listeners;
         void onAsyncRequest(const HttpRequestPtr& req,const std::function<void (const HttpResponsePtr &)> & callback);
         void onNewWebsockRequest(const HttpRequestPtr& req,
                                  const std::function<void (const HttpResponsePtr &)> & callback,
@@ -149,5 +159,11 @@ namespace drogon
 
         size_t _maxConnectionNum=100000;
         std::atomic<uint64_t> _connectionNum;
+
+        bool _runAsDaemon=false;
+        bool _relaunchOnError=false;
+        std::string _logPath="";
+        std::string _logfileBaseName="";
+        size_t _logfileSize=100000000;
     };
 }

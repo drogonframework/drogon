@@ -12,13 +12,17 @@
  *
  */
 #include "HttpAppFrameworkImpl.h"
+#include "ConfigLoader.h"
+#include "HttpServer.h"
+
 #include <drogon/utils/Utilities.h>
 #include <drogon/DrClassMap.h>
 #include <drogon/HttpRequest.h>
 #include <drogon/HttpResponse.h>
 #include <drogon/CacheMap.h>
 #include <drogon/Session.h>
-#include "HttpServer.h"
+#include <trantor/utils/AsyncFileLogger.h>
+
 #include <sys/stat.h>
 #include <iostream>
 #include <fstream>
@@ -28,28 +32,67 @@
 #include <memory>
 #include <tuple>
 #include <utility>
-
+#include <unistd.h>
+#include <fcntl.h>
 
 using namespace drogon;
 using namespace std::placeholders;
 std::map<std::string,std::shared_ptr<drogon::DrObjectBase>> HttpApiBinderBase::_objMap;
 std::mutex HttpApiBinderBase::_objMutex;
+
+static void godaemon(void)
+{
+    int fs;
+
+    printf("Initializing daemon mode\n");
+
+    if (getppid() != 1)
+    {
+        fs = fork();
+
+        if (fs > 0)
+            exit(0); // parent
+
+        if (fs < 0)
+        {
+            perror("fork");
+            exit(1);
+        }
+
+        setsid();
+    }
+
+    // redirect stdin/stdout/stderr to /dev/null
+    close(0);
+    close(1);
+    close(2);
+
+    open("/dev/null", O_RDWR);
+    int ret = dup(0);
+    ret = dup(0);
+    (void)ret;
+    umask(0);
+
+    return;
+}
+
 void HttpAppFrameworkImpl::enableDynamicViewsLoading(const std::vector<std::string> &libPaths)
 {
     assert(!_running);
-    if(_libFilePaths.empty())
-    {
-        for(auto libpath:libPaths)
-        {
-            if(libpath[0]!='/')
-            {
-                _libFilePaths.push_back(_rootPath+"/"+libpath);
-            } else
-                _libFilePaths.push_back(libpath);
-        }
+    if(_sharedLibManagerPtr)
+        return;
 
-        _sharedLibManagerPtr=std::unique_ptr<SharedLibManager>(new SharedLibManager(&_loop,_libFilePaths));
+    for(auto libpath:libPaths)
+    {
+        if(libpath[0]!='/')
+        {
+            _libFilePaths.push_back(_rootPath+"/"+libpath);
+        } else
+            _libFilePaths.push_back(libpath);
     }
+
+    _sharedLibManagerPtr=std::unique_ptr<SharedLibManager>(new SharedLibManager(&_loop,_libFilePaths));
+
 }
 void HttpAppFrameworkImpl::setFileTypes(const std::vector<std::string> &types)
 {
@@ -183,13 +226,42 @@ void HttpAppFrameworkImpl::setMaxConnectionNum(size_t maxConnections)
 {
     _maxConnectionNum=maxConnections;
 }
+void HttpAppFrameworkImpl::loadConfigFile(const std::string &fileName)
+{
+    ConfigLoader loader(fileName);
+    loader.load();
+}
+void HttpAppFrameworkImpl::setLogPath(const std::string &logPath,
+                                      const std::string &logfileBaseName,
+                                      size_t logfileSize)
+{
+    if(logPath=="")
+        return;
+    if(access(logPath.c_str(),0)!=0)
+    {
+        std::cerr<<"Log path dose not exist!\n";
+        exit(1);
+    }
+    if(access(logPath.c_str(),R_OK|W_OK)!=0)
+    {
+        std::cerr<<"Unable to access log path!\n";
+        exit(1);
+    }
+    _logPath=logPath;
+    _logfileBaseName=logfileBaseName;
+    _logfileSize=logfileSize;
+}
 void HttpAppFrameworkImpl::setSSLFiles(const std::string &certPath,
                  const std::string &keyPath)
 {
     _sslCertPath=certPath;
     _sslKeyPath=keyPath;
 }
-void HttpAppFrameworkImpl::addListener(const std::string &ip, uint16_t port,bool useSSL)
+void HttpAppFrameworkImpl::addListener(const std::string &ip,
+                                       uint16_t port,
+                                       bool useSSL,
+                                       const std::string & certFile,
+                                       const std::string & keyFile)
 {
     assert(!_running);
 
@@ -197,12 +269,73 @@ void HttpAppFrameworkImpl::addListener(const std::string &ip, uint16_t port,bool
     assert(!useSSL);
 #endif
 
-    _listeners.push_back(std::make_tuple(ip,port,useSSL));
+    _listeners.push_back(std::make_tuple(ip,port,useSSL,certFile,keyFile));
 }
 
 void HttpAppFrameworkImpl::run()
 {
     //
+    LOG_INFO<<"Start to run...";
+    trantor::AsyncFileLogger asyncFileLogger;
+
+    if(_runAsDaemon)
+    {
+        //go daemon!
+        godaemon();
+    }
+
+    //set relaunching
+    if(_relaunchOnError)
+    {
+        while(true)
+        {
+            int child_status = 0;
+            auto child_pid = fork();
+            if(child_pid < 0)
+            {
+                LOG_ERROR<<"fork error";
+                abort();
+            }
+            else if(child_pid == 0)
+            {
+                //child
+                break;
+            }
+            waitpid(child_pid, &child_status, 0);
+            sleep(5);
+            LOG_INFO<<"start new process";
+        }
+    }
+
+    //set logger
+    if (!_logPath.empty())
+    {
+        if (access(_logPath.c_str(), R_OK|W_OK) >= 0)
+        {
+            std::string baseName=_logfileBaseName;
+            if(baseName=="")
+            {
+                baseName="drogon";
+            }
+            asyncFileLogger.setFileName(baseName,".log",_logPath);
+            asyncFileLogger.startLogging();
+            trantor::Logger::setOutputFunction([&](const char *msg,const uint64_t len){
+                asyncFileLogger.output(msg,len);
+            },[&](){
+                asyncFileLogger.flush();
+            });
+            asyncFileLogger.setFileSizeLimit(_logfileSize);
+        }
+        else
+        {
+            LOG_ERROR<<"log file path not exist";
+            abort();
+        }
+    }
+    if(_relaunchOnError)
+    {
+        LOG_INFO<<"Start child process";
+    }
     _running=true;
     std::vector<std::shared_ptr<HttpServer>> servers;
     std::vector<std::shared_ptr<EventLoopThread>> loopThreads;
@@ -222,9 +355,18 @@ void HttpAppFrameworkImpl::run()
             {
                 //enable ssl;
 #ifdef USE_OPENSSL
-                assert(!_sslCertPath.empty());
-                assert(!_sslKeyPath.empty());
-                serverPtr->enableSSL(_sslCertPath,_sslKeyPath);
+                auto cert=std::get<3>(listener);
+                auto key=std::get<4>(listener);
+                if(cert=="")
+                    cert=_sslCertPath;
+                if(key=="")
+                    key=_sslKeyPath;
+                if(cert==""||key=="")
+                    {
+                        std::cerr<<"You can't use https without cert file or key file"<<std::endl;
+                        exit(1);
+                    }
+                serverPtr->enableSSL(cert,key);
 #endif
             }
             serverPtr->setHttpAsyncCallback(std::bind(&HttpAppFrameworkImpl::onAsyncRequest,this,_1,_2));
@@ -242,9 +384,18 @@ void HttpAppFrameworkImpl::run()
         {
             //enable ssl;
 #ifdef USE_OPENSSL
-            assert(!_sslCertPath.empty());
-            assert(!_sslKeyPath.empty());
-            serverPtr->enableSSL(_sslCertPath,_sslKeyPath);
+            auto cert=std::get<3>(listener);
+            auto key=std::get<4>(listener);
+            if(cert=="")
+                cert=_sslCertPath;
+            if(key=="")
+                key=_sslKeyPath;
+            if(cert==""||key=="")
+            {
+                std::cerr<<"You can't use https without cert file or key file"<<std::endl;
+                exit(1);
+            }
+            serverPtr->enableSSL(cert,key);
 #endif
         }
         serverPtr->setIoLoopNum(_threadNum);

@@ -31,6 +31,7 @@ static void forEachFileIn(const std::string &path,const std::function<void (cons
     if((dp = opendir(path.c_str())) == NULL)
     {
         perror("opendir");
+        std::cerr<<"path:"<<path;
         return;
     }
 

@@ -92,7 +92,7 @@ int main()
 //    drogon::HttpAppFramework::instance().addListener("0.0.0.0",4431,true);
 //#endif
     drogon::HttpAppFramework::instance().setThreadNum(4);
-    trantor::Logger::setLogLevel(trantor::Logger::DEBUG);
+    trantor::Logger::setLogLevel(trantor::Logger::TRACE);
     //class function
     drogon::HttpAppFramework::registerHttpApiMethod("/api/v1/handle1/{1}/{2}/?p3={3}&p4={4}",&A::handle);
     //lambda example
@@ -122,7 +122,8 @@ int main()
     drogon::HttpAppFramework::instance().setDocumentRoot("./");
     drogon::HttpAppFramework::instance().enableSession(1200);
     //start app framework
-    drogon::HttpAppFramework::instance().enableDynamicViewsLoading({"/tmp/views"});
+    //drogon::HttpAppFramework::instance().enableDynamicViewsLoading({"/tmp/views"});
+    drogon::HttpAppFramework::instance().loadConfigFile("../../drogon.conf.example");
     drogon::HttpAppFramework::instance().run();
 
 }
