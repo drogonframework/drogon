@@ -58,8 +58,8 @@
       "log_size_limit":100000000
     },
     //run_as_daemon:false by default
-    "run_as_daemon":true,
+    "run_as_daemon":false,
     //relaunch_on_error:false by default,if true,the program will be restart by parent after exit;
-    "relaunch_on_error":true
+    "relaunch_on_error":false
   }
 }
