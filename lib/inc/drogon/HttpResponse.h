@@ -136,6 +136,8 @@ namespace drogon
 
         virtual void addHeader(const std::string& key, const std::string& value)=0;
 
+        virtual void addHeader(const std::string& key, std::string&& value)=0;
+
         virtual void addHeader(const char* start, const char* colon, const char* end)=0;
 
         virtual void addCookie(const std::string& key, const std::string& value)=0;

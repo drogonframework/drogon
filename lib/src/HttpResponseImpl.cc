@@ -140,7 +140,7 @@ const std::string HttpResponseImpl::web_content_type_and_charset_to_string(uint8
             return "text/plain; charset="+charSet;
     }
 }
-const std::string HttpResponseImpl::web_content_type_to_string(uint8_t contenttype)
+std::string HttpResponseImpl::web_content_type_to_string(uint8_t contenttype)
 {
     switch(contenttype) {
         case CT_TEXT_HTML:

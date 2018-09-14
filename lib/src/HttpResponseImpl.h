@@ -127,6 +127,13 @@ namespace drogon
             _headers[field] = value;
         }
 
+        virtual void addHeader(const std::string& key, std::string&& value) override
+        {
+            auto field=key;
+            transform(field.begin(), field.end(), field.begin(), ::tolower);
+            _headers[field] = std::move(value);
+        }
+
         virtual void addHeader(const char* start, const char* colon, const char* end) override
         {
             std::string field(start, colon);
@@ -262,7 +269,7 @@ namespace drogon
             return _jsonPtr;
         }
     protected:
-        static const std::string web_content_type_to_string(uint8_t contenttype);
+        static std::string web_content_type_to_string(uint8_t contenttype);
         static const std::string web_content_type_and_charset_to_string(uint8_t contenttype,
                                                                         const std::string &charSet);
 
@@ -287,6 +294,10 @@ namespace drogon
         void setContentType(const std::string& contentType)
         {
             addHeader("Content-Type", contentType);
+        }
+        void setContentType(std::string && contentType)
+        {
+            addHeader("Content-Type", std::move(contentType));
         }
         void setStatusMessage(const std::string& message)
         {
