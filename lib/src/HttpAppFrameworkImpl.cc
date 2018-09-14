@@ -81,8 +81,6 @@ static void godaemon(void)
 void HttpAppFrameworkImpl::enableDynamicViewsLoading(const std::vector<std::string> &libPaths)
 {
     assert(!_running);
-    if(_sharedLibManagerPtr)
-        return;
 
     for(auto libpath:libPaths)
     {
@@ -92,9 +90,6 @@ void HttpAppFrameworkImpl::enableDynamicViewsLoading(const std::vector<std::stri
         } else
             _libFilePaths.push_back(libpath);
     }
-
-    _sharedLibManagerPtr=std::unique_ptr<SharedLibManager>(new SharedLibManager(&_loop,_libFilePaths));
-
 }
 void HttpAppFrameworkImpl::setFileTypes(const std::vector<std::string> &types)
 {
@@ -338,7 +333,15 @@ void HttpAppFrameworkImpl::run()
     {
         LOG_INFO<<"Start child process";
     }
+    //now start runing!!
+
     _running=true;
+
+    if(!_libFilePaths.empty())
+    {
+        _sharedLibManagerPtr=std::unique_ptr<SharedLibManager>(new SharedLibManager(&_loop,_libFilePaths));
+
+    }
     std::vector<std::shared_ptr<HttpServer>> servers;
     std::vector<std::shared_ptr<EventLoopThread>> loopThreads;
     initRegex();
@@ -410,23 +413,25 @@ void HttpAppFrameworkImpl::run()
         servers.push_back(serverPtr);
 #endif
     }
-    int interval,limit;
-    if(_sessionTimeout==0)
+    if(_useSession)
     {
-        interval=1;
-        limit=1200;
-    }else if(_sessionTimeout<1000)
-    {
-        interval=1;
-        limit=_sessionTimeout;
-    } else
-    {
-        interval=_sessionTimeout/1000;
-        limit=_sessionTimeout;
+        int interval,limit;
+        if(_sessionTimeout==0)
+        {
+            interval=1;
+            limit=1200;
+        }else if(_sessionTimeout<1000)
+        {
+            interval=1;
+            limit=_sessionTimeout;
+        } else
+        {
+            interval=_sessionTimeout/1000;
+            limit=_sessionTimeout;
+        }
+        _sessionMapPtr=std::unique_ptr<CacheMap<std::string,SessionPtr>>(new CacheMap<std::string,SessionPtr>(&_loop,interval,limit));
     }
-
-    _sessionMapPtr=std::unique_ptr<CacheMap<std::string,SessionPtr>>(new CacheMap<std::string,SessionPtr>(&_loop,interval,limit));
-    _loop.loop();
+   _loop.loop();
 }
 
 void HttpAppFrameworkImpl::doFilterChain(const std::shared_ptr<std::queue<std::shared_ptr<HttpFilterBase>>> &chain,
