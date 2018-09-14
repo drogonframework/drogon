@@ -24,6 +24,8 @@
 #include <trantor/utils/AsyncFileLogger.h>
 
 #include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 #include <iostream>
 #include <fstream>
 #include <uuid.h>
