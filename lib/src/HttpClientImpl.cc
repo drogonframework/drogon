@@ -209,7 +209,7 @@ void HttpClientImpl::onRecvMessage(const trantor::TcpConnectionPtr &connPtr,tran
         {
             resp.parseJson();
         }
-        context->reset();
+        context->resetRes();
         LOG_TRACE<<"req buffer size="<<_reqAndCallbacks.size();
         if(!_reqAndCallbacks.empty())
         {

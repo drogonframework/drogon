@@ -88,8 +88,8 @@ namespace drogon
           state_ = kExpectRequestLine;
           res_state_ = HttpResponseParseState::kExpectResponseLine;
           request_.reset(new HttpRequestImpl);
-          HttpResponseImpl dummy_res;
-          response_.swap(dummy_res);
+//          HttpResponseImpl dummy_res;
+//          response_.swap(dummy_res);
         }
 
         void resetRes()

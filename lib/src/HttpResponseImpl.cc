@@ -209,8 +209,7 @@ const std::string HttpResponseImpl::web_content_type_to_string(uint8_t contentty
     }
 }
 
-
-const std::string HttpResponseImpl::web_response_code_to_string(int code)
+std::string HttpResponseImpl::web_response_code_to_string(int code)
 {
     switch(code) {
         case 100:

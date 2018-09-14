@@ -266,7 +266,7 @@ namespace drogon
         static const std::string web_content_type_and_charset_to_string(uint8_t contenttype,
                                                                         const std::string &charSet);
 
-        static const std::string web_response_code_to_string(int code);
+        static std::string web_response_code_to_string(int code);
 
     private:
         std::map<std::string, std::string> _headers;
@@ -291,6 +291,10 @@ namespace drogon
         void setStatusMessage(const std::string& message)
         {
             _statusMessage = message;
+        }
+        void setStatusMessage(std::string && message)
+        {
+            _statusMessage = std::move(message);
         }
     };
     typedef std::shared_ptr<HttpResponseImpl> HttpResponseImplPtr;
