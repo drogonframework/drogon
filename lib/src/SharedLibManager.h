@@ -22,7 +22,7 @@ namespace drogon{
     {
     public:
         SharedLibManager(trantor::EventLoop *loop,const std::vector<std::string> & libPaths);
-        ~SharedLibManager(){}
+        ~SharedLibManager();
     private:
         void managerLibs();
         trantor::EventLoop *_loop;
@@ -33,5 +33,6 @@ namespace drogon{
         };
         std::unordered_map<std::string,DLStat> _dlMap;
         void* loadLibs(const std::string &sourceFile,void *oldHld);
+        trantor::TimerId _timeId;
     };
 }

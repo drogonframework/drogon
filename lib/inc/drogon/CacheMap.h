@@ -65,7 +65,7 @@ public:
     {
         bucketCount_=limit/interval+1;
         event_bucket_queue_.resize(bucketCount_);
-        _loop->runEvery(interval, [=](){
+        _timerId=_loop->runEvery(interval, [=](){
             CallbackBucket tmp;
             {
                 std::lock_guard<std::mutex> lock(bucketMutex_);
@@ -76,6 +76,9 @@ public:
             }
         });
     };
+    ~CacheMap(){
+        _loop->invalidateTimer(_timerId);
+    }
     typedef struct MapValue
     {
         size_t timeout=0;
@@ -147,7 +150,8 @@ public:
         _map.erase(key);
 
     }
-protected:
+
+private:
     std::unordered_map< T1,MapValue > _map;
     CallbackBucketQueue event_bucket_queue_;
 
@@ -156,6 +160,7 @@ protected:
     int bucketCount_;
     int timeInterval_;
     int _limit;
+    trantor::TimerId _timerId;
     trantor::EventLoop* _loop;
 
     void eraseAfter(int delay,const T1& key)

@@ -67,9 +67,13 @@ SharedLibManager::SharedLibManager(trantor::EventLoop *loop,const std::vector<st
 _loop(loop),
 _libPaths(libPaths)
 {
-    _loop->runEvery(5.0,[=](){
+    _timeId=_loop->runEvery(5.0,[=](){
         managerLibs();
     });
+}
+SharedLibManager::~SharedLibManager()
+{
+    _loop->invalidateTimer(_timeId);
 }
 void SharedLibManager::managerLibs()
 {
