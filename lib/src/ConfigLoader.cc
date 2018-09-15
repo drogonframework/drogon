@@ -85,7 +85,7 @@ static void loadApp(const Json::Value &app)
     }
     //file types
     auto fileTypes=app["file_types"];
-    if(fileTypes&&fileTypes.isArray()&&!fileTypes.empty())
+    if(fileTypes.isArray()&&!fileTypes.empty())
     {
         std::vector<std::string> types;
         for(auto fileType:fileTypes)
@@ -106,7 +106,7 @@ static void loadApp(const Json::Value &app)
     if(enableDynamicViews)
     {
         auto viewsPaths=app["dynamic_views_path"];
-        if(viewsPaths&&viewsPaths.isArray()&&viewsPaths.size()>0)
+        if(viewsPaths.isArray()&&viewsPaths.size()>0)
         {
             std::vector<std::string> paths;
             for(auto viewsPath:viewsPaths)
