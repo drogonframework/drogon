@@ -55,7 +55,10 @@ static void newCmakeFile(std::ofstream &cmakeFile,const std::string &projectName
                "\n"
                "set(CMAKE_CXX_FLAGS_DEBUG \"${CMAKE_CXX_FLAGS_DEBUG} -Wall -std=${CMAKE_CXX_STD_FLAGS}\")\n"
                "set(CMAKE_CXX_FLAGS_RELEASE \"${CMAKE_CXX_FLAGS_RELEASE} -Wall -std=${CMAKE_CXX_STD_FLAGS}\")\n"
-               "aux_source_directory(./ SRC_DIR)\n"
+               "\n"
+               "AUX_SOURCE_DIRECTORY(./ SRC_DIR)\n"
+               "AUX_SOURCE_DIRECTORY(controllers CTL_SRC)\n"
+               "AUX_SOURCE_DIRECTORY(filters FILTER_SRC)\n"
                "\n"
                "FILE(GLOB SCP_LIST ${CMAKE_CURRENT_SOURCE_DIR}/views/*.csp)\n"
                "foreach(cspFile ${SCP_LIST})\n"
@@ -70,7 +73,7 @@ static void newCmakeFile(std::ofstream &cmakeFile,const std::string &projectName
                "    set(VIEWSRC ${VIEWSRC} ${classname}.cc)\n"
                "endforeach()\n"
                "\n"
-               "add_executable("<<projectName<<" ${SRC_DIR} ${VIEWSRC})";
+               "add_executable("<<projectName<<" ${SRC_DIR} ${CTL_SRC} ${FILTER_SRC} ${VIEWSRC})\n";
 }
 static void newMainFile(std::ofstream &mainFile)
 {
@@ -139,6 +142,8 @@ void create_project::createProject(const std::string &projectName)
     std::ofstream mainFile("main.cc",std::ofstream::out);
     newMainFile(mainFile);
     mkdir("views",0755);
+    mkdir("controllers",0755);
+    mkdir("filters",0755);
     mkdir("build",0755);
     std::ofstream gitFile(".gitignore",std::ofstream::out);
     newGitIgFile(gitFile);
