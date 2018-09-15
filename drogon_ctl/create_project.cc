@@ -63,7 +63,6 @@ static void newCmakeFile(std::ofstream &cmakeFile,const std::string &projectName
                "#jsoncpp\n"
                "find_package (Jsoncpp REQUIRED)\n"
                "include_directories(${JSONCPP_INCLUDE_DIRS})\n"
-               "endif()\n"
                "\n"
                "AUX_SOURCE_DIRECTORY(./ SRC_DIR)\n"
                "AUX_SOURCE_DIRECTORY(controllers CTL_SRC)\n"
@@ -134,6 +133,72 @@ static void newGitIgFile(std::ofstream &gitFile)
              "cmake-build-debug\n"
              ".idea\n";
 }
+static void newJsonFindFile(std::ofstream &jsonFile)
+{
+    jsonFile<<"# Find jsoncpp\n"
+              "#\n"
+              "# Find the jsoncpp includes and library\n"
+              "# \n"
+              "# if you nee to add a custom library search path, do it via via CMAKE_PREFIX_PATH \n"
+              "# \n"
+              "# This module defines\n"
+              "#  JSONCPP_INCLUDE_DIRS, where to find header, etc.\n"
+              "#  JSONCPP_LIBRARIES, the libraries needed to use jsoncpp.\n"
+              "#  JSONCPP_FOUND, If false, do not try to use jsoncpp.\n"
+              "#  JSONCPP_INCLUDE_PREFIX, include prefix for jsoncpp\n"
+              "\n"
+              "# only look in default directories\n"
+              "find_path(\n"
+              "\tJSONCPP_INCLUDE_DIR \n"
+              "\tNAMES jsoncpp/json/json.h json/json.h\n"
+              "\tDOC \"jsoncpp include dir\"\n"
+              ")\n"
+              "\n"
+              "find_library(\n"
+              "\tJSONCPP_LIBRARY\n"
+              "\tNAMES jsoncpp\n"
+              "\tDOC \"jsoncpp library\"\n"
+              ")\n"
+              "\n"
+              "set(JSONCPP_INCLUDE_DIRS ${JSONCPP_INCLUDE_DIR})\n"
+              "set(JSONCPP_LIBRARIES ${JSONCPP_LIBRARY})\n"
+              "\n"
+              "# debug library on windows\n"
+              "# same naming convention as in qt (appending debug library with d)\n"
+              "# boost is using the same \"hack\" as us with \"optimized\" and \"debug\"\n"
+              "if (\"${CMAKE_CXX_COMPILER_ID}\" STREQUAL \"MSVC\")\n"
+              "\tfind_library(\n"
+              "\t\tJSONCPP_LIBRARY_DEBUG\n"
+              "\t\tNAMES jsoncppd\n"
+              "\t\tDOC \"jsoncpp debug library\"\n"
+              "\t)\n"
+              "\t\n"
+              "\tset(JSONCPP_LIBRARIES optimized ${JSONCPP_LIBRARIES} debug ${JSONCPP_LIBRARY_DEBUG})\n"
+              "\n"
+              "endif()\n"
+              "\n"
+              "# find JSONCPP_INCLUDE_PREFIX\n"
+              "find_path(\n"
+              "\tJSONCPP_INCLUDE_PREFIX\n"
+              "\tNAMES json.h\n"
+              "\tPATH_SUFFIXES jsoncpp/json json\n"
+              ")\n"
+              "\n"
+              "if (${JSONCPP_INCLUDE_PREFIX} MATCHES \"jsoncpp\")\n"
+              "\tset(JSONCPP_INCLUDE_PREFIX \"jsoncpp\")\n"
+              "\tset(JSONCPP_INCLUDE_DIRS \"${JSONCPP_INCLUDE_DIRS}/jsoncpp\")\n"
+              "else()\n"
+              "\tset(JSONCPP_INCLUDE_PREFIX \"\")\n"
+              "endif()\n"
+              "\n"
+              "\n"
+              "# handle the QUIETLY and REQUIRED arguments and set JSONCPP_FOUND to TRUE\n"
+              "# if all listed variables are TRUE, hide their existence from configuration view\n"
+              "include(FindPackageHandleStandardArgs)\n"
+              "find_package_handle_standard_args(jsoncpp DEFAULT_MSG\n"
+              "\tJSONCPP_INCLUDE_DIR JSONCPP_LIBRARY)\n"
+              "mark_as_advanced (JSONCPP_INCLUDE_DIR JSONCPP_LIBRARY)\n";
+}
 void create_project::createProject(const std::string &projectName)
 {
 
@@ -154,6 +219,9 @@ void create_project::createProject(const std::string &projectName)
     mkdir("controllers",0755);
     mkdir("filters",0755);
     mkdir("build",0755);
+    mkdir("cmake_modules",0755);
+    std::ofstream jsonFile("cmake_modules/FindJsoncpp.cmake",std::ofstream::out);
+    newJsonFindFile(jsonFile);
     std::ofstream gitFile(".gitignore",std::ofstream::out);
     newGitIgFile(gitFile);
 }
