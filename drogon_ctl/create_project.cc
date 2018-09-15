@@ -23,7 +23,11 @@ static void newCmakeFile(std::ofstream &cmakeFile,const std::string &projectName
                 "Project("
              <<projectName
              <<")\n"
-               "link_libraries(drogon trantor uuid pthread jsoncpp ssl crypto dl z)\n"
+               "link_libraries(drogon trantor uuid pthread jsoncpp dl z)\n"
+               "find_package (OpenSSL)\n"
+               "if(OpenSSL_FOUND)\n"
+               "link_libraries(ssl crypto)\n"
+               "endif()\n"
                "IF (CMAKE_SYSTEM_NAME MATCHES \"Linux\")\n"
                "    EXEC_PROGRAM (gcc ARGS \"--version | grep '^gcc'|awk '{print $3}' | sed s'/)//g' | sed s'/-.*//g'\" OUTPUT_VARIABLE version)\n"
                "    MESSAGE(STATUS \"This is gcc version:: \" ${version})\n"

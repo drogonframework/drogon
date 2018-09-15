@@ -266,7 +266,10 @@ void HttpAppFrameworkImpl::addListener(const std::string &ip,
     assert(!_running);
 
 #ifndef USE_OPENSSL
-    assert(!useSSL);
+    if(useSSL)
+        {
+            LOG_ERROR<<"Can't use SSL without OpenSSL found in your system";
+        }
 #endif
 
     _listeners.push_back(std::make_tuple(ip,port,useSSL,certFile,keyFile));
