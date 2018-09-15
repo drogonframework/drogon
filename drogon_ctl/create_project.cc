@@ -60,6 +60,7 @@ static void newCmakeFile(std::ofstream &cmakeFile,const std::string &projectName
                "set(CMAKE_CXX_FLAGS_DEBUG \"${CMAKE_CXX_FLAGS_DEBUG} -Wall -std=${CMAKE_CXX_STD_FLAGS}\")\n"
                "set(CMAKE_CXX_FLAGS_RELEASE \"${CMAKE_CXX_FLAGS_RELEASE} -Wall -std=${CMAKE_CXX_STD_FLAGS}\")\n"
                "\n"
+	       "set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake_modules/)\n"
                "#jsoncpp\n"
                "find_package (Jsoncpp REQUIRED)\n"
                "include_directories(${JSONCPP_INCLUDE_DIRS})\n"
