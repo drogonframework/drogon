@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <drogon/config.h>
 #include <drogon/utils/Utilities.h>
 #include <drogon/HttpApiBinder.h>
 #include <trantor/utils/NonCopyable.h>

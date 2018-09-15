@@ -34,11 +34,6 @@ namespace drogon{
                       char *data, size_t *ndata);
     std::string getHttpFullDate(const trantor::Date &date);
 
-#ifndef USE_OPENSSL
-    #define SHA_DIGEST_LENGTH 20
-    void SHA1(const unsigned char *str, size_t length, unsigned char const * sha1);
-#endif
-
 }
 
 

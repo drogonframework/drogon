@@ -14,7 +14,6 @@
 #include "HttpAppFrameworkImpl.h"
 #include "ConfigLoader.h"
 #include "HttpServer.h"
-
 #include <drogon/utils/Utilities.h>
 #include <drogon/DrClassMap.h>
 #include <drogon/HttpRequest.h>
@@ -22,7 +21,11 @@
 #include <drogon/CacheMap.h>
 #include <drogon/Session.h>
 #include <trantor/utils/AsyncFileLogger.h>
-
+#ifdef USE_OPENSSL
+#include <openssl/sha.h>
+#else
+#include "Sha1.h"
+#endif
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/wait.h>

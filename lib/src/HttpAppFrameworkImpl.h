@@ -21,7 +21,7 @@
 #include <drogon/HttpAppFramework.h>
 #include <drogon/HttpSimpleController.h>
 #include <drogon/version.h>
-#include <openssl/sha.h>
+
 #include <string>
 #include <vector>
 #include <memory>
