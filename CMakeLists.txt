@@ -47,7 +47,7 @@ endif()
 find_package (UUID REQUIRED)
 include_directories(${UUID_INCLUDE_DIR})
 
-find_package (OpenSSL REQUIRED)
+find_package (OpenSSL)
 if(OpenSSL_FOUND)
     #add_definitions(-DUSE_OPENSSL)
     set(DR_DEFS "USE_OPENSSL;${DR_DEFS}")
