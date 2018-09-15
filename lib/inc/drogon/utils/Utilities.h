@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <drogon/config.h>
 #include <trantor/utils/Date.h>
 #include <string>
 #include <vector>
@@ -32,6 +33,11 @@ namespace drogon{
     int gzipDecompress(const  char *zdata, const size_t nzdata,
                       char *data, size_t *ndata);
     std::string getHttpFullDate(const trantor::Date &date);
+
+#ifndef USE_OPENSSL
+    #define SHA_DIGEST_LENGTH 20
+    void SHA1(const unsigned char *str, size_t length, unsigned char const * sha1);
+#endif
 
 }
 
