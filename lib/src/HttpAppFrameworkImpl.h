@@ -69,7 +69,10 @@ namespace drogon
         virtual void setLogPath(const std::string &logPath,
                                 const std::string &logfileBaseName="",
                                 size_t logfileSize=100000000) override;
-        ~HttpAppFrameworkImpl(){}
+        ~HttpAppFrameworkImpl(){
+		_sharedLibManagerPtr.reset();
+		_sessionMapPtr.reset();
+	}
 
         trantor::EventLoop *loop();
     private:
