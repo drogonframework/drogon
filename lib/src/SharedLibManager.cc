@@ -30,8 +30,8 @@ static void forEachFileIn(const std::string &path,const std::function<void (cons
     /* open dirent directory */
     if((dp = opendir(path.c_str())) == NULL)
     {
-        perror("opendir");
-        std::cerr<<"path:"<<path;
+        perror("opendir:");
+        std::cerr<<"path:"<<path<<std::endl;
         return;
     }
 

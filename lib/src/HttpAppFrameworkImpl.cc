@@ -87,9 +87,12 @@ void HttpAppFrameworkImpl::enableDynamicViewsLoading(const std::vector<std::stri
 
     for(auto libpath:libPaths)
     {
-        if(libpath[0]!='/')
+        if(libpath[0]!='/'&&libpath[0]!='.'&&libpath[1]!='/')
         {
-            _libFilePaths.push_back(_rootPath+"/"+libpath);
+	    if(_rootPath[_rootPath.length()-1]=='/')
+                _libFilePaths.push_back(_rootPath+libpath);
+	    else
+                _libFilePaths.push_back(_rootPath+"/"+libpath);
         } else
             _libFilePaths.push_back(libpath);
     }
