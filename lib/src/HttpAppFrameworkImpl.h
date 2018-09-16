@@ -70,6 +70,7 @@ namespace drogon
                                 const std::string &logfileBaseName="",
                                 size_t logfileSize=100000000) override;
         ~HttpAppFrameworkImpl(){
+		//Destroy the following objects before _loop destruction
 		_sharedLibManagerPtr.reset();
 		_sessionMapPtr.reset();
 	}
