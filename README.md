@@ -11,7 +11,7 @@
 * Support view page dynamic loading (dynamic compilation and loading at runtime);
 * Very convenient and flexible path to controller handler mapping scheme;
 * Support filter chain to facilitate the execution of unified logic (such as login verification, Http Method constraint verification, etc.) before the controller;
-* Support https (based on OpenSSL implementation);
+* Support https (based on OpenSSL);
 * Support websocket (server side);
 * Support Json format request and response;
 * Support file download and upload;
