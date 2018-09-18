@@ -123,7 +123,7 @@ int main()
     drogon::HttpAppFramework::instance().enableSession(1200);
     //start app framework
     //drogon::HttpAppFramework::instance().enableDynamicViewsLoading({"/tmp/views"});
-    drogon::HttpAppFramework::instance().loadConfigFile("../../drogon.conf.example");
+    drogon::HttpAppFramework::instance().loadConfigFile("../../config.json.example");
     drogon::HttpAppFramework::instance().run();
 
 }

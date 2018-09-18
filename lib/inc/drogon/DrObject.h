@@ -40,6 +40,7 @@ namespace drogon
                     __cxxabiv1::__cxa_demangle( mangled_name, nullptr, &len, &status ), &std::free ) ;
             return ptr.get() ;
         }
+        virtual ~DrObjectBase(){}
     };
 
 
