@@ -62,6 +62,9 @@
     //run_as_daemon:false by default
     "run_as_daemon":false,
     //relaunch_on_error:false by default,if true,the program will be restart by parent after exit;
-    "relaunch_on_error":false
+    "relaunch_on_error":false,
+    //use_sendfile:true by default,if ture,the program will
+    //use sendfile() system-call to send static file to client;
+    "use_sendfile":true
   }
 }

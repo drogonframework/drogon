@@ -177,7 +177,10 @@ void HttpServer::onRequest(const TcpConnectionPtr& conn, const HttpRequestPtr& r
         //if the request method is HEAD,remove the body of response(rfc2616-9.4)
         if(_isHeadMethod)
             response->setBody(std::string());
-        if(response->getContentTypeCode()<CT_APPLICATION_OCTET_STREAM&&
+        auto & sendfileName=std::dynamic_pointer_cast<HttpResponseImpl>(response)->sendfileName();
+
+        if(sendfileName.empty()&&
+           response->getContentTypeCode()<CT_APPLICATION_OCTET_STREAM&&
            response->getBody().length()>1024&&
            req->getHeader("Accept-Encoding").find("gzip")!=std::string::npos)
         {
@@ -240,6 +243,11 @@ void HttpServer::sendResponse(const TcpConnectionPtr& conn,
     MsgBuffer buf;
     std::dynamic_pointer_cast<HttpResponseImpl>(response)->appendToBuffer(&buf);
     conn->send(std::move(buf));
+    auto & sendfileName=std::dynamic_pointer_cast<HttpResponseImpl>(response)->sendfileName();
+    if(!sendfileName.empty())
+    {
+        conn->sendFile(sendfileName.c_str());
+    }
     if (response->closeConnection()) {
         conn->shutdown();
     }

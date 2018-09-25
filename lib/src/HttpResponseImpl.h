@@ -268,6 +268,12 @@ namespace drogon
             }
             return _jsonPtr;
         }
+        const std::string &sendfileName() const {
+            return _sendfileName;
+        }
+        void setSendfile(const std::string &filename){
+            _sendfileName=filename;
+        }
     protected:
         static std::string web_content_type_to_string(uint8_t contenttype);
         static const std::string web_content_type_and_charset_to_string(uint8_t contenttype,
@@ -288,6 +294,7 @@ namespace drogon
         size_t _current_chunk_length;
         uint8_t _contentType=CT_TEXT_HTML;
 
+        std::string _sendfileName;
         mutable std::shared_ptr<Json::Value> _jsonPtr;
         //trantor::Date receiveTime_;
 

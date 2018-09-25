@@ -83,7 +83,7 @@ int main()
 
     std::cout<<banner<<std::endl;
 
-    drogon::HttpAppFramework::instance().addListener("0.0.0.0",12345);
+//    drogon::HttpAppFramework::instance().addListener("0.0.0.0",12345);
     drogon::HttpAppFramework::instance().addListener("0.0.0.0",8080);
 //#ifdef USE_OPENSSL
 //    //https

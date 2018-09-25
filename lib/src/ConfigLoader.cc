@@ -131,6 +131,8 @@ static void loadApp(const Json::Value &app)
     {
         HttpAppFramework::instance().enableRelaunchOnError();
     }
+    auto useSendfile=app.get("use_sendfile",true).asBool();
+    HttpAppFramework::instance().enableSendfile(useSendfile);
 }
 static void loadListeners(const Json::Value &listeners)
 {
@@ -157,7 +159,7 @@ static void loadSSL(const Json::Value &sslFiles)
     HttpAppFramework::instance().setSSLFiles(cert,key);
 }
 void ConfigLoader::load() {
-    std::cout<<_configJsonRoot<<std::endl;
+    //std::cout<<_configJsonRoot<<std::endl;
     loadApp(_configJsonRoot["app"]);
     loadSSL(_configJsonRoot["ssl"]);
     loadListeners(_configJsonRoot["listeners"]);

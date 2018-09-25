@@ -892,18 +892,26 @@ void HttpAppFrameworkImpl::readSendFile(const std::string& filePath,const HttpRe
         }
     }
 
-    std::streambuf * pbuf = infile.rdbuf();
-    std::streamsize size = pbuf->pubseekoff(0,infile.end);
-    pbuf->pubseekoff(0,infile.beg);       // rewind
-    std::string str;
-    str.resize(size);
-    pbuf->sgetn (&str[0],size);
-    infile.close();
+    if(_useSendfile&&
+       (req->getHeader("Accept-Encoding").find("gzip")==std::string::npos||
+        resp->getContentTypeCode()>=CT_APPLICATION_OCTET_STREAM))
+    {
+        //binary file or no gzip supported by client
+        std::dynamic_pointer_cast<HttpResponseImpl>(resp)->setSendfile(filePath);
+    }
+    else
+    {
+        std::streambuf * pbuf = infile.rdbuf();
+        std::streamsize size = pbuf->pubseekoff(0,infile.end);
+        pbuf->pubseekoff(0,infile.beg);       // rewind
+        std::string str;
+        str.resize(size);
+        pbuf->sgetn (&str[0],size);
+        LOG_INFO << "file len:" << str.length();
+        resp->setBody(std::move(str));
+    }
 
     resp->setStatusCode(HttpResponse::k200OK);
-    LOG_INFO << "file len:" << str.length();
-    resp->setBody(std::move(str));
-
 }
 
 trantor::EventLoop *HttpAppFrameworkImpl::loop()
