@@ -208,7 +208,8 @@ void create_project::createProject(const std::string &projectName)
     std::cout<<"create a project named "<<projectName<<std::endl;
     mkdir(projectName.data(),0755);
     //1.create CMakeLists.txt
-    chdir(projectName.data());
+    auto r=chdir(projectName.data());
+    (void)(r);
     std::ofstream cmakeFile("CMakeLists.txt",std::ofstream::out);
     newCmakeFile(cmakeFile,projectName);
     std::ofstream mainFile("main.cc",std::ofstream::out);

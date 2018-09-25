@@ -77,6 +77,8 @@ static void loadApp(const Json::Value &app)
     auto timeout=app.get("session_timeout",0).asUInt64();
     if(enableSession)
         HttpAppFramework::instance().enableSession(timeout);
+    else
+        HttpAppFramework::instance().disableSession();
     //document root
     auto documentRoot=app.get("document_root","").asString();
     if(documentRoot!="")
