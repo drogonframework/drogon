@@ -85,9 +85,9 @@ static void newMainFile(std::ofstream &mainFile)
 {
     mainFile<<"#include <drogon/HttpAppFramework.h>\n"
               "int main() {\n"
-              "    //设置http监听的地址和端口\n"
+              "    //Set HTTP listener address and port\n"
               "    drogon::HttpAppFramework::instance().addListener(\"0.0.0.0\",80);\n"
-              "    //运行http框架，程序阻塞在底层的事件循环中\n"
+              "    //Run HTTP framework,the method will block in the inner event loop\n"
               "    drogon::HttpAppFramework::instance().run();\n"
               "    return 0;\n"
               "}";
@@ -197,6 +197,80 @@ static void newJsonFindFile(std::ofstream &jsonFile)
               "\tJSONCPP_INCLUDE_DIR JSONCPP_LIBRARY)\n"
               "mark_as_advanced (JSONCPP_INCLUDE_DIR JSONCPP_LIBRARY)\n";
 }
+
+static void newConfigFile(std::ofstream &configFile)
+{
+    configFile<<"/* This is a JSON format configuration file\n"
+                "*/\n"
+                "{\n"
+                "  //ssl:the global ssl files setting\n"
+                "  \"ssl\": {\n"
+                "    \"cert\": \"../../trantor/trantor/tests/server.pem\",\n"
+                "    \"key\": \"../../trantor/trantor/tests/server.pem\"\n"
+                "  },\n"
+                "  \"listeners\": [\n"
+                "    {\n"
+                "      //address:ip address,0.0.0.0 by default\n"
+                "      \"address\": \"0.0.0.0\",\n"
+                "      //port:port number\n"
+                "      \"port\": 80,\n"
+                "      //https:if use https for security,false by default\n"
+                "      \"https\": false\n"
+                "    },\n"
+                "    {\n"
+                "      \"address\": \"0.0.0.0\",\n"
+                "      \"port\": 443,\n"
+                "      \"https\": true,\n"
+                "      //cert,key:cert file path and key file path,empty by default,\n"
+                "      //if empty,use global setting\n"
+                "      \"cert\": \"\",\n"
+                "      \"key\": \"\"\n"
+                "    }\n"
+                "  ],\n"
+                "  \"app\": {\n"
+                "    //threads_num:num of threads,1 by default\n"
+                "    \"threads_num\": 16,\n"
+                "    //enable_session:false by default\n"
+                "    \"enable_session\": false,\n"
+                "    \"session_timeout\": 0,\n"
+                "    //document_root:Root path of HTTP document,defaut path is ./\n"
+                "    \"document_root\":\"./\",\n"
+                "    /* file_types:\n"
+                "     * HTTP download file types,The file types supported by drogon\n"
+                "     * by default are \"html\", \"js\", \"css\", \"xml\", \"xsl\", \"txt\", \"svg\",\n"
+                "     * \"ttf\", \"otf\", \"woff2\", \"woff\" , \"eot\", \"png\", \"jpg\", \"jpeg\",\n"
+                "     * \"gif\", \"bmp\", \"ico\", \"icns\", etc. */\n"
+                "    \"file_types\":[\"gif\",\"png\",\"jpg\",\"js\",\"css\",\"html\",\"ico\",\"swf\",\"xap\",\"apk\",\"cur\",\"xml\"],\n"
+                "    //max_connections:max connections number,100000 by default\n"
+                "    \"max_connections\":100000,\n"
+                "    //Load_dynamic_views: false by default, when set to true, drogon will\n"
+                "    //compile and load dynamically \"CSP View Files\" in directories defined\n"
+                "    //by \"dynamic_views_path\"\n"
+                "    \"load_dynamic_views\":true,\n"
+                "    //dynamic_views_path: if the path isn't prefixed with / or ./,\n"
+                "    //it will be relative path of document_root path\n"
+                "    \"dynamic_views_path\":[\"./views\"],\n"
+                "    //log:set log output,drogon output logs to stdout by default\n"
+                "    \"log\":{\n"
+                "      //log_path:log file path,empty by default,in which case,log will output to the stdout\n"
+                "      \"log_path\":\"./\",\n"
+                "      //logfile_base_name:log file base name,empty by default which means drogon will name logfile as\n"
+                "      //drogon.log ...\n"
+                "      \"logfile_base_name\":\"\",\n"
+                "      //log_size_limit:100000000 bytes by default,\n"
+                "      //When the log file size reaches \"log_size_limit\", the log file is switched.\n"
+                "      \"log_size_limit\":100000000\n"
+                "    },\n"
+                "    //run_as_daemon:false by default\n"
+                "    \"run_as_daemon\":false,\n"
+                "    //relaunch_on_error:false by default,if true,the program will be restart by parent after exit;\n"
+                "    \"relaunch_on_error\":false,\n"
+                "    //use_sendfile:true by default,if ture,the program will\n"
+                "    //use sendfile() system-call to send static file to client;\n"
+                "    \"use_sendfile\":true\n"
+                "  }\n"
+                "}\n";
+}
 void create_project::createProject(const std::string &projectName)
 {
 
@@ -208,7 +282,8 @@ void create_project::createProject(const std::string &projectName)
     std::cout<<"create a project named "<<projectName<<std::endl;
     mkdir(projectName.data(),0755);
     //1.create CMakeLists.txt
-    chdir(projectName.data());
+    auto r=chdir(projectName.data());
+    (void)(r);
     std::ofstream cmakeFile("CMakeLists.txt",std::ofstream::out);
     newCmakeFile(cmakeFile,projectName);
     std::ofstream mainFile("main.cc",std::ofstream::out);
@@ -222,4 +297,6 @@ void create_project::createProject(const std::string &projectName)
     newJsonFindFile(jsonFile);
     std::ofstream gitFile(".gitignore",std::ofstream::out);
     newGitIgFile(gitFile);
+    std::ofstream configFile("config.json",std::ofstream::out);
+    newConfigFile(configFile);
 }

@@ -331,7 +331,11 @@ void HttpResponseImpl::appendToBuffer(MsgBuffer* output) const
             LOG_SYSERR<<_sendfileName<<" stat error";
             return;
         }
+#ifdef __linux__
+        snprintf(buf, sizeof buf, "Content-Length: %ld\r\n",filestat.st_size);
+#else
         snprintf(buf, sizeof buf, "Content-Length: %lld\r\n",filestat.st_size);
+#endif
     }
 
     output->append(buf);
