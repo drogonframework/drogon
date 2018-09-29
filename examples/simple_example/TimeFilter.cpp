@@ -9,7 +9,13 @@ void TimeFilter::doFilter(const HttpRequestPtr& req,
                                                    const FilterChainCallback &ccb)
 {
     trantor::Date now=trantor::Date::date();
-    LOG_TRACE<<"";
+    if(!req->session())
+    {
+        //no session support by framework,pls enable session
+        auto resp=HttpResponse::newNotFoundResponse();
+        cb(resp);
+        return;
+    }
     if(req->session()->find(VDate))
     {
         auto lastDate=req->session()->get<trantor::Date>(VDate);

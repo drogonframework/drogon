@@ -25,6 +25,22 @@ public:
         auto res=HttpResponse::newHttpViewResponse("ListParaView",data);
         callback(res);
     }
+    static void staticHandle(const HttpRequestPtr& req,
+                const std::function<void (const HttpResponsePtr &)>&callback,
+                int p1,const std::string &p2,const std::string &p3,int p4)
+    {
+        HttpViewData data;
+        data.insert("title",std::string("ApiTest::get"));
+        std::map<std::string,std::string> para;
+        para["int p1"]=std::to_string(p1);
+        para["string p2"]=p2;
+        para["string p3"]=p3;
+        para["int p4"]=std::to_string(p4);
+
+        data.insert("parameters",para);
+        auto res=HttpResponse::newHttpViewResponse("ListParaView",data);
+        callback(res);
+    }
 };
 class B:public DrObjectBase
 {
@@ -95,6 +111,7 @@ int main()
     trantor::Logger::setLogLevel(trantor::Logger::TRACE);
     //class function
     drogon::HttpAppFramework::registerHttpApiMethod("/api/v1/handle1/{1}/{2}/?p3={3}&p4={4}",&A::handle);
+    drogon::HttpAppFramework::registerHttpApiMethod("/api/v1/handle11/{1}/{2}/?p3={3}&p4={4}",&A::staticHandle);
     //lambda example
     drogon::HttpAppFramework::registerHttpApiMethod("/api/v1/handle2/{1}/{2}",[](const HttpRequestPtr&req,const std::function<void (const HttpResponsePtr &)>&callback,int a,float b){
         LOG_DEBUG<<"int a="<<a;
