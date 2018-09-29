@@ -103,6 +103,13 @@ static void loadApp(const Json::Value &app)
     {
         HttpAppFramework::instance().setMaxConnectionNum(maxConns);
     }
+    //max connections per IP
+    auto maxConnsPerIP=app.get("max_connections_per_ip",0).asUInt64();
+    if(maxConnsPerIP>0)
+    {
+        HttpAppFramework::instance().setMaxConnectionNumPerIP(maxConnsPerIP);
+    }
+
     //dynamic views
     auto enableDynamicViews=app.get("load_dynamic_views",false).asBool();
     if(enableDynamicViews)

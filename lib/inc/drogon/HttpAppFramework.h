@@ -97,6 +97,7 @@ namespace drogon
         virtual void enableDynamicViewsLoading(const std::vector<std::string> &libPaths)=0;
 
         virtual void setMaxConnectionNum(size_t maxConnections)=0;
+        virtual void setMaxConnectionNumPerIP(size_t maxConnectionsPerIP)=0;
 
         virtual void loadConfigFile(const std::string &fileName)=0;
 

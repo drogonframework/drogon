@@ -229,6 +229,10 @@ void HttpAppFrameworkImpl::setMaxConnectionNum(size_t maxConnections)
 {
     _maxConnectionNum=maxConnections;
 }
+void HttpAppFrameworkImpl::setMaxConnectionNumPerIP(size_t maxConnectionsPerIP)
+{
+    _maxConnectionNumPerIP=maxConnectionsPerIP;
+}
 void HttpAppFrameworkImpl::loadConfigFile(const std::string &fileName)
 {
     ConfigLoader loader(fileName);
@@ -506,10 +510,30 @@ void HttpAppFrameworkImpl::onConnection(const TcpConnectionPtr &conn)
             LOG_ERROR<<"too much connections!force close!";
             conn->forceClose();
         }
+        else if(_maxConnectionNumPerIP>0)
+        {
+            {
+                auto iter=_connectionsNumMap.find(conn->peerAddr().toIp());
+                if(iter==_connectionsNumMap.end())
+                {
+                    _connectionsNumMap[conn->peerAddr().toIp()]=0;
+                }
+                if(_connectionsNumMap[conn->peerAddr().toIp()]++>=_maxConnectionNumPerIP)
+                {
+                    conn->forceClose();
+                }
+            }
+        }
     }
     else
     {
         _connectionNum--;
+
+        if(_maxConnectionNumPerIP>0&&_connectionsNumMap.find(conn->peerAddr().toIp())!=_connectionsNumMap.end())
+        {
+            std::lock_guard<std::mutex> guard(_connectionsNumMapMutex);
+            _connectionsNumMap[conn->peerAddr().toIp()]--;
+        }
     }
 }
 std::string parseWebsockFrame(trantor::MsgBuffer *buffer)

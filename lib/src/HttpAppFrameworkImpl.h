@@ -60,6 +60,7 @@ namespace drogon
         virtual void setFileTypes(const std::vector<std::string> &types) override;
         virtual void enableDynamicViewsLoading(const std::vector<std::string> &libPaths) override;
         virtual void setMaxConnectionNum(size_t maxConnections) override;
+        virtual void setMaxConnectionNumPerIP(size_t maxConnectionsPerIP) override;
         virtual void loadConfigFile(const std::string &fileName) override;
         virtual void enableRunAsDaemon() override {_runAsDaemon=true;}
         virtual void enableRelaunchOnError() override {_relaunchOnError=true;}
@@ -164,7 +165,13 @@ namespace drogon
         std::string _sslKeyPath;
 
         size_t _maxConnectionNum=100000;
+        size_t _maxConnectionNumPerIP=0;
+
         std::atomic<uint64_t> _connectionNum;
+        std::unordered_map<std::string,size_t> _connectionsNumMap;
+
+        std::mutex _connectionsNumMapMutex;
+
 
         bool _runAsDaemon=false;
         bool _relaunchOnError=false;

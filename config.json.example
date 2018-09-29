@@ -41,6 +41,8 @@
     "file_types":["gif","png","jpg","js","css","html","ico","swf","xap","apk","cur","xml"],
     //max_connections:max connections number,100000 by default
     "max_connections":100000,
+    //max_connections_per_ip:max connections number per clinet,0 by default which means no limit
+    "max_connections_per_ip":0,
     //Load_dynamic_views: false by default, when set to true, drogon will
     //compile and load dynamically "CSP View Files" in directories defined
     //by "dynamic_views_path"
