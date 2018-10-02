@@ -229,6 +229,10 @@ void HttpAppFrameworkImpl::setMaxConnectionNum(size_t maxConnections)
 {
     _maxConnectionNum=maxConnections;
 }
+void HttpAppFrameworkImpl::setMaxConnectionNumPerIP(size_t maxConnectionsPerIP)
+{
+    _maxConnectionNumPerIP=maxConnectionsPerIP;
+}
 void HttpAppFrameworkImpl::loadConfigFile(const std::string &fileName)
 {
     ConfigLoader loader(fileName);
@@ -506,10 +510,30 @@ void HttpAppFrameworkImpl::onConnection(const TcpConnectionPtr &conn)
             LOG_ERROR<<"too much connections!force close!";
             conn->forceClose();
         }
+        else if(_maxConnectionNumPerIP>0)
+        {
+            {
+                auto iter=_connectionsNumMap.find(conn->peerAddr().toIp());
+                if(iter==_connectionsNumMap.end())
+                {
+                    _connectionsNumMap[conn->peerAddr().toIp()]=0;
+                }
+                if(_connectionsNumMap[conn->peerAddr().toIp()]++>=_maxConnectionNumPerIP)
+                {
+                    conn->forceClose();
+                }
+            }
+        }
     }
     else
     {
         _connectionNum--;
+
+        if(_maxConnectionNumPerIP>0&&_connectionsNumMap.find(conn->peerAddr().toIp())!=_connectionsNumMap.end())
+        {
+            std::lock_guard<std::mutex> guard(_connectionsNumMapMutex);
+            _connectionsNumMap[conn->peerAddr().toIp()]--;
+        }
     }
 }
 std::string parseWebsockFrame(trantor::MsgBuffer *buffer)
@@ -892,18 +916,26 @@ void HttpAppFrameworkImpl::readSendFile(const std::string& filePath,const HttpRe
         }
     }
 
-    std::streambuf * pbuf = infile.rdbuf();
-    std::streamsize size = pbuf->pubseekoff(0,infile.end);
-    pbuf->pubseekoff(0,infile.beg);       // rewind
-    std::string str;
-    str.resize(size);
-    pbuf->sgetn (&str[0],size);
-    infile.close();
+    if(_useSendfile&&
+       (req->getHeader("Accept-Encoding").find("gzip")==std::string::npos||
+        resp->getContentTypeCode()>=CT_APPLICATION_OCTET_STREAM))
+    {
+        //binary file or no gzip supported by client
+        std::dynamic_pointer_cast<HttpResponseImpl>(resp)->setSendfile(filePath);
+    }
+    else
+    {
+        std::streambuf * pbuf = infile.rdbuf();
+        std::streamsize size = pbuf->pubseekoff(0,infile.end);
+        pbuf->pubseekoff(0,infile.beg);       // rewind
+        std::string str;
+        str.resize(size);
+        pbuf->sgetn (&str[0],size);
+        LOG_INFO << "file len:" << str.length();
+        resp->setBody(std::move(str));
+    }
 
     resp->setStatusCode(HttpResponse::k200OK);
-    LOG_INFO << "file len:" << str.length();
-    resp->setBody(std::move(str));
-
 }
 
 trantor::EventLoop *HttpAppFrameworkImpl::loop()

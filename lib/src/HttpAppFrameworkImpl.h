@@ -33,7 +33,7 @@ namespace drogon
     {
     public:
         HttpAppFrameworkImpl():
-        _connectionNum(0)
+                _connectionNum(0)
         {
         }
         virtual void addListener(const std::string &ip,
@@ -53,9 +53,6 @@ namespace drogon
                                                   const std::string &crtlName,
                                                   const std::vector<std::string> &filters=
                                                   std::vector<std::string>())override ;
-        virtual void registerHttpApiController(const std::string &pathPattern,
-                                               const HttpApiBinderBasePtr &binder,
-                                               const std::vector<std::string> &filters=std::vector<std::string>()) override ;
         virtual void enableSession(const size_t timeout=0) override { _useSession=true;_sessionTimeout=timeout;}
         virtual void disableSession() override { _useSession=false;}
         virtual const std::string & getDocumentRoot() const override {return _rootPath;}
@@ -63,20 +60,26 @@ namespace drogon
         virtual void setFileTypes(const std::vector<std::string> &types) override;
         virtual void enableDynamicViewsLoading(const std::vector<std::string> &libPaths) override;
         virtual void setMaxConnectionNum(size_t maxConnections) override;
+        virtual void setMaxConnectionNumPerIP(size_t maxConnectionsPerIP) override;
         virtual void loadConfigFile(const std::string &fileName) override;
         virtual void enableRunAsDaemon() override {_runAsDaemon=true;}
         virtual void enableRelaunchOnError() override {_relaunchOnError=true;}
         virtual void setLogPath(const std::string &logPath,
                                 const std::string &logfileBaseName="",
                                 size_t logfileSize=100000000) override;
+        virtual void enableSendfile(bool sendFile) override {_useSendfile=sendFile;}
         ~HttpAppFrameworkImpl(){
-		//Destroy the following objects before _loop destruction
-		_sharedLibManagerPtr.reset();
-		_sessionMapPtr.reset();
-	}
+            //Destroy the following objects before _loop destruction
+            _sharedLibManagerPtr.reset();
+            _sessionMapPtr.reset();
+        }
 
         trantor::EventLoop *loop();
     private:
+        virtual void registerHttpApiController(const std::string &pathPattern,
+                                               const HttpApiBinderBasePtr &binder,
+                                               const std::vector<std::string> &filters=std::vector<std::string>()) override ;
+
         std::vector<std::tuple<std::string,uint16_t,bool,std::string,std::string>> _listeners;
         void onAsyncRequest(const HttpRequestPtr& req,const std::function<void (const HttpResponsePtr &)> & callback);
         void onNewWebsockRequest(const HttpRequestPtr& req,
@@ -104,11 +107,11 @@ namespace drogon
                        const std::string &session_id,
                        const std::function<void ()> &missCallback);
         void doFilterChain(const std::shared_ptr<std::queue<std::shared_ptr<HttpFilterBase>>> &chain,
-        const HttpRequestPtr& req,
-        const std::function<void (const HttpResponsePtr &)> & callback,
-        bool needSetJsessionid,
-        const std::string &session_id,
-        const std::function<void ()> &missCallback);
+                           const HttpRequestPtr& req,
+                           const std::function<void (const HttpResponsePtr &)> & callback,
+                           bool needSetJsessionid,
+                           const std::string &session_id,
+                           const std::function<void ()> &missCallback);
         //
         struct ControllerAndFiltersName
         {
@@ -162,12 +165,19 @@ namespace drogon
         std::string _sslKeyPath;
 
         size_t _maxConnectionNum=100000;
+        size_t _maxConnectionNumPerIP=0;
+
         std::atomic<uint64_t> _connectionNum;
+        std::unordered_map<std::string,size_t> _connectionsNumMap;
+
+        std::mutex _connectionsNumMapMutex;
+
 
         bool _runAsDaemon=false;
         bool _relaunchOnError=false;
         std::string _logPath="";
         std::string _logfileBaseName="";
         size_t _logfileSize=100000000;
+        bool _useSendfile=true;
     };
 }

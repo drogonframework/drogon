@@ -77,6 +77,8 @@ static void loadApp(const Json::Value &app)
     auto timeout=app.get("session_timeout",0).asUInt64();
     if(enableSession)
         HttpAppFramework::instance().enableSession(timeout);
+    else
+        HttpAppFramework::instance().disableSession();
     //document root
     auto documentRoot=app.get("document_root","").asString();
     if(documentRoot!="")
@@ -101,6 +103,13 @@ static void loadApp(const Json::Value &app)
     {
         HttpAppFramework::instance().setMaxConnectionNum(maxConns);
     }
+    //max connections per IP
+    auto maxConnsPerIP=app.get("max_connections_per_ip",0).asUInt64();
+    if(maxConnsPerIP>0)
+    {
+        HttpAppFramework::instance().setMaxConnectionNumPerIP(maxConnsPerIP);
+    }
+
     //dynamic views
     auto enableDynamicViews=app.get("load_dynamic_views",false).asBool();
     if(enableDynamicViews)
@@ -131,6 +140,8 @@ static void loadApp(const Json::Value &app)
     {
         HttpAppFramework::instance().enableRelaunchOnError();
     }
+    auto useSendfile=app.get("use_sendfile",true).asBool();
+    HttpAppFramework::instance().enableSendfile(useSendfile);
 }
 static void loadListeners(const Json::Value &listeners)
 {
@@ -157,7 +168,7 @@ static void loadSSL(const Json::Value &sslFiles)
     HttpAppFramework::instance().setSSLFiles(cert,key);
 }
 void ConfigLoader::load() {
-    std::cout<<_configJsonRoot<<std::endl;
+    //std::cout<<_configJsonRoot<<std::endl;
     loadApp(_configJsonRoot["app"]);
     loadSSL(_configJsonRoot["ssl"]);
     loadListeners(_configJsonRoot["listeners"]);

@@ -24,6 +24,7 @@ namespace drogon{
 
         template<typename> struct FunctionTraits;
 
+        //functor,lambda,std::function...
         template <typename Function>
         struct FunctionTraits : public FunctionTraits<
                 decltype(&std::remove_reference<Function>::type::operator())
@@ -33,7 +34,7 @@ namespace drogon{
             {return std::string("Functor");}
         };
 
-
+        //class instance method of const object
         template <
                 typename    ClassType,
                 typename    ReturnType,
@@ -47,8 +48,7 @@ namespace drogon{
             static const std::string name(){return std::string("Class Function");}
             };
 
-        /* support the non-const operator ()
-         * this will work with user defined functors */
+        //class instance method of non-const object
         template <
                 typename    ClassType,
                 typename    ReturnType,
@@ -62,31 +62,7 @@ namespace drogon{
             static const std::string name(){return std::string("Class Function");}
         };
 
-        //class function
-        template <
-                typename    ClassType,
-                typename    ReturnType,
-                typename... Arguments
-        >
-        struct FunctionTraits<
-                ReturnType(ClassType::*)(const HttpRequestPtr& req,const std::function<void (const HttpResponsePtr &)>&callback,Arguments...) const
-        > : FunctionTraits<ReturnType(ClassType::*)(Arguments...)> {
-            static const bool isHTTPApiFunction=true;
-            static const std::string name(){return std::string("Class Const Api Function");}
-        };
-
-        template <
-                typename    ClassType,
-                typename    ReturnType,
-                typename... Arguments
-        >
-        struct FunctionTraits<
-                ReturnType(ClassType::*)(const HttpRequestPtr& req,const std::function<void (const HttpResponsePtr &)>&callback,Arguments...)
-        > : FunctionTraits<ReturnType(ClassType::*)(Arguments...)> {
-            static const bool isHTTPApiFunction=true;
-            static const std::string name(){return std::string("Class Api Function");}
-            };
-        //normal function
+        //normal function for HTTP handling
         template <
                 typename    ReturnType,
                 typename... Arguments
@@ -97,18 +73,8 @@ namespace drogon{
             static const bool isHTTPApiFunction=true;
 
         };
-        //std::function
-//        template <
-//                typename    ReturnType,
-//                typename... Arguments
-//        >
-//        struct FunctionTraits<std::function<
-//                ReturnType(const HttpRequest& req,const std::function<void (const HttpResponsePtr &)>& callback,Arguments...)>>
-//                :FunctionTraits<ReturnType(*)(Arguments...)> {
-//            static const bool isHTTPApiFunction=true;
-//            static const std::string name(){return std::string("std::function");}
-//        };
 
+        //normal function
         template <
                 typename    ReturnType,
                 typename... Arguments

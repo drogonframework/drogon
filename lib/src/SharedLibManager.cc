@@ -115,7 +115,9 @@ void SharedLibManager::managerLibs()
                     std::string cmd="drogon_ctl create view ";
                     cmd.append(filename).append(" -o ").append(libPath);
                     LOG_TRACE<<cmd;
-                    system(cmd.c_str());
+                    auto r=system(cmd.c_str());
+                    //FIXME:handle r
+                    (void)(r);
                     auto srcFile=filename.substr(0,pos);
                     srcFile.append(".cc");
                     DLStat dlStat;

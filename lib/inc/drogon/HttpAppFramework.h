@@ -75,9 +75,6 @@ namespace drogon
         virtual void registerHttpSimpleController(const std::string &pathName,
                                                   const std::string &crtlName,
                                                   const std::vector<std::string> &filters=std::vector<std::string>())=0;
-        virtual void registerHttpApiController(const std::string &pathPattern,
-                                               const HttpApiBinderBasePtr &binder,
-                                               const std::vector<std::string> &filters=std::vector<std::string>())=0;
         template <typename FUNCTION>
         static void registerHttpApiMethod(const std::string &pathPattern,
                                           FUNCTION && function,
@@ -100,6 +97,7 @@ namespace drogon
         virtual void enableDynamicViewsLoading(const std::vector<std::string> &libPaths)=0;
 
         virtual void setMaxConnectionNum(size_t maxConnections)=0;
+        virtual void setMaxConnectionNumPerIP(size_t maxConnectionsPerIP)=0;
 
         virtual void loadConfigFile(const std::string &fileName)=0;
 
@@ -109,5 +107,12 @@ namespace drogon
         virtual void setLogPath(const std::string &logPath,
                                 const std::string &logfileBaseName="",
                                 size_t logSize=100000000)=0;
+        virtual void enableSendfile(bool sendFile)=0;
+
+    private:
+        virtual void registerHttpApiController(const std::string &pathPattern,
+                                               const HttpApiBinderBasePtr &binder,
+                                               const std::vector<std::string> &filters=std::vector<std::string>())=0;
+
     };
 }

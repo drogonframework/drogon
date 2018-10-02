@@ -27,6 +27,7 @@
 #include <drogon/HttpAppFramework.h>
 #include <trantor/utils/Logger.h>
 #include <stdio.h>
+#include <sys/stat.h>
 
 using namespace trantor;
 using namespace drogon;
@@ -313,12 +314,30 @@ std::string HttpResponseImpl::web_response_code_to_string(int code)
 }
 void HttpResponseImpl::appendToBuffer(MsgBuffer* output) const
 {
-    char buf[32];
+    char buf[64];
     snprintf(buf, sizeof buf, "HTTP/1.1 %d ", _statusCode);
     output->append(buf);
     output->append(_statusMessage);
     output->append("\r\n");
-    snprintf(buf, sizeof buf, "Content-Length: %lu\r\n", _body.size());
+    if(_sendfileName.empty())
+    {
+        snprintf(buf, sizeof buf, "Content-Length: %lu\r\n", _body.size());
+    }
+    else
+    {
+        struct stat filestat;
+        if(stat(_sendfileName.c_str(), &filestat)<0)
+        {
+            LOG_SYSERR<<_sendfileName<<" stat error";
+            return;
+        }
+#ifdef __linux__
+        snprintf(buf, sizeof buf, "Content-Length: %ld\r\n",filestat.st_size);
+#else
+        snprintf(buf, sizeof buf, "Content-Length: %lld\r\n",filestat.st_size);
+#endif
+    }
+
     output->append(buf);
     if(_headers.find("Connection")==_headers.end())
     {

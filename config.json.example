@@ -41,6 +41,8 @@
     "file_types":["gif","png","jpg","js","css","html","ico","swf","xap","apk","cur","xml"],
     //max_connections:max connections number,100000 by default
     "max_connections":100000,
+    //max_connections_per_ip:max connections number per clinet,0 by default which means no limit
+    "max_connections_per_ip":0,
     //Load_dynamic_views: false by default, when set to true, drogon will
     //compile and load dynamically "CSP View Files" in directories defined
     //by "dynamic_views_path"
@@ -56,12 +58,15 @@
       //drogon.log ...
       "logfile_base_name":"",
       //log_size_limit:100000000 bytes by default,
-      //When the log file size reaches "log_size_limit", the log file is switched.
+      //When the log file size reaches "log_size_limit", the log file will be switched.
       "log_size_limit":100000000
     },
     //run_as_daemon:false by default
     "run_as_daemon":false,
     //relaunch_on_error:false by default,if true,the program will be restart by parent after exit;
-    "relaunch_on_error":false
+    "relaunch_on_error":false,
+    //use_sendfile:true by default,if ture,the program will
+    //use sendfile() system-call to send static file to client;
+    "use_sendfile":true
   }
 }
