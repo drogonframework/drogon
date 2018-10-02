@@ -58,7 +58,7 @@
       //drogon.log ...
       "logfile_base_name":"",
       //log_size_limit:100000000 bytes by default,
-      //When the log file size reaches "log_size_limit", the log file is switched.
+      //When the log file size reaches "log_size_limit", the log file will be switched.
       "log_size_limit":100000000
     },
     //run_as_daemon:false by default
