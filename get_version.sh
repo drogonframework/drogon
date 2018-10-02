@@ -11,5 +11,7 @@ else
 diff $TMP_FILE $1
 if [ $? -eq 1 ];then
 mv -f $TMP_FILE $1
+else
+rm -f $TMP_FILE
 fi
 fi
