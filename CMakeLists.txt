@@ -81,15 +81,6 @@ aux_source_directory(${PROJECT_SOURCE_DIR}/lib/src DIR_SRCS)
 
 ADD_LIBRARY(drogon ${DIR_SRCS})
 
-SET(CMAKE_INSTALL_PREFIX /usr/local)
-
-install(TARGETS drogon DESTINATION lib)
-
-file(GLOB drogon_headers "${CMAKE_CURRENT_SOURCE_DIR}/lib/inc/drogon/*.h")
-install(FILES ${drogon_headers} DESTINATION include/drogon)
-file(GLOB drogon_util_headers "${CMAKE_CURRENT_SOURCE_DIR}/lib/inc/drogon/utils/*.h")
-install(FILES ${drogon_util_headers}
-        DESTINATION include/drogon/utils)
 add_dependencies(drogon trantor makeVersion)
 
 
@@ -134,5 +125,17 @@ EXEC_PROGRAM(${PROJECT_SOURCE_DIR}/update_config.sh ARGS "${CONFIG_HEADER} ${PRO
 if (MAKETEST STREQUAL YES)
     ADD_SUBDIRECTORY(tests)
 endif ()
+
+SET(CMAKE_INSTALL_PREFIX /usr/local)
+
+install(TARGETS drogon DESTINATION lib)
+
+file(GLOB drogon_headers "${CMAKE_CURRENT_SOURCE_DIR}/lib/inc/drogon/*.h")
+install(FILES ${drogon_headers} DESTINATION include/drogon)
+file(GLOB drogon_util_headers "${CMAKE_CURRENT_SOURCE_DIR}/lib/inc/drogon/utils/*.h")
+install(FILES ${drogon_util_headers}
+        DESTINATION include/drogon/utils)
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/lib/inc/drogon/version.h"
+        DESTINATION include/drogon)
 
 #target_link_libraries(drogon trantor pthread)
