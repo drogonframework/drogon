@@ -16,47 +16,93 @@
 
 #include <trantor/utils/Logger.h>
 #include <drogon/config.h>
-
+#include <trantor/utils/MsgBuffer.h>
 
 #include <unordered_map>
 #include <string>
+#include <sstream>
 
 typedef std::unordered_map<std::string,any> ViewDataMap;
 namespace drogon
 {
-class HttpViewData
-{
-public:
-    template <typename T>
-    const T get(const std::string &key) const
+    class HttpViewData
     {
-        auto it=viewData_.find(key);
-        if(it!=viewData_.end())
+    public:
+        template <typename T>
+        const T get(const std::string &key,T && nullVal=T()) const
         {
-            try {
-                return any_cast<T>(it->second);
-            }
-            catch (std::exception& e)
+            auto it=viewData_.find(key);
+            if(it!=viewData_.end())
             {
-                LOG_ERROR << e.what();
+                try {
+                    return any_cast<T>(it->second);
+                }
+                catch (std::exception& e)
+                {
+                    LOG_ERROR << e.what();
+                }
             }
+            return nullVal;
         }
-        T tmp;
-        return tmp;
-    }
-    void insert(const std::string& key,any &&obj)
-    {
-        viewData_[key]=std::move(obj);
-    }
-    void insert(const std::string& key,const any &obj)
-    {
-        viewData_[key]=obj;
-    }
-    any& operator [] (const std::string &key) const
-    {
-        return viewData_[key];
-    }
-protected:
-    mutable ViewDataMap viewData_;
-};
+        void insert(const std::string& key,any &&obj)
+        {
+            viewData_[key]=std::move(obj);
+        }
+        void insert(const std::string& key,const any &obj)
+        {
+            viewData_[key]=obj;
+        }
+        template <typename T>
+        void insertAsString(const std::string &key,T && val)
+        {
+            std::stringstream ss;
+            ss<<val;
+            viewData_[key] = ss.str();
+        }
+        void insertFormattedString(const std::string &key,
+                                   const char* format, ...)
+        {
+            std::string strBuffer;
+            strBuffer.resize(1024);
+            va_list ap,backup_ap;
+            va_start(ap, format);
+            va_copy(backup_ap, ap);
+            auto result=vsnprintf((char *)strBuffer.data(), strBuffer.size(), format, backup_ap);
+            va_end(backup_ap);
+            if ((result >= 0) && (result < strBuffer.size())) {
+                strBuffer.resize(result);
+            }
+            else
+            {
+                // Repeatedly increase buffer size until it fits
+                while (true) {
+                    if (result < 0) {
+                        // Older snprintf() behavior. :-(  Just try doubling the buffer size
+                        strBuffer.resize(strBuffer.size()*2);
+                    } else {
+                        // We need exactly "result+1" characters
+                        strBuffer.resize(result+1);
+                    }
+
+                    va_copy(backup_ap, ap);
+                    auto result=vsnprintf((char *)strBuffer.data(), strBuffer.size(), format, backup_ap);
+                    va_end(backup_ap);
+
+                    if ((result >= 0) && (result < strBuffer.size())) {
+                        strBuffer.resize(result);
+                        break;
+                    }
+                }
+            }
+            va_end(ap);
+            viewData_[key]=strBuffer;
+        }
+
+        any& operator [] (const std::string &key) const
+        {
+            return viewData_[key];
+        }
+    protected:
+        mutable ViewDataMap viewData_;
+    };
 }
