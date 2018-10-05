@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html>
-<%c++ std::string  title=@@.get<std::string>("title");
+<%c++
     auto para=@@.get<std::map<std::string,std::string>>("parameters");
 %>
 <head>
     <meta charset="UTF-8">
-    <title><%c++ $$<<title;%> </title>
+    <title>{{ title }}</title>
 </head>
 <body>
     <%c++ if(para.size()>0){%>

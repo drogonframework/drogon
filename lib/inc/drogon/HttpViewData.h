@@ -52,7 +52,11 @@ public:
     {
         viewData_[key]=obj;
     }
+    any& operator [] (const std::string &key) const
+    {
+        return viewData_[key];
+    }
 protected:
-    ViewDataMap viewData_;
+    mutable ViewDataMap viewData_;
 };
 }
