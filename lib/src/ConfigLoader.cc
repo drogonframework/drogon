@@ -63,6 +63,23 @@ static void loadLogSetting(const Json::Value &log)
         auto logSize=log.get("log_size_limit",100000000).asUInt64();
         HttpAppFramework::instance().setLogPath(logPath,baseName,logSize);
     }
+    auto logLevel=log.get("log_level","DEBUG").asString();
+    if(logLevel=="TRACE")
+    {
+        trantor::Logger::setLogLevel(trantor::Logger::TRACE);
+    }
+    else if(logLevel=="DEBUG")
+    {
+        trantor::Logger::setLogLevel(trantor::Logger::DEBUG);
+    }
+    else if(logLevel=="INFO")
+    {
+        trantor::Logger::setLogLevel(trantor::Logger::INFO);
+    }
+    else if(logLevel=="WARN")
+    {
+        trantor::Logger::setLogLevel(trantor::Logger::WARN);
+    }
 }
 static void loadApp(const Json::Value &app)
 {
