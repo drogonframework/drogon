@@ -21,6 +21,8 @@
 #include <unordered_map>
 #include <string>
 #include <sstream>
+#include <stdio.h>
+#include <stdarg.h>
 
 typedef std::unordered_map<std::string,any> ViewDataMap;
 namespace drogon
@@ -69,7 +71,7 @@ namespace drogon
             va_copy(backup_ap, ap);
             auto result=vsnprintf((char *)strBuffer.data(), strBuffer.size(), format, backup_ap);
             va_end(backup_ap);
-            if ((result >= 0) && (result < strBuffer.size())) {
+            if ((result >= 0) && ((std::string::size_type)result < strBuffer.size())) {
                 strBuffer.resize(result);
             }
             else
@@ -86,7 +88,7 @@ namespace drogon
                     auto result=vsnprintf((char *)strBuffer.data(), strBuffer.size(), format, backup_ap);
                     va_end(backup_ap);
 
-                    if ((result >= 0) && (result < strBuffer.size())) {
+                    if ((result >= 0) && ((std::string::size_type)result < strBuffer.size())) {
                         strBuffer.resize(result);
                         break;
                     }

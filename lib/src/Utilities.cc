@@ -4,6 +4,8 @@
 #include <string.h>
 #include <zlib.h>
 #include <uuid.h>
+#include <stdio.h>
+#include <stdarg.h>
 namespace drogon{
     static const std::string base64_chars =
             "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -320,7 +322,7 @@ namespace drogon{
         va_copy(backup_ap, ap);
         auto result=vsnprintf((char *)strBuffer.data(), strBuffer.size(), format, backup_ap);
         va_end(backup_ap);
-        if ((result >= 0) && (result < strBuffer.size())) {
+        if ((result >= 0) && ((std::string::size_type)result < strBuffer.size())) {
             strBuffer.resize(result);
         }
         else
@@ -337,7 +339,7 @@ namespace drogon{
                 auto result=vsnprintf((char *)strBuffer.data(), strBuffer.size(), format, backup_ap);
                 va_end(backup_ap);
 
-                if ((result >= 0) && (result < strBuffer.size())) {
+                if ((result >= 0) && ((std::string::size_type)result < strBuffer.size())) {
                     strBuffer.resize(result);
                     break;
                 }
