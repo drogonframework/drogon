@@ -311,5 +311,39 @@ namespace drogon{
         //                           Wed, 12 Sep 2018 09:22:40 GMT
         return date.toCustomedFormattedString("%a, %d %b %Y %T GMT");
     }
+    std::string formattedString(const char *format,...)
+    {
+        std::string strBuffer;
+        strBuffer.resize(1024);
+        va_list ap,backup_ap;
+        va_start(ap, format);
+        va_copy(backup_ap, ap);
+        auto result=vsnprintf((char *)strBuffer.data(), strBuffer.size(), format, backup_ap);
+        va_end(backup_ap);
+        if ((result >= 0) && (result < strBuffer.size())) {
+            strBuffer.resize(result);
+        }
+        else
+        {
+            while (true) {
+                if (result < 0) {
+                    // Older snprintf() behavior. Just try doubling the buffer size
+                    strBuffer.resize(strBuffer.size()*2);
+                } else {
+                    strBuffer.resize(result+1);
+                }
 
+                va_copy(backup_ap, ap);
+                auto result=vsnprintf((char *)strBuffer.data(), strBuffer.size(), format, backup_ap);
+                va_end(backup_ap);
+
+                if ((result >= 0) && (result < strBuffer.size())) {
+                    strBuffer.resize(result);
+                    break;
+                }
+            }
+        }
+        va_end(ap);
+        return strBuffer;
+    }
 }

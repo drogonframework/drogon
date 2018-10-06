@@ -33,7 +33,7 @@ namespace drogon{
     int gzipDecompress(const  char *zdata, const size_t nzdata,
                       char *data, size_t *ndata);
     std::string getHttpFullDate(const trantor::Date &date);
-
+    std::string formattedString(const char *format,...);
 
 }
 

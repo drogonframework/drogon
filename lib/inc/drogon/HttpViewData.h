@@ -74,13 +74,11 @@ namespace drogon
             }
             else
             {
-                // Repeatedly increase buffer size until it fits
                 while (true) {
                     if (result < 0) {
-                        // Older snprintf() behavior. :-(  Just try doubling the buffer size
+                        // Older snprintf() behavior. Just try doubling the buffer size
                         strBuffer.resize(strBuffer.size()*2);
                     } else {
-                        // We need exactly "result+1" characters
                         strBuffer.resize(result+1);
                     }
 
@@ -95,7 +93,7 @@ namespace drogon
                 }
             }
             va_end(ap);
-            viewData_[key]=strBuffer;
+            viewData_[key]=std::move(strBuffer);
         }
 
         any& operator [] (const std::string &key) const
