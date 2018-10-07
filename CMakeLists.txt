@@ -22,7 +22,7 @@ else()
     set(CMAKE_CXX_STD_FLAGS c++11)
 endif()
 
-
+include_directories(${PROJECT_SOURCE_DIR}/trantor ${PROJECT_SOURCE_DIR}/lib/inc)
 
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake_modules/)
 #jsoncpp
@@ -66,7 +66,6 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -std=${CMAKE_CXX_STD_F
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall -std=${CMAKE_CXX_STD_FLAGS}")
 
 add_subdirectory(trantor)
-include_directories(${PROJECT_SOURCE_DIR}/trantor ${PROJECT_SOURCE_DIR}/lib/inc)
 
 add_custom_target(makeVersion)
 add_custom_command(TARGET makeVersion
