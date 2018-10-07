@@ -442,7 +442,7 @@ void HttpAppFrameworkImpl::run()
             interval=_sessionTimeout/1000;
             limit=_sessionTimeout;
         }
-        _sessionMapPtr=std::unique_ptr<CacheMap<std::string,SessionPtr>>(new CacheMap<std::string,SessionPtr>(&_loop,interval,limit));
+        _sessionMapPtr=std::unique_ptr<CacheMap<std::string,SessionPtr>>(new CacheMap<std::string,SessionPtr>(&_loop));
     }
    _loop.loop();
 }

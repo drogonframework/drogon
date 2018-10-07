@@ -17,6 +17,7 @@
 
 
 #include <trantor/net/EventLoop.h>
+#include <trantor/utils/Logger.h>
 #include <map>
 #include <mutex>
 #include <deque>
@@ -25,6 +26,13 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <assert.h>
+
+
+#define WHEELS_NUM 4
+#define BUCKET_NUM_PER_WHEEL 100
+#define TICK_INTERVAL 1.0
+
+
 namespace drogon
 {
 
@@ -54,25 +62,43 @@ public:
     /// constructor
     /// @param loop
     /// eventloop pointer
-    /// @param interval
-    /// timer step（seconds）
-    /// @param limit
-    /// tht max timeout value of the cache (seconds)
-    CacheMap(trantor::EventLoop *loop,int interval,int limit)
-    :timeInterval_(interval),
-     _limit(limit),
-     _loop(loop)
+    /// @param tickInterval
+    /// second
+    /// @param wheelsNum
+    /// number of wheels
+    /// @param bucketsNumPerWheel
+    /// buckets number per wheel
+    CacheMap(trantor::EventLoop *loop,
+             float tickInterval=TICK_INTERVAL,
+             size_t wheelsNum=WHEELS_NUM,
+             size_t bucketsNumPerWheel=BUCKET_NUM_PER_WHEEL)
+    :_loop(loop),
+     _tickInterval(tickInterval),
+     _wheelsNum(wheelsNum),
+     _bucketsNumPerWheel(bucketsNumPerWheel)
     {
-        bucketCount_=limit/interval+1;
-        event_bucket_queue_.resize(bucketCount_);
-        _timerId=_loop->runEvery(interval, [=](){
-            CallbackBucket tmp;
+        _wheels.resize(_wheelsNum);
+        for(int i=0;i<_wheelsNum;i++)
+        {
+            _wheels[i].resize(_bucketsNumPerWheel);
+        }
+        _timerId=_loop->runEvery(_tickInterval, [=](){
+            _ticksCounter++;
+            size_t pow=1;
+            for(int i=0;i<_wheelsNum;i++)
             {
-                std::lock_guard<std::mutex> lock(bucketMutex_);
-                //use tmp val to make this critical area as short as possible.
-                event_bucket_queue_.front().swap(tmp);
-                event_bucket_queue_.pop_front();
-                event_bucket_queue_.push_back(CallbackBucket());
+                if((_ticksCounter%pow)==0)
+                {
+                    CallbackBucket tmp;
+                    {
+                        std::lock_guard<std::mutex> lock(bucketMutex_);
+                        //use tmp val to make this critical area as short as possible.
+                        _wheels[i].front().swap(tmp);
+                        _wheels[i].pop_front();
+                        _wheels[i].push_back(CallbackBucket());
+                    }
+                }
+                pow=pow*_bucketsNumPerWheel;
             }
         });
     };
@@ -153,33 +179,55 @@ public:
 
 private:
     std::unordered_map< T1,MapValue > _map;
-    CallbackBucketQueue event_bucket_queue_;
+
+    std::vector<CallbackBucketQueue> _wheels;
+
+    size_t _ticksCounter=0;
 
     std::mutex mtx_;
     std::mutex bucketMutex_;
-    int bucketCount_;
-    int timeInterval_;
-    int _limit;
     trantor::TimerId _timerId;
     trantor::EventLoop* _loop;
 
+    float _tickInterval;
+    size_t _wheelsNum;
+    size_t _bucketsNumPerWheel;
+
+
+    void inertEntry(int delay,CallbackEntryPtr entryPtr)
+    {
+        //protected by bucketMutex;
+        if(delay<=0)
+            return;
+        for(int i=0;i<_wheelsNum;i++)
+        {
+            if(delay<=_bucketsNumPerWheel)
+            {
+                _wheels[i][delay-1].insert(entryPtr);
+                break;
+            }
+            if(i<(_wheelsNum-1))
+            {
+                entryPtr=std::make_shared<CallbackEntry>([=](){
+                    if(delay>0)
+                    {
+                        std::lock_guard<std::mutex> lock(bucketMutex_);
+                        _wheels[i][(delay-1)%_bucketsNumPerWheel].insert(entryPtr);
+                    }
+                });
+            }
+            else
+            {
+                //delay is too long to put entry at valid position in wheels;
+                _wheels[i][_bucketsNumPerWheel-1].insert(entryPtr);
+            }
+            delay=(delay-1)/_bucketsNumPerWheel;
+        }
+    }
     void eraseAfter(int delay,const T1& key)
     {
         assert(_map.find(key)!=_map.end());
 
-        size_t bucketIndexToPush;
-        size_t bucketNum = size_t(delay / timeInterval_) + 1;
-        size_t queue_size = event_bucket_queue_.size();
-
-
-        if (bucketNum >= queue_size)
-        {
-            bucketIndexToPush = queue_size - 1;
-        }
-        else
-        {
-            bucketIndexToPush = bucketNum;
-        }
 
         CallbackEntryPtr entryPtr;
 
@@ -191,7 +239,7 @@ private:
         if(entryPtr)
         {
             std::lock_guard<std::mutex> lock(bucketMutex_);
-            event_bucket_queue_[bucketIndexToPush].insert(entryPtr);
+            inertEntry(delay,entryPtr);
         }
         else
         {
@@ -217,7 +265,7 @@ private:
 
             {
                 std::lock_guard<std::mutex> lock(bucketMutex_);
-                event_bucket_queue_[bucketIndexToPush].insert(entryPtr);
+                inertEntry(delay,entryPtr);
             }
         }
     }
