@@ -79,7 +79,7 @@ public:
      _bucketsNumPerWheel(bucketsNumPerWheel)
     {
         _wheels.resize(_wheelsNum);
-        for(int i=0;i<_wheelsNum;i++)
+        for(size_t i=0;i<_wheelsNum;i++)
         {
             _wheels[i].resize(_bucketsNumPerWheel);
         }
@@ -87,7 +87,7 @@ public:
             _ticksCounter++;
             size_t t=_ticksCounter;
             size_t pow=1;
-            for(int i=0;i<_wheelsNum;i++)
+            for(size_t i=0;i<_wheelsNum;i++)
             {
                 if((t%pow)==0)
                 {
@@ -201,13 +201,13 @@ private:
     size_t _bucketsNumPerWheel;
 
 
-    void inertEntry(int delay,CallbackEntryPtr entryPtr)
+    void inertEntry(size_t delay,CallbackEntryPtr entryPtr)
     {
         //protected by bucketMutex;
         if(delay<=0)
             return;
         size_t t=_ticksCounter;
-        for(int i=0;i<_wheelsNum;i++)
+        for(size_t i=0;i<_wheelsNum;i++)
         {
             if(delay<=_bucketsNumPerWheel)
             {
@@ -233,7 +233,7 @@ private:
             t=t/_bucketsNumPerWheel;
         }
     }
-    void eraseAfter(int delay,const T1& key)
+    void eraseAfter(size_t delay,const T1& key)
     {
         assert(_map.find(key)!=_map.end());
 
