@@ -9,10 +9,12 @@
 
 int main()
 {
+    trantor::Logger::setLogLevel(trantor::Logger::TRACE);
     trantor::EventLoopThread loopThread;
     loopThread.run();
+
     drogon::CacheMap<std::string,std::string> cache(loopThread.getLoop(),1,3,3);
-    sleep(15);
+    sleep(3);
     for(int i=0;i<40;i++)
     {
         cache.insert(drogon::formattedString("aaa%d",i),"hehe",i,[=](){
@@ -86,7 +88,6 @@ int main()
     });
     thread1.join();
 
-    loopThread.stop();
 
     getchar();
 }

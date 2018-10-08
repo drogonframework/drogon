@@ -30,9 +30,11 @@
 
 
 #define WHEELS_NUM 4
-#define BUCKET_NUM_PER_WHEEL 100
+#define BUCKET_NUM_PER_WHEEL 200
 #define TICK_INTERVAL 1.0
 
+//Four wheels with 200 buckets per wheel means the cache map can work with
+//a timeout up to 200^4 seconds,about 50 years;
 
 namespace drogon
 {
@@ -69,6 +71,8 @@ public:
     /// number of wheels
     /// @param bucketsNumPerWheel
     /// buckets number per wheel
+    /// The max delay of the CacheMap is about tickInterval*(bucketsNumPerWheel^wheelsNum) seconds.
+
     CacheMap(trantor::EventLoop *loop,
              float tickInterval=TICK_INTERVAL,
              size_t wheelsNum=WHEELS_NUM,
@@ -119,6 +123,10 @@ public:
         std::function<void()> _timeoutCallback;
         WeakCallbackEntryPtr _weakEntryPtr;
     }MapValue;
+
+    //If timeout>0,the value will be erased
+    //within the 'timeout' seconds after the last access
+
     void insert(const T1& key,T2&& value,size_t timeout=0,std::function<void()> timeoutCallback=std::function<void()>())
     {
         if(timeout>0)
