@@ -110,11 +110,7 @@ public:
     };
     ~CacheMap(){
         _loop->invalidateTimer(_timerId);
-        std::lock_guard<std::mutex> lock(bucketMutex_);
-        for(auto & queue : _wheels)
-        {
-            queue.clear();
-        }
+        LOG_TRACE<<"CacheMap destruct!";
     }
     typedef struct MapValue
     {
@@ -209,7 +205,7 @@ private:
     size_t _bucketsNumPerWheel;
 
 
-    void inertEntry(size_t delay,CallbackEntryPtr entryPtr)
+    void insertEntry(size_t delay,CallbackEntryPtr entryPtr)
     {
         //protected by bucketMutex;
         if(delay<=0)
@@ -256,7 +252,7 @@ private:
         if(entryPtr)
         {
             std::lock_guard<std::mutex> lock(bucketMutex_);
-            inertEntry(delay,entryPtr);
+            insertEntry(delay,entryPtr);
         }
         else
         {
@@ -265,7 +261,10 @@ private:
                 if(_map.find(key)!=_map.end())
                 {
                     auto & value=_map[key];
-                    if(value.timeout>0)
+                    auto entryPtr=value._weakEntryPtr.lock();
+                    //entryPtr is used to avoid race conditions
+                    if(value.timeout>0&&
+                       !entryPtr)
                     {
                         if(value._timeoutCallback)
                         {
@@ -282,7 +281,7 @@ private:
 
             {
                 std::lock_guard<std::mutex> lock(bucketMutex_);
-                inertEntry(delay,entryPtr);
+                insertEntry(delay,entryPtr);
             }
         }
     }
