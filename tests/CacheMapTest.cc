@@ -1,4 +1,5 @@
 #include <drogon/CacheMap.h>
+#include <trantor/utils/Logger.h>
 #include <trantor/net/EventLoopThread.h>
 #include <drogon/utils/Utilities.h>
 #include <unistd.h>
@@ -11,6 +12,7 @@ int main()
     trantor::EventLoopThread loopThread;
     loopThread.run();
     drogon::CacheMap<std::string,std::string> cache(loopThread.getLoop(),1,3,3);
+    sleep(15);
     for(int i=0;i<40;i++)
     {
         cache.insert(drogon::formattedString("aaa%d",i),"hehe",i,[=](){
@@ -18,7 +20,7 @@ int main()
         });
     }
     cache.insert("1","first",20,[=]{
-        std::cout<<"first item in cache timeout,erase!"<<std::endl;
+        LOG_DEBUG<<"first item in cache timeout,erase!";
     });
     cache.insert("2","second",5);
     cache.insert("3","third",5);
@@ -29,56 +31,56 @@ int main()
         sleep(10);
         if(cache.find("1"))
         {
-            std::cout<<"sleep 10,1 item:"<<cache["1"]<<std::endl;
+            LOG_DEBUG<<"sleep 10,1 item:"<<cache["1"];
         }
         else
         {
-            std::cout<<"can't find 1 item"<<std::endl;
+            LOG_DEBUG<<"can't find 1 item";
         }
         sleep(15);
         if(cache.find("1"))
         {
-            std::cout<<"sleep 15,1 item:"<<cache["1"]<<std::endl;
+            LOG_DEBUG<<"sleep 15,1 item:"<<cache["1"];
         }
         else
         {
-            std::cout<<"can't find 1 item"<<std::endl;
+            LOG_DEBUG<<"can't find 1 item";
         }
         sleep(20);
         if(cache.find("1"))
         {
-            std::cout<<"sleep 20,1 item:"<<cache["1"]<<std::endl;
+            LOG_DEBUG<<"sleep 20,1 item:"<<cache["1"];
         }
         else
         {
-            std::cout<<"can't find 1 item"<<std::endl;
+            LOG_DEBUG<<"can't find 1 item";
         }
         sleep(22);
         if(cache.find("1"))
         {
-            std::cout<<"sleep22,1 item:"<<cache["1"]<<std::endl;
+            LOG_DEBUG<<"sleep22,1 item:"<<cache["1"];
         }
         else
         {
-            std::cout<<"can't find 1 item"<<std::endl;
+            LOG_DEBUG<<"can't find 1 item";
         }
 
         if(cache.find("2"))
         {
-            std::cout<<"sleep22,2 item:"<<cache["2"]<<std::endl;
+            LOG_DEBUG<<"sleep22,2 item:"<<cache["2"];
         }
         else
         {
-            std::cout<<"can't find 2 item"<<std::endl;
+            LOG_DEBUG<<"can't find 2 item";
         }
 
         if(cache.find("3"))
         {
-            std::cout<<"sleep22,3 item:"<<cache["3"]<<std::endl;
+            LOG_DEBUG<<"sleep22,3 item:"<<cache["3"];
         }
         else
         {
-            std::cout<<"can't find 3 item"<<std::endl;
+            LOG_DEBUG<<"can't find 3 item";
         }
 
     });

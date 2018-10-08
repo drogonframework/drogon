@@ -25,6 +25,7 @@
 #include <set>
 #include <unordered_map>
 #include <unordered_set>
+#include <atomic>
 #include <assert.h>
 
 
@@ -84,10 +85,11 @@ public:
         }
         _timerId=_loop->runEvery(_tickInterval, [=](){
             _ticksCounter++;
+            size_t t=_ticksCounter;
             size_t pow=1;
             for(int i=0;i<_wheelsNum;i++)
             {
-                if((_ticksCounter%pow)==0)
+                if((t%pow)==0)
                 {
                     CallbackBucket tmp;
                     {
@@ -104,6 +106,11 @@ public:
     };
     ~CacheMap(){
         _loop->invalidateTimer(_timerId);
+        std::lock_guard<std::mutex> lock(bucketMutex_);
+        for(auto & queue : _wheels)
+        {
+            queue.clear();
+        }
     }
     typedef struct MapValue
     {
@@ -182,7 +189,7 @@ private:
 
     std::vector<CallbackBucketQueue> _wheels;
 
-    size_t _ticksCounter=0;
+    std::atomic<size_t> _ticksCounter=ATOMIC_VAR_INIT(0);
 
     std::mutex mtx_;
     std::mutex bucketMutex_;
@@ -199,6 +206,7 @@ private:
         //protected by bucketMutex;
         if(delay<=0)
             return;
+        size_t t=_ticksCounter;
         for(int i=0;i<_wheelsNum;i++)
         {
             if(delay<=_bucketsNumPerWheel)
@@ -212,7 +220,7 @@ private:
                     if(delay>0)
                     {
                         std::lock_guard<std::mutex> lock(bucketMutex_);
-                        _wheels[i][(delay-1)%_bucketsNumPerWheel].insert(entryPtr);
+                        _wheels[i][(delay+(t%_bucketsNumPerWheel)-1)%_bucketsNumPerWheel].insert(entryPtr);
                     }
                 });
             }
@@ -221,7 +229,8 @@ private:
                 //delay is too long to put entry at valid position in wheels;
                 _wheels[i][_bucketsNumPerWheel-1].insert(entryPtr);
             }
-            delay=(delay-1)/_bucketsNumPerWheel;
+            delay=(delay+(t%_bucketsNumPerWheel)-1)/_bucketsNumPerWheel;
+            t=t/_bucketsNumPerWheel;
         }
     }
     void eraseAfter(int delay,const T1& key)
