@@ -349,7 +349,6 @@ void HttpResponseImpl::appendToBuffer(MsgBuffer* output) const
         }
     }
 
-    _headers["Date"]=getHttpFullDate(trantor::Date::date());
 
     for (auto it = _headers.begin();
          it != _headers.end();
@@ -359,6 +358,11 @@ void HttpResponseImpl::appendToBuffer(MsgBuffer* output) const
         output->append(it->second);
         output->append("\r\n");
     }
+    //output Date header
+    output->append("Date: ");
+    output->append(getHttpFullDate(trantor::Date::date()));
+    output->append("\r\n");
+    
     if(_cookies.size() > 0) {
         for(auto it = _cookies.begin(); it != _cookies.end(); it++) {
 
