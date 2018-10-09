@@ -46,10 +46,10 @@
     //Load_dynamic_views: false by default, when set to true, drogon will
     //compile and load dynamically "CSP View Files" in directories defined
     //by "dynamic_views_path"
-    "load_dynamic_views":true,
+    //"load_dynamic_views":true,
     //dynamic_views_path: if the path isn't prefixed with / or ./,
     //it will be relative path of document_root path
-    "dynamic_views_path":["./views"],
+    //"dynamic_views_path":["./views"],
     //log:set log output,drogon output logs to stdout by default
     "log":{
       //log_path:log file path,empty by default,in which case,log will output to the stdout

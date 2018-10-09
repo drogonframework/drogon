@@ -428,21 +428,7 @@ void HttpAppFrameworkImpl::run()
     }
     if(_useSession)
     {
-        int interval,limit;
-        if(_sessionTimeout==0)
-        {
-            interval=1;
-            limit=1200;
-        }else if(_sessionTimeout<1000)
-        {
-            interval=1;
-            limit=_sessionTimeout;
-        } else
-        {
-            interval=_sessionTimeout/1000;
-            limit=_sessionTimeout;
-        }
-        _sessionMapPtr=std::unique_ptr<CacheMap<std::string,SessionPtr>>(new CacheMap<std::string,SessionPtr>(&_loop,interval,limit));
+        _sessionMapPtr=std::unique_ptr<CacheMap<std::string,SessionPtr>>(new CacheMap<std::string,SessionPtr>(&_loop));
     }
    _loop.loop();
 }

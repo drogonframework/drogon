@@ -17,6 +17,7 @@
 
 
 #include <trantor/net/EventLoop.h>
+#include <trantor/utils/Logger.h>
 #include <map>
 #include <mutex>
 #include <deque>
@@ -24,7 +25,17 @@
 #include <set>
 #include <unordered_map>
 #include <unordered_set>
+#include <atomic>
 #include <assert.h>
+
+
+#define WHEELS_NUM 4
+#define BUCKET_NUM_PER_WHEEL 200
+#define TICK_INTERVAL 1.0
+
+//Four wheels with 200 buckets per wheel means the cache map can work with
+//a timeout up to 200^4 seconds,about 50 years;
+
 namespace drogon
 {
 
@@ -54,30 +65,62 @@ public:
     /// constructor
     /// @param loop
     /// eventloop pointer
-    /// @param interval
-    /// timer step（seconds）
-    /// @param limit
-    /// tht max timeout value of the cache (seconds)
-    CacheMap(trantor::EventLoop *loop,int interval,int limit)
-    :timeInterval_(interval),
-     _limit(limit),
-     _loop(loop)
+    /// @param tickInterval
+    /// second
+    /// @param wheelsNum
+    /// number of wheels
+    /// @param bucketsNumPerWheel
+    /// buckets number per wheel
+    /// The max delay of the CacheMap is about tickInterval*(bucketsNumPerWheel^wheelsNum) seconds.
+
+    CacheMap(trantor::EventLoop *loop,
+             float tickInterval=TICK_INTERVAL,
+             size_t wheelsNum=WHEELS_NUM,
+             size_t bucketsNumPerWheel=BUCKET_NUM_PER_WHEEL)
+    :_loop(loop),
+     _tickInterval(tickInterval),
+     _wheelsNum(wheelsNum),
+     _bucketsNumPerWheel(bucketsNumPerWheel)
     {
-        bucketCount_=limit/interval+1;
-        event_bucket_queue_.resize(bucketCount_);
-        _timerId=_loop->runEvery(interval, [=](){
-            CallbackBucket tmp;
+        _wheels.resize(_wheelsNum);
+        for(size_t i=0;i<_wheelsNum;i++)
+        {
+            _wheels[i].resize(_bucketsNumPerWheel);
+        }
+        _timerId=_loop->runEvery(_tickInterval, [=](){
+            _ticksCounter++;
+            size_t t=_ticksCounter;
+            size_t pow=1;
+            for(size_t i=0;i<_wheelsNum;i++)
             {
-                std::lock_guard<std::mutex> lock(bucketMutex_);
-                //use tmp val to make this critical area as short as possible.
-                event_bucket_queue_.front().swap(tmp);
-                event_bucket_queue_.pop_front();
-                event_bucket_queue_.push_back(CallbackBucket());
+                if((t%pow)==0)
+                {
+                    CallbackBucket tmp;
+                    {
+                        std::lock_guard<std::mutex> lock(bucketMutex_);
+                        //use tmp val to make this critical area as short as possible.
+                        _wheels[i].front().swap(tmp);
+                        _wheels[i].pop_front();
+                        _wheels[i].push_back(CallbackBucket());
+                    }
+                }
+                pow=pow*_bucketsNumPerWheel;
             }
         });
     };
     ~CacheMap(){
         _loop->invalidateTimer(_timerId);
+        {
+            std::lock_guard<std::mutex> guard(mtx_);
+            _map.clear();
+        }
+
+        for(int i=_wheels.size()-1;i>=0;i--)
+        {
+            _wheels[i].clear();
+        }
+
+        LOG_TRACE<<"CacheMap destruct!";
     }
     typedef struct MapValue
     {
@@ -86,6 +129,10 @@ public:
         std::function<void()> _timeoutCallback;
         WeakCallbackEntryPtr _weakEntryPtr;
     }MapValue;
+
+    //If timeout>0,the value will be erased
+    //within the 'timeout' seconds after the last access
+
     void insert(const T1& key,T2&& value,size_t timeout=0,std::function<void()> timeoutCallback=std::function<void()>())
     {
         if(timeout>0)
@@ -153,33 +200,58 @@ public:
 
 private:
     std::unordered_map< T1,MapValue > _map;
-    CallbackBucketQueue event_bucket_queue_;
+
+    std::vector<CallbackBucketQueue> _wheels;
+
+    std::atomic<size_t> _ticksCounter=ATOMIC_VAR_INIT(0);
 
     std::mutex mtx_;
     std::mutex bucketMutex_;
-    int bucketCount_;
-    int timeInterval_;
-    int _limit;
     trantor::TimerId _timerId;
     trantor::EventLoop* _loop;
 
-    void eraseAfter(int delay,const T1& key)
+    float _tickInterval;
+    size_t _wheelsNum;
+    size_t _bucketsNumPerWheel;
+
+
+    void insertEntry(size_t delay,CallbackEntryPtr entryPtr)
+    {
+        //protected by bucketMutex;
+        if(delay<=0)
+            return;
+        delay = delay/_tickInterval + 1;
+        size_t t=_ticksCounter;
+        for(size_t i=0;i<_wheelsNum;i++)
+        {
+            if(delay<=_bucketsNumPerWheel)
+            {
+                _wheels[i][delay-1].insert(entryPtr);
+                break;
+            }
+            if(i<(_wheelsNum-1))
+            {
+                entryPtr=std::make_shared<CallbackEntry>([=](){
+                    if(delay>0)
+                    {
+                        std::lock_guard<std::mutex> lock(bucketMutex_);
+                        _wheels[i][(delay+(t%_bucketsNumPerWheel)-1)%_bucketsNumPerWheel].insert(entryPtr);
+                    }
+                });
+            }
+            else
+            {
+                //delay is too long to put entry at valid position in wheels;
+                _wheels[i][_bucketsNumPerWheel-1].insert(entryPtr);
+            }
+            delay=(delay+(t%_bucketsNumPerWheel)-1)/_bucketsNumPerWheel;
+            t=t/_bucketsNumPerWheel;
+        }
+    }
+    void eraseAfter(size_t delay,const T1& key)
     {
         assert(_map.find(key)!=_map.end());
 
-        size_t bucketIndexToPush;
-        size_t bucketNum = size_t(delay / timeInterval_) + 1;
-        size_t queue_size = event_bucket_queue_.size();
-
-
-        if (bucketNum >= queue_size)
-        {
-            bucketIndexToPush = queue_size - 1;
-        }
-        else
-        {
-            bucketIndexToPush = bucketNum;
-        }
 
         CallbackEntryPtr entryPtr;
 
@@ -191,7 +263,7 @@ private:
         if(entryPtr)
         {
             std::lock_guard<std::mutex> lock(bucketMutex_);
-            event_bucket_queue_[bucketIndexToPush].insert(entryPtr);
+            insertEntry(delay,entryPtr);
         }
         else
         {
@@ -200,7 +272,10 @@ private:
                 if(_map.find(key)!=_map.end())
                 {
                     auto & value=_map[key];
-                    if(value.timeout>0)
+                    auto entryPtr=value._weakEntryPtr.lock();
+                    //entryPtr is used to avoid race conditions
+                    if(value.timeout>0&&
+                       !entryPtr)
                     {
                         if(value._timeoutCallback)
                         {
@@ -217,7 +292,7 @@ private:
 
             {
                 std::lock_guard<std::mutex> lock(bucketMutex_);
-                event_bucket_queue_[bucketIndexToPush].insert(entryPtr);
+                insertEntry(delay,entryPtr);
             }
         }
     }
