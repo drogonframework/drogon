@@ -311,7 +311,7 @@ namespace drogon{
         //rfc2616-3.3.1
         //Full Date format like this:Sun, 06 Nov 1994 08:49:37 GMT
         //                           Wed, 12 Sep 2018 09:22:40 GMT
-        static __thread uint64_t lastSecond=0;
+        static __thread int64_t lastSecond=0;
         static __thread char lastTimeString[128]={0};
         auto nowSecond=date.microSecondsSinceEpoch()/MICRO_SECONDS_PRE_SEC;
         if(nowSecond==lastSecond)
