@@ -306,12 +306,21 @@ namespace drogon{
         *ndata = d_stream.total_out;
         return 0;
     }
-    std::string getHttpFullDate(const trantor::Date &date)
+    char * getHttpFullDate(const trantor::Date &date)
     {
         //rfc2616-3.3.1
         //Full Date format like this:Sun, 06 Nov 1994 08:49:37 GMT
         //                           Wed, 12 Sep 2018 09:22:40 GMT
-        return date.toCustomedFormattedString("%a, %d %b %Y %T GMT");
+        static __thread uint64_t lastSecond=0;
+        static __thread char lastTimeString[128]={0};
+        auto nowSecond=date.microSecondsSinceEpoch()/MICRO_SECONDS_PRE_SEC;
+        if(nowSecond==lastSecond)
+        {
+            return lastTimeString;
+        }
+        lastSecond=nowSecond;
+        date.toCustomedFormattedString("%a, %d %b %Y %T GMT",lastTimeString,sizeof(lastTimeString));
+        return lastTimeString;
     }
     std::string formattedString(const char *format,...)
     {
