@@ -345,10 +345,11 @@ void HttpResponseImpl::appendToBuffer(MsgBuffer* output) const
             output->append("Connection: close\r\n");
         } else {
 
-            output->append("Connection: Keep-Alive\r\n");
+            //output->append("Connection: Keep-Alive\r\n");
         }
     }
 
+    _headers["Date"]=getHttpFullDate(trantor::Date::date());
 
     for (auto it = _headers.begin();
          it != _headers.end();
@@ -364,10 +365,11 @@ void HttpResponseImpl::appendToBuffer(MsgBuffer* output) const
              output->append(it->second.cookieString());
         }
     }
-    output->append("Server: drogon/");
-    output->append(drogon::getVersion());
-    output->append("\r\n\r\n");
+//    output->append("Server: drogon/");
+//    output->append(drogon::getVersion());
+//    output->append("\r\n\r\n");
 
+    output->append("\r\n");
 	LOG_TRACE<<"reponse(no body):"<<output->peek();
 	output->append(_body);
 	

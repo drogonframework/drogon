@@ -51,7 +51,7 @@ namespace drogon
                   _left_body_length(0),
                   _current_chunk_length(0)
         {
-            _headers["Date"]=getHttpFullDate(trantor::Date::date());
+
         }
         virtual HttpStatusCode statusCode() override
         {
