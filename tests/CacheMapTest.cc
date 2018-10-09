@@ -13,7 +13,7 @@ int main()
     trantor::EventLoopThread loopThread;
     loopThread.run();
 
-    drogon::CacheMap<std::string,std::string> cache(loopThread.getLoop(),1,3,3);
+    drogon::CacheMap<std::string,std::string> cache(loopThread.getLoop(),0.1,4,30);
     sleep(3);
     for(int i=0;i<40;i++)
     {

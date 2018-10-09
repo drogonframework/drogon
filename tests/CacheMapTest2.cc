@@ -24,7 +24,7 @@ int main()
         {
             std::shared_ptr<drogon::CacheMap<std::string,std::string>> cachePtr
                     =std::make_shared<drogon::CacheMap<std::string,std::string>>
-                            (loop,1,3,3);
+                            (loop,0.1,3,50);
             main_cachePtr=cachePtr;
             LOG_DEBUG<<"insert :usecount="<<main_cachePtr.use_count();
             cachePtr->insert("1","1",3,[=](){

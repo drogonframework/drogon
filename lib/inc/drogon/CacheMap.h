@@ -110,6 +110,16 @@ public:
     };
     ~CacheMap(){
         _loop->invalidateTimer(_timerId);
+        {
+            std::lock_guard<std::mutex> guard(mtx_);
+            _map.clear();
+        }
+
+        for(int i=_wheels.size()-1;i>=0;i--)
+        {
+            _wheels[i].clear();
+        }
+
         LOG_TRACE<<"CacheMap destruct!";
     }
     typedef struct MapValue
@@ -210,6 +220,7 @@ private:
         //protected by bucketMutex;
         if(delay<=0)
             return;
+        delay = delay/_tickInterval + 1;
         size_t t=_ticksCounter;
         for(size_t i=0;i<_wheelsNum;i++)
         {
