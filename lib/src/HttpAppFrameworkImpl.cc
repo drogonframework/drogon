@@ -781,7 +781,6 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestPtr& req,const std::f
                         auto newResp=std::make_shared<HttpResponseImpl>
                                 (*std::dynamic_pointer_cast<HttpResponseImpl>(responsePtr));
                         newResp->addCookie("JSESSIONID",session_id);
-                        newResp->setExpiredTime(-1);
                         callback(newResp);
                     }
                     return;
@@ -798,7 +797,6 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestPtr& req,const std::f
                             if(needSetJsessionid)
                             {
                                 resp->removeCookie("JSESSIONID");
-                                std::dynamic_pointer_cast<HttpResponseImpl>(resp)->makeHeaderString();
                             }
                             std::lock_guard<std::mutex> guard(_simpCtrlMap[pathLower]._mutex);
                             _responseCacheMap->insert(pathLower,resp,resp->expiredTime());
@@ -852,7 +850,6 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestPtr& req,const std::f
                                 auto newResp=std::make_shared<HttpResponseImpl>
                                         (*std::dynamic_pointer_cast<HttpResponseImpl>(responsePtr));
                                 newResp->addCookie("JSESSIONID",session_id);
-                                newResp->setExpiredTime(-1);
                                 callback(newResp);
                             }
                             return;
@@ -901,10 +898,8 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestPtr& req,const std::f
                             if(resp->expiredTime()>=0)
                             {
                                 //cache the response;
-                                if(needSetJsessionid)
-                                {
+                                if(needSetJsessionid) {
                                     resp->removeCookie("JSESSIONID");
-                                    std::dynamic_pointer_cast<HttpResponseImpl>(resp)->makeHeaderString();
                                 }
                                 std::lock_guard<std::mutex> guard(*(_apiCtrlVector[ctlIndex].binderMtx));
                                 _responseCacheMap->insert(_apiCtrlVector[ctlIndex].pathParameterPattern,resp,resp->expiredTime());

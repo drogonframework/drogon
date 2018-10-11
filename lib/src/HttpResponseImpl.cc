@@ -358,22 +358,10 @@ void HttpResponseImpl::makeHeaderString(MsgBuffer* output) const
     output->append(drogon::getVersion());
     output->append("\r\n");
 
-    if(_cookies.size() > 0) {
-        for(auto it = _cookies.begin(); it != _cookies.end(); it++) {
-
-            output->append(it->second.cookieString());
-        }
-    }
-
     if(_expriedTime>=0)
         _fullHeaderString=std::string(output->peek(),output->readableBytes());
 }
-void HttpResponseImpl::makeHeaderString() const
-{
-    assert(_expriedTime>=0);
-    MsgBuffer buffer;
-    makeHeaderString(&buffer);
-}
+
 void HttpResponseImpl::appendToBuffer(MsgBuffer* output) const {
     if(_fullHeaderString.empty())
     {
@@ -384,6 +372,13 @@ void HttpResponseImpl::appendToBuffer(MsgBuffer* output) const {
         output->append(_fullHeaderString);
     }
 
+    //output cookies
+    if(_cookies.size() > 0) {
+        for(auto it = _cookies.begin(); it != _cookies.end(); it++) {
+
+            output->append(it->second.cookieString());
+        }
+    }
 
     //output Date header
     output->append("Date: ");

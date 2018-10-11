@@ -186,19 +186,16 @@ namespace drogon
         virtual void addCookie(const std::string& key, const std::string& value) override
         {
             _cookies.insert(std::make_pair(key,Cookie(key,value)));
-            _fullHeaderString.clear();
         }
 
         virtual void addCookie(const Cookie &cookie) override
         {
             _cookies.insert(std::make_pair(cookie.key(),cookie));
-            _fullHeaderString.clear();
         }
 
         virtual void removeCookie(const std::string& key) override
         {
             _cookies.erase(key);
-            _fullHeaderString.clear();
         }
 
         virtual void setBody(const std::string& body) override
@@ -262,6 +259,7 @@ namespace drogon
             std::swap(_current_chunk_length,that._current_chunk_length);
             std::swap(_contentType,that._contentType);
             _jsonPtr.swap(that._jsonPtr);
+            _fullHeaderString.swap(that._fullHeaderString);
         }
         void parseJson() const
         {
@@ -290,7 +288,6 @@ namespace drogon
         void setSendfile(const std::string &filename){
             _sendfileName=filename;
         }
-        void makeHeaderString() const;
     protected:
         static std::string web_content_type_to_string(uint8_t contenttype);
         static const std::string web_content_type_and_charset_to_string(uint8_t contenttype,

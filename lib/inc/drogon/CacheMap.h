@@ -133,28 +133,54 @@ public:
     //If timeout>0,the value will be erased
     //within the 'timeout' seconds after the last access
 
-    template <typename V>
-    void insert(const T1& key,V&& value,size_t timeout=0,std::function<void()> timeoutCallback=std::function<void()>())
+    void insert(const T1& key,T2 && value,size_t timeout=0,std::function<void()> timeoutCallback=std::function<void()>())
     {
         if(timeout>0)
         {
-
+            MapValue v;
+            v.value=std::move(value);
+            v.timeout=timeout;
+            v._timeoutCallback=std::move(timeoutCallback);
             std::lock_guard<std::mutex> lock(mtx_);
-            _map[key].value=std::forward<V>(value);
-            _map[key].timeout=timeout;
-            _map[key]._timeoutCallback=std::move(timeoutCallback);
-
+            _map[key]=std::move(v);
             eraseAfter(timeout,key);
         }
         else
         {
+            MapValue v;
+            v.value=std::move(value);
+            v.timeout=timeout;
+            v._timeoutCallback=std::function<void()>();
+            v._weakEntryPtr=WeakCallbackEntryPtr();
             std::lock_guard<std::mutex> lock(mtx_);
-            _map[key].value=std::forward<V>(value);
-            _map[key].timeout=timeout;
-            _map[key]._timeoutCallback=std::function<void()>();
-            _map[key]._weakEntryPtr=WeakCallbackEntryPtr();
+            _map[key]=std::move(v);
         }
     }
+
+    void insert(const T1& key,const T2 & value,size_t timeout=0,std::function<void()> timeoutCallback=std::function<void()>())
+    {
+        if(timeout>0)
+        {
+            MapValue v;
+            v.value=value;
+            v.timeout=timeout;
+            v._timeoutCallback=std::move(timeoutCallback);
+            std::lock_guard<std::mutex> lock(mtx_);
+            _map[key]=std::move(v);
+            eraseAfter(timeout,key);
+        }
+        else
+        {
+            MapValue v;
+            v.value=value;
+            v.timeout=timeout;
+            v._timeoutCallback=std::function<void()>();
+            v._weakEntryPtr=WeakCallbackEntryPtr();
+            std::lock_guard<std::mutex> lock(mtx_);
+            _map[key]=std::move(v);
+        }
+    }
+
     T2& operator [](const T1& key){
         int timeout=0;
 
