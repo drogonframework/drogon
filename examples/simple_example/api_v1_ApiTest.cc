@@ -23,4 +23,11 @@ void ApiTest::your_method_name(const HttpRequestPtr& req,const std::function<voi
     auto res=HttpResponse::newHttpViewResponse("ListParaView",data);
     callback(res);
 }
+void ApiTest::staticApi(const HttpRequestPtr& req,const std::function<void (const HttpResponsePtr &)>&callback)
+{
+    auto resp=HttpResponse::newHttpResponse();
+    resp->setBody("staticApi,hello!!");
+    resp->setExpiredTime(0);//cache the response forever;
+    callback(resp);
+}
 

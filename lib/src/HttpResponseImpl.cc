@@ -312,65 +312,72 @@ std::string HttpResponseImpl::web_response_code_to_string(int code)
             return "Undefined Error";
     }
 }
-void HttpResponseImpl::appendToBuffer(MsgBuffer* output) const
-{
-    char buf[64];
-    snprintf(buf, sizeof buf, "HTTP/1.1 %d ", _statusCode);
-    output->append(buf);
-    output->append(_statusMessage);
-    output->append("\r\n");
-    if(_sendfileName.empty())
+void HttpResponseImpl::appendToBuffer(MsgBuffer* output) const {
+    if(_fullHeaderString.empty())
     {
-        snprintf(buf, sizeof buf, "Content-Length: %lu\r\n", _body.size());
+        char buf[64];
+        snprintf(buf, sizeof buf, "HTTP/1.1 %d ", _statusCode);
+        output->append(buf);
+        output->append(_statusMessage);
+        output->append("\r\n");
+        if (_sendfileName.empty()) {
+            snprintf(buf, sizeof buf, "Content-Length: %lu\r\n", _body.size());
+        } else {
+            struct stat filestat;
+            if (stat(_sendfileName.c_str(), &filestat) < 0) {
+                LOG_SYSERR << _sendfileName << " stat error";
+                return;
+            }
+#ifdef __linux__
+            snprintf(buf, sizeof buf, "Content-Length: %ld\r\n",filestat.st_size);
+#else
+            snprintf(buf, sizeof buf, "Content-Length: %lld\r\n", filestat.st_size);
+#endif
+        }
+
+        output->append(buf);
+        if (_headers.find("Connection") == _headers.end()) {
+            if (_closeConnection) {
+                output->append("Connection: close\r\n");
+            } else {
+
+                //output->append("Connection: Keep-Alive\r\n");
+            }
+        }
+
+
+        for (auto it = _headers.begin();
+             it != _headers.end();
+             ++it) {
+            output->append(it->first);
+            output->append(": ");
+            output->append(it->second);
+            output->append("\r\n");
+        }
+
+        output->append("Server: drogon/");
+        output->append(drogon::getVersion());
+        output->append("\r\n");
+
+        if(_cookies.size() > 0) {
+            for(auto it = _cookies.begin(); it != _cookies.end(); it++) {
+
+                output->append(it->second.cookieString());
+            }
+        }
+
+        if(_expriedTime>=0)
+            _fullHeaderString=std::string(output->peek(),output->readableBytes());
     }
     else
     {
-        struct stat filestat;
-        if(stat(_sendfileName.c_str(), &filestat)<0)
-        {
-            LOG_SYSERR<<_sendfileName<<" stat error";
-            return;
-        }
-#ifdef __linux__
-        snprintf(buf, sizeof buf, "Content-Length: %ld\r\n",filestat.st_size);
-#else
-        snprintf(buf, sizeof buf, "Content-Length: %lld\r\n",filestat.st_size);
-#endif
-    }
-
-    output->append(buf);
-    if(_headers.find("Connection")==_headers.end())
-    {
-        if (_closeConnection) {
-            output->append("Connection: close\r\n");
-        } else {
-
-            //output->append("Connection: Keep-Alive\r\n");
-        }
+        output->append(_fullHeaderString);
     }
 
 
-    for (auto it = _headers.begin();
-         it != _headers.end();
-         ++it) {
-        output->append(it->first);
-        output->append(": ");
-        output->append(it->second);
-        output->append("\r\n");
-    }
     //output Date header
     output->append("Date: ");
     output->append(getHttpFullDate(trantor::Date::date()));
-    output->append("\r\n");
-
-    if(_cookies.size() > 0) {
-        for(auto it = _cookies.begin(); it != _cookies.end(); it++) {
-
-             output->append(it->second.cookieString());
-        }
-    }
-    output->append("Server: drogon/");
-    output->append(drogon::getVersion());
     output->append("\r\n\r\n");
 
 	LOG_TRACE<<"reponse(no body):"<<output->peek();
