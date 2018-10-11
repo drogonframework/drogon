@@ -751,14 +751,15 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestPtr& req,const std::f
     {
         auto &filters=_simpCtrlMap[pathLower].filtersName;
         doFilters(filters,req,callback,needSetJsessionid,session_id,[=](){
-            const std::string &ctrlName = _simpCtrlMap[pathLower].controllerName;
+	    auto &ctrlItem=_simpCtrlMap[pathLower];
+            const std::string &ctrlName = ctrlItem.controllerName;
             std::shared_ptr<HttpSimpleControllerBase> controller;
             HttpResponsePtr responsePtr;
             {
                 //maybe update controller,so we use lock_guard to protect;
-                std::lock_guard<std::mutex> guard(_simpCtrlMap[pathLower]._mutex);
-                controller=_simpCtrlMap[pathLower].controller;
-                responsePtr=_simpCtrlMap[pathLower].responsePtr.lock();
+                std::lock_guard<std::mutex> guard(ctrlItem._mutex);
+                controller=ctrlItem.controller;
+                responsePtr=ctrlItem.responsePtr.lock();
                 if(!controller)
                 {
                     auto _object = std::shared_ptr<DrObjectBase>(DrClassMap::newObject(ctrlName));
