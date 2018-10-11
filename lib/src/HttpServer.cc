@@ -183,7 +183,7 @@ void HttpServer::onRequest(const TcpConnectionPtr& conn, const HttpRequestPtr& r
            response->getContentTypeCode()<CT_APPLICATION_OCTET_STREAM&&
            response->getBody().length()>1024&&
            req->getHeader("Accept-Encoding").find("gzip")!=std::string::npos&&
-           response->getHeader("Content-Encoding")!="")
+           response->getHeader("Content-Encoding")=="")
         {
             //use gzip
             LOG_TRACE<<"Use gzip to compress the body";
