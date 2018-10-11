@@ -186,16 +186,19 @@ namespace drogon
         virtual void addCookie(const std::string& key, const std::string& value) override
         {
             _cookies.insert(std::make_pair(key,Cookie(key,value)));
+            _fullHeaderString.clear();
         }
 
         virtual void addCookie(const Cookie &cookie) override
         {
             _cookies.insert(std::make_pair(cookie.key(),cookie));
+            _fullHeaderString.clear();
         }
 
         virtual void removeCookie(const std::string& key) override
         {
             _cookies.erase(key);
+            _fullHeaderString.clear();
         }
 
         virtual void setBody(const std::string& body) override
@@ -218,6 +221,7 @@ namespace drogon
             _statusCode = kUnknown;
             _v = kHttp11;
             _statusMessage.clear();
+            _fullHeaderString.clear();
             _headers.clear();
             _cookies.clear();
             _body.clear();
@@ -286,12 +290,15 @@ namespace drogon
         void setSendfile(const std::string &filename){
             _sendfileName=filename;
         }
+        void makeHeaderString() const;
     protected:
         static std::string web_content_type_to_string(uint8_t contenttype);
         static const std::string web_content_type_and_charset_to_string(uint8_t contenttype,
                                                                         const std::string &charSet);
 
         static std::string web_response_code_to_string(int code);
+
+        void makeHeaderString(MsgBuffer* output) const;
 
     private:
         std::map<std::string, std::string> _headers;

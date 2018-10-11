@@ -770,9 +770,21 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestPtr& req,const std::f
 
 
             if(controller) {
-                if(responsePtr&&!needSetJsessionid)
+                if(responsePtr)
                 {
-                    callback(responsePtr);
+                    //use cached response!
+                    LOG_TRACE<<"Use cached response";
+                    if(!needSetJsessionid)
+                        callback(responsePtr);
+                    else
+                    {
+                        auto newResp=std::make_shared<HttpResponseImpl>
+                                (*std::dynamic_pointer_cast<HttpResponseImpl>(responsePtr));
+                        newResp->addCookie("JSESSIONID",session_id);
+                        newResp->setExpiredTime(-1);
+                        callback(newResp);
+                    }
+                    return;
                 }
                 else
                 {
@@ -780,9 +792,14 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestPtr& req,const std::f
                         if(needSetJsessionid)
                             resp->addCookie("JSESSIONID",session_id);
                         callback(resp);
-                        if(resp->expiredTime()>=0&&!needSetJsessionid)
+                        if(resp->expiredTime()>=0)
                         {
                             //cache the response;
+                            if(needSetJsessionid)
+                            {
+                                resp->removeCookie("JSESSIONID");
+                                std::dynamic_pointer_cast<HttpResponseImpl>(resp)->makeHeaderString();
+                            }
                             std::lock_guard<std::mutex> guard(_simpCtrlMap[pathLower]._mutex);
                             _responseCacheMap->insert(pathLower,resp,resp->expiredTime());
                             _simpCtrlMap[pathLower].responsePtr=resp;
@@ -818,21 +835,29 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestPtr& req,const std::f
                     doFilters(filters,req,callback,needSetJsessionid,session_id,[=](){
 
                         auto &binder=_apiCtrlVector[ctlIndex];
-                        if(!needSetJsessionid)
+
+                        HttpResponsePtr responsePtr;
                         {
-                            HttpResponsePtr responsePtr;
-                            {
-                                std::lock_guard<std::mutex> guard(*(binder.binderMtx));
-                                responsePtr=binder.responsePtr.lock();
-                            }
-                            if(responsePtr)
-                            {
-                                //use cached response!
-                                LOG_TRACE<<"Use cached response";
-                                callback(responsePtr);
-                                return;
-                            }
+                            std::lock_guard<std::mutex> guard(*(binder.binderMtx));
+                            responsePtr=binder.responsePtr.lock();
                         }
+                        if(responsePtr)
+                        {
+                            //use cached response!
+                            LOG_TRACE<<"Use cached response";
+                            if(!needSetJsessionid)
+                                callback(responsePtr);
+                            else
+                            {
+                                auto newResp=std::make_shared<HttpResponseImpl>
+                                        (*std::dynamic_pointer_cast<HttpResponseImpl>(responsePtr));
+                                newResp->addCookie("JSESSIONID",session_id);
+                                newResp->setExpiredTime(-1);
+                                callback(newResp);
+                            }
+                            return;
+                        }
+
                         std::vector<std::string> params(binder.parameterPlaces.size());
                         std::smatch r;
                         if(std::regex_match(req->path(),r,std::regex(binder.pathParameterPattern)))
@@ -873,9 +898,14 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestPtr& req,const std::f
                             if(needSetJsessionid)
                                 resp->addCookie("JSESSIONID",session_id);
                             callback(resp);
-                            if(resp->expiredTime()>=0&&!needSetJsessionid)
+                            if(resp->expiredTime()>=0)
                             {
                                 //cache the response;
+                                if(needSetJsessionid)
+                                {
+                                    resp->removeCookie("JSESSIONID");
+                                    std::dynamic_pointer_cast<HttpResponseImpl>(resp)->makeHeaderString();
+                                }
                                 std::lock_guard<std::mutex> guard(*(_apiCtrlVector[ctlIndex].binderMtx));
                                 _responseCacheMap->insert(_apiCtrlVector[ctlIndex].pathParameterPattern,resp,resp->expiredTime());
                                 _apiCtrlVector[ctlIndex].responsePtr=resp;
