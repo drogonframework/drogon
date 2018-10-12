@@ -106,7 +106,7 @@ void HttpAppFrameworkImpl::setFileTypes(const std::vector<std::string> &types)
 }
 void HttpAppFrameworkImpl::initRegex() {
     std::string regString;
-    for(auto binder:_apiCtrlVector)
+    for(auto &binder:_apiCtrlVector)
     {
         std::regex reg("\\(\\[\\^/\\]\\*\\)");
         std::string tmp=std::regex_replace(binder.pathParameterPattern,reg,"[^/]*");
@@ -292,8 +292,10 @@ void HttpAppFrameworkImpl::run()
     {
         //go daemon!
         godaemon();
+#ifdef __linux__
+        _loop.resetTimerQueue();
+#endif
     }
-
     //set relaunching
     if(_relaunchOnError)
     {
@@ -430,6 +432,8 @@ void HttpAppFrameworkImpl::run()
     {
         _sessionMapPtr=std::unique_ptr<CacheMap<std::string,SessionPtr>>(new CacheMap<std::string,SessionPtr>(&_loop));
     }
+    _responseCacheMap=std::unique_ptr<CacheMap<std::string,HttpResponsePtr>>
+            (new CacheMap<std::string,HttpResponsePtr>(&_loop,1.0,4,50));//Max timeout up to about 70 days;
    _loop.loop();
 }
 
@@ -658,7 +662,7 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestPtr& req,const std::f
     LOG_TRACE << "new request:"<<req->peerAddr().toIpPort()<<"->"<<req->localAddr().toIpPort();
     LOG_TRACE << "Headers " << req->methodString() << " " << req->path();
 
-#if 1
+#if 0
     const std::map<std::string, std::string>& headers = req->headers();
     for (std::map<std::string, std::string>::const_iterator it = headers.begin();
          it != headers.end();
@@ -749,12 +753,15 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestPtr& req,const std::f
     {
         auto &filters=_simpCtrlMap[pathLower].filtersName;
         doFilters(filters,req,callback,needSetJsessionid,session_id,[=](){
-            const std::string &ctrlName = _simpCtrlMap[pathLower].controllerName;
+	    auto &ctrlItem=_simpCtrlMap[pathLower];
+            const std::string &ctrlName = ctrlItem.controllerName;
             std::shared_ptr<HttpSimpleControllerBase> controller;
+            HttpResponsePtr responsePtr;
             {
                 //maybe update controller,so we use lock_guard to protect;
-                std::lock_guard<std::mutex> guard(_simpCtrlMap[pathLower]._mutex);
-                controller=_simpCtrlMap[pathLower].controller;
+                std::lock_guard<std::mutex> guard(ctrlItem._mutex);
+                controller=ctrlItem.controller;
+                responsePtr=ctrlItem.responsePtr.lock();
                 if(!controller)
                 {
                     auto _object = std::shared_ptr<DrObjectBase>(DrClassMap::newObject(ctrlName));
@@ -765,11 +772,46 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestPtr& req,const std::f
 
 
             if(controller) {
-                controller->asyncHandleHttpRequest(req, [=](const HttpResponsePtr& resp){
-                    if(needSetJsessionid)
-                        resp->addCookie("JSESSIONID",session_id);
-                    callback(resp);
-                });
+                if(responsePtr)
+                {
+                    //use cached response!
+                    LOG_TRACE<<"Use cached response";
+                    //make a copy response;
+                    auto newResp=std::make_shared<HttpResponseImpl>
+                            (*std::dynamic_pointer_cast<HttpResponseImpl>(responsePtr));
+                    if(!needSetJsessionid)
+                        callback(newResp);
+                    else
+                    {
+                        newResp->addCookie("JSESSIONID",session_id);
+                        callback(newResp);
+                    }
+                    return;
+                }
+                else
+                {
+                    controller->asyncHandleHttpRequest(req, [=](const HttpResponsePtr& resp){
+                        auto newResp=resp;
+                        if(resp->expiredTime()>=0)
+                        {
+                            //cache the response;
+                            {
+                                std::lock_guard<std::mutex> guard(_simpCtrlMap[pathLower]._mutex);
+                                _responseCacheMap->insert(pathLower,resp,resp->expiredTime());
+                                _simpCtrlMap[pathLower].responsePtr=resp;
+                            }
+                            //make a copy
+                            newResp=std::make_shared<HttpResponseImpl>
+                                    (*std::dynamic_pointer_cast<HttpResponseImpl>(resp));
+
+                        }
+                        if(needSetJsessionid)
+                            newResp->addCookie("JSESSIONID",session_id);
+                        callback(newResp);
+
+                    });
+                }
+
                 return;
             } else {
 
@@ -795,6 +837,31 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestPtr& req,const std::f
                     LOG_TRACE<<"got api access,regex="<<binder.pathParameterPattern;
                     auto &filters=binder.filtersName;
                     doFilters(filters,req,callback,needSetJsessionid,session_id,[=](){
+
+                        auto &binder=_apiCtrlVector[ctlIndex];
+
+                        HttpResponsePtr responsePtr;
+                        {
+                            std::lock_guard<std::mutex> guard(*(binder.binderMtx));
+                            responsePtr=binder.responsePtr.lock();
+                        }
+                        if(responsePtr)
+                        {
+                            //use cached response!
+                            LOG_TRACE<<"Use cached response";
+                            //make a copy response;
+                            auto newResp=std::make_shared<HttpResponseImpl>
+                                    (*std::dynamic_pointer_cast<HttpResponseImpl>(responsePtr));
+                            if(!needSetJsessionid)
+                                callback(newResp);
+                            else
+                            {
+                                newResp->addCookie("JSESSIONID",session_id);
+                                callback(newResp);
+                            }
+                            return;
+                        }
+
                         std::vector<std::string> params(binder.parameterPlaces.size());
                         std::smatch r;
                         if(std::regex_match(req->path(),r,std::regex(binder.pathParameterPattern)))
@@ -832,9 +899,26 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestPtr& req,const std::f
 
                         binder.binderPtr->handleHttpApiRequest(paraList,req,[=](const HttpResponsePtr& resp){
                             LOG_TRACE<<"api resp:needSetJsessionid="<<needSetJsessionid<<";JSESSIONID="<<session_id;
+                            auto newResp=resp;
+                            if(resp->expiredTime()>=0)
+                            {
+                                //cache the response;
+                                {
+                                    std::lock_guard<std::mutex> guard(*(_apiCtrlVector[ctlIndex].binderMtx));
+                                    _responseCacheMap->insert(_apiCtrlVector[ctlIndex].pathParameterPattern,resp,resp->expiredTime());
+                                    _apiCtrlVector[ctlIndex].responsePtr=resp;
+                                }
+
+                                //make a copy
+                                newResp=std::make_shared<HttpResponseImpl>
+                                        (*std::dynamic_pointer_cast<HttpResponseImpl>(resp));
+
+                            }
+
                             if(needSetJsessionid)
-                                resp->addCookie("JSESSIONID",session_id);
-                            callback(resp);
+                                newResp->addCookie("JSESSIONID",session_id);
+                            callback(newResp);
+
                         });
                         return;
                     });

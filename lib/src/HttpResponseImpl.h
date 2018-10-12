@@ -193,6 +193,11 @@ namespace drogon
             _cookies.insert(std::make_pair(cookie.key(),cookie));
         }
 
+        virtual void removeCookie(const std::string& key) override
+        {
+            _cookies.erase(key);
+        }
+
         virtual void setBody(const std::string& body) override
         {
             _body = body;
@@ -213,12 +218,20 @@ namespace drogon
             _statusCode = kUnknown;
             _v = kHttp11;
             _statusMessage.clear();
+            _fullHeaderString.clear();
             _headers.clear();
             _cookies.clear();
             _body.clear();
             _left_body_length = 0;
             _current_chunk_length = 0;
         }
+
+        virtual void setExpiredTime(ssize_t expiredTime) override
+        {
+            _expriedTime=expiredTime;
+        }
+
+        virtual ssize_t expiredTime() const override {return _expriedTime;}
 
 //	void setReceiveTime(trantor::Date t)
 //    {
@@ -246,6 +259,7 @@ namespace drogon
             std::swap(_current_chunk_length,that._current_chunk_length);
             std::swap(_contentType,that._contentType);
             _jsonPtr.swap(that._jsonPtr);
+            _fullHeaderString.swap(that._fullHeaderString);
         }
         void parseJson() const
         {
@@ -281,6 +295,8 @@ namespace drogon
 
         static std::string web_response_code_to_string(int code);
 
+        void makeHeaderString(MsgBuffer* output) const;
+
     private:
         std::map<std::string, std::string> _headers;
         std::map<std::string, Cookie> _cookies;
@@ -294,8 +310,11 @@ namespace drogon
         size_t _current_chunk_length;
         uint8_t _contentType=CT_TEXT_HTML;
 
+        ssize_t _expriedTime=-1;
         std::string _sendfileName;
         mutable std::shared_ptr<Json::Value> _jsonPtr;
+
+        mutable std::string _fullHeaderString;
         //trantor::Date receiveTime_;
 
         void setContentType(const std::string& contentType)

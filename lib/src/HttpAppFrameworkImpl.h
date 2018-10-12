@@ -100,6 +100,8 @@ namespace drogon
         typedef std::shared_ptr<Session> SessionPtr;
         std::unique_ptr<CacheMap<std::string,SessionPtr>> _sessionMapPtr;
 
+        std::unique_ptr<CacheMap<std::string,HttpResponsePtr>> _responseCacheMap;
+
         void doFilters(const std::vector<std::string> &filters,
                        const HttpRequestPtr& req,
                        const std::function<void (const HttpResponsePtr &)> & callback,
@@ -118,6 +120,7 @@ namespace drogon
             std::string controllerName;
             std::vector<std::string> filtersName;
             std::shared_ptr<HttpSimpleControllerBase> controller;
+            std::weak_ptr<HttpResponse> responsePtr;
             std::mutex _mutex;
         };
         std::unordered_map<std::string,ControllerAndFiltersName>_simpCtrlMap;
@@ -137,6 +140,8 @@ namespace drogon
             std::map<std::string,size_t> queryParametersPlaces;
             HttpApiBinderBasePtr binderPtr;
             std::vector<std::string> filtersName;
+            std::unique_ptr <std::mutex> binderMtx=std::unique_ptr<std::mutex>(new std::mutex);
+            std::weak_ptr<HttpResponse> responsePtr;
         };
         //std::unordered_map<std::string,ApiBinder>_apiCtrlMap;
         std::vector<ApiBinder>_apiCtrlVector;

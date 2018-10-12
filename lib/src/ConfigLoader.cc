@@ -87,8 +87,7 @@ static void loadApp(const Json::Value &app)
         return;
     //threads number
     auto threadsNum=app.get("threads_num",1).asUInt64();
-    if(threadsNum>1)
-        HttpAppFramework::instance().setThreadNum(threadsNum);
+    HttpAppFramework::instance().setThreadNum(threadsNum);
     //session
     auto enableSession=app.get("enable_session",false).asBool();
     auto timeout=app.get("session_timeout",0).asUInt64();

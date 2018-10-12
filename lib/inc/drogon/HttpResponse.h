@@ -144,6 +144,8 @@ namespace drogon
 
         virtual void addCookie(const Cookie &cookie)=0;
 
+        virtual void removeCookie(const std::string& key)=0;
+
         virtual void setBody(const std::string& body)=0;
 
         virtual void setBody(std::string&& body)=0;
@@ -151,6 +153,9 @@ namespace drogon
         virtual void redirect(const std::string& url)=0;
 
         virtual void clear()=0;
+
+        virtual void setExpiredTime(ssize_t expiredTime)=0;
+        virtual ssize_t expiredTime() const=0;
 
         virtual const std::string & getBody() const=0;
         virtual std::string & getBody() = 0;
