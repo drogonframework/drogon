@@ -292,8 +292,10 @@ void HttpAppFrameworkImpl::run()
     {
         //go daemon!
         godaemon();
+#ifdef __linux__
+        _loop.resetTimerQueue();
+#endif
     }
-
     //set relaunching
     if(_relaunchOnError)
     {
