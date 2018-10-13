@@ -35,41 +35,39 @@ using namespace std::placeholders;
 using namespace drogon;
 using namespace trantor;
 
-
-static void defaultHttpAsyncCallback(const HttpRequestPtr&,const std::function<void(const HttpResponsePtr & resp)> & callback)
+static void defaultHttpAsyncCallback(const HttpRequestPtr &, const std::function<void(const HttpResponsePtr &resp)> &callback)
 {
-    auto resp=HttpResponse::newNotFoundResponse();
+    auto resp = HttpResponse::newNotFoundResponse();
     resp->setCloseConnection(true);
     callback(resp);
 }
 
-static void defaultWebSockAsyncCallback(const HttpRequestPtr&,
-                                        const std::function<void( const HttpResponsePtr & resp)> & callback,
-                                        const WebSocketConnectionPtr& wsConnPtr)
+static void defaultWebSockAsyncCallback(const HttpRequestPtr &,
+                                        const std::function<void(const HttpResponsePtr &resp)> &callback,
+                                        const WebSocketConnectionPtr &wsConnPtr)
 {
-    auto resp=HttpResponse::newNotFoundResponse();
+    auto resp = HttpResponse::newNotFoundResponse();
     resp->setCloseConnection(true);
     callback(resp);
 }
 
-
-static void defaultConnectionCallback(const trantor::TcpConnectionPtr & conn)
+static void defaultConnectionCallback(const trantor::TcpConnectionPtr &conn)
 {
     return;
 }
 
-HttpServer::HttpServer(EventLoop* loop,
-                       const InetAddress& listenAddr,
-                       const std::string& name)
-        : server_(loop, listenAddr, name.c_str()),
-          httpAsyncCallback_(defaultHttpAsyncCallback),
-          newWebsocketCallback_(defaultWebSockAsyncCallback),
-          _connectionCallback(defaultConnectionCallback)
+HttpServer::HttpServer(EventLoop *loop,
+                       const InetAddress &listenAddr,
+                       const std::string &name)
+    : server_(loop, listenAddr, name.c_str()),
+      httpAsyncCallback_(defaultHttpAsyncCallback),
+      newWebsocketCallback_(defaultWebSockAsyncCallback),
+      _connectionCallback(defaultConnectionCallback)
 {
     server_.setConnectionCallback(
-            std::bind(&HttpServer::onConnection, this, _1));
+        std::bind(&HttpServer::onConnection, this, _1));
     server_.setRecvMessageCallback(
-            std::bind(&HttpServer::onMessage, this, _1, _2));
+        std::bind(&HttpServer::onMessage, this, _1, _2));
 }
 
 HttpServer::~HttpServer()
@@ -83,18 +81,19 @@ void HttpServer::start()
     server_.start();
 }
 
-void HttpServer::onConnection(const TcpConnectionPtr& conn)
+void HttpServer::onConnection(const TcpConnectionPtr &conn)
 {
-    if (conn->connected()) {
+    if (conn->connected())
+    {
         conn->setContext(HttpContext(conn));
     }
-    else if(conn->disconnected())
+    else if (conn->disconnected())
     {
-        LOG_TRACE<<"conn disconnected!";
-        HttpContext* context = any_cast<HttpContext>(conn->getMutableContext());
+        LOG_TRACE << "conn disconnected!";
+        HttpContext *context = any_cast<HttpContext>(conn->getMutableContext());
 
         // LOG_INFO << "###:" << string(buf->peek(), buf->readableBytes());
-        if(context->webSocketConn())
+        if (context->webSocketConn())
         {
             disconnectWebsocketCallback_(context->webSocketConn());
         }
@@ -103,107 +102,113 @@ void HttpServer::onConnection(const TcpConnectionPtr& conn)
     _connectionCallback(conn);
 }
 
-void HttpServer::onMessage(const TcpConnectionPtr& conn,
-                           MsgBuffer* buf)
+void HttpServer::onMessage(const TcpConnectionPtr &conn,
+                           MsgBuffer *buf)
 {
-    HttpContext* context = any_cast<HttpContext>(conn->getMutableContext());
+    HttpContext *context = any_cast<HttpContext>(conn->getMutableContext());
 
     // LOG_INFO << "###:" << string(buf->peek(), buf->readableBytes());
-    if(context->webSocketConn())
+    if (context->webSocketConn())
     {
         //websocket payload,we shouldn't parse it
-        webSocketMessageCallback_(context->webSocketConn(),buf);
+        webSocketMessageCallback_(context->webSocketConn(), buf);
         return;
     }
-    if (!context->parseRequest(buf)) {
+    if (!context->parseRequest(buf))
+    {
         conn->send("HTTP/1.1 400 Bad Request\r\n\r\n");
         //conn->shutdown();
     }
 
-    if (context->gotAll()) {
+    if (context->gotAll())
+    {
         context->requestImpl()->parsePremeter();
         context->requestImpl()->setPeerAddr(conn->peerAddr());
         context->requestImpl()->setLocalAddr(conn->localAddr());
         context->requestImpl()->setReceiveDate(trantor::Date::date());
-        if(context->firstReq()&&isWebSocket(conn,context->request()))
+        if (context->firstReq() && isWebSocket(conn, context->request()))
         {
-            auto wsConn=std::make_shared<WebSocketConnectionImpl>(conn);
-            newWebsocketCallback_(context->request(),[=](const HttpResponsePtr &resp) mutable
-            {
-                if(resp->statusCode()==HttpResponse::k101SwitchingProtocols)
+            auto wsConn = std::make_shared<WebSocketConnectionImpl>(conn);
+            newWebsocketCallback_(context->request(), [=](const HttpResponsePtr &resp) mutable {
+                if (resp->statusCode() == HttpResponse::k101SwitchingProtocols)
                 {
                     context->setWebsockConnection(wsConn);
                 }
                 MsgBuffer buffer;
                 std::dynamic_pointer_cast<HttpResponseImpl>(resp)->appendToBuffer(&buffer);
                 conn->send(std::move(buffer));
-            },wsConn);
+            },
+                                  wsConn);
         }
         else
             onRequest(conn, context->request());
         context->reset();
     }
 }
-bool HttpServer::isWebSocket(const TcpConnectionPtr& conn, const HttpRequestPtr& req)
+bool HttpServer::isWebSocket(const TcpConnectionPtr &conn, const HttpRequestPtr &req)
 {
-    if(req->getHeader("Connection")=="Upgrade"&&
-       req->getHeader("Upgrade")=="websocket")
+    if (req->getHeader("Connection") == "Upgrade" &&
+        req->getHeader("Upgrade") == "websocket")
     {
-        LOG_TRACE<<"new websocket request";
+        LOG_TRACE << "new websocket request";
 
         return true;
     }
     return false;
 }
-void HttpServer::onRequest(const TcpConnectionPtr& conn, const HttpRequestPtr& req)
+void HttpServer::onRequest(const TcpConnectionPtr &conn, const HttpRequestPtr &req)
 {
-    const std::string& connection = req->getHeader("Connection");
+    const std::string &connection = req->getHeader("Connection");
     bool _close = connection == "close" ||
                   (req->getVersion() == HttpRequestImpl::kHttp10 && connection != "Keep-Alive");
 
-    bool _isHeadMethod=(req->method()==HttpRequest::kHead);
-    if(_isHeadMethod)
+    bool _isHeadMethod = (req->method() == HttpRequest::kHead);
+    if (_isHeadMethod)
     {
         req->setMethod(HttpRequest::kGet);
     }
-    HttpContext* context = any_cast<HttpContext>(conn->getMutableContext());
+    HttpContext *context = any_cast<HttpContext>(conn->getMutableContext());
     //request will be received in same thread,so we don't need mutex;
     context->pushRquestToPipeLine(req);
-    httpAsyncCallback_(req, [ = ](const HttpResponsePtr &response) {
-
-        if(!response)
+    httpAsyncCallback_(req, [=](const HttpResponsePtr &response) {
+        if (!response)
             return;
         response->setCloseConnection(_close);
         //if the request method is HEAD,remove the body of response(rfc2616-9.4)
-        if(_isHeadMethod)
+        if (_isHeadMethod)
             response->setBody(std::string());
-        auto & sendfileName=std::dynamic_pointer_cast<HttpResponseImpl>(response)->sendfileName();
-
-        if(sendfileName.empty()&&
-           response->getContentTypeCode()<CT_APPLICATION_OCTET_STREAM&&
-           response->getBody().length()>1024&&
-           req->getHeader("Accept-Encoding").find("gzip")!=std::string::npos&&
-           response->getHeader("Content-Encoding")=="")
+        auto &sendfileName = std::dynamic_pointer_cast<HttpResponseImpl>(response)->sendfileName();
+        auto newResp = response;
+        if (sendfileName.empty() &&
+            response->getContentTypeCode() < CT_APPLICATION_OCTET_STREAM &&
+            response->getBody().length() > 1024 &&
+            req->getHeader("Accept-Encoding").find("gzip") != std::string::npos &&
+            response->getHeader("Content-Encoding") == "")
         {
             //use gzip
-            LOG_TRACE<<"Use gzip to compress the body";
-            char *zbuf=new char[response->getBody().length()];
-            size_t zlen=response->getBody().length();
-            if(gzipCompress(response->getBody().data(),
-                          response->getBody().length(),
-            zbuf,&zlen)>=0)
+            LOG_TRACE << "Use gzip to compress the body";
+            char *zbuf = new char[response->getBody().length()];
+            size_t zlen = response->getBody().length();
+            if (gzipCompress(response->getBody().data(),
+                             response->getBody().length(),
+                             zbuf, &zlen) >= 0)
             {
-                if(zlen>0)
+                if (zlen > 0)
                 {
-                    response->setBody(std::string(zbuf,zlen));
-                    response->addHeader("Content-Encoding","gzip");
+                    if (response->expiredTime() >= 0)
+                    {
+                        //cached response,we need to make a clone
+                        newResp = std::make_shared<HttpResponseImpl>(*std::dynamic_pointer_cast<HttpResponseImpl>(response));
+                    }
+                    newResp->setBody(std::string(zbuf, zlen));
+                    newResp->addHeader("Content-Encoding", "gzip");
                 }
                 else
                 {
-                    LOG_ERROR<<"gzip got 0 length result";
+                    LOG_ERROR << "gzip got 0 length result";
                 }
             }
-            delete [] zbuf;
+            delete[] zbuf;
         }
         {
             /*
@@ -214,42 +219,43 @@ void HttpServer::onRequest(const TcpConnectionPtr& conn, const HttpRequestPtr& r
              *                                             rfc2616-8.1.1.2
              */
             std::lock_guard<std::mutex> guard(context->getPipeLineMutex());
-            if(context->getFirstRequest()==req)
+            if (context->getFirstRequest() == req)
             {
                 context->popFirstRequest();
-                sendResponse(conn,response);
-                while(1)
+                sendResponse(conn, newResp);
+                while (1)
                 {
-                    auto resp=context->getFirstResponse();
-                    if(resp)
+                    auto resp = context->getFirstResponse();
+                    if (resp)
                     {
                         context->popFirstRequest();
-                        sendResponse(conn,resp);
-                    } else
+                        sendResponse(conn, resp);
+                    }
+                    else
                         return;
                 }
             }
             else
             {
                 //some earlier requests are waiting for responses;
-                context->pushResponseToPipeLine(req,response);
+                context->pushResponseToPipeLine(req, newResp);
             }
         }
-
     });
 }
-void HttpServer::sendResponse(const TcpConnectionPtr& conn,
+void HttpServer::sendResponse(const TcpConnectionPtr &conn,
                               const HttpResponsePtr &response)
 {
     MsgBuffer buf;
     std::dynamic_pointer_cast<HttpResponseImpl>(response)->appendToBuffer(&buf);
     conn->send(std::move(buf));
-    auto & sendfileName=std::dynamic_pointer_cast<HttpResponseImpl>(response)->sendfileName();
-    if(!sendfileName.empty())
+    auto &sendfileName = std::dynamic_pointer_cast<HttpResponseImpl>(response)->sendfileName();
+    if (!sendfileName.empty())
     {
         conn->sendFile(sendfileName.c_str());
     }
-    if (response->closeConnection()) {
+    if (response->closeConnection())
+    {
         conn->shutdown();
     }
 }

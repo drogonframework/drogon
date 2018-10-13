@@ -136,5 +136,3 @@ install(FILES ${drogon_util_headers}
         DESTINATION include/drogon/utils)
 install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/lib/inc/drogon/version.h"
         DESTINATION include/drogon)
-
-#target_link_libraries(drogon trantor pthread)

@@ -39,3 +39,4 @@ lib/inc/drogon/config.h
 Doxyfile
 html/
 latex/
+.vscode
