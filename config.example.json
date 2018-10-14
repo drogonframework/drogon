@@ -2,6 +2,7 @@
 */
 {
   //ssl:the global ssl files setting
+  /*
   "ssl": {
     "cert": "../../trantor/trantor/tests/server.pem",
     "key": "../../trantor/trantor/tests/server.pem"
@@ -24,7 +25,7 @@
       "cert": "",
       "key": ""
     }
-  ],
+  ],*/
   "app": {
     //threads_num:num of threads,1 by default
     "threads_num": 16,
@@ -32,17 +33,30 @@
     "enable_session": false,
     "session_timeout": 0,
     //document_root:Root path of HTTP document,defaut path is ./
-    "document_root":"./",
+    "document_root": "./",
     /* file_types:
      * HTTP download file types,The file types supported by drogon
      * by default are "html", "js", "css", "xml", "xsl", "txt", "svg",
      * "ttf", "otf", "woff2", "woff" , "eot", "png", "jpg", "jpeg",
      * "gif", "bmp", "ico", "icns", etc. */
-    "file_types":["gif","png","jpg","js","css","html","ico","swf","xap","apk","cur","xml"],
+    "file_types": [
+      "gif",
+      "png",
+      "jpg",
+      "js",
+      "css",
+      "html",
+      "ico",
+      "swf",
+      "xap",
+      "apk",
+      "cur",
+      "xml"
+    ],
     //max_connections:max connections number,100000 by default
-    "max_connections":100000,
+    "max_connections": 100000,
     //max_connections_per_ip:max connections number per clinet,0 by default which means no limit
-    "max_connections_per_ip":0,
+    "max_connections_per_ip": 0,
     //Load_dynamic_views: false by default, when set to true, drogon will
     //compile and load dynamically "CSP View Files" in directories defined
     //by "dynamic_views_path"
@@ -51,25 +65,27 @@
     //it will be relative path of document_root path
     //"dynamic_views_path":["./views"],
     //log:set log output,drogon output logs to stdout by default
-    "log":{
+    "log": {
       //log_path:log file path,empty by default,in which case,log will output to the stdout
-      "log_path":"./",
+      "log_path": "./",
       //logfile_base_name:log file base name,empty by default which means drogon will name logfile as
       //drogon.log ...
-      "logfile_base_name":"",
+      "logfile_base_name": "",
       //log_size_limit:100000000 bytes by default,
       //When the log file size reaches "log_size_limit", the log file will be switched.
-      "log_size_limit":100000000,
+      "log_size_limit": 100000000,
       //log_level:"DEBUG" by default,options:"TRACE","DEBUG","INFO","WARN"
       //The TRACE level is only valid when built in DEBUG mode.
-      "log_level":"DEBUG"
+      "log_level": "DEBUG"
     },
     //run_as_daemon:false by default
-    "run_as_daemon":false,
+    "run_as_daemon": false,
     //relaunch_on_error:false by default,if true,the program will be restart by parent after exit;
-    "relaunch_on_error":false,
+    "relaunch_on_error": false,
     //use_sendfile:true by default,if ture,the program will
     //use sendfile() system-call to send static file to client;
-    "use_sendfile":true
+    "use_sendfile": true,
+    //use_gzip:true by default,use gzip to compress the response body's content;
+    "use_gzip": true
   }
 }

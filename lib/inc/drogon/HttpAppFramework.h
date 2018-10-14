@@ -39,80 +39,80 @@
 #include <vector>
 namespace drogon
 {
-    //the drogon banner
-    const char banner[]=       "     _                             \n"
-                               "  __| |_ __ ___   __ _  ___  _ __  \n"
-                               " / _` | '__/ _ \\ / _` |/ _ \\| '_ \\ \n"
-                               "| (_| | | | (_) | (_| | (_) | | | |\n"
-                               " \\__,_|_|  \\___/ \\__, |\\___/|_| |_|\n"
-                               "                 |___/             \n";
-    inline std::string getVersion()
-    {
-        return VERSION;
-    }
-    inline std::string getGitCommit()
-    {
-        return VERSION_MD5;
-    }
-    class HttpAppFramework:public trantor::NonCopyable
-    {
-    public:
-        static HttpAppFramework &instance();
-        virtual void setThreadNum(size_t threadNum)=0;
-        virtual void setSSLFiles(const std::string &certPath,
-                                 const std::string &keyPath)=0;
-        virtual void addListener(const std::string &ip,
-                                 uint16_t port,
-                                 bool useSSL=false,
-                                 const std::string & certFile="",
-                                 const std::string & keyFile="")=0;
-        virtual void run()=0;
-        virtual ~HttpAppFramework();
-        virtual void registerWebSocketController(const std::string &pathName,
-                                                  const std::string &crtlName,
-                                                 const std::vector<std::string> &filters=
-                                                 std::vector<std::string>())=0;
-        virtual void registerHttpSimpleController(const std::string &pathName,
-                                                  const std::string &crtlName,
-                                                  const std::vector<std::string> &filters=std::vector<std::string>())=0;
-        template <typename FUNCTION>
-        static void registerHttpApiMethod(const std::string &pathPattern,
-                                          FUNCTION && function,
-                                          const std::vector<std::string> &filters=std::vector<std::string>())
-        {
-            LOG_TRACE<<"pathPattern:"<<pathPattern;
-            HttpApiBinderBasePtr binder;
-
-            binder=std::make_shared<
-                    HttpApiBinder<FUNCTION>
-            >(std::forward<FUNCTION>(function));
-
-            instance().registerHttpApiController(pathPattern,binder,filters);
-        }
-        virtual void enableSession(const size_t timeout=0)=0;
-        virtual void disableSession()=0;
-        virtual const std::string & getDocumentRoot() const =0;
-        virtual void setDocumentRoot(const std::string &rootPath)=0;
-        virtual void setFileTypes(const std::vector<std::string> &types)=0;
-        virtual void enableDynamicViewsLoading(const std::vector<std::string> &libPaths)=0;
-
-        virtual void setMaxConnectionNum(size_t maxConnections)=0;
-        virtual void setMaxConnectionNumPerIP(size_t maxConnectionsPerIP)=0;
-
-        virtual void loadConfigFile(const std::string &fileName)=0;
-
-        virtual void enableRunAsDaemon()=0;
-        virtual void enableRelaunchOnError()=0;
-
-        virtual void setLogPath(const std::string &logPath,
-                                const std::string &logfileBaseName="",
-                                size_t logSize=100000000)=0;
-        virtual void enableSendfile(bool sendFile)=0;
-
-    private:
-        virtual void registerHttpApiController(const std::string &pathPattern,
-                                               const HttpApiBinderBasePtr &binder,
-                                               const std::vector<std::string> &filters=std::vector<std::string>())=0;
-
-    };
+//the drogon banner
+const char banner[] = "     _                             \n"
+                      "  __| |_ __ ___   __ _  ___  _ __  \n"
+                      " / _` | '__/ _ \\ / _` |/ _ \\| '_ \\ \n"
+                      "| (_| | | | (_) | (_| | (_) | | | |\n"
+                      " \\__,_|_|  \\___/ \\__, |\\___/|_| |_|\n"
+                      "                 |___/             \n";
+inline std::string getVersion()
+{
+    return VERSION;
 }
+inline std::string getGitCommit()
+{
+    return VERSION_MD5;
+}
+class HttpAppFramework : public trantor::NonCopyable
+{
+  public:
+    static HttpAppFramework &instance();
+    virtual void setThreadNum(size_t threadNum) = 0;
+    virtual void setSSLFiles(const std::string &certPath,
+                             const std::string &keyPath) = 0;
+    virtual void addListener(const std::string &ip,
+                             uint16_t port,
+                             bool useSSL = false,
+                             const std::string &certFile = "",
+                             const std::string &keyFile = "") = 0;
+    virtual void run() = 0;
+    virtual ~HttpAppFramework();
+    virtual void registerWebSocketController(const std::string &pathName,
+                                             const std::string &crtlName,
+                                             const std::vector<std::string> &filters =
+                                                 std::vector<std::string>()) = 0;
+    virtual void registerHttpSimpleController(const std::string &pathName,
+                                              const std::string &crtlName,
+                                              const std::vector<std::string> &filters = std::vector<std::string>()) = 0;
+    template <typename FUNCTION>
+    static void registerHttpApiMethod(const std::string &pathPattern,
+                                      FUNCTION &&function,
+                                      const std::vector<std::string> &filters = std::vector<std::string>())
+    {
+        LOG_TRACE << "pathPattern:" << pathPattern;
+        HttpApiBinderBasePtr binder;
+
+        binder = std::make_shared<
+            HttpApiBinder<FUNCTION>>(std::forward<FUNCTION>(function));
+
+        instance().registerHttpApiController(pathPattern, binder, filters);
+    }
+    virtual void enableSession(const size_t timeout = 0) = 0;
+    virtual void disableSession() = 0;
+    virtual const std::string &getDocumentRoot() const = 0;
+    virtual void setDocumentRoot(const std::string &rootPath) = 0;
+    virtual void setFileTypes(const std::vector<std::string> &types) = 0;
+    virtual void enableDynamicViewsLoading(const std::vector<std::string> &libPaths) = 0;
+
+    virtual void setMaxConnectionNum(size_t maxConnections) = 0;
+    virtual void setMaxConnectionNumPerIP(size_t maxConnectionsPerIP) = 0;
+
+    virtual void loadConfigFile(const std::string &fileName) = 0;
+
+    virtual void enableRunAsDaemon() = 0;
+    virtual void enableRelaunchOnError() = 0;
+
+    virtual void setLogPath(const std::string &logPath,
+                            const std::string &logfileBaseName = "",
+                            size_t logSize = 100000000) = 0;
+    virtual void enableSendfile(bool sendFile) = 0;
+    virtual void enableGzip(bool useGzip) = 0;
+    virtual bool useGzip() const = 0;
+
+  private:
+    virtual void registerHttpApiController(const std::string &pathPattern,
+                                           const HttpApiBinderBasePtr &binder,
+                                           const std::vector<std::string> &filters = std::vector<std::string>()) = 0;
+};
+} // namespace drogon

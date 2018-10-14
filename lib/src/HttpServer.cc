@@ -179,11 +179,12 @@ void HttpServer::onRequest(const TcpConnectionPtr &conn, const HttpRequestPtr &r
             response->setBody(std::string());
         auto &sendfileName = std::dynamic_pointer_cast<HttpResponseImpl>(response)->sendfileName();
         auto newResp = response;
-        if (sendfileName.empty() &&
-            response->getContentTypeCode() < CT_APPLICATION_OCTET_STREAM &&
-            response->getBody().length() > 1024 &&
+        if (HttpAppFramework::instance().useGzip() &&
+            sendfileName.empty() &&
             req->getHeader("Accept-Encoding").find("gzip") != std::string::npos &&
-            response->getHeader("Content-Encoding") == "")
+            response->getHeader("Content-Encoding") == "" &&
+            response->getContentTypeCode() < CT_APPLICATION_OCTET_STREAM &&
+            response->getBody().length() > 1024)
         {
             //use gzip
             LOG_TRACE << "Use gzip to compress the body";
