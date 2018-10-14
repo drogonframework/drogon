@@ -24,7 +24,7 @@
 #ifdef USE_OPENSSL
 #include <openssl/sha.h>
 #else
-#include "Sha1.h"
+#include "ssl_funcs/Sha1.h"
 #endif
 #include <sys/stat.h>
 #include <sys/types.h>

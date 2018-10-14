@@ -1,7 +1,8 @@
+#include <drogon/config.h>
 #ifdef USE_OPENSSL
 #include <openssl/sha.h>
 #else
-#include "../lib/src/Sha1.h"
+#include "../lib/src/ssl_funcs/Sha1.h"
 #endif
 #include <stdio.h>
 int main()

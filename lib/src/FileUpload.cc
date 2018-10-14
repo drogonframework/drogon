@@ -3,7 +3,7 @@
 #ifdef USE_OPENSSL
 #include <openssl/md5.h>
 #else
-#include "Md5.h"
+#include "ssl_funcs/Md5.h"
 #endif
 #include <iostream>
 #include <fstream>
