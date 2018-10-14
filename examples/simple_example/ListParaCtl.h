@@ -1,10 +1,10 @@
 #pragma once
 #include <drogon/HttpSimpleController.h>
 using namespace drogon;
-class ListParaCtl:public drogon::HttpSimpleController<ListParaCtl>
+class ListParaCtl : public drogon::HttpSimpleController<ListParaCtl>
 {
-public:
-    virtual void asyncHandleHttpRequest(const HttpRequestPtr& req,const std::function<void (const HttpResponsePtr &)> &callback)override;
+  public:
+    virtual void asyncHandleHttpRequest(const HttpRequestPtr &req, const std::function<void(const HttpResponsePtr &)> &callback) override;
     PATH_LIST_BEGIN
     //list path definations here;
     //PATH_ADD("/path","filter1","filter2",...);

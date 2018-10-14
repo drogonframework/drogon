@@ -23,7 +23,6 @@
  *
  */
 
-
 #include <trantor/utils/MsgBuffer.h>
 #include <trantor/utils/Logger.h>
 #include "HttpContext.h"
@@ -31,11 +30,11 @@
 using namespace trantor;
 using namespace drogon;
 HttpContext::HttpContext(const trantor::TcpConnectionPtr &connPtr)
-        : state_(kExpectRequestLine),
-          request_(new HttpRequestImpl),
-          res_state_(HttpResponseParseState::kExpectResponseLine),
-          _pipeLineMutex(std::make_shared<std::mutex>()),
-          _conn(connPtr)
+    : state_(kExpectRequestLine),
+      request_(new HttpRequestImpl),
+      res_state_(HttpResponseParseState::kExpectResponseLine),
+      _pipeLineMutex(std::make_shared<std::mutex>()),
+      _conn(connPtr)
 {
 }
 bool HttpContext::processRequestLine(const char *begin, const char *end)
@@ -130,41 +129,40 @@ bool HttpContext::parseRequest(MsgBuffer *buf)
                     {
                         request_->contentLen = atoi(len.c_str());
                         state_ = kExpectBody;
-                        auto expect=request_->getHeader("Expect");
-                        if(expect=="100-continue"&&
-                           request_->getVersion()>=HttpRequest::kHttp11)
+                        auto expect = request_->getHeader("Expect");
+                        if (expect == "100-continue" &&
+                            request_->getVersion() >= HttpRequest::kHttp11)
                         {
                             //rfc2616-8.2.3
                             //TODO:here we can add content-length limitation
-                            auto connPtr=_conn.lock();
-                            if(connPtr)
+                            auto connPtr = _conn.lock();
+                            if (connPtr)
                             {
-                                auto resp=HttpResponse::newHttpResponse();
+                                auto resp = HttpResponse::newHttpResponse();
                                 resp->setStatusCode(HttpResponse::k100Continue);
                                 MsgBuffer buffer;
                                 std::dynamic_pointer_cast<HttpResponseImpl>(resp)
-                                        ->appendToBuffer(&buffer);
+                                    ->appendToBuffer(&buffer);
                                 connPtr->send(std::move(buffer));
                             }
                         }
-                        else if(!expect.empty())
+                        else if (!expect.empty())
                         {
-                            LOG_WARN<<"417ExpectationFailed for \""<<expect<<"\"";
-                            auto connPtr=_conn.lock();
-                            if(connPtr)
+                            LOG_WARN << "417ExpectationFailed for \"" << expect << "\"";
+                            auto connPtr = _conn.lock();
+                            if (connPtr)
                             {
-                                auto resp=HttpResponse::newHttpResponse();
+                                auto resp = HttpResponse::newHttpResponse();
                                 resp->setStatusCode(HttpResponse::k417ExpectationFailed);
                                 MsgBuffer buffer;
                                 std::dynamic_pointer_cast<HttpResponseImpl>(resp)
-                                        ->appendToBuffer(&buffer);
+                                    ->appendToBuffer(&buffer);
                                 connPtr->send(std::move(buffer));
                                 buf->retrieveAll();
                                 connPtr->forceClose();
 
                                 //return false;
                             }
-
                         }
                     }
                     else
@@ -246,8 +244,8 @@ bool HttpContext::processResponseLine(const char *begin, const char *end)
         std::string status_code(start, space - start);
         std::string status_message(space + 1, end - space - 1);
         LOG_TRACE << status_code << " " << status_message;
-        auto code=atoi(status_code.c_str());
-        response_.setStatusCode(HttpResponse::HttpStatusCode(code),status_message);
+        auto code = atoi(status_code.c_str());
+        response_.setStatusCode(HttpResponse::HttpStatusCode(code), status_message);
 
         return true;
     }
@@ -393,13 +391,13 @@ bool HttpContext::parseResponse(MsgBuffer *buf)
         else if (res_state_ == HttpResponseParseState::kExpectChunkBody)
         {
             //LOG_TRACE<<"expect chunk len="<<response_._current_chunk_length;
-            if(buf->readableBytes()>=(response_._current_chunk_length+2))
+            if (buf->readableBytes() >= (response_._current_chunk_length + 2))
             {
-                if(*(buf->peek()+response_._current_chunk_length)=='\r'&&
-                        *(buf->peek()+response_._current_chunk_length+1)=='\n' )
+                if (*(buf->peek() + response_._current_chunk_length) == '\r' &&
+                    *(buf->peek() + response_._current_chunk_length + 1) == '\n')
                 {
                     response_._body += std::string(buf->peek(), response_._current_chunk_length);
-                    buf->retrieve(response_._current_chunk_length+2);
+                    buf->retrieve(response_._current_chunk_length + 2);
                     response_._current_chunk_length = 0;
                     res_state_ = HttpResponseParseState::kExpectChunkLen;
                 }
@@ -412,7 +410,7 @@ bool HttpContext::parseResponse(MsgBuffer *buf)
             }
             else
             {
-                hasMore=false;
+                hasMore = false;
             }
         }
         else if (res_state_ == HttpResponseParseState::kExpectLastEmptyChunk)
@@ -436,13 +434,13 @@ bool HttpContext::parseResponse(MsgBuffer *buf)
 
 void HttpContext::pushRquestToPipeLine(const HttpRequestPtr &req)
 {
-    std::pair<HttpRequestPtr,HttpResponsePtr> reqPair(req,HttpResponseImplPtr());
+    std::pair<HttpRequestPtr, HttpResponsePtr> reqPair(req, HttpResponseImplPtr());
 
     _requestPipeLine.push_back(std::move(reqPair));
 }
 HttpRequestPtr HttpContext::getFirstRequest() const
 {
-    if(_requestPipeLine.size()>0)
+    if (_requestPipeLine.size() > 0)
     {
         return _requestPipeLine.front().first;
     }
@@ -450,7 +448,7 @@ HttpRequestPtr HttpContext::getFirstRequest() const
 }
 HttpResponsePtr HttpContext::getFirstResponse() const
 {
-    if(_requestPipeLine.size()>0)
+    if (_requestPipeLine.size() > 0)
     {
         return _requestPipeLine.front().second;
     }
@@ -463,18 +461,17 @@ void HttpContext::popFirstRequest()
 void HttpContext::pushResponseToPipeLine(const HttpRequestPtr &req,
                                          const HttpResponsePtr &resp)
 {
-    for(auto &iter:_requestPipeLine)
+    for (auto &iter : _requestPipeLine)
     {
-        if(iter.first==req)
+        if (iter.first == req)
         {
-            iter.second=resp;
+            iter.second = resp;
             return;
         }
     }
 }
 
-std::mutex & HttpContext::getPipeLineMutex()
+std::mutex &HttpContext::getPipeLineMutex()
 {
     return *_pipeLineMutex;
 }
-

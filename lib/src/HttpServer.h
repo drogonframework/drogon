@@ -12,7 +12,6 @@
  *
  */
 
-
 #pragma once
 
 #include "WebSockectConnectionImpl.h"
@@ -23,84 +22,80 @@
 #include <functional>
 #include <string>
 
-
-
 using namespace trantor;
 namespace drogon
 {
-    class HttpRequest;
-    class HttpResponse;
-    typedef std::shared_ptr<HttpRequest> HttpRequestPtr;
-    class HttpServer : trantor::NonCopyable
+class HttpRequest;
+class HttpResponse;
+typedef std::shared_ptr<HttpRequest> HttpRequestPtr;
+class HttpServer : trantor::NonCopyable
+{
+  public:
+    typedef std::function<void(const HttpRequestPtr &, const std::function<void(const HttpResponsePtr &)> &)> HttpAsyncCallback;
+    typedef std::function<void(const HttpRequestPtr &,
+                               const std::function<void(const HttpResponsePtr &)> &,
+                               const WebSocketConnectionPtr &)>
+        WebSocketNewAsyncCallback;
+    typedef std::function<void(const WebSocketConnectionPtr &)>
+        WebSocketDisconnetCallback;
+    typedef std::function<void(const WebSocketConnectionPtr &, trantor::MsgBuffer *)>
+        WebSocketMessageCallback;
+
+    HttpServer(EventLoop *loop,
+               const InetAddress &listenAddr,
+               const std::string &name);
+
+    ~HttpServer();
+
+    EventLoop *getLoop() const { return server_.getLoop(); }
+
+    void setHttpAsyncCallback(const HttpAsyncCallback &cb)
     {
-    public:
+        httpAsyncCallback_ = cb;
+    }
+    void setNewWebsocketCallback(const WebSocketNewAsyncCallback &cb)
+    {
+        newWebsocketCallback_ = cb;
+    }
+    void setDisconnectWebsocketCallback(const WebSocketDisconnetCallback &cb)
+    {
+        disconnectWebsocketCallback_ = cb;
+    }
+    void setWebsocketMessageCallback(const WebSocketMessageCallback &cb)
+    {
+        webSocketMessageCallback_ = cb;
+    }
+    void setConnectionCallback(const ConnectionCallback &cb)
+    {
+        _connectionCallback = cb;
+    }
+    void setIoLoopNum(int numThreads)
+    {
+        server_.setIoLoopNum(numThreads);
+    }
 
-        typedef std::function< void (const HttpRequestPtr&,const std::function<void (const HttpResponsePtr &)>&)> HttpAsyncCallback;
-        typedef std::function< void (const HttpRequestPtr&,
-                                     const std::function<void (const HttpResponsePtr &)>&,
-                                     const WebSocketConnectionPtr &)>
-                WebSocketNewAsyncCallback;
-        typedef std::function< void (const WebSocketConnectionPtr &)>
-                WebSocketDisconnetCallback;
-        typedef std::function< void (const WebSocketConnectionPtr &,trantor::MsgBuffer *)>
-                WebSocketMessageCallback;
-
-        HttpServer(EventLoop* loop,
-                   const InetAddress& listenAddr,
-                   const std::string& name);
-
-        ~HttpServer();
-
-        EventLoop* getLoop() const { return server_.getLoop(); }
-
-        void setHttpAsyncCallback(const HttpAsyncCallback& cb)
-        {
-            httpAsyncCallback_= cb;
-        }
-        void setNewWebsocketCallback(const WebSocketNewAsyncCallback& cb)
-        {
-            newWebsocketCallback_=cb;
-        }
-        void setDisconnectWebsocketCallback(const WebSocketDisconnetCallback& cb)
-        {
-            disconnectWebsocketCallback_=cb;
-        }
-        void setWebsocketMessageCallback(const WebSocketMessageCallback& cb)
-        {
-            webSocketMessageCallback_=cb;
-        }
-        void setConnectionCallback(const ConnectionCallback &cb)
-        {
-            _connectionCallback=cb;
-        }
-        void setIoLoopNum(int numThreads)
-        {
-            server_.setIoLoopNum(numThreads);
-        }
-
-        void start();
+    void start();
 
 #ifdef USE_OPENSSL
-        void enableSSL(const std::string &certPath,const std::string &keyPath){
-            server_.enableSSL(certPath,keyPath);
-        }
+    void enableSSL(const std::string &certPath, const std::string &keyPath)
+    {
+        server_.enableSSL(certPath, keyPath);
+    }
 #endif
 
-    private:
-        void onConnection(const TcpConnectionPtr& conn);
-        void onMessage(const TcpConnectionPtr&,
-                       MsgBuffer*);
-        void onRequest(const TcpConnectionPtr&, const HttpRequestPtr &);
-        bool isWebSocket(const TcpConnectionPtr& conn, const HttpRequestPtr& req);
-        void sendResponse(const TcpConnectionPtr&,const HttpResponsePtr &);
-        trantor::TcpServer server_;
-        HttpAsyncCallback httpAsyncCallback_;
-        WebSocketNewAsyncCallback newWebsocketCallback_;
-        WebSocketDisconnetCallback disconnectWebsocketCallback_;
-        WebSocketMessageCallback webSocketMessageCallback_;
-        trantor::ConnectionCallback _connectionCallback;
-    };
+  private:
+    void onConnection(const TcpConnectionPtr &conn);
+    void onMessage(const TcpConnectionPtr &,
+                   MsgBuffer *);
+    void onRequest(const TcpConnectionPtr &, const HttpRequestPtr &);
+    bool isWebSocket(const TcpConnectionPtr &conn, const HttpRequestPtr &req);
+    void sendResponse(const TcpConnectionPtr &, const HttpResponsePtr &);
+    trantor::TcpServer server_;
+    HttpAsyncCallback httpAsyncCallback_;
+    WebSocketNewAsyncCallback newWebsocketCallback_;
+    WebSocketDisconnetCallback disconnectWebsocketCallback_;
+    WebSocketMessageCallback webSocketMessageCallback_;
+    trantor::ConnectionCallback _connectionCallback;
+};
 
-
-
-}
+} // namespace drogon

@@ -18,4 +18,4 @@
 #include <string>
 #include <iostream>
 #define ARGS_ERROR_STR "args error!use help command to get usage!"
-void exeCommand(std::vector<std::string>& parameters);
+void exeCommand(std::vector<std::string> &parameters);

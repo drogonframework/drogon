@@ -18,12 +18,12 @@
 
 namespace drogon
 {
-    class LocalHostFilter:public HttpFilter<LocalHostFilter>
-    {
-    public:
-        LocalHostFilter(){}
-        virtual void doFilter(const HttpRequestPtr& req,
-                              const FilterCallback &fcb,
-                              const FilterChainCallback &fccb) override ;
-    };
-}
+class LocalHostFilter : public HttpFilter<LocalHostFilter>
+{
+  public:
+    LocalHostFilter() {}
+    virtual void doFilter(const HttpRequestPtr &req,
+                          const FilterCallback &fcb,
+                          const FilterChainCallback &fccb) override;
+};
+} // namespace drogon

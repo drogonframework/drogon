@@ -73,7 +73,7 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     virtual void enableSendfile(bool sendFile) override { _useSendfile = sendFile; }
     virtual void enableGzip(bool useGzip) override { _useGzip = useGzip; }
     virtual bool useGzip() const override { return _useGzip; }
-    ~HttpAppFrameworkImpl()
+    virtual ~HttpAppFrameworkImpl()
     {
         //Destroy the following objects before _loop destruction
         _sharedLibManagerPtr.reset();

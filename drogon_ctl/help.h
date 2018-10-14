@@ -19,11 +19,11 @@
 using namespace drogon;
 namespace drogon_ctl
 {
-    class help:public DrObject<help>,public CommandHandler
-    {
-    public:
-        virtual void handleCommand(std::vector<std::string> &parameters) override;
-        virtual std::string script() override {return "display this message";}
-        virtual bool isTopCommand() override {return true;}
-    };
-}
+class help : public DrObject<help>, public CommandHandler
+{
+  public:
+    virtual void handleCommand(std::vector<std::string> &parameters) override;
+    virtual std::string script() override { return "display this message"; }
+    virtual bool isTopCommand() override { return true; }
+};
+} // namespace drogon_ctl

@@ -12,8 +12,8 @@ static void WriteBigEndian64(unsigned char *p, unsigned int v)
 	unsigned char t;
 	memset(p, 0, 8);
 	memcpy(p, &v, 4);
-	int i=0;
-	for(i = 0; i < 4; i++)
+	int i = 0;
+	for (i = 0; i < 4; i++)
 	{
 		t = p[i];
 		p[i] = p[7 - i];
@@ -26,11 +26,11 @@ static unsigned int LeftRol(unsigned int v, int n)
 	return (v << n) | (v >> (32 - n));
 }
 
-unsigned char * SHA1(const unsigned char* data, size_t dataLen, unsigned char* md)
+unsigned char *SHA1(const unsigned char *data, size_t dataLen, unsigned char *md)
 {
-	unsigned char* pbytes = (unsigned char*)data;
+	unsigned char *pbytes = (unsigned char *)data;
 	unsigned int nbyte = dataLen;
-	
+
 	static unsigned int words[80];
 	unsigned int H[5] = {0x67452301, 0xEFCDAB89, 0x98BADCFE, 0x10325476, 0xC3D2E1F0};
 	unsigned int a, b, c, d, e, f, k, temp, bitlen[2], word;
@@ -46,7 +46,7 @@ unsigned char * SHA1(const unsigned char* data, size_t dataLen, unsigned char* m
 	}
 
 	maxlen = (nbyte + 1) % 64;
-	if(maxlen <= 56)
+	if (maxlen <= 56)
 	{
 		maxlen = (nbyte + 1) - maxlen + 64;
 	}
@@ -54,51 +54,51 @@ unsigned char * SHA1(const unsigned char* data, size_t dataLen, unsigned char* m
 	{
 		maxlen = (nbyte + 1) - maxlen + 128;
 	}
-	p2= maxlen - 8;
- 	WriteBigEndian64((unsigned char*)bitlen, nbyte * 8);
+	p2 = maxlen - 8;
+	WriteBigEndian64((unsigned char *)bitlen, nbyte * 8);
 
-	for(j = 0; j < maxlen; j += 64)
+	for (j = 0; j < maxlen; j += 64)
 	{
 		a = H[0];
 		b = H[1];
 		c = H[2];
 		d = H[3];
 		e = H[4];
-		for(i = 0; i < 80; i++)
+		for (i = 0; i < 80; i++)
 		{
-			if(i < 16)
+			if (i < 16)
 			{
 				index = j + (i << 2);
-				if(index < p1)
+				if (index < p1)
 				{
-					word = *((unsigned int*)(pbytes + index));
+					word = *((unsigned int *)(pbytes + index));
 				}
-				else if(index == p1)
+				else if (index == p1)
 				{
-					word = *(unsigned int*)spec;
+					word = *(unsigned int *)spec;
 				}
-				else if(index < p2)
+				else if (index < p2)
 				{
 					word = 0;
 				}
-				else 
+				else
 				{
 					word = (index < maxlen - 4) ? bitlen[0] : bitlen[1];
 				}
 				words[i] = FromBigEndian(word);
 			}
-			else 
+			else
 			{
 				words[i] = LeftRol(words[i - 3] ^ words[i - 8] ^ words[i - 14] ^ words[i - 16], 1);
 			}
-			if(i < 20)
+			if (i < 20)
 			{
 				f = (b & c) | ((~b) & d);
 				k = 0x5A827999;
 			}
 			else if (i < 40)
 			{
-				f=b ^ c ^ d;
+				f = b ^ c ^ d;
 				k = 0x6ED9EBA1;
 			}
 			else if (i < 60)
@@ -106,7 +106,7 @@ unsigned char * SHA1(const unsigned char* data, size_t dataLen, unsigned char* m
 				f = (b & c) | (b & d) | (c & d);
 				k = 0x8F1BBCDC;
 			}
-			else 
+			else
 			{
 				f = b ^ c ^ d;
 				k = 0xCA62C1D6;
@@ -123,7 +123,6 @@ unsigned char * SHA1(const unsigned char* data, size_t dataLen, unsigned char* m
 		H[2] += c;
 		H[3] += d;
 		H[4] += e;
-
 	}
 	int ct = 0;
 	for (i = 0; i < 5; i++)
@@ -139,5 +138,3 @@ unsigned char * SHA1(const unsigned char* data, size_t dataLen, unsigned char* m
 
 	return md;
 }
-
-

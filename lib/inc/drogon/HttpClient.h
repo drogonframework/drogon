@@ -18,26 +18,29 @@
 #include <trantor/utils/NonCopyable.h>
 #include <functional>
 #include <memory>
-namespace drogon{
-    enum class ReqResult{
-        Ok,
-        BadResponse,
-        NetworkFailure,
-        BadServerAddress,
-        Timeout
-    };
-    typedef std::function<void(ReqResult,const HttpResponse &response)> HttpReqCallback;
-    class HttpClient;
-    typedef std::shared_ptr<HttpClient> HttpClientPtr;
-    class HttpClient:public trantor::NonCopyable
-    {
-    public:
-        virtual void sendRequest(const HttpRequestPtr &req,const HttpReqCallback &callback)=0;
-        virtual ~HttpClient(){}
-        static HttpClientPtr newHttpClient(const std::string &ip,uint16_t port,bool useSSL=false) ;
-//        static HttpClientPtr newHttpClient(const trantor::InetAddress &addr,bool useSSL=false) ;
-        static HttpClientPtr newHttpClient(const std::string &hostString);
-    protected:
-        HttpClient()= default;
-    };
-}
+namespace drogon
+{
+enum class ReqResult
+{
+    Ok,
+    BadResponse,
+    NetworkFailure,
+    BadServerAddress,
+    Timeout
+};
+typedef std::function<void(ReqResult, const HttpResponse &response)> HttpReqCallback;
+class HttpClient;
+typedef std::shared_ptr<HttpClient> HttpClientPtr;
+class HttpClient : public trantor::NonCopyable
+{
+  public:
+    virtual void sendRequest(const HttpRequestPtr &req, const HttpReqCallback &callback) = 0;
+    virtual ~HttpClient() {}
+    static HttpClientPtr newHttpClient(const std::string &ip, uint16_t port, bool useSSL = false);
+    //        static HttpClientPtr newHttpClient(const trantor::InetAddress &addr,bool useSSL=false) ;
+    static HttpClientPtr newHttpClient(const std::string &hostString);
+
+  protected:
+    HttpClient() = default;
+};
+} // namespace drogon

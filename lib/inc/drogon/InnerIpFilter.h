@@ -18,12 +18,12 @@
 
 namespace drogon
 {
-    class InnerIpFilter:public HttpFilter<InnerIpFilter>
-    {
-    public:
-        InnerIpFilter(){}
-        virtual void doFilter(const HttpRequestPtr& req,
-                              const FilterCallback &fcb,
-                              const FilterChainCallback &fccb) override ;
-    };
-}
+class InnerIpFilter : public HttpFilter<InnerIpFilter>
+{
+  public:
+    InnerIpFilter() {}
+    virtual void doFilter(const HttpRequestPtr &req,
+                          const FilterCallback &fcb,
+                          const FilterChainCallback &fccb) override;
+};
+} // namespace drogon

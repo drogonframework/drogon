@@ -15,15 +15,15 @@
 #include <drogon/InnerIpFilter.h>
 #include "HttpResponseImpl.h"
 using namespace drogon;
-void InnerIpFilter::doFilter(const HttpRequestPtr& req,
-                               const FilterCallback &fcb,
-                               const FilterChainCallback &fccb)
+void InnerIpFilter::doFilter(const HttpRequestPtr &req,
+                             const FilterCallback &fcb,
+                             const FilterChainCallback &fccb)
 {
-    if(req->peerAddr().isInnerIp())
+    if (req->peerAddr().isInnerIp())
     {
         fccb();
         return;
     }
-    auto res=drogon::HttpResponse::newNotFoundResponse();
+    auto res = drogon::HttpResponse::newNotFoundResponse();
     fcb(res);
 }

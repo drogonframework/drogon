@@ -21,20 +21,20 @@
 
 namespace drogon
 {
-    typedef std::function<void(HttpResponsePtr)>FilterCallback;
-    typedef std::function<void()>FilterChainCallback;
-    class HttpFilterBase:public virtual DrObjectBase
-    {
-    public:
-        virtual void doFilter(const HttpRequestPtr& req,
-                              const FilterCallback &fcb,
-                              const FilterChainCallback &fccb)=0;
-        virtual ~HttpFilterBase(){}
-    };
-    template <typename T>
-    class HttpFilter:public DrObject<T>,public HttpFilterBase
-    {
-    public:
-        virtual ~HttpFilter(){}
-    };
-}
+typedef std::function<void(HttpResponsePtr)> FilterCallback;
+typedef std::function<void()> FilterChainCallback;
+class HttpFilterBase : public virtual DrObjectBase
+{
+  public:
+    virtual void doFilter(const HttpRequestPtr &req,
+                          const FilterCallback &fcb,
+                          const FilterChainCallback &fccb) = 0;
+    virtual ~HttpFilterBase() {}
+};
+template <typename T>
+class HttpFilter : public DrObject<T>, public HttpFilterBase
+{
+  public:
+    virtual ~HttpFilter() {}
+};
+} // namespace drogon

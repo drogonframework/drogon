@@ -15,15 +15,15 @@
 #include <drogon/LocalHostFilter.h>
 #include "HttpResponseImpl.h"
 using namespace drogon;
-void LocalHostFilter::doFilter(const HttpRequestPtr& req,
-                         const FilterCallback &fcb,
-                         const FilterChainCallback &fccb)
+void LocalHostFilter::doFilter(const HttpRequestPtr &req,
+                               const FilterCallback &fcb,
+                               const FilterChainCallback &fccb)
 {
-    if(req->peerAddr().toIp()=="127.0.0.1")
+    if (req->peerAddr().toIp() == "127.0.0.1")
     {
         fccb();
         return;
     }
-    auto res=drogon::HttpResponse::newNotFoundResponse();
+    auto res = drogon::HttpResponse::newNotFoundResponse();
     fcb(res);
 }

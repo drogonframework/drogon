@@ -23,43 +23,50 @@
 #include <memory>
 namespace drogon
 {
-    class HttpRequest;
-    typedef std::shared_ptr<HttpRequest> HttpRequestPtr;
-    /*
+class HttpRequest;
+typedef std::shared_ptr<HttpRequest> HttpRequestPtr;
+/*
      * abstract class for webapp developer to get Http client request;
      * */
-    class HttpRequest
+class HttpRequest
+{
+  public:
+    enum Version
     {
-    public:
-        enum Version {
-            kUnknown=0,
-            kHttp10=1,
-            kHttp11=2
-        };
-        enum Method {
-            kInvalid, kGet, kPost, kHead, kPut, kDelete
-        };
-        virtual const char* methodString() const=0;
-        virtual Method method() const=0;
-        virtual std::string getHeader(const std::string& field) const=0;
-        virtual std::string getCookie(const std::string& field) const=0;
-        virtual const std::map<std::string, std::string>& headers() const=0;
-        virtual const std::map<std::string, std::string>& cookies() const=0;
-        virtual const std::string& query() const=0;
-        virtual const std::string& path() const=0;
-        virtual Version getVersion() const=0;
-        virtual SessionPtr session() const=0;
-        virtual const std::map<std::string,std::string > & getParameters() const=0;
-        virtual const trantor::InetAddress & peerAddr() const=0;
-        virtual const trantor::InetAddress & localAddr() const=0;
-        virtual const trantor::Date & receiveDate() const=0;
-        virtual ~HttpRequest(){}
-        virtual const std::shared_ptr<Json::Value> getJsonObject() const=0;
-
-        virtual void setMethod(const Method method)=0;
-        virtual void setPath(const std::string &path)=0;
-        virtual void setParameter(const std::string &key,const std::string &value)=0;
-        static HttpRequestPtr newHttpRequest();
+        kUnknown = 0,
+        kHttp10 = 1,
+        kHttp11 = 2
     };
+    enum Method
+    {
+        kInvalid,
+        kGet,
+        kPost,
+        kHead,
+        kPut,
+        kDelete
+    };
+    virtual const char *methodString() const = 0;
+    virtual Method method() const = 0;
+    virtual std::string getHeader(const std::string &field) const = 0;
+    virtual std::string getCookie(const std::string &field) const = 0;
+    virtual const std::map<std::string, std::string> &headers() const = 0;
+    virtual const std::map<std::string, std::string> &cookies() const = 0;
+    virtual const std::string &query() const = 0;
+    virtual const std::string &path() const = 0;
+    virtual Version getVersion() const = 0;
+    virtual SessionPtr session() const = 0;
+    virtual const std::map<std::string, std::string> &getParameters() const = 0;
+    virtual const trantor::InetAddress &peerAddr() const = 0;
+    virtual const trantor::InetAddress &localAddr() const = 0;
+    virtual const trantor::Date &receiveDate() const = 0;
+    virtual ~HttpRequest() {}
+    virtual const std::shared_ptr<Json::Value> getJsonObject() const = 0;
 
-}
+    virtual void setMethod(const Method method) = 0;
+    virtual void setPath(const std::string &path) = 0;
+    virtual void setParameter(const std::string &key, const std::string &value) = 0;
+    static HttpRequestPtr newHttpRequest();
+};
+
+} // namespace drogon

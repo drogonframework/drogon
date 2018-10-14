@@ -14,7 +14,6 @@
 
 #pragma once
 
-
 #include <stdio.h>
 #include <unordered_map>
 #include <memory>
@@ -27,16 +26,15 @@
 namespace drogon
 {
 class DrObjectBase;
-typedef std::function<DrObjectBase*()>DrAllocFunc;
+typedef std::function<DrObjectBase *()> DrAllocFunc;
 class DrClassMap
 {
-public:
-    static void registerClass(const std::string &className,const DrAllocFunc &func);
-    static DrObjectBase* newObject(const std::string &className);
+  public:
+    static void registerClass(const std::string &className, const DrAllocFunc &func);
+    static DrObjectBase *newObject(const std::string &className);
     static std::vector<std::string> getAllClassName();
-protected:
-    static std::unordered_map <std::string,DrAllocFunc> &getMap();
 
+  protected:
+    static std::unordered_map<std::string, DrAllocFunc> &getMap();
 };
-}
-
+} // namespace drogon

@@ -1,41 +1,41 @@
 #include "api_v1_ApiTest.h"
 using namespace api::v1;
 //add definition of your processing function here
-void ApiTest::get(const HttpRequestPtr& req,const std::function<void (const HttpResponsePtr &)>&callback,int p1,std::string &&p2)
+void ApiTest::get(const HttpRequestPtr &req, const std::function<void(const HttpResponsePtr &)> &callback, int p1, std::string &&p2)
 {
     HttpViewData data;
-    data.insert("title",std::string("ApiTest::get"));
-    std::map<std::string,std::string> para;
-    para["p1"]=std::to_string(p1);
-    para["p2"]=p2;
-    data.insert("parameters",para);
-    auto res=HttpResponse::newHttpViewResponse("ListParaView.csp",data);
+    data.insert("title", std::string("ApiTest::get"));
+    std::map<std::string, std::string> para;
+    para["p1"] = std::to_string(p1);
+    para["p2"] = p2;
+    data.insert("parameters", para);
+    auto res = HttpResponse::newHttpViewResponse("ListParaView.csp", data);
     callback(res);
 }
 
-void ApiTest::your_method_name(const HttpRequestPtr& req,const std::function<void (const HttpResponsePtr &)>&callback,double p1,int p2) const
+void ApiTest::your_method_name(const HttpRequestPtr &req, const std::function<void(const HttpResponsePtr &)> &callback, double p1, int p2) const
 {
     HttpViewData data;
-    data.insert("title",std::string("ApiTest::get"));
-    std::map<std::string,std::string> para;
-    para["p1"]=std::to_string(p1);
-    para["p2"]=std::to_string(p2);
-    data.insert("parameters",para);
-    auto res=HttpResponse::newHttpViewResponse("ListParaView",data);
+    data.insert("title", std::string("ApiTest::get"));
+    std::map<std::string, std::string> para;
+    para["p1"] = std::to_string(p1);
+    para["p2"] = std::to_string(p2);
+    data.insert("parameters", para);
+    auto res = HttpResponse::newHttpViewResponse("ListParaView", data);
     callback(res);
 }
-void ApiTest::staticApi(const HttpRequestPtr& req,const std::function<void (const HttpResponsePtr &)>&callback)
+void ApiTest::staticApi(const HttpRequestPtr &req, const std::function<void(const HttpResponsePtr &)> &callback)
 {
-    auto resp=HttpResponse::newHttpResponse();
+    auto resp = HttpResponse::newHttpResponse();
     resp->setBody("staticApi,hello!!");
-    resp->setExpiredTime(0);//cache the response forever;
+    resp->setExpiredTime(0); //cache the response forever;
     callback(resp);
 }
 
-void ApiTest::get2(const HttpRequestPtr& req,const std::function<void (const HttpResponsePtr &)>&callback,std::string &&p1)
+void ApiTest::get2(const HttpRequestPtr &req, const std::function<void(const HttpResponsePtr &)> &callback, std::string &&p1)
 {
     //test gzip feature
-    auto res=HttpResponse::newHttpResponse();
+    auto res = HttpResponse::newHttpResponse();
     res->setBody("Applications\n"
                  "Developer\n"
                  "Library\n"

@@ -15,16 +15,16 @@
 #include <drogon/DeleteFilter.h>
 #include "HttpResponseImpl.h"
 using namespace drogon;
-void DeleteFilter::doFilter(const HttpRequestPtr& req,
-                                 const FilterCallback &fcb,
-                                 const FilterChainCallback &fccb)
+void DeleteFilter::doFilter(const HttpRequestPtr &req,
+                            const FilterCallback &fcb,
+                            const FilterChainCallback &fccb)
 {
-    if(req->method()==HttpRequest::kDelete)
+    if (req->method() == HttpRequest::kDelete)
     {
         fccb();
         return;
     }
-    auto res=drogon::HttpResponse::newHttpResponse();
+    auto res = drogon::HttpResponse::newHttpResponse();
     res->setStatusCode(HttpResponse::k405MethodNotAllowed);
     fcb(res);
 }

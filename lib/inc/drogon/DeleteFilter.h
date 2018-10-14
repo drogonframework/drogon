@@ -18,12 +18,12 @@
 
 namespace drogon
 {
-    class DeleteFilter:public HttpFilter<DeleteFilter>
-    {
-    public:
-        DeleteFilter(){}
-        virtual void doFilter(const HttpRequestPtr& req,
-                              const FilterCallback &fcb,
-                              const FilterChainCallback &fccb) override ;
-    };
-}
+class DeleteFilter : public HttpFilter<DeleteFilter>
+{
+  public:
+    DeleteFilter() {}
+    virtual void doFilter(const HttpRequestPtr &req,
+                          const FilterCallback &fcb,
+                          const FilterChainCallback &fccb) override;
+};
+} // namespace drogon

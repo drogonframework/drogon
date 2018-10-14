@@ -16,22 +16,22 @@
 #include <trantor/utils/Logger.h>
 #include <memory>
 using namespace drogon;
-HttpResponsePtr HttpViewBase::genHttpResponse(std::string viewName,const HttpViewData &data)
+HttpResponsePtr HttpViewBase::genHttpResponse(std::string viewName, const HttpViewData &data)
 {
-    LOG_TRACE<<"http view name="<<viewName;
-    auto pos=viewName.find(".csp");
-    if(pos!=std::string::npos)
+    LOG_TRACE << "http view name=" << viewName;
+    auto pos = viewName.find(".csp");
+    if (pos != std::string::npos)
     {
-        if(pos==viewName.length()-4)
+        if (pos == viewName.length() - 4)
         {
-            viewName=viewName.substr(0,pos);
+            viewName = viewName.substr(0, pos);
         }
     }
-    auto obj=std::shared_ptr<DrObjectBase>(drogon::DrClassMap::newObject(viewName));
-    if(obj)
+    auto obj = std::shared_ptr<DrObjectBase>(drogon::DrClassMap::newObject(viewName));
+    if (obj)
     {
-        auto view= std::dynamic_pointer_cast<HttpViewBase>(obj);
-        if(view)
+        auto view = std::dynamic_pointer_cast<HttpViewBase>(obj);
+        if (view)
         {
             return view->genHttpResponse(data);
         }

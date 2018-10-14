@@ -15,16 +15,16 @@
 #include <drogon/GetFilter.h>
 #include "HttpResponseImpl.h"
 using namespace drogon;
-void GetFilter::doFilter(const HttpRequestPtr& req,
+void GetFilter::doFilter(const HttpRequestPtr &req,
                          const FilterCallback &fcb,
                          const FilterChainCallback &fccb)
 {
-    if(req->method()==HttpRequest::kGet)
+    if (req->method() == HttpRequest::kGet)
     {
         fccb();
         return;
     }
-    auto res=drogon::HttpResponse::newHttpResponse();
+    auto res = drogon::HttpResponse::newHttpResponse();
     res->setStatusCode(HttpResponse::k405MethodNotAllowed);
     fcb(res);
 }

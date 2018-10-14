@@ -20,15 +20,15 @@
 
 namespace drogon
 {
-    class ConfigLoader:public trantor::NonCopyable
-    {
-    public:
-        explicit ConfigLoader(const std::string &configFile);
-        ~ConfigLoader();
-        void load();
+class ConfigLoader : public trantor::NonCopyable
+{
+  public:
+    explicit ConfigLoader(const std::string &configFile);
+    ~ConfigLoader();
+    void load();
 
-    private:
-        std::string _configFile;
-        Json::Value _configJsonRoot;
-    };
-}
+  private:
+    std::string _configFile;
+    Json::Value _configJsonRoot;
+};
+} // namespace drogon

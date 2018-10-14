@@ -18,12 +18,12 @@
 
 namespace drogon
 {
-    class PutFilter:public HttpFilter<PutFilter>
-    {
-    public:
-        PutFilter(){}
-        virtual void doFilter(const HttpRequestPtr& req,
-                              const FilterCallback &fcb,
-                              const FilterChainCallback &fccb) override ;
-    };
-}
+class PutFilter : public HttpFilter<PutFilter>
+{
+  public:
+    PutFilter() {}
+    virtual void doFilter(const HttpRequestPtr &req,
+                          const FilterCallback &fcb,
+                          const FilterChainCallback &fccb) override;
+};
+} // namespace drogon

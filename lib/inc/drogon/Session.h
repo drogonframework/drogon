@@ -20,60 +20,63 @@
 #include <thread>
 #include <drogon/config.h>
 
-
-typedef std::map<std::string,any> SessionMap;
+typedef std::map<std::string, any> SessionMap;
 namespace drogon
 {
-    class Session
+class Session
+{
+  public:
+    template <typename T>
+    T get(const std::string &key) const
     {
-    public:
-        template <typename T> T get(const std::string &key) const{
-            std::lock_guard<std::mutex> lck(mutex_);
-            auto it=sessionMap_.find(key);
-            if(it!=sessionMap_.end())
-            {
-                return any_cast<T>(it->second);
-            }
-            T tmp;
-            return tmp;
-        };
-        any &operator[](const std::string &key){
-            std::lock_guard<std::mutex> lck(mutex_);
-            return sessionMap_[key];
-        };
-        void insert(const std::string& key,const any &obj)
+        std::lock_guard<std::mutex> lck(mutex_);
+        auto it = sessionMap_.find(key);
+        if (it != sessionMap_.end())
         {
-            std::lock_guard<std::mutex> lck(mutex_);
-            sessionMap_[key]=obj;
-        };
-        void insert(const std::string& key,any &&obj)
-        {
-            std::lock_guard<std::mutex> lck(mutex_);
-            sessionMap_[key]=std::move(obj);
+            return any_cast<T>(it->second);
         }
-        void erase(const std::string& key)
-        {
-            std::lock_guard<std::mutex> lck(mutex_);
-            sessionMap_.erase(key);
-        }
-        bool find(const std::string& key)
-        {
-            std::lock_guard<std::mutex> lck(mutex_);
-            if(sessionMap_.find(key) == sessionMap_.end())
-            {
-                return false;
-            }
-            return true;
-        }
-        void clear()
-        {
-            std::lock_guard<std::mutex> lck(mutex_);
-            sessionMap_.clear();
-        }
-    protected:
-        SessionMap sessionMap_;
-        int timeoutInterval_;
-        mutable std::mutex mutex_;
+        T tmp;
+        return tmp;
     };
-    typedef std::shared_ptr<Session> SessionPtr;
-}
+    any &operator[](const std::string &key)
+    {
+        std::lock_guard<std::mutex> lck(mutex_);
+        return sessionMap_[key];
+    };
+    void insert(const std::string &key, const any &obj)
+    {
+        std::lock_guard<std::mutex> lck(mutex_);
+        sessionMap_[key] = obj;
+    };
+    void insert(const std::string &key, any &&obj)
+    {
+        std::lock_guard<std::mutex> lck(mutex_);
+        sessionMap_[key] = std::move(obj);
+    }
+    void erase(const std::string &key)
+    {
+        std::lock_guard<std::mutex> lck(mutex_);
+        sessionMap_.erase(key);
+    }
+    bool find(const std::string &key)
+    {
+        std::lock_guard<std::mutex> lck(mutex_);
+        if (sessionMap_.find(key) == sessionMap_.end())
+        {
+            return false;
+        }
+        return true;
+    }
+    void clear()
+    {
+        std::lock_guard<std::mutex> lck(mutex_);
+        sessionMap_.clear();
+    }
+
+  protected:
+    SessionMap sessionMap_;
+    int timeoutInterval_;
+    mutable std::mutex mutex_;
+};
+typedef std::shared_ptr<Session> SessionPtr;
+} // namespace drogon

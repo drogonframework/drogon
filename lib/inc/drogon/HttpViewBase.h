@@ -22,18 +22,15 @@
 
 namespace drogon
 {
-    class HttpViewBase:virtual public DrObjectBase
-    {
-    public:
+class HttpViewBase : virtual public DrObjectBase
+{
+  public:
+    static HttpResponsePtr genHttpResponse(std::string viewName, const HttpViewData &data);
 
-        static HttpResponsePtr genHttpResponse(std::string viewName,const HttpViewData &data);
+    virtual ~HttpViewBase(){};
+    HttpViewBase(){};
 
-        virtual ~HttpViewBase(){};
-        HttpViewBase(){};
-    protected:
-
-        virtual HttpResponsePtr genHttpResponse(const HttpViewData&)=0;
-    };
-}
-
-
+  protected:
+    virtual HttpResponsePtr genHttpResponse(const HttpViewData &) = 0;
+};
+} // namespace drogon

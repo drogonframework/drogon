@@ -24,7 +24,7 @@ int FileUpload::parse(const HttpRequestPtr &req)
     if (req->method() != HttpRequest::kPost)
         return -1;
     std::string contentType = req->getHeader("Content-Type");
-    if(contentType.empty())
+    if (contentType.empty())
     {
         return -1;
     }
@@ -33,7 +33,7 @@ int FileUpload::parse(const HttpRequestPtr &req)
         return -1;
 
     std::string type = contentType.substr(0, pos);
-    std::transform(type.begin(),type.end(),type.begin(),tolower);
+    std::transform(type.begin(), type.end(), type.begin(), tolower);
     if (type != "multipart/form-data")
         return -1;
     pos = contentType.find("boundary=");
