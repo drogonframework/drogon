@@ -87,7 +87,7 @@
     "use_sendfile": true,
     //use_gzip:true by default,use gzip to compress the response body's content;
     "use_gzip": true,
-    //static_files_cache_time:5 by default,the time in which static file response is cached,
+    //static_files_cache_time:5 (seconds) by default,the time in which static file response is cached,
     //0 means cache forever,the negative value means no cache
     "static_files_cache_time":5
   }

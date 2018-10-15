@@ -710,39 +710,6 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestPtr &req, const std::
             LOG_INFO << "file query!";
             std::string filePath = _rootPath + path;
             std::shared_ptr<HttpResponseImpl> resp = std::make_shared<HttpResponseImpl>();
-
-            //check last modified time,rfc2616-14.25
-            //If-Modified-Since: Mon, 15 Oct 2018 06:26:33 GMT
-
-            if (_enableLastModify)
-            {
-                struct stat fileStat;
-                LOG_TRACE << "enabled LastModify";
-                if (stat(filePath.c_str(), &fileStat) >= 0)
-                {
-                    LOG_TRACE << "last modify time:" << fileStat.st_mtime;
-                    struct tm tm1;
-                    gmtime_r(&fileStat.st_mtime, &tm1);
-                    std::string timeStr;
-                    timeStr.resize(64);
-                    auto len=strftime((char *)timeStr.data(), timeStr.size() , "%a, %d %b %Y %T GMT", &tm1);
-                    timeStr.resize(len);
-                    std::string modiStr = req->getHeader("If-Modified-Since");
-                    if (modiStr == timeStr && !modiStr.empty())
-                    {
-                        LOG_TRACE << "not Modified!";
-                        resp->setStatusCode(HttpResponse::k304NotModified);
-                        if (needSetJsessionid)
-                        {
-                            resp->addCookie("JSESSIONID", session_id);
-                        }
-                        callback(resp);
-                        return;
-                    }
-                    resp->addHeader("Last-Modified", timeStr);
-                    resp->addHeader("Expires", "Thu, 01 Jan 1970 00:00:00 GMT");
-                }
-            }
             //find cached response
             HttpResponsePtr cachedResp;
             {
@@ -756,6 +723,56 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestPtr &req, const std::
                     }
                 }
             }
+
+            //check last modified time,rfc2616-14.25
+            //If-Modified-Since: Mon, 15 Oct 2018 06:26:33 GMT
+
+            if (_enableLastModify)
+            {
+                if (cachedResp)
+                {
+                    if (cachedResp->getHeader("Last-Modified") == req->getHeader("If-Modified-Since"))
+                    {
+                        resp->setStatusCode(HttpResponse::k304NotModified);
+                        if (needSetJsessionid)
+                        {
+                            resp->addCookie("JSESSIONID", session_id);
+                        }
+                        callback(resp);
+                        return;
+                    }
+                }
+                else
+                {
+                    struct stat fileStat;
+                    LOG_TRACE << "enabled LastModify";
+                    if (stat(filePath.c_str(), &fileStat) >= 0)
+                    {
+                        LOG_TRACE << "last modify time:" << fileStat.st_mtime;
+                        struct tm tm1;
+                        gmtime_r(&fileStat.st_mtime, &tm1);
+                        std::string timeStr;
+                        timeStr.resize(64);
+                        auto len = strftime((char *)timeStr.data(), timeStr.size(), "%a, %d %b %Y %T GMT", &tm1);
+                        timeStr.resize(len);
+                        std::string modiStr = req->getHeader("If-Modified-Since");
+                        if (modiStr == timeStr && !modiStr.empty())
+                        {
+                            LOG_TRACE << "not Modified!";
+                            resp->setStatusCode(HttpResponse::k304NotModified);
+                            if (needSetJsessionid)
+                            {
+                                resp->addCookie("JSESSIONID", session_id);
+                            }
+                            callback(resp);
+                            return;
+                        }
+                        resp->addHeader("Last-Modified", timeStr);
+                        resp->addHeader("Expires", "Thu, 01 Jan 1970 00:00:00 GMT");
+                    }
+                }
+            }
+
             if (cachedResp)
             {
                 if (needSetJsessionid)
