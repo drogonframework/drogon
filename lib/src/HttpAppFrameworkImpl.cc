@@ -711,13 +711,15 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestPtr &req, const std::
             std::string filePath = _rootPath + path;
             //find cached response
             HttpResponsePtr cachedResp;
-            if (_staticFilesCache.find(filePath) != _staticFilesCache.end())
             {
                 std::lock_guard<std::mutex> guard(_staticFilesCacheMutex);
-                cachedResp = _staticFilesCache[filePath].lock();
-                if (!cachedResp)
+                if (_staticFilesCache.find(filePath) != _staticFilesCache.end())
                 {
-                    _staticFilesCache.erase(filePath);
+                    cachedResp = _staticFilesCache[filePath].lock();
+                    if (!cachedResp)
+                    {
+                        _staticFilesCache.erase(filePath);
+                    }
                 }
             }
             if (cachedResp)
