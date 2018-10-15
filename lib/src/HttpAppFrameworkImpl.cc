@@ -707,7 +707,7 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestPtr &req, const std::
         transform(filetype.begin(), filetype.end(), filetype.begin(), tolower);
         if (_fileTypeSet.find(filetype) != _fileTypeSet.end())
         {
-            LOG_INFO << "file query!";
+            //LOG_INFO << "file query!";
             std::string filePath = _rootPath + path;
             std::shared_ptr<HttpResponseImpl> resp = std::make_shared<HttpResponseImpl>();
             //find cached response
@@ -1059,7 +1059,7 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestPtr &req, const std::
 void HttpAppFrameworkImpl::readSendFile(const std::string &filePath, const HttpRequestPtr &req, const HttpResponsePtr &resp)
 {
     std::ifstream infile(filePath, std::ifstream::binary);
-    LOG_INFO << "send http file:" << filePath;
+    LOG_TRACE << "send http file:" << filePath;
     if (!infile)
     {
 
