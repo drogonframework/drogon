@@ -1059,8 +1059,8 @@ void HttpAppFrameworkImpl::readSendFile(const std::string &filePath, const HttpR
 
     resp->setStatusCode(HttpResponse::k200OK);
 
-    //cache the response for 5 seconds
-    resp->setExpiredTime(5);
+    //cache the response for 5 seconds by default
+    resp->setExpiredTime(_staticFilesCacheTime);
     _responseCacheMap->insert(filePath, resp, resp->expiredTime(), [=]() {
         std::lock_guard<std::mutex> guard(_staticFilesCacheMutex);
         _staticFilesCache.erase(filePath);

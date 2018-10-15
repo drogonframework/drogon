@@ -160,6 +160,8 @@ static void loadApp(const Json::Value &app)
     HttpAppFramework::instance().enableSendfile(useSendfile);
     auto useGzip = app.get("use_gzip", true).asBool();
     HttpAppFramework::instance().enableGzip(useGzip);
+    auto staticFilesCacheTime=app.get("static_files_cache_time",5).asInt();
+    HttpAppFramework::instance().setStaticFilesCacheTime(staticFilesCacheTime);
 }
 static void loadListeners(const Json::Value &listeners)
 {
