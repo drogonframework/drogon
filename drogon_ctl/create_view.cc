@@ -72,8 +72,14 @@ static void outputVal(std::ofstream &oSrcFile, const std::string &streamName, co
 static void parseLine(std::ofstream &oSrcFile, std::string &line, const std::string &streamName, const std::string &viewDataName, int &cxx_flag, int returnFlag = 1)
 {
     std::string::size_type pos(0);
+    // std::cout<<line<<"("<<line.length()<<")\n";
     if (line.length() == 0)
+    {
+        // std::cout<<"blank line!"<<std::endl;
+        // std::cout<<streamName<<"<<\"\\n\";\n";
+        oSrcFile << streamName << "<<\"\\n\";\n";
         return;
+    }
     if (cxx_flag == 0)
     {
         //find cxx lang begin

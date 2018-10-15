@@ -165,7 +165,7 @@ class HttpResponse
     static HttpResponsePtr newHttpResponse();
     static HttpResponsePtr newNotFoundResponse();
     static HttpResponsePtr newHttpJsonResponse(const Json::Value &data);
-    static HttpResponsePtr newHttpViewResponse(const std::string &viewName, const HttpViewData &data);
+    static HttpResponsePtr newHttpViewResponse(const std::string &viewName, const HttpViewData &data = HttpViewData());
     static HttpResponsePtr newLocationRedirectResponse(const std::string &path);
 
     virtual ~HttpResponse() {}

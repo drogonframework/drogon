@@ -1,0 +1,8 @@
+#include <drogon/HttpAppFramework.h>
+int main() {
+    //Set HTTP listener address and port
+    drogon::HttpAppFramework::instance().addListener("0.0.0.0",80);
+    //Run HTTP framework,the method will block in the inner event loop
+    drogon::HttpAppFramework::instance().run();
+    return 0;
+}
