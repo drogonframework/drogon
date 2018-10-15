@@ -1085,7 +1085,6 @@ void HttpAppFrameworkImpl::readSendFile(const std::string &filePath, const HttpR
         std::string str;
         str.resize(filesize);
         pbuf->sgetn(&str[0], filesize);
-        LOG_INFO << "file len:" << str.length();
         resp->setBody(std::move(str));
     }
 
