@@ -707,12 +707,86 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestPtr &req, const std::
         transform(filetype.begin(), filetype.end(), filetype.begin(), tolower);
         if (_fileTypeSet.find(filetype) != _fileTypeSet.end())
         {
-            LOG_INFO << "file query!";
+            //LOG_INFO << "file query!";
             std::string filePath = _rootPath + path;
             std::shared_ptr<HttpResponseImpl> resp = std::make_shared<HttpResponseImpl>();
+            //find cached response
+            HttpResponsePtr cachedResp;
+            {
+                std::lock_guard<std::mutex> guard(_staticFilesCacheMutex);
+                if (_staticFilesCache.find(filePath) != _staticFilesCache.end())
+                {
+                    cachedResp = _staticFilesCache[filePath].lock();
+                    if (!cachedResp)
+                    {
+                        _staticFilesCache.erase(filePath);
+                    }
+                }
+            }
 
-            if (needSetJsessionid)
-                resp->addCookie("JSESSIONID", session_id);
+            //check last modified time,rfc2616-14.25
+            //If-Modified-Since: Mon, 15 Oct 2018 06:26:33 GMT
+
+            if (_enableLastModify)
+            {
+                if (cachedResp)
+                {
+                    if (cachedResp->getHeader("Last-Modified") == req->getHeader("If-Modified-Since"))
+                    {
+                        resp->setStatusCode(HttpResponse::k304NotModified);
+                        if (needSetJsessionid)
+                        {
+                            resp->addCookie("JSESSIONID", session_id);
+                        }
+                        callback(resp);
+                        return;
+                    }
+                }
+                else
+                {
+                    struct stat fileStat;
+                    LOG_TRACE << "enabled LastModify";
+                    if (stat(filePath.c_str(), &fileStat) >= 0)
+                    {
+                        LOG_TRACE << "last modify time:" << fileStat.st_mtime;
+                        struct tm tm1;
+                        gmtime_r(&fileStat.st_mtime, &tm1);
+                        std::string timeStr;
+                        timeStr.resize(64);
+                        auto len = strftime((char *)timeStr.data(), timeStr.size(), "%a, %d %b %Y %T GMT", &tm1);
+                        timeStr.resize(len);
+                        std::string modiStr = req->getHeader("If-Modified-Since");
+                        if (modiStr == timeStr && !modiStr.empty())
+                        {
+                            LOG_TRACE << "not Modified!";
+                            resp->setStatusCode(HttpResponse::k304NotModified);
+                            if (needSetJsessionid)
+                            {
+                                resp->addCookie("JSESSIONID", session_id);
+                            }
+                            callback(resp);
+                            return;
+                        }
+                        resp->addHeader("Last-Modified", timeStr);
+                        resp->addHeader("Expires", "Thu, 01 Jan 1970 00:00:00 GMT");
+                    }
+                }
+            }
+
+            if (cachedResp)
+            {
+                if (needSetJsessionid)
+                {
+                    //make a copy
+                    auto newCachedResp = std::make_shared<HttpResponseImpl>(*std::dynamic_pointer_cast<HttpResponseImpl>(cachedResp));
+                    newCachedResp->addCookie("JSESSIONID", session_id);
+                    newCachedResp->setExpiredTime(-1);
+                    callback(newCachedResp);
+                    return;
+                }
+                callback(cachedResp);
+                return;
+            }
 
             // pick a Content-Type for the file
             if (filetype == "html")
@@ -757,6 +831,20 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestPtr &req, const std::
                 resp->setContentTypeCode(CT_APPLICATION_OCTET_STREAM);
 
             readSendFile(filePath, req, resp);
+
+            if (needSetJsessionid)
+            {
+                auto newCachedResp = resp;
+                if (resp->expiredTime() >= 0)
+                {
+                    //make a copy
+                    newCachedResp = std::make_shared<HttpResponseImpl>(*std::dynamic_pointer_cast<HttpResponseImpl>(resp));
+                    newCachedResp->setExpiredTime(-1);
+                }
+                newCachedResp->addCookie("JSESSIONID", session_id);
+                callback(newCachedResp);
+                return;
+            }
             callback(resp);
             return;
         }
@@ -836,7 +924,6 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestPtr &req, const std::
             }
             else
             {
-
                 LOG_ERROR << "can't find controller " << ctrlName;
             }
         });
@@ -969,11 +1056,10 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestPtr &req, const std::
     }
 }
 
-void HttpAppFrameworkImpl::readSendFile(const std::string &filePath, const HttpRequestPtr &req, const HttpResponsePtr resp)
+void HttpAppFrameworkImpl::readSendFile(const std::string &filePath, const HttpRequestPtr &req, const HttpResponsePtr &resp)
 {
-    //If-Modified-Since: Wed Jun 15 08:57:30 2016 GMT
     std::ifstream infile(filePath, std::ifstream::binary);
-    LOG_INFO << "send http file:" << filePath;
+    LOG_TRACE << "send http file:" << filePath;
     if (!infile)
     {
 
@@ -982,54 +1068,42 @@ void HttpAppFrameworkImpl::readSendFile(const std::string &filePath, const HttpR
         return;
     }
 
-    if (_enableLastModify)
-    {
-        struct stat fileStat;
-        LOG_TRACE << "enabled LastModify";
-        if (stat(filePath.c_str(), &fileStat) >= 0)
-        {
-            LOG_TRACE << "last modify time:" << fileStat.st_mtime;
-            struct tm tm1;
-            gmtime_r(&fileStat.st_mtime, &tm1);
-            char timeBuf[64];
-            asctime_r(&tm1, timeBuf);
-            std::string timeStr(timeBuf);
-            std::string::size_type len = timeStr.length();
-            std::string lastModified = timeStr.substr(0, len - 1) + " GMT";
-
-            std::string modiStr = req->getHeader("If-Modified-Since");
-            if (modiStr != "" && modiStr == lastModified)
-            {
-                LOG_TRACE << "not Modified!";
-                resp->setStatusCode(HttpResponse::k304NotModified);
-                return;
-            }
-            resp->addHeader("Last-Modified", lastModified);
-
-            resp->addHeader("Expires", "Thu, 01 Jan 1970 00:00:00 GMT");
-        }
-    }
+    std::streambuf *pbuf = infile.rdbuf();
+    std::streamsize filesize = pbuf->pubseekoff(0, infile.end);
+    pbuf->pubseekoff(0, infile.beg); // rewind
 
     if (_useSendfile &&
         (req->getHeader("Accept-Encoding").find("gzip") == std::string::npos ||
-         resp->getContentTypeCode() >= CT_APPLICATION_OCTET_STREAM))
+         resp->getContentTypeCode() >= CT_APPLICATION_OCTET_STREAM) &&
+        filesize > 1024 * 100)
     {
         //binary file or no gzip supported by client
         std::dynamic_pointer_cast<HttpResponseImpl>(resp)->setSendfile(filePath);
     }
     else
     {
-        std::streambuf *pbuf = infile.rdbuf();
-        std::streamsize size = pbuf->pubseekoff(0, infile.end);
-        pbuf->pubseekoff(0, infile.beg); // rewind
         std::string str;
-        str.resize(size);
-        pbuf->sgetn(&str[0], size);
-        LOG_INFO << "file len:" << str.length();
+        str.resize(filesize);
+        pbuf->sgetn(&str[0], filesize);
         resp->setBody(std::move(str));
     }
 
     resp->setStatusCode(HttpResponse::k200OK);
+
+    //cache the response for 5 seconds by default
+
+    if (_staticFilesCacheTime >= 0)
+    {
+        resp->setExpiredTime(_staticFilesCacheTime);
+        _responseCacheMap->insert(filePath, resp, resp->expiredTime(), [=]() {
+            std::lock_guard<std::mutex> guard(_staticFilesCacheMutex);
+            _staticFilesCache.erase(filePath);
+        });
+        {
+            std::lock_guard<std::mutex> guard(_staticFilesCacheMutex);
+            _staticFilesCache[filePath] = resp;
+        }
+    }
 }
 
 trantor::EventLoop *HttpAppFrameworkImpl::loop()

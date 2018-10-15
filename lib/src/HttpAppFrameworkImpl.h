@@ -25,6 +25,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <mutex>
 #include <regex>
 
 namespace drogon
@@ -73,6 +74,8 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     virtual void enableSendfile(bool sendFile) override { _useSendfile = sendFile; }
     virtual void enableGzip(bool useGzip) override { _useGzip = useGzip; }
     virtual bool useGzip() const override { return _useGzip; }
+    virtual void setStaticFilesCacheTime(int cacheTime) override { _staticFilesCacheTime = cacheTime; }
+    virtual int staticFilesCacheTime() const override { return _staticFilesCacheTime; }
     virtual ~HttpAppFrameworkImpl()
     {
         //Destroy the following objects before _loop destruction
@@ -95,7 +98,7 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     void onWebsockMessage(const WebSocketConnectionPtr &wsConnPtr, trantor::MsgBuffer *buffer);
     void onWebsockDisconnect(const WebSocketConnectionPtr &wsConnPtr);
     void onConnection(const TcpConnectionPtr &conn);
-    void readSendFile(const std::string &filePath, const HttpRequestPtr &req, const HttpResponsePtr resp);
+    void readSendFile(const std::string &filePath, const HttpRequestPtr &req, const HttpResponsePtr &resp);
     void addApiPath(const std::string &path,
                     const HttpApiBinderBasePtr &binder,
                     const std::vector<std::string> &filters);
@@ -190,5 +193,8 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     size_t _logfileSize = 100000000;
     bool _useSendfile = true;
     bool _useGzip = true;
+    int _staticFilesCacheTime = 5;
+    std::unordered_map<std::string, std::weak_ptr<HttpResponse>> _staticFilesCache;
+    std::mutex _staticFilesCacheMutex;
 };
 } // namespace drogon

@@ -109,6 +109,8 @@ class HttpAppFramework : public trantor::NonCopyable
     virtual void enableSendfile(bool sendFile) = 0;
     virtual void enableGzip(bool useGzip) = 0;
     virtual bool useGzip() const = 0;
+    virtual void setStaticFilesCacheTime(int cacheTime) = 0;
+    virtual int staticFilesCacheTime() const = 0;
 
   private:
     virtual void registerHttpApiController(const std::string &pathPattern,
