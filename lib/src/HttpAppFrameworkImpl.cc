@@ -1073,11 +1073,10 @@ void HttpAppFrameworkImpl::readSendFile(const std::string &filePath, const HttpR
     pbuf->pubseekoff(0, infile.beg); // rewind
 
     if (_useSendfile &&
-        (req->getHeader("Accept-Encoding").find("gzip") == std::string::npos ||
-         resp->getContentTypeCode() >= CT_APPLICATION_OCTET_STREAM) &&
-        filesize > 1024 * 100)
+        filesize > 1024 * 200) 
+        //FIXME : Is 200k an appropriate value? Or set it to be configurable
     {
-        //binary file or no gzip supported by client
+        //The advantages of sendfile() can only be reflected in sending large files.
         std::dynamic_pointer_cast<HttpResponseImpl>(resp)->setSendfile(filePath);
     }
     else
