@@ -729,6 +729,7 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestPtr &req, const std::
                     //make a copy
                     auto newCachedResp = std::make_shared<HttpResponseImpl>(*std::dynamic_pointer_cast<HttpResponseImpl>(cachedResp));
                     newCachedResp->addCookie("JSESSIONID", session_id);
+                    newCachedResp->setExpiredTime(-1);
                     callback(newCachedResp);
                     return;
                 }
@@ -736,9 +737,6 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestPtr &req, const std::
                 return;
             }
             std::shared_ptr<HttpResponseImpl> resp = std::make_shared<HttpResponseImpl>();
-
-            if (needSetJsessionid)
-                resp->addCookie("JSESSIONID", session_id);
 
             // pick a Content-Type for the file
             if (filetype == "html")
@@ -783,6 +781,19 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestPtr &req, const std::
                 resp->setContentTypeCode(CT_APPLICATION_OCTET_STREAM);
 
             readSendFile(filePath, req, resp);
+            if (needSetJsessionid)
+            {
+                auto newCachedResp = resp;
+                if (resp->expiredTime() >= 0)
+                {
+                    //make a copy
+                    newCachedResp = std::make_shared<HttpResponseImpl>(*std::dynamic_pointer_cast<HttpResponseImpl>(resp));
+                    newCachedResp->setExpiredTime(-1);
+                }
+                newCachedResp->addCookie("JSESSIONID", session_id);
+                callback(newCachedResp);
+                return;
+            }
             callback(resp);
             return;
         }
@@ -1060,14 +1071,18 @@ void HttpAppFrameworkImpl::readSendFile(const std::string &filePath, const HttpR
     resp->setStatusCode(HttpResponse::k200OK);
 
     //cache the response for 5 seconds by default
-    resp->setExpiredTime(_staticFilesCacheTime);
-    _responseCacheMap->insert(filePath, resp, resp->expiredTime(), [=]() {
-        std::lock_guard<std::mutex> guard(_staticFilesCacheMutex);
-        _staticFilesCache.erase(filePath);
-    });
+    
+    if (_staticFilesCacheTime >= 0)
     {
-        std::lock_guard<std::mutex> guard(_staticFilesCacheMutex);
-        _staticFilesCache[filePath] = resp;
+        resp->setExpiredTime(_staticFilesCacheTime);
+        _responseCacheMap->insert(filePath, resp, resp->expiredTime(), [=]() {
+            std::lock_guard<std::mutex> guard(_staticFilesCacheMutex);
+            _staticFilesCache.erase(filePath);
+        });
+        {
+            std::lock_guard<std::mutex> guard(_staticFilesCacheMutex);
+            _staticFilesCache[filePath] = resp;
+        }
     }
 }
 
