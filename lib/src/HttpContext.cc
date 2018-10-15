@@ -339,12 +339,12 @@ bool HttpContext::parseResponse(MsgBuffer *buf)
             if (response_._left_body_length >= buf->readableBytes())
             {
                 response_._left_body_length -= buf->readableBytes();
-                response_._body += std::string(buf->peek(), buf->readableBytes());
+                response_._bodyPtr->append(std::string(buf->peek(), buf->readableBytes()));
                 buf->retrieveAll();
             }
             else
             {
-                response_._body += std::string(buf->peek(), response_._left_body_length);
+                response_._bodyPtr->append(std::string(buf->peek(), response_._left_body_length));
                 buf->retrieve(request_->contentLen);
                 response_._left_body_length = 0;
             }
@@ -359,7 +359,7 @@ bool HttpContext::parseResponse(MsgBuffer *buf)
         }
         else if (res_state_ == HttpResponseParseState::kExpectClose)
         {
-            response_._body += std::string(buf->peek(), buf->readableBytes());
+            response_._bodyPtr->append(std::string(buf->peek(), buf->readableBytes()));
             buf->retrieveAll();
             break;
         }
@@ -396,7 +396,7 @@ bool HttpContext::parseResponse(MsgBuffer *buf)
                 if (*(buf->peek() + response_._current_chunk_length) == '\r' &&
                     *(buf->peek() + response_._current_chunk_length + 1) == '\n')
                 {
-                    response_._body += std::string(buf->peek(), response_._current_chunk_length);
+                    response_._bodyPtr->append(std::string(buf->peek(), response_._current_chunk_length));
                     buf->retrieve(response_._current_chunk_length + 2);
                     response_._current_chunk_length = 0;
                     res_state_ = HttpResponseParseState::kExpectChunkLen;

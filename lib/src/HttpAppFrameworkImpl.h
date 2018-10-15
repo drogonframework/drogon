@@ -25,6 +25,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <mutex>
 #include <regex>
 
 namespace drogon
@@ -95,7 +96,7 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     void onWebsockMessage(const WebSocketConnectionPtr &wsConnPtr, trantor::MsgBuffer *buffer);
     void onWebsockDisconnect(const WebSocketConnectionPtr &wsConnPtr);
     void onConnection(const TcpConnectionPtr &conn);
-    void readSendFile(const std::string &filePath, const HttpRequestPtr &req, const HttpResponsePtr resp);
+    void readSendFile(const std::string &filePath, const HttpRequestPtr &req, const HttpResponsePtr &resp);
     void addApiPath(const std::string &path,
                     const HttpApiBinderBasePtr &binder,
                     const std::vector<std::string> &filters);
@@ -190,5 +191,8 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     size_t _logfileSize = 100000000;
     bool _useSendfile = true;
     bool _useGzip = true;
+
+    std::unordered_map<std::string, std::weak_ptr<HttpResponse>> _staticFilesCache;
+    std::mutex _staticFilesCacheMutex;
 };
 } // namespace drogon

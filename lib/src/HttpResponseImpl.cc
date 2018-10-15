@@ -324,7 +324,7 @@ void HttpResponseImpl::makeHeaderString(MsgBuffer *output) const
     output->append("\r\n");
     if (_sendfileName.empty())
     {
-        snprintf(buf, sizeof buf, "Content-Length: %lu\r\n", _body.size());
+        snprintf(buf, sizeof buf, "Content-Length: %lu\r\n", _bodyPtr->size());
     }
     else
     {
@@ -397,5 +397,5 @@ void HttpResponseImpl::appendToBuffer(MsgBuffer *output) const
     output->append("\r\n\r\n");
 
     LOG_TRACE << "reponse(no body):" << output->peek();
-    output->append(_body);
+    output->append(*_bodyPtr);
 }

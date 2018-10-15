@@ -709,6 +709,30 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestPtr &req, const std::
         {
             LOG_INFO << "file query!";
             std::string filePath = _rootPath + path;
+            //find cached response
+            HttpResponsePtr cachedResp;
+            if (_staticFilesCache.find(filePath) != _staticFilesCache.end())
+            {
+                std::lock_guard<std::mutex> guard(_staticFilesCacheMutex);
+                cachedResp = _staticFilesCache[filePath].lock();
+                if (!cachedResp)
+                {
+                    _staticFilesCache.erase(filePath);
+                }
+            }
+            if (cachedResp)
+            {
+                if (needSetJsessionid)
+                {
+                    //make a copy
+                    auto newCachedResp = std::make_shared<HttpResponseImpl>(*std::dynamic_pointer_cast<HttpResponseImpl>(cachedResp));
+                    newCachedResp->addCookie("JSESSIONID", session_id);
+                    callback(newCachedResp);
+                    return;
+                }
+                callback(cachedResp);
+                return;
+            }
             std::shared_ptr<HttpResponseImpl> resp = std::make_shared<HttpResponseImpl>();
 
             if (needSetJsessionid)
@@ -969,7 +993,7 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestPtr &req, const std::
     }
 }
 
-void HttpAppFrameworkImpl::readSendFile(const std::string &filePath, const HttpRequestPtr &req, const HttpResponsePtr resp)
+void HttpAppFrameworkImpl::readSendFile(const std::string &filePath, const HttpRequestPtr &req, const HttpResponsePtr &resp)
 {
     //If-Modified-Since: Wed Jun 15 08:57:30 2016 GMT
     std::ifstream infile(filePath, std::ifstream::binary);
@@ -1010,26 +1034,39 @@ void HttpAppFrameworkImpl::readSendFile(const std::string &filePath, const HttpR
         }
     }
 
+    std::streambuf *pbuf = infile.rdbuf();
+    std::streamsize filesize = pbuf->pubseekoff(0, infile.end);
+    pbuf->pubseekoff(0, infile.beg); // rewind
+
     if (_useSendfile &&
         (req->getHeader("Accept-Encoding").find("gzip") == std::string::npos ||
-         resp->getContentTypeCode() >= CT_APPLICATION_OCTET_STREAM))
+         resp->getContentTypeCode() >= CT_APPLICATION_OCTET_STREAM) &&
+        filesize > 1024 * 100)
     {
         //binary file or no gzip supported by client
         std::dynamic_pointer_cast<HttpResponseImpl>(resp)->setSendfile(filePath);
     }
     else
     {
-        std::streambuf *pbuf = infile.rdbuf();
-        std::streamsize size = pbuf->pubseekoff(0, infile.end);
-        pbuf->pubseekoff(0, infile.beg); // rewind
         std::string str;
-        str.resize(size);
-        pbuf->sgetn(&str[0], size);
+        str.resize(filesize);
+        pbuf->sgetn(&str[0], filesize);
         LOG_INFO << "file len:" << str.length();
         resp->setBody(std::move(str));
     }
 
     resp->setStatusCode(HttpResponse::k200OK);
+
+    //cache the response for 5 seconds
+    resp->setExpiredTime(5);
+    _responseCacheMap->insert(filePath, resp, resp->expiredTime(), [=]() {
+        std::lock_guard<std::mutex> guard(_staticFilesCacheMutex);
+        _staticFilesCache.erase(filePath);
+    });
+    {
+        std::lock_guard<std::mutex> guard(_staticFilesCacheMutex);
+        _staticFilesCache[filePath] = resp;
+    }
 }
 
 trantor::EventLoop *HttpAppFrameworkImpl::loop()

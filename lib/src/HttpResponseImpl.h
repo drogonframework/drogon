@@ -47,7 +47,8 @@ class HttpResponseImpl : public HttpResponse
         : _statusCode(kUnknown),
           _closeConnection(false),
           _left_body_length(0),
-          _current_chunk_length(0)
+          _current_chunk_length(0),
+          _bodyPtr(new std::string())
     {
     }
     virtual HttpStatusCode statusCode() override
@@ -205,11 +206,11 @@ class HttpResponseImpl : public HttpResponse
 
     virtual void setBody(const std::string &body) override
     {
-        _body = body;
+        _bodyPtr = std::make_shared<std::string>(body);
     }
     virtual void setBody(std::string &&body) override
     {
-        _body = std::move(body);
+        _bodyPtr = std::make_shared<std::string>(std::move(body));
     }
 
     virtual void redirect(const std::string &url) override
@@ -226,7 +227,7 @@ class HttpResponseImpl : public HttpResponse
         _fullHeaderString.reset();
         _headers.clear();
         _cookies.clear();
-        _body.clear();
+        _bodyPtr.reset(new std::string());
         _left_body_length = 0;
         _current_chunk_length = 0;
     }
@@ -245,11 +246,11 @@ class HttpResponseImpl : public HttpResponse
 
     virtual const std::string &getBody() const override
     {
-        return _body;
+        return *_bodyPtr;
     }
     virtual std::string &getBody() override
     {
-        return _body;
+        return *_bodyPtr;
     }
     void swap(HttpResponseImpl &that)
     {
@@ -259,7 +260,7 @@ class HttpResponseImpl : public HttpResponse
         std::swap(_v, that._v);
         _statusMessage.swap(that._statusMessage);
         std::swap(_closeConnection, that._closeConnection);
-        _body.swap(that._body);
+        _bodyPtr.swap(that._bodyPtr);
         std::swap(_left_body_length, that._left_body_length);
         std::swap(_current_chunk_length, that._current_chunk_length);
         std::swap(_contentType, that._contentType);
@@ -274,7 +275,7 @@ class HttpResponseImpl : public HttpResponse
         builder["collectComments"] = false;
         JSONCPP_STRING errs;
         std::unique_ptr<Json::CharReader> reader(builder.newCharReader());
-        if (!reader->parse(_body.data(), _body.data() + _body.size(), _jsonPtr.get(), &errs))
+        if (!reader->parse(_bodyPtr->data(), _bodyPtr->data() + _bodyPtr->size(), _jsonPtr.get(), &errs))
         {
             LOG_ERROR << errs;
             _jsonPtr.reset();
@@ -320,9 +321,11 @@ class HttpResponseImpl : public HttpResponse
     Version _v;
     std::string _statusMessage;
     bool _closeConnection;
-    std::string _body;
+    
     size_t _left_body_length;
     size_t _current_chunk_length;
+    std::shared_ptr<std::string> _bodyPtr;
+    
     uint8_t _contentType = CT_TEXT_HTML;
 
     ssize_t _expriedTime = -1;
