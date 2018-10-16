@@ -38,7 +38,7 @@ class HttpViewData
         {
             try
             {
-                return any_cast<T>(it->second);
+                return *(std::any_cast<T>(&(it->second)));
             }
             catch (std::exception &e)
             {
