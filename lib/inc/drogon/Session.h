@@ -33,7 +33,7 @@ class Session
         auto it = sessionMap_.find(key);
         if (it != sessionMap_.end())
         {
-            return any_cast<T>(it->second);
+            return *(any_cast<T>(&(it->second)));
         }
         T tmp;
         return tmp;
