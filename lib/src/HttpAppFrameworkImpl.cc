@@ -112,13 +112,13 @@ void HttpAppFrameworkImpl::initRegex()
     {
         std::regex reg("\\(\\[\\^/\\]\\*\\)");
         std::string tmp = std::regex_replace(binder.pathParameterPattern, reg, "[^/]*");
-        binder._regex=std::regex(binder.pathParameterPattern,std::regex_constants::icase);
+        binder._regex = std::regex(binder.pathParameterPattern, std::regex_constants::icase);
         regString.append("(").append(tmp).append(")|");
     }
     if (regString.length() > 0)
         regString.resize(regString.length() - 1); //remove the last '|'
     LOG_TRACE << "regex string:" << regString;
-    _apiRegex = std::regex(regString,std::regex_constants::icase);
+    _apiRegex = std::regex(regString, std::regex_constants::icase);
 }
 void HttpAppFrameworkImpl::registerWebSocketController(const std::string &pathName,
                                                        const std::string &ctrlName,
@@ -184,7 +184,6 @@ void HttpAppFrameworkImpl::addApiPath(const std::string &path,
     std::map<std::string, size_t> parametersPlaces;
     if (!paras.empty())
     {
-
         std::regex pregex("([^&]*)=\\{([0-9]+)\\}&*");
         while (std::regex_search(paras, results, pregex))
         {
@@ -219,7 +218,7 @@ void HttpAppFrameworkImpl::registerHttpApiController(const std::string &pathPatt
     assert(binder);
     std::string path(pathPattern);
 
-    std::transform(path.begin(), path.end(), path.begin(), tolower);
+    //std::transform(path.begin(), path.end(), path.begin(), tolower);
     addApiPath(path, binder, filters);
 }
 void HttpAppFrameworkImpl::setThreadNum(size_t threadNum)
@@ -938,6 +937,7 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestPtr &req, const std::
         {
             for (size_t i = 1; i < result.size(); i++)
             {
+                //FIXME:Is there any better way to find the sub-match index without using loop?
                 if (!result[i].matched)
                     continue;
                 if (result[i].str() == req->path() && i <= _apiCtrlVector.size())
@@ -1074,8 +1074,8 @@ void HttpAppFrameworkImpl::readSendFile(const std::string &filePath, const HttpR
     pbuf->pubseekoff(0, infile.beg); // rewind
 
     if (_useSendfile &&
-        filesize > 1024 * 200) 
-        //FIXME : Is 200k an appropriate value? Or set it to be configurable
+        filesize > 1024 * 200)
+    //FIXME : Is 200k an appropriate value? Or set it to be configurable
     {
         //The advantages of sendfile() can only be reflected in sending large files.
         std::dynamic_pointer_cast<HttpResponseImpl>(resp)->setSendfile(filePath);

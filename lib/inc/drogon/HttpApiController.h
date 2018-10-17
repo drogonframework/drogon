@@ -52,7 +52,7 @@ class HttpApiController : public DrObject<T>
             path.append("/");
             path.append(methodName);
         }
-        transform(path.begin(), path.end(), path.begin(), tolower);
+        //transform(path.begin(), path.end(), path.begin(), tolower);
         std::string::size_type pos;
         while ((pos = path.find("::")) != std::string::npos)
         {
