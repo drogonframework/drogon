@@ -152,6 +152,7 @@ class HttpAppFrameworkImpl : public HttpAppFramework
         std::vector<std::string> filtersName;
         std::unique_ptr<std::mutex> binderMtx = std::unique_ptr<std::mutex>(new std::mutex);
         std::weak_ptr<HttpResponse> responsePtr;
+        std::regex _regex;
     };
     //std::unordered_map<std::string,ApiBinder>_apiCtrlMap;
     std::vector<ApiBinder> _apiCtrlVector;

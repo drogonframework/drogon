@@ -1,7 +1,7 @@
 /**
  *
- *  @file
- *  @author An Tao
+ *  HttpAppFrameworkImpl.cc
+ *  An Tao
  *  @section LICENSE
  *
  *  Copyright 2018, An Tao.  All rights reserved.
@@ -112,12 +112,13 @@ void HttpAppFrameworkImpl::initRegex()
     {
         std::regex reg("\\(\\[\\^/\\]\\*\\)");
         std::string tmp = std::regex_replace(binder.pathParameterPattern, reg, "[^/]*");
+        binder._regex=std::regex(binder.pathParameterPattern,std::regex_constants::icase);
         regString.append("(").append(tmp).append(")|");
     }
     if (regString.length() > 0)
-        regString.resize(regString.length() - 1); //remove last '|'
+        regString.resize(regString.length() - 1); //remove the last '|'
     LOG_TRACE << "regex string:" << regString;
-    _apiRegex = std::regex(regString);
+    _apiRegex = std::regex(regString,std::regex_constants::icase);
 }
 void HttpAppFrameworkImpl::registerWebSocketController(const std::string &pathName,
                                                        const std::string &ctrlName,
@@ -937,7 +938,7 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestPtr &req, const std::
         {
             for (size_t i = 1; i < result.size(); i++)
             {
-                if (result[i].str().empty())
+                if (!result[i].matched)
                     continue;
                 if (result[i].str() == req->path() && i <= _apiCtrlVector.size())
                 {
@@ -973,7 +974,7 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestPtr &req, const std::
 
                         std::vector<std::string> params(binder.parameterPlaces.size());
                         std::smatch r;
-                        if (std::regex_match(req->path(), r, std::regex(binder.pathParameterPattern)))
+                        if (std::regex_match(req->path(), r, binder._regex))
                         {
                             for (size_t j = 1; j < r.size(); j++)
                             {
