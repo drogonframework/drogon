@@ -5,7 +5,7 @@ endif()
 FILE(GLOB SCP_LIST ${CMAKE_CURRENT_SOURCE_DIR}/simple_example/*.csp)
 foreach(cspFile ${SCP_LIST})
     message(STATUS "cspFile:" ${cspFile})
-    EXEC_PROGRAM(basename ARGS "-s .csp ${cspFile}" OUTPUT_VARIABLE classname)
+    EXEC_PROGRAM(basename ARGS "${cspFile} .csp" OUTPUT_VARIABLE classname)
     message(STATUS "view classname:" ${classname})
     add_custom_command(OUTPUT ${classname}.h ${classname}.cc
         COMMAND drogon_ctl
