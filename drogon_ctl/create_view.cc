@@ -1,7 +1,7 @@
 /**
  *
- *  @file
- *  @author An Tao
+ *  create_view.cc
+ *  An Tao
  *  @section LICENSE
  *
  *  Copyright 2018, An Tao.  All rights reserved.
@@ -25,6 +25,8 @@ static const std::string cxx_view_data = "@@";
 static const std::string cxx_output = "$$";
 static const std::string cxx_val_start = "{{";
 static const std::string cxx_val_end = "}}";
+static const std::string sub_view_start = "<%view";
+static const std::string sub_view_end = "%>";
 
 using namespace drogon_ctl;
 
@@ -69,6 +71,17 @@ static void outputVal(std::ofstream &oSrcFile, const std::string &streamName, co
     oSrcFile << "    }\n";
     oSrcFile << "}\n";
 }
+
+static void outputSubView(std::ofstream &oSrcFile, const std::string &streamName, const std::string &viewDataName, const std::string &keyName)
+{
+    oSrcFile << "{\n";
+    oSrcFile << "    auto templ=DrTemplateBase::newTemplate(\""<<keyName<<"\");\n";
+    oSrcFile << "    if(templ){\n";
+    oSrcFile << "      "<<streamName<<"<< templ->genText("<<viewDataName<<");\n";
+    oSrcFile << "    }\n";
+    oSrcFile << "}\n";
+}
+
 static void parseLine(std::ofstream &oSrcFile, std::string &line, const std::string &streamName, const std::string &viewDataName, int &cxx_flag, int returnFlag = 1)
 {
     std::string::size_type pos(0);
@@ -110,6 +123,31 @@ static void parseLine(std::ofstream &oSrcFile, std::string &line, const std::str
                     keyName = std::string(iter, iterEnd);
                     outputVal(oSrcFile, streamName, viewDataName, keyName);
                     std::string tailLine = newLine.substr(pos + cxx_val_end.length());
+                    parseLine(oSrcFile, tailLine, streamName, viewDataName, cxx_flag, returnFlag);
+                }
+                else
+                {
+                    std::cerr << "format err!" << std::endl;
+                    exit(1);
+                }
+            }
+            else if ((pos = line.find(sub_view_start)) != std::string::npos)
+            {
+                std::string oldLine = line.substr(0, pos);
+                parseLine(oSrcFile, oldLine, streamName, viewDataName, cxx_flag, 0);
+                std::string newLine = line.substr(pos + sub_view_start.length());
+                if ((pos = newLine.find(sub_view_end)) != std::string::npos)
+                {
+                    std::string keyName = newLine.substr(0, pos);
+                    auto iter = keyName.begin();
+                    while (iter != keyName.end() && *iter == ' ')
+                        iter++;
+                    auto iterEnd = iter;
+                    while (iterEnd != keyName.end() && *iterEnd != ' ')
+                        iterEnd++;
+                    keyName = std::string(iter, iterEnd);
+                    outputSubView(oSrcFile, streamName, viewDataName, keyName);
+                    std::string tailLine = newLine.substr(pos + sub_view_end.length());
                     parseLine(oSrcFile, tailLine, streamName, viewDataName, cxx_flag, returnFlag);
                 }
                 else
