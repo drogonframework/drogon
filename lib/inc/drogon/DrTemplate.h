@@ -1,7 +1,7 @@
 /**
  *
- *  @file
- *  @author An Tao
+ *  DrTemplate.h
+ *  An Tao
  *  @section LICENSE
  *
  *  Copyright 2018, An Tao.  All rights reserved.
@@ -15,15 +15,13 @@
 #pragma once
 
 #include <drogon/DrObject.h>
-#include <drogon/HttpResponse.h>
-#include <drogon/HttpRequest.h>
-#include <drogon/HttpViewBase.h>
+#include <drogon/DrTemplateBase.h>
 namespace drogon
 {
 template <typename T>
-class HttpView : public DrObject<T>, public HttpViewBase
+class DrTemplate : public DrObject<T>, public DrTemplateBase
 {
   protected:
-    HttpView() {}
+    DrTemplate() {}
 };
 } // namespace drogon

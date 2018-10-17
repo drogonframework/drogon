@@ -8,6 +8,7 @@
     <title>{{ title }}</title>
 </head>
 <body>
+    <%view header %>
     <%c++ if(para.size()>0){%>
     <H1>Parameters</H1>
     <table border="1">
