@@ -27,23 +27,23 @@ bool isInteger(const std::string &str)
     }
     return true;
 }
-std::string genRandomString(int length)
-{
-    int i;
-    char str[length + 1];
+// std::string genRandomString(int length)
+// {
+//     int i;
+//     char str[length + 1];
 
-    timespec tp;
-    clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &tp);
-    //LOG_INFO<<"time: "<<tp.tv_nsec;
-    srand(static_cast<unsigned int>(tp.tv_nsec));
-    std::string char_space = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+//     timespec tp;
+//     clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &tp);
+//     //LOG_INFO<<"time: "<<tp.tv_nsec;
+//     srand(static_cast<unsigned int>(tp.tv_nsec));
+//     std::string char_space = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
-    for (i = 0; i < length; i++)
-    {
-        str[i] = char_space[rand() % char_space.length()];
-    }
-    return std::string(str);
-}
+//     for (i = 0; i < length; i++)
+//     {
+//         str[i] = char_space[rand() % char_space.length()];
+//     }
+//     return std::string(str);
+// }
 
 std::string stringToHex(unsigned char *ptr, long long length)
 {
