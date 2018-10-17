@@ -1,5 +1,19 @@
+/**
+ *
+ *  create_project.cc
+ *  An Tao
+ *  @section LICENSE
+ *
+ *  Copyright 2018, An Tao.  All rights reserved.
+ *  Use of this source code is governed by a MIT license
+ *  that can be found in the License file.
+ *
+ *  @section DESCRIPTION
+ *
+ */
+
 #include "create_project.h"
-#include <drogon/HttpResponse.h>
+#include <drogon/DrTemplateBase.h>
 #include <iostream>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -22,29 +36,29 @@ static void newCmakeFile(std::ofstream &cmakeFile, const std::string &projectNam
 {
     HttpViewData data;
     data.insert("ProjectName",projectName);
-    auto resp=HttpResponse::newHttpViewResponse("cmake.csp",data);
-    cmakeFile << resp->getBody();
+    auto templ=DrTemplateBase::newTemplate("cmake.csp");
+    cmakeFile << templ->genText(data);
 }
 static void newMainFile(std::ofstream &mainFile)
 {
-    auto resp=HttpResponse::newHttpViewResponse("demoMain");
-    mainFile << resp->getBody();
+    auto templ=DrTemplateBase::newTemplate("demoMain");
+    mainFile << templ->genText();
 }
 static void newGitIgFile(std::ofstream &gitFile)
 {
-    auto resp=HttpResponse::newHttpViewResponse("gitignore.csp");
-    gitFile << resp->getBody();
+    auto templ=DrTemplateBase::newTemplate("gitignore.csp");
+    gitFile << templ->genText();
 }
 static void newJsonFindFile(std::ofstream &jsonFile)
 {
-    auto resp=HttpResponse::newHttpViewResponse("FindJsoncpp.csp");
-    jsonFile << resp->getBody();
+    auto templ=DrTemplateBase::newTemplate("FindJsoncpp.csp");
+    jsonFile << templ->genText();
 }
 
 static void newConfigFile(std::ofstream &configFile)
 {
-    auto resp=HttpResponse::newHttpViewResponse("config",drogon::HttpViewData());
-    configFile << resp->getBody();
+    auto templ=DrTemplateBase::newTemplate("config");
+    configFile << templ->genText();
 }
 void create_project::createProject(const std::string &projectName)
 {

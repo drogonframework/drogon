@@ -1,7 +1,7 @@
 /**
  *
- *  @file
- *  @author An Tao
+ *  HttpViewBase.h
+ *  An Tao
  *  @section LICENSE
  *
  *  Copyright 2018, An Tao.  All rights reserved.
@@ -13,6 +13,8 @@
  */
 #include <drogon/HttpViewBase.h>
 #include <drogon/DrClassMap.h>
+
+#include <drogon/DrTemplateBase.h>
 #include <trantor/utils/Logger.h>
 #include <memory>
 using namespace drogon;
@@ -27,14 +29,16 @@ HttpResponsePtr HttpViewBase::genHttpResponse(std::string viewName, const HttpVi
             viewName = viewName.substr(0, pos);
         }
     }
-    auto obj = std::shared_ptr<DrObjectBase>(drogon::DrClassMap::newObject(viewName));
-    if (obj)
+
+    auto templ = DrTemplateBase::newTemplate(viewName);
+    if (templ)
     {
-        auto view = std::dynamic_pointer_cast<HttpViewBase>(obj);
-        if (view)
-        {
-            return view->genHttpResponse(data);
-        }
+        auto res = HttpResponse::newHttpResponse();
+        res->setStatusCode(HttpResponse::k200OK);
+        res->setContentTypeCode(CT_TEXT_HTML);
+        res->setBody(templ->genText(data));
+        return res;
     }
+
     return drogon::HttpResponse::newNotFoundResponse();
 }
