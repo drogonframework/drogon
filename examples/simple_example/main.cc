@@ -1,7 +1,5 @@
 #include <iostream>
-#include <drogon/HttpAppFramework.h>
-#include <drogon/HttpApiController.h>
-#include <trantor/utils/Logger.h>
+#include <drogon/drogon.h>
 #include <vector>
 #include <string>
 

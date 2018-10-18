@@ -1,6 +1,4 @@
-#include <drogon/HttpAppFramework.h>
-#include <trantor/net/InetAddress.h>
-#include <netdb.h>
+#include <drogon/drogon.h>
 #include <iostream>
 #include <future>
 int main()
