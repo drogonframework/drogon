@@ -1,8 +1,7 @@
 /**
  *
- *  @file
- *  @author An Tao
- *  @section LICENSE
+ *  FunctionTraits.h
+ *  An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  Use of this source code is governed by a MIT license
@@ -16,11 +15,16 @@
 
 #include <tuple>
 #include <type_traits>
+#include <memory>
+#include <functional>
+
 namespace drogon
 {
 class HttpRequest;
 class HttpResponse;
 typedef std::shared_ptr<HttpRequest> HttpRequestPtr;
+typedef std::shared_ptr<HttpResponse> HttpResponsePtr;
+
 namespace utility
 {
 
