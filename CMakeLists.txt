@@ -92,10 +92,17 @@ else()
     file(APPEND "${CONFIG_HEADER}" "\n" "const char compileFlags[]=\"" ${CMAKE_CXX_FLAGS_DEBUG} "\";")
 endif()
 get_target_property(INS drogon INCLUDE_DIRECTORIES)
+
 file(APPEND "${CONFIG_HEADER}" "\nconst char includeDirs[]=\"")
+set(TMP_INS,"")
 foreach(loop_var ${INS})
-    file(APPEND "${CONFIG_HEADER}" "-I" ${loop_var} " ")
+    if(TMP_INS MATCHES ";${loop_var};")
+    else()
+        set(TMP_INS ";${loop_var};${TMP_INS}")
+        file(APPEND "${CONFIG_HEADER}" "-I" ${loop_var} " ")
+    endif()
 endforeach(loop_var)
+
 file(APPEND "${CONFIG_HEADER}" "\";\n")
 EXEC_PROGRAM(${PROJECT_SOURCE_DIR}/update_config.sh ARGS "${CONFIG_HEADER} ${PROJECT_SOURCE_DIR}/lib/inc/drogon/config.h")
 
