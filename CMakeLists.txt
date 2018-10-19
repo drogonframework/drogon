@@ -25,6 +25,8 @@ set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake_modules/)
 #jsoncpp
 find_package (Jsoncpp REQUIRED)
 include_directories(${JSONCPP_INCLUDE_DIRS})
+message(STATUS "jsoncpp inc path:" ${JSONCPP_INCLUDE_DIRS})
+
 #message(STATUS ${JSONCPP_LIBRARIES})
 if(NOT EXISTS ${JSONCPP_INCLUDE_DIRS}/json/version.h)
     message(STATUS "jsoncpp lib is too old.....stop")
@@ -36,20 +38,23 @@ if(jsoncpp_ver LESS 1.7)
     MESSAGE(STATUS "jsoncpp lib is too old,please get new version from https://github.com/open-source-parsers/jsoncpp")
     stop()
 endif()
+
 find_package (UUID REQUIRED)
 include_directories(${UUID_INCLUDE_DIR})
+message(STATUS "uuid inc path:" ${UUID_INCLUDE_DIR})
 
 find_package (OpenSSL)
 if(OpenSSL_FOUND)
-    #add_definitions(-DUSE_OPENSSL)
-    set(DR_DEFS "USE_OPENSSL;${DR_DEFS}")
     include_directories(${OPENSSL_INCLUDE_DIR})
+    message(STATUS "openssl inc path:" ${OPENSSL_INCLUDE_DIR})
 else()
     aux_source_directory(${PROJECT_SOURCE_DIR}/lib/src/ssl_funcs DIR_SRCS)
 endif()
-message(STATUS "openssl inc path:" ${OPENSSL_INCLUDE_DIR})
+
+
 find_package(ZLIB REQUIRED)
 include_directories(${ZLIB_INCLUDE_DIR})
+message(STATUS "zlib inc path:" ${ZLIB_INCLUDE_DIR})
 
 if(CMAKE_BUILD_TYPE STREQUAL "")
     set(CMAKE_BUILD_TYPE Release)
@@ -78,8 +83,6 @@ add_dependencies(drogon trantor makeVersion)
 
 SET(CONFIG_HEADER "${PROJECT_SOURCE_DIR}/config.h")
 file(WRITE "${CONFIG_HEADER}" "#pragma once\n")
-
-#get_directory_property(DR_DEFS COMPILE_DEFINITIONS)
 
 file(APPEND "${CONFIG_HEADER}" "#include <trantor/utils/config.h>\n")
 string(TOLOWER ${CMAKE_BUILD_TYPE} CMAKE_BUILD_TYPE_LOWER)
