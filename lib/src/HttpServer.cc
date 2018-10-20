@@ -175,10 +175,19 @@ void HttpServer::onRequest(const TcpConnectionPtr &conn, const HttpRequestPtr &r
             return;
         response->setCloseConnection(_close);
         //if the request method is HEAD,remove the body of response(rfc2616-9.4)
-        if (_isHeadMethod)
-            response->setBody(std::string());
-        auto &sendfileName = std::dynamic_pointer_cast<HttpResponseImpl>(response)->sendfileName();
         auto newResp = response;
+        if (_isHeadMethod)
+        {
+            if (newResp->expiredTime() >= 0)
+            {
+                //Cached response,make a copy
+                newResp = std::make_shared<HttpResponseImpl>(*std::dynamic_pointer_cast<HttpResponseImpl>(response));
+            }
+            newResp->setBody(std::string());
+        }
+
+        auto &sendfileName = std::dynamic_pointer_cast<HttpResponseImpl>(newResp)->sendfileName();
+
         if (HttpAppFramework::instance().useGzip() &&
             sendfileName.empty() &&
             req->getHeader("Accept-Encoding").find("gzip") != std::string::npos &&
