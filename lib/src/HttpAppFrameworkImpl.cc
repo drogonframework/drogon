@@ -169,14 +169,16 @@ void HttpAppFrameworkImpl::registerHttpSimpleController(const std::string &pathN
             exit(1);
         }
     }
-    _simpCtrlMap[path].controllerName = ctrlName;
-    _simpCtrlMap[path].filtersName = filters;
+    auto &iterm = _simpCtrlMap[path];
+    iterm.controllerName = ctrlName;
+    iterm.filtersName = filters;
+    iterm._validMethodsFlags.clear(); //There may be old data, first clear
     if (validMethods.size() > 0)
     {
-        _simpCtrlMap[path]._validMethodsFlags.resize(Invalid, 0);
+        iterm._validMethodsFlags.resize(Invalid, 0);
         for (auto method : validMethods)
         {
-            _simpCtrlMap[path]._validMethodsFlags[method] = 1;
+            iterm._validMethodsFlags[method] = 1;
         }
     }
 }

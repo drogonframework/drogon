@@ -8,7 +8,7 @@ class Attachment : public drogon::HttpApiController<Attachment>
 public:
   METHOD_LIST_BEGIN
   //use METHOD_ADD to add your custom processing function here;
-  METHOD_ADD(Attachment::get, "/", Post);
+  METHOD_ADD(Attachment::get, "", Post); //Path will be '/api/attachment'
   
   METHOD_LIST_END
   //your declaration of processing function maybe like this:
