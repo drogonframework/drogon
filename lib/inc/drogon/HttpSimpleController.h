@@ -20,16 +20,13 @@
 #include <string>
 #include <vector>
 #include <iostream>
-#define PATH_LIST_BEGIN                                                          \
-    static std::vector<std::pair<std::string, std::vector<std::string>>> paths() \
-    {                                                                            \
-        std::vector<std::pair<std::string, std::vector<std::string>>> vet;
+#define PATH_LIST_BEGIN       \
+    static void ___paths___() \
+    {
 
-#define PATH_ADD(path, filters...) \
-    vet.push_back({path, {filters}})
+#define PATH_ADD(path, filters...) __registerSelf(path, {filters});
 
 #define PATH_LIST_END \
-    return vet;       \
     }
 namespace drogon
 {
@@ -48,6 +45,11 @@ class HttpSimpleController : public DrObject<T>, public HttpSimpleControllerBase
 
   protected:
     HttpSimpleController() {}
+    static void __registerSelf(const std::string &path, const std::vector<any> &filtersAndMethods)
+    {
+        LOG_TRACE << "register simple controller(" << HttpSimpleController<T>::classTypeName() << ") on path:" << path;
+        HttpAppFramework::instance().registerHttpSimpleController(path, HttpSimpleController<T>::classTypeName(), filtersAndMethods);
+    }
 
   private:
     class pathRegister
@@ -55,13 +57,7 @@ class HttpSimpleController : public DrObject<T>, public HttpSimpleControllerBase
       public:
         pathRegister()
         {
-            auto vPaths = T::paths();
-
-            for (auto path : vPaths)
-            {
-                LOG_TRACE << "register simple controller(" << HttpSimpleController<T>::classTypeName() << ") on path:" << path.first;
-                HttpAppFramework::instance().registerHttpSimpleController(path.first, HttpSimpleController<T>::classTypeName(), path.second);
-            }
+            T::___paths___();
         }
 
       protected:

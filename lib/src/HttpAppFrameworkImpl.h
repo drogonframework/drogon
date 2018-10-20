@@ -51,8 +51,8 @@ class HttpAppFrameworkImpl : public HttpAppFramework
                                                  std::vector<std::string>()) override;
     virtual void registerHttpSimpleController(const std::string &pathName,
                                               const std::string &crtlName,
-                                              const std::vector<std::string> &filters =
-                                                  std::vector<std::string>()) override;
+                                              const std::vector<any> &filtersAndMethods =
+                                                  std::vector<any>()) override;
     virtual void enableSession(const size_t timeout = 0) override
     {
         _useSession = true;
@@ -88,6 +88,7 @@ class HttpAppFrameworkImpl : public HttpAppFramework
   private:
     virtual void registerHttpApiController(const std::string &pathPattern,
                                            const HttpApiBinderBasePtr &binder,
+                                           const std::vector<HttpMethod> &validMethods = std::vector<HttpMethod>(),
                                            const std::vector<std::string> &filters = std::vector<std::string>()) override;
 
     std::vector<std::tuple<std::string, uint16_t, bool, std::string, std::string>> _listeners;
@@ -101,6 +102,7 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     void readSendFile(const std::string &filePath, const HttpRequestPtr &req, const HttpResponsePtr &resp);
     void addApiPath(const std::string &path,
                     const HttpApiBinderBasePtr &binder,
+                    const std::vector<HttpMethod> &validMethods,
                     const std::vector<std::string> &filters);
     void initRegex();
     //if uuid package found,we can use a uuid string as session id;
@@ -129,6 +131,7 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     {
         std::string controllerName;
         std::vector<std::string> filtersName;
+        std::vector<int> _validMethodsFlags;
         std::shared_ptr<HttpSimpleControllerBase> controller;
         std::weak_ptr<HttpResponse> responsePtr;
         std::mutex _mutex;
@@ -152,6 +155,7 @@ class HttpAppFrameworkImpl : public HttpAppFramework
         std::vector<std::string> filtersName;
         std::unique_ptr<std::mutex> binderMtx = std::unique_ptr<std::mutex>(new std::mutex);
         std::weak_ptr<HttpResponse> responsePtr;
+        std::vector<int> _validMethodsFlags;
         std::regex _regex;
     };
     //std::unordered_map<std::string,ApiBinder>_apiCtrlMap;

@@ -162,10 +162,10 @@ void HttpServer::onRequest(const TcpConnectionPtr &conn, const HttpRequestPtr &r
     bool _close = connection == "close" ||
                   (req->getVersion() == HttpRequestImpl::kHttp10 && connection != "Keep-Alive");
 
-    bool _isHeadMethod = (req->method() == HttpRequest::kHead);
+    bool _isHeadMethod = (req->method() == Head);
     if (_isHeadMethod)
     {
-        req->setMethod(HttpRequest::kGet);
+        req->setMethod(Get);
     }
     HttpContext *context = any_cast<HttpContext>(conn->getMutableContext());
     //request will be received in same thread,so we don't need mutex;

@@ -34,7 +34,7 @@ void HttpRequestImpl::parsePremeter()
 
     std::transform(type.begin(), type.end(), type.begin(), tolower);
     const std::string &input = query();
-    if (_method == kGet || (_method == kPost && (type == "" || type.find("application/x-www-form-urlencoded") != std::string::npos)))
+    if (_method == Get || (_method == Post && (type == "" || type.find("application/x-www-form-urlencoded") != std::string::npos)))
     {
 
         std::string::size_type pos = 0;
@@ -104,20 +104,20 @@ void HttpRequestImpl::appendToBuffer(MsgBuffer *output) const
 {
     switch (_method)
     {
-    case kDelete:
-        output->append("DELETE ");
-        break;
-    case kGet:
+    case Get:
         output->append("GET ");
         break;
-    case kHead:
-        output->append("HEAD ");
-        break;
-    case kPost:
+    case Post:
         output->append("POST ");
         break;
-    case kPut:
+    case Head:
+        output->append("HEAD ");
+        break;
+    case Put:
         output->append("PUT ");
+        break;
+    case Delete:
+        output->append("DELETE ");
         break;
     default:
         return;
@@ -192,7 +192,7 @@ void HttpRequestImpl::appendToBuffer(MsgBuffer *output) const
 HttpRequestPtr HttpRequest::newHttpRequest()
 {
     auto req = std::make_shared<HttpRequestImpl>();
-    req->setMethod(drogon::HttpRequest::kGet);
+    req->setMethod(drogon::Get);
     req->setVersion(drogon::HttpRequest::kHttp11);
     return req;
 }
