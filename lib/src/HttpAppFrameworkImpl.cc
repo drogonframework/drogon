@@ -151,6 +151,7 @@ void HttpAppFrameworkImpl::registerHttpSimpleController(const std::string &pathN
 }
 void HttpAppFrameworkImpl::addApiPath(const std::string &path,
                                       const HttpApiBinderBasePtr &binder,
+                                      const std::vector<HttpRequest::Method> &validMethods,
                                       const std::vector<std::string> &filters)
 {
     //path will be like /api/v1/service/method/{1}/{2}/xxx...
@@ -207,11 +208,22 @@ void HttpAppFrameworkImpl::addApiPath(const std::string &path,
     _binder.binderPtr = binder;
     _binder.filtersName = filters;
     _binder.pathParameterPattern = std::regex_replace(originPath, regex, "([^/]*)");
-    std::lock_guard<std::mutex> guard(_apiCtrlMutex);
-    _apiCtrlVector.push_back(std::move(_binder));
+    if (validMethods.size() > 0)
+    {
+        _binder._validMethodsFlag.resize(HttpRequest::Invalid, 0);
+        for (auto method : validMethods)
+        {
+            _binder._validMethodsFlag[method] = 1;
+        }
+    }
+    {
+        std::lock_guard<std::mutex> guard(_apiCtrlMutex);
+        _apiCtrlVector.push_back(std::move(_binder));
+    }
 }
 void HttpAppFrameworkImpl::registerHttpApiController(const std::string &pathPattern,
                                                      const HttpApiBinderBasePtr &binder,
+                                                     const std::vector<HttpRequest::Method> &validMethods,
                                                      const std::vector<std::string> &filters)
 {
     assert(!pathPattern.empty());
@@ -219,7 +231,7 @@ void HttpAppFrameworkImpl::registerHttpApiController(const std::string &pathPatt
     std::string path(pathPattern);
 
     //std::transform(path.begin(), path.end(), path.begin(), tolower);
-    addApiPath(path, binder, filters);
+    addApiPath(path, binder, validMethods, filters);
 }
 void HttpAppFrameworkImpl::setThreadNum(size_t threadNum)
 {
@@ -945,6 +957,18 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestPtr &req, const std::
                     size_t ctlIndex = i - 1;
                     auto &binder = _apiCtrlVector[ctlIndex];
                     LOG_TRACE << "got api access,regex=" << binder.pathParameterPattern;
+                    if (binder._validMethodsFlag.size() > 0)
+                    {
+                        assert(binder._validMethodsFlag.size() > req->method());
+                        if (binder._validMethodsFlag[req->method()] == 0)
+                        {
+                            //Invalid Http Method
+                            auto res = drogon::HttpResponse::newHttpResponse();
+                            res->setStatusCode(HttpResponse::k405MethodNotAllowed);
+                            callback(res);
+                            return;
+                        }
+                    }
                     auto &filters = binder.filtersName;
                     doFilters(filters, req, callback, needSetJsessionid, session_id, [=]() {
                         auto &binder = _apiCtrlVector[ctlIndex];

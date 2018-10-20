@@ -19,7 +19,7 @@ void PutFilter::doFilter(const HttpRequestPtr &req,
                          const FilterCallback &fcb,
                          const FilterChainCallback &fccb)
 {
-    if (req->method() == HttpRequest::kPut)
+    if (req->method() == HttpRequest::Put)
     {
         fccb();
         return;

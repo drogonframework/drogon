@@ -88,6 +88,7 @@ class HttpAppFrameworkImpl : public HttpAppFramework
   private:
     virtual void registerHttpApiController(const std::string &pathPattern,
                                            const HttpApiBinderBasePtr &binder,
+                                           const std::vector<HttpRequest::Method> &validMethods = std::vector<HttpRequest::Method>(),
                                            const std::vector<std::string> &filters = std::vector<std::string>()) override;
 
     std::vector<std::tuple<std::string, uint16_t, bool, std::string, std::string>> _listeners;
@@ -101,6 +102,7 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     void readSendFile(const std::string &filePath, const HttpRequestPtr &req, const HttpResponsePtr &resp);
     void addApiPath(const std::string &path,
                     const HttpApiBinderBasePtr &binder,
+                    const std::vector<HttpRequest::Method> &validMethods,
                     const std::vector<std::string> &filters);
     void initRegex();
     //if uuid package found,we can use a uuid string as session id;
@@ -152,6 +154,7 @@ class HttpAppFrameworkImpl : public HttpAppFramework
         std::vector<std::string> filtersName;
         std::unique_ptr<std::mutex> binderMtx = std::unique_ptr<std::mutex>(new std::mutex);
         std::weak_ptr<HttpResponse> responsePtr;
+        std::vector<int> _validMethodsFlag;
         std::regex _regex;
     };
     //std::unordered_map<std::string,ApiBinder>_apiCtrlMap;

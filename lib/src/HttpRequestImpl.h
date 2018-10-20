@@ -47,7 +47,7 @@ class HttpRequestImpl : public HttpRequest
     friend class HttpContext;
 
     HttpRequestImpl()
-        : _method(kInvalid),
+        : _method(Invalid),
           _version(kUnknown),
           contentLen(0)
     {
@@ -66,33 +66,33 @@ class HttpRequestImpl : public HttpRequest
     bool setMethod(const char *start, const char *end)
     {
 
-        assert(_method == kInvalid);
+        assert(_method == Invalid);
         std::string m(start, end);
         if (m == "GET")
         {
-            _method = kGet;
+            _method = Get;
         }
         else if (m == "POST")
         {
-            _method = kPost;
+            _method = Post;
         }
         else if (m == "HEAD")
         {
-            _method = kHead;
+            _method = Head;
         }
         else if (m == "PUT")
         {
-            _method = kPut;
+            _method = Put;
         }
         else if (m == "DELETE")
         {
-            _method = kDelete;
+            _method = Delete;
         }
         else
         {
-            _method = kInvalid;
+            _method = Invalid;
         }
-        if (_method != kInvalid)
+        if (_method != Invalid)
         {
             content_ = "";
             _query = "";
@@ -100,7 +100,7 @@ class HttpRequestImpl : public HttpRequest
             _parameters.clear();
             _headers.clear();
         }
-        return _method != kInvalid;
+        return _method != Invalid;
     }
 
     virtual void setMethod(const Method method) override
@@ -124,19 +124,19 @@ class HttpRequestImpl : public HttpRequest
         const char *result = "UNKNOWN";
         switch (_method)
         {
-        case kGet:
+        case Get:
             result = "GET";
             break;
-        case kPost:
+        case Post:
             result = "POST";
             break;
-        case kHead:
+        case Head:
             result = "HEAD";
             break;
-        case kPut:
+        case Put:
             result = "PUT";
             break;
-        case kDelete:
+        case Delete:
             result = "DELETE";
             break;
         default:
@@ -179,7 +179,7 @@ class HttpRequestImpl : public HttpRequest
     {
         if (_query != "")
             return _query;
-        if (_method == kPost)
+        if (_method == Post)
             return content_;
         return _query;
     }
@@ -360,7 +360,7 @@ class HttpRequestImpl : public HttpRequest
     }
 
   private:
-    Method _method = kGet;
+    Method _method = Get;
     Version _version = kHttp11;
     std::string _path;
     std::string _query;

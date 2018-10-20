@@ -24,10 +24,10 @@
 #define METHOD_LIST_BEGIN     \
     static void initMethods() \
     {
-#define METHOD_ADD(method, pattern, filters...)                  \
-    {                                                            \
-        std::string methodName = "";                             \
-        registerMethod(methodName, pattern, &method, {filters}); \
+
+#define METHOD_ADD(method, pattern, filters...)          \
+    {                                                    \
+        registerMethod(&method, pattern, {}, {filters}); \
     }
 
 #define METHOD_LIST_END \
@@ -43,15 +43,14 @@ class HttpApiController : public DrObject<T>
 {
   protected:
     template <typename FUNCTION>
-    static void registerMethod(const std::string &methodName, const std::string &pattern, FUNCTION &&function, const std::vector<std::string> &filters)
+    static void registerMethod(FUNCTION &&function,
+                               const std::string &pattern,
+                               const std::vector<HttpRequest::Method> &validMethods = std::vector<HttpRequest::Method>(),
+                               const std::vector<std::string> &filters = std::vector<std::string>())
     {
         std::string path = std::string("/") + HttpApiController<T>::classTypeName();
         LOG_TRACE << "classname:" << HttpApiController<T>::classTypeName();
-        if (!methodName.empty())
-        {
-            path.append("/");
-            path.append(methodName);
-        }
+
         //transform(path.begin(), path.end(), path.begin(), tolower);
         std::string::size_type pos;
         while ((pos = path.find("::")) != std::string::npos)
@@ -61,10 +60,12 @@ class HttpApiController : public DrObject<T>
         if (pattern[0] == '/')
             HttpAppFramework::registerHttpApiMethod(path + pattern,
                                                     std::forward<FUNCTION>(function),
+                                                    validMethods,
                                                     filters);
         else
             HttpAppFramework::registerHttpApiMethod(path + "/" + pattern,
                                                     std::forward<FUNCTION>(function),
+                                                    validMethods,
                                                     filters);
     }
 

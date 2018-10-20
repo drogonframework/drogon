@@ -78,6 +78,7 @@ class HttpAppFramework : public trantor::NonCopyable
     template <typename FUNCTION>
     static void registerHttpApiMethod(const std::string &pathPattern,
                                       FUNCTION &&function,
+                                      const std::vector<HttpRequest::Method> &validMethods = std::vector<HttpRequest::Method>(),
                                       const std::vector<std::string> &filters = std::vector<std::string>())
     {
         LOG_TRACE << "pathPattern:" << pathPattern;
@@ -86,7 +87,7 @@ class HttpAppFramework : public trantor::NonCopyable
         binder = std::make_shared<
             HttpApiBinder<FUNCTION>>(std::forward<FUNCTION>(function));
 
-        instance().registerHttpApiController(pathPattern, binder, filters);
+        instance().registerHttpApiController(pathPattern, binder, validMethods, filters);
     }
     virtual void enableSession(const size_t timeout = 0) = 0;
     virtual void disableSession() = 0;
@@ -115,6 +116,7 @@ class HttpAppFramework : public trantor::NonCopyable
   private:
     virtual void registerHttpApiController(const std::string &pathPattern,
                                            const HttpApiBinderBasePtr &binder,
+                                           const std::vector<HttpRequest::Method> &validMethods = std::vector<HttpRequest::Method>(),
                                            const std::vector<std::string> &filters = std::vector<std::string>()) = 0;
 };
 } // namespace drogon

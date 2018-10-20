@@ -19,7 +19,7 @@ void PostFilter::doFilter(const HttpRequestPtr &req,
                           const FilterCallback &fcb,
                           const FilterChainCallback &fccb)
 {
-    if (req->method() == HttpRequest::kPost)
+    if (req->method() == HttpRequest::Post)
     {
         fccb();
         return;

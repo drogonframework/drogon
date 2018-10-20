@@ -7,7 +7,7 @@ int main()
 
     auto client = HttpClient::newHttpClient("http://www.baidu.com");
     auto req = HttpRequest::newHttpRequest();
-    req->setMethod(drogon::HttpRequest::kGet);
+    req->setMethod(drogon::HttpRequest::Get);
     req->setPath("/s");
     req->setParameter("wd", "weixin");
     int count = 0;

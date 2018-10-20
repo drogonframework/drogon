@@ -39,12 +39,12 @@ class HttpRequest
     };
     enum Method
     {
-        kInvalid,
-        kGet,
-        kPost,
-        kHead,
-        kPut,
-        kDelete
+        Get = 0,
+        Post,
+        Head,
+        Put,
+        Delete,
+        Invalid
     };
     virtual const char *methodString() const = 0;
     virtual Method method() const = 0;
