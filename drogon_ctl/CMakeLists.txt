@@ -4,7 +4,7 @@ link_libraries(ssl crypto)
 endif()
 
 AUX_SOURCE_DIRECTORY(. SRC_DIR)
-add_executable(_drogon_ctl ${SRC_DIR})
+add_executable(_drogon_ctl main.cc cmd.cc create.cc create_view.cc)
 FILE(GLOB SCP_LIST ${CMAKE_CURRENT_SOURCE_DIR}/templates/*.csp)
 foreach(cspFile ${SCP_LIST})
     message(STATUS "cspFile:" ${cspFile})
