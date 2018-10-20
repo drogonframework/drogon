@@ -25,9 +25,9 @@
     static void initMethods() \
     {
 
-#define METHOD_ADD(method, pattern, filters...)          \
-    {                                                    \
-        registerMethod(&method, pattern, {}, {filters}); \
+#define METHOD_ADD(method, pattern, filters...)      \
+    {                                                \
+        registerMethod(&method, pattern, {filters}); \
     }
 
 #define METHOD_LIST_END \
@@ -45,14 +45,37 @@ class HttpApiController : public DrObject<T>
     template <typename FUNCTION>
     static void registerMethod(FUNCTION &&function,
                                const std::string &pattern,
-                               const std::vector<HttpRequest::Method> &validMethods = std::vector<HttpRequest::Method>(),
-                               const std::vector<std::string> &filters = std::vector<std::string>())
+                               const std::vector<any> &filtersAndMethods = std::vector<any>())
     {
         std::string path = std::string("/") + HttpApiController<T>::classTypeName();
         LOG_TRACE << "classname:" << HttpApiController<T>::classTypeName();
 
         //transform(path.begin(), path.end(), path.begin(), tolower);
         std::string::size_type pos;
+
+        std::vector<HttpRequest::Method> validMethods;
+        std::vector<std::string> filters;
+        for (auto &filterOrMethod : filtersAndMethods)
+        {
+            if (filterOrMethod.type() == typeid(std::string))
+            {
+                filters.push_back(*any_cast<std::string>(&filterOrMethod));
+            }
+            else if (filterOrMethod.type() == typeid(const char *))
+            {
+                filters.push_back(*any_cast<const char *>(&filterOrMethod));
+            }
+            else if (filterOrMethod.type() == typeid(HttpRequest::Method))
+            {
+                validMethods.push_back(*any_cast<HttpRequest::Method>(&filterOrMethod));
+            }
+            else
+            {
+                std::cerr << "Invalid controller constraint type:" << filterOrMethod.type().name() << std::endl;
+                LOG_ERROR << "Invalid controller constraint type";
+                exit(1);
+            }
+        }
         while ((pos = path.find("::")) != std::string::npos)
         {
             path.replace(pos, 2, "/");
