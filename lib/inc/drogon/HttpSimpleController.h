@@ -20,15 +20,11 @@
 #include <string>
 #include <vector>
 #include <iostream>
-#define PATH_LIST_BEGIN \
+#define PATH_LIST_BEGIN       \
     static void ___paths___() \
     {
 
-#define PATH_ADD(path, filters...)                                                                   \
-    {                                                                                                \
-        LOG_TRACE << "register simple controller(" << classTypeName() << ") on path:" << path;       \
-        HttpAppFramework::instance().registerHttpSimpleController(path, classTypeName(), {filters}); \
-    }
+#define PATH_ADD(path, filters...) __registerSelf(path, {filters});
 
 #define PATH_LIST_END \
     }
@@ -49,6 +45,11 @@ class HttpSimpleController : public DrObject<T>, public HttpSimpleControllerBase
 
   protected:
     HttpSimpleController() {}
+    static void __registerSelf(const std::string &path, const std::vector<any> &filtersAndMethods)
+    {
+        LOG_TRACE << "register simple controller(" << HttpSimpleController<T>::classTypeName() << ") on path:" << path;
+        HttpAppFramework::instance().registerHttpSimpleController(path, HttpSimpleController<T>::classTypeName(), filtersAndMethods);
+    }
 
   private:
     class pathRegister

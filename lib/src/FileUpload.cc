@@ -21,7 +21,7 @@ const std::map<std::string, std::string> &FileUpload::getPremeter() const
 };
 int FileUpload::parse(const HttpRequestPtr &req)
 {
-    if (req->method() != HttpRequest::Post)
+    if (req->method() != Post)
         return -1;
     std::string contentType = req->getHeader("Content-Type");
     if (contentType.empty())

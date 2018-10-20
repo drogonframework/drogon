@@ -192,7 +192,7 @@ void HttpRequestImpl::appendToBuffer(MsgBuffer *output) const
 HttpRequestPtr HttpRequest::newHttpRequest()
 {
     auto req = std::make_shared<HttpRequestImpl>();
-    req->setMethod(drogon::HttpRequest::Get);
+    req->setMethod(drogon::Get);
     req->setVersion(drogon::HttpRequest::kHttp11);
     return req;
 }

@@ -8,6 +8,6 @@ class ListParaCtl : public drogon::HttpSimpleController<ListParaCtl>
     PATH_LIST_BEGIN
     //list path definations here;
     //PATH_ADD("/path","filter1","filter2",...);
-    PATH_ADD("/listpara");
+    PATH_ADD("/listpara",Get);
     PATH_LIST_END
 };

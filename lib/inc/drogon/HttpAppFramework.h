@@ -74,18 +74,41 @@ class HttpAppFramework : public trantor::NonCopyable
                                                  std::vector<std::string>()) = 0;
     virtual void registerHttpSimpleController(const std::string &pathName,
                                               const std::string &crtlName,
-                                              const std::vector<std::string> &filters = std::vector<std::string>()) = 0;
+                                              const std::vector<any> &filtersAndMethods = std::vector<any>()) = 0;
     template <typename FUNCTION>
     static void registerHttpApiMethod(const std::string &pathPattern,
                                       FUNCTION &&function,
-                                      const std::vector<HttpRequest::Method> &validMethods = std::vector<HttpRequest::Method>(),
-                                      const std::vector<std::string> &filters = std::vector<std::string>())
+                                      const std::vector<any> &filtersAndMethods = std::vector<any>())
     {
         LOG_TRACE << "pathPattern:" << pathPattern;
         HttpApiBinderBasePtr binder;
 
         binder = std::make_shared<
             HttpApiBinder<FUNCTION>>(std::forward<FUNCTION>(function));
+
+        std::vector<HttpMethod> validMethods;
+        std::vector<std::string> filters;
+        for (auto &filterOrMethod : filtersAndMethods)
+        {
+            if (filterOrMethod.type() == typeid(std::string))
+            {
+                filters.push_back(*any_cast<std::string>(&filterOrMethod));
+            }
+            else if (filterOrMethod.type() == typeid(const char *))
+            {
+                filters.push_back(*any_cast<const char *>(&filterOrMethod));
+            }
+            else if (filterOrMethod.type() == typeid(HttpMethod))
+            {
+                validMethods.push_back(*any_cast<HttpMethod>(&filterOrMethod));
+            }
+            else
+            {
+                std::cerr << "Invalid controller constraint type:" << filterOrMethod.type().name() << std::endl;
+                LOG_ERROR << "Invalid controller constraint type";
+                exit(1);
+            }
+        }
 
         instance().registerHttpApiController(pathPattern, binder, validMethods, filters);
     }
@@ -116,7 +139,7 @@ class HttpAppFramework : public trantor::NonCopyable
   private:
     virtual void registerHttpApiController(const std::string &pathPattern,
                                            const HttpApiBinderBasePtr &binder,
-                                           const std::vector<HttpRequest::Method> &validMethods = std::vector<HttpRequest::Method>(),
+                                           const std::vector<HttpMethod> &validMethods = std::vector<HttpMethod>(),
                                            const std::vector<std::string> &filters = std::vector<std::string>()) = 0;
 };
 } // namespace drogon

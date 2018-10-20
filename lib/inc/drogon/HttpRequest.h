@@ -25,6 +25,15 @@ namespace drogon
 {
 class HttpRequest;
 typedef std::shared_ptr<HttpRequest> HttpRequestPtr;
+enum HttpMethod
+{
+    Get = 0,
+    Post,
+    Head,
+    Put,
+    Delete,
+    Invalid
+};
 /*
      * abstract class for webapp developer to get Http client request;
      * */
@@ -37,17 +46,9 @@ class HttpRequest
         kHttp10 = 1,
         kHttp11 = 2
     };
-    enum Method
-    {
-        Get = 0,
-        Post,
-        Head,
-        Put,
-        Delete,
-        Invalid
-    };
+
     virtual const char *methodString() const = 0;
-    virtual Method method() const = 0;
+    virtual HttpMethod method() const = 0;
     virtual std::string getHeader(const std::string &field) const = 0;
     virtual std::string getCookie(const std::string &field) const = 0;
     virtual const std::map<std::string, std::string> &headers() const = 0;
@@ -63,7 +64,7 @@ class HttpRequest
     virtual ~HttpRequest() {}
     virtual const std::shared_ptr<Json::Value> getJsonObject() const = 0;
 
-    virtual void setMethod(const Method method) = 0;
+    virtual void setMethod(const HttpMethod method) = 0;
     virtual void setPath(const std::string &path) = 0;
     virtual void setParameter(const std::string &key, const std::string &value) = 0;
     static HttpRequestPtr newHttpRequest();

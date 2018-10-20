@@ -103,7 +103,7 @@ class HttpRequestImpl : public HttpRequest
         return _method != Invalid;
     }
 
-    virtual void setMethod(const Method method) override
+    virtual void setMethod(const HttpMethod method) override
     {
         _method = method;
         content_ = "";
@@ -114,7 +114,7 @@ class HttpRequestImpl : public HttpRequest
         return;
     }
 
-    Method method() const override
+    HttpMethod method() const override
     {
         return _method;
     }
@@ -360,7 +360,7 @@ class HttpRequestImpl : public HttpRequest
     }
 
   private:
-    Method _method = Get;
+    HttpMethod _method = Get;
     Version _version = kHttp11;
     std::string _path;
     std::string _query;

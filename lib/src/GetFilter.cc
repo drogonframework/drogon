@@ -19,7 +19,7 @@ void GetFilter::doFilter(const HttpRequestPtr &req,
                          const FilterCallback &fcb,
                          const FilterChainCallback &fccb)
 {
-    if (req->method() == HttpRequest::Get)
+    if (req->method() == Get)
     {
         fccb();
         return;

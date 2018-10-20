@@ -52,30 +52,6 @@ class HttpApiController : public DrObject<T>
 
         //transform(path.begin(), path.end(), path.begin(), tolower);
         std::string::size_type pos;
-
-        std::vector<HttpRequest::Method> validMethods;
-        std::vector<std::string> filters;
-        for (auto &filterOrMethod : filtersAndMethods)
-        {
-            if (filterOrMethod.type() == typeid(std::string))
-            {
-                filters.push_back(*any_cast<std::string>(&filterOrMethod));
-            }
-            else if (filterOrMethod.type() == typeid(const char *))
-            {
-                filters.push_back(*any_cast<const char *>(&filterOrMethod));
-            }
-            else if (filterOrMethod.type() == typeid(HttpRequest::Method))
-            {
-                validMethods.push_back(*any_cast<HttpRequest::Method>(&filterOrMethod));
-            }
-            else
-            {
-                std::cerr << "Invalid controller constraint type:" << filterOrMethod.type().name() << std::endl;
-                LOG_ERROR << "Invalid controller constraint type";
-                exit(1);
-            }
-        }
         while ((pos = path.find("::")) != std::string::npos)
         {
             path.replace(pos, 2, "/");
@@ -83,13 +59,11 @@ class HttpApiController : public DrObject<T>
         if (pattern[0] == '/')
             HttpAppFramework::registerHttpApiMethod(path + pattern,
                                                     std::forward<FUNCTION>(function),
-                                                    validMethods,
-                                                    filters);
+                                                    filtersAndMethods);
         else
             HttpAppFramework::registerHttpApiMethod(path + "/" + pattern,
                                                     std::forward<FUNCTION>(function),
-                                                    validMethods,
-                                                    filters);
+                                                    filtersAndMethods);
     }
 
   private:

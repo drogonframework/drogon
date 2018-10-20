@@ -19,7 +19,7 @@ void DeleteFilter::doFilter(const HttpRequestPtr &req,
                             const FilterCallback &fcb,
                             const FilterChainCallback &fccb)
 {
-    if (req->method() == HttpRequest::Delete)
+    if (req->method() == Delete)
     {
         fccb();
         return;

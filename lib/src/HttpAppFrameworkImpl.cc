@@ -138,7 +138,7 @@ void HttpAppFrameworkImpl::registerWebSocketController(const std::string &pathNa
 }
 void HttpAppFrameworkImpl::registerHttpSimpleController(const std::string &pathName,
                                                         const std::string &ctrlName,
-                                                        const std::vector<std::string> &filters)
+                                                        const std::vector<any> &filtersAndMethods)
 {
     assert(!pathName.empty());
     assert(!ctrlName.empty());
@@ -146,12 +146,43 @@ void HttpAppFrameworkImpl::registerHttpSimpleController(const std::string &pathN
     std::string path(pathName);
     std::transform(pathName.begin(), pathName.end(), path.begin(), tolower);
     std::lock_guard<std::mutex> guard(_simpCtrlMutex);
+    std::vector<HttpMethod> validMethods;
+    std::vector<std::string> filters;
+    for (auto &filterOrMethod : filtersAndMethods)
+    {
+        if (filterOrMethod.type() == typeid(std::string))
+        {
+            filters.push_back(*any_cast<std::string>(&filterOrMethod));
+        }
+        else if (filterOrMethod.type() == typeid(const char *))
+        {
+            filters.push_back(*any_cast<const char *>(&filterOrMethod));
+        }
+        else if (filterOrMethod.type() == typeid(HttpMethod))
+        {
+            validMethods.push_back(*any_cast<HttpMethod>(&filterOrMethod));
+        }
+        else
+        {
+            std::cerr << "Invalid controller constraint type:" << filterOrMethod.type().name() << std::endl;
+            LOG_ERROR << "Invalid controller constraint type";
+            exit(1);
+        }
+    }
     _simpCtrlMap[path].controllerName = ctrlName;
     _simpCtrlMap[path].filtersName = filters;
+    if (validMethods.size() > 0)
+    {
+        _simpCtrlMap[path]._validMethodsFlags.resize(Invalid, 0);
+        for (auto method : validMethods)
+        {
+            _simpCtrlMap[path]._validMethodsFlags[method] = 1;
+        }
+    }
 }
 void HttpAppFrameworkImpl::addApiPath(const std::string &path,
                                       const HttpApiBinderBasePtr &binder,
-                                      const std::vector<HttpRequest::Method> &validMethods,
+                                      const std::vector<HttpMethod> &validMethods,
                                       const std::vector<std::string> &filters)
 {
     //path will be like /api/v1/service/method/{1}/{2}/xxx...
@@ -210,10 +241,10 @@ void HttpAppFrameworkImpl::addApiPath(const std::string &path,
     _binder.pathParameterPattern = std::regex_replace(originPath, regex, "([^/]*)");
     if (validMethods.size() > 0)
     {
-        _binder._validMethodsFlag.resize(HttpRequest::Invalid, 0);
+        _binder._validMethodsFlags.resize(Invalid, 0);
         for (auto method : validMethods)
         {
-            _binder._validMethodsFlag[method] = 1;
+            _binder._validMethodsFlags[method] = 1;
         }
     }
     {
@@ -223,7 +254,7 @@ void HttpAppFrameworkImpl::addApiPath(const std::string &path,
 }
 void HttpAppFrameworkImpl::registerHttpApiController(const std::string &pathPattern,
                                                      const HttpApiBinderBasePtr &binder,
-                                                     const std::vector<HttpRequest::Method> &validMethods,
+                                                     const std::vector<HttpMethod> &validMethods,
                                                      const std::vector<std::string> &filters)
 {
     assert(!pathPattern.empty());
@@ -868,7 +899,20 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestPtr &req, const std::
 
     if (_simpCtrlMap.find(pathLower) != _simpCtrlMap.end())
     {
-        auto &filters = _simpCtrlMap[pathLower].filtersName;
+        auto &ctrlInfo = _simpCtrlMap[pathLower];
+        if (ctrlInfo._validMethodsFlags.size() > 0)
+        {
+            assert(ctrlInfo._validMethodsFlags.size() > req->method());
+            if (ctrlInfo._validMethodsFlags[req->method()] == 0)
+            {
+                //Invalid Http Method
+                auto res = drogon::HttpResponse::newHttpResponse();
+                res->setStatusCode(HttpResponse::k405MethodNotAllowed);
+                callback(res);
+                return;
+            }
+        }
+        auto &filters = ctrlInfo.filtersName;
         doFilters(filters, req, callback, needSetJsessionid, session_id, [=]() {
             auto &ctrlItem = _simpCtrlMap[pathLower];
             const std::string &ctrlName = ctrlItem.controllerName;
@@ -957,10 +1001,10 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestPtr &req, const std::
                     size_t ctlIndex = i - 1;
                     auto &binder = _apiCtrlVector[ctlIndex];
                     LOG_TRACE << "got api access,regex=" << binder.pathParameterPattern;
-                    if (binder._validMethodsFlag.size() > 0)
+                    if (binder._validMethodsFlags.size() > 0)
                     {
-                        assert(binder._validMethodsFlag.size() > req->method());
-                        if (binder._validMethodsFlag[req->method()] == 0)
+                        assert(binder._validMethodsFlags.size() > req->method());
+                        if (binder._validMethodsFlags[req->method()] == 0)
                         {
                             //Invalid Http Method
                             auto res = drogon::HttpResponse::newHttpResponse();

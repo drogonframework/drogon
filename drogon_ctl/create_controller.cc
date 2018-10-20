@@ -218,7 +218,7 @@ void create_controller::newSimpleControllerHeaderFile(std::ofstream &file, const
 
     file << indent << "    PATH_LIST_BEGIN\n";
     file << indent << "    //list path definitions here;\n";
-    file << indent << "    //PATH_ADD(\"/path\",\"filter1\",\"filter2\",...);\n";
+    file << indent << "    //PATH_ADD(\"/path\",\"filter1\",\"filter2\",HttpMethod1,HttpMethod2...);\n";
     file << indent << "    PATH_LIST_END\n";
     file << indent << "};\n";
     if (indent == "")
@@ -367,7 +367,7 @@ void create_controller::newApiControllerHeaderFile(std::ofstream &file, const st
     indent.append("    ");
     file << indent << "METHOD_LIST_BEGIN\n";
     file << indent << "//use METHOD_ADD to add your custom processing function here;\n";
-    file << indent << "//METHOD_ADD(" << class_name << "::get,\"/get/{2}/{1}\",\"drogon::GetFilter\");"
+    file << indent << "//METHOD_ADD(" << class_name << "::get,\"/get/{2}/{1}\",Get);"
                                                        "//path will be "
          << namepace_path << class_name << "/get/{arg2}/{arg1}\n";
     file << indent << "//METHOD_ADD(" << class_name << "::your_method_name,\"/{1}/{2}/list\",\"drogon::GetFilter\");"
