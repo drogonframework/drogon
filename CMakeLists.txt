@@ -25,6 +25,8 @@ set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake_modules/)
 #jsoncpp
 find_package (Jsoncpp REQUIRED)
 include_directories(${JSONCPP_INCLUDE_DIRS})
+link_libraries(${JSONCPP_LIBRARIES})
+
 message(STATUS "jsoncpp inc path:" ${JSONCPP_INCLUDE_DIRS})
 
 #message(STATUS ${JSONCPP_LIBRARIES})
@@ -41,11 +43,12 @@ endif()
 
 find_package (UUID REQUIRED)
 include_directories(${UUID_INCLUDE_DIR})
-message(STATUS "uuid inc path:" ${UUID_INCLUDE_DIR})
+link_libraries(${UUID_LIBRARIES})
 
 find_package (OpenSSL)
 if(OpenSSL_FOUND)
     include_directories(${OPENSSL_INCLUDE_DIR})
+    link_libraries(${OPENSSL_LIBRARIES})
     message(STATUS "openssl inc path:" ${OPENSSL_INCLUDE_DIR})
 else()
     aux_source_directory(${PROJECT_SOURCE_DIR}/lib/src/ssl_funcs DIR_SRCS)
@@ -54,6 +57,8 @@ endif()
 
 find_package(ZLIB REQUIRED)
 include_directories(${ZLIB_INCLUDE_DIR})
+link_libraries(${ZLIB_LIBRARIES})
+
 message(STATUS "zlib inc path:" ${ZLIB_INCLUDE_DIR})
 
 if(CMAKE_BUILD_TYPE STREQUAL "")

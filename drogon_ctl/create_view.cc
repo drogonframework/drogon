@@ -75,9 +75,9 @@ static void outputVal(std::ofstream &oSrcFile, const std::string &streamName, co
 static void outputSubView(std::ofstream &oSrcFile, const std::string &streamName, const std::string &viewDataName, const std::string &keyName)
 {
     oSrcFile << "{\n";
-    oSrcFile << "    auto templ=DrTemplateBase::newTemplate(\""<<keyName<<"\");\n";
+    oSrcFile << "    auto templ=DrTemplateBase::newTemplate(\"" << keyName << "\");\n";
     oSrcFile << "    if(templ){\n";
-    oSrcFile << "      "<<streamName<<"<< templ->genText("<<viewDataName<<");\n";
+    oSrcFile << "      " << streamName << "<< templ->genText(" << viewDataName << ");\n";
     oSrcFile << "    }\n";
     oSrcFile << "}\n";
 }
@@ -159,7 +159,11 @@ static void parseLine(std::ofstream &oSrcFile, std::string &line, const std::str
             else
             {
                 if (line.length() > 0)
-                    oSrcFile << "\t" << streamName << " << \"" << replace_all(line, "\"", "\\\"");
+                {
+                    replace_all(line, "\\", "\\\\");
+                    replace_all(line, "\"", "\\\"");
+                    oSrcFile << "\t" << streamName << " << \"" << line;
+                }
                 if (returnFlag)
                     oSrcFile << "\\n\";\n";
                 else

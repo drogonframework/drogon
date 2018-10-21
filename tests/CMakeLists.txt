@@ -1,7 +1,5 @@
-link_libraries(drogon trantor uuid pthread jsoncpp dl z)
-if(OpenSSL_FOUND)
-link_libraries(ssl crypto)
-endif()
+link_libraries(drogon trantor pthread dl)
+
 add_executable(cache_map_test CacheMapTest.cc)
 add_executable(cache_map_test2 CacheMapTest2.cc)
 add_executable(cookies_test CookiesTest.cc)

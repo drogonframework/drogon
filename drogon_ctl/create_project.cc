@@ -49,6 +49,13 @@ static void newGitIgFile(std::ofstream &gitFile)
     auto templ=DrTemplateBase::newTemplate("gitignore.csp");
     gitFile << templ->genText();
 }
+
+static void newUuidFindFile(std::ofstream &uuidFile)
+{
+    auto templ=DrTemplateBase::newTemplate("FindUUID.csp");
+    uuidFile << templ->genText();
+}
+
 static void newJsonFindFile(std::ofstream &jsonFile)
 {
     auto templ=DrTemplateBase::newTemplate("FindJsoncpp.csp");
@@ -84,6 +91,9 @@ void create_project::createProject(const std::string &projectName)
     mkdir("cmake_modules", 0755);
     std::ofstream jsonFile("cmake_modules/FindJsoncpp.cmake", std::ofstream::out);
     newJsonFindFile(jsonFile);
+    std::ofstream uuidFile("cmake_modules/FindUUID.cmake", std::ofstream::out);
+    newUuidFindFile(uuidFile);
+
     std::ofstream gitFile(".gitignore", std::ofstream::out);
     newGitIgFile(gitFile);
     std::ofstream configFile("config.json", std::ofstream::out);

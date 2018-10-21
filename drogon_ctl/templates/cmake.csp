@@ -1,10 +1,8 @@
 cmake_minimum_required(VERSION 3.2)
 Project({{ProjectName}})
-link_libraries(drogon trantor uuid pthread jsoncpp dl z)
-find_package (OpenSSL)
-if(OpenSSL_FOUND)
-link_libraries(ssl crypto)
-endif()
+
+link_directories(/usr/local/lib)
+link_libraries(drogon trantor pthread dl)
 
 IF (CMAKE_SYSTEM_NAME MATCHES "Linux")
     EXEC_PROGRAM (gcc ARGS "--version | grep '^gcc'|awk '{print $3}' | sed s'/)//g' | sed s'/-.*//g'" OUTPUT_VARIABLE version)
@@ -32,9 +30,27 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -std=${CMAKE_CXX_STD_F
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall -std=${CMAKE_CXX_STD_FLAGS}")
 
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake_modules/)
+
 #jsoncpp
 find_package (Jsoncpp REQUIRED)
 include_directories(${JSONCPP_INCLUDE_DIRS})
+link_libraries(${JSONCPP_LIBRARIES})
+
+#uuid
+find_package (UUID REQUIRED)
+include_directories(${UUID_INCLUDE_DIR})
+link_libraries(${UUID_LIBRARIES})
+
+#OpenSSL
+find_package (OpenSSL)
+if(OpenSSL_FOUND)
+    link_libraries(${OPENSSL_LIBRARIES})
+endif()
+
+#zlib
+find_package(ZLIB REQUIRED)
+include_directories(${ZLIB_INCLUDE_DIR})
+link_libraries(${ZLIB_LIBRARIES})
 
 AUX_SOURCE_DIRECTORY(./ SRC_DIR)
 AUX_SOURCE_DIRECTORY(controllers CTL_SRC)

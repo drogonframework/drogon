@@ -81,6 +81,55 @@ static void loadLogSetting(const Json::Value &log)
         trantor::Logger::setLogLevel(trantor::Logger::WARN);
     }
 }
+static void loadControllers(const Json::Value &controllers)
+{
+    if (!controllers)
+        return;
+    for (auto controller : controllers)
+    {
+        auto path = controller.get("path", "").asString();
+        auto ctrlName = controller.get("controller", "").asString();
+        if (path == "" || ctrlName == "")
+            continue;
+        std::vector<any> constraints;
+        if (!controller["http_methods"].isNull())
+        {
+            for (auto method : controller["http_methods"])
+            {
+                auto strMethod = method.asString();
+                std::transform(strMethod.begin(), strMethod.end(), strMethod.begin(), tolower);
+                if (strMethod == "get")
+                {
+                    constraints.push_back(Get);
+                }
+                else if (strMethod == "post")
+                {
+                    constraints.push_back(Post);
+                }
+                else if (strMethod == "head") //The branch nerver work
+                {
+                    constraints.push_back(Head);
+                }
+                else if (strMethod == "put")
+                {
+                    constraints.push_back(Put);
+                }
+                else if (strMethod == "delete")
+                {
+                    constraints.push_back(Delete);
+                }
+            }
+        }
+        if (!controller["filters"].isNull())
+        {
+            for (auto filter : controller["filters"])
+            {
+                constraints.push_back(filter.asString());
+            }
+        }
+        HttpAppFramework::instance().registerHttpSimpleController(path,ctrlName,constraints);
+    }
+}
 static void loadApp(const Json::Value &app)
 {
     if (!app)
@@ -160,8 +209,9 @@ static void loadApp(const Json::Value &app)
     HttpAppFramework::instance().enableSendfile(useSendfile);
     auto useGzip = app.get("use_gzip", true).asBool();
     HttpAppFramework::instance().enableGzip(useGzip);
-    auto staticFilesCacheTime=app.get("static_files_cache_time",5).asInt();
+    auto staticFilesCacheTime = app.get("static_files_cache_time", 5).asInt();
     HttpAppFramework::instance().setStaticFilesCacheTime(staticFilesCacheTime);
+    loadControllers(app["simple_controllers_map"]);
 }
 static void loadListeners(const Json::Value &listeners)
 {
