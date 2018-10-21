@@ -1,7 +1,4 @@
-link_libraries(drogon trantor uuid pthread jsoncpp dl z)
-if(OpenSSL_FOUND)
-link_libraries(ssl crypto)
-endif()
+link_libraries(drogon trantor pthread dl)
 
 AUX_SOURCE_DIRECTORY(. SRC_DIR)
 add_executable(_drogon_ctl main.cc cmd.cc create.cc create_view.cc)
