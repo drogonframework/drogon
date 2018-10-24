@@ -135,6 +135,7 @@ class HttpAppFramework : public trantor::NonCopyable
     virtual bool useGzip() const = 0;
     virtual void setStaticFilesCacheTime(int cacheTime) = 0;
     virtual int staticFilesCacheTime() const = 0;
+    virtual void setIdleConnectionTimeout(size_t timeout) = 0;
 
   private:
     virtual void registerHttpApiController(const std::string &pathPattern,

@@ -127,7 +127,7 @@ static void loadControllers(const Json::Value &controllers)
                 constraints.push_back(filter.asString());
             }
         }
-        HttpAppFramework::instance().registerHttpSimpleController(path,ctrlName,constraints);
+        HttpAppFramework::instance().registerHttpSimpleController(path, ctrlName, constraints);
     }
 }
 static void loadApp(const Json::Value &app)
@@ -212,6 +212,9 @@ static void loadApp(const Json::Value &app)
     auto staticFilesCacheTime = app.get("static_files_cache_time", 5).asInt();
     HttpAppFramework::instance().setStaticFilesCacheTime(staticFilesCacheTime);
     loadControllers(app["simple_controllers_map"]);
+    //Kick off idle connections
+    auto kickOffTimeout = app.get("idle_connection_timeout", 60).asUInt64();
+    HttpAppFramework::instance().setIdleConnectionTimeout(kickOffTimeout);
 }
 static void loadListeners(const Json::Value &listeners)
 {
