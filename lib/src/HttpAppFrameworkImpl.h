@@ -76,6 +76,7 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     virtual bool useGzip() const override { return _useGzip; }
     virtual void setStaticFilesCacheTime(int cacheTime) override { _staticFilesCacheTime = cacheTime; }
     virtual int staticFilesCacheTime() const override { return _staticFilesCacheTime; }
+    virtual void setIdleConnectionTimeout(size_t timeout) override { _idleConnectionTimeout = timeout; }
     virtual ~HttpAppFrameworkImpl()
     {
         //Destroy the following objects before _loop destruction
@@ -108,6 +109,7 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     //if uuid package found,we can use a uuid string as session id;
     //set _sessionTimeout=0 to make location session valid forever based on cookies;
     size_t _sessionTimeout = 0;
+    size_t _idleConnectionTimeout = 60;
     bool _useSession = false;
     typedef std::shared_ptr<Session> SessionPtr;
     std::unique_ptr<CacheMap<std::string, SessionPtr>> _sessionMapPtr;

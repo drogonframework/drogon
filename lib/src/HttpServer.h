@@ -73,7 +73,10 @@ class HttpServer : trantor::NonCopyable
     {
         server_.setIoLoopNum(numThreads);
     }
-
+    void kickoffIdleConnections(size_t timeout)
+    {
+        server_.kickoffIdleConnections(timeout);
+    }
     void start();
 
 #ifdef USE_OPENSSL

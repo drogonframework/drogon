@@ -432,6 +432,7 @@ void HttpAppFrameworkImpl::run()
             }
             serverPtr->setHttpAsyncCallback(std::bind(&HttpAppFrameworkImpl::onAsyncRequest, this, _1, _2));
             serverPtr->setConnectionCallback(std::bind(&HttpAppFrameworkImpl::onConnection, this, _1));
+            serverPtr->kickoffIdleConnections(_idleConnectionTimeout);
             serverPtr->start();
             servers.push_back(serverPtr);
         }
@@ -465,6 +466,7 @@ void HttpAppFrameworkImpl::run()
         serverPtr->setWebsocketMessageCallback(std::bind(&HttpAppFrameworkImpl::onWebsockMessage, this, _1, _2));
         serverPtr->setDisconnectWebsocketCallback(std::bind(&HttpAppFrameworkImpl::onWebsockDisconnect, this, _1));
         serverPtr->setConnectionCallback(std::bind(&HttpAppFrameworkImpl::onConnection, this, _1));
+        serverPtr->kickoffIdleConnections(_idleConnectionTimeout);
         serverPtr->start();
         servers.push_back(serverPtr);
 #endif
