@@ -31,9 +31,12 @@ int main()
     });
     trantor::EventLoop mainLoop;
     mainLoop.runAt(now.after(3).roundSecond().after(0.0013), [&]() {
+        (*main_cachePtr)["new"]="new";
         if (main_cachePtr->find("1"))
         {
-            LOG_DEBUG << "find item 1";
+            LOG_DEBUG << "find item 1:" << (*main_cachePtr)["1"];
+            (*main_cachePtr)["1"] = "22";
+            LOG_DEBUG << (*main_cachePtr)["1"];
         }
         else
         {

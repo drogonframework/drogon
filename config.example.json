@@ -30,8 +30,8 @@
     //threads_num:num of threads,1 by default
     "threads_num": 16,
     //enable_session:false by default
-    "enable_session": false,
-    "session_timeout": 0,
+    "enable_session": true,
+    "session_timeout": 1200,
     //document_root:Root path of HTTP document,defaut path is ./
     "document_root": "./",
     /* file_types:

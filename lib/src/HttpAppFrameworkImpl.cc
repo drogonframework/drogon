@@ -473,7 +473,30 @@ void HttpAppFrameworkImpl::run()
     }
     if (_useSession)
     {
-        _sessionMapPtr = std::unique_ptr<CacheMap<std::string, SessionPtr>>(new CacheMap<std::string, SessionPtr>(&_loop));
+        if (_sessionTimeout > 0)
+        {
+            size_t wheelNum = 1;
+            size_t bucketNum = 0;
+            if (_sessionTimeout < 500)
+            {
+                bucketNum = _sessionTimeout + 1;
+            }
+            else
+            {
+                auto tmpTimeout = _sessionTimeout;
+                bucketNum = 100;
+                while (tmpTimeout > 100)
+                {
+                    wheelNum++;
+                    tmpTimeout = tmpTimeout / 100;
+                }
+            }
+            _sessionMapPtr = std::unique_ptr<CacheMap<std::string, SessionPtr>>(new CacheMap<std::string, SessionPtr>(&_loop, 1.0, wheelNum, bucketNum));
+        }
+        else if (_sessionTimeout == 0)
+        {
+            _sessionMapPtr = std::unique_ptr<CacheMap<std::string, SessionPtr>>(new CacheMap<std::string, SessionPtr>(&_loop, 0, 0, 0));
+        }
     }
     _responseCacheMap = std::unique_ptr<CacheMap<std::string, HttpResponsePtr>>(new CacheMap<std::string, HttpResponsePtr>(&_loop, 1.0, 4, 50)); //Max timeout up to about 70 days;
     _loop.loop();

@@ -84,26 +84,35 @@ class CacheMap
         {
             _wheels[i].resize(_bucketsNumPerWheel);
         }
-        _timerId = _loop->runEvery(_tickInterval, [=]() {
-            _ticksCounter++;
-            size_t t = _ticksCounter;
-            size_t pow = 1;
-            for (size_t i = 0; i < _wheelsNum; i++)
-            {
-                if ((t % pow) == 0)
+        if (_tickInterval > 0 &&
+            _wheelsNum > 0 &&
+            _bucketsNumPerWheel > 0)
+        {
+            _timerId = _loop->runEvery(_tickInterval, [=]() {
+                _ticksCounter++;
+                size_t t = _ticksCounter;
+                size_t pow = 1;
+                for (size_t i = 0; i < _wheelsNum; i++)
                 {
-                    CallbackBucket tmp;
+                    if ((t % pow) == 0)
                     {
-                        std::lock_guard<std::mutex> lock(bucketMutex_);
-                        //use tmp val to make this critical area as short as possible.
-                        _wheels[i].front().swap(tmp);
-                        _wheels[i].pop_front();
-                        _wheels[i].push_back(CallbackBucket());
+                        CallbackBucket tmp;
+                        {
+                            std::lock_guard<std::mutex> lock(bucketMutex_);
+                            //use tmp val to make this critical area as short as possible.
+                            _wheels[i].front().swap(tmp);
+                            _wheels[i].pop_front();
+                            _wheels[i].push_back(CallbackBucket());
+                        }
                     }
+                    pow = pow * _bucketsNumPerWheel;
                 }
-                pow = pow * _bucketsNumPerWheel;
-            }
-        });
+            });
+        }
+        else
+        {
+            _noWheels = true;
+        }
     };
     ~CacheMap()
     {
@@ -184,14 +193,14 @@ class CacheMap
         int timeout = 0;
 
         std::lock_guard<std::mutex> lock(mtx_);
-        if (_map.find(key) != _map.end())
+        auto iter = _map.find(key);
+        if (iter != _map.end())
         {
-            timeout = _map[key].timeout;
+            timeout = iter->second.timeout;
+            if (timeout > 0)
+                eraseAfter(timeout, key);
+            return iter->second.value;
         }
-
-        if (timeout > 0)
-            eraseAfter(timeout, key);
-
         return _map[key].value;
     }
     bool find(const T1 &key)
@@ -200,9 +209,10 @@ class CacheMap
         bool flag = false;
 
         std::lock_guard<std::mutex> lock(mtx_);
-        if (_map.find(key) != _map.end())
+        auto iter = _map.find(key);
+        if (iter != _map.end())
         {
-            timeout = _map[key].timeout;
+            timeout = iter->second.timeout;
             flag = true;
         }
 
@@ -234,6 +244,8 @@ class CacheMap
     float _tickInterval;
     size_t _wheelsNum;
     size_t _bucketsNumPerWheel;
+
+    bool _noWheels = false;
 
     void insertEntry(size_t delay, CallbackEntryPtr entryPtr)
     {
@@ -270,6 +282,8 @@ class CacheMap
     }
     void eraseAfter(size_t delay, const T1 &key)
     {
+        if (_noWheels)
+            return;
         assert(_map.find(key) != _map.end());
 
         CallbackEntryPtr entryPtr;
