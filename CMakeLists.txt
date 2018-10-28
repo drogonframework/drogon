@@ -19,7 +19,7 @@ else()
     set(CMAKE_CXX_STD_FLAGS c++17)
 endif()
 
-include_directories(${PROJECT_SOURCE_DIR}/trantor ${PROJECT_SOURCE_DIR}/lib/inc)
+include_directories(${PROJECT_SOURCE_DIR}/trantor ${PROJECT_SOURCE_DIR}/lib/inc ${PROJECT_SOURCE_DIR}/orm_lib/inc)
 
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake_modules/)
 #jsoncpp
@@ -61,6 +61,15 @@ link_libraries(${ZLIB_LIBRARIES})
 
 message(STATUS "zlib inc path:" ${ZLIB_INCLUDE_DIR})
 
+#find postgres
+find_package(PostgreSQL)
+if(PostgreSQL_FOUND)
+include_directories(${PostgreSQL_INCLUDE_DIR})
+message(STATUS "libpq inc path:" ${PostgreSQL_INCLUDE_DIR})
+link_libraries(${PostgreSQL_LIBRARIES})
+aux_source_directory(${PROJECT_SOURCE_DIR}/orm_lib/src/postgresql_impl DIR_SRCS)
+endif()
+
 if(CMAKE_BUILD_TYPE STREQUAL "")
     set(CMAKE_BUILD_TYPE Release)
 endif()
@@ -80,6 +89,7 @@ add_subdirectory(examples)
 add_subdirectory(drogon_ctl)
 
 aux_source_directory(${PROJECT_SOURCE_DIR}/lib/src DIR_SRCS)
+aux_source_directory(${PROJECT_SOURCE_DIR}/orm_lib/src DIR_SRCS)
 
 ADD_LIBRARY(drogon ${DIR_SRCS})
 
@@ -113,6 +123,9 @@ EXEC_PROGRAM(${PROJECT_SOURCE_DIR}/update_config.sh ARGS "${CONFIG_HEADER} ${PRO
 
 if (MAKETEST STREQUAL YES)
     ADD_SUBDIRECTORY(tests)
+    if(PostgreSQL_FOUND)
+        add_subdirectory(${PROJECT_SOURCE_DIR}/orm_lib/src/postgresql_impl/test)
+    endif()
 endif ()
 
 SET(CMAKE_INSTALL_PREFIX /usr/local)
