@@ -28,22 +28,12 @@ void PgClient::execSql(const std::string &sql,
                        const ResultCallback &rcb,
                        const std::function<void(const std::exception_ptr &)> &exceptCallback)
 {
-    // std::thread _thread([=]() {
-    //     try
-    //     {
-    //         throw Failure("exception test!!!");
-    //     }
-    //     catch (...)
-    //     {
-    //         exceptCallback(std::current_exception());
-    //     }
-    // });
-    // _thread.detach();
-    //  rcb(Result());
     _clientPtr->execSql(sql,paraNum,parameters,length,format,rcb,exceptCallback);
 }
 
-PgClient::PgClient(const std::string &connInfo, const size_t connNum):
-_clientPtr(new PgClientImpl(connInfo,connNum))
+std::string PgClient::replaceSqlPlaceHolder(const std::string &sqlStr, const std::string &holderStr) const {
+   return _clientPtr->replaceSqlPlaceHolder(sqlStr, holderStr);
+}
+PgClient::PgClient(const std::string &connInfo, const size_t connNum) : _clientPtr(new PgClientImpl(connInfo, connNum))
 {
 }

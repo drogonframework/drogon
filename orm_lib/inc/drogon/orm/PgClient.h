@@ -23,6 +23,7 @@ class PgClient : public DbClient
 {
   public:
     PgClient(const std::string &connInfo, const size_t connNum);
+    virtual std::string replaceSqlPlaceHolder(const std::string &sqlStr, const std::string &holderStr) const override;
 
   private:
     virtual void execSql(const std::string &sql,

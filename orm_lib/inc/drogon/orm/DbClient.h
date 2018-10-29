@@ -96,8 +96,9 @@ public:
     }
 
     internal::SqlBinder operator<<(const std::string &sql);
+    virtual std::string replaceSqlPlaceHolder(const std::string &sqlStr, const std::string &holderStr) const = 0;
 
-private:
+  private:
     friend internal::SqlBinder;
     virtual void execSql(const std::string &sql,
                          size_t paraNum,

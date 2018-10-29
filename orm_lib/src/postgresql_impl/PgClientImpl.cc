@@ -16,6 +16,8 @@
 #include <memory>
 #include <stdio.h>
 #include <unistd.h>
+#include <sstream>
+
 using namespace drogon::orm;
 
 DbConnectionPtr PgClientImpl::newConnection(trantor::EventLoop *loop)
@@ -34,7 +36,7 @@ DbConnectionPtr PgClientImpl::newConnection(trantor::EventLoop *loop)
         //std::cout<<"Conn closed!end"<<std::endl;
     });
     connPtr->setOkCallback([=](const DbConnectionPtr &okConnPtr) {
-        LOG_TRACE << "postgreSQL connected!" ;
+        LOG_TRACE << "postgreSQL connected!";
         std::lock_guard<std::mutex> guard(_connectionsMutex);
         _readyConnections.insert(okConnPtr);
     });
@@ -151,7 +153,7 @@ void PgClientImpl::execSql(const std::string &sql,
                 {
                     throw BrokenConnection("No connection to postgreSQL server");
                 }
-                catch(...)
+                catch (...)
                 {
                     exceptCb(std::current_exception());
                 }
@@ -199,4 +201,25 @@ void PgClientImpl::execSql(const std::string &sql,
         std::lock_guard<std::mutex> guard(_bufferMutex);
         _sqlCmdBuffer.push_back(std::move(cmd));
     }
+}
+
+std::string PgClientImpl::replaceSqlPlaceHolder(const std::string &sqlStr, const std::string &holderStr) const
+{
+    std::string::size_type startPos = 0;
+    std::string::size_type pos;
+    std::stringstream ret;
+    size_t phCount = 1;
+    do
+    {
+        pos = sqlStr.find(holderStr, startPos);
+        if (pos == std::string::npos)
+        {
+            ret << sqlStr.substr(startPos);
+            return ret.str();
+        }
+        ret << sqlStr.substr(startPos, pos - startPos);
+        ret << "$";
+        ret << phCount++;
+        startPos = pos + holderStr.length();
+    } while (1);
 }

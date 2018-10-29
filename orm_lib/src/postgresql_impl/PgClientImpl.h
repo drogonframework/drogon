@@ -29,6 +29,7 @@ class PgClientImpl : public trantor::NonCopyable
                  const std::vector<int> &format,
                  const ResultCallback &rcb,
                  const std::function<void(const std::exception_ptr &)> &exceptCallback);
+    std::string replaceSqlPlaceHolder(const std::string &sqlStr, const std::string &holderStr) const;
 
   private:
     void ioLoop();
