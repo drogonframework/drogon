@@ -92,6 +92,7 @@ inline T Mapper<T>::findByPrimaryKey(const T::PrimaryKeyType &key) noexcept(fals
     static_assert(T::hasPrimaryKey, "No primary key in the table!");
     return findOne(Criteria(T::primaryKeyName, key));
 }
+
 template <typename T>
 inline void Mapper<T>::findByPrimaryKey(const T::PrimaryKeyType &key,
                                         const SingleRowCallback &rcb,
@@ -100,12 +101,14 @@ inline void Mapper<T>::findByPrimaryKey(const T::PrimaryKeyType &key,
     static_assert(T::hasPrimaryKey, "No primary key in the table!");
     findOne(Criteria(T::primaryKeyName, key), rcb, ecb);
 }
+
 template <typename T>
 inline std::future<T> Mapper<T>::findFutureByPrimaryKey(const T::PrimaryKeyType &key) noexcept
 {
     static_assert(T::hasPrimaryKey, "No primary key in the table!");
     return findFutureOne(Criteria(T::primaryKeyName, key));
 }
+
 template <typename T>
 inline T Mapper<T>::findOne(const Criteria &criteria) noexcept(false)
 {
@@ -130,15 +133,16 @@ inline T Mapper<T>::findOne(const Criteria &criteria) noexcept(false)
     }
     if (r.size() == 0)
     {
-        throw Failure("No records found that meet the criteria");
+        throw Failure("0 rows found");
     }
     else if (r.size() > 1)
     {
-        throw Failure("More than one record found");
+        throw Failure("Found more than one row");
     }
     auto row = r[0];
     return T(row);
 }
+
 template <typename T>
 inline void Mapper<T>::findOne(const Criteria &criteria,
                                const SingleRowCallback &rcb,
@@ -159,11 +163,11 @@ inline void Mapper<T>::findOne(const Criteria &criteria,
     binder >> [=](const Result &r) {
         if (r.size() == 0)
         {
-            ecb(Failure("No records found that meet the criteria"));
+            ecb(Failure("0 rows found"));
         }
         else if (r.size() > 1)
         {
-            ech(Failure("More than one record found"));
+            ech(Failure("Found more than one row"));
         }
         else
         {
@@ -172,6 +176,7 @@ inline void Mapper<T>::findOne(const Criteria &criteria,
     };
     binder >> ecb;
 }
+
 template <typename T>
 inline std::future<T> Mapper<T>::findFutureOne(const Criteria &criteria) noexcept
 {
@@ -194,7 +199,7 @@ inline std::future<T> Mapper<T>::findFutureOne(const Criteria &criteria) noexcep
         {
             try
             {
-                throw Failure("No records found that meet the criteria");
+                throw Failure("0 rows found");
             }
             catch (...)
             {
@@ -205,7 +210,7 @@ inline std::future<T> Mapper<T>::findFutureOne(const Criteria &criteria) noexcep
         {
             try
             {
-                throw Failure("More than one record found");
+                throw Failure("Found more than one row");
             }
             catch (...)
             {
@@ -223,5 +228,6 @@ inline std::future<T> Mapper<T>::findFutureOne(const Criteria &criteria) noexcep
     binder.exec();
     return prom->get_future();
 }
+
 } // namespace orm
 } // namespace drogon
