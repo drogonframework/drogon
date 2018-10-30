@@ -10,6 +10,7 @@
  *  Definitions for the PostgreSQL client class
  *
  */
+#pragma once
 
 #include <drogon/orm/DbClient.h>
 #include <memory>

@@ -100,6 +100,13 @@ SET(CONFIG_HEADER "${PROJECT_SOURCE_DIR}/config.h")
 file(WRITE "${CONFIG_HEADER}" "#pragma once\n")
 
 file(APPEND "${CONFIG_HEADER}" "#include <trantor/utils/config.h>\n")
+
+if(PostgreSQL_FOUND)
+file(APPEND "${CONFIG_HEADER}" "#define USE_POSTGRESQL 1")
+else()
+file(APPEND "${CONFIG_HEADER}" "#define USE_POSTGRESQL 0")
+endif()
+
 string(TOLOWER ${CMAKE_BUILD_TYPE} CMAKE_BUILD_TYPE_LOWER)
 if(CMAKE_BUILD_TYPE_LOWER STREQUAL release)
     file(APPEND "${CONFIG_HEADER}" "\n" "const char compileFlags[]=\"" ${CMAKE_CXX_FLAGS_RELEASE} "\";")

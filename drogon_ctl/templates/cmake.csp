@@ -52,6 +52,14 @@ find_package(ZLIB REQUIRED)
 include_directories(${ZLIB_INCLUDE_DIR})
 link_libraries(${ZLIB_LIBRARIES})
 
+#find postgres
+find_package(PostgreSQL)
+if(PostgreSQL_FOUND)
+include_directories(${PostgreSQL_INCLUDE_DIR})
+link_libraries(${PostgreSQL_LIBRARIES})
+endif()
+
+
 AUX_SOURCE_DIRECTORY(./ SRC_DIR)
 AUX_SOURCE_DIRECTORY(controllers CTL_SRC)
 AUX_SOURCE_DIRECTORY(filters FILTER_SRC)

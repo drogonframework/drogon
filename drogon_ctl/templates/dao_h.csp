@@ -1,0 +1,25 @@
+/**
+ *
+ *  {{className}}.h
+ *  Created by drogon_ctl
+ *
+ */
+
+#pragma once
+
+namespace drogon_dao
+{
+namespace {{dbName}} 
+{
+    class {{className}}
+    {
+      public:
+        const static std::string primaryKeyName;
+        const static bool hasPrimaryKey;
+        const static std::string tableName;
+
+        typedef {{primaryKeyType}} PrimaryKeyType;
+        {{className}}(const Row &r);
+    };
+} // namespace {{dbName}}
+} // namespace drogon_dao
