@@ -39,13 +39,12 @@ class Criteria
 {
   public:
     explicit operator bool() const { return !_condString.empty(); }
-    std::string criteriaString() { return _condString; }
+    std::string criteriaString() const { return _condString; }
     template <typename T>
     Criteria(const std::string &colName, const CompareOperator &opera, T &&arg)
     {
-        static_assert(opera != CompareOperator::IsNotNull &&
-                          opera != CompareOperator::IsNull,
-                      "Invalid compare operator!");
+        assert(opera != CompareOperator::IsNotNull &&
+                          opera != CompareOperator::IsNull);
         _condString = colName;
         switch (opera)
         {
@@ -72,7 +71,7 @@ class Criteria
         default:
             break;
         }
-        _outputArgumentsFunc = [=](inner::SqlBinder &binder) {
+        _outputArgumentsFunc = [=](internal::SqlBinder &binder) {
             binder << arg;
         };
     }
@@ -100,7 +99,7 @@ class Criteria
         }
     }
     Criteria() {}
-    void outputArgs(internal::SqlBinder &binder)
+    void outputArgs(internal::SqlBinder &binder) const
     {
         if (_outputArgumentsFunc)
             _outputArgumentsFunc(binder);

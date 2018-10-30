@@ -67,7 +67,7 @@ class PgClientImpl : public trantor::NonCopyable
         std::vector<std::string> _parameters;
         std::vector<int> _format;
         QueryCallback _cb;
-        ExceptCallback _exceptCb;
+        ExceptPtrCallback _exceptCb;
     };
     std::list<SqlCmd> _sqlCmdBuffer;
     std::mutex _bufferMutex;

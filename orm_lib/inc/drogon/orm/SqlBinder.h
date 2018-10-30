@@ -32,7 +32,7 @@ namespace orm
 
 class DbClient;
 typedef std::function<void(const Result &)> QueryCallback;
-typedef std::function<void(const std::exception_ptr &)> ExceptCallback;
+typedef std::function<void(const std::exception_ptr &)> ExceptPtrCallback;
 enum class Mode
 {
     NonBlocking,
@@ -267,7 +267,7 @@ class SqlBinder
     Mode _mode = Mode::NonBlocking;
     std::shared_ptr<CallbackHolderBase> _callbackHolder;
     DrogonDbExceptionCallback _exceptCallback;
-    ExceptCallback _exceptPtrCallback;
+    ExceptPtrCallback _exceptPtrCallback;
     bool _execed = false;
     bool _destructed = false;
     bool _isExceptPtr = false;

@@ -31,7 +31,7 @@ namespace orm
 {
 
 typedef std::function<void(const Result &)> ResultCallback;
-typedef std::function<void(const std::exception_ptr &)> ExceptionCallback;
+typedef std::function<void(const DrogonDbException &)> ExceptionCallback;
 
 class DbClient : public trantor::NonCopyable
 {

@@ -133,7 +133,7 @@ void PgClientImpl::execSql(const std::string &sql,
                            const std::vector<int> &length,
                            const std::vector<int> &format,
                            const QueryCallback &cb,
-                           const ExceptCallback &exceptCb)
+                           const ExceptPtrCallback &exceptCb)
 {
     assert(paraNum == parameters.size());
     assert(paraNum == length.size());
