@@ -33,8 +33,8 @@ std::string create::detail()
            "create a project named project_name\n"
            "drogon_ctl create filter <class_name> //"
            "create a filter named class_name\n"
-           "drogon_ctl create dao <dao_path> //"
-           "create DAO classes in dao_path\n";
+           "drogon_ctl create model <model_path> //"
+           "create model classes in model_path\n";
 }
 
 void create::handleCommand(std::vector<std::string> &parameters)

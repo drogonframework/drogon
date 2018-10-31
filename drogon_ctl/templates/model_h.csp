@@ -1,0 +1,61 @@
+/**
+ *
+ *  {{className}}.h
+ *  Created by drogon_ctl
+ *
+ */
+<%inc#include "create_model.h"
+using namespace drogon_ctl;
+%>
+#pragma once
+#include <drogon/orm/Result.h>
+#include <drogon/orm/Row.h>
+#include <drogon/orm/Field.h>
+#include <string>
+#include <memory>
+using namespace drogon::orm;
+
+namespace drogon_model
+{
+namespace {{dbName}} 
+{
+
+class {{className}}
+{
+    public:
+    const static std::string primaryKeyName;
+    const static bool hasPrimaryKey;
+    const static std::string tableName;
+
+    typedef {{primaryKeyType}} PrimaryKeyType;
+    {{className}}(const Row &r) noexcept;
+    <%c++
+    auto cols=@@.get<std::vector<ColumnInfo>>("columns");
+    for(auto col:cols)
+    {
+        $$<<"    //For column "<<col._colName<<"\n";
+        if(!col._colType.empty())
+        {
+            $$<<"    const "<<col._colType<<" &getValueOf"<<col._colTypeName<<"(const "<<col._colType<<" &default="<<col._colType<<"()) const noexcept;\n";
+            $$<<"    std::shared_ptr<const "<<col._colType<<"> get"<<col._colTypeName<<"() const noexcept;\n";
+            $$<<"    void set"<<col._colTypeName<<"(const "<<col._colType<<" &"<<col._colValName<<") noexcept;\n";
+            if(col._colType=="std::string")
+                $$<<"    void set"<<col._colTypeName<<"("<<col._colType<<" &&"<<col._colValName<<") noexcept;\n";
+        }
+        else
+            $$<<"    //FIXME!!"<<" getValueOf"<<col._colTypeName<<"() const noexcept;\n";
+        $$<<"\n";    
+    }
+    %>
+  private:
+    <%c++
+    for(auto col:cols)
+    {
+        if(!col._colType.empty())
+            $$<<"    std::shared_ptr<"<<col._colType<<"> _"<<col._colValName<<";\n";
+    }
+    %>
+};
+
+} // namespace {{dbName}}
+} // namespace drogon_model

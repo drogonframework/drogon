@@ -455,7 +455,7 @@ inline void Mapper<T>::insert(T &obj) noexcept(false)
         };
         binder.exec(); //Maybe throw exception;
     }
-    assert(r.szie() == 1);
+    assert(r.size() == 1);
     obj = T(r[0]);
 }
 template <typename T>

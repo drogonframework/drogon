@@ -1,0 +1,76 @@
+/**
+ *
+ *  {{className}}.cc
+ *  created by drogon_ctl
+ *
+ */
+<%inc#include "create_model.h"
+using namespace drogon_ctl;
+%>
+
+#include "{{className}}.h"
+#include <string>
+
+using namespace drogon_model::{{dbname}};
+const std::string User::primaryKeyName = "{{priKeyName}}";
+<%c++ if(@@.get<bool>("hasPrimaryKey",false)){%>
+const bool User::hasPrimaryKey = true;
+<%c++ }else{%>
+const bool User::hasPrimaryKey = false;
+<%c++}%>
+const std::string User::tableName = "{{tableName}}";
+<%c++
+    auto cols=@@.get<std::vector<ColumnInfo>>("columns");
+    auto className=@@.get<std::string>("className");
+%>
+{{className}}::{{className}}(const Row &r) noexcept
+{
+<%c++
+    for(auto col:cols)
+    {
+        %>
+        if(!r["<%c++$$<<col._colName;%>"].isNull())
+        {
+            _<%c++$$<<col._colValName;%>=std::make_shared<<%c++$$<<col._colType;%>>(r["<%c++$$<<col._colName;%>"].as<<%c++$$<<col._colType;%>>());
+        }
+        <%c++
+    }%>
+}
+<%c++
+    for(auto col:cols)
+    {
+        if(!col._colType.empty())
+        {
+            $$<<"const "<<col._colType<<" & "<<className<<"::getValueOf"<<col._colTypeName<<"(const "<<col._colType<<" &default) const noexcept\n";
+            $$<<"{\n";
+            $$<<"    if(_"<<col._colValName<<")\n";
+            $$<<"        return *_"<<col._colValName<<";\n";
+            $$<<"    return default;\n";
+            $$<<"}\n";
+            
+            
+            
+            $$<<"std::shared_ptr<const "<<col._colType<<"> "<<className<<"::get"<<col._colTypeName<<"() const noexcept\n";
+            $$<<"{\n";
+            $$<<"    return _"<<col._colValName<<";\n";
+            $$<<"}\n";
+ 
+
+            $$<<"void "<<className<<"::set"<<col._colTypeName<<"(const "<<col._colType<<" &"<<col._colValName<<") noexcept\n";
+            $$<<"{\n";
+            $$<<"    _"<<col._colValName<<" = std::make_shared<"<<col._colType<<">("<<col._colValName<<");\n";
+            $$<<"}\n";
+
+
+            if(col._colType=="std::string")
+            {
+                $$<<"void "<<className<<"::set"<<col._colTypeName<<"("<<col._colType<<" &&"<<col._colValName<<") noexcept\n";
+                $$<<"{\n";
+                $$<<"    _"<<col._colValName<<" = std::make_shared<"<<col._colType<<">(std::move("<<col._colValName<<"));\n";
+                $$<<"}\n";
+            }
+                
+        }
+        $$<<"\n";    
+    }
+%>

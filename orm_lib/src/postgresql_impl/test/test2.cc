@@ -32,6 +32,7 @@ int main()
     drogon::orm::PgClient client("host=127.0.0.1 port=5432 dbname=trantor user=antao", 1);
     LOG_DEBUG << "start!";
     sleep(1);
+    //client << "\\d users" >> [](const Result &r) {} >> [](const DrogonDbException &e) { std::cerr << e.base().what() << std::endl; };
     Mapper<User> mapper(client);
     auto U = mapper.findByPrimaryKey(2);
     std::cout << "id=" << U._userId << std::endl;
