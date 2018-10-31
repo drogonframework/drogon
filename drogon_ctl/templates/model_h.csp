@@ -22,14 +22,15 @@ namespace {{dbName}}
 
 class {{className}}
 {
-    public:
+  public:
     const static std::string primaryKeyName;
     const static bool hasPrimaryKey;
     const static std::string tableName;
 
     typedef {{primaryKeyType}} PrimaryKeyType;
     {{className}}(const Row &r) noexcept;
-    <%c++
+    
+<%c++
     auto cols=@@.get<std::vector<ColumnInfo>>("columns");
     for(auto col:cols)
     {
@@ -46,9 +47,9 @@ class {{className}}
             $$<<"    //FIXME!!"<<" getValueOf"<<col._colTypeName<<"() const noexcept;\n";
         $$<<"\n";    
     }
-    %>
+%>
   private:
-    <%c++
+<%c++
     for(auto col:cols)
     {
         if(!col._colType.empty())

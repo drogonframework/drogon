@@ -28,13 +28,16 @@ const std::string User::tableName = "{{tableName}}";
 <%c++
     for(auto col:cols)
     {
+        if(col._colType.empty())
+            continue;
         %>
         if(!r["<%c++$$<<col._colName;%>"].isNull())
         {
             _<%c++$$<<col._colValName;%>=std::make_shared<<%c++$$<<col._colType;%>>(r["<%c++$$<<col._colName;%>"].as<<%c++$$<<col._colType;%>>());
         }
-        <%c++
-    }%>
+<%c++
+    }
+    %>
 }
 <%c++
     for(auto col:cols)
