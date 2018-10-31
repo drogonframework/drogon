@@ -58,7 +58,8 @@ const std::string {{className}}::tableName = "{{tableName}}";
             $$<<"    return _"<<col._colValName<<";\n";
             $$<<"}\n";
  
-
+            if(!col._isAutoVal)
+            {
             $$<<"void "<<className<<"::set"<<col._colTypeName<<"(const "<<col._colType<<" &"<<col._colValName<<") noexcept\n";
             $$<<"{\n";
             $$<<"    _"<<col._colValName<<" = std::make_shared<"<<col._colType<<">("<<col._colValName<<");\n";
@@ -72,7 +73,7 @@ const std::string {{className}}::tableName = "{{tableName}}";
                 $$<<"    _"<<col._colValName<<" = std::make_shared<"<<col._colType<<">(std::move("<<col._colValName<<"));\n";
                 $$<<"}\n";
             }
-                
+            }
         }
         $$<<"\n";    
     }

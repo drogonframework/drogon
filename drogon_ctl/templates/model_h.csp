@@ -44,9 +44,12 @@ class {{className}}
         {
             $$<<"    const "<<col._colType<<" &getValueOf"<<col._colTypeName<<"(const "<<col._colType<<" &defaultValue="<<col._colType<<"()) const noexcept;\n";
             $$<<"    std::shared_ptr<const "<<col._colType<<"> get"<<col._colTypeName<<"() const noexcept;\n";
+            if(!col._isAutoVal)
+            {
             $$<<"    void set"<<col._colTypeName<<"(const "<<col._colType<<" &"<<col._colValName<<") noexcept;\n";
             if(col._colType=="std::string")
                 $$<<"    void set"<<col._colTypeName<<"("<<col._colType<<" &&"<<col._colValName<<") noexcept;\n";
+            }
         }
         else
             $$<<"    //FIXME!!"<<" getValueOf"<<col._colTypeName<<"() const noexcept;\n";
