@@ -11,14 +11,14 @@ using namespace drogon_ctl;
 #include "{{className}}.h"
 #include <string>
 
-using namespace drogon_model::{{dbname}};
-const std::string User::primaryKeyName = "{{priKeyName}}";
+using namespace drogon_model::{{dbName}};
+const std::string {{className}}::primaryKeyName = "{{priKeyName}}";
 <%c++ if(@@.get<bool>("hasPrimaryKey",false)){%>
-const bool User::hasPrimaryKey = true;
+const bool {{className}}::hasPrimaryKey = true;
 <%c++ }else{%>
-const bool User::hasPrimaryKey = false;
+const bool {{className}}::hasPrimaryKey = false;
 <%c++}%>
-const std::string User::tableName = "{{tableName}}";
+const std::string {{className}}::tableName = "{{tableName}}";
 <%c++
     auto cols=@@.get<std::vector<ColumnInfo>>("columns");
     auto className=@@.get<std::string>("className");
@@ -44,11 +44,11 @@ const std::string User::tableName = "{{tableName}}";
     {
         if(!col._colType.empty())
         {
-            $$<<"const "<<col._colType<<" & "<<className<<"::getValueOf"<<col._colTypeName<<"(const "<<col._colType<<" &default) const noexcept\n";
+            $$<<"const "<<col._colType<<" & "<<className<<"::getValueOf"<<col._colTypeName<<"(const "<<col._colType<<" &defaultValue) const noexcept\n";
             $$<<"{\n";
             $$<<"    if(_"<<col._colValName<<")\n";
             $$<<"        return *_"<<col._colValName<<";\n";
-            $$<<"    return default;\n";
+            $$<<"    return defaultValue;\n";
             $$<<"}\n";
             
             

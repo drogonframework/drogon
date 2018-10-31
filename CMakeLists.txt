@@ -68,6 +68,7 @@ include_directories(${PostgreSQL_INCLUDE_DIR})
 message(STATUS "libpq inc path:" ${PostgreSQL_INCLUDE_DIR})
 link_libraries(${PostgreSQL_LIBRARIES})
 aux_source_directory(${PROJECT_SOURCE_DIR}/orm_lib/src/postgresql_impl DIR_SRCS)
+set(USE_ORM TRUE)
 endif()
 
 if(CMAKE_BUILD_TYPE STREQUAL "")
@@ -137,10 +138,15 @@ endif ()
 
 SET(CMAKE_INSTALL_PREFIX /usr/local)
 
+#Installation
 install(TARGETS drogon DESTINATION lib)
 
 file(GLOB drogon_headers "${CMAKE_CURRENT_SOURCE_DIR}/lib/inc/drogon/*.h")
 install(FILES ${drogon_headers} DESTINATION include/drogon)
+if(USE_ORM)
+file(GLOB orm_headers "${CMAKE_CURRENT_SOURCE_DIR}/orm_lib/inc/drogon/orm/*.h")
+install(FILES ${orm_headers} DESTINATION include/drogon/orm)
+endif()
 file(GLOB drogon_util_headers "${CMAKE_CURRENT_SOURCE_DIR}/lib/inc/drogon/utils/*.h")
 install(FILES ${drogon_util_headers}
         DESTINATION include/drogon/utils)

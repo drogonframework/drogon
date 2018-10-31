@@ -13,6 +13,8 @@ using namespace drogon_ctl;
 #include <drogon/orm/Field.h>
 #include <string>
 #include <memory>
+#include <stdint.h>
+
 using namespace drogon::orm;
 
 namespace drogon_model
@@ -26,8 +28,11 @@ class {{className}}
     const static std::string primaryKeyName;
     const static bool hasPrimaryKey;
     const static std::string tableName;
-
+<%c++if(!@@.get<std::string>("primaryKeyType").empty()){%>
     typedef {{primaryKeyType}} PrimaryKeyType;
+<%c++}else{%>
+    typedef void PrimaryKeyType;
+<%c++}%>
     {{className}}(const Row &r) noexcept;
     
 <%c++
@@ -37,7 +42,7 @@ class {{className}}
         $$<<"    //For column "<<col._colName<<"\n";
         if(!col._colType.empty())
         {
-            $$<<"    const "<<col._colType<<" &getValueOf"<<col._colTypeName<<"(const "<<col._colType<<" &default="<<col._colType<<"()) const noexcept;\n";
+            $$<<"    const "<<col._colType<<" &getValueOf"<<col._colTypeName<<"(const "<<col._colType<<" &defaultValue="<<col._colType<<"()) const noexcept;\n";
             $$<<"    std::shared_ptr<const "<<col._colType<<"> get"<<col._colTypeName<<"() const noexcept;\n";
             $$<<"    void set"<<col._colTypeName<<"(const "<<col._colType<<" &"<<col._colValName<<") noexcept;\n";
             if(col._colType=="std::string")
