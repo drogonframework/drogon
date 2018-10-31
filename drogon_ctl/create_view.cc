@@ -90,7 +90,8 @@ static void parseLine(std::ofstream &oSrcFile, std::string &line, const std::str
     {
         // std::cout<<"blank line!"<<std::endl;
         // std::cout<<streamName<<"<<\"\\n\";\n";
-        oSrcFile << streamName << "<<\"\\n\";\n";
+        if (returnFlag)
+            oSrcFile << streamName << "<<\"\\n\";\n";
         return;
     }
     if (cxx_flag == 0)
@@ -99,10 +100,12 @@ static void parseLine(std::ofstream &oSrcFile, std::string &line, const std::str
         if ((pos = line.find(cxx_lang)) != std::string::npos)
         {
             std::string oldLine = line.substr(0, pos);
-            parseLine(oSrcFile, oldLine, streamName, viewDataName, cxx_flag, 0);
+            if (oldLine.length() > 0)
+                parseLine(oSrcFile, oldLine, streamName, viewDataName, cxx_flag, 0);
             std::string newLine = line.substr(pos + cxx_lang.length());
             cxx_flag = 1;
-            parseLine(oSrcFile, newLine, streamName, viewDataName, cxx_flag, returnFlag);
+            if (newLine.length() > 0)
+                parseLine(oSrcFile, newLine, streamName, viewDataName, cxx_flag, returnFlag);
         }
         else
         {
@@ -179,7 +182,8 @@ static void parseLine(std::ofstream &oSrcFile, std::string &line, const std::str
             parseCxxLine(oSrcFile, newLine, streamName, viewDataName);
             std::string oldLine = line.substr(pos + cxx_end.length());
             cxx_flag = 0;
-            parseLine(oSrcFile, oldLine, streamName, viewDataName, cxx_flag, returnFlag);
+            if (oldLine.length() > 0)
+                parseLine(oSrcFile, oldLine, streamName, viewDataName, cxx_flag, returnFlag);
         }
         else
         {
