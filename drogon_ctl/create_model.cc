@@ -252,7 +252,7 @@ void create_model::createModel(const std::string &path, const Json::Value &confi
             createModelFromPG(path, client);
         else
         {
-            for (int i = 0; i < tables.size(); i++)
+            for (int i = 0; i < (int)tables.size(); i++)
             {
                 auto tableName = tables[i].asString();
                 std::cout << "table name:" << tableName << std::endl;
