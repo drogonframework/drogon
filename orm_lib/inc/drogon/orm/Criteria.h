@@ -127,7 +127,8 @@ class Criteria
 
 const Criteria operator&&(Criteria cond1, Criteria cond2)
 {
-    assert(cond1 && cond2);
+    assert(cond1);
+    assert(cond2);
     Criteria cond;
     cond._condString = "( ";
     cond._condString += cond1._condString;
@@ -150,7 +151,8 @@ const Criteria operator&&(Criteria cond1, Criteria cond2)
 }
 const Criteria operator||(Criteria cond1, Criteria cond2)
 {
-    assert(cond1 && cond2);
+    assert(cond1);
+    assert(cond2);
     Criteria cond;
     cond._condString = "( ";
     cond._condString += cond1._condString;
