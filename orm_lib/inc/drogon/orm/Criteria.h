@@ -76,18 +76,6 @@ class Criteria
         };
     }
 
-    template <typename M, typename T>
-    Criteria(const typename M::Col idx, const CompareOperator &opera, T &&arg)
-        : Criteria(M::getColumnName((int)idx), opera, arg)
-    {
-    }
-
-    template <typename M>
-    Criteria(const typename M::Col idx, const CompareOperator &opera)
-        : Criteria(M::getColumnName((int)idx), opera)
-    {
-    }
-
     template <typename T>
     Criteria(const std::string &colName, T &&arg)
         : Criteria(colName, CompareOperator::EQ, arg)

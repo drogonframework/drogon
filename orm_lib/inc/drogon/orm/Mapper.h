@@ -98,7 +98,7 @@ class Mapper
 template <typename T>
 inline T Mapper<T>::findByPrimaryKey(const typename T::PrimaryKeyType &key) noexcept(false)
 {
-    static_assert(T::hasPrimaryKey, "No primary key in the table!");
+    static_assert(!std::is_same<typename T::PrimaryKeyType, void>::value, "No primary key in the table!");
     return findOne(Criteria(T::primaryKeyName, key));
 }
 
@@ -107,14 +107,14 @@ inline void Mapper<T>::findByPrimaryKey(const typename T::PrimaryKeyType &key,
                                         const SingleRowCallback &rcb,
                                         const ExceptionCallback &ecb) noexcept
 {
-    static_assert(T::hasPrimaryKey, "No primary key in the table!");
+    static_assert(!std::is_same<typename T::PrimaryKeyType, void>::value, "No primary key in the table!");
     findOne(Criteria(T::primaryKeyName, key), rcb, ecb);
 }
 
 template <typename T>
 inline std::future<T> Mapper<T>::findFutureByPrimaryKey(const typename T::PrimaryKeyType &key) noexcept
 {
-    static_assert(T::hasPrimaryKey, "No primary key in the table!");
+    static_assert(!std::is_same<typename T::PrimaryKeyType, void>::value, "No primary key in the table!");
     return findFutureOne(Criteria(T::primaryKeyName, key));
 }
 
@@ -444,7 +444,7 @@ inline void Mapper<T>::insert(T &obj) noexcept(false)
     }
     sql[sql.length() - 1] = ')'; //Replace the last ','
     sql += " returning *";
-    _client.replaceSqlPlaceHolder(sql, "$?");
+    sql = _client.replaceSqlPlaceHolder(sql, "$?");
     Result r(nullptr);
     {
         auto binder = _client << sql;
@@ -480,7 +480,7 @@ inline void Mapper<T>::insert(const T &obj,
     }
     sql[sql.length() - 1] = ')'; //Replace the last ','
     sql += " returning *";
-    _client.replaceSqlPlaceHolder(sql, "$?");
+    sql = _client.replaceSqlPlaceHolder(sql, "$?");
     auto binder = _client << sql;
     obj.outputArgs(binder);
     binder >> [=](const Result &r) {
@@ -509,7 +509,7 @@ inline std::future<T> Mapper<T>::insertFuture(const T &obj) noexcept
     }
     sql[sql.length() - 1] = ')'; //Replace the last ','
     sql += " returning *";
-    _client.replaceSqlPlaceHolder(sql, "$?");
+    sql = _client.replaceSqlPlaceHolder(sql, "$?");
     auto binder = _client << sql;
     obj.outputArgs(binder);
 
@@ -528,7 +528,7 @@ template <typename T>
 inline size_t Mapper<T>::update(T &obj) noexcept(false)
 {
     clear();
-    static_assert(T::hasPrimaryKey, "No primary key in the table!");
+    static_assert(!std::is_same<typename T::PrimaryKeyType, void>::value, "No primary key in the table!");
     std::string sql = "update ";
     sql += T::tableName;
     sql += " set ";
@@ -542,7 +542,7 @@ inline size_t Mapper<T>::update(T &obj) noexcept(false)
     sql += T::primaryKeyName;
     sql += " = $?";
 
-    _client.replaceSqlPlaceHolder(sql, "$?");
+    sql = _client.replaceSqlPlaceHolder(sql, "$?");
     Result r(nullptr);
     {
         auto binder = _client << sql;
@@ -562,7 +562,7 @@ inline void Mapper<T>::update(const T &obj,
                               const ExceptionCallback &ecb) noexcept
 {
     clear();
-    static_assert(T::hasPrimaryKey, "No primary key in the table!");
+    static_assert(!std::is_same<typename T::PrimaryKeyType, void>::value, "No primary key in the table!");
     std::string sql = "update ";
     sql += T::tableName;
     sql += " set ";
@@ -576,7 +576,7 @@ inline void Mapper<T>::update(const T &obj,
     sql += T::primaryKeyName;
     sql += " = $?";
 
-    _client.replaceSqlPlaceHolder(sql, "$?");
+    sql = _client.replaceSqlPlaceHolder(sql, "$?");
     auto binder = _client << sql;
     obj.updateArgs(binder);
     binder << obj.getPrimaryKey();
@@ -589,7 +589,7 @@ template <typename T>
 inline std::future<size_t> Mapper<T>::updateFuture(const T &obj) noexcept
 {
     clear();
-    static_assert(T::hasPrimaryKey, "No primary key in the table!");
+    static_assert(!std::is_same<typename T::PrimaryKeyType, void>::value, "No primary key in the table!");
     std::string sql = "update ";
     sql += T::tableName;
     sql += " set ";
@@ -603,7 +603,7 @@ inline std::future<size_t> Mapper<T>::updateFuture(const T &obj) noexcept
     sql += T::primaryKeyName;
     sql += " = $?";
 
-    _client.replaceSqlPlaceHolder(sql, "$?");
+    sql = _client.replaceSqlPlaceHolder(sql, "$?");
     auto binder = _client << sql;
     obj.updateArgs(binder);
     binder << obj.getPrimaryKey();

@@ -27,27 +27,23 @@ namespace {{dbName}}
 class {{className}}
 {
   public:
-    enum class Col
+    struct Cols
     {
 <%c++
 auto cols=@@.get<std::vector<ColumnInfo>>("columns");
     for(int i=0;i<cols.size();i++)
     {
-        $$<<"        "<<cols[i]._colName;
-        if(i==0)
-            $$<<" = 0,\n";
-        else if(i<(cols.size()-1))
-            $$<<",\n";
-        else
-            $$<<"\n";
+        $$<<"        static const std::string "<<cols[i]._colName<<";\n";
     }
 %>
     };
+
     const static std::string primaryKeyName;
     const static bool hasPrimaryKey;
     const static std::string tableName;
 <%c++if(!@@.get<std::string>("primaryKeyType").empty()){%>
     typedef {{primaryKeyType}} PrimaryKeyType;
+    const PrimaryKeyType & getPrimaryKey() const;
 <%c++}else{%>
     typedef void PrimaryKeyType;
 <%c++}%>
@@ -73,7 +69,7 @@ auto cols=@@.get<std::vector<ColumnInfo>>("columns");
         $$<<"\n";    
     }
 %>
-    const std::string &getColumnName(int index) const noexcept(false);
+    static const std::string &getColumnName(int index) noexcept(false);
     static const std::vector<std::string> &insertColumns() noexcept;
     void outputArgs(drogon::orm::internal::SqlBinder &binder) const;
 

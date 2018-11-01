@@ -35,7 +35,6 @@
 using namespace drogon_ctl;
 using namespace drogon::orm;
 
-
 std::string nameTransform(const std::string &origName, bool isType)
 {
     auto str = origName;
@@ -241,8 +240,25 @@ void create_model::createModel(const std::string &path, const Json::Value &confi
         }
         PgClient client(connStr, 1);
         std::cout << "Connect to server..." << std::endl;
-        sleep(1);
-        createModelFromPG(path, client);
+        std::cout << "Source files in the " << path << " folder will be overwritten, continue(y/n)?\n";
+        auto in = getchar();
+        if (in != 'Y' && in != 'y')
+        {
+            std::cout << "Abort!" << std::endl;
+            exit(0);
+        }
+        auto tables = config["tables"];
+        if (!tables || tables.size() == 0)
+            createModelFromPG(path, client);
+        else
+        {
+            for (int i = 0; i < tables.size(); i++)
+            {
+                auto tableName = tables[i].asString();
+                std::cout << "table name:" << tableName << std::endl;
+                createModelClassFromPG(path, client, tableName);
+            }
+        }
 #endif
     }
     else if (dbType == "No dbms")

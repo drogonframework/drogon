@@ -10,19 +10,27 @@ using namespace drogon_ctl;
 
 #include "{{className}}.h"
 #include <string>
+<%c++
+    auto cols=@@.get<std::vector<ColumnInfo>>("columns");
+    auto className=@@.get<std::string>("className");
+%>
 
 using namespace drogon_model::{{dbName}};
-const std::string {{className}}::primaryKeyName = "{{priKeyName}}";
+
+<%c++for(auto col:cols){
+%>
+const std::string {{className}}::Cols::<%c++$$<<col._colName;%> = "<%c++$$<<col._colName;%>";
+<%c++
+}%>
+
+const std::string {{className}}::primaryKeyName = "{{primaryKeyName}}";
 <%c++ if(@@.get<bool>("hasPrimaryKey",false)){%>
 const bool {{className}}::hasPrimaryKey = true;
 <%c++ }else{%>
 const bool {{className}}::hasPrimaryKey = false;
 <%c++}%>
 const std::string {{className}}::tableName = "{{tableName}}";
-<%c++
-    auto cols=@@.get<std::vector<ColumnInfo>>("columns");
-    auto className=@@.get<std::string>("className");
-%>
+
 const std::vector<typename {{className}}::MetaData> {{className}}::_metaData={
 <%c++for(int i=0;i<cols.size();i++){
     auto &col=cols[i];
@@ -33,7 +41,7 @@ else
 $$<<"\n";
 }%>
 };
-const std::string &{{className}}::getColumnName(int index) const noexcept(false)
+const std::string &{{className}}::getColumnName(int index) noexcept(false)
 {
     assert(index < _metaData.size());
     return _metaData[index]._colName;
@@ -74,20 +82,28 @@ const std::string &{{className}}::getColumnName(int index) const noexcept(false)
  
             if(!col._isAutoVal)
             {
-            $$<<"void "<<className<<"::set"<<col._colTypeName<<"(const "<<col._colType<<" &"<<col._colValName<<") noexcept\n";
-            $$<<"{\n";
-            $$<<"    _"<<col._colValName<<" = std::make_shared<"<<col._colType<<">("<<col._colValName<<");\n";
-            $$<<"    _dirtyFlag["<<i<<"] = true;\n";
-            $$<<"}\n";
-            
-            if(col._colType=="std::string")
-            {
-                $$<<"void "<<className<<"::set"<<col._colTypeName<<"("<<col._colType<<" &&"<<col._colValName<<") noexcept\n";
+                $$<<"void "<<className<<"::set"<<col._colTypeName<<"(const "<<col._colType<<" &"<<col._colValName<<") noexcept\n";
                 $$<<"{\n";
-                $$<<"    _"<<col._colValName<<" = std::make_shared<"<<col._colType<<">(std::move("<<col._colValName<<"));\n";
+                $$<<"    _"<<col._colValName<<" = std::make_shared<"<<col._colType<<">("<<col._colValName<<");\n";
                 $$<<"    _dirtyFlag["<<i<<"] = true;\n";
                 $$<<"}\n";
+                
+                if(col._colType=="std::string")
+                {
+                    $$<<"void "<<className<<"::set"<<col._colTypeName<<"("<<col._colType<<" &&"<<col._colValName<<") noexcept\n";
+                    $$<<"{\n";
+                    $$<<"    _"<<col._colValName<<" = std::make_shared<"<<col._colType<<">(std::move("<<col._colValName<<"));\n";
+                    $$<<"    _dirtyFlag["<<i<<"] = true;\n";
+                    $$<<"}\n";
+                }
             }
+            if(col._isPrimaryKey)
+            {
+                $$<<"const typename "<<className<<"::PrimaryKeyType & "<<className<<"::getPrimaryKey() const\n";
+                $$<<"{\n";
+                $$<<"    assert(_"<<col._colValName<<");\n";
+                $$<<"    return *_"<<col._colValName<<";\n";
+                $$<<"}\n";
             }
         }
         $$<<"\n";    
