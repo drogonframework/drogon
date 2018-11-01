@@ -129,7 +129,7 @@ void create_model::createModelClassFromPG(const std::string &path, PgClient &cli
                 }
                 else
                 {
-                    //FIXME add more type such as hstore...
+                    //FIXME add more type such as hstore,date...
                 }
                 auto defaultVal = row["column_default"].as<std::string>();
 

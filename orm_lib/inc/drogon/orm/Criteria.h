@@ -44,7 +44,7 @@ class Criteria
     Criteria(const std::string &colName, const CompareOperator &opera, T &&arg)
     {
         assert(opera != CompareOperator::IsNotNull &&
-                          opera != CompareOperator::IsNull);
+               opera != CompareOperator::IsNull);
         _condString = colName;
         switch (opera)
         {
@@ -75,6 +75,19 @@ class Criteria
             binder << arg;
         };
     }
+
+    template <typename M, typename T>
+    Criteria(const typename M::Col idx, const CompareOperator &opera, T &&arg)
+        : Criteria(M::getColumnName((int)idx), opera, arg)
+    {
+    }
+
+    template <typename M>
+    Criteria(const typename M::Col idx, const CompareOperator &opera)
+        : Criteria(M::getColumnName((int)idx), opera)
+    {
+    }
+
     template <typename T>
     Criteria(const std::string &colName, T &&arg)
         : Criteria(colName, CompareOperator::EQ, arg)
@@ -84,7 +97,7 @@ class Criteria
     Criteria(const std::string &colName, const CompareOperator &opera)
     {
         assert(opera == CompareOperator::IsNotNull ||
-                          opera == CompareOperator::IsNull);
+               opera == CompareOperator::IsNull);
         _condString = colName;
         switch (opera)
         {

@@ -11,8 +11,10 @@ using namespace drogon_ctl;
 #include <drogon/orm/Result.h>
 #include <drogon/orm/Row.h>
 #include <drogon/orm/Field.h>
+#include <drogon/orm/SqlBinder.h>
 #include <string>
 #include <memory>
+#include <vector>
 #include <stdint.h>
 
 using namespace drogon::orm;
@@ -25,6 +27,22 @@ namespace {{dbName}}
 class {{className}}
 {
   public:
+    enum class Col
+    {
+<%c++
+auto cols=@@.get<std::vector<ColumnInfo>>("columns");
+    for(int i=0;i<cols.size();i++)
+    {
+        $$<<"        "<<cols[i]._colName;
+        if(i==0)
+            $$<<" = 0,\n";
+        else if(i<(cols.size()-1))
+            $$<<",\n";
+        else
+            $$<<"\n";
+    }
+%>
+    };
     const static std::string primaryKeyName;
     const static bool hasPrimaryKey;
     const static std::string tableName;
@@ -36,7 +54,6 @@ class {{className}}
     {{className}}(const Row &r) noexcept;
     
 <%c++
-    auto cols=@@.get<std::vector<ColumnInfo>>("columns");
     for(auto col:cols)
     {
         $$<<"    //For column "<<col._colName<<"\n";
@@ -56,6 +73,13 @@ class {{className}}
         $$<<"\n";    
     }
 %>
+    const std::string &getColumnName(int index) const noexcept(false);
+    static const std::vector<std::string> &insertColumns() noexcept;
+    void outputArgs(drogon::orm::internal::SqlBinder &binder) const;
+
+    const std::vector<std::string> updateColumns() const;
+    void updateArgs(drogon::orm::internal::SqlBinder &binder) const;
+
   private:
 <%c++
     for(auto col:cols)
@@ -64,6 +88,17 @@ class {{className}}
             $$<<"    std::shared_ptr<"<<col._colType<<"> _"<<col._colValName<<";\n";
     }
     %>
+    struct MetaData
+    {
+        const std::string _colName;
+        const std::string _colType;
+        const ssize_t _colLength;
+        const bool _isAutoVal;
+        const bool _isPrimaryKey;
+        const bool _notNull;
+    };
+    static const std::vector<MetaData> _metaData;
+    bool _dirtyFlag[<%c++$$<<cols.size();%>]={ false };
 };
 
 } // namespace {{dbName}}

@@ -532,7 +532,7 @@ inline size_t Mapper<T>::update(T &obj) noexcept(false)
     std::string sql = "update ";
     sql += T::tableName;
     sql += " set ";
-    for (auto colName : T::insertColumns())
+    for (auto colName : obj.updateColumns())
     {
         sql += colName;
         sql += " = $?,";
@@ -546,7 +546,7 @@ inline size_t Mapper<T>::update(T &obj) noexcept(false)
     Result r(nullptr);
     {
         auto binder = _client << sql;
-        obj.outputArgs(binder);
+        obj.updateArgs(binder);
         binder << obj.getPrimaryKey();
         binder << Mode::Blocking;
         binder >> [&r](const Result &result) {
@@ -566,7 +566,7 @@ inline void Mapper<T>::update(const T &obj,
     std::string sql = "update ";
     sql += T::tableName;
     sql += " set ";
-    for (auto colName : T::insertColumns())
+    for (auto colName : T::updateColumns())
     {
         sql += colName;
         sql += " = $?,";
@@ -578,7 +578,7 @@ inline void Mapper<T>::update(const T &obj,
 
     _client.replaceSqlPlaceHolder(sql, "$?");
     auto binder = _client << sql;
-    obj.outputArgs(binder);
+    obj.updateArgs(binder);
     binder << obj.getPrimaryKey();
     binder >> [=](const Result &r) {
         rcb(r.affectedRows());
@@ -593,7 +593,7 @@ inline std::future<size_t> Mapper<T>::updateFuture(const T &obj) noexcept
     std::string sql = "update ";
     sql += T::tableName;
     sql += " set ";
-    for (auto colName : T::insertColumns())
+    for (auto colName : T::updateColumns())
     {
         sql += colName;
         sql += " = $?,";
@@ -605,7 +605,7 @@ inline std::future<size_t> Mapper<T>::updateFuture(const T &obj) noexcept
 
     _client.replaceSqlPlaceHolder(sql, "$?");
     auto binder = _client << sql;
-    obj.outputArgs(binder);
+    obj.updateArgs(binder);
     binder << obj.getPrimaryKey();
 
     std::shared_ptr<std::promise<size_t>> prom = std::make_shared<std::promise<size_t>>();

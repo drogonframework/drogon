@@ -6,9 +6,19 @@ using namespace drogon::orm;
 
 int main()
 {
-    drogon::orm::PgClient client("host=127.0.0.1 port=5432 dbname=trantor user=antao", 1);
+    drogon::orm::PgClient client("host=127.0.0.1 port=5432 dbname=test user=antao", 1);
     LOG_DEBUG << "start!";
     sleep(1);
+    client << "update group_users set join_date=$1,relationship=$2 where g_uuid=420040 and u_uuid=2"
+           << nullptr
+           << nullptr
+           << Mode::Blocking >>
+        [](const Result &r) {
+            std::cout << "update " << r.affectedRows() << " lines" << std::endl;
+        } >>
+        [](const DrogonDbException &e) {
+            std::cerr << e.base().what() << std::endl;
+        };
     try
     {
         auto r = client.execSqlSync("select * from users where user_uuid=$1;", 1);

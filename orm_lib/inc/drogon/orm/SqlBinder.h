@@ -244,6 +244,14 @@ class SqlBinder
     {
         return operator<<((const std::string &)str);
     }
+    self &operator<<(std::nullptr_t nullp)
+    {
+        _paraNum++;
+        _parameters.push_back(NULL);
+        _length.push_back(0);
+        _format.push_back(0);
+        return *this;
+    }
     self &operator<<(const Mode &mode)
     {
         _mode = mode;
