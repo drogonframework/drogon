@@ -17,13 +17,14 @@
 #include <json/json.h>
 #if USE_POSTGRESQL
 #include <drogon/orm/PgClient.h>
+using namespace drogon::orm;
 #endif
 #include <drogon/DrObject.h>
 #include "CommandHandler.h"
 #include <string>
 
 using namespace drogon;
-using namespace drogon::orm;
+
 
 namespace drogon_ctl
 {

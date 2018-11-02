@@ -16,9 +16,6 @@
 
 #include <drogon/config.h>
 #include <drogon/utils/Utilities.h>
-#if USE_POSTGRESQL
-#include <drogon/orm/PgClient.h>
-#endif
 #include <drogon/HttpViewData.h>
 #include <drogon/DrTemplateBase.h>
 #include <json/json.h>
@@ -33,7 +30,6 @@
 #include <unistd.h>
 
 using namespace drogon_ctl;
-using namespace drogon::orm;
 
 std::string nameTransform(const std::string &origName, bool isType)
 {
@@ -313,6 +309,7 @@ void create_model::createModel(const std::string &path)
 
 void create_model::handleCommand(std::vector<std::string> &parameters)
 {
+#if USE_POSTGRESQL
     std::cout << "Create model" << std::endl;
     if (parameters.size() == 0)
     {
@@ -322,4 +319,8 @@ void create_model::handleCommand(std::vector<std::string> &parameters)
     {
         createModel(path);
     }
+#else
+    std::cout << "No database can be found in your system, please install one first!" << std::endl;
+    exit(1);
+#endif
 }
