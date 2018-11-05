@@ -35,6 +35,8 @@ struct ColumnInfo
   std::string _colValName;
   std::string _colTypeName;
   std::string _colType;
+  std::string _colDatabaseType;
+  std::string _dbType;
   ssize_t _colLength = -1;
   bool _isAutoVal = false;
   bool _isPrimaryKey = false;

@@ -34,7 +34,7 @@ const std::string {{className}}::tableName = "{{tableName}}";
 const std::vector<typename {{className}}::MetaData> {{className}}::_metaData={
 <%c++for(size_t i=0;i<cols.size();i++){
     auto &col=cols[i];
-$$<<"{\""<<col._colName<<"\",\""<<col._colType<<"\","<<col._colLength<<","<<col._isAutoVal<<","<<col._isPrimaryKey<<","<<col._notNull<<"}";
+$$<<"{\""<<col._colName<<"\",\""<<col._colType<<"\",\""<<col._colDatabaseType<<"\","<<col._colLength<<","<<col._isAutoVal<<","<<col._isPrimaryKey<<","<<col._notNull<<"}";
 if(i<(cols.size()-1))
 $$<<",\n";
 else
@@ -56,6 +56,15 @@ const std::string &{{className}}::getColumnName(int index) noexcept(false)
         %>
         if(!r["<%c++$$<<col._colName;%>"].isNull())
         {
+<%c++
+            if(col._colDatabaseType=="date")
+            {
+                $$<<"            auto daysNum = r[\""<<col._colName<<"\"].as<int32_t>();\n";
+                $$<<"            _"<<col._colValName<<"=std::make_shared<::trantor::Date>(::trantor::Date(946656000000000).after(daysNum*86400));\n";
+                $$<<"        }\n";
+                continue;
+            }            
+%>
             _<%c++$$<<col._colValName;%>=std::make_shared<<%c++$$<<col._colType;%>>(r["<%c++$$<<col._colName;%>"].as<<%c++$$<<col._colType;%>>());
         }
 <%c++
@@ -84,7 +93,14 @@ const std::string &{{className}}::getColumnName(int index) noexcept(false)
             {
                 $$<<"void "<<className<<"::set"<<col._colTypeName<<"(const "<<col._colType<<" &"<<col._colValName<<") noexcept\n";
                 $$<<"{\n";
-                $$<<"    _"<<col._colValName<<" = std::make_shared<"<<col._colType<<">("<<col._colValName<<");\n";
+                if(col._colDatabaseType=="date")
+                {
+                    $$<<"    _"<<col._colValName<<" = std::make_shared<"<<col._colType<<">("<<col._colValName<<".roundDay());\n";
+                }
+                else
+                {
+                    $$<<"    _"<<col._colValName<<" = std::make_shared<"<<col._colType<<">("<<col._colValName<<");\n";
+                }
                 $$<<"    _dirtyFlag["<<i<<"] = true;\n";
                 $$<<"}\n";
                 
@@ -136,7 +152,11 @@ void {{className}}::outputArgs(drogon::orm::internal::SqlBinder &binder) const
 %>
     if(get<%c++$$<<col._colTypeName;%>())
     {
+<%c++if(col._colDatabaseType=="date"){%>
+        binder << (int32_t)(getValueOf<%c++$$<<col._colTypeName;%>().microSecondsSinceEpoch()/1000000-946656000)/86400;
+<%c++}else{%>
         binder << getValueOf<%c++$$<<col._colTypeName;%>();
+<%c++}%>
     }
     else
     {
@@ -174,7 +194,11 @@ void {{className}}::updateArgs(drogon::orm::internal::SqlBinder &binder) const
     {
         if(get<%c++$$<<col._colTypeName;%>())
         {
+<%c++if(col._colDatabaseType=="date"){%>
+            binder << (int32_t)(getValueOf<%c++$$<<col._colTypeName;%>().microSecondsSinceEpoch()/1000000-946656000)/86400;
+<%c++}else{%>
             binder << getValueOf<%c++$$<<col._colTypeName;%>();
+<%c++}%>
         }
         else
         {

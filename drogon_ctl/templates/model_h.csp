@@ -12,6 +12,7 @@ using namespace drogon_ctl;
 #include <drogon/orm/Row.h>
 #include <drogon/orm/Field.h>
 #include <drogon/orm/SqlBinder.h>
+#include <trantor/utils/Date.h>
 #include <string>
 #include <memory>
 #include <vector>
@@ -88,6 +89,7 @@ auto cols=@@.get<std::vector<ColumnInfo>>("columns");
     {
         const std::string _colName;
         const std::string _colType;
+        const std::string _colDatabaseType;
         const ssize_t _colLength;
         const bool _isAutoVal;
         const bool _isPrimaryKey;

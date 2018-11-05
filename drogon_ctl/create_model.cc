@@ -79,6 +79,7 @@ void create_model::createModelClassFromPG(const std::string &path, PgClient &cli
             for (auto row : r)
             {
                 ColumnInfo info;
+                info._dbType = "pg";
                 info._colName = row["column_name"].as<std::string>();
                 info._colTypeName = nameTransform(info._colName, true);
                 info._colValName = nameTransform(info._colName, false);
@@ -86,6 +87,7 @@ void create_model::createModelClassFromPG(const std::string &path, PgClient &cli
 
                 info._notNull = isNullAble == "YES" ? false : true;
                 auto type = row["data_type"].as<std::string>();
+                info._colDatabaseType = type;
                 if (type == "smallint")
                 {
                     info._colType = "short";
@@ -122,7 +124,12 @@ void create_model::createModelClassFromPG(const std::string &path, PgClient &cli
                     info._colType = "bool";
                     info._colLength = 1;
                 }
-                else
+                else if(type == "date")
+                {
+                    info._colType = "::trantor::Date";
+                    info._colLength = 4;
+                }
+                else 
                 {
                     //FIXME add more type such as hstore,date...
                 }
