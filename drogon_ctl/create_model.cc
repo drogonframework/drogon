@@ -66,7 +66,7 @@ void create_model::createModelClassFromPG(const std::string &path, PgClient &cli
     HttpViewData data;
     data["className"] = className;
     data["tableName"] = tableName;
-    data["hasPrimaryKey"] = false;
+    data["hasPrimaryKey"] = (int)0;
     data["primaryKeyName"] = "";
     data["dbName"] = _dbname;
     std::vector<ColumnInfo> cols;
@@ -124,12 +124,12 @@ void create_model::createModelClassFromPG(const std::string &path, PgClient &cli
                     info._colType = "bool";
                     info._colLength = 1;
                 }
-                else if(type == "date")
+                else if (type == "date")
                 {
                     info._colType = "::trantor::Date";
                     info._colLength = 4;
                 }
-                else 
+                else
                 {
                     //FIXME add more type such as hstore,date...
                 }
@@ -150,8 +150,32 @@ void create_model::createModelClassFromPG(const std::string &path, PgClient &cli
             std::cerr << e.base().what() << std::endl;
             exit(1);
         };
-
+    size_t pkNumber = 0;
     client << "SELECT \
+                pg_constraint.conname AS pk_name,\
+                pg_constraint.conkey AS pk_vector \
+                FROM pg_constraint \
+                INNER JOIN pg_class ON pg_constraint.conrelid = pg_class.oid \
+                WHERE \
+                pg_class.relname = $1 \
+                AND pg_constraint.contype = 'p'"
+           << tableName
+           << Mode::Blocking >>
+        [&](bool isNull, const std::string &pkName, const std::vector<std::shared_ptr<short>> &pk) {
+            if (!isNull)
+            {
+                std::cout << tableName << " Primary key = " << pk.size() << std::endl;
+                pkNumber = pk.size();
+            }
+        } >>
+        [](const DrogonDbException &e) {
+            std::cerr << e.base().what() << std::endl;
+            exit(1);
+        };
+    data["hasPrimaryKey"] = (int)pkNumber;
+    if (pkNumber == 1)
+    {
+        client << "SELECT \
                 pg_attribute.attname AS colname,\
                 pg_type.typname AS typename,\
                 pg_constraint.contype AS contype \
@@ -161,25 +185,67 @@ void create_model::createModelClassFromPG(const std::string &path, PgClient &cli
                 AND pg_attribute.attnum = pg_constraint.conkey [ 1 ] \
                 INNER JOIN pg_type ON pg_type.oid = pg_attribute.atttypid \
                 WHERE pg_class.relname = $1 and pg_constraint.contype='p'"
-           << tableName << Mode::Blocking >>
-        [&](bool isNull, std::string colName, const std::string &type) {
-            if (isNull)
-                return;
-            data["hasPrimaryKey"] = true;
-            data["primaryKeyName"] = colName;
-            for (auto &col : cols)
-            {
-                if (col._colName == colName)
+               << tableName << Mode::Blocking >>
+            [&](bool isNull, std::string colName, const std::string &type) {
+                if (isNull)
+                    return;
+                
+                data["primaryKeyName"] = colName;
+                for (auto &col : cols)
                 {
-                    col._isPrimaryKey = true;
-                    data["primaryKeyType"] = col._colType;
+                    if (col._colName == colName)
+                    {
+                        col._isPrimaryKey = true;
+                        data["primaryKeyType"] = col._colType;
+                    }
                 }
-            }
-        } >>
-        [](const DrogonDbException &e) {
-            std::cerr << e.base().what() << std::endl;
-            exit(1);
-        };
+            } >>
+            [](const DrogonDbException &e) {
+                std::cerr << e.base().what() << std::endl;
+                exit(1);
+            };
+    }
+    else if (pkNumber > 1)
+    {
+        std::vector<std::string> pkNames, pkTypes;
+        for (int i = 1; i <= pkNumber; i++)
+        {
+            client << "SELECT \
+                pg_attribute.attname AS colname,\
+                pg_type.typname AS typename,\
+                pg_constraint.contype AS contype \
+                FROM pg_constraint \
+                INNER JOIN pg_class ON pg_constraint.conrelid = pg_class.oid \
+                INNER JOIN pg_attribute ON pg_attribute.attrelid = pg_class.oid \
+                AND pg_attribute.attnum = pg_constraint.conkey [ $1 ] \
+                INNER JOIN pg_type ON pg_type.oid = pg_attribute.atttypid \
+                WHERE pg_class.relname = $2 and pg_constraint.contype='p'"
+                   << i
+                   << tableName
+                   << Mode::Blocking >>
+                [&](bool isNull, std::string colName, const std::string &type) {
+                    if (isNull)
+                        return;
+                    std::cout << "primary key name=" << colName << std::endl;
+                    pkNames.push_back(colName);
+                    for (auto &col : cols)
+                    {
+                        if (col._colName == colName)
+                        {
+                            col._isPrimaryKey = true;
+                            pkTypes.push_back(col._colType);
+                        }
+                    }
+                } >>
+                [](const DrogonDbException &e) {
+                    std::cerr << e.base().what() << std::endl;
+                    exit(1);
+                };
+        }
+        data["primaryKeyName"] = pkNames;
+        data["primaryKeyType"] = pkTypes;
+    }
+
     data["columns"] = cols;
     std::ofstream headerFile(path + "/" + className + ".h", std::ofstream::out);
     std::ofstream sourceFile(path + "/" + className + ".cc", std::ofstream::out);

@@ -16,7 +16,9 @@ using namespace drogon_ctl;
 #include <string>
 #include <memory>
 #include <vector>
+#include <tuple>
 #include <stdint.h>
+#include <iostream>
 
 using namespace drogon::orm;
 
@@ -39,14 +41,30 @@ auto cols=@@.get<std::vector<ColumnInfo>>("columns");
 %>
     };
 
-    const static std::string primaryKeyName;
-    const static bool hasPrimaryKey;
+    const static int primaryKeyNumber;
     const static std::string tableName;
+    const static bool hasPrimaryKey;
+<%c++if(@@.get<int>("hasPrimaryKey")<=1){%>
+    const static std::string primaryKeyName;
 <%c++if(!@@.get<std::string>("primaryKeyType").empty()){%>
     typedef {{primaryKeyType}} PrimaryKeyType;
     const PrimaryKeyType & getPrimaryKey() const;
 <%c++}else{%>
     typedef void PrimaryKeyType;
+<%c++}%>
+<%c++}else{
+    auto pkTypes=@@.get<std::vector<std::string>>("primaryKeyType");   
+    std::string typelist;
+    for(size_t i=0;i<pkTypes.size();i++)
+    {
+        typelist += pkTypes[i];
+        if(i<(pkTypes.size()-1))
+            typelist += ",";
+    }
+%>
+    const static std::vector<std::string> primaryKeyName;
+    typedef std::tuple<<%c++$$<<typelist;%>> PrimaryKeyType;
+    PrimaryKeyType getPrimaryKey() const; 
 <%c++}%>
     {{className}}(const Row &r) noexcept;
     

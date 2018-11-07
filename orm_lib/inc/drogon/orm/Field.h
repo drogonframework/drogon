@@ -18,6 +18,11 @@
 
 #include <drogon/orm/Result.h>
 #include <drogon/orm/Row.h>
+#include <drogon/orm/ArrayParser.h>
+#include <vector>
+#include <string>
+#include <sstream>
+#include <memory>
 
 #ifdef __linux__
 #include <arpa/inet.h>
@@ -84,22 +89,60 @@ class Field
     T as() const
     {
         auto _data = _result.getValue(_row, _column);
-        auto _dataLength = _result.getLength(_row, _column);
-        if (_dataLength == 1)
+        //auto _dataLength = _result.getLength(_row, _column);
+        // For binary format!
+        // if (_dataLength == 1)
+        // {
+        //     return *_data;
+        // }
+        // else if (_dataLength == 4)
+        // {
+        //     const int32_t *n = (int32_t *)_data;
+        //     return ntohl(*n);
+        // }
+        // else if (_dataLength == 8)
+        // {
+        //     const int64_t *n = (int64_t *)_data;
+        //     return ntohll(*n);
+        // }
+        // return 0;
+        T value = T();
+        if (_data)
         {
-            return *_data;
+            std::stringstream ss(_data);
+            ss >> value;
         }
-        else if (_dataLength == 4)
+        return value;
+    }
+    ArrayParser getArrayParser() const
+    {
+        return ArrayParser(_result.getValue(_row, _column));
+    }
+    template <typename T>
+    std::vector<std::shared_ptr<T>> asArray() const
+    {
+        std::vector<std::shared_ptr<T>> ret;
+        auto arrParser = getArrayParser();
+        while(1)
         {
-            const int32_t *n = (int32_t *)_data;
-            return ntohl(*n);
+            auto arrVal = arrParser.getNext();
+            if(arrVal.first==ArrayParser::juncture::done)
+            {
+                break;
+            }
+            if(arrVal.first==ArrayParser::juncture::string_value)
+            {
+                T val;
+                std::stringstream ss(std::move(arrVal.second));
+                ss >> val;
+                ret.push_back(std::shared_ptr<T>(new T(val)));
+            }
+            else if(arrVal.first==ArrayParser::juncture::null_value)
+            {
+                ret.push_back(std::shared_ptr<T>());
+            }
         }
-        else if (_dataLength == 8)
-        {
-            const int64_t *n = (int64_t *)_data;
-            return ntohll(*n);
-        }
-        return 0;
+        return ret;
     }
 
   protected:
@@ -122,5 +165,11 @@ template <>
 const char *Field::as<const char *>() const;
 template <>
 char *Field::as<char *>() const;
+// template <>
+// std::vector<short> Field::as<std::vector<short>>() const;
+// template <>
+// std::vector<int32_t> Field::as<std::vector<int32_t>>() const;
+// template <>
+// std::vector<int64_t> Field::as<std::vector<int64_t>>() const;
 } // namespace orm
 } // namespace drogon

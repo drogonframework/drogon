@@ -25,6 +25,8 @@
 #include <functional>
 #include <map>
 #include <vector>
+#include <memory>
+
 namespace drogon
 {
 namespace orm
@@ -40,6 +42,35 @@ enum class Mode
 };
 namespace internal
 {
+template <typename T>
+struct VectorTypeTraits
+{
+    static const bool isVector = false;
+    static const bool isPtrVector = false;
+    typedef T ItemsType;
+};
+template <typename T>
+struct VectorTypeTraits<std::vector<std::shared_ptr<T>>>
+{
+    static const bool isVector = true;
+    static const bool isPtrVector = true;
+    typedef T ItemsType;
+};
+// template <typename T>
+// struct VectorTypeTraits<std::vector<T>>
+// {
+//     static const bool isVector = true;
+//     static const bool isPtrVector = false;
+//     typedef T ItemsType;
+// };
+template <>
+struct VectorTypeTraits<std::string>
+{
+    static const bool isVector = false;
+    static const bool isPtrVector = false;
+    typedef std::string ItemsType;
+};
+
 //we only accept value type or const lreference type or rreference type as handle method parameters type
 template <typename T>
 struct CallbackArgTypeTraits
@@ -132,7 +163,11 @@ class CallbackHolder : public CallbackHolderBase
         ValueType value = ValueType();
         if (row && row->size() > sizeof...(Values))
         {
-            value = (*row)[sizeof...(Values)].as<ValueType>();
+            // if(!VectorTypeTraits<ValueType>::isVector)
+            //     value = (*row)[sizeof...(Values)].as<ValueType>();
+            // else
+            //     ; // value = (*row)[sizeof...(Values)].asArray<VectorTypeTraits<ValueType>::ItemsType>();
+            value = makeValue<ValueType>((*row)[sizeof...(Values)]);
         }
 
         run(row, isNull, std::forward<Values>(values)..., std::move(value));
@@ -146,6 +181,16 @@ class CallbackHolder : public CallbackHolderBase
         Values &&... values)
     {
         _function(isNull, std::move(values)...);
+    }
+    template <typename ValueType>
+    typename std::enable_if<VectorTypeTraits<ValueType>::isVector, ValueType>::type makeValue(const Field &field)
+    {
+        return field.asArray<typename VectorTypeTraits<ValueType>::ItemsType>();
+    }
+    template <typename ValueType>
+    typename std::enable_if<!VectorTypeTraits<ValueType>::isVector, ValueType>::type makeValue(const Field &field)
+    {
+        return field.as<ValueType>();
     }
 };
 class SqlBinder

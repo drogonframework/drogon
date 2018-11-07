@@ -22,9 +22,20 @@ using namespace drogon_model::{{dbName}};
 const std::string {{className}}::Cols::<%c++$$<<col._colName;%> = "<%c++$$<<col._colName;%>";
 <%c++
 }%>
-
+<%c++if(@@.get<int>("hasPrimaryKey")<=1){%>
 const std::string {{className}}::primaryKeyName = "{{primaryKeyName}}";
-<%c++ if(@@.get<bool>("hasPrimaryKey",false)){%>
+<%c++}else{%>
+const std::vector<std::string> {{className}}::primaryKeyName = {<%c++
+auto pkName=@@.get<std::vector<std::string>>("primaryKeyName");
+for(int i=0;i<pkName.size();i++)
+{
+    $$<<"\""<<pkName[i]<<"\"";
+    if(i<(pkName.size()-1))
+        $$<<",";
+}
+%>};
+<%c++}%>
+<%c++ if(@@.get<int>("hasPrimaryKey",0)>0){%>
 const bool {{className}}::hasPrimaryKey = true;
 <%c++ }else{%>
 const bool {{className}}::hasPrimaryKey = false;
@@ -113,7 +124,7 @@ const std::string &{{className}}::getColumnName(int index) noexcept(false)
                     $$<<"}\n";
                 }
             }
-            if(col._isPrimaryKey)
+            if(col._isPrimaryKey&&@@.get<int>("hasPrimaryKey")==1)
             {
                 $$<<"const typename "<<className<<"::PrimaryKeyType & "<<className<<"::getPrimaryKey() const\n";
                 $$<<"{\n";
@@ -123,6 +134,25 @@ const std::string &{{className}}::getColumnName(int index) noexcept(false)
             }
         }
         $$<<"\n";    
+    }
+    if(@@.get<int>("hasPrimaryKey")>1)
+    {
+        $$<<"typename "<<className<<"::PrimaryKeyType "<<className<<"::getPrimaryKey() const\n";
+        $$<<"{\n";
+        $$<<"    return std::make_tuple(";
+        int count=0;
+        for(auto col:cols)
+        {
+            if(col._isPrimaryKey)
+            {
+                count++;
+                $$<<"*_"<<col._colValName;
+                if(count<@@.get<int>("hasPrimaryKey"))
+                    $$<<",";
+            }
+        }
+        $$<<");\n";
+        $$<<"}\n";
     }
 %>
 
@@ -209,3 +239,5 @@ void {{className}}::updateArgs(drogon::orm::internal::SqlBinder &binder) const
     }
 %>
 }
+
+<%c++std::cout<<"Model source file!!"<<std::endl; %>

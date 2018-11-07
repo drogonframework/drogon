@@ -151,7 +151,7 @@ void DbConnection::execSql(const std::string &sql,
             parameters.data(),
             length.data(),
             format.data(),
-            1) == 0)
+            0) == 0)
     {
         fprintf(stderr, "send query error:%s\n", PQerrorMessage(_connPtr.get()));
         //FIXME call exception callback
