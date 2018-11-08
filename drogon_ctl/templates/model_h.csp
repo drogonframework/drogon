@@ -63,7 +63,16 @@ auto cols=@@.get<std::vector<ColumnInfo>>("columns");
     }
 %>
     const static std::vector<std::string> primaryKeyName;
-    typedef std::tuple<<%c++$$<<typelist;%>> PrimaryKeyType;
+    typedef std::tuple<<%c++$$<<typelist;%>> PrimaryKeyType;//<%c++
+    auto pkName=@@.get<std::vector<std::string>>("primaryKeyName");
+    for(int i=0;i<pkName.size();i++)
+    {
+        $$<<pkName[i];
+        if(i<(pkName.size()-1))
+            $$<<",";
+    }
+%>
+
     PrimaryKeyType getPrimaryKey() const; 
 <%c++}%>
     {{className}}(const Row &r) noexcept;
