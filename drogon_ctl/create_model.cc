@@ -164,7 +164,7 @@ void create_model::createModelClassFromPG(const std::string &path, PgClient &cli
         [&](bool isNull, const std::string &pkName, const std::vector<std::shared_ptr<short>> &pk) {
             if (!isNull)
             {
-                std::cout << tableName << " Primary key = " << pk.size() << std::endl;
+                //std::cout << tableName << " Primary key = " << pk.size() << std::endl;
                 pkNumber = pk.size();
             }
         } >>
@@ -226,7 +226,7 @@ void create_model::createModelClassFromPG(const std::string &path, PgClient &cli
                 [&](bool isNull, std::string colName, const std::string &type) {
                     if (isNull)
                         return;
-                    std::cout << "primary key name=" << colName << std::endl;
+                    //std::cout << "primary key name=" << colName << std::endl;
                     pkNames.push_back(colName);
                     for (auto &col : cols)
                     {

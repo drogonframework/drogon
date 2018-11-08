@@ -36,6 +36,7 @@ std::string Field::as<std::string>() const
 {
     auto _data = _result.getValue(_row, _column);
     auto _dataLength = _result.getLength(_row, _column);
+//    LOG_DEBUG << "_dataLength=" << _dataLength << " str=" << _data;
     return std::string(_data, _dataLength);
 }
 template <>

@@ -70,8 +70,13 @@ const std::string &{{className}}::getColumnName(int index) noexcept(false)
 <%c++
             if(col._colDatabaseType=="date")
             {
-                $$<<"            auto daysNum = r[\""<<col._colName<<"\"].as<int32_t>();\n";
-                $$<<"            _"<<col._colValName<<"=std::make_shared<::trantor::Date>(::trantor::Date(946656000000000).after(daysNum*86400));\n";
+                $$<<"            auto daysStr = r[\""<<col._colName<<"\"].as<std::string>();\n";
+                $$<<"            struct tm stm;\n";
+                $$<<"            memset(&stm,0,sizeof(stm));\n";
+                $$<<"            strptime(daysStr.c_str(),\"%Y-%m-%d\",&stm);\n";
+                $$<<"            long t = timelocal(&stm);\n";
+ //               $$<<"            _"<<col._colValName<<"=std::make_shared<::trantor::Date>(::trantor::Date(946656000000000).after(daysNum*86400));\n";
+                $$<<"            _"<<col._colValName<<"=std::make_shared<::trantor::Date>(t*1000000);\n";
                 $$<<"        }\n";
                 continue;
             }            
@@ -239,5 +244,3 @@ void {{className}}::updateArgs(drogon::orm::internal::SqlBinder &binder) const
     }
 %>
 }
-
-<%c++std::cout<<"Model source file!!"<<std::endl; %>
