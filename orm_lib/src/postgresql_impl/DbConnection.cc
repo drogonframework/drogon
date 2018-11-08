@@ -143,6 +143,7 @@ void DbConnection::execSql(const std::string &sql,
     _isWorking = true;
     _exceptCb = exceptCallback;
     //_channel.enableWriting();
+    LOG_TRACE << sql;
     if (PQsendQueryParams(
             _connPtr.get(),
             sql.c_str(),

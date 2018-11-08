@@ -129,6 +129,10 @@ void create_model::createModelClassFromPG(const std::string &path, PgClient &cli
                     info._colType = "::trantor::Date";
                     info._colLength = 4;
                 }
+                else if (type.find("timestamp") != std::string::npos)
+                {
+                    info._colType = "::trantor::Date";
+                }
                 else
                 {
                     //FIXME add more type such as hstore,date...
@@ -189,7 +193,7 @@ void create_model::createModelClassFromPG(const std::string &path, PgClient &cli
             [&](bool isNull, std::string colName, const std::string &type) {
                 if (isNull)
                     return;
-                
+
                 data["primaryKeyName"] = colName;
                 for (auto &col : cols)
                 {

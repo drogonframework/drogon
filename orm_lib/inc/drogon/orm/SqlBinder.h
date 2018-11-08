@@ -287,7 +287,13 @@ class SqlBinder
     }
     self &operator<<(std::string &&str)
     {
-        return operator<<((const std::string &)str);
+        std::shared_ptr<std::string> obj = std::make_shared<std::string>(std::move(str));
+        _objs.push_back(obj);
+        _paraNum++;
+        _parameters.push_back((char *)obj->c_str());
+        _length.push_back(obj->length());
+        _format.push_back(0);
+        return *this;
     }
     self &operator<<(std::nullptr_t nullp)
     {
