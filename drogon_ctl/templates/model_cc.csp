@@ -27,7 +27,7 @@ const std::string {{className}}::primaryKeyName = "{{primaryKeyName}}";
 <%c++}else{%>
 const std::vector<std::string> {{className}}::primaryKeyName = {<%c++
 auto pkName=@@.get<std::vector<std::string>>("primaryKeyName");
-for(int i=0;i<pkName.size();i++)
+for(size_t i=0;i<pkName.size();i++)
 {
     $$<<"\""<<pkName[i]<<"\"";
     if(i<(pkName.size()-1))

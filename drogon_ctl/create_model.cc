@@ -212,7 +212,7 @@ void create_model::createModelClassFromPG(const std::string &path, PgClient &cli
     else if (pkNumber > 1)
     {
         std::vector<std::string> pkNames, pkTypes;
-        for (int i = 1; i <= pkNumber; i++)
+        for (size_t i = 1; i <= pkNumber; i++)
         {
             client << "SELECT \
                 pg_attribute.attname AS colname,\

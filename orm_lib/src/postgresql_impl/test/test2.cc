@@ -41,7 +41,7 @@ int main()
         if (!isNull)
         {
             std::cout << "a.len=" << a.size() << std::endl;
-            for (int i = 0; i < a.size(); i++)
+            for (size_t i = 0; i < a.size(); i++)
             {
                 std::cout << "a[" << i << "]=" << *a[i] << " ";
             }
