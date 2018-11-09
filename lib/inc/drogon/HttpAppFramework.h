@@ -54,6 +54,7 @@ inline std::string getGitCommit()
 {
     return VERSION_MD5;
 }
+
 class HttpAppFramework : public trantor::NonCopyable
 {
   public:
@@ -76,9 +77,9 @@ class HttpAppFramework : public trantor::NonCopyable
                                               const std::string &crtlName,
                                               const std::vector<any> &filtersAndMethods = std::vector<any>()) = 0;
     template <typename FUNCTION>
-    static void registerHttpApiMethod(const std::string &pathPattern,
-                                      FUNCTION &&function,
-                                      const std::vector<any> &filtersAndMethods = std::vector<any>())
+    void registerHttpApiMethod(const std::string &pathPattern,
+                               FUNCTION &&function,
+                               const std::vector<any> &filtersAndMethods = std::vector<any>())
     {
         LOG_TRACE << "pathPattern:" << pathPattern;
         HttpApiBinderBasePtr binder;
@@ -110,7 +111,7 @@ class HttpAppFramework : public trantor::NonCopyable
             }
         }
 
-        instance().registerHttpApiController(pathPattern, binder, validMethods, filters);
+        registerHttpApiController(pathPattern, binder, validMethods, filters);
     }
     virtual void enableSession(const size_t timeout = 0) = 0;
     virtual void disableSession() = 0;
@@ -143,4 +144,10 @@ class HttpAppFramework : public trantor::NonCopyable
                                            const std::vector<HttpMethod> &validMethods = std::vector<HttpMethod>(),
                                            const std::vector<std::string> &filters = std::vector<std::string>()) = 0;
 };
+
+inline HttpAppFramework &app()
+{
+    return HttpAppFramework::instance();
+}
+
 } // namespace drogon

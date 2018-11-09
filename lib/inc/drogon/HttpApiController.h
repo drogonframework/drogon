@@ -57,13 +57,13 @@ class HttpApiController : public DrObject<T>
             path.replace(pos, 2, "/");
         }
         if (pattern.empty() || pattern[0] == '/')
-            HttpAppFramework::registerHttpApiMethod(path + pattern,
-                                                    std::forward<FUNCTION>(function),
-                                                    filtersAndMethods);
+            app().registerHttpApiMethod(path + pattern,
+                                        std::forward<FUNCTION>(function),
+                                        filtersAndMethods);
         else
-            HttpAppFramework::registerHttpApiMethod(path + "/" + pattern,
-                                                    std::forward<FUNCTION>(function),
-                                                    filtersAndMethods);
+            app().registerHttpApiMethod(path + "/" + pattern,
+                                        std::forward<FUNCTION>(function),
+                                        filtersAndMethods);
     }
 
   private:
