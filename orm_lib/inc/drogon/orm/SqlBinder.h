@@ -208,7 +208,7 @@ class SqlBinder
               typename traits = FunctionTraits<CallbackType>>
     typename std::enable_if<traits::isExceptCallback && traits::isPtr, self>::type &operator>>(CallbackType &&callback)
     {
-        LOG_DEBUG << "ptr callback";
+        //LOG_DEBUG << "ptr callback";
         _isExceptPtr = true;
         _exceptPtrCallback = std::forward<CallbackType>(callback);
         return *this;
@@ -258,6 +258,7 @@ class SqlBinder
         _parameters.push_back((char *)obj.get());
         _length.push_back(sizeof(T));
         _format.push_back(1);
+        //LOG_TRACE << "Bind parameter:" << parameter;
         return *this;
     }
     //template <>

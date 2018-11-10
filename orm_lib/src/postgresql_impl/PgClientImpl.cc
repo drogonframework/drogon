@@ -109,7 +109,7 @@ void PgClientImpl::execSql(const DbConnectionPtr &conn,
                                   _loopPtr->queueInLoop([=]() {
                                       std::vector<const char *> paras;
                                       std::vector<int> lens;
-                                      for (auto p : cmd._parameters)
+                                      for (auto &p : cmd._parameters)
                                       {
                                           paras.push_back(p.c_str());
                                           lens.push_back(p.length());
@@ -147,8 +147,6 @@ void PgClientImpl::execSql(const std::string &sql,
         {
             if (_busyConnections.size() == 0)
             {
-                //std::cout<<"no connection"<<std::endl;
-                //FIXME call exception callback
                 try
                 {
                     throw BrokenConnection("No connection to postgreSQL server");
@@ -184,14 +182,23 @@ void PgClientImpl::execSql(const std::string &sql,
     }
     if (busy)
     {
-        //FIXME call except callback
+        try
+        {
+            throw Failure("Too many queries in buffer");
+        }
+        catch (...)
+        {
+            exceptCb(std::current_exception());
+        }
         return;
     }
+    //LOG_TRACE << "Push query to buffer";
     SqlCmd cmd;
     cmd._sql = sql;
     cmd._paraNum = paraNum;
     for (size_t i = 0; i < parameters.size(); i++)
     {
+        //LOG_TRACE << "parameters[" << i << "]=" << (size_t)(parameters[i]);
         cmd._parameters.push_back(std::string(parameters[i], length[i]));
     }
     cmd._format = format;
