@@ -56,6 +56,8 @@ AUX_SOURCE_DIRECTORY(./ SRC_DIR)
 AUX_SOURCE_DIRECTORY(controllers CTL_SRC)
 AUX_SOURCE_DIRECTORY(filters FILTER_SRC)
 
+include_directories(/usr/local/include)
+
 FILE(GLOB SCP_LIST ${CMAKE_CURRENT_SOURCE_DIR}/views/*.csp)
 foreach(cspFile ${SCP_LIST})
     message(STATUS "cspFile:" ${cspFile})
