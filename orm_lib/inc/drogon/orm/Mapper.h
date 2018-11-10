@@ -55,11 +55,11 @@ class Mapper
                  const ExceptionCallback &ecb) noexcept;
     std::future<std::vector<T>> findFutureAll() noexcept;
 
-    size_t count(const Criteria &criteria) noexcept(false);
+    size_t count(const Criteria &criteria = Criteria()) noexcept(false);
     void count(const Criteria &criteria,
                const CountCallback &rcb,
                const ExceptionCallback &ecb) noexcept;
-    std::future<size_t> countFuture(const Criteria &criteria) noexcept;
+    std::future<size_t> countFuture(const Criteria &criteria = Criteria()) noexcept;
 
     T findOne(const Criteria &criteria) noexcept(false);
     void findOne(const Criteria &criteria,
@@ -145,7 +145,7 @@ template <typename T>
 inline T Mapper<T>::findByPrimaryKey(const typename T::PrimaryKeyType &key) noexcept(false)
 {
     static_assert(!std::is_same<typename T::PrimaryKeyType, void>::value, "No primary key in the table!");
-   // return findOne(Criteria(T::primaryKeyName, key));
+    // return findOne(Criteria(T::primaryKeyName, key));
     std::string sql = "select * from ";
     sql += T::tableName;
     makePrimaryKeyCriteria(sql);
@@ -154,7 +154,7 @@ inline T Mapper<T>::findByPrimaryKey(const typename T::PrimaryKeyType &key) noex
     Result r(nullptr);
     {
         auto binder = _client << sql;
-        outputPrimeryKeyToBinder(key,binder);
+        outputPrimeryKeyToBinder(key, binder);
         binder << Mode::Blocking;
         binder >> [&r](const Result &result) {
             r = result;
