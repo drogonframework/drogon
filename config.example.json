@@ -101,6 +101,6 @@
     ],
     //idle_connection_timeout: defaults to 60 seconds, the lifetime 
     //of the connection without read or write
-    "idle_connection_timeout":10
+    "idle_connection_timeout":60
   }
 }
