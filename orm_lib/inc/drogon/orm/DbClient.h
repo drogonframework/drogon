@@ -11,6 +11,7 @@
  */
 
 #pragma once
+#include <drogon/config.h>
 #include <drogon/orm/Exception.h>
 #include <trantor/utils/Logger.h>
 #include <trantor/utils/NonCopyable.h>
@@ -35,9 +36,11 @@ typedef std::function<void(const DrogonDbException &)> ExceptionCallback;
 
 class DbClient : public trantor::NonCopyable
 {
-public:
-    virtual ~DbClient() {};
-
+  public:
+    virtual ~DbClient(){};
+#if USE_POSTGRESQL
+    static std::shared_ptr<DbClient> newPgClient(const std::string &connInfo, const size_t connNum);
+#endif
     //Async method, nonblocking by default;
     template <
         typename FUNCTION1,
@@ -65,7 +68,7 @@ public:
     {
         auto binder = *this << sql;
         std::vector<int> v = {(binder << std::forward<Arguments>(args), 0)...};
-        std::shared_ptr<std::promise<const Result>> prom=std::make_shared<std::promise<const Result>>();
+        std::shared_ptr<std::promise<const Result>> prom = std::make_shared<std::promise<const Result>>();
         binder >> [=](const Result &r) {
             prom->set_value(r);
         };
@@ -108,6 +111,7 @@ public:
                          const ResultCallback &rcb,
                          const std::function<void(const std::exception_ptr &)> &exptCallback) = 0;
 };
+typedef std::shared_ptr<DbClient> DbClientPtr;
 
 } // namespace orm
 } // namespace drogon

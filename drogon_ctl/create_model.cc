@@ -60,7 +60,7 @@ std::string nameTransform(const std::string &origName, bool isType)
 }
 
 #if USE_POSTGRESQL
-void create_model::createModelClassFromPG(const std::string &path, PgClient &client, const std::string &tableName)
+void create_model::createModelClassFromPG(const std::string &path, const DbClientPtr &client, const std::string &tableName)
 {
     auto className = nameTransform(tableName, true);
     HttpViewData data;
@@ -70,11 +70,11 @@ void create_model::createModelClassFromPG(const std::string &path, PgClient &cli
     data["primaryKeyName"] = "";
     data["dbName"] = _dbname;
     std::vector<ColumnInfo> cols;
-    client << "SELECT * \
+    *client << "SELECT * \
                 FROM information_schema.columns \
                 WHERE table_schema = 'public' \
                 AND table_name   = $1"
-           << tableName << Mode::Blocking >>
+            << tableName << Mode::Blocking >>
         [&](const Result &r) {
             for (auto row : r)
             {
@@ -156,7 +156,7 @@ void create_model::createModelClassFromPG(const std::string &path, PgClient &cli
         };
 
     size_t pkNumber = 0;
-    client << "SELECT \
+    *client << "SELECT \
                 pg_constraint.conname AS pk_name,\
                 pg_constraint.conkey AS pk_vector \
                 FROM pg_constraint \
@@ -164,8 +164,8 @@ void create_model::createModelClassFromPG(const std::string &path, PgClient &cli
                 WHERE \
                 pg_class.relname = $1 \
                 AND pg_constraint.contype = 'p'"
-           << tableName
-           << Mode::Blocking >>
+            << tableName
+            << Mode::Blocking >>
         [&](bool isNull, const std::string &pkName, const std::vector<std::shared_ptr<short>> &pk) {
             if (!isNull)
             {
@@ -180,7 +180,7 @@ void create_model::createModelClassFromPG(const std::string &path, PgClient &cli
     data["hasPrimaryKey"] = (int)pkNumber;
     if (pkNumber == 1)
     {
-        client << "SELECT \
+        *client << "SELECT \
                 pg_attribute.attname AS colname,\
                 pg_type.typname AS typename,\
                 pg_constraint.contype AS contype \
@@ -190,7 +190,7 @@ void create_model::createModelClassFromPG(const std::string &path, PgClient &cli
                 AND pg_attribute.attnum = pg_constraint.conkey [ 1 ] \
                 INNER JOIN pg_type ON pg_type.oid = pg_attribute.atttypid \
                 WHERE pg_class.relname = $1 and pg_constraint.contype='p'"
-               << tableName << Mode::Blocking >>
+                << tableName << Mode::Blocking >>
             [&](bool isNull, std::string colName, const std::string &type) {
                 if (isNull)
                     return;
@@ -215,7 +215,7 @@ void create_model::createModelClassFromPG(const std::string &path, PgClient &cli
         std::vector<std::string> pkNames, pkTypes;
         for (size_t i = 1; i <= pkNumber; i++)
         {
-            client << "SELECT \
+            *client << "SELECT \
                 pg_attribute.attname AS colname,\
                 pg_type.typname AS typename,\
                 pg_constraint.contype AS contype \
@@ -225,9 +225,9 @@ void create_model::createModelClassFromPG(const std::string &path, PgClient &cli
                 AND pg_attribute.attnum = pg_constraint.conkey [ $1 ] \
                 INNER JOIN pg_type ON pg_type.oid = pg_attribute.atttypid \
                 WHERE pg_class.relname = $2 and pg_constraint.contype='p'"
-                   << (int)i
-                   << tableName
-                   << Mode::Blocking >>
+                    << (int)i
+                    << tableName
+                    << Mode::Blocking >>
                 [&](bool isNull, std::string colName, const std::string &type) {
                     if (isNull)
                         return;
@@ -259,16 +259,16 @@ void create_model::createModelClassFromPG(const std::string &path, PgClient &cli
     templ = DrTemplateBase::newTemplate("model_cc.csp");
     sourceFile << templ->genText(data);
 }
-void create_model::createModelFromPG(const std::string &path, PgClient &client)
+void create_model::createModelFromPG(const std::string &path, const DbClientPtr &client)
 {
-    client << "SELECT a.oid,"
-              "a.relname AS name,"
-              "b.description AS comment "
-              "FROM pg_class a "
-              "LEFT OUTER JOIN pg_description b ON b.objsubid = 0 AND a.oid = b.objoid "
-              "WHERE a.relnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public') "
-              "AND a.relkind = 'r' ORDER BY a.relname"
-           << Mode::Blocking >>
+    *client << "SELECT a.oid,"
+               "a.relname AS name,"
+               "b.description AS comment "
+               "FROM pg_class a "
+               "LEFT OUTER JOIN pg_description b ON b.objsubid = 0 AND a.oid = b.objoid "
+               "WHERE a.relnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public') "
+               "AND a.relkind = 'r' ORDER BY a.relname"
+            << Mode::Blocking >>
         [&](bool isNull, size_t oid, const std::string &tableName, const std::string &comment) {
             if (!isNull)
             {
@@ -312,7 +312,7 @@ void create_model::createModel(const std::string &path, const Json::Value &confi
             connStr += " password=";
             connStr += password;
         }
-        PgClient client(connStr, 1);
+        DbClientPtr client = drogon::orm::DbClient::newPgClient(connStr, 1);
         std::cout << "Connect to server..." << std::endl;
         std::cout << "Source files in the " << path << " folder will be overwritten, continue(y/n)?\n";
         auto in = getchar();

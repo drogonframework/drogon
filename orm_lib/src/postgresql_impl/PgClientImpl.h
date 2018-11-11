@@ -17,19 +17,19 @@ namespace orm
 // extern Result makeResult(SqlStatus status, const std::shared_ptr<PGresult> &r = std::shared_ptr<PGresult>(nullptr),
 //                          const std::string &query = "");
 
-class PgClientImpl : public trantor::NonCopyable
+class PgClientImpl : public DbClient
 {
   public:
     PgClientImpl(const std::string &connInfo, const size_t connNum);
     ~PgClientImpl();
-    void execSql(const std::string &sql,
-                 size_t paraNum,
-                 const std::vector<const char *> &parameters,
-                 const std::vector<int> &length,
-                 const std::vector<int> &format,
-                 const ResultCallback &rcb,
-                 const std::function<void(const std::exception_ptr &)> &exceptCallback);
-    std::string replaceSqlPlaceHolder(const std::string &sqlStr, const std::string &holderStr) const;
+    virtual void execSql(const std::string &sql,
+                         size_t paraNum,
+                         const std::vector<const char *> &parameters,
+                         const std::vector<int> &length,
+                         const std::vector<int> &format,
+                         const ResultCallback &rcb,
+                         const std::function<void(const std::exception_ptr &)> &exceptCallback) override;
+    virtual std::string replaceSqlPlaceHolder(const std::string &sqlStr, const std::string &holderStr) const override;
 
   private:
     void ioLoop();
