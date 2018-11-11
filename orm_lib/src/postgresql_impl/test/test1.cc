@@ -1,4 +1,4 @@
-#include <drogon/orm/PgClient.h>
+#include <drogon/orm/DbClient.h>
 #include <trantor/utils/Logger.h>
 #include <iostream>
 #include <unistd.h>
@@ -6,13 +6,13 @@ using namespace drogon::orm;
 
 int main()
 {
-    drogon::orm::PgClient client("host=127.0.0.1 port=5432 dbname=test user=antao", 1);
+    auto clientPtr=DbClient::newPgClient("host=127.0.0.1 port=5432 dbname=test user=antao", 1);
     LOG_DEBUG << "start!";
     sleep(1);
-    client << "update group_users set join_date=$1,relationship=$2 where g_uuid=420040 and u_uuid=2"
-           << nullptr
-           << nullptr
-           << Mode::Blocking >>
+    *clientPtr << "update group_users set join_date=$1,relationship=$2 where g_uuid=420040 and u_uuid=2"
+              << nullptr
+              << nullptr
+              << Mode::Blocking >>
         [](const Result &r) {
             std::cout << "update " << r.affectedRows() << " lines" << std::endl;
         } >>
@@ -21,7 +21,7 @@ int main()
         };
     try
     {
-        auto r = client.execSqlSync("select * from users where user_uuid=$1;", 1);
+        auto r = clientPtr->execSqlSync("select * from users where user_uuid=$1;", 1);
         for (auto row : r)
         {
             for (auto f : row)
@@ -81,7 +81,7 @@ int main()
     //                         LOG_DEBUG << "async blocking except callback:" << e.base().what();
     //                     },
     //                     true);
-    auto f = client.execSqlAsync("select * from users limit 5");
+    auto f = clientPtr->execSqlAsync("select * from users limit 5");
     try
     {
         auto r=f.get();
