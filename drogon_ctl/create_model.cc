@@ -154,6 +154,7 @@ void create_model::createModelClassFromPG(const std::string &path, PgClient &cli
             std::cerr << e.base().what() << std::endl;
             exit(1);
         };
+
     size_t pkNumber = 0;
     client << "SELECT \
                 pg_constraint.conname AS pk_name,\
@@ -224,7 +225,7 @@ void create_model::createModelClassFromPG(const std::string &path, PgClient &cli
                 AND pg_attribute.attnum = pg_constraint.conkey [ $1 ] \
                 INNER JOIN pg_type ON pg_type.oid = pg_attribute.atttypid \
                 WHERE pg_class.relname = $2 and pg_constraint.contype='p'"
-                   << i
+                   << (int)i
                    << tableName
                    << Mode::Blocking >>
                 [&](bool isNull, std::string colName, const std::string &type) {
