@@ -97,7 +97,7 @@ auto cols=@@.get<std::vector<ColumnInfo>>("columns");
         $$<<"\n";    
     }
 %>
-    static const std::string &getColumnName(int index) noexcept(false);
+    static const std::string &getColumnName(size_t index) noexcept(false);
     static const std::vector<std::string> &insertColumns() noexcept;
     void outputArgs(drogon::orm::internal::SqlBinder &binder) const;
 

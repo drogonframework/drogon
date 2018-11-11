@@ -52,7 +52,7 @@ else
 $$<<"\n";
 }%>
 };
-const std::string &{{className}}::getColumnName(int index) noexcept(false)
+const std::string &{{className}}::getColumnName(size_t index) noexcept(false)
 {
     assert(index < _metaData.size());
     return _metaData[index]._colName;
