@@ -78,7 +78,7 @@ void PgClientImpl::execSql(const DbConnectionPtr &conn,
                            const std::vector<int> &length,
                            const std::vector<int> &format,
                            const ResultCallback &cb,
-                           const std::function<void(const std::exception_ptr &)> &exceptCallback)
+                           const std::function<void(const std::exception_ptr &)> &exceptCallback) 
 {
     if (!conn)
     {

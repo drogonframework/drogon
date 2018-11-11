@@ -16,7 +16,7 @@
 #include <drogon/config.h>
 #include <json/json.h>
 #if USE_POSTGRESQL
-#include <drogon/orm/PgClient.h>
+#include <drogon/orm/DbClient.h>
 using namespace drogon::orm;
 #endif
 #include <drogon/DrObject.h>
@@ -54,8 +54,8 @@ protected:
   void createModel(const std::string &path);
   void createModel(const std::string &path, const Json::Value &config);
 #if USE_POSTGRESQL
-  void createModelClassFromPG(const std::string &path, PgClient &client, const std::string &tableName);
-  void createModelFromPG(const std::string &path, PgClient &client);
+  void createModelClassFromPG(const std::string &path, const DbClientPtr &client, const std::string &tableName);
+  void createModelFromPG(const std::string &path, const DbClientPtr &client);
 #endif
   std::string _dbname;
 };
