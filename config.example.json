@@ -26,6 +26,26 @@
       "key": ""
     }
   ],*/
+  "db_clients":[
+    {
+      //name:Name of the client,'default' by default
+      //"name":"",
+      //rdbms:server type, "postgreSQL" by default
+      "rdbms": "postgreSQL",
+      //host:server address,localhost by default
+      "host": "127.0.0.1",
+      //port:server port, 5432 by default
+      "port": 5432,
+      //dbname:Database name
+      "dbname": "test",
+      //user:'postgres' by default
+      "user": "",
+      //passwd:'' by default
+      "passwd": "",
+      //connection_number:1 by default
+      "connection_number":1
+    }
+  ],
   "app": {
     //threads_num:num of threads,1 by default
     "threads_num": 16,
