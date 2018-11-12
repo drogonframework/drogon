@@ -218,6 +218,7 @@ static void loadApp(const Json::Value &app)
 }
 static void loadDbClients(const Json::Value &dbClients)
 {
+#if USE_POSTGRESQL
     if (!dbClients)
         return;
     for (auto &client : dbClients)
@@ -237,6 +238,7 @@ static void loadDbClients(const Json::Value &dbClients)
         auto name = client.get("name", "default").asString();
         HttpAppFramework::instance().createDbClient(type, host, (u_short)port, dbname, user, password, connNum, name);
     }
+#endif
 }
 static void loadListeners(const Json::Value &listeners)
 {
