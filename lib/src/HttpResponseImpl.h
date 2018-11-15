@@ -230,6 +230,7 @@ class HttpResponseImpl : public HttpResponse
         _bodyPtr.reset(new std::string());
         _left_body_length = 0;
         _current_chunk_length = 0;
+        _jsonPtr.reset();
     }
 
     virtual void setExpiredTime(ssize_t expiredTime) override
