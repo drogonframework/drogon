@@ -1,9 +1,9 @@
 #pragma once
-#include <drogon/HttpApiController.h>
+#include <drogon/HttpController.h>
 using namespace drogon;
 namespace api
 {
-class Attachment : public drogon::HttpApiController<Attachment>
+class Attachment : public drogon::HttpController<Attachment>
 {
 public:
   METHOD_LIST_BEGIN

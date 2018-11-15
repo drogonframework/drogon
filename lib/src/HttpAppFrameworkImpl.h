@@ -97,8 +97,8 @@ class HttpAppFrameworkImpl : public HttpAppFramework
                                 const std::string &name = "default") override;
 #endif
   private:
-    virtual void registerHttpApiController(const std::string &pathPattern,
-                                           const HttpApiBinderBasePtr &binder,
+    virtual void registerHttpController(const std::string &pathPattern,
+                                           const HttpBinderBasePtr &binder,
                                            const std::vector<HttpMethod> &validMethods = std::vector<HttpMethod>(),
                                            const std::vector<std::string> &filters = std::vector<std::string>()) override;
 
@@ -111,8 +111,8 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     void onWebsockDisconnect(const WebSocketConnectionPtr &wsConnPtr);
     void onConnection(const TcpConnectionPtr &conn);
     void readSendFile(const std::string &filePath, const HttpRequestPtr &req, const HttpResponsePtr &resp);
-    void addApiPath(const std::string &path,
-                    const HttpApiBinderBasePtr &binder,
+    void addHttpPath(const std::string &path,
+                    const HttpBinderBasePtr &binder,
                     const std::vector<HttpMethod> &validMethods,
                     const std::vector<std::string> &filters);
     void initRegex();
@@ -158,23 +158,22 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     std::unordered_map<std::string, WSCtrlAndFiltersName> _websockCtrlMap;
     std::mutex _websockCtrlMutex;
 
-    struct ApiBinder
+    struct CtrlBinder
     {
         std::string pathParameterPattern;
         std::vector<size_t> parameterPlaces;
         std::map<std::string, size_t> queryParametersPlaces;
-        HttpApiBinderBasePtr binderPtr;
+        HttpBinderBasePtr binderPtr;
         std::vector<std::string> filtersName;
         std::unique_ptr<std::mutex> binderMtx = std::unique_ptr<std::mutex>(new std::mutex);
         std::weak_ptr<HttpResponse> responsePtr;
         std::vector<int> _validMethodsFlags;
         std::regex _regex;
     };
-    //std::unordered_map<std::string,ApiBinder>_apiCtrlMap;
-    std::vector<ApiBinder> _apiCtrlVector;
-    std::mutex _apiCtrlMutex;
+    std::vector<CtrlBinder> _ctrlVector;
+    std::mutex _ctrlMutex;
 
-    std::regex _apiRegex;
+    std::regex _ctrlRegex;
     bool _enableLastModify = true;
     std::set<std::string> _fileTypeSet = {"html", "js", "css", "xml", "xsl", "txt", "svg", "ttf",
                                           "otf", "woff2", "woff", "eot", "png", "jpg", "jpeg",

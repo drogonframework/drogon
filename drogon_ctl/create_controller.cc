@@ -33,9 +33,9 @@ void create_controller::handleCommand(std::vector<std::string> &parameters)
                 parameters.erase(iter);
                 break;
             }
-            else if (*iter == "-a" || *iter == "--api")
+            else if (*iter == "-a" || *iter == "-h" || *iter == "--http")
             {
-                type = API;
+                type = Http;
                 parameters.erase(iter);
                 break;
             }
@@ -125,7 +125,7 @@ void create_controller::handleCommand(std::vector<std::string> &parameters)
         createWebsockController(parameters, namespaceName);
     }
     else
-        createApiController(parameters);
+        createHttpController(parameters);
 }
 
 void create_controller::createSimpleController(std::vector<std::string> &ctlNames, const std::string &namespaceName)
@@ -311,9 +311,9 @@ void create_controller::newWebsockControllerSourceFile(std::ofstream &file, cons
     file << "}\n";
 }
 
-void create_controller::createApiController(std::vector<std::string> &apiClasses)
+void create_controller::createHttpController(std::vector<std::string> &httpClasses)
 {
-    for (auto iter = apiClasses.begin(); iter != apiClasses.end(); iter++)
+    for (auto iter = httpClasses.begin(); iter != httpClasses.end(); iter++)
     {
         if ((*iter)[0] == '-')
         {
@@ -321,31 +321,31 @@ void create_controller::createApiController(std::vector<std::string> &apiClasses
             return;
         }
     }
-    for (auto className : apiClasses)
+    for (auto className : httpClasses)
     {
-        createApiController(className);
+        createHttpController(className);
     }
 }
-void create_controller::createApiController(const std::string &className)
+void create_controller::createHttpController(const std::string &className)
 {
     std::regex regex("::");
     std::string ctlName = std::regex_replace(className, regex, std::string("_"));
 
-    std::cout << "create api controller:" << className << std::endl;
+    std::cout << "create http controller:" << className << std::endl;
     std::string headFileName = ctlName + ".h";
     std::string sourceFilename = ctlName + ".cc";
     std::ofstream oHeadFile(headFileName.c_str(), std::ofstream::out);
     std::ofstream oSourceFile(sourceFilename.c_str(), std::ofstream::out);
     if (!oHeadFile || !oSourceFile)
         return;
-    newApiControllerHeaderFile(oHeadFile, className);
-    newApiControllerSourceFile(oSourceFile, className, ctlName);
+    newHttpControllerHeaderFile(oHeadFile, className);
+    newHttpControllerSourceFile(oSourceFile, className, ctlName);
 }
 
-void create_controller::newApiControllerHeaderFile(std::ofstream &file, const std::string &className)
+void create_controller::newHttpControllerHeaderFile(std::ofstream &file, const std::string &className)
 {
     file << "#pragma once\n";
-    file << "#include <drogon/HttpApiController.h>\n";
+    file << "#include <drogon/HttpController.h>\n";
     file << "using namespace drogon;\n";
     std::string indent = "";
     std::string class_name = className;
@@ -361,7 +361,7 @@ void create_controller::newApiControllerHeaderFile(std::ofstream &file, const st
         indent.append("    ");
         pos = class_name.find("::");
     }
-    file << indent << "class " << class_name << ":public drogon::HttpApiController<" << class_name << ">\n";
+    file << indent << "class " << class_name << ":public drogon::HttpController<" << class_name << ">\n";
     file << indent << "{\n";
     file << indent << "public:\n";
     indent.append("    ");
@@ -390,7 +390,7 @@ void create_controller::newApiControllerHeaderFile(std::ofstream &file, const st
         file << indent << "}\n";
     } while (indent != "");
 }
-void create_controller::newApiControllerSourceFile(std::ofstream &file, const std::string &className, const std::string &filename)
+void create_controller::newHttpControllerSourceFile(std::ofstream &file, const std::string &className, const std::string &filename)
 {
     file << "#include \"" << filename << ".h\"\n";
     auto pos = className.rfind("::");

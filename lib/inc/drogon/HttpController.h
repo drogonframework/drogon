@@ -39,7 +39,7 @@
 namespace drogon
 {
 template <typename T>
-class HttpApiController : public DrObject<T>
+class HttpController : public DrObject<T>
 {
   protected:
     template <typename FUNCTION>
@@ -47,8 +47,8 @@ class HttpApiController : public DrObject<T>
                                const std::string &pattern,
                                const std::vector<any> &filtersAndMethods = std::vector<any>())
     {
-        std::string path = std::string("/") + HttpApiController<T>::classTypeName();
-        LOG_TRACE << "classname:" << HttpApiController<T>::classTypeName();
+        std::string path = std::string("/") + HttpController<T>::classTypeName();
+        LOG_TRACE << "classname:" << HttpController<T>::classTypeName();
 
         //transform(path.begin(), path.end(), path.begin(), tolower);
         std::string::size_type pos;
@@ -57,11 +57,11 @@ class HttpApiController : public DrObject<T>
             path.replace(pos, 2, "/");
         }
         if (pattern.empty() || pattern[0] == '/')
-            app().registerHttpApiMethod(path + pattern,
+            app().registerHttpMethod(path + pattern,
                                         std::forward<FUNCTION>(function),
                                         filtersAndMethods);
         else
-            app().registerHttpApiMethod(path + "/" + pattern,
+            app().registerHttpMethod(path + "/" + pattern,
                                         std::forward<FUNCTION>(function),
                                         filtersAndMethods);
     }
@@ -83,5 +83,5 @@ class HttpApiController : public DrObject<T>
     }
 };
 template <typename T>
-typename HttpApiController<T>::methodRegister HttpApiController<T>::_register;
+typename HttpController<T>::methodRegister HttpController<T>::_register;
 } // namespace drogon

@@ -76,7 +76,7 @@ template <
 struct FunctionTraits<
     ReturnType (*)(const HttpRequestPtr &req, const std::function<void(const HttpResponsePtr &)> &callback, Arguments...)> : FunctionTraits<ReturnType (*)(Arguments...)>
 {
-        static const bool isHTTPApiFunction = true;
+        static const bool isHTTPFunction = true;
 };
 
 //normal function
@@ -95,7 +95,7 @@ struct FunctionTraits<
 
         static const std::size_t arity = sizeof...(Arguments);
 
-        static const bool isHTTPApiFunction = false;
+        static const bool isHTTPFunction = false;
         static const bool isClassFunction = false;
         static const std::string name() { return std::string("Normal or Static Function"); }
 };

@@ -56,25 +56,25 @@ struct BinderArgTypeTraits<const T &>
     static const bool isValid = true;
 };
 
-class HttpApiBinderBase
+class HttpBinderBase
 {
   public:
-    virtual void handleHttpApiRequest(std::list<std::string> &pathParameter,
+    virtual void handleHttpRequest(std::list<std::string> &pathParameter,
                                       const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> callback) = 0;
     virtual size_t paramCount() = 0;
-    virtual ~HttpApiBinderBase() {}
+    virtual ~HttpBinderBase() {}
 
   protected:
     static std::map<std::string, std::shared_ptr<drogon::DrObjectBase>> _objMap;
     static std::mutex _objMutex;
 };
-typedef std::shared_ptr<HttpApiBinderBase> HttpApiBinderBasePtr;
+typedef std::shared_ptr<HttpBinderBase> HttpBinderBasePtr;
 template <typename FUNCTION>
-class HttpApiBinder : public HttpApiBinderBase
+class HttpBinder : public HttpBinderBase
 {
   public:
     typedef FUNCTION FunctionType;
-    virtual void handleHttpApiRequest(std::list<std::string> &pathParameter,
+    virtual void handleHttpRequest(std::list<std::string> &pathParameter,
                                       const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> callback) override
     {
         run(pathParameter, req, callback);
@@ -83,13 +83,13 @@ class HttpApiBinder : public HttpApiBinderBase
     {
         return traits::arity;
     }
-    HttpApiBinder(FUNCTION &&func) : _func(std::forward<FUNCTION>(func))
+    HttpBinder(FUNCTION &&func) : _func(std::forward<FUNCTION>(func))
     {
-        static_assert(traits::isHTTPApiFunction, "Your API handler function interface is wrong!");
+        static_assert(traits::isHTTPFunction, "Your API handler function interface is wrong!");
     }
     void test()
     {
-        std::cout << "argument_count=" << argument_count << " " << traits::isHTTPApiFunction << std::endl;
+        std::cout << "argument_count=" << argument_count << " " << traits::isHTTPFunction << std::endl;
     }
 
   private:

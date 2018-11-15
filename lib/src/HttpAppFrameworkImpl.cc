@@ -42,8 +42,8 @@
 
 using namespace drogon;
 using namespace std::placeholders;
-std::map<std::string, std::shared_ptr<drogon::DrObjectBase>> HttpApiBinderBase::_objMap;
-std::mutex HttpApiBinderBase::_objMutex;
+std::map<std::string, std::shared_ptr<drogon::DrObjectBase>> HttpBinderBase::_objMap;
+std::mutex HttpBinderBase::_objMutex;
 
 static void godaemon(void)
 {
@@ -108,7 +108,7 @@ void HttpAppFrameworkImpl::setFileTypes(const std::vector<std::string> &types)
 void HttpAppFrameworkImpl::initRegex()
 {
     std::string regString;
-    for (auto &binder : _apiCtrlVector)
+    for (auto &binder : _ctrlVector)
     {
         std::regex reg("\\(\\[\\^/\\]\\*\\)");
         std::string tmp = std::regex_replace(binder.pathParameterPattern, reg, "[^/]*");
@@ -118,7 +118,7 @@ void HttpAppFrameworkImpl::initRegex()
     if (regString.length() > 0)
         regString.resize(regString.length() - 1); //remove the last '|'
     LOG_TRACE << "regex string:" << regString;
-    _apiRegex = std::regex(regString, std::regex_constants::icase);
+    _ctrlRegex = std::regex(regString, std::regex_constants::icase);
 }
 void HttpAppFrameworkImpl::registerWebSocketController(const std::string &pathName,
                                                        const std::string &ctrlName,
@@ -182,8 +182,8 @@ void HttpAppFrameworkImpl::registerHttpSimpleController(const std::string &pathN
         }
     }
 }
-void HttpAppFrameworkImpl::addApiPath(const std::string &path,
-                                      const HttpApiBinderBasePtr &binder,
+void HttpAppFrameworkImpl::addHttpPath(const std::string &path,
+                                      const HttpBinderBasePtr &binder,
                                       const std::vector<HttpMethod> &validMethods,
                                       const std::vector<std::string> &filters)
 {
@@ -235,7 +235,7 @@ void HttpAppFrameworkImpl::addApiPath(const std::string &path,
             paras = results.suffix();
         }
     }
-    struct ApiBinder _binder;
+    struct CtrlBinder _binder;
     _binder.parameterPlaces = std::move(places);
     _binder.queryParametersPlaces = std::move(parametersPlaces);
     _binder.binderPtr = binder;
@@ -250,12 +250,12 @@ void HttpAppFrameworkImpl::addApiPath(const std::string &path,
         }
     }
     {
-        std::lock_guard<std::mutex> guard(_apiCtrlMutex);
-        _apiCtrlVector.push_back(std::move(_binder));
+        std::lock_guard<std::mutex> guard(_ctrlMutex);
+        _ctrlVector.push_back(std::move(_binder));
     }
 }
-void HttpAppFrameworkImpl::registerHttpApiController(const std::string &pathPattern,
-                                                     const HttpApiBinderBasePtr &binder,
+void HttpAppFrameworkImpl::registerHttpController(const std::string &pathPattern,
+                                                     const HttpBinderBasePtr &binder,
                                                      const std::vector<HttpMethod> &validMethods,
                                                      const std::vector<std::string> &filters)
 {
@@ -264,7 +264,7 @@ void HttpAppFrameworkImpl::registerHttpApiController(const std::string &pathPatt
     std::string path(pathPattern);
 
     //std::transform(path.begin(), path.end(), path.begin(), tolower);
-    addApiPath(path, binder, validMethods, filters);
+    addHttpPath(path, binder, validMethods, filters);
 }
 void HttpAppFrameworkImpl::setThreadNum(size_t threadNum)
 {
@@ -1012,22 +1012,22 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestPtr &req, const std::
         });
         return;
     }
-    //find api controller
-    if (_apiRegex.mark_count() > 0)
+    //find http controller
+    if (_ctrlRegex.mark_count() > 0)
     {
         std::smatch result;
-        if (std::regex_match(req->path(), result, _apiRegex))
+        if (std::regex_match(req->path(), result, _ctrlRegex))
         {
             for (size_t i = 1; i < result.size(); i++)
             {
                 //FIXME:Is there any better way to find the sub-match index without using loop?
                 if (!result[i].matched)
                     continue;
-                if (result[i].str() == req->path() && i <= _apiCtrlVector.size())
+                if (result[i].str() == req->path() && i <= _ctrlVector.size())
                 {
                     size_t ctlIndex = i - 1;
-                    auto &binder = _apiCtrlVector[ctlIndex];
-                    LOG_TRACE << "got api access,regex=" << binder.pathParameterPattern;
+                    auto &binder = _ctrlVector[ctlIndex];
+                    //LOG_TRACE << "got http access,regex=" << binder.pathParameterPattern;
                     if (binder._validMethodsFlags.size() > 0)
                     {
                         assert(binder._validMethodsFlags.size() > req->method());
@@ -1042,7 +1042,7 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestPtr &req, const std::
                     }
                     auto &filters = binder.filtersName;
                     doFilters(filters, req, callback, needSetJsessionid, session_id, [=]() {
-                        auto &binder = _apiCtrlVector[ctlIndex];
+                        auto &binder = _ctrlVector[ctlIndex];
 
                         HttpResponsePtr responsePtr;
                         {
@@ -1102,15 +1102,15 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestPtr &req, const std::
                             paraList.push_back(std::move(p));
                         }
 
-                        binder.binderPtr->handleHttpApiRequest(paraList, req, [=](const HttpResponsePtr &resp) {
-                            LOG_TRACE << "api resp:needSetJsessionid=" << needSetJsessionid << ";JSESSIONID=" << session_id;
+                        binder.binderPtr->handleHttpRequest(paraList, req, [=](const HttpResponsePtr &resp) {
+                            LOG_TRACE << "http resp:needSetJsessionid=" << needSetJsessionid << ";JSESSIONID=" << session_id;
                             auto newResp = resp;
                             if (resp->expiredTime() >= 0)
                             {
                                 //cache the response;
                                 std::dynamic_pointer_cast<HttpResponseImpl>(resp)->makeHeaderString();
                                 {
-                                    auto &binderIterm = _apiCtrlVector[ctlIndex];
+                                    auto &binderIterm = _ctrlVector[ctlIndex];
                                     std::lock_guard<std::mutex> guard(*(binderIterm.binderMtx));
                                     _responseCacheMap->insert(binderIterm.pathParameterPattern, resp, resp->expiredTime());
                                     binderIterm.responsePtr = resp;
