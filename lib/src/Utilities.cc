@@ -1,3 +1,16 @@
+/**
+ *
+ *  Utilities.cc
+ *  An Tao
+ *
+ *  Copyright 2018, An Tao.  All rights reserved.
+ *  Use of this source code is governed by a MIT license
+ *  that can be found in the License file.
+ *
+ *  @section DESCRIPTION
+ *
+ */
+
 #include <drogon/utils/Utilities.h>
 #include <drogon/config.h>
 #include <trantor/utils/Logger.h>
@@ -6,6 +19,9 @@
 #include <uuid.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <thread>
+#include <cstdlib>
+
 namespace drogon
 {
 static const std::string base64_chars =
@@ -27,23 +43,27 @@ bool isInteger(const std::string &str)
     }
     return true;
 }
-// std::string genRandomString(int length)
-// {
-//     int i;
-//     char str[length + 1];
 
-//     timespec tp;
-//     clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &tp);
-//     //LOG_INFO<<"time: "<<tp.tv_nsec;
-//     srand(static_cast<unsigned int>(tp.tv_nsec));
-//     std::string char_space = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+std::string genRandomString(int length)
+{
+    static const char char_space[] = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    static std::once_flag once;
+    static const int len = strlen(char_space);
+    std::call_once(once, []() {
+        std::srand(time(nullptr));
+    });
 
-//     for (i = 0; i < length; i++)
-//     {
-//         str[i] = char_space[rand() % char_space.length()];
-//     }
-//     return std::string(str);
-// }
+    int i;
+    char str[length + 1];
+
+    for (i = 0; i < length; i++)
+    {
+        str[i] = char_space[std::rand() % len];
+    }
+
+    str[length] = 0;
+    return std::string(str);
+}
 
 std::string stringToHex(unsigned char *ptr, long long length)
 {
