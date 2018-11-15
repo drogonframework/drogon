@@ -1,6 +1,6 @@
 #include "HttpClientImpl.h"
 #include "HttpRequestImpl.h"
-#include "HttpContext.h"
+#include "HttpClientContext.h"
 #include "HttpAppFrameworkImpl.h"
 #include <stdlib.h>
 #include <algorithm>
@@ -95,7 +95,7 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
             if (InetAddress::resolve(_domain, &_server) == false)
             {
                 callback(ReqResult::BadServerAddress,
-                         HttpResponseImpl());
+                         HttpResponse::newHttpResponse());
                 return;
             }
             LOG_TRACE << "dns:domain=" << _domain << ";ip=" << _server.toIp();
@@ -117,7 +117,7 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
             _tcpClient->setConnectionCallback([=](const trantor::TcpConnectionPtr &connPtr) {
                 if (connPtr->connected())
                 {
-                    connPtr->setContext(HttpContext(connPtr));
+                    connPtr->setContext(HttpClientContext(connPtr));
                     //send request;
                     LOG_TRACE << "Connection established!";
                     auto req = thisPtr->_reqAndCallbacks.front().first;
@@ -130,7 +130,7 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
                     {
                         auto reqCallback = _reqAndCallbacks.front().second;
                         _reqAndCallbacks.pop();
-                        reqCallback(ReqResult::NetworkFailure, HttpResponseImpl());
+                        reqCallback(ReqResult::NetworkFailure, HttpResponse::newHttpResponse());
                     }
                     thisPtr->_tcpClient.reset();
                 }
@@ -141,7 +141,7 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
                 {
                     auto reqCallback = _reqAndCallbacks.front().second;
                     _reqAndCallbacks.pop();
-                    reqCallback(ReqResult::BadServerAddress, HttpResponseImpl());
+                    reqCallback(ReqResult::BadServerAddress, HttpResponse::newHttpResponse());
                 }
                 thisPtr->_tcpClient.reset();
             });
@@ -151,7 +151,7 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
         else
         {
             callback(ReqResult::BadServerAddress,
-                     HttpResponseImpl());
+                     HttpResponse::newHttpResponse());
             return;
         }
     }
@@ -183,33 +183,36 @@ void HttpClientImpl::sendReq(const trantor::TcpConnectionPtr &connPtr, const Htt
 
 void HttpClientImpl::onRecvMessage(const trantor::TcpConnectionPtr &connPtr, trantor::MsgBuffer *msg)
 {
-    HttpContext *context = any_cast<HttpContext>(connPtr->getMutableContext());
+    HttpClientContext *context = any_cast<HttpClientContext>(connPtr->getMutableContext());
 
     //LOG_TRACE << "###:" << msg->readableBytes();
     if (!context->parseResponse(msg))
     {
         assert(!_reqAndCallbacks.empty());
         auto cb = _reqAndCallbacks.front().second;
-        cb(ReqResult::BadResponse, HttpResponseImpl());
+        cb(ReqResult::BadResponse, HttpResponse::newHttpResponse());
         _reqAndCallbacks.pop();
 
         _tcpClient.reset();
         return;
     }
 
-    if (context->resGotAll())
+    if (context->gotAll())
     {
-        auto &resp = context->responseImpl();
+        auto resp = context->responseImpl();
+        context->reset();
+
         assert(!_reqAndCallbacks.empty());
-        auto cb = _reqAndCallbacks.front().second;
-        cb(ReqResult::Ok, resp);
-        _reqAndCallbacks.pop();
-        auto type = resp.getHeader("Content-Type");
+        
+        auto type = resp->getHeader("Content-Type");
         if (type.find("application/json") != std::string::npos)
         {
-            resp.parseJson();
+            resp->parseJson();
         }
-        context->resetRes();
+        auto &cb = _reqAndCallbacks.front().second;
+        cb(ReqResult::Ok, resp);
+        _reqAndCallbacks.pop();
+        
         LOG_TRACE << "req buffer size=" << _reqAndCallbacks.size();
         if (!_reqAndCallbacks.empty())
         {
@@ -218,7 +221,7 @@ void HttpClientImpl::onRecvMessage(const trantor::TcpConnectionPtr &connPtr, tra
         }
         else
         {
-            if (resp.closeConnection())
+            if (resp->closeConnection())
             {
                 _tcpClient.reset();
             }

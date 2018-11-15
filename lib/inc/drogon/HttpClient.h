@@ -28,7 +28,7 @@ enum class ReqResult
     BadServerAddress,
     Timeout
 };
-typedef std::function<void(ReqResult, const HttpResponse &response)> HttpReqCallback;
+typedef std::function<void(ReqResult, const HttpResponsePtr &response)> HttpReqCallback;
 class HttpClient;
 typedef std::shared_ptr<HttpClient> HttpClientPtr;
 class HttpClient : public trantor::NonCopyable

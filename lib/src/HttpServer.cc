@@ -25,7 +25,8 @@
 #include "HttpServer.h"
 
 #include <trantor/utils/Logger.h>
-#include "HttpContext.h"
+#include "HttpServerContext.h"
+#include "HttpResponseImpl.h"
 #include <drogon/HttpRequest.h>
 #include <drogon/HttpResponse.h>
 #include <drogon/utils/Utilities.h>
@@ -85,12 +86,12 @@ void HttpServer::onConnection(const TcpConnectionPtr &conn)
 {
     if (conn->connected())
     {
-        conn->setContext(HttpContext(conn));
+        conn->setContext(HttpServerContext(conn));
     }
     else if (conn->disconnected())
     {
         LOG_TRACE << "conn disconnected!";
-        HttpContext *context = any_cast<HttpContext>(conn->getMutableContext());
+        HttpServerContext *context = any_cast<HttpServerContext>(conn->getMutableContext());
 
         // LOG_INFO << "###:" << string(buf->peek(), buf->readableBytes());
         if (context->webSocketConn())
@@ -105,7 +106,7 @@ void HttpServer::onConnection(const TcpConnectionPtr &conn)
 void HttpServer::onMessage(const TcpConnectionPtr &conn,
                            MsgBuffer *buf)
 {
-    HttpContext *context = any_cast<HttpContext>(conn->getMutableContext());
+    HttpServerContext *context = any_cast<HttpServerContext>(conn->getMutableContext());
 
     // LOG_INFO << "###:" << string(buf->peek(), buf->readableBytes());
     if (context->webSocketConn())
@@ -167,7 +168,7 @@ void HttpServer::onRequest(const TcpConnectionPtr &conn, const HttpRequestPtr &r
     {
         req->setMethod(Get);
     }
-    HttpContext *context = any_cast<HttpContext>(conn->getMutableContext());
+    HttpServerContext *context = any_cast<HttpServerContext>(conn->getMutableContext());
     //request will be received in same thread,so we don't need mutex;
     context->pushRquestToPipeLine(req);
     httpAsyncCallback_(req, [=](const HttpResponsePtr &response) {

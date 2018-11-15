@@ -26,9 +26,9 @@
 #pragma once
 
 #include "HttpRequestImpl.h"
-#include "HttpResponseImpl.h"
 #include <trantor/utils/MsgBuffer.h>
 #include <drogon/WebSocketConnection.h>
+#include <drogon/HttpResponse.h>
 #include <list>
 #include <mutex>
 #include <trantor/net/TcpConnection.h>
@@ -36,7 +36,7 @@
 using namespace trantor;
 namespace drogon
 {
-class HttpContext
+class HttpServerContext
 {
   public:
     enum HttpRequestParseState
@@ -47,54 +47,22 @@ class HttpContext
         kGotAll,
     };
 
-    enum class HttpResponseParseState
-    {
-        kExpectResponseLine,
-        kExpectHeaders,
-        kExpectBody,
-        kExpectChunkLen,
-        kExpectChunkBody,
-        kExpectLastEmptyChunk,
-        kExpectClose,
-        kGotAll,
-    };
-
-    HttpContext(const trantor::TcpConnectionPtr &connPtr);
+    HttpServerContext(const trantor::TcpConnectionPtr &connPtr);
 
     // default copy-ctor, dtor and assignment are fine
 
     // return false if any error
     bool parseRequest(MsgBuffer *buf);
-    bool parseResponse(MsgBuffer *buf);
 
     bool gotAll() const
     {
         return state_ == kGotAll;
     }
 
-    bool resGotAll() const
-    {
-        return res_state_ == HttpResponseParseState::kGotAll;
-    }
-
-    bool resExpectResponseLine() const
-    {
-        return res_state_ == HttpResponseParseState::kExpectResponseLine;
-    }
-
     void reset()
     {
         state_ = kExpectRequestLine;
-        res_state_ = HttpResponseParseState::kExpectResponseLine;
         request_.reset(new HttpRequestImpl);
-        //          HttpResponseImpl dummy_res;
-        //          response_.swap(dummy_res);
-    }
-
-    void resetRes()
-    {
-        res_state_ = HttpResponseParseState::kExpectResponseLine;
-        response_.clear();
     }
 
     const HttpRequestPtr request() const
@@ -112,19 +80,6 @@ class HttpContext
         return request_;
     }
 
-    const HttpResponse &response() const
-    {
-        return response_;
-    }
-
-    HttpResponse &response()
-    {
-        return response_;
-    }
-    HttpResponseImpl &responseImpl()
-    {
-        return response_;
-    }
     bool firstReq()
     {
         if (_firstRequest)
@@ -152,13 +107,10 @@ class HttpContext
 
   private:
     bool processRequestLine(const char *begin, const char *end);
-    bool processResponseLine(const char *begin, const char *end);
 
     HttpRequestParseState state_;
     HttpRequestImplPtr request_;
 
-    HttpResponseParseState res_state_;
-    HttpResponseImpl response_;
     bool _firstRequest = true;
     WebSocketConnectionPtr _websockConnPtr;
 
