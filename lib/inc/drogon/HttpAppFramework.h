@@ -16,7 +16,7 @@
 
 #include <drogon/config.h>
 #include <drogon/utils/Utilities.h>
-#include <drogon/HttpApiBinder.h>
+#include <drogon/HttpBinder.h>
 #include <trantor/utils/NonCopyable.h>
 #include <drogon/DrObject.h>
 #include <drogon/HttpRequest.h>
@@ -77,15 +77,15 @@ class HttpAppFramework : public trantor::NonCopyable
                                               const std::string &crtlName,
                                               const std::vector<any> &filtersAndMethods = std::vector<any>()) = 0;
     template <typename FUNCTION>
-    void registerHttpApiMethod(const std::string &pathPattern,
+    void registerHttpMethod(const std::string &pathPattern,
                                FUNCTION &&function,
                                const std::vector<any> &filtersAndMethods = std::vector<any>())
     {
         LOG_TRACE << "pathPattern:" << pathPattern;
-        HttpApiBinderBasePtr binder;
+        HttpBinderBasePtr binder;
 
         binder = std::make_shared<
-            HttpApiBinder<FUNCTION>>(std::forward<FUNCTION>(function));
+            HttpBinder<FUNCTION>>(std::forward<FUNCTION>(function));
 
         std::vector<HttpMethod> validMethods;
         std::vector<std::string> filters;
@@ -111,7 +111,7 @@ class HttpAppFramework : public trantor::NonCopyable
             }
         }
 
-        registerHttpApiController(pathPattern, binder, validMethods, filters);
+        registerHttpController(pathPattern, binder, validMethods, filters);
     }
     virtual void enableSession(const size_t timeout = 0) = 0;
     virtual void disableSession() = 0;
@@ -139,8 +139,8 @@ class HttpAppFramework : public trantor::NonCopyable
     virtual void setIdleConnectionTimeout(size_t timeout) = 0;
 
   private:
-    virtual void registerHttpApiController(const std::string &pathPattern,
-                                           const HttpApiBinderBasePtr &binder,
+    virtual void registerHttpController(const std::string &pathPattern,
+                                           const HttpBinderBasePtr &binder,
                                            const std::vector<HttpMethod> &validMethods = std::vector<HttpMethod>(),
                                            const std::vector<std::string> &filters = std::vector<std::string>()) = 0;
 };

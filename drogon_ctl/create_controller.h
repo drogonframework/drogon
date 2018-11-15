@@ -29,7 +29,7 @@ class create_controller : public DrObject<create_controller>, public CommandHand
     enum ControllerType
     {
         Simple = 0,
-        API,
+        Http,
         WebSocket
     };
     void createSimpleController(std::vector<std::string> &ctlNames, const std::string &namespaceName = "");
@@ -37,14 +37,14 @@ class create_controller : public DrObject<create_controller>, public CommandHand
     void createWebsockController(std::vector<std::string> &ctlNames, const std::string &namespaceName = "");
     void createWebsockController(const std::string &ctlName, const std::string &namespaceName = "");
 
-    void createApiController(std::vector<std::string> &apiClasses);
-    void createApiController(const std::string &className);
+    void createHttpController(std::vector<std::string> &httpClasses);
+    void createHttpController(const std::string &className);
     void newSimpleControllerHeaderFile(std::ofstream &file, const std::string &ctlName, const std::string &namespaceName = "");
     void newSimpleControllerSourceFile(std::ofstream &file, const std::string &ctlName, const std::string &namespaceName = "");
     void newWebsockControllerHeaderFile(std::ofstream &file, const std::string &ctlName, const std::string &namespaceName = "");
     void newWebsockControllerSourceFile(std::ofstream &file, const std::string &ctlName, const std::string &namespaceName = "");
 
-    void newApiControllerHeaderFile(std::ofstream &file, const std::string &className);
-    void newApiControllerSourceFile(std::ofstream &file, const std::string &className, const std::string &filename);
+    void newHttpControllerHeaderFile(std::ofstream &file, const std::string &className);
+    void newHttpControllerSourceFile(std::ofstream &file, const std::string &className, const std::string &filename);
 };
 } // namespace drogon_ctl

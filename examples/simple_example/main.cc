@@ -59,7 +59,7 @@ namespace api
 {
 namespace v1
 {
-class Test : public HttpApiController<Test>
+class Test : public HttpController<Test>
 {
   public:
     METHOD_LIST_BEGIN
@@ -109,10 +109,10 @@ int main()
     app().setThreadNum(4);
     //    trantor::Logger::setLogLevel(trantor::Logger::TRACE);
     //class function
-    app().registerHttpApiMethod("/api/v1/handle1/{1}/{2}/?p3={3}&p4={4}", &A::handle);
-    app().registerHttpApiMethod("/api/v1/handle11/{1}/{2}/?p3={3}&p4={4}", &A::staticHandle);
+    app().registerHttpMethod("/api/v1/handle1/{1}/{2}/?p3={3}&p4={4}", &A::handle);
+    app().registerHttpMethod("/api/v1/handle11/{1}/{2}/?p3={3}&p4={4}", &A::staticHandle);
     //lambda example
-    app().registerHttpApiMethod("/api/v1/handle2/{1}/{2}", [](const HttpRequestPtr &req, const std::function<void(const HttpResponsePtr &)> &callback, int a, float b) {
+    app().registerHttpMethod("/api/v1/handle2/{1}/{2}", [](const HttpRequestPtr &req, const std::function<void(const HttpResponsePtr &)> &callback, int a, float b) {
         LOG_DEBUG << "int a=" << a;
         LOG_DEBUG << "float b=" << b;
         HttpViewData data;
@@ -127,13 +127,13 @@ int main()
 
     B b;
     //functor example
-    app().registerHttpApiMethod("/api/v1/handle3/{1}/{2}", b);
+    app().registerHttpMethod("/api/v1/handle3/{1}/{2}", b);
 
     A tmp;
     std::function<void(const HttpRequestPtr &, const std::function<void(const HttpResponsePtr &)> &, int, const std::string &, const std::string &, int)>
         func = std::bind(&A::handle, &tmp, _1, _2, _3, _4, _5, _6);
     //api example for std::function
-    app().registerHttpApiMethod("/api/v1/handle4/{4}/{3}/{1}", func);
+    app().registerHttpMethod("/api/v1/handle4/{4}/{3}/{1}", func);
 
     app().setDocumentRoot("./");
     app().enableSession(60);
