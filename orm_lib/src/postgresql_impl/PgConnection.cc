@@ -1,4 +1,4 @@
-#include "DbConnection.h"
+#include "PgConnection.h"
 #include "PostgreSQLResultImpl.h"
 #include <drogon/orm/Exception.h>
 #include <stdio.h>
@@ -17,7 +17,7 @@ Result makeResult(const std::shared_ptr<PGresult> &r = std::shared_ptr<PGresult>
 } // namespace orm
 } // namespace drogon
 
-DbConnection::DbConnection(trantor::EventLoop *loop, const std::string &connInfo)
+PgConnection::PgConnection(trantor::EventLoop *loop, const std::string &connInfo)
     : _connPtr(std::shared_ptr<PGconn>(PQconnectStart(connInfo.c_str()), [](PGconn *conn) {
           PQfinish(conn);
       })),
@@ -57,11 +57,11 @@ DbConnection::DbConnection(trantor::EventLoop *loop, const std::string &connInfo
     _channel.enableReading();
     _channel.enableWriting();
 }
-int DbConnection::sock()
+int PgConnection::sock()
 {
     return PQsocket(_connPtr.get());
 }
-void DbConnection::handleClosed()
+void PgConnection::handleClosed()
 {
     std::cout << "handleClosed!" << this << std::endl;
     _loop->assertInLoopThread();
@@ -71,7 +71,7 @@ void DbConnection::handleClosed()
     auto thisPtr = shared_from_this();
     _closeCb(thisPtr);
 }
-void DbConnection::pgPoll()
+void PgConnection::pgPoll()
 {
     _loop->assertInLoopThread();
     auto connStatus = PQconnectPoll(_connPtr.get());
@@ -121,7 +121,7 @@ void DbConnection::pgPoll()
         break;
     }
 }
-void DbConnection::execSql(const std::string &sql,
+void PgConnection::execSql(const std::string &sql,
                            size_t paraNum,
                            const std::vector<const char *> &parameters,
                            const std::vector<int> &length,
@@ -155,14 +155,32 @@ void DbConnection::execSql(const std::string &sql,
             0) == 0)
     {
         fprintf(stderr, "send query error:%s\n", PQerrorMessage(_connPtr.get()));
-        //FIXME call exception callback
+        // connection broken! will be handled in handleRead()
+        // _loop->queueInLoop([=]() {
+        //     try
+        //     {
+        //         throw InternalError(PQerrorMessage(_connPtr.get()));
+        //     }
+        //     catch (...)
+        //     {
+        //         _isWorking = false;
+        //         _exceptCb(std::current_exception());
+        //         _exceptCb = decltype(_exceptCb)();
+        //         if (_idleCb)
+        //         {
+        //             _idleCb();
+        //             _idleCb = decltype(_idleCb)();
+        //         }
+        //     }
+        // });
+        // return;
     }
     auto thisPtr = shared_from_this();
     _loop->runInLoop([=]() {
         thisPtr->pgPoll();
     });
 }
-void DbConnection::handleRead()
+void PgConnection::handleRead()
 {
 
     std::shared_ptr<PGresult> res;
@@ -185,6 +203,11 @@ void DbConnection::handleRead()
                 _exceptCb = decltype(_exceptCb)();
             }
             _cb = decltype(_cb)();
+            if (_idleCb)
+            {
+                _idleCb();
+                _idleCb = decltype(_idleCb)();
+            }
         }
         handleClosed();
         return;
@@ -239,6 +262,10 @@ void DbConnection::handleRead()
     if (_isWorking)
     {
         _isWorking = false;
-        _idleCb();
+        if (_idleCb)
+        {
+            _idleCb();
+            _idleCb = decltype(_idleCb)();
+        }
     }
 }

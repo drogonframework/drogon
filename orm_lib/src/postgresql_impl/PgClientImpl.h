@@ -1,6 +1,6 @@
 #pragma once
 
-#include "DbConnection.h"
+#include "PgConnection.h"
 #include <drogon/orm/DbClient.h>
 #include <trantor/net/EventLoop.h>
 #include <memory>
@@ -30,6 +30,7 @@ class PgClientImpl : public DbClient
                          const ResultCallback &rcb,
                          const std::function<void(const std::exception_ptr &)> &exceptCallback) override;
     virtual std::string replaceSqlPlaceHolder(const std::string &sqlStr, const std::string &holderStr) const override;
+    virtual std::shared_ptr<Transaction> newTransaction() override;
 
   private:
     void ioLoop();
@@ -42,7 +43,7 @@ class PgClientImpl : public DbClient
         ConnectStatus_Bad
     };
 
-    void execSql(const DbConnectionPtr &conn, const std::string &sql,
+    void execSql(const PgConnectionPtr &conn, const std::string &sql,
                  size_t paraNum,
                  const std::vector<const char *> &parameters,
                  const std::vector<int> &length,
@@ -50,13 +51,14 @@ class PgClientImpl : public DbClient
                  const ResultCallback &rcb,
                  const std::function<void(const std::exception_ptr &)> &exceptCallback);
 
-    DbConnectionPtr newConnection(trantor::EventLoop *loop);
-    std::unordered_set<DbConnectionPtr> _connections;
-    std::unordered_set<DbConnectionPtr> _readyConnections;
-    std::unordered_set<DbConnectionPtr> _busyConnections;
+    PgConnectionPtr newConnection(trantor::EventLoop *loop);
+    std::unordered_set<PgConnectionPtr> _connections;
+    std::unordered_set<PgConnectionPtr> _readyConnections;
+    std::unordered_set<PgConnectionPtr> _busyConnections;
     std::string _connInfo;
     std::thread _loopThread;
     std::mutex _connectionsMutex;
+    std::condition_variable _condConnectionReady;
     size_t _connectNum;
     bool _stop = false;
 

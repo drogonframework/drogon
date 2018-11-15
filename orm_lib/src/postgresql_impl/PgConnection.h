@@ -23,19 +23,19 @@ enum ConnectStatus
     ConnectStatus_Bad
 };
 
-class DbConnection;
-typedef std::shared_ptr<DbConnection> DbConnectionPtr;
-class DbConnection : public trantor::NonCopyable, public std::enable_shared_from_this<DbConnection>
+class PgConnection;
+typedef std::shared_ptr<PgConnection> PgConnectionPtr;
+class PgConnection : public trantor::NonCopyable, public std::enable_shared_from_this<PgConnection>
 {
   public:
-    typedef std::function<void(const DbConnectionPtr &)> DbConnectionCallback;
-    DbConnection(trantor::EventLoop *loop, const std::string &connInfo);
+    typedef std::function<void(const PgConnectionPtr &)> PgConnectionCallback;
+    PgConnection(trantor::EventLoop *loop, const std::string &connInfo);
 
-    void setOkCallback(const DbConnectionCallback &cb)
+    void setOkCallback(const PgConnectionCallback &cb)
     {
         _okCb = cb;
     }
-    void setCloseCallback(const DbConnectionCallback &cb)
+    void setCloseCallback(const PgConnectionCallback &cb)
     {
         _closeCb = cb;
     }
@@ -47,11 +47,12 @@ class DbConnection : public trantor::NonCopyable, public std::enable_shared_from
                  const ResultCallback &rcb,
                  const std::function<void(const std::exception_ptr &)> &exceptCallback,
                  const std::function<void()> &idleCb);
-    ~DbConnection()
+    ~PgConnection()
     {
-        //std::cout<<"unconstruct DbConn"<<this<<std::endl;
+        LOG_TRACE<<"Destruct DbConn"<<this;
     }
     int sock();
+    trantor::EventLoop *loop() { return _loop; }
 
   private:
     std::shared_ptr<PGconn> _connPtr;
@@ -60,8 +61,8 @@ class DbConnection : public trantor::NonCopyable, public std::enable_shared_from
     QueryCallback _cb;
     std::function<void()> _idleCb;
     ConnectStatus _status = ConnectStatus_None;
-    DbConnectionCallback _closeCb = [](const DbConnectionPtr &) {};
-    DbConnectionCallback _okCb = [](const DbConnectionPtr &) {};
+    PgConnectionCallback _closeCb = [](const PgConnectionPtr &) {};
+    PgConnectionCallback _okCb = [](const PgConnectionPtr &) {};
     std::function<void(const std::exception_ptr &)> _exceptCb;
     bool _isWorking = false;
     std::string _sql = "";

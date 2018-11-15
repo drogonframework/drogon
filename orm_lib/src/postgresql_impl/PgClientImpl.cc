@@ -2,7 +2,8 @@
 // Created by antao on 2018/6/22.
 //
 #include "PgClientImpl.h"
-#include "DbConnection.h"
+#include "PgTransactionImpl.h"
+#include "PgConnection.h"
 #include <trantor/net/EventLoop.h>
 #include <trantor/net/inner/Channel.h>
 #include <drogon/orm/Exception.h>
@@ -20,11 +21,11 @@
 
 using namespace drogon::orm;
 
-DbConnectionPtr PgClientImpl::newConnection(trantor::EventLoop *loop)
+PgConnectionPtr PgClientImpl::newConnection(trantor::EventLoop *loop)
 {
     //std::cout<<"newConn"<<std::endl;
-    auto connPtr = std::make_shared<DbConnection>(loop, _connInfo);
-    connPtr->setCloseCallback([=](const DbConnectionPtr &closeConnPtr) {
+    auto connPtr = std::make_shared<PgConnection>(loop, _connInfo);
+    connPtr->setCloseCallback([=](const PgConnectionPtr &closeConnPtr) {
         //std::cout<<"Conn closed!"<<closeConnPtr<<std::endl;
         sleep(1);
         std::lock_guard<std::mutex> guard(_connectionsMutex);
@@ -35,10 +36,14 @@ DbConnectionPtr PgClientImpl::newConnection(trantor::EventLoop *loop)
         _connections.insert(newConnection(loop));
         //std::cout<<"Conn closed!end"<<std::endl;
     });
-    connPtr->setOkCallback([=](const DbConnectionPtr &okConnPtr) {
+    connPtr->setOkCallback([=](const PgConnectionPtr &okConnPtr) {
         LOG_TRACE << "postgreSQL connected!";
-        std::lock_guard<std::mutex> guard(_connectionsMutex);
-        _readyConnections.insert(okConnPtr);
+        {
+            std::lock_guard<std::mutex> guard(_connectionsMutex);
+            _readyConnections.insert(okConnPtr);
+        }
+
+        _condConnectionReady.notify_one();
     });
     //std::cout<<"newConn end"<<connPtr<<std::endl;
     return connPtr;
@@ -71,14 +76,14 @@ PgClientImpl::~PgClientImpl()
         _loopThread.join();
 }
 
-void PgClientImpl::execSql(const DbConnectionPtr &conn,
+void PgClientImpl::execSql(const PgConnectionPtr &conn,
                            const std::string &sql,
                            size_t paraNum,
                            const std::vector<const char *> &parameters,
                            const std::vector<int> &length,
                            const std::vector<int> &format,
                            const ResultCallback &cb,
-                           const std::function<void(const std::exception_ptr &)> &exceptCallback) 
+                           const std::function<void(const std::exception_ptr &)> &exceptCallback)
 {
     if (!conn)
     {
@@ -92,7 +97,7 @@ void PgClientImpl::execSql(const DbConnectionPtr &conn,
         }
         return;
     }
-    std::weak_ptr<DbConnection> weakConn = conn;
+    std::weak_ptr<PgConnection> weakConn = conn;
     conn->execSql(sql, paraNum, parameters, length, format,
                   cb, exceptCallback,
                   [=]() -> void {
@@ -120,10 +125,12 @@ void PgClientImpl::execSql(const DbConnectionPtr &conn,
                                   return;
                               }
                           }
-
-                          std::lock_guard<std::mutex> guard(_connectionsMutex);
-                          _busyConnections.erase(connPtr);
-                          _readyConnections.insert(connPtr);
+                          {
+                              std::lock_guard<std::mutex> guard(_connectionsMutex);
+                              _busyConnections.erase(connPtr);
+                              _readyConnections.insert(connPtr);
+                          }
+                          _condConnectionReady.notify_one();
                       }
                   });
 }
@@ -139,7 +146,7 @@ void PgClientImpl::execSql(const std::string &sql,
     assert(paraNum == length.size());
     assert(paraNum == format.size());
     assert(cb);
-    DbConnectionPtr conn;
+    PgConnectionPtr conn;
     {
         std::lock_guard<std::mutex> guard(_connectionsMutex);
 
@@ -229,4 +236,50 @@ std::string PgClientImpl::replaceSqlPlaceHolder(const std::string &sqlStr, const
         ret << phCount++;
         startPos = pos + holderStr.length();
     } while (1);
+}
+
+std::shared_ptr<Transaction> PgClientImpl::newTransaction()
+{
+    PgConnectionPtr conn;
+    {
+        std::unique_lock<std::mutex> lock(_connectionsMutex);
+
+        _condConnectionReady.wait(lock, [this]() {
+            return _readyConnections.size() > 0;
+        });
+
+        auto iter = _readyConnections.begin();
+        _busyConnections.insert(*iter);
+        conn = *iter;
+        _readyConnections.erase(iter);
+    }
+    auto trans = std::shared_ptr<PgTransactionImpl>(new PgTransactionImpl(conn, [=]() {
+        {
+            std::lock_guard<std::mutex> guard(_bufferMutex);
+            if (_sqlCmdBuffer.size() > 0)
+            {
+                auto cmd = _sqlCmdBuffer.front();
+                _sqlCmdBuffer.pop_front();
+                _loopPtr->queueInLoop([=]() {
+                    std::vector<const char *> paras;
+                    std::vector<int> lens;
+                    for (auto &p : cmd._parameters)
+                    {
+                        paras.push_back(p.c_str());
+                        lens.push_back(p.length());
+                    }
+                    execSql(conn, cmd._sql, cmd._paraNum, paras, lens, cmd._format, cmd._cb, cmd._exceptCb);
+                });
+
+                return;
+            }
+        }
+        {
+            std::lock_guard<std::mutex> lock(_connectionsMutex);
+            _readyConnections.insert(conn);
+        }
+        _condConnectionReady.notify_one();
+    }));
+    trans->doBegin();
+    return trans;
 }
