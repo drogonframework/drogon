@@ -35,7 +35,27 @@ int main()
     LOG_DEBUG << "start!";
     {
         auto trans = client->newTransaction();
-        //trans->rollback();
+        *trans << "delete from users where user_uuid=201" >>
+            [](const Result &r) {
+                std::cout << "delete " << r.affectedRows() << "user!!!!!" << std::endl;
+            } >>
+            [](const DrogonDbException &e) {
+                std::cout << e.base().what() << std::endl;
+            };
+        *trans << "dlelf from users" >>
+            [](const Result &r) {
+                std::cout << "delete " << r.affectedRows() << "user!!!!!" << std::endl;
+            } >>
+            [](const DrogonDbException &e) {
+                std::cout << e.base().what() << std::endl;
+            };
+        *trans << "dlelf111 from users" >>
+            [](const Result &r) {
+                std::cout << "delete " << r.affectedRows() << "user!!!!!" << std::endl;
+            } >>
+            [](const DrogonDbException &e) {
+                std::cout << e.base().what() << std::endl;
+            };
     }
     Mapper<User> mapper(client);
     auto U = mapper.findByPrimaryKey(2);

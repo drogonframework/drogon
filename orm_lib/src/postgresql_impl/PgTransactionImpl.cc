@@ -24,6 +24,7 @@ PgTransactionImpl::PgTransactionImpl(const PgConnectionPtr &connPtr,
 }
 PgTransactionImpl::~PgTransactionImpl()
 {
+    assert(!_isWorking);
     if (!_isCommitedOrRolledback)
     {
         auto cb = _usedUpCallback;
@@ -72,8 +73,9 @@ void PgTransactionImpl::execSql(const std::string &sql,
                                                  format,
                                                  rcb,
                                                  [exceptCallback, thisPtr](const std::exception_ptr &ePtr) {
-                                                     exceptCallback(ePtr);
                                                      thisPtr->rollback();
+                                                     if(exceptCallback)
+                                                        exceptCallback(ePtr);
                                                  },
                                                  [thisPtr]() {
                                                      thisPtr->execNewTask();
@@ -115,7 +117,7 @@ void PgTransactionImpl::rollback()
 {
     auto thisPtr = shared_from_this();
 
-    _loop->queueInLoop([thisPtr]() {
+    _loop->runInLoop([thisPtr]() {
         if (thisPtr->_isCommitedOrRolledback)
             return;
         auto clearupCb = [thisPtr]() {
@@ -139,7 +141,8 @@ void PgTransactionImpl::rollback()
             cmd._exceptCb = [clearupCb](const std::exception_ptr &ePtr) {
                 clearupCb();
             };
-            thisPtr->_sqlCmdBuffer.push_back(std::move(cmd));
+            //Rollback cmd should be executed firstly, so we push it in front of the list
+            thisPtr->_sqlCmdBuffer.push_front(std::move(cmd));
             return;
         }
         thisPtr->_isWorking = true;
