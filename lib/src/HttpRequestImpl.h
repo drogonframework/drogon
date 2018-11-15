@@ -44,8 +44,7 @@ namespace drogon
 class HttpRequestImpl : public HttpRequest
 {
   public:
-    friend class HttpContext;
-
+    friend class HttpServerContext;
     HttpRequestImpl()
         : _method(Invalid),
           _version(kUnknown),

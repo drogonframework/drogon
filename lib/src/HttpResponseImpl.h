@@ -40,7 +40,7 @@ namespace drogon
 {
 class HttpResponseImpl : public HttpResponse
 {
-    friend class HttpContext;
+    friend class HttpClientContext;
 
   public:
     explicit HttpResponseImpl()

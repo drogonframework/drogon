@@ -14,11 +14,11 @@ int main()
 
         for (int i = 0; i < 10; i++)
         {
-            client->sendRequest(req, [&](ReqResult result, const HttpResponse &response) {
+            client->sendRequest(req, [&](ReqResult result, const HttpResponsePtr &response) {
                 std::cout << "receive response!" << std::endl;
                 //auto headers=response.
                 count++;
-                std::cout << response.getBody() << std::endl;
+                std::cout << response->getBody() << std::endl;
                 std::cout << "count=" << count << std::endl;
             });
         }
