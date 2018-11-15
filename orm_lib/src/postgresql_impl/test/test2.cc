@@ -36,20 +36,15 @@ int main()
     {
         auto trans = client->newTransaction();
         *trans << "delete from users where user_uuid=201" >>
-            [](const Result &r) {
+            [trans](const Result &r) {
                 std::cout << "delete " << r.affectedRows() << "user!!!!!" << std::endl;
+                trans->rollback();
             } >>
             [](const DrogonDbException &e) {
                 std::cout << e.base().what() << std::endl;
             };
-        *trans << "dlelf from users" >>
-            [](const Result &r) {
-                std::cout << "delete " << r.affectedRows() << "user!!!!!" << std::endl;
-            } >>
-            [](const DrogonDbException &e) {
-                std::cout << e.base().what() << std::endl;
-            };
-        *trans << "dlelf111 from users" >>
+        
+        *trans << "delete from users where user_uuid=201" >>
             [](const Result &r) {
                 std::cout << "delete " << r.affectedRows() << "user!!!!!" << std::endl;
             } >>
@@ -57,6 +52,7 @@ int main()
                 std::cout << e.base().what() << std::endl;
             };
     }
+
     Mapper<User> mapper(client);
     auto U = mapper.findByPrimaryKey(2);
     std::cout << "id=" << U._userId << std::endl;

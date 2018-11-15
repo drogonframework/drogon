@@ -24,6 +24,7 @@ PgTransactionImpl::PgTransactionImpl(const PgConnectionPtr &connPtr,
 }
 PgTransactionImpl::~PgTransactionImpl()
 {
+    LOG_TRACE << "Destruct";
     assert(!_isWorking);
     if (!_isCommitedOrRolledback)
     {
