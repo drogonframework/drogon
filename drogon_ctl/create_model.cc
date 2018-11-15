@@ -135,7 +135,8 @@ void create_model::createModelClassFromPG(const std::string &path, const DbClien
                 }
                 else
                 {
-                    //FIXME add more type such as hstore,date...
+                    info._colType = "std::string";
+                    //FIXME add more type such as hstore,blob...
                 }
                 auto defaultVal = row["column_default"].as<std::string>();
 

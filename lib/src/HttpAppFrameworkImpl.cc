@@ -360,7 +360,7 @@ void HttpAppFrameworkImpl::run()
                 break;
             }
             waitpid(child_pid, &child_status, 0);
-            sleep(5);
+            sleep(1);
             LOG_INFO << "start new process";
         }
     }
