@@ -20,6 +20,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <thread>
+#include <mutex>
 #include <cstdlib>
 
 namespace drogon
