@@ -3,20 +3,20 @@
 #building drogon
 function build_drogon() {
 
-    #update the submodule and initialize
+    #Update the submodule and initialize
     git submodule update --init
     
-    #saving current directory
+    #Saving current directory
     current_dir="${PWD}"
 
-    #the folder we will build
+    #The folder we will build
     build_dir='./build'
     if [ -d $build_dir ]; then
         echo "Deleted folder: ${build_dir}"
         rm -rf $build_dir
     fi
 
-    #creating building folder
+    #Creating building folder
     echo "Created building folder: ${build_dir}"
     mkdir $build_dir
 
@@ -26,24 +26,24 @@ function build_drogon() {
     echo "Start building drogon ..."
     cmake ..
     
-    #errors exit
+    #If errors then exit
     if [ "$?" != "0" ]; then
         exit
     fi
     
     make
     
-    #errors exit
+    #If errors then exit
     if [ "$?" != "0" ]; then
         exit
     fi
 
-    echo "Installing header files ..."
+    echo "Installing ..."
     sudo make install
 
-    #reback current directory
+    #Reback current directory
     cd $current_dir
-    #ok!
+    #Ok!
 }
 
 build_drogon
