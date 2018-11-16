@@ -1,5 +1,6 @@
 #include "PgConnection.h"
 #include "PostgreSQLResultImpl.h"
+#include <trantor/utils/Logger.h>
 #include <drogon/orm/Exception.h>
 #include <stdio.h>
 
@@ -23,9 +24,7 @@ PgConnection::PgConnection(trantor::EventLoop *loop, const std::string &connInfo
       })),
       _loop(loop), _channel(_loop, PQsocket(_connPtr.get()))
 {
-    //std::cout<<"sock="<<sock()<<std::endl;
     _channel.setReadCallback([=]() {
-        //std::cout<<"reading callback"<<std::endl;
         if (_status != ConnectStatus_Ok)
         {
             pgPoll();
@@ -36,7 +35,6 @@ PgConnection::PgConnection(trantor::EventLoop *loop, const std::string &connInfo
         }
     });
     _channel.setWriteCallback([=]() {
-        //std::cout<<"writing callback"<<std::endl;
         if (_status != ConnectStatus_Ok)
         {
             pgPoll();
@@ -63,7 +61,7 @@ int PgConnection::sock()
 }
 void PgConnection::handleClosed()
 {
-    std::cout << "handleClosed!" << this << std::endl;
+    _status = ConnectStatus_Bad;
     _loop->assertInLoopThread();
     _channel.disableAll();
     _channel.remove();
@@ -79,20 +77,7 @@ void PgConnection::pgPoll()
     switch (connStatus)
     {
     case PGRES_POLLING_FAILED:
-        /*            fprintf(stderr, "!!!Pg connection failed: %s",
-                    PQerrorMessage(_connPtr.get()));
-            if(_isWorking){
-                _isWorking=false;
-                auto r=makeResult(SqlStatus::NetworkError, nullptr,_sql);
-                r.setError(PQerrorMessage(_connPtr.get()));
-                assert(_cb);
-                _cb(r);
-            }
-            handleClosed();
-*/
-        fprintf(stderr, "!!!Pg connection failed: %s",
-                PQerrorMessage(_connPtr.get()));
-
+        LOG_ERROR << "!!!Pg connection failed: " << PQerrorMessage(_connPtr.get());
         break;
     case PGRES_POLLING_WRITING:
         _channel.enableWriting();
@@ -115,7 +100,6 @@ void PgConnection::pgPoll()
         break;
     case PGRES_POLLING_ACTIVE:
         //unused!
-        printf("active\n");
         break;
     default:
         break;
@@ -154,7 +138,7 @@ void PgConnection::execSql(const std::string &sql,
             format.data(),
             0) == 0)
     {
-        fprintf(stderr, "send query error:%s\n", PQerrorMessage(_connPtr.get()));
+        LOG_ERROR << "send query error: " << PQerrorMessage(_connPtr.get());
         // connection broken! will be handled in handleRead()
         // _loop->queueInLoop([=]() {
         //     try
@@ -187,8 +171,7 @@ void PgConnection::handleRead()
 
     if (!PQconsumeInput(_connPtr.get()))
     {
-        fprintf(stderr, "Failed to consume pg input: %s\n",
-                PQerrorMessage(_connPtr.get()));
+        LOG_ERROR << "Failed to consume pg input:" << PQerrorMessage(_connPtr.get());
         if (_isWorking)
         {
             _isWorking = false;
@@ -216,7 +199,6 @@ void PgConnection::handleRead()
     if (PQisBusy(_connPtr.get()))
     {
         //need read more data from socket;
-        printf("need read more data from socket!\n");
         return;
     }
 
@@ -229,7 +211,7 @@ void PgConnection::handleRead()
         auto type = PQresultStatus(res.get());
         if (type == PGRES_BAD_RESPONSE || type == PGRES_FATAL_ERROR)
         {
-            fprintf(stderr, "Result error: %s", PQerrorMessage(_connPtr.get()));
+            LOG_ERROR << "Result error: %s" << PQerrorMessage(_connPtr.get());
             if (_isWorking)
             {
                 {

@@ -53,6 +53,7 @@ class PgConnection : public trantor::NonCopyable, public std::enable_shared_from
     }
     int sock();
     trantor::EventLoop *loop() { return _loop; }
+    ConnectStatus status() const { return _status; }
 
   private:
     std::shared_ptr<PGconn> _connPtr;

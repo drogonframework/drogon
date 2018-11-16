@@ -35,14 +35,6 @@ class PgClientImpl : public DbClient
   private:
     void ioLoop();
     std::unique_ptr<trantor::EventLoop> _loopPtr;
-    enum ConnectStatus
-    {
-        ConnectStatus_None = 0,
-        ConnectStatus_Connecting,
-        ConnectStatus_Ok,
-        ConnectStatus_Bad
-    };
-
     void execSql(const PgConnectionPtr &conn, const std::string &sql,
                  size_t paraNum,
                  const std::vector<const char *> &parameters,
@@ -59,6 +51,8 @@ class PgClientImpl : public DbClient
     std::thread _loopThread;
     std::mutex _connectionsMutex;
     std::condition_variable _condConnectionReady;
+    size_t _transWaitNum = 0;
+
     size_t _connectNum;
     bool _stop = false;
 
@@ -73,6 +67,8 @@ class PgClientImpl : public DbClient
     };
     std::list<SqlCmd> _sqlCmdBuffer;
     std::mutex _bufferMutex;
+
+    void handleNewTask(const PgConnectionPtr &conn);
 };
 } // namespace orm
 

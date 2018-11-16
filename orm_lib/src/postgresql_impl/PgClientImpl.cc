@@ -38,12 +38,7 @@ PgConnectionPtr PgClientImpl::newConnection(trantor::EventLoop *loop)
     });
     connPtr->setOkCallback([=](const PgConnectionPtr &okConnPtr) {
         LOG_TRACE << "postgreSQL connected!";
-        {
-            std::lock_guard<std::mutex> guard(_connectionsMutex);
-            _readyConnections.insert(okConnPtr);
-        }
-
-        _condConnectionReady.notify_one();
+        handleNewTask(okConnPtr);
     });
     //std::cout<<"newConn end"<<connPtr<<std::endl;
     return connPtr;
@@ -105,32 +100,7 @@ void PgClientImpl::execSql(const PgConnectionPtr &conn,
                           auto connPtr = weakConn.lock();
                           if (!connPtr)
                               return;
-                          {
-                              std::lock_guard<std::mutex> guard(_bufferMutex);
-                              if (_sqlCmdBuffer.size() > 0)
-                              {
-                                  auto cmd = _sqlCmdBuffer.front();
-                                  _sqlCmdBuffer.pop_front();
-                                  _loopPtr->queueInLoop([=]() {
-                                      std::vector<const char *> paras;
-                                      std::vector<int> lens;
-                                      for (auto &p : cmd._parameters)
-                                      {
-                                          paras.push_back(p.c_str());
-                                          lens.push_back(p.length());
-                                      }
-                                      execSql(connPtr, cmd._sql, cmd._paraNum, paras, lens, cmd._format, cmd._cb, cmd._exceptCb);
-                                  });
-
-                                  return;
-                              }
-                          }
-                          {
-                              std::lock_guard<std::mutex> guard(_connectionsMutex);
-                              _busyConnections.erase(connPtr);
-                              _readyConnections.insert(connPtr);
-                          }
-                          _condConnectionReady.notify_one();
+                          handleNewTask(connPtr);
                       }
                   });
 }
@@ -243,21 +213,55 @@ std::shared_ptr<Transaction> PgClientImpl::newTransaction()
     PgConnectionPtr conn;
     {
         std::unique_lock<std::mutex> lock(_connectionsMutex);
-
+        _transWaitNum++;
         _condConnectionReady.wait(lock, [this]() {
             return _readyConnections.size() > 0;
         });
-
+        _transWaitNum--;
         auto iter = _readyConnections.begin();
         _busyConnections.insert(*iter);
         conn = *iter;
         _readyConnections.erase(iter);
     }
     auto trans = std::shared_ptr<PgTransactionImpl>(new PgTransactionImpl(conn, [=]() {
+        if (conn->status() == ConnectStatus_Bad)
+        {
+            return;
+        }
+        {
+            std::lock_guard<std::mutex> guard(_connectionsMutex);
+            
+            if (_connections.find(conn) == _connections.end() &&
+                _busyConnections.find(conn) == _busyConnections.find(conn))
+            {
+                //connection is broken and removed
+                return;
+            }
+        }
+        handleNewTask(conn);
+    }));
+    trans->doBegin();
+    return trans;
+}
+
+void PgClientImpl::handleNewTask(const PgConnectionPtr &connPtr)
+{
+    std::lock_guard<std::mutex> guard(_connectionsMutex);
+    if (_transWaitNum > 0)
+    {
+        //Prioritize the needs of the transaction
+        _busyConnections.erase(connPtr);
+        _readyConnections.insert(connPtr);
+        _condConnectionReady.notify_one();
+    }
+    else
+    {
+        //Then check if there are some sql queries in the buffer
         {
             std::lock_guard<std::mutex> guard(_bufferMutex);
             if (_sqlCmdBuffer.size() > 0)
             {
+                _busyConnections.insert(connPtr); //For new connections, this sentence is necessary
                 auto cmd = _sqlCmdBuffer.front();
                 _sqlCmdBuffer.pop_front();
                 _loopPtr->queueInLoop([=]() {
@@ -268,18 +272,14 @@ std::shared_ptr<Transaction> PgClientImpl::newTransaction()
                         paras.push_back(p.c_str());
                         lens.push_back(p.length());
                     }
-                    execSql(conn, cmd._sql, cmd._paraNum, paras, lens, cmd._format, cmd._cb, cmd._exceptCb);
+                    execSql(connPtr, cmd._sql, cmd._paraNum, paras, lens, cmd._format, cmd._cb, cmd._exceptCb);
                 });
 
                 return;
             }
         }
-        {
-            std::lock_guard<std::mutex> lock(_connectionsMutex);
-            _readyConnections.insert(conn);
-        }
-        _condConnectionReady.notify_one();
-    }));
-    trans->doBegin();
-    return trans;
+        //Idle connection
+        _busyConnections.erase(connPtr);
+        _readyConnections.insert(connPtr);
+    }
 }
