@@ -13,12 +13,12 @@ function build_drogon() {
     build_dir='./build'
     if [ -d $build_dir ]; then
         echo "Deleted folder: ${build_dir}"
-        rm -rf build
+        rm -rf $build_dir
     fi
 
     #creating building folder
     echo "Created building folder: ${build_dir}"
-    mkdir build
+    mkdir $build_dir
 
     echo "Entering folder: ${build_dir}"
     cd $build_dir
