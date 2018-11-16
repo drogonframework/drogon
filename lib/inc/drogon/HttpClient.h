@@ -22,11 +22,11 @@ namespace drogon
 {
 enum class ReqResult
 {
-  Ok,
-  BadResponse,
-  NetworkFailure,
-  BadServerAddress,
-  Timeout
+    Ok,
+    BadResponse,
+    NetworkFailure,
+    BadServerAddress,
+    Timeout
 };
 typedef std::function<void(ReqResult, const HttpResponsePtr &response)> HttpReqCallback;
 class HttpClient;
@@ -42,35 +42,37 @@ typedef std::shared_ptr<HttpClient> HttpClientPtr;
  */
 class HttpClient : public trantor::NonCopyable
 {
-public:
-  /// Send request to server
-  /**
-   * The response from http server will be got in
-   * the callback function
-   */
-  virtual void sendRequest(const HttpRequestPtr &req, const HttpReqCallback &callback) = 0;
+  public:
+    /// Send request to server
+    /**
+     * The response from the http server will be obtained 
+     * in the callback function
+     */
+    virtual void sendRequest(const HttpRequestPtr &req, const HttpReqCallback &callback) = 0;
 
-  virtual ~HttpClient() {}
+    virtual ~HttpClient() {}
 
-  /// Use ip and port to connect to server
-  /** If useSSL is set to true, the client will 
-   * connect to the server using https
-   */
-  static HttpClientPtr newHttpClient(const std::string &ip, uint16_t port, bool useSSL = false);
+    /// Use ip and port to connect to server
+    /** 
+     * If useSSL is set to true, the client will 
+     * connect to the server using https
+     */
+    static HttpClientPtr newHttpClient(const std::string &ip, uint16_t port, bool useSSL = false);
 
-  /// Use hostString to connect to server
-  /** Examples for hostString:
-   *  https://www.baidu.com
-   *  http://www.baidu.com
-   *  https://127.0.0.1:8080/
-   *  http://127.0.0.1
-   *  Note:don't add path and parameters in hostString, the request path 
-   *  and parameters should be set in 
-   *  HttpRequestPtr 
-   */
-  static HttpClientPtr newHttpClient(const std::string &hostString);
+    /// Use hostString to connect to server
+    /** 
+     *  Examples for hostString:
+     *  https://www.baidu.com
+     *  http://www.baidu.com
+     *  https://127.0.0.1:8080/
+     *  http://127.0.0.1
+     *  Note:don't add path and parameters in hostString, the request path 
+     *  and parameters should be set in 
+     *  HttpRequestPtr 
+     */
+    static HttpClientPtr newHttpClient(const std::string &hostString);
 
-protected:
-  HttpClient() = default;
+  protected:
+    HttpClient() = default;
 };
 } // namespace drogon
