@@ -712,7 +712,7 @@ inline void Mapper<T>::update(const T &obj,
     std::string sql = "update ";
     sql += T::tableName;
     sql += " set ";
-    for (auto colName : T::updateColumns())
+    for (auto colName : obj.updateColumns())
     {
         sql += colName;
         sql += " = $?,";
@@ -738,7 +738,7 @@ inline std::future<size_t> Mapper<T>::updateFuture(const T &obj) noexcept
     std::string sql = "update ";
     sql += T::tableName;
     sql += " set ";
-    for (auto colName : T::updateColumns())
+    for (auto colName : obj.updateColumns())
     {
         sql += colName;
         sql += " = $?,";
