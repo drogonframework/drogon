@@ -85,6 +85,11 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     }
 
     trantor::EventLoop *loop();
+    virtual void quit() override
+    {
+        assert(_loop.isRunning());
+        _loop.quit();
+    }
 #if USE_POSTGRESQL
     virtual orm::DbClientPtr getDbClient(const std::string &name = "default") override;
     virtual void createDbClient(const std::string &dbType,
@@ -98,9 +103,9 @@ class HttpAppFrameworkImpl : public HttpAppFramework
 #endif
   private:
     virtual void registerHttpController(const std::string &pathPattern,
-                                           const HttpBinderBasePtr &binder,
-                                           const std::vector<HttpMethod> &validMethods = std::vector<HttpMethod>(),
-                                           const std::vector<std::string> &filters = std::vector<std::string>()) override;
+                                        const HttpBinderBasePtr &binder,
+                                        const std::vector<HttpMethod> &validMethods = std::vector<HttpMethod>(),
+                                        const std::vector<std::string> &filters = std::vector<std::string>()) override;
 
     std::vector<std::tuple<std::string, uint16_t, bool, std::string, std::string>> _listeners;
     void onAsyncRequest(const HttpRequestPtr &req, const std::function<void(const HttpResponsePtr &)> &callback);
@@ -112,9 +117,9 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     void onConnection(const TcpConnectionPtr &conn);
     void readSendFile(const std::string &filePath, const HttpRequestPtr &req, const HttpResponsePtr &resp);
     void addHttpPath(const std::string &path,
-                    const HttpBinderBasePtr &binder,
-                    const std::vector<HttpMethod> &validMethods,
-                    const std::vector<std::string> &filters);
+                     const HttpBinderBasePtr &binder,
+                     const std::vector<HttpMethod> &validMethods,
+                     const std::vector<std::string> &filters);
     void initRegex();
     //if uuid package found,we can use a uuid string as session id;
     //set _sessionTimeout=0 to make location session valid forever based on cookies;
