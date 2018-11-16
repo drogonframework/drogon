@@ -8,7 +8,7 @@
  *  Use of this source code is governed by a MIT license
  *  that can be found in the License file.
  *
- *  @section DESCRIPTION
+ *  Drogon
  *
  */
 
@@ -216,6 +216,30 @@ static void loadApp(const Json::Value &app)
     auto kickOffTimeout = app.get("idle_connection_timeout", 60).asUInt64();
     HttpAppFramework::instance().setIdleConnectionTimeout(kickOffTimeout);
 }
+static void loadDbClients(const Json::Value &dbClients)
+{
+#if USE_POSTGRESQL
+    if (!dbClients)
+        return;
+    for (auto &client : dbClients)
+    {
+        auto type = client.get("rdbms", "postgreSQL").asString();
+        auto host = client.get("host", "127.0.0.1").asString();
+        auto port = client.get("port", 5432).asUInt();
+        auto dbname = client.get("dbname", "").asString();
+        if (dbname == "")
+        {
+            std::cerr << "Please configure dbname in the configuration file" << std::endl;
+            exit(1);
+        }
+        auto user = client.get("user", "postgres").asString();
+        auto password = client.get("passwd", "").asString();
+        auto connNum = client.get("connection_number", 1).asUInt();
+        auto name = client.get("name", "default").asString();
+        HttpAppFramework::instance().createDbClient(type, host, (u_short)port, dbname, user, password, connNum, name);
+    }
+#endif
+}
 static void loadListeners(const Json::Value &listeners)
 {
     if (!listeners)
@@ -246,4 +270,5 @@ void ConfigLoader::load()
     loadApp(_configJsonRoot["app"]);
     loadSSL(_configJsonRoot["ssl"]);
     loadListeners(_configJsonRoot["listeners"]);
+    loadDbClients(_configJsonRoot["db_clients"]);
 }

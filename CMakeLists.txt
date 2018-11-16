@@ -19,7 +19,7 @@ else()
     set(CMAKE_CXX_STD_FLAGS c++17)
 endif()
 
-include_directories(${PROJECT_SOURCE_DIR}/trantor ${PROJECT_SOURCE_DIR}/lib/inc)
+include_directories(${PROJECT_SOURCE_DIR}/trantor ${PROJECT_SOURCE_DIR}/lib/inc ${PROJECT_SOURCE_DIR}/orm_lib/inc)
 
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake_modules/)
 #jsoncpp
@@ -61,6 +61,16 @@ link_libraries(${ZLIB_LIBRARIES})
 
 message(STATUS "zlib inc path:" ${ZLIB_INCLUDE_DIR})
 
+#find postgres
+find_package(PostgreSQL)
+if(PostgreSQL_FOUND)
+include_directories(${PostgreSQL_INCLUDE_DIR})
+message(STATUS "libpq inc path:" ${PostgreSQL_INCLUDE_DIR})
+link_libraries(${PostgreSQL_LIBRARIES})
+aux_source_directory(${PROJECT_SOURCE_DIR}/orm_lib/src/postgresql_impl DIR_SRCS)
+set(USE_ORM TRUE)
+endif()
+
 if(CMAKE_BUILD_TYPE STREQUAL "")
     set(CMAKE_BUILD_TYPE Release)
 endif()
@@ -80,6 +90,7 @@ add_subdirectory(examples)
 add_subdirectory(drogon_ctl)
 
 aux_source_directory(${PROJECT_SOURCE_DIR}/lib/src DIR_SRCS)
+aux_source_directory(${PROJECT_SOURCE_DIR}/orm_lib/src DIR_SRCS)
 
 ADD_LIBRARY(drogon ${DIR_SRCS})
 
@@ -90,6 +101,13 @@ SET(CONFIG_HEADER "${PROJECT_SOURCE_DIR}/config.h")
 file(WRITE "${CONFIG_HEADER}" "#pragma once\n")
 
 file(APPEND "${CONFIG_HEADER}" "#include <trantor/utils/config.h>\n")
+
+if(PostgreSQL_FOUND)
+file(APPEND "${CONFIG_HEADER}" "#define USE_POSTGRESQL 1")
+else()
+file(APPEND "${CONFIG_HEADER}" "#define USE_POSTGRESQL 0")
+endif()
+
 string(TOLOWER ${CMAKE_BUILD_TYPE} CMAKE_BUILD_TYPE_LOWER)
 if(CMAKE_BUILD_TYPE_LOWER STREQUAL release)
     file(APPEND "${CONFIG_HEADER}" "\n" "const char compileFlags[]=\"" ${CMAKE_CXX_FLAGS_RELEASE} "\";")
@@ -113,14 +131,22 @@ EXEC_PROGRAM(${PROJECT_SOURCE_DIR}/update_config.sh ARGS "${CONFIG_HEADER} ${PRO
 
 if (MAKETEST STREQUAL YES)
     ADD_SUBDIRECTORY(tests)
+    if(PostgreSQL_FOUND)
+        add_subdirectory(${PROJECT_SOURCE_DIR}/orm_lib/src/postgresql_impl/test)
+    endif()
 endif ()
 
 SET(CMAKE_INSTALL_PREFIX /usr/local)
 
+#Installation
 install(TARGETS drogon DESTINATION lib)
 
 file(GLOB drogon_headers "${CMAKE_CURRENT_SOURCE_DIR}/lib/inc/drogon/*.h")
 install(FILES ${drogon_headers} DESTINATION include/drogon)
+if(USE_ORM)
+file(GLOB orm_headers "${CMAKE_CURRENT_SOURCE_DIR}/orm_lib/inc/drogon/orm/*.h")
+install(FILES ${orm_headers} DESTINATION include/drogon/orm)
+endif()
 file(GLOB drogon_util_headers "${CMAKE_CURRENT_SOURCE_DIR}/lib/inc/drogon/utils/*.h")
 install(FILES ${drogon_util_headers}
         DESTINATION include/drogon/utils)

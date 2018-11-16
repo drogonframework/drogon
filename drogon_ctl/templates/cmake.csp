@@ -52,9 +52,18 @@ find_package(ZLIB REQUIRED)
 include_directories(${ZLIB_INCLUDE_DIR})
 link_libraries(${ZLIB_LIBRARIES})
 
+#find postgres
+find_package(PostgreSQL)
+if(PostgreSQL_FOUND)
+include_directories(${PostgreSQL_INCLUDE_DIR})
+link_libraries(${PostgreSQL_LIBRARIES})
+endif()
+
+
 AUX_SOURCE_DIRECTORY(./ SRC_DIR)
 AUX_SOURCE_DIRECTORY(controllers CTL_SRC)
 AUX_SOURCE_DIRECTORY(filters FILTER_SRC)
+AUX_SOURCE_DIRECTORY(models MODEL_SRC)
 
 include_directories(/usr/local/include)
 
@@ -71,4 +80,5 @@ foreach(cspFile ${SCP_LIST})
     set(VIEWSRC ${VIEWSRC} ${classname}.cc)
 endforeach()
 
-add_executable({{ProjectName}} ${SRC_DIR} ${CTL_SRC} ${FILTER_SRC} ${VIEWSRC})
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+add_executable({{ProjectName}} ${SRC_DIR} ${CTL_SRC} ${FILTER_SRC} ${VIEWSRC} ${MODEL_SRC})

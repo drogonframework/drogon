@@ -26,6 +26,27 @@
       "key": ""
     }
   ],*/
+  /*
+  "db_clients": [
+    {
+      //name:Name of the client,'default' by default
+      //"name":"",
+      //rdbms:server type, "postgreSQL" by default
+      "rdbms": "postgreSQL",
+      //host:server address,localhost by default
+      "host": "127.0.0.1",
+      //port:server port, 5432 by default
+      "port": 5432,
+      //dbname:Database name
+      "dbname": "test",
+      //user:'postgres' by default
+      "user": "",
+      //passwd:'' by default
+      "passwd": "",
+      //connection_number:1 by default
+      "connection_number": 1
+    }
+  ],*/
   "app": {
     //threads_num:num of threads,1 by default
     "threads_num": 16,
@@ -89,18 +110,23 @@
     "use_gzip": true,
     //static_files_cache_time:5 (seconds) by default,the time in which static file response is cached,
     //0 means cache forever,the negative value means no cache
-    "static_files_cache_time":5,
+    "static_files_cache_time": 5,
     //simple_controllers_map:Configuring mapping from path to simple controller
     "simple_controllers_map": [
       {
         "path": "/path/name",
         "controller": "controllerClassName",
-        "http_methods": ["get","post"],
-        "filters": ["FilterClassName"]
+        "http_methods": [
+          "get",
+          "post"
+        ],
+        "filters": [
+          "FilterClassName"
+        ]
       }
     ],
     //idle_connection_timeout: defaults to 60 seconds, the lifetime 
     //of the connection without read or write
-    "idle_connection_timeout":60
+    "idle_connection_timeout": 60
   }
 }

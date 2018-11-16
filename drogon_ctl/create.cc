@@ -8,7 +8,7 @@
  *  Use of this source code is governed by a MIT license
  *  that can be found in the License file.
  *
- *  @section DESCRIPTION
+ *  Drogon
  *
  */
 
@@ -32,7 +32,9 @@ std::string create::detail()
            "drogon_ctl create project <project_name> //"
            "create a project named project_name\n"
            "drogon_ctl create filter <class_name> //"
-           "create a filter named class_name\n";
+           "create a filter named class_name\n"
+           "drogon_ctl create model <model_path> //"
+           "create model classes in model_path\n";
 }
 
 void create::handleCommand(std::vector<std::string> &parameters)

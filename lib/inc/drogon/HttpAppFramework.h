@@ -8,13 +8,16 @@
  *  Use of this source code is governed by a MIT license
  *  that can be found in the License file.
  *
- *  @section DESCRIPTION
+ *  Drogon
  *
  */
 
 #pragma once
 
 #include <drogon/config.h>
+#if USE_POSTGRESQL
+#include <drogon/orm/DbClient.h>
+#endif
 #include <drogon/utils/Utilities.h>
 #include <drogon/HttpBinder.h>
 #include <trantor/utils/NonCopyable.h>
@@ -137,6 +140,17 @@ class HttpAppFramework : public trantor::NonCopyable
     virtual void setStaticFilesCacheTime(int cacheTime) = 0;
     virtual int staticFilesCacheTime() const = 0;
     virtual void setIdleConnectionTimeout(size_t timeout) = 0;
+#if USE_POSTGRESQL
+    virtual orm::DbClientPtr getDbClient(const std::string &name = "default") = 0;
+    virtual void createDbClient(const std::string &dbType,
+                                const std::string &host,
+                                const u_short port,
+                                const std::string &databaseName,
+                                const std::string &userName,
+                                const std::string &password,
+                                const size_t connectionNum = 1,
+                                const std::string &name = "default") = 0;
+#endif
 
   private:
     virtual void registerHttpController(const std::string &pathPattern,

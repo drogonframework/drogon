@@ -1,0 +1,272 @@
+/**
+ *
+ *  {{className}}.cc
+ *  created by drogon_ctl
+ *
+ */
+<%inc#include "create_model.h"
+using namespace drogon_ctl;
+%>
+
+#include "{{className}}.h"
+#include <string>
+<%c++
+    auto cols=@@.get<std::vector<ColumnInfo>>("columns");
+    auto className=@@.get<std::string>("className");
+%>
+
+using namespace drogon_model::{{dbName}};
+
+<%c++for(auto col:cols){
+%>
+const std::string {{className}}::Cols::<%c++$$<<col._colName;%> = "<%c++$$<<col._colName;%>";
+<%c++
+}%>
+<%c++if(@@.get<int>("hasPrimaryKey")<=1){%>
+const std::string {{className}}::primaryKeyName = "{{primaryKeyName}}";
+<%c++}else{%>
+const std::vector<std::string> {{className}}::primaryKeyName = {<%c++
+auto pkName=@@.get<std::vector<std::string>>("primaryKeyName");
+for(size_t i=0;i<pkName.size();i++)
+{
+    $$<<"\""<<pkName[i]<<"\"";
+    if(i<(pkName.size()-1))
+        $$<<",";
+}
+%>};
+<%c++}%>
+<%c++ if(@@.get<int>("hasPrimaryKey",0)>0){%>
+const bool {{className}}::hasPrimaryKey = true;
+<%c++ }else{%>
+const bool {{className}}::hasPrimaryKey = false;
+<%c++}%>
+const std::string {{className}}::tableName = "{{tableName}}";
+
+const std::vector<typename {{className}}::MetaData> {{className}}::_metaData={
+<%c++for(size_t i=0;i<cols.size();i++){
+    auto &col=cols[i];
+$$<<"{\""<<col._colName<<"\",\""<<col._colType<<"\",\""<<col._colDatabaseType<<"\","<<col._colLength<<","<<col._isAutoVal<<","<<col._isPrimaryKey<<","<<col._notNull<<"}";
+if(i<(cols.size()-1))
+$$<<",\n";
+else
+$$<<"\n";
+}%>
+};
+const std::string &{{className}}::getColumnName(size_t index) noexcept(false)
+{
+    assert(index < _metaData.size());
+    return _metaData[index]._colName;
+}
+{{className}}::{{className}}(const Row &r) noexcept
+{
+<%c++
+    for(auto col:cols)
+    {
+        if(col._colType.empty())
+            continue;
+        %>
+        if(!r["<%c++$$<<col._colName;%>"].isNull())
+        {
+<%c++
+            if(col._colDatabaseType=="date")
+            {
+                $$<<"            auto daysStr = r[\""<<col._colName<<"\"].as<std::string>();\n";
+                $$<<"            struct tm stm;\n";
+                $$<<"            memset(&stm,0,sizeof(stm));\n";
+                $$<<"            strptime(daysStr.c_str(),\"%Y-%m-%d\",&stm);\n";
+                $$<<"            long t = timelocal(&stm);\n";
+ //               $$<<"            _"<<col._colValName<<"=std::make_shared<::trantor::Date>(::trantor::Date(946656000000000).after(daysNum*86400));\n";
+                $$<<"            _"<<col._colValName<<"=std::make_shared<::trantor::Date>(t*1000000);\n";
+                $$<<"        }\n";
+                continue;
+            }
+            else if(col._colDatabaseType.find("timestamp")!=std::string::npos)
+            {
+                $$<<"            auto timeStr = r[\""<<col._colName<<"\"].as<std::string>();\n";
+                $$<<"            struct tm stm;\n";
+                $$<<"            memset(&stm,0,sizeof(stm));\n";
+                $$<<"            auto p = strptime(timeStr.c_str(),\"%Y-%m-%d %H:%M:%S\",&stm);\n";
+                $$<<"            size_t t = timelocal(&stm);\n";
+                $$<<"            size_t decimalNum = 0;\n";
+                $$<<"            if(*p=='.')\n";
+                $$<<"            {\n";
+                $$<<"                std::string decimals(p+1,&timeStr[timeStr.length()]);\n";
+                $$<<"                while(decimals.length()<6)\n";
+                $$<<"                {\n";
+                $$<<"                    decimals += \"0\";\n";
+                $$<<"                }\n";
+                $$<<"                decimalNum = (size_t)atol(decimals.c_str());\n";
+                $$<<"            }\n";
+ //               $$<<"            _"<<col._colValName<<"=std::make_shared<::trantor::Date>(::trantor::Date(946656000000000).after(daysNum*86400));\n";
+                $$<<"            _"<<col._colValName<<"=std::make_shared<::trantor::Date>(t*1000000+decimalNum);\n";
+                $$<<"        }\n";
+                continue;
+            }            
+%>
+            _<%c++$$<<col._colValName;%>=std::make_shared<<%c++$$<<col._colType;%>>(r["<%c++$$<<col._colName;%>"].as<<%c++$$<<col._colType;%>>());
+        }
+<%c++
+    }
+    %>
+}
+<%c++
+    for(size_t i=0;i<cols.size();i++)
+    {
+        auto & col = cols[i];
+        if(!col._colType.empty())
+        {
+            $$<<"const "<<col._colType<<" & "<<className<<"::getValueOf"<<col._colTypeName<<"(const "<<col._colType<<" &defaultValue) const noexcept\n";
+            $$<<"{\n";
+            $$<<"    if(_"<<col._colValName<<")\n";
+            $$<<"        return *_"<<col._colValName<<";\n";
+            $$<<"    return defaultValue;\n";
+            $$<<"}\n";
+          
+            $$<<"std::shared_ptr<const "<<col._colType<<"> "<<className<<"::get"<<col._colTypeName<<"() const noexcept\n";
+            $$<<"{\n";
+            $$<<"    return _"<<col._colValName<<";\n";
+            $$<<"}\n";
+ 
+            if(!col._isAutoVal)
+            {
+                $$<<"void "<<className<<"::set"<<col._colTypeName<<"(const "<<col._colType<<" &"<<col._colValName<<") noexcept\n";
+                $$<<"{\n";
+                if(col._colDatabaseType=="date")
+                {
+                    $$<<"    _"<<col._colValName<<" = std::make_shared<"<<col._colType<<">("<<col._colValName<<".roundDay());\n";
+                }
+                else
+                {
+                    $$<<"    _"<<col._colValName<<" = std::make_shared<"<<col._colType<<">("<<col._colValName<<");\n";
+                }
+                $$<<"    _dirtyFlag["<<i<<"] = true;\n";
+                $$<<"}\n";
+                
+                if(col._colType=="std::string")
+                {
+                    $$<<"void "<<className<<"::set"<<col._colTypeName<<"("<<col._colType<<" &&"<<col._colValName<<") noexcept\n";
+                    $$<<"{\n";
+                    $$<<"    _"<<col._colValName<<" = std::make_shared<"<<col._colType<<">(std::move("<<col._colValName<<"));\n";
+                    $$<<"    _dirtyFlag["<<i<<"] = true;\n";
+                    $$<<"}\n";
+                }
+            }
+            if(col._isPrimaryKey&&@@.get<int>("hasPrimaryKey")==1)
+            {
+                $$<<"const typename "<<className<<"::PrimaryKeyType & "<<className<<"::getPrimaryKey() const\n";
+                $$<<"{\n";
+                $$<<"    assert(_"<<col._colValName<<");\n";
+                $$<<"    return *_"<<col._colValName<<";\n";
+                $$<<"}\n";
+            }
+        }
+        $$<<"\n";    
+    }
+    if(@@.get<int>("hasPrimaryKey")>1)
+    {
+        $$<<"typename "<<className<<"::PrimaryKeyType "<<className<<"::getPrimaryKey() const\n";
+        $$<<"{\n";
+        $$<<"    return std::make_tuple(";
+        int count=0;
+        for(auto col:cols)
+        {
+            if(col._isPrimaryKey)
+            {
+                count++;
+                $$<<"*_"<<col._colValName;
+                if(count<@@.get<int>("hasPrimaryKey"))
+                    $$<<",";
+            }
+        }
+        $$<<");\n";
+        $$<<"}\n";
+    }
+%>
+
+const std::vector<std::string> &{{className}}::insertColumns() noexcept
+{
+    static const std::vector<std::string> _inCols={
+<%c++for(size_t i=0;i<cols.size();i++){
+    auto col=cols[i];
+    if(!col._isAutoVal&&!col._colType.empty())
+    {
+        $$<<"        \""<<col._colName<<"\"";
+        if(i<(cols.size()-1))
+            $$<<",\n";
+        else
+            $$<<"\n";
+    }
+}%>
+    };
+    return _inCols;
+}
+
+void {{className}}::outputArgs(drogon::orm::internal::SqlBinder &binder) const
+{
+<%c++for(auto col:cols){
+    if(!col._isAutoVal&&!col._colType.empty())
+    {
+%>
+    if(get<%c++$$<<col._colTypeName;%>())
+    {
+<%c++if(col._colDatabaseType=="date"){%>
+        binder << (int32_t)(getValueOf<%c++$$<<col._colTypeName;%>().microSecondsSinceEpoch()/1000000-946656000)/86400;
+<%c++}else if(col._colDatabaseType.find("timestamp")!=std::string::npos){%>
+        binder << get<%c++$$<<col._colTypeName;%>()->toCustomedFormattedStringLocal("%Y-%m-%d %H:%M:%S", true);
+<%c++}else{%>
+        binder << getValueOf<%c++$$<<col._colTypeName;%>();
+<%c++}%>
+    }
+    else
+    {
+        binder << nullptr;
+    }
+<%c++
+    }
+}
+%>
+}
+
+const std::vector<std::string> {{className}}::updateColumns() const
+{
+    std::vector<std::string> ret;
+    for(size_t i=0;i<sizeof(_dirtyFlag);i++)
+    {
+        if(_dirtyFlag[i])
+        {
+            ret.push_back(getColumnName(i));
+        }
+    }
+    return ret;
+}
+
+void {{className}}::updateArgs(drogon::orm::internal::SqlBinder &binder) const
+{
+<%c++
+    for(size_t i=0;i<cols.size();i++)
+    {
+        auto & col=cols[i];
+        if(col._colType.empty()||col._isAutoVal)
+            continue;
+%>
+    if(_dirtyFlag[<%c++$$<<i;%>])
+    {
+        if(get<%c++$$<<col._colTypeName;%>())
+        {
+<%c++if(col._colDatabaseType=="date"){%>
+            binder << (int32_t)(getValueOf<%c++$$<<col._colTypeName;%>().microSecondsSinceEpoch()/1000000-946656000)/86400;
+<%c++}else if(col._colDatabaseType.find("timestamp")!=std::string::npos){%>
+            binder << get<%c++$$<<col._colTypeName;%>()->toCustomedFormattedStringLocal("%Y-%m-%d %H:%M:%S", true);
+<%c++}else{%>
+            binder << getValueOf<%c++$$<<col._colTypeName;%>();
+<%c++}%>
+        }
+        else
+        {
+            binder << nullptr;
+        }
+    }
+<%c++
+    }
+%>
+}

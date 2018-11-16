@@ -8,7 +8,7 @@
  *  Use of this source code is governed by a MIT license
  *  that can be found in the License file.
  *
- *  @section DESCRIPTION
+ *  Drogon
  *
  */
 
@@ -67,6 +67,11 @@ static void newConfigFile(std::ofstream &configFile)
     auto templ=DrTemplateBase::newTemplate("config");
     configFile << templ->genText();
 }
+static void newModelConfigFile(std::ofstream &configFile)
+{
+    auto templ = DrTemplateBase::newTemplate("model_json");
+    configFile << templ->genText();
+}
 void create_project::createProject(const std::string &projectName)
 {
 
@@ -88,6 +93,7 @@ void create_project::createProject(const std::string &projectName)
     mkdir("controllers", 0755);
     mkdir("filters", 0755);
     mkdir("build", 0755);
+    mkdir("models", 0755);
     mkdir("cmake_modules", 0755);
     std::ofstream jsonFile("cmake_modules/FindJsoncpp.cmake", std::ofstream::out);
     newJsonFindFile(jsonFile);
@@ -98,4 +104,6 @@ void create_project::createProject(const std::string &projectName)
     newGitIgFile(gitFile);
     std::ofstream configFile("config.json", std::ofstream::out);
     newConfigFile(configFile);
+    std::ofstream modelConfigFile("models/model.json", std::ofstream::out);
+    newModelConfigFile(modelConfigFile);
 }

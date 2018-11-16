@@ -6,4 +6,5 @@ add_executable(cookies_test CookiesTest.cc)
 add_executable(class_name_test ClassNameTest.cc)
 add_executable(sha1_test Sha1Test.cc)
 add_executable(view_data_test HttpViewDataTest.cc)
+add_executable(orm_result_test OrmResultTest.cc)
 

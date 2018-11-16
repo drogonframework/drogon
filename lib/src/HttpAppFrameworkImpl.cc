@@ -8,7 +8,7 @@
  *  Use of this source code is governed by a MIT license
  *  that can be found in the License file.
  *
- *  @section DESCRIPTION
+ *  Drogon
  *
  */
 #include "HttpAppFrameworkImpl.h"
@@ -360,7 +360,7 @@ void HttpAppFrameworkImpl::run()
                 break;
             }
             waitpid(child_pid, &child_status, 0);
-            sleep(5);
+            sleep(1);
             LOG_INFO << "start new process";
         }
     }
@@ -1215,3 +1215,32 @@ HttpAppFramework &HttpAppFramework::instance()
 HttpAppFramework::~HttpAppFramework()
 {
 }
+
+#if USE_POSTGRESQL
+orm::DbClientPtr HttpAppFrameworkImpl::getDbClient(const std::string &name)
+{
+    return _dbClientsMap[name];
+}
+
+void HttpAppFrameworkImpl::createDbClient(const std::string &dbType,
+                                          const std::string &host,
+                                          const u_short port,
+                                          const std::string &databaseName,
+                                          const std::string &userName,
+                                          const std::string &password,
+                                          const size_t connectionNum,
+                                          const std::string &name)
+{
+    if (dbType == "postgreSQL")
+    {
+        auto connStr = formattedString("host=%s port=%u dbname=%s user=%s", host.c_str(), port, databaseName.c_str(), userName.c_str());
+        if (!password.empty())
+        {
+            connStr += " password=";
+            connStr += password;
+        }
+        auto client = drogon::orm::DbClient::newPgClient(connStr, connectionNum);
+        _dbClientsMap[name] = client;
+    }
+}
+#endif

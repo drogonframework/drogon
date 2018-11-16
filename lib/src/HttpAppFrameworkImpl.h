@@ -8,7 +8,7 @@
  *  Use of this source code is governed by a MIT license
  *  that can be found in the License file.
  *
- *  @section DESCRIPTION
+ *  Drogon
  *
  */
 #pragma once
@@ -85,7 +85,17 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     }
 
     trantor::EventLoop *loop();
-
+#if USE_POSTGRESQL
+    virtual orm::DbClientPtr getDbClient(const std::string &name = "default") override;
+    virtual void createDbClient(const std::string &dbType,
+                                const std::string &host,
+                                const u_short port,
+                                const std::string &databaseName,
+                                const std::string &userName,
+                                const std::string &password,
+                                const size_t connectionNum = 1,
+                                const std::string &name = "default") override;
+#endif
   private:
     virtual void registerHttpController(const std::string &pathPattern,
                                            const HttpBinderBasePtr &binder,
@@ -202,5 +212,9 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     int _staticFilesCacheTime = 5;
     std::unordered_map<std::string, std::weak_ptr<HttpResponse>> _staticFilesCache;
     std::mutex _staticFilesCacheMutex;
+#if USE_POSTGRESQL
+    std::map<std::string, orm::DbClientPtr> _dbClientsMap;
+#endif
 };
+
 } // namespace drogon
