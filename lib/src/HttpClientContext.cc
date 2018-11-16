@@ -113,10 +113,8 @@ bool HttpClientContext::parseResponse(MsgBuffer *buf)
                 }
                 else
                 {
-                    // empty line, end of header
-                    // FIXME:
                     std::string len = _response->getHeader("Content-Length");
-                    LOG_INFO << "content len=" << len;
+                    //LOG_INFO << "content len=" << len;
                     if (len != "")
                     {
                         _response->_left_body_length = atoi(len.c_str());
