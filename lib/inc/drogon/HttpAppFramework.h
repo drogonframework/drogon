@@ -90,6 +90,15 @@ class HttpAppFramework : public trantor::NonCopyable
      */
     virtual void quit() = 0;
 
+    ///Get the event loop of framework;
+    /**
+     * NOTE:
+     * The event loop is not the network IO loop, but the main event loop
+     * of the framework in which only some timer tasks are running;
+     * You can run some timer tasks or other tasks in this loop;
+     */
+    virtual trantor::EventLoop *loop() = 0;
+
     virtual void setThreadNum(size_t threadNum) = 0;
     virtual void setSSLFiles(const std::string &certPath,
                              const std::string &keyPath) = 0;

@@ -84,7 +84,7 @@ class HttpAppFrameworkImpl : public HttpAppFramework
         _sessionMapPtr.reset();
     }
 
-    trantor::EventLoop *loop();
+    virtual trantor::EventLoop *loop() override;
     virtual void quit() override
     {
         assert(_loop.isRunning());
