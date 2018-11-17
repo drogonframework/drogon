@@ -8,7 +8,7 @@
  *  Use of this source code is governed by a MIT license
  *  that can be found in the License file.
  *
- *  @section DESCRIPTION
+ *  Drogon
  *
  */
 
@@ -19,7 +19,7 @@
 #include <drogon/orm/DbClient.h>
 #endif
 #include <drogon/utils/Utilities.h>
-#include <drogon/HttpApiBinder.h>
+#include <drogon/HttpBinder.h>
 #include <trantor/utils/NonCopyable.h>
 #include <drogon/DrObject.h>
 #include <drogon/HttpRequest.h>
@@ -61,7 +61,44 @@ inline std::string getGitCommit()
 class HttpAppFramework : public trantor::NonCopyable
 {
   public:
+    ///Get the instance of HttpAppFramework 
+    /**
+     * HttpAppFramework works at singleton mode, so any calling of this
+     * method will get the same instance;
+     * Calling drogon::HttpAppFramework::instance() 
+     * can be replaced by a simple interface -- drogon::app() 
+     */
     static HttpAppFramework &instance();
+
+    ///Run the event loop
+    /**
+     * Calling this method will start the event loop which drive the network;
+     * The thread calling this method must be the first thread to call instance() method;
+     * Usually the thread calling this method is main thread of the application;
+     */
+    virtual void run() = 0;
+
+    ///Quit the event loop
+    /**
+     * Calling this method will result in stopping all network IO in the
+     * framework and interrupting the blocking of the run() method. Usually, 
+     * after calling this method, the application will exit.
+     * 
+     * NOTE:
+     * This method can be called in any thread and anywhere.
+     * This method should not be called before calling run().
+     */
+    virtual void quit() = 0;
+
+    ///Get the event loop of the framework;
+    /**
+     * NOTE:
+     * The event loop is not the network IO loop, but the main event loop
+     * of the framework in which only some timer tasks are running;
+     * You can run some timer tasks or other tasks in this loop;
+     */
+    virtual trantor::EventLoop *loop() = 0;
+
     virtual void setThreadNum(size_t threadNum) = 0;
     virtual void setSSLFiles(const std::string &certPath,
                              const std::string &keyPath) = 0;
@@ -70,7 +107,7 @@ class HttpAppFramework : public trantor::NonCopyable
                              bool useSSL = false,
                              const std::string &certFile = "",
                              const std::string &keyFile = "") = 0;
-    virtual void run() = 0;
+
     virtual ~HttpAppFramework();
     virtual void registerWebSocketController(const std::string &pathName,
                                              const std::string &crtlName,
@@ -80,15 +117,15 @@ class HttpAppFramework : public trantor::NonCopyable
                                               const std::string &crtlName,
                                               const std::vector<any> &filtersAndMethods = std::vector<any>()) = 0;
     template <typename FUNCTION>
-    void registerHttpApiMethod(const std::string &pathPattern,
-                               FUNCTION &&function,
-                               const std::vector<any> &filtersAndMethods = std::vector<any>())
+    void registerHttpMethod(const std::string &pathPattern,
+                            FUNCTION &&function,
+                            const std::vector<any> &filtersAndMethods = std::vector<any>())
     {
         LOG_TRACE << "pathPattern:" << pathPattern;
-        HttpApiBinderBasePtr binder;
+        HttpBinderBasePtr binder;
 
         binder = std::make_shared<
-            HttpApiBinder<FUNCTION>>(std::forward<FUNCTION>(function));
+            HttpBinder<FUNCTION>>(std::forward<FUNCTION>(function));
 
         std::vector<HttpMethod> validMethods;
         std::vector<std::string> filters;
@@ -114,7 +151,7 @@ class HttpAppFramework : public trantor::NonCopyable
             }
         }
 
-        registerHttpApiController(pathPattern, binder, validMethods, filters);
+        registerHttpController(pathPattern, binder, validMethods, filters);
     }
     virtual void enableSession(const size_t timeout = 0) = 0;
     virtual void disableSession() = 0;
@@ -153,10 +190,10 @@ class HttpAppFramework : public trantor::NonCopyable
 #endif
 
   private:
-    virtual void registerHttpApiController(const std::string &pathPattern,
-                                           const HttpApiBinderBasePtr &binder,
-                                           const std::vector<HttpMethod> &validMethods = std::vector<HttpMethod>(),
-                                           const std::vector<std::string> &filters = std::vector<std::string>()) = 0;
+    virtual void registerHttpController(const std::string &pathPattern,
+                                        const HttpBinderBasePtr &binder,
+                                        const std::vector<HttpMethod> &validMethods = std::vector<HttpMethod>(),
+                                        const std::vector<std::string> &filters = std::vector<std::string>()) = 0;
 };
 
 inline HttpAppFramework &app()

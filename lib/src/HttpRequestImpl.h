@@ -19,7 +19,7 @@
  *  Use of this source code is governed by a MIT license
  *  that can be found in the License file.
  *
- *  @section DESCRIPTION
+ *  Drogon
  *
  */
 
@@ -44,8 +44,7 @@ namespace drogon
 class HttpRequestImpl : public HttpRequest
 {
   public:
-    friend class HttpContext;
-
+    friend class HttpServerContext;
     HttpRequestImpl()
         : _method(Invalid),
           _version(kUnknown),

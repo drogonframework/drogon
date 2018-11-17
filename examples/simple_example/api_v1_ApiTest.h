@@ -1,11 +1,11 @@
 #pragma once
-#include <drogon/HttpApiController.h>
+#include <drogon/HttpController.h>
 using namespace drogon;
 namespace api
 {
 namespace v1
 {
-class ApiTest : public drogon::HttpApiController<ApiTest>
+class ApiTest : public drogon::HttpController<ApiTest>
 {
 public:
   METHOD_LIST_BEGIN

@@ -8,7 +8,7 @@
  *  Use of this source code is governed by a MIT license
  *  that can be found in the License file.
  *
- *  @section DESCRIPTION
+ *  Drogon
  *
  */
 
@@ -22,7 +22,7 @@
 namespace drogon
 {
 bool isInteger(const std::string &str);
-//std::string genRandomString(int length);
+std::string genRandomString(int length);
 std::string stringToHex(unsigned char *ptr, long long length);
 std::vector<std::string> splitString(const std::string &str, const std::string &separator);
 std::string getuuid();

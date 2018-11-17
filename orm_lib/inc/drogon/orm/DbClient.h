@@ -34,6 +34,8 @@ namespace orm
 typedef std::function<void(const Result &)> ResultCallback;
 typedef std::function<void(const DrogonDbException &)> ExceptionCallback;
 
+class Transaction;
+
 class DbClient : public trantor::NonCopyable
 {
   public:
@@ -99,6 +101,8 @@ class DbClient : public trantor::NonCopyable
     }
 
     internal::SqlBinder operator<<(const std::string &sql);
+    virtual std::shared_ptr<Transaction> newTransaction() = 0;
+
     virtual std::string replaceSqlPlaceHolder(const std::string &sqlStr, const std::string &holderStr) const = 0;
 
   private:
@@ -112,6 +116,13 @@ class DbClient : public trantor::NonCopyable
                          const std::function<void(const std::exception_ptr &)> &exptCallback) = 0;
 };
 typedef std::shared_ptr<DbClient> DbClientPtr;
+
+class Transaction : public DbClient
+{
+  public:
+    virtual void rollback() = 0;
+    //virtual void commit() = 0;
+};
 
 } // namespace orm
 } // namespace drogon

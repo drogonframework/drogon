@@ -1,5 +1,6 @@
-#include "DbConnection.h"
+#include "PgConnection.h"
 #include "PostgreSQLResultImpl.h"
+#include <trantor/utils/Logger.h>
 #include <drogon/orm/Exception.h>
 #include <stdio.h>
 
@@ -17,15 +18,13 @@ Result makeResult(const std::shared_ptr<PGresult> &r = std::shared_ptr<PGresult>
 } // namespace orm
 } // namespace drogon
 
-DbConnection::DbConnection(trantor::EventLoop *loop, const std::string &connInfo)
+PgConnection::PgConnection(trantor::EventLoop *loop, const std::string &connInfo)
     : _connPtr(std::shared_ptr<PGconn>(PQconnectStart(connInfo.c_str()), [](PGconn *conn) {
           PQfinish(conn);
       })),
       _loop(loop), _channel(_loop, PQsocket(_connPtr.get()))
 {
-    //std::cout<<"sock="<<sock()<<std::endl;
     _channel.setReadCallback([=]() {
-        //std::cout<<"reading callback"<<std::endl;
         if (_status != ConnectStatus_Ok)
         {
             pgPoll();
@@ -36,7 +35,6 @@ DbConnection::DbConnection(trantor::EventLoop *loop, const std::string &connInfo
         }
     });
     _channel.setWriteCallback([=]() {
-        //std::cout<<"writing callback"<<std::endl;
         if (_status != ConnectStatus_Ok)
         {
             pgPoll();
@@ -57,13 +55,13 @@ DbConnection::DbConnection(trantor::EventLoop *loop, const std::string &connInfo
     _channel.enableReading();
     _channel.enableWriting();
 }
-int DbConnection::sock()
+int PgConnection::sock()
 {
     return PQsocket(_connPtr.get());
 }
-void DbConnection::handleClosed()
+void PgConnection::handleClosed()
 {
-    std::cout << "handleClosed!" << this << std::endl;
+    _status = ConnectStatus_Bad;
     _loop->assertInLoopThread();
     _channel.disableAll();
     _channel.remove();
@@ -71,7 +69,7 @@ void DbConnection::handleClosed()
     auto thisPtr = shared_from_this();
     _closeCb(thisPtr);
 }
-void DbConnection::pgPoll()
+void PgConnection::pgPoll()
 {
     _loop->assertInLoopThread();
     auto connStatus = PQconnectPoll(_connPtr.get());
@@ -79,20 +77,7 @@ void DbConnection::pgPoll()
     switch (connStatus)
     {
     case PGRES_POLLING_FAILED:
-        /*            fprintf(stderr, "!!!Pg connection failed: %s",
-                    PQerrorMessage(_connPtr.get()));
-            if(_isWorking){
-                _isWorking=false;
-                auto r=makeResult(SqlStatus::NetworkError, nullptr,_sql);
-                r.setError(PQerrorMessage(_connPtr.get()));
-                assert(_cb);
-                _cb(r);
-            }
-            handleClosed();
-*/
-        fprintf(stderr, "!!!Pg connection failed: %s",
-                PQerrorMessage(_connPtr.get()));
-
+        LOG_ERROR << "!!!Pg connection failed: " << PQerrorMessage(_connPtr.get());
         break;
     case PGRES_POLLING_WRITING:
         _channel.enableWriting();
@@ -115,13 +100,12 @@ void DbConnection::pgPoll()
         break;
     case PGRES_POLLING_ACTIVE:
         //unused!
-        printf("active\n");
         break;
     default:
         break;
     }
 }
-void DbConnection::execSql(const std::string &sql,
+void PgConnection::execSql(const std::string &sql,
                            size_t paraNum,
                            const std::vector<const char *> &parameters,
                            const std::vector<int> &length,
@@ -154,23 +138,40 @@ void DbConnection::execSql(const std::string &sql,
             format.data(),
             0) == 0)
     {
-        fprintf(stderr, "send query error:%s\n", PQerrorMessage(_connPtr.get()));
-        //FIXME call exception callback
+        LOG_ERROR << "send query error: " << PQerrorMessage(_connPtr.get());
+        // connection broken! will be handled in handleRead()
+        // _loop->queueInLoop([=]() {
+        //     try
+        //     {
+        //         throw InternalError(PQerrorMessage(_connPtr.get()));
+        //     }
+        //     catch (...)
+        //     {
+        //         _isWorking = false;
+        //         _exceptCb(std::current_exception());
+        //         _exceptCb = decltype(_exceptCb)();
+        //         if (_idleCb)
+        //         {
+        //             _idleCb();
+        //             _idleCb = decltype(_idleCb)();
+        //         }
+        //     }
+        // });
+        // return;
     }
     auto thisPtr = shared_from_this();
     _loop->runInLoop([=]() {
         thisPtr->pgPoll();
     });
 }
-void DbConnection::handleRead()
+void PgConnection::handleRead()
 {
 
     std::shared_ptr<PGresult> res;
 
     if (!PQconsumeInput(_connPtr.get()))
     {
-        fprintf(stderr, "Failed to consume pg input: %s\n",
-                PQerrorMessage(_connPtr.get()));
+        LOG_ERROR << "Failed to consume pg input:" << PQerrorMessage(_connPtr.get());
         if (_isWorking)
         {
             _isWorking = false;
@@ -185,6 +186,11 @@ void DbConnection::handleRead()
                 _exceptCb = decltype(_exceptCb)();
             }
             _cb = decltype(_cb)();
+            if (_idleCb)
+            {
+                _idleCb();
+                _idleCb = decltype(_idleCb)();
+            }
         }
         handleClosed();
         return;
@@ -193,7 +199,6 @@ void DbConnection::handleRead()
     if (PQisBusy(_connPtr.get()))
     {
         //need read more data from socket;
-        printf("need read more data from socket!\n");
         return;
     }
 
@@ -206,7 +211,7 @@ void DbConnection::handleRead()
         auto type = PQresultStatus(res.get());
         if (type == PGRES_BAD_RESPONSE || type == PGRES_FATAL_ERROR)
         {
-            fprintf(stderr, "Result error: %s", PQerrorMessage(_connPtr.get()));
+            LOG_ERROR << "Result error: %s" << PQerrorMessage(_connPtr.get());
             if (_isWorking)
             {
                 {
@@ -239,6 +244,10 @@ void DbConnection::handleRead()
     if (_isWorking)
     {
         _isWorking = false;
-        _idleCb();
+        if (_idleCb)
+        {
+            _idleCb();
+            _idleCb = decltype(_idleCb)();
+        }
     }
 }

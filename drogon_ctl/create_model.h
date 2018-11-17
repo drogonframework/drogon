@@ -7,7 +7,7 @@
  *  Use of this source code is governed by a MIT license
  *  that can be found in the License file.
  *
- *  @section DESCRIPTION
+ *  Drogon
  *
  */
 
@@ -38,6 +38,7 @@ struct ColumnInfo
   std::string _colDatabaseType;
   std::string _dbType;
   ssize_t _colLength = -1;
+  size_t _index;
   bool _isAutoVal = false;
   bool _isPrimaryKey = false;
   bool _notNull = false;

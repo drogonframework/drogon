@@ -7,7 +7,7 @@
  *  Use of this source code is governed by a MIT license
  *  that can be found in the License file.
  *
- *  @section DESCRIPTION
+ *  Drogon
  *
  */
 
@@ -22,7 +22,7 @@
 #include <trantor/net/InetAddress.h>
 
 #include <drogon/HttpAppFramework.h>
-#include <drogon/HttpApiController.h>
+#include <drogon/HttpController.h>
 #include <drogon/HttpSimpleController.h>
 #include <drogon/CacheMap.h>
 #include <drogon/HttpClient.h>

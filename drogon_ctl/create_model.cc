@@ -7,7 +7,7 @@
  *  Use of this source code is governed by a MIT license
  *  that can be found in the License file.
  *
- *  @section DESCRIPTION
+ *  Drogon
  *
  */
 
@@ -76,9 +76,11 @@ void create_model::createModelClassFromPG(const std::string &path, const DbClien
                 AND table_name   = $1"
             << tableName << Mode::Blocking >>
         [&](const Result &r) {
-            for (auto row : r)
+            for (size_t i = 0; i < r.size();i++)
             {
+                auto row = r[i];
                 ColumnInfo info;
+                info._index = i;
                 info._dbType = "pg";
                 info._colName = row["column_name"].as<std::string>();
                 info._colTypeName = nameTransform(info._colName, true);
@@ -135,7 +137,8 @@ void create_model::createModelClassFromPG(const std::string &path, const DbClien
                 }
                 else
                 {
-                    //FIXME add more type such as hstore,date...
+                    info._colType = "std::string";
+                    //FIXME add more type such as hstore,blob...
                 }
                 auto defaultVal = row["column_default"].as<std::string>();
 

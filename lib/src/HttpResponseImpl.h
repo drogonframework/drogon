@@ -20,7 +20,7 @@
  *  Use of this source code is governed by a MIT license
  *  that can be found in the License file.
  *
- *  @section DESCRIPTION
+ *  Drogon
  *
  */
 
@@ -40,7 +40,7 @@ namespace drogon
 {
 class HttpResponseImpl : public HttpResponse
 {
-    friend class HttpContext;
+    friend class HttpClientContext;
 
   public:
     explicit HttpResponseImpl()
@@ -230,6 +230,7 @@ class HttpResponseImpl : public HttpResponse
         _bodyPtr.reset(new std::string());
         _left_body_length = 0;
         _current_chunk_length = 0;
+        _jsonPtr.reset();
     }
 
     virtual void setExpiredTime(ssize_t expiredTime) override
