@@ -232,7 +232,8 @@ class SqlBinder
     }
 
     template <typename T>
-    self &operator<<(T &&parameter)
+    typename std::enable_if<!std::is_same<typename std::remove_cv<typename std::remove_reference<T>::type>::type,trantor::Date>::value,self &>::type
+        operator<<(T &&parameter)
     {
         _paraNum++;
         typedef typename std::remove_cv<typename std::remove_reference<T>::type>::type ParaType;
@@ -295,6 +296,14 @@ class SqlBinder
         _length.push_back(obj->length());
         _format.push_back(0);
         return *this;
+    }
+    self &operator<<(trantor::Date &&date)
+    {
+        return operator<<(date.toCustomedFormattedStringLocal("%Y-%m-%d %H:%M:%S", true)); //for postgreSQL
+    }
+    self &operator<<(const trantor::Date &date)
+    {
+        return operator<<(date.toCustomedFormattedStringLocal("%Y-%m-%d %H:%M:%S", true)); //for postgreSQL
     }
     self &operator<<(std::nullptr_t nullp)
     {
