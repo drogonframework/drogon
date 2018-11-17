@@ -203,7 +203,7 @@ void HttpClientImpl::onRecvMessage(const trantor::TcpConnectionPtr &connPtr, tra
         context->reset();
 
         assert(!_reqAndCallbacks.empty());
-        
+
         auto type = resp->getHeader("Content-Type");
         if (type.find("application/json") != std::string::npos)
         {
@@ -212,7 +212,7 @@ void HttpClientImpl::onRecvMessage(const trantor::TcpConnectionPtr &connPtr, tra
         auto &cb = _reqAndCallbacks.front().second;
         cb(ReqResult::Ok, resp);
         _reqAndCallbacks.pop();
-        
+
         LOG_TRACE << "req buffer size=" << _reqAndCallbacks.size();
         if (!_reqAndCallbacks.empty())
         {
@@ -229,15 +229,12 @@ void HttpClientImpl::onRecvMessage(const trantor::TcpConnectionPtr &connPtr, tra
     }
 }
 
-HttpClientPtr HttpClient::newHttpClient(const std::string &ip, uint16_t port, bool useSSL)
+HttpClientPtr HttpClient::newHttpClient(const std::string &ip, uint16_t port, bool useSSL, trantor::EventLoop *loop)
 {
-    return std::make_shared<HttpClientImpl>(((HttpAppFrameworkImpl &)(HttpAppFramework::instance())).loop(), trantor::InetAddress(ip, port), useSSL);
+    return std::make_shared<HttpClientImpl>(loop == nullptr ? drogon::app().loop() : loop, trantor::InetAddress(ip, port), useSSL);
 }
-//HttpClientPtr HttpClient::newHttpClient(const trantor::InetAddress &addr,bool useSSL)
-//{
-//    return std::make_shared<HttpClientImpl>(((HttpAppFrameworkImpl &)(HttpAppFramework::instance())).loop(),addr,useSSL);
-//}
-HttpClientPtr HttpClient::newHttpClient(const std::string &hostString)
+
+HttpClientPtr HttpClient::newHttpClient(const std::string &hostString, trantor::EventLoop *loop)
 {
-    return std::make_shared<HttpClientImpl>(((HttpAppFrameworkImpl &)(HttpAppFramework::instance())).loop(), hostString);
+    return std::make_shared<HttpClientImpl>(loop == nullptr ? drogon::app().loop() : loop, hostString);
 }

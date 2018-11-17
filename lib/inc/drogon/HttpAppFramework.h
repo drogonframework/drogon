@@ -90,7 +90,7 @@ class HttpAppFramework : public trantor::NonCopyable
      */
     virtual void quit() = 0;
 
-    ///Get the event loop of framework;
+    ///Get the event loop of the framework;
     /**
      * NOTE:
      * The event loop is not the network IO loop, but the main event loop
