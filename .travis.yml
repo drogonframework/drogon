@@ -1,0 +1,37 @@
+os:
+  - linux
+  - osx
+sudo: required
+dist: trusty
+
+language: cpp
+compiler:
+  - gcc
+  - clang
+
+addons:
+  apt:
+    sources:
+    - xenial
+    - sourceline: 'deb http://archive.ubuntu.com/ubuntu xenial main'
+    packages:
+    - libjsoncpp-dev
+    - uuid-dev
+    - zlib1g-dev
+    - postgresql-all
+    - openssl
+    - libssl-dev
+    - build-essential
+    - cmake
+  homebrew:
+    packages:
+    - openssl
+    - cmake
+    - libtool
+    - lz4
+    - postgresql
+
+script:
+  - ./build.sh
+
+

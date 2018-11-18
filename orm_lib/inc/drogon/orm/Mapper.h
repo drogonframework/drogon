@@ -37,6 +37,7 @@ class Mapper
     Mapper<T> &offset(size_t offset);
     Mapper<T> &orderBy(const std::string &colName, const SortOrder &order = SortOrder::ASC);
     Mapper<T> &orderBy(size_t colIndex, const SortOrder &order = SortOrder::ASC);
+    Mapper<T> &forUpdate();
 
     typedef std::function<void(T)> SingleRowCallback;
     typedef std::function<void(std::vector<T>)> MultipleRowsCallback;
@@ -102,11 +103,13 @@ class Mapper
     std::string _limitString;
     std::string _offsetString;
     std::string _orderbyString;
+    bool _forUpdate = false;
     void clear()
     {
         _limitString.clear();
         _offsetString.clear();
         _orderbyString.clear();
+        _forUpdate = false;
     }
     template <typename PKType = decltype(T::primaryKeyName)>
     typename std::enable_if<std::is_same<const std::string, PKType>::value, void>::type makePrimaryKeyCriteria(std::string &sql)
@@ -161,6 +164,10 @@ inline T Mapper<T>::findByPrimaryKey(const typename T::PrimaryKeyType &key) noex
     std::string sql = "select * from ";
     sql += T::tableName;
     makePrimaryKeyCriteria(sql);
+    if(_forUpdate)
+    {
+        sql += " for update";
+    }
     sql = _client->replaceSqlPlaceHolder(sql, "$?");
     clear();
     Result r(nullptr);
@@ -175,11 +182,11 @@ inline T Mapper<T>::findByPrimaryKey(const typename T::PrimaryKeyType &key) noex
     }
     if (r.size() == 0)
     {
-        throw Failure("0 rows found");
+        throw UnexpectedRows("0 rows found");
     }
     else if (r.size() > 1)
     {
-        throw Failure("Found more than one row");
+        throw UnexpectedRows("Found more than one row");
     }
     auto row = r[0];
     return T(row);
@@ -195,6 +202,10 @@ inline void Mapper<T>::findByPrimaryKey(const typename T::PrimaryKeyType &key,
     std::string sql = "select * from ";
     sql += T::tableName;
     makePrimaryKeyCriteria(sql);
+    if (_forUpdate)
+    {
+        sql += " for update";
+    }
     sql = _client->replaceSqlPlaceHolder(sql, "$?");
     clear();
     auto binder = *_client << sql;
@@ -202,11 +213,11 @@ inline void Mapper<T>::findByPrimaryKey(const typename T::PrimaryKeyType &key,
     binder >> [=](const Result &r) {
         if (r.size() == 0)
         {
-            ecb(Failure("0 rows found"));
+            ecb(UnexpectedRows("0 rows found"));
         }
         else if (r.size() > 1)
         {
-            ecb(Failure("Found more than one row"));
+            ecb(UnexpectedRows("Found more than one row"));
         }
         else
         {
@@ -224,6 +235,10 @@ inline std::future<T> Mapper<T>::findFutureByPrimaryKey(const typename T::Primar
     std::string sql = "select * from ";
     sql += T::tableName;
     makePrimaryKeyCriteria(sql);
+    if (_forUpdate)
+    {
+        sql += " for update";
+    }
     sql = _client->replaceSqlPlaceHolder(sql, "$?");
     clear();
     auto binder = *_client << sql;
@@ -235,7 +250,7 @@ inline std::future<T> Mapper<T>::findFutureByPrimaryKey(const typename T::Primar
         {
             try
             {
-                throw Failure("0 rows found");
+                throw UnexpectedRows("0 rows found");
             }
             catch (...)
             {
@@ -246,7 +261,7 @@ inline std::future<T> Mapper<T>::findFutureByPrimaryKey(const typename T::Primar
         {
             try
             {
-                throw Failure("Found more than one row");
+                throw UnexpectedRows("Found more than one row");
             }
             catch (...)
             {
@@ -277,6 +292,10 @@ inline T Mapper<T>::findOne(const Criteria &criteria) noexcept(false)
         sql = _client->replaceSqlPlaceHolder(sql, "$?");
     }
     sql.append(_orderbyString).append(_offsetString).append(_limitString);
+    if (_forUpdate)
+    {
+        sql += " for update";
+    }
     clear();
     Result r(nullptr);
     {
@@ -291,11 +310,11 @@ inline T Mapper<T>::findOne(const Criteria &criteria) noexcept(false)
     }
     if (r.size() == 0)
     {
-        throw Failure("0 rows found");
+        throw UnexpectedRows("0 rows found");
     }
     else if (r.size() > 1)
     {
-        throw Failure("Found more than one row");
+        throw UnexpectedRows("Found more than one row");
     }
     auto row = r[0];
     return T(row);
@@ -315,6 +334,10 @@ inline void Mapper<T>::findOne(const Criteria &criteria,
         sql = _client->replaceSqlPlaceHolder(sql, "$?");
     }
     sql.append(_orderbyString).append(_offsetString).append(_limitString);
+    if (_forUpdate)
+    {
+        sql += " for update";
+    }
     clear();
     auto binder = *_client << sql;
     if (criteria)
@@ -322,11 +345,11 @@ inline void Mapper<T>::findOne(const Criteria &criteria,
     binder >> [=](const Result &r) {
         if (r.size() == 0)
         {
-            ecb(Failure("0 rows found"));
+            ecb(UnexpectedRows("0 rows found"));
         }
         else if (r.size() > 1)
         {
-            ecb(Failure("Found more than one row"));
+            ecb(UnexpectedRows("Found more than one row"));
         }
         else
         {
@@ -348,6 +371,10 @@ inline std::future<T> Mapper<T>::findFutureOne(const Criteria &criteria) noexcep
         sql = _client->replaceSqlPlaceHolder(sql, "$?");
     }
     sql.append(_orderbyString).append(_offsetString).append(_limitString);
+    if (_forUpdate)
+    {
+        sql += " for update";
+    }
     clear();
     auto binder = *_client << sql;
     if (criteria)
@@ -359,7 +386,7 @@ inline std::future<T> Mapper<T>::findFutureOne(const Criteria &criteria) noexcep
         {
             try
             {
-                throw Failure("0 rows found");
+                throw UnexpectedRows("0 rows found");
             }
             catch (...)
             {
@@ -370,7 +397,7 @@ inline std::future<T> Mapper<T>::findFutureOne(const Criteria &criteria) noexcep
         {
             try
             {
-                throw Failure("Found more than one row");
+                throw UnexpectedRows("Found more than one row");
             }
             catch (...)
             {
@@ -400,6 +427,10 @@ inline std::vector<T> Mapper<T>::findBy(const Criteria &criteria) noexcept(false
         sql = _client->replaceSqlPlaceHolder(sql, "$?");
     }
     sql.append(_orderbyString).append(_offsetString).append(_limitString);
+    if (_forUpdate)
+    {
+        sql += " for update";
+    }
     clear();
     Result r(nullptr);
     {
@@ -433,6 +464,10 @@ inline void Mapper<T>::findBy(const Criteria &criteria,
         sql = _client->replaceSqlPlaceHolder(sql, "$?");
     }
     sql.append(_orderbyString).append(_offsetString).append(_limitString);
+    if (_forUpdate)
+    {
+        sql += " for update";
+    }
     clear();
     auto binder = *_client << sql;
     if (criteria)
@@ -459,6 +494,10 @@ inline std::future<std::vector<T>> Mapper<T>::findFutureBy(const Criteria &crite
         sql = _client->replaceSqlPlaceHolder(sql, "$?");
     }
     sql.append(_orderbyString).append(_offsetString).append(_limitString);
+    if (_forUpdate)
+    {
+        sql += " for update";
+    }
     clear();
     auto binder = *_client << sql;
     if (criteria)
@@ -966,6 +1005,12 @@ inline Mapper<T> &Mapper<T>::orderBy(size_t colIndex, const SortOrder &order)
     std::string colName = T::getColumnName(colIndex);
     assert(!colName.empty());
     return orderBy(colName, order);
+}
+template <typename T>
+inline Mapper<T> &Mapper<T>::forUpdate()
+{
+    _forUpdate = true;
+    return *this;
 }
 
 } // namespace orm
