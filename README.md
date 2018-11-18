@@ -1,5 +1,7 @@
 ![](https://github.com/an-tao/drogon/wiki/images/drogon-white.jpg)
 
+[![Build Status](https://travis-ci.com/an-tao/drogon.svg?branch=master)](https://travis-ci.com/an-tao/drogon)
+
 **Drogon** is a C++11-based HTTP application framework. Drogon can be used to easily build various types of web application server programs using C++. **Drogon** is the name of a dragon in the American TV series "Game of Thrones" that I really like. 
 
 Drogon's main application platform is Linux. For debugging purposes, it also supports Mac OS. There is no plan to support Windows. Its main features are as follows:
