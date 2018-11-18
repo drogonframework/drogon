@@ -18,7 +18,7 @@ addons:
     - libjsoncpp-dev
     - uuid-dev
     - zlib1g-dev
-    - postgresql-all
+    - postgresql-server-dev-10
     - openssl
     - libssl-dev
     - build-essential
