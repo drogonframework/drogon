@@ -1,7 +1,5 @@
 ![](https://github.com/an-tao/drogon/wiki/images/drogon-white.jpg)
 
-### 欢迎使用Drogon
-
 [![Build Status](https://travis-ci.com/an-tao/drogon.svg?branch=master)](https://travis-ci.com/an-tao/drogon)
 
 **Drogon**是一个基于C++11的Http应用框架，使用Drogon可以方便的使用C++构建各种类型的Web应用服务端程序。
