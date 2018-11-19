@@ -29,6 +29,20 @@ enum class SortOrder
     ASC,
     DESC
 };
+namespace internal
+{
+template <typename T, bool hasPrimaryKey = true>
+struct Traits
+{
+    typedef typename T::PrimaryKeyType type;
+};
+template <typename T>
+struct Traits<T, false>
+{
+    typedef int type;
+};
+} // namespace internal
+
 template <typename T>
 class Mapper
 {
@@ -45,11 +59,15 @@ class Mapper
 
     Mapper(const DbClientPtr &client) : _client(client) {}
 
-    T findByPrimaryKey(const typename T::PrimaryKeyType &key) noexcept(false);
-    void findByPrimaryKey(const typename T::PrimaryKeyType &key,
-                          const SingleRowCallback &rcb,
-                          const ExceptionCallback &ecb) noexcept;
-    std::future<T> findFutureByPrimaryKey(const typename T::PrimaryKeyType &key) noexcept;
+    typedef typename internal::Traits<T,!std::is_same<typename T::PrimaryKeyType, void>::value>::type TraitsPKType;
+
+    T findByPrimaryKey(const TraitsPKType &key) noexcept(false);
+
+    void findByPrimaryKey(const TraitsPKType &key,
+                     const SingleRowCallback &rcb,
+                     const ExceptionCallback &ecb) noexcept;
+
+    std::future<T> findFutureByPrimaryKey(const TraitsPKType &key) noexcept;
 
     std::vector<T> findAll() noexcept(false);
     void findAll(const MultipleRowsCallback &rcb,
@@ -133,12 +151,14 @@ class Mapper
         }
     }
     template <typename PKType = decltype(T::primaryKeyName)>
-    typename std::enable_if<std::is_same<const std::string, PKType>::value, void>::type outputPrimeryKeyToBinder(const typename T::PrimaryKeyType &pk, internal::SqlBinder &binder)
+    typename std::enable_if<std::is_same<const std::string, PKType>::value, void>::type
+    outputPrimeryKeyToBinder(const TraitsPKType &pk, internal::SqlBinder &binder)
     {
         binder << pk;
     }
     template <typename PKType = decltype(T::primaryKeyName)>
-    typename std::enable_if<std::is_same<const std::vector<std::string>, PKType>::value, void>::type outputPrimeryKeyToBinder(const typename T::PrimaryKeyType &pk, internal::SqlBinder &binder)
+    typename std::enable_if<std::is_same<const std::vector<std::string>, PKType>::value, void>::type
+    outputPrimeryKeyToBinder(const TraitsPKType &pk, internal::SqlBinder &binder)
     {
         tupleToBinder<typename T::PrimaryKeyType>(pk, binder);
     }
@@ -157,14 +177,14 @@ class Mapper
 };
 
 template <typename T>
-inline T Mapper<T>::findByPrimaryKey(const typename T::PrimaryKeyType &key) noexcept(false)
+inline T Mapper<T>::findByPrimaryKey(const typename Mapper<T>::TraitsPKType &key) noexcept(false)
 {
     static_assert(!std::is_same<typename T::PrimaryKeyType, void>::value, "No primary key in the table!");
     // return findOne(Criteria(T::primaryKeyName, key));
     std::string sql = "select * from ";
     sql += T::tableName;
     makePrimaryKeyCriteria(sql);
-    if(_forUpdate)
+    if (_forUpdate)
     {
         sql += " for update";
     }
@@ -193,7 +213,7 @@ inline T Mapper<T>::findByPrimaryKey(const typename T::PrimaryKeyType &key) noex
 }
 
 template <typename T>
-inline void Mapper<T>::findByPrimaryKey(const typename T::PrimaryKeyType &key,
+inline void Mapper<T>::findByPrimaryKey(const typename Mapper<T>::TraitsPKType &key,
                                         const SingleRowCallback &rcb,
                                         const ExceptionCallback &ecb) noexcept
 {
@@ -228,7 +248,8 @@ inline void Mapper<T>::findByPrimaryKey(const typename T::PrimaryKeyType &key,
 }
 
 template <typename T>
-inline std::future<T> Mapper<T>::findFutureByPrimaryKey(const typename T::PrimaryKeyType &key) noexcept
+inline std::future<T>
+Mapper<T>::findFutureByPrimaryKey(const typename Mapper<T>::TraitsPKType &key) noexcept
 {
     static_assert(!std::is_same<typename T::PrimaryKeyType, void>::value, "No primary key in the table!");
     //return findFutureOne(Criteria(T::primaryKeyName, key));
