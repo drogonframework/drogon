@@ -65,8 +65,56 @@ std::string genRandomString(int length)
     str[length] = 0;
     return std::string(str);
 }
-
-std::string stringToHex(unsigned char *ptr, long long length)
+std::string hexToBinaryString(unsigned char *ptr, size_t length)
+{
+    assert(length % 2 == 0);
+    std::string ret(length / 2, '\0');
+    for (size_t i = 0; i < ret.length(); i++)
+    {
+        auto p = i * 2;
+        char c1 = ptr[p];
+        if (c1 >= '0' && c1 <= '9')
+        {
+            c1 -= '0';
+        }
+        else if (c1 >= 'a' && c1 <= 'f')
+        {
+            c1 -= 'a';
+            c1 += 10;
+        }
+        else if (c1 >= 'A' && c1 <= 'F')
+        {
+            c1 -= 'A';
+            c1 += 10;
+        }
+        else
+        {
+            return "";
+        }
+        char c2 = ptr[p + 1];
+        if (c2 >= '0' && c2 <= '9')
+        {
+            c2 -= '0';
+        }
+        else if (c2 >= 'a' && c2 <= 'f')
+        {
+            c2 -= 'a';
+            c2 += 10;
+        }
+        else if (c2 >= 'A' && c2 <= 'F')
+        {
+            c2 -= 'A';
+            c2 += 10;
+        }
+        else
+        {
+            return "";
+        }
+        ret[i] = c1 * 16 + c2;
+    }
+    return ret;
+}
+std::string binaryStringToHex(unsigned char *ptr, size_t length)
 {
     std::string idString;
     for (long long i = 0; i < length; i++)
@@ -119,7 +167,7 @@ std::string getuuid()
 {
     uuid_t uu;
     uuid_generate(uu);
-    return stringToHex(uu, 16);
+    return binaryStringToHex(uu, 16);
 }
 
 std::string base64Encode(unsigned char const *bytes_to_encode, unsigned int in_len)

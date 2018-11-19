@@ -23,7 +23,8 @@ namespace drogon
 {
 bool isInteger(const std::string &str);
 std::string genRandomString(int length);
-std::string stringToHex(unsigned char *ptr, long long length);
+std::string binaryStringToHex(unsigned char *ptr, size_t length);
+std::string hexToBinaryString(unsigned char *ptr, size_t length);
 std::vector<std::string> splitString(const std::string &str, const std::string &separator);
 std::string getuuid();
 std::string base64Encode(unsigned char const *bytes_to_encode, unsigned int in_len);

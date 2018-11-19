@@ -42,7 +42,7 @@ class PgTransactionImpl : public Transaction, public std::enable_shared_from_thi
     {
         return shared_from_this();
     }
- 
+
     std::function<void()> _usedUpCallback;
     bool _isCommitedOrRolledback = false;
     bool _isWorking = false;
@@ -51,13 +51,14 @@ class PgTransactionImpl : public Transaction, public std::enable_shared_from_thi
     {
         std::string _sql;
         size_t _paraNum;
-        std::vector<std::string> _parameters;
+        std::vector<const char *> _parameters;
+        std::vector<int> _length;
         std::vector<int> _format;
         QueryCallback _cb;
         ExceptPtrCallback _exceptCb;
     };
     std::list<SqlCmd> _sqlCmdBuffer;
- //   std::mutex _bufferMutex;
+    //   std::mutex _bufferMutex;
     friend class PgClientImpl;
     void doBegin();
     trantor::EventLoop *_loop;

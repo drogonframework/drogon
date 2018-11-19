@@ -9,6 +9,7 @@ using namespace drogon_ctl;
 %>
 
 #include "{{className}}.h"
+#include <drogon/utils/Utilities.h>
 #include <string>
 <%c++
     auto cols=@@.get<std::vector<ColumnInfo>>("columns");
@@ -101,7 +102,19 @@ const std::string &{{className}}::getColumnName(size_t index) noexcept(false)
                 $$<<"            _"<<col._colValName<<"=std::make_shared<::trantor::Date>(t*1000000+decimalNum);\n";
                 $$<<"        }\n";
                 continue;
-            }            
+            } 
+            else if(col._colDatabaseType=="bytea")
+            {
+                $$<<"            auto str = r[\""<<col._colName<<"\"].as<std::string>();\n";
+                $$<<"            if(str.length()>=2&&\n";
+                $$<<"               str[0]=='\\\\'&&str[1]=='x')\n";
+                $$<<"            {\n";
+                $$<<"                auto binStr=drogon::hexToBinaryString((unsigned char *)str.c_str()+2,str.length()-2);\n";
+                $$<<"                _"<<col._colValName<<"=std::make_shared<std::string>(std::move(binStr));\n";
+                $$<<"            }\n";
+                $$<<"        }\n";
+                continue;
+            }           
 %>
             _<%c++$$<<col._colValName;%>=std::make_shared<<%c++$$<<col._colType;%>>(r["<%c++$$<<col._colName;%>"].as<<%c++$$<<col._colType;%>>());
         }
@@ -213,6 +226,8 @@ void {{className}}::outputArgs(drogon::orm::internal::SqlBinder &binder) const
         binder << (int32_t)(getValueOf<%c++$$<<col._colTypeName;%>().microSecondsSinceEpoch()/1000000-946656000)/86400;
 <%c++}else if(col._colDatabaseType.find("timestamp")!=std::string::npos){%>
         binder << get<%c++$$<<col._colTypeName;%>()->toCustomedFormattedStringLocal("%Y-%m-%d %H:%M:%S", true);
+<%c++}else if(col._colDatabaseType=="bytea"){%>
+        binder << std::string("\\x")+drogon::binaryStringToHex((unsigned char *)getValueOf<%c++$$<<col._colTypeName;%>().c_str(),getValueOf<%c++$$<<col._colTypeName;%>().length());
 <%c++}else{%>
         binder << getValueOf<%c++$$<<col._colTypeName;%>();
 <%c++}%>
@@ -257,6 +272,8 @@ void {{className}}::updateArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << (int32_t)(getValueOf<%c++$$<<col._colTypeName;%>().microSecondsSinceEpoch()/1000000-946656000)/86400;
 <%c++}else if(col._colDatabaseType.find("timestamp")!=std::string::npos){%>
             binder << get<%c++$$<<col._colTypeName;%>()->toCustomedFormattedStringLocal("%Y-%m-%d %H:%M:%S", true);
+<%c++}else if(col._colDatabaseType=="bytea"){%>
+            binder << std::string("\\x")+drogon::binaryStringToHex((unsigned char *)getValueOf<%c++$$<<col._colTypeName;%>().c_str(),getValueOf<%c++$$<<col._colTypeName;%>().length());
 <%c++}else{%>
             binder << getValueOf<%c++$$<<col._colTypeName;%>();
 <%c++}%>

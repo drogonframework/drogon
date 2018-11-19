@@ -232,8 +232,8 @@ class SqlBinder
     }
 
     template <typename T>
-    typename std::enable_if<!std::is_same<typename std::remove_cv<typename std::remove_reference<T>::type>::type,trantor::Date>::value,self &>::type
-        operator<<(T &&parameter)
+    typename std::enable_if<!std::is_same<typename std::remove_cv<typename std::remove_reference<T>::type>::type, trantor::Date>::value, self &>::type
+    operator<<(T &&parameter)
     {
         _paraNum++;
         typedef typename std::remove_cv<typename std::remove_reference<T>::type>::type ParaType;
@@ -245,7 +245,7 @@ class SqlBinder
             *std::static_pointer_cast<short>(obj) = ntohs(parameter);
             break;
         case 4:
-            *std::static_pointer_cast<int>(obj) = ntohl(parameter);
+             *std::static_pointer_cast<int>(obj) = ntohl(parameter);
             break;
         case 8:
             *std::static_pointer_cast<long>(obj) = ntohll(parameter);

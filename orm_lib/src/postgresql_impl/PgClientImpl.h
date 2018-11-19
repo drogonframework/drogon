@@ -60,7 +60,8 @@ class PgClientImpl : public DbClient
     {
         std::string _sql;
         size_t _paraNum;
-        std::vector<std::string> _parameters;
+        std::vector<const char *> _parameters;
+        std::vector<int> _length;
         std::vector<int> _format;
         QueryCallback _cb;
         ExceptPtrCallback _exceptCb;

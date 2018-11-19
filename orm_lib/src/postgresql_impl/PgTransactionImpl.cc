@@ -88,11 +88,8 @@ void PgTransactionImpl::execSql(const std::string &sql,
                 SqlCmd cmd;
                 cmd._sql = sql;
                 cmd._paraNum = paraNum;
-                for (size_t i = 0; i < parameters.size(); i++)
-                {
-                    //LOG_TRACE << "parameters[" << i << "]=" << (size_t)(parameters[i]);
-                    cmd._parameters.push_back(std::string(parameters[i], length[i]));
-                }
+                cmd._parameters = parameters;
+                cmd._length = length;
                 cmd._format = format;
                 cmd._cb = rcb;
                 cmd._exceptCb = exceptCallback;
@@ -179,20 +176,13 @@ void PgTransactionImpl::execNewTask()
             auto cmd = _sqlCmdBuffer.front();
             _sqlCmdBuffer.pop_front();
 
-            std::vector<const char *> paras;
-            std::vector<int> lens;
-            for (auto &p : cmd._parameters)
-            {
-                paras.push_back(p.c_str());
-                lens.push_back(p.length());
-            }
             auto conn = _connectionPtr;
 
             _loop->queueInLoop([=]() {
                 conn->execSql(cmd._sql,
                               cmd._paraNum,
-                              paras,
-                              lens,
+                              cmd._parameters,
+                              cmd._length,
                               cmd._format,
                               cmd._cb,
                               [cmd, thisPtr](const std::exception_ptr &ePtr) {

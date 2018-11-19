@@ -128,6 +128,10 @@ void PgConnection::execSql(const std::string &sql,
     _exceptCb = exceptCallback;
     //_channel.enableWriting();
     LOG_TRACE << sql;
+    // for (size_t i = 0; i < paraNum;i++)
+    // {
+    //     LOG_TRACE << "parameter[" << i << "]=" << ntohl(*(int *)parameters[i]);
+    // }
     if (PQsendQueryParams(
             _connPtr.get(),
             sql.c_str(),
@@ -158,7 +162,7 @@ void PgConnection::execSql(const std::string &sql,
         //     }
         // });
         // return;
-    }
+        }
     auto thisPtr = shared_from_this();
     _loop->runInLoop([=]() {
         thisPtr->pgPoll();

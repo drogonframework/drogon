@@ -76,7 +76,7 @@ void create_model::createModelClassFromPG(const std::string &path, const DbClien
                 AND table_name   = $1"
             << tableName << Mode::Blocking >>
         [&](const Result &r) {
-            for (size_t i = 0; i < r.size();i++)
+            for (size_t i = 0; i < r.size(); i++)
             {
                 auto row = r[i];
                 ColumnInfo info;
@@ -134,6 +134,10 @@ void create_model::createModelClassFromPG(const std::string &path, const DbClien
                 else if (type.find("timestamp") != std::string::npos)
                 {
                     info._colType = "::trantor::Date";
+                }
+                else if (type == "bytea")
+                {
+                    info._colType = "std::string";
                 }
                 else
                 {

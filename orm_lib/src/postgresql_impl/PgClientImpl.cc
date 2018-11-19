@@ -173,11 +173,8 @@ void PgClientImpl::execSql(const std::string &sql,
     SqlCmd cmd;
     cmd._sql = sql;
     cmd._paraNum = paraNum;
-    for (size_t i = 0; i < parameters.size(); i++)
-    {
-        //LOG_TRACE << "parameters[" << i << "]=" << (size_t)(parameters[i]);
-        cmd._parameters.push_back(std::string(parameters[i], length[i]));
-    }
+    cmd._parameters = parameters;
+    cmd._length = length;
     cmd._format = format;
     cmd._cb = cb;
     cmd._exceptCb = exceptCb;
@@ -265,14 +262,8 @@ void PgClientImpl::handleNewTask(const PgConnectionPtr &connPtr)
                 auto cmd = _sqlCmdBuffer.front();
                 _sqlCmdBuffer.pop_front();
                 _loopPtr->queueInLoop([=]() {
-                    std::vector<const char *> paras;
-                    std::vector<int> lens;
-                    for (auto &p : cmd._parameters)
-                    {
-                        paras.push_back(p.c_str());
-                        lens.push_back(p.length());
-                    }
-                    execSql(connPtr, cmd._sql, cmd._paraNum, paras, lens, cmd._format, cmd._cb, cmd._exceptCb);
+                    
+                    execSql(connPtr, cmd._sql, cmd._paraNum, cmd._parameters, cmd._length, cmd._format, cmd._cb, cmd._exceptCb);
                 });
 
                 return;

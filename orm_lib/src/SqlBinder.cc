@@ -27,9 +27,11 @@ void SqlBinder::exec()
         auto exceptCb = std::move(_exceptCallback);
         auto exceptPtrCb = std::move(_exceptPtrCallback);
         auto isExceptPtr = _isExceptPtr;
-
+        //Retain shared_ptrs of parameters until we get the result;
+        std::shared_ptr<decltype(_objs)> objs = std::make_shared<decltype(_objs)>(std::move(_objs));
         _client.execSql(_sql, _paraNum, _parameters, _length, _format,
-                        [holder](const Result &r) {
+                        [holder, objs](const Result &r) {
+                            objs->clear();
                             if (holder)
                             {
                                 holder->execCallback(r);
