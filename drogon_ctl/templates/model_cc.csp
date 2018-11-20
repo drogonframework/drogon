@@ -300,3 +300,28 @@ void {{className}}::updateArgs(drogon::orm::internal::SqlBinder &binder) const
     }
 %>
 }
+
+Json::Value {{className}}::toJson() const
+{
+    Json::Value ret;
+<%c++for(auto col:cols){%>
+    if(get<%c++$$<<col._colTypeName;%>())
+    {
+<%c++if(col._colDatabaseType=="date"){%>
+        ret["<%c++$$<<col._colName;%>"]=get<%c++$$<<col._colTypeName;%>()->toCustomedFormattedStringLocal("%Y-%m-%d", false);
+<%c++}else if(col._colDatabaseType.find("timestamp")!=std::string::npos){%>
+        ret["<%c++$$<<col._colName;%>"]=get<%c++$$<<col._colTypeName;%>()->toCustomedFormattedStringLocal("%Y-%m-%d %H:%M:%S", true);
+<%c++}else if(col._colDatabaseType=="bytea"){%>
+        ret["<%c++$$<<col._colName;%>"]=drogon::base64Encode((const unsigned char *)get<%c++$$<<col._colTypeName;%>()->data(),get<%c++$$<<col._colTypeName;%>()->size());
+<%c++}else{%>
+        ret["<%c++$$<<col._colName;%>"]=getValueOf<%c++$$<<col._colTypeName;%>();
+<%c++}%>
+    }
+    else
+    {
+        ret["<%c++$$<<col._colName;%>"]=Json::Value();
+    }
+<%c++
+}%>
+    return ret;
+}

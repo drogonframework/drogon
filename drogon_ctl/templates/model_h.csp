@@ -13,6 +13,7 @@ using namespace drogon_ctl;
 #include <drogon/orm/Field.h>
 #include <drogon/orm/SqlBinder.h>
 #include <trantor/utils/Date.h>
+#include <json/json.h>
 #include <string>
 #include <memory>
 #include <vector>
@@ -111,6 +112,8 @@ auto cols=@@.get<std::vector<ColumnInfo>>("columns");
 
     const std::vector<std::string> updateColumns() const;
     void updateArgs(drogon::orm::internal::SqlBinder &binder) const;
+
+    Json::Value toJson() const;
 
   private:
 <%c++

@@ -170,7 +170,7 @@ std::string getuuid()
     return binaryStringToHex(uu, 16);
 }
 
-std::string base64Encode(unsigned char const *bytes_to_encode, unsigned int in_len)
+std::string base64Encode(const unsigned char *bytes_to_encode, unsigned int in_len)
 {
     std::string ret;
     int i = 0;
