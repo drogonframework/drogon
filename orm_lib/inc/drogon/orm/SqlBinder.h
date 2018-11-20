@@ -26,6 +26,7 @@
 #include <map>
 #include <vector>
 #include <memory>
+#include <sstream>
 
 namespace drogon
 {
@@ -322,6 +323,14 @@ class SqlBinder
         _length.push_back(obj->size());
         _format.push_back(1);
         return *this;
+    }
+    self &operator<<(float f)
+    {
+        return operator<<(std::to_string(f));
+    }
+    self &operator<<(double f)
+    {
+        return operator<<(std::to_string(f));
     }
     self &operator<<(std::nullptr_t nullp)
     {
