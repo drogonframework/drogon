@@ -24,6 +24,8 @@ PgConnection::PgConnection(trantor::EventLoop *loop, const std::string &connInfo
       })),
       _loop(loop), _channel(_loop, PQsocket(_connPtr.get()))
 {
+    PQsetnonblocking(_connPtr.get(), 1);
+    //assert(PQisnonblocking(_connPtr.get()));
     _channel.setReadCallback([=]() {
         if (_status != ConnectStatus_Ok)
         {
@@ -162,7 +164,7 @@ void PgConnection::execSql(const std::string &sql,
         //     }
         // });
         // return;
-        }
+    }
     auto thisPtr = shared_from_this();
     _loop->runInLoop([=]() {
         thisPtr->pgPoll();
