@@ -110,7 +110,7 @@ const std::string &{{className}}::getColumnName(size_t index) noexcept(false)
                 $$<<"               str[0]=='\\\\'&&str[1]=='x')\n";
                 $$<<"            {\n";
                 $$<<"                auto binStr=drogon::hexToBinaryString((unsigned char *)str.c_str()+2,str.length()-2);\n";
-                $$<<"                _"<<col._colValName<<"=std::make_shared<std::string>(std::move(binStr));\n";
+                $$<<"                _"<<col._colValName<<"=std::make_shared<std::vector<char>>((char *)binStr.data(),(char *)binStr.data()+binStr.length());\n";
                 $$<<"            }\n";
                 $$<<"        }\n";
                 continue;
@@ -134,7 +134,15 @@ const std::string &{{className}}::getColumnName(size_t index) noexcept(false)
             $$<<"        return *_"<<col._colValName<<";\n";
             $$<<"    return defaultValue;\n";
             $$<<"}\n";
-          
+            if(col._colType=="std::vector<char>")
+            {
+                $$<<"std::string "<<className<<"::getValueOf"<<col._colTypeName<<"AsString(const std::string &defaultValue) const noexcept\n";
+                $$<<"{\n";
+                $$<<"    if(_"<<col._colValName<<")\n";
+                $$<<"        return std::string(_"<<col._colValName<<"->data(),_"<<col._colValName<<"->size());\n";
+                $$<<"    return defaultValue;\n";
+                $$<<"}\n";
+            }
             $$<<"std::shared_ptr<const "<<col._colType<<"> "<<className<<"::get"<<col._colTypeName<<"() const noexcept\n";
             $$<<"{\n";
             $$<<"    return _"<<col._colValName<<";\n";
@@ -160,6 +168,15 @@ const std::string &{{className}}::getColumnName(size_t index) noexcept(false)
                     $$<<"void "<<className<<"::set"<<col._colTypeName<<"("<<col._colType<<" &&"<<col._colValName<<") noexcept\n";
                     $$<<"{\n";
                     $$<<"    _"<<col._colValName<<" = std::make_shared<"<<col._colType<<">(std::move("<<col._colValName<<"));\n";
+                    $$<<"    _dirtyFlag["<<i<<"] = true;\n";
+                    $$<<"}\n";
+                }
+
+                if(col._colType=="std::vector<char>")
+                {
+                    $$<<"void "<<className<<"::set"<<col._colTypeName<<"(const std::string &"<<col._colValName<<") noexcept\n";
+                    $$<<"{\n";
+                    $$<<"    _"<<col._colValName<<" = std::make_shared<std::vector<char>>("<<col._colValName<<".c_str(),"<<col._colValName<<".c_str()+"<<col._colValName<<".length());\n";
                     $$<<"    _dirtyFlag["<<i<<"] = true;\n";
                     $$<<"}\n";
                 }
@@ -226,8 +243,6 @@ void {{className}}::outputArgs(drogon::orm::internal::SqlBinder &binder) const
         binder << (int32_t)(getValueOf<%c++$$<<col._colTypeName;%>().microSecondsSinceEpoch()/1000000-946656000)/86400;
 <%c++}else if(col._colDatabaseType.find("timestamp")!=std::string::npos){%>
         binder << get<%c++$$<<col._colTypeName;%>()->toCustomedFormattedStringLocal("%Y-%m-%d %H:%M:%S", true);
-<%c++}else if(col._colDatabaseType=="bytea"){%>
-        binder << std::string("\\x")+drogon::binaryStringToHex((unsigned char *)getValueOf<%c++$$<<col._colTypeName;%>().c_str(),getValueOf<%c++$$<<col._colTypeName;%>().length());
 <%c++}else{%>
         binder << getValueOf<%c++$$<<col._colTypeName;%>();
 <%c++}%>
@@ -272,8 +287,6 @@ void {{className}}::updateArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << (int32_t)(getValueOf<%c++$$<<col._colTypeName;%>().microSecondsSinceEpoch()/1000000-946656000)/86400;
 <%c++}else if(col._colDatabaseType.find("timestamp")!=std::string::npos){%>
             binder << get<%c++$$<<col._colTypeName;%>()->toCustomedFormattedStringLocal("%Y-%m-%d %H:%M:%S", true);
-<%c++}else if(col._colDatabaseType=="bytea"){%>
-            binder << std::string("\\x")+drogon::binaryStringToHex((unsigned char *)getValueOf<%c++$$<<col._colTypeName;%>().c_str(),getValueOf<%c++$$<<col._colTypeName;%>().length());
 <%c++}else{%>
             binder << getValueOf<%c++$$<<col._colTypeName;%>();
 <%c++}%>

@@ -245,7 +245,7 @@ class SqlBinder
             *std::static_pointer_cast<short>(obj) = ntohs(parameter);
             break;
         case 4:
-             *std::static_pointer_cast<int>(obj) = ntohl(parameter);
+            *std::static_pointer_cast<int>(obj) = ntohl(parameter);
             break;
         case 8:
             *std::static_pointer_cast<long>(obj) = ntohll(parameter);
@@ -265,21 +265,19 @@ class SqlBinder
     //template <>
     self &operator<<(const char str[])
     {
-        _paraNum++;
-        _parameters.push_back((char *)str);
-        _length.push_back(strlen(str));
-        _format.push_back(0);
-        return *this;
+        return operator<<(std::string(str));
     }
     self &operator<<(char str[])
     {
-        return operator<<((const char *)str);
+        return operator<<(std::string(str));
     }
     self &operator<<(const std::string &str)
     {
+        std::shared_ptr<std::string> obj = std::make_shared<std::string>(str);
+        _objs.push_back(obj);
         _paraNum++;
-        _parameters.push_back((char *)str.c_str());
-        _length.push_back(str.length());
+        _parameters.push_back((char *)obj->c_str());
+        _length.push_back(obj->length());
         _format.push_back(0);
         return *this;
     }
@@ -305,6 +303,26 @@ class SqlBinder
     {
         return operator<<(date.toCustomedFormattedStringLocal("%Y-%m-%d %H:%M:%S", true)); //for postgreSQL
     }
+    self &operator<<(const std::vector<char> &v)
+    {
+        std::shared_ptr<std::vector<char>> obj = std::make_shared<std::vector<char>>(v);
+        _objs.push_back(obj);
+        _paraNum++;
+        _parameters.push_back((char *)obj->data());
+        _length.push_back(obj->size());
+        _format.push_back(1);
+        return *this;
+    }
+    self &operator<<(std::vector<char> &&v)
+    {
+        std::shared_ptr<std::vector<char>> obj = std::make_shared<std::vector<char>>(std::move(v));
+        _objs.push_back(obj);
+        _paraNum++;
+        _parameters.push_back((char *)obj->data());
+        _length.push_back(obj->size());
+        _format.push_back(1);
+        return *this;
+    }
     self &operator<<(std::nullptr_t nullp)
     {
         _paraNum++;
@@ -323,6 +341,7 @@ class SqlBinder
         _mode = mode;
         return *this;
     }
+   
     void exec() noexcept(false);
 
   private:

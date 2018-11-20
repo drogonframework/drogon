@@ -137,12 +137,12 @@ void create_model::createModelClassFromPG(const std::string &path, const DbClien
                 }
                 else if (type == "bytea")
                 {
-                    info._colType = "std::string";
+                    info._colType = "std::vector<char>";
                 }
                 else
                 {
                     info._colType = "std::string";
-                    //FIXME add more type such as hstore,blob...
+                    //FIXME add more type such as hstore...
                 }
                 auto defaultVal = row["column_default"].as<std::string>();
 
