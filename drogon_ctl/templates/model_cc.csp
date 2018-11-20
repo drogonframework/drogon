@@ -109,7 +109,7 @@ const std::string &{{className}}::getColumnName(size_t index) noexcept(false)
                 $$<<"            if(str.length()>=2&&\n";
                 $$<<"               str[0]=='\\\\'&&str[1]=='x')\n";
                 $$<<"            {\n";
-                $$<<"                auto binStr=drogon::hexToBinaryString((unsigned char *)str.c_str()+2,str.length()-2);\n";
+                $$<<"                auto binStr=drogon::hexToBinaryString(str.c_str()+2,str.length()-2);\n";
                 $$<<"                _"<<col._colValName<<"=std::make_shared<std::vector<char>>((char *)binStr.data(),(char *)binStr.data()+binStr.length());\n";
                 $$<<"            }\n";
                 $$<<"        }\n";

@@ -65,7 +65,7 @@ std::string genRandomString(int length)
     str[length] = 0;
     return std::string(str);
 }
-std::string hexToBinaryString(unsigned char *ptr, size_t length)
+std::string hexToBinaryString(const char *ptr, size_t length)
 {
     assert(length % 2 == 0);
     std::string ret(length / 2, '\0');
@@ -114,7 +114,7 @@ std::string hexToBinaryString(unsigned char *ptr, size_t length)
     }
     return ret;
 }
-std::string binaryStringToHex(unsigned char *ptr, size_t length)
+std::string binaryStringToHex(const unsigned char *ptr, size_t length)
 {
     std::string idString;
     for (long long i = 0; i < length; i++)
