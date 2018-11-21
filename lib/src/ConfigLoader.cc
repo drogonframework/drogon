@@ -221,7 +221,7 @@ static void loadApp(const Json::Value &app)
 }
 static void loadDbClients(const Json::Value &dbClients)
 {
-#if USE_POSTGRESQL
+#if USE_ORM
     if (!dbClients)
         return;
     for (auto &client : dbClients)

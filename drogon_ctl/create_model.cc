@@ -399,7 +399,7 @@ void create_model::createModel(const std::string &path)
 
 void create_model::handleCommand(std::vector<std::string> &parameters)
 {
-#if USE_POSTGRESQL
+#if USE_ORM
     std::cout << "Create model" << std::endl;
     if (parameters.size() == 0)
     {

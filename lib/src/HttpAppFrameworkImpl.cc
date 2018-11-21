@@ -1235,7 +1235,7 @@ HttpAppFramework::~HttpAppFramework()
 {
 }
 
-#if USE_POSTGRESQL
+#if USE_ORM
 orm::DbClientPtr HttpAppFrameworkImpl::getDbClient(const std::string &name)
 {
     return _dbClientsMap[name];

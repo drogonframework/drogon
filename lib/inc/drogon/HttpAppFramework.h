@@ -15,7 +15,7 @@
 #pragma once
 
 #include <drogon/config.h>
-#if USE_POSTGRESQL
+#if USE_ORM
 #include <drogon/orm/DbClient.h>
 #endif
 #include <drogon/utils/Utilities.h>
@@ -179,7 +179,7 @@ class HttpAppFramework : public trantor::NonCopyable
     virtual void setStaticFilesCacheTime(int cacheTime) = 0;
     virtual int staticFilesCacheTime() const = 0;
     virtual void setIdleConnectionTimeout(size_t timeout) = 0;
-#if USE_POSTGRESQL
+#if USE_ORM
     virtual orm::DbClientPtr getDbClient(const std::string &name = "default") = 0;
     virtual void createDbClient(const std::string &dbType,
                                 const std::string &host,

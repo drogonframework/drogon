@@ -15,7 +15,7 @@
 
 #include <drogon/config.h>
 #include <json/json.h>
-#if USE_POSTGRESQL
+#if USE_ORM
 #include <drogon/orm/DbClient.h>
 using namespace drogon::orm;
 #endif
