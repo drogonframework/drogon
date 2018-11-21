@@ -1,6 +1,6 @@
 /**
  *
- *  PgTransactionImpl.h
+ *  TransactionImpl.h
  *  An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
@@ -12,7 +12,7 @@
 
 #pragma once
 
-#include "PgConnection.h"
+#include "DbConnection.h"
 #include <drogon/orm/DbClient.h>
 #include <functional>
 #include <list>
@@ -21,16 +21,16 @@ namespace drogon
 {
 namespace orm
 {
-class PgTransactionImpl : public Transaction, public std::enable_shared_from_this<PgTransactionImpl>
+class TransactionImpl : public Transaction, public std::enable_shared_from_this<TransactionImpl>
 {
   public:
-    PgTransactionImpl(const PgConnectionPtr &connPtr, const std::function<void()> &usedUpCallback);
-    ~PgTransactionImpl();
+    TransactionImpl(const DbConnectionPtr &connPtr, const std::function<void()> &usedUpCallback);
+    ~TransactionImpl();
     void rollback() override;
     virtual std::string replaceSqlPlaceHolder(const std::string &sqlStr, const std::string &holderStr) const override;
 
   private:
-    PgConnectionPtr _connectionPtr;
+    DbConnectionPtr _connectionPtr;
     virtual void execSql(const std::string &sql,
                          size_t paraNum,
                          const std::vector<const char *> &parameters,
@@ -59,7 +59,7 @@ class PgTransactionImpl : public Transaction, public std::enable_shared_from_thi
     };
     std::list<SqlCmd> _sqlCmdBuffer;
     //   std::mutex _bufferMutex;
-    friend class PgClientImpl;
+    friend class DbClientGeneralImpl;
     void doBegin();
     trantor::EventLoop *_loop;
 };

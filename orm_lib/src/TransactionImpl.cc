@@ -1,6 +1,6 @@
 /**
  *
- *  PgTransactionImpl.cc
+ *  TransactionImpl.cc
  *  An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
@@ -10,19 +10,19 @@
  *
  */
 
-#include "PgTransactionImpl.h"
+#include "TransactionImpl.h"
 #include <trantor/utils/Logger.h>
 
 using namespace drogon::orm;
 
-PgTransactionImpl::PgTransactionImpl(const PgConnectionPtr &connPtr,
+TransactionImpl::TransactionImpl(const DbConnectionPtr &connPtr,
                                      const std::function<void()> &usedUpCallback)
     : _connectionPtr(connPtr),
       _usedUpCallback(usedUpCallback),
       _loop(connPtr->loop())
 {
 }
-PgTransactionImpl::~PgTransactionImpl()
+TransactionImpl::~TransactionImpl()
 {
     LOG_TRACE << "Destruct";
     assert(!_isWorking);
@@ -52,7 +52,7 @@ PgTransactionImpl::~PgTransactionImpl()
         });
     }
 }
-void PgTransactionImpl::execSql(const std::string &sql,
+void TransactionImpl::execSql(const std::string &sql,
                                 size_t paraNum,
                                 const std::vector<const char *> &parameters,
                                 const std::vector<int> &length,
@@ -111,7 +111,7 @@ void PgTransactionImpl::execSql(const std::string &sql,
     });
 }
 
-void PgTransactionImpl::rollback()
+void TransactionImpl::rollback()
 {
     auto thisPtr = shared_from_this();
 
@@ -164,7 +164,7 @@ void PgTransactionImpl::rollback()
     });
 }
 
-void PgTransactionImpl::execNewTask()
+void TransactionImpl::execNewTask()
 {
     _loop->assertInLoopThread();
     assert(_isWorking);
@@ -223,7 +223,7 @@ void PgTransactionImpl::execNewTask()
     }
 }
 
-void PgTransactionImpl::doBegin()
+void TransactionImpl::doBegin()
 {
     auto thisPtr = shared_from_this();
     _loop->queueInLoop([thisPtr]() {
@@ -252,7 +252,7 @@ void PgTransactionImpl::doBegin()
     });
 }
 
-std::string PgTransactionImpl::replaceSqlPlaceHolder(const std::string &sqlStr, const std::string &holderStr) const
+std::string TransactionImpl::replaceSqlPlaceHolder(const std::string &sqlStr, const std::string &holderStr) const
 {
     std::string::size_type startPos = 0;
     std::string::size_type pos;

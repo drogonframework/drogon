@@ -19,10 +19,11 @@ Result makeResult(const std::shared_ptr<PGresult> &r = std::shared_ptr<PGresult>
 } // namespace drogon
 
 PgConnection::PgConnection(trantor::EventLoop *loop, const std::string &connInfo)
-    : _connPtr(std::shared_ptr<PGconn>(PQconnectStart(connInfo.c_str()), [](PGconn *conn) {
+    : DbConnection(loop),
+      _connPtr(std::shared_ptr<PGconn>(PQconnectStart(connInfo.c_str()), [](PGconn *conn) {
           PQfinish(conn);
       })),
-      _loop(loop), _channel(_loop, PQsocket(_connPtr.get()))
+      _channel(loop, PQsocket(_connPtr.get()))
 {
     PQsetnonblocking(_connPtr.get(), 1);
     //assert(PQisnonblocking(_connPtr.get()));
@@ -57,10 +58,10 @@ PgConnection::PgConnection(trantor::EventLoop *loop, const std::string &connInfo
     _channel.enableReading();
     _channel.enableWriting();
 }
-int PgConnection::sock()
-{
-    return PQsocket(_connPtr.get());
-}
+// int PgConnection::sock()
+// {
+//     return PQsocket(_connPtr.get());
+// }
 void PgConnection::handleClosed()
 {
     _status = ConnectStatus_Bad;
