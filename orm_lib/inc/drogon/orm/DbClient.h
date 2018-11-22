@@ -36,14 +36,36 @@ typedef std::function<void(const DrogonDbException &)> ExceptionCallback;
 
 class Transaction;
 
+/// Database client abstract class
 class DbClient : public trantor::NonCopyable
 {
   public:
     virtual ~DbClient(){};
+    /// Create new database client with multiple connections;
+    /**
+     * @param connInfo: Connection string with some parameters,
+     * each parameter setting is in the form keyword = value. Spaces around the equal sign are optional. 
+     * To write an empty value, or a value containing spaces, surround it with single quotes, e.g., 
+     * keyword = 'a value'. Single quotes and backslashes within the value must be escaped with a backslash, 
+     * i.e., \' and \\.
+     * Example:
+     *      host=localhost port=5432 dbname=mydb connect_timeout=10 password=''
+     * The currently recognized parameter key words are:
+     * - host: can be either a host name or an IP address. 
+     * - port: Port number to connect to at the server host.
+     * - dbname: The database name. Defaults to be the same as the user name.
+     * - user:  user name to connect as. With PostgreSQL defaults to be the same as 
+     *          the operating system name of the user running the application.
+     * - password: Password to be used if the server demands password authentication.
+     * 
+     * Other key words for PostgreSQL, please refer to the documentation of PostgreSQL.
+     * 
+     * @param connNum: The number of connections to database server; 
+     */
 #if USE_POSTGRESQL
     static std::shared_ptr<DbClient> newPgClient(const std::string &connInfo, const size_t connNum);
 #endif
-    //Async method, nonblocking by default;
+    ///Async method, nonblocking by default;
     template <
         typename FUNCTION1,
         typename FUNCTION2,
