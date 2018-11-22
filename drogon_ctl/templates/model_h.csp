@@ -77,6 +77,7 @@ auto cols=@@.get<std::vector<ColumnInfo>>("columns");
     PrimaryKeyType getPrimaryKey() const; 
 <%c++}%>
     {{className}}(const Row &r) noexcept;
+    {{className}}() = default;
     
 <%c++
     for(auto col:cols)
