@@ -39,11 +39,13 @@ DbClientImpl::DbClientImpl(const std::string &connInfo, const size_t connNum, Cl
 }
 void DbClientImpl::ioLoop()
 {
-
-    for (size_t i = 0; i < _connectNum; i++)
-    {
-        _connections.insert(newConnection());
-    }
+    auto thisPtr = shared_from_this();
+    _loopPtr->runAfter(0, [thisPtr]() {
+        for (size_t i = 0; i < thisPtr->_connectNum; i++)
+        {
+            thisPtr->_connections.insert(thisPtr->newConnection());
+        }
+    });
     _loopPtr->loop();
 }
 
@@ -269,7 +271,7 @@ DbConnectionPtr DbClientImpl::newConnection()
         return nullptr;
 #endif
     }
-    else if(_type == ClientType::Mysql)
+    else if (_type == ClientType::Mysql)
     {
 #if USE_MYSQL
         connPtr = std::make_shared<MysqlConnection>(_loopPtr.get(), _connInfo);

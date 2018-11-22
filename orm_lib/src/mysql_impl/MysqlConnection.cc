@@ -12,6 +12,9 @@
  */
 
 #include "MysqlConnection.h"
+#include <drogon/utils/Utilities.h>
+#include <regex>
+#include <algorithm>
 
 using namespace drogon::orm;
 
@@ -24,8 +27,55 @@ MysqlConnection::MysqlConnection(trantor::EventLoop *loop, const std::string &co
     mysql_init(_mysqlPtr.get());
     mysql_options(_mysqlPtr.get(), MYSQL_OPT_NONBLOCK, 0);
     MYSQL *ret;
-    int status = mysql_real_connect_start(&ret, _mysqlPtr.get(), "127.0.0.1", "root", "", "test", 3306, NULL, 0);
-    
+    //Get the key and value
+    std::regex r(" *= *");
+    auto tmpStr = std::regex_replace(connInfo, r, "=");
+    std::string host, user, passwd, dbname, port;
+    auto keyValues = splitString(tmpStr, " ");
+    for (auto &kvs : keyValues)
+    {
+        auto kv = splitString(kvs, "=");
+        assert(kv.size() == 2);
+        auto key = kv[0];
+        auto value = kv[1];
+        if (value[0] == '\'' && value[value.length() - 1] == '\'')
+        {
+            value = value.substr(1, value.length() - 2);
+        }
+        std::transform(key.begin(), key.end(), key.begin(), tolower);
+        //LOG_TRACE << key << "=" << value;
+        if (key == "host")
+        {
+            host = value;
+        }
+        else if (key == "user")
+        {
+            user = value;
+        }
+        else if (key == "dbname")
+        {
+            dbname = value;
+        }
+        else if (key == "port")
+        {
+            port = value;
+        }
+        else if (key == "password")
+        {
+            passwd = value;
+        }
+    }
+
+    int status = mysql_real_connect_start(&ret,
+                                          _mysqlPtr.get(),
+                                          host.empty() ? NULL : host.c_str(),
+                                          user.empty() ? NULL : user.c_str(),
+                                          passwd.empty() ? NULL : passwd.c_str(),
+                                          dbname.empty() ? NULL : dbname.c_str(),
+                                          port.empty() ? 3306 : atol(port.c_str()),
+                                          NULL,
+                                          0);
+
     auto fd = mysql_get_socket(_mysqlPtr.get());
     _channelPtr = std::unique_ptr<trantor::Channel>(new trantor::Channel(loop, fd));
 
@@ -51,7 +101,6 @@ MysqlConnection::MysqlConnection(trantor::EventLoop *loop, const std::string &co
 
 void MysqlConnection::setChannel(int status)
 {
-    LOG_TRACE << "channel index:" << _channelPtr->index();
     _channelPtr->disableReading();
     _channelPtr->disableWriting();
     if (status & MYSQL_WAIT_READ)
@@ -74,7 +123,6 @@ void MysqlConnection::setChannel(int status)
 }
 void MysqlConnection::handleRead()
 {
-    LOG_TRACE << "channel index:" << _channelPtr->index();
     int status = 0;
     status |= MYSQL_WAIT_READ;
     MYSQL *ret;
@@ -160,4 +208,16 @@ void MysqlConnection::handleTimeout()
             setChannel(status);
         }
     }
+}
+
+void MysqlConnection::execSql(const std::string &sql,
+                              size_t paraNum,
+                              const std::vector<const char *> &parameters,
+                              const std::vector<int> &length,
+                              const std::vector<int> &format,
+                              const ResultCallback &rcb,
+                              const std::function<void(const std::exception_ptr &)> &exceptCallback,
+                              const std::function<void()> &idleCb)
+{
+    
 }

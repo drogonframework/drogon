@@ -43,7 +43,7 @@ class MysqlConnection : public DbConnection, public std::enable_shared_from_this
                          const std::vector<int> &format,
                          const ResultCallback &rcb,
                          const std::function<void(const std::exception_ptr &)> &exceptCallback,
-                         const std::function<void()> &idleCb) override {}
+                         const std::function<void()> &idleCb) override;
 
   private:
     std::unique_ptr<trantor::Channel> _channelPtr;
