@@ -1,8 +1,11 @@
 //
 // Created by antao on 2018/6/22.
 //
-#include "DbClientGeneralImpl.h"
+#include "DbClientImpl.h"
 #include "DbConnection.h"
+#if USE_POSTGRESQL
+#include "postgresql_impl/PgConnection.h"
+#endif
 #include "TransactionImpl.h"
 #include <trantor/net/EventLoop.h>
 #include <trantor/net/inner/Channel.h>
@@ -20,9 +23,10 @@
 
 using namespace drogon::orm;
 
-DbClientGeneralImpl::DbClientGeneralImpl(const std::string &connInfo, const size_t connNum)
+DbClientImpl::DbClientImpl(const std::string &connInfo, const size_t connNum, ClientType type)
     : _connInfo(connInfo),
-      _connectNum(connNum)
+      _connectNum(connNum),
+      _type(type)
 {
     assert(connNum > 0);
     _loopThread = std::thread([=]() {
@@ -30,7 +34,7 @@ DbClientGeneralImpl::DbClientGeneralImpl(const std::string &connInfo, const size
         ioLoop();
     });
 }
-void DbClientGeneralImpl::ioLoop()
+void DbClientImpl::ioLoop()
 {
 
     for (size_t i = 0; i < _connectNum; i++)
@@ -40,7 +44,7 @@ void DbClientGeneralImpl::ioLoop()
     _loopPtr->loop();
 }
 
-DbClientGeneralImpl::~DbClientGeneralImpl()
+DbClientImpl::~DbClientImpl()
 {
     _stop = true;
     _loopPtr->quit();
@@ -48,7 +52,7 @@ DbClientGeneralImpl::~DbClientGeneralImpl()
         _loopThread.join();
 }
 
-void DbClientGeneralImpl::execSql(const DbConnectionPtr &conn,
+void DbClientImpl::execSql(const DbConnectionPtr &conn,
                            const std::string &sql,
                            size_t paraNum,
                            const std::vector<const char *> &parameters,
@@ -81,7 +85,7 @@ void DbClientGeneralImpl::execSql(const DbConnectionPtr &conn,
                       }
                   });
 }
-void DbClientGeneralImpl::execSql(const std::string &sql,
+void DbClientImpl::execSql(const std::string &sql,
                            size_t paraNum,
                            const std::vector<const char *> &parameters,
                            const std::vector<int> &length,
@@ -161,7 +165,7 @@ void DbClientGeneralImpl::execSql(const std::string &sql,
     }
 }
 
-std::string DbClientGeneralImpl::replaceSqlPlaceHolder(const std::string &sqlStr, const std::string &holderStr) const
+std::string DbClientImpl::replaceSqlPlaceHolder(const std::string &sqlStr, const std::string &holderStr) const
 {
     std::string::size_type startPos = 0;
     std::string::size_type pos;
@@ -182,7 +186,7 @@ std::string DbClientGeneralImpl::replaceSqlPlaceHolder(const std::string &sqlStr
     } while (1);
 }
 
-std::shared_ptr<Transaction> DbClientGeneralImpl::newTransaction()
+std::shared_ptr<Transaction> DbClientImpl::newTransaction()
 {
     DbConnectionPtr conn;
     {
@@ -204,7 +208,7 @@ std::shared_ptr<Transaction> DbClientGeneralImpl::newTransaction()
         }
         {
             std::lock_guard<std::mutex> guard(_connectionsMutex);
-            
+
             if (_connections.find(conn) == _connections.end() &&
                 _busyConnections.find(conn) == _busyConnections.find(conn))
             {
@@ -218,7 +222,7 @@ std::shared_ptr<Transaction> DbClientGeneralImpl::newTransaction()
     return trans;
 }
 
-void DbClientGeneralImpl::handleNewTask(const DbConnectionPtr &connPtr)
+void DbClientImpl::handleNewTask(const DbConnectionPtr &connPtr)
 {
     std::lock_guard<std::mutex> guard(_connectionsMutex);
     if (_transWaitNum > 0)
@@ -239,7 +243,6 @@ void DbClientGeneralImpl::handleNewTask(const DbConnectionPtr &connPtr)
                 auto cmd = _sqlCmdBuffer.front();
                 _sqlCmdBuffer.pop_front();
                 _loopPtr->queueInLoop([=]() {
-                    
                     execSql(connPtr, cmd._sql, cmd._paraNum, cmd._parameters, cmd._length, cmd._format, cmd._cb, cmd._exceptCb);
                 });
 
@@ -250,4 +253,46 @@ void DbClientGeneralImpl::handleNewTask(const DbConnectionPtr &connPtr)
         _busyConnections.erase(connPtr);
         _readyConnections.insert(connPtr);
     }
+}
+
+DbConnectionPtr DbClientImpl::newConnection()
+{
+    DbConnectionPtr connPtr;
+    if (_type == ClientType::PostgreSQL)
+    {
+#if USE_POSTGRESQL
+        connPtr = std::make_shared<PgConnection>(_loopPtr.get(), _connInfo);
+#else
+        return nullptr;
+#endif
+    }
+    else
+    {
+        return nullptr;
+    }
+    auto loopPtr = _loopPtr;
+    std::weak_ptr<DbClientImpl> weakPtr = shared_from_this();
+    connPtr->setCloseCallback([weakPtr, loopPtr](const DbConnectionPtr &closeConnPtr) {
+        //Reconnect after 1 second
+        loopPtr->runAfter(1, [weakPtr, closeConnPtr] {
+            auto thisPtr = weakPtr.lock();
+            if (!thisPtr)
+                return;
+            std::lock_guard<std::mutex> guard(thisPtr->_connectionsMutex);
+            thisPtr->_readyConnections.erase(closeConnPtr);
+            thisPtr->_busyConnections.erase(closeConnPtr);
+            assert(thisPtr->_connections.find(closeConnPtr) != thisPtr->_connections.end());
+            thisPtr->_connections.erase(closeConnPtr);
+            thisPtr->_connections.insert(thisPtr->newConnection());
+        });
+    });
+    connPtr->setOkCallback([weakPtr](const DbConnectionPtr &okConnPtr) {
+        LOG_TRACE << "connected!";
+        auto thisPtr = weakPtr.lock();
+        if (!thisPtr)
+            return;
+        thisPtr->handleNewTask(okConnPtr);
+    });
+    //std::cout<<"newConn end"<<connPtr<<std::endl;
+    return connPtr;
 }

@@ -59,7 +59,7 @@ class TransactionImpl : public Transaction, public std::enable_shared_from_this<
     };
     std::list<SqlCmd> _sqlCmdBuffer;
     //   std::mutex _bufferMutex;
-    friend class DbClientGeneralImpl;
+    friend class DbClientImpl;
     void doBegin();
     trantor::EventLoop *_loop;
 };
