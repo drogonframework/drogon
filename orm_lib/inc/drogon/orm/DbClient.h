@@ -65,7 +65,10 @@ class DbClient : public trantor::NonCopyable
 #if USE_POSTGRESQL
     static std::shared_ptr<DbClient> newPgClient(const std::string &connInfo, const size_t connNum);
 #endif
-    ///Async method, nonblocking by default;
+#if USE_MYSQL
+    static std::shared_ptr<DbClient> newMysqlClient(const std::string &connInfo, const size_t connNum);
+#endif
+    //Async method, nonblocking by default;
     template <
         typename FUNCTION1,
         typename FUNCTION2,

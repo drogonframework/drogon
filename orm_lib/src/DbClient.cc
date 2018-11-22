@@ -29,3 +29,10 @@ std::shared_ptr<DbClient> DbClient::newPgClient(const std::string &connInfo, con
     return std::make_shared<DbClientImpl>(connInfo, connNum, ClientType::PostgreSQL);
 }
 #endif
+
+#if USE_MYSQL
+std::shared_ptr<DbClient> DbClient::newMysqlClient(const std::string &connInfo, const size_t connNum)
+{
+    return std::make_shared<DbClientImpl>(connInfo, connNum, ClientType::Mysql);
+}
+#endif

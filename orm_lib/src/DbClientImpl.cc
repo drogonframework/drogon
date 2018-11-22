@@ -6,6 +6,9 @@
 #if USE_POSTGRESQL
 #include "postgresql_impl/PgConnection.h"
 #endif
+#if USE_MYSQL
+#include "mysql_impl/MysqlConnection.h"
+#endif
 #include "TransactionImpl.h"
 #include <trantor/net/EventLoop.h>
 #include <trantor/net/inner/Channel.h>
@@ -262,6 +265,14 @@ DbConnectionPtr DbClientImpl::newConnection()
     {
 #if USE_POSTGRESQL
         connPtr = std::make_shared<PgConnection>(_loopPtr.get(), _connInfo);
+#else
+        return nullptr;
+#endif
+    }
+    else if(_type == ClientType::Mysql)
+    {
+#if USE_MYSQL
+        connPtr = std::make_shared<MysqlConnection>(_loopPtr.get(), _connInfo);
 #else
         return nullptr;
 #endif

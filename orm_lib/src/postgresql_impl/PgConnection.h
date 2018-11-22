@@ -20,23 +20,24 @@ class PgConnection;
 typedef std::shared_ptr<PgConnection> PgConnectionPtr;
 class PgConnection : public DbConnection, public std::enable_shared_from_this<PgConnection>
 {
-  public:
-    PgConnection(trantor::EventLoop *loop, const std::string &connInfo);
+public:
+  PgConnection(trantor::EventLoop *loop, const std::string &connInfo);
 
-    void execSql(const std::string &sql,
-                 size_t paraNum,
-                 const std::vector<const char *> &parameters,
-                 const std::vector<int> &length,
-                 const std::vector<int> &format,
-                 const ResultCallback &rcb,
-                 const std::function<void(const std::exception_ptr &)> &exceptCallback,
-                 const std::function<void()> &idleCb);
-  private:
-    std::shared_ptr<PGconn> _connPtr;
-    trantor::Channel _channel;
-    void handleRead();
-    void pgPoll();
-    void handleClosed();
+  virtual void execSql(const std::string &sql,
+                       size_t paraNum,
+                       const std::vector<const char *> &parameters,
+                       const std::vector<int> &length,
+                       const std::vector<int> &format,
+                       const ResultCallback &rcb,
+                       const std::function<void(const std::exception_ptr &)> &exceptCallback,
+                       const std::function<void()> &idleCb) override;
+
+private:
+  std::shared_ptr<PGconn> _connPtr;
+  trantor::Channel _channel;
+  void handleRead();
+  void pgPoll();
+  void handleClosed();
 };
 
 } // namespace orm
