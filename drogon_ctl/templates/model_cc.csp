@@ -313,6 +313,8 @@ Json::Value {{className}}::toJson() const
         ret["<%c++$$<<col._colName;%>"]=get<%c++$$<<col._colTypeName;%>()->toCustomedFormattedStringLocal("%Y-%m-%d %H:%M:%S", true);
 <%c++}else if(col._colDatabaseType=="bytea"){%>
         ret["<%c++$$<<col._colName;%>"]=drogon::base64Encode((const unsigned char *)get<%c++$$<<col._colTypeName;%>()->data(),get<%c++$$<<col._colTypeName;%>()->size());
+<%c++}else if(col._colType=="int64_t"){%>
+        ret["<%c++$$<<col._colName;%>"]=(Json::Int64)getValueOf<%c++$$<<col._colTypeName;%>();
 <%c++}else{%>
         ret["<%c++$$<<col._colName;%>"]=getValueOf<%c++$$<<col._colTypeName;%>();
 <%c++}%>
