@@ -58,7 +58,7 @@ class DbClient : public trantor::NonCopyable
      *          the operating system name of the user running the application.
      * - password: Password to be used if the server demands password authentication.
      * 
-     * Other key words for PostgreSQL, please refer to the documentation of PostgreSQL.
+     * For other key words on PostgreSQL, see the PostgreSQL documentation.
      * 
      * @param connNum: The number of connections to database server; 
      */

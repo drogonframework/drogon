@@ -12,6 +12,7 @@ using namespace drogon_ctl;
 #include <drogon/orm/Row.h>
 #include <drogon/orm/Field.h>
 #include <drogon/orm/SqlBinder.h>
+#include <drogon/orm/Mapper.h>
 #include <trantor/utils/Date.h>
 #include <json/json.h>
 #include <string>
@@ -20,7 +21,6 @@ using namespace drogon_ctl;
 #include <tuple>
 #include <stdint.h>
 #include <iostream>
-
 using namespace drogon::orm;
 
 namespace drogon_model
@@ -82,17 +82,21 @@ auto cols=@@.get<std::vector<ColumnInfo>>("columns");
 <%c++
     for(auto col:cols)
     {
-        $$<<"    //For column "<<col._colName<<"\n";
+        $$<<"    /**  For column "<<col._colName<<"  */\n";
         if(!col._colType.empty())
         {
+            $$<<"    ///Get the value of the column "<<col._colName<<", returns the default value if the column is null\n";
             $$<<"    const "<<col._colType<<" &getValueOf"<<col._colTypeName<<"(const "<<col._colType<<" &defaultValue="<<col._colType<<"()) const noexcept;\n";
             if(col._colType=="std::vector<char>")
             {
+                $$<<"    ///Returns the column value by std::string with binary data\n";
                 $$<<"    std::string getValueOf"<<col._colTypeName<<"AsString(const std::string &defaultValue=\"\") const noexcept;\n";
             }
+            $$<<"    ///Returns a shared_ptr object pointing to the column const value, or an empty shared_ptr object if the column is null\n";
             $$<<"    std::shared_ptr<const "<<col._colType<<"> get"<<col._colTypeName<<"() const noexcept;\n";
             if(!col._isAutoVal)
             {
+            $$<<"    ///Set the value of the column "<<col._colName<<"\n";
             $$<<"    void set"<<col._colTypeName<<"(const "<<col._colType<<" &"<<col._colValName<<") noexcept;\n";
                 if(col._colType=="std::string")
                     $$<<"    void set"<<col._colTypeName<<"("<<col._colType<<" &&"<<col._colValName<<") noexcept;\n";
@@ -107,16 +111,18 @@ auto cols=@@.get<std::vector<ColumnInfo>>("columns");
         $$<<"\n";    
     }
 %>
-    static const std::string &getColumnName(size_t index) noexcept(false);
-    static const std::vector<std::string> &insertColumns() noexcept;
-    void outputArgs(drogon::orm::internal::SqlBinder &binder) const;
 
-    const std::vector<std::string> updateColumns() const;
-    void updateArgs(drogon::orm::internal::SqlBinder &binder) const;
+    static size_t getColumnNumber() noexcept {  return <%c++$$<<cols.size();%>;  }
+    static const std::string &getColumnName(size_t index) noexcept(false);
 
     Json::Value toJson() const;
 
   private:
+    friend Mapper<{{className}}>;
+    static const std::vector<std::string> &insertColumns() noexcept;
+    void outputArgs(drogon::orm::internal::SqlBinder &binder) const;
+    const std::vector<std::string> updateColumns() const;
+    void updateArgs(drogon::orm::internal::SqlBinder &binder) const;
 <%c++
     for(auto col:cols)
     {

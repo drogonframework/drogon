@@ -218,7 +218,7 @@ void PgConnection::handleRead()
         auto type = PQresultStatus(res.get());
         if (type == PGRES_BAD_RESPONSE || type == PGRES_FATAL_ERROR)
         {
-            LOG_ERROR << "Result error: %s" << PQerrorMessage(_connPtr.get());
+            LOG_WARN << PQerrorMessage(_connPtr.get());
             if (_isWorking)
             {
                 {
