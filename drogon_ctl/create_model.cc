@@ -76,6 +76,11 @@ void create_model::createModelClassFromPG(const std::string &path, const DbClien
                 AND table_name   = $1"
             << tableName << Mode::Blocking >>
         [&](const Result &r) {
+            if (r.size() == 0)
+            {
+                std::cout << "    ---Can't create model from the table " << tableName << ", please check privileges on the table." << std::endl;
+                return;
+            }
             for (size_t i = 0; i < r.size(); i++)
             {
                 auto row = r[i];
