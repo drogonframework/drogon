@@ -7,6 +7,9 @@
 #endif
 #include <iostream>
 #include <fstream>
+#include<sys/stat.h>
+#include<unistd.h>
+#include<fcntl.h>
 #include <algorithm>
 
 using namespace drogon;
@@ -118,14 +121,28 @@ int HttpFile::save(const std::string &path)
     if (fileName_ == "")
         return -1;
     std::string filename;
-    if (path[path.length()] != '/')
+	std::string path_("./"+path);
+	//replace_all(path_, "../", "");
+	//to prevent to create dir on the top of current dir
+	if(path_.find("../")!=std::string::npos){
+		return -1;
+	}
+	if(access(path_.c_str(), F_OK)!=0){
+		if (mkdir(path_.c_str(), 0667)==-1){
+			return -1;
+		}
+	}
+
+    if (path_[path_.length()] != '/')
     {
-        filename = path + "/" + fileName_;
+        filename = path_ + "/" + fileName_;
     }
     else
-        filename = path + fileName_;
+        filename = path_ + fileName_;
+
     return saveAs(filename);
 }
+
 int HttpFile::saveAs(const std::string &filename)
 {
     std::ofstream file(filename);
