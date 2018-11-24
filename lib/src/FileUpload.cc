@@ -7,20 +7,20 @@
 #endif
 #include <iostream>
 #include <fstream>
-#include<sys/stat.h>
-#include<unistd.h>
-#include<fcntl.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <fcntl.h>
 #include <algorithm>
 
 using namespace drogon;
 
 const std::vector<HttpFile> FileUpload::getFiles()
 {
-    return files_;
+    return _files;
 }
-const std::map<std::string, std::string> &FileUpload::getPremeter() const
+const std::map<std::string, std::string> &FileUpload::getParameters() const
 {
-    return premeter_;
+    return _parameters;
 };
 int FileUpload::parse(const HttpRequestPtr &req)
 {
@@ -96,7 +96,7 @@ int FileUpload::parseEntity(const std::string &str)
         pos1 = str.find("\r\n\r\n");
         if (pos1 == std::string::npos)
             return -1;
-        premeter_[name] = str.substr(pos1 + 4);
+        _parameters[name] = str.substr(pos1 + 4);
         return 0;
     }
     else
@@ -111,34 +111,31 @@ int FileUpload::parseEntity(const std::string &str)
         if (pos1 == std::string::npos)
             return -1;
         file.setFile(str.substr(pos1 + 4));
-        files_.push_back(file);
+        _files.push_back(file);
         return 0;
     }
 }
 
 int HttpFile::save(const std::string &path)
 {
-    if (fileName_ == "")
+    if (_fileName == "")
         return -1;
     std::string filename;
-	std::string path_("./"+path);
-	//replace_all(path_, "../", "");
-	//to prevent to create dir on the top of current dir
-	if(path_.find("../")!=std::string::npos){
-		return -1;
-	}
-	if(access(path_.c_str(), F_OK)!=0){
-		if (mkdir(path_.c_str(), 0667)==-1){
-			return -1;
-		}
-	}
 
-    if (path_[path_.length()] != '/')
+    if (access(path.c_str(), F_OK) != 0)
     {
-        filename = path_ + "/" + fileName_;
+        if (mkdir(path.c_str(), 0667) == -1)
+        {
+            return -1;
+        }
+    }
+
+    if (path[path.length() - 1] != '/')
+    {
+        filename = path + "/" + _fileName;
     }
     else
-        filename = path_ + fileName_;
+        filename = path + _fileName;
 
     return saveAs(filename);
 }
@@ -148,7 +145,7 @@ int HttpFile::saveAs(const std::string &filename)
     std::ofstream file(filename);
     if (file.is_open())
     {
-        file << fileContent_;
+        file << _fileContent;
         file.close();
         return 0;
     }
@@ -161,11 +158,11 @@ const std::string HttpFile::getMd5() const
     MD5_CTX c;
     unsigned char md5[16] = {0};
     MD5_Init(&c);
-    MD5_Update(&c, fileContent_.c_str(), fileContent_.size());
+    MD5_Update(&c, _fileContent.c_str(), _fileContent.size());
     MD5_Final(md5, &c);
     return binaryStringToHex(md5, 16);
 #else
     Md5Encode encode;
-    return encode.Encode(fileContent_);
+    return encode.Encode(_fileContent);
 #endif
 }

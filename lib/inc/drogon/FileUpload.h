@@ -23,17 +23,17 @@ namespace drogon
 class HttpFile
 {
   public:
-    const std::string &getFileName() const { return fileName_; };
-    void setFileName(const std::string &filename) { fileName_ = filename; };
-    void setFile(const std::string &file) { fileContent_ = file; };
+    const std::string &getFileName() const { return _fileName; };
+    void setFileName(const std::string &filename) { _fileName = filename; };
+    void setFile(const std::string &file) { _fileContent = file; };
     int save(const std::string &path);
     int saveAs(const std::string &filename);
-    int64_t fileLength() const { return fileContent_.length(); };
+    int64_t fileLength() const { return _fileContent.length(); };
     const std::string getMd5() const;
 
   protected:
-    std::string fileName_;
-    std::string fileContent_;
+    std::string _fileName;
+    std::string _fileContent;
 };
 class FileUpload
 {
@@ -41,12 +41,12 @@ class FileUpload
     FileUpload(){};
     ~FileUpload(){};
     const std::vector<HttpFile> getFiles();
-    const std::map<std::string, std::string> &getPremeter() const;
+    const std::map<std::string, std::string> &getParameters() const;
     int parse(const HttpRequestPtr &req);
 
   protected:
-    std::vector<HttpFile> files_;
-    std::map<std::string, std::string> premeter_;
+    std::vector<HttpFile> _files;
+    std::map<std::string, std::string> _parameters;
     int parseEntity(const std::string &str);
 };
 } // namespace drogon
