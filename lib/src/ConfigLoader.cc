@@ -61,7 +61,7 @@ static void loadLogSetting(const Json::Value &log)
     {
         auto baseName = log.get("logfile_base_name", "").asString();
         auto logSize = log.get("log_size_limit", 100000000).asUInt64();
-        HttpAppFramework::instance().setLogPath(logPath, baseName, logSize);
+        drogon::app().setLogPath(logPath, baseName, logSize);
     }
     auto logLevel = log.get("log_level", "DEBUG").asString();
     if (logLevel == "TRACE")
@@ -127,7 +127,7 @@ static void loadControllers(const Json::Value &controllers)
                 constraints.push_back(filter.asString());
             }
         }
-        HttpAppFramework::instance().registerHttpSimpleController(path, ctrlName, constraints);
+        drogon::app().registerHttpSimpleController(path, ctrlName, constraints);
     }
 }
 static void loadApp(const Json::Value &app)
@@ -136,20 +136,23 @@ static void loadApp(const Json::Value &app)
         return;
     //threads number
     auto threadsNum = app.get("threads_num", 1).asUInt64();
-    HttpAppFramework::instance().setThreadNum(threadsNum);
+    drogon::app().setThreadNum(threadsNum);
     //session
     auto enableSession = app.get("enable_session", false).asBool();
     auto timeout = app.get("session_timeout", 0).asUInt64();
     if (enableSession)
-        HttpAppFramework::instance().enableSession(timeout);
+        drogon::app().enableSession(timeout);
     else
-        HttpAppFramework::instance().disableSession();
+        drogon::app().disableSession();
     //document root
     auto documentRoot = app.get("document_root", "").asString();
     if (documentRoot != "")
     {
-        HttpAppFramework::instance().setDocumentRoot(documentRoot);
+        drogon::app().setDocumentRoot(documentRoot);
     }
+    //upload path
+    auto uploadPath = app.get("upload_path", "uploads").asString();
+    drogon::app().setUploadPath(uploadPath);
     //file types
     auto fileTypes = app["file_types"];
     if (fileTypes.isArray() && !fileTypes.empty())
@@ -160,19 +163,19 @@ static void loadApp(const Json::Value &app)
             types.push_back(fileType.asString());
             LOG_TRACE << "file type:" << types.back();
         }
-        HttpAppFramework::instance().setFileTypes(types);
+        drogon::app().setFileTypes(types);
     }
     //max connections
     auto maxConns = app.get("max_connections", 0).asUInt64();
     if (maxConns > 0)
     {
-        HttpAppFramework::instance().setMaxConnectionNum(maxConns);
+        drogon::app().setMaxConnectionNum(maxConns);
     }
     //max connections per IP
     auto maxConnsPerIP = app.get("max_connections_per_ip", 0).asUInt64();
     if (maxConnsPerIP > 0)
     {
-        HttpAppFramework::instance().setMaxConnectionNumPerIP(maxConnsPerIP);
+        drogon::app().setMaxConnectionNumPerIP(maxConnsPerIP);
     }
 
     //dynamic views
@@ -188,7 +191,7 @@ static void loadApp(const Json::Value &app)
                 paths.push_back(viewsPath.asString());
                 LOG_TRACE << "views path:" << paths.back();
             }
-            HttpAppFramework::instance().enableDynamicViewsLoading(paths);
+            drogon::app().enableDynamicViewsLoading(paths);
         }
     }
     //log
@@ -197,24 +200,24 @@ static void loadApp(const Json::Value &app)
     auto runAsDaemon = app.get("run_as_daemon", false).asBool();
     if (runAsDaemon)
     {
-        HttpAppFramework::instance().enableRunAsDaemon();
+        drogon::app().enableRunAsDaemon();
     }
     //relaunch
     auto relaunch = app.get("relaunch_on_error", false).asBool();
     if (relaunch)
     {
-        HttpAppFramework::instance().enableRelaunchOnError();
+        drogon::app().enableRelaunchOnError();
     }
     auto useSendfile = app.get("use_sendfile", true).asBool();
-    HttpAppFramework::instance().enableSendfile(useSendfile);
+    drogon::app().enableSendfile(useSendfile);
     auto useGzip = app.get("use_gzip", true).asBool();
-    HttpAppFramework::instance().enableGzip(useGzip);
+    drogon::app().enableGzip(useGzip);
     auto staticFilesCacheTime = app.get("static_files_cache_time", 5).asInt();
-    HttpAppFramework::instance().setStaticFilesCacheTime(staticFilesCacheTime);
+    drogon::app().setStaticFilesCacheTime(staticFilesCacheTime);
     loadControllers(app["simple_controllers_map"]);
     //Kick off idle connections
     auto kickOffTimeout = app.get("idle_connection_timeout", 60).asUInt64();
-    HttpAppFramework::instance().setIdleConnectionTimeout(kickOffTimeout);
+    drogon::app().setIdleConnectionTimeout(kickOffTimeout);
 }
 static void loadDbClients(const Json::Value &dbClients)
 {
@@ -236,7 +239,7 @@ static void loadDbClients(const Json::Value &dbClients)
         auto password = client.get("passwd", "").asString();
         auto connNum = client.get("connection_number", 1).asUInt();
         auto name = client.get("name", "default").asString();
-        HttpAppFramework::instance().createDbClient(type, host, (u_short)port, dbname, user, password, connNum, name);
+        drogon::app().createDbClient(type, host, (u_short)port, dbname, user, password, connNum, name);
     }
 #endif
 }
@@ -253,7 +256,7 @@ static void loadListeners(const Json::Value &listeners)
         auto cert = listener.get("cert", "").asString();
         auto key = listener.get("key", "").asString();
         LOG_TRACE << "Add listener:" << addr << ":" << port;
-        HttpAppFramework::instance().addListener(addr, port, useSSL, cert, key);
+        drogon::app().addListener(addr, port, useSSL, cert, key);
     }
 }
 static void loadSSL(const Json::Value &sslFiles)
@@ -262,7 +265,7 @@ static void loadSSL(const Json::Value &sslFiles)
         return;
     auto key = sslFiles.get("key", "").asString();
     auto cert = sslFiles.get("cert", "").asString();
-    HttpAppFramework::instance().setSSLFiles(cert, key);
+    drogon::app().setSSLFiles(cert, key);
 }
 void ConfigLoader::load()
 {

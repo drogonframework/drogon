@@ -55,6 +55,10 @@
     "session_timeout": 0,
     //document_root:Root path of HTTP document,defaut path is ./
     "document_root": "./",
+    //upload_path: The path to save the uploaded file. "uploads" by default. 
+    //If the path isn't prefixed with / or ./,
+    //it will be relative path of document_root path
+    "upload_path":"uploads",
     /* file_types:
      * HTTP download file types,The file types supported by drogon
      * by default are "html", "js", "css", "xml", "xsl", "txt", "svg",

@@ -33,7 +33,9 @@ namespace drogon
 class HttpAppFrameworkImpl : public HttpAppFramework
 {
   public:
-    HttpAppFrameworkImpl() : _connectionNum(0)
+    HttpAppFrameworkImpl()
+        : _uploadPath(_rootPath + "uploads"),
+          _connectionNum(0)
     {
     }
     virtual void addListener(const std::string &ip,
@@ -61,6 +63,8 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     virtual void disableSession() override { _useSession = false; }
     virtual const std::string &getDocumentRoot() const override { return _rootPath; }
     virtual void setDocumentRoot(const std::string &rootPath) override { _rootPath = rootPath; }
+    virtual const std::string &getUploadPath() const override { return _uploadPath; }
+    virtual void setUploadPath(const std::string &uploadPath) override;
     virtual void setFileTypes(const std::vector<std::string> &types) override;
     virtual void enableDynamicViewsLoading(const std::vector<std::string> &libPaths) override;
     virtual void setMaxConnectionNum(size_t maxConnections) override;
@@ -184,7 +188,7 @@ class HttpAppFrameworkImpl : public HttpAppFramework
                                           "otf", "woff2", "woff", "eot", "png", "jpg", "jpeg",
                                           "gif", "bmp", "ico", "icns"};
     std::string _rootPath = "./";
-
+    std::string _uploadPath;
     std::atomic_bool _running;
 
     //tool funcs

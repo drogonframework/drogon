@@ -1,5 +1,6 @@
 #include <drogon/utils/Utilities.h>
 #include <drogon/FileUpload.h>
+#include <drogon/HttpAppFramework.h>
 #ifdef USE_OPENSSL
 #include <openssl/md5.h>
 #else
@@ -14,7 +15,7 @@
 
 using namespace drogon;
 
-const std::vector<HttpFile> FileUpload::getFiles()
+const std::vector<HttpFile> &FileUpload::getFiles()
 {
     return _files;
 }
@@ -116,33 +117,71 @@ int FileUpload::parseEntity(const std::string &str)
     }
 }
 
-int HttpFile::save(const std::string &path)
+int HttpFile::save(const std::string &path) const
 {
+    assert(!path.empty());
     if (_fileName == "")
         return -1;
     std::string filename;
-
-    if (access(path.c_str(), F_OK) != 0)
+    auto tmpPath = path;
+    if (path[0] == '/' ||
+        (path.length() >= 2 && path[0] == '.' && path[1] == '/'))
     {
-        if (mkdir(path.c_str(), 0667) == -1)
-        {
-            return -1;
-        }
-    }
-
-    if (path[path.length() - 1] != '/')
-    {
-        filename = path + "/" + _fileName;
     }
     else
-        filename = path + _fileName;
+    {
+        auto &uploadPath = drogon::app().getUploadPath();
+        if (uploadPath[uploadPath.length() - 1] == '/')
+            tmpPath = uploadPath + path;
+        else
+            tmpPath = uploadPath + "/" + path;
+    }
 
-    return saveAs(filename);
+    if (createPath(tmpPath) < 0)
+        return -1;
+
+    if (tmpPath[tmpPath.length() - 1] != '/')
+    {
+        filename = tmpPath + "/" + _fileName;
+    }
+    else
+        filename = tmpPath + _fileName;
+
+    return saveTo(filename);
 }
-
-int HttpFile::saveAs(const std::string &filename)
+int HttpFile::save() const
 {
-    std::ofstream file(filename);
+    return save(drogon::app().getUploadPath());
+}
+int HttpFile::saveAs(const std::string &filename) const
+{
+    assert(!filename.empty());
+    auto pathAndFileName = filename;
+    if (filename[0] == '/' ||
+        (filename.length() >= 2 && filename[0] == '.' && filename[1] == '/'))
+    {
+    }
+    else
+    {
+        auto &uploadPath = drogon::app().getUploadPath();
+        if (uploadPath[uploadPath.length() - 1] == '/')
+            pathAndFileName = uploadPath + filename;
+        else
+            pathAndFileName = uploadPath + "/" + filename;
+    }
+    auto pathPos = pathAndFileName.rfind("/");
+    if (pathPos != std::string::npos)
+    {
+        std::string path = pathAndFileName.substr(0, pathPos);
+        if (createPath(path) < 0)
+            return -1;
+    }
+    return saveTo(pathAndFileName);
+}
+int HttpFile::saveTo(const std::string &pathAndFilename) const
+{
+    LOG_TRACE << "save uploaded file:" << pathAndFilename;
+    std::ofstream file(pathAndFilename);
     if (file.is_open())
     {
         file << _fileContent;
@@ -150,7 +189,10 @@ int HttpFile::saveAs(const std::string &filename)
         return 0;
     }
     else
+    {
+        LOG_ERROR << "save failed!";
         return -1;
+    }
 }
 const std::string HttpFile::getMd5() const
 {

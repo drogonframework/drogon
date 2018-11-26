@@ -85,17 +85,20 @@ void HttpAppFrameworkImpl::enableDynamicViewsLoading(const std::vector<std::stri
 {
     assert(!_running);
 
-    for (auto libpath : libPaths)
+    for (auto &libpath : libPaths)
     {
-        if (libpath[0] != '/' && libpath[0] != '.' && libpath[1] != '/')
+        if (libpath[0] == '/' ||
+            (libpath.length() >= 2 && libpath[0] == '.' && libpath[1] == '/'))
+        {
+            _libFilePaths.push_back(libpath);
+        }
+        else
         {
             if (_rootPath[_rootPath.length() - 1] == '/')
                 _libFilePaths.push_back(_rootPath + libpath);
             else
                 _libFilePaths.push_back(_rootPath + "/" + libpath);
         }
-        else
-            _libFilePaths.push_back(libpath);
     }
 }
 void HttpAppFrameworkImpl::setFileTypes(const std::vector<std::string> &types)
@@ -183,9 +186,9 @@ void HttpAppFrameworkImpl::registerHttpSimpleController(const std::string &pathN
     }
 }
 void HttpAppFrameworkImpl::addHttpPath(const std::string &path,
-                                      const HttpBinderBasePtr &binder,
-                                      const std::vector<HttpMethod> &validMethods,
-                                      const std::vector<std::string> &filters)
+                                       const HttpBinderBasePtr &binder,
+                                       const std::vector<HttpMethod> &validMethods,
+                                       const std::vector<std::string> &filters)
 {
     //path will be like /api/v1/service/method/{1}/{2}/xxx...
     std::vector<size_t> places;
@@ -255,9 +258,9 @@ void HttpAppFrameworkImpl::addHttpPath(const std::string &path,
     }
 }
 void HttpAppFrameworkImpl::registerHttpController(const std::string &pathPattern,
-                                                     const HttpBinderBasePtr &binder,
-                                                     const std::vector<HttpMethod> &validMethods,
-                                                     const std::vector<std::string> &filters)
+                                                  const HttpBinderBasePtr &binder,
+                                                  const std::vector<HttpMethod> &validMethods,
+                                                  const std::vector<std::string> &filters)
 {
     assert(!pathPattern.empty());
     assert(binder);
@@ -677,6 +680,22 @@ void HttpAppFrameworkImpl::onWebsockMessage(const WebSocketConnectionPtr &wsConn
             LOG_TRACE << "Got websock message:" << message;
             ctrl->handleNewMessage(wsConnPtr, std::move(message));
         }
+    }
+}
+void HttpAppFrameworkImpl::setUploadPath(const std::string &uploadPath)
+{
+    assert(!uploadPath.empty());
+    if (uploadPath[0] == '/' ||
+        (uploadPath.length() >= 2 && uploadPath[0] == '.' && uploadPath[1] == '/'))
+    {
+        _uploadPath = uploadPath;
+    }
+    else
+    {
+        if (_rootPath[_rootPath.length() - 1] == '/')
+            _uploadPath = _rootPath + uploadPath;
+        else
+            _uploadPath = _rootPath + "/" + uploadPath;
     }
 }
 void HttpAppFrameworkImpl::onNewWebsockRequest(const HttpRequestPtr &req,

@@ -19,9 +19,13 @@
 #include <uuid.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <fcntl.h>
 #include <thread>
 #include <mutex>
 #include <cstdlib>
+#include <stack>
 
 namespace drogon
 {
@@ -456,4 +460,56 @@ std::string formattedString(const char *format, ...)
     va_end(ap);
     return strBuffer;
 }
+
+int createPath(const std::string &path)
+{
+    auto tmpPath = path;
+    std::stack<std::string> pathStack;
+    while (access(tmpPath.c_str(), F_OK) != 0)
+    {
+        if (tmpPath == "./" || tmpPath == "/")
+            return -1;
+        while (tmpPath[tmpPath.length() - 1] == '/')
+            tmpPath.resize(tmpPath.length() - 1);
+        auto pos = tmpPath.rfind("/");
+        if (pos != std::string::npos)
+        {
+            pathStack.push(tmpPath.substr(pos));
+            tmpPath = tmpPath.substr(0, pos + 1);
+        }
+        else
+        {
+            pathStack.push(tmpPath);
+            tmpPath.clear();
+            break;
+        }
+    }
+    while (pathStack.size() > 0)
+    {
+        if (tmpPath.empty())
+        {
+            tmpPath = pathStack.top();
+        }
+        else
+        {
+            if (tmpPath[tmpPath.length() - 1] == '/')
+            {
+                tmpPath.append(pathStack.top());
+            }
+            else
+            {
+                tmpPath.append("/").append(pathStack.top());
+            }
+        }
+        pathStack.pop();
+        
+        if (mkdir(tmpPath.c_str(), 0755) == -1)
+        {
+            LOG_ERROR << "Can't create path:" << path;
+            return -1;
+        }
+    }
+    return 0;
+}
+
 } // namespace drogon
