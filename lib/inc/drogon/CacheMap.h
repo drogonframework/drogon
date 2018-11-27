@@ -203,6 +203,7 @@ class CacheMap
         }
         return _map[key].value;
     }
+
     bool find(const T1 &key)
     {
         int timeout = 0;
@@ -221,6 +222,26 @@ class CacheMap
 
         return flag;
     }
+
+    bool findAndFetch(const T1 &key, T2 &value)
+    {
+        int timeout = 0;
+        bool flag = false;
+        std::lock_guard<std::mutex> lock(mtx_);
+        auto iter = _map.find(key);
+        if (iter != _map.end())
+        {
+            timeout = iter->second.timeout;
+            flag = true;
+            value = iter->second.value;
+        }
+
+        if (timeout > 0)
+            eraseAfter(timeout, key);
+
+        return flag;
+    }
+
     void erase(const T1 &key)
     {
         //in this case,we don't evoke the timeout callback;
