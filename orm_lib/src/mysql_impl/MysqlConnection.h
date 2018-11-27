@@ -55,6 +55,15 @@ class MysqlConnection : public DbConnection, public std::enable_shared_from_this
     void handleEvent();
     void setChannel();
     int _waitStatus;
+    enum ExecStatus
+    {
+      ExecStatus_None = 0,
+      ExecStatus_StmtPrepare
+    };
+    ExecStatus _execStatus = ExecStatus_None;
+    std::shared_ptr<MYSQL_STMT> _stmtPtr;
+
+    void outputError();
 };
 
 } // namespace orm

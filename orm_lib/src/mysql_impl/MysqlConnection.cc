@@ -68,6 +68,7 @@ MysqlConnection::MysqlConnection(trantor::EventLoop *loop, const std::string &co
     }
     _loop->queueInLoop([=]() {
         MYSQL *ret;
+        _status = ConnectStatus_Connecting;
         _waitStatus = mysql_real_connect_start(&ret,
                                                _mysqlPtr.get(),
                                                host.empty() ? NULL : host.c_str(),
@@ -129,7 +130,7 @@ void MysqlConnection::handleTimeout()
     int status = 0;
     status |= MYSQL_WAIT_TIMEOUT;
     MYSQL *ret;
-    if (_status != ConnectStatus_Ok)
+    if (_status == ConnectStatus_Connecting)
     {
         _waitStatus = mysql_real_connect_cont(&ret, _mysqlPtr.get(), status);
         if (_waitStatus == 0)
@@ -150,6 +151,9 @@ void MysqlConnection::handleTimeout()
         }
         setChannel();
     }
+    else if (_status == ConnectStatus_Ok)
+    {
+    }
 }
 void MysqlConnection::handleEvent()
 {
@@ -163,7 +167,7 @@ void MysqlConnection::handleEvent()
         status |= MYSQL_WAIT_EXCEPT;
     status = (status & _waitStatus);
     MYSQL *ret;
-    if (_status != ConnectStatus_Ok)
+    if (_status == ConnectStatus_Connecting)
     {
         _waitStatus = mysql_real_connect_cont(&ret, _mysqlPtr.get(), status);
         if (_waitStatus == 0)
@@ -184,6 +188,33 @@ void MysqlConnection::handleEvent()
         }
         setChannel();
     }
+    else if (_status == ConnectStatus_Ok)
+    {
+        switch (_execStatus)
+        {
+        case ExecStatus_StmtPrepare:
+        {
+            int err;
+            _waitStatus = mysql_stmt_prepare_cont(&err, _stmtPtr.get(), status);
+            if (_waitStatus == 0)
+            {
+                _execStatus = ExecStatus_None;
+                if (err)
+                {
+                    outputError();
+                    //FIXME exception callback;
+                    return;
+                }
+                LOG_TRACE << "stmt ready!";
+            }
+            setChannel();
+            break;
+        }
+
+        default:
+            return;
+        }
+    }
 }
 
 void MysqlConnection::execSql(const std::string &sql,
@@ -195,4 +226,71 @@ void MysqlConnection::execSql(const std::string &sql,
                               const std::function<void(const std::exception_ptr &)> &exceptCallback,
                               const std::function<void()> &idleCb)
 {
+    assert(paraNum == parameters.size());
+    assert(paraNum == length.size());
+    assert(paraNum == format.size());
+    assert(rcb);
+    assert(idleCb);
+    assert(!_isWorking);
+    assert(!sql.empty());
+    _sql = sql;
+    _cb = rcb;
+    _idleCb = idleCb;
+    _isWorking = true;
+    _exceptCb = exceptCallback;
+    //_channel.enableWriting();
+    LOG_TRACE << sql;
+
+    _stmtPtr = std::shared_ptr<MYSQL_STMT>(mysql_stmt_init(_mysqlPtr.get()), [](MYSQL_STMT *stmt) {
+        //blocking method;
+        mysql_stmt_close(stmt);
+    });
+
+    if (!_stmtPtr)
+    {
+        LOG_ERROR << " mysql_stmt_init(), out of memory";
+        //FIXME,exception callback
+        return;
+    }
+
+    _loop->runInLoop([=]() {
+        int err;
+        _waitStatus = mysql_stmt_prepare_start(&err, _stmtPtr.get(), sql.c_str(), sql.length());
+        if (_waitStatus == 0)
+        {
+            if (err)
+            {
+                outputError();
+                return;
+            }
+        }
+
+        _execStatus = ExecStatus_StmtPrepare;
+        setChannel();
+    });
+
+    // /* Get the parameter count from the statement */
+    // auto param_count = mysql_stmt_param_count(stmt);
+    // if (param_count != paraNum)
+    // {
+    //     //FIXME,exception callback
+    //     return;
+    // }
+    // MYSQL_BIND *bind = new MYSQL_BIND[param_count];
+    // for (int i = 0; i < param_count; i++)
+    // {
+    //     bind[i].buffer_type = (enum_field_types)format[i];
+    //     bind[i].buffer = (char *)parameters[i];
+    //     bind[i].buffer_length = length[i];
+    //     bind[i].is_null = parameters[i] == NULL ? 1 : 0;
+    //     bind[i].length = &length[i];
+    // }
+    //delete[] bind;
+}
+
+void MysqlConnection::outputError()
+{
+    LOG_ERROR << "mysql_stmt_prepare_start(), Error("
+              << mysql_errno(_mysqlPtr.get()) << ") [" << mysql_sqlstate(_mysqlPtr.get()) << "] \""
+              << mysql_error(_mysqlPtr.get()) << "\"";
 }
