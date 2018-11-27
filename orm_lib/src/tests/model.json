@@ -1,0 +1,14 @@
+{
+    //rdbms:server type, postgreSQL 
+    "rdbms":"postgreSQL",
+    //host:server address,localhost by default;
+    "host":"127.0.0.1",
+    //port:server port, 5432 by default;
+    "port":5432,
+    //dbname:Database name;
+    "dbname":"postgres",
+    "user":"antao",
+    "passwd":"",
+    //"tables":["group_users"]
+    "tables":["users"]
+}
