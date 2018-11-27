@@ -48,11 +48,13 @@ class MysqlConnection : public DbConnection, public std::enable_shared_from_this
   private:
     std::unique_ptr<trantor::Channel> _channelPtr;
     std::shared_ptr<MYSQL> _mysqlPtr;
-    void handleRead();
+   
     void handleTimeout();
-    void handleWrite();
+   
     void handleClosed();
-    void setChannel(int status);
+    void handleEvent();
+    void setChannel();
+    int _waitStatus;
 };
 
 } // namespace orm
