@@ -82,12 +82,12 @@ int main()
                << "123"
                << "default" >>
         [](const Result &r) {
-            std::cout << "id=" << r[0]["id"].as<int64_t>() << std::endl;
-            testOutput(r[0]["id"].as<int64_t>() == 1, "Prepare the test environment(1)");
+            //std::cout << "id=" << r[0]["id"].as<int64_t>() << std::endl;
+            testOutput(r[0]["id"].as<int64_t>() == 1, "DbClient streaming-type interface(0)");
         } >>
         [](const DrogonDbException &e) {
             std::cerr << e.base().what() << std::endl;
-            testOutput(false, "Prepare the test environment(1)");
+            testOutput(false, "DbClient streaming-type interface(0)");
         };
     ///1.2 insert,blocking
     *clientPtr << "insert into users \
@@ -99,12 +99,12 @@ int main()
                << "default"
                << Mode::Blocking >>
         [](const Result &r) {
-            std::cout << "id=" << r[0]["id"].as<int64_t>() << std::endl;
-            testOutput(r[0]["id"].as<int64_t>() == 2, "Prepare the test environment(1)");
+            //std::cout << "id=" << r[0]["id"].as<int64_t>() << std::endl;
+            testOutput(r[0]["id"].as<int64_t>() == 2, "DbClient streaming-type interface(1)");
         } >>
         [](const DrogonDbException &e) {
             std::cerr << e.base().what() << std::endl;
-            testOutput(false, "Prepare the test environment(1)");
+            testOutput(false, "DbClient streaming-type interface(1)");
         };
     /// Add more testing here
 
