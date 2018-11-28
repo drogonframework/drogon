@@ -225,10 +225,11 @@ void MysqlConnection::handleEvent()
             setChannel();
             break;
         }
-        case ExecStatus_SendQuery:
+        case ExecStatus_RealQuery:
         {
             int err;
-            _waitStatus = mysql_send_query_cont(&err, _mysqlPtr.get(), status);
+            _waitStatus = mysql_real_query_cont(&err, _mysqlPtr.get(), status);
+            LOG_TRACE << "real_query:" << _waitStatus;
             if (_waitStatus == 0)
             {
                 if (err)
@@ -241,9 +242,18 @@ void MysqlConnection::handleEvent()
                 _execStatus = ExecStatus_StoreResult;
                 MYSQL_RES *ret;
                 _waitStatus = mysql_store_result_start(&ret, _mysqlPtr.get());
-
-                LOG_TRACE
-                    << "send_query completely!";
+                LOG_TRACE << "store_result_start:" << _waitStatus;
+                if (_waitStatus == 0)
+                {
+                    _execStatus = ExecStatus_None;
+                    if (err)
+                    {
+                        outputError();
+                        //FIXME exception callback;
+                        return;
+                    }
+                    getResult(ret);
+                }
             }
             setChannel();
             break;
@@ -252,6 +262,7 @@ void MysqlConnection::handleEvent()
         {
             MYSQL_RES *ret;
             _waitStatus = mysql_store_result_cont(&ret, _mysqlPtr.get(), status);
+            LOG_TRACE << "store_result:" << _waitStatus;
             if (_waitStatus == 0)
             {
                 if (!ret)
@@ -262,19 +273,7 @@ void MysqlConnection::handleEvent()
                     return;
                 }
                 //make result!
-                auto resultPtr = std::shared_ptr<MYSQL_RES>(ret, [](MYSQL_RES *r) {
-                    mysql_free_result(r);
-                });
-                auto Result = makeResult(resultPtr, _sql, mysql_affected_rows(_mysqlPtr.get()));
-                if (_isWorking)
-                {
-                    _cb(Result);
-                    _cb = decltype(_cb)();
-                    _exceptCb = decltype(_exceptCb)();
-                    _isWorking = false;
-                    _idleCb();
-                    _idleCb = decltype(_idleCb)();
-                }
+                getResult(ret);
             }
             setChannel();
             break;
@@ -312,8 +311,10 @@ void MysqlConnection::execSql(const std::string &sql,
     {
         _loop->runInLoop([=]() {
             int err;
-            //int mysql_send_query_start(int *ret, MYSQL *mysql, const char *q, unsigned long length)
-            _waitStatus = mysql_send_query_start(&err, _mysqlPtr.get(), sql.c_str(), sql.length());
+            //int mysql_real_query_start(int *ret, MYSQL *mysql, const char *q, unsigned long length)
+            _waitStatus = mysql_real_query_start(&err, _mysqlPtr.get(), sql.c_str(), sql.length());
+            LOG_TRACE << "real_query:" << _waitStatus;
+            _execStatus = ExecStatus_RealQuery;
             if (_waitStatus == 0)
             {
                 if (err)
@@ -321,9 +322,22 @@ void MysqlConnection::execSql(const std::string &sql,
                     outputError();
                     return;
                 }
-            }
 
-            _execStatus = ExecStatus_SendQuery;
+                MYSQL_RES *ret;
+                _waitStatus = mysql_store_result_start(&ret, _mysqlPtr.get());
+                LOG_TRACE << "store_result:" << _waitStatus;
+                _execStatus = ExecStatus_StoreResult;
+                if (_waitStatus == 0)
+                {
+                    _execStatus = ExecStatus_None;
+                    if (!ret)
+                    {
+                        outputError();
+                        return;
+                    }
+                    getResult(ret);
+                }
+            }
             setChannel();
         });
         return;
@@ -377,7 +391,48 @@ void MysqlConnection::execSql(const std::string &sql,
 
 void MysqlConnection::outputError()
 {
-    LOG_ERROR << "mysql_stmt_prepare_start(), Error("
+    _channelPtr->disableAll();
+    LOG_ERROR << "Error("
               << mysql_errno(_mysqlPtr.get()) << ") [" << mysql_sqlstate(_mysqlPtr.get()) << "] \""
               << mysql_error(_mysqlPtr.get()) << "\"";
+    if (_isWorking)
+    {
+
+        try
+        {
+            //FIXME exception type
+            throw SqlError(mysql_error(_mysqlPtr.get()),
+                           _sql);
+        }
+        catch (...)
+        {
+            _exceptCb(std::current_exception());
+            _exceptCb = decltype(_exceptCb)();
+        }
+
+        _cb = decltype(_cb)();
+        _isWorking = false;
+        if (_idleCb)
+        {
+            _idleCb();
+            _idleCb = decltype(_idleCb)();
+        }
+    }
+}
+
+void MysqlConnection::getResult(MYSQL_RES *res)
+{
+    auto resultPtr = std::shared_ptr<MYSQL_RES>(res, [](MYSQL_RES *r) {
+        mysql_free_result(r);
+    });
+    auto Result = makeResult(resultPtr, _sql, mysql_affected_rows(_mysqlPtr.get()));
+    if (_isWorking)
+    {
+        _cb(Result);
+        _cb = decltype(_cb)();
+        _exceptCb = decltype(_exceptCb)();
+        _isWorking = false;
+        _idleCb();
+        _idleCb = decltype(_idleCb)();
+    }
 }

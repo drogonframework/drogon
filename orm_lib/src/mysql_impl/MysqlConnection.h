@@ -54,11 +54,12 @@ class MysqlConnection : public DbConnection, public std::enable_shared_from_this
     void handleClosed();
     void handleEvent();
     void setChannel();
+    void getResult(MYSQL_RES *res);
     int _waitStatus;
     enum ExecStatus
     {
       ExecStatus_None = 0,
-      ExecStatus_SendQuery,
+      ExecStatus_RealQuery,
       ExecStatus_StmtPrepare,
       ExecStatus_StoreResult
     };

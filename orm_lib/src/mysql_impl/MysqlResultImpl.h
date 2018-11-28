@@ -33,7 +33,7 @@ class MysqlResultImpl : public ResultImpl
           _query(query),
           _rowsNum(_result ? mysql_num_rows(_result.get()) : 0),
           _fieldArray(r ? mysql_fetch_fields(r.get()) : nullptr),
-          _fieldNum(r ? mysql_num_rows(r.get()) : 0),
+          _fieldNum(r ? mysql_num_fields(r.get()) : 0),
           _affectedRows(affectedRows)
     {
         if (_fieldNum > 0)

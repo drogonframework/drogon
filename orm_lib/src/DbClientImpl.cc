@@ -112,7 +112,7 @@ void DbClientImpl::execSql(const std::string &sql,
             {
                 try
                 {
-                    throw BrokenConnection("No connection to postgreSQL server");
+                    throw BrokenConnection("No connection to database server");
                 }
                 catch (...)
                 {
