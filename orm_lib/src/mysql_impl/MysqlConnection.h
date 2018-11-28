@@ -59,7 +59,8 @@ class MysqlConnection : public DbConnection, public std::enable_shared_from_this
     {
       ExecStatus_None = 0,
       ExecStatus_SendQuery,
-      ExecStatus_StmtPrepare
+      ExecStatus_StmtPrepare,
+      ExecStatus_StoreResult
     };
     ExecStatus _execStatus = ExecStatus_None;
     std::shared_ptr<MYSQL_STMT> _stmtPtr;

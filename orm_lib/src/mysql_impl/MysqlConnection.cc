@@ -12,6 +12,7 @@
  */
 
 #include "MysqlConnection.h"
+#include "MysqlResultImpl.h"
 #include <drogon/utils/Utilities.h>
 #include <regex>
 #include <algorithm>
@@ -23,9 +24,11 @@ namespace drogon
 namespace orm
 {
 
-Result makeResult(const std::shared_ptr<MYSQL_RES> &r = std::shared_ptr<MYSQL_RES>(nullptr), const std::string &query = "")
+Result makeResult(const std::shared_ptr<MYSQL_RES> &r = std::shared_ptr<MYSQL_RES>(nullptr),
+                  const std::string &query = "",
+                  Result::size_type affectedRows = 0)
 {
-    return Result(std::shared_ptr<MysqlResultImpl>(new MysqlResultImpl(r, query)));
+    return Result(std::shared_ptr<MysqlResultImpl>(new MysqlResultImpl(r, query, affectedRows)));
 }
 
 } // namespace orm
@@ -225,7 +228,7 @@ void MysqlConnection::handleEvent()
         case ExecStatus_SendQuery:
         {
             int err;
-            _waitStatus = mysql_send_query_cont(&err, _stmtPtr.get(), status);
+            _waitStatus = mysql_send_query_cont(&err, _mysqlPtr.get(), status);
             if (_waitStatus == 0)
             {
                 if (err)
@@ -237,7 +240,7 @@ void MysqlConnection::handleEvent()
                 }
                 _execStatus = ExecStatus_StoreResult;
                 MYSQL_RES *ret;
-                _waitStatus = mysql_store_result_start(&ret, MYSQL * mysql);
+                _waitStatus = mysql_store_result_start(&ret, _mysqlPtr.get());
 
                 LOG_TRACE
                     << "send_query completely!";
@@ -248,10 +251,10 @@ void MysqlConnection::handleEvent()
         case ExecStatus_StoreResult:
         {
             MYSQL_RES *ret;
-            _waitStatus = mysql_store_result_cont(&ret, MYSQL * mysql);
+            _waitStatus = mysql_store_result_cont(&ret, _mysqlPtr.get(), status);
             if (_waitStatus == 0)
             {
-                if(!ret)
+                if (!ret)
                 {
                     _execStatus = ExecStatus_None;
                     outputError();
@@ -262,12 +265,12 @@ void MysqlConnection::handleEvent()
                 auto resultPtr = std::shared_ptr<MYSQL_RES>(ret, [](MYSQL_RES *r) {
                     mysql_free_result(r);
                 });
-                auto Result = makeResult(r, _sql);
-                if(_isWorking)
+                auto Result = makeResult(resultPtr, _sql, mysql_affected_rows(_mysqlPtr.get()));
+                if (_isWorking)
                 {
                     _cb(Result);
                     _cb = decltype(_cb)();
-                    _exceptCb = decltype(_exceptCallback)();
+                    _exceptCb = decltype(_exceptCb)();
                     _isWorking = false;
                     _idleCb();
                     _idleCb = decltype(_idleCb)();
@@ -310,7 +313,7 @@ void MysqlConnection::execSql(const std::string &sql,
         _loop->runInLoop([=]() {
             int err;
             //int mysql_send_query_start(int *ret, MYSQL *mysql, const char *q, unsigned long length)
-            _waitStatus = mysql_send_query_start(&err, _stmtPtr.get(), sql.c_str(), sql.length());
+            _waitStatus = mysql_send_query_start(&err, _mysqlPtr.get(), sql.c_str(), sql.length());
             if (_waitStatus == 0)
             {
                 if (err)
