@@ -18,6 +18,18 @@
 #include <poll.h>
 
 using namespace drogon::orm;
+namespace drogon
+{
+namespace orm
+{
+
+Result makeResult(const std::shared_ptr<MYSQL_RES> &r = std::shared_ptr<MYSQL_RES>(nullptr), const std::string &query = "")
+{
+    return Result(std::shared_ptr<MysqlResultImpl>(new MysqlResultImpl(r, query)));
+}
+
+} // namespace orm
+} // namespace drogon
 
 MysqlConnection::MysqlConnection(trantor::EventLoop *loop, const std::string &connInfo)
     : DbConnection(loop)
@@ -210,7 +222,60 @@ void MysqlConnection::handleEvent()
             setChannel();
             break;
         }
+        case ExecStatus_SendQuery:
+        {
+            int err;
+            _waitStatus = mysql_send_query_cont(&err, _stmtPtr.get(), status);
+            if (_waitStatus == 0)
+            {
+                if (err)
+                {
+                    _execStatus = ExecStatus_None;
+                    outputError();
+                    //FIXME exception callback;
+                    return;
+                }
+                _execStatus = ExecStatus_StoreResult;
+                MYSQL_RES *ret;
+                _waitStatus = mysql_store_result_start(&ret, MYSQL * mysql);
 
+                LOG_TRACE
+                    << "send_query completely!";
+            }
+            setChannel();
+            break;
+        }
+        case ExecStatus_StoreResult:
+        {
+            MYSQL_RES *ret;
+            _waitStatus = mysql_store_result_cont(&ret, MYSQL * mysql);
+            if (_waitStatus == 0)
+            {
+                if(!ret)
+                {
+                    _execStatus = ExecStatus_None;
+                    outputError();
+                    //FIXME exception callback;
+                    return;
+                }
+                //make result!
+                auto resultPtr = std::shared_ptr<MYSQL_RES>(ret, [](MYSQL_RES *r) {
+                    mysql_free_result(r);
+                });
+                auto Result = makeResult(r, _sql);
+                if(_isWorking)
+                {
+                    _cb(Result);
+                    _cb = decltype(_cb)();
+                    _exceptCb = decltype(_exceptCallback)();
+                    _isWorking = false;
+                    _idleCb();
+                    _idleCb = decltype(_idleCb)();
+                }
+            }
+            setChannel();
+            break;
+        }
         default:
             return;
         }
@@ -240,7 +305,26 @@ void MysqlConnection::execSql(const std::string &sql,
     _exceptCb = exceptCallback;
     //_channel.enableWriting();
     LOG_TRACE << sql;
+    if (paraNum == 0)
+    {
+        _loop->runInLoop([=]() {
+            int err;
+            //int mysql_send_query_start(int *ret, MYSQL *mysql, const char *q, unsigned long length)
+            _waitStatus = mysql_send_query_start(&err, _stmtPtr.get(), sql.c_str(), sql.length());
+            if (_waitStatus == 0)
+            {
+                if (err)
+                {
+                    outputError();
+                    return;
+                }
+            }
 
+            _execStatus = ExecStatus_SendQuery;
+            setChannel();
+        });
+        return;
+    }
     _stmtPtr = std::shared_ptr<MYSQL_STMT>(mysql_stmt_init(_mysqlPtr.get()), [](MYSQL_STMT *stmt) {
         //blocking method;
         mysql_stmt_close(stmt);

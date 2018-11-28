@@ -58,6 +58,7 @@ class MysqlConnection : public DbConnection, public std::enable_shared_from_this
     enum ExecStatus
     {
       ExecStatus_None = 0,
+      ExecStatus_SendQuery,
       ExecStatus_StmtPrepare
     };
     ExecStatus _execStatus = ExecStatus_None;
