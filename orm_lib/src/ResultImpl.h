@@ -9,6 +9,7 @@
  *
  *
  */
+#pragma once
 
 #include <trantor/utils/NonCopyable.h>
 #include <drogon/orm/Result.h>
