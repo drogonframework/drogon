@@ -24,6 +24,10 @@ int main()
     *clientPtr << "select * from users" >> [](const Result &r) {
         std::cout << "rows:" << r.size() << std::endl;
         std::cout << "column num:" << r.columns() << std::endl;
+        for(auto row:r)
+        {
+            std::cout << "user_id=" << row["user_id"].as<std::string>() << std::endl;
+        }
         // for (auto row : r)
         // {
         //     for (auto f : row)

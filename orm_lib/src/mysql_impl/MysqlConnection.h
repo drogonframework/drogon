@@ -55,18 +55,26 @@ class MysqlConnection : public DbConnection, public std::enable_shared_from_this
     void handleEvent();
     void setChannel();
     void getResult(MYSQL_RES *res);
+    void getStmtResult();
     int _waitStatus;
     enum ExecStatus
     {
       ExecStatus_None = 0,
       ExecStatus_RealQuery,
       ExecStatus_StmtPrepare,
-      ExecStatus_StoreResult
+      ExecStatus_StoreResult,
+      ExecStatus_StmtExec,
+      ExecStatus_StmtStoreResult
     };
     ExecStatus _execStatus = ExecStatus_None;
     std::shared_ptr<MYSQL_STMT> _stmtPtr;
 
     void outputError();
+    void outputStmtError();
+    std::vector<MYSQL_BIND>
+        _binds;
+    std::vector<unsigned long> _lengths;
+    std::vector<my_bool> _isNulls;
 };
 
 } // namespace orm

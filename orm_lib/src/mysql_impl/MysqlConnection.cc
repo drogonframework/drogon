@@ -216,11 +216,39 @@ void MysqlConnection::handleEvent()
                 _execStatus = ExecStatus_None;
                 if (err)
                 {
-                    outputError();
+                    outputStmtError();
                     //FIXME exception callback;
                     return;
                 }
                 LOG_TRACE << "stmt ready!";
+                if (mysql_stmt_bind_param(_stmtPtr.get(), _binds.data()))
+                {
+                    outputStmtError();
+                    return;
+                }
+                _waitStatus = mysql_stmt_execute_start(&err, _stmtPtr.get());
+                _execStatus = ExecStatus_StmtExec;
+                if (_waitStatus == 0)
+                {
+                    _execStatus = ExecStatus_None;
+                    if (err)
+                    {
+                        outputStmtError();
+                        return;
+                    }
+                    _waitStatus = mysql_stmt_store_result_start(&err, _stmtPtr.get());
+                    _execStatus = ExecStatus_StmtStoreResult;
+                    if (_waitStatus == 0)
+                    {
+                        _execStatus = ExecStatus_None;
+                        if (err)
+                        {
+                            outputStmtError();
+                            return;
+                        }
+                        getStmtResult();
+                    }
+                }
             }
             setChannel();
             break;
@@ -274,6 +302,51 @@ void MysqlConnection::handleEvent()
                 }
                 //make result!
                 getResult(ret);
+            }
+            setChannel();
+            break;
+        }
+        case ExecStatus_StmtExec:
+        {
+            int err;
+            _waitStatus = mysql_stmt_execute_cont(&err, _stmtPtr.get(), status);
+            if (_waitStatus == 0)
+            {
+                _execStatus = ExecStatus_None;
+                if (err)
+                {
+                    outputStmtError();
+                    return;
+                }
+                _waitStatus = mysql_stmt_store_result_start(&err, _stmtPtr.get());
+                _execStatus = ExecStatus_StmtStoreResult;
+                if (_waitStatus == 0)
+                {
+                    _execStatus = ExecStatus_None;
+                    if (err)
+                    {
+                        outputStmtError();
+                        return;
+                    }
+                    getStmtResult();
+                }
+            }
+            setChannel();
+            break;
+        }
+        case ExecStatus_StmtStoreResult:
+        {
+            int err;
+            _waitStatus = mysql_stmt_store_result_cont(&err, _stmtPtr.get(), status);
+            if (_waitStatus == 0)
+            {
+                _execStatus = ExecStatus_None;
+                if (err)
+                {
+                    outputStmtError();
+                    return;
+                }
+                getStmtResult();
             }
             setChannel();
             break;
@@ -342,18 +415,28 @@ void MysqlConnection::execSql(const std::string &sql,
         });
         return;
     }
+
     _stmtPtr = std::shared_ptr<MYSQL_STMT>(mysql_stmt_init(_mysqlPtr.get()), [](MYSQL_STMT *stmt) {
-        //blocking method;
+        //Is it a blocking method?
         mysql_stmt_close(stmt);
     });
-
     if (!_stmtPtr)
     {
-        LOG_ERROR << " mysql_stmt_init(), out of memory";
-        //FIXME,exception callback
+        outputError();
         return;
     }
 
+    _binds.resize(paraNum);
+    _lengths.resize(paraNum);
+    _isNulls.resize(paraNum);
+    for (size_t i = 0; i < paraNum; i++)
+    {
+        _binds[i].buffer = (void *)parameters[i];
+        _binds[i].buffer_type = (enum_field_types)format[i];
+        _binds[i].buffer_length = length[i];
+        _binds[i].length = (length[i] == 0 ? 0 : (_lengths[i] = length[i], &_lengths[i]));
+        _binds[i].is_null = (parameters[i] == NULL ? 0 : (_isNulls[i] = true, &_isNulls[i]));
+    }
     _loop->runInLoop([=]() {
         int err;
         _waitStatus = mysql_stmt_prepare_start(&err, _stmtPtr.get(), sql.c_str(), sql.length());
@@ -420,9 +503,56 @@ void MysqlConnection::outputError()
     }
 }
 
+void MysqlConnection::outputStmtError()
+{
+    _channelPtr->disableAll();
+    LOG_ERROR << "Error("
+              << mysql_stmt_errno(_stmtPtr.get()) << ") [" << mysql_stmt_sqlstate(_stmtPtr.get()) << "] \""
+              << mysql_stmt_error(_stmtPtr.get()) << "\"";
+    if (_isWorking)
+    {
+        try
+        {
+            //FIXME exception type
+            throw SqlError(mysql_stmt_error(_stmtPtr.get()),
+                           _sql);
+        }
+        catch (...)
+        {
+            _exceptCb(std::current_exception());
+            _exceptCb = decltype(_exceptCb)();
+        }
+
+        _cb = decltype(_cb)();
+        _isWorking = false;
+        if (_idleCb)
+        {
+            _idleCb();
+            _idleCb = decltype(_idleCb)();
+        }
+    }
+}
+
 void MysqlConnection::getResult(MYSQL_RES *res)
 {
     auto resultPtr = std::shared_ptr<MYSQL_RES>(res, [](MYSQL_RES *r) {
+        mysql_free_result(r);
+    });
+    auto Result = makeResult(resultPtr, _sql, mysql_affected_rows(_mysqlPtr.get()));
+    if (_isWorking)
+    {
+        _cb(Result);
+        _cb = decltype(_cb)();
+        _exceptCb = decltype(_exceptCb)();
+        _isWorking = false;
+        _idleCb();
+        _idleCb = decltype(_idleCb)();
+    }
+}
+
+void MysqlConnection::getStmtResult()
+{
+    auto resultPtr = std::shared_ptr<MYSQL_RES>(_stmtPtr->default_rset_handler(_stmtPtr.get()), [](MYSQL_RES *r) {
         mysql_free_result(r);
     });
     auto Result = makeResult(resultPtr, _sql, mysql_affected_rows(_mysqlPtr.get()));
