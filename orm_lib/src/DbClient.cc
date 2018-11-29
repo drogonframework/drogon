@@ -20,7 +20,7 @@ using namespace drogon;
 
 internal::SqlBinder DbClient::operator<<(const std::string &sql)
 {
-    return internal::SqlBinder(sql, *this);
+    return internal::SqlBinder(sql, *this, ((DbClientImpl *)this)->type());
 }
 
 #if USE_POSTGRESQL

@@ -13,6 +13,7 @@
 
 #include "MysqlConnection.h"
 #include "MysqlResultImpl.h"
+#include "MysqlStmtResultImpl.h"
 #include <drogon/utils/Utilities.h>
 #include <regex>
 #include <algorithm>
@@ -30,6 +31,13 @@ Result makeResult(const std::shared_ptr<MYSQL_RES> &r = std::shared_ptr<MYSQL_RE
 {
     return Result(std::shared_ptr<MysqlResultImpl>(new MysqlResultImpl(r, query, affectedRows)));
 }
+
+Result makeResult(const std::shared_ptr<MYSQL_STMT> &r = std::shared_ptr<MYSQL_STMT>(nullptr),
+                  const std::string &query = "")
+{
+    return Result(std::shared_ptr<MysqlStmtResultImpl>(new MysqlStmtResultImpl(r, query)));
+}
+
 
 } // namespace orm
 } // namespace drogon
@@ -227,6 +235,7 @@ void MysqlConnection::handleEvent()
                     return;
                 }
                 _waitStatus = mysql_stmt_execute_start(&err, _stmtPtr.get());
+                LOG_TRACE << "mysql_stmt_execute_start:" << _waitStatus;
                 _execStatus = ExecStatus_StmtExec;
                 if (_waitStatus == 0)
                 {
@@ -236,6 +245,7 @@ void MysqlConnection::handleEvent()
                         outputStmtError();
                         return;
                     }
+                    
                     _waitStatus = mysql_stmt_store_result_start(&err, _stmtPtr.get());
                     _execStatus = ExecStatus_StmtStoreResult;
                     if (_waitStatus == 0)
@@ -310,6 +320,7 @@ void MysqlConnection::handleEvent()
         {
             int err;
             _waitStatus = mysql_stmt_execute_cont(&err, _stmtPtr.get(), status);
+            LOG_TRACE << "mysql_stmt_execute_cont:" << _waitStatus;
             if (_waitStatus == 0)
             {
                 _execStatus = ExecStatus_None;
@@ -319,6 +330,7 @@ void MysqlConnection::handleEvent()
                     return;
                 }
                 _waitStatus = mysql_stmt_store_result_start(&err, _stmtPtr.get());
+                LOG_TRACE << "mysql_stmt_store_result_start:" << _waitStatus;
                 _execStatus = ExecStatus_StmtStoreResult;
                 if (_waitStatus == 0)
                 {
@@ -338,6 +350,7 @@ void MysqlConnection::handleEvent()
         {
             int err;
             _waitStatus = mysql_stmt_store_result_cont(&err, _stmtPtr.get(), status);
+            LOG_TRACE << "mysql_stmt_store_result_cont:" << _waitStatus;
             if (_waitStatus == 0)
             {
                 _execStatus = ExecStatus_None;
@@ -425,17 +438,21 @@ void MysqlConnection::execSql(const std::string &sql,
         outputError();
         return;
     }
+    
+    my_bool flag = 1;
+    mysql_stmt_attr_set(_stmtPtr.get(), STMT_ATTR_UPDATE_MAX_LENGTH, &flag);
 
     _binds.resize(paraNum);
     _lengths.resize(paraNum);
     _isNulls.resize(paraNum);
+    memset(_binds.data(), 0, sizeof(MYSQL_BIND) * paraNum);
     for (size_t i = 0; i < paraNum; i++)
     {
         _binds[i].buffer = (void *)parameters[i];
         _binds[i].buffer_type = (enum_field_types)format[i];
         _binds[i].buffer_length = length[i];
         _binds[i].length = (length[i] == 0 ? 0 : (_lengths[i] = length[i], &_lengths[i]));
-        _binds[i].is_null = (parameters[i] == NULL ? 0 : (_isNulls[i] = true, &_isNulls[i]));
+        _binds[i].is_null = (parameters[i] != NULL ? 0 : (_isNulls[i] = true, &_isNulls[i]));
     }
     _loop->runInLoop([=]() {
         int err;
@@ -452,24 +469,6 @@ void MysqlConnection::execSql(const std::string &sql,
         _execStatus = ExecStatus_StmtPrepare;
         setChannel();
     });
-
-    // /* Get the parameter count from the statement */
-    // auto param_count = mysql_stmt_param_count(stmt);
-    // if (param_count != paraNum)
-    // {
-    //     //FIXME,exception callback
-    //     return;
-    // }
-    // MYSQL_BIND *bind = new MYSQL_BIND[param_count];
-    // for (int i = 0; i < param_count; i++)
-    // {
-    //     bind[i].buffer_type = (enum_field_types)format[i];
-    //     bind[i].buffer = (char *)parameters[i];
-    //     bind[i].buffer_length = length[i];
-    //     bind[i].is_null = parameters[i] == NULL ? 1 : 0;
-    //     bind[i].length = &length[i];
-    // }
-    //delete[] bind;
 }
 
 void MysqlConnection::outputError()
@@ -552,10 +551,8 @@ void MysqlConnection::getResult(MYSQL_RES *res)
 
 void MysqlConnection::getStmtResult()
 {
-    auto resultPtr = std::shared_ptr<MYSQL_RES>(_stmtPtr->default_rset_handler(_stmtPtr.get()), [](MYSQL_RES *r) {
-        mysql_free_result(r);
-    });
-    auto Result = makeResult(resultPtr, _sql, mysql_affected_rows(_mysqlPtr.get()));
+    LOG_TRACE << "Got " << mysql_stmt_num_rows(_stmtPtr.get()) << " rows";
+    auto Result = makeResult(_stmtPtr, _sql);
     if (_isWorking)
     {
         _cb(Result);

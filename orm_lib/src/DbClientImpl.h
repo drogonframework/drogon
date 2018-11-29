@@ -14,13 +14,7 @@ namespace drogon
 {
 namespace orm
 {
-// extern Result makeResult(SqlStatus status, const std::shared_ptr<PGresult> &r = std::shared_ptr<PGresult>(nullptr),
-//                          const std::string &query = "");
-enum class ClientType
-{
-    PostgreSQL = 0,
-    Mysql
-};
+
 class DbClientImpl : public DbClient, public std::enable_shared_from_this<DbClientImpl>
 {
   public:
@@ -35,6 +29,7 @@ class DbClientImpl : public DbClient, public std::enable_shared_from_this<DbClie
                          const std::function<void(const std::exception_ptr &)> &exceptCallback) override;
     virtual std::string replaceSqlPlaceHolder(const std::string &sqlStr, const std::string &holderStr) const override;
     virtual std::shared_ptr<Transaction> newTransaction() override;
+    ClientType type() { return _type; }
 
   private:
     void ioLoop();

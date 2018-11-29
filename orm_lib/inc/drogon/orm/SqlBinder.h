@@ -19,6 +19,9 @@
 #include <drogon/orm/FunctionTraits.h>
 #include <drogon/orm/Exception.h>
 #include <trantor/utils/Logger.h>
+#ifdef USE_MYSQL
+#include <mysql.h>
+#endif
 #include <string.h>
 #include <string>
 #include <iostream>
@@ -32,6 +35,11 @@ namespace drogon
 {
 namespace orm
 {
+enum class ClientType
+{
+    PostgreSQL = 0,
+    Mysql
+};
 
 class DbClient;
 typedef std::function<void(const Result &)> QueryCallback;
@@ -201,7 +209,7 @@ class SqlBinder
   public:
     friend class Dbclient;
 
-    SqlBinder(const std::string &sql, DbClient &client) : _sql(sql), _client(client)
+    SqlBinder(const std::string &sql, DbClient &client, ClientType type) : _sql(sql), _client(client), _type(type)
     {
     }
     ~SqlBinder();
@@ -240,26 +248,53 @@ class SqlBinder
         typedef typename std::remove_cv<typename std::remove_reference<T>::type>::type ParaType;
         std::shared_ptr<void> obj =
             std::make_shared<ParaType>(parameter);
-        switch (sizeof(T))
+        if (_type == ClientType::PostgreSQL)
         {
-        case 2:
-            *std::static_pointer_cast<short>(obj) = ntohs(parameter);
-            break;
-        case 4:
-            *std::static_pointer_cast<int>(obj) = ntohl(parameter);
-            break;
-        case 8:
-            *std::static_pointer_cast<long>(obj) = ntohll(parameter);
-            break;
-        case 1:
-        default:
+            switch (sizeof(T))
+            {
+            case 2:
+                *std::static_pointer_cast<short>(obj) = ntohs(parameter);
+                break;
+            case 4:
+                *std::static_pointer_cast<int>(obj) = ntohl(parameter);
+                break;
+            case 8:
+                *std::static_pointer_cast<long>(obj) = ntohll(parameter);
+                break;
+            case 1:
+            default:
 
-            break;
+                break;
+            }
+            _objs.push_back(obj);
+            _parameters.push_back((char *)obj.get());
+            _length.push_back(sizeof(T));
+            _format.push_back(1);
         }
-        _objs.push_back(obj);
-        _parameters.push_back((char *)obj.get());
-        _length.push_back(sizeof(T));
-        _format.push_back(1);
+        else if (_type == ClientType::Mysql)
+        {
+#ifdef USE_MYSQL
+            _objs.push_back(obj);
+            _parameters.push_back((char *)obj.get());
+            _length.push_back(0);
+            switch (sizeof(T))
+            {
+            case 1:
+                _format.push_back(MYSQL_TYPE_TINY);
+                break;
+            case 2:
+                _format.push_back(MYSQL_TYPE_SHORT);
+                break;
+            case 4:
+                _format.push_back(MYSQL_TYPE_LONG);
+                break;
+            case 8:
+                _format.push_back(MYSQL_TYPE_LONGLONG);
+            default:
+                break;
+            }
+#endif
+        }
         //LOG_TRACE << "Bind parameter:" << parameter;
         return *this;
     }
@@ -279,7 +314,16 @@ class SqlBinder
         _paraNum++;
         _parameters.push_back((char *)obj->c_str());
         _length.push_back(obj->length());
-        _format.push_back(0);
+        if (_type == ClientType::PostgreSQL)
+        {
+            _format.push_back(0);
+        }
+        else if (_type == ClientType::Mysql)
+        {
+#ifdef USE_MYSQL
+            _format.push_back(MYSQL_TYPE_VAR_STRING);
+#endif
+        }
         return *this;
     }
     self &operator<<(std::string &str)
@@ -293,7 +337,16 @@ class SqlBinder
         _paraNum++;
         _parameters.push_back((char *)obj->c_str());
         _length.push_back(obj->length());
-        _format.push_back(0);
+        if (_type == ClientType::PostgreSQL)
+        {
+            _format.push_back(0);
+        }
+        else if (_type == ClientType::Mysql)
+        {
+#ifdef USE_MYSQL
+            _format.push_back(MYSQL_TYPE_VAR_STRING);
+#endif
+        }
         return *this;
     }
     self &operator<<(trantor::Date &&date)
@@ -350,7 +403,7 @@ class SqlBinder
         _mode = mode;
         return *this;
     }
-   
+
     void exec() noexcept(false);
 
   private:
@@ -368,6 +421,7 @@ class SqlBinder
     bool _execed = false;
     bool _destructed = false;
     bool _isExceptPtr = false;
+    ClientType _type;
 };
 
 } // namespace internal
