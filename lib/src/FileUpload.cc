@@ -125,7 +125,9 @@ int HttpFile::save(const std::string &path) const
     std::string filename;
     auto tmpPath = path;
     if (path[0] == '/' ||
-        (path.length() >= 2 && path[0] == '.' && path[1] == '/'))
+        (path.length() >= 2 && path[0] == '.' && path[1] == '/') ||
+        (path.length() >= 3 && path[0] == '.' && path[1] == '.' && path[2] == '/') ||
+        path == "." || path == "..")
     {
     }
     else
@@ -158,7 +160,8 @@ int HttpFile::saveAs(const std::string &filename) const
     assert(!filename.empty());
     auto pathAndFileName = filename;
     if (filename[0] == '/' ||
-        (filename.length() >= 2 && filename[0] == '.' && filename[1] == '/'))
+        (filename.length() >= 2 && filename[0] == '.' && filename[1] == '/') ||
+        (filename.length() >= 3 && filename[0] == '.' && filename[1] == '.' && filename[2] == '/'))
     {
     }
     else

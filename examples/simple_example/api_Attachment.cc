@@ -27,6 +27,9 @@ void Attachment::upload(const HttpRequestPtr &req,
         file.save("123");
         file.saveAs("456/hehe");
         file.saveAs("456/7/8/9/"+file.getMd5());
+        file.save("..");
+        file.save(".xx");
+        file.saveAs("../xxx");
     }
     auto resp = HttpResponse::newHttpResponse();
     resp->setStatusCode(HttpResponse::k200OK);
