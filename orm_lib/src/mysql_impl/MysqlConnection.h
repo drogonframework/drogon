@@ -55,7 +55,6 @@ class MysqlConnection : public DbConnection, public std::enable_shared_from_this
     void handleEvent();
     void setChannel();
     void getResult(MYSQL_RES *res);
-    void getStmtResult();
     int _waitStatus;
     enum ExecStatus
     {
@@ -70,7 +69,6 @@ class MysqlConnection : public DbConnection, public std::enable_shared_from_this
     std::shared_ptr<MYSQL_STMT> _stmtPtr;
 
     void outputError();
-    void outputStmtError();
     std::vector<MYSQL_BIND>
         _binds;
     std::vector<unsigned long> _lengths;

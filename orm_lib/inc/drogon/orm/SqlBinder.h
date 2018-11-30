@@ -321,7 +321,7 @@ class SqlBinder
         else if (_type == ClientType::Mysql)
         {
 #ifdef USE_MYSQL
-            _format.push_back(MYSQL_TYPE_VAR_STRING);
+            _format.push_back(MYSQL_TYPE_STRING);
 #endif
         }
         return *this;
@@ -344,7 +344,7 @@ class SqlBinder
         else if (_type == ClientType::Mysql)
         {
 #ifdef USE_MYSQL
-            _format.push_back(MYSQL_TYPE_VAR_STRING);
+            _format.push_back(MYSQL_TYPE_STRING);
 #endif
         }
         return *this;
@@ -390,7 +390,14 @@ class SqlBinder
         _paraNum++;
         _parameters.push_back(NULL);
         _length.push_back(0);
-        _format.push_back(0);
+        if (_type == ClientType::PostgreSQL)
+            _format.push_back(0);
+        else if (_type == ClientType::Mysql)
+        {
+#ifdef USE_MYSQL
+            _format.push_back(MYSQL_TYPE_NULL);
+#endif
+        }
         return *this;
     }
     self &operator<<(const Mode &mode)

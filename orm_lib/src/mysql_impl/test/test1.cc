@@ -40,20 +40,27 @@ int main()
     };
     LOG_TRACE << "end";
     LOG_TRACE << "begin";
-    *clientPtr << "select * from users where id!=? order by id"
+    *clientPtr << "select * from users where id=? and user_id=? order by id"
                << 139
+               << "233"
                << Mode::Blocking >>
         [](const Result &r) {
             std::cout << "rows:" << r.size() << std::endl;
             std::cout << "column num:" << r.columns() << std::endl;
-            // for (auto row : r)
-            // {
-            //     std::cout << "user_id=" << row["user_id"].as<std::string>() << " id=" << row["id"].as<int>() << std::endl;
-            // }
+            for (auto row : r)
+            {
+                std::cout << "user_id=" << row["user_id"].as<std::string>() << " id=" << row["id"].as<std::string>();
+                std::cout << " time=" << row["time"].as<std::string>() << std::endl;
+            }
         } >>
         [](const DrogonDbException &e) {
             std::cerr << e.base().what() << std::endl;
         };
+    *clientPtr << "update users set time=? where id>?" << trantor::Date::date() << 1000 >> [](const Result &r) {
+        std::cout << "update " << r.affectedRows() << " rows" << std::endl;
+    } >> [](const DrogonDbException &e) {
+        std::cerr << e.base().what() << std::endl;
+    };
     LOG_TRACE << "end";
     getchar();
 }
