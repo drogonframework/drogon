@@ -393,41 +393,41 @@ void MysqlConnection::execSql(const std::string &sql,
     _exceptCb = exceptCallback;
     //_channel.enableWriting();
     LOG_TRACE << sql;
-    if (paraNum == 0)
-    {
-        _loop->runInLoop([=]() {
-            int err;
-            //int mysql_real_query_start(int *ret, MYSQL *mysql, const char *q, unsigned long length)
-            _waitStatus = mysql_real_query_start(&err, _mysqlPtr.get(), sql.c_str(), sql.length());
-            LOG_TRACE << "real_query:" << _waitStatus;
-            _execStatus = ExecStatus_RealQuery;
-            if (_waitStatus == 0)
-            {
-                if (err)
-                {
-                    outputError();
-                    return;
-                }
+    // if (paraNum == 0)
+    // {
+    //     _loop->runInLoop([=]() {
+    //         int err;
+    //         //int mysql_real_query_start(int *ret, MYSQL *mysql, const char *q, unsigned long length)
+    //         _waitStatus = mysql_real_query_start(&err, _mysqlPtr.get(), sql.c_str(), sql.length());
+    //         LOG_TRACE << "real_query:" << _waitStatus;
+    //         _execStatus = ExecStatus_RealQuery;
+    //         if (_waitStatus == 0)
+    //         {
+    //             if (err)
+    //             {
+    //                 outputError();
+    //                 return;
+    //             }
 
-                MYSQL_RES *ret;
-                _waitStatus = mysql_store_result_start(&ret, _mysqlPtr.get());
-                LOG_TRACE << "store_result:" << _waitStatus;
-                _execStatus = ExecStatus_StoreResult;
-                if (_waitStatus == 0)
-                {
-                    _execStatus = ExecStatus_None;
-                    if (!ret)
-                    {
-                        outputError();
-                        return;
-                    }
-                    getResult(ret);
-                }
-            }
-            setChannel();
-        });
-        return;
-    }
+    //             MYSQL_RES *ret;
+    //             _waitStatus = mysql_store_result_start(&ret, _mysqlPtr.get());
+    //             LOG_TRACE << "store_result:" << _waitStatus;
+    //             _execStatus = ExecStatus_StoreResult;
+    //             if (_waitStatus == 0)
+    //             {
+    //                 _execStatus = ExecStatus_None;
+    //                 if (!ret)
+    //                 {
+    //                     outputError();
+    //                     return;
+    //                 }
+    //                 getResult(ret);
+    //             }
+    //         }
+    //         setChannel();
+    //     });
+    //     return;
+    // }
 
     _stmtPtr = std::shared_ptr<MYSQL_STMT>(mysql_stmt_init(_mysqlPtr.get()), [](MYSQL_STMT *stmt) {
         //Is it a blocking method?

@@ -54,7 +54,7 @@ class MysqlStmtResultImpl : public ResultImpl
                 std::string fieldName = _fieldArray[i].name;
                 std::transform(fieldName.begin(), fieldName.end(), fieldName.begin(), tolower);
                 _fieldMap[fieldName] = i;
-                LOG_TRACE << "row[" << fieldName << "].max_length=" << _fieldArray[i].max_length;
+                //LOG_TRACE << "row[" << fieldName << "].max_length=" << _fieldArray[i].max_length;
                 if (_rowsNum > 0)
                 {
                     if (_fieldArray[i].max_length > 0)
