@@ -3,6 +3,8 @@
 #include <drogon/utils/Utilities.h>
 #include <iostream>
 #include <unistd.h>
+#include <fstream>
+
 using namespace drogon::orm;
 using namespace drogon;
 
@@ -56,8 +58,28 @@ int main()
         [](const DrogonDbException &e) {
             std::cerr << e.base().what() << std::endl;
         };
-    *clientPtr << "update users set time=? where id>?" << trantor::Date::date() << 1000 >> [](const Result &r) {
+    *clientPtr << "update users set time=? where id>?" << trantor::Date::date() << 1000 << Mode::Blocking >> [](const Result &r) {
         std::cout << "update " << r.affectedRows() << " rows" << std::endl;
+    } >> [](const DrogonDbException &e) {
+        std::cerr << e.base().what() << std::endl;
+    };
+
+    // std::ifstream infile("Makefile", std::ifstream::binary);
+    // std::streambuf *pbuf = infile.rdbuf();
+    // std::streamsize filesize = pbuf->pubseekoff(0, infile.end);
+    // pbuf->pubseekoff(0, infile.beg); // rewind
+    // std::string str;
+    // str.resize(filesize);
+    // pbuf->sgetn(&str[0], filesize);
+
+    // *clientPtr << "update users set file=? where id=?" << str << 1000 << Mode::Blocking >> [](const Result &r) {
+    //     std::cout << "update " << r.affectedRows() << " rows" << std::endl;
+    // } >> [](const DrogonDbException &e) {
+    //     std::cerr << e.base().what() << std::endl;
+    // };
+
+    *clientPtr << "select * from users where id=1000" >> [](const Result &r) {
+        std::cout << "file:" << r[0]["file"].as<std::string>() << std::endl;
     } >> [](const DrogonDbException &e) {
         std::cerr << e.base().what() << std::endl;
     };
