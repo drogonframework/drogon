@@ -174,6 +174,8 @@ class Mapper
     {
         binder << std::get<0>(t);
     }
+
+    std::string replaceSqlPlaceHolder(const std::string &sqlStr, const std::string &holderStr) const;
 };
 
 template <typename T>
@@ -188,7 +190,7 @@ inline T Mapper<T>::findByPrimaryKey(const typename Mapper<T>::TraitsPKType &key
     {
         sql += " for update";
     }
-    sql = _client->replaceSqlPlaceHolder(sql, "$?");
+    sql = replaceSqlPlaceHolder(sql, "$?");
     clear();
     Result r(nullptr);
     {
@@ -226,7 +228,7 @@ inline void Mapper<T>::findByPrimaryKey(const typename Mapper<T>::TraitsPKType &
     {
         sql += " for update";
     }
-    sql = _client->replaceSqlPlaceHolder(sql, "$?");
+    sql = replaceSqlPlaceHolder(sql, "$?");
     clear();
     auto binder = *_client << sql;
     outputPrimeryKeyToBinder(key, binder);
@@ -260,7 +262,7 @@ Mapper<T>::findFutureByPrimaryKey(const typename Mapper<T>::TraitsPKType &key) n
     {
         sql += " for update";
     }
-    sql = _client->replaceSqlPlaceHolder(sql, "$?");
+    sql = replaceSqlPlaceHolder(sql, "$?");
     clear();
     auto binder = *_client << sql;
     outputPrimeryKeyToBinder(key, binder);
@@ -310,7 +312,7 @@ inline T Mapper<T>::findOne(const Criteria &criteria) noexcept(false)
     {
         sql += " where ";
         sql += criteria.criteriaString();
-        sql = _client->replaceSqlPlaceHolder(sql, "$?");
+        sql = replaceSqlPlaceHolder(sql, "$?");
     }
     sql.append(_orderbyString).append(_offsetString).append(_limitString);
     if (_forUpdate)
@@ -352,7 +354,7 @@ inline void Mapper<T>::findOne(const Criteria &criteria,
     {
         sql += " where ";
         sql += criteria.criteriaString();
-        sql = _client->replaceSqlPlaceHolder(sql, "$?");
+        sql = replaceSqlPlaceHolder(sql, "$?");
     }
     sql.append(_orderbyString).append(_offsetString).append(_limitString);
     if (_forUpdate)
@@ -389,7 +391,7 @@ inline std::future<T> Mapper<T>::findFutureOne(const Criteria &criteria) noexcep
     {
         sql += " where ";
         sql += criteria.criteriaString();
-        sql = _client->replaceSqlPlaceHolder(sql, "$?");
+        sql = replaceSqlPlaceHolder(sql, "$?");
     }
     sql.append(_orderbyString).append(_offsetString).append(_limitString);
     if (_forUpdate)
@@ -445,7 +447,7 @@ inline std::vector<T> Mapper<T>::findBy(const Criteria &criteria) noexcept(false
     {
         sql += " where ";
         sql += criteria.criteriaString();
-        sql = _client->replaceSqlPlaceHolder(sql, "$?");
+        sql = replaceSqlPlaceHolder(sql, "$?");
     }
     sql.append(_orderbyString).append(_offsetString).append(_limitString);
     if (_forUpdate)
@@ -482,7 +484,7 @@ inline void Mapper<T>::findBy(const Criteria &criteria,
     {
         sql += " where ";
         sql += criteria.criteriaString();
-        sql = _client->replaceSqlPlaceHolder(sql, "$?");
+        sql = replaceSqlPlaceHolder(sql, "$?");
     }
     sql.append(_orderbyString).append(_offsetString).append(_limitString);
     if (_forUpdate)
@@ -512,7 +514,7 @@ inline std::future<std::vector<T>> Mapper<T>::findFutureBy(const Criteria &crite
     {
         sql += " where ";
         sql += criteria.criteriaString();
-        sql = _client->replaceSqlPlaceHolder(sql, "$?");
+        sql = replaceSqlPlaceHolder(sql, "$?");
     }
     sql.append(_orderbyString).append(_offsetString).append(_limitString);
     if (_forUpdate)
@@ -564,7 +566,7 @@ inline size_t Mapper<T>::count(const Criteria &criteria) noexcept(false)
     {
         sql += " where ";
         sql += criteria.criteriaString();
-        sql = _client->replaceSqlPlaceHolder(sql, "$?");
+        sql = replaceSqlPlaceHolder(sql, "$?");
     }
     clear();
     Result r(nullptr);
@@ -592,7 +594,7 @@ inline void Mapper<T>::count(const Criteria &criteria,
     {
         sql += " where ";
         sql += criteria.criteriaString();
-        sql = _client->replaceSqlPlaceHolder(sql, "$?");
+        sql = replaceSqlPlaceHolder(sql, "$?");
     }
     clear();
     auto binder = *_client << sql;
@@ -613,7 +615,7 @@ inline std::future<size_t> Mapper<T>::countFuture(const Criteria &criteria) noex
     {
         sql += " where ";
         sql += criteria.criteriaString();
-        sql = _client->replaceSqlPlaceHolder(sql, "$?");
+        sql = replaceSqlPlaceHolder(sql, "$?");
     }
     clear();
     auto binder = *_client << sql;
@@ -651,7 +653,7 @@ inline void Mapper<T>::insert(T &obj) noexcept(false)
     }
     sql[sql.length() - 1] = ')'; //Replace the last ','
     sql += " returning *";
-    sql = _client->replaceSqlPlaceHolder(sql, "$?");
+    sql = replaceSqlPlaceHolder(sql, "$?");
     Result r(nullptr);
     {
         auto binder = *_client << sql;
@@ -687,7 +689,7 @@ inline void Mapper<T>::insert(const T &obj,
     }
     sql[sql.length() - 1] = ')'; //Replace the last ','
     sql += " returning *";
-    sql = _client->replaceSqlPlaceHolder(sql, "$?");
+    sql = replaceSqlPlaceHolder(sql, "$?");
     auto binder = *_client << sql;
     obj.outputArgs(binder);
     binder >> [=](const Result &r) {
@@ -716,7 +718,7 @@ inline std::future<T> Mapper<T>::insertFuture(const T &obj) noexcept
     }
     sql[sql.length() - 1] = ')'; //Replace the last ','
     sql += " returning *";
-    sql = _client->replaceSqlPlaceHolder(sql, "$?");
+    sql = replaceSqlPlaceHolder(sql, "$?");
     auto binder = *_client << sql;
     obj.outputArgs(binder);
 
@@ -748,7 +750,7 @@ inline size_t Mapper<T>::update(T &obj) noexcept(false)
 
     makePrimaryKeyCriteria(sql);
 
-    sql = _client->replaceSqlPlaceHolder(sql, "$?");
+    sql = replaceSqlPlaceHolder(sql, "$?");
     Result r(nullptr);
     {
         auto binder = *_client << sql;
@@ -781,7 +783,7 @@ inline void Mapper<T>::update(const T &obj,
 
     makePrimaryKeyCriteria(sql);
 
-    sql = _client->replaceSqlPlaceHolder(sql, "$?");
+    sql = replaceSqlPlaceHolder(sql, "$?");
     auto binder = *_client << sql;
     obj.updateArgs(binder);
     outputPrimeryKeyToBinder(obj.getPrimaryKey(), binder);
@@ -807,7 +809,7 @@ inline std::future<size_t> Mapper<T>::updateFuture(const T &obj) noexcept
 
     makePrimaryKeyCriteria(sql);
 
-    sql = _client->replaceSqlPlaceHolder(sql, "$?");
+    sql = replaceSqlPlaceHolder(sql, "$?");
     auto binder = *_client << sql;
     obj.updateArgs(binder);
     outputPrimeryKeyToBinder(obj.getPrimaryKey(), binder);
@@ -835,7 +837,7 @@ inline size_t Mapper<T>::deleteOne(const T &obj) noexcept(false)
 
     makePrimaryKeyCriteria(sql);
 
-    sql = _client->replaceSqlPlaceHolder(sql, "$?");
+    sql = replaceSqlPlaceHolder(sql, "$?");
     Result r(nullptr);
     {
         auto binder = *_client << sql;
@@ -861,7 +863,7 @@ inline void Mapper<T>::deleteOne(const T &obj,
 
     makePrimaryKeyCriteria(sql);
 
-    sql = _client->replaceSqlPlaceHolder(sql, "$?");
+    sql = replaceSqlPlaceHolder(sql, "$?");
     auto binder = *_client << sql;
     outputPrimeryKeyToBinder(obj.getPrimaryKey(), binder);
     binder >> [=](const Result &r) {
@@ -880,7 +882,7 @@ inline std::future<size_t> Mapper<T>::deleteFutureOne(const T &obj) noexcept
 
     makePrimaryKeyCriteria(sql);
 
-    sql = _client->replaceSqlPlaceHolder(sql, "$?");
+    sql = replaceSqlPlaceHolder(sql, "$?");
     auto binder = *_client << sql;
     outputPrimeryKeyToBinder(obj.getPrimaryKey(), binder);
 
@@ -907,7 +909,7 @@ inline size_t Mapper<T>::deleteBy(const Criteria &criteria) noexcept(false)
     {
         sql += " where ";
         sql += criteria.criteriaString();
-        sql = _client->replaceSqlPlaceHolder(sql, "$?");
+        sql = replaceSqlPlaceHolder(sql, "$?");
     }
 
     Result r(nullptr);
@@ -939,7 +941,7 @@ inline void Mapper<T>::deleteBy(const Criteria &criteria,
     {
         sql += " where ";
         sql += criteria.criteriaString();
-        sql = _client->replaceSqlPlaceHolder(sql, "$?");
+        sql = replaceSqlPlaceHolder(sql, "$?");
     }
 
     auto binder = *_client << sql;
@@ -963,7 +965,7 @@ inline std::future<size_t> Mapper<T>::deleteFutureBy(const Criteria &criteria) n
     {
         sql += " where ";
         sql += criteria.criteriaString();
-        sql = _client->replaceSqlPlaceHolder(sql, "$?");
+        sql = replaceSqlPlaceHolder(sql, "$?");
     }
     auto binder = *_client << sql;
     if (criteria)
@@ -1032,6 +1034,28 @@ inline Mapper<T> &Mapper<T>::forUpdate()
 {
     _forUpdate = true;
     return *this;
+}
+template <typename T>
+inline std::string Mapper<T>::replaceSqlPlaceHolder(const std::string &sqlStr, const std::string &holderStr) const
+{
+    ///FIXME add mysql support
+    std::string::size_type startPos = 0;
+    std::string::size_type pos;
+    std::stringstream ret;
+    size_t phCount = 1;
+    do
+    {
+        pos = sqlStr.find(holderStr, startPos);
+        if (pos == std::string::npos)
+        {
+            ret << sqlStr.substr(startPos);
+            return ret.str();
+        }
+        ret << sqlStr.substr(startPos, pos - startPos);
+        ret << "$";
+        ret << phCount++;
+        startPos = pos + holderStr.length();
+    } while (1);
 }
 
 } // namespace orm

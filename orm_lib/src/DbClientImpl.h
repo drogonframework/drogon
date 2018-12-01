@@ -19,7 +19,7 @@ class DbClientImpl : public DbClient, public std::enable_shared_from_this<DbClie
 {
   public:
     DbClientImpl(const std::string &connInfo, const size_t connNum, ClientType type);
-    ~DbClientImpl();
+    virtual ~DbClientImpl() noexcept;
     virtual void execSql(const std::string &sql,
                          size_t paraNum,
                          const std::vector<const char *> &parameters,
@@ -27,9 +27,7 @@ class DbClientImpl : public DbClient, public std::enable_shared_from_this<DbClie
                          const std::vector<int> &format,
                          const ResultCallback &rcb,
                          const std::function<void(const std::exception_ptr &)> &exceptCallback) override;
-    virtual std::string replaceSqlPlaceHolder(const std::string &sqlStr, const std::string &holderStr) const override;
     virtual std::shared_ptr<Transaction> newTransaction() override;
-    ClientType type() { return _type; }
 
   private:
     void ioLoop();
@@ -70,8 +68,6 @@ class DbClientImpl : public DbClient, public std::enable_shared_from_this<DbClie
     std::mutex _bufferMutex;
 
     void handleNewTask(const DbConnectionPtr &conn);
-
-    ClientType _type;
 };
 
 } // namespace orm

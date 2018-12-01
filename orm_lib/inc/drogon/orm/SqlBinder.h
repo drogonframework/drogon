@@ -246,8 +246,7 @@ class SqlBinder
     {
         _paraNum++;
         typedef typename std::remove_cv<typename std::remove_reference<T>::type>::type ParaType;
-        std::shared_ptr<void> obj =
-            std::make_shared<ParaType>(parameter);
+        std::shared_ptr<void> obj = std::make_shared<ParaType>(parameter);
         if (_type == ClientType::PostgreSQL)
         {
             switch (sizeof(T))
@@ -364,7 +363,7 @@ class SqlBinder
         _paraNum++;
         _parameters.push_back((char *)obj->data());
         _length.push_back(obj->size());
-        if(_type==ClientType::PostgreSQL)
+        if (_type == ClientType::PostgreSQL)
         {
             _format.push_back(1);
         }

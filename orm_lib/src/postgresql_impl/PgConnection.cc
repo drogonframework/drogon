@@ -118,7 +118,6 @@ void PgConnection::execSql(const std::string &sql,
                            const std::function<void()> &idleCb)
 {
     LOG_TRACE << sql;
-    LOG_TRACE << "paraNum=" << paraNum << " size()=" << parameters.size();
     assert(paraNum == parameters.size());
     assert(paraNum == length.size());
     assert(paraNum == format.size());

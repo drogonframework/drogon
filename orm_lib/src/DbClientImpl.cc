@@ -28,9 +28,10 @@ using namespace drogon::orm;
 
 DbClientImpl::DbClientImpl(const std::string &connInfo, const size_t connNum, ClientType type)
     : _connInfo(connInfo),
-      _connectNum(connNum),
-      _type(type)
+      _connectNum(connNum)
 {
+    _type = type;
+    LOG_TRACE << "type=" << (int)type;
     assert(connNum > 0);
     _loopThread = std::thread([=]() {
         _loopPtr = std::shared_ptr<trantor::EventLoop>(new trantor::EventLoop);
@@ -49,7 +50,7 @@ void DbClientImpl::ioLoop()
     _loopPtr->loop();
 }
 
-DbClientImpl::~DbClientImpl()
+DbClientImpl::~DbClientImpl() noexcept
 {
     _stop = true;
     _loopPtr->quit();
@@ -170,27 +171,6 @@ void DbClientImpl::execSql(const std::string &sql,
     }
 }
 
-std::string DbClientImpl::replaceSqlPlaceHolder(const std::string &sqlStr, const std::string &holderStr) const
-{
-    std::string::size_type startPos = 0;
-    std::string::size_type pos;
-    std::stringstream ret;
-    size_t phCount = 1;
-    do
-    {
-        pos = sqlStr.find(holderStr, startPos);
-        if (pos == std::string::npos)
-        {
-            ret << sqlStr.substr(startPos);
-            return ret.str();
-        }
-        ret << sqlStr.substr(startPos, pos - startPos);
-        ret << "$";
-        ret << phCount++;
-        startPos = pos + holderStr.length();
-    } while (1);
-}
-
 std::shared_ptr<Transaction> DbClientImpl::newTransaction()
 {
     DbConnectionPtr conn;
@@ -206,7 +186,7 @@ std::shared_ptr<Transaction> DbClientImpl::newTransaction()
         conn = *iter;
         _readyConnections.erase(iter);
     }
-    auto trans = std::shared_ptr<TransactionImpl>(new TransactionImpl(conn, [=]() {
+    auto trans = std::shared_ptr<TransactionImpl>(new TransactionImpl(_type, conn, [=]() {
         if (conn->status() == ConnectStatus_Bad)
         {
             return;

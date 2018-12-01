@@ -24,10 +24,9 @@ namespace orm
 class TransactionImpl : public Transaction, public std::enable_shared_from_this<TransactionImpl>
 {
   public:
-    TransactionImpl(const DbConnectionPtr &connPtr, const std::function<void()> &usedUpCallback);
+    TransactionImpl(ClientType type,const DbConnectionPtr &connPtr, const std::function<void()> &usedUpCallback);
     ~TransactionImpl();
     void rollback() override;
-    virtual std::string replaceSqlPlaceHolder(const std::string &sqlStr, const std::string &holderStr) const override;
 
   private:
     DbConnectionPtr _connectionPtr;
