@@ -165,8 +165,9 @@ template <>
 const char *Field::as<const char *>() const;
 template <>
 char *Field::as<char *>() const;
-// template <>
-// std::vector<short> Field::as<std::vector<short>>() const;
+template <>
+std::vector<char> Field::as<std::vector<char>>() const;
+
 // template <>
 // std::vector<int32_t> Field::as<std::vector<int32_t>>() const;
 // template <>

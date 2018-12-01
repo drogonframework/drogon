@@ -36,7 +36,7 @@ std::string Field::as<std::string>() const
 {
     auto _data = _result.getValue(_row, _column);
     auto _dataLength = _result.getLength(_row, _column);
-//    LOG_DEBUG << "_dataLength=" << _dataLength << " str=" << _data;
+    //    LOG_DEBUG << "_dataLength=" << _dataLength << " str=" << _data;
     return std::string(_data, _dataLength);
 }
 template <>
@@ -51,7 +51,13 @@ char *Field::as<char *>() const
     auto _data = _result.getValue(_row, _column);
     return (char *)_data;
 }
-
+template <>
+std::vector<char> Field::as<std::vector<char>>() const
+{
+    char *first = (char *)_result.getValue(_row, _column);
+    char *last = first + _result.getLength(_row, _column);
+    return std::vector<char>(first, last);
+}
 // template <>
 // std::vector<short> Field::as<std::vector<short>>() const
 // {
@@ -81,4 +87,3 @@ char *Field::as<char *>() const
 //     auto _dataLength = _result.getLength(_row, _column);
 //     return std::vector<int64_t>((int64_t *)_data,(int64_t *)(_data + _dataLength));
 // }
-

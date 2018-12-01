@@ -135,7 +135,6 @@ void create_model::createModelClassFromPG(const std::string &path, const DbClien
                 else if (type == "date")
                 {
                     info._colType = "::trantor::Date";
-                    info._colLength = 4;
                 }
                 else if (type.find("timestamp") != std::string::npos)
                 {
@@ -299,28 +298,104 @@ void create_model::createModelFromPG(const std::string &path, const DbClientPtr 
 #if USE_MYSQL
 void create_model::createModelClassFromMysql(const std::string &path, const DbClientPtr &client, const std::string &tableName)
 {
-    std::cout << "create table " << tableName << " model" << std::endl;
+    auto className = nameTransform(tableName, true);
+    HttpViewData data;
+    data["className"] = className;
+    data["tableName"] = tableName;
+    data["hasPrimaryKey"] = (int)0;
+    data["primaryKeyName"] = "";
+    data["dbName"] = _dbname;
+    std::vector<ColumnInfo> cols;
+    int i = 0;
     *client << "desc " + tableName << Mode::Blocking >>
-        // [&](bool isNull, const std::string &field, const std::string &type, bool isNullAble, const std::string &key, const std::string &defaultVal, const std::string &extra) {
-        //     if (!isNull)
-        //     {
-        //         std::cout << field << ":" << type << ":" << isNullAble << ":" << key << ":" << defaultVal << ":" << extra << std::endl;
-        //     }
-        // } >>
-        [](const Result &r) {
-            for (auto row : r)
+        [&](bool isNull, const std::string &field, const std::string &type, const std::string &isNullAble, const std::string &key, const std::string &defaultVal, const std::string &extra) {
+            if (!isNull)
             {
-                for (auto field : row)
+                ColumnInfo info;
+                info._index = i;
+                info._dbType = "pg";
+                info._colName = field;
+                info._colTypeName = nameTransform(info._colName, true);
+                info._colValName = nameTransform(info._colName, false);
+                info._notNull = isNullAble == "YES" ? false : true;
+                info._colDatabaseType = type;
+                info._isPrimaryKey = key == "PRI" ? true : false;
+                if (type.find("tinyint") == 0)
                 {
-                    std::cout << field.name() << "(" << field.as<std::string>() << ") ";
+                    info._colType = "int8_t";
+                    info._colLength = 1;
                 }
-                std::cout << std::endl;
+                else if (type.find("smallint") == 0)
+                {
+                    info._colType = "int16_t";
+                    info._colLength = 2;
+                }
+                else if (type.find("int") == 0)
+                {
+                    info._colType = "int32_t";
+                    info._colLength = 4;
+                }
+                else if (type.find("bigint") == 0)
+                {
+                    info._colType = "int64_t";
+                    info._colLength = 8;
+                }
+                else if (type.find("float") == 0 || type.find("double") == 0)
+                {
+                    info._colType = "double";
+                    info._colLength = sizeof(double);
+                }
+                else if (type.find("date") == 0 || type.find("datetime") == 0 || type.find("timestamp") == 0)
+                {
+                    info._colType = "::trantor::Date";
+                }
+                else if (type.find("blob") != std::string::npos)
+                {
+                    info._colType = "std::vector<char>";
+                }
+                else
+                {
+                    info._colType = "std::string";
+                }
+                if (type.find("unsigned") != std::string::npos)
+                {
+                    info._colType = "u" + info._colType;
+                }
+                cols.push_back(std::move(info));
+                i++;
             }
         } >>
         [](const DrogonDbException &e) {
             std::cerr << e.base().what() << std::endl;
             exit(1);
         };
+    std::vector<std::string> pkNames, pkTypes;
+    for (auto col : cols)
+    {
+        if (col._isPrimaryKey)
+        {
+            pkNames.push_back(col._colName);
+            pkTypes.push_back(col._colType);
+        }
+    }
+    data["hasPrimaryKey"] = (int)pkNames.size();
+    if (pkNames.size() == 1)
+    {
+        data["primaryKeyName"] = pkNames[0];
+        data["primaryKeyType"] = pkTypes[0];
+    }
+    else if (pkNames.size() > 1)
+    {
+        data["primaryKeyName"] = pkNames;
+        data["primaryKeyType"] = pkTypes;
+    }
+    data["columns"] = cols;
+    std::ofstream headerFile(path + "/" + className + ".h", std::ofstream::out);
+    std::ofstream sourceFile(path + "/" + className + ".cc", std::ofstream::out);
+    auto templ = DrTemplateBase::newTemplate("model_h.csp");
+    headerFile << templ->genText(data);
+    templ = DrTemplateBase::newTemplate("model_cc.csp");
+    sourceFile << templ->genText(data);
 }
 void create_model::createModelFromMysql(const std::string &path, const DbClientPtr &client)
 {

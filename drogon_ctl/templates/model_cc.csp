@@ -81,7 +81,7 @@ const std::string &{{className}}::getColumnName(size_t index) noexcept(false)
                 $$<<"        }\n";
                 continue;
             }
-            else if(col._colDatabaseType.find("timestamp")!=std::string::npos)
+            else if(col._colDatabaseType.find("timestamp")!=std::string::npos||col._colDatabaseType.find("datetime")!=std::string::npos)
             {
                 $$<<"            auto timeStr = r[\""<<col._colName<<"\"].as<std::string>();\n";
                 $$<<"            struct tm stm;\n";
@@ -239,13 +239,7 @@ void {{className}}::outputArgs(drogon::orm::internal::SqlBinder &binder) const
 %>
     if(get<%c++$$<<col._colTypeName;%>())
     {
-<%c++if(col._colDatabaseType=="date"){%>
-        binder << (int32_t)(getValueOf<%c++$$<<col._colTypeName;%>().microSecondsSinceEpoch()/1000000-946656000)/86400;
-<%c++}else if(col._colDatabaseType.find("timestamp")!=std::string::npos){%>
-        binder << get<%c++$$<<col._colTypeName;%>()->toCustomedFormattedStringLocal("%Y-%m-%d %H:%M:%S", true);
-<%c++}else{%>
         binder << getValueOf<%c++$$<<col._colTypeName;%>();
-<%c++}%>
     }
     else
     {
@@ -283,13 +277,7 @@ void {{className}}::updateArgs(drogon::orm::internal::SqlBinder &binder) const
     {
         if(get<%c++$$<<col._colTypeName;%>())
         {
-<%c++if(col._colDatabaseType=="date"){%>
-            binder << (int32_t)(getValueOf<%c++$$<<col._colTypeName;%>().microSecondsSinceEpoch()/1000000-946656000)/86400;
-<%c++}else if(col._colDatabaseType.find("timestamp")!=std::string::npos){%>
-            binder << get<%c++$$<<col._colTypeName;%>()->toCustomedFormattedStringLocal("%Y-%m-%d %H:%M:%S", true);
-<%c++}else{%>
             binder << getValueOf<%c++$$<<col._colTypeName;%>();
-<%c++}%>
         }
         else
         {
@@ -300,7 +288,6 @@ void {{className}}::updateArgs(drogon::orm::internal::SqlBinder &binder) const
     }
 %>
 }
-
 Json::Value {{className}}::toJson() const
 {
     Json::Value ret;
@@ -309,12 +296,14 @@ Json::Value {{className}}::toJson() const
     {
 <%c++if(col._colDatabaseType=="date"){%>
         ret["<%c++$$<<col._colName;%>"]=get<%c++$$<<col._colTypeName;%>()->toCustomedFormattedStringLocal("%Y-%m-%d", false);
-<%c++}else if(col._colDatabaseType.find("timestamp")!=std::string::npos){%>
+<%c++}else if(col._colDatabaseType.find("timestamp")!=std::string::npos||col._colDatabaseType.find("datetime")!=std::string::npos){%>
         ret["<%c++$$<<col._colName;%>"]=get<%c++$$<<col._colTypeName;%>()->toCustomedFormattedStringLocal("%Y-%m-%d %H:%M:%S", true);
-<%c++}else if(col._colDatabaseType=="bytea"){%>
+<%c++}else if(col._colDatabaseType=="bytea"||col._colDatabaseType.find("blob")!=std::string::npos){%>
         ret["<%c++$$<<col._colName;%>"]=drogon::base64Encode((const unsigned char *)get<%c++$$<<col._colTypeName;%>()->data(),get<%c++$$<<col._colTypeName;%>()->size());
 <%c++}else if(col._colType=="int64_t"){%>
         ret["<%c++$$<<col._colName;%>"]=(Json::Int64)getValueOf<%c++$$<<col._colTypeName;%>();
+<%c++}else if(col._colType=="uint64_t"){%>
+        ret["<%c++$$<<col._colName;%>"]=(Json::UInt64)getValueOf<%c++$$<<col._colTypeName;%>();
 <%c++}else{%>
         ret["<%c++$$<<col._colName;%>"]=getValueOf<%c++$$<<col._colTypeName;%>();
 <%c++}%>

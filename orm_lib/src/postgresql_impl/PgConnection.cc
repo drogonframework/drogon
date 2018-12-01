@@ -117,6 +117,8 @@ void PgConnection::execSql(const std::string &sql,
                            const std::function<void(const std::exception_ptr &)> &exceptCallback,
                            const std::function<void()> &idleCb)
 {
+    LOG_TRACE << sql;
+    LOG_TRACE << "paraNum=" << paraNum << " size()=" << parameters.size();
     assert(paraNum == parameters.size());
     assert(paraNum == length.size());
     assert(paraNum == format.size());
@@ -129,12 +131,7 @@ void PgConnection::execSql(const std::string &sql,
     _idleCb = idleCb;
     _isWorking = true;
     _exceptCb = exceptCallback;
-    //_channel.enableWriting();
-    LOG_TRACE << sql;
-    // for (size_t i = 0; i < paraNum;i++)
-    // {
-    //     LOG_TRACE << "parameter[" << i << "]=" << ntohl(*(int *)parameters[i]);
-    // }
+
     if (PQsendQueryParams(
             _connPtr.get(),
             sql.c_str(),
