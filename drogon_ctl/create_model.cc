@@ -86,6 +86,7 @@ void create_model::createModelClassFromPG(const std::string &path, const DbClien
             {
                 auto row = r[i];
                 ColumnInfo info;
+                memset(&info, 0, sizeof(info));
                 info._index = i;
                 info._dbType = "pg";
                 info._colName = row["column_name"].as<std::string>();
@@ -312,6 +313,7 @@ void create_model::createModelClassFromMysql(const std::string &path, const DbCl
             if (!isNull)
             {
                 ColumnInfo info;
+                memset(&info, 0, sizeof(info));
                 info._index = i;
                 info._dbType = "pg";
                 info._colName = field;
@@ -360,6 +362,14 @@ void create_model::createModelClassFromMysql(const std::string &path, const DbCl
                 if (type.find("unsigned") != std::string::npos)
                 {
                     info._colType = "u" + info._colType;
+                }
+                if (!defaultVal.empty())
+                {
+                    info._hasDefaultVal = true;
+                }
+                if (extra.find("auto_") == 0)
+                {
+                    info._isAutoVal = true;
                 }
                 cols.push_back(std::move(info));
                 i++;

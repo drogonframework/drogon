@@ -59,13 +59,13 @@ class Mapper
 
     Mapper(const DbClientPtr &client) : _client(client) {}
 
-    typedef typename internal::Traits<T,!std::is_same<typename T::PrimaryKeyType, void>::value>::type TraitsPKType;
+    typedef typename internal::Traits<T, !std::is_same<typename T::PrimaryKeyType, void>::value>::type TraitsPKType;
 
     T findByPrimaryKey(const TraitsPKType &key) noexcept(false);
 
     void findByPrimaryKey(const TraitsPKType &key,
-                     const SingleRowCallback &rcb,
-                     const ExceptionCallback &ecb) noexcept;
+                          const SingleRowCallback &rcb,
+                          const ExceptionCallback &ecb) noexcept;
 
     std::future<T> findFutureByPrimaryKey(const TraitsPKType &key) noexcept;
 
@@ -1039,23 +1039,48 @@ template <typename T>
 inline std::string Mapper<T>::replaceSqlPlaceHolder(const std::string &sqlStr, const std::string &holderStr) const
 {
     ///FIXME add mysql support
-    std::string::size_type startPos = 0;
-    std::string::size_type pos;
-    std::stringstream ret;
-    size_t phCount = 1;
-    do
+    if (_client->type() == ClientType::PostgreSQL)
     {
-        pos = sqlStr.find(holderStr, startPos);
-        if (pos == std::string::npos)
+        std::string::size_type startPos = 0;
+        std::string::size_type pos;
+        std::stringstream ret;
+        size_t phCount = 1;
+        do
         {
-            ret << sqlStr.substr(startPos);
-            return ret.str();
-        }
-        ret << sqlStr.substr(startPos, pos - startPos);
-        ret << "$";
-        ret << phCount++;
-        startPos = pos + holderStr.length();
-    } while (1);
+            pos = sqlStr.find(holderStr, startPos);
+            if (pos == std::string::npos)
+            {
+                ret << sqlStr.substr(startPos);
+                return ret.str();
+            }
+            ret << sqlStr.substr(startPos, pos - startPos);
+            ret << "$";
+            ret << phCount++;
+            startPos = pos + holderStr.length();
+        } while (1);
+    }
+    else if (_client->type() == ClientType::Mysql)
+    {
+        std::string::size_type startPos = 0;
+        std::string::size_type pos;
+        std::stringstream ret;
+        do
+        {
+            pos = sqlStr.find(holderStr, startPos);
+            if (pos == std::string::npos)
+            {
+                ret << sqlStr.substr(startPos);
+                return ret.str();
+            }
+            ret << sqlStr.substr(startPos, pos - startPos);
+            ret << "?";
+            startPos = pos + holderStr.length();
+        } while (1);
+    }
+    else
+    {
+        return sqlStr;
+    }
 }
 
 } // namespace orm
