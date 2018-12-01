@@ -12,7 +12,7 @@
 #pragma once
 
 #include "../ResultImpl.h"
-
+#include <trantor/utils/Logger.h>
 #include <mysql.h>
 #include <memory>
 #include <string>
@@ -48,12 +48,15 @@ class MysqlResultImpl : public ResultImpl
         }
         if (size() > 0)
         {
-            _rowsPtr = std::make_shared<std::vector<std::pair<char **, field_size_type *>>>();
+            _rowsPtr = std::make_shared<std::vector<std::pair<char **, std::vector<unsigned long>>>>();
             MYSQL_ROW row;
+            std::vector<unsigned long> vLens;
+            vLens.resize(_fieldNum);
             while ((row = mysql_fetch_row(r.get())) != NULL)
             {
                 auto lengths = mysql_fetch_lengths(r.get());
-                _rowsPtr->push_back(std::make_pair(row, lengths));
+                memcpy(vLens.data(), lengths, sizeof(unsigned long) * _fieldNum);
+                _rowsPtr->push_back(std::make_pair(row, vLens));
             }
         }
     }
@@ -74,7 +77,7 @@ class MysqlResultImpl : public ResultImpl
     const Result::row_size_type _fieldNum;
     const size_type _affectedRows;
     std::shared_ptr<std::unordered_map<std::string, row_size_type>> _fieldMapPtr;
-    std::shared_ptr<std::vector<std::pair<char **, field_size_type *>>> _rowsPtr;
+    std::shared_ptr<std::vector<std::pair<char **, std::vector<unsigned long>>>> _rowsPtr;
 };
 
 } // namespace orm

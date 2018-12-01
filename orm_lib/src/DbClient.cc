@@ -12,9 +12,6 @@
 
 #include <drogon/orm/DbClient.h>
 #include "DbClientImpl.h"
-#if USE_POSTGRESQL
-#include "postgresql_impl/PgConnection.h"
-#endif
 using namespace drogon::orm;
 using namespace drogon;
 

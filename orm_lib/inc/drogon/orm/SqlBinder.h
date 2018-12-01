@@ -19,7 +19,7 @@
 #include <drogon/orm/FunctionTraits.h>
 #include <drogon/orm/Exception.h>
 #include <trantor/utils/Logger.h>
-#ifdef USE_MYSQL
+#if USE_MYSQL
 #include <mysql.h>
 #endif
 #include <string.h>
@@ -273,7 +273,7 @@ class SqlBinder
         }
         else if (_type == ClientType::Mysql)
         {
-#ifdef USE_MYSQL
+#if USE_MYSQL
             _objs.push_back(obj);
             _parameters.push_back((char *)obj.get());
             _length.push_back(0);
@@ -320,7 +320,7 @@ class SqlBinder
         }
         else if (_type == ClientType::Mysql)
         {
-#ifdef USE_MYSQL
+#if USE_MYSQL
             _format.push_back(MYSQL_TYPE_STRING);
 #endif
         }
@@ -343,7 +343,7 @@ class SqlBinder
         }
         else if (_type == ClientType::Mysql)
         {
-#ifdef USE_MYSQL
+#if USE_MYSQL
             _format.push_back(MYSQL_TYPE_STRING);
 #endif
         }
@@ -370,7 +370,7 @@ class SqlBinder
         }
         else if (_type == ClientType::Mysql)
         {
-#ifdef USE_MYSQL
+#if USE_MYSQL
             _format.push_back(MYSQL_TYPE_STRING);
 #endif
         }
@@ -389,7 +389,7 @@ class SqlBinder
         }
         else if (_type == ClientType::Mysql)
         {
-#ifdef USE_MYSQL
+#if USE_MYSQL
             _format.push_back(MYSQL_TYPE_STRING);
 #endif
         }
@@ -414,7 +414,7 @@ class SqlBinder
         }
         else if (_type == ClientType::Mysql)
         {
-#ifdef USE_MYSQL
+#if USE_MYSQL
             _format.push_back(MYSQL_TYPE_NULL);
 #endif
         }

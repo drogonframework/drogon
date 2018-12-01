@@ -18,6 +18,7 @@
 #include <drogon/utils/Utilities.h>
 #include <drogon/HttpViewData.h>
 #include <drogon/DrTemplateBase.h>
+#include <trantor/utils/Logger.h>
 #include <json/json.h>
 #include <iostream>
 #include <fstream>
@@ -294,6 +295,50 @@ void create_model::createModelFromPG(const std::string &path, const DbClientPtr 
         };
 }
 #endif
+
+#if USE_MYSQL
+void create_model::createModelClassFromMysql(const std::string &path, const DbClientPtr &client, const std::string &tableName)
+{
+    std::cout << "create table " << tableName << " model" << std::endl;
+    *client << "desc " + tableName << Mode::Blocking >>
+        // [&](bool isNull, const std::string &field, const std::string &type, bool isNullAble, const std::string &key, const std::string &defaultVal, const std::string &extra) {
+        //     if (!isNull)
+        //     {
+        //         std::cout << field << ":" << type << ":" << isNullAble << ":" << key << ":" << defaultVal << ":" << extra << std::endl;
+        //     }
+        // } >>
+        [](const Result &r) {
+            for (auto row : r)
+            {
+                for (auto field : row)
+                {
+                    std::cout << field.name() << "(" << field.as<std::string>() << ") ";
+                }
+                std::cout << std::endl;
+            }
+        } >>
+        [](const DrogonDbException &e) {
+            std::cerr << e.base().what() << std::endl;
+            exit(1);
+        };
+}
+void create_model::createModelFromMysql(const std::string &path, const DbClientPtr &client)
+{
+    *client << "show tables" << Mode::Blocking >>
+        [&](bool isNull, const std::string &tableName) {
+            if (!isNull)
+            {
+                std::cout << "table name:" << tableName << std::endl;
+                createModelClassFromMysql(path, client, tableName);
+            }
+        } >>
+        [](const DrogonDbException &e) {
+            std::cerr << e.base().what() << std::endl;
+            exit(1);
+        };
+}
+#endif
+
 void create_model::createModel(const std::string &path, const Json::Value &config)
 {
     auto dbType = config.get("rdbms", "No dbms").asString();
@@ -345,6 +390,60 @@ void create_model::createModel(const std::string &path, const Json::Value &confi
                 createModelClassFromPG(path, client, tableName);
             }
         }
+#else
+        std::cerr << "Drogon does not support PostgreSQL, please install PostgreSQL development environment before installing drogon" << std::endl;
+#endif
+    }
+    else if (dbType == "mysql")
+    {
+#if USE_MYSQL
+        std::cout << "mysql" << std::endl;
+        auto host = config.get("host", "127.0.0.1").asString();
+        auto port = config.get("port", 5432).asUInt();
+        auto dbname = config.get("dbname", "").asString();
+        if (dbname == "")
+        {
+            std::cerr << "Please configure dbname in " << path << "/model.json " << std::endl;
+            exit(1);
+        }
+        _dbname = dbname;
+        auto user = config.get("user", "").asString();
+        if (user == "")
+        {
+            std::cerr << "Please configure user in " << path << "/model.json " << std::endl;
+            exit(1);
+        }
+        auto password = config.get("passwd", "").asString();
+
+        auto connStr = formattedString("host=%s port=%u dbname=%s user=%s", host.c_str(), port, dbname.c_str(), user.c_str());
+        if (!password.empty())
+        {
+            connStr += " password=";
+            connStr += password;
+        }
+        DbClientPtr client = drogon::orm::DbClient::newMysqlClient(connStr, 1);
+        std::cout << "Connect to server..." << std::endl;
+        std::cout << "Source files in the " << path << " folder will be overwritten, continue(y/n)?\n";
+        auto in = getchar();
+        if (in != 'Y' && in != 'y')
+        {
+            std::cout << "Abort!" << std::endl;
+            exit(0);
+        }
+        auto tables = config["tables"];
+        if (!tables || tables.size() == 0)
+            createModelFromMysql(path, client);
+        else
+        {
+            for (int i = 0; i < (int)tables.size(); i++)
+            {
+                auto tableName = tables[i].asString();
+                std::cout << "table name:" << tableName << std::endl;
+                createModelClassFromMysql(path, client, tableName);
+            }
+        }
+#else
+        std::cerr << "Drogon does not support Mysql, please install MariaDB development environment before installing drogon" << std::endl;
 #endif
     }
     else if (dbType == "No dbms")
