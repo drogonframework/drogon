@@ -143,3 +143,7 @@ Result::field_size_type Result::getLength(Result::size_type row, Result::row_siz
 {
     return _resultPtr->getLength(row,column);
 }
+unsigned long long Result::insertId() const noexcept
+{
+    return _resultPtr->insertId();
+}

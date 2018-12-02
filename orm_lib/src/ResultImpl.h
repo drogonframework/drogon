@@ -29,6 +29,7 @@ public:
   virtual const char *getValue(size_type row, row_size_type column) const = 0;
   virtual bool isNull(size_type row, row_size_type column) const = 0;
   virtual field_size_type getLength(size_type row, row_size_type column) const = 0;
+  virtual unsigned long long insertId() const noexcept { return 0; }
   virtual ~ResultImpl() {}
 };
 

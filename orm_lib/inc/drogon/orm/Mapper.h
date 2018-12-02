@@ -646,13 +646,16 @@ inline void Mapper<T>::insert(T &obj) noexcept(false)
         sql += ",";
     }
     sql[sql.length() - 1] = ')'; //Replace the last ','
-    sql += "values (";
+    sql += " values (";
     for (int i = 0; i < T::insertColumns().size(); i++)
     {
         sql += "$?,";
     }
     sql[sql.length() - 1] = ')'; //Replace the last ','
-    sql += " returning *";
+    if (_client->type() == ClientType::PostgreSQL)
+    {
+        sql += " returning *";
+    }
     sql = replaceSqlPlaceHolder(sql, "$?");
     Result r(nullptr);
     {
@@ -664,8 +667,16 @@ inline void Mapper<T>::insert(T &obj) noexcept(false)
         };
         binder.exec(); //Maybe throw exception;
     }
-    assert(r.size() == 1);
-    obj = T(r[0]);
+    if (_client->type() == ClientType::PostgreSQL)
+    {
+        assert(r.size() == 1);
+        obj = T(r[0]);
+    }
+    else if (_client->type() == ClientType::Mysql)
+    {
+        auto id = r.insertId();
+        obj.updateId(id);
+    }
 }
 template <typename T>
 inline void Mapper<T>::insert(const T &obj,
@@ -682,19 +693,32 @@ inline void Mapper<T>::insert(const T &obj,
         sql += ",";
     }
     sql[sql.length() - 1] = ')'; //Replace the last ','
-    sql += "values (";
+    sql += " values (";
     for (int i = 0; i < T::insertColumns().size(); i++)
     {
         sql += "$?,";
     }
     sql[sql.length() - 1] = ')'; //Replace the last ','
-    sql += " returning *";
+    if (_client->type() == ClientType::PostgreSQL)
+    {
+        sql += " returning *";
+    }
     sql = replaceSqlPlaceHolder(sql, "$?");
     auto binder = *_client << sql;
     obj.outputArgs(binder);
     binder >> [=](const Result &r) {
-        assert(r.size() == 1);
-        rcb(T(r[0]));
+        if (_client->type() == ClientType::PostgreSQL)
+        {
+            assert(r.size() == 1);
+            rcb(T(r[0]));
+        }
+        else if (_client->type() == ClientType::Mysql)
+        {
+            auto id = r.insertId();
+            auto newObj = obj;
+            newObj.updateId(id);
+            rcb(newObj);
+        }
     };
     binder >> ecb;
 }
@@ -711,21 +735,34 @@ inline std::future<T> Mapper<T>::insertFuture(const T &obj) noexcept
         sql += ",";
     }
     sql[sql.length() - 1] = ')'; //Replace the last ','
-    sql += "values (";
+    sql += " values (";
     for (int i = 0; i < T::insertColumns().size(); i++)
     {
         sql += "$?,";
     }
     sql[sql.length() - 1] = ')'; //Replace the last ','
-    sql += " returning *";
+    if (_client->type() == ClientType::PostgreSQL)
+    {
+        sql += " returning *";
+    }
     sql = replaceSqlPlaceHolder(sql, "$?");
     auto binder = *_client << sql;
     obj.outputArgs(binder);
 
     std::shared_ptr<std::promise<T>> prom = std::make_shared<std::promise<T>>();
     binder >> [=](const Result &r) {
-        assert(r.size() == 1);
-        prom->set_value(T(r[0]));
+        if (_client->type() == ClientType::PostgreSQL)
+        {
+            assert(r.size() == 1);
+            prom->set_value(T(r[0]));
+        }
+        else if (_client->type() == ClientType::Mysql)
+        {
+            auto id = r.insertId();
+            auto newObj = obj;
+            newObj.updateId(id);
+            prom->set_value(newObj);
+        }
     };
     binder >> [=](const std::exception_ptr &e) {
         prom->set_exception(e);

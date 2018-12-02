@@ -70,6 +70,7 @@ void create_model::createModelClassFromPG(const std::string &path, const DbClien
     data["hasPrimaryKey"] = (int)0;
     data["primaryKeyName"] = "";
     data["dbName"] = _dbname;
+    data["rdbms"] = std::string("postgresql");
     std::vector<ColumnInfo> cols;
     *client << "SELECT * \
                 FROM information_schema.columns \
@@ -306,6 +307,7 @@ void create_model::createModelClassFromMysql(const std::string &path, const DbCl
     data["hasPrimaryKey"] = (int)0;
     data["primaryKeyName"] = "";
     data["dbName"] = _dbname;
+    data["rdbms"] = std::string("mysql");
     std::vector<ColumnInfo> cols;
     int i = 0;
     *client << "desc " + tableName << Mode::Blocking >>
@@ -342,7 +344,12 @@ void create_model::createModelClassFromMysql(const std::string &path, const DbCl
                     info._colType = "int64_t";
                     info._colLength = 8;
                 }
-                else if (type.find("float") == 0 || type.find("double") == 0)
+                else if (type.find("float") == 0)
+                {
+                    info._colType = "float";
+                    info._colLength = sizeof(float);
+                }
+                else if (type.find("double") == 0)
                 {
                     info._colType = "double";
                     info._colLength = sizeof(double);

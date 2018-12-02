@@ -192,6 +192,26 @@ const std::string &{{className}}::getColumnName(size_t index) noexcept(false)
         }
         $$<<"\n";    
     }
+    if(@@.get<std::string>("rdbms")=="postgresql")
+    {
+        $$<<"void "<<className<<"::updateId(const unsigned long long id)\n";
+        $$<<"{\n";
+        $$<<"}\n";
+    }
+    else if(@@.get<std::string>("rdbms")=="mysql")
+    {
+        $$<<"void "<<className<<"::updateId(const unsigned long long id)\n";
+        $$<<"{\n";
+        for(auto col:cols)
+        {
+            if(col._isAutoVal)
+            {
+                $$<<"    _"<<col._colValName<<" = std::make_shared<unsigned long long>(id);\n";
+                break;
+            }
+        }
+        $$<<"}\n";
+    }
     if(@@.get<int>("hasPrimaryKey")>1)
     {
         $$<<"typename "<<className<<"::PrimaryKeyType "<<className<<"::getPrimaryKey() const\n";

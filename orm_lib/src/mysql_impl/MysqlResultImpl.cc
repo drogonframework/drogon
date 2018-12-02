@@ -65,3 +65,7 @@ Result::field_size_type MysqlResultImpl::getLength(size_type row, row_size_type 
     assert(column < _fieldNum);
     return (*_rowsPtr)[row].second[column];
 }
+unsigned long long MysqlResultImpl::insertId() const noexcept
+{
+    return _insertId;
+}

@@ -26,9 +26,10 @@ namespace orm
 
 Result makeResult(const std::shared_ptr<MYSQL_RES> &r = std::shared_ptr<MYSQL_RES>(nullptr),
                   const std::string &query = "",
-                  Result::size_type affectedRows = 0)
+                  Result::size_type affectedRows = 0,
+                  unsigned long long insertId = 0)
 {
-    return Result(std::shared_ptr<MysqlResultImpl>(new MysqlResultImpl(r, query, affectedRows)));
+    return Result(std::shared_ptr<MysqlResultImpl>(new MysqlResultImpl(r, query, affectedRows, insertId)));
 }
 
 } // namespace orm
@@ -275,6 +276,7 @@ void MysqlConnection::execSql(const std::string &sql,
                               const std::function<void(const std::exception_ptr &)> &exceptCallback,
                               const std::function<void()> &idleCb)
 {
+    LOG_TRACE << sql;
     assert(paraNum == parameters.size());
     assert(paraNum == length.size());
     assert(paraNum == format.size());
@@ -298,6 +300,7 @@ void MysqlConnection::execSql(const std::string &sql,
             if (seekPos == std::string::npos)
             {
                 _sql.append(sql.substr(pos));
+                pos = seekPos;
                 break;
             }
             else
@@ -335,6 +338,10 @@ void MysqlConnection::execSql(const std::string &sql,
                     break;
                 }
             }
+        }
+        if (pos < sql.length())
+        {
+            _sql.append(sql.substr(pos));
         }
     }
     else
@@ -412,7 +419,7 @@ void MysqlConnection::getResult(MYSQL_RES *res)
     auto resultPtr = std::shared_ptr<MYSQL_RES>(res, [](MYSQL_RES *r) {
         mysql_free_result(r);
     });
-    auto Result = makeResult(resultPtr, _sql, mysql_affected_rows(_mysqlPtr.get()));
+    auto Result = makeResult(resultPtr, _sql, mysql_affected_rows(_mysqlPtr.get()), mysql_insert_id(_mysqlPtr.get()));
     if (_isWorking)
     {
         _cb(Result);

@@ -124,6 +124,8 @@ auto cols=@@.get<std::vector<ColumnInfo>>("columns");
     void outputArgs(drogon::orm::internal::SqlBinder &binder) const;
     const std::vector<std::string> updateColumns() const;
     void updateArgs(drogon::orm::internal::SqlBinder &binder) const;
+    ///For mysql only
+    void updateId(const unsigned long long id);
 <%c++
     for(auto col:cols)
     {

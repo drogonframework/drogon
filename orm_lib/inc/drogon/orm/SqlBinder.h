@@ -11,7 +11,7 @@
  */
 
 #pragma once
-
+#include <drogon/config.h>
 #include <drogon/orm/Row.h>
 #include <drogon/orm/Field.h>
 #include <drogon/orm/ResultIterator.h>
