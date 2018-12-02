@@ -23,7 +23,7 @@
 #include <iostream>
 #include <fstream>
 #include <regex>
-
+#include <algorithm>
 #include <unistd.h>
 #include <dirent.h>
 #include <dlfcn.h>
@@ -434,7 +434,8 @@ void create_model::createModelFromMysql(const std::string &path, const DbClientP
 void create_model::createModel(const std::string &path, const Json::Value &config)
 {
     auto dbType = config.get("rdbms", "No dbms").asString();
-    if (dbType == "postgreSQL")
+    std::transform(dbType.begin(), dbType.end(), dbType.begin(), tolower);
+    if (dbType == "postgresql")
     {
 #if USE_POSTGRESQL
         std::cout << "postgresql" << std::endl;

@@ -1256,14 +1256,16 @@ void HttpAppFrameworkImpl::createDbClient(const std::string &dbType,
         connStr += " password=";
         connStr += password;
     }
-    if (dbType == "postgreSQL")
+    std::string type = dbType;
+    std::transform(type.begin(), type.end(), type.begin(), tolower);
+    if (type == "postgresql")
     {
 #if USE_POSTGRESQL
         auto client = drogon::orm::DbClient::newPgClient(connStr, connectionNum);
         _dbClientsMap[name] = client;
 #endif
     }
-    else if (dbType == "mysql")
+    else if (type == "mysql")
     {
 #if USE_MYSQL
         auto client = drogon::orm::DbClient::newMysqlClient(connStr, connectionNum);
