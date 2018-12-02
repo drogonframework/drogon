@@ -315,9 +315,9 @@ Json::Value {{className}}::toJson() const
     if(get<%c++$$<<col._colTypeName;%>())
     {
 <%c++if(col._colDatabaseType=="date"){%>
-        ret["<%c++$$<<col._colName;%>"]=get<%c++$$<<col._colTypeName;%>()->toCustomedFormattedStringLocal("%Y-%m-%d", false);
+        ret["<%c++$$<<col._colName;%>"]=get<%c++$$<<col._colTypeName;%>()->toDbStringLocal();
 <%c++}else if(col._colDatabaseType.find("timestamp")!=std::string::npos||col._colDatabaseType.find("datetime")!=std::string::npos){%>
-        ret["<%c++$$<<col._colName;%>"]=get<%c++$$<<col._colTypeName;%>()->toCustomedFormattedStringLocal("%Y-%m-%d %H:%M:%S", true);
+        ret["<%c++$$<<col._colName;%>"]=get<%c++$$<<col._colTypeName;%>()->toDbStringLocal();
 <%c++}else if(col._colDatabaseType=="bytea"||col._colDatabaseType.find("blob")!=std::string::npos){%>
         ret["<%c++$$<<col._colName;%>"]=drogon::base64Encode((const unsigned char *)get<%c++$$<<col._colTypeName;%>()->data(),get<%c++$$<<col._colTypeName;%>()->size());
 <%c++}else if(col._colType=="int64_t"){%>

@@ -350,11 +350,11 @@ class SqlBinder
     }
     self &operator<<(trantor::Date &&date)
     {
-        return operator<<(date.toCustomedFormattedStringLocal("%Y-%m-%d %H:%M:%S", true)); 
+        return operator<<(date.toDbStringLocal());
     }
     self &operator<<(const trantor::Date &date)
     {
-        return operator<<(date.toCustomedFormattedStringLocal("%Y-%m-%d %H:%M:%S", true)); 
+        return operator<<(date.toDbStringLocal());
     }
     self &operator<<(const std::vector<char> &v)
     {
