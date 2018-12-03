@@ -66,7 +66,7 @@ IF (WIN32)
     $ENV{ProgramFiles}/MySQL/*/lib/${libsuffixDist}
     $ENV{SystemDrive}/MySQL/*/lib/${libsuffixDist})
 ELSE (WIN32)
-  FIND_LIBRARY(MYSQL_LIB NAMES mysqlclient_r mysqlclient
+  FIND_LIBRARY(MYSQL_LIB NAMES mariadbclient
     PATHS
     /usr/lib/mysql
     /usr/local/lib/mysql
@@ -84,19 +84,10 @@ ENDIF(MYSQL_LIB)
 
 set(MYSQL_VERSION_STRING "")
 
-if( MYSQL_INCLUDE_DIR AND EXISTS "${MYSQL_INCLUDE_DIR}/mariadb_version.h" )
-	file( STRINGS "${MYSQL_INCLUDE_DIR}/mariadb_version.h"
-		MYSQL_VERSION_H REGEX "^#define[ \t]+MARIADB_CLIENT_VERSION_STR[ \t]+\"[^\"]+\".*$" )
-	string( REGEX REPLACE
-		"^.*MARIADB_CLIENT_VERSION_STR[ \t]+\"([^\"]+)\".*$" "\\1" MYSQL_VERSION_STRING
-		"${MYSQL_VERSION_H}" )
-endif()
+EXEC_PROGRAM (grep ARGS "MARIADB_BASE_VERSION ${MYSQL_INCLUDE_DIR}/*.h|awk '{print $3}'" OUTPUT_VARIABLE MYSQL_VERSION_STRING)
 
 IF (MYSQL_INCLUDE_DIR AND MYSQL_LIB_DIR)
   SET(MYSQL_FOUND TRUE)
-
-  INCLUDE_DIRECTORIES(${MYSQL_INCLUDE_DIR})
-  LINK_DIRECTORIES(${MYSQL_LIB_DIR})
 
   FIND_LIBRARY(MYSQL_ZLIB zlib PATHS ${MYSQL_LIB_DIR})
   FIND_LIBRARY(MYSQL_TAOCRYPT taocrypt PATHS ${MYSQL_LIB_DIR})
