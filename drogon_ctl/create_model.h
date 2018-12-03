@@ -15,7 +15,7 @@
 
 #include <drogon/config.h>
 #include <json/json.h>
-#if USE_POSTGRESQL
+#if USE_ORM
 #include <drogon/orm/DbClient.h>
 using namespace drogon::orm;
 #endif
@@ -57,6 +57,10 @@ protected:
 #if USE_POSTGRESQL
   void createModelClassFromPG(const std::string &path, const DbClientPtr &client, const std::string &tableName);
   void createModelFromPG(const std::string &path, const DbClientPtr &client);
+#endif
+#if USE_MYSQL
+  void createModelClassFromMysql(const std::string &path, const DbClientPtr &client, const std::string &tableName);
+  void createModelFromMysql(const std::string &path, const DbClientPtr &client);
 #endif
   std::string _dbname;
 };

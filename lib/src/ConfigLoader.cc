@@ -221,12 +221,12 @@ static void loadApp(const Json::Value &app)
 }
 static void loadDbClients(const Json::Value &dbClients)
 {
-#if USE_POSTGRESQL
+#if USE_ORM
     if (!dbClients)
         return;
     for (auto &client : dbClients)
     {
-        auto type = client.get("rdbms", "postgreSQL").asString();
+        auto type = client.get("rdbms", "postgresql").asString();
         auto host = client.get("host", "127.0.0.1").asString();
         auto port = client.get("port", 5432).asUInt();
         auto dbname = client.get("dbname", "").asString();

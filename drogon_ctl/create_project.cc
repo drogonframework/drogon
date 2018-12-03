@@ -62,6 +62,13 @@ static void newJsonFindFile(std::ofstream &jsonFile)
     jsonFile << templ->genText();
 }
 
+static void newMySQLFindFile(std::ofstream &jsonFile)
+{
+    auto templ = DrTemplateBase::newTemplate("FindMySQL.csp");
+    jsonFile << templ->genText();
+}
+
+
 static void newConfigFile(std::ofstream &configFile)
 {
     auto templ=DrTemplateBase::newTemplate("config");
@@ -99,6 +106,8 @@ void create_project::createProject(const std::string &projectName)
     newJsonFindFile(jsonFile);
     std::ofstream uuidFile("cmake_modules/FindUUID.cmake", std::ofstream::out);
     newUuidFindFile(uuidFile);
+    std::ofstream mysqlFile("cmake_modules/FindMySQL.cmake", std::ofstream::out);
+    newMySQLFindFile(mysqlFile);
 
     std::ofstream gitFile(".gitignore", std::ofstream::out);
     newGitIgFile(gitFile);

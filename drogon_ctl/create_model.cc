@@ -18,11 +18,12 @@
 #include <drogon/utils/Utilities.h>
 #include <drogon/HttpViewData.h>
 #include <drogon/DrTemplateBase.h>
+#include <trantor/utils/Logger.h>
 #include <json/json.h>
 #include <iostream>
 #include <fstream>
 #include <regex>
-
+#include <algorithm>
 #include <unistd.h>
 #include <dirent.h>
 #include <dlfcn.h>
@@ -69,6 +70,7 @@ void create_model::createModelClassFromPG(const std::string &path, const DbClien
     data["hasPrimaryKey"] = (int)0;
     data["primaryKeyName"] = "";
     data["dbName"] = _dbname;
+    data["rdbms"] = std::string("postgresql");
     std::vector<ColumnInfo> cols;
     *client << "SELECT * \
                 FROM information_schema.columns \
@@ -85,6 +87,7 @@ void create_model::createModelClassFromPG(const std::string &path, const DbClien
             {
                 auto row = r[i];
                 ColumnInfo info;
+                memset(&info, 0, sizeof(info));
                 info._index = i;
                 info._dbType = "pg";
                 info._colName = row["column_name"].as<std::string>();
@@ -134,7 +137,6 @@ void create_model::createModelClassFromPG(const std::string &path, const DbClien
                 else if (type == "date")
                 {
                     info._colType = "::trantor::Date";
-                    info._colLength = 4;
                 }
                 else if (type.find("timestamp") != std::string::npos)
                 {
@@ -294,10 +296,146 @@ void create_model::createModelFromPG(const std::string &path, const DbClientPtr 
         };
 }
 #endif
+
+#if USE_MYSQL
+void create_model::createModelClassFromMysql(const std::string &path, const DbClientPtr &client, const std::string &tableName)
+{
+    auto className = nameTransform(tableName, true);
+    HttpViewData data;
+    data["className"] = className;
+    data["tableName"] = tableName;
+    data["hasPrimaryKey"] = (int)0;
+    data["primaryKeyName"] = "";
+    data["dbName"] = _dbname;
+    data["rdbms"] = std::string("mysql");
+    std::vector<ColumnInfo> cols;
+    int i = 0;
+    *client << "desc " + tableName << Mode::Blocking >>
+        [&](bool isNull, const std::string &field, const std::string &type, const std::string &isNullAble, const std::string &key, const std::string &defaultVal, const std::string &extra) {
+            if (!isNull)
+            {
+                ColumnInfo info;
+                memset(&info, 0, sizeof(info));
+                info._index = i;
+                info._dbType = "pg";
+                info._colName = field;
+                info._colTypeName = nameTransform(info._colName, true);
+                info._colValName = nameTransform(info._colName, false);
+                info._notNull = isNullAble == "YES" ? false : true;
+                info._colDatabaseType = type;
+                info._isPrimaryKey = key == "PRI" ? true : false;
+                if (type.find("tinyint") == 0)
+                {
+                    info._colType = "int8_t";
+                    info._colLength = 1;
+                }
+                else if (type.find("smallint") == 0)
+                {
+                    info._colType = "int16_t";
+                    info._colLength = 2;
+                }
+                else if (type.find("int") == 0)
+                {
+                    info._colType = "int32_t";
+                    info._colLength = 4;
+                }
+                else if (type.find("bigint") == 0)
+                {
+                    info._colType = "int64_t";
+                    info._colLength = 8;
+                }
+                else if (type.find("float") == 0)
+                {
+                    info._colType = "float";
+                    info._colLength = sizeof(float);
+                }
+                else if (type.find("double") == 0)
+                {
+                    info._colType = "double";
+                    info._colLength = sizeof(double);
+                }
+                else if (type.find("date") == 0 || type.find("datetime") == 0 || type.find("timestamp") == 0)
+                {
+                    info._colType = "::trantor::Date";
+                }
+                else if (type.find("blob") != std::string::npos)
+                {
+                    info._colType = "std::vector<char>";
+                }
+                else
+                {
+                    info._colType = "std::string";
+                }
+                if (type.find("unsigned") != std::string::npos)
+                {
+                    info._colType = "u" + info._colType;
+                }
+                if (!defaultVal.empty())
+                {
+                    info._hasDefaultVal = true;
+                }
+                if (extra.find("auto_") == 0)
+                {
+                    info._isAutoVal = true;
+                }
+                cols.push_back(std::move(info));
+                i++;
+            }
+        } >>
+        [](const DrogonDbException &e) {
+            std::cerr << e.base().what() << std::endl;
+            exit(1);
+        };
+    std::vector<std::string> pkNames, pkTypes;
+    for (auto col : cols)
+    {
+        if (col._isPrimaryKey)
+        {
+            pkNames.push_back(col._colName);
+            pkTypes.push_back(col._colType);
+        }
+    }
+    data["hasPrimaryKey"] = (int)pkNames.size();
+    if (pkNames.size() == 1)
+    {
+        data["primaryKeyName"] = pkNames[0];
+        data["primaryKeyType"] = pkTypes[0];
+    }
+    else if (pkNames.size() > 1)
+    {
+        data["primaryKeyName"] = pkNames;
+        data["primaryKeyType"] = pkTypes;
+    }
+    data["columns"] = cols;
+    std::ofstream headerFile(path + "/" + className + ".h", std::ofstream::out);
+    std::ofstream sourceFile(path + "/" + className + ".cc", std::ofstream::out);
+    auto templ = DrTemplateBase::newTemplate("model_h.csp");
+    headerFile << templ->genText(data);
+    templ = DrTemplateBase::newTemplate("model_cc.csp");
+    sourceFile << templ->genText(data);
+}
+void create_model::createModelFromMysql(const std::string &path, const DbClientPtr &client)
+{
+    *client << "show tables" << Mode::Blocking >>
+        [&](bool isNull, const std::string &tableName) {
+            if (!isNull)
+            {
+                std::cout << "table name:" << tableName << std::endl;
+                createModelClassFromMysql(path, client, tableName);
+            }
+        } >>
+        [](const DrogonDbException &e) {
+            std::cerr << e.base().what() << std::endl;
+            exit(1);
+        };
+}
+#endif
+
 void create_model::createModel(const std::string &path, const Json::Value &config)
 {
     auto dbType = config.get("rdbms", "No dbms").asString();
-    if (dbType == "postgreSQL")
+    std::transform(dbType.begin(), dbType.end(), dbType.begin(), tolower);
+    if (dbType == "postgresql")
     {
 #if USE_POSTGRESQL
         std::cout << "postgresql" << std::endl;
@@ -345,6 +483,60 @@ void create_model::createModel(const std::string &path, const Json::Value &confi
                 createModelClassFromPG(path, client, tableName);
             }
         }
+#else
+        std::cerr << "Drogon does not support PostgreSQL, please install PostgreSQL development environment before installing drogon" << std::endl;
+#endif
+    }
+    else if (dbType == "mysql")
+    {
+#if USE_MYSQL
+        std::cout << "mysql" << std::endl;
+        auto host = config.get("host", "127.0.0.1").asString();
+        auto port = config.get("port", 5432).asUInt();
+        auto dbname = config.get("dbname", "").asString();
+        if (dbname == "")
+        {
+            std::cerr << "Please configure dbname in " << path << "/model.json " << std::endl;
+            exit(1);
+        }
+        _dbname = dbname;
+        auto user = config.get("user", "").asString();
+        if (user == "")
+        {
+            std::cerr << "Please configure user in " << path << "/model.json " << std::endl;
+            exit(1);
+        }
+        auto password = config.get("passwd", "").asString();
+
+        auto connStr = formattedString("host=%s port=%u dbname=%s user=%s", host.c_str(), port, dbname.c_str(), user.c_str());
+        if (!password.empty())
+        {
+            connStr += " password=";
+            connStr += password;
+        }
+        DbClientPtr client = drogon::orm::DbClient::newMysqlClient(connStr, 1);
+        std::cout << "Connect to server..." << std::endl;
+        std::cout << "Source files in the " << path << " folder will be overwritten, continue(y/n)?\n";
+        auto in = getchar();
+        if (in != 'Y' && in != 'y')
+        {
+            std::cout << "Abort!" << std::endl;
+            exit(0);
+        }
+        auto tables = config["tables"];
+        if (!tables || tables.size() == 0)
+            createModelFromMysql(path, client);
+        else
+        {
+            for (int i = 0; i < (int)tables.size(); i++)
+            {
+                auto tableName = tables[i].asString();
+                std::cout << "table name:" << tableName << std::endl;
+                createModelClassFromMysql(path, client, tableName);
+            }
+        }
+#else
+        std::cerr << "Drogon does not support Mysql, please install MariaDB development environment before installing drogon" << std::endl;
 #endif
     }
     else if (dbType == "No dbms")
@@ -399,7 +591,7 @@ void create_model::createModel(const std::string &path)
 
 void create_model::handleCommand(std::vector<std::string> &parameters)
 {
-#if USE_POSTGRESQL
+#if USE_ORM
     std::cout << "Create model" << std::endl;
     if (parameters.size() == 0)
     {

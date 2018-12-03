@@ -65,7 +65,10 @@ class DbClient : public trantor::NonCopyable
 #if USE_POSTGRESQL
     static std::shared_ptr<DbClient> newPgClient(const std::string &connInfo, const size_t connNum);
 #endif
-    ///Async method, nonblocking by default;
+#if USE_MYSQL
+    static std::shared_ptr<DbClient> newMysqlClient(const std::string &connInfo, const size_t connNum);
+#endif
+    //Async method, nonblocking by default;
     template <
         typename FUNCTION1,
         typename FUNCTION2,
@@ -125,7 +128,8 @@ class DbClient : public trantor::NonCopyable
     internal::SqlBinder operator<<(const std::string &sql);
     virtual std::shared_ptr<Transaction> newTransaction() = 0;
 
-    virtual std::string replaceSqlPlaceHolder(const std::string &sqlStr, const std::string &holderStr) const = 0;
+    
+    ClientType type() const { return _type; }
 
   private:
     friend internal::SqlBinder;
@@ -136,6 +140,9 @@ class DbClient : public trantor::NonCopyable
                          const std::vector<int> &format,
                          const ResultCallback &rcb,
                          const std::function<void(const std::exception_ptr &)> &exptCallback) = 0;
+
+  protected:
+    ClientType _type;
 };
 typedef std::shared_ptr<DbClient> DbClientPtr;
 

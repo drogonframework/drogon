@@ -80,6 +80,9 @@ class Result
 
     size_type affectedRows() const noexcept;
 
+    /// For Mysql database only
+    unsigned long long insertId() const noexcept;
+
   private:
     ResultImplPtr _resultPtr;
     std::string _query;

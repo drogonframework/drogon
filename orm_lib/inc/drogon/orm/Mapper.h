@@ -59,13 +59,13 @@ class Mapper
 
     Mapper(const DbClientPtr &client) : _client(client) {}
 
-    typedef typename internal::Traits<T,!std::is_same<typename T::PrimaryKeyType, void>::value>::type TraitsPKType;
+    typedef typename internal::Traits<T, !std::is_same<typename T::PrimaryKeyType, void>::value>::type TraitsPKType;
 
     T findByPrimaryKey(const TraitsPKType &key) noexcept(false);
 
     void findByPrimaryKey(const TraitsPKType &key,
-                     const SingleRowCallback &rcb,
-                     const ExceptionCallback &ecb) noexcept;
+                          const SingleRowCallback &rcb,
+                          const ExceptionCallback &ecb) noexcept;
 
     std::future<T> findFutureByPrimaryKey(const TraitsPKType &key) noexcept;
 
@@ -174,6 +174,8 @@ class Mapper
     {
         binder << std::get<0>(t);
     }
+
+    std::string replaceSqlPlaceHolder(const std::string &sqlStr, const std::string &holderStr) const;
 };
 
 template <typename T>
@@ -188,7 +190,7 @@ inline T Mapper<T>::findByPrimaryKey(const typename Mapper<T>::TraitsPKType &key
     {
         sql += " for update";
     }
-    sql = _client->replaceSqlPlaceHolder(sql, "$?");
+    sql = replaceSqlPlaceHolder(sql, "$?");
     clear();
     Result r(nullptr);
     {
@@ -226,7 +228,7 @@ inline void Mapper<T>::findByPrimaryKey(const typename Mapper<T>::TraitsPKType &
     {
         sql += " for update";
     }
-    sql = _client->replaceSqlPlaceHolder(sql, "$?");
+    sql = replaceSqlPlaceHolder(sql, "$?");
     clear();
     auto binder = *_client << sql;
     outputPrimeryKeyToBinder(key, binder);
@@ -260,7 +262,7 @@ Mapper<T>::findFutureByPrimaryKey(const typename Mapper<T>::TraitsPKType &key) n
     {
         sql += " for update";
     }
-    sql = _client->replaceSqlPlaceHolder(sql, "$?");
+    sql = replaceSqlPlaceHolder(sql, "$?");
     clear();
     auto binder = *_client << sql;
     outputPrimeryKeyToBinder(key, binder);
@@ -310,7 +312,7 @@ inline T Mapper<T>::findOne(const Criteria &criteria) noexcept(false)
     {
         sql += " where ";
         sql += criteria.criteriaString();
-        sql = _client->replaceSqlPlaceHolder(sql, "$?");
+        sql = replaceSqlPlaceHolder(sql, "$?");
     }
     sql.append(_orderbyString).append(_offsetString).append(_limitString);
     if (_forUpdate)
@@ -352,7 +354,7 @@ inline void Mapper<T>::findOne(const Criteria &criteria,
     {
         sql += " where ";
         sql += criteria.criteriaString();
-        sql = _client->replaceSqlPlaceHolder(sql, "$?");
+        sql = replaceSqlPlaceHolder(sql, "$?");
     }
     sql.append(_orderbyString).append(_offsetString).append(_limitString);
     if (_forUpdate)
@@ -389,7 +391,7 @@ inline std::future<T> Mapper<T>::findFutureOne(const Criteria &criteria) noexcep
     {
         sql += " where ";
         sql += criteria.criteriaString();
-        sql = _client->replaceSqlPlaceHolder(sql, "$?");
+        sql = replaceSqlPlaceHolder(sql, "$?");
     }
     sql.append(_orderbyString).append(_offsetString).append(_limitString);
     if (_forUpdate)
@@ -445,7 +447,7 @@ inline std::vector<T> Mapper<T>::findBy(const Criteria &criteria) noexcept(false
     {
         sql += " where ";
         sql += criteria.criteriaString();
-        sql = _client->replaceSqlPlaceHolder(sql, "$?");
+        sql = replaceSqlPlaceHolder(sql, "$?");
     }
     sql.append(_orderbyString).append(_offsetString).append(_limitString);
     if (_forUpdate)
@@ -482,7 +484,7 @@ inline void Mapper<T>::findBy(const Criteria &criteria,
     {
         sql += " where ";
         sql += criteria.criteriaString();
-        sql = _client->replaceSqlPlaceHolder(sql, "$?");
+        sql = replaceSqlPlaceHolder(sql, "$?");
     }
     sql.append(_orderbyString).append(_offsetString).append(_limitString);
     if (_forUpdate)
@@ -512,7 +514,7 @@ inline std::future<std::vector<T>> Mapper<T>::findFutureBy(const Criteria &crite
     {
         sql += " where ";
         sql += criteria.criteriaString();
-        sql = _client->replaceSqlPlaceHolder(sql, "$?");
+        sql = replaceSqlPlaceHolder(sql, "$?");
     }
     sql.append(_orderbyString).append(_offsetString).append(_limitString);
     if (_forUpdate)
@@ -564,7 +566,7 @@ inline size_t Mapper<T>::count(const Criteria &criteria) noexcept(false)
     {
         sql += " where ";
         sql += criteria.criteriaString();
-        sql = _client->replaceSqlPlaceHolder(sql, "$?");
+        sql = replaceSqlPlaceHolder(sql, "$?");
     }
     clear();
     Result r(nullptr);
@@ -592,7 +594,7 @@ inline void Mapper<T>::count(const Criteria &criteria,
     {
         sql += " where ";
         sql += criteria.criteriaString();
-        sql = _client->replaceSqlPlaceHolder(sql, "$?");
+        sql = replaceSqlPlaceHolder(sql, "$?");
     }
     clear();
     auto binder = *_client << sql;
@@ -613,7 +615,7 @@ inline std::future<size_t> Mapper<T>::countFuture(const Criteria &criteria) noex
     {
         sql += " where ";
         sql += criteria.criteriaString();
-        sql = _client->replaceSqlPlaceHolder(sql, "$?");
+        sql = replaceSqlPlaceHolder(sql, "$?");
     }
     clear();
     auto binder = *_client << sql;
@@ -644,14 +646,17 @@ inline void Mapper<T>::insert(T &obj) noexcept(false)
         sql += ",";
     }
     sql[sql.length() - 1] = ')'; //Replace the last ','
-    sql += "values (";
+    sql += " values (";
     for (int i = 0; i < T::insertColumns().size(); i++)
     {
         sql += "$?,";
     }
     sql[sql.length() - 1] = ')'; //Replace the last ','
-    sql += " returning *";
-    sql = _client->replaceSqlPlaceHolder(sql, "$?");
+    if (_client->type() == ClientType::PostgreSQL)
+    {
+        sql += " returning *";
+    }
+    sql = replaceSqlPlaceHolder(sql, "$?");
     Result r(nullptr);
     {
         auto binder = *_client << sql;
@@ -662,8 +667,16 @@ inline void Mapper<T>::insert(T &obj) noexcept(false)
         };
         binder.exec(); //Maybe throw exception;
     }
-    assert(r.size() == 1);
-    obj = T(r[0]);
+    if (_client->type() == ClientType::PostgreSQL)
+    {
+        assert(r.size() == 1);
+        obj = T(r[0]);
+    }
+    else if (_client->type() == ClientType::Mysql)
+    {
+        auto id = r.insertId();
+        obj.updateId(id);
+    }
 }
 template <typename T>
 inline void Mapper<T>::insert(const T &obj,
@@ -680,19 +693,32 @@ inline void Mapper<T>::insert(const T &obj,
         sql += ",";
     }
     sql[sql.length() - 1] = ')'; //Replace the last ','
-    sql += "values (";
+    sql += " values (";
     for (int i = 0; i < T::insertColumns().size(); i++)
     {
         sql += "$?,";
     }
     sql[sql.length() - 1] = ')'; //Replace the last ','
-    sql += " returning *";
-    sql = _client->replaceSqlPlaceHolder(sql, "$?");
+    if (_client->type() == ClientType::PostgreSQL)
+    {
+        sql += " returning *";
+    }
+    sql = replaceSqlPlaceHolder(sql, "$?");
     auto binder = *_client << sql;
     obj.outputArgs(binder);
     binder >> [=](const Result &r) {
-        assert(r.size() == 1);
-        rcb(T(r[0]));
+        if (_client->type() == ClientType::PostgreSQL)
+        {
+            assert(r.size() == 1);
+            rcb(T(r[0]));
+        }
+        else if (_client->type() == ClientType::Mysql)
+        {
+            auto id = r.insertId();
+            auto newObj = obj;
+            newObj.updateId(id);
+            rcb(newObj);
+        }
     };
     binder >> ecb;
 }
@@ -709,21 +735,34 @@ inline std::future<T> Mapper<T>::insertFuture(const T &obj) noexcept
         sql += ",";
     }
     sql[sql.length() - 1] = ')'; //Replace the last ','
-    sql += "values (";
+    sql += " values (";
     for (int i = 0; i < T::insertColumns().size(); i++)
     {
         sql += "$?,";
     }
     sql[sql.length() - 1] = ')'; //Replace the last ','
-    sql += " returning *";
-    sql = _client->replaceSqlPlaceHolder(sql, "$?");
+    if (_client->type() == ClientType::PostgreSQL)
+    {
+        sql += " returning *";
+    }
+    sql = replaceSqlPlaceHolder(sql, "$?");
     auto binder = *_client << sql;
     obj.outputArgs(binder);
 
     std::shared_ptr<std::promise<T>> prom = std::make_shared<std::promise<T>>();
     binder >> [=](const Result &r) {
-        assert(r.size() == 1);
-        prom->set_value(T(r[0]));
+        if (_client->type() == ClientType::PostgreSQL)
+        {
+            assert(r.size() == 1);
+            prom->set_value(T(r[0]));
+        }
+        else if (_client->type() == ClientType::Mysql)
+        {
+            auto id = r.insertId();
+            auto newObj = obj;
+            newObj.updateId(id);
+            prom->set_value(newObj);
+        }
     };
     binder >> [=](const std::exception_ptr &e) {
         prom->set_exception(e);
@@ -748,7 +787,7 @@ inline size_t Mapper<T>::update(T &obj) noexcept(false)
 
     makePrimaryKeyCriteria(sql);
 
-    sql = _client->replaceSqlPlaceHolder(sql, "$?");
+    sql = replaceSqlPlaceHolder(sql, "$?");
     Result r(nullptr);
     {
         auto binder = *_client << sql;
@@ -781,7 +820,7 @@ inline void Mapper<T>::update(const T &obj,
 
     makePrimaryKeyCriteria(sql);
 
-    sql = _client->replaceSqlPlaceHolder(sql, "$?");
+    sql = replaceSqlPlaceHolder(sql, "$?");
     auto binder = *_client << sql;
     obj.updateArgs(binder);
     outputPrimeryKeyToBinder(obj.getPrimaryKey(), binder);
@@ -807,7 +846,7 @@ inline std::future<size_t> Mapper<T>::updateFuture(const T &obj) noexcept
 
     makePrimaryKeyCriteria(sql);
 
-    sql = _client->replaceSqlPlaceHolder(sql, "$?");
+    sql = replaceSqlPlaceHolder(sql, "$?");
     auto binder = *_client << sql;
     obj.updateArgs(binder);
     outputPrimeryKeyToBinder(obj.getPrimaryKey(), binder);
@@ -835,7 +874,7 @@ inline size_t Mapper<T>::deleteOne(const T &obj) noexcept(false)
 
     makePrimaryKeyCriteria(sql);
 
-    sql = _client->replaceSqlPlaceHolder(sql, "$?");
+    sql = replaceSqlPlaceHolder(sql, "$?");
     Result r(nullptr);
     {
         auto binder = *_client << sql;
@@ -861,7 +900,7 @@ inline void Mapper<T>::deleteOne(const T &obj,
 
     makePrimaryKeyCriteria(sql);
 
-    sql = _client->replaceSqlPlaceHolder(sql, "$?");
+    sql = replaceSqlPlaceHolder(sql, "$?");
     auto binder = *_client << sql;
     outputPrimeryKeyToBinder(obj.getPrimaryKey(), binder);
     binder >> [=](const Result &r) {
@@ -880,7 +919,7 @@ inline std::future<size_t> Mapper<T>::deleteFutureOne(const T &obj) noexcept
 
     makePrimaryKeyCriteria(sql);
 
-    sql = _client->replaceSqlPlaceHolder(sql, "$?");
+    sql = replaceSqlPlaceHolder(sql, "$?");
     auto binder = *_client << sql;
     outputPrimeryKeyToBinder(obj.getPrimaryKey(), binder);
 
@@ -907,7 +946,7 @@ inline size_t Mapper<T>::deleteBy(const Criteria &criteria) noexcept(false)
     {
         sql += " where ";
         sql += criteria.criteriaString();
-        sql = _client->replaceSqlPlaceHolder(sql, "$?");
+        sql = replaceSqlPlaceHolder(sql, "$?");
     }
 
     Result r(nullptr);
@@ -939,7 +978,7 @@ inline void Mapper<T>::deleteBy(const Criteria &criteria,
     {
         sql += " where ";
         sql += criteria.criteriaString();
-        sql = _client->replaceSqlPlaceHolder(sql, "$?");
+        sql = replaceSqlPlaceHolder(sql, "$?");
     }
 
     auto binder = *_client << sql;
@@ -963,7 +1002,7 @@ inline std::future<size_t> Mapper<T>::deleteFutureBy(const Criteria &criteria) n
     {
         sql += " where ";
         sql += criteria.criteriaString();
-        sql = _client->replaceSqlPlaceHolder(sql, "$?");
+        sql = replaceSqlPlaceHolder(sql, "$?");
     }
     auto binder = *_client << sql;
     if (criteria)
@@ -1032,6 +1071,53 @@ inline Mapper<T> &Mapper<T>::forUpdate()
 {
     _forUpdate = true;
     return *this;
+}
+template <typename T>
+inline std::string Mapper<T>::replaceSqlPlaceHolder(const std::string &sqlStr, const std::string &holderStr) const
+{
+    ///FIXME add mysql support
+    if (_client->type() == ClientType::PostgreSQL)
+    {
+        std::string::size_type startPos = 0;
+        std::string::size_type pos;
+        std::stringstream ret;
+        size_t phCount = 1;
+        do
+        {
+            pos = sqlStr.find(holderStr, startPos);
+            if (pos == std::string::npos)
+            {
+                ret << sqlStr.substr(startPos);
+                return ret.str();
+            }
+            ret << sqlStr.substr(startPos, pos - startPos);
+            ret << "$";
+            ret << phCount++;
+            startPos = pos + holderStr.length();
+        } while (1);
+    }
+    else if (_client->type() == ClientType::Mysql)
+    {
+        std::string::size_type startPos = 0;
+        std::string::size_type pos;
+        std::stringstream ret;
+        do
+        {
+            pos = sqlStr.find(holderStr, startPos);
+            if (pos == std::string::npos)
+            {
+                ret << sqlStr.substr(startPos);
+                return ret.str();
+            }
+            ret << sqlStr.substr(startPos, pos - startPos);
+            ret << "?";
+            startPos = pos + holderStr.length();
+        } while (1);
+    }
+    else
+    {
+        return sqlStr;
+    }
 }
 
 } // namespace orm

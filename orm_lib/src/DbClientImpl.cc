@@ -6,6 +6,9 @@
 #if USE_POSTGRESQL
 #include "postgresql_impl/PgConnection.h"
 #endif
+#if USE_MYSQL
+#include "mysql_impl/MysqlConnection.h"
+#endif
 #include "TransactionImpl.h"
 #include <trantor/net/EventLoop.h>
 #include <trantor/net/inner/Channel.h>
@@ -25,9 +28,10 @@ using namespace drogon::orm;
 
 DbClientImpl::DbClientImpl(const std::string &connInfo, const size_t connNum, ClientType type)
     : _connInfo(connInfo),
-      _connectNum(connNum),
-      _type(type)
+      _connectNum(connNum)
 {
+    _type = type;
+    LOG_TRACE << "type=" << (int)type;
     assert(connNum > 0);
     _loopThread = std::thread([=]() {
         _loopPtr = std::shared_ptr<trantor::EventLoop>(new trantor::EventLoop);
@@ -36,15 +40,17 @@ DbClientImpl::DbClientImpl(const std::string &connInfo, const size_t connNum, Cl
 }
 void DbClientImpl::ioLoop()
 {
-
-    for (size_t i = 0; i < _connectNum; i++)
-    {
-        _connections.insert(newConnection());
-    }
+    auto thisPtr = shared_from_this();
+    _loopPtr->runAfter(0, [thisPtr]() {
+        for (size_t i = 0; i < thisPtr->_connectNum; i++)
+        {
+            thisPtr->_connections.insert(thisPtr->newConnection());
+        }
+    });
     _loopPtr->loop();
 }
 
-DbClientImpl::~DbClientImpl()
+DbClientImpl::~DbClientImpl() noexcept
 {
     _stop = true;
     _loopPtr->quit();
@@ -107,7 +113,7 @@ void DbClientImpl::execSql(const std::string &sql,
             {
                 try
                 {
-                    throw BrokenConnection("No connection to postgreSQL server");
+                    throw BrokenConnection("No connection to database server");
                 }
                 catch (...)
                 {
@@ -165,27 +171,6 @@ void DbClientImpl::execSql(const std::string &sql,
     }
 }
 
-std::string DbClientImpl::replaceSqlPlaceHolder(const std::string &sqlStr, const std::string &holderStr) const
-{
-    std::string::size_type startPos = 0;
-    std::string::size_type pos;
-    std::stringstream ret;
-    size_t phCount = 1;
-    do
-    {
-        pos = sqlStr.find(holderStr, startPos);
-        if (pos == std::string::npos)
-        {
-            ret << sqlStr.substr(startPos);
-            return ret.str();
-        }
-        ret << sqlStr.substr(startPos, pos - startPos);
-        ret << "$";
-        ret << phCount++;
-        startPos = pos + holderStr.length();
-    } while (1);
-}
-
 std::shared_ptr<Transaction> DbClientImpl::newTransaction()
 {
     DbConnectionPtr conn;
@@ -201,7 +186,7 @@ std::shared_ptr<Transaction> DbClientImpl::newTransaction()
         conn = *iter;
         _readyConnections.erase(iter);
     }
-    auto trans = std::shared_ptr<TransactionImpl>(new TransactionImpl(conn, [=]() {
+    auto trans = std::shared_ptr<TransactionImpl>(new TransactionImpl(_type, conn, [=]() {
         if (conn->status() == ConnectStatus_Bad)
         {
             return;
@@ -262,6 +247,14 @@ DbConnectionPtr DbClientImpl::newConnection()
     {
 #if USE_POSTGRESQL
         connPtr = std::make_shared<PgConnection>(_loopPtr.get(), _connInfo);
+#else
+        return nullptr;
+#endif
+    }
+    else if (_type == ClientType::Mysql)
+    {
+#if USE_MYSQL
+        connPtr = std::make_shared<MysqlConnection>(_loopPtr.get(), _connInfo);
 #else
         return nullptr;
 #endif

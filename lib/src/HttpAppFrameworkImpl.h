@@ -94,7 +94,7 @@ class HttpAppFrameworkImpl : public HttpAppFramework
         assert(_loop.isRunning());
         _loop.quit();
     }
-#if USE_POSTGRESQL
+#if USE_ORM
     virtual orm::DbClientPtr getDbClient(const std::string &name = "default") override;
     virtual void createDbClient(const std::string &dbType,
                                 const std::string &host,
@@ -221,7 +221,7 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     int _staticFilesCacheTime = 5;
     std::unordered_map<std::string, std::weak_ptr<HttpResponse>> _staticFilesCache;
     std::mutex _staticFilesCacheMutex;
-#if USE_POSTGRESQL
+#if USE_ORM
     std::map<std::string, orm::DbClientPtr> _dbClientsMap;
 #endif
 };

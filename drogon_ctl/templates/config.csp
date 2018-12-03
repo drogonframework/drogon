@@ -31,8 +31,8 @@
     {
       //name:Name of the client,'default' by default
       //"name":"",
-      //rdbms:server type, "postgreSQL" by default
-      "rdbms": "postgreSQL",
+      //rdbms:server type, "postgresql" by default
+      "rdbms": "postgresql",
       //host:server address,localhost by default
       "host": "127.0.0.1",
       //port:server port, 5432 by default

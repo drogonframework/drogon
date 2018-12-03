@@ -15,12 +15,13 @@
 
 using namespace drogon::orm;
 
-TransactionImpl::TransactionImpl(const DbConnectionPtr &connPtr,
-                                     const std::function<void()> &usedUpCallback)
+TransactionImpl::TransactionImpl(ClientType type, const DbConnectionPtr &connPtr,
+                                 const std::function<void()> &usedUpCallback)
     : _connectionPtr(connPtr),
       _usedUpCallback(usedUpCallback),
       _loop(connPtr->loop())
 {
+    _type = type;
 }
 TransactionImpl::~TransactionImpl()
 {
@@ -53,12 +54,12 @@ TransactionImpl::~TransactionImpl()
     }
 }
 void TransactionImpl::execSql(const std::string &sql,
-                                size_t paraNum,
-                                const std::vector<const char *> &parameters,
-                                const std::vector<int> &length,
-                                const std::vector<int> &format,
-                                const ResultCallback &rcb,
-                                const std::function<void(const std::exception_ptr &)> &exceptCallback)
+                              size_t paraNum,
+                              const std::vector<const char *> &parameters,
+                              const std::vector<int> &length,
+                              const std::vector<int> &format,
+                              const ResultCallback &rcb,
+                              const std::function<void(const std::exception_ptr &)> &exceptCallback)
 {
     auto thisPtr = shared_from_this();
     _loop->queueInLoop([thisPtr, sql, paraNum, parameters, length, format, rcb, exceptCallback]() {
@@ -75,8 +76,8 @@ void TransactionImpl::execSql(const std::string &sql,
                                                  rcb,
                                                  [exceptCallback, thisPtr](const std::exception_ptr &ePtr) {
                                                      thisPtr->rollback();
-                                                     if(exceptCallback)
-                                                        exceptCallback(ePtr);
+                                                     if (exceptCallback)
+                                                         exceptCallback(ePtr);
                                                  },
                                                  [thisPtr]() {
                                                      thisPtr->execNewTask();
@@ -252,23 +253,3 @@ void TransactionImpl::doBegin()
     });
 }
 
-std::string TransactionImpl::replaceSqlPlaceHolder(const std::string &sqlStr, const std::string &holderStr) const
-{
-    std::string::size_type startPos = 0;
-    std::string::size_type pos;
-    std::stringstream ret;
-    size_t phCount = 1;
-    do
-    {
-        pos = sqlStr.find(holderStr, startPos);
-        if (pos == std::string::npos)
-        {
-            ret << sqlStr.substr(startPos);
-            return ret.str();
-        }
-        ret << sqlStr.substr(startPos, pos - startPos);
-        ret << "$";
-        ret << phCount++;
-        startPos = pos + holderStr.length();
-    } while (1);
-}

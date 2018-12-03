@@ -1235,7 +1235,7 @@ HttpAppFramework::~HttpAppFramework()
 {
 }
 
-#if USE_POSTGRESQL
+#if USE_ORM
 orm::DbClientPtr HttpAppFrameworkImpl::getDbClient(const std::string &name)
 {
     return _dbClientsMap[name];
@@ -1250,16 +1250,27 @@ void HttpAppFrameworkImpl::createDbClient(const std::string &dbType,
                                           const size_t connectionNum,
                                           const std::string &name)
 {
-    if (dbType == "postgreSQL")
+    auto connStr = formattedString("host=%s port=%u dbname=%s user=%s", host.c_str(), port, databaseName.c_str(), userName.c_str());
+    if (!password.empty())
     {
-        auto connStr = formattedString("host=%s port=%u dbname=%s user=%s", host.c_str(), port, databaseName.c_str(), userName.c_str());
-        if (!password.empty())
-        {
-            connStr += " password=";
-            connStr += password;
-        }
+        connStr += " password=";
+        connStr += password;
+    }
+    std::string type = dbType;
+    std::transform(type.begin(), type.end(), type.begin(), tolower);
+    if (type == "postgresql")
+    {
+#if USE_POSTGRESQL
         auto client = drogon::orm::DbClient::newPgClient(connStr, connectionNum);
         _dbClientsMap[name] = client;
+#endif
+    }
+    else if (type == "mysql")
+    {
+#if USE_MYSQL
+        auto client = drogon::orm::DbClient::newMysqlClient(connStr, connectionNum);
+        _dbClientsMap[name] = client;
+#endif
     }
 }
 #endif
