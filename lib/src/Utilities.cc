@@ -121,7 +121,7 @@ std::string hexToBinaryString(const char *ptr, size_t length)
 std::string binaryStringToHex(const unsigned char *ptr, size_t length)
 {
     std::string idString;
-    for (long long i = 0; i < length; i++)
+    for (size_t i = 0; i < length; i++)
     {
         int value = (ptr[i] & 0xf0) >> 4;
         if (value < 10)
