@@ -40,7 +40,14 @@ void testOutput(bool isGood, const std::string &testMessage)
 int main()
 {
     trantor::Logger::setLogLevel(trantor::Logger::DEBUG);
+#if USE_POSTGRESQL
     auto clientPtr = DbClient::newPgClient("host=127.0.0.1 port=5432 dbname=postgres user=antao", 1);
+#elif USE_MYSQL
+    auto clientPtr = DbClient::newMysqlClient("host=127.0.0.1 port=3306 dbname=test user=root", 1);
+#else
+    DbClientPtr clientPtr;
+    return -1;
+#endif
     LOG_DEBUG << "start!";
     sleep(1);
     //Prepare the test environment
