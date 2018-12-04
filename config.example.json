@@ -25,8 +25,8 @@
       "cert": "",
       "key": ""
     }
-  ],*/
-  "db_clients":[
+  ],
+  "db_clients": [
     {
       //name:Name of the client,'default' by default
       //"name":"",
@@ -43,21 +43,21 @@
       //passwd:'' by default
       "passwd": "",
       //connection_number:1 by default
-      "connection_number":1
+      "connection_number": 1
     }
-  ],
+  ],*/
   "app": {
     //threads_num:num of threads,1 by default
     "threads_num": 16,
     //enable_session:false by default
-    "enable_session": true,
-    "session_timeout": 1200,
+    "enable_session": false,
+    "session_timeout": 0,
     //document_root:Root path of HTTP document,defaut path is ./
     "document_root": "./",
     //upload_path: The path to save the uploaded file. "uploads" by default. 
-    //If the path isn't prefixed with / or ./,
+    //If the path isn't prefixed with /, ./ or ../,
     //it will be relative path of document_root path
-    "upload_path":"uploads",
+    "upload_path": "uploads",
     /* file_types:
      * HTTP download file types,The file types supported by drogon
      * by default are "html", "js", "css", "xml", "xsl", "txt", "svg",
@@ -84,10 +84,10 @@
     //Load_dynamic_views: false by default, when set to true, drogon will
     //compile and load dynamically "CSP View Files" in directories defined
     //by "dynamic_views_path"
-    //"load_dynamic_views":true,
-    //dynamic_views_path: if the path isn't prefixed with / or ./,
+    "load_dynamic_views":false,
+    //dynamic_views_path: if the path isn't prefixed with /, ./ or ../,
     //it will be relative path of document_root path
-    //"dynamic_views_path":["./views"],
+    "dynamic_views_path":["./views"],
     //log:set log output,drogon output logs to stdout by default
     "log": {
       //log_path:log file path,empty by default,in which case,log will output to the stdout
@@ -100,7 +100,7 @@
       "log_size_limit": 100000000,
       //log_level:"DEBUG" by default,options:"TRACE","DEBUG","INFO","WARN"
       //The TRACE level is only valid when built in DEBUG mode.
-      "log_level": "TRACE"
+      "log_level": "DEBUG"
     },
     //run_as_daemon:false by default
     "run_as_daemon": false,
@@ -111,7 +111,7 @@
     "use_sendfile": true,
     //use_gzip:true by default,use gzip to compress the response body's content;
     "use_gzip": true,
-    //static_files_cache_time:5 by default,the time in which static file response is cached,
+    //static_files_cache_time:5 (seconds) by default,the time in which static file response is cached,
     //0 means cache forever,the negative value means no cache
     "static_files_cache_time": 5,
     //simple_controllers_map:Configuring mapping from path to simple controller
@@ -119,12 +119,17 @@
       {
         "path": "/path/name",
         "controller": "controllerClassName",
-        "http_methods": ["get","post"],
-        "filters": ["FilterClassName"]
+        "http_methods": [
+          "get",
+          "post"
+        ],
+        "filters": [
+          "FilterClassName"
+        ]
       }
     ],
     //idle_connection_timeout: defaults to 60 seconds, the lifetime 
     //of the connection without read or write
-    "idle_connection_timeout":60
+    "idle_connection_timeout": 60
   }
 }

@@ -25,8 +25,7 @@
       "cert": "",
       "key": ""
     }
-  ],*/
-  /*
+  ],
   "db_clients": [
     {
       //name:Name of the client,'default' by default
@@ -56,9 +55,9 @@
     //document_root:Root path of HTTP document,defaut path is ./
     "document_root": "./",
     //upload_path: The path to save the uploaded file. "uploads" by default. 
-    //If the path isn't prefixed with / or ./,
+    //If the path isn't prefixed with /, ./ or ../,
     //it will be relative path of document_root path
-    "upload_path":"uploads",
+    "upload_path": "uploads",
     /* file_types:
      * HTTP download file types,The file types supported by drogon
      * by default are "html", "js", "css", "xml", "xsl", "txt", "svg",
@@ -85,14 +84,14 @@
     //Load_dynamic_views: false by default, when set to true, drogon will
     //compile and load dynamically "CSP View Files" in directories defined
     //by "dynamic_views_path"
-    //"load_dynamic_views":true,
-    //dynamic_views_path: if the path isn't prefixed with / or ./,
+    "load_dynamic_views":false,
+    //dynamic_views_path: if the path isn't prefixed with /, ./ or ../,
     //it will be relative path of document_root path
-    //"dynamic_views_path":["./views"],
+    "dynamic_views_path":["./views"],
     //log:set log output,drogon output logs to stdout by default
     "log": {
       //log_path:log file path,empty by default,in which case,log will output to the stdout
-      "log_path": "./",
+      //"log_path": "./",
       //logfile_base_name:log file base name,empty by default which means drogon will name logfile as
       //drogon.log ...
       "logfile_base_name": "",

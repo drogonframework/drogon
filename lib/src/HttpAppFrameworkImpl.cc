@@ -88,7 +88,9 @@ void HttpAppFrameworkImpl::enableDynamicViewsLoading(const std::vector<std::stri
     for (auto &libpath : libPaths)
     {
         if (libpath[0] == '/' ||
-            (libpath.length() >= 2 && libpath[0] == '.' && libpath[1] == '/'))
+            (libpath.length() >= 2 && libpath[0] == '.' && libpath[1] == '/') ||
+            (libpath.length() >= 3 && libpath[0] == '.' && libpath[1] == '.' && libpath[2] == '/') ||
+            libpath == "." || libpath == "..")
         {
             _libFilePaths.push_back(libpath);
         }
@@ -686,7 +688,9 @@ void HttpAppFrameworkImpl::setUploadPath(const std::string &uploadPath)
 {
     assert(!uploadPath.empty());
     if (uploadPath[0] == '/' ||
-        (uploadPath.length() >= 2 && uploadPath[0] == '.' && uploadPath[1] == '/'))
+        (uploadPath.length() >= 2 && uploadPath[0] == '.' && uploadPath[1] == '/') ||
+        (uploadPath.length() >= 3 && uploadPath[0] == '.' && uploadPath[1] == '.' && uploadPath[2] == '/') ||
+        uploadPath == "." || uploadPath == "..")
     {
         _uploadPath = uploadPath;
     }
