@@ -22,6 +22,8 @@ Drogon的主要应用平台是Linux，为了调试方便，也支持Mac OS，目
 * 支持文件下载和上传,支持sendfile系统调用；
 * 支持gzip压缩传输；
 * 提供一个轻量的命令行工具drogon_ctl，帮助简化各种类的创建和视图代码的生成过程；
+* 基于NIO实现的异步数据库读写，目前支持PostgreSQL和MySQL(MariaDB)数据库；
+* 方便的轻量级ORM实现，支持常规的对象到数据库的双向映射操作；
 
 ### 更多详情请浏览 [wiki](https://gitee.com/an-tao/drogon/wikis/概述)
 

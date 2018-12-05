@@ -21,6 +21,8 @@ Drogon's main application platform is Linux. For debugging purposes, it also sup
 * Support file download and upload;
 * Support gzip compression transmission;
 * Provides a lightweight command line tool, drogon_ctl, to simplify the creation of various classes in Drogon and the generation of view code;
+* Asynchronous database read and write based on NIO, currently supports PostgreSQL and MySQL (MariaDB) database;
+* Convenient lightweight ORM implementation that supports regular object-to-database bidirectional mapping;
 
 
 ### For more information, please visit the [wiki](https://github.com/an-tao/drogon/wiki)
