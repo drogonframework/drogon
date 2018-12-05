@@ -33,6 +33,7 @@ enum class CompareOperator
     GE,
     LT,
     LE,
+    LIKE,
     IsNull,
     IsNotNull
 };
@@ -66,6 +67,9 @@ class Criteria
             break;
         case CompareOperator::LE:
             _condString += " <= $?";
+            break;
+        case CompareOperator::LIKE:
+            _condString += " like $?";
             break;
         case CompareOperator::IsNull:
         case CompareOperator::IsNotNull:

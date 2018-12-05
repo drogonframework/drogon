@@ -19,6 +19,7 @@ addons:
     - uuid-dev
     - zlib1g-dev
     - postgresql-server-dev-10
+    - libmariadbclient-dev
     - openssl
     - libssl-dev
     - build-essential
@@ -30,6 +31,7 @@ addons:
     - libtool
     - lz4
     - postgresql
+    - mariadb
 
 script:
   - ./build.sh
