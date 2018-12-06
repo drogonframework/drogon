@@ -44,6 +44,7 @@ link_libraries(${UUID_LIBRARIES})
 #OpenSSL
 find_package (OpenSSL)
 if(OpenSSL_FOUND)
+    include_directories(${OPENSSL_INCLUDE_DIR})
     link_libraries(${OPENSSL_LIBRARIES})
 endif()
 
