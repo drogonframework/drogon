@@ -98,7 +98,7 @@ class Mapper
                 const ExceptionCallback &ecb) noexcept;
     std::future<T> insertFuture(const T &) noexcept;
 
-    size_t update(T &obj) noexcept(false);
+    size_t update(const T &obj) noexcept(false);
     void update(const T &obj,
                 const CountCallback &rcb,
                 const ExceptionCallback &ecb) noexcept;
@@ -771,7 +771,7 @@ inline std::future<T> Mapper<T>::insertFuture(const T &obj) noexcept
     return prom->get_future();
 }
 template <typename T>
-inline size_t Mapper<T>::update(T &obj) noexcept(false)
+inline size_t Mapper<T>::update(const T &obj) noexcept(false)
 {
     clear();
     static_assert(!std::is_same<typename T::PrimaryKeyType, void>::value, "No primary key in the table!");
