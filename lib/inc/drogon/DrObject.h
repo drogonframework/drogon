@@ -1,10 +1,10 @@
 /**
  *
- *  @file
- *  @author An Tao
- *  @section LICENSE
+ *  DrObject.h
+ *  An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
+ *  https://github.com/an-tao/drogon
  *  Use of this source code is governed by a MIT license
  *  that can be found in the License file.
  *
@@ -45,10 +45,10 @@ class DrObjectBase
     virtual ~DrObjectBase() {}
 };
 
-/*
-    * a class template to
-    * implement the reflection function of creating the class object by class name
-    * */
+/**
+ * a class template to
+ * implement the reflection function of creating the class object by class name
+ */
 template <typename T>
 class DrObject : public virtual DrObjectBase
 {
@@ -96,4 +96,5 @@ class DrObject : public virtual DrObjectBase
 };
 template <typename T>
 typename DrObject<T>::DrAllocator DrObject<T>::_alloc;
+
 } // namespace drogon

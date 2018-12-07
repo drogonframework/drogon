@@ -1,28 +1,17 @@
-// Copyright 2010, Shuo Chen.  All rights reserved.
-// http://code.google.com/p/muduo/
-//
-// Use of this source code is governed by a BSD-style license
-// that can be found in the License file.
-
-// Author: Shuo Chen (chenshuo at chenshuo dot com)
-//
-// This is an internal header file, you should not include this.
-
-//taken from muduo and modified
-
 /**
  *
- *  @file
- *  @author An Tao
- *  @section LICENSE
- *
+ *  HttpClientContext.h
+ *  An Tao
+ *  
  *  Copyright 2018, An Tao.  All rights reserved.
+ *  https://github.com/an-tao/drogon
  *  Use of this source code is governed by a MIT license
  *  that can be found in the License file.
  *
  *  Drogon
  *
  */
+
 #pragma once
 
 #include "HttpResponseImpl.h"
@@ -38,7 +27,6 @@ namespace drogon
 class HttpClientContext
 {
   public:
-
     enum class HttpResponseParseState
     {
         kExpectResponseLine,
@@ -69,7 +57,6 @@ class HttpClientContext
         _response.reset(new HttpResponseImpl);
     }
 
-
     const HttpResponsePtr response() const
     {
         return _response;
@@ -83,7 +70,7 @@ class HttpClientContext
     {
         return _response;
     }
-    
+
   private:
     bool processResponseLine(const char *begin, const char *end);
 

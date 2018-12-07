@@ -1,20 +1,10 @@
-// Copyright 2010, Shuo Chen.  All rights reserved.
-// http://code.google.com/p/muduo/
-//
-// Use of this source code is governed by a BSD-style license
-// that can be found in the License file.
-
-// Author: Shuo Chen (chenshuo at chenshuo dot com)
-//
-
-//taken from muduo and modified
 /**
  *
- *  @file
- *  @author An Tao
- *  @section LICENSE
- *
+ *  HttpServer.cc
+ *  An Tao
+ *  
  *  Copyright 2018, An Tao.  All rights reserved.
+ *  https://github.com/an-tao/drogon
  *  Use of this source code is governed by a MIT license
  *  that can be found in the License file.
  *

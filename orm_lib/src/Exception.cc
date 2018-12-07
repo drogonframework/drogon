@@ -14,9 +14,11 @@
  *  An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
+ *  https://github.com/an-tao/drogon
  *  Use of this source code is governed by a MIT license
  *  that can be found in the License file.
  *
+ *  Drogon
  *
  */
 
@@ -55,12 +57,12 @@ SqlError::~SqlError() noexcept
 
 const std::string &SqlError::query() const noexcept
 {
-  return _query;
+    return _query;
 }
 
 const std::string &SqlError::sqlState() const noexcept
 {
-  return _sqlState;
+    return _sqlState;
 }
 
 InDoubtError::InDoubtError(const std::string &whatarg)

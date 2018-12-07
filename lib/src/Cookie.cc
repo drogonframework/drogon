@@ -1,10 +1,10 @@
 /**
  *
- *  @file
- *  @author An Tao
- *  @section LICENSE
- *
+ *  Cookie.cc
+ *  An Tao
+ *  
  *  Copyright 2018, An Tao.  All rights reserved.
+ *  https://github.com/an-tao/drogon
  *  Use of this source code is governed by a MIT license
  *  that can be found in the License file.
  *
@@ -21,14 +21,6 @@ const std::string Cookie::cookieString() const
     ret.append(_key).append("= ").append(_value).append("; ");
     if (_expiresDate.microSecondsSinceEpoch() > 0)
     {
-        //add expiresDate string
-        //        struct tm tm1=_expiresDate.tmStruct();
-        //        char timeBuf[64];
-        //        asctime_r(&tm1,timeBuf);
-        //        std::string timeStr(timeBuf);
-        //        std::string::size_type len=timeStr.length();
-        //        timeStr =timeStr.substr(0,len-1)+" GMT";
-
         ret.append("Expires= ").append(getHttpFullDate(_expiresDate)).append("; ");
     }
     if (!_domain.empty())

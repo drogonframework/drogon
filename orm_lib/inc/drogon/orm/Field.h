@@ -4,6 +4,7 @@
  *  An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
+ *  https://github.com/an-tao/drogon
  *  Use of this source code is governed by a MIT license
  *  that can be found in the License file.
  *
@@ -123,21 +124,21 @@ class Field
     {
         std::vector<std::shared_ptr<T>> ret;
         auto arrParser = getArrayParser();
-        while(1)
+        while (1)
         {
             auto arrVal = arrParser.getNext();
-            if(arrVal.first==ArrayParser::juncture::done)
+            if (arrVal.first == ArrayParser::juncture::done)
             {
                 break;
             }
-            if(arrVal.first==ArrayParser::juncture::string_value)
+            if (arrVal.first == ArrayParser::juncture::string_value)
             {
                 T val;
                 std::stringstream ss(std::move(arrVal.second));
                 ss >> val;
                 ret.push_back(std::shared_ptr<T>(new T(val)));
             }
-            else if(arrVal.first==ArrayParser::juncture::null_value)
+            else if (arrVal.first == ArrayParser::juncture::null_value)
             {
                 ret.push_back(std::shared_ptr<T>());
             }

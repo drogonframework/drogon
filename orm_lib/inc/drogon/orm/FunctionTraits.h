@@ -4,9 +4,11 @@
  *  An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
+ *  https://github.com/an-tao/drogon
  *  Use of this source code is governed by a MIT license
  *  that can be found in the License file.
  *
+ *  Drogon
  *
  */
 
@@ -97,7 +99,7 @@ template <
     typename ReturnType,
     typename... Arguments>
 struct FunctionTraits<
-    ReturnType (*)(bool,Arguments...)> : FunctionTraits<ReturnType (*)(Arguments...)>
+    ReturnType (*)(bool, Arguments...)> : FunctionTraits<ReturnType (*)(Arguments...)>
 {
     static const bool isSqlCallback = true;
     static const bool isStepResultCallback = true;

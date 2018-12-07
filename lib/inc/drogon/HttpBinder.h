@@ -1,10 +1,10 @@
 /**
  *
- *  @file
- *  @author An Tao
- *  @section LICENSE
- *
+ *  HttpBinder.h
+ *  An Tao
+ *  
  *  Copyright 2018, An Tao.  All rights reserved.
+ *  https://github.com/an-tao/drogon
  *  Use of this source code is governed by a MIT license
  *  that can be found in the License file.
  *
@@ -60,7 +60,7 @@ class HttpBinderBase
 {
   public:
     virtual void handleHttpRequest(std::list<std::string> &pathParameter,
-                                      const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> callback) = 0;
+                                   const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> callback) = 0;
     virtual size_t paramCount() = 0;
     virtual ~HttpBinderBase() {}
 
@@ -75,7 +75,7 @@ class HttpBinder : public HttpBinderBase
   public:
     typedef FUNCTION FunctionType;
     virtual void handleHttpRequest(std::list<std::string> &pathParameter,
-                                      const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> callback) override
+                                   const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> callback) override
     {
         run(pathParameter, req, callback);
     }

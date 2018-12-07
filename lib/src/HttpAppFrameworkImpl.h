@@ -1,16 +1,17 @@
 /**
  *
- *  @file
- *  @author An Tao
- *  @section LICENSE
- *
+ *  HttpAppFrameworkImpl.h
+ *  An Tao
+ *  
  *  Copyright 2018, An Tao.  All rights reserved.
+ *  https://github.com/an-tao/drogon
  *  Use of this source code is governed by a MIT license
  *  that can be found in the License file.
  *
  *  Drogon
  *
  */
+
 #pragma once
 
 #include "HttpRequestImpl.h"
@@ -81,7 +82,7 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     virtual void setStaticFilesCacheTime(int cacheTime) override { _staticFilesCacheTime = cacheTime; }
     virtual int staticFilesCacheTime() const override { return _staticFilesCacheTime; }
     virtual void setIdleConnectionTimeout(size_t timeout) override { _idleConnectionTimeout = timeout; }
-    virtual ~HttpAppFrameworkImpl()
+    virtual ~HttpAppFrameworkImpl() noexcept
     {
         //Destroy the following objects before _loop destruction
         _sharedLibManagerPtr.reset();

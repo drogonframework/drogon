@@ -1,21 +1,10 @@
-// Copyright 2010, Shuo Chen.  All rights reserved.
-// http://code.google.com/p/muduo/
-//
-// Use of this source code is governed by a BSD-style license
-// that can be found in the License file.
-
-// Author: Shuo Chen (chenshuo at chenshuo dot com)
-//
-
-//taken from muduo and modified
-
 /**
  *
- *  @file
- *  @author An Tao
- *  @section LICENSE
- *
+ *  HttpServerContext.cc
+ *  An Tao
+ *  
  *  Copyright 2018, An Tao.  All rights reserved.
+ *  https://github.com/an-tao/drogon
  *  Use of this source code is governed by a MIT license
  *  that can be found in the License file.
  *
@@ -180,8 +169,6 @@ bool HttpServerContext::parseRequest(MsgBuffer *buf)
         }
         else if (state_ == kExpectBody)
         {
-            //LOG_INFO << "expectBody:len=" << request_->contentLen;
-            //LOG_INFO << "expectBody:buf=" << buf;
             if (buf->readableBytes() == 0)
             {
                 if (request_->contentLen == 0)
@@ -205,9 +192,6 @@ bool HttpServerContext::parseRequest(MsgBuffer *buf)
             if (request_->contentLen == 0)
             {
                 state_ = kGotAll;
-                LOG_TRACE << "post got all:len=" << request_->content_.length();
-                //LOG_INFO<<"content:"<<request_->content_;
-                LOG_TRACE << "content(END)";
                 hasMore = false;
             }
         }

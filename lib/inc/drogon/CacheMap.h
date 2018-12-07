@@ -1,10 +1,10 @@
 /**
  *
- *  @file
- *  @author An Tao
- *  @section LICENSE
+ *  CacheMap.h
+ *  An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
+ *  https://github.com/an-tao/drogon
  *  Use of this source code is governed by a MIT license
  *  that can be found in the License file.
  *
@@ -60,16 +60,17 @@ class CacheMap
 {
   public:
     /// constructor
-    /// @param loop
-    /// eventloop pointer
-    /// @param tickInterval
-    /// second
-    /// @param wheelsNum
-    /// number of wheels
-    /// @param bucketsNumPerWheel
-    /// buckets number per wheel
-    /// The max delay of the CacheMap is about tickInterval*(bucketsNumPerWheel^wheelsNum) seconds.
-
+    /**
+     *  @param loop
+     *  eventloop pointer
+     *  @param tickInterval
+     *  second
+     *  @param wheelsNum
+     *  number of wheels
+     *  @param bucketsNumPerWheel
+     *  buckets number per wheel
+     *  The max delay of the CacheMap is about tickInterval*(bucketsNumPerWheel^wheelsNum) seconds.
+     */
     CacheMap(trantor::EventLoop *loop,
              float tickInterval = TICK_INTERVAL,
              size_t wheelsNum = WHEELS_NUM,
@@ -137,9 +138,11 @@ class CacheMap
         WeakCallbackEntryPtr _weakEntryPtr;
     } MapValue;
 
-    //If timeout>0,the value will be erased
-    //within the 'timeout' seconds after the last access
-
+    /// Inserts a value of the keyword
+    /**
+     * If timeout>0,the value will be erased
+     * within the 'timeout' seconds after the last access
+     */
     void insert(const T1 &key, T2 &&value, size_t timeout = 0, std::function<void()> timeoutCallback = std::function<void()>())
     {
         if (timeout > 0)
@@ -188,6 +191,7 @@ class CacheMap
         }
     }
 
+    /// Returns the reference to the value of the keyword.
     T2 &operator[](const T1 &key)
     {
         int timeout = 0;
@@ -204,6 +208,7 @@ class CacheMap
         return _map[key].value;
     }
 
+    /// Determine if the value of the keyword exists
     bool find(const T1 &key)
     {
         int timeout = 0;
@@ -223,6 +228,11 @@ class CacheMap
         return flag;
     }
 
+    /// Atomically find and get the value of a keyword
+    /**
+     * Returns true when the value is found, and the value
+     * is assigned to the @param value 
+     */
     bool findAndFetch(const T1 &key, T2 &value)
     {
         int timeout = 0;
@@ -242,10 +252,10 @@ class CacheMap
         return flag;
     }
 
+    /// Erases the value of the keyword.
     void erase(const T1 &key)
     {
         //in this case,we don't evoke the timeout callback;
-
         std::lock_guard<std::mutex> lock(mtx_);
         _map.erase(key);
     }

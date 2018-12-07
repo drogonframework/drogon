@@ -12,7 +12,6 @@
 
 #pragma once
 
-
 #include <stdexcept>
 #include <string>
 #include <utility>

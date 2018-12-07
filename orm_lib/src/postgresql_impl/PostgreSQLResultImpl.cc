@@ -4,10 +4,12 @@
  *  An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
+ *  https://github.com/an-tao/drogon
  *  Use of this source code is governed by a MIT license
  *  that can be found in the License file.
  *
- *
+ *  Drogon
+ * 
  */
 
 #include "PostgreSQLResultImpl.h"
@@ -64,5 +66,5 @@ bool PostgreSQLResultImpl::isNull(size_type row, row_size_type column) const
 }
 Result::field_size_type PostgreSQLResultImpl::getLength(size_type row, row_size_type column) const
 {
-    return PQgetlength(_result.get(),int(row),int(column));
+    return PQgetlength(_result.get(), int(row), int(column));
 }

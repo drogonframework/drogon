@@ -1,22 +1,10 @@
-// Copyright 2010, Shuo Chen.  All rights reserved.
-// http://code.google.com/p/muduo/
-//
-// Use of this source code is governed by a BSD-style license
-// that can be found in the License file.
-
-// Author: Shuo Chen (chenshuo at chenshuo dot com)
-//
-// This is a public header file, it must only include public header files.
-
-//taken from muduo and modified
-
 /**
  *
- *  @file
- *  @author An Tao
- *  @section LICENSE
- *
+ *  HttpResponseImpl.h
+ *  An Tao
+ *  
  *  Copyright 2018, An Tao.  All rights reserved.
+ *  https://github.com/an-tao/drogon
  *  Use of this source code is governed by a MIT license
  *  that can be found in the License file.
  *
@@ -322,11 +310,11 @@ class HttpResponseImpl : public HttpResponse
     Version _v;
     std::string _statusMessage;
     bool _closeConnection;
-    
+
     size_t _left_body_length;
     size_t _current_chunk_length;
     std::shared_ptr<std::string> _bodyPtr;
-    
+
     uint8_t _contentType = CT_TEXT_HTML;
 
     ssize_t _expriedTime = -1;

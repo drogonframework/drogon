@@ -15,9 +15,11 @@
  *  An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
+ *  https://github.com/an-tao/drogon
  *  Use of this source code is governed by a MIT license
  *  that can be found in the License file.
  *
+ *  Drogon
  *
  */
 
@@ -46,12 +48,12 @@ namespace orm
  */
 class DrogonDbException
 {
-public:
-  /// Support run-time polymorphism, and keep this class abstract
-  virtual ~DrogonDbException() noexcept;
+  public:
+    /// Support run-time polymorphism, and keep this class abstract
+    virtual ~DrogonDbException() noexcept;
 
-  /// Return std::exception base-class object
-  /** Use this to get at the exception's what() function, or to downcast to a
+    /// Return std::exception base-class object
+    /** Use this to get at the exception's what() function, or to downcast to a
    * more specific type using dynamic_cast.
    *
    * Casting directly from DrogonDbException to a specific exception type is not
@@ -73,22 +75,23 @@ public:
    * }
    * @endcode
    */
-  virtual const std::exception &base() const noexcept { 
-    static std::exception except;
-    return except;
-   } //[t00]
+    virtual const std::exception &base() const noexcept
+    {
+        static std::exception except;
+        return except;
+    } //[t00]
 };
 
 /// Run-time Failure encountered by drogon orm lib, similar to std::runtime_error
 class Failure : public DrogonDbException, public std::runtime_error
 {
-  virtual const std::exception &base() const noexcept override
-  {
-    return *this;
-  }
+    virtual const std::exception &base() const noexcept override
+    {
+        return *this;
+    }
 
-public:
-  explicit Failure(const std::string &);
+  public:
+    explicit Failure(const std::string &);
 };
 
 /// Exception class for lost or failed backend connection.
@@ -112,9 +115,9 @@ public:
  */
 class BrokenConnection : public Failure
 {
-public:
-  BrokenConnection();
-  explicit BrokenConnection(const std::string &);
+  public:
+    BrokenConnection();
+    explicit BrokenConnection(const std::string &);
 };
 
 /// Exception class for failed queries.
@@ -123,21 +126,21 @@ public:
  */
 class SqlError : public Failure
 {
-  /// Query string.  Empty if unknown.
-  const std::string _query;
-  /// SQLSTATE string describing the error type, if known; or empty string.
-  const std::string _sqlState;
+    /// Query string.  Empty if unknown.
+    const std::string _query;
+    /// SQLSTATE string describing the error type, if known; or empty string.
+    const std::string _sqlState;
 
-public:
-  explicit SqlError(
-      const std::string &msg = "",
-      const std::string &Q = "",
-      const char sqlstate[] = nullptr);
-  virtual ~SqlError() noexcept;
+  public:
+    explicit SqlError(
+        const std::string &msg = "",
+        const std::string &Q = "",
+        const char sqlstate[] = nullptr);
+    virtual ~SqlError() noexcept;
 
-  /// The query whose execution triggered the exception
-  const std::string &query() const noexcept;
-  const std::string &sqlState() const noexcept;
+    /// The query whose execution triggered the exception
+    const std::string &query() const noexcept;
+    const std::string &sqlState() const noexcept;
 };
 
 /// "Help, I don't know whether transaction was committed successfully!"
@@ -149,15 +152,15 @@ public:
  */
 class InDoubtError : public Failure
 {
-public:
-  explicit InDoubtError(const std::string &);
+  public:
+    explicit InDoubtError(const std::string &);
 };
 
 /// The backend saw itself forced to roll back the ongoing transaction.
 class TransactionRollback : public Failure
 {
-public:
-  explicit TransactionRollback(const std::string &);
+  public:
+    explicit TransactionRollback(const std::string &);
 };
 
 /// Transaction failed to serialize.  Please retry it.
@@ -171,278 +174,278 @@ public:
  */
 class SerializationFailure : public TransactionRollback
 {
-public:
-  explicit SerializationFailure(const std::string &);
+  public:
+    explicit SerializationFailure(const std::string &);
 };
 
 /// We can't tell whether our last statement succeeded.
 class StatementCompletionUnknown : public TransactionRollback
 {
-public:
-  explicit StatementCompletionUnknown(const std::string &);
+  public:
+    explicit StatementCompletionUnknown(const std::string &);
 };
 
 /// The ongoing transaction has deadlocked.  Retrying it may help.
 class DeadlockDetected : public TransactionRollback
 {
-public:
-  explicit DeadlockDetected(const std::string &);
+  public:
+    explicit DeadlockDetected(const std::string &);
 };
 
 /// Internal error in internal library
 class InternalError : public DrogonDbException, public std::logic_error
 {
-  virtual const std::exception &base() const noexcept override
-  {
-    return *this;
-  }
+    virtual const std::exception &base() const noexcept override
+    {
+        return *this;
+    }
 
-public:
-  explicit InternalError(const std::string &);
+  public:
+    explicit InternalError(const std::string &);
 };
 
 /// Error in usage of drogon orm library, similar to std::logic_error
 class UsageError : public DrogonDbException, public std::logic_error
 {
-  virtual const std::exception &base() const noexcept override
-  {
-    return *this;
-  }
+    virtual const std::exception &base() const noexcept override
+    {
+        return *this;
+    }
 
-public:
-  explicit UsageError(const std::string &);
+  public:
+    explicit UsageError(const std::string &);
 };
 
 /// Invalid argument passed to drogon orm lib, similar to std::invalid_argument
 class ArgumentError : public DrogonDbException, public std::invalid_argument
 {
-  virtual const std::exception &base() const noexcept override
-  {
-    return *this;
-  }
+    virtual const std::exception &base() const noexcept override
+    {
+        return *this;
+    }
 
-public:
-  explicit ArgumentError(const std::string &);
+  public:
+    explicit ArgumentError(const std::string &);
 };
 
 /// Value conversion failed, e.g. when converting "Hello" to int.
 class ConversionError : public DrogonDbException, public std::domain_error
 {
-  virtual const std::exception &base() const noexcept override
-  {
-    return *this;
-  }
+    virtual const std::exception &base() const noexcept override
+    {
+        return *this;
+    }
 
-public:
-  explicit ConversionError(const std::string &);
+  public:
+    explicit ConversionError(const std::string &);
 };
 
 /// Something is out of range, similar to std::out_of_range
 class RangeError : public DrogonDbException, public std::out_of_range
 {
-  virtual const std::exception &base() const noexcept override
-  {
-    return *this;
-  }
+    virtual const std::exception &base() const noexcept override
+    {
+        return *this;
+    }
 
-public:
-  explicit RangeError(const std::string &);
+  public:
+    explicit RangeError(const std::string &);
 };
 
 /// Query returned an unexpected number of rows.
 class UnexpectedRows : public RangeError
 {
-  virtual const std::exception &base() const noexcept override
-  {
-    return *this;
-  }
+    virtual const std::exception &base() const noexcept override
+    {
+        return *this;
+    }
 
-public:
-  explicit UnexpectedRows(const std::string &msg) : RangeError(msg) {}
+  public:
+    explicit UnexpectedRows(const std::string &msg) : RangeError(msg) {}
 };
 
 /// Database feature not supported in current setup
 class FeatureNotSupported : public SqlError
 {
-public:
-  explicit FeatureNotSupported(
-      const std::string &err,
-      const std::string &Q = "",
-      const char sqlstate[] = nullptr) : SqlError(err, Q, sqlstate) {}
+  public:
+    explicit FeatureNotSupported(
+        const std::string &err,
+        const std::string &Q = "",
+        const char sqlstate[] = nullptr) : SqlError(err, Q, sqlstate) {}
 };
 
 /// Error in data provided to SQL statement
 class DataException : public SqlError
 {
-public:
-  explicit DataException(
-      const std::string &err,
-      const std::string &Q = "",
-      const char sqlstate[] = nullptr) : SqlError(err, Q, sqlstate) {}
+  public:
+    explicit DataException(
+        const std::string &err,
+        const std::string &Q = "",
+        const char sqlstate[] = nullptr) : SqlError(err, Q, sqlstate) {}
 };
 
 class IntegrityConstraintViolation : public SqlError
 {
-public:
-  explicit IntegrityConstraintViolation(
-      const std::string &err,
-      const std::string &Q = "",
-      const char sqlstate[] = nullptr) : SqlError(err, Q, sqlstate) {}
+  public:
+    explicit IntegrityConstraintViolation(
+        const std::string &err,
+        const std::string &Q = "",
+        const char sqlstate[] = nullptr) : SqlError(err, Q, sqlstate) {}
 };
 
 class RestrictViolation : public IntegrityConstraintViolation
 {
-public:
-  explicit RestrictViolation(
-      const std::string &err,
-      const std::string &Q = "",
-      const char sqlstate[] = nullptr) : IntegrityConstraintViolation(err, Q, sqlstate) {}
+  public:
+    explicit RestrictViolation(
+        const std::string &err,
+        const std::string &Q = "",
+        const char sqlstate[] = nullptr) : IntegrityConstraintViolation(err, Q, sqlstate) {}
 };
 
 class NotNullViolation : public IntegrityConstraintViolation
 {
-public:
-  explicit NotNullViolation(
-      const std::string &err,
-      const std::string &Q = "",
-      const char sqlstate[] = nullptr) : IntegrityConstraintViolation(err, Q, sqlstate) {}
+  public:
+    explicit NotNullViolation(
+        const std::string &err,
+        const std::string &Q = "",
+        const char sqlstate[] = nullptr) : IntegrityConstraintViolation(err, Q, sqlstate) {}
 };
 
 class ForeignKeyViolation : public IntegrityConstraintViolation
 {
-public:
-  explicit ForeignKeyViolation(
-      const std::string &err,
-      const std::string &Q = "",
-      const char sqlstate[] = nullptr) : IntegrityConstraintViolation(err, Q, sqlstate) {}
+  public:
+    explicit ForeignKeyViolation(
+        const std::string &err,
+        const std::string &Q = "",
+        const char sqlstate[] = nullptr) : IntegrityConstraintViolation(err, Q, sqlstate) {}
 };
 
 class UniqueViolation : public IntegrityConstraintViolation
 {
-public:
-  explicit UniqueViolation(
-      const std::string &err,
-      const std::string &Q = "",
-      const char sqlstate[] = nullptr) : IntegrityConstraintViolation(err, Q, sqlstate) {}
+  public:
+    explicit UniqueViolation(
+        const std::string &err,
+        const std::string &Q = "",
+        const char sqlstate[] = nullptr) : IntegrityConstraintViolation(err, Q, sqlstate) {}
 };
 
 class CheckViolation : public IntegrityConstraintViolation
 {
-public:
-  explicit CheckViolation(
-      const std::string &err,
-      const std::string &Q = "",
-      const char sqlstate[] = nullptr) : IntegrityConstraintViolation(err, Q, sqlstate) {}
+  public:
+    explicit CheckViolation(
+        const std::string &err,
+        const std::string &Q = "",
+        const char sqlstate[] = nullptr) : IntegrityConstraintViolation(err, Q, sqlstate) {}
 };
 
 class InvalidCursorState : public SqlError
 {
-public:
-  explicit InvalidCursorState(
-      const std::string &err,
-      const std::string &Q = "",
-      const char sqlstate[] = nullptr) : SqlError(err, Q, sqlstate) {}
+  public:
+    explicit InvalidCursorState(
+        const std::string &err,
+        const std::string &Q = "",
+        const char sqlstate[] = nullptr) : SqlError(err, Q, sqlstate) {}
 };
 
 class InvalidSqlStatementName : public SqlError
 {
-public:
-  explicit InvalidSqlStatementName(
-      const std::string &err,
-      const std::string &Q = "",
-      const char sqlstate[] = nullptr) : SqlError(err, Q, sqlstate) {}
+  public:
+    explicit InvalidSqlStatementName(
+        const std::string &err,
+        const std::string &Q = "",
+        const char sqlstate[] = nullptr) : SqlError(err, Q, sqlstate) {}
 };
 
 class InvalidCursorName : public SqlError
 {
-public:
-  explicit InvalidCursorName(
-      const std::string &err,
-      const std::string &Q = "",
-      const char sqlstate[] = nullptr) : SqlError(err, Q, sqlstate) {}
+  public:
+    explicit InvalidCursorName(
+        const std::string &err,
+        const std::string &Q = "",
+        const char sqlstate[] = nullptr) : SqlError(err, Q, sqlstate) {}
 };
 
 class SyntaxError : public SqlError
 {
-public:
-  /// Approximate position in string where error occurred, or -1 if unknown.
-  const int _errorPosition;
+  public:
+    /// Approximate position in string where error occurred, or -1 if unknown.
+    const int _errorPosition;
 
-  explicit SyntaxError(
-      const std::string &err,
-      const std::string &Q = "",
-      const char sqlstate[] = nullptr,
-      int pos = -1) : SqlError(err, Q, sqlstate), _errorPosition(pos) {}
+    explicit SyntaxError(
+        const std::string &err,
+        const std::string &Q = "",
+        const char sqlstate[] = nullptr,
+        int pos = -1) : SqlError(err, Q, sqlstate), _errorPosition(pos) {}
 };
 
 class UndefinedColumn : public SyntaxError
 {
-public:
-  explicit UndefinedColumn(
-      const std::string &err,
-      const std::string &Q = "",
-      const char sqlstate[] = nullptr) : SyntaxError(err, Q, sqlstate) {}
+  public:
+    explicit UndefinedColumn(
+        const std::string &err,
+        const std::string &Q = "",
+        const char sqlstate[] = nullptr) : SyntaxError(err, Q, sqlstate) {}
 };
 
 class UndefinedFunction : public SyntaxError
 {
-public:
-  explicit UndefinedFunction(
-      const std::string &err,
-      const std::string &Q = "",
-      const char sqlstate[] = nullptr) : SyntaxError(err, Q, sqlstate) {}
+  public:
+    explicit UndefinedFunction(
+        const std::string &err,
+        const std::string &Q = "",
+        const char sqlstate[] = nullptr) : SyntaxError(err, Q, sqlstate) {}
 };
 
 class UndefinedTable : public SyntaxError
 {
-public:
-  explicit UndefinedTable(
-      const std::string &err,
-      const std::string &Q = "",
-      const char sqlstate[] = nullptr) : SyntaxError(err, Q, sqlstate) {}
+  public:
+    explicit UndefinedTable(
+        const std::string &err,
+        const std::string &Q = "",
+        const char sqlstate[] = nullptr) : SyntaxError(err, Q, sqlstate) {}
 };
 
 class InsufficientPrivilege : public SqlError
 {
-public:
-  explicit InsufficientPrivilege(
-      const std::string &err,
-      const std::string &Q = "",
-      const char sqlstate[] = nullptr) : SqlError(err, Q, sqlstate) {}
+  public:
+    explicit InsufficientPrivilege(
+        const std::string &err,
+        const std::string &Q = "",
+        const char sqlstate[] = nullptr) : SqlError(err, Q, sqlstate) {}
 };
 
 /// Resource shortage on the server
 class InsufficientResources : public SqlError
 {
-public:
-  explicit InsufficientResources(
-      const std::string &err,
-      const std::string &Q = "",
-      const char sqlstate[] = nullptr) : SqlError(err, Q, sqlstate) {}
+  public:
+    explicit InsufficientResources(
+        const std::string &err,
+        const std::string &Q = "",
+        const char sqlstate[] = nullptr) : SqlError(err, Q, sqlstate) {}
 };
 
 class DiskFull : public InsufficientResources
 {
-public:
-  explicit DiskFull(
-      const std::string &err,
-      const std::string &Q = "",
-      const char sqlstate[] = nullptr) : InsufficientResources(err, Q, sqlstate) {}
+  public:
+    explicit DiskFull(
+        const std::string &err,
+        const std::string &Q = "",
+        const char sqlstate[] = nullptr) : InsufficientResources(err, Q, sqlstate) {}
 };
 
 class OutOfMemory : public InsufficientResources
 {
-public:
-  explicit OutOfMemory(
-      const std::string &err,
-      const std::string &Q = "",
-      const char sqlstate[] = nullptr) : InsufficientResources(err, Q, sqlstate) {}
+  public:
+    explicit OutOfMemory(
+        const std::string &err,
+        const std::string &Q = "",
+        const char sqlstate[] = nullptr) : InsufficientResources(err, Q, sqlstate) {}
 };
 
 class TooManyConnections : public BrokenConnection
 {
-public:
-  explicit TooManyConnections(const std::string &err) : BrokenConnection(err) {}
+  public:
+    explicit TooManyConnections(const std::string &err) : BrokenConnection(err) {}
 };
 
 // /// PL/pgSQL error

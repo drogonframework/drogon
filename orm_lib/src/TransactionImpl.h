@@ -4,9 +4,11 @@
  *  An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
+ *  https://github.com/an-tao/drogon
  *  Use of this source code is governed by a MIT license
  *  that can be found in the License file.
  *
+ *  Drogon
  *
  */
 
@@ -24,7 +26,7 @@ namespace orm
 class TransactionImpl : public Transaction, public std::enable_shared_from_this<TransactionImpl>
 {
   public:
-    TransactionImpl(ClientType type,const DbConnectionPtr &connPtr, const std::function<void()> &usedUpCallback);
+    TransactionImpl(ClientType type, const DbConnectionPtr &connPtr, const std::function<void()> &usedUpCallback);
     ~TransactionImpl();
     void rollback() override;
 

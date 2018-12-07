@@ -4,9 +4,11 @@
  *  An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
+ *  https://github.com/an-tao/drogon
  *  Use of this source code is governed by a MIT license
  *  that can be found in the License file.
  *
+ *  Drogon
  *
  */
 
@@ -133,15 +135,15 @@ Result::row_size_type Result::columnNumber(const char colName[]) const
 }
 const char *Result::getValue(Result::size_type row, Result::row_size_type column) const
 {
-    return _resultPtr->getValue(row,column);
+    return _resultPtr->getValue(row, column);
 }
 bool Result::isNull(Result::size_type row, Result::row_size_type column) const
 {
-    return _resultPtr->isNull(row,column);
+    return _resultPtr->isNull(row, column);
 }
 Result::field_size_type Result::getLength(Result::size_type row, Result::row_size_type column) const
 {
-    return _resultPtr->getLength(row,column);
+    return _resultPtr->getLength(row, column);
 }
 unsigned long long Result::insertId() const noexcept
 {

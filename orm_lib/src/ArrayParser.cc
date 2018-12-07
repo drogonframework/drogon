@@ -7,7 +7,21 @@
  * or contact the author.
  */
 
-//Taken from libpqxx and modified 
+//Taken from libpqxx and modified
+
+/**
+ *
+ *  ArrayParser.cc
+ *  An Tao
+ *
+ *  Copyright 2018, An Tao.  All rights reserved.
+ *  https://github.com/an-tao/drogon
+ *  Use of this source code is governed by a MIT license
+ *  that can be found in the License file.
+ *
+ *  Drogon
+ *
+ */
 
 #include <cassert>
 #include <cstddef>
@@ -16,7 +30,6 @@
 
 #include <drogon/orm/ArrayParser.h>
 #include <drogon/orm/Exception.h>
-
 
 using namespace drogon::orm;
 
@@ -29,7 +42,7 @@ namespace
  *
  * Returns the address of the first character after the closing quote.
  */
-const char*scan_single_quoted_string(const char begin[])
+const char *scan_single_quoted_string(const char begin[])
 {
   const char *here = begin;
   assert(*here == '\'');
@@ -43,7 +56,8 @@ const char*scan_single_quoted_string(const char begin[])
       // If the next character is a quote, we've got a double single quote.
       // That's how SQL escapes embedded quotes in a string.  Terrible idea,
       // but it's what we have.
-      if (*here != '\'') return here;
+      if (*here != '\'')
+        return here;
       // Otherwise, we've found the end of the string.  Return the address of
       // the very next byte.
       break;
@@ -52,14 +66,13 @@ const char*scan_single_quoted_string(const char begin[])
       here++;
       if (!*here)
         throw ArgumentError(
-          "SQL string ends in escape: " + std::string(begin));
+            "SQL string ends in escape: " + std::string(begin));
       break;
     }
   }
   throw ArgumentError(
       "Null byte in SQL string: " + std::string(begin));
 }
-
 
 /// Parse a single-quoted SQL string: un-quote it and un-escape it.
 /** Assumes UTF-8 or an ASCII-superset single-byte encoding.
@@ -80,13 +93,13 @@ std::string parse_single_quoted_string(const char begin[], const char end[])
   {
     auto c = *here;
     // Skip escapes.
-    if (c == '\'' || c == '\\') here++;
+    if (c == '\'' || c == '\\')
+      here++;
     output.push_back(c);
   }
 
   return output;
 }
-
 
 /// Find the end of a double-quoted SQL string in an SQL array.
 /** Assumes UTF-8 or an ASCII-superset single-byte encoding.
@@ -114,7 +127,6 @@ const char *scan_double_quoted_string(const char begin[])
       "Null byte in SQL string: " + std::string(begin));
 }
 
-
 /// Parse a double-quoted SQL string: un-quote it and un-escape it.
 /** Assumes UTF-8 or an ASCII-superset single-byte encoding.
  */
@@ -134,13 +146,13 @@ std::string parse_double_quoted_string(const char begin[], const char end[])
   {
     auto c = *here;
     // Skip escapes.
-    if (c == '\\') here++;
+    if (c == '\\')
+      here++;
     output.push_back(c);
   }
 
   return output;
 }
-
 
 /// Find the end of an unquoted string in an SQL array.
 /** Assumes UTF-8 or an ASCII-superset single-byte encoding.
@@ -152,12 +164,12 @@ const char *scan_unquoted_string(const char begin[])
 
   const char *p;
   for (
-        p = begin;
-        *p != ',' && *p != ';' && *p != '}';
-        p++);
+      p = begin;
+      *p != ',' && *p != ';' && *p != '}';
+      p++)
+    ;
   return p;
 }
-
 
 /// Parse an unquoted SQL string.
 /** Here, the special unquoted value NULL means a null value, not a string
@@ -170,11 +182,9 @@ std::string parse_unquoted_string(const char begin[], const char end[])
 
 } // namespace
 
-
 ArrayParser::ArrayParser(const char input[]) : m_pos(input)
 {
 }
-
 
 std::pair<ArrayParser::juncture, std::string>
 ArrayParser::getNext()
@@ -188,48 +198,49 @@ ArrayParser::getNext()
     found = juncture::done;
     end = nullptr;
   }
-  else switch (*m_pos)
-  {
-  case '\0':
-    found = juncture::done;
-    end = m_pos;
-    break;
-  case '{':
-    found = juncture::row_start;
-    end = m_pos + 1;
-    break;
-  case '}':
-    found = juncture::row_end;
-    end = m_pos + 1;
-    break;
-  case '\'':
-    found = juncture::string_value;
-    end = scan_single_quoted_string(m_pos);
-    value = parse_single_quoted_string(m_pos, end);
-    break;
-  case '"':
-    found = juncture::string_value;
-    end = scan_double_quoted_string(m_pos);
-    value = parse_double_quoted_string(m_pos, end);
-    break;
-  default:
-    end = scan_unquoted_string(m_pos);
-    value = parse_unquoted_string(m_pos, end);
-    if (value == "NULL")
+  else
+    switch (*m_pos)
     {
-      // In this one situation, as a special case, NULL means a null field,
-      // not a string that happens to spell "NULL".
-      value.clear();
-      found = juncture::null_value;
-    }
-    else
-    {
-      // The normal case: we just parsed an unquoted string.  The value is
-      // what we need.
+    case '\0':
+      found = juncture::done;
+      end = m_pos;
+      break;
+    case '{':
+      found = juncture::row_start;
+      end = m_pos + 1;
+      break;
+    case '}':
+      found = juncture::row_end;
+      end = m_pos + 1;
+      break;
+    case '\'':
       found = juncture::string_value;
+      end = scan_single_quoted_string(m_pos);
+      value = parse_single_quoted_string(m_pos, end);
+      break;
+    case '"':
+      found = juncture::string_value;
+      end = scan_double_quoted_string(m_pos);
+      value = parse_double_quoted_string(m_pos, end);
+      break;
+    default:
+      end = scan_unquoted_string(m_pos);
+      value = parse_unquoted_string(m_pos, end);
+      if (value == "NULL")
+      {
+        // In this one situation, as a special case, NULL means a null field,
+        // not a string that happens to spell "NULL".
+        value.clear();
+        found = juncture::null_value;
+      }
+      else
+      {
+        // The normal case: we just parsed an unquoted string.  The value is
+        // what we need.
+        found = juncture::string_value;
+      }
+      break;
     }
-    break;
-  }
 
   // Skip a field separator following a string (or null).
   if (end != nullptr && (*end == ',' || *end == ';'))
@@ -238,4 +249,3 @@ ArrayParser::getNext()
   m_pos = end;
   return std::make_pair(found, value);
 }
-

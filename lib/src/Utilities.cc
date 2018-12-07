@@ -2,8 +2,9 @@
  *
  *  Utilities.cc
  *  An Tao
- *
+ *  
  *  Copyright 2018, An Tao.  All rights reserved.
+ *  https://github.com/an-tao/drogon
  *  Use of this source code is governed by a MIT license
  *  that can be found in the License file.
  *
@@ -499,7 +500,7 @@ int createPath(const std::string &path)
             }
         }
         pathStack.pop();
-        
+
         if (mkdir(tmpPath.c_str(), 0755) == -1)
         {
             LOG_ERROR << "Can't create path:" << path;
