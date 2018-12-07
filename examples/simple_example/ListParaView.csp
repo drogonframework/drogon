@@ -18,7 +18,7 @@
       </tr>
       <%c++ for(auto iter:para){%>
       <tr>
-        <td><%c++ $$<<iter.first;%></td>
+        <td>{%iter.first%}</td>
         <td><%c++ $$<<iter.second;%></td>
       </tr>
       <%c++}%>
