@@ -65,7 +65,7 @@ auto cols=@@.get<std::vector<ColumnInfo>>("columns");
     }
 %>
     const static std::vector<std::string> primaryKeyName;
-    typedef std::tuple<<%c++$$<<typelist;%>> PrimaryKeyType;//<%c++
+    typedef std::tuple<{%typelist%}> PrimaryKeyType;//<%c++
     auto pkName=@@.get<std::vector<std::string>>("primaryKeyName");
     for(size_t i=0;i<pkName.size();i++)
     {
@@ -113,7 +113,7 @@ auto cols=@@.get<std::vector<ColumnInfo>>("columns");
     }
 %>
 
-    static size_t getColumnNumber() noexcept {  return <%c++$$<<cols.size();%>;  }
+    static size_t getColumnNumber() noexcept {  return {% cols.size() %};  }
     static const std::string &getColumnName(size_t index) noexcept(false);
 
     Json::Value toJson() const;
@@ -144,7 +144,7 @@ auto cols=@@.get<std::vector<ColumnInfo>>("columns");
         const bool _notNull;
     };
     static const std::vector<MetaData> _metaData;
-    bool _dirtyFlag[<%c++$$<<cols.size();%>]={ false };
+    bool _dirtyFlag[{%cols.size()%}]={ false };
 };
 
 } // namespace {{dbName}}

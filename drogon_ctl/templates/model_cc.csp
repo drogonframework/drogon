@@ -20,7 +20,7 @@ using namespace drogon_model::{{dbName}};
 
 <%c++for(auto col:cols){
 %>
-const std::string {{className}}::Cols::<%c++$$<<col._colName;%> = "<%c++$$<<col._colName;%>";
+const std::string {{className}}::Cols::{%col._colName%} = "{%col._colName%}";
 <%c++
 }%>
 <%c++if(@@.get<int>("hasPrimaryKey")<=1){%>
@@ -66,7 +66,7 @@ const std::string &{{className}}::getColumnName(size_t index) noexcept(false)
         if(col._colType.empty())
             continue;
         %>
-        if(!r["<%c++$$<<col._colName;%>"].isNull())
+        if(!r["{%col._colName%}"].isNull())
         {
 <%c++
             if(col._colDatabaseType=="date")
@@ -116,7 +116,7 @@ const std::string &{{className}}::getColumnName(size_t index) noexcept(false)
                 continue;
             }           
 %>
-            _<%c++$$<<col._colValName;%>=std::make_shared<<%c++$$<<col._colType;%>>(r["<%c++$$<<col._colName;%>"].as<<%c++$$<<col._colType;%>>());
+            _{%col._colValName%}=std::make_shared<{%col._colType%}>(r["{%col._colName%}"].as<{%col._colType%}>());
         }
 <%c++
     }
@@ -257,9 +257,9 @@ void {{className}}::outputArgs(drogon::orm::internal::SqlBinder &binder) const
     if(!col._isAutoVal&&!col._colType.empty())
     {
 %>
-    if(get<%c++$$<<col._colTypeName;%>())
+    if(get{%col._colTypeName%}())
     {
-        binder << getValueOf<%c++$$<<col._colTypeName;%>();
+        binder << getValueOf{%col._colTypeName%}();
     }
     else
     {
@@ -293,11 +293,11 @@ void {{className}}::updateArgs(drogon::orm::internal::SqlBinder &binder) const
         if(col._colType.empty()||col._isAutoVal)
             continue;
 %>
-    if(_dirtyFlag[<%c++$$<<i;%>])
+    if(_dirtyFlag[{%i%}])
     {
-        if(get<%c++$$<<col._colTypeName;%>())
+        if(get{%col._colTypeName%}())
         {
-            binder << getValueOf<%c++$$<<col._colTypeName;%>();
+            binder << getValueOf{%col._colTypeName%}();
         }
         else
         {
@@ -312,25 +312,25 @@ Json::Value {{className}}::toJson() const
 {
     Json::Value ret;
 <%c++for(auto col:cols){%>
-    if(get<%c++$$<<col._colTypeName;%>())
+    if(get{%col._colTypeName%}())
     {
 <%c++if(col._colDatabaseType=="date"){%>
-        ret["<%c++$$<<col._colName;%>"]=get<%c++$$<<col._colTypeName;%>()->toDbStringLocal();
+        ret["{%col._colName%}"]=get{%col._colTypeName%}()->toDbStringLocal();
 <%c++}else if(col._colDatabaseType.find("timestamp")!=std::string::npos||col._colDatabaseType.find("datetime")!=std::string::npos){%>
-        ret["<%c++$$<<col._colName;%>"]=get<%c++$$<<col._colTypeName;%>()->toDbStringLocal();
+        ret["{%col._colName%}"]=get{%col._colTypeName%}()->toDbStringLocal();
 <%c++}else if(col._colDatabaseType=="bytea"||col._colDatabaseType.find("blob")!=std::string::npos){%>
-        ret["<%c++$$<<col._colName;%>"]=drogon::base64Encode((const unsigned char *)get<%c++$$<<col._colTypeName;%>()->data(),get<%c++$$<<col._colTypeName;%>()->size());
+        ret["{%col._colName%}"]=drogon::base64Encode((const unsigned char *)get{%col._colTypeName%}()->data(),get{%col._colTypeName%}()->size());
 <%c++}else if(col._colType=="int64_t"){%>
-        ret["<%c++$$<<col._colName;%>"]=(Json::Int64)getValueOf<%c++$$<<col._colTypeName;%>();
+        ret["{%col._colName%}"]=(Json::Int64)getValueOf{%col._colTypeName%}();
 <%c++}else if(col._colType=="uint64_t"){%>
-        ret["<%c++$$<<col._colName;%>"]=(Json::UInt64)getValueOf<%c++$$<<col._colTypeName;%>();
+        ret["{%col._colName%}"]=(Json::UInt64)getValueOf{%col._colTypeName%}();
 <%c++}else{%>
-        ret["<%c++$$<<col._colName;%>"]=getValueOf<%c++$$<<col._colTypeName;%>();
+        ret["{%col._colName%}"]=getValueOf{%col._colTypeName%}();
 <%c++}%>
     }
     else
     {
-        ret["<%c++$$<<col._colName;%>"]=Json::Value();
+        ret["{%col._colName%}"]=Json::Value();
     }
 <%c++
 }%>

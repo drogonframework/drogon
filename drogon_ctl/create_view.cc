@@ -18,6 +18,8 @@
 #include <fstream>
 #include <string>
 #include <algorithm>
+#include <regex>
+
 static const std::string cxx_include = "<%inc";
 static const std::string cxx_end = "%>";
 static const std::string cxx_lang = "<%c++";
@@ -362,6 +364,11 @@ void create_view::newViewSourceFile(std::ofstream &file, const std::string &clas
     while (infile.getline(line, sizeof(line)))
     {
         buffer = line;
+        if (buffer.length() > 0)
+        {
+            std::regex re("\\{%[ \\t]*([^ \\t%]*)[^%]*%\\}");
+            buffer = std::regex_replace(buffer, re, "<%c++$$$$<<$1;%>");
+        }
         parseLine(file, buffer, streamName, viewDataName, cxx_flag);
     }
 
