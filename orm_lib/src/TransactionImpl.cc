@@ -18,10 +18,12 @@
 using namespace drogon::orm;
 
 TransactionImpl::TransactionImpl(ClientType type, const DbConnectionPtr &connPtr,
+                                 const std::function<void(bool)> &commitCallback,
                                  const std::function<void()> &usedUpCallback)
     : _connectionPtr(connPtr),
       _usedUpCallback(usedUpCallback),
-      _loop(connPtr->loop())
+      _loop(connPtr->loop()),
+      _commitCallback(commitCallback)
 {
     _type = type;
 }
@@ -31,25 +33,41 @@ TransactionImpl::~TransactionImpl()
     assert(!_isWorking);
     if (!_isCommitedOrRolledback)
     {
-        auto cb = _usedUpCallback;
+        auto ucb = std::move(_usedUpCallback);
+        auto commitCb = std::move(_commitCallback);
         auto loop = _connectionPtr->loop();
         auto conn = _connectionPtr;
-        loop->queueInLoop([conn, cb]() {
+        loop->queueInLoop([conn, ucb, commitCb]() {
             conn->execSql("commit",
                           0,
                           std::vector<const char *>(),
                           std::vector<int>(),
                           std::vector<int>(),
-                          [](const Result &r) {
+                          [commitCb](const Result &r) {
                               LOG_TRACE << "Transaction commited!";
-                          },
-                          [](const std::exception_ptr &ePtr) {
-
-                          },
-                          [cb]() {
-                              if (cb)
+                              if (commitCb)
                               {
-                                  cb();
+                                  commitCb(true);
+                              }
+                          },
+                          [commitCb](const std::exception_ptr &ePtr) {
+                              if (commitCb)
+                              {
+                                  try
+                                  {
+                                      std::rethrow_exception(ePtr);
+                                  }
+                                  catch (const DrogonDbException &e)
+                                  {
+                                      LOG_ERROR << "Transaction submission failed:" << e.base().what();
+                                      commitCb(false);
+                                  }
+                              }
+                          },
+                          [ucb]() {
+                              if (ucb)
+                              {
+                                  ucb();
                               }
                           });
         });

@@ -34,7 +34,9 @@ int main()
     sleep(1);
     LOG_DEBUG << "start!";
     {
-        auto trans = client->newTransaction();
+        auto trans = client->newTransaction([](bool committed) {
+            std::cout << "The transaction submission " << (committed ? "succeeded" : "failed") << std::endl;
+        });
         *trans << "delete from users where user_uuid=201" >>
             [trans](const Result &r) {
                 std::cout << "delete " << r.affectedRows() << "user!!!!!" << std::endl;
@@ -72,7 +74,7 @@ int main()
     } >> [](const DrogonDbException &e) {
         std::cout << e.base().what() << std::endl;
     };
-    for (int i = 0; i < 100;i++)
+    for (int i = 0; i < 100; i++)
         mapper.findByPrimaryKey(2,
                                 [](User u) {
                                     std::cout << "get a user by pk" << std::endl;

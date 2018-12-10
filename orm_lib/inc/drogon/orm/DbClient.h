@@ -70,6 +70,7 @@ class DbClient : public trantor::NonCopyable
 #if USE_MYSQL
     static std::shared_ptr<DbClient> newMysqlClient(const std::string &connInfo, const size_t connNum);
 #endif
+
     //Async method, nonblocking by default;
     template <
         typename FUNCTION1,
@@ -90,6 +91,7 @@ class DbClient : public trantor::NonCopyable
         binder >> rCallback;
         binder >> exceptCallback;
     }
+
     //Async and nonblocking method
     template <typename... Arguments>
     std::future<const Result> execSqlAsync(const std::string &sql,
@@ -107,6 +109,7 @@ class DbClient : public trantor::NonCopyable
         binder.exec();
         return prom->get_future();
     }
+
     //Sync and blocking method
     template <typename... Arguments>
     const Result execSqlSync(const std::string &sql,
@@ -127,10 +130,22 @@ class DbClient : public trantor::NonCopyable
         return r;
     }
 
+    /// A stream-type method for sql execution
     internal::SqlBinder operator<<(const std::string &sql);
-    virtual std::shared_ptr<Transaction> newTransaction() = 0;
 
-        ClientType type() const { return _type; }
+    /// Create a transaction object.
+    /**
+     * @param commitCallback: the callback with which user can get the submitting result, 
+     * The Boolean type parameter in the callback function indicates whether the 
+     * transaction was submitted successfully.
+     * NOTE:
+     * The callback only indicates the result of the 'commit' command, which is the last 
+     * step of the transaction. If the transaction has been automatically or manually rolled back, 
+     * the callback will not be executed.
+     */
+    virtual std::shared_ptr<Transaction> newTransaction(const std::function<void(bool)> &commitCallback = std::function<void(bool)>()) = 0;
+
+    ClientType type() const { return _type; }
 
   private:
     friend internal::SqlBinder;

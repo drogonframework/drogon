@@ -26,7 +26,7 @@ namespace orm
 class TransactionImpl : public Transaction, public std::enable_shared_from_this<TransactionImpl>
 {
   public:
-    TransactionImpl(ClientType type, const DbConnectionPtr &connPtr, const std::function<void()> &usedUpCallback);
+    TransactionImpl(ClientType type, const DbConnectionPtr &connPtr, const std::function<void(bool)> &commitCallback, const std::function<void()> &usedUpCallback);
     ~TransactionImpl();
     void rollback() override;
 
@@ -39,7 +39,7 @@ class TransactionImpl : public Transaction, public std::enable_shared_from_this<
                          const std::vector<int> &format,
                          const ResultCallback &rcb,
                          const std::function<void(const std::exception_ptr &)> &exceptCallback) override;
-    virtual std::shared_ptr<Transaction> newTransaction() override
+    virtual std::shared_ptr<Transaction> newTransaction(const std::function<void(bool)>&) override
     {
         return shared_from_this();
     }
@@ -63,6 +63,7 @@ class TransactionImpl : public Transaction, public std::enable_shared_from_this<
     friend class DbClientImpl;
     void doBegin();
     trantor::EventLoop *_loop;
+    std::function<void(bool)> _commitCallback;
 };
 } // namespace orm
 } // namespace drogon

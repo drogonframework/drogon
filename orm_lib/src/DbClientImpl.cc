@@ -182,7 +182,7 @@ void DbClientImpl::execSql(const std::string &sql,
     }
 }
 
-std::shared_ptr<Transaction> DbClientImpl::newTransaction()
+std::shared_ptr<Transaction> DbClientImpl::newTransaction(const std::function<void(bool)> &commitCallback)
 {
     DbConnectionPtr conn;
     {
@@ -197,7 +197,7 @@ std::shared_ptr<Transaction> DbClientImpl::newTransaction()
         conn = *iter;
         _readyConnections.erase(iter);
     }
-    auto trans = std::shared_ptr<TransactionImpl>(new TransactionImpl(_type, conn, [=]() {
+    auto trans = std::shared_ptr<TransactionImpl>(new TransactionImpl(_type, conn, commitCallback, [=]() {
         if (conn->status() == ConnectStatus_Bad)
         {
             return;
