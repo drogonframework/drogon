@@ -707,13 +707,14 @@ inline void Mapper<T>::insert(const T &obj,
     sql = replaceSqlPlaceHolder(sql, "$?");
     auto binder = *_client << sql;
     obj.outputArgs(binder);
-    binder >> [=](const Result &r) {
-        if (_client->type() == ClientType::PostgreSQL)
+    auto client = _client;
+    binder >> [client, rcb, obj](const Result &r) {
+        if (client->type() == ClientType::PostgreSQL)
         {
             assert(r.size() == 1);
             rcb(T(r[0]));
         }
-        else if (_client->type() == ClientType::Mysql)
+        else if (client->type() == ClientType::Mysql)
         {
             auto id = r.insertId();
             auto newObj = obj;
@@ -751,13 +752,14 @@ inline std::future<T> Mapper<T>::insertFuture(const T &obj) noexcept
     obj.outputArgs(binder);
 
     std::shared_ptr<std::promise<T>> prom = std::make_shared<std::promise<T>>();
-    binder >> [=](const Result &r) {
-        if (_client->type() == ClientType::PostgreSQL)
+    auto client = _client;
+    binder >> [client, prom, obj](const Result &r) {
+        if (client->type() == ClientType::PostgreSQL)
         {
             assert(r.size() == 1);
             prom->set_value(T(r[0]));
         }
-        else if (_client->type() == ClientType::Mysql)
+        else if (client->type() == ClientType::Mysql)
         {
             auto id = r.insertId();
             auto newObj = obj;
