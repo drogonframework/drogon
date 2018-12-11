@@ -144,46 +144,26 @@ void PgConnection::execSql(const std::string &sql,
     _idleCb = idleCb;
     _isWorking = true;
     _exceptCb = exceptCallback;
-
-    if (PQsendQueryParams(
-            _connPtr.get(),
-            sql.c_str(),
-            paraNum,
-            NULL,
-            parameters.data(),
-            length.data(),
-            format.data(),
-            0) == 0)
-    {
-        LOG_ERROR << "send query error: " << PQerrorMessage(_connPtr.get());
-        // connection broken! will be handled in handleRead()
-        // _loop->queueInLoop([=]() {
-        //     try
-        //     {
-        //         throw InternalError(PQerrorMessage(_connPtr.get()));
-        //     }
-        //     catch (...)
-        //     {
-        //         _isWorking = false;
-        //         _exceptCb(std::current_exception());
-        //         _exceptCb = decltype(_exceptCb)();
-        //         if (_idleCb)
-        //         {
-        //             _idleCb();
-        //             _idleCb = decltype(_idleCb)();
-        //         }
-        //     }
-        // });
-        // return;
-    }
     auto thisPtr = shared_from_this();
-    _loop->runInLoop([=]() {
+    _loop->runInLoop([thisPtr, sql, paraNum, parameters, length, format]() {
+        if (PQsendQueryParams(
+                thisPtr->_connPtr.get(),
+                sql.c_str(),
+                paraNum,
+                NULL,
+                parameters.data(),
+                length.data(),
+                format.data(),
+                0) == 0)
+        {
+            LOG_ERROR << "send query error: " << PQerrorMessage(thisPtr->_connPtr.get());
+        }
         thisPtr->pgPoll();
     });
 }
 void PgConnection::handleRead()
 {
-
+    _loop->assertInLoopThread();
     std::shared_ptr<PGresult> res;
 
     if (!PQconsumeInput(_connPtr.get()))
