@@ -17,7 +17,7 @@ Drogon's main application platform is Linux. For debugging purposes, it also sup
 * Support filter chain to facilitate the execution of unified logic (such as login verification, Http Method constraint verification, etc.) before the controller;
 * Support https (based on OpenSSL);
 * Support websocket (server side);
-* Support Json format request and response;
+* Support Json format request and response, very friendly to the Restful API application development;
 * Support file download and upload;
 * Support gzip compression transmission;
 * Provides a lightweight command line tool, drogon_ctl, to simplify the creation of various classes in Drogon and the generation of view code;
