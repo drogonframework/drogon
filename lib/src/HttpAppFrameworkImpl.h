@@ -76,6 +76,7 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     virtual void setLogPath(const std::string &logPath,
                             const std::string &logfileBaseName = "",
                             size_t logfileSize = 100000000) override;
+    virtual void setLogLevel(trantor::Logger::LogLevel level) override;
     virtual void enableSendfile(bool sendFile) override { _useSendfile = sendFile; }
     virtual void enableGzip(bool useGzip) override { _useGzip = useGzip; }
     virtual bool useGzip() const override { return _useGzip; }

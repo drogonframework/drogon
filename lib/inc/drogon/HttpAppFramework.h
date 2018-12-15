@@ -173,6 +173,7 @@ class HttpAppFramework : public trantor::NonCopyable
     virtual void setLogPath(const std::string &logPath,
                             const std::string &logfileBaseName = "",
                             size_t logSize = 100000000) = 0;
+    virtual void setLogLevel(trantor::Logger::LogLevel level) = 0;
     virtual void enableSendfile(bool sendFile) = 0;
     virtual void enableGzip(bool useGzip) = 0;
     virtual bool useGzip() const = 0;

@@ -310,6 +310,10 @@ void HttpAppFrameworkImpl::setLogPath(const std::string &logPath,
     _logfileBaseName = logfileBaseName;
     _logfileSize = logfileSize;
 }
+void HttpAppFrameworkImpl::setLogLevel(trantor::Logger::LogLevel level)
+{
+    trantor::Logger::setLogLevel(level);
+}
 void HttpAppFrameworkImpl::setSSLFiles(const std::string &certPath,
                                        const std::string &keyPath)
 {

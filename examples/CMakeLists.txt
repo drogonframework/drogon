@@ -20,6 +20,8 @@ add_executable(webapp ${DIR_STATIC} ${VIEWSRC})
 add_dependencies(webapp drogon_ctl)
 
 AUX_SOURCE_DIRECTORY(client_example DIR_CLIENT)
+AUX_SOURCE_DIRECTORY(benchmark DIR_BENCHMARK)
 
 add_executable(client ${DIR_CLIENT})
+add_executable(benchmark ${DIR_BENCHMARK})
 
