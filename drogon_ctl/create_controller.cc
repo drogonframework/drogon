@@ -45,16 +45,6 @@ void create_controller::handleCommand(std::vector<std::string> &parameters)
                 parameters.erase(iter);
                 break;
             }
-            else if (*iter == "-n" || *iter == "--namespace")
-            {
-                if (type == Simple)
-                    break;
-                else
-                {
-                    std::cout << ARGS_ERROR_STR << std::endl;
-                    return;
-                }
-            }
             else
             {
                 std::cout << ARGS_ERROR_STR << std::endl;
@@ -62,155 +52,29 @@ void create_controller::handleCommand(std::vector<std::string> &parameters)
             }
         }
     }
-    if (type == Simple)
-    {
-        std::string namespaceName;
-        for (auto iter = parameters.begin(); iter != parameters.end(); iter++)
-        {
-            if ((*iter)[0] == '-')
-            {
-                if (*iter == "-n" || *iter == "--namespace")
-                {
-                    iter = parameters.erase(iter);
-                    if (iter != parameters.end())
-                    {
-                        namespaceName = *iter;
-                        iter = parameters.erase(iter);
-                        break;
-                    }
-                    else
-                    {
-                        std::cout << "please enter namespace" << std::endl;
-                        return;
-                    }
-                }
-                else
-                {
-                    std::cout << ARGS_ERROR_STR << std::endl;
-                    return;
-                }
-            }
-        }
-        createSimpleController(parameters, namespaceName);
-    }
-    else if (type == WebSocket)
-    {
-        std::string namespaceName;
-        for (auto iter = parameters.begin(); iter != parameters.end(); iter++)
-        {
-            if ((*iter)[0] == '-')
-            {
-                if (*iter == "-n" || *iter == "--namespace")
-                {
-                    iter = parameters.erase(iter);
-                    if (iter != parameters.end())
-                    {
-                        namespaceName = *iter;
-                        iter = parameters.erase(iter);
-                        break;
-                    }
-                    else
-                    {
-                        std::cout << "please enter namespace" << std::endl;
-                        return;
-                    }
-                }
-                else
-                {
-                    std::cout << ARGS_ERROR_STR << std::endl;
-                    return;
-                }
-            }
-        }
-        createWebsockController(parameters, namespaceName);
-    }
-    else
-        createHttpController(parameters);
+    createController(parameters, type);
 }
 
-void create_controller::createSimpleController(std::vector<std::string> &ctlNames, const std::string &namespaceName)
-{
-    for (auto iter = ctlNames.begin(); iter != ctlNames.end(); iter++)
-    {
-        if ((*iter)[0] == '-')
-        {
-            std::cout << ARGS_ERROR_STR << std::endl;
-            return;
-        }
-    }
-    for (auto ctlName : ctlNames)
-    {
-        createSimpleController(ctlName, namespaceName);
-    }
-}
-void create_controller::createSimpleController(const std::string &ctlName, const std::string &namespaceName)
-{
-    std::cout << "create simple controller:" << namespaceName << (namespaceName == "" ? "" : "::") << ctlName << std::endl;
-    std::string headFileName = ctlName + ".h";
-    std::string sourceFilename = ctlName + ".cc";
-    std::ofstream oHeadFile(headFileName.c_str(), std::ofstream::out);
-    std::ofstream oSourceFile(sourceFilename.c_str(), std::ofstream::out);
-    if (!oHeadFile || !oSourceFile)
-        return;
-    newSimpleControllerHeaderFile(oHeadFile, ctlName, namespaceName);
-    newSimpleControllerSourceFile(oSourceFile, ctlName, namespaceName);
-}
-
-void create_controller::createWebsockController(std::vector<std::string> &ctlNames, const std::string &namespaceName)
-{
-    for (auto iter = ctlNames.begin(); iter != ctlNames.end(); iter++)
-    {
-        if ((*iter)[0] == '-')
-        {
-            std::cout << ARGS_ERROR_STR << std::endl;
-            return;
-        }
-    }
-    for (auto ctlName : ctlNames)
-    {
-        createWebsockController(ctlName, namespaceName);
-    }
-}
-void create_controller::createWebsockController(const std::string &ctlName, const std::string &namespaceName)
-{
-    std::cout << "create websocket controller:" << namespaceName << (namespaceName == "" ? "" : "::") << ctlName << std::endl;
-    std::string headFileName = ctlName + ".h";
-    std::string sourceFilename = ctlName + ".cc";
-    std::ofstream oHeadFile(headFileName.c_str(), std::ofstream::out);
-    std::ofstream oSourceFile(sourceFilename.c_str(), std::ofstream::out);
-    if (!oHeadFile || !oSourceFile)
-        return;
-    newWebsockControllerHeaderFile(oHeadFile, ctlName, namespaceName);
-    newWebsockControllerSourceFile(oSourceFile, ctlName, namespaceName);
-}
-
-void create_controller::newSimpleControllerHeaderFile(std::ofstream &file, const std::string &ctlName, const std::string &namespaceName)
+void create_controller::newSimpleControllerHeaderFile(std::ofstream &file, const std::string &className)
 {
     file << "#pragma once\n";
     file << "#include <drogon/HttpSimpleController.h>\n";
     file << "using namespace drogon;\n";
     std::string indent = "";
-    auto namespace_name = namespaceName;
-    if (namespace_name != "")
+    std::string class_name = className;
+    std::string namepace_path = "/";
+    auto pos = class_name.find("::");
+    while (pos != std::string::npos)
     {
-        auto pos = namespace_name.find("::");
-        while (pos != std::string::npos)
-        {
-            auto namespaceI = namespace_name.substr(0, pos);
-            namespace_name = namespace_name.substr(pos + 2);
-            file << indent << "namespace " << namespaceI << "\n";
-            file << indent << "{\n";
-            indent.append("    ");
-            pos = namespace_name.find("::");
-        }
-        if (!namespace_name.empty())
-        {
-            file << indent << "namespace " << namespace_name << "\n";
-            file << indent << "{\n";
-            indent.append("    ");
-        }
+        auto namespaceName = class_name.substr(0, pos);
+        class_name = class_name.substr(pos + 2);
+        file << indent << "namespace " << namespaceName << "\n";
+        namepace_path.append(namespaceName).append("/");
+        file << indent << "{\n";
+        indent.append("    ");
+        pos = class_name.find("::");
     }
-    file << indent << "class " << ctlName << ":public drogon::HttpSimpleController<" << ctlName << ">\n";
+    file << indent << "class " << class_name << ":public drogon::HttpSimpleController<" << class_name << ">\n";
     file << indent << "{\n";
     file << indent << "public:\n";
     //TestController(){}
@@ -229,44 +93,43 @@ void create_controller::newSimpleControllerHeaderFile(std::ofstream &file, const
         file << indent << "}\n";
     } while (indent != "");
 }
-void create_controller::newSimpleControllerSourceFile(std::ofstream &file, const std::string &ctlName, const std::string &namespaceName)
+void create_controller::newSimpleControllerSourceFile(std::ofstream &file, const std::string &className, const std::string &filename)
 {
-    file << "#include \"" << ctlName << ".h\"\n";
-    if (namespaceName != "")
-        file << "using namespace " << namespaceName << ";\n";
-    file << "void " << ctlName << "::asyncHandleHttpRequest(const HttpRequestPtr& req,const std::function<void (const HttpResponsePtr &)> & callback)\n";
+    file << "#include \"" << filename << ".h\"\n";
+    auto pos = className.rfind("::");
+    auto class_name = className;
+    if (pos != std::string::npos)
+    {
+        auto namespacename = className.substr(0, pos);
+        file << "using namespace " << namespacename << ";\n";
+        class_name = className.substr(pos + 2);
+    }
+    file << "void " << class_name << "::asyncHandleHttpRequest(const HttpRequestPtr& req,const std::function<void (const HttpResponsePtr &)> & callback)\n";
     file << "{\n";
     file << "    //write your application logic here\n";
     file << "}";
 }
 
-void create_controller::newWebsockControllerHeaderFile(std::ofstream &file, const std::string &ctlName, const std::string &namespaceName)
+void create_controller::newWebsockControllerHeaderFile(std::ofstream &file, const std::string &className)
 {
     file << "#pragma once\n";
     file << "#include <drogon/WebSocketController.h>\n";
     file << "using namespace drogon;\n";
     std::string indent = "";
-    auto namespace_name = namespaceName;
-    if (namespace_name != "")
+    std::string class_name = className;
+    std::string namepace_path = "/";
+    auto pos = class_name.find("::");
+    while (pos != std::string::npos)
     {
-        auto pos = namespace_name.find("::");
-        while (pos != std::string::npos)
-        {
-            auto namespaceI = namespace_name.substr(0, pos);
-            namespace_name = namespace_name.substr(pos + 2);
-            file << indent << "namespace " << namespaceI << "\n";
-            file << indent << "{\n";
-            indent.append("    ");
-            pos = namespace_name.find("::");
-        }
-        if (!namespace_name.empty())
-        {
-            file << indent << "namespace " << namespace_name << "\n";
-            file << indent << "{\n";
-            indent.append("    ");
-        }
+        auto namespaceName = class_name.substr(0, pos);
+        class_name = class_name.substr(pos + 2);
+        file << indent << "namespace " << namespaceName << "\n";
+        namepace_path.append(namespaceName).append("/");
+        file << indent << "{\n";
+        indent.append("    ");
+        pos = class_name.find("::");
     }
-    file << indent << "class " << ctlName << ":public drogon::WebSocketController<" << ctlName << ">\n";
+    file << indent << "class " << class_name << ":public drogon::WebSocketController<" << class_name << ">\n";
     file << indent << "{\n";
     file << indent << "public:\n";
     //TestController(){}
@@ -292,54 +155,29 @@ void create_controller::newWebsockControllerHeaderFile(std::ofstream &file, cons
         file << indent << "}\n";
     } while (indent != "");
 }
-void create_controller::newWebsockControllerSourceFile(std::ofstream &file, const std::string &ctlName, const std::string &namespaceName)
+void create_controller::newWebsockControllerSourceFile(std::ofstream &file, const std::string &className, const std::string &filename)
 {
-    file << "#include \"" << ctlName << ".h\"\n";
-    if (namespaceName != "")
-        file << "using namespace " << namespaceName << ";\n";
-    file << "void " << ctlName << "::handleNewMessage(const WebSocketConnectionPtr& wsConnPtr,std::string &&message)\n";
-    file << "{\n";
-    file << "    //write your application logic here\n";
-    file << "}\n";
-    file << "void " << ctlName << "::handleNewConnection(const HttpRequestPtr &req,const WebSocketConnectionPtr& wsConnPtr)\n";
-    file << "{\n";
-    file << "    //write your application logic here\n";
-    file << "}\n";
-    file << "void " << ctlName << "::handleConnectionClosed(const WebSocketConnectionPtr& wsConnPtr)\n";
-    file << "{\n";
-    file << "    //write your application logic here\n";
-    file << "}\n";
-}
-
-void create_controller::createHttpController(std::vector<std::string> &httpClasses)
-{
-    for (auto iter = httpClasses.begin(); iter != httpClasses.end(); iter++)
+    file << "#include \"" << filename << ".h\"\n";
+    auto pos = className.rfind("::");
+    auto class_name = className;
+    if (pos != std::string::npos)
     {
-        if ((*iter)[0] == '-')
-        {
-            std::cout << ARGS_ERROR_STR << std::endl;
-            return;
-        }
+        auto namespacename = className.substr(0, pos);
+        file << "using namespace " << namespacename << ";\n";
+        class_name = className.substr(pos + 2);
     }
-    for (auto className : httpClasses)
-    {
-        createHttpController(className);
-    }
-}
-void create_controller::createHttpController(const std::string &className)
-{
-    std::regex regex("::");
-    std::string ctlName = std::regex_replace(className, regex, std::string("_"));
-
-    std::cout << "create http controller:" << className << std::endl;
-    std::string headFileName = ctlName + ".h";
-    std::string sourceFilename = ctlName + ".cc";
-    std::ofstream oHeadFile(headFileName.c_str(), std::ofstream::out);
-    std::ofstream oSourceFile(sourceFilename.c_str(), std::ofstream::out);
-    if (!oHeadFile || !oSourceFile)
-        return;
-    newHttpControllerHeaderFile(oHeadFile, className);
-    newHttpControllerSourceFile(oSourceFile, className, ctlName);
+    file << "void " << class_name << "::handleNewMessage(const WebSocketConnectionPtr& wsConnPtr,std::string &&message)\n";
+    file << "{\n";
+    file << "    //write your application logic here\n";
+    file << "}\n";
+    file << "void " << class_name << "::handleNewConnection(const HttpRequestPtr &req,const WebSocketConnectionPtr& wsConnPtr)\n";
+    file << "{\n";
+    file << "    //write your application logic here\n";
+    file << "}\n";
+    file << "void " << class_name << "::handleConnectionClosed(const WebSocketConnectionPtr& wsConnPtr)\n";
+    file << "{\n";
+    file << "    //write your application logic here\n";
+    file << "}\n";
 }
 
 void create_controller::newHttpControllerHeaderFile(std::ofstream &file, const std::string &className)
@@ -403,4 +241,69 @@ void create_controller::newHttpControllerSourceFile(std::ofstream &file, const s
     }
 
     file << "//add definition of your processing function here\n";
+}
+
+void create_controller::createController(std::vector<std::string> &httpClasses, ControllerType type)
+{
+    for (auto iter = httpClasses.begin(); iter != httpClasses.end(); iter++)
+    {
+        if ((*iter)[0] == '-')
+        {
+            std::cout << ARGS_ERROR_STR << std::endl;
+            return;
+        }
+    }
+    for (auto className : httpClasses)
+    {
+        createController(className, type);
+    }
+}
+
+void create_controller::createController(const std::string &className, ControllerType type)
+{
+    std::regex regex("::");
+    std::string ctlName = std::regex_replace(className, regex, std::string("_"));
+
+    std::string headFileName = ctlName + ".h";
+    std::string sourceFilename = ctlName + ".cc";
+    {
+        std::ifstream iHeadFile(headFileName.c_str(), std::ifstream::in);
+        std::ifstream iSourceFile(sourceFilename.c_str(), std::ifstream::in);
+
+        if (iHeadFile || iSourceFile)
+        {
+            std::cout << "The file you want to create already exists, overwrite it(y/n)?" << std::endl;
+            auto in = getchar();
+            if (in != 'Y' && in != 'y')
+            {
+                std::cout << "Abort!" << std::endl;
+                exit(0);
+            }
+        }
+    }
+    std::ofstream oHeadFile(headFileName.c_str(), std::ofstream::out);
+    std::ofstream oSourceFile(sourceFilename.c_str(), std::ofstream::out);
+    if (!oHeadFile || !oSourceFile)
+    {
+        perror("");
+        exit(-1);
+    }
+    if (type == Http)
+    {
+        std::cout << "create a http controller:" << className << std::endl;
+        newHttpControllerHeaderFile(oHeadFile, className);
+        newHttpControllerSourceFile(oSourceFile, className, ctlName);
+    }
+    else if (type == Simple)
+    {
+        std::cout << "create a http simple controller:" << className << std::endl;
+        newSimpleControllerHeaderFile(oHeadFile, className);
+        newSimpleControllerSourceFile(oSourceFile, className, ctlName);
+    }
+    else if (type == WebSocket)
+    {
+        std::cout << "create a websocket controller:" << className << std::endl;
+        newWebsockControllerHeaderFile(oHeadFile, className);
+        newWebsockControllerSourceFile(oSourceFile, className, ctlName);
+    }
 }

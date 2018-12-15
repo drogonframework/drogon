@@ -32,17 +32,15 @@ class create_controller : public DrObject<create_controller>, public CommandHand
         Http,
         WebSocket
     };
-    void createSimpleController(std::vector<std::string> &ctlNames, const std::string &namespaceName = "");
-    void createSimpleController(const std::string &ctlName, const std::string &namespaceName = "");
-    void createWebsockController(std::vector<std::string> &ctlNames, const std::string &namespaceName = "");
-    void createWebsockController(const std::string &ctlName, const std::string &namespaceName = "");
 
-    void createHttpController(std::vector<std::string> &httpClasses);
-    void createHttpController(const std::string &className);
-    void newSimpleControllerHeaderFile(std::ofstream &file, const std::string &ctlName, const std::string &namespaceName = "");
-    void newSimpleControllerSourceFile(std::ofstream &file, const std::string &ctlName, const std::string &namespaceName = "");
-    void newWebsockControllerHeaderFile(std::ofstream &file, const std::string &ctlName, const std::string &namespaceName = "");
-    void newWebsockControllerSourceFile(std::ofstream &file, const std::string &ctlName, const std::string &namespaceName = "");
+    void createController(std::vector<std::string> &httpClasses, ControllerType type);
+    void createController(const std::string &className, ControllerType type);
+
+    void newSimpleControllerHeaderFile(std::ofstream &file, const std::string &className);
+    void newSimpleControllerSourceFile(std::ofstream &file, const std::string &className, const std::string &filename);
+
+    void newWebsockControllerHeaderFile(std::ofstream &file, const std::string &className);
+    void newWebsockControllerSourceFile(std::ofstream &file, const std::string &className, const std::string &filename);
 
     void newHttpControllerHeaderFile(std::ofstream &file, const std::string &className);
     void newHttpControllerSourceFile(std::ofstream &file, const std::string &className, const std::string &filename);

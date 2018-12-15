@@ -29,7 +29,5 @@ class create_filter : public DrObject<create_filter>, public CommandHandler
     std::string _outputPath = ".";
     void createViewFiles(std::vector<std::string> &cspFileNames);
     int createViewFile(const std::string &script_filename);
-    void newViewHeaderFile(std::ofstream &file, const std::string &className);
-    void newViewSourceFile(std::ofstream &file, const std::string &className, std::ifstream &infile);
 };
 } // namespace drogon_ctl
