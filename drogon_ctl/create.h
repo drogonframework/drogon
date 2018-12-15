@@ -23,7 +23,7 @@ class create : public DrObject<create>, public CommandHandler
 {
   public:
     virtual void handleCommand(std::vector<std::string> &parameters) override;
-    virtual std::string script() override { return "create controller or view class files"; }
+    virtual std::string script() override { return "create some source files(Use 'drogon_ctl help create' for more information)"; }
     virtual bool isTopCommand() override { return true; }
     virtual std::string detail() override;
 };

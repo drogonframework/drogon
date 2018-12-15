@@ -21,18 +21,18 @@ using namespace drogon_ctl;
 std::string create::detail()
 {
     return "Use create command to create some source files of drogon webapp\n"
-           "Usage:drogon_ctl create <view|controller|filter|model> [-options] <object name>\n"
-           "drogon_ctl create view <csp file name> //create HttpView source files from csp file\n"
+           "Usage:drogon_ctl create <view|controller|filter|project|model> [-options] <object name>\n\n"
+           "drogon_ctl create view <csp file name> //create HttpView source files from csp file\n\n"
            "drogon_ctl create controller [-s] <[namespace::]class_name> //"
-           "create HttpSimpleController source files\n"
+           "create HttpSimpleController source files\n\n"
            "drogon_ctl create controller -h <[namespace::]class_name> //"
-           "create HttpController source files\n"
+           "create HttpController source files\n\n"
            "drogon_ctl create controller -w <[namespace::]class_name> //"
-           "create WebSocketController source files\n"
-           "drogon_ctl create project <project_name> //"
-           "create a project named project_name\n"
+           "create WebSocketController source files\n\n"
            "drogon_ctl create filter <class_name> //"
-           "create a filter named class_name\n"
+           "create a filter named class_name\n\n"
+           "drogon_ctl create project <project_name> //"
+           "create a project named project_name\n\n"
            "drogon_ctl create model <model_path> //"
            "create model classes in model_path\n";
 }
