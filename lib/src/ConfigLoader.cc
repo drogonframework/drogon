@@ -19,6 +19,8 @@
 #include <iostream>
 #include <fstream>
 #include <unistd.h>
+#include <thread>
+
 using namespace drogon;
 
 ConfigLoader::ConfigLoader(const std::string &configFile)
@@ -136,6 +138,14 @@ static void loadApp(const Json::Value &app)
         return;
     //threads number
     auto threadsNum = app.get("threads_num", 1).asUInt64();
+    if (threadsNum == 0)
+    {
+        //set the number to the number of processors.
+        threadsNum = std::thread::hardware_concurrency();
+        LOG_DEBUG << "The number of processors is " << threadsNum;
+    }
+    if (threadsNum < 1)
+        threadsNum = 1;
     drogon::app().setThreadNum(threadsNum);
     //session
     auto enableSession = app.get("enable_session", false).asBool();
