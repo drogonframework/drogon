@@ -93,8 +93,8 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     virtual trantor::EventLoop *loop() override;
     virtual void quit() override
     {
-        assert(_loop.isRunning());
-        _loop.quit();
+        if (_loop.isRunning())
+            _loop.quit();
     }
 #if USE_ORM
     virtual orm::DbClientPtr getDbClient(const std::string &name = "default") override;

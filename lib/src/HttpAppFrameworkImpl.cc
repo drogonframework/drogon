@@ -351,6 +351,7 @@ void HttpAppFrameworkImpl::run()
 #ifdef __linux__
         _loop.resetTimerQueue();
 #endif
+        _loop.resetAfterFork();
     }
     //set relaunching
     if (_relaunchOnError)
@@ -373,6 +374,7 @@ void HttpAppFrameworkImpl::run()
             sleep(1);
             LOG_INFO << "start new process";
         }
+        _loop.resetAfterFork();
     }
 
     //set logger
