@@ -6,7 +6,7 @@
 
 Drogon's main application platform is Linux. For debugging purposes, it also supports Mac OS. There is no plan to support Windows. Its main features are as follows:
 
-* The network layer uses a NIO framework based on epoll (poll under MacOS) to provide high-concurrency, high-performance network IO;
+* The network layer uses a NIO framework based on epoll (kqueue under MacOS) to provide high-concurrency, high-performance network IO;
 * Full asynchronous programming mode;
 * Support Http1.0/1.1 (server side and client side);
 * Based on template, a simple reflection mechanism is implemented to completely decouple the main program framework, controller and view.
