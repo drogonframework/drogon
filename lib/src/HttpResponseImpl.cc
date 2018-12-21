@@ -316,7 +316,7 @@ void HttpResponseImpl::makeHeaderString(MsgBuffer *output) const
     output->append("\r\n");
     if (_sendfileName.empty())
     {
-        snprintf(buf, sizeof buf, "Content-Length: %lu\r\n", _bodyPtr->size());
+        snprintf(buf, sizeof buf, "Content-Length: %lu\r\n", static_cast<long unsigned int>(_bodyPtr->size()));
     }
     else
     {
