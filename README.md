@@ -4,9 +4,9 @@
 
 **Drogon** is a C++11-based HTTP application framework. Drogon can be used to easily build various types of web application server programs using C++. **Drogon** is the name of a dragon in the American TV series "Game of Thrones" that I really like. 
 
-Drogon's main application platform is Linux. For debugging purposes, it also supports Mac OS. There is no plan to support Windows. Its main features are as follows:
+Drogon's main application platform is Linux. It also supports Mac OS and FreeBSD. There is no plan to support Windows. Its main features are as follows:
 
-* The network layer uses a NIO framework based on epoll (kqueue under MacOS) to provide high-concurrency, high-performance network IO;
+* The network layer uses a NIO framework based on epoll (kqueue under MacOS/FreeBSD) to provide high-concurrency, high-performance network IO;
 * Full asynchronous programming mode;
 * Support Http1.0/1.1 (server side and client side);
 * Based on template, a simple reflection mechanism is implemented to completely decouple the main program framework, controller and view.
