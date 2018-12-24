@@ -7,4 +7,4 @@ add_executable(class_name_test ClassNameTest.cc)
 add_executable(sha1_test Sha1Test.cc)
 add_executable(view_data_test HttpViewDataTest.cc)
 add_executable(orm_result_test OrmResultTest.cc)
-
+add_executable(md5_test Md5Test.cc ../src/ssl_funcs/Md5.cc)

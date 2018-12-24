@@ -233,7 +233,7 @@ void DbClientImpl::handleNewTask(const DbConnectionPtr &connPtr)
         //Then check if there are some sql queries in the buffer
         {
             std::lock_guard<std::mutex> guard(_bufferMutex);
-            if (_sqlCmdBuffer.size() > 0)
+            if (!_sqlCmdBuffer.empty())
             {
                 _busyConnections.insert(connPtr); //For new connections, this sentence is necessary
                 auto cmd = _sqlCmdBuffer.front();

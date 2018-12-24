@@ -76,7 +76,7 @@ class HttpResponseImpl : public HttpResponse
         setContentType(web_content_type_to_string(type));
     }
 
-    virtual void setContentTypeCodeAndCharacterSet(uint8_t type, const std::string charSet = "utf-8") override
+    virtual void setContentTypeCodeAndCharacterSet(uint8_t type, const std::string &charSet = "utf-8") override
     {
         _contentType = type;
         setContentType(web_content_type_and_charset_to_string(type, charSet));

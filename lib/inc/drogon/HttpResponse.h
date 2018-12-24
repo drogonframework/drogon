@@ -118,7 +118,7 @@ class HttpResponse
 
     virtual void setContentTypeCode(uint8_t type) = 0;
 
-    virtual void setContentTypeCodeAndCharacterSet(uint8_t type, const std::string charSet = "utf-8") = 0;
+    virtual void setContentTypeCodeAndCharacterSet(uint8_t type, const std::string &charSet = "utf-8") = 0;
 
     virtual uint8_t getContentTypeCode() = 0;
 

@@ -192,7 +192,7 @@ void TransactionImpl::execNewTask()
     if (!_isCommitedOrRolledback)
     {
         auto thisPtr = shared_from_this();
-        if (_sqlCmdBuffer.size() > 0)
+        if (!_sqlCmdBuffer.empty())
         {
             auto cmd = _sqlCmdBuffer.front();
             _sqlCmdBuffer.pop_front();
@@ -223,7 +223,7 @@ void TransactionImpl::execNewTask()
     else
     {
         _isWorking = false;
-        if (_sqlCmdBuffer.size() > 0)
+        if (!_sqlCmdBuffer.empty())
         {
             try
             {

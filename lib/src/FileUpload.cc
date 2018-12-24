@@ -221,7 +221,6 @@ const std::string HttpFile::getMd5() const
     MD5_Final(md5, &c);
     return binaryStringToHex(md5, 16);
 #else
-    Md5Encode encode;
-    return encode.Encode(_fileContent);
+    return Md5Encode::encode(_fileContent);
 #endif
 }

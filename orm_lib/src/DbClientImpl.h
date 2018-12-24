@@ -78,7 +78,7 @@ private:
     QueryCallback _cb;
     ExceptPtrCallback _exceptCb;
   };
-  std::list<SqlCmd> _sqlCmdBuffer;
+  std::deque<SqlCmd> _sqlCmdBuffer;
   std::mutex _bufferMutex;
 
   void handleNewTask(const DbConnectionPtr &conn);

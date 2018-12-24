@@ -37,11 +37,11 @@ Result makeResult(const std::shared_ptr<MYSQL_RES> &r = std::shared_ptr<MYSQL_RE
 } // namespace drogon
 
 MysqlConnection::MysqlConnection(trantor::EventLoop *loop, const std::string &connInfo)
-    : DbConnection(loop)
+    : DbConnection(loop),
+      _mysqlPtr(std::shared_ptr<MYSQL>(new MYSQL, [](MYSQL *p) {
+          mysql_close(p);
+      }))
 {
-    _mysqlPtr = std::shared_ptr<MYSQL>(new MYSQL, [](MYSQL *p) {
-        mysql_close(p);
-    });
     mysql_init(_mysqlPtr.get());
     mysql_options(_mysqlPtr.get(), MYSQL_OPT_NONBLOCK, 0);
 

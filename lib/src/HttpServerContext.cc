@@ -208,7 +208,7 @@ void HttpServerContext::pushRquestToPipeLine(const HttpRequestPtr &req)
 }
 HttpRequestPtr HttpServerContext::getFirstRequest() const
 {
-    if (_requestPipeLine.size() > 0)
+    if (!_requestPipeLine.empty())
     {
         return _requestPipeLine.front().first;
     }
@@ -216,7 +216,7 @@ HttpRequestPtr HttpServerContext::getFirstRequest() const
 }
 HttpResponsePtr HttpServerContext::getFirstResponse() const
 {
-    if (_requestPipeLine.size() > 0)
+    if (!_requestPipeLine.empty())
     {
         return _requestPipeLine.front().second;
     }

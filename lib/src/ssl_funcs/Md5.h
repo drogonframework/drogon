@@ -60,20 +60,18 @@ class Md5Encode
     };
 
   public:
-    Md5Encode()
-    {
-    }
-    std::string Encode(std::string src_info);
+
+    static std::string encode(const std::string &src_info);
 
   protected:
-    UInt32 CycleMoveLeft(UInt32 src_num, int bit_num_to_move);
-    UInt32 FillData(const char *in_data_ptr, int data_byte_len, char **out_data_ptr);
-    void RoundF(char *data_512_ptr, ParamDynamic &param);
-    void RoundG(char *data_512_ptr, ParamDynamic &param);
-    void RoundH(char *data_512_ptr, ParamDynamic &param);
-    void RoundI(char *data_512_ptr, ParamDynamic &param);
-    void RotationCalculate(char *data_512_ptr, ParamDynamic &param);
-    std::string GetHexStr(unsigned int num_str);
+    static UInt32 CycleMoveLeft(UInt32 src_num, int bit_num_to_move);
+    static void RoundF(char *data_512_ptr, ParamDynamic &param);
+    static void RoundG(char *data_512_ptr, ParamDynamic &param);
+    static void RoundH(char *data_512_ptr, ParamDynamic &param);
+    static void RoundI(char *data_512_ptr, ParamDynamic &param);
+    static void RotationCalculate(char *data_512_ptr, ParamDynamic &param);
+    static std::string GetHexStr(unsigned int num_str);
+    static UInt32 FillData(const char *in_data_ptr, int data_byte_len, char **out_data_ptr);
 
   private:
     // 幻数定义

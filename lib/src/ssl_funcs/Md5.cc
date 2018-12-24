@@ -231,7 +231,7 @@ std::string Md5Encode::GetHexStr(unsigned int num_str)
 // function: Encode
 // @param src_info:要加密的信息
 // return :加密后的MD5值
-std::string Md5Encode::Encode(std::string src_info)
+std::string Md5Encode::encode(const std::string &src_info)
 {
     ParamDynamic param;
     param.ua_ = kA;
@@ -244,9 +244,8 @@ std::string Md5Encode::Encode(std::string src_info)
     param.vd_last_ = kD;
 
     std::string result;
-    const char *src_data = src_info.c_str();
     char *out_data_ptr = NULL;
-    int total_byte = FillData(src_data, strlen(src_data), &out_data_ptr);
+    int total_byte = FillData(src_info.c_str(), src_info.length(), &out_data_ptr);
     //char * data_BIT_OF_GROUP = out_data_ptr;
     for (int i = 0; i < total_byte / (BIT_OF_GROUP / BIT_OF_BYTE); ++i)
     {
