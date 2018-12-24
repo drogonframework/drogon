@@ -78,7 +78,7 @@ void create_controller::newSimpleControllerHeaderFile(std::ofstream &file, const
     file << indent << "{\n";
     file << indent << "public:\n";
     //TestController(){}
-    file << indent << "    virtual void asyncHandleHttpRequest(const HttpRequestPtr& req,const std::function<void (const HttpResponsePtr &)> & callback)override;\n";
+    file << indent << "    virtual void asyncHandleHttpRequest(const HttpRequestPtr& req,const std::function<void (const HttpResponsePtr &)> & callback) override;\n";
 
     file << indent << "    PATH_LIST_BEGIN\n";
     file << indent << "    //list path definitions here;\n";

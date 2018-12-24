@@ -50,6 +50,7 @@ static void forEachFileIn(const std::string &path, const std::function<void(cons
         if (stat(fullname.c_str(), &st) == -1)
         {
             perror("stat");
+            closedir(dp);
             return;
         }
 
@@ -58,6 +59,7 @@ static void forEachFileIn(const std::string &path, const std::function<void(cons
             continue;
         cb(fullname, st);
     }
+    closedir(dp);
     return;
 }
 
