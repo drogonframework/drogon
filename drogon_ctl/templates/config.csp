@@ -47,8 +47,9 @@
     }
   ],*/
   "app": {
-    //threads_num:num of threads,1 by default
-    "threads_num": 16,
+    //threads_num:the number of IO threads,1 by default, if the value is set to 0, the number of threads
+    //will be the number of processors.
+    "threads_num": 1,
     //enable_session:false by default
     "enable_session": false,
     "session_timeout": 0,
