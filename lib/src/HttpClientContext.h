@@ -76,8 +76,6 @@ class HttpClientContext
 
     HttpResponseParseState _state;
     HttpResponseImplPtr _response;
-
-    std::weak_ptr<trantor::TcpConnection> _conn;
 };
 
 } // namespace drogon

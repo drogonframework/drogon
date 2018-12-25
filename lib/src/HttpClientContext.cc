@@ -20,8 +20,7 @@ using namespace trantor;
 using namespace drogon;
 HttpClientContext::HttpClientContext(const trantor::TcpConnectionPtr &connPtr)
     : _state(HttpResponseParseState::kExpectResponseLine),
-      _response(new HttpResponseImpl),
-      _conn(connPtr)
+      _response(new HttpResponseImpl)
 {
 }
 
