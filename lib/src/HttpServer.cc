@@ -159,8 +159,10 @@ void HttpServer::onRequest(const TcpConnectionPtr &conn, const HttpRequestPtr &r
         req->setMethod(Get);
     }
     HttpServerContext *context = any_cast<HttpServerContext>(conn->getMutableContext());
-    //request will be received in same thread,so we don't need mutex;
-    context->pushRquestToPipeLine(req);
+    {
+        std::lock_guard<std::mutex> guard(context->getPipeLineMutex());
+        context->pushRquestToPipeLine(req);
+    }
     httpAsyncCallback_(req, [=](const HttpResponsePtr &response) {
         if (!response)
             return;
