@@ -19,6 +19,8 @@
 #include <drogon/HttpRequest.h>
 #include <memory>
 
+/// For more details on the class, see the wiki site (the 'Filter' section)
+
 namespace drogon
 {
 typedef std::function<void(HttpResponsePtr)> FilterCallback;

@@ -34,9 +34,8 @@ enum HttpMethod
     Delete,
     Invalid
 };
-/*
-     * abstract class for webapp developer to get Http client request;
-     * */
+
+/// Abstract class for webapp developer to get Http client request;
 class HttpRequest
 {
   public:

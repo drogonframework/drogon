@@ -22,6 +22,10 @@
 #include <string>
 #include <sstream>
 #include <memory>
+
+/// The classes in the file are internal tool classes. Do not include this 
+/// file directly and use any of these classes directly.
+
 namespace drogon
 {
 //we only accept value type or const lreference type as handle method parameters type

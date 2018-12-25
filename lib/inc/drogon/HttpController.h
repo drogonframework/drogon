@@ -21,6 +21,8 @@
 #include <vector>
 #include <iostream>
 
+/// For more details on the class, see the wiki site (the 'HttpController' section)
+
 #define METHOD_LIST_BEGIN     \
     static void initMethods() \
     {
