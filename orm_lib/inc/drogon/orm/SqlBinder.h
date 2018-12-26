@@ -40,7 +40,20 @@ namespace orm
 enum class ClientType
 {
     PostgreSQL = 0,
-    Mysql
+    Mysql,
+    Sqlite3
+};
+
+enum Sqlite3Type
+{
+    Sqlite3TypeChar = 0,
+    Sqlite3TypeShort,
+    Sqlite3TypeInt,
+    Sqlite3TypeInt64,
+    Sqlite3TypeDouble,
+    Sqlite3TypeText,
+    Sqlite3TypeBlob,
+    Sqlite3TypeNull
 };
 
 class DbClient;
@@ -295,6 +308,28 @@ class SqlBinder
                 break;
             }
 #endif
+        }
+        else if (_type == ClientType::Sqlite3)
+        {
+            _objs.push_back(obj);
+            _parameters.push_back((char *)obj.get());
+            _length.push_back(0);
+            switch (sizeof(T))
+            {
+            case 1:
+                _format.push_back(Sqlite3TypeChar);
+                break;
+            case 2:
+                _format.push_back(Sqlite3TypeShort);
+                break;
+            case 4:
+                _format.push_back(Sqlite3TypeInt);
+                break;
+            case 8:
+                _format.push_back(Sqlite3TypeInt64);
+            default:
+                break;
+            }
         }
         //LOG_TRACE << "Bind parameter:" << parameter;
         return *this;

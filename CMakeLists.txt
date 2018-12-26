@@ -90,6 +90,15 @@ if(MYSQL_FOUND)
     endif()
 endif()
 
+#Find sqlite3.
+find_package (SQLite3)
+if (SQLITE3_FOUND)
+  include_directories(${SQLITE3_INCLUDE_DIRS})
+  link_libraries(${SQLITE3_LIBRARIES})
+  aux_source_directory(${PROJECT_SOURCE_DIR}/orm_lib/src/sqlite3_impl DIR_SRCS)
+  set(USE_ORM TRUE)
+endif (SQLITE3_FOUND)
+
 message(STATUS ${DIR_SRCS})
 
 if(CMAKE_BUILD_TYPE STREQUAL "")
@@ -136,6 +145,13 @@ if(USE_ORM)
     else()
         file(APPEND "${CONFIG_HEADER}" "#define USE_MYSQL 0\n")
     endif()
+
+    if(SQLITE3_FOUND)
+        file(APPEND "${CONFIG_HEADER}" "#define USE_SQLITE3 1\n")
+    else()
+        file(APPEND "${CONFIG_HEADER}" "#define USE_SQLITE3 0\n")
+    endif()
+
 else()
     file(APPEND "${CONFIG_HEADER}" "#define USE_ORM 0\n")
 endif()
