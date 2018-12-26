@@ -28,7 +28,7 @@ typedef HttpViewData DrTemplateData;
  * This class can generate a text string from the template file and template data.
  * For more details on the template file, see the wiki site (the 'View' section)
  */
-class DrTemplateBase
+class DrTemplateBase : public virtual DrObjectBase
 {
   public:
     /// Create an object of the implementation class
