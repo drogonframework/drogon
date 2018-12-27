@@ -56,6 +56,7 @@ class Sqlite3Connection : public DbConnection, public std::enable_shared_from_th
                         const ResultCallback &rcb,
                         const std::function<void(const std::exception_ptr &)> &exceptCallback,
                         const std::function<void()> &idleCb);
+    void onError(const std::string &sql, const std::function<void(const std::exception_ptr &)> &exceptCallback);
     trantor::SerialTaskQueue _queue;
     std::shared_ptr<sqlite3> _conn;
 };

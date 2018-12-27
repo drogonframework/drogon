@@ -673,7 +673,7 @@ inline void Mapper<T>::insert(T &obj) noexcept(false)
         assert(r.size() == 1);
         obj = T(r[0]);
     }
-    else if (_client->type() == ClientType::Mysql)
+    else // Mysql or Sqlite3
     {
         auto id = r.insertId();
         obj.updateId(id);
@@ -714,7 +714,7 @@ inline void Mapper<T>::insert(const T &obj,
             assert(r.size() == 1);
             rcb(T(r[0]));
         }
-        else if (client->type() == ClientType::Mysql)
+        else //Mysql or Sqlite3
         {
             auto id = r.insertId();
             auto newObj = obj;
@@ -759,7 +759,7 @@ inline std::future<T> Mapper<T>::insertFuture(const T &obj) noexcept
             assert(r.size() == 1);
             prom->set_value(T(r[0]));
         }
-        else if (client->type() == ClientType::Mysql)
+        else //Mysql or Sqlite3
         {
             auto id = r.insertId();
             auto newObj = obj;

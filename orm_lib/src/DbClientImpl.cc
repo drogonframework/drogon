@@ -20,6 +20,9 @@
 #if USE_MYSQL
 #include "mysql_impl/MysqlConnection.h"
 #endif
+#if USE_SQLITE3
+#include "sqlite3_impl/Sqlite3Connection.h"
+#endif
 #include "TransactionImpl.h"
 #include <trantor/net/EventLoop.h>
 #include <trantor/net/inner/Channel.h>
@@ -266,6 +269,14 @@ DbConnectionPtr DbClientImpl::newConnection()
     {
 #if USE_MYSQL
         connPtr = std::make_shared<MysqlConnection>(_loopPtr.get(), _connInfo);
+#else
+        return nullptr;
+#endif
+    }
+    else if (_type == ClientType::Sqlite3)
+    {
+#if USE_SQLITE3
+        connPtr = std::make_shared<Sqlite3Connection>(_loopPtr.get(), _connInfo);
 #else
         return nullptr;
 #endif

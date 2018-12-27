@@ -360,6 +360,10 @@ class SqlBinder
             _format.push_back(MYSQL_TYPE_STRING);
 #endif
         }
+        else if (_type == ClientType::Sqlite3)
+        {
+            _format.push_back(Sqlite3TypeText);
+        }
         return *this;
     }
     self &operator<<(std::string &str)
@@ -382,6 +386,10 @@ class SqlBinder
 #if USE_MYSQL
             _format.push_back(MYSQL_TYPE_STRING);
 #endif
+        }
+        else if (_type == ClientType::Sqlite3)
+        {
+            _format.push_back(Sqlite3TypeText);
         }
         return *this;
     }
@@ -410,6 +418,10 @@ class SqlBinder
             _format.push_back(MYSQL_TYPE_STRING);
 #endif
         }
+        else if (_type == ClientType::Sqlite3)
+        {
+            _format.push_back(Sqlite3TypeBlob);
+        }
         return *this;
     }
     self &operator<<(std::vector<char> &&v)
@@ -429,14 +441,32 @@ class SqlBinder
             _format.push_back(MYSQL_TYPE_STRING);
 #endif
         }
+        else if (_type == ClientType::Sqlite3)
+        {
+            _format.push_back(Sqlite3TypeBlob);
+        }
         return *this;
     }
     self &operator<<(float f)
     {
+        if (_type == ClientType::Sqlite3)
+        {
+            return operator<<((double)f);
+        }
         return operator<<(std::to_string(f));
     }
     self &operator<<(double f)
     {
+        if (_type == ClientType::Sqlite3)
+        {
+            _paraNum++;
+            auto obj = std::make_shared<double>(f);
+            _objs.push_back(obj);
+            _format.push_back(Sqlite3TypeDouble);
+            _length.push_back(0);
+            _parameters.push_back((char *)(obj.get()));
+            return *this;
+        }
         return operator<<(std::to_string(f));
     }
     self &operator<<(std::nullptr_t nullp)
@@ -453,6 +483,10 @@ class SqlBinder
 #if USE_MYSQL
             _format.push_back(MYSQL_TYPE_NULL);
 #endif
+        }
+        else if (_type == ClientType::Sqlite3)
+        {
+            _format.push_back(Sqlite3TypeNull);
         }
         return *this;
     }

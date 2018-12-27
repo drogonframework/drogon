@@ -35,3 +35,10 @@ std::shared_ptr<DbClient> DbClient::newMysqlClient(const std::string &connInfo, 
     return std::make_shared<DbClientImpl>(connInfo, connNum, ClientType::Mysql);
 }
 #endif
+
+#if USE_SQLITE3
+std::shared_ptr<DbClient> DbClient::newSqlite3Client(const std::string &connInfo, const size_t connNum)
+{
+    return std::make_shared<DbClientImpl>(connInfo, connNum, ClientType::Sqlite3);
+}
+#endif

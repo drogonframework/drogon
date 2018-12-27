@@ -20,6 +20,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <unordered_map>
 
 namespace drogon
 {
@@ -29,10 +30,7 @@ class Sqlite3ResultImpl : public ResultImpl
 {
   public:
     Sqlite3ResultImpl(const std::string &query) noexcept
-        : _query(query),
-          _result(new std::vector<std::vector<std::shared_ptr<std::string>>>)
     {
-
     }
     virtual size_type size() const noexcept override;
     virtual row_size_type columns() const noexcept override;
@@ -42,12 +40,16 @@ class Sqlite3ResultImpl : public ResultImpl
     virtual const char *getValue(size_type row, row_size_type column) const override;
     virtual bool isNull(size_type row, row_size_type column) const override;
     virtual field_size_type getLength(size_type row, row_size_type column) const override;
+    virtual unsigned long long insertId() const noexcept override;
 
   private:
     friend class Sqlite3Connection;
-    std::shared_ptr<std::vector<std::vector<std::shared_ptr<std::string>>>> _result;
+    std::vector<std::vector<std::shared_ptr<std::string>>> _result;
     std::string _query;
+    std::vector<std::string> _columnNames;
+    std::unordered_map<std::string, size_t> _columnNameMap;
     size_t _affectedRows = 0;
+    size_t _insertId = 0;
 };
 } // namespace orm
 } // namespace drogon

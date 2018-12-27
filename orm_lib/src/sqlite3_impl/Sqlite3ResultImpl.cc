@@ -19,16 +19,16 @@ using namespace drogon::orm;
 
 Result::size_type Sqlite3ResultImpl::size() const noexcept
 {
-    return _result->size();
+    return _result.size();
 }
 Result::row_size_type Sqlite3ResultImpl::columns() const noexcept
 {
-    return _result->empty() ? 0 : (*_result)[0].size();
+    return _result.empty() ? 0 : _result[0].size();
 }
 const char *Sqlite3ResultImpl::columnName(row_size_type number) const
 {
-    //FIXME
-    return "";
+    assert(number < _columnNames.size());
+    return _columnNames[number].c_str();
 }
 Result::size_type Sqlite3ResultImpl::affectedRows() const noexcept
 {
@@ -36,20 +36,30 @@ Result::size_type Sqlite3ResultImpl::affectedRows() const noexcept
 }
 Result::row_size_type Sqlite3ResultImpl::columnNumber(const char colName[]) const
 {
-    //FIXME
-    return 0;
+    auto name = std::string(colName);
+    std::transform(name.begin(), name.end(), name.begin(), tolower);
+    auto iter = _columnNameMap.find(name);
+    if (iter != _columnNameMap.end())
+    {
+        return iter->second;
+    }
+    throw std::string("there is no column named ")+colName;
 }
 const char *Sqlite3ResultImpl::getValue(size_type row, row_size_type column) const
 {
-    auto col = (*_result)[row][column];
+    auto col = _result[row][column];
     return col ? nullptr : col->c_str();
 }
 bool Sqlite3ResultImpl::isNull(size_type row, row_size_type column) const
 {
-    return !(*_result)[row][column];
+    return !_result[row][column];
 }
 Result::field_size_type Sqlite3ResultImpl::getLength(size_type row, row_size_type column) const
 {
-    auto col = (*_result)[row][column];
+    auto col = _result[row][column];
     return col ? 0 : col->length();
+}
+unsigned long long Sqlite3ResultImpl::insertId() const noexcept
+{
+    return _insertId;
 }

@@ -51,7 +51,7 @@ Result::row_size_type PostgreSQLResultImpl::columnNumber(const char colName[]) c
     {
         auto N = PQfnumber(ptr, colName);
         if (N == -1)
-            throw "there is no column named ..."; // TODO throw detail exception here;
+            throw std::string("there is no column named ") + colName; // TODO throw detail exception here;
         return N;
     }
     throw "nullptr result"; //The program will not execute here
