@@ -432,7 +432,7 @@ void create_model::createModelFromMysql(const std::string &path, const DbClientP
 
 void create_model::createModel(const std::string &path, const Json::Value &config)
 {
-    auto dbType = config.get("rdbms", "No dbms").asString();
+    auto dbType = config.get("rdbms", "no dbms").asString();
     std::transform(dbType.begin(), dbType.end(), dbType.begin(), tolower);
     if (dbType == "postgresql")
     {
@@ -538,7 +538,12 @@ void create_model::createModel(const std::string &path, const Json::Value &confi
         std::cerr << "Drogon does not support Mysql, please install MariaDB development environment before installing drogon" << std::endl;
 #endif
     }
-    else if (dbType == "No dbms")
+    else if (dbType == "sqlite3")
+    {
+#if USE_SQLITE3
+#endif
+    }
+    else if (dbType == "no dbms")
     {
         std::cerr << "Please configure Model in " << path << "/model.json " << std::endl;
         exit(1);

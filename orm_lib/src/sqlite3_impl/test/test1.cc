@@ -47,6 +47,10 @@ int main()
             LOG_DEBUG << "affected rows:" << r.affectedRows();
             LOG_DEBUG << "select " << r.size() << " rows";
             LOG_DEBUG << "id:" << r.insertId();
+            for(auto row:r)
+            {
+                LOG_DEBUG << "group_id:" << row["group_id"].as<size_t>();
+            }
         } >>
         [](const DrogonDbException &e) {
             std::cout << e.base().what() << std::endl;

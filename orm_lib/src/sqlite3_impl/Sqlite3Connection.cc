@@ -180,6 +180,7 @@ void Sqlite3Connection::execSqlInQueue(const std::string &sql,
     {
         auto name = std::string(sqlite3_column_name(stmt, i));
         std::transform(name.begin(), name.end(), name.begin(), tolower);
+        LOG_TRACE << "column name:" << name;
         resultPtr->_columnNames.push_back(name);
         resultPtr->_columnNameMap.insert({name, i});
     }
@@ -192,10 +193,10 @@ void Sqlite3Connection::execSqlInQueue(const std::string &sql,
             switch (sqlite3_column_type(stmt, i))
             {
             case SQLITE_INTEGER:
-                row.push_back(std::make_shared<std::string>(formattedString("%ld", sqlite3_column_int64(stmt, i))));
+                row.push_back(std::make_shared<std::string>(std::to_string(sqlite3_column_int64(stmt, i))));
                 break;
             case SQLITE_FLOAT:
-                row.push_back(std::make_shared<std::string>(formattedString("%f", sqlite3_column_double(stmt, i))));
+                row.push_back(std::make_shared<std::string>(std::to_string(sqlite3_column_double(stmt, i))));
                 break;
             case SQLITE_TEXT:
                 row.push_back(std::make_shared<std::string>((const char *)sqlite3_column_text(stmt, i), (size_t)sqlite3_column_bytes(stmt, i)));

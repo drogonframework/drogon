@@ -43,12 +43,12 @@ Result::row_size_type Sqlite3ResultImpl::columnNumber(const char colName[]) cons
     {
         return iter->second;
     }
-    throw std::string("there is no column named ")+colName;
+    throw std::string("there is no column named ") + colName;
 }
 const char *Sqlite3ResultImpl::getValue(size_type row, row_size_type column) const
 {
     auto col = _result[row][column];
-    return col ? nullptr : col->c_str();
+    return col ? col->c_str() : nullptr;
 }
 bool Sqlite3ResultImpl::isNull(size_type row, row_size_type column) const
 {
@@ -57,7 +57,7 @@ bool Sqlite3ResultImpl::isNull(size_type row, row_size_type column) const
 Result::field_size_type Sqlite3ResultImpl::getLength(size_type row, row_size_type column) const
 {
     auto col = _result[row][column];
-    return col ? 0 : col->length();
+    return col ? col->length() : 0;
 }
 unsigned long long Sqlite3ResultImpl::insertId() const noexcept
 {
