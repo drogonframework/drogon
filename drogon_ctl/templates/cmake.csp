@@ -75,6 +75,13 @@ if(MYSQL_FOUND)
     endif()
 endif()
 
+#Find sqlite3.
+find_package (SQLite3)
+if (SQLITE3_FOUND)
+  include_directories(${SQLITE3_INCLUDE_DIRS})
+  link_libraries(${SQLITE3_LIBRARIES})
+endif()
+
 AUX_SOURCE_DIRECTORY(./ SRC_DIR)
 AUX_SOURCE_DIRECTORY(controllers CTL_SRC)
 AUX_SOURCE_DIRECTORY(filters FILTER_SRC)

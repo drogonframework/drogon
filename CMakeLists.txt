@@ -97,7 +97,7 @@ if (SQLITE3_FOUND)
   link_libraries(${SQLITE3_LIBRARIES})
   aux_source_directory(${PROJECT_SOURCE_DIR}/orm_lib/src/sqlite3_impl DIR_SRCS)
   set(USE_ORM TRUE)
-endif (SQLITE3_FOUND)
+endif()
 
 message(STATUS ${DIR_SRCS})
 

@@ -62,12 +62,17 @@ static void newJsonFindFile(std::ofstream &jsonFile)
     jsonFile << templ->genText();
 }
 
-static void newMySQLFindFile(std::ofstream &jsonFile)
+static void newMySQLFindFile(std::ofstream &mysqlFile)
 {
     auto templ = DrTemplateBase::newTemplate("FindMySQL.csp");
-    jsonFile << templ->genText();
+    mysqlFile << templ->genText();
 }
 
+static void newSQLite3FindFile(std::ofstream &sqlite3File)
+{
+    auto templ = DrTemplateBase::newTemplate("FindSQLite3.csp");
+    sqlite3File << templ->genText();
+}
 
 static void newConfigFile(std::ofstream &configFile)
 {
@@ -108,6 +113,8 @@ void create_project::createProject(const std::string &projectName)
     newUuidFindFile(uuidFile);
     std::ofstream mysqlFile("cmake_modules/FindMySQL.cmake", std::ofstream::out);
     newMySQLFindFile(mysqlFile);
+    std::ofstream sqlite3File("cmake_modules/FindSQLite3.cmake", std::ofstream::out);
+    newSQLite3FindFile(sqlite3File);
 
     std::ofstream gitFile(".gitignore", std::ofstream::out);
     newGitIgFile(gitFile);
