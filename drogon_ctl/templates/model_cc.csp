@@ -198,7 +198,7 @@ const std::string &{{className}}::getColumnName(size_t index) noexcept(false)
         $$<<"{\n";
         $$<<"}\n";
     }
-    else if(@@.get<std::string>("rdbms")=="mysql")
+    else if(@@.get<std::string>("rdbms")=="mysql"||@@.get<std::string>("rdbms")=="sqlite3")
     {
         $$<<"void "<<className<<"::updateId(const unsigned long long id)\n";
         $$<<"{\n";

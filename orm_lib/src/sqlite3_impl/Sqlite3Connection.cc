@@ -109,6 +109,7 @@ void Sqlite3Connection::execSqlInQueue(const std::string &sql,
                                        const std::function<void(const std::exception_ptr &)> &exceptCallback,
                                        const std::function<void()> &idleCb)
 {
+    LOG_TRACE << "sql:" << sql;
     sqlite3_stmt *stmt = nullptr;
     const char *remaining;
 

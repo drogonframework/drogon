@@ -38,6 +38,7 @@ TransactionImpl::~TransactionImpl()
         auto loop = _connectionPtr->loop();
         auto conn = _connectionPtr;
         loop->queueInLoop([conn, ucb, commitCb]() {
+            LOG_TRACE << "to commit";
             conn->execSql("commit",
                           0,
                           std::vector<const char *>(),
@@ -100,7 +101,9 @@ void TransactionImpl::execSql(const std::string &sql,
                                                          exceptCallback(ePtr);
                                                  },
                                                  [thisPtr]() {
-                                                     thisPtr->execNewTask();
+                                                     thisPtr->_loop->runInLoop([=]() {
+                                                         thisPtr->execNewTask();
+                                                     });
                                                  });
             }
             else
@@ -180,7 +183,9 @@ void TransactionImpl::rollback()
                           clearupCb();
                       },
                       [thisPtr]() {
-                          thisPtr->execNewTask();
+                          thisPtr->_loop->runInLoop([=]() {
+                              thisPtr->execNewTask();
+                          });
                       });
     });
 }
@@ -212,7 +217,9 @@ void TransactionImpl::execNewTask()
                                       cmd._exceptCb(ePtr);
                               },
                               [thisPtr]() {
-                                  thisPtr->execNewTask();
+                                  thisPtr->_loop->runInLoop([=]() {
+                                      thisPtr->execNewTask();
+                                  });
                               });
             });
 
@@ -268,7 +275,9 @@ void TransactionImpl::doBegin()
                                              }
                                          },
                                          [thisPtr]() {
-                                             thisPtr->execNewTask();
+                                             thisPtr->_loop->runInLoop([=]() {
+                                                 thisPtr->execNewTask();
+                                             });
                                          });
     });
 }

@@ -1099,7 +1099,7 @@ inline std::string Mapper<T>::replaceSqlPlaceHolder(const std::string &sqlStr, c
             startPos = pos + holderStr.length();
         } while (1);
     }
-    else if (_client->type() == ClientType::Mysql)
+    else if (_client->type() == ClientType::Mysql || _client->type() == ClientType::Sqlite3)
     {
         std::string::size_type startPos = 0;
         std::string::size_type pos;
