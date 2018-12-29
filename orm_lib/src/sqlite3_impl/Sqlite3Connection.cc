@@ -139,7 +139,7 @@ void Sqlite3Connection::execSqlInQueue(const std::string &sql,
         }
         return;
     }
-    for (int i = 0; i < parameters.size(); i++)
+    for (int i = 0; i < (int)parameters.size(); i++)
     {
         int bindRet;
         switch (format[i])
