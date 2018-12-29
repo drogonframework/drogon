@@ -439,7 +439,7 @@ void create_model::createModelClassFromSqlite3(const std::string &path, const Db
             if (!isNull)
             {
                 auto pos1 = sql.find("(");
-                auto pos2 = sql.find(")");
+                auto pos2 = sql.rfind(")");
                 if (pos1 != std::string::npos && pos2 != std::string::npos)
                 {
                     sql = sql.substr(pos1 + 1, pos2 - pos1 - 1);
@@ -454,7 +454,7 @@ void create_model::createModelClassFromSqlite3(const std::string &path, const Db
                     data["primaryKeyName"] = "";
                     data["dbName"] = "sqlite3";
                     data["rdbms"] = std::string("sqlite3");
-
+                    std::cout << sql << std::endl;
                     auto columns = splitString(sql, ",");
                     int i = 0;
                     std::vector<ColumnInfo> cols;
@@ -469,6 +469,7 @@ void create_model::createModelClassFromSqlite3(const std::string &path, const Db
                         bool autoVal = (column.find("autoincrement") != std::string::npos);
                         bool primary = (column.find("primary key") != std::string::npos);
 
+                        std::cout << "field:" << field << std::endl;
                         ColumnInfo info;
                         info._index = i;
                         info._dbType = "sqlite3";

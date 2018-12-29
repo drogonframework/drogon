@@ -18,6 +18,7 @@
 #include <drogon/orm/DbClient.h>
 #include <trantor/utils/NonCopyable.h>
 #include <trantor/utils/SerialTaskQueue.h>
+#include <trantor/net/EventLoopThread.h>
 #include <sqlite3.h>
 #include <memory>
 #include <string>
@@ -57,7 +58,7 @@ class Sqlite3Connection : public DbConnection, public std::enable_shared_from_th
                         const std::function<void(const std::exception_ptr &)> &exceptCallback,
                         const std::function<void()> &idleCb);
     void onError(const std::string &sql, const std::function<void(const std::exception_ptr &)> &exceptCallback);
-    trantor::SerialTaskQueue _queue;
+    trantor::EventLoopThread _loopThread;
     std::shared_ptr<sqlite3> _conn;
 };
 

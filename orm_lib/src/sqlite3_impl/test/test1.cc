@@ -26,7 +26,7 @@ int main()
      CREATE_TIME TEXT,\
      INVITING INTEGER,\
      INVITING_USER_ID INTEGER,\
-     AVATAR_ID TEXT, uuu double, text VARCHAR(255))"
+     AVATAR_ID TEXT, uuu double, text VARCHAR(255),avatar blob)"
                << Mode::Blocking >>
         [](const Result &r) {
             LOG_DEBUG << "created";
@@ -65,10 +65,21 @@ int main()
         for(auto group:v)
         {
             LOG_DEBUG << "group_id=" << group.getValueOfGroupId();
+            std::cout << group.toJson() << std::endl;
+            std::cout << "avatar:" << group.getValueOfAvatarAsString() << std::endl;
             group.setAvatarId("xixi");
             mapper.update(group, [=](const size_t count) { LOG_DEBUG << "update " << count << " rows"; 
-            trans->rollback(); }, [](const DrogonDbException &e) { LOG_ERROR << e.base().what(); });
+            }, [](const DrogonDbException &e) { LOG_ERROR << e.base().what(); });
         } }, [](const DrogonDbException &e) { LOG_ERROR << e.base().what(); });
+        drogon_model::sqlite3::Groups group;
+        group.setAvatar("hahahaha,xixixixix");
+        try{
+            mapper.insert(group);
+        }
+        catch(const DrogonDbException &e)
+        {
+            std::cerr << e.base().what() << std::endl;
+        }
     }
     getchar();
 }

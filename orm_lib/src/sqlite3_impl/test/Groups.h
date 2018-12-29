@@ -40,6 +40,7 @@ class Groups
         static const std::string avatar_id;
         static const std::string uuu;
         static const std::string text;
+        static const std::string avatar;
     };
 
     const static int primaryKeyNumber;
@@ -125,8 +126,19 @@ class Groups
     void setText(const std::string &text) noexcept;
     void setText(std::string &&text) noexcept;
 
+    /**  For column avatar  */
+    ///Get the value of the column avatar, returns the default value if the column is null
+    const std::vector<char> &getValueOfAvatar(const std::vector<char> &defaultValue=std::vector<char>()) const noexcept;
+    ///Returns the column value by std::string with binary data
+    std::string getValueOfAvatarAsString(const std::string &defaultValue="") const noexcept;
+    ///Returns a shared_ptr object pointing to the column const value, or an empty shared_ptr object if the column is null
+    std::shared_ptr<const std::vector<char>> getAvatar() const noexcept;
+    ///Set the value of the column avatar
+    void setAvatar(const std::vector<char> &avatar) noexcept;
+    void setAvatar(const std::string &avatar) noexcept;
 
-    static size_t getColumnNumber() noexcept {  return 9;  }
+
+    static size_t getColumnNumber() noexcept {  return 10;  }
     static const std::string &getColumnName(size_t index) noexcept(false);
 
     Json::Value toJson() const;
@@ -148,6 +160,7 @@ class Groups
     std::shared_ptr<std::string> _avatarId;
     std::shared_ptr<double> _uuu;
     std::shared_ptr<std::string> _text;
+    std::shared_ptr<std::vector<char>> _avatar;
     struct MetaData
     {
         const std::string _colName;
@@ -159,7 +172,7 @@ class Groups
         const bool _notNull;
     };
     static const std::vector<MetaData> _metaData;
-    bool _dirtyFlag[9]={ false };
+    bool _dirtyFlag[10]={ false };
 };
 
 } // namespace sqlite3

@@ -20,6 +20,7 @@ const std::string Groups::Cols::inviting_user_id = "inviting_user_id";
 const std::string Groups::Cols::avatar_id = "avatar_id";
 const std::string Groups::Cols::uuu = "uuu";
 const std::string Groups::Cols::text = "text";
+const std::string Groups::Cols::avatar = "avatar";
 const std::string Groups::primaryKeyName = "group_id";
 const bool Groups::hasPrimaryKey = true;
 const std::string Groups::tableName = "GROUPS";
@@ -33,7 +34,8 @@ const std::vector<typename Groups::MetaData> Groups::_metaData={
 {"inviting_user_id","uint64_t","integer",8,0,0,0},
 {"avatar_id","std::string","text",0,0,0,0},
 {"uuu","double","double",8,0,0,0},
-{"text","std::string","varchar(255",0,0,0,0}
+{"text","std::string","varchar(255)",0,0,0,0},
+{"avatar","std::vector<char>","blob",0,0,0,0}
 };
 const std::string &Groups::getColumnName(size_t index) noexcept(false)
 {
@@ -77,6 +79,10 @@ Groups::Groups(const Row &r) noexcept
         if(!r["text"].isNull())
         {
             _text=std::make_shared<std::string>(r["text"].as<std::string>());
+        }
+        if(!r["avatar"].isNull())
+        {
+            _avatar=std::make_shared<std::vector<char>>(r["avatar"].as<std::vector<char>>());
         }
 }
 const uint64_t & Groups::getValueOfGroupId(const uint64_t &defaultValue) const noexcept
@@ -251,6 +257,34 @@ void Groups::setText(std::string &&text) noexcept
 }
 
 
+const std::vector<char> & Groups::getValueOfAvatar(const std::vector<char> &defaultValue) const noexcept
+{
+    if(_avatar)
+        return *_avatar;
+    return defaultValue;
+}
+std::string Groups::getValueOfAvatarAsString(const std::string &defaultValue) const noexcept
+{
+    if(_avatar)
+        return std::string(_avatar->data(),_avatar->size());
+    return defaultValue;
+}
+std::shared_ptr<const std::vector<char>> Groups::getAvatar() const noexcept
+{
+    return _avatar;
+}
+void Groups::setAvatar(const std::vector<char> &avatar) noexcept
+{
+    _avatar = std::make_shared<std::vector<char>>(avatar);
+    _dirtyFlag[9] = true;
+}
+
+void Groups::setAvatar(const std::string &avatar) noexcept
+{
+    _avatar = std::make_shared<std::vector<char>>(avatar.c_str(),avatar.c_str()+avatar.length());
+    _dirtyFlag[9] = true;
+}
+
 void Groups::updateId(const unsigned long long id)
 {
     _groupId = std::make_shared<unsigned long long>(id);
@@ -266,7 +300,8 @@ const std::vector<std::string> &Groups::insertColumns() noexcept
         "inviting_user_id",
         "avatar_id",
         "uuu",
-        "text"
+        "text",
+        "avatar"
     };
     return _inCols;
 }
@@ -332,6 +367,14 @@ void Groups::outputArgs(drogon::orm::internal::SqlBinder &binder) const
     if(getText())
     {
         binder << getValueOfText();
+    }
+    else
+    {
+        binder << nullptr;
+    }
+    if(getAvatar())
+    {
+        binder << getValueOfAvatar();
     }
     else
     {
@@ -442,6 +485,17 @@ void Groups::updateArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
+    if(_dirtyFlag[9])
+    {
+        if(getAvatar())
+        {
+            binder << getValueOfAvatar();
+        }
+        else
+        {
+            binder << nullptr;
+        }
+    }
 }
 Json::Value Groups::toJson() const
 {
@@ -517,6 +571,14 @@ Json::Value Groups::toJson() const
     else
     {
         ret["text"]=Json::Value();
+    }
+    if(getAvatar())
+    {
+        ret["avatar"]=drogon::base64Encode((const unsigned char *)getAvatar()->data(),getAvatar()->size());
+    }
+    else
+    {
+        ret["avatar"]=Json::Value();
     }
     return ret;
 }

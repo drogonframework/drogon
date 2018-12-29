@@ -35,9 +35,10 @@ void Sqlite3Connection::onError(const std::string &sql, const std::function<void
 }
 
 Sqlite3Connection::Sqlite3Connection(trantor::EventLoop *loop, const std::string &connInfo)
-    : DbConnection(loop),
-      _queue("Sqlite")
+    : DbConnection(loop)
 {
+    _loopThread.run();
+    _loop = _loopThread.getLoop();
     std::call_once(_once, []() {
         auto ret = sqlite3_config(SQLITE_CONFIG_MULTITHREAD);
         if (ret != SQLITE_OK)
@@ -67,7 +68,7 @@ Sqlite3Connection::Sqlite3Connection(trantor::EventLoop *loop, const std::string
             filename = value;
         }
     }
-    _queue.runTaskInQueue([this, filename = std::move(filename)]() {
+    _loop->runInLoop([this, filename = std::move(filename)]() {
         sqlite3 *tmp = nullptr;
         auto ret = sqlite3_open(filename.data(), &tmp);
         _conn = std::shared_ptr<sqlite3>(tmp, [=](sqlite3 *ptr) { sqlite3_close(ptr); });
@@ -95,7 +96,7 @@ void Sqlite3Connection::execSql(const std::string &sql,
                                 const std::function<void()> &idleCb)
 {
     auto thisPtr = shared_from_this();
-    _queue.runTaskInQueue([=]() {
+    _loopThread.getLoop()->runInLoop([=]() {
         thisPtr->execSqlInQueue(sql, paraNum, parameters, length, format, rcb, exceptCallback, idleCb);
     });
 }
