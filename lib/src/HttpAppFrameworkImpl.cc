@@ -1259,7 +1259,8 @@ void HttpAppFrameworkImpl::createDbClient(const std::string &dbType,
                                           const std::string &userName,
                                           const std::string &password,
                                           const size_t connectionNum,
-                                          const std::string &name)
+                                          const std::string &name,
+                                          const std::string &filename)
 {
     auto connStr = formattedString("host=%s port=%u dbname=%s user=%s", host.c_str(), port, databaseName.c_str(), userName.c_str());
     if (!password.empty())
@@ -1280,6 +1281,14 @@ void HttpAppFrameworkImpl::createDbClient(const std::string &dbType,
     {
 #if USE_MYSQL
         auto client = drogon::orm::DbClient::newMysqlClient(connStr, connectionNum);
+        _dbClientsMap[name] = client;
+#endif
+    }
+    else if (type == "sqlite3")
+    {
+#if USE_SQLITE3
+        std::string sqlite3ConnStr = "filename=" + filename;
+        auto client = drogon::orm::DbClient::newSqlite3Client(sqlite3ConnStr, connectionNum);
         _dbClientsMap[name] = client;
 #endif
     }

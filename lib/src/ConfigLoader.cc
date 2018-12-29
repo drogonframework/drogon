@@ -249,7 +249,8 @@ static void loadDbClients(const Json::Value &dbClients)
         auto password = client.get("passwd", "").asString();
         auto connNum = client.get("connection_number", 1).asUInt();
         auto name = client.get("name", "default").asString();
-        drogon::app().createDbClient(type, host, (u_short)port, dbname, user, password, connNum, name);
+        auto filename = client.get("filename", "").asString();
+        drogon::app().createDbClient(type, host, (u_short)port, dbname, user, password, connNum, name, filename);
     }
 #endif
 }
