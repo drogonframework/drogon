@@ -10,7 +10,7 @@ int main()
     trantor::Logger::setLogLevel(trantor::Logger::TRACE);
     auto clientPtr = DbClient::newSqlite3Client("filename=test.db", 3);
 
-    sleep(1);
+    sleep(3);
     LOG_DEBUG << "start!";
     // *clientPtr << "Drop table groups;" << Mode::Blocking >>
     //     [](const Result &r) {

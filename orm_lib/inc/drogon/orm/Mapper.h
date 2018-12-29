@@ -648,7 +648,7 @@ inline void Mapper<T>::insert(T &obj) noexcept(false)
     }
     sql[sql.length() - 1] = ')'; //Replace the last ','
     sql += " values (";
-    for (int i = 0; i < T::insertColumns().size(); i++)
+    for (size_t i = 0; i < T::insertColumns().size(); i++)
     {
         sql += "$?,";
     }
