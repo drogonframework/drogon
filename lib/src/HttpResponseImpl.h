@@ -255,6 +255,8 @@ class HttpResponseImpl : public HttpResponse
         std::swap(_contentType, that._contentType);
         _jsonPtr.swap(that._jsonPtr);
         _fullHeaderString.swap(that._fullHeaderString);
+        _httpString.swap(that._httpString);
+        std::swap(_datePos, that._datePos);
     }
     void parseJson() const
     {
@@ -322,6 +324,8 @@ class HttpResponseImpl : public HttpResponse
     mutable std::shared_ptr<Json::Value> _jsonPtr;
 
     std::shared_ptr<std::string> _fullHeaderString;
+    mutable std::shared_ptr<std::string> _httpString;
+    mutable std::string::size_type _datePos = std::string::npos;
     //trantor::Date receiveTime_;
 
     void setContentType(const std::string &contentType)

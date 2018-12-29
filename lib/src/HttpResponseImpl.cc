@@ -360,6 +360,17 @@ void HttpResponseImpl::makeHeaderString(MsgBuffer *output) const
 
 void HttpResponseImpl::appendToBuffer(MsgBuffer *output) const
 {
+    if (_expriedTime >= 0 && _httpString && _datePos != std::string::npos)
+    {
+        bool isDateChanged = false;
+        auto newDate = getHttpFullDate(trantor::Date::now(), &isDateChanged);
+        if(isDateChanged)
+        {
+            memcpy(_httpString->data() + _datePos, newDate, strlen(newDate));
+        }
+        output->append(*_httpString);
+        return;
+    }
     if (!_fullHeaderString)
     {
         makeHeaderString(output);
@@ -381,9 +392,17 @@ void HttpResponseImpl::appendToBuffer(MsgBuffer *output) const
 
     //output Date header
     output->append("Date: ");
+    if (_expriedTime >= 0)
+    {
+        _datePos = output->readableBytes();
+    }
     output->append(getHttpFullDate(trantor::Date::date()));
     output->append("\r\n\r\n");
 
     LOG_TRACE << "reponse(no body):" << output->peek();
     output->append(*_bodyPtr);
+    if (_expriedTime >= 0)
+    {
+        _httpString = std::make_shared<std::string>(output->peek(), output->readableBytes());
+    }
 }

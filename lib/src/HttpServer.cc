@@ -175,6 +175,7 @@ void HttpServer::onRequest(const TcpConnectionPtr &conn, const HttpRequestPtr &r
             {
                 //Cached response,make a copy
                 newResp = std::make_shared<HttpResponseImpl>(*std::dynamic_pointer_cast<HttpResponseImpl>(response));
+                newResp->setExpiredTime(-1);
             }
             newResp->setBody(std::string());
         }
@@ -202,6 +203,7 @@ void HttpServer::onRequest(const TcpConnectionPtr &conn, const HttpRequestPtr &r
                     {
                         //cached response,we need to make a clone
                         newResp = std::make_shared<HttpResponseImpl>(*std::dynamic_pointer_cast<HttpResponseImpl>(response));
+                        newResp->setExpiredTime(-1);
                     }
                     newResp->setBody(std::string(zbuf, zlen));
                     newResp->addHeader("Content-Encoding", "gzip");
