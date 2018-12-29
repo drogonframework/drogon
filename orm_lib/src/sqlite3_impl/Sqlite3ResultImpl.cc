@@ -14,6 +14,7 @@
 
 #include "Sqlite3ResultImpl.h"
 #include <assert.h>
+#include <algorithm>
 
 using namespace drogon::orm;
 
