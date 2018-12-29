@@ -285,9 +285,9 @@ void Groups::setAvatar(const std::string &avatar) noexcept
     _dirtyFlag[9] = true;
 }
 
-void Groups::updateId(const unsigned long long id)
+void Groups::updateId(const uint64_t id)
 {
-    _groupId = std::make_shared<unsigned long long>(id);
+    _groupId = std::make_shared<uint64_t>(id);
 }
 
 const std::vector<std::string> &Groups::insertColumns() noexcept

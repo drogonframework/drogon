@@ -194,19 +194,19 @@ const std::string &{{className}}::getColumnName(size_t index) noexcept(false)
     }
     if(@@.get<std::string>("rdbms")=="postgresql")
     {
-        $$<<"void "<<className<<"::updateId(const unsigned long long id)\n";
+        $$<<"void "<<className<<"::updateId(const uint64_t id)\n";
         $$<<"{\n";
         $$<<"}\n";
     }
     else if(@@.get<std::string>("rdbms")=="mysql"||@@.get<std::string>("rdbms")=="sqlite3")
     {
-        $$<<"void "<<className<<"::updateId(const unsigned long long id)\n";
+        $$<<"void "<<className<<"::updateId(const uint64_t id)\n";
         $$<<"{\n";
         for(auto col:cols)
         {
             if(col._isAutoVal)
             {
-                $$<<"    _"<<col._colValName<<" = std::make_shared<unsigned long long>(id);\n";
+                $$<<"    _"<<col._colValName<<" = std::make_shared<uint64_t>(id);\n";
                 break;
             }
         }

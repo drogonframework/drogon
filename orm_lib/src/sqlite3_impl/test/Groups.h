@@ -150,7 +150,7 @@ class Groups
     const std::vector<std::string> updateColumns() const;
     void updateArgs(drogon::orm::internal::SqlBinder &binder) const;
     ///For mysql only
-    void updateId(const unsigned long long id);
+    void updateId(const uint64_t id);
     std::shared_ptr<uint64_t> _groupId;
     std::shared_ptr<std::string> _groupName;
     std::shared_ptr<uint64_t> _createrId;
