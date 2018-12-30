@@ -126,7 +126,6 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn,
                                       {
                                           context->setWebsockConnection(wsConn);
                                       }
-                                      MsgBuffer buffer;
                                       auto httpString = std::dynamic_pointer_cast<HttpResponseImpl>(resp)->renderToString();
                                       conn->send(httpString);
                                   },
@@ -252,7 +251,6 @@ void HttpServer::onRequest(const TcpConnectionPtr &conn, const HttpRequestPtr &r
 void HttpServer::sendResponse(const TcpConnectionPtr &conn,
                               const HttpResponsePtr &response)
 {
-    MsgBuffer buf;
     auto httpString = std::dynamic_pointer_cast<HttpResponseImpl>(response)->renderToString();
     conn->send(httpString);
     auto &sendfileName = std::dynamic_pointer_cast<HttpResponseImpl>(response)->sendfileName();
