@@ -61,6 +61,7 @@ class DbClient : public trantor::NonCopyable
      * - password: Password to be used if the server demands password authentication.
      * 
      * For other key words on PostgreSQL, see the PostgreSQL documentation.
+     * Only a pair of key values ​​is valid for Sqlite3, and its keyword is 'filename'.
      * 
      * @param connNum: The number of connections to database server; 
      */
@@ -70,7 +71,9 @@ class DbClient : public trantor::NonCopyable
 #if USE_MYSQL
     static std::shared_ptr<DbClient> newMysqlClient(const std::string &connInfo, const size_t connNum);
 #endif
-
+#if USE_SQLITE3
+    static std::shared_ptr<DbClient> newSqlite3Client(const std::string &connInfo, const size_t connNum);
+#endif
     //Async method, nonblocking by default;
     template <
         typename FUNCTION1,

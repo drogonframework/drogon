@@ -316,7 +316,7 @@ void create_model::createModelClassFromMysql(const std::string &path, const DbCl
             {
                 ColumnInfo info;
                 info._index = i;
-                info._dbType = "pg";
+                info._dbType = "mysql";
                 info._colName = field;
                 info._colTypeName = nameTransform(info._colName, true);
                 info._colValName = nameTransform(info._colName, false);
@@ -429,10 +429,145 @@ void create_model::createModelFromMysql(const std::string &path, const DbClientP
         };
 }
 #endif
+#if USE_SQLITE3
+void create_model::createModelClassFromSqlite3(const std::string &path, const DbClientPtr &client, const std::string &tableName)
+{
+    *client << "SELECT sql FROM sqlite_master WHERE name=? and (type='table' or type='view');"
+            << tableName
+            << Mode::Blocking >>
+        [=](bool isNull, std::string sql) {
+            if (!isNull)
+            {
+                auto pos1 = sql.find("(");
+                auto pos2 = sql.rfind(")");
+                if (pos1 != std::string::npos && pos2 != std::string::npos)
+                {
+                    sql = sql.substr(pos1 + 1, pos2 - pos1 - 1);
+                    std::regex r(" *, *");
+                    sql = std::regex_replace(sql, r, ",");
+
+                    auto className = nameTransform(tableName, true);
+                    HttpViewData data;
+                    data["className"] = className;
+                    data["tableName"] = tableName;
+                    data["hasPrimaryKey"] = (int)0;
+                    data["primaryKeyName"] = "";
+                    data["dbName"] = "sqlite3";
+                    data["rdbms"] = std::string("sqlite3");
+                    //std::cout << sql << std::endl;
+                    auto columns = splitString(sql, ",");
+                    int i = 0;
+                    std::vector<ColumnInfo> cols;
+                    for (auto &column : columns)
+                    {
+                        std::transform(column.begin(), column.end(), column.begin(), tolower);
+                        auto columnVector = splitString(column, " ");
+                        auto field = columnVector[0];
+                        auto type = columnVector[1];
+
+                        bool notnull = (column.find("not null") != std::string::npos);
+                        bool autoVal = (column.find("autoincrement") != std::string::npos);
+                        bool primary = (column.find("primary key") != std::string::npos);
+
+                        //std::cout << "field:" << field << std::endl;
+                        ColumnInfo info;
+                        info._index = i;
+                        info._dbType = "sqlite3";
+                        info._colName = field;
+                        info._colTypeName = nameTransform(info._colName, true);
+                        info._colValName = nameTransform(info._colName, false);
+                        info._notNull = notnull;
+                        info._colDatabaseType = type;
+                        info._isPrimaryKey = primary;
+                        info._isAutoVal = autoVal;
+
+                        if (type.find("int") != std::string::npos)
+                        {
+                            info._colType = "uint64_t";
+                            info._colLength = 8;
+                        }
+                        else if (type.find("char") != std::string::npos || type == "text" || type == "clob")
+                        {
+                            info._colType = "std::string";
+                        }
+                        else if (type.find("double") != std::string::npos || type == "real" || type == "float")
+                        {
+                            info._colType = "double";
+                            info._colLength = sizeof(double);
+                        }
+                        else if (type == "blob")
+                        {
+                            info._colType = "std::vector<char>";
+                        }
+                        else
+                        {
+                            info._colType = "std::string";
+                        }
+                        cols.push_back(std::move(info));
+                        i++;
+                    }
+
+                    std::vector<std::string> pkNames, pkTypes;
+                    for (auto col : cols)
+                    {
+                        if (col._isPrimaryKey)
+                        {
+                            pkNames.push_back(col._colName);
+                            pkTypes.push_back(col._colType);
+                        }
+                    }
+                    data["hasPrimaryKey"] = (int)pkNames.size();
+                    if (pkNames.size() == 1)
+                    {
+                        data["primaryKeyName"] = pkNames[0];
+                        data["primaryKeyType"] = pkTypes[0];
+                    }
+                    else if (pkNames.size() > 1)
+                    {
+                        data["primaryKeyName"] = pkNames;
+                        data["primaryKeyType"] = pkTypes;
+                    }
+                    data["columns"] = cols;
+                    std::ofstream headerFile(path + "/" + className + ".h", std::ofstream::out);
+                    std::ofstream sourceFile(path + "/" + className + ".cc", std::ofstream::out);
+                    auto templ = DrTemplateBase::newTemplate("model_h.csp");
+                    headerFile << templ->genText(data);
+                    templ = DrTemplateBase::newTemplate("model_cc.csp");
+                    sourceFile << templ->genText(data);
+                }
+                else
+                {
+                    std::cout << "The sql for creating table is wrong!" << std::endl;
+                    exit(1);
+                }
+            }
+        } >>
+        [](const DrogonDbException &e) {
+            std::cerr << e.base().what() << std::endl;
+            exit(1);
+        };
+}
+void create_model::createModelFromSqlite3(const std::string &path, const DbClientPtr &client)
+{
+    *client << "SELECT name FROM sqlite_master WHERE name!='sqlite_sequence' and (type='table' or type='view') ORDER BY name;"
+            << Mode::Blocking >>
+        [=](bool isNull, const std::string &tableName) {
+            if (!isNull)
+            {
+                std::cout << "table name:" << tableName << std::endl;
+                createModelClassFromSqlite3(path, client, tableName);
+            }
+        } >>
+        [](const DrogonDbException &e) {
+            std::cerr << e.base().what() << std::endl;
+            exit(1);
+        };
+}
+#endif
 
 void create_model::createModel(const std::string &path, const Json::Value &config)
 {
-    auto dbType = config.get("rdbms", "No dbms").asString();
+    auto dbType = config.get("rdbms", "no dbms").asString();
     std::transform(dbType.begin(), dbType.end(), dbType.begin(), tolower);
     if (dbType == "postgresql")
     {
@@ -538,7 +673,40 @@ void create_model::createModel(const std::string &path, const Json::Value &confi
         std::cerr << "Drogon does not support Mysql, please install MariaDB development environment before installing drogon" << std::endl;
 #endif
     }
-    else if (dbType == "No dbms")
+    else if (dbType == "sqlite3")
+    {
+#if USE_SQLITE3
+        auto filename = config.get("filename", "").asString();
+        if (filename == "")
+        {
+            std::cerr << "Please configure filename in " << path << "/model.json " << std::endl;
+            exit(1);
+        }
+        std::string connStr = "filename=" + filename;
+        DbClientPtr client = drogon::orm::DbClient::newSqlite3Client(connStr, 1);
+        std::cout << "Connect..." << std::endl;
+        std::cout << "Source files in the " << path << " folder will be overwritten, continue(y/n)?\n";
+        auto in = getchar();
+        if (in != 'Y' && in != 'y')
+        {
+            std::cout << "Abort!" << std::endl;
+            exit(0);
+        }
+        auto tables = config["tables"];
+        if (!tables || tables.size() == 0)
+            createModelFromSqlite3(path, client);
+        else
+        {
+            for (int i = 0; i < (int)tables.size(); i++)
+            {
+                auto tableName = tables[i].asString();
+                std::cout << "table name:" << tableName << std::endl;
+                createModelClassFromSqlite3(path, client, tableName);
+            }
+        }
+#endif
+    }
+    else if (dbType == "no dbms")
     {
         std::cerr << "Please configure Model in " << path << "/model.json " << std::endl;
         exit(1);

@@ -63,6 +63,10 @@ protected:
   void createModelClassFromMysql(const std::string &path, const DbClientPtr &client, const std::string &tableName);
   void createModelFromMysql(const std::string &path, const DbClientPtr &client);
 #endif
+#if USE_SQLITE3
+  void createModelClassFromSqlite3(const std::string &path, const DbClientPtr &client, const std::string &tableName);
+  void createModelFromSqlite3(const std::string &path, const DbClientPtr &client);
+#endif
   std::string _dbname;
 };
 } // namespace drogon_ctl

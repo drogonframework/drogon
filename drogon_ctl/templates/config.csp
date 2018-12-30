@@ -30,8 +30,10 @@
     {
       //name:Name of the client,'default' by default
       //"name":"",
-      //rdbms:server type, "postgresql" by default
+      //rdbms:server type, postgresql,mysql or sqlite3, "postgresql" by default
       "rdbms": "postgresql",
+      //filename:sqlite3 db file name
+      //"filename":"",
       //host:server address,localhost by default
       "host": "127.0.0.1",
       //port:server port, 5432 by default

@@ -648,7 +648,7 @@ inline void Mapper<T>::insert(T &obj) noexcept(false)
     }
     sql[sql.length() - 1] = ')'; //Replace the last ','
     sql += " values (";
-    for (int i = 0; i < T::insertColumns().size(); i++)
+    for (size_t i = 0; i < T::insertColumns().size(); i++)
     {
         sql += "$?,";
     }
@@ -673,7 +673,7 @@ inline void Mapper<T>::insert(T &obj) noexcept(false)
         assert(r.size() == 1);
         obj = T(r[0]);
     }
-    else if (_client->type() == ClientType::Mysql)
+    else // Mysql or Sqlite3
     {
         auto id = r.insertId();
         obj.updateId(id);
@@ -714,7 +714,7 @@ inline void Mapper<T>::insert(const T &obj,
             assert(r.size() == 1);
             rcb(T(r[0]));
         }
-        else if (client->type() == ClientType::Mysql)
+        else //Mysql or Sqlite3
         {
             auto id = r.insertId();
             auto newObj = obj;
@@ -759,7 +759,7 @@ inline std::future<T> Mapper<T>::insertFuture(const T &obj) noexcept
             assert(r.size() == 1);
             prom->set_value(T(r[0]));
         }
-        else if (client->type() == ClientType::Mysql)
+        else //Mysql or Sqlite3
         {
             auto id = r.insertId();
             auto newObj = obj;
@@ -1099,7 +1099,7 @@ inline std::string Mapper<T>::replaceSqlPlaceHolder(const std::string &sqlStr, c
             startPos = pos + holderStr.length();
         } while (1);
     }
-    else if (_client->type() == ClientType::Mysql)
+    else if (_client->type() == ClientType::Mysql || _client->type() == ClientType::Sqlite3)
     {
         std::string::size_type startPos = 0;
         std::string::size_type pos;

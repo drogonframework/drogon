@@ -40,7 +40,20 @@ namespace orm
 enum class ClientType
 {
     PostgreSQL = 0,
-    Mysql
+    Mysql,
+    Sqlite3
+};
+
+enum Sqlite3Type
+{
+    Sqlite3TypeChar = 0,
+    Sqlite3TypeShort,
+    Sqlite3TypeInt,
+    Sqlite3TypeInt64,
+    Sqlite3TypeDouble,
+    Sqlite3TypeText,
+    Sqlite3TypeBlob,
+    Sqlite3TypeNull
 };
 
 class DbClient;
@@ -296,6 +309,28 @@ class SqlBinder
             }
 #endif
         }
+        else if (_type == ClientType::Sqlite3)
+        {
+            _objs.push_back(obj);
+            _parameters.push_back((char *)obj.get());
+            _length.push_back(0);
+            switch (sizeof(T))
+            {
+            case 1:
+                _format.push_back(Sqlite3TypeChar);
+                break;
+            case 2:
+                _format.push_back(Sqlite3TypeShort);
+                break;
+            case 4:
+                _format.push_back(Sqlite3TypeInt);
+                break;
+            case 8:
+                _format.push_back(Sqlite3TypeInt64);
+            default:
+                break;
+            }
+        }
         //LOG_TRACE << "Bind parameter:" << parameter;
         return *this;
     }
@@ -325,6 +360,10 @@ class SqlBinder
             _format.push_back(MYSQL_TYPE_STRING);
 #endif
         }
+        else if (_type == ClientType::Sqlite3)
+        {
+            _format.push_back(Sqlite3TypeText);
+        }
         return *this;
     }
     self &operator<<(std::string &str)
@@ -347,6 +386,10 @@ class SqlBinder
 #if USE_MYSQL
             _format.push_back(MYSQL_TYPE_STRING);
 #endif
+        }
+        else if (_type == ClientType::Sqlite3)
+        {
+            _format.push_back(Sqlite3TypeText);
         }
         return *this;
     }
@@ -375,6 +418,10 @@ class SqlBinder
             _format.push_back(MYSQL_TYPE_STRING);
 #endif
         }
+        else if (_type == ClientType::Sqlite3)
+        {
+            _format.push_back(Sqlite3TypeBlob);
+        }
         return *this;
     }
     self &operator<<(std::vector<char> &&v)
@@ -394,14 +441,32 @@ class SqlBinder
             _format.push_back(MYSQL_TYPE_STRING);
 #endif
         }
+        else if (_type == ClientType::Sqlite3)
+        {
+            _format.push_back(Sqlite3TypeBlob);
+        }
         return *this;
     }
     self &operator<<(float f)
     {
+        if (_type == ClientType::Sqlite3)
+        {
+            return operator<<((double)f);
+        }
         return operator<<(std::to_string(f));
     }
     self &operator<<(double f)
     {
+        if (_type == ClientType::Sqlite3)
+        {
+            _paraNum++;
+            auto obj = std::make_shared<double>(f);
+            _objs.push_back(obj);
+            _format.push_back(Sqlite3TypeDouble);
+            _length.push_back(0);
+            _parameters.push_back((char *)(obj.get()));
+            return *this;
+        }
         return operator<<(std::to_string(f));
     }
     self &operator<<(std::nullptr_t nullp)
@@ -418,6 +483,10 @@ class SqlBinder
 #if USE_MYSQL
             _format.push_back(MYSQL_TYPE_NULL);
 #endif
+        }
+        else if (_type == ClientType::Sqlite3)
+        {
+            _format.push_back(Sqlite3TypeNull);
         }
         return *this;
     }
