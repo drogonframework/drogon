@@ -120,15 +120,16 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn,
         if (context->firstReq() && isWebSocket(conn, context->request()))
         {
             auto wsConn = std::make_shared<WebSocketConnectionImpl>(conn);
-            newWebsocketCallback_(context->request(), [=](const HttpResponsePtr &resp) mutable {
-                if (resp->statusCode() == HttpResponse::k101SwitchingProtocols)
-                {
-                    context->setWebsockConnection(wsConn);
-                }
-                MsgBuffer buffer;
-                std::dynamic_pointer_cast<HttpResponseImpl>(resp)->appendToBuffer(&buffer);
-                conn->send(std::move(buffer));
-            },
+            newWebsocketCallback_(context->request(),
+                                  [=](const HttpResponsePtr &resp) mutable {
+                                      if (resp->statusCode() == HttpResponse::k101SwitchingProtocols)
+                                      {
+                                          context->setWebsockConnection(wsConn);
+                                      }
+                                      MsgBuffer buffer;
+                                      auto httpString = std::dynamic_pointer_cast<HttpResponseImpl>(resp)->renderToString();
+                                      conn->send(httpString);
+                                  },
                                   wsConn);
         }
         else
@@ -252,8 +253,8 @@ void HttpServer::sendResponse(const TcpConnectionPtr &conn,
                               const HttpResponsePtr &response)
 {
     MsgBuffer buf;
-    std::dynamic_pointer_cast<HttpResponseImpl>(response)->appendToBuffer(&buf);
-    conn->send(std::move(buf));
+    auto httpString = std::dynamic_pointer_cast<HttpResponseImpl>(response)->renderToString();
+    conn->send(httpString);
     auto &sendfileName = std::dynamic_pointer_cast<HttpResponseImpl>(response)->sendfileName();
     if (!sendfileName.empty())
     {

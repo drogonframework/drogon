@@ -129,10 +129,8 @@ bool HttpServerContext::parseRequest(MsgBuffer *buf)
                             {
                                 auto resp = HttpResponse::newHttpResponse();
                                 resp->setStatusCode(HttpResponse::k100Continue);
-                                MsgBuffer buffer;
-                                std::dynamic_pointer_cast<HttpResponseImpl>(resp)
-                                    ->appendToBuffer(&buffer);
-                                connPtr->send(std::move(buffer));
+                                auto httpString = std::dynamic_pointer_cast<HttpResponseImpl>(resp)->renderToString();
+                                connPtr->send(httpString);
                             }
                         }
                         else if (!expect.empty())
@@ -144,9 +142,8 @@ bool HttpServerContext::parseRequest(MsgBuffer *buf)
                                 auto resp = HttpResponse::newHttpResponse();
                                 resp->setStatusCode(HttpResponse::k417ExpectationFailed);
                                 MsgBuffer buffer;
-                                std::dynamic_pointer_cast<HttpResponseImpl>(resp)
-                                    ->appendToBuffer(&buffer);
-                                connPtr->send(std::move(buffer));
+                                auto httpString = std::dynamic_pointer_cast<HttpResponseImpl>(resp)->renderToString();
+                                connPtr->send(httpString);
                                 buf->retrieveAll();
                                 connPtr->forceClose();
 

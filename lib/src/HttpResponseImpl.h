@@ -207,7 +207,7 @@ class HttpResponseImpl : public HttpResponse
     {
         _headers["Location"] = url;
     }
-    void appendToBuffer(MsgBuffer *output) const;
+    std::shared_ptr<std::string> renderToString() const;
 
     virtual void clear() override
     {
@@ -292,9 +292,8 @@ class HttpResponseImpl : public HttpResponse
     }
     void makeHeaderString()
     {
-        trantor::MsgBuffer buf;
-        makeHeaderString(&buf);
-        _fullHeaderString = std::make_shared<std::string>(buf.peek(), buf.readableBytes());
+        _fullHeaderString = std::make_shared<std::string>();
+        makeHeaderString(_fullHeaderString);
     }
 
   protected:
@@ -304,7 +303,7 @@ class HttpResponseImpl : public HttpResponse
 
     static std::string web_response_code_to_string(int code);
 
-    void makeHeaderString(MsgBuffer *output) const;
+    void makeHeaderString(const std::shared_ptr<std::string> &headerStringPtr) const;
 
   private:
     std::map<std::string, std::string> _headers;
