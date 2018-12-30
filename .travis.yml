@@ -22,6 +22,7 @@ addons:
     - libmariadbclient-dev
     - openssl
     - libssl-dev
+    - libsqlite3-dev
     - build-essential
     - cmake
   homebrew:
@@ -32,6 +33,7 @@ addons:
     - lz4
     - postgresql
     - mariadb
+    - sqlite3
 
 script:
   - ./build.sh
