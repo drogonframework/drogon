@@ -368,13 +368,11 @@ std::shared_ptr<std::string> HttpResponseImpl::renderToString() const
         {
             bool isDateChanged = false;
             auto newDate = getHttpFullDate(trantor::Date::now(), &isDateChanged);
+            if (isDateChanged)
             {
                 std::lock_guard<std::mutex> lock(*_httpStringMutex);
-                if (isDateChanged)
-                {
-                    _httpString = std::make_shared<std::string>(*_httpString);
-                    memcpy(_httpString->data() + _datePos, newDate, strlen(newDate));
-                }
+                _httpString = std::make_shared<std::string>(*_httpString);
+                memcpy(_httpString->data() + _datePos, newDate, strlen(newDate));
             }
             return _httpString;
         }
