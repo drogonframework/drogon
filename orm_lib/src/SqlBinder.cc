@@ -26,21 +26,19 @@ void SqlBinder::exec()
     if (_mode == Mode::NonBlocking)
     {
         //nonblocking mode,default mode
-        auto holder = std::move(_callbackHolder);
-        auto exceptCb = std::move(_exceptCallback);
-        auto exceptPtrCb = std::move(_exceptPtrCallback);
-        auto isExceptPtr = _isExceptPtr;
         //Retain shared_ptrs of parameters until we get the result;
         std::shared_ptr<decltype(_objs)> objs = std::make_shared<decltype(_objs)>(std::move(_objs));
         _client.execSql(_sql, _paraNum, _parameters, _length, _format,
-                        [holder, objs](const Result &r) {
+                        [holder = std::move(_callbackHolder), objs](const Result &r) {
                             objs->clear();
                             if (holder)
                             {
                                 holder->execCallback(r);
                             }
                         },
-                        [exceptCb, exceptPtrCb, isExceptPtr](const std::exception_ptr &exception) {
+                        [exceptCb = std::move(_exceptCallback),
+                         exceptPtrCb = std::move(_exceptPtrCallback),
+                         isExceptPtr = _isExceptPtr](const std::exception_ptr &exception) {
                             //LOG_DEBUG<<"exp callback "<<isExceptPtr;
                             if (!isExceptPtr)
                             {

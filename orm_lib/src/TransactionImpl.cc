@@ -33,11 +33,8 @@ TransactionImpl::~TransactionImpl()
     assert(!_isWorking);
     if (!_isCommitedOrRolledback)
     {
-        auto ucb = std::move(_usedUpCallback);
-        auto commitCb = std::move(_commitCallback);
         auto loop = _connectionPtr->loop();
-        auto conn = _connectionPtr;
-        loop->queueInLoop([conn, ucb, commitCb]() {
+        loop->queueInLoop([conn = _connectionPtr, ucb = std::move(_usedUpCallback), commitCb = std::move(_commitCallback)]() {
             conn->execSql("commit",
                           0,
                           std::vector<const char *>(),

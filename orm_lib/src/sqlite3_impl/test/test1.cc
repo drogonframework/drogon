@@ -57,7 +57,9 @@ int main()
             std::cout << e.base().what() << std::endl;
         };
     {
-        auto trans = clientPtr->newTransaction();
+        auto trans = clientPtr->newTransaction([](bool success) {
+            LOG_DEBUG << (success ? "commit success!" : "commit failed!");
+        });
         Mapper<drogon_model::sqlite3::Groups> mapper(trans);
         mapper.findAll([trans](const std::vector<drogon_model::sqlite3::Groups> &v) {
         
