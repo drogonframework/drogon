@@ -20,6 +20,7 @@
 #include <trantor/utils/Logger.h>
 #include <stdio.h>
 #include <sys/stat.h>
+#include <memory>
 
 using namespace trantor;
 using namespace drogon;
@@ -307,13 +308,14 @@ std::string HttpResponseImpl::web_response_code_to_string(int code)
         return "Undefined Error";
     }
 }
-void HttpResponseImpl::makeHeaderString(MsgBuffer *output) const
+void HttpResponseImpl::makeHeaderString(const std::shared_ptr<std::string> &headerStringPtr) const
 {
     char buf[64];
+    assert(headerStringPtr);
     snprintf(buf, sizeof buf, "HTTP/1.1 %d ", _statusCode);
-    output->append(buf);
-    output->append(_statusMessage);
-    output->append("\r\n");
+    headerStringPtr->append(buf);
+    headerStringPtr->append(_statusMessage);
+    headerStringPtr->append("\r\n");
     if (_sendfileName.empty())
     {
         snprintf(buf, sizeof buf, "Content-Length: %lu\r\n", static_cast<long unsigned int>(_bodyPtr->size()));
@@ -329,12 +331,12 @@ void HttpResponseImpl::makeHeaderString(MsgBuffer *output) const
         snprintf(buf, sizeof buf, "Content-Length: %llu\r\n", static_cast<long long unsigned int>(filestat.st_size));
     }
 
-    output->append(buf);
+    headerStringPtr->append(buf);
     if (_headers.find("Connection") == _headers.end())
     {
         if (_closeConnection)
         {
-            output->append("Connection: close\r\n");
+            headerStringPtr->append("Connection: close\r\n");
         }
         else
         {
@@ -347,18 +349,18 @@ void HttpResponseImpl::makeHeaderString(MsgBuffer *output) const
          it != _headers.end();
          ++it)
     {
-        output->append(it->first);
-        output->append(": ");
-        output->append(it->second);
-        output->append("\r\n");
+        headerStringPtr->append(it->first);
+        headerStringPtr->append(": ");
+        headerStringPtr->append(it->second);
+        headerStringPtr->append("\r\n");
     }
 
-    output->append("Server: drogon/");
-    output->append(drogon::getVersion());
-    output->append("\r\n");
+    headerStringPtr->append("Server: drogon/");
+    headerStringPtr->append(drogon::getVersion());
+    headerStringPtr->append("\r\n");
 }
 
-void HttpResponseImpl::appendToBuffer(MsgBuffer *output) const
+std::shared_ptr<std::string> HttpResponseImpl::renderToString() const
 {
     if (_expriedTime >= 0)
     {
@@ -366,24 +368,24 @@ void HttpResponseImpl::appendToBuffer(MsgBuffer *output) const
         {
             bool isDateChanged = false;
             auto newDate = getHttpFullDate(trantor::Date::now(), &isDateChanged);
-	    {
+            if (isDateChanged)
+            {
                 std::lock_guard<std::mutex> lock(*_httpStringMutex);
-                if (isDateChanged)
-                {
-                    memcpy(_httpString->data() + _datePos, newDate, strlen(newDate));
-                }
-                output->append(*_httpString);
+                _httpString = std::make_shared<std::string>(*_httpString);
+                memcpy(_httpString->data() + _datePos, newDate, strlen(newDate));
             }
-            return;
+            return _httpString;
         }
     }
+    auto httpString = std::make_shared<std::string>();
+    httpString->reserve(256);
     if (!_fullHeaderString)
     {
-        makeHeaderString(output);
+        makeHeaderString(httpString);
     }
     else
     {
-        output->append(*_fullHeaderString);
+        httpString->append(*_fullHeaderString);
     }
 
     //output cookies
@@ -392,22 +394,23 @@ void HttpResponseImpl::appendToBuffer(MsgBuffer *output) const
         for (auto it = _cookies.begin(); it != _cookies.end(); it++)
         {
 
-            output->append(it->second.cookieString());
+            httpString->append(it->second.cookieString());
         }
     }
 
     //output Date header
-    output->append("Date: ");
-    auto datePos = output->readableBytes();
-    output->append(getHttpFullDate(trantor::Date::date()));
-    output->append("\r\n\r\n");
+    httpString->append("Date: ");
+    auto datePos = httpString->length();
+    httpString->append(getHttpFullDate(trantor::Date::date()));
+    httpString->append("\r\n\r\n");
 
-    LOG_TRACE << "reponse(no body):" << output->peek();
-    output->append(*_bodyPtr);
+    LOG_TRACE << "reponse(no body):" << httpString->c_str();
+    httpString->append(*_bodyPtr);
     if (_expriedTime >= 0)
     {
         std::lock_guard<std::mutex> lock(*_httpStringMutex);
         _datePos = datePos;
-        _httpString = std::make_shared<std::string>(output->peek(), output->readableBytes());
+        _httpString = httpString;
     }
+    return httpString;
 }
