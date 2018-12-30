@@ -22,6 +22,7 @@
 #include <map>
 #include <string>
 #include <memory>
+#include <mutex>
 
 using namespace trantor;
 namespace drogon
@@ -36,7 +37,8 @@ class HttpResponseImpl : public HttpResponse
           _closeConnection(false),
           _left_body_length(0),
           _current_chunk_length(0),
-          _bodyPtr(new std::string())
+          _bodyPtr(new std::string()),
+          _httpStringMutex(new std::mutex())
     {
     }
     virtual HttpStatusCode statusCode() override
@@ -325,6 +327,7 @@ class HttpResponseImpl : public HttpResponse
 
     std::shared_ptr<std::string> _fullHeaderString;
     mutable std::shared_ptr<std::string> _httpString;
+    mutable std::shared_ptr<std::mutex> _httpStringMutex;
     mutable std::string::size_type _datePos = std::string::npos;
     //trantor::Date receiveTime_;
 

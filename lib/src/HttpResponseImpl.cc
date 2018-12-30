@@ -360,16 +360,20 @@ void HttpResponseImpl::makeHeaderString(MsgBuffer *output) const
 
 void HttpResponseImpl::appendToBuffer(MsgBuffer *output) const
 {
-    if (_expriedTime >= 0 && _httpString && _datePos != std::string::npos)
+    if (_expriedTime >= 0)
     {
-        bool isDateChanged = false;
-        auto newDate = getHttpFullDate(trantor::Date::now(), &isDateChanged);
-        if(isDateChanged)
+        std::lock_guard<std::mutex> lock(*_httpStringMutex);
+        if (_httpString && _datePos != std::string::npos)
         {
-            memcpy(_httpString->data() + _datePos, newDate, strlen(newDate));
+            bool isDateChanged = false;
+            auto newDate = getHttpFullDate(trantor::Date::now(), &isDateChanged);
+            if (isDateChanged)
+            {
+                memcpy(_httpString->data() + _datePos, newDate, strlen(newDate));
+            }
+            output->append(*_httpString);
+            return;
         }
-        output->append(*_httpString);
-        return;
     }
     if (!_fullHeaderString)
     {
@@ -392,10 +396,7 @@ void HttpResponseImpl::appendToBuffer(MsgBuffer *output) const
 
     //output Date header
     output->append("Date: ");
-    if (_expriedTime >= 0)
-    {
-        _datePos = output->readableBytes();
-    }
+    auto datePos = output->readableBytes();
     output->append(getHttpFullDate(trantor::Date::date()));
     output->append("\r\n\r\n");
 
@@ -403,6 +404,8 @@ void HttpResponseImpl::appendToBuffer(MsgBuffer *output) const
     output->append(*_bodyPtr);
     if (_expriedTime >= 0)
     {
+        std::lock_guard<std::mutex> lock(*_httpStringMutex);
+        _datePos = datePos;
         _httpString = std::make_shared<std::string>(output->peek(), output->readableBytes());
     }
 }
