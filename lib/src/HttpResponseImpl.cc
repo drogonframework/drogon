@@ -362,16 +362,18 @@ void HttpResponseImpl::appendToBuffer(MsgBuffer *output) const
 {
     if (_expriedTime >= 0)
     {
-        std::lock_guard<std::mutex> lock(*_httpStringMutex);
         if (_httpString && _datePos != std::string::npos)
         {
             bool isDateChanged = false;
             auto newDate = getHttpFullDate(trantor::Date::now(), &isDateChanged);
-            if (isDateChanged)
-            {
-                memcpy(_httpString->data() + _datePos, newDate, strlen(newDate));
+	    {
+                std::lock_guard<std::mutex> lock(*_httpStringMutex);
+                if (isDateChanged)
+                {
+                    memcpy(_httpString->data() + _datePos, newDate, strlen(newDate));
+                }
+                output->append(*_httpString);
             }
-            output->append(*_httpString);
             return;
         }
     }
