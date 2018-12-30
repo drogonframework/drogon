@@ -22,6 +22,7 @@ Drogon's main application platform is Linux. It also supports Mac OS and FreeBSD
 * Support gzip compression transmission;
 * Provides a lightweight command line tool, drogon_ctl, to simplify the creation of various classes in Drogon and the generation of view code;
 * Asynchronous database read and write based on NIO, currently supports PostgreSQL and MySQL (MariaDB) database;
+* Asynchronously read and write sqlite3 database based on thread pool, providing the same interfaces as above databases;
 * Convenient lightweight ORM implementation that supports regular object-to-database bidirectional mapping;
 
 
