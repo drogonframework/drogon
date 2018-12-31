@@ -404,19 +404,15 @@ int gzipDecompress(const char *zdata, const size_t nzdata,
     *ndata = d_stream.total_out;
     return 0;
 }
-char *getHttpFullDate(const trantor::Date &date, bool *isChanged)
+char *getHttpFullDate(const trantor::Date &date)
 {
     static __thread int64_t lastSecond = 0;
     static __thread char lastTimeString[128] = {0};
     auto nowSecond = date.microSecondsSinceEpoch() / MICRO_SECONDS_PRE_SEC;
     if (nowSecond == lastSecond)
     {
-        if(isChanged)
-            *isChanged = false;
         return lastTimeString;
     }
-    if(isChanged)
-        *isChanged = true;
     lastSecond = nowSecond;
     date.toCustomedFormattedString("%a, %d %b %Y %T GMT", lastTimeString, sizeof(lastTimeString));
     return lastTimeString;

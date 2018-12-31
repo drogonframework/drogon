@@ -325,9 +325,12 @@ class HttpResponseImpl : public HttpResponse
     mutable std::shared_ptr<Json::Value> _jsonPtr;
 
     std::shared_ptr<std::string> _fullHeaderString;
+
     mutable std::shared_ptr<std::string> _httpString;
     mutable std::shared_ptr<std::mutex> _httpStringMutex;
     mutable std::string::size_type _datePos = std::string::npos;
+    mutable uint64_t _httpStringDate = -1;
+
     //trantor::Date receiveTime_;
 
     void setContentType(const std::string &contentType)

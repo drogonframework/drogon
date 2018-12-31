@@ -71,7 +71,7 @@ int gzipDecompress(const char *zdata, const size_t nzdata,
  * like this:Sun, 06 Nov 1994 08:49:37 GMT
  *           Wed, 12 Sep 2018 09:22:40 GMT
  */
-char *getHttpFullDate(const trantor::Date &date = trantor::Date::now(), bool *isChanged = nullptr);
+char *getHttpFullDate(const trantor::Date &date = trantor::Date::now());
 
 /// Get a formatted string
 std::string formattedString(const char *format, ...);

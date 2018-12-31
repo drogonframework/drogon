@@ -366,18 +366,18 @@ std::shared_ptr<std::string> HttpResponseImpl::renderToString() const
     {
         if (_datePos != std::string::npos)
         {
-            bool isDateChanged = false;
-            auto newDate = getHttpFullDate(trantor::Date::now(), &isDateChanged);
+            std::lock_guard<std::mutex> lock(*_httpStringMutex);
+            auto now = trantor::Date::now();
+            bool isDateChanged = ((now.microSecondsSinceEpoch() / MICRO_SECONDS_PRE_SEC) != _httpStringDate);
+            assert(_httpString);
+            if (isDateChanged)
             {
-                std::lock_guard<std::mutex> lock(*_httpStringMutex);
-                assert(_httpString);
-                if (isDateChanged)
-                {
-                    _httpString = std::make_shared<std::string>(*_httpString);
-                    memcpy(_httpString->data() + _datePos, newDate, strlen(newDate));
-                }
-                return _httpString;
+                _httpStringDate = now.microSecondsSinceEpoch() / MICRO_SECONDS_PRE_SEC;
+                auto newDate = getHttpFullDate(now);
+                _httpString = std::make_shared<std::string>(*_httpString);
+                memcpy(_httpString->data() + _datePos, newDate, strlen(newDate));
             }
+            return _httpString;
         }
     }
     auto httpString = std::make_shared<std::string>();
