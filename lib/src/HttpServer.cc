@@ -160,7 +160,7 @@ void HttpServer::onRequest(const TcpConnectionPtr &conn, const HttpRequestPtr &r
     }
     HttpServerContext *context = any_cast<HttpServerContext>(conn->getMutableContext());
     {
-        std::lock_guard<std::mutex> guard(context->getPipeLineMutex());
+        //std::lock_guard<std::mutex> guard(context->getPipeLineMutex());
         context->pushRquestToPipeLine(req);
     }
     httpAsyncCallback_(req, [=](const HttpResponsePtr &response) {
@@ -215,6 +215,7 @@ void HttpServer::onRequest(const TcpConnectionPtr &conn, const HttpRequestPtr &r
             }
             delete[] zbuf;
         }
+        if (conn->getLoop()->isInLoopThread())
         {
             /*
              * A client that supports persistent connections MAY “pipeline”
@@ -223,7 +224,7 @@ void HttpServer::onRequest(const TcpConnectionPtr &conn, const HttpRequestPtr &r
              * requests in the same order that the requests were received.
              *                                             rfc2616-8.1.1.2
              */
-            std::lock_guard<std::mutex> guard(context->getPipeLineMutex());
+            //std::lock_guard<std::mutex> guard(context->getPipeLineMutex());
             if (context->getFirstRequest() == req)
             {
                 context->popFirstRequest();
@@ -245,6 +246,33 @@ void HttpServer::onRequest(const TcpConnectionPtr &conn, const HttpRequestPtr &r
                 //some earlier requests are waiting for responses;
                 context->pushResponseToPipeLine(req, newResp);
             }
+        }
+        else
+        {
+            conn->getLoop()->queueInLoop([conn, req, newResp, this]() {
+                HttpServerContext *context = any_cast<HttpServerContext>(conn->getMutableContext());
+                if (context->getFirstRequest() == req)
+                {
+                    context->popFirstRequest();
+                    sendResponse(conn, newResp);
+                    while (1)
+                    {
+                        auto resp = context->getFirstResponse();
+                        if (resp)
+                        {
+                            context->popFirstRequest();
+                            sendResponse(conn, resp);
+                        }
+                        else
+                            return;
+                    }
+                }
+                else
+                {
+                    //some earlier requests are waiting for responses;
+                    context->pushResponseToPipeLine(req, newResp);
+                }
+            });
         }
     });
 }

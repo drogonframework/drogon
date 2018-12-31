@@ -22,7 +22,6 @@ using namespace drogon;
 HttpServerContext::HttpServerContext(const trantor::TcpConnectionPtr &connPtr)
     : state_(kExpectRequestLine),
       request_(new HttpRequestImpl),
-      _pipeLineMutex(std::make_shared<std::mutex>()),
       _conn(connPtr)
 {
 }
@@ -199,12 +198,26 @@ bool HttpServerContext::parseRequest(MsgBuffer *buf)
 
 void HttpServerContext::pushRquestToPipeLine(const HttpRequestPtr &req)
 {
+#ifndef NDEBUG
+    auto conn = _conn.lock();
+    if(conn)
+    {
+        conn->getLoop()->assertInLoopThread();
+    }
+#endif
     std::pair<HttpRequestPtr, HttpResponsePtr> reqPair(req, HttpResponseImplPtr());
 
     _requestPipeLine.push_back(std::move(reqPair));
 }
 HttpRequestPtr HttpServerContext::getFirstRequest() const
 {
+#ifndef NDEBUG
+    auto conn = _conn.lock();
+    if (conn)
+    {
+        conn->getLoop()->assertInLoopThread();
+    }
+#endif
     if (!_requestPipeLine.empty())
     {
         return _requestPipeLine.front().first;
@@ -213,6 +226,13 @@ HttpRequestPtr HttpServerContext::getFirstRequest() const
 }
 HttpResponsePtr HttpServerContext::getFirstResponse() const
 {
+#ifndef NDEBUG
+    auto conn = _conn.lock();
+    if (conn)
+    {
+        conn->getLoop()->assertInLoopThread();
+    }
+#endif
     if (!_requestPipeLine.empty())
     {
         return _requestPipeLine.front().second;
@@ -221,11 +241,25 @@ HttpResponsePtr HttpServerContext::getFirstResponse() const
 }
 void HttpServerContext::popFirstRequest()
 {
+#ifndef NDEBUG
+    auto conn = _conn.lock();
+    if (conn)
+    {
+        conn->getLoop()->assertInLoopThread();
+    }
+#endif
     _requestPipeLine.pop_front();
 }
 void HttpServerContext::pushResponseToPipeLine(const HttpRequestPtr &req,
                                                const HttpResponsePtr &resp)
 {
+#ifndef NDEBUG
+    auto conn = _conn.lock();
+    if (conn)
+    {
+        conn->getLoop()->assertInLoopThread();
+    }
+#endif
     for (auto &iter : _requestPipeLine)
     {
         if (iter.first == req)
@@ -236,7 +270,7 @@ void HttpServerContext::pushResponseToPipeLine(const HttpRequestPtr &req,
     }
 }
 
-std::mutex &HttpServerContext::getPipeLineMutex()
-{
-    return *_pipeLineMutex;
-}
+// std::mutex &HttpServerContext::getPipeLineMutex()
+// {
+//     return *_pipeLineMutex;
+// }
