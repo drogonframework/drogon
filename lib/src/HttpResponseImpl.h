@@ -329,7 +329,7 @@ class HttpResponseImpl : public HttpResponse
     mutable std::shared_ptr<std::string> _httpString;
     mutable std::shared_ptr<std::mutex> _httpStringMutex;
     mutable std::string::size_type _datePos = std::string::npos;
-    mutable uint64_t _httpStringDate = -1;
+    mutable int64_t _httpStringDate = -1;
 
     //trantor::Date receiveTime_;
 
