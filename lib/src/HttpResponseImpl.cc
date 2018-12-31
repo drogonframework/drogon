@@ -364,12 +364,13 @@ std::shared_ptr<std::string> HttpResponseImpl::renderToString() const
 {
     if (_expriedTime >= 0)
     {
-        if (_httpString && _datePos != std::string::npos)
+        if (_datePos != std::string::npos)
         {
             bool isDateChanged = false;
             auto newDate = getHttpFullDate(trantor::Date::now(), &isDateChanged);
             {
                 std::lock_guard<std::mutex> lock(*_httpStringMutex);
+                assert(_httpString);
                 if (isDateChanged)
                 {
                     _httpString = std::make_shared<std::string>(*_httpString);
