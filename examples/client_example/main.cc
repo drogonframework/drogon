@@ -19,6 +19,11 @@ int main()
                 //auto headers=response.
                 count++;
                 std::cout << response->getBody() << std::endl;
+                auto cookies = response->cookies();
+                for (auto &cookie : cookies)
+                {
+                    std::cout << cookie.first << "=" << cookie.second.value() << ":domain=" << cookie.second.domain() << std::endl;
+                }
                 std::cout << "count=" << count << std::endl;
             });
         }

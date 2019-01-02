@@ -73,6 +73,9 @@ int gzipDecompress(const char *zdata, const size_t nzdata,
  */
 char *getHttpFullDate(const trantor::Date &date = trantor::Date::now());
 
+/// Get the trantor::Date object according to the http full date string
+trantor::Date getHttpDate(const std::string &httpFullDateString);
+
 /// Get a formatted string
 std::string formattedString(const char *format, ...);
 

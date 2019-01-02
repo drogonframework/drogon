@@ -112,7 +112,7 @@ class HttpResponseImpl : public HttpResponse
         _fullHeaderString.reset();
         auto field = key;
         transform(field.begin(), field.end(), field.begin(), ::tolower);
-        _headers[field] = value;
+        _headers[std::move(field)] = value;
     }
 
     virtual void addHeader(const std::string &key, std::string &&value) override
@@ -120,7 +120,7 @@ class HttpResponseImpl : public HttpResponse
         _fullHeaderString.reset();
         auto field = key;
         transform(field.begin(), field.end(), field.begin(), ::tolower);
-        _headers[field] = std::move(value);
+        _headers[std::move(field)] = std::move(value);
     }
 
     virtual void addHeader(const char *start, const char *colon, const char *end) override
@@ -138,44 +138,73 @@ class HttpResponseImpl : public HttpResponse
         {
             value.resize(value.size() - 1);
         }
-        _headers[field] = value;
 
-        //FIXME:reponse cookie should be "Set-Cookie:...."
-        if (field == "cookie")
+        if (field == "set-cookie")
         {
             //LOG_INFO<<"cookies!!!:"<<value;
-            std::string::size_type pos;
-            while ((pos = value.find(";")) != std::string::npos)
+            auto values = splitString(value, ";");
+            Cookie cookie;
+            cookie.setHttpOnly(false);
+            for (int i = 0; i < values.size(); i++)
             {
-                std::string coo = value.substr(0, pos);
+                std::string &coo = values[i];
+                std::string cookie_name;
+                std::string cookie_value;
                 auto epos = coo.find("=");
                 if (epos != std::string::npos)
                 {
-                    std::string cookie_name = coo.substr(0, epos);
+                    cookie_name = coo.substr(0, epos);
                     std::string::size_type cpos = 0;
                     while (cpos < cookie_name.length() && isspace(cookie_name[cpos]))
                         cpos++;
                     cookie_name = cookie_name.substr(cpos);
-                    std::string cookie_value = coo.substr(epos + 1);
-                    _cookies.insert(std::make_pair(cookie_name, Cookie(cookie_name, cookie_value)));
+                    cookie_value = coo.substr(epos + 1);
                 }
-                value = value.substr(pos + 1);
-            }
-            if (value.length() > 0)
-            {
-                std::string &coo = value;
-                auto epos = coo.find("=");
-                if (epos != std::string::npos)
+                else
                 {
-                    std::string cookie_name = coo.substr(0, epos);
                     std::string::size_type cpos = 0;
-                    while (cpos < cookie_name.length() && isspace(cookie_name[cpos]))
+                    while (cpos < coo.length() && isspace(coo[cpos]))
                         cpos++;
-                    cookie_name = cookie_name.substr(cpos);
-                    std::string cookie_value = coo.substr(epos + 1);
-                    _cookies.insert(std::make_pair(cookie_name, Cookie(cookie_name, cookie_value)));
+                    cookie_name = coo.substr(cpos);
+                }
+                if (i == 0)
+                {
+                    cookie.setKey(cookie_name);
+                    cookie.setValue(cookie_value);
+                }
+                else
+                {
+                    std::transform(cookie_name.begin(), cookie_name.end(), cookie_name.begin(), tolower);
+                    if (cookie_name == "path")
+                    {
+                        cookie.setPath(cookie_value);
+                    }
+                    else if (cookie_name == "domain")
+                    {
+                        cookie.setDomain(cookie_value);
+                    }
+                    else if (cookie_name == "expires")
+                    {
+                        cookie.setExpiresDate(getHttpDate(cookie_value));
+                    }
+                    else if (cookie_name == "secure")
+                    {
+                        cookie.setEnsure(true);
+                    }
+                    else if (cookie_name == "httponly")
+                    {
+                        cookie.setHttpOnly(true);
+                    }
                 }
             }
+            if(!cookie.key().empty())
+            {
+                _cookies[cookie.key()] = cookie;
+            }
+        }
+        else
+        {
+            _headers[std::move(field)] = std::move(value);
         }
     }
 
@@ -187,6 +216,21 @@ class HttpResponseImpl : public HttpResponse
     virtual void addCookie(const Cookie &cookie) override
     {
         _cookies.insert(std::make_pair(cookie.key(), cookie));
+    }
+
+    virtual const Cookie &getCookie(const std::string &key, const Cookie &defaultCookie = Cookie()) const override
+    {
+        auto it = _cookies.find(key);
+        if (it != _cookies.end())
+        {
+            return it->second;
+        }
+        return defaultCookie;
+    }
+
+    virtual const std::unordered_map<std::string, Cookie> &cookies() const override
+    {
+        return _cookies;
     }
 
     virtual void removeCookie(const std::string &key) override

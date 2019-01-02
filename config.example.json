@@ -53,7 +53,7 @@
     //will be the number of processors.
     "threads_num": 1,
     //enable_session:false by default
-    "enable_session": false,
+    "enable_session": true,
     "session_timeout": 0,
     //document_root:Root path of HTTP document,defaut path is ./
     "document_root": "./",

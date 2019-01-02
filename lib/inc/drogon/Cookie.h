@@ -25,13 +25,22 @@ class Cookie
                                                                _value(value)
     {
     }
+    Cookie() = default;
     ~Cookie() {}
     void setExpiresDate(const trantor::Date &date) { _expiresDate = date; }
     void setHttpOnly(bool only) { _httpOnly = only; }
     void setEnsure(bool ensure) { _ensure = ensure; }
     void setDomain(const std::string &domain) { _domain = domain; }
     void setPath(const std::string &path) { _path = path; }
+    void setKey(const std::string &key) { _key = key; }
+    void setValue(const std::string &value) { _value = value; }
+    
     const std::string cookieString() const;
+    const trantor::Date &expiresDate() const { return _expiresDate; }
+    bool httpOnly() const { return _httpOnly; }
+    bool ensure() const { return _ensure; }
+    const std::string &domain() const { return _domain; }
+    const std::string &path() const { return _path; }
     const std::string &key() const { return _key; }
     const std::string &value() const { return _value; }
 

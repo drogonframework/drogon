@@ -135,6 +135,10 @@ class HttpResponse
 
     virtual void addCookie(const Cookie &cookie) = 0;
 
+    virtual const Cookie &getCookie(const std::string &key, const Cookie &defaultCookie = Cookie()) const = 0;
+
+    virtual const std::unordered_map<std::string, Cookie> &cookies() const = 0;
+
     virtual void removeCookie(const std::string &key) = 0;
 
     virtual void setBody(const std::string &body) = 0;

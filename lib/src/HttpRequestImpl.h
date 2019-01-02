@@ -218,7 +218,7 @@ class HttpRequestImpl : public HttpRequest
         {
             value.resize(value.size() - 1);
         }
-        _headers[field] = value;
+
         if (field == "cookie")
         {
             LOG_TRACE << "cookies!!!:" << value;
@@ -235,7 +235,7 @@ class HttpRequestImpl : public HttpRequest
                         cpos++;
                     cookie_name = cookie_name.substr(cpos);
                     std::string cookie_value = coo.substr(epos + 1);
-                    _cookies[cookie_name] = cookie_value;
+                    _cookies[std::move(cookie_name)] = std::move(cookie_value);
                 }
                 value = value.substr(pos + 1);
             }
@@ -251,9 +251,13 @@ class HttpRequestImpl : public HttpRequest
                         cpos++;
                     cookie_name = cookie_name.substr(cpos);
                     std::string cookie_value = coo.substr(epos + 1);
-                    _cookies[cookie_name] = cookie_value;
+                    _cookies[std::move(cookie_name)] = std::move(cookie_value);
                 }
             }
+        }
+        else
+        {
+            _headers[std::move(field)] = std::move(value);
         }
     }
 
