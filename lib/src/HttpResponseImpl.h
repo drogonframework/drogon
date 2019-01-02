@@ -145,7 +145,7 @@ class HttpResponseImpl : public HttpResponse
             auto values = splitString(value, ";");
             Cookie cookie;
             cookie.setHttpOnly(false);
-            for (int i = 0; i < values.size(); i++)
+            for (size_t i = 0; i < values.size(); i++)
             {
                 std::string &coo = values[i];
                 std::string cookie_name;
