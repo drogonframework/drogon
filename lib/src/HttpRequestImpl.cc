@@ -149,9 +149,7 @@ void HttpRequestImpl::appendToBuffer(MsgBuffer *output) const
     }
     output->append("\r\n");
 
-    for (std::map<std::string, std::string>::const_iterator it = _headers.begin();
-         it != _headers.end();
-         ++it)
+    for (auto it = _headers.begin(); it != _headers.end(); ++it)
     {
         output->append(it->first);
         output->append(": ");
@@ -161,7 +159,7 @@ void HttpRequestImpl::appendToBuffer(MsgBuffer *output) const
     if (_cookies.size() > 0)
     {
         output->append("Cookie: ");
-        for (auto it = _cookies.begin(); it != _cookies.end(); it++)
+        for (auto it = _cookies.begin(); it != _cookies.end(); ++it)
         {
             output->append(it->first);
             output->append("= ");

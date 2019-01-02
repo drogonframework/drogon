@@ -19,7 +19,7 @@
 #include <trantor/net/InetAddress.h>
 #include <trantor/utils/Date.h>
 #include <drogon/utils/Utilities.h>
-#include <map>
+#include <unordered_map>
 #include <string>
 #include <memory>
 #include <mutex>
@@ -306,8 +306,8 @@ class HttpResponseImpl : public HttpResponse
     void makeHeaderString(const std::shared_ptr<std::string> &headerStringPtr) const;
 
   private:
-    std::map<std::string, std::string> _headers;
-    std::map<std::string, Cookie> _cookies;
+    std::unordered_map<std::string, std::string> _headers;
+    std::unordered_map<std::string, Cookie> _cookies;
     HttpStatusCode _statusCode;
     // FIXME: add http version
     Version _v;

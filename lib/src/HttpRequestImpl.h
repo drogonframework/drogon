@@ -21,7 +21,7 @@
 #include <trantor/utils/Logger.h>
 #include <trantor/utils/MsgBuffer.h>
 #include <trantor/net/InetAddress.h>
-#include <map>
+#include <unordered_map>
 #include <assert.h>
 #include <stdio.h>
 #include <algorithm>
@@ -142,7 +142,7 @@ class HttpRequestImpl : public HttpRequest
         _path = path;
     }
 
-    const std::map<std::string, std::string> &getParameters() const override
+    const std::unordered_map<std::string, std::string> &getParameters() const override
     {
         return _parameters;
     }
@@ -262,7 +262,7 @@ class HttpRequestImpl : public HttpRequest
         std::string result;
         auto lowField = field;
         std::transform(lowField.begin(), lowField.end(), lowField.begin(), tolower);
-        std::map<std::string, std::string>::const_iterator it = _headers.find(lowField);
+        std::unordered_map<std::string, std::string>::const_iterator it = _headers.find(lowField);
         if (it != _headers.end())
         {
             result = it->second;
@@ -273,19 +273,19 @@ class HttpRequestImpl : public HttpRequest
     std::string getCookie(const std::string &field) const override
     {
         std::string result;
-        std::map<std::string, std::string>::const_iterator it = _cookies.find(field);
+        std::unordered_map<std::string, std::string>::const_iterator it = _cookies.find(field);
         if (it != _cookies.end())
         {
             result = it->second;
         }
         return result;
     }
-    const std::map<std::string, std::string> &headers() const override
+    const std::unordered_map<std::string, std::string> &headers() const override
     {
         return _headers;
     }
 
-    const std::map<std::string, std::string> &cookies() const override
+    const std::unordered_map<std::string, std::string> &cookies() const override
     {
         return _cookies;
     }
@@ -354,9 +354,9 @@ class HttpRequestImpl : public HttpRequest
     std::string _query;
 
     //trantor::Date receiveTime_;
-    std::map<std::string, std::string> _headers;
-    std::map<std::string, std::string> _cookies;
-    std::map<std::string, std::string> _parameters;
+    std::unordered_map<std::string, std::string> _headers;
+    std::unordered_map<std::string, std::string> _cookies;
+    std::unordered_map<std::string, std::string> _parameters;
     std::shared_ptr<Json::Value> _jsonPtr;
     SessionPtr _sessionPtr;
     trantor::InetAddress _peer;

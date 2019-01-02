@@ -394,7 +394,7 @@ std::shared_ptr<std::string> HttpResponseImpl::renderToString() const
     //output cookies
     if (_cookies.size() > 0)
     {
-        for (auto it = _cookies.begin(); it != _cookies.end(); it++)
+        for (auto it = _cookies.begin(); it != _cookies.end(); ++it)
         {
 
             httpString->append(it->second.cookieString());

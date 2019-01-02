@@ -18,7 +18,7 @@
 #include <trantor/net/InetAddress.h>
 #include <trantor/utils/Date.h>
 #include <json/json.h>
-#include <map>
+#include <unordered_map>
 #include <string>
 #include <memory>
 namespace drogon
@@ -58,10 +58,10 @@ class HttpRequest
     virtual std::string getCookie(const std::string &field) const = 0;
 
     /// Get all headers of the request
-    virtual const std::map<std::string, std::string> &headers() const = 0;
+    virtual const std::unordered_map<std::string, std::string> &headers() const = 0;
 
     /// Get all cookies of the request
-    virtual const std::map<std::string, std::string> &cookies() const = 0;
+    virtual const std::unordered_map<std::string, std::string> &cookies() const = 0;
 
     /// Get the query string of the request.
     /**
@@ -84,7 +84,7 @@ class HttpRequest
     virtual SessionPtr session() const = 0;
 
     /// Get parameters of the request.
-    virtual const std::map<std::string, std::string> &getParameters() const = 0;
+    virtual const std::unordered_map<std::string, std::string> &getParameters() const = 0;
 
     /// Return the remote IP address and port
     virtual const trantor::InetAddress &peerAddr() const = 0;
