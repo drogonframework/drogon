@@ -521,7 +521,7 @@ void HttpAppFrameworkImpl::doFilterChain(const std::shared_ptr<std::queue<std::s
                                          const std::string &session_id,
                                          const std::function<void()> &missCallback)
 {
-    if (chain->size() > 0)
+    if (chain && chain->size() > 0)
     {
         auto filter = chain->front();
         chain->pop();
@@ -542,18 +542,20 @@ void HttpAppFrameworkImpl::doFilters(const std::vector<std::string> &filters,
                                      const std::string &session_id,
                                      const std::function<void()> &missCallback)
 {
-    LOG_TRACE << "filters count:" << filters.size();
-    std::shared_ptr<std::queue<std::shared_ptr<HttpFilterBase>>> filterPtrs =
-        std::make_shared<std::queue<std::shared_ptr<HttpFilterBase>>>();
-    for (auto filter : filters)
+    std::shared_ptr<std::queue<std::shared_ptr<HttpFilterBase>>> filterPtrs;
+    if (!filters.empty())
     {
-        auto _object = std::shared_ptr<DrObjectBase>(DrClassMap::newObject(filter));
-        auto _filter = std::dynamic_pointer_cast<HttpFilterBase>(_object);
-        if (_filter)
-            filterPtrs->push(_filter);
-        else
+        filterPtrs = std::make_shared<std::queue<std::shared_ptr<HttpFilterBase>>>();
+        for (auto &filter : filters)
         {
-            LOG_ERROR << "filter " << filter << " not found";
+            auto _object = std::shared_ptr<DrObjectBase>(DrClassMap::newObject(filter));
+            auto _filter = std::dynamic_pointer_cast<HttpFilterBase>(_object);
+            if (_filter)
+                filterPtrs->push(_filter);
+            else
+            {
+                LOG_ERROR << "filter " << filter << " not found";
+            }
         }
     }
     doFilterChain(filterPtrs, req, callback, needSetJsessionid, session_id, missCallback);
