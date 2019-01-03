@@ -12,6 +12,7 @@
  *
  */
 
+#include "HttpRequestImpl.h"
 #include <drogon/utils/Utilities.h>
 #include <drogon/FileUpload.h>
 #include <drogon/HttpAppFramework.h>
@@ -41,7 +42,7 @@ int FileUpload::parse(const HttpRequestPtr &req)
 {
     if (req->method() != Post)
         return -1;
-    std::string contentType = req->getHeader("Content-Type");
+    const std::string &contentType = std::dynamic_pointer_cast<HttpRequestImpl>(req)->getHeaderBy("content-type");
     if (contentType.empty())
     {
         return -1;

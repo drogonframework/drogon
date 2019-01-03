@@ -93,20 +93,33 @@ class HttpResponseImpl : public HttpResponse
     //            return _contentType;
     //        }
 
-    virtual std::string getHeader(const std::string &key) const override
+    virtual const std::string &getHeader(const std::string &key, const std::string &defaultVal = std::string()) const override
     {
         auto field = key;
         transform(field.begin(), field.end(), field.begin(), ::tolower);
-        auto iter = _headers.find(field);
+        return getHeaderBy(field);
+    }
+
+    virtual const std::string &getHeader(std::string &&key, const std::string &defaultVal = std::string()) const override
+    {
+        transform(key.begin(), key.end(), key.begin(), ::tolower);
+        return getHeaderBy(key);
+    }
+
+    const std::string &getHeaderBy(const std::string &lowerKey, const std::string &defaultVal = std::string()) const
+    {
+        auto iter = _headers.find(lowerKey);
         if (iter == _headers.end())
         {
-            return "";
+            return defaultVal;
         }
         else
         {
             return iter->second;
         }
     }
+
+
     virtual void addHeader(const std::string &key, const std::string &value) override
     {
         _fullHeaderString.reset();
@@ -197,7 +210,7 @@ class HttpResponseImpl : public HttpResponse
                     }
                 }
             }
-            if(!cookie.key().empty())
+            if (!cookie.key().empty())
             {
                 _cookies[cookie.key()] = cookie;
             }

@@ -261,28 +261,37 @@ class HttpRequestImpl : public HttpRequest
         }
     }
 
-    std::string getHeader(const std::string &field) const override
+    const std::string &getHeader(const std::string &field, const std::string &defaultVal = std::string()) const override
     {
-        std::string result;
         auto lowField = field;
         std::transform(lowField.begin(), lowField.end(), lowField.begin(), tolower);
-        std::unordered_map<std::string, std::string>::const_iterator it = _headers.find(lowField);
-        if (it != _headers.end())
-        {
-            result = it->second;
-        }
-        return result;
+        return getHeaderBy(lowField, defaultVal);
     }
 
-    std::string getCookie(const std::string &field) const override
+    const std::string &getHeader(std::string &&field, const std::string &defaultVal = std::string()) const override
     {
-        std::string result;
+        std::transform(field.begin(), field.end(), field.begin(), tolower);
+        return getHeaderBy(field, defaultVal);
+    }
+
+    const std::string &getHeaderBy(const std::string &lowerField, const std::string &defaultVal = std::string()) const
+    {
+        auto it = _headers.find(lowerField);
+        if (it != _headers.end())
+        {
+            return it->second;
+        }
+        return defaultVal;
+    }
+    
+    const std::string &getCookie(const std::string &field, const std::string &defaultVal = std::string()) const override
+    {
         std::unordered_map<std::string, std::string>::const_iterator it = _cookies.find(field);
         if (it != _cookies.end())
         {
-            result = it->second;
+            return it->second;
         }
-        return result;
+        return defaultVal;
     }
     const std::unordered_map<std::string, std::string> &headers() const override
     {

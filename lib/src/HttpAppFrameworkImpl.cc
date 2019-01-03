@@ -515,7 +515,7 @@ void HttpAppFrameworkImpl::run()
 }
 
 void HttpAppFrameworkImpl::doFilterChain(const std::shared_ptr<std::queue<std::shared_ptr<HttpFilterBase>>> &chain,
-                                         const HttpRequestPtr &req,
+                                         const HttpRequestImplPtr &req,
                                          const std::function<void(const HttpResponsePtr &)> &callback,
                                          bool needSetJsessionid,
                                          const std::string &session_id,
@@ -536,7 +536,7 @@ void HttpAppFrameworkImpl::doFilterChain(const std::shared_ptr<std::queue<std::s
     }
 }
 void HttpAppFrameworkImpl::doFilters(const std::vector<std::string> &filters,
-                                     const HttpRequestPtr &req,
+                                     const HttpRequestImplPtr &req,
                                      const std::function<void(const HttpResponsePtr &)> &callback,
                                      bool needSetJsessionid,
                                      const std::string &session_id,
@@ -711,11 +711,11 @@ void HttpAppFrameworkImpl::setUploadPath(const std::string &uploadPath)
             _uploadPath = _rootPath + "/" + uploadPath;
     }
 }
-void HttpAppFrameworkImpl::onNewWebsockRequest(const HttpRequestPtr &req,
+void HttpAppFrameworkImpl::onNewWebsockRequest(const HttpRequestImplPtr &req,
                                                const std::function<void(const HttpResponsePtr &)> &callback,
                                                const WebSocketConnectionPtr &wsConnPtr)
 {
-    std::string wsKey = req->getHeader("Sec-WebSocket-Key");
+    std::string wsKey = req->getHeaderBy("sec-websocket-key");
     if (!wsKey.empty())
     {
         // magic="258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
@@ -757,7 +757,7 @@ void HttpAppFrameworkImpl::onNewWebsockRequest(const HttpRequestPtr &req,
     resp->setCloseConnection(true);
     callback(resp);
 }
-void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestPtr &req, const std::function<void(const HttpResponsePtr &)> &callback)
+void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestImplPtr &req, const std::function<void(const HttpResponsePtr &)> &callback)
 {
     LOG_TRACE << "new request:" << req->peerAddr().toIpPort() << "->" << req->localAddr().toIpPort();
     LOG_TRACE << "Headers " << req->methodString() << " " << req->path();
@@ -833,7 +833,7 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestPtr &req, const std::
             {
                 if (cachedResp)
                 {
-                    if (cachedResp->getHeader("Last-Modified") == req->getHeader("If-Modified-Since"))
+                    if (std::dynamic_pointer_cast<HttpResponseImpl>(cachedResp)->getHeaderBy("last-modified") == req->getHeaderBy("if-modified-since"))
                     {
                         resp->setStatusCode(HttpResponse::k304NotModified);
                         if (needSetJsessionid)
@@ -857,7 +857,7 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestPtr &req, const std::
                         timeStr.resize(64);
                         auto len = strftime((char *)timeStr.data(), timeStr.size(), "%a, %d %b %Y %T GMT", &tm1);
                         timeStr.resize(len);
-                        std::string modiStr = req->getHeader("If-Modified-Since");
+                        const std::string &modiStr = req->getHeaderBy("if-modified-since");
                         if (modiStr == timeStr && !modiStr.empty())
                         {
                             LOG_TRACE << "not Modified!";
@@ -1184,7 +1184,7 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestPtr &req, const std::
     }
 }
 
-void HttpAppFrameworkImpl::readSendFile(const std::string &filePath, const HttpRequestPtr &req, const HttpResponsePtr &resp)
+void HttpAppFrameworkImpl::readSendFile(const std::string &filePath, const HttpRequestImplPtr &req, const HttpResponsePtr &resp)
 {
     std::ifstream infile(filePath, std::ifstream::binary);
     LOG_TRACE << "send http file:" << filePath;

@@ -218,7 +218,7 @@ void HttpClientImpl::onRecvMessage(const trantor::TcpConnectionPtr &connPtr, tra
 
         assert(!_reqAndCallbacks.empty());
 
-        auto type = resp->getHeader("Content-Type");
+        auto &type = resp->getHeaderBy("content-type");
         if (type.find("application/json") != std::string::npos)
         {
             resp->parseJson();

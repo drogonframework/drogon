@@ -57,7 +57,7 @@ class HttpServerContext
         return _request;
     }
 
-    HttpRequestPtr request()
+    HttpRequestImplPtr request()
     {
         return _request;
     }

@@ -111,13 +111,13 @@ bool HttpServerContext::parseRequest(MsgBuffer *buf)
                 else
                 {
                     // empty line, end of header
-                    std::string len = _request->getHeader("Content-Length");
+                    const std::string &len = _request->getHeaderBy("content-length");
                     LOG_TRACE << "content len=" << len;
-                    if (len != "")
+                    if (!len.empty())
                     {
                         _request->_contentLen = atoi(len.c_str());
                         _state = kExpectBody;
-                        auto expect = _request->getHeader("Expect");
+                        auto &expect = _request->getHeaderBy("expect");
                         if (expect == "100-continue" &&
                             _request->getVersion() >= HttpRequest::kHttp11)
                         {
@@ -200,7 +200,7 @@ void HttpServerContext::pushRquestToPipeLine(const HttpRequestPtr &req)
 {
 #ifndef NDEBUG
     auto conn = _conn.lock();
-    if(conn)
+    if (conn)
     {
         conn->getLoop()->assertInLoopThread();
     }

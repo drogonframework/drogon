@@ -115,14 +115,14 @@ class HttpAppFrameworkImpl : public HttpAppFramework
                                         const std::vector<std::string> &filters = std::vector<std::string>()) override;
 
     std::vector<std::tuple<std::string, uint16_t, bool, std::string, std::string>> _listeners;
-    void onAsyncRequest(const HttpRequestPtr &req, const std::function<void(const HttpResponsePtr &)> &callback);
-    void onNewWebsockRequest(const HttpRequestPtr &req,
+    void onAsyncRequest(const HttpRequestImplPtr &req, const std::function<void(const HttpResponsePtr &)> &callback);
+    void onNewWebsockRequest(const HttpRequestImplPtr &req,
                              const std::function<void(const HttpResponsePtr &)> &callback,
                              const WebSocketConnectionPtr &wsConnPtr);
     void onWebsockMessage(const WebSocketConnectionPtr &wsConnPtr, trantor::MsgBuffer *buffer);
     void onWebsockDisconnect(const WebSocketConnectionPtr &wsConnPtr);
     void onConnection(const TcpConnectionPtr &conn);
-    void readSendFile(const std::string &filePath, const HttpRequestPtr &req, const HttpResponsePtr &resp);
+    void readSendFile(const std::string &filePath, const HttpRequestImplPtr &req, const HttpResponsePtr &resp);
     void addHttpPath(const std::string &path,
                      const HttpBinderBasePtr &binder,
                      const std::vector<HttpMethod> &validMethods,
@@ -139,13 +139,13 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     std::unique_ptr<CacheMap<std::string, HttpResponsePtr>> _responseCacheMap;
 
     void doFilters(const std::vector<std::string> &filters,
-                   const HttpRequestPtr &req,
+                   const HttpRequestImplPtr &req,
                    const std::function<void(const HttpResponsePtr &)> &callback,
                    bool needSetJsessionid,
                    const std::string &session_id,
                    const std::function<void()> &missCallback);
     void doFilterChain(const std::shared_ptr<std::queue<std::shared_ptr<HttpFilterBase>>> &chain,
-                       const HttpRequestPtr &req,
+                       const HttpRequestImplPtr &req,
                        const std::function<void(const HttpResponsePtr &)> &callback,
                        bool needSetJsessionid,
                        const std::string &session_id,

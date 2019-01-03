@@ -15,6 +15,7 @@
 #pragma once
 
 #include "WebSockectConnectionImpl.h"
+#include "HttpRequestImpl.h"
 #include <drogon/config.h>
 #include <trantor/net/TcpServer.h>
 #include <trantor/net/callbacks.h>
@@ -31,8 +32,8 @@ typedef std::shared_ptr<HttpRequest> HttpRequestPtr;
 class HttpServer : trantor::NonCopyable
 {
   public:
-    typedef std::function<void(const HttpRequestPtr &, const std::function<void(const HttpResponsePtr &)> &)> HttpAsyncCallback;
-    typedef std::function<void(const HttpRequestPtr &,
+    typedef std::function<void(const HttpRequestImplPtr &, const std::function<void(const HttpResponsePtr &)> &)> HttpAsyncCallback;
+    typedef std::function<void(const HttpRequestImplPtr &,
                                const std::function<void(const HttpResponsePtr &)> &,
                                const WebSocketConnectionPtr &)>
         WebSocketNewAsyncCallback;
@@ -90,8 +91,8 @@ class HttpServer : trantor::NonCopyable
     void onConnection(const TcpConnectionPtr &conn);
     void onMessage(const TcpConnectionPtr &,
                    MsgBuffer *);
-    void onRequest(const TcpConnectionPtr &, const HttpRequestPtr &);
-    bool isWebSocket(const TcpConnectionPtr &conn, const HttpRequestPtr &req);
+    void onRequest(const TcpConnectionPtr &, const HttpRequestImplPtr &);
+    bool isWebSocket(const TcpConnectionPtr &conn, const HttpRequestImplPtr &req);
     void sendResponse(const TcpConnectionPtr &, const HttpResponsePtr &);
     trantor::TcpServer _server;
     HttpAsyncCallback _httpAsyncCallback;
