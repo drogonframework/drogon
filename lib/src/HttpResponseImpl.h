@@ -88,22 +88,18 @@ class HttpResponseImpl : public HttpResponse
     {
         return _contentType;
     }
-    //        virtual uint8_t contentTypeCode() override
-    //        {
-    //            return _contentType;
-    //        }
 
     virtual const std::string &getHeader(const std::string &key, const std::string &defaultVal = std::string()) const override
     {
         auto field = key;
         transform(field.begin(), field.end(), field.begin(), ::tolower);
-        return getHeaderBy(field);
+        return getHeaderBy(field,defaultVal);
     }
 
     virtual const std::string &getHeader(std::string &&key, const std::string &defaultVal = std::string()) const override
     {
         transform(key.begin(), key.end(), key.begin(), ::tolower);
-        return getHeaderBy(key);
+        return getHeaderBy(key,defaultVal);
     }
 
     const std::string &getHeaderBy(const std::string &lowerKey, const std::string &defaultVal = std::string()) const
@@ -113,10 +109,7 @@ class HttpResponseImpl : public HttpResponse
         {
             return defaultVal;
         }
-        else
-        {
-            return iter->second;
-        }
+        return iter->second;
     }
 
 
