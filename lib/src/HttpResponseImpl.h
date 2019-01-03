@@ -93,13 +93,13 @@ class HttpResponseImpl : public HttpResponse
     {
         auto field = key;
         transform(field.begin(), field.end(), field.begin(), ::tolower);
-        return getHeaderBy(field,defaultVal);
+        return getHeaderBy(field, defaultVal);
     }
 
     virtual const std::string &getHeader(std::string &&key, const std::string &defaultVal = std::string()) const override
     {
         transform(key.begin(), key.end(), key.begin(), ::tolower);
-        return getHeaderBy(key,defaultVal);
+        return getHeaderBy(key, defaultVal);
     }
 
     const std::string &getHeaderBy(const std::string &lowerKey, const std::string &defaultVal = std::string()) const
@@ -111,7 +111,6 @@ class HttpResponseImpl : public HttpResponse
         }
         return iter->second;
     }
-
 
     virtual void addHeader(const std::string &key, const std::string &value) override
     {

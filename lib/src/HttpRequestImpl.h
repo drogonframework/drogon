@@ -283,7 +283,7 @@ class HttpRequestImpl : public HttpRequest
         }
         return defaultVal;
     }
-    
+
     const std::string &getCookie(const std::string &field, const std::string &defaultVal = std::string()) const override
     {
         std::unordered_map<std::string, std::string>::const_iterator it = _cookies.find(field);
