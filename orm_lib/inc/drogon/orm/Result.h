@@ -81,7 +81,7 @@ class Result
 
     size_type affectedRows() const noexcept;
 
-    /// For Mysql database only
+    /// For Mysql, Sqlite3 database
     unsigned long long insertId() const noexcept;
 
   private:

@@ -39,7 +39,7 @@ class HttpClientContext
         kGotAll,
     };
 
-    HttpClientContext(const trantor::TcpConnectionPtr &connPtr);
+    explicit HttpClientContext(const trantor::TcpConnectionPtr &connPtr);
 
     // default copy-ctor, dtor and assignment are fine
 
@@ -57,16 +57,7 @@ class HttpClientContext
         _response.reset(new HttpResponseImpl);
     }
 
-    const HttpResponsePtr response() const
-    {
-        return _response;
-    }
-
-    HttpResponsePtr response()
-    {
-        return _response;
-    }
-    HttpResponseImplPtr responseImpl()
+    const HttpResponseImplPtr &responseImpl() const
     {
         return _response;
     }
