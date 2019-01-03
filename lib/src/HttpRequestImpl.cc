@@ -173,7 +173,7 @@ void HttpRequestImpl::appendToBuffer(MsgBuffer *output) const
     output->append("\r\n");
 
     //LOG_INFO<<"request(no body):"<<output->peek();
-    output->append(content_);
+    output->append(_content);
 }
 
 HttpRequestPtr HttpRequest::newHttpRequest()

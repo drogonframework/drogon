@@ -47,23 +47,23 @@ class HttpServer : trantor::NonCopyable
 
     ~HttpServer();
 
-    EventLoop *getLoop() const { return server_.getLoop(); }
+    EventLoop *getLoop() const { return _server.getLoop(); }
 
     void setHttpAsyncCallback(const HttpAsyncCallback &cb)
     {
-        httpAsyncCallback_ = cb;
+        _httpAsyncCallback = cb;
     }
     void setNewWebsocketCallback(const WebSocketNewAsyncCallback &cb)
     {
-        newWebsocketCallback_ = cb;
+        _newWebsocketCallback = cb;
     }
     void setDisconnectWebsocketCallback(const WebSocketDisconnetCallback &cb)
     {
-        disconnectWebsocketCallback_ = cb;
+        _disconnectWebsocketCallback = cb;
     }
     void setWebsocketMessageCallback(const WebSocketMessageCallback &cb)
     {
-        webSocketMessageCallback_ = cb;
+        _webSocketMessageCallback = cb;
     }
     void setConnectionCallback(const ConnectionCallback &cb)
     {
@@ -71,18 +71,18 @@ class HttpServer : trantor::NonCopyable
     }
     void setIoLoopNum(int numThreads)
     {
-        server_.setIoLoopNum(numThreads);
+        _server.setIoLoopNum(numThreads);
     }
     void kickoffIdleConnections(size_t timeout)
     {
-        server_.kickoffIdleConnections(timeout);
+        _server.kickoffIdleConnections(timeout);
     }
     void start();
 
 #ifdef USE_OPENSSL
     void enableSSL(const std::string &certPath, const std::string &keyPath)
     {
-        server_.enableSSL(certPath, keyPath);
+        _server.enableSSL(certPath, keyPath);
     }
 #endif
 
@@ -93,11 +93,11 @@ class HttpServer : trantor::NonCopyable
     void onRequest(const TcpConnectionPtr &, const HttpRequestPtr &);
     bool isWebSocket(const TcpConnectionPtr &conn, const HttpRequestPtr &req);
     void sendResponse(const TcpConnectionPtr &, const HttpResponsePtr &);
-    trantor::TcpServer server_;
-    HttpAsyncCallback httpAsyncCallback_;
-    WebSocketNewAsyncCallback newWebsocketCallback_;
-    WebSocketDisconnetCallback disconnectWebsocketCallback_;
-    WebSocketMessageCallback webSocketMessageCallback_;
+    trantor::TcpServer _server;
+    HttpAsyncCallback _httpAsyncCallback;
+    WebSocketNewAsyncCallback _newWebsocketCallback;
+    WebSocketDisconnetCallback _disconnectWebsocketCallback;
+    WebSocketMessageCallback _webSocketMessageCallback;
     trantor::ConnectionCallback _connectionCallback;
 };
 

@@ -37,7 +37,7 @@ class HttpRequestImpl : public HttpRequest
     HttpRequestImpl()
         : _method(Invalid),
           _version(kUnknown),
-          contentLen(0)
+          _contentLen(0)
     {
     }
 
@@ -82,7 +82,7 @@ class HttpRequestImpl : public HttpRequest
         }
         if (_method != Invalid)
         {
-            content_ = "";
+            _content = "";
             _query = "";
             _cookies.clear();
             _parameters.clear();
@@ -94,7 +94,7 @@ class HttpRequestImpl : public HttpRequest
     virtual void setMethod(const HttpMethod method) override
     {
         _method = method;
-        content_ = "";
+        _content = "";
         _query = "";
         _cookies.clear();
         _parameters.clear();
@@ -161,14 +161,14 @@ class HttpRequestImpl : public HttpRequest
     }
     //            const string& content() const
     //            {
-    //                return content_;
+    //                return _content;
     //            }
     const std::string &query() const override
     {
         if (_query != "")
             return _query;
         if (_method == Post)
-            return content_;
+            return _content;
         return _query;
     }
 
@@ -299,7 +299,7 @@ class HttpRequestImpl : public HttpRequest
     }
     const std::string &getContent() const
     {
-        return content_;
+        return _content;
     }
     void swap(HttpRequestImpl &that)
     {
@@ -317,13 +317,13 @@ class HttpRequestImpl : public HttpRequest
         std::swap(_peer, that._peer);
         std::swap(_local, that._local);
         _date.swap(that._date);
-        content_.swap(that.content_);
-        std::swap(contentLen, that.contentLen);
+        _content.swap(that._content);
+        std::swap(_contentLen, that._contentLen);
     }
 
     void setContent(const std::string &content)
     {
-        content_ = content;
+        _content = content;
     }
     void addHeader(const std::string &key, const std::string &value)
     {
@@ -368,8 +368,8 @@ class HttpRequestImpl : public HttpRequest
     trantor::Date _date;
 
   protected:
-    std::string content_;
-    size_t contentLen;
+    std::string _content;
+    size_t _contentLen;
 };
 
 typedef std::shared_ptr<HttpRequestImpl> HttpRequestImplPtr;

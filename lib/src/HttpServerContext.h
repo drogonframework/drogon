@@ -43,28 +43,28 @@ class HttpServerContext
 
     bool gotAll() const
     {
-        return state_ == kGotAll;
+        return _state == kGotAll;
     }
 
     void reset()
     {
-        state_ = kExpectRequestLine;
-        request_.reset(new HttpRequestImpl);
+        _state = kExpectRequestLine;
+        _request.reset(new HttpRequestImpl);
     }
 
     const HttpRequestPtr request() const
     {
-        return request_;
+        return _request;
     }
 
     HttpRequestPtr request()
     {
-        return request_;
+        return _request;
     }
 
     HttpRequestImplPtr requestImpl()
     {
-        return request_;
+        return _request;
     }
 
     bool firstReq()
@@ -95,8 +95,8 @@ class HttpServerContext
   private:
     bool processRequestLine(const char *begin, const char *end);
 
-    HttpRequestParseState state_;
-    HttpRequestImplPtr request_;
+    HttpRequestParseState _state;
+    HttpRequestImplPtr _request;
 
     bool _firstRequest = true;
     WebSocketConnectionPtr _websockConnPtr;

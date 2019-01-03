@@ -50,14 +50,14 @@ static void defaultConnectionCallback(const trantor::TcpConnectionPtr &conn)
 HttpServer::HttpServer(EventLoop *loop,
                        const InetAddress &listenAddr,
                        const std::string &name)
-    : server_(loop, listenAddr, name.c_str()),
-      httpAsyncCallback_(defaultHttpAsyncCallback),
-      newWebsocketCallback_(defaultWebSockAsyncCallback),
+    : _server(loop, listenAddr, name.c_str()),
+      _httpAsyncCallback(defaultHttpAsyncCallback),
+      _newWebsocketCallback(defaultWebSockAsyncCallback),
       _connectionCallback(defaultConnectionCallback)
 {
-    server_.setConnectionCallback(
+    _server.setConnectionCallback(
         std::bind(&HttpServer::onConnection, this, _1));
-    server_.setRecvMessageCallback(
+    _server.setRecvMessageCallback(
         std::bind(&HttpServer::onMessage, this, _1, _2));
 }
 
@@ -67,9 +67,9 @@ HttpServer::~HttpServer()
 
 void HttpServer::start()
 {
-    LOG_WARN << "HttpServer[" << server_.name()
-             << "] starts listenning on " << server_.ipPort();
-    server_.start();
+    LOG_WARN << "HttpServer[" << _server.name()
+             << "] starts listenning on " << _server.ipPort();
+    _server.start();
 }
 
 void HttpServer::onConnection(const TcpConnectionPtr &conn)
@@ -86,7 +86,7 @@ void HttpServer::onConnection(const TcpConnectionPtr &conn)
         // LOG_INFO << "###:" << string(buf->peek(), buf->readableBytes());
         if (context->webSocketConn())
         {
-            disconnectWebsocketCallback_(context->webSocketConn());
+            _disconnectWebsocketCallback(context->webSocketConn());
         }
         conn->setContext(std::string("None"));
     }
@@ -102,7 +102,7 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn,
     if (context->webSocketConn())
     {
         //websocket payload,we shouldn't parse it
-        webSocketMessageCallback_(context->webSocketConn(), buf);
+        _webSocketMessageCallback(context->webSocketConn(), buf);
         return;
     }
     if (!context->parseRequest(buf))
@@ -120,7 +120,7 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn,
         if (context->firstReq() && isWebSocket(conn, context->request()))
         {
             auto wsConn = std::make_shared<WebSocketConnectionImpl>(conn);
-            newWebsocketCallback_(context->request(),
+            _newWebsocketCallback(context->request(),
                                   [=](const HttpResponsePtr &resp) mutable {
                                       if (resp->statusCode() == HttpResponse::k101SwitchingProtocols)
                                       {
@@ -163,7 +163,7 @@ void HttpServer::onRequest(const TcpConnectionPtr &conn, const HttpRequestPtr &r
         //std::lock_guard<std::mutex> guard(context->getPipeLineMutex());
         context->pushRquestToPipeLine(req);
     }
-    httpAsyncCallback_(req, [=](const HttpResponsePtr &response) {
+    _httpAsyncCallback(req, [=](const HttpResponsePtr &response) {
         if (!response)
             return;
         response->setCloseConnection(_close);

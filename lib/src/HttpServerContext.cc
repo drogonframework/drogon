@@ -20,8 +20,8 @@
 using namespace trantor;
 using namespace drogon;
 HttpServerContext::HttpServerContext(const trantor::TcpConnectionPtr &connPtr)
-    : state_(kExpectRequestLine),
-      request_(new HttpRequestImpl),
+    : _state(kExpectRequestLine),
+      _request(new HttpRequestImpl),
       _conn(connPtr)
 {
 }
@@ -30,7 +30,7 @@ bool HttpServerContext::processRequestLine(const char *begin, const char *end)
     bool succeed = false;
     const char *start = begin;
     const char *space = std::find(start, end, ' ');
-    if (space != end && request_->setMethod(start, space))
+    if (space != end && _request->setMethod(start, space))
     {
         start = space + 1;
         space = std::find(start, end, ' ');
@@ -39,12 +39,12 @@ bool HttpServerContext::processRequestLine(const char *begin, const char *end)
             const char *question = std::find(start, space, '?');
             if (question != space)
             {
-                request_->setPath(start, question);
-                request_->setQuery(question + 1, space);
+                _request->setPath(start, question);
+                _request->setQuery(question + 1, space);
             }
             else
             {
-                request_->setPath(start, space);
+                _request->setPath(start, space);
             }
             start = space + 1;
             succeed = end - start == 8 && std::equal(start, end - 1, "HTTP/1.");
@@ -52,11 +52,11 @@ bool HttpServerContext::processRequestLine(const char *begin, const char *end)
             {
                 if (*(end - 1) == '1')
                 {
-                    request_->setVersion(HttpRequest::kHttp11);
+                    _request->setVersion(HttpRequest::kHttp11);
                 }
                 else if (*(end - 1) == '0')
                 {
-                    request_->setVersion(HttpRequest::kHttp10);
+                    _request->setVersion(HttpRequest::kHttp10);
                 }
                 else
                 {
@@ -76,7 +76,7 @@ bool HttpServerContext::parseRequest(MsgBuffer *buf)
     //  std::cout<<std::string(buf->peek(),buf->readableBytes())<<std::endl;
     while (hasMore)
     {
-        if (state_ == kExpectRequestLine)
+        if (_state == kExpectRequestLine)
         {
             const char *crlf = buf->findCRLF();
             if (crlf)
@@ -84,9 +84,9 @@ bool HttpServerContext::parseRequest(MsgBuffer *buf)
                 ok = processRequestLine(buf->peek(), crlf);
                 if (ok)
                 {
-                    //request_->setReceiveTime(receiveTime);
+                    //_request->setReceiveTime(receiveTime);
                     buf->retrieveUntil(crlf + 2);
-                    state_ = kExpectHeaders;
+                    _state = kExpectHeaders;
                 }
                 else
                 {
@@ -98,7 +98,7 @@ bool HttpServerContext::parseRequest(MsgBuffer *buf)
                 hasMore = false;
             }
         }
-        else if (state_ == kExpectHeaders)
+        else if (_state == kExpectHeaders)
         {
             const char *crlf = buf->findCRLF();
             if (crlf)
@@ -106,20 +106,20 @@ bool HttpServerContext::parseRequest(MsgBuffer *buf)
                 const char *colon = std::find(buf->peek(), crlf, ':');
                 if (colon != crlf)
                 {
-                    request_->addHeader(buf->peek(), colon, crlf);
+                    _request->addHeader(buf->peek(), colon, crlf);
                 }
                 else
                 {
                     // empty line, end of header
-                    std::string len = request_->getHeader("Content-Length");
+                    std::string len = _request->getHeader("Content-Length");
                     LOG_TRACE << "content len=" << len;
                     if (len != "")
                     {
-                        request_->contentLen = atoi(len.c_str());
-                        state_ = kExpectBody;
-                        auto expect = request_->getHeader("Expect");
+                        _request->_contentLen = atoi(len.c_str());
+                        _state = kExpectBody;
+                        auto expect = _request->getHeader("Expect");
                         if (expect == "100-continue" &&
-                            request_->getVersion() >= HttpRequest::kHttp11)
+                            _request->getVersion() >= HttpRequest::kHttp11)
                         {
                             //rfc2616-8.2.3
                             //TODO:here we can add content-length limitation
@@ -152,7 +152,7 @@ bool HttpServerContext::parseRequest(MsgBuffer *buf)
                     }
                     else
                     {
-                        state_ = kGotAll;
+                        _state = kGotAll;
                         hasMore = false;
                     }
                 }
@@ -163,31 +163,31 @@ bool HttpServerContext::parseRequest(MsgBuffer *buf)
                 hasMore = false;
             }
         }
-        else if (state_ == kExpectBody)
+        else if (_state == kExpectBody)
         {
             if (buf->readableBytes() == 0)
             {
-                if (request_->contentLen == 0)
+                if (_request->_contentLen == 0)
                 {
-                    state_ = kGotAll;
+                    _state = kGotAll;
                 }
                 break;
             }
-            if (request_->contentLen >= buf->readableBytes())
+            if (_request->_contentLen >= buf->readableBytes())
             {
-                request_->contentLen -= buf->readableBytes();
-                request_->content_ += std::string(buf->peek(), buf->readableBytes());
+                _request->_contentLen -= buf->readableBytes();
+                _request->_content += std::string(buf->peek(), buf->readableBytes());
                 buf->retrieveAll();
             }
             else
             {
-                request_->content_ += std::string(buf->peek(), request_->contentLen);
-                buf->retrieve(request_->contentLen);
-                request_->contentLen = 0;
+                _request->_content += std::string(buf->peek(), _request->_contentLen);
+                buf->retrieve(_request->_contentLen);
+                _request->_contentLen = 0;
             }
-            if (request_->contentLen == 0)
+            if (_request->_contentLen == 0)
             {
-                state_ = kGotAll;
+                _state = kGotAll;
                 hasMore = false;
             }
         }
