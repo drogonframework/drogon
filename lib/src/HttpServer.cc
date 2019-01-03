@@ -136,10 +136,10 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn,
         context->reset();
     }
 }
-bool HttpServer::isWebSocket(const TcpConnectionPtr &conn, const HttpRequestPtr &req)
+bool HttpServer::isWebSocket(const TcpConnectionPtr &conn, const HttpRequestImplPtr &req)
 {
-    if (req->getHeader("Connection") == "Upgrade" &&
-        req->getHeader("Upgrade") == "websocket")
+    if (req->getHeaderBy("connection") == "Upgrade" &&
+        req->getHeaderBy("upgrade") == "websocket")
     {
         LOG_TRACE << "new websocket request";
 
@@ -147,9 +147,9 @@ bool HttpServer::isWebSocket(const TcpConnectionPtr &conn, const HttpRequestPtr 
     }
     return false;
 }
-void HttpServer::onRequest(const TcpConnectionPtr &conn, const HttpRequestPtr &req)
+void HttpServer::onRequest(const TcpConnectionPtr &conn, const HttpRequestImplPtr &req)
 {
-    const std::string &connection = req->getHeader("Connection");
+    const std::string &connection = req->getHeaderBy("connection");
     bool _close = connection == "close" ||
                   (req->getVersion() == HttpRequestImpl::kHttp10 && connection != "Keep-Alive");
 
@@ -184,8 +184,8 @@ void HttpServer::onRequest(const TcpConnectionPtr &conn, const HttpRequestPtr &r
 
         if (HttpAppFramework::instance().useGzip() &&
             sendfileName.empty() &&
-            req->getHeader("Accept-Encoding").find("gzip") != std::string::npos &&
-            response->getHeader("Content-Encoding") == "" &&
+            req->getHeaderBy("accept-encoding").find("gzip") != std::string::npos &&
+            std::dynamic_pointer_cast<HttpResponseImpl>(response)->getHeaderBy("content-encoding") == "" &&
             response->getContentTypeCode() < CT_APPLICATION_OCTET_STREAM &&
             response->getBody().length() > 1024)
         {

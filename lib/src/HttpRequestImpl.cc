@@ -19,7 +19,7 @@ using namespace drogon;
 
 void HttpRequestImpl::parsePremeter()
 {
-    std::string type = getHeader("Content-Type");
+    std::string type = getHeaderBy("content-type");
 
     std::transform(type.begin(), type.end(), type.begin(), tolower);
     const std::string &input = query();

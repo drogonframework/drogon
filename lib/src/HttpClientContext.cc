@@ -101,16 +101,16 @@ bool HttpClientContext::parseResponse(MsgBuffer *buf)
                 }
                 else
                 {
-                    std::string len = _response->getHeader("Content-Length");
+                    const std::string &len = _response->getHeaderBy("content-length");
                     //LOG_INFO << "content len=" << len;
-                    if (len != "")
+                    if (!len.empty())
                     {
                         _response->_left_body_length = atoi(len.c_str());
                         _state = HttpResponseParseState::kExpectBody;
                     }
                     else
                     {
-                        std::string encode = _response->getHeader("Transfer-Encoding");
+                        const std::string &encode = _response->getHeaderBy("transfer-encoding");
                         if (encode == "chunked")
                         {
                             _state = HttpResponseParseState::kExpectChunkLen;

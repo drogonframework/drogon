@@ -52,10 +52,11 @@ class HttpRequest
     virtual HttpMethod method() const = 0;
 
     /// Get the header string identified by the @param field
-    virtual std::string getHeader(const std::string &field) const = 0;
+    virtual const std::string &getHeader(const std::string &field, const std::string &defaultVal = std::string()) const = 0;
+    virtual const std::string &getHeader(std::string &&field, const std::string &defaultVal = std::string()) const = 0;
 
     /// Get the cookie string identified by the @param field
-    virtual std::string getCookie(const std::string &field) const = 0;
+    virtual const std::string &getCookie(const std::string &field, const std::string &defaultVal = std::string()) const = 0;
 
     /// Get all headers of the request
     virtual const std::unordered_map<std::string, std::string> &headers() const = 0;
@@ -97,8 +98,7 @@ class HttpRequest
 
     /// Get the Json object of the request
     virtual const std::shared_ptr<Json::Value> getJsonObject() const = 0;
-    
-    
+
     /// Set the Http method
     virtual void setMethod(const HttpMethod method) = 0;
 

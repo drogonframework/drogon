@@ -123,7 +123,9 @@ class HttpResponse
 
     virtual uint8_t getContentTypeCode() = 0;
 
-    virtual std::string getHeader(const std::string &key) const = 0;
+    virtual const std::string &getHeader(const std::string &key, const std::string &defaultVal = std::string()) const = 0;
+
+    virtual const std::string &getHeader(std::string &&key, const std::string &defaultVal = std::string()) const = 0;
 
     virtual void addHeader(const std::string &key, const std::string &value) = 0;
 
