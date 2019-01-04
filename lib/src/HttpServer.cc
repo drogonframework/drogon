@@ -113,7 +113,7 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn,
 
     if (context->gotAll())
     {
-        context->requestImpl()->parsePremeter();
+        context->requestImpl()->parseParameter();
         context->requestImpl()->setPeerAddr(conn->peerAddr());
         context->requestImpl()->setLocalAddr(conn->localAddr());
         context->requestImpl()->setReceiveDate(trantor::Date::date());

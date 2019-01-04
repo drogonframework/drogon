@@ -50,7 +50,7 @@ class HttpRequestImpl : public HttpRequest
     {
         return _version;
     }
-    void parsePremeter();
+    void parseParameter();
     bool setMethod(const char *start, const char *end)
     {
 
