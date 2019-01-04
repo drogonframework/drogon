@@ -17,12 +17,13 @@
 #include <iostream>
 using namespace drogon;
 
-void HttpRequestImpl::parsePremeter()
+void HttpRequestImpl::parseParameter()
 {
-    std::string type = getHeaderBy("content-type");
-
-    std::transform(type.begin(), type.end(), type.begin(), tolower);
     const std::string &input = query();
+    if(input.empty())
+        return;
+    std::string type = getHeaderBy("content-type");
+    std::transform(type.begin(), type.end(), type.begin(), tolower);
     if (_method == Get || (_method == Post && (type == "" || type.find("application/x-www-form-urlencoded") != std::string::npos)))
     {
 
@@ -82,11 +83,11 @@ void HttpRequestImpl::parsePremeter()
             _jsonPtr.reset();
         }
     }
-    LOG_TRACE << "_parameters:";
-    for (auto iter : _parameters)
-    {
-        LOG_TRACE << iter.first << "=" << iter.second;
-    }
+    // LOG_TRACE << "_parameters:";
+    // for (auto iter : _parameters)
+    // {
+    //     LOG_TRACE << iter.first << "=" << iter.second;
+    // }
 }
 
 void HttpRequestImpl::appendToBuffer(MsgBuffer *output) const

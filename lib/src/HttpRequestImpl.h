@@ -50,7 +50,7 @@ class HttpRequestImpl : public HttpRequest
     {
         return _version;
     }
-    void parsePremeter();
+    void parseParameter();
     bool setMethod(const char *start, const char *end)
     {
 
@@ -135,7 +135,15 @@ class HttpRequestImpl : public HttpRequest
 
     void setPath(const char *start, const char *end)
     {
-        _path = urlDecode(std::string(start, end));
+        auto path = std::string(start, end);
+        if (path.find('+') != std::string::npos || path.find('%') != std::string::npos)
+        {
+            _path = urlDecode(path);
+        }
+        else
+        {
+            _path = path;
+        }
     }
     virtual void setPath(const std::string &path) override
     {
