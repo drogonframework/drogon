@@ -135,15 +135,7 @@ class HttpRequestImpl : public HttpRequest
 
     void setPath(const char *start, const char *end)
     {
-        auto path = std::string(start, end);
-        if (path.find('+') != std::string::npos || path.find('%') != std::string::npos)
-        {
-            _path = urlDecode(path);
-        }
-        else
-        {
-            _path = path;
-        }
+        _path = urlDecode(std::string(start, end));
     }
     virtual void setPath(const std::string &path) override
     {
