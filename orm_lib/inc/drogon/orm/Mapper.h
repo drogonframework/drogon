@@ -315,7 +315,7 @@ inline T Mapper<T>::findOne(const Criteria &criteria) noexcept(false)
         sql += criteria.criteriaString();
         sql = replaceSqlPlaceHolder(sql, "$?");
     }
-    sql.append(_orderbyString).append(_offsetString).append(_limitString);
+    sql.append(_orderbyString).append(_limitString).append(_offsetString);
     if (_forUpdate)
     {
         sql += " for update";
@@ -357,7 +357,7 @@ inline void Mapper<T>::findOne(const Criteria &criteria,
         sql += criteria.criteriaString();
         sql = replaceSqlPlaceHolder(sql, "$?");
     }
-    sql.append(_orderbyString).append(_offsetString).append(_limitString);
+    sql.append(_orderbyString).append(_limitString).append(_offsetString);
     if (_forUpdate)
     {
         sql += " for update";
@@ -394,7 +394,7 @@ inline std::future<T> Mapper<T>::findFutureOne(const Criteria &criteria) noexcep
         sql += criteria.criteriaString();
         sql = replaceSqlPlaceHolder(sql, "$?");
     }
-    sql.append(_orderbyString).append(_offsetString).append(_limitString);
+    sql.append(_orderbyString).append(_limitString).append(_offsetString);
     if (_forUpdate)
     {
         sql += " for update";
@@ -450,7 +450,7 @@ inline std::vector<T> Mapper<T>::findBy(const Criteria &criteria) noexcept(false
         sql += criteria.criteriaString();
         sql = replaceSqlPlaceHolder(sql, "$?");
     }
-    sql.append(_orderbyString).append(_offsetString).append(_limitString);
+    sql.append(_orderbyString).append(_limitString).append(_offsetString);
     if (_forUpdate)
     {
         sql += " for update";
@@ -487,7 +487,7 @@ inline void Mapper<T>::findBy(const Criteria &criteria,
         sql += criteria.criteriaString();
         sql = replaceSqlPlaceHolder(sql, "$?");
     }
-    sql.append(_orderbyString).append(_offsetString).append(_limitString);
+    sql.append(_orderbyString).append(_limitString).append(_offsetString);
     if (_forUpdate)
     {
         sql += " for update";
@@ -517,7 +517,7 @@ inline std::future<std::vector<T>> Mapper<T>::findFutureBy(const Criteria &crite
         sql += criteria.criteriaString();
         sql = replaceSqlPlaceHolder(sql, "$?");
     }
-    sql.append(_orderbyString).append(_offsetString).append(_limitString);
+    sql.append(_orderbyString).append(_limitString).append(_offsetString);
     if (_forUpdate)
     {
         sql += " for update";
