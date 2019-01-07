@@ -189,8 +189,8 @@ class HttpAppFramework : public trantor::NonCopyable
                                 const std::string &userName,
                                 const std::string &password,
                                 const size_t connectionNum = 1,
-                                const std::string &name = "default",
-                                const std::string &filename = "") = 0;
+                                const std::string &filename = "",
+                                const std::string &name = "default") = 0;
 #endif
 
   private:

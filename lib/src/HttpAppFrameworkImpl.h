@@ -105,8 +105,8 @@ class HttpAppFrameworkImpl : public HttpAppFramework
                                 const std::string &userName,
                                 const std::string &password,
                                 const size_t connectionNum = 1,
-                                const std::string &name = "default",
-                                const std::string &filename = "") override;
+                                const std::string &filename = "",
+                                const std::string &name = "default") override;
 #endif
   private:
     virtual void registerHttpController(const std::string &pathPattern,
