@@ -251,7 +251,7 @@ void HttpServer::onRequest(const TcpConnectionPtr &conn, const HttpRequestImplPt
         {
             conn->getLoop()->queueInLoop([conn, req, newResp, this]() {
                 HttpServerContext *context = any_cast<HttpServerContext>(conn->getMutableContext());
-                if (context->getFirstRequest() == req)
+                if (context && context->getFirstRequest() == req)
                 {
                     context->popFirstRequest();
                     sendResponse(conn, newResp);
