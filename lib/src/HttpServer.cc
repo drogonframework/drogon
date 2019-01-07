@@ -88,7 +88,7 @@ void HttpServer::onConnection(const TcpConnectionPtr &conn)
         {
             _disconnectWebsocketCallback(context->webSocketConn());
         }
-        conn->setContext(std::string("None"));
+        conn->getMutableContext()->reset();
     }
     _connectionCallback(conn);
 }
