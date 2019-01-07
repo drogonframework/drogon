@@ -376,7 +376,7 @@ std::shared_ptr<std::string> HttpResponseImpl::renderToString() const
                 {
                     std::lock_guard<std::mutex> lock(*_httpStringMutex);
                     _httpString = std::make_shared<std::string>(*_httpString);
-                    memcpy((void *)(_httpString->data() + _datePos), newDate, strlen(newDate));
+                    memcpy((void *)&(*_httpString)[_datePos], newDate, strlen(newDate));
                     return _httpString;
                 }
             }
