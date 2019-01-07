@@ -268,21 +268,52 @@ std::string base64Decode(std::string const &encoded_string)
 
 std::string urlDecode(const std::string &szToDecode)
 {
+    return urlDecode(szToDecode.c_str(), szToDecode.c_str() + szToDecode.length());
+}
+
+std::string urlDecode(const char *begin, const char *end)
+{
     std::string result;
-    result.reserve(szToDecode.length());
+    auto len = end - begin;
+    result.reserve(len);
     int hex = 0;
-    for (size_t i = 0; i < szToDecode.length(); ++i)
+    for (size_t i = 0; i < len; ++i)
     {
-        switch (szToDecode[i])
+        switch (begin[i])
         {
         case '+':
             result += ' ';
             break;
         case '%':
-            if (isxdigit(szToDecode[i + 1]) && isxdigit(szToDecode[i + 2]))
+            if ((i + 2) < len && isxdigit(begin[i + 1]) && isxdigit(begin[i + 2]))
             {
-                std::string hexStr = szToDecode.substr(i + 1, 2);
-                hex = strtol(hexStr.c_str(), 0, 16);
+                uint x1 = begin[i + 1];
+                if (x1 >= '0' && x1 <= '9')
+                {
+                    x1 -= '0';
+                }
+                else if (x1 >= 'a' && x1 <= 'f')
+                {
+                    x1 = x1 - 'a' + 10;
+                }
+                else if (x1 >= 'A' && x1 <= 'F')
+                {
+                    x1 = x1 - 'A' + 10;
+                }
+                uint x2 = begin[i + 2];
+                if (x2 >= '0' && x2 <= '9')
+                {
+                    x2 -= '0';
+                }
+                else if (x2 >= 'a' && x2 <= 'f')
+                {
+                    x2 = x2 - 'a' + 10;
+                }
+                else if (x2 >= 'A' && x2 <= 'F')
+                {
+                    x2 = x2 - 'A' + 10;
+                }
+                hex = x1 * 16 + x2;
                 //字母和数字[0-9a-zA-Z]、一些特殊符号[$-_.+!*'(),] 、以及某些保留字[$&+,/:;=?@]
                 //可以不经过编码直接用于URL
                 if (!((hex >= 48 && hex <= 57) ||  //0-9
@@ -303,7 +334,7 @@ std::string urlDecode(const std::string &szToDecode)
             }
             break;
         default:
-            result += szToDecode[i];
+            result += begin[i];
             break;
         }
     }
