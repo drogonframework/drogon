@@ -274,7 +274,7 @@ std::string urlDecode(const std::string &szToDecode)
 std::string urlDecode(const char *begin, const char *end)
 {
     std::string result;
-    auto len = end - begin;
+    size_t len = end - begin;
     result.reserve(len);
     int hex = 0;
     for (size_t i = 0; i < len; ++i)
