@@ -51,6 +51,7 @@ std::string base64Decode(std::string const &encoded_string);
 
 /// Decode the URL format string send by web browser.
 std::string urlDecode(const std::string &szToDecode);
+std::string urlDecode(const char *begin, const char *end);
 
 /// Commpress or decompress data using gzip lib.
 /**
