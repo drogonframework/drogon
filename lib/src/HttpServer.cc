@@ -251,26 +251,29 @@ void HttpServer::onRequest(const TcpConnectionPtr &conn, const HttpRequestImplPt
         {
             conn->getLoop()->queueInLoop([conn, req, newResp, this]() {
                 HttpServerContext *context = any_cast<HttpServerContext>(conn->getMutableContext());
-                if (context && context->getFirstRequest() == req)
+                if (context)
                 {
-                    context->popFirstRequest();
-                    sendResponse(conn, newResp);
-                    while (1)
+                    if (context->getFirstRequest() == req)
                     {
-                        auto resp = context->getFirstResponse();
-                        if (resp)
+                        context->popFirstRequest();
+                        sendResponse(conn, newResp);
+                        while (1)
                         {
-                            context->popFirstRequest();
-                            sendResponse(conn, resp);
+                            auto resp = context->getFirstResponse();
+                            if (resp)
+                            {
+                                context->popFirstRequest();
+                                sendResponse(conn, resp);
+                            }
+                            else
+                                return;
                         }
-                        else
-                            return;
                     }
-                }
-                else
-                {
-                    //some earlier requests are waiting for responses;
-                    context->pushResponseToPipeLine(req, newResp);
+                    else
+                    {
+                        //some earlier requests are waiting for responses;
+                        context->pushResponseToPipeLine(req, newResp);
+                    }
                 }
             });
         }
