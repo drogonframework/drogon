@@ -30,6 +30,7 @@ class Sqlite3ResultImpl : public ResultImpl
 {
   public:
     Sqlite3ResultImpl(const std::string &query) noexcept
+        : ResultImpl(query)
     {
     }
     virtual size_type size() const noexcept override;

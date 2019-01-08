@@ -32,13 +32,13 @@ class TransactionImpl : public Transaction, public std::enable_shared_from_this<
 
   private:
     DbConnectionPtr _connectionPtr;
-    virtual void execSql(const std::string &sql,
+    virtual void execSql(std::string &&sql,
                          size_t paraNum,
-                         const std::vector<const char *> &parameters,
-                         const std::vector<int> &length,
-                         const std::vector<int> &format,
-                         const ResultCallback &rcb,
-                         const std::function<void(const std::exception_ptr &)> &exceptCallback) override;
+                         std::vector<const char *> &&parameters,
+                         std::vector<int> &&length,
+                         std::vector<int> &&format,
+                         ResultCallback &&rcb,
+                         std::function<void(const std::exception_ptr &)> &&exceptCallback) override;
     virtual std::shared_ptr<Transaction> newTransaction(const std::function<void(bool)>&) override
     {
         return shared_from_this();

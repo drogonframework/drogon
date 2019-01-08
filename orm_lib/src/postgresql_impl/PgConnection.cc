@@ -97,12 +97,14 @@ void PgConnection::pgPoll()
         LOG_ERROR << "!!!Pg connection failed: " << PQerrorMessage(_connPtr.get());
         break;
     case PGRES_POLLING_WRITING:
-        _channel.enableWriting();
-        _channel.disableReading();
+        if (!_channel.isWriting())
+            _channel.enableWriting();
         break;
     case PGRES_POLLING_READING:
-        _channel.enableReading();
-        _channel.disableWriting();
+        if (!_channel.isReading())
+            _channel.enableReading();
+        if (_channel.isWriting())
+            _channel.disableWriting();
         break;
 
     case PGRES_POLLING_OK:
@@ -112,8 +114,10 @@ void PgConnection::pgPoll()
             assert(_okCb);
             _okCb(shared_from_this());
         }
-        _channel.enableReading();
-        _channel.disableWriting();
+        if (!_channel.isReading())
+            _channel.enableReading();
+        if (_channel.isWriting())
+            _channel.disableWriting();
         break;
     case PGRES_POLLING_ACTIVE:
         //unused!
@@ -122,14 +126,14 @@ void PgConnection::pgPoll()
         break;
     }
 }
-void PgConnection::execSql(const std::string &sql,
+void PgConnection::execSql(std::string &&sql,
                            size_t paraNum,
-                           const std::vector<const char *> &parameters,
-                           const std::vector<int> &length,
-                           const std::vector<int> &format,
-                           const ResultCallback &rcb,
-                           const std::function<void(const std::exception_ptr &)> &exceptCallback,
-                           const std::function<void()> &idleCb)
+                           std::vector<const char *> &&parameters,
+                           std::vector<int> &&length,
+                           std::vector<int> &&format,
+                           ResultCallback &&rcb,
+                           std::function<void(const std::exception_ptr &)> &&exceptCallback,
+                           std::function<void()> &&idleCb)
 {
     LOG_TRACE << sql;
     assert(paraNum == parameters.size());
@@ -139,16 +143,16 @@ void PgConnection::execSql(const std::string &sql,
     assert(idleCb);
     assert(!_isWorking);
     assert(!sql.empty());
-    _sql = sql;
-    _cb = rcb;
-    _idleCb = idleCb;
+    _sql = std::move(sql);
+    _cb = std::move(rcb);
+    _idleCb = std::move(idleCb);
     _isWorking = true;
-    _exceptCb = exceptCallback;
+    _exceptCb = std::move(exceptCallback);
     auto thisPtr = shared_from_this();
-    _loop->runInLoop([thisPtr, sql, paraNum, parameters, length, format]() {
+    _loop->runInLoop([thisPtr, paraNum=std::move(paraNum), parameters=std::move(parameters), length=std::move(length), format=std::move(format)]() {
         if (PQsendQueryParams(
                 thisPtr->_connPtr.get(),
-                sql.c_str(),
+                thisPtr->_sql.c_str(),
                 paraNum,
                 NULL,
                 parameters.data(),
@@ -198,8 +202,8 @@ void PgConnection::handleRead()
         //need read more data from socket;
         return;
     }
-
-    _channel.disableWriting();
+    if (_channel.isWriting())
+        _channel.disableWriting();
     // got query results?
     while ((res = std::shared_ptr<PGresult>(PQgetResult(_connPtr.get()), [](PGresult *p) {
                 PQclear(p);

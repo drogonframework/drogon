@@ -70,27 +70,27 @@ TransactionImpl::~TransactionImpl()
         });
     }
 }
-void TransactionImpl::execSql(const std::string &sql,
+void TransactionImpl::execSql(std::string &&sql,
                               size_t paraNum,
-                              const std::vector<const char *> &parameters,
-                              const std::vector<int> &length,
-                              const std::vector<int> &format,
-                              const ResultCallback &rcb,
-                              const std::function<void(const std::exception_ptr &)> &exceptCallback)
+                              std::vector<const char *> &&parameters,
+                              std::vector<int> &&length,
+                              std::vector<int> &&format,
+                              ResultCallback &&rcb,
+                              std::function<void(const std::exception_ptr &)> &&exceptCallback)
 {
     auto thisPtr = shared_from_this();
-    _loop->queueInLoop([thisPtr, sql, paraNum, parameters, length, format, rcb, exceptCallback]() {
+    _loop->queueInLoop([thisPtr, sql = std::move(sql), paraNum, parameters = std::move(parameters), length = std::move(length), format = std::move(format), rcb = std::move(rcb), exceptCallback = std::move(exceptCallback)]() mutable {
         if (!thisPtr->_isCommitedOrRolledback)
         {
             if (!thisPtr->_isWorking)
             {
                 thisPtr->_isWorking = true;
-                thisPtr->_connectionPtr->execSql(sql,
+                thisPtr->_connectionPtr->execSql(std::move(sql),
                                                  paraNum,
-                                                 parameters,
-                                                 length,
-                                                 format,
-                                                 rcb,
+                                                 std::move(parameters),
+                                                 std::move(length),
+                                                 std::move(format),
+                                                 std::move(rcb),
                                                  [exceptCallback, thisPtr](const std::exception_ptr &ePtr) {
                                                      thisPtr->rollback();
                                                      if (exceptCallback)
@@ -104,13 +104,13 @@ void TransactionImpl::execSql(const std::string &sql,
             {
                 //push sql cmd to buffer;
                 SqlCmd cmd;
-                cmd._sql = sql;
+                cmd._sql = std::move(sql);
                 cmd._paraNum = paraNum;
-                cmd._parameters = parameters;
-                cmd._length = length;
-                cmd._format = format;
-                cmd._cb = rcb;
-                cmd._exceptCb = exceptCallback;
+                cmd._parameters = std::move(parameters);
+                cmd._length = std::move(length);
+                cmd._format = std::move(format);
+                cmd._cb = std::move(rcb);
+                cmd._exceptCb = std::move(exceptCallback);
                 thisPtr->_sqlCmdBuffer.push_back(std::move(cmd));
             }
         }
@@ -196,13 +196,13 @@ void TransactionImpl::execNewTask()
 
             auto conn = _connectionPtr;
 
-            _loop->queueInLoop([=]() {
-                conn->execSql(cmd._sql,
+            _loop->queueInLoop([=]() mutable {
+                conn->execSql(std::move(cmd._sql),
                               cmd._paraNum,
-                              cmd._parameters,
-                              cmd._length,
-                              cmd._format,
-                              cmd._cb,
+                              std::move(cmd._parameters),
+                              std::move(cmd._length),
+                              std::move(cmd._format),
+                              std::move(cmd._cb),
                               [cmd, thisPtr](const std::exception_ptr &ePtr) {
                                   thisPtr->rollback();
                                   if (cmd._exceptCb)

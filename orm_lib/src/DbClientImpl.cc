@@ -73,13 +73,13 @@ DbClientImpl::~DbClientImpl() noexcept
 }
 
 void DbClientImpl::execSql(const DbConnectionPtr &conn,
-                           const std::string &sql,
+                           std::string &&sql,
                            size_t paraNum,
-                           const std::vector<const char *> &parameters,
-                           const std::vector<int> &length,
-                           const std::vector<int> &format,
-                           const ResultCallback &cb,
-                           const std::function<void(const std::exception_ptr &)> &exceptCallback)
+                           std::vector<const char *> &&parameters,
+                           std::vector<int> &&length,
+                           std::vector<int> &&format,
+                           ResultCallback &&rcb,
+                           std::function<void(const std::exception_ptr &)> &&exceptCallback)
 {
     if (!conn)
     {
@@ -94,8 +94,8 @@ void DbClientImpl::execSql(const DbConnectionPtr &conn,
         return;
     }
     std::weak_ptr<DbConnection> weakConn = conn;
-    conn->execSql(sql, paraNum, parameters, length, format,
-                  cb, exceptCallback,
+    conn->execSql(std::move(sql), paraNum, std::move(parameters), std::move(length), std::move(format),
+                  std::move(rcb), std::move(exceptCallback),
                   [=]() -> void {
                       {
                           auto connPtr = weakConn.lock();
@@ -105,18 +105,18 @@ void DbClientImpl::execSql(const DbConnectionPtr &conn,
                       }
                   });
 }
-void DbClientImpl::execSql(const std::string &sql,
+void DbClientImpl::execSql(std::string &&sql,
                            size_t paraNum,
-                           const std::vector<const char *> &parameters,
-                           const std::vector<int> &length,
-                           const std::vector<int> &format,
-                           const QueryCallback &cb,
-                           const ExceptPtrCallback &exceptCb)
+                           std::vector<const char *> &&parameters,
+                           std::vector<int> &&length,
+                           std::vector<int> &&format,
+                           ResultCallback &&rcb,
+                           std::function<void(const std::exception_ptr &)> &&exceptCallback)
 {
     assert(paraNum == parameters.size());
     assert(paraNum == length.size());
     assert(paraNum == format.size());
-    assert(cb);
+    assert(rcb);
     DbConnectionPtr conn;
     {
         std::lock_guard<std::mutex> guard(_connectionsMutex);
@@ -131,7 +131,7 @@ void DbClientImpl::execSql(const std::string &sql,
                 }
                 catch (...)
                 {
-                    exceptCb(std::current_exception());
+                    exceptCallback(std::current_exception());
                 }
                 return;
             }
@@ -146,7 +146,7 @@ void DbClientImpl::execSql(const std::string &sql,
     }
     if (conn)
     {
-        execSql(conn, sql, paraNum, parameters, length, format, cb, exceptCb);
+        execSql(conn, std::move(sql), paraNum, std::move(parameters), std::move(length), std::move(format), std::move(rcb), std::move(exceptCallback));
         return;
     }
     bool busy = false;
@@ -166,19 +166,19 @@ void DbClientImpl::execSql(const std::string &sql,
         }
         catch (...)
         {
-            exceptCb(std::current_exception());
+            exceptCallback(std::current_exception());
         }
         return;
     }
     //LOG_TRACE << "Push query to buffer";
-    SqlCmd cmd;
-    cmd._sql = sql;
-    cmd._paraNum = paraNum;
-    cmd._parameters = parameters;
-    cmd._length = length;
-    cmd._format = format;
-    cmd._cb = cb;
-    cmd._exceptCb = exceptCb;
+    std::shared_ptr<SqlCmd> cmd = std::make_shared<SqlCmd>();
+    cmd->_sql = std::move(sql);
+    cmd->_paraNum = paraNum;
+    cmd->_parameters = std::move(parameters);
+    cmd->_length = std::move(length);
+    cmd->_format = std::move(format);
+    cmd->_cb = std::move(rcb);
+    cmd->_exceptCb = std::move(exceptCallback);
     {
         std::lock_guard<std::mutex> guard(_bufferMutex);
         _sqlCmdBuffer.push_back(std::move(cmd));
@@ -239,18 +239,20 @@ void DbClientImpl::handleNewTask(const DbConnectionPtr &connPtr)
             if (!_sqlCmdBuffer.empty())
             {
                 _busyConnections.insert(connPtr); //For new connections, this sentence is necessary
-                auto cmd = _sqlCmdBuffer.front();
-                _sqlCmdBuffer.pop_front();
-                _loopPtr->queueInLoop([=]() {
-                    execSql(connPtr, cmd._sql, cmd._paraNum, cmd._parameters, cmd._length, cmd._format, cmd._cb, cmd._exceptCb);
+                auto &cmd = _sqlCmdBuffer.front();
+                _loopPtr->queueInLoop([connPtr, cmd, this]() {
+                    execSql(connPtr, std::move(cmd->_sql), cmd->_paraNum, std::move(cmd->_parameters), std::move(cmd->_length), std::move(cmd->_format), std::move(cmd->_cb), std::move(cmd->_exceptCb));
                 });
-
+                _sqlCmdBuffer.pop_front();
                 return;
             }
         }
         //Idle connection
-        _busyConnections.erase(connPtr);
-        _readyConnections.insert(connPtr);
+        _loopPtr->queueInLoop([connPtr, this]() {
+            std::lock_guard<std::mutex> guard(_connectionsMutex);
+            _busyConnections.erase(connPtr);
+            _readyConnections.insert(connPtr);
+        });
     }
 }
 

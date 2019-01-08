@@ -34,25 +34,26 @@ class DbClientImpl : public DbClient, public std::enable_shared_from_this<DbClie
   public:
     DbClientImpl(const std::string &connInfo, const size_t connNum, ClientType type);
     virtual ~DbClientImpl() noexcept;
-    virtual void execSql(const std::string &sql,
+    virtual void execSql(std::string &&sql,
                          size_t paraNum,
-                         const std::vector<const char *> &parameters,
-                         const std::vector<int> &length,
-                         const std::vector<int> &format,
-                         const ResultCallback &rcb,
-                         const std::function<void(const std::exception_ptr &)> &exceptCallback) override;
+                         std::vector<const char *> &&parameters,
+                         std::vector<int> &&length,
+                         std::vector<int> &&format,
+                         ResultCallback &&rcb,
+                         std::function<void(const std::exception_ptr &)> &&exceptCallback) override;
     virtual std::shared_ptr<Transaction> newTransaction(const std::function<void(bool)> &commitCallback = std::function<void(bool)>()) override;
 
   private:
     void ioLoop();
     std::shared_ptr<trantor::EventLoop> _loopPtr;
-    void execSql(const DbConnectionPtr &conn, const std::string &sql,
+    void execSql(const DbConnectionPtr &conn,
+                 std::string &&sql,
                  size_t paraNum,
-                 const std::vector<const char *> &parameters,
-                 const std::vector<int> &length,
-                 const std::vector<int> &format,
-                 const ResultCallback &rcb,
-                 const std::function<void(const std::exception_ptr &)> &exceptCallback);
+                 std::vector<const char *> &&parameters,
+                 std::vector<int> &&length,
+                 std::vector<int> &&format,
+                 ResultCallback &&rcb,
+                 std::function<void(const std::exception_ptr &)> &&exceptCallback);
 
     DbConnectionPtr newConnection();
 
@@ -78,7 +79,7 @@ class DbClientImpl : public DbClient, public std::enable_shared_from_this<DbClie
         QueryCallback _cb;
         ExceptPtrCallback _exceptCb;
     };
-    std::deque<SqlCmd> _sqlCmdBuffer;
+    std::deque<std::shared_ptr<SqlCmd>> _sqlCmdBuffer;
     std::mutex _bufferMutex;
 
     void handleNewTask(const DbConnectionPtr &conn);
