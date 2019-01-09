@@ -419,7 +419,7 @@ void HttpAppFrameworkImpl::run()
 #ifdef __linux__
         for (size_t i = 0; i < _threadNum; i++)
         {
-            auto loopThreadPtr = std::make_shared<EventLoopThread>();
+            auto loopThreadPtr = std::make_shared<EventLoopThread>("DrogonIoLoop");
             loopThreadPtr->run();
             loopThreads.push_back(loopThreadPtr);
             auto serverPtr = std::make_shared<HttpServer>(loopThreadPtr->getLoop(),
@@ -449,7 +449,7 @@ void HttpAppFrameworkImpl::run()
             servers.push_back(serverPtr);
         }
 #else
-        auto loopThreadPtr = std::make_shared<EventLoopThread>();
+        auto loopThreadPtr = std::make_shared<EventLoopThread>("DrogonIoLoop");
         loopThreadPtr->run();
         loopThreads.push_back(loopThreadPtr);
         auto serverPtr = std::make_shared<HttpServer>(loopThreadPtr->getLoop(),
