@@ -268,14 +268,14 @@ void MysqlConnection::handleEvent()
     }
 }
 
-void MysqlConnection::execSql(const std::string &sql,
+void MysqlConnection::execSql(std::string &&sql,
                               size_t paraNum,
-                              const std::vector<const char *> &parameters,
-                              const std::vector<int> &length,
-                              const std::vector<int> &format,
-                              const ResultCallback &rcb,
-                              const std::function<void(const std::exception_ptr &)> &exceptCallback,
-                              const std::function<void()> &idleCb)
+                              std::vector<const char *> &&parameters,
+                              std::vector<int> &&length,
+                              std::vector<int> &&format,
+                              ResultCallback &&rcb,
+                              std::function<void(const std::exception_ptr &)> &&exceptCallback,
+                              std::function<void()> &&idleCb)
 {
     LOG_TRACE << sql;
     assert(paraNum == parameters.size());
@@ -286,10 +286,10 @@ void MysqlConnection::execSql(const std::string &sql,
     assert(!_isWorking);
     assert(!sql.empty());
 
-    _cb = rcb;
-    _idleCb = idleCb;
+    _cb = std::move(rcb);
+    _idleCb = std::move(idleCb);
     _isWorking = true;
-    _exceptCb = exceptCallback;
+    _exceptCb = std::move(exceptCallback);
     _sql.clear();
     if (paraNum > 0)
     {

@@ -37,14 +37,14 @@ class PgConnection : public DbConnection, public std::enable_shared_from_this<Pg
   public:
     PgConnection(trantor::EventLoop *loop, const std::string &connInfo);
 
-    virtual void execSql(const std::string &sql,
+    virtual void execSql(std::string &&sql,
                          size_t paraNum,
-                         const std::vector<const char *> &parameters,
-                         const std::vector<int> &length,
-                         const std::vector<int> &format,
-                         const ResultCallback &rcb,
-                         const std::function<void(const std::exception_ptr &)> &exceptCallback,
-                         const std::function<void()> &idleCb) override;
+                         std::vector<const char *> &&parameters,
+                         std::vector<int> &&length,
+                         std::vector<int> &&format,
+                         ResultCallback &&rcb,
+                         std::function<void(const std::exception_ptr &)> &&exceptCallback,
+                         std::function<void()> &&idleCb) override;
 
   private:
     std::shared_ptr<PGconn> _connPtr;

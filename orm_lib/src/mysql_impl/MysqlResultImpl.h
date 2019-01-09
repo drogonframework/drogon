@@ -34,8 +34,8 @@ class MysqlResultImpl : public ResultImpl
                     const std::string &query,
                     size_type affectedRows,
                     unsigned long long insertId) noexcept
-        : _result(r),
-          _query(query),
+        : ResultImpl(query),
+          _result(r),
           _rowsNum(_result ? mysql_num_rows(_result.get()) : 0),
           _fieldArray(r ? mysql_fetch_fields(r.get()) : nullptr),
           _fieldNum(r ? mysql_num_fields(r.get()) : 0),
@@ -78,7 +78,6 @@ class MysqlResultImpl : public ResultImpl
 
   private:
     const std::shared_ptr<MYSQL_RES> _result;
-    const std::string _query;
     const Result::size_type _rowsNum;
     const MYSQL_FIELD *_fieldArray;
     const Result::row_size_type _fieldNum;

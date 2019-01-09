@@ -28,7 +28,7 @@ void SqlBinder::exec()
         //nonblocking mode,default mode
         //Retain shared_ptrs of parameters until we get the result;
         std::shared_ptr<decltype(_objs)> objs = std::make_shared<decltype(_objs)>(std::move(_objs));
-        _client.execSql(_sql, _paraNum, _parameters, _length, _format,
+        _client.execSql(std::move(_sql), _paraNum, std::move(_parameters), std::move(_length), std::move(_format),
                         [holder = std::move(_callbackHolder), objs](const Result &r) {
                             objs->clear();
                             if (holder)
@@ -67,7 +67,7 @@ void SqlBinder::exec()
         std::shared_ptr<std::promise<Result>> pro(new std::promise<Result>);
         auto f = pro->get_future();
 
-        _client.execSql(_sql, _paraNum, _parameters, _length, _format,
+        _client.execSql(std::move(_sql), _paraNum, std::move(_parameters), std::move(_length), std::move(_format),
                         [pro](const Result &r) {
                             pro->set_value(r);
                         },

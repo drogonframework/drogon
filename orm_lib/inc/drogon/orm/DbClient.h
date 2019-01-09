@@ -152,13 +152,13 @@ class DbClient : public trantor::NonCopyable
 
   private:
     friend internal::SqlBinder;
-    virtual void execSql(const std::string &sql,
+    virtual void execSql(std::string &&sql,
                          size_t paraNum,
-                         const std::vector<const char *> &parameters,
-                         const std::vector<int> &length,
-                         const std::vector<int> &format,
-                         const ResultCallback &rcb,
-                         const std::function<void(const std::exception_ptr &)> &exptCallback) = 0;
+                         std::vector<const char *> &&parameters,
+                         std::vector<int> &&length,
+                         std::vector<int> &&format,
+                         ResultCallback &&rcb,
+                         std::function<void(const std::exception_ptr &)> &&exceptCallback) = 0;
 
   protected:
     ClientType _type;

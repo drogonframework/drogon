@@ -114,7 +114,6 @@ Result::size_type Result::size() const noexcept
 void Result::swap(Result &other) noexcept
 {
     _resultPtr.swap(other._resultPtr);
-    _query.swap(other._query);
     _errString.swap(other._errString);
 }
 Result::row_size_type Result::columns() const noexcept
@@ -148,4 +147,8 @@ Result::field_size_type Result::getLength(Result::size_type row, Result::row_siz
 unsigned long long Result::insertId() const noexcept
 {
     return _resultPtr->insertId();
+}
+const std::string &Result::sql() const noexcept
+{
+    return _resultPtr->sql();
 }

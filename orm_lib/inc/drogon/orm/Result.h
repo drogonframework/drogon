@@ -84,9 +84,11 @@ class Result
     /// For Mysql, Sqlite3 database
     unsigned long long insertId() const noexcept;
 
+    const std::string &sql() const noexcept;
+
   private:
     ResultImplPtr _resultPtr;
-    std::string _query;
+    
     std::string _errString;
     friend class Field;
     friend class Row;

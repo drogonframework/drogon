@@ -45,6 +45,7 @@ class HttpAppFrameworkImpl : public HttpAppFramework
                              const std::string &certFile = "",
                              const std::string &keyFile = "") override;
     virtual void setThreadNum(size_t threadNum) override;
+    virtual size_t getThreadNum() const override { return _threadNum; }
     virtual void setSSLFiles(const std::string &certPath,
                              const std::string &keyPath) override;
     virtual void run() override;
