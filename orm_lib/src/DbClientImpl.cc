@@ -44,7 +44,7 @@ using namespace drogon::orm;
 DbClientImpl::DbClientImpl(const std::string &connInfo, const size_t connNum, ClientType type)
     : _connInfo(connInfo),
       _connectNum(connNum),
-      _loops(connNum / 10 > 0 ? (connNum / 10 < drogon::app().getThreadNum() ? connNum / 10 : drogon::app().getThreadNum()) : 1)
+      _loops(connNum / 100 > 0 ? connNum / 100 : 1)
 {
     _type = type;
     LOG_TRACE << "type=" << (int)type;
