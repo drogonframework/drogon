@@ -51,13 +51,15 @@ DbClientImpl::DbClientImpl(const std::string &connInfo, const size_t connNum, Cl
     //LOG_DEBUG << _loops.getLoopNum();
     assert(connNum > 0);
     _loops.start();
-    for (size_t i = 0; i < _connectNum; i++)
-    {
-        auto loop = _loops.getNextLoop();
-        loop->runInLoop([this, loop]() {
-            _connections.insert(newConnection(loop));
-        });
-    }
+    std::thread([this]() {
+        for (size_t i = 0; i < _connectNum; i++)
+        {
+            auto loop = _loops.getNextLoop();
+            loop->runInLoop([this, loop]() {
+                _connections.insert(newConnection(loop));
+            });
+        }
+    }).detach();
 }
 
 DbClientImpl::~DbClientImpl() noexcept
