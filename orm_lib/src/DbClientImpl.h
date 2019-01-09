@@ -16,7 +16,7 @@
 
 #include "DbConnection.h"
 #include <drogon/orm/DbClient.h>
-#include <trantor/net/EventLoop.h>
+#include <trantor/net/EventLoopThreadPool.h>
 #include <memory>
 #include <thread>
 #include <functional>
@@ -44,8 +44,10 @@ class DbClientImpl : public DbClient, public std::enable_shared_from_this<DbClie
     virtual std::shared_ptr<Transaction> newTransaction(const std::function<void(bool)> &commitCallback = std::function<void(bool)>()) override;
 
   private:
-    void ioLoop();
-    std::shared_ptr<trantor::EventLoop> _loopPtr;
+    std::string _connInfo;
+    size_t _connectNum;
+    trantor::EventLoopThreadPool _loops;
+
     void execSql(const DbConnectionPtr &conn,
                  std::string &&sql,
                  size_t paraNum,
@@ -55,19 +57,15 @@ class DbClientImpl : public DbClient, public std::enable_shared_from_this<DbClie
                  ResultCallback &&rcb,
                  std::function<void(const std::exception_ptr &)> &&exceptCallback);
 
-    DbConnectionPtr newConnection();
+    DbConnectionPtr newConnection(trantor::EventLoop *loop);
 
+    std::mutex _connectionsMutex;
     std::unordered_set<DbConnectionPtr> _connections;
     std::unordered_set<DbConnectionPtr> _readyConnections;
     std::unordered_set<DbConnectionPtr> _busyConnections;
-    std::string _connInfo;
-    std::thread _loopThread;
-    std::mutex _connectionsMutex;
+
     std::condition_variable _condConnectionReady;
     size_t _transWaitNum = 0;
-
-    size_t _connectNum;
-    bool _stop = false;
 
     struct SqlCmd
     {

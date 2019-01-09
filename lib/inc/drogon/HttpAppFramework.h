@@ -100,6 +100,7 @@ class HttpAppFramework : public trantor::NonCopyable
     virtual trantor::EventLoop *loop() = 0;
 
     virtual void setThreadNum(size_t threadNum) = 0;
+    virtual size_t getThreadNum() const = 0;
     virtual void setSSLFiles(const std::string &certPath,
                              const std::string &keyPath) = 0;
     virtual void addListener(const std::string &ip,
