@@ -231,9 +231,9 @@ static void loadApp(const Json::Value &app)
 }
 static void loadDbClients(const Json::Value &dbClients)
 {
-#if USE_ORM
     if (!dbClients)
         return;
+#if USE_ORM   
     for (auto &client : dbClients)
     {
         auto type = client.get("rdbms", "postgresql").asString();
@@ -252,6 +252,9 @@ static void loadDbClients(const Json::Value &dbClients)
         auto filename = client.get("filename", "").asString();
         drogon::app().createDbClient(type, host, (u_short)port, dbname, user, password, connNum, filename, name);
     }
+#else
+    std::cout << "No database is supported by drogon, please install the database development library first." << std::endl;
+    exit(1);
 #endif
 }
 static void loadListeners(const Json::Value &listeners)
