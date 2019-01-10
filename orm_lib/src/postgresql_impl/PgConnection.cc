@@ -95,6 +95,10 @@ void PgConnection::pgPoll()
     {
     case PGRES_POLLING_FAILED:
         LOG_ERROR << "!!!Pg connection failed: " << PQerrorMessage(_connPtr.get());
+        if (_status == ConnectStatus_None)
+        {
+            handleClosed();
+        }
         break;
     case PGRES_POLLING_WRITING:
         if (!_channel.isWriting())
@@ -149,7 +153,7 @@ void PgConnection::execSql(std::string &&sql,
     _isWorking = true;
     _exceptCb = std::move(exceptCallback);
     auto thisPtr = shared_from_this();
-    _loop->runInLoop([thisPtr, paraNum=std::move(paraNum), parameters=std::move(parameters), length=std::move(length), format=std::move(format)]() {
+    _loop->runInLoop([thisPtr, paraNum = std::move(paraNum), parameters = std::move(parameters), length = std::move(length), format = std::move(format)]() {
         if (PQsendQueryParams(
                 thisPtr->_connPtr.get(),
                 thisPtr->_sql.c_str(),
