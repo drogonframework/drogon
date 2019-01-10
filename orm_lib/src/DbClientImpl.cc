@@ -44,24 +44,50 @@ using namespace drogon::orm;
 DbClientImpl::DbClientImpl(const std::string &connInfo, const size_t connNum, ClientType type)
     : _connInfo(connInfo),
       _connectNum(connNum),
-      _loops((connNum / 100 > 0 ? connNum / 100 : 1), "DbLoop")
+      _loops(type == ClientType::Sqlite3 ? 1 : (connNum / 100 > 0 ? connNum / 100 : 1), "DbLoop")
 {
     _type = type;
     LOG_TRACE << "type=" << (int)type;
     //LOG_DEBUG << _loops.getLoopNum();
     assert(connNum > 0);
     _loops.start();
-    std::thread([this]() {
-        for (size_t i = 0; i < _connectNum; i++)
-        {
-            auto loop = _loops.getNextLoop();
-            loop->runInLoop([this, loop]() {
-                std::lock_guard<std::mutex> lock(_connectionsMutex);
-                _connections.insert(newConnection(loop));
-            });
-        }
-    })
-        .detach();
+    if (type == ClientType::PostgreSQL)
+    {
+        std::thread([this]() {
+            for (size_t i = 0; i < _connectNum; i++)
+            {
+                auto loop = _loops.getNextLoop();
+                loop->runInLoop([this, loop]() {
+                    std::lock_guard<std::mutex> lock(_connectionsMutex);
+                    _connections.insert(newConnection(loop));
+                });
+            }
+        }).detach();
+    }
+    else if (type == ClientType::Mysql)
+    {
+        std::thread([this]() {
+            for (size_t i = 0; i < _connectNum; i++)
+            {
+                auto loop = _loops.getNextLoop();
+                loop->runAfter(0.01 * (i + 1), [this, loop]() {
+                    std::lock_guard<std::mutex> lock(_connectionsMutex);
+                    _connections.insert(newConnection(loop));
+                });
+            }
+        }).detach();
+    }
+    else if (type == ClientType::Sqlite3)
+    {
+        auto loop = _loops.getNextLoop();
+        loop->runInLoop([this]() {
+            std::lock_guard<std::mutex> lock(_connectionsMutex);
+            for (size_t i = 0; i < _connectNum; i++)
+            {
+                _connections.insert(newConnection(nullptr));
+            }
+        });
+    }
 }
 
 DbClientImpl::~DbClientImpl() noexcept
@@ -289,7 +315,7 @@ DbConnectionPtr DbClientImpl::newConnection(trantor::EventLoop *loop)
     }
 
     std::weak_ptr<DbClientImpl> weakPtr = shared_from_this();
-    connPtr->setCloseCallback([weakPtr, loop](const DbConnectionPtr &closeConnPtr) {
+    connPtr->setCloseCallback([weakPtr](const DbConnectionPtr &closeConnPtr) {
         //Erase the connection
         auto thisPtr = weakPtr.lock();
         if (!thisPtr)
@@ -302,6 +328,7 @@ DbConnectionPtr DbClientImpl::newConnection(trantor::EventLoop *loop)
             thisPtr->_connections.erase(closeConnPtr);
         }
         //Reconnect after 1 second
+        auto loop = closeConnPtr->loop();
         loop->runAfter(1, [weakPtr, closeConnPtr, loop] {
             auto thisPtr = weakPtr.lock();
             if (!thisPtr)
