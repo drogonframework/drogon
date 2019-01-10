@@ -44,7 +44,7 @@ using namespace drogon::orm;
 DbClientImpl::DbClientImpl(const std::string &connInfo, const size_t connNum, ClientType type)
     : _connInfo(connInfo),
       _connectNum(connNum),
-      _loops((connNum / 100 > 0 ? connNum / 100 : 1),"DbLoop")
+      _loops((connNum / 100 > 0 ? connNum / 100 : 1), "DbLoop")
 {
     _type = type;
     LOG_TRACE << "type=" << (int)type;
@@ -56,10 +56,12 @@ DbClientImpl::DbClientImpl(const std::string &connInfo, const size_t connNum, Cl
         {
             auto loop = _loops.getNextLoop();
             loop->runInLoop([this, loop]() {
+                std::lock_guard<std::mutex> lock(_connectionsMutex);
                 _connections.insert(newConnection(loop));
             });
         }
-    }).detach();
+    })
+        .detach();
 }
 
 DbClientImpl::~DbClientImpl() noexcept
@@ -288,16 +290,23 @@ DbConnectionPtr DbClientImpl::newConnection(trantor::EventLoop *loop)
 
     std::weak_ptr<DbClientImpl> weakPtr = shared_from_this();
     connPtr->setCloseCallback([weakPtr, loop](const DbConnectionPtr &closeConnPtr) {
+        //Erase the connection
+        auto thisPtr = weakPtr.lock();
+        if (!thisPtr)
+            return;
+        {
+            std::lock_guard<std::mutex> guard(thisPtr->_connectionsMutex);
+            thisPtr->_readyConnections.erase(closeConnPtr);
+            thisPtr->_busyConnections.erase(closeConnPtr);
+            assert(thisPtr->_connections.find(closeConnPtr) != thisPtr->_connections.end());
+            thisPtr->_connections.erase(closeConnPtr);
+        }
         //Reconnect after 1 second
         loop->runAfter(1, [weakPtr, closeConnPtr, loop] {
             auto thisPtr = weakPtr.lock();
             if (!thisPtr)
                 return;
             std::lock_guard<std::mutex> guard(thisPtr->_connectionsMutex);
-            thisPtr->_readyConnections.erase(closeConnPtr);
-            thisPtr->_busyConnections.erase(closeConnPtr);
-            assert(thisPtr->_connections.find(closeConnPtr) != thisPtr->_connections.end());
-            thisPtr->_connections.erase(closeConnPtr);
             thisPtr->_connections.insert(thisPtr->newConnection(loop));
         });
     });

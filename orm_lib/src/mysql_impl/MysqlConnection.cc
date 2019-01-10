@@ -133,8 +133,10 @@ void MysqlConnection::setChannel()
 
 void MysqlConnection::handleClosed()
 {
-    _status = ConnectStatus_Bad;
     _loop->assertInLoopThread();
+    if (_status == ConnectStatus_Bad)
+        return;
+    _status = ConnectStatus_Bad;
     _channelPtr->disableAll();
     _channelPtr->remove();
     assert(_closeCb);
