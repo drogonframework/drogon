@@ -34,8 +34,9 @@ void Sqlite3Connection::onError(const std::string &sql, const std::function<void
     }
 }
 
-Sqlite3Connection::Sqlite3Connection(trantor::EventLoop *loop, const std::string &connInfo)
-    : DbConnection(loop)
+Sqlite3Connection::Sqlite3Connection(trantor::EventLoop *loop, const std::string &connInfo, const std::shared_ptr<std::shared_mutex> &sharedMutex)
+    : DbConnection(loop),
+      _sharedMutexPtr(sharedMutex)
 {
     _loopThread.run();
     _loop = _loopThread.getLoop();
@@ -186,6 +187,36 @@ void Sqlite3Connection::execSqlInQueue(const std::string &sql,
         resultPtr->_columnNames.push_back(name);
         resultPtr->_columnNameMap.insert({name, i});
     }
+
+    if (sqlite3_stmt_readonly(stmt))
+    {
+        //Readonly, hold read lock;
+        std::shared_lock<std::shared_mutex> lock(*_sharedMutexPtr);
+        r = stmtStep(stmt, resultPtr, columnNum);
+    }
+    else
+    {
+        //Hold write lock
+        std::unique_lock<std::shared_mutex> lock(*_sharedMutexPtr);
+        r = stmtStep(stmt, resultPtr, columnNum);
+    }
+
+    if (r != SQLITE_DONE)
+    {
+        onError(sql, exceptCallback);
+        return;
+    }
+    // If the sql is a select statement? FIXME
+    resultPtr->_affectedRows = sqlite3_changes(_conn.get());
+    resultPtr->_insertId = sqlite3_last_insert_rowid(_conn.get());
+    // sqlite3_set_last_insert_rowid(_conn.get(), 0);
+    rcb(Result(resultPtr));
+    idleCb();
+}
+
+int Sqlite3Connection::stmtStep(sqlite3_stmt *stmt, const std::shared_ptr<Sqlite3ResultImpl> &resultPtr, int columnNum)
+{
+    int r;
     while ((r = sqlite3_step(stmt)) == SQLITE_ROW)
     {
         std::vector<std::shared_ptr<std::string>> row;
@@ -217,15 +248,5 @@ void Sqlite3Connection::execSqlInQueue(const std::string &sql,
         }
         resultPtr->_result.push_back(std::move(row));
     }
-    if (r != SQLITE_DONE)
-    {
-        onError(sql, exceptCallback);
-        return;
-    }
-    // If the sql is a select statement? FIXME
-    resultPtr->_affectedRows = sqlite3_changes(_conn.get());
-    resultPtr->_insertId = sqlite3_last_insert_rowid(_conn.get());
-    // sqlite3_set_last_insert_rowid(_conn.get(), 0);
-    rcb(Result(resultPtr));
-    idleCb();
+    return r;
 }

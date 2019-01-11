@@ -15,6 +15,7 @@
 #pragma once
 
 #include "../DbConnection.h"
+#include "Sqlite3ResultImpl.h"
 #include <drogon/orm/DbClient.h>
 #include <trantor/utils/NonCopyable.h>
 #include <trantor/utils/SerialTaskQueue.h>
@@ -25,6 +26,7 @@
 #include <functional>
 #include <iostream>
 #include <thread>
+#include <shared_mutex>
 
 namespace drogon
 {
@@ -36,7 +38,7 @@ typedef std::shared_ptr<Sqlite3Connection> Sqlite3ConnectionPtr;
 class Sqlite3Connection : public DbConnection, public std::enable_shared_from_this<Sqlite3Connection>
 {
   public:
-    Sqlite3Connection(trantor::EventLoop *loop, const std::string &connInfo);
+    Sqlite3Connection(trantor::EventLoop *loop, const std::string &connInfo, const std::shared_ptr<std::shared_mutex> &sharedMutex);
 
     virtual void execSql(std::string &&sql,
                          size_t paraNum,
@@ -58,8 +60,10 @@ class Sqlite3Connection : public DbConnection, public std::enable_shared_from_th
                         const std::function<void(const std::exception_ptr &)> &exceptCallback,
                         const std::function<void()> &idleCb);
     void onError(const std::string &sql, const std::function<void(const std::exception_ptr &)> &exceptCallback);
+    int stmtStep(sqlite3_stmt *stmt, const std::shared_ptr<Sqlite3ResultImpl> &resultPtr, int columnNum);
     trantor::EventLoopThread _loopThread;
     std::shared_ptr<sqlite3> _conn;
+    std::shared_ptr<std::shared_mutex> _sharedMutexPtr;
 };
 
 } // namespace orm

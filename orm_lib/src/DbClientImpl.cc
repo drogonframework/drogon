@@ -62,7 +62,8 @@ DbClientImpl::DbClientImpl(const std::string &connInfo, const size_t connNum, Cl
                     _connections.insert(newConnection(loop));
                 });
             }
-        }).detach();
+        })
+            .detach();
     }
     else if (type == ClientType::Mysql)
     {
@@ -75,10 +76,13 @@ DbClientImpl::DbClientImpl(const std::string &connInfo, const size_t connNum, Cl
                     _connections.insert(newConnection(loop));
                 });
             }
-        }).detach();
+        })
+            .detach();
     }
     else if (type == ClientType::Sqlite3)
     {
+        _sharedMutexPtr = std::make_shared<std::shared_mutex>();
+        assert(_sharedMutexPtr);
         auto loop = _loops.getNextLoop();
         loop->runInLoop([this]() {
             std::lock_guard<std::mutex> lock(_connectionsMutex);
@@ -304,7 +308,7 @@ DbConnectionPtr DbClientImpl::newConnection(trantor::EventLoop *loop)
     else if (_type == ClientType::Sqlite3)
     {
 #if USE_SQLITE3
-        connPtr = std::make_shared<Sqlite3Connection>(loop, _connInfo);
+        connPtr = std::make_shared<Sqlite3Connection>(loop, _connInfo, _sharedMutexPtr);
 #else
         return nullptr;
 #endif
@@ -329,7 +333,7 @@ DbConnectionPtr DbClientImpl::newConnection(trantor::EventLoop *loop)
         }
         //Reconnect after 1 second
         auto loop = closeConnPtr->loop();
-        loop->runAfter(1, [weakPtr, closeConnPtr, loop] {
+        loop->runAfter(1, [weakPtr, loop] {
             auto thisPtr = weakPtr.lock();
             if (!thisPtr)
                 return;
