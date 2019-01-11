@@ -194,7 +194,7 @@ void MysqlConnection::handleEvent()
             if (!ret)
             {
                 handleClosed();
-                perror("");
+                //perror("");
                 LOG_ERROR << "Failed to mysql_real_connect()";
                 return;
             }
