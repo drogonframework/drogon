@@ -121,7 +121,6 @@ void Sqlite3Connection::execSqlInQueue(const std::string &sql,
                                                                                      sqlite3_finalize(p);
                                                                                  })
                                                  : nullptr;
-
     if (ret != SQLITE_OK)
     {
         onError(sql, exceptCallback);
@@ -193,12 +192,19 @@ void Sqlite3Connection::execSqlInQueue(const std::string &sql,
         //Readonly, hold read lock;
         std::shared_lock<std::shared_mutex> lock(*_sharedMutexPtr);
         r = stmtStep(stmt, resultPtr, columnNum);
+        stmtPtr.reset();
     }
     else
     {
         //Hold write lock
         std::unique_lock<std::shared_mutex> lock(*_sharedMutexPtr);
         r = stmtStep(stmt, resultPtr, columnNum);
+        if (r == SQLITE_DONE)
+        {
+            resultPtr->_affectedRows = sqlite3_changes(_conn.get());
+            resultPtr->_insertId = sqlite3_last_insert_rowid(_conn.get());
+        }
+        stmtPtr.reset();
     }
 
     if (r != SQLITE_DONE)
@@ -206,10 +212,7 @@ void Sqlite3Connection::execSqlInQueue(const std::string &sql,
         onError(sql, exceptCallback);
         return;
     }
-    // If the sql is a select statement? FIXME
-    resultPtr->_affectedRows = sqlite3_changes(_conn.get());
-    resultPtr->_insertId = sqlite3_last_insert_rowid(_conn.get());
-    // sqlite3_set_last_insert_rowid(_conn.get(), 0);
+
     rcb(Result(resultPtr));
     idleCb();
 }
