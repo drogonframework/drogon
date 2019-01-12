@@ -111,14 +111,20 @@ MysqlConnection::MysqlConnection(trantor::EventLoop *loop, const std::string &co
 
 void MysqlConnection::setChannel()
 {
-    _channelPtr->disableAll();
     if ((_waitStatus & MYSQL_WAIT_READ) || (_waitStatus & MYSQL_WAIT_EXCEPT))
     {
-        _channelPtr->enableReading();
+        if (!_channelPtr->isReading())
+            _channelPtr->enableReading();
     }
     if (_waitStatus & MYSQL_WAIT_WRITE)
     {
-        _channelPtr->enableWriting();
+        if (!_channelPtr->isWriting())
+            _channelPtr->enableWriting();
+    }
+    else
+    {
+        if (_channelPtr->isWriting())
+            _channelPtr->disableWriting();
     }
     //(status & MYSQL_WAIT_EXCEPT) ///FIXME
     if (_waitStatus & MYSQL_WAIT_TIMEOUT)
@@ -258,10 +264,16 @@ void MysqlConnection::handleEvent()
                     //FIXME exception callback;
                     return;
                 }
-                //make result!
                 getResult(ret);
             }
             setChannel();
+            break;
+        }
+        case ExecStatus_None:
+        {
+            //Connection closed!
+            if (_waitStatus == 0)
+                handleClosed();
             break;
         }
         default:
