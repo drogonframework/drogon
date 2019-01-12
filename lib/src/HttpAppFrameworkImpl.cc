@@ -406,6 +406,12 @@ void HttpAppFrameworkImpl::run()
 
     _running = true;
 
+    //Create db clients
+    for (auto &fun : _dbFuncs)
+    {
+        fun();
+    }
+
     if (!_libFilePaths.empty())
     {
         _sharedLibManagerPtr = std::unique_ptr<SharedLibManager>(new SharedLibManager(&_loop, _libFilePaths));
@@ -1264,6 +1270,7 @@ void HttpAppFrameworkImpl::createDbClient(const std::string &dbType,
                                           const std::string &filename,
                                           const std::string &name)
 {
+    assert(!_running);
     auto connStr = formattedString("host=%s port=%u dbname=%s user=%s", host.c_str(), port, databaseName.c_str(), userName.c_str());
     if (!password.empty())
     {
@@ -1275,8 +1282,10 @@ void HttpAppFrameworkImpl::createDbClient(const std::string &dbType,
     if (type == "postgresql")
     {
 #if USE_POSTGRESQL
-        auto client = drogon::orm::DbClient::newPgClient(connStr, connectionNum);
-        _dbClientsMap[name] = client;
+        _dbFuncs.push_back([this, connStr, connectionNum, name]() {
+            auto client = drogon::orm::DbClient::newPgClient(connStr, connectionNum);
+            _dbClientsMap[name] = client;
+        });
 #else
         std::cout << "The PostgreSQL is not supported by drogon, please install the development library first." << std::endl;
         exit(1);
@@ -1285,8 +1294,10 @@ void HttpAppFrameworkImpl::createDbClient(const std::string &dbType,
     else if (type == "mysql")
     {
 #if USE_MYSQL
-        auto client = drogon::orm::DbClient::newMysqlClient(connStr, connectionNum);
-        _dbClientsMap[name] = client;
+        _dbFuncs.push_back([this, connStr, connectionNum, name]() {
+            auto client = drogon::orm::DbClient::newMysqlClient(connStr, connectionNum);
+            _dbClientsMap[name] = client;
+        });
 #else
         std::cout << "The Mysql is not supported by drogon, please install the development library first." << std::endl;
         exit(1);
@@ -1296,8 +1307,10 @@ void HttpAppFrameworkImpl::createDbClient(const std::string &dbType,
     {
 #if USE_SQLITE3
         std::string sqlite3ConnStr = "filename=" + filename;
-        auto client = drogon::orm::DbClient::newSqlite3Client(sqlite3ConnStr, connectionNum);
-        _dbClientsMap[name] = client;
+        _dbFuncs.push_back([this, sqlite3ConnStr, connectionNum, name]() {
+            auto client = drogon::orm::DbClient::newSqlite3Client(sqlite3ConnStr, connectionNum);
+            _dbClientsMap[name] = client;
+        });
 #else
         std::cout << "The Sqlite3 is not supported by drogon, please install the development library first." << std::endl;
         exit(1);
