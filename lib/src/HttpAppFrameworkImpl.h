@@ -227,6 +227,7 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     std::mutex _staticFilesCacheMutex;
 #if USE_ORM
     std::map<std::string, orm::DbClientPtr> _dbClientsMap;
+    std::vector<std::function<void()>> _dbFuncs;
 #endif
 };
 
