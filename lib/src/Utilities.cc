@@ -55,20 +55,27 @@ std::string genRandomString(int length)
     static const char char_space[] = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
     static std::once_flag once;
     static const int len = strlen(char_space);
+    static const int randMax = RAND_MAX - (RAND_MAX % len);
     std::call_once(once, []() {
         std::srand(time(nullptr));
     });
 
     int i;
-    char str[length + 1];
+    std::string str;
+    str.resize(length);
 
     for (i = 0; i < length; i++)
     {
-        str[i] = char_space[std::rand() % len];
+        int x = std::rand();
+        while (x >= randMax)
+        {
+            x = std::rand();
+        }
+        x = (x % len);
+        str[i] = char_space[x];
     }
 
-    str[length] = 0;
-    return std::string(str);
+    return str;
 }
 std::string hexToBinaryString(const char *ptr, size_t length)
 {
