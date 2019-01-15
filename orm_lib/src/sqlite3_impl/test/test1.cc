@@ -9,11 +9,9 @@ using namespace drogon::orm;
 int main()
 {
     trantor::Logger::setLogLevel(trantor::Logger::TRACE);
-    drogon::app().createDbClient("sqlite3", "", 0, "", "", "", 3, "test.db");
-    //auto clientPtr = DbClient::newSqlite3Client("filename=test.db", 3);
-
+    auto clientPtr = DbClient::newSqlite3Client("filename=test.db", 3);
     sleep(1);
-    auto clientPtr = app().getDbClient();
+    
     LOG_DEBUG << "start!";
     // *clientPtr << "Drop table groups;" << Mode::Blocking >>
     //     [](const Result &r) {

@@ -76,8 +76,6 @@ class Result
     row_size_type columns() const noexcept;
     /// Name of column with this number (throws exception if it doesn't exist)
     const char *columnName(row_size_type number) const;
-    const std::string &errorDescription() const { return _errString; }
-    void setError(const std::string &description) { _errString = description; }
 
     size_type affectedRows() const noexcept;
 
@@ -88,8 +86,7 @@ class Result
 
   private:
     ResultImplPtr _resultPtr;
-    
-    std::string _errString;
+
     friend class Field;
     friend class Row;
     /// Number of given column (throws exception if it doesn't exist).

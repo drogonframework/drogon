@@ -158,7 +158,7 @@ class Field
     Field(const Row &row, Row::size_type columnNum) noexcept;
 
   private:
-    Result _result;
+    const Result _result;
 };
 template <>
 std::string Field::as<std::string>() const;

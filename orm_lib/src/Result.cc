@@ -114,7 +114,6 @@ Result::size_type Result::size() const noexcept
 void Result::swap(Result &other) noexcept
 {
     _resultPtr.swap(other._resultPtr);
-    _errString.swap(other._errString);
 }
 Result::row_size_type Result::columns() const noexcept
 {

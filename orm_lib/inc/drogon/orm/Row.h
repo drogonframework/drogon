@@ -55,7 +55,7 @@ class Row
     ConstReverseIterator crend() const;
 
   private:
-    Result _result;
+    const Result _result;
 
   protected:
     friend class Field;
