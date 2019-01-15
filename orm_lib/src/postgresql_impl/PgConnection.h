@@ -45,6 +45,7 @@ class PgConnection : public DbConnection, public std::enable_shared_from_this<Pg
                          ResultCallback &&rcb,
                          std::function<void(const std::exception_ptr &)> &&exceptCallback,
                          std::function<void()> &&idleCb) override;
+    virtual void disconnect() override;
 
   private:
     std::shared_ptr<PGconn> _connPtr;

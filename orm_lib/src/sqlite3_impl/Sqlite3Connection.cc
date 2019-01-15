@@ -253,3 +253,14 @@ int Sqlite3Connection::stmtStep(sqlite3_stmt *stmt, const std::shared_ptr<Sqlite
     }
     return r;
 }
+void Sqlite3Connection::disconnect()
+{
+    std::promise<int> pro;
+    auto f = pro.get_future();
+    auto thisPtr = shared_from_this();
+    _loopThread.getLoop()->runInLoop([thisPtr, &pro]() {
+        thisPtr->_conn.reset();
+        pro.set_value(1);
+    });
+    f.get();
+}

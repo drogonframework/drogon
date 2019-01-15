@@ -88,6 +88,20 @@ void PgConnection::handleClosed()
     auto thisPtr = shared_from_this();
     _closeCb(thisPtr);
 }
+void PgConnection::disconnect()
+{
+    std::promise<int> pro;
+    auto f = pro.get_future();
+    auto thisPtr = shared_from_this();
+    _loop->runInLoop([thisPtr, &pro]() {
+        thisPtr->_status = ConnectStatus_Bad;
+        thisPtr->_channel.disableAll();
+        thisPtr->_channel.remove();
+        thisPtr->_connPtr.reset();
+        pro.set_value(1);
+    });
+    f.get();
+}
 void PgConnection::pgPoll()
 {
     _loop->assertInLoopThread();

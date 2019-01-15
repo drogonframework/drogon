@@ -65,6 +65,7 @@ class DbConnection : public trantor::NonCopyable
     }
     ConnectStatus status() const { return _status; }
     trantor::EventLoop *loop() { return _loop; }
+    virtual void disconnect() = 0;
 
   protected:
     QueryCallback _cb;

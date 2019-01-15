@@ -97,6 +97,10 @@ DbClientImpl::DbClientImpl(const std::string &connInfo, const size_t connNum, Cl
 DbClientImpl::~DbClientImpl() noexcept
 {
     std::lock_guard<std::mutex> lock(_connectionsMutex);
+    for (auto &conn : _connections)
+    {
+        conn->disconnect();
+    }
     _connections.clear();
     _readyConnections.clear();
     _busyConnections.clear();
@@ -182,7 +186,7 @@ void DbClientImpl::execSql(std::string &&sql,
     bool busy = false;
     {
         std::lock_guard<std::mutex> guard(_bufferMutex);
-        if (_sqlCmdBuffer.size() > 10000)
+        if (_sqlCmdBuffer.size() > 200000)
         {
             //too many queries in buffer;
             busy = true;
