@@ -152,12 +152,16 @@ void MysqlConnection::handleClosed()
 void MysqlConnection::disconnect()
 {
     auto thisPtr = shared_from_this();
-    _loop->runInLoop([thisPtr]() {
+    std::promise<int> pro;
+    auto f = pro.get_future();
+    _loop->runInLoop([thisPtr, &pro]() {
         thisPtr->_status = ConnectStatus_Bad;
         thisPtr->_channelPtr->disableAll();
         thisPtr->_channelPtr->remove();
         thisPtr->_mysqlPtr.reset();
+        pro.set_value(1);
     });
+    f.get();
 }
 void MysqlConnection::handleTimeout()
 {
