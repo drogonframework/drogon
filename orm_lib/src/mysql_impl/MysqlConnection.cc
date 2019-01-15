@@ -149,6 +149,16 @@ void MysqlConnection::handleClosed()
     auto thisPtr = shared_from_this();
     _closeCb(thisPtr);
 }
+void MysqlConnection::disconnect()
+{
+    auto thisPtr = shared_from_this();
+    _loop->runInLoop([thisPtr]() {
+        thisPtr->_status = ConnectStatus_Bad;
+        thisPtr->_channelPtr->disableAll();
+        thisPtr->_channelPtr->remove();
+        thisPtr->_mysqlPtr.reset();
+    });
+}
 void MysqlConnection::handleTimeout()
 {
     LOG_TRACE << "channel index:" << _channelPtr->index();

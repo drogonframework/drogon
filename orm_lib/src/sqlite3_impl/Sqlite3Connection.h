@@ -48,6 +48,7 @@ class Sqlite3Connection : public DbConnection, public std::enable_shared_from_th
                          ResultCallback &&rcb,
                          std::function<void(const std::exception_ptr &)> &&exceptCallback,
                          std::function<void()> &&idleCb) override;
+    virtual void disconnect() override;
 
   private:
     static std::once_flag _once;
