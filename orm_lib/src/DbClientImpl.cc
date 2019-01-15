@@ -186,7 +186,7 @@ void DbClientImpl::execSql(std::string &&sql,
     bool busy = false;
     {
         std::lock_guard<std::mutex> guard(_bufferMutex);
-        if (_sqlCmdBuffer.size() > 10000)
+        if (_sqlCmdBuffer.size() > 200000)
         {
             //too many queries in buffer;
             busy = true;
