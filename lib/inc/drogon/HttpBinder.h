@@ -71,6 +71,16 @@ class HttpBinderBase
     virtual size_t paramCount() = 0;
     virtual ~HttpBinderBase() {}
 };
+
+template <typename T>
+T &getControllerObj()
+{
+    //Initialization of function-local statics is guaranteed to occur only once even when
+    //called from multiple threads, and may be more efficient than the equivalent code using std::call_once.
+    static T obj;
+    return obj;
+}
+
 typedef std::shared_ptr<HttpBinderBase> HttpBinderBasePtr;
 template <typename FUNCTION>
 class HttpBinder : public HttpBinderBase
@@ -147,10 +157,8 @@ class HttpBinder : public HttpBinderBase
         const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> callback,
         Values &&... values)
     {
-        static auto className = drogon::DrObjectBase::demangle(typeid(typename traits::class_type).name());
-        auto &obj=getObj();
-        assert(obj);
-        ((*obj).*_func)(req, callback, std::move(values)...);
+        auto &obj = getControllerObj<typename traits::class_type>();
+        (obj.*_func)(req, callback, std::move(values)...);
     };
     template <typename... Values,
               bool isClassFunction = traits::isClassFunction>
@@ -160,22 +168,6 @@ class HttpBinder : public HttpBinderBase
     {
         _func(req, callback, std::move(values)...);
     };
-    template <bool isClassFunction = traits::isClassFunction>
-    typename std::enable_if<isClassFunction, const std::shared_ptr<typename traits::class_type> &>::type getObj()
-    {
-        //Initialization of function-local statics is guaranteed to occur only once even when
-        //called from multiple threads, and may be more efficient than the equivalent code using std::call_once.
-        static auto obj = std::shared_ptr<typename traits::class_type>(new typename traits::class_type);
-        return obj;
-    }
-    template <bool isClassFunction = traits::isClassFunction>
-    typename std::enable_if<!isClassFunction, const std::shared_ptr<void> &>::type getObj()
-    {
-        //This function will never be called
-        static auto obj = std::shared_ptr<void>(nullptr);
-        assert(0);
-        return obj;
-    }
 };
 
 } // namespace internal
