@@ -12,7 +12,7 @@ class TestController : public drogon::HttpSimpleController<TestController>
     //PATH_ADD("/path","filter1","filter2",...);
     PATH_ADD("/");
     PATH_ADD("/Test", "nonFilter");
-    PATH_ADD("/tpost", "drogon::PostFilter");
+    PATH_ADD("/tpost", Post);
     PATH_ADD("/slow", "TimeFilter", Get);
     PATH_LIST_END
 };

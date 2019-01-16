@@ -208,7 +208,7 @@ void create_controller::newHttpControllerHeaderFile(std::ofstream &file, const s
     file << indent << "//METHOD_ADD(" << class_name << "::get,\"/get/{2}/{1}\",Get);"
                                                        "//path will be "
          << namepace_path << class_name << "/get/{arg2}/{arg1}\n";
-    file << indent << "//METHOD_ADD(" << class_name << "::your_method_name,\"/{1}/{2}/list\",\"drogon::GetFilter\");"
+    file << indent << "//METHOD_ADD(" << class_name << "::your_method_name,\"/{1}/{2}/list\",Get);"
                                                        "//path will be "
          << namepace_path << class_name << "/{arg1}/{arg2}/list\n";
     file << indent << "\n";

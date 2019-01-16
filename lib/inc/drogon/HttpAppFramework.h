@@ -24,10 +24,7 @@
 #include <drogon/DrObject.h>
 #include <drogon/HttpRequest.h>
 #include <drogon/HttpResponse.h>
-#include <drogon/PostFilter.h>
-#include <drogon/GetFilter.h>
-#include <drogon/PutFilter.h>
-#include <drogon/DeleteFilter.h>
+#include <drogon/HttpFilter.h>
 #include <drogon/LocalHostFilter.h>
 #include <drogon/InnerIpFilter.h>
 #include <drogon/version.h>
