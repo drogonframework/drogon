@@ -152,7 +152,7 @@ class HttpAppFrameworkImpl : public HttpAppFramework
                        const std::string &session_id,
                        const std::function<void()> &missCallback);
     //
-    struct ControllerAndFiltersName
+    struct SimpleControllerRouterItem
     {
         std::string controllerName;
         std::vector<std::string> filtersName;
@@ -161,29 +161,33 @@ class HttpAppFrameworkImpl : public HttpAppFramework
         std::weak_ptr<HttpResponse> responsePtr;
         std::mutex _mutex;
     };
-    std::unordered_map<std::string, ControllerAndFiltersName> _simpCtrlMap;
+    std::unordered_map<std::string, SimpleControllerRouterItem> _simpCtrlMap;
     std::mutex _simpCtrlMutex;
-    struct WSCtrlAndFiltersName
+    struct WebSocketControllerRouterItem
     {
         WebSocketControllerBasePtr controller;
         std::vector<std::string> filtersName;
     };
-    std::unordered_map<std::string, WSCtrlAndFiltersName> _websockCtrlMap;
+    std::unordered_map<std::string, WebSocketControllerRouterItem> _websockCtrlMap;
     std::mutex _websockCtrlMutex;
 
     struct CtrlBinder
     {
-        std::string pathParameterPattern;
-        std::vector<size_t> parameterPlaces;
-        std::map<std::string, size_t> queryParametersPlaces;
         internal::HttpBinderBasePtr binderPtr;
         std::vector<std::string> filtersName;
+        std::vector<size_t> parameterPlaces;
+        std::map<std::string, size_t> queryParametersPlaces;
         std::unique_ptr<std::mutex> binderMtx = std::unique_ptr<std::mutex>(new std::mutex);
         std::weak_ptr<HttpResponse> responsePtr;
-        std::vector<int> _validMethodsFlags;
-        std::regex _regex;
     };
-    std::vector<CtrlBinder> _ctrlVector;
+    typedef std::shared_ptr<CtrlBinder> CtrlBinderPtr;
+    struct HttpControllerRouterItem
+    {
+        std::string pathParameterPattern;
+        std::regex _regex;
+        CtrlBinderPtr _binders[Invalid]; //The enum value Invalid is the http methods number
+    };
+    std::vector<HttpControllerRouterItem> _ctrlVector;
     std::mutex _ctrlMutex;
 
     std::regex _ctrlRegex;
