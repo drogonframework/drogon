@@ -43,8 +43,6 @@
 
 using namespace drogon;
 using namespace std::placeholders;
-std::map<std::string, std::shared_ptr<drogon::DrObjectBase>> HttpBinderBase::_objMap;
-std::mutex HttpBinderBase::_objMutex;
 
 static void godaemon(void)
 {
@@ -189,7 +187,7 @@ void HttpAppFrameworkImpl::registerHttpSimpleController(const std::string &pathN
     }
 }
 void HttpAppFrameworkImpl::addHttpPath(const std::string &path,
-                                       const HttpBinderBasePtr &binder,
+                                       const internal::HttpBinderBasePtr &binder,
                                        const std::vector<HttpMethod> &validMethods,
                                        const std::vector<std::string> &filters)
 {
@@ -261,7 +259,7 @@ void HttpAppFrameworkImpl::addHttpPath(const std::string &path,
     }
 }
 void HttpAppFrameworkImpl::registerHttpController(const std::string &pathPattern,
-                                                  const HttpBinderBasePtr &binder,
+                                                  const internal::HttpBinderBasePtr &binder,
                                                   const std::vector<HttpMethod> &validMethods,
                                                   const std::vector<std::string> &filters)
 {
