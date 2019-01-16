@@ -23,12 +23,15 @@
 #include <sstream>
 #include <memory>
 
-/// The classes in the file are internal tool classes. Do not include this 
+/// The classes in the file are internal tool classes. Do not include this
 /// file directly and use any of these classes directly.
 
 namespace drogon
 {
-//we only accept value type or const lreference type as handle method parameters type
+namespace internal
+{
+
+//we only accept value type or const lreference type or right reference type as the handle method parameters type
 template <typename T>
 struct BinderArgTypeTraits
 {
@@ -67,10 +70,6 @@ class HttpBinderBase
                                    const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> callback) = 0;
     virtual size_t paramCount() = 0;
     virtual ~HttpBinderBase() {}
-
-  protected:
-    static std::map<std::string, std::shared_ptr<drogon::DrObjectBase>> _objMap;
-    static std::mutex _objMutex;
 };
 typedef std::shared_ptr<HttpBinderBase> HttpBinderBasePtr;
 template <typename FUNCTION>
@@ -99,7 +98,7 @@ class HttpBinder : public HttpBinderBase
   private:
     FUNCTION _func;
 
-    typedef utility::FunctionTraits<FUNCTION> traits;
+    typedef FunctionTraits<FUNCTION> traits;
     template <
         std::size_t Index>
     using nth_argument_type = typename traits::template argument<Index>;
@@ -149,19 +148,7 @@ class HttpBinder : public HttpBinderBase
         Values &&... values)
     {
         static auto className = drogon::DrObjectBase::demangle(typeid(typename traits::class_type).name());
-        std::shared_ptr<typename traits::class_type> obj;
-        {
-            std::lock_guard<std::mutex> guard(_objMutex);
-            if (_objMap.find(className) == _objMap.end())
-            {
-                obj = std::shared_ptr<typename traits::class_type>(new typename traits::class_type);
-                _objMap[className] = obj;
-            }
-            else
-            {
-                obj = std::dynamic_pointer_cast<typename traits::class_type>(_objMap[className]);
-            }
-        }
+        auto &obj=getObj();
         assert(obj);
         ((*obj).*_func)(req, callback, std::move(values)...);
     };
@@ -173,5 +160,23 @@ class HttpBinder : public HttpBinderBase
     {
         _func(req, callback, std::move(values)...);
     };
+    template <bool isClassFunction = traits::isClassFunction>
+    typename std::enable_if<isClassFunction, const std::shared_ptr<typename traits::class_type> &>::type getObj()
+    {
+        //Initialization of function-local statics is guaranteed to occur only once even when
+        //called from multiple threads, and may be more efficient than the equivalent code using std::call_once.
+        static auto obj = std::shared_ptr<typename traits::class_type>(new typename traits::class_type);
+        return obj;
+    }
+    template <bool isClassFunction = traits::isClassFunction>
+    typename std::enable_if<!isClassFunction, const std::shared_ptr<void> &>::type getObj()
+    {
+        //This function will never be called
+        static auto obj = std::shared_ptr<void>(nullptr);
+        assert(0);
+        return obj;
+    }
 };
+
+} // namespace internal
 } // namespace drogon

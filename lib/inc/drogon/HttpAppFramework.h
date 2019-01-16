@@ -120,10 +120,10 @@ class HttpAppFramework : public trantor::NonCopyable
                             const std::vector<any> &filtersAndMethods = std::vector<any>())
     {
         LOG_TRACE << "pathPattern:" << pathPattern;
-        HttpBinderBasePtr binder;
+        internal::HttpBinderBasePtr binder;
 
         binder = std::make_shared<
-            HttpBinder<FUNCTION>>(std::forward<FUNCTION>(function));
+            internal::HttpBinder<FUNCTION>>(std::forward<FUNCTION>(function));
 
         std::vector<HttpMethod> validMethods;
         std::vector<std::string> filters;
@@ -193,7 +193,7 @@ class HttpAppFramework : public trantor::NonCopyable
 
   private:
     virtual void registerHttpController(const std::string &pathPattern,
-                                        const HttpBinderBasePtr &binder,
+                                        const internal::HttpBinderBasePtr &binder,
                                         const std::vector<HttpMethod> &validMethods = std::vector<HttpMethod>(),
                                         const std::vector<std::string> &filters = std::vector<std::string>()) = 0;
 };

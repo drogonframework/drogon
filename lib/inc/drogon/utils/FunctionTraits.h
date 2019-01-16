@@ -26,7 +26,7 @@ class HttpResponse;
 typedef std::shared_ptr<HttpRequest> HttpRequestPtr;
 typedef std::shared_ptr<HttpResponse> HttpResponsePtr;
 
-namespace utility
+namespace internal
 {
 
 template <typename>
@@ -38,6 +38,7 @@ struct FunctionTraits : public FunctionTraits<
                             decltype(&std::remove_reference<Function>::type::operator())>
 {
     static const bool isClassFunction = false;
+    typedef void class_type;
     static const std::string name()
     {
         return std::string("Functor");
@@ -78,6 +79,7 @@ struct FunctionTraits<
     ReturnType (*)(const HttpRequestPtr &req, const std::function<void(const HttpResponsePtr &)> &callback, Arguments...)> : FunctionTraits<ReturnType (*)(Arguments...)>
 {
     static const bool isHTTPFunction = true;
+    typedef void class_type;
 };
 
 //normal function
@@ -95,11 +97,11 @@ struct FunctionTraits<
         std::tuple<Arguments...>>::type;
 
     static const std::size_t arity = sizeof...(Arguments);
-
+    typedef void class_type;
     static const bool isHTTPFunction = false;
     static const bool isClassFunction = false;
     static const std::string name() { return std::string("Normal or Static Function"); }
 };
 
-} // namespace utility
+} // namespace internal
 } // namespace drogon

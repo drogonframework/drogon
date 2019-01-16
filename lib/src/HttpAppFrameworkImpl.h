@@ -111,7 +111,7 @@ class HttpAppFrameworkImpl : public HttpAppFramework
 #endif
   private:
     virtual void registerHttpController(const std::string &pathPattern,
-                                        const HttpBinderBasePtr &binder,
+                                        const internal::HttpBinderBasePtr &binder,
                                         const std::vector<HttpMethod> &validMethods = std::vector<HttpMethod>(),
                                         const std::vector<std::string> &filters = std::vector<std::string>()) override;
 
@@ -125,7 +125,7 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     void onConnection(const TcpConnectionPtr &conn);
     void readSendFile(const std::string &filePath, const HttpRequestImplPtr &req, const HttpResponsePtr &resp);
     void addHttpPath(const std::string &path,
-                     const HttpBinderBasePtr &binder,
+                     const internal::HttpBinderBasePtr &binder,
                      const std::vector<HttpMethod> &validMethods,
                      const std::vector<std::string> &filters);
     void initRegex();
@@ -176,7 +176,7 @@ class HttpAppFrameworkImpl : public HttpAppFramework
         std::string pathParameterPattern;
         std::vector<size_t> parameterPlaces;
         std::map<std::string, size_t> queryParametersPlaces;
-        HttpBinderBasePtr binderPtr;
+        internal::HttpBinderBasePtr binderPtr;
         std::vector<std::string> filtersName;
         std::unique_ptr<std::mutex> binderMtx = std::unique_ptr<std::mutex>(new std::mutex);
         std::weak_ptr<HttpResponse> responsePtr;
