@@ -112,11 +112,11 @@ void HttpAppFrameworkImpl::setFileTypes(const std::vector<std::string> &types)
 void HttpAppFrameworkImpl::initRegex()
 {
     std::string regString;
-    for (auto &binder : _ctrlVector)
+    for (auto &router : _ctrlVector)
     {
         std::regex reg("\\(\\[\\^/\\]\\*\\)");
-        std::string tmp = std::regex_replace(binder.pathParameterPattern, reg, "[^/]*");
-        binder._regex = std::regex(binder.pathParameterPattern, std::regex_constants::icase);
+        std::string tmp = std::regex_replace(router.pathParameterPattern, reg, "[^/]*");
+        router._regex = std::regex(router.pathParameterPattern, std::regex_constants::icase);
         regString.append("(").append(tmp).append(")|");
     }
     if (regString.length() > 0)
@@ -239,23 +239,52 @@ void HttpAppFrameworkImpl::addHttpPath(const std::string &path,
             paras = results.suffix();
         }
     }
-    struct CtrlBinder _binder;
-    _binder.parameterPlaces = std::move(places);
-    _binder.queryParametersPlaces = std::move(parametersPlaces);
-    _binder.binderPtr = binder;
-    _binder.filtersName = filters;
-    _binder.pathParameterPattern = std::regex_replace(originPath, regex, "([^/]*)");
+    auto pathParameterPattern = std::regex_replace(originPath, regex, "([^/]*)");
+    auto binderInfo = CtrlBinderPtr(new CtrlBinder);
+    binderInfo->filtersName = filters;
+    binderInfo->binderPtr = binder;
+    binderInfo->parameterPlaces = std::move(places);
+    binderInfo->queryParametersPlaces = std::move(parametersPlaces);
+    {
+        std::lock_guard<std::mutex> guard(_ctrlMutex);
+        for (auto &router : _ctrlVector)
+        {
+            if (router.pathParameterPattern == pathParameterPattern)
+            {
+                if (validMethods.size() > 0)
+                {
+                    for (auto method : validMethods)
+                    {
+                        router._binders[method] = binderInfo;
+                    }
+                }
+                else
+                {
+                    for (int i = 0; i < Invalid; i++)
+                        router._binders[i] = binderInfo;
+                }
+                return;
+            }
+        }
+    }
+
+    struct HttpControllerRouterItem router;
+    router.pathParameterPattern = pathParameterPattern;
     if (validMethods.size() > 0)
     {
-        _binder._validMethodsFlags.resize(Invalid, 0);
         for (auto method : validMethods)
         {
-            _binder._validMethodsFlags[method] = 1;
+            router._binders[method] = binderInfo;
         }
+    }
+    else
+    {
+        for (int i = 0; i < Invalid; i++)
+            router._binders[i] = binderInfo;
     }
     {
         std::lock_guard<std::mutex> guard(_ctrlMutex);
-        _ctrlVector.push_back(std::move(_binder));
+        _ctrlVector.push_back(std::move(router));
     }
 }
 void HttpAppFrameworkImpl::registerHttpController(const std::string &pathPattern,
@@ -1062,28 +1091,25 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestImplPtr &req, const s
                 if (result[i].str() == req->path() && i <= _ctrlVector.size())
                 {
                     size_t ctlIndex = i - 1;
-                    auto &binder = _ctrlVector[ctlIndex];
+                    auto &router = _ctrlVector[ctlIndex];
                     //LOG_TRACE << "got http access,regex=" << binder.pathParameterPattern;
-                    if (binder._validMethodsFlags.size() > 0)
+                    assert(Invalid > req->method());
+                    auto &binder = router._binders[req->method()];
+                    if (!binder)
                     {
-                        assert(binder._validMethodsFlags.size() > req->method());
-                        if (binder._validMethodsFlags[req->method()] == 0)
-                        {
-                            //Invalid Http Method
-                            auto res = drogon::HttpResponse::newHttpResponse();
-                            res->setStatusCode(HttpResponse::k405MethodNotAllowed);
-                            callback(res);
-                            return;
-                        }
+                        //Invalid Http Method
+                        auto res = drogon::HttpResponse::newHttpResponse();
+                        res->setStatusCode(HttpResponse::k405MethodNotAllowed);
+                        callback(res);
+                        return;
                     }
-                    auto &filters = binder.filtersName;
-                    doFilters(filters, req, callback, needSetJsessionid, session_id, [=]() {
-                        auto &binder = _ctrlVector[ctlIndex];
 
+                    auto &filters = binder->filtersName;
+                    doFilters(filters, req, callback, needSetJsessionid, session_id, [=]() {
                         HttpResponsePtr responsePtr;
                         {
-                            std::lock_guard<std::mutex> guard(*(binder.binderMtx));
-                            responsePtr = binder.responsePtr.lock();
+                            std::lock_guard<std::mutex> guard(*(binder->binderMtx));
+                            responsePtr = binder->responsePtr.lock();
                         }
                         if (responsePtr)
                         {
@@ -1103,28 +1129,28 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestImplPtr &req, const s
                             return;
                         }
 
-                        std::vector<std::string> params(binder.parameterPlaces.size());
+                        std::vector<std::string> params(binder->parameterPlaces.size());
                         std::smatch r;
-                        if (std::regex_match(req->path(), r, binder._regex))
+                        if (std::regex_match(req->path(), r, router._regex))
                         {
                             for (size_t j = 1; j < r.size(); j++)
                             {
-                                size_t place = binder.parameterPlaces[j - 1];
+                                size_t place = binder->parameterPlaces[j - 1];
                                 if (place > params.size())
                                     params.resize(place);
                                 params[place - 1] = r[j].str();
                                 LOG_TRACE << "place=" << place << " para:" << params[place - 1];
                             }
                         }
-                        if (binder.queryParametersPlaces.size() > 0)
+                        if (binder->queryParametersPlaces.size() > 0)
                         {
                             auto qureyPara = req->getParameters();
                             for (auto parameter : qureyPara)
                             {
-                                if (binder.queryParametersPlaces.find(parameter.first) !=
-                                    binder.queryParametersPlaces.end())
+                                if (binder->queryParametersPlaces.find(parameter.first) !=
+                                    binder->queryParametersPlaces.end())
                                 {
-                                    auto place = binder.queryParametersPlaces.find(parameter.first)->second;
+                                    auto place = binder->queryParametersPlaces.find(parameter.first)->second;
                                     if (place > params.size())
                                         params.resize(place);
                                     params[place - 1] = parameter.second;
@@ -1138,7 +1164,7 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestImplPtr &req, const s
                             paraList.push_back(std::move(p));
                         }
 
-                        binder.binderPtr->handleHttpRequest(paraList, req, [=](const HttpResponsePtr &resp) {
+                        binder->binderPtr->handleHttpRequest(paraList, req, [=](const HttpResponsePtr &resp) {
                             LOG_TRACE << "http resp:needSetJsessionid=" << needSetJsessionid << ";JSESSIONID=" << session_id;
                             auto newResp = resp;
                             if (resp->expiredTime() >= 0)
@@ -1147,9 +1173,9 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestImplPtr &req, const s
                                 std::dynamic_pointer_cast<HttpResponseImpl>(resp)->makeHeaderString();
                                 {
                                     auto &binderIterm = _ctrlVector[ctlIndex];
-                                    std::lock_guard<std::mutex> guard(*(binderIterm.binderMtx));
+                                    std::lock_guard<std::mutex> guard(*(binder->binderMtx));
                                     _responseCacheMap->insert(binderIterm.pathParameterPattern, resp, resp->expiredTime());
-                                    binderIterm.responsePtr = resp;
+                                    binder->responsePtr = resp;
                                 }
                             }
                             if (needSetJsessionid)

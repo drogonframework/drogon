@@ -1,6 +1,18 @@
 #include "api_v1_ApiTest.h"
 using namespace api::v1;
 //add definition of your processing function here
+void ApiTest::rootGet(const HttpRequestPtr &req, const std::function<void(const HttpResponsePtr &)> &callback)
+{
+    auto res = HttpResponse::newHttpResponse();
+    res->setBody("ROOT Get!!!");
+    callback(res);
+}
+void ApiTest::rootPost(const HttpRequestPtr &req, const std::function<void(const HttpResponsePtr &)> &callback)
+{
+    auto res = HttpResponse::newHttpResponse();
+    res->setBody("ROOT Post!!!");
+    callback(res);
+}
 void ApiTest::get(const HttpRequestPtr &req, const std::function<void(const HttpResponsePtr &)> &callback, int p1, std::string &&p2)
 {
     HttpViewData data;
