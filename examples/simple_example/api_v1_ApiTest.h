@@ -23,7 +23,7 @@ class ApiTest : public drogon::HttpController<ApiTest>
     void staticApi(const HttpRequestPtr &req, const std::function<void(const HttpResponsePtr &)> &callback);
     void get2(const HttpRequestPtr &req, const std::function<void(const HttpResponsePtr &)> &callback, std::string &&p1);
     void rootGet(const HttpRequestPtr &req, const std::function<void(const HttpResponsePtr &)> &callback);
-     void rootPost(const HttpRequestPtr &req, const std::function<void(const HttpResponsePtr &)> &callback);
+    void rootPost(const HttpRequestPtr &req, const std::function<void(const HttpResponsePtr &)> &callback);
 };
 } // namespace v1
 } // namespace api
