@@ -107,6 +107,9 @@ class HttpResponse
     }
 
     virtual HttpStatusCode statusCode() = 0;
+
+    virtual const trantor::Date &createDate() const = 0;
+    
     virtual void setStatusCode(HttpStatusCode code) = 0;
 
     virtual void setStatusCode(HttpStatusCode code, const std::string &status_message) = 0;
