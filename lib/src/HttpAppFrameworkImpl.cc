@@ -22,11 +22,7 @@
 #include <drogon/CacheMap.h>
 #include <drogon/Session.h>
 #include <trantor/utils/AsyncFileLogger.h>
-#ifdef USE_OPENSSL
-#include <openssl/sha.h>
-#else
-#include "ssl_funcs/Sha1.h"
-#endif
+
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -109,184 +105,20 @@ void HttpAppFrameworkImpl::setFileTypes(const std::vector<std::string> &types)
         _fileTypeSet.insert(type);
     }
 }
-void HttpAppFrameworkImpl::initRegex()
-{
-    std::string regString;
-    for (auto &router : _ctrlVector)
-    {
-        std::regex reg("\\(\\[\\^/\\]\\*\\)");
-        std::string tmp = std::regex_replace(router.pathParameterPattern, reg, "[^/]*");
-        router._regex = std::regex(router.pathParameterPattern, std::regex_constants::icase);
-        regString.append("(").append(tmp).append(")|");
-    }
-    if (regString.length() > 0)
-        regString.resize(regString.length() - 1); //remove the last '|'
-    LOG_TRACE << "regex string:" << regString;
-    _ctrlRegex = std::regex(regString, std::regex_constants::icase);
-}
+
 void HttpAppFrameworkImpl::registerWebSocketController(const std::string &pathName,
                                                        const std::string &ctrlName,
                                                        const std::vector<std::string> &filters)
 {
-    assert(!pathName.empty());
-    assert(!ctrlName.empty());
-    std::string path(pathName);
-    std::transform(pathName.begin(), pathName.end(), path.begin(), tolower);
-    auto objPtr = std::shared_ptr<DrObjectBase>(DrClassMap::newObject(ctrlName));
-    auto ctrlPtr = std::dynamic_pointer_cast<WebSocketControllerBase>(objPtr);
-    assert(ctrlPtr);
-    std::lock_guard<std::mutex> guard(_websockCtrlMutex);
-
-    _websockCtrlMap[path].controller = ctrlPtr;
-    _websockCtrlMap[path].filtersName = filters;
+    _websockCtrlsRouter.registerWebSocketController(pathName, ctrlName, filters);
 }
 void HttpAppFrameworkImpl::registerHttpSimpleController(const std::string &pathName,
                                                         const std::string &ctrlName,
                                                         const std::vector<any> &filtersAndMethods)
 {
-    assert(!pathName.empty());
-    assert(!ctrlName.empty());
-
-    std::string path(pathName);
-    std::transform(pathName.begin(), pathName.end(), path.begin(), tolower);
-    std::lock_guard<std::mutex> guard(_simpCtrlMutex);
-    std::vector<HttpMethod> validMethods;
-    std::vector<std::string> filters;
-    for (auto &filterOrMethod : filtersAndMethods)
-    {
-        if (filterOrMethod.type() == typeid(std::string))
-        {
-            filters.push_back(*any_cast<std::string>(&filterOrMethod));
-        }
-        else if (filterOrMethod.type() == typeid(const char *))
-        {
-            filters.push_back(*any_cast<const char *>(&filterOrMethod));
-        }
-        else if (filterOrMethod.type() == typeid(HttpMethod))
-        {
-            validMethods.push_back(*any_cast<HttpMethod>(&filterOrMethod));
-        }
-        else
-        {
-            std::cerr << "Invalid controller constraint type:" << filterOrMethod.type().name() << std::endl;
-            LOG_ERROR << "Invalid controller constraint type";
-            exit(1);
-        }
-    }
-    auto &iterm = _simpCtrlMap[path];
-    iterm.controllerName = ctrlName;
-    iterm.filtersName = filters;
-    iterm._validMethodsFlags.clear(); //There may be old data, first clear
-    if (validMethods.size() > 0)
-    {
-        iterm._validMethodsFlags.resize(Invalid, 0);
-        for (auto method : validMethods)
-        {
-            iterm._validMethodsFlags[method] = 1;
-        }
-    }
+    _httpSimpleCtrlsRouter.registerHttpSimpleController(pathName, ctrlName, filtersAndMethods);
 }
-void HttpAppFrameworkImpl::addHttpPath(const std::string &path,
-                                       const internal::HttpBinderBasePtr &binder,
-                                       const std::vector<HttpMethod> &validMethods,
-                                       const std::vector<std::string> &filters)
-{
-    //path will be like /api/v1/service/method/{1}/{2}/xxx...
-    std::vector<size_t> places;
-    std::string tmpPath = path;
-    std::string paras = "";
-    std::regex regex = std::regex("\\{([0-9]+)\\}");
-    std::smatch results;
-    auto pos = tmpPath.find("?");
-    if (pos != std::string::npos)
-    {
-        paras = tmpPath.substr(pos + 1);
-        tmpPath = tmpPath.substr(0, pos);
-    }
-    std::string originPath = tmpPath;
-    while (std::regex_search(tmpPath, results, regex))
-    {
-        if (results.size() > 1)
-        {
-            size_t place = (size_t)std::stoi(results[1].str());
-            if (place > binder->paramCount() || place == 0)
-            {
-                LOG_ERROR << "parameter placeholder(value=" << place << ") out of range (1 to "
-                          << binder->paramCount() << ")";
-                exit(0);
-            }
-            places.push_back(place);
-        }
-        tmpPath = results.suffix();
-    }
-    std::map<std::string, size_t> parametersPlaces;
-    if (!paras.empty())
-    {
-        std::regex pregex("([^&]*)=\\{([0-9]+)\\}&*");
-        while (std::regex_search(paras, results, pregex))
-        {
-            if (results.size() > 2)
-            {
-                size_t place = (size_t)std::stoi(results[2].str());
-                if (place > binder->paramCount() || place == 0)
-                {
-                    LOG_ERROR << "parameter placeholder(value=" << place << ") out of range (1 to "
-                              << binder->paramCount() << ")";
-                    exit(0);
-                }
-                parametersPlaces[results[1].str()] = place;
-            }
-            paras = results.suffix();
-        }
-    }
-    auto pathParameterPattern = std::regex_replace(originPath, regex, "([^/]*)");
-    auto binderInfo = CtrlBinderPtr(new CtrlBinder);
-    binderInfo->filtersName = filters;
-    binderInfo->binderPtr = binder;
-    binderInfo->parameterPlaces = std::move(places);
-    binderInfo->queryParametersPlaces = std::move(parametersPlaces);
-    {
-        std::lock_guard<std::mutex> guard(_ctrlMutex);
-        for (auto &router : _ctrlVector)
-        {
-            if (router.pathParameterPattern == pathParameterPattern)
-            {
-                if (validMethods.size() > 0)
-                {
-                    for (auto method : validMethods)
-                    {
-                        router._binders[method] = binderInfo;
-                    }
-                }
-                else
-                {
-                    for (int i = 0; i < Invalid; i++)
-                        router._binders[i] = binderInfo;
-                }
-                return;
-            }
-        }
-    }
 
-    struct HttpControllerRouterItem router;
-    router.pathParameterPattern = pathParameterPattern;
-    if (validMethods.size() > 0)
-    {
-        for (auto method : validMethods)
-        {
-            router._binders[method] = binderInfo;
-        }
-    }
-    else
-    {
-        for (int i = 0; i < Invalid; i++)
-            router._binders[i] = binderInfo;
-    }
-    {
-        std::lock_guard<std::mutex> guard(_ctrlMutex);
-        _ctrlVector.push_back(std::move(router));
-    }
-}
 void HttpAppFrameworkImpl::registerHttpController(const std::string &pathPattern,
                                                   const internal::HttpBinderBasePtr &binder,
                                                   const std::vector<HttpMethod> &validMethods,
@@ -295,9 +127,7 @@ void HttpAppFrameworkImpl::registerHttpController(const std::string &pathPattern
     assert(!pathPattern.empty());
     assert(binder);
     std::string path(pathPattern);
-
-    //std::transform(path.begin(), path.end(), path.begin(), tolower);
-    addHttpPath(path, binder, validMethods, filters);
+    _httpCtrlsRouter.addHttpPath(path, binder, validMethods, filters);
 }
 void HttpAppFrameworkImpl::setThreadNum(size_t threadNum)
 {
@@ -445,7 +275,7 @@ void HttpAppFrameworkImpl::run()
     }
     std::vector<std::shared_ptr<HttpServer>> servers;
     std::vector<std::shared_ptr<EventLoopThread>> loopThreads;
-    initRegex();
+    _httpCtrlsRouter.init();
     for (auto listener : _listeners)
     {
         LOG_TRACE << "thread num=" << _threadNum;
@@ -543,7 +373,7 @@ void HttpAppFrameworkImpl::run()
             _sessionMapPtr = std::unique_ptr<CacheMap<std::string, SessionPtr>>(new CacheMap<std::string, SessionPtr>(&_loop, 0, 0, 0));
         }
     }
-    _responseCacheMap = std::unique_ptr<CacheMap<std::string, HttpResponsePtr>>(new CacheMap<std::string, HttpResponsePtr>(&_loop, 1.0, 4, 50)); //Max timeout up to about 70 days;
+    _responseCachingMap = std::unique_ptr<CacheMap<std::string, HttpResponsePtr>>(new CacheMap<std::string, HttpResponsePtr>(&_loop, 1.0, 4, 50)); //Max timeout up to about 70 days;
     _loop.loop();
 }
 
@@ -748,47 +578,7 @@ void HttpAppFrameworkImpl::onNewWebsockRequest(const HttpRequestImplPtr &req,
                                                const std::function<void(const HttpResponsePtr &)> &callback,
                                                const WebSocketConnectionPtr &wsConnPtr)
 {
-    std::string wsKey = req->getHeaderBy("sec-websocket-key");
-    if (!wsKey.empty())
-    {
-        // magic="258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
-        WebSocketControllerBasePtr ctrlPtr;
-        std::vector<std::string> filtersName;
-        {
-            std::string pathLower(req->path());
-            std::transform(pathLower.begin(), pathLower.end(), pathLower.begin(), tolower);
-            std::lock_guard<std::mutex> guard(_websockCtrlMutex);
-            if (_websockCtrlMap.find(pathLower) != _websockCtrlMap.end())
-            {
-                ctrlPtr = _websockCtrlMap[pathLower].controller;
-                filtersName = _websockCtrlMap[pathLower].filtersName;
-            }
-        }
-        if (ctrlPtr)
-        {
-            doFilters(filtersName, req, callback, false, "", [=]() mutable {
-                wsKey.append("258EAFA5-E914-47DA-95CA-C5AB0DC85B11");
-                unsigned char accKey[SHA_DIGEST_LENGTH];
-                SHA1(reinterpret_cast<const unsigned char *>(wsKey.c_str()), wsKey.length(), accKey);
-                auto base64Key = base64Encode(accKey, SHA_DIGEST_LENGTH);
-                auto resp = HttpResponse::newHttpResponse();
-                resp->setStatusCode(HttpResponse::k101SwitchingProtocols);
-                resp->addHeader("Upgrade", "websocket");
-                resp->addHeader("Connection", "Upgrade");
-                resp->addHeader("Sec-WebSocket-Accept", base64Key);
-                callback(resp);
-                auto wsConnImplPtr = std::dynamic_pointer_cast<WebSocketConnectionImpl>(wsConnPtr);
-                assert(wsConnImplPtr);
-                wsConnImplPtr->setController(ctrlPtr);
-                ctrlPtr->handleNewConnection(req, wsConnPtr);
-                return;
-            });
-            return;
-        }
-    }
-    auto resp = drogon::HttpResponse::newNotFoundResponse();
-    resp->setCloseConnection(true);
-    callback(resp);
+    _websockCtrlsRouter.route(req, callback, wsConnPtr);
 }
 void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestImplPtr &req, const std::function<void(const HttpResponsePtr &)> &callback)
 {
@@ -985,233 +775,11 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestImplPtr &req, const s
         }
     }
 
-    /*find simple controller*/
-    std::string pathLower(req->path());
-    std::transform(pathLower.begin(), pathLower.end(), pathLower.begin(), tolower);
-
-    if (_simpCtrlMap.find(pathLower) != _simpCtrlMap.end())
-    {
-        auto &ctrlInfo = _simpCtrlMap[pathLower];
-        if (ctrlInfo._validMethodsFlags.size() > 0)
-        {
-            assert(ctrlInfo._validMethodsFlags.size() > req->method());
-            if (ctrlInfo._validMethodsFlags[req->method()] == 0)
-            {
-                //Invalid Http Method
-                auto res = drogon::HttpResponse::newHttpResponse();
-                res->setStatusCode(HttpResponse::k405MethodNotAllowed);
-                callback(res);
-                return;
-            }
-        }
-        auto &filters = ctrlInfo.filtersName;
-        doFilters(filters, req, callback, needSetJsessionid, session_id, [=]() {
-            auto &ctrlItem = _simpCtrlMap[pathLower];
-            const std::string &ctrlName = ctrlItem.controllerName;
-            std::shared_ptr<HttpSimpleControllerBase> controller;
-            HttpResponsePtr responsePtr;
-            {
-                //maybe update controller,so we use lock_guard to protect;
-                std::lock_guard<std::mutex> guard(ctrlItem._mutex);
-                controller = ctrlItem.controller;
-                responsePtr = ctrlItem.responsePtr.lock();
-                if (!controller)
-                {
-                    auto _object = std::shared_ptr<DrObjectBase>(DrClassMap::newObject(ctrlName));
-                    controller = std::dynamic_pointer_cast<HttpSimpleControllerBase>(_object);
-                    ctrlItem.controller = controller;
-                }
-            }
-
-            if (controller)
-            {
-                if (responsePtr)
-                {
-                    //use cached response!
-                    LOG_TRACE << "Use cached response";
-                    if (!needSetJsessionid)
-                        callback(responsePtr);
-                    else
-                    {
-                        //make a copy response;
-                        auto newResp = std::make_shared<HttpResponseImpl>(*std::dynamic_pointer_cast<HttpResponseImpl>(responsePtr));
-                        newResp->setExpiredTime(-1); //make it temporary
-                        newResp->addCookie("JSESSIONID", session_id);
-                        callback(newResp);
-                    }
-                    return;
-                }
-                else
-                {
-                    controller->asyncHandleHttpRequest(req, [=](const HttpResponsePtr &resp) {
-                        auto newResp = resp;
-                        if (resp->expiredTime() >= 0)
-                        {
-                            //cache the response;
-                            std::dynamic_pointer_cast<HttpResponseImpl>(resp)->makeHeaderString();
-                            {
-                                auto &item = _simpCtrlMap[pathLower];
-                                std::lock_guard<std::mutex> guard(item._mutex);
-                                _responseCacheMap->insert(pathLower, resp, resp->expiredTime());
-                                item.responsePtr = resp;
-                            }
-                        }
-                        if (needSetJsessionid)
-                        {
-                            //make a copy
-                            newResp = std::make_shared<HttpResponseImpl>(*std::dynamic_pointer_cast<HttpResponseImpl>(resp));
-                            newResp->setExpiredTime(-1); //make it temporary
-                            newResp->addCookie("JSESSIONID", session_id);
-                        }
-
-                        callback(newResp);
-                    });
-                }
-
-                return;
-            }
-            else
-            {
-                LOG_ERROR << "can't find controller " << ctrlName;
-            }
-        });
+    //find simple controller
+    if (_httpSimpleCtrlsRouter.route(req, callback, needSetJsessionid, session_id))
         return;
-    }
-    //find http controller
-    if (_ctrlRegex.mark_count() > 0)
-    {
-        std::smatch result;
-        if (std::regex_match(req->path(), result, _ctrlRegex))
-        {
-            for (size_t i = 1; i < result.size(); i++)
-            {
-                //FIXME:Is there any better way to find the sub-match index without using loop?
-                if (!result[i].matched)
-                    continue;
-                if (result[i].str() == req->path() && i <= _ctrlVector.size())
-                {
-                    size_t ctlIndex = i - 1;
-                    auto &router = _ctrlVector[ctlIndex];
-                    //LOG_TRACE << "got http access,regex=" << binder.pathParameterPattern;
-                    assert(Invalid > req->method());
-                    auto &binder = router._binders[req->method()];
-                    if (!binder)
-                    {
-                        //Invalid Http Method
-                        auto res = drogon::HttpResponse::newHttpResponse();
-                        res->setStatusCode(HttpResponse::k405MethodNotAllowed);
-                        callback(res);
-                        return;
-                    }
-
-                    auto &filters = binder->filtersName;
-                    doFilters(filters, req, callback, needSetJsessionid, session_id, [=]() {
-                        HttpResponsePtr responsePtr;
-                        {
-                            std::lock_guard<std::mutex> guard(*(binder->binderMtx));
-                            responsePtr = binder->responsePtr.lock();
-                        }
-                        if (responsePtr)
-                        {
-                            //use cached response!
-                            LOG_TRACE << "Use cached response";
-
-                            if (!needSetJsessionid)
-                                callback(responsePtr);
-                            else
-                            {
-                                //make a copy response;
-                                auto newResp = std::make_shared<HttpResponseImpl>(*std::dynamic_pointer_cast<HttpResponseImpl>(responsePtr));
-                                newResp->setExpiredTime(-1); //make it temporary
-                                newResp->addCookie("JSESSIONID", session_id);
-                                callback(newResp);
-                            }
-                            return;
-                        }
-
-                        std::vector<std::string> params(binder->parameterPlaces.size());
-                        std::smatch r;
-                        if (std::regex_match(req->path(), r, router._regex))
-                        {
-                            for (size_t j = 1; j < r.size(); j++)
-                            {
-                                size_t place = binder->parameterPlaces[j - 1];
-                                if (place > params.size())
-                                    params.resize(place);
-                                params[place - 1] = r[j].str();
-                                LOG_TRACE << "place=" << place << " para:" << params[place - 1];
-                            }
-                        }
-                        if (binder->queryParametersPlaces.size() > 0)
-                        {
-                            auto qureyPara = req->getParameters();
-                            for (auto parameter : qureyPara)
-                            {
-                                if (binder->queryParametersPlaces.find(parameter.first) !=
-                                    binder->queryParametersPlaces.end())
-                                {
-                                    auto place = binder->queryParametersPlaces.find(parameter.first)->second;
-                                    if (place > params.size())
-                                        params.resize(place);
-                                    params[place - 1] = parameter.second;
-                                }
-                            }
-                        }
-                        std::list<std::string> paraList;
-                        for (auto p : params)
-                        {
-                            LOG_TRACE << p;
-                            paraList.push_back(std::move(p));
-                        }
-
-                        binder->binderPtr->handleHttpRequest(paraList, req, [=](const HttpResponsePtr &resp) {
-                            LOG_TRACE << "http resp:needSetJsessionid=" << needSetJsessionid << ";JSESSIONID=" << session_id;
-                            auto newResp = resp;
-                            if (resp->expiredTime() >= 0)
-                            {
-                                //cache the response;
-                                std::dynamic_pointer_cast<HttpResponseImpl>(resp)->makeHeaderString();
-                                {
-                                    auto &binderIterm = _ctrlVector[ctlIndex];
-                                    std::lock_guard<std::mutex> guard(*(binder->binderMtx));
-                                    _responseCacheMap->insert(binderIterm.pathParameterPattern, resp, resp->expiredTime());
-                                    binder->responsePtr = resp;
-                                }
-                            }
-                            if (needSetJsessionid)
-                            {
-                                //make a copy
-                                newResp = std::make_shared<HttpResponseImpl>(*std::dynamic_pointer_cast<HttpResponseImpl>(resp));
-                                newResp->setExpiredTime(-1); //make it temporary
-                                newResp->addCookie("JSESSIONID", session_id);
-                            }
-                            callback(newResp);
-                        });
-                        return;
-                    });
-                }
-            }
-        }
-        else
-        {
-            //No controller found
-            auto res = drogon::HttpResponse::newNotFoundResponse();
-            if (needSetJsessionid)
-                res->addCookie("JSESSIONID", session_id);
-
-            callback(res);
-        }
-    }
-    else
-    {
-        //No controller found
-        auto res = drogon::HttpResponse::newNotFoundResponse();
-
-        if (needSetJsessionid)
-            res->addCookie("JSESSIONID", session_id);
-
-        callback(res);
-    }
+    //Find http controller
+    _httpCtrlsRouter.route(req, callback, needSetJsessionid, session_id);
 }
 
 void HttpAppFrameworkImpl::readSendFile(const std::string &filePath, const HttpRequestImplPtr &req, const HttpResponsePtr &resp)
@@ -1252,7 +820,7 @@ void HttpAppFrameworkImpl::readSendFile(const std::string &filePath, const HttpR
     if (_staticFilesCacheTime >= 0)
     {
         resp->setExpiredTime(_staticFilesCacheTime);
-        _responseCacheMap->insert(filePath, resp, resp->expiredTime(), [=]() {
+        _responseCachingMap->insert(filePath, resp, resp->expiredTime(), [=]() {
             std::lock_guard<std::mutex> guard(_staticFilesCacheMutex);
             _staticFilesCache.erase(filePath);
         });

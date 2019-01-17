@@ -19,6 +19,10 @@
 #include "HttpClientImpl.h"
 #include "SharedLibManager.h"
 #include "WebSockectConnectionImpl.h"
+#include "HttpControllersRouter.h"
+#include "HttpSimpleControllersRouter.h"
+#include "WebsocketControllersRouter.h"
+
 #include <drogon/HttpAppFramework.h>
 #include <drogon/HttpSimpleController.h>
 #include <drogon/version.h>
@@ -35,7 +39,10 @@ class HttpAppFrameworkImpl : public HttpAppFramework
 {
   public:
     HttpAppFrameworkImpl()
-        : _uploadPath(_rootPath + "uploads"),
+        : _httpSimpleCtrlsRouter(*this),
+          _httpCtrlsRouter(*this),
+          _websockCtrlsRouter(*this),
+          _uploadPath(_rootPath + "uploads"),
           _connectionNum(0)
     {
     }
@@ -109,6 +116,13 @@ class HttpAppFrameworkImpl : public HttpAppFramework
                                 const std::string &filename = "",
                                 const std::string &name = "default") override;
 #endif
+    void doFilters(const std::vector<std::string> &filters,
+                   const HttpRequestImplPtr &req,
+                   const std::function<void(const HttpResponsePtr &)> &callback,
+                   bool needSetJsessionid,
+                   const std::string &session_id,
+                   const std::function<void()> &missCallback);
+
   private:
     virtual void registerHttpController(const std::string &pathPattern,
                                         const internal::HttpBinderBasePtr &binder,
@@ -128,7 +142,6 @@ class HttpAppFrameworkImpl : public HttpAppFramework
                      const internal::HttpBinderBasePtr &binder,
                      const std::vector<HttpMethod> &validMethods,
                      const std::vector<std::string> &filters);
-    void initRegex();
     //if uuid package found,we can use a uuid string as session id;
     //set _sessionTimeout=0 to make location session valid forever based on cookies;
     size_t _sessionTimeout = 0;
@@ -136,61 +149,19 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     bool _useSession = false;
     typedef std::shared_ptr<Session> SessionPtr;
     std::unique_ptr<CacheMap<std::string, SessionPtr>> _sessionMapPtr;
+    std::unique_ptr<CacheMap<std::string, HttpResponsePtr>> _responseCachingMap;
 
-    std::unique_ptr<CacheMap<std::string, HttpResponsePtr>> _responseCacheMap;
-
-    void doFilters(const std::vector<std::string> &filters,
-                   const HttpRequestImplPtr &req,
-                   const std::function<void(const HttpResponsePtr &)> &callback,
-                   bool needSetJsessionid,
-                   const std::string &session_id,
-                   const std::function<void()> &missCallback);
     void doFilterChain(const std::shared_ptr<std::queue<std::shared_ptr<HttpFilterBase>>> &chain,
                        const HttpRequestImplPtr &req,
                        const std::function<void(const HttpResponsePtr &)> &callback,
                        bool needSetJsessionid,
                        const std::string &session_id,
                        const std::function<void()> &missCallback);
-    //
-    struct SimpleControllerRouterItem
-    {
-        std::string controllerName;
-        std::vector<std::string> filtersName;
-        std::vector<int> _validMethodsFlags;
-        std::shared_ptr<HttpSimpleControllerBase> controller;
-        std::weak_ptr<HttpResponse> responsePtr;
-        std::mutex _mutex;
-    };
-    std::unordered_map<std::string, SimpleControllerRouterItem> _simpCtrlMap;
-    std::mutex _simpCtrlMutex;
-    struct WebSocketControllerRouterItem
-    {
-        WebSocketControllerBasePtr controller;
-        std::vector<std::string> filtersName;
-    };
-    std::unordered_map<std::string, WebSocketControllerRouterItem> _websockCtrlMap;
-    std::mutex _websockCtrlMutex;
 
-    struct CtrlBinder
-    {
-        internal::HttpBinderBasePtr binderPtr;
-        std::vector<std::string> filtersName;
-        std::vector<size_t> parameterPlaces;
-        std::map<std::string, size_t> queryParametersPlaces;
-        std::unique_ptr<std::mutex> binderMtx = std::unique_ptr<std::mutex>(new std::mutex);
-        std::weak_ptr<HttpResponse> responsePtr;
-    };
-    typedef std::shared_ptr<CtrlBinder> CtrlBinderPtr;
-    struct HttpControllerRouterItem
-    {
-        std::string pathParameterPattern;
-        std::regex _regex;
-        CtrlBinderPtr _binders[Invalid]; //The enum value Invalid is the http methods number
-    };
-    std::vector<HttpControllerRouterItem> _ctrlVector;
-    std::mutex _ctrlMutex;
+    HttpSimpleControllersRouter _httpSimpleCtrlsRouter;
+    HttpControllersRouter _httpCtrlsRouter;
+    WebsocketControllersRouter _websockCtrlsRouter;
 
-    std::regex _ctrlRegex;
     bool _enableLastModify = true;
     std::set<std::string> _fileTypeSet = {"html", "js", "css", "xml", "xsl", "txt", "svg", "ttf",
                                           "otf", "woff2", "woff", "eot", "png", "jpg", "jpeg",
@@ -198,8 +169,6 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     std::string _rootPath = "./";
     std::string _uploadPath;
     std::atomic_bool _running;
-
-    //tool funcs
 
     size_t _threadNum = 1;
     std::vector<std::string> _libFilePaths;
