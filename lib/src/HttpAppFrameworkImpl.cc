@@ -583,8 +583,7 @@ void HttpAppFrameworkImpl::onNewWebsockRequest(const HttpRequestImplPtr &req,
                                                std::function<void(const HttpResponsePtr &)> &&callback,
                                                const WebSocketConnectionPtr &wsConnPtr)
 {
-    auto callbackPtr = std::make_shared<std::function<void(const HttpResponsePtr &)>>(std::move(callback));
-    _websockCtrlsRouter.route(req, callbackPtr, wsConnPtr);
+    _websockCtrlsRouter.route(req, std::move(callback), wsConnPtr);
 }
 void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestImplPtr &req, std::function<void(const HttpResponsePtr &)> &&callback)
 {
@@ -780,13 +779,9 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestImplPtr &req, std::fu
             return;
         }
     }
-    auto sessionIdPtr = std::make_shared<std::string>(std::move(session_id));
-    auto callbackPtr = std::make_shared<std::function<void(const HttpResponsePtr &)>>(std::move(callback));
-    //find simple controller
-    if (_httpSimpleCtrlsRouter.route(req, callbackPtr, needSetJsessionid, sessionIdPtr))
-        return;
-    //Find http controller
-    _httpCtrlsRouter.route(req, callbackPtr, needSetJsessionid, sessionIdPtr);
+
+    //Route to controller
+    _httpSimpleCtrlsRouter.route(req, std::move(callback), needSetJsessionid, std::move(session_id));
 }
 
 void HttpAppFrameworkImpl::readSendFile(const std::string &filePath, const HttpRequestImplPtr &req, const HttpResponsePtr &resp)

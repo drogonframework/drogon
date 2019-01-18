@@ -39,7 +39,7 @@ void WebsocketControllersRouter::registerWebSocketController(const std::string &
 }
 
 void WebsocketControllersRouter::route(const HttpRequestImplPtr &req,
-                                       const std::shared_ptr<std::function<void(const HttpResponsePtr &)>> &callbackPtr,
+                                       std::function<void(const HttpResponsePtr &)> &&callback,
                                        const WebSocketConnectionPtr &wsConnPtr)
 {
     std::string wsKey = req->getHeaderBy("sec-websocket-key");
@@ -62,20 +62,21 @@ void WebsocketControllersRouter::route(const HttpRequestImplPtr &req,
         {
             if (!filtersName.empty())
             {
+                auto callbackPtr = std::make_shared<std::function<void(const HttpResponsePtr &)>>(std::move(callback));
                 _appImpl.doFilters(filtersName, req, callbackPtr, false, nullptr, [=]() mutable {
                     doControllerHandler(ctrlPtr, wsKey, req, *callbackPtr, wsConnPtr);
                 });
             }
             else
             {
-                doControllerHandler(ctrlPtr, wsKey, req, *callbackPtr, wsConnPtr);
+                doControllerHandler(ctrlPtr, wsKey, req, callback, wsConnPtr);
             }
             return;
         }
     }
     auto resp = drogon::HttpResponse::newNotFoundResponse();
     resp->setCloseConnection(true);
-    (*callbackPtr)(resp);
+    callback(resp);
 }
 
 void WebsocketControllersRouter::doControllerHandler(const WebSocketControllerBasePtr &ctrlPtr,

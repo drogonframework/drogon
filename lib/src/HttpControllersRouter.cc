@@ -138,9 +138,9 @@ void HttpControllersRouter::addHttpPath(const std::string &path,
 }
 
 void HttpControllersRouter::route(const HttpRequestImplPtr &req,
-                                  const std::shared_ptr<std::function<void(const HttpResponsePtr &)>> &callbackPtr,
+                                  std::function<void(const HttpResponsePtr &)> &&callback,
                                   bool needSetJsessionid,
-                                  const std::shared_ptr<std::string> &sessionIdPtr)
+                                  std::string &&session_id)
 {
     //find http controller
     if (_ctrlRegex.mark_count() > 0)
@@ -165,20 +165,22 @@ void HttpControllersRouter::route(const HttpRequestImplPtr &req,
                         //Invalid Http Method
                         auto res = drogon::HttpResponse::newHttpResponse();
                         res->setStatusCode(HttpResponse::k405MethodNotAllowed);
-                        (*callbackPtr)(res);
+                        callback(res);
                         return;
                     }
 
                     auto &filters = binder->filtersName;
                     if (!filters.empty())
                     {
+                        auto sessionIdPtr = std::make_shared<std::string>(std::move(session_id));
+                        auto callbackPtr = std::make_shared<std::function<void(const HttpResponsePtr &)>>(std::move(callback));
                         _appImpl.doFilters(filters, req, callbackPtr, needSetJsessionid, sessionIdPtr, [=]() {
                             doControllerHandler(binder, routerItem, req, std::move(*callbackPtr), needSetJsessionid, std::move(*sessionIdPtr));
                         });
                     }
                     else
                     {
-                        doControllerHandler(binder, routerItem, req, std::move(*callbackPtr), needSetJsessionid, std::move(*sessionIdPtr));
+                        doControllerHandler(binder, routerItem, req, std::move(callback), needSetJsessionid, std::move(session_id));
                     }
                 }
             }
@@ -188,20 +190,17 @@ void HttpControllersRouter::route(const HttpRequestImplPtr &req,
             //No controller found
             auto res = drogon::HttpResponse::newNotFoundResponse();
             if (needSetJsessionid)
-                res->addCookie("JSESSIONID", *sessionIdPtr);
-
-            (*callbackPtr)(res);
+                res->addCookie("JSESSIONID", session_id);
+            callback(res);
         }
     }
     else
     {
         //No controller found
         auto res = drogon::HttpResponse::newNotFoundResponse();
-
         if (needSetJsessionid)
-            res->addCookie("JSESSIONID", *sessionIdPtr);
-
-        (*callbackPtr)(res);
+            res->addCookie("JSESSIONID", session_id);
+        callback(res);
     }
 }
 
@@ -285,9 +284,12 @@ void HttpControllersRouter::doControllerHandler(const CtrlBinderPtr &ctrlBinderP
         }
         if (needSetJsessionid)
         {
-            //make a copy
-            newResp = std::make_shared<HttpResponseImpl>(*std::dynamic_pointer_cast<HttpResponseImpl>(resp));
-            newResp->setExpiredTime(-1); //make it temporary
+            if (resp->expiredTime() >= 0)
+            {
+                //make a copy
+                newResp = std::make_shared<HttpResponseImpl>(*std::dynamic_pointer_cast<HttpResponseImpl>(resp));
+                newResp->setExpiredTime(-1); //make it temporary
+            }
             newResp->addCookie("JSESSIONID", session_id);
         }
         callback(newResp);

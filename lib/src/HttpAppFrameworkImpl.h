@@ -39,8 +39,8 @@ class HttpAppFrameworkImpl : public HttpAppFramework
 {
   public:
     HttpAppFrameworkImpl()
-        : _httpSimpleCtrlsRouter(*this),
-          _httpCtrlsRouter(*this),
+        : _httpCtrlsRouter(*this),
+          _httpSimpleCtrlsRouter(*this, _httpCtrlsRouter),
           _websockCtrlsRouter(*this),
           _uploadPath(_rootPath + "uploads"),
           _connectionNum(0)
@@ -157,8 +157,9 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     std::unique_ptr<CacheMap<std::string, SessionPtr>> _sessionMapPtr;
     std::unique_ptr<CacheMap<std::string, HttpResponsePtr>> _responseCachingMap;
 
-    HttpSimpleControllersRouter _httpSimpleCtrlsRouter;
     HttpControllersRouter _httpCtrlsRouter;
+    HttpSimpleControllersRouter _httpSimpleCtrlsRouter;
+
     WebsocketControllersRouter _websockCtrlsRouter;
 
     bool _enableLastModify = true;

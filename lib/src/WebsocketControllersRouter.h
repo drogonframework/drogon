@@ -34,7 +34,7 @@ class WebsocketControllersRouter : public trantor::NonCopyable
                                      const std::string &ctrlName,
                                      const std::vector<std::string> &filters);
     void route(const HttpRequestImplPtr &req,
-               const std::shared_ptr<std::function<void(const HttpResponsePtr &)>> &callbackPtr,
+               std::function<void(const HttpResponsePtr &)> &&callback,
                const WebSocketConnectionPtr &wsConnPtr);
 
   private:

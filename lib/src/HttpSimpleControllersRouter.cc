@@ -64,18 +64,18 @@ void HttpSimpleControllersRouter::registerHttpSimpleController(const std::string
     }
 }
 
-bool HttpSimpleControllersRouter::route(const HttpRequestImplPtr &req,
-                                        const std::shared_ptr<std::function<void(const HttpResponsePtr &)>> &callbackPtr,
+void HttpSimpleControllersRouter::route(const HttpRequestImplPtr &req,
+                                        std::function<void(const HttpResponsePtr &)> &&callback,
                                         bool needSetJsessionid,
-                                        const std::shared_ptr<std::string> &sessionIdPtr)
+                                        std::string &&session_id)
 {
-    std::string pathLower(req->path());
-    std::transform(pathLower.begin(), pathLower.end(), pathLower.begin(), tolower);
+    std::string pathLower(req->path().length(), 0);
+    std::transform(req->path().begin(), req->path().end(), pathLower.begin(), tolower);
 
     if (_simpCtrlMap.find(pathLower) != _simpCtrlMap.end())
     {
         auto &ctrlInfo = _simpCtrlMap[pathLower];
-        if (ctrlInfo._validMethodsFlags.size() > 0)
+        if (!ctrlInfo._validMethodsFlags.empty())
         {
             assert(ctrlInfo._validMethodsFlags.size() > req->method());
             if (ctrlInfo._validMethodsFlags[req->method()] == 0)
@@ -83,24 +83,26 @@ bool HttpSimpleControllersRouter::route(const HttpRequestImplPtr &req,
                 //Invalid Http Method
                 auto res = drogon::HttpResponse::newHttpResponse();
                 res->setStatusCode(HttpResponse::k405MethodNotAllowed);
-                (*callbackPtr)(res);
-                return true;
+                callback(res);
+                return;
             }
         }
         auto &filters = ctrlInfo.filtersName;
         if (!filters.empty())
         {
+            auto sessionIdPtr = std::make_shared<std::string>(std::move(session_id));
+            auto callbackPtr = std::make_shared<std::function<void(const HttpResponsePtr &)>>(std::move(callback));
             _appImpl.doFilters(filters, req, callbackPtr, needSetJsessionid, sessionIdPtr, [=, pathLower = std::move(pathLower)]() mutable {
                 doControllerHandler(std::move(pathLower), req, std::move(*callbackPtr), needSetJsessionid, std::move(*sessionIdPtr));
             });
         }
         else
         {
-            doControllerHandler(std::move(pathLower), req, std::move(*callbackPtr), needSetJsessionid, std::move(*sessionIdPtr));
+            doControllerHandler(std::move(pathLower), req, std::move(callback), needSetJsessionid, std::move(session_id));
         }
-        return true;
+        return;
     }
-    return false;
+    _httpCtrlsRouter.route(req, std::move(callback), needSetJsessionid, std::move(session_id));
 }
 
 void HttpSimpleControllersRouter::doControllerHandler(std::string &&pathLower,
@@ -146,7 +148,7 @@ void HttpSimpleControllersRouter::doControllerHandler(std::string &&pathLower,
         }
         else
         {
-            controller->asyncHandleHttpRequest(req, [callback = std::move(callback), this, pathLower = std::move(pathLower), needSetJsessionid, session_id = std::move(session_id)](const HttpResponsePtr &resp) {
+            controller->asyncHandleHttpRequest(req, [=, callback = std::move(callback), pathLower = std::move(pathLower), session_id = std::move(session_id)](const HttpResponsePtr &resp) {
                 auto newResp = resp;
                 if (resp->expiredTime() >= 0)
                 {
@@ -160,12 +162,14 @@ void HttpSimpleControllersRouter::doControllerHandler(std::string &&pathLower,
                 }
                 if (needSetJsessionid)
                 {
-                    //make a copy
-                    newResp = std::make_shared<HttpResponseImpl>(*std::dynamic_pointer_cast<HttpResponseImpl>(resp));
-                    newResp->setExpiredTime(-1); //make it temporary
+                    if (resp->expiredTime() >= 0)
+                    {
+                        //make a copy
+                        newResp = std::make_shared<HttpResponseImpl>(*std::dynamic_pointer_cast<HttpResponseImpl>(resp));
+                        newResp->setExpiredTime(-1); //make it temporary
+                    }
                     newResp->addCookie("JSESSIONID", session_id);
                 }
-
                 callback(newResp);
             });
         }

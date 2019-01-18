@@ -36,9 +36,9 @@ class HttpControllersRouter : public trantor::NonCopyable
                      const std::vector<HttpMethod> &validMethods,
                      const std::vector<std::string> &filters);
     void route(const HttpRequestImplPtr &req,
-               const std::shared_ptr<std::function<void(const HttpResponsePtr &)>> &callbackPtr,
+               std::function<void(const HttpResponsePtr &)> &&callback,
                bool needSetJsessionid,
-               const std::shared_ptr<std::string> &sessionIdPtr);
+               std::string &&session_id);
 
   private:
     struct CtrlBinder

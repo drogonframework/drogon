@@ -27,20 +27,24 @@
 namespace drogon
 {
 class HttpAppFrameworkImpl;
+class HttpControllersRouter;
 class HttpSimpleControllersRouter : public trantor::NonCopyable
 {
   public:
-    HttpSimpleControllersRouter(HttpAppFrameworkImpl &app) : _appImpl(app) {}
+    HttpSimpleControllersRouter(HttpAppFrameworkImpl &app, HttpControllersRouter &httpCtrlRouter)
+        : _appImpl(app),
+          _httpCtrlsRouter(httpCtrlRouter) {}
     void registerHttpSimpleController(const std::string &pathName,
                                       const std::string &ctrlName,
                                       const std::vector<any> &filtersAndMethods);
-    bool route(const HttpRequestImplPtr &req,
-               const std::shared_ptr<std::function<void(const HttpResponsePtr &)>> &callbackPtr,
+    void route(const HttpRequestImplPtr &req,
+               std::function<void(const HttpResponsePtr &)> &&callback,
                bool needSetJsessionid,
-               const std::shared_ptr<std::string> &sessionIdPtr);
+               std::string &&session_id);
 
   private:
     HttpAppFrameworkImpl &_appImpl;
+    HttpControllersRouter &_httpCtrlsRouter;
     struct SimpleControllerRouterItem
     {
         std::string controllerName;
