@@ -128,8 +128,6 @@ class HttpAppFrameworkImpl : public HttpAppFramework
                                         const internal::HttpBinderBasePtr &binder,
                                         const std::vector<HttpMethod> &validMethods = std::vector<HttpMethod>(),
                                         const std::vector<std::string> &filters = std::vector<std::string>()) override;
-
-    std::vector<std::tuple<std::string, uint16_t, bool, std::string, std::string>> _listeners;
     void onAsyncRequest(const HttpRequestImplPtr &req, const std::function<void(const HttpResponsePtr &)> &callback);
     void onNewWebsockRequest(const HttpRequestImplPtr &req,
                              const std::function<void(const HttpResponsePtr &)> &callback,
@@ -142,21 +140,22 @@ class HttpAppFrameworkImpl : public HttpAppFramework
                      const internal::HttpBinderBasePtr &binder,
                      const std::vector<HttpMethod> &validMethods,
                      const std::vector<std::string> &filters);
-    //if uuid package found,we can use a uuid string as session id;
-    //set _sessionTimeout=0 to make location session valid forever based on cookies;
-    size_t _sessionTimeout = 0;
-    size_t _idleConnectionTimeout = 60;
-    bool _useSession = false;
-    typedef std::shared_ptr<Session> SessionPtr;
-    std::unique_ptr<CacheMap<std::string, SessionPtr>> _sessionMapPtr;
-    std::unique_ptr<CacheMap<std::string, HttpResponsePtr>> _responseCachingMap;
-
     void doFilterChain(const std::shared_ptr<std::queue<std::shared_ptr<HttpFilterBase>>> &chain,
                        const HttpRequestImplPtr &req,
                        const std::function<void(const HttpResponsePtr &)> &callback,
                        bool needSetJsessionid,
                        const std::string &session_id,
                        const std::function<void()> &missCallback);
+
+    //We use a uuid string as session id;
+    //set _sessionTimeout=0 to make location session valid forever based on cookies;
+    size_t _sessionTimeout = 0;
+    size_t _idleConnectionTimeout = 60;
+    bool _useSession = false;
+    std::vector<std::tuple<std::string, uint16_t, bool, std::string, std::string>> _listeners;
+    typedef std::shared_ptr<Session> SessionPtr;
+    std::unique_ptr<CacheMap<std::string, SessionPtr>> _sessionMapPtr;
+    std::unique_ptr<CacheMap<std::string, HttpResponsePtr>> _responseCachingMap;
 
     HttpSimpleControllersRouter _httpSimpleCtrlsRouter;
     HttpControllersRouter _httpCtrlsRouter;
