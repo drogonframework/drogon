@@ -118,19 +118,19 @@ class HttpAppFrameworkImpl : public HttpAppFramework
 #endif
     void doFilters(const std::vector<std::string> &filters,
                    const HttpRequestImplPtr &req,
-                   const std::function<void(const HttpResponsePtr &)> &callback,
+                   const std::shared_ptr<const std::function<void(const HttpResponsePtr &)>> &callbackPtr,
                    bool needSetJsessionid,
-                   const std::string &session_id,
-                   const std::function<void()> &missCallback);
+                   const std::shared_ptr<std::string> &sessionIdPtr,
+                   std::function<void()> &&missCallback);
 
   private:
     virtual void registerHttpController(const std::string &pathPattern,
                                         const internal::HttpBinderBasePtr &binder,
                                         const std::vector<HttpMethod> &validMethods = std::vector<HttpMethod>(),
                                         const std::vector<std::string> &filters = std::vector<std::string>()) override;
-    void onAsyncRequest(const HttpRequestImplPtr &req, const std::function<void(const HttpResponsePtr &)> &callback);
+    void onAsyncRequest(const HttpRequestImplPtr &req, std::function<void(const HttpResponsePtr &)> &&callback);
     void onNewWebsockRequest(const HttpRequestImplPtr &req,
-                             const std::function<void(const HttpResponsePtr &)> &callback,
+                             std::function<void(const HttpResponsePtr &)> &&callback,
                              const WebSocketConnectionPtr &wsConnPtr);
     void onWebsockMessage(const WebSocketConnectionPtr &wsConnPtr, trantor::MsgBuffer *buffer);
     void onWebsockDisconnect(const WebSocketConnectionPtr &wsConnPtr);
@@ -142,10 +142,10 @@ class HttpAppFrameworkImpl : public HttpAppFramework
                      const std::vector<std::string> &filters);
     void doFilterChain(const std::shared_ptr<std::queue<std::shared_ptr<HttpFilterBase>>> &chain,
                        const HttpRequestImplPtr &req,
-                       const std::function<void(const HttpResponsePtr &)> &callback,
+                       const std::shared_ptr<const std::function<void(const HttpResponsePtr &)>> &callbackPtr,
                        bool needSetJsessionid,
-                       const std::string &session_id,
-                       const std::function<void()> &missCallback);
+                       const std::shared_ptr<std::string> &sessionIdPtr,
+                       std::function<void()> &&missCallback);
 
     //We use a uuid string as session id;
     //set _sessionTimeout=0 to make location session valid forever based on cookies;

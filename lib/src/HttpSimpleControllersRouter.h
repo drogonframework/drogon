@@ -35,9 +35,9 @@ class HttpSimpleControllersRouter : public trantor::NonCopyable
                                       const std::string &ctrlName,
                                       const std::vector<any> &filtersAndMethods);
     bool route(const HttpRequestImplPtr &req,
-               const std::function<void(const HttpResponsePtr &)> &callback,
+               const std::shared_ptr<std::function<void(const HttpResponsePtr &)>> &callbackPtr,
                bool needSetJsessionid,
-               const std::string &session_id);
+               const std::shared_ptr<std::string> &sessionIdPtr);
 
   private:
     HttpAppFrameworkImpl &_appImpl;
@@ -52,5 +52,11 @@ class HttpSimpleControllersRouter : public trantor::NonCopyable
     };
     std::unordered_map<std::string, SimpleControllerRouterItem> _simpCtrlMap;
     std::mutex _simpCtrlMutex;
+
+    void doControllerHandler(std::string &&pathLower,
+                             const HttpRequestImplPtr &req,
+                             std::function<void(const HttpResponsePtr &)> &&callback,
+                             bool needSetJsessionid,
+                             std::string &&session_id);
 };
 } // namespace drogon

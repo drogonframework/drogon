@@ -138,9 +138,9 @@ void HttpControllersRouter::addHttpPath(const std::string &path,
 }
 
 void HttpControllersRouter::route(const HttpRequestImplPtr &req,
-                                  const std::function<void(const HttpResponsePtr &)> &callback,
+                                  const std::shared_ptr<std::function<void(const HttpResponsePtr &)>> &callbackPtr,
                                   bool needSetJsessionid,
-                                  const std::string &session_id)
+                                  const std::shared_ptr<std::string> &sessionIdPtr)
 {
     //find http controller
     if (_ctrlRegex.mark_count() > 0)
@@ -156,103 +156,30 @@ void HttpControllersRouter::route(const HttpRequestImplPtr &req,
                 if (result[i].str() == req->path() && i <= _ctrlVector.size())
                 {
                     size_t ctlIndex = i - 1;
-                    auto &router = _ctrlVector[ctlIndex];
+                    auto &routerItem = _ctrlVector[ctlIndex];
                     //LOG_TRACE << "got http access,regex=" << binder.pathParameterPattern;
                     assert(Invalid > req->method());
-                    auto &binder = router._binders[req->method()];
+                    auto &binder = routerItem._binders[req->method()];
                     if (!binder)
                     {
                         //Invalid Http Method
                         auto res = drogon::HttpResponse::newHttpResponse();
                         res->setStatusCode(HttpResponse::k405MethodNotAllowed);
-                        callback(res);
+                        (*callbackPtr)(res);
                         return;
                     }
 
                     auto &filters = binder->filtersName;
-                    _appImpl.doFilters(filters, req, callback, needSetJsessionid, session_id, [=]() {
-                        HttpResponsePtr responsePtr;
-                        {
-                            std::lock_guard<std::mutex> guard(*(binder->binderMtx));
-                            responsePtr = binder->responsePtr;
-                        }
-                        
-                        if (responsePtr && (responsePtr->expiredTime() == 0 || (trantor::Date::now() < responsePtr->createDate().after(responsePtr->expiredTime()))))
-                        {
-                            //use cached response!
-                            LOG_TRACE << "Use cached response";
-
-                            if (!needSetJsessionid)
-                                callback(responsePtr);
-                            else
-                            {
-                                //make a copy response;
-                                auto newResp = std::make_shared<HttpResponseImpl>(*std::dynamic_pointer_cast<HttpResponseImpl>(responsePtr));
-                                newResp->setExpiredTime(-1); //make it temporary
-                                newResp->addCookie("JSESSIONID", session_id);
-                                callback(newResp);
-                            }
-                            return;
-                        }
-
-                        std::vector<std::string> params(binder->parameterPlaces.size());
-                        std::smatch r;
-                        if (std::regex_match(req->path(), r, router._regex))
-                        {
-                            for (size_t j = 1; j < r.size(); j++)
-                            {
-                                size_t place = binder->parameterPlaces[j - 1];
-                                if (place > params.size())
-                                    params.resize(place);
-                                params[place - 1] = r[j].str();
-                                LOG_TRACE << "place=" << place << " para:" << params[place - 1];
-                            }
-                        }
-                        if (binder->queryParametersPlaces.size() > 0)
-                        {
-                            auto qureyPara = req->getParameters();
-                            for (auto parameter : qureyPara)
-                            {
-                                if (binder->queryParametersPlaces.find(parameter.first) !=
-                                    binder->queryParametersPlaces.end())
-                                {
-                                    auto place = binder->queryParametersPlaces.find(parameter.first)->second;
-                                    if (place > params.size())
-                                        params.resize(place);
-                                    params[place - 1] = parameter.second;
-                                }
-                            }
-                        }
-                        std::list<std::string> paraList;
-                        for (auto p : params)
-                        {
-                            LOG_TRACE << p;
-                            paraList.push_back(std::move(p));
-                        }
-
-                        binder->binderPtr->handleHttpRequest(paraList, req, [=](const HttpResponsePtr &resp) {
-                            LOG_TRACE << "http resp:needSetJsessionid=" << needSetJsessionid << ";JSESSIONID=" << session_id;
-                            auto newResp = resp;
-                            if (resp->expiredTime() >= 0)
-                            {
-                                //cache the response;
-                                std::dynamic_pointer_cast<HttpResponseImpl>(resp)->makeHeaderString();
-                                {
-                                    std::lock_guard<std::mutex> guard(*(binder->binderMtx));
-                                    binder->responsePtr = resp;
-                                }
-                            }
-                            if (needSetJsessionid)
-                            {
-                                //make a copy
-                                newResp = std::make_shared<HttpResponseImpl>(*std::dynamic_pointer_cast<HttpResponseImpl>(resp));
-                                newResp->setExpiredTime(-1); //make it temporary
-                                newResp->addCookie("JSESSIONID", session_id);
-                            }
-                            callback(newResp);
+                    if (!filters.empty())
+                    {
+                        _appImpl.doFilters(filters, req, callbackPtr, needSetJsessionid, sessionIdPtr, [=]() {
+                            doControllerHandler(binder, routerItem, req, std::move(*callbackPtr), needSetJsessionid, std::move(*sessionIdPtr));
                         });
-                        return;
-                    });
+                    }
+                    else
+                    {
+                        doControllerHandler(binder, routerItem, req, std::move(*callbackPtr), needSetJsessionid, std::move(*sessionIdPtr));
+                    }
                 }
             }
         }
@@ -261,9 +188,9 @@ void HttpControllersRouter::route(const HttpRequestImplPtr &req,
             //No controller found
             auto res = drogon::HttpResponse::newNotFoundResponse();
             if (needSetJsessionid)
-                res->addCookie("JSESSIONID", session_id);
+                res->addCookie("JSESSIONID", *sessionIdPtr);
 
-            callback(res);
+            (*callbackPtr)(res);
         }
     }
     else
@@ -272,8 +199,98 @@ void HttpControllersRouter::route(const HttpRequestImplPtr &req,
         auto res = drogon::HttpResponse::newNotFoundResponse();
 
         if (needSetJsessionid)
-            res->addCookie("JSESSIONID", session_id);
+            res->addCookie("JSESSIONID", *sessionIdPtr);
 
-        callback(res);
+        (*callbackPtr)(res);
     }
+}
+
+void HttpControllersRouter::doControllerHandler(const CtrlBinderPtr &ctrlBinderPtr,
+                                                const HttpControllerRouterItem &routerItem,
+                                                const HttpRequestImplPtr &req,
+                                                std::function<void(const HttpResponsePtr &)> &&callback,
+                                                bool needSetJsessionid,
+                                                std::string &&session_id)
+{
+    HttpResponsePtr responsePtr;
+    {
+        std::lock_guard<std::mutex> guard(*(ctrlBinderPtr->binderMtx));
+        responsePtr = ctrlBinderPtr->responsePtr;
+    }
+
+    if (responsePtr && (responsePtr->expiredTime() == 0 || (trantor::Date::now() < responsePtr->createDate().after(responsePtr->expiredTime()))))
+    {
+        //use cached response!
+        LOG_TRACE << "Use cached response";
+
+        if (!needSetJsessionid)
+            callback(responsePtr);
+        else
+        {
+            //make a copy response;
+            auto newResp = std::make_shared<HttpResponseImpl>(*std::dynamic_pointer_cast<HttpResponseImpl>(responsePtr));
+            newResp->setExpiredTime(-1); //make it temporary
+            newResp->addCookie("JSESSIONID", session_id);
+            callback(newResp);
+        }
+        return;
+    }
+
+    std::vector<std::string> params(ctrlBinderPtr->parameterPlaces.size());
+    std::smatch r;
+    if (std::regex_match(req->path(), r, routerItem._regex))
+    {
+        for (size_t j = 1; j < r.size(); j++)
+        {
+            size_t place = ctrlBinderPtr->parameterPlaces[j - 1];
+            if (place > params.size())
+                params.resize(place);
+            params[place - 1] = r[j].str();
+            LOG_TRACE << "place=" << place << " para:" << params[place - 1];
+        }
+    }
+    if (ctrlBinderPtr->queryParametersPlaces.size() > 0)
+    {
+        auto qureyPara = req->getParameters();
+        for (auto parameter : qureyPara)
+        {
+            if (ctrlBinderPtr->queryParametersPlaces.find(parameter.first) !=
+                ctrlBinderPtr->queryParametersPlaces.end())
+            {
+                auto place = ctrlBinderPtr->queryParametersPlaces.find(parameter.first)->second;
+                if (place > params.size())
+                    params.resize(place);
+                params[place - 1] = parameter.second;
+            }
+        }
+    }
+    std::list<std::string> paraList;
+    for (auto p : params)
+    {
+        LOG_TRACE << p;
+        paraList.push_back(std::move(p));
+    }
+
+    ctrlBinderPtr->binderPtr->handleHttpRequest(paraList, req, [=, callback = std::move(callback), session_id = std::move(session_id)](const HttpResponsePtr &resp) {
+        LOG_TRACE << "http resp:needSetJsessionid=" << needSetJsessionid << ";JSESSIONID=" << session_id;
+        auto newResp = resp;
+        if (resp->expiredTime() >= 0)
+        {
+            //cache the response;
+            std::dynamic_pointer_cast<HttpResponseImpl>(resp)->makeHeaderString();
+            {
+                std::lock_guard<std::mutex> guard(*(ctrlBinderPtr->binderMtx));
+                ctrlBinderPtr->responsePtr = resp;
+            }
+        }
+        if (needSetJsessionid)
+        {
+            //make a copy
+            newResp = std::make_shared<HttpResponseImpl>(*std::dynamic_pointer_cast<HttpResponseImpl>(resp));
+            newResp->setExpiredTime(-1); //make it temporary
+            newResp->addCookie("JSESSIONID", session_id);
+        }
+        callback(newResp);
+    });
+    return;
 }
