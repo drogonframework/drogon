@@ -32,9 +32,9 @@ typedef std::shared_ptr<HttpRequest> HttpRequestPtr;
 class HttpServer : trantor::NonCopyable
 {
   public:
-    typedef std::function<void(const HttpRequestImplPtr &, const std::function<void(const HttpResponsePtr &)> &)> HttpAsyncCallback;
+    typedef std::function<void(const HttpRequestImplPtr &, std::function<void(const HttpResponsePtr &)> &&)> HttpAsyncCallback;
     typedef std::function<void(const HttpRequestImplPtr &,
-                               const std::function<void(const HttpResponsePtr &)> &,
+                               std::function<void(const HttpResponsePtr &)> &&,
                                const WebSocketConnectionPtr &)>
         WebSocketNewAsyncCallback;
     typedef std::function<void(const WebSocketConnectionPtr &)>

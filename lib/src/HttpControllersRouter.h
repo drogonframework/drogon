@@ -36,9 +36,9 @@ class HttpControllersRouter : public trantor::NonCopyable
                      const std::vector<HttpMethod> &validMethods,
                      const std::vector<std::string> &filters);
     void route(const HttpRequestImplPtr &req,
-               const std::function<void(const HttpResponsePtr &)> &callback,
+               std::function<void(const HttpResponsePtr &)> &&callback,
                bool needSetJsessionid,
-               const std::string &session_id);
+               std::string &&session_id);
 
   private:
     struct CtrlBinder
@@ -61,5 +61,12 @@ class HttpControllersRouter : public trantor::NonCopyable
     std::mutex _ctrlMutex;
     std::regex _ctrlRegex;
     HttpAppFrameworkImpl &_appImpl;
+
+    void doControllerHandler(const CtrlBinderPtr &ctrlBinderPtr,
+                             const HttpControllerRouterItem &routerItem,
+                             const HttpRequestImplPtr &req,
+                             std::function<void(const HttpResponsePtr &)> &&callback,
+                             bool needSetJsessionid,
+                             std::string &&session_id);
 };
 } // namespace drogon

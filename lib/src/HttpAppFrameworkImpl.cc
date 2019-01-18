@@ -379,19 +379,24 @@ void HttpAppFrameworkImpl::run()
 
 void HttpAppFrameworkImpl::doFilterChain(const std::shared_ptr<std::queue<std::shared_ptr<HttpFilterBase>>> &chain,
                                          const HttpRequestImplPtr &req,
-                                         const std::function<void(const HttpResponsePtr &)> &callback,
+                                         const std::shared_ptr<const std::function<void(const HttpResponsePtr &)>> &callbackPtr,
                                          bool needSetJsessionid,
-                                         const std::string &session_id,
-                                         const std::function<void()> &missCallback)
+                                         const std::shared_ptr<std::string> &sessionIdPtr,
+                                         std::function<void()> &&missCallback)
 {
     if (chain && chain->size() > 0)
     {
         auto filter = chain->front();
         chain->pop();
-        filter->doFilter(req, [=](HttpResponsePtr res) {
-            if (needSetJsessionid)
-                res->addCookie("JSESSIONID", session_id);
-            callback(res); }, [=]() { doFilterChain(chain, req, callback, needSetJsessionid, session_id, missCallback); });
+        filter->doFilter(req,
+                         [=](HttpResponsePtr res) {
+                             if (needSetJsessionid)
+                                 res->addCookie("JSESSIONID", *sessionIdPtr);
+                             (*callbackPtr)(res);
+                         },
+                         [=, missCallback = std::move(missCallback)]() mutable {
+                             doFilterChain(chain, req, callbackPtr, needSetJsessionid, sessionIdPtr, std::move(missCallback));
+                         });
     }
     else
     {
@@ -400,10 +405,10 @@ void HttpAppFrameworkImpl::doFilterChain(const std::shared_ptr<std::queue<std::s
 }
 void HttpAppFrameworkImpl::doFilters(const std::vector<std::string> &filters,
                                      const HttpRequestImplPtr &req,
-                                     const std::function<void(const HttpResponsePtr &)> &callback,
+                                     const std::shared_ptr<const std::function<void(const HttpResponsePtr &)>> &callbackPtr,
                                      bool needSetJsessionid,
-                                     const std::string &session_id,
-                                     const std::function<void()> &missCallback)
+                                     const std::shared_ptr<std::string> &sessionIdPtr,
+                                     std::function<void()> &&missCallback)
 {
     std::shared_ptr<std::queue<std::shared_ptr<HttpFilterBase>>> filterPtrs;
     if (!filters.empty())
@@ -421,7 +426,7 @@ void HttpAppFrameworkImpl::doFilters(const std::vector<std::string> &filters,
             }
         }
     }
-    doFilterChain(filterPtrs, req, callback, needSetJsessionid, session_id, missCallback);
+    doFilterChain(filterPtrs, req, callbackPtr, needSetJsessionid, sessionIdPtr, std::move(missCallback));
 }
 void HttpAppFrameworkImpl::onWebsockDisconnect(const WebSocketConnectionPtr &wsConnPtr)
 {
@@ -575,12 +580,12 @@ void HttpAppFrameworkImpl::setUploadPath(const std::string &uploadPath)
     }
 }
 void HttpAppFrameworkImpl::onNewWebsockRequest(const HttpRequestImplPtr &req,
-                                               const std::function<void(const HttpResponsePtr &)> &callback,
+                                               std::function<void(const HttpResponsePtr &)> &&callback,
                                                const WebSocketConnectionPtr &wsConnPtr)
 {
-    _websockCtrlsRouter.route(req, callback, wsConnPtr);
+    _websockCtrlsRouter.route(req, std::move(callback), wsConnPtr);
 }
-void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestImplPtr &req, const std::function<void(const HttpResponsePtr &)> &callback)
+void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestImplPtr &req, std::function<void(const HttpResponsePtr &)> &&callback)
 {
     LOG_TRACE << "new request:" << req->peerAddr().toIpPort() << "->" << req->localAddr().toIpPort();
     LOG_TRACE << "Headers " << req->methodString() << " " << req->path();
@@ -624,7 +629,7 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestImplPtr &req, const s
         (std::dynamic_pointer_cast<HttpRequestImpl>(req))->setSession((*_sessionMapPtr)[session_id]);
     }
 
-    std::string path = req->path();
+    const std::string &path = req->path();
     auto pos = path.rfind(".");
     if (pos != std::string::npos)
     {
@@ -775,11 +780,8 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestImplPtr &req, const s
         }
     }
 
-    //find simple controller
-    if (_httpSimpleCtrlsRouter.route(req, callback, needSetJsessionid, session_id))
-        return;
-    //Find http controller
-    _httpCtrlsRouter.route(req, callback, needSetJsessionid, session_id);
+    //Route to controller
+    _httpSimpleCtrlsRouter.route(req, std::move(callback), needSetJsessionid, std::move(session_id));
 }
 
 void HttpAppFrameworkImpl::readSendFile(const std::string &filePath, const HttpRequestImplPtr &req, const HttpResponsePtr &resp)

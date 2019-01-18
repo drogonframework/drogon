@@ -26,7 +26,7 @@ using namespace std::placeholders;
 using namespace drogon;
 using namespace trantor;
 
-static void defaultHttpAsyncCallback(const HttpRequestPtr &, const std::function<void(const HttpResponsePtr &resp)> &callback)
+static void defaultHttpAsyncCallback(const HttpRequestPtr &, std::function<void(const HttpResponsePtr &resp)> &&callback)
 {
     auto resp = HttpResponse::newNotFoundResponse();
     resp->setCloseConnection(true);
@@ -34,7 +34,7 @@ static void defaultHttpAsyncCallback(const HttpRequestPtr &, const std::function
 }
 
 static void defaultWebSockAsyncCallback(const HttpRequestPtr &,
-                                        const std::function<void(const HttpResponsePtr &resp)> &callback,
+                                        std::function<void(const HttpResponsePtr &resp)> &&callback,
                                         const WebSocketConnectionPtr &wsConnPtr)
 {
     auto resp = HttpResponse::newNotFoundResponse();

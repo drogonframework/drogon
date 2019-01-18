@@ -34,7 +34,7 @@ class WebsocketControllersRouter : public trantor::NonCopyable
                                      const std::string &ctrlName,
                                      const std::vector<std::string> &filters);
     void route(const HttpRequestImplPtr &req,
-               const std::function<void(const HttpResponsePtr &)> &callback,
+               std::function<void(const HttpResponsePtr &)> &&callback,
                const WebSocketConnectionPtr &wsConnPtr);
 
   private:
@@ -46,5 +46,11 @@ class WebsocketControllersRouter : public trantor::NonCopyable
     };
     std::unordered_map<std::string, WebSocketControllerRouterItem> _websockCtrlMap;
     std::mutex _websockCtrlMutex;
+
+    void doControllerHandler(const WebSocketControllerBasePtr &ctrlPtr,
+                             std::string &wsKey,
+                             const HttpRequestImplPtr &req,
+                             const std::function<void(const HttpResponsePtr &)> &callback,
+                             const WebSocketConnectionPtr &wsConnPtr);
 };
 } // namespace drogon

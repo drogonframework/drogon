@@ -64,18 +64,18 @@ void HttpSimpleControllersRouter::registerHttpSimpleController(const std::string
     }
 }
 
-bool HttpSimpleControllersRouter::route(const HttpRequestImplPtr &req,
-                                        const std::function<void(const HttpResponsePtr &)> &callback,
+void HttpSimpleControllersRouter::route(const HttpRequestImplPtr &req,
+                                        std::function<void(const HttpResponsePtr &)> &&callback,
                                         bool needSetJsessionid,
-                                        const std::string &session_id)
+                                        std::string &&session_id)
 {
-    std::string pathLower(req->path());
-    std::transform(pathLower.begin(), pathLower.end(), pathLower.begin(), tolower);
+    std::string pathLower(req->path().length(), 0);
+    std::transform(req->path().begin(), req->path().end(), pathLower.begin(), tolower);
 
     if (_simpCtrlMap.find(pathLower) != _simpCtrlMap.end())
     {
         auto &ctrlInfo = _simpCtrlMap[pathLower];
-        if (ctrlInfo._validMethodsFlags.size() > 0)
+        if (!ctrlInfo._validMethodsFlags.empty())
         {
             assert(ctrlInfo._validMethodsFlags.size() > req->method());
             if (ctrlInfo._validMethodsFlags[req->method()] == 0)
@@ -84,85 +84,105 @@ bool HttpSimpleControllersRouter::route(const HttpRequestImplPtr &req,
                 auto res = drogon::HttpResponse::newHttpResponse();
                 res->setStatusCode(HttpResponse::k405MethodNotAllowed);
                 callback(res);
-                return true;
+                return;
             }
         }
         auto &filters = ctrlInfo.filtersName;
-        _appImpl.doFilters(filters, req, callback, needSetJsessionid, session_id, [=]() {
-            auto &ctrlItem = _simpCtrlMap[pathLower];
-            const std::string &ctrlName = ctrlItem.controllerName;
-            std::shared_ptr<HttpSimpleControllerBase> controller;
-            HttpResponsePtr responsePtr;
-            {
-                //maybe update controller,so we use lock_guard to protect;
-                std::lock_guard<std::mutex> guard(ctrlItem._mutex);
-                controller = ctrlItem.controller;
-                responsePtr = ctrlItem.responsePtr;
-                if (!controller)
-                {
-                    auto _object = std::shared_ptr<DrObjectBase>(DrClassMap::newObject(ctrlName));
-                    controller = std::dynamic_pointer_cast<HttpSimpleControllerBase>(_object);
-                    ctrlItem.controller = controller;
-                }
-            }
+        if (!filters.empty())
+        {
+            auto sessionIdPtr = std::make_shared<std::string>(std::move(session_id));
+            auto callbackPtr = std::make_shared<std::function<void(const HttpResponsePtr &)>>(std::move(callback));
+            _appImpl.doFilters(filters, req, callbackPtr, needSetJsessionid, sessionIdPtr, [=, pathLower = std::move(pathLower)]() mutable {
+                doControllerHandler(std::move(pathLower), req, std::move(*callbackPtr), needSetJsessionid, std::move(*sessionIdPtr));
+            });
+        }
+        else
+        {
+            doControllerHandler(std::move(pathLower), req, std::move(callback), needSetJsessionid, std::move(session_id));
+        }
+        return;
+    }
+    _httpCtrlsRouter.route(req, std::move(callback), needSetJsessionid, std::move(session_id));
+}
 
-            if (controller)
-            {
-                if (responsePtr && (responsePtr->expiredTime() == 0 || (trantor::Date::now() < responsePtr->createDate().after(responsePtr->expiredTime()))))
-                {
-                    //use cached response!
-                    LOG_TRACE << "Use cached response";
-                    if (!needSetJsessionid)
-                        callback(responsePtr);
-                    else
-                    {
-                        //make a copy response;
-                        auto newResp = std::make_shared<HttpResponseImpl>(*std::dynamic_pointer_cast<HttpResponseImpl>(responsePtr));
-                        newResp->setExpiredTime(-1); //make it temporary
-                        newResp->addCookie("JSESSIONID", session_id);
-                        callback(newResp);
-                    }
-                    return;
-                }
-                else
-                {
-                    controller->asyncHandleHttpRequest(req, [=](const HttpResponsePtr &resp) {
-                        auto newResp = resp;
-                        if (resp->expiredTime() >= 0)
-                        {
-                            //cache the response;
-                            std::dynamic_pointer_cast<HttpResponseImpl>(resp)->makeHeaderString();
-                            {
-                                auto &item = _simpCtrlMap[pathLower];
-                                std::lock_guard<std::mutex> guard(item._mutex);
-                                item.responsePtr = resp;
-                            }
-                        }
-                        if (needSetJsessionid)
-                        {
-                            //make a copy
-                            newResp = std::make_shared<HttpResponseImpl>(*std::dynamic_pointer_cast<HttpResponseImpl>(resp));
-                            newResp->setExpiredTime(-1); //make it temporary
-                            newResp->addCookie("JSESSIONID", session_id);
-                        }
+void HttpSimpleControllersRouter::doControllerHandler(std::string &&pathLower,
+                                                      const HttpRequestImplPtr &req,
+                                                      std::function<void(const HttpResponsePtr &)> &&callback,
+                                                      bool needSetJsessionid,
+                                                      std::string &&session_id)
+{
+    auto &ctrlItem = _simpCtrlMap[pathLower];
+    const std::string &ctrlName = ctrlItem.controllerName;
+    std::shared_ptr<HttpSimpleControllerBase> controller;
+    HttpResponsePtr responsePtr;
+    {
+        //maybe update controller,so we use lock_guard to protect;
+        std::lock_guard<std::mutex> guard(ctrlItem._mutex);
+        controller = ctrlItem.controller;
+        responsePtr = ctrlItem.responsePtr;
+        if (!controller)
+        {
+            auto _object = std::shared_ptr<DrObjectBase>(DrClassMap::newObject(ctrlName));
+            controller = std::dynamic_pointer_cast<HttpSimpleControllerBase>(_object);
+            ctrlItem.controller = controller;
+        }
+    }
 
-                        callback(newResp);
-                    });
-                }
-
-                return;
-            }
+    if (controller)
+    {
+        if (responsePtr && (responsePtr->expiredTime() == 0 || (trantor::Date::now() < responsePtr->createDate().after(responsePtr->expiredTime()))))
+        {
+            //use cached response!
+            LOG_TRACE << "Use cached response";
+            if (!needSetJsessionid)
+                callback(responsePtr);
             else
             {
-                LOG_ERROR << "can't find controller " << ctrlName;
-                auto res = drogon::HttpResponse::newNotFoundResponse();
-                if (needSetJsessionid)
-                    res->addCookie("JSESSIONID", session_id);
-
-                callback(res);
+                //make a copy response;
+                auto newResp = std::make_shared<HttpResponseImpl>(*std::dynamic_pointer_cast<HttpResponseImpl>(responsePtr));
+                newResp->setExpiredTime(-1); //make it temporary
+                newResp->addCookie("JSESSIONID", session_id);
+                callback(newResp);
             }
-        });
-        return true;
+            return;
+        }
+        else
+        {
+            controller->asyncHandleHttpRequest(req, [=, callback = std::move(callback), pathLower = std::move(pathLower), session_id = std::move(session_id)](const HttpResponsePtr &resp) {
+                auto newResp = resp;
+                if (resp->expiredTime() >= 0)
+                {
+                    //cache the response;
+                    std::dynamic_pointer_cast<HttpResponseImpl>(resp)->makeHeaderString();
+                    {
+                        auto &item = _simpCtrlMap[pathLower];
+                        std::lock_guard<std::mutex> guard(item._mutex);
+                        item.responsePtr = resp;
+                    }
+                }
+                if (needSetJsessionid)
+                {
+                    if (resp->expiredTime() >= 0)
+                    {
+                        //make a copy
+                        newResp = std::make_shared<HttpResponseImpl>(*std::dynamic_pointer_cast<HttpResponseImpl>(resp));
+                        newResp->setExpiredTime(-1); //make it temporary
+                    }
+                    newResp->addCookie("JSESSIONID", session_id);
+                }
+                callback(newResp);
+            });
+        }
+
+        return;
     }
-    return false;
+    else
+    {
+        LOG_ERROR << "can't find controller " << ctrlName;
+        auto res = drogon::HttpResponse::newNotFoundResponse();
+        if (needSetJsessionid)
+            res->addCookie("JSESSIONID", session_id);
+
+        callback(res);
+    }
 }
