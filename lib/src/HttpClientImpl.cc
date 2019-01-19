@@ -14,7 +14,7 @@
 
 #include "HttpClientImpl.h"
 #include "HttpRequestImpl.h"
-#include "HttpClientContext.h"
+#include "HttpClientParser.h"
 #include "HttpAppFrameworkImpl.h"
 #include <stdlib.h>
 #include <algorithm>
@@ -131,7 +131,7 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
             _tcpClient->setConnectionCallback([=](const trantor::TcpConnectionPtr &connPtr) {
                 if (connPtr->connected())
                 {
-                    connPtr->setContext(HttpClientContext(connPtr));
+                    connPtr->setContext(HttpClientParser(connPtr));
                     //send request;
                     LOG_TRACE << "Connection established!";
                     auto req = thisPtr->_reqAndCallbacks.front().first;
@@ -197,7 +197,7 @@ void HttpClientImpl::sendReq(const trantor::TcpConnectionPtr &connPtr, const Htt
 
 void HttpClientImpl::onRecvMessage(const trantor::TcpConnectionPtr &connPtr, trantor::MsgBuffer *msg)
 {
-    HttpClientContext *context = any_cast<HttpClientContext>(connPtr->getMutableContext());
+    HttpClientParser *context = any_cast<HttpClientParser>(connPtr->getMutableContext());
 
     //LOG_TRACE << "###:" << msg->readableBytes();
     if (!context->parseResponse(msg))

@@ -91,6 +91,7 @@ class Test : public HttpController<Test>
 };
 } // namespace v1
 } // namespace api
+
 using namespace std::placeholders;
 using namespace drogon;
 int main()
@@ -100,7 +101,7 @@ int main()
     app().addListener("0.0.0.0", 8848);
 #ifdef USE_OPENSSL
    //https
-    drogon::HttpAppFramework::instance().setSSLFiles("../../trantor/trantor/tests/server.pem", "../../trantor/trantor/tests/server.pem");
+    drogon::HttpAppFramework::instance().setSSLFiles("server.pem", "server.pem");
     drogon::HttpAppFramework::instance().addListener("0.0.0.0", 8849, true);
 #endif
     app().setThreadNum(4);
@@ -136,6 +137,6 @@ int main()
     app().enableSession(60);
     //start app framework
     //drogon::HttpAppFramework::instance().enableDynamicViewsLoading({"/tmp/views"});
-    app().loadConfigFile("../../config.example.json");
+    app().loadConfigFile("config.example.json");
     app().run();
 }

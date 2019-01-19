@@ -637,8 +637,16 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestImplPtr &req, std::fu
         transform(filetype.begin(), filetype.end(), filetype.begin(), tolower);
         if (_fileTypeSet.find(filetype) != _fileTypeSet.end())
         {
-            //LOG_INFO << "file query!";
+            //LOG_INFO << "file query!" << path;
             std::string filePath = _rootPath + path;
+            if (filePath.find("/../") != std::string::npos)
+            {
+                //Downloading files from the parent folder is forbidden.
+                auto resp = HttpResponse::newHttpResponse();
+                resp->setStatusCode(HttpResponse::k403Forbidden);
+                callback(resp);
+                return;
+            }
             std::shared_ptr<HttpResponseImpl> resp = std::make_shared<HttpResponseImpl>();
             //find cached response
             HttpResponsePtr cachedResp;

@@ -26,3 +26,8 @@ AUX_SOURCE_DIRECTORY(simple_example_test DIR_TEST)
 add_executable(client ${DIR_CLIENT})
 add_executable(benchmark ${DIR_BENCHMARK})
 add_executable(webapp_test ${DIR_TEST})
+
+add_custom_command(TARGET webapp POST_BUILD
+                   COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                   ${CMAKE_SOURCE_DIR}/config.example.json ${CMAKE_SOURCE_DIR}/drogon.jpg 
+                   ${CMAKE_SOURCE_DIR}/trantor/trantor/tests/server.pem $<TARGET_FILE_DIR:webapp>)

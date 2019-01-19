@@ -1,6 +1,6 @@
 /**
  *
- *  HttpServerContext.cc
+ *  HttpServerParser.cc
  *  An Tao
  *  
  *  Copyright 2018, An Tao.  All rights reserved.
@@ -14,18 +14,18 @@
 
 #include <trantor/utils/MsgBuffer.h>
 #include <trantor/utils/Logger.h>
-#include "HttpServerContext.h"
+#include "HttpServerParser.h"
 #include "HttpResponseImpl.h"
 #include <iostream>
 using namespace trantor;
 using namespace drogon;
-HttpServerContext::HttpServerContext(const trantor::TcpConnectionPtr &connPtr)
+HttpServerParser::HttpServerParser(const trantor::TcpConnectionPtr &connPtr)
     : _state(kExpectRequestLine),
       _request(new HttpRequestImpl),
       _conn(connPtr)
 {
 }
-bool HttpServerContext::processRequestLine(const char *begin, const char *end)
+bool HttpServerParser::processRequestLine(const char *begin, const char *end)
 {
     bool succeed = false;
     const char *start = begin;
@@ -69,7 +69,7 @@ bool HttpServerContext::processRequestLine(const char *begin, const char *end)
 }
 
 // return false if any error
-bool HttpServerContext::parseRequest(MsgBuffer *buf)
+bool HttpServerParser::parseRequest(MsgBuffer *buf)
 {
     bool ok = true;
     bool hasMore = true;
@@ -196,7 +196,7 @@ bool HttpServerContext::parseRequest(MsgBuffer *buf)
     return ok;
 }
 
-void HttpServerContext::pushRquestToPipeLine(const HttpRequestPtr &req)
+void HttpServerParser::pushRquestToPipeLine(const HttpRequestPtr &req)
 {
 #ifndef NDEBUG
     auto conn = _conn.lock();
@@ -209,7 +209,7 @@ void HttpServerContext::pushRquestToPipeLine(const HttpRequestPtr &req)
 
     _requestPipeLine.push_back(std::move(reqPair));
 }
-HttpRequestPtr HttpServerContext::getFirstRequest() const
+HttpRequestPtr HttpServerParser::getFirstRequest() const
 {
 #ifndef NDEBUG
     auto conn = _conn.lock();
@@ -224,7 +224,7 @@ HttpRequestPtr HttpServerContext::getFirstRequest() const
     }
     return HttpRequestImplPtr();
 }
-HttpResponsePtr HttpServerContext::getFirstResponse() const
+HttpResponsePtr HttpServerParser::getFirstResponse() const
 {
 #ifndef NDEBUG
     auto conn = _conn.lock();
@@ -239,7 +239,7 @@ HttpResponsePtr HttpServerContext::getFirstResponse() const
     }
     return HttpResponseImplPtr();
 }
-void HttpServerContext::popFirstRequest()
+void HttpServerParser::popFirstRequest()
 {
 #ifndef NDEBUG
     auto conn = _conn.lock();
@@ -250,7 +250,7 @@ void HttpServerContext::popFirstRequest()
 #endif
     _requestPipeLine.pop_front();
 }
-void HttpServerContext::pushResponseToPipeLine(const HttpRequestPtr &req,
+void HttpServerParser::pushResponseToPipeLine(const HttpRequestPtr &req,
                                                const HttpResponsePtr &resp)
 {
 #ifndef NDEBUG
@@ -270,7 +270,7 @@ void HttpServerContext::pushResponseToPipeLine(const HttpRequestPtr &req,
     }
 }
 
-// std::mutex &HttpServerContext::getPipeLineMutex()
+// std::mutex &HttpServerParser::getPipeLineMutex()
 // {
 //     return *_pipeLineMutex;
 // }

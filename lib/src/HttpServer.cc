@@ -15,7 +15,7 @@
 #include "HttpServer.h"
 
 #include <trantor/utils/Logger.h>
-#include "HttpServerContext.h"
+#include "HttpServerParser.h"
 #include "HttpResponseImpl.h"
 #include <drogon/HttpRequest.h>
 #include <drogon/HttpResponse.h>
@@ -76,12 +76,12 @@ void HttpServer::onConnection(const TcpConnectionPtr &conn)
 {
     if (conn->connected())
     {
-        conn->setContext(HttpServerContext(conn));
+        conn->setContext(HttpServerParser(conn));
     }
     else if (conn->disconnected())
     {
         LOG_TRACE << "conn disconnected!";
-        HttpServerContext *context = any_cast<HttpServerContext>(conn->getMutableContext());
+        HttpServerParser *context = any_cast<HttpServerParser>(conn->getMutableContext());
 
         // LOG_INFO << "###:" << string(buf->peek(), buf->readableBytes());
         if (context->webSocketConn())
@@ -96,7 +96,7 @@ void HttpServer::onConnection(const TcpConnectionPtr &conn)
 void HttpServer::onMessage(const TcpConnectionPtr &conn,
                            MsgBuffer *buf)
 {
-    HttpServerContext *context = any_cast<HttpServerContext>(conn->getMutableContext());
+    HttpServerParser *context = any_cast<HttpServerParser>(conn->getMutableContext());
 
     // LOG_INFO << "###:" << string(buf->peek(), buf->readableBytes());
     if (context->webSocketConn())
@@ -158,7 +158,7 @@ void HttpServer::onRequest(const TcpConnectionPtr &conn, const HttpRequestImplPt
     {
         req->setMethod(Get);
     }
-    HttpServerContext *context = any_cast<HttpServerContext>(conn->getMutableContext());
+    HttpServerParser *context = any_cast<HttpServerParser>(conn->getMutableContext());
     {
         //std::lock_guard<std::mutex> guard(context->getPipeLineMutex());
         context->pushRquestToPipeLine(req);
@@ -250,7 +250,7 @@ void HttpServer::onRequest(const TcpConnectionPtr &conn, const HttpRequestImplPt
         else
         {
             conn->getLoop()->queueInLoop([conn, req, newResp, this]() {
-                HttpServerContext *context = any_cast<HttpServerContext>(conn->getMutableContext());
+                HttpServerParser *context = any_cast<HttpServerParser>(conn->getMutableContext());
                 if (context)
                 {
                     if (context->getFirstRequest() == req)
