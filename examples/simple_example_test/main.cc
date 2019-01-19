@@ -15,6 +15,7 @@
 //Make a http client to test the example server app;
 
 #include <drogon/drogon.h>
+#include <trantor/net/EventLoopThread.h>
 #include <mutex>
 #define RESET "\033[0m"
 #define RED "\033[31m"   /* Red */
@@ -413,11 +414,16 @@ void doTest(const HttpClientPtr &client)
 }
 int main()
 {
-    auto client = HttpClient::newHttpClient("http://127.0.0.1:8848");
+    trantor::EventLoopThread loop[2];
+    loop[0].run();
+    loop[1].run();
+    auto client = HttpClient::newHttpClient("http://127.0.0.1:8848",loop[0].getLoop());
     doTest(client);
 #ifdef USE_OPENSSL
-    auto sslClient = HttpClient::newHttpClient("https://127.0.0.1:8849");
+    auto sslClient = HttpClient::newHttpClient("https://127.0.0.1:8849",loop[1].getLoop());
     doTest(sslClient);
 #endif
-    app().run();
+    getchar();
+    loop[0].getLoop()->quit();
+    loop[1].getLoop()->quit();
 }
