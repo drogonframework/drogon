@@ -97,15 +97,12 @@ int main()
 {
 
     std::cout << banner << std::endl;
-
-    //    drogon::HttpAppFramework::instance().addListener("0.0.0.0",12345);
-    app().addListener("0.0.0.0", 8080);
-    //#ifdef USE_OPENSSL
-    //    //https
-    //    drogon::HttpAppFramework::instance().setSSLFiles("server.pem","server.pem");
-    //    drogon::HttpAppFramework::instance().addListener("0.0.0.0",4430,true);
-    //    drogon::HttpAppFramework::instance().addListener("0.0.0.0",4431,true);
-    //#endif
+    app().addListener("0.0.0.0", 8848);
+#ifdef USE_OPENSSL
+   //https
+    drogon::HttpAppFramework::instance().setSSLFiles("../../trantor/trantor/tests/server.pem", "../../trantor/trantor/tests/server.pem");
+    drogon::HttpAppFramework::instance().addListener("0.0.0.0", 8849, true);
+#endif
     app().setThreadNum(4);
     //    trantor::Logger::setLogLevel(trantor::Logger::TRACE);
     //class function

@@ -32,9 +32,8 @@ void outputGood(const HttpRequestPtr &req)
                   << " " << req->path() << RESET << std::endl;
     }
 }
-int main()
+void doTest(const HttpClientPtr &client)
 {
-    auto client = HttpClient::newHttpClient("http://127.0.0.1:8080");
     /// 1 Get /
     auto req = HttpRequest::newHttpRequest();
     req->setMethod(drogon::Get);
@@ -411,6 +410,14 @@ int main()
             exit(1);
         }
     });
-
+}
+int main()
+{
+    auto client = HttpClient::newHttpClient("http://127.0.0.1:8848");
+    doTest(client);
+#ifdef USE_OPENSSL
+    auto sslClient = HttpClient::newHttpClient("https://127.0.0.1:8849");
+    doTest(sslClient);
+#endif
     app().run();
 }
