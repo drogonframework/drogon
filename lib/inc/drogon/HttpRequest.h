@@ -55,6 +55,9 @@ class HttpRequest
     virtual const std::string &getHeader(const std::string &field, const std::string &defaultVal = std::string()) const = 0;
     virtual const std::string &getHeader(std::string &&field, const std::string &defaultVal = std::string()) const = 0;
 
+    /// Set the header string identified by the @param field
+    virtual void addHeader(const std::string &field, const std::string &value) = 0;
+
     /// Get the cookie string identified by the @param field
     virtual const std::string &getCookie(const std::string &field, const std::string &defaultVal = std::string()) const = 0;
 
