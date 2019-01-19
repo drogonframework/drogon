@@ -1,6 +1,6 @@
 /**
  *
- *  HttpClientContext.cc
+ *  HttpClientParser.cc
  *  An Tao
  *  
  *  Copyright 2018, An Tao.  All rights reserved.
@@ -14,17 +14,17 @@
 
 #include <trantor/utils/MsgBuffer.h>
 #include <trantor/utils/Logger.h>
-#include "HttpClientContext.h"
+#include "HttpClientParser.h"
 #include <iostream>
 using namespace trantor;
 using namespace drogon;
-HttpClientContext::HttpClientContext(const trantor::TcpConnectionPtr &connPtr)
+HttpClientParser::HttpClientParser(const trantor::TcpConnectionPtr &connPtr)
     : _state(HttpResponseParseState::kExpectResponseLine),
       _response(new HttpResponseImpl)
 {
 }
 
-bool HttpClientContext::processResponseLine(const char *begin, const char *end)
+bool HttpClientParser::processResponseLine(const char *begin, const char *end)
 {
     const char *start = begin;
     const char *space = std::find(start, end, ' ');
@@ -61,7 +61,7 @@ bool HttpClientContext::processResponseLine(const char *begin, const char *end)
 }
 
 // return false if any error
-bool HttpClientContext::parseResponse(MsgBuffer *buf)
+bool HttpClientParser::parseResponse(MsgBuffer *buf)
 {
     bool ok = true;
     bool hasMore = true;
@@ -105,7 +105,7 @@ bool HttpClientContext::parseResponse(MsgBuffer *buf)
                     //LOG_INFO << "content len=" << len;
                     if (!len.empty())
                     {
-                        _response->_left_body_length = atoi(len.c_str());
+                        _response->_leftBodyLength = atoi(len.c_str());
                         _state = HttpResponseParseState::kExpectBody;
                     }
                     else
@@ -136,28 +136,28 @@ bool HttpClientContext::parseResponse(MsgBuffer *buf)
             //LOG_INFO << "expectBody:buf=" << buf;
             if (buf->readableBytes() == 0)
             {
-                if (_response->_left_body_length == 0)
+                if (_response->_leftBodyLength == 0)
                 {
                     _state = HttpResponseParseState::kGotAll;
                 }
                 break;
             }
-            if (_response->_left_body_length >= buf->readableBytes())
+            if (_response->_leftBodyLength >= buf->readableBytes())
             {
-                _response->_left_body_length -= buf->readableBytes();
+                _response->_leftBodyLength -= buf->readableBytes();
                 _response->_bodyPtr->append(std::string(buf->peek(), buf->readableBytes()));
                 buf->retrieveAll();
             }
             else
             {
-                _response->_bodyPtr->append(std::string(buf->peek(), _response->_left_body_length));
-                buf->retrieve(_response->_left_body_length);
-                _response->_left_body_length = 0;
+                _response->_bodyPtr->append(std::string(buf->peek(), _response->_leftBodyLength));
+                buf->retrieve(_response->_leftBodyLength);
+                _response->_leftBodyLength = 0;
             }
-            if (_response->_left_body_length == 0)
+            if (_response->_leftBodyLength == 0)
             {
                 _state = HttpResponseParseState::kGotAll;
-                LOG_TRACE << "post got all:len=" << _response->_left_body_length;
+                LOG_TRACE << "post got all:len=" << _response->_leftBodyLength;
                 //LOG_INFO<<"content:"<<request_->content_;
                 LOG_TRACE << "content(END)";
                 hasMore = false;
@@ -177,9 +177,9 @@ bool HttpClientContext::parseResponse(MsgBuffer *buf)
                 //chunk length line
                 std::string len(buf->peek(), crlf - buf->peek());
                 char *end;
-                _response->_current_chunk_length = strtol(len.c_str(), &end, 16);
-                //LOG_TRACE << "chun length : " << _response->_current_chunk_length;
-                if (_response->_current_chunk_length != 0)
+                _response->_currentChunkLength = strtol(len.c_str(), &end, 16);
+                //LOG_TRACE << "chun length : " << _response->_currentChunkLength;
+                if (_response->_currentChunkLength != 0)
                 {
                     _state = HttpResponseParseState::kExpectChunkBody;
                 }
@@ -196,15 +196,15 @@ bool HttpClientContext::parseResponse(MsgBuffer *buf)
         }
         else if (_state == HttpResponseParseState::kExpectChunkBody)
         {
-            //LOG_TRACE<<"expect chunk len="<<_response->_current_chunk_length;
-            if (buf->readableBytes() >= (_response->_current_chunk_length + 2))
+            //LOG_TRACE<<"expect chunk len="<<_response->_currentChunkLength;
+            if (buf->readableBytes() >= (_response->_currentChunkLength + 2))
             {
-                if (*(buf->peek() + _response->_current_chunk_length) == '\r' &&
-                    *(buf->peek() + _response->_current_chunk_length + 1) == '\n')
+                if (*(buf->peek() + _response->_currentChunkLength) == '\r' &&
+                    *(buf->peek() + _response->_currentChunkLength + 1) == '\n')
                 {
-                    _response->_bodyPtr->append(std::string(buf->peek(), _response->_current_chunk_length));
-                    buf->retrieve(_response->_current_chunk_length + 2);
-                    _response->_current_chunk_length = 0;
+                    _response->_bodyPtr->append(std::string(buf->peek(), _response->_currentChunkLength));
+                    buf->retrieve(_response->_currentChunkLength + 2);
+                    _response->_currentChunkLength = 0;
                     _state = HttpResponseParseState::kExpectChunkLen;
                 }
                 else

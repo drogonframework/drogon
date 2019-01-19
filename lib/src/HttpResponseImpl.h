@@ -29,15 +29,15 @@ namespace drogon
 {
 class HttpResponseImpl : public HttpResponse
 {
-    friend class HttpClientContext;
+    friend class HttpClientParser;
 
   public:
     explicit HttpResponseImpl()
         : _statusCode(kUnknown),
           _createDate(trantor::Date::now()),
           _closeConnection(false),
-          _left_body_length(0),
-          _current_chunk_length(0),
+          _leftBodyLength(0),
+          _currentChunkLength(0),
           _bodyPtr(new std::string()),
           _httpStringMutex(new std::mutex())
     {
@@ -274,8 +274,8 @@ class HttpResponseImpl : public HttpResponse
         _headers.clear();
         _cookies.clear();
         _bodyPtr.reset(new std::string());
-        _left_body_length = 0;
-        _current_chunk_length = 0;
+        _leftBodyLength = 0;
+        _currentChunkLength = 0;
         _jsonPtr.reset();
     }
 
@@ -308,8 +308,8 @@ class HttpResponseImpl : public HttpResponse
         _statusMessage.swap(that._statusMessage);
         std::swap(_closeConnection, that._closeConnection);
         _bodyPtr.swap(that._bodyPtr);
-        std::swap(_left_body_length, that._left_body_length);
-        std::swap(_current_chunk_length, that._current_chunk_length);
+        std::swap(_leftBodyLength, that._leftBodyLength);
+        std::swap(_currentChunkLength, that._currentChunkLength);
         std::swap(_contentType, that._contentType);
         _jsonPtr.swap(that._jsonPtr);
         _fullHeaderString.swap(that._fullHeaderString);
@@ -371,8 +371,8 @@ class HttpResponseImpl : public HttpResponse
     std::string _statusMessage;
     bool _closeConnection;
 
-    size_t _left_body_length;
-    size_t _current_chunk_length;
+    size_t _leftBodyLength;
+    size_t _currentChunkLength;
     std::shared_ptr<std::string> _bodyPtr;
 
     uint8_t _contentType = CT_TEXT_HTML;

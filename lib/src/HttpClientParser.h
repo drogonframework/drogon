@@ -1,6 +1,6 @@
 /**
  *
- *  HttpClientContext.h
+ *  HttpClientParser.h
  *  An Tao
  *  
  *  Copyright 2018, An Tao.  All rights reserved.
@@ -24,7 +24,7 @@
 using namespace trantor;
 namespace drogon
 {
-class HttpClientContext
+class HttpClientParser
 {
   public:
     enum class HttpResponseParseState
@@ -39,7 +39,7 @@ class HttpClientContext
         kGotAll,
     };
 
-    explicit HttpClientContext(const trantor::TcpConnectionPtr &connPtr);
+    explicit HttpClientParser(const trantor::TcpConnectionPtr &connPtr);
 
     // default copy-ctor, dtor and assignment are fine
 

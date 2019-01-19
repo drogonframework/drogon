@@ -411,16 +411,67 @@ void doTest(const HttpClientPtr &client)
             exit(1);
         }
     });
+
+    /// Test file download
+    req = HttpRequest::newHttpRequest();
+    req->setMethod(drogon::Get);
+    req->setPath("/drogon.jpg");
+    client->sendRequest(req, [=](ReqResult result, const HttpResponsePtr &resp) {
+        if (result == ReqResult::Ok)
+        {
+            if (resp->getBody().length() == 51822)
+            {
+                outputGood(req);
+            }
+            else
+            {
+                LOG_DEBUG << resp->getBody().length();
+                LOG_ERROR << "Error!";
+                exit(1);
+            }
+        }
+        else
+        {
+            LOG_ERROR << "Error!";
+            exit(1);
+        }
+    });
+
+    /// Test file download, It is forbidden to download files from the parent folder
+    req = HttpRequest::newHttpRequest();
+    req->setMethod(drogon::Get);
+    req->setPath("/../../drogon.jpg");
+    client->sendRequest(req, [=](ReqResult result, const HttpResponsePtr &resp) {
+        if (result == ReqResult::Ok)
+        {
+            if (resp->statusCode() == HttpResponse::k403Forbidden)
+            {
+                outputGood(req);
+            }
+            else
+            {
+                LOG_DEBUG << resp->getBody().length();
+                LOG_ERROR << "Error!";
+                exit(1);
+            }
+        }
+        else
+        {
+            LOG_ERROR << "Error!";
+            exit(1);
+        }
+    });
 }
+
 int main()
 {
     trantor::EventLoopThread loop[2];
     loop[0].run();
     loop[1].run();
-    auto client = HttpClient::newHttpClient("http://127.0.0.1:8848",loop[0].getLoop());
+    auto client = HttpClient::newHttpClient("http://127.0.0.1:8848", loop[0].getLoop());
     doTest(client);
 #ifdef USE_OPENSSL
-    auto sslClient = HttpClient::newHttpClient("https://127.0.0.1:8849",loop[1].getLoop());
+    auto sslClient = HttpClient::newHttpClient("https://127.0.0.1:8849", loop[1].getLoop());
     doTest(sslClient);
 #endif
     getchar();
