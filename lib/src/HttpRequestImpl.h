@@ -334,7 +334,7 @@ class HttpRequestImpl : public HttpRequest
     {
         _content = content;
     }
-    void addHeader(const std::string &key, const std::string &value)
+    virtual void addHeader(const std::string &key, const std::string &value) override
     {
         _headers[key] = value;
     }

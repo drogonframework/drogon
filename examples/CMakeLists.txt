@@ -21,7 +21,8 @@ add_dependencies(webapp drogon_ctl)
 
 AUX_SOURCE_DIRECTORY(client_example DIR_CLIENT)
 AUX_SOURCE_DIRECTORY(benchmark DIR_BENCHMARK)
+AUX_SOURCE_DIRECTORY(simple_example_test DIR_TEST)
 
 add_executable(client ${DIR_CLIENT})
 add_executable(benchmark ${DIR_BENCHMARK})
-
+add_executable(webapp_test ${DIR_TEST})
