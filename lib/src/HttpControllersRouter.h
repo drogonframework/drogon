@@ -38,7 +38,7 @@ class HttpControllersRouter : public trantor::NonCopyable
     void route(const HttpRequestImplPtr &req,
                std::function<void(const HttpResponsePtr &)> &&callback,
                bool needSetJsessionid,
-               std::string &&session_id);
+               std::string &&sessionId);
 
   private:
     struct CtrlBinder
@@ -67,6 +67,6 @@ class HttpControllersRouter : public trantor::NonCopyable
                              const HttpRequestImplPtr &req,
                              std::function<void(const HttpResponsePtr &)> &&callback,
                              bool needSetJsessionid,
-                             std::string &&session_id);
+                             std::string &&sessionId);
 };
 } // namespace drogon

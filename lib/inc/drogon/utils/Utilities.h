@@ -18,6 +18,7 @@
 #include <trantor/utils/Date.h>
 #include <string>
 #include <vector>
+#include <memory>
 
 namespace drogon
 {
@@ -64,6 +65,7 @@ int gzipCompress(const char *data, const size_t ndata,
                  char *zdata, size_t *nzdata);
 int gzipDecompress(const char *zdata, const size_t nzdata,
                    char *data, size_t *ndata);
+std::shared_ptr<std::string> gzipDecompress(const std::shared_ptr<std::string> &compressedData);
 
 /// Get the http full date string
 /**

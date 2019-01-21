@@ -140,7 +140,7 @@ void HttpControllersRouter::addHttpPath(const std::string &path,
 void HttpControllersRouter::route(const HttpRequestImplPtr &req,
                                   std::function<void(const HttpResponsePtr &)> &&callback,
                                   bool needSetJsessionid,
-                                  std::string &&session_id)
+                                  std::string &&sessionId)
 {
     //find http controller
     if (_ctrlRegex.mark_count() > 0)
@@ -172,7 +172,7 @@ void HttpControllersRouter::route(const HttpRequestImplPtr &req,
                     auto &filters = binder->filtersName;
                     if (!filters.empty())
                     {
-                        auto sessionIdPtr = std::make_shared<std::string>(std::move(session_id));
+                        auto sessionIdPtr = std::make_shared<std::string>(std::move(sessionId));
                         auto callbackPtr = std::make_shared<std::function<void(const HttpResponsePtr &)>>(std::move(callback));
                         _appImpl.doFilters(filters, req, callbackPtr, needSetJsessionid, sessionIdPtr, [=]() {
                             doControllerHandler(binder, routerItem, req, std::move(*callbackPtr), needSetJsessionid, std::move(*sessionIdPtr));
@@ -180,7 +180,7 @@ void HttpControllersRouter::route(const HttpRequestImplPtr &req,
                     }
                     else
                     {
-                        doControllerHandler(binder, routerItem, req, std::move(callback), needSetJsessionid, std::move(session_id));
+                        doControllerHandler(binder, routerItem, req, std::move(callback), needSetJsessionid, std::move(sessionId));
                     }
                 }
             }
@@ -190,7 +190,7 @@ void HttpControllersRouter::route(const HttpRequestImplPtr &req,
             //No controller found
             auto res = drogon::HttpResponse::newNotFoundResponse();
             if (needSetJsessionid)
-                res->addCookie("JSESSIONID", session_id);
+                res->addCookie("JSESSIONID", sessionId);
             callback(res);
         }
     }
@@ -199,7 +199,7 @@ void HttpControllersRouter::route(const HttpRequestImplPtr &req,
         //No controller found
         auto res = drogon::HttpResponse::newNotFoundResponse();
         if (needSetJsessionid)
-            res->addCookie("JSESSIONID", session_id);
+            res->addCookie("JSESSIONID", sessionId);
         callback(res);
     }
 }
@@ -209,7 +209,7 @@ void HttpControllersRouter::doControllerHandler(const CtrlBinderPtr &ctrlBinderP
                                                 const HttpRequestImplPtr &req,
                                                 std::function<void(const HttpResponsePtr &)> &&callback,
                                                 bool needSetJsessionid,
-                                                std::string &&session_id)
+                                                std::string &&sessionId)
 {
     HttpResponsePtr responsePtr;
     {
@@ -229,7 +229,7 @@ void HttpControllersRouter::doControllerHandler(const CtrlBinderPtr &ctrlBinderP
             //make a copy response;
             auto newResp = std::make_shared<HttpResponseImpl>(*std::dynamic_pointer_cast<HttpResponseImpl>(responsePtr));
             newResp->setExpiredTime(-1); //make it temporary
-            newResp->addCookie("JSESSIONID", session_id);
+            newResp->addCookie("JSESSIONID", sessionId);
             callback(newResp);
         }
         return;
@@ -270,8 +270,8 @@ void HttpControllersRouter::doControllerHandler(const CtrlBinderPtr &ctrlBinderP
         paraList.push_back(std::move(p));
     }
 
-    ctrlBinderPtr->binderPtr->handleHttpRequest(paraList, req, [=, callback = std::move(callback), session_id = std::move(session_id)](const HttpResponsePtr &resp) {
-        LOG_TRACE << "http resp:needSetJsessionid=" << needSetJsessionid << ";JSESSIONID=" << session_id;
+    ctrlBinderPtr->binderPtr->handleHttpRequest(paraList, req, [=, callback = std::move(callback), sessionId = std::move(sessionId)](const HttpResponsePtr &resp) {
+        LOG_TRACE << "http resp:needSetJsessionid=" << needSetJsessionid << ";JSESSIONID=" << sessionId;
         auto newResp = resp;
         if (resp->expiredTime() >= 0)
         {
@@ -290,7 +290,7 @@ void HttpControllersRouter::doControllerHandler(const CtrlBinderPtr &ctrlBinderP
                 newResp = std::make_shared<HttpResponseImpl>(*std::dynamic_pointer_cast<HttpResponseImpl>(resp));
                 newResp->setExpiredTime(-1); //make it temporary
             }
-            newResp->addCookie("JSESSIONID", session_id);
+            newResp->addCookie("JSESSIONID", sessionId);
         }
         callback(newResp);
     });

@@ -29,7 +29,7 @@ namespace drogon
 {
 class HttpResponseImpl : public HttpResponse
 {
-    friend class HttpClientParser;
+    friend class HttpResponseParser;
 
   public:
     explicit HttpResponseImpl()
@@ -350,6 +350,13 @@ class HttpResponseImpl : public HttpResponse
     {
         _fullHeaderString = std::make_shared<std::string>();
         makeHeaderString(_fullHeaderString);
+    }
+
+    void gunzip()
+    {
+        auto gunzipBody = gzipDecompress(_bodyPtr);
+        if(gunzipBody)
+            _bodyPtr = gunzipBody;
     }
 
   protected:

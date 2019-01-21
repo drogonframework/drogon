@@ -312,7 +312,7 @@ void doTest(const HttpClientPtr &client)
     client->sendRequest(req, [=](ReqResult result, const HttpResponsePtr &resp) {
         if (result == ReqResult::Ok)
         {
-            if (resp->getBody().length() == 1754)
+            if (resp->getBody().length() == 5123)
             {
                 outputGood(req);
             }
@@ -468,12 +468,16 @@ int main()
     trantor::EventLoopThread loop[2];
     loop[0].run();
     loop[1].run();
-    auto client = HttpClient::newHttpClient("http://127.0.0.1:8848", loop[0].getLoop());
-    doTest(client);
+ //   for (int i = 0; i < 100;i++)
+    {
+        auto client = HttpClient::newHttpClient("http://127.0.0.1:8848", loop[0].getLoop());
+        doTest(client);
 #ifdef USE_OPENSSL
-    auto sslClient = HttpClient::newHttpClient("https://127.0.0.1:8849", loop[1].getLoop());
-    doTest(sslClient);
+        auto sslClient = HttpClient::newHttpClient("https://127.0.0.1:8849", loop[1].getLoop());
+        doTest(sslClient);
 #endif
+    }
+
     getchar();
     loop[0].getLoop()->quit();
     loop[1].getLoop()->quit();

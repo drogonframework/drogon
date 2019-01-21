@@ -14,7 +14,7 @@
 
 #include "HttpClientImpl.h"
 #include "HttpRequestImpl.h"
-#include "HttpClientParser.h"
+#include "HttpResponseParser.h"
 #include "HttpAppFrameworkImpl.h"
 #include <stdlib.h>
 #include <algorithm>
@@ -131,7 +131,7 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
             _tcpClient->setConnectionCallback([=](const trantor::TcpConnectionPtr &connPtr) {
                 if (connPtr->connected())
                 {
-                    connPtr->setContext(HttpClientParser(connPtr));
+                    connPtr->setContext(HttpResponseParser(connPtr));
                     //send request;
                     LOG_TRACE << "Connection established!";
                     auto req = thisPtr->_reqAndCallbacks.front().first;
@@ -197,10 +197,10 @@ void HttpClientImpl::sendReq(const trantor::TcpConnectionPtr &connPtr, const Htt
 
 void HttpClientImpl::onRecvMessage(const trantor::TcpConnectionPtr &connPtr, trantor::MsgBuffer *msg)
 {
-    HttpClientParser *context = any_cast<HttpClientParser>(connPtr->getMutableContext());
+    HttpResponseParser *responseParser = any_cast<HttpResponseParser>(connPtr->getMutableContext());
 
     //LOG_TRACE << "###:" << msg->readableBytes();
-    if (!context->parseResponse(msg))
+    if (!responseParser->parseResponse(msg))
     {
         assert(!_reqAndCallbacks.empty());
         auto cb = _reqAndCallbacks.front().second;
@@ -211,10 +211,10 @@ void HttpClientImpl::onRecvMessage(const trantor::TcpConnectionPtr &connPtr, tra
         return;
     }
 
-    if (context->gotAll())
+    if (responseParser->gotAll())
     {
-        auto resp = context->responseImpl();
-        context->reset();
+        auto resp = responseParser->responseImpl();
+        responseParser->reset();
 
         assert(!_reqAndCallbacks.empty());
 
@@ -222,6 +222,11 @@ void HttpClientImpl::onRecvMessage(const trantor::TcpConnectionPtr &connPtr, tra
         if (type.find("application/json") != std::string::npos)
         {
             resp->parseJson();
+        }
+
+        if (resp->getHeaderBy("content-encoding")=="gzip")
+        {
+            resp->gunzip();
         }
         auto &cb = _reqAndCallbacks.front().second;
         cb(ReqResult::Ok, resp);

@@ -609,24 +609,24 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestImplPtr &req, std::fu
     LOG_TRACE << "http path=" << req->path();
     // LOG_TRACE << "query: " << req->query() ;
 
-    std::string session_id = req->getCookie("JSESSIONID");
+    std::string sessionId = req->getCookie("JSESSIONID");
     bool needSetJsessionid = false;
     if (_useSession)
     {
-        if (session_id == "")
+        if (sessionId == "")
         {
-            session_id = getuuid().c_str();
+            sessionId = getuuid().c_str();
             needSetJsessionid = true;
-            _sessionMapPtr->insert(session_id, std::make_shared<Session>(), _sessionTimeout);
+            _sessionMapPtr->insert(sessionId, std::make_shared<Session>(), _sessionTimeout);
         }
         else
         {
-            if (_sessionMapPtr->find(session_id) == false)
+            if (_sessionMapPtr->find(sessionId) == false)
             {
-                _sessionMapPtr->insert(session_id, std::make_shared<Session>(), _sessionTimeout);
+                _sessionMapPtr->insert(sessionId, std::make_shared<Session>(), _sessionTimeout);
             }
         }
-        (std::dynamic_pointer_cast<HttpRequestImpl>(req))->setSession((*_sessionMapPtr)[session_id]);
+        (std::dynamic_pointer_cast<HttpRequestImpl>(req))->setSession((*_sessionMapPtr)[sessionId]);
     }
 
     const std::string &path = req->path();
@@ -674,7 +674,7 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestImplPtr &req, std::fu
                         resp->setStatusCode(HttpResponse::k304NotModified);
                         if (needSetJsessionid)
                         {
-                            resp->addCookie("JSESSIONID", session_id);
+                            resp->addCookie("JSESSIONID", sessionId);
                         }
                         callback(resp);
                         return;
@@ -700,7 +700,7 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestImplPtr &req, std::fu
                             resp->setStatusCode(HttpResponse::k304NotModified);
                             if (needSetJsessionid)
                             {
-                                resp->addCookie("JSESSIONID", session_id);
+                                resp->addCookie("JSESSIONID", sessionId);
                             }
                             callback(resp);
                             return;
@@ -717,7 +717,7 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestImplPtr &req, std::fu
                 {
                     //make a copy
                     auto newCachedResp = std::make_shared<HttpResponseImpl>(*std::dynamic_pointer_cast<HttpResponseImpl>(cachedResp));
-                    newCachedResp->addCookie("JSESSIONID", session_id);
+                    newCachedResp->addCookie("JSESSIONID", sessionId);
                     newCachedResp->setExpiredTime(-1);
                     callback(newCachedResp);
                     return;
@@ -779,7 +779,7 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestImplPtr &req, std::fu
                     newCachedResp = std::make_shared<HttpResponseImpl>(*std::dynamic_pointer_cast<HttpResponseImpl>(resp));
                     newCachedResp->setExpiredTime(-1);
                 }
-                newCachedResp->addCookie("JSESSIONID", session_id);
+                newCachedResp->addCookie("JSESSIONID", sessionId);
                 callback(newCachedResp);
                 return;
             }
@@ -789,7 +789,7 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestImplPtr &req, std::fu
     }
 
     //Route to controller
-    _httpSimpleCtrlsRouter.route(req, std::move(callback), needSetJsessionid, std::move(session_id));
+    _httpSimpleCtrlsRouter.route(req, std::move(callback), needSetJsessionid, std::move(sessionId));
 }
 
 void HttpAppFrameworkImpl::readSendFile(const std::string &filePath, const HttpRequestImplPtr &req, const HttpResponsePtr &resp)

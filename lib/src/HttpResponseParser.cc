@@ -1,6 +1,6 @@
 /**
  *
- *  HttpClientParser.cc
+ *  HttpResponseParser.cc
  *  An Tao
  *  
  *  Copyright 2018, An Tao.  All rights reserved.
@@ -14,17 +14,17 @@
 
 #include <trantor/utils/MsgBuffer.h>
 #include <trantor/utils/Logger.h>
-#include "HttpClientParser.h"
+#include "HttpResponseParser.h"
 #include <iostream>
 using namespace trantor;
 using namespace drogon;
-HttpClientParser::HttpClientParser(const trantor::TcpConnectionPtr &connPtr)
+HttpResponseParser::HttpResponseParser(const trantor::TcpConnectionPtr &connPtr)
     : _state(HttpResponseParseState::kExpectResponseLine),
       _response(new HttpResponseImpl)
 {
 }
 
-bool HttpClientParser::processResponseLine(const char *begin, const char *end)
+bool HttpResponseParser::processResponseLine(const char *begin, const char *end)
 {
     const char *start = begin;
     const char *space = std::find(start, end, ' ');
@@ -61,7 +61,7 @@ bool HttpClientParser::processResponseLine(const char *begin, const char *end)
 }
 
 // return false if any error
-bool HttpClientParser::parseResponse(MsgBuffer *buf)
+bool HttpResponseParser::parseResponse(MsgBuffer *buf)
 {
     bool ok = true;
     bool hasMore = true;

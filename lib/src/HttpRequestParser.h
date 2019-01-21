@@ -1,6 +1,6 @@
 /**
  *
- *  HttpServerParser.h
+ *  HttpRequestParser.h
  *  An Tao
  *  
  *  Copyright 2018, An Tao.  All rights reserved.
@@ -25,7 +25,7 @@
 using namespace trantor;
 namespace drogon
 {
-class HttpServerParser
+class HttpRequestParser
 {
   public:
     enum HttpRequestParseState
@@ -36,7 +36,7 @@ class HttpServerParser
         kGotAll,
     };
 
-    HttpServerParser(const trantor::TcpConnectionPtr &connPtr);
+    HttpRequestParser(const trantor::TcpConnectionPtr &connPtr);
 
     // return false if any error
     bool parseRequest(MsgBuffer *buf);

@@ -442,6 +442,61 @@ int gzipDecompress(const char *zdata, const size_t nzdata,
     *ndata = d_stream.total_out;
     return 0;
 }
+
+std::shared_ptr<std::string> gzipDecompress(const std::shared_ptr<std::string> &compressedData)
+{
+
+    if (compressedData->length() == 0)
+        return compressedData;
+
+    auto full_length = compressedData->length();
+
+    auto decompressed = std::make_shared<std::string>(full_length * 2, 0);
+    bool done = false;
+    int status;
+    z_stream strm = {0};
+    strm.next_in = (Bytef *)compressedData->data();
+    strm.avail_in = compressedData->length();
+    strm.total_out = 0;
+    strm.zalloc = Z_NULL;
+    strm.zfree = Z_NULL;
+    if (inflateInit2(&strm, (15 + 32)) != Z_OK)
+        return nullptr;
+    while (!done)
+    {
+        // Make sure we have enough room and reset the lengths.
+        if (strm.total_out >= decompressed->length())
+        {
+            decompressed->resize(decompressed->length() * 2);
+        }
+        // chadeltu 加了(Bytef *)
+        strm.next_out = (Bytef *)decompressed->data() + strm.total_out;
+        strm.avail_out = decompressed->length() - strm.total_out;
+        // Inflate another chunk.
+        status = inflate(&strm, Z_SYNC_FLUSH);
+        if (status == Z_STREAM_END)
+        {
+            done = true;
+        }
+        else if (status != Z_OK)
+        {
+            break;
+        }
+    }
+    if (inflateEnd(&strm) != Z_OK)
+        return nullptr;
+    // Set real length.
+    if (done)
+    {
+        decompressed->resize(strm.total_out);
+        return decompressed;
+    }
+    else
+    {
+        return nullptr;
+    }
+}
+
 char *getHttpFullDate(const trantor::Date &date)
 {
     static __thread int64_t lastSecond = 0;
