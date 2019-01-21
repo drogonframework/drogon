@@ -126,7 +126,6 @@ void MysqlConnection::setChannel()
         if (_channelPtr->isWriting())
             _channelPtr->disableWriting();
     }
-    //(status & MYSQL_WAIT_EXCEPT) ///FIXME
     if (_waitStatus & MYSQL_WAIT_TIMEOUT)
     {
         auto timeout = mysql_get_timeout_value(_mysqlPtr.get());
@@ -242,7 +241,6 @@ void MysqlConnection::handleEvent()
                 {
                     _execStatus = ExecStatus_None;
                     outputError();
-                    //FIXME exception callback;
                     return;
                 }
                 _execStatus = ExecStatus_StoreResult;
@@ -255,7 +253,6 @@ void MysqlConnection::handleEvent()
                     if (err)
                     {
                         outputError();
-                        //FIXME exception callback;
                         return;
                     }
                     getResult(ret);
@@ -275,7 +272,6 @@ void MysqlConnection::handleEvent()
                 {
                     _execStatus = ExecStatus_None;
                     outputError();
-                    //FIXME exception callback;
                     return;
                 }
                 getResult(ret);
@@ -423,7 +419,7 @@ void MysqlConnection::outputError()
 
         try
         {
-            //FIXME exception type
+            //TODO exception type
             throw SqlError(mysql_error(_mysqlPtr.get()),
                            _sql);
         }

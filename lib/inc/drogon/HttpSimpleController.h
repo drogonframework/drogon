@@ -59,16 +59,14 @@ class HttpSimpleController : public DrObject<T>, public HttpSimpleControllerBase
         {
             T::___paths___();
         }
-
-      protected:
-        ///FIXME!!!
-        void _register(const std::string &className, const std::vector<std::string> &paths)
-        {
-            for (auto const &reqPath : paths)
-            {
-                std::cout << "register controller class " << className << " on path " << reqPath << std::endl;
-            }
-        }
+    //   protected:
+    //     void _register(const std::string &className, const std::vector<std::string> &paths)
+    //     {
+    //         for (auto const &reqPath : paths)
+    //         {
+    //             std::cout << "register controller class " << className << " on path " << reqPath << std::endl;
+    //         }
+    //     }
     };
     friend pathRegister;
     static pathRegister _register;

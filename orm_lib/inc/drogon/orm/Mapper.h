@@ -1078,7 +1078,6 @@ inline Mapper<T> &Mapper<T>::forUpdate()
 template <typename T>
 inline std::string Mapper<T>::replaceSqlPlaceHolder(const std::string &sqlStr, const std::string &holderStr) const
 {
-    ///FIXME add mysql support
     if (_client->type() == ClientType::PostgreSQL)
     {
         std::string::size_type startPos = 0;

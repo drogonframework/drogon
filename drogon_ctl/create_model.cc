@@ -108,7 +108,7 @@ void create_model::createModelClassFromPG(const std::string &path, const DbClien
                     info._colType = "int32_t";
                     info._colLength = 4;
                 }
-                else if (type == "bigint" || type == "numeric") //FIXME:Use int64 to represent numeric type?
+                else if (type == "bigint" || type == "numeric") ///TODO:Use int64 to represent numeric type?
                 {
                     info._colType = "int64_t";
                     info._colLength = 8;
@@ -149,7 +149,6 @@ void create_model::createModelClassFromPG(const std::string &path, const DbClien
                 else
                 {
                     info._colType = "std::string";
-                    //FIXME add more type such as hstore...
                 }
                 auto defaultVal = row["column_default"].as<std::string>();
 

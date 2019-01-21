@@ -373,7 +373,6 @@ class HttpResponseImpl : public HttpResponse
     std::unordered_map<std::string, Cookie> _cookies;
     HttpStatusCode _statusCode;
     trantor::Date _createDate;
-    // FIXME: add http version
     Version _v;
     std::string _statusMessage;
     bool _closeConnection;
