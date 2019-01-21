@@ -19,6 +19,7 @@
 #include <stdio.h>
 
 using namespace drogon::orm;
+
 namespace drogon
 {
 namespace orm
@@ -72,10 +73,7 @@ PgConnection::PgConnection(trantor::EventLoop *loop, const std::string &connInfo
     _channel.enableReading();
     _channel.enableWriting();
 }
-// int PgConnection::sock()
-// {
-//     return PQsocket(_connPtr.get());
-// }
+
 void PgConnection::handleClosed()
 {
     _loop->assertInLoopThread();
@@ -88,6 +86,7 @@ void PgConnection::handleClosed()
     auto thisPtr = shared_from_this();
     _closeCb(thisPtr);
 }
+
 void PgConnection::disconnect()
 {
     std::promise<int> pro;
@@ -102,6 +101,7 @@ void PgConnection::disconnect()
     });
     f.get();
 }
+
 void PgConnection::pgPoll()
 {
     _loop->assertInLoopThread();
@@ -146,6 +146,7 @@ void PgConnection::pgPoll()
         break;
     }
 }
+
 void PgConnection::execSql(std::string &&sql,
                            size_t paraNum,
                            std::vector<const char *> &&parameters,
@@ -185,6 +186,7 @@ void PgConnection::execSql(std::string &&sql,
         thisPtr->pgPoll();
     });
 }
+
 void PgConnection::handleRead()
 {
     _loop->assertInLoopThread();
@@ -216,7 +218,6 @@ void PgConnection::handleRead()
         handleClosed();
         return;
     }
-
     if (PQisBusy(_connPtr.get()))
     {
         //need read more data from socket;
@@ -238,7 +239,7 @@ void PgConnection::handleRead()
                 {
                     try
                     {
-                        //TODO exception type
+                        //TODO: exception type
                         throw SqlError(PQerrorMessage(_connPtr.get()),
                                        _sql);
                     }

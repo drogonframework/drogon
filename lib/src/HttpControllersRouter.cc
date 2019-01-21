@@ -116,7 +116,6 @@ void HttpControllersRouter::addHttpPath(const std::string &path,
             }
         }
     }
-
     struct HttpControllerRouterItem router;
     router.pathParameterPattern = pathParameterPattern;
     if (validMethods.size() > 0)
@@ -142,7 +141,7 @@ void HttpControllersRouter::route(const HttpRequestImplPtr &req,
                                   bool needSetJsessionid,
                                   std::string &&sessionId)
 {
-    //find http controller
+    //Find http controller
     if (_ctrlRegex.mark_count() > 0)
     {
         std::smatch result;
@@ -168,7 +167,6 @@ void HttpControllersRouter::route(const HttpRequestImplPtr &req,
                         callback(res);
                         return;
                     }
-
                     auto &filters = binder->filtersName;
                     if (!filters.empty())
                     {
@@ -234,7 +232,6 @@ void HttpControllersRouter::doControllerHandler(const CtrlBinderPtr &ctrlBinderP
         }
         return;
     }
-
     std::vector<std::string> params(ctrlBinderPtr->parameterPlaces.size());
     std::smatch r;
     if (std::regex_match(req->path(), r, routerItem._regex))
@@ -269,7 +266,6 @@ void HttpControllersRouter::doControllerHandler(const CtrlBinderPtr &ctrlBinderP
         LOG_TRACE << p;
         paraList.push_back(std::move(p));
     }
-
     ctrlBinderPtr->binderPtr->handleHttpRequest(paraList, req, [=, callback = std::move(callback), sessionId = std::move(sessionId)](const HttpResponsePtr &resp) {
         LOG_TRACE << "http resp:needSetJsessionid=" << needSetJsessionid << ";JSESSIONID=" << sessionId;
         auto newResp = resp;

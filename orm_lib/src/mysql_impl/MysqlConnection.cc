@@ -419,7 +419,7 @@ void MysqlConnection::outputError()
 
         try
         {
-            //TODO exception type
+            //TODO: exception type
             throw SqlError(mysql_error(_mysqlPtr.get()),
                            _sql);
         }

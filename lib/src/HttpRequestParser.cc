@@ -17,14 +17,17 @@
 #include "HttpRequestParser.h"
 #include "HttpResponseImpl.h"
 #include <iostream>
+
 using namespace trantor;
 using namespace drogon;
+
 HttpRequestParser::HttpRequestParser(const trantor::TcpConnectionPtr &connPtr)
     : _state(kExpectRequestLine),
       _request(new HttpRequestImpl),
       _conn(connPtr)
 {
 }
+
 bool HttpRequestParser::processRequestLine(const char *begin, const char *end)
 {
     bool succeed = false;
@@ -122,7 +125,7 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
                             _request->getVersion() >= HttpRequest::kHttp11)
                         {
                             //rfc2616-8.2.3
-                            //TODO:here we can add content-length limitation
+                            //TODO: here we can add content-length limitation
                             auto connPtr = _conn.lock();
                             if (connPtr)
                             {
@@ -209,6 +212,7 @@ void HttpRequestParser::pushRquestToPipeLine(const HttpRequestPtr &req)
 
     _requestPipeLine.push_back(std::move(reqPair));
 }
+
 HttpRequestPtr HttpRequestParser::getFirstRequest() const
 {
 #ifndef NDEBUG
@@ -224,6 +228,7 @@ HttpRequestPtr HttpRequestParser::getFirstRequest() const
     }
     return HttpRequestImplPtr();
 }
+
 HttpResponsePtr HttpRequestParser::getFirstResponse() const
 {
 #ifndef NDEBUG
@@ -239,6 +244,7 @@ HttpResponsePtr HttpRequestParser::getFirstResponse() const
     }
     return HttpResponseImplPtr();
 }
+
 void HttpRequestParser::popFirstRequest()
 {
 #ifndef NDEBUG
@@ -250,6 +256,7 @@ void HttpRequestParser::popFirstRequest()
 #endif
     _requestPipeLine.pop_front();
 }
+
 void HttpRequestParser::pushResponseToPipeLine(const HttpRequestPtr &req,
                                                const HttpResponsePtr &resp)
 {
@@ -269,8 +276,3 @@ void HttpRequestParser::pushResponseToPipeLine(const HttpRequestPtr &req,
         }
     }
 }
-
-// std::mutex &HttpRequestParser::getPipeLineMutex()
-// {
-//     return *_pipeLineMutex;
-// }

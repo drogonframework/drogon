@@ -18,8 +18,10 @@
 #include "HttpAppFrameworkImpl.h"
 #include <stdlib.h>
 #include <algorithm>
+
 using namespace drogon;
 using namespace std::placeholders;
+
 HttpClientImpl::HttpClientImpl(trantor::EventLoop *loop,
                                const trantor::InetAddress &addr,
                                bool useSSL)
@@ -28,6 +30,7 @@ HttpClientImpl::HttpClientImpl(trantor::EventLoop *loop,
       _useSSL(useSSL)
 {
 }
+
 HttpClientImpl::HttpClientImpl(trantor::EventLoop *loop,
                                const std::string &hostString)
     : _loop(loop)
@@ -83,16 +86,19 @@ HttpClientImpl::HttpClientImpl(trantor::EventLoop *loop,
     }
     LOG_TRACE << "userSSL=" << _useSSL << " domain=" << _domain;
 }
+
 HttpClientImpl::~HttpClientImpl()
 {
     LOG_TRACE << "Deconstruction HttpClient";
 }
+
 void HttpClientImpl::sendRequest(const drogon::HttpRequestPtr &req, const drogon::HttpReqCallback &callback)
 {
     _loop->runInLoop([=]() {
         sendRequestInLoop(req, callback);
     });
 }
+
 void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
                                        const drogon::HttpReqCallback &callback)
 {
@@ -105,7 +111,7 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
             _server.portNetEndian() != 0)
         {
             //dns
-            //TODO:timeout should be set by user
+            //TODO: timeout should be set by user
             if (InetAddress::resolve(_domain, &_server) == false)
             {
                 callback(ReqResult::BadServerAddress,
