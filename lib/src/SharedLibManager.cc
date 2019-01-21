@@ -117,7 +117,7 @@ void SharedLibManager::managerLibs()
                     cmd.append(filename).append(" -o ").append(libPath);
                     LOG_TRACE << cmd;
                     auto r = system(cmd.c_str());
-                    //TODO:handle r
+                    //TODO: handle r
                     (void)(r);
                     auto srcFile = filename.substr(0, pos);
                     srcFile.append(".cc");

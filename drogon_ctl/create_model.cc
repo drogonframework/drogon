@@ -14,7 +14,6 @@
 
 #include "create_model.h"
 #include "cmd.h"
-
 #include <drogon/config.h>
 #include <drogon/utils/Utilities.h>
 #include <drogon/HttpViewData.h>
