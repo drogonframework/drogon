@@ -87,7 +87,7 @@ static void loadControllers(const Json::Value &controllers)
 {
     if (!controllers)
         return;
-    for (auto controller : controllers)
+    for (auto const &controller : controllers)
     {
         auto path = controller.get("path", "").asString();
         auto ctrlName = controller.get("controller", "").asString();
@@ -96,7 +96,7 @@ static void loadControllers(const Json::Value &controllers)
         std::vector<any> constraints;
         if (!controller["http_methods"].isNull())
         {
-            for (auto method : controller["http_methods"])
+            for (auto const &method : controller["http_methods"])
             {
                 auto strMethod = method.asString();
                 std::transform(strMethod.begin(), strMethod.end(), strMethod.begin(), tolower);
@@ -124,7 +124,7 @@ static void loadControllers(const Json::Value &controllers)
         }
         if (!controller["filters"].isNull())
         {
-            for (auto filter : controller["filters"])
+            for (auto const &filter : controller["filters"])
             {
                 constraints.push_back(filter.asString());
             }
@@ -168,7 +168,7 @@ static void loadApp(const Json::Value &app)
     if (fileTypes.isArray() && !fileTypes.empty())
     {
         std::vector<std::string> types;
-        for (auto fileType : fileTypes)
+        for (auto const &fileType : fileTypes)
         {
             types.push_back(fileType.asString());
             LOG_TRACE << "file type:" << types.back();
@@ -196,7 +196,7 @@ static void loadApp(const Json::Value &app)
         if (viewsPaths.isArray() && viewsPaths.size() > 0)
         {
             std::vector<std::string> paths;
-            for (auto viewsPath : viewsPaths)
+            for (auto const &viewsPath : viewsPaths)
             {
                 paths.push_back(viewsPath.asString());
                 LOG_TRACE << "views path:" << paths.back();
@@ -234,7 +234,7 @@ static void loadDbClients(const Json::Value &dbClients)
     if (!dbClients)
         return;
 #if USE_ORM   
-    for (auto &client : dbClients)
+    for (auto const &client : dbClients)
     {
         auto type = client.get("rdbms", "postgresql").asString();
         auto host = client.get("host", "127.0.0.1").asString();
@@ -262,7 +262,7 @@ static void loadListeners(const Json::Value &listeners)
     if (!listeners)
         return;
     LOG_TRACE << "Has " << listeners.size() << " listeners";
-    for (auto listener : listeners)
+    for (auto const &listener : listeners)
     {
         auto addr = listener.get("address", "0.0.0.0").asString();
         auto port = (uint16_t)listener.get("port", 0).asUInt();

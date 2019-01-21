@@ -23,7 +23,7 @@ void help::handleCommand(std::vector<std::string> &parameters)
     {
         std::cout << "usage: drogon_ctl <command> [<args>]" << std::endl;
         std::cout << "commands list:" << std::endl;
-        for (auto className : drogon::DrClassMap::getAllClassName())
+        for (auto &className : drogon::DrClassMap::getAllClassName())
         {
             auto classPtr = std::shared_ptr<DrObjectBase>(drogon::DrClassMap::newObject(className));
             if (classPtr)

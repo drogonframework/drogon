@@ -253,7 +253,7 @@ void create_controller::createController(std::vector<std::string> &httpClasses, 
             return;
         }
     }
-    for (auto className : httpClasses)
+    for (auto const &className : httpClasses)
     {
         createController(className, type);
     }

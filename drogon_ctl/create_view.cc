@@ -220,7 +220,7 @@ void create_view::handleCommand(std::vector<std::string> &parameters)
 void create_view::createViewFiles(std::vector<std::string> &cspFileNames)
 {
 
-    for (auto file : cspFileNames)
+    for (auto const &file : cspFileNames)
     {
         std::cout << "create view:" << file << std::endl;
         createViewFile(file);

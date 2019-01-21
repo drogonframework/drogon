@@ -42,7 +42,7 @@ static inline bool is_base64(unsigned char c)
 
 bool isInteger(const std::string &str)
 {
-    for (auto c : str)
+    for (auto const &c : str)
     {
         if (c > '9' || c < '0')
             return false;

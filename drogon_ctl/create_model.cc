@@ -386,7 +386,7 @@ void create_model::createModelClassFromMysql(const std::string &path, const DbCl
             exit(1);
         };
     std::vector<std::string> pkNames, pkTypes;
-    for (auto col : cols)
+    for (auto const &col : cols)
     {
         if (col._isPrimaryKey)
         {
@@ -508,7 +508,7 @@ void create_model::createModelClassFromSqlite3(const std::string &path, const Db
                     }
 
                     std::vector<std::string> pkNames, pkTypes;
-                    for (auto col : cols)
+                    for (auto const &col : cols)
                     {
                         if (col._isPrimaryKey)
                         {
@@ -764,7 +764,7 @@ void create_model::handleCommand(std::vector<std::string> &parameters)
     {
         std::cerr << "Missing Model path name!" << std::endl;
     }
-    for (auto path : parameters)
+    for (auto const &path : parameters)
     {
         createModel(path);
     }

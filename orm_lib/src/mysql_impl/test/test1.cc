@@ -26,8 +26,8 @@ int main()
     *clientPtr << "select * from users where id!=139 order by id" << Mode::Blocking >> [](const Result &r) {
         std::cout << "rows:" << r.size() << std::endl;
         std::cout << "column num:" << r.columns() << std::endl;
-        
-        for (auto row : r)
+
+        for (auto const &row : r)
         {
             std::cout << "id=" << row["id"].as<int>() << std::endl;
         }
@@ -50,7 +50,7 @@ int main()
         [](const Result &r) {
             std::cout << "rows:" << r.size() << std::endl;
             std::cout << "column num:" << r.columns() << std::endl;
-            for (auto row : r)
+            for (auto const &row : r)
             {
                 std::cout << "user_id=" << row["user_id"].as<std::string>() << " id=" << row["id"].as<std::string>();
                 std::cout << " time=" << row["time"].as<std::string>() << std::endl;

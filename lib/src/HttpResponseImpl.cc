@@ -345,9 +345,7 @@ void HttpResponseImpl::makeHeaderString(const std::shared_ptr<std::string> &head
         }
     }
 
-    for (auto it = _headers.begin();
-         it != _headers.end();
-         ++it)
+    for (auto it = _headers.begin(); it != _headers.end(); ++it)
     {
         headerStringPtr->append(it->first);
         headerStringPtr->append(": ");

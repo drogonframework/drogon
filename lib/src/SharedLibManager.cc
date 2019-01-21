@@ -77,7 +77,7 @@ SharedLibManager::~SharedLibManager()
 }
 void SharedLibManager::managerLibs()
 {
-    for (auto libPath : _libPaths)
+    for (auto const &libPath : _libPaths)
     {
         forEachFileIn(libPath, [=](const std::string &filename, const struct stat &st) {
             auto pos = filename.rfind(".");

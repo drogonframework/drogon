@@ -23,9 +23,9 @@ int main()
     try
     {
         auto r = clientPtr->execSqlSync("select * from users where user_uuid=$1;", 1);
-        for (auto row : r)
+        for (auto const &row : r)
         {
-            for (auto f : row)
+            for (auto const &f : row)
             {
                 std::cout << f.name() << " : " << f.as<int>() << std::endl;
             }
@@ -85,7 +85,7 @@ int main()
     try
     {
         auto r = f.get();
-        for (auto row : r)
+        for (auto const &row : r)
         {
             std::cout << "user_id:" << row["user_id"].as<std::string>() << std::endl;
         }

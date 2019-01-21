@@ -29,7 +29,7 @@ void HttpSimpleControllersRouter::registerHttpSimpleController(const std::string
     std::lock_guard<std::mutex> guard(_simpCtrlMutex);
     std::vector<HttpMethod> validMethods;
     std::vector<std::string> filters;
-    for (auto &filterOrMethod : filtersAndMethods)
+    for (auto const &filterOrMethod : filtersAndMethods)
     {
         if (filterOrMethod.type() == typeid(std::string))
         {
@@ -57,7 +57,7 @@ void HttpSimpleControllersRouter::registerHttpSimpleController(const std::string
     if (validMethods.size() > 0)
     {
         iterm._validMethodsFlags.resize(Invalid, 0);
-        for (auto method : validMethods)
+        for (auto const &method : validMethods)
         {
             iterm._validMethodsFlags[method] = 1;
         }

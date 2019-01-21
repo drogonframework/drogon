@@ -14,7 +14,7 @@ void Attachment::upload(const HttpRequestPtr &req,
     FileUpload fileUpload;
     fileUpload.parse(req);
     auto files = fileUpload.getFiles();
-    for (auto file : files)
+    for (auto const &file : files)
     {
         LOG_DEBUG << "file:"
                   << file.getFileName()
