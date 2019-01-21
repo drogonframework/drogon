@@ -15,6 +15,8 @@
 #include <drogon/orm/Row.h>
 #include <drogon/orm/Field.h>
 #include <drogon/orm/RowIterator.h>
+#include <drogon/orm/Exception.h>
+
 using namespace drogon::orm;
 Row::Row(const Result &r, size_type index) noexcept
     : _result(r),
@@ -29,7 +31,7 @@ Row::size_type Row::size() const
 Row::reference Row::operator[](size_type index) const
 {
     if (index >= _end)
-        throw; //TODO throw....
+        throw RangeError("The indwx out of range");
     return Field(*this, index);
 }
 

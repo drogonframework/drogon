@@ -42,7 +42,7 @@ void WebSocketConnectionImpl::send(const char *msg, uint64_t len)
 
             indexStartRawData = 2;
         }
-        else if (len >= 126 && len <= 65535)
+        else if (len <= 65535)
         {
             bytesFormatted[1] = 126;
             bytesFormatted[2] = ((len >> 8) & 255);

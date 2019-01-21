@@ -144,6 +144,7 @@ int HttpFile::save(const std::string &path) const
         (path.length() >= 3 && path[0] == '.' && path[1] == '.' && path[2] == '/') ||
         path == "." || path == "..")
     {
+        //Absolute or relative path	    
     }
     else
     {
@@ -178,6 +179,7 @@ int HttpFile::saveAs(const std::string &filename) const
         (filename.length() >= 2 && filename[0] == '.' && filename[1] == '/') ||
         (filename.length() >= 3 && filename[0] == '.' && filename[1] == '.' && filename[2] == '/'))
     {
+        //Absolute or relative path	    
     }
     else
     {
