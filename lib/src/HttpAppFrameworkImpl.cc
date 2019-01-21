@@ -810,7 +810,7 @@ void HttpAppFrameworkImpl::readSendFile(const std::string &filePath, const HttpR
 
     if (_useSendfile &&
         filesize > 1024 * 200)
-    //FIXME : Is 200k an appropriate value? Or set it to be configurable
+    //TODO : Is 200k an appropriate value? Or set it to be configurable
     {
         //The advantages of sendfile() can only be reflected in sending large files.
         std::dynamic_pointer_cast<HttpResponseImpl>(resp)->setSendfile(filePath);

@@ -238,7 +238,7 @@ void PgConnection::handleRead()
                 {
                     try
                     {
-                        //FIXME exception type
+                        //TODO exception type
                         throw SqlError(PQerrorMessage(_connPtr.get()),
                                        _sql);
                     }
