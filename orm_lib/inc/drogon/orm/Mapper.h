@@ -468,7 +468,7 @@ inline std::vector<T> Mapper<T>::findBy(const Criteria &criteria) noexcept(false
         binder.exec(); //exec may be throw exception;
     }
     std::vector<T> ret;
-    for (auto row : r)
+    for (auto const &row : r)
     {
         ret.push_back(T(row));
     }
@@ -498,7 +498,7 @@ inline void Mapper<T>::findBy(const Criteria &criteria,
         criteria.outputArgs(binder);
     binder >> [=](const Result &r) {
         std::vector<T> ret;
-        for (auto row : r)
+        for (auto const &row : r)
         {
             ret.push_back(T(row));
         }
@@ -530,7 +530,7 @@ inline std::future<std::vector<T>> Mapper<T>::findFutureBy(const Criteria &crite
     std::shared_ptr<std::promise<std::vector<T>>> prom = std::make_shared<std::promise<std::vector<T>>>();
     binder >> [=](const Result &r) {
         std::vector<T> ret;
-        for (auto row : r)
+        for (auto const &row : r)
         {
             ret.push_back(T(row));
         }
@@ -641,7 +641,7 @@ inline void Mapper<T>::insert(T &obj) noexcept(false)
     std::string sql = "insert into ";
     sql += T::tableName;
     sql += " (";
-    for (auto colName : T::insertColumns())
+    for (auto const &colName : T::insertColumns())
     {
         sql += colName;
         sql += ",";
@@ -688,7 +688,7 @@ inline void Mapper<T>::insert(const T &obj,
     std::string sql = "insert into ";
     sql += T::tableName;
     sql += " (";
-    for (auto colName : T::insertColumns())
+    for (auto const &colName : T::insertColumns())
     {
         sql += colName;
         sql += ",";
@@ -731,7 +731,7 @@ inline std::future<T> Mapper<T>::insertFuture(const T &obj) noexcept
     std::string sql = "insert into ";
     sql += T::tableName;
     sql += " (";
-    for (auto colName : T::insertColumns())
+    for (auto const &colName : T::insertColumns())
     {
         sql += colName;
         sql += ",";
@@ -781,7 +781,7 @@ inline size_t Mapper<T>::update(const T &obj) noexcept(false)
     std::string sql = "update ";
     sql += T::tableName;
     sql += " set ";
-    for (auto colName : obj.updateColumns())
+    for (auto const &colName : obj.updateColumns())
     {
         sql += colName;
         sql += " = $?,";
@@ -814,7 +814,7 @@ inline void Mapper<T>::update(const T &obj,
     std::string sql = "update ";
     sql += T::tableName;
     sql += " set ";
-    for (auto colName : obj.updateColumns())
+    for (auto const &colName : obj.updateColumns())
     {
         sql += colName;
         sql += " = $?,";
@@ -840,7 +840,7 @@ inline std::future<size_t> Mapper<T>::updateFuture(const T &obj) noexcept
     std::string sql = "update ";
     sql += T::tableName;
     sql += " set ";
-    for (auto colName : obj.updateColumns())
+    for (auto const &colName : obj.updateColumns())
     {
         sql += colName;
         sql += " = $?,";

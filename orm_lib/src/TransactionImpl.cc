@@ -228,7 +228,7 @@ void TransactionImpl::execNewTask()
             }
             catch (...)
             {
-                for (auto &cmd : _sqlCmdBuffer)
+                for (auto const &cmd : _sqlCmdBuffer)
                 {
                     if (cmd._exceptCb)
                     {

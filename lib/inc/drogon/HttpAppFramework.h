@@ -127,7 +127,7 @@ class HttpAppFramework : public trantor::NonCopyable
 
         std::vector<HttpMethod> validMethods;
         std::vector<std::string> filters;
-        for (auto &filterOrMethod : filtersAndMethods)
+        for (auto const &filterOrMethod : filtersAndMethods)
         {
             if (filterOrMethod.type() == typeid(std::string))
             {

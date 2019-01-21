@@ -50,7 +50,7 @@ MysqlConnection::MysqlConnection(trantor::EventLoop *loop, const std::string &co
     auto tmpStr = std::regex_replace(connInfo, r, "=");
     std::string host, user, passwd, dbname, port;
     auto keyValues = splitString(tmpStr, " ");
-    for (auto &kvs : keyValues)
+    for (auto const &kvs : keyValues)
     {
         auto kv = splitString(kvs, "=");
         assert(kv.size() == 2);

@@ -97,7 +97,7 @@ DbClientImpl::DbClientImpl(const std::string &connInfo, const size_t connNum, Cl
 DbClientImpl::~DbClientImpl() noexcept
 {
     std::lock_guard<std::mutex> lock(_connectionsMutex);
-    for (auto &conn : _connections)
+    for (auto const &conn : _connections)
     {
         conn->disconnect();
     }

@@ -160,7 +160,7 @@ class CallbackHolder : public CallbackHolderBase
             run(nullptr, true);
             return;
         }
-        for (auto row : result)
+        for (auto const &row : result)
         {
             run(&row, false);
         }

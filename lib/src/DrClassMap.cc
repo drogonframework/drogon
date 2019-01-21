@@ -36,7 +36,7 @@ DrObjectBase *DrClassMap::newObject(const std::string &className)
 std::vector<std::string> DrClassMap::getAllClassName()
 {
     std::vector<std::string> ret;
-    for (auto iter : getMap())
+    for (auto const &iter : getMap())
     {
         ret.push_back(iter.first);
     }

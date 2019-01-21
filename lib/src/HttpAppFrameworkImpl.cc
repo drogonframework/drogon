@@ -80,7 +80,7 @@ void HttpAppFrameworkImpl::enableDynamicViewsLoading(const std::vector<std::stri
 {
     assert(!_running);
 
-    for (auto &libpath : libPaths)
+    for (auto const &libpath : libPaths)
     {
         if (libpath[0] == '/' ||
             (libpath.length() >= 2 && libpath[0] == '.' && libpath[1] == '/') ||
@@ -100,7 +100,7 @@ void HttpAppFrameworkImpl::enableDynamicViewsLoading(const std::vector<std::stri
 }
 void HttpAppFrameworkImpl::setFileTypes(const std::vector<std::string> &types)
 {
-    for (auto type : types)
+    for (auto const &type : types)
     {
         _fileTypeSet.insert(type);
     }
@@ -264,7 +264,7 @@ void HttpAppFrameworkImpl::run()
     _running = true;
 
     //Create db clients
-    for (auto &fun : _dbFuncs)
+    for (auto const &fun : _dbFuncs)
     {
         fun();
     }
@@ -276,7 +276,7 @@ void HttpAppFrameworkImpl::run()
     std::vector<std::shared_ptr<HttpServer>> servers;
     std::vector<std::shared_ptr<EventLoopThread>> loopThreads;
     _httpCtrlsRouter.init();
-    for (auto listener : _listeners)
+    for (auto const &listener : _listeners)
     {
         LOG_TRACE << "thread num=" << _threadNum;
 #ifdef __linux__
@@ -414,7 +414,7 @@ void HttpAppFrameworkImpl::doFilters(const std::vector<std::string> &filters,
     if (!filters.empty())
     {
         filterPtrs = std::make_shared<std::queue<std::shared_ptr<HttpFilterBase>>>();
-        for (auto &filter : filters)
+        for (auto const &filter : filters)
         {
             auto _object = std::shared_ptr<DrObjectBase>(DrClassMap::newObject(filter));
             auto _filter = std::dynamic_pointer_cast<HttpFilterBase>(_object);

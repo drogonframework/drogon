@@ -102,7 +102,7 @@ void HttpControllersRouter::addHttpPath(const std::string &path,
             {
                 if (validMethods.size() > 0)
                 {
-                    for (auto method : validMethods)
+                    for (auto const &method : validMethods)
                     {
                         router._binders[method] = binderInfo;
                     }
@@ -121,7 +121,7 @@ void HttpControllersRouter::addHttpPath(const std::string &path,
     router.pathParameterPattern = pathParameterPattern;
     if (validMethods.size() > 0)
     {
-        for (auto method : validMethods)
+        for (auto const &method : validMethods)
         {
             router._binders[method] = binderInfo;
         }
@@ -251,7 +251,7 @@ void HttpControllersRouter::doControllerHandler(const CtrlBinderPtr &ctrlBinderP
     if (ctrlBinderPtr->queryParametersPlaces.size() > 0)
     {
         auto qureyPara = req->getParameters();
-        for (auto parameter : qureyPara)
+        for (auto const &parameter : qureyPara)
         {
             if (ctrlBinderPtr->queryParametersPlaces.find(parameter.first) !=
                 ctrlBinderPtr->queryParametersPlaces.end())
@@ -264,7 +264,7 @@ void HttpControllersRouter::doControllerHandler(const CtrlBinderPtr &ctrlBinderP
         }
     }
     std::list<std::string> paraList;
-    for (auto p : params)
+    for (auto &p : params)///Use reference
     {
         LOG_TRACE << p;
         paraList.push_back(std::move(p));

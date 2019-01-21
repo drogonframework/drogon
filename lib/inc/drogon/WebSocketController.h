@@ -68,7 +68,7 @@ class WebSocketController : public DrObject<T>, public WebSocketControllerBase
         {
             auto vPaths = T::paths();
 
-            for (auto path : vPaths)
+            for (auto const &path : vPaths)
             {
                 LOG_TRACE << "register websocket controller (" << WebSocketController<T>::classTypeName() << ") on path:" << path.first;
                 HttpAppFramework::instance().registerWebSocketController(path.first,
@@ -80,7 +80,7 @@ class WebSocketController : public DrObject<T>, public WebSocketControllerBase
       protected:
         void _register(const std::string &className, const std::vector<std::string> &paths)
         {
-            for (auto reqPath : paths)
+            for (auto const &reqPath : paths)
             {
                 std::cout << "register controller class " << className << " on path " << reqPath << std::endl;
             }

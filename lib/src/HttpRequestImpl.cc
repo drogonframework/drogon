@@ -125,7 +125,7 @@ void HttpRequestImpl::appendToBuffer(MsgBuffer *output) const
     if (_parameters.size() != 0)
     {
         output->append("?");
-        for (auto p : _parameters)
+        for (auto const &p : _parameters)
         {
             output->append(p.first);
             output->append("=");

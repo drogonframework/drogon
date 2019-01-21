@@ -49,7 +49,7 @@ int main()
             LOG_DEBUG << "affected rows:" << r.affectedRows();
             LOG_DEBUG << "select " << r.size() << " rows";
             LOG_DEBUG << "id:" << r.insertId();
-            for (auto row : r)
+            for (auto const &row : r)
             {
                 LOG_DEBUG << "group_id:" << row["group_id"].as<size_t>();
             }

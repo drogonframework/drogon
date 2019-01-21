@@ -20,7 +20,7 @@ int main()
                 count++;
                 std::cout << response->getBody() << std::endl;
                 auto cookies = response->cookies();
-                for (auto &cookie : cookies)
+                for (auto const &cookie : cookies)
                 {
                     std::cout << cookie.first << "=" << cookie.second.value() << ":domain=" << cookie.second.domain() << std::endl;
                 }

@@ -53,7 +53,7 @@ Sqlite3Connection::Sqlite3Connection(trantor::EventLoop *loop, const std::string
     std::string host, user, passwd, dbname, port;
     auto keyValues = splitString(tmpStr, " ");
     std::string filename;
-    for (auto &kvs : keyValues)
+    for (auto const &kvs : keyValues)
     {
         auto kv = splitString(kvs, "=");
         assert(kv.size() == 2);
