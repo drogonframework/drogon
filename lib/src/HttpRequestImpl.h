@@ -33,7 +33,7 @@ namespace drogon
 class HttpRequestImpl : public HttpRequest
 {
   public:
-    friend class HttpServerParser;
+    friend class HttpRequestParser;
     HttpRequestImpl()
         : _method(Invalid),
           _version(kUnknown),

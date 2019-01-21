@@ -15,7 +15,7 @@
 #include "HttpServer.h"
 
 #include <trantor/utils/Logger.h>
-#include "HttpServerParser.h"
+#include "HttpRequestParser.h"
 #include "HttpResponseImpl.h"
 #include <drogon/HttpRequest.h>
 #include <drogon/HttpResponse.h>
@@ -76,17 +76,17 @@ void HttpServer::onConnection(const TcpConnectionPtr &conn)
 {
     if (conn->connected())
     {
-        conn->setContext(HttpServerParser(conn));
+        conn->setContext(HttpRequestParser(conn));
     }
     else if (conn->disconnected())
     {
         LOG_TRACE << "conn disconnected!";
-        HttpServerParser *context = any_cast<HttpServerParser>(conn->getMutableContext());
+        HttpRequestParser *requestParser = any_cast<HttpRequestParser>(conn->getMutableContext());
 
         // LOG_INFO << "###:" << string(buf->peek(), buf->readableBytes());
-        if (context->webSocketConn())
+        if (requestParser->webSocketConn())
         {
-            _disconnectWebsocketCallback(context->webSocketConn());
+            _disconnectWebsocketCallback(requestParser->webSocketConn());
         }
         conn->getMutableContext()->reset();
     }
@@ -96,35 +96,35 @@ void HttpServer::onConnection(const TcpConnectionPtr &conn)
 void HttpServer::onMessage(const TcpConnectionPtr &conn,
                            MsgBuffer *buf)
 {
-    HttpServerParser *context = any_cast<HttpServerParser>(conn->getMutableContext());
+    HttpRequestParser *requestParser = any_cast<HttpRequestParser>(conn->getMutableContext());
 
     // LOG_INFO << "###:" << string(buf->peek(), buf->readableBytes());
-    if (context->webSocketConn())
+    if (requestParser->webSocketConn())
     {
         //websocket payload,we shouldn't parse it
-        _webSocketMessageCallback(context->webSocketConn(), buf);
+        _webSocketMessageCallback(requestParser->webSocketConn(), buf);
         return;
     }
-    if (!context->parseRequest(buf))
+    if (!requestParser->parseRequest(buf))
     {
         conn->send("HTTP/1.1 400 Bad Request\r\n\r\n");
         //conn->shutdown();
     }
 
-    if (context->gotAll())
+    if (requestParser->gotAll())
     {
-        context->requestImpl()->parseParameter();
-        context->requestImpl()->setPeerAddr(conn->peerAddr());
-        context->requestImpl()->setLocalAddr(conn->localAddr());
-        context->requestImpl()->setReceiveDate(trantor::Date::date());
-        if (context->firstReq() && isWebSocket(conn, context->request()))
+        requestParser->requestImpl()->parseParameter();
+        requestParser->requestImpl()->setPeerAddr(conn->peerAddr());
+        requestParser->requestImpl()->setLocalAddr(conn->localAddr());
+        requestParser->requestImpl()->setReceiveDate(trantor::Date::date());
+        if (requestParser->firstReq() && isWebSocket(conn, requestParser->request()))
         {
             auto wsConn = std::make_shared<WebSocketConnectionImpl>(conn);
-            _newWebsocketCallback(context->request(),
+            _newWebsocketCallback(requestParser->request(),
                                   [=](const HttpResponsePtr &resp) mutable {
                                       if (resp->statusCode() == HttpResponse::k101SwitchingProtocols)
                                       {
-                                          context->setWebsockConnection(wsConn);
+                                          requestParser->setWebsockConnection(wsConn);
                                       }
                                       auto httpString = std::dynamic_pointer_cast<HttpResponseImpl>(resp)->renderToString();
                                       conn->send(httpString);
@@ -132,8 +132,8 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn,
                                   wsConn);
         }
         else
-            onRequest(conn, context->request());
-        context->reset();
+            onRequest(conn, requestParser->request());
+        requestParser->reset();
     }
 }
 bool HttpServer::isWebSocket(const TcpConnectionPtr &conn, const HttpRequestImplPtr &req)
@@ -158,10 +158,10 @@ void HttpServer::onRequest(const TcpConnectionPtr &conn, const HttpRequestImplPt
     {
         req->setMethod(Get);
     }
-    HttpServerParser *context = any_cast<HttpServerParser>(conn->getMutableContext());
+    HttpRequestParser *requestParser = any_cast<HttpRequestParser>(conn->getMutableContext());
     {
-        //std::lock_guard<std::mutex> guard(context->getPipeLineMutex());
-        context->pushRquestToPipeLine(req);
+        //std::lock_guard<std::mutex> guard(requestParser->getPipeLineMutex());
+        requestParser->pushRquestToPipeLine(req);
     }
     _httpAsyncCallback(req, [=](const HttpResponsePtr &response) {
         if (!response)
@@ -224,17 +224,17 @@ void HttpServer::onRequest(const TcpConnectionPtr &conn, const HttpRequestImplPt
              * requests in the same order that the requests were received.
              *                                             rfc2616-8.1.1.2
              */
-            //std::lock_guard<std::mutex> guard(context->getPipeLineMutex());
-            if (context->getFirstRequest() == req)
+            //std::lock_guard<std::mutex> guard(requestParser->getPipeLineMutex());
+            if (requestParser->getFirstRequest() == req)
             {
-                context->popFirstRequest();
+                requestParser->popFirstRequest();
                 sendResponse(conn, newResp);
                 while (1)
                 {
-                    auto resp = context->getFirstResponse();
+                    auto resp = requestParser->getFirstResponse();
                     if (resp)
                     {
-                        context->popFirstRequest();
+                        requestParser->popFirstRequest();
                         sendResponse(conn, resp);
                     }
                     else
@@ -244,25 +244,25 @@ void HttpServer::onRequest(const TcpConnectionPtr &conn, const HttpRequestImplPt
             else
             {
                 //some earlier requests are waiting for responses;
-                context->pushResponseToPipeLine(req, newResp);
+                requestParser->pushResponseToPipeLine(req, newResp);
             }
         }
         else
         {
             conn->getLoop()->queueInLoop([conn, req, newResp, this]() {
-                HttpServerParser *context = any_cast<HttpServerParser>(conn->getMutableContext());
-                if (context)
+                HttpRequestParser *requestParser = any_cast<HttpRequestParser>(conn->getMutableContext());
+                if (requestParser)
                 {
-                    if (context->getFirstRequest() == req)
+                    if (requestParser->getFirstRequest() == req)
                     {
-                        context->popFirstRequest();
+                        requestParser->popFirstRequest();
                         sendResponse(conn, newResp);
                         while (1)
                         {
-                            auto resp = context->getFirstResponse();
+                            auto resp = requestParser->getFirstResponse();
                             if (resp)
                             {
-                                context->popFirstRequest();
+                                requestParser->popFirstRequest();
                                 sendResponse(conn, resp);
                             }
                             else
@@ -272,7 +272,7 @@ void HttpServer::onRequest(const TcpConnectionPtr &conn, const HttpRequestImplPt
                     else
                     {
                         //some earlier requests are waiting for responses;
-                        context->pushResponseToPipeLine(req, newResp);
+                        requestParser->pushResponseToPipeLine(req, newResp);
                     }
                 }
             });

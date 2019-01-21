@@ -67,7 +67,7 @@ void HttpSimpleControllersRouter::registerHttpSimpleController(const std::string
 void HttpSimpleControllersRouter::route(const HttpRequestImplPtr &req,
                                         std::function<void(const HttpResponsePtr &)> &&callback,
                                         bool needSetJsessionid,
-                                        std::string &&session_id)
+                                        std::string &&sessionId)
 {
     std::string pathLower(req->path().length(), 0);
     std::transform(req->path().begin(), req->path().end(), pathLower.begin(), tolower);
@@ -90,7 +90,7 @@ void HttpSimpleControllersRouter::route(const HttpRequestImplPtr &req,
         auto &filters = ctrlInfo.filtersName;
         if (!filters.empty())
         {
-            auto sessionIdPtr = std::make_shared<std::string>(std::move(session_id));
+            auto sessionIdPtr = std::make_shared<std::string>(std::move(sessionId));
             auto callbackPtr = std::make_shared<std::function<void(const HttpResponsePtr &)>>(std::move(callback));
             _appImpl.doFilters(filters, req, callbackPtr, needSetJsessionid, sessionIdPtr, [=, pathLower = std::move(pathLower)]() mutable {
                 doControllerHandler(std::move(pathLower), req, std::move(*callbackPtr), needSetJsessionid, std::move(*sessionIdPtr));
@@ -98,18 +98,18 @@ void HttpSimpleControllersRouter::route(const HttpRequestImplPtr &req,
         }
         else
         {
-            doControllerHandler(std::move(pathLower), req, std::move(callback), needSetJsessionid, std::move(session_id));
+            doControllerHandler(std::move(pathLower), req, std::move(callback), needSetJsessionid, std::move(sessionId));
         }
         return;
     }
-    _httpCtrlsRouter.route(req, std::move(callback), needSetJsessionid, std::move(session_id));
+    _httpCtrlsRouter.route(req, std::move(callback), needSetJsessionid, std::move(sessionId));
 }
 
 void HttpSimpleControllersRouter::doControllerHandler(std::string &&pathLower,
                                                       const HttpRequestImplPtr &req,
                                                       std::function<void(const HttpResponsePtr &)> &&callback,
                                                       bool needSetJsessionid,
-                                                      std::string &&session_id)
+                                                      std::string &&sessionId)
 {
     auto &ctrlItem = _simpCtrlMap[pathLower];
     const std::string &ctrlName = ctrlItem.controllerName;
@@ -141,14 +141,14 @@ void HttpSimpleControllersRouter::doControllerHandler(std::string &&pathLower,
                 //make a copy response;
                 auto newResp = std::make_shared<HttpResponseImpl>(*std::dynamic_pointer_cast<HttpResponseImpl>(responsePtr));
                 newResp->setExpiredTime(-1); //make it temporary
-                newResp->addCookie("JSESSIONID", session_id);
+                newResp->addCookie("JSESSIONID", sessionId);
                 callback(newResp);
             }
             return;
         }
         else
         {
-            controller->asyncHandleHttpRequest(req, [=, callback = std::move(callback), pathLower = std::move(pathLower), session_id = std::move(session_id)](const HttpResponsePtr &resp) {
+            controller->asyncHandleHttpRequest(req, [=, callback = std::move(callback), pathLower = std::move(pathLower), sessionId = std::move(sessionId)](const HttpResponsePtr &resp) {
                 auto newResp = resp;
                 if (resp->expiredTime() >= 0)
                 {
@@ -168,7 +168,7 @@ void HttpSimpleControllersRouter::doControllerHandler(std::string &&pathLower,
                         newResp = std::make_shared<HttpResponseImpl>(*std::dynamic_pointer_cast<HttpResponseImpl>(resp));
                         newResp->setExpiredTime(-1); //make it temporary
                     }
-                    newResp->addCookie("JSESSIONID", session_id);
+                    newResp->addCookie("JSESSIONID", sessionId);
                 }
                 callback(newResp);
             });
@@ -181,7 +181,7 @@ void HttpSimpleControllersRouter::doControllerHandler(std::string &&pathLower,
         LOG_ERROR << "can't find controller " << ctrlName;
         auto res = drogon::HttpResponse::newNotFoundResponse();
         if (needSetJsessionid)
-            res->addCookie("JSESSIONID", session_id);
+            res->addCookie("JSESSIONID", sessionId);
 
         callback(res);
     }
