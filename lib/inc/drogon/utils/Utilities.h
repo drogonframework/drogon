@@ -18,6 +18,7 @@
 #include <trantor/utils/Date.h>
 #include <string>
 #include <vector>
+#include <memory>
 
 namespace drogon
 {
