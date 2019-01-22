@@ -13,6 +13,7 @@
  */
 
 #include "HttpRequestImpl.h"
+#include "HttpUtils.h"
 #include <drogon/utils/Utilities.h>
 #include <drogon/FileUpload.h>
 #include <drogon/HttpAppFramework.h>

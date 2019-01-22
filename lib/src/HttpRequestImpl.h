@@ -14,8 +14,10 @@
 
 #pragma once
 
+#include "HttpUtils.h"
 #include <drogon/utils/Utilities.h>
 #include <drogon/HttpRequest.h>
+#include <drogon/HttpResponse.h>
 
 #include <trantor/utils/NonCopyable.h>
 #include <trantor/utils/Logger.h>
@@ -26,14 +28,18 @@
 #include <stdio.h>
 #include <algorithm>
 #include <string>
+
 using std::string;
 using namespace trantor;
+
 namespace drogon
 {
+
 class HttpRequestImpl : public HttpRequest
 {
   public:
     friend class HttpRequestParser;
+
     HttpRequestImpl()
         : _method(Invalid),
           _version(kUnknown),
@@ -50,7 +56,9 @@ class HttpRequestImpl : public HttpRequest
     {
         return _version;
     }
+
     void parseParameter();
+
     bool setMethod(const char *start, const char *end)
     {
 
@@ -137,6 +145,7 @@ class HttpRequestImpl : public HttpRequest
     {
         _path = urlDecode(start, end);
     }
+
     virtual void setPath(const std::string &path) override
     {
         _path = path;
@@ -146,6 +155,7 @@ class HttpRequestImpl : public HttpRequest
     {
         return _parameters;
     }
+
     const std::string &path() const override
     {
         return _path;
@@ -155,6 +165,7 @@ class HttpRequestImpl : public HttpRequest
     {
         _query.assign(start, end);
     }
+
     void setQuery(const std::string &query)
     {
         _query = query;
@@ -182,84 +193,33 @@ class HttpRequestImpl : public HttpRequest
     {
         return _peer;
     }
+
     virtual const trantor::InetAddress &localAddr() const override
     {
         return _local;
     }
+
     virtual const trantor::Date &receiveDate() const override
     {
         return _date;
     }
+
     void setReceiveDate(const trantor::Date &date)
     {
         _date = date;
     }
+
     void setPeerAddr(const trantor::InetAddress &peer)
     {
         _peer = peer;
     }
+
     void setLocalAddr(const trantor::InetAddress &local)
     {
         _local = local;
     }
 
-    void addHeader(const char *start, const char *colon, const char *end)
-    {
-        std::string field(start, colon);
-        //field name is case-insensitive.so we transform it to lower;(rfc2616-4.2)
-        std::transform(field.begin(), field.end(), field.begin(), ::tolower);
-        ++colon;
-        while (colon < end && isspace(*colon))
-        {
-            ++colon;
-        }
-        std::string value(colon, end);
-        while (!value.empty() && isspace(value[value.size() - 1]))
-        {
-            value.resize(value.size() - 1);
-        }
-
-        if (field == "cookie")
-        {
-            LOG_TRACE << "cookies!!!:" << value;
-            std::string::size_type pos;
-            while ((pos = value.find(";")) != std::string::npos)
-            {
-                std::string coo = value.substr(0, pos);
-                auto epos = coo.find("=");
-                if (epos != std::string::npos)
-                {
-                    std::string cookie_name = coo.substr(0, epos);
-                    std::string::size_type cpos = 0;
-                    while (cpos < cookie_name.length() && isspace(cookie_name[cpos]))
-                        cpos++;
-                    cookie_name = cookie_name.substr(cpos);
-                    std::string cookie_value = coo.substr(epos + 1);
-                    _cookies[std::move(cookie_name)] = std::move(cookie_value);
-                }
-                value = value.substr(pos + 1);
-            }
-            if (value.length() > 0)
-            {
-                std::string &coo = value;
-                auto epos = coo.find("=");
-                if (epos != std::string::npos)
-                {
-                    std::string cookie_name = coo.substr(0, epos);
-                    std::string::size_type cpos = 0;
-                    while (cpos < cookie_name.length() && isspace(cookie_name[cpos]))
-                        cpos++;
-                    cookie_name = cookie_name.substr(cpos);
-                    std::string cookie_value = coo.substr(epos + 1);
-                    _cookies[std::move(cookie_name)] = std::move(cookie_value);
-                }
-            }
-        }
-        else
-        {
-            _headers[std::move(field)] = std::move(value);
-        }
-    }
+    void addHeader(const char *start, const char *colon, const char *end);
 
     const std::string &getHeader(const std::string &field, const std::string &defaultVal = std::string()) const override
     {
@@ -293,6 +253,7 @@ class HttpRequestImpl : public HttpRequest
         }
         return defaultVal;
     }
+
     const std::unordered_map<std::string, std::string> &headers() const override
     {
         return _headers;
@@ -302,14 +263,17 @@ class HttpRequestImpl : public HttpRequest
     {
         return _cookies;
     }
+
     virtual void setParameter(const std::string &key, const std::string &value) override
     {
         _parameters[key] = value;
     }
+
     const std::string &getContent() const
     {
         return _content;
     }
+
     void swap(HttpRequestImpl &that)
     {
         std::swap(_method, that._method);
@@ -334,10 +298,12 @@ class HttpRequestImpl : public HttpRequest
     {
         _content = content;
     }
+
     virtual void addHeader(const std::string &key, const std::string &value) override
     {
         _headers[key] = value;
     }
+
     void addCookie(const std::string &key, const std::string &value)
     {
         _cookies[key] = value;
@@ -360,7 +326,35 @@ class HttpRequestImpl : public HttpRequest
         return _jsonPtr;
     }
 
+    virtual void setContentTypeCode(ContentType type) override
+    {
+        _contentType = type;
+        setContentType(webContentTypeToString(type));
+    }
+
+    virtual void setContentTypeCodeAndCharacterSet(ContentType type, const std::string &charSet = "utf-8") override
+    {
+        _contentType = type;
+        setContentType(webContentTypeAndCharsetToString(type, charSet));
+    }
+
+    virtual ContentType getContentTypeCode() override
+    {
+        return _contentType;
+    }
+
+
   private:
+    friend class HttpRequest;
+    void setContentType(const std::string &contentType)
+    {
+        addHeader("Content-Type", contentType);
+    }
+    void setContentType(std::string &&contentType)
+    {
+        addHeader("Content-Type", std::move(contentType));
+    }
+    
     HttpMethod _method;
     Version _version;
     std::string _path;
@@ -375,6 +369,7 @@ class HttpRequestImpl : public HttpRequest
     trantor::InetAddress _peer;
     trantor::InetAddress _local;
     trantor::Date _date;
+    ContentType _contentType = CT_TEXT_PLAIN;
 
   protected:
     std::string _content;
@@ -382,4 +377,5 @@ class HttpRequestImpl : public HttpRequest
 };
 
 typedef std::shared_ptr<HttpRequestImpl> HttpRequestImplPtr;
+
 } // namespace drogon

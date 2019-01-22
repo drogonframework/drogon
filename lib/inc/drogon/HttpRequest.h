@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <drogon/HttpTypes.h>
 #include <drogon/Session.h>
 #include <trantor/net/InetAddress.h>
 #include <trantor/utils/Date.h>
@@ -21,19 +22,13 @@
 #include <unordered_map>
 #include <string>
 #include <memory>
+
 namespace drogon
 {
+
 class HttpRequest;
 typedef std::shared_ptr<HttpRequest> HttpRequestPtr;
-enum HttpMethod
-{
-    Get = 0,
-    Post,
-    Head,
-    Put,
-    Delete,
-    Invalid
-};
+
 
 /// Abstract class for webapp developer to get or set the Http request;
 class HttpRequest
@@ -111,8 +106,14 @@ class HttpRequest
     /// Set the parameter of the request
     virtual void setParameter(const std::string &key, const std::string &value) = 0;
 
+    /// Set or get the content type
+    virtual void setContentTypeCode(ContentType type) = 0;
+    virtual void setContentTypeCodeAndCharacterSet(ContentType type, const std::string &charSet = "utf-8") = 0;
+    virtual ContentType getContentTypeCode() = 0;
+
     /// Create a request object.
     static HttpRequestPtr newHttpRequest();
+    static HttpRequestPtr newHttpJsonRequest(const Json::Value &data);
 
     virtual ~HttpRequest() {}
 };

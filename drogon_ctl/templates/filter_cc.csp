@@ -22,6 +22,6 @@ void {{className}}::doFilter(const HttpRequestPtr &req,
     }
     //Check failed
     auto res = drogon::HttpResponse::newHttpResponse();
-    res->setStatusCode(HttpResponse::k500InternalServerError);
+    res->setStatusCode(k500InternalServerError);
     fcb(res);
 }

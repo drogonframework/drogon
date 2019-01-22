@@ -13,14 +13,14 @@
  */
 
 #include "HttpRequestImpl.h"
-
 #include <iostream>
+
 using namespace drogon;
 
 void HttpRequestImpl::parseParameter()
 {
     const std::string &input = query();
-    if(input.empty())
+    if (input.empty())
         return;
     std::string type = getHeaderBy("content-type");
     std::transform(type.begin(), type.end(), type.begin(), tolower);
@@ -113,7 +113,7 @@ void HttpRequestImpl::appendToBuffer(MsgBuffer *output) const
         return;
     }
 
-    if (_path.size() != 0)
+    if (!_path.empty())
     {
         output->append(_path);
     }
@@ -122,17 +122,31 @@ void HttpRequestImpl::appendToBuffer(MsgBuffer *output) const
         output->append("/");
     }
 
-    if (_parameters.size() != 0)
+    std::string content;
+    if (!_parameters.empty())
     {
-        output->append("?");
         for (auto const &p : _parameters)
         {
-            output->append(p.first);
-            output->append("=");
-            output->append(p.second);
-            output->append("&");
+            content.append(p.first);
+            content.append("=");
+            content.append(p.second);
+            content.append("&");
         }
-        output->unwrite(1);
+        content.resize(content.length() - 1);
+        ///TODO: URL code?
+        if (_method == Get || _method == Delete)
+        {
+            output->append("?");
+            output->append(content);
+            content.clear();
+        }
+        else if (_contentType == CT_APPLICATION_JSON)
+        {
+            ///Can't set parameters in content in this case
+            LOG_ERROR << "You can't set parameters in the query string when the request content type is JSON and http method is POST or PUT";
+            LOG_ERROR << "Please put these parameters in the path or the json string";
+            content.clear();
+        }
     }
 
     output->append(" ");
@@ -149,6 +163,20 @@ void HttpRequestImpl::appendToBuffer(MsgBuffer *output) const
         return;
     }
     output->append("\r\n");
+
+    assert(!(!content.empty() && !_content.empty()));
+    if (!content.empty() || !_content.empty())
+    {
+        char buf[64];
+        snprintf(buf, sizeof buf, "Content-Length: %lu\r\n", static_cast<long unsigned int>(content.length() + _content.length()));
+        output->append(buf);
+        if (_headers.find("Content-Type") == _headers.end())
+        {
+            output->append("Content-Type: ");
+            output->append(webContentTypeToString(_contentType));
+            output->append("\r\n");
+        }
+    }
 
     for (auto it = _headers.begin(); it != _headers.end(); ++it)
     {
@@ -172,9 +200,70 @@ void HttpRequestImpl::appendToBuffer(MsgBuffer *output) const
     }
 
     output->append("\r\n");
-
     //LOG_INFO<<"request(no body):"<<output->peek();
-    output->append(_content);
+    if (!content.empty())
+        output->append(content);
+    if (!_content.empty())
+        output->append(_content);
+    //LOG_INFO << output->peek();
+}
+
+void HttpRequestImpl::addHeader(const char *start, const char *colon, const char *end)
+{
+    std::string field(start, colon);
+    //field name is case-insensitive.so we transform it to lower;(rfc2616-4.2)
+    std::transform(field.begin(), field.end(), field.begin(), ::tolower);
+    ++colon;
+    while (colon < end && isspace(*colon))
+    {
+        ++colon;
+    }
+    std::string value(colon, end);
+    while (!value.empty() && isspace(value[value.size() - 1]))
+    {
+        value.resize(value.size() - 1);
+    }
+
+    if (field == "cookie")
+    {
+        LOG_TRACE << "cookies!!!:" << value;
+        std::string::size_type pos;
+        while ((pos = value.find(";")) != std::string::npos)
+        {
+            std::string coo = value.substr(0, pos);
+            auto epos = coo.find("=");
+            if (epos != std::string::npos)
+            {
+                std::string cookie_name = coo.substr(0, epos);
+                std::string::size_type cpos = 0;
+                while (cpos < cookie_name.length() && isspace(cookie_name[cpos]))
+                    cpos++;
+                cookie_name = cookie_name.substr(cpos);
+                std::string cookie_value = coo.substr(epos + 1);
+                _cookies[std::move(cookie_name)] = std::move(cookie_value);
+            }
+            value = value.substr(pos + 1);
+        }
+        if (value.length() > 0)
+        {
+            std::string &coo = value;
+            auto epos = coo.find("=");
+            if (epos != std::string::npos)
+            {
+                std::string cookie_name = coo.substr(0, epos);
+                std::string::size_type cpos = 0;
+                while (cpos < cookie_name.length() && isspace(cookie_name[cpos]))
+                    cpos++;
+                cookie_name = cookie_name.substr(cpos);
+                std::string cookie_value = coo.substr(epos + 1);
+                _cookies[std::move(cookie_name)] = std::move(cookie_value);
+            }
+        }
+    }
+    else
+    {
+        _headers[std::move(field)] = std::move(value);
+    }
 }
 
 HttpRequestPtr HttpRequest::newHttpRequest()
@@ -182,5 +271,18 @@ HttpRequestPtr HttpRequest::newHttpRequest()
     auto req = std::make_shared<HttpRequestImpl>();
     req->setMethod(drogon::Get);
     req->setVersion(drogon::HttpRequest::kHttp11);
+    return req;
+}
+
+HttpRequestPtr HttpRequest::newHttpJsonRequest(const Json::Value &data)
+{
+    auto req = std::make_shared<HttpRequestImpl>();
+    req->setMethod(drogon::Get);
+    req->setVersion(drogon::HttpRequest::kHttp11);
+    req->_contentType = CT_APPLICATION_JSON;
+    Json::StreamWriterBuilder builder;
+    builder["commentStyle"] = "None";
+    builder["indentation"] = "";
+    req->setContent(writeString(builder, data));
     return req;
 }

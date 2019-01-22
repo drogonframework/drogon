@@ -350,3 +350,19 @@ void ApiTest::get2(const HttpRequestPtr &req, const std::function<void(const Htt
     res->setExpiredTime(0);
     callback(res);
 }
+
+void ApiTest::jsonTest(const HttpRequestPtr &req, const std::function<void(const HttpResponsePtr &)> &callback)
+{
+    auto json = req->getJsonObject();
+    Json::Value ret;
+    if(json)
+    {
+        ret["result"] = "ok";
+    }
+    else
+    {
+        ret["result"] = "bad";
+    }
+    auto resp = HttpResponse::newHttpJsonResponse(ret);
+    callback(resp);
+}

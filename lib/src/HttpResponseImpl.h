@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include "HttpUtils.h"
 #include <drogon/HttpResponse.h>
 #include <trantor/utils/MsgBuffer.h>
 #include <trantor/net/InetAddress.h>
@@ -79,19 +80,19 @@ class HttpResponseImpl : public HttpResponse
         return _closeConnection;
     }
 
-    virtual void setContentTypeCode(uint8_t type) override
+    virtual void setContentTypeCode(ContentType type) override
     {
         _contentType = type;
-        setContentType(web_content_type_to_string(type));
+        setContentType(webContentTypeToString(type));
     }
 
-    virtual void setContentTypeCodeAndCharacterSet(uint8_t type, const std::string &charSet = "utf-8") override
+    virtual void setContentTypeCodeAndCharacterSet(ContentType type, const std::string &charSet = "utf-8") override
     {
         _contentType = type;
-        setContentType(web_content_type_and_charset_to_string(type, charSet));
+        setContentType(webContentTypeAndCharsetToString(type, charSet));
     }
 
-    virtual uint8_t getContentTypeCode() override
+    virtual ContentType getContentTypeCode() override
     {
         return _contentType;
     }
@@ -360,12 +361,8 @@ class HttpResponseImpl : public HttpResponse
     }
 
   protected:
-    static std::string web_content_type_to_string(uint8_t contenttype);
-    static const std::string web_content_type_and_charset_to_string(uint8_t contenttype,
-                                                                    const std::string &charSet);
 
     static std::string web_response_code_to_string(int code);
-
     void makeHeaderString(const std::shared_ptr<std::string> &headerStringPtr) const;
 
   private:
@@ -381,7 +378,7 @@ class HttpResponseImpl : public HttpResponse
     size_t _currentChunkLength;
     std::shared_ptr<std::string> _bodyPtr;
 
-    uint8_t _contentType = CT_TEXT_HTML;
+    ContentType _contentType = CT_TEXT_HTML;
 
     ssize_t _expriedTime = -1;
     std::string _sendfileName;

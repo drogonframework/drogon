@@ -122,7 +122,7 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn,
             auto wsConn = std::make_shared<WebSocketConnectionImpl>(conn);
             _newWebsocketCallback(requestParser->request(),
                                   [=](const HttpResponsePtr &resp) mutable {
-                                      if (resp->statusCode() == HttpResponse::k101SwitchingProtocols)
+                                      if (resp->statusCode() == k101SwitchingProtocols)
                                       {
                                           requestParser->setWebsockConnection(wsConn);
                                       }

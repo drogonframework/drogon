@@ -15,6 +15,7 @@
 #include "HttpAppFrameworkImpl.h"
 #include "ConfigLoader.h"
 #include "HttpServer.h"
+#include <drogon/HttpTypes.h>
 #include <drogon/utils/Utilities.h>
 #include <drogon/DrClassMap.h>
 #include <drogon/HttpRequest.h>
@@ -642,7 +643,7 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestImplPtr &req, std::fu
             {
                 //Downloading files from the parent folder is forbidden.
                 auto resp = HttpResponse::newHttpResponse();
-                resp->setStatusCode(HttpResponse::k403Forbidden);
+                resp->setStatusCode(k403Forbidden);
                 callback(resp);
                 return;
             }
@@ -670,7 +671,7 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestImplPtr &req, std::fu
                 {
                     if (std::dynamic_pointer_cast<HttpResponseImpl>(cachedResp)->getHeaderBy("last-modified") == req->getHeaderBy("if-modified-since"))
                     {
-                        resp->setStatusCode(HttpResponse::k304NotModified);
+                        resp->setStatusCode(k304NotModified);
                         if (needSetJsessionid)
                         {
                             resp->addCookie("JSESSIONID", sessionId);
@@ -696,7 +697,7 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestImplPtr &req, std::fu
                         if (modiStr == timeStr && !modiStr.empty())
                         {
                             LOG_TRACE << "not Modified!";
-                            resp->setStatusCode(HttpResponse::k304NotModified);
+                            resp->setStatusCode(k304NotModified);
                             if (needSetJsessionid)
                             {
                                 resp->addCookie("JSESSIONID", sessionId);
@@ -798,7 +799,7 @@ void HttpAppFrameworkImpl::readSendFile(const std::string &filePath, const HttpR
     if (!infile)
     {
 
-        resp->setStatusCode(HttpResponse::k404NotFound);
+        resp->setStatusCode(k404NotFound);
         resp->setCloseConnection(true);
         return;
     }
@@ -822,7 +823,7 @@ void HttpAppFrameworkImpl::readSendFile(const std::string &filePath, const HttpR
         resp->setBody(std::move(str));
     }
 
-    resp->setStatusCode(HttpResponse::k200OK);
+    resp->setStatusCode(k200OK);
 
     //cache the response for 5 seconds by default
 

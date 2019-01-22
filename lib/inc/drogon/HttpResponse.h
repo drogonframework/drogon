@@ -15,32 +15,10 @@
 
 #include <drogon/HttpViewData.h>
 #include <drogon/Cookie.h>
+#include <drogon/HttpTypes.h>
 #include <json/json.h>
 #include <string>
 #include <memory>
-
-using std::string;
-#define CT_APPLICATION_JSON 1
-#define CT_TEXT_PLAIN 2
-#define CT_TEXT_HTML 3
-#define CT_APPLICATION_X_JAVASCRIPT 4
-#define CT_TEXT_CSS 5
-#define CT_TEXT_XML 6
-#define CT_APPLICATION_XML 7
-#define CT_TEXT_XSL 8
-#define CT_APPLICATION_OCTET_STREAM 9
-#define CT_APPLICATION_X_FONT_TRUETYPE 10
-#define CT_APPLICATION_X_FONT_OPENTYPE 11
-#define CT_APPLICATION_FONT_WOFF 12
-#define CT_APPLICATION_FONT_WOFF2 13
-#define CT_APPLICATION_VND_MS_FONTOBJ 14
-#define CT_IMAGE_SVG_XML 15
-#define CT_IMAGE_PNG 16
-#define CT_IMAGE_JPG 17
-#define CT_IMAGE_GIF 18
-#define CT_IMAGE_XICON 19
-#define CT_IMAGE_ICNS 20
-#define CT_IMAGE_BMP 21
 
 namespace drogon
 {
@@ -50,58 +28,6 @@ typedef std::shared_ptr<HttpResponse> HttpResponsePtr;
 class HttpResponse
 {
   public:
-    enum HttpStatusCode
-    {
-        //rfc2616-6.1.1
-        kUnknown = 0,
-        k100Continue = 100,
-        k101SwitchingProtocols = 101,
-        k200OK = 200,
-        k201Created = 201,
-        k202Accepted = 202,
-        k203NonAuthoritativeInformation = 203,
-        k204NoContent = 204,
-        k205ResetContent = 205,
-        k206PartialContent = 206,
-        k300MultipleChoices = 300,
-        k301MovedPermanently = 301,
-        k302Found = 302,
-        k303SeeOther = 303,
-        k304NotModified = 304,
-        k305UseProxy = 305,
-        k307TemporaryRedirect = 307,
-        k400BadRequest = 400,
-        k401Unauthorized = 401,
-        k402PaymentRequired = 402,
-        k403Forbidden = 403,
-        k404NotFound = 404,
-        k405MethodNotAllowed = 405,
-        k406NotAcceptable = 406,
-        k407ProxyAuthenticationRequired = 407,
-        k408RequestTimeout = 408,
-        k409Conflict = 409,
-        k410Gone = 410,
-        k411LengthRequired = 411,
-        k412PreconditionFailed = 412,
-        k413RequestEntityTooLarge = 413,
-        k414RequestURITooLarge = 414,
-        k415UnsupportedMediaType = 415,
-        k416Requestedrangenotsatisfiable = 416,
-        k417ExpectationFailed = 417,
-        k500InternalServerError = 500,
-        k501NotImplemented = 501,
-        k502BadGateway = 502,
-        k503ServiceUnavailable = 503,
-        k504GatewayTimeout = 504,
-        k505HTTPVersionnotsupported = 505,
-    };
-
-    enum Version
-    {
-        kHttp10,
-        kHttp11
-    };
-
     explicit HttpResponse()
     {
     }
@@ -109,7 +35,7 @@ class HttpResponse
     virtual HttpStatusCode statusCode() = 0;
 
     virtual const trantor::Date &createDate() const = 0;
-    
+
     virtual void setStatusCode(HttpStatusCode code) = 0;
 
     virtual void setStatusCode(HttpStatusCode code, const std::string &status_message) = 0;
@@ -120,11 +46,11 @@ class HttpResponse
 
     virtual bool closeConnection() const = 0;
 
-    virtual void setContentTypeCode(uint8_t type) = 0;
+    virtual void setContentTypeCode(ContentType type) = 0;
 
-    virtual void setContentTypeCodeAndCharacterSet(uint8_t type, const std::string &charSet = "utf-8") = 0;
+    virtual void setContentTypeCodeAndCharacterSet(ContentType type, const std::string &charSet = "utf-8") = 0;
 
-    virtual uint8_t getContentTypeCode() = 0;
+    virtual ContentType getContentTypeCode() = 0;
 
     virtual const std::string &getHeader(const std::string &key, const std::string &defaultVal = std::string()) const = 0;
 
