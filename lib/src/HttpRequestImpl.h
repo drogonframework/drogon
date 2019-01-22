@@ -361,8 +361,8 @@ class HttpRequestImpl : public HttpRequest
     }
 
   private:
-    HttpMethod _method = Get;
-    Version _version = kHttp11;
+    HttpMethod _method;
+    Version _version;
     std::string _path;
     std::string _query;
 
