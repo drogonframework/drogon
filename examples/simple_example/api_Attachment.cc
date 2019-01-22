@@ -32,6 +32,6 @@ void Attachment::upload(const HttpRequestPtr &req,
         file.saveAs("../xxx");
     }
     auto resp = HttpResponse::newHttpResponse();
-    resp->setStatusCode(HttpResponse::k200OK);
+    resp->setStatusCode(k200OK);
     callback(resp);
 }

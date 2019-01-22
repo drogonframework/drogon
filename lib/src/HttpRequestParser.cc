@@ -12,6 +12,7 @@
  *
  */
 
+#include <drogon/HttpTypes.h>
 #include <trantor/utils/MsgBuffer.h>
 #include <trantor/utils/Logger.h>
 #include "HttpRequestParser.h"
@@ -130,7 +131,7 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
                             if (connPtr)
                             {
                                 auto resp = HttpResponse::newHttpResponse();
-                                resp->setStatusCode(HttpResponse::k100Continue);
+                                resp->setStatusCode(k100Continue);
                                 auto httpString = std::dynamic_pointer_cast<HttpResponseImpl>(resp)->renderToString();
                                 connPtr->send(httpString);
                             }
@@ -142,7 +143,7 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
                             if (connPtr)
                             {
                                 auto resp = HttpResponse::newHttpResponse();
-                                resp->setStatusCode(HttpResponse::k417ExpectationFailed);
+                                resp->setStatusCode(k417ExpectationFailed);
                                 MsgBuffer buffer;
                                 auto httpString = std::dynamic_pointer_cast<HttpResponseImpl>(resp)->renderToString();
                                 connPtr->send(httpString);

@@ -90,7 +90,7 @@ void WebsocketControllersRouter::doControllerHandler(const WebSocketControllerBa
     SHA1(reinterpret_cast<const unsigned char *>(wsKey.c_str()), wsKey.length(), accKey);
     auto base64Key = base64Encode(accKey, SHA_DIGEST_LENGTH);
     auto resp = HttpResponse::newHttpResponse();
-    resp->setStatusCode(HttpResponse::k101SwitchingProtocols);
+    resp->setStatusCode(k101SwitchingProtocols);
     resp->addHeader("Upgrade", "websocket");
     resp->addHeader("Connection", "Upgrade");
     resp->addHeader("Sec-WebSocket-Accept", base64Key);

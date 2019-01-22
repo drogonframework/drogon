@@ -33,11 +33,11 @@ bool HttpResponseParser::processResponseLine(const char *begin, const char *end)
         LOG_TRACE << *(space - 1);
         if (*(space - 1) == '1')
         {
-            _response->setVersion(HttpResponse::kHttp11);
+            _response->setVersion(kHttp11);
         }
         else if (*(space - 1) == '0')
         {
-            _response->setVersion(HttpResponse::kHttp10);
+            _response->setVersion(kHttp10);
         }
         else
         {
@@ -53,7 +53,7 @@ bool HttpResponseParser::processResponseLine(const char *begin, const char *end)
         std::string status_message(space + 1, end - space - 1);
         LOG_TRACE << status_code << " " << status_message;
         auto code = atoi(status_code.c_str());
-        _response->setStatusCode(HttpResponse::HttpStatusCode(code), status_message);
+        _response->setStatusCode(HttpStatusCode(code), status_message);
 
         return true;
     }

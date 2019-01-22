@@ -35,8 +35,35 @@ void outputGood(const HttpRequestPtr &req)
 }
 void doTest(const HttpClientPtr &client)
 {
+    /// Post json
+    Json::Value json;
+    json["request"] = "json";
+    auto req = HttpRequest::newHttpJsonRequest(json);
+    req->setMethod(drogon::Post);
+    req->setPath("/api/v1/apitest/json");
+    client->sendRequest(req, [=](ReqResult result, const HttpResponsePtr &resp) {
+        if (result == ReqResult::Ok)
+        {
+            auto ret = resp->getJsonObject();
+            if (ret && (*ret)["result"].asString() == "ok")
+            {
+                outputGood(req);
+            }
+            else
+            {
+                LOG_DEBUG << resp->getBody();
+                LOG_ERROR << "Error!";
+                exit(1);
+            }
+        }
+        else
+        {
+            LOG_ERROR << "Error!";
+            exit(1);
+        }
+    });
     /// 1 Get /
-    auto req = HttpRequest::newHttpRequest();
+    req = HttpRequest::newHttpRequest();
     req->setMethod(drogon::Get);
     req->setPath("/");
     client->sendRequest(req, [=](ReqResult result, const HttpResponsePtr &resp) {
@@ -91,7 +118,7 @@ void doTest(const HttpClientPtr &client)
         if (result == ReqResult::Ok)
         {
             //LOG_DEBUG << resp->getBody();
-            if (resp->statusCode() == HttpResponse::k405MethodNotAllowed)
+            if (resp->statusCode() == k405MethodNotAllowed)
             {
                 outputGood(req);
             }
@@ -444,7 +471,7 @@ void doTest(const HttpClientPtr &client)
     client->sendRequest(req, [=](ReqResult result, const HttpResponsePtr &resp) {
         if (result == ReqResult::Ok)
         {
-            if (resp->statusCode() == HttpResponse::k403Forbidden)
+            if (resp->statusCode() == k403Forbidden)
             {
                 outputGood(req);
             }
@@ -461,6 +488,7 @@ void doTest(const HttpClientPtr &client)
             exit(1);
         }
     });
+
 }
 
 int main()
@@ -468,7 +496,7 @@ int main()
     trantor::EventLoopThread loop[2];
     loop[0].run();
     loop[1].run();
- //   for (int i = 0; i < 100;i++)
+    //   for (int i = 0; i < 100;i++)
     {
         auto client = HttpClient::newHttpClient("http://127.0.0.1:8848", loop[0].getLoop());
         doTest(client);

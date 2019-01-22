@@ -103,6 +103,13 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
                                        const drogon::HttpReqCallback &callback)
 {
     _loop->assertInLoopThread();
+    req->addHeader("Connection", "Keep-Alive");
+    // req->addHeader("Accept", "*/*");
+    if (!_domain.empty())
+    {
+        req->addHeader("Host", _domain);
+    }
+    req->addHeader("User-Agent", "DrogonClient");
 
     if (!_tcpClient)
     {
@@ -230,7 +237,7 @@ void HttpClientImpl::onRecvMessage(const trantor::TcpConnectionPtr &connPtr, tra
             resp->parseJson();
         }
 
-        if (resp->getHeaderBy("content-encoding")=="gzip")
+        if (resp->getHeaderBy("content-encoding") == "gzip")
         {
             resp->gunzip();
         }

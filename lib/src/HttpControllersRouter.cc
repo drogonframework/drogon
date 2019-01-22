@@ -163,7 +163,7 @@ void HttpControllersRouter::route(const HttpRequestImplPtr &req,
                     {
                         //Invalid Http Method
                         auto res = drogon::HttpResponse::newHttpResponse();
-                        res->setStatusCode(HttpResponse::k405MethodNotAllowed);
+                        res->setStatusCode(k405MethodNotAllowed);
                         callback(res);
                         return;
                     }
