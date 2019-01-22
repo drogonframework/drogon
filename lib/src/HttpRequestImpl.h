@@ -80,25 +80,25 @@ class HttpRequestImpl : public HttpRequest
         {
             _method = Invalid;
         }
-        if (_method != Invalid)
-        {
-            _content = "";
-            _query = "";
-            _cookies.clear();
-            _parameters.clear();
-            _headers.clear();
-        }
+        // if (_method != Invalid)
+        // {
+        //     _content = "";
+        //     _query = "";
+        //     _cookies.clear();
+        //     _parameters.clear();
+        //     _headers.clear();
+        // }
         return _method != Invalid;
     }
 
     virtual void setMethod(const HttpMethod method) override
     {
         _method = method;
-        _content = "";
-        _query = "";
-        _cookies.clear();
-        _parameters.clear();
-        _headers.clear();
+        // _content = "";
+        // _query = "";
+        // _cookies.clear();
+        // _parameters.clear();
+        // _headers.clear();
         return;
     }
 
