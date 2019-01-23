@@ -184,9 +184,7 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     size_t _maxConnectionNumPerIP = 0;
 
     std::atomic<uint64_t> _connectionNum;
-    std::unordered_map<std::string, size_t> _connectionsNumMap;
-
-    std::mutex _connectionsNumMapMutex;
+    std::unordered_map<std::string, std::atomic<size_t>> _connectionsNumMap;
 
     bool _runAsDaemon = false;
     bool _relaunchOnError = false;

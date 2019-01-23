@@ -466,10 +466,8 @@ void HttpAppFrameworkImpl::onConnection(const TcpConnectionPtr &conn)
     else
     {
         _connectionNum--;
-
         if (_maxConnectionNumPerIP > 0 && _connectionsNumMap.find(conn->peerAddr().toIp()) != _connectionsNumMap.end())
         {
-            std::lock_guard<std::mutex> guard(_connectionsNumMapMutex);
             _connectionsNumMap[conn->peerAddr().toIp()]--;
         }
     }
