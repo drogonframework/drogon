@@ -13,6 +13,7 @@
  */
 
 #include "HttpRequestImpl.h"
+#include <drogon/utils/Utilities.h>
 #include <iostream>
 
 using namespace drogon;
@@ -133,7 +134,7 @@ void HttpRequestImpl::appendToBuffer(MsgBuffer *output) const
             content.append("&");
         }
         content.resize(content.length() - 1);
-        ///TODO: URL code?
+        content = urlEncode(content);
         if (_method == Get || _method == Delete)
         {
             output->append("?");
@@ -211,7 +212,7 @@ void HttpRequestImpl::appendToBuffer(MsgBuffer *output) const
 void HttpRequestImpl::addHeader(const char *start, const char *colon, const char *end)
 {
     std::string field(start, colon);
-    //field name is case-insensitive.so we transform it to lower;(rfc2616-4.2)
+    //Field name is case-insensitive.so we transform it to lower;(rfc2616-4.2)
     std::transform(field.begin(), field.end(), field.begin(), ::tolower);
     ++colon;
     while (colon < end && isspace(*colon))
@@ -271,6 +272,15 @@ HttpRequestPtr HttpRequest::newHttpRequest()
     auto req = std::make_shared<HttpRequestImpl>();
     req->setMethod(drogon::Get);
     req->setVersion(drogon::HttpRequest::kHttp11);
+    return req;
+}
+
+HttpRequestPtr HttpRequest::newHttpFormPostRequest()
+{
+    auto req = std::make_shared<HttpRequestImpl>();
+    req->setMethod(drogon::Post);
+    req->setVersion(drogon::HttpRequest::kHttp11);
+    req->_contentType = CT_APPLICATION_X_FORM;
     return req;
 }
 

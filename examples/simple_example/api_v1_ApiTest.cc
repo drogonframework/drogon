@@ -355,7 +355,23 @@ void ApiTest::jsonTest(const HttpRequestPtr &req, const std::function<void(const
 {
     auto json = req->getJsonObject();
     Json::Value ret;
-    if(json)
+    if (json)
+    {
+        ret["result"] = "ok";
+    }
+    else
+    {
+        ret["result"] = "bad";
+    }
+    auto resp = HttpResponse::newHttpJsonResponse(ret);
+    callback(resp);
+}
+
+void ApiTest::formTest(const HttpRequestPtr &req, const std::function<void(const HttpResponsePtr &)> &callback)
+{
+    auto parameters = req->getParameters();
+    Json::Value ret;
+    if (parameters["k1"] == "1" && parameters["k2"] == "安")
     {
         ret["result"] = "ok";
     }

@@ -15,7 +15,7 @@
 
 namespace drogon
 {
-    
+
 enum HttpStatusCode
 {
     //rfc2616-6.1.1
@@ -73,6 +73,7 @@ enum ContentType
     CT_APPLICATION_JSON = 0,
     CT_TEXT_PLAIN,
     CT_TEXT_HTML,
+    CT_APPLICATION_X_FORM,
     CT_APPLICATION_X_JAVASCRIPT,
     CT_TEXT_CSS,
     CT_TEXT_XML,

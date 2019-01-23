@@ -29,7 +29,6 @@ namespace drogon
 class HttpRequest;
 typedef std::shared_ptr<HttpRequest> HttpRequestPtr;
 
-
 /// Abstract class for webapp developer to get or set the Http request;
 class HttpRequest
 {
@@ -114,7 +113,7 @@ class HttpRequest
     /// Create a request object.
     static HttpRequestPtr newHttpRequest();
     static HttpRequestPtr newHttpJsonRequest(const Json::Value &data);
-
+    static HttpRequestPtr newHttpFormPostRequest();
     virtual ~HttpRequest() {}
 };
 

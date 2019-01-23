@@ -17,6 +17,7 @@ class ApiTest : public drogon::HttpController<ApiTest>
     METHOD_ADD(ApiTest::staticApi, "/static", Get, Post);
     METHOD_ADD(ApiTest::get2, "/get/{1}", Get);
     METHOD_ADD(ApiTest::jsonTest, "/json", Post);
+    METHOD_ADD(ApiTest::formTest, "/form", Post);
     METHOD_LIST_END
     //your declaration of processing function maybe like this:
     void get(const HttpRequestPtr &req, const std::function<void(const HttpResponsePtr &)> &callback, int p1, std::string &&p2);
@@ -26,6 +27,7 @@ class ApiTest : public drogon::HttpController<ApiTest>
     void rootGet(const HttpRequestPtr &req, const std::function<void(const HttpResponsePtr &)> &callback);
     void rootPost(const HttpRequestPtr &req, const std::function<void(const HttpResponsePtr &)> &callback);
     void jsonTest(const HttpRequestPtr &req, const std::function<void(const HttpResponsePtr &)> &callback);
+    void formTest(const HttpRequestPtr &req, const std::function<void(const HttpResponsePtr &)> &callback);
 };
 } // namespace v1
 } // namespace api
