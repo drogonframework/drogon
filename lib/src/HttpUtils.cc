@@ -24,6 +24,9 @@ std::string webContentTypeAndCharsetToString(ContentType contenttype, const std:
     case CT_TEXT_HTML:
         return "text/html; charset=" + charSet;
 
+    case CT_APPLICATION_X_FORM:
+        return "application/x-www-form-urlencoded";
+
     case CT_APPLICATION_XML:
         return "application/xml; charset=" + charSet;
 
@@ -94,6 +97,9 @@ std::string webContentTypeToString(ContentType contenttype)
     case CT_TEXT_HTML:
         return "text/html; charset=utf-8";
 
+    case CT_APPLICATION_X_FORM:
+        return "application/x-www-form-urlencoded";
+        
     case CT_APPLICATION_XML:
         return "application/xml; charset=utf-8";
 

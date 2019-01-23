@@ -489,6 +489,32 @@ void doTest(const HttpClientPtr &client)
         }
     });
 
+    /// Test form post
+    req = HttpRequest::newHttpFormPostRequest();
+    req->setPath("/api/v1/apitest/form");
+    req->setParameter("k1", "1");
+    req->setParameter("k2", "安");
+    client->sendRequest(req, [=](ReqResult result, const HttpResponsePtr &resp) {
+        if (result == ReqResult::Ok)
+        {
+            auto ret = resp->getJsonObject();
+            if (ret && (*ret)["result"].asString() == "ok")
+            {
+                outputGood(req);
+            }
+            else
+            {
+                LOG_DEBUG << resp->getBody();
+                LOG_ERROR << "Error!";
+                exit(1);
+            }
+        }
+        else
+        {
+            LOG_ERROR << "Error!";
+            exit(1);
+        }
+    });
 }
 
 int main()
