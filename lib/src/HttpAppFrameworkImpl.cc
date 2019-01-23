@@ -441,6 +441,7 @@ void HttpAppFrameworkImpl::onWebsockDisconnect(const WebSocketConnectionPtr &wsC
 }
 void HttpAppFrameworkImpl::onConnection(const TcpConnectionPtr &conn)
 {
+    static std::mutex mtx;
     if (conn->connected())
     {
         if (_connectionNum.fetch_add(1) >= _maxConnectionNum)
@@ -451,14 +452,17 @@ void HttpAppFrameworkImpl::onConnection(const TcpConnectionPtr &conn)
         else if (_maxConnectionNumPerIP > 0)
         {
             {
+                std::lock_guard<std::mutex> lock(mtx);
                 auto iter = _connectionsNumMap.find(conn->peerAddr().toIp());
                 if (iter == _connectionsNumMap.end())
                 {
-                    _connectionsNumMap[conn->peerAddr().toIp()] = 0;
+                    _connectionsNumMap[conn->peerAddr().toIp()] = 1;
                 }
-                if (_connectionsNumMap[conn->peerAddr().toIp()]++ >= _maxConnectionNumPerIP)
+                else if (iter->second++ > _maxConnectionNumPerIP)
                 {
-                    conn->forceClose();
+                    conn->getLoop()->queueInLoop([conn]() {
+                        conn->forceClose();
+                    });
                 }
             }
         }
@@ -466,9 +470,18 @@ void HttpAppFrameworkImpl::onConnection(const TcpConnectionPtr &conn)
     else
     {
         _connectionNum--;
-        if (_maxConnectionNumPerIP > 0 && _connectionsNumMap.find(conn->peerAddr().toIp()) != _connectionsNumMap.end())
+        if (_maxConnectionNumPerIP > 0)
         {
-            _connectionsNumMap[conn->peerAddr().toIp()]--;
+            std::lock_guard<std::mutex> lock(mtx);
+            auto iter = _connectionsNumMap.find(conn->peerAddr().toIp());
+            if (iter != _connectionsNumMap.end())
+            {
+                iter->second--;
+                if (iter->second <= 0)
+                {
+                    _connectionsNumMap.erase(iter);
+                }
+            }
         }
     }
 }
