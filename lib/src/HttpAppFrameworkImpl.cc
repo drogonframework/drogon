@@ -110,12 +110,14 @@ void HttpAppFrameworkImpl::registerWebSocketController(const std::string &pathNa
                                                        const std::string &ctrlName,
                                                        const std::vector<std::string> &filters)
 {
+    assert(!_running);
     _websockCtrlsRouter.registerWebSocketController(pathName, ctrlName, filters);
 }
 void HttpAppFrameworkImpl::registerHttpSimpleController(const std::string &pathName,
                                                         const std::string &ctrlName,
                                                         const std::vector<any> &filtersAndMethods)
 {
+    assert(!_running);
     _httpSimpleCtrlsRouter.registerHttpSimpleController(pathName, ctrlName, filtersAndMethods);
 }
 
@@ -126,8 +128,8 @@ void HttpAppFrameworkImpl::registerHttpController(const std::string &pathPattern
 {
     assert(!pathPattern.empty());
     assert(binder);
-    std::string path(pathPattern);
-    _httpCtrlsRouter.addHttpPath(path, binder, validMethods, filters);
+    assert(!_running);
+    _httpCtrlsRouter.addHttpPath(pathPattern, binder, validMethods, filters);
 }
 void HttpAppFrameworkImpl::setThreadNum(size_t threadNum)
 {

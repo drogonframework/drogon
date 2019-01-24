@@ -50,17 +50,24 @@ void HttpSimpleControllersRouter::registerHttpSimpleController(const std::string
             exit(1);
         }
     }
-    auto &iterm = _simpCtrlMap[path];
-    iterm.controllerName = ctrlName;
-    iterm.filtersName = filters;
-    iterm._validMethodsFlags.clear(); //There may be old data, first clear
+    auto &item = _simpCtrlMap[path];
+    item.controllerName = ctrlName;
+    item.filtersName = filters;
+    item._validMethodsFlags.clear(); //There may be old data, first clear
     if (validMethods.size() > 0)
     {
-        iterm._validMethodsFlags.resize(Invalid, 0);
+        item._validMethodsFlags.resize(Invalid, 0);
         for (auto const &method : validMethods)
         {
-            iterm._validMethodsFlags[method] = 1;
+            item._validMethodsFlags[method] = 1;
         }
+    }
+    auto controller = item.controller;
+    if (!controller)
+    {
+        auto _object = std::shared_ptr<DrObjectBase>(DrClassMap::newObject(ctrlName));
+        controller = std::dynamic_pointer_cast<HttpSimpleControllerBase>(_object);
+        item.controller = controller;
     }
 }
 
@@ -71,10 +78,10 @@ void HttpSimpleControllersRouter::route(const HttpRequestImplPtr &req,
 {
     std::string pathLower(req->path().length(), 0);
     std::transform(req->path().begin(), req->path().end(), pathLower.begin(), tolower);
-
-    if (_simpCtrlMap.find(pathLower) != _simpCtrlMap.end())
+    auto iter = _simpCtrlMap.find(pathLower);
+    if (iter != _simpCtrlMap.end())
     {
-        auto &ctrlInfo = _simpCtrlMap[pathLower];
+        auto &ctrlInfo = iter->second;
         if (!ctrlInfo._validMethodsFlags.empty())
         {
             assert(ctrlInfo._validMethodsFlags.size() > req->method());
@@ -92,44 +99,35 @@ void HttpSimpleControllersRouter::route(const HttpRequestImplPtr &req,
         {
             auto sessionIdPtr = std::make_shared<std::string>(std::move(sessionId));
             auto callbackPtr = std::make_shared<std::function<void(const HttpResponsePtr &)>>(std::move(callback));
-            _appImpl.doFilters(filters, req, callbackPtr, needSetJsessionid, sessionIdPtr, [=, pathLower = std::move(pathLower)]() mutable {
-                doControllerHandler(std::move(pathLower), req, std::move(*callbackPtr), needSetJsessionid, std::move(*sessionIdPtr));
+            _appImpl.doFilters(filters, req, callbackPtr, needSetJsessionid, sessionIdPtr, [=, &ctrlInfo]() mutable {
+                doControllerHandler(ctrlInfo, req, std::move(*callbackPtr), needSetJsessionid, std::move(*sessionIdPtr));
             });
         }
         else
         {
-            doControllerHandler(std::move(pathLower), req, std::move(callback), needSetJsessionid, std::move(sessionId));
+            doControllerHandler(ctrlInfo, req, std::move(callback), needSetJsessionid, std::move(sessionId));
         }
         return;
     }
     _httpCtrlsRouter.route(req, std::move(callback), needSetJsessionid, std::move(sessionId));
 }
 
-void HttpSimpleControllersRouter::doControllerHandler(std::string &&pathLower,
+void HttpSimpleControllersRouter::doControllerHandler(SimpleControllerRouterItem &item,
                                                       const HttpRequestImplPtr &req,
                                                       std::function<void(const HttpResponsePtr &)> &&callback,
                                                       bool needSetJsessionid,
                                                       std::string &&sessionId)
 {
-    auto &ctrlItem = _simpCtrlMap[pathLower];
-    const std::string &ctrlName = ctrlItem.controllerName;
-    std::shared_ptr<HttpSimpleControllerBase> controller;
-    HttpResponsePtr responsePtr;
-    {
-        //maybe update controller,so we use lock_guard to protect;
-        std::lock_guard<std::mutex> guard(ctrlItem._mutex);
-        controller = ctrlItem.controller;
-        responsePtr = ctrlItem.responsePtr;
-        if (!controller)
-        {
-            auto _object = std::shared_ptr<DrObjectBase>(DrClassMap::newObject(ctrlName));
-            controller = std::dynamic_pointer_cast<HttpSimpleControllerBase>(_object);
-            ctrlItem.controller = controller;
-        }
-    }
-
+    const std::string &ctrlName = item.controllerName; 
+    auto &controller = item.controller;
     if (controller)
     {
+        HttpResponsePtr responsePtr;
+        {
+            //maybe update controller,so we use lock_guard to protect;
+            std::lock_guard<std::mutex> guard(item._mutex);
+            responsePtr = item.responsePtr;
+        }
         if (responsePtr && (responsePtr->expiredTime() == 0 || (trantor::Date::now() < responsePtr->createDate().after(responsePtr->expiredTime()))))
         {
             //use cached response!
@@ -148,14 +146,13 @@ void HttpSimpleControllersRouter::doControllerHandler(std::string &&pathLower,
         }
         else
         {
-            controller->asyncHandleHttpRequest(req, [=, callback = std::move(callback), pathLower = std::move(pathLower), sessionId = std::move(sessionId)](const HttpResponsePtr &resp) {
+            controller->asyncHandleHttpRequest(req, [=, callback = std::move(callback), &item, sessionId = std::move(sessionId)](const HttpResponsePtr &resp) {
                 auto newResp = resp;
                 if (resp->expiredTime() >= 0)
                 {
                     //cache the response;
                     std::dynamic_pointer_cast<HttpResponseImpl>(resp)->makeHeaderString();
                     {
-                        auto &item = _simpCtrlMap[pathLower];
                         std::lock_guard<std::mutex> guard(item._mutex);
                         item.responsePtr = resp;
                     }

@@ -57,7 +57,7 @@ class HttpSimpleControllersRouter : public trantor::NonCopyable
     std::unordered_map<std::string, SimpleControllerRouterItem> _simpCtrlMap;
     std::mutex _simpCtrlMutex;
 
-    void doControllerHandler(std::string &&pathLower,
+    void doControllerHandler( SimpleControllerRouterItem &item,
                              const HttpRequestImplPtr &req,
                              std::function<void(const HttpResponsePtr &)> &&callback,
                              bool needSetJsessionid,
