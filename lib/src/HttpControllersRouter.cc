@@ -25,8 +25,8 @@ void HttpControllersRouter::init()
     for (auto &router : _ctrlVector)
     {
         std::regex reg("\\(\\[\\^/\\]\\*\\)");
-        std::string tmp = std::regex_replace(router.pathParameterPattern, reg, "[^/]*");
-        router._regex = std::regex(router.pathParameterPattern, std::regex_constants::icase);
+        std::string tmp = std::regex_replace(router._pathParameterPattern, reg, "[^/]*");
+        router._regex = std::regex(router._pathParameterPattern, std::regex_constants::icase);
         regString.append("(").append(tmp).append(")|");
     }
     if (regString.length() > 0)
@@ -90,15 +90,15 @@ void HttpControllersRouter::addHttpPath(const std::string &path,
     }
     auto pathParameterPattern = std::regex_replace(originPath, regex, "([^/]*)");
     auto binderInfo = CtrlBinderPtr(new CtrlBinder);
-    binderInfo->filtersName = filters;
-    binderInfo->binderPtr = binder;
-    binderInfo->parameterPlaces = std::move(places);
-    binderInfo->queryParametersPlaces = std::move(parametersPlaces);
+    binderInfo->_filtersName = filters;
+    binderInfo->_binderPtr = binder;
+    binderInfo->_parameterPlaces = std::move(places);
+    binderInfo->_queryParametersPlaces = std::move(parametersPlaces);
     {
         std::lock_guard<std::mutex> guard(_ctrlMutex);
         for (auto &router : _ctrlVector)
         {
-            if (router.pathParameterPattern == pathParameterPattern)
+            if (router._pathParameterPattern == pathParameterPattern)
             {
                 if (validMethods.size() > 0)
                 {
@@ -117,7 +117,7 @@ void HttpControllersRouter::addHttpPath(const std::string &path,
         }
     }
     struct HttpControllerRouterItem router;
-    router.pathParameterPattern = pathParameterPattern;
+    router._pathParameterPattern = pathParameterPattern;
     if (validMethods.size() > 0)
     {
         for (auto const &method : validMethods)
@@ -156,7 +156,7 @@ void HttpControllersRouter::route(const HttpRequestImplPtr &req,
                 {
                     size_t ctlIndex = i - 1;
                     auto &routerItem = _ctrlVector[ctlIndex];
-                    //LOG_TRACE << "got http access,regex=" << binder.pathParameterPattern;
+                    //LOG_TRACE << "got http access,regex=" << binder._pathParameterPattern;
                     assert(Invalid > req->method());
                     auto &binder = routerItem._binders[req->method()];
                     if (!binder)
@@ -167,12 +167,12 @@ void HttpControllersRouter::route(const HttpRequestImplPtr &req,
                         callback(res);
                         return;
                     }
-                    auto &filters = binder->filtersName;
+                    auto &filters = binder->_filtersName;
                     if (!filters.empty())
                     {
                         auto sessionIdPtr = std::make_shared<std::string>(std::move(sessionId));
                         auto callbackPtr = std::make_shared<std::function<void(const HttpResponsePtr &)>>(std::move(callback));
-                        _appImpl.doFilters(filters, req, callbackPtr, needSetJsessionid, sessionIdPtr, [=]() {
+                        _appImpl.doFilters(filters, req, callbackPtr, needSetJsessionid, sessionIdPtr, [=, &binder, &routerItem]() {
                             doControllerHandler(binder, routerItem, req, std::move(*callbackPtr), needSetJsessionid, std::move(*sessionIdPtr));
                         });
                     }
@@ -211,8 +211,8 @@ void HttpControllersRouter::doControllerHandler(const CtrlBinderPtr &ctrlBinderP
 {
     HttpResponsePtr responsePtr;
     {
-        std::lock_guard<std::mutex> guard(*(ctrlBinderPtr->binderMtx));
-        responsePtr = ctrlBinderPtr->responsePtr;
+        std::lock_guard<std::mutex> guard(ctrlBinderPtr->_binderMtx);
+        responsePtr = ctrlBinderPtr->_responsePtr;
     }
 
     if (responsePtr && (responsePtr->expiredTime() == 0 || (trantor::Date::now() < responsePtr->createDate().after(responsePtr->expiredTime()))))
@@ -232,28 +232,28 @@ void HttpControllersRouter::doControllerHandler(const CtrlBinderPtr &ctrlBinderP
         }
         return;
     }
-    std::vector<std::string> params(ctrlBinderPtr->parameterPlaces.size());
+    std::vector<std::string> params(ctrlBinderPtr->_parameterPlaces.size());
     std::smatch r;
     if (std::regex_match(req->path(), r, routerItem._regex))
     {
         for (size_t j = 1; j < r.size(); j++)
         {
-            size_t place = ctrlBinderPtr->parameterPlaces[j - 1];
+            size_t place = ctrlBinderPtr->_parameterPlaces[j - 1];
             if (place > params.size())
                 params.resize(place);
             params[place - 1] = r[j].str();
             LOG_TRACE << "place=" << place << " para:" << params[place - 1];
         }
     }
-    if (ctrlBinderPtr->queryParametersPlaces.size() > 0)
+    if (ctrlBinderPtr->_queryParametersPlaces.size() > 0)
     {
         auto qureyPara = req->getParameters();
         for (auto const &parameter : qureyPara)
         {
-            if (ctrlBinderPtr->queryParametersPlaces.find(parameter.first) !=
-                ctrlBinderPtr->queryParametersPlaces.end())
+            if (ctrlBinderPtr->_queryParametersPlaces.find(parameter.first) !=
+                ctrlBinderPtr->_queryParametersPlaces.end())
             {
-                auto place = ctrlBinderPtr->queryParametersPlaces.find(parameter.first)->second;
+                auto place = ctrlBinderPtr->_queryParametersPlaces.find(parameter.first)->second;
                 if (place > params.size())
                     params.resize(place);
                 params[place - 1] = parameter.second;
@@ -261,12 +261,12 @@ void HttpControllersRouter::doControllerHandler(const CtrlBinderPtr &ctrlBinderP
         }
     }
     std::list<std::string> paraList;
-    for (auto &p : params)///Use reference
+    for (auto &p : params) ///Use reference
     {
         LOG_TRACE << p;
         paraList.push_back(std::move(p));
     }
-    ctrlBinderPtr->binderPtr->handleHttpRequest(paraList, req, [=, callback = std::move(callback), sessionId = std::move(sessionId)](const HttpResponsePtr &resp) {
+    ctrlBinderPtr->_binderPtr->handleHttpRequest(paraList, req, [=, callback = std::move(callback), sessionId = std::move(sessionId)](const HttpResponsePtr &resp) {
         LOG_TRACE << "http resp:needSetJsessionid=" << needSetJsessionid << ";JSESSIONID=" << sessionId;
         auto newResp = resp;
         if (resp->expiredTime() >= 0)
@@ -274,8 +274,8 @@ void HttpControllersRouter::doControllerHandler(const CtrlBinderPtr &ctrlBinderP
             //cache the response;
             std::dynamic_pointer_cast<HttpResponseImpl>(resp)->makeHeaderString();
             {
-                std::lock_guard<std::mutex> guard(*(ctrlBinderPtr->binderMtx));
-                ctrlBinderPtr->responsePtr = resp;
+                std::lock_guard<std::mutex> guard(ctrlBinderPtr->_binderMtx);
+                ctrlBinderPtr->_responsePtr = resp;
             }
         }
         if (needSetJsessionid)

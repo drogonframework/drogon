@@ -47,11 +47,11 @@ class HttpSimpleControllersRouter : public trantor::NonCopyable
     HttpControllersRouter &_httpCtrlsRouter;
     struct SimpleControllerRouterItem
     {
-        std::string controllerName;
-        std::vector<std::string> filtersName;
+        std::string _controllerName;
+        std::vector<std::string> _filtersName;
         std::vector<int> _validMethodsFlags;
-        std::shared_ptr<HttpSimpleControllerBase> controller;
-        std::shared_ptr<HttpResponse> responsePtr;
+        std::shared_ptr<HttpSimpleControllerBase> _controller;
+        std::shared_ptr<HttpResponse> _responsePtr;
         std::mutex _mutex;
     };
     std::unordered_map<std::string, SimpleControllerRouterItem> _simpCtrlMap;

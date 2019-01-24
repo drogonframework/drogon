@@ -43,17 +43,17 @@ class HttpControllersRouter : public trantor::NonCopyable
   private:
     struct CtrlBinder
     {
-        internal::HttpBinderBasePtr binderPtr;
-        std::vector<std::string> filtersName;
-        std::vector<size_t> parameterPlaces;
-        std::map<std::string, size_t> queryParametersPlaces;
-        std::unique_ptr<std::mutex> binderMtx = std::unique_ptr<std::mutex>(new std::mutex);
-        std::shared_ptr<HttpResponse> responsePtr;
+        internal::HttpBinderBasePtr _binderPtr;
+        std::vector<std::string> _filtersName;
+        std::vector<size_t> _parameterPlaces;
+        std::map<std::string, size_t> _queryParametersPlaces;
+        std::mutex _binderMtx;
+        std::shared_ptr<HttpResponse> _responsePtr;
     };
     typedef std::shared_ptr<CtrlBinder> CtrlBinderPtr;
     struct HttpControllerRouterItem
     {
-        std::string pathParameterPattern;
+        std::string _pathParameterPattern;
         std::regex _regex;
         CtrlBinderPtr _binders[Invalid]; //The enum value Invalid is the http methods number
     };

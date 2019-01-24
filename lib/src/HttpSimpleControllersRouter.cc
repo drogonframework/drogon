@@ -51,8 +51,8 @@ void HttpSimpleControllersRouter::registerHttpSimpleController(const std::string
         }
     }
     auto &item = _simpCtrlMap[path];
-    item.controllerName = ctrlName;
-    item.filtersName = filters;
+    item._controllerName = ctrlName;
+    item._filtersName = filters;
     item._validMethodsFlags.clear(); //There may be old data, first clear
     if (validMethods.size() > 0)
     {
@@ -62,12 +62,12 @@ void HttpSimpleControllersRouter::registerHttpSimpleController(const std::string
             item._validMethodsFlags[method] = 1;
         }
     }
-    auto controller = item.controller;
+    auto controller = item._controller;
     if (!controller)
     {
         auto _object = std::shared_ptr<DrObjectBase>(DrClassMap::newObject(ctrlName));
         controller = std::dynamic_pointer_cast<HttpSimpleControllerBase>(_object);
-        item.controller = controller;
+        item._controller = controller;
     }
 }
 
@@ -94,7 +94,7 @@ void HttpSimpleControllersRouter::route(const HttpRequestImplPtr &req,
                 return;
             }
         }
-        auto &filters = ctrlInfo.filtersName;
+        auto &filters = ctrlInfo._filtersName;
         if (!filters.empty())
         {
             auto sessionIdPtr = std::make_shared<std::string>(std::move(sessionId));
@@ -118,15 +118,15 @@ void HttpSimpleControllersRouter::doControllerHandler(SimpleControllerRouterItem
                                                       bool needSetJsessionid,
                                                       std::string &&sessionId)
 {
-    const std::string &ctrlName = item.controllerName; 
-    auto &controller = item.controller;
+    const std::string &ctrlName = item._controllerName; 
+    auto &controller = item._controller;
     if (controller)
     {
         HttpResponsePtr responsePtr;
         {
             //maybe update controller,so we use lock_guard to protect;
             std::lock_guard<std::mutex> guard(item._mutex);
-            responsePtr = item.responsePtr;
+            responsePtr = item._responsePtr;
         }
         if (responsePtr && (responsePtr->expiredTime() == 0 || (trantor::Date::now() < responsePtr->createDate().after(responsePtr->expiredTime()))))
         {
@@ -154,7 +154,7 @@ void HttpSimpleControllersRouter::doControllerHandler(SimpleControllerRouterItem
                     std::dynamic_pointer_cast<HttpResponseImpl>(resp)->makeHeaderString();
                     {
                         std::lock_guard<std::mutex> guard(item._mutex);
-                        item.responsePtr = resp;
+                        item._responsePtr = resp;
                     }
                 }
                 if (needSetJsessionid)
