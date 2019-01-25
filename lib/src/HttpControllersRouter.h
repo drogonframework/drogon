@@ -29,7 +29,7 @@ class HttpAppFrameworkImpl;
 class HttpControllersRouter : public trantor::NonCopyable
 {
   public:
-    HttpControllersRouter(HttpAppFrameworkImpl &app) : _appImpl(app) {}
+    HttpControllersRouter(){}
     void init();
     void addHttpPath(const std::string &path,
                      const internal::HttpBinderBasePtr &binder,
@@ -60,7 +60,6 @@ class HttpControllersRouter : public trantor::NonCopyable
     std::vector<HttpControllerRouterItem> _ctrlVector;
     std::mutex _ctrlMutex;
     std::regex _ctrlRegex;
-    HttpAppFrameworkImpl &_appImpl;
 
     void doControllerHandler(const CtrlBinderPtr &ctrlBinderPtr,
                              const HttpControllerRouterItem &routerItem,

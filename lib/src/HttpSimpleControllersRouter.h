@@ -31,9 +31,8 @@ class HttpControllersRouter;
 class HttpSimpleControllersRouter : public trantor::NonCopyable
 {
   public:
-    HttpSimpleControllersRouter(HttpAppFrameworkImpl &app, HttpControllersRouter &httpCtrlRouter)
-        : _appImpl(app),
-          _httpCtrlsRouter(httpCtrlRouter) {}
+    HttpSimpleControllersRouter(HttpControllersRouter &httpCtrlRouter)
+        : _httpCtrlsRouter(httpCtrlRouter) {}
     void registerHttpSimpleController(const std::string &pathName,
                                       const std::string &ctrlName,
                                       const std::vector<any> &filtersAndMethods);
@@ -43,7 +42,6 @@ class HttpSimpleControllersRouter : public trantor::NonCopyable
                std::string &&sessionId);
 
   private:
-    HttpAppFrameworkImpl &_appImpl;
     HttpControllersRouter &_httpCtrlsRouter;
     struct SimpleControllerRouterItem
     {
@@ -57,7 +55,7 @@ class HttpSimpleControllersRouter : public trantor::NonCopyable
     std::unordered_map<std::string, SimpleControllerRouterItem> _simpCtrlMap;
     std::mutex _simpCtrlMutex;
 
-    void doControllerHandler( SimpleControllerRouterItem &item,
+    void doControllerHandler(SimpleControllerRouterItem &item,
                              const HttpRequestImplPtr &req,
                              std::function<void(const HttpResponsePtr &)> &&callback,
                              bool needSetJsessionid,

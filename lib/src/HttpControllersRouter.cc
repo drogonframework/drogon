@@ -12,6 +12,7 @@
  *
  */
 
+#include "FiltersFunction.h"
 #include "HttpControllersRouter.h"
 #include "HttpRequestImpl.h"
 #include "HttpResponseImpl.h"
@@ -172,7 +173,7 @@ void HttpControllersRouter::route(const HttpRequestImplPtr &req,
                     {
                         auto sessionIdPtr = std::make_shared<std::string>(std::move(sessionId));
                         auto callbackPtr = std::make_shared<std::function<void(const HttpResponsePtr &)>>(std::move(callback));
-                        _appImpl.doFilters(filters, req, callbackPtr, needSetJsessionid, sessionIdPtr, [=, &binder, &routerItem]() {
+                        FiltersFunction::doFilters(filters, req, callbackPtr, needSetJsessionid, sessionIdPtr, [=, &binder, &routerItem]() {
                             doControllerHandler(binder, routerItem, req, std::move(*callbackPtr), needSetJsessionid, std::move(*sessionIdPtr));
                         });
                     }

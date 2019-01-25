@@ -29,7 +29,7 @@ class HttpAppFrameworkImpl;
 class WebsocketControllersRouter : public trantor::NonCopyable
 {
   public:
-    WebsocketControllersRouter(HttpAppFrameworkImpl &app) : _appImpl(app) {}
+    WebsocketControllersRouter(){}
     void registerWebSocketController(const std::string &pathName,
                                      const std::string &ctrlName,
                                      const std::vector<std::string> &filters);
@@ -38,7 +38,6 @@ class WebsocketControllersRouter : public trantor::NonCopyable
                const WebSocketConnectionPtr &wsConnPtr);
 
   private:
-    HttpAppFrameworkImpl &_appImpl;
     struct WebSocketControllerRouterItem
     {
         WebSocketControllerBasePtr controller;

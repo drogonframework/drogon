@@ -12,6 +12,7 @@
  *
  */
 
+#include "FiltersFunction.h"
 #include "WebsocketControllersRouter.h"
 #include "HttpAppFrameworkImpl.h"
 #ifdef USE_OPENSSL
@@ -63,7 +64,7 @@ void WebsocketControllersRouter::route(const HttpRequestImplPtr &req,
             if (!filtersName.empty())
             {
                 auto callbackPtr = std::make_shared<std::function<void(const HttpResponsePtr &)>>(std::move(callback));
-                _appImpl.doFilters(filtersName, req, callbackPtr, false, nullptr, [=]() mutable {
+                FiltersFunction::doFilters(filtersName, req, callbackPtr, false, nullptr, [=]() mutable {
                     doControllerHandler(ctrlPtr, wsKey, req, *callbackPtr, wsConnPtr);
                 });
             }

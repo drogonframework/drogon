@@ -39,9 +39,7 @@ class HttpAppFrameworkImpl : public HttpAppFramework
 {
   public:
     HttpAppFrameworkImpl()
-        : _httpCtrlsRouter(*this),
-          _httpSimpleCtrlsRouter(*this, _httpCtrlsRouter),
-          _websockCtrlsRouter(*this),
+        : _httpSimpleCtrlsRouter(_httpCtrlsRouter),
           _uploadPath(_rootPath + "uploads"),
           _connectionNum(0)
     {
@@ -116,12 +114,6 @@ class HttpAppFrameworkImpl : public HttpAppFramework
                                 const std::string &filename = "",
                                 const std::string &name = "default") override;
 #endif
-    void doFilters(const std::vector<std::string> &filters,
-                   const HttpRequestImplPtr &req,
-                   const std::shared_ptr<const std::function<void(const HttpResponsePtr &)>> &callbackPtr,
-                   bool needSetJsessionid,
-                   const std::shared_ptr<std::string> &sessionIdPtr,
-                   std::function<void()> &&missCallback);
 
   private:
     virtual void registerHttpController(const std::string &pathPattern,
@@ -140,12 +132,6 @@ class HttpAppFrameworkImpl : public HttpAppFramework
                      const internal::HttpBinderBasePtr &binder,
                      const std::vector<HttpMethod> &validMethods,
                      const std::vector<std::string> &filters);
-    void doFilterChain(const std::shared_ptr<std::queue<std::shared_ptr<HttpFilterBase>>> &chain,
-                       const HttpRequestImplPtr &req,
-                       const std::shared_ptr<const std::function<void(const HttpResponsePtr &)>> &callbackPtr,
-                       bool needSetJsessionid,
-                       const std::shared_ptr<std::string> &sessionIdPtr,
-                       std::function<void()> &&missCallback);
 
     //We use a uuid string as session id;
     //set _sessionTimeout=0 to make location session valid forever based on cookies;

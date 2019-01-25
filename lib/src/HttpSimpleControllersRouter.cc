@@ -12,6 +12,7 @@
  *
  */
 
+#include "FiltersFunction.h"
 #include "HttpSimpleControllersRouter.h"
 #include "HttpAppFrameworkImpl.h"
 
@@ -99,7 +100,7 @@ void HttpSimpleControllersRouter::route(const HttpRequestImplPtr &req,
         {
             auto sessionIdPtr = std::make_shared<std::string>(std::move(sessionId));
             auto callbackPtr = std::make_shared<std::function<void(const HttpResponsePtr &)>>(std::move(callback));
-            _appImpl.doFilters(filters, req, callbackPtr, needSetJsessionid, sessionIdPtr, [=, &ctrlInfo]() mutable {
+            FiltersFunction::doFilters(filters, req, callbackPtr, needSetJsessionid, sessionIdPtr, [=, &ctrlInfo]() mutable {
                 doControllerHandler(ctrlInfo, req, std::move(*callbackPtr), needSetJsessionid, std::move(*sessionIdPtr));
             });
         }
