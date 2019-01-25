@@ -281,30 +281,30 @@ void doTest(const HttpClientPtr &client)
         }
     });
 
-    app().loop()->runAfter(0.5, [=]() mutable {
-        req = HttpRequest::newHttpRequest();
-        req->setMethod(drogon::Post);
-        req->setPath("/api/v1/apitest/static");
-        client->sendRequest(req, [=](ReqResult result, const HttpResponsePtr &resp) {
-            if (result == ReqResult::Ok)
+    //auto loop = app().loop();
+
+    req = HttpRequest::newHttpRequest();
+    req->setMethod(drogon::Post);
+    req->setPath("/api/v1/apitest/static");
+    client->sendRequest(req, [=](ReqResult result, const HttpResponsePtr &resp) {
+        if (result == ReqResult::Ok)
+        {
+            if (resp->getBody() == "staticApi,hello!!")
             {
-                if (resp->getBody() == "staticApi,hello!!")
-                {
-                    outputGood(req);
-                }
-                else
-                {
-                    LOG_DEBUG << resp->getBody();
-                    LOG_ERROR << "Error!";
-                    exit(1);
-                }
+                outputGood(req);
             }
             else
             {
+                LOG_DEBUG << resp->getBody();
                 LOG_ERROR << "Error!";
                 exit(1);
             }
-        });
+        }
+        else
+        {
+            LOG_ERROR << "Error!";
+            exit(1);
+        }
     });
 
     req = HttpRequest::newHttpRequest();

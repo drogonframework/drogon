@@ -26,6 +26,7 @@
 #include <drogon/HttpAppFramework.h>
 #include <drogon/HttpSimpleController.h>
 #include <drogon/version.h>
+#include <trantor/net/EventLoop.h>
 
 #include <string>
 #include <vector>
@@ -102,8 +103,8 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     virtual trantor::EventLoop *loop() override;
     virtual void quit() override
     {
-        if (_loop.isRunning())
-            _loop.quit();
+        if (loop()->isRunning())
+            loop()->quit();
     }
 #if USE_ORM
     virtual orm::DbClientPtr getDbClient(const std::string &name = "default") override;
@@ -163,8 +164,6 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     std::vector<std::string> _libFilePaths;
 
     std::unique_ptr<SharedLibManager> _sharedLibManagerPtr;
-
-    trantor::EventLoop _loop;
 
     std::string _sslCertPath;
     std::string _sslKeyPath;

@@ -69,11 +69,15 @@ class HttpAppFramework : public trantor::NonCopyable
 
     ///Run the event loop
     /**
-     * Calling this method will start the event loop which drive the network;
-     * The thread calling this method must be the first thread to call instance() method;
-     * Usually the thread calling this method is main thread of the application;
+     * Calling this method will start the IO event loops and the main loop of the application;
+     * Usually, the thread that calls this method is the main thread of the application;
+     * If the loop() method is called before this method, it must be called from the thread 
+     * that first calls the loop () method.
+     * If all loop() calls are after this method, it can be called from any thread.
      */
     virtual void run() = 0;
+
+    /// Return true if the framework is running
     virtual bool isRunning() = 0;
 
     ///Quit the event loop
