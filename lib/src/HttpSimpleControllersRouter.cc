@@ -53,7 +53,7 @@ void HttpSimpleControllersRouter::registerHttpSimpleController(const std::string
     }
     auto &item = _simpCtrlMap[path];
     item._controllerName = ctrlName;
-    item._filtersName = filters;
+    item._filterNames = filters;
     item._validMethodsFlags.clear(); //There may be old data, first clear
     if (validMethods.size() > 0)
     {
@@ -66,7 +66,7 @@ void HttpSimpleControllersRouter::registerHttpSimpleController(const std::string
     auto controller = item._controller;
     if (!controller)
     {
-        auto _object = std::shared_ptr<DrObjectBase>(DrClassMap::newObject(ctrlName));
+        auto &_object = DrClassMap::getSingleInstance(ctrlName);
         controller = std::dynamic_pointer_cast<HttpSimpleControllerBase>(_object);
         item._controller = controller;
     }
@@ -95,7 +95,7 @@ void HttpSimpleControllersRouter::route(const HttpRequestImplPtr &req,
                 return;
             }
         }
-        auto &filters = ctrlInfo._filtersName;
+        auto &filters = ctrlInfo._filters;
         if (!filters.empty())
         {
             auto sessionIdPtr = std::make_shared<std::string>(std::move(sessionId));
@@ -119,7 +119,7 @@ void HttpSimpleControllersRouter::doControllerHandler(SimpleControllerRouterItem
                                                       bool needSetJsessionid,
                                                       std::string &&sessionId)
 {
-    const std::string &ctrlName = item._controllerName; 
+    const std::string &ctrlName = item._controllerName;
     auto &controller = item._controller;
     if (controller)
     {
@@ -182,5 +182,14 @@ void HttpSimpleControllersRouter::doControllerHandler(SimpleControllerRouterItem
             res->addCookie("JSESSIONID", sessionId);
 
         callback(res);
+    }
+}
+
+void HttpSimpleControllersRouter::init()
+{
+    for (auto &iter : _simpCtrlMap)
+    {
+        auto &item = iter.second;
+        item._filters = FiltersFunction::createFilters(item._filterNames);
     }
 }

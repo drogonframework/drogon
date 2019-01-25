@@ -32,6 +32,7 @@ class DrClassMap
   public:
     static void registerClass(const std::string &className, const DrAllocFunc &func);
     static DrObjectBase *newObject(const std::string &className);
+    static const std::shared_ptr<DrObjectBase> &getSingleInstance(const std::string &className);
     static std::vector<std::string> getAllClassName();
 
   protected:

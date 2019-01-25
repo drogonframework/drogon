@@ -17,6 +17,7 @@
 #include "HttpResponseImpl.h"
 #include <trantor/utils/NonCopyable.h>
 #include <drogon/HttpBinder.h>
+#include <drogon/HttpFilter.h>
 #include <vector>
 #include <regex>
 #include <string>
@@ -29,7 +30,7 @@ class HttpAppFrameworkImpl;
 class HttpControllersRouter : public trantor::NonCopyable
 {
   public:
-    HttpControllersRouter(){}
+    HttpControllersRouter() {}
     void init();
     void addHttpPath(const std::string &path,
                      const internal::HttpBinderBasePtr &binder,
@@ -44,7 +45,8 @@ class HttpControllersRouter : public trantor::NonCopyable
     struct CtrlBinder
     {
         internal::HttpBinderBasePtr _binderPtr;
-        std::vector<std::string> _filtersName;
+        std::vector<std::string> _filterNames;
+        std::vector<std::shared_ptr<HttpFilterBase>> _filters;
         std::vector<size_t> _parameterPlaces;
         std::map<std::string, size_t> _queryParametersPlaces;
         std::mutex _binderMtx;

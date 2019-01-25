@@ -15,5 +15,9 @@ class TestController : public drogon::HttpSimpleController<TestController>
     PATH_ADD("/tpost", Post);
     PATH_ADD("/slow", "TimeFilter", Get);
     PATH_LIST_END
+    TestController()
+    {
+        LOG_DEBUG << "TestController constructor";
+    }
 };
 } // namespace example

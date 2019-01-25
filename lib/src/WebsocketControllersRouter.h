@@ -17,6 +17,7 @@
 #include "HttpResponseImpl.h"
 #include <trantor/utils/NonCopyable.h>
 #include <drogon/WebSocketController.h>
+#include <drogon/HttpFilter.h>
 #include <vector>
 #include <regex>
 #include <string>
@@ -29,19 +30,21 @@ class HttpAppFrameworkImpl;
 class WebsocketControllersRouter : public trantor::NonCopyable
 {
   public:
-    WebsocketControllersRouter(){}
+    WebsocketControllersRouter() {}
     void registerWebSocketController(const std::string &pathName,
                                      const std::string &ctrlName,
                                      const std::vector<std::string> &filters);
     void route(const HttpRequestImplPtr &req,
                std::function<void(const HttpResponsePtr &)> &&callback,
                const WebSocketConnectionPtr &wsConnPtr);
+    void init();
 
   private:
     struct WebSocketControllerRouterItem
     {
-        WebSocketControllerBasePtr controller;
-        std::vector<std::string> filtersName;
+        WebSocketControllerBasePtr _controller;
+        std::vector<std::string> _filterNames;
+        std::vector<std::shared_ptr<HttpFilterBase>> _filters;
     };
     std::unordered_map<std::string, WebSocketControllerRouterItem> _websockCtrlMap;
     std::mutex _websockCtrlMutex;
@@ -49,7 +52,7 @@ class WebsocketControllersRouter : public trantor::NonCopyable
     void doControllerHandler(const WebSocketControllerBasePtr &ctrlPtr,
                              std::string &wsKey,
                              const HttpRequestImplPtr &req,
-                             const std::function<void(const HttpResponsePtr &)> &callback,
+                             std::function<void(const HttpResponsePtr &)> &&callback,
                              const WebSocketConnectionPtr &wsConnPtr);
 };
 } // namespace drogon

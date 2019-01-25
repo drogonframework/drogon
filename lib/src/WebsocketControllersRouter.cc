@@ -35,8 +35,8 @@ void WebsocketControllersRouter::registerWebSocketController(const std::string &
     assert(ctrlPtr);
     std::lock_guard<std::mutex> guard(_websockCtrlMutex);
 
-    _websockCtrlMap[path].controller = ctrlPtr;
-    _websockCtrlMap[path].filtersName = filters;
+    _websockCtrlMap[path]._controller = ctrlPtr;
+    _websockCtrlMap[path]._filterNames = filters;
 }
 
 void WebsocketControllersRouter::route(const HttpRequestImplPtr &req,
@@ -47,32 +47,29 @@ void WebsocketControllersRouter::route(const HttpRequestImplPtr &req,
     if (!wsKey.empty())
     {
         // magic="258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
-        WebSocketControllerBasePtr ctrlPtr;
-        std::vector<std::string> filtersName;
+
+        std::string pathLower(req->path());
+        std::transform(pathLower.begin(), pathLower.end(), pathLower.begin(), tolower);
+        auto iter = _websockCtrlMap.find(pathLower);
+        if (iter != _websockCtrlMap.end())
         {
-            std::string pathLower(req->path());
-            std::transform(pathLower.begin(), pathLower.end(), pathLower.begin(), tolower);
-            std::lock_guard<std::mutex> guard(_websockCtrlMutex);
-            if (_websockCtrlMap.find(pathLower) != _websockCtrlMap.end())
+            auto &ctrlPtr = iter->second._controller;
+            auto &filters = iter->second._filters;
+            if (ctrlPtr)
             {
-                ctrlPtr = _websockCtrlMap[pathLower].controller;
-                filtersName = _websockCtrlMap[pathLower].filtersName;
+                if (!filters.empty())
+                {
+                    auto callbackPtr = std::make_shared<std::function<void(const HttpResponsePtr &)>>(std::move(callback));
+                    FiltersFunction::doFilters(filters, req, callbackPtr, false, nullptr, [=]() mutable {
+                        doControllerHandler(ctrlPtr, wsKey, req, std::move(*callbackPtr), wsConnPtr);
+                    });
+                }
+                else
+                {
+                    doControllerHandler(ctrlPtr, wsKey, req, std::move(callback), wsConnPtr);
+                }
+                return;
             }
-        }
-        if (ctrlPtr)
-        {
-            if (!filtersName.empty())
-            {
-                auto callbackPtr = std::make_shared<std::function<void(const HttpResponsePtr &)>>(std::move(callback));
-                FiltersFunction::doFilters(filtersName, req, callbackPtr, false, nullptr, [=]() mutable {
-                    doControllerHandler(ctrlPtr, wsKey, req, *callbackPtr, wsConnPtr);
-                });
-            }
-            else
-            {
-                doControllerHandler(ctrlPtr, wsKey, req, callback, wsConnPtr);
-            }
-            return;
         }
     }
     auto resp = drogon::HttpResponse::newNotFoundResponse();
@@ -83,7 +80,7 @@ void WebsocketControllersRouter::route(const HttpRequestImplPtr &req,
 void WebsocketControllersRouter::doControllerHandler(const WebSocketControllerBasePtr &ctrlPtr,
                                                      std::string &wsKey,
                                                      const HttpRequestImplPtr &req,
-                                                     const std::function<void(const HttpResponsePtr &)> &callback,
+                                                     std::function<void(const HttpResponsePtr &)> &&callback,
                                                      const WebSocketConnectionPtr &wsConnPtr)
 {
     wsKey.append("258EAFA5-E914-47DA-95CA-C5AB0DC85B11");
@@ -101,4 +98,12 @@ void WebsocketControllersRouter::doControllerHandler(const WebSocketControllerBa
     wsConnImplPtr->setController(ctrlPtr);
     ctrlPtr->handleNewConnection(req, wsConnPtr);
     return;
+}
+
+void WebsocketControllersRouter::init()
+{
+    for (auto &iter : _websockCtrlMap)
+    {
+        iter.second._filters = FiltersFunction::createFilters(iter.second._filterNames);
+    }
 }

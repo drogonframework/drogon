@@ -95,7 +95,10 @@ class HttpAppFrameworkImpl : public HttpAppFramework
         _sharedLibManagerPtr.reset();
         _sessionMapPtr.reset();
     }
-
+    virtual bool isRunning() override
+    {
+        return _running;
+    }
     virtual trantor::EventLoop *loop() override;
     virtual void quit() override
     {

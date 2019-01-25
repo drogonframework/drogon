@@ -74,6 +74,7 @@ class HttpAppFramework : public trantor::NonCopyable
      * Usually the thread calling this method is main thread of the application;
      */
     virtual void run() = 0;
+    virtual bool isRunning() = 0;
 
     ///Quit the event loop
     /**
