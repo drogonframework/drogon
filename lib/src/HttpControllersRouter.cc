@@ -29,6 +29,13 @@ void HttpControllersRouter::init()
         std::string tmp = std::regex_replace(router._pathParameterPattern, reg, "[^/]*");
         router._regex = std::regex(router._pathParameterPattern, std::regex_constants::icase);
         regString.append("(").append(tmp).append(")|");
+        for(auto &binder:router._binders)
+        {
+            if(binder)
+            {
+                binder->_filters = FiltersFunction::createFilters(binder->_filterNames);
+            }
+        }
     }
     if (regString.length() > 0)
         regString.resize(regString.length() - 1); //remove the last '|'
@@ -91,7 +98,7 @@ void HttpControllersRouter::addHttpPath(const std::string &path,
     }
     auto pathParameterPattern = std::regex_replace(originPath, regex, "([^/]*)");
     auto binderInfo = CtrlBinderPtr(new CtrlBinder);
-    binderInfo->_filtersName = filters;
+    binderInfo->_filterNames = filters;
     binderInfo->_binderPtr = binder;
     binderInfo->_parameterPlaces = std::move(places);
     binderInfo->_queryParametersPlaces = std::move(parametersPlaces);
@@ -168,9 +175,9 @@ void HttpControllersRouter::route(const HttpRequestImplPtr &req,
                         callback(res);
                         return;
                     }
-                    auto &filters = binder->_filtersName;
-                    if (!filters.empty())
+                    if (!binder->_filters.empty())
                     {
+                        auto &filters = binder->_filters;
                         auto sessionIdPtr = std::make_shared<std::string>(std::move(sessionId));
                         auto callbackPtr = std::make_shared<std::function<void(const HttpResponsePtr &)>>(std::move(callback));
                         FiltersFunction::doFilters(filters, req, callbackPtr, needSetJsessionid, sessionIdPtr, [=, &binder, &routerItem]() {

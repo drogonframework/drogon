@@ -15,14 +15,18 @@
 #pragma once
 
 #include "HttpRequestImpl.h"
+#include <drogon/HttpFilter.h>
 #include <string>
 #include <vector>
+#include <memory>
+
 namespace drogon
 {
 
 struct FiltersFunction
 {
-    static void doFilters(const std::vector<std::string> &filters,
+    static std::vector<std::shared_ptr<HttpFilterBase>> createFilters(const std::vector<std::string> &filterNames);
+    static void doFilters(const std::vector<std::shared_ptr<HttpFilterBase>> &filters,
                           const HttpRequestImplPtr &req,
                           const std::shared_ptr<const std::function<void(const HttpResponsePtr &)>> &callbackPtr,
                           bool needSetJsessionid,

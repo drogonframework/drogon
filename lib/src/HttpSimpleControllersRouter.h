@@ -18,6 +18,7 @@
 #include <drogon/HttpSimpleController.h>
 #include <trantor/utils/NonCopyable.h>
 #include <drogon/HttpBinder.h>
+#include <drogon/HttpFilter.h>
 #include <vector>
 #include <regex>
 #include <string>
@@ -40,13 +41,15 @@ class HttpSimpleControllersRouter : public trantor::NonCopyable
                std::function<void(const HttpResponsePtr &)> &&callback,
                bool needSetJsessionid,
                std::string &&sessionId);
+    void init();
 
   private:
     HttpControllersRouter &_httpCtrlsRouter;
     struct SimpleControllerRouterItem
     {
         std::string _controllerName;
-        std::vector<std::string> _filtersName;
+        std::vector<std::string> _filterNames;
+        std::vector<std::shared_ptr<HttpFilterBase>> _filters;
         std::vector<int> _validMethodsFlags;
         std::shared_ptr<HttpSimpleControllerBase> _controller;
         std::shared_ptr<HttpResponse> _responsePtr;

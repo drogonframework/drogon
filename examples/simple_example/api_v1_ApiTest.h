@@ -10,7 +10,7 @@ class ApiTest : public drogon::HttpController<ApiTest>
   public:
     METHOD_LIST_BEGIN
     //use METHOD_ADD to add your custom processing function here;
-    METHOD_ADD(ApiTest::rootGet, "", "TimeFilter", Get, "drogon::LocalHostFilter");
+    METHOD_ADD(ApiTest::rootGet, "", "TimeFilter", Get, "drogon::LocalHostFilter", "drogon::InnerIpFilter");
     METHOD_ADD(ApiTest::rootPost, "", Post);
     METHOD_ADD(ApiTest::get, "/get/{2}/{1}", Get);                  //path will be /api/v1/apitest/get/{arg2}/{arg1}
     METHOD_ADD(ApiTest::your_method_name, "/{1}/List?P2={2}", Get); //path will be /api/v1/apitest/{arg1}/list
@@ -28,6 +28,12 @@ class ApiTest : public drogon::HttpController<ApiTest>
     void rootPost(const HttpRequestPtr &req, const std::function<void(const HttpResponsePtr &)> &callback);
     void jsonTest(const HttpRequestPtr &req, const std::function<void(const HttpResponsePtr &)> &callback);
     void formTest(const HttpRequestPtr &req, const std::function<void(const HttpResponsePtr &)> &callback);
+
+  public:
+    ApiTest()
+    {
+        LOG_DEBUG << "ApiTest constructor!";
+    }
 };
 } // namespace v1
 } // namespace api

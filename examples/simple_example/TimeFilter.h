@@ -13,4 +13,8 @@ class TimeFilter : public drogon::HttpFilter<TimeFilter>
     virtual void doFilter(const HttpRequestPtr &req,
                           const FilterCallback &cb,
                           const FilterChainCallback &ccb) override;
+    TimeFilter()
+    {
+        LOG_DEBUG << "TimeFilter constructor";
+    }
 };

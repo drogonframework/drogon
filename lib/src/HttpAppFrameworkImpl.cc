@@ -278,6 +278,8 @@ void HttpAppFrameworkImpl::run()
     std::vector<std::shared_ptr<HttpServer>> servers;
     std::vector<std::shared_ptr<EventLoopThread>> loopThreads;
     _httpCtrlsRouter.init();
+    _httpSimpleCtrlsRouter.init();
+    _websockCtrlsRouter.init();
     for (auto const &listener : _listeners)
     {
         LOG_TRACE << "thread num=" << _threadNum;

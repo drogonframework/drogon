@@ -13,6 +13,7 @@
  */
 
 #include <drogon/DrClassMap.h>
+#include <drogon/DrObject.h>
 #include <iostream>
 using namespace drogon;
 //std::map <std::string,DrAllocFunc> * DrClassMap::classMap=nullptr;
@@ -32,6 +33,17 @@ DrObjectBase *DrClassMap::newObject(const std::string &className)
     }
     else
         return nullptr;
+}
+const std::shared_ptr<DrObjectBase> &DrClassMap::getSingleInstance(const std::string &className)
+{
+    static std::unordered_map<std::string, std::shared_ptr<DrObjectBase>> singleInstanceMap;
+    static std::mutex mtx;
+    std::lock_guard<std::mutex> lock(mtx);
+    auto iter = singleInstanceMap.find(className);
+    if (iter != singleInstanceMap.end())
+        return iter->second;
+    singleInstanceMap[className] = std::shared_ptr<DrObjectBase>(newObject(className));
+    return singleInstanceMap[className];
 }
 std::vector<std::string> DrClassMap::getAllClassName()
 {
