@@ -208,9 +208,9 @@ void HttpAppFrameworkImpl::run()
         //go daemon!
         godaemon();
 #ifdef __linux__
-        _loop.resetTimerQueue();
+        loop()->resetTimerQueue();
 #endif
-        _loop.resetAfterFork();
+        loop()->resetAfterFork();
     }
     //set relaunching
     if (_relaunchOnError)
@@ -233,7 +233,7 @@ void HttpAppFrameworkImpl::run()
             sleep(1);
             LOG_INFO << "start new process";
         }
-        _loop.resetAfterFork();
+        loop()->resetAfterFork();
     }
 
     //set logger
@@ -273,7 +273,7 @@ void HttpAppFrameworkImpl::run()
 
     if (!_libFilePaths.empty())
     {
-        _sharedLibManagerPtr = std::unique_ptr<SharedLibManager>(new SharedLibManager(&_loop, _libFilePaths));
+        _sharedLibManagerPtr = std::unique_ptr<SharedLibManager>(new SharedLibManager(loop(), _libFilePaths));
     }
     std::vector<std::shared_ptr<HttpServer>> servers;
     std::vector<std::shared_ptr<EventLoopThread>> loopThreads;
@@ -370,17 +370,16 @@ void HttpAppFrameworkImpl::run()
                     tmpTimeout = tmpTimeout / 100;
                 }
             }
-            _sessionMapPtr = std::unique_ptr<CacheMap<std::string, SessionPtr>>(new CacheMap<std::string, SessionPtr>(&_loop, 1.0, wheelNum, bucketNum));
+            _sessionMapPtr = std::unique_ptr<CacheMap<std::string, SessionPtr>>(new CacheMap<std::string, SessionPtr>(loop(), 1.0, wheelNum, bucketNum));
         }
         else if (_sessionTimeout == 0)
         {
-            _sessionMapPtr = std::unique_ptr<CacheMap<std::string, SessionPtr>>(new CacheMap<std::string, SessionPtr>(&_loop, 0, 0, 0));
+            _sessionMapPtr = std::unique_ptr<CacheMap<std::string, SessionPtr>>(new CacheMap<std::string, SessionPtr>(loop(), 0, 0, 0));
         }
     }
-    _responseCachingMap = std::unique_ptr<CacheMap<std::string, HttpResponsePtr>>(new CacheMap<std::string, HttpResponsePtr>(&_loop, 1.0, 4, 50)); //Max timeout up to about 70 days;
-    _loop.loop();
+    _responseCachingMap = std::unique_ptr<CacheMap<std::string, HttpResponsePtr>>(new CacheMap<std::string, HttpResponsePtr>(loop(), 1.0, 4, 50)); //Max timeout up to about 70 days;
+    loop()->loop();
 }
-
 
 void HttpAppFrameworkImpl::onWebsockDisconnect(const WebSocketConnectionPtr &wsConnPtr)
 {
@@ -808,7 +807,8 @@ void HttpAppFrameworkImpl::readSendFile(const std::string &filePath, const HttpR
 
 trantor::EventLoop *HttpAppFrameworkImpl::loop()
 {
-    return &_loop;
+    static trantor::EventLoop loop;
+    return &loop;
 }
 
 HttpAppFramework &HttpAppFramework::instance()

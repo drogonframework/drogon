@@ -94,8 +94,9 @@ HttpClientImpl::~HttpClientImpl()
 
 void HttpClientImpl::sendRequest(const drogon::HttpRequestPtr &req, const drogon::HttpReqCallback &callback)
 {
-    _loop->runInLoop([=]() {
-        sendRequestInLoop(req, callback);
+    auto thisPtr = shared_from_this();
+    _loop->runInLoop([thisPtr,req,callback]() {
+        thisPtr->sendRequestInLoop(req, callback);
     });
 }
 
