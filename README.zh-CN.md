@@ -30,6 +30,3 @@ Drogon的主要应用平台是Linux，也支持Mac OS、FreeBSD，目前还不�
 * 方便的轻量级ORM实现，支持常规的对象到数据库的双向映射操作；
 
 ### 更多详情请浏览 [wiki](https://gitee.com/an-tao/drogon/wikis/概述)
-
-### 欢迎加微信群交流
-![](https://github.com/an-tao/drogon/wiki/images/wechat.jpeg)
