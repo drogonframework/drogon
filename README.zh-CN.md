@@ -8,7 +8,7 @@
 **Drogon**是一个基于C++11的Http应用框架，使用Drogon可以方便的使用C++构建各种类型的Web应用服务端程序。
 本版本库是github上[Drogon工程](https://github.com/an-tao/drogon)的镜像库。**Drogon**是作者非常喜欢的美剧《权力的游戏》中的一条龙的名字(汉译作卓耿)，和龙有关但并不是dragon的误写，为了不至于引起不必要的误会这里说明一下。
 
-Drogon的主要应用平台是Linux，也支持Mac OS、FreeBSD，目前还没有支持Windows的计划。它的主要特点如下：
+Drogon的主要应用平台是Linux，也支持Mac OS、FreeBSD，目前还不支持Windows。它的主要特点如下：
 
 * 网络层使用基于epoll(MacOS/FreeBSD下是kqueue)的NIO框架，提供高并发、高性能的网络IO。详细请见[性能测试](https://gitee.com/an-tao/drogon/wikis/性能测试)；
 * 全异步编程模式；
