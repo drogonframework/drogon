@@ -1,6 +1,6 @@
 /**
  *
- *  FileUpload.h
+ *  MultiPart.h
  *  An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
@@ -14,12 +14,15 @@
 
 #pragma once
 
-#include "HttpRequest.h"
+#include <drogon/HttpRequest.h>
+#include <drogon/HttpResponse.h>
 #include <string>
 #include <map>
 #include <vector>
+
 namespace drogon
 {
+
 class HttpFile
 {
   public:
@@ -31,6 +34,7 @@ class HttpFile
 
     /// Set the contents of the file, usually called by the FileUpload parser.
     void setFile(const std::string &file) { _fileContent = file; };
+    void setFile(std::string &&file) { _fileContent = std::move(file); }
 
     /// Save the file to the file system.
     /**
@@ -66,11 +70,12 @@ class HttpFile
     std::string _fileName;
     std::string _fileContent;
 };
-class FileUpload
+
+class MultiPartParser
 {
   public:
-    FileUpload(){};
-    ~FileUpload(){};
+    MultiPartParser(){};
+    ~MultiPartParser(){};
     /// Get files, This method should be called after calling the parse() method.
     const std::vector<HttpFile> &getFiles();
 
@@ -80,9 +85,16 @@ class FileUpload
     /// Parse the http request stream to get files and parameters.
     int parse(const HttpRequestPtr &req);
 
+    /// Parse the http response stream to get files and parameters.
+    int parse(const HttpResponsePtr &req);
+
   protected:
     std::vector<HttpFile> _files;
     std::map<std::string, std::string> _parameters;
-    int parseEntity(const std::string &str);
+    int parse(const std::string &content, const std::string &boundary);
+    int parseEntity(const char *begin, const char *end);
 };
+
+typedef MultiPartParser FileUpload; /// In order to be compatible with old interfaces
+
 } // namespace drogon

@@ -11,27 +11,35 @@ void Attachment::get(const HttpRequestPtr &req,
 void Attachment::upload(const HttpRequestPtr &req,
                         const std::function<void(const HttpResponsePtr &)> &callback)
 {
-    FileUpload fileUpload;
-    fileUpload.parse(req);
-    auto files = fileUpload.getFiles();
-    for (auto const &file : files)
+    MultiPartParser fileUpload;
+    if(fileUpload.parse(req)==0)
     {
-        LOG_DEBUG << "file:"
-                  << file.getFileName()
-                  << "(len="
-                  << file.fileLength()
-                  << ",md5="
-                  << file.getMd5()
-                  << ")";
-        file.save();
-        file.save("123");
-        file.saveAs("456/hehe");
-        file.saveAs("456/7/8/9/"+file.getMd5());
-        file.save("..");
-        file.save(".xx");
-        file.saveAs("../xxx");
+        auto files = fileUpload.getFiles();
+        for (auto const &file : files)
+        {
+            LOG_DEBUG << "file:"
+                      << file.getFileName()
+                      << "(len="
+                      << file.fileLength()
+                      << ",md5="
+                      << file.getMd5()
+                      << ")";
+            file.save();
+            file.save("123");
+            file.saveAs("456/hehe");
+            file.saveAs("456/7/8/9/" + file.getMd5());
+            file.save("..");
+            file.save(".xx");
+            file.saveAs("../xxx");
+        }
+        Json::Value json;
+        json["result"] = "ok";
+        auto resp = HttpResponse::newHttpJsonResponse(json);
+        callback(resp);
+        return;
     }
-    auto resp = HttpResponse::newHttpResponse();
-    resp->setStatusCode(k200OK);
+    Json::Value json;
+    json["result"] = "failed";
+    auto resp = HttpResponse::newHttpJsonResponse(json);
     callback(resp);
 }
