@@ -119,6 +119,13 @@ class HttpAppFrameworkImpl : public HttpAppFramework
                                 const std::string &name = "default") override;
 #endif
 
+    inline static HttpAppFrameworkImpl &instance()
+    {
+        static HttpAppFrameworkImpl _instance;
+        return _instance;
+    }
+    bool useSendfile() { return _useSendfile; }
+
   private:
     virtual void registerHttpController(const std::string &pathPattern,
                                         const internal::HttpBinderBasePtr &binder,
@@ -131,7 +138,6 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     void onWebsockMessage(const WebSocketConnectionPtr &wsConnPtr, trantor::MsgBuffer *buffer);
     void onWebsockDisconnect(const WebSocketConnectionPtr &wsConnPtr);
     void onConnection(const TcpConnectionPtr &conn);
-    void readSendFile(const std::string &filePath, const HttpRequestImplPtr &req, const HttpResponsePtr &resp);
     void addHttpPath(const std::string &path,
                      const internal::HttpBinderBasePtr &binder,
                      const std::vector<HttpMethod> &validMethods,

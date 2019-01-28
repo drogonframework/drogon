@@ -82,13 +82,14 @@ void HttpServer::onConnection(const TcpConnectionPtr &conn)
     {
         LOG_TRACE << "conn disconnected!";
         HttpRequestParser *requestParser = any_cast<HttpRequestParser>(conn->getMutableContext());
-
-        // LOG_INFO << "###:" << string(buf->peek(), buf->readableBytes());
-        if (requestParser->webSocketConn())
+        if (requestParser)
         {
-            _disconnectWebsocketCallback(requestParser->webSocketConn());
+            if (requestParser->webSocketConn())
+            {
+                _disconnectWebsocketCallback(requestParser->webSocketConn());
+            }
+            conn->getMutableContext()->reset();
         }
-        conn->getMutableContext()->reset();
     }
     _connectionCallback(conn);
 }

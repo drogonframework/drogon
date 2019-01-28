@@ -92,6 +92,7 @@ class HttpResponse
     static HttpResponsePtr newHttpJsonResponse(const Json::Value &data);
     static HttpResponsePtr newHttpViewResponse(const std::string &viewName, const HttpViewData &data = HttpViewData());
     static HttpResponsePtr newLocationRedirectResponse(const std::string &path);
+    static HttpResponsePtr newFileResponse(const std::string &fullPath, const std::string &attachmentFileName = "", bool asAttachment = true);
 
     virtual ~HttpResponse() {}
 };

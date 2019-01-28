@@ -58,9 +58,8 @@ class HttpClient : public trantor::NonCopyable
      * The response from the http server will be obtained 
      * in the callback function.
      */
-    virtual void sendRequest(const HttpRequestPtr &req,
-                             const HttpReqCallback &callback) = 0;
-
+    virtual void sendRequest(const HttpRequestPtr &req, const HttpReqCallback &callback) = 0;
+    virtual void sendRequest(const HttpRequestPtr &req, HttpReqCallback &&callback) = 0;
     /// Use ip and port to connect to server
     /** 
      * If useSSL is set to true, the client will 

@@ -104,7 +104,7 @@ int main()
     drogon::HttpAppFramework::instance().setSSLFiles("server.pem", "server.pem");
     drogon::HttpAppFramework::instance().addListener("0.0.0.0", 8849, true);
 #endif
-    app().setThreadNum(4);
+    //app().setThreadNum(4);
     //    trantor::Logger::setLogLevel(trantor::Logger::TRACE);
     //class function
     app().registerHttpMethod("/api/v1/handle1/{1}/{2}/?p3={3}&p4={4}", &A::handle);

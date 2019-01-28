@@ -27,6 +27,7 @@ class HttpClientImpl : public HttpClient, public std::enable_shared_from_this<Ht
     HttpClientImpl(trantor::EventLoop *loop, const trantor::InetAddress &addr, bool useSSL = false);
     HttpClientImpl(trantor::EventLoop *loop, const std::string &hostString);
     virtual void sendRequest(const HttpRequestPtr &req, const HttpReqCallback &callback) override;
+    virtual void sendRequest(const HttpRequestPtr &req, HttpReqCallback &&callback) override;
     ~HttpClientImpl();
 
   private:

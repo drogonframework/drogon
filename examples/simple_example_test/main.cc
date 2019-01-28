@@ -16,12 +16,18 @@
 
 #include <drogon/drogon.h>
 #include <trantor/net/EventLoopThread.h>
+#include <trantor/net/TcpClient.h>
+
 #include <mutex>
+#include <future>
+#include <unistd.h>
+
 #define RESET "\033[0m"
 #define RED "\033[31m"   /* Red */
 #define GREEN "\033[32m" /* Green */
 
 using namespace drogon;
+
 void outputGood(const HttpRequestPtr &req)
 {
     static int i = 0;
@@ -33,7 +39,7 @@ void outputGood(const HttpRequestPtr &req)
                   << " " << req->path() << RESET << std::endl;
     }
 }
-void doTest(const HttpClientPtr &client)
+void doTest(const HttpClientPtr &client, std::promise<int> &pro)
 {
     /// Post json
     Json::Value json;
@@ -515,24 +521,61 @@ void doTest(const HttpClientPtr &client)
             exit(1);
         }
     });
+
+    /// Test attachment download
+    req = HttpRequest::newHttpRequest();
+    req->setMethod(drogon::Get);
+    req->setPath("/api/attachment/download");
+    client->sendRequest(req, [=, &pro](ReqResult result, const HttpResponsePtr &resp) {
+        if (result == ReqResult::Ok)
+        {
+            if (resp->getBody().length() == 51822)
+            {
+                outputGood(req);
+                pro.set_value(1);
+            }
+            else
+            {
+                LOG_DEBUG << resp->getBody().length();
+                LOG_ERROR << "Error!";
+                exit(1);
+            }
+        }
+        else
+        {
+            LOG_ERROR << "Error!";
+            exit(1);
+        }
+    });
 }
 
-int main()
+int main(int argc, char *argv[])
 {
     trantor::EventLoopThread loop[2];
+    trantor::Logger::setLogLevel(trantor::Logger::LogLevel::DEBUG);
+    bool ever = false;
+    if (argc > 1 && std::string(argv[1]) == "-f")
+        ever = true;
     loop[0].run();
     loop[1].run();
-    //   for (int i = 0; i < 100;i++)
-    {
-        auto client = HttpClient::newHttpClient("http://127.0.0.1:8848", loop[0].getLoop());
-        doTest(client);
-#ifdef USE_OPENSSL
-        auto sslClient = HttpClient::newHttpClient("https://127.0.0.1:8849", loop[1].getLoop());
-        doTest(sslClient);
-#endif
-    }
 
-    getchar();
+    do
+    {
+        std::promise<int> pro1;
+        auto client = HttpClient::newHttpClient("http://127.0.0.1:8848", loop[0].getLoop());
+        doTest(client, pro1);
+#ifdef USE_OPENSSL
+        std::promise<int> pro2;
+        auto sslClient = HttpClient::newHttpClient("https://127.0.0.1:8849", loop[1].getLoop());
+        doTest(sslClient, pro2);
+        auto f2 = pro2.get_future();
+        f2.get();
+#endif
+        auto f1 = pro1.get_future();
+        f1.get();
+        //LOG_DEBUG << sslClient.use_count();
+    } while (ever);
+    //getchar();
     loop[0].getLoop()->quit();
     loop[1].getLoop()->quit();
 }
