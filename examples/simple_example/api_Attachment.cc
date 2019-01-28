@@ -1,4 +1,6 @@
 #include "api_Attachment.h"
+#include <fstream>
+
 using namespace api;
 //add definition of your processing function here
 void Attachment::get(const HttpRequestPtr &req,
@@ -12,7 +14,7 @@ void Attachment::upload(const HttpRequestPtr &req,
                         const std::function<void(const HttpResponsePtr &)> &callback)
 {
     MultiPartParser fileUpload;
-    if(fileUpload.parse(req)==0)
+    if (fileUpload.parse(req) == 0)
     {
         auto files = fileUpload.getFiles();
         for (auto const &file : files)
@@ -41,5 +43,12 @@ void Attachment::upload(const HttpRequestPtr &req,
     Json::Value json;
     json["result"] = "failed";
     auto resp = HttpResponse::newHttpJsonResponse(json);
+    callback(resp);
+}
+
+void Attachment::download(const HttpRequestPtr &req,
+                          const std::function<void(const HttpResponsePtr &)> &callback)
+{
+    auto resp = HttpResponse::newFileResponse("./drogon.jpg");
     callback(resp);
 }

@@ -103,7 +103,7 @@
       "log_size_limit": 100000000,
       //log_level:"DEBUG" by default,options:"TRACE","DEBUG","INFO","WARN"
       //The TRACE level is only valid when built in DEBUG mode.
-      "log_level": "DEBUG"
+      "log_level": "TRACE"
     },
     //run_as_daemon:false by default
     "run_as_daemon": false,

@@ -95,7 +95,15 @@ HttpClientImpl::~HttpClientImpl()
 void HttpClientImpl::sendRequest(const drogon::HttpRequestPtr &req, const drogon::HttpReqCallback &callback)
 {
     auto thisPtr = shared_from_this();
-    _loop->runInLoop([thisPtr,req,callback]() {
+    _loop->runInLoop([thisPtr, req, callback]() {
+        thisPtr->sendRequestInLoop(req, callback);
+    });
+}
+
+void HttpClientImpl::sendRequest(const drogon::HttpRequestPtr &req, drogon::HttpReqCallback &&callback)
+{
+    auto thisPtr = shared_from_this();
+    _loop->runInLoop([thisPtr, req, callback = std::move(callback)]() {
         thisPtr->sendRequestInLoop(req, callback);
     });
 }
@@ -139,10 +147,13 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
                 _tcpClient->enableSSL();
             }
 #endif
-            auto thisPtr = shared_from_this();
+            std::weak_ptr<HttpClientImpl> weakPtr = shared_from_this();
             assert(_reqAndCallbacks.empty());
             _reqAndCallbacks.push(std::make_pair(req, callback));
-            _tcpClient->setConnectionCallback([=](const trantor::TcpConnectionPtr &connPtr) {
+            _tcpClient->setConnectionCallback([weakPtr](const trantor::TcpConnectionPtr &connPtr) {
+                auto thisPtr = weakPtr.lock();
+                if (!thisPtr)
+                    return;
                 if (connPtr->connected())
                 {
                     connPtr->setContext(HttpResponseParser(connPtr));
@@ -156,24 +167,33 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
                     LOG_TRACE << "connection disconnect";
                     while (!(thisPtr->_reqAndCallbacks.empty()))
                     {
-                        auto reqCallback = _reqAndCallbacks.front().second;
-                        _reqAndCallbacks.pop();
+                        auto reqCallback = thisPtr->_reqAndCallbacks.front().second;
+                        thisPtr->_reqAndCallbacks.pop();
                         reqCallback(ReqResult::NetworkFailure, HttpResponse::newHttpResponse());
                     }
                     thisPtr->_tcpClient.reset();
                 }
             });
-            _tcpClient->setConnectionErrorCallback([=]() {
+            _tcpClient->setConnectionErrorCallback([weakPtr]() {
+                auto thisPtr = weakPtr.lock();
+                if (!thisPtr)
+                    return;
                 //can't connect to server
                 while (!(thisPtr->_reqAndCallbacks.empty()))
                 {
-                    auto reqCallback = _reqAndCallbacks.front().second;
-                    _reqAndCallbacks.pop();
+                    auto reqCallback = thisPtr->_reqAndCallbacks.front().second;
+                    thisPtr->_reqAndCallbacks.pop();
                     reqCallback(ReqResult::BadServerAddress, HttpResponse::newHttpResponse());
                 }
                 thisPtr->_tcpClient.reset();
             });
-            _tcpClient->setMessageCallback(std::bind(&HttpClientImpl::onRecvMessage, shared_from_this(), _1, _2));
+            _tcpClient->setMessageCallback([weakPtr](const trantor::TcpConnectionPtr &connPtr, trantor::MsgBuffer *msg) {
+                auto thisPtr = weakPtr.lock();
+                if (thisPtr)
+                {
+                    thisPtr->onRecvMessage(connPtr, msg);
+                }
+            });
             _tcpClient->connect();
         }
         else
@@ -194,7 +214,11 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
                 sendReq(connPtr, req);
             }
         }
-        _reqAndCallbacks.push(std::make_pair(req, callback));
+        auto thisPtr = shared_from_this();
+        _reqAndCallbacks.push(std::make_pair(req, [thisPtr, callback](ReqResult result, const HttpResponsePtr &response) {
+            //thisPtr.reset();
+            callback(result, response);
+        }));
     }
 }
 
