@@ -49,6 +49,6 @@ void Attachment::upload(const HttpRequestPtr &req,
 void Attachment::download(const HttpRequestPtr &req,
                           const std::function<void(const HttpResponsePtr &)> &callback)
 {
-    auto resp = HttpResponse::newFileResponse("./drogon.jpg");
+    auto resp = HttpResponse::newFileResponse("./drogon.jpg", "", CT_IMAGE_JPG);
     callback(resp);
 }

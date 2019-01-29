@@ -111,8 +111,8 @@ int main()
     app().registerHttpMethod("/api/v1/handle11/{1}/{2}/?p3={3}&p4={4}", &A::staticHandle);
     //lambda example
     app().registerHttpMethod("/api/v1/handle2/{1}/{2}", [](const HttpRequestPtr &req, const std::function<void(const HttpResponsePtr &)> &callback, int a, float b) {
-        LOG_DEBUG << "int a=" << a;
-        LOG_DEBUG << "float b=" << b;
+        // LOG_DEBUG << "int a=" << a;
+        // LOG_DEBUG << "float b=" << b;
         HttpViewData data;
         data.insert("title", std::string("ApiTest::get"));
         std::map<std::string, std::string> para;

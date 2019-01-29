@@ -692,7 +692,7 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestImplPtr &req, std::fu
                 callback(cachedResp);
                 return;
             }
-            auto resp = HttpResponse::newFileResponse(filePath, "", false);
+            auto resp = HttpResponse::newFileResponse(filePath);
             if (!timeStr.empty())
             {
                 resp->addHeader("Last-Modified", timeStr);

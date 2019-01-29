@@ -70,7 +70,8 @@ enum Version
 
 enum ContentType
 {
-    CT_APPLICATION_JSON = 0,
+    CT_NONE = 0,
+    CT_APPLICATION_JSON,
     CT_TEXT_PLAIN,
     CT_TEXT_HTML,
     CT_APPLICATION_X_FORM,

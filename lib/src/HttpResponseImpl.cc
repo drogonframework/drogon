@@ -68,7 +68,7 @@ HttpResponsePtr HttpResponse::newHttpViewResponse(const std::string &viewName, c
     return HttpViewBase::genHttpResponse(viewName, data);
 }
 
-HttpResponsePtr HttpResponse::newFileResponse(const std::string &fullPath, const std::string &fileNameForUser, bool asAttachment)
+HttpResponsePtr HttpResponse::newFileResponse(const std::string &fullPath, const std::string &attachmentFileName, ContentType type)
 {
     auto resp = std::make_shared<HttpResponseImpl>();
     std::ifstream infile(fullPath, std::ifstream::binary);
@@ -79,11 +79,9 @@ HttpResponsePtr HttpResponse::newFileResponse(const std::string &fullPath, const
         resp->setCloseConnection(true);
         return resp;
     }
-
     std::streambuf *pbuf = infile.rdbuf();
     std::streamsize filesize = pbuf->pubseekoff(0, infile.end);
     pbuf->pubseekoff(0, infile.beg); // rewind
-
     if (HttpAppFrameworkImpl::instance().useSendfile() &&
         filesize > 1024 * 200)
     //TODO : Is 200k an appropriate value? Or set it to be configurable
@@ -98,81 +96,87 @@ HttpResponsePtr HttpResponse::newFileResponse(const std::string &fullPath, const
         pbuf->sgetn(&str[0], filesize);
         resp->setBody(std::move(str));
     }
-
     resp->setStatusCode(k200OK);
-    std::string filename;
-    std::string filetype;
-    if (!fileNameForUser.empty())
+
+    if (type == CT_NONE)
     {
-        filename = fileNameForUser;
-    }
-    else
-    {
-        auto pos = fullPath.rfind("/");
-        if (pos != std::string::npos)
+        std::string filename;
+        if (!attachmentFileName.empty())
         {
-            filename = fullPath.substr(pos + 1);
+            filename = attachmentFileName;
         }
         else
         {
-            filename = fullPath;
+            auto pos = fullPath.rfind("/");
+            if (pos != std::string::npos)
+            {
+                filename = fullPath.substr(pos + 1);
+            }
+            else
+            {
+                filename = fullPath;
+            }
+        }
+        std::string filetype;
+        auto pos = filename.rfind(".");
+        if (pos != std::string::npos)
+        {
+            filetype = filename.substr(pos + 1);
+            transform(filetype.begin(), filetype.end(), filetype.begin(), tolower);
+        }
+        if (filetype == "html")
+            resp->setContentTypeCode(CT_TEXT_HTML);
+        else if (filetype == "js")
+            resp->setContentTypeCode(CT_APPLICATION_X_JAVASCRIPT);
+        else if (filetype == "css")
+            resp->setContentTypeCode(CT_TEXT_CSS);
+        else if (filetype == "xml")
+            resp->setContentTypeCode(CT_TEXT_XML);
+        else if (filetype == "xsl")
+            resp->setContentTypeCode(CT_TEXT_XSL);
+        else if (filetype == "txt")
+            resp->setContentTypeCode(CT_TEXT_PLAIN);
+        else if (filetype == "svg")
+            resp->setContentTypeCode(CT_IMAGE_SVG_XML);
+        else if (filetype == "ttf")
+            resp->setContentTypeCode(CT_APPLICATION_X_FONT_TRUETYPE);
+        else if (filetype == "otf")
+            resp->setContentTypeCode(CT_APPLICATION_X_FONT_OPENTYPE);
+        else if (filetype == "woff2")
+            resp->setContentTypeCode(CT_APPLICATION_FONT_WOFF2);
+        else if (filetype == "woff")
+            resp->setContentTypeCode(CT_APPLICATION_FONT_WOFF);
+        else if (filetype == "eot")
+            resp->setContentTypeCode(CT_APPLICATION_VND_MS_FONTOBJ);
+        else if (filetype == "png")
+            resp->setContentTypeCode(CT_IMAGE_PNG);
+        else if (filetype == "jpg")
+            resp->setContentTypeCode(CT_IMAGE_JPG);
+        else if (filetype == "jpeg")
+            resp->setContentTypeCode(CT_IMAGE_JPG);
+        else if (filetype == "gif")
+            resp->setContentTypeCode(CT_IMAGE_GIF);
+        else if (filetype == "bmp")
+            resp->setContentTypeCode(CT_IMAGE_BMP);
+        else if (filetype == "ico")
+            resp->setContentTypeCode(CT_IMAGE_XICON);
+        else if (filetype == "icns")
+            resp->setContentTypeCode(CT_IMAGE_ICNS);
+        else
+        {
+            resp->setContentTypeCode(CT_APPLICATION_OCTET_STREAM);
         }
     }
-    auto pos = filename.rfind(".");
-    if (pos != std::string::npos)
-    {
-        filetype = filename.substr(pos + 1);
-        transform(filetype.begin(), filetype.end(), filetype.begin(), tolower);
-    }
-    bool attachment = (asAttachment || (!fileNameForUser.empty()));
-    // pick a Content-Type for the file
-    if (filetype == "html")
-        resp->setContentTypeCode(CT_TEXT_HTML);
-    else if (filetype == "js")
-        resp->setContentTypeCode(CT_APPLICATION_X_JAVASCRIPT);
-    else if (filetype == "css")
-        resp->setContentTypeCode(CT_TEXT_CSS);
-    else if (filetype == "xml")
-        resp->setContentTypeCode(CT_TEXT_XML);
-    else if (filetype == "xsl")
-        resp->setContentTypeCode(CT_TEXT_XSL);
-    else if (filetype == "txt")
-        resp->setContentTypeCode(CT_TEXT_PLAIN);
-    else if (filetype == "svg")
-        resp->setContentTypeCode(CT_IMAGE_SVG_XML);
-    else if (filetype == "ttf")
-        resp->setContentTypeCode(CT_APPLICATION_X_FONT_TRUETYPE);
-    else if (filetype == "otf")
-        resp->setContentTypeCode(CT_APPLICATION_X_FONT_OPENTYPE);
-    else if (filetype == "woff2")
-        resp->setContentTypeCode(CT_APPLICATION_FONT_WOFF2);
-    else if (filetype == "woff")
-        resp->setContentTypeCode(CT_APPLICATION_FONT_WOFF);
-    else if (filetype == "eot")
-        resp->setContentTypeCode(CT_APPLICATION_VND_MS_FONTOBJ);
-    else if (filetype == "png")
-        resp->setContentTypeCode(CT_IMAGE_PNG);
-    else if (filetype == "jpg")
-        resp->setContentTypeCode(CT_IMAGE_JPG);
-    else if (filetype == "jpeg")
-        resp->setContentTypeCode(CT_IMAGE_JPG);
-    else if (filetype == "gif")
-        resp->setContentTypeCode(CT_IMAGE_GIF);
-    else if (filetype == "bmp")
-        resp->setContentTypeCode(CT_IMAGE_BMP);
-    else if (filetype == "ico")
-        resp->setContentTypeCode(CT_IMAGE_XICON);
-    else if (filetype == "icns")
-        resp->setContentTypeCode(CT_IMAGE_ICNS);
     else
     {
-        resp->setContentTypeCode(CT_APPLICATION_OCTET_STREAM);
-        attachment = true;
+        resp->setContentTypeCode(type);
     }
-    if (attachment)
+
+    if (!attachmentFileName.empty())
     {
-        resp->addHeader("Content-Disposition", "attachment; filename=" + filename);
+        resp->addHeader("Content-Disposition", "attachment; filename=" + attachmentFileName);
     }
+
     return resp;
 }
 

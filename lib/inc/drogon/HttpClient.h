@@ -73,6 +73,9 @@ class HttpClient : public trantor::NonCopyable
                                        uint16_t port,
                                        bool useSSL = false,
                                        trantor::EventLoop *loop = nullptr);
+                                       
+    /// Get the event loop of the client;
+    virtual trantor::EventLoop *loop() = 0;
 
     /// Use hostString to connect to server
     /** 

@@ -449,12 +449,40 @@ void doTest(const HttpClientPtr &client, std::promise<int> &pro)
     req = HttpRequest::newHttpRequest();
     req->setMethod(drogon::Get);
     req->setPath("/drogon.jpg");
-    client->sendRequest(req, [=](ReqResult result, const HttpResponsePtr &resp) {
+    client->sendRequest(req, [=, &pro](ReqResult result, const HttpResponsePtr &resp) {
         if (result == ReqResult::Ok)
         {
             if (resp->getBody().length() == 51822)
             {
                 outputGood(req);
+                auto lastModified = resp->getHeader("last-modified");
+                //LOG_DEBUG << lastModified;
+                // Test 'Not Modified'
+                auto req = HttpRequest::newHttpRequest();
+                req->setMethod(drogon::Get);
+                req->setPath("/drogon.jpg");
+                req->addHeader("If-Modified-Since", lastModified);
+                client->sendRequest(req, [=, &pro](ReqResult result, const HttpResponsePtr &resp) {
+                    if (result == ReqResult::Ok)
+                    {
+                        if (resp->statusCode() == k304NotModified)
+                        {
+                            outputGood(req);
+                            pro.set_value(1);
+                        }
+                        else
+                        {
+                            LOG_DEBUG << resp->getBody().length();
+                            LOG_ERROR << "Error!";
+                            exit(1);
+                        }
+                    }
+                    else
+                    {
+                        LOG_ERROR << "Error!";
+                        exit(1);
+                    }
+                });
             }
             else
             {
@@ -526,13 +554,12 @@ void doTest(const HttpClientPtr &client, std::promise<int> &pro)
     req = HttpRequest::newHttpRequest();
     req->setMethod(drogon::Get);
     req->setPath("/api/attachment/download");
-    client->sendRequest(req, [=, &pro](ReqResult result, const HttpResponsePtr &resp) {
+    client->sendRequest(req, [=](ReqResult result, const HttpResponsePtr &resp) {
         if (result == ReqResult::Ok)
         {
             if (resp->getBody().length() == 51822)
             {
                 outputGood(req);
-                pro.set_value(1);
             }
             else
             {
