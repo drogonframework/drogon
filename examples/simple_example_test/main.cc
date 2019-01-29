@@ -31,6 +31,12 @@ using namespace drogon;
 void outputGood(const HttpRequestPtr &req)
 {
     static int i = 0;
+    // auto start = req->creationDate();
+    // auto end = trantor::Date::now();
+    // int ms = end.microSecondsSinceEpoch() - start.microSecondsSinceEpoch();
+    // ms = ms / 1000;
+    // char str[32];
+    // sprintf(str, "%6dms", ms);
     static std::mutex mtx;
     {
         std::lock_guard<std::mutex> lock(mtx);
@@ -560,6 +566,36 @@ void doTest(const HttpClientPtr &client, std::promise<int> &pro)
             if (resp->getBody().length() == 51822)
             {
                 outputGood(req);
+            }
+            else
+            {
+                LOG_DEBUG << resp->getBody().length();
+                LOG_ERROR << "Error!";
+                exit(1);
+            }
+        }
+        else
+        {
+            LOG_ERROR << "Error!";
+            exit(1);
+        }
+    });
+    //return;
+    // Test file upload
+    UploadFile file1("./drogon.jpg");
+    UploadFile file2("./config.example.json", "config.json", "file2");
+    req = HttpRequest::newFileUploadRequest({file1, file2});
+    req->setPath("/api/attachment/upload");
+    req->setParameter("P1", "upload");
+    req->setParameter("P2", "test");
+    client->sendRequest(req, [=](ReqResult result, const HttpResponsePtr &resp) {
+        if (result == ReqResult::Ok)
+        {
+            auto json = resp->getJsonObject();
+            if (json && (*json)["result"].asString() == "ok" && (*json)["P1"] == "upload" & (*json)["P2"] == "test")
+            {
+                outputGood(req);
+                //std::cout << (*json) << std::endl;
             }
             else
             {

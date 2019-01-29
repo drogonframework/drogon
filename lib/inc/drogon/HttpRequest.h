@@ -16,6 +16,7 @@
 
 #include <drogon/HttpTypes.h>
 #include <drogon/Session.h>
+#include <drogon/UploadFile.h>
 #include <trantor/net/InetAddress.h>
 #include <trantor/utils/Date.h>
 #include <json/json.h>
@@ -90,8 +91,8 @@ class HttpRequest
     /// Return the local IP address and port
     virtual const trantor::InetAddress &localAddr() const = 0;
 
-    /// Returns the receive timestamp set by the framework.
-    virtual const trantor::Date &receiveDate() const = 0;
+    /// Returns the creation timestamp set by the framework.
+    virtual const trantor::Date &creationDate() const = 0;
 
     /// Get the Json object of the request
     virtual const std::shared_ptr<Json::Value> getJsonObject() const = 0;
@@ -114,6 +115,7 @@ class HttpRequest
     static HttpRequestPtr newHttpRequest();
     static HttpRequestPtr newHttpJsonRequest(const Json::Value &data);
     static HttpRequestPtr newHttpFormPostRequest();
+    static HttpRequestPtr newFileUploadRequest(const std::vector<UploadFile> &files);
     virtual ~HttpRequest() {}
 };
 

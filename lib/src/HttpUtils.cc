@@ -99,7 +99,7 @@ std::string webContentTypeToString(ContentType contenttype)
 
     case CT_APPLICATION_X_FORM:
         return "application/x-www-form-urlencoded";
-        
+
     case CT_APPLICATION_XML:
         return "application/xml; charset=utf-8";
 
@@ -163,4 +163,4 @@ std::string webContentTypeToString(ContentType contenttype)
     }
 }
 
-}
+} // namespace drogon

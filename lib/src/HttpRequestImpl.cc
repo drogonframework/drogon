@@ -13,8 +13,11 @@
  */
 
 #include "HttpRequestImpl.h"
+#include "HttpFileUploadRequest.h"
 #include <drogon/utils/Utilities.h>
 #include <iostream>
+#include <fstream>
+#include <unistd.h>
 
 using namespace drogon;
 
@@ -124,7 +127,7 @@ void HttpRequestImpl::appendToBuffer(MsgBuffer *output) const
     }
 
     std::string content;
-    if (!_parameters.empty())
+    if (!_parameters.empty() && _contentType != CT_MULTIPART_FORM_DATA)
     {
         for (auto const &p : _parameters)
         {
@@ -145,7 +148,7 @@ void HttpRequestImpl::appendToBuffer(MsgBuffer *output) const
         {
             ///Can't set parameters in content in this case
             LOG_ERROR << "You can't set parameters in the query string when the request content type is JSON and http method is POST or PUT";
-            LOG_ERROR << "Please put these parameters in the path or the json string";
+            LOG_ERROR << "Please put these parameters into the path or into the json string";
             content.clear();
         }
     }
@@ -164,7 +167,54 @@ void HttpRequestImpl::appendToBuffer(MsgBuffer *output) const
         return;
     }
     output->append("\r\n");
-
+    if (_contentType == CT_MULTIPART_FORM_DATA)
+    {
+        auto mReq = dynamic_cast<const HttpFileUploadRequest *>(this);
+        if (mReq)
+        {
+            for (auto &param : mReq->getParameters())
+            {
+                content.append("--");
+                content.append(mReq->boundary());
+                content.append("\r\n");
+                content.append("Content-Disposition: form-data; name=\"");
+                content.append(param.first);
+                content.append("\"\r\n\r\n");
+                content.append(param.second);
+                content.append("\r\n");
+            }
+            for (auto &file : mReq->files())
+            {
+                content.append("--");
+                content.append(mReq->boundary());
+                content.append("\r\n");
+                content.append("Content-Disposition: form-data; name=\"");
+                content.append(file.itemName());
+                content.append("\"; filename=\"");
+                content.append(file.fileName());
+                content.append("\"\r\n\r\n");
+                std::ifstream infile(file.path(), std::ifstream::binary);
+                if (!infile)
+                {
+                    LOG_ERROR << file.path() << " not found";
+                }
+                else
+                {
+                    std::streambuf *pbuf = infile.rdbuf();
+                    std::streamsize filesize = pbuf->pubseekoff(0, infile.end);
+                    pbuf->pubseekoff(0, infile.beg); // rewind
+                    std::string str;
+                    str.resize(filesize);
+                    pbuf->sgetn(&str[0], filesize);
+                    content.append(std::move(str));
+                }
+                content.append("\r\n");
+            }
+            content.append("--");
+            content.append(mReq->boundary());
+            content.append("--");
+        }
+    }
     assert(!(!content.empty() && !_content.empty()));
     if (!content.empty() || !_content.empty())
     {
@@ -201,12 +251,10 @@ void HttpRequestImpl::appendToBuffer(MsgBuffer *output) const
     }
 
     output->append("\r\n");
-    //LOG_INFO<<"request(no body):"<<output->peek();
     if (!content.empty())
         output->append(content);
     if (!_content.empty())
         output->append(_content);
-    //LOG_INFO << output->peek();
 }
 
 void HttpRequestImpl::addHeader(const char *start, const char *colon, const char *end)
@@ -295,4 +343,9 @@ HttpRequestPtr HttpRequest::newHttpJsonRequest(const Json::Value &data)
     builder["indentation"] = "";
     req->setContent(writeString(builder, data));
     return req;
+}
+
+HttpRequestPtr HttpRequest::newFileUploadRequest(const std::vector<UploadFile> &files)
+{
+    return std::make_shared<HttpFileUploadRequest>(files);
 }

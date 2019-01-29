@@ -35,7 +35,7 @@ class HttpResponseImpl : public HttpResponse
   public:
     explicit HttpResponseImpl()
         : _statusCode(kUnknown),
-          _createDate(trantor::Date::now()),
+          _creationDate(trantor::Date::now()),
           _closeConnection(false),
           _leftBodyLength(0),
           _currentChunkLength(0),
@@ -48,9 +48,9 @@ class HttpResponseImpl : public HttpResponse
         return _statusCode;
     }
 
-    virtual const trantor::Date &createDate() const override
+    virtual const trantor::Date &creationDate() const override
     {
-        return _createDate;
+        return _creationDate;
     }
     
     virtual void setStatusCode(HttpStatusCode code) override
@@ -369,7 +369,7 @@ class HttpResponseImpl : public HttpResponse
     std::unordered_map<std::string, std::string> _headers;
     std::unordered_map<std::string, Cookie> _cookies;
     HttpStatusCode _statusCode;
-    trantor::Date _createDate;
+    trantor::Date _creationDate;
     Version _v;
     std::string _statusMessage;
     bool _closeConnection;
