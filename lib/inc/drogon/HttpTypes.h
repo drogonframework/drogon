@@ -92,7 +92,8 @@ enum ContentType
     CT_IMAGE_GIF,
     CT_IMAGE_XICON,
     CT_IMAGE_ICNS,
-    CT_IMAGE_BMP
+    CT_IMAGE_BMP,
+    CT_MULTIPART_FORM_DATA
 };
 
 enum HttpMethod

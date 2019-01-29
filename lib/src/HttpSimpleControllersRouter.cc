@@ -129,7 +129,7 @@ void HttpSimpleControllersRouter::doControllerHandler(SimpleControllerRouterItem
             std::lock_guard<std::mutex> guard(item._mutex);
             responsePtr = item._responsePtr;
         }
-        if (responsePtr && (responsePtr->expiredTime() == 0 || (trantor::Date::now() < responsePtr->createDate().after(responsePtr->expiredTime()))))
+        if (responsePtr && (responsePtr->expiredTime() == 0 || (trantor::Date::now() < responsePtr->creationDate().after(responsePtr->expiredTime()))))
         {
             //use cached response!
             LOG_TRACE << "Use cached response";

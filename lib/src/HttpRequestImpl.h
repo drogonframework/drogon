@@ -43,6 +43,7 @@ class HttpRequestImpl : public HttpRequest
     HttpRequestImpl()
         : _method(Invalid),
           _version(kUnknown),
+          _date(trantor::Date::now()),
           _contentLen(0)
     {
     }
@@ -199,7 +200,7 @@ class HttpRequestImpl : public HttpRequest
         return _local;
     }
 
-    virtual const trantor::Date &receiveDate() const override
+    virtual const trantor::Date &creationDate() const override
     {
         return _date;
     }
@@ -343,8 +344,7 @@ class HttpRequestImpl : public HttpRequest
         return _contentType;
     }
 
-
-  private:
+  protected:
     friend class HttpRequest;
     void setContentType(const std::string &contentType)
     {
@@ -354,13 +354,12 @@ class HttpRequestImpl : public HttpRequest
     {
         addHeader("Content-Type", std::move(contentType));
     }
-    
+
+  private:
     HttpMethod _method;
     Version _version;
     std::string _path;
     std::string _query;
-
-    //trantor::Date receiveTime_;
     std::unordered_map<std::string, std::string> _headers;
     std::unordered_map<std::string, std::string> _cookies;
     std::unordered_map<std::string, std::string> _parameters;
@@ -369,11 +368,11 @@ class HttpRequestImpl : public HttpRequest
     trantor::InetAddress _peer;
     trantor::InetAddress _local;
     trantor::Date _date;
-    ContentType _contentType = CT_TEXT_PLAIN;
-
+    
   protected:
     std::string _content;
     size_t _contentLen;
+    ContentType _contentType = CT_TEXT_PLAIN;
 };
 
 typedef std::shared_ptr<HttpRequestImpl> HttpRequestImplPtr;
