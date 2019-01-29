@@ -38,7 +38,7 @@ typedef std::shared_ptr<Sqlite3Connection> Sqlite3ConnectionPtr;
 class Sqlite3Connection : public DbConnection, public std::enable_shared_from_this<Sqlite3Connection>
 {
   public:
-    Sqlite3Connection(trantor::EventLoop *loop, const std::string &connInfo, const std::shared_ptr<std::shared_mutex> &sharedMutex);
+    Sqlite3Connection(trantor::EventLoop *loop, const std::string &connInfo, const std::shared_ptr<std::shared_timed_mutex> &sharedMutex);
 
     virtual void execSql(std::string &&sql,
                          size_t paraNum,
@@ -64,7 +64,7 @@ class Sqlite3Connection : public DbConnection, public std::enable_shared_from_th
     int stmtStep(sqlite3_stmt *stmt, const std::shared_ptr<Sqlite3ResultImpl> &resultPtr, int columnNum);
     trantor::EventLoopThread _loopThread;
     std::shared_ptr<sqlite3> _conn;
-    std::shared_ptr<std::shared_mutex> _sharedMutexPtr;
+    std::shared_ptr<std::shared_timed_mutex> _sharedMutexPtr;
 };
 
 } // namespace orm
