@@ -307,7 +307,7 @@ int main()
     std::string out;
     out.resize(inStr.length());
     size_t len = out.length();
-    auto ret=gzipCompress(inStr.c_str(), inStr.length(), out.data(), &len);
+    auto ret=gzipCompress(inStr.c_str(), inStr.length(), (char *)(out.data()), &len);
     if(ret==0)
     {
         out.resize(len);

@@ -48,7 +48,7 @@ class DbClientImpl : public DbClient, public std::enable_shared_from_this<DbClie
     std::string _connInfo;
     size_t _connectNum;
     trantor::EventLoopThreadPool _loops;
-    std::shared_ptr<std::shared_mutex> _sharedMutexPtr;
+    std::shared_ptr<std::shared_timed_mutex> _sharedMutexPtr;
 
     void execSql(const DbConnectionPtr &conn,
                  std::string &&sql,

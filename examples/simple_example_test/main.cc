@@ -592,7 +592,7 @@ void doTest(const HttpClientPtr &client, std::promise<int> &pro)
         if (result == ReqResult::Ok)
         {
             auto json = resp->getJsonObject();
-            if (json && (*json)["result"].asString() == "ok" && (*json)["P1"] == "upload" & (*json)["P2"] == "test")
+            if (json && (*json)["result"].asString() == "ok" && (*json)["P1"] == "upload" && (*json)["P2"] == "test")
             {
                 outputGood(req);
                 //std::cout << (*json) << std::endl;

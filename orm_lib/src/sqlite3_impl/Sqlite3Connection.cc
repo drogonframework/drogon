@@ -34,7 +34,7 @@ void Sqlite3Connection::onError(const std::string &sql, const std::function<void
     }
 }
 
-Sqlite3Connection::Sqlite3Connection(trantor::EventLoop *loop, const std::string &connInfo, const std::shared_ptr<std::shared_mutex> &sharedMutex)
+Sqlite3Connection::Sqlite3Connection(trantor::EventLoop *loop, const std::string &connInfo, const std::shared_ptr<std::shared_timed_mutex> &sharedMutex)
     : DbConnection(loop),
       _sharedMutexPtr(sharedMutex)
 {
@@ -190,14 +190,14 @@ void Sqlite3Connection::execSqlInQueue(const std::string &sql,
     if (sqlite3_stmt_readonly(stmt))
     {
         //Readonly, hold read lock;
-        std::shared_lock<std::shared_mutex> lock(*_sharedMutexPtr);
+        std::shared_lock<std::shared_timed_mutex> lock(*_sharedMutexPtr);
         r = stmtStep(stmt, resultPtr, columnNum);
         stmtPtr.reset();
     }
     else
     {
         //Hold write lock
-        std::unique_lock<std::shared_mutex> lock(*_sharedMutexPtr);
+        std::unique_lock<std::shared_timed_mutex> lock(*_sharedMutexPtr);
         r = stmtStep(stmt, resultPtr, columnNum);
         if (r == SQLITE_DONE)
         {
