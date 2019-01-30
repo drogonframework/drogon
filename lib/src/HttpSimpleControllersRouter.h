@@ -24,9 +24,12 @@
 #include <string>
 #include <mutex>
 #include <memory>
+#include <shared_mutex>
+#include <atomic>
 
 namespace drogon
 {
+
 class HttpAppFrameworkImpl;
 class HttpControllersRouter;
 class HttpSimpleControllersRouter : public trantor::NonCopyable
@@ -53,7 +56,7 @@ class HttpSimpleControllersRouter : public trantor::NonCopyable
         std::vector<int> _validMethodsFlags;
         std::shared_ptr<HttpSimpleControllerBase> _controller;
         std::shared_ptr<HttpResponse> _responsePtr;
-        std::mutex _mutex;
+        std::atomic_flag _mutex = ATOMIC_FLAG_INIT;
     };
     std::unordered_map<std::string, SimpleControllerRouterItem> _simpCtrlMap;
     std::mutex _simpCtrlMutex;

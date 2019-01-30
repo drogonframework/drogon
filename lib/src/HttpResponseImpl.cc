@@ -347,14 +347,14 @@ std::shared_ptr<std::string> HttpResponseImpl::renderToString() const
                 _httpStringDate = now.microSecondsSinceEpoch() / MICRO_SECONDS_PRE_SEC;
                 auto newDate = getHttpFullDate(now);
                 {
-                    std::lock_guard<std::mutex> lock(*_httpStringMutex);
+                    SpinLock lock(*_httpStringMutex);
                     _httpString = std::make_shared<std::string>(*_httpString);
                     memcpy((void *)&(*_httpString)[_datePos], newDate, strlen(newDate));
                     return _httpString;
                 }
             }
             {
-                std::lock_guard<std::mutex> lock(*_httpStringMutex);
+                SpinLock lock(*_httpStringMutex);
                 return _httpString;
             }
         }
@@ -390,7 +390,7 @@ std::shared_ptr<std::string> HttpResponseImpl::renderToString() const
     httpString->append(*_bodyPtr);
     if (_expriedTime >= 0)
     {
-        std::lock_guard<std::mutex> lock(*_httpStringMutex);
+        SpinLock lock(*_httpStringMutex);
         _datePos = datePos;
         _httpString = httpString;
     }

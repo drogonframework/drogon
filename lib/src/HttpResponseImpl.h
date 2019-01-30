@@ -24,6 +24,7 @@
 #include <string>
 #include <memory>
 #include <mutex>
+#include <atomic>
 
 using namespace trantor;
 namespace drogon
@@ -40,8 +41,9 @@ class HttpResponseImpl : public HttpResponse
           _leftBodyLength(0),
           _currentChunkLength(0),
           _bodyPtr(new std::string()),
-          _httpStringMutex(new std::mutex())
+          _httpStringMutex(new std::atomic_flag())
     {
+        _httpStringMutex->clear();
     }
     virtual HttpStatusCode statusCode() override
     {
@@ -52,7 +54,7 @@ class HttpResponseImpl : public HttpResponse
     {
         return _creationDate;
     }
-    
+
     virtual void setStatusCode(HttpStatusCode code) override
     {
         _statusCode = code;
@@ -356,12 +358,11 @@ class HttpResponseImpl : public HttpResponse
     void gunzip()
     {
         auto gunzipBody = gzipDecompress(_bodyPtr);
-        if(gunzipBody)
+        if (gunzipBody)
             _bodyPtr = gunzipBody;
     }
 
   protected:
-
     static std::string web_response_code_to_string(int code);
     void makeHeaderString(const std::shared_ptr<std::string> &headerStringPtr) const;
 
@@ -387,7 +388,7 @@ class HttpResponseImpl : public HttpResponse
     std::shared_ptr<std::string> _fullHeaderString;
 
     mutable std::shared_ptr<std::string> _httpString;
-    mutable std::shared_ptr<std::mutex> _httpStringMutex;
+    mutable std::shared_ptr<std::atomic_flag> _httpStringMutex;
     mutable std::string::size_type _datePos = std::string::npos;
     mutable int64_t _httpStringDate = -1;
 
