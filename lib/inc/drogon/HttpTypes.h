@@ -126,7 +126,7 @@ class SpinLock
     }
     ~SpinLock()
     {
-        _flag.clear();
+        _flag.clear(std::memory_order_release);
     }
 
   private:
