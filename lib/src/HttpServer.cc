@@ -88,8 +88,11 @@ void HttpServer::onConnection(const TcpConnectionPtr &conn)
             {
                 _disconnectWebsocketCallback(requestParser->webSocketConn());
             }
-            //conn->getMutableContext()->reset();   reset() is in c++17
-            conn->setContext(0);
+#if (CXX_STD > 14)
+            conn->getMutableContext()->reset(); //reset(): since c++17
+#else
+            conn->getMutableContext()->clear();
+#endif
         }
     }
     _connectionCallback(conn);
