@@ -265,11 +265,13 @@ void HttpAppFrameworkImpl::run()
 
     _running = true;
 
+#if USE_ORM
     //Create db clients
     for (auto const &fun : _dbFuncs)
     {
         fun();
     }
+#endif
 
     if (!_libFilePaths.empty())
     {
