@@ -81,7 +81,7 @@ DbClientImpl::DbClientImpl(const std::string &connInfo, const size_t connNum, Cl
     }
     else if (type == ClientType::Sqlite3)
     {
-        _sharedMutexPtr = std::make_shared<std::shared_timed_mutex>();
+        _sharedMutexPtr = std::make_shared<SharedMutex>();
         assert(_sharedMutexPtr);
         auto loop = _loops.getNextLoop();
         loop->runInLoop([this]() {

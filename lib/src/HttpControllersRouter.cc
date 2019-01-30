@@ -219,7 +219,7 @@ void HttpControllersRouter::doControllerHandler(const CtrlBinderPtr &ctrlBinderP
 {
     HttpResponsePtr responsePtr;
     {
-        std::lock_guard<std::mutex> guard(ctrlBinderPtr->_binderMtx);
+        SpinLock guard(ctrlBinderPtr->_binderMtx);
         responsePtr = ctrlBinderPtr->_responsePtr;
     }
 
@@ -282,7 +282,7 @@ void HttpControllersRouter::doControllerHandler(const CtrlBinderPtr &ctrlBinderP
             //cache the response;
             std::dynamic_pointer_cast<HttpResponseImpl>(resp)->makeHeaderString();
             {
-                std::lock_guard<std::mutex> guard(ctrlBinderPtr->_binderMtx);
+                SpinLock guard(ctrlBinderPtr->_binderMtx);
                 ctrlBinderPtr->_responsePtr = resp;
             }
         }
