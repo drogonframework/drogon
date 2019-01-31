@@ -28,4 +28,15 @@ class SpinLock
     std::atomic<bool> &_flag;
 };
 
+class SimpleSpinLock
+{
+  public:
+    SimpleSpinLock(std::atomic_flag &flag);
+    ~SimpleSpinLock();
+
+  private:
+    std::atomic_flag &_flag;
+};
+
+
 } // namespace drogon

@@ -20,7 +20,8 @@ using namespace drogon;
 SpinLock::SpinLock(std::atomic<bool> &flag)
     : _flag(flag)
 {
-    for (;;)
+    int n, i;
+    while(1)
     {
         if (!_flag.load() && !_flag.exchange(true, std::memory_order_acquire))
         {
@@ -28,9 +29,9 @@ SpinLock::SpinLock(std::atomic<bool> &flag)
         }
         if (std::thread::hardware_concurrency() > 1)
         {
-            for (int n = 1; n < LOCK_SPIN; n <<= 1)
+            for (n = 1; n < LOCK_SPIN; n <<= 1)
             {
-                for (int i = 0; i < n; i++)
+                for (i = 0; i < n; i++)
                 {
                     __asm__ __volatile__("rep; nop" ::: "memory"); //pause
                 }
@@ -47,4 +48,18 @@ SpinLock::SpinLock(std::atomic<bool> &flag)
 SpinLock::~SpinLock()
 {
     _flag.store(false, std::memory_order_release);
+}
+
+SimpleSpinLock::SimpleSpinLock(std::atomic_flag &flag)
+    : _flag(flag)
+{
+    while (_flag.test_and_set(std::memory_order_acquire))
+    {
+        __asm__ __volatile__("rep; nop" ::: "memory"); //pause
+    }
+}
+
+SimpleSpinLock::~SimpleSpinLock()
+{
+    _flag.clear(std::memory_order_release);
 }
