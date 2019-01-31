@@ -36,12 +36,15 @@ HttpResponsePtr HttpResponse::newHttpResponse()
 
 HttpResponsePtr HttpResponse::newHttpJsonResponse(const Json::Value &data)
 {
+    static std::once_flag once;
+    static Json::StreamWriterBuilder builder;
+    std::call_once(once, []() {
+        builder["commentStyle"] = "None";
+        builder["indentation"] = "";
+    });
     auto res = std::make_shared<HttpResponseImpl>();
     res->setStatusCode(k200OK);
     res->setContentTypeCode(CT_APPLICATION_JSON);
-    Json::StreamWriterBuilder builder;
-    builder["commentStyle"] = "None";
-    builder["indentation"] = "";
     res->setBody(writeString(builder, data));
     return res;
 }
