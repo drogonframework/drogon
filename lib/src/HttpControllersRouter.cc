@@ -17,6 +17,7 @@
 #include "HttpRequestImpl.h"
 #include "HttpResponseImpl.h"
 #include "HttpAppFrameworkImpl.h"
+#include "SpinLock.h"
 
 using namespace drogon;
 

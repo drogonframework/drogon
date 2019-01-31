@@ -56,7 +56,7 @@ class HttpSimpleControllersRouter : public trantor::NonCopyable
         std::vector<int> _validMethodsFlags;
         std::shared_ptr<HttpSimpleControllerBase> _controller;
         std::shared_ptr<HttpResponse> _responsePtr;
-        std::atomic_flag _mutex = ATOMIC_FLAG_INIT;
+        std::atomic<bool> _mutex = ATOMIC_VAR_INIT(false);
     };
     std::unordered_map<std::string, SimpleControllerRouterItem> _simpCtrlMap;
     std::mutex _simpCtrlMutex;

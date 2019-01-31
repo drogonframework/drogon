@@ -14,6 +14,7 @@
 
 #include "HttpAppFrameworkImpl.h"
 #include "HttpResponseImpl.h"
+#include "SpinLock.h"
 #include <drogon/HttpViewBase.h>
 #include <drogon/HttpViewData.h>
 #include <drogon/HttpAppFramework.h>

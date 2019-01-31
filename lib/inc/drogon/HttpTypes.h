@@ -13,17 +13,11 @@
 
 #pragma once
 #include <drogon/config.h>
-#include <shared_mutex>
 #include <atomic>
+#include <thread>
 
 namespace drogon
 {
-
-#if (CXX_STD > 14)
-typedef std::shared_mutex SharedMutex;
-#else
-typedef std::shared_timed_mutex SharedMutex;
-#endif
 
 enum HttpStatusCode
 {
@@ -113,24 +107,6 @@ enum HttpMethod
     Put,
     Delete,
     Invalid
-};
-
-class SpinLock
-{
-  public:
-    SpinLock(std::atomic_flag &flag) : _flag(flag)
-    {
-        while (_flag.test_and_set(std::memory_order_acquire))
-        {
-        }
-    }
-    ~SpinLock()
-    {
-        _flag.clear(std::memory_order_release);
-    }
-
-  private:
-    std::atomic_flag &_flag;
 };
 
 } // namespace drogon

@@ -15,6 +15,7 @@
 #include "FiltersFunction.h"
 #include "HttpSimpleControllersRouter.h"
 #include "HttpAppFrameworkImpl.h"
+#include "SpinLock.h"
 
 using namespace drogon;
 
