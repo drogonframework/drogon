@@ -1,7 +1,7 @@
 /* This is a JSON format configuration file
 */
 {
-  //ssl:the global ssl files setting
+  //ssl:The global ssl files setting
   /*
   "ssl": {
     "cert": "../../trantor/trantor/tests/server.pem",
@@ -9,53 +9,53 @@
   },
   "listeners": [
     {
-      //address:ip address,0.0.0.0 by default
+      //address: Ip address,0.0.0.0 by default
       "address": "0.0.0.0",
-      //port:port number
+      //port: Port number
       "port": 80,
-      //https:if use https for security,false by default
+      //https: If true, use https for security,false by default
       "https": false
     },
     {
       "address": "0.0.0.0",
       "port": 443,
       "https": true,
-      //cert,key:cert file path and key file path,empty by default,
-      //if empty,use global setting
+      //cert,key: Cert file path and key file path, empty by default,
+      //if empty, use global setting
       "cert": "",
       "key": ""
     }
   ],
   "db_clients": [
     {
-      //name:Name of the client,'default' by default
+      //name: Name of the client,'default' by default
       //"name":"",
-      //rdbms:server type, postgresql,mysql or sqlite3, "postgresql" by default
+      //rdbms: Server type, postgresql,mysql or sqlite3, "postgresql" by default
       "rdbms": "postgresql",
-      //filename:sqlite3 db file name
+      //filename: Sqlite3 db file name
       //"filename":"",
-      //host:server address,localhost by default
+      //host: Server address,localhost by default
       "host": "127.0.0.1",
-      //port:server port, 5432 by default
+      //port: Server port, 5432 by default
       "port": 5432,
-      //dbname:Database name
+      //dbname: Database name
       "dbname": "test",
-      //user:'postgres' by default
+      //user: 'postgres' by default
       "user": "",
-      //passwd:'' by default
+      //passwd: '' by default
       "passwd": "",
-      //connection_number:1 by default
+      //connection_number: 1 by default
       "connection_number": 1
     }
   ],*/
   "app": {
-    //threads_num:the number of IO threads,1 by default, if the value is set to 0, the number of threads
+    //threads_num: The number of IO threads,1 by default, if the value is set to 0, the number of threads
     //will be the number of processors.
     "threads_num": 1,
-    //enable_session:false by default
-    "enable_session": false,
+    //enable_session: False by default
+    "enable_session": true,
     "session_timeout": 0,
-    //document_root:Root path of HTTP document,defaut path is ./
+    //document_root: Root path of HTTP document,defaut path is ./
     "document_root": "./",
     //upload_path: The path to save the uploaded file. "uploads" by default. 
     //If the path isn't prefixed with /, ./ or ../,
@@ -80,44 +80,44 @@
       "cur",
       "xml"
     ],
-    //max_connections:max connections number,100000 by default
+    //max_connections: Max connections number,100000 by default
     "max_connections": 100000,
-    //max_connections_per_ip:max connections number per clinet,0 by default which means no limit
+    //max_connections_per_ip: Max connections number per clinet,0 by default which means no limit
     "max_connections_per_ip": 0,
-    //Load_dynamic_views: false by default, when set to true, drogon will
+    //Load_dynamic_views: False by default, when set to true, drogon will
     //compile and load dynamically "CSP View Files" in directories defined
     //by "dynamic_views_path"
     "load_dynamic_views":false,
-    //dynamic_views_path: if the path isn't prefixed with /, ./ or ../,
+    //dynamic_views_path: If the path isn't prefixed with /, ./ or ../,
     //it will be relative path of document_root path
     "dynamic_views_path":["./views"],
-    //log:set log output,drogon output logs to stdout by default
+    //log: Set log output, drogon output logs to stdout by default
     "log": {
-      //log_path:log file path,empty by default,in which case,log will output to the stdout
+      //log_path: Log file path,empty by default,in which case,log will output to the stdout
       //"log_path": "./",
-      //logfile_base_name:log file base name,empty by default which means drogon will name logfile as
+      //logfile_base_name: Log file base name,empty by default which means drogon will name logfile as
       //drogon.log ...
       "logfile_base_name": "",
-      //log_size_limit:100000000 bytes by default,
+      //log_size_limit: 100000000 bytes by default,
       //When the log file size reaches "log_size_limit", the log file will be switched.
       "log_size_limit": 100000000,
-      //log_level:"DEBUG" by default,options:"TRACE","DEBUG","INFO","WARN"
+      //log_level: "DEBUG" by default,options:"TRACE","DEBUG","INFO","WARN"
       //The TRACE level is only valid when built in DEBUG mode.
       "log_level": "DEBUG"
     },
-    //run_as_daemon:false by default
+    //run_as_daemon: False by default
     "run_as_daemon": false,
-    //relaunch_on_error:false by default,if true,the program will be restart by parent after exit;
+    //relaunch_on_error: False by default, if true, the program will be restart by the parent after exiting;
     "relaunch_on_error": false,
-    //use_sendfile:true by default,if ture,the program will
-    //use sendfile() system-call to send static file to client;
+    //use_sendfile: True by default, if ture, the program will
+    //use sendfile() system-call to send static file to the client;
     "use_sendfile": true,
-    //use_gzip:true by default,use gzip to compress the response body's content;
+    //use_gzip: True by default,use gzip to compress the response body's content;
     "use_gzip": true,
-    //static_files_cache_time:5 (seconds) by default,the time in which static file response is cached,
-    //0 means cache forever,the negative value means no cache
+    //static_files_cache_time: 5 (seconds) by default,the time in which static file response is cached,
+    //0 means cache forever, the negative value means no cache
     "static_files_cache_time": 5,
-    //simple_controllers_map:Configuring mapping from path to simple controller
+    //simple_controllers_map: Used to configure mapping from path to simple controller
     "simple_controllers_map": [
       {
         "path": "/path/name",
@@ -131,7 +131,7 @@
         ]
       }
     ],
-    //idle_connection_timeout: defaults to 60 seconds, the lifetime 
+    //idle_connection_timeout: Defaults to 60 seconds, the lifetime 
     //of the connection without read or write
     "idle_connection_timeout": 60
   }
