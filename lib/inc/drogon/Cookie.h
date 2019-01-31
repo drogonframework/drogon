@@ -18,11 +18,13 @@
 
 namespace drogon
 {
+
 class Cookie
 {
   public:
-    Cookie(const std::string &key, const std::string &value) : _key(key),
-                                                               _value(value)
+    Cookie(const std::string &key, const std::string &value)
+        : _key(key),
+          _value(value)
     {
     }
     Cookie() = default;
@@ -34,7 +36,7 @@ class Cookie
     void setPath(const std::string &path) { _path = path; }
     void setKey(const std::string &key) { _key = key; }
     void setValue(const std::string &value) { _value = value; }
-    
+
     const std::string cookieString() const;
     const trantor::Date &expiresDate() const { return _expiresDate; }
     bool httpOnly() const { return _httpOnly; }
@@ -53,4 +55,5 @@ class Cookie
     std::string _key;
     std::string _value;
 };
+
 } // namespace drogon

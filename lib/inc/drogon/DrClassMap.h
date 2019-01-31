@@ -25,6 +25,7 @@
 
 namespace drogon
 {
+
 class DrObjectBase;
 typedef std::function<DrObjectBase *()> DrAllocFunc;
 class DrClassMap
@@ -38,4 +39,5 @@ class DrClassMap
   protected:
     static std::unordered_map<std::string, DrAllocFunc> &getMap();
 };
+
 } // namespace drogon

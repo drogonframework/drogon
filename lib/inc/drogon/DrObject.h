@@ -28,11 +28,9 @@ class DrObjectBase
         static std::string _name = "DrObjectBase";
         return _name;
     }
-    virtual bool isClass(const std::string &className_) const
+    virtual bool isClass(const std::string &class_name) const
     {
-        if (className() == className_)
-            return true;
-        return false;
+        return (className() == class_name);
     }
     static const std::string demangle(const char *mangled_name)
     {
@@ -62,11 +60,9 @@ class DrObject : public virtual DrObjectBase
         return _alloc.className();
     }
 
-    virtual bool isClass(const std::string &className_) const override
+    virtual bool isClass(const std::string &class_name) const override
     {
-        if (className() == className_)
-            return true;
-        return false;
+        return (className() == class_name);
     }
 
   protected:
@@ -80,8 +76,7 @@ class DrObject : public virtual DrObjectBase
         DrAllocator()
         {
             DrClassMap::registerClass(className(), []() -> DrObjectBase * {
-                T *p = new T;
-                return static_cast<DrObjectBase *>(p);
+                return new T;
             });
         }
         const std::string &className() const
