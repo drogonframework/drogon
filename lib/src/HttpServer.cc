@@ -77,10 +77,12 @@ void HttpServer::onConnection(const TcpConnectionPtr &conn)
     if (conn->connected())
     {
         conn->setContext(HttpRequestParser(conn));
+        _connectionCallback(conn);
     }
     else if (conn->disconnected())
     {
         LOG_TRACE << "conn disconnected!";
+        _connectionCallback(conn);
         HttpRequestParser *requestParser = any_cast<HttpRequestParser>(conn->getMutableContext());
         if (requestParser)
         {
@@ -95,7 +97,6 @@ void HttpServer::onConnection(const TcpConnectionPtr &conn)
 #endif
         }
     }
-    _connectionCallback(conn);
 }
 
 void HttpServer::onMessage(const TcpConnectionPtr &conn,

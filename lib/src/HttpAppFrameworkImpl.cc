@@ -425,10 +425,16 @@ void HttpAppFrameworkImpl::onConnection(const TcpConnectionPtr &conn)
     }
     else
     {
-        if (_connectionNum-- == 0)
+#if (CXX_STD > 14)
+        if (!conn->getContext().has_value())
+#else
+        if (conn->getContext().empty())
+#endif
         {
-            _connectionNum++;
+            //If the connection is connected to the SSL port and then disconnected before the SSL handshake.
+            return;
         }
+        _connectionNum--;
         if (_maxConnectionNumPerIP > 0)
         {
             std::lock_guard<std::mutex> lock(mtx);

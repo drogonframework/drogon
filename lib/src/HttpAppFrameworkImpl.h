@@ -174,11 +174,11 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     std::string _sslCertPath;
     std::string _sslKeyPath;
 
-    size_t _maxConnectionNum = 100000;
     size_t _maxConnectionNumPerIP = 0;
-
-    std::atomic<uint64_t> _connectionNum;
     std::unordered_map<std::string, size_t> _connectionsNumMap;
+
+    int64_t _maxConnectionNum = 100000;
+    std::atomic<int64_t> _connectionNum;
 
     bool _runAsDaemon = false;
     bool _relaunchOnError = false;
