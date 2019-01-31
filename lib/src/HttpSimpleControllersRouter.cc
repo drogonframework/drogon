@@ -15,6 +15,7 @@
 #include "FiltersFunction.h"
 #include "HttpSimpleControllersRouter.h"
 #include "HttpAppFrameworkImpl.h"
+#include "SpinLock.h"
 
 using namespace drogon;
 
@@ -126,7 +127,7 @@ void HttpSimpleControllersRouter::doControllerHandler(SimpleControllerRouterItem
         HttpResponsePtr responsePtr;
         {
             //Maybe update the _responsePtr, so we use shared_lock to protect;
-            SpinLock guard(item._mutex);
+            SimpleSpinLock guard(item._mutex);
             responsePtr = item._responsePtr;
         }
         if (responsePtr && (responsePtr->expiredTime() == 0 || (trantor::Date::now() < responsePtr->creationDate().after(responsePtr->expiredTime()))))
@@ -154,7 +155,7 @@ void HttpSimpleControllersRouter::doControllerHandler(SimpleControllerRouterItem
                     //cache the response;
                     std::dynamic_pointer_cast<HttpResponseImpl>(resp)->makeHeaderString();
                     {
-                        SpinLock guard(item._mutex);
+                        SimpleSpinLock guard(item._mutex);
                         item._responsePtr = resp;
                     }
                 }

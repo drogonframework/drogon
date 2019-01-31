@@ -22,11 +22,19 @@
 #include <string>
 #include <functional>
 #include <iostream>
+#include <mutex>
+#include <shared_mutex>
 
 namespace drogon
 {
 namespace orm
 {
+
+#if (CXX_STD > 14)
+typedef std::shared_mutex SharedMutex;
+#else
+typedef std::shared_timed_mutex SharedMutex;
+#endif
 
 enum ConnectStatus
 {

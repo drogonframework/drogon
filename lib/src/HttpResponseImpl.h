@@ -41,7 +41,7 @@ class HttpResponseImpl : public HttpResponse
           _leftBodyLength(0),
           _currentChunkLength(0),
           _bodyPtr(new std::string()),
-          _httpStringMutex(new std::atomic_flag())
+          _httpStringMutex(new std::atomic_flag)
     {
         _httpStringMutex->clear();
     }

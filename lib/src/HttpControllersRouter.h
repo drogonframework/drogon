@@ -50,6 +50,7 @@ class HttpControllersRouter : public trantor::NonCopyable
         std::vector<std::shared_ptr<HttpFilterBase>> _filters;
         std::vector<size_t> _parameterPlaces;
         std::map<std::string, size_t> _queryParametersPlaces;
+        //std::atomic<bool> _binderMtx = ATOMIC_VAR_INIT(false);
         std::atomic_flag _binderMtx = ATOMIC_FLAG_INIT;
         std::shared_ptr<HttpResponse> _responsePtr;
     };
