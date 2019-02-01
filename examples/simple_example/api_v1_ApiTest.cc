@@ -9,9 +9,11 @@ void ApiTest::rootGet(const HttpRequestPtr &req, const std::function<void(const 
 }
 void ApiTest::rootPost(const HttpRequestPtr &req, const std::function<void(const HttpResponsePtr &)> &callback)
 {
-    auto res = HttpResponse::newHttpResponse();
-    res->setBody("ROOT Post!!!");
-    callback(res);
+    std::thread([=]() {
+        auto res = HttpResponse::newHttpResponse();
+        res->setBody("ROOT Post!!!");
+        callback(res);
+    }).detach();
 }
 void ApiTest::get(const HttpRequestPtr &req, const std::function<void(const HttpResponsePtr &)> &callback, int p1, std::string &&p2)
 {

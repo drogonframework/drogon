@@ -288,6 +288,7 @@ void HttpServer::onRequest(const TcpConnectionPtr &conn, const HttpRequestImplPt
 void HttpServer::sendResponse(const TcpConnectionPtr &conn,
                               const HttpResponsePtr &response)
 {
+    conn->getLoop()->assertInLoopThread();
     auto httpString = std::dynamic_pointer_cast<HttpResponseImpl>(response)->renderToString();
     conn->send(httpString);
     auto &sendfileName = std::dynamic_pointer_cast<HttpResponseImpl>(response)->sendfileName();
