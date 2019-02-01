@@ -279,9 +279,8 @@ void HttpAppFrameworkImpl::run()
     }
     std::vector<std::shared_ptr<HttpServer>> servers;
     std::vector<std::shared_ptr<EventLoopThread>> loopThreads;
-    _httpCtrlsRouter.init();
-    _httpSimpleCtrlsRouter.init();
-    _websockCtrlsRouter.init();
+
+    std::vector<trantor::EventLoop *> ioLoops;
     for (auto const &listener : _listeners)
     {
         LOG_TRACE << "thread num=" << _threadNum;
@@ -316,6 +315,7 @@ void HttpAppFrameworkImpl::run()
             serverPtr->kickoffIdleConnections(_idleConnectionTimeout);
             serverPtr->start();
             servers.push_back(serverPtr);
+            ioLoops.push_back(serverPtr->getLoop());
         }
 #else
         auto loopThreadPtr = std::make_shared<EventLoopThread>("DrogonIoLoop");
@@ -349,9 +349,24 @@ void HttpAppFrameworkImpl::run()
         serverPtr->setConnectionCallback(std::bind(&HttpAppFrameworkImpl::onConnection, this, _1));
         serverPtr->kickoffIdleConnections(_idleConnectionTimeout);
         serverPtr->start();
+        std::promise<int> pro;
+        auto f = pro.get_future();
+        serverPtr->getLoop()->runInLoop([&pro]() {
+            pro.set_value(1);
+        });
+        f.get();
+        auto serverIoLoops = serverPtr->getIoLoops();
+        for (auto serverIoLoop : serverIoLoops)
+        {
+            ioLoops.push_back(serverIoLoop);
+        }
         servers.push_back(serverPtr);
 #endif
     }
+    _httpCtrlsRouter.init(ioLoops);
+    _httpSimpleCtrlsRouter.init(ioLoops);
+    _websockCtrlsRouter.init();
+
     if (_useSession)
     {
         if (_sessionTimeout > 0)

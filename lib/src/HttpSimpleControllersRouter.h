@@ -44,7 +44,7 @@ class HttpSimpleControllersRouter : public trantor::NonCopyable
                std::function<void(const HttpResponsePtr &)> &&callback,
                bool needSetJsessionid,
                std::string &&sessionId);
-    void init();
+    void init(const std::vector<trantor::EventLoop *> &ioLoops);
 
   private:
     HttpControllersRouter &_httpCtrlsRouter;
@@ -55,9 +55,9 @@ class HttpSimpleControllersRouter : public trantor::NonCopyable
         std::vector<std::shared_ptr<HttpFilterBase>> _filters;
         std::vector<int> _validMethodsFlags;
         std::shared_ptr<HttpSimpleControllerBase> _controller;
-        std::shared_ptr<HttpResponse> _responsePtr;
+        std::map<trantor::EventLoop *, std::shared_ptr<HttpResponse>> _responsePtrMap;
         //std::atomic<bool> _mutex = ATOMIC_VAR_INIT(false);
-        std::atomic_flag _mutex = ATOMIC_FLAG_INIT;
+        //std::atomic_flag _mutex = ATOMIC_FLAG_INIT;
     };
     std::unordered_map<std::string, SimpleControllerRouterItem> _simpCtrlMap;
     std::mutex _simpCtrlMutex;

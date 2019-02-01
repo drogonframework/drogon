@@ -24,7 +24,8 @@ using namespace drogon;
 
 HttpRequestParser::HttpRequestParser(const trantor::TcpConnectionPtr &connPtr)
     : _state(kExpectRequestLine),
-      _request(new HttpRequestImpl),
+      _loop(connPtr->getLoop()),
+      _request(new HttpRequestImpl(connPtr->getLoop())),
       _conn(connPtr)
 {
 }

@@ -317,7 +317,7 @@ void HttpRequestImpl::addHeader(const char *start, const char *colon, const char
 
 HttpRequestPtr HttpRequest::newHttpRequest()
 {
-    auto req = std::make_shared<HttpRequestImpl>();
+    auto req = std::make_shared<HttpRequestImpl>(nullptr);
     req->setMethod(drogon::Get);
     req->setVersion(drogon::HttpRequest::kHttp11);
     return req;
@@ -325,7 +325,7 @@ HttpRequestPtr HttpRequest::newHttpRequest()
 
 HttpRequestPtr HttpRequest::newHttpFormPostRequest()
 {
-    auto req = std::make_shared<HttpRequestImpl>();
+    auto req = std::make_shared<HttpRequestImpl>(nullptr);
     req->setMethod(drogon::Post);
     req->setVersion(drogon::HttpRequest::kHttp11);
     req->_contentType = CT_APPLICATION_X_FORM;
@@ -334,7 +334,7 @@ HttpRequestPtr HttpRequest::newHttpFormPostRequest()
 
 HttpRequestPtr HttpRequest::newHttpJsonRequest(const Json::Value &data)
 {
-    auto req = std::make_shared<HttpRequestImpl>();
+    auto req = std::make_shared<HttpRequestImpl>(nullptr);
     req->setMethod(drogon::Get);
     req->setVersion(drogon::HttpRequest::kHttp11);
     req->_contentType = CT_APPLICATION_JSON;

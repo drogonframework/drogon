@@ -17,11 +17,10 @@
 #include "HttpRequestImpl.h"
 #include "HttpResponseImpl.h"
 #include "HttpAppFrameworkImpl.h"
-#include "SpinLock.h"
 
 using namespace drogon;
 
-void HttpControllersRouter::init()
+void HttpControllersRouter::init(const std::vector<trantor::EventLoop *> &ioLoops)
 {
     std::string regString;
     for (auto &router : _ctrlVector)
@@ -30,11 +29,15 @@ void HttpControllersRouter::init()
         std::string tmp = std::regex_replace(router._pathParameterPattern, reg, "[^/]*");
         router._regex = std::regex(router._pathParameterPattern, std::regex_constants::icase);
         regString.append("(").append(tmp).append(")|");
-        for(auto &binder:router._binders)
+        for (auto &binder : router._binders)
         {
-            if(binder)
+            if (binder)
             {
                 binder->_filters = FiltersFunction::createFilters(binder->_filterNames);
+                for(auto ioloop:ioLoops)
+                {
+                    binder->_responsePtrMap[ioloop] = std::shared_ptr<HttpResponse>();
+                }
             }
         }
     }
@@ -218,12 +221,7 @@ void HttpControllersRouter::doControllerHandler(const CtrlBinderPtr &ctrlBinderP
                                                 bool needSetJsessionid,
                                                 std::string &&sessionId)
 {
-    HttpResponsePtr responsePtr;
-    {
-        SimpleSpinLock guard(ctrlBinderPtr->_binderMtx);
-        responsePtr = ctrlBinderPtr->_responsePtr;
-    }
-
+    HttpResponsePtr &responsePtr = ctrlBinderPtr->_responsePtrMap[req->getLoop()];
     if (responsePtr && (responsePtr->expiredTime() == 0 || (trantor::Date::now() < responsePtr->creationDate().after(responsePtr->expiredTime()))))
     {
         //use cached response!
@@ -282,9 +280,16 @@ void HttpControllersRouter::doControllerHandler(const CtrlBinderPtr &ctrlBinderP
         {
             //cache the response;
             std::dynamic_pointer_cast<HttpResponseImpl>(resp)->makeHeaderString();
+            auto loop = req->getLoop();
+            if (loop->isInLoopThread())
             {
-                SimpleSpinLock guard(ctrlBinderPtr->_binderMtx);
-                ctrlBinderPtr->_responsePtr = resp;
+                ctrlBinderPtr->_responsePtrMap[loop] = resp;
+            }
+            else
+            {
+                req->getLoop()->queueInLoop([loop, resp, ctrlBinderPtr]() {
+                    ctrlBinderPtr->_responsePtrMap[loop] = resp;
+                });
             }
         }
         if (needSetJsessionid)
