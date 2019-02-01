@@ -14,6 +14,7 @@
 
 #include "HttpAppFrameworkImpl.h"
 #include "HttpResponseImpl.h"
+#include "SpinLock.h"
 #include <drogon/HttpViewBase.h>
 #include <drogon/HttpViewData.h>
 #include <drogon/HttpAppFramework.h>
@@ -350,14 +351,14 @@ std::shared_ptr<std::string> HttpResponseImpl::renderToString() const
                 _httpStringDate = now.microSecondsSinceEpoch() / MICRO_SECONDS_PRE_SEC;
                 auto newDate = getHttpFullDate(now);
                 {
-                    SpinLock lock(*_httpStringMutex);
+                    SimpleSpinLock lock(*_httpStringMutex);
                     _httpString = std::make_shared<std::string>(*_httpString);
                     memcpy((void *)&(*_httpString)[_datePos], newDate, strlen(newDate));
                     return _httpString;
                 }
             }
             {
-                SpinLock lock(*_httpStringMutex);
+                SimpleSpinLock lock(*_httpStringMutex);
                 return _httpString;
             }
         }
@@ -393,7 +394,7 @@ std::shared_ptr<std::string> HttpResponseImpl::renderToString() const
     httpString->append(*_bodyPtr);
     if (_expriedTime >= 0)
     {
-        SpinLock lock(*_httpStringMutex);
+        SimpleSpinLock lock(*_httpStringMutex);
         _datePos = datePos;
         _httpString = httpString;
     }

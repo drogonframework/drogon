@@ -17,6 +17,7 @@
 #include "HttpRequestImpl.h"
 #include "HttpResponseImpl.h"
 #include "HttpAppFrameworkImpl.h"
+#include "SpinLock.h"
 
 using namespace drogon;
 
@@ -219,7 +220,7 @@ void HttpControllersRouter::doControllerHandler(const CtrlBinderPtr &ctrlBinderP
 {
     HttpResponsePtr responsePtr;
     {
-        SpinLock guard(ctrlBinderPtr->_binderMtx);
+        SimpleSpinLock guard(ctrlBinderPtr->_binderMtx);
         responsePtr = ctrlBinderPtr->_responsePtr;
     }
 
@@ -282,7 +283,7 @@ void HttpControllersRouter::doControllerHandler(const CtrlBinderPtr &ctrlBinderP
             //cache the response;
             std::dynamic_pointer_cast<HttpResponseImpl>(resp)->makeHeaderString();
             {
-                SpinLock guard(ctrlBinderPtr->_binderMtx);
+                SimpleSpinLock guard(ctrlBinderPtr->_binderMtx);
                 ctrlBinderPtr->_responsePtr = resp;
             }
         }
