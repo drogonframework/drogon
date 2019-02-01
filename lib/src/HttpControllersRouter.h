@@ -32,7 +32,7 @@ class HttpControllersRouter : public trantor::NonCopyable
 {
   public:
     HttpControllersRouter() {}
-    void init();
+    void init(const std::vector<trantor::EventLoop *> &ioLoops);
     void addHttpPath(const std::string &path,
                      const internal::HttpBinderBasePtr &binder,
                      const std::vector<HttpMethod> &validMethods,
@@ -50,9 +50,7 @@ class HttpControllersRouter : public trantor::NonCopyable
         std::vector<std::shared_ptr<HttpFilterBase>> _filters;
         std::vector<size_t> _parameterPlaces;
         std::map<std::string, size_t> _queryParametersPlaces;
-        //std::atomic<bool> _binderMtx = ATOMIC_VAR_INIT(false);
-        std::atomic_flag _binderMtx = ATOMIC_FLAG_INIT;
-        std::shared_ptr<HttpResponse> _responsePtr;
+        std::map<trantor::EventLoop *,std::shared_ptr<HttpResponse>> _responsePtrMap;
     };
     typedef std::shared_ptr<CtrlBinder> CtrlBinderPtr;
     struct HttpControllerRouterItem

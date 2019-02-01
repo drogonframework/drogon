@@ -15,7 +15,6 @@
 #include "FiltersFunction.h"
 #include "HttpSimpleControllersRouter.h"
 #include "HttpAppFrameworkImpl.h"
-#include "SpinLock.h"
 
 using namespace drogon;
 
@@ -124,12 +123,7 @@ void HttpSimpleControllersRouter::doControllerHandler(SimpleControllerRouterItem
     auto &controller = item._controller;
     if (controller)
     {
-        HttpResponsePtr responsePtr;
-        {
-            //Maybe update the _responsePtr, so we use shared_lock to protect;
-            SimpleSpinLock guard(item._mutex);
-            responsePtr = item._responsePtr;
-        }
+        HttpResponsePtr &responsePtr = item._responsePtrMap[req->getLoop()];
         if (responsePtr && (responsePtr->expiredTime() == 0 || (trantor::Date::now() < responsePtr->creationDate().after(responsePtr->expiredTime()))))
         {
             //use cached response!
@@ -154,9 +148,16 @@ void HttpSimpleControllersRouter::doControllerHandler(SimpleControllerRouterItem
                 {
                     //cache the response;
                     std::dynamic_pointer_cast<HttpResponseImpl>(resp)->makeHeaderString();
+                    auto loop = req->getLoop();
+                    if (loop->isInLoopThread())
                     {
-                        SimpleSpinLock guard(item._mutex);
-                        item._responsePtr = resp;
+                        item._responsePtrMap[loop] = resp;
+                    }
+                    else
+                    {
+                        loop->queueInLoop([loop, resp, &item]() {
+                            item._responsePtrMap[loop] = resp;
+                        });
                     }
                 }
                 if (needSetJsessionid)
@@ -186,11 +187,15 @@ void HttpSimpleControllersRouter::doControllerHandler(SimpleControllerRouterItem
     }
 }
 
-void HttpSimpleControllersRouter::init()
+void HttpSimpleControllersRouter::init(const std::vector<trantor::EventLoop *> &ioLoops)
 {
     for (auto &iter : _simpCtrlMap)
     {
         auto &item = iter.second;
         item._filters = FiltersFunction::createFilters(item._filterNames);
+        for (auto ioloop : ioLoops)
+        {
+            item._responsePtrMap[ioloop] = std::shared_ptr<HttpResponse>();
+        }
     }
 }

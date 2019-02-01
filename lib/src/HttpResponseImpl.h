@@ -40,10 +40,8 @@ class HttpResponseImpl : public HttpResponse
           _closeConnection(false),
           _leftBodyLength(0),
           _currentChunkLength(0),
-          _bodyPtr(new std::string()),
-          _httpStringMutex(new std::atomic_flag)
+          _bodyPtr(new std::string())
     {
-        _httpStringMutex->clear();
     }
     virtual HttpStatusCode statusCode() override
     {
@@ -388,7 +386,6 @@ class HttpResponseImpl : public HttpResponse
     std::shared_ptr<std::string> _fullHeaderString;
 
     mutable std::shared_ptr<std::string> _httpString;
-    mutable std::shared_ptr<std::atomic_flag> _httpStringMutex;
     mutable std::string::size_type _datePos = std::string::npos;
     mutable int64_t _httpStringDate = -1;
 

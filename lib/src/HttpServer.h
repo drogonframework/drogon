@@ -78,6 +78,14 @@ class HttpServer : trantor::NonCopyable
     {
         _server.kickoffIdleConnections(timeout);
     }
+    trantor::EventLoop *getLoop()
+    {
+        return _server.getLoop();
+    }
+    std::vector<trantor::EventLoop *> getIoLoops()
+    {
+        return _server.getIoLoops();
+    }
     void start();
 
 #ifdef USE_OPENSSL

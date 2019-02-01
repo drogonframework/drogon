@@ -23,6 +23,8 @@
 #include <trantor/utils/Logger.h>
 #include <trantor/utils/MsgBuffer.h>
 #include <trantor/net/InetAddress.h>
+#include <trantor/net/EventLoop.h>
+
 #include <unordered_map>
 #include <assert.h>
 #include <stdio.h>
@@ -40,13 +42,16 @@ class HttpRequestImpl : public HttpRequest
   public:
     friend class HttpRequestParser;
 
-    HttpRequestImpl()
+    HttpRequestImpl(trantor::EventLoop *loop)
         : _method(Invalid),
           _version(kUnknown),
           _date(trantor::Date::now()),
-          _contentLen(0)
+          _contentLen(0),
+          _loop(loop)
     {
     }
+
+    trantor::EventLoop *getLoop() { return _loop; }
 
     void setVersion(Version v)
     {
@@ -368,10 +373,11 @@ class HttpRequestImpl : public HttpRequest
     trantor::InetAddress _peer;
     trantor::InetAddress _local;
     trantor::Date _date;
-    
+
   protected:
     std::string _content;
     size_t _contentLen;
+    trantor::EventLoop *_loop;
     ContentType _contentType = CT_TEXT_PLAIN;
 };
 

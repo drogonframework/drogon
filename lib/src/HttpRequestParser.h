@@ -49,7 +49,7 @@ class HttpRequestParser
     void reset()
     {
         _state = kExpectRequestLine;
-        _request.reset(new HttpRequestImpl);
+        _request.reset(new HttpRequestImpl(_loop));
     }
 
     const HttpRequestPtr request() const
@@ -96,6 +96,8 @@ class HttpRequestParser
     bool processRequestLine(const char *begin, const char *end);
 
     HttpRequestParseState _state;
+
+    trantor::EventLoop *_loop;
     HttpRequestImplPtr _request;
 
     bool _firstRequest = true;
