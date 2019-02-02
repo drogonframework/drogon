@@ -1,6 +1,9 @@
 #include <drogon/drogon.h>
 #include <iostream>
 #include <future>
+
+using namespace drogon;
+
 int main()
 {
     trantor::Logger::setLogLevel(trantor::Logger::TRACE); 

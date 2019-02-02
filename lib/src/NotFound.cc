@@ -20,7 +20,10 @@
 #include <map>
 #include <vector>
 #include <set>
+
 using namespace std;
+using namespace drogon;
+
 std::string NotFound::genText(const HttpViewData &NotFound_view_data)
 {
 	std::stringstream NotFound_tmp_stream;

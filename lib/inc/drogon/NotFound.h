@@ -15,11 +15,11 @@
  */
 
 #include <drogon/DrTemplate.h>
-using namespace drogon;
-class NotFound : public DrTemplate<NotFound>
+
+class NotFound : public drogon::DrTemplate<NotFound>
 {
   public:
 	NotFound(){};
 	virtual ~NotFound(){};
-	virtual std::string genText(const HttpViewData &) override;
+	virtual std::string genText(const drogon::HttpViewData &) override;
 };
