@@ -318,7 +318,7 @@ void HttpAppFrameworkImpl::run()
             ioLoops.push_back(serverPtr->getLoop());
         }
 #else
-        auto loopThreadPtr = std::make_shared<EventLoopThread>("DrogonIoLoop");
+        auto loopThreadPtr = std::make_shared<EventLoopThread>("DrogonListeningLoop");
         loopThreadPtr->run();
         loopThreads.push_back(loopThreadPtr);
         auto serverPtr = std::make_shared<HttpServer>(loopThreadPtr->getLoop(),
@@ -349,6 +349,7 @@ void HttpAppFrameworkImpl::run()
         serverPtr->setConnectionCallback(std::bind(&HttpAppFrameworkImpl::onConnection, this, _1));
         serverPtr->kickoffIdleConnections(_idleConnectionTimeout);
         serverPtr->start();
+        /// Use std::promise to ensure that IO loops have been created
         std::promise<int> pro;
         auto f = pro.get_future();
         serverPtr->getLoop()->runInLoop([&pro]() {

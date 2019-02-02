@@ -12,8 +12,7 @@
  *
  */
 
-#ifndef __HEADER_DROGON_H__
-#define __HEADER_DROGON_H__
+#pragma once
 
 #include <drogon/config.h>
 
@@ -28,5 +27,3 @@
 #include <drogon/CacheMap.h>
 #include <drogon/HttpClient.h>
 #include <drogon/utils/Utilities.h>
-
-#endif
