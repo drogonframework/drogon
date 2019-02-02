@@ -190,7 +190,6 @@ std::string base64Encode(const unsigned char *bytes_to_encode, unsigned int in_l
 {
     std::string ret;
     int i = 0;
-    int j = 0;
     unsigned char char_array_3[3];
     unsigned char char_array_4[4];
 
@@ -212,7 +211,7 @@ std::string base64Encode(const unsigned char *bytes_to_encode, unsigned int in_l
 
     if (i)
     {
-        for (j = i; j < 3; j++)
+        for (int j = i; j < 3; j++)
             char_array_3[j] = '\0';
 
         char_array_4[0] = (char_array_3[0] & 0xfc) >> 2;
@@ -220,7 +219,7 @@ std::string base64Encode(const unsigned char *bytes_to_encode, unsigned int in_l
         char_array_4[2] = ((char_array_3[1] & 0x0f) << 2) + ((char_array_3[2] & 0xc0) >> 6);
         char_array_4[3] = char_array_3[2] & 0x3f;
 
-        for (j = 0; (j < i + 1); j++)
+        for (int j = 0; (j < i + 1); j++)
             ret += base64_chars[char_array_4[j]];
 
         while ((i++ < 3))
@@ -474,7 +473,6 @@ int gzipCompress(const char *data, const size_t ndata,
 {
 
     z_stream c_stream;
-    int err = 0;
 
     if (data && ndata > 0)
     {
@@ -501,6 +499,7 @@ int gzipCompress(const char *data, const size_t ndata,
             return c_stream.avail_in;
         for (;;)
         {
+            int err = 0;
             if ((err = deflate(&c_stream, Z_FINISH)) == Z_STREAM_END)
                 break;
             if (err != Z_OK)
