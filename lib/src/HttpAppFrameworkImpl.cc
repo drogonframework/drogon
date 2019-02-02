@@ -42,23 +42,19 @@ using namespace std::placeholders;
 
 static void godaemon(void)
 {
-    int fs;
-
     printf("Initializing daemon mode\n");
 
     if (getppid() != 1)
     {
-        fs = fork();
-
-        if (fs > 0)
+        pid_t pid;
+        pid = fork();
+        if (pid > 0)
             exit(0); // parent
-
-        if (fs < 0)
+        if (pid < 0)
         {
             perror("fork");
             exit(1);
         }
-
         setsid();
     }
 
@@ -69,6 +65,7 @@ static void godaemon(void)
 
     open("/dev/null", O_RDWR);
     int ret = dup(0);
+    (void)ret;
     ret = dup(0);
     (void)ret;
     umask(0);

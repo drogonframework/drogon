@@ -19,9 +19,9 @@ using namespace drogon;
 
 HttpFileUploadRequest::HttpFileUploadRequest(const std::vector<UploadFile> &files)
     : HttpRequestImpl(nullptr),
+      _boundary(genRandomString(32)),
       _files(files)
 {
-    _boundary = genRandomString(32);
     setMethod(drogon::Post);
     setVersion(drogon::HttpRequest::kHttp11);
     setContentType("multipart/form-data; boundary=" + _boundary);

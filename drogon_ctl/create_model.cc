@@ -309,7 +309,7 @@ void create_model::createModelClassFromMysql(const std::string &path, const DbCl
     std::vector<ColumnInfo> cols;
     int i = 0;
     *client << "desc " + tableName << Mode::Blocking >>
-        [&](bool isNull, const std::string &field, const std::string &type, const std::string &isNullAble, const std::string &key, const std::string &defaultVal, const std::string &extra) {
+        [&i,&cols](bool isNull, const std::string &field, const std::string &type, const std::string &isNullAble, const std::string &key, const std::string &defaultVal, const std::string &extra) {
             if (!isNull)
             {
                 ColumnInfo info;

@@ -234,7 +234,6 @@ std::string base64Decode(std::string const &encoded_string)
 {
     int in_len = encoded_string.size();
     int i = 0;
-    int j = 0;
     int in_ = 0;
     unsigned char char_array_4[4], char_array_3[3];
     std::string ret;
@@ -260,17 +259,17 @@ std::string base64Decode(std::string const &encoded_string)
 
     if (i)
     {
-        for (j = i; j < 4; j++)
+        for (int j = i; j < 4; j++)
             char_array_4[j] = 0;
 
-        for (j = 0; j < 4; j++)
+        for (int j = 0; j < 4; j++)
             char_array_4[j] = base64_chars.find(char_array_4[j]);
 
         char_array_3[0] = (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
         char_array_3[1] = ((char_array_4[1] & 0xf) << 4) + ((char_array_4[2] & 0x3c) >> 2);
         char_array_3[2] = ((char_array_4[2] & 0x3) << 6) + char_array_4[3];
 
-        for (j = 0; (j < i - 1); j++)
+        for (int j = 0; (j < i - 1); j++)
             ret += char_array_3[j];
     }
 
@@ -520,7 +519,6 @@ int gzipCompress(const char *data, const size_t ndata,
 int gzipDecompress(const char *zdata, const size_t nzdata,
                    char *data, size_t *ndata)
 {
-    int err = 0;
     z_stream d_stream = {0}; /* decompression stream */
     static char dummy_head[2] = {
         0x8 + 0x7 * 0x10,
@@ -535,9 +533,10 @@ int gzipDecompress(const char *zdata, const size_t nzdata,
     //只有设置为MAX_WBITS + 16才能在解压带header和trailer的文本
     if (inflateInit2(&d_stream, MAX_WBITS + 16) != Z_OK)
         return -1;
-    //if(inflateInit2(&d_stream, 47) != Z_OK) return -1;
+    //if(inflateInit2(&d_stream, 47) != Z_OK) return -1;  
     while (d_stream.total_out < *ndata && d_stream.total_in < nzdata)
     {
+        int err = 0;
         d_stream.avail_in = d_stream.avail_out = 1; /* force small buffers */
         if ((err = inflate(&d_stream, Z_NO_FLUSH)) == Z_STREAM_END)
             break;
@@ -572,7 +571,7 @@ std::shared_ptr<std::string> gzipDecompress(const std::shared_ptr<std::string> &
 
     auto decompressed = std::make_shared<std::string>(full_length * 2, 0);
     bool done = false;
-    int status;
+
     z_stream strm = {0};
     strm.next_in = (Bytef *)compressedData->data();
     strm.avail_in = compressedData->length();
@@ -592,7 +591,7 @@ std::shared_ptr<std::string> gzipDecompress(const std::shared_ptr<std::string> &
         strm.next_out = (Bytef *)decompressed->data() + strm.total_out;
         strm.avail_out = decompressed->length() - strm.total_out;
         // Inflate another chunk.
-        status = inflate(&strm, Z_SYNC_FLUSH);
+        int status = inflate(&strm, Z_SYNC_FLUSH);
         if (status == Z_STREAM_END)
         {
             done = true;

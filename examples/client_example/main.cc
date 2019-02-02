@@ -3,9 +3,9 @@
 #include <future>
 int main()
 {
-    trantor::Logger::setLogLevel(trantor::Logger::TRACE);
-    int count = 0;
+    trantor::Logger::setLogLevel(trantor::Logger::TRACE); 
     {
+        int count = 0;
         auto client = HttpClient::newHttpClient("http://www.baidu.com");
         auto req = HttpRequest::newHttpRequest();
         req->setMethod(drogon::Get);
@@ -14,7 +14,7 @@ int main()
 
         for (int i = 0; i < 10; i++)
         {
-            client->sendRequest(req, [&](ReqResult result, const HttpResponsePtr &response) {
+            client->sendRequest(req, [&count](ReqResult result, const HttpResponsePtr &response) {
                 std::cout << "receive response!" << std::endl;
                 //auto headers=response.
                 count++;

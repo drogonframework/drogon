@@ -15,7 +15,7 @@ class User
     const static std::string tableName;
 
     typedef int PrimaryKeyType;
-    User(const Row &r)
+    explicit User(const Row &r)
         : _userId(r["user_id"].as<std::string>()),
           _userName(r["user_name"].as<std::string>())
     {

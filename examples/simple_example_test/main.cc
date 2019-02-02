@@ -458,7 +458,7 @@ void doTest(const HttpClientPtr &client, std::promise<int> &pro)
     client->sendRequest(req, [=, &pro](ReqResult result, const HttpResponsePtr &resp) {
         if (result == ReqResult::Ok)
         {
-            if (resp->getBody().length() == 51822)
+            if (resp->getBody().length() == 52594)
             {
                 outputGood(req);
                 auto lastModified = resp->getHeader("last-modified");
@@ -563,7 +563,7 @@ void doTest(const HttpClientPtr &client, std::promise<int> &pro)
     client->sendRequest(req, [=](ReqResult result, const HttpResponsePtr &resp) {
         if (result == ReqResult::Ok)
         {
-            if (resp->getBody().length() == 51822)
+            if (resp->getBody().length() == 52594)
             {
                 outputGood(req);
             }

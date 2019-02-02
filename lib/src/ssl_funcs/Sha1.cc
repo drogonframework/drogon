@@ -23,13 +23,12 @@ static unsigned int FromBigEndian(unsigned int v)
 
 static void WriteBigEndian64(unsigned char *p, unsigned int v)
 {
-	unsigned char t;
 	memset(p, 0, 8);
 	memcpy(p, &v, 4);
 	int i = 0;
 	for (i = 0; i < 4; i++)
 	{
-		t = p[i];
+		unsigned char t = p[i];
 		p[i] = p[7 - i];
 		p[7 - i] = t;
 	}
