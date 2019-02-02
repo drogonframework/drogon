@@ -5,6 +5,8 @@
 #include "../lib/src/ssl_funcs/Sha1.h"
 #endif
 #include <stdio.h>
+#include <string.h>
+
 int main()
 {
 	unsigned char in[] = "1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890";
