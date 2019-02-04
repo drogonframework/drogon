@@ -25,7 +25,7 @@ class HttpFileUploadRequest : public HttpRequestImpl
   public:
     const std::string &boundary() const { return _boundary; }
     const std::vector<UploadFile> &files() const { return _files; }
-    HttpFileUploadRequest(const std::vector<UploadFile> &files);
+    explicit HttpFileUploadRequest(const std::vector<UploadFile> &files);
 
   private:
     std::string _boundary;

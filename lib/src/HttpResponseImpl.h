@@ -136,7 +136,7 @@ class HttpResponseImpl : public HttpResponse
         _headers[std::move(field)] = std::move(value);
     }
 
-    virtual void addHeader(const char *start, const char *colon, const char *end) override
+    void addHeader(const char *start, const char *colon, const char *end)
     {
         _fullHeaderString.reset();
         std::string field(start, colon);
@@ -260,9 +260,9 @@ class HttpResponseImpl : public HttpResponse
         _bodyPtr = std::make_shared<std::string>(std::move(body));
     }
 
-    virtual void redirect(const std::string &url) override
+    void redirect(const std::string &url)
     {
-        _headers["Location"] = url;
+        _headers["location"] = url;
     }
     std::shared_ptr<std::string> renderToString() const;
 

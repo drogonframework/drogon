@@ -45,6 +45,7 @@ class Cookie
     const std::string &path() const { return _path; }
     const std::string &key() const { return _key; }
     const std::string &value() const { return _value; }
+    operator bool() const { return (!_key.empty()) && (!_value.empty()); }
 
   private:
     trantor::Date _expiresDate;

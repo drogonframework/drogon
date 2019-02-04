@@ -67,11 +67,11 @@ int MultiPartParser::parse(const HttpRequestPtr &req)
     return parse(content, boundary);
 }
 
-int MultiPartParser::parse(const HttpResponsePtr &resp)
-{
-    /// TODO:
-    return 0;
-}
+// int MultiPartParser::parse(const HttpResponsePtr &resp)
+// {
+//     /// TODO:
+//     return 0;
+// }
 
 int MultiPartParser::parseEntity(const char *begin, const char *end)
 {

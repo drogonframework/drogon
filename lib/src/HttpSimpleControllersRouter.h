@@ -35,7 +35,7 @@ class HttpControllersRouter;
 class HttpSimpleControllersRouter : public trantor::NonCopyable
 {
   public:
-    HttpSimpleControllersRouter(HttpControllersRouter &httpCtrlRouter)
+    explicit HttpSimpleControllersRouter(HttpControllersRouter &httpCtrlRouter)
         : _httpCtrlsRouter(httpCtrlRouter) {}
     void registerHttpSimpleController(const std::string &pathName,
                                       const std::string &ctrlName,

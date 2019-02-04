@@ -42,7 +42,7 @@ class HttpRequestImpl : public HttpRequest
   public:
     friend class HttpRequestParser;
 
-    HttpRequestImpl(trantor::EventLoop *loop)
+    explicit HttpRequestImpl(trantor::EventLoop *loop)
         : _method(Invalid),
           _version(kUnknown),
           _date(trantor::Date::now()),

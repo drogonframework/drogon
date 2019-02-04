@@ -71,6 +71,7 @@ class HttpFile
     std::string _fileContent;
 };
 
+/// A parser class which help the user to get the files and the parameters in the multipart format request.
 class MultiPartParser
 {
   public:
@@ -85,8 +86,8 @@ class MultiPartParser
     /// Parse the http request stream to get files and parameters.
     int parse(const HttpRequestPtr &req);
 
-    /// Parse the http response stream to get files and parameters.
-    int parse(const HttpResponsePtr &req);
+    /// Parse the http response stream to get files and parameters. 
+    /// int parse(const HttpResponsePtr &req);
 
   protected:
     std::vector<HttpFile> _files;

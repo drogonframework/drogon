@@ -36,7 +36,7 @@ class HttpRequestParser
         kGotAll,
     };
 
-    HttpRequestParser(const trantor::TcpConnectionPtr &connPtr);
+    explicit HttpRequestParser(const trantor::TcpConnectionPtr &connPtr);
 
     // return false if any error
     bool parseRequest(MsgBuffer *buf);
