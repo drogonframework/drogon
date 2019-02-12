@@ -24,19 +24,19 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-typedef std::unordered_map<std::string, any> ViewDataMap;
 namespace drogon
 {
+
 /// This class represents the data set displayed in views.
 class HttpViewData
 {
   public:
     /// The function template is used to get an item in the data set by the @param key.
     template <typename T>
-    const T get(const std::string &key, T &&nullVal = T()) const
+    const T &get(const std::string &key, T &&nullVal = T()) const
     {
-        auto it = viewData_.find(key);
-        if (it != viewData_.end())
+        auto it = _viewData.find(key);
+        if (it != _viewData.end())
         {
             try
             {
@@ -53,11 +53,11 @@ class HttpViewData
     /// Insert an item identified by the @param key into the data set;
     void insert(const std::string &key, any &&obj)
     {
-        viewData_[key] = std::move(obj);
+        _viewData[key] = std::move(obj);
     }
     void insert(const std::string &key, const any &obj)
     {
-        viewData_[key] = obj;
+        _viewData[key] = obj;
     }
 
     /// Insert an item identified by the @param key into the data set; The item will be converted to a string.
@@ -66,7 +66,7 @@ class HttpViewData
     {
         std::stringstream ss;
         ss << val;
-        viewData_[key] = ss.str();
+        _viewData[key] = ss.str();
     }
 
     /// Insert a formated string identified by the @param key.
@@ -110,17 +110,18 @@ class HttpViewData
             }
         }
         va_end(ap);
-        viewData_[key] = std::move(strBuffer);
+        _viewData[key] = std::move(strBuffer);
     }
 
     /// Get the 'any' object by the @param key.
     any &operator[](const std::string &key) const
     {
-        return viewData_[key];
+        return _viewData[key];
     }
 
   protected:
-    mutable ViewDataMap viewData_;
+    typedef std::unordered_map<std::string, any> ViewDataMap;
+    mutable ViewDataMap _viewData;
 };
 
 } // namespace drogon

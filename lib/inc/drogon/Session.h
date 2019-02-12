@@ -20,48 +20,47 @@
 #include <thread>
 #include <drogon/config.h>
 
-typedef std::map<std::string, any> SessionMap;
 namespace drogon
 {
+    
 class Session
 {
   public:
     template <typename T>
-    T get(const std::string &key) const
+    const T &get(const std::string &key, T &&nullVal = T()) const
     {
-        std::lock_guard<std::mutex> lck(mutex_);
-        auto it = sessionMap_.find(key);
-        if (it != sessionMap_.end())
+        std::lock_guard<std::mutex> lck(_mutex);
+        auto it = _sessionMap.find(key);
+        if (it != _sessionMap.end())
         {
             return *(any_cast<T>(&(it->second)));
         }
-        T tmp;
-        return tmp;
+        return nullVal;
     };
     any &operator[](const std::string &key)
     {
-        std::lock_guard<std::mutex> lck(mutex_);
-        return sessionMap_[key];
+        std::lock_guard<std::mutex> lck(_mutex);
+        return _sessionMap[key];
     };
     void insert(const std::string &key, const any &obj)
     {
-        std::lock_guard<std::mutex> lck(mutex_);
-        sessionMap_[key] = obj;
+        std::lock_guard<std::mutex> lck(_mutex);
+        _sessionMap[key] = obj;
     };
     void insert(const std::string &key, any &&obj)
     {
-        std::lock_guard<std::mutex> lck(mutex_);
-        sessionMap_[key] = std::move(obj);
+        std::lock_guard<std::mutex> lck(_mutex);
+        _sessionMap[key] = std::move(obj);
     }
     void erase(const std::string &key)
     {
-        std::lock_guard<std::mutex> lck(mutex_);
-        sessionMap_.erase(key);
+        std::lock_guard<std::mutex> lck(_mutex);
+        _sessionMap.erase(key);
     }
     bool find(const std::string &key)
     {
-        std::lock_guard<std::mutex> lck(mutex_);
-        if (sessionMap_.find(key) == sessionMap_.end())
+        std::lock_guard<std::mutex> lck(_mutex);
+        if (_sessionMap.find(key) == _sessionMap.end())
         {
             return false;
         }
@@ -69,14 +68,16 @@ class Session
     }
     void clear()
     {
-        std::lock_guard<std::mutex> lck(mutex_);
-        sessionMap_.clear();
+        std::lock_guard<std::mutex> lck(_mutex);
+        _sessionMap.clear();
     }
 
   protected:
-    SessionMap sessionMap_;
-    int timeoutInterval_;
-    mutable std::mutex mutex_;
+    typedef std::map<std::string, any> SessionMap;
+    SessionMap _sessionMap;
+    mutable std::mutex _mutex;
 };
+
 typedef std::shared_ptr<Session> SessionPtr;
+
 } // namespace drogon
