@@ -22,6 +22,7 @@
 
 namespace drogon
 {
+
 class HttpViewBase : virtual public DrObjectBase
 {
   public:
@@ -33,4 +34,5 @@ class HttpViewBase : virtual public DrObjectBase
   protected:
     virtual HttpResponsePtr genHttpResponse(const HttpViewData &) = 0;
 };
+
 } // namespace drogon

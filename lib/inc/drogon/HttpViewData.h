@@ -27,9 +27,11 @@
 typedef std::unordered_map<std::string, any> ViewDataMap;
 namespace drogon
 {
+/// This class represents the data set displayed in views.
 class HttpViewData
 {
   public:
+    /// The function template is used to get an item in the data set by the @param key.
     template <typename T>
     const T get(const std::string &key, T &&nullVal = T()) const
     {
@@ -47,6 +49,8 @@ class HttpViewData
         }
         return nullVal;
     }
+
+    /// Insert an item identified by the @param key into the data set;
     void insert(const std::string &key, any &&obj)
     {
         viewData_[key] = std::move(obj);
@@ -55,6 +59,8 @@ class HttpViewData
     {
         viewData_[key] = obj;
     }
+
+    /// Insert an item identified by the @param key into the data set; The item will be converted to a string.
     template <typename T>
     void insertAsString(const std::string &key, T &&val)
     {
@@ -62,6 +68,8 @@ class HttpViewData
         ss << val;
         viewData_[key] = ss.str();
     }
+
+    /// Insert a formated string identified by the @param key.
     void insertFormattedString(const std::string &key,
                                const char *format, ...)
     {
@@ -105,6 +113,7 @@ class HttpViewData
         viewData_[key] = std::move(strBuffer);
     }
 
+    /// Get the 'any' object by the @param key.
     any &operator[](const std::string &key) const
     {
         return viewData_[key];
@@ -113,4 +122,5 @@ class HttpViewData
   protected:
     mutable ViewDataMap viewData_;
 };
+
 } // namespace drogon

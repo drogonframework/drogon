@@ -360,4 +360,5 @@ class CacheMap
         }
     }
 };
+
 } // namespace drogon

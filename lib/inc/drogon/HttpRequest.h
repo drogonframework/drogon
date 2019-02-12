@@ -111,10 +111,25 @@ class HttpRequest
     virtual void setContentTypeCodeAndCharacterSet(ContentType type, const std::string &charSet = "utf-8") = 0;
     virtual ContentType getContentTypeCode() = 0;
 
-    /// Create a request object.
+    /// The following methods are a series of factory methods that help users create request objects.
+
+    /// Create a normal request with http method Get and version Http1.1.
     static HttpRequestPtr newHttpRequest();
+    /// Create a http request with:
+    /// Method: Get
+    /// Version: Http1.1
+    /// Content type: application/json, the @param data will be serialized into the content of the request.
     static HttpRequestPtr newHttpJsonRequest(const Json::Value &data);
+    /// Create a http request with:
+    /// Method: Post
+    /// Version: Http1.1
+    /// Content type: application/x-www-form-urlencoded
     static HttpRequestPtr newHttpFormPostRequest();
+    /// Create a http file upload request with:
+    /// Method: Post
+    /// Version: Http1.1
+    /// Content type: multipart/form-data
+    /// The @param files represents pload files which will be transferred to the server via the multipart/form-data format
     static HttpRequestPtr newFileUploadRequest(const std::vector<UploadFile> &files);
     virtual ~HttpRequest() {}
 };

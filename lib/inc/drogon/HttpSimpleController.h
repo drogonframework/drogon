@@ -30,6 +30,7 @@
     }
 namespace drogon
 {
+    
 class HttpSimpleControllerBase : public virtual DrObjectBase
 {
   public:
