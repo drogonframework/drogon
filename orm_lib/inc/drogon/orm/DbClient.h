@@ -75,19 +75,22 @@ class DbClient : public trantor::NonCopyable
     static std::shared_ptr<DbClient> newSqlite3Client(const std::string &connInfo, const size_t connNum);
 #endif
     /// Async and nonblocking method
-    template <
-        typename FUNCTION1,
-        typename FUNCTION2,
-        typename... Arguments>
+    /**
+     * FUNCTION1 is usually the ResultCallback type;
+     * FUNCTION2 is usually the ExceptionCallback type;
+     */
+    template <typename FUNCTION1,
+              typename FUNCTION2,
+              typename... Arguments>
     void execSqlAsync(const std::string &sql,
-                      FUNCTION1 rCallback,
-                      FUNCTION2 exceptCallback,
+                      FUNCTION1 &&rCallback,
+                      FUNCTION2 &&exceptCallback,
                       Arguments &&... args) noexcept
     {
         auto binder = *this << sql;
         std::vector<int> v = {(binder << std::forward<Arguments>(args), 0)...};
-        binder >> rCallback;
-        binder >> exceptCallback;
+        binder >> std::forward<FUNCTION1>(rCallback);
+        binder >> std::forward<FUNCTION2>(exceptCallback);
     }
 
     /// Async and nonblocking method

@@ -107,5 +107,18 @@ int main()
                                 LOG_DEBUG << "async nonblocking except callback:" << e.base().what();
                             },
                             1);
+    clientPtr->execSqlAsync("select * from users where org_name=$1",
+                            [](const Result &r) {
+                                std::cout << r.size() << " rows selected!" << std::endl;
+                                int i = 0;
+                                for (auto row : r)
+                                {
+                                    std::cout << i++ << ": user name is " << row["user_name"].as<std::string>() << std::endl;
+                                }
+                            },
+                            [](const DrogonDbException &e) {
+                                std::cerr << "error:" << e.base().what() << std::endl;
+                            },
+                            "default");
     getchar();
 }
