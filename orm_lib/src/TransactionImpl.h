@@ -57,6 +57,7 @@ class TransactionImpl : public Transaction, public std::enable_shared_from_this<
         std::vector<int> _format;
         QueryCallback _cb;
         ExceptPtrCallback _exceptCb;
+        std::function<void()> _idleCb;
     };
     std::list<SqlCmd> _sqlCmdBuffer;
     //   std::mutex _bufferMutex;

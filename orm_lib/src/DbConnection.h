@@ -78,7 +78,7 @@ class DbConnection : public trantor::NonCopyable
   protected:
     QueryCallback _cb;
     trantor::EventLoop *_loop;
-    std::function<void()> _idleCb;
+    std::shared_ptr<std::function<void()>> _idleCbPtr;
     ConnectStatus _status = ConnectStatus_None;
     DbConnectionCallback _closeCb = [](const DbConnectionPtr &) {};
     DbConnectionCallback _okCb = [](const DbConnectionPtr &) {};

@@ -16,6 +16,7 @@
 #include "PostgreSQLResultImpl.h"
 #include <trantor/utils/Logger.h>
 #include <drogon/orm/Exception.h>
+#include <memory>
 #include <stdio.h>
 
 using namespace drogon::orm;
@@ -166,14 +167,55 @@ void PgConnection::execSql(std::string &&sql,
     assert(!sql.empty());
     _sql = std::move(sql);
     _cb = std::move(rcb);
-    _idleCb = std::move(idleCb);
+    _idleCbPtr = std::make_shared<std::function<void()>>(std::move(idleCb));
     _isWorking = true;
     _exceptCb = std::move(exceptCallback);
     auto thisPtr = shared_from_this();
-    _loop->runInLoop([thisPtr, paraNum = std::move(paraNum), parameters = std::move(parameters), length = std::move(length), format = std::move(format)]() {
+    if (!_loop->isInLoopThread())
+    {
+        _loop->queueInLoop([thisPtr, paraNum = std::move(paraNum), parameters = std::move(parameters), length = std::move(length), format = std::move(format)]() {
+            if (PQsendQueryParams(
+                    thisPtr->_connPtr.get(),
+                    thisPtr->_sql.c_str(),
+                    paraNum,
+                    NULL,
+                    parameters.data(),
+                    length.data(),
+                    format.data(),
+                    0) == 0)
+            {
+                LOG_ERROR << "send query error: " << PQerrorMessage(thisPtr->_connPtr.get());
+                if (thisPtr->_isWorking)
+                {
+                    thisPtr->_isWorking = false;
+                    try
+                    {
+                        throw Failure(PQerrorMessage(thisPtr->_connPtr.get()));
+                    }
+                    catch (...)
+                    {
+                        auto exceptPtr = std::current_exception();
+                        thisPtr->_exceptCb(exceptPtr);
+                        thisPtr->_exceptCb = decltype(_exceptCb)();
+                    }
+                    thisPtr->_cb = decltype(_cb)();
+                    if (thisPtr->_idleCbPtr)
+                    {
+                        auto idle = std::move(thisPtr->_idleCbPtr);
+                        thisPtr->_idleCbPtr.reset();
+                        (*idle)();
+                    }
+                }
+                return;
+            }
+            thisPtr->pgPoll();
+        });
+    }
+    else
+    {
         if (PQsendQueryParams(
-                thisPtr->_connPtr.get(),
-                thisPtr->_sql.c_str(),
+                _connPtr.get(),
+                _sql.c_str(),
                 paraNum,
                 NULL,
                 parameters.data(),
@@ -182,9 +224,31 @@ void PgConnection::execSql(std::string &&sql,
                 0) == 0)
         {
             LOG_ERROR << "send query error: " << PQerrorMessage(thisPtr->_connPtr.get());
+            if (_isWorking)
+            {
+                _isWorking = false;
+                try
+                {
+                    throw Failure(PQerrorMessage(_connPtr.get()));
+                }
+                catch (...)
+                {
+                    auto exceptPtr = std::current_exception();
+                    _exceptCb(exceptPtr);
+                    _exceptCb = decltype(_exceptCb)();
+                }
+                _cb = decltype(_cb)();
+                if (_idleCbPtr)
+                {
+                    auto idle = std::move(_idleCbPtr);
+                    _idleCbPtr.reset();
+                    (*idle)();
+                }
+            }
+            return;
         }
         thisPtr->pgPoll();
-    });
+    }
 }
 
 void PgConnection::handleRead()
@@ -209,10 +273,11 @@ void PgConnection::handleRead()
                 _exceptCb = decltype(_exceptCb)();
             }
             _cb = decltype(_cb)();
-            if (_idleCb)
+            if (_idleCbPtr)
             {
-                _idleCb();
-                _idleCb = decltype(_idleCb)();
+                auto idle = std::move(_idleCbPtr);
+                _idleCbPtr.reset();
+                (*idle)();
             }
         }
         handleClosed();
@@ -225,7 +290,6 @@ void PgConnection::handleRead()
     }
     if (_channel.isWriting())
         _channel.disableWriting();
-    // got query results?
     while ((res = std::shared_ptr<PGresult>(PQgetResult(_connPtr.get()), [](PGresult *p) {
                 PQclear(p);
             })))
@@ -236,18 +300,15 @@ void PgConnection::handleRead()
             LOG_WARN << PQerrorMessage(_connPtr.get());
             if (_isWorking)
             {
+                try
                 {
-                    try
-                    {
-                        //TODO: exception type
-                        throw SqlError(PQerrorMessage(_connPtr.get()),
-                                       _sql);
-                    }
-                    catch (...)
-                    {
-                        _exceptCb(std::current_exception());
-                        _exceptCb = decltype(_exceptCb)();
-                    }
+                    //TODO: exception type
+                    throw SqlError(PQerrorMessage(_connPtr.get()), _sql);
+                }
+                catch (...)
+                {
+                    _exceptCb(std::current_exception());
+                    _exceptCb = decltype(_exceptCb)();
                 }
                 _cb = decltype(_cb)();
             }
@@ -266,10 +327,11 @@ void PgConnection::handleRead()
     if (_isWorking)
     {
         _isWorking = false;
-        if (_idleCb)
+        if (_idleCbPtr)
         {
-            _idleCb();
-            _idleCb = decltype(_idleCb)();
+            auto idle = std::move(_idleCbPtr);
+            _idleCbPtr.reset();
+            (*idle)();
         }
     }
 }

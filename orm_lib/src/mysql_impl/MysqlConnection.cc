@@ -311,7 +311,7 @@ void MysqlConnection::execSql(std::string &&sql,
     assert(!sql.empty());
 
     _cb = std::move(rcb);
-    _idleCb = std::move(idleCb);
+    _idleCbPtr = std::make_shared<std::function<void()>>(std ::move(idleCb));
     _isWorking = true;
     _exceptCb = std::move(exceptCallback);
     _sql.clear();
@@ -431,10 +431,11 @@ void MysqlConnection::outputError()
 
         _cb = decltype(_cb)();
         _isWorking = false;
-        if (_idleCb)
+        if (_idleCbPtr)
         {
-            _idleCb();
-            _idleCb = decltype(_idleCb)();
+            auto idle = std::move(_idleCbPtr);
+            _idleCbPtr.reset();
+            (*idle)();
         }
     }
 }
@@ -451,7 +452,11 @@ void MysqlConnection::getResult(MYSQL_RES *res)
         _cb = decltype(_cb)();
         _exceptCb = decltype(_exceptCb)();
         _isWorking = false;
-        _idleCb();
-        _idleCb = decltype(_idleCb)();
+        if (_idleCbPtr)
+        {
+            auto idle = std::move(_idleCbPtr);
+            _idleCbPtr.reset();
+            (*idle)();
+        }
     }
 }

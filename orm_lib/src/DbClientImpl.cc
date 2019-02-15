@@ -274,19 +274,13 @@ void DbClientImpl::handleNewTask(const DbConnectionPtr &connPtr)
             {
                 _busyConnections.insert(connPtr); //For new connections, this sentence is necessary
                 auto &cmd = _sqlCmdBuffer.front();
-                connPtr->loop()->queueInLoop([connPtr, cmd, this]() {
-                    execSql(connPtr, std::move(cmd->_sql), cmd->_paraNum, std::move(cmd->_parameters), std::move(cmd->_length), std::move(cmd->_format), std::move(cmd->_cb), std::move(cmd->_exceptCb));
-                });
+                execSql(connPtr, std::move(cmd->_sql), cmd->_paraNum, std::move(cmd->_parameters), std::move(cmd->_length), std::move(cmd->_format), std::move(cmd->_cb), std::move(cmd->_exceptCb));
                 _sqlCmdBuffer.pop_front();
                 return;
             }
-        }
-        //Idle connection
-        connPtr->loop()->queueInLoop([connPtr, this]() {
-            std::lock_guard<std::mutex> guard(_connectionsMutex);
             _busyConnections.erase(connPtr);
             _readyConnections.insert(connPtr);
-        });
+        }
     }
 }
 

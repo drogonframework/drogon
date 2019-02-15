@@ -150,13 +150,15 @@ void TransactionImpl::rollback()
             SqlCmd cmd;
             cmd._sql = "rollback";
             cmd._paraNum = 0;
-            cmd._cb = [clearupCb](const Result &r) {
+            cmd._cb = [](const Result &r) {
                 LOG_TRACE << "Transaction roll back!";
-                clearupCb();
+                //clearupCb();
             };
-            cmd._exceptCb = [clearupCb](const std::exception_ptr &ePtr) {
-                clearupCb();
+            cmd._exceptCb = [](const std::exception_ptr &ePtr) {
+                //clearupCb();
+                LOG_ERROR << "Transaction rool back error";
             };
+            cmd._idleCb = clearupCb;
             //Rollback cmd should be executed firstly, so we push it in front of the list
             thisPtr->_sqlCmdBuffer.push_front(std::move(cmd));
             return;
@@ -169,14 +171,16 @@ void TransactionImpl::rollback()
                       std::vector<const char *>(),
                       std::vector<int>(),
                       std::vector<int>(),
-                      [clearupCb](const Result &r) {
+                      [](const Result &r) {
                           LOG_TRACE << "Transaction roll back!";
-                          clearupCb();
+                          //clearupCb();
                       },
-                      [clearupCb](const std::exception_ptr &ePtr) {
-                          clearupCb();
+                      [](const std::exception_ptr &ePtr) {
+                          //clearupCb();
+                          LOG_ERROR << "Transaction rool back error";
                       },
-                      [thisPtr]() {
+                      [thisPtr, clearupCb]() {
+                          clearupCb();
                           thisPtr->execNewTask();
                       });
     });
@@ -204,11 +208,14 @@ void TransactionImpl::execNewTask()
                               std::move(cmd._format),
                               std::move(cmd._cb),
                               [cmd, thisPtr](const std::exception_ptr &ePtr) {
-                                  thisPtr->rollback();
+                                  if (!cmd._idleCb)
+                                      thisPtr->rollback();
                                   if (cmd._exceptCb)
                                       cmd._exceptCb(ePtr);
                               },
-                              [thisPtr]() {
+                              [cmd,thisPtr]() {
+                                  if(cmd._idleCb)
+                                      cmd._idleCb();
                                   thisPtr->execNewTask();
                               });
             });
