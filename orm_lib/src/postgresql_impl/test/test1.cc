@@ -70,18 +70,14 @@ int main()
     // } >> [](const drogon::orm::DrogonDbException &e) {
     //     LOG_DEBUG << "except callback:" << e.base().what();
     // };
-    // client.execSqlAsync("",
-    //                     [](const drogon::orm::Result &r) {},
-    //                     [](const drogon::orm::DrogonDbException &e) {
-    //                         LOG_DEBUG << "async nonblocking except callback:" << e.base().what();
-    //                     });
+
     // client.execSqlAsync("",
     //                     [](const drogon::orm::Result &r) {},
     //                     [](const drogon::orm::DrogonDbException &e) {
     //                         LOG_DEBUG << "async blocking except callback:" << e.base().what();
     //                     },
     //                     true);
-    auto f = clientPtr->execSqlAsync("select * from users limit 5");
+    auto f = clientPtr->execSqlAsyncFuture("select * from users where user_uuid > $1 limit $2", 100, "5");
     try
     {
         auto r = f.get();
@@ -103,5 +99,13 @@ int main()
     // {
     //     std::cout<< e.base().what()<<std::endl;
     // };
+    clientPtr->execSqlAsync("select * from users where user_uuid=$1;",
+                            [](const drogon::orm::Result &r) {
+                                LOG_DEBUG << "row count:" << r.size();
+                            },
+                            [](const drogon::orm::DrogonDbException &e) {
+                                LOG_DEBUG << "async nonblocking except callback:" << e.base().what();
+                            },
+                            1);
     getchar();
 }
