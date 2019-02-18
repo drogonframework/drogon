@@ -257,30 +257,37 @@ std::shared_ptr<Transaction> DbClientImpl::newTransaction(const std::function<vo
 
 void DbClientImpl::handleNewTask(const DbConnectionPtr &connPtr)
 {
-    std::lock_guard<std::mutex> guard(_connectionsMutex);
-    if (_transWaitNum > 0)
     {
-        //Prioritize the needs of the transaction
-        _busyConnections.erase(connPtr);
-        _readyConnections.insert(connPtr);
-        _condConnectionReady.notify_one();
-    }
-    else
-    {
-        //Then check if there are some sql queries in the buffer
+        std::lock_guard<std::mutex> guard(_connectionsMutex);
+        if (_transWaitNum > 0)
         {
-            std::lock_guard<std::mutex> guard(_bufferMutex);
-            if (!_sqlCmdBuffer.empty())
-            {
-                _busyConnections.insert(connPtr); //For new connections, this sentence is necessary
-                auto &cmd = _sqlCmdBuffer.front();
-                execSql(connPtr, std::move(cmd->_sql), cmd->_paraNum, std::move(cmd->_parameters), std::move(cmd->_length), std::move(cmd->_format), std::move(cmd->_cb), std::move(cmd->_exceptCb));
-                _sqlCmdBuffer.pop_front();
-                return;
-            }
+            //Prioritize the needs of the transaction
             _busyConnections.erase(connPtr);
             _readyConnections.insert(connPtr);
+            _condConnectionReady.notify_one();
+            return;
         }
+    }
+    //Then check if there are some sql queries in the buffer
+    std::shared_ptr<SqlCmd> cmd;
+    {
+        std::lock_guard<std::mutex> guard(_bufferMutex);
+        if (!_sqlCmdBuffer.empty())
+        {
+            cmd = _sqlCmdBuffer.front();
+            _sqlCmdBuffer.pop_front();
+        }
+    }
+    if (cmd)
+    {
+        execSql(connPtr, std::move(cmd->_sql), cmd->_paraNum, std::move(cmd->_parameters), std::move(cmd->_length), std::move(cmd->_format), std::move(cmd->_cb), std::move(cmd->_exceptCb));
+        return;
+    }
+    //Connection is idle, put it into the _readyConnections set;
+    {
+        std::lock_guard<std::mutex> guard(_connectionsMutex);
+        _busyConnections.erase(connPtr);
+        _readyConnections.insert(connPtr);
     }
 }
 
@@ -344,6 +351,10 @@ DbConnectionPtr DbClientImpl::newConnection(trantor::EventLoop *loop)
         auto thisPtr = weakPtr.lock();
         if (!thisPtr)
             return;
+        {
+            std::lock_guard<std::mutex> guard(thisPtr->_connectionsMutex);
+            thisPtr->_busyConnections.insert(okConnPtr); //For new connections, this sentence is necessary
+        }
         thisPtr->handleNewTask(okConnPtr);
     });
     //std::cout<<"newConn end"<<connPtr<<std::endl;
