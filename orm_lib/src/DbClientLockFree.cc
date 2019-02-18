@@ -46,11 +46,15 @@ DbClientLockFree::DbClientLockFree(const std::string &connInfo, trantor::EventLo
     LOG_TRACE << "type=" << (int)type;
     if (type == ClientType::PostgreSQL)
     {
-        newConnection();
+        _loop->runInLoop([this](){
+            _connectionHolder=newConnection();
+        });
     }
     else if (type == ClientType::Mysql)
     {
-        newConnection();
+        _loop->runInLoop([this](){
+            _connectionHolder=newConnection();
+        });
     }
     else
     {
@@ -207,7 +211,7 @@ DbConnectionPtr DbClientLockFree::newConnection()
             auto thisPtr = weakPtr.lock();
             if (!thisPtr)
                 return;
-            thisPtr->newConnection();
+            thisPtr->_connectionHolder=thisPtr->newConnection();
         });
     });
     connPtr->setOkCallback([weakPtr](const DbConnectionPtr &okConnPtr) {

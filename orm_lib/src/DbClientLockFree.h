@@ -60,6 +60,7 @@ class DbClientLockFree : public DbClient, public std::enable_shared_from_this<Db
     DbConnectionPtr newConnection();
 
     DbConnectionPtr _connection;
+    DbConnectionPtr _connectionHolder;
 
     struct SqlCmd
     {
