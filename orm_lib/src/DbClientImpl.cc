@@ -44,7 +44,7 @@ using namespace drogon::orm;
 DbClientImpl::DbClientImpl(const std::string &connInfo, const size_t connNum, ClientType type)
     : _connInfo(connInfo),
       _connectNum(connNum),
-      _loops(type == ClientType::Sqlite3 ? 1 : (connNum / 100 > 0 ? connNum / 100 : 1), "DbLoop")
+      _loops(type == ClientType::Sqlite3 ? 1 : (connNum < std::thread::hardware_concurrency() ? connNum : std::thread::hardware_concurrency()), "DbLoop")
 {
     _type = type;
     LOG_TRACE << "type=" << (int)type;
