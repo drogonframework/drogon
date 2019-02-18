@@ -15,6 +15,9 @@
 #include "HttpAppFrameworkImpl.h"
 #include "ConfigLoader.h"
 #include "HttpServer.h"
+#ifdef USE_ORM
+#include "../../orm_lib/src/DbClientLockFree.h"
+#endif
 #include <drogon/HttpTypes.h>
 #include <drogon/utils/Utilities.h>
 #include <drogon/DrClassMap.h>
@@ -361,6 +364,10 @@ void HttpAppFrameworkImpl::run()
         servers.push_back(serverPtr);
 #endif
     }
+#if USE_ORM
+    // Create fast db clients for every io loop
+    createFastDbClient(ioLoops);
+#endif
     _httpCtrlsRouter.init(ioLoops);
     _httpSimpleCtrlsRouter.init(ioLoops);
     _websockCtrlsRouter.init();
@@ -395,7 +402,25 @@ void HttpAppFrameworkImpl::run()
     _responseCachingMap = std::unique_ptr<CacheMap<std::string, HttpResponsePtr>>(new CacheMap<std::string, HttpResponsePtr>(loop(), 1.0, 4, 50)); //Max timeout up to about 70 days;
     loop()->loop();
 }
-
+#if USE_ORM
+void HttpAppFrameworkImpl::createFastDbClient(const std::vector<trantor::EventLoop *> &ioloops)
+{
+    for (auto &iter : _dbClientsMap)
+    {
+        for (auto *loop : ioloops)
+        {
+            if (iter.second->type() == drogon::orm::ClientType::Sqlite3)
+            {
+                _dbFastClientsMap[iter.first][loop] = iter.second;
+            }
+            if (iter.second->type() == drogon::orm::ClientType::PostgreSQL || iter.second->type() == drogon::orm::ClientType::Mysql)
+            {
+                _dbFastClientsMap[iter.first][loop] = std::shared_ptr<drogon::orm::DbClient>(new drogon::orm::DbClientLockFree(iter.second->connectionInfo(), loop, iter.second->type()));
+            }
+        }
+    }
+}
+#endif
 void HttpAppFrameworkImpl::onWebsockDisconnect(const WebSocketConnectionPtr &wsConnPtr)
 {
     auto wsConnImplPtr = std::dynamic_pointer_cast<WebSocketConnectionImpl>(wsConnPtr);
@@ -775,7 +800,10 @@ orm::DbClientPtr HttpAppFrameworkImpl::getDbClient(const std::string &name)
 {
     return _dbClientsMap[name];
 }
-
+orm::DbClientPtr HttpAppFrameworkImpl::getFastDbClient(const std::string &name)
+{
+    return _dbFastClientsMap[name][trantor::EventLoop::getEventLoopOfCurrentThread()];
+}
 void HttpAppFrameworkImpl::createDbClient(const std::string &dbType,
                                           const std::string &host,
                                           const u_short port,

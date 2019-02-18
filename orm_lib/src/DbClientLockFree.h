@@ -1,6 +1,6 @@
 /**
  *
- *  DbClientImpl.h
+ *  DbClientLockFree.h
  *  An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
@@ -30,11 +30,11 @@ namespace drogon
 namespace orm
 {
 
-class DbClientImpl : public DbClient, public std::enable_shared_from_this<DbClientImpl>
+class DbClientLockFree : public DbClient, public std::enable_shared_from_this<DbClientLockFree>
 {
   public:
-    DbClientImpl(const std::string &connInfo, const size_t connNum, ClientType type);
-    virtual ~DbClientImpl() noexcept;
+    DbClientLockFree(const std::string &connInfo, trantor::EventLoop *loop, ClientType type);
+    virtual ~DbClientLockFree() noexcept;
     virtual void execSql(std::string &&sql,
                          size_t paraNum,
                          std::vector<const char *> &&parameters,
@@ -45,9 +45,8 @@ class DbClientImpl : public DbClient, public std::enable_shared_from_this<DbClie
     virtual std::shared_ptr<Transaction> newTransaction(const std::function<void(bool)> &commitCallback = std::function<void(bool)>()) override;
 
   private:
-    size_t _connectNum;
-    trantor::EventLoopThreadPool _loops;
-    std::shared_ptr<SharedMutex> _sharedMutexPtr;
+    std::string _connInfo;
+    trantor::EventLoop *_loop;
 
     void execSql(const DbConnectionPtr &conn,
                  std::string &&sql,
@@ -58,15 +57,9 @@ class DbClientImpl : public DbClient, public std::enable_shared_from_this<DbClie
                  ResultCallback &&rcb,
                  std::function<void(const std::exception_ptr &)> &&exceptCallback);
 
-    DbConnectionPtr newConnection(trantor::EventLoop *loop);
+    DbConnectionPtr newConnection();
 
-    std::mutex _connectionsMutex;
-    std::unordered_set<DbConnectionPtr> _connections;
-    std::unordered_set<DbConnectionPtr> _readyConnections;
-    std::unordered_set<DbConnectionPtr> _busyConnections;
-
-    std::condition_variable _condConnectionReady;
-    size_t _transWaitNum = 0;
+    DbConnectionPtr _connection;
 
     struct SqlCmd
     {
@@ -79,9 +72,8 @@ class DbClientImpl : public DbClient, public std::enable_shared_from_this<DbClie
         ExceptPtrCallback _exceptCb;
     };
     std::deque<std::shared_ptr<SqlCmd>> _sqlCmdBuffer;
-    std::mutex _bufferMutex;
 
-    void handleNewTask(const DbConnectionPtr &conn);
+    void handleNewTask();
 };
 
 } // namespace orm

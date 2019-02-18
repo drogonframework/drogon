@@ -147,6 +147,7 @@ class DbClient : public trantor::NonCopyable
     virtual std::shared_ptr<Transaction> newTransaction(const std::function<void(bool)> &commitCallback = std::function<void(bool)>()) = 0;
 
     ClientType type() const { return _type; }
+    const std::string &connectionInfo() { return _connInfo; }
 
   private:
     friend internal::SqlBinder;
@@ -157,9 +158,10 @@ class DbClient : public trantor::NonCopyable
                          std::vector<int> &&format,
                          ResultCallback &&rcb,
                          std::function<void(const std::exception_ptr &)> &&exceptCallback) = 0;
-
+    
   protected:
     ClientType _type;
+    std::string _connInfo;
 };
 typedef std::shared_ptr<DbClient> DbClientPtr;
 

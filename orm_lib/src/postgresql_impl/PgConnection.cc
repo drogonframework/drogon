@@ -275,9 +275,9 @@ void PgConnection::handleRead()
             _cb = decltype(_cb)();
             if (_idleCbPtr)
             {
-                auto idle = std::move(_idleCbPtr);
+                //auto idle = std::move(_idleCbPtr);
                 _idleCbPtr.reset();
-                (*idle)();
+                //(*idle)();
             }
         }
         handleClosed();
