@@ -72,6 +72,7 @@ MysqlConnection::MysqlConnection(trantor::EventLoop *loop, const std::string &co
         }
         else if (key == "dbname")
         {
+            LOG_DEBUG << "database:" << value;
             dbname = value;
         }
         else if (key == "port")
@@ -204,6 +205,8 @@ void MysqlConnection::handleEvent()
     if (revents & POLLPRI)
         status |= MYSQL_WAIT_EXCEPT;
     status = (status & _waitStatus);
+    if (status == 0)
+        return;
     MYSQL *ret;
     if (_status == ConnectStatus_Connecting)
     {

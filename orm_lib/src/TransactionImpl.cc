@@ -164,25 +164,23 @@ void TransactionImpl::rollback()
             return;
         }
         thisPtr->_isWorking = true;
-        thisPtr
-            ->_connectionPtr
-            ->execSql("rollback",
-                      0,
-                      std::vector<const char *>(),
-                      std::vector<int>(),
-                      std::vector<int>(),
-                      [](const Result &r) {
-                          LOG_TRACE << "Transaction roll back!";
-                          //clearupCb();
-                      },
-                      [](const std::exception_ptr &ePtr) {
-                          //clearupCb();
-                          LOG_ERROR << "Transaction rool back error";
-                      },
-                      [thisPtr, clearupCb]() {
-                          clearupCb();
-                          thisPtr->execNewTask();
-                      });
+        thisPtr->_connectionPtr->execSql("rollback",
+                                         0,
+                                         std::vector<const char *>(),
+                                         std::vector<int>(),
+                                         std::vector<int>(),
+                                         [](const Result &r) {
+                                             LOG_TRACE << "Transaction roll back!";
+                                             //clearupCb();
+                                         },
+                                         [](const std::exception_ptr &ePtr) {
+                                             //clearupCb();
+                                             LOG_ERROR << "Transaction rool back error";
+                                         },
+                                         [thisPtr, clearupCb]() {
+                                             clearupCb();
+                                             thisPtr->execNewTask();
+                                         });
     });
 }
 
@@ -197,29 +195,24 @@ void TransactionImpl::execNewTask()
         {
             auto cmd = _sqlCmdBuffer.front();
             _sqlCmdBuffer.pop_front();
-
             auto conn = _connectionPtr;
-
-            _loop->queueInLoop([=]() mutable {
-                conn->execSql(std::move(cmd._sql),
-                              cmd._paraNum,
-                              std::move(cmd._parameters),
-                              std::move(cmd._length),
-                              std::move(cmd._format),
-                              std::move(cmd._cb),
-                              [cmd, thisPtr](const std::exception_ptr &ePtr) {
-                                  if (!cmd._idleCb)
-                                      thisPtr->rollback();
-                                  if (cmd._exceptCb)
-                                      cmd._exceptCb(ePtr);
-                              },
-                              [cmd,thisPtr]() {
-                                  if(cmd._idleCb)
-                                      cmd._idleCb();
-                                  thisPtr->execNewTask();
-                              });
-            });
-
+            conn->execSql(std::move(cmd._sql),
+                          cmd._paraNum,
+                          std::move(cmd._parameters),
+                          std::move(cmd._length),
+                          std::move(cmd._format),
+                          std::move(cmd._cb),
+                          [cmd, thisPtr](const std::exception_ptr &ePtr) {
+                              if (!cmd._idleCb)
+                                  thisPtr->rollback();
+                              if (cmd._exceptCb)
+                                  cmd._exceptCb(ePtr);
+                          },
+                          [cmd, thisPtr]() {
+                              if (cmd._idleCb)
+                                  cmd._idleCb();
+                              thisPtr->execNewTask();
+                          });
             return;
         }
         _isWorking = false;
