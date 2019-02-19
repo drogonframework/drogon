@@ -108,7 +108,9 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     }
 #if USE_ORM
     virtual orm::DbClientPtr getDbClient(const std::string &name = "default") override;
+#if USE_FAST_CLIENT
     virtual orm::DbClientPtr getFastDbClient(const std::string &name = "default") override;
+#endif
     virtual void createDbClient(const std::string &dbType,
                                 const std::string &host,
                                 const u_short port,
@@ -193,9 +195,11 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     std::mutex _staticFilesCacheMutex;
 #if USE_ORM
     std::map<std::string, orm::DbClientPtr> _dbClientsMap;
-    std::map<std::string, std::map<trantor::EventLoop *, orm::DbClientPtr>> _dbFastClientsMap;
     std::vector<std::function<void()>> _dbFuncs;
+#if USE_FAST_CLIENT
+    std::map<std::string, std::map<trantor::EventLoop *, orm::DbClientPtr>> _dbFastClientsMap;
     void createFastDbClient(const std::vector<trantor::EventLoop *> &ioloops);
+#endif
 #endif
 };
 
