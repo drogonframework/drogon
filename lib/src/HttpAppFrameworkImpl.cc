@@ -283,15 +283,17 @@ void HttpAppFrameworkImpl::run()
     std::vector<std::shared_ptr<EventLoopThread>> loopThreads;
 
     std::vector<trantor::EventLoop *> ioLoops;
-    for (auto const &listener : _listeners)
+
+#ifdef __linux__
+    for (size_t i = 0; i < _threadNum; i++)
     {
         LOG_TRACE << "thread num=" << _threadNum;
-#ifdef __linux__
-        for (size_t i = 0; i < _threadNum; i++)
+        auto loopThreadPtr = std::make_shared<EventLoopThread>("DrogonIoLoop");
+        loopThreadPtr->run();
+        loopThreads.push_back(loopThreadPtr);
+        ioLoops.push_back(loopThreadPtr->getLoop());
+        for (auto const &listener : _listeners)
         {
-            auto loopThreadPtr = std::make_shared<EventLoopThread>("DrogonIoLoop");
-            loopThreadPtr->run();
-            loopThreads.push_back(loopThreadPtr);
             auto serverPtr = std::make_shared<HttpServer>(loopThreadPtr->getLoop(),
                                                           InetAddress(std::get<0>(listener), std::get<1>(listener)), "drogon");
             if (std::get<2>(listener))
@@ -317,9 +319,12 @@ void HttpAppFrameworkImpl::run()
             serverPtr->kickoffIdleConnections(_idleConnectionTimeout);
             serverPtr->start();
             servers.push_back(serverPtr);
-            ioLoops.push_back(serverPtr->getLoop());
         }
+    }
 #else
+    for (auto const &listener : _listeners)
+    {
+        LOG_TRACE << "thread num=" << _threadNum;
         auto loopThreadPtr = std::make_shared<EventLoopThread>("DrogonListeningLoop");
         loopThreadPtr->run();
         loopThreads.push_back(loopThreadPtr);
@@ -364,12 +369,14 @@ void HttpAppFrameworkImpl::run()
             ioLoops.push_back(serverIoLoop);
         }
         servers.push_back(serverPtr);
-#endif
     }
+#endif
+
 #if USE_ORM
 #if USE_FAST_CLIENT
     // Create fast db clients for every io loop
-    createFastDbClient(ioLoops);
+    if (_enableFastDbClient)
+        createFastDbClient(ioLoops);
 #endif
 #endif
     _httpCtrlsRouter.init(ioLoops);

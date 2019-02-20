@@ -228,12 +228,20 @@ static void loadApp(const Json::Value &app)
     //Kick off idle connections
     auto kickOffTimeout = app.get("idle_connection_timeout", 60).asUInt64();
     drogon::app().setIdleConnectionTimeout(kickOffTimeout);
+#if USE_ORM
+#if USE_FAST_CLIENT
+    //Fast db client
+    auto fastDbClient = app.get("enable_fast_db_client", false).asBool();
+    if (fastDbClient)
+        drogon::app().enableFastDbClient();
+#endif
+#endif
 }
 static void loadDbClients(const Json::Value &dbClients)
 {
     if (!dbClients)
         return;
-#if USE_ORM   
+#if USE_ORM
     for (auto const &client : dbClients)
     {
         auto type = client.get("rdbms", "postgresql").asString();

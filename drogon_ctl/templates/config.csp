@@ -133,6 +133,8 @@
     ],
     //idle_connection_timeout: Defaults to 60 seconds, the lifetime 
     //of the connection without read or write
-    "idle_connection_timeout": 60
+    "idle_connection_timeout": 60,
+    //enable_fast_db_client: Defaults to false
+    "enable_fast_db_client": false
   }
 }
