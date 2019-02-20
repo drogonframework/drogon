@@ -175,15 +175,14 @@ void PgConnection::execSqlInLoop(std::string &&sql,
     if (paraNum == 0)
     {
         _isRreparingStatement = false;
-        if (PQsendQueryParams(
-                _connPtr.get(),
-                _sql.c_str(),
-                paraNum,
-                nullptr,
-                parameters.data(),
-                length.data(),
-                format.data(),
-                0) == 0)
+        if (PQsendQueryParams(_connPtr.get(),
+                              _sql.c_str(),
+                              paraNum,
+                              nullptr,
+                              parameters.data(),
+                              length.data(),
+                              format.data(),
+                              0) == 0)
         {
             LOG_ERROR << "send query error: " << PQerrorMessage(_connPtr.get());
             if (_isWorking)
@@ -217,14 +216,13 @@ void PgConnection::execSqlInLoop(std::string &&sql,
         if (iter != _preparedStatementMap.end())
         {
             _isRreparingStatement = false;
-            if (PQsendQueryPrepared(
-                    _connPtr.get(),
-                    iter->second.c_str(),
-                    paraNum,
-                    parameters.data(),
-                    length.data(),
-                    format.data(),
-                    0) == 0)
+            if (PQsendQueryPrepared(_connPtr.get(),
+                                    iter->second.c_str(),
+                                    paraNum,
+                                    parameters.data(),
+                                    length.data(),
+                                    format.data(),
+                                    0) == 0)
             {
                 LOG_ERROR << "send query error: " << PQerrorMessage(_connPtr.get());
                 if (_isWorking)
@@ -283,20 +281,24 @@ void PgConnection::execSqlInLoop(std::string &&sql,
                 return;
             }
             std::weak_ptr<PgConnection> weakPtr = shared_from_this();
-            _preparingCallback = [weakPtr, statementName, paraNum, parameters = std::move(parameters), length = std::move(length), format = std::move(format)]() {
+            _preparingCallback = [weakPtr,
+                                  statementName,
+                                  paraNum,
+                                  parameters = std::move(parameters),
+                                  length = std::move(length),
+                                  format = std::move(format)]() {
                 auto thisPtr = weakPtr.lock();
                 if (!thisPtr)
                     return;
                 thisPtr->_isRreparingStatement = false;
                 thisPtr->_preparedStatementMap[thisPtr->_sql] = statementName;
-                if (PQsendQueryPrepared(
-                        thisPtr->_connPtr.get(),
-                        statementName.c_str(),
-                        paraNum,
-                        parameters.data(),
-                        length.data(),
-                        format.data(),
-                        0) == 0)
+                if (PQsendQueryPrepared(thisPtr->_connPtr.get(),
+                                        statementName.c_str(),
+                                        paraNum,
+                                        parameters.data(),
+                                        length.data(),
+                                        format.data(),
+                                        0) == 0)
                 {
                     LOG_ERROR << "send query error: " << PQerrorMessage(thisPtr->_connPtr.get());
                     if (thisPtr->_isWorking)

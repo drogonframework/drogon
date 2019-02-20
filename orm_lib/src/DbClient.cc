@@ -22,6 +22,11 @@ internal::SqlBinder DbClient::operator<<(const std::string &sql)
     return internal::SqlBinder(sql, *this, _type);
 }
 
+internal::SqlBinder DbClient::operator<<(std::string &&sql)
+{
+    return internal::SqlBinder(std::move(sql), *this, _type);
+}
+
 #if USE_POSTGRESQL
 std::shared_ptr<DbClient> DbClient::newPgClient(const std::string &connInfo, const size_t connNum)
 {

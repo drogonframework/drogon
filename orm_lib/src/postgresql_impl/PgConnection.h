@@ -49,13 +49,35 @@ class PgConnection : public DbConnection, public std::enable_shared_from_this<Pg
     {
         if (_loop->isInLoopThread())
         {
-            execSqlInLoop(std::move(sql), paraNum, std::move(parameters), std::move(length), std::move(format), std::move(rcb), std::move(exceptCallback), std::move(idleCb));
+            execSqlInLoop(std::move(sql),
+                          paraNum,
+                          std::move(parameters),
+                          std::move(length),
+                          std::move(format),
+                          std::move(rcb),
+                          std::move(exceptCallback),
+                          std::move(idleCb));
         }
         else
         {
             auto thisPtr = shared_from_this();
-            _loop->queueInLoop([thisPtr, sql = std::move(sql), paraNum, parameters = std::move(parameters), length = std::move(length), format = std::move(format), rcb = std::move(rcb), exceptCallback = std::move(exceptCallback), idleCb = std::move(idleCb)]() mutable {
-                thisPtr->execSqlInLoop(std::move(sql), paraNum, std::move(parameters), std::move(length), std::move(format), std::move(rcb), std::move(exceptCallback), std::move(idleCb));
+            _loop->queueInLoop([thisPtr,
+                                sql = std::move(sql),
+                                paraNum,
+                                parameters = std::move(parameters),
+                                length = std::move(length),
+                                format = std::move(format),
+                                rcb = std::move(rcb),
+                                exceptCallback = std::move(exceptCallback),
+                                idleCb = std::move(idleCb)]() mutable {
+                thisPtr->execSqlInLoop(std::move(sql),
+                                       paraNum,
+                                       std::move(parameters),
+                                       std::move(length),
+                                       std::move(format),
+                                       std::move(rcb),
+                                       std::move(exceptCallback),
+                                       std::move(idleCb));
             });
         }
     }

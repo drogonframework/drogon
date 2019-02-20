@@ -133,6 +133,7 @@ class DbClient : public trantor::NonCopyable
 
     /// A stream-type method for sql execution
     internal::SqlBinder operator<<(const std::string &sql);
+    internal::SqlBinder operator<<(std::string &&sql);
 
     /// Create a transaction object.
     /**
@@ -158,7 +159,7 @@ class DbClient : public trantor::NonCopyable
                          std::vector<int> &&format,
                          ResultCallback &&rcb,
                          std::function<void(const std::exception_ptr &)> &&exceptCallback) = 0;
-    
+
   protected:
     ClientType _type;
     std::string _connInfo;
