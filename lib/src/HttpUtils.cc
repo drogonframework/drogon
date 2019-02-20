@@ -89,7 +89,125 @@ namespace drogon
 //         return "text/plain; charset=" + charSet;
 //     }
 // }
-
+#if CXX_STD >= 17
+const std::string_view &webContentTypeToString(ContentType contenttype)
+{
+    switch (contenttype)
+    {
+    case CT_TEXT_HTML:
+    {
+        static std::string_view sv = "Content-Type: text/html; charset=utf-8\r\n";
+        return sv;
+    }
+    case CT_APPLICATION_X_FORM:
+    {
+        static std::string_view sv = "Content-Type: application/x-www-form-urlencoded\r\n";
+        return sv;
+    }
+    case CT_APPLICATION_XML:
+    {
+        static std::string_view sv = "Content-Type: application/xml; charset=utf-8\r\n";
+        return sv;
+    }
+    case CT_APPLICATION_JSON:
+    {
+        static std::string_view sv = "Content-Type: application/json; charset=utf-8\r\n";
+        return sv;
+    }
+    case CT_APPLICATION_X_JAVASCRIPT:
+    {
+        static std::string_view sv = "Content-Type: application/x-javascript; charset=utf-8\r\n";
+        return sv;
+    }
+    case CT_TEXT_CSS:
+    {
+        static std::string_view sv = "Content-Type: text/css; charset=utf-8\r\n";
+        return sv;
+    }
+    case CT_TEXT_XML:
+    {
+        static std::string_view sv = "Content-Type: text/xml; charset=utf-8\r\n";
+        return sv;
+    }
+    case CT_TEXT_XSL:
+    {
+        static std::string_view sv = "Content-Type: text/xsl; charset=utf-8\r\n";
+        return sv;
+    }
+    case CT_APPLICATION_OCTET_STREAM:
+    {
+        static std::string_view sv = "Content-Type: application/octet-stream\r\n";
+        return sv;
+    }
+    case CT_IMAGE_SVG_XML:
+    {
+        static std::string_view sv = "Content-Type: image/svg+xml\r\n";
+        return sv;
+    }
+    case CT_APPLICATION_X_FONT_TRUETYPE:
+    {
+        static std::string_view sv = "Content-Type: application/x-font-truetype\r\n";
+        return sv;
+    }
+    case CT_APPLICATION_X_FONT_OPENTYPE:
+    {
+        static std::string_view sv = "Content-Type: application/x-font-opentype\r\n";
+        return sv;
+    }
+    case CT_APPLICATION_FONT_WOFF:
+    {
+        static std::string_view sv = "Content-Type: application/font-woff\r\n";
+        return sv;
+    }
+    case CT_APPLICATION_FONT_WOFF2:
+    {
+        static std::string_view sv = "Content-Type: application/font-woff2\r\n";
+        return sv;
+    }
+    case CT_APPLICATION_VND_MS_FONTOBJ:
+    {
+        static std::string_view sv = "Content-Type: application/vnd.ms-fontobject\r\n";
+        return sv;
+    }
+    case CT_IMAGE_PNG:
+    {
+        static std::string_view sv = "Content-Type: image/png\r\n";
+        return sv;
+    }
+    case CT_IMAGE_JPG:
+    {
+        static std::string_view sv = "Content-Type: image/jpeg\r\n";
+        return sv;
+    }
+    case CT_IMAGE_GIF:
+    {
+        static std::string_view sv = "Content-Type: image/gif\r\n";
+        return sv;
+    }
+    case CT_IMAGE_XICON:
+    {
+        static std::string_view sv = "Content-Type: image/x-icon\r\n";
+        return sv;
+    }
+    case CT_IMAGE_BMP:
+    {
+        static std::string_view sv = "Content-Type: image/bmp\r\n";
+        return sv;
+    }
+    case CT_IMAGE_ICNS:
+    {
+        static std::string_view sv = "Content-Type: image/icns\r\n";
+        return sv;
+    }
+    default:
+    case CT_TEXT_PLAIN:
+    {
+        static std::string_view sv = "Content-Type: text/plain; charset=utf-8\r\n";
+        return sv;
+    }
+    }
+}
+#else
 const char *webContentTypeToString(ContentType contenttype)
 {
     switch (contenttype)
@@ -162,5 +280,5 @@ const char *webContentTypeToString(ContentType contenttype)
         return "Content-Type: text/plain; charset=utf-8\r\n";
     }
 }
-
+#endif
 } // namespace drogon

@@ -332,10 +332,16 @@ class HttpRequestImpl : public HttpRequest
         return _jsonPtr;
     }
 
-    virtual void setContentTypeCode(ContentType type) override
+    virtual void setContentTypeCode(const ContentType type) override
     {
         _contentType = type;
-        setContentType(webContentTypeToString(type));
+#if CXX_STD >= 17
+        auto &typeStr = webContentTypeToString(type);
+        setContentType(std::string(typeStr.data(), typeStr.length()));
+#else
+        auto typeStr = webContentTypeToString(type);
+        setContentType(std::string(typeStr));
+#endif
     }
 
     // virtual void setContentTypeCodeAndCharacterSet(ContentType type, const std::string &charSet = "utf-8") override

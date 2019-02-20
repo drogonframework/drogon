@@ -25,6 +25,9 @@
 #include <memory>
 #include <mutex>
 #include <atomic>
+#if CXX_STD >= 17
+#include <string_view>
+#endif
 
 using namespace trantor;
 namespace drogon
@@ -390,13 +393,21 @@ class HttpResponseImpl : public HttpResponse
     mutable std::shared_ptr<std::string> _httpString;
     mutable std::string::size_type _datePos = std::string::npos;
     mutable int64_t _httpStringDate = -1;
-    const char *_contentTypeString = "text/html; charset=utf-8";
-    //trantor::Date receiveTime_;
-
-    void setContentType(const char *contentType)
+#if CXX_STD >= 17
+    std::string_view _contentTypeString = "text/html; charset=utf-8";
+    void setContentType(const std::string_view &contentType)
     {
         _contentTypeString = contentType;
     }
+#else
+    const char *_contentTypeString = "text/html; charset=utf-8";
+    void setContentType(const char *contentType)
+    {
+        _contentTypeString = contentType;
+    
+    }
+#endif
+    
     void setStatusMessage(const char *message)
     {
         _statusMessage = message;

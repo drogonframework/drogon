@@ -26,6 +26,12 @@
 using namespace trantor;
 using namespace drogon;
 
+static const std::string &getServerString()
+{
+    static const std::string server = "Server: drogon/" + drogon::getVersion() + "\r\n";
+    return server;
+}
+
 HttpResponsePtr HttpResponse::newHttpResponse()
 {
     auto res = std::make_shared<HttpResponseImpl>();
@@ -323,7 +329,11 @@ void HttpResponseImpl::makeHeaderString(const std::shared_ptr<std::string> &head
             //output->append("Connection: Keep-Alive\r\n");
         }
     }
+#if CXX_STD >= 17
+    headerStringPtr->append(_contentTypeString.data(), _contentTypeString.length());
+#else
     headerStringPtr->append(_contentTypeString);
+#endif
     for (auto it = _headers.begin(); it != _headers.end(); ++it)
     {
         headerStringPtr->append(it->first);
@@ -331,9 +341,7 @@ void HttpResponseImpl::makeHeaderString(const std::shared_ptr<std::string> &head
         headerStringPtr->append(it->second);
         headerStringPtr->append("\r\n");
     }
-    headerStringPtr->append("Server: drogon/");
-    headerStringPtr->append(drogon::getVersion());
-    headerStringPtr->append("\r\n");
+    headerStringPtr->append(getServerString());
 }
 
 std::shared_ptr<std::string> HttpResponseImpl::renderToString() const
