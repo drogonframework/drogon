@@ -221,14 +221,13 @@ void HttpRequestImpl::appendToBuffer(MsgBuffer *output) const
         char buf[64];
         snprintf(buf, sizeof buf, "Content-Length: %lu\r\n", static_cast<long unsigned int>(content.length() + _content.length()));
         output->append(buf);
-        if (_headers.find("Content-Type") == _headers.end())
+        if (_contentTypeString.empty())
         {
-            output->append("Content-Type: ");
             output->append(webContentTypeToString(_contentType));
-            output->append("\r\n");
         }
     }
-
+    if (!_contentTypeString.empty())
+        output->append(_contentTypeString);
     for (auto it = _headers.begin(); it != _headers.end(); ++it)
     {
         output->append(it->first);

@@ -24,6 +24,6 @@ HttpFileUploadRequest::HttpFileUploadRequest(const std::vector<UploadFile> &file
 {
     setMethod(drogon::Post);
     setVersion(drogon::HttpRequest::kHttp11);
-    setContentType("multipart/form-data; boundary=" + _boundary);
+    setContentType("Content-Type: multipart/form-data; boundary=" + _boundary + "\r\n");
     _contentType = CT_MULTIPART_FORM_DATA;
 }

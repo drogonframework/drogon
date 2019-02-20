@@ -58,7 +58,7 @@ class HttpResponse
     virtual void setContentTypeCode(ContentType type) = 0;
 
     /// Set the reponse content type and the character set.
-    virtual void setContentTypeCodeAndCharacterSet(ContentType type, const std::string &charSet = "utf-8") = 0;
+    /// virtual void setContentTypeCodeAndCharacterSet(ContentType type, const std::string &charSet = "utf-8") = 0;
 
     /// Get the response content type.
     virtual ContentType getContentTypeCode() = 0;
@@ -103,7 +103,7 @@ class HttpResponse
     /// Get the expiration time of the response.
     virtual ssize_t expiredTime() const = 0;
 
-    /// Get the json object from the server response. If the response is not in json format, 
+    /// Get the json object from the server response. If the response is not in json format,
     /// then a empty shared_ptr will be retured.
     virtual const std::shared_ptr<Json::Value> getJsonObject() const = 0;
 

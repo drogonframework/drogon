@@ -86,11 +86,11 @@ class HttpResponseImpl : public HttpResponse
         setContentType(webContentTypeToString(type));
     }
 
-    virtual void setContentTypeCodeAndCharacterSet(ContentType type, const std::string &charSet = "utf-8") override
-    {
-        _contentType = type;
-        setContentType(webContentTypeAndCharsetToString(type, charSet));
-    }
+    // virtual void setContentTypeCodeAndCharacterSet(ContentType type, const std::string &charSet = "utf-8") override
+    // {
+    //     _contentType = type;
+    //     setContentType(webContentTypeAndCharsetToString(type, charSet));
+    // }
 
     virtual ContentType getContentTypeCode() override
     {
@@ -270,7 +270,7 @@ class HttpResponseImpl : public HttpResponse
     {
         _statusCode = kUnknown;
         _v = kHttp11;
-        _statusMessage.clear();
+        _statusMessage = nullptr;
         _fullHeaderString.reset();
         _headers.clear();
         _cookies.clear();
@@ -302,20 +302,21 @@ class HttpResponseImpl : public HttpResponse
     }
     void swap(HttpResponseImpl &that)
     {
+        using std::swap;
         _headers.swap(that._headers);
         _cookies.swap(that._cookies);
-        std::swap(_statusCode, that._statusCode);
-        std::swap(_v, that._v);
-        _statusMessage.swap(that._statusMessage);
-        std::swap(_closeConnection, that._closeConnection);
+        swap(_statusCode, that._statusCode);
+        swap(_v, that._v);
+        swap(_statusMessage, that._statusMessage);
+        swap(_closeConnection, that._closeConnection);
         _bodyPtr.swap(that._bodyPtr);
-        std::swap(_leftBodyLength, that._leftBodyLength);
-        std::swap(_currentChunkLength, that._currentChunkLength);
-        std::swap(_contentType, that._contentType);
+        swap(_leftBodyLength, that._leftBodyLength);
+        swap(_currentChunkLength, that._currentChunkLength);
+        swap(_contentType, that._contentType);
         _jsonPtr.swap(that._jsonPtr);
         _fullHeaderString.swap(that._fullHeaderString);
         _httpString.swap(that._httpString);
-        std::swap(_datePos, that._datePos);
+        swap(_datePos, that._datePos);
     }
     void parseJson() const
     {
@@ -361,7 +362,7 @@ class HttpResponseImpl : public HttpResponse
     }
 
   protected:
-    static std::string web_response_code_to_string(int code);
+    static const char *web_response_code_to_string(int code);
     void makeHeaderString(const std::shared_ptr<std::string> &headerStringPtr) const;
 
   private:
@@ -370,7 +371,8 @@ class HttpResponseImpl : public HttpResponse
     HttpStatusCode _statusCode;
     trantor::Date _creationDate;
     Version _v;
-    std::string _statusMessage;
+    const char *_statusMessage = nullptr;
+    std::string _statusMessageString;
     bool _closeConnection;
 
     size_t _leftBodyLength;
@@ -388,24 +390,26 @@ class HttpResponseImpl : public HttpResponse
     mutable std::shared_ptr<std::string> _httpString;
     mutable std::string::size_type _datePos = std::string::npos;
     mutable int64_t _httpStringDate = -1;
-
+    const char *_contentTypeString = "text/html; charset=utf-8";
     //trantor::Date receiveTime_;
 
-    void setContentType(const std::string &contentType)
+    void setContentType(const char *contentType)
     {
-        addHeader("Content-Type", contentType);
+        _contentTypeString = contentType;
     }
-    void setContentType(std::string &&contentType)
-    {
-        addHeader("Content-Type", std::move(contentType));
-    }
-    void setStatusMessage(const std::string &message)
+    void setStatusMessage(const char *message)
     {
         _statusMessage = message;
     }
+    void setStatusMessage(const std::string &message)
+    {
+        _statusMessageString = message;
+        _statusMessage = _statusMessageString.c_str();
+    }
     void setStatusMessage(std::string &&message)
     {
-        _statusMessage = std::move(message);
+        _statusMessageString = std::move(message);
+        _statusMessage = _statusMessageString.c_str();
     }
 };
 typedef std::shared_ptr<HttpResponseImpl> HttpResponseImplPtr;

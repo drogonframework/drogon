@@ -19,7 +19,7 @@
 namespace drogon
 {
 
-std::string webContentTypeToString(ContentType contenttype);
-std::string webContentTypeAndCharsetToString(ContentType contenttype, const std::string &charSet);
+const char *webContentTypeToString(ContentType contenttype);
+//std::string webContentTypeAndCharsetToString(ContentType contenttype, const std::string &charSet);
 
 } // namespace drogon

@@ -183,7 +183,7 @@ HttpResponsePtr HttpResponse::newFileResponse(const std::string &fullPath, const
     return resp;
 }
 
-std::string HttpResponseImpl::web_response_code_to_string(int code)
+const char *HttpResponseImpl::web_response_code_to_string(int code)
 {
     switch (code)
     {
@@ -292,7 +292,8 @@ void HttpResponseImpl::makeHeaderString(const std::shared_ptr<std::string> &head
     assert(headerStringPtr);
     snprintf(buf, sizeof buf, "HTTP/1.1 %d ", _statusCode);
     headerStringPtr->append(buf);
-    headerStringPtr->append(_statusMessage);
+    if (_statusMessage)
+        headerStringPtr->append(_statusMessage);
     headerStringPtr->append("\r\n");
     if (_sendfileName.empty())
     {
@@ -322,7 +323,7 @@ void HttpResponseImpl::makeHeaderString(const std::shared_ptr<std::string> &head
             //output->append("Connection: Keep-Alive\r\n");
         }
     }
-
+    headerStringPtr->append(_contentTypeString);
     for (auto it = _headers.begin(); it != _headers.end(); ++it)
     {
         headerStringPtr->append(it->first);
@@ -330,7 +331,6 @@ void HttpResponseImpl::makeHeaderString(const std::shared_ptr<std::string> &head
         headerStringPtr->append(it->second);
         headerStringPtr->append("\r\n");
     }
-
     headerStringPtr->append("Server: drogon/");
     headerStringPtr->append(drogon::getVersion());
     headerStringPtr->append("\r\n");
