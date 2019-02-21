@@ -44,8 +44,7 @@ class PgConnection : public DbConnection, public std::enable_shared_from_this<Pg
                          std::vector<int> &&length,
                          std::vector<int> &&format,
                          ResultCallback &&rcb,
-                         std::function<void(const std::exception_ptr &)> &&exceptCallback,
-                         std::function<void()> &&idleCb) override
+                         std::function<void(const std::exception_ptr &)> &&exceptCallback) override
     {
         if (_loop->isInLoopThread())
         {
@@ -55,8 +54,7 @@ class PgConnection : public DbConnection, public std::enable_shared_from_this<Pg
                           std::move(length),
                           std::move(format),
                           std::move(rcb),
-                          std::move(exceptCallback),
-                          std::move(idleCb));
+                          std::move(exceptCallback));
         }
         else
         {
@@ -68,16 +66,14 @@ class PgConnection : public DbConnection, public std::enable_shared_from_this<Pg
                                 length = std::move(length),
                                 format = std::move(format),
                                 rcb = std::move(rcb),
-                                exceptCallback = std::move(exceptCallback),
-                                idleCb = std::move(idleCb)]() mutable {
+                                exceptCallback = std::move(exceptCallback)]() mutable {
                 thisPtr->execSqlInLoop(std::move(sql),
                                        paraNum,
                                        std::move(parameters),
                                        std::move(length),
                                        std::move(format),
                                        std::move(rcb),
-                                       std::move(exceptCallback),
-                                       std::move(idleCb));
+                                       std::move(exceptCallback));
             });
         }
     }
@@ -98,8 +94,7 @@ class PgConnection : public DbConnection, public std::enable_shared_from_this<Pg
                        std::vector<int> &&length,
                        std::vector<int> &&format,
                        ResultCallback &&rcb,
-                       std::function<void(const std::exception_ptr &)> &&exceptCallback,
-                       std::function<void()> &&idleCb);
+                       std::function<void(const std::exception_ptr &)> &&exceptCallback);
     std::function<void()> _preparingCallback;
 };
 

@@ -39,7 +39,7 @@ class TransactionImpl : public Transaction, public std::enable_shared_from_this<
                          std::vector<int> &&format,
                          ResultCallback &&rcb,
                          std::function<void(const std::exception_ptr &)> &&exceptCallback) override;
-    virtual std::shared_ptr<Transaction> newTransaction(const std::function<void(bool)>&) override
+    virtual std::shared_ptr<Transaction> newTransaction(const std::function<void(bool)> &) override
     {
         return shared_from_this();
     }
@@ -57,7 +57,8 @@ class TransactionImpl : public Transaction, public std::enable_shared_from_this<
         std::vector<int> _format;
         QueryCallback _cb;
         ExceptPtrCallback _exceptCb;
-        std::function<void()> _idleCb;
+        bool _isRollbackCmd = false;
+        std::shared_ptr<TransactionImpl> _thisPtr;
     };
     std::list<SqlCmd> _sqlCmdBuffer;
     //   std::mutex _bufferMutex;

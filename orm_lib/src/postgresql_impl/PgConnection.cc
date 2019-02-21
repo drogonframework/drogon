@@ -155,8 +155,7 @@ void PgConnection::execSqlInLoop(std::string &&sql,
                                  std::vector<int> &&length,
                                  std::vector<int> &&format,
                                  ResultCallback &&rcb,
-                                 std::function<void(const std::exception_ptr &)> &&exceptCallback,
-                                 std::function<void()> &&idleCb)
+                                 std::function<void(const std::exception_ptr &)> &&exceptCallback)
 {
     LOG_TRACE << sql;
     _loop->assertInLoopThread();
@@ -164,12 +163,10 @@ void PgConnection::execSqlInLoop(std::string &&sql,
     assert(paraNum == length.size());
     assert(paraNum == format.size());
     assert(rcb);
-    assert(idleCb);
     assert(!_isWorking);
     assert(!sql.empty());
     _sql = std::move(sql);
     _cb = std::move(rcb);
-    _idleCbPtr = std::make_shared<std::function<void()>>(std::move(idleCb));
     _isWorking = true;
     _exceptCb = std::move(exceptCallback);
     if (paraNum == 0)
@@ -200,12 +197,7 @@ void PgConnection::execSqlInLoop(std::string &&sql,
                     _exceptCb = nullptr;
                 }
                 _cb = nullptr;
-                if (_idleCbPtr)
-                {
-                    auto idle = std::move(_idleCbPtr);
-                    _idleCbPtr.reset();
-                    (*idle)();
-                }
+                _idleCb();
             }
             return;
         }
@@ -240,12 +232,7 @@ void PgConnection::execSqlInLoop(std::string &&sql,
                         _exceptCb = nullptr;
                     }
                     _cb = nullptr;
-                    if (_idleCbPtr)
-                    {
-                        auto idle = std::move(_idleCbPtr);
-                        _idleCbPtr.reset();
-                        (*idle)();
-                    }
+                    _idleCb();
                 }
                 return;
             }
@@ -271,12 +258,7 @@ void PgConnection::execSqlInLoop(std::string &&sql,
                         _exceptCb = nullptr;
                     }
                     _cb = nullptr;
-                    if (_idleCbPtr)
-                    {
-                        auto idle = std::move(_idleCbPtr);
-                        _idleCbPtr.reset();
-                        (*idle)();
-                    }
+                    _idleCb();
                 }
                 return;
             }
@@ -315,12 +297,7 @@ void PgConnection::execSqlInLoop(std::string &&sql,
                             thisPtr->_exceptCb = nullptr;
                         }
                         thisPtr->_cb = nullptr;
-                        if (thisPtr->_idleCbPtr)
-                        {
-                            auto idle = std::move(thisPtr->_idleCbPtr);
-                            thisPtr->_idleCbPtr.reset();
-                            (*idle)();
-                        }
+                        thisPtr->_idleCb();
                     }
                     return;
                 }
@@ -352,12 +329,6 @@ void PgConnection::handleRead()
                 _exceptCb = nullptr;
             }
             _cb = nullptr;
-            if (_idleCbPtr)
-            {
-                //auto idle = std::move(_idleCbPtr);
-                _idleCbPtr.reset();
-                //(*idle)();
-            }
         }
         handleClosed();
         return;
@@ -422,12 +393,7 @@ void PgConnection::handleRead()
         {
             _isWorking = false;
             _isRreparingStatement = false;
-            if (_idleCbPtr)
-            {
-                auto idle = std::move(_idleCbPtr);
-                _idleCbPtr.reset();
-                (*idle)();
-            }
+            _idleCb();
         }
     }
 }

@@ -82,15 +82,7 @@ void DbClientLockFree::execSql(const DbConnectionPtr &conn,
     assert(conn);
     std::weak_ptr<DbConnection> weakConn = conn;
     conn->execSql(std::move(sql), paraNum, std::move(parameters), std::move(length), std::move(format),
-                  std::move(rcb), std::move(exceptCallback),
-                  [=]() -> void {
-                      {
-                          auto connPtr = weakConn.lock();
-                          if (!connPtr)
-                              return;
-                          handleNewTask();
-                      }
-                  });
+                  std::move(rcb), std::move(exceptCallback));
 }
 void DbClientLockFree::execSql(std::string &&sql,
                                size_t paraNum,
@@ -121,7 +113,14 @@ void DbClientLockFree::execSql(std::string &&sql,
     {
         if (!_connection->isWorking())
         {
-            execSql(_connection, std::move(sql), paraNum, std::move(parameters), std::move(length), std::move(format), std::move(rcb), std::move(exceptCallback));
+            execSql(_connection,
+                    std::move(sql),
+                    paraNum,
+                    std::move(parameters),
+                    std::move(length),
+                    std::move(format),
+                    std::move(rcb),
+                    std::move(exceptCallback));
             return;
         }
     }
@@ -164,7 +163,14 @@ void DbClientLockFree::handleNewTask()
     if (!_sqlCmdBuffer.empty())
     {
         auto &cmd = _sqlCmdBuffer.front();
-        execSql(_connection, std::move(cmd._sql), cmd._paraNum, std::move(cmd._parameters), std::move(cmd._length), std::move(cmd._format), std::move(cmd._cb), std::move(cmd._exceptCb));
+        execSql(_connection,
+                std::move(cmd._sql),
+                cmd._paraNum,
+                std::move(cmd._parameters),
+                std::move(cmd._length),
+                std::move(cmd._format),
+                std::move(cmd._cb),
+                std::move(cmd._exceptCb));
         _sqlCmdBuffer.pop_front();
         return;
     }
@@ -218,6 +224,12 @@ DbConnectionPtr DbClientLockFree::newConnection()
         if (!thisPtr)
             return;
         thisPtr->_connection = okConnPtr;
+        thisPtr->handleNewTask();
+    });
+    connPtr->setIdleCallback([weakPtr]() {
+        auto thisPtr = weakPtr.lock();
+        if (!thisPtr)
+            return;
         thisPtr->handleNewTask();
     });
     //std::cout<<"newConn end"<<connPtr<<std::endl;

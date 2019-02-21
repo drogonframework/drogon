@@ -73,12 +73,19 @@ int main()
     // str.resize(filesize);
     // pbuf->sgetn(&str[0], filesize);
 
-    // *clientPtr << "update users set file=? where id=?" << str << 1000 << Mode::Blocking >> [](const Result &r) {
-    //     std::cout << "update " << r.affectedRows() << " rows" << std::endl;
-    // } >> [](const DrogonDbException &e) {
-    //     std::cerr << e.base().what() << std::endl;
-    // };
-
+    {
+        auto trans = clientPtr->newTransaction();
+        *trans << "update users set file=? where id != ?"
+               << "hehaha" << 1000 >>
+            [](const Result &r) {
+                std::cout << "hahaha update " << r.affectedRows() << " rows" << std::endl;
+                //trans->rollback();
+            } >>
+            [](const DrogonDbException &e) {
+                std::cerr << e.base().what() << std::endl;
+            };
+    }
+    LOG_DEBUG << "out of transaction block";
     *clientPtr << "select * from users where id=1000" >> [](const Result &r) {
         std::cout << "file:" << r[0]["file"].as<std::string>() << std::endl;
     } >> [](const DrogonDbException &e) {

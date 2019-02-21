@@ -47,8 +47,7 @@ class Sqlite3Connection : public DbConnection, public std::enable_shared_from_th
                          std::vector<int> &&length,
                          std::vector<int> &&format,
                          ResultCallback &&rcb,
-                         std::function<void(const std::exception_ptr &)> &&exceptCallback,
-                         std::function<void()> &&idleCb) override;
+                         std::function<void(const std::exception_ptr &)> &&exceptCallback) override;
     virtual void disconnect() override;
 
   private:
@@ -59,8 +58,7 @@ class Sqlite3Connection : public DbConnection, public std::enable_shared_from_th
                         const std::vector<int> &length,
                         const std::vector<int> &format,
                         const ResultCallback &rcb,
-                        const std::function<void(const std::exception_ptr &)> &exceptCallback,
-                        const std::function<void()> &idleCb);
+                        const std::function<void(const std::exception_ptr &)> &exceptCallback);
     void onError(const std::string &sql, const std::function<void(const std::exception_ptr &)> &exceptCallback);
     int stmtStep(sqlite3_stmt *stmt, const std::shared_ptr<Sqlite3ResultImpl> &resultPtr, int columnNum);
     trantor::EventLoopThread _loopThread;

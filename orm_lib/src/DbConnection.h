@@ -59,14 +59,17 @@ class DbConnection : public trantor::NonCopyable
     {
         _closeCb = cb;
     }
+    void setIdleCallback(const std::function<void()> &cb)
+    {
+        _idleCb = cb;
+    }
     virtual void execSql(std::string &&sql,
                          size_t paraNum,
                          std::vector<const char *> &&parameters,
                          std::vector<int> &&length,
                          std::vector<int> &&format,
                          ResultCallback &&rcb,
-                         std::function<void(const std::exception_ptr &)> &&exceptCallback,
-                         std::function<void()> &&idleCb) = 0;
+                         std::function<void(const std::exception_ptr &)> &&exceptCallback) = 0;
     virtual ~DbConnection()
     {
         LOG_TRACE << "Destruct DbConn" << this;
@@ -79,7 +82,7 @@ class DbConnection : public trantor::NonCopyable
   protected:
     QueryCallback _cb;
     trantor::EventLoop *_loop;
-    std::shared_ptr<std::function<void()>> _idleCbPtr;
+    std::function<void()> _idleCb;
     ConnectStatus _status = ConnectStatus_None;
     DbConnectionCallback _closeCb = [](const DbConnectionPtr &) {};
     DbConnectionCallback _okCb = [](const DbConnectionPtr &) {};

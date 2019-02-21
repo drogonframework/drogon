@@ -304,20 +304,17 @@ void MysqlConnection::execSql(std::string &&sql,
                               std::vector<int> &&length,
                               std::vector<int> &&format,
                               ResultCallback &&rcb,
-                              std::function<void(const std::exception_ptr &)> &&exceptCallback,
-                              std::function<void()> &&idleCb)
+                              std::function<void(const std::exception_ptr &)> &&exceptCallback)
 {
     LOG_TRACE << sql;
     assert(paraNum == parameters.size());
     assert(paraNum == length.size());
     assert(paraNum == format.size());
     assert(rcb);
-    assert(idleCb);
     assert(!_isWorking);
     assert(!sql.empty());
 
     _cb = std::move(rcb);
-    _idleCbPtr = std::make_shared<std::function<void()>>(std ::move(idleCb));
     _isWorking = true;
     _exceptCb = std::move(exceptCallback);
     _sql.clear();
@@ -439,12 +436,7 @@ void MysqlConnection::outputError()
 
         _cb = nullptr;
         _isWorking = false;
-        if (_idleCbPtr)
-        {
-            auto idle = std::move(_idleCbPtr);
-            _idleCbPtr.reset();
-            (*idle)();
-        }
+        _idleCb();
     }
 }
 
@@ -460,11 +452,6 @@ void MysqlConnection::getResult(MYSQL_RES *res)
         _cb = nullptr;
         _exceptCb = nullptr;
         _isWorking = false;
-        if (_idleCbPtr)
-        {
-            auto idle = std::move(_idleCbPtr);
-            _idleCbPtr.reset();
-            (*idle)();
-        }
+        _idleCb();
     }
 }

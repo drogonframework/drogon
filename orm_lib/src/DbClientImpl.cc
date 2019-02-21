@@ -129,15 +129,7 @@ void DbClientImpl::execSql(const DbConnectionPtr &conn,
     }
     std::weak_ptr<DbConnection> weakConn = conn;
     conn->execSql(std::move(sql), paraNum, std::move(parameters), std::move(length), std::move(format),
-                  std::move(rcb), std::move(exceptCallback),
-                  [=]() -> void {
-                      {
-                          auto connPtr = weakConn.lock();
-                          if (!connPtr)
-                              return;
-                          handleNewTask(connPtr);
-                      }
-                  });
+                  std::move(rcb), std::move(exceptCallback));
 }
 void DbClientImpl::execSql(std::string &&sql,
                            size_t paraNum,
@@ -233,22 +225,40 @@ std::shared_ptr<Transaction> DbClientImpl::newTransaction(const std::function<vo
         conn = *iter;
         _readyConnections.erase(iter);
     }
-    auto trans = std::shared_ptr<TransactionImpl>(new TransactionImpl(_type, conn, commitCallback, [=]() {
+    std::weak_ptr<DbClientImpl> weakThis = shared_from_this();
+    auto trans = std::shared_ptr<TransactionImpl>(new TransactionImpl(_type, conn, commitCallback, [weakThis, conn]() {
+        auto thisPtr = weakThis.lock();
+        if (!thisPtr)
+            return;
         if (conn->status() == ConnectStatus_Bad)
         {
             return;
         }
         {
-            std::lock_guard<std::mutex> guard(_connectionsMutex);
-
-            if (_connections.find(conn) == _connections.end() &&
-                _busyConnections.find(conn) == _busyConnections.find(conn))
+            std::lock_guard<std::mutex> guard(thisPtr->_connectionsMutex);
+            if (thisPtr->_connections.find(conn) == thisPtr->_connections.end() &&
+                thisPtr->_busyConnections.find(conn) == thisPtr->_busyConnections.find(conn))
             {
                 //connection is broken and removed
                 return;
             }
         }
-        handleNewTask(conn);
+        conn->loop()->queueInLoop([weakThis, conn]() {
+            auto thisPtr = weakThis.lock();
+            if(!thisPtr)
+                return;
+            std::weak_ptr<DbConnection> weakConn = conn;
+            conn->setIdleCallback([weakThis, weakConn]() {
+                auto thisPtr = weakThis.lock();
+                if (!thisPtr)
+                    return;
+                auto connPtr = weakConn.lock();
+                if (!connPtr)
+                    return;
+                thisPtr->handleNewTask(connPtr);
+            });
+            thisPtr->handleNewTask(conn);
+        });
     }));
     trans->doBegin();
     return trans;
@@ -355,6 +365,16 @@ DbConnectionPtr DbClientImpl::newConnection(trantor::EventLoop *loop)
             thisPtr->_busyConnections.insert(okConnPtr); //For new connections, this sentence is necessary
         }
         thisPtr->handleNewTask(okConnPtr);
+    });
+    std::weak_ptr<DbConnection> weakConn = connPtr;
+    connPtr->setIdleCallback([weakPtr, weakConn]() {
+        auto thisPtr = weakPtr.lock();
+        if (!thisPtr)
+            return;
+        auto connPtr = weakConn.lock();
+        if (!connPtr)
+            return;
+        thisPtr->handleNewTask(connPtr);
     });
     //std::cout<<"newConn end"<<connPtr<<std::endl;
     return connPtr;

@@ -93,12 +93,18 @@ void Sqlite3Connection::execSql(std::string &&sql,
                                 std::vector<int> &&length,
                                 std::vector<int> &&format,
                                 ResultCallback &&rcb,
-                                std::function<void(const std::exception_ptr &)> &&exceptCallback,
-                                std::function<void()> &&idleCb)
+                                std::function<void(const std::exception_ptr &)> &&exceptCallback)
 {
     auto thisPtr = shared_from_this();
-    _loopThread.getLoop()->runInLoop([thisPtr, sql = std::move(sql), paraNum, parameters = std::move(parameters), length = std::move(length), format = std::move(format), rcb = std::move(rcb), exceptCallback = std::move(exceptCallback), idleCb = std::move(idleCb)]() mutable {
-        thisPtr->execSqlInQueue(sql, paraNum, parameters, length, format, rcb, exceptCallback, idleCb);
+    _loopThread.getLoop()->runInLoop([thisPtr,
+                                      sql = std::move(sql),
+                                      paraNum,
+                                      parameters = std::move(parameters),
+                                      length = std::move(length),
+                                      format = std::move(format),
+                                      rcb = std::move(rcb),
+                                      exceptCallback = std::move(exceptCallback)]() mutable {
+        thisPtr->execSqlInQueue(sql, paraNum, parameters, length, format, rcb, exceptCallback);
     });
 }
 
@@ -108,8 +114,7 @@ void Sqlite3Connection::execSqlInQueue(const std::string &sql,
                                        const std::vector<int> &length,
                                        const std::vector<int> &format,
                                        const ResultCallback &rcb,
-                                       const std::function<void(const std::exception_ptr &)> &exceptCallback,
-                                       const std::function<void()> &idleCb)
+                                       const std::function<void(const std::exception_ptr &)> &exceptCallback)
 {
     LOG_TRACE << "sql:" << sql;
     sqlite3_stmt *stmt = nullptr;
@@ -214,7 +219,7 @@ void Sqlite3Connection::execSqlInQueue(const std::string &sql,
     }
 
     rcb(Result(resultPtr));
-    idleCb();
+    _idleCb();
 }
 
 int Sqlite3Connection::stmtStep(sqlite3_stmt *stmt, const std::shared_ptr<Sqlite3ResultImpl> &resultPtr, int columnNum)
