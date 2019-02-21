@@ -71,8 +71,24 @@ class DbClientLockFree : public DbClient, public std::enable_shared_from_this<Db
         std::vector<int> _format;
         QueryCallback _cb;
         ExceptPtrCallback _exceptCb;
+        SqlCmd(std::string &&sql,
+               const size_t paraNum,
+               std::vector<const char *> &&parameters,
+               std::vector<int> &&length,
+               std::vector<int> format,
+               QueryCallback &&cb,
+               ExceptPtrCallback &&exceptCb)
+            : _sql(std::move(sql)),
+              _paraNum(paraNum),
+              _parameters(std::move(parameters)),
+              _length(std::move(length)),
+              _format(std::move(format)),
+              _cb(std::move(cb)),
+              _exceptCb(std::move(exceptCb))
+        {
+        }
     };
-    std::deque<std::shared_ptr<SqlCmd>> _sqlCmdBuffer;
+    std::deque<SqlCmd> _sqlCmdBuffer;
 
     void handleNewTask();
 };

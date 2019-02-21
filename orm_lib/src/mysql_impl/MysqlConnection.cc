@@ -72,7 +72,7 @@ MysqlConnection::MysqlConnection(trantor::EventLoop *loop, const std::string &co
         }
         else if (key == "dbname")
         {
-            LOG_DEBUG << "database:" << value;
+            //LOG_DEBUG << "database:[" << value << "]";
             dbname = value;
         }
         else if (key == "port")
@@ -96,7 +96,7 @@ MysqlConnection::MysqlConnection(trantor::EventLoop *loop, const std::string &co
                                                port.empty() ? 3306 : atol(port.c_str()),
                                                NULL,
                                                0);
-
+        //LOG_DEBUG << ret;
         auto fd = mysql_get_socket(_mysqlPtr.get());
         _channelPtr = std::unique_ptr<trantor::Channel>(new trantor::Channel(loop, fd));
         _channelPtr->setCloseCallback([=]() {
@@ -235,7 +235,7 @@ void MysqlConnection::handleEvent()
         {
         case ExecStatus_RealQuery:
         {
-            int err;
+            int err = 0;
             _waitStatus = mysql_real_query_cont(&err, _mysqlPtr.get(), status);
             LOG_TRACE << "real_query:" << _waitStatus;
             if (_waitStatus == 0)
@@ -243,6 +243,7 @@ void MysqlConnection::handleEvent()
                 if (err)
                 {
                     _execStatus = ExecStatus_None;
+                    LOG_ERROR << "error:" << err << " status:" << status;
                     outputError();
                     return;
                 }
@@ -255,6 +256,7 @@ void MysqlConnection::handleEvent()
                     _execStatus = ExecStatus_None;
                     if (err)
                     {
+                        LOG_ERROR << "error";
                         outputError();
                         return;
                     }
@@ -274,6 +276,7 @@ void MysqlConnection::handleEvent()
                 if (!ret)
                 {
                     _execStatus = ExecStatus_None;
+                    LOG_ERROR << "error";
                     outputError();
                     return;
                 }
@@ -387,6 +390,7 @@ void MysqlConnection::execSql(std::string &&sql,
         {
             if (err)
             {
+                LOG_ERROR << "error";
                 outputError();
                 return;
             }
@@ -400,6 +404,7 @@ void MysqlConnection::execSql(std::string &&sql,
                 _execStatus = ExecStatus_None;
                 if (!ret)
                 {
+                    LOG_ERROR << "error";
                     outputError();
                     return;
                 }

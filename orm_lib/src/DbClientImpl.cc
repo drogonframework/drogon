@@ -71,7 +71,7 @@ DbClientImpl::DbClientImpl(const std::string &connInfo, const size_t connNum, Cl
             for (size_t i = 0; i < _connectNum; i++)
             {
                 auto loop = _loops.getNextLoop();
-                loop->runAfter(0.01 * (i + 1), [this, loop]() {
+                loop->runAfter(0.1 * (i + 1), [this, loop]() {
                     std::lock_guard<std::mutex> lock(_connectionsMutex);
                     _connections.insert(newConnection(loop));
                 });
@@ -205,14 +205,13 @@ void DbClientImpl::execSql(std::string &&sql,
         return;
     }
     //LOG_TRACE << "Push query to buffer";
-    std::shared_ptr<SqlCmd> cmd = std::make_shared<SqlCmd>();
-    cmd->_sql = std::move(sql);
-    cmd->_paraNum = paraNum;
-    cmd->_parameters = std::move(parameters);
-    cmd->_length = std::move(length);
-    cmd->_format = std::move(format);
-    cmd->_cb = std::move(rcb);
-    cmd->_exceptCb = std::move(exceptCallback);
+    std::shared_ptr<SqlCmd> cmd = std::make_shared<SqlCmd>(std::move(sql),
+                                                           paraNum,
+                                                           std::move(parameters),
+                                                           std::move(length),
+                                                           std::move(format),
+                                                           std::move(rcb),
+                                                           std::move(exceptCallback));
     {
         std::lock_guard<std::mutex> guard(_bufferMutex);
         _sqlCmdBuffer.push_back(std::move(cmd));
@@ -274,7 +273,7 @@ void DbClientImpl::handleNewTask(const DbConnectionPtr &connPtr)
         std::lock_guard<std::mutex> guard(_bufferMutex);
         if (!_sqlCmdBuffer.empty())
         {
-            cmd = _sqlCmdBuffer.front();
+            cmd = std::move(_sqlCmdBuffer.front());
             _sqlCmdBuffer.pop_front();
         }
     }

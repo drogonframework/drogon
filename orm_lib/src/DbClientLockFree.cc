@@ -46,14 +46,14 @@ DbClientLockFree::DbClientLockFree(const std::string &connInfo, trantor::EventLo
     LOG_TRACE << "type=" << (int)type;
     if (type == ClientType::PostgreSQL)
     {
-        _loop->runInLoop([this](){
-            _connectionHolder=newConnection();
+        _loop->runInLoop([this]() {
+            _connectionHolder = newConnection();
         });
     }
     else if (type == ClientType::Mysql)
     {
-        _loop->runInLoop([this](){
-            _connectionHolder=newConnection();
+        _loop->runInLoop([this]() {
+            _connectionHolder = newConnection();
         });
     }
     else
@@ -141,15 +141,13 @@ void DbClientLockFree::execSql(std::string &&sql,
     }
 
     //LOG_TRACE << "Push query to buffer";
-    std::shared_ptr<SqlCmd> cmd = std::make_shared<SqlCmd>();
-    cmd->_sql = std::move(sql);
-    cmd->_paraNum = paraNum;
-    cmd->_parameters = std::move(parameters);
-    cmd->_length = std::move(length);
-    cmd->_format = std::move(format);
-    cmd->_cb = std::move(rcb);
-    cmd->_exceptCb = std::move(exceptCallback);
-    _sqlCmdBuffer.push_back(std::move(cmd));
+    _sqlCmdBuffer.emplace_back(std::move(sql),
+                               paraNum,
+                               std::move(parameters),
+                               std::move(length),
+                               std::move(format),
+                               std::move(rcb),
+                               std::move(exceptCallback));
 }
 
 std::shared_ptr<Transaction> DbClientLockFree::newTransaction(const std::function<void(bool)> &commitCallback)
@@ -165,9 +163,9 @@ void DbClientLockFree::handleNewTask()
     assert(!_connection->isWorking());
     if (!_sqlCmdBuffer.empty())
     {
-        auto cmd = _sqlCmdBuffer.front();
+        auto &cmd = _sqlCmdBuffer.front();
+        execSql(_connection, std::move(cmd._sql), cmd._paraNum, std::move(cmd._parameters), std::move(cmd._length), std::move(cmd._format), std::move(cmd._cb), std::move(cmd._exceptCb));
         _sqlCmdBuffer.pop_front();
-        execSql(_connection, std::move(cmd->_sql), cmd->_paraNum, std::move(cmd->_parameters), std::move(cmd->_length), std::move(cmd->_format), std::move(cmd->_cb), std::move(cmd->_exceptCb));
         return;
     }
 }
@@ -211,7 +209,7 @@ DbConnectionPtr DbClientLockFree::newConnection()
             auto thisPtr = weakPtr.lock();
             if (!thisPtr)
                 return;
-            thisPtr->_connectionHolder=thisPtr->newConnection();
+            thisPtr->_connectionHolder = thisPtr->newConnection();
         });
     });
     connPtr->setOkCallback([weakPtr](const DbConnectionPtr &okConnPtr) {
