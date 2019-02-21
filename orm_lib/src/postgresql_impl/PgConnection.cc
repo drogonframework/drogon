@@ -197,9 +197,9 @@ void PgConnection::execSqlInLoop(std::string &&sql,
                 {
                     auto exceptPtr = std::current_exception();
                     _exceptCb(exceptPtr);
-                    _exceptCb = decltype(_exceptCb)();
+                    _exceptCb = nullptr;
                 }
-                _cb = decltype(_cb)();
+                _cb = nullptr;
                 if (_idleCbPtr)
                 {
                     auto idle = std::move(_idleCbPtr);
@@ -237,9 +237,9 @@ void PgConnection::execSqlInLoop(std::string &&sql,
                     {
                         auto exceptPtr = std::current_exception();
                         _exceptCb(exceptPtr);
-                        _exceptCb = decltype(_exceptCb)();
+                        _exceptCb = nullptr;
                     }
-                    _cb = decltype(_cb)();
+                    _cb = nullptr;
                     if (_idleCbPtr)
                     {
                         auto idle = std::move(_idleCbPtr);
@@ -268,9 +268,9 @@ void PgConnection::execSqlInLoop(std::string &&sql,
                     {
                         auto exceptPtr = std::current_exception();
                         _exceptCb(exceptPtr);
-                        _exceptCb = decltype(_exceptCb)();
+                        _exceptCb = nullptr;
                     }
-                    _cb = decltype(_cb)();
+                    _cb = nullptr;
                     if (_idleCbPtr)
                     {
                         auto idle = std::move(_idleCbPtr);
@@ -312,9 +312,9 @@ void PgConnection::execSqlInLoop(std::string &&sql,
                         {
                             auto exceptPtr = std::current_exception();
                             thisPtr->_exceptCb(exceptPtr);
-                            thisPtr->_exceptCb = decltype(thisPtr->_exceptCb)();
+                            thisPtr->_exceptCb = nullptr;
                         }
-                        thisPtr->_cb = decltype(thisPtr->_cb)();
+                        thisPtr->_cb = nullptr;
                         if (thisPtr->_idleCbPtr)
                         {
                             auto idle = std::move(thisPtr->_idleCbPtr);
@@ -349,9 +349,9 @@ void PgConnection::handleRead()
             {
                 auto exceptPtr = std::current_exception();
                 _exceptCb(exceptPtr);
-                _exceptCb = decltype(_exceptCb)();
+                _exceptCb = nullptr;
             }
-            _cb = decltype(_cb)();
+            _cb = nullptr;
             if (_idleCbPtr)
             {
                 //auto idle = std::move(_idleCbPtr);
@@ -388,9 +388,9 @@ void PgConnection::handleRead()
                 catch (...)
                 {
                     _exceptCb(std::current_exception());
-                    _exceptCb = decltype(_exceptCb)();
+                    _exceptCb = nullptr;
                 }
-                _cb = decltype(_cb)();
+                _cb = nullptr;
             }
         }
         else
@@ -405,8 +405,8 @@ void PgConnection::handleRead()
                 {
                     auto r = makeResult(res, _sql);
                     _cb(r);
-                    _cb = decltype(_cb)();
-                    _exceptCb = decltype(_exceptCb)();
+                    _cb = nullptr;
+                    _exceptCb = nullptr;
                 }
             }
         }
@@ -416,7 +416,7 @@ void PgConnection::handleRead()
         if (isPreparing)
         {
             _preparingCallback();
-            _preparingCallback = std::function<void()>();
+            _preparingCallback = nullptr;
         }
         else
         {

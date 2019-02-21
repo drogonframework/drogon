@@ -434,10 +434,10 @@ void MysqlConnection::outputError()
         catch (...)
         {
             _exceptCb(std::current_exception());
-            _exceptCb = decltype(_exceptCb)();
+            _exceptCb = nullptr;
         }
 
-        _cb = decltype(_cb)();
+        _cb = nullptr;
         _isWorking = false;
         if (_idleCbPtr)
         {
@@ -457,8 +457,8 @@ void MysqlConnection::getResult(MYSQL_RES *res)
     if (_isWorking)
     {
         _cb(Result);
-        _cb = decltype(_cb)();
-        _exceptCb = decltype(_exceptCb)();
+        _cb = nullptr;
+        _exceptCb = nullptr;
         _isWorking = false;
         if (_idleCbPtr)
         {
