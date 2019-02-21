@@ -66,6 +66,7 @@ class TransactionImpl : public Transaction, public std::enable_shared_from_this<
     void doBegin();
     trantor::EventLoop *_loop;
     std::function<void(bool)> _commitCallback;
+    std::shared_ptr<TransactionImpl> _thisPtr;
 };
 } // namespace orm
 } // namespace drogon
