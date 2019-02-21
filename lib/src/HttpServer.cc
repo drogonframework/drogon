@@ -165,10 +165,8 @@ void HttpServer::onRequest(const TcpConnectionPtr &conn, const HttpRequestImplPt
         req->setMethod(Get);
     }
     HttpRequestParser *requestParser = any_cast<HttpRequestParser>(conn->getMutableContext());
-    {
-        //std::lock_guard<std::mutex> guard(requestParser->getPipeLineMutex());
-        requestParser->pushRquestToPipeLine(req);
-    }
+    requestParser->pushRquestToPipeLine(req);
+
     _httpAsyncCallback(req, [=](const HttpResponsePtr &response) {
         if (!response)
             return;
@@ -231,6 +229,8 @@ void HttpServer::onRequest(const TcpConnectionPtr &conn, const HttpRequestImplPt
              *                                             rfc2616-8.1.1.2
              */
             //std::lock_guard<std::mutex> guard(requestParser->getPipeLineMutex());
+            if(conn->disconnected())
+                return;
             if (requestParser->getFirstRequest() == req)
             {
                 requestParser->popFirstRequest();
