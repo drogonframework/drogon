@@ -268,7 +268,7 @@ class HttpResponseImpl : public HttpResponse
         _headers["location"] = url;
     }
     std::shared_ptr<std::string> renderToString() const;
-
+    std::shared_ptr<std::string> renderHeaderForHeadMethod() const;
     virtual void clear() override
     {
         _statusCode = kUnknown;

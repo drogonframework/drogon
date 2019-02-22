@@ -38,7 +38,46 @@ class TransactionImpl : public Transaction, public std::enable_shared_from_this<
                          std::vector<int> &&length,
                          std::vector<int> &&format,
                          ResultCallback &&rcb,
-                         std::function<void(const std::exception_ptr &)> &&exceptCallback) override;
+                         std::function<void(const std::exception_ptr &)> &&exceptCallback) override
+    {
+        if (_loop->isInLoopThread())
+        {
+            execSqlInLoop(std::move(sql),
+                          paraNum,
+                          std::move(parameters),
+                          std::move(length),
+                          std::move(format),
+                          std::move(rcb),
+                          std::move(exceptCallback));
+        }
+        else
+        {
+            _loop->queueInLoop([thisPtr = shared_from_this(),
+                                sql = std::move(sql),
+                                paraNum,
+                                parameters = std::move(parameters),
+                                length = std::move(length),
+                                format = std::move(format),
+                                rcb = std::move(rcb),
+                                exceptCallback = std::move(exceptCallback)]() mutable {
+                thisPtr->execSqlInLoop(std::move(sql),
+                                       paraNum,
+                                       std::move(parameters),
+                                       std::move(length),
+                                       std::move(format),
+                                       std::move(rcb),
+                                       std::move(exceptCallback));
+            });
+        }
+    }
+
+    void execSqlInLoop(std::string &&sql,
+                       size_t paraNum,
+                       std::vector<const char *> &&parameters,
+                       std::vector<int> &&length,
+                       std::vector<int> &&format,
+                       ResultCallback &&rcb,
+                       std::function<void(const std::exception_ptr &)> &&exceptCallback);
     virtual std::shared_ptr<Transaction> newTransaction(const std::function<void(bool)> &) override
     {
         return shared_from_this();

@@ -402,3 +402,34 @@ std::shared_ptr<std::string> HttpResponseImpl::renderToString() const
     }
     return httpString;
 }
+
+std::shared_ptr<std::string> HttpResponseImpl::renderHeaderForHeadMethod() const
+{
+    auto httpString = std::make_shared<std::string>();
+    httpString->reserve(256);
+    if (!_fullHeaderString)
+    {
+        makeHeaderString(httpString);
+    }
+    else
+    {
+        httpString->append(*_fullHeaderString);
+    }
+
+    //output cookies
+    if (_cookies.size() > 0)
+    {
+        for (auto it = _cookies.begin(); it != _cookies.end(); ++it)
+        {
+
+            httpString->append(it->second.cookieString());
+        }
+    }
+
+    //output Date header
+    httpString->append("Date: ");
+    httpString->append(getHttpFullDate(trantor::Date::date()));
+    httpString->append("\r\n\r\n");
+
+    return httpString;
+}

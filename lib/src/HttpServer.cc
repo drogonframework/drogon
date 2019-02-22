@@ -159,8 +159,8 @@ void HttpServer::onRequest(const TcpConnectionPtr &conn, const HttpRequestImplPt
     bool _close = connection == "close" ||
                   (req->getVersion() == HttpRequestImpl::kHttp10 && connection != "Keep-Alive");
 
-    bool _isHeadMethod = (req->method() == Head);
-    if (_isHeadMethod)
+    bool isHeadMethod = (req->method() == Head);
+    if (isHeadMethod)
     {
         req->setMethod(Get);
     }
@@ -172,18 +172,19 @@ void HttpServer::onRequest(const TcpConnectionPtr &conn, const HttpRequestImplPt
             return;
         response->setCloseConnection(_close);
         //if the request method is HEAD,remove the body of response(rfc2616-9.4)
-        auto newResp = response;
-        if (_isHeadMethod)
-        {
-            if (newResp->expiredTime() >= 0)
-            {
-                //Cached response,make a copy
-                newResp = std::make_shared<HttpResponseImpl>(*std::dynamic_pointer_cast<HttpResponseImpl>(response));
-                newResp->setExpiredTime(-1);
-            }
-            newResp->setBody(std::string());
-        }
+        //
+        // if (isHeadMethod)
+        // {
+        //     if (newResp->expiredTime() >= 0)
+        //     {
+        //         //Cached response,make a copy
+        //         newResp = std::make_shared<HttpResponseImpl>(*std::dynamic_pointer_cast<HttpResponseImpl>(response));
+        //         newResp->setExpiredTime(-1);
+        //     }
+        //     newResp->setBody(std::string());
+        // }
 
+        auto newResp = response;
         auto &sendfileName = std::dynamic_pointer_cast<HttpResponseImpl>(newResp)->sendfileName();
 
         if (HttpAppFramework::instance().useGzip() &&
@@ -229,19 +230,19 @@ void HttpServer::onRequest(const TcpConnectionPtr &conn, const HttpRequestImplPt
              *                                             rfc2616-8.1.1.2
              */
             //std::lock_guard<std::mutex> guard(requestParser->getPipeLineMutex());
-            if(conn->disconnected())
+            if (conn->disconnected())
                 return;
             if (requestParser->getFirstRequest() == req)
             {
                 requestParser->popFirstRequest();
-                sendResponse(conn, newResp);
+                sendResponse(conn, newResp, isHeadMethod);
                 while (1)
                 {
                     auto resp = requestParser->getFirstResponse();
                     if (resp)
                     {
                         requestParser->popFirstRequest();
-                        sendResponse(conn, resp);
+                        sendResponse(conn, resp, isHeadMethod);
                     }
                     else
                         return;
@@ -255,21 +256,21 @@ void HttpServer::onRequest(const TcpConnectionPtr &conn, const HttpRequestImplPt
         }
         else
         {
-            conn->getLoop()->queueInLoop([conn, req, newResp, this]() {
+            conn->getLoop()->queueInLoop([conn, req, newResp, this, isHeadMethod]() {
                 HttpRequestParser *requestParser = any_cast<HttpRequestParser>(conn->getMutableContext());
                 if (requestParser)
                 {
                     if (requestParser->getFirstRequest() == req)
                     {
                         requestParser->popFirstRequest();
-                        sendResponse(conn, newResp);
+                        sendResponse(conn, newResp, isHeadMethod);
                         while (1)
                         {
                             auto resp = requestParser->getFirstResponse();
                             if (resp)
                             {
                                 requestParser->popFirstRequest();
-                                sendResponse(conn, resp);
+                                sendResponse(conn, resp, isHeadMethod);
                             }
                             else
                                 return;
@@ -286,16 +287,27 @@ void HttpServer::onRequest(const TcpConnectionPtr &conn, const HttpRequestImplPt
     });
 }
 void HttpServer::sendResponse(const TcpConnectionPtr &conn,
-                              const HttpResponsePtr &response)
+                              const HttpResponsePtr &response,
+                              bool isHeadMethod)
 {
     conn->getLoop()->assertInLoopThread();
-    auto httpString = std::dynamic_pointer_cast<HttpResponseImpl>(response)->renderToString();
-    conn->send(httpString);
-    auto &sendfileName = std::dynamic_pointer_cast<HttpResponseImpl>(response)->sendfileName();
-    if (!sendfileName.empty())
+    auto respImplPtr = std::dynamic_pointer_cast<HttpResponseImpl>(response);
+    if (!isHeadMethod)
     {
-        conn->sendFile(sendfileName.c_str());
+        auto httpString = respImplPtr->renderToString();
+        conn->send(httpString);
+        auto &sendfileName = respImplPtr->sendfileName();
+        if (!sendfileName.empty())
+        {
+            conn->sendFile(sendfileName.c_str());
+        }
     }
+    else
+    {
+        auto httpString = respImplPtr->renderHeaderForHeadMethod();
+        conn->send(httpString);
+    }
+
     if (response->closeConnection())
     {
         conn->shutdown();

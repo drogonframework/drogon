@@ -319,7 +319,8 @@ void HttpRequestImpl::addHeader(const char *start, const char *colon, const char
     }
     else
     {
-        _headers[std::move(field)] = std::move(value);
+        //_headers[std::move(field)] = std::move(value);
+        _headers.emplace(std::move(field), std::move(value));
     }
 }
 

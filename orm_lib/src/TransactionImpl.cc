@@ -68,61 +68,61 @@ TransactionImpl::~TransactionImpl()
         });
     }
 }
-void TransactionImpl::execSql(std::string &&sql,
-                              size_t paraNum,
-                              std::vector<const char *> &&parameters,
-                              std::vector<int> &&length,
-                              std::vector<int> &&format,
-                              ResultCallback &&rcb,
-                              std::function<void(const std::exception_ptr &)> &&exceptCallback)
+void TransactionImpl::execSqlInLoop(std::string &&sql,
+                                    size_t paraNum,
+                                    std::vector<const char *> &&parameters,
+                                    std::vector<int> &&length,
+                                    std::vector<int> &&format,
+                                    ResultCallback &&rcb,
+                                    std::function<void(const std::exception_ptr &)> &&exceptCallback)
 {
-    _loop->queueInLoop([thisPtr = shared_from_this(), sql = std::move(sql), paraNum, parameters = std::move(parameters), length = std::move(length), format = std::move(format), rcb = std::move(rcb), exceptCallback = std::move(exceptCallback)]() mutable {
-        if (!thisPtr->_isCommitedOrRolledback)
+    _loop->assertInLoopThread();
+    if (!_isCommitedOrRolledback)
+    {
+        auto thisPtr = shared_from_this();
+        if (!_isWorking)
         {
-            if (!thisPtr->_isWorking)
-            {
-                thisPtr->_isWorking = true;
-                thisPtr->_thisPtr = thisPtr;
-                thisPtr->_connectionPtr->execSql(std::move(sql),
-                                                 paraNum,
-                                                 std::move(parameters),
-                                                 std::move(length),
-                                                 std::move(format),
-                                                 std::move(rcb),
-                                                 [exceptCallback, thisPtr](const std::exception_ptr &ePtr) {
-                                                     thisPtr->rollback();
-                                                     if (exceptCallback)
-                                                         exceptCallback(ePtr);
-                                                 });
-            }
-            else
-            {
-                //push sql cmd to buffer;
-                SqlCmd cmd;
-                cmd._sql = std::move(sql);
-                cmd._paraNum = paraNum;
-                cmd._parameters = std::move(parameters);
-                cmd._length = std::move(length);
-                cmd._format = std::move(format);
-                cmd._cb = std::move(rcb);
-                cmd._exceptCb = std::move(exceptCallback);
-                cmd._thisPtr = thisPtr;
-                thisPtr->_sqlCmdBuffer.push_back(std::move(cmd));
-            }
+            _isWorking = true;
+            _thisPtr = thisPtr;
+            _connectionPtr->execSql(std::move(sql),
+                                    paraNum,
+                                    std::move(parameters),
+                                    std::move(length),
+                                    std::move(format),
+                                    std::move(rcb),
+                                    [exceptCallback, thisPtr](const std::exception_ptr &ePtr) {
+                                        thisPtr->rollback();
+                                        if (exceptCallback)
+                                            exceptCallback(ePtr);
+                                    });
         }
         else
         {
-            //The transaction has been rolled back;
-            try
-            {
-                throw TransactionRollback("The transaction has been rolled back");
-            }
-            catch (...)
-            {
-                exceptCallback(std::current_exception());
-            }
+            //push sql cmd to buffer;
+            SqlCmd cmd;
+            cmd._sql = std::move(sql);
+            cmd._paraNum = paraNum;
+            cmd._parameters = std::move(parameters);
+            cmd._length = std::move(length);
+            cmd._format = std::move(format);
+            cmd._cb = std::move(rcb);
+            cmd._exceptCb = std::move(exceptCallback);
+            cmd._thisPtr = thisPtr;
+            thisPtr->_sqlCmdBuffer.push_back(std::move(cmd));
         }
-    });
+    }
+    else
+    {
+        //The transaction has been rolled back;
+        try
+        {
+            throw TransactionRollback("The transaction has been rolled back");
+        }
+        catch (...)
+        {
+            exceptCallback(std::current_exception());
+        }
+    }
 }
 
 void TransactionImpl::rollback()

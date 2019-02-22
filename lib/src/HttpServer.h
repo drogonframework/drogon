@@ -101,7 +101,7 @@ class HttpServer : trantor::NonCopyable
                    MsgBuffer *);
     void onRequest(const TcpConnectionPtr &, const HttpRequestImplPtr &);
     bool isWebSocket(const TcpConnectionPtr &conn, const HttpRequestImplPtr &req);
-    void sendResponse(const TcpConnectionPtr &, const HttpResponsePtr &);
+    void sendResponse(const TcpConnectionPtr &, const HttpResponsePtr &, bool isHeadMethod);
     trantor::TcpServer _server;
     HttpAsyncCallback _httpAsyncCallback;
     WebSocketNewAsyncCallback _newWebsocketCallback;

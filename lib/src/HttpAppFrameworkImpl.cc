@@ -476,7 +476,7 @@ void HttpAppFrameworkImpl::onConnection(const TcpConnectionPtr &conn)
     }
     else
     {
-#if (CXX_STD > 14)
+#if CXX_STD >= 17
         if (!conn->getContext().has_value())
 #else
         if (conn->getContext().empty())
