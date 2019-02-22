@@ -223,14 +223,8 @@ void HttpRequestImpl::appendToBuffer(MsgBuffer *output) const
         output->append(buf);
         if (_contentTypeString.empty())
         {
-
-#if CXX_STD >= 17
             auto &type = webContentTypeToString(_contentType);
             output->append(type.data(), type.length());
-#else
-            auto type = webContentTypeToString(_contentType);
-            output->append(type);
-#endif
         }
     }
     if (!_contentTypeString.empty())

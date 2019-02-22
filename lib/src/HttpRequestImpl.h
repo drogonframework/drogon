@@ -335,13 +335,8 @@ class HttpRequestImpl : public HttpRequest
     virtual void setContentTypeCode(const ContentType type) override
     {
         _contentType = type;
-#if CXX_STD >= 17
         auto &typeStr = webContentTypeToString(type);
         setContentType(std::string(typeStr.data(), typeStr.length()));
-#else
-        auto typeStr = webContentTypeToString(type);
-        setContentType(std::string(typeStr));
-#endif
     }
 
     // virtual void setContentTypeCodeAndCharacterSet(ContentType type, const std::string &charSet = "utf-8") override

@@ -25,9 +25,6 @@
 #include <memory>
 #include <mutex>
 #include <atomic>
-#if CXX_STD >= 17
-#include <string_view>
-#endif
 
 using namespace trantor;
 namespace drogon
@@ -37,13 +34,25 @@ class HttpResponseImpl : public HttpResponse
     friend class HttpResponseParser;
 
   public:
-    explicit HttpResponseImpl()
+    HttpResponseImpl()
         : _statusCode(kUnknown),
           _creationDate(trantor::Date::now()),
           _closeConnection(false),
           _leftBodyLength(0),
           _currentChunkLength(0),
           _bodyPtr(new std::string())
+    {
+    }
+    HttpResponseImpl(HttpStatusCode code, ContentType type)
+        : _statusCode(code),
+          _statusMessage(statusCodeToString(code)),
+          _creationDate(trantor::Date::now()),
+          _closeConnection(false),
+          _leftBodyLength(0),
+          _currentChunkLength(0),
+          _bodyPtr(new std::string()),
+          _contentType(type),
+          _contentTypeString(webContentTypeToString(type))
     {
     }
     virtual HttpStatusCode statusCode() override
@@ -59,7 +68,7 @@ class HttpResponseImpl : public HttpResponse
     virtual void setStatusCode(HttpStatusCode code) override
     {
         _statusCode = code;
-        setStatusMessage(web_response_code_to_string(code));
+        setStatusMessage(statusCodeToString(code));
     }
 
     virtual void setStatusCode(HttpStatusCode code, const std::string &status_message) override
@@ -365,24 +374,24 @@ class HttpResponseImpl : public HttpResponse
     }
 
   protected:
-    static const char *web_response_code_to_string(int code);
+    static const char *statusCodeToString(int code);
     void makeHeaderString(const std::shared_ptr<std::string> &headerStringPtr) const;
 
   private:
     std::unordered_map<std::string, std::string> _headers;
     std::unordered_map<std::string, Cookie> _cookies;
+
     HttpStatusCode _statusCode;
+    const char *_statusMessage = nullptr;
+
     trantor::Date _creationDate;
     Version _v;
-    const char *_statusMessage = nullptr;
     std::string _statusMessageString;
     bool _closeConnection;
 
     size_t _leftBodyLength;
     size_t _currentChunkLength;
     std::shared_ptr<std::string> _bodyPtr;
-
-    ContentType _contentType = CT_TEXT_HTML;
 
     ssize_t _expriedTime = -1;
     std::string _sendfileName;
@@ -393,21 +402,14 @@ class HttpResponseImpl : public HttpResponse
     mutable std::shared_ptr<std::string> _httpString;
     mutable std::string::size_type _datePos = std::string::npos;
     mutable int64_t _httpStringDate = -1;
-#if CXX_STD >= 17
-    std::string_view _contentTypeString = "text/html; charset=utf-8";
-    void setContentType(const std::string_view &contentType)
+
+    ContentType _contentType = CT_TEXT_HTML;
+    string_view _contentTypeString = "Content-Type: text/html; charset=utf-8\r\n";
+    void setContentType(const string_view &contentType)
     {
         _contentTypeString = contentType;
     }
-#else
-    const char *_contentTypeString = "text/html; charset=utf-8";
-    void setContentType(const char *contentType)
-    {
-        _contentTypeString = contentType;
-    
-    }
-#endif
-    
+
     void setStatusMessage(const char *message)
     {
         _statusMessage = message;

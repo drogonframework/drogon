@@ -18,14 +18,14 @@
 #include <drogon/config.h>
 #if CXX_STD >= 17
 #include <string_view>
+typedef std::string_view string_view;
+#else
+#include <experimental/string_view>
+typedef std::experimental::basic_string_view<char> string_view;
 #endif
 namespace drogon
 {
-#if CXX_STD >= 17
-const std::string_view &webContentTypeToString(ContentType contenttype);
-#else
-const char *webContentTypeToString(ContentType contenttype);
-#endif
+const string_view &webContentTypeToString(ContentType contenttype);
 
 //std::string webContentTypeAndCharsetToString(ContentType contenttype, const std::string &charSet);
 

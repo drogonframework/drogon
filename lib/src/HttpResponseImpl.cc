@@ -34,9 +34,7 @@ static const std::string &getServerString()
 
 HttpResponsePtr HttpResponse::newHttpResponse()
 {
-    auto res = std::make_shared<HttpResponseImpl>();
-    res->setStatusCode(k200OK);
-    res->setContentTypeCode(CT_TEXT_HTML);
+    auto res = std::make_shared<HttpResponseImpl>(k200OK, CT_TEXT_HTML);
     return res;
 }
 
@@ -48,12 +46,11 @@ HttpResponsePtr HttpResponse::newHttpJsonResponse(const Json::Value &data)
         builder["commentStyle"] = "None";
         builder["indentation"] = "";
     });
-    auto res = std::make_shared<HttpResponseImpl>();
-    res->setStatusCode(k200OK);
-    res->setContentTypeCode(CT_APPLICATION_JSON);
+    auto res = std::make_shared<HttpResponseImpl>(k200OK, CT_APPLICATION_JSON);
     res->setBody(writeString(builder, data));
     return res;
 }
+
 HttpResponsePtr HttpResponse::newNotFoundResponse()
 {
     HttpViewData data;
@@ -189,7 +186,7 @@ HttpResponsePtr HttpResponse::newFileResponse(const std::string &fullPath, const
     return resp;
 }
 
-const char *HttpResponseImpl::web_response_code_to_string(int code)
+const char *HttpResponseImpl::statusCodeToString(int code)
 {
     switch (code)
     {
@@ -329,11 +326,7 @@ void HttpResponseImpl::makeHeaderString(const std::shared_ptr<std::string> &head
             //output->append("Connection: Keep-Alive\r\n");
         }
     }
-#if CXX_STD >= 17
     headerStringPtr->append(_contentTypeString.data(), _contentTypeString.length());
-#else
-    headerStringPtr->append(_contentTypeString);
-#endif
     for (auto it = _headers.begin(); it != _headers.end(); ++it)
     {
         headerStringPtr->append(it->first);
