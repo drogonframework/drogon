@@ -133,6 +133,7 @@ class DbClient : public trantor::NonCopyable
 
     /// A stream-type method for sql execution
     internal::SqlBinder operator<<(const std::string &sql);
+    internal::SqlBinder operator<<(std::string &&sql);
 
     /// Create a transaction object.
     /**
@@ -147,6 +148,7 @@ class DbClient : public trantor::NonCopyable
     virtual std::shared_ptr<Transaction> newTransaction(const std::function<void(bool)> &commitCallback = std::function<void(bool)>()) = 0;
 
     ClientType type() const { return _type; }
+    const std::string &connectionInfo() { return _connInfo; }
 
   private:
     friend internal::SqlBinder;
@@ -160,6 +162,7 @@ class DbClient : public trantor::NonCopyable
 
   protected:
     ClientType _type;
+    std::string _connInfo;
 };
 typedef std::shared_ptr<DbClient> DbClientPtr;
 

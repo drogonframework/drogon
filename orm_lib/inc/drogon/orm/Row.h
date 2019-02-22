@@ -28,6 +28,19 @@ class Field;
 class ConstRowIterator;
 class ConstReverseRowIterator;
 
+/// Reference to one row in a result.
+/** 
+ * A row represents one row (also called a row) in a query result set.
+ * It also acts as a container mapping column numbers or names to field
+ * values (see below):
+ *
+ * @code
+ *	cout << row["date"].as<std::string>() << ": " << row["name"].as<std::string>() << endl;
+ * @endcode
+ *
+ * The row itself acts like a (non-modifyable) container, complete with its
+ * own const_iterator and const_reverse_iterator.
+ */
 class Row
 {
   public:

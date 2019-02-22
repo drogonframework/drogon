@@ -15,6 +15,11 @@
 #include "HttpAppFrameworkImpl.h"
 #include "ConfigLoader.h"
 #include "HttpServer.h"
+#if USE_ORM
+#if USE_FAST_CLIENT
+#include "../../orm_lib/src/DbClientLockFree.h"
+#endif
+#endif
 #include <drogon/HttpTypes.h>
 #include <drogon/utils/Utilities.h>
 #include <drogon/DrClassMap.h>
@@ -278,15 +283,17 @@ void HttpAppFrameworkImpl::run()
     std::vector<std::shared_ptr<EventLoopThread>> loopThreads;
 
     std::vector<trantor::EventLoop *> ioLoops;
-    for (auto const &listener : _listeners)
+
+#ifdef __linux__
+    for (size_t i = 0; i < _threadNum; i++)
     {
         LOG_TRACE << "thread num=" << _threadNum;
-#ifdef __linux__
-        for (size_t i = 0; i < _threadNum; i++)
+        auto loopThreadPtr = std::make_shared<EventLoopThread>("DrogonIoLoop");
+        loopThreadPtr->run();
+        loopThreads.push_back(loopThreadPtr);
+        ioLoops.push_back(loopThreadPtr->getLoop());
+        for (auto const &listener : _listeners)
         {
-            auto loopThreadPtr = std::make_shared<EventLoopThread>("DrogonIoLoop");
-            loopThreadPtr->run();
-            loopThreads.push_back(loopThreadPtr);
             auto serverPtr = std::make_shared<HttpServer>(loopThreadPtr->getLoop(),
                                                           InetAddress(std::get<0>(listener), std::get<1>(listener)), "drogon");
             if (std::get<2>(listener))
@@ -312,9 +319,12 @@ void HttpAppFrameworkImpl::run()
             serverPtr->kickoffIdleConnections(_idleConnectionTimeout);
             serverPtr->start();
             servers.push_back(serverPtr);
-            ioLoops.push_back(serverPtr->getLoop());
         }
+    }
 #else
+    for (auto const &listener : _listeners)
+    {
+        LOG_TRACE << "thread num=" << _threadNum;
         auto loopThreadPtr = std::make_shared<EventLoopThread>("DrogonListeningLoop");
         loopThreadPtr->run();
         loopThreads.push_back(loopThreadPtr);
@@ -359,8 +369,16 @@ void HttpAppFrameworkImpl::run()
             ioLoops.push_back(serverIoLoop);
         }
         servers.push_back(serverPtr);
-#endif
     }
+#endif
+
+#if USE_ORM
+#if USE_FAST_CLIENT
+    // Create fast db clients for every io loop
+    if (_enableFastDbClient)
+        createFastDbClient(ioLoops);
+#endif
+#endif
     _httpCtrlsRouter.init(ioLoops);
     _httpSimpleCtrlsRouter.init(ioLoops);
     _websockCtrlsRouter.init();
@@ -395,7 +413,27 @@ void HttpAppFrameworkImpl::run()
     _responseCachingMap = std::unique_ptr<CacheMap<std::string, HttpResponsePtr>>(new CacheMap<std::string, HttpResponsePtr>(loop(), 1.0, 4, 50)); //Max timeout up to about 70 days;
     loop()->loop();
 }
-
+#if USE_ORM
+#if USE_FAST_CLIENT
+void HttpAppFrameworkImpl::createFastDbClient(const std::vector<trantor::EventLoop *> &ioloops)
+{
+    for (auto &iter : _dbClientsMap)
+    {
+        for (auto *loop : ioloops)
+        {
+            if (iter.second->type() == drogon::orm::ClientType::Sqlite3)
+            {
+                _dbFastClientsMap[iter.first][loop] = iter.second;
+            }
+            if (iter.second->type() == drogon::orm::ClientType::PostgreSQL || iter.second->type() == drogon::orm::ClientType::Mysql)
+            {
+                _dbFastClientsMap[iter.first][loop] = std::shared_ptr<drogon::orm::DbClient>(new drogon::orm::DbClientLockFree(iter.second->connectionInfo(), loop, iter.second->type()));
+            }
+        }
+    }
+}
+#endif
+#endif
 void HttpAppFrameworkImpl::onWebsockDisconnect(const WebSocketConnectionPtr &wsConnPtr)
 {
     auto wsConnImplPtr = std::dynamic_pointer_cast<WebSocketConnectionImpl>(wsConnPtr);
@@ -438,7 +476,7 @@ void HttpAppFrameworkImpl::onConnection(const TcpConnectionPtr &conn)
     }
     else
     {
-#if (CXX_STD > 14)
+#if CXX_STD >= 17
         if (!conn->getContext().has_value())
 #else
         if (conn->getContext().empty())
@@ -775,7 +813,12 @@ orm::DbClientPtr HttpAppFrameworkImpl::getDbClient(const std::string &name)
 {
     return _dbClientsMap[name];
 }
-
+#if USE_FAST_CLIENT
+orm::DbClientPtr HttpAppFrameworkImpl::getFastDbClient(const std::string &name)
+{
+    return _dbFastClientsMap[name][trantor::EventLoop::getEventLoopOfCurrentThread()];
+}
+#endif
 void HttpAppFrameworkImpl::createDbClient(const std::string &dbType,
                                           const std::string &host,
                                           const u_short port,

@@ -195,7 +195,7 @@ inline T Mapper<T>::findByPrimaryKey(const typename Mapper<T>::TraitsPKType &key
     clear();
     Result r(nullptr);
     {
-        auto binder = *_client << sql;
+        auto binder = *_client << std::move(sql);
         outputPrimeryKeyToBinder(key, binder);
         binder << Mode::Blocking;
         binder >> [&r](const Result &result) {
@@ -231,7 +231,7 @@ inline void Mapper<T>::findByPrimaryKey(const typename Mapper<T>::TraitsPKType &
     }
     sql = replaceSqlPlaceHolder(sql, "$?");
     clear();
-    auto binder = *_client << sql;
+    auto binder = *_client << std::move(sql);
     outputPrimeryKeyToBinder(key, binder);
     binder >> [=](const Result &r) {
         if (r.size() == 0)
@@ -265,7 +265,7 @@ Mapper<T>::findFutureByPrimaryKey(const typename Mapper<T>::TraitsPKType &key) n
     }
     sql = replaceSqlPlaceHolder(sql, "$?");
     clear();
-    auto binder = *_client << sql;
+    auto binder = *_client << std::move(sql);
     outputPrimeryKeyToBinder(key, binder);
 
     std::shared_ptr<std::promise<T>> prom = std::make_shared<std::promise<T>>();
@@ -323,7 +323,7 @@ inline T Mapper<T>::findOne(const Criteria &criteria) noexcept(false)
     clear();
     Result r(nullptr);
     {
-        auto binder = *_client << sql;
+        auto binder = *_client << std::move(sql);
         if (criteria)
             criteria.outputArgs(binder);
         binder << Mode::Blocking;
@@ -363,7 +363,7 @@ inline void Mapper<T>::findOne(const Criteria &criteria,
         sql += " for update";
     }
     clear();
-    auto binder = *_client << sql;
+    auto binder = *_client << std::move(sql);
     if (criteria)
         criteria.outputArgs(binder);
     binder >> [=](const Result &r) {
@@ -400,7 +400,7 @@ inline std::future<T> Mapper<T>::findFutureOne(const Criteria &criteria) noexcep
         sql += " for update";
     }
     clear();
-    auto binder = *_client << sql;
+    auto binder = *_client << std::move(sql);
     if (criteria)
         criteria.outputArgs(binder);
 
@@ -458,7 +458,7 @@ inline std::vector<T> Mapper<T>::findBy(const Criteria &criteria) noexcept(false
     clear();
     Result r(nullptr);
     {
-        auto binder = *_client << sql;
+        auto binder = *_client << std::move(sql);
         if (criteria)
             criteria.outputArgs(binder);
         binder << Mode::Blocking;
@@ -493,7 +493,7 @@ inline void Mapper<T>::findBy(const Criteria &criteria,
         sql += " for update";
     }
     clear();
-    auto binder = *_client << sql;
+    auto binder = *_client << std::move(sql);
     if (criteria)
         criteria.outputArgs(binder);
     binder >> [=](const Result &r) {
@@ -523,7 +523,7 @@ inline std::future<std::vector<T>> Mapper<T>::findFutureBy(const Criteria &crite
         sql += " for update";
     }
     clear();
-    auto binder = *_client << sql;
+    auto binder = *_client << std::move(sql);
     if (criteria)
         criteria.outputArgs(binder);
 
@@ -572,7 +572,7 @@ inline size_t Mapper<T>::count(const Criteria &criteria) noexcept(false)
     clear();
     Result r(nullptr);
     {
-        auto binder = *_client << sql;
+        auto binder = *_client << std::move(sql);
         if (criteria)
             criteria.outputArgs(binder);
         binder << Mode::Blocking;
@@ -598,7 +598,7 @@ inline void Mapper<T>::count(const Criteria &criteria,
         sql = replaceSqlPlaceHolder(sql, "$?");
     }
     clear();
-    auto binder = *_client << sql;
+    auto binder = *_client << std::move(sql);
     if (criteria)
         criteria.outputArgs(binder);
     binder >> [=](const Result &r) {
@@ -619,7 +619,7 @@ inline std::future<size_t> Mapper<T>::countFuture(const Criteria &criteria) noex
         sql = replaceSqlPlaceHolder(sql, "$?");
     }
     clear();
-    auto binder = *_client << sql;
+    auto binder = *_client << std::move(sql);
     if (criteria)
         criteria.outputArgs(binder);
 
@@ -660,7 +660,7 @@ inline void Mapper<T>::insert(T &obj) noexcept(false)
     sql = replaceSqlPlaceHolder(sql, "$?");
     Result r(nullptr);
     {
-        auto binder = *_client << sql;
+        auto binder = *_client << std::move(sql);
         obj.outputArgs(binder);
         binder << Mode::Blocking;
         binder >> [&r](const Result &result) {
@@ -705,7 +705,7 @@ inline void Mapper<T>::insert(const T &obj,
         sql += " returning *";
     }
     sql = replaceSqlPlaceHolder(sql, "$?");
-    auto binder = *_client << sql;
+    auto binder = *_client << std::move(sql);
     obj.outputArgs(binder);
     auto client = _client;
     binder >> [client, rcb, obj](const Result &r) {
@@ -748,7 +748,7 @@ inline std::future<T> Mapper<T>::insertFuture(const T &obj) noexcept
         sql += " returning *";
     }
     sql = replaceSqlPlaceHolder(sql, "$?");
-    auto binder = *_client << sql;
+    auto binder = *_client << std::move(sql);
     obj.outputArgs(binder);
 
     std::shared_ptr<std::promise<T>> prom = std::make_shared<std::promise<T>>();
@@ -793,7 +793,7 @@ inline size_t Mapper<T>::update(const T &obj) noexcept(false)
     sql = replaceSqlPlaceHolder(sql, "$?");
     Result r(nullptr);
     {
-        auto binder = *_client << sql;
+        auto binder = *_client << std::move(sql);
         obj.updateArgs(binder);
         outputPrimeryKeyToBinder(obj.getPrimaryKey(), binder);
         binder << Mode::Blocking;
@@ -824,7 +824,7 @@ inline void Mapper<T>::update(const T &obj,
     makePrimaryKeyCriteria(sql);
 
     sql = replaceSqlPlaceHolder(sql, "$?");
-    auto binder = *_client << sql;
+    auto binder = *_client << std::move(sql);
     obj.updateArgs(binder);
     outputPrimeryKeyToBinder(obj.getPrimaryKey(), binder);
     binder >> [=](const Result &r) {
@@ -850,7 +850,7 @@ inline std::future<size_t> Mapper<T>::updateFuture(const T &obj) noexcept
     makePrimaryKeyCriteria(sql);
 
     sql = replaceSqlPlaceHolder(sql, "$?");
-    auto binder = *_client << sql;
+    auto binder = *_client << std::move(sql);
     obj.updateArgs(binder);
     outputPrimeryKeyToBinder(obj.getPrimaryKey(), binder);
 
@@ -880,7 +880,7 @@ inline size_t Mapper<T>::deleteOne(const T &obj) noexcept(false)
     sql = replaceSqlPlaceHolder(sql, "$?");
     Result r(nullptr);
     {
-        auto binder = *_client << sql;
+        auto binder = *_client << std::move(sql);
         outputPrimeryKeyToBinder(obj.getPrimaryKey(), binder);
         binder << Mode::Blocking;
         binder >> [&r](const Result &result) {
@@ -904,7 +904,7 @@ inline void Mapper<T>::deleteOne(const T &obj,
     makePrimaryKeyCriteria(sql);
 
     sql = replaceSqlPlaceHolder(sql, "$?");
-    auto binder = *_client << sql;
+    auto binder = *_client << std::move(sql);
     outputPrimeryKeyToBinder(obj.getPrimaryKey(), binder);
     binder >> [=](const Result &r) {
         rcb(r.affectedRows());
@@ -923,7 +923,7 @@ inline std::future<size_t> Mapper<T>::deleteFutureOne(const T &obj) noexcept
     makePrimaryKeyCriteria(sql);
 
     sql = replaceSqlPlaceHolder(sql, "$?");
-    auto binder = *_client << sql;
+    auto binder = *_client << std::move(sql);
     outputPrimeryKeyToBinder(obj.getPrimaryKey(), binder);
 
     std::shared_ptr<std::promise<size_t>> prom = std::make_shared<std::promise<size_t>>();
@@ -954,7 +954,7 @@ inline size_t Mapper<T>::deleteBy(const Criteria &criteria) noexcept(false)
 
     Result r(nullptr);
     {
-        auto binder = *_client << sql;
+        auto binder = *_client << std::move(sql);
         if (criteria)
         {
             criteria.outputArgs(binder);
@@ -984,7 +984,7 @@ inline void Mapper<T>::deleteBy(const Criteria &criteria,
         sql = replaceSqlPlaceHolder(sql, "$?");
     }
 
-    auto binder = *_client << sql;
+    auto binder = *_client << std::move(sql);
     if (criteria)
     {
         criteria.outputArgs(binder);
@@ -1007,7 +1007,7 @@ inline std::future<size_t> Mapper<T>::deleteFutureBy(const Criteria &criteria) n
         sql += criteria.criteriaString();
         sql = replaceSqlPlaceHolder(sql, "$?");
     }
-    auto binder = *_client << sql;
+    auto binder = *_client << std::move(sql);
     if (criteria)
     {
         criteria.outputArgs(binder);

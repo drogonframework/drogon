@@ -107,8 +107,8 @@ class HttpRequest
     virtual void setParameter(const std::string &key, const std::string &value) = 0;
 
     /// Set or get the content type
-    virtual void setContentTypeCode(ContentType type) = 0;
-    virtual void setContentTypeCodeAndCharacterSet(ContentType type, const std::string &charSet = "utf-8") = 0;
+    virtual void setContentTypeCode(const ContentType type) = 0;
+    /// virtual void setContentTypeCodeAndCharacterSet(ContentType type, const std::string &charSet = "utf-8") = 0;
     virtual ContentType getContentTypeCode() = 0;
 
     /// The following methods are a series of factory methods that help users create request objects.

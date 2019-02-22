@@ -72,6 +72,7 @@ MysqlConnection::MysqlConnection(trantor::EventLoop *loop, const std::string &co
         }
         else if (key == "dbname")
         {
+            //LOG_DEBUG << "database:[" << value << "]";
             dbname = value;
         }
         else if (key == "port")
@@ -95,7 +96,7 @@ MysqlConnection::MysqlConnection(trantor::EventLoop *loop, const std::string &co
                                                port.empty() ? 3306 : atol(port.c_str()),
                                                NULL,
                                                0);
-
+        //LOG_DEBUG << ret;
         auto fd = mysql_get_socket(_mysqlPtr.get());
         _channelPtr = std::unique_ptr<trantor::Channel>(new trantor::Channel(loop, fd));
         _channelPtr->setCloseCallback([=]() {
@@ -204,6 +205,8 @@ void MysqlConnection::handleEvent()
     if (revents & POLLPRI)
         status |= MYSQL_WAIT_EXCEPT;
     status = (status & _waitStatus);
+    if (status == 0)
+        return;
     MYSQL *ret;
     if (_status == ConnectStatus_Connecting)
     {
@@ -232,7 +235,7 @@ void MysqlConnection::handleEvent()
         {
         case ExecStatus_RealQuery:
         {
-            int err;
+            int err = 0;
             _waitStatus = mysql_real_query_cont(&err, _mysqlPtr.get(), status);
             LOG_TRACE << "real_query:" << _waitStatus;
             if (_waitStatus == 0)
@@ -240,6 +243,7 @@ void MysqlConnection::handleEvent()
                 if (err)
                 {
                     _execStatus = ExecStatus_None;
+                    LOG_ERROR << "error:" << err << " status:" << status;
                     outputError();
                     return;
                 }
@@ -252,6 +256,7 @@ void MysqlConnection::handleEvent()
                     _execStatus = ExecStatus_None;
                     if (err)
                     {
+                        LOG_ERROR << "error";
                         outputError();
                         return;
                     }
@@ -271,6 +276,7 @@ void MysqlConnection::handleEvent()
                 if (!ret)
                 {
                     _execStatus = ExecStatus_None;
+                    LOG_ERROR << "error";
                     outputError();
                     return;
                 }
@@ -298,20 +304,17 @@ void MysqlConnection::execSql(std::string &&sql,
                               std::vector<int> &&length,
                               std::vector<int> &&format,
                               ResultCallback &&rcb,
-                              std::function<void(const std::exception_ptr &)> &&exceptCallback,
-                              std::function<void()> &&idleCb)
+                              std::function<void(const std::exception_ptr &)> &&exceptCallback)
 {
     LOG_TRACE << sql;
     assert(paraNum == parameters.size());
     assert(paraNum == length.size());
     assert(paraNum == format.size());
     assert(rcb);
-    assert(idleCb);
     assert(!_isWorking);
     assert(!sql.empty());
 
     _cb = std::move(rcb);
-    _idleCb = std::move(idleCb);
     _isWorking = true;
     _exceptCb = std::move(exceptCallback);
     _sql.clear();
@@ -384,6 +387,7 @@ void MysqlConnection::execSql(std::string &&sql,
         {
             if (err)
             {
+                LOG_ERROR << "error";
                 outputError();
                 return;
             }
@@ -397,6 +401,7 @@ void MysqlConnection::execSql(std::string &&sql,
                 _execStatus = ExecStatus_None;
                 if (!ret)
                 {
+                    LOG_ERROR << "error";
                     outputError();
                     return;
                 }
@@ -426,16 +431,12 @@ void MysqlConnection::outputError()
         catch (...)
         {
             _exceptCb(std::current_exception());
-            _exceptCb = decltype(_exceptCb)();
+            _exceptCb = nullptr;
         }
 
-        _cb = decltype(_cb)();
+        _cb = nullptr;
         _isWorking = false;
-        if (_idleCb)
-        {
-            _idleCb();
-            _idleCb = decltype(_idleCb)();
-        }
+        _idleCb();
     }
 }
 
@@ -448,10 +449,9 @@ void MysqlConnection::getResult(MYSQL_RES *res)
     if (_isWorking)
     {
         _cb(Result);
-        _cb = decltype(_cb)();
-        _exceptCb = decltype(_exceptCb)();
+        _cb = nullptr;
+        _exceptCb = nullptr;
         _isWorking = false;
         _idleCb();
-        _idleCb = decltype(_idleCb)();
     }
 }

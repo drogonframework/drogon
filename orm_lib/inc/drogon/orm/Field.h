@@ -80,12 +80,33 @@ namespace drogon
 {
 namespace orm
 {
+
+/// Reference to a field in a result set.
+/** 
+ * A field represents one entry in a row.  It represents an actual value
+ * in the result set, and can be converted to various types.
+ */
 class Field
 {
   public:
     using size_type = unsigned long;
+
+    /// Column name
     const char *name() const;
+
+    /// Is this field's value null?
     bool isNull() const;
+
+    /// Read as plain C string
+    /** 
+     * Since the field's data is stored internally in the form of a
+     * zero-terminated C string, this is the fastest way to read it.  Use the
+     * to() or as() functions to convert the string to other types such as
+     * @c int, or to C++ strings.
+     */
+    const char *c_str() const;
+
+    /// Convert to a type T value
     template <typename T>
     T as() const
     {
@@ -115,6 +136,15 @@ class Field
         }
         return value;
     }
+
+    /// Parse the field as an SQL array.
+    /** 
+     * Call the parser to retrieve values (and structure) from the array.
+     *
+     * Make sure the @c result object stays alive until parsing is finished.  If
+     * you keep the @c row of @c field object alive, it will keep the @c result
+     * object alive as well.
+     */
     ArrayParser getArrayParser() const
     {
         return ArrayParser(_result.getValue(_row, _column));

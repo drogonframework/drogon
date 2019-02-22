@@ -26,11 +26,15 @@
 using namespace trantor;
 using namespace drogon;
 
+static const std::string &getServerString()
+{
+    static const std::string server = "Server: drogon/" + drogon::getVersion() + "\r\n";
+    return server;
+}
+
 HttpResponsePtr HttpResponse::newHttpResponse()
 {
-    auto res = std::make_shared<HttpResponseImpl>();
-    res->setStatusCode(k200OK);
-    res->setContentTypeCode(CT_TEXT_HTML);
+    auto res = std::make_shared<HttpResponseImpl>(k200OK, CT_TEXT_HTML);
     return res;
 }
 
@@ -42,12 +46,11 @@ HttpResponsePtr HttpResponse::newHttpJsonResponse(const Json::Value &data)
         builder["commentStyle"] = "None";
         builder["indentation"] = "";
     });
-    auto res = std::make_shared<HttpResponseImpl>();
-    res->setStatusCode(k200OK);
-    res->setContentTypeCode(CT_APPLICATION_JSON);
+    auto res = std::make_shared<HttpResponseImpl>(k200OK, CT_APPLICATION_JSON);
     res->setBody(writeString(builder, data));
     return res;
 }
+
 HttpResponsePtr HttpResponse::newNotFoundResponse()
 {
     HttpViewData data;
@@ -183,7 +186,7 @@ HttpResponsePtr HttpResponse::newFileResponse(const std::string &fullPath, const
     return resp;
 }
 
-std::string HttpResponseImpl::web_response_code_to_string(int code)
+const char *HttpResponseImpl::statusCodeToString(int code)
 {
     switch (code)
     {
@@ -292,7 +295,8 @@ void HttpResponseImpl::makeHeaderString(const std::shared_ptr<std::string> &head
     assert(headerStringPtr);
     snprintf(buf, sizeof buf, "HTTP/1.1 %d ", _statusCode);
     headerStringPtr->append(buf);
-    headerStringPtr->append(_statusMessage);
+    if (_statusMessage)
+        headerStringPtr->append(_statusMessage);
     headerStringPtr->append("\r\n");
     if (_sendfileName.empty())
     {
@@ -322,7 +326,7 @@ void HttpResponseImpl::makeHeaderString(const std::shared_ptr<std::string> &head
             //output->append("Connection: Keep-Alive\r\n");
         }
     }
-
+    headerStringPtr->append(_contentTypeString.data(), _contentTypeString.length());
     for (auto it = _headers.begin(); it != _headers.end(); ++it)
     {
         headerStringPtr->append(it->first);
@@ -330,10 +334,7 @@ void HttpResponseImpl::makeHeaderString(const std::shared_ptr<std::string> &head
         headerStringPtr->append(it->second);
         headerStringPtr->append("\r\n");
     }
-
-    headerStringPtr->append("Server: drogon/");
-    headerStringPtr->append(drogon::getVersion());
-    headerStringPtr->append("\r\n");
+    headerStringPtr->append(getServerString());
 }
 
 std::shared_ptr<std::string> HttpResponseImpl::renderToString() const
@@ -392,5 +393,36 @@ std::shared_ptr<std::string> HttpResponseImpl::renderToString() const
         _datePos = datePos;
         _httpString = httpString;
     }
+    return httpString;
+}
+
+std::shared_ptr<std::string> HttpResponseImpl::renderHeaderForHeadMethod() const
+{
+    auto httpString = std::make_shared<std::string>();
+    httpString->reserve(256);
+    if (!_fullHeaderString)
+    {
+        makeHeaderString(httpString);
+    }
+    else
+    {
+        httpString->append(*_fullHeaderString);
+    }
+
+    //output cookies
+    if (_cookies.size() > 0)
+    {
+        for (auto it = _cookies.begin(); it != _cookies.end(); ++it)
+        {
+
+            httpString->append(it->second.cookieString());
+        }
+    }
+
+    //output Date header
+    httpString->append("Date: ");
+    httpString->append(getHttpFullDate(trantor::Date::date()));
+    httpString->append("\r\n\r\n");
+
     return httpString;
 }

@@ -17,6 +17,7 @@
 #include <drogon/config.h>
 #if USE_ORM
 #include <drogon/orm/DbClient.h>
+#define USE_FAST_CLIENT 1
 #endif
 #include <drogon/utils/Utilities.h>
 #include <drogon/HttpBinder.h>
@@ -185,6 +186,10 @@ class HttpAppFramework : public trantor::NonCopyable
     virtual void setIdleConnectionTimeout(size_t timeout) = 0;
 #if USE_ORM
     virtual orm::DbClientPtr getDbClient(const std::string &name = "default") = 0;
+#if USE_FAST_CLIENT
+    virtual void enableFastDbClient() = 0;
+    virtual orm::DbClientPtr getFastDbClient(const std::string &name = "default") = 0;
+#endif
     virtual void createDbClient(const std::string &dbType,
                                 const std::string &host,
                                 const u_short port,

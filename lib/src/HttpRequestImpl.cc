@@ -221,14 +221,16 @@ void HttpRequestImpl::appendToBuffer(MsgBuffer *output) const
         char buf[64];
         snprintf(buf, sizeof buf, "Content-Length: %lu\r\n", static_cast<long unsigned int>(content.length() + _content.length()));
         output->append(buf);
-        if (_headers.find("Content-Type") == _headers.end())
+        if (_contentTypeString.empty())
         {
-            output->append("Content-Type: ");
-            output->append(webContentTypeToString(_contentType));
-            output->append("\r\n");
+            auto &type = webContentTypeToString(_contentType);
+            output->append(type.data(), type.length());
         }
     }
-
+    if (!_contentTypeString.empty())
+    {
+        output->append(_contentTypeString);
+    }
     for (auto it = _headers.begin(); it != _headers.end(); ++it)
     {
         output->append(it->first);
@@ -311,7 +313,8 @@ void HttpRequestImpl::addHeader(const char *start, const char *colon, const char
     }
     else
     {
-        _headers[std::move(field)] = std::move(value);
+        //_headers[std::move(field)] = std::move(value);
+        _headers.emplace(std::move(field), std::move(value));
     }
 }
 

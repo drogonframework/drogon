@@ -332,17 +332,18 @@ class HttpRequestImpl : public HttpRequest
         return _jsonPtr;
     }
 
-    virtual void setContentTypeCode(ContentType type) override
+    virtual void setContentTypeCode(const ContentType type) override
     {
         _contentType = type;
-        setContentType(webContentTypeToString(type));
+        auto &typeStr = webContentTypeToString(type);
+        setContentType(std::string(typeStr.data(), typeStr.length()));
     }
 
-    virtual void setContentTypeCodeAndCharacterSet(ContentType type, const std::string &charSet = "utf-8") override
-    {
-        _contentType = type;
-        setContentType(webContentTypeAndCharsetToString(type, charSet));
-    }
+    // virtual void setContentTypeCodeAndCharacterSet(ContentType type, const std::string &charSet = "utf-8") override
+    // {
+    //     _contentType = type;
+    //     setContentType(webContentTypeAndCharsetToString(type, charSet));
+    // }
 
     virtual ContentType getContentTypeCode() override
     {
@@ -353,11 +354,11 @@ class HttpRequestImpl : public HttpRequest
     friend class HttpRequest;
     void setContentType(const std::string &contentType)
     {
-        addHeader("Content-Type", contentType);
+        _contentTypeString = contentType;
     }
     void setContentType(std::string &&contentType)
     {
-        addHeader("Content-Type", std::move(contentType));
+        _contentTypeString = std::move(contentType);
     }
 
   private:
@@ -379,6 +380,7 @@ class HttpRequestImpl : public HttpRequest
     size_t _contentLen;
     trantor::EventLoop *_loop;
     ContentType _contentType = CT_TEXT_PLAIN;
+    std::string _contentTypeString;
 };
 
 typedef std::shared_ptr<HttpRequestImpl> HttpRequestImplPtr;

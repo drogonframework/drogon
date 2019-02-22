@@ -108,6 +108,13 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     }
 #if USE_ORM
     virtual orm::DbClientPtr getDbClient(const std::string &name = "default") override;
+#if USE_FAST_CLIENT
+    virtual void enableFastDbClient() override
+    {
+        _enableFastDbClient = true;
+    }
+    virtual orm::DbClientPtr getFastDbClient(const std::string &name = "default") override;
+#endif
     virtual void createDbClient(const std::string &dbType,
                                 const std::string &host,
                                 const u_short port,
@@ -187,12 +194,17 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     size_t _logfileSize = 100000000;
     bool _useSendfile = true;
     bool _useGzip = true;
+    bool _enableFastDbClient = false;
     int _staticFilesCacheTime = 5;
     std::unordered_map<std::string, std::weak_ptr<HttpResponse>> _staticFilesCache;
     std::mutex _staticFilesCacheMutex;
 #if USE_ORM
     std::map<std::string, orm::DbClientPtr> _dbClientsMap;
     std::vector<std::function<void()>> _dbFuncs;
+#if USE_FAST_CLIENT
+    std::map<std::string, std::map<trantor::EventLoop *, orm::DbClientPtr>> _dbFastClientsMap;
+    void createFastDbClient(const std::vector<trantor::EventLoop *> &ioloops);
+#endif
 #endif
 };
 

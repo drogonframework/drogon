@@ -43,8 +43,7 @@ class MysqlConnection : public DbConnection, public std::enable_shared_from_this
                          std::vector<int> &&length,
                          std::vector<int> &&format,
                          ResultCallback &&rcb,
-                         std::function<void(const std::exception_ptr &)> &&exceptCallback,
-                         std::function<void()> &&idleCb) override;
+                         std::function<void(const std::exception_ptr &)> &&exceptCallback) override;
     virtual void disconnect() override;
 
   private:

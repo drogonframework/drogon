@@ -227,6 +227,9 @@ class SqlBinder
     SqlBinder(const std::string &sql, DbClient &client, ClientType type) : _sql(sql), _client(client), _type(type)
     {
     }
+    SqlBinder(std::string &&sql, DbClient &client, ClientType type) : _sql(std::move(sql)), _client(client), _type(type)
+    {
+    }
     ~SqlBinder();
     template <typename CallbackType,
               typename traits = FunctionTraits<CallbackType>>

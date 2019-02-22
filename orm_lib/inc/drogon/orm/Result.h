@@ -37,6 +37,21 @@ enum class SqlStatus
     Ok,
     End
 };
+
+/// Result set containing data returned by a query or command.
+/** This behaves as a container (as defined by the C++ standard library) and
+ * provides random access const iterators to iterate over its rows.  A row
+ * can also be accessed by indexing a result R by the row's zero-based
+ * number:
+ *
+ * @code
+ *	for (result::size_type i=0; i < R.size(); ++i) Process(R[i]);
+ * @endcode
+ *
+ * Result sets in libpqxx are lightweight, reference-counted wrapper objects
+ * which are relatively small and cheap to copy.  Think of a result object as
+ * a "smart pointer" to an underlying result set.
+ */
 class Result
 {
   public:
@@ -73,15 +88,24 @@ class Result
     reference operator[](size_type index) const;
     reference at(size_type index) const;
     void swap(Result &) noexcept;
+
+    /// Number of columns in result.
     row_size_type columns() const noexcept;
+
     /// Name of column with this number (throws exception if it doesn't exist)
     const char *columnName(row_size_type number) const;
 
+    /// If command was @c INSERT, @c UPDATE, or @c DELETE: number of affected rows
+    /**
+     * @return Number of affected rows if last command was @c INSERT, @c UPDATE,
+     * or @c DELETE; zero for all other commands.
+     */
     size_type affectedRows() const noexcept;
 
     /// For Mysql, Sqlite3 database
     unsigned long long insertId() const noexcept;
 
+    /// Query that produced this result, if available (empty string otherwise)
     const std::string &sql() const noexcept;
 
   private:
