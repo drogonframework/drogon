@@ -70,20 +70,6 @@ DbClientLockFree::~DbClientLockFree() noexcept
     }
 }
 
-void DbClientLockFree::execSql(const DbConnectionPtr &conn,
-                               std::string &&sql,
-                               size_t paraNum,
-                               std::vector<const char *> &&parameters,
-                               std::vector<int> &&length,
-                               std::vector<int> &&format,
-                               ResultCallback &&rcb,
-                               std::function<void(const std::exception_ptr &)> &&exceptCallback)
-{
-    assert(conn);
-    std::weak_ptr<DbConnection> weakConn = conn;
-    conn->execSql(std::move(sql), paraNum, std::move(parameters), std::move(length), std::move(format),
-                  std::move(rcb), std::move(exceptCallback));
-}
 void DbClientLockFree::execSql(std::string &&sql,
                                size_t paraNum,
                                std::vector<const char *> &&parameters,
@@ -113,14 +99,13 @@ void DbClientLockFree::execSql(std::string &&sql,
     {
         if (!_connection->isWorking())
         {
-            execSql(_connection,
-                    std::move(sql),
-                    paraNum,
-                    std::move(parameters),
-                    std::move(length),
-                    std::move(format),
-                    std::move(rcb),
-                    std::move(exceptCallback));
+            _connection->execSql(std::move(sql),
+                                 paraNum,
+                                 std::move(parameters),
+                                 std::move(length),
+                                 std::move(format),
+                                 std::move(rcb),
+                                 std::move(exceptCallback));
             return;
         }
     }
@@ -163,14 +148,13 @@ void DbClientLockFree::handleNewTask()
     if (!_sqlCmdBuffer.empty())
     {
         auto &cmd = _sqlCmdBuffer.front();
-        execSql(_connection,
-                std::move(cmd._sql),
-                cmd._paraNum,
-                std::move(cmd._parameters),
-                std::move(cmd._length),
-                std::move(cmd._format),
-                std::move(cmd._cb),
-                std::move(cmd._exceptCb));
+        _connection->execSql(std::move(cmd._sql),
+                             cmd._paraNum,
+                             std::move(cmd._parameters),
+                             std::move(cmd._length),
+                             std::move(cmd._format),
+                             std::move(cmd._cb),
+                             std::move(cmd._exceptCb));
         _sqlCmdBuffer.pop_front();
         return;
     }

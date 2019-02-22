@@ -60,6 +60,11 @@ std::vector<char> Field::as<std::vector<char>>() const
     char *last = first + _result.getLength(_row, _column);
     return std::vector<char>(first, last);
 }
+
+const char *Field::c_str() const
+{
+    return as<const char *>();
+}
 // template <>
 // std::vector<short> Field::as<std::vector<short>>() const
 // {

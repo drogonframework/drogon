@@ -47,21 +47,9 @@ class DbClientLockFree : public DbClient, public std::enable_shared_from_this<Db
   private:
     std::string _connInfo;
     trantor::EventLoop *_loop;
-
-    void execSql(const DbConnectionPtr &conn,
-                 std::string &&sql,
-                 size_t paraNum,
-                 std::vector<const char *> &&parameters,
-                 std::vector<int> &&length,
-                 std::vector<int> &&format,
-                 ResultCallback &&rcb,
-                 std::function<void(const std::exception_ptr &)> &&exceptCallback);
-
     DbConnectionPtr newConnection();
-
     DbConnectionPtr _connection;
     DbConnectionPtr _connectionHolder;
-
     struct SqlCmd
     {
         std::string _sql;
