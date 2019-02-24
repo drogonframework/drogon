@@ -127,9 +127,13 @@ void DbClientImpl::execSql(const DbConnectionPtr &conn,
         }
         return;
     }
-    std::weak_ptr<DbConnection> weakConn = conn;
-    conn->execSql(std::move(sql), paraNum, std::move(parameters), std::move(length), std::move(format),
-                  std::move(rcb), std::move(exceptCallback));
+    conn->execSql(std::move(sql),
+                  paraNum,
+                  std::move(parameters),
+                  std::move(length),
+                  std::move(format),
+                  std::move(rcb),
+                  std::move(exceptCallback));
 }
 void DbClientImpl::execSql(std::string &&sql,
                            size_t paraNum,
@@ -245,7 +249,7 @@ std::shared_ptr<Transaction> DbClientImpl::newTransaction(const std::function<vo
         }
         conn->loop()->queueInLoop([weakThis, conn]() {
             auto thisPtr = weakThis.lock();
-            if(!thisPtr)
+            if (!thisPtr)
                 return;
             std::weak_ptr<DbConnection> weakConn = conn;
             conn->setIdleCallback([weakThis, weakConn]() {
