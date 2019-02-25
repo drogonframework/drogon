@@ -120,5 +120,15 @@ int main()
                                 std::cerr << "error:" << e.base().what() << std::endl;
                             },
                             "default");
+    *clientPtr << "select t2,t9 from ttt where t7=2" >> [](const Result &r) {
+        std::cout << r.size() << " rows selected!" << std::endl;
+        for (auto row : r)
+        {
+            std::cout << row["t9"].as<std::string>() << std::endl;
+            std::cout << row["t2"].as<int>() << std::endl;
+        }
+    } >> [](const DrogonDbException &e) {
+        std::cerr << "error:" << e.base().what() << std::endl;
+    };
     getchar();
 }
