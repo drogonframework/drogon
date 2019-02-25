@@ -172,14 +172,7 @@ void PgConnection::execSqlInLoop(std::string &&sql,
     if (paraNum == 0)
     {
         _isRreparingStatement = false;
-        if (PQsendQueryParams(_connPtr.get(),
-                              _sql.c_str(),
-                              paraNum,
-                              nullptr,
-                              parameters.data(),
-                              length.data(),
-                              format.data(),
-                              0) == 0)
+        if (PQsendQuery(_connPtr.get(), _sql.c_str()) == 0)
         {
             LOG_ERROR << "send query error: " << PQerrorMessage(_connPtr.get());
             if (_isWorking)
@@ -340,7 +333,6 @@ void PgConnection::handleRead()
     }
     if (_channel.isWriting())
         _channel.disableWriting();
-    bool isPreparing = false;
     while ((res = std::shared_ptr<PGresult>(PQgetResult(_connPtr.get()), [](PGresult *p) {
                 PQclear(p);
             })))
@@ -368,11 +360,7 @@ void PgConnection::handleRead()
         {
             if (_isWorking)
             {
-                if (_isRreparingStatement)
-                {
-                    isPreparing = true;
-                }
-                else
+                if (!_isRreparingStatement)
                 {
                     auto r = makeResult(res, _sql);
                     _cb(r);
@@ -384,7 +372,7 @@ void PgConnection::handleRead()
     }
     if (_isWorking)
     {
-        if (isPreparing)
+        if (_isRreparingStatement)
         {
             _preparingCallback();
             _preparingCallback = nullptr;
