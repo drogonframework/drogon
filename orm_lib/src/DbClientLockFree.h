@@ -22,8 +22,8 @@
 #include <thread>
 #include <functional>
 #include <string>
+#include <queue>
 #include <unordered_set>
-#include <list>
 
 namespace drogon
 {
@@ -42,14 +42,17 @@ class DbClientLockFree : public DbClient, public std::enable_shared_from_this<Db
                          std::vector<int> &&format,
                          ResultCallback &&rcb,
                          std::function<void(const std::exception_ptr &)> &&exceptCallback) override;
-    virtual std::shared_ptr<Transaction> newTransaction(const std::function<void(bool)> &commitCallback = std::function<void(bool)>()) override;
+    virtual std::shared_ptr<Transaction> newTransaction(const std::function<void(bool)> &commitCallback = nullptr) override;
+    virtual void newTransactionAsync(const std::function<void(const std::shared_ptr<Transaction> &)> &callback) override;
 
   private:
     std::string _connInfo;
     trantor::EventLoop *_loop;
     DbConnectionPtr newConnection();
-    DbConnectionPtr _connection;
-    DbConnectionPtr _connectionHolder;
+    const size_t _connectionNum = 4;
+    std::vector<DbConnectionPtr> _connections;
+    std::vector<DbConnectionPtr> _connectionHolders;
+    std::unordered_set<DbConnectionPtr> _transSet;
     struct SqlCmd
     {
         std::string _sql;
@@ -78,7 +81,11 @@ class DbClientLockFree : public DbClient, public std::enable_shared_from_this<Db
     };
     std::deque<SqlCmd> _sqlCmdBuffer;
 
-    void handleNewTask();
+    std::queue<std::function<void(const std::shared_ptr<Transaction> &)>> _transCallbacks;
+
+    void makeTrans(const DbConnectionPtr &conn, std::function<void(const std::shared_ptr<Transaction> &)> &&callback);
+
+    void handleNewTask(const DbConnectionPtr &conn);
 };
 
 } // namespace orm

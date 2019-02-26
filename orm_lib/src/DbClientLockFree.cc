@@ -13,6 +13,7 @@
  */
 
 #include "DbClientLockFree.h"
+#include "TransactionImpl.h"
 #include "DbConnection.h"
 #if USE_POSTGRESQL
 #include "postgresql_impl/PgConnection.h"
@@ -47,13 +48,15 @@ DbClientLockFree::DbClientLockFree(const std::string &connInfo, trantor::EventLo
     if (type == ClientType::PostgreSQL)
     {
         _loop->runInLoop([this]() {
-            _connectionHolder = newConnection();
+            for (size_t i = 0; i < _connectionNum; i++)
+                _connectionHolders.push_back(newConnection());
         });
     }
     else if (type == ClientType::Mysql)
     {
         _loop->runInLoop([this]() {
-            _connectionHolder = newConnection();
+            for (size_t i = 0; i < _connectionNum; i++)
+                _connectionHolders.push_back(newConnection());
         });
     }
     else
@@ -64,9 +67,9 @@ DbClientLockFree::DbClientLockFree(const std::string &connInfo, trantor::EventLo
 
 DbClientLockFree::~DbClientLockFree() noexcept
 {
-    if (_connection)
+    for (auto &conn : _connections)
     {
-        _connection->disconnect();
+        conn->disconnect();
     }
 }
 
@@ -83,7 +86,7 @@ void DbClientLockFree::execSql(std::string &&sql,
     assert(paraNum == format.size());
     assert(rcb);
     _loop->assertInLoopThread();
-    if (!_connection)
+    if (_connections.empty())
     {
         try
         {
@@ -97,16 +100,19 @@ void DbClientLockFree::execSql(std::string &&sql,
     }
     else
     {
-        if (!_connection->isWorking())
+        for (auto &conn : _connections)
         {
-            _connection->execSql(std::move(sql),
-                                 paraNum,
-                                 std::move(parameters),
-                                 std::move(length),
-                                 std::move(format),
-                                 std::move(rcb),
-                                 std::move(exceptCallback));
-            return;
+            if (!conn->isWorking() && (_transSet.empty() || _transSet.find(conn) == _transSet.end()))
+            {
+                conn->execSql(std::move(sql),
+                              paraNum,
+                              std::move(parameters),
+                              std::move(length),
+                              std::move(format),
+                              std::move(rcb),
+                              std::move(exceptCallback));
+                return;
+            }
         }
     }
 
@@ -141,20 +147,95 @@ std::shared_ptr<Transaction> DbClientLockFree::newTransaction(const std::functio
     return nullptr;
 }
 
-void DbClientLockFree::handleNewTask()
+void DbClientLockFree::newTransactionAsync(const std::function<void(const std::shared_ptr<Transaction> &)> &callback)
 {
-    assert(_connection);
-    assert(!_connection->isWorking());
+    _loop->assertInLoopThread();
+    for (auto &conn : _connections)
+    {
+        if (!conn->isWorking() && _transSet.find(conn) == _transSet.end())
+        {
+            makeTrans(conn, std::function<void(const std::shared_ptr<Transaction> &)>(callback));
+            return;
+        }
+    }
+    _transCallbacks.push(callback);
+}
+
+void DbClientLockFree::makeTrans(const DbConnectionPtr &conn, std::function<void(const std::shared_ptr<Transaction> &)> &&callback)
+{
+    std::weak_ptr<DbClientLockFree> weakThis = shared_from_this();
+    auto trans = std::shared_ptr<TransactionImpl>(new TransactionImpl(_type, conn, std::function<void(bool)>(), [weakThis, conn]() {
+        auto thisPtr = weakThis.lock();
+        if (!thisPtr)
+            return;
+
+        if (conn->status() == ConnectStatus_Bad)
+        {
+            return;
+        }
+        if (!thisPtr->_transCallbacks.empty())
+        {
+            auto callback = std::move(thisPtr->_transCallbacks.front());
+            thisPtr->_transCallbacks.pop();
+            thisPtr->makeTrans(conn, std::move(callback));
+            return;
+        }
+
+        for (auto &connPtr : thisPtr->_connections)
+        {
+            if (connPtr == conn)
+            {
+                conn->loop()->queueInLoop([weakThis, conn]() {
+                    auto thisPtr = weakThis.lock();
+                    if (!thisPtr)
+                        return;
+                    std::weak_ptr<DbConnection> weakConn = conn;
+                    conn->setIdleCallback([weakThis, weakConn]() {
+                        auto thisPtr = weakThis.lock();
+                        if (!thisPtr)
+                            return;
+                        auto connPtr = weakConn.lock();
+                        if (!connPtr)
+                            return;
+                        thisPtr->handleNewTask(connPtr);
+                    });
+                    thisPtr->_transSet.erase(conn);
+                    thisPtr->handleNewTask(conn);
+                });
+                break;
+            }
+        }
+    }));
+    _transSet.insert(conn);
+    trans->doBegin();
+    conn->loop()->queueInLoop([callback = std::move(callback), trans] {
+        callback(trans);
+    });
+}
+
+void DbClientLockFree::handleNewTask(const DbConnectionPtr &conn)
+{
+    assert(conn);
+    assert(!conn->isWorking());
+
+    if (!_transCallbacks.empty())
+    {
+        auto callback = std::move(_transCallbacks.front());
+        _transCallbacks.pop();
+        makeTrans(conn, std::move(callback));
+        return;
+    }
+
     if (!_sqlCmdBuffer.empty())
     {
         auto &cmd = _sqlCmdBuffer.front();
-        _connection->execSql(std::move(cmd._sql),
-                             cmd._paraNum,
-                             std::move(cmd._parameters),
-                             std::move(cmd._length),
-                             std::move(cmd._format),
-                             std::move(cmd._cb),
-                             std::move(cmd._exceptCb));
+        conn->execSql(std::move(cmd._sql),
+                      cmd._paraNum,
+                      std::move(cmd._parameters),
+                      std::move(cmd._length),
+                      std::move(cmd._format),
+                      std::move(cmd._cb),
+                      std::move(cmd._exceptCb));
         _sqlCmdBuffer.pop_front();
         return;
     }
@@ -191,15 +272,30 @@ DbConnectionPtr DbClientLockFree::newConnection()
         if (!thisPtr)
             return;
 
-        assert(thisPtr->_connection);
-        thisPtr->_connection.reset();
+        for (auto iter = thisPtr->_connections.begin(); iter != thisPtr->_connections.end(); iter++)
+        {
+            if (closeConnPtr == *iter)
+            {
+                thisPtr->_connections.erase(iter);
+                break;
+            }
+        }
+        for (auto iter = thisPtr->_connectionHolders.begin(); iter != thisPtr->_connectionHolders.end(); iter++)
+        {
+            if (closeConnPtr == *iter)
+            {
+                thisPtr->_connectionHolders.erase(iter);
+                break;
+            }
+        }
 
+        thisPtr->_transSet.erase(closeConnPtr);
         //Reconnect after 1 second
         thisPtr->_loop->runAfter(1, [weakPtr] {
             auto thisPtr = weakPtr.lock();
             if (!thisPtr)
                 return;
-            thisPtr->_connectionHolder = thisPtr->newConnection();
+            thisPtr->_connectionHolders.push_back(thisPtr->newConnection());
         });
     });
     connPtr->setOkCallback([weakPtr](const DbConnectionPtr &okConnPtr) {
@@ -207,14 +303,18 @@ DbConnectionPtr DbClientLockFree::newConnection()
         auto thisPtr = weakPtr.lock();
         if (!thisPtr)
             return;
-        thisPtr->_connection = okConnPtr;
-        thisPtr->handleNewTask();
+        thisPtr->_connections.push_back(okConnPtr);
+        thisPtr->handleNewTask(okConnPtr);
     });
-    connPtr->setIdleCallback([weakPtr]() {
+    std::weak_ptr<DbConnection> weakConnPtr = connPtr;
+    connPtr->setIdleCallback([weakPtr, weakConnPtr]() {
         auto thisPtr = weakPtr.lock();
         if (!thisPtr)
             return;
-        thisPtr->handleNewTask();
+        auto connPtr = weakConnPtr.lock();
+        if (!connPtr)
+            return;
+        thisPtr->handleNewTask(connPtr);
     });
     //std::cout<<"newConn end"<<connPtr<<std::endl;
     return connPtr;

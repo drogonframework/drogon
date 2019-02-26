@@ -74,7 +74,12 @@ int main()
     // pbuf->sgetn(&str[0], filesize);
 
     {
-        auto trans = clientPtr->newTransaction();
+        auto trans = clientPtr->newTransaction([](bool ret){
+            if(ret)
+            {
+                std::cout << "commited!!!!!!" << std::endl;
+            }
+        });
         *trans << "update users set file=? where id != ?"
                << "hehaha" << 1000 >>
             [](const Result &r) {

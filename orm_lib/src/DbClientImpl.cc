@@ -213,24 +213,33 @@ void DbClientImpl::execSql(std::string &&sql,
         _sqlCmdBuffer.push_back(std::move(cmd));
     }
 }
-
-std::shared_ptr<Transaction> DbClientImpl::newTransaction(const std::function<void(bool)> &commitCallback)
+void DbClientImpl::newTransactionAsync(const std::function<void(const std::shared_ptr<Transaction> &)> &callback)
 {
     DbConnectionPtr conn;
     {
-        std::unique_lock<std::mutex> lock(_connectionsMutex);
-        _transWaitNum++;
-        _condConnectionReady.wait(lock, [this]() {
-            return _readyConnections.size() > 0;
-        });
-        _transWaitNum--;
-        auto iter = _readyConnections.begin();
-        _busyConnections.insert(*iter);
-        conn = *iter;
-        _readyConnections.erase(iter);
+        std::lock_guard<std::mutex> lock(_connectionsMutex);
+        if (!_readyConnections.empty())
+        {
+            auto iter = _readyConnections.begin();
+            _busyConnections.insert(*iter);
+            conn = *iter;
+            _readyConnections.erase(iter);
+        }
     }
+    if (conn)
+    {
+        makeTrans(conn, std::function<void(const std::shared_ptr<Transaction> &)>(callback));
+    }
+    else
+    {
+        std::lock_guard<std::mutex> lock(_transMutex);
+        _transCallbacks.push(callback);
+    }
+}
+void DbClientImpl::makeTrans(const DbConnectionPtr &conn, std::function<void(const std::shared_ptr<Transaction> &)> &&callback)
+{
     std::weak_ptr<DbClientImpl> weakThis = shared_from_this();
-    auto trans = std::shared_ptr<TransactionImpl>(new TransactionImpl(_type, conn, commitCallback, [weakThis, conn]() {
+    auto trans = std::shared_ptr<TransactionImpl>(new TransactionImpl(_type, conn, std::function<void(bool)>(), [weakThis, conn]() {
         auto thisPtr = weakThis.lock();
         if (!thisPtr)
             return;
@@ -265,21 +274,37 @@ std::shared_ptr<Transaction> DbClientImpl::newTransaction(const std::function<vo
         });
     }));
     trans->doBegin();
+    conn->loop()->queueInLoop([callback = std::move(callback), trans]() {
+        callback(trans);
+    });
+}
+std::shared_ptr<Transaction> DbClientImpl::newTransaction(const std::function<void(bool)> &commitCallback)
+{
+    std::promise<std::shared_ptr<Transaction>> pro;
+    auto f = pro.get_future();
+    newTransactionAsync([&pro](const std::shared_ptr<Transaction> &trans) {
+        pro.set_value(trans);
+    });
+    auto trans = f.get();
+    trans->setCommitCallback(commitCallback);
     return trans;
 }
 
 void DbClientImpl::handleNewTask(const DbConnectionPtr &connPtr)
 {
+    std::function<void(const std::shared_ptr<Transaction> &)> transCallback;
     {
-        std::lock_guard<std::mutex> guard(_connectionsMutex);
-        if (_transWaitNum > 0)
+        std::lock_guard<std::mutex> guard(_transMutex);
+        if (!_transCallbacks.empty())
         {
-            //Prioritize the needs of the transaction
-            _busyConnections.erase(connPtr);
-            _readyConnections.insert(connPtr);
-            _condConnectionReady.notify_one();
-            return;
+            transCallback = std::move(_transCallbacks.front());
+            _transCallbacks.pop();
         }
+    }
+    if (transCallback)
+    {
+        makeTrans(connPtr, std::move(transCallback));
+        return;
     }
     //Then check if there are some sql queries in the buffer
     std::shared_ptr<SqlCmd> cmd;

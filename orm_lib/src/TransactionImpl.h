@@ -29,6 +29,10 @@ class TransactionImpl : public Transaction, public std::enable_shared_from_this<
     TransactionImpl(ClientType type, const DbConnectionPtr &connPtr, const std::function<void(bool)> &commitCallback, const std::function<void()> &usedUpCallback);
     ~TransactionImpl();
     void rollback() override;
+    virtual void setCommitCallback(const std::function<void(bool)> &commitCallback) override
+    {
+        _commitCallback = commitCallback;
+    }
 
   private:
     DbConnectionPtr _connectionPtr;
@@ -83,6 +87,10 @@ class TransactionImpl : public Transaction, public std::enable_shared_from_this<
         return shared_from_this();
     }
 
+    virtual void newTransactionAsync(const std::function<void(const std::shared_ptr<Transaction> &)> &callback) override
+    {
+        callback(shared_from_this());
+    }
     std::function<void()> _usedUpCallback;
     bool _isCommitedOrRolledback = false;
     bool _isWorking = false;
@@ -102,6 +110,7 @@ class TransactionImpl : public Transaction, public std::enable_shared_from_this<
     std::list<SqlCmd> _sqlCmdBuffer;
     //   std::mutex _bufferMutex;
     friend class DbClientImpl;
+    friend class DbClientLockFree;
     void doBegin();
     trantor::EventLoop *_loop;
     std::function<void(bool)> _commitCallback;
