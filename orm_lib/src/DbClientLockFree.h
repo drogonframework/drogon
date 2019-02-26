@@ -25,6 +25,7 @@
 #include <unordered_set>
 #include <list>
 
+
 namespace drogon
 {
 namespace orm
@@ -48,8 +49,9 @@ class DbClientLockFree : public DbClient, public std::enable_shared_from_this<Db
     std::string _connInfo;
     trantor::EventLoop *_loop;
     DbConnectionPtr newConnection();
-    DbConnectionPtr _connection;
-    DbConnectionPtr _connectionHolder;
+    const size_t _connectionNum = 4;
+    std::vector<DbConnectionPtr> _connections;
+    std::vector<DbConnectionPtr> _connectionHolders;
     struct SqlCmd
     {
         std::string _sql;
@@ -78,7 +80,7 @@ class DbClientLockFree : public DbClient, public std::enable_shared_from_this<Db
     };
     std::deque<SqlCmd> _sqlCmdBuffer;
 
-    void handleNewTask();
+    void handleNewTask(const DbConnectionPtr &conn);
 };
 
 } // namespace orm
