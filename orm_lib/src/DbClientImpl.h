@@ -42,7 +42,8 @@ class DbClientImpl : public DbClient, public std::enable_shared_from_this<DbClie
                          std::vector<int> &&format,
                          ResultCallback &&rcb,
                          std::function<void(const std::exception_ptr &)> &&exceptCallback) override;
-    virtual std::shared_ptr<Transaction> newTransaction(const std::function<void(bool)> &commitCallback = std::function<void(bool)>()) override;
+    virtual std::shared_ptr<Transaction> newTransaction(const std::function<void(bool)> &commitCallback = nullptr) override;
+    virtual void newTransactionAsync(const std::function<void(const std::shared_ptr<Transaction> &)> &callback) override;
 
   private:
     size_t _connectNum;
@@ -60,13 +61,15 @@ class DbClientImpl : public DbClient, public std::enable_shared_from_this<DbClie
 
     DbConnectionPtr newConnection(trantor::EventLoop *loop);
 
+    void makeTrans(const DbConnectionPtr &conn, std::function<void(const std::shared_ptr<Transaction> &)> &&callback);
+    
     std::mutex _connectionsMutex;
     std::unordered_set<DbConnectionPtr> _connections;
     std::unordered_set<DbConnectionPtr> _readyConnections;
     std::unordered_set<DbConnectionPtr> _busyConnections;
 
-    std::condition_variable _condConnectionReady;
-    size_t _transWaitNum = 0;
+    std::mutex _transMutex;
+    std::queue<std::function<void(const std::shared_ptr<Transaction> &)>> _transCallbacks;
 
     struct SqlCmd
     {

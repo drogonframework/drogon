@@ -13,6 +13,7 @@
  */
 
 #include "DbClientLockFree.h"
+#include "TransactionImpl.h"
 #include "DbConnection.h"
 #if USE_POSTGRESQL
 #include "postgresql_impl/PgConnection.h"
@@ -101,7 +102,7 @@ void DbClientLockFree::execSql(std::string &&sql,
     {
         for (auto &conn : _connections)
         {
-            if (!conn->isWorking())
+            if (!conn->isWorking() && (_transSet.empty() || _transSet.find(conn) == _transSet.end()))
             {
                 conn->execSql(std::move(sql),
                               paraNum,
@@ -146,10 +147,85 @@ std::shared_ptr<Transaction> DbClientLockFree::newTransaction(const std::functio
     return nullptr;
 }
 
+void DbClientLockFree::newTransactionAsync(const std::function<void(const std::shared_ptr<Transaction> &)> &callback)
+{
+    _loop->assertInLoopThread();
+    for (auto &conn : _connections)
+    {
+        if (!conn->isWorking() && _transSet.find(conn) == _transSet.end())
+        {
+            makeTrans(conn, std::function<void(const std::shared_ptr<Transaction> &)>(callback));
+            return;
+        }
+    }
+    _transCallbacks.push(callback);
+}
+
+void DbClientLockFree::makeTrans(const DbConnectionPtr &conn, std::function<void(const std::shared_ptr<Transaction> &)> &&callback)
+{
+    std::weak_ptr<DbClientLockFree> weakThis = shared_from_this();
+    auto trans = std::shared_ptr<TransactionImpl>(new TransactionImpl(_type, conn, std::function<void(bool)>(), [weakThis, conn]() {
+        auto thisPtr = weakThis.lock();
+        if (!thisPtr)
+            return;
+
+        if (conn->status() == ConnectStatus_Bad)
+        {
+            return;
+        }
+        if (!thisPtr->_transCallbacks.empty())
+        {
+            auto callback = std::move(thisPtr->_transCallbacks.front());
+            thisPtr->_transCallbacks.pop();
+            thisPtr->makeTrans(conn, std::move(callback));
+            return;
+        }
+
+        for (auto &connPtr : thisPtr->_connections)
+        {
+            if (connPtr == conn)
+            {
+                conn->loop()->queueInLoop([weakThis, conn]() {
+                    auto thisPtr = weakThis.lock();
+                    if (!thisPtr)
+                        return;
+                    std::weak_ptr<DbConnection> weakConn = conn;
+                    conn->setIdleCallback([weakThis, weakConn]() {
+                        auto thisPtr = weakThis.lock();
+                        if (!thisPtr)
+                            return;
+                        auto connPtr = weakConn.lock();
+                        if (!connPtr)
+                            return;
+                        thisPtr->handleNewTask(connPtr);
+                    });
+                    thisPtr->_transSet.erase(conn);
+                    thisPtr->handleNewTask(conn);
+                });
+                break;
+            }
+        }
+    }));
+    _transSet.insert(conn);
+    trans->doBegin();
+    conn->loop()->queueInLoop([callback = std::move(callback), trans] {
+        callback(trans);
+    });
+}
+
 void DbClientLockFree::handleNewTask(const DbConnectionPtr &conn)
 {
     assert(conn);
     assert(!conn->isWorking());
+
+    if (!_transCallbacks.empty())
+    {
+        auto callback = std::move(_transCallbacks.front());
+        _transCallbacks.pop();
+        makeTrans(conn, std::move(callback));
+        return;
+    }
+
     if (!_sqlCmdBuffer.empty())
     {
         auto &cmd = _sqlCmdBuffer.front();
@@ -213,6 +289,7 @@ DbConnectionPtr DbClientLockFree::newConnection()
             }
         }
 
+        thisPtr->_transSet.erase(closeConnPtr);
         //Reconnect after 1 second
         thisPtr->_loop->runAfter(1, [weakPtr] {
             auto thisPtr = weakPtr.lock();
@@ -235,7 +312,8 @@ DbConnectionPtr DbClientLockFree::newConnection()
         if (!thisPtr)
             return;
         auto connPtr = weakConnPtr.lock();
-        assert(connPtr);
+        if (!connPtr)
+            return;
         thisPtr->handleNewTask(connPtr);
     });
     //std::cout<<"newConn end"<<connPtr<<std::endl;
