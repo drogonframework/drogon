@@ -85,6 +85,9 @@ class HttpRequest
     /// Get parameters of the request.
     virtual const std::unordered_map<std::string, std::string> &getParameters() const = 0;
 
+    /// Get a parameter identified by the @param key
+    virtual const std::string &getParameter(const std::string &key, const std::string &defaultVal = std::string()) const = 0;
+
     /// Return the remote IP address and port
     virtual const trantor::InetAddress &peerAddr() const = 0;
 

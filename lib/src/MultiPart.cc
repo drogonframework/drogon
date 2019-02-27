@@ -39,7 +39,7 @@ const std::vector<HttpFile> &MultiPartParser::getFiles()
 const std::map<std::string, std::string> &MultiPartParser::getParameters() const
 {
     return _parameters;
-};
+}
 
 int MultiPartParser::parse(const HttpRequestPtr &req)
 {

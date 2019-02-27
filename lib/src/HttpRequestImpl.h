@@ -157,9 +157,17 @@ class HttpRequestImpl : public HttpRequest
         _path = path;
     }
 
-    const std::unordered_map<std::string, std::string> &getParameters() const override
+    virtual const std::unordered_map<std::string, std::string> &getParameters() const override
     {
         return _parameters;
+    }
+    
+    virtual const std::string &getParameter(const std::string &key, const std::string &defaultVal = std::string()) const override
+    {
+        auto iter = _parameters.find(key);
+        if (iter != _parameters.end())
+            return iter->second;
+        return defaultVal;
     }
 
     const std::string &path() const override
