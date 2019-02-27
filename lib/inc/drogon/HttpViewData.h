@@ -119,6 +119,15 @@ class HttpViewData
         return _viewData[key];
     }
 
+    /// Translate some special characters to HTML format, such as:
+    /**
+     * " --> &quot;
+     * & --> &amp;
+     * < --> &lt;
+     * > --> &gt;
+     */
+    static std::string htmlTranslate(const std::string &str);
+
   protected:
     typedef std::unordered_map<std::string, any> ViewDataMap;
     mutable ViewDataMap _viewData;
