@@ -359,7 +359,8 @@ std::shared_ptr<std::string> HttpResponseImpl::renderToString() const
             return _httpString;
         }
     }
-    auto httpString = std::make_shared<std::string>(256, '\0');
+    auto httpString = std::make_shared<std::string>();
+    httpString->reserve(256);
     if (!_fullHeaderString)
     {
         makeHeaderString(httpString);
