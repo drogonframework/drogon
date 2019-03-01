@@ -291,16 +291,16 @@ const char *HttpResponseImpl::statusCodeToString(int code)
 }
 void HttpResponseImpl::makeHeaderString(const std::shared_ptr<std::string> &headerStringPtr) const
 {
-    char buf[64];
+    char buf[128];
     assert(headerStringPtr);
-    snprintf(buf, sizeof buf, "HTTP/1.1 %d ", _statusCode);
-    headerStringPtr->append(buf);
+    auto len = snprintf(buf, sizeof buf, "HTTP/1.1 %d ", _statusCode);
+    headerStringPtr->append(buf, len);
     if (_statusMessage)
         headerStringPtr->append(_statusMessage);
     headerStringPtr->append("\r\n");
     if (_sendfileName.empty())
     {
-        snprintf(buf, sizeof buf, "Content-Length: %lu\r\n", static_cast<long unsigned int>(_bodyPtr->size()));
+        len = snprintf(buf, sizeof buf, "Content-Length: %lu\r\n", static_cast<long unsigned int>(_bodyPtr->size()));
     }
     else
     {
@@ -310,10 +310,10 @@ void HttpResponseImpl::makeHeaderString(const std::shared_ptr<std::string> &head
             LOG_SYSERR << _sendfileName << " stat error";
             return;
         }
-        snprintf(buf, sizeof buf, "Content-Length: %llu\r\n", static_cast<long long unsigned int>(filestat.st_size));
+        len = snprintf(buf, sizeof buf, "Content-Length: %llu\r\n", static_cast<long long unsigned int>(filestat.st_size));
     }
 
-    headerStringPtr->append(buf);
+    headerStringPtr->append(buf, len);
     if (_headers.find("Connection") == _headers.end())
     {
         if (_closeConnection)
@@ -359,8 +359,7 @@ std::shared_ptr<std::string> HttpResponseImpl::renderToString() const
             return _httpString;
         }
     }
-    auto httpString = std::make_shared<std::string>();
-    httpString->reserve(256);
+    auto httpString = std::make_shared<std::string>(256, '\0');
     if (!_fullHeaderString)
     {
         makeHeaderString(httpString);

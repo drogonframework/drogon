@@ -74,7 +74,7 @@ class HttpViewData
                                const char *format, ...)
     {
         std::string strBuffer;
-        strBuffer.resize(1024);
+        strBuffer.resize(128);
         va_list ap, backup_ap;
         va_start(ap, format);
         va_copy(backup_ap, ap);

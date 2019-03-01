@@ -219,8 +219,8 @@ void HttpRequestImpl::appendToBuffer(MsgBuffer *output) const
     if (!content.empty() || !_content.empty())
     {
         char buf[64];
-        snprintf(buf, sizeof buf, "Content-Length: %lu\r\n", static_cast<long unsigned int>(content.length() + _content.length()));
-        output->append(buf);
+        auto len = snprintf(buf, sizeof(buf), "Content-Length: %lu\r\n", static_cast<long unsigned int>(content.length() + _content.length()));
+        output->append(buf, len);
         if (_contentTypeString.empty())
         {
             auto &type = webContentTypeToString(_contentType);
