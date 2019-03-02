@@ -16,9 +16,7 @@
 #include "ConfigLoader.h"
 #include "HttpServer.h"
 #if USE_ORM
-#if USE_FAST_CLIENT
 #include "../../orm_lib/src/DbClientLockFree.h"
-#endif
 #endif
 #include <drogon/HttpTypes.h>
 #include <drogon/utils/Utilities.h>
@@ -68,8 +66,9 @@ static void godaemon(void)
     close(1);
     close(2);
 
-    open("/dev/null", O_RDWR);
-    int ret = dup(0);
+    int ret = open("/dev/null", O_RDWR);
+    (void)ret;
+    ret = dup(0);
     (void)ret;
     ret = dup(0);
     (void)ret;
@@ -373,11 +372,9 @@ void HttpAppFrameworkImpl::run()
 #endif
 
 #if USE_ORM
-#if USE_FAST_CLIENT
     // Create fast db clients for every io loop
     if (_enableFastDbClient)
         createFastDbClient(ioLoops);
-#endif
 #endif
     _httpCtrlsRouter.init(ioLoops);
     _httpSimpleCtrlsRouter.init(ioLoops);
@@ -414,7 +411,6 @@ void HttpAppFrameworkImpl::run()
     loop()->loop();
 }
 #if USE_ORM
-#if USE_FAST_CLIENT
 void HttpAppFrameworkImpl::createFastDbClient(const std::vector<trantor::EventLoop *> &ioloops)
 {
     for (auto &iter : _dbClientsMap)
@@ -432,7 +428,6 @@ void HttpAppFrameworkImpl::createFastDbClient(const std::vector<trantor::EventLo
         }
     }
 }
-#endif
 #endif
 void HttpAppFrameworkImpl::onWebsockDisconnect(const WebSocketConnectionPtr &wsConnPtr)
 {
@@ -813,12 +808,10 @@ orm::DbClientPtr HttpAppFrameworkImpl::getDbClient(const std::string &name)
 {
     return _dbClientsMap[name];
 }
-#if USE_FAST_CLIENT
 orm::DbClientPtr HttpAppFrameworkImpl::getFastDbClient(const std::string &name)
 {
     return _dbFastClientsMap[name][trantor::EventLoop::getEventLoopOfCurrentThread()];
 }
-#endif
 void HttpAppFrameworkImpl::createDbClient(const std::string &dbType,
                                           const std::string &host,
                                           const u_short port,

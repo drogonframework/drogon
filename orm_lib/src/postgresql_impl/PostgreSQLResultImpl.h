@@ -35,7 +35,7 @@ class PostgreSQLResultImpl : public ResultImpl
     }
     virtual size_type size() const noexcept override;
     virtual row_size_type columns() const noexcept override;
-    virtual const char *columnName(row_size_type Number) const override;
+    virtual const char *columnName(row_size_type number) const override;
     virtual size_type affectedRows() const noexcept override;
     virtual row_size_type columnNumber(const char colName[]) const override;
     virtual const char *getValue(size_type row, row_size_type column) const override;

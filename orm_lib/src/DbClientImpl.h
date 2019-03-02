@@ -84,7 +84,7 @@ class DbClientImpl : public DbClient, public std::enable_shared_from_this<DbClie
                const size_t paraNum,
                std::vector<const char *> &&parameters,
                std::vector<int> &&length,
-               std::vector<int> format,
+               std::vector<int> &&format,
                QueryCallback &&cb,
                ExceptPtrCallback &&exceptCb)
             : _sql(std::move(sql)),
@@ -100,7 +100,7 @@ class DbClientImpl : public DbClient, public std::enable_shared_from_this<DbClie
     std::deque<std::shared_ptr<SqlCmd>> _sqlCmdBuffer;
     std::mutex _bufferMutex;
 
-    void handleNewTask(const DbConnectionPtr &conn);
+    void handleNewTask(const DbConnectionPtr &connPtr);
 };
 
 } // namespace orm

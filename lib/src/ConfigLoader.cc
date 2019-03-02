@@ -229,12 +229,10 @@ static void loadApp(const Json::Value &app)
     auto kickOffTimeout = app.get("idle_connection_timeout", 60).asUInt64();
     drogon::app().setIdleConnectionTimeout(kickOffTimeout);
 #if USE_ORM
-#if USE_FAST_CLIENT
     //Fast db client
     auto fastDbClient = app.get("enable_fast_db_client", false).asBool();
     if (fastDbClient)
         drogon::app().enableFastDbClient();
-#endif
 #endif
     auto server = app.get("server_header_field", "").asString();
     if(!server.empty())

@@ -123,10 +123,10 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn,
         requestParser->requestImpl()->setPeerAddr(conn->peerAddr());
         requestParser->requestImpl()->setLocalAddr(conn->localAddr());
         requestParser->requestImpl()->setReceiveDate(trantor::Date::date());
-        if (requestParser->firstReq() && isWebSocket(conn, requestParser->request()))
+        if (requestParser->firstReq() && isWebSocket(conn, requestParser->requestImpl()))
         {
             auto wsConn = std::make_shared<WebSocketConnectionImpl>(conn);
-            _newWebsocketCallback(requestParser->request(),
+            _newWebsocketCallback(requestParser->requestImpl(),
                                   [=](const HttpResponsePtr &resp) mutable {
                                       if (resp->statusCode() == k101SwitchingProtocols)
                                       {
@@ -138,7 +138,7 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn,
                                   wsConn);
         }
         else
-            onRequest(conn, requestParser->request());
+            onRequest(conn, requestParser->requestImpl());
         requestParser->reset();
     }
 }

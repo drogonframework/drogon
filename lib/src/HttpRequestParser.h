@@ -52,17 +52,12 @@ class HttpRequestParser
         _request.reset(new HttpRequestImpl(_loop));
     }
 
-    const HttpRequestPtr request() const
-    {
-        return _request;
-    }
+    // const HttpRequestPtr &request() const
+    // {
+    //     return _request;
+    // }
 
-    HttpRequestImplPtr request()
-    {
-        return _request;
-    }
-
-    HttpRequestImplPtr requestImpl()
+    const HttpRequestImplPtr &requestImpl() const
     {
         return _request;
     }
@@ -76,7 +71,7 @@ class HttpRequestParser
         }
         return false;
     }
-    WebSocketConnectionPtr webSocketConn()
+    const WebSocketConnectionPtr &webSocketConn() const
     {
         return _websockConnPtr;
     }
