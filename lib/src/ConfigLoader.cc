@@ -236,6 +236,9 @@ static void loadApp(const Json::Value &app)
         drogon::app().enableFastDbClient();
 #endif
 #endif
+    auto server = app.get("server_header_field", "").asString();
+    if(!server.empty())
+        drogon::app().setServerHeaderField(server);
 }
 static void loadDbClients(const Json::Value &dbClients)
 {
