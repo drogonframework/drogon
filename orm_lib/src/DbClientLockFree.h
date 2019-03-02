@@ -66,7 +66,7 @@ class DbClientLockFree : public DbClient, public std::enable_shared_from_this<Db
                const size_t paraNum,
                std::vector<const char *> &&parameters,
                std::vector<int> &&length,
-               std::vector<int> format,
+               std::vector<int> &&format,
                QueryCallback &&cb,
                ExceptPtrCallback &&exceptCb)
             : _sql(std::move(sql)),
