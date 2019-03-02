@@ -106,6 +106,17 @@ class HttpAppFrameworkImpl : public HttpAppFramework
         if (loop()->isRunning())
             loop()->quit();
     }
+    virtual void setServerHeaderField(const std::string &server) override
+    {
+        assert(!_running);
+        assert(server.find("\r\n") == std::string::npos);
+        _serverHeader = "Server: " + server + "\r\n";
+    }
+    const std::string &getServerHeaderString() const
+    {
+        return _serverHeader;
+    }
+
 #if USE_ORM
     virtual orm::DbClientPtr getDbClient(const std::string &name = "default") override;
 #if USE_FAST_CLIENT
@@ -156,6 +167,8 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     size_t _idleConnectionTimeout = 60;
     bool _useSession = false;
     std::vector<std::tuple<std::string, uint16_t, bool, std::string, std::string>> _listeners;
+    std::string _serverHeader = "Server: drogon/" + drogon::getVersion() + "\r\n";
+
     typedef std::shared_ptr<Session> SessionPtr;
     std::unique_ptr<CacheMap<std::string, SessionPtr>> _sessionMapPtr;
     std::unique_ptr<CacheMap<std::string, HttpResponsePtr>> _responseCachingMap;
