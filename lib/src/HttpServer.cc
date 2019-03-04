@@ -68,7 +68,7 @@ HttpServer::~HttpServer()
 void HttpServer::start()
 {
     LOG_TRACE << "HttpServer[" << _server.name()
-             << "] starts listenning on " << _server.ipPort();
+              << "] starts listenning on " << _server.ipPort();
     _server.start();
 }
 
@@ -111,35 +111,48 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn,
         _webSocketMessageCallback(requestParser->webSocketConn(), buf);
         return;
     }
-    if (!requestParser->parseRequest(buf))
+    int counter=0;
+    while (buf->readableBytes() > 0)
     {
-        conn->send("HTTP/1.1 400 Bad Request\r\n\r\n");
-        //conn->shutdown();
-    }
-
-    if (requestParser->gotAll())
-    {
-        requestParser->requestImpl()->parseParameter();
-        requestParser->requestImpl()->setPeerAddr(conn->peerAddr());
-        requestParser->requestImpl()->setLocalAddr(conn->localAddr());
-        requestParser->requestImpl()->setReceiveDate(trantor::Date::date());
-        if (requestParser->firstReq() && isWebSocket(conn, requestParser->requestImpl()))
+        if (!requestParser->parseRequest(buf))
         {
-            auto wsConn = std::make_shared<WebSocketConnectionImpl>(conn);
-            _newWebsocketCallback(requestParser->requestImpl(),
-                                  [=](const HttpResponsePtr &resp) mutable {
-                                      if (resp->statusCode() == k101SwitchingProtocols)
-                                      {
-                                          requestParser->setWebsockConnection(wsConn);
-                                      }
-                                      auto httpString = std::dynamic_pointer_cast<HttpResponseImpl>(resp)->renderToString();
-                                      conn->send(httpString);
-                                  },
-                                  wsConn);
+            conn->send("HTTP/1.1 400 Bad Request\r\n\r\n");
+            //conn->shutdown();
+            requestParser->reset();
+            break;
+        }
+
+        if (requestParser->gotAll())
+        {
+            requestParser->requestImpl()->parseParameter();
+            requestParser->requestImpl()->setPeerAddr(conn->peerAddr());
+            requestParser->requestImpl()->setLocalAddr(conn->localAddr());
+            requestParser->requestImpl()->setReceiveDate(trantor::Date::date());
+            if (requestParser->firstReq() && isWebSocket(conn, requestParser->requestImpl()))
+            {
+                auto wsConn = std::make_shared<WebSocketConnectionImpl>(conn);
+                _newWebsocketCallback(requestParser->requestImpl(),
+                                      [=](const HttpResponsePtr &resp) mutable {
+                                          if (resp->statusCode() == k101SwitchingProtocols)
+                                          {
+                                              requestParser->setWebsockConnection(wsConn);
+                                          }
+                                          auto httpString = std::dynamic_pointer_cast<HttpResponseImpl>(resp)->renderToString();
+                                          conn->send(httpString);
+                                      },
+                                      wsConn);
+            }
+            else
+                onRequest(conn, requestParser->requestImpl());
+            requestParser->reset();
+            counter++;
+            if(counter>1)
+                LOG_WARN<<"HAHAHAHA, more than 1 req received!"<<counter;
         }
         else
-            onRequest(conn, requestParser->requestImpl());
-        requestParser->reset();
+        {
+            break;
+        }
     }
 }
 bool HttpServer::isWebSocket(const TcpConnectionPtr &conn, const HttpRequestImplPtr &req)
