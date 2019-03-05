@@ -103,28 +103,26 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn,
                            MsgBuffer *buf)
 {
     HttpRequestParser *requestParser = any_cast<HttpRequestParser>(conn->getMutableContext());
-
-    // LOG_INFO << "###:" << string(buf->peek(), buf->readableBytes());
-    if (requestParser->webSocketConn())
-    {
-        //websocket payload,we shouldn't parse it
-        _webSocketMessageCallback(requestParser->webSocketConn(), buf);
-        return;
-    }
-    int counter=0;
+    int counter = 0;
+    // With the pipelining feature or web socket, it is possible to receice multiple messages at once, so
+    // the while loop is necessary 
     while (buf->readableBytes() > 0)
     {
+        if (requestParser->webSocketConn())
+        {
+            //Websocket payload,we shouldn't parse it
+            _webSocketMessageCallback(requestParser->webSocketConn(), buf);
+            return;
+        }
         if (!requestParser->parseRequest(buf))
         {
             conn->send("HTTP/1.1 400 Bad Request\r\n\r\n");
             //conn->shutdown();
             requestParser->reset();
-            break;
+            return;
         }
-
         if (requestParser->gotAll())
         {
-            requestParser->requestImpl()->parseParameter();
             requestParser->requestImpl()->setPeerAddr(conn->peerAddr());
             requestParser->requestImpl()->setLocalAddr(conn->localAddr());
             requestParser->requestImpl()->setReceiveDate(trantor::Date::date());
@@ -146,15 +144,16 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn,
                 onRequest(conn, requestParser->requestImpl());
             requestParser->reset();
             counter++;
-            if(counter>1)
-                LOG_WARN<<"HAHAHAHA, more than 1 req received!"<<counter;
+            if (counter > 1)
+                LOG_TRACE << "More than one requests are parsed (" << counter << ")";
         }
         else
         {
-            break;
+            return;
         }
     }
 }
+
 bool HttpServer::isWebSocket(const TcpConnectionPtr &conn, const HttpRequestImplPtr &req)
 {
     if (req->getHeaderBy("connection") == "Upgrade" &&
@@ -166,6 +165,7 @@ bool HttpServer::isWebSocket(const TcpConnectionPtr &conn, const HttpRequestImpl
     }
     return false;
 }
+
 void HttpServer::onRequest(const TcpConnectionPtr &conn, const HttpRequestImplPtr &req)
 {
     const std::string &connection = req->getHeaderBy("connection");
@@ -299,6 +299,7 @@ void HttpServer::onRequest(const TcpConnectionPtr &conn, const HttpRequestImplPt
         }
     });
 }
+
 void HttpServer::sendResponse(const TcpConnectionPtr &conn,
                               const HttpResponsePtr &response,
                               bool isHeadMethod)

@@ -21,7 +21,7 @@
 
 using namespace drogon;
 
-void HttpRequestImpl::parseParameter()
+void HttpRequestImpl::parseParameters() const
 {
     const std::string &input = query();
     if (input.empty())

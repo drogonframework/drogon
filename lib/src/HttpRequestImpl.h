@@ -30,6 +30,7 @@
 #include <stdio.h>
 #include <algorithm>
 #include <string>
+#include <thread>
 
 using std::string;
 using namespace trantor;
@@ -62,8 +63,6 @@ class HttpRequestImpl : public HttpRequest
     {
         return _version;
     }
-
-    void parseParameter();
 
     bool setMethod(const char *start, const char *end)
     {
@@ -159,11 +158,13 @@ class HttpRequestImpl : public HttpRequest
 
     virtual const std::unordered_map<std::string, std::string> &getParameters() const override
     {
+        parseParametersOnce();
         return _parameters;
     }
-    
+
     virtual const std::string &getParameter(const std::string &key, const std::string &defaultVal = std::string()) const override
     {
+        parseParametersOnce();
         auto iter = _parameters.find(key);
         if (iter != _parameters.end())
             return iter->second;
@@ -280,6 +281,7 @@ class HttpRequestImpl : public HttpRequest
 
     virtual void setParameter(const std::string &key, const std::string &value) override
     {
+        _flagForParsingParameters = true;
         _parameters[key] = value;
     }
 
@@ -337,6 +339,7 @@ class HttpRequestImpl : public HttpRequest
 
     virtual const std::shared_ptr<Json::Value> getJsonObject() const override
     {
+        parseParametersOnce();
         return _jsonPtr;
     }
 
@@ -370,14 +373,25 @@ class HttpRequestImpl : public HttpRequest
     }
 
   private:
+    void parseParameters() const;
+    void parseParametersOnce() const
+    {
+        // Multi-thread is not safe but good enough
+        if(!_flagForParsingParameters)
+        {
+            _flagForParsingParameters = true;
+            parseParameters();
+        }
+    }
+    mutable bool _flagForParsingParameters=false;
     HttpMethod _method;
     Version _version;
     std::string _path;
     std::string _query;
     std::unordered_map<std::string, std::string> _headers;
     std::unordered_map<std::string, std::string> _cookies;
-    std::unordered_map<std::string, std::string> _parameters;
-    std::shared_ptr<Json::Value> _jsonPtr;
+    mutable std::unordered_map<std::string, std::string> _parameters;
+    mutable std::shared_ptr<Json::Value> _jsonPtr;
     SessionPtr _sessionPtr;
     trantor::InetAddress _peer;
     trantor::InetAddress _local;
