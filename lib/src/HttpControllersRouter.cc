@@ -164,7 +164,7 @@ void HttpControllersRouter::route(const HttpRequestImplPtr &req,
                 //TODO: Is there any better way to find the sub-match index without using loop?
                 if (!result[i].matched)
                     continue;
-                if (result[i].str() == req->path() && i <= _ctrlVector.size())
+                if (i <= _ctrlVector.size())
                 {
                     size_t ctlIndex = i - 1;
                     auto &routerItem = _ctrlVector[ctlIndex];
