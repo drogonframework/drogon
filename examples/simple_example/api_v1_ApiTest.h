@@ -12,8 +12,8 @@ class ApiTest : public drogon::HttpController<ApiTest>
     //use METHOD_ADD to add your custom processing function here;
     METHOD_ADD(ApiTest::rootGet, "", "TimeFilter", Get, "drogon::LocalHostFilter", "drogon::InnerIpFilter");
     METHOD_ADD(ApiTest::rootPost, "", Post);
-    METHOD_ADD(ApiTest::get, "/get/{2}/{1}", Get);                  //path will be /api/v1/apitest/get/{arg2}/{arg1}
-    METHOD_ADD(ApiTest::your_method_name, "/{1}/List?P2={2}", Get); //path will be /api/v1/apitest/{arg1}/list
+    METHOD_ADD(ApiTest::get, "/get/{2}/{1}", Get);                  //path is /api/v1/apitest/get/{arg2}/{arg1}
+    METHOD_ADD(ApiTest::your_method_name, "/{1}/List?P2={2}", Get); //path is /api/v1/apitest/{arg1}/list
     METHOD_ADD(ApiTest::staticApi, "/static", Get, Post);
     METHOD_ADD(ApiTest::get2, "/get/{1}", Get);
     METHOD_ADD(ApiTest::jsonTest, "/json", Post);

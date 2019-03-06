@@ -47,7 +47,7 @@ class HttpFile
     /**
      * If the @param path is prefixed with "/", "./" or "../", or the @param path is 
      * "." or "..", the full path is @param path+"/"+this->getFileName(), otherwise
-     * the file will be saved as app().getUploadPath()+"/"+@param path+"/"+this->getFileName()
+     * the file is saved as app().getUploadPath()+"/"+@param path+"/"+this->getFileName()
      */
     int save(const std::string &path) const;
 
@@ -55,7 +55,7 @@ class HttpFile
     /**
      * If the @param filename isn't prefixed with "/", "./" or "../", the full path is 
      * app().getUploadPath()+"/"+@param filename, otherwise
-     * the file will be saved as @param filename
+     * the file is saved as @param filename
      */
     int saveAs(const std::string &filename) const;
 

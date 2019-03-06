@@ -61,7 +61,7 @@ class HttpAppFramework : public trantor::NonCopyable
     ///Get the instance of HttpAppFramework
     /**
      * HttpAppFramework works at singleton mode, so any calling of this
-     * method will get the same instance;
+     * method gets the same instance;
      * Calling drogon::HttpAppFramework::instance() 
      * can be replaced by a simple interface -- drogon::app() 
      */
@@ -69,7 +69,7 @@ class HttpAppFramework : public trantor::NonCopyable
 
     ///Run the event loop
     /**
-     * Calling this method will start the IO event loops and the main loop of the application;
+     * Calling this method starts the IO event loops and the main loop of the application;
      * Usually, the thread that calls this method is the main thread of the application;
      * If the loop() method is called before this method, it must be called from the thread 
      * that first calls the loop () method.
@@ -82,7 +82,7 @@ class HttpAppFramework : public trantor::NonCopyable
 
     ///Quit the event loop
     /**
-     * Calling this method will result in stopping all network IO in the
+     * Calling this method results in stopping all network IO in the
      * framework and interrupting the blocking of the run() method. Usually, 
      * after calling this method, the application will exit.
      * 

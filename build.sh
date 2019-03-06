@@ -1,22 +1,22 @@
 #!/bin/bash
 
-#building drogon
+#build drogon
 function build_drogon() {
 
     #Update the submodule and initialize
     git submodule update --init
     
-    #Saving current directory
+    #Save current directory
     current_dir="${PWD}"
 
-    #The folder we will build
+    #The folder in which we will build drogon
     build_dir='./build'
     if [ -d $build_dir ]; then
         echo "Deleted folder: ${build_dir}"
         rm -rf $build_dir
     fi
 
-    #Creating building folder
+    #Create building folder
     echo "Created building folder: ${build_dir}"
     mkdir $build_dir
 
@@ -41,7 +41,7 @@ function build_drogon() {
     echo "Installing ..."
     sudo make install
 
-    #Reback current directory
+    #Go back to the current directory
     cd $current_dir
     #Ok!
 }

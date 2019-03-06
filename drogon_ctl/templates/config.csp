@@ -50,7 +50,7 @@
   ],*/
   "app": {
     //threads_num: The number of IO threads,1 by default, if the value is set to 0, the number of threads
-    //will be the number of processors.
+    //is the number of processors.
     "threads_num": 1,
     //enable_session: False by default
     "enable_session": true,
@@ -59,7 +59,7 @@
     "document_root": "./",
     //upload_path: The path to save the uploaded file. "uploads" by default. 
     //If the path isn't prefixed with /, ./ or ../,
-    //it will be relative path of document_root path
+    //it is relative path of document_root path
     "upload_path": "uploads",
     /* file_types:
      * HTTP download file types,The file types supported by drogon
@@ -84,22 +84,22 @@
     "max_connections": 100000,
     //max_connections_per_ip: Max connections number per clinet,0 by default which means no limit
     "max_connections_per_ip": 0,
-    //Load_dynamic_views: False by default, when set to true, drogon will
-    //compile and load dynamically "CSP View Files" in directories defined
+    //Load_dynamic_views: False by default, when set to true, drogon
+    //compiles and loads dynamically "CSP View Files" in directories defined
     //by "dynamic_views_path"
     "load_dynamic_views":false,
     //dynamic_views_path: If the path isn't prefixed with /, ./ or ../,
-    //it will be relative path of document_root path
+    //it is relative path of document_root path
     "dynamic_views_path":["./views"],
     //log: Set log output, drogon output logs to stdout by default
     "log": {
-      //log_path: Log file path,empty by default,in which case,log will output to the stdout
+      //log_path: Log file path,empty by default,in which case,logs are output to the stdout
       //"log_path": "./",
-      //logfile_base_name: Log file base name,empty by default which means drogon will name logfile as
+      //logfile_base_name: Log file base name,empty by default which means drogon names logfile as
       //drogon.log ...
       "logfile_base_name": "",
       //log_size_limit: 100000000 bytes by default,
-      //When the log file size reaches "log_size_limit", the log file will be switched.
+      //When the log file size reaches "log_size_limit", the log file is switched.
       "log_size_limit": 100000000,
       //log_level: "DEBUG" by default,options:"TRACE","DEBUG","INFO","WARN"
       //The TRACE level is only valid when built in DEBUG mode.
@@ -109,10 +109,10 @@
     "run_as_daemon": false,
     //relaunch_on_error: False by default, if true, the program will be restart by the parent after exiting;
     "relaunch_on_error": false,
-    //use_sendfile: True by default, if ture, the program will
-    //use sendfile() system-call to send static file to the client;
+    //use_sendfile: True by default, if ture, the program 
+    //uses sendfile() system-call to send static files to clients;
     "use_sendfile": true,
-    //use_gzip: True by default,use gzip to compress the response body's content;
+    //use_gzip: True by default, use gzip to compress the response body's content;
     "use_gzip": true,
     //static_files_cache_time: 5 (seconds) by default,the time in which static file response is cached,
     //0 means cache forever, the negative value means no cache
@@ -137,7 +137,7 @@
     //enable_fast_db_client: Defaults to false
     "enable_fast_db_client": false,
     //server_header_field: Set the 'server' header field in each response sent by drogon,
-    //empty string by default with which the 'server' header field will be "Server: drogon/version string\r\n"
+    //empty string by default with which the 'server' header field is set to "Server: drogon/version string\r\n"
     "server_header_field": ""
   }
 }

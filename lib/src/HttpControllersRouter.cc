@@ -52,7 +52,7 @@ void HttpControllersRouter::addHttpPath(const std::string &path,
                                         const std::vector<HttpMethod> &validMethods,
                                         const std::vector<std::string> &filters)
 {
-    //path will be like /api/v1/service/method/{1}/{2}/xxx...
+    //Path is like /api/v1/service/method/{1}/{2}/xxx...
     std::vector<size_t> places;
     std::string tmpPath = path;
     std::string paras = "";
