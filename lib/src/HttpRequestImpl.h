@@ -68,31 +68,52 @@ class HttpRequestImpl : public HttpRequest
     {
 
         assert(_method == Invalid);
-        std::string m(start, end);
-        if (m == "GET")
+        string_view m(start, end - start);
+        switch (m.length())
         {
-            _method = Get;
-        }
-        else if (m == "POST")
-        {
-            _method = Post;
-        }
-        else if (m == "HEAD")
-        {
-            _method = Head;
-        }
-        else if (m == "PUT")
-        {
-            _method = Put;
-        }
-        else if (m == "DELETE")
-        {
-            _method = Delete;
-        }
-        else
-        {
+        case 3:
+            if (m == "GET")
+            {
+                _method = Get;
+            }
+            else if (m == "PUT")
+            {
+                _method = Put;
+            }
+            else
+            {
+                _method = Invalid;
+            }
+            break;
+        case 4:
+            if (m == "POST")
+            {
+                _method = Post;
+            }
+            else if (m == "HEAD")
+            {
+                _method = Head;
+            }
+            else
+            {
+                _method = Invalid;
+            }
+            break;
+        case 6:
+            if (m == "DELETE")
+            {
+                _method = Delete;
+            }
+            else
+            {
+                _method = Invalid;
+            }
+            break;
+        default:
             _method = Invalid;
+            break;
         }
+
         // if (_method != Invalid)
         // {
         //     _content = "";
@@ -376,14 +397,14 @@ class HttpRequestImpl : public HttpRequest
     void parseParameters() const;
     void parseParametersOnce() const
     {
-        // Multi-thread is not safe but good enough
-        if(!_flagForParsingParameters)
+        //Not multi-thread safe but good, because we basically call this function in a single thread
+        if (!_flagForParsingParameters)
         {
             _flagForParsingParameters = true;
             parseParameters();
         }
     }
-    mutable bool _flagForParsingParameters=false;
+    mutable bool _flagForParsingParameters = false;
     HttpMethod _method;
     Version _version;
     std::string _path;

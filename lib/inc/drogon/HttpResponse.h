@@ -46,8 +46,9 @@ class HttpResponse
     /// Set the http version, http1.0 or http1.1
     virtual void setVersion(const Version v) = 0;
 
-    /// If @param on is false, the connection will keep alive on the condition that the client request has a
-    //  'keep-alive' head, otherwise it will be closed. It's false by default when the reponse is created.
+    /// If @param on is false, the connection keeps alive on the condition that the client request has a
+    //  'keep-alive' head, otherwise it is closed immediately after sending the last byte of the response.
+    //  It's false by default when the response is created.
     virtual void setCloseConnection(bool on) = 0;
 
     /// Get the status set by the setCloseConnetion() method.
@@ -63,7 +64,8 @@ class HttpResponse
     /// Get the response content type.
     virtual ContentType getContentTypeCode() = 0;
 
-    /// Get the header string identified by the @param key. If there is no the header, the @param defaultVal will be retured.
+    /// Get the header string identified by the @param key.
+    /// If there is no the header, the @param defaultVal is retured.
     /// The @param key is case insensitive
     virtual const std::string &getHeader(const std::string &key, const std::string &defaultVal = std::string()) const = 0;
     virtual const std::string &getHeader(std::string &&key, const std::string &defaultVal = std::string()) const = 0;
@@ -76,7 +78,8 @@ class HttpResponse
     virtual void addCookie(const std::string &key, const std::string &value) = 0;
     virtual void addCookie(const Cookie &cookie) = 0;
 
-    /// Get the cookie identified by the @param key. If there is no the cookie, the @param defaultCookie will be retured.
+    /// Get the cookie identified by the @param key. If there is no the cookie,
+    /// If there is no the cookie, the @param defaultCookie is retured.
     virtual const Cookie &getCookie(const std::string &key, const Cookie &defaultCookie = Cookie()) const = 0;
 
     /// Get all cookies.
@@ -103,8 +106,8 @@ class HttpResponse
     /// Get the expiration time of the response.
     virtual ssize_t expiredTime() const = 0;
 
-    /// Get the json object from the server response. If the response is not in json format,
-    /// then a empty shared_ptr will be retured.
+    /// Get the json object from the server response.
+    /// If the response is not in json format, then a empty shared_ptr is be retured.
     virtual const std::shared_ptr<Json::Value> getJsonObject() const = 0;
 
     /// The following methods are a series of factory methods that help users create response objects.
@@ -125,7 +128,7 @@ class HttpResponse
     /**
      * @param fullPath is the full path to the file.
      * If @param attachmentFileName is not empty, the browser does not open the file, but saves it as an attachment.
-     * If the @param type is CT_NONE, the content type will be set by drogon based on the file extension.
+     * If the @param type is CT_NONE, the content type is set by drogon based on the file extension.
      */
     static HttpResponsePtr newFileResponse(const std::string &fullPath, const std::string &attachmentFileName = "", ContentType type = CT_NONE);
 

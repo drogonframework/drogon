@@ -57,10 +57,10 @@ class ArrayParser
 
     /// Parse the next step in the array.
     /** Returns what it found.  If the juncture is @c string_value, the string
-   * will contain the value.  Otherwise, it will be empty.
-   *
-   * Call this until the @c juncture it returns is @c done.
-   */
+     * will contain the value.  Otherwise, it will be empty.
+     *
+     * Call this until the @c juncture it returns is @c done.
+     */
     std::pair<juncture, std::string> getNext();
 
   private:

@@ -60,7 +60,7 @@ class HttpViewData
         _viewData[key] = obj;
     }
 
-    /// Insert an item identified by the @param key into the data set; The item will be converted to a string.
+    /// Insert an item identified by the @param key into the data set; The item is converted to a string.
     template <typename T>
     void insertAsString(const std::string &key, T &&val)
     {

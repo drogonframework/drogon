@@ -24,7 +24,7 @@ class UploadFile
     /**
      * @param filePath: The file location on local host, including file name.
      * @param fileName: The file name provided to the server. If it is empty by default, the file name in the @param filePath
-     * will be provided to the server.
+     * is provided to the server.
      * @param itemName: The item name on the browser form.
      */
     explicit UploadFile(const std::string &filePath, const std::string &fileName = "", const std::string &itemName = "file")

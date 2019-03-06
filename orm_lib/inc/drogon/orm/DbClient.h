@@ -143,7 +143,7 @@ class DbClient : public trantor::NonCopyable
      * NOTE:
      * The callback only indicates the result of the 'commit' command, which is the last 
      * step of the transaction. If the transaction has been automatically or manually rolled back, 
-     * the callback will not be executed.
+     * the callback will never be executed.
      * You can also use the setCommitCallback() method of a transaction object to set the callback.
      */
     virtual std::shared_ptr<Transaction> newTransaction(const std::function<void(bool)> &commitCallback = nullptr) = 0;

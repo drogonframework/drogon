@@ -28,13 +28,12 @@ void WebSocketConnectionImpl::send(const char *msg, uint64_t len)
     auto conn = _tcpConn.lock();
     if (conn)
     {
-        //format the frame
+        //Format the frame
         std::string bytesFormatted;
         bytesFormatted.resize(len + 10);
         bytesFormatted[0] = char(129);
 
         int indexStartRawData = -1;
-        // set here - it will be set now:
 
         if (len <= 125)
         {

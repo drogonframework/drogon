@@ -35,7 +35,7 @@ const char *PostgreSQLResultImpl::columnName(row_size_type number) const
         assert(N);
         return N;
     }
-    throw "nullptr result"; //The program will not execute here
+    throw "nullptr result"; //The program will never execute here
 }
 Result::size_type PostgreSQLResultImpl::affectedRows() const noexcept
 {
@@ -54,7 +54,7 @@ Result::row_size_type PostgreSQLResultImpl::columnNumber(const char colName[]) c
             throw std::string("there is no column named ") + colName; // TODO throw detail exception here;
         return N;
     }
-    throw "nullptr result"; //The program will not execute here
+    throw "nullptr result"; //The program will never execute here
 }
 const char *PostgreSQLResultImpl::getValue(size_type row, row_size_type column) const
 {

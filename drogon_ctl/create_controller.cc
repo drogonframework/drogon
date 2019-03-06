@@ -206,10 +206,10 @@ void create_controller::newHttpControllerHeaderFile(std::ofstream &file, const s
     file << indent << "METHOD_LIST_BEGIN\n";
     file << indent << "//use METHOD_ADD to add your custom processing function here;\n";
     file << indent << "//METHOD_ADD(" << class_name << "::get,\"/get/{2}/{1}\",Get);"
-                                                       "//path will be "
+                                                       "//path is "
          << namepace_path << class_name << "/get/{arg2}/{arg1}\n";
     file << indent << "//METHOD_ADD(" << class_name << "::your_method_name,\"/{1}/{2}/list\",Get);"
-                                                       "//path will be "
+                                                       "//path is "
          << namepace_path << class_name << "/{arg1}/{arg2}/list\n";
     file << indent << "\n";
     file << indent << "METHOD_LIST_END\n";
