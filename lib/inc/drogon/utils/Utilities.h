@@ -38,6 +38,9 @@ std::string binaryStringToHex(const unsigned char *ptr, size_t length);
 /// Get a binary string from hexadecimal format
 std::string hexToBinaryString(const char *ptr, size_t length);
 
+/// Get a binary vector from hexadecimal format
+std::vector<char> hexToBinaryVector(const char *ptr, size_t length);
+
 /// Split the string into multiple separated strings.
 std::vector<std::string> splitString(const std::string &str, const std::string &separator);
 

@@ -102,7 +102,7 @@ class Result
      */
     size_type affectedRows() const noexcept;
 
-    /// For Mysql, Sqlite3 database
+    /// For Mysql, Sqlite3 database, return the auto-incrementing primary key after inserting
     unsigned long long insertId() const noexcept;
 
     /// Query that produced this result, if available (empty string otherwise)
@@ -120,6 +120,8 @@ class Result
     {
         return columnNumber(name.c_str());
     }
+    /// Get the column oid, for postgresql database
+    int oid(row_size_type column) const noexcept;
 
     const char *getValue(size_type row, row_size_type column) const;
     bool isNull(size_type row, row_size_type column) const;

@@ -30,6 +30,7 @@ int main()
         for (auto const &row : r)
         {
             std::cout << "id=" << row["id"].as<int>() << std::endl;
+            std::cout << "id=" << row["id"].as<std::string>() << std::endl;
         }
         // for (auto row : r)
         // {

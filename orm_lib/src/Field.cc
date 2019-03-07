@@ -13,6 +13,7 @@
  */
 
 #include <drogon/orm/Field.h>
+#include <drogon/utils/Utilities.h>
 #include <trantor/utils/Logger.h>
 
 using namespace drogon::orm;
@@ -36,10 +37,21 @@ bool Field::isNull() const
 template <>
 std::string Field::as<std::string>() const
 {
-    auto _data = _result.getValue(_row, _column);
-    auto _dataLength = _result.getLength(_row, _column);
-    //    LOG_DEBUG << "_dataLength=" << _dataLength << " str=" << _data;
-    return std::string(_data, _dataLength);
+    if (_result.oid(_column) != 17)
+    {
+        auto _data = _result.getValue(_row, _column);
+        auto _dataLength = _result.getLength(_row, _column);
+        //    LOG_DEBUG << "_dataLength=" << _dataLength << " str=" << _data;
+        return std::string(_data, _dataLength);
+    }
+    else
+    {
+        // Bytea type of PostgreSQL
+        auto sv = as<string_view>();
+        if (sv.length() < 2 || sv[0] != '\\' || sv[1] != 'x')
+            return std::string();
+        return hexToBinaryString(sv.data() + 2, sv.length() - 2);
+    }
 }
 template <>
 const char *Field::as<const char *>() const
@@ -56,11 +68,28 @@ char *Field::as<char *>() const
 template <>
 std::vector<char> Field::as<std::vector<char>>() const
 {
-    char *first = (char *)_result.getValue(_row, _column);
-    char *last = first + _result.getLength(_row, _column);
-    return std::vector<char>(first, last);
+    if (_result.oid(_column) != 17)
+    {
+        char *first = (char *)_result.getValue(_row, _column);
+        char *last = first + _result.getLength(_row, _column);
+        return std::vector<char>(first, last);
+    }
+    else
+    {
+        // Bytea type of PostgreSQL
+        auto sv = as<string_view>();
+        if (sv.length() < 2 || sv[0] != '\\' || sv[1] != 'x')
+            return std::vector<char>();
+        return hexToBinaryVector(sv.data() + 2, sv.length() - 2);
+    }
 }
-
+template <>
+string_view Field::as<string_view>() const
+{
+    auto first = _result.getValue(_row, _column);
+    auto length = _result.getLength(_row, _column);
+    return string_view(first, length);
+}
 const char *Field::c_str() const
 {
     return as<const char *>();

@@ -9,6 +9,7 @@ using namespace drogon_ctl;
  */
 
 #include "{{className}}.h"
+#include <trantor/utils/config.h>
 #include <drogon/utils/Utilities.h>
 #include <string>
 <%c++
@@ -105,12 +106,11 @@ const std::string &{{className}}::getColumnName(size_t index) noexcept(false)
             } 
             else if(col._colDatabaseType=="bytea")
             {
-                $$<<"            auto str = r[\""<<col._colName<<"\"].as<std::string>();\n";
+                $$<<"            auto str = r[\""<<col._colName<<"\"].as<string_view>();\n";
                 $$<<"            if(str.length()>=2&&\n";
                 $$<<"               str[0]=='\\\\'&&str[1]=='x')\n";
                 $$<<"            {\n";
-                $$<<"                auto binStr=drogon::hexToBinaryString(str.c_str()+2,str.length()-2);\n";
-                $$<<"                _"<<col._colValName<<"=std::make_shared<std::vector<char>>((char *)binStr.data(),(char *)binStr.data()+binStr.length());\n";
+                $$<<"                _"<<col._colValName<<"=std::make_shared<std::vector<char>>(drogon::hexToBinaryVector(str.data()+2,str.length()-2));\n";
                 $$<<"            }\n";
                 $$<<"        }\n";
                 continue;

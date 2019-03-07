@@ -151,3 +151,8 @@ const std::string &Result::sql() const noexcept
 {
     return _resultPtr->sql();
 }
+
+int Result::oid(row_size_type column) const noexcept
+{
+    return _resultPtr->oid(column);
+}

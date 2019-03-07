@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include <trantor/utils/config.h>
 #include <drogon/orm/Result.h>
 #include <drogon/orm/Row.h>
 #include <drogon/orm/ArrayParser.h>
@@ -198,7 +199,8 @@ template <>
 char *Field::as<char *>() const;
 template <>
 std::vector<char> Field::as<std::vector<char>>() const;
-
+template <>
+string_view Field::as<string_view>() const;
 // template <>
 // std::vector<int32_t> Field::as<std::vector<int32_t>>() const;
 // template <>

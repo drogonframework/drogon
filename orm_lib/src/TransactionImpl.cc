@@ -30,7 +30,7 @@ TransactionImpl::TransactionImpl(ClientType type, const DbConnectionPtr &connPtr
 TransactionImpl::~TransactionImpl()
 {
     LOG_TRACE << "Destruct";
-    assert(!_isWorking);
+    assert(_sqlCmdBuffer.empty());
     if (!_isCommitedOrRolledback)
     {
         auto loop = _connectionPtr->loop();
@@ -66,6 +66,13 @@ TransactionImpl::~TransactionImpl()
                               }
                           });
         });
+    }
+    else
+    {
+        if(_usedUpCallback)
+        {
+            _usedUpCallback();
+        }
     }
 }
 void TransactionImpl::execSqlInLoop(std::string &&sql,
