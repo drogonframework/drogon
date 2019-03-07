@@ -68,3 +68,7 @@ Result::field_size_type PostgreSQLResultImpl::getLength(size_type row, row_size_
 {
     return PQgetlength(_result.get(), int(row), int(column));
 }
+int PostgreSQLResultImpl::oid(row_size_type column) const
+{
+    return PQftype(_result.get(), (int)column);
+}

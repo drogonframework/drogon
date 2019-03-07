@@ -41,6 +41,8 @@ class PostgreSQLResultImpl : public ResultImpl
     virtual const char *getValue(size_type row, row_size_type column) const override;
     virtual bool isNull(size_type row, row_size_type column) const override;
     virtual field_size_type getLength(size_type row, row_size_type column) const override;
+    virtual int oid(row_size_type column) const override;
+
   private:
     std::shared_ptr<PGresult> _result;
 };

@@ -88,7 +88,7 @@ class DbClient : public trantor::NonCopyable
                       Arguments &&... args) noexcept
     {
         auto binder = *this << sql;
-        std::vector<int> v = {(binder << std::forward<Arguments>(args), 0)...};
+        (void)std::initializer_list<int>{(binder << std::forward<Arguments>(args), 0)...};
         binder >> std::forward<FUNCTION1>(rCallback);
         binder >> std::forward<FUNCTION2>(exceptCallback);
     }
@@ -99,7 +99,7 @@ class DbClient : public trantor::NonCopyable
                                                  Arguments &&... args) noexcept
     {
         auto binder = *this << sql;
-        std::vector<int> v = {(binder << std::forward<Arguments>(args), 0)...};
+        (void)std::initializer_list<int>{(binder << std::forward<Arguments>(args), 0)...};
         std::shared_ptr<std::promise<const Result>> prom = std::make_shared<std::promise<const Result>>();
         binder >> [=](const Result &r) {
             prom->set_value(r);
@@ -119,7 +119,7 @@ class DbClient : public trantor::NonCopyable
         Result r(nullptr);
         {
             auto binder = *this << sql;
-            std::vector<int> v = {(binder << std::forward<Arguments>(args), 0)...};
+            (void)std::initializer_list<int>{(binder << std::forward<Arguments>(args), 0)...};
             //Use blocking mode
             binder << Mode::Blocking;
 
@@ -147,7 +147,7 @@ class DbClient : public trantor::NonCopyable
      * You can also use the setCommitCallback() method of a transaction object to set the callback.
      */
     virtual std::shared_ptr<Transaction> newTransaction(const std::function<void(bool)> &commitCallback = nullptr) = 0;
-    
+
     /// Create a transaction object in asynchronous mode.
     virtual void newTransactionAsync(const std::function<void(const std::shared_ptr<Transaction> &)> &callback) = 0;
 
