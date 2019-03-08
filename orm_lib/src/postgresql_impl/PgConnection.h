@@ -95,7 +95,13 @@ class PgConnection : public DbConnection, public std::enable_shared_from_this<Pg
                        std::vector<int> &&format,
                        ResultCallback &&rcb,
                        std::function<void(const std::exception_ptr &)> &&exceptCallback);
-    std::function<void()> _preparingCallback;
+    //std::function<void()> _preparingCallback;
+    void doAfterPreparing();
+    std::string _statementName;
+    int _paraNum;
+    std::vector<const char *> _parameters;
+    std::vector<int> _length;
+    std::vector<int> _format;
 };
 
 } // namespace orm

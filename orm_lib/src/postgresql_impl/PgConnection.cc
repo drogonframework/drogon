@@ -233,8 +233,8 @@ void PgConnection::execSqlInLoop(std::string &&sql,
         else
         {
             _isRreparingStatement = true;
-            auto statementName = getuuid();
-            if (PQsendPrepare(_connPtr.get(), statementName.c_str(), _sql.c_str(), paraNum, NULL) == 0)
+            _statementName = getuuid();
+            if (PQsendPrepare(_connPtr.get(), _statementName.c_str(), _sql.c_str(), paraNum, NULL) == 0)
             {
                 LOG_ERROR << "send query error: " << PQerrorMessage(_connPtr.get());
                 if (_isWorking)
@@ -255,46 +255,10 @@ void PgConnection::execSqlInLoop(std::string &&sql,
                 }
                 return;
             }
-            std::weak_ptr<PgConnection> weakPtr = shared_from_this();
-            _preparingCallback = [weakPtr,
-                                  statementName,
-                                  paraNum,
-                                  parameters = std::move(parameters),
-                                  length = std::move(length),
-                                  format = std::move(format)]() {
-                auto thisPtr = weakPtr.lock();
-                if (!thisPtr)
-                    return;
-                thisPtr->_isRreparingStatement = false;
-                thisPtr->_preparedStatementMap[thisPtr->_sql] = statementName;
-                if (PQsendQueryPrepared(thisPtr->_connPtr.get(),
-                                        statementName.c_str(),
-                                        paraNum,
-                                        parameters.data(),
-                                        length.data(),
-                                        format.data(),
-                                        0) == 0)
-                {
-                    LOG_ERROR << "send query error: " << PQerrorMessage(thisPtr->_connPtr.get());
-                    if (thisPtr->_isWorking)
-                    {
-                        thisPtr->_isWorking = false;
-                        try
-                        {
-                            throw Failure(PQerrorMessage(thisPtr->_connPtr.get()));
-                        }
-                        catch (...)
-                        {
-                            auto exceptPtr = std::current_exception();
-                            thisPtr->_exceptCb(exceptPtr);
-                            thisPtr->_exceptCb = nullptr;
-                        }
-                        thisPtr->_cb = nullptr;
-                        thisPtr->_idleCb();
-                    }
-                    return;
-                }
-            };
+            _paraNum = paraNum;
+            _parameters = std::move(parameters);
+            _length = std::move(length);
+            _format = std::move(format);
         }
     }
     pgPoll();
@@ -374,8 +338,7 @@ void PgConnection::handleRead()
     {
         if (_isRreparingStatement)
         {
-            _preparingCallback();
-            _preparingCallback = nullptr;
+            doAfterPreparing();
         }
         else
         {
@@ -383,5 +346,38 @@ void PgConnection::handleRead()
             _isRreparingStatement = false;
             _idleCb();
         }
+    }
+}
+
+void PgConnection::doAfterPreparing()
+{
+    _isRreparingStatement = false;
+    _preparedStatementMap[_sql] = _statementName;
+    if (PQsendQueryPrepared(_connPtr.get(),
+                            _statementName.c_str(),
+                            _paraNum,
+                            _parameters.data(),
+                            _length.data(),
+                            _format.data(),
+                            0) == 0)
+    {
+        LOG_ERROR << "send query error: " << PQerrorMessage(_connPtr.get());
+        if (_isWorking)
+        {
+            _isWorking = false;
+            try
+            {
+                throw Failure(PQerrorMessage(_connPtr.get()));
+            }
+            catch (...)
+            {
+                auto exceptPtr = std::current_exception();
+                _exceptCb(exceptPtr);
+                _exceptCb = nullptr;
+            }
+            _cb = nullptr;
+            _idleCb();
+        }
+        return;
     }
 }
