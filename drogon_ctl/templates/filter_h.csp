@@ -1,7 +1,6 @@
 /**
  *
- *  {{className}}.h
- *  drogon_ctl
+ *  {{filename}}.h
  *
  */
 
@@ -9,7 +8,16 @@
 
 #include <drogon/HttpFilter.h>
 using namespace drogon;
+<%c++
+auto namespaceVector=@@.get<std::vector<std::string>>("namespaceVector");
+if(namespaceVector.empty())
+$$<<"\n";
+for(auto &namespaceName:namespaceVector){%>
+namespace {%namespaceName%}
 
+{
+<%c++}
+$$<<"\n";%>
 class {{className}} : public HttpFilter<{{className}}>
 {
   public:
@@ -18,3 +26,7 @@ class {{className}} : public HttpFilter<{{className}}>
                           const FilterCallback &fcb,
                           const FilterChainCallback &fccb) override;
 };
+
+<%c++for(size_t i=0;i<namespaceVector.size();i++){%>
+}
+<%c++}%>

@@ -1,14 +1,17 @@
 /**
  *
- *  {{className}}.cc
- * 
- *  drogon_ctl
+ *  {{filename}}.cc
  *
  */
 
-#include "{{className}}.h"
+#include "{{filename}}.h"
 
 using namespace drogon;
+<%c++auto namespaceStr=@@.get<std::string>("namespaceString");
+if(!namespaceStr.empty())
+$$<<"using namespace "<<namespaceStr<<";\n";
+%>
+
 void {{className}}::doFilter(const HttpRequestPtr &req,
                          const FilterCallback &fcb,
                          const FilterChainCallback &fccb)

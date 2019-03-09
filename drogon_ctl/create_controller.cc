@@ -274,6 +274,7 @@ void create_controller::createController(const std::string &className, Controlle
         {
             std::cout << "The file you want to create already exists, overwrite it(y/n)?" << std::endl;
             auto in = getchar();
+            (void)getchar(); //get the return key
             if (in != 'Y' && in != 'y')
             {
                 std::cout << "Abort!" << std::endl;
