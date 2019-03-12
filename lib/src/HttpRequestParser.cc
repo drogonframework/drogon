@@ -158,6 +158,7 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
                     else
                     {
                         _state = kGotAll;
+                        _requestsCounter++;
                         hasMore = false;
                     }
                 }
@@ -175,6 +176,7 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
                 if (_request->_contentLen == 0)
                 {
                     _state = kGotAll;
+                    _requestsCounter++;
                 }
                 break;
             }
@@ -193,11 +195,11 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
             if (_request->_contentLen == 0)
             {
                 _state = kGotAll;
+                _requestsCounter++;
                 hasMore = false;
             }
         }
     }
-
     return ok;
 }
 

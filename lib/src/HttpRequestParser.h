@@ -18,7 +18,7 @@
 #include <trantor/utils/MsgBuffer.h>
 #include <drogon/WebSocketConnection.h>
 #include <drogon/HttpResponse.h>
-#include <list>
+#include <deque>
 #include <mutex>
 #include <trantor/net/TcpConnection.h>
 
@@ -86,22 +86,22 @@ class HttpRequestParser
     HttpResponsePtr getFirstResponse() const;
     void popFirstRequest();
     void pushResponseToPipeLine(const HttpRequestPtr &req, const HttpResponsePtr &resp);
+    size_t numberOfRequestsInPipeLine() const { return _requestPipeLine.size(); }
+    bool isStop() const { return _stopWorking; }
+    void stop() { _stopWorking = true; }
+    size_t numberOfRequestsParsed() const { return _requestsCounter; }
 
   private:
     bool processRequestLine(const char *begin, const char *end);
-
     HttpRequestParseState _state;
-
     trantor::EventLoop *_loop;
     HttpRequestImplPtr _request;
-
     bool _firstRequest = true;
     WebSocketConnectionPtr _websockConnPtr;
-
-    std::list<std::pair<HttpRequestPtr, HttpResponsePtr>> _requestPipeLine;
-    //std::shared_ptr<std::mutex> _pipeLineMutex;
-
+    std::deque<std::pair<HttpRequestPtr, HttpResponsePtr>> _requestPipeLine;
+    size_t _requestsCounter = 0;
     std::weak_ptr<trantor::TcpConnection> _conn;
+    bool _stopWorking = false;
 };
 
 } // namespace drogon

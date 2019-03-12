@@ -17,6 +17,7 @@
 #include <trantor/utils/Logger.h>
 #include "HttpRequestParser.h"
 #include "HttpResponseImpl.h"
+#include "HttpAppFrameworkImpl.h"
 #include <drogon/HttpRequest.h>
 #include <drogon/HttpResponse.h>
 #include <drogon/utils/Utilities.h>
@@ -219,6 +220,12 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn,
             }
             return;
         }
+        if (requestParser->isStop())
+        {
+            //The number of requests has reached the limit.
+            buf->retrieveAll();
+            return;
+        }
         if (!requestParser->parseRequest(buf))
         {
             conn->send("HTTP/1.1 400 Bad Request\r\n\r\n");
@@ -272,23 +279,22 @@ void HttpServer::onRequest(const TcpConnectionPtr &conn, const HttpRequestImplPt
     }
     HttpRequestParser *requestParser = any_cast<HttpRequestParser>(conn->getMutableContext());
     requestParser->pushRquestToPipeLine(req);
+    if (HttpAppFrameworkImpl::instance().keepaliveRequestsNumber() > 0 &&
+        requestParser->numberOfRequestsParsed() >= HttpAppFrameworkImpl::instance().keepaliveRequestsNumber())
+    {
+        requestParser->stop();
+    }
+
+    if (HttpAppFrameworkImpl::instance().pipelineRequestsNumber() > 0 &&
+        requestParser->numberOfRequestsInPipeLine() >= HttpAppFrameworkImpl::instance().pipelineRequestsNumber())
+    {
+        requestParser->stop();
+    }
 
     _httpAsyncCallback(req, [=](const HttpResponsePtr &response) {
         if (!response)
             return;
         response->setCloseConnection(_close);
-        //if the request method is HEAD,remove the body of response(rfc2616-9.4)
-        //
-        // if (isHeadMethod)
-        // {
-        //     if (newResp->expiredTime() >= 0)
-        //     {
-        //         //Cached response,make a copy
-        //         newResp = std::make_shared<HttpResponseImpl>(*std::dynamic_pointer_cast<HttpResponseImpl>(response));
-        //         newResp->setExpiredTime(-1);
-        //     }
-        //     newResp->setBody(std::string());
-        // }
 
         auto newResp = response;
         auto &sendfileName = std::dynamic_pointer_cast<HttpResponseImpl>(newResp)->sendfileName();
@@ -351,7 +357,11 @@ void HttpServer::onRequest(const TcpConnectionPtr &conn, const HttpRequestImplPt
                         sendResponse(conn, resp, isHeadMethod);
                     }
                     else
-                        return;
+                        break;
+                }
+                if (requestParser->isStop() && requestParser->numberOfRequestsInPipeLine() == 0)
+                {
+                    conn->shutdown();
                 }
             }
             else
@@ -379,7 +389,11 @@ void HttpServer::onRequest(const TcpConnectionPtr &conn, const HttpRequestImplPt
                                 sendResponse(conn, resp, isHeadMethod);
                             }
                             else
-                                return;
+                                break;
+                        }
+                        if (requestParser->isStop() && requestParser->numberOfRequestsInPipeLine() == 0)
+                        {
+                            conn->shutdown();
                         }
                     }
                     else
@@ -420,4 +434,3 @@ void HttpServer::sendResponse(const TcpConnectionPtr &conn,
         conn->shutdown();
     }
 }
-

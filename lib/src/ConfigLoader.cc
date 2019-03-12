@@ -237,6 +237,10 @@ static void loadApp(const Json::Value &app)
     auto server = app.get("server_header_field", "").asString();
     if(!server.empty())
         drogon::app().setServerHeaderField(server);
+    auto keepaliveReqs = app.get("keepalive_requests", 0).asUInt64();
+    drogon::app().setKeepaliveRequestsNumber(keepaliveReqs);
+    auto pipelineReqs = app.get("pipeline_requests", 0).asUInt64();
+    drogon::app().setPipelineRequestsNumber(pipelineReqs);
 }
 static void loadDbClients(const Json::Value &dbClients)
 {
