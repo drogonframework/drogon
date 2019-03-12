@@ -496,93 +496,18 @@ void HttpAppFrameworkImpl::onConnection(const TcpConnectionPtr &conn)
         }
     }
 }
-std::string parseWebsockFrame(trantor::MsgBuffer *buffer)
-{
-    if (buffer->readableBytes() >= 2)
-    {
-        auto secondByte = (*buffer)[1];
-        size_t length = secondByte & 127;
-        int isMasked = (secondByte & 0x80);
-        if (isMasked != 0)
-        {
-            LOG_TRACE << "data encoded!";
-        }
-        else
-            LOG_TRACE << "plain data";
-        size_t indexFirstMask = 2;
 
-        if (length == 126)
-        {
-            indexFirstMask = 4;
-        }
-        else if (length == 127)
-        {
-            indexFirstMask = 10;
-        }
-        if (indexFirstMask > 2 && buffer->readableBytes() >= indexFirstMask)
-        {
-            if (indexFirstMask == 4)
-            {
-                length = (unsigned char)(*buffer)[2];
-                length = (length << 8) + (unsigned char)(*buffer)[3];
-                LOG_TRACE << "bytes[2]=" << (unsigned char)(*buffer)[2];
-                LOG_TRACE << "bytes[3]=" << (unsigned char)(*buffer)[3];
-            }
-            else if (indexFirstMask == 10)
-            {
-                length = (unsigned char)(*buffer)[2];
-                length = (length << 8) + (unsigned char)(*buffer)[3];
-                length = (length << 8) + (unsigned char)(*buffer)[4];
-                length = (length << 8) + (unsigned char)(*buffer)[5];
-                length = (length << 8) + (unsigned char)(*buffer)[6];
-                length = (length << 8) + (unsigned char)(*buffer)[7];
-                length = (length << 8) + (unsigned char)(*buffer)[8];
-                length = (length << 8) + (unsigned char)(*buffer)[9];
-                //                length=*((uint64_t *)(buffer->peek()+2));
-                //                length=ntohll(length);
-            }
-            else
-            {
-                assert(0);
-            }
-        }
-        LOG_TRACE << "websocket message len=" << length;
-        if (buffer->readableBytes() >= (indexFirstMask + 4 + length))
-        {
-            auto masks = buffer->peek() + indexFirstMask;
-            int indexFirstDataByte = indexFirstMask + 4;
-            auto rawData = buffer->peek() + indexFirstDataByte;
-            std::string message;
-            message.resize(length);
-            LOG_TRACE << "rawData[0]=" << (unsigned char)rawData[0];
-            LOG_TRACE << "masks[0]=" << (unsigned char)masks[0];
-            for (size_t i = 0; i < length; i++)
-            {
-                message[i] = (rawData[i] ^ masks[i % 4]);
-            }
-            buffer->retrieve(indexFirstMask + 4 + length);
-            LOG_TRACE << "got message len=" << message.length();
-            return message;
-        }
-    }
-    return std::string();
-}
-void HttpAppFrameworkImpl::onWebsockMessage(const WebSocketConnectionPtr &wsConnPtr,
-                                            trantor::MsgBuffer *buffer)
+void HttpAppFrameworkImpl::onWebsockMessage(const WebSocketConnectionPtr &wsConnPtr, std::string &&message)
 {
     auto wsConnImplPtr = std::dynamic_pointer_cast<WebSocketConnectionImpl>(wsConnPtr);
     assert(wsConnImplPtr);
     auto ctrl = wsConnImplPtr->controller();
     if (ctrl)
     {
-        std::string message;
-        while (!(message = parseWebsockFrame(buffer)).empty())
-        {
-            LOG_TRACE << "Got websock message:" << message;
-            ctrl->handleNewMessage(wsConnPtr, std::move(message));
-        }
+        ctrl->handleNewMessage(wsConnPtr, std::move(message));
     }
 }
+
 void HttpAppFrameworkImpl::setUploadPath(const std::string &uploadPath)
 {
     assert(!uploadPath.empty());

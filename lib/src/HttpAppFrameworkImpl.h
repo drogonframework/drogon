@@ -151,7 +151,7 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     void onNewWebsockRequest(const HttpRequestImplPtr &req,
                              std::function<void(const HttpResponsePtr &)> &&callback,
                              const WebSocketConnectionPtr &wsConnPtr);
-    void onWebsockMessage(const WebSocketConnectionPtr &wsConnPtr, trantor::MsgBuffer *buffer);
+    void onWebsockMessage(const WebSocketConnectionPtr &wsConnPtr, std::string &&message);
     void onWebsockDisconnect(const WebSocketConnectionPtr &wsConnPtr);
     void onConnection(const TcpConnectionPtr &conn);
     void addHttpPath(const std::string &path,

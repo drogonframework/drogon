@@ -73,7 +73,7 @@ bool HttpRequestParser::processRequestLine(const char *begin, const char *end)
     return succeed;
 }
 
-// return false if any error
+// Return false if any error
 bool HttpRequestParser::parseRequest(MsgBuffer *buf)
 {
     bool ok = true;
