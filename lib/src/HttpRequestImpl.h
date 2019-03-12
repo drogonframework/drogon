@@ -240,7 +240,7 @@ class HttpRequestImpl : public HttpRequest
         return _date;
     }
 
-    void setReceiveDate(const trantor::Date &date)
+    void setCreationDate(const trantor::Date &date)
     {
         _date = date;
     }

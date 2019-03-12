@@ -39,7 +39,7 @@ class HttpServer : trantor::NonCopyable
         WebSocketNewAsyncCallback;
     typedef std::function<void(const WebSocketConnectionPtr &)>
         WebSocketDisconnetCallback;
-    typedef std::function<void(const WebSocketConnectionPtr &, trantor::MsgBuffer *)>
+    typedef std::function<void(const WebSocketConnectionPtr &, std::string &&message)>
         WebSocketMessageCallback;
 
     HttpServer(EventLoop *loop,
@@ -100,7 +100,6 @@ class HttpServer : trantor::NonCopyable
     void onMessage(const TcpConnectionPtr &,
                    MsgBuffer *);
     void onRequest(const TcpConnectionPtr &, const HttpRequestImplPtr &);
-    bool isWebSocket(const TcpConnectionPtr &conn, const HttpRequestImplPtr &req);
     void sendResponse(const TcpConnectionPtr &, const HttpResponsePtr &, bool isHeadMethod);
     trantor::TcpServer _server;
     HttpAsyncCallback _httpAsyncCallback;
