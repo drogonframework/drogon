@@ -184,6 +184,8 @@ class HttpAppFramework : public trantor::NonCopyable
     virtual int staticFilesCacheTime() const = 0;
     virtual void setIdleConnectionTimeout(size_t timeout) = 0;
     virtual void setServerHeaderField(const std::string &server) = 0;
+    virtual void setKeepaliveRequestsNumber(const size_t number) = 0;
+    virtual void setPipelineRequestsNumber(const size_t number) = 0;
 #if USE_ORM
     virtual orm::DbClientPtr getDbClient(const std::string &name = "default") = 0;
     virtual void enableFastDbClient() = 0;

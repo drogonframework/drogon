@@ -90,6 +90,11 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     virtual void setStaticFilesCacheTime(int cacheTime) override { _staticFilesCacheTime = cacheTime; }
     virtual int staticFilesCacheTime() const override { return _staticFilesCacheTime; }
     virtual void setIdleConnectionTimeout(size_t timeout) override { _idleConnectionTimeout = timeout; }
+    virtual void setKeepaliveRequestsNumber(const size_t number) override { _keepaliveRequestsNumber = number; }
+    virtual void setPipelineRequestsNumber(const size_t number) override { _pipelineRequestsNumber = number; }
+    size_t keepaliveRequestsNumber() const { return _keepaliveRequestsNumber; }
+    size_t pipelineRequestsNumber() const { return _pipelineRequestsNumber; }
+    
     virtual ~HttpAppFrameworkImpl() noexcept
     {
         //Destroy the following objects before _loop destruction
@@ -203,6 +208,8 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     std::string _logPath = "";
     std::string _logfileBaseName = "";
     size_t _logfileSize = 100000000;
+    size_t _keepaliveRequestsNumber = 0;
+    size_t _pipelineRequestsNumber = 0;
     bool _useSendfile = true;
     bool _useGzip = true;
     bool _enableFastDbClient = false;

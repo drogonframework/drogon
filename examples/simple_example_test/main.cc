@@ -28,7 +28,7 @@
 
 using namespace drogon;
 
-void outputGood(const HttpRequestPtr &req)
+void outputGood(const HttpRequestPtr &req, bool isHttps)
 {
     static int i = 0;
     // auto start = req->creationDate();
@@ -42,10 +42,13 @@ void outputGood(const HttpRequestPtr &req)
         std::lock_guard<std::mutex> lock(mtx);
         i++;
         std::cout << i << GREEN << '\t' << "Good" << '\t' << RED << req->methodString()
-                  << " " << req->path() << RESET << std::endl;
+                  << " " << req->path();
+        if (isHttps)
+            std::cout << "\t(https)";
+        std::cout << RESET << std::endl;
     }
 }
-void doTest(const HttpClientPtr &client, std::promise<int> &pro)
+void doTest(const HttpClientPtr &client, std::promise<int> &pro, bool isHttps = false)
 {
     /// Post json
     Json::Value json;
@@ -59,7 +62,7 @@ void doTest(const HttpClientPtr &client, std::promise<int> &pro)
             auto ret = resp->getJsonObject();
             if (ret && (*ret)["result"].asString() == "ok")
             {
-                outputGood(req);
+                outputGood(req, isHttps);
             }
             else
             {
@@ -84,7 +87,7 @@ void doTest(const HttpClientPtr &client, std::promise<int> &pro)
             //LOG_DEBUG << resp->getBody();
             if (resp->getBody() == "<p>Hello, world!</p>")
             {
-                outputGood(req);
+                outputGood(req, isHttps);
             }
             else
             {
@@ -108,7 +111,7 @@ void doTest(const HttpClientPtr &client, std::promise<int> &pro)
             //LOG_DEBUG << resp->getBody();
             if (resp->getBody() == "<p>Hello, world!</p>")
             {
-                outputGood(req);
+                outputGood(req, isHttps);
             }
             else
             {
@@ -132,7 +135,7 @@ void doTest(const HttpClientPtr &client, std::promise<int> &pro)
             //LOG_DEBUG << resp->getBody();
             if (resp->statusCode() == k405MethodNotAllowed)
             {
-                outputGood(req);
+                outputGood(req, isHttps);
             }
             else
             {
@@ -155,7 +158,7 @@ void doTest(const HttpClientPtr &client, std::promise<int> &pro)
         {
             if (resp->getBody() == "<p>Hello, world!</p>")
             {
-                outputGood(req);
+                outputGood(req, isHttps);
             }
             else
             {
@@ -179,7 +182,7 @@ void doTest(const HttpClientPtr &client, std::promise<int> &pro)
         {
             if (resp->getBody() == "ROOT Post!!!")
             {
-                outputGood(req);
+                outputGood(req, isHttps);
             }
             else
             {
@@ -203,7 +206,7 @@ void doTest(const HttpClientPtr &client, std::promise<int> &pro)
         {
             if (resp->getBody() == "ROOT Get!!!")
             {
-                outputGood(req);
+                outputGood(req, isHttps);
             }
             else
             {
@@ -228,7 +231,7 @@ void doTest(const HttpClientPtr &client, std::promise<int> &pro)
             if (resp->getBody().find("<td>p1</td>\n        <td>123</td>") != std::string::npos &&
                 resp->getBody().find("<td>p2</td>\n        <td>abc</td>") != std::string::npos)
             {
-                outputGood(req);
+                outputGood(req, isHttps);
             }
             else
             {
@@ -253,7 +256,7 @@ void doTest(const HttpClientPtr &client, std::promise<int> &pro)
             if (resp->getBody().find("<td>p1</td>\n        <td>3.140000</td>") != std::string::npos &&
                 resp->getBody().find("<td>p2</td>\n        <td>1234</td>") != std::string::npos)
             {
-                outputGood(req);
+                outputGood(req, isHttps);
             }
             else
             {
@@ -277,7 +280,7 @@ void doTest(const HttpClientPtr &client, std::promise<int> &pro)
         {
             if (resp->getBody() == "staticApi,hello!!")
             {
-                outputGood(req);
+                outputGood(req, isHttps);
             }
             else
             {
@@ -303,7 +306,7 @@ void doTest(const HttpClientPtr &client, std::promise<int> &pro)
         {
             if (resp->getBody() == "staticApi,hello!!")
             {
-                outputGood(req);
+                outputGood(req, isHttps);
             }
             else
             {
@@ -327,7 +330,7 @@ void doTest(const HttpClientPtr &client, std::promise<int> &pro)
         {
             if (resp->getBody().length() == 5123)
             {
-                outputGood(req);
+                outputGood(req, isHttps);
             }
             else
             {
@@ -353,7 +356,7 @@ void doTest(const HttpClientPtr &client, std::promise<int> &pro)
         {
             if (resp->getBody().length() == 5123)
             {
-                outputGood(req);
+                outputGood(req, isHttps);
             }
             else
             {
@@ -381,7 +384,7 @@ void doTest(const HttpClientPtr &client, std::promise<int> &pro)
                 resp->getBody().find("<td>string p2</td>\n        <td>22</td>") != std::string::npos &&
                 resp->getBody().find("<td>string p3</td>\n        <td>33</td>") != std::string::npos)
             {
-                outputGood(req);
+                outputGood(req, isHttps);
             }
             else
             {
@@ -407,7 +410,7 @@ void doTest(const HttpClientPtr &client, std::promise<int> &pro)
             if (resp->getBody().find("<td>a</td>\n        <td>111</td>") != std::string::npos &&
                 resp->getBody().find("<td>b</td>\n        <td>222.000000</td>") != std::string::npos)
             {
-                outputGood(req);
+                outputGood(req, isHttps);
             }
             else
             {
@@ -435,7 +438,7 @@ void doTest(const HttpClientPtr &client, std::promise<int> &pro)
                 resp->getBody().find("<td>string p3</td>\n        <td>333</td>") != std::string::npos &&
                 resp->getBody().find("<td>string p2</td>\n        <td></td>") != std::string::npos)
             {
-                outputGood(req);
+                outputGood(req, isHttps);
             }
             else
             {
@@ -460,7 +463,7 @@ void doTest(const HttpClientPtr &client, std::promise<int> &pro)
         {
             if (resp->getBody().length() == 52594)
             {
-                outputGood(req);
+                outputGood(req, isHttps);
                 auto lastModified = resp->getHeader("last-modified");
                 //LOG_DEBUG << lastModified;
                 // Test 'Not Modified'
@@ -473,7 +476,7 @@ void doTest(const HttpClientPtr &client, std::promise<int> &pro)
                     {
                         if (resp->statusCode() == k304NotModified)
                         {
-                            outputGood(req);
+                            outputGood(req, isHttps);
                             pro.set_value(1);
                         }
                         else
@@ -485,6 +488,7 @@ void doTest(const HttpClientPtr &client, std::promise<int> &pro)
                     }
                     else
                     {
+
                         LOG_ERROR << "Error!";
                         exit(1);
                     }
@@ -513,7 +517,7 @@ void doTest(const HttpClientPtr &client, std::promise<int> &pro)
         {
             if (resp->statusCode() == k403Forbidden)
             {
-                outputGood(req);
+                outputGood(req, isHttps);
             }
             else
             {
@@ -540,7 +544,7 @@ void doTest(const HttpClientPtr &client, std::promise<int> &pro)
             auto ret = resp->getJsonObject();
             if (ret && (*ret)["result"].asString() == "ok")
             {
-                outputGood(req);
+                outputGood(req, isHttps);
             }
             else
             {
@@ -565,7 +569,7 @@ void doTest(const HttpClientPtr &client, std::promise<int> &pro)
         {
             if (resp->getBody().length() == 52594)
             {
-                outputGood(req);
+                outputGood(req, isHttps);
             }
             else
             {
@@ -594,7 +598,7 @@ void doTest(const HttpClientPtr &client, std::promise<int> &pro)
             auto json = resp->getJsonObject();
             if (json && (*json)["result"].asString() == "ok" && (*json)["P1"] == "upload" && (*json)["P2"] == "test")
             {
-                outputGood(req);
+                outputGood(req, isHttps);
                 //std::cout << (*json) << std::endl;
             }
             else
@@ -630,7 +634,7 @@ int main(int argc, char *argv[])
 #ifdef USE_OPENSSL
         std::promise<int> pro2;
         auto sslClient = HttpClient::newHttpClient("https://127.0.0.1:8849", loop[1].getLoop());
-        doTest(sslClient, pro2);
+        doTest(sslClient, pro2, true);
         auto f2 = pro2.get_future();
         f2.get();
 #endif
