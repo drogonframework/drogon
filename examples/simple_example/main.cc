@@ -98,10 +98,12 @@ int main()
 {
 
     std::cout << banner << std::endl;
-    app().addListener("0.0.0.0", 8848);
+    app().addListener("::1", 8848);
+    //app().addListener("0.0.0.0", 8848);
 #ifdef USE_OPENSSL
-   //https
+    //https
     drogon::HttpAppFramework::instance().setSSLFiles("server.pem", "server.pem");
+    //drogon::HttpAppFramework::instance().addListener("::1", 8849, true);
     drogon::HttpAppFramework::instance().addListener("0.0.0.0", 8849, true);
 #endif
     //app().setThreadNum(4);

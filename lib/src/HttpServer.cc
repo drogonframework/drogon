@@ -308,21 +308,21 @@ void HttpServer::onRequest(const TcpConnectionPtr &conn, const HttpRequestImplPt
         {
             //use gzip
             LOG_TRACE << "Use gzip to compress the body";
-            char *zbuf = new char[response->getBody().length()];
             size_t zlen = response->getBody().length();
-            if (gzipCompress(response->getBody().data(),
-                             response->getBody().length(),
-                             zbuf, &zlen) >= 0)
+            auto strCompress = gzipCompress(response->getBody().data(),
+                                            response->getBody().length());
+            if (strCompress)
             {
                 if (zlen > 0)
                 {
+                    LOG_TRACE << "length after compressing:" << zlen;
                     if (response->expiredTime() >= 0)
                     {
                         //cached response,we need to make a clone
                         newResp = std::make_shared<HttpResponseImpl>(*std::dynamic_pointer_cast<HttpResponseImpl>(response));
                         newResp->setExpiredTime(-1);
                     }
-                    newResp->setBody(std::string(zbuf, zlen));
+                    newResp->setBody(std::move(*strCompress));
                     newResp->addHeader("Content-Encoding", "gzip");
                 }
                 else
@@ -330,7 +330,6 @@ void HttpServer::onRequest(const TcpConnectionPtr &conn, const HttpRequestImplPt
                     LOG_ERROR << "gzip got 0 length result";
                 }
             }
-            delete[] zbuf;
         }
         if (conn->getLoop()->isInLoopThread())
         {

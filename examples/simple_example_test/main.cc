@@ -50,10 +50,35 @@ void outputGood(const HttpRequestPtr &req, bool isHttps)
 }
 void doTest(const HttpClientPtr &client, std::promise<int> &pro, bool isHttps = false)
 {
+    /// Test gzip
+    auto req = HttpRequest::newHttpRequest();
+    req->setMethod(drogon::Get);
+    req->addHeader("accept-encoding", "gzip");
+    req->setPath("/api/v1/apitest/get/111");
+    client->sendRequest(req, [=](ReqResult result, const HttpResponsePtr &resp) {
+        if (result == ReqResult::Ok)
+        {
+            if (resp->getBody().length() == 5123)
+            {
+                outputGood(req, isHttps);
+            }
+            else
+            {
+                LOG_DEBUG << resp->getBody().length();
+                LOG_ERROR << "Error!";
+                exit(1);
+            }
+        }
+        else
+        {
+            LOG_ERROR << "Error!";
+            exit(1);
+        }
+    });
     /// Post json
     Json::Value json;
     json["request"] = "json";
-    auto req = HttpRequest::newHttpJsonRequest(json);
+    req = HttpRequest::newHttpJsonRequest(json);
     req->setMethod(drogon::Post);
     req->setPath("/api/v1/apitest/json");
     client->sendRequest(req, [=](ReqResult result, const HttpResponsePtr &resp) {
@@ -346,32 +371,6 @@ void doTest(const HttpClientPtr &client, std::promise<int> &pro, bool isHttps = 
         }
     });
 
-    /// Test gzip
-    req = HttpRequest::newHttpRequest();
-    req->setMethod(drogon::Get);
-    req->addHeader("accept-encoding", "gzip");
-    req->setPath("/api/v1/apitest/get/111");
-    client->sendRequest(req, [=](ReqResult result, const HttpResponsePtr &resp) {
-        if (result == ReqResult::Ok)
-        {
-            if (resp->getBody().length() == 5123)
-            {
-                outputGood(req, isHttps);
-            }
-            else
-            {
-                LOG_DEBUG << resp->getBody().length();
-                LOG_ERROR << "Error!";
-                exit(1);
-            }
-        }
-        else
-        {
-            LOG_ERROR << "Error!";
-            exit(1);
-        }
-    });
-
     /// Test static function
     req = HttpRequest::newHttpRequest();
     req->setMethod(drogon::Get);
@@ -629,11 +628,11 @@ int main(int argc, char *argv[])
     do
     {
         std::promise<int> pro1;
-        auto client = HttpClient::newHttpClient("http://127.0.0.1:8848", loop[0].getLoop());
+        auto client = HttpClient::newHttpClient("::1", 8848, false, loop[0].getLoop());
         doTest(client, pro1);
 #ifdef USE_OPENSSL
         std::promise<int> pro2;
-        auto sslClient = HttpClient::newHttpClient("https://127.0.0.1:8849", loop[1].getLoop());
+        auto sslClient = HttpClient::newHttpClient("127.0.0.1", 8849, true, loop[1].getLoop());
         doTest(sslClient, pro2, true);
         auto f2 = pro2.get_future();
         f2.get();
