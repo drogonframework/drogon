@@ -68,6 +68,8 @@ class HttpClient : public trantor::NonCopyable
      * If the loop parameter is set to nullptr, the client 
      * uses the HttpAppFramework's event loop, otherwise it
      * runs in the loop identified by the parameter.
+     * 
+     * Note: The @param ip support for both ipv4 and ipv6 address
      */
     static HttpClientPtr newHttpClient(const std::string &ip,
                                        uint16_t port,
@@ -84,6 +86,9 @@ class HttpClient : public trantor::NonCopyable
      * http://www.baidu.com
      * https://127.0.0.1:8080/
      * http://127.0.0.1
+     * 
+     * The @param hostString must be prefixed by 'http://' or 'https://' 
+     * and doesn't support for ipv6 address if the host is in ip format
      * 
      * If the loop parameter is set to nullptr, the client 
      * uses the HttpAppFramework's event loop, otherwise it

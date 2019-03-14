@@ -304,16 +304,12 @@ int main()
                               "mobile\n"
                               "origin\n"
                               "rawpacket";
-    std::string out;
-    out.resize(inStr.length());
-    size_t len = out.length();
-    auto ret=gzipCompress(inStr.c_str(), inStr.length(), (char *)(out.data()), &len);
-    if(ret==0)
+    auto ret=gzipCompress(inStr.c_str(), inStr.length());
+    if(ret)
     {
-        out.resize(len);
-        std::cout << "origin length=" << inStr.length() << " compressing length=" << out.length() << std::endl;
+        std::cout << "origin length=" << inStr.length() << " compressing length=" << ret->length() << std::endl;
         
-        auto decompressStr = gzipDecompress(std::make_shared<std::string>(out));
+        auto decompressStr = gzipDecompress(ret);
         if (decompressStr)
         {
             std::cout << "decompressing length=" << decompressStr->length() << std::endl;

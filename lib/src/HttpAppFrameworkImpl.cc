@@ -293,8 +293,11 @@ void HttpAppFrameworkImpl::run()
         ioLoops.push_back(loopThreadPtr->getLoop());
         for (auto const &listener : _listeners)
         {
+            auto ip = std::get<0>(listener);
+            bool isIpv6 = ip.find(":") == std::string::npos ? false : true;
             auto serverPtr = std::make_shared<HttpServer>(loopThreadPtr->getLoop(),
-                                                          InetAddress(std::get<0>(listener), std::get<1>(listener)), "drogon");
+                                                          InetAddress(ip, std::get<1>(listener), isIpv6),
+                                                          "drogon");
             if (std::get<2>(listener))
             {
                 //enable ssl;
@@ -327,8 +330,11 @@ void HttpAppFrameworkImpl::run()
         auto loopThreadPtr = std::make_shared<EventLoopThread>("DrogonListeningLoop");
         loopThreadPtr->run();
         loopThreads.push_back(loopThreadPtr);
+        auto ip = std::get<0>(listener);
+        bool isIpv6 = ip.find(":") == std::string::npos ? false : true;
         auto serverPtr = std::make_shared<HttpServer>(loopThreadPtr->getLoop(),
-                                                      InetAddress(std::get<0>(listener), std::get<1>(listener)), "drogon");
+                                                      InetAddress(ip, std::get<1>(listener), isIpv6),
+                                                      "drogon");
         if (std::get<2>(listener))
         {
             //enable ssl;

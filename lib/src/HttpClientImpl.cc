@@ -122,7 +122,21 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
 
     if (!_tcpClient)
     {
-        if (_server.ipNetEndian() == 0 &&
+        bool hasIpv6Address = false;
+        if (_server.isIpV6())
+        {
+            auto ipaddr = _server.ip6NetEndian();
+            for (int i = 0; i < 4; i++)
+            {
+                if (ipaddr[i] != 0)
+                {
+                    hasIpv6Address = true;
+                    break;
+                }
+            }
+        }
+
+        if (_server.ipNetEndian() == 0 && !hasIpv6Address &&
             !_domain.empty() &&
             _server.portNetEndian() != 0)
         {
@@ -136,7 +150,8 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
             }
             LOG_TRACE << "dns:domain=" << _domain << ";ip=" << _server.toIp();
         }
-        if (_server.ipNetEndian() != 0 && _server.portNetEndian() != 0)
+
+        if ((_server.ipNetEndian() != 0 || hasIpv6Address) && _server.portNetEndian() != 0)
         {
             LOG_TRACE << "New TcpClient," << _server.toIpPort();
             _tcpClient = std::make_shared<trantor::TcpClient>(_loop, _server, "httpClient");
@@ -288,7 +303,8 @@ void HttpClientImpl::onRecvMessage(const trantor::TcpConnectionPtr &connPtr, tra
 
 HttpClientPtr HttpClient::newHttpClient(const std::string &ip, uint16_t port, bool useSSL, trantor::EventLoop *loop)
 {
-    return std::make_shared<HttpClientImpl>(loop == nullptr ? drogon::app().loop() : loop, trantor::InetAddress(ip, port), useSSL);
+    bool isIpv6 = ip.find(":") == std::string::npos ? false : true;
+    return std::make_shared<HttpClientImpl>(loop == nullptr ? drogon::app().loop() : loop, trantor::InetAddress(ip, port, isIpv6), useSSL);
 }
 
 HttpClientPtr HttpClient::newHttpClient(const std::string &hostString, trantor::EventLoop *loop)

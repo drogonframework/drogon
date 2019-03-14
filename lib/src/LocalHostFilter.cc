@@ -19,7 +19,8 @@ void LocalHostFilter::doFilter(const HttpRequestPtr &req,
                                const FilterCallback &fcb,
                                const FilterChainCallback &fccb)
 {
-    if (req->peerAddr().toIp() == "127.0.0.1")
+
+    if (req->peerAddr().isLoopbackIp())
     {
         fccb();
         return;
