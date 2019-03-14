@@ -1,6 +1,6 @@
 /**
  *
- *  InnerIpFilter.h
+ *  IntranetIpFilter.h
  *  An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
@@ -18,10 +18,10 @@
 
 namespace drogon
 {
-class InnerIpFilter : public HttpFilter<InnerIpFilter>
+class IntranetIpFilter : public HttpFilter<IntranetIpFilter>
 {
   public:
-    InnerIpFilter() {}
+    IntranetIpFilter() {}
     virtual void doFilter(const HttpRequestPtr &req,
                           const FilterCallback &fcb,
                           const FilterChainCallback &fccb) override;

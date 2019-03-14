@@ -26,7 +26,7 @@
 #include <drogon/HttpResponse.h>
 #include <drogon/HttpFilter.h>
 #include <drogon/LocalHostFilter.h>
-#include <drogon/InnerIpFilter.h>
+#include <drogon/IntranetIpFilter.h>
 #include <drogon/version.h>
 #include <drogon/NotFound.h>
 #include <drogon/HttpClient.h>
