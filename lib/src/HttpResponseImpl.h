@@ -71,11 +71,11 @@ class HttpResponseImpl : public HttpResponse
         setStatusMessage(statusCodeToString(code));
     }
 
-    virtual void setStatusCode(HttpStatusCode code, const std::string &status_message) override
-    {
-        _statusCode = code;
-        setStatusMessage(status_message);
-    }
+    // virtual void setStatusCode(HttpStatusCode code, const std::string &status_message) override
+    // {
+    //     _statusCode = code;
+    //     setStatusMessage(status_message);
+    // }
 
     virtual void setVersion(const Version v) override
     {
@@ -374,7 +374,6 @@ class HttpResponseImpl : public HttpResponse
     }
 
   protected:
-    static const char *statusCodeToString(int code);
     void makeHeaderString(const std::shared_ptr<std::string> &headerStringPtr) const;
 
   private:
@@ -382,11 +381,10 @@ class HttpResponseImpl : public HttpResponse
     std::unordered_map<std::string, Cookie> _cookies;
 
     HttpStatusCode _statusCode;
-    const char *_statusMessage = nullptr;
+    string_view _statusMessage;
 
     trantor::Date _creationDate;
     Version _v;
-    std::string _statusMessageString;
     bool _closeConnection;
 
     size_t _leftBodyLength;
@@ -409,20 +407,9 @@ class HttpResponseImpl : public HttpResponse
     {
         _contentTypeString = contentType;
     }
-
-    void setStatusMessage(const char *message)
+    void setStatusMessage(const string_view &message)
     {
         _statusMessage = message;
-    }
-    void setStatusMessage(const std::string &message)
-    {
-        _statusMessageString = message;
-        _statusMessage = _statusMessageString.c_str();
-    }
-    void setStatusMessage(std::string &&message)
-    {
-        _statusMessageString = std::move(message);
-        _statusMessage = _statusMessageString.c_str();
     }
 };
 typedef std::shared_ptr<HttpResponseImpl> HttpResponseImplPtr;

@@ -30,10 +30,11 @@ class HttpRequestParser
   public:
     enum HttpRequestParseState
     {
-        kExpectRequestLine,
-        kExpectHeaders,
-        kExpectBody,
-        kGotAll,
+        HttpRequestParseState_ExpectMethod,
+        HttpRequestParseState_ExpectRequestLine,
+        HttpRequestParseState_ExpectHeaders,
+        HttpRequestParseState_ExpectBody,
+        HttpRequestParseState_GotAll,
     };
 
     explicit HttpRequestParser(const trantor::TcpConnectionPtr &connPtr);
@@ -43,12 +44,12 @@ class HttpRequestParser
 
     bool gotAll() const
     {
-        return _state == kGotAll;
+        return _state == HttpRequestParseState_GotAll;
     }
 
     void reset()
     {
-        _state = kExpectRequestLine;
+        _state = HttpRequestParseState_ExpectMethod;
         _request.reset(new HttpRequestImpl(_loop));
     }
 
@@ -92,6 +93,7 @@ class HttpRequestParser
     size_t numberOfRequestsParsed() const { return _requestsCounter; }
 
   private:
+    void shutdownConnection(HttpStatusCode code);
     bool processRequestLine(const char *begin, const char *end);
     HttpRequestParseState _state;
     trantor::EventLoop *_loop;

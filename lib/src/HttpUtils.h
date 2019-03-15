@@ -25,8 +25,8 @@ typedef std::experimental::basic_string_view<char> string_view;
 #endif
 namespace drogon
 {
-const string_view &webContentTypeToString(ContentType contenttype);
 
-//std::string webContentTypeAndCharsetToString(ContentType contenttype, const std::string &charSet);
+const string_view &webContentTypeToString(ContentType contenttype);
+const string_view &statusCodeToString(int code);
 
 } // namespace drogon

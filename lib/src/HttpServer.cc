@@ -228,8 +228,6 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn,
         }
         if (!requestParser->parseRequest(buf))
         {
-            conn->send("HTTP/1.1 400 Bad Request\r\n\r\n");
-            //conn->shutdown();
             requestParser->reset();
             return;
         }
