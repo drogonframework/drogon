@@ -17,17 +17,28 @@
 #include <trantor/utils/Logger.h>
 #include "HttpRequestParser.h"
 #include "HttpResponseImpl.h"
+#include "HttpUtils.h"
 #include <iostream>
 
 using namespace trantor;
 using namespace drogon;
 
 HttpRequestParser::HttpRequestParser(const trantor::TcpConnectionPtr &connPtr)
-    : _state(kExpectRequestLine),
+    : _state(HttpRequestParseState_ExpectMethod),
       _loop(connPtr->getLoop()),
       _request(new HttpRequestImpl(connPtr->getLoop())),
       _conn(connPtr)
 {
+}
+
+void HttpRequestParser::shutdownConnection(HttpStatusCode code)
+{
+    auto connPtr = _conn.lock();
+    if (connPtr)
+    {
+        connPtr->send(formattedString("HTTP/1.1 %d %s\r\n\r\n", code, statusCodeToString(code)));
+        connPtr->shutdown();
+    }
 }
 
 bool HttpRequestParser::processRequestLine(const char *begin, const char *end)
@@ -35,38 +46,33 @@ bool HttpRequestParser::processRequestLine(const char *begin, const char *end)
     bool succeed = false;
     const char *start = begin;
     const char *space = std::find(start, end, ' ');
-    if (space != end && _request->setMethod(start, space))
+    if (space != end)
     {
-        start = space + 1;
-        space = std::find(start, end, ' ');
-        if (space != end)
+        const char *question = std::find(start, space, '?');
+        if (question != space)
         {
-            const char *question = std::find(start, space, '?');
-            if (question != space)
+            _request->setPath(start, question);
+            _request->setQuery(question + 1, space);
+        }
+        else
+        {
+            _request->setPath(start, space);
+        }
+        start = space + 1;
+        succeed = end - start == 8 && std::equal(start, end - 1, "HTTP/1.");
+        if (succeed)
+        {
+            if (*(end - 1) == '1')
             {
-                _request->setPath(start, question);
-                _request->setQuery(question + 1, space);
+                _request->setVersion(HttpRequest::kHttp11);
+            }
+            else if (*(end - 1) == '0')
+            {
+                _request->setVersion(HttpRequest::kHttp10);
             }
             else
             {
-                _request->setPath(start, space);
-            }
-            start = space + 1;
-            succeed = end - start == 8 && std::equal(start, end - 1, "HTTP/1.");
-            if (succeed)
-            {
-                if (*(end - 1) == '1')
-                {
-                    _request->setVersion(HttpRequest::kHttp11);
-                }
-                else if (*(end - 1) == '0')
-                {
-                    _request->setVersion(HttpRequest::kHttp10);
-                }
-                else
-                {
-                    succeed = false;
-                }
+                succeed = false;
             }
         }
     }
@@ -81,7 +87,36 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
     //  std::cout<<std::string(buf->peek(),buf->readableBytes())<<std::endl;
     while (hasMore)
     {
-        if (_state == kExpectRequestLine)
+        if (_state == HttpRequestParseState_ExpectMethod)
+        {
+            auto *space = std::find(buf->peek(), (const char *)buf->beginWrite(), ' ');
+            if (space != buf->beginWrite())
+            {
+                if (_request->setMethod(buf->peek(), space))
+                {
+                    _state = HttpRequestParseState_ExpectRequestLine;
+                    buf->retrieveUntil(space + 1);
+                    continue;
+                }
+                else
+                {
+                    buf->retrieveAll();
+                    shutdownConnection(k405MethodNotAllowed);
+                    return false;
+                }
+            }
+            else
+            {
+                if (buf->readableBytes() >= 7)
+                {
+                    buf->retrieveAll();
+                    shutdownConnection(k400BadRequest);
+                    return false;
+                }
+                hasMore = false;
+            }
+        }
+        else if (_state == HttpRequestParseState_ExpectRequestLine)
         {
             const char *crlf = buf->findCRLF();
             if (crlf)
@@ -89,21 +124,30 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
                 ok = processRequestLine(buf->peek(), crlf);
                 if (ok)
                 {
-                    //_request->setReceiveTime(receiveTime);
                     buf->retrieveUntil(crlf + 2);
-                    _state = kExpectHeaders;
+                    _state = HttpRequestParseState_ExpectHeaders;
                 }
                 else
                 {
-                    hasMore = false;
+                    buf->retrieveAll();
+                    shutdownConnection(k400BadRequest);
+                    return false;
                 }
             }
             else
             {
+                if (buf->readableBytes() >= 64 * 1024)
+                {
+                    /// The limit for request line is 64K bytes. respone k414RequestURITooLarge
+                    /// TODO: Make this configurable?
+                    buf->retrieveAll();
+                    shutdownConnection(k414RequestURITooLarge);
+                    return false;
+                }
                 hasMore = false;
             }
         }
-        else if (_state == kExpectHeaders)
+        else if (_state == HttpRequestParseState_ExpectHeaders)
         {
             const char *crlf = buf->findCRLF();
             if (crlf)
@@ -121,11 +165,17 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
                     if (!len.empty())
                     {
                         _request->_contentLen = atoi(len.c_str());
-                        _state = kExpectBody;
+                        _state = HttpRequestParseState_ExpectBody;
                         auto &expect = _request->getHeaderBy("expect");
                         if (expect == "100-continue" &&
                             _request->getVersion() >= HttpRequest::kHttp11)
                         {
+                            if (_request->_contentLen == 0)
+                            {
+                                buf->retrieveAll();
+                                shutdownConnection(k400BadRequest);
+                                return false;
+                            }
                             //rfc2616-8.2.3
                             //TODO: here we can add content-length limitation
                             auto connPtr = _conn.lock();
@@ -143,21 +193,15 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
                             auto connPtr = _conn.lock();
                             if (connPtr)
                             {
-                                auto resp = HttpResponse::newHttpResponse();
-                                resp->setStatusCode(k417ExpectationFailed);
-                                MsgBuffer buffer;
-                                auto httpString = std::dynamic_pointer_cast<HttpResponseImpl>(resp)->renderToString();
-                                connPtr->send(httpString);
                                 buf->retrieveAll();
-                                connPtr->forceClose();
-
-                                //return false;
+                                shutdownConnection(k417ExpectationFailed);
+                                return false;
                             }
                         }
                     }
                     else
                     {
-                        _state = kGotAll;
+                        _state = HttpRequestParseState_GotAll;
                         _requestsCounter++;
                         hasMore = false;
                     }
@@ -166,16 +210,24 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
             }
             else
             {
+                if (buf->readableBytes() >= 64 * 1024)
+                {
+                    /// The limit for every request header is 64K bytes;
+                    /// TODO: Make this configurable?
+                    buf->retrieveAll();
+                    shutdownConnection(k400BadRequest);
+                    return false;
+                }
                 hasMore = false;
             }
         }
-        else if (_state == kExpectBody)
+        else if (_state == HttpRequestParseState_ExpectBody)
         {
             if (buf->readableBytes() == 0)
             {
                 if (_request->_contentLen == 0)
                 {
-                    _state = kGotAll;
+                    _state = HttpRequestParseState_GotAll;
                     _requestsCounter++;
                 }
                 break;
@@ -194,7 +246,7 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
             }
             if (_request->_contentLen == 0)
             {
-                _state = kGotAll;
+                _state = HttpRequestParseState_GotAll;
                 _requestsCounter++;
                 hasMore = false;
             }

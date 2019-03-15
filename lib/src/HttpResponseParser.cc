@@ -53,7 +53,7 @@ bool HttpResponseParser::processResponseLine(const char *begin, const char *end)
         std::string status_message(space + 1, end - space - 1);
         LOG_TRACE << status_code << " " << status_message;
         auto code = atoi(status_code.c_str());
-        _response->setStatusCode(HttpStatusCode(code), status_message);
+        _response->setStatusCode(HttpStatusCode(code));
 
         return true;
     }

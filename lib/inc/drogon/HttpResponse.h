@@ -37,8 +37,8 @@ class HttpResponse
     /// Set the status code of the response.
     virtual void setStatusCode(HttpStatusCode code) = 0;
 
-    /// Set the status code and the status message of the response. Usually not used.
-    virtual void setStatusCode(HttpStatusCode code, const std::string &status_message) = 0;
+    // /// Set the status code and the status message of the response. Usually not used.
+    // virtual void setStatusCode(HttpStatusCode code, const std::string &status_message) = 0;
 
     /// Get the creation timestamp of the response.
     virtual const trantor::Date &creationDate() const = 0;
