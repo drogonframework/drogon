@@ -34,7 +34,7 @@ void HttpControllersRouter::init(const std::vector<trantor::EventLoop *> &ioLoop
             if (binder)
             {
                 binder->_filters = FiltersFunction::createFilters(binder->_filterNames);
-                for(auto ioloop:ioLoops)
+                for (auto ioloop : ioLoops)
                 {
                     binder->_responsePtrMap[ioloop] = std::shared_ptr<HttpResponse>();
                 }
@@ -130,6 +130,7 @@ void HttpControllersRouter::addHttpPath(const std::string &path,
     }
     struct HttpControllerRouterItem router;
     router._pathParameterPattern = pathParameterPattern;
+    router._pathPattern = path;
     if (validMethods.size() > 0)
     {
         for (auto const &method : validMethods)
@@ -168,8 +169,8 @@ void HttpControllersRouter::route(const HttpRequestImplPtr &req,
                 {
                     size_t ctlIndex = i - 1;
                     auto &routerItem = _ctrlVector[ctlIndex];
-                    //LOG_TRACE << "got http access,regex=" << binder._pathParameterPattern;
                     assert(Invalid > req->method());
+                    req->setMatchedPathPattern(routerItem._pathPattern);
                     auto &binder = routerItem._binders[req->method()];
                     if (!binder)
                     {

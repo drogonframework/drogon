@@ -382,6 +382,18 @@ class HttpRequestImpl : public HttpRequest
         return _contentType;
     }
 
+    virtual const std::string &matchedPathPattern() const override
+    {
+        if(_matchedPathPattern.empty())
+            return _path;
+        return _matchedPathPattern;
+    }
+
+    void setMatchedPathPattern(const std::string &pathPattern)
+    {
+        _matchedPathPattern = pathPattern;
+    }
+
   protected:
     friend class HttpRequest;
     void setContentType(const std::string &contentType)
@@ -408,6 +420,7 @@ class HttpRequestImpl : public HttpRequest
     HttpMethod _method;
     Version _version;
     std::string _path;
+    std::string _matchedPathPattern;
     std::string _query;
     std::unordered_map<std::string, std::string> _headers;
     std::unordered_map<std::string, std::string> _cookies;
