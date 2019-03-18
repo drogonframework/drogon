@@ -72,6 +72,9 @@ class HttpRequest
     /// Get the path of the request.
     virtual const std::string &path() const = 0;
 
+    /// Get the matched path pattern after routing
+    virtual const std::string &matchedPathPattern() const = 0;
+
     /// Return the enum type version of the request.
     /**
      * kHttp10 means Http version is 1.0

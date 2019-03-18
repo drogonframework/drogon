@@ -56,6 +56,7 @@ class HttpControllersRouter : public trantor::NonCopyable
     struct HttpControllerRouterItem
     {
         std::string _pathParameterPattern;
+        std::string _pathPattern;
         std::regex _regex;
         CtrlBinderPtr _binders[Invalid]; //The enum value Invalid is the http methods number
     };

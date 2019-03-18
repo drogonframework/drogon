@@ -29,6 +29,7 @@ void ApiTest::get(const HttpRequestPtr &req, const std::function<void(const Http
 
 void ApiTest::your_method_name(const HttpRequestPtr &req, const std::function<void(const HttpResponsePtr &)> &callback, double p1, int p2) const
 {
+    LOG_WARN << req->matchedPathPattern();
     HttpViewData data;
     data.insert("title", std::string("ApiTest::get"));
     std::map<std::string, std::string> para;
