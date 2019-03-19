@@ -64,7 +64,23 @@ int main()
 }
 ```
 
-Drogon provides some interfaces for adding controller logic directly in the main() function, but unless your logic is very simple, we don't recommend using them. Instead, we create an HttpSimpleController as follows:
+Drogon provides some interfaces for adding controller logic directly in the main() function, for example, user can register a handler like this in Drogon:
+
+```c++
+app.registerHttpMethod("/test",
+                        [=](const HttpRequestPtr& req,
+                            const std::function<void (const HttpResponsePtr &)> & callback)
+                            {
+                                Json::Value json;
+                                json["result"]="ok";
+                                auto resp=HttpResponse::newHttpJsonResponse(json);
+                                callback(resp);
+                            },
+                            {Get,"LoginFilter"});
+```
+                                   
+                                   
+In a scene with dozens of path handlers, isn't it better to disperse them in their respective classes? So unless your logic is very simple, we don't recommend using above interfaces. Instead, we create an HttpSimpleController as follows:
 
 ```c++
 /// The TestCtrl.h file
