@@ -34,7 +34,7 @@ Drogon's main application platform is Linux. It also supports Mac OS and FreeBSD
 
 ## A very simple example
 
-Unlike most C++ frameworks, the main program of the drogon application can be kept clean and simple. Drogon uses a few tricks to decouple the controller from the main program. The routing of controllers can be done through macros or configuration file.
+Unlike most C++ frameworks, the main program of the drogon application can be kept clean and simple. Drogon uses a few tricks to decouple controllers from the main program. The routing settings of controllers can be done through macros or configuration file.
 
 Below is the main program of a typical drogon application:
 
