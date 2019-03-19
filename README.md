@@ -12,7 +12,7 @@
 
 Drogon's main application platform is Linux. It also supports Mac OS and FreeBSD. Currently, it does not support windows. Its main features are as follows:
 
-* Use a NIO network lib based on epoll (kqueue under MacOS/FreeBSD) to provide high-concurrency, high-performance network IO, please visit the [benchmarks](https://github.com/an-tao/drogon/wiki/benchmarks) page for more details;
+* Use a non-blocking I/O network lib based on epoll (kqueue under MacOS/FreeBSD) to provide high-concurrency, high-performance network IO, please visit the [benchmarks](https://github.com/an-tao/drogon/wiki/benchmarks) page for more details;
 * Provide a completely asynchronous programming mode;
 * Support Http1.0/1.1 (server side and client side);
 * Based on template, a simple reflection mechanism is implemented to completely decouple the main program framework, controllers and views.
