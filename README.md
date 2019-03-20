@@ -67,20 +67,22 @@ int main()
 Drogon provides some interfaces for adding controller logic directly in the main() function, for example, user can register a handler like this in Drogon:
 
 ```c++
-app.registerHttpMethod("/test",
-                        [=](const HttpRequestPtr& req,
-                            const std::function<void (const HttpResponsePtr &)> & callback)
-                            {
-                                Json::Value json;
-                                json["result"]="ok";
-                                auto resp=HttpResponse::newHttpJsonResponse(json);
-                                callback(resp);
-                            },
-                            {Get,"LoginFilter"});
+app.registerHttpMethod("/test?username={1}",
+                        [](const HttpRequestPtr& req,
+                           const std::function<void (const HttpResponsePtr &)> & callback,
+                           const std::string &name)
+                        {
+                            Json::Value json;
+                            json["result"]="ok";
+                            json["message"]=std::string("hello,")+name;
+                            auto resp=HttpResponse::newHttpJsonResponse(json);
+                            callback(resp);
+                        },
+                        {Get,"LoginFilter"});
 ```
                                    
                                    
-In a scene with dozens of path handlers, isn't it better to disperse them in their respective classes? So unless your logic is very simple, we don't recommend using above interfaces. Instead, we create an HttpSimpleController as follows:
+While such interfaces look intuitive, they are not suitable for complex business logic scenarios. Assuming there are tens or even hundreds of handlers that need to be registered in the framework, isn't it a better practice to implement them separately in their respective classes? So unless your logic is very simple, we don't recommend using above interfaces. Instead, we can create an HttpSimpleController as follows:
 
 ```c++
 /// The TestCtrl.h file
@@ -157,7 +159,7 @@ class User : public drogon::HttpController<User>
     METHOD_LIST_BEGIN
     //use METHOD_ADD to add your custom processing function here;
     METHOD_ADD(User::getInfo, "/{1}", Get);                  //path is /api/v1/User/{arg1}
-    METHOD_ADD(User::getDetailInfo, "/{1}/detailinfo, Get);  //path is /api/v1/User/{arg1}/detailinfo
+    METHOD_ADD(User::getDetailInfo, "/{1}/detailinfo", Get);  //path is /api/v1/User/{arg1}/detailinfo
     METHOD_ADD(User::newUser, "/{1}", Post);                 //path is /api/v1/User/{arg1}
     METHOD_LIST_END
     //your declaration of processing function maybe like this:
@@ -174,6 +176,8 @@ class User : public drogon::HttpController<User>
 } // namespace api
 ```
 
-As you can see, users can use the `HttpController` to map paths and parameters at the same time. This is a very convenient way to create a RESTful API application.
+As you can see, users can use the `HttpController` to map paths and parameters at the same time. This is a very convenient way to create a RESTful API application. 
+
+In addition, you can also find that all handler interfaces are in asynchronous mode, where the response is returned by a callback object. This design is for performance reasons because in asynchronous mode the drogon application can handle a large number of concurrent requests with a small number of threads.
 
 After compiling all of the above source files, we get a very simple web application. This is a good start. **for more information, please visit the [wiki](https://github.com/an-tao/drogon/wiki) site**
