@@ -113,7 +113,36 @@ int main()
             std::cerr << e.base().what() << std::endl;
             testOutput(false, "DbClient streaming-type interface(1)");
         };
-    /// Add more testing here
+    ///1.3 query,no-blocking
+    *clientPtr << "select * from users where 1 = 1"
+               << Mode::NonBlocking >>
+        [](const Result &r) {
+            for (Result::size_type i = 0; i < r.size(); ++i)
+            {
+                std::cout << r[i]["id"].as<int64_t>() << " " << r[i]["user_id"].as<std::string>() << " "
+                          << r[i]["user_name"].as<std::string>() << std::endl;
+            }
+            testOutput(true, "DbClient streaming-type interface(0)");
+        } >>
+        [](const DrogonDbException &e) {
+            std::cerr << e.base().what() << std::endl;
+            testOutput(false, "DbClient streaming-type interface(0)");
+        };
+    ///1.4 query,blocking
+    *clientPtr << "select * from users where 1 = 1"
+               << Mode::Blocking >>
+        [](const Result &r) {
+            for (const auto &item : r)
+            {
+                std::cout << item["id"].as<int64_t>() << " " << item["user_id"].as<std::string>() << " "
+                          << item["user_name"].as<std::string>() << std::endl;
+            }
+            testOutput(true, "DbClient streaming-type interface(1)");
+        } >>
+        [](const DrogonDbException &e) {
+            std::cerr << e.base().what() << std::endl;
+            testOutput(false, "DbClient streaming-type interface(1)");
+        };
 
     /// 2 DbClient execSqlAsync()...
     ///
