@@ -16,7 +16,7 @@
 #include <math.h>
 #include <string.h>
 #include <iostream>
-// 幻数定义
+
 const int Md5Encode::kA = 0x67452301;
 const int Md5Encode::kB = 0xefcdab89;
 const int Md5Encode::kC = 0x98badcfe;
@@ -25,9 +25,9 @@ const int Md5Encode::kD = 0x10325476;
 const unsigned long long Md5Encode::k_ti_num_integer = 4294967296;
 
 // function: CycleMoveLeft
-// @param src_num:要左移的数
-// @param bit_num_to_move:要移动的bit位数
-// @return  循环左移后的结果数
+// @param src_num: the number to be moved left
+// @param bit_num_to_move: the number of bit of moving
+// @return  result after moving
 UInt32 Md5Encode::CycleMoveLeft(UInt32 src_num, int bit_num_to_move)
 {
     UInt32 src_num1 = src_num;
@@ -43,10 +43,10 @@ UInt32 Md5Encode::CycleMoveLeft(UInt32 src_num, int bit_num_to_move)
 }
 
 // function: FillData
-// @param in_data_ptr:    要加密的信息数据
-// @param data_byte_len: 数据的字节数
-// @param out_data_ptr:  填充必要信息后的数据
-// return : 填充信息后的数据长度,以字节为单位
+// @param in_data_ptr:    input data
+// @param data_byte_len:  length of input data
+// @param out_data_ptr:   output data
+// return : length of output data
 UInt32 Md5Encode::FillData(const char *in_data_ptr, int data_byte_len, char **out_data_ptr)
 {
     int bit_num = data_byte_len * BIT_OF_BYTE;
@@ -60,7 +60,7 @@ UInt32 Md5Encode::FillData(const char *in_data_ptr, int data_byte_len, char **ou
     }
     else
     {
-        bit_need_fill = (BIT_OF_GROUP - SRC_DATA_LEN) - mod_bit_num; //  这里多加了一个BIT_OF_GROUP，避免bit_need_fill正好等于0,暂时不加
+        bit_need_fill = (BIT_OF_GROUP - SRC_DATA_LEN) - mod_bit_num; 
     }
     int all_bit = bit_num + bit_need_fill;
     if (0 < bit_need_fill)
@@ -209,14 +209,13 @@ void Md5Encode::RotationCalculate(char *data_512_ptr, ParamDynamic &param)
     param.vd_last_ = param.ud_;
 }
 
-// 转换成十六进制字符串输出
+// Convert to hex format string
 std::string Md5Encode::GetHexStr(unsigned int num_str)
 {
     std::string hexstr = "";
     char szch[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
     unsigned char *tmptr = (unsigned char *)&num_str;
     int len = sizeof(num_str);
-    // 小端字节序，逆序打印
     for (int i = 0; i < len; i++)
     {
         unsigned char ch = tmptr[i] & 0xF0;
@@ -229,8 +228,8 @@ std::string Md5Encode::GetHexStr(unsigned int num_str)
 }
 
 // function: Encode
-// @param src_info:要加密的信息
-// return :加密后的MD5值
+// @param src_info: the string to be encoded.
+// return : the string after encoding
 std::string Md5Encode::encode(const std::string &src_info)
 {
     ParamDynamic param;
@@ -253,10 +252,7 @@ std::string Md5Encode::encode(const std::string &src_info)
         data_BIT_OF_GROUP += i * (BIT_OF_GROUP / BIT_OF_BYTE);
         RotationCalculate(data_BIT_OF_GROUP, param);
     }
-    if (NULL != out_data_ptr)
-    {
-        delete[] out_data_ptr, out_data_ptr = NULL;
-    }
+    delete[] out_data_ptr, out_data_ptr = NULL;
     result.append(GetHexStr(param.ua_));
     result.append(GetHexStr(param.ub_));
     result.append(GetHexStr(param.uc_));
