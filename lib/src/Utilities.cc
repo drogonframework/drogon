@@ -37,10 +37,7 @@ namespace drogon
 namespace utils
 {
 
-static const std::string base64Chars =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-    "abcdefghijklmnopqrstuvwxyz"
-    "0123456789+/";
+static const std::string base64Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 static inline bool isBase64(unsigned char c)
 {
@@ -134,6 +131,7 @@ std::vector<char> hexToBinaryVector(const char *ptr, size_t length)
     }
     return ret;
 }
+
 std::string hexToBinaryString(const char *ptr, size_t length)
 {
     assert(length % 2 == 0);
@@ -183,6 +181,7 @@ std::string hexToBinaryString(const char *ptr, size_t length)
     }
     return ret;
 }
+
 std::string binaryStringToHex(const unsigned char *ptr, size_t length)
 {
     std::string idString;
@@ -210,6 +209,7 @@ std::string binaryStringToHex(const unsigned char *ptr, size_t length)
     }
     return idString;
 }
+
 std::vector<std::string> splitString(const std::string &str, const std::string &separator)
 {
     std::vector<std::string> ret;
@@ -232,6 +232,7 @@ std::vector<std::string> splitString(const std::string &str, const std::string &
         ret.push_back(str.substr(pos2));
     return ret;
 }
+
 std::string getUuid()
 {
     uuid_t uu;
@@ -327,6 +328,7 @@ std::string base64Decode(std::string const &encoded_string)
 
     return ret;
 }
+
 static std::string charToHex(char c)
 {
     std::string result;
@@ -610,6 +612,7 @@ char *getHttpFullDate(const trantor::Date &date)
     date.toCustomedFormattedString("%a, %d %b %Y %T GMT", lastTimeString, sizeof(lastTimeString));
     return lastTimeString;
 }
+
 trantor::Date getHttpDate(const std::string &httpFullDateString)
 {
     struct tm tmptm;
@@ -617,6 +620,7 @@ trantor::Date getHttpDate(const std::string &httpFullDateString)
     auto epoch = timegm(&tmptm);
     return trantor::Date(epoch * MICRO_SECONDS_PRE_SEC);
 }
+
 std::string formattedString(const char *format, ...)
 {
     std::string strBuffer;
@@ -708,6 +712,28 @@ int createPath(const std::string &path)
         }
     }
     return 0;
+}
+
+int charCount(const std::string& str) {
+    int index, count;
+    for (count = 0, index = 0; index < str.length(); index++, count++) {
+        int ch = (unsigned char) str[index];
+        if (ch <= 127) {
+            index += 0;
+        } else if ((ch & 0xE0) == 0xC0) {
+            index += 1;
+        } else if ((ch & 0xF0) == 0xE0) {
+            index += 2;
+        } else if ((ch & 0xF8) == 0xF0) {
+            index += 3;
+        }
+        //else if (($c & 0xFC) == 0xF8) i+=4; // 111110bb //byte 5, unnecessary in 4 byte UTF-8
+        //else if (($c & 0xFE) == 0xFC) i+=5; // 1111110b //byte 6, unnecessary in 4 byte UTF-8
+        else { //invalid utf8
+            return 0; 
+        } 
+    }
+    return count;
 }
 
 } // namespace utils
