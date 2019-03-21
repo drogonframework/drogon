@@ -7,12 +7,12 @@
 [![Join the chat at https://gitter.im/drogon-web/community](https://badges.gitter.im/drogon-web/community.svg)](https://gitter.im/drogon-web/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Docker image](https://img.shields.io/badge/Docker-image-blue.svg)](https://cloud.docker.com/u/drogonframework/repository/docker/drogonframework/drogon)
 
-**Drogon**是一个基于C++14/17的Http应用框架，使用Drogon可以方便的使用C++构建各种类型的Web应用服务端程序。
-本版本库是github上[Drogon工程](https://github.com/an-tao/drogon)的镜像库。**Drogon**是作者非常喜欢的美剧《权力的游戏》中的一条龙的名字(汉译作卓耿)，和龙有关但并不是dragon的误写，为了不至于引起不必要的误会这里说明一下。
+**Drogon**是一个基于C++14/17的高性能、全异步、MVC式Web开发框架，使用Drogon可以极大的简化基于C++构建的各类Web服务端程序开发过程。
+本版本库是github上[Drogon工程](https://github.com/an-tao/drogon)的镜像库。**Drogon**是作者非常喜欢的美剧《权力的游戏》中的一条龙的名字(汉译作卓耿)，和龙有关但并不是dragon的误写，为了不引起不必要的误会故在这里特别说明一下。
 
 Drogon的主要应用平台是Linux，也支持Mac OS、FreeBSD，目前还不支持Windows。它的主要特点如下：
 
-* 网络层使用基于epoll(MacOS/FreeBSD下是kqueue)的NIO框架，提供高并发、高性能的网络IO。详细请见[性能测试](https://gitee.com/an-tao/drogon/wikis/性能测试)；
+* 高并发、高性能，网络层使用基于epoll(MacOS/FreeBSD下是kqueue)的NIO框架，提供高并发、高性能的网络IO。详细请见[性能测试](https://gitee.com/an-tao/drogon/wikis/性能测试)；
 * 全异步编程模式；
 * 支持Http1.0/1.1(server端和client端)；
 * 基于template实现了简单的反射机制，使主程序框架、控制器(controller)和视图(view)完全解耦；
