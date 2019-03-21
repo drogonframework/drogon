@@ -163,7 +163,7 @@ int HttpFile::save(const std::string &path) const
             tmpPath = uploadPath + "/" + path;
     }
 
-    if (createPath(tmpPath) < 0)
+    if (utils::createPath(tmpPath) < 0)
         return -1;
 
     if (tmpPath[tmpPath.length() - 1] != '/')
@@ -201,7 +201,7 @@ int HttpFile::saveAs(const std::string &filename) const
     if (pathPos != std::string::npos)
     {
         std::string path = pathAndFileName.substr(0, pathPos);
-        if (createPath(path) < 0)
+        if (utils::createPath(path) < 0)
             return -1;
     }
     return saveTo(pathAndFileName);
@@ -230,7 +230,7 @@ const std::string HttpFile::getMd5() const
     MD5_Init(&c);
     MD5_Update(&c, _fileContent.c_str(), _fileContent.size());
     MD5_Final(md5, &c);
-    return binaryStringToHex(md5, 16);
+    return utils::binaryStringToHex(md5, 16);
 #else
     return Md5Encode::encode(_fileContent);
 #endif

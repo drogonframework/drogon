@@ -1030,14 +1030,14 @@ inline Mapper<T> &Mapper<T>::limit(size_t limit)
     assert(limit > 0);
     if (limit > 0)
     {
-        _limitString = formattedString(" limit %u", limit);
+        _limitString = utils::formattedString(" limit %u", limit);
     }
     return *this;
 }
 template <typename T>
 inline Mapper<T> &Mapper<T>::offset(size_t offset)
 {
-    _offsetString = formattedString(" offset %u", offset);
+    _offsetString = utils::formattedString(" offset %u", offset);
     return *this;
 }
 template <typename T>
@@ -1045,7 +1045,7 @@ inline Mapper<T> &Mapper<T>::orderBy(const std::string &colName, const SortOrder
 {
     if (_orderbyString.empty())
     {
-        _orderbyString = formattedString(" order by %s", colName.c_str());
+        _orderbyString = utils::formattedString(" order by %s", colName.c_str());
         if (order == SortOrder::DESC)
         {
             _orderbyString += " desc";

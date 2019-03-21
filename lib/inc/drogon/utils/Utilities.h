@@ -22,6 +22,9 @@
 
 namespace drogon
 {
+namespace utils
+{
+
 /// Determine if the string is an integer
 bool isInteger(const std::string &str);
 
@@ -45,7 +48,7 @@ std::vector<char> hexToBinaryVector(const char *ptr, size_t length);
 std::vector<std::string> splitString(const std::string &str, const std::string &separator);
 
 /// Get UUID string.
-std::string getuuid();
+std::string getUuid();
 
 /// Encode the string to base64 format.
 std::string base64Encode(const unsigned char *bytes_to_encode, unsigned int in_len);
@@ -89,4 +92,5 @@ std::string formattedString(const char *format, ...);
  */
 int createPath(const std::string &path);
 
+} // namespace utils
 } // namespace drogon

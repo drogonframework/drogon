@@ -4,8 +4,8 @@
 using namespace drogon;
 int main()
 {
-    auto str = getHttpFullDate();
+    auto str = utils::getHttpFullDate();
     std::cout << str << std::endl;
-    auto date = getHttpDate(str);
-    std::cout << getHttpFullDate(date) << std::endl;
+    auto date = utils::getHttpDate(str);
+    std::cout << utils::getHttpFullDate(date) << std::endl;
 }

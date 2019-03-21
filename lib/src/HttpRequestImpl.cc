@@ -49,8 +49,8 @@ void HttpRequestImpl::parseParameters() const
                     cpos++;
                 key = key.substr(cpos);
                 std::string pvalue = coo.substr(epos + 1);
-                std::string pdecode = urlDecode(pvalue);
-                std::string keydecode = urlDecode(key);
+                std::string pdecode = utils::urlDecode(pvalue);
+                std::string keydecode = utils::urlDecode(key);
                 _parameters[keydecode] = pdecode;
             }
             value = value.substr(pos + 1);
@@ -67,8 +67,8 @@ void HttpRequestImpl::parseParameters() const
                     cpos++;
                 key = key.substr(cpos);
                 std::string pvalue = coo.substr(epos + 1);
-                std::string pdecode = urlDecode(pvalue);
-                std::string keydecode = urlDecode(key);
+                std::string pdecode = utils::urlDecode(pvalue);
+                std::string keydecode = utils::urlDecode(key);
                 _parameters[keydecode] = pdecode;
             }
         }
@@ -137,7 +137,7 @@ void HttpRequestImpl::appendToBuffer(MsgBuffer *output) const
             content.append("&");
         }
         content.resize(content.length() - 1);
-        content = urlEncode(content);
+        content = utils::urlEncode(content);
         if (_method == Get || _method == Delete)
         {
             output->append("?");

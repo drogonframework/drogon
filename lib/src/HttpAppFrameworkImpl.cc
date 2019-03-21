@@ -568,7 +568,7 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestImplPtr &req, std::fu
     {
         if (sessionId == "")
         {
-            sessionId = getuuid().c_str();
+            sessionId = utils::getUuid().c_str();
             needSetJsessionid = true;
             _sessionMapPtr->insert(sessionId, std::make_shared<Session>(), _sessionTimeout);
         }
@@ -754,7 +754,7 @@ void HttpAppFrameworkImpl::createDbClient(const std::string &dbType,
                                           const std::string &name)
 {
     assert(!_running);
-    auto connStr = formattedString("host=%s port=%u dbname=%s user=%s", host.c_str(), port, databaseName.c_str(), userName.c_str());
+    auto connStr = utils::formattedString("host=%s port=%u dbname=%s user=%s", host.c_str(), port, databaseName.c_str(), userName.c_str());
     if (!password.empty())
     {
         connStr += " password=";

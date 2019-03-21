@@ -21,7 +21,7 @@ const std::string Cookie::cookieString() const
     ret.append(_key).append("= ").append(_value).append("; ");
     if (_expiresDate.microSecondsSinceEpoch() > 0)
     {
-        ret.append("Expires= ").append(getHttpFullDate(_expiresDate)).append("; ");
+        ret.append("Expires= ").append(utils::getHttpFullDate(_expiresDate)).append("; ");
     }
     if (!_domain.empty())
     {

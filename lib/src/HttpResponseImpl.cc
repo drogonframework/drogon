@@ -240,7 +240,7 @@ std::shared_ptr<std::string> HttpResponseImpl::renderToString() const
             if (isDateChanged)
             {
                 _httpStringDate = now.microSecondsSinceEpoch() / MICRO_SECONDS_PRE_SEC;
-                auto newDate = getHttpFullDate(now);
+                auto newDate = utils::getHttpFullDate(now);
 
                 _httpString = std::make_shared<std::string>(*_httpString);
                 memcpy((void *)&(*_httpString)[_datePos], newDate, strlen(newDate));
@@ -274,7 +274,7 @@ std::shared_ptr<std::string> HttpResponseImpl::renderToString() const
     //output Date header
     httpString->append("Date: ");
     auto datePos = httpString->length();
-    httpString->append(getHttpFullDate(trantor::Date::date()));
+    httpString->append(utils::getHttpFullDate(trantor::Date::date()));
     httpString->append("\r\n\r\n");
 
     LOG_TRACE << "reponse(no body):" << httpString->c_str();
@@ -312,7 +312,7 @@ std::shared_ptr<std::string> HttpResponseImpl::renderHeaderForHeadMethod() const
 
     //output Date header
     httpString->append("Date: ");
-    httpString->append(getHttpFullDate(trantor::Date::date()));
+    httpString->append(utils::getHttpFullDate(trantor::Date::date()));
     httpString->append("\r\n\r\n");
 
     return httpString;

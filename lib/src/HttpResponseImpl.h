@@ -167,7 +167,7 @@ class HttpResponseImpl : public HttpResponse
         if (field == "set-cookie")
         {
             //LOG_INFO<<"cookies!!!:"<<value;
-            auto values = splitString(value, ";");
+            auto values = utils::splitString(value, ";");
             Cookie cookie;
             cookie.setHttpOnly(false);
             for (size_t i = 0; i < values.size(); i++)
@@ -210,7 +210,7 @@ class HttpResponseImpl : public HttpResponse
                     }
                     else if (cookie_name == "expires")
                     {
-                        cookie.setExpiresDate(getHttpDate(cookie_value));
+                        cookie.setExpiresDate(utils::getHttpDate(cookie_value));
                     }
                     else if (cookie_name == "secure")
                     {
@@ -368,7 +368,7 @@ class HttpResponseImpl : public HttpResponse
 
     void gunzip()
     {
-        auto gunzipBody = gzipDecompress(_bodyPtr);
+        auto gunzipBody = utils::gzipDecompress(_bodyPtr);
         if (gunzipBody)
             _bodyPtr = gunzipBody;
     }

@@ -17,7 +17,7 @@ int main()
     sleep(3);
     for (int i = 0; i < 40; i++)
     {
-        cache.insert(drogon::formattedString("aaa%d", i), "hehe", i, [=]() {
+        cache.insert(drogon::utils::formattedString("aaa%d", i), "hehe", i, [=]() {
             std::cout << i << " cache item erased!" << std::endl;
         });
     }

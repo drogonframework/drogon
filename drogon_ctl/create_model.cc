@@ -453,13 +453,13 @@ void create_model::createModelClassFromSqlite3(const std::string &path, const Db
                     data["dbName"] = "sqlite3";
                     data["rdbms"] = std::string("sqlite3");
                     //std::cout << sql << std::endl;
-                    auto columns = splitString(sql, ",");
+                    auto columns = utils::splitString(sql, ",");
                     int i = 0;
                     std::vector<ColumnInfo> cols;
                     for (auto &column : columns)
                     {
                         std::transform(column.begin(), column.end(), column.begin(), tolower);
-                        auto columnVector = splitString(column, " ");
+                        auto columnVector = utils::splitString(column, " ");
                         auto field = columnVector[0];
                         auto type = columnVector[1];
 
@@ -588,7 +588,7 @@ void create_model::createModel(const std::string &path, const Json::Value &confi
         }
         auto password = config.get("passwd", "").asString();
 
-        auto connStr = formattedString("host=%s port=%u dbname=%s user=%s", host.c_str(), port, dbname.c_str(), user.c_str());
+        auto connStr = utils::formattedString("host=%s port=%u dbname=%s user=%s", host.c_str(), port, dbname.c_str(), user.c_str());
         if (!password.empty())
         {
             connStr += " password=";
@@ -640,7 +640,7 @@ void create_model::createModel(const std::string &path, const Json::Value &confi
         }
         auto password = config.get("passwd", "").asString();
 
-        auto connStr = formattedString("host=%s port=%u dbname=%s user=%s", host.c_str(), port, dbname.c_str(), user.c_str());
+        auto connStr = utils::formattedString("host=%s port=%u dbname=%s user=%s", host.c_str(), port, dbname.c_str(), user.c_str());
         if (!password.empty())
         {
             connStr += " password=";

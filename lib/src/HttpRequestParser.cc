@@ -36,7 +36,7 @@ void HttpRequestParser::shutdownConnection(HttpStatusCode code)
     auto connPtr = _conn.lock();
     if (connPtr)
     {
-        connPtr->send(formattedString("HTTP/1.1 %d %s\r\n\r\n", code, statusCodeToString(code).data()));
+        connPtr->send(utils::formattedString("HTTP/1.1 %d %s\r\n\r\n", code, statusCodeToString(code).data()));
         connPtr->shutdown();
     }
 }

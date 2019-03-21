@@ -86,7 +86,7 @@ void WebsocketControllersRouter::doControllerHandler(const WebSocketControllerBa
     wsKey.append("258EAFA5-E914-47DA-95CA-C5AB0DC85B11");
     unsigned char accKey[SHA_DIGEST_LENGTH];
     SHA1(reinterpret_cast<const unsigned char *>(wsKey.c_str()), wsKey.length(), accKey);
-    auto base64Key = base64Encode(accKey, SHA_DIGEST_LENGTH);
+    auto base64Key = utils::base64Encode(accKey, SHA_DIGEST_LENGTH);
     auto resp = HttpResponse::newHttpResponse();
     resp->setStatusCode(k101SwitchingProtocols);
     resp->addHeader("Upgrade", "websocket");
