@@ -574,7 +574,7 @@ Json::Value Groups::toJson() const
     }
     if(getAvatar())
     {
-        ret["avatar"]=drogon::base64Encode((const unsigned char *)getAvatar()->data(),getAvatar()->size());
+        ret["avatar"]=drogon::utils::base64Encode((const unsigned char *)getAvatar()->data(),getAvatar()->size());
     }
     else
     {

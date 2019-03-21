@@ -233,7 +233,7 @@ void PgConnection::execSqlInLoop(std::string &&sql,
         else
         {
             _isRreparingStatement = true;
-            _statementName = getuuid();
+            _statementName = utils::getUuid();
             if (PQsendPrepare(_connPtr.get(), _statementName.c_str(), _sql.c_str(), paraNum, NULL) == 0)
             {
                 LOG_ERROR << "send query error: " << PQerrorMessage(_connPtr.get());

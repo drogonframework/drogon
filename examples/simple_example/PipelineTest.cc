@@ -9,7 +9,7 @@ void PipelineTest::asyncHandleHttpRequest(const HttpRequestPtr &req, const std::
     double delay = ((double)(10 - (c % 10))) / 10.0;
     trantor::EventLoop::getEventLoopOfCurrentThread()->runAfter(delay, [c, callback]() {
         auto resp = HttpResponse::newHttpResponse();
-        auto str = formattedString("<P>the %dth response</P>", c);
+        auto str = utils::formattedString("<P>the %dth response</P>", c);
         resp->setBody(std::move(str));
         callback(resp);
     });

@@ -169,7 +169,7 @@ class HttpRequestImpl : public HttpRequest
 
     void setPath(const char *start, const char *end)
     {
-        _path = urlDecode(start, end);
+        _path = utils::urlDecode(start, end);
     }
 
     virtual void setPath(const std::string &path) override

@@ -49,10 +49,10 @@ MysqlConnection::MysqlConnection(trantor::EventLoop *loop, const std::string &co
     std::regex r(" *= *");
     auto tmpStr = std::regex_replace(connInfo, r, "=");
     std::string host, user, passwd, dbname, port;
-    auto keyValues = splitString(tmpStr, " ");
+    auto keyValues = utils::splitString(tmpStr, " ");
     for (auto const &kvs : keyValues)
     {
-        auto kv = splitString(kvs, "=");
+        auto kv = utils::splitString(kvs, "=");
         assert(kv.size() == 2);
         auto key = kv[0];
         auto value = kv[1];

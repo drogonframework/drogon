@@ -307,8 +307,8 @@ void HttpServer::onRequest(const TcpConnectionPtr &conn, const HttpRequestImplPt
             //use gzip
             LOG_TRACE << "Use gzip to compress the body";
             size_t zlen = response->getBody().length();
-            auto strCompress = gzipCompress(response->getBody().data(),
-                                            response->getBody().length());
+            auto strCompress = utils::gzipCompress(response->getBody().data(),
+                                                   response->getBody().length());
             if (strCompress)
             {
                 if (zlen > 0)

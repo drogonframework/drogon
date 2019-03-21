@@ -33,7 +33,7 @@ static void createFilterHeaderFile(std::ofstream &file, const std::string &class
     HttpViewData data;
     if (className.find("::") != std::string::npos)
     {
-        auto namespaceVector = splitString(className, "::");
+        auto namespaceVector = utils::splitString(className, "::");
         data.insert("className", namespaceVector.back());
         namespaceVector.pop_back();
         data.insert("namespaceVector", namespaceVector);

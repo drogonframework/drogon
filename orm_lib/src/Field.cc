@@ -50,7 +50,7 @@ std::string Field::as<std::string>() const
         auto sv = as<string_view>();
         if (sv.length() < 2 || sv[0] != '\\' || sv[1] != 'x')
             return std::string();
-        return hexToBinaryString(sv.data() + 2, sv.length() - 2);
+        return utils::hexToBinaryString(sv.data() + 2, sv.length() - 2);
     }
 }
 template <>
@@ -80,7 +80,7 @@ std::vector<char> Field::as<std::vector<char>>() const
         auto sv = as<string_view>();
         if (sv.length() < 2 || sv[0] != '\\' || sv[1] != 'x')
             return std::vector<char>();
-        return hexToBinaryVector(sv.data() + 2, sv.length() - 2);
+        return utils::hexToBinaryVector(sv.data() + 2, sv.length() - 2);
     }
 }
 template <>

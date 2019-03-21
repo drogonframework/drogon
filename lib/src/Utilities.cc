@@ -34,12 +34,15 @@
 
 namespace drogon
 {
-static const std::string base64_chars =
+namespace utils
+{
+
+static const std::string base64Chars =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
     "abcdefghijklmnopqrstuvwxyz"
     "0123456789+/";
 
-static inline bool is_base64(unsigned char c)
+static inline bool isBase64(unsigned char c)
 {
     return (isalnum(c) || (c == '+') || (c == '/'));
 }
@@ -229,7 +232,7 @@ std::vector<std::string> splitString(const std::string &str, const std::string &
         ret.push_back(str.substr(pos2));
     return ret;
 }
-std::string getuuid()
+std::string getUuid()
 {
     uuid_t uu;
     uuid_generate(uu);
@@ -254,7 +257,7 @@ std::string base64Encode(const unsigned char *bytes_to_encode, unsigned int in_l
             char_array_4[3] = char_array_3[2] & 0x3f;
 
             for (i = 0; (i < 4); i++)
-                ret += base64_chars[char_array_4[i]];
+                ret += base64Chars[char_array_4[i]];
             i = 0;
         }
     }
@@ -270,7 +273,7 @@ std::string base64Encode(const unsigned char *bytes_to_encode, unsigned int in_l
         char_array_4[3] = char_array_3[2] & 0x3f;
 
         for (int j = 0; (j < i + 1); j++)
-            ret += base64_chars[char_array_4[j]];
+            ret += base64Chars[char_array_4[j]];
 
         while ((i++ < 3))
             ret += '=';
@@ -287,14 +290,14 @@ std::string base64Decode(std::string const &encoded_string)
     unsigned char char_array_4[4], char_array_3[3];
     std::string ret;
 
-    while (in_len-- && (encoded_string[in_] != '=') && is_base64(encoded_string[in_]))
+    while (in_len-- && (encoded_string[in_] != '=') && isBase64(encoded_string[in_]))
     {
         char_array_4[i++] = encoded_string[in_];
         in_++;
         if (i == 4)
         {
             for (i = 0; i < 4; i++)
-                char_array_4[i] = base64_chars.find(char_array_4[i]);
+                char_array_4[i] = base64Chars.find(char_array_4[i]);
 
             char_array_3[0] = (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
             char_array_3[1] = ((char_array_4[1] & 0xf) << 4) + ((char_array_4[2] & 0x3c) >> 2);
@@ -312,7 +315,7 @@ std::string base64Decode(std::string const &encoded_string)
             char_array_4[j] = 0;
 
         for (int j = 0; j < 4; j++)
-            char_array_4[j] = base64_chars.find(char_array_4[j]);
+            char_array_4[j] = base64Chars.find(char_array_4[j]);
 
         char_array_3[0] = (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
         char_array_3[1] = ((char_array_4[1] & 0xf) << 4) + ((char_array_4[2] & 0x3c) >> 2);
@@ -707,4 +710,5 @@ int createPath(const std::string &path)
     return 0;
 }
 
+} // namespace utils
 } // namespace drogon

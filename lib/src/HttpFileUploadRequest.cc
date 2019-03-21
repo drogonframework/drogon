@@ -19,7 +19,7 @@ using namespace drogon;
 
 HttpFileUploadRequest::HttpFileUploadRequest(const std::vector<UploadFile> &files)
     : HttpRequestImpl(nullptr),
-      _boundary(genRandomString(32)),
+      _boundary(utils::genRandomString(32)),
       _files(files)
 {
     setMethod(drogon::Post);
