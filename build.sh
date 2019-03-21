@@ -1,5 +1,11 @@
 #!/bin/bash
 
+#Check operation permissions
+if [ "$(whoami)" != "root" ]; then
+    echo "Need user authorization: root!"
+    exit
+fi
+
 #build drogon
 function build_drogon() {
 
@@ -11,14 +17,16 @@ function build_drogon() {
 
     #The folder in which we will build drogon
     build_dir='./build'
-    if [ -d $build_dir ]; then
-        echo "Deleted folder: ${build_dir}"
-        rm -rf $build_dir
-    fi
+    #if [ -d $build_dir ]; then
+    #    echo "Deleted folder: ${build_dir}"
+    #    rm -rf $build_dir
+    #fi
 
     #Create building folder
-    echo "Created building folder: ${build_dir}"
-    mkdir $build_dir
+    if [ ! -d $build_dir ]; then
+        echo "Created building folder: ${build_dir}"
+        mkdir $build_dir
+    fi
 
     echo "Entering folder: ${build_dir}"
     cd $build_dir
