@@ -228,14 +228,8 @@ static void loadApp(const Json::Value &app)
     //Kick off idle connections
     auto kickOffTimeout = app.get("idle_connection_timeout", 60).asUInt64();
     drogon::app().setIdleConnectionTimeout(kickOffTimeout);
-#if USE_ORM
-    //Fast db client
-    auto fastDbClient = app.get("enable_fast_db_client", false).asBool();
-    if (fastDbClient)
-        drogon::app().enableFastDbClient();
-#endif
     auto server = app.get("server_header_field", "").asString();
-    if(!server.empty())
+    if (!server.empty())
         drogon::app().setServerHeaderField(server);
     auto keepaliveReqs = app.get("keepalive_requests", 0).asUInt64();
     drogon::app().setKeepaliveRequestsNumber(keepaliveReqs);
@@ -263,7 +257,8 @@ static void loadDbClients(const Json::Value &dbClients)
         auto connNum = client.get("connection_number", 1).asUInt();
         auto name = client.get("name", "default").asString();
         auto filename = client.get("filename", "").asString();
-        drogon::app().createDbClient(type, host, (u_short)port, dbname, user, password, connNum, filename, name);
+        auto isFast = client.get("is_fast", false).asBool();
+        drogon::app().createDbClient(type, host, (u_short)port, dbname, user, password, connNum, filename, name, isFast);
     }
 #else
     std::cout << "No database is supported by drogon, please install the database development library first." << std::endl;
