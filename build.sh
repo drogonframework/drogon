@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #Check operation permissions
-if [ "`whoami`" != "root" ]; then
+if [ "$(whoami)" != "root" ]; then
     echo "Need user authorization: root!"
     exit
 fi
