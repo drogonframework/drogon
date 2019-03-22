@@ -41,8 +41,7 @@ void Validation::isNumeric(const HttpRequestPtr& request, const std::string& fie
     }
 }
 
-void Validation::stringLength(const HttpRequestPtr& request, 
-        const std::string& field, 
+void Validation::stringLength(const HttpRequestPtr& request, const std::string& field, 
         const int min, const int max, const std::string& message) noexcept 
 {
     auto& value = request->getParameter(field, "");
