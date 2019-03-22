@@ -2,43 +2,57 @@
 
 using namespace drogon;
 
-Validation::Validation() noexcept {
-    this->errorMessages = "";
+Validation::Validation() noexcept 
+{ 
 }
 
-Validation::~Validation() noexcept {  }
-
-bool Validation::validateAll() noexcept { 
-    return this->errorMessages == "";
+Validation::~Validation() noexcept 
+{  
 }
 
-string Validation::getMessages() noexcept { 
-    return this->errorMessages.substr(0, this->errorMessages.size() - 1);
+bool Validation::validateAll() noexcept 
+{ 
+    return this->_errorMessages.empty();
 }
 
-void Validation::notNull(const HttpRequestPtr& request, const string& field, const string& message) noexcept {
+std::string Validation::getMessages() noexcept 
+{ 
+    if (this->_errorMessages.empty()) { 
+        return "";
+    }
+    return this->_errorMessages.substr(0, this->_errorMessages.size() - 1);
+}
+
+void Validation::notNull(const HttpRequestPtr& request, const std::string& field, 
+        const std::string& message) noexcept 
+{
     auto& value = request->getParameter(field, "");
     if (value == "") {
-        this->errorMessages += message + ",";
+        this->_errorMessages += message + ",";
     }
 }
 
-void Validation::isNumeric(const HttpRequestPtr& request, const string& field, const string& message) noexcept {
+void Validation::isNumeric(const HttpRequestPtr& request, const std::string& field, 
+        const std::string& message) noexcept 
+{
     auto& value = request->getParameter(field, "");
     if (!isInteger(value)) {
-        this->errorMessages += message + ",";
+        this->_errorMessages += message + ",";
     }
 }
 
-void Validation::stringLength(const HttpRequestPtr& request, const string& field, const int min, const int max, const string& message) noexcept {
+void Validation::stringLength(const HttpRequestPtr& request, 
+        const std::string& field, 
+        const int min, const int max, const std::string& message) noexcept 
+{
     auto& value = request->getParameter(field, "");
     if (!isInteger(value)) { //如果不是数字
-        this->errorMessages += message + ",";
+        this->_errorMessages += message + ",";
     }
 
     int length = value.length();
     if (length < min || length > max) { 
-        this->errorMessages += message + ",";
+        this->_errorMessages += message + ",";
     }
 }
 
