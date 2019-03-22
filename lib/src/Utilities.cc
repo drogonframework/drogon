@@ -717,14 +717,14 @@ namespace drogon
             int length = str.length();
             int ch, index, count;
             for (count = 0, index = 0; index < length; index++, count++) {
-                ch = (unsigned char) str[i];
+                ch = (unsigned char) str[index];
                 if (ch <= 127) {
                     index += 0;
-                } else if ((c & 0xE0) == 0xC0) {
+                } else if ((ch & 0xE0) == 0xC0) {
                     index += 1;
-                } else if ((c & 0xF0) == 0xE0) {
+                } else if ((ch & 0xF0) == 0xE0) {
                     index += 2;
-                } else if ((c & 0xF8) == 0xF0) {
+                } else if ((ch & 0xF8) == 0xF0) {
                     index += 3;
                 }
                 //else if (($c & 0xFC) == 0xF8) i+=4; // 111110bb //byte 5, unnecessary in 4 byte UTF-8
