@@ -715,7 +715,7 @@ namespace drogon
 
         int charCount(const std::string& str) {
             int length = str.length();
-            int ch, index, length, count;
+            int ch, index, count;
             for (count = 0, index = 0; index < length; index++, count++) {
                 ch = (unsigned char) str[i];
                 if (ch <= 127) {
