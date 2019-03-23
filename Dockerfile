@@ -23,6 +23,7 @@ ENV IROOT=/install
 ENV DROGON_ROOT=$IROOT/drogon
 
 WORKDIR $IROOT
+ADD https://api.github.com/repos/an-tao/drogon/git/refs/heads/master version.json
 RUN git clone https://github.com/an-tao/drogon
 
 WORKDIR $DROGON_ROOT
