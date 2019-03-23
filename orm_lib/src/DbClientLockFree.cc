@@ -45,12 +45,19 @@ DbClientLockFree::DbClientLockFree(const std::string &connInfo, trantor::EventLo
 {
     _type = type;
     LOG_TRACE << "type=" << (int)type;
-    if (type == ClientType::PostgreSQL || type == ClientType::Mysql)
+    if (type == ClientType::PostgreSQL)
     {
         _loop->runInLoop([this]() {
             for (size_t i = 0; i < _connectionNum; i++)
                 _connectionHolders.push_back(newConnection());
         });
+    }
+    else if (type == ClientType::Mysql)
+    {
+        for (size_t i = 0; i < _connectionNum; i++)
+            _loop->runAfter(0.1 * (i + 1), [this]() {
+                _connectionHolders.push_back(newConnection());
+            });
     }
     else
     {
