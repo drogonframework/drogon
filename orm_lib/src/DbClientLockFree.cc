@@ -131,13 +131,13 @@ void DbClientLockFree::execSql(std::string &&sql,
     }
 
     //LOG_TRACE << "Push query to buffer";
-    _sqlCmdBuffer.emplace_back(std::move(sql),
-                               paraNum,
-                               std::move(parameters),
-                               std::move(length),
-                               std::move(format),
-                               std::move(rcb),
-                               std::move(exceptCallback));
+    _sqlCmdBuffer.emplace_back(std::make_shared<SqlCmd>(std::move(sql),
+                                                        paraNum,
+                                                        std::move(parameters),
+                                                        std::move(length),
+                                                        std::move(format),
+                                                        std::move(rcb),
+                                                        std::move(exceptCallback)));
 }
 
 std::shared_ptr<Transaction> DbClientLockFree::newTransaction(const std::function<void(bool)> &commitCallback)
@@ -228,15 +228,15 @@ void DbClientLockFree::handleNewTask(const DbConnectionPtr &conn)
 
     if (!_sqlCmdBuffer.empty())
     {
-        auto &cmd = _sqlCmdBuffer.front();
-        conn->execSql(std::move(cmd._sql),
-                      cmd._paraNum,
-                      std::move(cmd._parameters),
-                      std::move(cmd._length),
-                      std::move(cmd._format),
-                      std::move(cmd._cb),
-                      std::move(cmd._exceptCb));
+        auto cmdPtr = std::move(_sqlCmdBuffer.front());
         _sqlCmdBuffer.pop_front();
+        conn->execSql(std::move(cmdPtr->_sql),
+                      cmdPtr->_paraNum,
+                      std::move(cmdPtr->_parameters),
+                      std::move(cmdPtr->_length),
+                      std::move(cmdPtr->_format),
+                      std::move(cmdPtr->_cb),
+                      std::move(cmdPtr->_exceptCb));
         return;
     }
 }
