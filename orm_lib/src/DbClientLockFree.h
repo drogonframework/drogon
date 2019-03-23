@@ -79,7 +79,8 @@ class DbClientLockFree : public DbClient, public std::enable_shared_from_this<Db
         {
         }
     };
-    std::deque<SqlCmd> _sqlCmdBuffer;
+    
+    std::deque<std::shared_ptr<SqlCmd>> _sqlCmdBuffer;
 
     std::queue<std::function<void(const std::shared_ptr<Transaction> &)>> _transCallbacks;
 

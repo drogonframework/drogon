@@ -44,7 +44,10 @@
             "user": "",
             //passwd: '' by default
             "passwd": "",
-            //connection_number: 1 by default
+            //is_fast: false by default, if it is true, the client is faster but user can't call
+            //any synchronous interface of it.
+            is_fast: false,
+            //connection_number: 1 by default, valid only if is_fast is false.
             "connection_number": 1
         }
     ],*/
@@ -136,8 +139,6 @@
         //idle_connection_timeout: Defaults to 60 seconds, the lifetime 
         //of the connection without read or write
         "idle_connection_timeout": 60,
-        //enable_fast_db_client: Defaults to false
-        "enable_fast_db_client": false,
         //server_header_field: Set the 'server' header field in each response sent by drogon,
         //empty string by default with which the 'server' header field is set to "Server: drogon/version string\r\n"
         "server_header_field": "",

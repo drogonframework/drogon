@@ -298,13 +298,13 @@ void MysqlConnection::handleEvent()
     }
 }
 
-void MysqlConnection::execSql(std::string &&sql,
-                              size_t paraNum,
-                              std::vector<const char *> &&parameters,
-                              std::vector<int> &&length,
-                              std::vector<int> &&format,
-                              ResultCallback &&rcb,
-                              std::function<void(const std::exception_ptr &)> &&exceptCallback)
+void MysqlConnection::execSqlInLoop(std::string &&sql,
+                                    size_t paraNum,
+                                    std::vector<const char *> &&parameters,
+                                    std::vector<int> &&length,
+                                    std::vector<int> &&format,
+                                    ResultCallback &&rcb,
+                                    std::function<void(const std::exception_ptr &)> &&exceptCallback)
 {
     LOG_TRACE << sql;
     assert(paraNum == parameters.size());
@@ -377,39 +377,37 @@ void MysqlConnection::execSql(std::string &&sql,
         _sql = sql;
     }
     LOG_TRACE << _sql;
-    _loop->runInLoop([=]() {
-        int err;
-        //int mysql_real_query_start(int *ret, MYSQL *mysql, const char *q, unsigned long length)
-        _waitStatus = mysql_real_query_start(&err, _mysqlPtr.get(), _sql.c_str(), _sql.length());
-        LOG_TRACE << "real_query:" << _waitStatus;
-        _execStatus = ExecStatus_RealQuery;
+    int err;
+    //int mysql_real_query_start(int *ret, MYSQL *mysql, const char *q, unsigned long length)
+    _waitStatus = mysql_real_query_start(&err, _mysqlPtr.get(), _sql.c_str(), _sql.length());
+    LOG_TRACE << "real_query:" << _waitStatus;
+    _execStatus = ExecStatus_RealQuery;
+    if (_waitStatus == 0)
+    {
+        if (err)
+        {
+            LOG_ERROR << "error";
+            outputError();
+            return;
+        }
+
+        MYSQL_RES *ret;
+        _waitStatus = mysql_store_result_start(&ret, _mysqlPtr.get());
+        LOG_TRACE << "store_result:" << _waitStatus;
+        _execStatus = ExecStatus_StoreResult;
         if (_waitStatus == 0)
         {
-            if (err)
+            _execStatus = ExecStatus_None;
+            if (!ret)
             {
                 LOG_ERROR << "error";
                 outputError();
                 return;
             }
-
-            MYSQL_RES *ret;
-            _waitStatus = mysql_store_result_start(&ret, _mysqlPtr.get());
-            LOG_TRACE << "store_result:" << _waitStatus;
-            _execStatus = ExecStatus_StoreResult;
-            if (_waitStatus == 0)
-            {
-                _execStatus = ExecStatus_None;
-                if (!ret)
-                {
-                    LOG_ERROR << "error";
-                    outputError();
-                    return;
-                }
-                getResult(ret);
-            }
+            getResult(ret);
         }
-        setChannel();
-    });
+    }
+    setChannel();
     return;
 }
 

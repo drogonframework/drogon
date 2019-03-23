@@ -71,9 +71,7 @@ class HttpAppFramework : public trantor::NonCopyable
     /**
      * Calling this method starts the IO event loops and the main loop of the application;
      * Usually, the thread that calls this method is the main thread of the application;
-     * If the loop() method is called before this method, it must be called from the thread 
-     * that first calls the loop () method.
-     * If all loop() calls are after this method, it can be called from any thread.
+     * This method blocks the calling thread until the main loop exits.
      */
     virtual void run() = 0;
 
@@ -188,7 +186,6 @@ class HttpAppFramework : public trantor::NonCopyable
     virtual void setPipelineRequestsNumber(const size_t number) = 0;
 #if USE_ORM
     virtual orm::DbClientPtr getDbClient(const std::string &name = "default") = 0;
-    virtual void enableFastDbClient() = 0;
     virtual orm::DbClientPtr getFastDbClient(const std::string &name = "default") = 0;
     virtual void createDbClient(const std::string &dbType,
                                 const std::string &host,
@@ -198,7 +195,8 @@ class HttpAppFramework : public trantor::NonCopyable
                                 const std::string &password,
                                 const size_t connectionNum = 1,
                                 const std::string &filename = "",
-                                const std::string &name = "default") = 0;
+                                const std::string &name = "default",
+                                const bool isFast = false) = 0;
 #endif
 
   private:

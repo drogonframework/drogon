@@ -266,14 +266,6 @@ void HttpAppFrameworkImpl::run()
 
     _running = true;
 
-#if USE_ORM
-    //Create db clients
-    for (auto const &fun : _dbFuncs)
-    {
-        fun();
-    }
-#endif
-
     if (!_libFilePaths.empty())
     {
         _sharedLibManagerPtr = std::unique_ptr<SharedLibManager>(new SharedLibManager(loop(), _libFilePaths));
@@ -288,7 +280,7 @@ void HttpAppFrameworkImpl::run()
     {
         LOG_TRACE << "thread num=" << _threadNum;
         auto loopThreadPtr = std::make_shared<EventLoopThread>("DrogonIoLoop");
-        loopThreadPtr->run();
+        //loopThreadPtr->run();
         loopThreads.push_back(loopThreadPtr);
         ioLoops.push_back(loopThreadPtr->getLoop());
         for (auto const &listener : _listeners)
@@ -328,7 +320,7 @@ void HttpAppFrameworkImpl::run()
     {
         LOG_TRACE << "thread num=" << _threadNum;
         auto loopThreadPtr = std::make_shared<EventLoopThread>("DrogonListeningLoop");
-        loopThreadPtr->run();
+        //loopThreadPtr->run();
         loopThreads.push_back(loopThreadPtr);
         auto ip = std::get<0>(listener);
         bool isIpv6 = ip.find(":") == std::string::npos ? false : true;
@@ -362,12 +354,12 @@ void HttpAppFrameworkImpl::run()
         serverPtr->kickoffIdleConnections(_idleConnectionTimeout);
         serverPtr->start();
         /// Use std::promise to ensure that IO loops have been created
-        std::promise<int> pro;
-        auto f = pro.get_future();
-        serverPtr->getLoop()->runInLoop([&pro]() {
-            pro.set_value(1);
-        });
-        f.get();
+        // std::promise<int> pro;
+        // auto f = pro.get_future();
+        // serverPtr->getLoop()->runInLoop([&pro]() {
+        //     pro.set_value(1);
+        // });
+        // f.get();
         auto serverIoLoops = serverPtr->getIoLoops();
         for (auto serverIoLoop : serverIoLoops)
         {
@@ -378,9 +370,7 @@ void HttpAppFrameworkImpl::run()
 #endif
 
 #if USE_ORM
-    // Create fast db clients for every io loop
-    if (_enableFastDbClient)
-        createFastDbClient(ioLoops);
+    createDbClients(ioLoops);
 #endif
     _httpCtrlsRouter.init(ioLoops);
     _httpSimpleCtrlsRouter.init(ioLoops);
@@ -414,22 +404,56 @@ void HttpAppFrameworkImpl::run()
         }
     }
     _responseCachingMap = std::unique_ptr<CacheMap<std::string, HttpResponsePtr>>(new CacheMap<std::string, HttpResponsePtr>(loop(), 1.0, 4, 50)); //Max timeout up to about 70 days;
-    loop()->loop();
+
+    // Let listener event loops run when everything is ready.
+    for (auto &loopTh : loopThreads)
+    {
+        loopTh->run();
+    }
+    _mainLoopThread.run();
+    _mainLoopThread.wait();
 }
 #if USE_ORM
-void HttpAppFrameworkImpl::createFastDbClient(const std::vector<trantor::EventLoop *> &ioloops)
+void HttpAppFrameworkImpl::createDbClients(const std::vector<trantor::EventLoop *> &ioloops)
 {
-    for (auto &iter : _dbClientsMap)
+    assert(_dbClientsMap.empty());
+    assert(_dbFastClientsMap.empty());
+    for (auto &dbInfo : _dbInfos)
     {
-        for (auto *loop : ioloops)
+        if (dbInfo._isFast)
         {
-            if (iter.second->type() == drogon::orm::ClientType::Sqlite3)
+            for (auto *loop : ioloops)
             {
-                _dbFastClientsMap[iter.first][loop] = iter.second;
+                if (dbInfo._dbType == drogon::orm::ClientType::Sqlite3)
+                {
+                    LOG_ERROR << "Sqlite3 don't support fast mode";
+                    abort();
+                }
+                if (dbInfo._dbType == drogon::orm::ClientType::PostgreSQL || dbInfo._dbType == drogon::orm::ClientType::Mysql)
+                {
+                    _dbFastClientsMap[dbInfo._name][loop] = std::shared_ptr<drogon::orm::DbClient>(new drogon::orm::DbClientLockFree(dbInfo._connectionInfo, loop, dbInfo._dbType));
+                }
             }
-            if (iter.second->type() == drogon::orm::ClientType::PostgreSQL || iter.second->type() == drogon::orm::ClientType::Mysql)
+        }
+        else
+        {
+            if (dbInfo._dbType == drogon::orm::ClientType::PostgreSQL)
             {
-                _dbFastClientsMap[iter.first][loop] = std::shared_ptr<drogon::orm::DbClient>(new drogon::orm::DbClientLockFree(iter.second->connectionInfo(), loop, iter.second->type()));
+#if USE_POSTGRESQL
+                _dbClientsMap[dbInfo._name] = drogon::orm::DbClient::newPgClient(dbInfo._connectionInfo, dbInfo._connectionNumber);
+#endif
+            }
+            else if (dbInfo._dbType == drogon::orm::ClientType::Mysql)
+            {
+#if USE_MYSQL
+                _dbClientsMap[dbInfo._name] = drogon::orm::DbClient::newMysqlClient(dbInfo._connectionInfo, dbInfo._connectionNumber);
+#endif
+            }
+            else if (dbInfo._dbType == drogon::orm::ClientType::Sqlite3)
+            {
+#if USE_SQLITE3
+                _dbClientsMap[dbInfo._name] = drogon::orm::DbClient::newSqlite3Client(dbInfo._connectionInfo, dbInfo._connectionNumber);
+#endif
             }
         }
     }
@@ -721,8 +745,7 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestImplPtr &req, std::fu
 
 trantor::EventLoop *HttpAppFrameworkImpl::loop()
 {
-    static trantor::EventLoop loop;
-    return &loop;
+    return _mainLoopThread.getLoop();
 }
 
 HttpAppFramework &HttpAppFramework::instance()
@@ -737,10 +760,13 @@ HttpAppFramework::~HttpAppFramework()
 #if USE_ORM
 orm::DbClientPtr HttpAppFrameworkImpl::getDbClient(const std::string &name)
 {
+    assert(_dbClientsMap.find(name) != _dbClientsMap.end());
     return _dbClientsMap[name];
 }
 orm::DbClientPtr HttpAppFrameworkImpl::getFastDbClient(const std::string &name)
 {
+    assert(_dbFastClientsMap[name].find(trantor::EventLoop::getEventLoopOfCurrentThread()) !=
+           _dbFastClientsMap[name].end());
     return _dbFastClientsMap[name][trantor::EventLoop::getEventLoopOfCurrentThread()];
 }
 void HttpAppFrameworkImpl::createDbClient(const std::string &dbType,
@@ -751,7 +777,8 @@ void HttpAppFrameworkImpl::createDbClient(const std::string &dbType,
                                           const std::string &password,
                                           const size_t connectionNum,
                                           const std::string &filename,
-                                          const std::string &name)
+                                          const std::string &name,
+                                          const bool isFast)
 {
     assert(!_running);
     auto connStr = utils::formattedString("host=%s port=%u dbname=%s user=%s", host.c_str(), port, databaseName.c_str(), userName.c_str());
@@ -762,13 +789,17 @@ void HttpAppFrameworkImpl::createDbClient(const std::string &dbType,
     }
     std::string type = dbType;
     std::transform(type.begin(), type.end(), type.begin(), tolower);
+    DbInfo info;
+    info._connectionInfo = connStr;
+    info._connectionNumber = connectionNum;
+    info._isFast = isFast;
+    info._name = name;
+
     if (type == "postgresql")
     {
 #if USE_POSTGRESQL
-        _dbFuncs.push_back([this, connStr, connectionNum, name]() {
-            auto client = drogon::orm::DbClient::newPgClient(connStr, connectionNum);
-            _dbClientsMap[name] = client;
-        });
+        info._dbType = orm::ClientType::PostgreSQL;
+        _dbInfos.push_back(info);
 #else
         std::cout << "The PostgreSQL is not supported by drogon, please install the development library first." << std::endl;
         exit(1);
@@ -777,10 +808,8 @@ void HttpAppFrameworkImpl::createDbClient(const std::string &dbType,
     else if (type == "mysql")
     {
 #if USE_MYSQL
-        _dbFuncs.push_back([this, connStr, connectionNum, name]() {
-            auto client = drogon::orm::DbClient::newMysqlClient(connStr, connectionNum);
-            _dbClientsMap[name] = client;
-        });
+        info._dbType = orm::ClientType::Mysql;
+        _dbInfos.push_back(info);
 #else
         std::cout << "The Mysql is not supported by drogon, please install the development library first." << std::endl;
         exit(1);
@@ -790,10 +819,9 @@ void HttpAppFrameworkImpl::createDbClient(const std::string &dbType,
     {
 #if USE_SQLITE3
         std::string sqlite3ConnStr = "filename=" + filename;
-        _dbFuncs.push_back([this, sqlite3ConnStr, connectionNum, name]() {
-            auto client = drogon::orm::DbClient::newSqlite3Client(sqlite3ConnStr, connectionNum);
-            _dbClientsMap[name] = client;
-        });
+        info._connectionInfo = sqlite3ConnStr;
+        info._dbType = orm::ClientType::Sqlite3;
+        _dbInfos.push_back(info);
 #else
         std::cout << "The Sqlite3 is not supported by drogon, please install the development library first." << std::endl;
         exit(1);
