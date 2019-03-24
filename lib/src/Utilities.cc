@@ -714,7 +714,7 @@ int createPath(const std::string &path)
     return 0;
 }
 
-int charCount(const std::string& str) {
+int countUTF8(const std::string& str) {
     int index, count;
     for (count = 0, index = 0; index < str.length(); index++, count++) {
         int ch = (unsigned char) str[index];

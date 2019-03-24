@@ -27,7 +27,7 @@ void Validation::notNull(const HttpRequestPtr& request, const std::string& field
         const std::string& message) noexcept 
 {
     auto& value = request->getParameter(field, "");
-    if (value == "") {
+    if (value.empty()) {
         this->_errorMessages += message + ",";
     }
 }
@@ -45,13 +45,8 @@ void Validation::stringLength(const HttpRequestPtr& request, const std::string& 
         const int min, const int max, const std::string& message) noexcept 
 {
     auto& value = request->getParameter(field, "");
-    if (!isInteger(value)) { //如果不是数字
-        this->_errorMessages += message + ",";
-    }
-
     int length = value.length();
     if (length < min || length > max) { 
         this->_errorMessages += message + ",";
     }
 }
-
