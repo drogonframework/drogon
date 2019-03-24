@@ -26,6 +26,7 @@
 #define RED "\033[31m"   /* Red */
 #define GREEN "\033[32m" /* Green */
 
+#define JPG_LEN 44618
 using namespace drogon;
 
 void outputGood(const HttpRequestPtr &req, bool isHttps)
@@ -460,7 +461,7 @@ void doTest(const HttpClientPtr &client, std::promise<int> &pro, bool isHttps = 
     client->sendRequest(req, [=, &pro](ReqResult result, const HttpResponsePtr &resp) {
         if (result == ReqResult::Ok)
         {
-            if (resp->getBody().length() == 52594)
+            if (resp->getBody().length() == JPG_LEN)
             {
                 outputGood(req, isHttps);
                 auto lastModified = resp->getHeader("last-modified");
@@ -566,7 +567,7 @@ void doTest(const HttpClientPtr &client, std::promise<int> &pro, bool isHttps = 
     client->sendRequest(req, [=](ReqResult result, const HttpResponsePtr &resp) {
         if (result == ReqResult::Ok)
         {
-            if (resp->getBody().length() == 52594)
+            if (resp->getBody().length() == JPG_LEN)
             {
                 outputGood(req, isHttps);
             }
