@@ -59,11 +59,11 @@ class HttpController : public DrObject<T>
             path.replace(pos, 2, "/");
         }
         if (pattern.empty() || pattern[0] == '/')
-            app().registerHttpMethod(path + pattern,
+            app().registerHandler(path + pattern,
                                      std::forward<FUNCTION>(function),
                                      filtersAndMethods);
         else
-            app().registerHttpMethod(path + "/" + pattern,
+            app().registerHandler(path + "/" + pattern,
                                      std::forward<FUNCTION>(function),
                                      filtersAndMethods);
     }

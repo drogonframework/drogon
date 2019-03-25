@@ -67,21 +67,20 @@ int main()
 Drogon provides some interfaces for adding controller logic directly in the main() function, for example, user can register a handler like this in Drogon:
 
 ```c++
-app.registerHttpMethod("/test?username={1}",
-                        [](const HttpRequestPtr& req,
-                           const std::function<void (const HttpResponsePtr &)> & callback,
-                           const std::string &name)
-                        {
-                            Json::Value json;
-                            json["result"]="ok";
-                            json["message"]=std::string("hello,")+name;
-                            auto resp=HttpResponse::newHttpJsonResponse(json);
-                            callback(resp);
-                        },
-                        {Get,"LoginFilter"});
+app.registerHandler("/test?username={1}",
+                    [](const HttpRequestPtr& req,
+                       const std::function<void (const HttpResponsePtr &)> & callback,
+                       const std::string &name)
+                    {
+                        Json::Value json;
+                        json["result"]="ok";
+                        json["message"]=std::string("hello,")+name;
+                        auto resp=HttpResponse::newHttpJsonResponse(json);
+                        callback(resp);
+                    },
+                    {Get,"LoginFilter"});
 ```
-                                   
-                                   
+                                                              
 While such interfaces look intuitive, they are not suitable for complex business logic scenarios. Assuming there are tens or even hundreds of handlers that need to be registered in the framework, isn't it a better practice to implement them separately in their respective classes? So unless your logic is very simple, we don't recommend using above interfaces. Instead, we can create an HttpSimpleController as follows:
 
 ```c++
