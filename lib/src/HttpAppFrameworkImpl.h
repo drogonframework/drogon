@@ -106,22 +106,27 @@ class HttpAppFrameworkImpl : public HttpAppFramework
         _sharedLibManagerPtr.reset();
         _sessionMapPtr.reset();
     }
+
     virtual bool isRunning() override
     {
         return _running;
     }
-    virtual trantor::EventLoop *loop() override;
+
+    trantor::EventLoop *loop();
+
     virtual void quit() override
     {
         if (loop()->isRunning())
             loop()->quit();
     }
+
     virtual void setServerHeaderField(const std::string &server) override
     {
         assert(!_running);
         assert(server.find("\r\n") == std::string::npos);
         _serverHeader = "Server: " + server + "\r\n";
     }
+    
     const std::string &getServerHeaderString() const
     {
         return _serverHeader;
@@ -232,7 +237,6 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     std::map<std::string, std::map<trantor::EventLoop *, orm::DbClientPtr>> _dbFastClientsMap;
     void createDbClients(const std::vector<trantor::EventLoop *> &ioloops);
 #endif
-    trantor::EventLoopThread _mainLoopThread;
 };
 
 } // namespace drogon

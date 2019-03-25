@@ -91,14 +91,16 @@ class HttpAppFramework : public trantor::NonCopyable
      */
     virtual void quit() = 0;
 
-    ///Get the event loop of the framework;
-    /**
-     * NOTE:
-     * The event loop is not the network IO loop, but the main event loop
-     * of the framework in which only some timer tasks are running;
-     * You can run some timer tasks or other tasks in this loop;
-     */
-    virtual trantor::EventLoop *loop() = 0;
+    //////////////////////////////////////////////////////
+    // ///Get the event loop of the framework;
+    // /**
+    //  * NOTE:
+    //  * The event loop is not the network IO loop, but the main event loop
+    //  * of the framework in which only some timer tasks are running;
+    //  * You can run some timer tasks or other tasks in this loop;
+    //  */
+    // // virtual trantor::EventLoop *loop() = 0;
+    ///////////////////////////////////////////////////////////
 
     ///Load the configuration file with json format.
     virtual void loadConfigFile(const std::string &fileName) = 0;

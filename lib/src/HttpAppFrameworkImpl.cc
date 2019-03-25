@@ -413,8 +413,7 @@ void HttpAppFrameworkImpl::run()
     {
         loopTh->run();
     }
-    _mainLoopThread.run();
-    _mainLoopThread.wait();
+    loop()->loop();
 }
 #if USE_ORM
 void HttpAppFrameworkImpl::createDbClients(const std::vector<trantor::EventLoop *> &ioloops)
@@ -748,7 +747,8 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestImplPtr &req, std::fu
 
 trantor::EventLoop *HttpAppFrameworkImpl::loop()
 {
-    return _mainLoopThread.getLoop();
+    static trantor::EventLoop loop;
+    return &loop;
 }
 
 HttpAppFramework &HttpAppFramework::instance()
