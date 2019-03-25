@@ -629,7 +629,7 @@ int main(int argc, char *argv[])
     do
     {
         std::promise<int> pro1;
-        auto client = HttpClient::newHttpClient("::1", 8848, false, loop[0].getLoop());
+        auto client = HttpClient::newHttpClient("127.0.0.1", 8848, false, loop[0].getLoop());
         doTest(client, pro1);
 #ifdef USE_OPENSSL
         std::promise<int> pro2;
