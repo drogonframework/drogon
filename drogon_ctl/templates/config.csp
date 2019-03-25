@@ -1,5 +1,5 @@
 /* This is a JSON format configuration file
-*/
+ */
 {
     /*
     //ssl:The global ssl files setting
@@ -52,23 +52,23 @@
         }
     ],*/
     "app": {
-        //threads_num: The number of IO threads,1 by default, if the value is set to 0, the number of threads
+        //threads_num: The number of IO threads, 1 by default, if the value is set to 0, the number of threads
         //is the number of processors.
         "threads_num": 1,
         //enable_session: False by default
         "enable_session": true,
         "session_timeout": 0,
-        //document_root: Root path of HTTP document,defaut path is ./
+        //document_root: Root path of HTTP document, defaut path is ./
         "document_root": "./",
         //upload_path: The path to save the uploaded file. "uploads" by default. 
         //If the path isn't prefixed with /, ./ or ../,
         //it is relative path of document_root path
         "upload_path": "uploads",
         /* file_types:
-     * HTTP download file types,The file types supported by drogon
-     * by default are "html", "js", "css", "xml", "xsl", "txt", "svg",
-     * "ttf", "otf", "woff2", "woff" , "eot", "png", "jpg", "jpeg",
-     * "gif", "bmp", "ico", "icns", etc. */
+         * HTTP download file types,The file types supported by drogon
+         * by default are "html", "js", "css", "xml", "xsl", "txt", "svg",
+         * "ttf", "otf", "woff2", "woff" , "eot", "png", "jpg", "jpeg",
+         * "gif", "bmp", "ico", "icns", etc. */
         "file_types": [
             "gif",
             "png",
@@ -119,23 +119,21 @@
         "use_sendfile": true,
         //use_gzip: True by default, use gzip to compress the response body's content;
         "use_gzip": true,
-        //static_files_cache_time: 5 (seconds) by default,the time in which static file response is cached,
+        //static_files_cache_time: 5 (seconds) by default, the time in which the static file response is cached,
         //0 means cache forever, the negative value means no cache
         "static_files_cache_time": 5,
         //simple_controllers_map: Used to configure mapping from path to simple controller
-        "simple_controllers_map": [
-            {
-                "path": "/path/name",
-                "controller": "controllerClassName",
-                "http_methods": [
-                    "get",
-                    "post"
-                ],
-                "filters": [
-                    "FilterClassName"
-                ]
-            }
-        ],
+        "simple_controllers_map": [{
+            "path": "/path/name",
+            "controller": "controllerClassName",
+            "http_methods": [
+                "get",
+                "post"
+            ],
+            "filters": [
+                "FilterClassName"
+            ]
+        }],
         //idle_connection_timeout: Defaults to 60 seconds, the lifetime 
         //of the connection without read or write
         "idle_connection_timeout": 60,
@@ -150,5 +148,7 @@
         //After the maximum number of requests are made, the connection is closed.
         //The default value of 0 means no limit.
         "pipeline_requests": 0
-    }
+    },
+    //custom_config: custom configuration for users. This object can be get by the app().getCustomConfig() method. 
+    "custom_config": {}
 }

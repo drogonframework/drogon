@@ -46,6 +46,10 @@ class HttpAppFrameworkImpl : public HttpAppFramework
           _connectionNum(0)
     {
     }
+    virtual const Json::Value &getCustomConfig() const override
+    {
+        return _customConfig;
+    }
     virtual void addListener(const std::string &ip,
                              uint16_t port,
                              bool useSSL = false,
@@ -213,6 +217,7 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     int _staticFilesCacheTime = 5;
     std::unordered_map<std::string, std::weak_ptr<HttpResponse>> _staticFilesCache;
     std::mutex _staticFilesCacheMutex;
+    Json::Value _customConfig;
 #if USE_ORM
     std::map<std::string, orm::DbClientPtr> _dbClientsMap;
     struct DbInfo

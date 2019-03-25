@@ -26,6 +26,7 @@
 #include <drogon/CacheMap.h>
 #include <drogon/Session.h>
 #include <trantor/utils/AsyncFileLogger.h>
+#include <json/json.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -149,6 +150,8 @@ void HttpAppFrameworkImpl::loadConfigFile(const std::string &fileName)
 {
     ConfigLoader loader(fileName);
     loader.load();
+    auto &jsonRoot = loader.jsonValue();
+    _customConfig = jsonRoot.get("custom_config", Json::Value());
 }
 void HttpAppFrameworkImpl::setLogPath(const std::string &logPath,
                                       const std::string &logfileBaseName,
