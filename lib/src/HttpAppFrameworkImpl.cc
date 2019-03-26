@@ -44,6 +44,13 @@
 using namespace drogon;
 using namespace std::placeholders;
 
+///Make sure that the main event loop is initialized in the main thread.
+drogon::InitBeforeMainFunction drogon::HttpAppFrameworkImpl::_initFirst([]() {
+    HttpAppFrameworkImpl::instance().getLoop()->runInLoop([]() {
+        LOG_TRACE << "Initialize the main event loop in the main thread";
+    });
+});
+
 static void godaemon(void)
 {
     printf("Initializing daemon mode\n");
@@ -212,9 +219,9 @@ void HttpAppFrameworkImpl::run()
         //go daemon!
         godaemon();
 #ifdef __linux__
-        loop()->resetTimerQueue();
+        getLoop()->resetTimerQueue();
 #endif
-        loop()->resetAfterFork();
+        getLoop()->resetAfterFork();
     }
     //set relaunching
     if (_relaunchOnError)
@@ -237,7 +244,7 @@ void HttpAppFrameworkImpl::run()
             sleep(1);
             LOG_INFO << "start new process";
         }
-        loop()->resetAfterFork();
+        getLoop()->resetAfterFork();
     }
 
     //set logger
@@ -271,7 +278,7 @@ void HttpAppFrameworkImpl::run()
 
     if (!_libFilePaths.empty())
     {
-        _sharedLibManagerPtr = std::unique_ptr<SharedLibManager>(new SharedLibManager(loop(), _libFilePaths));
+        _sharedLibManagerPtr = std::unique_ptr<SharedLibManager>(new SharedLibManager(getLoop(), _libFilePaths));
     }
     std::vector<std::shared_ptr<HttpServer>> servers;
     std::vector<std::shared_ptr<EventLoopThread>> loopThreads;
@@ -399,21 +406,21 @@ void HttpAppFrameworkImpl::run()
                     tmpTimeout = tmpTimeout / 100;
                 }
             }
-            _sessionMapPtr = std::unique_ptr<CacheMap<std::string, SessionPtr>>(new CacheMap<std::string, SessionPtr>(loop(), 1.0, wheelNum, bucketNum));
+            _sessionMapPtr = std::unique_ptr<CacheMap<std::string, SessionPtr>>(new CacheMap<std::string, SessionPtr>(getLoop(), 1.0, wheelNum, bucketNum));
         }
         else if (_sessionTimeout == 0)
         {
-            _sessionMapPtr = std::unique_ptr<CacheMap<std::string, SessionPtr>>(new CacheMap<std::string, SessionPtr>(loop(), 0, 0, 0));
+            _sessionMapPtr = std::unique_ptr<CacheMap<std::string, SessionPtr>>(new CacheMap<std::string, SessionPtr>(getLoop(), 0, 0, 0));
         }
     }
-    _responseCachingMap = std::unique_ptr<CacheMap<std::string, HttpResponsePtr>>(new CacheMap<std::string, HttpResponsePtr>(loop(), 1.0, 4, 50)); //Max timeout up to about 70 days;
+    _responseCachingMap = std::unique_ptr<CacheMap<std::string, HttpResponsePtr>>(new CacheMap<std::string, HttpResponsePtr>(getLoop(), 1.0, 4, 50)); //Max timeout up to about 70 days;
 
     // Let listener event loops run when everything is ready.
     for (auto &loopTh : loopThreads)
     {
         loopTh->run();
     }
-    loop()->loop();
+    getLoop()->loop();
 }
 #if USE_ORM
 void HttpAppFrameworkImpl::createDbClients(const std::vector<trantor::EventLoop *> &ioloops)
@@ -745,7 +752,7 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestImplPtr &req, std::fu
     _httpSimpleCtrlsRouter.route(req, std::move(callback), needSetJsessionid, std::move(sessionId));
 }
 
-trantor::EventLoop *HttpAppFrameworkImpl::loop()
+trantor::EventLoop *HttpAppFrameworkImpl::getLoop()
 {
     static trantor::EventLoop loop;
     return &loop;
