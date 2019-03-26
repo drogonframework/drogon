@@ -28,14 +28,14 @@ function build_drogon() {
     
     #If errors then exit
     if [ "$?" != "0" ]; then
-        exit
+        exit -1
     fi
     
     make
     
     #If errors then exit
     if [ "$?" != "0" ]; then
-        exit
+        exit -1
     fi
 
     echo "Installing ..."
