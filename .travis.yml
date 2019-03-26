@@ -1,13 +1,14 @@
 os:
   - linux
   - osx
+
+osx_image: xcode10.1
+
 sudo: required
-dist: trusty
+
+dist: xenial
 
 language: cpp
-compiler:
-  - gcc
-  - clang
 
 addons:
   apt:
@@ -15,11 +16,12 @@ addons:
     - xenial
     - sourceline: 'deb http://archive.ubuntu.com/ubuntu xenial main'
     packages:
+    - gcc
+    - g++
     - libjsoncpp-dev
     - uuid-dev
     - zlib1g-dev
     - postgresql-server-dev-10
-    - libmariadbclient-dev
     - openssl
     - libssl-dev
     - libsqlite3-dev
@@ -27,6 +29,8 @@ addons:
     - cmake
   homebrew:
     packages:
+    - jsoncpp
+    - ossp-uuid
     - openssl
     - cmake
     - libtool
@@ -36,6 +40,4 @@ addons:
     - sqlite3
 
 script:
-  - ./build.sh
-
-
+  - ./build.sh && ./test.sh

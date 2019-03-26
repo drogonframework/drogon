@@ -645,4 +645,5 @@ int main(int argc, char *argv[])
     //getchar();
     loop[0].getLoop()->quit();
     loop[1].getLoop()->quit();
+    return 0;
 }
