@@ -37,6 +37,13 @@
 
 namespace drogon
 {
+struct InitBeforeMainFunction
+{
+    InitBeforeMainFunction(const std::function<void()> &func)
+    {
+        func();
+    }
+};
 class HttpAppFrameworkImpl : public HttpAppFramework
 {
   public:
@@ -112,12 +119,12 @@ class HttpAppFrameworkImpl : public HttpAppFramework
         return _running;
     }
 
-    trantor::EventLoop *loop();
+    virtual trantor::EventLoop *getLoop() override;
 
     virtual void quit() override
     {
-        if (loop()->isRunning())
-            loop()->quit();
+        if (getLoop()->isRunning())
+            getLoop()->quit();
     }
 
     virtual void setServerHeaderField(const std::string &server) override
@@ -126,7 +133,7 @@ class HttpAppFrameworkImpl : public HttpAppFramework
         assert(server.find("\r\n") == std::string::npos);
         _serverHeader = "Server: " + server + "\r\n";
     }
-    
+
     const std::string &getServerHeaderString() const
     {
         return _serverHeader;
@@ -237,6 +244,7 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     std::map<std::string, std::map<trantor::EventLoop *, orm::DbClientPtr>> _dbFastClientsMap;
     void createDbClients(const std::vector<trantor::EventLoop *> &ioloops);
 #endif
+    static InitBeforeMainFunction _initFirst;
 };
 
 } // namespace drogon

@@ -71,8 +71,8 @@ class HttpAppFramework : public trantor::NonCopyable
     ///Run the event loop
     /**
      * Calling this method starts the IO event loops and the main loop of the application;
-     * Usually, the thread that calls this method is the main thread of the application;
-     * This method blocks the calling thread until the main loop exits.
+     * This method MUST be called in the main thread.
+     * This method blocks the main thread until the main event loop exits.
      */
     virtual void run() = 0;
 
@@ -83,7 +83,7 @@ class HttpAppFramework : public trantor::NonCopyable
     /**
      * Calling this method results in stopping all network IO in the
      * framework and interrupting the blocking of the run() method. Usually, 
-     * after calling this method, the application will exit.
+     * after calling this method, the application exits.
      * 
      * NOTE:
      * This method can be called in any thread and anywhere.
@@ -91,16 +91,15 @@ class HttpAppFramework : public trantor::NonCopyable
      */
     virtual void quit() = 0;
 
-    //////////////////////////////////////////////////////
-    // ///Get the event loop of the framework;
-    // /**
-    //  * NOTE:
-    //  * The event loop is not the network IO loop, but the main event loop
-    //  * of the framework in which only some timer tasks are running;
-    //  * You can run some timer tasks or other tasks in this loop;
-    //  */
-    // // virtual trantor::EventLoop *loop() = 0;
-    ///////////////////////////////////////////////////////////
+    ///Get the main event loop of the framework;
+    /**
+     * NOTE:
+     * The event loop is not the network IO loop, but the main event loop
+     * of the framework in which only some timer tasks are running;
+     * User can run some timer tasks or other tasks in this loop;
+     * This method can be call in any thread.
+     */
+    virtual trantor::EventLoop *getLoop() = 0;
 
     ///Load the configuration file with json format.
     virtual void loadConfigFile(const std::string &fileName) = 0;
@@ -130,18 +129,18 @@ class HttpAppFramework : public trantor::NonCopyable
      * @param filtersAndMethods is the same as the third parameter in the above method.
      * 
      * FOR EXAMPLE:
-     * app.registerHandler("/hello?username={1}",
-                           [](const HttpRequestPtr& req,
-                              const std::function<void (const HttpResponsePtr &)> & callback,
-                              const std::string &name)
-                              {
-                                  Json::Value json;
-                                  json["result"]="ok";
-                                  json["message"]=std::string("hello,")+name;
-                                  auto resp=HttpResponse::newHttpJsonResponse(json);
-                                  callback(resp);
-                              },
-                           {Get,"LoginFilter"});
+     *  app.registerHandler("/hello?username={1}",
+     *                      [](const HttpRequestPtr& req,
+     *                         const std::function<void (const HttpResponsePtr &)> & callback,
+     *                         const std::string &name)
+     *                         {
+     *                             Json::Value json;
+     *                             json["result"]="ok";
+     *                             json["message"]=std::string("hello,")+name;
+     *                             auto resp=HttpResponse::newHttpJsonResponse(json);
+     *                             callback(resp);
+     *                         },
+     *                      {Get,"LoginFilter"});
      * 
      * NOTE:
      * As you can see in the above example, this method supports parameters mapping.
@@ -182,6 +181,7 @@ class HttpAppFramework : public trantor::NonCopyable
         }
         registerHttpController(pathPattern, binder, validMethods, filters);
     }
+
     /// Register a WebSocketController into the framework.
     /// The parameters of this method are the same as those in the registerHttpSimpleController() method.
     virtual void registerWebSocketController(const std::string &pathName,
@@ -424,9 +424,17 @@ class HttpAppFramework : public trantor::NonCopyable
 
 #if USE_ORM
     ///Get a database client by @param name
+    /**
+     * NOTE:
+     * This method must be called after the framework has been run.
+     */
     virtual orm::DbClientPtr getDbClient(const std::string &name = "default") = 0;
 
     ///Get a 'fast' database client by @param name
+    /**
+     * NOTE:
+     * This method must be called after the framework has been run.
+     */
     virtual orm::DbClientPtr getFastDbClient(const std::string &name = "default") = 0;
 
     ///Create a database client
