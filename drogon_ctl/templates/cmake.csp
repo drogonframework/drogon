@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.2)
+cmake_minimum_required (VERSION 3.2)
 Project({{ProjectName}})
 
 link_directories(/usr/local/lib)
@@ -15,7 +15,6 @@ IF (CMAKE_SYSTEM_NAME MATCHES "Linux")
         MESSAGE(STATUS "c++14")
     else()
         set(CMAKE_CXX_STD_FLAGS c++17)
-        set(DR_DEFS "USE_STD_ANY")
         MESSAGE(STATUS "c++17")
     endif()
 else()
@@ -29,7 +28,7 @@ endif()
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -std=${CMAKE_CXX_STD_FLAGS}")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall -std=${CMAKE_CXX_STD_FLAGS}")
 
-set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake_modules/)
+set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules/)
 
 #jsoncpp
 find_package (Jsoncpp REQUIRED)

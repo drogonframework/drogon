@@ -25,7 +25,8 @@ endif()
 
 include_directories(${PROJECT_SOURCE_DIR}/trantor ${PROJECT_SOURCE_DIR}/lib/inc ${PROJECT_SOURCE_DIR}/orm_lib/inc)
 
-list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules/)
+set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules/)
+
 #jsoncpp
 find_package (Jsoncpp REQUIRED)
 include_directories(${JSONCPP_INCLUDE_DIRS})
@@ -102,7 +103,7 @@ if (SQLITE3_FOUND)
   set(USE_ORM TRUE)
 endif()
 
-message(STATUS ${DIR_SRCS})
+#message(STATUS ${DIR_SRCS})
 
 if(CMAKE_BUILD_TYPE STREQUAL "")
     set(CMAKE_BUILD_TYPE Release)
@@ -117,6 +118,7 @@ add_custom_target(makeVersion)
 add_custom_command(TARGET makeVersion
         COMMAND ${PROJECT_SOURCE_DIR}/get_version.sh
         ARGS ${PROJECT_SOURCE_DIR}/lib/inc/drogon/version.h
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
         VERBATIM )
 
 add_subdirectory(examples)
