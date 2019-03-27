@@ -25,7 +25,7 @@ endif()
 
 include_directories(${PROJECT_SOURCE_DIR}/trantor ${PROJECT_SOURCE_DIR}/lib/inc ${PROJECT_SOURCE_DIR}/orm_lib/inc)
 
-set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake_modules/)
+list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules/)
 #jsoncpp
 find_package (Jsoncpp REQUIRED)
 include_directories(${JSONCPP_INCLUDE_DIRS})
