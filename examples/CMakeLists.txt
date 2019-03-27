@@ -30,5 +30,5 @@ add_executable(pipeline_test simple_example_test/HttpPipelineTest.cc)
 
 add_custom_command(TARGET webapp POST_BUILD
                    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                   ${CMAKE_SOURCE_DIR}/config.example.json ${CMAKE_SOURCE_DIR}/drogon.jpg 
-                   ${CMAKE_SOURCE_DIR}/trantor/trantor/tests/server.pem $<TARGET_FILE_DIR:webapp>)
+                   ${PROJECT_SOURCE_DIR}/config.example.json ${PROJECT_SOURCE_DIR}/drogon.jpg 
+                   ${PROJECT_SOURCE_DIR}/trantor/trantor/tests/server.pem $<TARGET_FILE_DIR:webapp>)
