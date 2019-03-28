@@ -12,7 +12,7 @@
 
 Drogon的主要应用平台是Linux，也支持Mac OS、FreeBSD，目前还不支持Windows。它的主要特点如下：
 
-* 网络层使用基于epoll(MacOS/FreeBSD下是kqueue)的NIO框架，提供高并发、高性能的网络IO。详细请见[性能测试](https://gitee.com/an-tao/drogon/wikis/性能测试)；
+* 网络层使用基于epoll(MacOS/FreeBSD下是kqueue)的非阻塞IO框架，提供高并发、高性能的网络IO。详细请见[性能测试](https://gitee.com/an-tao/drogon/wikis/性能测试)；
 * 全异步编程模式；
 * 支持Http1.0/1.1(server端和client端)；
 * 基于template实现了简单的反射机制，使主程序框架、控制器(controller)和视图(view)完全解耦；
@@ -28,8 +28,9 @@ Drogon的主要应用平台是Linux，也支持Mac OS、FreeBSD，目前还不�
 * 支持gzip压缩传输；
 * 支持pipelining；
 * 提供一个轻量的命令行工具drogon_ctl，帮助简化各种类的创建和视图代码的生成过程；
-* 基于NIO实现的异步数据库读写，目前支持PostgreSQL和MySQL(MariaDB)数据库；
+* 基于非阻塞IO实现的异步数据库读写，目前支持PostgreSQL和MySQL(MariaDB)数据库；
 * 基于线程池实现sqlite3数据库的异步读写，提供与上文数据库相同的接口；
+* 支持ARM架构；
 * 方便的轻量级ORM实现，支持常规的对象到数据库的双向映射操作；
 
 ### 更多详情请浏览 [wiki](https://gitee.com/an-tao/drogon/wikis/概述)

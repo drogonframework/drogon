@@ -16,6 +16,7 @@ fi
 
 killall -9 webapp
 ./webapp
+sleep 1
 ./webapp_test
 
 if [ $? -ne 0 ];then
