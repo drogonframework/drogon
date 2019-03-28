@@ -25,6 +25,7 @@ class ConfigLoader : public trantor::NonCopyable
   public:
     explicit ConfigLoader(const std::string &configFile);
     ~ConfigLoader();
+    const Json::Value &jsonValue() const { return _configJsonRoot; }
     void load();
 
   private:

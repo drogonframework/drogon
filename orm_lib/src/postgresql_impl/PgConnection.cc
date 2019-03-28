@@ -336,7 +336,7 @@ void PgConnection::handleRead()
     }
     if (_isWorking)
     {
-        if (_isRreparingStatement)
+        if (_isRreparingStatement && _cb)
         {
             doAfterPreparing();
         }

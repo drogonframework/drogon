@@ -27,6 +27,7 @@
 #include <drogon/HttpSimpleController.h>
 #include <drogon/version.h>
 #include <trantor/net/EventLoop.h>
+#include <trantor/net/EventLoopThread.h>
 
 #include <string>
 #include <vector>
@@ -36,6 +37,13 @@
 
 namespace drogon
 {
+struct InitBeforeMainFunction
+{
+    InitBeforeMainFunction(const std::function<void()> &func)
+    {
+        func();
+    }
+};
 class HttpAppFrameworkImpl : public HttpAppFramework
 {
   public:
@@ -44,6 +52,10 @@ class HttpAppFrameworkImpl : public HttpAppFramework
           _uploadPath(_rootPath + "uploads"),
           _connectionNum(0)
     {
+    }
+    virtual const Json::Value &getCustomConfig() const override
+    {
+        return _customConfig;
     }
     virtual void addListener(const std::string &ip,
                              uint16_t port,
@@ -94,29 +106,34 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     virtual void setPipelineRequestsNumber(const size_t number) override { _pipelineRequestsNumber = number; }
     size_t keepaliveRequestsNumber() const { return _keepaliveRequestsNumber; }
     size_t pipelineRequestsNumber() const { return _pipelineRequestsNumber; }
-    
+
     virtual ~HttpAppFrameworkImpl() noexcept
     {
         //Destroy the following objects before _loop destruction
         _sharedLibManagerPtr.reset();
         _sessionMapPtr.reset();
     }
+
     virtual bool isRunning() override
     {
         return _running;
     }
-    virtual trantor::EventLoop *loop() override;
+
+    virtual trantor::EventLoop *getLoop() override;
+
     virtual void quit() override
     {
-        if (loop()->isRunning())
-            loop()->quit();
+        if (getLoop()->isRunning())
+            getLoop()->quit();
     }
+
     virtual void setServerHeaderField(const std::string &server) override
     {
         assert(!_running);
         assert(server.find("\r\n") == std::string::npos);
         _serverHeader = "Server: " + server + "\r\n";
     }
+
     const std::string &getServerHeaderString() const
     {
         return _serverHeader;
@@ -124,10 +141,6 @@ class HttpAppFrameworkImpl : public HttpAppFramework
 
 #if USE_ORM
     virtual orm::DbClientPtr getDbClient(const std::string &name = "default") override;
-    virtual void enableFastDbClient() override
-    {
-        _enableFastDbClient = true;
-    }
     virtual orm::DbClientPtr getFastDbClient(const std::string &name = "default") override;
     virtual void createDbClient(const std::string &dbType,
                                 const std::string &host,
@@ -137,7 +150,8 @@ class HttpAppFrameworkImpl : public HttpAppFramework
                                 const std::string &password,
                                 const size_t connectionNum = 1,
                                 const std::string &filename = "",
-                                const std::string &name = "default") override;
+                                const std::string &name = "default",
+                                const bool isFast = false) override;
 #endif
 
     inline static HttpAppFrameworkImpl &instance()
@@ -212,16 +226,25 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     size_t _pipelineRequestsNumber = 0;
     bool _useSendfile = true;
     bool _useGzip = true;
-    bool _enableFastDbClient = false;
     int _staticFilesCacheTime = 5;
     std::unordered_map<std::string, std::weak_ptr<HttpResponse>> _staticFilesCache;
     std::mutex _staticFilesCacheMutex;
+    Json::Value _customConfig;
 #if USE_ORM
     std::map<std::string, orm::DbClientPtr> _dbClientsMap;
-    std::vector<std::function<void()>> _dbFuncs;
+    struct DbInfo
+    {
+        std::string _name;
+        std::string _connectionInfo;
+        orm::ClientType _dbType;
+        bool _isFast;
+        size_t _connectionNumber;
+    };
+    std::vector<DbInfo> _dbInfos;
     std::map<std::string, std::map<trantor::EventLoop *, orm::DbClientPtr>> _dbFastClientsMap;
-    void createFastDbClient(const std::vector<trantor::EventLoop *> &ioloops);
+    void createDbClients(const std::vector<trantor::EventLoop *> &ioloops);
 #endif
+    static InitBeforeMainFunction _initFirst;
 };
 
 } // namespace drogon
