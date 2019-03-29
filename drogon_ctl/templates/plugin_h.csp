@@ -1,0 +1,36 @@
+/**
+ *
+ *  {{filename}}.h
+ *
+ */
+
+#pragma once
+
+#include <drogon/plugins/Plugin.h>
+using namespace drogon;
+<%c++
+auto namespaceVector=@@.get<std::vector<std::string>>("namespaceVector");
+if(namespaceVector.empty())
+$$<<"\n";
+for(auto &namespaceName:namespaceVector){%>
+namespace {%namespaceName%}
+
+{
+<%c++}
+$$<<"\n";%>
+class {{className}} : public Plugin<{{className}}>
+{
+  public:
+    {{className}}() {}
+    /// This method must be called by drogon to initialize and start the plugin.
+    /// It must be implemented by the user.
+    virtual void initAndStart(const Json::Value &config) override;
+
+    /// This method must be called by drogon to shutdown the plugin.
+    /// It must be implemented by the user.
+    virtual void shutdown() override;
+};
+
+<%c++for(size_t i=0;i<namespaceVector.size();i++){%>
+}
+<%c++}%>

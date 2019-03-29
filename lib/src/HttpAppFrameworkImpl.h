@@ -22,6 +22,7 @@
 #include "HttpControllersRouter.h"
 #include "HttpSimpleControllersRouter.h"
 #include "WebsocketControllersRouter.h"
+#include "PluginsManager.h"
 
 #include <drogon/HttpAppFramework.h>
 #include <drogon/HttpSimpleController.h>
@@ -53,10 +54,17 @@ class HttpAppFrameworkImpl : public HttpAppFramework
           _connectionNum(0)
     {
     }
+    
     virtual const Json::Value &getCustomConfig() const override
     {
-        return _customConfig;
+        return _jsonConfig["custom_config"];
     }
+
+    virtual PluginBase *getPlugin(const std::string &name) override
+    {
+        return _pluginsManager.getPlugin(name);
+    }
+
     virtual void addListener(const std::string &ip,
                              uint16_t port,
                              bool useSSL = false,
@@ -229,7 +237,9 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     int _staticFilesCacheTime = 5;
     std::unordered_map<std::string, std::weak_ptr<HttpResponse>> _staticFilesCache;
     std::mutex _staticFilesCacheMutex;
-    Json::Value _customConfig;
+    //Json::Value _customConfig;
+    Json::Value _jsonConfig;
+    PluginsManager _pluginsManager;
 #if USE_ORM
     std::map<std::string, orm::DbClientPtr> _dbClientsMap;
     struct DbInfo

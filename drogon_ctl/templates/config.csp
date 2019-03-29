@@ -149,6 +149,19 @@
         //The default value of 0 means no limit.
         "pipeline_requests": 0
     },
+    //plugins: Define all plugins running in the application
+    "plugins": [{
+        //name: The class name of the plugin
+        //"name": "TestPlugin",
+        //dependencies: Plugins that the plugin depends on. It's a null object by default.
+        "dependencies": [],
+        //config: The configuration of the plugin. This json object is the parameter to initialize the plugin.
+        //It's a null object by default.
+        "config": {
+            "heartbeat_interval": 2
+        }
+        
+    }],
     //custom_config: custom configuration for users. This object can be get by the app().getCustomConfig() method. 
     "custom_config": {}
 }

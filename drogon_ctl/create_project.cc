@@ -104,6 +104,7 @@ void create_project::createProject(const std::string &projectName)
     mkdir("views", 0755);
     mkdir("controllers", 0755);
     mkdir("filters", 0755);
+    mkdir("plugins", 0755);
     mkdir("build", 0755);
     mkdir("models", 0755);
     mkdir("cmake_modules", 0755);

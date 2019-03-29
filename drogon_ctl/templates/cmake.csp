@@ -84,6 +84,7 @@ endif()
 AUX_SOURCE_DIRECTORY(./ SRC_DIR)
 AUX_SOURCE_DIRECTORY(controllers CTL_SRC)
 AUX_SOURCE_DIRECTORY(filters FILTER_SRC)
+AUX_SOURCE_DIRECTORY(plugins PLUGIN_SRC)
 AUX_SOURCE_DIRECTORY(models MODEL_SRC)
 
 include_directories(/usr/local/include)
@@ -102,4 +103,4 @@ foreach(cspFile ${SCP_LIST})
 endforeach()
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-add_executable({{ProjectName}} ${SRC_DIR} ${CTL_SRC} ${FILTER_SRC} ${VIEWSRC} ${MODEL_SRC})
+add_executable({{ProjectName}} ${SRC_DIR} ${CTL_SRC} ${FILTER_SRC} ${VIEWSRC} ${PLUGIN_SRC} ${MODEL_SRC})
