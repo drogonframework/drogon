@@ -31,12 +31,15 @@
 #include <drogon/NotFound.h>
 #include <drogon/HttpClient.h>
 #include <drogon/MultiPart.h>
+#include <drogon/plugins/Plugin.h>
 #include <trantor/net/EventLoop.h>
 #include <drogon/CacheMap.h>
 #include <memory>
 #include <string>
 #include <functional>
 #include <vector>
+#include <type_traits>
+
 namespace drogon
 {
 //the drogon banner
@@ -100,6 +103,30 @@ class HttpAppFramework : public trantor::NonCopyable
      * This method can be call in any thread.
      */
     virtual trantor::EventLoop *getLoop() = 0;
+
+    ///Get the plugin object registered in the framework
+    /**
+     * NOTE:
+     * This method is usually called after the framework is run.
+     * Calling this method in the initAndStart() method of some plugins is also valid. 
+     */
+    template <typename T>
+    T *getPlugin()
+    {
+        static_assert(IsPlugin<T>::value, "The Template parameter must be a subclass of PluginBase");
+        assert(isRunning());
+        return dynamic_cast<T *>(getPlugin(T::className()));
+    }
+
+    ///Get the plugin object registered in the framework
+    /**
+     * @param name: is the class name of the plugin.
+     * 
+     * NOTE:
+     * This method is usually called after the framework is run.
+     * Calling this method in the initAndStart() method of some plugins is also valid. 
+     */
+    virtual PluginBase *getPlugin(const std::string &name) = 0;
 
     ///Load the configuration file with json format.
     virtual void loadConfigFile(const std::string &fileName) = 0;

@@ -1,6 +1,6 @@
 /**
  *
- *  create_filter.cc
+ *  create_plugin.cc
  *  An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
@@ -12,7 +12,7 @@
  *
  */
 
-#include "create_filter.h"
+#include "create_plugin.h"
 #include <drogon/DrTemplateBase.h>
 #include <drogon/utils/Utilities.h>
 
@@ -27,9 +27,9 @@
 
 using namespace drogon_ctl;
 
-static void createFilterHeaderFile(std::ofstream &file, const std::string &className, const std::string &fileName)
+static void createPluginHeaderFile(std::ofstream &file, const std::string &className, const std::string &fileName)
 {
-    auto templ = drogon::DrTemplateBase::newTemplate("filter_h");
+    auto templ = drogon::DrTemplateBase::newTemplate("plugin_h");
     HttpViewData data;
     if (className.find("::") != std::string::npos)
     {
@@ -46,9 +46,9 @@ static void createFilterHeaderFile(std::ofstream &file, const std::string &class
     file << templ->genText(data);
 }
 
-static void createFilterSourceFile(std::ofstream &file, const std::string &className, const std::string &fileName)
+static void createPluginSourceFile(std::ofstream &file, const std::string &className, const std::string &fileName)
 {
-    auto templ = drogon::DrTemplateBase::newTemplate("filter_cc");
+    auto templ = drogon::DrTemplateBase::newTemplate("plugin_cc");
     HttpViewData data;
     if (className.find("::") != std::string::npos)
     {
@@ -63,7 +63,7 @@ static void createFilterSourceFile(std::ofstream &file, const std::string &class
     data.insert("filename", fileName);
     file << templ->genText(data);
 }
-void create_filter::handleCommand(std::vector<std::string> &parameters)
+void create_plugin::handleCommand(std::vector<std::string> &parameters)
 {
     if (parameters.size() < 1)
     {
@@ -100,8 +100,8 @@ void create_filter::handleCommand(std::vector<std::string> &parameters)
             exit(-1);
         }
 
-        std::cout << "create a http filter:" << className << std::endl;
-        createFilterHeaderFile(oHeadFile, className, fileName);
-        createFilterSourceFile(oSourceFile, className, fileName);
+        std::cout << "create a plugin:" << className << std::endl;
+        createPluginHeaderFile(oHeadFile, className, fileName);
+        createPluginSourceFile(oSourceFile, className, fileName);
     }
 }

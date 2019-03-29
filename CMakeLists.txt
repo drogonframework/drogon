@@ -214,5 +214,8 @@ endif()
 file(GLOB drogon_util_headers "${CMAKE_CURRENT_SOURCE_DIR}/lib/inc/drogon/utils/*.h")
 install(FILES ${drogon_util_headers}
         DESTINATION include/drogon/utils)
+file(GLOB drogon_plugin_headers "${CMAKE_CURRENT_SOURCE_DIR}/lib/inc/drogon/plugins/*.h")
+install(FILES ${drogon_plugin_headers}
+        DESTINATION include/drogon/plugins)
 install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/lib/inc/drogon/version.h"
         DESTINATION include/drogon)

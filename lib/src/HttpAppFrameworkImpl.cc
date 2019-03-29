@@ -157,8 +157,7 @@ void HttpAppFrameworkImpl::loadConfigFile(const std::string &fileName)
 {
     ConfigLoader loader(fileName);
     loader.load();
-    auto &jsonRoot = loader.jsonValue();
-    _customConfig = jsonRoot.get("custom_config", Json::Value());
+    _jsonConfig = loader.jsonValue();
 }
 void HttpAppFrameworkImpl::setLogPath(const std::string &logPath,
                                       const std::string &logfileBaseName,
@@ -414,6 +413,16 @@ void HttpAppFrameworkImpl::run()
         }
     }
     _responseCachingMap = std::unique_ptr<CacheMap<std::string, HttpResponsePtr>>(new CacheMap<std::string, HttpResponsePtr>(getLoop(), 1.0, 4, 50)); //Max timeout up to about 70 days;
+
+    //Initialize plugins
+    const auto &pluginConfig = _jsonConfig["plugins"];
+    if (!pluginConfig.isNull())
+    {
+        _pluginsManager.initializeAllPlugins(pluginConfig,
+                                             [](PluginBase *plugin) {
+                                                 //TODO: new plugin
+                                             });
+    }
 
     // Let listener event loops run when everything is ready.
     for (auto &loopTh : loopThreads)
