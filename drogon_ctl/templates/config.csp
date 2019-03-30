@@ -153,10 +153,10 @@
     "plugins": [{
         //name: The class name of the plugin
         //"name": "TestPlugin",
-        //dependencies: Plugins that the plugin depends on. It's a null object by default.
+        //dependencies: Plugins that the plugin depends on. It can be commented out
         "dependencies": [],
         //config: The configuration of the plugin. This json object is the parameter to initialize the plugin.
-        //It's a null object by default.
+        //It can be commented out
         "config": {
             "heartbeat_interval": 2
         }
