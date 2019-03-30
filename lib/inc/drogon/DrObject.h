@@ -16,8 +16,9 @@
 
 #include <drogon/DrClassMap.h>
 
-#include <cxxabi.h>
 #include <string>
+#include <type_traits>
+
 namespace drogon
 {
 class DrObjectBase
@@ -31,14 +32,6 @@ class DrObjectBase
     virtual bool isClass(const std::string &class_name) const
     {
         return (className() == class_name);
-    }
-    static const std::string demangle(const char *mangled_name)
-    {
-        std::size_t len = 0;
-        int status = 0;
-        std::unique_ptr<char, decltype(&std::free)> ptr(
-            __cxxabiv1::__cxa_demangle(mangled_name, nullptr, &len, &status), &std::free);
-        return ptr.get();
     }
     virtual ~DrObjectBase() {}
 };
@@ -75,14 +68,23 @@ class DrObject : public virtual DrObjectBase
       public:
         DrAllocator()
         {
+            registerClass<T>();
+        }
+        const std::string &className() const
+        {
+            static std::string className = DrClassMap::demangle(typeid(T).name());
+            return className;
+        }
+        template <typename D>
+        typename std::enable_if<std::is_default_constructible<D>::value, void>::type registerClass()
+        {
             DrClassMap::registerClass(className(), []() -> DrObjectBase * {
                 return new T;
             });
         }
-        const std::string &className() const
+        template <typename D>
+        typename std::enable_if<!std::is_default_constructible<D>::value, void>::type registerClass()
         {
-            static std::string className = demangle(typeid(T).name());
-            return className;
         }
     };
 

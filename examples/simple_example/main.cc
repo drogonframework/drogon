@@ -2,6 +2,8 @@
 #include <drogon/drogon.h>
 #include <vector>
 #include <string>
+#include "CustomCtrl.h"
+#include "CustomHeaderFilter.h"
 
 using namespace drogon;
 class A : public DrObjectBase
@@ -141,9 +143,15 @@ int main()
     //drogon::HttpAppFramework::instance().enableDynamicViewsLoading({"/tmp/views"});
     app().loadConfigFile("config.example.json");
     auto &json = app().getCustomConfig();
-    if(json.empty())
+    if (json.empty())
     {
         std::cout << "empty custom config!" << std::endl;
     }
+    //Install custom controller
+    auto ctrlPtr = std::make_shared<CustomCtrl>("Hi");
+    app().registerController(ctrlPtr);
+    //Install custom filter
+    auto filterPtr = std::make_shared<CustomHeaderFilter>("custom_header", "yes");
+    app().registerFilter(filterPtr);
     app().run();
 }

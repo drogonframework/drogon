@@ -21,6 +21,7 @@
 
 namespace drogon
 {
+
 typedef HttpViewData DrTemplateData;
 
 /// The templating engine class
@@ -35,7 +36,7 @@ class DrTemplateBase : public virtual DrObjectBase
     /**
      * The @param templateName represents the name of the template file.
      * A template file is a description file with a special format. Its extension is 
-     * usually .csp and can be omitted. The user should preprocess the template file 
+     * usually .csp. The user should preprocess the template file 
      * with the drogon_ctl tool to create c++ source files. 
      */
     static std::shared_ptr<DrTemplateBase> newTemplate(std::string templateName);
@@ -49,4 +50,5 @@ class DrTemplateBase : public virtual DrObjectBase
     virtual ~DrTemplateBase(){};
     DrTemplateBase(){};
 };
+
 } // namespace drogon
