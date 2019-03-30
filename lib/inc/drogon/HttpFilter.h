@@ -33,10 +33,11 @@ class HttpFilterBase : public virtual DrObjectBase
                           const FilterChainCallback &fccb) = 0;
     virtual ~HttpFilterBase() {}
 };
-template <typename T>
+template <typename T, bool AutoCreation = true>
 class HttpFilter : public DrObject<T>, public HttpFilterBase
 {
   public:
+    static const bool isAutoCreation = AutoCreation;
     virtual ~HttpFilter() {}
 };
 } // namespace drogon

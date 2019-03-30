@@ -17,6 +17,7 @@
 #include <drogon/HttpRequest.h>
 #include <drogon/HttpResponse.h>
 #include <drogon/utils/FunctionTraits.h>
+#include <drogon/DrClassMap.h>
 #include <drogon/DrObject.h>
 #include <list>
 #include <string>
@@ -109,15 +110,13 @@ class HttpBinder : public HttpBinderBase
     FUNCTION _func;
 
     typedef FunctionTraits<FUNCTION> traits;
-    template <
-        std::size_t Index>
+    template <std::size_t Index>
     using nth_argument_type = typename traits::template argument<Index>;
 
     static const size_t argument_count = traits::arity;
 
-    template <
-        typename... Values,
-        std::size_t Boundary = argument_count>
+    template <typename... Values,
+              std::size_t Boundary = argument_count>
     typename std::enable_if<(sizeof...(Values) < Boundary), void>::type run(
         std::list<std::string> &pathParameter,
         const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> callback,
@@ -152,13 +151,24 @@ class HttpBinder : public HttpBinderBase
         callFunction(req, callback, std::move(values)...);
     }
     template <typename... Values,
-              bool isClassFunction = traits::isClassFunction>
-    typename std::enable_if<isClassFunction, void>::type callFunction(
+              bool isClassFunction = traits::isClassFunction,
+              bool isDrObjectClass = traits::isDrObjectClass>
+    typename std::enable_if<isClassFunction && !isDrObjectClass, void>::type callFunction(
         const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> callback,
         Values &&... values)
     {
-        auto &obj = getControllerObj<typename traits::class_type>();
+        static auto &obj = getControllerObj<typename traits::class_type>();
         (obj.*_func)(req, callback, std::move(values)...);
+    };
+    template <typename... Values,
+              bool isClassFunction = traits::isClassFunction,
+              bool isDrObjectClass = traits::isDrObjectClass>
+    typename std::enable_if<isClassFunction && isDrObjectClass, void>::type callFunction(
+        const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> callback,
+        Values &&... values)
+    {
+        static auto objPtr = DrClassMap::getSingleInstance<typename traits::class_type>();
+        (*objPtr.*_func)(req, callback, std::move(values)...);
     };
     template <typename... Values,
               bool isClassFunction = traits::isClassFunction>

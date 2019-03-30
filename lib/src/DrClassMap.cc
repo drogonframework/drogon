@@ -18,12 +18,31 @@
 using namespace drogon;
 //std::map <std::string,DrAllocFunc> * DrClassMap::classMap=nullptr;
 //std::once_flag DrClassMap::flag;
+namespace drogon
+{
+namespace internal
+{
+
+static std::unordered_map<std::string, std::shared_ptr<DrObjectBase>> &getObjsMap()
+{
+    static std::unordered_map<std::string, std::shared_ptr<DrObjectBase>> singleInstanceMap;
+    return singleInstanceMap;
+}
+
+static std::mutex &getMapMutex()
+{
+    static std::mutex mtx;
+    return mtx;
+}
+
+} // namespace internal
+} // namespace drogon
+
 void DrClassMap::registerClass(const std::string &className, const DrAllocFunc &func)
 {
-    //std::cout<<"register class:"<<className<<std::endl;
-
     getMap().insert(std::make_pair(className, func));
 }
+
 DrObjectBase *DrClassMap::newObject(const std::string &className)
 {
     auto iter = getMap().find(className);
@@ -34,10 +53,11 @@ DrObjectBase *DrClassMap::newObject(const std::string &className)
     else
         return nullptr;
 }
+
 const std::shared_ptr<DrObjectBase> &DrClassMap::getSingleInstance(const std::string &className)
 {
-    static std::unordered_map<std::string, std::shared_ptr<DrObjectBase>> singleInstanceMap;
-    static std::mutex mtx;
+    auto &mtx = internal::getMapMutex();
+    auto &singleInstanceMap = internal::getObjsMap();
     std::lock_guard<std::mutex> lock(mtx);
     auto iter = singleInstanceMap.find(className);
     if (iter != singleInstanceMap.end())
@@ -45,6 +65,15 @@ const std::shared_ptr<DrObjectBase> &DrClassMap::getSingleInstance(const std::st
     singleInstanceMap[className] = std::shared_ptr<DrObjectBase>(newObject(className));
     return singleInstanceMap[className];
 }
+
+void DrClassMap::setSingleInstance(const std::shared_ptr<DrObjectBase> &ins)
+{
+    auto &mtx = internal::getMapMutex();
+    auto &singleInstanceMap = internal::getObjsMap();
+    std::lock_guard<std::mutex> lock(mtx);
+    singleInstanceMap[ins->className()] = ins;
+}
+
 std::vector<std::string> DrClassMap::getAllClassName()
 {
     std::vector<std::string> ret;
@@ -54,6 +83,7 @@ std::vector<std::string> DrClassMap::getAllClassName()
     }
     return ret;
 }
+
 std::unordered_map<std::string, DrAllocFunc> &DrClassMap::getMap()
 {
     static std::unordered_map<std::string, DrAllocFunc> map;

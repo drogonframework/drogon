@@ -19,6 +19,7 @@
 #include <drogon/orm/DbClient.h>
 #endif
 #include <drogon/utils/Utilities.h>
+#include <drogon/utils/ClassTraits.h>
 #include <drogon/HttpBinder.h>
 #include <trantor/utils/NonCopyable.h>
 #include <drogon/DrObject.h>
@@ -57,6 +58,10 @@ inline std::string getGitCommit()
 {
     return VERSION_MD5;
 }
+
+class HttpControllerBase;
+class HttpSimpleControllerBase;
+class WebSocketControllerBase;
 
 class HttpAppFramework : public trantor::NonCopyable
 {
@@ -115,7 +120,7 @@ class HttpAppFramework : public trantor::NonCopyable
     {
         static_assert(IsPlugin<T>::value, "The Template parameter must be a subclass of PluginBase");
         assert(isRunning());
-        return dynamic_cast<T *>(getPlugin(T::className()));
+        return dynamic_cast<T *>(getPlugin(T::classTypeName()));
     }
 
     ///Get the plugin object registered in the framework
@@ -215,6 +220,54 @@ class HttpAppFramework : public trantor::NonCopyable
                                              const std::string &crtlName,
                                              const std::vector<std::string> &filters =
                                                  std::vector<std::string>()) = 0;
+
+    /// Register controller objects created and initialized by the user
+    /**
+     * Drogon can only automatically create controllers using the default constructor. 
+     * Sometimes users want to be able to create controllers using constructors with 
+     * parameters. Controllers created by user in this way should be registered to the framework 
+     * via this method. 
+     * The macro or configuration file is still valid for the path routing configuration 
+     * of the controller created by users.
+     * 
+     * NOTE:
+     * The declaration of the controller class must be as follows:
+     *   class ApiTest : public drogon::HttpController<ApiTest, false>
+     *   {
+     *       public:
+     *           ApiTest(const std::string &str);
+     *       ...
+     *   };
+     * The second template parameter must be explicitly set to false to disable automatic creation.
+     * And then user can create and register it somewhere as follows:
+     *   auto ctrlPtr=std::make_shared<ApiTest>("hello world");
+     *   drogon::app().registerController(ctrlPtr);
+     * This method should be called before calling the app().run() method.
+     */
+    template <typename T>
+    void registerController(const std::shared_ptr<T> &ctrlPtr)
+    {
+        static_assert(internal::IsSubClass<T, HttpControllerBase>::value ||
+                          internal::IsSubClass<T, HttpSimpleControllerBase>::value ||
+                          internal::IsSubClass<T, WebSocketControllerBase>::value,
+                      "Error! Only controller objects can be registered here");
+        static_assert(!T::isAutoCreation, "Controllers created and initialized automatically by drogon cannot be registered here");
+        DrClassMap::setSingleInstance(ctrlPtr);
+        T::initPathRouting();
+    }
+
+    /// Register filter objects created and initialized by the user
+    /**
+     * This method is similar to the above method.
+     */
+    template <typename T>
+    void registerFilter(const std::shared_ptr<T> &filterPtr)
+    {
+        static_assert(internal::IsSubClass<T, HttpFilterBase>::value,
+                      "Error! Only fitler objects can be registered here");
+        static_assert(!T::isAutoCreation, "Filters created and initialized automatically by drogon cannot be registered here");
+        DrClassMap::setSingleInstance(filterPtr);
+    }
 
     ///Get the custom configuration defined by users in the configuration file.
     virtual const Json::Value &getCustomConfig() const = 0;

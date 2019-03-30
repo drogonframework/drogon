@@ -23,9 +23,9 @@
 #include <vector>
 #include <iostream>
 #include <memory>
-#define WS_PATH_LIST_BEGIN                                                       \
-    static std::vector<std::pair<std::string, std::vector<std::string>>> paths() \
-    {                                                                            \
+#define WS_PATH_LIST_BEGIN                                                         \
+    static std::vector<std::pair<std::string, std::vector<std::string>>> __paths() \
+    {                                                                              \
         std::vector<std::pair<std::string, std::vector<std::string>>> vet;
 
 #define WS_PATH_ADD(path, filters...) \
@@ -34,8 +34,10 @@
 #define WS_PATH_LIST_END \
     return vet;          \
     }
+
 namespace drogon
 {
+
 class WebSocketControllerBase : public virtual DrObjectBase
 {
   public:
@@ -51,11 +53,24 @@ class WebSocketControllerBase : public virtual DrObjectBase
 };
 
 typedef std::shared_ptr<WebSocketControllerBase> WebSocketControllerBasePtr;
-template <typename T>
+
+template <typename T, bool AutoCreation = true>
 class WebSocketController : public DrObject<T>, public WebSocketControllerBase
 {
   public:
+    static const bool isAutoCreation = AutoCreation;
     virtual ~WebSocketController() {}
+    static void initPathRouting()
+    {
+        auto vPaths = T::__paths();
+        for (auto const &path : vPaths)
+        {
+            LOG_TRACE << "register websocket controller (" << WebSocketController<T>::classTypeName() << ") on path:" << path.first;
+            HttpAppFramework::instance().registerWebSocketController(path.first,
+                                                                     WebSocketController<T>::classTypeName(),
+                                                                     path.second);
+        }
+    }
 
   protected:
     WebSocketController() {}
@@ -66,25 +81,11 @@ class WebSocketController : public DrObject<T>, public WebSocketControllerBase
       public:
         pathRegister()
         {
-            auto vPaths = T::paths();
-
-            for (auto const &path : vPaths)
+            if (AutoCreation)
             {
-                LOG_TRACE << "register websocket controller (" << WebSocketController<T>::classTypeName() << ") on path:" << path.first;
-                HttpAppFramework::instance().registerWebSocketController(path.first,
-                                                                         WebSocketController<T>::classTypeName(),
-                                                                         path.second);
+                T::initPathRouting();
             }
         }
-
-    //   protected:
-    //     void _register(const std::string &className, const std::vector<std::string> &paths)
-    //     {
-    //         for (auto const &reqPath : paths)
-    //         {
-    //             std::cout << "register controller class " << className << " on path " << reqPath << std::endl;
-    //         }
-    //     }
     };
     friend pathRegister;
     static pathRegister _register;
@@ -93,7 +94,7 @@ class WebSocketController : public DrObject<T>, public WebSocketControllerBase
         return &_register;
     }
 };
-template <typename T>
-typename WebSocketController<T>::pathRegister WebSocketController<T>::_register;
+template <typename T, bool AutoCreation>
+typename WebSocketController<T, AutoCreation>::pathRegister WebSocketController<T, AutoCreation>::_register;
 
 } // namespace drogon

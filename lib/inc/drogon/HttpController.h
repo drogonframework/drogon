@@ -23,8 +23,8 @@
 
 /// For more details on the class, see the wiki site (the 'HttpController' section)
 
-#define METHOD_LIST_BEGIN     \
-    static void initMethods() \
+#define METHOD_LIST_BEGIN         \
+    static void initPathRouting() \
     {
 
 #define METHOD_ADD(method, pattern, filters...)      \
@@ -34,15 +34,21 @@
 
 #define METHOD_LIST_END \
     return;             \
-    }                   \
-                        \
-  protected:
+    }                   
 
 namespace drogon
 {
-template <typename T>
-class HttpController : public DrObject<T>
+
+class HttpControllerBase
 {
+};
+
+template <typename T, bool AutoCreation = true>
+class HttpController : public DrObject<T>, public HttpControllerBase
+{
+  public:
+    static const bool isAutoCreation = AutoCreation;
+
   protected:
     template <typename FUNCTION>
     static void registerMethod(FUNCTION &&function,
@@ -60,12 +66,12 @@ class HttpController : public DrObject<T>
         }
         if (pattern.empty() || pattern[0] == '/')
             app().registerHandler(path + pattern,
-                                     std::forward<FUNCTION>(function),
-                                     filtersAndMethods);
+                                  std::forward<FUNCTION>(function),
+                                  filtersAndMethods);
         else
             app().registerHandler(path + "/" + pattern,
-                                     std::forward<FUNCTION>(function),
-                                     filtersAndMethods);
+                                  std::forward<FUNCTION>(function),
+                                  filtersAndMethods);
     }
 
   private:
@@ -74,7 +80,8 @@ class HttpController : public DrObject<T>
       public:
         methodRegister()
         {
-            T::initMethods();
+            if (AutoCreation)
+                T::initPathRouting();
         }
     };
     //use static value to register controller method in framework before main();
@@ -84,6 +91,6 @@ class HttpController : public DrObject<T>
         return &_register;
     }
 };
-template <typename T>
-typename HttpController<T>::methodRegister HttpController<T>::_register;
+template <typename T, bool AutoCreation>
+typename HttpController<T, AutoCreation>::methodRegister HttpController<T, AutoCreation>::_register;
 } // namespace drogon

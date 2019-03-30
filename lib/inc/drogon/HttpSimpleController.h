@@ -20,8 +20,8 @@
 #include <string>
 #include <vector>
 #include <iostream>
-#define PATH_LIST_BEGIN       \
-    static void ___paths___() \
+#define PATH_LIST_BEGIN           \
+    static void initPathRouting() \
     {
 
 #define PATH_ADD(path, filters...) __registerSelf(path, {filters});
@@ -30,7 +30,7 @@
     }
 namespace drogon
 {
-    
+
 class HttpSimpleControllerBase : public virtual DrObjectBase
 {
   public:
@@ -38,10 +38,11 @@ class HttpSimpleControllerBase : public virtual DrObjectBase
     virtual ~HttpSimpleControllerBase() {}
 };
 
-template <typename T>
+template <typename T, bool AutoCreation = true>
 class HttpSimpleController : public DrObject<T>, public HttpSimpleControllerBase
 {
   public:
+    static const bool isAutoCreation = AutoCreation;
     virtual ~HttpSimpleController() {}
 
   protected:
@@ -58,16 +59,11 @@ class HttpSimpleController : public DrObject<T>, public HttpSimpleControllerBase
       public:
         pathRegister()
         {
-            T::___paths___();
+            if (AutoCreation)
+            {
+                T::initPathRouting();
+            }
         }
-    //   protected:
-    //     void _register(const std::string &className, const std::vector<std::string> &paths)
-    //     {
-    //         for (auto const &reqPath : paths)
-    //         {
-    //             std::cout << "register controller class " << className << " on path " << reqPath << std::endl;
-    //         }
-    //     }
     };
     friend pathRegister;
     static pathRegister _register;
@@ -76,7 +72,7 @@ class HttpSimpleController : public DrObject<T>, public HttpSimpleControllerBase
         return &_register;
     }
 };
-template <typename T>
-typename HttpSimpleController<T>::pathRegister HttpSimpleController<T>::_register;
+template <typename T, bool AutoCreation>
+typename HttpSimpleController<T, AutoCreation>::pathRegister HttpSimpleController<T, AutoCreation>::_register;
 
 } // namespace drogon

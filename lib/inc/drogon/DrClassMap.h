@@ -14,14 +14,15 @@
 
 #pragma once
 
+#include <drogon/utils/ClassTraits.h>
 #include <stdio.h>
 #include <unordered_map>
 #include <memory>
 #include <functional>
-
 #include <thread>
 #include <mutex>
 #include <vector>
+#include <cxxabi.h>
 
 namespace drogon
 {
@@ -34,7 +35,22 @@ class DrClassMap
     static void registerClass(const std::string &className, const DrAllocFunc &func);
     static DrObjectBase *newObject(const std::string &className);
     static const std::shared_ptr<DrObjectBase> &getSingleInstance(const std::string &className);
+    template <typename T>
+    static std::shared_ptr<T> getSingleInstance()
+    {
+        static_assert(internal::IsSubClass<T, DrObjectBase>::value, "T must be a sub-class of DrObjectBase");
+        return std::dynamic_pointer_cast<T>(getSingleInstance(T::classTypeName()));
+    }
+    static void setSingleInstance(const std::shared_ptr<DrObjectBase> &ins);
     static std::vector<std::string> getAllClassName();
+    static const std::string demangle(const char *mangled_name)
+    {
+        std::size_t len = 0;
+        int status = 0;
+        std::unique_ptr<char, decltype(&std::free)> ptr(
+            __cxxabiv1::__cxa_demangle(mangled_name, nullptr, &len, &status), &std::free);
+        return ptr.get();
+    }
 
   protected:
     static std::unordered_map<std::string, DrAllocFunc> &getMap();

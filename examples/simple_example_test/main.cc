@@ -532,7 +532,32 @@ void doTest(const HttpClientPtr &client, std::promise<int> &pro, bool isHttps = 
             exit(1);
         }
     });
-
+    /// Test controllers created and initialized by users
+    req = HttpRequest::newHttpFormPostRequest();
+    req->setMethod(drogon::Get);
+    req->setPath("/customctrl/antao");
+    req->addHeader("custom_header", "yes");
+    client->sendRequest(req, [=](ReqResult result, const HttpResponsePtr &resp) {
+        if (result == ReqResult::Ok)
+        {
+            auto ret = resp->getBody();
+            if (ret == "<P>Hi, antao</P>")
+            {
+                outputGood(req, isHttps);
+            }
+            else
+            {
+                LOG_DEBUG << resp->getBody();
+                LOG_ERROR << "Error!";
+                exit(1);
+            }
+        }
+        else
+        {
+            LOG_ERROR << "Error!";
+            exit(1);
+        }
+    });
     /// Test form post
     req = HttpRequest::newHttpFormPostRequest();
     req->setPath("/api/v1/apitest/form");

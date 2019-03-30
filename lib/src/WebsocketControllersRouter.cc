@@ -30,7 +30,7 @@ void WebsocketControllersRouter::registerWebSocketController(const std::string &
     assert(!ctrlName.empty());
     std::string path(pathName);
     std::transform(pathName.begin(), pathName.end(), path.begin(), tolower);
-    auto objPtr = std::shared_ptr<DrObjectBase>(DrClassMap::newObject(ctrlName));
+    auto objPtr = DrClassMap::getSingleInstance(ctrlName);
     auto ctrlPtr = std::dynamic_pointer_cast<WebSocketControllerBase>(objPtr);
     assert(ctrlPtr);
     std::lock_guard<std::mutex> guard(_websockCtrlMutex);

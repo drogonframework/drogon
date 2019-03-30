@@ -14,6 +14,8 @@
 
 #pragma once
 
+#include <drogon/DrObject.h>
+#include <drogon/utils/ClassTraits.h>
 #include <tuple>
 #include <type_traits>
 #include <memory>
@@ -38,6 +40,7 @@ struct FunctionTraits : public FunctionTraits<
                             decltype(&std::remove_reference<Function>::type::operator())>
 {
     static const bool isClassFunction = false;
+    static const bool isDrObjectClass = false;
     typedef void class_type;
     static const std::string name()
     {
@@ -46,14 +49,13 @@ struct FunctionTraits : public FunctionTraits<
 };
 
 //class instance method of const object
-template <
-    typename ClassType,
-    typename ReturnType,
-    typename... Arguments>
-struct FunctionTraits<
-    ReturnType (ClassType::*)(Arguments...) const> : FunctionTraits<ReturnType (*)(Arguments...)>
+template <typename ClassType,
+          typename ReturnType,
+          typename... Arguments>
+struct FunctionTraits<ReturnType (ClassType::*)(Arguments...) const> : FunctionTraits<ReturnType (*)(Arguments...)>
 {
     static const bool isClassFunction = true;
+    static const bool isDrObjectClass = IsSubClass<ClassType, DrObject<ClassType>>::value;
     typedef ClassType class_type;
     static const std::string name() { return std::string("Class Function"); }
 };
@@ -63,10 +65,10 @@ template <
     typename ClassType,
     typename ReturnType,
     typename... Arguments>
-struct FunctionTraits<
-    ReturnType (ClassType::*)(Arguments...)> : FunctionTraits<ReturnType (*)(Arguments...)>
+struct FunctionTraits<ReturnType (ClassType::*)(Arguments...)> : FunctionTraits<ReturnType (*)(Arguments...)>
 {
     static const bool isClassFunction = true;
+    static const bool isDrObjectClass = IsSubClass<ClassType, DrObject<ClassType>>::value;
     typedef ClassType class_type;
     static const std::string name() { return std::string("Class Function"); }
 };
@@ -100,6 +102,7 @@ struct FunctionTraits<
     typedef void class_type;
     static const bool isHTTPFunction = false;
     static const bool isClassFunction = false;
+    static const bool isDrObjectClass = false;
     static const std::string name() { return std::string("Normal or Static Function"); }
 };
 
