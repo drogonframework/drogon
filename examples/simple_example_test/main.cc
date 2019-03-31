@@ -533,8 +533,7 @@ void doTest(const HttpClientPtr &client, std::promise<int> &pro, bool isHttps = 
         }
     });
     /// Test controllers created and initialized by users
-    req = HttpRequest::newHttpFormPostRequest();
-    req->setMethod(drogon::Get);
+    req = HttpRequest::newHttpRequest();
     req->setPath("/customctrl/antao");
     req->addHeader("custom_header", "yes");
     client->sendRequest(req, [=](ReqResult result, const HttpResponsePtr &resp) {
@@ -542,6 +541,29 @@ void doTest(const HttpClientPtr &client, std::promise<int> &pro, bool isHttps = 
         {
             auto ret = resp->getBody();
             if (ret == "<P>Hi, antao</P>")
+            {
+                outputGood(req, isHttps);
+            }
+            else
+            {
+                LOG_DEBUG << resp->getBody();
+                LOG_ERROR << "Error!";
+                exit(1);
+            }
+        }
+        else
+        {
+            LOG_ERROR << "Error!";
+            exit(1);
+        }
+    });
+    /// Test controllers created and initialized by users
+    req = HttpRequest::newHttpRequest();
+    req->setPath("/absolute/123");
+    client->sendRequest(req, [=](ReqResult result, const HttpResponsePtr &resp) {
+        if (result == ReqResult::Ok)
+        {
+            if (resp->statusCode() == k200OK)
             {
                 outputGood(req, isHttps);
             }

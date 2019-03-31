@@ -15,7 +15,8 @@ class ApiTest : public drogon::HttpController<ApiTest>
     METHOD_ADD(ApiTest::get, "/get/{2}/{1}", Get);                  //path is /api/v1/apitest/get/{arg2}/{arg1}
     METHOD_ADD(ApiTest::your_method_name, "/{1}/List?P2={2}", Get); //path is /api/v1/apitest/{arg1}/list
     METHOD_ADD(ApiTest::staticApi, "/static", Get, Post);
-    METHOD_ADD(ApiTest::get2, "/get/{1}", Get);
+    METHOD_ADD(ApiTest::get2, "/get/{1}", Get);         //path is /api/v1/apitest/get/{arg1}
+    ADD_METHOD_TO(ApiTest::get2, "/absolute/{1}", Get); //path is /absolute/{arg1}
     METHOD_ADD(ApiTest::jsonTest, "/json", Post);
     METHOD_ADD(ApiTest::formTest, "/form", Post);
     METHOD_LIST_END
@@ -28,7 +29,6 @@ class ApiTest : public drogon::HttpController<ApiTest>
     void rootPost(const HttpRequestPtr &req, const std::function<void(const HttpResponsePtr &)> &callback);
     void jsonTest(const HttpRequestPtr &req, const std::function<void(const HttpResponsePtr &)> &callback);
     void formTest(const HttpRequestPtr &req, const std::function<void(const HttpResponsePtr &)> &callback);
-
   public:
     ApiTest()
     {
