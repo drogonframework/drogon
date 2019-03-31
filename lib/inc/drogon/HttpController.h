@@ -27,14 +27,15 @@
     static void initPathRouting() \
     {
 
-#define METHOD_ADD(method, pattern, filters...)      \
-    {                                                \
-        registerMethod(&method, pattern, {filters}); \
-    }
+#define METHOD_ADD(method, pattern, filters...) \
+    registerMethod(&method, pattern, {filters})
+
+#define ADD_METHOD_TO(method, path_pattern, filters...) \
+    registerMethod(&method, path_pattern, {filters}, false)
 
 #define METHOD_LIST_END \
     return;             \
-    }                   
+    }
 
 namespace drogon
 {
@@ -53,25 +54,41 @@ class HttpController : public DrObject<T>, public HttpControllerBase
     template <typename FUNCTION>
     static void registerMethod(FUNCTION &&function,
                                const std::string &pattern,
-                               const std::vector<any> &filtersAndMethods = std::vector<any>())
+                               const std::vector<any> &filtersAndMethods = std::vector<any>(),
+                               bool classNameInPath = true)
     {
-        std::string path = std::string("/") + HttpController<T>::classTypeName();
-        LOG_TRACE << "classname:" << HttpController<T>::classTypeName();
-
-        //transform(path.begin(), path.end(), path.begin(), tolower);
-        std::string::size_type pos;
-        while ((pos = path.find("::")) != std::string::npos)
+        if (classNameInPath)
         {
-            path.replace(pos, 2, "/");
+            std::string path = "/";
+            path.append(HttpController<T>::classTypeName());
+            LOG_TRACE << "classname:" << HttpController<T>::classTypeName();
+
+            //transform(path.begin(), path.end(), path.begin(), tolower);
+            std::string::size_type pos;
+            while ((pos = path.find("::")) != std::string::npos)
+            {
+                path.replace(pos, 2, "/");
+            }
+            if (pattern.empty() || pattern[0] == '/')
+                app().registerHandler(path + pattern,
+                                      std::forward<FUNCTION>(function),
+                                      filtersAndMethods);
+            else
+                app().registerHandler(path + "/" + pattern,
+                                      std::forward<FUNCTION>(function),
+                                      filtersAndMethods);
         }
-        if (pattern.empty() || pattern[0] == '/')
-            app().registerHandler(path + pattern,
-                                  std::forward<FUNCTION>(function),
-                                  filtersAndMethods);
         else
-            app().registerHandler(path + "/" + pattern,
+        {
+            std::string path = pattern;
+            if (path.empty() || path[0] != '/')
+            {
+                path = "/" + path;
+            }
+            app().registerHandler(path,
                                   std::forward<FUNCTION>(function),
                                   filtersAndMethods);
+        }
     }
 
   private:
