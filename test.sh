@@ -70,5 +70,8 @@ if [ ! -f "drogon_test" ];then
     exit -1
 fi
 
+cd ../../
+rm -rf drogon_test
+
 echo "Everything is ok!"
 exit 0

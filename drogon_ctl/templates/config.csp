@@ -53,7 +53,7 @@
     ],*/
     "app": {
         //threads_num: The number of IO threads, 1 by default, if the value is set to 0, the number of threads
-        //is the number of processors.
+        //is the number of CPU cores
         "threads_num": 1,
         //enable_session: False by default
         "enable_session": true,
