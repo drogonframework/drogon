@@ -430,6 +430,9 @@ std::string urlEncode(const std::string &src)
         case ')':
         case '&':
         case '=':
+        case '/':
+        case '\\':
+        case '?':
             result.append(1, *iter);
             break;
             // escape
