@@ -275,7 +275,8 @@ void doTest(const HttpClientPtr &client, std::promise<int> &pro, bool isHttps = 
 
     req = HttpRequest::newHttpRequest();
     req->setMethod(drogon::Get);
-    req->setPath("/api/v1/apitest/3.14/List?P2=1234");
+    req->setPath("/api/v1/apitest/3.14/List");
+    req->setParameter("P2","1234");
     client->sendRequest(req, [=](ReqResult result, const HttpResponsePtr &resp) {
         if (result == ReqResult::Ok)
         {
@@ -375,7 +376,8 @@ void doTest(const HttpClientPtr &client, std::promise<int> &pro, bool isHttps = 
     /// Test static function
     req = HttpRequest::newHttpRequest();
     req->setMethod(drogon::Get);
-    req->setPath("/api/v1/handle11/11/22/?p3=33&p4=44");
+    req->setPath("/api/v1/handle11/11/22/?p3=33");
+    req->setParameter("p4","44");
     client->sendRequest(req, [=](ReqResult result, const HttpResponsePtr &resp) {
         if (result == ReqResult::Ok)
         {

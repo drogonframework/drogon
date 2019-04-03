@@ -119,7 +119,7 @@ void HttpRequestImpl::appendToBuffer(MsgBuffer *output) const
 
     if (!_path.empty())
     {
-        output->append(_path);
+        output->append(utils::urlEncode(_path));
     }
     else
     {
@@ -138,9 +138,21 @@ void HttpRequestImpl::appendToBuffer(MsgBuffer *output) const
         }
         content.resize(content.length() - 1);
         content = utils::urlEncode(content);
-        if (_method == Get || _method == Delete)
+        if (_method == Get || _method == Delete || _method == Head)
         {
-            output->append("?");
+            auto ret = std::find(output->peek(), (const char *)output->beginWrite(), '?');
+            if (ret != output->beginWrite())
+            {
+                if (ret != output->beginWrite() - 1)
+                {
+                    output->append("&");
+                }
+            }
+            else
+            {
+
+                output->append("?");
+            }
             output->append(content);
             content.clear();
         }
