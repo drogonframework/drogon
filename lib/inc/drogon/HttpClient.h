@@ -60,6 +60,14 @@ class HttpClient : public trantor::NonCopyable
      */
     virtual void sendRequest(const HttpRequestPtr &req, const HttpReqCallback &callback) = 0;
     virtual void sendRequest(const HttpRequestPtr &req, HttpReqCallback &&callback) = 0;
+
+    /// Set the pipelining depth, which is the number of requests that are not responding.
+    /**
+     * If this method is not called, the default depth value is 0 which means the pipelining is disabled. 
+     * For details about pipelining, see rfc2616-8.1.2.2
+     */
+    virtual void setPipeliningDepth(size_t depth) = 0;
+
     /// Use ip and port to connect to server
     /** 
      * If useSSL is set to true, the client 
@@ -75,7 +83,7 @@ class HttpClient : public trantor::NonCopyable
                                        uint16_t port,
                                        bool useSSL = false,
                                        trantor::EventLoop *loop = nullptr);
-                                       
+
     /// Get the event loop of the client;
     virtual trantor::EventLoop *loop() = 0;
 

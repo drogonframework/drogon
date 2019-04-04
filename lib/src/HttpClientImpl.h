@@ -19,6 +19,7 @@
 #include <trantor/net/TcpClient.h>
 #include <mutex>
 #include <queue>
+
 namespace drogon
 {
 class HttpClientImpl : public HttpClient, public std::enable_shared_from_this<HttpClientImpl>
@@ -29,6 +30,10 @@ class HttpClientImpl : public HttpClient, public std::enable_shared_from_this<Ht
     virtual void sendRequest(const HttpRequestPtr &req, const HttpReqCallback &callback) override;
     virtual void sendRequest(const HttpRequestPtr &req, HttpReqCallback &&callback) override;
     virtual trantor::EventLoop *loop() override { return _loop; }
+    virtual void setPipeliningDepth(size_t depth) override
+    {
+        _pipeliningDepth = depth;
+    }
     ~HttpClientImpl();
 
   private:
@@ -38,8 +43,11 @@ class HttpClientImpl : public HttpClient, public std::enable_shared_from_this<Ht
     bool _useSSL;
     void sendReq(const trantor::TcpConnectionPtr &connPtr, const HttpRequestPtr &req);
     void sendRequestInLoop(const HttpRequestPtr &req, const HttpReqCallback &callback);
-    std::queue<std::pair<HttpRequestPtr, HttpReqCallback>> _reqAndCallbacks;
+    std::queue<HttpReqCallback> _pipeliningCallbacks;
+    std::queue<std::pair<HttpRequestPtr, HttpReqCallback>> _requestsBuffer;
     void onRecvMessage(const trantor::TcpConnectionPtr &, trantor::MsgBuffer *);
+    void onError(ReqResult result);
     std::string _domain;
+    size_t _pipeliningDepth = 0;
 };
 } // namespace drogon
