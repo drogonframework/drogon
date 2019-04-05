@@ -77,7 +77,6 @@ void create_controller::newSimpleControllerHeaderFile(std::ofstream &file, const
     file << indent << "class " << class_name << ":public drogon::HttpSimpleController<" << class_name << ">\n";
     file << indent << "{\n";
     file << indent << "public:\n";
-    //TestController(){}
     file << indent << "    virtual void asyncHandleHttpRequest(const HttpRequestPtr& req,const std::function<void (const HttpResponsePtr &)> & callback) override;\n";
 
     file << indent << "    PATH_LIST_BEGIN\n";
@@ -132,11 +131,6 @@ void create_controller::newWebsockControllerHeaderFile(std::ofstream &file, cons
     file << indent << "class " << class_name << ":public drogon::WebSocketController<" << class_name << ">\n";
     file << indent << "{\n";
     file << indent << "public:\n";
-    //TestController(){}
-    //    virtual void handleNewMessage(const WebSocketConnectionPtr&,
-    //                                  trantor::MsgBuffer*)=0;
-    //    //on new connection or after disconnect
-    //    virtual void handleConnection(const WebSocketConnectionPtr&)=0;
     file << indent << "    virtual void handleNewMessage(const WebSocketConnectionPtr&,\n";
     file << indent << "                                  std::string &&)override;\n";
     file << indent << "    virtual void handleNewConnection(const HttpRequestPtr &,\n";
@@ -211,6 +205,9 @@ void create_controller::newHttpControllerHeaderFile(std::ofstream &file, const s
     file << indent << "//METHOD_ADD(" << class_name << "::your_method_name,\"/{1}/{2}/list\",Get);"
                                                        "//path is "
          << namepace_path << class_name << "/{arg1}/{arg2}/list\n";
+    file << indent << "//ADD_METHOD_TO(" << class_name << "::your_method_name,\"/absolute/path/{1}/{2}/list\",Get);"
+                                                          "//path is "
+         << namepace_path << "/absolute/path/{arg1}/{arg2}/list\n";
     file << indent << "\n";
     file << indent << "METHOD_LIST_END\n";
     file << indent << "//your declaration of processing function maybe like this:\n";

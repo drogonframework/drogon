@@ -276,7 +276,7 @@ void doTest(const HttpClientPtr &client, std::promise<int> &pro, bool isHttps = 
     req = HttpRequest::newHttpRequest();
     req->setMethod(drogon::Get);
     req->setPath("/api/v1/apitest/3.14/List");
-    req->setParameter("P2","1234");
+    req->setParameter("P2", "1234");
     client->sendRequest(req, [=](ReqResult result, const HttpResponsePtr &resp) {
         if (result == ReqResult::Ok)
         {
@@ -377,7 +377,7 @@ void doTest(const HttpClientPtr &client, std::promise<int> &pro, bool isHttps = 
     req = HttpRequest::newHttpRequest();
     req->setMethod(drogon::Get);
     req->setPath("/api/v1/handle11/11/22/?p3=33");
-    req->setParameter("p4","44");
+    req->setParameter("p4", "44");
     client->sendRequest(req, [=](ReqResult result, const HttpResponsePtr &resp) {
         if (result == ReqResult::Ok)
         {
@@ -582,6 +582,54 @@ void doTest(const HttpClientPtr &client, std::promise<int> &pro, bool isHttps = 
             exit(1);
         }
     });
+    /// Test pipelining
+    // req = HttpRequest::newHttpRequest();
+    // req->setPath("/pipe");
+    // auto flag = std::make_shared<int>(0);
+    // client->sendRequest(req, [=](ReqResult result, const HttpResponsePtr &resp) {
+    //     if (result == ReqResult::Ok)
+    //     {
+    //         if (resp->statusCode() == k200OK && *flag == 0)
+    //         {
+    //             ++(*flag);
+    //             outputGood(req, isHttps);
+    //         }
+    //         else
+    //         {
+    //             LOG_DEBUG << resp->getBody();
+    //             LOG_ERROR << "Error!";
+    //             exit(1);
+    //         }
+    //     }
+    //     else
+    //     {
+    //         LOG_ERROR << "Error!";
+    //         exit(1);
+    //     }
+    // });
+    // req = HttpRequest::newHttpRequest();
+    // req->setPath("/pipe");
+    // client->sendRequest(req, [=](ReqResult result, const HttpResponsePtr &resp) {
+    //     if (result == ReqResult::Ok)
+    //     {
+    //         if (resp->statusCode() == k200OK && *flag == 1)
+    //         {
+    //             ++(*flag);
+    //             outputGood(req, isHttps);
+    //         }
+    //         else
+    //         {
+    //             LOG_DEBUG << resp->getBody();
+    //             LOG_ERROR << "Error!";
+    //             exit(1);
+    //         }
+    //     }
+    //     else
+    //     {
+    //         LOG_ERROR << "Error!";
+    //         exit(1);
+    //     }
+    // });
     /// Test form post
     req = HttpRequest::newHttpFormPostRequest();
     req->setPath("/api/v1/apitest/form");
@@ -653,6 +701,7 @@ void doTest(const HttpClientPtr &client, std::promise<int> &pro, bool isHttps = 
             else
             {
                 LOG_DEBUG << resp->getBody().length();
+                LOG_DEBUG << resp->getBody();
                 LOG_ERROR << "Error!";
                 exit(1);
             }
@@ -679,6 +728,7 @@ int main(int argc, char *argv[])
     {
         std::promise<int> pro1;
         auto client = HttpClient::newHttpClient("127.0.0.1", 8848, false, loop[0].getLoop());
+        client->setPipeliningDepth(10);
         doTest(client, pro1);
 #ifdef USE_OPENSSL
         std::promise<int> pro2;

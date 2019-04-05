@@ -162,9 +162,12 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
                 _tcpClient->enableSSL();
             }
 #endif
-            std::weak_ptr<HttpClientImpl> weakPtr = shared_from_this();
-            assert(_reqAndCallbacks.empty());
-            _reqAndCallbacks.push(std::make_pair(req, callback));
+            auto thisPtr = shared_from_this();
+            std::weak_ptr<HttpClientImpl> weakPtr = thisPtr;
+            assert(_requestsBuffer.empty());
+            _requestsBuffer.push({req, [thisPtr, callback](ReqResult result, const HttpResponsePtr &response) {
+                                      callback(result, response);
+                                  }});
             _tcpClient->setConnectionCallback([weakPtr](const trantor::TcpConnectionPtr &connPtr) {
                 auto thisPtr = weakPtr.lock();
                 if (!thisPtr)
@@ -174,19 +177,18 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
                     connPtr->setContext(HttpResponseParser(connPtr));
                     //send request;
                     LOG_TRACE << "Connection established!";
-                    auto req = thisPtr->_reqAndCallbacks.front().first;
-                    thisPtr->sendReq(connPtr, req);
+                    while (thisPtr->_pipeliningCallbacks.size() <= thisPtr->_pipeliningDepth &&
+                           !thisPtr->_requestsBuffer.empty())
+                    {
+                        thisPtr->sendReq(connPtr, thisPtr->_requestsBuffer.front().first);
+                        thisPtr->_pipeliningCallbacks.push(std::move(thisPtr->_requestsBuffer.front().second));
+                        thisPtr->_requestsBuffer.pop();
+                    }
                 }
                 else
                 {
                     LOG_TRACE << "connection disconnect";
-                    while (!(thisPtr->_reqAndCallbacks.empty()))
-                    {
-                        auto reqCallback = thisPtr->_reqAndCallbacks.front().second;
-                        thisPtr->_reqAndCallbacks.pop();
-                        reqCallback(ReqResult::NetworkFailure, HttpResponse::newHttpResponse());
-                    }
-                    thisPtr->_tcpClient.reset();
+                    thisPtr->onError(ReqResult::NetworkFailure);
                 }
             });
             _tcpClient->setConnectionErrorCallback([weakPtr]() {
@@ -194,13 +196,7 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
                 if (!thisPtr)
                     return;
                 //can't connect to server
-                while (!(thisPtr->_reqAndCallbacks.empty()))
-                {
-                    auto reqCallback = thisPtr->_reqAndCallbacks.front().second;
-                    thisPtr->_reqAndCallbacks.pop();
-                    reqCallback(ReqResult::BadServerAddress, HttpResponse::newHttpResponse());
-                }
-                thisPtr->_tcpClient.reset();
+                thisPtr->onError(ReqResult::BadServerAddress);
             });
             _tcpClient->setMessageCallback([weakPtr](const trantor::TcpConnectionPtr &connPtr, trantor::MsgBuffer *msg) {
                 auto thisPtr = weakPtr.lock();
@@ -222,18 +218,29 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
     {
         //send request;
         auto connPtr = _tcpClient->connection();
+        auto thisPtr = shared_from_this();
         if (connPtr && connPtr->connected())
         {
-            if (_reqAndCallbacks.empty())
+            if (_pipeliningCallbacks.size() <= _pipeliningDepth && _requestsBuffer.empty())
             {
                 sendReq(connPtr, req);
+                _pipeliningCallbacks.push([thisPtr, callback](ReqResult result, const HttpResponsePtr &response) {
+                    callback(result, response);
+                });
+            }
+            else
+            {
+                _requestsBuffer.push({req, [thisPtr, callback](ReqResult result, const HttpResponsePtr &response) {
+                                          callback(result, response);
+                                      }});
             }
         }
-        auto thisPtr = shared_from_this();
-        _reqAndCallbacks.push(std::make_pair(req, [thisPtr, callback](ReqResult result, const HttpResponsePtr &response) {
-            //thisPtr.reset();
-            callback(result, response);
-        }));
+        else
+        {
+            _requestsBuffer.push({req, [thisPtr, callback](ReqResult result, const HttpResponsePtr &response) {
+                                      callback(result, response);
+                                  }});
+        }
     }
 }
 
@@ -253,50 +260,57 @@ void HttpClientImpl::onRecvMessage(const trantor::TcpConnectionPtr &connPtr, tra
     HttpResponseParser *responseParser = any_cast<HttpResponseParser>(connPtr->getMutableContext());
 
     //LOG_TRACE << "###:" << msg->readableBytes();
-    if (!responseParser->parseResponse(msg))
+    while (msg->readableBytes() > 0)
     {
-        assert(!_reqAndCallbacks.empty());
-        auto cb = _reqAndCallbacks.front().second;
-        cb(ReqResult::BadResponse, HttpResponse::newHttpResponse());
-        _reqAndCallbacks.pop();
-
-        _tcpClient.reset();
-        return;
-    }
-
-    if (responseParser->gotAll())
-    {
-        auto resp = responseParser->responseImpl();
-        responseParser->reset();
-
-        assert(!_reqAndCallbacks.empty());
-
-        auto &type = resp->getHeaderBy("content-type");
-        if (type.find("application/json") != std::string::npos)
+        if (!responseParser->parseResponse(msg))
         {
-            resp->parseJson();
+            assert(!_pipeliningCallbacks.empty());
+            onError(ReqResult::BadResponse);
+            return;
         }
-
-        if (resp->getHeaderBy("content-encoding") == "gzip")
+        if (responseParser->gotAll())
         {
-            resp->gunzip();
-        }
-        auto &cb = _reqAndCallbacks.front().second;
-        cb(ReqResult::Ok, resp);
-        _reqAndCallbacks.pop();
+            auto resp = responseParser->responseImpl();
+            responseParser->reset();
 
-        LOG_TRACE << "req buffer size=" << _reqAndCallbacks.size();
-        if (!_reqAndCallbacks.empty())
-        {
-            auto req = _reqAndCallbacks.front().first;
-            sendReq(connPtr, req);
+            assert(!_pipeliningCallbacks.empty());
+
+            auto &type = resp->getHeaderBy("content-type");
+            if (type.find("application/json") != std::string::npos)
+            {
+                resp->parseJson();
+            }
+
+            if (resp->getHeaderBy("content-encoding") == "gzip")
+            {
+                resp->gunzip();
+            }
+
+            auto cb = std::move(_pipeliningCallbacks.front());
+            _pipeliningCallbacks.pop();
+            cb(ReqResult::Ok, resp);
+
+            // LOG_TRACE << "pipelining buffer size=" << _pipeliningCallbacks.size();
+            // LOG_TRACE << "requests buffer size=" << _requestsBuffer.size();
+            
+            if (!_requestsBuffer.empty())
+            {
+                auto &reqAndCb = _requestsBuffer.front();
+                sendReq(connPtr, reqAndCb.first);
+                _pipeliningCallbacks.push(std::move(reqAndCb.second));
+                _requestsBuffer.pop();
+            }
+            else
+            {
+                if (resp->closeConnection() && _pipeliningCallbacks.empty())
+                {
+                    _tcpClient.reset();
+                }
+            }
         }
         else
         {
-            if (resp->closeConnection())
-            {
-                _tcpClient.reset();
-            }
+            break;
         }
     }
 }
@@ -310,4 +324,21 @@ HttpClientPtr HttpClient::newHttpClient(const std::string &ip, uint16_t port, bo
 HttpClientPtr HttpClient::newHttpClient(const std::string &hostString, trantor::EventLoop *loop)
 {
     return std::make_shared<HttpClientImpl>(loop == nullptr ? HttpAppFrameworkImpl::instance().getLoop() : loop, hostString);
+}
+
+void HttpClientImpl::onError(ReqResult result)
+{
+    while (!_pipeliningCallbacks.empty())
+    {
+        auto cb = std::move(_pipeliningCallbacks.front());
+        _pipeliningCallbacks.pop();
+        cb(result, HttpResponse::newHttpResponse());
+    }
+    while (!_requestsBuffer.empty())
+    {
+        auto cb = std::move(_requestsBuffer.front().second);
+        _requestsBuffer.pop();
+        cb(result, HttpResponse::newHttpResponse());
+    }
+    _tcpClient.reset();
 }

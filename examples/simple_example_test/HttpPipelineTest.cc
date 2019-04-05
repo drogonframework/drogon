@@ -16,8 +16,22 @@ int main()
         if (conn->connected())
         {
             std::string str = "GET /pipe HTTP/1.1\r\n"
+                              "\r\n"
+                              "GET /pipe HTTP/1.1\r\n"
+                              "\r\n"
+                              "GET /pipe HTTP/1.1\r\n"
+                              "\r\n"
+                              "GET /pipe HTTP/1.1\r\n"
+                              "\r\n"
+                              "GET /pipe HTTP/1.1\r\n"
+                              "\r\n"
+                              "GET /pipe HTTP/1.1\r\n"
+                              "\r\n"
+                              "GET /pipe HTTP/1.1\r\n"
+                              "\r\n"
+                              "GET /pipe HTTP/1.1\r\n"
                               "\r\n";
-            for (int i = 0; i < 32; i++)
+            for (int i = 0; i < 4; i++)
                 conn->send(str);
         }
         else
