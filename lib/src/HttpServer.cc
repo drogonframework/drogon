@@ -103,7 +103,10 @@ static bool parseWebsockMessage(MsgBuffer *buffer, std::string &message)
 
 static bool isWebSocket(const HttpRequestImplPtr &req)
 {
-    if (req->getHeaderBy("connection") == "Upgrade" &&
+    auto &headers = req->headers();
+    if (headers.find("upgrade") == headers.end() || headers.find("connection") == headers.end())
+        return false;
+    if (req->getHeaderBy("connection").find("Upgrade") != std::string::npos &&
         req->getHeaderBy("upgrade") == "websocket")
     {
         LOG_TRACE << "new websocket request";
