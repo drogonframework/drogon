@@ -132,7 +132,8 @@ void create_controller::newWebsockControllerHeaderFile(std::ofstream &file, cons
     file << indent << "{\n";
     file << indent << "public:\n";
     file << indent << "    virtual void handleNewMessage(const WebSocketConnectionPtr&,\n";
-    file << indent << "                                  std::string &&)override;\n";
+    file << indent << "                                  std::string &&,\n";
+    file << indent << "                                  const WebSocketMessageType &) override;\n";
     file << indent << "    virtual void handleNewConnection(const HttpRequestPtr &,\n";
     file << indent << "                                     const WebSocketConnectionPtr&)override;\n";
     file << indent << "    virtual void handleConnectionClosed(const WebSocketConnectionPtr&)override;\n";
@@ -160,7 +161,7 @@ void create_controller::newWebsockControllerSourceFile(std::ofstream &file, cons
         file << "using namespace " << namespacename << ";\n";
         class_name = className.substr(pos + 2);
     }
-    file << "void " << class_name << "::handleNewMessage(const WebSocketConnectionPtr& wsConnPtr,std::string &&message)\n";
+    file << "void " << class_name << "::handleNewMessage(const WebSocketConnectionPtr& wsConnPtr, std::string &&message, const WebSocketMessageType &type)\n";
     file << "{\n";
     file << "    //write your application logic here\n";
     file << "}\n";

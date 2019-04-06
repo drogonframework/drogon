@@ -22,7 +22,7 @@ Drogon的主要应用平台是Linux，也支持Mac OS、FreeBSD，目前还不�
 * 非常方便灵活的路径(path)到控制器处理函数(handler)的映射方案；
 * 支持过滤器(filter)链，方便在控制器之前执行统一的逻辑(如登录验证、Http Method约束验证等)；
 * 支持https(基于OpenSSL实现);
-* 支持websocket(server端);
+* 支持websocket(server端和client端);
 * 支持Json格式请求和应答, 对Restful API应用开发非常友好;
 * 支持文件下载和上传,支持sendfile系统调用；
 * 支持gzip压缩传输；

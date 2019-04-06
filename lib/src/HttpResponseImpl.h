@@ -122,6 +122,11 @@ class HttpResponseImpl : public HttpResponse
         return getHeaderBy(key, defaultVal);
     }
 
+    virtual const std::unordered_map<std::string, std::string> &headers() const override
+    {
+        return _headers;
+    }
+
     const std::string &getHeaderBy(const std::string &lowerKey, const std::string &defaultVal = std::string()) const
     {
         auto iter = _headers.find(lowerKey);

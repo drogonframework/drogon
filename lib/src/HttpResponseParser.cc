@@ -118,8 +118,18 @@ bool HttpResponseParser::parseResponse(MsgBuffer *buf)
                         }
                         else
                         {
-                            _state = HttpResponseParseState::kExpectClose;
-                            hasMore = true;
+                            if (_response->statusCode() == k101SwitchingProtocols &&
+                                _response->getHeaderBy("upgrade") == "websocket")
+                            {
+                                //The Websocket response may not have a content-length header.
+                                _state = HttpResponseParseState::kGotAll;
+                                hasMore = false;
+                            }
+                            else
+                            {
+                                _state = HttpResponseParseState::kExpectClose;
+                                hasMore = true;
+                            }
                         }
                     }
                 }

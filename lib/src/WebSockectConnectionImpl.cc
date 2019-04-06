@@ -14,16 +14,42 @@
 
 #include "WebSockectConnectionImpl.h"
 #include <trantor/net/TcpConnection.h>
+#include <thread>
 
 using namespace drogon;
-WebSocketConnectionImpl::WebSocketConnectionImpl(const trantor::TcpConnectionPtr &conn)
+WebSocketConnectionImpl::WebSocketConnectionImpl(const trantor::TcpConnectionPtr &conn, bool isServer)
     : _tcpConn(conn),
       _localAddr(conn->localAddr()),
-      _peerAddr(conn->peerAddr())
+      _peerAddr(conn->peerAddr()),
+      _isServer(isServer)
 {
 }
-void WebSocketConnectionImpl::send(const char *msg, uint64_t len)
+
+void WebSocketConnectionImpl::send(const char *msg, uint64_t len, const WebSocketMessageType &type)
 {
+    unsigned char opcode;
+    if (type == WebSocketMessageType::Text)
+        opcode = 1;
+    else if (type == WebSocketMessageType::Binary)
+        opcode = 2;
+    else if (type == WebSocketMessageType::Close)
+        opcode = 8;
+    else if (type == WebSocketMessageType::Ping)
+        opcode = 9;
+    else if (type == WebSocketMessageType::Pong)
+        opcode = 10;
+    else
+    {
+        opcode = 0;
+        assert(0);
+    }
+
+    sendWsData(msg, len, opcode);
+}
+
+void WebSocketConnectionImpl::sendWsData(const char *msg, size_t len, unsigned char opcode)
+{
+
     LOG_TRACE << "send " << len << " bytes";
     auto conn = _tcpConn.lock();
     if (conn)
@@ -31,14 +57,13 @@ void WebSocketConnectionImpl::send(const char *msg, uint64_t len)
         //Format the frame
         std::string bytesFormatted;
         bytesFormatted.resize(len + 10);
-        bytesFormatted[0] = char(129);
+        bytesFormatted[0] = char(0x80 | (opcode & 0x0f));
 
         int indexStartRawData = -1;
 
         if (len <= 125)
         {
             bytesFormatted[1] = len;
-
             indexStartRawData = 2;
         }
         else if (len <= 65535)
@@ -64,17 +89,35 @@ void WebSocketConnectionImpl::send(const char *msg, uint64_t len)
 
             indexStartRawData = 10;
         }
+        if (!_isServer)
+        {
+            //Add masking key;
+            static std::once_flag once;
+            std::call_once(once, []() {
+                std::srand(time(nullptr));
+            });
+            int random = std::rand();
 
-        bytesFormatted.resize(indexStartRawData);
-        LOG_TRACE << "fheadlen=" << bytesFormatted.length();
-        bytesFormatted.append(msg, len);
-        LOG_TRACE << "send formatted frame len=" << len << " flen=" << bytesFormatted.length();
+            bytesFormatted[1] = (bytesFormatted[1] | 0x80);
+            bytesFormatted.resize(indexStartRawData + 4 + len);
+            *((int *)&bytesFormatted[indexStartRawData]) = random;
+            for (size_t i = 0; i < len; i++)
+            {
+                bytesFormatted[indexStartRawData + 4 + i] = (msg[i] ^ bytesFormatted[indexStartRawData + (i % 4)]);
+            }
+        }
+        else
+        {
+            bytesFormatted.resize(indexStartRawData);
+            bytesFormatted.append(msg, len);
+        }
+
         conn->send(bytesFormatted);
     }
 }
-void WebSocketConnectionImpl::send(const std::string &msg)
+void WebSocketConnectionImpl::send(const std::string &msg, const WebSocketMessageType &type)
 {
-    send(msg.data(), msg.length());
+    send(msg.data(), msg.length(), type);
 }
 const trantor::InetAddress &WebSocketConnectionImpl::localAddr() const
 {
@@ -132,3 +175,4 @@ any *WebSocketConnectionImpl::WebSocketConnectionImpl::getMutableContext()
 {
     return &_context;
 }
+

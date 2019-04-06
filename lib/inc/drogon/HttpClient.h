@@ -16,6 +16,7 @@
 
 #include <drogon/HttpRequest.h>
 #include <drogon/HttpResponse.h>
+#include <drogon/HttpTypes.h>
 #include <trantor/utils/NonCopyable.h>
 #include <trantor/net/EventLoop.h>
 #include <functional>
@@ -23,18 +24,10 @@
 namespace drogon
 {
 
-enum class ReqResult
-{
-    Ok,
-    BadResponse,
-    NetworkFailure,
-    BadServerAddress,
-    Timeout
-};
-
-typedef std::function<void(ReqResult, const HttpResponsePtr &response)> HttpReqCallback;
 class HttpClient;
 typedef std::shared_ptr<HttpClient> HttpClientPtr;
+
+typedef std::function<void(ReqResult, const HttpResponsePtr &)> HttpReqCallback;
 
 /// Asynchronous http client
 /**

@@ -22,7 +22,7 @@ Drogon's main application platform is Linux. It also supports Mac OS and FreeBSD
 * Provide a convenient and flexible routing solution from the path to the controller handler;
 * Support filter chains to facilitate the execution of unified logic (such as login verification, Http Method constraint verification, etc.) before controllers;
 * Support https (based on OpenSSL);
-* Support WebSocket (server side);
+* Support WebSocket (server side and client side);
 * Support JSON format request and response, very friendly to the Restful API application development;
 * Support file download and upload;
 * Support gzip compression transmission;

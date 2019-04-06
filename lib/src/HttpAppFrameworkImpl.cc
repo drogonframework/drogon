@@ -319,7 +319,7 @@ void HttpAppFrameworkImpl::run()
             }
             serverPtr->setHttpAsyncCallback(std::bind(&HttpAppFrameworkImpl::onAsyncRequest, this, _1, _2));
             serverPtr->setNewWebsocketCallback(std::bind(&HttpAppFrameworkImpl::onNewWebsockRequest, this, _1, _2, _3));
-            serverPtr->setWebsocketMessageCallback(std::bind(&HttpAppFrameworkImpl::onWebsockMessage, this, _1, _2));
+            serverPtr->setWebsocketMessageCallback(std::bind(&HttpAppFrameworkImpl::onWebsockMessage, this, _1, _2, _3));
             serverPtr->setDisconnectWebsocketCallback(std::bind(&HttpAppFrameworkImpl::onWebsockDisconnect, this, _1));
             serverPtr->setConnectionCallback(std::bind(&HttpAppFrameworkImpl::onConnection, this, _1));
             serverPtr->kickoffIdleConnections(_idleConnectionTimeout);
@@ -360,7 +360,7 @@ void HttpAppFrameworkImpl::run()
         serverPtr->setIoLoopNum(_threadNum);
         serverPtr->setHttpAsyncCallback(std::bind(&HttpAppFrameworkImpl::onAsyncRequest, this, _1, _2));
         serverPtr->setNewWebsocketCallback(std::bind(&HttpAppFrameworkImpl::onNewWebsockRequest, this, _1, _2, _3));
-        serverPtr->setWebsocketMessageCallback(std::bind(&HttpAppFrameworkImpl::onWebsockMessage, this, _1, _2));
+        serverPtr->setWebsocketMessageCallback(std::bind(&HttpAppFrameworkImpl::onWebsockMessage, this, _1, _2, _3));
         serverPtr->setDisconnectWebsocketCallback(std::bind(&HttpAppFrameworkImpl::onWebsockDisconnect, this, _1));
         serverPtr->setConnectionCallback(std::bind(&HttpAppFrameworkImpl::onConnection, this, _1));
         serverPtr->kickoffIdleConnections(_idleConnectionTimeout);
@@ -548,14 +548,14 @@ void HttpAppFrameworkImpl::onConnection(const TcpConnectionPtr &conn)
     }
 }
 
-void HttpAppFrameworkImpl::onWebsockMessage(const WebSocketConnectionPtr &wsConnPtr, std::string &&message)
+void HttpAppFrameworkImpl::onWebsockMessage(const WebSocketConnectionPtr &wsConnPtr, std::string &&message, const WebSocketMessageType &type)
 {
     auto wsConnImplPtr = std::dynamic_pointer_cast<WebSocketConnectionImpl>(wsConnPtr);
     assert(wsConnImplPtr);
     auto ctrl = wsConnImplPtr->controller();
     if (ctrl)
     {
-        ctrl->handleNewMessage(wsConnPtr, std::move(message));
+        ctrl->handleNewMessage(wsConnPtr, std::move(message), type);
     }
 }
 

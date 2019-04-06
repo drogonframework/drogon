@@ -15,8 +15,8 @@
 #pragma once
 
 #include "HttpRequestImpl.h"
+#include "WebSockectConnectionImpl.h"
 #include <trantor/utils/MsgBuffer.h>
-#include <drogon/WebSocketConnection.h>
 #include <drogon/HttpResponse.h>
 #include <deque>
 #include <mutex>
@@ -72,11 +72,11 @@ class HttpRequestParser
         }
         return false;
     }
-    const WebSocketConnectionPtr &webSocketConn() const
+    const WebSocketConnectionImplPtr &webSocketConn() const
     {
         return _websockConnPtr;
     }
-    void setWebsockConnection(const WebSocketConnectionPtr &conn)
+    void setWebsockConnection(const WebSocketConnectionImplPtr &conn)
     {
         _websockConnPtr = conn;
     }
@@ -99,7 +99,7 @@ class HttpRequestParser
     trantor::EventLoop *_loop;
     HttpRequestImplPtr _request;
     bool _firstRequest = true;
-    WebSocketConnectionPtr _websockConnPtr;
+    WebSocketConnectionImplPtr _websockConnPtr;
     std::deque<std::pair<HttpRequestPtr, HttpResponsePtr>> _requestPipeLine;
     size_t _requestsCounter = 0;
     std::weak_ptr<trantor::TcpConnection> _conn;

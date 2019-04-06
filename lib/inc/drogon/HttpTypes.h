@@ -109,4 +109,13 @@ enum HttpMethod
     Invalid
 };
 
+enum class ReqResult
+{
+    Ok,
+    BadResponse,
+    NetworkFailure,
+    BadServerAddress,
+    Timeout
+};
+
 } // namespace drogon

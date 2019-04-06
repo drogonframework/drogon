@@ -318,12 +318,12 @@ void HttpClientImpl::onRecvMessage(const trantor::TcpConnectionPtr &connPtr, tra
 HttpClientPtr HttpClient::newHttpClient(const std::string &ip, uint16_t port, bool useSSL, trantor::EventLoop *loop)
 {
     bool isIpv6 = ip.find(":") == std::string::npos ? false : true;
-    return std::make_shared<HttpClientImpl>(loop == nullptr ? HttpAppFrameworkImpl::instance().getLoop() : loop, trantor::InetAddress(ip, port, isIpv6), useSSL);
+    return std::make_shared<HttpClientImpl>(loop == nullptr ? app().getLoop() : loop, trantor::InetAddress(ip, port, isIpv6), useSSL);
 }
 
 HttpClientPtr HttpClient::newHttpClient(const std::string &hostString, trantor::EventLoop *loop)
 {
-    return std::make_shared<HttpClientImpl>(loop == nullptr ? HttpAppFrameworkImpl::instance().getLoop() : loop, hostString);
+    return std::make_shared<HttpClientImpl>(loop == nullptr ? app().getLoop() : loop, hostString);
 }
 
 void HttpClientImpl::onError(ReqResult result)

@@ -21,13 +21,24 @@
 #include <memory>
 namespace drogon
 {
+
+enum class WebSocketMessageType
+{
+    Text,
+    Binary,
+    Ping,
+    Pong,
+    Close,
+    Unknown
+};
+
 class WebSocketConnection
 {
   public:
     WebSocketConnection() = default;
     virtual ~WebSocketConnection(){};
-    virtual void send(const char *msg, uint64_t len) = 0;
-    virtual void send(const std::string &msg) = 0;
+    virtual void send(const char *msg, uint64_t len, const WebSocketMessageType &type = WebSocketMessageType::Text) = 0;
+    virtual void send(const std::string &msg, const WebSocketMessageType &type = WebSocketMessageType::Text) = 0;
 
     virtual const trantor::InetAddress &localAddr() const = 0;
     virtual const trantor::InetAddress &peerAddr() const = 0;
