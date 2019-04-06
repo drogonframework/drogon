@@ -27,80 +27,6 @@ using namespace std::placeholders;
 using namespace drogon;
 using namespace trantor;
 
-// Return false if any error
-static bool parseWebsockMessage(MsgBuffer *buffer, std::string &message)
-{
-    assert(message.empty());
-    if (buffer->readableBytes() >= 2)
-    {
-        auto secondByte = (*buffer)[1];
-        size_t length = secondByte & 127;
-        int isMasked = (secondByte & 0x80);
-        if (isMasked != 0)
-        {
-            LOG_TRACE << "data encoded!";
-        }
-        else
-            LOG_TRACE << "plain data";
-        size_t indexFirstMask = 2;
-
-        if (length == 126)
-        {
-            indexFirstMask = 4;
-        }
-        else if (length == 127)
-        {
-            indexFirstMask = 10;
-        }
-        if (indexFirstMask > 2 && buffer->readableBytes() >= indexFirstMask)
-        {
-            if (indexFirstMask == 4)
-            {
-                length = (unsigned char)(*buffer)[2];
-                length = (length << 8) + (unsigned char)(*buffer)[3];
-                LOG_TRACE << "bytes[2]=" << (unsigned char)(*buffer)[2];
-                LOG_TRACE << "bytes[3]=" << (unsigned char)(*buffer)[3];
-            }
-            else if (indexFirstMask == 10)
-            {
-                length = (unsigned char)(*buffer)[2];
-                length = (length << 8) + (unsigned char)(*buffer)[3];
-                length = (length << 8) + (unsigned char)(*buffer)[4];
-                length = (length << 8) + (unsigned char)(*buffer)[5];
-                length = (length << 8) + (unsigned char)(*buffer)[6];
-                length = (length << 8) + (unsigned char)(*buffer)[7];
-                length = (length << 8) + (unsigned char)(*buffer)[8];
-                length = (length << 8) + (unsigned char)(*buffer)[9];
-                //                length=*((uint64_t *)(buffer->peek()+2));
-                //                length=ntohll(length);
-            }
-            else
-            {
-                LOG_ERROR << "Websock parsing failed!";
-                return false;
-            }
-        }
-        LOG_TRACE << "websocket message len=" << length;
-        if (buffer->readableBytes() >= (indexFirstMask + 4 + length))
-        {
-            auto masks = buffer->peek() + indexFirstMask;
-            int indexFirstDataByte = indexFirstMask + 4;
-            auto rawData = buffer->peek() + indexFirstDataByte;
-            message.resize(length);
-            LOG_TRACE << "rawData[0]=" << (unsigned char)rawData[0];
-            LOG_TRACE << "masks[0]=" << (unsigned char)masks[0];
-            for (size_t i = 0; i < length; i++)
-            {
-                message[i] = (rawData[i] ^ masks[i % 4]);
-            }
-            buffer->retrieve(indexFirstMask + 4 + length);
-            LOG_TRACE << "got message len=" << message.length();
-            return true;
-        }
-    }
-    return true;
-}
-
 static bool isWebSocket(const HttpRequestImplPtr &req)
 {
     auto &headers = req->headers();
@@ -196,73 +122,83 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn,
     int counter = 0;
     // With the pipelining feature or web socket, it is possible to receice multiple messages at once, so
     // the while loop is necessary
-    while (buf->readableBytes() > 0)
+    if (requestParser->webSocketConn())
     {
-        if (requestParser->webSocketConn())
+        //Websocket payload
+        while (buf->readableBytes() > 0)
         {
-            //Websocket payload
-            while (1)
+            std::string message;
+            WebSocketMessageType type;
+            auto success = parseWebsockMessage(buf, message, type);
+            if (success)
             {
-                std::string message;
-                auto success = parseWebsockMessage(buf, message);
-                if (success)
+                if (type == WebSocketMessageType::Ping)
                 {
-                    if (message.empty())
-                        break;
-                    else
-                    {
-                        _webSocketMessageCallback(requestParser->webSocketConn(), std::move(message));
-                    }
+                    //ping
+                    requestParser->webSocketConn()->send(message, WebSocketMessageType::Pong);
                 }
-                else
+                else if (type == WebSocketMessageType::Close)
                 {
-                    //Websock error!
+                    //close
                     conn->shutdown();
-                    return;
                 }
-            }
-            return;
-        }
-        if (requestParser->isStop())
-        {
-            //The number of requests has reached the limit.
-            buf->retrieveAll();
-            return;
-        }
-        if (!requestParser->parseRequest(buf))
-        {
-            requestParser->reset();
-            return;
-        }
-        if (requestParser->gotAll())
-        {
-            requestParser->requestImpl()->setPeerAddr(conn->peerAddr());
-            requestParser->requestImpl()->setLocalAddr(conn->localAddr());
-            requestParser->requestImpl()->setCreationDate(trantor::Date::date());
-            if (requestParser->firstReq() && isWebSocket(requestParser->requestImpl()))
-            {
-                auto wsConn = std::make_shared<WebSocketConnectionImpl>(conn);
-                _newWebsocketCallback(requestParser->requestImpl(),
-                                      [=](const HttpResponsePtr &resp) mutable {
-                                          if (resp->statusCode() == k101SwitchingProtocols)
-                                          {
-                                              requestParser->setWebsockConnection(wsConn);
-                                          }
-                                          auto httpString = std::dynamic_pointer_cast<HttpResponseImpl>(resp)->renderToString();
-                                          conn->send(httpString);
-                                      },
-                                      wsConn);
+                _webSocketMessageCallback(requestParser->webSocketConn(), std::move(message), type);
             }
             else
-                onRequest(conn, requestParser->requestImpl());
-            requestParser->reset();
-            counter++;
-            if (counter > 1)
-                LOG_TRACE << "More than one requests are parsed (" << counter << ")";
+            {
+                //Websock error!
+                conn->shutdown();
+                return;
+            }
         }
-        else
+        return;
+    }
+    else
+    {
+        while (buf->readableBytes() > 0)
         {
-            return;
+
+            if (requestParser->isStop())
+            {
+                //The number of requests has reached the limit.
+                buf->retrieveAll();
+                return;
+            }
+            if (!requestParser->parseRequest(buf))
+            {
+                requestParser->reset();
+                return;
+            }
+            if (requestParser->gotAll())
+            {
+                requestParser->requestImpl()->setPeerAddr(conn->peerAddr());
+                requestParser->requestImpl()->setLocalAddr(conn->localAddr());
+                requestParser->requestImpl()->setCreationDate(trantor::Date::date());
+                if (requestParser->firstReq() && isWebSocket(requestParser->requestImpl()))
+                {
+                    auto wsConn = std::make_shared<WebSocketConnectionImpl>(conn);
+                    _newWebsocketCallback(requestParser->requestImpl(),
+                                          [=](const HttpResponsePtr &resp) mutable {
+                                              if (resp->statusCode() == k101SwitchingProtocols)
+                                              {
+                                                  requestParser->setWebsockConnection(wsConn);
+                                              }
+                                              auto httpString = std::dynamic_pointer_cast<HttpResponseImpl>(resp)->renderToString();
+                                              conn->send(httpString);
+                                          },
+                                          wsConn);
+                }
+                else
+                    onRequest(conn, requestParser->requestImpl());
+                requestParser->reset();
+                counter++;
+                if (counter > 1)
+                    LOG_TRACE << "More than one requests are parsed (" << counter << ")";
+            }
+            else
+            {
+                return;
+            }
         }
     }
 }

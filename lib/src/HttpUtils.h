@@ -16,6 +16,9 @@
 #include <string>
 #include <drogon/HttpTypes.h>
 #include <drogon/config.h>
+#include <trantor/utils/MsgBuffer.h>
+#include <drogon/WebSocketConnection.h>
+
 #if CXX_STD >= 17
 #include <string_view>
 typedef std::string_view string_view;
@@ -28,5 +31,6 @@ namespace drogon
 
 const string_view &webContentTypeToString(ContentType contenttype);
 const string_view &statusCodeToString(int code);
+bool parseWebsockMessage(trantor::MsgBuffer *buffer, std::string &message, WebSocketMessageType &type);
 
 } // namespace drogon

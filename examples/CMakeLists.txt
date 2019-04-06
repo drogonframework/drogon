@@ -27,6 +27,7 @@ add_executable(client ${DIR_CLIENT})
 add_executable(benchmark ${DIR_BENCHMARK})
 add_executable(webapp_test simple_example_test/main.cc)
 add_executable(pipeline_test simple_example_test/HttpPipelineTest.cc)
+add_executable(websocket_test simple_example_test/WebSocketTest.cc)
 
 add_custom_command(TARGET webapp POST_BUILD
                    COMMAND ${CMAKE_COMMAND} -E copy_if_different

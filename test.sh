@@ -24,9 +24,18 @@ if [ $? -ne 0 ];then
     exit -1
 fi
 
+#Test WebSocket
+./websocket_test -t
+if [ $? -ne 0 ];then
+    echo "Error in testing"
+    exit -1
+fi
+
 killall -9 webapp
 
 #Test drogon_ctl
+
+rm -rf drogon_test
 
 drogon_ctl create project drogon_test
 

@@ -70,6 +70,9 @@ class HttpResponse
     virtual const std::string &getHeader(const std::string &key, const std::string &defaultVal = std::string()) const = 0;
     virtual const std::string &getHeader(std::string &&key, const std::string &defaultVal = std::string()) const = 0;
 
+    /// Get all headers of the response
+    virtual const std::unordered_map<std::string, std::string> &headers() const = 0;
+
     /// Add a header.
     virtual void addHeader(const std::string &key, const std::string &value) = 0;
     virtual void addHeader(const std::string &key, std::string &&value) = 0;

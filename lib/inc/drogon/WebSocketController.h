@@ -41,14 +41,18 @@ namespace drogon
 class WebSocketControllerBase : public virtual DrObjectBase
 {
   public:
-    //on new data received
+    //Call this function when a new message is received
     virtual void handleNewMessage(const WebSocketConnectionPtr &,
-                                  std::string &&) = 0;
-    //after new websocket connection established
+                                  std::string &&,
+                                  const WebSocketMessageType &) = 0;
+
+    //Call this function after the new connection of WebSocket is established.
     virtual void handleNewConnection(const HttpRequestPtr &,
                                      const WebSocketConnectionPtr &) = 0;
-    //after connection closed
+
+    //Call this function after the WebSocket connection is closed
     virtual void handleConnectionClosed(const WebSocketConnectionPtr &) = 0;
+
     virtual ~WebSocketControllerBase() {}
 };
 
