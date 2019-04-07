@@ -47,7 +47,7 @@ DbClientLockFree::DbClientLockFree(const std::string &connInfo, trantor::EventLo
     LOG_TRACE << "type=" << (int)type;
     if (type == ClientType::PostgreSQL)
     {
-        _loop->runInLoop([this]() {
+        _loop->queueInLoop([this]() {
             for (size_t i = 0; i < _connectionNum; i++)
                 _connectionHolders.push_back(newConnection());
         });

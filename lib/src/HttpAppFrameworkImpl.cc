@@ -289,7 +289,6 @@ void HttpAppFrameworkImpl::run()
     {
         LOG_TRACE << "thread num=" << _threadNum;
         auto loopThreadPtr = std::make_shared<EventLoopThread>("DrogonIoLoop");
-        //loopThreadPtr->run();
         loopThreads.push_back(loopThreadPtr);
         ioLoops.push_back(loopThreadPtr->getLoop());
         for (auto const &listener : _listeners)
@@ -301,7 +300,6 @@ void HttpAppFrameworkImpl::run()
                                                           "drogon");
             if (std::get<2>(listener))
             {
-                //enable ssl;
 #ifdef USE_OPENSSL
                 auto cert = std::get<3>(listener);
                 auto key = std::get<4>(listener);
@@ -332,7 +330,6 @@ void HttpAppFrameworkImpl::run()
     {
         LOG_TRACE << "thread num=" << _threadNum;
         auto loopThreadPtr = std::make_shared<EventLoopThread>("DrogonListeningLoop");
-        //loopThreadPtr->run();
         loopThreads.push_back(loopThreadPtr);
         auto ip = std::get<0>(listener);
         bool isIpv6 = ip.find(":") == std::string::npos ? false : true;
@@ -341,7 +338,6 @@ void HttpAppFrameworkImpl::run()
                                                       "drogon");
         if (std::get<2>(listener))
         {
-            //enable ssl;
 #ifdef USE_OPENSSL
             auto cert = std::get<3>(listener);
             auto key = std::get<4>(listener);
@@ -365,13 +361,6 @@ void HttpAppFrameworkImpl::run()
         serverPtr->setConnectionCallback(std::bind(&HttpAppFrameworkImpl::onConnection, this, _1));
         serverPtr->kickoffIdleConnections(_idleConnectionTimeout);
         serverPtr->start();
-        /// Use std::promise to ensure that IO loops have been created
-        // std::promise<int> pro;
-        // auto f = pro.get_future();
-        // serverPtr->getLoop()->runInLoop([&pro]() {
-        //     pro.set_value(1);
-        // });
-        // f.get();
         auto serverIoLoops = serverPtr->getIoLoops();
         for (auto serverIoLoop : serverIoLoops)
         {
@@ -382,7 +371,10 @@ void HttpAppFrameworkImpl::run()
 #endif
 
 #if USE_ORM
+    // A fast database client instance should be created in the main event loop, so put the main loop into ioLoops.
+    ioLoops.push_back(getLoop());
     createDbClients(ioLoops);
+    ioLoops.pop_back();
 #endif
     _httpCtrlsRouter.init(ioLoops);
     _httpSimpleCtrlsRouter.init(ioLoops);
