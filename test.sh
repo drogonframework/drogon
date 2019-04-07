@@ -16,7 +16,9 @@ fi
 
 killall -9 webapp
 ./webapp
-sleep 1
+
+sleep 4
+
 ./webapp_test
 
 if [ $? -ne 0 ];then
@@ -26,6 +28,13 @@ fi
 
 #Test WebSocket
 ./websocket_test -t
+if [ $? -ne 0 ];then
+    echo "Error in testing"
+    exit -1
+fi
+
+#Test pipelining
+./pipelining_test
 if [ $? -ne 0 ];then
     echo "Error in testing"
     exit -1

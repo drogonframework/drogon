@@ -255,7 +255,7 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
     return ok;
 }
 
-void HttpRequestParser::pushRquestToPipeLine(const HttpRequestPtr &req)
+void HttpRequestParser::pushRquestToPipelining(const HttpRequestPtr &req)
 {
 #ifndef NDEBUG
     auto conn = _conn.lock();
@@ -266,7 +266,7 @@ void HttpRequestParser::pushRquestToPipeLine(const HttpRequestPtr &req)
 #endif
     std::pair<HttpRequestPtr, HttpResponsePtr> reqPair(req, HttpResponseImplPtr());
 
-    _requestPipeLine.push_back(std::move(reqPair));
+    _requestPipelining.push_back(std::move(reqPair));
 }
 
 HttpRequestPtr HttpRequestParser::getFirstRequest() const
@@ -278,9 +278,9 @@ HttpRequestPtr HttpRequestParser::getFirstRequest() const
         conn->getLoop()->assertInLoopThread();
     }
 #endif
-    if (!_requestPipeLine.empty())
+    if (!_requestPipelining.empty())
     {
-        return _requestPipeLine.front().first;
+        return _requestPipelining.front().first;
     }
     return HttpRequestImplPtr();
 }
@@ -294,9 +294,9 @@ HttpResponsePtr HttpRequestParser::getFirstResponse() const
         conn->getLoop()->assertInLoopThread();
     }
 #endif
-    if (!_requestPipeLine.empty())
+    if (!_requestPipelining.empty())
     {
-        return _requestPipeLine.front().second;
+        return _requestPipelining.front().second;
     }
     return HttpResponseImplPtr();
 }
@@ -310,10 +310,10 @@ void HttpRequestParser::popFirstRequest()
         conn->getLoop()->assertInLoopThread();
     }
 #endif
-    _requestPipeLine.pop_front();
+    _requestPipelining.pop_front();
 }
 
-void HttpRequestParser::pushResponseToPipeLine(const HttpRequestPtr &req,
+void HttpRequestParser::pushResponseToPipelining(const HttpRequestPtr &req,
                                                const HttpResponsePtr &resp)
 {
 #ifndef NDEBUG
@@ -323,7 +323,7 @@ void HttpRequestParser::pushResponseToPipeLine(const HttpRequestPtr &req,
         conn->getLoop()->assertInLoopThread();
     }
 #endif
-    for (auto &iter : _requestPipeLine)
+    for (auto &iter : _requestPipelining)
     {
         if (iter.first == req)
         {

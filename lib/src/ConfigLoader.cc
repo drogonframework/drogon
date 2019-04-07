@@ -233,8 +233,8 @@ static void loadApp(const Json::Value &app)
         drogon::app().setServerHeaderField(server);
     auto keepaliveReqs = app.get("keepalive_requests", 0).asUInt64();
     drogon::app().setKeepaliveRequestsNumber(keepaliveReqs);
-    auto pipelineReqs = app.get("pipeline_requests", 0).asUInt64();
-    drogon::app().setPipelineRequestsNumber(pipelineReqs);
+    auto pipeliningReqs = app.get("pipelining_requests", 0).asUInt64();
+    drogon::app().setPipeliningRequestsNumber(pipeliningReqs);
 }
 static void loadDbClients(const Json::Value &dbClients)
 {

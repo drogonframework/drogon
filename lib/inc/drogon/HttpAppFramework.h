@@ -492,15 +492,15 @@ class HttpAppFramework : public trantor::NonCopyable
      */
     virtual void setKeepaliveRequestsNumber(const size_t number) = 0;
 
-    ///Sets the maximum number of unhandled requests that can be cached in pipeline buffer.
+    ///Sets the maximum number of unhandled requests that can be cached in pipelining buffer.
     /**
      * The default value of 0 means no limit.
-     * After the maximum number of requests cached in pipeline buffer are made, the connection is closed.
+     * After the maximum number of requests cached in pipelining buffer are made, the connection is closed.
      * 
      * NOTE:
      * This operation can be performed by an option in the configuration file.
      */
-    virtual void setPipelineRequestsNumber(const size_t number) = 0;
+    virtual void setPipeliningRequestsNumber(const size_t number) = 0;
 
 #if USE_ORM
     ///Get a database client by @param name
