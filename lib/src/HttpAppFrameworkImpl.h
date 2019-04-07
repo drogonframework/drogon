@@ -111,9 +111,9 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     virtual int staticFilesCacheTime() const override { return _staticFilesCacheTime; }
     virtual void setIdleConnectionTimeout(size_t timeout) override { _idleConnectionTimeout = timeout; }
     virtual void setKeepaliveRequestsNumber(const size_t number) override { _keepaliveRequestsNumber = number; }
-    virtual void setPipelineRequestsNumber(const size_t number) override { _pipelineRequestsNumber = number; }
+    virtual void setPipeliningRequestsNumber(const size_t number) override { _pipeliningRequestsNumber = number; }
     size_t keepaliveRequestsNumber() const { return _keepaliveRequestsNumber; }
-    size_t pipelineRequestsNumber() const { return _pipelineRequestsNumber; }
+    size_t pipeliningRequestsNumber() const { return _pipeliningRequestsNumber; }
 
     virtual ~HttpAppFrameworkImpl() noexcept
     {
@@ -231,7 +231,7 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     std::string _logfileBaseName = "";
     size_t _logfileSize = 100000000;
     size_t _keepaliveRequestsNumber = 0;
-    size_t _pipelineRequestsNumber = 0;
+    size_t _pipeliningRequestsNumber = 0;
     bool _useSendfile = true;
     bool _useGzip = true;
     int _staticFilesCacheTime = 5;

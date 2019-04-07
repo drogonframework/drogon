@@ -215,15 +215,15 @@ void HttpServer::onRequest(const TcpConnectionPtr &conn, const HttpRequestImplPt
         req->setMethod(Get);
     }
     HttpRequestParser *requestParser = any_cast<HttpRequestParser>(conn->getMutableContext());
-    requestParser->pushRquestToPipeLine(req);
+    requestParser->pushRquestToPipelining(req);
     if (HttpAppFrameworkImpl::instance().keepaliveRequestsNumber() > 0 &&
         requestParser->numberOfRequestsParsed() >= HttpAppFrameworkImpl::instance().keepaliveRequestsNumber())
     {
         requestParser->stop();
     }
 
-    if (HttpAppFrameworkImpl::instance().pipelineRequestsNumber() > 0 &&
-        requestParser->numberOfRequestsInPipeLine() >= HttpAppFrameworkImpl::instance().pipelineRequestsNumber())
+    if (HttpAppFrameworkImpl::instance().pipeliningRequestsNumber() > 0 &&
+        requestParser->numberOfRequestsInPipelining() >= HttpAppFrameworkImpl::instance().pipeliningRequestsNumber())
     {
         requestParser->stop();
     }
@@ -277,7 +277,6 @@ void HttpServer::onRequest(const TcpConnectionPtr &conn, const HttpRequestImplPt
              * requests in the same order that the requests were received.
              *                                             rfc2616-8.1.1.2
              */
-            //std::lock_guard<std::mutex> guard(requestParser->getPipeLineMutex());
             if (conn->disconnected())
                 return;
             if (requestParser->getFirstRequest() == req)
@@ -295,7 +294,7 @@ void HttpServer::onRequest(const TcpConnectionPtr &conn, const HttpRequestImplPt
                     else
                         break;
                 }
-                if (requestParser->isStop() && requestParser->numberOfRequestsInPipeLine() == 0)
+                if (requestParser->isStop() && requestParser->numberOfRequestsInPipelining() == 0)
                 {
                     conn->shutdown();
                 }
@@ -303,7 +302,7 @@ void HttpServer::onRequest(const TcpConnectionPtr &conn, const HttpRequestImplPt
             else
             {
                 //some earlier requests are waiting for responses;
-                requestParser->pushResponseToPipeLine(req, newResp);
+                requestParser->pushResponseToPipelining(req, newResp);
             }
         }
         else
@@ -327,7 +326,7 @@ void HttpServer::onRequest(const TcpConnectionPtr &conn, const HttpRequestImplPt
                             else
                                 break;
                         }
-                        if (requestParser->isStop() && requestParser->numberOfRequestsInPipeLine() == 0)
+                        if (requestParser->isStop() && requestParser->numberOfRequestsInPipelining() == 0)
                         {
                             conn->shutdown();
                         }
@@ -335,7 +334,7 @@ void HttpServer::onRequest(const TcpConnectionPtr &conn, const HttpRequestImplPt
                     else
                     {
                         //some earlier requests are waiting for responses;
-                        requestParser->pushResponseToPipeLine(req, newResp);
+                        requestParser->pushResponseToPipelining(req, newResp);
                     }
                 }
             });

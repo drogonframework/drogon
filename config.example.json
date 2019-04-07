@@ -144,10 +144,10 @@
         //After the maximum number of requests are made, the connection is closed.
         //The default value of 0 means no limit.
         "keepalive_requests": 0,
-        //pipeline_requests: Sets the maximum number of unhandled requests that can be cached in pipeline buffer. 
+        //pipelining_requests: Sets the maximum number of unhandled requests that can be cached in pipelining buffer. 
         //After the maximum number of requests are made, the connection is closed.
         //The default value of 0 means no limit.
-        "pipeline_requests": 0
+        "pipelining_requests": 0
     },
     //plugins: Define all plugins running in the application
     "plugins": [{

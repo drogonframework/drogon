@@ -1,7 +1,7 @@
 #pragma once
 #include <drogon/HttpSimpleController.h>
 using namespace drogon;
-class PipelineTest : public drogon::HttpSimpleController<PipelineTest>
+class PipeliningTest : public drogon::HttpSimpleController<PipeliningTest>
 {
   public:
     virtual void asyncHandleHttpRequest(const HttpRequestPtr &req, const std::function<void(const HttpResponsePtr &)> &callback) override;

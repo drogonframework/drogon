@@ -81,13 +81,12 @@ class HttpRequestParser
         _websockConnPtr = conn;
     }
     //to support request pipelining(rfc2616-8.1.2.2)
-    //std::mutex &getPipeLineMutex();
-    void pushRquestToPipeLine(const HttpRequestPtr &req);
+    void pushRquestToPipelining(const HttpRequestPtr &req);
     HttpRequestPtr getFirstRequest() const;
     HttpResponsePtr getFirstResponse() const;
     void popFirstRequest();
-    void pushResponseToPipeLine(const HttpRequestPtr &req, const HttpResponsePtr &resp);
-    size_t numberOfRequestsInPipeLine() const { return _requestPipeLine.size(); }
+    void pushResponseToPipelining(const HttpRequestPtr &req, const HttpResponsePtr &resp);
+    size_t numberOfRequestsInPipelining() const { return _requestPipelining.size(); }
     bool isStop() const { return _stopWorking; }
     void stop() { _stopWorking = true; }
     size_t numberOfRequestsParsed() const { return _requestsCounter; }
@@ -100,7 +99,7 @@ class HttpRequestParser
     HttpRequestImplPtr _request;
     bool _firstRequest = true;
     WebSocketConnectionImplPtr _websockConnPtr;
-    std::deque<std::pair<HttpRequestPtr, HttpResponsePtr>> _requestPipeLine;
+    std::deque<std::pair<HttpRequestPtr, HttpResponsePtr>> _requestPipelining;
     size_t _requestsCounter = 0;
     std::weak_ptr<trantor::TcpConnection> _conn;
     bool _stopWorking = false;
