@@ -14,9 +14,10 @@
 
 #pragma once
 
-#include "WebSockectConnectionImpl.h"
+#include "WebSocketConnectionImpl.h"
 #include "HttpRequestImpl.h"
 #include <drogon/config.h>
+#include <drogon/WebSocketController.h>
 #include <trantor/net/TcpServer.h>
 #include <trantor/net/callbacks.h>
 #include <trantor/utils/NonCopyable.h>
@@ -35,12 +36,8 @@ class HttpServer : trantor::NonCopyable
     typedef std::function<void(const HttpRequestImplPtr &, std::function<void(const HttpResponsePtr &)> &&)> HttpAsyncCallback;
     typedef std::function<void(const HttpRequestImplPtr &,
                                std::function<void(const HttpResponsePtr &)> &&,
-                               const WebSocketConnectionPtr &)>
+                               const WebSocketConnectionImplPtr &)>
         WebSocketNewAsyncCallback;
-    typedef std::function<void(const WebSocketConnectionPtr &)>
-        WebSocketDisconnetCallback;
-    typedef std::function<void(const WebSocketConnectionPtr &, std::string &&, const WebSocketMessageType &)>
-        WebSocketMessageCallback;
 
     HttpServer(EventLoop *loop,
                const InetAddress &listenAddr,
@@ -57,14 +54,6 @@ class HttpServer : trantor::NonCopyable
     void setNewWebsocketCallback(const WebSocketNewAsyncCallback &cb)
     {
         _newWebsocketCallback = cb;
-    }
-    void setDisconnectWebsocketCallback(const WebSocketDisconnetCallback &cb)
-    {
-        _disconnectWebsocketCallback = cb;
-    }
-    void setWebsocketMessageCallback(const WebSocketMessageCallback &cb)
-    {
-        _webSocketMessageCallback = cb;
     }
     void setConnectionCallback(const ConnectionCallback &cb)
     {
@@ -104,8 +93,6 @@ class HttpServer : trantor::NonCopyable
     trantor::TcpServer _server;
     HttpAsyncCallback _httpAsyncCallback;
     WebSocketNewAsyncCallback _newWebsocketCallback;
-    WebSocketDisconnetCallback _disconnectWebsocketCallback;
-    WebSocketMessageCallback _webSocketMessageCallback;
     trantor::ConnectionCallback _connectionCallback;
 };
 

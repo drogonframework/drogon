@@ -19,6 +19,7 @@ killall -9 webapp
 
 sleep 4
 
+echo "Test http requests and responses."
 ./webapp_test
 
 if [ $? -ne 0 ];then
@@ -27,6 +28,7 @@ if [ $? -ne 0 ];then
 fi
 
 #Test WebSocket
+echo "Test the WebSocket"
 ./websocket_test -t
 if [ $? -ne 0 ];then
     echo "Error in testing"
@@ -34,6 +36,7 @@ if [ $? -ne 0 ];then
 fi
 
 #Test pipelining
+echo "Test the pipelining"
 ./pipelining_test
 if [ $? -ne 0 ];then
     echo "Error in testing"
@@ -43,7 +46,7 @@ fi
 killall -9 webapp
 
 #Test drogon_ctl
-
+echo "Test the drogon_ctl"
 rm -rf drogon_test
 
 drogon_ctl create project drogon_test

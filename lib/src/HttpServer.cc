@@ -51,7 +51,7 @@ static void defaultHttpAsyncCallback(const HttpRequestPtr &, std::function<void(
 
 static void defaultWebSockAsyncCallback(const HttpRequestPtr &,
                                         std::function<void(const HttpResponsePtr &resp)> &&callback,
-                                        const WebSocketConnectionPtr &wsConnPtr)
+                                        const WebSocketConnectionImplPtr &wsConnPtr)
 {
     auto resp = HttpResponse::newNotFoundResponse();
     resp->setCloseConnection(true);
@@ -104,7 +104,7 @@ void HttpServer::onConnection(const TcpConnectionPtr &conn)
         {
             if (requestParser->webSocketConn())
             {
-                _disconnectWebsocketCallback(requestParser->webSocketConn());
+                requestParser->webSocketConn()->onClose();
             }
 #if (CXX_STD > 14)
             conn->getMutableContext()->reset(); //reset(): since c++17
@@ -125,33 +125,7 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn,
     if (requestParser->webSocketConn())
     {
         //Websocket payload
-        while (buf->readableBytes() > 0)
-        {
-            std::string message;
-            WebSocketMessageType type;
-            auto success = parseWebsockMessage(buf, message, type);
-            if (success)
-            {
-                if (type == WebSocketMessageType::Ping)
-                {
-                    //ping
-                    requestParser->webSocketConn()->send(message, WebSocketMessageType::Pong);
-                }
-                else if (type == WebSocketMessageType::Close)
-                {
-                    //close
-                    conn->shutdown();
-                }
-                _webSocketMessageCallback(requestParser->webSocketConn(), std::move(message), type);
-            }
-            else
-            {
-                //Websock error!
-                conn->shutdown();
-                return;
-            }
-        }
-        return;
+        requestParser->webSocketConn()->onNewMessage(conn, buf);
     }
     else
     {
@@ -182,6 +156,7 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn,
                                               if (resp->statusCode() == k101SwitchingProtocols)
                                               {
                                                   requestParser->setWebsockConnection(wsConn);
+                                                  
                                               }
                                               auto httpString = std::dynamic_pointer_cast<HttpResponseImpl>(resp)->renderToString();
                                               conn->send(httpString);

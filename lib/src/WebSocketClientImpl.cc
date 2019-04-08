@@ -121,6 +121,7 @@ void WebSocketClientImpl::connectToServerInLoop()
             {
                 LOG_TRACE << "connection disconnect";
                 thisPtr->_connectionClosedCallback(thisPtr);
+                thisPtr->_websockConnPtr.reset();
                 thisPtr->_loop->runAfter(1.0, [thisPtr]() {
                     thisPtr->reconnect();
                 });
@@ -154,36 +155,8 @@ void WebSocketClientImpl::connectToServerInLoop()
 
 void WebSocketClientImpl::onRecvWsMessage(const trantor::TcpConnectionPtr &connPtr, trantor::MsgBuffer *msgBuffer)
 {
-    std::string message;
-    WebSocketMessageType type;
-    auto success = parseWebsockMessage(msgBuffer, message, type);
-    if (success)
-    {
-        if (type == WebSocketMessageType::Close)
-        {
-            //close
-            connPtr->shutdown();
-        }
-        else if (type == WebSocketMessageType::Ping)
-        {
-            //ping
-            if (_websockConnPtr)
-            {
-                _websockConnPtr->send(message, WebSocketMessageType::Pong);
-            }
-        }
-        _messageCallback(std::move(message), shared_from_this(), type);
-    }
-    else
-    {
-        //Websock error!
-        connPtr->shutdown();
-        auto thisPtr = shared_from_this();
-        _loop->runAfter(1.0, [thisPtr]() {
-            thisPtr->reconnect();
-        });
-        return;
-    }
+    assert(_websockConnPtr);
+    _websockConnPtr->onNewMessage(connPtr, msgBuffer);
 }
 
 void WebSocketClientImpl::onRecvMessage(const trantor::TcpConnectionPtr &connPtr, trantor::MsgBuffer *msgBuffer)
@@ -234,6 +207,12 @@ void WebSocketClientImpl::onRecvMessage(const trantor::TcpConnectionPtr &connPtr
 
         _upgraded = true;
         _websockConnPtr = std::make_shared<WebSocketConnectionImpl>(connPtr, false);
+        auto thisPtr = shared_from_this();
+        _websockConnPtr->setMessageCallback([thisPtr](std::string &&message,
+                                                      const WebSocketConnectionImplPtr &connPtr,
+                                                      const WebSocketMessageType &type) {
+            thisPtr->_messageCallback(std::move(message), thisPtr, type);
+        });
         _requestCallback(ReqResult::Ok, resp, shared_from_this());
         if (msgBuffer->readableBytes() > 0)
         {

@@ -31,6 +31,5 @@ namespace drogon
 
 const string_view &webContentTypeToString(ContentType contenttype);
 const string_view &statusCodeToString(int code);
-bool parseWebsockMessage(trantor::MsgBuffer *buffer, std::string &message, WebSocketMessageType &type);
 
 } // namespace drogon

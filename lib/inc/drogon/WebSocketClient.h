@@ -34,7 +34,7 @@ class WebSocketClient
 {
   public:
     /// Get the WebSocket connection that is typically used to send messages.
-    virtual const WebSocketConnectionPtr &getConnection() = 0;
+    virtual WebSocketConnectionPtr getConnection() = 0;
 
     /// Set messages handler. When a message is recieved from the server, the @param callback is called.
     virtual void setMessageHandler(const std::function<void(std::string &&message, const WebSocketClientPtr &, const WebSocketMessageType &)> &callback) = 0;

@@ -35,7 +35,7 @@ int main(int argc, char *argv[])
         if (r == ReqResult::Ok)
         {
             std::cout << "ws connected!" << std::endl;
-            wsPtr->getConnection()->send("hello");
+            wsPtr->getConnection()->send("hello!");
         }
         else
         {

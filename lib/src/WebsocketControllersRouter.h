@@ -15,6 +15,7 @@
 #pragma once
 #include "HttpRequestImpl.h"
 #include "HttpResponseImpl.h"
+#include "WebSocketConnectionImpl.h"
 #include <trantor/utils/NonCopyable.h>
 #include <drogon/WebSocketController.h>
 #include <drogon/HttpFilter.h>
@@ -36,7 +37,7 @@ class WebsocketControllersRouter : public trantor::NonCopyable
                                      const std::vector<std::string> &filters);
     void route(const HttpRequestImplPtr &req,
                std::function<void(const HttpResponsePtr &)> &&callback,
-               const WebSocketConnectionPtr &wsConnPtr);
+               const WebSocketConnectionImplPtr &wsConnPtr);
     void init();
 
   private:
@@ -53,6 +54,6 @@ class WebsocketControllersRouter : public trantor::NonCopyable
                              std::string &wsKey,
                              const HttpRequestImplPtr &req,
                              std::function<void(const HttpResponsePtr &)> &&callback,
-                             const WebSocketConnectionPtr &wsConnPtr);
+                             const WebSocketConnectionImplPtr &wsConnPtr);
 };
 } // namespace drogon

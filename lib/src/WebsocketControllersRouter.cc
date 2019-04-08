@@ -41,7 +41,7 @@ void WebsocketControllersRouter::registerWebSocketController(const std::string &
 
 void WebsocketControllersRouter::route(const HttpRequestImplPtr &req,
                                        std::function<void(const HttpResponsePtr &)> &&callback,
-                                       const WebSocketConnectionPtr &wsConnPtr)
+                                       const WebSocketConnectionImplPtr &wsConnPtr)
 {
     std::string wsKey = req->getHeaderBy("sec-websocket-key");
     if (!wsKey.empty())
@@ -81,7 +81,7 @@ void WebsocketControllersRouter::doControllerHandler(const WebSocketControllerBa
                                                      std::string &wsKey,
                                                      const HttpRequestImplPtr &req,
                                                      std::function<void(const HttpResponsePtr &)> &&callback,
-                                                     const WebSocketConnectionPtr &wsConnPtr)
+                                                     const WebSocketConnectionImplPtr &wsConnPtr)
 {
     wsKey.append("258EAFA5-E914-47DA-95CA-C5AB0DC85B11");
     unsigned char accKey[SHA_DIGEST_LENGTH];
@@ -93,9 +93,14 @@ void WebsocketControllersRouter::doControllerHandler(const WebSocketControllerBa
     resp->addHeader("Connection", "Upgrade");
     resp->addHeader("Sec-WebSocket-Accept", base64Key);
     callback(resp);
-    auto wsConnImplPtr = std::dynamic_pointer_cast<WebSocketConnectionImpl>(wsConnPtr);
-    assert(wsConnImplPtr);
-    wsConnImplPtr->setController(ctrlPtr);
+    wsConnPtr->setMessageCallback([ctrlPtr](std::string &&message,
+                                         const WebSocketConnectionImplPtr &connPtr,
+                                         const WebSocketMessageType &type) {
+        ctrlPtr->handleNewMessage(connPtr, std::move(message), type);
+    });
+    wsConnPtr->setCloseCallback([ctrlPtr](const WebSocketConnectionImplPtr &connPtr) {
+        ctrlPtr->handleConnectionClosed(connPtr);
+    });
     ctrlPtr->handleNewConnection(req, wsConnPtr);
     return;
 }
