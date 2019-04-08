@@ -18,7 +18,7 @@
 #include "HttpResponseImpl.h"
 #include "HttpClientImpl.h"
 #include "SharedLibManager.h"
-#include "WebSockectConnectionImpl.h"
+#include "WebSocketConnectionImpl.h"
 #include "HttpControllersRouter.h"
 #include "HttpSimpleControllersRouter.h"
 #include "WebsocketControllersRouter.h"
@@ -177,9 +177,7 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     void onAsyncRequest(const HttpRequestImplPtr &req, std::function<void(const HttpResponsePtr &)> &&callback);
     void onNewWebsockRequest(const HttpRequestImplPtr &req,
                              std::function<void(const HttpResponsePtr &)> &&callback,
-                             const WebSocketConnectionPtr &wsConnPtr);
-    void onWebsockMessage(const WebSocketConnectionPtr &wsConnPtr, std::string &&message, const WebSocketMessageType &type);
-    void onWebsockDisconnect(const WebSocketConnectionPtr &wsConnPtr);
+                             const WebSocketConnectionImplPtr &wsConnPtr);
     void onConnection(const TcpConnectionPtr &conn);
     void addHttpPath(const std::string &path,
                      const internal::HttpBinderBasePtr &binder,

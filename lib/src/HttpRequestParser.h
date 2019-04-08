@@ -15,7 +15,7 @@
 #pragma once
 
 #include "HttpRequestImpl.h"
-#include "WebSockectConnectionImpl.h"
+#include "WebSocketConnectionImpl.h"
 #include <trantor/utils/MsgBuffer.h>
 #include <drogon/HttpResponse.h>
 #include <deque>

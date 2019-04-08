@@ -14,7 +14,7 @@
 
 #pragma once
 
-#include "WebSockectConnectionImpl.h"
+#include "WebSocketConnectionImpl.h"
 #include <drogon/WebSocketClient.h>
 #include <trantor/utils/NonCopyable.h>
 #include <trantor/net/EventLoop.h>
@@ -29,7 +29,7 @@ namespace drogon
 class WebSocketClientImpl : public WebSocketClient, public std::enable_shared_from_this<WebSocketClientImpl>
 {
   public:
-    virtual const WebSocketConnectionPtr &getConnection() override
+    virtual WebSocketConnectionPtr getConnection() override
     {
         return _websockConnPtr;
     }
@@ -50,6 +50,7 @@ class WebSocketClientImpl : public WebSocketClient, public std::enable_shared_fr
 
     virtual void connectToServer(const HttpRequestPtr &request, const WebSocketRequestCallback &callback) override
     {
+        assert(callback);
         if (_loop->isInLoopThread())
         {
             _upgradeRequest = request;
@@ -87,10 +88,10 @@ class WebSocketClientImpl : public WebSocketClient, public std::enable_shared_fr
     trantor::TimerId _heartbeatTimerId;
 
     HttpRequestPtr _upgradeRequest;
-    std::function<void(std::string &&message, const WebSocketClientPtr &, const WebSocketMessageType &)> _messageCallback;
-    std::function<void(const WebSocketClientPtr &)> _connectionClosedCallback;
+    std::function<void(std::string &&message, const WebSocketClientPtr &, const WebSocketMessageType &)> _messageCallback = [](std::string &&message, const WebSocketClientPtr &, const WebSocketMessageType &) {};
+    std::function<void(const WebSocketClientPtr &)> _connectionClosedCallback = [](const WebSocketClientPtr &) {};
     WebSocketRequestCallback _requestCallback;
-    WebSocketConnectionPtr _websockConnPtr;
+    WebSocketConnectionImplPtr _websockConnPtr;
 
     void connectToServerInLoop();
     void sendReq(const trantor::TcpConnectionPtr &connPtr);
