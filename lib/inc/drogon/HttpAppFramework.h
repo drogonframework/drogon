@@ -109,6 +109,13 @@ class HttpAppFramework : public trantor::NonCopyable
      */
     virtual trantor::EventLoop *getLoop() = 0;
 
+    ///Set custom 404 page
+    /**
+     * After calling this method, the @param resp object is returned 
+     * by the HttpResponse::newNotFoundResponse() method.
+     */
+    virtual void setCustom404Page(const HttpResponsePtr &resp) = 0;
+
     ///Get the plugin object registered in the framework
     /**
      * NOTE:

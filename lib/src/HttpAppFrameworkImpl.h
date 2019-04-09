@@ -83,6 +83,16 @@ class HttpAppFrameworkImpl : public HttpAppFramework
                                               const std::string &crtlName,
                                               const std::vector<any> &filtersAndMethods =
                                                   std::vector<any>()) override;
+
+    virtual void setCustom404Page(const HttpResponsePtr &resp) override
+    {
+        resp->setStatusCode(k404NotFound);
+        _custom404 = resp;
+    }
+    const HttpResponsePtr &getCustom404Page()
+    {
+        return _custom404;
+    }
     virtual void enableSession(const size_t timeout = 0) override
     {
         _useSession = true;
@@ -238,6 +248,7 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     //Json::Value _customConfig;
     Json::Value _jsonConfig;
     PluginsManager _pluginsManager;
+    HttpResponsePtr _custom404;
 #if USE_ORM
     std::map<std::string, orm::DbClientPtr> _dbClientsMap;
     struct DbInfo

@@ -119,7 +119,6 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn,
                            MsgBuffer *buf)
 {
     HttpRequestParser *requestParser = any_cast<HttpRequestParser>(conn->getMutableContext());
-    int counter = 0;
     // With the pipelining feature or web socket, it is possible to receice multiple messages at once, so
     // the while loop is necessary
     if (requestParser->webSocketConn())
@@ -166,9 +165,6 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn,
                 else
                     onRequest(conn, requestParser->requestImpl());
                 requestParser->reset();
-                counter++;
-                if (counter > 1)
-                    LOG_TRACE << "More than one requests are parsed (" << counter << ")";
             }
             else
             {
