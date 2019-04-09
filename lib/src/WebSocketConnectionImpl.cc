@@ -118,7 +118,7 @@ void WebSocketConnectionImpl::sendWsData(const char *msg, size_t len, unsigned c
         bytesFormatted.resize(indexStartRawData);
         bytesFormatted.append(msg, len);
     }
-    _tcpConn->send(bytesFormatted);
+    _tcpConn->send(std::move(bytesFormatted));
 }
 void WebSocketConnectionImpl::send(const std::string &msg, const WebSocketMessageType &type)
 {

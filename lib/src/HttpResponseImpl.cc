@@ -47,13 +47,25 @@ HttpResponsePtr HttpResponse::newHttpJsonResponse(const Json::Value &data)
 
 HttpResponsePtr HttpResponse::newNotFoundResponse()
 {
-    HttpViewData data;
-    data.insert("version", getVersion());
-    auto res = HttpResponse::newHttpViewResponse("NotFound", data);
-    res->setStatusCode(k404NotFound);
-    //res->setCloseConnection(true);
-
-    return res;
+    auto &resp = HttpAppFrameworkImpl::instance().getCustom404Page();
+    if(resp)
+    {
+        return resp;
+    }
+    else
+    {
+        static std::once_flag once;
+        static HttpResponsePtr notFoundResp;
+        std::call_once(once, []() {
+            HttpViewData data;
+            data.insert("version", getVersion());
+            notFoundResp = HttpResponse::newHttpViewResponse("NotFound", data);
+            notFoundResp->setStatusCode(k404NotFound);
+        });
+        return notFoundResp;
+    }
+    
+   
 }
 HttpResponsePtr HttpResponse::newLocationRedirectResponse(const std::string &path)
 {
