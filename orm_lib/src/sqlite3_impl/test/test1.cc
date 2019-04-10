@@ -11,7 +11,7 @@ int main()
     trantor::Logger::setLogLevel(trantor::Logger::TRACE);
     auto clientPtr = DbClient::newSqlite3Client("filename=test.db", 3);
     sleep(1);
-    
+
     LOG_DEBUG << "start!";
     // *clientPtr << "Drop table groups;" << Mode::Blocking >>
     //     [](const Result &r) {
@@ -44,6 +44,15 @@ int main()
         [](const DrogonDbException &e) {
             std::cout << e.base().what() << std::endl;
         };
+    *clientPtr << "insert into GROUPS (group_name) values(?)"
+               << "test_group" << Mode::Blocking >>
+        [](const Result &r) {
+            LOG_DEBUG << "inserted:" << r.affectedRows();
+            LOG_DEBUG << "id:" << r.insertId();
+        } >>
+        [](const DrogonDbException &e) {
+            std::cout << e.base().what() << std::endl;
+        };
     *clientPtr << "select * from GROUPS " >>
         [](const Result &r) {
             LOG_DEBUG << "affected rows:" << r.affectedRows();
@@ -62,8 +71,7 @@ int main()
             LOG_DEBUG << (success ? "commit success!" : "commit failed!");
         });
         Mapper<drogon_model::sqlite3::Groups> mapper(trans);
-        mapper.findAll([trans](const std::vector<drogon_model::sqlite3::Groups> &v) {
-        
+        mapper.limit(2).offset(1).findAll([trans](const std::vector<drogon_model::sqlite3::Groups> &v) {
         Mapper<drogon_model::sqlite3::Groups> mapper(trans);
         for(auto group:v)
         {
@@ -71,15 +79,24 @@ int main()
             std::cout << group.toJson() << std::endl;
             std::cout << "avatar:" << group.getValueOfAvatarAsString() << std::endl;
             group.setAvatarId("xixi");
-            mapper.update(group, [=](const size_t count) { LOG_DEBUG << "update " << count << " rows"; 
-            }, [](const DrogonDbException &e) { LOG_ERROR << e.base().what(); });
-        } }, [](const DrogonDbException &e) { LOG_ERROR << e.base().what(); });
+            mapper.update(group, 
+            [=](const size_t count) 
+            {
+                 LOG_DEBUG << "update " << count << " rows"; 
+            }, 
+            [](const DrogonDbException &e) 
+            {
+                 LOG_ERROR << e.base().what();
+            });
+        } },
+                       [](const DrogonDbException &e) { LOG_ERROR << e.base().what(); });
         drogon_model::sqlite3::Groups group;
         group.setAvatar("hahahaha,xixixixix");
-        try{
+        try
+        {
             mapper.insert(group);
         }
-        catch(const DrogonDbException &e)
+        catch (const DrogonDbException &e)
         {
             std::cerr << e.base().what() << std::endl;
         }

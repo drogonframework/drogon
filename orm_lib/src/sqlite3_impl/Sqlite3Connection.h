@@ -64,6 +64,7 @@ class Sqlite3Connection : public DbConnection, public std::enable_shared_from_th
     trantor::EventLoopThread _loopThread;
     std::shared_ptr<sqlite3> _conn;
     std::shared_ptr<SharedMutex> _sharedMutexPtr;
+    std::unordered_map<std::string,std::shared_ptr<sqlite3_stmt>> _stmtMap;
 };
 
 } // namespace orm

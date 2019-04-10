@@ -75,8 +75,8 @@ int main()
     // pbuf->sgetn(&str[0], filesize);
 
     {
-        auto trans = clientPtr->newTransaction([](bool ret){
-            if(ret)
+        auto trans = clientPtr->newTransaction([](bool ret) {
+            if (ret)
             {
                 std::cout << "commited!!!!!!" << std::endl;
             }
@@ -97,6 +97,16 @@ int main()
     } >> [](const DrogonDbException &e) {
         std::cerr << e.base().what() << std::endl;
     };
+
+    *clientPtr << "select * from users limit ? offset ?"
+               << 2
+               << 2 >>
+        [](const Result &r) {
+            std::cout << "select " << r.size() << " records" << std::endl;
+        } >>
+        [](const DrogonDbException &e) {
+            std::cerr << e.base().what() << std::endl;
+        };
     LOG_TRACE << "end";
     getchar();
 }
