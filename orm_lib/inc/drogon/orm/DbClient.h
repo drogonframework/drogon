@@ -74,10 +74,26 @@ class DbClient : public trantor::NonCopyable
 #if USE_SQLITE3
     static std::shared_ptr<DbClient> newSqlite3Client(const std::string &connInfo, const size_t connNum);
 #endif
+
     /// Async and nonblocking method
     /**
      * FUNCTION1 is usually the ResultCallback type;
      * FUNCTION2 is usually the ExceptionCallback type;
+     * @param args are parameters that are bound to placeholders in the @param sql.
+     * NOTE: 
+     * 
+     * If the number of @param args is not zero, make sure that all criteria
+     * in @param sql are set by bind parameters, for example: 
+     * 
+     *   1. select * from users where user_id > 10 limit 10 offset 10; //Not bad, no bind parameters are used.
+     *   2. select * from users where user_id > ? limit ? offset ?; //Good, fully use bind parameters.
+     *   3. select * from users where user_id > ? limit ? offset 10; //Bad, partially use bind parameters.
+     * 
+     * Strictly speaking, try not to splice SQL statements dynamically, Instead, use the constant sql string 
+     * with placeholders and the bind parameters to execute sql.
+     * This rule makes the sql execute faster and more securely, and users should follow this rule when calling 
+     * all methods of DbClient.
+     * 
      */
     template <typename FUNCTION1,
               typename FUNCTION2,
@@ -131,7 +147,7 @@ class DbClient : public trantor::NonCopyable
         return r;
     }
 
-    /// A stream-type method for sql execution
+    /// Streaming-like method for sql execution. For more information, see the wiki page.
     internal::SqlBinder operator<<(const std::string &sql);
     internal::SqlBinder operator<<(std::string &&sql);
 

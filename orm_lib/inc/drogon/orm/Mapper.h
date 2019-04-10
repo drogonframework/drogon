@@ -119,14 +119,14 @@ class Mapper
 
   private:
     DbClientPtr _client;
-    std::string _limitString;
-    std::string _offsetString;
+    size_t _limit = 0;
+    size_t _offset = 0;
     std::string _orderbyString;
     bool _forUpdate = false;
     void clear()
     {
-        _limitString.clear();
-        _offsetString.clear();
+        _limit = 0;
+        _offset = 0;
         _orderbyString.clear();
         _forUpdate = false;
     }
@@ -309,23 +309,40 @@ inline T Mapper<T>::findOne(const Criteria &criteria) noexcept(false)
 {
     std::string sql = "select * from ";
     sql += T::tableName;
+    bool hasParameters = false;
     if (criteria)
     {
         sql += " where ";
         sql += criteria.criteriaString();
-        sql = replaceSqlPlaceHolder(sql, "$?");
+        hasParameters = true;
     }
-    sql.append(_orderbyString).append(_limitString).append(_offsetString);
+    sql.append(_orderbyString);
+    if (_limit > 0)
+    {
+        hasParameters = true;
+        sql.append(" limit $?");
+    }
+    if (_offset > 0)
+    {
+        hasParameters = true;
+        sql.append(" offset $?");
+    }
+    if (hasParameters)
+        sql = replaceSqlPlaceHolder(sql, "$?");
     if (_forUpdate)
     {
         sql += " for update";
     }
-    clear();
     Result r(nullptr);
     {
         auto binder = *_client << std::move(sql);
         if (criteria)
             criteria.outputArgs(binder);
+        if (_limit > 0)
+            binder << _limit;
+        if (_offset)
+            binder << _offset;
+        clear();
         binder << Mode::Blocking;
         binder >> [&r](const Result &result) {
             r = result;
@@ -351,21 +368,38 @@ inline void Mapper<T>::findOne(const Criteria &criteria,
 {
     std::string sql = "select * from ";
     sql += T::tableName;
+    bool hasParameters = false;
     if (criteria)
     {
         sql += " where ";
         sql += criteria.criteriaString();
-        sql = replaceSqlPlaceHolder(sql, "$?");
+        hasParameters = true;
     }
-    sql.append(_orderbyString).append(_limitString).append(_offsetString);
+    sql.append(_orderbyString);
+    if (_limit > 0)
+    {
+        hasParameters = true;
+        sql.append(" limit $?");
+    }
+    if (_offset > 0)
+    {
+        hasParameters = true;
+        sql.append(" offset $?");
+    }
+    if (hasParameters)
+        sql = replaceSqlPlaceHolder(sql, "$?");
     if (_forUpdate)
     {
         sql += " for update";
     }
-    clear();
     auto binder = *_client << std::move(sql);
     if (criteria)
         criteria.outputArgs(binder);
+    if (_limit > 0)
+        binder << _limit;
+    if (_offset)
+        binder << _offset;
+    clear();
     binder >> [=](const Result &r) {
         if (r.size() == 0)
         {
@@ -388,22 +422,38 @@ inline std::future<T> Mapper<T>::findFutureOne(const Criteria &criteria) noexcep
 {
     std::string sql = "select * from ";
     sql += T::tableName;
+    bool hasParameters = false;
     if (criteria)
     {
         sql += " where ";
         sql += criteria.criteriaString();
-        sql = replaceSqlPlaceHolder(sql, "$?");
+        hasParameters = true;
     }
-    sql.append(_orderbyString).append(_limitString).append(_offsetString);
+    sql.append(_orderbyString);
+    if (_limit > 0)
+    {
+        hasParameters = true;
+        sql.append(" limit $?");
+    }
+    if (_offset > 0)
+    {
+        hasParameters = true;
+        sql.append(" offset $?");
+    }
+    if (hasParameters)
+        sql = replaceSqlPlaceHolder(sql, "$?");
     if (_forUpdate)
     {
         sql += " for update";
     }
-    clear();
     auto binder = *_client << std::move(sql);
     if (criteria)
         criteria.outputArgs(binder);
-
+    if (_limit > 0)
+        binder << _limit;
+    if (_offset)
+        binder << _offset;
+    clear();
     std::shared_ptr<std::promise<T>> prom = std::make_shared<std::promise<T>>();
     binder >> [=](const Result &r) {
         if (r.size() == 0)
@@ -444,23 +494,40 @@ inline std::vector<T> Mapper<T>::findBy(const Criteria &criteria) noexcept(false
 {
     std::string sql = "select * from ";
     sql += T::tableName;
+    bool hasParameters = false;
     if (criteria)
     {
+        hasParameters = true;
         sql += " where ";
         sql += criteria.criteriaString();
-        sql = replaceSqlPlaceHolder(sql, "$?");
     }
-    sql.append(_orderbyString).append(_limitString).append(_offsetString);
+    sql.append(_orderbyString);
+    if (_limit > 0)
+    {
+        hasParameters = true;
+        sql.append(" limit $?");
+    }
+    if (_offset > 0)
+    {
+        hasParameters = true;
+        sql.append(" offset $?");
+    }
+    if (hasParameters)
+        sql = replaceSqlPlaceHolder(sql, "$?");
     if (_forUpdate)
     {
         sql += " for update";
     }
-    clear();
     Result r(nullptr);
     {
         auto binder = *_client << std::move(sql);
         if (criteria)
             criteria.outputArgs(binder);
+        if (_limit > 0)
+            binder << _limit;
+        if (_offset)
+            binder << _offset;
+        clear();
         binder << Mode::Blocking;
         binder >> [&r](const Result &result) {
             r = result;
@@ -481,21 +548,38 @@ inline void Mapper<T>::findBy(const Criteria &criteria,
 {
     std::string sql = "select * from ";
     sql += T::tableName;
+    bool hasParameters = false;
     if (criteria)
     {
+        hasParameters = true;
         sql += " where ";
         sql += criteria.criteriaString();
-        sql = replaceSqlPlaceHolder(sql, "$?");
     }
-    sql.append(_orderbyString).append(_limitString).append(_offsetString);
+    sql.append(_orderbyString);
+    if (_limit > 0)
+    {
+        hasParameters = true;
+        sql.append(" limit $?");
+    }
+    if (_offset > 0)
+    {
+        hasParameters = true;
+        sql.append(" offset $?");
+    }
+    if (hasParameters)
+        sql = replaceSqlPlaceHolder(sql, "$?");
     if (_forUpdate)
     {
         sql += " for update";
     }
-    clear();
     auto binder = *_client << std::move(sql);
     if (criteria)
         criteria.outputArgs(binder);
+    if (_limit > 0)
+        binder << _limit;
+    if (_offset)
+        binder << _offset;
+    clear();
     binder >> [=](const Result &r) {
         std::vector<T> ret;
         for (auto const &row : r)
@@ -511,22 +595,38 @@ inline std::future<std::vector<T>> Mapper<T>::findFutureBy(const Criteria &crite
 {
     std::string sql = "select * from ";
     sql += T::tableName;
+    bool hasParameters = false;
     if (criteria)
     {
+        hasParameters = true;
         sql += " where ";
         sql += criteria.criteriaString();
-        sql = replaceSqlPlaceHolder(sql, "$?");
     }
-    sql.append(_orderbyString).append(_limitString).append(_offsetString);
+    sql.append(_orderbyString);
+    if (_limit > 0)
+    {
+        hasParameters = true;
+        sql.append(" limit $?");
+    }
+    if (_offset > 0)
+    {
+        hasParameters = true;
+        sql.append(" offset $?");
+    }
+    if (hasParameters)
+        sql = replaceSqlPlaceHolder(sql, "$?");
     if (_forUpdate)
     {
         sql += " for update";
     }
-    clear();
     auto binder = *_client << std::move(sql);
     if (criteria)
         criteria.outputArgs(binder);
-
+    if (_limit > 0)
+        binder << _limit;
+    if (_offset)
+        binder << _offset;
+    clear();
     std::shared_ptr<std::promise<std::vector<T>>> prom = std::make_shared<std::promise<std::vector<T>>>();
     binder >> [=](const Result &r) {
         std::vector<T> ret;
@@ -1028,16 +1128,13 @@ template <typename T>
 inline Mapper<T> &Mapper<T>::limit(size_t limit)
 {
     assert(limit > 0);
-    if (limit > 0)
-    {
-        _limitString = utils::formattedString(" limit %u", limit);
-    }
+    _limit = limit;
     return *this;
 }
 template <typename T>
 inline Mapper<T> &Mapper<T>::offset(size_t offset)
 {
-    _offsetString = utils::formattedString(" offset %u", offset);
+    _offset = offset;
     return *this;
 }
 template <typename T>

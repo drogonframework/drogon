@@ -117,33 +117,49 @@ void Sqlite3Connection::execSqlInQueue(const std::string &sql,
                                        const std::function<void(const std::exception_ptr &)> &exceptCallback)
 {
     LOG_TRACE << "sql:" << sql;
-    sqlite3_stmt *stmt = nullptr;
-    const char *remaining;
+    std::shared_ptr<sqlite3_stmt> stmtPtr;
+    bool newStmt = false;
+    if (paraNum > 0)
+    {
 
-    auto ret = sqlite3_prepare_v2(_conn.get(), sql.data(), -1, &stmt, &remaining);
-    std::shared_ptr<sqlite3_stmt> stmtPtr = stmt ? std::shared_ptr<sqlite3_stmt>(stmt,
-                                                                                 [](sqlite3_stmt *p) {
-                                                                                     sqlite3_finalize(p);
-                                                                                 })
-                                                 : nullptr;
-    if (ret != SQLITE_OK)
-    {
-        onError(sql, exceptCallback);
-        return;
-    }
-    if (!std::all_of(remaining, sql.data() + sql.size(), [](char ch) { return std::isspace(ch); }))
-    {
-        try
+        auto iter = _stmtMap.find(sql);
+        if (iter != _stmtMap.end())
         {
-            throw SqlError("Multiple semicolon separated statements are unsupported", sql);
+            stmtPtr = iter->second;
         }
-        catch (...)
-        {
-            auto exceptPtr = std::current_exception();
-            exceptCallback(exceptPtr);
-        }
-        return;
     }
+    if (!stmtPtr)
+    {
+        sqlite3_stmt *stmt = nullptr;
+        newStmt = true;
+        const char *remaining;
+        auto ret = sqlite3_prepare_v2(_conn.get(), sql.data(), -1, &stmt, &remaining);
+        stmtPtr = stmt ? std::shared_ptr<sqlite3_stmt>(stmt,
+                                                       [](sqlite3_stmt *p) {
+                                                           sqlite3_finalize(p);
+                                                       })
+                       : nullptr;
+        if (ret != SQLITE_OK || !stmtPtr)
+        {
+            onError(sql, exceptCallback);
+            return;
+        }
+        if (!std::all_of(remaining, sql.data() + sql.size(), [](char ch) { return std::isspace(ch); }))
+        {
+            try
+            {
+                throw SqlError("Multiple semicolon separated statements are unsupported", sql);
+            }
+            catch (...)
+            {
+                auto exceptPtr = std::current_exception();
+                exceptCallback(exceptPtr);
+            }
+            return;
+        }
+    }
+    assert(stmtPtr);
+    auto stmt = stmtPtr.get();
     for (int i = 0; i < (int)parameters.size(); i++)
     {
         int bindRet;
@@ -177,6 +193,7 @@ void Sqlite3Connection::execSqlInQueue(const std::string &sql,
         if (bindRet != SQLITE_OK)
         {
             onError(sql, exceptCallback);
+            sqlite3_reset(stmt);
             return;
         }
     }
@@ -197,7 +214,7 @@ void Sqlite3Connection::execSqlInQueue(const std::string &sql,
         //Readonly, hold read lock;
         std::shared_lock<SharedMutex> lock(*_sharedMutexPtr);
         r = stmtStep(stmt, resultPtr, columnNum);
-        stmtPtr.reset();
+        sqlite3_reset(stmt);
     }
     else
     {
@@ -209,15 +226,17 @@ void Sqlite3Connection::execSqlInQueue(const std::string &sql,
             resultPtr->_affectedRows = sqlite3_changes(_conn.get());
             resultPtr->_insertId = sqlite3_last_insert_rowid(_conn.get());
         }
-        stmtPtr.reset();
+        sqlite3_reset(stmt);
     }
 
     if (r != SQLITE_DONE)
     {
         onError(sql, exceptCallback);
+        sqlite3_reset(stmt);
         return;
     }
-
+    if (paraNum > 0 && newStmt)
+        _stmtMap[sql] = stmtPtr;
     rcb(Result(resultPtr));
     _idleCb();
 }

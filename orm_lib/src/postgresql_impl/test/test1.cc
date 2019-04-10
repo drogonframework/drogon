@@ -77,7 +77,7 @@ int main()
     //                         LOG_DEBUG << "async blocking except callback:" << e.base().what();
     //                     },
     //                     true);
-    auto f = clientPtr->execSqlAsyncFuture("select * from users where user_uuid > $1 limit $2", 100, "5");
+    auto f = clientPtr->execSqlAsyncFuture("select * from users where user_uuid > $1 limit $2 offset $3", 100, (size_t)2, (size_t)2);
     try
     {
         auto r = f.get();
