@@ -9,5 +9,6 @@ class TestViewCtl : public drogon::HttpSimpleController<TestViewCtl>
     //list path definations here;
     //PATH_ADD("/path","filter1","filter2",...);
     PATH_ADD("/view");
+    PATH_ADD("/", Post);
     PATH_LIST_END
 };

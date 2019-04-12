@@ -106,6 +106,7 @@ enum HttpMethod
     Head,
     Put,
     Delete,
+    Options,
     Invalid
 };
 

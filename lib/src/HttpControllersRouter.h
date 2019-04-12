@@ -51,6 +51,7 @@ class HttpControllersRouter : public trantor::NonCopyable
         std::vector<size_t> _parameterPlaces;
         std::map<std::string, size_t> _queryParametersPlaces;
         std::map<trantor::EventLoop *,std::shared_ptr<HttpResponse>> _responsePtrMap;
+        bool _isCORS = false;
     };
     typedef std::shared_ptr<CtrlBinder> CtrlBinderPtr;
     struct HttpControllerRouterItem
@@ -58,7 +59,7 @@ class HttpControllersRouter : public trantor::NonCopyable
         std::string _pathParameterPattern;
         std::string _pathPattern;
         std::regex _regex;
-        CtrlBinderPtr _binders[Invalid]; //The enum value Invalid is the http methods number
+        CtrlBinderPtr _binders[Invalid]={nullptr}; //The enum value Invalid is the http methods number
     };
     std::vector<HttpControllerRouterItem> _ctrlVector;
     std::mutex _ctrlMutex;
