@@ -101,7 +101,7 @@ void HttpControllersRouter::addHttpPath(const std::string &path,
         }
     }
     auto pathParameterPattern = std::regex_replace(originPath, regex, "([^/]*)");
-    auto binderInfo = CtrlBinderPtr(new CtrlBinder);
+    auto binderInfo = std::make_shared<CtrlBinder>();
     binderInfo->_filterNames = filters;
     binderInfo->_binderPtr = binder;
     binderInfo->_parameterPlaces = std::move(places);
@@ -117,10 +117,13 @@ void HttpControllersRouter::addHttpPath(const std::string &path,
                     for (auto const &method : validMethods)
                     {
                         router._binders[method] = binderInfo;
+                        if (method == Options)
+                            binderInfo->_isCORS = true;
                     }
                 }
                 else
                 {
+                    binderInfo->_isCORS = true;
                     for (int i = 0; i < Invalid; i++)
                         router._binders[i] = binderInfo;
                 }
@@ -136,10 +139,13 @@ void HttpControllersRouter::addHttpPath(const std::string &path,
         for (auto const &method : validMethods)
         {
             router._binders[method] = binderInfo;
+            if (method == Options)
+                binderInfo->_isCORS = true;
         }
     }
     else
     {
+        binderInfo->_isCORS = true;
         for (int i = 0; i < Invalid; i++)
             router._binders[i] = binderInfo;
     }
@@ -176,7 +182,14 @@ void HttpControllersRouter::route(const HttpRequestImplPtr &req,
                     {
                         //Invalid Http Method
                         auto res = drogon::HttpResponse::newHttpResponse();
-                        res->setStatusCode(k405MethodNotAllowed);
+                        if (req->method() != Options)
+                        {
+                            res->setStatusCode(k405MethodNotAllowed);
+                        }
+                        else
+                        {
+                            res->setStatusCode(k403Forbidden);
+                        }
                         callback(res);
                         return;
                     }
@@ -222,6 +235,33 @@ void HttpControllersRouter::doControllerHandler(const CtrlBinderPtr &ctrlBinderP
                                                 bool needSetJsessionid,
                                                 std::string &&sessionId)
 {
+    if (req->method() == Options)
+    {
+        auto resp = HttpResponse::newHttpResponse();
+        resp->setContentTypeCode(ContentType::CT_TEXT_PLAIN);
+        std::string methods = "OPTIONS,";
+        if (routerItem._binders[Get] && routerItem._binders[Get]->_isCORS)
+        {
+            methods.append("GET,HEAD,");
+        }
+        if (routerItem._binders[Post] && routerItem._binders[Post]->_isCORS)
+        {
+            methods.append("POST,");
+        }
+        if (routerItem._binders[Put] && routerItem._binders[Put]->_isCORS)
+        {
+            methods.append("PUT,");
+        }
+        if (routerItem._binders[Delete] && routerItem._binders[Delete]->_isCORS)
+        {
+            methods.append("DELETE,");
+        }
+        methods.resize(methods.length() - 1);
+        resp->addHeader("ALLOW", methods);
+        callback(resp);
+        return;
+    }
+
     HttpResponsePtr &responsePtr = ctrlBinderPtr->_responsePtrMap[req->getLoop()];
     if (responsePtr && (responsePtr->expiredTime() == 0 || (trantor::Date::now() < responsePtr->creationDate().after(responsePtr->expiredTime()))))
     {
@@ -240,6 +280,7 @@ void HttpControllersRouter::doControllerHandler(const CtrlBinderPtr &ctrlBinderP
         }
         return;
     }
+    
     std::vector<std::string> params(ctrlBinderPtr->_parameterPlaces.size());
     std::smatch r;
     if (std::regex_match(req->path(), r, routerItem._regex))

@@ -53,22 +53,30 @@ void HttpSimpleControllersRouter::registerHttpSimpleController(const std::string
     }
     auto &item = _simpCtrlMap[path];
     item._controllerName = ctrlName;
-    item._filterNames = filters;
-    item._validMethodsFlags.clear(); //There may be old data, first clear
+    auto binder = std::make_shared<CtrlBinder>();
+    binder->_filterNames = filters;
+    auto &_object = DrClassMap::getSingleInstance(ctrlName);
+    auto controller = std::dynamic_pointer_cast<HttpSimpleControllerBase>(_object);
+    binder->_controller = controller;
     if (validMethods.size() > 0)
     {
-        item._validMethodsFlags.resize(Invalid, 0);
         for (auto const &method : validMethods)
         {
-            item._validMethodsFlags[method] = 1;
+            item._binders[method] = binder;
+            if (method == Options)
+            {
+                binder->_isCORS = true;
+            }
         }
     }
-    auto controller = item._controller;
-    if (!controller)
+    else
     {
-        auto &_object = DrClassMap::getSingleInstance(ctrlName);
-        controller = std::dynamic_pointer_cast<HttpSimpleControllerBase>(_object);
-        item._controller = controller;
+        //All HTTP methods are valid
+        for (size_t i = 0; i < Invalid; i++)
+        {
+            item._binders[i] = binder;
+        }
+        binder->_isCORS = true;
     }
 }
 
@@ -83,47 +91,77 @@ void HttpSimpleControllersRouter::route(const HttpRequestImplPtr &req,
     if (iter != _simpCtrlMap.end())
     {
         auto &ctrlInfo = iter->second;
-        if (!ctrlInfo._validMethodsFlags.empty())
+        auto &binder = ctrlInfo._binders[req->method()];
+        if (!binder)
         {
-            assert(ctrlInfo._validMethodsFlags.size() > req->method());
-            if (ctrlInfo._validMethodsFlags[req->method()] == 0)
+            //Invalid Http Method
+            auto res = drogon::HttpResponse::newHttpResponse();
+            if (req->method() != Options)
             {
-                //Invalid Http Method
-                auto res = drogon::HttpResponse::newHttpResponse();
                 res->setStatusCode(k405MethodNotAllowed);
-                callback(res);
-                return;
             }
+            else
+            {
+                res->setStatusCode(k403Forbidden);
+            }
+            callback(res);
+            return;
         }
-        auto &filters = ctrlInfo._filters;
+        auto &filters = ctrlInfo._binders[req->method()]->_filters;
         if (!filters.empty())
         {
             auto sessionIdPtr = std::make_shared<std::string>(std::move(sessionId));
             auto callbackPtr = std::make_shared<std::function<void(const HttpResponsePtr &)>>(std::move(callback));
-            FiltersFunction::doFilters(filters, req, callbackPtr, needSetJsessionid, sessionIdPtr, [=, &ctrlInfo]() mutable {
-                doControllerHandler(ctrlInfo, req, std::move(*callbackPtr), needSetJsessionid, std::move(*sessionIdPtr));
+            FiltersFunction::doFilters(filters, req, callbackPtr, needSetJsessionid, sessionIdPtr, [=, &binder]() mutable {
+                doControllerHandler(binder, ctrlInfo, req, std::move(*callbackPtr), needSetJsessionid, std::move(*sessionIdPtr));
             });
         }
         else
         {
-            doControllerHandler(ctrlInfo, req, std::move(callback), needSetJsessionid, std::move(sessionId));
+            doControllerHandler(binder, ctrlInfo, req, std::move(callback), needSetJsessionid, std::move(sessionId));
         }
         return;
     }
     _httpCtrlsRouter.route(req, std::move(callback), needSetJsessionid, std::move(sessionId));
 }
 
-void HttpSimpleControllersRouter::doControllerHandler(SimpleControllerRouterItem &item,
+void HttpSimpleControllersRouter::doControllerHandler(const CtrlBinderPtr &ctrlBinderPtr,
+                                                      const SimpleControllerRouterItem &routerItem,
                                                       const HttpRequestImplPtr &req,
                                                       std::function<void(const HttpResponsePtr &)> &&callback,
                                                       bool needSetJsessionid,
                                                       std::string &&sessionId)
 {
-    const std::string &ctrlName = item._controllerName;
-    auto &controller = item._controller;
+    auto &controller = ctrlBinderPtr->_controller;
     if (controller)
     {
-        HttpResponsePtr &responsePtr = item._responsePtrMap[req->getLoop()];
+        if (req->method() == Options)
+        {
+            auto resp = HttpResponse::newHttpResponse();
+            resp->setContentTypeCode(ContentType::CT_TEXT_PLAIN);
+            std::string methods = "OPTIONS,";
+            if (routerItem._binders[Get] && routerItem._binders[Get]->_isCORS)
+            {
+                methods.append("GET,HEAD,");
+            }
+            if (routerItem._binders[Post] && routerItem._binders[Post]->_isCORS)
+            {
+                methods.append("POST,");
+            }
+            if (routerItem._binders[Put] && routerItem._binders[Put]->_isCORS)
+            {
+                methods.append("PUT,");
+            }
+            if (routerItem._binders[Delete] && routerItem._binders[Delete]->_isCORS)
+            {
+                methods.append("DELETE,");
+            }
+            methods.resize(methods.length() - 1);
+            resp->addHeader("ALLOW", methods);
+            callback(resp);
+            return;
+        }
+        HttpResponsePtr &responsePtr = ctrlBinderPtr->_responsePtrMap[req->getLoop()];
         if (responsePtr && (responsePtr->expiredTime() == 0 || (trantor::Date::now() < responsePtr->creationDate().after(responsePtr->expiredTime()))))
         {
             //use cached response!
@@ -142,7 +180,7 @@ void HttpSimpleControllersRouter::doControllerHandler(SimpleControllerRouterItem
         }
         else
         {
-            controller->asyncHandleHttpRequest(req, [=, callback = std::move(callback), &item, sessionId = std::move(sessionId)](const HttpResponsePtr &resp) {
+            controller->asyncHandleHttpRequest(req, [=, callback = std::move(callback), &ctrlBinderPtr, sessionId = std::move(sessionId)](const HttpResponsePtr &resp) {
                 auto newResp = resp;
                 if (resp->expiredTime() >= 0)
                 {
@@ -151,12 +189,12 @@ void HttpSimpleControllersRouter::doControllerHandler(SimpleControllerRouterItem
                     auto loop = req->getLoop();
                     if (loop->isInLoopThread())
                     {
-                        item._responsePtrMap[loop] = resp;
+                        ctrlBinderPtr->_responsePtrMap[loop] = resp;
                     }
                     else
                     {
-                        loop->queueInLoop([loop, resp, &item]() {
-                            item._responsePtrMap[loop] = resp;
+                        loop->queueInLoop([loop, resp, &ctrlBinderPtr]() {
+                            ctrlBinderPtr->_responsePtrMap[loop] = resp;
                         });
                     }
                 }
@@ -178,6 +216,7 @@ void HttpSimpleControllersRouter::doControllerHandler(SimpleControllerRouterItem
     }
     else
     {
+        const std::string &ctrlName = routerItem._controllerName;
         LOG_ERROR << "can't find controller " << ctrlName;
         auto res = drogon::HttpResponse::newNotFoundResponse();
         if (needSetJsessionid)
@@ -192,10 +231,17 @@ void HttpSimpleControllersRouter::init(const std::vector<trantor::EventLoop *> &
     for (auto &iter : _simpCtrlMap)
     {
         auto &item = iter.second;
-        item._filters = FiltersFunction::createFilters(item._filterNames);
-        for (auto ioloop : ioLoops)
+        for (size_t i = 0; i < Invalid; i++)
         {
-            item._responsePtrMap[ioloop] = std::shared_ptr<HttpResponse>();
+            auto &binder = item._binders[i];
+            if(binder)
+            {
+                binder->_filters = FiltersFunction::createFilters(binder->_filterNames);
+                for (auto ioloop : ioLoops)
+                {
+                    binder->_responsePtrMap[ioloop] = nullptr;
+                }
+            }
         }
     }
 }

@@ -113,6 +113,9 @@ void HttpRequestImpl::appendToBuffer(MsgBuffer *output) const
     case Delete:
         output->append("DELETE ");
         break;
+    case Options:
+        output->append("OPTIONS ");
+        break;
     default:
         return;
     }

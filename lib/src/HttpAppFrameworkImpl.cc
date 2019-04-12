@@ -526,7 +526,6 @@ void HttpAppFrameworkImpl::onConnection(const TcpConnectionPtr &conn)
     }
 }
 
-
 void HttpAppFrameworkImpl::setUploadPath(const std::string &uploadPath)
 {
     assert(!uploadPath.empty());
@@ -555,24 +554,16 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestImplPtr &req, std::fu
 {
     LOG_TRACE << "new request:" << req->peerAddr().toIpPort() << "->" << req->localAddr().toIpPort();
     LOG_TRACE << "Headers " << req->methodString() << " " << req->path();
-
-#if 0
-    const std::map<std::string, std::string>& headers = req->headers();
-    for (std::map<std::string, std::string>::const_iterator it = headers.begin();
-         it != headers.end();
-         ++it) {
-        LOG_TRACE << it->first << ": " << it->second;
-    }
-
-    LOG_TRACE<<"cookies:";
-    auto cookies = req->cookies();
-    for(auto it=cookies.begin();it!=cookies.end();++it)
-    {
-        LOG_TRACE<<it->first<<"="<<it->second;
-    }
-#endif
-
     LOG_TRACE << "http path=" << req->path();
+    if (req->method() == Options && (req->path() == "*" || req->path() == "/*"))
+    {
+        auto resp = HttpResponse::newHttpResponse();
+        resp->setContentTypeCode(ContentType::CT_TEXT_PLAIN);
+        resp->addHeader("ALLOW", "GET,HEAD,POST,PUT,DELETE,OPTIONS");
+        resp->setExpiredTime(0);
+        callback(resp);
+        return;
+    }
     // LOG_TRACE << "query: " << req->query() ;
 
     std::string sessionId = req->getCookie("JSESSIONID");

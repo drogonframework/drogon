@@ -118,8 +118,8 @@ bool HttpResponseParser::parseResponse(MsgBuffer *buf)
                         }
                         else
                         {
-                            if (_response->statusCode() == k101SwitchingProtocols &&
-                                _response->getHeaderBy("upgrade") == "websocket")
+                            if (_response->statusCode() == k204NoContent || (_response->statusCode() == k101SwitchingProtocols &&
+                                                                             _response->getHeaderBy("upgrade") == "websocket"))
                             {
                                 //The Websocket response may not have a content-length header.
                                 _state = HttpResponseParseState::kGotAll;

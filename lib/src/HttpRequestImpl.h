@@ -109,6 +109,16 @@ class HttpRequestImpl : public HttpRequest
                 _method = Invalid;
             }
             break;
+        case 7:
+            if (m == "OPTIONS")
+            {
+                _method = Options;
+            }
+            else
+            {
+                _method = Invalid;
+            }
+            break;
         default:
             _method = Invalid;
             break;
@@ -160,6 +170,9 @@ class HttpRequestImpl : public HttpRequest
             break;
         case Delete:
             result = "DELETE";
+            break;
+        case Options:
+            result = "OPTIONS";
             break;
         default:
             break;
@@ -384,7 +397,7 @@ class HttpRequestImpl : public HttpRequest
 
     virtual const std::string &matchedPathPattern() const override
     {
-        if(_matchedPathPattern.empty())
+        if (_matchedPathPattern.empty())
             return _path;
         return _matchedPathPattern;
     }

@@ -34,38 +34,44 @@ class HttpAppFrameworkImpl;
 class HttpControllersRouter;
 class HttpSimpleControllersRouter : public trantor::NonCopyable
 {
-  public:
-    explicit HttpSimpleControllersRouter(HttpControllersRouter &httpCtrlRouter)
-        : _httpCtrlsRouter(httpCtrlRouter) {}
-    void registerHttpSimpleController(const std::string &pathName,
-                                      const std::string &ctrlName,
-                                      const std::vector<any> &filtersAndMethods);
-    void route(const HttpRequestImplPtr &req,
-               std::function<void(const HttpResponsePtr &)> &&callback,
-               bool needSetJsessionid,
-               std::string &&sessionId);
-    void init(const std::vector<trantor::EventLoop *> &ioLoops);
+public:
+  explicit HttpSimpleControllersRouter(HttpControllersRouter &httpCtrlRouter)
+      : _httpCtrlsRouter(httpCtrlRouter) {}
+  void registerHttpSimpleController(const std::string &pathName,
+                                    const std::string &ctrlName,
+                                    const std::vector<any> &filtersAndMethods);
+  void route(const HttpRequestImplPtr &req,
+             std::function<void(const HttpResponsePtr &)> &&callback,
+             bool needSetJsessionid,
+             std::string &&sessionId);
+  void init(const std::vector<trantor::EventLoop *> &ioLoops);
 
-  private:
-    HttpControllersRouter &_httpCtrlsRouter;
-    struct SimpleControllerRouterItem
-    {
-        std::string _controllerName;
-        std::vector<std::string> _filterNames;
-        std::vector<std::shared_ptr<HttpFilterBase>> _filters;
-        std::vector<int> _validMethodsFlags;
-        std::shared_ptr<HttpSimpleControllerBase> _controller;
-        std::map<trantor::EventLoop *, std::shared_ptr<HttpResponse>> _responsePtrMap;
-        //std::atomic<bool> _mutex = ATOMIC_VAR_INIT(false);
-        //std::atomic_flag _mutex = ATOMIC_FLAG_INIT;
-    };
-    std::unordered_map<std::string, SimpleControllerRouterItem> _simpCtrlMap;
-    std::mutex _simpCtrlMutex;
+private:
+  HttpControllersRouter &_httpCtrlsRouter;
 
-    void doControllerHandler(SimpleControllerRouterItem &item,
-                             const HttpRequestImplPtr &req,
-                             std::function<void(const HttpResponsePtr &)> &&callback,
-                             bool needSetJsessionid,
-                             std::string &&sessionId);
+  struct CtrlBinder
+  {
+    std::shared_ptr<HttpSimpleControllerBase> _controller;
+    std::vector<std::string> _filterNames;
+    std::vector<std::shared_ptr<HttpFilterBase>> _filters;
+    std::map<trantor::EventLoop *, std::shared_ptr<HttpResponse>> _responsePtrMap;
+    bool _isCORS = false;
+  };
+  typedef std::shared_ptr<CtrlBinder> CtrlBinderPtr;
+
+  struct SimpleControllerRouterItem
+  {
+    std::string _controllerName;
+    CtrlBinderPtr _binders[Invalid] = {nullptr};
+  };
+  std::unordered_map<std::string, SimpleControllerRouterItem> _simpCtrlMap;
+  std::mutex _simpCtrlMutex;
+
+  void doControllerHandler(const CtrlBinderPtr &ctrlBinderPtr,
+                           const SimpleControllerRouterItem &routerItem,
+                           const HttpRequestImplPtr &req,
+                           std::function<void(const HttpResponsePtr &)> &&callback,
+                           bool needSetJsessionid,
+                           std::string &&sessionId);
 };
 } // namespace drogon

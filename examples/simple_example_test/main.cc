@@ -199,6 +199,130 @@ void doTest(const HttpClientPtr &client, std::promise<int> &pro, bool isHttps = 
         }
     });
 
+    /// 4. Http OPTIONS Method
+    req = HttpRequest::newHttpRequest();
+    req->setMethod(drogon::Options);
+    req->setPath("/tpost");
+    client->sendRequest(req, [=](ReqResult result, const HttpResponsePtr &resp) {
+        if (result == ReqResult::Ok)
+        {
+            //LOG_DEBUG << resp->getBody();
+            auto allow = resp->getHeader("allow");
+            if (resp->statusCode() == k200OK && allow.find("POST") != std::string::npos)
+            {
+                outputGood(req, isHttps);
+            }
+            else
+            {
+                LOG_ERROR << "Error!";
+                exit(1);
+            }
+        }
+        else
+        {
+            LOG_ERROR << "Error!";
+            exit(1);
+        }
+    });
+
+    req = HttpRequest::newHttpRequest();
+    req->setMethod(drogon::Options);
+    req->setPath("/api/v1/apitest");
+    client->sendRequest(req, [=](ReqResult result, const HttpResponsePtr &resp) {
+        if (result == ReqResult::Ok)
+        {
+            //LOG_DEBUG << resp->getBody();
+            auto allow = resp->getHeader("allow");
+            if (resp->statusCode() == k200OK && allow == "OPTIONS,GET,HEAD,POST")
+            {
+                outputGood(req, isHttps);
+            }
+            else
+            {
+                LOG_ERROR << "Error!";
+                exit(1);
+            }
+        }
+        else
+        {
+            LOG_ERROR << "Error!";
+            exit(1);
+        }
+    });
+
+    req = HttpRequest::newHttpRequest();
+    req->setMethod(drogon::Options);
+    req->setPath("/slow");
+    client->sendRequest(req, [=](ReqResult result, const HttpResponsePtr &resp) {
+        if (result == ReqResult::Ok)
+        {
+            if (resp->statusCode() == k403Forbidden)
+            {
+                outputGood(req, isHttps);
+            }
+            else
+            {
+                LOG_ERROR << "Error!";
+                exit(1);
+            }
+        }
+        else
+        {
+            LOG_ERROR << "Error!";
+            exit(1);
+        }
+    });
+
+    req = HttpRequest::newHttpRequest();
+    req->setMethod(drogon::Options);
+    req->setPath("/*");
+    client->sendRequest(req, [=](ReqResult result, const HttpResponsePtr &resp) {
+        if (result == ReqResult::Ok)
+        {
+            //LOG_DEBUG << resp->getBody();
+            auto allow = resp->getHeader("allow");
+            if (resp->statusCode() == k200OK && allow == "GET,HEAD,POST,PUT,DELETE,OPTIONS")
+            {
+                outputGood(req, isHttps);
+            }
+            else
+            {
+                LOG_ERROR << "Error!";
+                exit(1);
+            }
+        }
+        else
+        {
+            LOG_ERROR << "Error!";
+            exit(1);
+        }
+    });
+
+    req = HttpRequest::newHttpRequest();
+    req->setMethod(drogon::Options);
+    req->setPath("/api/v1/apitest/static");
+    client->sendRequest(req, [=](ReqResult result, const HttpResponsePtr &resp) {
+        if (result == ReqResult::Ok)
+        {
+            //LOG_DEBUG << resp->getBody();
+            auto allow = resp->getHeader("allow");
+            if (resp->statusCode() == k200OK && allow == "OPTIONS,GET,HEAD")
+            {
+                outputGood(req, isHttps);
+            }
+            else
+            {
+                LOG_ERROR << "Error!";
+                exit(1);
+            }
+        }
+        else
+        {
+            LOG_ERROR << "Error!";
+            exit(1);
+        }
+    });
+
     /// 4. Test HttpController
     req = HttpRequest::newHttpRequest();
     req->setMethod(drogon::Post);
