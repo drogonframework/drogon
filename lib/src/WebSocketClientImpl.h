@@ -46,7 +46,6 @@ class WebSocketClientImpl : public WebSocketClient, public std::enable_shared_fr
         _connectionClosedCallback = callback;
     }
 
-    virtual void setHeartbeatMessage(const std::string &message, double interval) override;
 
     virtual void connectToServer(const HttpRequestPtr &request, const WebSocketRequestCallback &callback) override
     {
@@ -85,7 +84,6 @@ class WebSocketClientImpl : public WebSocketClient, public std::enable_shared_fr
     bool _upgraded = false;
     std::string _wsKey;
     std::string _wsAccept;
-    trantor::TimerId _heartbeatTimerId;
 
     HttpRequestPtr _upgradeRequest;
     std::function<void(std::string &&message, const WebSocketClientPtr &, const WebSocketMessageType &)> _messageCallback = [](std::string &&message, const WebSocketClientPtr &, const WebSocketMessageType &) {};

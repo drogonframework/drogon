@@ -5,6 +5,7 @@
 #include <iostream>
 
 using namespace drogon;
+using namespace std::chrono_literals;
 
 int main(int argc, char *argv[])
 {
@@ -35,6 +36,7 @@ int main(int argc, char *argv[])
         if (r == ReqResult::Ok)
         {
             std::cout << "ws connected!" << std::endl;
+            wsPtr->getConnection()->setPingMessage("", 2s);
             wsPtr->getConnection()->send("hello!");
         }
         else
@@ -46,7 +48,6 @@ int main(int argc, char *argv[])
             }
         }
     });
-    wsPtr->setHeartbeatMessage("", 1.0);
     app().getLoop()->runAfter(5.0, [continually]() {
         if (!continually)
         {

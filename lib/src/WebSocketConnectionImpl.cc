@@ -163,6 +163,19 @@ any *WebSocketConnectionImpl::WebSocketConnectionImpl::getMutableContext()
     return &_context;
 }
 
+void WebSocketConnectionImpl::setPingMessage(const std::string &message, const std::chrono::duration<long double> &interval)
+{
+    std::weak_ptr<WebSocketConnectionImpl> weakPtr = shared_from_this();
+    _pingTimerId = _tcpConn->getLoop()->runEvery(interval.count(), [weakPtr, message]() {
+        auto thisPtr = weakPtr.lock();
+        if (thisPtr)
+        {
+            thisPtr->send(message, WebSocketMessageType::Ping);
+        }
+    });
+}
+
+
 bool WebSocketMessageParser::parse(trantor::MsgBuffer *buffer)
 {
     //According to the rfc6455
