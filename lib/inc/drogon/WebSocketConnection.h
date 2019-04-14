@@ -52,6 +52,13 @@ class WebSocketConnection
     virtual void setContext(const any &context) = 0;
     virtual const any &getContext() const = 0;
     virtual any *getMutableContext() = 0;
+
+    /// Set the heartbeat(ping) message sent to the server.
+    /**
+     * NOTE:
+     * Both the server and the client in Drogon automatically send the pong message after receiving the ping message.
+     */
+    virtual void setPingMessage(const std::string &message, const std::chrono::duration<long double> &interval) = 0;
 };
 typedef std::shared_ptr<WebSocketConnection> WebSocketConnectionPtr;
 } // namespace drogon

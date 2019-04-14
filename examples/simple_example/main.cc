@@ -6,6 +6,7 @@
 #include "CustomHeaderFilter.h"
 
 using namespace drogon;
+using namespace std::chrono_literals;
 class A : public DrObjectBase
 {
   public:
@@ -153,5 +154,6 @@ int main()
     //Install custom filter
     auto filterPtr = std::make_shared<CustomHeaderFilter>("custom_header", "yes");
     app().registerFilter(filterPtr);
+    app().setIdleConnectionTimeout(30s);
     app().run();
 }

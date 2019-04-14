@@ -28,21 +28,8 @@
 using namespace drogon;
 using namespace trantor;
 
-void WebSocketClientImpl::setHeartbeatMessage(const std::string &message, double interval)
-{
-    std::weak_ptr<WebSocketClientImpl> weakPtr = shared_from_this();
-    _heartbeatTimerId = _loop->runEvery(interval, [weakPtr, message]() {
-        auto thisPtr = weakPtr.lock();
-        if (thisPtr && thisPtr->_websockConnPtr)
-        {
-            thisPtr->_websockConnPtr->send(message, WebSocketMessageType::Ping);
-        }
-    });
-}
-
 WebSocketClientImpl::~WebSocketClientImpl()
 {
-    _loop->invalidateTimer(_heartbeatTimerId);
 }
 
 void WebSocketClientImpl::connectToServerInLoop()

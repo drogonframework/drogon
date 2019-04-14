@@ -40,6 +40,7 @@
 #include <functional>
 #include <vector>
 #include <type_traits>
+#include <chrono>
 
 namespace drogon
 {
@@ -326,6 +327,17 @@ class HttpAppFramework : public trantor::NonCopyable
      */
     virtual void enableSession(const size_t timeout = 0) = 0;
 
+    ///An wrapper of the above method.
+    /**
+     * Users can set the timeout value as follows:
+     *   app().enableSession(0.2h);
+     *   app().enableSession(12min); 
+     */
+    inline void enableSession(const std::chrono::duration<long double> &timeout)
+    {
+        enableSession((size_t)timeout.count());
+    }
+
     ///Disable sessions supporting.
     /** 
      * NOTE:
@@ -472,12 +484,23 @@ class HttpAppFramework : public trantor::NonCopyable
 
     ///Set the lifetime of the connection without read or write
     /**
-     * @param timeout: in seconds. 60 by default.
+     * @param timeout: in seconds. 60 by default. Setting the timeout to 0 means that drogon does not close idle connections.
      * 
      * NOTE:
      * This operation can be performed by an option in the configuration file.
      */
     virtual void setIdleConnectionTimeout(size_t timeout) = 0;
+
+    ///An wrapper of the above method.
+    /**
+     * Users can set the timeout value as follows:
+     *   app().setIdleConnectionTimeout(0.5h);
+     *   app().setIdleConnectionTimeout(30min); 
+     */
+    inline void setIdleConnectionTimeout(const std::chrono::duration<long double> &timeout)
+    {
+        setIdleConnectionTimeout((size_t)timeout.count());
+    }
 
     ///Set the 'server' header field in each response sent by drogon.
     /**

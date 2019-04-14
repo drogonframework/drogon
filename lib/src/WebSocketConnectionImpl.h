@@ -16,6 +16,7 @@
 
 #include <drogon/WebSocketConnection.h>
 #include <drogon/WebSocketController.h>
+
 namespace drogon
 {
 
@@ -62,6 +63,8 @@ class WebSocketConnectionImpl : public WebSocketConnection, public std::enable_s
     virtual void setContext(const any &context) override;
     virtual const any &getContext() const override;
     virtual any *getMutableContext() override;
+
+    virtual void setPingMessage(const std::string &message, const std::chrono::duration<long double> &interval) override;
 
     void setMessageCallback(const std::function<void(std::string &&,
                                                      const WebSocketConnectionImplPtr &,
@@ -120,6 +123,8 @@ class WebSocketConnectionImpl : public WebSocketConnection, public std::enable_s
 
     void onClose()
     {
+        if (_pingTimerId != trantor::InvalidTimerId)
+            _tcpConn->getLoop()->invalidateTimer(_pingTimerId);
         _closeCallback(shared_from_this());
     }
 
@@ -129,6 +134,9 @@ class WebSocketConnectionImpl : public WebSocketConnection, public std::enable_s
     trantor::InetAddress _peerAddr;
     any _context;
     bool _isServer = true;
+    WebSocketMessageParser _parser;
+    trantor::TimerId _pingTimerId = trantor::InvalidTimerId;
+
     std::function<void(std::string &&,
                        const WebSocketConnectionImplPtr &,
                        const WebSocketMessageType &)>
@@ -136,10 +144,7 @@ class WebSocketConnectionImpl : public WebSocketConnection, public std::enable_s
                               const WebSocketConnectionImplPtr &,
                               const WebSocketMessageType &) {};
     std::function<void(const WebSocketConnectionImplPtr &)> _closeCallback = [](const WebSocketConnectionImplPtr &) {};
-
     void sendWsData(const char *msg, size_t len, unsigned char opcode);
-
-    WebSocketMessageParser _parser;
 };
 
 } // namespace drogon

@@ -43,13 +43,6 @@ class WebSocketClient
     /// parameter.
     virtual void setConnectionClosedHandler(const std::function<void(const WebSocketClientPtr &)> &callback) = 0;
 
-    /// Set the heartbeat(ping) message sent to the server.
-    /**
-     * NOTE:
-     * Both the server and the client in Drogon automatically send the pong message after receiving the ping message.
-     */
-    virtual void setHeartbeatMessage(const std::string &message, double interval) = 0;
-
     /// Connect to the server.
     virtual void connectToServer(const HttpRequestPtr &request, const WebSocketRequestCallback &callback) = 0;
 
