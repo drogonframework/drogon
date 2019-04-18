@@ -9,7 +9,7 @@ using namespace drogon;
 using namespace std::chrono_literals;
 class A : public DrObjectBase
 {
-  public:
+public:
     void handle(const HttpRequestPtr &req,
                 const std::function<void(const HttpResponsePtr &)> &callback,
                 int p1, const std::string &p2, const std::string &p3, int p4) const
@@ -45,7 +45,7 @@ class A : public DrObjectBase
 };
 class B : public DrObjectBase
 {
-  public:
+public:
     void operator()(const HttpRequestPtr &req, const std::function<void(const HttpResponsePtr &)> &callback, int p1, int p2)
     {
         HttpViewData data;
@@ -64,7 +64,7 @@ namespace v1
 {
 class Test : public HttpController<Test>
 {
-  public:
+public:
     METHOD_LIST_BEGIN
     METHOD_ADD(Test::get, "get/{2}/{1}", Get); //path is /api/v1/test/get/{arg2}/{arg1}
     METHOD_ADD(Test::list, "/{2}/info", Get);  //path is /api/v1/test/{arg2}/info
@@ -155,5 +155,47 @@ int main()
     auto filterPtr = std::make_shared<CustomHeaderFilter>("custom_header", "yes");
     app().registerFilter(filterPtr);
     app().setIdleConnectionTimeout(30s);
+    //Test AOP
+    app().registerBeginningAdvice([]() {
+        LOG_DEBUG << "Event loop is running!";
+    });
+    app().registerNewConnectionAdvice([](const trantor::InetAddress &peer, const trantor::InetAddress &local) {
+        LOG_DEBUG << "New connection: " << peer.toIpPort() << "-->" << local.toIpPort();
+        return true;
+    });
+    app().registerPreRoutingAdvice([](const drogon::HttpRequestPtr &req,
+                                      const drogon::AdviceCallback &acb,
+                                      const drogon::AdviceChainCallback &accb) {
+        LOG_DEBUG << "preRouting1";
+        accb();
+    });
+    app().registerPostRoutingAdvice([](const drogon::HttpRequestPtr &req,
+                                       const drogon::AdviceCallback &acb,
+                                       const drogon::AdviceChainCallback &accb) {
+        LOG_DEBUG << "postRouting1";
+        LOG_DEBUG << "Matched path=" << req->matchedPathPattern();
+        accb();
+    });
+    app().registerPreHandlingAdvice([](const drogon::HttpRequestPtr &req,
+                                       const drogon::AdviceCallback &acb,
+                                       const drogon::AdviceChainCallback &accb) {
+        LOG_DEBUG << "preHandling1";
+        // auto resp = HttpResponse::newNotFoundResponse();
+        // acb(resp);
+        // return;
+        accb();
+    });
+    app().registerPostHandlingAdvice([](const drogon::HttpRequestPtr &, const drogon::HttpResponsePtr &) {
+        LOG_DEBUG << "postHandling1";
+    });
+    app().registerPreRoutingAdvice([](const drogon::HttpRequestPtr &req) {
+        LOG_DEBUG << "preRouting observer";
+    });
+    app().registerPostRoutingAdvice([](const drogon::HttpRequestPtr &req) {
+        LOG_DEBUG << "postRouting observer";
+    });
+    app().registerPreHandlingAdvice([](const drogon::HttpRequestPtr &req) {
+        LOG_DEBUG << "preHanding observer";
+    });
     app().run();
 }

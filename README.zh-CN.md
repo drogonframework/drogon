@@ -32,5 +32,7 @@ Drogon的主要应用平台是Linux，也支持Mac OS、FreeBSD，目前还不�
 * 基于线程池实现sqlite3数据库的异步读写，提供与上文数据库相同的接口；
 * 支持ARM架构；
 * 方便的轻量级ORM实现，支持常规的对象到数据库的双向映射操作；
+* 支持插件，可通过配置文件在加载期动态拆装；
+* 支持内建插入点的AOP
 
 ### 更多详情请浏览 [wiki](https://gitee.com/an-tao/drogon/wikis/概述)

@@ -16,6 +16,7 @@
 
 #include <drogon/WebSocketConnection.h>
 #include <drogon/WebSocketController.h>
+#include <trantor/utils/NonCopyable.h>
 
 namespace drogon
 {
@@ -25,7 +26,7 @@ typedef std::shared_ptr<WebSocketConnectionImpl> WebSocketConnectionImplPtr;
 
 class WebSocketMessageParser
 {
-  public:
+public:
     bool parse(trantor::MsgBuffer *buffer);
     bool gotAll(std::string &message, WebSocketMessageType &type)
     {
@@ -37,15 +38,17 @@ class WebSocketMessageParser
         return true;
     }
 
-  private:
+private:
     std::string _message;
     WebSocketMessageType _type;
     bool _gotAll = false;
 };
 
-class WebSocketConnectionImpl : public WebSocketConnection, public std::enable_shared_from_this<WebSocketConnectionImpl>
+class WebSocketConnectionImpl : public WebSocketConnection,
+                                public std::enable_shared_from_this<WebSocketConnectionImpl>,
+                                public trantor::NonCopyable
 {
-  public:
+public:
     explicit WebSocketConnectionImpl(const trantor::TcpConnectionPtr &conn, bool isServer = true);
 
     virtual void send(const char *msg, uint64_t len, const WebSocketMessageType &type = WebSocketMessageType::Text) override;
@@ -128,7 +131,7 @@ class WebSocketConnectionImpl : public WebSocketConnection, public std::enable_s
         _closeCallback(shared_from_this());
     }
 
-  private:
+private:
     trantor::TcpConnectionPtr _tcpConn;
     trantor::InetAddress _localAddr;
     trantor::InetAddress _peerAddr;

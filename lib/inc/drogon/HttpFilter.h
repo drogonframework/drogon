@@ -23,11 +23,20 @@
 
 namespace drogon
 {
-typedef std::function<void(HttpResponsePtr)> FilterCallback;
+typedef std::function<void(const HttpResponsePtr &)> FilterCallback;
 typedef std::function<void()> FilterChainCallback;
 class HttpFilterBase : public virtual DrObjectBase
 {
-  public:
+public:
+    /// This virtual function should be overrided in subclasses.
+    /**
+     * This method is an asynchronous interface, user should return the result via 'FilterCallback'
+     * or 'FilterChainCallback'.
+     * If @param fcb is called, the response object is send to the client by the callback, 
+     * and doFilter methods of next filters and the handler registed on the path are not called anymore.
+     * If @param fccb is called, the next filter's doFilter method or the handler 
+     * registered on the path is called.
+     */
     virtual void doFilter(const HttpRequestPtr &req,
                           const FilterCallback &fcb,
                           const FilterChainCallback &fccb) = 0;
@@ -36,7 +45,7 @@ class HttpFilterBase : public virtual DrObjectBase
 template <typename T, bool AutoCreation = true>
 class HttpFilter : public DrObject<T>, public HttpFilterBase
 {
-  public:
+public:
     static const bool isAutoCreation = AutoCreation;
     virtual ~HttpFilter() {}
 };
