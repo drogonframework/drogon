@@ -15,6 +15,7 @@
 #include "HttpAppFrameworkImpl.h"
 #include "ConfigLoader.h"
 #include "HttpServer.h"
+#include "AOPAdvice.h"
 #if USE_ORM
 #include "../../orm_lib/src/DbClientLockFree.h"
 #endif
@@ -479,6 +480,7 @@ void HttpAppFrameworkImpl::onConnection(const TcpConnectionPtr &conn)
         {
             LOG_ERROR << "too much connections!force close!";
             conn->forceClose();
+            return;
         }
         else if (_maxConnectionNumPerIP > 0)
         {
@@ -494,7 +496,16 @@ void HttpAppFrameworkImpl::onConnection(const TcpConnectionPtr &conn)
                     conn->getLoop()->queueInLoop([conn]() {
                         conn->forceClose();
                     });
+                    return;
                 }
+            }
+        }
+        for (auto &advice : _newConnectionAdvices)
+        {
+            if (!advice(conn->peerAddr(), conn->localAddr()))
+            {
+                conn->forceClose();
+                return;
             }
         }
     }
@@ -720,7 +731,74 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestImplPtr &req, std::fu
     }
 
     //Route to controller
-    _httpSimpleCtrlsRouter.route(req, std::move(callback), needSetJsessionid, std::move(sessionId));
+    if (!_preRoutingObservers.empty())
+    {
+        for (auto &observer : _preRoutingObservers)
+        {
+            observer(req);
+        }
+    }
+    if (_postHandlingAdvices.empty())
+    {
+        if (_preRoutingAdvices.empty())
+        {
+            _httpSimpleCtrlsRouter.route(req, std::move(callback), needSetJsessionid, std::move(sessionId));
+        }
+        else
+        {
+            auto callbackPtr = std::make_shared<std::function<void(const HttpResponsePtr &)>>(std::move(callback));
+            auto sessionIdPtr = std::make_shared<std::string>(std::move(sessionId));
+            doAdvicesChain(_preRoutingAdvices,
+                           0,
+                           req,
+                           std::make_shared<std::function<void(const HttpResponsePtr &)>>([callbackPtr, needSetJsessionid, sessionIdPtr](const HttpResponsePtr &resp) {
+                               if (!needSetJsessionid)
+                                   (*callbackPtr)(resp);
+                               else
+                               {
+                                   resp->addCookie("JSESSIONID", *sessionIdPtr);
+                                   (*callbackPtr)(resp);
+                               }
+                           }),
+                           [this, callbackPtr, req, needSetJsessionid, sessionIdPtr]() {
+                               _httpSimpleCtrlsRouter.route(req, std::move(*callbackPtr), needSetJsessionid, std::move(*sessionIdPtr));
+                           });
+        }
+    }
+    else
+    {
+        auto postHandlingCallback = [this, req, callback = std::move(callback)](const HttpResponsePtr &resp) -> void {
+            for (auto &advice : _postHandlingAdvices)
+            {
+                advice(req, resp);
+            }
+            callback(resp);
+        };
+        if (_preRoutingAdvices.empty())
+        {
+            _httpSimpleCtrlsRouter.route(req, std::move(postHandlingCallback), needSetJsessionid, std::move(sessionId));
+        }
+        else
+        {
+            auto callbackPtr = std::make_shared<std::function<void(const HttpResponsePtr &)>>(std::move(postHandlingCallback));
+            auto sessionIdPtr = std::make_shared<std::string>(std::move(sessionId));
+            doAdvicesChain(_preRoutingAdvices,
+                           0,
+                           req,
+                           std::make_shared<std::function<void(const HttpResponsePtr &)>>([callbackPtr, needSetJsessionid, sessionIdPtr](const HttpResponsePtr &resp) {
+                               if (!needSetJsessionid)
+                                   (*callbackPtr)(resp);
+                               else
+                               {
+                                   resp->addCookie("JSESSIONID", *sessionIdPtr);
+                                   (*callbackPtr)(resp);
+                               }
+                           }),
+                           [this, callbackPtr, req, needSetJsessionid, sessionIdPtr]() mutable {
+                               _httpSimpleCtrlsRouter.route(req, std::move(*callbackPtr), needSetJsessionid, std::move(*sessionIdPtr));
+                           });
+        }
+    }
 }
 
 trantor::EventLoop *HttpAppFrameworkImpl::getLoop()

@@ -63,6 +63,8 @@ inline std::string getGitCommit()
 class HttpControllerBase;
 class HttpSimpleControllerBase;
 class WebSocketControllerBase;
+typedef std::function<void(const HttpResponsePtr &)> AdviceCallback;
+typedef std::function<void()> AdviceChainCallback;
 
 class HttpAppFramework : public trantor::NonCopyable
 {
@@ -121,7 +123,7 @@ class HttpAppFramework : public trantor::NonCopyable
     /**
      * NOTE:
      * This method is usually called after the framework is run.
-     * Calling this method in the initAndStart() method of some plugins is also valid. 
+     * Calling this method in the initAndStart() method of plugins is also valid. 
      */
     template <typename T>
     T *getPlugin()
@@ -137,9 +139,74 @@ class HttpAppFramework : public trantor::NonCopyable
      * 
      * NOTE:
      * This method is usually called after the framework is run.
-     * Calling this method in the initAndStart() method of some plugins is also valid. 
+     * Calling this method in the initAndStart() method of plugins is also valid. 
      */
     virtual PluginBase *getPlugin(const std::string &name) = 0;
+
+    ///The following is a series of methods of AOP
+
+    ///The @param advice is called immediately after the main event loop runs.
+    virtual void registerBeginningAdvice(const std::function<void()> &advice) = 0;
+
+    ///The @param advice is called immediately when a new connection is established.
+    /**
+     * The first parameter of the @param advice is the remote address of the new connection, the second one
+     * is the local address of it.
+     * If the @param advice returns a false value, drogon closes the connection.
+     * Users can use this advice to implement some security policies.
+     */
+    virtual void registerNewConnectionAdvice(const std::function<bool(const trantor::InetAddress &, const trantor::InetAddress &)> &advice) = 0;
+
+    ///The @param advice is called immediately after the request is created and before it matches any handler paths.
+    /**
+     * The parameters of the @param advice are same as those of the doFilter method of the Filter class. 
+     */
+    virtual void registerPreRoutingAdvice(const std::function<void(const HttpRequestPtr &,
+                                                                   const AdviceCallback &,
+                                                                   const AdviceChainCallback &)> &advice) = 0;
+
+    ///The @param advice is called at the same time as the above advice. It can be thought of as an observer who cannot respond to http requests.
+    /**
+     * This advice has less overhead than the above one. 
+     * If one does not intend to intercept the http request, please use this interface.
+     */
+    virtual void registerPreRoutingAdvice(const std::function<void(const HttpRequestPtr &)> &advice) = 0;
+
+    ///The @param advice is called immediately after the request matchs a handler path 
+    ///and before any 'doFilter' method of filters applies.
+    /**
+     * The parameters of the @param advice are same as those of the doFilter method of the Filter class. 
+     */
+    virtual void registerPostRoutingAdvice(const std::function<void(const HttpRequestPtr &,
+                                                                    const AdviceCallback &,
+                                                                    const AdviceChainCallback &)> &advice) = 0;
+
+    ///The @param advice is called at the same time as the above advice. It can be thought of as an observer who cannot respond to http requests.
+    /**
+     * This advice has less overhead than the above one. 
+     * If one does not intend to intercept the http request, please use this interface.
+     */
+    virtual void registerPostRoutingAdvice(const std::function<void(const HttpRequestPtr &)> &advice) = 0;
+
+    ///The @param advice is called immediately after the request is approved by all filters and before it is handled.
+    /**
+     * The parameters of the @param advice are same as those of the doFilter method of the Filter class. 
+     */
+    virtual void registerPreHandlingAdvice(const std::function<void(const HttpRequestPtr &,
+                                                                    const AdviceCallback &,
+                                                                    const AdviceChainCallback &)> &advice) = 0;
+
+    ///The @param advice is called at the same time as the above advice. It can be thought of as an observer who cannot respond to http requests.
+    /**
+     * This advice has less overhead than the above one. 
+     * If one does not intend to intercept the http request, please use this interface.
+     */
+    virtual void registerPreHandlingAdvice(const std::function<void(const HttpRequestPtr &)> &advice) = 0;
+
+    ///The @param advice is called immediately after the request is handled and a response object is created by handlers or by filters.
+    virtual void registerPostHandlingAdvice(const std::function<void(const HttpRequestPtr &, const HttpResponsePtr &)> &advice) = 0;
+    
+    ///End of AOP methods
 
     ///Load the configuration file with json format.
     virtual void loadConfigFile(const std::string &fileName) = 0;

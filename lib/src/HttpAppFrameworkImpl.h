@@ -18,9 +18,9 @@
 #include "HttpResponseImpl.h"
 #include "HttpClientImpl.h"
 #include "SharedLibManager.h"
-#include "WebSocketConnectionImpl.h"
 #include "HttpControllersRouter.h"
 #include "HttpSimpleControllersRouter.h"
+#include "WebSocketConnectionImpl.h"
 #include "WebsocketControllersRouter.h"
 #include "PluginsManager.h"
 
@@ -47,14 +47,15 @@ struct InitBeforeMainFunction
 };
 class HttpAppFrameworkImpl : public HttpAppFramework
 {
-  public:
+public:
     HttpAppFrameworkImpl()
-        : _httpSimpleCtrlsRouter(_httpCtrlsRouter),
+        : _httpCtrlsRouter(_postRoutingAdvices, _postRoutingObservers, _preHandlingAdvices, _preHandlingObservers),
+          _httpSimpleCtrlsRouter(_httpCtrlsRouter, _postRoutingAdvices, _postRoutingObservers, _preHandlingAdvices, _preHandlingObservers),
           _uploadPath(_rootPath + "uploads"),
           _connectionNum(0)
     {
     }
-    
+
     virtual const Json::Value &getCustomConfig() const override
     {
         return _jsonConfig["custom_config"];
@@ -93,6 +94,53 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     {
         return _custom404;
     }
+
+    virtual void registerBeginningAdvice(const std::function<void()> &advice) override
+    {
+        getLoop()->runInLoop(advice);
+    }
+
+    virtual void registerNewConnectionAdvice(const std::function<bool(const trantor::InetAddress &, const trantor::InetAddress &)> &advice) override
+    {
+        _newConnectionAdvices.emplace_back(advice);
+    }
+
+    virtual void registerPreRoutingAdvice(const std::function<void(const HttpRequestPtr &,
+                                                                   const AdviceCallback &,
+                                                                   const AdviceChainCallback &)> &advice) override
+    {
+        _preRoutingAdvices.emplace_back(advice);
+    }
+    virtual void registerPostRoutingAdvice(const std::function<void(const HttpRequestPtr &,
+                                                                    const AdviceCallback &,
+                                                                    const AdviceChainCallback &)> &advice) override
+    {
+        _postRoutingAdvices.emplace_front(advice);
+    }
+    virtual void registerPreHandlingAdvice(const std::function<void(const HttpRequestPtr &,
+                                                                    const AdviceCallback &,
+                                                                    const AdviceChainCallback &)> &advice) override
+    {
+        _preHandlingAdvices.emplace_back(advice);
+    }
+
+    virtual void registerPreRoutingAdvice(const std::function<void(const HttpRequestPtr &)> &advice) override
+    {
+        _preRoutingObservers.emplace_back(advice);
+    }
+    virtual void registerPostRoutingAdvice(const std::function<void(const HttpRequestPtr &)> &advice) override
+    {
+        _postRoutingObservers.emplace_front(advice);
+    }
+    virtual void registerPreHandlingAdvice(const std::function<void(const HttpRequestPtr &)> &advice) override
+    {
+        _preHandlingObservers.emplace_back(advice);
+    }
+    virtual void registerPostHandlingAdvice(const std::function<void(const HttpRequestPtr &, const HttpResponsePtr &)> &advice) override
+    {
+        _postHandlingAdvices.emplace_front(advice);
+    }
+
     virtual void enableSession(const size_t timeout = 0) override
     {
         _useSession = true;
@@ -179,7 +227,7 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     }
     bool useSendfile() { return _useSendfile; }
 
-  private:
+private:
     virtual void registerHttpController(const std::string &pathPattern,
                                         const internal::HttpBinderBasePtr &binder,
                                         const std::vector<HttpMethod> &validMethods = std::vector<HttpMethod>(),
@@ -264,6 +312,26 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     void createDbClients(const std::vector<trantor::EventLoop *> &ioloops);
 #endif
     static InitBeforeMainFunction _initFirst;
+    std::vector<std::function<bool(const trantor::InetAddress &, const trantor::InetAddress &)>> _newConnectionAdvices;
+    std::vector<std::function<void(const HttpRequestPtr &,
+                                   const AdviceCallback &,
+                                   const AdviceChainCallback &)>>
+        _preRoutingAdvices;
+    std::deque<std::function<void(const HttpRequestPtr &,
+                                  const AdviceCallback &,
+                                  const AdviceChainCallback &)>>
+        _postRoutingAdvices;
+    std::vector<std::function<void(const HttpRequestPtr &,
+                                   const AdviceCallback &,
+                                   const AdviceChainCallback &)>>
+        _preHandlingAdvices;
+    std::deque<std::function<void(const HttpRequestPtr &,
+                                  const HttpResponsePtr &)>>
+        _postHandlingAdvices;
+
+    std::vector<std::function<void(const HttpRequestPtr &)>> _preRoutingObservers;
+    std::deque<std::function<void(const HttpRequestPtr &)>> _postRoutingObservers;
+    std::vector<std::function<void(const HttpRequestPtr &)>> _preHandlingObservers;
 };
 
 } // namespace drogon

@@ -32,6 +32,8 @@ Drogon's main application platform is Linux. It also supports Mac OS and FreeBSD
 * Support asynchronously reading and writing sqlite3 database based on thread pool;
 * Support ARM Architecture;
 * Provide a convenient lightweight ORM implementation that supports for regular object-to-database bidirectional mapping;
+* Support plugins which can be installed by the configuration file at load time;
+* Support AOP with build-in joinpoints.
 
 ## A very simple example
 

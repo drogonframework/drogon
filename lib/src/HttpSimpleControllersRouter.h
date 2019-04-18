@@ -15,6 +15,7 @@
 #pragma once
 #include "HttpRequestImpl.h"
 #include "HttpResponseImpl.h"
+#include "HttpControllersRouter.h"
 #include <drogon/HttpSimpleController.h>
 #include <trantor/utils/NonCopyable.h>
 #include <drogon/HttpBinder.h>
@@ -30,48 +31,82 @@
 namespace drogon
 {
 
-class HttpAppFrameworkImpl;
-class HttpControllersRouter;
 class HttpSimpleControllersRouter : public trantor::NonCopyable
 {
 public:
-  explicit HttpSimpleControllersRouter(HttpControllersRouter &httpCtrlRouter)
-      : _httpCtrlsRouter(httpCtrlRouter) {}
-  void registerHttpSimpleController(const std::string &pathName,
-                                    const std::string &ctrlName,
-                                    const std::vector<any> &filtersAndMethods);
-  void route(const HttpRequestImplPtr &req,
-             std::function<void(const HttpResponsePtr &)> &&callback,
-             bool needSetJsessionid,
-             std::string &&sessionId);
-  void init(const std::vector<trantor::EventLoop *> &ioLoops);
+    HttpSimpleControllersRouter(HttpControllersRouter &httpCtrlRouter,
+                                const std::deque<std::function<void(const HttpRequestPtr &,
+                                                                    const AdviceCallback &,
+                                                                    const AdviceChainCallback &)>>
+                                    &postRoutingAdvices,
+                                const std::deque<std::function<void(const HttpRequestPtr &)>>
+                                    &postRoutingObservers,
+                                const std::vector<std::function<void(const HttpRequestPtr &,
+                                                                     const AdviceCallback &,
+                                                                     const AdviceChainCallback &)>>
+                                    &preHandlingAdvices,
+                                const std::vector<std::function<void(const HttpRequestPtr &)>>
+                                    &preHandlingObservers)
+        : _httpCtrlsRouter(httpCtrlRouter),
+          _postRoutingAdvices(postRoutingAdvices),
+          _preHandlingAdvices(preHandlingAdvices),
+          _postRoutingObservers(postRoutingObservers),
+          _preHandlingObservers(preHandlingObservers)
+    {
+    }
+
+    void registerHttpSimpleController(const std::string &pathName,
+                                      const std::string &ctrlName,
+                                      const std::vector<any> &filtersAndMethods);
+    void route(const HttpRequestImplPtr &req,
+               std::function<void(const HttpResponsePtr &)> &&callback,
+               bool needSetJsessionid,
+               std::string &&sessionId);
+    void init(const std::vector<trantor::EventLoop *> &ioLoops);
 
 private:
-  HttpControllersRouter &_httpCtrlsRouter;
+    HttpControllersRouter &_httpCtrlsRouter;
+    const std::deque<std::function<void(const HttpRequestPtr &,
+                                        const AdviceCallback &,
+                                        const AdviceChainCallback &)>>
+        &_postRoutingAdvices;
+    const std::vector<std::function<void(const HttpRequestPtr &,
+                                         const AdviceCallback &,
+                                         const AdviceChainCallback &)>>
+        &_preHandlingAdvices;
+    const std::deque<std::function<void(const HttpRequestPtr &)>>
+        &_postRoutingObservers;
+    const std::vector<std::function<void(const HttpRequestPtr &)>>
+        &_preHandlingObservers;
+    struct CtrlBinder
+    {
+        std::shared_ptr<HttpSimpleControllerBase> _controller;
+        std::vector<std::string> _filterNames;
+        std::vector<std::shared_ptr<HttpFilterBase>> _filters;
+        std::map<trantor::EventLoop *, std::shared_ptr<HttpResponse>> _responsePtrMap;
+        bool _isCORS = false;
+    };
+    typedef std::shared_ptr<CtrlBinder> CtrlBinderPtr;
 
-  struct CtrlBinder
-  {
-    std::shared_ptr<HttpSimpleControllerBase> _controller;
-    std::vector<std::string> _filterNames;
-    std::vector<std::shared_ptr<HttpFilterBase>> _filters;
-    std::map<trantor::EventLoop *, std::shared_ptr<HttpResponse>> _responsePtrMap;
-    bool _isCORS = false;
-  };
-  typedef std::shared_ptr<CtrlBinder> CtrlBinderPtr;
+    struct SimpleControllerRouterItem
+    {
+        std::string _controllerName;
+        CtrlBinderPtr _binders[Invalid] = {nullptr};
+    };
+    std::unordered_map<std::string, SimpleControllerRouterItem> _simpCtrlMap;
+    std::mutex _simpCtrlMutex;
 
-  struct SimpleControllerRouterItem
-  {
-    std::string _controllerName;
-    CtrlBinderPtr _binders[Invalid] = {nullptr};
-  };
-  std::unordered_map<std::string, SimpleControllerRouterItem> _simpCtrlMap;
-  std::mutex _simpCtrlMutex;
-
-  void doControllerHandler(const CtrlBinderPtr &ctrlBinderPtr,
-                           const SimpleControllerRouterItem &routerItem,
-                           const HttpRequestImplPtr &req,
-                           std::function<void(const HttpResponsePtr &)> &&callback,
-                           bool needSetJsessionid,
-                           std::string &&sessionId);
+    void doPreHandlingAdvices(const CtrlBinderPtr &ctrlBinderPtr,
+                              const SimpleControllerRouterItem &routerItem,
+                              const HttpRequestImplPtr &req,
+                              std::function<void(const HttpResponsePtr &)> &&callback,
+                              bool needSetJsessionid,
+                              std::string &&sessionId);
+    void doControllerHandler(const CtrlBinderPtr &ctrlBinderPtr,
+                             const SimpleControllerRouterItem &routerItem,
+                             const HttpRequestImplPtr &req,
+                             std::function<void(const HttpResponsePtr &)> &&callback,
+                             bool needSetJsessionid,
+                             std::string &&sessionId);
 };
 } // namespace drogon

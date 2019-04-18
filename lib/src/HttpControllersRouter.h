@@ -15,6 +15,7 @@
 #pragma once
 #include "HttpRequestImpl.h"
 #include "HttpResponseImpl.h"
+#include "AOPAdvice.h"
 #include <trantor/utils/NonCopyable.h>
 #include <drogon/HttpBinder.h>
 #include <drogon/HttpFilter.h>
@@ -27,11 +28,27 @@
 
 namespace drogon
 {
-class HttpAppFrameworkImpl;
 class HttpControllersRouter : public trantor::NonCopyable
 {
-  public:
-    HttpControllersRouter() {}
+public:
+    HttpControllersRouter(const std::deque<std::function<void(const HttpRequestPtr &,
+                                                              const AdviceCallback &,
+                                                              const AdviceChainCallback &)>>
+                              &postRoutingAdvices,
+                          const std::deque<std::function<void(const HttpRequestPtr &)>>
+                              &postRoutingObservers,
+                          const std::vector<std::function<void(const HttpRequestPtr &,
+                                                               const AdviceCallback &,
+                                                               const AdviceChainCallback &)>>
+                              &preHandlingAdvices,
+                          const std::vector<std::function<void(const HttpRequestPtr &)>>
+                              &preHandlingObservers)
+        : _postRoutingAdvices(postRoutingAdvices),
+          _preHandlingAdvices(preHandlingAdvices),
+          _postRoutingObservers(postRoutingObservers),
+          _preHandlingObservers(preHandlingObservers)
+    {
+    }
     void init(const std::vector<trantor::EventLoop *> &ioLoops);
     void addHttpPath(const std::string &path,
                      const internal::HttpBinderBasePtr &binder,
@@ -42,7 +59,7 @@ class HttpControllersRouter : public trantor::NonCopyable
                bool needSetJsessionid,
                std::string &&sessionId);
 
-  private:
+private:
     struct CtrlBinder
     {
         internal::HttpBinderBasePtr _binderPtr;
@@ -50,7 +67,7 @@ class HttpControllersRouter : public trantor::NonCopyable
         std::vector<std::shared_ptr<HttpFilterBase>> _filters;
         std::vector<size_t> _parameterPlaces;
         std::map<std::string, size_t> _queryParametersPlaces;
-        std::map<trantor::EventLoop *,std::shared_ptr<HttpResponse>> _responsePtrMap;
+        std::map<trantor::EventLoop *, std::shared_ptr<HttpResponse>> _responsePtrMap;
         bool _isCORS = false;
     };
     typedef std::shared_ptr<CtrlBinder> CtrlBinderPtr;
@@ -59,11 +76,28 @@ class HttpControllersRouter : public trantor::NonCopyable
         std::string _pathParameterPattern;
         std::string _pathPattern;
         std::regex _regex;
-        CtrlBinderPtr _binders[Invalid]={nullptr}; //The enum value Invalid is the http methods number
+        CtrlBinderPtr _binders[Invalid] = {nullptr}; //The enum value Invalid is the http methods number
     };
     std::vector<HttpControllerRouterItem> _ctrlVector;
     std::mutex _ctrlMutex;
     std::regex _ctrlRegex;
+
+    const std::deque<std::function<void(const HttpRequestPtr &,
+                                        const AdviceCallback &,
+                                        const AdviceChainCallback &)>> &_postRoutingAdvices;
+    const std::vector<std::function<void(const HttpRequestPtr &,
+                                         const AdviceCallback &,
+                                         const AdviceChainCallback &)>> &_preHandlingAdvices;
+    const std::deque<std::function<void(const HttpRequestPtr &)>>
+        &_postRoutingObservers;
+    const std::vector<std::function<void(const HttpRequestPtr &)>>
+        &_preHandlingObservers;
+    void doPreHandlingAdvices(const CtrlBinderPtr &ctrlBinderPtr,
+                              const HttpControllerRouterItem &routerItem,
+                              const HttpRequestImplPtr &req,
+                              std::function<void(const HttpResponsePtr &)> &&callback,
+                              bool needSetJsessionid,
+                              std::string &&sessionId);
 
     void doControllerHandler(const CtrlBinderPtr &ctrlBinderPtr,
                              const HttpControllerRouterItem &routerItem,
