@@ -267,33 +267,6 @@ void HttpControllersRouter::doControllerHandler(const CtrlBinderPtr &ctrlBinderP
                                                 bool needSetJsessionid,
                                                 std::string &&sessionId)
 {
-    if (req->method() == Options)
-    {
-        auto resp = HttpResponse::newHttpResponse();
-        resp->setContentTypeCode(ContentType::CT_TEXT_PLAIN);
-        std::string methods = "OPTIONS,";
-        if (routerItem._binders[Get] && routerItem._binders[Get]->_isCORS)
-        {
-            methods.append("GET,HEAD,");
-        }
-        if (routerItem._binders[Post] && routerItem._binders[Post]->_isCORS)
-        {
-            methods.append("POST,");
-        }
-        if (routerItem._binders[Put] && routerItem._binders[Put]->_isCORS)
-        {
-            methods.append("PUT,");
-        }
-        if (routerItem._binders[Delete] && routerItem._binders[Delete]->_isCORS)
-        {
-            methods.append("DELETE,");
-        }
-        methods.resize(methods.length() - 1);
-        resp->addHeader("ALLOW", methods);
-        callback(resp);
-        return;
-    }
-
     HttpResponsePtr &responsePtr = ctrlBinderPtr->_responsePtrMap[req->getLoop()];
     if (responsePtr && (responsePtr->expiredTime() == 0 || (trantor::Date::now() < responsePtr->creationDate().after(responsePtr->expiredTime()))))
     {
@@ -301,14 +274,14 @@ void HttpControllersRouter::doControllerHandler(const CtrlBinderPtr &ctrlBinderP
         LOG_TRACE << "Use cached response";
 
         if (!needSetJsessionid)
-            callback(responsePtr);
+            invokeCallback(callback, req, responsePtr);
         else
         {
             //make a copy response;
             auto newResp = std::make_shared<HttpResponseImpl>(*std::dynamic_pointer_cast<HttpResponseImpl>(responsePtr));
             newResp->setExpiredTime(-1); //make it temporary
             newResp->addCookie("JSESSIONID", sessionId);
-            callback(newResp);
+            invokeCallback(callback, req, newResp);
         }
         return;
     }
@@ -376,7 +349,7 @@ void HttpControllersRouter::doControllerHandler(const CtrlBinderPtr &ctrlBinderP
             }
             newResp->addCookie("JSESSIONID", sessionId);
         }
-        callback(newResp);
+        invokeCallback(callback, req, newResp);
     });
     return;
 }
@@ -388,6 +361,32 @@ void HttpControllersRouter::doPreHandlingAdvices(const CtrlBinderPtr &ctrlBinder
                                                  bool needSetJsessionid,
                                                  std::string &&sessionId)
 {
+    if (req->method() == Options)
+    {
+        auto resp = HttpResponse::newHttpResponse();
+        resp->setContentTypeCode(ContentType::CT_TEXT_PLAIN);
+        std::string methods = "OPTIONS,";
+        if (routerItem._binders[Get] && routerItem._binders[Get]->_isCORS)
+        {
+            methods.append("GET,HEAD,");
+        }
+        if (routerItem._binders[Post] && routerItem._binders[Post]->_isCORS)
+        {
+            methods.append("POST,");
+        }
+        if (routerItem._binders[Put] && routerItem._binders[Put]->_isCORS)
+        {
+            methods.append("PUT,");
+        }
+        if (routerItem._binders[Delete] && routerItem._binders[Delete]->_isCORS)
+        {
+            methods.append("DELETE,");
+        }
+        methods.resize(methods.length() - 1);
+        resp->addHeader("ALLOW", methods);
+        callback(resp);
+        return;
+    }
     if (!_preHandlingObservers.empty())
     {
         for (auto &observer : _preHandlingObservers)

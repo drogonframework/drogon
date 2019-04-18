@@ -203,7 +203,7 @@ class HttpAppFramework : public trantor::NonCopyable
      */
     virtual void registerPreHandlingAdvice(const std::function<void(const HttpRequestPtr &)> &advice) = 0;
 
-    ///The @param advice is called immediately after the request is handled and a response object is created by handlers or by filters.
+    ///The @param advice is called immediately after the request is handled and a response object is created by handlers.
     virtual void registerPostHandlingAdvice(const std::function<void(const HttpRequestPtr &, const HttpResponsePtr &)> &advice) = 0;
     
     ///End of AOP methods

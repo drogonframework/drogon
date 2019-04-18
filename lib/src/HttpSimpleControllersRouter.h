@@ -33,7 +33,7 @@ namespace drogon
 
 class HttpSimpleControllersRouter : public trantor::NonCopyable
 {
-public:
+  public:
     HttpSimpleControllersRouter(HttpControllersRouter &httpCtrlRouter,
                                 const std::deque<std::function<void(const HttpRequestPtr &,
                                                                     const AdviceCallback &,
@@ -46,12 +46,16 @@ public:
                                                                      const AdviceChainCallback &)>>
                                     &preHandlingAdvices,
                                 const std::vector<std::function<void(const HttpRequestPtr &)>>
-                                    &preHandlingObservers)
+                                    &preHandlingObservers,
+                                const std::deque<std::function<void(const HttpRequestPtr &,
+                                                                    const HttpResponsePtr &)>>
+                                    &postHandlingAdvices)
         : _httpCtrlsRouter(httpCtrlRouter),
           _postRoutingAdvices(postRoutingAdvices),
           _preHandlingAdvices(preHandlingAdvices),
           _postRoutingObservers(postRoutingObservers),
-          _preHandlingObservers(preHandlingObservers)
+          _preHandlingObservers(preHandlingObservers),
+          _postHandlingAdvices(postHandlingAdvices)
     {
     }
 
@@ -64,7 +68,7 @@ public:
                std::string &&sessionId);
     void init(const std::vector<trantor::EventLoop *> &ioLoops);
 
-private:
+  private:
     HttpControllersRouter &_httpCtrlsRouter;
     const std::deque<std::function<void(const HttpRequestPtr &,
                                         const AdviceCallback &,
@@ -78,6 +82,10 @@ private:
         &_postRoutingObservers;
     const std::vector<std::function<void(const HttpRequestPtr &)>>
         &_preHandlingObservers;
+
+    const std::deque<std::function<void(const HttpRequestPtr &,
+                                        const HttpResponsePtr &)>>
+        &_postHandlingAdvices;
     struct CtrlBinder
     {
         std::shared_ptr<HttpSimpleControllerBase> _controller;
@@ -108,5 +116,15 @@ private:
                              std::function<void(const HttpResponsePtr &)> &&callback,
                              bool needSetJsessionid,
                              std::string &&sessionId);
+    void invokeCallback(const std::function<void(const HttpResponsePtr &)> &callback,
+                        const HttpRequestImplPtr &req,
+                        const HttpResponsePtr &resp)
+    {
+        for (auto &advice : _postHandlingAdvices)
+        {
+            advice(req,resp);
+        }
+        callback(resp);
+    }
 };
 } // namespace drogon
