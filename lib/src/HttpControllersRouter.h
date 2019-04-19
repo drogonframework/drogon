@@ -30,7 +30,7 @@ namespace drogon
 {
 class HttpControllersRouter : public trantor::NonCopyable
 {
-public:
+  public:
     HttpControllersRouter(const std::deque<std::function<void(const HttpRequestPtr &,
                                                               const AdviceCallback &,
                                                               const AdviceChainCallback &)>>
@@ -42,11 +42,15 @@ public:
                                                                const AdviceChainCallback &)>>
                               &preHandlingAdvices,
                           const std::vector<std::function<void(const HttpRequestPtr &)>>
-                              &preHandlingObservers)
+                              &preHandlingObservers,
+                          const std::deque<std::function<void(const HttpRequestPtr &,
+                                                              const HttpResponsePtr &)>>
+                              &postHandlingAdvices)
         : _postRoutingAdvices(postRoutingAdvices),
           _preHandlingAdvices(preHandlingAdvices),
           _postRoutingObservers(postRoutingObservers),
-          _preHandlingObservers(preHandlingObservers)
+          _preHandlingObservers(preHandlingObservers),
+          _postHandlingAdvices(postHandlingAdvices)
     {
     }
     void init(const std::vector<trantor::EventLoop *> &ioLoops);
@@ -59,7 +63,7 @@ public:
                bool needSetJsessionid,
                std::string &&sessionId);
 
-private:
+  private:
     struct CtrlBinder
     {
         internal::HttpBinderBasePtr _binderPtr;
@@ -92,6 +96,10 @@ private:
         &_postRoutingObservers;
     const std::vector<std::function<void(const HttpRequestPtr &)>>
         &_preHandlingObservers;
+    const std::deque<std::function<void(const HttpRequestPtr &,
+                                        const HttpResponsePtr &)>>
+        &_postHandlingAdvices;
+
     void doPreHandlingAdvices(const CtrlBinderPtr &ctrlBinderPtr,
                               const HttpControllerRouterItem &routerItem,
                               const HttpRequestImplPtr &req,
@@ -105,5 +113,15 @@ private:
                              std::function<void(const HttpResponsePtr &)> &&callback,
                              bool needSetJsessionid,
                              std::string &&sessionId);
+    void invokeCallback(const std::function<void(const HttpResponsePtr &)> &callback,
+                        const HttpRequestImplPtr &req,
+                        const HttpResponsePtr &resp)
+    {
+        for (auto &advice : _postHandlingAdvices)
+        {
+            advice(req, resp);
+        }
+        callback(resp);
+    }
 };
 } // namespace drogon

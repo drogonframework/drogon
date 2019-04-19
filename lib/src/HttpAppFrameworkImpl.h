@@ -47,10 +47,10 @@ struct InitBeforeMainFunction
 };
 class HttpAppFrameworkImpl : public HttpAppFramework
 {
-public:
+  public:
     HttpAppFrameworkImpl()
-        : _httpCtrlsRouter(_postRoutingAdvices, _postRoutingObservers, _preHandlingAdvices, _preHandlingObservers),
-          _httpSimpleCtrlsRouter(_httpCtrlsRouter, _postRoutingAdvices, _postRoutingObservers, _preHandlingAdvices, _preHandlingObservers),
+        : _httpCtrlsRouter(_postRoutingAdvices, _postRoutingObservers, _preHandlingAdvices, _preHandlingObservers, _postHandlingAdvices),
+          _httpSimpleCtrlsRouter(_httpCtrlsRouter, _postRoutingAdvices, _postRoutingObservers, _preHandlingAdvices, _preHandlingObservers, _postHandlingAdvices),
           _uploadPath(_rootPath + "uploads"),
           _connectionNum(0)
     {
@@ -227,7 +227,7 @@ public:
     }
     bool useSendfile() { return _useSendfile; }
 
-private:
+  private:
     virtual void registerHttpController(const std::string &pathPattern,
                                         const internal::HttpBinderBasePtr &binder,
                                         const std::vector<HttpMethod> &validMethods = std::vector<HttpMethod>(),
