@@ -160,6 +160,40 @@ class HttpAppFramework : public trantor::NonCopyable
     ///The @param advice is called immediately after the request is created and before it matches any handler paths.
     /**
      * The parameters of the @param advice are same as those of the doFilter method of the Filter class. 
+     * The following diagram shows the location of the AOP join points during http request processing.
+     * 
+     * 
+     *                     +-----------+                             +------------+
+     *                     |  Request  |                             |  Response  |
+     *                     +-----------+                             +------------+
+     *                           |                                         ^
+     *                           v                                         |
+     *    Pre-routing join point o----------->[Advice callback]----------->+
+     *                           |                                         |
+     *                           v         Invalid path                    |
+     *                     [Find Handler]---------------->[404]----------->+
+     *                           |                                         |
+     *                           v                                         |
+     *   Post-routing join point o----------->[Advice callback]----------->+
+     *                           |                                         |
+     *                           v        Invalid method                   |
+     *                     [Check Method]---------------->[405]----------->+
+     *                           |                                         |
+     *                           v                                         |
+     *                       [Filters]------->[Filter callback]----------->+
+     *                           |                                         |
+     *                           v             Y                           |
+     *                  [Is OPTIONS method?]------------->[200]----------->+
+     *                           |                                         |
+     *                           v                                         |
+     *   Pre-handling join point o----------->[Advice callback]----------->+
+     *                           |                                         |
+     *                           v                                         |
+     *                       [Handler]                                     |
+     *                           |                                         |
+     *                           v                                         |
+     *  Post-handling join point o---------------------------------------->+
+     * 
      */
     virtual void registerPreRoutingAdvice(const std::function<void(const HttpRequestPtr &,
                                                                    const AdviceCallback &,
