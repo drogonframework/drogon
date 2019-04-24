@@ -436,7 +436,7 @@ public:
      */
     virtual void enableSession(const size_t timeout = 0) = 0;
 
-    ///An wrapper of the above method.
+    ///A wrapper of the above method.
     /**
      * Users can set the timeout value as follows:
      *   app().enableSession(0.2h);
@@ -600,7 +600,7 @@ public:
      */
     virtual void setIdleConnectionTimeout(size_t timeout) = 0;
 
-    ///An wrapper of the above method.
+    ///A wrapper of the above method.
     /**
      * Users can set the timeout value as follows:
      *   app().setIdleConnectionTimeout(0.5h);
