@@ -51,37 +51,71 @@ HttpClientImpl::HttpClientImpl(trantor::EventLoop *loop,
     {
         return;
     }
-    auto pos = lowerHost.find(":");
-    if (pos != std::string::npos)
+    auto pos = lowerHost.find("]");
+    if (lowerHost[0] == '[' && pos != std::string::npos)
     {
-        _domain = lowerHost.substr(0, pos);
-        auto portStr = lowerHost.substr(pos + 1);
-        pos = portStr.find("/");
-        if (pos != std::string::npos)
+        //ipv6
+        _domain = lowerHost.substr(1, pos - 1);
+        if (lowerHost[pos + 1] == ':')
         {
-            portStr = portStr.substr(0, pos);
+            auto portStr = lowerHost.substr(pos + 2);
+            pos = portStr.find("/");
+            if (pos != std::string::npos)
+            {
+                portStr = portStr.substr(0, pos);
+            }
+            auto port = atoi(portStr.c_str());
+            if (port > 0 && port < 65536)
+            {
+                _server = InetAddress(_domain, port, true);
+            }
         }
-        auto port = atoi(portStr.c_str());
-        if (port > 0 && port < 65536)
+        else
         {
-            _server = InetAddress(port);
+            if (_useSSL)
+            {
+                _server = InetAddress(_domain, 443, true);
+            }
+            else
+            {
+                _server = InetAddress(_domain, 80, true);
+            }
         }
     }
     else
     {
-        _domain = lowerHost;
-        pos = _domain.find("/");
+        auto pos = lowerHost.find(":");
         if (pos != std::string::npos)
         {
-            _domain = _domain.substr(0, pos);
-        }
-        if (_useSSL)
-        {
-            _server = InetAddress(443);
+            _domain = lowerHost.substr(0, pos);
+            auto portStr = lowerHost.substr(pos + 1);
+            pos = portStr.find("/");
+            if (pos != std::string::npos)
+            {
+                portStr = portStr.substr(0, pos);
+            }
+            auto port = atoi(portStr.c_str());
+            if (port > 0 && port < 65536)
+            {
+                _server = InetAddress(port);
+            }
         }
         else
         {
-            _server = InetAddress(80);
+            _domain = lowerHost;
+            pos = _domain.find("/");
+            if (pos != std::string::npos)
+            {
+                _domain = _domain.substr(0, pos);
+            }
+            if (_useSSL)
+            {
+                _server = InetAddress(443);
+            }
+            else
+            {
+                _server = InetAddress(80);
+            }
         }
     }
     LOG_TRACE << "userSSL=" << _useSSL << " domain=" << _domain;
@@ -292,7 +326,7 @@ void HttpClientImpl::onRecvMessage(const trantor::TcpConnectionPtr &connPtr, tra
 
             // LOG_TRACE << "pipelining buffer size=" << _pipeliningCallbacks.size();
             // LOG_TRACE << "requests buffer size=" << _requestsBuffer.size();
-            
+
             if (!_requestsBuffer.empty())
             {
                 auto &reqAndCb = _requestsBuffer.front();
