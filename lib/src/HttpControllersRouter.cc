@@ -47,10 +47,30 @@ void HttpControllersRouter::init(const std::vector<trantor::EventLoop *> &ioLoop
     _ctrlRegex = std::regex(regString, std::regex_constants::icase);
 }
 
+std::vector<std::tuple<std::string, HttpMethod, std::string>> HttpControllersRouter::getHandlersInfo() const
+{
+    std::vector<std::tuple<std::string, HttpMethod, std::string>> ret;
+    for (auto &item : _ctrlVector)
+    {
+        for (size_t i = 0; i < Invalid; i++)
+        {
+            if (item._binders[i])
+            {
+                auto description = item._binders[i]->_handlerName.empty() ? std::string("Handler: ") + item._binders[i]->_binderPtr->handlerName() : std::string("HttpController: ") + item._binders[i]->_handlerName;
+                auto info = std::tuple<std::string, HttpMethod, std::string>(item._pathPattern,
+                                                                             (HttpMethod)i,
+                                                                             std::move(description));
+                ret.emplace_back(std::move(info));
+            }
+        }
+    }
+    return ret;
+}
 void HttpControllersRouter::addHttpPath(const std::string &path,
                                         const internal::HttpBinderBasePtr &binder,
                                         const std::vector<HttpMethod> &validMethods,
-                                        const std::vector<std::string> &filters)
+                                        const std::vector<std::string> &filters,
+                                        const std::string &handlerName)
 {
     //Path is like /api/v1/service/method/{1}/{2}/xxx...
     std::vector<size_t> places;
@@ -103,6 +123,7 @@ void HttpControllersRouter::addHttpPath(const std::string &path,
     auto pathParameterPattern = std::regex_replace(originPath, regex, "([^/]*)");
     auto binderInfo = std::make_shared<CtrlBinder>();
     binderInfo->_filterNames = filters;
+    binderInfo->_handlerName = handlerName;
     binderInfo->_binderPtr = binder;
     binderInfo->_parameterPlaces = std::move(places);
     binderInfo->_queryParametersPlaces = std::move(parametersPlaces);

@@ -43,7 +43,7 @@ class DrClassMap
     }
     static void setSingleInstance(const std::shared_ptr<DrObjectBase> &ins);
     static std::vector<std::string> getAllClassName();
-    static const std::string demangle(const char *mangled_name)
+    static std::string demangle(const char *mangled_name)
     {
         std::size_t len = 0;
         int status = 0;

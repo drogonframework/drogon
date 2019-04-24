@@ -68,7 +68,9 @@ class HttpSimpleControllersRouter : public trantor::NonCopyable
                std::string &&sessionId);
     void init(const std::vector<trantor::EventLoop *> &ioLoops);
 
-  private:
+    std::vector<std::tuple<std::string, HttpMethod, std::string>> getHandlersInfo() const;
+
+private:
     HttpControllersRouter &_httpCtrlsRouter;
     const std::deque<std::function<void(const HttpRequestPtr &,
                                         const AdviceCallback &,
@@ -89,6 +91,7 @@ class HttpSimpleControllersRouter : public trantor::NonCopyable
     struct CtrlBinder
     {
         std::shared_ptr<HttpSimpleControllerBase> _controller;
+        std::string _controllerName;
         std::vector<std::string> _filterNames;
         std::vector<std::shared_ptr<HttpFilterBase>> _filters;
         std::map<trantor::EventLoop *, std::shared_ptr<HttpResponse>> _responsePtrMap;
@@ -98,7 +101,6 @@ class HttpSimpleControllersRouter : public trantor::NonCopyable
 
     struct SimpleControllerRouterItem
     {
-        std::string _controllerName;
         CtrlBinderPtr _binders[Invalid] = {nullptr};
     };
     std::unordered_map<std::string, SimpleControllerRouterItem> _simpCtrlMap;

@@ -47,7 +47,7 @@ struct InitBeforeMainFunction
 };
 class HttpAppFrameworkImpl : public HttpAppFramework
 {
-  public:
+public:
     HttpAppFrameworkImpl()
         : _httpCtrlsRouter(_postRoutingAdvices, _postRoutingObservers, _preHandlingAdvices, _preHandlingObservers, _postHandlingAdvices),
           _httpSimpleCtrlsRouter(_httpCtrlsRouter, _postRoutingAdvices, _postRoutingObservers, _preHandlingAdvices, _preHandlingObservers, _postHandlingAdvices),
@@ -170,6 +170,8 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     virtual void setIdleConnectionTimeout(size_t timeout) override { _idleConnectionTimeout = timeout; }
     virtual void setKeepaliveRequestsNumber(const size_t number) override { _keepaliveRequestsNumber = number; }
     virtual void setPipeliningRequestsNumber(const size_t number) override { _pipeliningRequestsNumber = number; }
+    virtual std::vector<std::tuple<std::string, HttpMethod, std::string>> getHandlersInfo() const override;
+
     size_t keepaliveRequestsNumber() const { return _keepaliveRequestsNumber; }
     size_t pipeliningRequestsNumber() const { return _pipeliningRequestsNumber; }
 
@@ -227,11 +229,12 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     }
     bool useSendfile() { return _useSendfile; }
 
-  private:
+private:
     virtual void registerHttpController(const std::string &pathPattern,
                                         const internal::HttpBinderBasePtr &binder,
                                         const std::vector<HttpMethod> &validMethods = std::vector<HttpMethod>(),
-                                        const std::vector<std::string> &filters = std::vector<std::string>()) override;
+                                        const std::vector<std::string> &filters = std::vector<std::string>(),
+                                        const std::string &handlerName = "") override;
     void onAsyncRequest(const HttpRequestImplPtr &req, std::function<void(const HttpResponsePtr &)> &&callback);
     void onNewWebsockRequest(const HttpRequestImplPtr &req,
                              std::function<void(const HttpResponsePtr &)> &&callback,

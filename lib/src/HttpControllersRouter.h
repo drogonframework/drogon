@@ -30,7 +30,7 @@ namespace drogon
 {
 class HttpControllersRouter : public trantor::NonCopyable
 {
-  public:
+public:
     HttpControllersRouter(const std::deque<std::function<void(const HttpRequestPtr &,
                                                               const AdviceCallback &,
                                                               const AdviceChainCallback &)>>
@@ -57,16 +57,19 @@ class HttpControllersRouter : public trantor::NonCopyable
     void addHttpPath(const std::string &path,
                      const internal::HttpBinderBasePtr &binder,
                      const std::vector<HttpMethod> &validMethods,
-                     const std::vector<std::string> &filters);
+                     const std::vector<std::string> &filters,
+                     const std::string &handlerName = "");
     void route(const HttpRequestImplPtr &req,
                std::function<void(const HttpResponsePtr &)> &&callback,
                bool needSetJsessionid,
                std::string &&sessionId);
+    std::vector<std::tuple<std::string, HttpMethod, std::string>> getHandlersInfo() const;
 
-  private:
+private:
     struct CtrlBinder
     {
         internal::HttpBinderBasePtr _binderPtr;
+        std::string _handlerName;
         std::vector<std::string> _filterNames;
         std::vector<std::shared_ptr<HttpFilterBase>> _filters;
         std::vector<size_t> _parameterPlaces;
@@ -80,7 +83,7 @@ class HttpControllersRouter : public trantor::NonCopyable
         std::string _pathParameterPattern;
         std::string _pathPattern;
         std::regex _regex;
-        CtrlBinderPtr _binders[Invalid] = {nullptr}; //The enum value Invalid is the http methods number
+        CtrlBinderPtr _binders[Invalid] = {nullptr}; //The enum value of Invalid is the http methods number
     };
     std::vector<HttpControllerRouterItem> _ctrlVector;
     std::mutex _ctrlMutex;

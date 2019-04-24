@@ -68,7 +68,7 @@ typedef std::function<void()> AdviceChainCallback;
 
 class HttpAppFramework : public trantor::NonCopyable
 {
-  public:
+public:
     virtual ~HttpAppFramework();
     ///Get the instance of HttpAppFramework
     /**
@@ -206,7 +206,7 @@ class HttpAppFramework : public trantor::NonCopyable
      */
     virtual void registerPreRoutingAdvice(const std::function<void(const HttpRequestPtr &)> &advice) = 0;
 
-    ///The @param advice is called immediately after the request matchs a handler path 
+    ///The @param advice is called immediately after the request matchs a handler path
     ///and before any 'doFilter' method of filters applies.
     /**
      * The parameters of the @param advice are same as those of the doFilter method of the Filter class. 
@@ -239,7 +239,7 @@ class HttpAppFramework : public trantor::NonCopyable
 
     ///The @param advice is called immediately after the request is handled and a response object is created by handlers.
     virtual void registerPostHandlingAdvice(const std::function<void(const HttpRequestPtr &, const HttpResponsePtr &)> &advice) = 0;
-    
+
     ///End of AOP methods
 
     ///Load the configuration file with json format.
@@ -289,7 +289,8 @@ class HttpAppFramework : public trantor::NonCopyable
     template <typename FUNCTION>
     void registerHandler(const std::string &pathPattern,
                          FUNCTION &&function,
-                         const std::vector<any> &filtersAndMethods = std::vector<any>())
+                         const std::vector<any> &filtersAndMethods = std::vector<any>(),
+                         const std::string &handlerName = "")
     {
         LOG_TRACE << "pathPattern:" << pathPattern;
         internal::HttpBinderBasePtr binder;
@@ -320,7 +321,7 @@ class HttpAppFramework : public trantor::NonCopyable
                 exit(1);
             }
         }
-        registerHttpController(pathPattern, binder, validMethods, filters);
+        registerHttpController(pathPattern, binder, validMethods, filters, handlerName);
     }
 
     /// Register a WebSocketController into the framework.
@@ -377,6 +378,13 @@ class HttpAppFramework : public trantor::NonCopyable
         static_assert(!T::isAutoCreation, "Filters created and initialized automatically by drogon cannot be registered here");
         DrClassMap::setSingleInstance(filterPtr);
     }
+
+    ///Get information about the handlers registered to drogon
+    /**
+     * The first item of std::tuple in the return value represents the path pattern of the handler;
+     * The last item in std::tuple is the description of the handler. 
+     */
+    virtual std::vector<std::tuple<std::string, HttpMethod, std::string>> getHandlersInfo() const = 0;
 
     ///Get the custom configuration defined by users in the configuration file.
     virtual const Json::Value &getCustomConfig() const = 0;
@@ -674,11 +682,12 @@ class HttpAppFramework : public trantor::NonCopyable
                                 const bool isFast = false) = 0;
 #endif
 
-  private:
+private:
     virtual void registerHttpController(const std::string &pathPattern,
                                         const internal::HttpBinderBasePtr &binder,
                                         const std::vector<HttpMethod> &validMethods = std::vector<HttpMethod>(),
-                                        const std::vector<std::string> &filters = std::vector<std::string>()) = 0;
+                                        const std::vector<std::string> &filters = std::vector<std::string>(),
+                                        const std::string &handlerName = "") = 0;
 };
 
 inline HttpAppFramework &app()

@@ -53,8 +53,8 @@ void HttpSimpleControllersRouter::registerHttpSimpleController(const std::string
         }
     }
     auto &item = _simpCtrlMap[path];
-    item._controllerName = ctrlName;
     auto binder = std::make_shared<CtrlBinder>();
+    binder->_controllerName = ctrlName;
     binder->_filterNames = filters;
     auto &_object = DrClassMap::getSingleInstance(ctrlName);
     auto controller = std::dynamic_pointer_cast<HttpSimpleControllerBase>(_object);
@@ -92,7 +92,7 @@ void HttpSimpleControllersRouter::route(const HttpRequestImplPtr &req,
     if (iter != _simpCtrlMap.end())
     {
         auto &ctrlInfo = iter->second;
-        req->setMatchedPathPattern(pathLower);
+        req->setMatchedPathPattern(iter->first);
         auto &binder = ctrlInfo._binders[req->method()];
         if (!binder)
         {
@@ -226,13 +226,32 @@ void HttpSimpleControllersRouter::doControllerHandler(const CtrlBinderPtr &ctrlB
     }
     else
     {
-        const std::string &ctrlName = routerItem._controllerName;
+        const std::string &ctrlName = ctrlBinderPtr->_controllerName;
         LOG_ERROR << "can't find controller " << ctrlName;
         auto res = drogon::HttpResponse::newNotFoundResponse();
         if (needSetJsessionid)
             res->addCookie("JSESSIONID", sessionId);
         invokeCallback(callback, req, res);
     }
+}
+
+std::vector<std::tuple<std::string, HttpMethod, std::string>> HttpSimpleControllersRouter::getHandlersInfo() const
+{
+    std::vector<std::tuple<std::string, HttpMethod, std::string>> ret;
+    for (auto &item : _simpCtrlMap)
+    {
+        for (size_t i = 0; i < Invalid; i++)
+        {
+            if (item.second._binders[i])
+            {
+                auto info = std::tuple<std::string, HttpMethod, std::string>(item.first,
+                                                                             (HttpMethod)i,
+                                                                             std::string("HttpSimpleController: ") + item.second._binders[i]->_controllerName);
+                ret.emplace_back(std::move(info));
+            }
+        }
+    }
+    return ret;
 }
 
 void HttpSimpleControllersRouter::init(const std::vector<trantor::EventLoop *> &ioLoops)

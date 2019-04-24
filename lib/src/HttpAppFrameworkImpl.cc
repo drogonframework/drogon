@@ -134,12 +134,13 @@ void HttpAppFrameworkImpl::registerHttpSimpleController(const std::string &pathN
 void HttpAppFrameworkImpl::registerHttpController(const std::string &pathPattern,
                                                   const internal::HttpBinderBasePtr &binder,
                                                   const std::vector<HttpMethod> &validMethods,
-                                                  const std::vector<std::string> &filters)
+                                                  const std::vector<std::string> &filters,
+                                                  const std::string &handlerName)
 {
     assert(!pathPattern.empty());
     assert(binder);
     assert(!_running);
-    _httpCtrlsRouter.addHttpPath(pathPattern, binder, validMethods, filters);
+    _httpCtrlsRouter.addHttpPath(pathPattern, binder, validMethods, filters, handlerName);
 }
 void HttpAppFrameworkImpl::setThreadNum(size_t threadNum)
 {
@@ -561,6 +562,17 @@ void HttpAppFrameworkImpl::onNewWebsockRequest(const HttpRequestImplPtr &req,
 {
     _websockCtrlsRouter.route(req, std::move(callback), wsConnPtr);
 }
+
+std::vector<std::tuple<std::string, HttpMethod, std::string>> HttpAppFrameworkImpl::getHandlersInfo() const
+{
+    auto ret = _httpSimpleCtrlsRouter.getHandlersInfo();
+    auto v=_httpCtrlsRouter.getHandlersInfo();
+    ret.insert(ret.end(), v.begin(), v.end());
+    v = _websockCtrlsRouter.getHandlersInfo();
+    ret.insert(ret.end(), v.begin(), v.end());
+    return ret;
+}
+
 void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestImplPtr &req, std::function<void(const HttpResponsePtr &)> &&callback)
 {
     LOG_TRACE << "new request:" << req->peerAddr().toIpPort() << "->" << req->localAddr().toIpPort();

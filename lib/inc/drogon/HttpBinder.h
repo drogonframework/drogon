@@ -70,6 +70,7 @@ class HttpBinderBase
     virtual void handleHttpRequest(std::list<std::string> &pathParameter,
                                    const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> callback) = 0;
     virtual size_t paramCount() = 0;
+    virtual const std::string &handlerName() const = 0;
     virtual ~HttpBinderBase() {}
 };
 
@@ -100,13 +101,18 @@ class HttpBinder : public HttpBinderBase
     HttpBinder(FUNCTION &&func) : _func(std::forward<FUNCTION>(func))
     {
         static_assert(traits::isHTTPFunction, "Your API handler function interface is wrong!");
+        _handlerName = DrClassMap::demangle(typeid(FUNCTION).name());
     }
     void test()
     {
         std::cout << "argument_count=" << argument_count << " " << traits::isHTTPFunction << std::endl;
     }
+    virtual const std::string &handlerName() const override
+    {
+        return _handlerName;
+    }
 
-  private:
+private:
     FUNCTION _func;
 
     typedef FunctionTraits<FUNCTION> traits;
@@ -114,7 +120,7 @@ class HttpBinder : public HttpBinderBase
     using nth_argument_type = typename traits::template argument<Index>;
 
     static const size_t argument_count = traits::arity;
-
+    std::string _handlerName;
     template <typename... Values,
               std::size_t Boundary = argument_count>
     typename std::enable_if<(sizeof...(Values) < Boundary), void>::type run(
