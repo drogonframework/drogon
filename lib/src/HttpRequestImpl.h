@@ -40,7 +40,7 @@ namespace drogon
 
 class HttpRequestImpl : public HttpRequest
 {
-  public:
+public:
     friend class HttpRequestParser;
 
     explicit HttpRequestImpl(trantor::EventLoop *loop)
@@ -395,10 +395,8 @@ class HttpRequestImpl : public HttpRequest
         return _contentType;
     }
 
-    virtual const std::string &matchedPathPattern() const override
+    virtual const string_view &matchedPathPattern() const override
     {
-        if (_matchedPathPattern.empty())
-            return _path;
         return _matchedPathPattern;
     }
 
@@ -407,7 +405,7 @@ class HttpRequestImpl : public HttpRequest
         _matchedPathPattern = pathPattern;
     }
 
-  protected:
+protected:
     friend class HttpRequest;
     void setContentType(const std::string &contentType)
     {
@@ -418,7 +416,7 @@ class HttpRequestImpl : public HttpRequest
         _contentTypeString = std::move(contentType);
     }
 
-  private:
+private:
     void parseParameters() const;
     void parseParametersOnce() const
     {
@@ -433,7 +431,7 @@ class HttpRequestImpl : public HttpRequest
     HttpMethod _method;
     Version _version;
     std::string _path;
-    std::string _matchedPathPattern;
+    string_view _matchedPathPattern = "";
     std::string _query;
     std::unordered_map<std::string, std::string> _headers;
     std::unordered_map<std::string, std::string> _cookies;
@@ -444,7 +442,7 @@ class HttpRequestImpl : public HttpRequest
     trantor::InetAddress _local;
     trantor::Date _date;
 
-  protected:
+protected:
     std::string _content;
     size_t _contentLen;
     trantor::EventLoop *_loop;

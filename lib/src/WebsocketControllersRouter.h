@@ -40,6 +40,8 @@ class WebsocketControllersRouter : public trantor::NonCopyable
                const WebSocketConnectionImplPtr &wsConnPtr);
     void init();
 
+    std::vector<std::tuple<std::string, HttpMethod, std::string>> getHandlersInfo() const;
+
   private:
     struct WebSocketControllerRouterItem
     {

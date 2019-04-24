@@ -73,7 +73,7 @@ class HttpRequest
     virtual const std::string &path() const = 0;
 
     /// Get the matched path pattern after routing
-    virtual const std::string &matchedPathPattern() const = 0;
+    virtual const string_view &matchedPathPattern() const = 0;
 
     /// Return the enum type version of the request.
     /**

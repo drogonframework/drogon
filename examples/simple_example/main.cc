@@ -197,5 +197,34 @@ int main()
     app().registerPreHandlingAdvice([](const drogon::HttpRequestPtr &req) {
         LOG_DEBUG << "preHanding observer";
     });
+    auto handlerInfo = app().getHandlersInfo();
+    for (auto &info : handlerInfo)
+    {
+        std::cout << std::get<0>(info);
+        switch (std::get<1>(info))
+        {
+        case Get:
+            std::cout << " (GET) ";
+            break;
+        case Post:
+            std::cout << " (POST) ";
+            break;
+        case Delete:
+            std::cout << " (DELETE) ";
+            break;
+        case Put:
+            std::cout << " (PUT) ";
+            break;
+        case Options:
+            std::cout << " (OPTIONS) ";
+            break;
+        case Head:
+            std::cout << " (Head) ";
+            break;
+        default:
+            break;
+        }
+        std::cout << std::get<2>(info) << std::endl;
+    }
     app().run();
 }

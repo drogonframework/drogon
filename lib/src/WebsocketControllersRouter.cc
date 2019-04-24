@@ -77,6 +77,19 @@ void WebsocketControllersRouter::route(const HttpRequestImplPtr &req,
     callback(resp);
 }
 
+std::vector<std::tuple<std::string, HttpMethod, std::string>> WebsocketControllersRouter::getHandlersInfo() const
+{
+    std::vector<std::tuple<std::string, HttpMethod, std::string>> ret;
+    for (auto &item : _websockCtrlMap)
+    {
+        auto info = std::tuple<std::string, HttpMethod, std::string>(item.first,
+                                                                     Get,
+                                                                     std::string("WebsocketController: ") + item.second._controller->className());
+        ret.emplace_back(std::move(info));
+    }
+    return ret;
+}
+
 void WebsocketControllersRouter::doControllerHandler(const WebSocketControllerBasePtr &ctrlPtr,
                                                      std::string &wsKey,
                                                      const HttpRequestImplPtr &req,
@@ -94,8 +107,8 @@ void WebsocketControllersRouter::doControllerHandler(const WebSocketControllerBa
     resp->addHeader("Sec-WebSocket-Accept", base64Key);
     callback(resp);
     wsConnPtr->setMessageCallback([ctrlPtr](std::string &&message,
-                                         const WebSocketConnectionImplPtr &connPtr,
-                                         const WebSocketMessageType &type) {
+                                            const WebSocketConnectionImplPtr &connPtr,
+                                            const WebSocketMessageType &type) {
         ctrlPtr->handleNewMessage(connPtr, std::move(message), type);
     });
     wsConnPtr->setCloseCallback([ctrlPtr](const WebSocketConnectionImplPtr &connPtr) {
