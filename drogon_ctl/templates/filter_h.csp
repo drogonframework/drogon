@@ -1,6 +1,6 @@
 /**
  *
- *  {{filename}}.h
+ *  [[filename]].h
  *
  */
 
@@ -18,10 +18,10 @@ namespace {%namespaceName%}
 {
 <%c++}
 $$<<"\n";%>
-class {{className}} : public HttpFilter<{{className}}>
+class [[className]] : public HttpFilter<[[className]]>
 {
   public:
-    {{className}}() {}
+    [[className]]() {}
     virtual void doFilter(const HttpRequestPtr &req,
                           const FilterCallback &fcb,
                           const FilterChainCallback &fccb) override;

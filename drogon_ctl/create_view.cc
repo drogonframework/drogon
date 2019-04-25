@@ -25,8 +25,8 @@ static const std::string cxx_end = "%>";
 static const std::string cxx_lang = "<%c++";
 static const std::string cxx_view_data = "@@";
 static const std::string cxx_output = "$$";
-static const std::string cxx_val_start = "{{";
-static const std::string cxx_val_end = "}}";
+static const std::string cxx_val_start = "[[";
+static const std::string cxx_val_end = "]]";
 static const std::string sub_view_start = "<%view";
 static const std::string sub_view_end = "%>";
 

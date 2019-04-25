@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 3.2)
-Project({{ProjectName}})
+Project([[ProjectName]])
 
 link_directories(/usr/local/lib)
 link_libraries(drogon trantor pthread dl)
@@ -103,4 +103,4 @@ foreach(cspFile ${SCP_LIST})
 endforeach()
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-add_executable({{ProjectName}} ${SRC_DIR} ${CTL_SRC} ${FILTER_SRC} ${VIEWSRC} ${PLUGIN_SRC} ${MODEL_SRC})
+add_executable([[ProjectName]] ${SRC_DIR} ${CTL_SRC} ${FILTER_SRC} ${VIEWSRC} ${PLUGIN_SRC} ${MODEL_SRC})

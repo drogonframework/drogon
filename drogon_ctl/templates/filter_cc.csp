@@ -1,10 +1,10 @@
 /**
  *
- *  {{filename}}.cc
+ *  [[filename]].cc
  *
  */
 
-#include "{{filename}}.h"
+#include "[[filename]].h"
 
 using namespace drogon;
 <%c++auto namespaceStr=@@.get<std::string>("namespaceString");
@@ -12,7 +12,7 @@ if(!namespaceStr.empty())
 $$<<"using namespace "<<namespaceStr<<";\n";
 %>
 
-void {{className}}::doFilter(const HttpRequestPtr &req,
+void [[className]]::doFilter(const HttpRequestPtr &req,
                          const FilterCallback &fcb,
                          const FilterChainCallback &fccb)
 {
