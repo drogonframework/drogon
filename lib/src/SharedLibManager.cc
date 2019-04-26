@@ -110,9 +110,9 @@ void SharedLibManager::managerLibs()
                             return;
                     }
 
-                    //                    {
-                    //                        std::ofstream fout(lockFile);
-                    //                    }
+                    {
+                        std::ofstream fout(lockFile);
+                    }
                     std::string cmd = "drogon_ctl create view ";
                     cmd.append(filename).append(" -o ").append(libPath);
                     LOG_TRACE << cmd;
@@ -150,13 +150,23 @@ void SharedLibManager::managerLibs()
 void *SharedLibManager::loadLibs(const std::string &sourceFile, void *oldHld)
 {
     LOG_TRACE << "src:" << sourceFile;
-    std::string cmd = "g++ ";
-    cmd.append(sourceFile).append(" ").append(compileFlags).append(" ").append(includeDirs).append(" -shared -fPIC --no-gnu-unique -o ");
-    auto pos = sourceFile.rfind(".");
+    std::string cmd = compilerCommand;
+    auto pos = cmd.rfind("/");
+    if (pos != std::string::npos)
+    {
+        cmd = cmd.substr(pos + 1);
+    }
+    cmd.append(" ").append(sourceFile).append(" ").append(compileFlags).append(" ").append(includeDirs);
+    if (std::string(compilerId).find("Clang") != std::string::npos)
+        cmd.append(" -shared -fPIC -undefined dynamic_lookup -o ");
+    else
+        cmd.append(" -shared -fPIC --no-gnu-unique -o ");
+    pos = sourceFile.rfind(".");
     auto soFile = sourceFile.substr(0, pos);
     soFile.append(".so");
     cmd.append(soFile);
     void *Handle = nullptr;
+    LOG_TRACE << cmd;
     if (system(cmd.c_str()) == 0)
     {
         LOG_TRACE << "Compiled successfully";
