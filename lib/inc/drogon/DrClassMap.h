@@ -15,6 +15,7 @@
 #pragma once
 
 #include <drogon/utils/ClassTraits.h>
+#include <trantor/utils/Logger.h>
 #include <stdio.h>
 #include <unordered_map>
 #include <memory>
@@ -31,7 +32,7 @@ class DrObjectBase;
 typedef std::function<DrObjectBase *()> DrAllocFunc;
 class DrClassMap
 {
-  public:
+public:
     static void registerClass(const std::string &className, const DrAllocFunc &func);
     static DrObjectBase *newObject(const std::string &className);
     static const std::shared_ptr<DrObjectBase> &getSingleInstance(const std::string &className);
@@ -49,10 +50,15 @@ class DrClassMap
         int status = 0;
         std::unique_ptr<char, decltype(&std::free)> ptr(
             __cxxabiv1::__cxa_demangle(mangled_name, nullptr, &len, &status), &std::free);
-        return ptr.get();
+        if (status == 0)
+        {
+            return std::string(ptr.get());
+        }
+        LOG_ERROR << "Demangle error!";
+        return "";
     }
 
-  protected:
+protected:
     static std::unordered_map<std::string, DrAllocFunc> &getMap();
 };
 
