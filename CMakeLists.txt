@@ -2,7 +2,11 @@ cmake_minimum_required (VERSION 3.2)
 
 project (DROGON CXX)
 message (STATUS "os:" ${CMAKE_SYSTEM_NAME})
-IF (CMAKE_SYSTEM_NAME MATCHES "Linux")
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+#Clang, use c++17
+    set(CMAKE_CXX_STD_FLAGS c++17)
+    set(CXX_STD 17)
+else()
     EXEC_PROGRAM (gcc ARGS "--version | grep '^gcc'|awk '{print $3}' | sed s'/)//g' | sed s'/-.*//g'" OUTPUT_VARIABLE version)
     MESSAGE(STATUS "This is gcc version:: " ${version})
     if(version LESS 5.4.0)
@@ -17,10 +21,6 @@ IF (CMAKE_SYSTEM_NAME MATCHES "Linux")
         set(CXX_STD 17)
         MESSAGE(STATUS "c++17")
     endif()
-else()
-#MacOS use c++17
-    set(CMAKE_CXX_STD_FLAGS c++17)
-    set(CXX_STD 17)
 endif()
 
 include_directories(${PROJECT_SOURCE_DIR}/trantor ${PROJECT_SOURCE_DIR}/lib/inc ${PROJECT_SOURCE_DIR}/orm_lib/inc)
@@ -161,14 +161,16 @@ else()
     file(APPEND "${CONFIG_HEADER}" "#define USE_ORM 0\n")
 endif()
 
-
-
 string(TOLOWER ${CMAKE_BUILD_TYPE} CMAKE_BUILD_TYPE_LOWER)
 if(CMAKE_BUILD_TYPE_LOWER STREQUAL release)
-    file(APPEND "${CONFIG_HEADER}" "\n" "const char compileFlags[]=\"" ${CMAKE_CXX_FLAGS_RELEASE} "\";")
+    file(APPEND "${CONFIG_HEADER}" "\n" "const char compileFlags[] = \"" ${CMAKE_CXX_FLAGS_RELEASE} "\";\n")
 else()
-    file(APPEND "${CONFIG_HEADER}" "\n" "const char compileFlags[]=\"" ${CMAKE_CXX_FLAGS_DEBUG} "\";")
+    file(APPEND "${CONFIG_HEADER}" "\n" "const char compileFlags[] = \"" ${CMAKE_CXX_FLAGS_DEBUG} "\";\n")
 endif()
+
+file(APPEND "${CONFIG_HEADER}" "const char compilerCommand[] = \"${CMAKE_CXX_COMPILER}\";\n")
+file(APPEND "${CONFIG_HEADER}" "const char compilerId[] = \"${CMAKE_CXX_COMPILER_ID}\";\n")
+
 get_target_property(INS drogon INCLUDE_DIRECTORIES)
 
 file(APPEND "${CONFIG_HEADER}" "\nconst char includeDirs[]=\"")

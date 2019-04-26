@@ -14,10 +14,10 @@
 
 #include <drogon/DrClassMap.h>
 #include <drogon/DrObject.h>
-#include <iostream>
+#include <trantor/utils/Logger.h>
+
 using namespace drogon;
-//std::map <std::string,DrAllocFunc> * DrClassMap::classMap=nullptr;
-//std::once_flag DrClassMap::flag;
+
 namespace drogon
 {
 namespace internal
@@ -40,6 +40,7 @@ static std::mutex &getMapMutex()
 
 void DrClassMap::registerClass(const std::string &className, const DrAllocFunc &func)
 {
+    LOG_TRACE << "Register class:" << className;
     getMap().insert(std::make_pair(className, func));
 }
 

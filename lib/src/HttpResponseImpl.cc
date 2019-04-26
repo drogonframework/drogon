@@ -48,7 +48,7 @@ HttpResponsePtr HttpResponse::newHttpJsonResponse(const Json::Value &data)
 HttpResponsePtr HttpResponse::newNotFoundResponse()
 {
     auto &resp = HttpAppFrameworkImpl::instance().getCustom404Page();
-    if(resp)
+    if (resp)
     {
         return resp;
     }
@@ -64,8 +64,6 @@ HttpResponsePtr HttpResponse::newNotFoundResponse()
         });
         return notFoundResp;
     }
-    
-   
 }
 HttpResponsePtr HttpResponse::newLocationRedirectResponse(const std::string &path)
 {
