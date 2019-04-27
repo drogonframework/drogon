@@ -41,6 +41,7 @@
 #include <utility>
 #include <unistd.h>
 #include <fcntl.h>
+#include <sys/file.h>
 
 using namespace drogon;
 using namespace std::placeholders;
@@ -51,7 +52,27 @@ drogon::InitBeforeMainFunction drogon::HttpAppFrameworkImpl::_initFirst([]() {
         LOG_TRACE << "Initialize the main event loop in the main thread";
     });
 });
+namespace drogon
+{
 
+class DrogonFileLocker : public trantor::NonCopyable
+{
+  public:
+    DrogonFileLocker()
+    {
+        _fd = open("/tmp/drogon.lock", O_TRUNC | O_CREAT, 0755);
+        flock(_fd, LOCK_EX);
+    }
+    ~DrogonFileLocker()
+    {
+        close(_fd);
+    }
+
+  private:
+    int _fd = 0;
+};
+
+} // namespace drogon
 static void godaemon(void)
 {
     printf("Initializing daemon mode\n");
@@ -297,9 +318,27 @@ void HttpAppFrameworkImpl::run()
         {
             auto ip = std::get<0>(listener);
             bool isIpv6 = ip.find(":") == std::string::npos ? false : true;
-            auto serverPtr = std::make_shared<HttpServer>(loopThreadPtr->getLoop(),
-                                                          InetAddress(ip, std::get<1>(listener), isIpv6),
-                                                          "drogon");
+            std::shared_ptr<HttpServer> serverPtr;
+            if (i == 0)
+            {
+                DrogonFileLocker lock;
+                // Check whether the port is in use.
+                TcpServer server(getLoop(),
+                                 InetAddress(ip, std::get<1>(listener), isIpv6),
+                                 "drogonPortTest",
+                                 true,
+                                 false);
+                serverPtr = std::make_shared<HttpServer>(loopThreadPtr->getLoop(),
+                                                         InetAddress(ip, std::get<1>(listener), isIpv6),
+                                                         "drogon");
+            }
+            else
+            {
+                serverPtr = std::make_shared<HttpServer>(loopThreadPtr->getLoop(),
+                                                         InetAddress(ip, std::get<1>(listener), isIpv6),
+                                                         "drogon");
+            }
+
             if (std::get<2>(listener))
             {
 #ifdef USE_OPENSSL
@@ -566,7 +605,7 @@ void HttpAppFrameworkImpl::onNewWebsockRequest(const HttpRequestImplPtr &req,
 std::vector<std::tuple<std::string, HttpMethod, std::string>> HttpAppFrameworkImpl::getHandlersInfo() const
 {
     auto ret = _httpSimpleCtrlsRouter.getHandlersInfo();
-    auto v=_httpCtrlsRouter.getHandlersInfo();
+    auto v = _httpCtrlsRouter.getHandlersInfo();
     ret.insert(ret.end(), v.begin(), v.end());
     v = _websockCtrlsRouter.getHandlersInfo();
     ret.insert(ret.end(), v.begin(), v.end());
