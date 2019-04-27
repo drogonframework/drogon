@@ -66,7 +66,11 @@ static void defaultConnectionCallback(const trantor::TcpConnectionPtr &conn)
 HttpServer::HttpServer(EventLoop *loop,
                        const InetAddress &listenAddr,
                        const std::string &name)
+#ifdef __linux__
     : _server(loop, listenAddr, name.c_str()),
+#else
+    : _server(loop, listenAddr, name.c_str(), true, false),
+#endif
       _httpAsyncCallback(defaultHttpAsyncCallback),
       _newWebsocketCallback(defaultWebSockAsyncCallback),
       _connectionCallback(defaultConnectionCallback)
@@ -155,7 +159,6 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn,
                                               if (resp->statusCode() == k101SwitchingProtocols)
                                               {
                                                   requestParser->setWebsockConnection(wsConn);
-                                                  
                                               }
                                               auto httpString = std::dynamic_pointer_cast<HttpResponseImpl>(resp)->renderToString();
                                               conn->send(httpString);
