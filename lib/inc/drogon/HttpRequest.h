@@ -33,7 +33,7 @@ typedef std::shared_ptr<HttpRequest> HttpRequestPtr;
 /// Abstract class for webapp developer to get or set the Http request;
 class HttpRequest
 {
-  public:
+public:
     enum Version
     {
         kUnknown = 0,
@@ -68,6 +68,9 @@ class HttpRequest
      * If the http method is POST, the query string is the content string of the HTTP request. 
      */
     virtual const std::string &query() const = 0;
+
+    /// Get the content string of the request, which is the body part of the request.
+    virtual const std::string &content() const = 0;
 
     /// Get the path of the request.
     virtual const std::string &path() const = 0;
