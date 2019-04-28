@@ -205,7 +205,7 @@ public:
         return defaultVal;
     }
 
-    const std::string &path() const override
+    virtual const std::string &path() const override
     {
         return _path;
     }
@@ -219,11 +219,13 @@ public:
     {
         _query = query;
     }
-    //            const string& content() const
-    //            {
-    //                return _content;
-    //            }
-    const std::string &query() const override
+
+    virtual const string &content() const override
+    {
+        return _content;
+    }
+
+    virtual const std::string &query() const override
     {
         if (_query != "")
             return _query;
