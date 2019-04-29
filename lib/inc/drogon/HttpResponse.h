@@ -27,21 +27,20 @@ class HttpResponse;
 typedef std::shared_ptr<HttpResponse> HttpResponsePtr;
 class HttpResponse
 {
-  public:
+public:
     HttpResponse()
     {
     }
     /// Get the status code such as 200, 404
-    virtual HttpStatusCode statusCode() = 0;
+    virtual HttpStatusCode statusCode() const = 0;
+    HttpStatusCode getStatusCode() const { return statusCode(); }
 
     /// Set the status code of the response.
     virtual void setStatusCode(HttpStatusCode code) = 0;
 
-    // /// Set the status code and the status message of the response. Usually not used.
-    // virtual void setStatusCode(HttpStatusCode code, const std::string &status_message) = 0;
-
     /// Get the creation timestamp of the response.
     virtual const trantor::Date &creationDate() const = 0;
+    const trantor::Date &getCreationDate() const { return creationDate(); }
 
     /// Set the http version, http1.0 or http1.1
     virtual void setVersion(const Version v) = 0;
@@ -52,7 +51,7 @@ class HttpResponse
     virtual void setCloseConnection(bool on) = 0;
 
     /// Get the status set by the setCloseConnetion() method.
-    virtual bool closeConnection() const = 0;
+    virtual bool ifCloseConnection() const = 0;
 
     /// Set the reponse content type, such as text/html, text/plaint, image/png and so on. If the content type
     /// is a text type, the character set is utf8.
@@ -62,7 +61,8 @@ class HttpResponse
     /// virtual void setContentTypeCodeAndCharacterSet(ContentType type, const std::string &charSet = "utf-8") = 0;
 
     /// Get the response content type.
-    virtual ContentType getContentTypeCode() = 0;
+    virtual ContentType contentType() const = 0;
+    ContentType getContentType() const { return contentType(); }
 
     /// Get the header string identified by the @param key.
     /// If there is no the header, the @param defaultVal is retured.
@@ -72,6 +72,7 @@ class HttpResponse
 
     /// Get all headers of the response
     virtual const std::unordered_map<std::string, std::string> &headers() const = 0;
+    const std::unordered_map<std::string, std::string> &getHeaders() const { return headers(); }
 
     /// Add a header.
     virtual void addHeader(const std::string &key, const std::string &value) = 0;
@@ -87,6 +88,7 @@ class HttpResponse
 
     /// Get all cookies.
     virtual const std::unordered_map<std::string, Cookie> &cookies() const = 0;
+    const std::unordered_map<std::string, Cookie> &getCookies() const { return cookies(); }
 
     /// Remove the cookie identified by the @param key.
     virtual void removeCookie(const std::string &key) = 0;
@@ -96,8 +98,10 @@ class HttpResponse
     virtual void setBody(std::string &&body) = 0;
 
     /// Get the response body.
-    virtual const std::string &getBody() const = 0;
-    virtual std::string &getBody() = 0;
+    virtual const std::string &body() const = 0;
+    const std::string &getBody() const { return body(); }
+    virtual std::string &body() = 0;
+    std::string &getBody() { return body(); }
 
     /// Reset the reponse object to its initial state
     virtual void clear() = 0;
@@ -108,10 +112,12 @@ class HttpResponse
 
     /// Get the expiration time of the response.
     virtual ssize_t expiredTime() const = 0;
+    ssize_t getExpiredTime() const { return expiredTime(); }
 
     /// Get the json object from the server response.
-    /// If the response is not in json format, then a empty shared_ptr is be retured.
-    virtual const std::shared_ptr<Json::Value> getJsonObject() const = 0;
+    /// If the response is not in json format, then a empty shared_ptr is retured.
+    virtual const std::shared_ptr<Json::Value> jsonObject() const = 0;
+    const std::shared_ptr<Json::Value> getJsonObject() const { return jsonObject(); }
 
     /// The following methods are a series of factory methods that help users create response objects.
 

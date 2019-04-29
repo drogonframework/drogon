@@ -191,7 +191,7 @@ class CacheMap
         }
     }
 
-    /// Returns the reference to the value of the keyword.
+    /// Return the reference to the value of the keyword.
     T2 &operator[](const T1 &key)
     {
         int timeout = 0;
@@ -230,7 +230,7 @@ class CacheMap
 
     /// Atomically find and get the value of a keyword
     /**
-     * Returns true when the value is found, and the value
+     * Return true when the value is found, and the value
      * is assigned to the @param value 
      */
     bool findAndFetch(const T1 &key, T2 &value)

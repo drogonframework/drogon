@@ -336,7 +336,7 @@ void HttpClientImpl::onRecvMessage(const trantor::TcpConnectionPtr &connPtr, tra
             }
             else
             {
-                if (resp->closeConnection() && _pipeliningCallbacks.empty())
+                if (resp->ifCloseConnection() && _pipeliningCallbacks.empty())
                 {
                     _tcpClient.reset();
                 }

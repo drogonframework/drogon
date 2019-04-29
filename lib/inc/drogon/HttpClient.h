@@ -78,7 +78,7 @@ class HttpClient : public trantor::NonCopyable
                                        trantor::EventLoop *loop = nullptr);
 
     /// Get the event loop of the client;
-    virtual trantor::EventLoop *loop() = 0;
+    virtual trantor::EventLoop *getLoop() = 0;
 
     /// Use hostString to connect to server
     /** 

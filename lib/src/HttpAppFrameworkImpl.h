@@ -164,7 +164,7 @@ public:
     virtual void setLogLevel(trantor::Logger::LogLevel level) override;
     virtual void enableSendfile(bool sendFile) override { _useSendfile = sendFile; }
     virtual void enableGzip(bool useGzip) override { _useGzip = useGzip; }
-    virtual bool useGzip() const override { return _useGzip; }
+    virtual bool isGzipEnabled() const override { return _useGzip; }
     virtual void setStaticFilesCacheTime(int cacheTime) override { _staticFilesCacheTime = cacheTime; }
     virtual int staticFilesCacheTime() const override { return _staticFilesCacheTime; }
     virtual void setIdleConnectionTimeout(size_t timeout) override { _idleConnectionTimeout = timeout; }

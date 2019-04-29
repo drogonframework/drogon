@@ -31,26 +31,38 @@ class Cookie
     ~Cookie() {}
     void setExpiresDate(const trantor::Date &date) { _expiresDate = date; }
     void setHttpOnly(bool only) { _httpOnly = only; }
-    void setEnsure(bool ensure) { _ensure = ensure; }
+    void setSecure(bool secure) { _secure = secure; }
     void setDomain(const std::string &domain) { _domain = domain; }
     void setPath(const std::string &path) { _path = path; }
     void setKey(const std::string &key) { _key = key; }
     void setValue(const std::string &value) { _value = value; }
 
-    const std::string cookieString() const;
+    std::string cookieString() const;
+    std::string getCookieString() const { return cookieString(); }
+    
     const trantor::Date &expiresDate() const { return _expiresDate; }
-    bool httpOnly() const { return _httpOnly; }
-    bool ensure() const { return _ensure; }
+    const trantor::Date &getExpiresDate() const { return _expiresDate; }
+
     const std::string &domain() const { return _domain; }
+    const std::string &getDomain() const { return _domain; }
+
     const std::string &path() const { return _path; }
+    const std::string &getPath() const { return _path; }
+
     const std::string &key() const { return _key; }
+    const std::string &getKey() const { return _key; }
+
     const std::string &value() const { return _value; }
+    const std::string &getValue() const { return _value; }
+
     operator bool() const { return (!_key.empty()) && (!_value.empty()); }
+    bool isHttpOnly() const { return _httpOnly; }
+    bool isSecure() const { return _secure; }
 
   private:
     trantor::Date _expiresDate;
     bool _httpOnly = true;
-    bool _ensure = false;
+    bool _secure = false;
     std::string _domain;
     std::string _path;
     std::string _key;

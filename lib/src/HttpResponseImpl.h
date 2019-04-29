@@ -55,7 +55,7 @@ class HttpResponseImpl : public HttpResponse
           _contentTypeString(webContentTypeToString(type))
     {
     }
-    virtual HttpStatusCode statusCode() override
+    virtual HttpStatusCode statusCode() const override
     {
         return _statusCode;
     }
@@ -87,7 +87,7 @@ class HttpResponseImpl : public HttpResponse
         _closeConnection = on;
     }
 
-    virtual bool closeConnection() const override
+    virtual bool ifCloseConnection() const override
     {
         return _closeConnection;
     }
@@ -104,7 +104,7 @@ class HttpResponseImpl : public HttpResponse
     //     setContentType(webContentTypeAndCharsetToString(type, charSet));
     // }
 
-    virtual ContentType getContentTypeCode() override
+    virtual ContentType contentType() const override
     {
         return _contentType;
     }
@@ -219,7 +219,7 @@ class HttpResponseImpl : public HttpResponse
                     }
                     else if (cookie_name == "secure")
                     {
-                        cookie.setEnsure(true);
+                        cookie.setSecure(true);
                     }
                     else if (cookie_name == "httponly")
                     {
@@ -309,11 +309,11 @@ class HttpResponseImpl : public HttpResponse
     //        receiveTime_ = t;
     //    }
 
-    virtual const std::string &getBody() const override
+    virtual const std::string &body() const override
     {
         return *_bodyPtr;
     }
-    virtual std::string &getBody() override
+    virtual std::string &body() override
     {
         return *_bodyPtr;
     }
@@ -349,7 +349,7 @@ class HttpResponseImpl : public HttpResponse
             _jsonPtr.reset();
         }
     }
-    virtual const std::shared_ptr<Json::Value> getJsonObject() const override
+    virtual const std::shared_ptr<Json::Value> jsonObject() const override
     {
         if (!_jsonPtr)
         {
