@@ -29,7 +29,7 @@ class HttpClientImpl : public HttpClient, public std::enable_shared_from_this<Ht
     HttpClientImpl(trantor::EventLoop *loop, const std::string &hostString);
     virtual void sendRequest(const HttpRequestPtr &req, const HttpReqCallback &callback) override;
     virtual void sendRequest(const HttpRequestPtr &req, HttpReqCallback &&callback) override;
-    virtual trantor::EventLoop *loop() override { return _loop; }
+    virtual trantor::EventLoop *getLoop() override { return _loop; }
     virtual void setPipeliningDepth(size_t depth) override
     {
         _pipeliningDepth = depth;

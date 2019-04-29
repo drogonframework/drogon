@@ -5,7 +5,7 @@ int main()
     drogon::Cookie cookie1("test", "1");
     std::cout << cookie1.cookieString();
     drogon::Cookie cookie2("test", "2");
-    cookie2.setEnsure(true);
+    cookie2.setSecure(true);
     std::cout << cookie2.cookieString();
     drogon::Cookie cookie3("test", "3");
     cookie3.setDomain("drogon.org");

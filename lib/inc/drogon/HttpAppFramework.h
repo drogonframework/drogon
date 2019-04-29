@@ -577,7 +577,7 @@ public:
     virtual void enableGzip(bool useGzip) = 0;
 
     ///Return true if gzip is enabled.
-    virtual bool useGzip() const = 0;
+    virtual bool isGzipEnabled() const = 0;
 
     ///Set the time in which the static file response is cached in memory.
     /**
@@ -621,7 +621,7 @@ public:
      */
     virtual void setServerHeaderField(const std::string &server) = 0;
 
-    ///Sets the maximum number of requests that can be served through one keep-alive connection.
+    ///Set the maximum number of requests that can be served through one keep-alive connection.
     /**
      * After the maximum number of requests are made, the connection is closed. The default value is
      * 0 which means no limit.
@@ -631,7 +631,7 @@ public:
      */
     virtual void setKeepaliveRequestsNumber(const size_t number) = 0;
 
-    ///Sets the maximum number of unhandled requests that can be cached in pipelining buffer.
+    ///Set the maximum number of unhandled requests that can be cached in pipelining buffer.
     /**
      * The default value of 0 means no limit.
      * After the maximum number of requests cached in pipelining buffer are made, the connection is closed.

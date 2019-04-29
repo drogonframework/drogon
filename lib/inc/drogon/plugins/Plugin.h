@@ -33,7 +33,7 @@ class PluginBase : public virtual DrObjectBase, public trantor::NonCopyable
 {
   public:
     /// This method is usually called by drogon.
-    /// it always returns PlugiinState::Initialized if the user calls it.
+    /// It always returns PlugiinState::Initialized if the user calls it.
     PluginState stat() const { return _stat; }
 
     /// This method must be called by drogon.

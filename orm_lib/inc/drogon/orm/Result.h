@@ -102,7 +102,12 @@ class Result
      */
     size_type affectedRows() const noexcept;
 
-    /// For Mysql, Sqlite3 database, return the auto-incrementing primary key after inserting
+    /// For Mysql, Sqlite3 databases, return the auto-incrementing primary key after inserting
+    /**
+     * For postgreSQL databases, this method always returns zero, One can use 
+     * the following sql to get auto-incrementing id:
+     *   insert into table_name volumn1, volumn2 values(....) returning id;   
+     */
     unsigned long long insertId() const noexcept;
 
     /// Query that produced this result, if available (empty string otherwise)

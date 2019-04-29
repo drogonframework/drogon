@@ -59,7 +59,7 @@ public:
         _version = v;
     }
 
-    Version getVersion() const override
+    virtual Version version() const override
     {
         return _version;
     }
@@ -190,7 +190,7 @@ public:
         _path = path;
     }
 
-    virtual const std::unordered_map<std::string, std::string> &getParameters() const override
+    virtual const std::unordered_map<std::string, std::string> &parameters() const override
     {
         parseParametersOnce();
         return _parameters;
@@ -220,7 +220,7 @@ public:
         _query = query;
     }
 
-    virtual const string &content() const override
+    virtual const string &body() const override
     {
         return _content;
     }
@@ -373,7 +373,7 @@ public:
         _sessionPtr = session;
     }
 
-    virtual const std::shared_ptr<Json::Value> getJsonObject() const override
+    virtual const std::shared_ptr<Json::Value> jsonObject() const override
     {
         parseParametersOnce();
         return _jsonPtr;
@@ -392,7 +392,7 @@ public:
     //     setContentType(webContentTypeAndCharsetToString(type, charSet));
     // }
 
-    virtual ContentType getContentTypeCode() override
+    virtual ContentType contentType() const override
     {
         return _contentType;
     }

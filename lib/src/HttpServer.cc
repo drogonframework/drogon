@@ -210,11 +210,11 @@ void HttpServer::onRequest(const TcpConnectionPtr &conn, const HttpRequestImplPt
         auto newResp = response;
         auto &sendfileName = std::dynamic_pointer_cast<HttpResponseImpl>(newResp)->sendfileName();
 
-        if (HttpAppFramework::instance().useGzip() &&
+        if (HttpAppFramework::instance().isGzipEnabled() &&
             sendfileName.empty() &&
             req->getHeaderBy("accept-encoding").find("gzip") != std::string::npos &&
             std::dynamic_pointer_cast<HttpResponseImpl>(response)->getHeaderBy("content-encoding") == "" &&
-            response->getContentTypeCode() < CT_APPLICATION_OCTET_STREAM &&
+            response->getContentType() < CT_APPLICATION_OCTET_STREAM &&
             response->getBody().length() > 1024)
         {
             //use gzip
@@ -338,7 +338,7 @@ void HttpServer::sendResponse(const TcpConnectionPtr &conn,
         conn->send(httpString);
     }
 
-    if (response->closeConnection())
+    if (response->ifCloseConnection())
     {
         conn->shutdown();
     }

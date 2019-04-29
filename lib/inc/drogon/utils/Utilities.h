@@ -88,7 +88,7 @@ std::string formattedString(const char *format, ...);
 
 /// Recursively create a file system path
 /**
- * Returns 0 or -1 on success or failure.
+ * Return 0 or -1 on success or failure.
  */
 int createPath(const std::string &path);
 

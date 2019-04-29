@@ -15,7 +15,7 @@
 #include <drogon/Cookie.h>
 #include <drogon/utils/Utilities.h>
 using namespace drogon;
-const std::string Cookie::cookieString() const
+std::string Cookie::cookieString() const
 {
     std::string ret = "Set-Cookie: ";
     ret.append(_key).append("= ").append(_value).append("; ");
@@ -31,7 +31,7 @@ const std::string Cookie::cookieString() const
     {
         ret.append("Path= ").append(_path).append("; ");
     }
-    if (_ensure)
+    if (_secure)
     {
         ret.append("Secure; ");
     }
