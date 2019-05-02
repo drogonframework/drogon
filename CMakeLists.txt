@@ -202,8 +202,6 @@ if (MAKETEST STREQUAL YES)
     endif()
 endif ()
 
-SET(CMAKE_INSTALL_PREFIX /usr/local)
-
 #Installation
 install(TARGETS drogon DESTINATION lib)
 
