@@ -235,6 +235,8 @@ static void loadApp(const Json::Value &app)
     drogon::app().setKeepaliveRequestsNumber(keepaliveReqs);
     auto pipeliningReqs = app.get("pipelining_requests", 0).asUInt64();
     drogon::app().setPipeliningRequestsNumber(pipeliningReqs);
+    auto useGzipStatic = app.get("gzip_static", true).asBool();
+    drogon::app().setGzipStatic(useGzipStatic);
 }
 static void loadDbClients(const Json::Value &dbClients)
 {

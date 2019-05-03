@@ -375,4 +375,103 @@ const string_view &statusCodeToString(int code)
     }
 }
 
+ContentType getContentType(const std::string &filename)
+{
+    std::string extName;
+    auto pos = filename.rfind(".");
+    if (pos != std::string::npos)
+    {
+        extName = filename.substr(pos + 1);
+        transform(extName.begin(), extName.end(), extName.begin(), tolower);
+    }
+    switch (extName.length())
+    {
+    case 0:
+        return CT_APPLICATION_OCTET_STREAM;
+    case 2:
+    {
+        if (extName == "js")
+            return CT_APPLICATION_X_JAVASCRIPT;
+        return CT_APPLICATION_OCTET_STREAM;
+    }
+    case 3:
+    {
+        switch (extName[0])
+        {
+        case 'b':
+            if (extName == "bmp")
+                return CT_IMAGE_BMP;
+            break;
+        case 'c':
+            if (extName == "css")
+                return CT_TEXT_CSS;
+            break;
+        case 'e':
+            if (extName == "eot")
+                return CT_APPLICATION_VND_MS_FONTOBJ;
+            break;
+        case 'g':
+            if (extName == "gif")
+                return CT_IMAGE_GIF;
+            break;
+        case 'i':
+            if (extName == "ico")
+                return CT_IMAGE_XICON;
+            break;
+        case 'j':
+            if (extName == "jpg")
+                return CT_IMAGE_JPG;
+            break;
+        case 'o':
+            if (extName == "otf")
+                return CT_APPLICATION_X_FONT_OPENTYPE;
+            break;
+        case 'p':
+            if (extName == "png")
+                return CT_IMAGE_PNG;
+            break;
+        case 's':
+            if (extName == "svg")
+                return CT_IMAGE_SVG_XML;
+            break;
+        case 't':
+            if (extName == "txt")
+                return CT_TEXT_PLAIN;
+            else if (extName == "ttf")
+                return CT_APPLICATION_X_FONT_TRUETYPE;
+            break;
+        case 'x':
+            if (extName == "xml")
+                return CT_TEXT_XML;
+            else if (extName == "xsl")
+                return CT_TEXT_XSL;
+            break;
+        default:
+            break;
+        }
+        return CT_APPLICATION_OCTET_STREAM;
+    }
+    case 4:
+    {
+        if (extName == "html")
+            return CT_TEXT_HTML;
+        else if (extName == "jpeg")
+            return CT_IMAGE_JPG;
+        else if (extName == "icns")
+            return CT_IMAGE_ICNS;
+        else if (extName == "woff")
+            return CT_APPLICATION_FONT_WOFF;
+        return CT_APPLICATION_OCTET_STREAM;
+    }
+    case 5:
+    {
+        if (extName == "woff2")
+            return CT_APPLICATION_FONT_WOFF2;
+        return CT_APPLICATION_OCTET_STREAM;
+    }
+    default:
+        return CT_APPLICATION_OCTET_STREAM;
+    }
+}
+
 } // namespace drogon
