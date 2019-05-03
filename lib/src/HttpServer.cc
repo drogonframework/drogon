@@ -213,7 +213,7 @@ void HttpServer::onRequest(const TcpConnectionPtr &conn, const HttpRequestImplPt
         if (HttpAppFramework::instance().isGzipEnabled() &&
             sendfileName.empty() &&
             req->getHeaderBy("accept-encoding").find("gzip") != std::string::npos &&
-            std::dynamic_pointer_cast<HttpResponseImpl>(response)->getHeaderBy("content-encoding") == "" &&
+            std::dynamic_pointer_cast<HttpResponseImpl>(response)->getHeaderBy("content-encoding").empty() &&
             response->getContentType() < CT_APPLICATION_OCTET_STREAM &&
             response->getBody().length() > 1024)
         {

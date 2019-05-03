@@ -641,6 +641,17 @@ public:
      */
     virtual void setPipeliningRequestsNumber(const size_t number) = 0;
 
+    ///Set the gzip_static option.
+    /**
+     * If it is set to true, when the client requests a static file, drogon first finds the compressed
+     * file with the extension ".gz" in the same path and send the compressed file to the client.
+     * The default value is true.
+     * 
+     * NOTE:
+     * This operation can be performed by an option in the configuration file.
+     */
+    virtual void setGzipStatic(bool useGzipStatic) = 0;
+
 #if USE_ORM
     ///Get a database client by @param name
     /**

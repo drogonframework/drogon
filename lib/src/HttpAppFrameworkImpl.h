@@ -170,6 +170,7 @@ public:
     virtual void setIdleConnectionTimeout(size_t timeout) override { _idleConnectionTimeout = timeout; }
     virtual void setKeepaliveRequestsNumber(const size_t number) override { _keepaliveRequestsNumber = number; }
     virtual void setPipeliningRequestsNumber(const size_t number) override { _pipeliningRequestsNumber = number; }
+    virtual void setGzipStatic(bool useGzipStatic) override { _gzipStaticFlag = useGzipStatic; }
     virtual std::vector<std::tuple<std::string, HttpMethod, std::string>> getHandlersInfo() const override;
 
     size_t keepaliveRequestsNumber() const { return _keepaliveRequestsNumber; }
@@ -293,6 +294,7 @@ private:
     size_t _pipeliningRequestsNumber = 0;
     bool _useSendfile = true;
     bool _useGzip = true;
+    bool _gzipStaticFlag = true;
     int _staticFilesCacheTime = 5;
     std::unordered_map<std::string, std::weak_ptr<HttpResponse>> _staticFilesCache;
     std::mutex _staticFilesCacheMutex;

@@ -27,6 +27,8 @@
 #define GREEN "\033[32m" /* Green */
 
 #define JPG_LEN 44618
+#define INDEX_LEN 10605
+
 using namespace drogon;
 
 void outputGood(const HttpRequestPtr &req, bool isHttps)
@@ -579,7 +581,54 @@ void doTest(const HttpClientPtr &client, std::promise<int> &pro, bool isHttps = 
             exit(1);
         }
     });
-
+    /// Test gzip_static
+    req = HttpRequest::newHttpRequest();
+    req->setMethod(drogon::Get);
+    req->setPath("/index.html");
+    client->sendRequest(req, [=](ReqResult result, const HttpResponsePtr &resp) {
+        if (result == ReqResult::Ok)
+        {
+            if (resp->getBody().length() == INDEX_LEN)
+            {
+                outputGood(req, isHttps);
+            }
+            else
+            {
+                LOG_DEBUG << resp->getBody().length();
+                LOG_ERROR << "Error!";
+                exit(1);
+            }
+        }
+        else
+        {
+            LOG_ERROR << "Error!";
+            exit(1);
+        }
+    });
+    req = HttpRequest::newHttpRequest();
+    req->setMethod(drogon::Get);
+    req->setPath("/index.html");
+    req->addHeader("accept-encoding", "gzip");
+    client->sendRequest(req, [=](ReqResult result, const HttpResponsePtr &resp) {
+        if (result == ReqResult::Ok)
+        {
+            if (resp->getBody().length() == INDEX_LEN)
+            {
+                outputGood(req, isHttps);
+            }
+            else
+            {
+                LOG_DEBUG << resp->getBody().length();
+                LOG_ERROR << "Error!";
+                exit(1);
+            }
+        }
+        else
+        {
+            LOG_ERROR << "Error!";
+            exit(1);
+        }
+    });
     /// Test file download
     req = HttpRequest::newHttpRequest();
     req->setMethod(drogon::Get);

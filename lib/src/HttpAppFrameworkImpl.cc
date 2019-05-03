@@ -57,7 +57,7 @@ namespace drogon
 
 class DrogonFileLocker : public trantor::NonCopyable
 {
-  public:
+public:
     DrogonFileLocker()
     {
         _fd = open("/tmp/drogon.lock", O_TRUNC | O_CREAT, 0755);
@@ -68,7 +68,7 @@ class DrogonFileLocker : public trantor::NonCopyable
         close(_fd);
     }
 
-  private:
+private:
     int _fd = 0;
 };
 
@@ -743,38 +743,54 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestImplPtr &req, std::fu
                 callback(cachedResp);
                 return;
             }
-            auto resp = HttpResponse::newFileResponse(filePath);
-            if (!timeStr.empty())
+            HttpResponsePtr resp;
+            if (_gzipStaticFlag && req->getHeaderBy("accept-encoding").find("gzip") != std::string::npos)
             {
-                resp->addHeader("Last-Modified", timeStr);
-                resp->addHeader("Expires", "Thu, 01 Jan 1970 00:00:00 GMT");
-            }
-            //cache the response for 5 seconds by default
-            if (_staticFilesCacheTime >= 0)
-            {
-                resp->setExpiredTime(_staticFilesCacheTime);
-                _responseCachingMap->insert(filePath, resp, resp->expiredTime(), [=]() {
-                    std::lock_guard<std::mutex> guard(_staticFilesCacheMutex);
-                    _staticFilesCache.erase(filePath);
-                });
+                //Find compressed file first.
+                auto gzipFileName = filePath + ".gz";
+                std::ifstream infile(gzipFileName, std::ifstream::binary);
+                if (infile)
                 {
-                    std::lock_guard<std::mutex> guard(_staticFilesCacheMutex);
-                    _staticFilesCache[filePath] = resp;
+                    resp = HttpResponse::newFileResponse(gzipFileName, "", drogon::getContentType(filePath));
+                    resp->addHeader("Content-Encoding", "gzip");
                 }
             }
+            if (!resp)
+                resp = HttpResponse::newFileResponse(filePath);
+            if (resp->statusCode() != k404NotFound)
+            {
+                if (!timeStr.empty())
+                {
+                    resp->addHeader("Last-Modified", timeStr);
+                    resp->addHeader("Expires", "Thu, 01 Jan 1970 00:00:00 GMT");
+                }
+                //cache the response for 5 seconds by default
+                if (_staticFilesCacheTime >= 0)
+                {
+                    resp->setExpiredTime(_staticFilesCacheTime);
+                    _responseCachingMap->insert(filePath, resp, resp->expiredTime(), [=]() {
+                        std::lock_guard<std::mutex> guard(_staticFilesCacheMutex);
+                        _staticFilesCache.erase(filePath);
+                    });
+                    {
+                        std::lock_guard<std::mutex> guard(_staticFilesCacheMutex);
+                        _staticFilesCache[filePath] = resp;
+                    }
+                }
 
-            if (needSetJsessionid)
-            {
-                auto newCachedResp = resp;
-                if (resp->expiredTime() >= 0)
+                if (needSetJsessionid)
                 {
-                    //make a copy
-                    newCachedResp = std::make_shared<HttpResponseImpl>(*std::dynamic_pointer_cast<HttpResponseImpl>(resp));
-                    newCachedResp->setExpiredTime(-1);
+                    auto newCachedResp = resp;
+                    if (resp->expiredTime() >= 0)
+                    {
+                        //make a copy
+                        newCachedResp = std::make_shared<HttpResponseImpl>(*std::dynamic_pointer_cast<HttpResponseImpl>(resp));
+                        newCachedResp->setExpiredTime(-1);
+                    }
+                    newCachedResp->addCookie("JSESSIONID", sessionId);
+                    callback(newCachedResp);
+                    return;
                 }
-                newCachedResp->addCookie("JSESSIONID", sessionId);
-                callback(newCachedResp);
-                return;
             }
             callback(resp);
             return;

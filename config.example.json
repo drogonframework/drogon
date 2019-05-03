@@ -147,7 +147,11 @@
         //pipelining_requests: Set the maximum number of unhandled requests that can be cached in pipelining buffer. 
         //After the maximum number of requests are made, the connection is closed.
         //The default value of 0 means no limit.
-        "pipelining_requests": 0
+        "pipelining_requests": 0,
+        //gzip_static: If it is set to true, when the client requests a static file, drogon first finds the compressed 
+        //file with the extension ".gz" in the same path and send the compressed file to the client.
+        //The default value of gzip_static is true.
+        "gzip_static": true
     },
     //plugins: Define all plugins running in the application
     "plugins": [{
