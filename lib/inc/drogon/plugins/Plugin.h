@@ -57,7 +57,7 @@ class PluginBase : public virtual DrObjectBase, public trantor::NonCopyable
         }
         else
         {
-            LOG_FATAL << "There are a loop-dependency within plugins.";
+            LOG_FATAL << "There are a circular dependency within plugins.";
             abort();
         }
     }

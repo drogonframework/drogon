@@ -71,6 +71,15 @@ if [ ! -f "Test_TestFilter.h" -o ! -f "Test_TestFilter.cc" ];then
     exit -1
 fi
 
+cd ../plugins
+
+drogon_ctl create plugin Test::TestPlugin
+
+if [ ! -f "Test_TestPlugin.h" -o ! -f "Test_TestPlugin.cc" ];then
+    echo "Failed to create plugins"
+    exit -1
+fi
+
 cd ../build
 cmake ..
 
