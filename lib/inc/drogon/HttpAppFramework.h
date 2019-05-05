@@ -122,7 +122,7 @@ public:
     ///Get the plugin object registered in the framework
     /**
      * NOTE:
-     * This method is usually called after the framework is run.
+     * This method is usually called after the framework runs.
      * Calling this method in the initAndStart() method of plugins is also valid. 
      */
     template <typename T>
@@ -138,7 +138,7 @@ public:
      * @param name: is the class name of the plugin.
      * 
      * NOTE:
-     * This method is usually called after the framework is run.
+     * This method is usually called after the framework runs.
      * Calling this method in the initAndStart() method of plugins is also valid. 
      */
     virtual PluginBase *getPlugin(const std::string &name) = 0;
