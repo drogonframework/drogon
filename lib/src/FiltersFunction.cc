@@ -36,7 +36,7 @@ static void doFilterChains(const std::vector<std::shared_ptr<HttpFilterBase>> &f
         auto &filter = filters[index];
         filter->doFilter(req,
                          [needSetJsessionid, callbackPtr, sessionIdPtr](const HttpResponsePtr &res) {
-                             if (needSetJsessionid)
+                             if (needSetJsessionid && res->statusCode() != k404NotFound)
                                  res->addCookie("JSESSIONID", *sessionIdPtr);
                              (*callbackPtr)(res);
                          },

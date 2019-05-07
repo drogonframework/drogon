@@ -33,7 +33,7 @@ class HttpResponseImpl : public HttpResponse
 {
     friend class HttpResponseParser;
 
-  public:
+public:
     HttpResponseImpl()
         : _statusCode(kUnknown),
           _creationDate(trantor::Date::now()),
@@ -240,12 +240,12 @@ class HttpResponseImpl : public HttpResponse
 
     virtual void addCookie(const std::string &key, const std::string &value) override
     {
-        _cookies.insert(std::make_pair(key, Cookie(key, value)));
+        _cookies[key] = Cookie(key, value);
     }
 
     virtual void addCookie(const Cookie &cookie) override
     {
-        _cookies.insert(std::make_pair(cookie.key(), cookie));
+        _cookies[cookie.key()] = cookie;
     }
 
     virtual const Cookie &getCookie(const std::string &key, const Cookie &defaultCookie = Cookie()) const override
@@ -378,10 +378,10 @@ class HttpResponseImpl : public HttpResponse
             _bodyPtr = gunzipBody;
     }
 
-  protected:
+protected:
     void makeHeaderString(const std::shared_ptr<std::string> &headerStringPtr) const;
 
-  private:
+private:
     std::unordered_map<std::string, std::string> _headers;
     std::unordered_map<std::string, Cookie> _cookies;
 

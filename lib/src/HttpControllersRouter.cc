@@ -266,8 +266,6 @@ void HttpControllersRouter::route(const HttpRequestImplPtr &req,
         {
             //No controller found
             auto res = drogon::HttpResponse::newNotFoundResponse();
-            if (needSetJsessionid)
-                res->addCookie("JSESSIONID", sessionId);
             callback(res);
         }
     }
@@ -275,8 +273,6 @@ void HttpControllersRouter::route(const HttpRequestImplPtr &req,
     {
         //No controller found
         auto res = drogon::HttpResponse::newNotFoundResponse();
-        if (needSetJsessionid)
-            res->addCookie("JSESSIONID", sessionId);
         callback(res);
     }
 }
@@ -294,7 +290,7 @@ void HttpControllersRouter::doControllerHandler(const CtrlBinderPtr &ctrlBinderP
         //use cached response!
         LOG_TRACE << "Use cached response";
 
-        if (!needSetJsessionid)
+        if (!needSetJsessionid || responsePtr->statusCode() == k404NotFound)
             invokeCallback(callback, req, responsePtr);
         else
         {
@@ -360,7 +356,7 @@ void HttpControllersRouter::doControllerHandler(const CtrlBinderPtr &ctrlBinderP
                 });
             }
         }
-        if (needSetJsessionid)
+        if (needSetJsessionid && resp->statusCode() != k404NotFound)
         {
             if (resp->expiredTime() >= 0)
             {
@@ -427,7 +423,7 @@ void HttpControllersRouter::doPreHandlingAdvices(const CtrlBinderPtr &ctrlBinder
                        0,
                        req,
                        std::make_shared<std::function<void(const HttpResponsePtr &)>>([callbackPtr, needSetJsessionid, sessionIdPtr](const HttpResponsePtr &resp) {
-                           if (!needSetJsessionid)
+                           if (!needSetJsessionid || resp->statusCode() == k404NotFound)
                                (*callbackPtr)(resp);
                            else
                            {
