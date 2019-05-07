@@ -21,7 +21,7 @@
             "port": 443,
             "https": true,
             //cert,key: Cert file path and key file path, empty by default,
-            //if empty, use global setting
+            //if empty, use the global setting
             "cert": "",
             "key": ""
         }
@@ -151,7 +151,13 @@
         //gzip_static: If it is set to true, when the client requests a static file, drogon first finds the compressed 
         //file with the extension ".gz" in the same path and send the compressed file to the client.
         //The default value of gzip_static is true.
-        "gzip_static": true
+        "gzip_static": true,
+        //client_max_body_size: Set the max body size of HTTP requests received by drogon. The default value is "1M".
+        //One can set it to "1024", "1k", "10M", "1G", etc. Setting it to "" means no limit.
+        "client_max_body_size": "1M",
+        //client_max_websocket_message_size: Set the max size of messages sent by WebSocket client. The default value is "128K".
+        //One can set it to "1024", "1k", "10M", "1G", etc. Setting it to "" means no limit.
+        "client_max_websocket_message_size": "128K"
     },
     //plugins: Define all plugins running in the application
     "plugins": [{

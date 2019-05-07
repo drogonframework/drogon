@@ -652,6 +652,20 @@ public:
      */
     virtual void setGzipStatic(bool useGzipStatic) = 0;
 
+    ///Set the max body size of the requests received by drogon. The default value is 1M.
+    /**
+     * NOTE:
+     * This operation can be performed by an option in the configuration file.
+     */
+    virtual void setClientMaxBodySize(size_t maxSize) = 0;
+
+    ///Set the max size of messages sent by WebSocket client. The default value is 128K.
+    /**
+     * NOTE:
+     * This operation can be performed by an option in the configuration file.
+     */
+    virtual void setClientMaxWebSocketMessageSize(size_t maxSize) = 0;
+
 #if USE_ORM
     ///Get a database client by @param name
     /**

@@ -171,6 +171,10 @@ public:
     virtual void setKeepaliveRequestsNumber(const size_t number) override { _keepaliveRequestsNumber = number; }
     virtual void setPipeliningRequestsNumber(const size_t number) override { _pipeliningRequestsNumber = number; }
     virtual void setGzipStatic(bool useGzipStatic) override { _gzipStaticFlag = useGzipStatic; }
+    virtual void setClientMaxBodySize(size_t maxSize) override { _clientMaxBodySize = maxSize; }
+    virtual void setClientMaxWebSocketMessageSize(size_t maxSize) override { _clientMaxWebSocketMessageSize = maxSize; }
+    size_t getClientMaxBodySize() { return _clientMaxBodySize; }
+    size_t getClientMaxWebSocketMessageSize() { return _clientMaxWebSocketMessageSize; }
     virtual std::vector<std::tuple<std::string, HttpMethod, std::string>> getHandlersInfo() const override;
 
     size_t keepaliveRequestsNumber() const { return _keepaliveRequestsNumber; }
@@ -295,6 +299,8 @@ private:
     bool _useSendfile = true;
     bool _useGzip = true;
     bool _gzipStaticFlag = true;
+    size_t _clientMaxBodySize = 1024 * 1024;
+    size_t _clientMaxWebSocketMessageSize = 128 * 1024;
     int _staticFilesCacheTime = 5;
     std::unordered_map<std::string, std::weak_ptr<HttpResponse>> _staticFilesCache;
     std::mutex _staticFilesCacheMutex;
