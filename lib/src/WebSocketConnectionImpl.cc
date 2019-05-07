@@ -12,6 +12,7 @@
  *
  */
 
+#include "HttpAppFrameworkImpl.h"
 #include "WebSocketConnectionImpl.h"
 #include <trantor/net/TcpConnection.h>
 #include <trantor/net/inner/TcpConnectionImpl.h>
@@ -175,7 +176,6 @@ void WebSocketConnectionImpl::setPingMessage(const std::string &message, const s
     });
 }
 
-
 bool WebSocketMessageParser::parse(trantor::MsgBuffer *buffer)
 {
     //According to the rfc6455
@@ -271,6 +271,13 @@ bool WebSocketMessageParser::parse(trantor::MsgBuffer *buffer)
         }
         if (isMasked != 0)
         {
+            //The message is sent by the client, check the length
+            if (length > HttpAppFrameworkImpl::instance().getClientMaxWebSocketMessageSize())
+            {
+                LOG_ERROR << "The size of the WebSocket message is too large!";
+                buffer->retrieveAll();
+                return false;
+            }
             if (buffer->readableBytes() >= (indexFirstMask + 4 + length))
             {
                 auto masks = buffer->peek() + indexFirstMask;

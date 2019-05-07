@@ -15,6 +15,7 @@
 #include <drogon/HttpTypes.h>
 #include <trantor/utils/MsgBuffer.h>
 #include <trantor/utils/Logger.h>
+#include "HttpAppFrameworkImpl.h"
 #include "HttpRequestParser.h"
 #include "HttpResponseImpl.h"
 #include "HttpUtils.h"
@@ -177,14 +178,23 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
                                 return false;
                             }
                             //rfc2616-8.2.3
-                            //TODO: here we can add content-length limitation
                             auto connPtr = _conn.lock();
                             if (connPtr)
                             {
                                 auto resp = HttpResponse::newHttpResponse();
-                                resp->setStatusCode(k100Continue);
-                                auto httpString = std::dynamic_pointer_cast<HttpResponseImpl>(resp)->renderToString();
-                                connPtr->send(httpString);
+                                if (_request->_contentLen > HttpAppFrameworkImpl::instance().getClientMaxBodySize())
+                                {
+                                    resp->setStatusCode(k413RequestEntityTooLarge);
+                                    auto httpString = std::dynamic_pointer_cast<HttpResponseImpl>(resp)->renderToString();
+                                    reset();
+                                    connPtr->send(httpString);
+                                }
+                                else
+                                {
+                                    resp->setStatusCode(k100Continue);
+                                    auto httpString = std::dynamic_pointer_cast<HttpResponseImpl>(resp)->renderToString();
+                                    connPtr->send(httpString);
+                                }
                             }
                         }
                         else if (!expect.empty())
@@ -197,6 +207,12 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
                                 shutdownConnection(k417ExpectationFailed);
                                 return false;
                             }
+                        }
+                        else if (_request->_contentLen > HttpAppFrameworkImpl::instance().getClientMaxBodySize())
+                        {
+                            buf->retrieveAll();
+                            shutdownConnection(k413RequestEntityTooLarge);
+                            return false;
                         }
                     }
                     else
@@ -314,7 +330,7 @@ void HttpRequestParser::popFirstRequest()
 }
 
 void HttpRequestParser::pushResponseToPipelining(const HttpRequestPtr &req,
-                                               const HttpResponsePtr &resp)
+                                                 const HttpResponsePtr &resp)
 {
 #ifndef NDEBUG
     auto conn = _conn.lock();

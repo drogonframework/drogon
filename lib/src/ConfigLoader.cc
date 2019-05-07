@@ -20,9 +20,76 @@
 #include <fstream>
 #include <unistd.h>
 #include <thread>
+#include <sstream>
 
 using namespace drogon;
-
+static bool bytesSize(std::string &sizeStr, size_t &size)
+{
+    if (sizeStr.empty())
+    {
+        size = -1;
+        return true;
+    }
+    else
+    {
+        size = 1;
+        switch (sizeStr[sizeStr.length() - 1])
+        {
+        case 'k':
+        case 'K':
+            size = 1024;
+            sizeStr.resize(sizeStr.length() - 1);
+            break;
+        case 'M':
+        case 'm':
+            size = (1024 * 1024);
+            sizeStr.resize(sizeStr.length() - 1);
+            break;
+        case 'g':
+        case 'G':
+            size = (1024 * 1024 * 1024);
+            sizeStr.resize(sizeStr.length() - 1);
+            break;
+#if ((ULONG_MAX) != (UINT_MAX))
+            //64bit system
+        case 't':
+        case 'T':
+            size = (1024 * 1024 * 1024 * 1024);
+            sizeStr.resize(sizeStr.length() - 1);
+            break;
+#endif
+        case '0':
+        case '1':
+        case '2':
+        case '3':
+        case '4':
+        case '5':
+        case '7':
+        case '8':
+        case '9':
+            break;
+        default:
+            std::cerr << "Invalid value of client_max_body_size: " << sizeStr << std::endl;
+            return false;
+            break;
+        }
+        std::istringstream iss(sizeStr);
+        size_t tmpSize;
+        iss >> tmpSize;
+        if (iss.fail())
+        {
+            std::cerr << "Invalid value of client_max_body_size: " << sizeStr << std::endl;
+            exit(-1);
+        }
+        if ((size_t(-1) / tmpSize) >= size)
+            size *= tmpSize;
+        else
+        {
+            size = -1;
+        }
+        return true;
+    }
+}
 ConfigLoader::ConfigLoader(const std::string &configFile)
 {
     if (access(configFile.c_str(), 0) != 0)
@@ -237,6 +304,25 @@ static void loadApp(const Json::Value &app)
     drogon::app().setPipeliningRequestsNumber(pipeliningReqs);
     auto useGzipStatic = app.get("gzip_static", true).asBool();
     drogon::app().setGzipStatic(useGzipStatic);
+    auto maxBodySize = app.get("client_max_body_size", "1M").asString();
+    size_t size;
+    if (bytesSize(maxBodySize, size))
+    {
+        drogon::app().setClientMaxBodySize(size);
+    }
+    else
+    {
+        exit(-1);
+    }
+    auto maxWsMsgSize = app.get("client_max_websocket_message_size", "128K").asString();
+    if (bytesSize(maxWsMsgSize, size))
+    {
+        drogon::app().setClientMaxWebSocketMessageSize(size);
+    }
+    else
+    {
+        exit(-1);
+    }
 }
 static void loadDbClients(const Json::Value &dbClients)
 {
