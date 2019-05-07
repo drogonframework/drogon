@@ -817,7 +817,7 @@ void HttpAppFrameworkImpl::onAsyncRequest(const HttpRequestImplPtr &req, std::fu
                        0,
                        req,
                        std::make_shared<std::function<void(const HttpResponsePtr &)>>([callbackPtr, needSetJsessionid, sessionIdPtr](const HttpResponsePtr &resp) {
-                           if (!needSetJsessionid)
+                           if (!needSetJsessionid || resp->statusCode() == k404NotFound)
                                (*callbackPtr)(resp);
                            else
                            {
