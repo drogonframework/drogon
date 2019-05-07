@@ -54,7 +54,7 @@ static bool bytesSize(std::string &sizeStr, size_t &size)
             //64bit system
         case 't':
         case 'T':
-            size = (1024 * 1024 * 1024 * 1024);
+            size = (1024L * 1024L * 1024L * 1024L);
             sizeStr.resize(sizeStr.length() - 1);
             break;
 #endif
@@ -323,6 +323,7 @@ static void loadApp(const Json::Value &app)
     {
         exit(-1);
     }
+    drogon::app().setHomePage(app.get("home_page", "index.html").asString());
 }
 static void loadDbClients(const Json::Value &dbClients)
 {

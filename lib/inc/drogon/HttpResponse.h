@@ -131,8 +131,8 @@ public:
     /// @param data is the data displayed on the page.
     /// For more details, see the wiki pages, the "View" section.
     static HttpResponsePtr newHttpViewResponse(const std::string &viewName, const HttpViewData &data = HttpViewData());
-    /// Create a response that returns a 302 Found page, redirecting to another page located in the @param path.
-    static HttpResponsePtr newLocationRedirectResponse(const std::string &path);
+    /// Create a response that returns a 302 Found page, redirecting to another page located in the @param location.
+    static HttpResponsePtr newLocationResponse(const std::string &location);
     /// Create a response that returns a file to the client.
     /**
      * @param fullPath is the full path to the file.
