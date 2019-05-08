@@ -60,6 +60,10 @@
         "session_timeout": 0,
         //document_root: Root path of HTTP document, defaut path is ./
         "document_root": "./",
+        //home_page: Set the HTML file of the home page, the default value is "index.html"
+        //If there isn't any handler registered to the path "/", the home page file in the "document_root" is send to clients as a response
+        //to the request for "/".
+        "home_page": "index.html",
         //upload_path: The path to save the uploaded file. "uploads" by default. 
         //If the path isn't prefixed with /, ./ or ../,
         //it is relative path of document_root path

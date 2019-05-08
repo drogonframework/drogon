@@ -20,6 +20,23 @@
 
 using namespace drogon;
 
+namespace drogon
+{
+
+static void doWhenNoHandlerFound(const HttpRequestImplPtr &req,
+                                 const std::function<void(const HttpResponsePtr &)> &callback)
+{
+    if (req->path() == "/" && !HttpAppFrameworkImpl::instance().getHomePage().empty())
+    {
+        auto resp = drogon::HttpResponse::newLocationResponse("/" + HttpAppFrameworkImpl::instance().getHomePage());
+        callback(resp);
+        return;
+    }
+    auto resp = drogon::HttpResponse::newNotFoundResponse();
+    callback(resp);
+}
+
+} // namespace drogon
 void HttpControllersRouter::init(const std::vector<trantor::EventLoop *> &ioLoops)
 {
     std::string regString;
@@ -264,16 +281,14 @@ void HttpControllersRouter::route(const HttpRequestImplPtr &req,
         }
         else
         {
-            //No controller found
-            auto res = drogon::HttpResponse::newNotFoundResponse();
-            callback(res);
+            //No handler found
+            doWhenNoHandlerFound(req, callback);
         }
     }
     else
     {
-        //No controller found
-        auto res = drogon::HttpResponse::newNotFoundResponse();
-        callback(res);
+        //No handler found
+        doWhenNoHandlerFound(req, callback);
     }
 }
 

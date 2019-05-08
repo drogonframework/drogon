@@ -666,6 +666,15 @@ public:
      */
     virtual void setClientMaxWebSocketMessageSize(size_t maxSize) = 0;
 
+    //Set the HTML file of the home page, the default value is "index.html"
+    /**
+     * If there isn't any handler registered to the path "/", the home page file in the "document_root" 
+     * is send to clients as a response to the request for "/".
+     * NOTE:
+     * This operation can be performed by an option in the configuration file.
+     */
+    virtual void setHomePage(const std::string &homePageFile) = 0;
+
 #if USE_ORM
     ///Get a database client by @param name
     /**
