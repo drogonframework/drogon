@@ -78,7 +78,7 @@ template <
     typename ReturnType,
     typename... Arguments>
 struct FunctionTraits<
-    ReturnType (*)(const HttpRequestPtr &req, const std::function<void(const HttpResponsePtr &)> &callback, Arguments...)> : FunctionTraits<ReturnType (*)(Arguments...)>
+    ReturnType (*)(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback, Arguments...)> : FunctionTraits<ReturnType (*)(Arguments...)>
 {
     static const bool isHTTPFunction = true;
     typedef void class_type;

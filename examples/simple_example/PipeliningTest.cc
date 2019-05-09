@@ -2,7 +2,7 @@
 #include <trantor/net/EventLoop.h>
 #include <atomic>
 
-void PipeliningTest::asyncHandleHttpRequest(const HttpRequestPtr &req, const std::function<void(const HttpResponsePtr &)> &callback)
+void PipeliningTest::asyncHandleHttpRequest(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback)
 {
     static std::atomic<int> counter{0};
     int c = counter.fetch_add(1);

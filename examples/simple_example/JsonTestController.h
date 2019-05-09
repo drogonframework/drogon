@@ -7,7 +7,7 @@ class JsonTestController : public drogon::HttpSimpleController<JsonTestControlle
 {
   public:
     //TestController(){}
-    virtual void asyncHandleHttpRequest(const HttpRequestPtr &req, const std::function<void(const HttpResponsePtr &)> &callback) override;
+    virtual void asyncHandleHttpRequest(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback) override;
 
     PATH_LIST_BEGIN
     PATH_ADD("/json", Get, "drogon::LocalHostFilter");

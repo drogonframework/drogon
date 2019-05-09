@@ -77,7 +77,7 @@ void create_controller::newSimpleControllerHeaderFile(std::ofstream &file, const
     file << indent << "class " << class_name << ":public drogon::HttpSimpleController<" << class_name << ">\n";
     file << indent << "{\n";
     file << indent << "public:\n";
-    file << indent << "    virtual void asyncHandleHttpRequest(const HttpRequestPtr& req,const std::function<void (const HttpResponsePtr &)> & callback) override;\n";
+    file << indent << "    virtual void asyncHandleHttpRequest(const HttpRequestPtr& req, std::function<void (const HttpResponsePtr &)> &&callback) override;\n";
 
     file << indent << "    PATH_LIST_BEGIN\n";
     file << indent << "    //list path definitions here;\n";
@@ -103,7 +103,7 @@ void create_controller::newSimpleControllerSourceFile(std::ofstream &file, const
         file << "using namespace " << namespacename << ";\n";
         class_name = className.substr(pos + 2);
     }
-    file << "void " << class_name << "::asyncHandleHttpRequest(const HttpRequestPtr& req,const std::function<void (const HttpResponsePtr &)> & callback)\n";
+    file << "void " << class_name << "::asyncHandleHttpRequest(const HttpRequestPtr& req, std::function<void (const HttpResponsePtr &)> &&callback)\n";
     file << "{\n";
     file << "    //write your application logic here\n";
     file << "}";
@@ -213,9 +213,9 @@ void create_controller::newHttpControllerHeaderFile(std::ofstream &file, const s
     file << indent << "METHOD_LIST_END\n";
     file << indent << "//your declaration of processing function maybe like this:\n";
     file << indent << "//void get(const HttpRequestPtr& req,"
-                      "const std::function<void (const HttpResponsePtr &)>&callback,int p1,std::string p2);\n";
+                      "std::function<void (const HttpResponsePtr &)> &&callback,int p1,std::string p2);\n";
     file << indent << "//void your_method_name(const HttpRequestPtr& req,"
-                      "const std::function<void (const HttpResponsePtr &)>&callback,double p1,int p2) const;\n";
+                      "std::function<void (const HttpResponsePtr &)> &&callback,double p1,int p2) const;\n";
     indent.resize(indent.length() - 4);
     file << indent << "};\n";
     if (indent == "")

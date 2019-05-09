@@ -11,7 +11,7 @@ class CustomCtrl : public drogon::HttpController<CustomCtrl, false>
 
     explicit CustomCtrl(const std::string &greetings) : _greetings(greetings) {}
 
-    void hello(const HttpRequestPtr &req, const std::function<void(const HttpResponsePtr &)> &callback, const std::string &userName) const;
+    void hello(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback, const std::string &userName) const;
 
   private:
     std::string _greetings;
