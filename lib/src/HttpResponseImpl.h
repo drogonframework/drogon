@@ -122,6 +122,19 @@ public:
         return getHeaderBy(key, defaultVal);
     }
 
+    virtual void removeHeader(const std::string &key) override
+    {
+        auto field = key;
+        transform(field.begin(), field.end(), field.begin(), ::tolower);
+        removeHeaderBy(field);
+    }
+
+    virtual void removeHeader(std::string &&key) override
+    {
+        transform(key.begin(), key.end(), key.begin(), ::tolower);
+        removeHeaderBy(key);
+    }
+
     virtual const std::unordered_map<std::string, std::string> &headers() const override
     {
         return _headers;
@@ -135,6 +148,11 @@ public:
             return defaultVal;
         }
         return iter->second;
+    }
+
+    void removeHeaderBy(const std::string &lowerKey)
+    {
+        _headers.erase(lowerKey);
     }
 
     virtual void addHeader(const std::string &key, const std::string &value) override
@@ -346,6 +364,7 @@ public:
         if (!reader->parse(_bodyPtr->data(), _bodyPtr->data() + _bodyPtr->size(), _jsonPtr.get(), &errs))
         {
             LOG_ERROR << errs;
+            LOG_DEBUG << "body: " << *_bodyPtr;
             _jsonPtr.reset();
         }
     }
@@ -375,7 +394,10 @@ public:
     {
         auto gunzipBody = utils::gzipDecompress(_bodyPtr);
         if (gunzipBody)
+        {
+            removeHeader("content-encoding");
             _bodyPtr = gunzipBody;
+        }
     }
 
 protected:
