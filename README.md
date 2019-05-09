@@ -125,7 +125,7 @@ using namespace drogon;
 class JsonCtrl : public drogon::HttpSimpleController<JsonCtrl>
 {
   public:
-    virtual void asyncHandleHttpRequest(const HttpRequestPtr &req, const std::function<void(const HttpResponsePtr &)> &callback) override;
+    virtual void asyncHandleHttpRequest(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback) override;
     PATH_LIST_BEGIN
     //list path definitions here;
     PATH_ADD("/json", Get);
@@ -135,7 +135,7 @@ class JsonCtrl : public drogon::HttpSimpleController<JsonCtrl>
 /// The source file
 #include "JsonCtrl.h"
 void JsonCtrl::asyncHandleHttpRequest(const HttpRequestPtr &req,
-                                      const std::function<void(const HttpResponsePtr &)> &callback)
+                                      std::function<void(const HttpResponsePtr &)> &&callback)
 {
     Json::Value ret;
     ret["message"] = "Hello, World!";
@@ -165,9 +165,9 @@ class User : public drogon::HttpController<User>
     METHOD_ADD(User::newUser, "/{1}", Post);                 //path is /api/v1/User/{arg1}
     METHOD_LIST_END
     //your declaration of processing function maybe like this:
-    void getInfo(const HttpRequestPtr &req, const std::function<void(const HttpResponsePtr &)> &callback, int userId) const;
-    void getDetailInfo(const HttpRequestPtr &req, const std::function<void(const HttpResponsePtr &)> &callback, int userId) const;
-    void newUser(const HttpRequestPtr &req, const std::function<void(const HttpResponsePtr &)> &callback, std::string &&userName);
+    void getInfo(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback, int userId) const;
+    void getDetailInfo(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback, int userId) const;
+    void newUser(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback, std::string &&userName);
   public:
     User()
     {

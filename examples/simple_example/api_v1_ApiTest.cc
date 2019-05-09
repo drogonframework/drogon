@@ -1,13 +1,13 @@
 #include "api_v1_ApiTest.h"
 using namespace api::v1;
 //add definition of your processing function here
-void ApiTest::rootGet(const HttpRequestPtr &req, const std::function<void(const HttpResponsePtr &)> &callback)
+void ApiTest::rootGet(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback)
 {
     auto res = HttpResponse::newHttpResponse();
     res->setBody("ROOT Get!!!");
     callback(res);
 }
-void ApiTest::rootPost(const HttpRequestPtr &req, const std::function<void(const HttpResponsePtr &)> &callback)
+void ApiTest::rootPost(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback)
 {
     std::thread([=]() {
         auto res = HttpResponse::newHttpResponse();
@@ -15,7 +15,7 @@ void ApiTest::rootPost(const HttpRequestPtr &req, const std::function<void(const
         callback(res);
     }).detach();
 }
-void ApiTest::get(const HttpRequestPtr &req, const std::function<void(const HttpResponsePtr &)> &callback, int p1, std::string &&p2)
+void ApiTest::get(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback, int p1, std::string &&p2)
 {
     HttpViewData data;
     data.insert("title", std::string("ApiTest::get"));
@@ -27,7 +27,7 @@ void ApiTest::get(const HttpRequestPtr &req, const std::function<void(const Http
     callback(res);
 }
 
-void ApiTest::your_method_name(const HttpRequestPtr &req, const std::function<void(const HttpResponsePtr &)> &callback, double p1, int p2) const
+void ApiTest::your_method_name(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback, double p1, int p2) const
 {
     LOG_WARN << req->matchedPathPattern();
     HttpViewData data;
@@ -40,7 +40,7 @@ void ApiTest::your_method_name(const HttpRequestPtr &req, const std::function<vo
     auto res = HttpResponse::newHttpViewResponse("ListParaView", data);
     callback(res);
 }
-void ApiTest::staticApi(const HttpRequestPtr &req, const std::function<void(const HttpResponsePtr &)> &callback)
+void ApiTest::staticApi(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback)
 {
     auto resp = HttpResponse::newHttpResponse();
     resp->setBody("staticApi,hello!!");
@@ -48,7 +48,7 @@ void ApiTest::staticApi(const HttpRequestPtr &req, const std::function<void(cons
     callback(resp);
 }
 
-void ApiTest::get2(const HttpRequestPtr &req, const std::function<void(const HttpResponsePtr &)> &callback, std::string &&p1)
+void ApiTest::get2(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback, std::string &&p1)
 {
     //test gzip feature
     auto res = HttpResponse::newHttpResponse();
@@ -355,7 +355,7 @@ void ApiTest::get2(const HttpRequestPtr &req, const std::function<void(const Htt
     callback(res);
 }
 
-void ApiTest::jsonTest(const HttpRequestPtr &req, const std::function<void(const HttpResponsePtr &)> &callback)
+void ApiTest::jsonTest(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback)
 {
     auto json = req->getJsonObject();
     Json::Value ret;
@@ -371,7 +371,7 @@ void ApiTest::jsonTest(const HttpRequestPtr &req, const std::function<void(const
     callback(resp);
 }
 
-void ApiTest::formTest(const HttpRequestPtr &req, const std::function<void(const HttpResponsePtr &)> &callback)
+void ApiTest::formTest(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback)
 {
     auto parameters = req->getParameters();
     Json::Value ret;

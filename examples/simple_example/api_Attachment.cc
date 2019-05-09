@@ -4,14 +4,14 @@
 using namespace api;
 //add definition of your processing function here
 void Attachment::get(const HttpRequestPtr &req,
-                     const std::function<void(const HttpResponsePtr &)> &callback)
+                     std::function<void(const HttpResponsePtr &)> &&callback)
 {
     auto resp = HttpResponse::newHttpViewResponse("FileUpload", HttpViewData());
     callback(resp);
 }
 
 void Attachment::upload(const HttpRequestPtr &req,
-                        const std::function<void(const HttpResponsePtr &)> &callback)
+                        std::function<void(const HttpResponsePtr &)> &&callback)
 {
     MultiPartParser fileUpload;
     if (fileUpload.parse(req) == 0)
@@ -55,7 +55,7 @@ void Attachment::upload(const HttpRequestPtr &req,
 }
 
 void Attachment::download(const HttpRequestPtr &req,
-                          const std::function<void(const HttpResponsePtr &)> &callback)
+                          std::function<void(const HttpResponsePtr &)> &&callback)
 {
     auto resp = HttpResponse::newFileResponse("./drogon.jpg", "", CT_IMAGE_JPG);
     callback(resp);
