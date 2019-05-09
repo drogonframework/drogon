@@ -72,7 +72,7 @@ Drogon provides some interfaces for adding controller logic directly in the main
 ```c++
 app.registerHandler("/test?username={1}",
                     [](const HttpRequestPtr& req,
-                       const std::function<void (const HttpResponsePtr &)> & callback,
+                       std::function<void (const HttpResponsePtr &)> &&callback,
                        const std::string &name)
                     {
                         Json::Value json;
@@ -94,7 +94,7 @@ using namespace drogon;
 class TestCtrl:public drogon::HttpSimpleController<TestCtrl>
 {
 public:
-    virtual void asyncHandleHttpRequest(const HttpRequestPtr& req,const std::function<void (const HttpResponsePtr &)> & callback)override;
+    virtual void asyncHandleHttpRequest(const HttpRequestPtr& req, std::function<void (const HttpResponsePtr &)> &&callback) override;
     PATH_LIST_BEGIN
     PATH_ADD("/test",Get);
     PATH_LIST_END
@@ -103,7 +103,7 @@ public:
 /// The TestCtrl.cc file
 #include "TestCtrl.h"
 void TestCtrl::asyncHandleHttpRequest(const HttpRequestPtr& req,
-                                      const std::function<void (const HttpResponsePtr &)> & callback)
+                                      std::function<void (const HttpResponsePtr &)> &&callback)
 {
     //write your application logic here
     auto resp = HttpResponse::newHttpResponse();
