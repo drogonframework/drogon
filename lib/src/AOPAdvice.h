@@ -19,15 +19,15 @@
 namespace drogon
 {
 void doAdvicesChain(const std::vector<std::function<void(const HttpRequestPtr &,
-                                                         const AdviceCallback &,
-                                                         const AdviceChainCallback &)>> &advices,
+                                                         AdviceCallback &&,
+                                                         AdviceChainCallback &&)>> &advices,
                     size_t index,
                     const HttpRequestImplPtr &req,
                     const std::shared_ptr<const std::function<void(const HttpResponsePtr &)>> &callbackPtr,
                     std::function<void()> &&missCallback);
 void doAdvicesChain(const std::deque<std::function<void(const HttpRequestPtr &,
-                                                        const AdviceCallback &,
-                                                        const AdviceChainCallback &)>> &advices,
+                                                        AdviceCallback &&,
+                                                        AdviceChainCallback &&)>> &advices,
                     size_t index,
                     const HttpRequestImplPtr &req,
                     const std::shared_ptr<const std::function<void(const HttpResponsePtr &)>> &callbackPtr,

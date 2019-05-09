@@ -107,20 +107,20 @@ public:
     }
 
     virtual void registerPreRoutingAdvice(const std::function<void(const HttpRequestPtr &,
-                                                                   const AdviceCallback &,
-                                                                   const AdviceChainCallback &)> &advice) override
+                                                                   AdviceCallback &&,
+                                                                   AdviceChainCallback &&)> &advice) override
     {
         _preRoutingAdvices.emplace_back(advice);
     }
     virtual void registerPostRoutingAdvice(const std::function<void(const HttpRequestPtr &,
-                                                                    const AdviceCallback &,
-                                                                    const AdviceChainCallback &)> &advice) override
+                                                                    AdviceCallback &&,
+                                                                    AdviceChainCallback &&)> &advice) override
     {
         _postRoutingAdvices.emplace_front(advice);
     }
     virtual void registerPreHandlingAdvice(const std::function<void(const HttpRequestPtr &,
-                                                                    const AdviceCallback &,
-                                                                    const AdviceChainCallback &)> &advice) override
+                                                                    AdviceCallback &&,
+                                                                    AdviceChainCallback &&)> &advice) override
     {
         _preHandlingAdvices.emplace_back(advice);
     }
@@ -330,16 +330,16 @@ private:
     static InitBeforeMainFunction _initFirst;
     std::vector<std::function<bool(const trantor::InetAddress &, const trantor::InetAddress &)>> _newConnectionAdvices;
     std::vector<std::function<void(const HttpRequestPtr &,
-                                   const AdviceCallback &,
-                                   const AdviceChainCallback &)>>
+                                   AdviceCallback &&,
+                                   AdviceChainCallback &&)>>
         _preRoutingAdvices;
     std::deque<std::function<void(const HttpRequestPtr &,
-                                  const AdviceCallback &,
-                                  const AdviceChainCallback &)>>
+                                  AdviceCallback &&,
+                                  AdviceChainCallback &&)>>
         _postRoutingAdvices;
     std::vector<std::function<void(const HttpRequestPtr &,
-                                   const AdviceCallback &,
-                                   const AdviceChainCallback &)>>
+                                   AdviceCallback &&,
+                                   AdviceChainCallback &&)>>
         _preHandlingAdvices;
     std::deque<std::function<void(const HttpRequestPtr &,
                                   const HttpResponsePtr &)>>

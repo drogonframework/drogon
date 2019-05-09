@@ -196,8 +196,8 @@ public:
      * 
      */
     virtual void registerPreRoutingAdvice(const std::function<void(const HttpRequestPtr &,
-                                                                   const AdviceCallback &,
-                                                                   const AdviceChainCallback &)> &advice) = 0;
+                                                                   AdviceCallback &&,
+                                                                   AdviceChainCallback &&)> &advice) = 0;
 
     ///The @param advice is called at the same time as the above advice. It can be thought of as an observer who cannot respond to http requests.
     /**
@@ -212,8 +212,8 @@ public:
      * The parameters of the @param advice are same as those of the doFilter method of the Filter class. 
      */
     virtual void registerPostRoutingAdvice(const std::function<void(const HttpRequestPtr &,
-                                                                    const AdviceCallback &,
-                                                                    const AdviceChainCallback &)> &advice) = 0;
+                                                                    AdviceCallback &&,
+                                                                    AdviceChainCallback &&)> &advice) = 0;
 
     ///The @param advice is called at the same time as the above advice. It can be thought of as an observer who cannot respond to http requests.
     /**
@@ -227,8 +227,8 @@ public:
      * The parameters of the @param advice are same as those of the doFilter method of the Filter class. 
      */
     virtual void registerPreHandlingAdvice(const std::function<void(const HttpRequestPtr &,
-                                                                    const AdviceCallback &,
-                                                                    const AdviceChainCallback &)> &advice) = 0;
+                                                                    AdviceCallback &&,
+                                                                    AdviceChainCallback &&)> &advice) = 0;
 
     ///The @param advice is called at the same time as the above advice. It can be thought of as an observer who cannot respond to http requests.
     /**

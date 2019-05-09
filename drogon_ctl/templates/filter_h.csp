@@ -23,8 +23,8 @@ class [[className]] : public HttpFilter<[[className]]>
   public:
     [[className]]() {}
     virtual void doFilter(const HttpRequestPtr &req,
-                          const FilterCallback &fcb,
-                          const FilterChainCallback &fccb) override;
+                          FilterCallback &&fcb,
+                          FilterChainCallback &&fccb) override;
 };
 
 <%c++for(size_t i=0;i<namespaceVector.size();i++){%>

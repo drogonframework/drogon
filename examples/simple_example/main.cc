@@ -164,21 +164,21 @@ int main()
         return true;
     });
     app().registerPreRoutingAdvice([](const drogon::HttpRequestPtr &req,
-                                      const drogon::AdviceCallback &acb,
-                                      const drogon::AdviceChainCallback &accb) {
+                                      drogon::AdviceCallback &&acb,
+                                      drogon::AdviceChainCallback &&accb) {
         LOG_DEBUG << "preRouting1";
         accb();
     });
     app().registerPostRoutingAdvice([](const drogon::HttpRequestPtr &req,
-                                       const drogon::AdviceCallback &acb,
-                                       const drogon::AdviceChainCallback &accb) {
+                                       drogon::AdviceCallback &&acb,
+                                       drogon::AdviceChainCallback &&accb) {
         LOG_DEBUG << "postRouting1";
         LOG_DEBUG << "Matched path=" << req->matchedPathPattern();
         accb();
     });
     app().registerPreHandlingAdvice([](const drogon::HttpRequestPtr &req,
-                                       const drogon::AdviceCallback &acb,
-                                       const drogon::AdviceChainCallback &accb) {
+                                       drogon::AdviceCallback &&acb,
+                                       drogon::AdviceChainCallback &&accb) {
         LOG_DEBUG << "preHandling1";
         // auto resp = HttpResponse::newNotFoundResponse();
         // acb(resp);

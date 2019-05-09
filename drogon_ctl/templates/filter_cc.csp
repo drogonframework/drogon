@@ -13,8 +13,8 @@ $$<<"using namespace "<<namespaceStr<<";\n";
 %>
 
 void [[className]]::doFilter(const HttpRequestPtr &req,
-                         const FilterCallback &fcb,
-                         const FilterChainCallback &fccb)
+                         FilterCallback &&fcb,
+                         FilterChainCallback &&fccb)
 {
     //Edit your logic here
     if (1)
