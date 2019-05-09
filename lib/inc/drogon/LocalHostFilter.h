@@ -23,7 +23,7 @@ class LocalHostFilter : public HttpFilter<LocalHostFilter>
   public:
     LocalHostFilter() {}
     virtual void doFilter(const HttpRequestPtr &req,
-                          const FilterCallback &fcb,
-                          const FilterChainCallback &fccb) override;
+                          FilterCallback &&fcb,
+                          FilterChainCallback &&fccb) override;
 };
 } // namespace drogon

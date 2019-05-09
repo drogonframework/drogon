@@ -5,8 +5,8 @@
 #include "TimeFilter.h"
 #define VDate "visitDate"
 void TimeFilter::doFilter(const HttpRequestPtr &req,
-                          const FilterCallback &cb,
-                          const FilterChainCallback &ccb)
+                          FilterCallback &&cb,
+                          FilterChainCallback &&ccb)
 {
     trantor::Date now = trantor::Date::date();
     if (!req->session())

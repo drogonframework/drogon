@@ -9,8 +9,8 @@
 using namespace drogon;
 
 void CustomHeaderFilter::doFilter(const HttpRequestPtr &req,
-                                  const FilterCallback &fcb,
-                                  const FilterChainCallback &fccb)
+                                  FilterCallback &&fcb,
+                                  FilterChainCallback &&fccb)
 {
     if (req->getHeader(_field) == _value)
     {

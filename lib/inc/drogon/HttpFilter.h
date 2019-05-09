@@ -38,8 +38,8 @@ public:
      * registered on the path is called.
      */
     virtual void doFilter(const HttpRequestPtr &req,
-                          const FilterCallback &fcb,
-                          const FilterChainCallback &fccb) = 0;
+                          FilterCallback &&fcb,
+                          FilterChainCallback &&fccb) = 0;
     virtual ~HttpFilterBase() {}
 };
 template <typename T, bool AutoCreation = true>
