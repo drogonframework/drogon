@@ -379,6 +379,25 @@ public:
         DrClassMap::setSingleInstance(filterPtr);
     }
 
+    /// Forward the http request
+    /**
+     * The @param hostString is the address where the request is forwarded. The following strings are 
+     * valid for the @param hostString:
+     * 
+     * https://www.baidu.com
+     * http://www.baidu.com
+     * https://127.0.0.1:8080/
+     * http://127.0.0.1
+     * http://[::1]:8080/ 
+     * 
+     * NOTE:
+     * If the @param hostString is empty, the request is handled by the same application, so in this condition 
+     * one should modify the path of the @param req before forwarding to avoid infinite loop processing. 
+     * 
+     * This method can be used to implement reverse proxy or redirection on the server side.
+     */
+    virtual void forward(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback, const std::string &hostString = "") = 0;
+
     ///Get information about the handlers registered to drogon
     /**
      * The first item of std::tuple in the return value represents the path pattern of the handler;

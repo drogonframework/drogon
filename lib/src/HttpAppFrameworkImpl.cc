@@ -918,3 +918,46 @@ void HttpAppFrameworkImpl::createDbClient(const std::string &dbType,
     }
 }
 #endif
+
+void HttpAppFrameworkImpl::forward(const HttpRequestImplPtr &req, std::function<void(const HttpResponsePtr &)> &&callback, const std::string &hostString)
+{
+    if (hostString.empty())
+    {
+        onAsyncRequest(req, std::move(callback));
+    }
+    else
+    {
+        /// A tiny implementation of a reverse proxy.
+        static std::unordered_map<std::string, HttpClientImplPtr> clientsMap;
+        HttpClientImplPtr clientPtr;
+        static std::mutex mtx;
+        {
+            std::lock_guard<std::mutex> lock(mtx);
+            auto iter = clientsMap.find(hostString);
+            if (iter != clientsMap.end())
+            {
+                clientPtr = iter->second;
+            }
+            else
+            {
+                clientPtr = std::make_shared<HttpClientImpl>(trantor::EventLoop::getEventLoopOfCurrentThread() ? trantor::EventLoop::getEventLoopOfCurrentThread() : getLoop(),
+                                                             hostString);
+                clientsMap[hostString] = clientPtr;
+            }
+        }
+        clientPtr->sendRequest(req, [callback = std::move(callback)](ReqResult result, const HttpResponsePtr &resp) {
+            if (result == ReqResult::Ok)
+            {
+                resp->removeHeader("server");
+                resp->removeHeader("date");
+                resp->removeHeader("content-length");
+                resp->removeHeader("transfer-encoding");
+                callback(resp);
+            }
+            else
+            {
+                callback(HttpResponse::newNotFoundResponse());
+            }
+        });
+    }
+}

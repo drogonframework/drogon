@@ -50,4 +50,5 @@ class HttpClientImpl : public HttpClient, public std::enable_shared_from_this<Ht
     std::string _domain;
     size_t _pipeliningDepth = 0;
 };
+typedef std::shared_ptr<HttpClientImpl> HttpClientImplPtr;
 } // namespace drogon

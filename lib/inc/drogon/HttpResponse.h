@@ -70,6 +70,10 @@ public:
     virtual const std::string &getHeader(const std::string &key, const std::string &defaultVal = std::string()) const = 0;
     virtual const std::string &getHeader(std::string &&key, const std::string &defaultVal = std::string()) const = 0;
 
+    /// Remove the header identified by the @param key.
+    virtual void removeHeader(const std::string &key) = 0;
+    virtual void removeHeader(std::string &&key) = 0;
+
     /// Get all headers of the response
     virtual const std::unordered_map<std::string, std::string> &headers() const = 0;
     const std::unordered_map<std::string, std::string> &getHeaders() const { return headers(); }
@@ -132,7 +136,7 @@ public:
     /// For more details, see the wiki pages, the "View" section.
     static HttpResponsePtr newHttpViewResponse(const std::string &viewName, const HttpViewData &data = HttpViewData());
     /// Create a response that returns a 302 Found page, redirecting to another page located in the @param location.
-    static HttpResponsePtr newLocationResponse(const std::string &location);
+    static HttpResponsePtr newRedirectionResponse(const std::string &location);
     /// Create a response that returns a file to the client.
     /**
      * @param fullPath is the full path to the file.

@@ -90,11 +90,18 @@ public:
         resp->setStatusCode(k404NotFound);
         _custom404 = resp;
     }
-    
+
     const HttpResponsePtr &getCustom404Page()
     {
         return _custom404;
     }
+
+    virtual void forward(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback, const std::string &hostString = "") override
+    {
+        forward(std::dynamic_pointer_cast<HttpRequestImpl>(req), std::move(callback), hostString);
+    }
+    
+    void forward(const HttpRequestImplPtr &req, std::function<void(const HttpResponsePtr &)> &&callback, const std::string &hostString);
 
     virtual void registerBeginningAdvice(const std::function<void()> &advice) override
     {

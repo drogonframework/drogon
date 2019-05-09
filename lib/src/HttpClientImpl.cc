@@ -306,20 +306,16 @@ void HttpClientImpl::onRecvMessage(const trantor::TcpConnectionPtr &connPtr, tra
         {
             auto resp = responseParser->responseImpl();
             responseParser->reset();
-
             assert(!_pipeliningCallbacks.empty());
-
             auto &type = resp->getHeaderBy("content-type");
-            if (type.find("application/json") != std::string::npos)
-            {
-                resp->parseJson();
-            }
-
             if (resp->getHeaderBy("content-encoding") == "gzip")
             {
                 resp->gunzip();
             }
-
+            if (type.find("application/json") != std::string::npos)
+            {
+                resp->parseJson();
+            }
             auto cb = std::move(_pipeliningCallbacks.front());
             _pipeliningCallbacks.pop();
             cb(ReqResult::Ok, resp);

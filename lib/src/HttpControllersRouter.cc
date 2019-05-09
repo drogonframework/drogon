@@ -24,12 +24,15 @@ namespace drogon
 {
 
 static void doWhenNoHandlerFound(const HttpRequestImplPtr &req,
-                                 const std::function<void(const HttpResponsePtr &)> &callback)
+                                 std::function<void(const HttpResponsePtr &)> &&callback)
 {
     if (req->path() == "/" && !HttpAppFrameworkImpl::instance().getHomePage().empty())
     {
-        auto resp = drogon::HttpResponse::newLocationResponse("/" + HttpAppFrameworkImpl::instance().getHomePage());
-        callback(resp);
+        // auto resp = drogon::HttpResponse::newRedirectionResponse("/" + HttpAppFrameworkImpl::instance().getHomePage());
+        // callback(resp);
+        // Redirect on the server side
+        req->setPath("/" + HttpAppFrameworkImpl::instance().getHomePage());
+        drogon::app().forward(req, std::move(callback));
         return;
     }
     auto resp = drogon::HttpResponse::newNotFoundResponse();
@@ -282,13 +285,13 @@ void HttpControllersRouter::route(const HttpRequestImplPtr &req,
         else
         {
             //No handler found
-            doWhenNoHandlerFound(req, callback);
+            doWhenNoHandlerFound(req, std::move(callback));
         }
     }
     else
     {
         //No handler found
-        doWhenNoHandlerFound(req, callback);
+        doWhenNoHandlerFound(req, std::move(callback));
     }
 }
 
