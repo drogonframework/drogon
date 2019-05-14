@@ -17,7 +17,7 @@ Drogon的主要应用平台是Linux，也支持Mac OS、FreeBSD，目前还不�
 * 支持Http1.0/1.1(server端和client端)；
 * 基于template实现了简单的反射机制，使主程序框架、控制器(controller)和视图(view)完全解耦；
 * 支持cookies和内建的session；
-* 支持后端渲染，把控制器生成的数据交给视图生成Html页面，视图由类似JSP的CSP文件描述，通过CSP标签把C++代码嵌入到Html页面，由drogon的命令行工具在编译阶段自动生成C++代码并编译；
+* 支持后端渲染，把控制器生成的数据交给视图生成Html页面，视图由CSP模板文件描述，通过CSP标签把C++代码嵌入到Html页面，由drogon的命令行工具在编译阶段自动生成C++代码并编译；
 * 支持运行期的视图页面动态加载(动态编译和加载so文件)；
 * 非常方便灵活的路径(path)到控制器处理函数(handler)的映射方案；
 * 支持过滤器(filter)链，方便在控制器之前执行统一的逻辑(如登录验证、Http Method约束验证等)；
@@ -35,4 +35,4 @@ Drogon的主要应用平台是Linux，也支持Mac OS、FreeBSD，目前还不�
 * 支持插件，可通过配置文件在加载期动态拆装；
 * 支持内建插入点的AOP
 
-### 更多详情请浏览 [wiki](https://gitee.com/an-tao/drogon/wikis/概述)
+### 更多详情请浏览 [wiki](https://github.com/an-tao/drogon/wiki/Chinese-home)

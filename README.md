@@ -17,10 +17,10 @@ Drogon's main application platform is Linux. It also supports Mac OS and FreeBSD
 * Support Http1.0/1.1 (server side and client side);
 * Based on template, a simple reflection mechanism is implemented to completely decouple the main program framework, controllers and views.
 * Support cookies and built-in sessions;
-* Support back-end rendering, the controller generates the data to the view to generate the Html page, the view is described by a "JSP-like" CSP file, the C++ code is embedded into the Html page by the CSP tag, and the drogon command-line tool automatically generates the C++ code file for compilation;
+* Support back-end rendering, the controller generates the data to the view to generate the Html page. Views are described by CSP template files, C++ codes are embedded into Html pages through CSP tags. And the drogon command-line tool automatically generates the C++ code files for compilation;
 * Support view page dynamic loading (dynamic compilation and loading at runtime);
 * Provide a convenient and flexible routing solution from the path to the controller handler;
-* Support filter chains to facilitate the execution of unified logic (such as login verification, Http Method constraint verification, etc.) before controllers;
+* Support filter chains to facilitate the execution of unified logic (such as login verification, Http Method constraint verification, etc.) before handling HTTP requests;
 * Support https (based on OpenSSL);
 * Support WebSocket (server side and client side);
 * Support JSON format request and response, very friendly to the Restful API application development;
