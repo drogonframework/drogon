@@ -1,0 +1,20 @@
+﻿---
+BasedOnStyle: Google
+BreakBeforeBraces: Allman
+AllowAllParametersOfDeclarationOnNextLine: false
+IndentWidth: '4'
+Language: Cpp
+UseTab: Never
+ColumnLimit: 128
+SortIncludes: false
+AllowShortFunctionsOnASingleLine: None
+AllowShortBlocksOnASingleLine: false
+AllowShortIfStatementsOnASingleLine: false
+AllowShortLoopsOnASingleLine: false
+BinPackArguments: false
+BinPackParameters: false
+ExperimentalAutoDetectBinPacking: false
+BreakConstructorInitializersBeforeComma: false
+ConstructorInitializerAllOnOneLineOrOnePerLine: true
+AccessModifierOffset: -2
+...

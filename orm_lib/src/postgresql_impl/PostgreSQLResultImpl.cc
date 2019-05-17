@@ -9,7 +9,7 @@
  *  that can be found in the License file.
  *
  *  Drogon
- * 
+ *
  */
 
 #include "PostgreSQLResultImpl.h"
@@ -35,7 +35,7 @@ const char *PostgreSQLResultImpl::columnName(row_size_type number) const
         assert(N);
         return N;
     }
-    throw "nullptr result"; //The program will never execute here
+    throw "nullptr result";  // The program will never execute here
 }
 Result::size_type PostgreSQLResultImpl::affectedRows() const noexcept
 {
@@ -51,10 +51,10 @@ Result::row_size_type PostgreSQLResultImpl::columnNumber(const char colName[]) c
     {
         auto N = PQfnumber(ptr, colName);
         if (N == -1)
-            throw std::string("there is no column named ") + colName; // TODO throw detail exception here;
+            throw std::string("there is no column named ") + colName;  // TODO throw detail exception here;
         return N;
     }
-    throw "nullptr result"; //The program will never execute here
+    throw "nullptr result";  // The program will never execute here
 }
 const char *PostgreSQLResultImpl::getValue(size_type row, row_size_type column) const
 {

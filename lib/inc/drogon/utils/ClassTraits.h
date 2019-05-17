@@ -18,17 +18,22 @@ namespace drogon
 {
 namespace internal
 {
-
 /// This template is used to check whether S is a subclass of B.
 template <typename S, typename B>
 struct IsSubClass
 {
     typedef typename std::remove_cv<typename std::remove_reference<S>::type>::type SubType;
     typedef typename std::remove_cv<typename std::remove_reference<B>::type>::type BaseType;
-    static char test(void *) { return 0; }
-    static int test(BaseType *) { return 0; }
+    static char test(void *)
+    {
+        return 0;
+    }
+    static int test(BaseType *)
+    {
+        return 0;
+    }
     static const bool value = (sizeof(test((SubType *)nullptr)) == sizeof(int));
 };
 
-} // namespace internal
-} // namespace drogon
+}  // namespace internal
+}  // namespace drogon

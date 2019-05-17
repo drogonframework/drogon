@@ -14,22 +14,21 @@
 
 #pragma once
 
-#include <trantor/net/EventLoop.h>
-#include <trantor/net/inner/Channel.h>
 #include <drogon/orm/DbClient.h>
-#include <trantor/utils/NonCopyable.h>
-#include <memory>
-#include <string>
 #include <functional>
 #include <iostream>
+#include <memory>
 #include <mutex>
 #include <shared_mutex>
+#include <string>
+#include <trantor/net/EventLoop.h>
+#include <trantor/net/inner/Channel.h>
+#include <trantor/utils/NonCopyable.h>
 
 namespace drogon
 {
 namespace orm
 {
-
 #if (CXX_STD > 14)
 typedef std::shared_mutex SharedMutex;
 #else
@@ -50,7 +49,9 @@ class DbConnection : public trantor::NonCopyable
 {
   public:
     typedef std::function<void(const DbConnectionPtr &)> DbConnectionCallback;
-    DbConnection(trantor::EventLoop *loop) : _loop(loop) {}
+    DbConnection(trantor::EventLoop *loop) : _loop(loop)
+    {
+    }
     void setOkCallback(const DbConnectionCallback &cb)
     {
         _okCb = cb;
@@ -74,10 +75,19 @@ class DbConnection : public trantor::NonCopyable
     {
         LOG_TRACE << "Destruct DbConn" << this;
     }
-    ConnectStatus status() const { return _status; }
-    trantor::EventLoop *loop() { return _loop; }
+    ConnectStatus status() const
+    {
+        return _status;
+    }
+    trantor::EventLoop *loop()
+    {
+        return _loop;
+    }
     virtual void disconnect() = 0;
-    bool isWorking() { return _isWorking; }
+    bool isWorking()
+    {
+        return _isWorking;
+    }
 
   protected:
     QueryCallback _cb;
@@ -91,5 +101,5 @@ class DbConnection : public trantor::NonCopyable
     std::string _sql = "";
 };
 
-} // namespace orm
-} // namespace drogon
+}  // namespace orm
+}  // namespace drogon

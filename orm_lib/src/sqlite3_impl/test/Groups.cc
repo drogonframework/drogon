@@ -25,18 +25,16 @@ const std::string Groups::primaryKeyName = "group_id";
 const bool Groups::hasPrimaryKey = true;
 const std::string Groups::tableName = "GROUPS";
 
-const std::vector<typename Groups::MetaData> Groups::_metaData={
-{"group_id","uint64_t","integer",8,1,1,0},
-{"group_name","std::string","text",0,0,0,0},
-{"creater_id","uint64_t","integer",8,0,0,0},
-{"create_time","std::string","text",0,0,0,0},
-{"inviting","uint64_t","integer",8,0,0,0},
-{"inviting_user_id","uint64_t","integer",8,0,0,0},
-{"avatar_id","std::string","text",0,0,0,0},
-{"uuu","double","double",8,0,0,0},
-{"text","std::string","varchar(255)",0,0,0,0},
-{"avatar","std::vector<char>","blob",0,0,0,0}
-};
+const std::vector<typename Groups::MetaData> Groups::_metaData = {{"group_id", "uint64_t", "integer", 8, 1, 1, 0},
+                                                                  {"group_name", "std::string", "text", 0, 0, 0, 0},
+                                                                  {"creater_id", "uint64_t", "integer", 8, 0, 0, 0},
+                                                                  {"create_time", "std::string", "text", 0, 0, 0, 0},
+                                                                  {"inviting", "uint64_t", "integer", 8, 0, 0, 0},
+                                                                  {"inviting_user_id", "uint64_t", "integer", 8, 0, 0, 0},
+                                                                  {"avatar_id", "std::string", "text", 0, 0, 0, 0},
+                                                                  {"uuu", "double", "double", 8, 0, 0, 0},
+                                                                  {"text", "std::string", "varchar(255)", 0, 0, 0, 0},
+                                                                  {"avatar", "std::vector<char>", "blob", 0, 0, 0, 0}};
 const std::string &Groups::getColumnName(size_t index) noexcept(false)
 {
     assert(index < _metaData.size());
@@ -44,50 +42,50 @@ const std::string &Groups::getColumnName(size_t index) noexcept(false)
 }
 Groups::Groups(const Row &r) noexcept
 {
-        if(!r["group_id"].isNull())
-        {
-            _groupId=std::make_shared<uint64_t>(r["group_id"].as<uint64_t>());
-        }
-        if(!r["group_name"].isNull())
-        {
-            _groupName=std::make_shared<std::string>(r["group_name"].as<std::string>());
-        }
-        if(!r["creater_id"].isNull())
-        {
-            _createrId=std::make_shared<uint64_t>(r["creater_id"].as<uint64_t>());
-        }
-        if(!r["create_time"].isNull())
-        {
-            _createTime=std::make_shared<std::string>(r["create_time"].as<std::string>());
-        }
-        if(!r["inviting"].isNull())
-        {
-            _inviting=std::make_shared<uint64_t>(r["inviting"].as<uint64_t>());
-        }
-        if(!r["inviting_user_id"].isNull())
-        {
-            _invitingUserId=std::make_shared<uint64_t>(r["inviting_user_id"].as<uint64_t>());
-        }
-        if(!r["avatar_id"].isNull())
-        {
-            _avatarId=std::make_shared<std::string>(r["avatar_id"].as<std::string>());
-        }
-        if(!r["uuu"].isNull())
-        {
-            _uuu=std::make_shared<double>(r["uuu"].as<double>());
-        }
-        if(!r["text"].isNull())
-        {
-            _text=std::make_shared<std::string>(r["text"].as<std::string>());
-        }
-        if(!r["avatar"].isNull())
-        {
-            _avatar=std::make_shared<std::vector<char>>(r["avatar"].as<std::vector<char>>());
-        }
+    if (!r["group_id"].isNull())
+    {
+        _groupId = std::make_shared<uint64_t>(r["group_id"].as<uint64_t>());
+    }
+    if (!r["group_name"].isNull())
+    {
+        _groupName = std::make_shared<std::string>(r["group_name"].as<std::string>());
+    }
+    if (!r["creater_id"].isNull())
+    {
+        _createrId = std::make_shared<uint64_t>(r["creater_id"].as<uint64_t>());
+    }
+    if (!r["create_time"].isNull())
+    {
+        _createTime = std::make_shared<std::string>(r["create_time"].as<std::string>());
+    }
+    if (!r["inviting"].isNull())
+    {
+        _inviting = std::make_shared<uint64_t>(r["inviting"].as<uint64_t>());
+    }
+    if (!r["inviting_user_id"].isNull())
+    {
+        _invitingUserId = std::make_shared<uint64_t>(r["inviting_user_id"].as<uint64_t>());
+    }
+    if (!r["avatar_id"].isNull())
+    {
+        _avatarId = std::make_shared<std::string>(r["avatar_id"].as<std::string>());
+    }
+    if (!r["uuu"].isNull())
+    {
+        _uuu = std::make_shared<double>(r["uuu"].as<double>());
+    }
+    if (!r["text"].isNull())
+    {
+        _text = std::make_shared<std::string>(r["text"].as<std::string>());
+    }
+    if (!r["avatar"].isNull())
+    {
+        _avatar = std::make_shared<std::vector<char>>(r["avatar"].as<std::vector<char>>());
+    }
 }
-const uint64_t & Groups::getValueOfGroupId(const uint64_t &defaultValue) const noexcept
+const uint64_t &Groups::getValueOfGroupId(const uint64_t &defaultValue) const noexcept
 {
-    if(_groupId)
+    if (_groupId)
         return *_groupId;
     return defaultValue;
 }
@@ -95,15 +93,15 @@ std::shared_ptr<const uint64_t> Groups::getGroupId() const noexcept
 {
     return _groupId;
 }
-const typename Groups::PrimaryKeyType & Groups::getPrimaryKey() const
+const typename Groups::PrimaryKeyType &Groups::getPrimaryKey() const
 {
     assert(_groupId);
     return *_groupId;
 }
 
-const std::string & Groups::getValueOfGroupName(const std::string &defaultValue) const noexcept
+const std::string &Groups::getValueOfGroupName(const std::string &defaultValue) const noexcept
 {
-    if(_groupName)
+    if (_groupName)
         return *_groupName;
     return defaultValue;
 }
@@ -122,10 +120,9 @@ void Groups::setGroupName(std::string &&groupName) noexcept
     _dirtyFlag[1] = true;
 }
 
-
-const uint64_t & Groups::getValueOfCreaterId(const uint64_t &defaultValue) const noexcept
+const uint64_t &Groups::getValueOfCreaterId(const uint64_t &defaultValue) const noexcept
 {
-    if(_createrId)
+    if (_createrId)
         return *_createrId;
     return defaultValue;
 }
@@ -139,10 +136,9 @@ void Groups::setCreaterId(const uint64_t &createrId) noexcept
     _dirtyFlag[2] = true;
 }
 
-
-const std::string & Groups::getValueOfCreateTime(const std::string &defaultValue) const noexcept
+const std::string &Groups::getValueOfCreateTime(const std::string &defaultValue) const noexcept
 {
-    if(_createTime)
+    if (_createTime)
         return *_createTime;
     return defaultValue;
 }
@@ -161,10 +157,9 @@ void Groups::setCreateTime(std::string &&createTime) noexcept
     _dirtyFlag[3] = true;
 }
 
-
-const uint64_t & Groups::getValueOfInviting(const uint64_t &defaultValue) const noexcept
+const uint64_t &Groups::getValueOfInviting(const uint64_t &defaultValue) const noexcept
 {
-    if(_inviting)
+    if (_inviting)
         return *_inviting;
     return defaultValue;
 }
@@ -178,10 +173,9 @@ void Groups::setInviting(const uint64_t &inviting) noexcept
     _dirtyFlag[4] = true;
 }
 
-
-const uint64_t & Groups::getValueOfInvitingUserId(const uint64_t &defaultValue) const noexcept
+const uint64_t &Groups::getValueOfInvitingUserId(const uint64_t &defaultValue) const noexcept
 {
-    if(_invitingUserId)
+    if (_invitingUserId)
         return *_invitingUserId;
     return defaultValue;
 }
@@ -195,10 +189,9 @@ void Groups::setInvitingUserId(const uint64_t &invitingUserId) noexcept
     _dirtyFlag[5] = true;
 }
 
-
-const std::string & Groups::getValueOfAvatarId(const std::string &defaultValue) const noexcept
+const std::string &Groups::getValueOfAvatarId(const std::string &defaultValue) const noexcept
 {
-    if(_avatarId)
+    if (_avatarId)
         return *_avatarId;
     return defaultValue;
 }
@@ -217,10 +210,9 @@ void Groups::setAvatarId(std::string &&avatarId) noexcept
     _dirtyFlag[6] = true;
 }
 
-
-const double & Groups::getValueOfUuu(const double &defaultValue) const noexcept
+const double &Groups::getValueOfUuu(const double &defaultValue) const noexcept
 {
-    if(_uuu)
+    if (_uuu)
         return *_uuu;
     return defaultValue;
 }
@@ -234,10 +226,9 @@ void Groups::setUuu(const double &uuu) noexcept
     _dirtyFlag[7] = true;
 }
 
-
-const std::string & Groups::getValueOfText(const std::string &defaultValue) const noexcept
+const std::string &Groups::getValueOfText(const std::string &defaultValue) const noexcept
 {
-    if(_text)
+    if (_text)
         return *_text;
     return defaultValue;
 }
@@ -256,17 +247,16 @@ void Groups::setText(std::string &&text) noexcept
     _dirtyFlag[8] = true;
 }
 
-
-const std::vector<char> & Groups::getValueOfAvatar(const std::vector<char> &defaultValue) const noexcept
+const std::vector<char> &Groups::getValueOfAvatar(const std::vector<char> &defaultValue) const noexcept
 {
-    if(_avatar)
+    if (_avatar)
         return *_avatar;
     return defaultValue;
 }
 std::string Groups::getValueOfAvatarAsString(const std::string &defaultValue) const noexcept
 {
-    if(_avatar)
-        return std::string(_avatar->data(),_avatar->size());
+    if (_avatar)
+        return std::string(_avatar->data(), _avatar->size());
     return defaultValue;
 }
 std::shared_ptr<const std::vector<char>> Groups::getAvatar() const noexcept
@@ -281,7 +271,7 @@ void Groups::setAvatar(const std::vector<char> &avatar) noexcept
 
 void Groups::setAvatar(const std::string &avatar) noexcept
 {
-    _avatar = std::make_shared<std::vector<char>>(avatar.c_str(),avatar.c_str()+avatar.length());
+    _avatar = std::make_shared<std::vector<char>>(avatar.c_str(), avatar.c_str() + avatar.length());
     _dirtyFlag[9] = true;
 }
 
@@ -292,23 +282,14 @@ void Groups::updateId(const uint64_t id)
 
 const std::vector<std::string> &Groups::insertColumns() noexcept
 {
-    static const std::vector<std::string> _inCols={
-        "group_name",
-        "creater_id",
-        "create_time",
-        "inviting",
-        "inviting_user_id",
-        "avatar_id",
-        "uuu",
-        "text",
-        "avatar"
-    };
+    static const std::vector<std::string> _inCols = {
+        "group_name", "creater_id", "create_time", "inviting", "inviting_user_id", "avatar_id", "uuu", "text", "avatar"};
     return _inCols;
 }
 
 void Groups::outputArgs(drogon::orm::internal::SqlBinder &binder) const
 {
-    if(getGroupName())
+    if (getGroupName())
     {
         binder << getValueOfGroupName();
     }
@@ -316,7 +297,7 @@ void Groups::outputArgs(drogon::orm::internal::SqlBinder &binder) const
     {
         binder << nullptr;
     }
-    if(getCreaterId())
+    if (getCreaterId())
     {
         binder << getValueOfCreaterId();
     }
@@ -324,7 +305,7 @@ void Groups::outputArgs(drogon::orm::internal::SqlBinder &binder) const
     {
         binder << nullptr;
     }
-    if(getCreateTime())
+    if (getCreateTime())
     {
         binder << getValueOfCreateTime();
     }
@@ -332,7 +313,7 @@ void Groups::outputArgs(drogon::orm::internal::SqlBinder &binder) const
     {
         binder << nullptr;
     }
-    if(getInviting())
+    if (getInviting())
     {
         binder << getValueOfInviting();
     }
@@ -340,7 +321,7 @@ void Groups::outputArgs(drogon::orm::internal::SqlBinder &binder) const
     {
         binder << nullptr;
     }
-    if(getInvitingUserId())
+    if (getInvitingUserId())
     {
         binder << getValueOfInvitingUserId();
     }
@@ -348,7 +329,7 @@ void Groups::outputArgs(drogon::orm::internal::SqlBinder &binder) const
     {
         binder << nullptr;
     }
-    if(getAvatarId())
+    if (getAvatarId())
     {
         binder << getValueOfAvatarId();
     }
@@ -356,7 +337,7 @@ void Groups::outputArgs(drogon::orm::internal::SqlBinder &binder) const
     {
         binder << nullptr;
     }
-    if(getUuu())
+    if (getUuu())
     {
         binder << getValueOfUuu();
     }
@@ -364,7 +345,7 @@ void Groups::outputArgs(drogon::orm::internal::SqlBinder &binder) const
     {
         binder << nullptr;
     }
-    if(getText())
+    if (getText())
     {
         binder << getValueOfText();
     }
@@ -372,7 +353,7 @@ void Groups::outputArgs(drogon::orm::internal::SqlBinder &binder) const
     {
         binder << nullptr;
     }
-    if(getAvatar())
+    if (getAvatar())
     {
         binder << getValueOfAvatar();
     }
@@ -385,9 +366,9 @@ void Groups::outputArgs(drogon::orm::internal::SqlBinder &binder) const
 const std::vector<std::string> Groups::updateColumns() const
 {
     std::vector<std::string> ret;
-    for(size_t i=0;i<sizeof(_dirtyFlag);i++)
+    for (size_t i = 0; i < sizeof(_dirtyFlag); i++)
     {
-        if(_dirtyFlag[i])
+        if (_dirtyFlag[i])
         {
             ret.push_back(getColumnName(i));
         }
@@ -397,9 +378,9 @@ const std::vector<std::string> Groups::updateColumns() const
 
 void Groups::updateArgs(drogon::orm::internal::SqlBinder &binder) const
 {
-    if(_dirtyFlag[1])
+    if (_dirtyFlag[1])
     {
-        if(getGroupName())
+        if (getGroupName())
         {
             binder << getValueOfGroupName();
         }
@@ -408,9 +389,9 @@ void Groups::updateArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
-    if(_dirtyFlag[2])
+    if (_dirtyFlag[2])
     {
-        if(getCreaterId())
+        if (getCreaterId())
         {
             binder << getValueOfCreaterId();
         }
@@ -419,9 +400,9 @@ void Groups::updateArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
-    if(_dirtyFlag[3])
+    if (_dirtyFlag[3])
     {
-        if(getCreateTime())
+        if (getCreateTime())
         {
             binder << getValueOfCreateTime();
         }
@@ -430,9 +411,9 @@ void Groups::updateArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
-    if(_dirtyFlag[4])
+    if (_dirtyFlag[4])
     {
-        if(getInviting())
+        if (getInviting())
         {
             binder << getValueOfInviting();
         }
@@ -441,9 +422,9 @@ void Groups::updateArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
-    if(_dirtyFlag[5])
+    if (_dirtyFlag[5])
     {
-        if(getInvitingUserId())
+        if (getInvitingUserId())
         {
             binder << getValueOfInvitingUserId();
         }
@@ -452,9 +433,9 @@ void Groups::updateArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
-    if(_dirtyFlag[6])
+    if (_dirtyFlag[6])
     {
-        if(getAvatarId())
+        if (getAvatarId())
         {
             binder << getValueOfAvatarId();
         }
@@ -463,9 +444,9 @@ void Groups::updateArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
-    if(_dirtyFlag[7])
+    if (_dirtyFlag[7])
     {
-        if(getUuu())
+        if (getUuu())
         {
             binder << getValueOfUuu();
         }
@@ -474,9 +455,9 @@ void Groups::updateArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
-    if(_dirtyFlag[8])
+    if (_dirtyFlag[8])
     {
-        if(getText())
+        if (getText())
         {
             binder << getValueOfText();
         }
@@ -485,9 +466,9 @@ void Groups::updateArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
-    if(_dirtyFlag[9])
+    if (_dirtyFlag[9])
     {
-        if(getAvatar())
+        if (getAvatar())
         {
             binder << getValueOfAvatar();
         }
@@ -500,85 +481,85 @@ void Groups::updateArgs(drogon::orm::internal::SqlBinder &binder) const
 Json::Value Groups::toJson() const
 {
     Json::Value ret;
-    if(getGroupId())
+    if (getGroupId())
     {
-        ret["group_id"]=(Json::UInt64)getValueOfGroupId();
+        ret["group_id"] = (Json::UInt64)getValueOfGroupId();
     }
     else
     {
-        ret["group_id"]=Json::Value();
+        ret["group_id"] = Json::Value();
     }
-    if(getGroupName())
+    if (getGroupName())
     {
-        ret["group_name"]=getValueOfGroupName();
-    }
-    else
-    {
-        ret["group_name"]=Json::Value();
-    }
-    if(getCreaterId())
-    {
-        ret["creater_id"]=(Json::UInt64)getValueOfCreaterId();
+        ret["group_name"] = getValueOfGroupName();
     }
     else
     {
-        ret["creater_id"]=Json::Value();
+        ret["group_name"] = Json::Value();
     }
-    if(getCreateTime())
+    if (getCreaterId())
     {
-        ret["create_time"]=getValueOfCreateTime();
-    }
-    else
-    {
-        ret["create_time"]=Json::Value();
-    }
-    if(getInviting())
-    {
-        ret["inviting"]=(Json::UInt64)getValueOfInviting();
+        ret["creater_id"] = (Json::UInt64)getValueOfCreaterId();
     }
     else
     {
-        ret["inviting"]=Json::Value();
+        ret["creater_id"] = Json::Value();
     }
-    if(getInvitingUserId())
+    if (getCreateTime())
     {
-        ret["inviting_user_id"]=(Json::UInt64)getValueOfInvitingUserId();
-    }
-    else
-    {
-        ret["inviting_user_id"]=Json::Value();
-    }
-    if(getAvatarId())
-    {
-        ret["avatar_id"]=getValueOfAvatarId();
+        ret["create_time"] = getValueOfCreateTime();
     }
     else
     {
-        ret["avatar_id"]=Json::Value();
+        ret["create_time"] = Json::Value();
     }
-    if(getUuu())
+    if (getInviting())
     {
-        ret["uuu"]=getValueOfUuu();
-    }
-    else
-    {
-        ret["uuu"]=Json::Value();
-    }
-    if(getText())
-    {
-        ret["text"]=getValueOfText();
+        ret["inviting"] = (Json::UInt64)getValueOfInviting();
     }
     else
     {
-        ret["text"]=Json::Value();
+        ret["inviting"] = Json::Value();
     }
-    if(getAvatar())
+    if (getInvitingUserId())
     {
-        ret["avatar"]=drogon::utils::base64Encode((const unsigned char *)getAvatar()->data(),getAvatar()->size());
+        ret["inviting_user_id"] = (Json::UInt64)getValueOfInvitingUserId();
     }
     else
     {
-        ret["avatar"]=Json::Value();
+        ret["inviting_user_id"] = Json::Value();
+    }
+    if (getAvatarId())
+    {
+        ret["avatar_id"] = getValueOfAvatarId();
+    }
+    else
+    {
+        ret["avatar_id"] = Json::Value();
+    }
+    if (getUuu())
+    {
+        ret["uuu"] = getValueOfUuu();
+    }
+    else
+    {
+        ret["uuu"] = Json::Value();
+    }
+    if (getText())
+    {
+        ret["text"] = getValueOfText();
+    }
+    else
+    {
+        ret["text"] = Json::Value();
+    }
+    if (getAvatar())
+    {
+        ret["avatar"] = drogon::utils::base64Encode((const unsigned char *)getAvatar()->data(), getAvatar()->size());
+    }
+    else
+    {
+        ret["avatar"] = Json::Value();
     }
     return ret;
 }

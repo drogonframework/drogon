@@ -2,7 +2,7 @@
  *
  *  HttpRequestImpl.h
  *  An Tao
- *  
+ *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
  *  Use of this source code is governed by a MIT license
@@ -15,44 +15,42 @@
 #pragma once
 
 #include "HttpUtils.h"
-#include <drogon/utils/Utilities.h>
 #include <drogon/HttpRequest.h>
 #include <drogon/HttpResponse.h>
+#include <drogon/utils/Utilities.h>
 
-#include <trantor/utils/NonCopyable.h>
+#include <trantor/net/EventLoop.h>
+#include <trantor/net/InetAddress.h>
 #include <trantor/utils/Logger.h>
 #include <trantor/utils/MsgBuffer.h>
-#include <trantor/net/InetAddress.h>
-#include <trantor/net/EventLoop.h>
+#include <trantor/utils/NonCopyable.h>
 
-#include <unordered_map>
+#include <algorithm>
 #include <assert.h>
 #include <stdio.h>
-#include <algorithm>
 #include <string>
 #include <thread>
+#include <unordered_map>
 
 using std::string;
 using namespace trantor;
 
 namespace drogon
 {
-
 class HttpRequestImpl : public HttpRequest
 {
-public:
+  public:
     friend class HttpRequestParser;
 
     explicit HttpRequestImpl(trantor::EventLoop *loop)
-        : _method(Invalid),
-          _version(kUnknown),
-          _date(trantor::Date::now()),
-          _contentLen(0),
-          _loop(loop)
+        : _method(Invalid), _version(kUnknown), _date(trantor::Date::now()), _contentLen(0), _loop(loop)
     {
     }
 
-    trantor::EventLoop *getLoop() { return _loop; }
+    trantor::EventLoop *getLoop()
+    {
+        return _loop;
+    }
 
     void setVersion(Version v)
     {
@@ -66,62 +64,61 @@ public:
 
     bool setMethod(const char *start, const char *end)
     {
-
         assert(_method == Invalid);
         string_view m(start, end - start);
         switch (m.length())
         {
-        case 3:
-            if (m == "GET")
-            {
-                _method = Get;
-            }
-            else if (m == "PUT")
-            {
-                _method = Put;
-            }
-            else
-            {
+            case 3:
+                if (m == "GET")
+                {
+                    _method = Get;
+                }
+                else if (m == "PUT")
+                {
+                    _method = Put;
+                }
+                else
+                {
+                    _method = Invalid;
+                }
+                break;
+            case 4:
+                if (m == "POST")
+                {
+                    _method = Post;
+                }
+                else if (m == "HEAD")
+                {
+                    _method = Head;
+                }
+                else
+                {
+                    _method = Invalid;
+                }
+                break;
+            case 6:
+                if (m == "DELETE")
+                {
+                    _method = Delete;
+                }
+                else
+                {
+                    _method = Invalid;
+                }
+                break;
+            case 7:
+                if (m == "OPTIONS")
+                {
+                    _method = Options;
+                }
+                else
+                {
+                    _method = Invalid;
+                }
+                break;
+            default:
                 _method = Invalid;
-            }
-            break;
-        case 4:
-            if (m == "POST")
-            {
-                _method = Post;
-            }
-            else if (m == "HEAD")
-            {
-                _method = Head;
-            }
-            else
-            {
-                _method = Invalid;
-            }
-            break;
-        case 6:
-            if (m == "DELETE")
-            {
-                _method = Delete;
-            }
-            else
-            {
-                _method = Invalid;
-            }
-            break;
-        case 7:
-            if (m == "OPTIONS")
-            {
-                _method = Options;
-            }
-            else
-            {
-                _method = Invalid;
-            }
-            break;
-        default:
-            _method = Invalid;
-            break;
+                break;
         }
 
         // if (_method != Invalid)
@@ -156,26 +153,26 @@ public:
         const char *result = "UNKNOWN";
         switch (_method)
         {
-        case Get:
-            result = "GET";
-            break;
-        case Post:
-            result = "POST";
-            break;
-        case Head:
-            result = "HEAD";
-            break;
-        case Put:
-            result = "PUT";
-            break;
-        case Delete:
-            result = "DELETE";
-            break;
-        case Options:
-            result = "OPTIONS";
-            break;
-        default:
-            break;
+            case Get:
+                result = "GET";
+                break;
+            case Post:
+                result = "POST";
+                break;
+            case Head:
+                result = "HEAD";
+                break;
+            case Put:
+                result = "PUT";
+                break;
+            case Delete:
+                result = "DELETE";
+                break;
+            case Options:
+                result = "OPTIONS";
+                break;
+            default:
+                break;
         }
         return result;
     }
@@ -196,7 +193,8 @@ public:
         return _parameters;
     }
 
-    virtual const std::string &getParameter(const std::string &key, const std::string &defaultVal = std::string()) const override
+    virtual const std::string &getParameter(const std::string &key,
+                                            const std::string &defaultVal = std::string()) const override
     {
         parseParametersOnce();
         auto iter = _parameters.find(key);
@@ -386,7 +384,8 @@ public:
         setContentType(std::string(typeStr.data(), typeStr.length()));
     }
 
-    // virtual void setContentTypeCodeAndCharacterSet(ContentType type, const std::string &charSet = "utf-8") override
+    // virtual void setContentTypeCodeAndCharacterSet(ContentType type, const
+    // std::string &charSet = "utf-8") override
     // {
     //     _contentType = type;
     //     setContentType(webContentTypeAndCharsetToString(type, charSet));
@@ -407,7 +406,7 @@ public:
         _matchedPathPattern = pathPattern;
     }
 
-protected:
+  protected:
     friend class HttpRequest;
     void setContentType(const std::string &contentType)
     {
@@ -418,11 +417,12 @@ protected:
         _contentTypeString = std::move(contentType);
     }
 
-private:
+  private:
     void parseParameters() const;
     void parseParametersOnce() const
     {
-        //Not multi-thread safe but good, because we basically call this function in a single thread
+        // Not multi-thread safe but good, because we basically call this function
+        // in a single thread
         if (!_flagForParsingParameters)
         {
             _flagForParsingParameters = true;
@@ -444,7 +444,7 @@ private:
     trantor::InetAddress _local;
     trantor::Date _date;
 
-protected:
+  protected:
     std::string _content;
     size_t _contentLen;
     trantor::EventLoop *_loop;
@@ -454,4 +454,4 @@ protected:
 
 typedef std::shared_ptr<HttpRequestImpl> HttpRequestImplPtr;
 
-} // namespace drogon
+}  // namespace drogon

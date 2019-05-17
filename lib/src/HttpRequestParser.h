@@ -2,7 +2,7 @@
  *
  *  HttpRequestParser.h
  *  An Tao
- *  
+ *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
  *  Use of this source code is governed by a MIT license
@@ -16,11 +16,11 @@
 
 #include "HttpRequestImpl.h"
 #include "WebSocketConnectionImpl.h"
-#include <trantor/utils/MsgBuffer.h>
-#include <drogon/HttpResponse.h>
 #include <deque>
+#include <drogon/HttpResponse.h>
 #include <mutex>
 #include <trantor/net/TcpConnection.h>
+#include <trantor/utils/MsgBuffer.h>
 
 using namespace trantor;
 namespace drogon
@@ -80,16 +80,28 @@ class HttpRequestParser
     {
         _websockConnPtr = conn;
     }
-    //to support request pipelining(rfc2616-8.1.2.2)
+    // to support request pipelining(rfc2616-8.1.2.2)
     void pushRquestToPipelining(const HttpRequestPtr &req);
     HttpRequestPtr getFirstRequest() const;
     HttpResponsePtr getFirstResponse() const;
     void popFirstRequest();
     void pushResponseToPipelining(const HttpRequestPtr &req, const HttpResponsePtr &resp);
-    size_t numberOfRequestsInPipelining() const { return _requestPipelining.size(); }
-    bool isStop() const { return _stopWorking; }
-    void stop() { _stopWorking = true; }
-    size_t numberOfRequestsParsed() const { return _requestsCounter; }
+    size_t numberOfRequestsInPipelining() const
+    {
+        return _requestPipelining.size();
+    }
+    bool isStop() const
+    {
+        return _stopWorking;
+    }
+    void stop()
+    {
+        _stopWorking = true;
+    }
+    size_t numberOfRequestsParsed() const
+    {
+        return _requestsCounter;
+    }
 
   private:
     void shutdownConnection(HttpStatusCode code);
@@ -105,4 +117,4 @@ class HttpRequestParser
     bool _stopWorking = false;
 };
 
-} // namespace drogon
+}  // namespace drogon

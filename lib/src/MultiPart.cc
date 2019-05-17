@@ -2,7 +2,7 @@
  *
  *  MultiPart.cc
  *  An Tao
- *  
+ *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
  *  Use of this source code is governed by a MIT license
@@ -14,20 +14,20 @@
 
 #include "HttpRequestImpl.h"
 #include "HttpUtils.h"
-#include <drogon/utils/Utilities.h>
-#include <drogon/MultiPart.h>
 #include <drogon/HttpAppFramework.h>
+#include <drogon/MultiPart.h>
+#include <drogon/utils/Utilities.h>
 #ifdef USE_OPENSSL
 #include <openssl/md5.h>
 #else
 #include "ssl_funcs/Md5.h"
 #endif
-#include <iostream>
+#include <algorithm>
+#include <fcntl.h>
 #include <fstream>
+#include <iostream>
 #include <sys/stat.h>
 #include <unistd.h>
-#include <fcntl.h>
-#include <algorithm>
 
 using namespace drogon;
 
@@ -62,7 +62,7 @@ int MultiPartParser::parse(const HttpRequestPtr &req)
     if (pos == std::string::npos)
         return -1;
     std::string boundary = contentType.substr(pos + 9);
-    //std::cout << "boundary[" << boundary << "]" << std::endl;
+    // std::cout << "boundary[" << boundary << "]" << std::endl;
     auto &content = req->query();
     return parse(content, boundary);
 }
@@ -135,7 +135,7 @@ int MultiPartParser::parse(const std::string &content, const std::string &bounda
             pos2 -= 4;
         if (parseEntity(content.c_str() + pos1, content.c_str() + pos2) != 0)
             return -1;
-        //pos2+=boundary.length();
+        // pos2+=boundary.length();
     }
     return 0;
 }
@@ -147,12 +147,10 @@ int HttpFile::save(const std::string &path) const
         return -1;
     std::string filename;
     auto tmpPath = path;
-    if (path[0] == '/' ||
-        (path.length() >= 2 && path[0] == '.' && path[1] == '/') ||
-        (path.length() >= 3 && path[0] == '.' && path[1] == '.' && path[2] == '/') ||
-        path == "." || path == "..")
+    if (path[0] == '/' || (path.length() >= 2 && path[0] == '.' && path[1] == '/') ||
+        (path.length() >= 3 && path[0] == '.' && path[1] == '.' && path[2] == '/') || path == "." || path == "..")
     {
-        //Absolute or relative path
+        // Absolute or relative path
     }
     else
     {
@@ -183,11 +181,10 @@ int HttpFile::saveAs(const std::string &filename) const
 {
     assert(!filename.empty());
     auto pathAndFileName = filename;
-    if (filename[0] == '/' ||
-        (filename.length() >= 2 && filename[0] == '.' && filename[1] == '/') ||
+    if (filename[0] == '/' || (filename.length() >= 2 && filename[0] == '.' && filename[1] == '/') ||
         (filename.length() >= 3 && filename[0] == '.' && filename[1] == '.' && filename[2] == '/'))
     {
-        //Absolute or relative path
+        // Absolute or relative path
     }
     else
     {

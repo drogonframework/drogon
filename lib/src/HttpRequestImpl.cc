@@ -2,7 +2,7 @@
  *
  *  HttpRequestImpl.cc
  *  An Tao
- *  
+ *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
  *  Use of this source code is governed by a MIT license
@@ -15,8 +15,8 @@
 #include "HttpRequestImpl.h"
 #include "HttpFileUploadRequest.h"
 #include <drogon/utils/Utilities.h>
-#include <iostream>
 #include <fstream>
+#include <iostream>
 #include <unistd.h>
 
 using namespace drogon;
@@ -28,9 +28,9 @@ void HttpRequestImpl::parseParameters() const
         return;
     std::string type = getHeaderBy("content-type");
     std::transform(type.begin(), type.end(), type.begin(), tolower);
-    if (_method == Get || (_method == Post && (type == "" || type.find("application/x-www-form-urlencoded") != std::string::npos)))
+    if (_method == Get ||
+        (_method == Post && (type == "" || type.find("application/x-www-form-urlencoded") != std::string::npos)))
     {
-
         std::string::size_type pos = 0;
         while ((input[pos] == '?' || isspace(input[pos])) && pos < input.length())
         {
@@ -75,7 +75,7 @@ void HttpRequestImpl::parseParameters() const
     }
     if (type.find("application/json") != std::string::npos)
     {
-        //parse json data in request
+        // parse json data in request
         _jsonPtr = std::make_shared<Json::Value>();
         Json::CharReaderBuilder builder;
         builder["collectComments"] = false;
@@ -98,26 +98,26 @@ void HttpRequestImpl::appendToBuffer(MsgBuffer *output) const
 {
     switch (_method)
     {
-    case Get:
-        output->append("GET ");
-        break;
-    case Post:
-        output->append("POST ");
-        break;
-    case Head:
-        output->append("HEAD ");
-        break;
-    case Put:
-        output->append("PUT ");
-        break;
-    case Delete:
-        output->append("DELETE ");
-        break;
-    case Options:
-        output->append("OPTIONS ");
-        break;
-    default:
-        return;
+        case Get:
+            output->append("GET ");
+            break;
+        case Post:
+            output->append("POST ");
+            break;
+        case Head:
+            output->append("HEAD ");
+            break;
+        case Put:
+            output->append("PUT ");
+            break;
+        case Delete:
+            output->append("DELETE ");
+            break;
+        case Options:
+            output->append("OPTIONS ");
+            break;
+        default:
+            return;
     }
 
     if (!_path.empty())
@@ -153,7 +153,6 @@ void HttpRequestImpl::appendToBuffer(MsgBuffer *output) const
             }
             else
             {
-
                 output->append("?");
             }
             output->append(content);
@@ -161,9 +160,12 @@ void HttpRequestImpl::appendToBuffer(MsgBuffer *output) const
         }
         else if (_contentType == CT_APPLICATION_JSON)
         {
-            ///Can't set parameters in content in this case
-            LOG_ERROR << "You can't set parameters in the query string when the request content type is JSON and http method is POST or PUT";
-            LOG_ERROR << "Please put these parameters into the path or into the json string";
+            /// Can't set parameters in content in this case
+            LOG_ERROR << "You can't set parameters in the query string when the "
+                         "request content type is JSON and http method "
+                         "is POST or PUT";
+            LOG_ERROR << "Please put these parameters into the path or into the json "
+                         "string";
             content.clear();
         }
     }
@@ -217,7 +219,7 @@ void HttpRequestImpl::appendToBuffer(MsgBuffer *output) const
                 {
                     std::streambuf *pbuf = infile.rdbuf();
                     std::streamsize filesize = pbuf->pubseekoff(0, infile.end);
-                    pbuf->pubseekoff(0, infile.beg); // rewind
+                    pbuf->pubseekoff(0, infile.beg);  // rewind
                     std::string str;
                     str.resize(filesize);
                     pbuf->sgetn(&str[0], filesize);
@@ -234,7 +236,8 @@ void HttpRequestImpl::appendToBuffer(MsgBuffer *output) const
     if (!content.empty() || !_content.empty())
     {
         char buf[64];
-        auto len = snprintf(buf, sizeof(buf), "Content-Length: %lu\r\n", static_cast<long unsigned int>(content.length() + _content.length()));
+        auto len = snprintf(
+            buf, sizeof(buf), "Content-Length: %lu\r\n", static_cast<long unsigned int>(content.length() + _content.length()));
         output->append(buf, len);
         if (_contentTypeString.empty())
         {
@@ -263,7 +266,7 @@ void HttpRequestImpl::appendToBuffer(MsgBuffer *output) const
             output->append(it->second);
             output->append(";");
         }
-        output->unwrite(1); //delete last ';'
+        output->unwrite(1);  // delete last ';'
         output->append("\r\n");
     }
 
@@ -277,7 +280,7 @@ void HttpRequestImpl::appendToBuffer(MsgBuffer *output) const
 void HttpRequestImpl::addHeader(const char *start, const char *colon, const char *end)
 {
     std::string field(start, colon);
-    //Field name is case-insensitive.so we transform it to lower;(rfc2616-4.2)
+    // Field name is case-insensitive.so we transform it to lower;(rfc2616-4.2)
     std::transform(field.begin(), field.end(), field.begin(), ::tolower);
     ++colon;
     while (colon < end && isspace(*colon))

@@ -2,7 +2,7 @@
  *
  *  HttpResponseImpl.cc
  *  An Tao
- *  
+ *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
  *  Use of this source code is governed by a MIT license
@@ -12,17 +12,17 @@
  *
  */
 
-#include "HttpAppFrameworkImpl.h"
 #include "HttpResponseImpl.h"
+#include "HttpAppFrameworkImpl.h"
 #include "HttpUtils.h"
+#include <drogon/HttpAppFramework.h>
 #include <drogon/HttpViewBase.h>
 #include <drogon/HttpViewData.h>
-#include <drogon/HttpAppFramework.h>
-#include <trantor/utils/Logger.h>
-#include <memory>
 #include <fstream>
+#include <memory>
 #include <stdio.h>
 #include <sys/stat.h>
+#include <trantor/utils/Logger.h>
 
 using namespace trantor;
 using namespace drogon;
@@ -79,9 +79,10 @@ HttpResponsePtr HttpResponse::newHttpViewResponse(const std::string &viewName, c
     return HttpViewBase::genHttpResponse(viewName, data);
 }
 
-HttpResponsePtr HttpResponse::newFileResponse(const std::string &fullPath, const std::string &attachmentFileName, ContentType type)
+HttpResponsePtr HttpResponse::newFileResponse(const std::string &fullPath,
+                                              const std::string &attachmentFileName,
+                                              ContentType type)
 {
-    
     std::ifstream infile(fullPath, std::ifstream::binary);
     LOG_TRACE << "send http file:" << fullPath;
     if (!infile)
@@ -92,12 +93,12 @@ HttpResponsePtr HttpResponse::newFileResponse(const std::string &fullPath, const
     auto resp = std::make_shared<HttpResponseImpl>();
     std::streambuf *pbuf = infile.rdbuf();
     std::streamsize filesize = pbuf->pubseekoff(0, infile.end);
-    pbuf->pubseekoff(0, infile.beg); // rewind
-    if (HttpAppFrameworkImpl::instance().useSendfile() &&
-        filesize > 1024 * 200)
-    //TODO : Is 200k an appropriate value? Or set it to be configurable
+    pbuf->pubseekoff(0, infile.beg);  // rewind
+    if (HttpAppFrameworkImpl::instance().useSendfile() && filesize > 1024 * 200)
+    // TODO : Is 200k an appropriate value? Or set it to be configurable
     {
-        //The advantages of sendfile() can only be reflected in sending large files.
+        // The advantages of sendfile() can only be reflected in sending large
+        // files.
         resp->setSendfile(fullPath);
     }
     else
@@ -166,8 +167,7 @@ void HttpResponseImpl::makeHeaderString(const std::shared_ptr<std::string> &head
         }
         else
         {
-
-            //output->append("Connection: Keep-Alive\r\n");
+            // output->append("Connection: Keep-Alive\r\n");
         }
     }
     headerStringPtr->append(_contentTypeString.data(), _contentTypeString.length());
@@ -214,17 +214,16 @@ std::shared_ptr<std::string> HttpResponseImpl::renderToString() const
         httpString->append(*_fullHeaderString);
     }
 
-    //output cookies
+    // output cookies
     if (_cookies.size() > 0)
     {
         for (auto it = _cookies.begin(); it != _cookies.end(); ++it)
         {
-
             httpString->append(it->second.cookieString());
         }
     }
 
-    //output Date header
+    // output Date header
     httpString->append("Date: ");
     auto datePos = httpString->length();
     httpString->append(utils::getHttpFullDate(trantor::Date::date()));
@@ -253,17 +252,16 @@ std::shared_ptr<std::string> HttpResponseImpl::renderHeaderForHeadMethod() const
         httpString->append(*_fullHeaderString);
     }
 
-    //output cookies
+    // output cookies
     if (_cookies.size() > 0)
     {
         for (auto it = _cookies.begin(); it != _cookies.end(); ++it)
         {
-
             httpString->append(it->second.cookieString());
         }
     }
 
-    //output Date header
+    // output Date header
     httpString->append("Date: ");
     httpString->append(utils::getHttpFullDate(trantor::Date::date()));
     httpString->append("\r\n\r\n");

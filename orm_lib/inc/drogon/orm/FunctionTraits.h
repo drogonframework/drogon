@@ -13,21 +13,19 @@
  */
 
 #pragma once
+#include <exception>
+#include <string>
 #include <tuple>
 #include <type_traits>
-#include <string>
-#include <exception>
 
 namespace drogon
 {
 namespace orm
 {
-
 class Result;
 class DrogonDbException;
 namespace internal
 {
-
 template <typename>
 struct FunctionTraits;
 template <>
@@ -41,34 +39,24 @@ struct FunctionTraits<void (*)()>
     static const bool isSqlCallback = false;
     static const bool isExceptCallback = false;
 };
-//functor,lambda
+// functor,lambda
 template <typename Function>
-struct FunctionTraits : public FunctionTraits<
-                            decltype(&std::remove_reference<Function>::type::operator())>
+struct FunctionTraits : public FunctionTraits<decltype(&std::remove_reference<Function>::type::operator())>
 {
 };
 
-template <
-    typename ClassType,
-    typename ReturnType,
-    typename... Arguments>
-struct FunctionTraits<
-    ReturnType (ClassType::*)(Arguments...) const> : FunctionTraits<ReturnType (*)(Arguments...)>
+template <typename ClassType, typename ReturnType, typename... Arguments>
+struct FunctionTraits<ReturnType (ClassType::*)(Arguments...) const> : FunctionTraits<ReturnType (*)(Arguments...)>
 {
 };
 
-template <
-    typename ClassType,
-    typename ReturnType,
-    typename... Arguments>
-struct FunctionTraits<
-    ReturnType (ClassType::*)(Arguments...)> : FunctionTraits<ReturnType (*)(Arguments...)>
+template <typename ClassType, typename ReturnType, typename... Arguments>
+struct FunctionTraits<ReturnType (ClassType::*)(Arguments...)> : FunctionTraits<ReturnType (*)(Arguments...)>
 {
 };
 
 template <>
-struct FunctionTraits<void (*)(const Result &)>
-    : public FunctionTraits<void (*)()>
+struct FunctionTraits<void (*)(const Result &)> : public FunctionTraits<void (*)()>
 {
     static const bool isSqlCallback = true;
     static const bool isStepResultCallback = false;
@@ -76,8 +64,7 @@ struct FunctionTraits<void (*)(const Result &)>
 };
 
 template <>
-struct FunctionTraits<void (*)(const DrogonDbException &)>
-    : public FunctionTraits<void (*)()>
+struct FunctionTraits<void (*)(const DrogonDbException &)> : public FunctionTraits<void (*)()>
 {
     static const bool isExceptCallback = true;
     static const bool isSqlCallback = false;
@@ -86,8 +73,7 @@ struct FunctionTraits<void (*)(const DrogonDbException &)>
 };
 
 template <>
-struct FunctionTraits<void (*)(const std::exception_ptr &)>
-    : public FunctionTraits<void (*)()>
+struct FunctionTraits<void (*)(const std::exception_ptr &)> : public FunctionTraits<void (*)()>
 {
     static const bool isExceptCallback = true;
     static const bool isSqlCallback = false;
@@ -95,35 +81,27 @@ struct FunctionTraits<void (*)(const std::exception_ptr &)>
     static const bool isPtr = true;
 };
 
-template <
-    typename ReturnType,
-    typename... Arguments>
-struct FunctionTraits<
-    ReturnType (*)(bool, Arguments...)> : FunctionTraits<ReturnType (*)(Arguments...)>
+template <typename ReturnType, typename... Arguments>
+struct FunctionTraits<ReturnType (*)(bool, Arguments...)> : FunctionTraits<ReturnType (*)(Arguments...)>
 {
     static const bool isSqlCallback = true;
     static const bool isStepResultCallback = true;
 };
 
-template <
-    typename ReturnType,
-    typename... Arguments>
-struct FunctionTraits<
-    ReturnType (*)(Arguments...)>
+template <typename ReturnType, typename... Arguments>
+struct FunctionTraits<ReturnType (*)(Arguments...)>
 {
     typedef ReturnType result_type;
 
     template <std::size_t Index>
-    using argument = typename std::tuple_element<
-        Index,
-        std::tuple<Arguments...>>::type;
+    using argument = typename std::tuple_element<Index, std::tuple<Arguments...>>::type;
 
     static const std::size_t arity = sizeof...(Arguments);
 
-    //static const bool isSqlCallback = false;
+    // static const bool isSqlCallback = false;
     static const bool isSqlCallback = true;
     static const bool isStepResultCallback = true;
 };
-} // namespace internal
-} // namespace orm
-} // namespace drogon
+}  // namespace internal
+}  // namespace orm
+}  // namespace drogon

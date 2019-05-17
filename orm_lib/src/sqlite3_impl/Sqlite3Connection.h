@@ -16,24 +16,23 @@
 
 #include "../DbConnection.h"
 #include "Sqlite3ResultImpl.h"
-#include <drogon/orm/DbClient.h>
 #include <drogon/HttpTypes.h>
-#include <trantor/utils/NonCopyable.h>
-#include <trantor/utils/SerialTaskQueue.h>
-#include <trantor/net/EventLoopThread.h>
-#include <sqlite3.h>
-#include <memory>
-#include <string>
+#include <drogon/orm/DbClient.h>
 #include <functional>
 #include <iostream>
-#include <thread>
+#include <memory>
 #include <shared_mutex>
+#include <sqlite3.h>
+#include <string>
+#include <thread>
+#include <trantor/net/EventLoopThread.h>
+#include <trantor/utils/NonCopyable.h>
+#include <trantor/utils/SerialTaskQueue.h>
 
 namespace drogon
 {
 namespace orm
 {
-
 class Sqlite3Connection;
 typedef std::shared_ptr<Sqlite3Connection> Sqlite3ConnectionPtr;
 class Sqlite3Connection : public DbConnection, public std::enable_shared_from_this<Sqlite3Connection>
@@ -64,8 +63,8 @@ class Sqlite3Connection : public DbConnection, public std::enable_shared_from_th
     trantor::EventLoopThread _loopThread;
     std::shared_ptr<sqlite3> _conn;
     std::shared_ptr<SharedMutex> _sharedMutexPtr;
-    std::unordered_map<std::string,std::shared_ptr<sqlite3_stmt>> _stmtMap;
+    std::unordered_map<std::string, std::shared_ptr<sqlite3_stmt>> _stmtMap;
 };
 
-} // namespace orm
-} // namespace drogon
+}  // namespace orm
+}  // namespace drogon

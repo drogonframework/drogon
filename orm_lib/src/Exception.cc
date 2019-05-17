@@ -1,4 +1,4 @@
-/** 
+/**
  *
  * Copyright (c) 2005-2017, Jeroen T. Vermeulen.
  *
@@ -6,7 +6,7 @@
  * COPYING with this source code, please notify the distributor of this mistake,
  * or contact the author.
  */
-//taken from libpqxx and modified
+// taken from libpqxx and modified
 
 /**
  *
@@ -42,12 +42,8 @@ BrokenConnection::BrokenConnection(const std::string &whatarg) : Failure(whatarg
 {
 }
 
-SqlError::SqlError(
-    const std::string &whatarg,
-    const std::string &Q,
-    const char sqlstate[]) : Failure(whatarg),
-                             _query(Q),
-                             _sqlState(sqlstate ? sqlstate : "")
+SqlError::SqlError(const std::string &whatarg, const std::string &Q, const char sqlstate[])
+    : Failure(whatarg), _query(Q), _sqlState(sqlstate ? sqlstate : "")
 {
 }
 
@@ -65,52 +61,42 @@ const std::string &SqlError::sqlState() const noexcept
     return _sqlState;
 }
 
-InDoubtError::InDoubtError(const std::string &whatarg)
-    : Failure(whatarg)
+InDoubtError::InDoubtError(const std::string &whatarg) : Failure(whatarg)
 {
 }
 
-TransactionRollback::TransactionRollback(const std::string &whatarg)
-    : Failure(whatarg)
+TransactionRollback::TransactionRollback(const std::string &whatarg) : Failure(whatarg)
 {
 }
 
-SerializationFailure::SerializationFailure(const std::string &whatarg)
-    : TransactionRollback(whatarg)
+SerializationFailure::SerializationFailure(const std::string &whatarg) : TransactionRollback(whatarg)
 {
 }
 
-StatementCompletionUnknown::StatementCompletionUnknown(const std::string &whatarg)
-    : TransactionRollback(whatarg)
+StatementCompletionUnknown::StatementCompletionUnknown(const std::string &whatarg) : TransactionRollback(whatarg)
 {
 }
 
-DeadlockDetected::DeadlockDetected(const std::string &whatarg)
-    : TransactionRollback(whatarg)
+DeadlockDetected::DeadlockDetected(const std::string &whatarg) : TransactionRollback(whatarg)
 {
 }
 
-InternalError::InternalError(const std::string &whatarg)
-    : logic_error("libpqxx internal error: " + whatarg)
+InternalError::InternalError(const std::string &whatarg) : logic_error("libpqxx internal error: " + whatarg)
 {
 }
 
-UsageError::UsageError(const std::string &whatarg)
-    : logic_error(whatarg)
+UsageError::UsageError(const std::string &whatarg) : logic_error(whatarg)
 {
 }
 
-ArgumentError::ArgumentError(const std::string &whatarg)
-    : invalid_argument(whatarg)
+ArgumentError::ArgumentError(const std::string &whatarg) : invalid_argument(whatarg)
 {
 }
 
-ConversionError::ConversionError(const std::string &whatarg)
-    : domain_error(whatarg)
+ConversionError::ConversionError(const std::string &whatarg) : domain_error(whatarg)
 {
 }
 
-RangeError::RangeError(const std::string &whatarg)
-    : out_of_range(whatarg)
+RangeError::RangeError(const std::string &whatarg) : out_of_range(whatarg)
 {
 }

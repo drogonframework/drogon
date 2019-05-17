@@ -12,8 +12,8 @@
  *
  */
 
-//Taken from libpqxx and modified.
-//The license for libpqxx can be found in the COPYING file.
+// Taken from libpqxx and modified.
+// The license for libpqxx can be found in the COPYING file.
 
 #pragma once
 
@@ -24,12 +24,7 @@ namespace drogon
 namespace orm
 {
 class ConstResultIterator
-    : public std::iterator<
-          std::random_access_iterator_tag,
-          const Row,
-          Result::difference_type,
-          ConstResultIterator,
-          Row>,
+    : public std::iterator<std::random_access_iterator_tag, const Row, Result::difference_type, ConstResultIterator, Row>,
       protected Row
 {
   public:
@@ -37,10 +32,16 @@ class ConstResultIterator
     using reference = Row;
     using size_type = Result::size_type;
     using difference_type = Result::difference_type;
-    //ConstResultIterator(const Row &t) noexcept : Row(t) {}
+    // ConstResultIterator(const Row &t) noexcept : Row(t) {}
 
-    pointer operator->() { return this; }
-    reference operator*() { return Row(*this); }
+    pointer operator->()
+    {
+        return this;
+    }
+    reference operator*()
+    {
+        return Row(*this);
+    }
 
     ConstResultIterator operator++(int);
     ConstResultIterator &operator++()
@@ -92,7 +93,9 @@ class ConstResultIterator
 
   private:
     friend class Result;
-    ConstResultIterator(const Result &r, size_type index) noexcept : Row(r, index) {}
+    ConstResultIterator(const Result &r, size_type index) noexcept : Row(r, index)
+    {
+    }
 };
 
 class ConstReverseResultIterator : private ConstResultIterator
@@ -106,10 +109,13 @@ class ConstReverseResultIterator : private ConstResultIterator
     using value_type = iterator_type::value_type;
     using reference = iterator_type::reference;
 
-    ConstReverseResultIterator(
-        const ConstReverseResultIterator &rhs) : ConstResultIterator(rhs) {}
-    explicit ConstReverseResultIterator(
-        const ConstResultIterator &rhs) : ConstResultIterator(rhs) { super::operator--(); }
+    ConstReverseResultIterator(const ConstReverseResultIterator &rhs) : ConstResultIterator(rhs)
+    {
+    }
+    explicit ConstReverseResultIterator(const ConstResultIterator &rhs) : ConstResultIterator(rhs)
+    {
+        super::operator--();
+    }
 
     ConstResultIterator base() const noexcept;
 
@@ -165,5 +171,5 @@ class ConstReverseResultIterator : private ConstResultIterator
     }
 };
 
-} // namespace orm
-} // namespace drogon
+}  // namespace orm
+}  // namespace drogon

@@ -2,7 +2,7 @@
  *
  *  HttpServer.h
  *  An Tao
- *  
+ *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
  *  Use of this source code is governed by a MIT license
@@ -14,15 +14,15 @@
 
 #pragma once
 
-#include "WebSocketConnectionImpl.h"
 #include "HttpRequestImpl.h"
-#include <drogon/config.h>
+#include "WebSocketConnectionImpl.h"
 #include <drogon/WebSocketController.h>
+#include <drogon/config.h>
+#include <functional>
+#include <string>
 #include <trantor/net/TcpServer.h>
 #include <trantor/net/callbacks.h>
 #include <trantor/utils/NonCopyable.h>
-#include <functional>
-#include <string>
 
 using namespace trantor;
 namespace drogon
@@ -34,18 +34,18 @@ class HttpServer : trantor::NonCopyable
 {
   public:
     typedef std::function<void(const HttpRequestImplPtr &, std::function<void(const HttpResponsePtr &)> &&)> HttpAsyncCallback;
-    typedef std::function<void(const HttpRequestImplPtr &,
-                               std::function<void(const HttpResponsePtr &)> &&,
-                               const WebSocketConnectionImplPtr &)>
+    typedef std::function<
+        void(const HttpRequestImplPtr &, std::function<void(const HttpResponsePtr &)> &&, const WebSocketConnectionImplPtr &)>
         WebSocketNewAsyncCallback;
 
-    HttpServer(EventLoop *loop,
-               const InetAddress &listenAddr,
-               const std::string &name);
+    HttpServer(EventLoop *loop, const InetAddress &listenAddr, const std::string &name);
 
     ~HttpServer();
 
-    EventLoop *getLoop() const { return _server.getLoop(); }
+    EventLoop *getLoop() const
+    {
+        return _server.getLoop();
+    }
 
     void setHttpAsyncCallback(const HttpAsyncCallback &cb)
     {
@@ -86,8 +86,7 @@ class HttpServer : trantor::NonCopyable
 
   private:
     void onConnection(const TcpConnectionPtr &conn);
-    void onMessage(const TcpConnectionPtr &,
-                   MsgBuffer *);
+    void onMessage(const TcpConnectionPtr &, MsgBuffer *);
     void onRequest(const TcpConnectionPtr &, const HttpRequestImplPtr &);
     void sendResponse(const TcpConnectionPtr &, const HttpResponsePtr &, bool isHeadMethod);
     trantor::TcpServer _server;
@@ -96,4 +95,4 @@ class HttpServer : trantor::NonCopyable
     trantor::ConnectionCallback _connectionCallback;
 };
 
-} // namespace drogon
+}  // namespace drogon

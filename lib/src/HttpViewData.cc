@@ -24,21 +24,21 @@ std::string HttpViewData::htmlTranslate(const std::string &str)
     {
         switch (ch)
         {
-        case '"':
-            ret.append("&quot;");
-            break;
-        case '<':
-            ret.append("&lt;");
-            break;
-        case '>':
-            ret.append("&gt;");
-            break;
-        case '&':
-            ret.append("&amp;");
-            break;
-        default:
-            ret.push_back(ch);
-            break;
+            case '"':
+                ret.append("&quot;");
+                break;
+            case '<':
+                ret.append("&lt;");
+                break;
+            case '>':
+                ret.append("&gt;");
+                break;
+            case '&':
+                ret.append("&amp;");
+                break;
+            default:
+                ret.push_back(ch);
+                break;
         }
     }
     return ret;

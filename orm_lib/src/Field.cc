@@ -18,9 +18,7 @@
 
 using namespace drogon::orm;
 Field::Field(const Row &row, Row::size_type columnNum) noexcept
-    : _row(Result::size_type(row._index)),
-      _column(columnNum),
-      _result(row._result)
+    : _row(Result::size_type(row._index)), _column(columnNum), _result(row._result)
 {
 }
 
@@ -113,7 +111,8 @@ const char *Field::c_str() const
 // {
 //     auto _data = _result.getValue(_row, _column);
 //     auto _dataLength = _result.getLength(_row, _column);
-//     return std::vector<int32_t>((int32_t *)_data,(int32_t *)(_data + _dataLength));
+//     return std::vector<int32_t>((int32_t *)_data,(int32_t *)(_data +
+//     _dataLength));
 // }
 
 // template <>
@@ -121,5 +120,6 @@ const char *Field::c_str() const
 // {
 //     auto _data = _result.getValue(_row, _column);
 //     auto _dataLength = _result.getLength(_row, _column);
-//     return std::vector<int64_t>((int64_t *)_data,(int64_t *)(_data + _dataLength));
+//     return std::vector<int64_t>((int64_t *)_data,(int64_t *)(_data +
+//     _dataLength));
 // }

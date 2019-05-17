@@ -8,14 +8,14 @@
  *  that can be found in the License file.
  *
  *  Drogon
- * 
+ *
  *  Drogon database test program
- * 
+ *
  */
 #include "Users.h"
 #include <drogon/orm/DbClient.h>
-#include <trantor/utils/Logger.h>
 #include <iostream>
+#include <trantor/utils/Logger.h>
 #include <unistd.h>
 using namespace drogon::orm;
 #define RESET "\033[0m"
@@ -50,12 +50,9 @@ int main()
 #endif
     LOG_DEBUG << "start!";
     sleep(1);
-    //Prepare the test environment
+    // Prepare the test environment
     *clientPtr << "DROP TABLE IF EXISTS USERS" >>
-        [](const Result &r) {
-            testOutput(true, "Prepare the test environment(0)");
-        } >>
-        [](const DrogonDbException &e) {
+        [](const Result &r) { testOutput(true, "Prepare the test environment(0)"); } >> [](const DrogonDbException &e) {
             std::cerr << e.base().what() << std::endl;
             testOutput(false, "Prepare the test environment(0)");
         };
@@ -72,10 +69,7 @@ int main()
             admin boolean DEFAULT false,\
             CONSTRAINT user_id_org UNIQUE(user_id, org_name)\
         )" >>
-        [](const Result &r) {
-            testOutput(true, "Prepare the test environment(1)");
-        } >>
-        [](const DrogonDbException &e) {
+        [](const Result &r) { testOutput(true, "Prepare the test environment(1)"); } >> [](const DrogonDbException &e) {
             std::cerr << e.base().what() << std::endl;
             testOutput(false, "Prepare the test environment(1)");
         };
@@ -89,60 +83,53 @@ int main()
                << "123"
                << "default" >>
         [](const Result &r) {
-            //std::cout << "id=" << r[0]["id"].as<int64_t>() << std::endl;
+            // std::cout << "id=" << r[0]["id"].as<int64_t>() << std::endl;
             testOutput(r[0]["id"].as<int64_t>() == 1, "DbClient streaming-type interface(0)");
         } >>
         [](const DrogonDbException &e) {
             std::cerr << e.base().what() << std::endl;
             testOutput(false, "DbClient streaming-type interface(0)");
         };
-    ///1.2 insert,blocking
+    /// 1.2 insert,blocking
     *clientPtr << "insert into users \
         (user_id,user_name,password,org_name) \
         values($1,$2,$3,$4) returning *"
                << "pg1"
                << "postgresql1"
                << "123"
-               << "default"
-               << Mode::Blocking >>
+               << "default" << Mode::Blocking >>
         [](const Result &r) {
-            //std::cout << "id=" << r[0]["id"].as<int64_t>() << std::endl;
+            // std::cout << "id=" << r[0]["id"].as<int64_t>() << std::endl;
             testOutput(r[0]["id"].as<int64_t>() == 2, "DbClient streaming-type interface(1)");
         } >>
         [](const DrogonDbException &e) {
             std::cerr << e.base().what() << std::endl;
             testOutput(false, "DbClient streaming-type interface(1)");
         };
-    ///1.3 query,no-blocking
-    *clientPtr << "select * from users where 1 = 1"
-               << Mode::NonBlocking >>
-        [](const Result &r) {
-            for (Result::size_type i = 0; i < r.size(); ++i)
-            {
-                std::cout << r[i]["id"].as<int64_t>() << " " << r[i]["user_id"].as<std::string>() << " "
-                          << r[i]["user_name"].as<std::string>() << std::endl;
-            }
-            testOutput(true, "DbClient streaming-type interface(0)");
-        } >>
-        [](const DrogonDbException &e) {
-            std::cerr << e.base().what() << std::endl;
-            testOutput(false, "DbClient streaming-type interface(0)");
-        };
-    ///1.4 query,blocking
-    *clientPtr << "select * from users where 1 = 1"
-               << Mode::Blocking >>
-        [](const Result &r) {
-            for (const auto &item : r)
-            {
-                std::cout << item["id"].as<int64_t>() << " " << item["user_id"].as<std::string>() << " "
-                          << item["user_name"].as<std::string>() << std::endl;
-            }
-            testOutput(true, "DbClient streaming-type interface(1)");
-        } >>
-        [](const DrogonDbException &e) {
-            std::cerr << e.base().what() << std::endl;
-            testOutput(false, "DbClient streaming-type interface(1)");
-        };
+    /// 1.3 query,no-blocking
+    *clientPtr << "select * from users where 1 = 1" << Mode::NonBlocking >> [](const Result &r) {
+        for (Result::size_type i = 0; i < r.size(); ++i)
+        {
+            std::cout << r[i]["id"].as<int64_t>() << " " << r[i]["user_id"].as<std::string>() << " "
+                      << r[i]["user_name"].as<std::string>() << std::endl;
+        }
+        testOutput(true, "DbClient streaming-type interface(0)");
+    } >> [](const DrogonDbException &e) {
+        std::cerr << e.base().what() << std::endl;
+        testOutput(false, "DbClient streaming-type interface(0)");
+    };
+    /// 1.4 query,blocking
+    *clientPtr << "select * from users where 1 = 1" << Mode::Blocking >> [](const Result &r) {
+        for (const auto &item : r)
+        {
+            std::cout << item["id"].as<int64_t>() << " " << item["user_id"].as<std::string>() << " "
+                      << item["user_name"].as<std::string>() << std::endl;
+        }
+        testOutput(true, "DbClient streaming-type interface(1)");
+    } >> [](const DrogonDbException &e) {
+        std::cerr << e.base().what() << std::endl;
+        testOutput(false, "DbClient streaming-type interface(1)");
+    };
 
     /// 2 DbClient execSqlAsync()...
     ///

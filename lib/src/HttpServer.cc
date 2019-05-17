@@ -2,7 +2,7 @@
  *
  *  HttpServer.cc
  *  An Tao
- *  
+ *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
  *  Use of this source code is governed by a MIT license
@@ -14,14 +14,14 @@
 
 #include "HttpServer.h"
 
-#include <trantor/utils/Logger.h>
+#include "HttpAppFrameworkImpl.h"
 #include "HttpRequestParser.h"
 #include "HttpResponseImpl.h"
-#include "HttpAppFrameworkImpl.h"
 #include <drogon/HttpRequest.h>
 #include <drogon/HttpResponse.h>
 #include <drogon/utils/Utilities.h>
 #include <functional>
+#include <trantor/utils/Logger.h>
 
 using namespace std::placeholders;
 using namespace drogon;
@@ -32,8 +32,7 @@ static bool isWebSocket(const HttpRequestImplPtr &req)
     auto &headers = req->headers();
     if (headers.find("upgrade") == headers.end() || headers.find("connection") == headers.end())
         return false;
-    if (req->getHeaderBy("connection").find("Upgrade") != std::string::npos &&
-        req->getHeaderBy("upgrade") == "websocket")
+    if (req->getHeaderBy("connection").find("Upgrade") != std::string::npos && req->getHeaderBy("upgrade") == "websocket")
     {
         LOG_TRACE << "new websocket request";
 
@@ -63,9 +62,7 @@ static void defaultConnectionCallback(const trantor::TcpConnectionPtr &conn)
     return;
 }
 
-HttpServer::HttpServer(EventLoop *loop,
-                       const InetAddress &listenAddr,
-                       const std::string &name)
+HttpServer::HttpServer(EventLoop *loop, const InetAddress &listenAddr, const std::string &name)
 #ifdef __linux__
     : _server(loop, listenAddr, name.c_str()),
 #else
@@ -75,10 +72,8 @@ HttpServer::HttpServer(EventLoop *loop,
       _newWebsocketCallback(defaultWebSockAsyncCallback),
       _connectionCallback(defaultConnectionCallback)
 {
-    _server.setConnectionCallback(
-        std::bind(&HttpServer::onConnection, this, _1));
-    _server.setRecvMessageCallback(
-        std::bind(&HttpServer::onMessage, this, _1, _2));
+    _server.setConnectionCallback(std::bind(&HttpServer::onConnection, this, _1));
+    _server.setRecvMessageCallback(std::bind(&HttpServer::onMessage, this, _1, _2));
 }
 
 HttpServer::~HttpServer()
@@ -87,8 +82,7 @@ HttpServer::~HttpServer()
 
 void HttpServer::start()
 {
-    LOG_TRACE << "HttpServer[" << _server.name()
-              << "] starts listenning on " << _server.ipPort();
+    LOG_TRACE << "HttpServer[" << _server.name() << "] starts listenning on " << _server.ipPort();
     _server.start();
 }
 
@@ -111,7 +105,7 @@ void HttpServer::onConnection(const TcpConnectionPtr &conn)
                 requestParser->webSocketConn()->onClose();
             }
 #if (CXX_STD > 14)
-            conn->getMutableContext()->reset(); //reset(): since c++17
+            conn->getMutableContext()->reset();  // reset(): since c++17
 #else
             conn->getMutableContext()->clear();
 #endif
@@ -119,25 +113,24 @@ void HttpServer::onConnection(const TcpConnectionPtr &conn)
     }
 }
 
-void HttpServer::onMessage(const TcpConnectionPtr &conn,
-                           MsgBuffer *buf)
+void HttpServer::onMessage(const TcpConnectionPtr &conn, MsgBuffer *buf)
 {
     HttpRequestParser *requestParser = any_cast<HttpRequestParser>(conn->getMutableContext());
-    // With the pipelining feature or web socket, it is possible to receice multiple messages at once, so
+    // With the pipelining feature or web socket, it is possible to receice
+    // multiple messages at once, so
     // the while loop is necessary
     if (requestParser->webSocketConn())
     {
-        //Websocket payload
+        // Websocket payload
         requestParser->webSocketConn()->onNewMessage(conn, buf);
     }
     else
     {
         while (buf->readableBytes() > 0)
         {
-
             if (requestParser->isStop())
             {
-                //The number of requests has reached the limit.
+                // The number of requests has reached the limit.
                 buf->retrieveAll();
                 return;
             }
@@ -160,7 +153,8 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn,
                                               {
                                                   requestParser->setWebsockConnection(wsConn);
                                               }
-                                              auto httpString = std::dynamic_pointer_cast<HttpResponseImpl>(resp)->renderToString();
+                                              auto httpString =
+                                                  std::dynamic_pointer_cast<HttpResponseImpl>(resp)->renderToString();
                                               conn->send(httpString);
                                           },
                                           wsConn);
@@ -180,8 +174,7 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn,
 void HttpServer::onRequest(const TcpConnectionPtr &conn, const HttpRequestImplPtr &req)
 {
     const std::string &connection = req->getHeaderBy("connection");
-    bool _close = connection == "close" ||
-                  (req->getVersion() == HttpRequestImpl::kHttp10 && connection != "Keep-Alive");
+    bool _close = connection == "close" || (req->getVersion() == HttpRequestImpl::kHttp10 && connection != "Keep-Alive");
 
     bool isHeadMethod = (req->method() == Head);
     if (isHeadMethod)
@@ -210,18 +203,15 @@ void HttpServer::onRequest(const TcpConnectionPtr &conn, const HttpRequestImplPt
         auto newResp = response;
         auto &sendfileName = std::dynamic_pointer_cast<HttpResponseImpl>(newResp)->sendfileName();
 
-        if (HttpAppFramework::instance().isGzipEnabled() &&
-            sendfileName.empty() &&
+        if (HttpAppFramework::instance().isGzipEnabled() && sendfileName.empty() &&
             req->getHeaderBy("accept-encoding").find("gzip") != std::string::npos &&
             std::dynamic_pointer_cast<HttpResponseImpl>(response)->getHeaderBy("content-encoding").empty() &&
-            response->getContentType() < CT_APPLICATION_OCTET_STREAM &&
-            response->getBody().length() > 1024)
+            response->getContentType() < CT_APPLICATION_OCTET_STREAM && response->getBody().length() > 1024)
         {
-            //use gzip
+            // use gzip
             LOG_TRACE << "Use gzip to compress the body";
             size_t zlen = response->getBody().length();
-            auto strCompress = utils::gzipCompress(response->getBody().data(),
-                                                   response->getBody().length());
+            auto strCompress = utils::gzipCompress(response->getBody().data(), response->getBody().length());
             if (strCompress)
             {
                 if (zlen > 0)
@@ -229,7 +219,7 @@ void HttpServer::onRequest(const TcpConnectionPtr &conn, const HttpRequestImplPt
                     LOG_TRACE << "length after compressing:" << zlen;
                     if (response->expiredTime() >= 0)
                     {
-                        //cached response,we need to make a clone
+                        // cached response,we need to make a clone
                         newResp = std::make_shared<HttpResponseImpl>(*std::dynamic_pointer_cast<HttpResponseImpl>(response));
                         newResp->setExpiredTime(-1);
                     }
@@ -275,7 +265,7 @@ void HttpServer::onRequest(const TcpConnectionPtr &conn, const HttpRequestImplPt
             }
             else
             {
-                //some earlier requests are waiting for responses;
+                // some earlier requests are waiting for responses;
                 requestParser->pushResponseToPipelining(req, newResp);
             }
         }
@@ -307,7 +297,7 @@ void HttpServer::onRequest(const TcpConnectionPtr &conn, const HttpRequestImplPt
                     }
                     else
                     {
-                        //some earlier requests are waiting for responses;
+                        // some earlier requests are waiting for responses;
                         requestParser->pushResponseToPipelining(req, newResp);
                     }
                 }
@@ -316,9 +306,7 @@ void HttpServer::onRequest(const TcpConnectionPtr &conn, const HttpRequestImplPt
     });
 }
 
-void HttpServer::sendResponse(const TcpConnectionPtr &conn,
-                              const HttpResponsePtr &response,
-                              bool isHeadMethod)
+void HttpServer::sendResponse(const TcpConnectionPtr &conn, const HttpResponsePtr &response, bool isHeadMethod)
 {
     conn->getLoop()->assertInLoopThread();
     auto respImplPtr = std::dynamic_pointer_cast<HttpResponseImpl>(response);

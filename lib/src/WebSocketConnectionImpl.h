@@ -2,7 +2,7 @@
  *
  *  WebSocketConnectionImpl.h
  *  An Tao
- *  
+ *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
  *  Use of this source code is governed by a MIT license
@@ -20,13 +20,12 @@
 
 namespace drogon
 {
-
 class WebSocketConnectionImpl;
 typedef std::shared_ptr<WebSocketConnectionImpl> WebSocketConnectionImplPtr;
 
 class WebSocketMessageParser
 {
-public:
+  public:
     bool parse(trantor::MsgBuffer *buffer);
     bool gotAll(std::string &message, WebSocketMessageType &type)
     {
@@ -38,7 +37,7 @@ public:
         return true;
     }
 
-private:
+  private:
     std::string _message;
     WebSocketMessageType _type;
     bool _gotAll = false;
@@ -48,7 +47,7 @@ class WebSocketConnectionImpl : public WebSocketConnection,
                                 public std::enable_shared_from_this<WebSocketConnectionImpl>,
                                 public trantor::NonCopyable
 {
-public:
+  public:
     explicit WebSocketConnectionImpl(const trantor::TcpConnectionPtr &conn, bool isServer = true);
 
     virtual void send(const char *msg, uint64_t len, const WebSocketMessageType &type = WebSocketMessageType::Text) override;
@@ -60,8 +59,8 @@ public:
     virtual bool connected() const override;
     virtual bool disconnected() const override;
 
-    virtual void shutdown() override;   //close write
-    virtual void forceClose() override; //close
+    virtual void shutdown() override;    // close write
+    virtual void forceClose() override;  // close
 
     virtual void setContext(const any &context) override;
     virtual const any &getContext() const override;
@@ -69,9 +68,8 @@ public:
 
     virtual void setPingMessage(const std::string &message, const std::chrono::duration<long double> &interval) override;
 
-    void setMessageCallback(const std::function<void(std::string &&,
-                                                     const WebSocketConnectionImplPtr &,
-                                                     const WebSocketMessageType &)> &callback)
+    void setMessageCallback(
+        const std::function<void(std::string &&, const WebSocketConnectionImplPtr &, const WebSocketMessageType &)> &callback)
     {
         _messageCallback = callback;
     }
@@ -85,7 +83,6 @@ public:
     {
         while (buffer->readableBytes() > 0)
         {
-
             auto success = _parser.parse(buffer);
             if (success)
             {
@@ -95,12 +92,12 @@ public:
                 {
                     if (type == WebSocketMessageType::Ping)
                     {
-                        //ping
+                        // ping
                         send(message, WebSocketMessageType::Pong);
                     }
                     else if (type == WebSocketMessageType::Close)
                     {
-                        //close
+                        // close
                         connPtr->shutdown();
                     }
                     else if (type == WebSocketMessageType::Unknown)
@@ -116,7 +113,7 @@ public:
             }
             else
             {
-                //Websock error!
+                // Websock error!
                 connPtr->shutdown();
                 return;
             }
@@ -131,7 +128,7 @@ public:
         _closeCallback(shared_from_this());
     }
 
-private:
+  private:
     trantor::TcpConnectionPtr _tcpConn;
     trantor::InetAddress _localAddr;
     trantor::InetAddress _peerAddr;
@@ -140,14 +137,10 @@ private:
     WebSocketMessageParser _parser;
     trantor::TimerId _pingTimerId = trantor::InvalidTimerId;
 
-    std::function<void(std::string &&,
-                       const WebSocketConnectionImplPtr &,
-                       const WebSocketMessageType &)>
-        _messageCallback = [](std::string &&,
-                              const WebSocketConnectionImplPtr &,
-                              const WebSocketMessageType &) {};
+    std::function<void(std::string &&, const WebSocketConnectionImplPtr &, const WebSocketMessageType &)> _messageCallback =
+        [](std::string &&, const WebSocketConnectionImplPtr &, const WebSocketMessageType &) {};
     std::function<void(const WebSocketConnectionImplPtr &)> _closeCallback = [](const WebSocketConnectionImplPtr &) {};
     void sendWsData(const char *msg, size_t len, unsigned char opcode);
 };
 
-} // namespace drogon
+}  // namespace drogon

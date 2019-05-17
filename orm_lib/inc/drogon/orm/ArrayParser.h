@@ -8,7 +8,7 @@
  * COPYING with this source code, please notify the distributor of this mistake,
  * or contact the author.
  */
-//Taken from libpqxx and modified
+// Taken from libpqxx and modified
 
 #pragma once
 
@@ -68,5 +68,5 @@ class ArrayParser
     const char *m_pos;
 };
 
-} // namespace orm
-} // namespace drogon
+}  // namespace orm
+}  // namespace drogon

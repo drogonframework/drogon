@@ -12,34 +12,36 @@
  *
  */
 
-//Taken from libpqxx and modified.
-//The license for libpqxx can be found in the COPYING file.
+// Taken from libpqxx and modified.
+// The license for libpqxx can be found in the COPYING file.
 
 #pragma once
 
-#include <drogon/orm/Row.h>
 #include <drogon/orm/Field.h>
+#include <drogon/orm/Row.h>
 namespace drogon
 {
 namespace orm
 {
-class ConstRowIterator : public std::iterator<
-                             std::random_access_iterator_tag,
-                             const Field,
-                             Row::difference_type,
-                             ConstRowIterator,
-                             Field>,
-                         protected Field
+class ConstRowIterator
+    : public std::iterator<std::random_access_iterator_tag, const Field, Row::difference_type, ConstRowIterator, Field>,
+      protected Field
 {
   public:
     using pointer = const Field *;
     using reference = Field;
     using size_type = Row::size_type;
     using difference_type = Row::difference_type;
-    //ConstRowIterator(const Field &t) noexcept : Field(t) {}
+    // ConstRowIterator(const Field &t) noexcept : Field(t) {}
 
-    pointer operator->() { return this; }
-    reference operator*() { return Field(*this); }
+    pointer operator->()
+    {
+        return this;
+    }
+    reference operator*()
+    {
+        return Field(*this);
+    }
 
     ConstRowIterator operator++(int);
     ConstRowIterator &operator++()
@@ -91,7 +93,9 @@ class ConstRowIterator : public std::iterator<
 
   private:
     friend class Row;
-    ConstRowIterator(const Row &r, size_type column) noexcept : Field(r, column) {}
+    ConstRowIterator(const Row &r, size_type column) noexcept : Field(r, column)
+    {
+    }
 };
 
 class ConstReverseRowIterator : private ConstRowIterator
@@ -105,10 +109,13 @@ class ConstReverseRowIterator : private ConstRowIterator
     using value_type = iterator_type::value_type;
     using reference = iterator_type::reference;
 
-    ConstReverseRowIterator(
-        const ConstReverseRowIterator &rhs) : ConstRowIterator(rhs) {}
-    explicit ConstReverseRowIterator(
-        const ConstRowIterator &rhs) : ConstRowIterator(rhs) { super::operator--(); }
+    ConstReverseRowIterator(const ConstReverseRowIterator &rhs) : ConstRowIterator(rhs)
+    {
+    }
+    explicit ConstReverseRowIterator(const ConstRowIterator &rhs) : ConstRowIterator(rhs)
+    {
+        super::operator--();
+    }
 
     ConstRowIterator base() const noexcept;
 
@@ -164,5 +171,5 @@ class ConstReverseRowIterator : private ConstRowIterator
     }
 };
 
-} // namespace orm
-} // namespace drogon
+}  // namespace orm
+}  // namespace drogon

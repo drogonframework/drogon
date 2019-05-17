@@ -18,12 +18,13 @@
 #include <drogon/DrTemplateBase.h>
 namespace drogon
 {
-
 template <typename T>
 class DrTemplate : public DrObject<T>, public DrTemplateBase
 {
   protected:
-    DrTemplate() {}
+    DrTemplate()
+    {
+    }
 };
 
-} // namespace drogon
+}  // namespace drogon

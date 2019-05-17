@@ -12,16 +12,13 @@
  *
  */
 
-#include <drogon/orm/Row.h>
-#include <drogon/orm/Field.h>
-#include <drogon/orm/RowIterator.h>
 #include <drogon/orm/Exception.h>
+#include <drogon/orm/Field.h>
+#include <drogon/orm/Row.h>
+#include <drogon/orm/RowIterator.h>
 
 using namespace drogon::orm;
-Row::Row(const Result &r, size_type index) noexcept
-    : _result(r),
-      _index(long(index)),
-      _end(r.columns())
+Row::Row(const Result &r, size_type index) noexcept : _result(r), _index(long(index)), _end(r.columns())
 {
 }
 Row::size_type Row::size() const

@@ -16,8 +16,8 @@ class handler : public drogon::DrObject<T>
 class hh : public handler<hh>
 {
 };
-} // namespace v1
-} // namespace api
+}  // namespace v1
+}  // namespace api
 int main()
 {
     api::v1::hh h;

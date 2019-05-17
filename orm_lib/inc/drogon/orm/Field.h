@@ -12,24 +12,23 @@
  *
  */
 
-//Taken from libpqxx and modified.
-//The license for libpqxx can be found in the COPYING file.
+// Taken from libpqxx and modified.
+// The license for libpqxx can be found in the COPYING file.
 
 #pragma once
 
-#include <trantor/utils/config.h>
+#include <drogon/orm/ArrayParser.h>
 #include <drogon/orm/Result.h>
 #include <drogon/orm/Row.h>
-#include <drogon/orm/ArrayParser.h>
-#include <vector>
-#include <string>
-#include <sstream>
 #include <memory>
+#include <sstream>
+#include <string>
+#include <trantor/utils/config.h>
+#include <vector>
 
 #ifdef __linux__
 #include <arpa/inet.h>
-inline uint64_t
-ntohll(const uint64_t &input)
+inline uint64_t ntohll(const uint64_t &input)
 {
     uint64_t rval;
     uint8_t *data = (uint8_t *)&rval;
@@ -46,15 +45,13 @@ ntohll(const uint64_t &input)
     return rval;
 }
 
-inline uint64_t
-htonll(const uint64_t &input)
+inline uint64_t htonll(const uint64_t &input)
 {
     return (ntohll(input));
 }
 #endif
 #ifdef _WIN32
-inline uint64_t
-ntohll(const uint64_t &input)
+inline uint64_t ntohll(const uint64_t &input)
 {
     uint64_t rval;
     uint8_t *data = (uint8_t *)&rval;
@@ -71,8 +68,7 @@ ntohll(const uint64_t &input)
     return rval;
 }
 
-inline uint64_t
-htonll(const uint64_t &input)
+inline uint64_t htonll(const uint64_t &input)
 {
     return (ntohll(input));
 }
@@ -81,9 +77,8 @@ namespace drogon
 {
 namespace orm
 {
-
 /// Reference to a field in a result set.
-/** 
+/**
  * A field represents one entry in a row.  It represents an actual value
  * in the result set, and can be converted to various types.
  */
@@ -99,7 +94,7 @@ class Field
     bool isNull() const;
 
     /// Read as plain C string
-    /** 
+    /**
      * Since the field's data is stored internally in the form of a
      * zero-terminated C string, this is the fastest way to read it.  Use the
      * to() or as() functions to convert the string to other types such as
@@ -112,7 +107,7 @@ class Field
     T as() const
     {
         auto _data = _result.getValue(_row, _column);
-        //auto _dataLength = _result.getLength(_row, _column);
+        // auto _dataLength = _result.getLength(_row, _column);
         // For binary format!
         // if (_dataLength == 1)
         // {
@@ -139,7 +134,7 @@ class Field
     }
 
     /// Parse the field as an SQL array.
-    /** 
+    /**
      * Call the parser to retrieve values (and structure) from the array.
      *
      * Make sure the @c result object stays alive until parsing is finished.  If
@@ -205,5 +200,5 @@ string_view Field::as<string_view>() const;
 // std::vector<int32_t> Field::as<std::vector<int32_t>>() const;
 // template <>
 // std::vector<int64_t> Field::as<std::vector<int64_t>>() const;
-} // namespace orm
-} // namespace drogon
+}  // namespace orm
+}  // namespace drogon

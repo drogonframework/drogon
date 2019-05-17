@@ -9,12 +9,12 @@
  *  that can be found in the License file.
  *
  *  Drogon
- * 
+ *
  */
 
 #include "Sqlite3ResultImpl.h"
-#include <assert.h>
 #include <algorithm>
+#include <assert.h>
 
 using namespace drogon::orm;
 

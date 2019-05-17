@@ -14,24 +14,24 @@
 
 #pragma once
 #include <drogon/config.h>
-#include <drogon/orm/Row.h>
-#include <drogon/orm/Field.h>
-#include <drogon/orm/ResultIterator.h>
-#include <drogon/orm/RowIterator.h>
-#include <drogon/orm/FunctionTraits.h>
 #include <drogon/orm/Exception.h>
+#include <drogon/orm/Field.h>
+#include <drogon/orm/FunctionTraits.h>
+#include <drogon/orm/ResultIterator.h>
+#include <drogon/orm/Row.h>
+#include <drogon/orm/RowIterator.h>
 #include <trantor/utils/Logger.h>
 #if USE_MYSQL
 #include <mysql.h>
 #endif
-#include <string.h>
-#include <string>
-#include <iostream>
 #include <functional>
+#include <iostream>
 #include <map>
-#include <vector>
 #include <memory>
 #include <sstream>
+#include <string.h>
+#include <string>
+#include <vector>
 
 namespace drogon
 {
@@ -95,7 +95,8 @@ struct VectorTypeTraits<std::string>
     typedef std::string ItemsType;
 };
 
-//we only accept value type or const lreference type or rreference type as handle method parameters type
+// we only accept value type or const lreference type or rreference type as
+// handle method parameters type
 template <typename T>
 struct CallbackArgTypeTraits
 {
@@ -147,8 +148,7 @@ class CallbackHolder : public CallbackHolderBase
   private:
     Function _function;
     typedef FunctionTraits<Function> traits;
-    template <
-        std::size_t Index>
+    template <std::size_t Index>
     using NthArgumentType = typename traits::template argument<Index>;
     static const size_t argumentCount = traits::arity;
 
@@ -172,37 +172,35 @@ class CallbackHolder : public CallbackHolderBase
         static_assert(argumentCount == 0, "Your sql callback function type is wrong!");
         _function(result);
     }
-    template <
-        typename... Values,
-        std::size_t Boundary = argumentCount>
-    typename std::enable_if<(sizeof...(Values) < Boundary), void>::type run(
-        const Row *const row,
-        bool isNull,
-        Values &&... values)
+    template <typename... Values, std::size_t Boundary = argumentCount>
+    typename std::enable_if<(sizeof...(Values) < Boundary), void>::type run(const Row *const row,
+                                                                            bool isNull,
+                                                                            Values &&... values)
     {
-        //call this function recursively until parameter's count equals to the count of target function parameters
+        // call this function recursively until parameter's count equals to the
+        // count of target function parameters
         static_assert(CallbackArgTypeTraits<NthArgumentType<sizeof...(Values)>>::isValid,
-                      "your sql callback function argument type must be value type or const left-reference type");
-        typedef typename std::remove_cv<typename std::remove_reference<NthArgumentType<sizeof...(Values)>>::type>::type ValueType;
+                      "your sql callback function argument type must be value type or const "
+                      "left-reference type");
+        typedef
+            typename std::remove_cv<typename std::remove_reference<NthArgumentType<sizeof...(Values)>>::type>::type ValueType;
         ValueType value = ValueType();
         if (row && row->size() > sizeof...(Values))
         {
             // if(!VectorTypeTraits<ValueType>::isVector)
             //     value = (*row)[sizeof...(Values)].as<ValueType>();
             // else
-            //     ; // value = (*row)[sizeof...(Values)].asArray<VectorTypeTraits<ValueType>::ItemsType>();
+            //     ; // value =
+            //     (*row)[sizeof...(Values)].asArray<VectorTypeTraits<ValueType>::ItemsType>();
             value = makeValue<ValueType>((*row)[(Row::size_type)sizeof...(Values)]);
         }
 
         run(row, isNull, std::forward<Values>(values)..., std::move(value));
     }
-    template <
-        typename... Values,
-        std::size_t Boundary = argumentCount>
-    typename std::enable_if<(sizeof...(Values) == Boundary), void>::type run(
-        const Row *const row,
-        bool isNull,
-        Values &&... values)
+    template <typename... Values, std::size_t Boundary = argumentCount>
+    typename std::enable_if<(sizeof...(Values) == Boundary), void>::type run(const Row *const row,
+                                                                             bool isNull,
+                                                                             Values &&... values)
     {
         _function(isNull, std::move(values)...);
     }
@@ -231,18 +229,16 @@ class SqlBinder
     {
     }
     ~SqlBinder();
-    template <typename CallbackType,
-              typename traits = FunctionTraits<CallbackType>>
+    template <typename CallbackType, typename traits = FunctionTraits<CallbackType>>
     typename std::enable_if<traits::isExceptCallback && traits::isPtr, self>::type &operator>>(CallbackType &&callback)
     {
-        //LOG_DEBUG << "ptr callback";
+        // LOG_DEBUG << "ptr callback";
         _isExceptPtr = true;
         _exceptPtrCallback = std::forward<CallbackType>(callback);
         return *this;
     }
 
-    template <typename CallbackType,
-              typename traits = FunctionTraits<CallbackType>>
+    template <typename CallbackType, typename traits = FunctionTraits<CallbackType>>
     typename std::enable_if<traits::isExceptCallback && !traits::isPtr, self>::type &operator>>(CallbackType &&callback)
     {
         _isExceptPtr = false;
@@ -250,16 +246,18 @@ class SqlBinder
         return *this;
     }
 
-    template <typename CallbackType,
-              typename traits = FunctionTraits<CallbackType>>
+    template <typename CallbackType, typename traits = FunctionTraits<CallbackType>>
     typename std::enable_if<traits::isSqlCallback, self>::type &operator>>(CallbackType &&callback)
     {
-        _callbackHolder = std::shared_ptr<CallbackHolderBase>(new CallbackHolder<CallbackType>(std::forward<CallbackType>(callback)));
+        _callbackHolder =
+            std::shared_ptr<CallbackHolderBase>(new CallbackHolder<CallbackType>(std::forward<CallbackType>(callback)));
         return *this;
     }
 
     template <typename T>
-    typename std::enable_if<!std::is_same<typename std::remove_cv<typename std::remove_reference<T>::type>::type, trantor::Date>::value, self &>::type
+    typename std::enable_if<
+        !std::is_same<typename std::remove_cv<typename std::remove_reference<T>::type>::type, trantor::Date>::value,
+        self &>::type
     operator<<(T &&parameter)
     {
         _paraNum++;
@@ -269,19 +267,19 @@ class SqlBinder
         {
             switch (sizeof(T))
             {
-            case 2:
-                *std::static_pointer_cast<short>(obj) = ntohs(parameter);
-                break;
-            case 4:
-                *std::static_pointer_cast<int>(obj) = ntohl(parameter);
-                break;
-            case 8:
-                *std::static_pointer_cast<long>(obj) = ntohll(parameter);
-                break;
-            case 1:
-            default:
+                case 2:
+                    *std::static_pointer_cast<short>(obj) = ntohs(parameter);
+                    break;
+                case 4:
+                    *std::static_pointer_cast<int>(obj) = ntohl(parameter);
+                    break;
+                case 8:
+                    *std::static_pointer_cast<long>(obj) = ntohll(parameter);
+                    break;
+                case 1:
+                default:
 
-                break;
+                    break;
             }
             _objs.push_back(obj);
             _parameters.push_back((char *)obj.get());
@@ -296,19 +294,19 @@ class SqlBinder
             _length.push_back(0);
             switch (sizeof(T))
             {
-            case 1:
-                _format.push_back(MYSQL_TYPE_TINY);
-                break;
-            case 2:
-                _format.push_back(MYSQL_TYPE_SHORT);
-                break;
-            case 4:
-                _format.push_back(MYSQL_TYPE_LONG);
-                break;
-            case 8:
-                _format.push_back(MYSQL_TYPE_LONGLONG);
-            default:
-                break;
+                case 1:
+                    _format.push_back(MYSQL_TYPE_TINY);
+                    break;
+                case 2:
+                    _format.push_back(MYSQL_TYPE_SHORT);
+                    break;
+                case 4:
+                    _format.push_back(MYSQL_TYPE_LONG);
+                    break;
+                case 8:
+                    _format.push_back(MYSQL_TYPE_LONGLONG);
+                default:
+                    break;
             }
 #endif
         }
@@ -319,25 +317,25 @@ class SqlBinder
             _length.push_back(0);
             switch (sizeof(T))
             {
-            case 1:
-                _format.push_back(Sqlite3TypeChar);
-                break;
-            case 2:
-                _format.push_back(Sqlite3TypeShort);
-                break;
-            case 4:
-                _format.push_back(Sqlite3TypeInt);
-                break;
-            case 8:
-                _format.push_back(Sqlite3TypeInt64);
-            default:
-                break;
+                case 1:
+                    _format.push_back(Sqlite3TypeChar);
+                    break;
+                case 2:
+                    _format.push_back(Sqlite3TypeShort);
+                    break;
+                case 4:
+                    _format.push_back(Sqlite3TypeInt);
+                    break;
+                case 8:
+                    _format.push_back(Sqlite3TypeInt64);
+                default:
+                    break;
             }
         }
-        //LOG_TRACE << "Bind parameter:" << parameter;
+        // LOG_TRACE << "Bind parameter:" << parameter;
         return *this;
     }
-    //template <>
+    // template <>
     self &operator<<(const char str[])
     {
         return operator<<(std::string(str));
@@ -524,6 +522,6 @@ class SqlBinder
     ClientType _type;
 };
 
-} // namespace internal
-} // namespace orm
-} // namespace drogon
+}  // namespace internal
+}  // namespace orm
+}  // namespace drogon

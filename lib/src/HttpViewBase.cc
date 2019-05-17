@@ -2,7 +2,7 @@
  *
  *  HttpViewBase.cc
  *  An Tao
- *  
+ *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
  *  Use of this source code is governed by a MIT license
@@ -12,12 +12,12 @@
  *
  */
 
-#include <drogon/HttpViewBase.h>
 #include <drogon/DrClassMap.h>
+#include <drogon/HttpViewBase.h>
 
 #include <drogon/DrTemplateBase.h>
-#include <trantor/utils/Logger.h>
 #include <memory>
+#include <trantor/utils/Logger.h>
 using namespace drogon;
 HttpResponsePtr HttpViewBase::genHttpResponse(std::string viewName, const HttpViewData &data)
 {

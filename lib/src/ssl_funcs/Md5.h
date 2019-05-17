@@ -9,7 +9,7 @@
  *
  *  Md5.h
  *  An Tao
- *  
+ *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
  *  Use of this source code is governed by a MIT license
@@ -60,7 +60,6 @@ class Md5Encode
     };
 
   public:
-
     static std::string encode(const std::string &src_info);
 
   protected:

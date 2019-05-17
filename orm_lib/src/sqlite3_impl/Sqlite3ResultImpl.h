@@ -16,11 +16,11 @@
 
 #include "../ResultImpl.h"
 
-#include <sqlite3.h>
 #include <memory>
+#include <sqlite3.h>
 #include <string>
-#include <vector>
 #include <unordered_map>
+#include <vector>
 
 namespace drogon
 {
@@ -29,8 +29,7 @@ namespace orm
 class Sqlite3ResultImpl : public ResultImpl
 {
   public:
-    explicit Sqlite3ResultImpl(const std::string &query) noexcept
-        : ResultImpl(query)
+    explicit Sqlite3ResultImpl(const std::string &query) noexcept : ResultImpl(query)
     {
     }
     virtual size_type size() const noexcept override;
@@ -52,5 +51,5 @@ class Sqlite3ResultImpl : public ResultImpl
     size_t _affectedRows = 0;
     size_t _insertId = 0;
 };
-} // namespace orm
-} // namespace drogon
+}  // namespace orm
+}  // namespace drogon

@@ -2,7 +2,7 @@
  *
  *  WebSocketConnectionImpl.cc
  *  An Tao
- *  
+ *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
  *  Use of this source code is governed by a MIT license
@@ -12,18 +12,15 @@
  *
  */
 
-#include "HttpAppFrameworkImpl.h"
 #include "WebSocketConnectionImpl.h"
+#include "HttpAppFrameworkImpl.h"
+#include <thread>
 #include <trantor/net/TcpConnection.h>
 #include <trantor/net/inner/TcpConnectionImpl.h>
-#include <thread>
 
 using namespace drogon;
 WebSocketConnectionImpl::WebSocketConnectionImpl(const trantor::TcpConnectionPtr &conn, bool isServer)
-    : _tcpConn(conn),
-      _localAddr(conn->localAddr()),
-      _peerAddr(conn->peerAddr()),
-      _isServer(isServer)
+    : _tcpConn(conn), _localAddr(conn->localAddr()), _peerAddr(conn->peerAddr()), _isServer(isServer)
 {
 }
 
@@ -59,10 +56,9 @@ void WebSocketConnectionImpl::send(const char *msg, uint64_t len, const WebSocke
 
 void WebSocketConnectionImpl::sendWsData(const char *msg, size_t len, unsigned char opcode)
 {
-
     LOG_TRACE << "send " << len << " bytes";
 
-    //Format the frame
+    // Format the frame
     std::string bytesFormatted;
     bytesFormatted.resize(len + 10);
     bytesFormatted[0] = char(0x80 | (opcode & 0x0f));
@@ -99,11 +95,9 @@ void WebSocketConnectionImpl::sendWsData(const char *msg, size_t len, unsigned c
     }
     if (!_isServer)
     {
-        //Add masking key;
+        // Add masking key;
         static std::once_flag once;
-        std::call_once(once, []() {
-            std::srand(time(nullptr));
-        });
+        std::call_once(once, []() { std::srand(time(nullptr)); });
         int random = std::rand();
 
         bytesFormatted[1] = (bytesFormatted[1] | 0x80);
@@ -178,7 +172,7 @@ void WebSocketConnectionImpl::setPingMessage(const std::string &message, const s
 
 bool WebSocketMessageParser::parse(trantor::MsgBuffer *buffer)
 {
-    //According to the rfc6455
+    // According to the rfc6455
     _gotAll = false;
     if (buffer->readableBytes() >= 2)
     {
@@ -186,37 +180,37 @@ bool WebSocketMessageParser::parse(trantor::MsgBuffer *buffer)
         bool isControlFrame = false;
         switch (opcode)
         {
-        case 0:
-            //continuation frame
-            break;
-        case 1:
-            _type = WebSocketMessageType::Text;
-            break;
-        case 2:
-            _type = WebSocketMessageType::Binary;
-            break;
-        case 8:
-            _type = WebSocketMessageType::Close;
-            isControlFrame = true;
-            break;
-        case 9:
-            _type = WebSocketMessageType::Ping;
-            isControlFrame = true;
-            break;
-        case 10:
-            _type = WebSocketMessageType::Pong;
-            isControlFrame = true;
-            break;
-        default:
-            LOG_ERROR << "Unknown frame type";
-            return false;
-            break;
+            case 0:
+                // continuation frame
+                break;
+            case 1:
+                _type = WebSocketMessageType::Text;
+                break;
+            case 2:
+                _type = WebSocketMessageType::Binary;
+                break;
+            case 8:
+                _type = WebSocketMessageType::Close;
+                isControlFrame = true;
+                break;
+            case 9:
+                _type = WebSocketMessageType::Ping;
+                isControlFrame = true;
+                break;
+            case 10:
+                _type = WebSocketMessageType::Pong;
+                isControlFrame = true;
+                break;
+            default:
+                LOG_ERROR << "Unknown frame type";
+                return false;
+                break;
         }
 
         bool isFin = (((*buffer)[0] & 0x80) == 0x80);
         if (!isFin && isControlFrame)
         {
-            //rfc6455-5.5
+            // rfc6455-5.5
             LOG_ERROR << "Bad frame: all control frames MUST NOT be fragmented";
             return false;
         }
@@ -243,8 +237,9 @@ bool WebSocketMessageParser::parse(trantor::MsgBuffer *buffer)
         {
             if (isControlFrame)
             {
-                //rfc6455-5.5
-                LOG_ERROR << "Bad frame: all control frames MUST have a payload length of 125 bytes or less";
+                // rfc6455-5.5
+                LOG_ERROR << "Bad frame: all control frames MUST have a payload length "
+                             "of 125 bytes or less";
                 return false;
             }
             if (indexFirstMask == 4)
@@ -271,7 +266,7 @@ bool WebSocketMessageParser::parse(trantor::MsgBuffer *buffer)
         }
         if (isMasked != 0)
         {
-            //The message is sent by the client, check the length
+            // The message is sent by the client, check the length
             if (length > HttpAppFrameworkImpl::instance().getClientMaxWebSocketMessageSize())
             {
                 LOG_ERROR << "The size of the WebSocket message is too large!";

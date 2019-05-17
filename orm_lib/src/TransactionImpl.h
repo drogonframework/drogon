@@ -26,7 +26,10 @@ namespace orm
 class TransactionImpl : public Transaction, public std::enable_shared_from_this<TransactionImpl>
 {
   public:
-    TransactionImpl(ClientType type, const DbConnectionPtr &connPtr, const std::function<void(bool)> &commitCallback, const std::function<void()> &usedUpCallback);
+    TransactionImpl(ClientType type,
+                    const DbConnectionPtr &connPtr,
+                    const std::function<void(bool)> &commitCallback,
+                    const std::function<void()> &usedUpCallback);
     ~TransactionImpl();
     void rollback() override;
     virtual void setCommitCallback(const std::function<void(bool)> &commitCallback) override
@@ -56,14 +59,16 @@ class TransactionImpl : public Transaction, public std::enable_shared_from_this<
         }
         else
         {
-            _loop->queueInLoop([thisPtr = shared_from_this(),
-                                sql = std::move(sql),
-                                paraNum,
-                                parameters = std::move(parameters),
-                                length = std::move(length),
-                                format = std::move(format),
-                                rcb = std::move(rcb),
-                                exceptCallback = std::move(exceptCallback)]() mutable {
+            _loop->queueInLoop([
+                thisPtr = shared_from_this(),
+                sql = std::move(sql),
+                paraNum,
+                parameters = std::move(parameters),
+                length = std::move(length),
+                format = std::move(format),
+                rcb = std::move(rcb),
+                exceptCallback = std::move(exceptCallback)
+            ]() mutable {
                 thisPtr->execSqlInLoop(std::move(sql),
                                        paraNum,
                                        std::move(parameters),
@@ -116,5 +121,5 @@ class TransactionImpl : public Transaction, public std::enable_shared_from_this<
     std::function<void(bool)> _commitCallback;
     std::shared_ptr<TransactionImpl> _thisPtr;
 };
-} // namespace orm
-} // namespace drogon
+}  // namespace orm
+}  // namespace drogon
