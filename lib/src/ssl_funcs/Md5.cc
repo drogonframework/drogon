@@ -2,7 +2,7 @@
  *
  *  Md5.cc
  *  An Tao
- *  
+ *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
  *  Use of this source code is governed by a MIT license
@@ -13,9 +13,9 @@
  */
 
 #include "Md5.h"
+#include <iostream>
 #include <math.h>
 #include <string.h>
-#include <iostream>
 
 const int Md5Encode::kA = 0x67452301;
 const int Md5Encode::kB = 0xefcdab89;
@@ -60,7 +60,7 @@ UInt32 Md5Encode::FillData(const char *in_data_ptr, int data_byte_len, char **ou
     }
     else
     {
-        bit_need_fill = (BIT_OF_GROUP - SRC_DATA_LEN) - mod_bit_num; 
+        bit_need_fill = (BIT_OF_GROUP - SRC_DATA_LEN) - mod_bit_num;
     }
     int all_bit = bit_num + bit_need_fill;
     if (0 < bit_need_fill)
@@ -245,7 +245,7 @@ std::string Md5Encode::encode(const std::string &src_info)
     std::string result;
     char *out_data_ptr = NULL;
     int total_byte = FillData(src_info.c_str(), src_info.length(), &out_data_ptr);
-    //char * data_BIT_OF_GROUP = out_data_ptr;
+    // char * data_BIT_OF_GROUP = out_data_ptr;
     for (int i = 0; i < total_byte / (BIT_OF_GROUP / BIT_OF_BYTE); ++i)
     {
         char *data_BIT_OF_GROUP = out_data_ptr;

@@ -12,8 +12,8 @@
  *
  */
 
-//Taken from libpqxx and modified.
-//The license for libpqxx can be found in the COPYING file.
+// Taken from libpqxx and modified.
+// The license for libpqxx can be found in the COPYING file.
 
 #pragma once
 
@@ -23,19 +23,19 @@ namespace drogon
 {
 namespace orm
 {
-
 class Field;
 class ConstRowIterator;
 class ConstReverseRowIterator;
 
 /// Reference to one row in a result.
-/** 
+/**
  * A row represents one row (also called a row) in a query result set.
  * It also acts as a container mapping column numbers or names to field
  * values (see below):
  *
  * @code
- *	cout << row["date"].as<std::string>() << ": " << row["name"].as<std::string>() << endl;
+ *	cout << row["date"].as<std::string>() << ": " <<
+ *row["name"].as<std::string>() << endl;
  * @endcode
  *
  * The row itself acts like a (non-modifyable) container, complete with its
@@ -56,7 +56,10 @@ class Row
     reference operator[](const char columnName[]) const;
     reference operator[](const std::string &columnName) const;
     size_type size() const;
-    size_type capacity() const noexcept { return size(); }
+    size_type capacity() const noexcept
+    {
+        return size();
+    }
     ConstIterator begin() const noexcept;
     ConstIterator cbegin() const noexcept;
     ConstIterator end() const noexcept;
@@ -83,5 +86,5 @@ class Row
     Row(const Result &r, size_type index) noexcept;
 };
 
-} // namespace orm
-} // namespace drogon
+}  // namespace orm
+}  // namespace drogon

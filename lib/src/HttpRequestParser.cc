@@ -2,7 +2,7 @@
  *
  *  HttpRequestParser.cc
  *  An Tao
- *  
+ *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
  *  Use of this source code is governed by a MIT license
@@ -12,14 +12,14 @@
  *
  */
 
-#include <drogon/HttpTypes.h>
-#include <trantor/utils/MsgBuffer.h>
-#include <trantor/utils/Logger.h>
-#include "HttpAppFrameworkImpl.h"
 #include "HttpRequestParser.h"
+#include "HttpAppFrameworkImpl.h"
 #include "HttpResponseImpl.h"
 #include "HttpUtils.h"
+#include <drogon/HttpTypes.h>
 #include <iostream>
+#include <trantor/utils/Logger.h>
+#include <trantor/utils/MsgBuffer.h>
 
 using namespace trantor;
 using namespace drogon;
@@ -139,7 +139,8 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
             {
                 if (buf->readableBytes() >= 64 * 1024)
                 {
-                    /// The limit for request line is 64K bytes. respone k414RequestURITooLarge
+                    /// The limit for request line is 64K bytes. respone
+                    /// k414RequestURITooLarge
                     /// TODO: Make this configurable?
                     buf->retrieveAll();
                     shutdownConnection(k414RequestURITooLarge);
@@ -168,8 +169,7 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
                         _request->_contentLen = atoi(len.c_str());
                         _state = HttpRequestParseState_ExpectBody;
                         auto &expect = _request->getHeaderBy("expect");
-                        if (expect == "100-continue" &&
-                            _request->getVersion() >= HttpRequest::kHttp11)
+                        if (expect == "100-continue" && _request->getVersion() >= HttpRequest::kHttp11)
                         {
                             if (_request->_contentLen == 0)
                             {
@@ -177,7 +177,7 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
                                 shutdownConnection(k400BadRequest);
                                 return false;
                             }
-                            //rfc2616-8.2.3
+                            // rfc2616-8.2.3
                             auto connPtr = _conn.lock();
                             if (connPtr)
                             {
@@ -330,8 +330,7 @@ void HttpRequestParser::popFirstRequest()
     _requestPipelining.pop_front();
 }
 
-void HttpRequestParser::pushResponseToPipelining(const HttpRequestPtr &req,
-                                                 const HttpResponsePtr &resp)
+void HttpRequestParser::pushResponseToPipelining(const HttpRequestPtr &req, const HttpResponsePtr &resp)
 {
 #ifndef NDEBUG
     auto conn = _conn.lock();

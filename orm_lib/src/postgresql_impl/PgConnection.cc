@@ -14,11 +14,11 @@
 
 #include "PgConnection.h"
 #include "PostgreSQLResultImpl.h"
-#include <trantor/utils/Logger.h>
 #include <drogon/orm/Exception.h>
 #include <drogon/utils/Utilities.h>
 #include <memory>
 #include <stdio.h>
+#include <trantor/utils/Logger.h>
 
 using namespace drogon::orm;
 
@@ -26,24 +26,21 @@ namespace drogon
 {
 namespace orm
 {
-
 Result makeResult(const std::shared_ptr<PGresult> &r = std::shared_ptr<PGresult>(nullptr), const std::string &query = "")
 {
     return Result(std::shared_ptr<PostgreSQLResultImpl>(new PostgreSQLResultImpl(r, query)));
 }
 
-} // namespace orm
-} // namespace drogon
+}  // namespace orm
+}  // namespace drogon
 
 PgConnection::PgConnection(trantor::EventLoop *loop, const std::string &connInfo)
     : DbConnection(loop),
-      _connPtr(std::shared_ptr<PGconn>(PQconnectStart(connInfo.c_str()), [](PGconn *conn) {
-          PQfinish(conn);
-      })),
+      _connPtr(std::shared_ptr<PGconn>(PQconnectStart(connInfo.c_str()), [](PGconn *conn) { PQfinish(conn); })),
       _channel(loop, PQsocket(_connPtr.get()))
 {
     PQsetnonblocking(_connPtr.get(), 1);
-    //assert(PQisnonblocking(_connPtr.get()));
+    // assert(PQisnonblocking(_connPtr.get()));
     _channel.setReadCallback([=]() {
         if (_status != ConnectStatus_Ok)
         {
@@ -111,41 +108,41 @@ void PgConnection::pgPoll()
 
     switch (connStatus)
     {
-    case PGRES_POLLING_FAILED:
-        LOG_ERROR << "!!!Pg connection failed: " << PQerrorMessage(_connPtr.get());
-        if (_status == ConnectStatus_None)
-        {
-            handleClosed();
-        }
-        break;
-    case PGRES_POLLING_WRITING:
-        if (!_channel.isWriting())
-            _channel.enableWriting();
-        break;
-    case PGRES_POLLING_READING:
-        if (!_channel.isReading())
-            _channel.enableReading();
-        if (_channel.isWriting())
-            _channel.disableWriting();
-        break;
+        case PGRES_POLLING_FAILED:
+            LOG_ERROR << "!!!Pg connection failed: " << PQerrorMessage(_connPtr.get());
+            if (_status == ConnectStatus_None)
+            {
+                handleClosed();
+            }
+            break;
+        case PGRES_POLLING_WRITING:
+            if (!_channel.isWriting())
+                _channel.enableWriting();
+            break;
+        case PGRES_POLLING_READING:
+            if (!_channel.isReading())
+                _channel.enableReading();
+            if (_channel.isWriting())
+                _channel.disableWriting();
+            break;
 
-    case PGRES_POLLING_OK:
-        if (_status != ConnectStatus_Ok)
-        {
-            _status = ConnectStatus_Ok;
-            assert(_okCb);
-            _okCb(shared_from_this());
-        }
-        if (!_channel.isReading())
-            _channel.enableReading();
-        if (_channel.isWriting())
-            _channel.disableWriting();
-        break;
-    case PGRES_POLLING_ACTIVE:
-        //unused!
-        break;
-    default:
-        break;
+        case PGRES_POLLING_OK:
+            if (_status != ConnectStatus_Ok)
+            {
+                _status = ConnectStatus_Ok;
+                assert(_okCb);
+                _okCb(shared_from_this());
+            }
+            if (!_channel.isReading())
+                _channel.enableReading();
+            if (_channel.isWriting())
+                _channel.disableWriting();
+            break;
+        case PGRES_POLLING_ACTIVE:
+            // unused!
+            break;
+        default:
+            break;
     }
 }
 
@@ -201,13 +198,8 @@ void PgConnection::execSqlInLoop(std::string &&sql,
         if (iter != _preparedStatementMap.end())
         {
             _isRreparingStatement = false;
-            if (PQsendQueryPrepared(_connPtr.get(),
-                                    iter->second.c_str(),
-                                    paraNum,
-                                    parameters.data(),
-                                    length.data(),
-                                    format.data(),
-                                    0) == 0)
+            if (PQsendQueryPrepared(
+                    _connPtr.get(), iter->second.c_str(), paraNum, parameters.data(), length.data(), format.data(), 0) == 0)
             {
                 LOG_ERROR << "send query error: " << PQerrorMessage(_connPtr.get());
                 if (_isWorking)
@@ -292,14 +284,12 @@ void PgConnection::handleRead()
     }
     if (PQisBusy(_connPtr.get()))
     {
-        //need read more data from socket;
+        // need read more data from socket;
         return;
     }
     if (_channel.isWriting())
         _channel.disableWriting();
-    while ((res = std::shared_ptr<PGresult>(PQgetResult(_connPtr.get()), [](PGresult *p) {
-                PQclear(p);
-            })))
+    while ((res = std::shared_ptr<PGresult>(PQgetResult(_connPtr.get()), [](PGresult *p) { PQclear(p); })))
     {
         auto type = PQresultStatus(res.get());
         if (type == PGRES_BAD_RESPONSE || type == PGRES_FATAL_ERROR)
@@ -309,7 +299,7 @@ void PgConnection::handleRead()
             {
                 try
                 {
-                    //TODO: exception type
+                    // TODO: exception type
                     throw SqlError(PQerrorMessage(_connPtr.get()), _sql);
                 }
                 catch (...)
@@ -353,13 +343,8 @@ void PgConnection::doAfterPreparing()
 {
     _isRreparingStatement = false;
     _preparedStatementMap[_sql] = _statementName;
-    if (PQsendQueryPrepared(_connPtr.get(),
-                            _statementName.c_str(),
-                            _paraNum,
-                            _parameters.data(),
-                            _length.data(),
-                            _format.data(),
-                            0) == 0)
+    if (PQsendQueryPrepared(
+            _connPtr.get(), _statementName.c_str(), _paraNum, _parameters.data(), _length.data(), _format.data(), 0) == 0)
     {
         LOG_ERROR << "send query error: " << PQerrorMessage(_connPtr.get());
         if (_isWorking)

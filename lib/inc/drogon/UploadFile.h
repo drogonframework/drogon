@@ -20,16 +20,17 @@ namespace drogon
 class UploadFile
 {
   public:
-    /// This class represents an upload file which will be transferred to the server via the multipart/form-data format
+    /// This class represents an upload file which will be transferred to the
+    /// server via the multipart/form-data format
     /**
      * @param filePath: The file location on local host, including file name.
-     * @param fileName: The file name provided to the server. If it is empty by default, the file name in the @param filePath
+     * @param fileName: The file name provided to the server. If it is empty by
+     * default, the file name in the @param filePath
      * is provided to the server.
      * @param itemName: The item name on the browser form.
      */
     explicit UploadFile(const std::string &filePath, const std::string &fileName = "", const std::string &itemName = "file")
-        : _path(filePath),
-          _itemName(itemName)
+        : _path(filePath), _itemName(itemName)
     {
         if (!fileName.empty())
         {
@@ -48,13 +49,22 @@ class UploadFile
             }
         }
     }
-    const std::string &path() const { return _path; }
-    const std::string &fileName() const { return _fileName; }
-    const std::string &itemName() const { return _itemName; }
+    const std::string &path() const
+    {
+        return _path;
+    }
+    const std::string &fileName() const
+    {
+        return _fileName;
+    }
+    const std::string &itemName() const
+    {
+        return _itemName;
+    }
 
   private:
     std::string _path;
     std::string _fileName;
     std::string _itemName;
 };
-} // namespace drogon
+}  // namespace drogon

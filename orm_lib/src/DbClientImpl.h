@@ -17,19 +17,18 @@
 #include "DbConnection.h"
 #include <drogon/HttpTypes.h>
 #include <drogon/orm/DbClient.h>
-#include <trantor/net/EventLoopThreadPool.h>
-#include <memory>
-#include <thread>
 #include <functional>
-#include <string>
-#include <unordered_set>
 #include <list>
+#include <memory>
+#include <string>
+#include <thread>
+#include <trantor/net/EventLoopThreadPool.h>
+#include <unordered_set>
 
 namespace drogon
 {
 namespace orm
 {
-
 class DbClientImpl : public DbClient, public std::enable_shared_from_this<DbClientImpl>
 {
   public:
@@ -62,7 +61,7 @@ class DbClientImpl : public DbClient, public std::enable_shared_from_this<DbClie
     DbConnectionPtr newConnection(trantor::EventLoop *loop);
 
     void makeTrans(const DbConnectionPtr &conn, std::function<void(const std::shared_ptr<Transaction> &)> &&callback);
-    
+
     std::mutex _connectionsMutex;
     std::unordered_set<DbConnectionPtr> _connections;
     std::unordered_set<DbConnectionPtr> _readyConnections;
@@ -103,5 +102,5 @@ class DbClientImpl : public DbClient, public std::enable_shared_from_this<DbClie
     void handleNewTask(const DbConnectionPtr &connPtr);
 };
 
-} // namespace orm
-} // namespace drogon
+}  // namespace orm
+}  // namespace drogon

@@ -2,7 +2,7 @@
  *
  *  SharedLibManager.cc
  *  An Tao
- *  
+ *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
  *  Use of this source code is governed by a MIT license
@@ -13,14 +13,14 @@
  */
 
 #include "SharedLibManager.h"
-#include <trantor/utils/Logger.h>
-#include <drogon/config.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>
 #include <dirent.h>
 #include <dlfcn.h>
+#include <drogon/config.h>
 #include <fstream>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <trantor/utils/Logger.h>
+#include <unistd.h>
 static void forEachFileIn(const std::string &path, const std::function<void(const std::string &, const struct stat &)> &cb)
 {
     DIR *dp;
@@ -30,7 +30,7 @@ static void forEachFileIn(const std::string &path, const std::function<void(cons
     /* open dirent directory */
     if ((dp = opendir(path.c_str())) == NULL)
     {
-        //perror("opendir:");
+        // perror("opendir:");
         LOG_ERROR << "can't open dir,path:" << path;
         return;
     }
@@ -64,12 +64,10 @@ static void forEachFileIn(const std::string &path, const std::function<void(cons
 }
 
 using namespace drogon;
-SharedLibManager::SharedLibManager(trantor::EventLoop *loop, const std::vector<std::string> &libPaths) : _loop(loop),
-                                                                                                         _libPaths(libPaths)
+SharedLibManager::SharedLibManager(trantor::EventLoop *loop, const std::vector<std::string> &libPaths)
+    : _loop(loop), _libPaths(libPaths)
 {
-    _timeId = _loop->runEvery(5.0, [=]() {
-        managerLibs();
-    });
+    _timeId = _loop->runEvery(5.0, [=]() { managerLibs(); });
 }
 SharedLibManager::~SharedLibManager()
 {
@@ -86,7 +84,7 @@ void SharedLibManager::managerLibs()
                 auto exName = filename.substr(pos + 1);
                 if (exName == "csp")
                 {
-                    //compile
+                    // compile
                     auto lockFile = filename + ".lock";
                     std::ifstream fin(lockFile);
                     if (fin)
@@ -100,7 +98,8 @@ void SharedLibManager::managerLibs()
 #ifdef __linux__
                         if (st.st_mtim.tv_sec > _dlMap[filename].mTime.tv_sec)
 #else
-                        if(st.st_mtimespec.tv_sec>_dlMap[filename].mTime.tv_sec)
+                          if (st.st_mtimespec.tv_sec >
+                              _dlMap[filename].mTime.tv_sec)
 #endif
                         {
                             LOG_TRACE << "new csp file:" << filename;
@@ -117,7 +116,7 @@ void SharedLibManager::managerLibs()
                     cmd.append(filename).append(" -o ").append(libPath);
                     LOG_TRACE << cmd;
                     auto r = system(cmd.c_str());
-                    //TODO: handle r
+                    // TODO: handle r
                     (void)(r);
                     auto srcFile = filename.substr(0, pos);
                     srcFile.append(".cc");
@@ -126,7 +125,7 @@ void SharedLibManager::managerLibs()
 #ifdef __linux__
                     dlStat.mTime = st.st_mtim;
 #else
-                    dlStat.mTime=st.st_mtimespec;
+                        dlStat.mTime = st.st_mtimespec;
 #endif
                     if (dlStat.handle)
                     {
@@ -182,7 +181,7 @@ void *SharedLibManager::loadLibs(const std::string &sourceFile, void *oldHld)
             }
         }
 
-        //loading so file;
+        // loading so file;
         Handle = dlopen(soFile.c_str(), RTLD_LAZY);
         if (!Handle)
         {

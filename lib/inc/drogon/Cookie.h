@@ -13,51 +13,113 @@
  */
 #pragma once
 
-#include <trantor/utils/Date.h>
 #include <string>
+#include <trantor/utils/Date.h>
 
 namespace drogon
 {
-
 class Cookie
 {
   public:
-    Cookie(const std::string &key, const std::string &value)
-        : _key(key),
-          _value(value)
+    Cookie(const std::string &key, const std::string &value) : _key(key), _value(value)
     {
     }
     Cookie() = default;
-    ~Cookie() {}
-    void setExpiresDate(const trantor::Date &date) { _expiresDate = date; }
-    void setHttpOnly(bool only) { _httpOnly = only; }
-    void setSecure(bool secure) { _secure = secure; }
-    void setDomain(const std::string &domain) { _domain = domain; }
-    void setPath(const std::string &path) { _path = path; }
-    void setKey(const std::string &key) { _key = key; }
-    void setValue(const std::string &value) { _value = value; }
+    ~Cookie()
+    {
+    }
+    void setExpiresDate(const trantor::Date &date)
+    {
+        _expiresDate = date;
+    }
+    void setHttpOnly(bool only)
+    {
+        _httpOnly = only;
+    }
+    void setSecure(bool secure)
+    {
+        _secure = secure;
+    }
+    void setDomain(const std::string &domain)
+    {
+        _domain = domain;
+    }
+    void setPath(const std::string &path)
+    {
+        _path = path;
+    }
+    void setKey(const std::string &key)
+    {
+        _key = key;
+    }
+    void setValue(const std::string &value)
+    {
+        _value = value;
+    }
 
     std::string cookieString() const;
-    std::string getCookieString() const { return cookieString(); }
-    
-    const trantor::Date &expiresDate() const { return _expiresDate; }
-    const trantor::Date &getExpiresDate() const { return _expiresDate; }
+    std::string getCookieString() const
+    {
+        return cookieString();
+    }
 
-    const std::string &domain() const { return _domain; }
-    const std::string &getDomain() const { return _domain; }
+    const trantor::Date &expiresDate() const
+    {
+        return _expiresDate;
+    }
+    const trantor::Date &getExpiresDate() const
+    {
+        return _expiresDate;
+    }
 
-    const std::string &path() const { return _path; }
-    const std::string &getPath() const { return _path; }
+    const std::string &domain() const
+    {
+        return _domain;
+    }
+    const std::string &getDomain() const
+    {
+        return _domain;
+    }
 
-    const std::string &key() const { return _key; }
-    const std::string &getKey() const { return _key; }
+    const std::string &path() const
+    {
+        return _path;
+    }
+    const std::string &getPath() const
+    {
+        return _path;
+    }
 
-    const std::string &value() const { return _value; }
-    const std::string &getValue() const { return _value; }
+    const std::string &key() const
+    {
+        return _key;
+    }
+    const std::string &getKey() const
+    {
+        return _key;
+    }
 
-    operator bool() const { return (!_key.empty()) && (!_value.empty()); }
-    bool isHttpOnly() const { return _httpOnly; }
-    bool isSecure() const { return _secure; }
+    const std::string &value() const
+    {
+        return _value;
+    }
+    const std::string &getValue() const
+    {
+        return _value;
+    }
+
+    operator bool() const
+    {
+        return (!_key.empty()) && (!_value.empty());
+    }
+    bool isHttpOnly() const
+    {
+        return _httpOnly;
+    }
+    bool isSecure() const
+    {
+        return _secure;
+    }
 
   private:
     trantor::Date _expiresDate;
@@ -69,4 +131,4 @@ class Cookie
     std::string _value;
 };
 
-} // namespace drogon
+}  // namespace drogon

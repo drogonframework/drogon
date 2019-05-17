@@ -2,7 +2,7 @@
  *
  *  HttpResponseImpl.h
  *  An Tao
- *  
+ *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
  *  Use of this source code is governed by a MIT license
@@ -15,16 +15,16 @@
 #pragma once
 
 #include "HttpUtils.h"
+#include <atomic>
 #include <drogon/HttpResponse.h>
-#include <trantor/utils/MsgBuffer.h>
-#include <trantor/net/InetAddress.h>
-#include <trantor/utils/Date.h>
 #include <drogon/utils/Utilities.h>
-#include <unordered_map>
-#include <string>
 #include <memory>
 #include <mutex>
-#include <atomic>
+#include <string>
+#include <trantor/net/InetAddress.h>
+#include <trantor/utils/Date.h>
+#include <trantor/utils/MsgBuffer.h>
+#include <unordered_map>
 
 using namespace trantor;
 namespace drogon
@@ -33,7 +33,7 @@ class HttpResponseImpl : public HttpResponse
 {
     friend class HttpResponseParser;
 
-public:
+  public:
     HttpResponseImpl()
         : _statusCode(kUnknown),
           _creationDate(trantor::Date::now()),
@@ -71,7 +71,8 @@ public:
         setStatusMessage(statusCodeToString(code));
     }
 
-    // virtual void setStatusCode(HttpStatusCode code, const std::string &status_message) override
+    // virtual void setStatusCode(HttpStatusCode code, const std::string
+    // &status_message) override
     // {
     //     _statusCode = code;
     //     setStatusMessage(status_message);
@@ -98,7 +99,8 @@ public:
         setContentType(webContentTypeToString(type));
     }
 
-    // virtual void setContentTypeCodeAndCharacterSet(ContentType type, const std::string &charSet = "utf-8") override
+    // virtual void setContentTypeCodeAndCharacterSet(ContentType type, const
+    // std::string &charSet = "utf-8") override
     // {
     //     _contentType = type;
     //     setContentType(webContentTypeAndCharsetToString(type, charSet));
@@ -189,7 +191,7 @@ public:
 
         if (field == "set-cookie")
         {
-            //LOG_INFO<<"cookies!!!:"<<value;
+            // LOG_INFO<<"cookies!!!:"<<value;
             auto values = utils::splitString(value, ";");
             Cookie cookie;
             cookie.setHttpOnly(false);
@@ -320,7 +322,10 @@ public:
         _expriedTime = expiredTime;
     }
 
-    virtual ssize_t expiredTime() const override { return _expriedTime; }
+    virtual ssize_t expiredTime() const override
+    {
+        return _expriedTime;
+    }
 
     //	void setReceiveTime(trantor::Date t)
     //    {
@@ -355,7 +360,7 @@ public:
     }
     void parseJson() const
     {
-        //parse json data in reponse
+        // parse json data in reponse
         _jsonPtr = std::make_shared<Json::Value>();
         Json::CharReaderBuilder builder;
         builder["collectComments"] = false;
@@ -400,10 +405,10 @@ public:
         }
     }
 
-protected:
+  protected:
     void makeHeaderString(const std::shared_ptr<std::string> &headerStringPtr) const;
 
-private:
+  private:
     std::unordered_map<std::string, std::string> _headers;
     std::unordered_map<std::string, Cookie> _cookies;
 
@@ -440,4 +445,4 @@ private:
     }
 };
 typedef std::shared_ptr<HttpResponseImpl> HttpResponseImplPtr;
-} // namespace drogon
+}  // namespace drogon

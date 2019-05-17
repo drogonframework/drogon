@@ -2,7 +2,7 @@
  *
  *  DrClassMap.cc
  *  An Tao
- *  
+ *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
  *  Use of this source code is governed by a MIT license
@@ -22,7 +22,6 @@ namespace drogon
 {
 namespace internal
 {
-
 static std::unordered_map<std::string, std::shared_ptr<DrObjectBase>> &getObjsMap()
 {
     static std::unordered_map<std::string, std::shared_ptr<DrObjectBase>> singleInstanceMap;
@@ -35,8 +34,8 @@ static std::mutex &getMapMutex()
     return mtx;
 }
 
-} // namespace internal
-} // namespace drogon
+}  // namespace internal
+}  // namespace drogon
 
 void DrClassMap::registerClass(const std::string &className, const DrAllocFunc &func)
 {

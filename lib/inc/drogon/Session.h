@@ -2,7 +2,7 @@
  *
  *  Session.h
  *  An Tao
- *  
+ *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
  *  Use of this source code is governed by a MIT license
@@ -14,15 +14,14 @@
 
 #pragma once
 
-#include <memory>
+#include <drogon/config.h>
 #include <map>
+#include <memory>
 #include <mutex>
 #include <thread>
-#include <drogon/config.h>
 
 namespace drogon
 {
-    
 class Session
 {
   public:
@@ -80,4 +79,4 @@ class Session
 
 typedef std::shared_ptr<Session> SessionPtr;
 
-} // namespace drogon
+}  // namespace drogon

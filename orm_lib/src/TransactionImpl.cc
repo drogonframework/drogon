@@ -17,13 +17,11 @@
 
 using namespace drogon::orm;
 
-TransactionImpl::TransactionImpl(ClientType type, const DbConnectionPtr &connPtr,
+TransactionImpl::TransactionImpl(ClientType type,
+                                 const DbConnectionPtr &connPtr,
                                  const std::function<void(bool)> &commitCallback,
                                  const std::function<void()> &usedUpCallback)
-    : _connectionPtr(connPtr),
-      _usedUpCallback(usedUpCallback),
-      _loop(connPtr->loop()),
-      _commitCallback(commitCallback)
+    : _connectionPtr(connPtr), _usedUpCallback(usedUpCallback), _loop(connPtr->loop()), _commitCallback(commitCallback)
 {
     _type = type;
 }
@@ -34,7 +32,7 @@ TransactionImpl::~TransactionImpl()
     if (!_isCommitedOrRolledback)
     {
         auto loop = _connectionPtr->loop();
-        loop->queueInLoop([conn = _connectionPtr, ucb = std::move(_usedUpCallback), commitCb = std::move(_commitCallback)]() {
+        loop->queueInLoop([ conn = _connectionPtr, ucb = std::move(_usedUpCallback), commitCb = std::move(_commitCallback) ]() {
             conn->setIdleCallback([ucb = std::move(ucb)]() {
                 if (ucb)
                     ucb();
@@ -69,7 +67,7 @@ TransactionImpl::~TransactionImpl()
     }
     else
     {
-        if(_usedUpCallback)
+        if (_usedUpCallback)
         {
             _usedUpCallback();
         }
@@ -105,7 +103,7 @@ void TransactionImpl::execSqlInLoop(std::string &&sql,
         }
         else
         {
-            //push sql cmd to buffer;
+            // push sql cmd to buffer;
             SqlCmd cmd;
             cmd._sql = std::move(sql);
             cmd._paraNum = paraNum;
@@ -120,7 +118,7 @@ void TransactionImpl::execSqlInLoop(std::string &&sql,
     }
     else
     {
-        //The transaction has been rolled back;
+        // The transaction has been rolled back;
         try
         {
             throw TransactionRollback("The transaction has been rolled back");
@@ -141,7 +139,7 @@ void TransactionImpl::rollback()
             return;
         if (thisPtr->_isWorking)
         {
-            //push sql cmd to buffer;
+            // push sql cmd to buffer;
             SqlCmd cmd;
             cmd._sql = "rollback";
             cmd._paraNum = 0;
@@ -150,12 +148,13 @@ void TransactionImpl::rollback()
                 thisPtr->_isCommitedOrRolledback = true;
             };
             cmd._exceptCb = [thisPtr](const std::exception_ptr &ePtr) {
-                //clearupCb();
+                // clearupCb();
                 thisPtr->_isCommitedOrRolledback = true;
                 LOG_ERROR << "Transaction rool back error";
             };
             cmd._isRollbackCmd = true;
-            //Rollback cmd should be executed firstly, so we push it in front of the list
+            // Rollback cmd should be executed firstly, so we push it in front of the
+            // list
             thisPtr->_sqlCmdBuffer.push_front(std::move(cmd));
             return;
         }
@@ -169,10 +168,10 @@ void TransactionImpl::rollback()
                                          [thisPtr](const Result &r) {
                                              LOG_TRACE << "Transaction roll back!";
                                              thisPtr->_isCommitedOrRolledback = true;
-                                             //clearupCb();
+                                             // clearupCb();
                                          },
                                          [thisPtr](const std::exception_ptr &ePtr) {
-                                             //clearupCb();
+                                             // clearupCb();
                                              LOG_ERROR << "Transaction rool back error";
                                              thisPtr->_isCommitedOrRolledback = true;
                                          });
@@ -197,7 +196,7 @@ void TransactionImpl::execNewTask()
                           std::move(cmd._parameters),
                           std::move(cmd._length),
                           std::move(cmd._format),
-                          [callback = std::move(cmd._cb), cmd, thisPtr](const Result &r) {
+                          [ callback = std::move(cmd._cb), cmd, thisPtr ](const Result &r) {
                               if (cmd._isRollbackCmd)
                               {
                                   thisPtr->_isCommitedOrRolledback = true;
@@ -261,16 +260,13 @@ void TransactionImpl::doBegin()
         assert(!thisPtr->_isCommitedOrRolledback);
         thisPtr->_isWorking = true;
         thisPtr->_thisPtr = thisPtr;
-        thisPtr->_connectionPtr->execSql("begin",
-                                         0,
-                                         std::vector<const char *>(),
-                                         std::vector<int>(),
-                                         std::vector<int>(),
-                                         [](const Result &r) {
-                                             LOG_TRACE << "Transaction begin!";
-                                         },
-                                         [thisPtr](const std::exception_ptr &ePtr) {
-                                             thisPtr->_isCommitedOrRolledback = true;
-                                         });
+        thisPtr->_connectionPtr->execSql(
+            "begin",
+            0,
+            std::vector<const char *>(),
+            std::vector<int>(),
+            std::vector<int>(),
+            [](const Result &r) { LOG_TRACE << "Transaction begin!"; },
+            [thisPtr](const std::exception_ptr &ePtr) { thisPtr->_isCommitedOrRolledback = true; });
     });
 }

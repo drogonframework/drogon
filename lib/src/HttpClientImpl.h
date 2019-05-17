@@ -2,7 +2,7 @@
  *
  *  HttpClientImpl.h
  *  An Tao
- *  
+ *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
  *  Use of this source code is governed by a MIT license
@@ -15,10 +15,10 @@
 #pragma once
 
 #include <drogon/HttpClient.h>
-#include <trantor/net/EventLoop.h>
-#include <trantor/net/TcpClient.h>
 #include <mutex>
 #include <queue>
+#include <trantor/net/EventLoop.h>
+#include <trantor/net/TcpClient.h>
 
 namespace drogon
 {
@@ -29,7 +29,10 @@ class HttpClientImpl : public HttpClient, public std::enable_shared_from_this<Ht
     HttpClientImpl(trantor::EventLoop *loop, const std::string &hostString);
     virtual void sendRequest(const HttpRequestPtr &req, const HttpReqCallback &callback) override;
     virtual void sendRequest(const HttpRequestPtr &req, HttpReqCallback &&callback) override;
-    virtual trantor::EventLoop *getLoop() override { return _loop; }
+    virtual trantor::EventLoop *getLoop() override
+    {
+        return _loop;
+    }
     virtual void setPipeliningDepth(size_t depth) override
     {
         _pipeliningDepth = depth;
@@ -51,4 +54,4 @@ class HttpClientImpl : public HttpClient, public std::enable_shared_from_this<Ht
     size_t _pipeliningDepth = 0;
 };
 typedef std::shared_ptr<HttpClientImpl> HttpClientImplPtr;
-} // namespace drogon
+}  // namespace drogon

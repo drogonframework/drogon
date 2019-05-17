@@ -24,13 +24,10 @@ namespace drogon
 {
 namespace orm
 {
-
 class PostgreSQLResultImpl : public ResultImpl
 {
   public:
-    PostgreSQLResultImpl(const std::shared_ptr<PGresult> &r, const std::string &query) noexcept
-        :ResultImpl(query),
-         _result(r)
+    PostgreSQLResultImpl(const std::shared_ptr<PGresult> &r, const std::string &query) noexcept : ResultImpl(query), _result(r)
     {
     }
     virtual size_type size() const noexcept override;
@@ -47,5 +44,5 @@ class PostgreSQLResultImpl : public ResultImpl
     std::shared_ptr<PGresult> _result;
 };
 
-} // namespace orm
-} // namespace drogon
+}  // namespace orm
+}  // namespace drogon

@@ -2,7 +2,7 @@
  *
  *  DrTemplateBase.cc
  *  An Tao
- *  
+ *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
  *  Use of this source code is governed by a MIT license
@@ -12,10 +12,10 @@
  *
  */
 
-#include <drogon/DrTemplateBase.h>
 #include <drogon/DrClassMap.h>
-#include <trantor/utils/Logger.h>
+#include <drogon/DrTemplateBase.h>
 #include <memory>
+#include <trantor/utils/Logger.h>
 
 using namespace drogon;
 

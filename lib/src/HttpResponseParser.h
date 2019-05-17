@@ -2,7 +2,7 @@
  *
  *  HttpResponseParser.h
  *  An Tao
- *  
+ *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
  *  Use of this source code is governed by a MIT license
@@ -15,11 +15,11 @@
 #pragma once
 
 #include "HttpResponseImpl.h"
-#include <trantor/utils/MsgBuffer.h>
 #include <drogon/WebSocketConnection.h>
 #include <list>
 #include <mutex>
 #include <trantor/net/TcpConnection.h>
+#include <trantor/utils/MsgBuffer.h>
 
 using namespace trantor;
 namespace drogon
@@ -69,4 +69,4 @@ class HttpResponseParser
     HttpResponseImplPtr _response;
 };
 
-} // namespace drogon
+}  // namespace drogon

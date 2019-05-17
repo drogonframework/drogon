@@ -1,7 +1,7 @@
 /**
  *  HttpTypes.h
  *  An Tao
- *  
+ *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
  *  Use of this source code is governed by a MIT license
@@ -12,16 +12,15 @@
  */
 
 #pragma once
-#include <drogon/config.h>
 #include <atomic>
+#include <drogon/config.h>
 #include <thread>
 
 namespace drogon
 {
-
 enum HttpStatusCode
 {
-    //rfc2616-6.1.1
+    // rfc2616-6.1.1
     kUnknown = 0,
     k100Continue = 100,
     k101SwitchingProtocols = 101,
@@ -119,4 +118,4 @@ enum class ReqResult
     Timeout
 };
 
-} // namespace drogon
+}  // namespace drogon

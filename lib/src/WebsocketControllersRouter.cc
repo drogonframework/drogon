@@ -2,7 +2,7 @@
  *
  *  WebsocketControllersRouter.cc
  *  An Tao
- *  
+ *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
  *  Use of this source code is governed by a MIT license
@@ -12,8 +12,8 @@
  *
  */
 
-#include "FiltersFunction.h"
 #include "WebsocketControllersRouter.h"
+#include "FiltersFunction.h"
 #include "HttpAppFrameworkImpl.h"
 #ifdef USE_OPENSSL
 #include <openssl/sha.h>
@@ -82,9 +82,8 @@ std::vector<std::tuple<std::string, HttpMethod, std::string>> WebsocketControlle
     std::vector<std::tuple<std::string, HttpMethod, std::string>> ret;
     for (auto &item : _websockCtrlMap)
     {
-        auto info = std::tuple<std::string, HttpMethod, std::string>(item.first,
-                                                                     Get,
-                                                                     std::string("WebsocketController: ") + item.second._controller->className());
+        auto info = std::tuple<std::string, HttpMethod, std::string>(
+            item.first, Get, std::string("WebsocketController: ") + item.second._controller->className());
         ret.emplace_back(std::move(info));
     }
     return ret;
@@ -106,14 +105,12 @@ void WebsocketControllersRouter::doControllerHandler(const WebSocketControllerBa
     resp->addHeader("Connection", "Upgrade");
     resp->addHeader("Sec-WebSocket-Accept", base64Key);
     callback(resp);
-    wsConnPtr->setMessageCallback([ctrlPtr](std::string &&message,
-                                            const WebSocketConnectionImplPtr &connPtr,
-                                            const WebSocketMessageType &type) {
-        ctrlPtr->handleNewMessage(connPtr, std::move(message), type);
-    });
-    wsConnPtr->setCloseCallback([ctrlPtr](const WebSocketConnectionImplPtr &connPtr) {
-        ctrlPtr->handleConnectionClosed(connPtr);
-    });
+    wsConnPtr->setMessageCallback(
+        [ctrlPtr](std::string &&message, const WebSocketConnectionImplPtr &connPtr, const WebSocketMessageType &type) {
+            ctrlPtr->handleNewMessage(connPtr, std::move(message), type);
+        });
+    wsConnPtr->setCloseCallback(
+        [ctrlPtr](const WebSocketConnectionImplPtr &connPtr) { ctrlPtr->handleConnectionClosed(connPtr); });
     ctrlPtr->handleNewConnection(req, wsConnPtr);
     return;
 }

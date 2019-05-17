@@ -2,7 +2,7 @@
  *
  *  PluginsManager.cc
  *  An Tao
- *  
+ *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
  *  Use of this source code is governed by a MIT license
@@ -26,8 +26,7 @@ PluginsManager::~PluginsManager()
     }
 }
 
-void PluginsManager::initializeAllPlugins(const Json::Value &configs,
-                                          const std::function<void(PluginBase *)> &forEachCallback)
+void PluginsManager::initializeAllPlugins(const Json::Value &configs, const std::function<void(PluginBase *)> &forEachCallback)
 {
     assert(configs.isArray());
     std::vector<PluginBase *> plugins;
@@ -47,7 +46,7 @@ void PluginsManager::initializeAllPlugins(const Json::Value &configs,
         assert(dependencies.isArray() || dependencies.isNull());
         if (dependencies.isArray())
         {
-            //Is not null and is an array
+            // Is not null and is an array
             for (auto &depName : dependencies)
             {
                 auto *dp = getPlugin(depName.asString());
@@ -68,7 +67,7 @@ void PluginsManager::initializeAllPlugins(const Json::Value &configs,
         });
         plugins.push_back(pluginPtr);
     }
-    //Initialize them, Depth first
+    // Initialize them, Depth first
     for (auto plugin : plugins)
     {
         plugin->initialize();

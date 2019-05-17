@@ -15,16 +15,15 @@
 #pragma once
 
 #include <drogon/config.h>
-#include <trantor/utils/Date.h>
-#include <string>
-#include <vector>
 #include <memory>
+#include <string>
+#include <trantor/utils/Date.h>
+#include <vector>
 
 namespace drogon
 {
 namespace utils
 {
-
 /// Determine if the string is an integer
 bool isInteger(const std::string &str);
 
@@ -92,5 +91,5 @@ std::string formattedString(const char *format, ...);
  */
 int createPath(const std::string &path);
 
-} // namespace utils
-} // namespace drogon
+}  // namespace utils
+}  // namespace drogon

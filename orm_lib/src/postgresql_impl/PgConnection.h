@@ -15,22 +15,21 @@
 #pragma once
 
 #include "../DbConnection.h"
-#include <trantor/net/EventLoop.h>
-#include <trantor/net/inner/Channel.h>
 #include <drogon/orm/DbClient.h>
-#include <trantor/utils/NonCopyable.h>
+#include <functional>
+#include <iostream>
 #include <libpq-fe.h>
 #include <memory>
 #include <string>
-#include <functional>
-#include <iostream>
+#include <trantor/net/EventLoop.h>
+#include <trantor/net/inner/Channel.h>
+#include <trantor/utils/NonCopyable.h>
 #include <unordered_map>
 
 namespace drogon
 {
 namespace orm
 {
-
 class PgConnection;
 typedef std::shared_ptr<PgConnection> PgConnectionPtr;
 class PgConnection : public DbConnection, public std::enable_shared_from_this<PgConnection>
@@ -59,14 +58,16 @@ class PgConnection : public DbConnection, public std::enable_shared_from_this<Pg
         else
         {
             auto thisPtr = shared_from_this();
-            _loop->queueInLoop([thisPtr,
-                                sql = std::move(sql),
-                                paraNum,
-                                parameters = std::move(parameters),
-                                length = std::move(length),
-                                format = std::move(format),
-                                rcb = std::move(rcb),
-                                exceptCallback = std::move(exceptCallback)]() mutable {
+            _loop->queueInLoop([
+                thisPtr,
+                sql = std::move(sql),
+                paraNum,
+                parameters = std::move(parameters),
+                length = std::move(length),
+                format = std::move(format),
+                rcb = std::move(rcb),
+                exceptCallback = std::move(exceptCallback)
+            ]() mutable {
                 thisPtr->execSqlInLoop(std::move(sql),
                                        paraNum,
                                        std::move(parameters),
@@ -95,7 +96,7 @@ class PgConnection : public DbConnection, public std::enable_shared_from_this<Pg
                        std::vector<int> &&format,
                        ResultCallback &&rcb,
                        std::function<void(const std::exception_ptr &)> &&exceptCallback);
-    //std::function<void()> _preparingCallback;
+    // std::function<void()> _preparingCallback;
     void doAfterPreparing();
     std::string _statementName;
     int _paraNum;
@@ -104,5 +105,5 @@ class PgConnection : public DbConnection, public std::enable_shared_from_this<Pg
     std::vector<int> _format;
 };
 
-} // namespace orm
-} // namespace drogon
+}  // namespace orm
+}  // namespace drogon

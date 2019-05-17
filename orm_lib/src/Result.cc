@@ -13,10 +13,10 @@
  */
 
 #include "ResultImpl.h"
-#include <drogon/orm/Result.h>
-#include <drogon/orm/Row.h>
-#include <drogon/orm/ResultIterator.h>
 #include <assert.h>
+#include <drogon/orm/Result.h>
+#include <drogon/orm/ResultIterator.h>
+#include <drogon/orm/Row.h>
 
 using namespace drogon::orm;
 

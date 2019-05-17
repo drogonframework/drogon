@@ -14,24 +14,24 @@
 
 #pragma once
 
-#include <trantor/utils/Logger.h>
 #include <drogon/config.h>
+#include <trantor/utils/Logger.h>
 #include <trantor/utils/MsgBuffer.h>
 
-#include <unordered_map>
-#include <string>
 #include <sstream>
-#include <stdio.h>
 #include <stdarg.h>
+#include <stdio.h>
+#include <string>
+#include <unordered_map>
 
 namespace drogon
 {
-
 /// This class represents the data set displayed in views.
 class HttpViewData
 {
   public:
-    /// The function template is used to get an item in the data set by the @param key.
+    /// The function template is used to get an item in the data set by the @param
+    /// key.
     template <typename T>
     const T &get(const std::string &key, T &&nullVal = T()) const
     {
@@ -60,7 +60,8 @@ class HttpViewData
         _viewData[key] = obj;
     }
 
-    /// Insert an item identified by the @param key into the data set; The item is converted to a string.
+    /// Insert an item identified by the @param key into the data set; The item is
+    /// converted to a string.
     template <typename T>
     void insertAsString(const std::string &key, T &&val)
     {
@@ -70,8 +71,7 @@ class HttpViewData
     }
 
     /// Insert a formated string identified by the @param key.
-    void insertFormattedString(const std::string &key,
-                               const char *format, ...)
+    void insertFormattedString(const std::string &key, const char *format, ...)
     {
         std::string strBuffer;
         strBuffer.resize(128);
@@ -133,4 +133,4 @@ class HttpViewData
     mutable ViewDataMap _viewData;
 };
 
-} // namespace drogon
+}  // namespace drogon

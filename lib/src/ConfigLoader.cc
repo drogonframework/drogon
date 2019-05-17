@@ -2,7 +2,7 @@
  *
  *  ConfigLoader.cc
  *  An Tao
- *  
+ *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
  *  Use of this source code is governed by a MIT license
@@ -14,13 +14,13 @@
 
 #include "ConfigLoader.h"
 
-#include <trantor/utils/Logger.h>
 #include <drogon/HttpAppFramework.h>
-#include <iostream>
 #include <fstream>
-#include <unistd.h>
-#include <thread>
+#include <iostream>
 #include <sstream>
+#include <thread>
+#include <trantor/utils/Logger.h>
+#include <unistd.h>
 
 using namespace drogon;
 static bool bytesSize(std::string &sizeStr, size_t &size)
@@ -35,43 +35,43 @@ static bool bytesSize(std::string &sizeStr, size_t &size)
         size = 1;
         switch (sizeStr[sizeStr.length() - 1])
         {
-        case 'k':
-        case 'K':
-            size = 1024;
-            sizeStr.resize(sizeStr.length() - 1);
-            break;
-        case 'M':
-        case 'm':
-            size = (1024 * 1024);
-            sizeStr.resize(sizeStr.length() - 1);
-            break;
-        case 'g':
-        case 'G':
-            size = (1024 * 1024 * 1024);
-            sizeStr.resize(sizeStr.length() - 1);
-            break;
+            case 'k':
+            case 'K':
+                size = 1024;
+                sizeStr.resize(sizeStr.length() - 1);
+                break;
+            case 'M':
+            case 'm':
+                size = (1024 * 1024);
+                sizeStr.resize(sizeStr.length() - 1);
+                break;
+            case 'g':
+            case 'G':
+                size = (1024 * 1024 * 1024);
+                sizeStr.resize(sizeStr.length() - 1);
+                break;
 #if ((ULONG_MAX) != (UINT_MAX))
-            //64bit system
-        case 't':
-        case 'T':
-            size = (1024L * 1024L * 1024L * 1024L);
-            sizeStr.resize(sizeStr.length() - 1);
-            break;
+            // 64bit system
+            case 't':
+            case 'T':
+                size = (1024L * 1024L * 1024L * 1024L);
+                sizeStr.resize(sizeStr.length() - 1);
+                break;
 #endif
-        case '0':
-        case '1':
-        case '2':
-        case '3':
-        case '4':
-        case '5':
-        case '7':
-        case '8':
-        case '9':
-            break;
-        default:
-            std::cerr << "Invalid value of client_max_body_size: " << sizeStr << std::endl;
-            return false;
-            break;
+            case '0':
+            case '1':
+            case '2':
+            case '3':
+            case '4':
+            case '5':
+            case '7':
+            case '8':
+            case '9':
+                break;
+            default:
+                std::cerr << "Invalid value of client_max_body_size: " << sizeStr << std::endl;
+                return false;
+                break;
         }
         std::istringstream iss(sizeStr);
         size_t tmpSize;
@@ -175,7 +175,7 @@ static void loadControllers(const Json::Value &controllers)
                 {
                     constraints.push_back(Post);
                 }
-                else if (strMethod == "head") //The branch nerver work
+                else if (strMethod == "head")  // The branch nerver work
                 {
                     constraints.push_back(Head);
                 }
@@ -203,34 +203,34 @@ static void loadApp(const Json::Value &app)
 {
     if (!app)
         return;
-    //threads number
+    // threads number
     auto threadsNum = app.get("threads_num", 1).asUInt64();
     if (threadsNum == 0)
     {
-        //set the number to the number of processors.
+        // set the number to the number of processors.
         threadsNum = std::thread::hardware_concurrency();
         LOG_DEBUG << "The number of processors is " << threadsNum;
     }
     if (threadsNum < 1)
         threadsNum = 1;
     drogon::app().setThreadNum(threadsNum);
-    //session
+    // session
     auto enableSession = app.get("enable_session", false).asBool();
     auto timeout = app.get("session_timeout", 0).asUInt64();
     if (enableSession)
         drogon::app().enableSession(timeout);
     else
         drogon::app().disableSession();
-    //document root
+    // document root
     auto documentRoot = app.get("document_root", "").asString();
     if (documentRoot != "")
     {
         drogon::app().setDocumentRoot(documentRoot);
     }
-    //upload path
+    // upload path
     auto uploadPath = app.get("upload_path", "uploads").asString();
     drogon::app().setUploadPath(uploadPath);
-    //file types
+    // file types
     auto fileTypes = app["file_types"];
     if (fileTypes.isArray() && !fileTypes.empty())
     {
@@ -242,20 +242,20 @@ static void loadApp(const Json::Value &app)
         }
         drogon::app().setFileTypes(types);
     }
-    //max connections
+    // max connections
     auto maxConns = app.get("max_connections", 0).asUInt64();
     if (maxConns > 0)
     {
         drogon::app().setMaxConnectionNum(maxConns);
     }
-    //max connections per IP
+    // max connections per IP
     auto maxConnsPerIP = app.get("max_connections_per_ip", 0).asUInt64();
     if (maxConnsPerIP > 0)
     {
         drogon::app().setMaxConnectionNumPerIP(maxConnsPerIP);
     }
 
-    //dynamic views
+    // dynamic views
     auto enableDynamicViews = app.get("load_dynamic_views", false).asBool();
     if (enableDynamicViews)
     {
@@ -271,15 +271,15 @@ static void loadApp(const Json::Value &app)
             drogon::app().enableDynamicViewsLoading(paths);
         }
     }
-    //log
+    // log
     loadLogSetting(app["log"]);
-    //run as daemon
+    // run as daemon
     auto runAsDaemon = app.get("run_as_daemon", false).asBool();
     if (runAsDaemon)
     {
         drogon::app().enableRunAsDaemon();
     }
-    //relaunch
+    // relaunch
     auto relaunch = app.get("relaunch_on_error", false).asBool();
     if (relaunch)
     {
@@ -292,7 +292,7 @@ static void loadApp(const Json::Value &app)
     auto staticFilesCacheTime = app.get("static_files_cache_time", 5).asInt();
     drogon::app().setStaticFilesCacheTime(staticFilesCacheTime);
     loadControllers(app["simple_controllers_map"]);
-    //Kick off idle connections
+    // Kick off idle connections
     auto kickOffTimeout = app.get("idle_connection_timeout", 60).asUInt64();
     drogon::app().setIdleConnectionTimeout(kickOffTimeout);
     auto server = app.get("server_header_field", "").asString();
@@ -350,7 +350,9 @@ static void loadDbClients(const Json::Value &dbClients)
         drogon::app().createDbClient(type, host, (u_short)port, dbname, user, password, connNum, filename, name, isFast);
     }
 #else
-    std::cout << "No database is supported by drogon, please install the database development library first." << std::endl;
+    std::cout << "No database is supported by drogon, please install the "
+                 "database development library first."
+              << std::endl;
     exit(1);
 #endif
 }
@@ -380,7 +382,7 @@ static void loadSSL(const Json::Value &sslFiles)
 }
 void ConfigLoader::load()
 {
-    //std::cout<<_configJsonRoot<<std::endl;
+    // std::cout<<_configJsonRoot<<std::endl;
     loadApp(_configJsonRoot["app"]);
     loadSSL(_configJsonRoot["ssl"]);
     loadListeners(_configJsonRoot["listeners"]);

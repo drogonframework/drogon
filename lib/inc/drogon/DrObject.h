@@ -33,7 +33,9 @@ class DrObjectBase
     {
         return (className() == class_name);
     }
-    virtual ~DrObjectBase() {}
+    virtual ~DrObjectBase()
+    {
+    }
 };
 
 /**
@@ -59,8 +61,10 @@ class DrObject : public virtual DrObjectBase
     }
 
   protected:
-    //protect constructor to make this class only inheritable
-    DrObject() {}
+    // protect constructor to make this class only inheritable
+    DrObject()
+    {
+    }
 
   private:
     class DrAllocator
@@ -78,9 +82,7 @@ class DrObject : public virtual DrObjectBase
         template <typename D>
         typename std::enable_if<std::is_default_constructible<D>::value, void>::type registerClass()
         {
-            DrClassMap::registerClass(className(), []() -> DrObjectBase * {
-                return new T;
-            });
+            DrClassMap::registerClass(className(), []() -> DrObjectBase * { return new T; });
         }
         template <typename D>
         typename std::enable_if<!std::is_default_constructible<D>::value, void>::type registerClass()
@@ -88,10 +90,10 @@ class DrObject : public virtual DrObjectBase
         }
     };
 
-    //use static val to register allocator function for class T;
+    // use static val to register allocator function for class T;
     static DrAllocator _alloc;
 };
 template <typename T>
 typename DrObject<T>::DrAllocator DrObject<T>::_alloc;
 
-} // namespace drogon
+}  // namespace drogon

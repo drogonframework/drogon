@@ -2,7 +2,7 @@
  *
  *  HttpControllersRouter.h
  *  An Tao
- *  
+ *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
  *  Use of this source code is governed by a MIT license
@@ -13,39 +13,32 @@
  */
 
 #pragma once
+#include "AOPAdvice.h"
 #include "HttpRequestImpl.h"
 #include "HttpResponseImpl.h"
-#include "AOPAdvice.h"
-#include <trantor/utils/NonCopyable.h>
+#include <atomic>
 #include <drogon/HttpBinder.h>
 #include <drogon/HttpFilter.h>
-#include <vector>
+#include <memory>
+#include <mutex>
 #include <regex>
 #include <string>
-#include <mutex>
-#include <memory>
-#include <atomic>
+#include <trantor/utils/NonCopyable.h>
+#include <vector>
 
 namespace drogon
 {
 class HttpControllersRouter : public trantor::NonCopyable
 {
-public:
-    HttpControllersRouter(const std::deque<std::function<void(const HttpRequestPtr &,
-                                                              AdviceCallback &&,
-                                                              AdviceChainCallback &&)>>
-                              &postRoutingAdvices,
-                          const std::deque<std::function<void(const HttpRequestPtr &)>>
-                              &postRoutingObservers,
-                          const std::vector<std::function<void(const HttpRequestPtr &,
-                                                               AdviceCallback &&,
-                                                               AdviceChainCallback &&)>>
-                              &preHandlingAdvices,
-                          const std::vector<std::function<void(const HttpRequestPtr &)>>
-                              &preHandlingObservers,
-                          const std::deque<std::function<void(const HttpRequestPtr &,
-                                                              const HttpResponsePtr &)>>
-                              &postHandlingAdvices)
+  public:
+    HttpControllersRouter(
+        const std::deque<std::function<void(const HttpRequestPtr &, AdviceCallback &&, AdviceChainCallback &&)>>
+            &postRoutingAdvices,
+        const std::deque<std::function<void(const HttpRequestPtr &)>> &postRoutingObservers,
+        const std::vector<std::function<void(const HttpRequestPtr &, AdviceCallback &&, AdviceChainCallback &&)>>
+            &preHandlingAdvices,
+        const std::vector<std::function<void(const HttpRequestPtr &)>> &preHandlingObservers,
+        const std::deque<std::function<void(const HttpRequestPtr &, const HttpResponsePtr &)>> &postHandlingAdvices)
         : _postRoutingAdvices(postRoutingAdvices),
           _preHandlingAdvices(preHandlingAdvices),
           _postRoutingObservers(postRoutingObservers),
@@ -65,7 +58,7 @@ public:
                std::string &&sessionId);
     std::vector<std::tuple<std::string, HttpMethod, std::string>> getHandlersInfo() const;
 
-private:
+  private:
     struct CtrlBinder
     {
         internal::HttpBinderBasePtr _binderPtr;
@@ -83,25 +76,19 @@ private:
         std::string _pathParameterPattern;
         std::string _pathPattern;
         std::regex _regex;
-        CtrlBinderPtr _binders[Invalid] = {nullptr}; //The enum value of Invalid is the http methods number
+        CtrlBinderPtr _binders[Invalid] = {nullptr};  // The enum value of Invalid is the http methods number
     };
     std::vector<HttpControllerRouterItem> _ctrlVector;
     std::mutex _ctrlMutex;
     std::regex _ctrlRegex;
 
-    const std::deque<std::function<void(const HttpRequestPtr &,
-                                        AdviceCallback &&,
-                                        AdviceChainCallback &&)>> &_postRoutingAdvices;
-    const std::vector<std::function<void(const HttpRequestPtr &,
-                                         AdviceCallback &&,
-                                         AdviceChainCallback &&)>> &_preHandlingAdvices;
-    const std::deque<std::function<void(const HttpRequestPtr &)>>
-        &_postRoutingObservers;
-    const std::vector<std::function<void(const HttpRequestPtr &)>>
-        &_preHandlingObservers;
-    const std::deque<std::function<void(const HttpRequestPtr &,
-                                        const HttpResponsePtr &)>>
-        &_postHandlingAdvices;
+    const std::deque<std::function<void(const HttpRequestPtr &, AdviceCallback &&, AdviceChainCallback &&)>>
+        &_postRoutingAdvices;
+    const std::vector<std::function<void(const HttpRequestPtr &, AdviceCallback &&, AdviceChainCallback &&)>>
+        &_preHandlingAdvices;
+    const std::deque<std::function<void(const HttpRequestPtr &)>> &_postRoutingObservers;
+    const std::vector<std::function<void(const HttpRequestPtr &)>> &_preHandlingObservers;
+    const std::deque<std::function<void(const HttpRequestPtr &, const HttpResponsePtr &)>> &_postHandlingAdvices;
 
     void doPreHandlingAdvices(const CtrlBinderPtr &ctrlBinderPtr,
                               const HttpControllerRouterItem &routerItem,
@@ -127,4 +114,4 @@ private:
         callback(resp);
     }
 };
-} // namespace drogon
+}  // namespace drogon

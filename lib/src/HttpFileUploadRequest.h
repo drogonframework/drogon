@@ -2,7 +2,7 @@
  *
  *  HttpFileUploadRequest.h
  *  An Tao
- *  
+ *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
  *  Use of this source code is governed by a MIT license
@@ -19,12 +19,17 @@
 
 namespace drogon
 {
-
 class HttpFileUploadRequest : public HttpRequestImpl
 {
   public:
-    const std::string &boundary() const { return _boundary; }
-    const std::vector<UploadFile> &files() const { return _files; }
+    const std::string &boundary() const
+    {
+        return _boundary;
+    }
+    const std::vector<UploadFile> &files() const
+    {
+        return _files;
+    }
     explicit HttpFileUploadRequest(const std::vector<UploadFile> &files);
 
   private:
@@ -32,4 +37,4 @@ class HttpFileUploadRequest : public HttpRequestImpl
     std::vector<UploadFile> _files;
 };
 
-} // namespace drogon
+}  // namespace drogon

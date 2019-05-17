@@ -2,7 +2,7 @@
  *
  *  HttpSimpleController.h
  *  An Tao
- *  
+ *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
  *  Use of this source code is governed by a MIT license
@@ -16,26 +16,25 @@
 
 #include <drogon/DrObject.h>
 #include <drogon/HttpAppFramework.h>
-#include <trantor/utils/Logger.h>
-#include <string>
-#include <vector>
 #include <iostream>
+#include <string>
+#include <trantor/utils/Logger.h>
+#include <vector>
 #define PATH_LIST_BEGIN           \
     static void initPathRouting() \
     {
-
 #define PATH_ADD(path, filters...) __registerSelf(path, {filters});
 
-#define PATH_LIST_END \
-    }
+#define PATH_LIST_END }
 namespace drogon
 {
-
 class HttpSimpleControllerBase : public virtual DrObjectBase
 {
   public:
     virtual void asyncHandleHttpRequest(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback) = 0;
-    virtual ~HttpSimpleControllerBase() {}
+    virtual ~HttpSimpleControllerBase()
+    {
+    }
 };
 
 template <typename T, bool AutoCreation = true>
@@ -43,14 +42,19 @@ class HttpSimpleController : public DrObject<T>, public HttpSimpleControllerBase
 {
   public:
     static const bool isAutoCreation = AutoCreation;
-    virtual ~HttpSimpleController() {}
+    virtual ~HttpSimpleController()
+    {
+    }
 
   protected:
-    HttpSimpleController() {}
+    HttpSimpleController()
+    {
+    }
     static void __registerSelf(const std::string &path, const std::vector<any> &filtersAndMethods)
     {
         LOG_TRACE << "register simple controller(" << HttpSimpleController<T>::classTypeName() << ") on path:" << path;
-        HttpAppFramework::instance().registerHttpSimpleController(path, HttpSimpleController<T>::classTypeName(), filtersAndMethods);
+        HttpAppFramework::instance().registerHttpSimpleController(
+            path, HttpSimpleController<T>::classTypeName(), filtersAndMethods);
     }
 
   private:
@@ -75,4 +79,4 @@ class HttpSimpleController : public DrObject<T>, public HttpSimpleControllerBase
 template <typename T, bool AutoCreation>
 typename HttpSimpleController<T, AutoCreation>::pathRegister HttpSimpleController<T, AutoCreation>::_register;
 
-} // namespace drogon
+}  // namespace drogon

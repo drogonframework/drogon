@@ -14,19 +14,18 @@
 #pragma once
 
 #include "../ResultImpl.h"
-#include <trantor/utils/Logger.h>
-#include <mysql.h>
-#include <memory>
-#include <string>
-#include <unordered_map>
 #include <algorithm>
+#include <memory>
+#include <mysql.h>
+#include <string>
+#include <trantor/utils/Logger.h>
+#include <unordered_map>
 #include <vector>
 
 namespace drogon
 {
 namespace orm
 {
-
 class MysqlResultImpl : public ResultImpl
 {
   public:
@@ -87,5 +86,5 @@ class MysqlResultImpl : public ResultImpl
     std::shared_ptr<std::vector<std::pair<char **, std::vector<unsigned long>>>> _rowsPtr;
 };
 
-} // namespace orm
-} // namespace drogon
+}  // namespace orm
+}  // namespace drogon

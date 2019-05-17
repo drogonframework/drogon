@@ -12,8 +12,8 @@
  *
  */
 
-#include <drogon/orm/DbClient.h>
 #include "DbClientImpl.h"
+#include <drogon/orm/DbClient.h>
 using namespace drogon::orm;
 using namespace drogon;
 
