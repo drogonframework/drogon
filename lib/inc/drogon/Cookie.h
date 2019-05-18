@@ -21,7 +21,8 @@ namespace drogon
 class Cookie
 {
   public:
-    Cookie(const std::string &key, const std::string &value) : _key(key), _value(value)
+    Cookie(const std::string &key, const std::string &value)
+        : _key(key), _value(value)
     {
     }
     Cookie() = default;

@@ -23,9 +23,10 @@
 #include <trantor/net/TcpConnection.h>
 #include <trantor/utils/Logger.h>
 #include <vector>
-#define WS_PATH_LIST_BEGIN                                                         \
-    static std::vector<std::pair<std::string, std::vector<std::string>>> __paths() \
-    {                                                                              \
+#define WS_PATH_LIST_BEGIN                                               \
+    static std::vector<std::pair<std::string, std::vector<std::string>>> \
+    __paths()                                                            \
+    {                                                                    \
         std::vector<std::pair<std::string, std::vector<std::string>>> vet;
 
 #define WS_PATH_ADD(path, filters...) vet.push_back({path, {filters}})
@@ -40,10 +41,14 @@ class WebSocketControllerBase : public virtual DrObjectBase
 {
   public:
     // This function is called when a new message is received
-    virtual void handleNewMessage(const WebSocketConnectionPtr &, std::string &&, const WebSocketMessageType &) = 0;
+    virtual void handleNewMessage(const WebSocketConnectionPtr &,
+                                  std::string &&,
+                                  const WebSocketMessageType &) = 0;
 
-    // This function is called after a new connection of WebSocket is established.
-    virtual void handleNewConnection(const HttpRequestPtr &, const WebSocketConnectionPtr &) = 0;
+    // This function is called after a new connection of WebSocket is
+    // established.
+    virtual void handleNewConnection(const HttpRequestPtr &,
+                                     const WebSocketConnectionPtr &) = 0;
 
     // This function is called after a WebSocket connection is closed
     virtual void handleConnectionClosed(const WebSocketConnectionPtr &) = 0;
@@ -68,10 +73,14 @@ class WebSocketController : public DrObject<T>, public WebSocketControllerBase
         auto vPaths = T::__paths();
         for (auto const &path : vPaths)
         {
-            LOG_TRACE << "register websocket controller (" << WebSocketController<T>::classTypeName()
+            LOG_TRACE << "register websocket controller ("
+                      << WebSocketController<T>::classTypeName()
                       << ") on path:" << path.first;
-            HttpAppFramework::instance().registerWebSocketController(
-                path.first, WebSocketController<T>::classTypeName(), path.second);
+            HttpAppFramework::instance()
+                .registerWebSocketController(path.first,
+                                             WebSocketController<
+                                                 T>::classTypeName(),
+                                             path.second);
         }
     }
 
@@ -100,6 +109,7 @@ class WebSocketController : public DrObject<T>, public WebSocketControllerBase
     }
 };
 template <typename T, bool AutoCreation>
-typename WebSocketController<T, AutoCreation>::pathRegister WebSocketController<T, AutoCreation>::_register;
+typename WebSocketController<T, AutoCreation>::pathRegister
+    WebSocketController<T, AutoCreation>::_register;
 
 }  // namespace drogon

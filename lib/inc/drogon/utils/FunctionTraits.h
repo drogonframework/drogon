@@ -35,7 +35,8 @@ struct FunctionTraits;
 
 // functor,lambda,std::function...
 template <typename Function>
-struct FunctionTraits : public FunctionTraits<decltype(&std::remove_reference<Function>::type::operator())>
+struct FunctionTraits : public FunctionTraits<decltype(
+                            &std::remove_reference<Function>::type::operator())>
 {
     static const bool isClassFunction = false;
     static const bool isDrObjectClass = false;
@@ -48,10 +49,12 @@ struct FunctionTraits : public FunctionTraits<decltype(&std::remove_reference<Fu
 
 // class instance method of const object
 template <typename ClassType, typename ReturnType, typename... Arguments>
-struct FunctionTraits<ReturnType (ClassType::*)(Arguments...) const> : FunctionTraits<ReturnType (*)(Arguments...)>
+struct FunctionTraits<ReturnType (ClassType::*)(Arguments...) const>
+    : FunctionTraits<ReturnType (*)(Arguments...)>
 {
     static const bool isClassFunction = true;
-    static const bool isDrObjectClass = IsSubClass<ClassType, DrObject<ClassType>>::value;
+    static const bool isDrObjectClass =
+        IsSubClass<ClassType, DrObject<ClassType>>::value;
     typedef ClassType class_type;
     static const std::string name()
     {
@@ -61,10 +64,12 @@ struct FunctionTraits<ReturnType (ClassType::*)(Arguments...) const> : FunctionT
 
 // class instance method of non-const object
 template <typename ClassType, typename ReturnType, typename... Arguments>
-struct FunctionTraits<ReturnType (ClassType::*)(Arguments...)> : FunctionTraits<ReturnType (*)(Arguments...)>
+struct FunctionTraits<ReturnType (ClassType::*)(Arguments...)>
+    : FunctionTraits<ReturnType (*)(Arguments...)>
 {
     static const bool isClassFunction = true;
-    static const bool isDrObjectClass = IsSubClass<ClassType, DrObject<ClassType>>::value;
+    static const bool isDrObjectClass =
+        IsSubClass<ClassType, DrObject<ClassType>>::value;
     typedef ClassType class_type;
     static const std::string name()
     {
@@ -75,8 +80,9 @@ struct FunctionTraits<ReturnType (ClassType::*)(Arguments...)> : FunctionTraits<
 // normal function for HTTP handling
 template <typename ReturnType, typename... Arguments>
 struct FunctionTraits<
-    ReturnType (*)(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback, Arguments...)>
-    : FunctionTraits<ReturnType (*)(Arguments...)>
+    ReturnType (*)(const HttpRequestPtr &req,
+                   std::function<void(const HttpResponsePtr &)> &&callback,
+                   Arguments...)> : FunctionTraits<ReturnType (*)(Arguments...)>
 {
     static const bool isHTTPFunction = true;
     typedef void class_type;
@@ -89,7 +95,8 @@ struct FunctionTraits<ReturnType (*)(Arguments...)>
     typedef ReturnType result_type;
 
     template <std::size_t Index>
-    using argument = typename std::tuple_element<Index, std::tuple<Arguments...>>::type;
+    using argument =
+        typename std::tuple_element<Index, std::tuple<Arguments...>>::type;
 
     static const std::size_t arity = sizeof...(Arguments);
     typedef void class_type;

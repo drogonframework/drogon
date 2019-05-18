@@ -35,19 +35,20 @@ class DrTemplateBase : public virtual DrObjectBase
     /// Create an object of the implementation class
     /**
      * The @param templateName represents the name of the template file.
-     * A template file is a description file with a special format. Its extension
-     * is
-     * usually .csp. The user should preprocess the template file
+     * A template file is a description file with a special format. Its
+     * extension is usually .csp. The user should preprocess the template file
      * with the drogon_ctl tool to create c++ source files.
      */
-    static std::shared_ptr<DrTemplateBase> newTemplate(std::string templateName);
+    static std::shared_ptr<DrTemplateBase> newTemplate(
+        std::string templateName);
 
     /// Generate the text string
     /**
      * The @param data represents data rendered in the string in a format
      * according to the template file.
      */
-    virtual std::string genText(const DrTemplateData &data = DrTemplateData()) = 0;
+    virtual std::string genText(
+        const DrTemplateData &data = DrTemplateData()) = 0;
 
     virtual ~DrTemplateBase(){};
     DrTemplateBase(){};

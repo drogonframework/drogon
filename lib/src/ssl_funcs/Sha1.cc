@@ -17,7 +17,8 @@
 
 static unsigned int FromBigEndian(unsigned int v)
 {
-    return ((v & 0xff) << 24) | ((v & 0xff00) << 8) | ((v & 0xff0000) >> 8) | ((v & 0xff000000) >> 24);
+    return ((v & 0xff) << 24) | ((v & 0xff00) << 8) | ((v & 0xff0000) >> 8) |
+           ((v & 0xff000000) >> 24);
 }
 
 static void WriteBigEndian64(unsigned char *p, unsigned int v)
@@ -38,13 +39,19 @@ static unsigned int LeftRol(unsigned int v, int n)
     return (v << n) | (v >> (32 - n));
 }
 
-unsigned char *SHA1(const unsigned char *data, size_t dataLen, unsigned char *md)
+unsigned char *SHA1(const unsigned char *data,
+                    size_t dataLen,
+                    unsigned char *md)
 {
     unsigned char *pbytes = (unsigned char *)data;
     unsigned int nbyte = dataLen;
 
     static unsigned int words[80];
-    unsigned int H[5] = {0x67452301, 0xEFCDAB89, 0x98BADCFE, 0x10325476, 0xC3D2E1F0};
+    unsigned int H[5] = {0x67452301,
+                         0xEFCDAB89,
+                         0x98BADCFE,
+                         0x10325476,
+                         0xC3D2E1F0};
     unsigned int a, b, c, d, e, f, k, temp, bitlen[2], word;
     unsigned int i, j, index, p1, p2, maxlen;
     unsigned char spec[4] = {0};
@@ -101,7 +108,9 @@ unsigned char *SHA1(const unsigned char *data, size_t dataLen, unsigned char *md
             }
             else
             {
-                words[i] = LeftRol(words[i - 3] ^ words[i - 8] ^ words[i - 14] ^ words[i - 16], 1);
+                words[i] = LeftRol(words[i - 3] ^ words[i - 8] ^ words[i - 14] ^
+                                       words[i - 16],
+                                   1);
             }
             if (i < 20)
             {

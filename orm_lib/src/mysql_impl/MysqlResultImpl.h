@@ -43,24 +43,31 @@ class MysqlResultImpl : public ResultImpl
     {
         if (_fieldNum > 0)
         {
-            _fieldMapPtr = std::make_shared<std::unordered_map<std::string, row_size_type>>();
+            _fieldMapPtr = std::make_shared<
+                std::unordered_map<std::string, row_size_type>>();
             for (row_size_type i = 0; i < _fieldNum; i++)
             {
                 std::string fieldName = _fieldArray[i].name;
-                std::transform(fieldName.begin(), fieldName.end(), fieldName.begin(), tolower);
+                std::transform(fieldName.begin(),
+                               fieldName.end(),
+                               fieldName.begin(),
+                               tolower);
                 (*_fieldMapPtr)[fieldName] = i;
             }
         }
         if (size() > 0)
         {
-            _rowsPtr = std::make_shared<std::vector<std::pair<char **, std::vector<unsigned long>>>>();
+            _rowsPtr = std::make_shared<
+                std::vector<std::pair<char **, std::vector<unsigned long>>>>();
             MYSQL_ROW row;
             std::vector<unsigned long> vLens;
             vLens.resize(_fieldNum);
             while ((row = mysql_fetch_row(r.get())) != NULL)
             {
                 auto lengths = mysql_fetch_lengths(r.get());
-                memcpy(vLens.data(), lengths, sizeof(unsigned long) * _fieldNum);
+                memcpy(vLens.data(),
+                       lengths,
+                       sizeof(unsigned long) * _fieldNum);
                 _rowsPtr->push_back(std::make_pair(row, vLens));
             }
         }
@@ -70,9 +77,11 @@ class MysqlResultImpl : public ResultImpl
     virtual const char *columnName(row_size_type number) const override;
     virtual size_type affectedRows() const noexcept override;
     virtual row_size_type columnNumber(const char colName[]) const override;
-    virtual const char *getValue(size_type row, row_size_type column) const override;
+    virtual const char *getValue(size_type row,
+                                 row_size_type column) const override;
     virtual bool isNull(size_type row, row_size_type column) const override;
-    virtual field_size_type getLength(size_type row, row_size_type column) const override;
+    virtual field_size_type getLength(size_type row,
+                                      row_size_type column) const override;
     virtual unsigned long long insertId() const noexcept override;
 
   private:
@@ -82,8 +91,10 @@ class MysqlResultImpl : public ResultImpl
     const Result::row_size_type _fieldNum;
     const size_type _affectedRows;
     const unsigned long long _insertId;
-    std::shared_ptr<std::unordered_map<std::string, row_size_type>> _fieldMapPtr;
-    std::shared_ptr<std::vector<std::pair<char **, std::vector<unsigned long>>>> _rowsPtr;
+    std::shared_ptr<std::unordered_map<std::string, row_size_type>>
+        _fieldMapPtr;
+    std::shared_ptr<std::vector<std::pair<char **, std::vector<unsigned long>>>>
+        _rowsPtr;
 };
 
 }  // namespace orm

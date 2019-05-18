@@ -76,10 +76,10 @@ class Row
   protected:
     friend class Field;
     /**
-    * Row number
-    * You'd expect this to be a size_t, but due to the way reverse iterators
-    * are related to regular iterators, it must be allowed to underflow to -1.
-    */
+     * Row number
+     * You'd expect this to be a size_t, but due to the way reverse iterators
+     * are related to regular iterators, it must be allowed to underflow to -1.
+     */
     long _index = 0;
     size_t _end = 0;
     friend class Result;

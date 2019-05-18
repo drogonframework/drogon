@@ -20,13 +20,17 @@ using namespace drogon;
 PluginsManager::~PluginsManager()
 {
     // Shut down all plugins in reverse order of initializaiton.
-    for (auto iter = _initializedPlugins.rbegin(); iter != _initializedPlugins.rend(); iter++)
+    for (auto iter = _initializedPlugins.rbegin();
+         iter != _initializedPlugins.rend();
+         iter++)
     {
         (*iter)->shutdown();
     }
 }
 
-void PluginsManager::initializeAllPlugins(const Json::Value &configs, const std::function<void(PluginBase *)> &forEachCallback)
+void PluginsManager::initializeAllPlugins(
+    const Json::Value &configs,
+    const std::function<void(PluginBase *)> &forEachCallback)
 {
     assert(configs.isArray());
     std::vector<PluginBase *> plugins;
@@ -56,7 +60,8 @@ void PluginsManager::initializeAllPlugins(const Json::Value &configs, const std:
                 }
                 else
                 {
-                    LOG_FATAL << "Plugin " << depName.asString() << " not defined";
+                    LOG_FATAL << "Plugin " << depName.asString()
+                              << " not defined";
                     abort();
                 }
             }

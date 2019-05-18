@@ -49,8 +49,10 @@ class Mapper
   public:
     Mapper<T> &limit(size_t limit);
     Mapper<T> &offset(size_t offset);
-    Mapper<T> &orderBy(const std::string &colName, const SortOrder &order = SortOrder::ASC);
-    Mapper<T> &orderBy(size_t colIndex, const SortOrder &order = SortOrder::ASC);
+    Mapper<T> &orderBy(const std::string &colName,
+                       const SortOrder &order = SortOrder::ASC);
+    Mapper<T> &orderBy(size_t colIndex,
+                       const SortOrder &order = SortOrder::ASC);
     Mapper<T> &forUpdate();
 
     typedef std::function<void(T)> SingleRowCallback;
@@ -61,44 +63,64 @@ class Mapper
     {
     }
 
-    typedef typename internal::Traits<T, !std::is_same<typename T::PrimaryKeyType, void>::value>::type TraitsPKType;
+    typedef typename internal::
+        Traits<T, !std::is_same<typename T::PrimaryKeyType, void>::value>::type
+            TraitsPKType;
 
     T findByPrimaryKey(const TraitsPKType &key) noexcept(false);
 
-    void findByPrimaryKey(const TraitsPKType &key, const SingleRowCallback &rcb, const ExceptionCallback &ecb) noexcept;
+    void findByPrimaryKey(const TraitsPKType &key,
+                          const SingleRowCallback &rcb,
+                          const ExceptionCallback &ecb) noexcept;
 
     std::future<T> findFutureByPrimaryKey(const TraitsPKType &key) noexcept;
 
     std::vector<T> findAll() noexcept(false);
-    void findAll(const MultipleRowsCallback &rcb, const ExceptionCallback &ecb) noexcept;
+    void findAll(const MultipleRowsCallback &rcb,
+                 const ExceptionCallback &ecb) noexcept;
     std::future<std::vector<T>> findFutureAll() noexcept;
 
     size_t count(const Criteria &criteria = Criteria()) noexcept(false);
-    void count(const Criteria &criteria, const CountCallback &rcb, const ExceptionCallback &ecb) noexcept;
-    std::future<size_t> countFuture(const Criteria &criteria = Criteria()) noexcept;
+    void count(const Criteria &criteria,
+               const CountCallback &rcb,
+               const ExceptionCallback &ecb) noexcept;
+    std::future<size_t> countFuture(
+        const Criteria &criteria = Criteria()) noexcept;
 
     T findOne(const Criteria &criteria) noexcept(false);
-    void findOne(const Criteria &criteria, const SingleRowCallback &rcb, const ExceptionCallback &ecb) noexcept;
+    void findOne(const Criteria &criteria,
+                 const SingleRowCallback &rcb,
+                 const ExceptionCallback &ecb) noexcept;
     std::future<T> findFutureOne(const Criteria &criteria) noexcept;
 
     std::vector<T> findBy(const Criteria &criteria) noexcept(false);
-    void findBy(const Criteria &criteria, const MultipleRowsCallback &rcb, const ExceptionCallback &ecb) noexcept;
+    void findBy(const Criteria &criteria,
+                const MultipleRowsCallback &rcb,
+                const ExceptionCallback &ecb) noexcept;
     std::future<std::vector<T>> findFutureBy(const Criteria &criteria) noexcept;
 
     void insert(T &obj) noexcept(false);
-    void insert(const T &obj, const SingleRowCallback &rcb, const ExceptionCallback &ecb) noexcept;
+    void insert(const T &obj,
+                const SingleRowCallback &rcb,
+                const ExceptionCallback &ecb) noexcept;
     std::future<T> insertFuture(const T &) noexcept;
 
     size_t update(const T &obj) noexcept(false);
-    void update(const T &obj, const CountCallback &rcb, const ExceptionCallback &ecb) noexcept;
+    void update(const T &obj,
+                const CountCallback &rcb,
+                const ExceptionCallback &ecb) noexcept;
     std::future<size_t> updateFuture(const T &obj) noexcept;
 
     size_t deleteOne(const T &obj) noexcept(false);
-    void deleteOne(const T &obj, const CountCallback &rcb, const ExceptionCallback &ecb) noexcept;
+    void deleteOne(const T &obj,
+                   const CountCallback &rcb,
+                   const ExceptionCallback &ecb) noexcept;
     std::future<size_t> deleteFutureOne(const T &obj) noexcept;
 
     size_t deleteBy(const Criteria &criteria) noexcept(false);
-    void deleteBy(const Criteria &criteria, const CountCallback &rcb, const ExceptionCallback &ecb) noexcept;
+    void deleteBy(const Criteria &criteria,
+                  const CountCallback &rcb,
+                  const ExceptionCallback &ecb) noexcept;
     std::future<size_t> deleteFutureBy(const Criteria &criteria) noexcept;
 
   private:
@@ -115,15 +137,19 @@ class Mapper
         _forUpdate = false;
     }
     template <typename PKType = decltype(T::primaryKeyName)>
-    typename std::enable_if<std::is_same<const std::string, PKType>::value, void>::type makePrimaryKeyCriteria(std::string &sql)
+    typename std::enable_if<std::is_same<const std::string, PKType>::value,
+                            void>::type
+    makePrimaryKeyCriteria(std::string &sql)
     {
         sql += " where ";
         sql += T::primaryKeyName;
         sql += " = $?";
     }
     template <typename PKType = decltype(T::primaryKeyName)>
-    typename std::enable_if<std::is_same<const std::vector<std::string>, PKType>::value, void>::type makePrimaryKeyCriteria(
-        std::string &sql)
+    typename std::enable_if<
+        std::is_same<const std::vector<std::string>, PKType>::value,
+        void>::type
+    makePrimaryKeyCriteria(std::string &sql)
     {
         sql += " where ";
         for (size_t i = 0; i < T::primaryKeyName.size(); i++)
@@ -137,39 +163,49 @@ class Mapper
         }
     }
     template <typename PKType = decltype(T::primaryKeyName)>
-    typename std::enable_if<std::is_same<const std::string, PKType>::value, void>::type outputPrimeryKeyToBinder(
-        const TraitsPKType &pk,
-        internal::SqlBinder &binder)
+    typename std::enable_if<std::is_same<const std::string, PKType>::value,
+                            void>::type
+    outputPrimeryKeyToBinder(const TraitsPKType &pk,
+                             internal::SqlBinder &binder)
     {
         binder << pk;
     }
     template <typename PKType = decltype(T::primaryKeyName)>
-    typename std::enable_if<std::is_same<const std::vector<std::string>, PKType>::value, void>::type outputPrimeryKeyToBinder(
-        const TraitsPKType &pk,
-        internal::SqlBinder &binder)
+    typename std::enable_if<
+        std::is_same<const std::vector<std::string>, PKType>::value,
+        void>::type
+    outputPrimeryKeyToBinder(const TraitsPKType &pk,
+                             internal::SqlBinder &binder)
     {
         tupleToBinder<typename T::PrimaryKeyType>(pk, binder);
     }
 
     template <typename TP, ssize_t N = std::tuple_size<TP>::value>
-    typename std::enable_if<(N > 1), void>::type tupleToBinder(const TP &t, internal::SqlBinder &binder)
+    typename std::enable_if<(N > 1), void>::type tupleToBinder(
+        const TP &t,
+        internal::SqlBinder &binder)
     {
         tupleToBinder<TP, N - 1>(t, binder);
         binder << std::get<N - 1>(t);
     }
     template <typename TP, ssize_t N = std::tuple_size<TP>::value>
-    typename std::enable_if<(N == 1), void>::type tupleToBinder(const TP &t, internal::SqlBinder &binder)
+    typename std::enable_if<(N == 1), void>::type tupleToBinder(
+        const TP &t,
+        internal::SqlBinder &binder)
     {
         binder << std::get<0>(t);
     }
 
-    std::string replaceSqlPlaceHolder(const std::string &sqlStr, const std::string &holderStr) const;
+    std::string replaceSqlPlaceHolder(const std::string &sqlStr,
+                                      const std::string &holderStr) const;
 };
 
 template <typename T>
-inline T Mapper<T>::findByPrimaryKey(const typename Mapper<T>::TraitsPKType &key) noexcept(false)
+inline T Mapper<T>::findByPrimaryKey(
+    const typename Mapper<T>::TraitsPKType &key) noexcept(false)
 {
-    static_assert(!std::is_same<typename T::PrimaryKeyType, void>::value, "No primary key in the table!");
+    static_assert(!std::is_same<typename T::PrimaryKeyType, void>::value,
+                  "No primary key in the table!");
     // return findOne(Criteria(T::primaryKeyName, key));
     std::string sql = "select * from ";
     sql += T::tableName;
@@ -201,11 +237,13 @@ inline T Mapper<T>::findByPrimaryKey(const typename Mapper<T>::TraitsPKType &key
 }
 
 template <typename T>
-inline void Mapper<T>::findByPrimaryKey(const typename Mapper<T>::TraitsPKType &key,
-                                        const SingleRowCallback &rcb,
-                                        const ExceptionCallback &ecb) noexcept
+inline void Mapper<T>::findByPrimaryKey(
+    const typename Mapper<T>::TraitsPKType &key,
+    const SingleRowCallback &rcb,
+    const ExceptionCallback &ecb) noexcept
 {
-    static_assert(!std::is_same<typename T::PrimaryKeyType, void>::value, "No primary key in the table!");
+    static_assert(!std::is_same<typename T::PrimaryKeyType, void>::value,
+                  "No primary key in the table!");
     // findOne(Criteria(T::primaryKeyName, key), rcb, ecb);
     std::string sql = "select * from ";
     sql += T::tableName;
@@ -236,9 +274,11 @@ inline void Mapper<T>::findByPrimaryKey(const typename Mapper<T>::TraitsPKType &
 }
 
 template <typename T>
-inline std::future<T> Mapper<T>::findFutureByPrimaryKey(const typename Mapper<T>::TraitsPKType &key) noexcept
+inline std::future<T> Mapper<T>::findFutureByPrimaryKey(
+    const typename Mapper<T>::TraitsPKType &key) noexcept
 {
-    static_assert(!std::is_same<typename T::PrimaryKeyType, void>::value, "No primary key in the table!");
+    static_assert(!std::is_same<typename T::PrimaryKeyType, void>::value,
+                  "No primary key in the table!");
     // return findFutureOne(Criteria(T::primaryKeyName, key));
     std::string sql = "select * from ";
     sql += T::tableName;
@@ -342,7 +382,9 @@ inline T Mapper<T>::findOne(const Criteria &criteria) noexcept(false)
 }
 
 template <typename T>
-inline void Mapper<T>::findOne(const Criteria &criteria, const SingleRowCallback &rcb, const ExceptionCallback &ecb) noexcept
+inline void Mapper<T>::findOne(const Criteria &criteria,
+                               const SingleRowCallback &rcb,
+                               const ExceptionCallback &ecb) noexcept
 {
     std::string sql = "select * from ";
     sql += T::tableName;
@@ -396,7 +438,8 @@ inline void Mapper<T>::findOne(const Criteria &criteria, const SingleRowCallback
 }
 
 template <typename T>
-inline std::future<T> Mapper<T>::findFutureOne(const Criteria &criteria) noexcept
+inline std::future<T> Mapper<T>::findFutureOne(
+    const Criteria &criteria) noexcept
 {
     std::string sql = "select * from ";
     sql += T::tableName;
@@ -466,7 +509,8 @@ inline std::future<T> Mapper<T>::findFutureOne(const Criteria &criteria) noexcep
     return prom->get_future();
 }
 template <typename T>
-inline std::vector<T> Mapper<T>::findBy(const Criteria &criteria) noexcept(false)
+inline std::vector<T> Mapper<T>::findBy(const Criteria &criteria) noexcept(
+    false)
 {
     std::string sql = "select * from ";
     sql += T::tableName;
@@ -516,7 +560,9 @@ inline std::vector<T> Mapper<T>::findBy(const Criteria &criteria) noexcept(false
     return ret;
 }
 template <typename T>
-inline void Mapper<T>::findBy(const Criteria &criteria, const MultipleRowsCallback &rcb, const ExceptionCallback &ecb) noexcept
+inline void Mapper<T>::findBy(const Criteria &criteria,
+                              const MultipleRowsCallback &rcb,
+                              const ExceptionCallback &ecb) noexcept
 {
     std::string sql = "select * from ";
     sql += T::tableName;
@@ -563,7 +609,8 @@ inline void Mapper<T>::findBy(const Criteria &criteria, const MultipleRowsCallba
     binder >> ecb;
 }
 template <typename T>
-inline std::future<std::vector<T>> Mapper<T>::findFutureBy(const Criteria &criteria) noexcept
+inline std::future<std::vector<T>> Mapper<T>::findFutureBy(
+    const Criteria &criteria) noexcept
 {
     std::string sql = "select * from ";
     sql += T::tableName;
@@ -599,7 +646,8 @@ inline std::future<std::vector<T>> Mapper<T>::findFutureBy(const Criteria &crite
     if (_offset)
         binder << _offset;
     clear();
-    std::shared_ptr<std::promise<std::vector<T>>> prom = std::make_shared<std::promise<std::vector<T>>>();
+    std::shared_ptr<std::promise<std::vector<T>>> prom =
+        std::make_shared<std::promise<std::vector<T>>>();
     binder >> [=](const Result &r) {
         std::vector<T> ret;
         for (auto const &row : r)
@@ -618,7 +666,8 @@ inline std::vector<T> Mapper<T>::findAll() noexcept(false)
     return findBy(Criteria());
 }
 template <typename T>
-inline void Mapper<T>::findAll(const MultipleRowsCallback &rcb, const ExceptionCallback &ecb) noexcept
+inline void Mapper<T>::findAll(const MultipleRowsCallback &rcb,
+                               const ExceptionCallback &ecb) noexcept
 {
     findBy(Criteria(), rcb, ecb);
 }
@@ -652,7 +701,9 @@ inline size_t Mapper<T>::count(const Criteria &criteria) noexcept(false)
     return r[0]["count"].as<size_t>();
 }
 template <typename T>
-inline void Mapper<T>::count(const Criteria &criteria, const CountCallback &rcb, const ExceptionCallback &ecb) noexcept
+inline void Mapper<T>::count(const Criteria &criteria,
+                             const CountCallback &rcb,
+                             const ExceptionCallback &ecb) noexcept
 {
     std::string sql = "select count(*) from ";
     sql += T::tableName;
@@ -673,7 +724,8 @@ inline void Mapper<T>::count(const Criteria &criteria, const CountCallback &rcb,
     binder >> ecb;
 }
 template <typename T>
-inline std::future<size_t> Mapper<T>::countFuture(const Criteria &criteria) noexcept
+inline std::future<size_t> Mapper<T>::countFuture(
+    const Criteria &criteria) noexcept
 {
     std::string sql = "select count(*) from ";
     sql += T::tableName;
@@ -688,7 +740,8 @@ inline std::future<size_t> Mapper<T>::countFuture(const Criteria &criteria) noex
     if (criteria)
         criteria.outputArgs(binder);
 
-    std::shared_ptr<std::promise<size_t>> prom = std::make_shared<std::promise<size_t>>();
+    std::shared_ptr<std::promise<size_t>> prom =
+        std::make_shared<std::promise<size_t>>();
     binder >> [=](const Result &r) {
         assert(r.size() == 1);
         prom->set_value(r[0]["count"].as<size_t>());
@@ -741,7 +794,9 @@ inline void Mapper<T>::insert(T &obj) noexcept(false)
     }
 }
 template <typename T>
-inline void Mapper<T>::insert(const T &obj, const SingleRowCallback &rcb, const ExceptionCallback &ecb) noexcept
+inline void Mapper<T>::insert(const T &obj,
+                              const SingleRowCallback &rcb,
+                              const ExceptionCallback &ecb) noexcept
 {
     clear();
     std::string sql = "insert into ";
@@ -834,7 +889,8 @@ template <typename T>
 inline size_t Mapper<T>::update(const T &obj) noexcept(false)
 {
     clear();
-    static_assert(!std::is_same<typename T::PrimaryKeyType, void>::value, "No primary key in the table!");
+    static_assert(!std::is_same<typename T::PrimaryKeyType, void>::value,
+                  "No primary key in the table!");
     std::string sql = "update ";
     sql += T::tableName;
     sql += " set ";
@@ -860,10 +916,13 @@ inline size_t Mapper<T>::update(const T &obj) noexcept(false)
     return r.affectedRows();
 }
 template <typename T>
-inline void Mapper<T>::update(const T &obj, const CountCallback &rcb, const ExceptionCallback &ecb) noexcept
+inline void Mapper<T>::update(const T &obj,
+                              const CountCallback &rcb,
+                              const ExceptionCallback &ecb) noexcept
 {
     clear();
-    static_assert(!std::is_same<typename T::PrimaryKeyType, void>::value, "No primary key in the table!");
+    static_assert(!std::is_same<typename T::PrimaryKeyType, void>::value,
+                  "No primary key in the table!");
     std::string sql = "update ";
     sql += T::tableName;
     sql += " set ";
@@ -887,7 +946,8 @@ template <typename T>
 inline std::future<size_t> Mapper<T>::updateFuture(const T &obj) noexcept
 {
     clear();
-    static_assert(!std::is_same<typename T::PrimaryKeyType, void>::value, "No primary key in the table!");
+    static_assert(!std::is_same<typename T::PrimaryKeyType, void>::value,
+                  "No primary key in the table!");
     std::string sql = "update ";
     sql += T::tableName;
     sql += " set ";
@@ -905,7 +965,8 @@ inline std::future<size_t> Mapper<T>::updateFuture(const T &obj) noexcept
     obj.updateArgs(binder);
     outputPrimeryKeyToBinder(obj.getPrimaryKey(), binder);
 
-    std::shared_ptr<std::promise<size_t>> prom = std::make_shared<std::promise<size_t>>();
+    std::shared_ptr<std::promise<size_t>> prom =
+        std::make_shared<std::promise<size_t>>();
     binder >> [=](const Result &r) { prom->set_value(r.affectedRows()); };
     binder >> [=](const std::exception_ptr &e) { prom->set_exception(e); };
     binder.exec();
@@ -916,7 +977,8 @@ template <typename T>
 inline size_t Mapper<T>::deleteOne(const T &obj) noexcept(false)
 {
     clear();
-    static_assert(!std::is_same<typename T::PrimaryKeyType, void>::value, "No primary key in the table!");
+    static_assert(!std::is_same<typename T::PrimaryKeyType, void>::value,
+                  "No primary key in the table!");
     std::string sql = "delete from ";
     sql += T::tableName;
 
@@ -936,10 +998,13 @@ inline size_t Mapper<T>::deleteOne(const T &obj) noexcept(false)
     return r.affectedRows();
 }
 template <typename T>
-inline void Mapper<T>::deleteOne(const T &obj, const CountCallback &rcb, const ExceptionCallback &ecb) noexcept
+inline void Mapper<T>::deleteOne(const T &obj,
+                                 const CountCallback &rcb,
+                                 const ExceptionCallback &ecb) noexcept
 {
     clear();
-    static_assert(!std::is_same<typename T::PrimaryKeyType, void>::value, "No primary key in the table!");
+    static_assert(!std::is_same<typename T::PrimaryKeyType, void>::value,
+                  "No primary key in the table!");
     std::string sql = "delete from ";
     sql += T::tableName;
     sql += " ";
@@ -956,7 +1021,8 @@ template <typename T>
 inline std::future<size_t> Mapper<T>::deleteFutureOne(const T &obj) noexcept
 {
     clear();
-    static_assert(!std::is_same<typename T::PrimaryKeyType, void>::value, "No primary key in the table!");
+    static_assert(!std::is_same<typename T::PrimaryKeyType, void>::value,
+                  "No primary key in the table!");
     std::string sql = "delete from ";
     sql += T::tableName;
     sql += " ";
@@ -967,7 +1033,8 @@ inline std::future<size_t> Mapper<T>::deleteFutureOne(const T &obj) noexcept
     auto binder = *_client << std::move(sql);
     outputPrimeryKeyToBinder(obj.getPrimaryKey(), binder);
 
-    std::shared_ptr<std::promise<size_t>> prom = std::make_shared<std::promise<size_t>>();
+    std::shared_ptr<std::promise<size_t>> prom =
+        std::make_shared<std::promise<size_t>>();
     binder >> [=](const Result &r) { prom->set_value(r.affectedRows()); };
     binder >> [=](const std::exception_ptr &e) { prom->set_exception(e); };
     binder.exec();
@@ -978,7 +1045,8 @@ template <typename T>
 inline size_t Mapper<T>::deleteBy(const Criteria &criteria) noexcept(false)
 {
     clear();
-    static_assert(!std::is_same<typename T::PrimaryKeyType, void>::value, "No primary key in the table!");
+    static_assert(!std::is_same<typename T::PrimaryKeyType, void>::value,
+                  "No primary key in the table!");
     std::string sql = "delete from ";
     sql += T::tableName;
 
@@ -1003,10 +1071,13 @@ inline size_t Mapper<T>::deleteBy(const Criteria &criteria) noexcept(false)
     return r.affectedRows();
 }
 template <typename T>
-inline void Mapper<T>::deleteBy(const Criteria &criteria, const CountCallback &rcb, const ExceptionCallback &ecb) noexcept
+inline void Mapper<T>::deleteBy(const Criteria &criteria,
+                                const CountCallback &rcb,
+                                const ExceptionCallback &ecb) noexcept
 {
     clear();
-    static_assert(!std::is_same<typename T::PrimaryKeyType, void>::value, "No primary key in the table!");
+    static_assert(!std::is_same<typename T::PrimaryKeyType, void>::value,
+                  "No primary key in the table!");
     std::string sql = "delete from ";
     sql += T::tableName;
 
@@ -1026,10 +1097,12 @@ inline void Mapper<T>::deleteBy(const Criteria &criteria, const CountCallback &r
     binder >> ecb;
 }
 template <typename T>
-inline std::future<size_t> Mapper<T>::deleteFutureBy(const Criteria &criteria) noexcept
+inline std::future<size_t> Mapper<T>::deleteFutureBy(
+    const Criteria &criteria) noexcept
 {
     clear();
-    static_assert(!std::is_same<typename T::PrimaryKeyType, void>::value, "No primary key in the table!");
+    static_assert(!std::is_same<typename T::PrimaryKeyType, void>::value,
+                  "No primary key in the table!");
     std::string sql = "delete from ";
     sql += T::tableName;
     if (criteria)
@@ -1044,7 +1117,8 @@ inline std::future<size_t> Mapper<T>::deleteFutureBy(const Criteria &criteria) n
         criteria.outputArgs(binder);
     }
 
-    std::shared_ptr<std::promise<size_t>> prom = std::make_shared<std::promise<size_t>>();
+    std::shared_ptr<std::promise<size_t>> prom =
+        std::make_shared<std::promise<size_t>>();
     binder >> [=](const Result &r) { prom->set_value(r.affectedRows()); };
     binder >> [=](const std::exception_ptr &e) { prom->set_exception(e); };
     binder.exec();
@@ -1065,11 +1139,13 @@ inline Mapper<T> &Mapper<T>::offset(size_t offset)
     return *this;
 }
 template <typename T>
-inline Mapper<T> &Mapper<T>::orderBy(const std::string &colName, const SortOrder &order)
+inline Mapper<T> &Mapper<T>::orderBy(const std::string &colName,
+                                     const SortOrder &order)
 {
     if (_orderbyString.empty())
     {
-        _orderbyString = utils::formattedString(" order by %s", colName.c_str());
+        _orderbyString =
+            utils::formattedString(" order by %s", colName.c_str());
         if (order == SortOrder::DESC)
         {
             _orderbyString += " desc";
@@ -1100,7 +1176,9 @@ inline Mapper<T> &Mapper<T>::forUpdate()
     return *this;
 }
 template <typename T>
-inline std::string Mapper<T>::replaceSqlPlaceHolder(const std::string &sqlStr, const std::string &holderStr) const
+inline std::string Mapper<T>::replaceSqlPlaceHolder(
+    const std::string &sqlStr,
+    const std::string &holderStr) const
 {
     if (_client->type() == ClientType::PostgreSQL)
     {
@@ -1122,7 +1200,8 @@ inline std::string Mapper<T>::replaceSqlPlaceHolder(const std::string &sqlStr, c
             startPos = pos + holderStr.length();
         } while (1);
     }
-    else if (_client->type() == ClientType::Mysql || _client->type() == ClientType::Sqlite3)
+    else if (_client->type() == ClientType::Mysql ||
+             _client->type() == ClientType::Sqlite3)
     {
         std::string::size_type startPos = 0;
         std::string::size_type pos;

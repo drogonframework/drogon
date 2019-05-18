@@ -53,19 +53,20 @@ const char *scan_single_quoted_string(const char begin[])
             case '\'':
                 // Escaped quote, or closing quote.
                 here++;
-                // If the next character is a quote, we've got a double single quote.
-                // That's how SQL escapes embedded quotes in a string.  Terrible idea,
-                // but it's what we have.
+                // If the next character is a quote, we've got a double single
+                // quote. That's how SQL escapes embedded quotes in a string.
+                // Terrible idea, but it's what we have.
                 if (*here != '\'')
                     return here;
-                // Otherwise, we've found the end of the string.  Return the address of
-                // the very next byte.
+                // Otherwise, we've found the end of the string.  Return the
+                // address of the very next byte.
                 break;
             case '\\':
                 // Backslash escape.  Skip ahead by one more character.
                 here++;
                 if (!*here)
-                    throw ArgumentError("SQL string ends in escape: " + std::string(begin));
+                    throw ArgumentError("SQL string ends in escape: " +
+                                        std::string(begin));
                 break;
         }
     }
@@ -114,7 +115,8 @@ const char *scan_double_quoted_string(const char begin[])
                 // Backslash escape.  Skip ahead by one more character.
                 here++;
                 if (!*here)
-                    throw ArgumentError("SQL string ends in escape: " + std::string(begin));
+                    throw ArgumentError("SQL string ends in escape: " +
+                                        std::string(begin));
                 break;
             case '"':
                 return here + 1;
@@ -220,15 +222,15 @@ std::pair<ArrayParser::juncture, std::string> ArrayParser::getNext()
                 value = parse_unquoted_string(m_pos, end);
                 if (value == "NULL")
                 {
-                    // In this one situation, as a special case, NULL means a null field,
-                    // not a string that happens to spell "NULL".
+                    // In this one situation, as a special case, NULL means a
+                    // null field, not a string that happens to spell "NULL".
                     value.clear();
                     found = juncture::null_value;
                 }
                 else
                 {
-                    // The normal case: we just parsed an unquoted string.  The value is
-                    // what we need.
+                    // The normal case: we just parsed an unquoted string.  The
+                    // value is what we need.
                     found = juncture::string_value;
                 }
                 break;

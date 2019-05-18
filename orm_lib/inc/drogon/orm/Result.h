@@ -102,7 +102,8 @@ class Result
     /// Name of column with this number (throws exception if it doesn't exist)
     const char *columnName(row_size_type number) const;
 
-    /// If command was @c INSERT, @c UPDATE, or @c DELETE: number of affected rows
+    /// If command was @c INSERT, @c UPDATE, or @c DELETE: number of affected
+    /// rows
     /**
      * @return Number of affected rows if last command was @c INSERT, @c UPDATE,
      * or @c DELETE; zero for all other commands.

@@ -25,7 +25,8 @@ namespace drogon
 class HttpViewBase : virtual public DrObjectBase
 {
   public:
-    static HttpResponsePtr genHttpResponse(std::string viewName, const HttpViewData &data);
+    static HttpResponsePtr genHttpResponse(std::string viewName,
+                                           const HttpViewData &data);
 
     virtual ~HttpViewBase(){};
     HttpViewBase(){};

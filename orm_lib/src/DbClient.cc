@@ -28,22 +28,30 @@ internal::SqlBinder DbClient::operator<<(std::string &&sql)
 }
 
 #if USE_POSTGRESQL
-std::shared_ptr<DbClient> DbClient::newPgClient(const std::string &connInfo, const size_t connNum)
+std::shared_ptr<DbClient> DbClient::newPgClient(const std::string &connInfo,
+                                                const size_t connNum)
 {
-    return std::make_shared<DbClientImpl>(connInfo, connNum, ClientType::PostgreSQL);
+    return std::make_shared<DbClientImpl>(connInfo,
+                                          connNum,
+                                          ClientType::PostgreSQL);
 }
 #endif
 
 #if USE_MYSQL
-std::shared_ptr<DbClient> DbClient::newMysqlClient(const std::string &connInfo, const size_t connNum)
+std::shared_ptr<DbClient> DbClient::newMysqlClient(const std::string &connInfo,
+                                                   const size_t connNum)
 {
     return std::make_shared<DbClientImpl>(connInfo, connNum, ClientType::Mysql);
 }
 #endif
 
 #if USE_SQLITE3
-std::shared_ptr<DbClient> DbClient::newSqlite3Client(const std::string &connInfo, const size_t connNum)
+std::shared_ptr<DbClient> DbClient::newSqlite3Client(
+    const std::string &connInfo,
+    const size_t connNum)
 {
-    return std::make_shared<DbClientImpl>(connInfo, connNum, ClientType::Sqlite3);
+    return std::make_shared<DbClientImpl>(connInfo,
+                                          connNum,
+                                          ClientType::Sqlite3);
 }
 #endif

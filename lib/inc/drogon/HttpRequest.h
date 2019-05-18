@@ -54,24 +54,33 @@ class HttpRequest
     }
 
     /// Get the header string identified by the @param field
-    virtual const std::string &getHeader(const std::string &field, const std::string &defaultVal = std::string()) const = 0;
-    virtual const std::string &getHeader(std::string &&field, const std::string &defaultVal = std::string()) const = 0;
+    virtual const std::string &getHeader(
+        const std::string &field,
+        const std::string &defaultVal = std::string()) const = 0;
+    virtual const std::string &getHeader(
+        std::string &&field,
+        const std::string &defaultVal = std::string()) const = 0;
 
     /// Set the header string identified by the @param field
-    virtual void addHeader(const std::string &field, const std::string &value) = 0;
+    virtual void addHeader(const std::string &field,
+                           const std::string &value) = 0;
 
     /// Get the cookie string identified by the @param field
-    virtual const std::string &getCookie(const std::string &field, const std::string &defaultVal = std::string()) const = 0;
+    virtual const std::string &getCookie(
+        const std::string &field,
+        const std::string &defaultVal = std::string()) const = 0;
 
     /// Get all headers of the request
-    virtual const std::unordered_map<std::string, std::string> &headers() const = 0;
+    virtual const std::unordered_map<std::string, std::string> &headers()
+        const = 0;
     const std::unordered_map<std::string, std::string> &getHeaders() const
     {
         return headers();
     }
 
     /// Get all cookies of the request
-    virtual const std::unordered_map<std::string, std::string> &cookies() const = 0;
+    virtual const std::unordered_map<std::string, std::string> &cookies()
+        const = 0;
     const std::unordered_map<std::string, std::string> &getCookies() const
     {
         return cookies();
@@ -79,10 +88,9 @@ class HttpRequest
 
     /// Get the query string of the request.
     /**
-     * If the http method is GET, the query string is the substring after the '?'
-     * in the URL string.
-     * If the http method is POST, the query string is the content(body) string of
-     * the HTTP request.
+     * If the http method is GET, the query string is the substring after the
+     * '?' in the URL string. If the http method is POST, the query string is
+     * the content(body) string of the HTTP request.
      */
     virtual const std::string &query() const = 0;
     const std::string &getQuery() const
@@ -131,14 +139,17 @@ class HttpRequest
     }
 
     /// Get parameters of the request.
-    virtual const std::unordered_map<std::string, std::string> &parameters() const = 0;
+    virtual const std::unordered_map<std::string, std::string> &parameters()
+        const = 0;
     const std::unordered_map<std::string, std::string> &getParameters() const
     {
         return parameters();
     }
 
     /// Get a parameter identified by the @param key
-    virtual const std::string &getParameter(const std::string &key, const std::string &defaultVal = std::string()) const = 0;
+    virtual const std::string &getParameter(
+        const std::string &key,
+        const std::string &defaultVal = std::string()) const = 0;
 
     /// Return the remote IP address and port
     virtual const trantor::InetAddress &peerAddr() const = 0;
@@ -186,7 +197,8 @@ class HttpRequest
     virtual void setPath(const std::string &path) = 0;
 
     /// Set the parameter of the request
-    virtual void setParameter(const std::string &key, const std::string &value) = 0;
+    virtual void setParameter(const std::string &key,
+                              const std::string &value) = 0;
 
     /// Set or get the content type
     virtual void setContentTypeCode(const ContentType type) = 0;
@@ -216,7 +228,8 @@ class HttpRequest
     /// Content type: multipart/form-data
     /// The @param files represents pload files which are transferred to the
     /// server via the multipart/form-data format
-    static HttpRequestPtr newFileUploadRequest(const std::vector<UploadFile> &files);
+    static HttpRequestPtr newFileUploadRequest(
+        const std::vector<UploadFile> &files);
 
     virtual ~HttpRequest()
     {

@@ -31,7 +31,9 @@ namespace drogon
 class HttpSimpleControllerBase : public virtual DrObjectBase
 {
   public:
-    virtual void asyncHandleHttpRequest(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback) = 0;
+    virtual void asyncHandleHttpRequest(
+        const HttpRequestPtr &req,
+        std::function<void(const HttpResponsePtr &)> &&callback) = 0;
     virtual ~HttpSimpleControllerBase()
     {
     }
@@ -50,11 +52,17 @@ class HttpSimpleController : public DrObject<T>, public HttpSimpleControllerBase
     HttpSimpleController()
     {
     }
-    static void __registerSelf(const std::string &path, const std::vector<any> &filtersAndMethods)
+    static void __registerSelf(const std::string &path,
+                               const std::vector<any> &filtersAndMethods)
     {
-        LOG_TRACE << "register simple controller(" << HttpSimpleController<T>::classTypeName() << ") on path:" << path;
-        HttpAppFramework::instance().registerHttpSimpleController(
-            path, HttpSimpleController<T>::classTypeName(), filtersAndMethods);
+        LOG_TRACE << "register simple controller("
+                  << HttpSimpleController<T>::classTypeName()
+                  << ") on path:" << path;
+        HttpAppFramework::instance()
+            .registerHttpSimpleController(path,
+                                          HttpSimpleController<
+                                              T>::classTypeName(),
+                                          filtersAndMethods);
     }
 
   private:
@@ -77,6 +85,7 @@ class HttpSimpleController : public DrObject<T>, public HttpSimpleControllerBase
     }
 };
 template <typename T, bool AutoCreation>
-typename HttpSimpleController<T, AutoCreation>::pathRegister HttpSimpleController<T, AutoCreation>::_register;
+typename HttpSimpleController<T, AutoCreation>::pathRegister
+    HttpSimpleController<T, AutoCreation>::_register;
 
 }  // namespace drogon

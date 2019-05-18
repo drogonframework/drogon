@@ -66,7 +66,8 @@ HttpResponsePtr HttpResponse::newNotFoundResponse()
         return notFoundResp;
     }
 }
-HttpResponsePtr HttpResponse::newRedirectionResponse(const std::string &location)
+HttpResponsePtr HttpResponse::newRedirectionResponse(
+    const std::string &location)
 {
     auto res = std::make_shared<HttpResponseImpl>();
     res->setStatusCode(k302Found);
@@ -74,14 +75,16 @@ HttpResponsePtr HttpResponse::newRedirectionResponse(const std::string &location
     return res;
 }
 
-HttpResponsePtr HttpResponse::newHttpViewResponse(const std::string &viewName, const HttpViewData &data)
+HttpResponsePtr HttpResponse::newHttpViewResponse(const std::string &viewName,
+                                                  const HttpViewData &data)
 {
     return HttpViewBase::genHttpResponse(viewName, data);
 }
 
-HttpResponsePtr HttpResponse::newFileResponse(const std::string &fullPath,
-                                              const std::string &attachmentFileName,
-                                              ContentType type)
+HttpResponsePtr HttpResponse::newFileResponse(
+    const std::string &fullPath,
+    const std::string &attachmentFileName,
+    ContentType type)
 {
     std::ifstream infile(fullPath, std::ifstream::binary);
     LOG_TRACE << "send http file:" << fullPath;
@@ -114,7 +117,8 @@ HttpResponsePtr HttpResponse::newFileResponse(const std::string &fullPath,
     {
         if (!attachmentFileName.empty())
         {
-            resp->setContentTypeCode(drogon::getContentType(attachmentFileName));
+            resp->setContentTypeCode(
+                drogon::getContentType(attachmentFileName));
         }
         else
         {
@@ -128,13 +132,15 @@ HttpResponsePtr HttpResponse::newFileResponse(const std::string &fullPath,
 
     if (!attachmentFileName.empty())
     {
-        resp->addHeader("Content-Disposition", "attachment; filename=" + attachmentFileName);
+        resp->addHeader("Content-Disposition",
+                        "attachment; filename=" + attachmentFileName);
     }
 
     return resp;
 }
 
-void HttpResponseImpl::makeHeaderString(const std::shared_ptr<std::string> &headerStringPtr) const
+void HttpResponseImpl::makeHeaderString(
+    const std::shared_ptr<std::string> &headerStringPtr) const
 {
     char buf[128];
     assert(headerStringPtr);
@@ -145,7 +151,10 @@ void HttpResponseImpl::makeHeaderString(const std::shared_ptr<std::string> &head
     headerStringPtr->append("\r\n");
     if (_sendfileName.empty())
     {
-        len = snprintf(buf, sizeof buf, "Content-Length: %lu\r\n", static_cast<long unsigned int>(_bodyPtr->size()));
+        len = snprintf(buf,
+                       sizeof buf,
+                       "Content-Length: %lu\r\n",
+                       static_cast<long unsigned int>(_bodyPtr->size()));
     }
     else
     {
@@ -155,7 +164,10 @@ void HttpResponseImpl::makeHeaderString(const std::shared_ptr<std::string> &head
             LOG_SYSERR << _sendfileName << " stat error";
             return;
         }
-        len = snprintf(buf, sizeof buf, "Content-Length: %llu\r\n", static_cast<long long unsigned int>(filestat.st_size));
+        len = snprintf(buf,
+                       sizeof buf,
+                       "Content-Length: %llu\r\n",
+                       static_cast<long long unsigned int>(filestat.st_size));
     }
 
     headerStringPtr->append(buf, len);
@@ -170,7 +182,8 @@ void HttpResponseImpl::makeHeaderString(const std::shared_ptr<std::string> &head
             // output->append("Connection: Keep-Alive\r\n");
         }
     }
-    headerStringPtr->append(_contentTypeString.data(), _contentTypeString.length());
+    headerStringPtr->append(_contentTypeString.data(),
+                            _contentTypeString.length());
     for (auto it = _headers.begin(); it != _headers.end(); ++it)
     {
         headerStringPtr->append(it->first);
@@ -178,7 +191,8 @@ void HttpResponseImpl::makeHeaderString(const std::shared_ptr<std::string> &head
         headerStringPtr->append(it->second);
         headerStringPtr->append("\r\n");
     }
-    headerStringPtr->append(HttpAppFrameworkImpl::instance().getServerHeaderString());
+    headerStringPtr->append(
+        HttpAppFrameworkImpl::instance().getServerHeaderString());
 }
 
 std::shared_ptr<std::string> HttpResponseImpl::renderToString() const
@@ -188,15 +202,19 @@ std::shared_ptr<std::string> HttpResponseImpl::renderToString() const
         if (_datePos != std::string::npos)
         {
             auto now = trantor::Date::now();
-            bool isDateChanged = ((now.microSecondsSinceEpoch() / MICRO_SECONDS_PRE_SEC) != _httpStringDate);
+            bool isDateChanged = ((now.microSecondsSinceEpoch() /
+                                   MICRO_SECONDS_PRE_SEC) != _httpStringDate);
             assert(_httpString);
             if (isDateChanged)
             {
-                _httpStringDate = now.microSecondsSinceEpoch() / MICRO_SECONDS_PRE_SEC;
+                _httpStringDate =
+                    now.microSecondsSinceEpoch() / MICRO_SECONDS_PRE_SEC;
                 auto newDate = utils::getHttpFullDate(now);
 
                 _httpString = std::make_shared<std::string>(*_httpString);
-                memcpy((void *)&(*_httpString)[_datePos], newDate, strlen(newDate));
+                memcpy((void *)&(*_httpString)[_datePos],
+                       newDate,
+                       strlen(newDate));
                 return _httpString;
             }
 

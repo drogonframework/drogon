@@ -111,14 +111,18 @@ class HttpResponseImpl : public HttpResponse
         return _contentType;
     }
 
-    virtual const std::string &getHeader(const std::string &key, const std::string &defaultVal = std::string()) const override
+    virtual const std::string &getHeader(
+        const std::string &key,
+        const std::string &defaultVal = std::string()) const override
     {
         auto field = key;
         transform(field.begin(), field.end(), field.begin(), ::tolower);
         return getHeaderBy(field, defaultVal);
     }
 
-    virtual const std::string &getHeader(std::string &&key, const std::string &defaultVal = std::string()) const override
+    virtual const std::string &getHeader(
+        std::string &&key,
+        const std::string &defaultVal = std::string()) const override
     {
         transform(key.begin(), key.end(), key.begin(), ::tolower);
         return getHeaderBy(key, defaultVal);
@@ -137,12 +141,15 @@ class HttpResponseImpl : public HttpResponse
         removeHeaderBy(key);
     }
 
-    virtual const std::unordered_map<std::string, std::string> &headers() const override
+    virtual const std::unordered_map<std::string, std::string> &headers()
+        const override
     {
         return _headers;
     }
 
-    const std::string &getHeaderBy(const std::string &lowerKey, const std::string &defaultVal = std::string()) const
+    const std::string &getHeaderBy(
+        const std::string &lowerKey,
+        const std::string &defaultVal = std::string()) const
     {
         auto iter = _headers.find(lowerKey);
         if (iter == _headers.end())
@@ -157,7 +164,8 @@ class HttpResponseImpl : public HttpResponse
         _headers.erase(lowerKey);
     }
 
-    virtual void addHeader(const std::string &key, const std::string &value) override
+    virtual void addHeader(const std::string &key,
+                           const std::string &value) override
     {
         _fullHeaderString.reset();
         auto field = key;
@@ -205,7 +213,8 @@ class HttpResponseImpl : public HttpResponse
                 {
                     cookie_name = coo.substr(0, epos);
                     std::string::size_type cpos = 0;
-                    while (cpos < cookie_name.length() && isspace(cookie_name[cpos]))
+                    while (cpos < cookie_name.length() &&
+                           isspace(cookie_name[cpos]))
                         cpos++;
                     cookie_name = cookie_name.substr(cpos);
                     cookie_value = coo.substr(epos + 1);
@@ -224,7 +233,10 @@ class HttpResponseImpl : public HttpResponse
                 }
                 else
                 {
-                    std::transform(cookie_name.begin(), cookie_name.end(), cookie_name.begin(), tolower);
+                    std::transform(cookie_name.begin(),
+                                   cookie_name.end(),
+                                   cookie_name.begin(),
+                                   tolower);
                     if (cookie_name == "path")
                     {
                         cookie.setPath(cookie_value);
@@ -258,7 +270,8 @@ class HttpResponseImpl : public HttpResponse
         }
     }
 
-    virtual void addCookie(const std::string &key, const std::string &value) override
+    virtual void addCookie(const std::string &key,
+                           const std::string &value) override
     {
         _cookies[key] = Cookie(key, value);
     }
@@ -268,7 +281,9 @@ class HttpResponseImpl : public HttpResponse
         _cookies[cookie.key()] = cookie;
     }
 
-    virtual const Cookie &getCookie(const std::string &key, const Cookie &defaultCookie = Cookie()) const override
+    virtual const Cookie &getCookie(
+        const std::string &key,
+        const Cookie &defaultCookie = Cookie()) const override
     {
         auto it = _cookies.find(key);
         if (it != _cookies.end())
@@ -278,7 +293,8 @@ class HttpResponseImpl : public HttpResponse
         return defaultCookie;
     }
 
-    virtual const std::unordered_map<std::string, Cookie> &cookies() const override
+    virtual const std::unordered_map<std::string, Cookie> &cookies()
+        const override
     {
         return _cookies;
     }
@@ -366,7 +382,10 @@ class HttpResponseImpl : public HttpResponse
         builder["collectComments"] = false;
         JSONCPP_STRING errs;
         std::unique_ptr<Json::CharReader> reader(builder.newCharReader());
-        if (!reader->parse(_bodyPtr->data(), _bodyPtr->data() + _bodyPtr->size(), _jsonPtr.get(), &errs))
+        if (!reader->parse(_bodyPtr->data(),
+                           _bodyPtr->data() + _bodyPtr->size(),
+                           _jsonPtr.get(),
+                           &errs))
         {
             LOG_ERROR << errs;
             LOG_DEBUG << "body: " << *_bodyPtr;
@@ -406,7 +425,8 @@ class HttpResponseImpl : public HttpResponse
     }
 
   protected:
-    void makeHeaderString(const std::shared_ptr<std::string> &headerStringPtr) const;
+    void makeHeaderString(
+        const std::shared_ptr<std::string> &headerStringPtr) const;
 
   private:
     std::unordered_map<std::string, std::string> _headers;
@@ -434,7 +454,8 @@ class HttpResponseImpl : public HttpResponse
     mutable int64_t _httpStringDate = -1;
 
     ContentType _contentType = CT_TEXT_HTML;
-    string_view _contentTypeString = "Content-Type: text/html; charset=utf-8\r\n";
+    string_view _contentTypeString =
+        "Content-Type: text/html; charset=utf-8\r\n";
     void setContentType(const string_view &contentType)
     {
         _contentTypeString = contentType;

@@ -38,10 +38,14 @@
 #define DEF_I(X, Y, Z) ((Y) ^ ((X) | (~Z)))
 
 // 求链接数函数宏定义
-#define FF(a, b, c, d, Mj, s, ti) (a = b + CycleMoveLeft((a + DEF_F(b, c, d) + Mj + ti), s));
-#define GG(a, b, c, d, Mj, s, ti) (a = b + CycleMoveLeft((a + DEF_G(b, c, d) + Mj + ti), s));
-#define HH(a, b, c, d, Mj, s, ti) (a = b + CycleMoveLeft((a + DEF_H(b, c, d) + Mj + ti), s));
-#define II(a, b, c, d, Mj, s, ti) (a = b + CycleMoveLeft((a + DEF_I(b, c, d) + Mj + ti), s));
+#define FF(a, b, c, d, Mj, s, ti) \
+    (a = b + CycleMoveLeft((a + DEF_F(b, c, d) + Mj + ti), s));
+#define GG(a, b, c, d, Mj, s, ti) \
+    (a = b + CycleMoveLeft((a + DEF_G(b, c, d) + Mj + ti), s));
+#define HH(a, b, c, d, Mj, s, ti) \
+    (a = b + CycleMoveLeft((a + DEF_H(b, c, d) + Mj + ti), s));
+#define II(a, b, c, d, Mj, s, ti) \
+    (a = b + CycleMoveLeft((a + DEF_I(b, c, d) + Mj + ti), s));
 
 class Md5Encode
 {
@@ -70,7 +74,9 @@ class Md5Encode
     static void RoundI(char *data_512_ptr, ParamDynamic &param);
     static void RotationCalculate(char *data_512_ptr, ParamDynamic &param);
     static std::string GetHexStr(unsigned int num_str);
-    static UInt32 FillData(const char *in_data_ptr, int data_byte_len, char **out_data_ptr);
+    static UInt32 FillData(const char *in_data_ptr,
+                           int data_byte_len,
+                           char **out_data_ptr);
 
   private:
     // 幻数定义

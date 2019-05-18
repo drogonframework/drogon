@@ -43,7 +43,11 @@ class HttpRequestImpl : public HttpRequest
     friend class HttpRequestParser;
 
     explicit HttpRequestImpl(trantor::EventLoop *loop)
-        : _method(Invalid), _version(kUnknown), _date(trantor::Date::now()), _contentLen(0), _loop(loop)
+        : _method(Invalid),
+          _version(kUnknown),
+          _date(trantor::Date::now()),
+          _contentLen(0),
+          _loop(loop)
     {
     }
 
@@ -187,14 +191,16 @@ class HttpRequestImpl : public HttpRequest
         _path = path;
     }
 
-    virtual const std::unordered_map<std::string, std::string> &parameters() const override
+    virtual const std::unordered_map<std::string, std::string> &parameters()
+        const override
     {
         parseParametersOnce();
         return _parameters;
     }
 
-    virtual const std::string &getParameter(const std::string &key,
-                                            const std::string &defaultVal = std::string()) const override
+    virtual const std::string &getParameter(
+        const std::string &key,
+        const std::string &defaultVal = std::string()) const override
     {
         parseParametersOnce();
         auto iter = _parameters.find(key);
@@ -270,20 +276,29 @@ class HttpRequestImpl : public HttpRequest
 
     void addHeader(const char *start, const char *colon, const char *end);
 
-    const std::string &getHeader(const std::string &field, const std::string &defaultVal = std::string()) const override
+    const std::string &getHeader(
+        const std::string &field,
+        const std::string &defaultVal = std::string()) const override
     {
         auto lowField = field;
-        std::transform(lowField.begin(), lowField.end(), lowField.begin(), tolower);
+        std::transform(lowField.begin(),
+                       lowField.end(),
+                       lowField.begin(),
+                       tolower);
         return getHeaderBy(lowField, defaultVal);
     }
 
-    const std::string &getHeader(std::string &&field, const std::string &defaultVal = std::string()) const override
+    const std::string &getHeader(
+        std::string &&field,
+        const std::string &defaultVal = std::string()) const override
     {
         std::transform(field.begin(), field.end(), field.begin(), tolower);
         return getHeaderBy(field, defaultVal);
     }
 
-    const std::string &getHeaderBy(const std::string &lowerField, const std::string &defaultVal = std::string()) const
+    const std::string &getHeaderBy(
+        const std::string &lowerField,
+        const std::string &defaultVal = std::string()) const
     {
         auto it = _headers.find(lowerField);
         if (it != _headers.end())
@@ -293,9 +308,12 @@ class HttpRequestImpl : public HttpRequest
         return defaultVal;
     }
 
-    const std::string &getCookie(const std::string &field, const std::string &defaultVal = std::string()) const override
+    const std::string &getCookie(
+        const std::string &field,
+        const std::string &defaultVal = std::string()) const override
     {
-        std::unordered_map<std::string, std::string>::const_iterator it = _cookies.find(field);
+        std::unordered_map<std::string, std::string>::const_iterator it =
+            _cookies.find(field);
         if (it != _cookies.end())
         {
             return it->second;
@@ -313,7 +331,8 @@ class HttpRequestImpl : public HttpRequest
         return _cookies;
     }
 
-    virtual void setParameter(const std::string &key, const std::string &value) override
+    virtual void setParameter(const std::string &key,
+                              const std::string &value) override
     {
         _flagForParsingParameters = true;
         _parameters[key] = value;
@@ -349,7 +368,8 @@ class HttpRequestImpl : public HttpRequest
         _content = content;
     }
 
-    virtual void addHeader(const std::string &key, const std::string &value) override
+    virtual void addHeader(const std::string &key,
+                           const std::string &value) override
     {
         _headers[key] = value;
     }
@@ -421,8 +441,8 @@ class HttpRequestImpl : public HttpRequest
     void parseParameters() const;
     void parseParametersOnce() const
     {
-        // Not multi-thread safe but good, because we basically call this function
-        // in a single thread
+        // Not multi-thread safe but good, because we basically call this
+        // function in a single thread
         if (!_flagForParsingParameters)
         {
             _flagForParsingParameters = true;

@@ -30,8 +30,8 @@ namespace drogon
 class HttpViewData
 {
   public:
-    /// The function template is used to get an item in the data set by the @param
-    /// key.
+    /// The function template is used to get an item in the data set by the
+    /// @param key.
     template <typename T>
     const T &get(const std::string &key, T &&nullVal = T()) const
     {
@@ -60,8 +60,8 @@ class HttpViewData
         _viewData[key] = obj;
     }
 
-    /// Insert an item identified by the @param key into the data set; The item is
-    /// converted to a string.
+    /// Insert an item identified by the @param key into the data set; The item
+    /// is converted to a string.
     template <typename T>
     void insertAsString(const std::string &key, T &&val)
     {
@@ -78,9 +78,13 @@ class HttpViewData
         va_list ap, backup_ap;
         va_start(ap, format);
         va_copy(backup_ap, ap);
-        auto result = vsnprintf((char *)strBuffer.data(), strBuffer.size(), format, backup_ap);
+        auto result = vsnprintf((char *)strBuffer.data(),
+                                strBuffer.size(),
+                                format,
+                                backup_ap);
         va_end(backup_ap);
-        if ((result >= 0) && ((std::string::size_type)result < strBuffer.size()))
+        if ((result >= 0) &&
+            ((std::string::size_type)result < strBuffer.size()))
         {
             strBuffer.resize(result);
         }
@@ -90,7 +94,8 @@ class HttpViewData
             {
                 if (result < 0)
                 {
-                    // Older snprintf() behavior. Just try doubling the buffer size
+                    // Older snprintf() behavior. Just try doubling the buffer
+                    // size
                     strBuffer.resize(strBuffer.size() * 2);
                 }
                 else
@@ -99,10 +104,14 @@ class HttpViewData
                 }
 
                 va_copy(backup_ap, ap);
-                auto result = vsnprintf((char *)strBuffer.data(), strBuffer.size(), format, backup_ap);
+                auto result = vsnprintf((char *)strBuffer.data(),
+                                        strBuffer.size(),
+                                        format,
+                                        backup_ap);
                 va_end(backup_ap);
 
-                if ((result >= 0) && ((std::string::size_type)result < strBuffer.size()))
+                if ((result >= 0) &&
+                    ((std::string::size_type)result < strBuffer.size()))
                 {
                     strBuffer.resize(result);
                     break;

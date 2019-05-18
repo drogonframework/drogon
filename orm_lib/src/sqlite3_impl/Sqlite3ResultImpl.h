@@ -29,7 +29,8 @@ namespace orm
 class Sqlite3ResultImpl : public ResultImpl
 {
   public:
-    explicit Sqlite3ResultImpl(const std::string &query) noexcept : ResultImpl(query)
+    explicit Sqlite3ResultImpl(const std::string &query) noexcept
+        : ResultImpl(query)
     {
     }
     virtual size_type size() const noexcept override;
@@ -37,9 +38,11 @@ class Sqlite3ResultImpl : public ResultImpl
     virtual const char *columnName(row_size_type number) const override;
     virtual size_type affectedRows() const noexcept override;
     virtual row_size_type columnNumber(const char colName[]) const override;
-    virtual const char *getValue(size_type row, row_size_type column) const override;
+    virtual const char *getValue(size_type row,
+                                 row_size_type column) const override;
     virtual bool isNull(size_type row, row_size_type column) const override;
-    virtual field_size_type getLength(size_type row, row_size_type column) const override;
+    virtual field_size_type getLength(size_type row,
+                                      row_size_type column) const override;
     virtual unsigned long long insertId() const noexcept override;
 
   private:

@@ -38,11 +38,14 @@ BrokenConnection::BrokenConnection() : Failure("Connection to database failed")
 {
 }
 
-BrokenConnection::BrokenConnection(const std::string &whatarg) : Failure(whatarg)
+BrokenConnection::BrokenConnection(const std::string &whatarg)
+    : Failure(whatarg)
 {
 }
 
-SqlError::SqlError(const std::string &whatarg, const std::string &Q, const char sqlstate[])
+SqlError::SqlError(const std::string &whatarg,
+                   const std::string &Q,
+                   const char sqlstate[])
     : Failure(whatarg), _query(Q), _sqlState(sqlstate ? sqlstate : "")
 {
 }
@@ -65,23 +68,29 @@ InDoubtError::InDoubtError(const std::string &whatarg) : Failure(whatarg)
 {
 }
 
-TransactionRollback::TransactionRollback(const std::string &whatarg) : Failure(whatarg)
+TransactionRollback::TransactionRollback(const std::string &whatarg)
+    : Failure(whatarg)
 {
 }
 
-SerializationFailure::SerializationFailure(const std::string &whatarg) : TransactionRollback(whatarg)
+SerializationFailure::SerializationFailure(const std::string &whatarg)
+    : TransactionRollback(whatarg)
 {
 }
 
-StatementCompletionUnknown::StatementCompletionUnknown(const std::string &whatarg) : TransactionRollback(whatarg)
+StatementCompletionUnknown::StatementCompletionUnknown(
+    const std::string &whatarg)
+    : TransactionRollback(whatarg)
 {
 }
 
-DeadlockDetected::DeadlockDetected(const std::string &whatarg) : TransactionRollback(whatarg)
+DeadlockDetected::DeadlockDetected(const std::string &whatarg)
+    : TransactionRollback(whatarg)
 {
 }
 
-InternalError::InternalError(const std::string &whatarg) : logic_error("libpqxx internal error: " + whatarg)
+InternalError::InternalError(const std::string &whatarg)
+    : logic_error("libpqxx internal error: " + whatarg)
 {
 }
 
@@ -89,11 +98,13 @@ UsageError::UsageError(const std::string &whatarg) : logic_error(whatarg)
 {
 }
 
-ArgumentError::ArgumentError(const std::string &whatarg) : invalid_argument(whatarg)
+ArgumentError::ArgumentError(const std::string &whatarg)
+    : invalid_argument(whatarg)
 {
 }
 
-ConversionError::ConversionError(const std::string &whatarg) : domain_error(whatarg)
+ConversionError::ConversionError(const std::string &whatarg)
+    : domain_error(whatarg)
 {
 }
 

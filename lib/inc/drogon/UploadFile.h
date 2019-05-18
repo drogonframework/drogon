@@ -29,7 +29,9 @@ class UploadFile
      * is provided to the server.
      * @param itemName: The item name on the browser form.
      */
-    explicit UploadFile(const std::string &filePath, const std::string &fileName = "", const std::string &itemName = "file")
+    explicit UploadFile(const std::string &filePath,
+                        const std::string &fileName = "",
+                        const std::string &itemName = "file")
         : _path(filePath), _itemName(itemName)
     {
         if (!fileName.empty())

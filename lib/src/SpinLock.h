@@ -29,7 +29,8 @@ class SpinLock
         int n, i;
         while (1)
         {
-            if (!_flag.load() && !_flag.exchange(true, std::memory_order_acquire))
+            if (!_flag.load() &&
+                !_flag.exchange(true, std::memory_order_acquire))
             {
                 return;
             }
@@ -42,7 +43,8 @@ class SpinLock
                         //__asm__ __volatile__("rep; nop" ::: "memory"); //pause
                         _mm_pause();
                     }
-                    if (!_flag.load() && !_flag.exchange(true, std::memory_order_acquire))
+                    if (!_flag.load() &&
+                        !_flag.exchange(true, std::memory_order_acquire))
                     {
                         return;
                     }

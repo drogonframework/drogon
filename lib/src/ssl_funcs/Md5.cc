@@ -39,7 +39,8 @@ UInt32 Md5Encode::CycleMoveLeft(UInt32 src_num, int bit_num_to_move)
     //    UInt32 num1 = src_num1 << bit_num_to_move;
     //    UInt32 num2 = src_num2 >> (32 - bit_num_to_move);
 
-    return ((src_num1 << bit_num_to_move) | (src_num2 >> (32 - bit_num_to_move)));
+    return ((src_num1 << bit_num_to_move) |
+            (src_num2 >> (32 - bit_num_to_move)));
 }
 
 // function: FillData
@@ -47,7 +48,9 @@ UInt32 Md5Encode::CycleMoveLeft(UInt32 src_num, int bit_num_to_move)
 // @param data_byte_len:  length of input data
 // @param out_data_ptr:   output data
 // return : length of output data
-UInt32 Md5Encode::FillData(const char *in_data_ptr, int data_byte_len, char **out_data_ptr)
+UInt32 Md5Encode::FillData(const char *in_data_ptr,
+                           int data_byte_len,
+                           char **out_data_ptr)
 {
     int bit_num = data_byte_len * BIT_OF_BYTE;
     // int grop_num = bit_num / BIT_OF_GROUP;
@@ -65,8 +68,11 @@ UInt32 Md5Encode::FillData(const char *in_data_ptr, int data_byte_len, char **ou
     int all_bit = bit_num + bit_need_fill;
     if (0 < bit_need_fill)
     {
-        *out_data_ptr = new char[all_bit / BIT_OF_BYTE + SRC_DATA_LEN / BIT_OF_BYTE];
-        memset(*out_data_ptr, 0, all_bit / BIT_OF_BYTE + SRC_DATA_LEN / BIT_OF_BYTE);
+        *out_data_ptr =
+            new char[all_bit / BIT_OF_BYTE + SRC_DATA_LEN / BIT_OF_BYTE];
+        memset(*out_data_ptr,
+               0,
+               all_bit / BIT_OF_BYTE + SRC_DATA_LEN / BIT_OF_BYTE);
         // copy data
         memcpy(*out_data_ptr, in_data_ptr, data_byte_len);
         // fill rest data
@@ -75,7 +81,8 @@ UInt32 Md5Encode::FillData(const char *in_data_ptr, int data_byte_len, char **ou
         // fill 1 and 0
         *tmp = 0x80;
         // fill origin data len
-        unsigned long long *origin_num = (unsigned long long *)((*out_data_ptr) + ((all_bit / BIT_OF_BYTE)));
+        unsigned long long *origin_num =
+            (unsigned long long *)((*out_data_ptr) + ((all_bit / BIT_OF_BYTE)));
         *origin_num = data_byte_len * BIT_OF_BYTE;
     }
     return (all_bit / BIT_OF_BYTE + SRC_DATA_LEN / BIT_OF_BYTE);
@@ -117,19 +124,43 @@ void Md5Encode::RoundG(char *data_BIT_OF_GROUP_ptr, ParamDynamic &param)
         int index = (i * 5 + 1) % 16;
         if (i % 4 == 0)
         {
-            GG(param.ua_, param.ub_, param.uc_, param.ud_, M[index], s[i % 4], ti);
+            GG(param.ua_,
+               param.ub_,
+               param.uc_,
+               param.ud_,
+               M[index],
+               s[i % 4],
+               ti);
         }
         else if (i % 4 == 1)
         {
-            GG(param.ud_, param.ua_, param.ub_, param.uc_, M[index], s[i % 4], ti);
+            GG(param.ud_,
+               param.ua_,
+               param.ub_,
+               param.uc_,
+               M[index],
+               s[i % 4],
+               ti);
         }
         else if (i % 4 == 2)
         {
-            GG(param.uc_, param.ud_, param.ua_, param.ub_, M[index], s[i % 4], ti);
+            GG(param.uc_,
+               param.ud_,
+               param.ua_,
+               param.ub_,
+               M[index],
+               s[i % 4],
+               ti);
         }
         else if (i % 4 == 3)
         {
-            GG(param.ub_, param.uc_, param.ud_, param.ua_, M[index], s[i % 4], ti);
+            GG(param.ub_,
+               param.uc_,
+               param.ud_,
+               param.ua_,
+               M[index],
+               s[i % 4],
+               ti);
         }
     }
 }
@@ -144,19 +175,43 @@ void Md5Encode::RoundH(char *data_BIT_OF_GROUP_ptr, ParamDynamic &param)
         int index = (i * 3 + 5) % 16;
         if (i % 4 == 0)
         {
-            HH(param.ua_, param.ub_, param.uc_, param.ud_, M[index], s[i % 4], ti);
+            HH(param.ua_,
+               param.ub_,
+               param.uc_,
+               param.ud_,
+               M[index],
+               s[i % 4],
+               ti);
         }
         else if (i % 4 == 1)
         {
-            HH(param.ud_, param.ua_, param.ub_, param.uc_, M[index], s[i % 4], ti);
+            HH(param.ud_,
+               param.ua_,
+               param.ub_,
+               param.uc_,
+               M[index],
+               s[i % 4],
+               ti);
         }
         else if (i % 4 == 2)
         {
-            HH(param.uc_, param.ud_, param.ua_, param.ub_, M[index], s[i % 4], ti);
+            HH(param.uc_,
+               param.ud_,
+               param.ua_,
+               param.ub_,
+               M[index],
+               s[i % 4],
+               ti);
         }
         else if (i % 4 == 3)
         {
-            HH(param.ub_, param.uc_, param.ud_, param.ua_, M[index], s[i % 4], ti);
+            HH(param.ub_,
+               param.uc_,
+               param.ud_,
+               param.ua_,
+               M[index],
+               s[i % 4],
+               ti);
         }
     }
 }
@@ -171,19 +226,43 @@ void Md5Encode::RoundI(char *data_BIT_OF_GROUP_ptr, ParamDynamic &param)
         int index = (i * 7 + 0) % 16;
         if (i % 4 == 0)
         {
-            II(param.ua_, param.ub_, param.uc_, param.ud_, M[index], s[i % 4], ti);
+            II(param.ua_,
+               param.ub_,
+               param.uc_,
+               param.ud_,
+               M[index],
+               s[i % 4],
+               ti);
         }
         else if (i % 4 == 1)
         {
-            II(param.ud_, param.ua_, param.ub_, param.uc_, M[index], s[i % 4], ti);
+            II(param.ud_,
+               param.ua_,
+               param.ub_,
+               param.uc_,
+               M[index],
+               s[i % 4],
+               ti);
         }
         else if (i % 4 == 2)
         {
-            II(param.uc_, param.ud_, param.ua_, param.ub_, M[index], s[i % 4], ti);
+            II(param.uc_,
+               param.ud_,
+               param.ua_,
+               param.ub_,
+               M[index],
+               s[i % 4],
+               ti);
         }
         else if (i % 4 == 3)
         {
-            II(param.ub_, param.uc_, param.ud_, param.ua_, M[index], s[i % 4], ti);
+            II(param.ub_,
+               param.uc_,
+               param.ud_,
+               param.ua_,
+               M[index],
+               s[i % 4],
+               ti);
         }
     }
 }
@@ -213,7 +292,22 @@ void Md5Encode::RotationCalculate(char *data_512_ptr, ParamDynamic &param)
 std::string Md5Encode::GetHexStr(unsigned int num_str)
 {
     std::string hexstr = "";
-    char szch[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
+    char szch[] = {'0',
+                   '1',
+                   '2',
+                   '3',
+                   '4',
+                   '5',
+                   '6',
+                   '7',
+                   '8',
+                   '9',
+                   'A',
+                   'B',
+                   'C',
+                   'D',
+                   'E',
+                   'F'};
     unsigned char *tmptr = (unsigned char *)&num_str;
     int len = sizeof(num_str);
     for (int i = 0; i < len; i++)
@@ -244,7 +338,8 @@ std::string Md5Encode::encode(const std::string &src_info)
 
     std::string result;
     char *out_data_ptr = NULL;
-    int total_byte = FillData(src_info.c_str(), src_info.length(), &out_data_ptr);
+    int total_byte =
+        FillData(src_info.c_str(), src_info.length(), &out_data_ptr);
     // char * data_BIT_OF_GROUP = out_data_ptr;
     for (int i = 0; i < total_byte / (BIT_OF_GROUP / BIT_OF_BYTE); ++i)
     {

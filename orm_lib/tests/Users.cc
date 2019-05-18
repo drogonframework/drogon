@@ -25,15 +25,16 @@ const std::string Users::primaryKeyName = "id";
 const bool Users::hasPrimaryKey = true;
 const std::string Users::tableName = "users";
 
-const std::vector<typename Users::MetaData> Users::_metaData = {{"user_id", "std::string", "character varying", 32, 0, 0, 0},
-                                                                {"user_name", "std::string", "character varying", 64, 0, 0, 0},
-                                                                {"password", "std::string", "character varying", 64, 0, 0, 0},
-                                                                {"org_name", "std::string", "character varying", 20, 0, 0, 0},
-                                                                {"signature", "std::string", "character varying", 50, 0, 0, 0},
-                                                                {"avatar_id", "std::string", "character varying", 32, 0, 0, 0},
-                                                                {"id", "int32_t", "integer", 4, 1, 1, 1},
-                                                                {"salt", "std::string", "character varying", 20, 0, 0, 0},
-                                                                {"admin", "bool", "boolean", 1, 0, 0, 0}};
+const std::vector<typename Users::MetaData> Users::_metaData =
+    {{"user_id", "std::string", "character varying", 32, 0, 0, 0},
+     {"user_name", "std::string", "character varying", 64, 0, 0, 0},
+     {"password", "std::string", "character varying", 64, 0, 0, 0},
+     {"org_name", "std::string", "character varying", 20, 0, 0, 0},
+     {"signature", "std::string", "character varying", 50, 0, 0, 0},
+     {"avatar_id", "std::string", "character varying", 32, 0, 0, 0},
+     {"id", "int32_t", "integer", 4, 1, 1, 1},
+     {"salt", "std::string", "character varying", 20, 0, 0, 0},
+     {"admin", "bool", "boolean", 1, 0, 0, 0}};
 const std::string &Users::getColumnName(size_t index) noexcept(false)
 {
     assert(index < _metaData.size());
@@ -47,23 +48,28 @@ Users::Users(const Row &r) noexcept
     }
     if (!r["user_name"].isNull())
     {
-        _userName = std::make_shared<std::string>(r["user_name"].as<std::string>());
+        _userName =
+            std::make_shared<std::string>(r["user_name"].as<std::string>());
     }
     if (!r["password"].isNull())
     {
-        _password = std::make_shared<std::string>(r["password"].as<std::string>());
+        _password =
+            std::make_shared<std::string>(r["password"].as<std::string>());
     }
     if (!r["org_name"].isNull())
     {
-        _orgName = std::make_shared<std::string>(r["org_name"].as<std::string>());
+        _orgName =
+            std::make_shared<std::string>(r["org_name"].as<std::string>());
     }
     if (!r["signature"].isNull())
     {
-        _signature = std::make_shared<std::string>(r["signature"].as<std::string>());
+        _signature =
+            std::make_shared<std::string>(r["signature"].as<std::string>());
     }
     if (!r["avatar_id"].isNull())
     {
-        _avatarId = std::make_shared<std::string>(r["avatar_id"].as<std::string>());
+        _avatarId =
+            std::make_shared<std::string>(r["avatar_id"].as<std::string>());
     }
     if (!r["id"].isNull())
     {
@@ -78,7 +84,8 @@ Users::Users(const Row &r) noexcept
         _admin = std::make_shared<bool>(r["admin"].as<bool>());
     }
 }
-const std::string &Users::getValueOfUserId(const std::string &defaultValue) const noexcept
+const std::string &Users::getValueOfUserId(
+    const std::string &defaultValue) const noexcept
 {
     if (_userId)
         return *_userId;
@@ -99,7 +106,8 @@ void Users::setUserId(std::string &&userId) noexcept
     _dirtyFlag[0] = true;
 }
 
-const std::string &Users::getValueOfUserName(const std::string &defaultValue) const noexcept
+const std::string &Users::getValueOfUserName(
+    const std::string &defaultValue) const noexcept
 {
     if (_userName)
         return *_userName;
@@ -120,7 +128,8 @@ void Users::setUserName(std::string &&userName) noexcept
     _dirtyFlag[1] = true;
 }
 
-const std::string &Users::getValueOfPassword(const std::string &defaultValue) const noexcept
+const std::string &Users::getValueOfPassword(
+    const std::string &defaultValue) const noexcept
 {
     if (_password)
         return *_password;
@@ -141,7 +150,8 @@ void Users::setPassword(std::string &&password) noexcept
     _dirtyFlag[2] = true;
 }
 
-const std::string &Users::getValueOfOrgName(const std::string &defaultValue) const noexcept
+const std::string &Users::getValueOfOrgName(
+    const std::string &defaultValue) const noexcept
 {
     if (_orgName)
         return *_orgName;
@@ -162,7 +172,8 @@ void Users::setOrgName(std::string &&orgName) noexcept
     _dirtyFlag[3] = true;
 }
 
-const std::string &Users::getValueOfSignature(const std::string &defaultValue) const noexcept
+const std::string &Users::getValueOfSignature(
+    const std::string &defaultValue) const noexcept
 {
     if (_signature)
         return *_signature;
@@ -183,7 +194,8 @@ void Users::setSignature(std::string &&signature) noexcept
     _dirtyFlag[4] = true;
 }
 
-const std::string &Users::getValueOfAvatarId(const std::string &defaultValue) const noexcept
+const std::string &Users::getValueOfAvatarId(
+    const std::string &defaultValue) const noexcept
 {
     if (_avatarId)
         return *_avatarId;
@@ -220,7 +232,8 @@ const typename Users::PrimaryKeyType &Users::getPrimaryKey() const
     return *_id;
 }
 
-const std::string &Users::getValueOfSalt(const std::string &defaultValue) const noexcept
+const std::string &Users::getValueOfSalt(const std::string &defaultValue) const
+    noexcept
 {
     if (_salt)
         return *_salt;
@@ -263,8 +276,14 @@ void Users::updateId(const uint64_t id)
 
 const std::vector<std::string> &Users::insertColumns() noexcept
 {
-    static const std::vector<std::string> _inCols = {
-        "user_id", "user_name", "password", "org_name", "signature", "avatar_id", "salt", "admin"};
+    static const std::vector<std::string> _inCols = {"user_id",
+                                                     "user_name",
+                                                     "password",
+                                                     "org_name",
+                                                     "signature",
+                                                     "avatar_id",
+                                                     "salt",
+                                                     "admin"};
     return _inCols;
 }
 

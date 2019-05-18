@@ -36,8 +36,13 @@ class WebSocketConnection
   public:
     WebSocketConnection() = default;
     virtual ~WebSocketConnection(){};
-    virtual void send(const char *msg, uint64_t len, const WebSocketMessageType &type = WebSocketMessageType::Text) = 0;
-    virtual void send(const std::string &msg, const WebSocketMessageType &type = WebSocketMessageType::Text) = 0;
+    virtual void send(
+        const char *msg,
+        uint64_t len,
+        const WebSocketMessageType &type = WebSocketMessageType::Text) = 0;
+    virtual void send(
+        const std::string &msg,
+        const WebSocketMessageType &type = WebSocketMessageType::Text) = 0;
 
     virtual const trantor::InetAddress &localAddr() const = 0;
     virtual const trantor::InetAddress &peerAddr() const = 0;
@@ -58,7 +63,9 @@ class WebSocketConnection
      * Both the server and the client in Drogon automatically send the pong
      * message after receiving the ping message.
      */
-    virtual void setPingMessage(const std::string &message, const std::chrono::duration<long double> &interval) = 0;
+    virtual void setPingMessage(
+        const std::string &message,
+        const std::chrono::duration<long double> &interval) = 0;
 };
 typedef std::shared_ptr<WebSocketConnection> WebSocketConnectionPtr;
 }  // namespace drogon

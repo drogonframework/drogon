@@ -35,10 +35,13 @@ namespace orm
 {
 class Sqlite3Connection;
 typedef std::shared_ptr<Sqlite3Connection> Sqlite3ConnectionPtr;
-class Sqlite3Connection : public DbConnection, public std::enable_shared_from_this<Sqlite3Connection>
+class Sqlite3Connection : public DbConnection,
+                          public std::enable_shared_from_this<Sqlite3Connection>
 {
   public:
-    Sqlite3Connection(trantor::EventLoop *loop, const std::string &connInfo, const std::shared_ptr<SharedMutex> &sharedMutex);
+    Sqlite3Connection(trantor::EventLoop *loop,
+                      const std::string &connInfo,
+                      const std::shared_ptr<SharedMutex> &sharedMutex);
 
     virtual void execSql(std::string &&sql,
                          size_t paraNum,
@@ -46,20 +49,26 @@ class Sqlite3Connection : public DbConnection, public std::enable_shared_from_th
                          std::vector<int> &&length,
                          std::vector<int> &&format,
                          ResultCallback &&rcb,
-                         std::function<void(const std::exception_ptr &)> &&exceptCallback) override;
+                         std::function<void(const std::exception_ptr &)>
+                             &&exceptCallback) override;
     virtual void disconnect() override;
 
   private:
     static std::once_flag _once;
-    void execSqlInQueue(const std::string &sql,
-                        size_t paraNum,
-                        const std::vector<const char *> &parameters,
-                        const std::vector<int> &length,
-                        const std::vector<int> &format,
-                        const ResultCallback &rcb,
-                        const std::function<void(const std::exception_ptr &)> &exceptCallback);
-    void onError(const std::string &sql, const std::function<void(const std::exception_ptr &)> &exceptCallback);
-    int stmtStep(sqlite3_stmt *stmt, const std::shared_ptr<Sqlite3ResultImpl> &resultPtr, int columnNum);
+    void execSqlInQueue(
+        const std::string &sql,
+        size_t paraNum,
+        const std::vector<const char *> &parameters,
+        const std::vector<int> &length,
+        const std::vector<int> &format,
+        const ResultCallback &rcb,
+        const std::function<void(const std::exception_ptr &)> &exceptCallback);
+    void onError(
+        const std::string &sql,
+        const std::function<void(const std::exception_ptr &)> &exceptCallback);
+    int stmtStep(sqlite3_stmt *stmt,
+                 const std::shared_ptr<Sqlite3ResultImpl> &resultPtr,
+                 int columnNum);
     trantor::EventLoopThread _loopThread;
     std::shared_ptr<sqlite3> _conn;
     std::shared_ptr<SharedMutex> _sharedMutexPtr;

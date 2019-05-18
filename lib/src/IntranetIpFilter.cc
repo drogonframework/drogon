@@ -15,7 +15,9 @@
 #include "HttpResponseImpl.h"
 #include <drogon/IntranetIpFilter.h>
 using namespace drogon;
-void IntranetIpFilter::doFilter(const HttpRequestPtr &req, FilterCallback &&fcb, FilterChainCallback &&fccb)
+void IntranetIpFilter::doFilter(const HttpRequestPtr &req,
+                                FilterCallback &&fcb,
+                                FilterChainCallback &&fccb)
 {
     if (req->peerAddr().isIntranetIp())
     {

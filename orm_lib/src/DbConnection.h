@@ -64,13 +64,14 @@ class DbConnection : public trantor::NonCopyable
     {
         _idleCb = cb;
     }
-    virtual void execSql(std::string &&sql,
-                         size_t paraNum,
-                         std::vector<const char *> &&parameters,
-                         std::vector<int> &&length,
-                         std::vector<int> &&format,
-                         ResultCallback &&rcb,
-                         std::function<void(const std::exception_ptr &)> &&exceptCallback) = 0;
+    virtual void execSql(
+        std::string &&sql,
+        size_t paraNum,
+        std::vector<const char *> &&parameters,
+        std::vector<int> &&length,
+        std::vector<int> &&format,
+        ResultCallback &&rcb,
+        std::function<void(const std::exception_ptr &)> &&exceptCallback) = 0;
     virtual ~DbConnection()
     {
         LOG_TRACE << "Destruct DbConn" << this;

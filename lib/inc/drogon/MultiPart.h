@@ -56,21 +56,18 @@ class HttpFile
 
     /// Save the file to @param path
     /**
-     * If the @param path is prefixed with "/", "./" or "../", or the @param path
-     * is
-     * "." or "..", the full path is @param path+"/"+this->getFileName(),
-     * otherwise
-     * the file is saved as app().getUploadPath()+"/"+@param
-     * path+"/"+this->getFileName()
+     * If the @param path is prefixed with "/", "./" or "../", or the @param
+     * path is "." or "..", the full path is @param
+     * path+"/"+this->getFileName(), otherwise the file is saved as
+     * app().getUploadPath()+"/"+@param path+"/"+this->getFileName()
      */
     int save(const std::string &path) const;
 
     /// Save the file to file system with a new name
     /**
      * If the @param filename isn't prefixed with "/", "./" or "../", the full
-     * path is
-     * app().getUploadPath()+"/"+@param filename, otherwise
-     * the file is saved as @param filename
+     * path is app().getUploadPath()+"/"+@param filename, otherwise the file is
+     * saved as @param filename
      */
     int saveAs(const std::string &filename) const;
 
@@ -96,7 +93,8 @@ class MultiPartParser
   public:
     MultiPartParser(){};
     ~MultiPartParser(){};
-    /// Get files, This method should be called after calling the parse() method.
+    /// Get files, This method should be called after calling the parse()
+    /// method.
     const std::vector<HttpFile> &getFiles();
 
     /// Get parameters, This method should be called after calling the parse ()
@@ -116,6 +114,7 @@ class MultiPartParser
     int parseEntity(const char *begin, const char *end);
 };
 
-typedef MultiPartParser FileUpload;  /// In order to be compatible with old interfaces
+typedef MultiPartParser
+    FileUpload;  /// In order to be compatible with old interfaces
 
 }  // namespace drogon

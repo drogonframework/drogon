@@ -18,7 +18,9 @@
 
 using namespace drogon::orm;
 Field::Field(const Row &row, Row::size_type columnNum) noexcept
-    : _row(Result::size_type(row._index)), _column(columnNum), _result(row._result)
+    : _row(Result::size_type(row._index)),
+      _column(columnNum),
+      _result(row._result)
 {
 }
 

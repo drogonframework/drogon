@@ -44,19 +44,22 @@ Result::size_type PostgreSQLResultImpl::affectedRows() const noexcept
         return 0;
     return atol(str);
 }
-Result::row_size_type PostgreSQLResultImpl::columnNumber(const char colName[]) const
+Result::row_size_type PostgreSQLResultImpl::columnNumber(
+    const char colName[]) const
 {
     auto ptr = const_cast<PGresult *>(_result.get());
     if (ptr)
     {
         auto N = PQfnumber(ptr, colName);
         if (N == -1)
-            throw std::string("there is no column named ") + colName;  // TODO throw detail exception here;
+            throw std::string("there is no column named ") +
+                colName;  // TODO throw detail exception here;
         return N;
     }
     throw "nullptr result";  // The program will never execute here
 }
-const char *PostgreSQLResultImpl::getValue(size_type row, row_size_type column) const
+const char *PostgreSQLResultImpl::getValue(size_type row,
+                                           row_size_type column) const
 {
     return PQgetvalue(_result.get(), int(row), int(column));
 }
@@ -64,7 +67,9 @@ bool PostgreSQLResultImpl::isNull(size_type row, row_size_type column) const
 {
     return PQgetisnull(_result.get(), int(row), int(column)) != 0;
 }
-Result::field_size_type PostgreSQLResultImpl::getLength(size_type row, row_size_type column) const
+Result::field_size_type PostgreSQLResultImpl::getLength(
+    size_type row,
+    row_size_type column) const
 {
     return PQgetlength(_result.get(), int(row), int(column));
 }

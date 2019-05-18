@@ -19,7 +19,8 @@
 using namespace trantor;
 using namespace drogon;
 HttpResponseParser::HttpResponseParser(const trantor::TcpConnectionPtr &connPtr)
-    : _state(HttpResponseParseState::kExpectResponseLine), _response(new HttpResponseImpl)
+    : _state(HttpResponseParseState::kExpectResponseLine),
+      _response(new HttpResponseImpl)
 {
 }
 
@@ -100,7 +101,8 @@ bool HttpResponseParser::parseResponse(MsgBuffer *buf)
                 }
                 else
                 {
-                    const std::string &len = _response->getHeaderBy("content-length");
+                    const std::string &len =
+                        _response->getHeaderBy("content-length");
                     // LOG_INFO << "content len=" << len;
                     if (!len.empty())
                     {
@@ -109,7 +111,8 @@ bool HttpResponseParser::parseResponse(MsgBuffer *buf)
                     }
                     else
                     {
-                        const std::string &encode = _response->getHeaderBy("transfer-encoding");
+                        const std::string &encode =
+                            _response->getHeaderBy("transfer-encoding");
                         if (encode == "chunked")
                         {
                             _state = HttpResponseParseState::kExpectChunkLen;
@@ -118,10 +121,13 @@ bool HttpResponseParser::parseResponse(MsgBuffer *buf)
                         else
                         {
                             if (_response->statusCode() == k204NoContent ||
-                                (_response->statusCode() == k101SwitchingProtocols &&
-                                 _response->getHeaderBy("upgrade") == "websocket"))
+                                (_response->statusCode() ==
+                                     k101SwitchingProtocols &&
+                                 _response->getHeaderBy("upgrade") ==
+                                     "websocket"))
                             {
-                                // The Websocket response may not have a content-length header.
+                                // The Websocket response may not have a
+                                // content-length header.
                                 _state = HttpResponseParseState::kGotAll;
                                 hasMore = false;
                             }
@@ -155,12 +161,14 @@ bool HttpResponseParser::parseResponse(MsgBuffer *buf)
             if (_response->_leftBodyLength >= buf->readableBytes())
             {
                 _response->_leftBodyLength -= buf->readableBytes();
-                _response->_bodyPtr->append(std::string(buf->peek(), buf->readableBytes()));
+                _response->_bodyPtr->append(
+                    std::string(buf->peek(), buf->readableBytes()));
                 buf->retrieveAll();
             }
             else
             {
-                _response->_bodyPtr->append(std::string(buf->peek(), _response->_leftBodyLength));
+                _response->_bodyPtr->append(
+                    std::string(buf->peek(), _response->_leftBodyLength));
                 buf->retrieve(_response->_leftBodyLength);
                 _response->_leftBodyLength = 0;
             }
@@ -175,7 +183,8 @@ bool HttpResponseParser::parseResponse(MsgBuffer *buf)
         }
         else if (_state == HttpResponseParseState::kExpectClose)
         {
-            _response->_bodyPtr->append(std::string(buf->peek(), buf->readableBytes()));
+            _response->_bodyPtr->append(
+                std::string(buf->peek(), buf->readableBytes()));
             buf->retrieveAll();
             break;
         }
@@ -188,7 +197,8 @@ bool HttpResponseParser::parseResponse(MsgBuffer *buf)
                 std::string len(buf->peek(), crlf - buf->peek());
                 char *end;
                 _response->_currentChunkLength = strtol(len.c_str(), &end, 16);
-                // LOG_TRACE << "chun length : " << _response->_currentChunkLength;
+                // LOG_TRACE << "chun length : " <<
+                // _response->_currentChunkLength;
                 if (_response->_currentChunkLength != 0)
                 {
                     _state = HttpResponseParseState::kExpectChunkBody;
@@ -212,7 +222,9 @@ bool HttpResponseParser::parseResponse(MsgBuffer *buf)
                 if (*(buf->peek() + _response->_currentChunkLength) == '\r' &&
                     *(buf->peek() + _response->_currentChunkLength + 1) == '\n')
                 {
-                    _response->_bodyPtr->append(std::string(buf->peek(), _response->_currentChunkLength));
+                    _response->_bodyPtr->append(
+                        std::string(buf->peek(),
+                                    _response->_currentChunkLength));
                     buf->retrieve(_response->_currentChunkLength + 2);
                     _response->_currentChunkLength = 0;
                     _state = HttpResponseParseState::kExpectChunkLen;

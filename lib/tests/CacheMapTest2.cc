@@ -19,10 +19,15 @@ int main()
     auto now = trantor::Date::date();
     loop->runAt(now.after(1).roundSecond(), [=, &main_cachePtr]() {
         std::shared_ptr<drogon::CacheMap<std::string, std::string>> cachePtr =
-            std::make_shared<drogon::CacheMap<std::string, std::string>>(loop, 0.1, 3, 50);
+            std::make_shared<drogon::CacheMap<std::string, std::string>>(loop,
+                                                                         0.1,
+                                                                         3,
+                                                                         50);
         main_cachePtr = cachePtr;
         LOG_DEBUG << "insert :usecount=" << main_cachePtr.use_count();
-        cachePtr->insert("1", "1", 3, [=]() { LOG_DEBUG << "timeout!erase 1!"; });
+        cachePtr->insert("1", "1", 3, [=]() {
+            LOG_DEBUG << "timeout!erase 1!";
+        });
         cachePtr->insert("2", "2", 10, []() { LOG_DEBUG << "2 timeout"; });
     });
     trantor::EventLoop mainLoop;

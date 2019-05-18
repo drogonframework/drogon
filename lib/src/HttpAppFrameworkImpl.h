@@ -85,14 +85,19 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     {
         return _threadNum;
     }
-    virtual void setSSLFiles(const std::string &certPath, const std::string &keyPath) override;
+    virtual void setSSLFiles(const std::string &certPath,
+                             const std::string &keyPath) override;
     virtual void run() override;
-    virtual void registerWebSocketController(const std::string &pathName,
-                                             const std::string &crtlName,
-                                             const std::vector<std::string> &filters = std::vector<std::string>()) override;
-    virtual void registerHttpSimpleController(const std::string &pathName,
-                                              const std::string &crtlName,
-                                              const std::vector<any> &filtersAndMethods = std::vector<any>()) override;
+    virtual void registerWebSocketController(
+        const std::string &pathName,
+        const std::string &crtlName,
+        const std::vector<std::string> &filters =
+            std::vector<std::string>()) override;
+    virtual void registerHttpSimpleController(
+        const std::string &pathName,
+        const std::string &crtlName,
+        const std::vector<any> &filtersAndMethods =
+            std::vector<any>()) override;
 
     virtual void setCustom404Page(const HttpResponsePtr &resp) override
     {
@@ -105,58 +110,74 @@ class HttpAppFrameworkImpl : public HttpAppFramework
         return _custom404;
     }
 
-    virtual void forward(const HttpRequestPtr &req,
-                         std::function<void(const HttpResponsePtr &)> &&callback,
-                         const std::string &hostString = "") override
+    virtual void forward(
+        const HttpRequestPtr &req,
+        std::function<void(const HttpResponsePtr &)> &&callback,
+        const std::string &hostString = "") override
     {
-        forward(std::dynamic_pointer_cast<HttpRequestImpl>(req), std::move(callback), hostString);
+        forward(std::dynamic_pointer_cast<HttpRequestImpl>(req),
+                std::move(callback),
+                hostString);
     }
 
     void forward(const HttpRequestImplPtr &req,
                  std::function<void(const HttpResponsePtr &)> &&callback,
                  const std::string &hostString);
 
-    virtual void registerBeginningAdvice(const std::function<void()> &advice) override
+    virtual void registerBeginningAdvice(
+        const std::function<void()> &advice) override
     {
         getLoop()->runInLoop(advice);
     }
 
     virtual void registerNewConnectionAdvice(
-        const std::function<bool(const trantor::InetAddress &, const trantor::InetAddress &)> &advice) override
+        const std::function<bool(const trantor::InetAddress &,
+                                 const trantor::InetAddress &)> &advice)
+        override
     {
         _newConnectionAdvices.emplace_back(advice);
     }
 
     virtual void registerPreRoutingAdvice(
-        const std::function<void(const HttpRequestPtr &, AdviceCallback &&, AdviceChainCallback &&)> &advice) override
+        const std::function<void(const HttpRequestPtr &,
+                                 AdviceCallback &&,
+                                 AdviceChainCallback &&)> &advice) override
     {
         _preRoutingAdvices.emplace_back(advice);
     }
     virtual void registerPostRoutingAdvice(
-        const std::function<void(const HttpRequestPtr &, AdviceCallback &&, AdviceChainCallback &&)> &advice) override
+        const std::function<void(const HttpRequestPtr &,
+                                 AdviceCallback &&,
+                                 AdviceChainCallback &&)> &advice) override
     {
         _postRoutingAdvices.emplace_front(advice);
     }
     virtual void registerPreHandlingAdvice(
-        const std::function<void(const HttpRequestPtr &, AdviceCallback &&, AdviceChainCallback &&)> &advice) override
+        const std::function<void(const HttpRequestPtr &,
+                                 AdviceCallback &&,
+                                 AdviceChainCallback &&)> &advice) override
     {
         _preHandlingAdvices.emplace_back(advice);
     }
 
-    virtual void registerPreRoutingAdvice(const std::function<void(const HttpRequestPtr &)> &advice) override
+    virtual void registerPreRoutingAdvice(
+        const std::function<void(const HttpRequestPtr &)> &advice) override
     {
         _preRoutingObservers.emplace_back(advice);
     }
-    virtual void registerPostRoutingAdvice(const std::function<void(const HttpRequestPtr &)> &advice) override
+    virtual void registerPostRoutingAdvice(
+        const std::function<void(const HttpRequestPtr &)> &advice) override
     {
         _postRoutingObservers.emplace_front(advice);
     }
-    virtual void registerPreHandlingAdvice(const std::function<void(const HttpRequestPtr &)> &advice) override
+    virtual void registerPreHandlingAdvice(
+        const std::function<void(const HttpRequestPtr &)> &advice) override
     {
         _preHandlingObservers.emplace_back(advice);
     }
     virtual void registerPostHandlingAdvice(
-        const std::function<void(const HttpRequestPtr &, const HttpResponsePtr &)> &advice) override
+        const std::function<void(const HttpRequestPtr &,
+                                 const HttpResponsePtr &)> &advice) override
     {
         _postHandlingAdvices.emplace_front(advice);
     }
@@ -184,7 +205,8 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     }
     virtual void setUploadPath(const std::string &uploadPath) override;
     virtual void setFileTypes(const std::vector<std::string> &types) override;
-    virtual void enableDynamicViewsLoading(const std::vector<std::string> &libPaths) override;
+    virtual void enableDynamicViewsLoading(
+        const std::vector<std::string> &libPaths) override;
     virtual void setMaxConnectionNum(size_t maxConnections) override;
     virtual void setMaxConnectionNumPerIP(size_t maxConnectionsPerIP) override;
     virtual void loadConfigFile(const std::string &fileName) override;
@@ -264,7 +286,8 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     {
         return _clientMaxWebSocketMessageSize;
     }
-    virtual std::vector<std::tuple<std::string, HttpMethod, std::string>> getHandlersInfo() const override;
+    virtual std::vector<std::tuple<std::string, HttpMethod, std::string>>
+    getHandlersInfo() const override;
 
     size_t keepaliveRequestsNumber() const
     {
@@ -308,8 +331,10 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     }
 
 #if USE_ORM
-    virtual orm::DbClientPtr getDbClient(const std::string &name = "default") override;
-    virtual orm::DbClientPtr getFastDbClient(const std::string &name = "default") override;
+    virtual orm::DbClientPtr getDbClient(
+        const std::string &name = "default") override;
+    virtual orm::DbClientPtr getFastDbClient(
+        const std::string &name = "default") override;
     virtual void createDbClient(const std::string &dbType,
                                 const std::string &host,
                                 const u_short port,
@@ -333,15 +358,19 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     }
 
   private:
-    virtual void registerHttpController(const std::string &pathPattern,
-                                        const internal::HttpBinderBasePtr &binder,
-                                        const std::vector<HttpMethod> &validMethods = std::vector<HttpMethod>(),
-                                        const std::vector<std::string> &filters = std::vector<std::string>(),
-                                        const std::string &handlerName = "") override;
-    void onAsyncRequest(const HttpRequestImplPtr &req, std::function<void(const HttpResponsePtr &)> &&callback);
-    void onNewWebsockRequest(const HttpRequestImplPtr &req,
-                             std::function<void(const HttpResponsePtr &)> &&callback,
-                             const WebSocketConnectionImplPtr &wsConnPtr);
+    virtual void registerHttpController(
+        const std::string &pathPattern,
+        const internal::HttpBinderBasePtr &binder,
+        const std::vector<HttpMethod> &validMethods = std::vector<HttpMethod>(),
+        const std::vector<std::string> &filters = std::vector<std::string>(),
+        const std::string &handlerName = "") override;
+    void onAsyncRequest(
+        const HttpRequestImplPtr &req,
+        std::function<void(const HttpResponsePtr &)> &&callback);
+    void onNewWebsockRequest(
+        const HttpRequestImplPtr &req,
+        std::function<void(const HttpResponsePtr &)> &&callback,
+        const WebSocketConnectionImplPtr &wsConnPtr);
     void onConnection(const TcpConnectionPtr &conn);
     void addHttpPath(const std::string &path,
                      const internal::HttpBinderBasePtr &binder,
@@ -354,8 +383,11 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     size_t _sessionTimeout = 0;
     size_t _idleConnectionTimeout = 60;
     bool _useSession = false;
-    std::vector<std::tuple<std::string, uint16_t, bool, std::string, std::string>> _listeners;
-    std::string _serverHeader = "Server: drogon/" + drogon::getVersion() + "\r\n";
+    std::vector<
+        std::tuple<std::string, uint16_t, bool, std::string, std::string>>
+        _listeners;
+    std::string _serverHeader =
+        "Server: drogon/" + drogon::getVersion() + "\r\n";
 
     typedef std::shared_ptr<Session> SessionPtr;
     std::unique_ptr<CacheMap<std::string, SessionPtr>> _sessionMapPtr;
@@ -418,7 +450,8 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     size_t _clientMaxWebSocketMessageSize = 128 * 1024;
     std::string _homePageFile = "index.html";
     int _staticFilesCacheTime = 5;
-    std::unordered_map<std::string, std::weak_ptr<HttpResponse>> _staticFilesCache;
+    std::unordered_map<std::string, std::weak_ptr<HttpResponse>>
+        _staticFilesCache;
     std::mutex _staticFilesCacheMutex;
     // Json::Value _customConfig;
     Json::Value _jsonConfig;
@@ -435,19 +468,36 @@ class HttpAppFrameworkImpl : public HttpAppFramework
         size_t _connectionNumber;
     };
     std::vector<DbInfo> _dbInfos;
-    std::map<std::string, std::map<trantor::EventLoop *, orm::DbClientPtr>> _dbFastClientsMap;
+    std::map<std::string, std::map<trantor::EventLoop *, orm::DbClientPtr>>
+        _dbFastClientsMap;
     void createDbClients(const std::vector<trantor::EventLoop *> &ioloops);
 #endif
     static InitBeforeMainFunction _initFirst;
-    std::vector<std::function<bool(const trantor::InetAddress &, const trantor::InetAddress &)>> _newConnectionAdvices;
-    std::vector<std::function<void(const HttpRequestPtr &, AdviceCallback &&, AdviceChainCallback &&)>> _preRoutingAdvices;
-    std::deque<std::function<void(const HttpRequestPtr &, AdviceCallback &&, AdviceChainCallback &&)>> _postRoutingAdvices;
-    std::vector<std::function<void(const HttpRequestPtr &, AdviceCallback &&, AdviceChainCallback &&)>> _preHandlingAdvices;
-    std::deque<std::function<void(const HttpRequestPtr &, const HttpResponsePtr &)>> _postHandlingAdvices;
+    std::vector<std::function<bool(const trantor::InetAddress &,
+                                   const trantor::InetAddress &)>>
+        _newConnectionAdvices;
+    std::vector<std::function<void(const HttpRequestPtr &,
+                                   AdviceCallback &&,
+                                   AdviceChainCallback &&)>>
+        _preRoutingAdvices;
+    std::deque<std::function<void(const HttpRequestPtr &,
+                                  AdviceCallback &&,
+                                  AdviceChainCallback &&)>>
+        _postRoutingAdvices;
+    std::vector<std::function<void(const HttpRequestPtr &,
+                                   AdviceCallback &&,
+                                   AdviceChainCallback &&)>>
+        _preHandlingAdvices;
+    std::deque<
+        std::function<void(const HttpRequestPtr &, const HttpResponsePtr &)>>
+        _postHandlingAdvices;
 
-    std::vector<std::function<void(const HttpRequestPtr &)>> _preRoutingObservers;
-    std::deque<std::function<void(const HttpRequestPtr &)>> _postRoutingObservers;
-    std::vector<std::function<void(const HttpRequestPtr &)>> _preHandlingObservers;
+    std::vector<std::function<void(const HttpRequestPtr &)>>
+        _preRoutingObservers;
+    std::deque<std::function<void(const HttpRequestPtr &)>>
+        _postRoutingObservers;
+    std::vector<std::function<void(const HttpRequestPtr &)>>
+        _preHandlingObservers;
 };
 
 }  // namespace drogon

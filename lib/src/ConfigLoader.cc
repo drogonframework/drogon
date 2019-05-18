@@ -69,7 +69,8 @@ static bool bytesSize(std::string &sizeStr, size_t &size)
             case '9':
                 break;
             default:
-                std::cerr << "Invalid value of client_max_body_size: " << sizeStr << std::endl;
+                std::cerr << "Invalid value of client_max_body_size: "
+                          << sizeStr << std::endl;
                 return false;
                 break;
         }
@@ -78,7 +79,8 @@ static bool bytesSize(std::string &sizeStr, size_t &size)
         iss >> tmpSize;
         if (iss.fail())
         {
-            std::cerr << "Invalid value of client_max_body_size: " << sizeStr << std::endl;
+            std::cerr << "Invalid value of client_max_body_size: " << sizeStr
+                      << std::endl;
             exit(-1);
         }
         if ((size_t(-1) / tmpSize) >= size)
@@ -99,7 +101,8 @@ ConfigLoader::ConfigLoader(const std::string &configFile)
     }
     if (access(configFile.c_str(), R_OK) != 0)
     {
-        std::cerr << "No permission to read config file " << configFile << std::endl;
+        std::cerr << "No permission to read config file " << configFile
+                  << std::endl;
         exit(1);
     }
     _configFile = configFile;
@@ -112,7 +115,8 @@ ConfigLoader::ConfigLoader(const std::string &configFile)
         }
         catch (const std::exception &exception)
         {
-            std::cerr << "Configuration file format error! in " << configFile << ":" << std::endl;
+            std::cerr << "Configuration file format error! in " << configFile
+                      << ":" << std::endl;
             std::cerr << exception.what() << std::endl;
             exit(1);
         }
@@ -166,7 +170,10 @@ static void loadControllers(const Json::Value &controllers)
             for (auto const &method : controller["http_methods"])
             {
                 auto strMethod = method.asString();
-                std::transform(strMethod.begin(), strMethod.end(), strMethod.begin(), tolower);
+                std::transform(strMethod.begin(),
+                               strMethod.end(),
+                               strMethod.begin(),
+                               tolower);
                 if (strMethod == "get")
                 {
                     constraints.push_back(Get);
@@ -314,7 +321,8 @@ static void loadApp(const Json::Value &app)
     {
         exit(-1);
     }
-    auto maxWsMsgSize = app.get("client_max_websocket_message_size", "128K").asString();
+    auto maxWsMsgSize =
+        app.get("client_max_websocket_message_size", "128K").asString();
     if (bytesSize(maxWsMsgSize, size))
     {
         drogon::app().setClientMaxWebSocketMessageSize(size);
@@ -338,7 +346,8 @@ static void loadDbClients(const Json::Value &dbClients)
         auto dbname = client.get("dbname", "").asString();
         if (dbname == "")
         {
-            std::cerr << "Please configure dbname in the configuration file" << std::endl;
+            std::cerr << "Please configure dbname in the configuration file"
+                      << std::endl;
             exit(1);
         }
         auto user = client.get("user", "postgres").asString();
@@ -347,7 +356,16 @@ static void loadDbClients(const Json::Value &dbClients)
         auto name = client.get("name", "default").asString();
         auto filename = client.get("filename", "").asString();
         auto isFast = client.get("is_fast", false).asBool();
-        drogon::app().createDbClient(type, host, (u_short)port, dbname, user, password, connNum, filename, name, isFast);
+        drogon::app().createDbClient(type,
+                                     host,
+                                     (u_short)port,
+                                     dbname,
+                                     user,
+                                     password,
+                                     connNum,
+                                     filename,
+                                     name,
+                                     isFast);
     }
 #else
     std::cout << "No database is supported by drogon, please install the "

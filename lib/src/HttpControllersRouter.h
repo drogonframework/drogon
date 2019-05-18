@@ -32,13 +32,21 @@ class HttpControllersRouter : public trantor::NonCopyable
 {
   public:
     HttpControllersRouter(
-        const std::deque<std::function<void(const HttpRequestPtr &, AdviceCallback &&, AdviceChainCallback &&)>>
+        const std::deque<std::function<void(const HttpRequestPtr &,
+                                            AdviceCallback &&,
+                                            AdviceChainCallback &&)>>
             &postRoutingAdvices,
-        const std::deque<std::function<void(const HttpRequestPtr &)>> &postRoutingObservers,
-        const std::vector<std::function<void(const HttpRequestPtr &, AdviceCallback &&, AdviceChainCallback &&)>>
+        const std::deque<std::function<void(const HttpRequestPtr &)>>
+            &postRoutingObservers,
+        const std::vector<std::function<void(const HttpRequestPtr &,
+                                             AdviceCallback &&,
+                                             AdviceChainCallback &&)>>
             &preHandlingAdvices,
-        const std::vector<std::function<void(const HttpRequestPtr &)>> &preHandlingObservers,
-        const std::deque<std::function<void(const HttpRequestPtr &, const HttpResponsePtr &)>> &postHandlingAdvices)
+        const std::vector<std::function<void(const HttpRequestPtr &)>>
+            &preHandlingObservers,
+        const std::deque<std::function<void(const HttpRequestPtr &,
+                                            const HttpResponsePtr &)>>
+            &postHandlingAdvices)
         : _postRoutingAdvices(postRoutingAdvices),
           _preHandlingAdvices(preHandlingAdvices),
           _postRoutingObservers(postRoutingObservers),
@@ -56,7 +64,8 @@ class HttpControllersRouter : public trantor::NonCopyable
                std::function<void(const HttpResponsePtr &)> &&callback,
                bool needSetJsessionid,
                std::string &&sessionId);
-    std::vector<std::tuple<std::string, HttpMethod, std::string>> getHandlersInfo() const;
+    std::vector<std::tuple<std::string, HttpMethod, std::string>>
+    getHandlersInfo() const;
 
   private:
     struct CtrlBinder
@@ -67,7 +76,8 @@ class HttpControllersRouter : public trantor::NonCopyable
         std::vector<std::shared_ptr<HttpFilterBase>> _filters;
         std::vector<size_t> _parameterPlaces;
         std::map<std::string, size_t> _queryParametersPlaces;
-        std::map<trantor::EventLoop *, std::shared_ptr<HttpResponse>> _responsePtrMap;
+        std::map<trantor::EventLoop *, std::shared_ptr<HttpResponse>>
+            _responsePtrMap;
         bool _isCORS = false;
     };
     typedef std::shared_ptr<CtrlBinder> CtrlBinderPtr;
@@ -76,36 +86,48 @@ class HttpControllersRouter : public trantor::NonCopyable
         std::string _pathParameterPattern;
         std::string _pathPattern;
         std::regex _regex;
-        CtrlBinderPtr _binders[Invalid] = {nullptr};  // The enum value of Invalid is the http methods number
+        CtrlBinderPtr _binders[Invalid] = {
+            nullptr};  // The enum value of Invalid is the http methods number
     };
     std::vector<HttpControllerRouterItem> _ctrlVector;
     std::mutex _ctrlMutex;
     std::regex _ctrlRegex;
 
-    const std::deque<std::function<void(const HttpRequestPtr &, AdviceCallback &&, AdviceChainCallback &&)>>
+    const std::deque<std::function<void(const HttpRequestPtr &,
+                                        AdviceCallback &&,
+                                        AdviceChainCallback &&)>>
         &_postRoutingAdvices;
-    const std::vector<std::function<void(const HttpRequestPtr &, AdviceCallback &&, AdviceChainCallback &&)>>
+    const std::vector<std::function<void(const HttpRequestPtr &,
+                                         AdviceCallback &&,
+                                         AdviceChainCallback &&)>>
         &_preHandlingAdvices;
-    const std::deque<std::function<void(const HttpRequestPtr &)>> &_postRoutingObservers;
-    const std::vector<std::function<void(const HttpRequestPtr &)>> &_preHandlingObservers;
-    const std::deque<std::function<void(const HttpRequestPtr &, const HttpResponsePtr &)>> &_postHandlingAdvices;
+    const std::deque<std::function<void(const HttpRequestPtr &)>>
+        &_postRoutingObservers;
+    const std::vector<std::function<void(const HttpRequestPtr &)>>
+        &_preHandlingObservers;
+    const std::deque<
+        std::function<void(const HttpRequestPtr &, const HttpResponsePtr &)>>
+        &_postHandlingAdvices;
 
-    void doPreHandlingAdvices(const CtrlBinderPtr &ctrlBinderPtr,
-                              const HttpControllerRouterItem &routerItem,
-                              const HttpRequestImplPtr &req,
-                              std::function<void(const HttpResponsePtr &)> &&callback,
-                              bool needSetJsessionid,
-                              std::string &&sessionId);
+    void doPreHandlingAdvices(
+        const CtrlBinderPtr &ctrlBinderPtr,
+        const HttpControllerRouterItem &routerItem,
+        const HttpRequestImplPtr &req,
+        std::function<void(const HttpResponsePtr &)> &&callback,
+        bool needSetJsessionid,
+        std::string &&sessionId);
 
-    void doControllerHandler(const CtrlBinderPtr &ctrlBinderPtr,
-                             const HttpControllerRouterItem &routerItem,
-                             const HttpRequestImplPtr &req,
-                             std::function<void(const HttpResponsePtr &)> &&callback,
-                             bool needSetJsessionid,
-                             std::string &&sessionId);
-    void invokeCallback(const std::function<void(const HttpResponsePtr &)> &callback,
-                        const HttpRequestImplPtr &req,
-                        const HttpResponsePtr &resp)
+    void doControllerHandler(
+        const CtrlBinderPtr &ctrlBinderPtr,
+        const HttpControllerRouterItem &routerItem,
+        const HttpRequestImplPtr &req,
+        std::function<void(const HttpResponsePtr &)> &&callback,
+        bool needSetJsessionid,
+        std::string &&sessionId);
+    void invokeCallback(
+        const std::function<void(const HttpResponsePtr &)> &callback,
+        const HttpRequestImplPtr &req,
+        const HttpResponsePtr &resp)
     {
         for (auto &advice : _postHandlingAdvices)
         {

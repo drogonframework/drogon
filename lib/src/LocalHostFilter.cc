@@ -15,7 +15,9 @@
 #include "HttpResponseImpl.h"
 #include <drogon/LocalHostFilter.h>
 using namespace drogon;
-void LocalHostFilter::doFilter(const HttpRequestPtr &req, FilterCallback &&fcb, FilterChainCallback &&fccb)
+void LocalHostFilter::doFilter(const HttpRequestPtr &req,
+                               FilterCallback &&fcb,
+                               FilterChainCallback &&fccb)
 {
     if (req->peerAddr().isLoopbackIp())
     {

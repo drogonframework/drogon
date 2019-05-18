@@ -22,9 +22,10 @@
 #endif
 using namespace drogon;
 
-void WebsocketControllersRouter::registerWebSocketController(const std::string &pathName,
-                                                             const std::string &ctrlName,
-                                                             const std::vector<std::string> &filters)
+void WebsocketControllersRouter::registerWebSocketController(
+    const std::string &pathName,
+    const std::string &ctrlName,
+    const std::vector<std::string> &filters)
 {
     assert(!pathName.empty());
     assert(!ctrlName.empty());
@@ -39,9 +40,10 @@ void WebsocketControllersRouter::registerWebSocketController(const std::string &
     _websockCtrlMap[path]._filterNames = filters;
 }
 
-void WebsocketControllersRouter::route(const HttpRequestImplPtr &req,
-                                       std::function<void(const HttpResponsePtr &)> &&callback,
-                                       const WebSocketConnectionImplPtr &wsConnPtr)
+void WebsocketControllersRouter::route(
+    const HttpRequestImplPtr &req,
+    std::function<void(const HttpResponsePtr &)> &&callback,
+    const WebSocketConnectionImplPtr &wsConnPtr)
 {
     std::string wsKey = req->getHeaderBy("sec-websocket-key");
     if (!wsKey.empty())
@@ -49,7 +51,10 @@ void WebsocketControllersRouter::route(const HttpRequestImplPtr &req,
         // magic="258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
 
         std::string pathLower(req->path());
-        std::transform(pathLower.begin(), pathLower.end(), pathLower.begin(), tolower);
+        std::transform(pathLower.begin(),
+                       pathLower.end(),
+                       pathLower.begin(),
+                       tolower);
         auto iter = _websockCtrlMap.find(pathLower);
         if (iter != _websockCtrlMap.end())
         {
@@ -59,14 +64,31 @@ void WebsocketControllersRouter::route(const HttpRequestImplPtr &req,
             {
                 if (!filters.empty())
                 {
-                    auto callbackPtr = std::make_shared<std::function<void(const HttpResponsePtr &)>>(std::move(callback));
-                    FiltersFunction::doFilters(filters, req, callbackPtr, false, nullptr, [=]() mutable {
-                        doControllerHandler(ctrlPtr, wsKey, req, std::move(*callbackPtr), wsConnPtr);
-                    });
+                    auto callbackPtr = std::make_shared<
+                        std::function<void(const HttpResponsePtr &)>>(
+                        std::move(callback));
+                    FiltersFunction::
+                        doFilters(filters,
+                                  req,
+                                  callbackPtr,
+                                  false,
+                                  nullptr,
+                                  [=]() mutable {
+                                      doControllerHandler(ctrlPtr,
+                                                          wsKey,
+                                                          req,
+                                                          std::move(
+                                                              *callbackPtr),
+                                                          wsConnPtr);
+                                  });
                 }
                 else
                 {
-                    doControllerHandler(ctrlPtr, wsKey, req, std::move(callback), wsConnPtr);
+                    doControllerHandler(ctrlPtr,
+                                        wsKey,
+                                        req,
+                                        std::move(callback),
+                                        wsConnPtr);
                 }
                 return;
             }
@@ -77,27 +99,36 @@ void WebsocketControllersRouter::route(const HttpRequestImplPtr &req,
     callback(resp);
 }
 
-std::vector<std::tuple<std::string, HttpMethod, std::string>> WebsocketControllersRouter::getHandlersInfo() const
+std::vector<std::tuple<std::string, HttpMethod, std::string>>
+WebsocketControllersRouter::getHandlersInfo() const
 {
     std::vector<std::tuple<std::string, HttpMethod, std::string>> ret;
     for (auto &item : _websockCtrlMap)
     {
-        auto info = std::tuple<std::string, HttpMethod, std::string>(
-            item.first, Get, std::string("WebsocketController: ") + item.second._controller->className());
+        auto info =
+            std::tuple<std::string,
+                       HttpMethod,
+                       std::string>(item.first,
+                                    Get,
+                                    std::string("WebsocketController: ") +
+                                        item.second._controller->className());
         ret.emplace_back(std::move(info));
     }
     return ret;
 }
 
-void WebsocketControllersRouter::doControllerHandler(const WebSocketControllerBasePtr &ctrlPtr,
-                                                     std::string &wsKey,
-                                                     const HttpRequestImplPtr &req,
-                                                     std::function<void(const HttpResponsePtr &)> &&callback,
-                                                     const WebSocketConnectionImplPtr &wsConnPtr)
+void WebsocketControllersRouter::doControllerHandler(
+    const WebSocketControllerBasePtr &ctrlPtr,
+    std::string &wsKey,
+    const HttpRequestImplPtr &req,
+    std::function<void(const HttpResponsePtr &)> &&callback,
+    const WebSocketConnectionImplPtr &wsConnPtr)
 {
     wsKey.append("258EAFA5-E914-47DA-95CA-C5AB0DC85B11");
     unsigned char accKey[SHA_DIGEST_LENGTH];
-    SHA1(reinterpret_cast<const unsigned char *>(wsKey.c_str()), wsKey.length(), accKey);
+    SHA1(reinterpret_cast<const unsigned char *>(wsKey.c_str()),
+         wsKey.length(),
+         accKey);
     auto base64Key = utils::base64Encode(accKey, SHA_DIGEST_LENGTH);
     auto resp = HttpResponse::newHttpResponse();
     resp->setStatusCode(k101SwitchingProtocols);
@@ -106,11 +137,15 @@ void WebsocketControllersRouter::doControllerHandler(const WebSocketControllerBa
     resp->addHeader("Sec-WebSocket-Accept", base64Key);
     callback(resp);
     wsConnPtr->setMessageCallback(
-        [ctrlPtr](std::string &&message, const WebSocketConnectionImplPtr &connPtr, const WebSocketMessageType &type) {
+        [ctrlPtr](std::string &&message,
+                  const WebSocketConnectionImplPtr &connPtr,
+                  const WebSocketMessageType &type) {
             ctrlPtr->handleNewMessage(connPtr, std::move(message), type);
         });
     wsConnPtr->setCloseCallback(
-        [ctrlPtr](const WebSocketConnectionImplPtr &connPtr) { ctrlPtr->handleConnectionClosed(connPtr); });
+        [ctrlPtr](const WebSocketConnectionImplPtr &connPtr) {
+            ctrlPtr->handleConnectionClosed(connPtr);
+        });
     ctrlPtr->handleNewConnection(req, wsConnPtr);
     return;
 }
@@ -119,6 +154,7 @@ void WebsocketControllersRouter::init()
 {
     for (auto &iter : _websockCtrlMap)
     {
-        iter.second._filters = FiltersFunction::createFilters(iter.second._filterNames);
+        iter.second._filters =
+            FiltersFunction::createFilters(iter.second._filterNames);
     }
 }

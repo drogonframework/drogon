@@ -125,12 +125,15 @@ class HttpAppFramework : public trantor::NonCopyable
     /**
      * NOTE:
      * This method is usually called after the framework runs.
-     * Calling this method in the initAndStart() method of plugins is also valid.
+     * Calling this method in the initAndStart() method of plugins is also
+     * valid.
      */
     template <typename T>
     T *getPlugin()
     {
-        static_assert(IsPlugin<T>::value, "The Template parameter must be a subclass of PluginBase");
+        static_assert(IsPlugin<T>::value,
+                      "The Template parameter must be a subclass of "
+                      "PluginBase");
         assert(isRunning());
         return dynamic_cast<T *>(getPlugin(T::classTypeName()));
     }
@@ -141,14 +144,16 @@ class HttpAppFramework : public trantor::NonCopyable
      *
      * NOTE:
      * This method is usually called after the framework runs.
-     * Calling this method in the initAndStart() method of plugins is also valid.
+     * Calling this method in the initAndStart() method of plugins is also
+     * valid.
      */
     virtual PluginBase *getPlugin(const std::string &name) = 0;
 
     /// The following is a series of methods of AOP
 
     /// The @param advice is called immediately after the main event loop runs.
-    virtual void registerBeginningAdvice(const std::function<void()> &advice) = 0;
+    virtual void registerBeginningAdvice(
+        const std::function<void()> &advice) = 0;
 
     /// The @param advice is called immediately when a new connection is
     /// established.
@@ -160,51 +165,54 @@ class HttpAppFramework : public trantor::NonCopyable
      * Users can use this advice to implement some security policies.
      */
     virtual void registerNewConnectionAdvice(
-        const std::function<bool(const trantor::InetAddress &, const trantor::InetAddress &)> &advice) = 0;
+        const std::function<bool(const trantor::InetAddress &,
+                                 const trantor::InetAddress &)> &advice) = 0;
 
     /// The @param advice is called immediately after the request is created and
     /// before it matches any handler paths.
     /**
      * The parameters of the @param advice are same as those of the doFilter
      * method of the Filter class.
-     * The following diagram shows the location of the AOP join points during http
-     * request processing.
+     * The following diagram shows the location of the AOP join points during
+     * http request processing.
      *
      *
-     *                     +-----------+ +------------+
-     *                     |  Request  |                             |  Response |
-     *                     +-----------+ +------------+
-     *                           |                                         ^
-     *                           v                                         |
-     *    Pre-routing join point o----------->[Advice callback]----------->+
-     *                           |                                         |
-     *                           v         Invalid path                    |
-     *                     [Find Handler]---------------->[404]----------->+
-     *                           |                                         |
-     *                           v                                         |
-     *   Post-routing join point o----------->[Advice callback]----------->+
-     *                           |                                         |
-     *                           v        Invalid method                   |
-     *                     [Check Method]---------------->[405]----------->+
-     *                           |                                         |
-     *                           v                                         |
-     *                       [Filters]------->[Filter callback]----------->+
-     *                           |                                         |
-     *                           v             Y                           |
-     *                  [Is OPTIONS method?]------------->[200]----------->+
-     *                           |                                         |
-     *                           v                                         |
-     *   Pre-handling join point o----------->[Advice callback]----------->+
-     *                           |                                         |
-     *                           v                                         |
-     *                       [Handler]                                     |
-     *                           |                                         |
-     *                           v                                         |
-     *  Post-handling join point o---------------------------------------->+
+     *                   +-----------+                             +----------+
+     *                   |  Request  |                             | Response |
+     *                   +-----------+                             +----------+
+     *                         |                                         ^
+     *                         v                                         |
+     *  Pre-routing join point o----------->[Advice callback]----------->+
+     *                         |                                         |
+     *                         v         Invalid path                    |
+     *                   [Find Handler]---------------->[404]----------->+
+     *                         |                                         |
+     *                         v                                         |
+     * Post-routing join point o----------->[Advice callback]----------->+
+     *                         |                                         |
+     *                         v        Invalid method                   |
+     *                   [Check Method]---------------->[405]----------->+
+     *                         |                                         |
+     *                         v                                         |
+     *                     [Filters]------->[Filter callback]----------->+
+     *                         |                                         |
+     *                         v             Y                           |
+     *                [Is OPTIONS method?]------------->[200]----------->+
+     *                         |                                         |
+     *                         v                                         |
+     * Pre-handling join point o----------->[Advice callback]----------->+
+     *                         |                                         |
+     *                         v                                         |
+     *                     [Handler]                                     |
+     *                         |                                         |
+     *                         v                                         |
+     *Post-handling join point o---------------------------------------->+
      *
      */
     virtual void registerPreRoutingAdvice(
-        const std::function<void(const HttpRequestPtr &, AdviceCallback &&, AdviceChainCallback &&)> &advice) = 0;
+        const std::function<void(const HttpRequestPtr &,
+                                 AdviceCallback &&,
+                                 AdviceChainCallback &&)> &advice) = 0;
 
     /// The @param advice is called at the same time as the above advice. It can
     /// be thought of as an observer who cannot respond
@@ -214,17 +222,19 @@ class HttpAppFramework : public trantor::NonCopyable
      * If one does not intend to intercept the http request, please use this
      * interface.
      */
-    virtual void registerPreRoutingAdvice(const std::function<void(const HttpRequestPtr &)> &advice) = 0;
+    virtual void registerPreRoutingAdvice(
+        const std::function<void(const HttpRequestPtr &)> &advice) = 0;
 
-    /// The @param advice is called immediately after the request matchs a handler
-    /// path
-    /// and before any 'doFilter' method of filters applies.
+    /// The @param advice is called immediately after the request matchs a
+    /// handler path and before any 'doFilter' method of filters applies.
     /**
      * The parameters of the @param advice are same as those of the doFilter
      * method of the Filter class.
      */
     virtual void registerPostRoutingAdvice(
-        const std::function<void(const HttpRequestPtr &, AdviceCallback &&, AdviceChainCallback &&)> &advice) = 0;
+        const std::function<void(const HttpRequestPtr &,
+                                 AdviceCallback &&,
+                                 AdviceChainCallback &&)> &advice) = 0;
 
     /// The @param advice is called at the same time as the above advice. It can
     /// be thought of as an observer who cannot respond
@@ -234,7 +244,8 @@ class HttpAppFramework : public trantor::NonCopyable
      * If one does not intend to intercept the http request, please use this
      * interface.
      */
-    virtual void registerPostRoutingAdvice(const std::function<void(const HttpRequestPtr &)> &advice) = 0;
+    virtual void registerPostRoutingAdvice(
+        const std::function<void(const HttpRequestPtr &)> &advice) = 0;
 
     /// The @param advice is called immediately after the request is approved by
     /// all filters and before it is handled.
@@ -243,22 +254,25 @@ class HttpAppFramework : public trantor::NonCopyable
      * method of the Filter class.
      */
     virtual void registerPreHandlingAdvice(
-        const std::function<void(const HttpRequestPtr &, AdviceCallback &&, AdviceChainCallback &&)> &advice) = 0;
+        const std::function<void(const HttpRequestPtr &,
+                                 AdviceCallback &&,
+                                 AdviceChainCallback &&)> &advice) = 0;
 
     /// The @param advice is called at the same time as the above advice. It can
-    /// be thought of as an observer who cannot respond
-    /// to http requests.
+    /// be thought of as an observer who cannot respond to http requests.
     /**
      * This advice has less overhead than the above one.
      * If one does not intend to intercept the http request, please use this
      * interface.
      */
-    virtual void registerPreHandlingAdvice(const std::function<void(const HttpRequestPtr &)> &advice) = 0;
+    virtual void registerPreHandlingAdvice(
+        const std::function<void(const HttpRequestPtr &)> &advice) = 0;
 
-    /// The @param advice is called immediately after the request is handled and a
-    /// response object is created by handlers.
+    /// The @param advice is called immediately after the request is handled and
+    /// a response object is created by handlers.
     virtual void registerPostHandlingAdvice(
-        const std::function<void(const HttpRequestPtr &, const HttpResponsePtr &)> &advice) = 0;
+        const std::function<void(const HttpRequestPtr &,
+                                 const HttpResponsePtr &)> &advice) = 0;
 
     /// End of AOP methods
 
@@ -270,10 +284,10 @@ class HttpAppFramework : public trantor::NonCopyable
      * @param pathName: When the path of a http request is equal to the @param
      * pathName, the asyncHandleHttpRequest() method
      * of the controller is called.
-     * @param ctrlName is the name of the controller. It includes the namespace to
-     * which the controller belongs.
-     * @param filtersAndMethods is a vector containing Http methods or filter name
-     * constraints.
+     * @param ctrlName is the name of the controller. It includes the namespace
+     * to which the controller belongs.
+     * @param filtersAndMethods is a vector containing Http methods or filter
+     * name constraints.
      *
      * FOR EXAMPLE:
      * app.registerHttpSimpleController("/userinfo","UserInfoCtrl",{Get,"LoginFilter"});
@@ -282,9 +296,10 @@ class HttpAppFramework : public trantor::NonCopyable
      * Users can perform the same operation through the configuration file or a
      * macro in the header file.
      */
-    virtual void registerHttpSimpleController(const std::string &pathName,
-                                              const std::string &ctrlName,
-                                              const std::vector<any> &filtersAndMethods = std::vector<any>()) = 0;
+    virtual void registerHttpSimpleController(
+        const std::string &pathName,
+        const std::string &ctrlName,
+        const std::vector<any> &filtersAndMethods = std::vector<any>()) = 0;
 
     /// Register a handler into the framework.
     /**
@@ -299,9 +314,8 @@ class HttpAppFramework : public trantor::NonCopyable
      * FOR EXAMPLE:
      *  app.registerHandler("/hello?username={1}",
      *                      [](const HttpRequestPtr& req,
-     *                         const std::function<void (const HttpResponsePtr &)>
-     * & callback,
-     *                         const std::string &name)
+     *                         const std::function<void (const HttpResponsePtr
+     * &)> & callback, const std::string &name)
      *                         {
      *                             Json::Value json;
      *                             json["result"]="ok";
@@ -317,15 +331,17 @@ class HttpAppFramework : public trantor::NonCopyable
      * mapping.
      */
     template <typename FUNCTION>
-    void registerHandler(const std::string &pathPattern,
-                         FUNCTION &&function,
-                         const std::vector<any> &filtersAndMethods = std::vector<any>(),
-                         const std::string &handlerName = "")
+    void registerHandler(
+        const std::string &pathPattern,
+        FUNCTION &&function,
+        const std::vector<any> &filtersAndMethods = std::vector<any>(),
+        const std::string &handlerName = "")
     {
         LOG_TRACE << "pathPattern:" << pathPattern;
         internal::HttpBinderBasePtr binder;
 
-        binder = std::make_shared<internal::HttpBinder<FUNCTION>>(std::forward<FUNCTION>(function));
+        binder = std::make_shared<internal::HttpBinder<FUNCTION>>(
+            std::forward<FUNCTION>(function));
 
         std::vector<HttpMethod> validMethods;
         std::vector<std::string> filters;
@@ -345,33 +361,37 @@ class HttpAppFramework : public trantor::NonCopyable
             }
             else
             {
-                std::cerr << "Invalid controller constraint type:" << filterOrMethod.type().name() << std::endl;
+                std::cerr << "Invalid controller constraint type:"
+                          << filterOrMethod.type().name() << std::endl;
                 LOG_ERROR << "Invalid controller constraint type";
                 exit(1);
             }
         }
-        registerHttpController(pathPattern, binder, validMethods, filters, handlerName);
+        registerHttpController(pathPattern,
+                               binder,
+                               validMethods,
+                               filters,
+                               handlerName);
     }
 
     /// Register a WebSocketController into the framework.
     /// The parameters of this method are the same as those in the
     /// registerHttpSimpleController() method.
-    virtual void registerWebSocketController(const std::string &pathName,
-                                             const std::string &crtlName,
-                                             const std::vector<std::string> &filters = std::vector<std::string>()) = 0;
+    virtual void registerWebSocketController(
+        const std::string &pathName,
+        const std::string &crtlName,
+        const std::vector<std::string> &filters =
+            std::vector<std::string>()) = 0;
 
     /// Register controller objects created and initialized by the user
     /**
      * Drogon can only automatically create controllers using the default
      * constructor.
      * Sometimes users want to be able to create controllers using constructors
-     * with
-     * parameters. Controllers created by user in this way should be registered to
-     * the framework
-     * via this method.
-     * The macro or configuration file is still valid for the path routing
-     * configuration
-     * of the controller created by users.
+     * with parameters. Controllers created by user in this way should be
+     * registered to the framework via this method. The macro or configuration
+     * file is still valid for the path routing configuration of the controller
+     * created by users.
      *
      * NOTE:
      * The declaration of the controller class must be as follows:
@@ -392,8 +412,10 @@ class HttpAppFramework : public trantor::NonCopyable
     void registerController(const std::shared_ptr<T> &ctrlPtr)
     {
         static_assert(internal::IsSubClass<T, HttpControllerBase>::value ||
-                          internal::IsSubClass<T, HttpSimpleControllerBase>::value ||
-                          internal::IsSubClass<T, WebSocketControllerBase>::value,
+                          internal::IsSubClass<T, HttpSimpleControllerBase>::
+                              value ||
+                          internal::IsSubClass<T,
+                                               WebSocketControllerBase>::value,
                       "Error! Only controller objects can be registered here");
         static_assert(!T::isAutoCreation,
                       "Controllers created and initialized "
@@ -410,7 +432,8 @@ class HttpAppFramework : public trantor::NonCopyable
     template <typename T>
     void registerFilter(const std::shared_ptr<T> &filterPtr)
     {
-        static_assert(internal::IsSubClass<T, HttpFilterBase>::value, "Error! Only fitler objects can be registered here");
+        static_assert(internal::IsSubClass<T, HttpFilterBase>::value,
+                      "Error! Only fitler objects can be registered here");
         static_assert(!T::isAutoCreation,
                       "Filters created and initialized "
                       "automatically by drogon cannot be "
@@ -421,8 +444,7 @@ class HttpAppFramework : public trantor::NonCopyable
     /// Forward the http request
     /**
      * The @param hostString is the address where the request is forwarded. The
-     * following strings are
-     * valid for the @param hostString:
+     * following strings are valid for the @param hostString:
      *
      * https://www.baidu.com
      * http://www.baidu.com
@@ -439,9 +461,10 @@ class HttpAppFramework : public trantor::NonCopyable
      * This method can be used to implement reverse proxy or redirection on the
      * server side.
      */
-    virtual void forward(const HttpRequestPtr &req,
-                         std::function<void(const HttpResponsePtr &)> &&callback,
-                         const std::string &hostString = "") = 0;
+    virtual void forward(
+        const HttpRequestPtr &req,
+        std::function<void(const HttpResponsePtr &)> &&callback,
+        const std::string &hostString = "") = 0;
 
     /// Get information about the handlers registered to drogon
     /**
@@ -449,7 +472,8 @@ class HttpAppFramework : public trantor::NonCopyable
      * pattern of the handler;
      * The last item in std::tuple is the description of the handler.
      */
-    virtual std::vector<std::tuple<std::string, HttpMethod, std::string>> getHandlersInfo() const = 0;
+    virtual std::vector<std::tuple<std::string, HttpMethod, std::string>>
+    getHandlersInfo() const = 0;
 
     /// Get the custom configuration defined by users in the configuration file.
     virtual const Json::Value &getCustomConfig() const = 0;
@@ -470,7 +494,8 @@ class HttpAppFramework : public trantor::NonCopyable
 
     /// Set the global cert file and private key file for https
     /// These options can be configured in the configuration file.
-    virtual void setSSLFiles(const std::string &certPath, const std::string &keyPath) = 0;
+    virtual void setSSLFiles(const std::string &certPath,
+                             const std::string &keyPath) = 0;
 
     /// Add a listener for http or https service
     /**
@@ -478,8 +503,8 @@ class HttpAppFramework : public trantor::NonCopyable
      * @param port is the port that the listener listens on.
      * If @param useSSL is true, the listener is used for the https service.
      * @param certFile and @param keyFile specify the cert file and the private
-     * key file for this listener. If
-     * they are empty, the global configuration set by the above method is used.
+     * key file for this listener. If they are empty, the global configuration
+     * set by the above method is used.
      *
      * NOTE:
      * This operation can be performed by an option in the configuration file.
@@ -562,7 +587,8 @@ class HttpAppFramework : public trantor::NonCopyable
      * NOTE:
      * This operation can be performed by an option in the configuration file.
      */
-    virtual void enableDynamicViewsLoading(const std::vector<std::string> &libPaths) = 0;
+    virtual void enableDynamicViewsLoading(
+        const std::vector<std::string> &libPaths) = 0;
 
     /// Set the maximum number of all connections.
     /**
@@ -621,8 +647,8 @@ class HttpAppFramework : public trantor::NonCopyable
      */
     virtual void setLogLevel(trantor::Logger::LogLevel level) = 0;
 
-    /// If @param sendFile is true, sendfile() system-call is used to send static
-    /// files to clients;
+    /// If @param sendFile is true, sendfile() system-call is used to send
+    /// static files to clients;
     /**
      * The default value is true.
      *
@@ -630,8 +656,8 @@ class HttpAppFramework : public trantor::NonCopyable
      * This operation can be performed by an option in the configuration file.
      * Even though sendfile() is enabled, only files larger than 200k are sent
      * this way,
-     * because the advantages of sendfile() can only be reflected in sending large
-     * files.
+     * because the advantages of sendfile() can only be reflected in sending
+     * large files.
      */
     virtual void enableSendfile(bool sendFile) = 0;
 
@@ -680,16 +706,16 @@ class HttpAppFramework : public trantor::NonCopyable
      *   app().setIdleConnectionTimeout(0.5h);
      *   app().setIdleConnectionTimeout(30min);
      */
-    inline void setIdleConnectionTimeout(const std::chrono::duration<long double> &timeout)
+    inline void setIdleConnectionTimeout(
+        const std::chrono::duration<long double> &timeout)
     {
         setIdleConnectionTimeout((size_t)timeout.count());
     }
 
     /// Set the 'server' header field in each response sent by drogon.
     /**
-     * @param server: empty string by default with which the 'server' header field
-     * is
-     * set to "Server: drogon/version string\r\n"
+     * @param server: empty string by default with which the 'server' header
+     * field is set to "Server: drogon/version string\r\n"
      *
      * NOTE:
      * This operation can be performed by an option in the configuration file.
@@ -700,8 +726,7 @@ class HttpAppFramework : public trantor::NonCopyable
     /// keep-alive connection.
     /**
      * After the maximum number of requests are made, the connection is closed.
-     * The default value is
-     * 0 which means no limit.
+     * The default value is 0 which means no limit.
      *
      * NOTE:
      * This operation can be performed by an option in the configuration file.
@@ -712,8 +737,8 @@ class HttpAppFramework : public trantor::NonCopyable
     /// pipelining buffer.
     /**
      * The default value of 0 means no limit.
-     * After the maximum number of requests cached in pipelining buffer are made,
-     * the connection is closed.
+     * After the maximum number of requests cached in pipelining buffer are
+     * made, the connection is closed.
      *
      * NOTE:
      * This operation can be performed by an option in the configuration file.
@@ -722,11 +747,9 @@ class HttpAppFramework : public trantor::NonCopyable
 
     /// Set the gzip_static option.
     /**
-     * If it is set to true, when the client requests a static file, drogon first
-     * finds the compressed
-     * file with the extension ".gz" in the same path and send the compressed file
-     * to the client.
-     * The default value is true.
+     * If it is set to true, when the client requests a static file, drogon
+     * first finds the compressed file with the extension ".gz" in the same path
+     * and send the compressed file to the client. The default value is true.
      *
      * NOTE:
      * This operation can be performed by an option in the configuration file.
@@ -765,18 +788,21 @@ class HttpAppFramework : public trantor::NonCopyable
      * NOTE:
      * This method must be called after the framework has been run.
      */
-    virtual orm::DbClientPtr getDbClient(const std::string &name = "default") = 0;
+    virtual orm::DbClientPtr getDbClient(
+        const std::string &name = "default") = 0;
 
     /// Get a 'fast' database client by @param name
     /**
      * NOTE:
      * This method must be called after the framework has been run.
      */
-    virtual orm::DbClientPtr getFastDbClient(const std::string &name = "default") = 0;
+    virtual orm::DbClientPtr getFastDbClient(
+        const std::string &name = "default") = 0;
 
     /// Create a database client
     /**
-     * @param dbType: The database type is one of "postgresql","mysql","sqlite3".
+     * @param dbType: The database type is one of
+     * "postgresql","mysql","sqlite3".
      * @param host: IP or host name.
      * @param port: The port on which the database server is listening.
      * @databaseName, @param userName, @param password: ...
@@ -802,11 +828,12 @@ class HttpAppFramework : public trantor::NonCopyable
 #endif
 
   private:
-    virtual void registerHttpController(const std::string &pathPattern,
-                                        const internal::HttpBinderBasePtr &binder,
-                                        const std::vector<HttpMethod> &validMethods = std::vector<HttpMethod>(),
-                                        const std::vector<std::string> &filters = std::vector<std::string>(),
-                                        const std::string &handlerName = "") = 0;
+    virtual void registerHttpController(
+        const std::string &pathPattern,
+        const internal::HttpBinderBasePtr &binder,
+        const std::vector<HttpMethod> &validMethods = std::vector<HttpMethod>(),
+        const std::vector<std::string> &filters = std::vector<std::string>(),
+        const std::string &handlerName = "") = 0;
 };
 
 inline HttpAppFramework &app()
