@@ -112,13 +112,8 @@ void Sqlite3Connection::execSql(
          format = std::move(format),
          rcb = std::move(rcb),
          exceptCallback = std::move(exceptCallback)]() mutable {
-            thisPtr->execSqlInQueue(sql,
-                                    paraNum,
-                                    parameters,
-                                    length,
-                                    format,
-                                    rcb,
-                                    exceptCallback);
+            thisPtr->execSqlInQueue(
+                sql, paraNum, parameters, length, format, rcb, exceptCallback);
         });
 }
 
@@ -204,18 +199,12 @@ void Sqlite3Connection::execSqlInQueue(
                     sqlite3_bind_double(stmt, i + 1, *(double *)parameters[i]);
                 break;
             case Sqlite3TypeText:
-                bindRet = sqlite3_bind_text(stmt,
-                                            i + 1,
-                                            parameters[i],
-                                            -1,
-                                            SQLITE_STATIC);
+                bindRet = sqlite3_bind_text(
+                    stmt, i + 1, parameters[i], -1, SQLITE_STATIC);
                 break;
             case Sqlite3TypeBlob:
-                bindRet = sqlite3_bind_blob(stmt,
-                                            i + 1,
-                                            parameters[i],
-                                            length[i],
-                                            SQLITE_STATIC);
+                bindRet = sqlite3_bind_blob(
+                    stmt, i + 1, parameters[i], length[i], SQLITE_STATIC);
                 break;
             case Sqlite3TypeNull:
                 bindRet = sqlite3_bind_null(stmt, i + 1);
@@ -294,12 +283,9 @@ int Sqlite3Connection::stmtStep(
                         std::to_string(sqlite3_column_double(stmt, i))));
                     break;
                 case SQLITE_TEXT:
-                    row.push_back(
-                        std::make_shared<
-                            std::string>((const char *)sqlite3_column_text(stmt,
-                                                                           i),
-                                         (size_t)sqlite3_column_bytes(stmt,
-                                                                      i)));
+                    row.push_back(std::make_shared<std::string>(
+                        (const char *)sqlite3_column_text(stmt, i),
+                        (size_t)sqlite3_column_bytes(stmt, i)));
                     break;
                 case SQLITE_BLOB:
                 {

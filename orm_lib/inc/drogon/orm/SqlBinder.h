@@ -176,17 +176,19 @@ class CallbackHolder : public CallbackHolderBase
         _function(result);
     }
     template <typename... Values, std::size_t Boundary = argumentCount>
-    typename std::enable_if<(sizeof...(Values) < Boundary), void>::type
-    run(const Row *const row, bool isNull, Values &&... values)
+    typename std::enable_if<(sizeof...(Values) < Boundary), void>::type run(
+        const Row *const row,
+        bool isNull,
+        Values &&... values)
     {
         // call this function recursively until parameter's count equals to the
         // count of target function parameters
-        static_assert(CallbackArgTypeTraits<
-                          NthArgumentType<sizeof...(Values)>>::isValid,
-                      "your sql callback function argument type must be value "
-                      "type or "
-                      "const "
-                      "left-reference type");
+        static_assert(
+            CallbackArgTypeTraits<NthArgumentType<sizeof...(Values)>>::isValid,
+            "your sql callback function argument type must be value "
+            "type or "
+            "const "
+            "left-reference type");
         typedef typename std::remove_cv<typename std::remove_reference<
             NthArgumentType<sizeof...(Values)>>::type>::type ValueType;
         ValueType value = ValueType();
@@ -204,8 +206,10 @@ class CallbackHolder : public CallbackHolderBase
         run(row, isNull, std::forward<Values>(values)..., std::move(value));
     }
     template <typename... Values, std::size_t Boundary = argumentCount>
-    typename std::enable_if<(sizeof...(Values) == Boundary), void>::type
-    run(const Row *const row, bool isNull, Values &&... values)
+    typename std::enable_if<(sizeof...(Values) == Boundary), void>::type run(
+        const Row *const row,
+        bool isNull,
+        Values &&... values)
     {
         _function(isNull, std::move(values)...);
     }

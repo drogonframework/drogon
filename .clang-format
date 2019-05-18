@@ -86,13 +86,13 @@ ObjCBlockIndentWidth: 2
 ObjCSpaceAfterProperty: false
 ObjCSpaceBeforeProtocolList: true
 PenaltyBreakAssignment: 2
-PenaltyBreakBeforeFirstCallParameter: 10000
+PenaltyBreakBeforeFirstCallParameter: 100
 PenaltyBreakComment: 300
 PenaltyBreakFirstLessLess: 120
 PenaltyBreakString: 1000
 PenaltyBreakTemplateDeclaration: 10
-PenaltyExcessCharacter: 10000
-PenaltyReturnTypeOnItsOwnLine: 200
+PenaltyExcessCharacter: 1000000
+PenaltyReturnTypeOnItsOwnLine: 2000
 PointerAlignment: Left
 RawStringFormats: 
   - Language:        Cpp

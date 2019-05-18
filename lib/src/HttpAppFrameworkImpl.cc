@@ -169,11 +169,8 @@ void HttpAppFrameworkImpl::registerHttpController(
     assert(!pathPattern.empty());
     assert(binder);
     assert(!_running);
-    _httpCtrlsRouter.addHttpPath(pathPattern,
-                                 binder,
-                                 validMethods,
-                                 filters,
-                                 handlerName);
+    _httpCtrlsRouter.addHttpPath(
+        pathPattern, binder, validMethods, filters, handlerName);
 }
 void HttpAppFrameworkImpl::setThreadNum(size_t threadNum)
 {
@@ -345,23 +342,17 @@ void HttpAppFrameworkImpl::run()
                                  "drogonPortTest",
                                  true,
                                  false);
-                serverPtr =
-                    std::make_shared<HttpServer>(loopThreadPtr->getLoop(),
-                                                 InetAddress(ip,
-                                                             std::get<1>(
-                                                                 listener),
-                                                             isIpv6),
-                                                 "drogon");
+                serverPtr = std::make_shared<HttpServer>(
+                    loopThreadPtr->getLoop(),
+                    InetAddress(ip, std::get<1>(listener), isIpv6),
+                    "drogon");
             }
             else
             {
-                serverPtr =
-                    std::make_shared<HttpServer>(loopThreadPtr->getLoop(),
-                                                 InetAddress(ip,
-                                                             std::get<1>(
-                                                                 listener),
-                                                             isIpv6),
-                                                 "drogon");
+                serverPtr = std::make_shared<HttpServer>(
+                    loopThreadPtr->getLoop(),
+                    InetAddress(ip, std::get<1>(listener), isIpv6),
+                    "drogon");
             }
 
             if (std::get<2>(listener))
@@ -385,12 +376,8 @@ void HttpAppFrameworkImpl::run()
             }
             serverPtr->setHttpAsyncCallback(
                 std::bind(&HttpAppFrameworkImpl::onAsyncRequest, this, _1, _2));
-            serverPtr->setNewWebsocketCallback(
-                std::bind(&HttpAppFrameworkImpl::onNewWebsockRequest,
-                          this,
-                          _1,
-                          _2,
-                          _3));
+            serverPtr->setNewWebsocketCallback(std::bind(
+                &HttpAppFrameworkImpl::onNewWebsockRequest, this, _1, _2, _3));
             serverPtr->setConnectionCallback(
                 std::bind(&HttpAppFrameworkImpl::onConnection, this, _1));
             serverPtr->kickoffIdleConnections(_idleConnectionTimeout);
@@ -407,12 +394,10 @@ void HttpAppFrameworkImpl::run()
         loopThreads.push_back(loopThreadPtr);
         auto ip = std::get<0>(listener);
         bool isIpv6 = ip.find(":") == std::string::npos ? false : true;
-        auto serverPtr =
-            std::make_shared<HttpServer>(loopThreadPtr->getLoop(),
-                                         InetAddress(ip,
-                                                     std::get<1>(listener),
-                                                     isIpv6),
-                                         "drogon");
+        auto serverPtr = std::make_shared<HttpServer>(
+            loopThreadPtr->getLoop(),
+            InetAddress(ip, std::get<1>(listener), isIpv6),
+            "drogon");
         if (std::get<2>(listener))
         {
 #ifdef USE_OPENSSL
@@ -434,12 +419,8 @@ void HttpAppFrameworkImpl::run()
         serverPtr->setIoLoopNum(_threadNum);
         serverPtr->setHttpAsyncCallback(
             std::bind(&HttpAppFrameworkImpl::onAsyncRequest, this, _1, _2));
-        serverPtr->setNewWebsocketCallback(
-            std::bind(&HttpAppFrameworkImpl::onNewWebsockRequest,
-                      this,
-                      _1,
-                      _2,
-                      _3));
+        serverPtr->setNewWebsocketCallback(std::bind(
+            &HttpAppFrameworkImpl::onNewWebsockRequest, this, _1, _2, _3));
         serverPtr->setConnectionCallback(
             std::bind(&HttpAppFrameworkImpl::onConnection, this, _1));
         serverPtr->kickoffIdleConnections(_idleConnectionTimeout);
@@ -485,10 +466,8 @@ void HttpAppFrameworkImpl::run()
                 }
             }
             _sessionMapPtr = std::unique_ptr<CacheMap<std::string, SessionPtr>>(
-                new CacheMap<std::string, SessionPtr>(getLoop(),
-                                                      1.0,
-                                                      wheelNum,
-                                                      bucketNum));
+                new CacheMap<std::string, SessionPtr>(
+                    getLoop(), 1.0, wheelNum, bucketNum));
         }
         else if (_sessionTimeout == 0)
         {
@@ -498,12 +477,12 @@ void HttpAppFrameworkImpl::run()
     }
     _responseCachingMap =
         std::unique_ptr<CacheMap<std::string, HttpResponsePtr>>(
-            new CacheMap<std::string,
-                         HttpResponsePtr>(getLoop(),
-                                          1.0,
-                                          4,
-                                          50));  // Max timeout up to about 70
-                                                 // days;
+            new CacheMap<std::string, HttpResponsePtr>(
+                getLoop(),
+                1.0,
+                4,
+                50));  // Max timeout up to about 70
+                       // days;
 
     // Initialize plugins
     const auto &pluginConfig = _jsonConfig["plugins"];
@@ -544,10 +523,8 @@ void HttpAppFrameworkImpl::createDbClients(
                 {
                     _dbFastClientsMap[dbInfo._name][loop] =
                         std::shared_ptr<drogon::orm::DbClient>(
-                            new drogon::orm::
-                                DbClientLockFree(dbInfo._connectionInfo,
-                                                 loop,
-                                                 dbInfo._dbType));
+                            new drogon::orm::DbClientLockFree(
+                                dbInfo._connectionInfo, loop, dbInfo._dbType));
                 }
             }
         }
@@ -557,25 +534,24 @@ void HttpAppFrameworkImpl::createDbClients(
             {
 #if USE_POSTGRESQL
                 _dbClientsMap[dbInfo._name] =
-                    drogon::orm::DbClient::newPgClient(dbInfo._connectionInfo,
-                                                       dbInfo
-                                                           ._connectionNumber);
+                    drogon::orm::DbClient::newPgClient(
+                        dbInfo._connectionInfo, dbInfo._connectionNumber);
 #endif
             }
             else if (dbInfo._dbType == drogon::orm::ClientType::Mysql)
             {
 #if USE_MYSQL
-                _dbClientsMap[dbInfo._name] = drogon::orm::DbClient::
-                    newMysqlClient(dbInfo._connectionInfo,
-                                   dbInfo._connectionNumber);
+                _dbClientsMap[dbInfo._name] =
+                    drogon::orm::DbClient::newMysqlClient(
+                        dbInfo._connectionInfo, dbInfo._connectionNumber);
 #endif
             }
             else if (dbInfo._dbType == drogon::orm::ClientType::Sqlite3)
             {
 #if USE_SQLITE3
-                _dbClientsMap[dbInfo._name] = drogon::orm::DbClient::
-                    newSqlite3Client(dbInfo._connectionInfo,
-                                     dbInfo._connectionNumber);
+                _dbClientsMap[dbInfo._name] =
+                    drogon::orm::DbClient::newSqlite3Client(
+                        dbInfo._connectionInfo, dbInfo._connectionNumber);
 #endif
             }
         }
@@ -849,10 +825,8 @@ void HttpAppFrameworkImpl::onAsyncRequest(
                 std::ifstream infile(gzipFileName, std::ifstream::binary);
                 if (infile)
                 {
-                    resp = HttpResponse::newFileResponse(gzipFileName,
-                                                         "",
-                                                         drogon::getContentType(
-                                                             filePath));
+                    resp = HttpResponse::newFileResponse(
+                        gzipFileName, "", drogon::getContentType(filePath));
                     resp->addHeader("Content-Encoding", "gzip");
                 }
             }
@@ -869,8 +843,8 @@ void HttpAppFrameworkImpl::onAsyncRequest(
                 if (_staticFilesCacheTime >= 0)
                 {
                     resp->setExpiredTime(_staticFilesCacheTime);
-                    _responseCachingMap
-                        ->insert(filePath, resp, resp->expiredTime(), [=]() {
+                    _responseCachingMap->insert(
+                        filePath, resp, resp->expiredTime(), [=]() {
                             std::lock_guard<std::mutex> guard(
                                 _staticFilesCacheMutex);
                             _staticFilesCache.erase(filePath);
@@ -923,33 +897,28 @@ void HttpAppFrameworkImpl::onAsyncRequest(
             std::make_shared<std::function<void(const HttpResponsePtr &)>>(
                 std::move(callback));
         auto sessionIdPtr = std::make_shared<std::string>(std::move(sessionId));
-        doAdvicesChain(_preRoutingAdvices,
-                       0,
-                       req,
-                       std::make_shared<
-                           std::function<void(const HttpResponsePtr &)>>(
-                           [callbackPtr, needSetJsessionid, sessionIdPtr](
-                               const HttpResponsePtr &resp) {
-                               if (!needSetJsessionid ||
-                                   resp->statusCode() == k404NotFound)
-                                   (*callbackPtr)(resp);
-                               else
-                               {
-                                   resp->addCookie("JSESSIONID", *sessionIdPtr);
-                                   (*callbackPtr)(resp);
-                               }
-                           }),
-                       [this,
-                        callbackPtr,
-                        req,
-                        needSetJsessionid,
-                        sessionIdPtr]() {
-                           _httpSimpleCtrlsRouter.route(req,
-                                                        std::move(*callbackPtr),
-                                                        needSetJsessionid,
-                                                        std::move(
-                                                            *sessionIdPtr));
-                       });
+        doAdvicesChain(
+            _preRoutingAdvices,
+            0,
+            req,
+            std::make_shared<std::function<void(const HttpResponsePtr &)>>(
+                [callbackPtr, needSetJsessionid, sessionIdPtr](
+                    const HttpResponsePtr &resp) {
+                    if (!needSetJsessionid ||
+                        resp->statusCode() == k404NotFound)
+                        (*callbackPtr)(resp);
+                    else
+                    {
+                        resp->addCookie("JSESSIONID", *sessionIdPtr);
+                        (*callbackPtr)(resp);
+                    }
+                }),
+            [this, callbackPtr, req, needSetJsessionid, sessionIdPtr]() {
+                _httpSimpleCtrlsRouter.route(req,
+                                             std::move(*callbackPtr),
+                                             needSetJsessionid,
+                                             std::move(*sessionIdPtr));
+            });
     }
 }
 
@@ -1079,33 +1048,30 @@ void HttpAppFrameworkImpl::forward(
             }
             else
             {
-                clientPtr = std::make_shared<
-                    HttpClientImpl>(trantor::EventLoop::
-                                            getEventLoopOfCurrentThread()
-                                        ? trantor::EventLoop::
-                                              getEventLoopOfCurrentThread()
-                                        : getLoop(),
-                                    hostString);
+                clientPtr = std::make_shared<HttpClientImpl>(
+                    trantor::EventLoop::getEventLoopOfCurrentThread()
+                        ? trantor::EventLoop::getEventLoopOfCurrentThread()
+                        : getLoop(),
+                    hostString);
                 clientsMap[hostString] = clientPtr;
             }
         }
-        clientPtr->sendRequest(req,
-                               [callback = std::move(
-                                    callback)](ReqResult result,
-                                               const HttpResponsePtr &resp) {
-                                   if (result == ReqResult::Ok)
-                                   {
-                                       resp->removeHeader("server");
-                                       resp->removeHeader("date");
-                                       resp->removeHeader("content-length");
-                                       resp->removeHeader("transfer-encoding");
-                                       callback(resp);
-                                   }
-                                   else
-                                   {
-                                       callback(
-                                           HttpResponse::newNotFoundResponse());
-                                   }
-                               });
+        clientPtr->sendRequest(
+            req,
+            [callback = std::move(callback)](ReqResult result,
+                                             const HttpResponsePtr &resp) {
+                if (result == ReqResult::Ok)
+                {
+                    resp->removeHeader("server");
+                    resp->removeHeader("date");
+                    resp->removeHeader("content-length");
+                    resp->removeHeader("transfer-encoding");
+                    callback(resp);
+                }
+                else
+                {
+                    callback(HttpResponse::newNotFoundResponse());
+                }
+            });
     }
 }

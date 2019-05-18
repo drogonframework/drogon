@@ -51,12 +51,9 @@ class DrClassMap
     {
         std::size_t len = 0;
         int status = 0;
-        std::unique_ptr<char, decltype(&std::free)>
-            ptr(__cxxabiv1::__cxa_demangle(mangled_name,
-                                           nullptr,
-                                           &len,
-                                           &status),
-                &std::free);
+        std::unique_ptr<char, decltype(&std::free)> ptr(
+            __cxxabiv1::__cxa_demangle(mangled_name, nullptr, &len, &status),
+            &std::free);
         if (status == 0)
         {
             return std::string(ptr.get());

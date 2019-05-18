@@ -314,8 +314,9 @@ class HttpAppFramework : public trantor::NonCopyable
      * FOR EXAMPLE:
      *  app.registerHandler("/hello?username={1}",
      *                      [](const HttpRequestPtr& req,
-     *                         const std::function<void (const HttpResponsePtr
-     * &)> & callback, const std::string &name)
+     *                         std::function<void (const HttpResponsePtr
+     * &)> &&callback,
+     *                         const std::string &name)
      *                         {
      *                             Json::Value json;
      *                             json["result"]="ok";
@@ -367,11 +368,8 @@ class HttpAppFramework : public trantor::NonCopyable
                 exit(1);
             }
         }
-        registerHttpController(pathPattern,
-                               binder,
-                               validMethods,
-                               filters,
-                               handlerName);
+        registerHttpController(
+            pathPattern, binder, validMethods, filters, handlerName);
     }
 
     /// Register a WebSocketController into the framework.
@@ -411,12 +409,11 @@ class HttpAppFramework : public trantor::NonCopyable
     template <typename T>
     void registerController(const std::shared_ptr<T> &ctrlPtr)
     {
-        static_assert(internal::IsSubClass<T, HttpControllerBase>::value ||
-                          internal::IsSubClass<T, HttpSimpleControllerBase>::
-                              value ||
-                          internal::IsSubClass<T,
-                                               WebSocketControllerBase>::value,
-                      "Error! Only controller objects can be registered here");
+        static_assert(
+            internal::IsSubClass<T, HttpControllerBase>::value ||
+                internal::IsSubClass<T, HttpSimpleControllerBase>::value ||
+                internal::IsSubClass<T, WebSocketControllerBase>::value,
+            "Error! Only controller objects can be registered here");
         static_assert(!T::isAutoCreation,
                       "Controllers created and initialized "
                       "automatically by drogon cannot be "

@@ -19,11 +19,15 @@
 using namespace drogon;
 namespace drogon_ctl
 {
-class create_controller : public DrObject<create_controller>, public CommandHandler
+class create_controller : public DrObject<create_controller>,
+                          public CommandHandler
 {
   public:
     virtual void handleCommand(std::vector<std::string> &parameters) override;
-    virtual std::string script() override { return "create controller files"; }
+    virtual std::string script() override
+    {
+        return "create controller files";
+    }
 
   protected:
     enum ControllerType
@@ -33,16 +37,26 @@ class create_controller : public DrObject<create_controller>, public CommandHand
         WebSocket
     };
 
-    void createController(std::vector<std::string> &httpClasses, ControllerType type);
+    void createController(std::vector<std::string> &httpClasses,
+                          ControllerType type);
     void createController(const std::string &className, ControllerType type);
 
-    void newSimpleControllerHeaderFile(std::ofstream &file, const std::string &className);
-    void newSimpleControllerSourceFile(std::ofstream &file, const std::string &className, const std::string &filename);
+    void newSimpleControllerHeaderFile(std::ofstream &file,
+                                       const std::string &className);
+    void newSimpleControllerSourceFile(std::ofstream &file,
+                                       const std::string &className,
+                                       const std::string &filename);
 
-    void newWebsockControllerHeaderFile(std::ofstream &file, const std::string &className);
-    void newWebsockControllerSourceFile(std::ofstream &file, const std::string &className, const std::string &filename);
+    void newWebsockControllerHeaderFile(std::ofstream &file,
+                                        const std::string &className);
+    void newWebsockControllerSourceFile(std::ofstream &file,
+                                        const std::string &className,
+                                        const std::string &filename);
 
-    void newHttpControllerHeaderFile(std::ofstream &file, const std::string &className);
-    void newHttpControllerSourceFile(std::ofstream &file, const std::string &className, const std::string &filename);
+    void newHttpControllerHeaderFile(std::ofstream &file,
+                                     const std::string &className);
+    void newHttpControllerSourceFile(std::ofstream &file,
+                                     const std::string &className,
+                                     const std::string &filename);
 };
-} // namespace drogon_ctl
+}  // namespace drogon_ctl

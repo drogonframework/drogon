@@ -25,16 +25,16 @@ const std::string Users::primaryKeyName = "id";
 const bool Users::hasPrimaryKey = true;
 const std::string Users::tableName = "users";
 
-const std::vector<typename Users::MetaData> Users::_metaData =
-    {{"user_id", "std::string", "character varying", 32, 0, 0, 0},
-     {"user_name", "std::string", "character varying", 64, 0, 0, 0},
-     {"password", "std::string", "character varying", 64, 0, 0, 0},
-     {"org_name", "std::string", "character varying", 20, 0, 0, 0},
-     {"signature", "std::string", "character varying", 50, 0, 0, 0},
-     {"avatar_id", "std::string", "character varying", 32, 0, 0, 0},
-     {"id", "int32_t", "integer", 4, 1, 1, 1},
-     {"salt", "std::string", "character varying", 20, 0, 0, 0},
-     {"admin", "bool", "boolean", 1, 0, 0, 0}};
+const std::vector<typename Users::MetaData> Users::_metaData = {
+    {"user_id", "std::string", "character varying", 32, 0, 0, 0},
+    {"user_name", "std::string", "character varying", 64, 0, 0, 0},
+    {"password", "std::string", "character varying", 64, 0, 0, 0},
+    {"org_name", "std::string", "character varying", 20, 0, 0, 0},
+    {"signature", "std::string", "character varying", 50, 0, 0, 0},
+    {"avatar_id", "std::string", "character varying", 32, 0, 0, 0},
+    {"id", "int32_t", "integer", 4, 1, 1, 1},
+    {"salt", "std::string", "character varying", 20, 0, 0, 0},
+    {"admin", "bool", "boolean", 1, 0, 0, 0}};
 const std::string &Users::getColumnName(size_t index) noexcept(false)
 {
     assert(index < _metaData.size());

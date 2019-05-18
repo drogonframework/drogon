@@ -23,13 +23,18 @@ class create_view : public DrObject<create_view>, public CommandHandler
 {
   public:
     virtual void handleCommand(std::vector<std::string> &parameters) override;
-    virtual std::string script() override { return "create view class files"; }
+    virtual std::string script() override
+    {
+        return "create view class files";
+    }
 
   protected:
     std::string _outputPath = ".";
     void createViewFiles(std::vector<std::string> &cspFileNames);
     int createViewFile(const std::string &script_filename);
     void newViewHeaderFile(std::ofstream &file, const std::string &className);
-    void newViewSourceFile(std::ofstream &file, const std::string &className, std::ifstream &infile);
+    void newViewSourceFile(std::ofstream &file,
+                           const std::string &className,
+                           std::ifstream &infile);
 };
-} // namespace drogon_ctl
+}  // namespace drogon_ctl

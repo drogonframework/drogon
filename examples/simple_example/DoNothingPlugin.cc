@@ -13,7 +13,7 @@ void DoNothingPlugin::initAndStart(const Json::Value &config)
     /// Initialize and start the plugin
 }
 
-void DoNothingPlugin::shutdown() 
+void DoNothingPlugin::shutdown()
 {
     /// Shutdown the plugin
 }

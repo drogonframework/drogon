@@ -1,8 +1,10 @@
 #include "WebSocketTest.h"
 using namespace example;
-void WebSocketTest::handleNewMessage(const WebSocketConnectionPtr &wsConnPtr, std::string &&message, const WebSocketMessageType &type)
+void WebSocketTest::handleNewMessage(const WebSocketConnectionPtr &wsConnPtr,
+                                     std::string &&message,
+                                     const WebSocketMessageType &type)
 {
-    //write your application logic here
+    // write your application logic here
     LOG_DEBUG << "new websocket message:" << message;
     if (type == WebSocketMessageType::Ping)
     {

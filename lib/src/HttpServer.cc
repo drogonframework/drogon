@@ -229,8 +229,7 @@ void HttpServer::onRequest(const TcpConnectionPtr &conn,
             std::dynamic_pointer_cast<HttpResponseImpl>(newResp)
                 ->sendfileName();
 
-        if (HttpAppFramework::instance().isGzipEnabled() &&
-            sendfileName.empty() &&
+        if (app().isGzipEnabled() && sendfileName.empty() &&
             req->getHeaderBy("accept-encoding").find("gzip") !=
                 std::string::npos &&
             std::dynamic_pointer_cast<HttpResponseImpl>(response)

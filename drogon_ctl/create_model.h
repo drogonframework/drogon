@@ -26,47 +26,56 @@ using namespace drogon::orm;
 
 using namespace drogon;
 
-
 namespace drogon_ctl
 {
-
 struct ColumnInfo
 {
-  std::string _colName;
-  std::string _colValName;
-  std::string _colTypeName;
-  std::string _colType;
-  std::string _colDatabaseType;
-  std::string _dbType;
-  ssize_t _colLength = 0;
-  size_t _index = 0;
-  bool _isAutoVal = false;
-  bool _isPrimaryKey = false;
-  bool _notNull = false;
-  bool _hasDefaultVal = false;
+    std::string _colName;
+    std::string _colValName;
+    std::string _colTypeName;
+    std::string _colType;
+    std::string _colDatabaseType;
+    std::string _dbType;
+    ssize_t _colLength = 0;
+    size_t _index = 0;
+    bool _isAutoVal = false;
+    bool _isPrimaryKey = false;
+    bool _notNull = false;
+    bool _hasDefaultVal = false;
 };
 
 class create_model : public DrObject<create_model>, public CommandHandler
 {
-public:
-  virtual void handleCommand(std::vector<std::string> &parameters) override;
-  virtual std::string script() override { return "create Model classes files"; }
+  public:
+    virtual void handleCommand(std::vector<std::string> &parameters) override;
+    virtual std::string script() override
+    {
+        return "create Model classes files";
+    }
 
-protected:
-  void createModel(const std::string &path);
-  void createModel(const std::string &path, const Json::Value &config);
+  protected:
+    void createModel(const std::string &path);
+    void createModel(const std::string &path, const Json::Value &config);
 #if USE_POSTGRESQL
-  void createModelClassFromPG(const std::string &path, const DbClientPtr &client, const std::string &tableName);
-  void createModelFromPG(const std::string &path, const DbClientPtr &client);
+    void createModelClassFromPG(const std::string &path,
+                                const DbClientPtr &client,
+                                const std::string &tableName);
+    void createModelFromPG(const std::string &path, const DbClientPtr &client);
 #endif
 #if USE_MYSQL
-  void createModelClassFromMysql(const std::string &path, const DbClientPtr &client, const std::string &tableName);
-  void createModelFromMysql(const std::string &path, const DbClientPtr &client);
+    void createModelClassFromMysql(const std::string &path,
+                                   const DbClientPtr &client,
+                                   const std::string &tableName);
+    void createModelFromMysql(const std::string &path,
+                              const DbClientPtr &client);
 #endif
 #if USE_SQLITE3
-  void createModelClassFromSqlite3(const std::string &path, const DbClientPtr &client, const std::string &tableName);
-  void createModelFromSqlite3(const std::string &path, const DbClientPtr &client);
+    void createModelClassFromSqlite3(const std::string &path,
+                                     const DbClientPtr &client,
+                                     const std::string &tableName);
+    void createModelFromSqlite3(const std::string &path,
+                                const DbClientPtr &client);
 #endif
-  std::string _dbname;
+    std::string _dbname;
 };
-} // namespace drogon_ctl
+}  // namespace drogon_ctl
