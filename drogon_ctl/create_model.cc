@@ -61,7 +61,9 @@ std::string nameTransform(const std::string &origName, bool isType)
 }
 
 #if USE_POSTGRESQL
-void create_model::createModelClassFromPG(const std::string &path, const DbClientPtr &client, const std::string &tableName)
+void create_model::createModelClassFromPG(const std::string &path,
+                                          const DbClientPtr &client,
+                                          const std::string &tableName)
 {
     auto className = nameTransform(tableName, true);
     HttpViewData data;
@@ -80,7 +82,10 @@ void create_model::createModelClassFromPG(const std::string &path, const DbClien
         [&](const Result &r) {
             if (r.size() == 0)
             {
-                std::cout << "    ---Can't create model from the table " << tableName << ", please check privileges on the table." << std::endl;
+                std::cout << "    ---Can't create model from the table "
+                          << tableName
+                          << ", please check privileges on the table."
+                          << std::endl;
                 return;
             }
             for (size_t i = 0; i < r.size(); i++)
@@ -107,7 +112,9 @@ void create_model::createModelClassFromPG(const std::string &path, const DbClien
                     info._colType = "int32_t";
                     info._colLength = 4;
                 }
-                else if (type == "bigint" || type == "numeric") ///TODO:Use int64 to represent numeric type?
+                else if (type == "bigint" ||
+                         type == "numeric")  /// TODO:Use int64 to represent
+                                             /// numeric type?
                 {
                     info._colType = "int64_t";
                     info._colLength = 8;
@@ -126,7 +133,8 @@ void create_model::createModelClassFromPG(const std::string &path, const DbClien
                 {
                     info._colType = "std::string";
                     if (!row["character_maximum_length"].isNull())
-                        info._colLength = row["character_maximum_length"].as<ssize_t>();
+                        info._colLength =
+                            row["character_maximum_length"].as<ssize_t>();
                 }
                 else if (type == "boolean")
                 {
@@ -176,12 +184,14 @@ void create_model::createModelClassFromPG(const std::string &path, const DbClien
                 WHERE \
                 pg_class.relname = $1 \
                 AND pg_constraint.contype = 'p'"
-            << tableName
-            << Mode::Blocking >>
-        [&](bool isNull, const std::string &pkName, const std::vector<std::shared_ptr<short>> &pk) {
+            << tableName << Mode::Blocking >>
+        [&](bool isNull,
+            const std::string &pkName,
+            const std::vector<std::shared_ptr<short>> &pk) {
             if (!isNull)
             {
-                //std::cout << tableName << " Primary key = " << pk.size() << std::endl;
+                // std::cout << tableName << " Primary key = " << pk.size() <<
+                // std::endl;
                 pkNumber = pk.size();
             }
         } >>
@@ -237,13 +247,11 @@ void create_model::createModelClassFromPG(const std::string &path, const DbClien
                 AND pg_attribute.attnum = pg_constraint.conkey [ $1 ] \
                 INNER JOIN pg_type ON pg_type.oid = pg_attribute.atttypid \
                 WHERE pg_class.relname = $2 and pg_constraint.contype='p'"
-                    << (int)i
-                    << tableName
-                    << Mode::Blocking >>
+                    << (int)i << tableName << Mode::Blocking >>
                 [&](bool isNull, std::string colName, const std::string &type) {
                     if (isNull)
                         return;
-                    //std::cout << "primary key name=" << colName << std::endl;
+                    // std::cout << "primary key name=" << colName << std::endl;
                     pkNames.push_back(colName);
                     for (auto &col : cols)
                     {
@@ -265,23 +273,30 @@ void create_model::createModelClassFromPG(const std::string &path, const DbClien
 
     data["columns"] = cols;
     std::ofstream headerFile(path + "/" + className + ".h", std::ofstream::out);
-    std::ofstream sourceFile(path + "/" + className + ".cc", std::ofstream::out);
+    std::ofstream sourceFile(path + "/" + className + ".cc",
+                             std::ofstream::out);
     auto templ = DrTemplateBase::newTemplate("model_h.csp");
     headerFile << templ->genText(data);
     templ = DrTemplateBase::newTemplate("model_cc.csp");
     sourceFile << templ->genText(data);
 }
-void create_model::createModelFromPG(const std::string &path, const DbClientPtr &client)
+void create_model::createModelFromPG(const std::string &path,
+                                     const DbClientPtr &client)
 {
     *client << "SELECT a.oid,"
                "a.relname AS name,"
                "b.description AS comment "
                "FROM pg_class a "
-               "LEFT OUTER JOIN pg_description b ON b.objsubid = 0 AND a.oid = b.objoid "
-               "WHERE a.relnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public') "
+               "LEFT OUTER JOIN pg_description b ON b.objsubid = 0 AND a.oid = "
+               "b.objoid "
+               "WHERE a.relnamespace = (SELECT oid FROM pg_namespace WHERE "
+               "nspname = 'public') "
                "AND a.relkind = 'r' ORDER BY a.relname"
             << Mode::Blocking >>
-        [&](bool isNull, size_t oid, const std::string &tableName, const std::string &comment) {
+        [&](bool isNull,
+            size_t oid,
+            const std::string &tableName,
+            const std::string &comment) {
             if (!isNull)
             {
                 std::cout << "table name:" << tableName << std::endl;
@@ -296,7 +311,9 @@ void create_model::createModelFromPG(const std::string &path, const DbClientPtr 
 #endif
 
 #if USE_MYSQL
-void create_model::createModelClassFromMysql(const std::string &path, const DbClientPtr &client, const std::string &tableName)
+void create_model::createModelClassFromMysql(const std::string &path,
+                                             const DbClientPtr &client,
+                                             const std::string &tableName)
 {
     auto className = nameTransform(tableName, true);
     HttpViewData data;
@@ -309,7 +326,13 @@ void create_model::createModelClassFromMysql(const std::string &path, const DbCl
     std::vector<ColumnInfo> cols;
     int i = 0;
     *client << "desc " + tableName << Mode::Blocking >>
-        [&i,&cols](bool isNull, const std::string &field, const std::string &type, const std::string &isNullAble, const std::string &key, const std::string &defaultVal, const std::string &extra) {
+        [&i, &cols](bool isNull,
+                    const std::string &field,
+                    const std::string &type,
+                    const std::string &isNullAble,
+                    const std::string &key,
+                    const std::string &defaultVal,
+                    const std::string &extra) {
             if (!isNull)
             {
                 ColumnInfo info;
@@ -351,7 +374,8 @@ void create_model::createModelClassFromMysql(const std::string &path, const DbCl
                     info._colType = "double";
                     info._colLength = sizeof(double);
                 }
-                else if (type.find("date") == 0 || type.find("datetime") == 0 || type.find("timestamp") == 0)
+                else if (type.find("date") == 0 || type.find("datetime") == 0 ||
+                         type.find("timestamp") == 0)
                 {
                     info._colType = "::trantor::Date";
                 }
@@ -405,13 +429,15 @@ void create_model::createModelClassFromMysql(const std::string &path, const DbCl
     }
     data["columns"] = cols;
     std::ofstream headerFile(path + "/" + className + ".h", std::ofstream::out);
-    std::ofstream sourceFile(path + "/" + className + ".cc", std::ofstream::out);
+    std::ofstream sourceFile(path + "/" + className + ".cc",
+                             std::ofstream::out);
     auto templ = DrTemplateBase::newTemplate("model_h.csp");
     headerFile << templ->genText(data);
     templ = DrTemplateBase::newTemplate("model_cc.csp");
     sourceFile << templ->genText(data);
 }
-void create_model::createModelFromMysql(const std::string &path, const DbClientPtr &client)
+void create_model::createModelFromMysql(const std::string &path,
+                                        const DbClientPtr &client)
 {
     *client << "show tables" << Mode::Blocking >>
         [&](bool isNull, const std::string &tableName) {
@@ -428,11 +454,13 @@ void create_model::createModelFromMysql(const std::string &path, const DbClientP
 }
 #endif
 #if USE_SQLITE3
-void create_model::createModelClassFromSqlite3(const std::string &path, const DbClientPtr &client, const std::string &tableName)
+void create_model::createModelClassFromSqlite3(const std::string &path,
+                                               const DbClientPtr &client,
+                                               const std::string &tableName)
 {
-    *client << "SELECT sql FROM sqlite_master WHERE name=? and (type='table' or type='view');"
-            << tableName
-            << Mode::Blocking >>
+    *client << "SELECT sql FROM sqlite_master WHERE name=? and (type='table' "
+               "or type='view');"
+            << tableName << Mode::Blocking >>
         [=](bool isNull, std::string sql) {
             if (!isNull)
             {
@@ -452,22 +480,28 @@ void create_model::createModelClassFromSqlite3(const std::string &path, const Db
                     data["primaryKeyName"] = "";
                     data["dbName"] = "sqlite3";
                     data["rdbms"] = std::string("sqlite3");
-                    //std::cout << sql << std::endl;
+                    // std::cout << sql << std::endl;
                     auto columns = utils::splitString(sql, ",");
                     int i = 0;
                     std::vector<ColumnInfo> cols;
                     for (auto &column : columns)
                     {
-                        std::transform(column.begin(), column.end(), column.begin(), tolower);
+                        std::transform(column.begin(),
+                                       column.end(),
+                                       column.begin(),
+                                       tolower);
                         auto columnVector = utils::splitString(column, " ");
                         auto field = columnVector[0];
                         auto type = columnVector[1];
 
-                        bool notnull = (column.find("not null") != std::string::npos);
-                        bool autoVal = (column.find("autoincrement") != std::string::npos);
-                        bool primary = (column.find("primary key") != std::string::npos);
+                        bool notnull =
+                            (column.find("not null") != std::string::npos);
+                        bool autoVal =
+                            (column.find("autoincrement") != std::string::npos);
+                        bool primary =
+                            (column.find("primary key") != std::string::npos);
 
-                        //std::cout << "field:" << field << std::endl;
+                        // std::cout << "field:" << field << std::endl;
                         ColumnInfo info;
                         info._index = i;
                         info._dbType = "sqlite3";
@@ -484,11 +518,13 @@ void create_model::createModelClassFromSqlite3(const std::string &path, const Db
                             info._colType = "uint64_t";
                             info._colLength = 8;
                         }
-                        else if (type.find("char") != std::string::npos || type == "text" || type == "clob")
+                        else if (type.find("char") != std::string::npos ||
+                                 type == "text" || type == "clob")
                         {
                             info._colType = "std::string";
                         }
-                        else if (type.find("double") != std::string::npos || type == "real" || type == "float")
+                        else if (type.find("double") != std::string::npos ||
+                                 type == "real" || type == "float")
                         {
                             info._colType = "double";
                             info._colLength = sizeof(double);
@@ -526,8 +562,10 @@ void create_model::createModelClassFromSqlite3(const std::string &path, const Db
                         data["primaryKeyType"] = pkTypes;
                     }
                     data["columns"] = cols;
-                    std::ofstream headerFile(path + "/" + className + ".h", std::ofstream::out);
-                    std::ofstream sourceFile(path + "/" + className + ".cc", std::ofstream::out);
+                    std::ofstream headerFile(path + "/" + className + ".h",
+                                             std::ofstream::out);
+                    std::ofstream sourceFile(path + "/" + className + ".cc",
+                                             std::ofstream::out);
                     auto templ = DrTemplateBase::newTemplate("model_h.csp");
                     headerFile << templ->genText(data);
                     templ = DrTemplateBase::newTemplate("model_cc.csp");
@@ -535,7 +573,8 @@ void create_model::createModelClassFromSqlite3(const std::string &path, const Db
                 }
                 else
                 {
-                    std::cout << "The sql for creating table is wrong!" << std::endl;
+                    std::cout << "The sql for creating table is wrong!"
+                              << std::endl;
                     exit(1);
                 }
             }
@@ -545,9 +584,11 @@ void create_model::createModelClassFromSqlite3(const std::string &path, const Db
             exit(1);
         };
 }
-void create_model::createModelFromSqlite3(const std::string &path, const DbClientPtr &client)
+void create_model::createModelFromSqlite3(const std::string &path,
+                                          const DbClientPtr &client)
 {
-    *client << "SELECT name FROM sqlite_master WHERE name!='sqlite_sequence' and (type='table' or type='view') ORDER BY name;"
+    *client << "SELECT name FROM sqlite_master WHERE name!='sqlite_sequence' "
+               "and (type='table' or type='view') ORDER BY name;"
             << Mode::Blocking >>
         [=](bool isNull, const std::string &tableName) {
             if (!isNull)
@@ -563,7 +604,8 @@ void create_model::createModelFromSqlite3(const std::string &path, const DbClien
 }
 #endif
 
-void create_model::createModel(const std::string &path, const Json::Value &config)
+void create_model::createModel(const std::string &path,
+                               const Json::Value &config)
 {
     auto dbType = config.get("rdbms", "no dbms").asString();
     std::transform(dbType.begin(), dbType.end(), dbType.begin(), tolower);
@@ -576,19 +618,26 @@ void create_model::createModel(const std::string &path, const Json::Value &confi
         auto dbname = config.get("dbname", "").asString();
         if (dbname == "")
         {
-            std::cerr << "Please configure dbname in " << path << "/model.json " << std::endl;
+            std::cerr << "Please configure dbname in " << path << "/model.json "
+                      << std::endl;
             exit(1);
         }
         _dbname = dbname;
         auto user = config.get("user", "").asString();
         if (user == "")
         {
-            std::cerr << "Please configure user in " << path << "/model.json " << std::endl;
+            std::cerr << "Please configure user in " << path << "/model.json "
+                      << std::endl;
             exit(1);
         }
         auto password = config.get("passwd", "").asString();
 
-        auto connStr = utils::formattedString("host=%s port=%u dbname=%s user=%s", host.c_str(), port, dbname.c_str(), user.c_str());
+        auto connStr =
+            utils::formattedString("host=%s port=%u dbname=%s user=%s",
+                                   host.c_str(),
+                                   port,
+                                   dbname.c_str(),
+                                   user.c_str());
         if (!password.empty())
         {
             connStr += " password=";
@@ -596,7 +645,8 @@ void create_model::createModel(const std::string &path, const Json::Value &confi
         }
         DbClientPtr client = drogon::orm::DbClient::newPgClient(connStr, 1);
         std::cout << "Connect to server..." << std::endl;
-        std::cout << "Source files in the " << path << " folder will be overwritten, continue(y/n)?\n";
+        std::cout << "Source files in the " << path
+                  << " folder will be overwritten, continue(y/n)?\n";
         auto in = getchar();
         if (in != 'Y' && in != 'y')
         {
@@ -616,7 +666,10 @@ void create_model::createModel(const std::string &path, const Json::Value &confi
             }
         }
 #else
-        std::cerr << "Drogon does not support PostgreSQL, please install PostgreSQL development environment before installing drogon" << std::endl;
+        std::cerr
+            << "Drogon does not support PostgreSQL, please install PostgreSQL "
+               "development environment before installing drogon"
+            << std::endl;
 #endif
     }
     else if (dbType == "mysql")
@@ -628,19 +681,26 @@ void create_model::createModel(const std::string &path, const Json::Value &confi
         auto dbname = config.get("dbname", "").asString();
         if (dbname == "")
         {
-            std::cerr << "Please configure dbname in " << path << "/model.json " << std::endl;
+            std::cerr << "Please configure dbname in " << path << "/model.json "
+                      << std::endl;
             exit(1);
         }
         _dbname = dbname;
         auto user = config.get("user", "").asString();
         if (user == "")
         {
-            std::cerr << "Please configure user in " << path << "/model.json " << std::endl;
+            std::cerr << "Please configure user in " << path << "/model.json "
+                      << std::endl;
             exit(1);
         }
         auto password = config.get("passwd", "").asString();
 
-        auto connStr = utils::formattedString("host=%s port=%u dbname=%s user=%s", host.c_str(), port, dbname.c_str(), user.c_str());
+        auto connStr =
+            utils::formattedString("host=%s port=%u dbname=%s user=%s",
+                                   host.c_str(),
+                                   port,
+                                   dbname.c_str(),
+                                   user.c_str());
         if (!password.empty())
         {
             connStr += " password=";
@@ -648,7 +708,8 @@ void create_model::createModel(const std::string &path, const Json::Value &confi
         }
         DbClientPtr client = drogon::orm::DbClient::newMysqlClient(connStr, 1);
         std::cout << "Connect to server..." << std::endl;
-        std::cout << "Source files in the " << path << " folder will be overwritten, continue(y/n)?\n";
+        std::cout << "Source files in the " << path
+                  << " folder will be overwritten, continue(y/n)?\n";
         auto in = getchar();
         if (in != 'Y' && in != 'y')
         {
@@ -668,7 +729,9 @@ void create_model::createModel(const std::string &path, const Json::Value &confi
             }
         }
 #else
-        std::cerr << "Drogon does not support Mysql, please install MariaDB development environment before installing drogon" << std::endl;
+        std::cerr << "Drogon does not support Mysql, please install MariaDB "
+                     "development environment before installing drogon"
+                  << std::endl;
 #endif
     }
     else if (dbType == "sqlite3")
@@ -677,13 +740,16 @@ void create_model::createModel(const std::string &path, const Json::Value &confi
         auto filename = config.get("filename", "").asString();
         if (filename == "")
         {
-            std::cerr << "Please configure filename in " << path << "/model.json " << std::endl;
+            std::cerr << "Please configure filename in " << path
+                      << "/model.json " << std::endl;
             exit(1);
         }
         std::string connStr = "filename=" + filename;
-        DbClientPtr client = drogon::orm::DbClient::newSqlite3Client(connStr, 1);
+        DbClientPtr client =
+            drogon::orm::DbClient::newSqlite3Client(connStr, 1);
         std::cout << "Connect..." << std::endl;
-        std::cout << "Source files in the " << path << " folder will be overwritten, continue(y/n)?\n";
+        std::cout << "Source files in the " << path
+                  << " folder will be overwritten, continue(y/n)?\n";
         auto in = getchar();
         if (in != 'Y' && in != 'y')
         {
@@ -706,7 +772,8 @@ void create_model::createModel(const std::string &path, const Json::Value &confi
     }
     else if (dbType == "no dbms")
     {
-        std::cerr << "Please configure Model in " << path << "/model.json " << std::endl;
+        std::cerr << "Please configure Model in " << path << "/model.json "
+                  << std::endl;
         exit(1);
     }
     else
@@ -732,7 +799,8 @@ void create_model::createModel(const std::string &path)
     }
     if (access(configFile.c_str(), R_OK) != 0)
     {
-        std::cerr << "No permission to read config file " << configFile << std::endl;
+        std::cerr << "No permission to read config file " << configFile
+                  << std::endl;
         exit(1);
     }
 
@@ -747,7 +815,8 @@ void create_model::createModel(const std::string &path)
         }
         catch (const std::exception &exception)
         {
-            std::cerr << "Configuration file format error! in " << configFile << ":" << std::endl;
+            std::cerr << "Configuration file format error! in " << configFile
+                      << ":" << std::endl;
             std::cerr << exception.what() << std::endl;
             exit(1);
         }
@@ -767,7 +836,9 @@ void create_model::handleCommand(std::vector<std::string> &parameters)
         createModel(path);
     }
 #else
-    std::cout << "No database can be found in your system, please install one first!" << std::endl;
+    std::cout
+        << "No database can be found in your system, please install one first!"
+        << std::endl;
     exit(1);
 #endif
 }

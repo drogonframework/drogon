@@ -76,11 +76,10 @@ class WebSocketController : public DrObject<T>, public WebSocketControllerBase
             LOG_TRACE << "register websocket controller ("
                       << WebSocketController<T>::classTypeName()
                       << ") on path:" << path.first;
-            HttpAppFramework::instance()
-                .registerWebSocketController(path.first,
-                                             WebSocketController<
-                                                 T>::classTypeName(),
-                                             path.second);
+            app().registerWebSocketController(
+                path.first,
+                WebSocketController<T>::classTypeName(),
+                path.second);
         }
     }
 

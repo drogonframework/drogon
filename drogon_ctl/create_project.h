@@ -22,10 +22,13 @@ class create_project : public DrObject<create_project>, public CommandHandler
 {
   public:
     virtual void handleCommand(std::vector<std::string> &parameters) override;
-    virtual std::string script() override { return "create a project"; }
+    virtual std::string script() override
+    {
+        return "create a project";
+    }
 
   protected:
     std::string _outputPath = ".";
     void createProject(const std::string &projectName);
 };
-} // namespace drogon_ctl
+}  // namespace drogon_ctl

@@ -1,8 +1,10 @@
 #include "TestController.h"
 using namespace example;
-void TestController::asyncHandleHttpRequest(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback)
+void TestController::asyncHandleHttpRequest(
+    const HttpRequestPtr &req,
+    std::function<void(const HttpResponsePtr &)> &&callback)
 {
-    //write your application logic here
+    // write your application logic here
     LOG_WARN << req->matchedPathPattern();
     auto resp = HttpResponse::newHttpResponse();
     resp->setBody("<p>Hello, world!</p>");

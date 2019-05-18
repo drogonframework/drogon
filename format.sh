@@ -1,3 +1,3 @@
 #!/bin/sh
 
-find lib orm_lib -name *.h -o -name *.cc|xargs clang-format -i -style=file
+find lib orm_lib examples drogon_ctl -name *.h -o -name *.cc|xargs clang-format -i -style=file

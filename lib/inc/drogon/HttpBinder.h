@@ -140,12 +140,10 @@ class HttpBinder : public HttpBinderBase
     {
         // call this function recursively until parameter's count equals to the
         // count of target function parameters
-        static_assert(BinderArgTypeTraits<
-                          nth_argument_type<sizeof...(Values)>>::isValid,
-                      "your handler argument type must be value type or const "
-                      "left "
-                      "reference "
-                      "type or right reference type");
+        static_assert(
+            BinderArgTypeTraits<nth_argument_type<sizeof...(Values)>>::isValid,
+            "your handler argument type must be value type or const left "
+            "reference type or right reference type");
         typedef typename std::remove_cv<typename std::remove_reference<
             nth_argument_type<sizeof...(Values)>>::type>::type ValueType;
         ValueType value = ValueType();

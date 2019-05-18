@@ -7,7 +7,7 @@
  *  https://github.com/an-tao/drogon
  *  Use of this source code is governed by a MIT license
  *  that can be found in the License file.
- *  
+ *
  *  Drogon
  *
  */
@@ -27,7 +27,9 @@
 
 using namespace drogon_ctl;
 
-static void createFilterHeaderFile(std::ofstream &file, const std::string &className, const std::string &fileName)
+static void createFilterHeaderFile(std::ofstream &file,
+                                   const std::string &className,
+                                   const std::string &fileName)
 {
     auto templ = drogon::DrTemplateBase::newTemplate("filter_h");
     HttpViewData data;
@@ -46,7 +48,9 @@ static void createFilterHeaderFile(std::ofstream &file, const std::string &class
     file << templ->genText(data);
 }
 
-static void createFilterSourceFile(std::ofstream &file, const std::string &className, const std::string &fileName)
+static void createFilterSourceFile(std::ofstream &file,
+                                   const std::string &className,
+                                   const std::string &fileName)
 {
     auto templ = drogon::DrTemplateBase::newTemplate("filter_cc");
     HttpViewData data;
@@ -72,19 +76,23 @@ void create_filter::handleCommand(std::vector<std::string> &parameters)
     for (auto className : parameters)
     {
         std::regex regex("::");
-        std::string fileName = std::regex_replace(className, regex, std::string("_"));
+        std::string fileName =
+            std::regex_replace(className, regex, std::string("_"));
 
         std::string headFileName = fileName + ".h";
         std::string sourceFilename = fileName + ".cc";
         {
             std::ifstream iHeadFile(headFileName.c_str(), std::ifstream::in);
-            std::ifstream iSourceFile(sourceFilename.c_str(), std::ifstream::in);
+            std::ifstream iSourceFile(sourceFilename.c_str(),
+                                      std::ifstream::in);
 
             if (iHeadFile || iSourceFile)
             {
-                std::cout << "The file you want to create already exists, overwrite it(y/n)?" << std::endl;
+                std::cout << "The file you want to create already exists, "
+                             "overwrite it(y/n)?"
+                          << std::endl;
                 auto in = getchar();
-                (void)getchar(); //get the return key
+                (void)getchar();  // get the return key
                 if (in != 'Y' && in != 'y')
                 {
                     std::cout << "Abort!" << std::endl;

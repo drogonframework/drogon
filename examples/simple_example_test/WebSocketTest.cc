@@ -18,7 +18,9 @@ int main(int argc, char *argv[])
             continually = false;
     }
     req->setPath("/chat");
-    wsPtr->setMessageHandler([continually](const std::string &message, const WebSocketClientPtr &wsPtr, const WebSocketMessageType &type) {
+    wsPtr->setMessageHandler([continually](const std::string &message,
+                                           const WebSocketClientPtr &wsPtr,
+                                           const WebSocketMessageType &type) {
         std::cout << "new message:" << message << std::endl;
         if (type == WebSocketMessageType::Pong)
         {
@@ -32,22 +34,26 @@ int main(int argc, char *argv[])
     wsPtr->setConnectionClosedHandler([](const WebSocketClientPtr &wsPtr) {
         std::cout << "ws closed!" << std::endl;
     });
-    wsPtr->connectToServer(req, [continually](ReqResult r, const HttpResponsePtr &resp, const WebSocketClientPtr &wsPtr) {
-        if (r == ReqResult::Ok)
-        {
-            std::cout << "ws connected!" << std::endl;
-            wsPtr->getConnection()->setPingMessage("", 2s);
-            wsPtr->getConnection()->send("hello!");
-        }
-        else
-        {
-            std::cout << "ws failed!" << std::endl;
-            if (!continually)
-            {
-                exit(-1);
-            }
-        }
-    });
+    wsPtr->connectToServer(req,
+                           [continually](ReqResult r,
+                                         const HttpResponsePtr &resp,
+                                         const WebSocketClientPtr &wsPtr) {
+                               if (r == ReqResult::Ok)
+                               {
+                                   std::cout << "ws connected!" << std::endl;
+                                   wsPtr->getConnection()->setPingMessage("",
+                                                                          2s);
+                                   wsPtr->getConnection()->send("hello!");
+                               }
+                               else
+                               {
+                                   std::cout << "ws failed!" << std::endl;
+                                   if (!continually)
+                                   {
+                                       exit(-1);
+                                   }
+                               }
+                           });
     app().getLoop()->runAfter(5.0, [continually]() {
         if (!continually)
         {

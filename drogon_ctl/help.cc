@@ -25,10 +25,12 @@ void help::handleCommand(std::vector<std::string> &parameters)
         std::cout << "commands list:" << std::endl;
         for (auto &className : drogon::DrClassMap::getAllClassName())
         {
-            auto classPtr = std::shared_ptr<DrObjectBase>(drogon::DrClassMap::newObject(className));
+            auto classPtr = std::shared_ptr<DrObjectBase>(
+                drogon::DrClassMap::newObject(className));
             if (classPtr)
             {
-                auto cmdHdlPtr = std::dynamic_pointer_cast<CommandHandler>(classPtr);
+                auto cmdHdlPtr =
+                    std::dynamic_pointer_cast<CommandHandler>(classPtr);
                 if (cmdHdlPtr)
                 {
                     if (!cmdHdlPtr->isTopCommand())
@@ -49,10 +51,12 @@ void help::handleCommand(std::vector<std::string> &parameters)
     {
         auto cmd = std::string("drogon_ctl::") + parameters[0];
 
-        auto classPtr = std::shared_ptr<DrObjectBase>(drogon::DrClassMap::newObject(cmd));
+        auto classPtr =
+            std::shared_ptr<DrObjectBase>(drogon::DrClassMap::newObject(cmd));
         if (classPtr)
         {
-            auto cmdHdlPtr = std::dynamic_pointer_cast<CommandHandler>(classPtr);
+            auto cmdHdlPtr =
+                std::dynamic_pointer_cast<CommandHandler>(classPtr);
             if (cmdHdlPtr)
             {
                 if (cmdHdlPtr->isTopCommand())

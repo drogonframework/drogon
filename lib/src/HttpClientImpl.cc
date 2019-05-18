@@ -224,9 +224,9 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
                                    thisPtr->_pipeliningDepth &&
                                !thisPtr->_requestsBuffer.empty())
                         {
-                            thisPtr->sendReq(connPtr,
-                                             thisPtr->_requestsBuffer.front()
-                                                 .first);
+                            thisPtr->sendReq(
+                                connPtr,
+                                thisPtr->_requestsBuffer.front().first);
                             thisPtr->_pipeliningCallbacks.push(std::move(
                                 thisPtr->_requestsBuffer.front().second));
                             thisPtr->_requestsBuffer.pop();
@@ -379,12 +379,10 @@ HttpClientPtr HttpClient::newHttpClient(const std::string &ip,
                                         trantor::EventLoop *loop)
 {
     bool isIpv6 = ip.find(":") == std::string::npos ? false : true;
-    return std::make_shared<HttpClientImpl>(loop == nullptr ? app().getLoop()
-                                                            : loop,
-                                            trantor::InetAddress(ip,
-                                                                 port,
-                                                                 isIpv6),
-                                            useSSL);
+    return std::make_shared<HttpClientImpl>(
+        loop == nullptr ? app().getLoop() : loop,
+        trantor::InetAddress(ip, port, isIpv6),
+        useSSL);
 }
 
 HttpClientPtr HttpClient::newHttpClient(const std::string &hostString,

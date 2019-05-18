@@ -174,57 +174,49 @@ void DbClientLockFree::makeTrans(
     std::function<void(const std::shared_ptr<Transaction> &)> &&callback)
 {
     std::weak_ptr<DbClientLockFree> weakThis = shared_from_this();
-    auto trans = std::shared_ptr<TransactionImpl>(
-        new TransactionImpl(_type,
-                            conn,
-                            std::function<void(bool)>(),
-                            [weakThis, conn]() {
-                                auto thisPtr = weakThis.lock();
-                                if (!thisPtr)
-                                    return;
+    auto trans = std::shared_ptr<TransactionImpl>(new TransactionImpl(
+        _type, conn, std::function<void(bool)>(), [weakThis, conn]() {
+            auto thisPtr = weakThis.lock();
+            if (!thisPtr)
+                return;
 
-                                if (conn->status() == ConnectStatus_Bad)
-                                {
-                                    return;
-                                }
-                                if (!thisPtr->_transCallbacks.empty())
-                                {
-                                    auto callback = std::move(
-                                        thisPtr->_transCallbacks.front());
-                                    thisPtr->_transCallbacks.pop();
-                                    thisPtr->makeTrans(conn,
-                                                       std::move(callback));
-                                    return;
-                                }
+            if (conn->status() == ConnectStatus_Bad)
+            {
+                return;
+            }
+            if (!thisPtr->_transCallbacks.empty())
+            {
+                auto callback = std::move(thisPtr->_transCallbacks.front());
+                thisPtr->_transCallbacks.pop();
+                thisPtr->makeTrans(conn, std::move(callback));
+                return;
+            }
 
-                                for (auto &connPtr : thisPtr->_connections)
-                                {
-                                    if (connPtr == conn)
-                                    {
-                                        conn->loop()->queueInLoop([weakThis,
-                                                                   conn]() {
-                                            auto thisPtr = weakThis.lock();
-                                            if (!thisPtr)
-                                                return;
-                                            std::weak_ptr<DbConnection>
-                                                weakConn = conn;
-                                            conn->setIdleCallback([weakThis,
-                                                                   weakConn]() {
-                                                auto thisPtr = weakThis.lock();
-                                                if (!thisPtr)
-                                                    return;
-                                                auto connPtr = weakConn.lock();
-                                                if (!connPtr)
-                                                    return;
-                                                thisPtr->handleNewTask(connPtr);
-                                            });
-                                            thisPtr->_transSet.erase(conn);
-                                            thisPtr->handleNewTask(conn);
-                                        });
-                                        break;
-                                    }
-                                }
-                            }));
+            for (auto &connPtr : thisPtr->_connections)
+            {
+                if (connPtr == conn)
+                {
+                    conn->loop()->queueInLoop([weakThis, conn]() {
+                        auto thisPtr = weakThis.lock();
+                        if (!thisPtr)
+                            return;
+                        std::weak_ptr<DbConnection> weakConn = conn;
+                        conn->setIdleCallback([weakThis, weakConn]() {
+                            auto thisPtr = weakThis.lock();
+                            if (!thisPtr)
+                                return;
+                            auto connPtr = weakConn.lock();
+                            if (!connPtr)
+                                return;
+                            thisPtr->handleNewTask(connPtr);
+                        });
+                        thisPtr->_transSet.erase(conn);
+                        thisPtr->handleNewTask(conn);
+                    });
+                    break;
+                }
+            }
+        }));
     _transSet.insert(conn);
     trans->doBegin();
     conn->loop()->queueInLoop(

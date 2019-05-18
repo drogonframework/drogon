@@ -25,17 +25,17 @@ const std::string Groups::primaryKeyName = "group_id";
 const bool Groups::hasPrimaryKey = true;
 const std::string Groups::tableName = "GROUPS";
 
-const std::vector<typename Groups::MetaData> Groups::_metaData =
-    {{"group_id", "uint64_t", "integer", 8, 1, 1, 0},
-     {"group_name", "std::string", "text", 0, 0, 0, 0},
-     {"creater_id", "uint64_t", "integer", 8, 0, 0, 0},
-     {"create_time", "std::string", "text", 0, 0, 0, 0},
-     {"inviting", "uint64_t", "integer", 8, 0, 0, 0},
-     {"inviting_user_id", "uint64_t", "integer", 8, 0, 0, 0},
-     {"avatar_id", "std::string", "text", 0, 0, 0, 0},
-     {"uuu", "double", "double", 8, 0, 0, 0},
-     {"text", "std::string", "varchar(255)", 0, 0, 0, 0},
-     {"avatar", "std::vector<char>", "blob", 0, 0, 0, 0}};
+const std::vector<typename Groups::MetaData> Groups::_metaData = {
+    {"group_id", "uint64_t", "integer", 8, 1, 1, 0},
+    {"group_name", "std::string", "text", 0, 0, 0, 0},
+    {"creater_id", "uint64_t", "integer", 8, 0, 0, 0},
+    {"create_time", "std::string", "text", 0, 0, 0, 0},
+    {"inviting", "uint64_t", "integer", 8, 0, 0, 0},
+    {"inviting_user_id", "uint64_t", "integer", 8, 0, 0, 0},
+    {"avatar_id", "std::string", "text", 0, 0, 0, 0},
+    {"uuu", "double", "double", 8, 0, 0, 0},
+    {"text", "std::string", "varchar(255)", 0, 0, 0, 0},
+    {"avatar", "std::vector<char>", "blob", 0, 0, 0, 0}};
 const std::string &Groups::getColumnName(size_t index) noexcept(false)
 {
     assert(index < _metaData.size());
@@ -580,10 +580,8 @@ Json::Value Groups::toJson() const
     }
     if (getAvatar())
     {
-        ret["avatar"] =
-            drogon::utils::base64Encode((const unsigned char *)getAvatar()
-                                            ->data(),
-                                        getAvatar()->size());
+        ret["avatar"] = drogon::utils::base64Encode(
+            (const unsigned char *)getAvatar()->data(), getAvatar()->size());
     }
     else
     {

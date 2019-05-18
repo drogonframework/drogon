@@ -9,27 +9,55 @@ class ApiTest : public drogon::HttpController<ApiTest>
 {
   public:
     METHOD_LIST_BEGIN
-    //use METHOD_ADD to add your custom processing function here;
-    METHOD_ADD(ApiTest::rootGet, "", "TimeFilter", Get, Options, "drogon::LocalHostFilter", "drogon::IntranetIpFilter");
+    // use METHOD_ADD to add your custom processing function here;
+    METHOD_ADD(ApiTest::rootGet,
+               "",
+               "TimeFilter",
+               Get,
+               Options,
+               "drogon::LocalHostFilter",
+               "drogon::IntranetIpFilter");
     METHOD_ADD(ApiTest::rootPost, "", Post, Options);
-    METHOD_ADD(ApiTest::get, "/get/{2}/{1}", Get);                  //path is /api/v1/apitest/get/{arg2}/{arg1}
-    METHOD_ADD(ApiTest::your_method_name, "/{1}/List?P2={2}", Get); //path is /api/v1/apitest/{arg1}/list
-    METHOD_ADD(ApiTest::staticApi, "/static", Get, Options); //CORS
+    METHOD_ADD(ApiTest::get,
+               "/get/{2}/{1}",
+               Get);  // path is /api/v1/apitest/get/{arg2}/{arg1}
+    METHOD_ADD(ApiTest::your_method_name,
+               "/{1}/List?P2={2}",
+               Get);  // path is /api/v1/apitest/{arg1}/list
+    METHOD_ADD(ApiTest::staticApi, "/static", Get, Options);  // CORS
     METHOD_ADD(ApiTest::staticApi, "/static", Post, Put, Delete);
-    METHOD_ADD(ApiTest::get2, "/get/{1}", Get);         //path is /api/v1/apitest/get/{arg1}
-    ADD_METHOD_TO(ApiTest::get2, "/absolute/{1}", Get); //path is /absolute/{arg1}
+    METHOD_ADD(ApiTest::get2,
+               "/get/{1}",
+               Get);  // path is /api/v1/apitest/get/{arg1}
+    ADD_METHOD_TO(ApiTest::get2,
+                  "/absolute/{1}",
+                  Get);  // path is /absolute/{arg1}
     METHOD_ADD(ApiTest::jsonTest, "/json", Post);
     METHOD_ADD(ApiTest::formTest, "/form", Post);
     METHOD_LIST_END
-    //your declaration of processing function maybe like this:
-    void get(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback, int p1, std::string &&p2);
-    void your_method_name(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback, double p1, int p2) const;
-    void staticApi(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback);
-    void get2(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback, std::string &&p1);
-    void rootGet(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback);
-    void rootPost(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback);
-    void jsonTest(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback);
-    void formTest(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback);
+    // your declaration of processing function maybe like this:
+    void get(const HttpRequestPtr &req,
+             std::function<void(const HttpResponsePtr &)> &&callback,
+             int p1,
+             std::string &&p2);
+    void your_method_name(
+        const HttpRequestPtr &req,
+        std::function<void(const HttpResponsePtr &)> &&callback,
+        double p1,
+        int p2) const;
+    void staticApi(const HttpRequestPtr &req,
+                   std::function<void(const HttpResponsePtr &)> &&callback);
+    void get2(const HttpRequestPtr &req,
+              std::function<void(const HttpResponsePtr &)> &&callback,
+              std::string &&p1);
+    void rootGet(const HttpRequestPtr &req,
+                 std::function<void(const HttpResponsePtr &)> &&callback);
+    void rootPost(const HttpRequestPtr &req,
+                  std::function<void(const HttpResponsePtr &)> &&callback);
+    void jsonTest(const HttpRequestPtr &req,
+                  std::function<void(const HttpResponsePtr &)> &&callback);
+    void formTest(const HttpRequestPtr &req,
+                  std::function<void(const HttpResponsePtr &)> &&callback);
 
   public:
     ApiTest()
@@ -37,5 +65,5 @@ class ApiTest : public drogon::HttpController<ApiTest>
         LOG_DEBUG << "ApiTest constructor!";
     }
 };
-} // namespace v1
-} // namespace api
+}  // namespace v1
+}  // namespace api

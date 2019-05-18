@@ -58,11 +58,8 @@ class HttpSimpleController : public DrObject<T>, public HttpSimpleControllerBase
         LOG_TRACE << "register simple controller("
                   << HttpSimpleController<T>::classTypeName()
                   << ") on path:" << path;
-        HttpAppFramework::instance()
-            .registerHttpSimpleController(path,
-                                          HttpSimpleController<
-                                              T>::classTypeName(),
-                                          filtersAndMethods);
+        app().registerHttpSimpleController(
+            path, HttpSimpleController<T>::classTypeName(), filtersAndMethods);
     }
 
   private:

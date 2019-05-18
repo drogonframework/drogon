@@ -325,21 +325,16 @@ WebSocketClientPtr WebSocketClient::newWebSocketClient(const std::string &ip,
                                                        trantor::EventLoop *loop)
 {
     bool isIpv6 = ip.find(":") == std::string::npos ? false : true;
-    return std::make_shared<WebSocketClientImpl>(loop == nullptr
-                                                     ? app().getLoop()
-                                                     : loop,
-                                                 trantor::InetAddress(ip,
-                                                                      port,
-                                                                      isIpv6),
-                                                 useSSL);
+    return std::make_shared<WebSocketClientImpl>(
+        loop == nullptr ? app().getLoop() : loop,
+        trantor::InetAddress(ip, port, isIpv6),
+        useSSL);
 }
 
 WebSocketClientPtr WebSocketClient::newWebSocketClient(
     const std::string &hostString,
     trantor::EventLoop *loop)
 {
-    return std::make_shared<WebSocketClientImpl>(loop == nullptr
-                                                     ? app().getLoop()
-                                                     : loop,
-                                                 hostString);
+    return std::make_shared<WebSocketClientImpl>(
+        loop == nullptr ? app().getLoop() : loop, hostString);
 }

@@ -259,49 +259,43 @@ void DbClientImpl::makeTrans(
     std::function<void(const std::shared_ptr<Transaction> &)> &&callback)
 {
     std::weak_ptr<DbClientImpl> weakThis = shared_from_this();
-    auto trans = std::shared_ptr<TransactionImpl>(
-        new TransactionImpl(_type,
-                            conn,
-                            std::function<void(bool)>(),
-                            [weakThis, conn]() {
-                                auto thisPtr = weakThis.lock();
-                                if (!thisPtr)
-                                    return;
-                                if (conn->status() == ConnectStatus_Bad)
-                                {
-                                    return;
-                                }
-                                {
-                                    std::lock_guard<std::mutex> guard(
-                                        thisPtr->_connectionsMutex);
-                                    if (thisPtr->_connections.find(conn) ==
-                                            thisPtr->_connections.end() &&
-                                        thisPtr->_busyConnections.find(conn) ==
-                                            thisPtr->_busyConnections.find(
-                                                conn))
-                                    {
-                                        // connection is broken and removed
-                                        return;
-                                    }
-                                }
-                                conn->loop()->queueInLoop([weakThis, conn]() {
-                                    auto thisPtr = weakThis.lock();
-                                    if (!thisPtr)
-                                        return;
-                                    std::weak_ptr<DbConnection> weakConn = conn;
-                                    conn->setIdleCallback(
-                                        [weakThis, weakConn]() {
-                                            auto thisPtr = weakThis.lock();
-                                            if (!thisPtr)
-                                                return;
-                                            auto connPtr = weakConn.lock();
-                                            if (!connPtr)
-                                                return;
-                                            thisPtr->handleNewTask(connPtr);
-                                        });
-                                    thisPtr->handleNewTask(conn);
-                                });
-                            }));
+    auto trans = std::shared_ptr<TransactionImpl>(new TransactionImpl(
+        _type, conn, std::function<void(bool)>(), [weakThis, conn]() {
+            auto thisPtr = weakThis.lock();
+            if (!thisPtr)
+                return;
+            if (conn->status() == ConnectStatus_Bad)
+            {
+                return;
+            }
+            {
+                std::lock_guard<std::mutex> guard(thisPtr->_connectionsMutex);
+                if (thisPtr->_connections.find(conn) ==
+                        thisPtr->_connections.end() &&
+                    thisPtr->_busyConnections.find(conn) ==
+                        thisPtr->_busyConnections.find(conn))
+                {
+                    // connection is broken and removed
+                    return;
+                }
+            }
+            conn->loop()->queueInLoop([weakThis, conn]() {
+                auto thisPtr = weakThis.lock();
+                if (!thisPtr)
+                    return;
+                std::weak_ptr<DbConnection> weakConn = conn;
+                conn->setIdleCallback([weakThis, weakConn]() {
+                    auto thisPtr = weakThis.lock();
+                    if (!thisPtr)
+                        return;
+                    auto connPtr = weakConn.lock();
+                    if (!connPtr)
+                        return;
+                    thisPtr->handleNewTask(connPtr);
+                });
+                thisPtr->handleNewTask(conn);
+            });
+        }));
     trans->doBegin();
     conn->loop()->queueInLoop(
         [callback = std::move(callback), trans]() { callback(trans); });
