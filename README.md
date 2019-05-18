@@ -1,7 +1,6 @@
 ![](https://github.com/an-tao/drogon/wiki/images/drogon-white.jpg)
 
 [![Build Status](https://travis-ci.com/an-tao/drogon.svg?branch=master)](https://travis-ci.com/an-tao/drogon)
-[![Codacy Badge](https://api.codacy.com/project/badge/Grade/45f8a65ca1844788b9109c0044a618f8)](https://app.codacy.com/app/an-tao/drogon?utm_source=github.com&utm_medium=referral&utm_content=an-tao/drogon&utm_campaign=Badge_Grade_Dashboard)
 [![Total alerts](https://img.shields.io/lgtm/alerts/g/an-tao/drogon.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/an-tao/drogon/alerts/)
 [![Language grade: C/C++](https://img.shields.io/lgtm/grade/cpp/g/an-tao/drogon.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/an-tao/drogon/context:cpp) 
 [![Join the chat at https://gitter.im/drogon-web/community](https://badges.gitter.im/drogon-web/community.svg)](https://gitter.im/drogon-web/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
