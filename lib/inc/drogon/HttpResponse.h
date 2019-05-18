@@ -80,31 +80,40 @@ class HttpResponse
     /// Get the header string identified by the @param key.
     /// If there is no the header, the @param defaultVal is retured.
     /// The @param key is case insensitive
-    virtual const std::string &getHeader(const std::string &key, const std::string &defaultVal = std::string()) const = 0;
-    virtual const std::string &getHeader(std::string &&key, const std::string &defaultVal = std::string()) const = 0;
+    virtual const std::string &getHeader(
+        const std::string &key,
+        const std::string &defaultVal = std::string()) const = 0;
+    virtual const std::string &getHeader(
+        std::string &&key,
+        const std::string &defaultVal = std::string()) const = 0;
 
     /// Remove the header identified by the @param key.
     virtual void removeHeader(const std::string &key) = 0;
     virtual void removeHeader(std::string &&key) = 0;
 
     /// Get all headers of the response
-    virtual const std::unordered_map<std::string, std::string> &headers() const = 0;
+    virtual const std::unordered_map<std::string, std::string> &headers()
+        const = 0;
     const std::unordered_map<std::string, std::string> &getHeaders() const
     {
         return headers();
     }
 
     /// Add a header.
-    virtual void addHeader(const std::string &key, const std::string &value) = 0;
+    virtual void addHeader(const std::string &key,
+                           const std::string &value) = 0;
     virtual void addHeader(const std::string &key, std::string &&value) = 0;
 
     /// Add a cookie
-    virtual void addCookie(const std::string &key, const std::string &value) = 0;
+    virtual void addCookie(const std::string &key,
+                           const std::string &value) = 0;
     virtual void addCookie(const Cookie &cookie) = 0;
 
     /// Get the cookie identified by the @param key. If there is no the cookie,
     /// If there is no the cookie, the @param defaultCookie is retured.
-    virtual const Cookie &getCookie(const std::string &key, const Cookie &defaultCookie = Cookie()) const = 0;
+    virtual const Cookie &getCookie(
+        const std::string &key,
+        const Cookie &defaultCookie = Cookie()) const = 0;
 
     /// Get all cookies.
     virtual const std::unordered_map<std::string, Cookie> &cookies() const = 0;
@@ -137,7 +146,8 @@ class HttpResponse
     virtual void clear() = 0;
 
     /// Set the expiration time of the response cache in memory.
-    /// in seconds, 0 means always cache, negative means not cache, default is -1.
+    /// in seconds, 0 means always cache, negative means not cache, default is
+    /// -1.
     virtual void setExpiredTime(ssize_t expiredTime) = 0;
 
     /// Get the expiration time of the response.
@@ -148,7 +158,8 @@ class HttpResponse
     }
 
     /// Get the json object from the server response.
-    /// If the response is not in json format, then a empty shared_ptr is retured.
+    /// If the response is not in json format, then a empty shared_ptr is
+    /// retured.
     virtual const std::shared_ptr<Json::Value> jsonObject() const = 0;
     const std::shared_ptr<Json::Value> getJsonObject() const
     {
@@ -158,19 +169,21 @@ class HttpResponse
     /// The following methods are a series of factory methods that help users
     /// create response objects.
 
-    /// Create a normal response with a status code of 200ok and a content type of
-    /// text/html.
+    /// Create a normal response with a status code of 200ok and a content type
+    /// of text/html.
     static HttpResponsePtr newHttpResponse();
     /// Create a response which returns a 404 page.
     static HttpResponsePtr newNotFoundResponse();
-    /// Create a response which returns a json object. Its content type is set to
-    /// set/json.
+    /// Create a response which returns a json object. Its content type is set
+    /// to set/json.
     static HttpResponsePtr newHttpJsonResponse(const Json::Value &data);
     /// Create a response that returns a page rendered by a view named @param
     /// viewName.
     /// @param data is the data displayed on the page.
     /// For more details, see the wiki pages, the "View" section.
-    static HttpResponsePtr newHttpViewResponse(const std::string &viewName, const HttpViewData &data = HttpViewData());
+    static HttpResponsePtr newHttpViewResponse(
+        const std::string &viewName,
+        const HttpViewData &data = HttpViewData());
     /// Create a response that returns a 302 Found page, redirecting to another
     /// page located in the @param location.
     static HttpResponsePtr newRedirectionResponse(const std::string &location);
@@ -182,9 +195,10 @@ class HttpResponse
      * If the @param type is CT_NONE, the content type is set by drogon based on
      * the file extension.
      */
-    static HttpResponsePtr newFileResponse(const std::string &fullPath,
-                                           const std::string &attachmentFileName = "",
-                                           ContentType type = CT_NONE);
+    static HttpResponsePtr newFileResponse(
+        const std::string &fullPath,
+        const std::string &attachmentFileName = "",
+        ContentType type = CT_NONE);
 
     virtual ~HttpResponse()
     {

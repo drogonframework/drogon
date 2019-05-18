@@ -24,6 +24,8 @@ class IntranetIpFilter : public HttpFilter<IntranetIpFilter>
     IntranetIpFilter()
     {
     }
-    virtual void doFilter(const HttpRequestPtr &req, FilterCallback &&fcb, FilterChainCallback &&fccb) override;
+    virtual void doFilter(const HttpRequestPtr &req,
+                          FilterCallback &&fcb,
+                          FilterChainCallback &&fccb) override;
 };
 }  // namespace drogon

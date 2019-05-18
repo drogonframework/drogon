@@ -77,7 +77,10 @@ class CacheMap
              float tickInterval = TICK_INTERVAL,
              size_t wheelsNum = WHEELS_NUM,
              size_t bucketsNumPerWheel = BUCKET_NUM_PER_WHEEL)
-        : _loop(loop), _tickInterval(tickInterval), _wheelsNum(wheelsNum), _bucketsNumPerWheel(bucketsNumPerWheel)
+        : _loop(loop),
+          _tickInterval(tickInterval),
+          _wheelsNum(wheelsNum),
+          _bucketsNumPerWheel(bucketsNumPerWheel)
     {
         _wheels.resize(_wheelsNum);
         for (size_t i = 0; i < _wheelsNum; i++)
@@ -97,7 +100,8 @@ class CacheMap
                         CallbackBucket tmp;
                         {
                             std::lock_guard<std::mutex> lock(bucketMutex_);
-                            // use tmp val to make this critical area as short as possible.
+                            // use tmp val to make this critical area as short
+                            // as possible.
                             _wheels[i].front().swap(tmp);
                             _wheels[i].pop_front();
                             _wheels[i].push_back(CallbackBucket());
@@ -140,7 +144,10 @@ class CacheMap
      * If timeout>0,the value will be erased
      * within the 'timeout' seconds after the last access
      */
-    void insert(const T1 &key, T2 &&value, size_t timeout = 0, std::function<void()> timeoutCallback = std::function<void()>())
+    void insert(const T1 &key,
+                T2 &&value,
+                size_t timeout = 0,
+                std::function<void()> timeoutCallback = std::function<void()>())
     {
         if (timeout > 0)
         {
@@ -298,7 +305,9 @@ class CacheMap
                     if (delay > 0)
                     {
                         std::lock_guard<std::mutex> lock(bucketMutex_);
-                        _wheels[i][(delay + (t % _bucketsNumPerWheel) - 1) % _bucketsNumPerWheel].insert(entryPtr);
+                        _wheels[i][(delay + (t % _bucketsNumPerWheel) - 1) %
+                                   _bucketsNumPerWheel]
+                            .insert(entryPtr);
                     }
                 });
             }
@@ -307,7 +316,8 @@ class CacheMap
                 // delay is too long to put entry at valid position in wheels;
                 _wheels[i][_bucketsNumPerWheel - 1].insert(entryPtr);
             }
-            delay = (delay + (t % _bucketsNumPerWheel) - 1) / _bucketsNumPerWheel;
+            delay =
+                (delay + (t % _bucketsNumPerWheel) - 1) / _bucketsNumPerWheel;
             t = t / _bucketsNumPerWheel;
         }
     }

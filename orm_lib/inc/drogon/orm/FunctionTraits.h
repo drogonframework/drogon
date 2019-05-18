@@ -41,22 +41,26 @@ struct FunctionTraits<void (*)()>
 };
 // functor,lambda
 template <typename Function>
-struct FunctionTraits : public FunctionTraits<decltype(&std::remove_reference<Function>::type::operator())>
+struct FunctionTraits : public FunctionTraits<decltype(
+                            &std::remove_reference<Function>::type::operator())>
 {
 };
 
 template <typename ClassType, typename ReturnType, typename... Arguments>
-struct FunctionTraits<ReturnType (ClassType::*)(Arguments...) const> : FunctionTraits<ReturnType (*)(Arguments...)>
+struct FunctionTraits<ReturnType (ClassType::*)(Arguments...) const>
+    : FunctionTraits<ReturnType (*)(Arguments...)>
 {
 };
 
 template <typename ClassType, typename ReturnType, typename... Arguments>
-struct FunctionTraits<ReturnType (ClassType::*)(Arguments...)> : FunctionTraits<ReturnType (*)(Arguments...)>
+struct FunctionTraits<ReturnType (ClassType::*)(Arguments...)>
+    : FunctionTraits<ReturnType (*)(Arguments...)>
 {
 };
 
 template <>
-struct FunctionTraits<void (*)(const Result &)> : public FunctionTraits<void (*)()>
+struct FunctionTraits<void (*)(const Result &)>
+    : public FunctionTraits<void (*)()>
 {
     static const bool isSqlCallback = true;
     static const bool isStepResultCallback = false;
@@ -64,7 +68,8 @@ struct FunctionTraits<void (*)(const Result &)> : public FunctionTraits<void (*)
 };
 
 template <>
-struct FunctionTraits<void (*)(const DrogonDbException &)> : public FunctionTraits<void (*)()>
+struct FunctionTraits<void (*)(const DrogonDbException &)>
+    : public FunctionTraits<void (*)()>
 {
     static const bool isExceptCallback = true;
     static const bool isSqlCallback = false;
@@ -73,7 +78,8 @@ struct FunctionTraits<void (*)(const DrogonDbException &)> : public FunctionTrai
 };
 
 template <>
-struct FunctionTraits<void (*)(const std::exception_ptr &)> : public FunctionTraits<void (*)()>
+struct FunctionTraits<void (*)(const std::exception_ptr &)>
+    : public FunctionTraits<void (*)()>
 {
     static const bool isExceptCallback = true;
     static const bool isSqlCallback = false;
@@ -82,7 +88,8 @@ struct FunctionTraits<void (*)(const std::exception_ptr &)> : public FunctionTra
 };
 
 template <typename ReturnType, typename... Arguments>
-struct FunctionTraits<ReturnType (*)(bool, Arguments...)> : FunctionTraits<ReturnType (*)(Arguments...)>
+struct FunctionTraits<ReturnType (*)(bool, Arguments...)>
+    : FunctionTraits<ReturnType (*)(Arguments...)>
 {
     static const bool isSqlCallback = true;
     static const bool isStepResultCallback = true;
@@ -94,7 +101,8 @@ struct FunctionTraits<ReturnType (*)(Arguments...)>
     typedef ReturnType result_type;
 
     template <std::size_t Index>
-    using argument = typename std::tuple_element<Index, std::tuple<Arguments...>>::type;
+    using argument =
+        typename std::tuple_element<Index, std::tuple<Arguments...>>::type;
 
     static const std::size_t arity = sizeof...(Arguments);
 

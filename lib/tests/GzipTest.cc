@@ -320,12 +320,14 @@ int main()
     auto ret = utils::gzipCompress(inStr.c_str(), inStr.length());
     if (ret)
     {
-        std::cout << "origin length=" << inStr.length() << " compressing length=" << ret->length() << std::endl;
+        std::cout << "origin length=" << inStr.length()
+                  << " compressing length=" << ret->length() << std::endl;
 
         auto decompressStr = utils::gzipDecompress(ret);
         if (decompressStr)
         {
-            std::cout << "decompressing length=" << decompressStr->length() << std::endl;
+            std::cout << "decompressing length=" << decompressStr->length()
+                      << std::endl;
             std::cout << *decompressStr;
         }
     }

@@ -44,13 +44,15 @@ std::string hexToBinaryString(const char *ptr, size_t length);
 std::vector<char> hexToBinaryVector(const char *ptr, size_t length);
 
 /// Split the string into multiple separated strings.
-std::vector<std::string> splitString(const std::string &str, const std::string &separator);
+std::vector<std::string> splitString(const std::string &str,
+                                     const std::string &separator);
 
 /// Get UUID string.
 std::string getUuid();
 
 /// Encode the string to base64 format.
-std::string base64Encode(const unsigned char *bytes_to_encode, unsigned int in_len);
+std::string base64Encode(const unsigned char *bytes_to_encode,
+                         unsigned int in_len);
 
 /// Decode the base64 format string.
 std::string base64Decode(std::string const &encoded_string);
@@ -68,7 +70,8 @@ std::string urlEncode(const std::string &str);
  * @param nzdata: Data length after compressing or before decompressing
  */
 std::shared_ptr<std::string> gzipCompress(const char *data, const size_t ndata);
-std::shared_ptr<std::string> gzipDecompress(const std::shared_ptr<std::string> &compressedData);
+std::shared_ptr<std::string> gzipDecompress(
+    const std::shared_ptr<std::string> &compressedData);
 
 /// Get the http full date string
 /**

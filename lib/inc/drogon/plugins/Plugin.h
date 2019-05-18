@@ -104,7 +104,9 @@ class PluginBase : public virtual DrObjectBase, public trantor::NonCopyable
 template <typename T>
 struct IsPlugin
 {
-    typedef typename std::remove_cv<typename std::remove_reference<T>::type>::type TYPE;
+    typedef
+        typename std::remove_cv<typename std::remove_reference<T>::type>::type
+            TYPE;
 
     static int test(void *p)
     {
@@ -114,7 +116,8 @@ struct IsPlugin
     {
         return 0;
     }
-    static constexpr bool value = (sizeof(test((TYPE *)nullptr)) == sizeof(int));
+    static constexpr bool value =
+        (sizeof(test((TYPE *)nullptr)) == sizeof(int));
 };
 
 template <typename T>

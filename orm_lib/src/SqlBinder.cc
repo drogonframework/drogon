@@ -33,15 +33,17 @@ void SqlBinder::exec()
             std::move(_parameters),
             std::move(_length),
             std::move(_format),
-            [ holder = std::move(_callbackHolder), objs = std::move(_objs) ](const Result &r) mutable {
+            [holder = std::move(_callbackHolder),
+             objs = std::move(_objs)](const Result &r) mutable {
                 objs.clear();
                 if (holder)
                 {
                     holder->execCallback(r);
                 }
             },
-            [ exceptCb = std::move(_exceptCallback), exceptPtrCb = std::move(_exceptPtrCallback), isExceptPtr = _isExceptPtr ](
-                const std::exception_ptr &exception) {
+            [exceptCb = std::move(_exceptCallback),
+             exceptPtrCb = std::move(_exceptPtrCallback),
+             isExceptPtr = _isExceptPtr](const std::exception_ptr &exception) {
                 // LOG_DEBUG<<"exp callback "<<isExceptPtr;
                 if (!isExceptPtr)
                 {
@@ -70,22 +72,23 @@ void SqlBinder::exec()
         std::shared_ptr<std::promise<Result>> pro(new std::promise<Result>);
         auto f = pro->get_future();
 
-        _client.execSql(std::move(_sql),
-                        _paraNum,
-                        std::move(_parameters),
-                        std::move(_length),
-                        std::move(_format),
-                        [pro](const Result &r) { pro->set_value(r); },
-                        [pro](const std::exception_ptr &exception) {
-                            try
-                            {
-                                pro->set_exception(exception);
-                            }
-                            catch (...)
-                            {
-                                assert(0);
-                            }
-                        });
+        _client.execSql(
+            std::move(_sql),
+            _paraNum,
+            std::move(_parameters),
+            std::move(_length),
+            std::move(_format),
+            [pro](const Result &r) { pro->set_value(r); },
+            [pro](const std::exception_ptr &exception) {
+                try
+                {
+                    pro->set_exception(exception);
+                }
+                catch (...)
+                {
+                    assert(0);
+                }
+            });
         if (_callbackHolder || _exceptCallback)
         {
             try

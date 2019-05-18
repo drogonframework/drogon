@@ -24,27 +24,32 @@ const string_view &webContentTypeToString(ContentType contenttype)
     {
         case CT_TEXT_HTML:
         {
-            static string_view sv = "Content-Type: text/html; charset=utf-8\r\n";
+            static string_view sv =
+                "Content-Type: text/html; charset=utf-8\r\n";
             return sv;
         }
         case CT_APPLICATION_X_FORM:
         {
-            static string_view sv = "Content-Type: application/x-www-form-urlencoded\r\n";
+            static string_view sv =
+                "Content-Type: application/x-www-form-urlencoded\r\n";
             return sv;
         }
         case CT_APPLICATION_XML:
         {
-            static string_view sv = "Content-Type: application/xml; charset=utf-8\r\n";
+            static string_view sv =
+                "Content-Type: application/xml; charset=utf-8\r\n";
             return sv;
         }
         case CT_APPLICATION_JSON:
         {
-            static string_view sv = "Content-Type: application/json; charset=utf-8\r\n";
+            static string_view sv =
+                "Content-Type: application/json; charset=utf-8\r\n";
             return sv;
         }
         case CT_APPLICATION_X_JAVASCRIPT:
         {
-            static string_view sv = "Content-Type: application/x-javascript; charset=utf-8\r\n";
+            static string_view sv =
+                "Content-Type: application/x-javascript; charset=utf-8\r\n";
             return sv;
         }
         case CT_TEXT_CSS:
@@ -64,7 +69,8 @@ const string_view &webContentTypeToString(ContentType contenttype)
         }
         case CT_APPLICATION_OCTET_STREAM:
         {
-            static string_view sv = "Content-Type: application/octet-stream\r\n";
+            static string_view sv =
+                "Content-Type: application/octet-stream\r\n";
             return sv;
         }
         case CT_IMAGE_SVG_XML:
@@ -74,12 +80,14 @@ const string_view &webContentTypeToString(ContentType contenttype)
         }
         case CT_APPLICATION_X_FONT_TRUETYPE:
         {
-            static string_view sv = "Content-Type: application/x-font-truetype\r\n";
+            static string_view sv =
+                "Content-Type: application/x-font-truetype\r\n";
             return sv;
         }
         case CT_APPLICATION_X_FONT_OPENTYPE:
         {
-            static string_view sv = "Content-Type: application/x-font-opentype\r\n";
+            static string_view sv =
+                "Content-Type: application/x-font-opentype\r\n";
             return sv;
         }
         case CT_APPLICATION_FONT_WOFF:
@@ -94,7 +102,8 @@ const string_view &webContentTypeToString(ContentType contenttype)
         }
         case CT_APPLICATION_VND_MS_FONTOBJ:
         {
-            static string_view sv = "Content-Type: application/vnd.ms-fontobject\r\n";
+            static string_view sv =
+                "Content-Type: application/vnd.ms-fontobject\r\n";
             return sv;
         }
         case CT_IMAGE_PNG:
@@ -130,7 +139,8 @@ const string_view &webContentTypeToString(ContentType contenttype)
         default:
         case CT_TEXT_PLAIN:
         {
-            static string_view sv = "Content-Type: text/plain; charset=utf-8\r\n";
+            static string_view sv =
+                "Content-Type: text/plain; charset=utf-8\r\n";
             return sv;
         }
     }

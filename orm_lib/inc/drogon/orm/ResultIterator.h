@@ -24,7 +24,11 @@ namespace drogon
 namespace orm
 {
 class ConstResultIterator
-    : public std::iterator<std::random_access_iterator_tag, const Row, Result::difference_type, ConstResultIterator, Row>,
+    : public std::iterator<std::random_access_iterator_tag,
+                           const Row,
+                           Result::difference_type,
+                           ConstResultIterator,
+                           Row>,
       protected Row
 {
   public:
@@ -93,7 +97,8 @@ class ConstResultIterator
 
   private:
     friend class Result;
-    ConstResultIterator(const Result &r, size_type index) noexcept : Row(r, index)
+    ConstResultIterator(const Result &r, size_type index) noexcept
+        : Row(r, index)
     {
     }
 };
@@ -109,10 +114,12 @@ class ConstReverseResultIterator : private ConstResultIterator
     using value_type = iterator_type::value_type;
     using reference = iterator_type::reference;
 
-    ConstReverseResultIterator(const ConstReverseResultIterator &rhs) : ConstResultIterator(rhs)
+    ConstReverseResultIterator(const ConstReverseResultIterator &rhs)
+        : ConstResultIterator(rhs)
     {
     }
-    explicit ConstReverseResultIterator(const ConstResultIterator &rhs) : ConstResultIterator(rhs)
+    explicit ConstReverseResultIterator(const ConstResultIterator &rhs)
+        : ConstResultIterator(rhs)
     {
         super::operator--();
     }

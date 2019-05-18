@@ -19,12 +19,19 @@
 #include <trantor/net/inner/TcpConnectionImpl.h>
 
 using namespace drogon;
-WebSocketConnectionImpl::WebSocketConnectionImpl(const trantor::TcpConnectionPtr &conn, bool isServer)
-    : _tcpConn(conn), _localAddr(conn->localAddr()), _peerAddr(conn->peerAddr()), _isServer(isServer)
+WebSocketConnectionImpl::WebSocketConnectionImpl(
+    const trantor::TcpConnectionPtr &conn,
+    bool isServer)
+    : _tcpConn(conn),
+      _localAddr(conn->localAddr()),
+      _peerAddr(conn->peerAddr()),
+      _isServer(isServer)
 {
 }
 
-void WebSocketConnectionImpl::send(const char *msg, uint64_t len, const WebSocketMessageType &type)
+void WebSocketConnectionImpl::send(const char *msg,
+                                   uint64_t len,
+                                   const WebSocketMessageType &type)
 {
     unsigned char opcode;
     if (type == WebSocketMessageType::Text)
@@ -54,7 +61,9 @@ void WebSocketConnectionImpl::send(const char *msg, uint64_t len, const WebSocke
     sendWsData(msg, len, opcode);
 }
 
-void WebSocketConnectionImpl::sendWsData(const char *msg, size_t len, unsigned char opcode)
+void WebSocketConnectionImpl::sendWsData(const char *msg,
+                                         size_t len,
+                                         unsigned char opcode)
 {
     LOG_TRACE << "send " << len << " bytes";
 
@@ -105,7 +114,8 @@ void WebSocketConnectionImpl::sendWsData(const char *msg, size_t len, unsigned c
         *((int *)&bytesFormatted[indexStartRawData]) = random;
         for (size_t i = 0; i < len; i++)
         {
-            bytesFormatted[indexStartRawData + 4 + i] = (msg[i] ^ bytesFormatted[indexStartRawData + (i % 4)]);
+            bytesFormatted[indexStartRawData + 4 + i] =
+                (msg[i] ^ bytesFormatted[indexStartRawData + (i % 4)]);
         }
     }
     else
@@ -115,7 +125,8 @@ void WebSocketConnectionImpl::sendWsData(const char *msg, size_t len, unsigned c
     }
     _tcpConn->send(std::move(bytesFormatted));
 }
-void WebSocketConnectionImpl::send(const std::string &msg, const WebSocketMessageType &type)
+void WebSocketConnectionImpl::send(const std::string &msg,
+                                   const WebSocketMessageType &type)
 {
     send(msg.data(), msg.length(), type);
 }
@@ -158,16 +169,19 @@ any *WebSocketConnectionImpl::WebSocketConnectionImpl::getMutableContext()
     return &_context;
 }
 
-void WebSocketConnectionImpl::setPingMessage(const std::string &message, const std::chrono::duration<long double> &interval)
+void WebSocketConnectionImpl::setPingMessage(
+    const std::string &message,
+    const std::chrono::duration<long double> &interval)
 {
     std::weak_ptr<WebSocketConnectionImpl> weakPtr = shared_from_this();
-    _pingTimerId = _tcpConn->getLoop()->runEvery(interval.count(), [weakPtr, message]() {
-        auto thisPtr = weakPtr.lock();
-        if (thisPtr)
-        {
-            thisPtr->send(message, WebSocketMessageType::Ping);
-        }
-    });
+    _pingTimerId =
+        _tcpConn->getLoop()->runEvery(interval.count(), [weakPtr, message]() {
+            auto thisPtr = weakPtr.lock();
+            if (thisPtr)
+            {
+                thisPtr->send(message, WebSocketMessageType::Ping);
+            }
+        });
 }
 
 bool WebSocketMessageParser::parse(trantor::MsgBuffer *buffer)
@@ -238,7 +252,8 @@ bool WebSocketMessageParser::parse(trantor::MsgBuffer *buffer)
             if (isControlFrame)
             {
                 // rfc6455-5.5
-                LOG_ERROR << "Bad frame: all control frames MUST have a payload length "
+                LOG_ERROR << "Bad frame: all control frames MUST have a "
+                             "payload length "
                              "of 125 bytes or less";
                 return false;
             }
@@ -267,7 +282,8 @@ bool WebSocketMessageParser::parse(trantor::MsgBuffer *buffer)
         if (isMasked != 0)
         {
             // The message is sent by the client, check the length
-            if (length > HttpAppFrameworkImpl::instance().getClientMaxWebSocketMessageSize())
+            if (length > HttpAppFrameworkImpl::instance()
+                             .getClientMaxWebSocketMessageSize())
             {
                 LOG_ERROR << "The size of the WebSocket message is too large!";
                 buffer->retrieveAll();

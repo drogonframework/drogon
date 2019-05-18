@@ -23,9 +23,12 @@ namespace drogon
 {
 namespace orm
 {
-class ConstRowIterator
-    : public std::iterator<std::random_access_iterator_tag, const Field, Row::difference_type, ConstRowIterator, Field>,
-      protected Field
+class ConstRowIterator : public std::iterator<std::random_access_iterator_tag,
+                                              const Field,
+                                              Row::difference_type,
+                                              ConstRowIterator,
+                                              Field>,
+                         protected Field
 {
   public:
     using pointer = const Field *;
@@ -109,10 +112,12 @@ class ConstReverseRowIterator : private ConstRowIterator
     using value_type = iterator_type::value_type;
     using reference = iterator_type::reference;
 
-    ConstReverseRowIterator(const ConstReverseRowIterator &rhs) : ConstRowIterator(rhs)
+    ConstReverseRowIterator(const ConstReverseRowIterator &rhs)
+        : ConstRowIterator(rhs)
     {
     }
-    explicit ConstReverseRowIterator(const ConstRowIterator &rhs) : ConstRowIterator(rhs)
+    explicit ConstReverseRowIterator(const ConstRowIterator &rhs)
+        : ConstRowIterator(rhs)
     {
         super::operator--();
     }

@@ -140,9 +140,11 @@ class CallbackHolder : public CallbackHolderBase
         run(result);
     }
 
-    CallbackHolder(Function &&function) : _function(std::forward<Function>(function))
+    CallbackHolder(Function &&function)
+        : _function(std::forward<Function>(function))
     {
-        static_assert(traits::isSqlCallback, "Your sql callback function type is wrong!");
+        static_assert(traits::isSqlCallback,
+                      "Your sql callback function type is wrong!");
     }
 
   private:
@@ -169,21 +171,24 @@ class CallbackHolder : public CallbackHolderBase
     template <bool isStep = traits::isStepResultCallback>
     typename std::enable_if<!isStep, void>::type run(const Result &result)
     {
-        static_assert(argumentCount == 0, "Your sql callback function type is wrong!");
+        static_assert(argumentCount == 0,
+                      "Your sql callback function type is wrong!");
         _function(result);
     }
     template <typename... Values, std::size_t Boundary = argumentCount>
-    typename std::enable_if<(sizeof...(Values) < Boundary), void>::type run(const Row *const row,
-                                                                            bool isNull,
-                                                                            Values &&... values)
+    typename std::enable_if<(sizeof...(Values) < Boundary), void>::type
+    run(const Row *const row, bool isNull, Values &&... values)
     {
         // call this function recursively until parameter's count equals to the
         // count of target function parameters
-        static_assert(CallbackArgTypeTraits<NthArgumentType<sizeof...(Values)>>::isValid,
-                      "your sql callback function argument type must be value type or const "
+        static_assert(CallbackArgTypeTraits<
+                          NthArgumentType<sizeof...(Values)>>::isValid,
+                      "your sql callback function argument type must be value "
+                      "type or "
+                      "const "
                       "left-reference type");
-        typedef
-            typename std::remove_cv<typename std::remove_reference<NthArgumentType<sizeof...(Values)>>::type>::type ValueType;
+        typedef typename std::remove_cv<typename std::remove_reference<
+            NthArgumentType<sizeof...(Values)>>::type>::type ValueType;
         ValueType value = ValueType();
         if (row && row->size() > sizeof...(Values))
         {
@@ -192,25 +197,29 @@ class CallbackHolder : public CallbackHolderBase
             // else
             //     ; // value =
             //     (*row)[sizeof...(Values)].asArray<VectorTypeTraits<ValueType>::ItemsType>();
-            value = makeValue<ValueType>((*row)[(Row::size_type)sizeof...(Values)]);
+            value =
+                makeValue<ValueType>((*row)[(Row::size_type)sizeof...(Values)]);
         }
 
         run(row, isNull, std::forward<Values>(values)..., std::move(value));
     }
     template <typename... Values, std::size_t Boundary = argumentCount>
-    typename std::enable_if<(sizeof...(Values) == Boundary), void>::type run(const Row *const row,
-                                                                             bool isNull,
-                                                                             Values &&... values)
+    typename std::enable_if<(sizeof...(Values) == Boundary), void>::type
+    run(const Row *const row, bool isNull, Values &&... values)
     {
         _function(isNull, std::move(values)...);
     }
     template <typename ValueType>
-    typename std::enable_if<VectorTypeTraits<ValueType>::isVector, ValueType>::type makeValue(const Field &field)
+    typename std::enable_if<VectorTypeTraits<ValueType>::isVector,
+                            ValueType>::type
+    makeValue(const Field &field)
     {
         return field.asArray<typename VectorTypeTraits<ValueType>::ItemsType>();
     }
     template <typename ValueType>
-    typename std::enable_if<!VectorTypeTraits<ValueType>::isVector, ValueType>::type makeValue(const Field &field)
+    typename std::enable_if<!VectorTypeTraits<ValueType>::isVector,
+                            ValueType>::type
+    makeValue(const Field &field)
     {
         return field.as<ValueType>();
     }
@@ -222,15 +231,20 @@ class SqlBinder
   public:
     friend class Dbclient;
 
-    SqlBinder(const std::string &sql, DbClient &client, ClientType type) : _sql(sql), _client(client), _type(type)
+    SqlBinder(const std::string &sql, DbClient &client, ClientType type)
+        : _sql(sql), _client(client), _type(type)
     {
     }
-    SqlBinder(std::string &&sql, DbClient &client, ClientType type) : _sql(std::move(sql)), _client(client), _type(type)
+    SqlBinder(std::string &&sql, DbClient &client, ClientType type)
+        : _sql(std::move(sql)), _client(client), _type(type)
     {
     }
     ~SqlBinder();
-    template <typename CallbackType, typename traits = FunctionTraits<CallbackType>>
-    typename std::enable_if<traits::isExceptCallback && traits::isPtr, self>::type &operator>>(CallbackType &&callback)
+    template <typename CallbackType,
+              typename traits = FunctionTraits<CallbackType>>
+    typename std::enable_if<traits::isExceptCallback && traits::isPtr,
+                            self>::type &
+    operator>>(CallbackType &&callback)
     {
         // LOG_DEBUG << "ptr callback";
         _isExceptPtr = true;
@@ -238,30 +252,39 @@ class SqlBinder
         return *this;
     }
 
-    template <typename CallbackType, typename traits = FunctionTraits<CallbackType>>
-    typename std::enable_if<traits::isExceptCallback && !traits::isPtr, self>::type &operator>>(CallbackType &&callback)
+    template <typename CallbackType,
+              typename traits = FunctionTraits<CallbackType>>
+    typename std::enable_if<traits::isExceptCallback && !traits::isPtr,
+                            self>::type &
+    operator>>(CallbackType &&callback)
     {
         _isExceptPtr = false;
         _exceptCallback = std::forward<CallbackType>(callback);
         return *this;
     }
 
-    template <typename CallbackType, typename traits = FunctionTraits<CallbackType>>
-    typename std::enable_if<traits::isSqlCallback, self>::type &operator>>(CallbackType &&callback)
+    template <typename CallbackType,
+              typename traits = FunctionTraits<CallbackType>>
+    typename std::enable_if<traits::isSqlCallback, self>::type &operator>>(
+        CallbackType &&callback)
     {
-        _callbackHolder =
-            std::shared_ptr<CallbackHolderBase>(new CallbackHolder<CallbackType>(std::forward<CallbackType>(callback)));
+        _callbackHolder = std::shared_ptr<CallbackHolderBase>(
+            new CallbackHolder<CallbackType>(
+                std::forward<CallbackType>(callback)));
         return *this;
     }
 
     template <typename T>
     typename std::enable_if<
-        !std::is_same<typename std::remove_cv<typename std::remove_reference<T>::type>::type, trantor::Date>::value,
+        !std::is_same<typename std::remove_cv<
+                          typename std::remove_reference<T>::type>::type,
+                      trantor::Date>::value,
         self &>::type
     operator<<(T &&parameter)
     {
         _paraNum++;
-        typedef typename std::remove_cv<typename std::remove_reference<T>::type>::type ParaType;
+        typedef typename std::remove_cv<
+            typename std::remove_reference<T>::type>::type ParaType;
         std::shared_ptr<void> obj = std::make_shared<ParaType>(parameter);
         if (_type == ClientType::PostgreSQL)
         {
@@ -373,7 +396,8 @@ class SqlBinder
     }
     self &operator<<(std::string &&str)
     {
-        std::shared_ptr<std::string> obj = std::make_shared<std::string>(std::move(str));
+        std::shared_ptr<std::string> obj =
+            std::make_shared<std::string>(std::move(str));
         _objs.push_back(obj);
         _paraNum++;
         _parameters.push_back((char *)obj->c_str());
@@ -404,7 +428,8 @@ class SqlBinder
     }
     self &operator<<(const std::vector<char> &v)
     {
-        std::shared_ptr<std::vector<char>> obj = std::make_shared<std::vector<char>>(v);
+        std::shared_ptr<std::vector<char>> obj =
+            std::make_shared<std::vector<char>>(v);
         _objs.push_back(obj);
         _paraNum++;
         _parameters.push_back((char *)obj->data());
@@ -427,7 +452,8 @@ class SqlBinder
     }
     self &operator<<(std::vector<char> &&v)
     {
-        std::shared_ptr<std::vector<char>> obj = std::make_shared<std::vector<char>>(std::move(v));
+        std::shared_ptr<std::vector<char>> obj =
+            std::make_shared<std::vector<char>>(std::move(v));
         _objs.push_back(obj);
         _paraNum++;
         _parameters.push_back((char *)obj->data());

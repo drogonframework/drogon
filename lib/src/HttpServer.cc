@@ -30,9 +30,11 @@ using namespace trantor;
 static bool isWebSocket(const HttpRequestImplPtr &req)
 {
     auto &headers = req->headers();
-    if (headers.find("upgrade") == headers.end() || headers.find("connection") == headers.end())
+    if (headers.find("upgrade") == headers.end() ||
+        headers.find("connection") == headers.end())
         return false;
-    if (req->getHeaderBy("connection").find("Upgrade") != std::string::npos && req->getHeaderBy("upgrade") == "websocket")
+    if (req->getHeaderBy("connection").find("Upgrade") != std::string::npos &&
+        req->getHeaderBy("upgrade") == "websocket")
     {
         LOG_TRACE << "new websocket request";
 
@@ -41,16 +43,19 @@ static bool isWebSocket(const HttpRequestImplPtr &req)
     return false;
 }
 
-static void defaultHttpAsyncCallback(const HttpRequestPtr &, std::function<void(const HttpResponsePtr &resp)> &&callback)
+static void defaultHttpAsyncCallback(
+    const HttpRequestPtr &,
+    std::function<void(const HttpResponsePtr &resp)> &&callback)
 {
     auto resp = HttpResponse::newNotFoundResponse();
     resp->setCloseConnection(true);
     callback(resp);
 }
 
-static void defaultWebSockAsyncCallback(const HttpRequestPtr &,
-                                        std::function<void(const HttpResponsePtr &resp)> &&callback,
-                                        const WebSocketConnectionImplPtr &wsConnPtr)
+static void defaultWebSockAsyncCallback(
+    const HttpRequestPtr &,
+    std::function<void(const HttpResponsePtr &resp)> &&callback,
+    const WebSocketConnectionImplPtr &wsConnPtr)
 {
     auto resp = HttpResponse::newNotFoundResponse();
     resp->setCloseConnection(true);
@@ -62,7 +67,9 @@ static void defaultConnectionCallback(const trantor::TcpConnectionPtr &conn)
     return;
 }
 
-HttpServer::HttpServer(EventLoop *loop, const InetAddress &listenAddr, const std::string &name)
+HttpServer::HttpServer(EventLoop *loop,
+                       const InetAddress &listenAddr,
+                       const std::string &name)
 #ifdef __linux__
     : _server(loop, listenAddr, name.c_str()),
 #else
@@ -72,8 +79,10 @@ HttpServer::HttpServer(EventLoop *loop, const InetAddress &listenAddr, const std
       _newWebsocketCallback(defaultWebSockAsyncCallback),
       _connectionCallback(defaultConnectionCallback)
 {
-    _server.setConnectionCallback(std::bind(&HttpServer::onConnection, this, _1));
-    _server.setRecvMessageCallback(std::bind(&HttpServer::onMessage, this, _1, _2));
+    _server.setConnectionCallback(
+        std::bind(&HttpServer::onConnection, this, _1));
+    _server.setRecvMessageCallback(
+        std::bind(&HttpServer::onMessage, this, _1, _2));
 }
 
 HttpServer::~HttpServer()
@@ -82,7 +91,8 @@ HttpServer::~HttpServer()
 
 void HttpServer::start()
 {
-    LOG_TRACE << "HttpServer[" << _server.name() << "] starts listenning on " << _server.ipPort();
+    LOG_TRACE << "HttpServer[" << _server.name() << "] starts listenning on "
+              << _server.ipPort();
     _server.start();
 }
 
@@ -97,7 +107,8 @@ void HttpServer::onConnection(const TcpConnectionPtr &conn)
     {
         LOG_TRACE << "conn disconnected!";
         _connectionCallback(conn);
-        HttpRequestParser *requestParser = any_cast<HttpRequestParser>(conn->getMutableContext());
+        HttpRequestParser *requestParser =
+            any_cast<HttpRequestParser>(conn->getMutableContext());
         if (requestParser)
         {
             if (requestParser->webSocketConn())
@@ -115,7 +126,8 @@ void HttpServer::onConnection(const TcpConnectionPtr &conn)
 
 void HttpServer::onMessage(const TcpConnectionPtr &conn, MsgBuffer *buf)
 {
-    HttpRequestParser *requestParser = any_cast<HttpRequestParser>(conn->getMutableContext());
+    HttpRequestParser *requestParser =
+        any_cast<HttpRequestParser>(conn->getMutableContext());
     // With the pipelining feature or web socket, it is possible to receice
     // multiple messages at once, so
     // the while loop is necessary
@@ -143,21 +155,27 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn, MsgBuffer *buf)
             {
                 requestParser->requestImpl()->setPeerAddr(conn->peerAddr());
                 requestParser->requestImpl()->setLocalAddr(conn->localAddr());
-                requestParser->requestImpl()->setCreationDate(trantor::Date::date());
-                if (requestParser->firstReq() && isWebSocket(requestParser->requestImpl()))
+                requestParser->requestImpl()->setCreationDate(
+                    trantor::Date::date());
+                if (requestParser->firstReq() &&
+                    isWebSocket(requestParser->requestImpl()))
                 {
-                    auto wsConn = std::make_shared<WebSocketConnectionImpl>(conn);
-                    _newWebsocketCallback(requestParser->requestImpl(),
-                                          [=](const HttpResponsePtr &resp) mutable {
-                                              if (resp->statusCode() == k101SwitchingProtocols)
-                                              {
-                                                  requestParser->setWebsockConnection(wsConn);
-                                              }
-                                              auto httpString =
-                                                  std::dynamic_pointer_cast<HttpResponseImpl>(resp)->renderToString();
-                                              conn->send(httpString);
-                                          },
-                                          wsConn);
+                    auto wsConn =
+                        std::make_shared<WebSocketConnectionImpl>(conn);
+                    _newWebsocketCallback(
+                        requestParser->requestImpl(),
+                        [=](const HttpResponsePtr &resp) mutable {
+                            if (resp->statusCode() == k101SwitchingProtocols)
+                            {
+                                requestParser->setWebsockConnection(wsConn);
+                            }
+                            auto httpString =
+                                std::dynamic_pointer_cast<HttpResponseImpl>(
+                                    resp)
+                                    ->renderToString();
+                            conn->send(httpString);
+                        },
+                        wsConn);
                 }
                 else
                     onRequest(conn, requestParser->requestImpl());
@@ -171,26 +189,32 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn, MsgBuffer *buf)
     }
 }
 
-void HttpServer::onRequest(const TcpConnectionPtr &conn, const HttpRequestImplPtr &req)
+void HttpServer::onRequest(const TcpConnectionPtr &conn,
+                           const HttpRequestImplPtr &req)
 {
     const std::string &connection = req->getHeaderBy("connection");
-    bool _close = connection == "close" || (req->getVersion() == HttpRequestImpl::kHttp10 && connection != "Keep-Alive");
+    bool _close = connection == "close" ||
+                  (req->getVersion() == HttpRequestImpl::kHttp10 &&
+                   connection != "Keep-Alive");
 
     bool isHeadMethod = (req->method() == Head);
     if (isHeadMethod)
     {
         req->setMethod(Get);
     }
-    HttpRequestParser *requestParser = any_cast<HttpRequestParser>(conn->getMutableContext());
+    HttpRequestParser *requestParser =
+        any_cast<HttpRequestParser>(conn->getMutableContext());
     requestParser->pushRquestToPipelining(req);
     if (HttpAppFrameworkImpl::instance().keepaliveRequestsNumber() > 0 &&
-        requestParser->numberOfRequestsParsed() >= HttpAppFrameworkImpl::instance().keepaliveRequestsNumber())
+        requestParser->numberOfRequestsParsed() >=
+            HttpAppFrameworkImpl::instance().keepaliveRequestsNumber())
     {
         requestParser->stop();
     }
 
     if (HttpAppFrameworkImpl::instance().pipeliningRequestsNumber() > 0 &&
-        requestParser->numberOfRequestsInPipelining() >= HttpAppFrameworkImpl::instance().pipeliningRequestsNumber())
+        requestParser->numberOfRequestsInPipelining() >=
+            HttpAppFrameworkImpl::instance().pipeliningRequestsNumber())
     {
         requestParser->stop();
     }
@@ -201,17 +225,26 @@ void HttpServer::onRequest(const TcpConnectionPtr &conn, const HttpRequestImplPt
         response->setCloseConnection(_close);
 
         auto newResp = response;
-        auto &sendfileName = std::dynamic_pointer_cast<HttpResponseImpl>(newResp)->sendfileName();
+        auto &sendfileName =
+            std::dynamic_pointer_cast<HttpResponseImpl>(newResp)
+                ->sendfileName();
 
-        if (HttpAppFramework::instance().isGzipEnabled() && sendfileName.empty() &&
-            req->getHeaderBy("accept-encoding").find("gzip") != std::string::npos &&
-            std::dynamic_pointer_cast<HttpResponseImpl>(response)->getHeaderBy("content-encoding").empty() &&
-            response->getContentType() < CT_APPLICATION_OCTET_STREAM && response->getBody().length() > 1024)
+        if (HttpAppFramework::instance().isGzipEnabled() &&
+            sendfileName.empty() &&
+            req->getHeaderBy("accept-encoding").find("gzip") !=
+                std::string::npos &&
+            std::dynamic_pointer_cast<HttpResponseImpl>(response)
+                ->getHeaderBy("content-encoding")
+                .empty() &&
+            response->getContentType() < CT_APPLICATION_OCTET_STREAM &&
+            response->getBody().length() > 1024)
         {
             // use gzip
             LOG_TRACE << "Use gzip to compress the body";
             size_t zlen = response->getBody().length();
-            auto strCompress = utils::gzipCompress(response->getBody().data(), response->getBody().length());
+            auto strCompress =
+                utils::gzipCompress(response->getBody().data(),
+                                    response->getBody().length());
             if (strCompress)
             {
                 if (zlen > 0)
@@ -220,7 +253,9 @@ void HttpServer::onRequest(const TcpConnectionPtr &conn, const HttpRequestImplPt
                     if (response->expiredTime() >= 0)
                     {
                         // cached response,we need to make a clone
-                        newResp = std::make_shared<HttpResponseImpl>(*std::dynamic_pointer_cast<HttpResponseImpl>(response));
+                        newResp = std::make_shared<HttpResponseImpl>(
+                            *std::dynamic_pointer_cast<HttpResponseImpl>(
+                                response));
                         newResp->setExpiredTime(-1);
                     }
                     newResp->setBody(std::move(*strCompress));
@@ -258,7 +293,8 @@ void HttpServer::onRequest(const TcpConnectionPtr &conn, const HttpRequestImplPt
                     else
                         break;
                 }
-                if (requestParser->isStop() && requestParser->numberOfRequestsInPipelining() == 0)
+                if (requestParser->isStop() &&
+                    requestParser->numberOfRequestsInPipelining() == 0)
                 {
                     conn->shutdown();
                 }
@@ -271,42 +307,49 @@ void HttpServer::onRequest(const TcpConnectionPtr &conn, const HttpRequestImplPt
         }
         else
         {
-            conn->getLoop()->queueInLoop([conn, req, newResp, this, isHeadMethod]() {
-                HttpRequestParser *requestParser = any_cast<HttpRequestParser>(conn->getMutableContext());
-                if (requestParser)
-                {
-                    if (requestParser->getFirstRequest() == req)
+            conn->getLoop()->queueInLoop(
+                [conn, req, newResp, this, isHeadMethod]() {
+                    HttpRequestParser *requestParser =
+                        any_cast<HttpRequestParser>(conn->getMutableContext());
+                    if (requestParser)
                     {
-                        requestParser->popFirstRequest();
-                        sendResponse(conn, newResp, isHeadMethod);
-                        while (1)
+                        if (requestParser->getFirstRequest() == req)
                         {
-                            auto resp = requestParser->getFirstResponse();
-                            if (resp)
+                            requestParser->popFirstRequest();
+                            sendResponse(conn, newResp, isHeadMethod);
+                            while (1)
                             {
-                                requestParser->popFirstRequest();
-                                sendResponse(conn, resp, isHeadMethod);
+                                auto resp = requestParser->getFirstResponse();
+                                if (resp)
+                                {
+                                    requestParser->popFirstRequest();
+                                    sendResponse(conn, resp, isHeadMethod);
+                                }
+                                else
+                                    break;
                             }
-                            else
-                                break;
+                            if (requestParser->isStop() &&
+                                requestParser->numberOfRequestsInPipelining() ==
+                                    0)
+                            {
+                                conn->shutdown();
+                            }
                         }
-                        if (requestParser->isStop() && requestParser->numberOfRequestsInPipelining() == 0)
+                        else
                         {
-                            conn->shutdown();
+                            // some earlier requests are waiting for responses;
+                            requestParser->pushResponseToPipelining(req,
+                                                                    newResp);
                         }
                     }
-                    else
-                    {
-                        // some earlier requests are waiting for responses;
-                        requestParser->pushResponseToPipelining(req, newResp);
-                    }
-                }
-            });
+                });
         }
     });
 }
 
-void HttpServer::sendResponse(const TcpConnectionPtr &conn, const HttpResponsePtr &response, bool isHeadMethod)
+void HttpServer::sendResponse(const TcpConnectionPtr &conn,
+                              const HttpResponsePtr &response,
+                              bool isHeadMethod)
 {
     conn->getLoop()->assertInLoopThread();
     auto respImplPtr = std::dynamic_pointer_cast<HttpResponseImpl>(response);

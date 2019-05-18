@@ -29,10 +29,13 @@ void HttpRequestImpl::parseParameters() const
     std::string type = getHeaderBy("content-type");
     std::transform(type.begin(), type.end(), type.begin(), tolower);
     if (_method == Get ||
-        (_method == Post && (type == "" || type.find("application/x-www-form-urlencoded") != std::string::npos)))
+        (_method == Post &&
+         (type == "" ||
+          type.find("application/x-www-form-urlencoded") != std::string::npos)))
     {
         std::string::size_type pos = 0;
-        while ((input[pos] == '?' || isspace(input[pos])) && pos < input.length())
+        while ((input[pos] == '?' || isspace(input[pos])) &&
+               pos < input.length())
         {
             pos++;
         }
@@ -81,7 +84,10 @@ void HttpRequestImpl::parseParameters() const
         builder["collectComments"] = false;
         JSONCPP_STRING errs;
         std::unique_ptr<Json::CharReader> reader(builder.newCharReader());
-        if (!reader->parse(input.data(), input.data() + input.size(), _jsonPtr.get(), &errs))
+        if (!reader->parse(input.data(),
+                           input.data() + input.size(),
+                           _jsonPtr.get(),
+                           &errs))
         {
             LOG_ERROR << errs;
             _jsonPtr.reset();
@@ -143,7 +149,9 @@ void HttpRequestImpl::appendToBuffer(MsgBuffer *output) const
         content = utils::urlEncode(content);
         if (_method == Get || _method == Delete || _method == Head)
         {
-            auto ret = std::find(output->peek(), (const char *)output->beginWrite(), '?');
+            auto ret = std::find(output->peek(),
+                                 (const char *)output->beginWrite(),
+                                 '?');
             if (ret != output->beginWrite())
             {
                 if (ret != output->beginWrite() - 1)
@@ -161,11 +169,13 @@ void HttpRequestImpl::appendToBuffer(MsgBuffer *output) const
         else if (_contentType == CT_APPLICATION_JSON)
         {
             /// Can't set parameters in content in this case
-            LOG_ERROR << "You can't set parameters in the query string when the "
-                         "request content type is JSON and http method "
-                         "is POST or PUT";
-            LOG_ERROR << "Please put these parameters into the path or into the json "
-                         "string";
+            LOG_ERROR
+                << "You can't set parameters in the query string when the "
+                   "request content type is JSON and http method "
+                   "is POST or PUT";
+            LOG_ERROR
+                << "Please put these parameters into the path or into the json "
+                   "string";
             content.clear();
         }
     }
@@ -236,8 +246,11 @@ void HttpRequestImpl::appendToBuffer(MsgBuffer *output) const
     if (!content.empty() || !_content.empty())
     {
         char buf[64];
-        auto len = snprintf(
-            buf, sizeof(buf), "Content-Length: %lu\r\n", static_cast<long unsigned int>(content.length() + _content.length()));
+        auto len = snprintf(buf,
+                            sizeof(buf),
+                            "Content-Length: %lu\r\n",
+                            static_cast<long unsigned int>(content.length() +
+                                                           _content.length()));
         output->append(buf, len);
         if (_contentTypeString.empty())
         {
@@ -277,7 +290,9 @@ void HttpRequestImpl::appendToBuffer(MsgBuffer *output) const
         output->append(_content);
 }
 
-void HttpRequestImpl::addHeader(const char *start, const char *colon, const char *end)
+void HttpRequestImpl::addHeader(const char *start,
+                                const char *colon,
+                                const char *end)
 {
     std::string field(start, colon);
     // Field name is case-insensitive.so we transform it to lower;(rfc2616-4.2)
@@ -305,7 +320,8 @@ void HttpRequestImpl::addHeader(const char *start, const char *colon, const char
             {
                 std::string cookie_name = coo.substr(0, epos);
                 std::string::size_type cpos = 0;
-                while (cpos < cookie_name.length() && isspace(cookie_name[cpos]))
+                while (cpos < cookie_name.length() &&
+                       isspace(cookie_name[cpos]))
                     cpos++;
                 cookie_name = cookie_name.substr(cpos);
                 std::string cookie_value = coo.substr(epos + 1);
@@ -321,7 +337,8 @@ void HttpRequestImpl::addHeader(const char *start, const char *colon, const char
             {
                 std::string cookie_name = coo.substr(0, epos);
                 std::string::size_type cpos = 0;
-                while (cpos < cookie_name.length() && isspace(cookie_name[cpos]))
+                while (cpos < cookie_name.length() &&
+                       isspace(cookie_name[cpos]))
                     cpos++;
                 cookie_name = cookie_name.substr(cpos);
                 std::string cookie_value = coo.substr(epos + 1);
@@ -366,7 +383,8 @@ HttpRequestPtr HttpRequest::newHttpJsonRequest(const Json::Value &data)
     return req;
 }
 
-HttpRequestPtr HttpRequest::newFileUploadRequest(const std::vector<UploadFile> &files)
+HttpRequestPtr HttpRequest::newFileUploadRequest(
+    const std::vector<UploadFile> &files)
 {
     return std::make_shared<HttpFileUploadRequest>(files);
 }

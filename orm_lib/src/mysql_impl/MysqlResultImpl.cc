@@ -59,7 +59,8 @@ bool MysqlResultImpl::isNull(size_type row, row_size_type column) const
 {
     return getValue(row, column) == NULL;
 }
-Result::field_size_type MysqlResultImpl::getLength(size_type row, row_size_type column) const
+Result::field_size_type MysqlResultImpl::getLength(size_type row,
+                                                   row_size_type column) const
 {
     if (_rowsNum == 0 || _fieldNum == 0)
         return 0;

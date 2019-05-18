@@ -19,7 +19,8 @@
 
 using namespace drogon;
 
-std::shared_ptr<DrTemplateBase> DrTemplateBase::newTemplate(std::string templateName)
+std::shared_ptr<DrTemplateBase> DrTemplateBase::newTemplate(
+    std::string templateName)
 {
     LOG_TRACE << "http view name=" << templateName;
     auto pos = templateName.find(".csp");
@@ -30,7 +31,8 @@ std::shared_ptr<DrTemplateBase> DrTemplateBase::newTemplate(std::string template
             templateName = templateName.substr(0, pos);
         }
     }
-    auto obj = std::shared_ptr<DrObjectBase>(drogon::DrClassMap::newObject(templateName));
+    auto obj = std::shared_ptr<DrObjectBase>(
+        drogon::DrClassMap::newObject(templateName));
     if (obj)
     {
         return std::dynamic_pointer_cast<DrTemplateBase>(obj);

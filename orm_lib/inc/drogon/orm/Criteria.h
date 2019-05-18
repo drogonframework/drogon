@@ -53,7 +53,8 @@ class Criteria
     template <typename T>
     Criteria(const std::string &colName, const CompareOperator &opera, T &&arg)
     {
-        assert(opera != CompareOperator::IsNotNull && opera != CompareOperator::IsNull);
+        assert(opera != CompareOperator::IsNotNull &&
+               opera != CompareOperator::IsNull);
         _condString = colName;
         switch (opera)
         {
@@ -83,17 +84,21 @@ class Criteria
             default:
                 break;
         }
-        _outputArgumentsFunc = [=](internal::SqlBinder &binder) { binder << arg; };
+        _outputArgumentsFunc = [=](internal::SqlBinder &binder) {
+            binder << arg;
+        };
     }
 
     template <typename T>
-    Criteria(const std::string &colName, T &&arg) : Criteria(colName, CompareOperator::EQ, arg)
+    Criteria(const std::string &colName, T &&arg)
+        : Criteria(colName, CompareOperator::EQ, arg)
     {
     }
 
     Criteria(const std::string &colName, const CompareOperator &opera)
     {
-        assert(opera == CompareOperator::IsNotNull || opera == CompareOperator::IsNull);
+        assert(opera == CompareOperator::IsNotNull ||
+               opera == CompareOperator::IsNull);
         _condString = colName;
         switch (opera)
         {

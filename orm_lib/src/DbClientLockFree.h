@@ -29,10 +29,13 @@ namespace drogon
 {
 namespace orm
 {
-class DbClientLockFree : public DbClient, public std::enable_shared_from_this<DbClientLockFree>
+class DbClientLockFree : public DbClient,
+                         public std::enable_shared_from_this<DbClientLockFree>
 {
   public:
-    DbClientLockFree(const std::string &connInfo, trantor::EventLoop *loop, ClientType type);
+    DbClientLockFree(const std::string &connInfo,
+                     trantor::EventLoop *loop,
+                     ClientType type);
     virtual ~DbClientLockFree() noexcept;
     virtual void execSql(std::string &&sql,
                          size_t paraNum,
@@ -40,9 +43,13 @@ class DbClientLockFree : public DbClient, public std::enable_shared_from_this<Db
                          std::vector<int> &&length,
                          std::vector<int> &&format,
                          ResultCallback &&rcb,
-                         std::function<void(const std::exception_ptr &)> &&exceptCallback) override;
-    virtual std::shared_ptr<Transaction> newTransaction(const std::function<void(bool)> &commitCallback = nullptr) override;
-    virtual void newTransactionAsync(const std::function<void(const std::shared_ptr<Transaction> &)> &callback) override;
+                         std::function<void(const std::exception_ptr &)>
+                             &&exceptCallback) override;
+    virtual std::shared_ptr<Transaction> newTransaction(
+        const std::function<void(bool)> &commitCallback = nullptr) override;
+    virtual void newTransactionAsync(
+        const std::function<void(const std::shared_ptr<Transaction> &)>
+            &callback) override;
 
   private:
     std::string _connInfo;
@@ -81,9 +88,12 @@ class DbClientLockFree : public DbClient, public std::enable_shared_from_this<Db
 
     std::deque<std::shared_ptr<SqlCmd>> _sqlCmdBuffer;
 
-    std::queue<std::function<void(const std::shared_ptr<Transaction> &)>> _transCallbacks;
+    std::queue<std::function<void(const std::shared_ptr<Transaction> &)>>
+        _transCallbacks;
 
-    void makeTrans(const DbConnectionPtr &conn, std::function<void(const std::shared_ptr<Transaction> &)> &&callback);
+    void makeTrans(
+        const DbConnectionPtr &conn,
+        std::function<void(const std::shared_ptr<Transaction> &)> &&callback);
 
     void handleNewTask(const DbConnectionPtr &conn);
 };

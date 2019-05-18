@@ -23,7 +23,9 @@ typedef std::unique_ptr<PluginBase> PluginBasePtr;
 class PluginsManager : trantor::NonCopyable
 {
   public:
-    void initializeAllPlugins(const Json::Value &configs, const std::function<void(PluginBase *)> &forEachCallback);
+    void initializeAllPlugins(
+        const Json::Value &configs,
+        const std::function<void(PluginBase *)> &forEachCallback);
 
     PluginBase *getPlugin(const std::string &pluginName);
     ~PluginsManager();

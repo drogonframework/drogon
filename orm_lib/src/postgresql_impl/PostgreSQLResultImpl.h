@@ -27,7 +27,9 @@ namespace orm
 class PostgreSQLResultImpl : public ResultImpl
 {
   public:
-    PostgreSQLResultImpl(const std::shared_ptr<PGresult> &r, const std::string &query) noexcept : ResultImpl(query), _result(r)
+    PostgreSQLResultImpl(const std::shared_ptr<PGresult> &r,
+                         const std::string &query) noexcept
+        : ResultImpl(query), _result(r)
     {
     }
     virtual size_type size() const noexcept override;
@@ -35,9 +37,11 @@ class PostgreSQLResultImpl : public ResultImpl
     virtual const char *columnName(row_size_type number) const override;
     virtual size_type affectedRows() const noexcept override;
     virtual row_size_type columnNumber(const char colName[]) const override;
-    virtual const char *getValue(size_type row, row_size_type column) const override;
+    virtual const char *getValue(size_type row,
+                                 row_size_type column) const override;
     virtual bool isNull(size_type row, row_size_type column) const override;
-    virtual field_size_type getLength(size_type row, row_size_type column) const override;
+    virtual field_size_type getLength(size_type row,
+                                      row_size_type column) const override;
     virtual int oid(row_size_type column) const override;
 
   private:

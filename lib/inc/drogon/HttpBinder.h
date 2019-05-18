@@ -67,9 +67,10 @@ struct BinderArgTypeTraits<const T &>
 class HttpBinderBase
 {
   public:
-    virtual void handleHttpRequest(std::list<std::string> &pathParameter,
-                                   const HttpRequestPtr &req,
-                                   std::function<void(const HttpResponsePtr &)> &&callback) = 0;
+    virtual void handleHttpRequest(
+        std::list<std::string> &pathParameter,
+        const HttpRequestPtr &req,
+        std::function<void(const HttpResponsePtr &)> &&callback) = 0;
     virtual size_t paramCount() = 0;
     virtual const std::string &handlerName() const = 0;
     virtual ~HttpBinderBase()
@@ -82,8 +83,8 @@ T &getControllerObj()
 {
     // Initialization of function-local statics is guaranteed to occur only once
     // even when
-    // called from multiple threads, and may be more efficient than the equivalent
-    // code using std::call_once.
+    // called from multiple threads, and may be more efficient than the
+    // equivalent code using std::call_once.
     static T obj;
     return obj;
 }
@@ -94,9 +95,10 @@ class HttpBinder : public HttpBinderBase
 {
   public:
     typedef FUNCTION FunctionType;
-    virtual void handleHttpRequest(std::list<std::string> &pathParameter,
-                                   const HttpRequestPtr &req,
-                                   std::function<void(const HttpResponsePtr &)> &&callback) override
+    virtual void handleHttpRequest(
+        std::list<std::string> &pathParameter,
+        const HttpRequestPtr &req,
+        std::function<void(const HttpResponsePtr &)> &&callback) override
     {
         run(pathParameter, req, std::move(callback));
     }
@@ -106,12 +108,14 @@ class HttpBinder : public HttpBinderBase
     }
     HttpBinder(FUNCTION &&func) : _func(std::forward<FUNCTION>(func))
     {
-        static_assert(traits::isHTTPFunction, "Your API handler function interface is wrong!");
+        static_assert(traits::isHTTPFunction,
+                      "Your API handler function interface is wrong!");
         _handlerName = DrClassMap::demangle(typeid(FUNCTION).name());
     }
     void test()
     {
-        std::cout << "argument_count=" << argument_count << " " << traits::isHTTPFunction << std::endl;
+        std::cout << "argument_count=" << argument_count << " "
+                  << traits::isHTTPFunction << std::endl;
     }
     virtual const std::string &handlerName() const override
     {
@@ -136,11 +140,14 @@ class HttpBinder : public HttpBinderBase
     {
         // call this function recursively until parameter's count equals to the
         // count of target function parameters
-        static_assert(BinderArgTypeTraits<nth_argument_type<sizeof...(Values)>>::isValid,
-                      "your handler argument type must be value type or const left reference "
+        static_assert(BinderArgTypeTraits<
+                          nth_argument_type<sizeof...(Values)>>::isValid,
+                      "your handler argument type must be value type or const "
+                      "left "
+                      "reference "
                       "type or right reference type");
-        typedef
-            typename std::remove_cv<typename std::remove_reference<nth_argument_type<sizeof...(Values)>>::type>::type ValueType;
+        typedef typename std::remove_cv<typename std::remove_reference<
+            nth_argument_type<sizeof...(Values)>>::type>::type ValueType;
         ValueType value = ValueType();
         if (!pathParameter.empty())
         {
@@ -153,7 +160,11 @@ class HttpBinder : public HttpBinderBase
             }
         }
 
-        run(pathParameter, req, std::move(callback), std::forward<Values>(values)..., std::move(value));
+        run(pathParameter,
+            req,
+            std::move(callback),
+            std::forward<Values>(values)...,
+            std::move(value));
     }
     template <typename... Values, std::size_t Boundary = argument_count>
     typename std::enable_if<(sizeof...(Values) == Boundary), void>::type run(
@@ -168,7 +179,9 @@ class HttpBinder : public HttpBinderBase
               bool isClassFunction = traits::isClassFunction,
               bool isDrObjectClass = traits::isDrObjectClass>
     typename std::enable_if<isClassFunction && !isDrObjectClass, void>::type
-    callFunction(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback, Values &&... values)
+    callFunction(const HttpRequestPtr &req,
+                 std::function<void(const HttpResponsePtr &)> &&callback,
+                 Values &&... values)
     {
         static auto &obj = getControllerObj<typename traits::class_type>();
         (obj.*_func)(req, std::move(callback), std::move(values)...);
@@ -177,15 +190,20 @@ class HttpBinder : public HttpBinderBase
               bool isClassFunction = traits::isClassFunction,
               bool isDrObjectClass = traits::isDrObjectClass>
     typename std::enable_if<isClassFunction && isDrObjectClass, void>::type
-    callFunction(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback, Values &&... values)
+    callFunction(const HttpRequestPtr &req,
+                 std::function<void(const HttpResponsePtr &)> &&callback,
+                 Values &&... values)
     {
-        static auto objPtr = DrClassMap::getSingleInstance<typename traits::class_type>();
+        static auto objPtr =
+            DrClassMap::getSingleInstance<typename traits::class_type>();
         (*objPtr.*_func)(req, std::move(callback), std::move(values)...);
     };
-    template <typename... Values, bool isClassFunction = traits::isClassFunction>
-    typename std::enable_if<!isClassFunction, void>::type callFunction(const HttpRequestPtr &req,
-                                                                       std::function<void(const HttpResponsePtr &)> &&callback,
-                                                                       Values &&... values)
+    template <typename... Values,
+              bool isClassFunction = traits::isClassFunction>
+    typename std::enable_if<!isClassFunction, void>::type callFunction(
+        const HttpRequestPtr &req,
+        std::function<void(const HttpResponsePtr &)> &&callback,
+        Values &&... values)
     {
         _func(req, std::move(callback), std::move(values)...);
     };

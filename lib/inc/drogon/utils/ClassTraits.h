@@ -22,8 +22,12 @@ namespace internal
 template <typename S, typename B>
 struct IsSubClass
 {
-    typedef typename std::remove_cv<typename std::remove_reference<S>::type>::type SubType;
-    typedef typename std::remove_cv<typename std::remove_reference<B>::type>::type BaseType;
+    typedef
+        typename std::remove_cv<typename std::remove_reference<S>::type>::type
+            SubType;
+    typedef
+        typename std::remove_cv<typename std::remove_reference<B>::type>::type
+            BaseType;
     static char test(void *)
     {
         return 0;

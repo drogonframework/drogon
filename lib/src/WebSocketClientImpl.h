@@ -25,7 +25,9 @@
 
 namespace drogon
 {
-class WebSocketClientImpl : public WebSocketClient, public std::enable_shared_from_this<WebSocketClientImpl>
+class WebSocketClientImpl
+    : public WebSocketClient,
+      public std::enable_shared_from_this<WebSocketClientImpl>
 {
   public:
     virtual WebSocketConnectionPtr getConnection() override
@@ -34,18 +36,24 @@ class WebSocketClientImpl : public WebSocketClient, public std::enable_shared_fr
     }
 
     virtual void setMessageHandler(
-        const std::function<void(std::string &&message, const WebSocketClientPtr &, const WebSocketMessageType &)> &callback)
+        const std::function<void(std::string &&message,
+                                 const WebSocketClientPtr &,
+                                 const WebSocketMessageType &)> &callback)
         override
     {
         _messageCallback = callback;
     }
 
-    virtual void setConnectionClosedHandler(const std::function<void(const WebSocketClientPtr &)> &callback) override
+    virtual void setConnectionClosedHandler(
+        const std::function<void(const WebSocketClientPtr &)> &callback)
+        override
     {
         _connectionClosedCallback = callback;
     }
 
-    virtual void connectToServer(const HttpRequestPtr &request, const WebSocketRequestCallback &callback) override
+    virtual void connectToServer(
+        const HttpRequestPtr &request,
+        const WebSocketRequestCallback &callback) override
     {
         assert(callback);
         if (_loop->isInLoopThread())
@@ -70,9 +78,12 @@ class WebSocketClientImpl : public WebSocketClient, public std::enable_shared_fr
         return _loop;
     }
 
-    WebSocketClientImpl(trantor::EventLoop *loop, const trantor::InetAddress &addr, bool useSSL = false);
+    WebSocketClientImpl(trantor::EventLoop *loop,
+                        const trantor::InetAddress &addr,
+                        bool useSSL = false);
 
-    WebSocketClientImpl(trantor::EventLoop *loop, const std::string &hostString);
+    WebSocketClientImpl(trantor::EventLoop *loop,
+                        const std::string &hostString);
 
     ~WebSocketClientImpl();
 
@@ -87,16 +98,22 @@ class WebSocketClientImpl : public WebSocketClient, public std::enable_shared_fr
     std::string _wsAccept;
 
     HttpRequestPtr _upgradeRequest;
-    std::function<void(std::string &&message, const WebSocketClientPtr &, const WebSocketMessageType &)> _messageCallback =
-        [](std::string &&message, const WebSocketClientPtr &, const WebSocketMessageType &) {};
-    std::function<void(const WebSocketClientPtr &)> _connectionClosedCallback = [](const WebSocketClientPtr &) {};
+    std::function<void(std::string &&message,
+                       const WebSocketClientPtr &,
+                       const WebSocketMessageType &)>
+        _messageCallback = [](std::string &&message,
+                              const WebSocketClientPtr &,
+                              const WebSocketMessageType &) {};
+    std::function<void(const WebSocketClientPtr &)> _connectionClosedCallback =
+        [](const WebSocketClientPtr &) {};
     WebSocketRequestCallback _requestCallback;
     WebSocketConnectionImplPtr _websockConnPtr;
 
     void connectToServerInLoop();
     void sendReq(const trantor::TcpConnectionPtr &connPtr);
     void onRecvMessage(const trantor::TcpConnectionPtr &, trantor::MsgBuffer *);
-    void onRecvWsMessage(const trantor::TcpConnectionPtr &, trantor::MsgBuffer *);
+    void onRecvWsMessage(const trantor::TcpConnectionPtr &,
+                         trantor::MsgBuffer *);
     void reconnect();
 };
 

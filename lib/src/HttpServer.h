@@ -33,12 +33,17 @@ typedef std::shared_ptr<HttpRequest> HttpRequestPtr;
 class HttpServer : trantor::NonCopyable
 {
   public:
-    typedef std::function<void(const HttpRequestImplPtr &, std::function<void(const HttpResponsePtr &)> &&)> HttpAsyncCallback;
-    typedef std::function<
-        void(const HttpRequestImplPtr &, std::function<void(const HttpResponsePtr &)> &&, const WebSocketConnectionImplPtr &)>
+    typedef std::function<void(const HttpRequestImplPtr &,
+                               std::function<void(const HttpResponsePtr &)> &&)>
+        HttpAsyncCallback;
+    typedef std::function<void(const HttpRequestImplPtr &,
+                               std::function<void(const HttpResponsePtr &)> &&,
+                               const WebSocketConnectionImplPtr &)>
         WebSocketNewAsyncCallback;
 
-    HttpServer(EventLoop *loop, const InetAddress &listenAddr, const std::string &name);
+    HttpServer(EventLoop *loop,
+               const InetAddress &listenAddr,
+               const std::string &name);
 
     ~HttpServer();
 
@@ -88,7 +93,9 @@ class HttpServer : trantor::NonCopyable
     void onConnection(const TcpConnectionPtr &conn);
     void onMessage(const TcpConnectionPtr &, MsgBuffer *);
     void onRequest(const TcpConnectionPtr &, const HttpRequestImplPtr &);
-    void sendResponse(const TcpConnectionPtr &, const HttpResponsePtr &, bool isHeadMethod);
+    void sendResponse(const TcpConnectionPtr &,
+                      const HttpResponsePtr &,
+                      bool isHeadMethod);
     trantor::TcpServer _server;
     HttpAsyncCallback _httpAsyncCallback;
     WebSocketNewAsyncCallback _newWebsocketCallback;

@@ -45,7 +45,9 @@ int MultiPartParser::parse(const HttpRequestPtr &req)
 {
     if (req->method() != Post)
         return -1;
-    const std::string &contentType = std::dynamic_pointer_cast<HttpRequestImpl>(req)->getHeaderBy("content-type");
+    const std::string &contentType =
+        std::dynamic_pointer_cast<HttpRequestImpl>(req)->getHeaderBy(
+            "content-type");
     if (contentType.empty())
     {
         return -1;
@@ -114,7 +116,8 @@ int MultiPartParser::parseEntity(const char *begin, const char *end)
     }
 }
 
-int MultiPartParser::parse(const std::string &content, const std::string &boundary)
+int MultiPartParser::parse(const std::string &content,
+                           const std::string &boundary)
 {
     std::string::size_type pos1, pos2;
     pos1 = 0;
@@ -131,7 +134,8 @@ int MultiPartParser::parse(const std::string &content, const std::string &bounda
         if (pos2 == std::string::npos)
             break;
         //    std::cout<<"pos1="<<pos1<<" pos2="<<pos2<<std::endl;
-        if (content[pos2 - 4] == '\r' && content[pos2 - 3] == '\n' && content[pos2 - 2] == '-' && content[pos2 - 1] == '-')
+        if (content[pos2 - 4] == '\r' && content[pos2 - 3] == '\n' &&
+            content[pos2 - 2] == '-' && content[pos2 - 1] == '-')
             pos2 -= 4;
         if (parseEntity(content.c_str() + pos1, content.c_str() + pos2) != 0)
             return -1;
@@ -147,8 +151,11 @@ int HttpFile::save(const std::string &path) const
         return -1;
     std::string filename;
     auto tmpPath = path;
-    if (path[0] == '/' || (path.length() >= 2 && path[0] == '.' && path[1] == '/') ||
-        (path.length() >= 3 && path[0] == '.' && path[1] == '.' && path[2] == '/') || path == "." || path == "..")
+    if (path[0] == '/' ||
+        (path.length() >= 2 && path[0] == '.' && path[1] == '/') ||
+        (path.length() >= 3 && path[0] == '.' && path[1] == '.' &&
+         path[2] == '/') ||
+        path == "." || path == "..")
     {
         // Absolute or relative path
     }
@@ -181,8 +188,10 @@ int HttpFile::saveAs(const std::string &filename) const
 {
     assert(!filename.empty());
     auto pathAndFileName = filename;
-    if (filename[0] == '/' || (filename.length() >= 2 && filename[0] == '.' && filename[1] == '/') ||
-        (filename.length() >= 3 && filename[0] == '.' && filename[1] == '.' && filename[2] == '/'))
+    if (filename[0] == '/' ||
+        (filename.length() >= 2 && filename[0] == '.' && filename[1] == '/') ||
+        (filename.length() >= 3 && filename[0] == '.' && filename[1] == '.' &&
+         filename[2] == '/'))
     {
         // Absolute or relative path
     }

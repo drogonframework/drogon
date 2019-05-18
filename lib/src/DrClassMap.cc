@@ -22,9 +22,11 @@ namespace drogon
 {
 namespace internal
 {
-static std::unordered_map<std::string, std::shared_ptr<DrObjectBase>> &getObjsMap()
+static std::unordered_map<std::string, std::shared_ptr<DrObjectBase>>
+    &getObjsMap()
 {
-    static std::unordered_map<std::string, std::shared_ptr<DrObjectBase>> singleInstanceMap;
+    static std::unordered_map<std::string, std::shared_ptr<DrObjectBase>>
+        singleInstanceMap;
     return singleInstanceMap;
 }
 
@@ -37,7 +39,8 @@ static std::mutex &getMapMutex()
 }  // namespace internal
 }  // namespace drogon
 
-void DrClassMap::registerClass(const std::string &className, const DrAllocFunc &func)
+void DrClassMap::registerClass(const std::string &className,
+                               const DrAllocFunc &func)
 {
     LOG_TRACE << "Register class:" << className;
     getMap().insert(std::make_pair(className, func));
@@ -54,7 +57,8 @@ DrObjectBase *DrClassMap::newObject(const std::string &className)
         return nullptr;
 }
 
-const std::shared_ptr<DrObjectBase> &DrClassMap::getSingleInstance(const std::string &className)
+const std::shared_ptr<DrObjectBase> &DrClassMap::getSingleInstance(
+    const std::string &className)
 {
     auto &mtx = internal::getMapMutex();
     auto &singleInstanceMap = internal::getObjsMap();
@@ -62,7 +66,8 @@ const std::shared_ptr<DrObjectBase> &DrClassMap::getSingleInstance(const std::st
     auto iter = singleInstanceMap.find(className);
     if (iter != singleInstanceMap.end())
         return iter->second;
-    singleInstanceMap[className] = std::shared_ptr<DrObjectBase>(newObject(className));
+    singleInstanceMap[className] =
+        std::shared_ptr<DrObjectBase>(newObject(className));
     return singleInstanceMap[className];
 }
 

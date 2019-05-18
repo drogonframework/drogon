@@ -38,12 +38,15 @@ void WebSocketClientImpl::connectToServerInLoop()
     _upgradeRequest->addHeader("Connection", "Upgrade");
     _upgradeRequest->addHeader("Upgrade", "websocket");
     auto randStr = utils::genRandomString(16);
-    _wsKey = utils::base64Encode((const unsigned char *)randStr.data(), (unsigned int)randStr.length());
+    _wsKey = utils::base64Encode((const unsigned char *)randStr.data(),
+                                 (unsigned int)randStr.length());
 
     auto wsKey = _wsKey;
     wsKey.append("258EAFA5-E914-47DA-95CA-C5AB0DC85B11");
     unsigned char accKey[SHA_DIGEST_LENGTH];
-    SHA1(reinterpret_cast<const unsigned char *>(wsKey.c_str()), wsKey.length(), accKey);
+    SHA1(reinterpret_cast<const unsigned char *>(wsKey.c_str()),
+         wsKey.length(),
+         accKey);
     _wsAccept = utils::base64Encode(accKey, SHA_DIGEST_LENGTH);
 
     _upgradeRequest->addHeader("Sec-WebSocket-Key", _wsKey);
@@ -65,22 +68,27 @@ void WebSocketClientImpl::connectToServerInLoop()
         }
     }
 
-    if (_server.ipNetEndian() == 0 && !hasIpv6Address && !_domain.empty() && _server.portNetEndian() != 0)
+    if (_server.ipNetEndian() == 0 && !hasIpv6Address && !_domain.empty() &&
+        _server.portNetEndian() != 0)
     {
         // dns
         // TODO: timeout should be set by user
         if (InetAddress::resolve(_domain, &_server) == false)
         {
-            _requestCallback(ReqResult::BadServerAddress, nullptr, shared_from_this());
+            _requestCallback(ReqResult::BadServerAddress,
+                             nullptr,
+                             shared_from_this());
             return;
         }
         LOG_TRACE << "dns:domain=" << _domain << ";ip=" << _server.toIp();
     }
 
-    if ((_server.ipNetEndian() != 0 || hasIpv6Address) && _server.portNetEndian() != 0)
+    if ((_server.ipNetEndian() != 0 || hasIpv6Address) &&
+        _server.portNetEndian() != 0)
     {
         LOG_TRACE << "New TcpClient," << _server.toIpPort();
-        _tcpClient = std::make_shared<trantor::TcpClient>(_loop, _server, "httpClient");
+        _tcpClient =
+            std::make_shared<trantor::TcpClient>(_loop, _server, "httpClient");
 
 #ifdef USE_OPENSSL
         if (_useSSL)
@@ -91,63 +99,78 @@ void WebSocketClientImpl::connectToServerInLoop()
         auto thisPtr = shared_from_this();
         std::weak_ptr<WebSocketClientImpl> weakPtr = thisPtr;
 
-        _tcpClient->setConnectionCallback([weakPtr](const trantor::TcpConnectionPtr &connPtr) {
-            auto thisPtr = weakPtr.lock();
-            if (!thisPtr)
-                return;
-            if (connPtr->connected())
-            {
-                connPtr->setContext(HttpResponseParser(connPtr));
-                // send request;
-                LOG_TRACE << "Connection established!";
-                thisPtr->sendReq(connPtr);
-            }
-            else
-            {
-                LOG_TRACE << "connection disconnect";
-                thisPtr->_connectionClosedCallback(thisPtr);
-                thisPtr->_websockConnPtr.reset();
-                thisPtr->_loop->runAfter(1.0, [thisPtr]() { thisPtr->reconnect(); });
-            }
-        });
+        _tcpClient->setConnectionCallback(
+            [weakPtr](const trantor::TcpConnectionPtr &connPtr) {
+                auto thisPtr = weakPtr.lock();
+                if (!thisPtr)
+                    return;
+                if (connPtr->connected())
+                {
+                    connPtr->setContext(HttpResponseParser(connPtr));
+                    // send request;
+                    LOG_TRACE << "Connection established!";
+                    thisPtr->sendReq(connPtr);
+                }
+                else
+                {
+                    LOG_TRACE << "connection disconnect";
+                    thisPtr->_connectionClosedCallback(thisPtr);
+                    thisPtr->_websockConnPtr.reset();
+                    thisPtr->_loop->runAfter(1.0, [thisPtr]() {
+                        thisPtr->reconnect();
+                    });
+                }
+            });
         _tcpClient->setConnectionErrorCallback([weakPtr]() {
             auto thisPtr = weakPtr.lock();
             if (!thisPtr)
                 return;
             // can't connect to server
-            thisPtr->_requestCallback(ReqResult::NetworkFailure, nullptr, thisPtr);
-            thisPtr->_loop->runAfter(1.0, [thisPtr]() { thisPtr->reconnect(); });
+            thisPtr->_requestCallback(ReqResult::NetworkFailure,
+                                      nullptr,
+                                      thisPtr);
+            thisPtr->_loop->runAfter(1.0,
+                                     [thisPtr]() { thisPtr->reconnect(); });
         });
-        _tcpClient->setMessageCallback([weakPtr](const trantor::TcpConnectionPtr &connPtr, trantor::MsgBuffer *msg) {
-            auto thisPtr = weakPtr.lock();
-            if (thisPtr)
-            {
-                thisPtr->onRecvMessage(connPtr, msg);
-            }
-        });
+        _tcpClient->setMessageCallback(
+            [weakPtr](const trantor::TcpConnectionPtr &connPtr,
+                      trantor::MsgBuffer *msg) {
+                auto thisPtr = weakPtr.lock();
+                if (thisPtr)
+                {
+                    thisPtr->onRecvMessage(connPtr, msg);
+                }
+            });
         _tcpClient->connect();
     }
     else
     {
-        _requestCallback(ReqResult::BadServerAddress, nullptr, shared_from_this());
+        _requestCallback(ReqResult::BadServerAddress,
+                         nullptr,
+                         shared_from_this());
         return;
     }
 }
 
-void WebSocketClientImpl::onRecvWsMessage(const trantor::TcpConnectionPtr &connPtr, trantor::MsgBuffer *msgBuffer)
+void WebSocketClientImpl::onRecvWsMessage(
+    const trantor::TcpConnectionPtr &connPtr,
+    trantor::MsgBuffer *msgBuffer)
 {
     assert(_websockConnPtr);
     _websockConnPtr->onNewMessage(connPtr, msgBuffer);
 }
 
-void WebSocketClientImpl::onRecvMessage(const trantor::TcpConnectionPtr &connPtr, trantor::MsgBuffer *msgBuffer)
+void WebSocketClientImpl::onRecvMessage(
+    const trantor::TcpConnectionPtr &connPtr,
+    trantor::MsgBuffer *msgBuffer)
 {
     if (_upgraded)
     {
         onRecvWsMessage(connPtr, msgBuffer);
         return;
     }
-    HttpResponseParser *responseParser = any_cast<HttpResponseParser>(connPtr->getMutableContext());
+    HttpResponseParser *responseParser =
+        any_cast<HttpResponseParser>(connPtr->getMutableContext());
 
     // LOG_TRACE << "###:" << msg->readableBytes();
 
@@ -166,9 +189,12 @@ void WebSocketClientImpl::onRecvMessage(const trantor::TcpConnectionPtr &connPtr
         responseParser->reset();
         auto acceptStr = resp->getHeaderBy("sec-websocket-accept");
 
-        if (resp->statusCode() != k101SwitchingProtocols || acceptStr != _wsAccept)
+        if (resp->statusCode() != k101SwitchingProtocols ||
+            acceptStr != _wsAccept)
         {
-            _requestCallback(ReqResult::BadResponse, nullptr, shared_from_this());
+            _requestCallback(ReqResult::BadResponse,
+                             nullptr,
+                             shared_from_this());
             connPtr->shutdown();
             _websockConnPtr.reset();
             _tcpClient.reset();
@@ -187,10 +213,13 @@ void WebSocketClientImpl::onRecvMessage(const trantor::TcpConnectionPtr &connPtr
         }
 
         _upgraded = true;
-        _websockConnPtr = std::make_shared<WebSocketConnectionImpl>(connPtr, false);
+        _websockConnPtr =
+            std::make_shared<WebSocketConnectionImpl>(connPtr, false);
         auto thisPtr = shared_from_this();
         _websockConnPtr->setMessageCallback(
-            [thisPtr](std::string &&message, const WebSocketConnectionImplPtr &connPtr, const WebSocketMessageType &type) {
+            [thisPtr](std::string &&message,
+                      const WebSocketConnectionImplPtr &connPtr,
+                      const WebSocketMessageType &type) {
                 thisPtr->_messageCallback(std::move(message), thisPtr, type);
             });
         _requestCallback(ReqResult::Ok, resp, shared_from_this());
@@ -213,15 +242,22 @@ void WebSocketClientImpl::reconnect()
     connectToServerInLoop();
 }
 
-WebSocketClientImpl::WebSocketClientImpl(trantor::EventLoop *loop, const trantor::InetAddress &addr, bool useSSL)
+WebSocketClientImpl::WebSocketClientImpl(trantor::EventLoop *loop,
+                                         const trantor::InetAddress &addr,
+                                         bool useSSL)
     : _loop(loop), _server(addr), _useSSL(useSSL)
 {
 }
 
-WebSocketClientImpl::WebSocketClientImpl(trantor::EventLoop *loop, const std::string &hostString) : _loop(loop)
+WebSocketClientImpl::WebSocketClientImpl(trantor::EventLoop *loop,
+                                         const std::string &hostString)
+    : _loop(loop)
 {
     auto lowerHost = hostString;
-    std::transform(lowerHost.begin(), lowerHost.end(), lowerHost.begin(), tolower);
+    std::transform(lowerHost.begin(),
+                   lowerHost.end(),
+                   lowerHost.begin(),
+                   tolower);
     if (lowerHost.find("wss://") != std::string::npos)
     {
         _useSSL = true;
@@ -278,7 +314,8 @@ void WebSocketClientImpl::sendReq(const trantor::TcpConnectionPtr &connPtr)
     auto implPtr = std::dynamic_pointer_cast<HttpRequestImpl>(_upgradeRequest);
     assert(implPtr);
     implPtr->appendToBuffer(&buffer);
-    LOG_TRACE << "Send request:" << std::string(buffer.peek(), buffer.readableBytes());
+    LOG_TRACE << "Send request:"
+              << std::string(buffer.peek(), buffer.readableBytes());
     connPtr->send(std::move(buffer));
 }
 
@@ -288,11 +325,21 @@ WebSocketClientPtr WebSocketClient::newWebSocketClient(const std::string &ip,
                                                        trantor::EventLoop *loop)
 {
     bool isIpv6 = ip.find(":") == std::string::npos ? false : true;
-    return std::make_shared<WebSocketClientImpl>(
-        loop == nullptr ? app().getLoop() : loop, trantor::InetAddress(ip, port, isIpv6), useSSL);
+    return std::make_shared<WebSocketClientImpl>(loop == nullptr
+                                                     ? app().getLoop()
+                                                     : loop,
+                                                 trantor::InetAddress(ip,
+                                                                      port,
+                                                                      isIpv6),
+                                                 useSSL);
 }
 
-WebSocketClientPtr WebSocketClient::newWebSocketClient(const std::string &hostString, trantor::EventLoop *loop)
+WebSocketClientPtr WebSocketClient::newWebSocketClient(
+    const std::string &hostString,
+    trantor::EventLoop *loop)
 {
-    return std::make_shared<WebSocketClientImpl>(loop == nullptr ? app().getLoop() : loop, hostString);
+    return std::make_shared<WebSocketClientImpl>(loop == nullptr
+                                                     ? app().getLoop()
+                                                     : loop,
+                                                 hostString);
 }

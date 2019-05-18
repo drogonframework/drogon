@@ -53,9 +53,10 @@ class Users
     /**  For column user_id  */
     /// Get the value of the column user_id, returns the default value if the
     /// column is null
-    const std::string &getValueOfUserId(const std::string &defaultValue = std::string()) const noexcept;
-    /// Return a shared_ptr object pointing to the column const value, or an empty
-    /// shared_ptr object if the column is null
+    const std::string &getValueOfUserId(
+        const std::string &defaultValue = std::string()) const noexcept;
+    /// Return a shared_ptr object pointing to the column const value, or an
+    /// empty shared_ptr object if the column is null
     std::shared_ptr<const std::string> getUserId() const noexcept;
     /// Set the value of the column user_id
     void setUserId(const std::string &userId) noexcept;
@@ -64,9 +65,10 @@ class Users
     /**  For column user_name  */
     /// Get the value of the column user_name, returns the default value if the
     /// column is null
-    const std::string &getValueOfUserName(const std::string &defaultValue = std::string()) const noexcept;
-    /// Return a shared_ptr object pointing to the column const value, or an empty
-    /// shared_ptr object if the column is null
+    const std::string &getValueOfUserName(
+        const std::string &defaultValue = std::string()) const noexcept;
+    /// Return a shared_ptr object pointing to the column const value, or an
+    /// empty shared_ptr object if the column is null
     std::shared_ptr<const std::string> getUserName() const noexcept;
     /// Set the value of the column user_name
     void setUserName(const std::string &userName) noexcept;
@@ -75,9 +77,10 @@ class Users
     /**  For column password  */
     /// Get the value of the column password, returns the default value if the
     /// column is null
-    const std::string &getValueOfPassword(const std::string &defaultValue = std::string()) const noexcept;
-    /// Return a shared_ptr object pointing to the column const value, or an empty
-    /// shared_ptr object if the column is null
+    const std::string &getValueOfPassword(
+        const std::string &defaultValue = std::string()) const noexcept;
+    /// Return a shared_ptr object pointing to the column const value, or an
+    /// empty shared_ptr object if the column is null
     std::shared_ptr<const std::string> getPassword() const noexcept;
     /// Set the value of the column password
     void setPassword(const std::string &password) noexcept;
@@ -86,9 +89,10 @@ class Users
     /**  For column org_name  */
     /// Get the value of the column org_name, returns the default value if the
     /// column is null
-    const std::string &getValueOfOrgName(const std::string &defaultValue = std::string()) const noexcept;
-    /// Return a shared_ptr object pointing to the column const value, or an empty
-    /// shared_ptr object if the column is null
+    const std::string &getValueOfOrgName(
+        const std::string &defaultValue = std::string()) const noexcept;
+    /// Return a shared_ptr object pointing to the column const value, or an
+    /// empty shared_ptr object if the column is null
     std::shared_ptr<const std::string> getOrgName() const noexcept;
     /// Set the value of the column org_name
     void setOrgName(const std::string &orgName) noexcept;
@@ -97,9 +101,10 @@ class Users
     /**  For column signature  */
     /// Get the value of the column signature, returns the default value if the
     /// column is null
-    const std::string &getValueOfSignature(const std::string &defaultValue = std::string()) const noexcept;
-    /// Return a shared_ptr object pointing to the column const value, or an empty
-    /// shared_ptr object if the column is null
+    const std::string &getValueOfSignature(
+        const std::string &defaultValue = std::string()) const noexcept;
+    /// Return a shared_ptr object pointing to the column const value, or an
+    /// empty shared_ptr object if the column is null
     std::shared_ptr<const std::string> getSignature() const noexcept;
     /// Set the value of the column signature
     void setSignature(const std::string &signature) noexcept;
@@ -108,39 +113,43 @@ class Users
     /**  For column avatar_id  */
     /// Get the value of the column avatar_id, returns the default value if the
     /// column is null
-    const std::string &getValueOfAvatarId(const std::string &defaultValue = std::string()) const noexcept;
-    /// Return a shared_ptr object pointing to the column const value, or an empty
-    /// shared_ptr object if the column is null
+    const std::string &getValueOfAvatarId(
+        const std::string &defaultValue = std::string()) const noexcept;
+    /// Return a shared_ptr object pointing to the column const value, or an
+    /// empty shared_ptr object if the column is null
     std::shared_ptr<const std::string> getAvatarId() const noexcept;
     /// Set the value of the column avatar_id
     void setAvatarId(const std::string &avatarId) noexcept;
     void setAvatarId(std::string &&avatarId) noexcept;
 
     /**  For column id  */
-    /// Get the value of the column id, returns the default value if the column is
-    /// null
-    const int32_t &getValueOfId(const int32_t &defaultValue = int32_t()) const noexcept;
-    /// Return a shared_ptr object pointing to the column const value, or an empty
-    /// shared_ptr object if the column is null
+    /// Get the value of the column id, returns the default value if the column
+    /// is null
+    const int32_t &getValueOfId(const int32_t &defaultValue = int32_t()) const
+        noexcept;
+    /// Return a shared_ptr object pointing to the column const value, or an
+    /// empty shared_ptr object if the column is null
     std::shared_ptr<const int32_t> getId() const noexcept;
 
     /**  For column salt  */
-    /// Get the value of the column salt, returns the default value if the column
-    /// is null
-    const std::string &getValueOfSalt(const std::string &defaultValue = std::string()) const noexcept;
-    /// Return a shared_ptr object pointing to the column const value, or an empty
-    /// shared_ptr object if the column is null
+    /// Get the value of the column salt, returns the default value if the
+    /// column is null
+    const std::string &getValueOfSalt(
+        const std::string &defaultValue = std::string()) const noexcept;
+    /// Return a shared_ptr object pointing to the column const value, or an
+    /// empty shared_ptr object if the column is null
     std::shared_ptr<const std::string> getSalt() const noexcept;
     /// Set the value of the column salt
     void setSalt(const std::string &salt) noexcept;
     void setSalt(std::string &&salt) noexcept;
 
     /**  For column admin  */
-    /// Get the value of the column admin, returns the default value if the column
-    /// is null
-    const bool &getValueOfAdmin(const bool &defaultValue = bool()) const noexcept;
-    /// Return a shared_ptr object pointing to the column const value, or an empty
-    /// shared_ptr object if the column is null
+    /// Get the value of the column admin, returns the default value if the
+    /// column is null
+    const bool &getValueOfAdmin(const bool &defaultValue = bool()) const
+        noexcept;
+    /// Return a shared_ptr object pointing to the column const value, or an
+    /// empty shared_ptr object if the column is null
     std::shared_ptr<const bool> getAdmin() const noexcept;
     /// Set the value of the column admin
     void setAdmin(const bool &admin) noexcept;

@@ -36,11 +36,17 @@ std::string NotFound::genText(const HttpViewData &NotFound_view_data)
     NotFound_tmp_stream << "</center>\n";
     NotFound_tmp_stream << "</body>\n";
     NotFound_tmp_stream << "</html>\n";
-    NotFound_tmp_stream << "<!-- a padding to disable MSIE and Chrome friendly error page -->\n";
-    NotFound_tmp_stream << "<!-- a padding to disable MSIE and Chrome friendly error page -->\n";
-    NotFound_tmp_stream << "<!-- a padding to disable MSIE and Chrome friendly error page -->\n";
-    NotFound_tmp_stream << "<!-- a padding to disable MSIE and Chrome friendly error page -->\n";
-    NotFound_tmp_stream << "<!-- a padding to disable MSIE and Chrome friendly error page -->\n";
-    NotFound_tmp_stream << "<!-- a padding to disable MSIE and Chrome friendly error page -->\n";
+    NotFound_tmp_stream << "<!-- a padding to disable MSIE and Chrome friendly "
+                           "error page -->\n";
+    NotFound_tmp_stream << "<!-- a padding to disable MSIE and Chrome friendly "
+                           "error page -->\n";
+    NotFound_tmp_stream << "<!-- a padding to disable MSIE and Chrome friendly "
+                           "error page -->\n";
+    NotFound_tmp_stream << "<!-- a padding to disable MSIE and Chrome friendly "
+                           "error page -->\n";
+    NotFound_tmp_stream << "<!-- a padding to disable MSIE and Chrome friendly "
+                           "error page -->\n";
+    NotFound_tmp_stream << "<!-- a padding to disable MSIE and Chrome friendly "
+                           "error page -->\n";
     return NotFound_tmp_stream.str();
 }

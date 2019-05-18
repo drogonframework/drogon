@@ -76,16 +76,22 @@ class DrObject : public virtual DrObjectBase
         }
         const std::string &className() const
         {
-            static std::string className = DrClassMap::demangle(typeid(T).name());
+            static std::string className =
+                DrClassMap::demangle(typeid(T).name());
             return className;
         }
         template <typename D>
-        typename std::enable_if<std::is_default_constructible<D>::value, void>::type registerClass()
+        typename std::enable_if<std::is_default_constructible<D>::value,
+                                void>::type
+        registerClass()
         {
-            DrClassMap::registerClass(className(), []() -> DrObjectBase * { return new T; });
+            DrClassMap::registerClass(className(),
+                                      []() -> DrObjectBase * { return new T; });
         }
         template <typename D>
-        typename std::enable_if<!std::is_default_constructible<D>::value, void>::type registerClass()
+        typename std::enable_if<!std::is_default_constructible<D>::value,
+                                void>::type
+        registerClass()
         {
         }
     };

@@ -23,7 +23,8 @@ namespace drogon
 class SharedLibManager : public trantor::NonCopyable
 {
   public:
-    SharedLibManager(trantor::EventLoop *loop, const std::vector<std::string> &libPaths);
+    SharedLibManager(trantor::EventLoop *loop,
+                     const std::vector<std::string> &libPaths);
     ~SharedLibManager();
 
   private:

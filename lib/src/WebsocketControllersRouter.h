@@ -42,7 +42,8 @@ class WebsocketControllersRouter : public trantor::NonCopyable
                const WebSocketConnectionImplPtr &wsConnPtr);
     void init();
 
-    std::vector<std::tuple<std::string, HttpMethod, std::string>> getHandlersInfo() const;
+    std::vector<std::tuple<std::string, HttpMethod, std::string>>
+    getHandlersInfo() const;
 
   private:
     struct WebSocketControllerRouterItem
@@ -51,13 +52,15 @@ class WebsocketControllersRouter : public trantor::NonCopyable
         std::vector<std::string> _filterNames;
         std::vector<std::shared_ptr<HttpFilterBase>> _filters;
     };
-    std::unordered_map<std::string, WebSocketControllerRouterItem> _websockCtrlMap;
+    std::unordered_map<std::string, WebSocketControllerRouterItem>
+        _websockCtrlMap;
     std::mutex _websockCtrlMutex;
 
-    void doControllerHandler(const WebSocketControllerBasePtr &ctrlPtr,
-                             std::string &wsKey,
-                             const HttpRequestImplPtr &req,
-                             std::function<void(const HttpResponsePtr &)> &&callback,
-                             const WebSocketConnectionImplPtr &wsConnPtr);
+    void doControllerHandler(
+        const WebSocketControllerBasePtr &ctrlPtr,
+        std::string &wsKey,
+        const HttpRequestImplPtr &req,
+        std::function<void(const HttpResponsePtr &)> &&callback,
+        const WebSocketConnectionImplPtr &wsConnPtr);
 };
 }  // namespace drogon

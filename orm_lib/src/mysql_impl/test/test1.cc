@@ -11,7 +11,8 @@ using namespace drogon;
 int main()
 {
     trantor::Logger::setLogLevel(trantor::Logger::TRACE);
-    auto clientPtr = DbClient::newMysqlClient("host= 127.0.0.1    port  =3306 dbname= test user = root  ", 1);
+    auto clientPtr = DbClient::newMysqlClient(
+        "host= 127.0.0.1    port  =3306 dbname= test user = root  ", 1);
     sleep(1);
     // for (int i = 0; i < 10; i++)
     // {
@@ -25,40 +26,55 @@ int main()
     //     };
     // }
     LOG_TRACE << "begin";
-    *clientPtr << "select * from users where id!=139 order by id" << Mode::Blocking >> [](const Result &r) {
-        std::cout << "rows:" << r.size() << std::endl;
-        std::cout << "column num:" << r.columns() << std::endl;
+    *clientPtr << "select * from users where id!=139 order by id"
+               << Mode::Blocking >>
+        [](const Result &r) {
+            std::cout << "rows:" << r.size() << std::endl;
+            std::cout << "column num:" << r.columns() << std::endl;
 
-        for (auto const &row : r)
-        {
-            std::cout << "id=" << row["id"].as<int>() << std::endl;
-            std::cout << "id=" << row["id"].as<std::string>() << std::endl;
-        }
-        // for (auto row : r)
-        // {
-        //     for (auto f : row)
-        //     {
-        //         std::cout << f.name() << ":" << (f.isNull() ? "NULL" :
-        //         f.as<std::string>()) << std::endl;
-        //     }
-        // }
-    } >> [](const DrogonDbException &e) { std::cerr << e.base().what() << std::endl; };
+            for (auto const &row : r)
+            {
+                std::cout << "id=" << row["id"].as<int>() << std::endl;
+                std::cout << "id=" << row["id"].as<std::string>() << std::endl;
+            }
+            // for (auto row : r)
+            // {
+            //     for (auto f : row)
+            //     {
+            //         std::cout << f.name() << ":" << (f.isNull() ? "NULL" :
+            //         f.as<std::string>()) << std::endl;
+            //     }
+            // }
+        } >>
+        [](const DrogonDbException &e) {
+            std::cerr << e.base().what() << std::endl;
+        };
     LOG_TRACE << "end";
     LOG_TRACE << "begin";
-    *clientPtr << "select * from users where id=? and user_id=? order by id" << 139 << "233" << Mode::Blocking >>
+    *clientPtr << "select * from users where id=? and user_id=? order by id"
+               << 139 << "233" << Mode::Blocking >>
         [](const Result &r) {
             std::cout << "rows:" << r.size() << std::endl;
             std::cout << "column num:" << r.columns() << std::endl;
             for (auto const &row : r)
             {
-                std::cout << "user_id=" << row["user_id"].as<std::string>() << " id=" << row["id"].as<std::string>();
-                std::cout << " time=" << row["time"].as<std::string>() << std::endl;
+                std::cout << "user_id=" << row["user_id"].as<std::string>()
+                          << " id=" << row["id"].as<std::string>();
+                std::cout << " time=" << row["time"].as<std::string>()
+                          << std::endl;
             }
         } >>
-        [](const DrogonDbException &e) { std::cerr << e.base().what() << std::endl; };
-    *clientPtr << "update users set time=? where id>?" << trantor::Date::date() << 1000 << Mode::Blocking >>
-        [](const Result &r) { std::cout << "update " << r.affectedRows() << " rows" << std::endl; } >>
-        [](const DrogonDbException &e) { std::cerr << e.base().what() << std::endl; };
+        [](const DrogonDbException &e) {
+            std::cerr << e.base().what() << std::endl;
+        };
+    *clientPtr << "update users set time=? where id>?" << trantor::Date::date()
+               << 1000 << Mode::Blocking >>
+        [](const Result &r) {
+            std::cout << "update " << r.affectedRows() << " rows" << std::endl;
+        } >>
+        [](const DrogonDbException &e) {
+            std::cerr << e.base().what() << std::endl;
+        };
 
     // std::ifstream infile("Makefile", std::ifstream::binary);
     // std::streambuf *pbuf = infile.rdbuf();
@@ -78,19 +94,28 @@ int main()
         *trans << "update users set file=? where id != ?"
                << "hehaha" << 1000 >>
             [](const Result &r) {
-                std::cout << "hahaha update " << r.affectedRows() << " rows" << std::endl;
+                std::cout << "hahaha update " << r.affectedRows() << " rows"
+                          << std::endl;
                 // trans->rollback();
             } >>
-            [](const DrogonDbException &e) { std::cerr << e.base().what() << std::endl; };
+            [](const DrogonDbException &e) {
+                std::cerr << e.base().what() << std::endl;
+            };
     }
     LOG_DEBUG << "out of transaction block";
     *clientPtr << "select * from users where id=1000" >> [](const Result &r) {
         std::cout << "file:" << r[0]["file"].as<std::string>() << std::endl;
-    } >> [](const DrogonDbException &e) { std::cerr << e.base().what() << std::endl; };
+    } >> [](const DrogonDbException &e) {
+        std::cerr << e.base().what() << std::endl;
+    };
 
-    *clientPtr << "select * from users limit ? offset ?" << 2 << 2 >> [](const Result &r) {
-        std::cout << "select " << r.size() << " records" << std::endl;
-    } >> [](const DrogonDbException &e) { std::cerr << e.base().what() << std::endl; };
+    *clientPtr << "select * from users limit ? offset ?" << 2 << 2 >>
+        [](const Result &r) {
+            std::cout << "select " << r.size() << " records" << std::endl;
+        } >>
+        [](const DrogonDbException &e) {
+            std::cerr << e.base().what() << std::endl;
+        };
     LOG_TRACE << "end";
     getchar();
 }

@@ -13,15 +13,23 @@ int main()
     trantor::EventLoopThread loopThread;
     loopThread.run();
 
-    drogon::CacheMap<std::string, std::string> cache(loopThread.getLoop(), 0.1, 4, 30);
+    drogon::CacheMap<std::string, std::string> cache(loopThread.getLoop(),
+                                                     0.1,
+                                                     4,
+                                                     30);
     sleep(3);
     for (int i = 0; i < 40; i++)
     {
-        cache.insert(drogon::utils::formattedString("aaa%d", i), "hehe", i, [=]() {
-            std::cout << i << " cache item erased!" << std::endl;
-        });
+        cache.insert(drogon::utils::formattedString("aaa%d", i),
+                     "hehe",
+                     i,
+                     [=]() {
+                         std::cout << i << " cache item erased!" << std::endl;
+                     });
     }
-    cache.insert("1", "first", 20, [=] { LOG_DEBUG << "first item in cache timeout,erase!"; });
+    cache.insert("1", "first", 20, [=] {
+        LOG_DEBUG << "first item in cache timeout,erase!";
+    });
     cache.insert("2", "second", 5);
     cache.insert("3", "third", 5);
     std::thread thread1([&] {

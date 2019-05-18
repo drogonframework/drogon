@@ -85,7 +85,8 @@ class HttpRequestParser
     HttpRequestPtr getFirstRequest() const;
     HttpResponsePtr getFirstResponse() const;
     void popFirstRequest();
-    void pushResponseToPipelining(const HttpRequestPtr &req, const HttpResponsePtr &resp);
+    void pushResponseToPipelining(const HttpRequestPtr &req,
+                                  const HttpResponsePtr &resp);
     size_t numberOfRequestsInPipelining() const
     {
         return _requestPipelining.size();
