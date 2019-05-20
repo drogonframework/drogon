@@ -16,6 +16,8 @@
 #include "AOPAdvice.h"
 #include "HttpRequestImpl.h"
 #include "HttpResponseImpl.h"
+#include "StaticFileRouter.h"
+
 #include <atomic>
 #include <drogon/HttpBinder.h>
 #include <drogon/HttpFilter.h>
@@ -32,6 +34,7 @@ class HttpControllersRouter : public trantor::NonCopyable
 {
   public:
     HttpControllersRouter(
+        StaticFileRouter &router,
         const std::deque<std::function<void(const HttpRequestPtr &,
                                             AdviceCallback &&,
                                             AdviceChainCallback &&)>>
@@ -47,7 +50,8 @@ class HttpControllersRouter : public trantor::NonCopyable
         const std::deque<std::function<void(const HttpRequestPtr &,
                                             const HttpResponsePtr &)>>
             &postHandlingAdvices)
-        : _postRoutingAdvices(postRoutingAdvices),
+        : _fileRouter(router),
+          _postRoutingAdvices(postRoutingAdvices),
           _preHandlingAdvices(preHandlingAdvices),
           _postRoutingObservers(postRoutingObservers),
           _preHandlingObservers(preHandlingObservers),
@@ -68,6 +72,7 @@ class HttpControllersRouter : public trantor::NonCopyable
     getHandlersInfo() const;
 
   private:
+    StaticFileRouter &_fileRouter;
     struct CtrlBinder
     {
         internal::HttpBinderBasePtr _binderPtr;
@@ -135,5 +140,10 @@ class HttpControllersRouter : public trantor::NonCopyable
         }
         callback(resp);
     }
+    void doWhenNoHandlerFound(
+        const HttpRequestImplPtr &req,
+        std::function<void(const HttpResponsePtr &)> &&callback,
+        bool needSetJsessionid,
+        std::string &&sessionId);
 };
 }  // namespace drogon

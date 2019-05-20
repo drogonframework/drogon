@@ -23,6 +23,7 @@
 #include "SharedLibManager.h"
 #include "WebSocketConnectionImpl.h"
 #include "WebsocketControllersRouter.h"
+#include "StaticFileRouter.h"
 
 #include <drogon/HttpAppFramework.h>
 #include <drogon/HttpSimpleController.h>
@@ -49,7 +50,8 @@ class HttpAppFrameworkImpl : public HttpAppFramework
 {
   public:
     HttpAppFrameworkImpl()
-        : _httpCtrlsRouter(_postRoutingAdvices,
+        : _httpCtrlsRouter(_staticFileRouter,
+                           _postRoutingAdvices,
                            _postRoutingObservers,
                            _preHandlingAdvices,
                            _preHandlingObservers,
@@ -236,11 +238,11 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     }
     virtual void setStaticFilesCacheTime(int cacheTime) override
     {
-        _staticFilesCacheTime = cacheTime;
+        _staticFileRouter.setStaticFilesCacheTime(cacheTime);
     }
     virtual int staticFilesCacheTime() const override
     {
-        return _staticFilesCacheTime;
+        return _staticFileRouter.staticFilesCacheTime();
     }
     virtual void setIdleConnectionTimeout(size_t timeout) override
     {
@@ -256,11 +258,7 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     }
     virtual void setGzipStatic(bool useGzipStatic) override
     {
-        _gzipStaticFlag = useGzipStatic;
-    }
-    bool getGzipStatic() const
-    {
-        return _gzipStaticFlag;
+        _staticFileRouter.setGzipStatic(useGzipStatic);
     }
     virtual void setClientMaxBodySize(size_t maxSize) override
     {
@@ -391,33 +389,12 @@ class HttpAppFrameworkImpl : public HttpAppFramework
 
     typedef std::shared_ptr<Session> SessionPtr;
     std::unique_ptr<CacheMap<std::string, SessionPtr>> _sessionMapPtr;
-    std::unique_ptr<CacheMap<std::string, HttpResponsePtr>> _responseCachingMap;
 
     HttpControllersRouter _httpCtrlsRouter;
     HttpSimpleControllersRouter _httpSimpleCtrlsRouter;
-
+    StaticFileRouter _staticFileRouter;
     WebsocketControllersRouter _websockCtrlsRouter;
 
-    bool _enableLastModify = true;
-    std::set<std::string> _fileTypeSet = {"html",
-                                          "js",
-                                          "css",
-                                          "xml",
-                                          "xsl",
-                                          "txt",
-                                          "svg",
-                                          "ttf",
-                                          "otf",
-                                          "woff2",
-                                          "woff",
-                                          "eot",
-                                          "png",
-                                          "jpg",
-                                          "jpeg",
-                                          "gif",
-                                          "bmp",
-                                          "ico",
-                                          "icns"};
     std::string _rootPath = "./";
     std::string _uploadPath;
     std::atomic_bool _running;
@@ -445,14 +422,10 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     size_t _pipeliningRequestsNumber = 0;
     bool _useSendfile = true;
     bool _useGzip = true;
-    bool _gzipStaticFlag = true;
     size_t _clientMaxBodySize = 1024 * 1024;
     size_t _clientMaxWebSocketMessageSize = 128 * 1024;
     std::string _homePageFile = "index.html";
-    int _staticFilesCacheTime = 5;
-    std::unordered_map<std::string, std::weak_ptr<HttpResponse>>
-        _staticFilesCache;
-    std::mutex _staticFilesCacheMutex;
+
     // Json::Value _customConfig;
     Json::Value _jsonConfig;
     PluginsManager _pluginsManager;
