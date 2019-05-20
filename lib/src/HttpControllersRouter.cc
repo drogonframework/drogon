@@ -13,8 +13,8 @@
  */
 
 #include "HttpControllersRouter.h"
-#include "FiltersFunction.h"
 #include "HttpAppFrameworkImpl.h"
+#include "FiltersFunction.h"
 #include "HttpRequestImpl.h"
 #include "HttpResponseImpl.h"
 
@@ -22,9 +22,11 @@ using namespace drogon;
 
 namespace drogon
 {
-static void doWhenNoHandlerFound(
+void HttpControllersRouter::doWhenNoHandlerFound(
     const HttpRequestImplPtr &req,
-    std::function<void(const HttpResponsePtr &)> &&callback)
+    std::function<void(const HttpResponsePtr &)> &&callback,
+    bool needSetJsessionid,
+    std::string &&sessionId)
 {
     if (req->path() == "/" &&
         !HttpAppFrameworkImpl::instance().getHomePage().empty())
@@ -37,11 +39,15 @@ static void doWhenNoHandlerFound(
         drogon::app().forward(req, std::move(callback));
         return;
     }
-    auto resp = drogon::HttpResponse::newNotFoundResponse();
-    callback(resp);
+    // auto resp = drogon::HttpResponse::newNotFoundResponse();
+    // callback(resp);
+    _fileRouter.route(req,
+                      std::move(callback),
+                      needSetJsessionid,
+                      std::move(sessionId));
 }
-
 }  // namespace drogon
+
 void HttpControllersRouter::init(
     const std::vector<trantor::EventLoop *> &ioLoops)
 {
@@ -352,13 +358,19 @@ void HttpControllersRouter::route(
         else
         {
             // No handler found
-            doWhenNoHandlerFound(req, std::move(callback));
+            doWhenNoHandlerFound(req,
+                                 std::move(callback),
+                                 needSetJsessionid,
+                                 std::move(sessionId));
         }
     }
     else
     {
         // No handler found
-        doWhenNoHandlerFound(req, std::move(callback));
+        doWhenNoHandlerFound(req,
+                             std::move(callback),
+                             needSetJsessionid,
+                             std::move(sessionId));
     }
 }
 
