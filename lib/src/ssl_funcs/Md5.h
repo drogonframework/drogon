@@ -19,25 +19,20 @@
  *
  */
 
-#ifndef __MD5_ENCODE_H__
-#define __MD5_ENCODE_H__
+#pragma once
 
-// std
 #include <string>
 
-// define
 #define UInt32 unsigned int
 #define BIT_OF_BYTE 8
 #define BIT_OF_GROUP 512
 #define SRC_DATA_LEN 64
 
-// 四个非线性函数宏定义
 #define DEF_F(X, Y, Z) ((((X) & (Y)) | ((~X) & (Z))))
 #define DEF_G(X, Y, Z) (((X) & (Z)) | ((Y) & (~Z)))
 #define DEF_H(X, Y, Z) ((X) ^ (Y) ^ (Z))
 #define DEF_I(X, Y, Z) ((Y) ^ ((X) | (~Z)))
 
-// 求链接数函数宏定义
 #define FF(a, b, c, d, Mj, s, ti) \
     (a = b + CycleMoveLeft((a + DEF_F(b, c, d) + Mj + ti), s));
 #define GG(a, b, c, d, Mj, s, ti) \
@@ -50,7 +45,6 @@
 class Md5Encode
 {
   public:
-    // 4轮循环算法
     struct ParamDynamic
     {
         UInt32 ua_;
@@ -79,12 +73,9 @@ class Md5Encode
                            char **out_data_ptr);
 
   private:
-    // 幻数定义
     static const int kA;
     static const int kB;
     static const int kC;
     static const int kD;
     static const unsigned long long k_ti_num_integer;
 };
-
-#endif

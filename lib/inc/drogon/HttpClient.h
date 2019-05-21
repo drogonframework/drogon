@@ -64,6 +64,24 @@ class HttpClient : public trantor::NonCopyable
      */
     virtual void setPipeliningDepth(size_t depth) = 0;
 
+    /// Enable cookies for the client
+    /**
+     * If the @param flag is true, all requests sent by the client carry the
+     * cookies set by the server side. Cookies are disabled by default.
+     */
+    virtual void enableCookies(bool flag = true) = 0;
+
+    /// Add a cookie to the client
+    /**
+     * NOTE:
+     * These methods are independent of the enableCookies() method. Whether the
+     * enableCookies() is called with true or false, the cookies added by these
+     * methods will be sent to the server.
+     */
+    virtual void addCookie(const std::string &key,
+                           const std::string &value) = 0;
+    virtual void addCookie(const Cookie &cookie) = 0;
+
     /// Use ip and port to connect to server
     /**
      * If useSSL is set to true, the client connects to the server using https.

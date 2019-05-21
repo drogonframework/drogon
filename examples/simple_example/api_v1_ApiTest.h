@@ -12,7 +12,6 @@ class ApiTest : public drogon::HttpController<ApiTest>
     // use METHOD_ADD to add your custom processing function here;
     METHOD_ADD(ApiTest::rootGet,
                "",
-               "TimeFilter",
                Get,
                Options,
                "drogon::LocalHostFilter",

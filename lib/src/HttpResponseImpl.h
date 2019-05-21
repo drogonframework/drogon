@@ -215,9 +215,12 @@ class HttpResponseImpl : public HttpResponse
                     std::string::size_type cpos = 0;
                     while (cpos < cookie_name.length() &&
                            isspace(cookie_name[cpos]))
-                        cpos++;
+                        ++cpos;
                     cookie_name = cookie_name.substr(cpos);
-                    cookie_value = coo.substr(epos + 1);
+                    ++epos;
+                    while (epos < coo.length() && isspace(coo[epos]))
+                        ++epos;
+                    cookie_value = coo.substr(epos);
                 }
                 else
                 {

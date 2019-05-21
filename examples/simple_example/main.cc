@@ -206,6 +206,10 @@ int main()
                                        drogon::AdviceChainCallback &&accb) {
         LOG_DEBUG << "postRouting1";
         LOG_DEBUG << "Matched path=" << req->matchedPathPattern();
+        for(auto &cookie:req->cookies())
+        {
+            LOG_DEBUG << "cookie: " << cookie.first << "=" << cookie.second;
+        }
         accb();
     });
     app().registerPreHandlingAdvice([](const drogon::HttpRequestPtr &req,
