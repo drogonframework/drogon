@@ -312,8 +312,7 @@ class HttpRequestImpl : public HttpRequest
         const std::string &field,
         const std::string &defaultVal = std::string()) const override
     {
-        std::unordered_map<std::string, std::string>::const_iterator it =
-            _cookies.find(field);
+        auto it = _cookies.find(field);
         if (it != _cookies.end())
         {
             return it->second;
@@ -374,7 +373,7 @@ class HttpRequestImpl : public HttpRequest
         _headers[key] = value;
     }
 
-    void addCookie(const std::string &key, const std::string &value)
+    virtual void addCookie(const std::string &key, const std::string &value) override
     {
         _cookies[key] = value;
     }

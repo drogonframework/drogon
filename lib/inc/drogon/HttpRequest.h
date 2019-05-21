@@ -203,6 +203,10 @@ class HttpRequest
     /// Set or get the content type
     virtual void setContentTypeCode(const ContentType type) = 0;
 
+    /// Add a cookie
+    virtual void addCookie(const std::string &key,
+                           const std::string &value) = 0;
+
     /// The following methods are a series of factory methods that help users
     /// create request objects.
 
