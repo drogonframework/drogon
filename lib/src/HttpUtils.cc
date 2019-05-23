@@ -384,13 +384,13 @@ const string_view &statusCodeToString(int code)
     }
 }
 
-ContentType getContentType(const std::string &filename)
+ContentType getContentType(const std::string &fileName)
 {
     std::string extName;
-    auto pos = filename.rfind(".");
+    auto pos = fileName.rfind(".");
     if (pos != std::string::npos)
     {
-        extName = filename.substr(pos + 1);
+        extName = fileName.substr(pos + 1);
         transform(extName.begin(), extName.end(), extName.begin(), tolower);
     }
     switch (extName.length())

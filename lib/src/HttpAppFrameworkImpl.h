@@ -41,7 +41,7 @@ namespace drogon
 {
 struct InitBeforeMainFunction
 {
-    InitBeforeMainFunction(const std::function<void()> &func)
+    explicit InitBeforeMainFunction(const std::function<void()> &func)
     {
         func();
     }

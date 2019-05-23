@@ -47,7 +47,7 @@ class Users
     const static std::string primaryKeyName;
     typedef int32_t PrimaryKeyType;
     const PrimaryKeyType &getPrimaryKey() const;
-    Users(const Row &r) noexcept;
+    explicit Users(const Row &r) noexcept;
     Users() = default;
 
     /**  For column user_id  */

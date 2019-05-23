@@ -46,7 +46,6 @@ void PluginsManager::initializeAllPlugins(
         auto configuration = config["config"];
         auto dependencies = config["dependencies"];
         pluginPtr->setConfig(configuration);
-        std::vector<std::string> depsNames;
         assert(dependencies.isArray() || dependencies.isNull());
         if (dependencies.isArray())
         {

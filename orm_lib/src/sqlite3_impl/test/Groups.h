@@ -48,7 +48,7 @@ class Groups
     const static std::string primaryKeyName;
     typedef uint64_t PrimaryKeyType;
     const PrimaryKeyType &getPrimaryKey() const;
-    Groups(const Row &r) noexcept;
+    explicit Groups(const Row &r) noexcept;
     Groups() = default;
 
     /**  For column group_id  */
