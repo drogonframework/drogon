@@ -134,20 +134,20 @@ void HttpSimpleControllersRouter::route(
                 auto callbackPtr = std::make_shared<
                     std::function<void(const HttpResponsePtr &)>>(
                     std::move(callback));
-                FiltersFunction::doFilters(filters,
-                                           req,
-                                           callbackPtr,
-                                           needSetJsessionid,
-                                           sessionIdPtr,
-                                           [=, &binder]() mutable {
-                                               doPreHandlingAdvices(
-                                                   binder,
-                                                   ctrlInfo,
-                                                   req,
-                                                   std::move(*callbackPtr),
-                                                   needSetJsessionid,
-                                                   std::move(*sessionIdPtr));
-                                           });
+                filters_function::doFilters(filters,
+                                            req,
+                                            callbackPtr,
+                                            needSetJsessionid,
+                                            sessionIdPtr,
+                                            [=, &binder]() mutable {
+                                                doPreHandlingAdvices(
+                                                    binder,
+                                                    ctrlInfo,
+                                                    req,
+                                                    std::move(*callbackPtr),
+                                                    needSetJsessionid,
+                                                    std::move(*sessionIdPtr));
+                                            });
             }
             else
             {
@@ -182,7 +182,7 @@ void HttpSimpleControllersRouter::route(
                     {
                         auto sessionIdPtr =
                             std::make_shared<std::string>(std::move(sessionId));
-                        FiltersFunction::doFilters(
+                        filters_function::doFilters(
                             filters,
                             req,
                             callbackPtr,
@@ -338,7 +338,7 @@ void HttpSimpleControllersRouter::init(
             if (binder)
             {
                 binder->_filters =
-                    FiltersFunction::createFilters(binder->_filterNames);
+                    filters_function::createFilters(binder->_filterNames);
                 for (auto ioloop : ioLoops)
                 {
                     binder->_responsePtrMap[ioloop] = nullptr;
@@ -435,4 +435,16 @@ void HttpSimpleControllersRouter::doPreHandlingAdvices(
                                     std::move(*sessionIdPtr));
             });
     }
+}
+
+void HttpSimpleControllersRouter::invokeCallback(
+    const std::function<void(const HttpResponsePtr &)> &callback,
+    const HttpRequestImplPtr &req,
+    const HttpResponsePtr &resp)
+{
+    for (auto &advice : _postHandlingAdvices)
+    {
+        advice(req, resp);
+    }
+    callback(resp);
 }

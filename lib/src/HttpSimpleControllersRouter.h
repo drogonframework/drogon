@@ -126,13 +126,6 @@ class HttpSimpleControllersRouter : public trantor::NonCopyable
     void invokeCallback(
         const std::function<void(const HttpResponsePtr &)> &callback,
         const HttpRequestImplPtr &req,
-        const HttpResponsePtr &resp)
-    {
-        for (auto &advice : _postHandlingAdvices)
-        {
-            advice(req, resp);
-        }
-        callback(resp);
-    }
+        const HttpResponsePtr &resp);
 };
 }  // namespace drogon

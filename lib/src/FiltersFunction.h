@@ -22,7 +22,7 @@
 
 namespace drogon
 {
-namespace FiltersFunction
+namespace filters_function
 {
 std::vector<std::shared_ptr<HttpFilterBase>> createFilters(
     const std::vector<std::string> &filterNames);
@@ -35,5 +35,5 @@ void doFilters(
     const std::shared_ptr<std::string> &sessionIdPtr,
     std::function<void()> &&missCallback);
 
-}  // namespace FiltersFunction
+}  // namespace filters_function
 }  // namespace drogon

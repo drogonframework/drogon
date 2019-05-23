@@ -65,7 +65,7 @@ void HttpControllersRouter::init(
             if (binder)
             {
                 binder->_filters =
-                    FiltersFunction::createFilters(binder->_filterNames);
+                    filters_function::createFilters(binder->_filterNames);
                 for (auto ioloop : ioLoops)
                 {
                     binder->_responsePtrMap[ioloop] =
@@ -275,7 +275,7 @@ void HttpControllersRouter::route(
                             auto callbackPtr = std::make_shared<
                                 std::function<void(const HttpResponsePtr &)>>(
                                 std::move(callback));
-                            FiltersFunction::doFilters(
+                            filters_function::doFilters(
                                 filters,
                                 req,
                                 callbackPtr,
@@ -324,7 +324,7 @@ void HttpControllersRouter::route(
                                     auto sessionIdPtr =
                                         std::make_shared<std::string>(
                                             std::move(sessionId));
-                                    FiltersFunction::doFilters(
+                                    filters_function::doFilters(
                                         filters,
                                         req,
                                         callbackPtr,
@@ -570,4 +570,16 @@ void HttpControllersRouter::doPreHandlingAdvices(
                                     std::move(*sessionIdPtr));
             });
     }
+}
+
+void HttpControllersRouter::invokeCallback(
+    const std::function<void(const HttpResponsePtr &)> &callback,
+    const HttpRequestImplPtr &req,
+    const HttpResponsePtr &resp)
+{
+    for (auto &advice : _postHandlingAdvices)
+    {
+        advice(req, resp);
+    }
+    callback(resp);
 }

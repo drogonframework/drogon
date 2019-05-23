@@ -319,6 +319,28 @@ void WebSocketClientImpl::sendReq(const trantor::TcpConnectionPtr &connPtr)
     connPtr->send(std::move(buffer));
 }
 
+void WebSocketClientImpl::connectToServer(
+    const HttpRequestPtr &request,
+    const WebSocketRequestCallback &callback)
+{
+    assert(callback);
+    if (_loop->isInLoopThread())
+    {
+        _upgradeRequest = request;
+        _requestCallback = callback;
+        connectToServerInLoop();
+    }
+    else
+    {
+        auto thisPtr = shared_from_this();
+        _loop->queueInLoop([request, callback, thisPtr] {
+            thisPtr->_upgradeRequest = request;
+            thisPtr->_requestCallback = callback;
+            thisPtr->connectToServerInLoop();
+        });
+    }
+}
+
 WebSocketClientPtr WebSocketClient::newWebSocketClient(const std::string &ip,
                                                        uint16_t port,
                                                        bool useSSL,

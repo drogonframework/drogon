@@ -53,25 +53,7 @@ class WebSocketClientImpl
 
     virtual void connectToServer(
         const HttpRequestPtr &request,
-        const WebSocketRequestCallback &callback) override
-    {
-        assert(callback);
-        if (_loop->isInLoopThread())
-        {
-            _upgradeRequest = request;
-            _requestCallback = callback;
-            connectToServerInLoop();
-        }
-        else
-        {
-            auto thisPtr = shared_from_this();
-            _loop->queueInLoop([request, callback, thisPtr] {
-                thisPtr->_upgradeRequest = request;
-                thisPtr->_requestCallback = callback;
-                thisPtr->connectToServerInLoop();
-            });
-        }
-    }
+        const WebSocketRequestCallback &callback) override;
 
     virtual trantor::EventLoop *getLoop() override
     {

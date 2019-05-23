@@ -132,14 +132,7 @@ class HttpControllersRouter : public trantor::NonCopyable
     void invokeCallback(
         const std::function<void(const HttpResponsePtr &)> &callback,
         const HttpRequestImplPtr &req,
-        const HttpResponsePtr &resp)
-    {
-        for (auto &advice : _postHandlingAdvices)
-        {
-            advice(req, resp);
-        }
-        callback(resp);
-    }
+        const HttpResponsePtr &resp);
     void doWhenNoHandlerFound(
         const HttpRequestImplPtr &req,
         std::function<void(const HttpResponsePtr &)> &&callback,

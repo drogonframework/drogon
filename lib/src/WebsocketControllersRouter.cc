@@ -67,19 +67,19 @@ void WebsocketControllersRouter::route(
                     auto callbackPtr = std::make_shared<
                         std::function<void(const HttpResponsePtr &)>>(
                         std::move(callback));
-                    FiltersFunction::doFilters(filters,
-                                               req,
-                                               callbackPtr,
-                                               false,
-                                               nullptr,
-                                               [=]() mutable {
-                                                   doControllerHandler(
-                                                       ctrlPtr,
-                                                       wsKey,
-                                                       req,
-                                                       std::move(*callbackPtr),
-                                                       wsConnPtr);
-                                               });
+                    filters_function::doFilters(filters,
+                                                req,
+                                                callbackPtr,
+                                                false,
+                                                nullptr,
+                                                [=]() mutable {
+                                                    doControllerHandler(
+                                                        ctrlPtr,
+                                                        wsKey,
+                                                        req,
+                                                        std::move(*callbackPtr),
+                                                        wsConnPtr);
+                                                });
                 }
                 else
                 {
@@ -149,6 +149,6 @@ void WebsocketControllersRouter::init()
     for (auto &iter : _websockCtrlMap)
     {
         iter.second._filters =
-            FiltersFunction::createFilters(iter.second._filterNames);
+            filters_function::createFilters(iter.second._filterNames);
     }
 }
