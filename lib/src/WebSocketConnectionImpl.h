@@ -92,49 +92,7 @@ class WebSocketConnectionImpl
     }
 
     void onNewMessage(const trantor::TcpConnectionPtr &connPtr,
-                      trantor::MsgBuffer *buffer)
-    {
-        while (buffer->readableBytes() > 0)
-        {
-            auto success = _parser.parse(buffer);
-            if (success)
-            {
-                std::string message;
-                WebSocketMessageType type;
-                if (_parser.gotAll(message, type))
-                {
-                    if (type == WebSocketMessageType::Ping)
-                    {
-                        // ping
-                        send(message, WebSocketMessageType::Pong);
-                    }
-                    else if (type == WebSocketMessageType::Close)
-                    {
-                        // close
-                        connPtr->shutdown();
-                    }
-                    else if (type == WebSocketMessageType::Unknown)
-                    {
-                        return;
-                    }
-                    _messageCallback(std::move(message),
-                                     shared_from_this(),
-                                     type);
-                }
-                else
-                {
-                    return;
-                }
-            }
-            else
-            {
-                // Websock error!
-                connPtr->shutdown();
-                return;
-            }
-        }
-        return;
-    }
+                      trantor::MsgBuffer *buffer);
 
     void onClose()
     {

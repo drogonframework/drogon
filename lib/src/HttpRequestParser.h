@@ -53,11 +53,6 @@ class HttpRequestParser
         _request.reset(new HttpRequestImpl(_loop));
     }
 
-    // const HttpRequestPtr &request() const
-    // {
-    //     return _request;
-    // }
-
     const HttpRequestImplPtr &requestImpl() const
     {
         return _request;

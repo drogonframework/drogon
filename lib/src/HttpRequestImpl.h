@@ -66,120 +66,20 @@ class HttpRequestImpl : public HttpRequest
         return _version;
     }
 
-    bool setMethod(const char *start, const char *end)
-    {
-        assert(_method == Invalid);
-        string_view m(start, end - start);
-        switch (m.length())
-        {
-            case 3:
-                if (m == "GET")
-                {
-                    _method = Get;
-                }
-                else if (m == "PUT")
-                {
-                    _method = Put;
-                }
-                else
-                {
-                    _method = Invalid;
-                }
-                break;
-            case 4:
-                if (m == "POST")
-                {
-                    _method = Post;
-                }
-                else if (m == "HEAD")
-                {
-                    _method = Head;
-                }
-                else
-                {
-                    _method = Invalid;
-                }
-                break;
-            case 6:
-                if (m == "DELETE")
-                {
-                    _method = Delete;
-                }
-                else
-                {
-                    _method = Invalid;
-                }
-                break;
-            case 7:
-                if (m == "OPTIONS")
-                {
-                    _method = Options;
-                }
-                else
-                {
-                    _method = Invalid;
-                }
-                break;
-            default:
-                _method = Invalid;
-                break;
-        }
-
-        // if (_method != Invalid)
-        // {
-        //     _content = "";
-        //     _query = "";
-        //     _cookies.clear();
-        //     _parameters.clear();
-        //     _headers.clear();
-        // }
-        return _method != Invalid;
-    }
+    bool setMethod(const char *start, const char *end);
 
     virtual void setMethod(const HttpMethod method) override
     {
         _method = method;
-        // _content = "";
-        // _query = "";
-        // _cookies.clear();
-        // _parameters.clear();
-        // _headers.clear();
         return;
     }
 
-    HttpMethod method() const override
+    virtual HttpMethod method() const override
     {
         return _method;
     }
 
-    const char *methodString() const override
-    {
-        const char *result = "UNKNOWN";
-        switch (_method)
-        {
-            case Get:
-                result = "GET";
-                break;
-            case Post:
-                result = "POST";
-                break;
-            case Head:
-                result = "HEAD";
-                break;
-            case Put:
-                result = "PUT";
-                break;
-            case Delete:
-                result = "DELETE";
-                break;
-            case Options:
-                result = "OPTIONS";
-                break;
-            default:
-                break;
-        }
-        return result;
-    }
+    virtual const char *methodString() const override;
 
     void setPath(const char *start, const char *end)
     {
@@ -237,12 +137,6 @@ class HttpRequestImpl : public HttpRequest
             return _content;
         return _query;
     }
-
-    //
-    //    Timestamp receiveTime() const
-    //    {
-    //        return receiveTime_;
-    //    }
 
     virtual const trantor::InetAddress &peerAddr() const override
     {
@@ -342,25 +236,7 @@ class HttpRequestImpl : public HttpRequest
         return _content;
     }
 
-    void swap(HttpRequestImpl &that)
-    {
-        std::swap(_method, that._method);
-        std::swap(_version, that._version);
-        _path.swap(that._path);
-        _query.swap(that._query);
-
-        _headers.swap(that._headers);
-        _cookies.swap(that._cookies);
-        _parameters.swap(that._parameters);
-        _jsonPtr.swap(that._jsonPtr);
-        _sessionPtr.swap(that._sessionPtr);
-
-        std::swap(_peer, that._peer);
-        std::swap(_local, that._local);
-        _date.swap(that._date);
-        _content.swap(that._content);
-        std::swap(_contentLen, that._contentLen);
-    }
+    void swap(HttpRequestImpl &that);
 
     void setContent(const std::string &content)
     {
@@ -373,7 +249,8 @@ class HttpRequestImpl : public HttpRequest
         _headers[key] = value;
     }
 
-    virtual void addCookie(const std::string &key, const std::string &value) override
+    virtual void addCookie(const std::string &key,
+                           const std::string &value) override
     {
         _cookies[key] = value;
     }
@@ -424,6 +301,8 @@ class HttpRequestImpl : public HttpRequest
     {
         _matchedPathPattern = pathPattern;
     }
+
+    ~HttpRequestImpl();
 
   protected:
     friend class HttpRequest;

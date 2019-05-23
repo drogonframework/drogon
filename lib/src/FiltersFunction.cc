@@ -20,7 +20,7 @@
 
 namespace drogon
 {
-namespace FiltersFunction
+namespace filters_function
 {
 static void doFilterChains(
     const std::vector<std::shared_ptr<HttpFilterBase>> &filters,

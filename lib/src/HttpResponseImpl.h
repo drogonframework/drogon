@@ -181,97 +181,7 @@ class HttpResponseImpl : public HttpResponse
         _headers[std::move(field)] = std::move(value);
     }
 
-    void addHeader(const char *start, const char *colon, const char *end)
-    {
-        _fullHeaderString.reset();
-        std::string field(start, colon);
-        transform(field.begin(), field.end(), field.begin(), ::tolower);
-        ++colon;
-        while (colon < end && isspace(*colon))
-        {
-            ++colon;
-        }
-        std::string value(colon, end);
-        while (!value.empty() && isspace(value[value.size() - 1]))
-        {
-            value.resize(value.size() - 1);
-        }
-
-        if (field == "set-cookie")
-        {
-            // LOG_INFO<<"cookies!!!:"<<value;
-            auto values = utils::splitString(value, ";");
-            Cookie cookie;
-            cookie.setHttpOnly(false);
-            for (size_t i = 0; i < values.size(); i++)
-            {
-                std::string &coo = values[i];
-                std::string cookie_name;
-                std::string cookie_value;
-                auto epos = coo.find("=");
-                if (epos != std::string::npos)
-                {
-                    cookie_name = coo.substr(0, epos);
-                    std::string::size_type cpos = 0;
-                    while (cpos < cookie_name.length() &&
-                           isspace(cookie_name[cpos]))
-                        ++cpos;
-                    cookie_name = cookie_name.substr(cpos);
-                    ++epos;
-                    while (epos < coo.length() && isspace(coo[epos]))
-                        ++epos;
-                    cookie_value = coo.substr(epos);
-                }
-                else
-                {
-                    std::string::size_type cpos = 0;
-                    while (cpos < coo.length() && isspace(coo[cpos]))
-                        cpos++;
-                    cookie_name = coo.substr(cpos);
-                }
-                if (i == 0)
-                {
-                    cookie.setKey(cookie_name);
-                    cookie.setValue(cookie_value);
-                }
-                else
-                {
-                    std::transform(cookie_name.begin(),
-                                   cookie_name.end(),
-                                   cookie_name.begin(),
-                                   tolower);
-                    if (cookie_name == "path")
-                    {
-                        cookie.setPath(cookie_value);
-                    }
-                    else if (cookie_name == "domain")
-                    {
-                        cookie.setDomain(cookie_value);
-                    }
-                    else if (cookie_name == "expires")
-                    {
-                        cookie.setExpiresDate(utils::getHttpDate(cookie_value));
-                    }
-                    else if (cookie_name == "secure")
-                    {
-                        cookie.setSecure(true);
-                    }
-                    else if (cookie_name == "httponly")
-                    {
-                        cookie.setHttpOnly(true);
-                    }
-                }
-            }
-            if (!cookie.key().empty())
-            {
-                _cookies[cookie.key()] = cookie;
-            }
-        }
-        else
-        {
-            _headers[std::move(field)] = std::move(value);
-        }
-    }
+    void addHeader(const char *start, const char *colon, const char *end);
 
     virtual void addCookie(const std::string &key,
                            const std::string &value) override
@@ -322,19 +232,7 @@ class HttpResponseImpl : public HttpResponse
     }
     std::shared_ptr<std::string> renderToString() const;
     std::shared_ptr<std::string> renderHeaderForHeadMethod() const;
-    virtual void clear() override
-    {
-        _statusCode = kUnknown;
-        _v = kHttp11;
-        _statusMessage = nullptr;
-        _fullHeaderString.reset();
-        _headers.clear();
-        _cookies.clear();
-        _bodyPtr.reset(new std::string());
-        _leftBodyLength = 0;
-        _currentChunkLength = 0;
-        _jsonPtr.reset();
-    }
+    virtual void clear() override;
 
     virtual void setExpiredTime(ssize_t expiredTime) override
     {
@@ -346,11 +244,6 @@ class HttpResponseImpl : public HttpResponse
         return _expriedTime;
     }
 
-    //	void setReceiveTime(trantor::Date t)
-    //    {
-    //        receiveTime_ = t;
-    //    }
-
     virtual const std::string &body() const override
     {
         return *_bodyPtr;
@@ -359,42 +252,8 @@ class HttpResponseImpl : public HttpResponse
     {
         return *_bodyPtr;
     }
-    void swap(HttpResponseImpl &that)
-    {
-        using std::swap;
-        _headers.swap(that._headers);
-        _cookies.swap(that._cookies);
-        swap(_statusCode, that._statusCode);
-        swap(_v, that._v);
-        swap(_statusMessage, that._statusMessage);
-        swap(_closeConnection, that._closeConnection);
-        _bodyPtr.swap(that._bodyPtr);
-        swap(_leftBodyLength, that._leftBodyLength);
-        swap(_currentChunkLength, that._currentChunkLength);
-        swap(_contentType, that._contentType);
-        _jsonPtr.swap(that._jsonPtr);
-        _fullHeaderString.swap(that._fullHeaderString);
-        _httpString.swap(that._httpString);
-        swap(_datePos, that._datePos);
-    }
-    void parseJson() const
-    {
-        // parse json data in reponse
-        _jsonPtr = std::make_shared<Json::Value>();
-        Json::CharReaderBuilder builder;
-        builder["collectComments"] = false;
-        JSONCPP_STRING errs;
-        std::unique_ptr<Json::CharReader> reader(builder.newCharReader());
-        if (!reader->parse(_bodyPtr->data(),
-                           _bodyPtr->data() + _bodyPtr->size(),
-                           _jsonPtr.get(),
-                           &errs))
-        {
-            LOG_ERROR << errs;
-            LOG_DEBUG << "body: " << *_bodyPtr;
-            _jsonPtr.reset();
-        }
-    }
+    void swap(HttpResponseImpl &that);
+    void parseJson() const;
     virtual const std::shared_ptr<Json::Value> jsonObject() const override
     {
         if (!_jsonPtr)
@@ -426,6 +285,7 @@ class HttpResponseImpl : public HttpResponse
             _bodyPtr = gunzipBody;
         }
     }
+    ~HttpResponseImpl();
 
   protected:
     void makeHeaderString(

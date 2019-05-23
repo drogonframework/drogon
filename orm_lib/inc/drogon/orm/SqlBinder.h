@@ -371,57 +371,12 @@ class SqlBinder
     {
         return operator<<(std::string(str));
     }
-    self &operator<<(const std::string &str)
-    {
-        std::shared_ptr<std::string> obj = std::make_shared<std::string>(str);
-        _objs.push_back(obj);
-        _paraNum++;
-        _parameters.push_back((char *)obj->c_str());
-        _length.push_back(obj->length());
-        if (_type == ClientType::PostgreSQL)
-        {
-            _format.push_back(0);
-        }
-        else if (_type == ClientType::Mysql)
-        {
-#if USE_MYSQL
-            _format.push_back(MYSQL_TYPE_STRING);
-#endif
-        }
-        else if (_type == ClientType::Sqlite3)
-        {
-            _format.push_back(Sqlite3TypeText);
-        }
-        return *this;
-    }
+    self &operator<<(const std::string &str);
     self &operator<<(std::string &str)
     {
         return operator<<((const std::string &)str);
     }
-    self &operator<<(std::string &&str)
-    {
-        std::shared_ptr<std::string> obj =
-            std::make_shared<std::string>(std::move(str));
-        _objs.push_back(obj);
-        _paraNum++;
-        _parameters.push_back((char *)obj->c_str());
-        _length.push_back(obj->length());
-        if (_type == ClientType::PostgreSQL)
-        {
-            _format.push_back(0);
-        }
-        else if (_type == ClientType::Mysql)
-        {
-#if USE_MYSQL
-            _format.push_back(MYSQL_TYPE_STRING);
-#endif
-        }
-        else if (_type == ClientType::Sqlite3)
-        {
-            _format.push_back(Sqlite3TypeText);
-        }
-        return *this;
-    }
+    self &operator<<(std::string &&str);
     self &operator<<(trantor::Date &&date)
     {
         return operator<<(date.toDbStringLocal());
@@ -430,54 +385,8 @@ class SqlBinder
     {
         return operator<<(date.toDbStringLocal());
     }
-    self &operator<<(const std::vector<char> &v)
-    {
-        std::shared_ptr<std::vector<char>> obj =
-            std::make_shared<std::vector<char>>(v);
-        _objs.push_back(obj);
-        _paraNum++;
-        _parameters.push_back((char *)obj->data());
-        _length.push_back(obj->size());
-        if (_type == ClientType::PostgreSQL)
-        {
-            _format.push_back(1);
-        }
-        else if (_type == ClientType::Mysql)
-        {
-#if USE_MYSQL
-            _format.push_back(MYSQL_TYPE_STRING);
-#endif
-        }
-        else if (_type == ClientType::Sqlite3)
-        {
-            _format.push_back(Sqlite3TypeBlob);
-        }
-        return *this;
-    }
-    self &operator<<(std::vector<char> &&v)
-    {
-        std::shared_ptr<std::vector<char>> obj =
-            std::make_shared<std::vector<char>>(std::move(v));
-        _objs.push_back(obj);
-        _paraNum++;
-        _parameters.push_back((char *)obj->data());
-        _length.push_back(obj->size());
-        if (_type == ClientType::PostgreSQL)
-        {
-            _format.push_back(1);
-        }
-        else if (_type == ClientType::Mysql)
-        {
-#if USE_MYSQL
-            _format.push_back(MYSQL_TYPE_STRING);
-#endif
-        }
-        else if (_type == ClientType::Sqlite3)
-        {
-            _format.push_back(Sqlite3TypeBlob);
-        }
-        return *this;
-    }
+    self &operator<<(const std::vector<char> &v);
+    self &operator<<(std::vector<char> &&v);
     self &operator<<(float f)
     {
         if (_type == ClientType::Sqlite3)
@@ -486,41 +395,8 @@ class SqlBinder
         }
         return operator<<(std::to_string(f));
     }
-    self &operator<<(double f)
-    {
-        if (_type == ClientType::Sqlite3)
-        {
-            _paraNum++;
-            auto obj = std::make_shared<double>(f);
-            _objs.push_back(obj);
-            _format.push_back(Sqlite3TypeDouble);
-            _length.push_back(0);
-            _parameters.push_back((char *)(obj.get()));
-            return *this;
-        }
-        return operator<<(std::to_string(f));
-    }
-    self &operator<<(std::nullptr_t nullp)
-    {
-        _paraNum++;
-        _parameters.push_back(NULL);
-        _length.push_back(0);
-        if (_type == ClientType::PostgreSQL)
-        {
-            _format.push_back(0);
-        }
-        else if (_type == ClientType::Mysql)
-        {
-#if USE_MYSQL
-            _format.push_back(MYSQL_TYPE_NULL);
-#endif
-        }
-        else if (_type == ClientType::Sqlite3)
-        {
-            _format.push_back(Sqlite3TypeNull);
-        }
-        return *this;
-    }
+    self &operator<<(double f);
+    self &operator<<(std::nullptr_t nullp);
     self &operator<<(const Mode &mode)
     {
         _mode = mode;
