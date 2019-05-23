@@ -95,5 +95,5 @@ void doFilters(
                    std::move(missCallback));
 }
 
-}  // namespace FiltersFunction
+}  // namespace filters_function
 }  // namespace drogon

@@ -144,7 +144,7 @@ void doTest(const HttpClientPtr &client,
                         [=](ReqResult result, const HttpResponsePtr &resp) {
                             if (result == ReqResult::Ok)
                             {
-                                if (resp->getBody().length() == 5123)
+                                if (resp->getBody().length() == 4994)
                                 {
                                     outputGood(req, isHttps);
                                 }
@@ -566,7 +566,7 @@ void doTest(const HttpClientPtr &client,
                         [=](ReqResult result, const HttpResponsePtr &resp) {
                             if (result == ReqResult::Ok)
                             {
-                                if (resp->getBody().length() == 5123)
+                                if (resp->getBody().length() == 4994)
                                 {
                                     outputGood(req, isHttps);
                                 }
