@@ -66,41 +66,50 @@ link_libraries(${ZLIB_LIBRARIES})
 
 message(STATUS "zlib inc path:" ${ZLIB_INCLUDE_DIR})
 
-#find postgres
-find_package(PostgreSQL)
-if(PostgreSQL_FOUND)
-    include_directories(${PostgreSQL_INCLUDE_DIR})
-    message(STATUS "libpq inc path:" ${PostgreSQL_INCLUDE_DIR})
-    link_libraries(${PostgreSQL_LIBRARIES})
-    aux_source_directory(${PROJECT_SOURCE_DIR}/orm_lib/src/postgresql_impl DIR_SRCS)
-    set(USE_ORM TRUE)
+if(NOT BUILD_ORM)
+   set(BUILD_ORM TRUE CACHE BOOL INTERNAL)
 endif()
 
-#Find mysql, only mariadb client liberary is supported
-find_package(MySQL)
-if(MYSQL_FOUND)
-    message(STATUS "inc:" ${MYSQL_INCLUDE_DIR})
-    message(STATUS "libs:" ${MYSQL_CLIENT_LIBS})
-    message(STATUS "version:" ${MYSQL_VERSION_STRING})
-    if(MYSQL_VERSION_STRING STREQUAL "")
-	    set(MYSQL_FOUND false)
-        message(STATUS "The mysql in your system is not the mariadb, so we can't use it in drogon")
-    else()
-        message(STATUS "Ok! We find the mariadb!")
-        include_directories(${MYSQL_INCLUDE_DIR})
-        link_libraries(${MYSQL_CLIENT_LIBS})
-        aux_source_directory(${PROJECT_SOURCE_DIR}/orm_lib/src/mysql_impl DIR_SRCS)
+
+if(BUILD_ORM)
+
+    #find postgres
+    find_package(PostgreSQL)
+    if(PostgreSQL_FOUND)
+        include_directories(${PostgreSQL_INCLUDE_DIR})
+        message(STATUS "libpq inc path:" ${PostgreSQL_INCLUDE_DIR})
+        link_libraries(${PostgreSQL_LIBRARIES})
+        aux_source_directory(${PROJECT_SOURCE_DIR}/orm_lib/src/postgresql_impl DIR_SRCS)
         set(USE_ORM TRUE)
     endif()
-endif()
 
-#Find sqlite3.
-find_package (SQLite3)
-if (SQLITE3_FOUND)
-  include_directories(${SQLITE3_INCLUDE_DIRS})
-  link_libraries(${SQLITE3_LIBRARIES})
-  aux_source_directory(${PROJECT_SOURCE_DIR}/orm_lib/src/sqlite3_impl DIR_SRCS)
-  set(USE_ORM TRUE)
+    #Find mysql, only mariadb client liberary is supported
+    find_package(MySQL)
+    if(MYSQL_FOUND)
+        message(STATUS "inc:" ${MYSQL_INCLUDE_DIR})
+        message(STATUS "libs:" ${MYSQL_CLIENT_LIBS})
+        message(STATUS "version:" ${MYSQL_VERSION_STRING})
+        if(MYSQL_VERSION_STRING STREQUAL "")
+            set(MYSQL_FOUND false)
+            message(STATUS "The mysql in your system is not the mariadb, so we can't use it in drogon")
+        else()
+            message(STATUS "Ok! We find the mariadb!")
+            include_directories(${MYSQL_INCLUDE_DIR})
+            link_libraries(${MYSQL_CLIENT_LIBS})
+            aux_source_directory(${PROJECT_SOURCE_DIR}/orm_lib/src/mysql_impl DIR_SRCS)
+            set(USE_ORM TRUE)
+        endif()
+    endif()
+
+    #Find sqlite3.
+    find_package (SQLite3)
+    if (SQLITE3_FOUND)
+      include_directories(${SQLITE3_INCLUDE_DIRS})
+      link_libraries(${SQLITE3_LIBRARIES})
+      aux_source_directory(${PROJECT_SOURCE_DIR}/orm_lib/src/sqlite3_impl DIR_SRCS)
+      set(USE_ORM TRUE)
+    endif()
+
 endif()
 
 #message(STATUS ${DIR_SRCS})
@@ -121,11 +130,27 @@ add_custom_command(TARGET makeVersion
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
         VERBATIM )
 
-add_subdirectory(examples)
-add_subdirectory(drogon_ctl)
+if(NOT BUILD_EXAMPLES)
+  set(BUILD_EXAMPLES TRUE CACHE BOOL INTERNAL)
+endif()
+
+if(BUILD_EXAMPLES)
+    add_subdirectory(examples)
+endif()
+
+if(NOT BUILD_CTL)
+  set(BUILD_CTL TRUE CACHE BOOL INTERNAL)
+endif()
+
+if(BUILD_CTL)
+    add_subdirectory(drogon_ctl)
+endif()
 
 aux_source_directory(${PROJECT_SOURCE_DIR}/lib/src DIR_SRCS)
-aux_source_directory(${PROJECT_SOURCE_DIR}/orm_lib/src DIR_SRCS)
+
+if(BUILD_ORM)
+    aux_source_directory(${PROJECT_SOURCE_DIR}/orm_lib/src DIR_SRCS)
+endif()
 
 ADD_LIBRARY(drogon ${DIR_SRCS})
 
