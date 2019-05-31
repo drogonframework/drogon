@@ -140,12 +140,52 @@ class HttpBinder : public HttpBinderBase
             ss >> value;
         }
     }
-    
+
     void getHandlerArgumentValue(std::string &value, std::string &&p)
     {
         value = std::move(p);
     }
-    
+
+    void getHandlerArgumentValue(int &value, std::string &&p)
+    {
+        value = std::stoi(p);
+    }
+
+    void getHandlerArgumentValue(long &value, std::string &&p)
+    {
+        value = std::stol(p);
+    }
+
+    void getHandlerArgumentValue(long long &value, std::string &&p)
+    {
+        value = std::stoll(p);
+    }
+
+    void getHandlerArgumentValue(unsigned long &value, std::string &&p)
+    {
+        value = std::stoul(p);
+    }
+
+    void getHandlerArgumentValue(unsigned long long &value, std::string &&p)
+    {
+        value = std::stoull(p);
+    }
+
+    void getHandlerArgumentValue(float &value, std::string &&p)
+    {
+        value = std::stof(p);
+    }
+
+    void getHandlerArgumentValue(double &value, std::string &&p)
+    {
+        value = std::stod(p);
+    }
+
+    void getHandlerArgumentValue(long double &value, std::string &&p)
+    {
+        value = std::stold(p);
+    }
+
     template <typename... Values, std::size_t Boundary = argument_count>
     typename std::enable_if<(sizeof...(Values) < Boundary), void>::type run(
         std::list<std::string> &pathArguments,
@@ -153,7 +193,7 @@ class HttpBinder : public HttpBinderBase
         std::function<void(const HttpResponsePtr &)> &&callback,
         Values &&... values)
     {
-        // call this function recursively until parameter's count equals to the
+        // Call this function recursively until parameter's count equals to the
         // count of target function parameters
         static_assert(
             BinderArgTypeTraits<nth_argument_type<sizeof...(Values)>>::isValid,
@@ -166,7 +206,15 @@ class HttpBinder : public HttpBinderBase
         {
             std::string v = std::move(pathArguments.front());
             pathArguments.pop_front();
-            getHandlerArgumentValue(value, std::move(v));
+            try
+            {
+                getHandlerArgumentValue(value, std::move(v));
+            }
+            catch (...)
+            {
+                LOG_ERROR << "Error converting string \"" << v << "\" to the "
+                          << sizeof...(Values) + 1 << "th argument";
+            }
         }
 
         run(pathArguments,
@@ -194,7 +242,7 @@ class HttpBinder : public HttpBinderBase
     {
         static auto &obj = getControllerObj<typename traits::class_type>();
         (obj.*_func)(req, std::move(callback), std::move(values)...);
-    };
+    }
     template <typename... Values,
               bool isClassFunction = traits::isClassFunction,
               bool isDrObjectClass = traits::isDrObjectClass>
@@ -206,7 +254,7 @@ class HttpBinder : public HttpBinderBase
         static auto objPtr =
             DrClassMap::getSingleInstance<typename traits::class_type>();
         (*objPtr.*_func)(req, std::move(callback), std::move(values)...);
-    };
+    }
     template <typename... Values,
               bool isClassFunction = traits::isClassFunction>
     typename std::enable_if<!isClassFunction, void>::type callFunction(
@@ -215,7 +263,7 @@ class HttpBinder : public HttpBinderBase
         Values &&... values)
     {
         _func(req, std::move(callback), std::move(values)...);
-    };
+    }
 };
 
 }  // namespace internal
