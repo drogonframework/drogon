@@ -587,7 +587,7 @@ void doTest(const HttpClientPtr &client,
     /// Test static function
     req = HttpRequest::newHttpRequest();
     req->setMethod(drogon::Get);
-    req->setPath("/api/v1/handle11/11/22/?p3=33");
+    req->setPath("/api/v1/handle11/11/2 2/?p3=3 x");
     req->setParameter("p4", "44");
     client->sendRequest(
         req, [=](ReqResult result, const HttpResponsePtr &resp) {
@@ -600,10 +600,10 @@ void doTest(const HttpClientPtr &client,
                         "<td>int p4</td>\n        <td>44</td>") !=
                         std::string::npos &&
                     resp->getBody().find(
-                        "<td>string p2</td>\n        <td>22</td>") !=
+                        "<td>string p2</td>\n        <td>2 2</td>") !=
                         std::string::npos &&
                     resp->getBody().find(
-                        "<td>string p3</td>\n        <td>33</td>") !=
+                        "<td>string p3</td>\n        <td>3 x</td>") !=
                         std::string::npos)
                 {
                     outputGood(req, isHttps);

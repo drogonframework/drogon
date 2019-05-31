@@ -68,7 +68,7 @@ class HttpBinderBase
 {
   public:
     virtual void handleHttpRequest(
-        std::list<std::string> &pathParameter,
+        std::list<std::string> &pathArguments,
         const HttpRequestPtr &req,
         std::function<void(const HttpResponsePtr &)> &&callback) = 0;
     virtual size_t paramCount() = 0;
@@ -96,11 +96,11 @@ class HttpBinder : public HttpBinderBase
   public:
     typedef FUNCTION FunctionType;
     virtual void handleHttpRequest(
-        std::list<std::string> &pathParameter,
+        std::list<std::string> &pathArguments,
         const HttpRequestPtr &req,
         std::function<void(const HttpResponsePtr &)> &&callback) override
     {
-        run(pathParameter, req, std::move(callback));
+        run(pathArguments, req, std::move(callback));
     }
     virtual size_t paramCount() override
     {
@@ -131,9 +131,24 @@ class HttpBinder : public HttpBinderBase
 
     static const size_t argument_count = traits::arity;
     std::string _handlerName;
+    template <typename T>
+    void getHandlerArgumentValue(T &value, std::string &&p)
+    {
+        if (!p.empty())
+        {
+            std::stringstream ss(std::move(p));
+            ss >> value;
+        }
+    }
+    
+    void getHandlerArgumentValue(std::string &value, std::string &&p)
+    {
+        value = std::move(p);
+    }
+    
     template <typename... Values, std::size_t Boundary = argument_count>
     typename std::enable_if<(sizeof...(Values) < Boundary), void>::type run(
-        std::list<std::string> &pathParameter,
+        std::list<std::string> &pathArguments,
         const HttpRequestPtr &req,
         std::function<void(const HttpResponsePtr &)> &&callback,
         Values &&... values)
@@ -147,18 +162,14 @@ class HttpBinder : public HttpBinderBase
         typedef typename std::remove_cv<typename std::remove_reference<
             nth_argument_type<sizeof...(Values)>>::type>::type ValueType;
         ValueType value = ValueType();
-        if (!pathParameter.empty())
+        if (!pathArguments.empty())
         {
-            std::string v = std::move(pathParameter.front());
-            pathParameter.pop_front();
-            if (!v.empty())
-            {
-                std::stringstream ss(std::move(v));
-                ss >> value;
-            }
+            std::string v = std::move(pathArguments.front());
+            pathArguments.pop_front();
+            getHandlerArgumentValue(value, std::move(v));
         }
 
-        run(pathParameter,
+        run(pathArguments,
             req,
             std::move(callback),
             std::forward<Values>(values)...,
@@ -166,7 +177,7 @@ class HttpBinder : public HttpBinderBase
     }
     template <typename... Values, std::size_t Boundary = argument_count>
     typename std::enable_if<(sizeof...(Values) == Boundary), void>::type run(
-        std::list<std::string> &pathParameter,
+        std::list<std::string> &pathArguments,
         const HttpRequestPtr &req,
         std::function<void(const HttpResponsePtr &)> &&callback,
         Values &&... values)
