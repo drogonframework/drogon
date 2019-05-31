@@ -30,7 +30,7 @@ void HttpRequestImpl::parseParameters() const
     std::transform(type.begin(), type.end(), type.begin(), tolower);
     if (_method == Get ||
         (_method == Post &&
-         (type == "" ||
+         (type.empty() ||
           type.find("application/x-www-form-urlencoded") != std::string::npos)))
     {
         std::string::size_type pos = 0;

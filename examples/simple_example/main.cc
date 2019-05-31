@@ -221,10 +221,11 @@ int main()
         // return;
         accb();
     });
-    app().registerPostHandlingAdvice(
-        [](const drogon::HttpRequestPtr &, const drogon::HttpResponsePtr &) {
-            LOG_DEBUG << "postHandling1";
-        });
+    app().registerPostHandlingAdvice([](const drogon::HttpRequestPtr &,
+                                        const drogon::HttpResponsePtr &resp) {
+        LOG_DEBUG << "postHandling1";
+        resp->addHeader("Access-Control-Allow-Origin", "*");
+    });
     app().registerPreRoutingAdvice([](const drogon::HttpRequestPtr &req) {
         LOG_DEBUG << "preRouting observer";
     });

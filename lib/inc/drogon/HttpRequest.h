@@ -174,8 +174,9 @@ class HttpRequest
 
     /// Get the Json object of the request
     /**
-     * The content type of the request must be 'application/json', otherwise
-     * the method returns an empty object.
+     * The content type of the request must be 'application/json', and the query
+     * string (the part after the question mark in the URI) must be empty,
+     * otherwise the method returns an empty shared_ptr object.
      */
     virtual const std::shared_ptr<Json::Value> jsonObject() const = 0;
     const std::shared_ptr<Json::Value> getJsonObject() const
