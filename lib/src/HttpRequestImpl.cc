@@ -372,13 +372,16 @@ HttpRequestPtr HttpRequest::newHttpFormPostRequest()
 
 HttpRequestPtr HttpRequest::newHttpJsonRequest(const Json::Value &data)
 {
+    static std::once_flag once;
+    static Json::StreamWriterBuilder builder;
+    std::call_once(once, []() {
+        builder["commentStyle"] = "None";
+        builder["indentation"] = "";
+    });
     auto req = std::make_shared<HttpRequestImpl>(nullptr);
     req->setMethod(drogon::Get);
     req->setVersion(drogon::HttpRequest::kHttp11);
     req->_contentType = CT_APPLICATION_JSON;
-    Json::StreamWriterBuilder builder;
-    builder["commentStyle"] = "None";
-    builder["indentation"] = "";
     req->setContent(writeString(builder, data));
     return req;
 }

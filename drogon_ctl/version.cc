@@ -29,9 +29,9 @@ static const char banner[] =
 void version::handleCommand(std::vector<std::string> &parameters)
 {
     std::cout << banner << std::endl;
-    std::cout << "drogon ctl tools" << std::endl;
-    std::cout << "version:" << VERSION << std::endl;
-    std::cout << "git commit:" << VERSION_MD5 << std::endl;
-    std::cout << "compile config:" << compileFlags << " " << includeDirs
+    std::cout << "A utility for drogon" << std::endl;
+    std::cout << "Version:" << VERSION << std::endl;
+    std::cout << "Git commit:" << VERSION_MD5 << std::endl;
+    std::cout << "Compile config:" << compileFlags << " " << includeDirs
               << std::endl;
 }
