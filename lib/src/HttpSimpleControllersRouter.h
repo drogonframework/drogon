@@ -35,11 +35,11 @@ class HttpSimpleControllersRouter : public trantor::NonCopyable
   public:
     HttpSimpleControllersRouter(
         HttpControllersRouter &httpCtrlRouter,
-        const std::deque<std::function<void(const HttpRequestPtr &,
-                                            AdviceCallback &&,
-                                            AdviceChainCallback &&)>>
+        const std::vector<std::function<void(const HttpRequestPtr &,
+                                             AdviceCallback &&,
+                                             AdviceChainCallback &&)>>
             &postRoutingAdvices,
-        const std::deque<std::function<void(const HttpRequestPtr &)>>
+        const std::vector<std::function<void(const HttpRequestPtr &)>>
             &postRoutingObservers,
         const std::vector<std::function<void(const HttpRequestPtr &,
                                              AdviceCallback &&,
@@ -47,8 +47,8 @@ class HttpSimpleControllersRouter : public trantor::NonCopyable
             &preHandlingAdvices,
         const std::vector<std::function<void(const HttpRequestPtr &)>>
             &preHandlingObservers,
-        const std::deque<std::function<void(const HttpRequestPtr &,
-                                            const HttpResponsePtr &)>>
+        const std::vector<std::function<void(const HttpRequestPtr &,
+                                             const HttpResponsePtr &)>>
             &postHandlingAdvices)
         : _httpCtrlsRouter(httpCtrlRouter),
           _postRoutingAdvices(postRoutingAdvices),
@@ -74,20 +74,20 @@ class HttpSimpleControllersRouter : public trantor::NonCopyable
 
   private:
     HttpControllersRouter &_httpCtrlsRouter;
-    const std::deque<std::function<void(const HttpRequestPtr &,
-                                        AdviceCallback &&,
-                                        AdviceChainCallback &&)>>
+    const std::vector<std::function<void(const HttpRequestPtr &,
+                                         AdviceCallback &&,
+                                         AdviceChainCallback &&)>>
         &_postRoutingAdvices;
     const std::vector<std::function<void(const HttpRequestPtr &,
                                          AdviceCallback &&,
                                          AdviceChainCallback &&)>>
         &_preHandlingAdvices;
-    const std::deque<std::function<void(const HttpRequestPtr &)>>
+    const std::vector<std::function<void(const HttpRequestPtr &)>>
         &_postRoutingObservers;
     const std::vector<std::function<void(const HttpRequestPtr &)>>
         &_preHandlingObservers;
 
-    const std::deque<
+    const std::vector<
         std::function<void(const HttpRequestPtr &, const HttpResponsePtr &)>>
         &_postHandlingAdvices;
     struct CtrlBinder

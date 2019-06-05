@@ -35,11 +35,11 @@ class HttpControllersRouter : public trantor::NonCopyable
   public:
     HttpControllersRouter(
         StaticFileRouter &router,
-        const std::deque<std::function<void(const HttpRequestPtr &,
-                                            AdviceCallback &&,
-                                            AdviceChainCallback &&)>>
+        const std::vector<std::function<void(const HttpRequestPtr &,
+                                             AdviceCallback &&,
+                                             AdviceChainCallback &&)>>
             &postRoutingAdvices,
-        const std::deque<std::function<void(const HttpRequestPtr &)>>
+        const std::vector<std::function<void(const HttpRequestPtr &)>>
             &postRoutingObservers,
         const std::vector<std::function<void(const HttpRequestPtr &,
                                              AdviceCallback &&,
@@ -47,8 +47,8 @@ class HttpControllersRouter : public trantor::NonCopyable
             &preHandlingAdvices,
         const std::vector<std::function<void(const HttpRequestPtr &)>>
             &preHandlingObservers,
-        const std::deque<std::function<void(const HttpRequestPtr &,
-                                            const HttpResponsePtr &)>>
+        const std::vector<std::function<void(const HttpRequestPtr &,
+                                             const HttpResponsePtr &)>>
             &postHandlingAdvices)
         : _fileRouter(router),
           _postRoutingAdvices(postRoutingAdvices),
@@ -98,19 +98,19 @@ class HttpControllersRouter : public trantor::NonCopyable
     std::mutex _ctrlMutex;
     std::regex _ctrlRegex;
 
-    const std::deque<std::function<void(const HttpRequestPtr &,
-                                        AdviceCallback &&,
-                                        AdviceChainCallback &&)>>
+    const std::vector<std::function<void(const HttpRequestPtr &,
+                                         AdviceCallback &&,
+                                         AdviceChainCallback &&)>>
         &_postRoutingAdvices;
     const std::vector<std::function<void(const HttpRequestPtr &,
                                          AdviceCallback &&,
                                          AdviceChainCallback &&)>>
         &_preHandlingAdvices;
-    const std::deque<std::function<void(const HttpRequestPtr &)>>
+    const std::vector<std::function<void(const HttpRequestPtr &)>>
         &_postRoutingObservers;
     const std::vector<std::function<void(const HttpRequestPtr &)>>
         &_preHandlingObservers;
-    const std::deque<
+    const std::vector<
         std::function<void(const HttpRequestPtr &, const HttpResponsePtr &)>>
         &_postHandlingAdvices;
 

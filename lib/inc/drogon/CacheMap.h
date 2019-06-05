@@ -62,15 +62,15 @@ class CacheMap
   public:
     /// constructor
     /**
-     *  @param loop
-     *  eventloop pointer
-     *  @param tickInterval
-     *  second
-     *  @param wheelsNum
-     *  number of wheels
-     *  @param bucketsNumPerWheel
-     *  buckets number per wheel
-     *  The max delay of the CacheMap is about
+     * @param loop
+     * eventloop pointer
+     * @param tickInterval
+     * second
+     * @param wheelsNum
+     * number of wheels
+     * @param bucketsNumPerWheel
+     * buckets number per wheel
+     * The max delay of the CacheMap is about
      * tickInterval*(bucketsNumPerWheel^wheelsNum) seconds.
      */
     CacheMap(trantor::EventLoop *loop,

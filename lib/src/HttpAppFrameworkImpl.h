@@ -152,7 +152,7 @@ class HttpAppFrameworkImpl : public HttpAppFramework
                                  AdviceCallback &&,
                                  AdviceChainCallback &&)> &advice) override
     {
-        _postRoutingAdvices.emplace_front(advice);
+        _postRoutingAdvices.emplace_back(advice);
     }
     virtual void registerPreHandlingAdvice(
         const std::function<void(const HttpRequestPtr &,
@@ -170,7 +170,7 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     virtual void registerPostRoutingAdvice(
         const std::function<void(const HttpRequestPtr &)> &advice) override
     {
-        _postRoutingObservers.emplace_front(advice);
+        _postRoutingObservers.emplace_back(advice);
     }
     virtual void registerPreHandlingAdvice(
         const std::function<void(const HttpRequestPtr &)> &advice) override
@@ -181,7 +181,7 @@ class HttpAppFrameworkImpl : public HttpAppFramework
         const std::function<void(const HttpRequestPtr &,
                                  const HttpResponsePtr &)> &advice) override
     {
-        _postHandlingAdvices.emplace_front(advice);
+        _postHandlingAdvices.emplace_back(advice);
     }
 
     virtual void enableSession(const size_t timeout = 0) override
@@ -453,21 +453,21 @@ class HttpAppFrameworkImpl : public HttpAppFramework
                                    AdviceCallback &&,
                                    AdviceChainCallback &&)>>
         _preRoutingAdvices;
-    std::deque<std::function<void(const HttpRequestPtr &,
-                                  AdviceCallback &&,
-                                  AdviceChainCallback &&)>>
+    std::vector<std::function<void(const HttpRequestPtr &,
+                                   AdviceCallback &&,
+                                   AdviceChainCallback &&)>>
         _postRoutingAdvices;
     std::vector<std::function<void(const HttpRequestPtr &,
                                    AdviceCallback &&,
                                    AdviceChainCallback &&)>>
         _preHandlingAdvices;
-    std::deque<
+    std::vector<
         std::function<void(const HttpRequestPtr &, const HttpResponsePtr &)>>
         _postHandlingAdvices;
 
     std::vector<std::function<void(const HttpRequestPtr &)>>
         _preRoutingObservers;
-    std::deque<std::function<void(const HttpRequestPtr &)>>
+    std::vector<std::function<void(const HttpRequestPtr &)>>
         _postRoutingObservers;
     std::vector<std::function<void(const HttpRequestPtr &)>>
         _preHandlingObservers;
