@@ -14,6 +14,8 @@
 
 #include "HttpRequestImpl.h"
 #include "HttpFileUploadRequest.h"
+#include "HttpAppFrameworkImpl.h"
+
 #include <drogon/utils/Utilities.h>
 #include <fstream>
 #include <iostream>
@@ -23,7 +25,7 @@ using namespace drogon;
 
 void HttpRequestImpl::parseParameters() const
 {
-    const std::string &input = query();
+    auto input = query();
     if (input.empty())
         return;
     std::string type = getHeaderBy("content-type");
@@ -33,25 +35,25 @@ void HttpRequestImpl::parseParameters() const
          (type.empty() ||
           type.find("application/x-www-form-urlencoded") != std::string::npos)))
     {
-        std::string::size_type pos = 0;
+        string_view::size_type pos = 0;
         while ((input[pos] == '?' || isspace(input[pos])) &&
                pos < input.length())
         {
             pos++;
         }
-        std::string value = input.substr(pos);
-        while ((pos = value.find("&")) != std::string::npos)
+        auto value = input.substr(pos);
+        while ((pos = value.find("&")) != string_view::npos)
         {
-            std::string coo = value.substr(0, pos);
+            auto coo = value.substr(0, pos);
             auto epos = coo.find("=");
-            if (epos != std::string::npos)
+            if (epos != string_view::npos)
             {
-                std::string key = coo.substr(0, epos);
-                std::string::size_type cpos = 0;
+                auto key = coo.substr(0, epos);
+                string_view::size_type cpos = 0;
                 while (cpos < key.length() && isspace(key[cpos]))
                     cpos++;
                 key = key.substr(cpos);
-                std::string pvalue = coo.substr(epos + 1);
+                auto pvalue = coo.substr(epos + 1);
                 std::string pdecode = utils::urlDecode(pvalue);
                 std::string keydecode = utils::urlDecode(key);
                 _parameters[keydecode] = pdecode;
@@ -60,16 +62,16 @@ void HttpRequestImpl::parseParameters() const
         }
         if (value.length() > 0)
         {
-            std::string &coo = value;
+            auto &coo = value;
             auto epos = coo.find("=");
-            if (epos != std::string::npos)
+            if (epos != string_view::npos)
             {
-                std::string key = coo.substr(0, epos);
-                std::string::size_type cpos = 0;
+                auto key = coo.substr(0, epos);
+                string_view::size_type cpos = 0;
                 while (cpos < key.length() && isspace(key[cpos]))
                     cpos++;
                 key = key.substr(cpos);
-                std::string pvalue = coo.substr(epos + 1);
+                auto pvalue = coo.substr(epos + 1);
                 std::string pdecode = utils::urlDecode(pvalue);
                 std::string keydecode = utils::urlDecode(key);
                 _parameters[keydecode] = pdecode;
@@ -513,4 +515,25 @@ bool HttpRequestImpl::setMethod(const char *start, const char *end)
 
 HttpRequestImpl::~HttpRequestImpl()
 {
+}
+
+void HttpRequestImpl::reserveBodySize()
+{
+    if (_contentLen <=
+        HttpAppFrameworkImpl::instance().getClientMaxMemoryBodySize())
+    {
+        _content.reserve(_contentLen);
+    }
+    else
+    {
+        // Store data of body to a temperary file
+        auto tmpfile = HttpAppFrameworkImpl::instance().getUploadPath();
+        auto fileName = utils::getUuid();
+        tmpfile.append("/tmp/")
+            .append(1, fileName[0])
+            .append(1, fileName[1])
+            .append("/")
+            .append(fileName);
+        _cacheFilePtr = std::make_unique<CacheFile>(tmpfile);
+    }
 }

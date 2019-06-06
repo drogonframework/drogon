@@ -59,6 +59,7 @@ std::string base64Decode(std::string const &encoded_string);
 
 /// Decode from or encode to the URL format string
 std::string urlDecode(const std::string &szToDecode);
+std::string urlDecode(const string_view &szToDecode);
 std::string urlDecode(const char *begin, const char *end);
 std::string urlEncode(const std::string &str);
 

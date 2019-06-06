@@ -15,6 +15,8 @@
 #pragma once
 
 #include "HttpUtils.h"
+#include "CacheFile.h"
+#include <drogon/utils/Utilities.h>
 #include <drogon/HttpRequest.h>
 #include <drogon/HttpResponse.h>
 #include <drogon/utils/Utilities.h>
@@ -124,17 +126,40 @@ class HttpRequestImpl : public HttpRequest
         _query = query;
     }
 
-    virtual const string &body() const override
+    virtual string_view body() const override
     {
+        if (_cacheFilePtr && _cacheFilePtr->data())
+        {
+            return string_view(_cacheFilePtr->data(), _cacheFilePtr->length());
+        }
         return _content;
     }
 
-    virtual const std::string &query() const override
+    void appendToBody(const char *data, size_t length)
+    {
+        if (_cacheFilePtr)
+        {
+            _cacheFilePtr->append(data, length);
+        }
+        else
+        {
+            _content.append(data, length);
+        }
+    }
+
+    void reserveBodySize();
+
+    virtual string_view query() const override
     {
         if (_query != "")
             return _query;
         if (_method == Post)
+        {
+            if (_cacheFilePtr && _cacheFilePtr->data())
+                return string_view(_cacheFilePtr->data(),
+                                   _cacheFilePtr->length());
             return _content;
+        }
         return _query;
     }
 
@@ -341,6 +366,7 @@ class HttpRequestImpl : public HttpRequest
     trantor::InetAddress _peer;
     trantor::InetAddress _local;
     trantor::Date _date;
+    std::unique_ptr<CacheFile> _cacheFilePtr;
 
   protected:
     std::string _content;

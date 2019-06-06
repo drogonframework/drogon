@@ -282,8 +282,8 @@ class HttpAppFramework : public trantor::NonCopyable
     /// Register a HttpSimpleController object into the framework.
     /**
      * @param pathName: When the path of a http request is equal to the @param
-     * pathName, the asyncHandleHttpRequest() method
-     * of the controller is called.
+     * pathName, the asyncHandleHttpRequest() method of the controller is
+     * called.
      * @param ctrlName is the name of the controller. It includes the namespace
      * to which the controller belongs.
      * @param filtersAndMethods is a vector containing Http methods or filter
@@ -760,6 +760,17 @@ class HttpAppFramework : public trantor::NonCopyable
      * This operation can be performed by an option in the configuration file.
      */
     virtual void setClientMaxBodySize(size_t maxSize) = 0;
+
+    /// Set the maximum body size in memory of HTTP requests received by drogon.
+    /**
+     * The default value is "64K" bytes. If the body size of a HTTP request
+     * exceeds this limit, the body is stored to a temporary file for
+     * processing.
+     *
+     * NOTE:
+     * This operation can be performed by an option in the configuration file.
+     */
+    virtual void setClientMaxMemoryBodySize(size_t maxSize) = 0;
 
     /// Set the max size of messages sent by WebSocket client. The default value
     /// is 128K.

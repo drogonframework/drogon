@@ -462,6 +462,12 @@ std::string urlDecode(const std::string &szToDecode)
                      szToDecode.c_str() + szToDecode.length());
 }
 
+std::string urlDecode(const string_view &szToDecode)
+{
+    return urlDecode(szToDecode.data(),
+                     szToDecode.data() + szToDecode.length());
+}
+
 std::string urlDecode(const char *begin, const char *end)
 {
     std::string result;

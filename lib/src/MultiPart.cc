@@ -64,16 +64,8 @@ int MultiPartParser::parse(const HttpRequestPtr &req)
     if (pos == std::string::npos)
         return -1;
     std::string boundary = contentType.substr(pos + 9);
-    // std::cout << "boundary[" << boundary << "]" << std::endl;
-    auto &content = req->query();
-    return parse(content, boundary);
+    return parse(req->query(), boundary);
 }
-
-// int MultiPartParser::parse(const HttpResponsePtr &resp)
-// {
-//     /// TODO:
-//     return 0;
-// }
 
 int MultiPartParser::parseEntity(const char *begin, const char *end)
 {
@@ -116,28 +108,28 @@ int MultiPartParser::parseEntity(const char *begin, const char *end)
     }
 }
 
-int MultiPartParser::parse(const std::string &content,
+int MultiPartParser::parse(const string_view &content,
                            const std::string &boundary)
 {
-    std::string::size_type pos1, pos2;
+    string_view::size_type pos1, pos2;
     pos1 = 0;
     pos2 = content.find(boundary);
     while (1)
     {
         pos1 = pos2;
-        if (pos1 == std::string::npos)
+        if (pos1 == string_view::npos)
             break;
         pos1 += boundary.length();
         if (content[pos1] == '\r' && content[pos1 + 1] == '\n')
             pos1 += 2;
         pos2 = content.find(boundary, pos1);
-        if (pos2 == std::string::npos)
+        if (pos2 == string_view::npos)
             break;
         //    std::cout<<"pos1="<<pos1<<" pos2="<<pos2<<std::endl;
         if (content[pos2 - 4] == '\r' && content[pos2 - 3] == '\n' &&
             content[pos2 - 2] == '-' && content[pos2 - 1] == '-')
             pos2 -= 4;
-        if (parseEntity(content.c_str() + pos1, content.c_str() + pos2) != 0)
+        if (parseEntity(content.data() + pos1, content.data() + pos2) != 0)
             return -1;
         // pos2+=boundary.length();
     }

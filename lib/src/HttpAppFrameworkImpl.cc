@@ -241,7 +241,14 @@ void HttpAppFrameworkImpl::run()
     //
     LOG_INFO << "Start to run...";
     trantor::AsyncFileLogger asyncFileLogger;
-
+    // Create dirs for cache files
+    for (int i = 0; i < 256; i++)
+    {
+        char dirName[4];
+        sprintf(dirName, "%02x", i);
+        std::transform(dirName, dirName + 2, dirName, toupper);
+        utils::createPath(getUploadPath() + "/tmp/" + dirName);
+    }
     if (_runAsDaemon)
     {
         // go daemon!
