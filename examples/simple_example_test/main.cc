@@ -977,8 +977,9 @@ void doTest(const HttpClientPtr &client,
     // return;
     // Test file upload
     UploadFile file1("./drogon.jpg");
-    UploadFile file2("./config.example.json", "config.json", "file2");
-    req = HttpRequest::newFileUploadRequest({file1, file2});
+    UploadFile file2("./drogon.jpg", "drogon1.jpg");
+    UploadFile file3("./config.example.json", "config.json", "file3");
+    req = HttpRequest::newFileUploadRequest({file1, file2, file3});
     req->setPath("/api/attachment/upload");
     req->setParameter("P1", "upload");
     req->setParameter("P2", "test");
