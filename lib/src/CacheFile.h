@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <drogon/config.h>
 #include <trantor/utils/NonCopyable.h>
 #include <string>
 #include <stdio.h>
@@ -25,19 +26,25 @@ class CacheFile : public trantor::NonCopyable
   public:
     explicit CacheFile(const std::string &path, bool autoDelete = true);
     ~CacheFile();
-    char *data();
-    size_t length();
     void append(const std::string &data)
     {
         append(data.data(), data.length());
     }
     void append(const char *data, size_t length);
+    string_view getStringView()
+    {
+        if (data())
+            return string_view(_data, _dataLength);
+        return string_view();
+    }
 
   private:
+    char *data();
+    size_t length();
     FILE *_file = nullptr;
     bool _autoDelete = true;
     const std::string _path;
-    void *_data = nullptr;
+    char *_data = nullptr;
     size_t _dataLength = 0;
 };
 }  // namespace drogon

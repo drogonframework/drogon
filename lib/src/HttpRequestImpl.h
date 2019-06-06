@@ -128,9 +128,9 @@ class HttpRequestImpl : public HttpRequest
 
     virtual string_view body() const override
     {
-        if (_cacheFilePtr && _cacheFilePtr->data())
+        if (_cacheFilePtr)
         {
-            return string_view(_cacheFilePtr->data(), _cacheFilePtr->length());
+            return _cacheFilePtr->getStringView();
         }
         return _content;
     }
@@ -155,9 +155,8 @@ class HttpRequestImpl : public HttpRequest
             return _query;
         if (_method == Post)
         {
-            if (_cacheFilePtr && _cacheFilePtr->data())
-                return string_view(_cacheFilePtr->data(),
-                                   _cacheFilePtr->length());
+            if (_cacheFilePtr)
+                return _cacheFilePtr->getStringView();
             return _content;
         }
         return _query;
