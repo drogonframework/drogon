@@ -92,16 +92,16 @@ class HttpRequest
      * '?' in the URL string. If the http method is POST, the query string is
      * the content(body) string of the HTTP request.
      */
-    virtual const std::string &query() const = 0;
-    const std::string &getQuery() const
+    virtual string_view query() const = 0;
+    string_view getQuery() const
     {
         return query();
     }
 
     /// Get the content string of the request, which is the body part of the
     /// request.
-    virtual const std::string &body() const = 0;
-    const std::string &getBody() const
+    virtual string_view body() const = 0;
+    string_view getBody() const
     {
         return body();
     }

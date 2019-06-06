@@ -110,11 +110,11 @@ class MultiPartParser
   protected:
     std::vector<HttpFile> _files;
     std::map<std::string, std::string> _parameters;
-    int parse(const std::string &content, const std::string &boundary);
+    int parse(const string_view &content, const std::string &boundary);
     int parseEntity(const char *begin, const char *end);
 };
 
-typedef MultiPartParser
-    FileUpload;  /// In order to be compatible with old interfaces
+/// In order to be compatible with old interfaces
+typedef MultiPartParser FileUpload;
 
 }  // namespace drogon

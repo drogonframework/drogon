@@ -264,6 +264,10 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     {
         _clientMaxBodySize = maxSize;
     }
+    virtual void setClientMaxMemoryBodySize(size_t maxSize) override
+    {
+        _clientMaxMemoryBodySize = maxSize;
+    }
     virtual void setClientMaxWebSocketMessageSize(size_t maxSize) override
     {
         _clientMaxWebSocketMessageSize = maxSize;
@@ -279,6 +283,10 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     size_t getClientMaxBodySize() const
     {
         return _clientMaxBodySize;
+    }
+    size_t getClientMaxMemoryBodySize() const
+    {
+        return _clientMaxMemoryBodySize;
     }
     size_t getClientMaxWebSocketMessageSize() const
     {
@@ -423,6 +431,7 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     bool _useSendfile = true;
     bool _useGzip = true;
     size_t _clientMaxBodySize = 1024 * 1024;
+    size_t _clientMaxMemoryBodySize = 64 * 1024;
     size_t _clientMaxWebSocketMessageSize = 128 * 1024;
     std::string _homePageFile = "index.html";
 

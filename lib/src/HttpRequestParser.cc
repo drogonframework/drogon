@@ -231,7 +231,7 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
                             shutdownConnection(k413RequestEntityTooLarge);
                             return false;
                         }
-                        _request->_content.reserve(_request->_contentLen);
+                        _request->reserveBodySize();
                     }
                     else
                     {
@@ -269,12 +269,12 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
             if (_request->_contentLen >= buf->readableBytes())
             {
                 _request->_contentLen -= buf->readableBytes();
-                _request->_content.append(buf->peek(), buf->readableBytes());
+                _request->appendToBody(buf->peek(), buf->readableBytes());
                 buf->retrieveAll();
             }
             else
             {
-                _request->_content.append(buf->peek(), _request->_contentLen);
+                _request->appendToBody(buf->peek(), _request->_contentLen);
                 buf->retrieve(_request->_contentLen);
                 _request->_contentLen = 0;
             }

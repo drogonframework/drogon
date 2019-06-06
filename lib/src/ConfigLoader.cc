@@ -69,8 +69,6 @@ static bool bytesSize(std::string &sizeStr, size_t &size)
             case '9':
                 break;
             default:
-                std::cerr << "Invalid value of client_max_body_size: "
-                          << sizeStr << std::endl;
                 return false;
                 break;
         }
@@ -79,9 +77,7 @@ static bool bytesSize(std::string &sizeStr, size_t &size)
         iss >> tmpSize;
         if (iss.fail())
         {
-            std::cerr << "Invalid value of client_max_body_size: " << sizeStr
-                      << std::endl;
-            exit(-1);
+            return false;
         }
         if ((size_t(-1) / tmpSize) >= size)
             size *= tmpSize;
@@ -319,6 +315,18 @@ static void loadApp(const Json::Value &app)
     }
     else
     {
+        std::cerr << "Error format of client_max_body_size" << std::endl;
+        exit(-1);
+    }
+    auto maxMemoryBodySize =
+        app.get("client_max_memory_body_size", "64K").asString();
+    if (bytesSize(maxMemoryBodySize, size))
+    {
+        drogon::app().setClientMaxMemoryBodySize(size);
+    }
+    else
+    {
+        std::cerr << "Error format of client_max_memory_body_size" << std::endl;
         exit(-1);
     }
     auto maxWsMsgSize =
@@ -329,6 +337,8 @@ static void loadApp(const Json::Value &app)
     }
     else
     {
+        std::cerr << "Error format of client_max_websocket_message_size"
+                  << std::endl;
         exit(-1);
     }
     drogon::app().setHomePage(app.get("home_page", "index.html").asString());

@@ -87,9 +87,9 @@
             "cur",
             "xml"
         ],
-        //max_connections: Max connections number,100000 by default
+        //max_connections: maximum connections number,100000 by default
         "max_connections": 100000,
-        //max_connections_per_ip: Max connections number per clinet,0 by default which means no limit
+        //max_connections_per_ip: maximum connections number per clinet,0 by default which means no limit
         "max_connections_per_ip": 0,
         //Load_dynamic_views: False by default, when set to true, drogon
         //compiles and loads dynamically "CSP View Files" in directories defined
@@ -156,10 +156,14 @@
         //file with the extension ".gz" in the same path and send the compressed file to the client.
         //The default value of gzip_static is true.
         "gzip_static": true,
-        //client_max_body_size: Set the max body size of HTTP requests received by drogon. The default value is "1M".
+        //client_max_body_size: Set the maximum body size of HTTP requests received by drogon. The default value is "1M".
         //One can set it to "1024", "1k", "10M", "1G", etc. Setting it to "" means no limit.
         "client_max_body_size": "1M",
-        //client_max_websocket_message_size: Set the max size of messages sent by WebSocket client. The default value is "128K".
+        //max_memory_body_size: Set the maximum body size in memory of HTTP requests received by drogon. The default value is "64K" bytes.
+        //If the body size of a HTTP request exceeds this limit, the body is stored to a temporary file for processing.
+        //Setting it to "" means no limit.
+        "client_max_memory_body_size": "64K",
+        //client_max_websocket_message_size: Set the maximum size of messages sent by WebSocket client. The default value is "128K".
         //One can set it to "1024", "1k", "10M", "1G", etc. Setting it to "" means no limit.
         "client_max_websocket_message_size": "128K"
     },
