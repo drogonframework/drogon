@@ -106,6 +106,10 @@ class HttpRequest
         return body();
     }
 
+    /// Set the content string of the request.
+    virtual void setBody(const std::string &body) = 0;
+    virtual void setBody(std::string &&body) = 0;
+
     /// Get the path of the request.
     virtual const std::string &path() const = 0;
     const std::string &getPath() const
