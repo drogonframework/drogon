@@ -267,6 +267,16 @@ class HttpRequestImpl : public HttpRequest
         _content = content;
     }
 
+    virtual void setBody(const std::string &body) override
+    {
+        _content = body;
+    }
+
+    virtual void setBody(std::string &&body) override
+    {
+        _content = std::move(body);
+    }
+
     virtual void addHeader(const std::string &key,
                            const std::string &value) override
     {
