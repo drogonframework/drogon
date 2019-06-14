@@ -5,7 +5,7 @@
  *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
- *  Use of this source code is governed by a MIT license
+ *  Use of this source code is governed by the MIT license
  *  that can be found in the License file.
  *
  *  Drogon
@@ -63,6 +63,15 @@ class HttpClientImpl : public HttpClient,
         _validCookies.emplace_back(cookie);
     }
 
+    virtual size_t bytesSent() const override
+    {
+        return _bytesSent;
+    }
+    virtual size_t bytesReceived() const override
+    {
+        return _bytesReceived;
+    }
+
   private:
     std::shared_ptr<trantor::TcpClient> _tcpClient;
     trantor::EventLoop *_loop;
@@ -81,6 +90,8 @@ class HttpClientImpl : public HttpClient,
     size_t _pipeliningDepth = 0;
     bool _enableCookies = false;
     std::vector<Cookie> _validCookies;
+    size_t _bytesSent = 0;
+    size_t _bytesReceived = 0;
 };
 typedef std::shared_ptr<HttpClientImpl> HttpClientImplPtr;
 }  // namespace drogon
