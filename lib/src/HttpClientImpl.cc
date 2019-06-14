@@ -319,6 +319,7 @@ void HttpClientImpl::sendReq(const trantor::TcpConnectionPtr &connPtr,
     implPtr->appendToBuffer(&buffer);
     LOG_TRACE << "Send request:"
               << std::string(buffer.peek(), buffer.readableBytes());
+    _bytesSent += buffer.readableBytes();
     connPtr->send(std::move(buffer));
 }
 
@@ -329,12 +330,14 @@ void HttpClientImpl::onRecvMessage(const trantor::TcpConnectionPtr &connPtr,
         any_cast<HttpResponseParser>(connPtr->getMutableContext());
 
     // LOG_TRACE << "###:" << msg->readableBytes();
+    auto msgSize = msg->readableBytes();
     while (msg->readableBytes() > 0)
     {
         if (!responseParser->parseResponse(msg))
         {
             assert(!_pipeliningCallbacks.empty());
             onError(ReqResult::BadResponse);
+            _bytesReceived += (msgSize - msg->readableBytes());
             return;
         }
         if (responseParser->gotAll())
@@ -354,6 +357,8 @@ void HttpClientImpl::onRecvMessage(const trantor::TcpConnectionPtr &connPtr,
             auto cb = std::move(_pipeliningCallbacks.front());
             _pipeliningCallbacks.pop();
             handleCookies(resp);
+            _bytesReceived += (msgSize - msg->readableBytes());
+            msgSize = msg->readableBytes();
             cb(ReqResult::Ok, resp);
 
             // LOG_TRACE << "pipelining buffer size=" <<
