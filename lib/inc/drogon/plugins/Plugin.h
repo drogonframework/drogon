@@ -117,7 +117,7 @@ struct IsPlugin
         return 0;
     }
     static constexpr bool value =
-        (sizeof(test((TYPE *)nullptr)) == sizeof(int));
+        (sizeof(test((TYPE *)nullptr)) == sizeof(char));
 };
 
 template <typename T>
