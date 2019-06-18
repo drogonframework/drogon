@@ -36,6 +36,8 @@ class WebSocketConnection
   public:
     WebSocketConnection() = default;
     virtual ~WebSocketConnection(){};
+
+    /// Send a message to the peer
     virtual void send(
         const char *msg,
         uint64_t len,
@@ -44,20 +46,30 @@ class WebSocketConnection
         const std::string &msg,
         const WebSocketMessageType &type = WebSocketMessageType::Text) = 0;
 
+    /// Return the local IP address and port number of the connection
     virtual const trantor::InetAddress &localAddr() const = 0;
+    /// Return the remote IP address and port number of the connection
     virtual const trantor::InetAddress &peerAddr() const = 0;
 
+    /// Return true if the connection is open
     virtual bool connected() const = 0;
+    /// Return true if the connection is closed
     virtual bool disconnected() const = 0;
 
-    virtual void shutdown() = 0;    // close write
-    virtual void forceClose() = 0;  // close
+    /// Shut down the write direction, which means that further send operations
+    /// are disabled.
+    virtual void shutdown() = 0;
+    /// Close the connection
+    virtual void forceClose() = 0;
 
+    /// Set custom data on the connection
     virtual void setContext(const any &context) = 0;
+
+    /// Get custom data from the connection
     virtual const any &getContext() const = 0;
     virtual any *getMutableContext() = 0;
 
-    /// Set the heartbeat(ping) message sent to the server.
+    /// Set the heartbeat(ping) message sent to the peer.
     /**
      * NOTE:
      * Both the server and the client in Drogon automatically send the pong
