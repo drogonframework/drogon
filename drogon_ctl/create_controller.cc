@@ -22,7 +22,7 @@ using namespace drogon_ctl;
 
 void create_controller::handleCommand(std::vector<std::string> &parameters)
 {
-    //std::cout<<"create!"<<std::endl;
+    // std::cout<<"create!"<<std::endl;
     ControllerType type = Simple;
     for (auto iter = parameters.begin(); iter != parameters.end(); iter++)
     {
@@ -55,7 +55,9 @@ void create_controller::handleCommand(std::vector<std::string> &parameters)
     createController(parameters, type);
 }
 
-void create_controller::newSimpleControllerHeaderFile(std::ofstream &file, const std::string &className)
+void create_controller::newSimpleControllerHeaderFile(
+    std::ofstream &file,
+    const std::string &className)
 {
     file << "#pragma once\n";
     file << "#include <drogon/HttpSimpleController.h>\n";
@@ -74,14 +76,21 @@ void create_controller::newSimpleControllerHeaderFile(std::ofstream &file, const
         indent.append("    ");
         pos = class_name.find("::");
     }
-    file << indent << "class " << class_name << ":public drogon::HttpSimpleController<" << class_name << ">\n";
+    file << indent << "class " << class_name
+         << ":public drogon::HttpSimpleController<" << class_name << ">\n";
     file << indent << "{\n";
     file << indent << "public:\n";
-    file << indent << "    virtual void asyncHandleHttpRequest(const HttpRequestPtr& req, std::function<void (const HttpResponsePtr &)> &&callback) override;\n";
+    file << indent
+         << "    virtual void asyncHandleHttpRequest(const HttpRequestPtr& "
+            "req, std::function<void (const HttpResponsePtr &)> &&callback) "
+            "override;\n";
 
     file << indent << "    PATH_LIST_BEGIN\n";
     file << indent << "    //list path definitions here;\n";
-    file << indent << "    //PATH_ADD(\"/path\",\"filter1\",\"filter2\",HttpMethod1,HttpMethod2...);\n";
+    file << indent
+         << "    "
+            "//PATH_ADD(\"/"
+            "path\",\"filter1\",\"filter2\",HttpMethod1,HttpMethod2...);\n";
     file << indent << "    PATH_LIST_END\n";
     file << indent << "};\n";
     if (indent == "")
@@ -92,7 +101,10 @@ void create_controller::newSimpleControllerHeaderFile(std::ofstream &file, const
         file << indent << "}\n";
     } while (indent != "");
 }
-void create_controller::newSimpleControllerSourceFile(std::ofstream &file, const std::string &className, const std::string &filename)
+void create_controller::newSimpleControllerSourceFile(
+    std::ofstream &file,
+    const std::string &className,
+    const std::string &filename)
 {
     file << "#include \"" << filename << ".h\"\n";
     auto pos = className.rfind("::");
@@ -103,13 +115,17 @@ void create_controller::newSimpleControllerSourceFile(std::ofstream &file, const
         file << "using namespace " << namespacename << ";\n";
         class_name = className.substr(pos + 2);
     }
-    file << "void " << class_name << "::asyncHandleHttpRequest(const HttpRequestPtr& req, std::function<void (const HttpResponsePtr &)> &&callback)\n";
+    file << "void " << class_name
+         << "::asyncHandleHttpRequest(const HttpRequestPtr& req, "
+            "std::function<void (const HttpResponsePtr &)> &&callback)\n";
     file << "{\n";
     file << "    //write your application logic here\n";
     file << "}";
 }
 
-void create_controller::newWebsockControllerHeaderFile(std::ofstream &file, const std::string &className)
+void create_controller::newWebsockControllerHeaderFile(
+    std::ofstream &file,
+    const std::string &className)
 {
     file << "#pragma once\n";
     file << "#include <drogon/WebSocketController.h>\n";
@@ -128,18 +144,29 @@ void create_controller::newWebsockControllerHeaderFile(std::ofstream &file, cons
         indent.append("    ");
         pos = class_name.find("::");
     }
-    file << indent << "class " << class_name << ":public drogon::WebSocketController<" << class_name << ">\n";
+    file << indent << "class " << class_name
+         << ":public drogon::WebSocketController<" << class_name << ">\n";
     file << indent << "{\n";
     file << indent << "public:\n";
-    file << indent << "    virtual void handleNewMessage(const WebSocketConnectionPtr&,\n";
+    file
+        << indent
+        << "    virtual void handleNewMessage(const WebSocketConnectionPtr&,\n";
     file << indent << "                                  std::string &&,\n";
-    file << indent << "                                  const WebSocketMessageType &) override;\n";
-    file << indent << "    virtual void handleNewConnection(const HttpRequestPtr &,\n";
-    file << indent << "                                     const WebSocketConnectionPtr&)override;\n";
-    file << indent << "    virtual void handleConnectionClosed(const WebSocketConnectionPtr&)override;\n";
+    file << indent
+         << "                                  const WebSocketMessageType &) "
+            "override;\n";
+    file << indent
+         << "    virtual void handleNewConnection(const HttpRequestPtr &,\n";
+    file << indent
+         << "                                     const "
+            "WebSocketConnectionPtr&)override;\n";
+    file << indent
+         << "    virtual void handleConnectionClosed(const "
+            "WebSocketConnectionPtr&)override;\n";
     file << indent << "    WS_PATH_LIST_BEGIN\n";
     file << indent << "    //list path definitions here;\n";
-    file << indent << "    //WS_PATH_ADD(\"/path\",\"filter1\",\"filter2\",...);\n";
+    file << indent
+         << "    //WS_PATH_ADD(\"/path\",\"filter1\",\"filter2\",...);\n";
     file << indent << "    WS_PATH_LIST_END\n";
     file << indent << "};\n";
     if (indent == "")
@@ -150,7 +177,10 @@ void create_controller::newWebsockControllerHeaderFile(std::ofstream &file, cons
         file << indent << "}\n";
     } while (indent != "");
 }
-void create_controller::newWebsockControllerSourceFile(std::ofstream &file, const std::string &className, const std::string &filename)
+void create_controller::newWebsockControllerSourceFile(
+    std::ofstream &file,
+    const std::string &className,
+    const std::string &filename)
 {
     file << "#include \"" << filename << ".h\"\n";
     auto pos = className.rfind("::");
@@ -161,21 +191,29 @@ void create_controller::newWebsockControllerSourceFile(std::ofstream &file, cons
         file << "using namespace " << namespacename << ";\n";
         class_name = className.substr(pos + 2);
     }
-    file << "void " << class_name << "::handleNewMessage(const WebSocketConnectionPtr& wsConnPtr, std::string &&message, const WebSocketMessageType &type)\n";
+    file << "void " << class_name
+         << "::handleNewMessage(const WebSocketConnectionPtr& wsConnPtr, "
+            "std::string &&message, const WebSocketMessageType &type)\n";
     file << "{\n";
     file << "    //write your application logic here\n";
     file << "}\n";
-    file << "void " << class_name << "::handleNewConnection(const HttpRequestPtr &req,const WebSocketConnectionPtr& wsConnPtr)\n";
+    file << "void " << class_name
+         << "::handleNewConnection(const HttpRequestPtr &req,const "
+            "WebSocketConnectionPtr& wsConnPtr)\n";
     file << "{\n";
     file << "    //write your application logic here\n";
     file << "}\n";
-    file << "void " << class_name << "::handleConnectionClosed(const WebSocketConnectionPtr& wsConnPtr)\n";
+    file << "void " << class_name
+         << "::handleConnectionClosed(const WebSocketConnectionPtr& "
+            "wsConnPtr)\n";
     file << "{\n";
     file << "    //write your application logic here\n";
     file << "}\n";
 }
 
-void create_controller::newHttpControllerHeaderFile(std::ofstream &file, const std::string &className)
+void create_controller::newHttpControllerHeaderFile(
+    std::ofstream &file,
+    const std::string &className)
 {
     file << "#pragma once\n";
     file << "#include <drogon/HttpController.h>\n";
@@ -194,28 +232,38 @@ void create_controller::newHttpControllerHeaderFile(std::ofstream &file, const s
         indent.append("    ");
         pos = class_name.find("::");
     }
-    file << indent << "class " << class_name << ":public drogon::HttpController<" << class_name << ">\n";
+    file << indent << "class " << class_name
+         << ":public drogon::HttpController<" << class_name << ">\n";
     file << indent << "{\n";
     file << indent << "public:\n";
     indent.append("    ");
     file << indent << "METHOD_LIST_BEGIN\n";
-    file << indent << "//use METHOD_ADD to add your custom processing function here;\n";
-    file << indent << "//METHOD_ADD(" << class_name << "::get,\"/get/{2}/{1}\",Get);"
-                                                       "//path is "
+    file << indent
+         << "//use METHOD_ADD to add your custom processing function here;\n";
+    file << indent << "//METHOD_ADD(" << class_name
+         << "::get,\"/get/{2}/{1}\",Get);"
+            "//path is "
          << namepace_path << class_name << "/get/{arg2}/{arg1}\n";
-    file << indent << "//METHOD_ADD(" << class_name << "::your_method_name,\"/{1}/{2}/list\",Get);"
-                                                       "//path is "
+    file << indent << "//METHOD_ADD(" << class_name
+         << "::your_method_name,\"/{1}/{2}/list\",Get);"
+            "//path is "
          << namepace_path << class_name << "/{arg1}/{arg2}/list\n";
-    file << indent << "//ADD_METHOD_TO(" << class_name << "::your_method_name,\"/absolute/path/{1}/{2}/list\",Get);"
-                                                          "//path is "
+    file << indent << "//ADD_METHOD_TO(" << class_name
+         << "::your_method_name,\"/absolute/path/{1}/{2}/list\",Get);"
+            "//path is "
          << namepace_path << "/absolute/path/{arg1}/{arg2}/list\n";
     file << indent << "\n";
     file << indent << "METHOD_LIST_END\n";
-    file << indent << "//your declaration of processing function maybe like this:\n";
-    file << indent << "//void get(const HttpRequestPtr& req,"
-                      "std::function<void (const HttpResponsePtr &)> &&callback,int p1,std::string p2);\n";
-    file << indent << "//void your_method_name(const HttpRequestPtr& req,"
-                      "std::function<void (const HttpResponsePtr &)> &&callback,double p1,int p2) const;\n";
+    file << indent
+         << "//your declaration of processing function maybe like this:\n";
+    file << indent
+         << "//void get(const HttpRequestPtr& req,"
+            "std::function<void (const HttpResponsePtr &)> &&callback,int "
+            "p1,std::string p2);\n";
+    file << indent
+         << "//void your_method_name(const HttpRequestPtr& req,"
+            "std::function<void (const HttpResponsePtr &)> &&callback,double "
+            "p1,int p2) const;\n";
     indent.resize(indent.length() - 4);
     file << indent << "};\n";
     if (indent == "")
@@ -226,7 +274,10 @@ void create_controller::newHttpControllerHeaderFile(std::ofstream &file, const s
         file << indent << "}\n";
     } while (indent != "");
 }
-void create_controller::newHttpControllerSourceFile(std::ofstream &file, const std::string &className, const std::string &filename)
+void create_controller::newHttpControllerSourceFile(
+    std::ofstream &file,
+    const std::string &className,
+    const std::string &filename)
 {
     file << "#include \"" << filename << ".h\"\n";
     auto pos = className.rfind("::");
@@ -241,7 +292,8 @@ void create_controller::newHttpControllerSourceFile(std::ofstream &file, const s
     file << "//add definition of your processing function here\n";
 }
 
-void create_controller::createController(std::vector<std::string> &httpClasses, ControllerType type)
+void create_controller::createController(std::vector<std::string> &httpClasses,
+                                         ControllerType type)
 {
     for (auto iter = httpClasses.begin(); iter != httpClasses.end(); iter++)
     {
@@ -257,10 +309,12 @@ void create_controller::createController(std::vector<std::string> &httpClasses, 
     }
 }
 
-void create_controller::createController(const std::string &className, ControllerType type)
+void create_controller::createController(const std::string &className,
+                                         ControllerType type)
 {
     std::regex regex("::");
-    std::string ctlName = std::regex_replace(className, regex, std::string("_"));
+    std::string ctlName =
+        std::regex_replace(className, regex, std::string("_"));
 
     std::string headFileName = ctlName + ".h";
     std::string sourceFilename = ctlName + ".cc";
@@ -270,9 +324,11 @@ void create_controller::createController(const std::string &className, Controlle
 
         if (iHeadFile || iSourceFile)
         {
-            std::cout << "The file you want to create already exists, overwrite it(y/n)?" << std::endl;
+            std::cout << "The file you want to create already exists, "
+                         "overwrite it(y/n)?"
+                      << std::endl;
             auto in = getchar();
-            (void)getchar(); //get the return key
+            (void)getchar();  // get the return key
             if (in != 'Y' && in != 'y')
             {
                 std::cout << "Abort!" << std::endl;
@@ -295,7 +351,8 @@ void create_controller::createController(const std::string &className, Controlle
     }
     else if (type == Simple)
     {
-        std::cout << "create a http simple controller:" << className << std::endl;
+        std::cout << "create a http simple controller:" << className
+                  << std::endl;
         newSimpleControllerHeaderFile(oHeadFile, className);
         newSimpleControllerSourceFile(oSourceFile, className, ctlName);
     }

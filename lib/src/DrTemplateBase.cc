@@ -2,7 +2,7 @@
  *
  *  DrTemplateBase.cc
  *  An Tao
- *  
+ *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
  *  Use of this source code is governed by a MIT license
@@ -12,14 +12,15 @@
  *
  */
 
-#include <drogon/DrTemplateBase.h>
 #include <drogon/DrClassMap.h>
-#include <trantor/utils/Logger.h>
+#include <drogon/DrTemplateBase.h>
 #include <memory>
+#include <trantor/utils/Logger.h>
 
 using namespace drogon;
 
-std::shared_ptr<DrTemplateBase> DrTemplateBase::newTemplate(std::string templateName)
+std::shared_ptr<DrTemplateBase> DrTemplateBase::newTemplate(
+    std::string templateName)
 {
     LOG_TRACE << "http view name=" << templateName;
     auto pos = templateName.find(".csp");
@@ -30,7 +31,8 @@ std::shared_ptr<DrTemplateBase> DrTemplateBase::newTemplate(std::string template
             templateName = templateName.substr(0, pos);
         }
     }
-    auto obj = std::shared_ptr<DrObjectBase>(drogon::DrClassMap::newObject(templateName));
+    auto obj = std::shared_ptr<DrObjectBase>(
+        drogon::DrClassMap::newObject(templateName));
     if (obj)
     {
         return std::dynamic_pointer_cast<DrTemplateBase>(obj);

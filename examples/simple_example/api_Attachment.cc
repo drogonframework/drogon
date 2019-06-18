@@ -2,7 +2,7 @@
 #include <fstream>
 
 using namespace api;
-//add definition of your processing function here
+// add definition of your processing function here
 void Attachment::get(const HttpRequestPtr &req,
                      std::function<void(const HttpResponsePtr &)> &&callback)
 {
@@ -16,18 +16,14 @@ void Attachment::upload(const HttpRequestPtr &req,
     MultiPartParser fileUpload;
     if (fileUpload.parse(req) == 0)
     {
-        //LOG_DEBUG << "upload good!";
+        // LOG_DEBUG << "upload good!";
         auto files = fileUpload.getFiles();
-        //LOG_DEBUG << "file num=" << files.size();
+        // LOG_DEBUG << "file num=" << files.size();
         for (auto const &file : files)
         {
-            LOG_DEBUG << "file:"
-                      << file.getFileName()
-                      << "(len="
-                      << file.fileLength()
-                      << ",md5="
-                      << file.getMd5()
-                      << ")";
+            LOG_DEBUG << "file:" << file.getFileName()
+                      << "(len=" << file.fileLength()
+                      << ",md5=" << file.getMd5() << ")";
             file.save();
             file.save("123");
             file.saveAs("456/hehe");
@@ -47,15 +43,16 @@ void Attachment::upload(const HttpRequestPtr &req,
         return;
     }
     LOG_DEBUG << "upload error!";
-    //LOG_DEBUG<<req->con
+    // LOG_DEBUG<<req->con
     Json::Value json;
     json["result"] = "failed";
     auto resp = HttpResponse::newHttpJsonResponse(json);
     callback(resp);
 }
 
-void Attachment::download(const HttpRequestPtr &req,
-                          std::function<void(const HttpResponsePtr &)> &&callback)
+void Attachment::download(
+    const HttpRequestPtr &req,
+    std::function<void(const HttpResponsePtr &)> &&callback)
 {
     auto resp = HttpResponse::newFileResponse("./drogon.jpg", "", CT_IMAGE_JPG);
     callback(resp);

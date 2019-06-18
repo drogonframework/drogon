@@ -16,17 +16,17 @@
 
 #include <drogon/DrObject.h>
 #include <drogon/HttpAppFramework.h>
-#include <trantor/utils/Logger.h>
-#include <string>
-#include <vector>
 #include <iostream>
+#include <string>
+#include <trantor/utils/Logger.h>
+#include <vector>
 
-/// For more details on the class, see the wiki site (the 'HttpController' section)
+/// For more details on the class, see the wiki site (the 'HttpController'
+/// section)
 
 #define METHOD_LIST_BEGIN         \
     static void initPathRouting() \
     {
-
 #define METHOD_ADD(method, pattern, filters...) \
     registerMethod(&method, pattern, {filters}, true, #method)
 
@@ -39,7 +39,6 @@
 
 namespace drogon
 {
-
 class HttpControllerBase
 {
 };
@@ -51,48 +50,49 @@ class HttpController : public DrObject<T>, public HttpControllerBase
     static const bool isAutoCreation = AutoCreation;
 
   protected:
-      template <typename FUNCTION>
-      static void registerMethod(FUNCTION &&function,
-                                 const std::string &pattern,
-                                 const std::vector<any> &filtersAndMethods = std::vector<any>(),
-                                 bool classNameInPath = true,
-                                 const std::string &handlerName = "")
-      {
-          if (classNameInPath)
-          {
-              std::string path = "/";
-              path.append(HttpController<T>::classTypeName());
-              LOG_TRACE << "classname:" << HttpController<T>::classTypeName();
+    template <typename FUNCTION>
+    static void registerMethod(
+        FUNCTION &&function,
+        const std::string &pattern,
+        const std::vector<any> &filtersAndMethods = std::vector<any>(),
+        bool classNameInPath = true,
+        const std::string &handlerName = "")
+    {
+        if (classNameInPath)
+        {
+            std::string path = "/";
+            path.append(HttpController<T>::classTypeName());
+            LOG_TRACE << "classname:" << HttpController<T>::classTypeName();
 
-              //transform(path.begin(), path.end(), path.begin(), tolower);
-              std::string::size_type pos;
-              while ((pos = path.find("::")) != std::string::npos)
-              {
-                  path.replace(pos, 2, "/");
-              }
-              if (pattern.empty() || pattern[0] == '/')
-                  app().registerHandler(path + pattern,
-                                        std::forward<FUNCTION>(function),
-                                        filtersAndMethods,
-                                        handlerName);
-              else
-                  app().registerHandler(path + "/" + pattern,
-                                        std::forward<FUNCTION>(function),
-                                        filtersAndMethods,
-                                        handlerName);
-          }
-          else
-          {
-              std::string path = pattern;
-              if (path.empty() || path[0] != '/')
-              {
-                  path = "/" + path;
-              }
-              app().registerHandler(path,
-                                    std::forward<FUNCTION>(function),
-                                    filtersAndMethods,
-                                    handlerName);
-          }
+            // transform(path.begin(), path.end(), path.begin(), tolower);
+            std::string::size_type pos;
+            while ((pos = path.find("::")) != std::string::npos)
+            {
+                path.replace(pos, 2, "/");
+            }
+            if (pattern.empty() || pattern[0] == '/')
+                app().registerHandler(path + pattern,
+                                      std::forward<FUNCTION>(function),
+                                      filtersAndMethods,
+                                      handlerName);
+            else
+                app().registerHandler(path + "/" + pattern,
+                                      std::forward<FUNCTION>(function),
+                                      filtersAndMethods,
+                                      handlerName);
+        }
+        else
+        {
+            std::string path = pattern;
+            if (path.empty() || path[0] != '/')
+            {
+                path = "/" + path;
+            }
+            app().registerHandler(path,
+                                  std::forward<FUNCTION>(function),
+                                  filtersAndMethods,
+                                  handlerName);
+        }
     }
 
   private:
@@ -105,7 +105,8 @@ class HttpController : public DrObject<T>, public HttpControllerBase
                 T::initPathRouting();
         }
     };
-    //use static value to register controller method in framework before main();
+    // use static value to register controller method in framework before
+    // main();
     static methodRegister _register;
     virtual void *touch()
     {
@@ -113,5 +114,6 @@ class HttpController : public DrObject<T>, public HttpControllerBase
     }
 };
 template <typename T, bool AutoCreation>
-typename HttpController<T, AutoCreation>::methodRegister HttpController<T, AutoCreation>::_register;
-} // namespace drogon
+typename HttpController<T, AutoCreation>::methodRegister
+    HttpController<T, AutoCreation>::_register;
+}  // namespace drogon

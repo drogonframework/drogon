@@ -1,11 +1,11 @@
 #include <drogon/CacheMap.h>
-#include <trantor/utils/Logger.h>
-#include <trantor/net/EventLoopThread.h>
 #include <drogon/utils/Utilities.h>
-#include <unistd.h>
+#include <iostream>
 #include <string>
 #include <thread>
-#include <iostream>
+#include <trantor/net/EventLoopThread.h>
+#include <trantor/utils/Logger.h>
+#include <unistd.h>
 
 int main()
 {
@@ -13,13 +13,19 @@ int main()
     trantor::EventLoopThread loopThread;
     loopThread.run();
 
-    drogon::CacheMap<std::string, std::string> cache(loopThread.getLoop(), 0.1, 4, 30);
+    drogon::CacheMap<std::string, std::string> cache(loopThread.getLoop(),
+                                                     0.1,
+                                                     4,
+                                                     30);
     sleep(3);
     for (int i = 0; i < 40; i++)
     {
-        cache.insert(drogon::utils::formattedString("aaa%d", i), "hehe", i, [=]() {
-            std::cout << i << " cache item erased!" << std::endl;
-        });
+        cache.insert(drogon::utils::formattedString("aaa%d", i),
+                     "hehe",
+                     i,
+                     [=]() {
+                         std::cout << i << " cache item erased!" << std::endl;
+                     });
     }
     cache.insert("1", "first", 20, [=] {
         LOG_DEBUG << "first item in cache timeout,erase!";

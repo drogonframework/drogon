@@ -14,11 +14,11 @@ void CustomHeaderFilter::doFilter(const HttpRequestPtr &req,
 {
     if (req->getHeader(_field) == _value)
     {
-        //Passed
+        // Passed
         fccb();
         return;
     }
-    //Check failed
+    // Check failed
     auto res = drogon::HttpResponse::newHttpResponse();
     res->setStatusCode(k500InternalServerError);
     fcb(res);

@@ -8,7 +8,6 @@ int main()
         drogon::app().getLoop()->runEvery(1, []() {
             std::cout << "!" << std::endl;
         });
-    })
-        .detach();
+    }).detach();
     drogon::app().run();
 }

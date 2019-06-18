@@ -14,32 +14,33 @@
 
 #pragma once
 
-#include <trantor/net/EventLoop.h>
-#include <trantor/utils/Logger.h>
+#include <assert.h>
+#include <atomic>
+#include <deque>
 #include <map>
 #include <mutex>
-#include <deque>
-#include <vector>
 #include <set>
+#include <trantor/net/EventLoop.h>
+#include <trantor/utils/Logger.h>
 #include <unordered_map>
 #include <unordered_set>
-#include <atomic>
-#include <assert.h>
+#include <vector>
 
 #define WHEELS_NUM 4
 #define BUCKET_NUM_PER_WHEEL 200
 #define TICK_INTERVAL 1.0
 
-//Four wheels with 200 buckets per wheel means the cache map can work with
-//a timeout up to 200^4 seconds,about 50 years;
+// Four wheels with 200 buckets per wheel means the cache map can work with
+// a timeout up to 200^4 seconds,about 50 years;
 
 namespace drogon
 {
-
 class CallbackEntry
 {
   public:
-    CallbackEntry(std::function<void()> cb) : cb_(std::move(cb)) {}
+    CallbackEntry(std::function<void()> cb) : cb_(std::move(cb))
+    {
+    }
     ~CallbackEntry()
     {
         cb_();
@@ -61,15 +62,16 @@ class CacheMap
   public:
     /// constructor
     /**
-     *  @param loop
-     *  eventloop pointer
-     *  @param tickInterval
-     *  second
-     *  @param wheelsNum
-     *  number of wheels
-     *  @param bucketsNumPerWheel
-     *  buckets number per wheel
-     *  The max delay of the CacheMap is about tickInterval*(bucketsNumPerWheel^wheelsNum) seconds.
+     * @param loop
+     * eventloop pointer
+     * @param tickInterval
+     * second
+     * @param wheelsNum
+     * number of wheels
+     * @param bucketsNumPerWheel
+     * buckets number per wheel
+     * The max delay of the CacheMap is about
+     * tickInterval*(bucketsNumPerWheel^wheelsNum) seconds.
      */
     CacheMap(trantor::EventLoop *loop,
              float tickInterval = TICK_INTERVAL,
@@ -85,9 +87,7 @@ class CacheMap
         {
             _wheels[i].resize(_bucketsNumPerWheel);
         }
-        if (_tickInterval > 0 &&
-            _wheelsNum > 0 &&
-            _bucketsNumPerWheel > 0)
+        if (_tickInterval > 0 && _wheelsNum > 0 && _bucketsNumPerWheel > 0)
         {
             _timerId = _loop->runEvery(_tickInterval, [=]() {
                 _ticksCounter++;
@@ -100,7 +100,8 @@ class CacheMap
                         CallbackBucket tmp;
                         {
                             std::lock_guard<std::mutex> lock(bucketMutex_);
-                            //use tmp val to make this critical area as short as possible.
+                            // use tmp val to make this critical area as short
+                            // as possible.
                             _wheels[i].front().swap(tmp);
                             _wheels[i].pop_front();
                             _wheels[i].push_back(CallbackBucket());
@@ -143,7 +144,10 @@ class CacheMap
      * If timeout>0,the value will be erased
      * within the 'timeout' seconds after the last access
      */
-    void insert(const T1 &key, T2 &&value, size_t timeout = 0, std::function<void()> timeoutCallback = std::function<void()>())
+    void insert(const T1 &key,
+                T2 &&value,
+                size_t timeout = 0,
+                std::function<void()> timeoutCallback = std::function<void()>())
     {
         if (timeout > 0)
         {
@@ -167,7 +171,10 @@ class CacheMap
         }
     }
 
-    void insert(const T1 &key, const T2 &value, size_t timeout = 0, std::function<void()> timeoutCallback = std::function<void()>())
+    void insert(const T1 &key,
+                const T2 &value,
+                size_t timeout = 0,
+                std::function<void()> timeoutCallback = std::function<void()>())
     {
         if (timeout > 0)
         {
@@ -231,7 +238,7 @@ class CacheMap
     /// Atomically find and get the value of a keyword
     /**
      * Return true when the value is found, and the value
-     * is assigned to the @param value 
+     * is assigned to the @param value
      */
     bool findAndFetch(const T1 &key, T2 &value)
     {
@@ -255,7 +262,7 @@ class CacheMap
     /// Erases the value of the keyword.
     void erase(const T1 &key)
     {
-        //in this case,we don't evoke the timeout callback;
+        // in this case,we don't evoke the timeout callback;
         std::lock_guard<std::mutex> lock(mtx_);
         _map.erase(key);
     }
@@ -280,7 +287,7 @@ class CacheMap
 
     void insertEntry(size_t delay, CallbackEntryPtr entryPtr)
     {
-        //protected by bucketMutex;
+        // protected by bucketMutex;
         if (delay <= 0)
             return;
         delay = delay / _tickInterval + 1;
@@ -298,16 +305,19 @@ class CacheMap
                     if (delay > 0)
                     {
                         std::lock_guard<std::mutex> lock(bucketMutex_);
-                        _wheels[i][(delay + (t % _bucketsNumPerWheel) - 1) % _bucketsNumPerWheel].insert(entryPtr);
+                        _wheels[i][(delay + (t % _bucketsNumPerWheel) - 1) %
+                                   _bucketsNumPerWheel]
+                            .insert(entryPtr);
                     }
                 });
             }
             else
             {
-                //delay is too long to put entry at valid position in wheels;
+                // delay is too long to put entry at valid position in wheels;
                 _wheels[i][_bucketsNumPerWheel - 1].insert(entryPtr);
             }
-            delay = (delay + (t % _bucketsNumPerWheel) - 1) / _bucketsNumPerWheel;
+            delay =
+                (delay + (t % _bucketsNumPerWheel) - 1) / _bucketsNumPerWheel;
             t = t / _bucketsNumPerWheel;
         }
     }
@@ -337,9 +347,8 @@ class CacheMap
                 {
                     auto &value = _map[key];
                     auto entryPtr = value._weakEntryPtr.lock();
-                    //entryPtr is used to avoid race conditions
-                    if (value.timeout > 0 &&
-                        !entryPtr)
+                    // entryPtr is used to avoid race conditions
+                    if (value.timeout > 0 && !entryPtr)
                     {
                         if (value._timeoutCallback)
                         {
@@ -361,4 +370,4 @@ class CacheMap
     }
 };
 
-} // namespace drogon
+}  // namespace drogon

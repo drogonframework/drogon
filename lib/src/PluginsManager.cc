@@ -2,7 +2,7 @@
  *
  *  PluginsManager.cc
  *  An Tao
- *  
+ *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
  *  Use of this source code is governed by a MIT license
@@ -20,14 +20,17 @@ using namespace drogon;
 PluginsManager::~PluginsManager()
 {
     // Shut down all plugins in reverse order of initializaiton.
-    for (auto iter = _initializedPlugins.rbegin(); iter != _initializedPlugins.rend(); iter++)
+    for (auto iter = _initializedPlugins.rbegin();
+         iter != _initializedPlugins.rend();
+         iter++)
     {
         (*iter)->shutdown();
     }
 }
 
-void PluginsManager::initializeAllPlugins(const Json::Value &configs,
-                                          const std::function<void(PluginBase *)> &forEachCallback)
+void PluginsManager::initializeAllPlugins(
+    const Json::Value &configs,
+    const std::function<void(PluginBase *)> &forEachCallback)
 {
     assert(configs.isArray());
     std::vector<PluginBase *> plugins;
@@ -43,11 +46,10 @@ void PluginsManager::initializeAllPlugins(const Json::Value &configs,
         auto configuration = config["config"];
         auto dependencies = config["dependencies"];
         pluginPtr->setConfig(configuration);
-        std::vector<std::string> depsNames;
         assert(dependencies.isArray() || dependencies.isNull());
         if (dependencies.isArray())
         {
-            //Is not null and is an array
+            // Is not null and is an array
             for (auto &depName : dependencies)
             {
                 auto *dp = getPlugin(depName.asString());
@@ -57,7 +59,8 @@ void PluginsManager::initializeAllPlugins(const Json::Value &configs,
                 }
                 else
                 {
-                    LOG_FATAL << "Plugin " << depName.asString() << " not defined";
+                    LOG_FATAL << "Plugin " << depName.asString()
+                              << " not defined";
                     abort();
                 }
             }
@@ -68,7 +71,7 @@ void PluginsManager::initializeAllPlugins(const Json::Value &configs,
         });
         plugins.push_back(pluginPtr);
     }
-    //Initialize them, Depth first
+    // Initialize them, Depth first
     for (auto plugin : plugins)
     {
         plugin->initialize();

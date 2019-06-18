@@ -2,7 +2,7 @@
  *
  *  Cookie.cc
  *  An Tao
- *  
+ *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
  *  Use of this source code is governed by a MIT license
@@ -21,7 +21,9 @@ std::string Cookie::cookieString() const
     ret.append(_key).append("= ").append(_value).append("; ");
     if (_expiresDate.microSecondsSinceEpoch() > 0)
     {
-        ret.append("Expires= ").append(utils::getHttpFullDate(_expiresDate)).append("; ");
+        ret.append("Expires= ")
+            .append(utils::getHttpFullDate(_expiresDate))
+            .append("; ");
     }
     if (!_domain.empty())
     {
@@ -39,7 +41,7 @@ std::string Cookie::cookieString() const
     {
         ret.append("HttpOnly; ");
     }
-    ret.resize(ret.length() - 2); //delete last semicolon
+    ret.resize(ret.length() - 2);  // delete last semicolon
     ret.append("\r\n");
     return ret;
 }

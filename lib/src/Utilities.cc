@@ -2,7 +2,7 @@
  *
  *  Utilities.cc
  *  An Tao
- *  
+ *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
  *  Use of this source code is governed by a MIT license
@@ -12,31 +12,30 @@
  *
  */
 
-#include <drogon/utils/Utilities.h>
-#include <drogon/config.h>
-#include <trantor/utils/Logger.h>
-#include <string.h>
-#include <zlib.h>
-#include <uuid.h>
-#include <stdio.h>
-#include <stdarg.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <thread>
-#include <mutex>
-#include <cstdlib>
-#include <stack>
 #include <cctype>
+#include <cstdlib>
+#include <drogon/config.h>
+#include <drogon/utils/Utilities.h>
+#include <fcntl.h>
 #include <iomanip>
+#include <mutex>
 #include <sstream>
+#include <stack>
+#include <stdarg.h>
+#include <stdio.h>
+#include <string.h>
 #include <string>
+#include <sys/stat.h>
+#include <thread>
+#include <trantor/utils/Logger.h>
+#include <unistd.h>
+#include <uuid.h>
+#include <zlib.h>
 
 namespace drogon
 {
 namespace utils
 {
-
 static const std::string base64Chars =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
     "abcdefghijklmnopqrstuvwxyz"
@@ -59,13 +58,12 @@ bool isInteger(const std::string &str)
 
 std::string genRandomString(int length)
 {
-    static const char char_space[] = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    static const char char_space[] =
+        "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
     static std::once_flag once;
     static const int len = strlen(char_space);
     static const int randMax = RAND_MAX - (RAND_MAX % len);
-    std::call_once(once, []() {
-        std::srand(time(nullptr));
-    });
+    std::call_once(once, []() { std::srand(time(nullptr)); });
 
     int i;
     std::string str;
@@ -210,7 +208,8 @@ std::string binaryStringToHex(const unsigned char *ptr, size_t length)
     }
     return idString;
 }
-std::vector<std::string> splitString(const std::string &str, const std::string &separator)
+std::vector<std::string> splitString(const std::string &str,
+                                     const std::string &separator)
 {
     std::vector<std::string> ret;
     std::string::size_type pos1, pos2;
@@ -224,7 +223,8 @@ std::vector<std::string> splitString(const std::string &str, const std::string &
             ret.push_back(item);
         }
         pos2 = pos1 + separator.length();
-        while (pos2 < str.length() && str.substr(pos2, separator.length()) == separator)
+        while (pos2 < str.length() &&
+               str.substr(pos2, separator.length()) == separator)
             pos2 += separator.length();
         pos1 = str.find(separator, pos2);
     }
@@ -239,7 +239,8 @@ std::string getUuid()
     return binaryStringToHex(uu, 16);
 }
 
-std::string base64Encode(const unsigned char *bytes_to_encode, unsigned int in_len)
+std::string base64Encode(const unsigned char *bytes_to_encode,
+                         unsigned int in_len)
 {
     std::string ret;
     int i = 0;
@@ -252,8 +253,10 @@ std::string base64Encode(const unsigned char *bytes_to_encode, unsigned int in_l
         if (i == 3)
         {
             char_array_4[0] = (char_array_3[0] & 0xfc) >> 2;
-            char_array_4[1] = ((char_array_3[0] & 0x03) << 4) + ((char_array_3[1] & 0xf0) >> 4);
-            char_array_4[2] = ((char_array_3[1] & 0x0f) << 2) + ((char_array_3[2] & 0xc0) >> 6);
+            char_array_4[1] = ((char_array_3[0] & 0x03) << 4) +
+                              ((char_array_3[1] & 0xf0) >> 4);
+            char_array_4[2] = ((char_array_3[1] & 0x0f) << 2) +
+                              ((char_array_3[2] & 0xc0) >> 6);
             char_array_4[3] = char_array_3[2] & 0x3f;
 
             for (i = 0; (i < 4); i++)
@@ -268,8 +271,10 @@ std::string base64Encode(const unsigned char *bytes_to_encode, unsigned int in_l
             char_array_3[j] = '\0';
 
         char_array_4[0] = (char_array_3[0] & 0xfc) >> 2;
-        char_array_4[1] = ((char_array_3[0] & 0x03) << 4) + ((char_array_3[1] & 0xf0) >> 4);
-        char_array_4[2] = ((char_array_3[1] & 0x0f) << 2) + ((char_array_3[2] & 0xc0) >> 6);
+        char_array_4[1] =
+            ((char_array_3[0] & 0x03) << 4) + ((char_array_3[1] & 0xf0) >> 4);
+        char_array_4[2] =
+            ((char_array_3[1] & 0x0f) << 2) + ((char_array_3[2] & 0xc0) >> 6);
         char_array_4[3] = char_array_3[2] & 0x3f;
 
         for (int j = 0; (j < i + 1); j++)
@@ -290,7 +295,8 @@ std::string base64Decode(std::string const &encoded_string)
     unsigned char char_array_4[4], char_array_3[3];
     std::string ret;
 
-    while (in_len-- && (encoded_string[in_] != '=') && isBase64(encoded_string[in_]))
+    while (in_len-- && (encoded_string[in_] != '=') &&
+           isBase64(encoded_string[in_]))
     {
         char_array_4[i++] = encoded_string[in_];
         in_++;
@@ -299,8 +305,10 @@ std::string base64Decode(std::string const &encoded_string)
             for (i = 0; i < 4; i++)
                 char_array_4[i] = base64Chars.find(char_array_4[i]);
 
-            char_array_3[0] = (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
-            char_array_3[1] = ((char_array_4[1] & 0xf) << 4) + ((char_array_4[2] & 0x3c) >> 2);
+            char_array_3[0] =
+                (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
+            char_array_3[1] = ((char_array_4[1] & 0xf) << 4) +
+                              ((char_array_4[2] & 0x3c) >> 2);
             char_array_3[2] = ((char_array_4[2] & 0x3) << 6) + char_array_4[3];
 
             for (i = 0; (i < 3); i++)
@@ -317,8 +325,10 @@ std::string base64Decode(std::string const &encoded_string)
         for (int j = 0; j < 4; j++)
             char_array_4[j] = base64Chars.find(char_array_4[j]);
 
-        char_array_3[0] = (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
-        char_array_3[1] = ((char_array_4[1] & 0xf) << 4) + ((char_array_4[2] & 0x3c) >> 2);
+        char_array_3[0] =
+            (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
+        char_array_3[1] =
+            ((char_array_4[1] & 0xf) << 4) + ((char_array_4[2] & 0x3c) >> 2);
         char_array_3[2] = ((char_array_4[2] & 0x3) << 6) + char_array_4[3];
 
         for (int j = 0; (j < i - 1); j++)
@@ -352,94 +362,94 @@ std::string urlEncode(const std::string &src)
     {
         switch (*iter)
         {
-        case ' ':
-            result.append(1, '+');
-            break;
+            case ' ':
+                result.append(1, '+');
+                break;
             // alnum
-        case 'A':
-        case 'B':
-        case 'C':
-        case 'D':
-        case 'E':
-        case 'F':
-        case 'G':
-        case 'H':
-        case 'I':
-        case 'J':
-        case 'K':
-        case 'L':
-        case 'M':
-        case 'N':
-        case 'O':
-        case 'P':
-        case 'Q':
-        case 'R':
-        case 'S':
-        case 'T':
-        case 'U':
-        case 'V':
-        case 'W':
-        case 'X':
-        case 'Y':
-        case 'Z':
-        case 'a':
-        case 'b':
-        case 'c':
-        case 'd':
-        case 'e':
-        case 'f':
-        case 'g':
-        case 'h':
-        case 'i':
-        case 'j':
-        case 'k':
-        case 'l':
-        case 'm':
-        case 'n':
-        case 'o':
-        case 'p':
-        case 'q':
-        case 'r':
-        case 's':
-        case 't':
-        case 'u':
-        case 'v':
-        case 'w':
-        case 'x':
-        case 'y':
-        case 'z':
-        case '0':
-        case '1':
-        case '2':
-        case '3':
-        case '4':
-        case '5':
-        case '6':
-        case '7':
-        case '8':
-        case '9':
+            case 'A':
+            case 'B':
+            case 'C':
+            case 'D':
+            case 'E':
+            case 'F':
+            case 'G':
+            case 'H':
+            case 'I':
+            case 'J':
+            case 'K':
+            case 'L':
+            case 'M':
+            case 'N':
+            case 'O':
+            case 'P':
+            case 'Q':
+            case 'R':
+            case 'S':
+            case 'T':
+            case 'U':
+            case 'V':
+            case 'W':
+            case 'X':
+            case 'Y':
+            case 'Z':
+            case 'a':
+            case 'b':
+            case 'c':
+            case 'd':
+            case 'e':
+            case 'f':
+            case 'g':
+            case 'h':
+            case 'i':
+            case 'j':
+            case 'k':
+            case 'l':
+            case 'm':
+            case 'n':
+            case 'o':
+            case 'p':
+            case 'q':
+            case 'r':
+            case 's':
+            case 't':
+            case 'u':
+            case 'v':
+            case 'w':
+            case 'x':
+            case 'y':
+            case 'z':
+            case '0':
+            case '1':
+            case '2':
+            case '3':
+            case '4':
+            case '5':
+            case '6':
+            case '7':
+            case '8':
+            case '9':
             // mark
-        case '-':
-        case '_':
-        case '.':
-        case '!':
-        case '~':
-        case '*':
-        case '\'':
-        case '(':
-        case ')':
-        case '&':
-        case '=':
-        case '/':
-        case '\\':
-        case '?':
-            result.append(1, *iter);
-            break;
+            case '-':
+            case '_':
+            case '.':
+            case '!':
+            case '~':
+            case '*':
+            case '\'':
+            case '(':
+            case ')':
+            case '&':
+            case '=':
+            case '/':
+            case '\\':
+            case '?':
+                result.append(1, *iter);
+                break;
             // escape
-        default:
-            result.append(1, '%');
-            result.append(charToHex(*iter));
-            break;
+            default:
+                result.append(1, '%');
+                result.append(charToHex(*iter));
+                break;
         }
     }
 
@@ -448,7 +458,14 @@ std::string urlEncode(const std::string &src)
 
 std::string urlDecode(const std::string &szToDecode)
 {
-    return urlDecode(szToDecode.c_str(), szToDecode.c_str() + szToDecode.length());
+    return urlDecode(szToDecode.c_str(),
+                     szToDecode.c_str() + szToDecode.length());
+}
+
+std::string urlDecode(const string_view &szToDecode)
+{
+    return urlDecode(szToDecode.data(),
+                     szToDecode.data() + szToDecode.length());
 }
 
 std::string urlDecode(const char *begin, const char *end)
@@ -461,61 +478,65 @@ std::string urlDecode(const char *begin, const char *end)
     {
         switch (begin[i])
         {
-        case '+':
-            result += ' ';
-            break;
-        case '%':
-            if ((i + 2) < len && isxdigit(begin[i + 1]) && isxdigit(begin[i + 2]))
-            {
-                uint x1 = begin[i + 1];
-                if (x1 >= '0' && x1 <= '9')
+            case '+':
+                result += ' ';
+                break;
+            case '%':
+                if ((i + 2) < len && isxdigit(begin[i + 1]) &&
+                    isxdigit(begin[i + 2]))
                 {
-                    x1 -= '0';
-                }
-                else if (x1 >= 'a' && x1 <= 'f')
-                {
-                    x1 = x1 - 'a' + 10;
-                }
-                else if (x1 >= 'A' && x1 <= 'F')
-                {
-                    x1 = x1 - 'A' + 10;
-                }
-                uint x2 = begin[i + 2];
-                if (x2 >= '0' && x2 <= '9')
-                {
-                    x2 -= '0';
-                }
-                else if (x2 >= 'a' && x2 <= 'f')
-                {
-                    x2 = x2 - 'a' + 10;
-                }
-                else if (x2 >= 'A' && x2 <= 'F')
-                {
-                    x2 = x2 - 'A' + 10;
-                }
-                hex = x1 * 16 + x2;
-                //字母和数字[0-9a-zA-Z]、一些特殊符号[$-_.+!*'(),] 、以及某些保留字[$&+,/:;=?@]
-                //可以不经过编码直接用于URL
-                if (!((hex >= 48 && hex <= 57) ||  //0-9
-                      (hex >= 97 && hex <= 122) || //a-z
-                      (hex >= 65 && hex <= 90) ||  //A-Z
-                      //一些特殊符号及保留字[$-_.+!*'(),]  [$&+,/:;?@]
-                      hex == 0x21 || hex == 0x24 || hex == 0x26 || hex == 0x27 || hex == 0x28 || hex == 0x29 || hex == 0x2a || hex == 0x2b || hex == 0x2c || hex == 0x2d || hex == 0x2e || hex == 0x2f || hex == 0x3A || hex == 0x3B || hex == 0x3f || hex == 0x40 || hex == 0x5f))
-                {
-                    result += char(hex);
-                    i += 2;
+                    uint x1 = begin[i + 1];
+                    if (x1 >= '0' && x1 <= '9')
+                    {
+                        x1 -= '0';
+                    }
+                    else if (x1 >= 'a' && x1 <= 'f')
+                    {
+                        x1 = x1 - 'a' + 10;
+                    }
+                    else if (x1 >= 'A' && x1 <= 'F')
+                    {
+                        x1 = x1 - 'A' + 10;
+                    }
+                    uint x2 = begin[i + 2];
+                    if (x2 >= '0' && x2 <= '9')
+                    {
+                        x2 -= '0';
+                    }
+                    else if (x2 >= 'a' && x2 <= 'f')
+                    {
+                        x2 = x2 - 'a' + 10;
+                    }
+                    else if (x2 >= 'A' && x2 <= 'F')
+                    {
+                        x2 = x2 - 'A' + 10;
+                    }
+                    hex = x1 * 16 + x2;
+                    if (!((hex >= 48 && hex <= 57) ||   // 0-9
+                          (hex >= 97 && hex <= 122) ||  // a-z
+                          (hex >= 65 && hex <= 90) ||   // A-Z
+                          //[$-_.+!*'(),]  [$&+,/:;?@]
+                          hex == 0x21 || hex == 0x24 || hex == 0x26 ||
+                          hex == 0x27 || hex == 0x28 || hex == 0x29 ||
+                          hex == 0x2a || hex == 0x2b || hex == 0x2c ||
+                          hex == 0x2d || hex == 0x2e || hex == 0x2f ||
+                          hex == 0x3A || hex == 0x3B || hex == 0x3f ||
+                          hex == 0x40 || hex == 0x5f))
+                    {
+                        result += char(hex);
+                        i += 2;
+                    }
+                    else
+                        result += '%';
                 }
                 else
+                {
                     result += '%';
-            }
-            else
-            {
-                result += '%';
-            }
-            break;
-        default:
-            result += begin[i];
-            break;
+                }
+                break;
+            default:
+                result += begin[i];
+                break;
         }
     }
     return result;
@@ -527,8 +548,12 @@ std::shared_ptr<std::string> gzipCompress(const char *data, const size_t ndata)
     z_stream strm = {0};
     if (data && ndata > 0)
     {
-        if (deflateInit2(&strm, Z_DEFAULT_COMPRESSION, Z_DEFLATED,
-                         MAX_WBITS + 16, 8, Z_DEFAULT_STRATEGY) != Z_OK)
+        if (deflateInit2(&strm,
+                         Z_DEFAULT_COMPRESSION,
+                         Z_DEFLATED,
+                         MAX_WBITS + 16,
+                         8,
+                         Z_DEFAULT_STRATEGY) != Z_OK)
             return nullptr;
         auto outstr = std::make_shared<std::string>();
         outstr->resize(compressBound(ndata));
@@ -546,9 +571,9 @@ std::shared_ptr<std::string> gzipCompress(const char *data, const size_t ndata)
     return nullptr;
 }
 
-std::shared_ptr<std::string> gzipDecompress(const std::shared_ptr<std::string> &compressedData)
+std::shared_ptr<std::string> gzipDecompress(
+    const std::shared_ptr<std::string> &compressedData)
 {
-
     if (compressedData->length() == 0)
         return compressedData;
 
@@ -572,7 +597,6 @@ std::shared_ptr<std::string> gzipDecompress(const std::shared_ptr<std::string> &
         {
             decompressed->resize(decompressed->length() * 2);
         }
-        // chadeltu 加了(Bytef *)
         strm.next_out = (Bytef *)decompressed->data() + strm.total_out;
         strm.avail_out = decompressed->length() - strm.total_out;
         // Inflate another chunk.
@@ -610,7 +634,9 @@ char *getHttpFullDate(const trantor::Date &date)
         return lastTimeString;
     }
     lastSecond = nowSecond;
-    date.toCustomedFormattedString("%a, %d %b %Y %T GMT", lastTimeString, sizeof(lastTimeString));
+    date.toCustomedFormattedString("%a, %d %b %Y %T GMT",
+                                   lastTimeString,
+                                   sizeof(lastTimeString));
     return lastTimeString;
 }
 trantor::Date getHttpDate(const std::string &httpFullDateString)
@@ -627,7 +653,10 @@ std::string formattedString(const char *format, ...)
     va_list ap, backup_ap;
     va_start(ap, format);
     va_copy(backup_ap, ap);
-    auto result = vsnprintf((char *)strBuffer.data(), strBuffer.size(), format, backup_ap);
+    auto result = vsnprintf((char *)strBuffer.data(),
+                            strBuffer.size(),
+                            format,
+                            backup_ap);
     va_end(backup_ap);
     if ((result >= 0) && ((std::string::size_type)result < strBuffer.size()))
     {
@@ -648,10 +677,14 @@ std::string formattedString(const char *format, ...)
             }
 
             va_copy(backup_ap, ap);
-            auto result = vsnprintf((char *)strBuffer.data(), strBuffer.size(), format, backup_ap);
+            auto result = vsnprintf((char *)strBuffer.data(),
+                                    strBuffer.size(),
+                                    format,
+                                    backup_ap);
             va_end(backup_ap);
 
-            if ((result >= 0) && ((std::string::size_type)result < strBuffer.size()))
+            if ((result >= 0) &&
+                ((std::string::size_type)result < strBuffer.size()))
             {
                 strBuffer.resize(result);
                 break;
@@ -713,5 +746,5 @@ int createPath(const std::string &path)
     return 0;
 }
 
-} // namespace utils
-} // namespace drogon
+}  // namespace utils
+}  // namespace drogon

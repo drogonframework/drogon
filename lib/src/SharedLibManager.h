@@ -2,7 +2,7 @@
  *
  *  SharedLibManager.h
  *  An Tao
- *  
+ *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
  *  Use of this source code is governed by a MIT license
@@ -14,8 +14,8 @@
 
 #pragma once
 
-#include <trantor/utils/NonCopyable.h>
 #include <trantor/net/EventLoop.h>
+#include <trantor/utils/NonCopyable.h>
 #include <unordered_map>
 #include <vector>
 namespace drogon
@@ -23,7 +23,8 @@ namespace drogon
 class SharedLibManager : public trantor::NonCopyable
 {
   public:
-    SharedLibManager(trantor::EventLoop *loop, const std::vector<std::string> &libPaths);
+    SharedLibManager(trantor::EventLoop *loop,
+                     const std::vector<std::string> &libPaths);
     ~SharedLibManager();
 
   private:
@@ -39,4 +40,4 @@ class SharedLibManager : public trantor::NonCopyable
     void *loadLibs(const std::string &sourceFile, void *oldHld);
     trantor::TimerId _timeId;
 };
-} // namespace drogon
+}  // namespace drogon

@@ -1,7 +1,7 @@
 /**
  *  SpinLock.h
  *  An Tao
- *  
+ *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
  *  Use of this source code is governed by a MIT license
@@ -13,25 +13,24 @@
 
 #pragma once
 #include <atomic>
-#include <thread>
 #include <emmintrin.h>
+#include <thread>
 
 #define LOCK_SPIN 2048
 
 namespace drogon
 {
-
 class SpinLock
 {
   public:
-    inline SpinLock(std::atomic<bool> &flag)
-        : _flag(flag)
+    inline SpinLock(std::atomic<bool> &flag) : _flag(flag)
     {
         const static int cpu = std::thread::hardware_concurrency();
         int n, i;
         while (1)
         {
-            if (!_flag.load() && !_flag.exchange(true, std::memory_order_acquire))
+            if (!_flag.load() &&
+                !_flag.exchange(true, std::memory_order_acquire))
             {
                 return;
             }
@@ -44,7 +43,8 @@ class SpinLock
                         //__asm__ __volatile__("rep; nop" ::: "memory"); //pause
                         _mm_pause();
                     }
-                    if (!_flag.load() && !_flag.exchange(true, std::memory_order_acquire))
+                    if (!_flag.load() &&
+                        !_flag.exchange(true, std::memory_order_acquire))
                     {
                         return;
                     }
@@ -65,8 +65,7 @@ class SpinLock
 class SimpleSpinLock
 {
   public:
-    inline SimpleSpinLock(std::atomic_flag &flag)
-        : _flag(flag)
+    inline SimpleSpinLock(std::atomic_flag &flag) : _flag(flag)
     {
         while (_flag.test_and_set(std::memory_order_acquire))
         {
@@ -83,4 +82,4 @@ class SimpleSpinLock
     std::atomic_flag &_flag;
 };
 
-} // namespace drogon
+}  // namespace drogon

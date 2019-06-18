@@ -6,7 +6,7 @@ using namespace drogon;
 
 int main()
 {
-    trantor::Logger::setLogLevel(trantor::Logger::TRACE); 
+    trantor::Logger::setLogLevel(trantor::Logger::TRACE);
     {
         int count = 0;
         auto client = HttpClient::newHttpClient("http://www.baidu.com");
@@ -17,18 +17,23 @@ int main()
 
         for (int i = 0; i < 10; i++)
         {
-            client->sendRequest(req, [&count](ReqResult result, const HttpResponsePtr &response) {
-                std::cout << "receive response!" << std::endl;
-                //auto headers=response.
-                count++;
-                std::cout << response->getBody() << std::endl;
-                auto cookies = response->cookies();
-                for (auto const &cookie : cookies)
-                {
-                    std::cout << cookie.first << "=" << cookie.second.value() << ":domain=" << cookie.second.domain() << std::endl;
-                }
-                std::cout << "count=" << count << std::endl;
-            });
+            client->sendRequest(
+                req,
+                [&count](ReqResult result, const HttpResponsePtr &response) {
+                    std::cout << "receive response!" << std::endl;
+                    // auto headers=response.
+                    count++;
+                    std::cout << response->getBody() << std::endl;
+                    auto cookies = response->cookies();
+                    for (auto const &cookie : cookies)
+                    {
+                        std::cout << cookie.first << "="
+                                  << cookie.second.value()
+                                  << ":domain=" << cookie.second.domain()
+                                  << std::endl;
+                    }
+                    std::cout << "count=" << count << std::endl;
+                });
         }
     }
 

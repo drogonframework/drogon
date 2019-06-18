@@ -23,9 +23,12 @@ class create_plugin : public DrObject<create_plugin>, public CommandHandler
 {
   public:
     virtual void handleCommand(std::vector<std::string> &parameters) override;
-    virtual std::string script() override { return "create plugin class files"; }
+    virtual std::string script() override
+    {
+        return "create plugin class files";
+    }
 
   protected:
     std::string _outputPath = ".";
 };
-} // namespace drogon_ctl
+}  // namespace drogon_ctl

@@ -2,7 +2,7 @@
  *
  *  HttpRequestParser.cc
  *  An Tao
- *  
+ *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
  *  Use of this source code is governed by a MIT license
@@ -12,14 +12,14 @@
  *
  */
 
-#include <drogon/HttpTypes.h>
-#include <trantor/utils/MsgBuffer.h>
-#include <trantor/utils/Logger.h>
-#include "HttpAppFrameworkImpl.h"
 #include "HttpRequestParser.h"
+#include "HttpAppFrameworkImpl.h"
 #include "HttpResponseImpl.h"
 #include "HttpUtils.h"
+#include <drogon/HttpTypes.h>
 #include <iostream>
+#include <trantor/utils/Logger.h>
+#include <trantor/utils/MsgBuffer.h>
 
 using namespace trantor;
 using namespace drogon;
@@ -37,7 +37,9 @@ void HttpRequestParser::shutdownConnection(HttpStatusCode code)
     auto connPtr = _conn.lock();
     if (connPtr)
     {
-        connPtr->send(utils::formattedString("HTTP/1.1 %d %s\r\n\r\n", code, statusCodeToString(code).data()));
+        connPtr->send(utils::formattedString("HTTP/1.1 %d %s\r\n\r\n",
+                                             code,
+                                             statusCodeToString(code).data()));
         connPtr->shutdown();
     }
 }
@@ -90,7 +92,8 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
     {
         if (_state == HttpRequestParseState_ExpectMethod)
         {
-            auto *space = std::find(buf->peek(), (const char *)buf->beginWrite(), ' ');
+            auto *space =
+                std::find(buf->peek(), (const char *)buf->beginWrite(), ' ');
             if (space != buf->beginWrite())
             {
                 if (_request->setMethod(buf->peek(), space))
@@ -139,7 +142,8 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
             {
                 if (buf->readableBytes() >= 64 * 1024)
                 {
-                    /// The limit for request line is 64K bytes. respone k414RequestURITooLarge
+                    /// The limit for request line is 64K bytes. respone
+                    /// k414RequestURITooLarge
                     /// TODO: Make this configurable?
                     buf->retrieveAll();
                     shutdownConnection(k414RequestURITooLarge);
@@ -161,7 +165,8 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
                 else
                 {
                     // empty line, end of header
-                    const std::string &len = _request->getHeaderBy("content-length");
+                    const std::string &len =
+                        _request->getHeaderBy("content-length");
                     LOG_TRACE << "content len=" << len;
                     if (!len.empty())
                     {
@@ -177,29 +182,39 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
                                 shutdownConnection(k400BadRequest);
                                 return false;
                             }
-                            //rfc2616-8.2.3
+                            // rfc2616-8.2.3
                             auto connPtr = _conn.lock();
                             if (connPtr)
                             {
                                 auto resp = HttpResponse::newHttpResponse();
-                                if (_request->_contentLen > HttpAppFrameworkImpl::instance().getClientMaxBodySize())
+                                if (_request->_contentLen >
+                                    HttpAppFrameworkImpl::instance()
+                                        .getClientMaxBodySize())
                                 {
-                                    resp->setStatusCode(k413RequestEntityTooLarge);
-                                    auto httpString = std::dynamic_pointer_cast<HttpResponseImpl>(resp)->renderToString();
+                                    resp->setStatusCode(
+                                        k413RequestEntityTooLarge);
+                                    auto httpString =
+                                        std::dynamic_pointer_cast<
+                                            HttpResponseImpl>(resp)
+                                            ->renderToString();
                                     reset();
                                     connPtr->send(httpString);
                                 }
                                 else
                                 {
                                     resp->setStatusCode(k100Continue);
-                                    auto httpString = std::dynamic_pointer_cast<HttpResponseImpl>(resp)->renderToString();
+                                    auto httpString =
+                                        std::dynamic_pointer_cast<
+                                            HttpResponseImpl>(resp)
+                                            ->renderToString();
                                     connPtr->send(httpString);
                                 }
                             }
                         }
                         else if (!expect.empty())
                         {
-                            LOG_WARN << "417ExpectationFailed for \"" << expect << "\"";
+                            LOG_WARN << "417ExpectationFailed for \"" << expect
+                                     << "\"";
                             auto connPtr = _conn.lock();
                             if (connPtr)
                             {
@@ -208,12 +223,15 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
                                 return false;
                             }
                         }
-                        else if (_request->_contentLen > HttpAppFrameworkImpl::instance().getClientMaxBodySize())
+                        else if (_request->_contentLen >
+                                 HttpAppFrameworkImpl::instance()
+                                     .getClientMaxBodySize())
                         {
                             buf->retrieveAll();
                             shutdownConnection(k413RequestEntityTooLarge);
                             return false;
                         }
+                        _request->reserveBodySize();
                     }
                     else
                     {
@@ -251,12 +269,12 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
             if (_request->_contentLen >= buf->readableBytes())
             {
                 _request->_contentLen -= buf->readableBytes();
-                _request->_content += std::string(buf->peek(), buf->readableBytes());
+                _request->appendToBody(buf->peek(), buf->readableBytes());
                 buf->retrieveAll();
             }
             else
             {
-                _request->_content += std::string(buf->peek(), _request->_contentLen);
+                _request->appendToBody(buf->peek(), _request->_contentLen);
                 buf->retrieve(_request->_contentLen);
                 _request->_contentLen = 0;
             }
@@ -280,7 +298,8 @@ void HttpRequestParser::pushRquestToPipelining(const HttpRequestPtr &req)
         conn->getLoop()->assertInLoopThread();
     }
 #endif
-    std::pair<HttpRequestPtr, HttpResponsePtr> reqPair(req, HttpResponseImplPtr());
+    std::pair<HttpRequestPtr, HttpResponsePtr> reqPair(req,
+                                                       HttpResponseImplPtr());
 
     _requestPipelining.push_back(std::move(reqPair));
 }

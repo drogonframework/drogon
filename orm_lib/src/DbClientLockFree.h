@@ -17,23 +17,25 @@
 #include "DbConnection.h"
 #include <drogon/HttpTypes.h>
 #include <drogon/orm/DbClient.h>
-#include <trantor/net/EventLoopThreadPool.h>
-#include <memory>
-#include <thread>
 #include <functional>
-#include <string>
+#include <memory>
 #include <queue>
+#include <string>
+#include <thread>
+#include <trantor/net/EventLoopThreadPool.h>
 #include <unordered_set>
 
 namespace drogon
 {
 namespace orm
 {
-
-class DbClientLockFree : public DbClient, public std::enable_shared_from_this<DbClientLockFree>
+class DbClientLockFree : public DbClient,
+                         public std::enable_shared_from_this<DbClientLockFree>
 {
   public:
-    DbClientLockFree(const std::string &connInfo, trantor::EventLoop *loop, ClientType type);
+    DbClientLockFree(const std::string &connInfo,
+                     trantor::EventLoop *loop,
+                     ClientType type);
     virtual ~DbClientLockFree() noexcept;
     virtual void execSql(std::string &&sql,
                          size_t paraNum,
@@ -41,9 +43,13 @@ class DbClientLockFree : public DbClient, public std::enable_shared_from_this<Db
                          std::vector<int> &&length,
                          std::vector<int> &&format,
                          ResultCallback &&rcb,
-                         std::function<void(const std::exception_ptr &)> &&exceptCallback) override;
-    virtual std::shared_ptr<Transaction> newTransaction(const std::function<void(bool)> &commitCallback = nullptr) override;
-    virtual void newTransactionAsync(const std::function<void(const std::shared_ptr<Transaction> &)> &callback) override;
+                         std::function<void(const std::exception_ptr &)>
+                             &&exceptCallback) override;
+    virtual std::shared_ptr<Transaction> newTransaction(
+        const std::function<void(bool)> &commitCallback = nullptr) override;
+    virtual void newTransactionAsync(
+        const std::function<void(const std::shared_ptr<Transaction> &)>
+            &callback) override;
 
   private:
     std::string _connInfo;
@@ -79,15 +85,18 @@ class DbClientLockFree : public DbClient, public std::enable_shared_from_this<Db
         {
         }
     };
-    
+
     std::deque<std::shared_ptr<SqlCmd>> _sqlCmdBuffer;
 
-    std::queue<std::function<void(const std::shared_ptr<Transaction> &)>> _transCallbacks;
+    std::queue<std::function<void(const std::shared_ptr<Transaction> &)>>
+        _transCallbacks;
 
-    void makeTrans(const DbConnectionPtr &conn, std::function<void(const std::shared_ptr<Transaction> &)> &&callback);
+    void makeTrans(
+        const DbConnectionPtr &conn,
+        std::function<void(const std::shared_ptr<Transaction> &)> &&callback);
 
     void handleNewTask(const DbConnectionPtr &conn);
 };
 
-} // namespace orm
-} // namespace drogon
+}  // namespace orm
+}  // namespace drogon

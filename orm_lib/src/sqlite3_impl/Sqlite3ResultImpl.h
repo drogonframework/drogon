@@ -16,11 +16,11 @@
 
 #include "../ResultImpl.h"
 
-#include <sqlite3.h>
 #include <memory>
+#include <sqlite3.h>
 #include <string>
-#include <vector>
 #include <unordered_map>
+#include <vector>
 
 namespace drogon
 {
@@ -38,9 +38,11 @@ class Sqlite3ResultImpl : public ResultImpl
     virtual const char *columnName(row_size_type number) const override;
     virtual size_type affectedRows() const noexcept override;
     virtual row_size_type columnNumber(const char colName[]) const override;
-    virtual const char *getValue(size_type row, row_size_type column) const override;
+    virtual const char *getValue(size_type row,
+                                 row_size_type column) const override;
     virtual bool isNull(size_type row, row_size_type column) const override;
-    virtual field_size_type getLength(size_type row, row_size_type column) const override;
+    virtual field_size_type getLength(size_type row,
+                                      row_size_type column) const override;
     virtual unsigned long long insertId() const noexcept override;
 
   private:
@@ -52,5 +54,5 @@ class Sqlite3ResultImpl : public ResultImpl
     size_t _affectedRows = 0;
     size_t _insertId = 0;
 };
-} // namespace orm
-} // namespace drogon
+}  // namespace orm
+}  // namespace drogon

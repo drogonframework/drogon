@@ -2,7 +2,7 @@
  *
  *  HttpSimpleControllersRouter.h
  *  An Tao
- *  
+ *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
  *  Use of this source code is governed by a MIT license
@@ -13,43 +13,43 @@
  */
 
 #pragma once
+#include "HttpControllersRouter.h"
 #include "HttpRequestImpl.h"
 #include "HttpResponseImpl.h"
-#include "HttpControllersRouter.h"
-#include <drogon/HttpSimpleController.h>
-#include <trantor/utils/NonCopyable.h>
+#include <atomic>
 #include <drogon/HttpBinder.h>
 #include <drogon/HttpFilter.h>
-#include <vector>
-#include <regex>
-#include <string>
-#include <mutex>
+#include <drogon/HttpSimpleController.h>
 #include <memory>
+#include <mutex>
+#include <regex>
 #include <shared_mutex>
-#include <atomic>
+#include <string>
+#include <trantor/utils/NonCopyable.h>
+#include <vector>
 
 namespace drogon
 {
-
 class HttpSimpleControllersRouter : public trantor::NonCopyable
 {
   public:
-    HttpSimpleControllersRouter(HttpControllersRouter &httpCtrlRouter,
-                                const std::deque<std::function<void(const HttpRequestPtr &,
-                                                                    AdviceCallback &&,
-                                                                    AdviceChainCallback &&)>>
-                                    &postRoutingAdvices,
-                                const std::deque<std::function<void(const HttpRequestPtr &)>>
-                                    &postRoutingObservers,
-                                const std::vector<std::function<void(const HttpRequestPtr &,
-                                                                     AdviceCallback &&,
-                                                                     AdviceChainCallback &&)>>
-                                    &preHandlingAdvices,
-                                const std::vector<std::function<void(const HttpRequestPtr &)>>
-                                    &preHandlingObservers,
-                                const std::deque<std::function<void(const HttpRequestPtr &,
-                                                                    const HttpResponsePtr &)>>
-                                    &postHandlingAdvices)
+    HttpSimpleControllersRouter(
+        HttpControllersRouter &httpCtrlRouter,
+        const std::vector<std::function<void(const HttpRequestPtr &,
+                                             AdviceCallback &&,
+                                             AdviceChainCallback &&)>>
+            &postRoutingAdvices,
+        const std::vector<std::function<void(const HttpRequestPtr &)>>
+            &postRoutingObservers,
+        const std::vector<std::function<void(const HttpRequestPtr &,
+                                             AdviceCallback &&,
+                                             AdviceChainCallback &&)>>
+            &preHandlingAdvices,
+        const std::vector<std::function<void(const HttpRequestPtr &)>>
+            &preHandlingObservers,
+        const std::vector<std::function<void(const HttpRequestPtr &,
+                                             const HttpResponsePtr &)>>
+            &postHandlingAdvices)
         : _httpCtrlsRouter(httpCtrlRouter),
           _postRoutingAdvices(postRoutingAdvices),
           _preHandlingAdvices(preHandlingAdvices),
@@ -59,34 +59,36 @@ class HttpSimpleControllersRouter : public trantor::NonCopyable
     {
     }
 
-    void registerHttpSimpleController(const std::string &pathName,
-                                      const std::string &ctrlName,
-                                      const std::vector<any> &filtersAndMethods);
+    void registerHttpSimpleController(
+        const std::string &pathName,
+        const std::string &ctrlName,
+        const std::vector<any> &filtersAndMethods);
     void route(const HttpRequestImplPtr &req,
                std::function<void(const HttpResponsePtr &)> &&callback,
                bool needSetJsessionid,
                std::string &&sessionId);
     void init(const std::vector<trantor::EventLoop *> &ioLoops);
 
-    std::vector<std::tuple<std::string, HttpMethod, std::string>> getHandlersInfo() const;
+    std::vector<std::tuple<std::string, HttpMethod, std::string>>
+    getHandlersInfo() const;
 
-private:
+  private:
     HttpControllersRouter &_httpCtrlsRouter;
-    const std::deque<std::function<void(const HttpRequestPtr &,
-                                        AdviceCallback &&,
-                                        AdviceChainCallback &&)>>
+    const std::vector<std::function<void(const HttpRequestPtr &,
+                                         AdviceCallback &&,
+                                         AdviceChainCallback &&)>>
         &_postRoutingAdvices;
     const std::vector<std::function<void(const HttpRequestPtr &,
                                          AdviceCallback &&,
                                          AdviceChainCallback &&)>>
         &_preHandlingAdvices;
-    const std::deque<std::function<void(const HttpRequestPtr &)>>
+    const std::vector<std::function<void(const HttpRequestPtr &)>>
         &_postRoutingObservers;
     const std::vector<std::function<void(const HttpRequestPtr &)>>
         &_preHandlingObservers;
 
-    const std::deque<std::function<void(const HttpRequestPtr &,
-                                        const HttpResponsePtr &)>>
+    const std::vector<
+        std::function<void(const HttpRequestPtr &, const HttpResponsePtr &)>>
         &_postHandlingAdvices;
     struct CtrlBinder
     {
@@ -94,7 +96,8 @@ private:
         std::string _controllerName;
         std::vector<std::string> _filterNames;
         std::vector<std::shared_ptr<HttpFilterBase>> _filters;
-        std::map<trantor::EventLoop *, std::shared_ptr<HttpResponse>> _responsePtrMap;
+        std::map<trantor::EventLoop *, std::shared_ptr<HttpResponse>>
+            _responsePtrMap;
         bool _isCORS = false;
     };
     typedef std::shared_ptr<CtrlBinder> CtrlBinderPtr;
@@ -106,27 +109,23 @@ private:
     std::unordered_map<std::string, SimpleControllerRouterItem> _simpCtrlMap;
     std::mutex _simpCtrlMutex;
 
-    void doPreHandlingAdvices(const CtrlBinderPtr &ctrlBinderPtr,
-                              const SimpleControllerRouterItem &routerItem,
-                              const HttpRequestImplPtr &req,
-                              std::function<void(const HttpResponsePtr &)> &&callback,
-                              bool needSetJsessionid,
-                              std::string &&sessionId);
-    void doControllerHandler(const CtrlBinderPtr &ctrlBinderPtr,
-                             const SimpleControllerRouterItem &routerItem,
-                             const HttpRequestImplPtr &req,
-                             std::function<void(const HttpResponsePtr &)> &&callback,
-                             bool needSetJsessionid,
-                             std::string &&sessionId);
-    void invokeCallback(const std::function<void(const HttpResponsePtr &)> &callback,
-                        const HttpRequestImplPtr &req,
-                        const HttpResponsePtr &resp)
-    {
-        for (auto &advice : _postHandlingAdvices)
-        {
-            advice(req,resp);
-        }
-        callback(resp);
-    }
+    void doPreHandlingAdvices(
+        const CtrlBinderPtr &ctrlBinderPtr,
+        const SimpleControllerRouterItem &routerItem,
+        const HttpRequestImplPtr &req,
+        std::function<void(const HttpResponsePtr &)> &&callback,
+        bool needSetJsessionid,
+        std::string &&sessionId);
+    void doControllerHandler(
+        const CtrlBinderPtr &ctrlBinderPtr,
+        const SimpleControllerRouterItem &routerItem,
+        const HttpRequestImplPtr &req,
+        std::function<void(const HttpResponsePtr &)> &&callback,
+        bool needSetJsessionid,
+        std::string &&sessionId);
+    void invokeCallback(
+        const std::function<void(const HttpResponsePtr &)> &callback,
+        const HttpRequestImplPtr &req,
+        const HttpResponsePtr &resp);
 };
-} // namespace drogon
+}  // namespace drogon

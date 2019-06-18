@@ -15,33 +15,34 @@ int main()
     int n = 0;
     for (int i = 0; i < 20; i++)
     {
-        client->sendRequest(request, [&counter, &n](ReqResult r, const HttpResponsePtr &resp) {
-            if (r == ReqResult::Ok)
-            {
-                auto counterHeader = resp->getHeader("counter");
-                int c = atoi(counterHeader.data());
-                if (c <= counter)
+        client->sendRequest(
+            request, [&counter, &n](ReqResult r, const HttpResponsePtr &resp) {
+                if (r == ReqResult::Ok)
                 {
-                    LOG_ERROR << "The response was received in the wrong order!";
-                    exit(-1);
+                    auto counterHeader = resp->getHeader("counter");
+                    int c = atoi(counterHeader.data());
+                    if (c <= counter)
+                    {
+                        LOG_ERROR
+                            << "The response was received in the wrong order!";
+                        exit(-1);
+                    }
+                    else
+                    {
+                        counter = c;
+                        n++;
+                        if (n == 20)
+                        {
+                            LOG_DEBUG << "Good!";
+                            app().getLoop()->quit();
+                        }
+                    }
                 }
                 else
                 {
-                    counter = c;
-                    n++;
-                    if(n==20)
-                    {
-                        LOG_DEBUG << "Good!";
-                        app().getLoop()->quit();
-                    }
+                    exit(-1);
                 }
-            }
-            else
-            {
-                exit(-1);
-            }
-            
-        });
+            });
     }
     app().run();
 }

@@ -18,7 +18,6 @@ namespace drogon
 {
 namespace orm
 {
-
 const Criteria operator&&(Criteria cond1, Criteria cond2)
 {
     assert(cond1);
@@ -68,5 +67,5 @@ const Criteria operator||(Criteria cond1, Criteria cond2)
     return cond;
 }
 
-} // namespace orm
-} // namespace drogon
+}  // namespace orm
+}  // namespace drogon

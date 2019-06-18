@@ -13,10 +13,10 @@
  */
 
 #include "ResultImpl.h"
-#include <drogon/orm/Result.h>
-#include <drogon/orm/Row.h>
-#include <drogon/orm/ResultIterator.h>
 #include <assert.h>
+#include <drogon/orm/Result.h>
+#include <drogon/orm/ResultIterator.h>
+#include <drogon/orm/Row.h>
 
 using namespace drogon::orm;
 
@@ -131,7 +131,8 @@ Result::row_size_type Result::columnNumber(const char colName[]) const
 {
     return _resultPtr->columnNumber(colName);
 }
-const char *Result::getValue(Result::size_type row, Result::row_size_type column) const
+const char *Result::getValue(Result::size_type row,
+                             Result::row_size_type column) const
 {
     return _resultPtr->getValue(row, column);
 }
@@ -139,7 +140,8 @@ bool Result::isNull(Result::size_type row, Result::row_size_type column) const
 {
     return _resultPtr->isNull(row, column);
 }
-Result::field_size_type Result::getLength(Result::size_type row, Result::row_size_type column) const
+Result::field_size_type Result::getLength(Result::size_type row,
+                                          Result::row_size_type column) const
 {
     return _resultPtr->getLength(row, column);
 }

@@ -2,7 +2,7 @@
  *
  *  HttpRequestImpl.h
  *  An Tao
- *  
+ *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
  *  Use of this source code is governed by a MIT license
@@ -15,32 +15,33 @@
 #pragma once
 
 #include "HttpUtils.h"
+#include "CacheFile.h"
 #include <drogon/utils/Utilities.h>
 #include <drogon/HttpRequest.h>
 #include <drogon/HttpResponse.h>
+#include <drogon/utils/Utilities.h>
 
-#include <trantor/utils/NonCopyable.h>
+#include <trantor/net/EventLoop.h>
+#include <trantor/net/InetAddress.h>
 #include <trantor/utils/Logger.h>
 #include <trantor/utils/MsgBuffer.h>
-#include <trantor/net/InetAddress.h>
-#include <trantor/net/EventLoop.h>
+#include <trantor/utils/NonCopyable.h>
 
-#include <unordered_map>
+#include <algorithm>
 #include <assert.h>
 #include <stdio.h>
-#include <algorithm>
 #include <string>
 #include <thread>
+#include <unordered_map>
 
 using std::string;
 using namespace trantor;
 
 namespace drogon
 {
-
 class HttpRequestImpl : public HttpRequest
 {
-public:
+  public:
     friend class HttpRequestParser;
 
     explicit HttpRequestImpl(trantor::EventLoop *loop)
@@ -52,7 +53,10 @@ public:
     {
     }
 
-    trantor::EventLoop *getLoop() { return _loop; }
+    trantor::EventLoop *getLoop()
+    {
+        return _loop;
+    }
 
     void setVersion(Version v)
     {
@@ -64,121 +68,20 @@ public:
         return _version;
     }
 
-    bool setMethod(const char *start, const char *end)
-    {
-
-        assert(_method == Invalid);
-        string_view m(start, end - start);
-        switch (m.length())
-        {
-        case 3:
-            if (m == "GET")
-            {
-                _method = Get;
-            }
-            else if (m == "PUT")
-            {
-                _method = Put;
-            }
-            else
-            {
-                _method = Invalid;
-            }
-            break;
-        case 4:
-            if (m == "POST")
-            {
-                _method = Post;
-            }
-            else if (m == "HEAD")
-            {
-                _method = Head;
-            }
-            else
-            {
-                _method = Invalid;
-            }
-            break;
-        case 6:
-            if (m == "DELETE")
-            {
-                _method = Delete;
-            }
-            else
-            {
-                _method = Invalid;
-            }
-            break;
-        case 7:
-            if (m == "OPTIONS")
-            {
-                _method = Options;
-            }
-            else
-            {
-                _method = Invalid;
-            }
-            break;
-        default:
-            _method = Invalid;
-            break;
-        }
-
-        // if (_method != Invalid)
-        // {
-        //     _content = "";
-        //     _query = "";
-        //     _cookies.clear();
-        //     _parameters.clear();
-        //     _headers.clear();
-        // }
-        return _method != Invalid;
-    }
+    bool setMethod(const char *start, const char *end);
 
     virtual void setMethod(const HttpMethod method) override
     {
         _method = method;
-        // _content = "";
-        // _query = "";
-        // _cookies.clear();
-        // _parameters.clear();
-        // _headers.clear();
         return;
     }
 
-    HttpMethod method() const override
+    virtual HttpMethod method() const override
     {
         return _method;
     }
 
-    const char *methodString() const override
-    {
-        const char *result = "UNKNOWN";
-        switch (_method)
-        {
-        case Get:
-            result = "GET";
-            break;
-        case Post:
-            result = "POST";
-            break;
-        case Head:
-            result = "HEAD";
-            break;
-        case Put:
-            result = "PUT";
-            break;
-        case Delete:
-            result = "DELETE";
-            break;
-        case Options:
-            result = "OPTIONS";
-            break;
-        default:
-            break;
-        }
-        return result;
-    }
+    virtual const char *methodString() const override;
 
     void setPath(const char *start, const char *end)
     {
@@ -190,13 +93,16 @@ public:
         _path = path;
     }
 
-    virtual const std::unordered_map<std::string, std::string> &parameters() const override
+    virtual const std::unordered_map<std::string, std::string> &parameters()
+        const override
     {
         parseParametersOnce();
         return _parameters;
     }
 
-    virtual const std::string &getParameter(const std::string &key, const std::string &defaultVal = std::string()) const override
+    virtual const std::string &getParameter(
+        const std::string &key,
+        const std::string &defaultVal = std::string()) const override
     {
         parseParametersOnce();
         auto iter = _parameters.find(key);
@@ -220,25 +126,41 @@ public:
         _query = query;
     }
 
-    virtual const string &body() const override
+    virtual string_view body() const override
     {
+        if (_cacheFilePtr)
+        {
+            return _cacheFilePtr->getStringView();
+        }
         return _content;
     }
 
-    virtual const std::string &query() const override
+    void appendToBody(const char *data, size_t length)
+    {
+        if (_cacheFilePtr)
+        {
+            _cacheFilePtr->append(data, length);
+        }
+        else
+        {
+            _content.append(data, length);
+        }
+    }
+
+    void reserveBodySize();
+
+    virtual string_view query() const override
     {
         if (_query != "")
             return _query;
         if (_method == Post)
+        {
+            if (_cacheFilePtr)
+                return _cacheFilePtr->getStringView();
             return _content;
+        }
         return _query;
     }
-
-    //
-    //    Timestamp receiveTime() const
-    //    {
-    //        return receiveTime_;
-    //    }
 
     virtual const trantor::InetAddress &peerAddr() const override
     {
@@ -272,20 +194,29 @@ public:
 
     void addHeader(const char *start, const char *colon, const char *end);
 
-    const std::string &getHeader(const std::string &field, const std::string &defaultVal = std::string()) const override
+    const std::string &getHeader(
+        const std::string &field,
+        const std::string &defaultVal = std::string()) const override
     {
         auto lowField = field;
-        std::transform(lowField.begin(), lowField.end(), lowField.begin(), tolower);
+        std::transform(lowField.begin(),
+                       lowField.end(),
+                       lowField.begin(),
+                       tolower);
         return getHeaderBy(lowField, defaultVal);
     }
 
-    const std::string &getHeader(std::string &&field, const std::string &defaultVal = std::string()) const override
+    const std::string &getHeader(
+        std::string &&field,
+        const std::string &defaultVal = std::string()) const override
     {
         std::transform(field.begin(), field.end(), field.begin(), tolower);
         return getHeaderBy(field, defaultVal);
     }
 
-    const std::string &getHeaderBy(const std::string &lowerField, const std::string &defaultVal = std::string()) const
+    const std::string &getHeaderBy(
+        const std::string &lowerField,
+        const std::string &defaultVal = std::string()) const
     {
         auto it = _headers.find(lowerField);
         if (it != _headers.end())
@@ -295,9 +226,11 @@ public:
         return defaultVal;
     }
 
-    const std::string &getCookie(const std::string &field, const std::string &defaultVal = std::string()) const override
+    const std::string &getCookie(
+        const std::string &field,
+        const std::string &defaultVal = std::string()) const override
     {
-        std::unordered_map<std::string, std::string>::const_iterator it = _cookies.find(field);
+        auto it = _cookies.find(field);
         if (it != _cookies.end())
         {
             return it->second;
@@ -315,7 +248,8 @@ public:
         return _cookies;
     }
 
-    virtual void setParameter(const std::string &key, const std::string &value) override
+    virtual void setParameter(const std::string &key,
+                              const std::string &value) override
     {
         _flagForParsingParameters = true;
         _parameters[key] = value;
@@ -326,37 +260,31 @@ public:
         return _content;
     }
 
-    void swap(HttpRequestImpl &that)
-    {
-        std::swap(_method, that._method);
-        std::swap(_version, that._version);
-        _path.swap(that._path);
-        _query.swap(that._query);
-
-        _headers.swap(that._headers);
-        _cookies.swap(that._cookies);
-        _parameters.swap(that._parameters);
-        _jsonPtr.swap(that._jsonPtr);
-        _sessionPtr.swap(that._sessionPtr);
-
-        std::swap(_peer, that._peer);
-        std::swap(_local, that._local);
-        _date.swap(that._date);
-        _content.swap(that._content);
-        std::swap(_contentLen, that._contentLen);
-    }
+    void swap(HttpRequestImpl &that);
 
     void setContent(const std::string &content)
     {
         _content = content;
     }
 
-    virtual void addHeader(const std::string &key, const std::string &value) override
+    virtual void setBody(const std::string &body) override
+    {
+        _content = body;
+    }
+
+    virtual void setBody(std::string &&body) override
+    {
+        _content = std::move(body);
+    }
+
+    virtual void addHeader(const std::string &key,
+                           const std::string &value) override
     {
         _headers[key] = value;
     }
 
-    void addCookie(const std::string &key, const std::string &value)
+    virtual void addCookie(const std::string &key,
+                           const std::string &value) override
     {
         _cookies[key] = value;
     }
@@ -386,7 +314,8 @@ public:
         setContentType(std::string(typeStr.data(), typeStr.length()));
     }
 
-    // virtual void setContentTypeCodeAndCharacterSet(ContentType type, const std::string &charSet = "utf-8") override
+    // virtual void setContentTypeCodeAndCharacterSet(ContentType type, const
+    // std::string &charSet = "utf-8") override
     // {
     //     _contentType = type;
     //     setContentType(webContentTypeAndCharsetToString(type, charSet));
@@ -407,7 +336,9 @@ public:
         _matchedPathPattern = pathPattern;
     }
 
-protected:
+    ~HttpRequestImpl();
+
+  protected:
     friend class HttpRequest;
     void setContentType(const std::string &contentType)
     {
@@ -418,11 +349,12 @@ protected:
         _contentTypeString = std::move(contentType);
     }
 
-private:
+  private:
     void parseParameters() const;
     void parseParametersOnce() const
     {
-        //Not multi-thread safe but good, because we basically call this function in a single thread
+        // Not multi-thread safe but good, because we basically call this
+        // function in a single thread
         if (!_flagForParsingParameters)
         {
             _flagForParsingParameters = true;
@@ -443,8 +375,9 @@ private:
     trantor::InetAddress _peer;
     trantor::InetAddress _local;
     trantor::Date _date;
+    std::unique_ptr<CacheFile> _cacheFilePtr;
 
-protected:
+  protected:
     std::string _content;
     size_t _contentLen;
     trantor::EventLoop *_loop;
@@ -454,4 +387,4 @@ protected:
 
 typedef std::shared_ptr<HttpRequestImpl> HttpRequestImplPtr;
 
-} // namespace drogon
+}  // namespace drogon

@@ -12,8 +12,8 @@
  *
  */
 
-//Taken from libpqxx and modified.
-//The license for libpqxx can be found in the COPYING file.
+// Taken from libpqxx and modified.
+// The license for libpqxx can be found in the COPYING file.
 
 #pragma once
 
@@ -55,8 +55,9 @@ enum class SqlStatus
 class Result
 {
   public:
-    Result(const ResultImplPtr &ptr)
-        : _resultPtr(ptr) {}
+    Result(const ResultImplPtr &ptr) : _resultPtr(ptr)
+    {
+    }
     using difference_type = long;
     using size_type = unsigned long;
     using reference = Row;
@@ -69,7 +70,10 @@ class Result
     using ReverseIterator = ConstReverseIterator;
 
     size_type size() const noexcept;
-    size_type capacity() const noexcept { return size(); }
+    size_type capacity() const noexcept
+    {
+        return size();
+    }
     ConstIterator begin() const noexcept;
     ConstIterator cbegin() const noexcept;
     ConstIterator end() const noexcept;
@@ -80,7 +84,10 @@ class Result
     ConstReverseIterator rend() const;
     ConstReverseIterator crend() const;
 
-    bool empty() const noexcept { return size() == 0; }
+    bool empty() const noexcept
+    {
+        return size() == 0;
+    }
 
     reference front() const noexcept;
     reference back() const noexcept;
@@ -95,18 +102,20 @@ class Result
     /// Name of column with this number (throws exception if it doesn't exist)
     const char *columnName(row_size_type number) const;
 
-    /// If command was @c INSERT, @c UPDATE, or @c DELETE: number of affected rows
+    /// If command was @c INSERT, @c UPDATE, or @c DELETE: number of affected
+    /// rows
     /**
      * @return Number of affected rows if last command was @c INSERT, @c UPDATE,
      * or @c DELETE; zero for all other commands.
      */
     size_type affectedRows() const noexcept;
 
-    /// For Mysql, Sqlite3 databases, return the auto-incrementing primary key after inserting
+    /// For Mysql, Sqlite3 databases, return the auto-incrementing primary key
+    /// after inserting
     /**
-     * For postgreSQL databases, this method always returns zero, One can use 
+     * For postgreSQL databases, this method always returns zero, One can use
      * the following sql to get auto-incrementing id:
-     *   insert into table_name volumn1, volumn2 values(....) returning id;   
+     *   insert into table_name volumn1, volumn2 values(....) returning id;
      */
     unsigned long long insertId() const noexcept;
 
@@ -133,7 +142,9 @@ class Result
     field_size_type getLength(size_type row, row_size_type column) const;
 
   protected:
-    Result() {}
+    Result()
+    {
+    }
 };
-} // namespace orm
-} // namespace drogon
+}  // namespace orm
+}  // namespace drogon

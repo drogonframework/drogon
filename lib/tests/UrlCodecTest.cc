@@ -9,6 +9,7 @@ int main()
     auto output2 = drogon::utils::urlDecode(output);
     std::cout << output2 << std::endl;
     std::cout << drogon::utils::urlEncode("k2=安&k1=1") << std::endl;
-    std::cout << drogon::utils::urlDecode("k2%3D%E5%AE%89&k1%3D1") << std::endl;
+    std::cout << drogon::utils::urlDecode(string_view("k2%3D%E5%AE%89&k1%3D1"))
+              << std::endl;
     return 0;
 }

@@ -2,7 +2,7 @@
  *
  *  HttpClientImpl.cc
  *  An Tao
- *  
+ *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
  *  Use of this source code is governed by a MIT license
@@ -13,11 +13,11 @@
  */
 
 #include "HttpClientImpl.h"
+#include "HttpAppFrameworkImpl.h"
 #include "HttpRequestImpl.h"
 #include "HttpResponseParser.h"
-#include "HttpAppFrameworkImpl.h"
-#include <stdlib.h>
 #include <algorithm>
+#include <stdlib.h>
 
 using namespace drogon;
 using namespace std::placeholders;
@@ -25,9 +25,7 @@ using namespace std::placeholders;
 HttpClientImpl::HttpClientImpl(trantor::EventLoop *loop,
                                const trantor::InetAddress &addr,
                                bool useSSL)
-    : _loop(loop),
-      _server(addr),
-      _useSSL(useSSL)
+    : _loop(loop), _server(addr), _useSSL(useSSL)
 {
 }
 
@@ -36,7 +34,10 @@ HttpClientImpl::HttpClientImpl(trantor::EventLoop *loop,
     : _loop(loop)
 {
     auto lowerHost = hostString;
-    std::transform(lowerHost.begin(), lowerHost.end(), lowerHost.begin(), tolower);
+    std::transform(lowerHost.begin(),
+                   lowerHost.end(),
+                   lowerHost.begin(),
+                   tolower);
     if (lowerHost.find("https://") != std::string::npos)
     {
         _useSSL = true;
@@ -54,7 +55,7 @@ HttpClientImpl::HttpClientImpl(trantor::EventLoop *loop,
     auto pos = lowerHost.find("]");
     if (lowerHost[0] == '[' && pos != std::string::npos)
     {
-        //ipv6
+        // ipv6
         _domain = lowerHost.substr(1, pos - 1);
         if (lowerHost[pos + 1] == ':')
         {
@@ -126,7 +127,8 @@ HttpClientImpl::~HttpClientImpl()
     LOG_TRACE << "Deconstruction HttpClient";
 }
 
-void HttpClientImpl::sendRequest(const drogon::HttpRequestPtr &req, const drogon::HttpReqCallback &callback)
+void HttpClientImpl::sendRequest(const drogon::HttpRequestPtr &req,
+                                 const drogon::HttpReqCallback &callback)
 {
     auto thisPtr = shared_from_this();
     _loop->runInLoop([thisPtr, req, callback]() {
@@ -134,7 +136,8 @@ void HttpClientImpl::sendRequest(const drogon::HttpRequestPtr &req, const drogon
     });
 }
 
-void HttpClientImpl::sendRequest(const drogon::HttpRequestPtr &req, drogon::HttpReqCallback &&callback)
+void HttpClientImpl::sendRequest(const drogon::HttpRequestPtr &req,
+                                 drogon::HttpReqCallback &&callback)
 {
     auto thisPtr = shared_from_this();
     _loop->runInLoop([thisPtr, req, callback = std::move(callback)]() {
@@ -154,6 +157,16 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
     }
     req->addHeader("User-Agent", "DrogonClient");
 
+    for (auto &cookie : _validCookies)
+    {
+        if ((cookie.expiresDate().microSecondsSinceEpoch() == 0 ||
+             cookie.expiresDate() > trantor::Date::now()) &&
+            (cookie.path().empty() || req->path().find(cookie.path()) == 0))
+        {
+            req->addCookie(cookie.key(), cookie.value());
+        }
+    }
+
     if (!_tcpClient)
     {
         bool hasIpv6Address = false;
@@ -170,25 +183,26 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
             }
         }
 
-        if (_server.ipNetEndian() == 0 && !hasIpv6Address &&
-            !_domain.empty() &&
+        if (_server.ipNetEndian() == 0 && !hasIpv6Address && !_domain.empty() &&
             _server.portNetEndian() != 0)
         {
-            //dns
-            //TODO: timeout should be set by user
+            // dns
+            // TODO: timeout should be set by user
             if (InetAddress::resolve(_domain, &_server) == false)
             {
-                callback(ReqResult::BadServerAddress,
-                         HttpResponse::newHttpResponse());
+                callback(ReqResult::BadServerAddress, nullptr);
                 return;
             }
             LOG_TRACE << "dns:domain=" << _domain << ";ip=" << _server.toIp();
         }
 
-        if ((_server.ipNetEndian() != 0 || hasIpv6Address) && _server.portNetEndian() != 0)
+        if ((_server.ipNetEndian() != 0 || hasIpv6Address) &&
+            _server.portNetEndian() != 0)
         {
             LOG_TRACE << "New TcpClient," << _server.toIpPort();
-            _tcpClient = std::make_shared<trantor::TcpClient>(_loop, _server, "httpClient");
+            _tcpClient = std::make_shared<trantor::TcpClient>(_loop,
+                                                              _server,
+                                                              "httpClient");
 
 #ifdef USE_OPENSSL
             if (_useSSL)
@@ -199,107 +213,131 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
             auto thisPtr = shared_from_this();
             std::weak_ptr<HttpClientImpl> weakPtr = thisPtr;
             assert(_requestsBuffer.empty());
-            _requestsBuffer.push({req, [thisPtr, callback](ReqResult result, const HttpResponsePtr &response) {
-                                      callback(result, response);
-                                  }});
-            _tcpClient->setConnectionCallback([weakPtr](const trantor::TcpConnectionPtr &connPtr) {
-                auto thisPtr = weakPtr.lock();
-                if (!thisPtr)
-                    return;
-                if (connPtr->connected())
-                {
-                    connPtr->setContext(HttpResponseParser(connPtr));
-                    //send request;
-                    LOG_TRACE << "Connection established!";
-                    while (thisPtr->_pipeliningCallbacks.size() <= thisPtr->_pipeliningDepth &&
-                           !thisPtr->_requestsBuffer.empty())
+            _requestsBuffer.push(
+                {req,
+                 [thisPtr, callback](ReqResult result,
+                                     const HttpResponsePtr &response) {
+                     callback(result, response);
+                 }});
+            _tcpClient->setConnectionCallback(
+                [weakPtr](const trantor::TcpConnectionPtr &connPtr) {
+                    auto thisPtr = weakPtr.lock();
+                    if (!thisPtr)
+                        return;
+                    if (connPtr->connected())
                     {
-                        thisPtr->sendReq(connPtr, thisPtr->_requestsBuffer.front().first);
-                        thisPtr->_pipeliningCallbacks.push(std::move(thisPtr->_requestsBuffer.front().second));
-                        thisPtr->_requestsBuffer.pop();
+                        connPtr->setContext(HttpResponseParser(connPtr));
+                        // send request;
+                        LOG_TRACE << "Connection established!";
+                        while (thisPtr->_pipeliningCallbacks.size() <=
+                                   thisPtr->_pipeliningDepth &&
+                               !thisPtr->_requestsBuffer.empty())
+                        {
+                            thisPtr->sendReq(
+                                connPtr,
+                                thisPtr->_requestsBuffer.front().first);
+                            thisPtr->_pipeliningCallbacks.push(std::move(
+                                thisPtr->_requestsBuffer.front().second));
+                            thisPtr->_requestsBuffer.pop();
+                        }
                     }
-                }
-                else
-                {
-                    LOG_TRACE << "connection disconnect";
-                    thisPtr->onError(ReqResult::NetworkFailure);
-                }
-            });
+                    else
+                    {
+                        LOG_TRACE << "connection disconnect";
+                        thisPtr->onError(ReqResult::NetworkFailure);
+                    }
+                });
             _tcpClient->setConnectionErrorCallback([weakPtr]() {
                 auto thisPtr = weakPtr.lock();
                 if (!thisPtr)
                     return;
-                //can't connect to server
+                // can't connect to server
                 thisPtr->onError(ReqResult::BadServerAddress);
             });
-            _tcpClient->setMessageCallback([weakPtr](const trantor::TcpConnectionPtr &connPtr, trantor::MsgBuffer *msg) {
-                auto thisPtr = weakPtr.lock();
-                if (thisPtr)
-                {
-                    thisPtr->onRecvMessage(connPtr, msg);
-                }
-            });
+            _tcpClient->setMessageCallback(
+                [weakPtr](const trantor::TcpConnectionPtr &connPtr,
+                          trantor::MsgBuffer *msg) {
+                    auto thisPtr = weakPtr.lock();
+                    if (thisPtr)
+                    {
+                        thisPtr->onRecvMessage(connPtr, msg);
+                    }
+                });
             _tcpClient->connect();
         }
         else
         {
-            callback(ReqResult::BadServerAddress,
-                     HttpResponse::newHttpResponse());
+            callback(ReqResult::BadServerAddress, nullptr);
             return;
         }
     }
     else
     {
-        //send request;
+        // send request;
         auto connPtr = _tcpClient->connection();
         auto thisPtr = shared_from_this();
         if (connPtr && connPtr->connected())
         {
-            if (_pipeliningCallbacks.size() <= _pipeliningDepth && _requestsBuffer.empty())
+            if (_pipeliningCallbacks.size() <= _pipeliningDepth &&
+                _requestsBuffer.empty())
             {
                 sendReq(connPtr, req);
-                _pipeliningCallbacks.push([thisPtr, callback](ReqResult result, const HttpResponsePtr &response) {
-                    callback(result, response);
-                });
+                _pipeliningCallbacks.push(
+                    [thisPtr, callback](ReqResult result,
+                                        const HttpResponsePtr &response) {
+                        callback(result, response);
+                    });
             }
             else
             {
-                _requestsBuffer.push({req, [thisPtr, callback](ReqResult result, const HttpResponsePtr &response) {
-                                          callback(result, response);
-                                      }});
+                _requestsBuffer.push(
+                    {req,
+                     [thisPtr, callback](ReqResult result,
+                                         const HttpResponsePtr &response) {
+                         callback(result, response);
+                     }});
             }
         }
         else
         {
-            _requestsBuffer.push({req, [thisPtr, callback](ReqResult result, const HttpResponsePtr &response) {
-                                      callback(result, response);
-                                  }});
+            _requestsBuffer.push(
+                {req,
+                 [thisPtr, callback](ReqResult result,
+                                     const HttpResponsePtr &response) {
+                     callback(result, response);
+                 }});
         }
     }
 }
 
-void HttpClientImpl::sendReq(const trantor::TcpConnectionPtr &connPtr, const HttpRequestPtr &req)
+void HttpClientImpl::sendReq(const trantor::TcpConnectionPtr &connPtr,
+                             const HttpRequestPtr &req)
 {
-
     trantor::MsgBuffer buffer;
     auto implPtr = std::dynamic_pointer_cast<HttpRequestImpl>(req);
     assert(implPtr);
     implPtr->appendToBuffer(&buffer);
-    LOG_TRACE << "Send request:" << std::string(buffer.peek(), buffer.readableBytes());
+    LOG_TRACE << "Send request:"
+              << std::string(buffer.peek(), buffer.readableBytes());
+    _bytesSent += buffer.readableBytes();
     connPtr->send(std::move(buffer));
 }
 
-void HttpClientImpl::onRecvMessage(const trantor::TcpConnectionPtr &connPtr, trantor::MsgBuffer *msg)
+void HttpClientImpl::onRecvMessage(const trantor::TcpConnectionPtr &connPtr,
+                                   trantor::MsgBuffer *msg)
 {
-    HttpResponseParser *responseParser = any_cast<HttpResponseParser>(connPtr->getMutableContext());
+    HttpResponseParser *responseParser =
+        any_cast<HttpResponseParser>(connPtr->getMutableContext());
 
-    //LOG_TRACE << "###:" << msg->readableBytes();
+    // LOG_TRACE << "###:" << msg->readableBytes();
+    auto msgSize = msg->readableBytes();
     while (msg->readableBytes() > 0)
     {
         if (!responseParser->parseResponse(msg))
         {
             assert(!_pipeliningCallbacks.empty());
             onError(ReqResult::BadResponse);
+            _bytesReceived += (msgSize - msg->readableBytes());
             return;
         }
         if (responseParser->gotAll())
@@ -318,10 +356,14 @@ void HttpClientImpl::onRecvMessage(const trantor::TcpConnectionPtr &connPtr, tra
             }
             auto cb = std::move(_pipeliningCallbacks.front());
             _pipeliningCallbacks.pop();
+            handleCookies(resp);
+            _bytesReceived += (msgSize - msg->readableBytes());
+            msgSize = msg->readableBytes();
             cb(ReqResult::Ok, resp);
 
-            // LOG_TRACE << "pipelining buffer size=" << _pipeliningCallbacks.size();
-            // LOG_TRACE << "requests buffer size=" << _requestsBuffer.size();
+            // LOG_TRACE << "pipelining buffer size=" <<
+            // _pipeliningCallbacks.size(); LOG_TRACE << "requests buffer size="
+            // << _requestsBuffer.size();
 
             if (!_requestsBuffer.empty())
             {
@@ -345,15 +387,24 @@ void HttpClientImpl::onRecvMessage(const trantor::TcpConnectionPtr &connPtr, tra
     }
 }
 
-HttpClientPtr HttpClient::newHttpClient(const std::string &ip, uint16_t port, bool useSSL, trantor::EventLoop *loop)
+HttpClientPtr HttpClient::newHttpClient(const std::string &ip,
+                                        uint16_t port,
+                                        bool useSSL,
+                                        trantor::EventLoop *loop)
 {
     bool isIpv6 = ip.find(":") == std::string::npos ? false : true;
-    return std::make_shared<HttpClientImpl>(loop == nullptr ? app().getLoop() : loop, trantor::InetAddress(ip, port, isIpv6), useSSL);
+    return std::make_shared<HttpClientImpl>(
+        loop == nullptr ? app().getLoop() : loop,
+        trantor::InetAddress(ip, port, isIpv6),
+        useSSL);
 }
 
-HttpClientPtr HttpClient::newHttpClient(const std::string &hostString, trantor::EventLoop *loop)
+HttpClientPtr HttpClient::newHttpClient(const std::string &hostString,
+                                        trantor::EventLoop *loop)
 {
-    return std::make_shared<HttpClientImpl>(loop == nullptr ? app().getLoop() : loop, hostString);
+    return std::make_shared<HttpClientImpl>(loop == nullptr ? app().getLoop()
+                                                            : loop,
+                                            hostString);
 }
 
 void HttpClientImpl::onError(ReqResult result)
@@ -362,13 +413,39 @@ void HttpClientImpl::onError(ReqResult result)
     {
         auto cb = std::move(_pipeliningCallbacks.front());
         _pipeliningCallbacks.pop();
-        cb(result, HttpResponse::newHttpResponse());
+        cb(result, nullptr);
     }
     while (!_requestsBuffer.empty())
     {
         auto cb = std::move(_requestsBuffer.front().second);
         _requestsBuffer.pop();
-        cb(result, HttpResponse::newHttpResponse());
+        cb(result, nullptr);
     }
     _tcpClient.reset();
+}
+
+void HttpClientImpl::handleCookies(const HttpResponseImplPtr &resp)
+{
+    _loop->assertInLoopThread();
+    if (!_enableCookies)
+        return;
+    for (auto &iter : resp->getCookies())
+    {
+        auto &cookie = iter.second;
+        if (!cookie.domain().empty() && cookie.domain() != _domain)
+        {
+            continue;
+        }
+        if (cookie.isSecure())
+        {
+            if (_useSSL)
+            {
+                _validCookies.emplace_back(cookie);
+            }
+        }
+        else
+        {
+            _validCookies.emplace_back(cookie);
+        }
+    }
 }
