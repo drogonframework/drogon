@@ -38,6 +38,7 @@ addons:
     - postgresql
     - mariadb
     - sqlite3
+    update: true
 
 script:
   - ./build.sh && ./test.sh
