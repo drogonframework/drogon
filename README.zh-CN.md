@@ -34,4 +34,4 @@ Drogon的主要应用平台是Linux，也支持Mac OS、FreeBSD，目前还不�
 * 支持插件，可通过配置文件在加载期动态拆装；
 * 支持内建插入点的AOP
 
-### 更多详情请浏览 [wiki](https://github.com/an-tao/drogon/wiki/Chinese-home)
+### 更多详情请浏览 [wiki](https://github.com/an-tao/drogon/wiki/01-概述)
