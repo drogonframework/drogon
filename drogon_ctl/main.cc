@@ -31,8 +31,9 @@ int main(int argc, char *argv[])
     {
         args.push_back(argv[i]);
     }
-    for (auto &arg : args)
+    if (args.size() > 0)
     {
+        auto &arg = args[0];
         if (arg == "-h" || arg == "--help")
         {
             arg = "help";
