@@ -118,7 +118,7 @@ class WebSocketConnectionImpl
                               const WebSocketMessageType &) {};
     std::function<void(const WebSocketConnectionImplPtr &)> _closeCallback =
         [](const WebSocketConnectionImplPtr &) {};
-    void sendWsData(const char *msg, size_t len, unsigned char opcode);
+    void sendWsData(const char *msg, uint64_t len, unsigned char opcode);
 };
 
 }  // namespace drogon

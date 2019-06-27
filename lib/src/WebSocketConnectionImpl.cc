@@ -62,7 +62,7 @@ void WebSocketConnectionImpl::send(const char *msg,
 }
 
 void WebSocketConnectionImpl::sendWsData(const char *msg,
-                                         size_t len,
+                                         uint64_t len,
                                          unsigned char opcode)
 {
     LOG_TRACE << "send " << len << " bytes";
