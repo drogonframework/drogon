@@ -404,7 +404,7 @@ void HttpResponseImpl::clear()
 {
     _statusCode = kUnknown;
     _v = kHttp11;
-    _statusMessage = nullptr;
+    _statusMessage = string_view{};
     _fullHeaderString.reset();
     _headers.clear();
     _cookies.clear();
