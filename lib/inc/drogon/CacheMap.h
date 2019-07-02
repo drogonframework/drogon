@@ -99,7 +99,7 @@ class CacheMap
                     {
                         CallbackBucket tmp;
                         {
-                            std::lock_guard<std::mutex> lock(bucketMutex_);
+                            std::lock_guard<std::mutex> lock(_bucketMutex);
                             // use tmp val to make this critical area as short
                             // as possible.
                             _wheels[i].front().swap(tmp);
@@ -120,7 +120,7 @@ class CacheMap
     {
         _loop->invalidateTimer(_timerId);
         {
-            std::lock_guard<std::mutex> guard(mtx_);
+            std::lock_guard<std::mutex> guard(_mtx);
             _map.clear();
         }
 
@@ -155,7 +155,7 @@ class CacheMap
             v.value = std::move(value);
             v.timeout = timeout;
             v._timeoutCallback = std::move(timeoutCallback);
-            std::lock_guard<std::mutex> lock(mtx_);
+            std::lock_guard<std::mutex> lock(_mtx);
             _map[key] = std::move(v);
             eraseAfter(timeout, key);
         }
@@ -166,7 +166,7 @@ class CacheMap
             v.timeout = timeout;
             v._timeoutCallback = std::function<void()>();
             v._weakEntryPtr = WeakCallbackEntryPtr();
-            std::lock_guard<std::mutex> lock(mtx_);
+            std::lock_guard<std::mutex> lock(_mtx);
             _map[key] = std::move(v);
         }
     }
@@ -182,7 +182,7 @@ class CacheMap
             v.value = value;
             v.timeout = timeout;
             v._timeoutCallback = std::move(timeoutCallback);
-            std::lock_guard<std::mutex> lock(mtx_);
+            std::lock_guard<std::mutex> lock(_mtx);
             _map[key] = std::move(v);
             eraseAfter(timeout, key);
         }
@@ -193,7 +193,7 @@ class CacheMap
             v.timeout = timeout;
             v._timeoutCallback = std::function<void()>();
             v._weakEntryPtr = WeakCallbackEntryPtr();
-            std::lock_guard<std::mutex> lock(mtx_);
+            std::lock_guard<std::mutex> lock(_mtx);
             _map[key] = std::move(v);
         }
     }
@@ -203,7 +203,7 @@ class CacheMap
     {
         int timeout = 0;
 
-        std::lock_guard<std::mutex> lock(mtx_);
+        std::lock_guard<std::mutex> lock(_mtx);
         auto iter = _map.find(key);
         if (iter != _map.end())
         {
@@ -221,7 +221,7 @@ class CacheMap
         int timeout = 0;
         bool flag = false;
 
-        std::lock_guard<std::mutex> lock(mtx_);
+        std::lock_guard<std::mutex> lock(_mtx);
         auto iter = _map.find(key);
         if (iter != _map.end())
         {
@@ -244,7 +244,7 @@ class CacheMap
     {
         int timeout = 0;
         bool flag = false;
-        std::lock_guard<std::mutex> lock(mtx_);
+        std::lock_guard<std::mutex> lock(_mtx);
         auto iter = _map.find(key);
         if (iter != _map.end())
         {
@@ -263,7 +263,7 @@ class CacheMap
     void erase(const T1 &key)
     {
         // in this case,we don't evoke the timeout callback;
-        std::lock_guard<std::mutex> lock(mtx_);
+        std::lock_guard<std::mutex> lock(_mtx);
         _map.erase(key);
     }
 
@@ -274,8 +274,8 @@ class CacheMap
 
     std::atomic<size_t> _ticksCounter = ATOMIC_VAR_INIT(0);
 
-    std::mutex mtx_;
-    std::mutex bucketMutex_;
+    std::mutex _mtx;
+    std::mutex _bucketMutex;
     trantor::TimerId _timerId;
     trantor::EventLoop *_loop;
 
@@ -304,7 +304,7 @@ class CacheMap
                 entryPtr = std::make_shared<CallbackEntry>([=]() {
                     if (delay > 0)
                     {
-                        std::lock_guard<std::mutex> lock(bucketMutex_);
+                        std::lock_guard<std::mutex> lock(_bucketMutex);
                         _wheels[i][(delay + (t % _bucketsNumPerWheel) - 1) %
                                    _bucketsNumPerWheel]
                             .insert(entryPtr);
@@ -336,13 +336,13 @@ class CacheMap
 
         if (entryPtr)
         {
-            std::lock_guard<std::mutex> lock(bucketMutex_);
+            std::lock_guard<std::mutex> lock(_bucketMutex);
             insertEntry(delay, entryPtr);
         }
         else
         {
             std::function<void()> cb = [=]() {
-                std::lock_guard<std::mutex> lock(mtx_);
+                std::lock_guard<std::mutex> lock(_mtx);
                 if (_map.find(key) != _map.end())
                 {
                     auto &value = _map[key];
@@ -363,7 +363,7 @@ class CacheMap
             _map[key]._weakEntryPtr = entryPtr;
 
             {
-                std::lock_guard<std::mutex> lock(bucketMutex_);
+                std::lock_guard<std::mutex> lock(_bucketMutex);
                 insertEntry(delay, entryPtr);
             }
         }
