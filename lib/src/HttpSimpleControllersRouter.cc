@@ -284,8 +284,7 @@ void HttpSimpleControllersRouter::doControllerHandler(
                             newResp = std::make_shared<HttpResponseImpl>(
                                 *std::dynamic_pointer_cast<HttpResponseImpl>(
                                     resp));
-                            newResp->setExpiredTime(-1);  // make it
-                                                          // temporary
+                            newResp->setExpiredTime(-1);  // make it temporary
                         }
                         newResp->addCookie("JSESSIONID", sessionId);
                     }
@@ -379,7 +378,16 @@ void HttpSimpleControllersRouter::doPreHandlingAdvices(
         }
         methods.resize(methods.length() - 1);
         resp->addHeader("ALLOW", methods);
-        resp->addHeader("Access-Control-Allow-Origin", "*");
+
+        auto &origin = req->getHeader("Origin");
+        if (origin.empty())
+        {
+            resp->addHeader("Access-Control-Allow-Origin", "*");
+        }
+        else
+        {
+            resp->addHeader("Access-Control-Allow-Origin", origin);
+        }
         resp->addHeader("Access-Control-Allow-Methods", methods);
         resp->addHeader("Access-Control-Allow-Headers",
                         "x-requested-with,content-type");

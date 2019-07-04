@@ -20,8 +20,6 @@
 
 using namespace drogon;
 
-namespace drogon
-{
 void HttpControllersRouter::doWhenNoHandlerFound(
     const HttpRequestImplPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback,
@@ -31,22 +29,15 @@ void HttpControllersRouter::doWhenNoHandlerFound(
     if (req->path() == "/" &&
         !HttpAppFrameworkImpl::instance().getHomePage().empty())
     {
-        // auto resp = drogon::HttpResponse::newRedirectionResponse("/" +
-        // HttpAppFrameworkImpl::instance().getHomePage());
-        // callback(resp);
-        // Redirect on the server side
         req->setPath("/" + HttpAppFrameworkImpl::instance().getHomePage());
         drogon::app().forward(req, std::move(callback));
         return;
     }
-    // auto resp = drogon::HttpResponse::newNotFoundResponse();
-    // callback(resp);
     _fileRouter.route(req,
                       std::move(callback),
                       needSetJsessionid,
                       std::move(sessionId));
 }
-}  // namespace drogon
 
 void HttpControllersRouter::init(
     const std::vector<trantor::EventLoop *> &ioLoops)
@@ -514,7 +505,15 @@ void HttpControllersRouter::doPreHandlingAdvices(
         }
         methods.resize(methods.length() - 1);
         resp->addHeader("ALLOW", methods);
-        resp->addHeader("Access-Control-Allow-Origin", "*");
+        auto &origin = req->getHeader("Origin");
+        if (origin.empty())
+        {
+            resp->addHeader("Access-Control-Allow-Origin", "*");
+        }
+        else
+        {
+            resp->addHeader("Access-Control-Allow-Origin", origin);
+        }
         resp->addHeader("Access-Control-Allow-Methods", methods);
         resp->addHeader("Access-Control-Allow-Headers",
                         "x-requested-with,content-type");
