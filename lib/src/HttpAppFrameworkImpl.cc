@@ -521,7 +521,10 @@ void HttpAppFrameworkImpl::createDbClients(
                     _dbFastClientsMap[dbInfo._name][loop] =
                         std::shared_ptr<drogon::orm::DbClient>(
                             new drogon::orm::DbClientLockFree(
-                                dbInfo._connectionInfo, loop, dbInfo._dbType));
+                                dbInfo._connectionInfo,
+                                loop,
+                                dbInfo._dbType,
+                                dbInfo._connectionNumber));
                 }
             }
         }

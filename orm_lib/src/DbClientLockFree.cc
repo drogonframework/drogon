@@ -41,8 +41,9 @@ using namespace drogon::orm;
 
 DbClientLockFree::DbClientLockFree(const std::string &connInfo,
                                    trantor::EventLoop *loop,
-                                   ClientType type)
-    : _connInfo(connInfo), _loop(loop)
+                                   ClientType type,
+                                   size_t connectionNumberPerLoop)
+    : _connInfo(connInfo), _loop(loop), _connectionNum(connectionNumberPerLoop)
 {
     _type = type;
     LOG_TRACE << "type=" << (int)type;

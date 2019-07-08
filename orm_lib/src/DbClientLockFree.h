@@ -35,7 +35,8 @@ class DbClientLockFree : public DbClient,
   public:
     DbClientLockFree(const std::string &connInfo,
                      trantor::EventLoop *loop,
-                     ClientType type);
+                     ClientType type,
+                     size_t connectionNumberPerLoop);
     virtual ~DbClientLockFree() noexcept;
     virtual void execSql(std::string &&sql,
                          size_t paraNum,
@@ -55,7 +56,7 @@ class DbClientLockFree : public DbClient,
     std::string _connInfo;
     trantor::EventLoop *_loop;
     DbConnectionPtr newConnection();
-    const size_t _connectionNum = 4;
+    const size_t _connectionNum;
     std::vector<DbConnectionPtr> _connections;
     std::vector<DbConnectionPtr> _connectionHolders;
     std::unordered_set<DbConnectionPtr> _transSet;
