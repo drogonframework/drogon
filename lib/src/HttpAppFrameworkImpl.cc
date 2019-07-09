@@ -390,12 +390,14 @@ void HttpAppFrameworkImpl::run()
         }
     }
 #else
+    auto loopThreadPtr =
+        std::make_shared<EventLoopThread>("DrogonListeningLoop");
+    loopThreads.push_back(loopThreadPtr);
+    auto ioLoopThreadPoolPtr =
+        std::make_shared<EventLoopThreadPool>(_threadNum);
     for (auto const &listener : _listeners)
     {
         LOG_TRACE << "thread num=" << _threadNum;
-        auto loopThreadPtr =
-            std::make_shared<EventLoopThread>("DrogonListeningLoop");
-        loopThreads.push_back(loopThreadPtr);
         auto ip = std::get<0>(listener);
         bool isIpv6 = ip.find(":") == std::string::npos ? false : true;
         auto serverPtr = std::make_shared<HttpServer>(
@@ -420,7 +422,7 @@ void HttpAppFrameworkImpl::run()
             serverPtr->enableSSL(cert, key);
 #endif
         }
-        serverPtr->setIoLoopNum(_threadNum);
+        serverPtr->setIoLoopThreadPool(ioLoopThreadPoolPtr);
         serverPtr->setHttpAsyncCallback(
             std::bind(&HttpAppFrameworkImpl::onAsyncRequest, this, _1, _2));
         serverPtr->setNewWebsocketCallback(std::bind(
@@ -429,12 +431,12 @@ void HttpAppFrameworkImpl::run()
             std::bind(&HttpAppFrameworkImpl::onConnection, this, _1));
         serverPtr->kickoffIdleConnections(_idleConnectionTimeout);
         serverPtr->start();
-        auto serverIoLoops = serverPtr->getIoLoops();
-        for (auto serverIoLoop : serverIoLoops)
-        {
-            ioLoops.push_back(serverIoLoop);
-        }
         servers.push_back(serverPtr);
+    }
+    auto serverIoLoops = ioLoopThreadPoolPtr->getLoops();
+    for (auto serverIoLoop : serverIoLoops)
+    {
+        ioLoops.push_back(serverIoLoop);
     }
 #endif
 

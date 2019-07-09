@@ -100,6 +100,13 @@ MysqlConnection::MysqlConnection(trantor::EventLoop *loop,
                                      0);
         // LOG_DEBUG << ret;
         auto fd = mysql_get_socket(_mysqlPtr.get());
+        if (fd < 0)
+        {
+            LOG_FATAL << "Socket fd < 0, Usually this is because the number of "
+                         "files opened by the program exceeds the system "
+                         "limit. Please use the ulimit command to check.";
+            exit(-1);
+        }
         _channelPtr =
             std::unique_ptr<trantor::Channel>(new trantor::Channel(loop, fd));
         _channelPtr->setCloseCallback([=]() {

@@ -64,6 +64,11 @@ class HttpServer : trantor::NonCopyable
     {
         _connectionCallback = cb;
     }
+    void setIoLoopThreadPool(
+        const std::shared_ptr<trantor::EventLoopThreadPool> &pool)
+    {
+        _server.setIoLoopThreadPool(pool);
+    }
     void setIoLoopNum(int numThreads)
     {
         _server.setIoLoopNum(numThreads);
