@@ -45,7 +45,13 @@ PgConnection::PgConnection(trantor::EventLoop *loop,
       _channel(loop, PQsocket(_connPtr.get()))
 {
     PQsetnonblocking(_connPtr.get(), 1);
-    // assert(PQisnonblocking(_connPtr.get()));
+    if (_channel.fd() < 0)
+    {
+        LOG_FATAL << "Socket fd < 0, Usually this is because the number of "
+                     "files opened by the program exceeds the system "
+                     "limit. Please use the ulimit command to check.";
+        exit(-1);
+    }
     _channel.setReadCallback([=]() {
         if (_status != ConnectStatus_Ok)
         {
