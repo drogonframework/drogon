@@ -61,10 +61,17 @@ class HttpResponse
     /// Get the status set by the setCloseConnetion() method.
     virtual bool ifCloseConnection() const = 0;
 
-    /// Set the reponse content type, such as text/html, text/plaint, image/png
+    /// Set the response content type, such as text/html, text/plaint, image/png
     /// and so on. If the content type
     /// is a text type, the character set is utf8.
     virtual void setContentTypeCode(ContentType type) = 0;
+
+    /// Set the response content type and the content-type string, The string
+    /// must contain the header name and CRLF.
+    /// For example, "content-type: text/plain\r\n"
+    virtual void setContentTypeCodeAndCustomString(
+        ContentType type,
+        const string_view &typeString) = 0;
 
     /// Set the reponse content type and the character set.
     /// virtual void setContentTypeCodeAndCharacterSet(ContentType type, const
