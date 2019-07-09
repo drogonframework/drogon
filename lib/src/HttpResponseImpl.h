@@ -99,6 +99,14 @@ class HttpResponseImpl : public HttpResponse
         setContentType(webContentTypeToString(type));
     }
 
+    virtual void setContentTypeCodeAndCustomString(
+        ContentType type,
+        const string_view &typeString) override
+    {
+        _contentType = type;
+        setContentType(typeString);
+    }
+
     // virtual void setContentTypeCodeAndCharacterSet(ContentType type, const
     // std::string &charSet = "utf-8") override
     // {
