@@ -48,7 +48,7 @@
             //any synchronous interface of it.
             "is_fast": false,
             //connection_number: 1 by default, if the 'is_fast' is true, the number is the number of  
-            connections per IO thread, otherwise it is the total number of all connections.  
+            //connections per IO thread, otherwise it is the total number of all connections.  
             "connection_number": 1
         }
     ],*/
