@@ -212,7 +212,7 @@ static void loadApp(const Json::Value &app)
     {
         // set the number to the number of processors.
         threadsNum = std::thread::hardware_concurrency();
-        LOG_DEBUG << "The number of processors is " << threadsNum;
+        LOG_TRACE << "The number of processors is " << threadsNum;
     }
     if (threadsNum < 1)
         threadsNum = 1;
