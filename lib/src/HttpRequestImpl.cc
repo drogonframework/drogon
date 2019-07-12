@@ -102,7 +102,7 @@ void HttpRequestImpl::parseParameters() const
     // }
 }
 
-void HttpRequestImpl::appendToBuffer(MsgBuffer *output) const
+void HttpRequestImpl::appendToBuffer(trantor::MsgBuffer *output) const
 {
     switch (_method)
     {

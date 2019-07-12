@@ -21,7 +21,6 @@
 #include <trantor/net/TcpConnection.h>
 #include <trantor/utils/MsgBuffer.h>
 
-using namespace trantor;
 namespace drogon
 {
 class HttpResponseParser
@@ -44,7 +43,7 @@ class HttpResponseParser
     // default copy-ctor, dtor and assignment are fine
 
     // return false if any error
-    bool parseResponse(MsgBuffer *buf);
+    bool parseResponse(trantor::MsgBuffer *buf);
 
     bool gotAll() const
     {

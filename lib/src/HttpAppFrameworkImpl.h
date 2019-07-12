@@ -20,11 +20,15 @@
 #include "HttpResponseImpl.h"
 #include "HttpSimpleControllersRouter.h"
 #include "PluginsManager.h"
+#include "ListenerManager.h"
 #include "SharedLibManager.h"
 #include "WebSocketConnectionImpl.h"
 #include "WebsocketControllersRouter.h"
 #include "StaticFileRouter.h"
-
+#include "SessionManager.h"
+#if USE_ORM
+#include "../../orm_lib/src/DbClientManager.h"
+#endif
 #include <drogon/HttpAppFramework.h>
 #include <drogon/HttpSimpleController.h>
 #include <drogon/version.h>
@@ -81,7 +85,11 @@ class HttpAppFrameworkImpl : public HttpAppFramework
                              uint16_t port,
                              bool useSSL = false,
                              const std::string &certFile = "",
-                             const std::string &keyFile = "") override;
+                             const std::string &keyFile = "") override
+    {
+        assert(!_running);
+        _listenerManager.addListener(ip, port, useSSL, certFile, keyFile);
+    }
     virtual void setThreadNum(size_t threadNum) override;
     virtual size_t getThreadNum() const override
     {
@@ -308,7 +316,7 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     {
         // Destroy the following objects before _loop destruction
         _sharedLibManagerPtr.reset();
-        _sessionMapPtr.reset();
+        _sessionManagerPtr.reset();
     }
 
     virtual bool isRunning() override
@@ -338,9 +346,15 @@ class HttpAppFrameworkImpl : public HttpAppFramework
 
 #if USE_ORM
     virtual orm::DbClientPtr getDbClient(
-        const std::string &name = "default") override;
+        const std::string &name = "default") override
+    {
+        return _dbClientManager.getDbClient(name);
+    }
     virtual orm::DbClientPtr getFastDbClient(
-        const std::string &name = "default") override;
+        const std::string &name = "default") override
+    {
+        return _dbClientManager.getFastDbClient(name);
+    }
     virtual void createDbClient(const std::string &dbType,
                                 const std::string &host,
                                 const u_short port,
@@ -350,7 +364,20 @@ class HttpAppFrameworkImpl : public HttpAppFramework
                                 const size_t connectionNum = 1,
                                 const std::string &filename = "",
                                 const std::string &name = "default",
-                                const bool isFast = false) override;
+                                const bool isFast = false) override
+    {
+        assert(!_running);
+        _dbClientManager.createDbClient(dbType,
+                                        host,
+                                        port,
+                                        databaseName,
+                                        userName,
+                                        password,
+                                        connectionNum,
+                                        filename,
+                                        name,
+                                        isFast);
+    }
 #endif
 
     inline static HttpAppFrameworkImpl &instance()
@@ -377,7 +404,7 @@ class HttpAppFrameworkImpl : public HttpAppFramework
         const HttpRequestImplPtr &req,
         std::function<void(const HttpResponsePtr &)> &&callback,
         const WebSocketConnectionImplPtr &wsConnPtr);
-    void onConnection(const TcpConnectionPtr &conn);
+    void onConnection(const trantor::TcpConnectionPtr &conn);
     void addHttpPath(const std::string &path,
                      const internal::HttpBinderBasePtr &binder,
                      const std::vector<HttpMethod> &validMethods,
@@ -389,14 +416,9 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     size_t _sessionTimeout = 0;
     size_t _idleConnectionTimeout = 60;
     bool _useSession = false;
-    std::vector<
-        std::tuple<std::string, uint16_t, bool, std::string, std::string>>
-        _listeners;
+    ListenerManager _listenerManager;
     std::string _serverHeader =
         "Server: drogon/" + drogon::getVersion() + "\r\n";
-
-    typedef std::shared_ptr<Session> SessionPtr;
-    std::unique_ptr<CacheMap<std::string, SessionPtr>> _sessionMapPtr;
 
     HttpControllersRouter _httpCtrlsRouter;
     HttpSimpleControllersRouter _httpSimpleCtrlsRouter;
@@ -434,25 +456,13 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     size_t _clientMaxMemoryBodySize = 64 * 1024;
     size_t _clientMaxWebSocketMessageSize = 128 * 1024;
     std::string _homePageFile = "index.html";
-
+    std::unique_ptr<SessionManager> _sessionManagerPtr;
     // Json::Value _customConfig;
     Json::Value _jsonConfig;
     PluginsManager _pluginsManager;
     HttpResponsePtr _custom404;
 #if USE_ORM
-    std::map<std::string, orm::DbClientPtr> _dbClientsMap;
-    struct DbInfo
-    {
-        std::string _name;
-        std::string _connectionInfo;
-        orm::ClientType _dbType;
-        bool _isFast;
-        size_t _connectionNumber;
-    };
-    std::vector<DbInfo> _dbInfos;
-    std::map<std::string, std::map<trantor::EventLoop *, orm::DbClientPtr>>
-        _dbFastClientsMap;
-    void createDbClients(const std::vector<trantor::EventLoop *> &ioloops);
+    orm::DbClientManager _dbClientManager;
 #endif
     static InitBeforeMainFunction _initFirst;
     std::vector<std::function<bool(const trantor::InetAddress &,

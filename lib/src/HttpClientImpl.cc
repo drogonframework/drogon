@@ -19,6 +19,7 @@
 #include <algorithm>
 #include <stdlib.h>
 
+using namespace trantor;
 using namespace drogon;
 using namespace std::placeholders;
 

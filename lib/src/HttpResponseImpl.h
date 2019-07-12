@@ -26,7 +26,6 @@
 #include <trantor/utils/MsgBuffer.h>
 #include <unordered_map>
 
-using namespace trantor;
 namespace drogon
 {
 class HttpResponseImpl : public HttpResponse

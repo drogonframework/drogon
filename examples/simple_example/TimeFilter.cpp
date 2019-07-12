@@ -32,7 +32,7 @@ void TimeFilter::doFilter(const HttpRequestPtr &req,
         {
             Json::Value json;
             json["result"] = "error";
-            json["message"] = "Visit interval should be at least 10 seconds";
+            json["message"] = "Access interval should be at least 10 seconds";
             auto res = HttpResponse::newHttpJsonResponse(json);
             cb(res);
             return;
