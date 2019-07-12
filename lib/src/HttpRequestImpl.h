@@ -34,9 +34,6 @@
 #include <thread>
 #include <unordered_map>
 
-using std::string;
-using namespace trantor;
-
 namespace drogon
 {
 class HttpRequestImpl : public HttpRequest
@@ -289,7 +286,7 @@ class HttpRequestImpl : public HttpRequest
         _cookies[key] = value;
     }
 
-    void appendToBuffer(MsgBuffer *output) const;
+    void appendToBuffer(trantor::MsgBuffer *output) const;
 
     virtual SessionPtr session() const override
     {

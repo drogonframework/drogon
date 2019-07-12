@@ -109,7 +109,7 @@ void doTest(const HttpClientPtr &client,
                             auto &json = resp1->jsonObject();
                             if (json && json->get("message", std::string(""))
                                                 .asString() ==
-                                            "Visit interval should be "
+                                            "Access interval should be "
                                             "at least 10 "
                                             "seconds")
                             {

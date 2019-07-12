@@ -16,9 +16,6 @@
 #include "AOPAdvice.h"
 #include "ConfigLoader.h"
 #include "HttpServer.h"
-#if USE_ORM
-#include "../../orm_lib/src/DbClientLockFree.h"
-#endif
 #include <algorithm>
 #include <drogon/CacheMap.h>
 #include <drogon/DrClassMap.h>
@@ -27,20 +24,22 @@
 #include <drogon/HttpTypes.h>
 #include <drogon/Session.h>
 #include <drogon/utils/Utilities.h>
-#include <fcntl.h>
+#include <trantor/utils/AsyncFileLogger.h>
+#include <json/json.h>
+
 #include <fstream>
 #include <iostream>
-#include <json/json.h>
 #include <memory>
+#include <unordered_map>
+#include <utility>
+#include <tuple>
+
+#include <fcntl.h>
 #include <sys/file.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-#include <trantor/utils/AsyncFileLogger.h>
-#include <tuple>
 #include <unistd.h>
-#include <unordered_map>
-#include <utility>
 #include <uuid.h>
 
 using namespace drogon;
@@ -52,26 +51,7 @@ drogon::InitBeforeMainFunction drogon::HttpAppFrameworkImpl::_initFirst([]() {
         LOG_TRACE << "Initialize the main event loop in the main thread";
     });
 });
-namespace drogon
-{
-class DrogonFileLocker : public trantor::NonCopyable
-{
-  public:
-    DrogonFileLocker()
-    {
-        _fd = open("/tmp/drogon.lock", O_TRUNC | O_CREAT, 0755);
-        flock(_fd, LOCK_EX);
-    }
-    ~DrogonFileLocker()
-    {
-        close(_fd);
-    }
 
-  private:
-    int _fd = 0;
-};
-
-}  // namespace drogon
 static void godaemon(void)
 {
     printf("Initializing daemon mode\n");
@@ -218,23 +198,6 @@ void HttpAppFrameworkImpl::setSSLFiles(const std::string &certPath,
     _sslCertPath = certPath;
     _sslKeyPath = keyPath;
 }
-void HttpAppFrameworkImpl::addListener(const std::string &ip,
-                                       uint16_t port,
-                                       bool useSSL,
-                                       const std::string &certFile,
-                                       const std::string &keyFile)
-{
-    assert(!_running);
-
-#ifndef USE_OPENSSL
-    if (useSSL)
-    {
-        LOG_ERROR << "Can't use SSL without OpenSSL found in your system";
-    }
-#endif
-
-    _listeners.push_back(std::make_tuple(ip, port, useSSL, certFile, keyFile));
-}
 
 void HttpAppFrameworkImpl::run()
 {
@@ -320,131 +283,20 @@ void HttpAppFrameworkImpl::run()
         _sharedLibManagerPtr = std::unique_ptr<SharedLibManager>(
             new SharedLibManager(getLoop(), _libFilePaths));
     }
-    std::vector<std::shared_ptr<HttpServer>> servers;
-    std::vector<std::shared_ptr<EventLoopThread>> loopThreads;
-
-    std::vector<trantor::EventLoop *> ioLoops;
-
-#ifdef __linux__
-    for (size_t i = 0; i < _threadNum; i++)
-    {
-        LOG_TRACE << "thread num=" << _threadNum;
-        auto loopThreadPtr = std::make_shared<EventLoopThread>("DrogonIoLoop");
-        loopThreads.push_back(loopThreadPtr);
-        ioLoops.push_back(loopThreadPtr->getLoop());
-        for (auto const &listener : _listeners)
-        {
-            auto ip = std::get<0>(listener);
-            bool isIpv6 = ip.find(":") == std::string::npos ? false : true;
-            std::shared_ptr<HttpServer> serverPtr;
-            if (i == 0)
-            {
-                DrogonFileLocker lock;
-                // Check whether the port is in use.
-                TcpServer server(getLoop(),
-                                 InetAddress(ip, std::get<1>(listener), isIpv6),
-                                 "drogonPortTest",
-                                 true,
-                                 false);
-                serverPtr = std::make_shared<HttpServer>(
-                    loopThreadPtr->getLoop(),
-                    InetAddress(ip, std::get<1>(listener), isIpv6),
-                    "drogon");
-            }
-            else
-            {
-                serverPtr = std::make_shared<HttpServer>(
-                    loopThreadPtr->getLoop(),
-                    InetAddress(ip, std::get<1>(listener), isIpv6),
-                    "drogon");
-            }
-
-            if (std::get<2>(listener))
-            {
-#ifdef USE_OPENSSL
-                auto cert = std::get<3>(listener);
-                auto key = std::get<4>(listener);
-                if (cert == "")
-                    cert = _sslCertPath;
-                if (key == "")
-                    key = _sslKeyPath;
-                if (cert == "" || key == "")
-                {
-                    std::cerr
-                        << "You can't use https without cert file or key file"
-                        << std::endl;
-                    exit(1);
-                }
-                serverPtr->enableSSL(cert, key);
-#endif
-            }
-            serverPtr->setHttpAsyncCallback(
-                std::bind(&HttpAppFrameworkImpl::onAsyncRequest, this, _1, _2));
-            serverPtr->setNewWebsocketCallback(std::bind(
-                &HttpAppFrameworkImpl::onNewWebsockRequest, this, _1, _2, _3));
-            serverPtr->setConnectionCallback(
-                std::bind(&HttpAppFrameworkImpl::onConnection, this, _1));
-            serverPtr->kickoffIdleConnections(_idleConnectionTimeout);
-            serverPtr->start();
-            servers.push_back(serverPtr);
-        }
-    }
-#else
-    auto loopThreadPtr =
-        std::make_shared<EventLoopThread>("DrogonListeningLoop");
-    loopThreads.push_back(loopThreadPtr);
-    auto ioLoopThreadPoolPtr =
-        std::make_shared<EventLoopThreadPool>(_threadNum);
-    for (auto const &listener : _listeners)
-    {
-        LOG_TRACE << "thread num=" << _threadNum;
-        auto ip = std::get<0>(listener);
-        bool isIpv6 = ip.find(":") == std::string::npos ? false : true;
-        auto serverPtr = std::make_shared<HttpServer>(
-            loopThreadPtr->getLoop(),
-            InetAddress(ip, std::get<1>(listener), isIpv6),
-            "drogon");
-        if (std::get<2>(listener))
-        {
-#ifdef USE_OPENSSL
-            auto cert = std::get<3>(listener);
-            auto key = std::get<4>(listener);
-            if (cert == "")
-                cert = _sslCertPath;
-            if (key == "")
-                key = _sslKeyPath;
-            if (cert == "" || key == "")
-            {
-                std::cerr << "You can't use https without cert file or key file"
-                          << std::endl;
-                exit(1);
-            }
-            serverPtr->enableSSL(cert, key);
-#endif
-        }
-        serverPtr->setIoLoopThreadPool(ioLoopThreadPoolPtr);
-        serverPtr->setHttpAsyncCallback(
-            std::bind(&HttpAppFrameworkImpl::onAsyncRequest, this, _1, _2));
-        serverPtr->setNewWebsocketCallback(std::bind(
-            &HttpAppFrameworkImpl::onNewWebsockRequest, this, _1, _2, _3));
-        serverPtr->setConnectionCallback(
-            std::bind(&HttpAppFrameworkImpl::onConnection, this, _1));
-        serverPtr->kickoffIdleConnections(_idleConnectionTimeout);
-        serverPtr->start();
-        servers.push_back(serverPtr);
-    }
-    auto serverIoLoops = ioLoopThreadPoolPtr->getLoops();
-    for (auto serverIoLoop : serverIoLoops)
-    {
-        ioLoops.push_back(serverIoLoop);
-    }
-#endif
-
+    // Create all listeners.
+    auto ioLoops = _listenerManager.createListeners(
+        std::bind(&HttpAppFrameworkImpl::onAsyncRequest, this, _1, _2),
+        std::bind(&HttpAppFrameworkImpl::onNewWebsockRequest, this, _1, _2, _3),
+        std::bind(&HttpAppFrameworkImpl::onConnection, this, _1),
+        _idleConnectionTimeout,
+        _sslCertPath,
+        _sslKeyPath,
+        _threadNum);
 #if USE_ORM
     // A fast database client instance should be created in the main event loop,
     // so put the main loop into ioLoops.
     ioLoops.push_back(getLoop());
-    createDbClients(ioLoops);
+    _dbClientManager.createDbClients(ioLoops);
     ioLoops.pop_back();
 #endif
     _httpCtrlsRouter.init(ioLoops);
@@ -454,33 +306,8 @@ void HttpAppFrameworkImpl::run()
 
     if (_useSession)
     {
-        if (_sessionTimeout > 0)
-        {
-            size_t wheelNum = 1;
-            size_t bucketNum = 0;
-            if (_sessionTimeout < 500)
-            {
-                bucketNum = _sessionTimeout + 1;
-            }
-            else
-            {
-                auto tmpTimeout = _sessionTimeout;
-                bucketNum = 100;
-                while (tmpTimeout > 100)
-                {
-                    wheelNum++;
-                    tmpTimeout = tmpTimeout / 100;
-                }
-            }
-            _sessionMapPtr = std::unique_ptr<CacheMap<std::string, SessionPtr>>(
-                new CacheMap<std::string, SessionPtr>(
-                    getLoop(), 1.0, wheelNum, bucketNum));
-        }
-        else if (_sessionTimeout == 0)
-        {
-            _sessionMapPtr = std::unique_ptr<CacheMap<std::string, SessionPtr>>(
-                new CacheMap<std::string, SessionPtr>(getLoop(), 0, 0, 0));
-        }
+        _sessionManagerPtr = std::unique_ptr<SessionManager>(
+            new SessionManager(getLoop(), _sessionTimeout));
     }
 
     // Initialize plugins
@@ -494,74 +321,11 @@ void HttpAppFrameworkImpl::run()
     }
 
     // Let listener event loops run when everything is ready.
-    for (auto &loopTh : loopThreads)
-    {
-        loopTh->run();
-    }
+    _listenerManager.startListening();
     getLoop()->loop();
 }
-#if USE_ORM
-void HttpAppFrameworkImpl::createDbClients(
-    const std::vector<trantor::EventLoop *> &ioloops)
-{
-    assert(_dbClientsMap.empty());
-    assert(_dbFastClientsMap.empty());
-    for (auto &dbInfo : _dbInfos)
-    {
-        if (dbInfo._isFast)
-        {
-            for (auto *loop : ioloops)
-            {
-                if (dbInfo._dbType == drogon::orm::ClientType::Sqlite3)
-                {
-                    LOG_ERROR << "Sqlite3 don't support fast mode";
-                    abort();
-                }
-                if (dbInfo._dbType == drogon::orm::ClientType::PostgreSQL ||
-                    dbInfo._dbType == drogon::orm::ClientType::Mysql)
-                {
-                    _dbFastClientsMap[dbInfo._name][loop] =
-                        std::shared_ptr<drogon::orm::DbClient>(
-                            new drogon::orm::DbClientLockFree(
-                                dbInfo._connectionInfo,
-                                loop,
-                                dbInfo._dbType,
-                                dbInfo._connectionNumber));
-                }
-            }
-        }
-        else
-        {
-            if (dbInfo._dbType == drogon::orm::ClientType::PostgreSQL)
-            {
-#if USE_POSTGRESQL
-                _dbClientsMap[dbInfo._name] =
-                    drogon::orm::DbClient::newPgClient(
-                        dbInfo._connectionInfo, dbInfo._connectionNumber);
-#endif
-            }
-            else if (dbInfo._dbType == drogon::orm::ClientType::Mysql)
-            {
-#if USE_MYSQL
-                _dbClientsMap[dbInfo._name] =
-                    drogon::orm::DbClient::newMysqlClient(
-                        dbInfo._connectionInfo, dbInfo._connectionNumber);
-#endif
-            }
-            else if (dbInfo._dbType == drogon::orm::ClientType::Sqlite3)
-            {
-#if USE_SQLITE3
-                _dbClientsMap[dbInfo._name] =
-                    drogon::orm::DbClient::newSqlite3Client(
-                        dbInfo._connectionInfo, dbInfo._connectionNumber);
-#endif
-            }
-        }
-    }
-}
-#endif
 
-void HttpAppFrameworkImpl::onConnection(const TcpConnectionPtr &conn)
+void HttpAppFrameworkImpl::onConnection(const trantor::TcpConnectionPtr &conn)
 {
     static std::mutex mtx;
     LOG_TRACE << "connect!!!" << _maxConnectionNum
@@ -691,25 +455,12 @@ void HttpAppFrameworkImpl::onAsyncRequest(
     bool needSetJsessionid = false;
     if (_useSession)
     {
-        if (sessionId == "")
+        if (sessionId.empty())
         {
             sessionId = utils::getUuid().c_str();
             needSetJsessionid = true;
-            _sessionMapPtr->insert(sessionId,
-                                   std::make_shared<Session>(),
-                                   _sessionTimeout);
         }
-        else
-        {
-            if (_sessionMapPtr->find(sessionId) == false)
-            {
-                _sessionMapPtr->insert(sessionId,
-                                       std::make_shared<Session>(),
-                                       _sessionTimeout);
-            }
-        }
-        (std::dynamic_pointer_cast<HttpRequestImpl>(req))
-            ->setSession((*_sessionMapPtr)[sessionId]);
+        req->setSession(_sessionManagerPtr->getSession(sessionId));
     }
 
     // Route to controller
@@ -772,93 +523,6 @@ HttpAppFramework &HttpAppFramework::instance()
 HttpAppFramework::~HttpAppFramework()
 {
 }
-
-#if USE_ORM
-orm::DbClientPtr HttpAppFrameworkImpl::getDbClient(const std::string &name)
-{
-    assert(_dbClientsMap.find(name) != _dbClientsMap.end());
-    return _dbClientsMap[name];
-}
-orm::DbClientPtr HttpAppFrameworkImpl::getFastDbClient(const std::string &name)
-{
-    assert(_dbFastClientsMap[name].find(
-               trantor::EventLoop::getEventLoopOfCurrentThread()) !=
-           _dbFastClientsMap[name].end());
-    return _dbFastClientsMap[name]
-                            [trantor::EventLoop::getEventLoopOfCurrentThread()];
-}
-void HttpAppFrameworkImpl::createDbClient(const std::string &dbType,
-                                          const std::string &host,
-                                          const u_short port,
-                                          const std::string &databaseName,
-                                          const std::string &userName,
-                                          const std::string &password,
-                                          const size_t connectionNum,
-                                          const std::string &filename,
-                                          const std::string &name,
-                                          const bool isFast)
-{
-    assert(!_running);
-    auto connStr = utils::formattedString("host=%s port=%u dbname=%s user=%s",
-                                          host.c_str(),
-                                          port,
-                                          databaseName.c_str(),
-                                          userName.c_str());
-    if (!password.empty())
-    {
-        connStr += " password=";
-        connStr += password;
-    }
-    std::string type = dbType;
-    std::transform(type.begin(), type.end(), type.begin(), tolower);
-    DbInfo info;
-    info._connectionInfo = connStr;
-    info._connectionNumber = connectionNum;
-    info._isFast = isFast;
-    info._name = name;
-
-    if (type == "postgresql")
-    {
-#if USE_POSTGRESQL
-        info._dbType = orm::ClientType::PostgreSQL;
-        _dbInfos.push_back(info);
-#else
-        std::cout
-            << "The PostgreSQL is not supported by drogon, please install "
-               "the development library first."
-            << std::endl;
-        exit(1);
-#endif
-    }
-    else if (type == "mysql")
-    {
-#if USE_MYSQL
-        info._dbType = orm::ClientType::Mysql;
-        _dbInfos.push_back(info);
-#else
-        std::cout << "The Mysql is not supported by drogon, please install the "
-                     "development library first."
-                  << std::endl;
-        exit(1);
-#endif
-    }
-    else if (type == "sqlite3")
-    {
-#if USE_SQLITE3
-        std::string sqlite3ConnStr = "filename=" + filename;
-        info._connectionInfo = sqlite3ConnStr;
-        info._dbType = orm::ClientType::Sqlite3;
-        _dbInfos.push_back(info);
-#else
-        std::cout
-            << "The Sqlite3 is not supported by drogon, please install the "
-               "development library first."
-            << std::endl;
-        exit(1);
-#endif
-    }
-}
-#endif
 
 void HttpAppFrameworkImpl::forward(
     const HttpRequestImplPtr &req,

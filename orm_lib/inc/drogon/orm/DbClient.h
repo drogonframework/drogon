@@ -42,7 +42,7 @@ class DbClient : public trantor::NonCopyable
 {
   public:
     virtual ~DbClient(){};
-/// Create new database client with multiple connections;
+/// Create a new database client with multiple connections;
 /**
  * @param connInfo: Connection string with some parameters,
  * each parameter setting is in the form keyword = value. Spaces around the
@@ -163,12 +163,13 @@ class DbClient : public trantor::NonCopyable
     /**
      * @param commitCallback: the callback with which user can get the
      * submitting result, The Boolean type parameter in the callback function
-     * indicates whether the transaction was submitted successfully. NOTE: The
-     * callback only indicates the result of the 'commit' command, which is the
-     * last step of the transaction. If the transaction has been automatically
-     * or manually rolled back, the callback will never be executed. You can
-     * also use the setCommitCallback() method of a transaction object to set
-     * the callback.
+     * indicates whether the transaction was submitted successfully.
+     * 
+     * NOTE: The callback only indicates the result of the 'commit' command,
+     * which is the last step of the transaction. If the transaction has been
+     * automatically or manually rolled back, the callback will never be
+     * executed. You can also use the setCommitCallback() method of a
+     * transaction object to set the callback.
      */
     virtual std::shared_ptr<Transaction> newTransaction(
         const std::function<void(bool)> &commitCallback = nullptr) = 0;
