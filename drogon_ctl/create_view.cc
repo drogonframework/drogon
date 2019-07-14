@@ -344,7 +344,7 @@ void create_view::newViewSourceFile(std::ofstream &file,
     file << "#include <deque>\n";
     file << "#include <queue>\n";
 
-    file << "using namespace std;\n";
+    //    file << "using namespace std;\n";
     //    file <<"void __attribute__((constructor)) startup()\n";
     //    file <<"{std::cout<<\"dynamic lib start to load!\"<<std::endl;}\n";
     //    file <<"void __attribute__((destructor)) shutdown()\n";

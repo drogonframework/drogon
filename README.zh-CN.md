@@ -11,7 +11,7 @@
 
 Drogon的主要应用平台是Linux，也支持Mac OS、FreeBSD，目前还不支持Windows。它的主要特点如下：
 
-* 网络层使用基于epoll(MacOS/FreeBSD下是kqueue)的非阻塞IO框架，提供高并发、高性能的网络IO。详细请见[性能测试](https://gitee.com/an-tao/drogon/wikis/性能测试)；
+* 网络层使用基于epoll(MacOS/FreeBSD下是kqueue)的非阻塞IO框架，提供高并发、高性能的网络IO。详细请见[性能测试](https://github.com/an-tao/drogon/wiki/13-%E6%80%A7%E8%83%BD%E6%B5%8B%E8%AF%95)；
 * 全异步编程模式；
 * 支持Http1.0/1.1(server端和client端)；
 * 基于template实现了简单的反射机制，使主程序框架、控制器(controller)和视图(view)完全解耦；
@@ -34,4 +34,4 @@ Drogon的主要应用平台是Linux，也支持Mac OS、FreeBSD，目前还不�
 * 支持插件，可通过配置文件在加载期动态拆装；
 * 支持内建插入点的AOP
 
-### 更多详情请浏览 [wiki](https://github.com/an-tao/drogon/wiki/Chinese-home)
+### 更多详情请浏览 [wiki](https://github.com/an-tao/drogon/wiki/01-概述)

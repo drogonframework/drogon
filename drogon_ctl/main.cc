@@ -31,6 +31,18 @@ int main(int argc, char *argv[])
     {
         args.push_back(argv[i]);
     }
+    if (args.size() > 0)
+    {
+        auto &arg = args[0];
+        if (arg == "-h" || arg == "--help")
+        {
+            arg = "help";
+        }
+        else if (arg == "-v" || arg == "--version")
+        {
+            arg = "version";
+        }
+    }
 
     exeCommand(args);
 

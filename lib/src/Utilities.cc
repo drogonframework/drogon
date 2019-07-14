@@ -648,8 +648,7 @@ trantor::Date getHttpDate(const std::string &httpFullDateString)
 }
 std::string formattedString(const char *format, ...)
 {
-    std::string strBuffer;
-    strBuffer.resize(1024);
+    std::string strBuffer(128, 0);
     va_list ap, backup_ap;
     va_start(ap, format);
     va_copy(backup_ap, ap);

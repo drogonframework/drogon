@@ -136,6 +136,41 @@ class HttpViewData
      * > --> &gt;
      */
     static std::string htmlTranslate(const std::string &str);
+    static std::string htmlTranslate(const string_view &str);
+    static bool needTranslation(const std::string &str)
+    {
+        for (auto const &c : str)
+        {
+            switch (c)
+            {
+                case '"':
+                case '&':
+                case '<':
+                case '>':
+                    return true;
+                default:
+                    continue;
+            }
+        }
+        return false;
+    }
+    static bool needTranslation(const string_view &str)
+    {
+        for (auto const &c : str)
+        {
+            switch (c)
+            {
+                case '"':
+                case '&':
+                case '<':
+                case '>':
+                    return true;
+                default:
+                    continue;
+            }
+        }
+        return false;
+    }
 
   protected:
     typedef std::unordered_map<std::string, any> ViewDataMap;

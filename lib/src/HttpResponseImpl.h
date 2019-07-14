@@ -26,7 +26,6 @@
 #include <trantor/utils/MsgBuffer.h>
 #include <unordered_map>
 
-using namespace trantor;
 namespace drogon
 {
 class HttpResponseImpl : public HttpResponse
@@ -97,6 +96,14 @@ class HttpResponseImpl : public HttpResponse
     {
         _contentType = type;
         setContentType(webContentTypeToString(type));
+    }
+
+    virtual void setContentTypeCodeAndCustomString(
+        ContentType type,
+        const string_view &typeString) override
+    {
+        _contentType = type;
+        setContentType(typeString);
     }
 
     // virtual void setContentTypeCodeAndCharacterSet(ContentType type, const

@@ -21,7 +21,6 @@
 #include <string>
 #include <vector>
 
-using namespace std;
 using namespace drogon;
 
 std::string NotFound::genText(const HttpViewData &NotFound_view_data)

@@ -21,7 +21,8 @@ void help::handleCommand(std::vector<std::string> &parameters)
 {
     if (parameters.size() == 0)
     {
-        std::cout << "usage: drogon_ctl <command> [<args>]" << std::endl;
+        std::cout << "usage: drogon_ctl [-v | --version] [-h | --help] <command> [<args>]"
+                  << std::endl;
         std::cout << "commands list:" << std::endl;
         for (auto &className : drogon::DrClassMap::getAllClassName())
         {

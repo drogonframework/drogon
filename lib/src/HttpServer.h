@@ -24,30 +24,28 @@
 #include <trantor/net/callbacks.h>
 #include <trantor/utils/NonCopyable.h>
 
-using namespace trantor;
 namespace drogon
 {
 class HttpRequest;
 class HttpResponse;
 typedef std::shared_ptr<HttpRequest> HttpRequestPtr;
+typedef std::function<void(const HttpRequestImplPtr &,
+                           std::function<void(const HttpResponsePtr &)> &&)>
+    HttpAsyncCallback;
+typedef std::function<void(const HttpRequestImplPtr &,
+                           std::function<void(const HttpResponsePtr &)> &&,
+                           const WebSocketConnectionImplPtr &)>
+    WebSocketNewAsyncCallback;
 class HttpServer : trantor::NonCopyable
 {
   public:
-    typedef std::function<void(const HttpRequestImplPtr &,
-                               std::function<void(const HttpResponsePtr &)> &&)>
-        HttpAsyncCallback;
-    typedef std::function<void(const HttpRequestImplPtr &,
-                               std::function<void(const HttpResponsePtr &)> &&,
-                               const WebSocketConnectionImplPtr &)>
-        WebSocketNewAsyncCallback;
-
-    HttpServer(EventLoop *loop,
-               const InetAddress &listenAddr,
+    HttpServer(trantor::EventLoop *loop,
+               const trantor::InetAddress &listenAddr,
                const std::string &name);
 
     ~HttpServer();
 
-    EventLoop *getLoop() const
+    trantor::EventLoop *getLoop() const
     {
         return _server.getLoop();
     }
@@ -60,9 +58,14 @@ class HttpServer : trantor::NonCopyable
     {
         _newWebsocketCallback = cb;
     }
-    void setConnectionCallback(const ConnectionCallback &cb)
+    void setConnectionCallback(const trantor::ConnectionCallback &cb)
     {
         _connectionCallback = cb;
+    }
+    void setIoLoopThreadPool(
+        const std::shared_ptr<trantor::EventLoopThreadPool> &pool)
+    {
+        _server.setIoLoopThreadPool(pool);
     }
     void setIoLoopNum(int numThreads)
     {
@@ -90,10 +93,11 @@ class HttpServer : trantor::NonCopyable
 #endif
 
   private:
-    void onConnection(const TcpConnectionPtr &conn);
-    void onMessage(const TcpConnectionPtr &, MsgBuffer *);
-    void onRequest(const TcpConnectionPtr &, const HttpRequestImplPtr &);
-    void sendResponse(const TcpConnectionPtr &,
+    void onConnection(const trantor::TcpConnectionPtr &conn);
+    void onMessage(const trantor::TcpConnectionPtr &, trantor::MsgBuffer *);
+    void onRequest(const trantor::TcpConnectionPtr &,
+                   const HttpRequestImplPtr &);
+    void sendResponse(const trantor::TcpConnectionPtr &,
                       const HttpResponsePtr &,
                       bool isHeadMethod);
     trantor::TcpServer _server;

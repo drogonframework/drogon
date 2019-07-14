@@ -37,9 +37,10 @@ void HttpRequestParser::shutdownConnection(HttpStatusCode code)
     auto connPtr = _conn.lock();
     if (connPtr)
     {
-        connPtr->send(utils::formattedString("HTTP/1.1 %d %s\r\n\r\n",
-                                             code,
-                                             statusCodeToString(code).data()));
+        connPtr->send(utils::formattedString(
+            "HTTP/1.1 %d %s\r\nConnection: close\r\n\r\n",
+            code,
+            statusCodeToString(code).data()));
         connPtr->shutdown();
     }
 }
@@ -170,76 +171,77 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
                     LOG_TRACE << "content len=" << len;
                     if (!len.empty())
                     {
-                        _request->_contentLen = atoi(len.c_str());
+                        _request->_contentLen = std::stoull(len.c_str());
                         _state = HttpRequestParseState_ExpectBody;
-                        auto &expect = _request->getHeaderBy("expect");
-                        if (expect == "100-continue" &&
-                            _request->getVersion() >= HttpRequest::kHttp11)
-                        {
-                            if (_request->_contentLen == 0)
-                            {
-                                buf->retrieveAll();
-                                shutdownConnection(k400BadRequest);
-                                return false;
-                            }
-                            // rfc2616-8.2.3
-                            auto connPtr = _conn.lock();
-                            if (connPtr)
-                            {
-                                auto resp = HttpResponse::newHttpResponse();
-                                if (_request->_contentLen >
-                                    HttpAppFrameworkImpl::instance()
-                                        .getClientMaxBodySize())
-                                {
-                                    resp->setStatusCode(
-                                        k413RequestEntityTooLarge);
-                                    auto httpString =
-                                        std::dynamic_pointer_cast<
-                                            HttpResponseImpl>(resp)
-                                            ->renderToString();
-                                    reset();
-                                    connPtr->send(httpString);
-                                }
-                                else
-                                {
-                                    resp->setStatusCode(k100Continue);
-                                    auto httpString =
-                                        std::dynamic_pointer_cast<
-                                            HttpResponseImpl>(resp)
-                                            ->renderToString();
-                                    connPtr->send(httpString);
-                                }
-                            }
-                        }
-                        else if (!expect.empty())
-                        {
-                            LOG_WARN << "417ExpectationFailed for \"" << expect
-                                     << "\"";
-                            auto connPtr = _conn.lock();
-                            if (connPtr)
-                            {
-                                buf->retrieveAll();
-                                shutdownConnection(k417ExpectationFailed);
-                                return false;
-                            }
-                        }
-                        else if (_request->_contentLen >
-                                 HttpAppFrameworkImpl::instance()
-                                     .getClientMaxBodySize())
-                        {
-                            buf->retrieveAll();
-                            shutdownConnection(k413RequestEntityTooLarge);
-                            return false;
-                        }
-                        _request->reserveBodySize();
                     }
-                    else
+                    if (_request->_contentLen == 0)
                     {
                         _state = HttpRequestParseState_GotAll;
                         _requestsCounter++;
                         hasMore = false;
                     }
+
+                    auto &expect = _request->getHeaderBy("expect");
+                    if (expect == "100-continue" &&
+                        _request->getVersion() >= HttpRequest::kHttp11)
+                    {
+                        if (_request->_contentLen == 0)
+                        {
+                            buf->retrieveAll();
+                            shutdownConnection(k400BadRequest);
+                            return false;
+                        }
+                        // rfc2616-8.2.3
+                        auto connPtr = _conn.lock();
+                        if (connPtr)
+                        {
+                            auto resp = HttpResponse::newHttpResponse();
+                            if (_request->_contentLen >
+                                HttpAppFrameworkImpl::instance()
+                                    .getClientMaxBodySize())
+                            {
+                                resp->setStatusCode(k413RequestEntityTooLarge);
+                                auto httpString =
+                                    std::dynamic_pointer_cast<HttpResponseImpl>(
+                                        resp)
+                                        ->renderToString();
+                                reset();
+                                connPtr->send(httpString);
+                            }
+                            else
+                            {
+                                resp->setStatusCode(k100Continue);
+                                auto httpString =
+                                    std::dynamic_pointer_cast<HttpResponseImpl>(
+                                        resp)
+                                        ->renderToString();
+                                connPtr->send(httpString);
+                            }
+                        }
+                    }
+                    else if (!expect.empty())
+                    {
+                        LOG_WARN << "417ExpectationFailed for \"" << expect
+                                 << "\"";
+                        auto connPtr = _conn.lock();
+                        if (connPtr)
+                        {
+                            buf->retrieveAll();
+                            shutdownConnection(k417ExpectationFailed);
+                            return false;
+                        }
+                    }
+                    else if (_request->_contentLen >
+                             HttpAppFrameworkImpl::instance()
+                                 .getClientMaxBodySize())
+                    {
+                        buf->retrieveAll();
+                        shutdownConnection(k413RequestEntityTooLarge);
+                        return false;
+                    }
+                    _request->reserveBodySize();
                 }
+
                 buf->retrieveUntil(crlf + 2);
             }
             else

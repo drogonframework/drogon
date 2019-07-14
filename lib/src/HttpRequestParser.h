@@ -22,7 +22,6 @@
 #include <trantor/net/TcpConnection.h>
 #include <trantor/utils/MsgBuffer.h>
 
-using namespace trantor;
 namespace drogon
 {
 class HttpRequestParser
@@ -40,7 +39,7 @@ class HttpRequestParser
     explicit HttpRequestParser(const trantor::TcpConnectionPtr &connPtr);
 
     // return false if any error
-    bool parseRequest(MsgBuffer *buf);
+    bool parseRequest(trantor::MsgBuffer *buf);
 
     bool gotAll() const
     {
