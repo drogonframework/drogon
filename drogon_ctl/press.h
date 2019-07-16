@@ -58,7 +58,7 @@ class press : public DrObject<press>, public CommandHandler
     size_t _numOfThreads = 1;
     size_t _numOfRequests = 1;
     size_t _numOfConnections = 1;
-    //bool _keepAlive = false;
+    // bool _keepAlive = false;
     bool _processIndication = true;
     std::string _url;
     std::string _host;
@@ -70,6 +70,5 @@ class press : public DrObject<press>, public CommandHandler
     std::unique_ptr<trantor::EventLoopThreadPool> _loopPool;
     std::vector<HttpClientPtr> _clients;
     Statistics _stat;
-
 };
 }  // namespace drogon_ctl

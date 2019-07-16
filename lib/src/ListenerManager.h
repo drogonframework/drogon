@@ -64,7 +64,8 @@ class ListenerManager : public trantor::NonCopyable
     };
     std::vector<ListenerInfo> _listeners;
     std::vector<std::shared_ptr<HttpServer>> _servers;
-    std::vector<std::shared_ptr<trantor::EventLoopThread>> _listeningloopThreads;
+    std::vector<std::shared_ptr<trantor::EventLoopThread>>
+        _listeningloopThreads;
     std::string _sslCertPath;
     std::string _sslKeyPath;
     std::shared_ptr<trantor::EventLoopThreadPool> _ioLoopThreadPoolPtr;

@@ -164,7 +164,7 @@ class DbClient : public trantor::NonCopyable
      * @param commitCallback: the callback with which user can get the
      * submitting result, The Boolean type parameter in the callback function
      * indicates whether the transaction was submitted successfully.
-     * 
+     *
      * NOTE: The callback only indicates the result of the 'commit' command,
      * which is the last step of the transaction. If the transaction has been
      * automatically or manually rolled back, the callback will never be
