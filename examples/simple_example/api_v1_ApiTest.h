@@ -34,7 +34,7 @@ class ApiTest : public drogon::HttpController<ApiTest>
     METHOD_ADD(ApiTest::jsonTest, "/json", Post);
     METHOD_ADD(ApiTest::formTest, "/form", Post);
     METHOD_LIST_END
-    
+
     void get(const HttpRequestPtr &req,
              std::function<void(const HttpResponsePtr &)> &&callback,
              int p1,

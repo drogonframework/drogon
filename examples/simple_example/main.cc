@@ -176,17 +176,17 @@ int main()
     {
         std::cout << "empty custom config!" << std::endl;
     }
-    
+
     // Install custom controller
     auto ctrlPtr = std::make_shared<CustomCtrl>("Hi");
     app().registerController(ctrlPtr);
-    
+
     // Install custom filter
     auto filterPtr =
         std::make_shared<CustomHeaderFilter>("custom_header", "yes");
     app().registerFilter(filterPtr);
     app().setIdleConnectionTimeout(30s);
-    
+
     // AOP example
     app().registerBeginningAdvice(
         []() { LOG_DEBUG << "Event loop is running!"; });
@@ -264,6 +264,6 @@ int main()
         }
         std::cout << std::get<2>(info) << std::endl;
     }
-    
+
     app().run();
 }

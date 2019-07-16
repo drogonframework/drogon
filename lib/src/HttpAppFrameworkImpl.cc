@@ -202,7 +202,7 @@ void HttpAppFrameworkImpl::setSSLFiles(const std::string &certPath,
 void HttpAppFrameworkImpl::run()
 {
     //
-    LOG_INFO << "Start to run...";
+    LOG_TRACE << "Start to run...";
     trantor::AsyncFileLogger asyncFileLogger;
     // Create dirs for cache files
     for (int i = 0; i < 256; i++)

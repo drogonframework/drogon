@@ -64,7 +64,8 @@ char *CacheFile::data()
         fflush(_file);
         auto fd = fileno(_file);
         _dataLength = length();
-        _data = static_cast<char *>(mmap(nullptr, _dataLength, PROT_READ, MAP_SHARED, fd, 0));
+        _data = static_cast<char *>(
+            mmap(nullptr, _dataLength, PROT_READ, MAP_SHARED, fd, 0));
         if (_data == MAP_FAILED)
         {
             _data = nullptr;
