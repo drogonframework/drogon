@@ -77,10 +77,11 @@ class HttpRequestParser
     // to support request pipelining(rfc2616-8.1.2.2)
     void pushRquestToPipelining(const HttpRequestPtr &req);
     HttpRequestPtr getFirstRequest() const;
-    HttpResponsePtr getFirstResponse() const;
+    std::pair<HttpResponsePtr, bool> getFirstResponse() const;
     void popFirstRequest();
     void pushResponseToPipelining(const HttpRequestPtr &req,
-                                  const HttpResponsePtr &resp);
+                                  const HttpResponsePtr &resp,
+                                  bool isHeadMethod);
     size_t numberOfRequestsInPipelining() const
     {
         return _requestPipelining.size();
@@ -106,7 +107,8 @@ class HttpRequestParser
     HttpRequestImplPtr _request;
     bool _firstRequest = true;
     WebSocketConnectionImplPtr _websockConnPtr;
-    std::deque<std::pair<HttpRequestPtr, HttpResponsePtr>> _requestPipelining;
+    std::deque<std::pair<HttpRequestPtr, std::pair<HttpResponsePtr, bool>>>
+        _requestPipelining;
     size_t _requestsCounter = 0;
     std::weak_ptr<trantor::TcpConnection> _conn;
     bool _stopWorking = false;

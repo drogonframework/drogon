@@ -50,10 +50,16 @@ class HttpResponseParser
         return _state == HttpResponseParseState::kGotAll;
     }
 
+    void setForHeadMethod()
+    {
+        _parseResponseForHeadMethod = true;
+    }
+
     void reset()
     {
         _state = HttpResponseParseState::kExpectResponseLine;
         _response.reset(new HttpResponseImpl);
+        _parseResponseForHeadMethod = false;
     }
 
     const HttpResponseImplPtr &responseImpl() const
@@ -66,6 +72,7 @@ class HttpResponseParser
 
     HttpResponseParseState _state;
     HttpResponseImplPtr _response;
+    bool _parseResponseForHeadMethod = false;
 };
 
 }  // namespace drogon

@@ -237,8 +237,8 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
                             thisPtr->sendReq(
                                 connPtr,
                                 thisPtr->_requestsBuffer.front().first);
-                            thisPtr->_pipeliningCallbacks.push(std::move(
-                                thisPtr->_requestsBuffer.front().second));
+                            thisPtr->_pipeliningCallbacks.push(
+                                std::move(thisPtr->_requestsBuffer.front()));
                             thisPtr->_requestsBuffer.pop();
                         }
                     }
@@ -284,10 +284,11 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
             {
                 sendReq(connPtr, req);
                 _pipeliningCallbacks.push(
-                    [thisPtr, callback](ReqResult result,
-                                        const HttpResponsePtr &response) {
-                        callback(result, response);
-                    });
+                    {req,
+                     [thisPtr, callback](ReqResult result,
+                                         const HttpResponsePtr &response) {
+                         callback(result, response);
+                     }});
             }
             else
             {
@@ -334,9 +335,14 @@ void HttpClientImpl::onRecvMessage(const trantor::TcpConnectionPtr &connPtr,
     auto msgSize = msg->readableBytes();
     while (msg->readableBytes() > 0)
     {
+        assert(!_pipeliningCallbacks.empty());
+        auto &firstReq = _pipeliningCallbacks.front();
+        if (firstReq.first->method() == Head)
+        {
+            responseParser->setForHeadMethod();
+        }
         if (!responseParser->parseResponse(msg))
         {
-            assert(!_pipeliningCallbacks.empty());
             onError(ReqResult::BadResponse);
             _bytesReceived += (msgSize - msg->readableBytes());
             return;
@@ -355,12 +361,12 @@ void HttpClientImpl::onRecvMessage(const trantor::TcpConnectionPtr &connPtr,
             {
                 resp->parseJson();
             }
-            auto cb = std::move(_pipeliningCallbacks.front());
+            auto cb = std::move(firstReq);
             _pipeliningCallbacks.pop();
             handleCookies(resp);
             _bytesReceived += (msgSize - msg->readableBytes());
             msgSize = msg->readableBytes();
-            cb(ReqResult::Ok, resp);
+            cb.second(ReqResult::Ok, resp);
 
             // LOG_TRACE << "pipelining buffer size=" <<
             // _pipeliningCallbacks.size(); LOG_TRACE << "requests buffer size="
@@ -370,7 +376,7 @@ void HttpClientImpl::onRecvMessage(const trantor::TcpConnectionPtr &connPtr,
             {
                 auto &reqAndCb = _requestsBuffer.front();
                 sendReq(connPtr, reqAndCb.first);
-                _pipeliningCallbacks.push(std::move(reqAndCb.second));
+                _pipeliningCallbacks.push(std::move(reqAndCb));
                 _requestsBuffer.pop();
             }
             else
@@ -414,7 +420,7 @@ void HttpClientImpl::onError(ReqResult result)
     {
         auto cb = std::move(_pipeliningCallbacks.front());
         _pipeliningCallbacks.pop();
-        cb(result, nullptr);
+        cb.second(result, nullptr);
     }
     while (!_requestsBuffer.empty())
     {

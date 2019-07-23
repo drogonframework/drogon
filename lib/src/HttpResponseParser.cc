@@ -138,6 +138,12 @@ bool HttpResponseParser::parseResponse(MsgBuffer *buf)
                             }
                         }
                     }
+                    if(_parseResponseForHeadMethod)
+                    {
+                        _response->_leftBodyLength = 0;
+                        _state = HttpResponseParseState::kGotAll;
+                        hasMore = false;
+                    }
                 }
                 buf->retrieveUntil(crlf + 2);
             }
