@@ -60,34 +60,8 @@ class DbClientLockFree : public DbClient,
     std::vector<DbConnectionPtr> _connections;
     std::vector<DbConnectionPtr> _connectionHolders;
     std::unordered_set<DbConnectionPtr> _transSet;
-    struct SqlCmd
-    {
-        std::string _sql;
-        size_t _paraNum;
-        std::vector<const char *> _parameters;
-        std::vector<int> _length;
-        std::vector<int> _format;
-        QueryCallback _cb;
-        ExceptPtrCallback _exceptCb;
-        SqlCmd(std::string &&sql,
-               const size_t paraNum,
-               std::vector<const char *> &&parameters,
-               std::vector<int> &&length,
-               std::vector<int> &&format,
-               QueryCallback &&cb,
-               ExceptPtrCallback &&exceptCb)
-            : _sql(std::move(sql)),
-              _paraNum(paraNum),
-              _parameters(std::move(parameters)),
-              _length(std::move(length)),
-              _format(std::move(format)),
-              _cb(std::move(cb)),
-              _exceptCb(std::move(exceptCb))
-        {
-        }
-    };
 
-    std::deque<std::shared_ptr<SqlCmd>> _sqlCmdBuffer;
+    std::deque<std::function<void(const DbConnectionPtr &)>> _sqlCmdBuffer;
 
     std::queue<std::function<void(const std::shared_ptr<Transaction> &)>>
         _transCallbacks;

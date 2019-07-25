@@ -82,7 +82,7 @@ class HttpClientImpl : public HttpClient,
     void sendRequestInLoop(const HttpRequestPtr &req,
                            const HttpReqCallback &callback);
     void handleCookies(const HttpResponseImplPtr &resp);
-    std::queue<HttpReqCallback> _pipeliningCallbacks;
+    std::queue<std::pair<HttpRequestPtr, HttpReqCallback>> _pipeliningCallbacks;
     std::queue<std::pair<HttpRequestPtr, HttpReqCallback>> _requestsBuffer;
     void onRecvMessage(const trantor::TcpConnectionPtr &, trantor::MsgBuffer *);
     void onError(ReqResult result);

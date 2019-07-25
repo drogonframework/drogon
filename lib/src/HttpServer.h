@@ -18,11 +18,13 @@
 #include "WebSocketConnectionImpl.h"
 #include <drogon/WebSocketController.h>
 #include <drogon/config.h>
-#include <functional>
-#include <string>
 #include <trantor/net/TcpServer.h>
 #include <trantor/net/callbacks.h>
 #include <trantor/utils/NonCopyable.h>
+
+#include <functional>
+#include <string>
+#include <vector>
 
 namespace drogon
 {
@@ -95,11 +97,14 @@ class HttpServer : trantor::NonCopyable
   private:
     void onConnection(const trantor::TcpConnectionPtr &conn);
     void onMessage(const trantor::TcpConnectionPtr &, trantor::MsgBuffer *);
-    void onRequest(const trantor::TcpConnectionPtr &,
-                   const HttpRequestImplPtr &);
+    void onRequests(const trantor::TcpConnectionPtr &,
+                    const std::vector<HttpRequestImplPtr> &);
     void sendResponse(const trantor::TcpConnectionPtr &,
                       const HttpResponsePtr &,
                       bool isHeadMethod);
+    void sendResponses(
+        const trantor::TcpConnectionPtr &conn,
+        const std::vector<std::pair<HttpResponsePtr, bool>> &responses);
     trantor::TcpServer _server;
     HttpAsyncCallback _httpAsyncCallback;
     WebSocketNewAsyncCallback _newWebsocketCallback;
