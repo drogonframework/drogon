@@ -63,14 +63,11 @@ PgConnection::PgConnection(trantor::EventLoop *loop,
         }
     });
     _channel.setWriteCallback([=]() {
-        if (_status != ConnectStatus_Ok)
-        {
-            pgPoll();
-        }
-        else
+        if (_status == ConnectStatus_Ok)
         {
             PQconsumeInput(_connPtr.get());
         }
+        pgPoll();
     });
     _channel.setCloseCallback([=]() {
         perror("sock close");
