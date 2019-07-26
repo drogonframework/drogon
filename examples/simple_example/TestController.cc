@@ -5,8 +5,10 @@ void TestController::asyncHandleHttpRequest(
     std::function<void(const HttpResponsePtr &)> &&callback)
 {
     // write your application logic here
-    LOG_WARN << req->matchedPathPattern();
+    LOG_WARN << req->matchedPathPatternData();
     auto resp = HttpResponse::newHttpResponse();
+    resp->setContentTypeCodeAndCustomString(CT_TEXT_PLAIN,
+                                            "Content-Type: plaintext\r\n");
     resp->setBody("<p>Hello, world!</p>");
     resp->setExpiredTime(0);
     callback(resp);

@@ -14,7 +14,7 @@
 
 #pragma once
 
-#include <drogon/config.h>
+#include <drogon/utils/string_view.h>
 #include <trantor/utils/NonCopyable.h>
 #include <string>
 #include <stdio.h>

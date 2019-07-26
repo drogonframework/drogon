@@ -13,7 +13,6 @@
 
 #pragma once
 #include <atomic>
-#include <drogon/config.h>
 #include <thread>
 
 namespace drogon

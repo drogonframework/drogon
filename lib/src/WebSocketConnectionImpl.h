@@ -69,10 +69,6 @@ class WebSocketConnectionImpl
     virtual void shutdown() override;    // close write
     virtual void forceClose() override;  // close
 
-    virtual void setContext(const any &context) override;
-    virtual const any &getContext() const override;
-    virtual any *getMutableContext() override;
-
     virtual void setPingMessage(
         const std::string &message,
         const std::chrono::duration<long double> &interval) override;
@@ -105,7 +101,6 @@ class WebSocketConnectionImpl
     trantor::TcpConnectionPtr _tcpConn;
     trantor::InetAddress _localAddr;
     trantor::InetAddress _peerAddr;
-    any _context;
     bool _isServer = true;
     WebSocketMessageParser _parser;
     trantor::TimerId _pingTimerId = trantor::InvalidTimerId;

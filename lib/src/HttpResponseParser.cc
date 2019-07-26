@@ -18,7 +18,7 @@
 #include <trantor/utils/MsgBuffer.h>
 using namespace trantor;
 using namespace drogon;
-HttpResponseParser::HttpResponseParser(const trantor::TcpConnectionPtr &connPtr)
+HttpResponseParser::HttpResponseParser()
     : _state(HttpResponseParseState::kExpectResponseLine),
       _response(new HttpResponseImpl)
 {
@@ -138,7 +138,7 @@ bool HttpResponseParser::parseResponse(MsgBuffer *buf)
                             }
                         }
                     }
-                    if(_parseResponseForHeadMethod)
+                    if (_parseResponseForHeadMethod)
                     {
                         _response->_leftBodyLength = 0;
                         _state = HttpResponseParseState::kGotAll;

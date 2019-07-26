@@ -25,7 +25,7 @@ using namespace drogon;
 
 void HttpRequestImpl::parseParameters() const
 {
-    auto input = query();
+    auto input = queryView();
     if (input.empty())
         return;
     std::string type = getHeaderBy("content-type");

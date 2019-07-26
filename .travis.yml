@@ -15,6 +15,7 @@ addons:
     sources:
     - xenial
     - sourceline: 'deb http://archive.ubuntu.com/ubuntu xenial main'
+    - sourceline: 'ppa:mhier/libboost-latest'
     packages:
     - gcc
     - g++
@@ -27,6 +28,7 @@ addons:
     - libsqlite3-dev
     - build-essential
     - cmake
+    - boost1.67
   homebrew:
     packages:
     - jsoncpp

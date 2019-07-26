@@ -14,11 +14,8 @@
 
 #pragma once
 
-#include <drogon/config.h>
-#if USE_ORM
 #include <drogon/orm/DbClient.h>
-#endif
-#include <chrono>
+#include <drogon/utils/HttpConstraint.h>
 #include <drogon/CacheMap.h>
 #include <drogon/DrObject.h>
 #include <drogon/HttpBinder.h>
@@ -34,13 +31,14 @@
 #include <drogon/utils/ClassTraits.h>
 #include <drogon/utils/Utilities.h>
 #include <drogon/version.h>
+#include <trantor/net/EventLoop.h>
+#include <trantor/utils/NonCopyable.h>
 #include <functional>
 #include <memory>
 #include <string>
-#include <trantor/net/EventLoop.h>
-#include <trantor/utils/NonCopyable.h>
 #include <type_traits>
 #include <vector>
+#include <chrono>
 
 namespace drogon
 {
@@ -299,7 +297,8 @@ class HttpAppFramework : public trantor::NonCopyable
     virtual void registerHttpSimpleController(
         const std::string &pathName,
         const std::string &ctrlName,
-        const std::vector<any> &filtersAndMethods = std::vector<any>()) = 0;
+        const std::vector<internal::HttpConstraint> &filtersAndMethods =
+            std::vector<internal::HttpConstraint>{}) = 0;
 
     /// Register a handler into the framework.
     /**
@@ -335,7 +334,8 @@ class HttpAppFramework : public trantor::NonCopyable
     void registerHandler(
         const std::string &pathPattern,
         FUNCTION &&function,
-        const std::vector<any> &filtersAndMethods = std::vector<any>(),
+        const std::vector<internal::HttpConstraint> &filtersAndMethods =
+            std::vector<internal::HttpConstraint>{},
         const std::string &handlerName = "")
     {
         LOG_TRACE << "pathPattern:" << pathPattern;
@@ -348,22 +348,17 @@ class HttpAppFramework : public trantor::NonCopyable
         std::vector<std::string> filters;
         for (auto const &filterOrMethod : filtersAndMethods)
         {
-            if (filterOrMethod.type() == typeid(std::string))
+            if (filterOrMethod.type() == internal::ConstraintType::HttpFilter)
             {
-                filters.push_back(*any_cast<std::string>(&filterOrMethod));
+                filters.push_back(filterOrMethod.getFilterName());
             }
-            else if (filterOrMethod.type() == typeid(const char *))
+            else if (filterOrMethod.type() ==
+                     internal::ConstraintType::HttpMethod)
             {
-                filters.push_back(*any_cast<const char *>(&filterOrMethod));
-            }
-            else if (filterOrMethod.type() == typeid(HttpMethod))
-            {
-                validMethods.push_back(*any_cast<HttpMethod>(&filterOrMethod));
+                validMethods.push_back(filterOrMethod.getHttpMethod());
             }
             else
             {
-                std::cerr << "Invalid controller constraint type:"
-                          << filterOrMethod.type().name() << std::endl;
                 LOG_ERROR << "Invalid controller constraint type";
                 exit(1);
             }
@@ -790,7 +785,6 @@ class HttpAppFramework : public trantor::NonCopyable
      */
     virtual void setHomePage(const std::string &homePageFile) = 0;
 
-#if USE_ORM
     /// Get a database client by @param name
     /**
      * NOTE:
@@ -833,7 +827,6 @@ class HttpAppFramework : public trantor::NonCopyable
                                 const std::string &filename = "",
                                 const std::string &name = "default",
                                 const bool isFast = false) = 0;
-#endif
 
   private:
     virtual void registerHttpController(

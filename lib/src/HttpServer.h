@@ -16,8 +16,8 @@
 
 #include "HttpRequestImpl.h"
 #include "WebSocketConnectionImpl.h"
+#include "HttpRequestParser.h"
 #include <drogon/WebSocketController.h>
-#include <drogon/config.h>
 #include <trantor/net/TcpServer.h>
 #include <trantor/net/callbacks.h>
 #include <trantor/utils/NonCopyable.h>
@@ -87,18 +87,17 @@ class HttpServer : trantor::NonCopyable
     }
     void start();
 
-#ifdef USE_OPENSSL
     void enableSSL(const std::string &certPath, const std::string &keyPath)
     {
         _server.enableSSL(certPath, keyPath);
     }
-#endif
 
   private:
     void onConnection(const trantor::TcpConnectionPtr &conn);
     void onMessage(const trantor::TcpConnectionPtr &, trantor::MsgBuffer *);
     void onRequests(const trantor::TcpConnectionPtr &,
-                    const std::vector<HttpRequestImplPtr> &);
+                    const std::vector<HttpRequestImplPtr> &,
+                    const std::shared_ptr<HttpRequestParser> &);
     void sendResponse(const trantor::TcpConnectionPtr &,
                       const HttpResponsePtr &,
                       bool isHeadMethod);

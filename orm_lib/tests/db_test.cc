@@ -13,6 +13,7 @@
  *
  */
 #include "Users.h"
+#include <drogon/config.h>
 #include <drogon/orm/DbClient.h>
 #include <iostream>
 #include <trantor/utils/Logger.h>
@@ -33,7 +34,7 @@ void testOutput(bool isGood, const std::string &testMessage)
     {
         std::cout << RED << testMessage << "\t\tBAD\n";
         std::cout << RESET;
-        exit(-1);
+        exit(1);
     }
 }
 
@@ -43,12 +44,6 @@ int main()
 #if USE_POSTGRESQL
     auto clientPtr = DbClient::newPgClient(
         "host=127.0.0.1 port=5432 dbname=postgres user=antao", 1);
-#elif USE_MYSQL
-    auto clientPtr = DbClient::newMysqlClient(
-        "host=127.0.0.1 port=3306 dbname=test user=root", 1);
-#else
-    DbClientPtr clientPtr;
-    return -1;
 #endif
     LOG_DEBUG << "start!";
     sleep(1);

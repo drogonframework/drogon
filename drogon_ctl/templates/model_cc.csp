@@ -9,7 +9,6 @@ using namespace drogon_ctl;
  */
 
 #include "[[className]].h"
-#include <trantor/utils/config.h>
 #include <drogon/utils/Utilities.h>
 #include <string>
 <%c++
@@ -17,6 +16,7 @@ using namespace drogon_ctl;
     auto className=@@.get<std::string>("className");
 %>
 
+using namespace drogon;
 using namespace drogon_model::[[dbName]];
 
 <%c++for(auto col:cols){

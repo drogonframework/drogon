@@ -1,4 +1,8 @@
-link_libraries(drogon trantor pthread dl)
+LINK_LIBRARIES(drogon trantor pthread dl)
 
-add_executable(pg_test1 test1.cc)
-add_executable(pg_test2 test2.cc)
+ADD_EXECUTABLE(pg_test1 test1.cc)
+ADD_EXECUTABLE(pg_test2 test2.cc)
+
+SET_PROPERTY(TARGET pg_test1 pg_test2 PROPERTY CXX_STANDARD ${DROGON_CXX_STANDARD})
+SET_PROPERTY(TARGET pg_test1 pg_test2 PROPERTY CXX_STANDARD_REQUIRED ON)
+SET_PROPERTY(TARGET pg_test1 pg_test2 PROPERTY CXX_EXTENSIONS OFF)

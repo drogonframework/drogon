@@ -22,6 +22,7 @@ using namespace drogon_ctl;
 #include <tuple>
 #include <stdint.h>
 #include <iostream>
+
 using namespace drogon::orm;
 
 namespace drogon_model

@@ -38,7 +38,7 @@ void ApiTest::your_method_name(
     double p1,
     int p2) const
 {
-    LOG_WARN << req->matchedPathPattern();
+    LOG_WARN << req->matchedPathPatternData();
     HttpViewData data;
     data.insert("title", std::string("ApiTest::get"));
     std::map<std::string, std::string> para;

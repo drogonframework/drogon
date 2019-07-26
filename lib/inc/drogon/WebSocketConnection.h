@@ -14,7 +14,6 @@
 
 #pragma once
 
-#include <drogon/config.h>
 #include <memory>
 #include <string>
 #include <trantor/net/InetAddress.h>
@@ -63,11 +62,33 @@ class WebSocketConnection
     virtual void forceClose() = 0;
 
     /// Set custom data on the connection
-    virtual void setContext(const any &context) = 0;
+    void setContext(const std::shared_ptr<void> &context)
+    {
+        _contextPtr = context;
+    }
+    void setContext(std::shared_ptr<void> &&context)
+    {
+        _contextPtr = std::move(context);
+    }
 
     /// Get custom data from the connection
-    virtual const any &getContext() const = 0;
-    virtual any *getMutableContext() = 0;
+    template <typename T>
+    std::shared_ptr<T> getContext() const
+    {
+        return std::static_pointer_cast<T>(_contextPtr);
+    }
+
+    /// Return true if the context is set by user.
+    bool hasContext()
+    {
+        return (bool)_contextPtr;
+    }
+
+    /// Clear the context.
+    void clearContext()
+    {
+        _contextPtr.reset();
+    }
 
     /// Set the heartbeat(ping) message sent to the peer.
     /**
@@ -78,6 +99,9 @@ class WebSocketConnection
     virtual void setPingMessage(
         const std::string &message,
         const std::chrono::duration<long double> &interval) = 0;
+
+  private:
+    std::shared_ptr<void> _contextPtr;
 };
 typedef std::shared_ptr<WebSocketConnection> WebSocketConnectionPtr;
 }  // namespace drogon

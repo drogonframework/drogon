@@ -12,8 +12,9 @@
  *
  */
 
-#include "DbClientManager.h"
+#include "../../lib/src/DbClientManager.h"
 #include "DbClientLockFree.h"
+#include <drogon/config.h>
 #include <drogon/utils/Utilities.h>
 #include <algorithm>
 

@@ -105,7 +105,7 @@ void create_filter::handleCommand(std::vector<std::string> &parameters)
         if (!oHeadFile || !oSourceFile)
         {
             perror("");
-            exit(-1);
+            exit(1);
         }
 
         std::cout << "create a http filter:" << className << std::endl;

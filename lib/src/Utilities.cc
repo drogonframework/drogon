@@ -14,7 +14,6 @@
 
 #include <cctype>
 #include <cstdlib>
-#include <drogon/config.h>
 #include <drogon/utils/Utilities.h>
 #include <fcntl.h>
 #include <iomanip>
@@ -454,18 +453,6 @@ std::string urlEncode(const std::string &src)
     }
 
     return result;
-}
-
-std::string urlDecode(const std::string &szToDecode)
-{
-    return urlDecode(szToDecode.c_str(),
-                     szToDecode.c_str() + szToDecode.length());
-}
-
-std::string urlDecode(const string_view &szToDecode)
-{
-    return urlDecode(szToDecode.data(),
-                     szToDecode.data() + szToDecode.length());
 }
 
 std::string urlDecode(const char *begin, const char *end)

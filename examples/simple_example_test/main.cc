@@ -14,6 +14,7 @@
 
 // Make a http client to test the example server app;
 
+#include <drogon/config.h>
 #include <drogon/drogon.h>
 #include <trantor/net/EventLoopThread.h>
 #include <trantor/net/TcpClient.h>
@@ -1031,7 +1032,7 @@ int main(int argc, char *argv[])
             client->addCookie(sessionID);
 
         doTest(client, pro1);
-#ifdef USE_OPENSSL
+#ifdef OpenSSL_FOUND
         std::promise<int> pro2;
         auto sslClient = HttpClient::newHttpClient("127.0.0.1",
                                                    8849,

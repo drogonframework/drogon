@@ -14,7 +14,6 @@
 
 #pragma once
 
-#include <drogon/config.h>
 #include <drogon/orm/SqlBinder.h>
 
 #include <assert.h>

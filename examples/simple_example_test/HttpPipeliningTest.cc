@@ -26,7 +26,7 @@ int main()
                 {
                     LOG_ERROR << "The response was received in "
                                  "the wrong order!";
-                    exit(-1);
+                    exit(1);
                 }
                 else
                 {
@@ -36,12 +36,12 @@ int main()
                 if (resp->getBody().length() > 0)
                 {
                     LOG_ERROR << "The response has a body:" << resp->getBody();
-                    exit(-1);
+                    exit(1);
                 }
             }
             else
             {
-                exit(-1);
+                exit(1);
             }
         });
 
@@ -53,15 +53,15 @@ int main()
             if (resp->getBody().length() != 44618)
             {
                 LOG_ERROR << "The response is error!";
-                exit(-1);
+                exit(1);
             }
         }
         else
         {
-            exit(-1);
+            exit(1);
         }
     });
-    
+
     auto request = HttpRequest::newHttpRequest();
     request->setPath("/pipe");
     for (int i = 0; i < 19; i++)
@@ -76,7 +76,7 @@ int main()
                     {
                         LOG_ERROR
                             << "The response was received in the wrong order!";
-                        exit(-1);
+                        exit(1);
                     }
                     else
                     {
@@ -91,12 +91,12 @@ int main()
                     if (resp->getBody().length() == 0)
                     {
                         LOG_ERROR << "The response hasn't a body!";
-                        exit(-1);
+                        exit(1);
                     }
                 }
                 else
                 {
-                    exit(-1);
+                    exit(1);
                 }
             });
     }

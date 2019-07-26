@@ -18,6 +18,9 @@
 #include <future>
 #include <iostream>
 #include <stdio.h>
+#if USE_MYSQL
+#include <mysql.h>
+#endif
 using namespace drogon::orm;
 using namespace drogon::orm::internal;
 void SqlBinder::exec()
@@ -258,4 +261,31 @@ SqlBinder &SqlBinder::operator<<(std::nullptr_t nullp)
         _format.push_back(Sqlite3TypeNull);
     }
     return *this;
+}
+
+int SqlBinder::getMysqlTypeBySize(size_t size)
+{
+#if USE_MYSQL
+    switch (size)
+    {
+        case 1:
+            return MYSQL_TYPE_TINY;
+            break;
+        case 2:
+            return MYSQL_TYPE_SHORT;
+            break;
+        case 4:
+            return MYSQL_TYPE_LONG;
+            break;
+        case 8:
+            return MYSQL_TYPE_LONGLONG;
+            break;
+        default:
+            return 0;
+    }
+#else
+    LOG_FATAL << "Mysql is not supported!";
+    exit(1);
+    return 0;
+#endif
 }

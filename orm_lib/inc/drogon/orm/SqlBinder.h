@@ -13,7 +13,6 @@
  */
 
 #pragma once
-#include <drogon/config.h>
 #include <drogon/orm/Exception.h>
 #include <drogon/orm/Field.h>
 #include <drogon/orm/FunctionTraits.h>
@@ -21,9 +20,6 @@
 #include <drogon/orm/Row.h>
 #include <drogon/orm/RowIterator.h>
 #include <trantor/utils/Logger.h>
-#if USE_MYSQL
-#include <mysql.h>
-#endif
 #include <functional>
 #include <iostream>
 #include <map>
@@ -315,27 +311,10 @@ class SqlBinder
         }
         else if (_type == ClientType::Mysql)
         {
-#if USE_MYSQL
             _objs.push_back(obj);
             _parameters.push_back((char *)obj.get());
             _length.push_back(0);
-            switch (sizeof(T))
-            {
-                case 1:
-                    _format.push_back(MYSQL_TYPE_TINY);
-                    break;
-                case 2:
-                    _format.push_back(MYSQL_TYPE_SHORT);
-                    break;
-                case 4:
-                    _format.push_back(MYSQL_TYPE_LONG);
-                    break;
-                case 8:
-                    _format.push_back(MYSQL_TYPE_LONGLONG);
-                default:
-                    break;
-            }
-#endif
+            _format.push_back(getMysqlTypeBySize(sizeof(T)));
         }
         else if (_type == ClientType::Sqlite3)
         {
@@ -411,6 +390,7 @@ class SqlBinder
     void exec() noexcept(false);
 
   private:
+    int getMysqlTypeBySize(size_t size);
     std::string _sql;
     DbClient &_client;
     size_t _paraNum = 0;

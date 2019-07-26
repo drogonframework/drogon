@@ -48,7 +48,7 @@ Sqlite3Connection::Sqlite3Connection(
         auto ret = sqlite3_config(SQLITE_CONFIG_MULTITHREAD);
         if (ret != SQLITE_OK)
         {
-            LOG_FATAL << sqlite3_errstr(ret);
+            LOG_FATAL << "SQLITE_CONFIG_MULTITHREAD is not supported!";
         }
     });
     // Get the key and value
@@ -82,7 +82,7 @@ Sqlite3Connection::Sqlite3Connection(
         auto thisPtr = shared_from_this();
         if (ret != SQLITE_OK)
         {
-            LOG_FATAL << sqlite3_errstr(ret);
+            LOG_FATAL << sqlite3_errmsg(_conn.get());
             _closeCb(thisPtr);
         }
         else

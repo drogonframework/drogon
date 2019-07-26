@@ -13,8 +13,8 @@
  */
 
 #include "version.h"
-#include <drogon/version.h>
 #include <drogon/config.h>
+#include <drogon/version.h>
 #include <iostream>
 
 using namespace drogon_ctl;
@@ -32,6 +32,6 @@ void version::handleCommand(std::vector<std::string> &parameters)
     std::cout << "A utility for drogon" << std::endl;
     std::cout << "Version:" << VERSION << std::endl;
     std::cout << "Git commit:" << VERSION_MD5 << std::endl;
-    std::cout << "Compile config:" << compileFlags << " " << includeDirs
+    std::cout << "Compile config:" << COMPILATION_FLAGS << " " << INCLUDING_DIRS
               << std::endl;
 }
