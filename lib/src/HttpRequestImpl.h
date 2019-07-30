@@ -123,13 +123,29 @@ class HttpRequestImpl : public HttpRequest
         _query = query;
     }
 
-    virtual string_view body() const override
+    string_view bodyView() const
     {
         if (_cacheFilePtr)
         {
             return _cacheFilePtr->getStringView();
         }
         return _content;
+    }
+    virtual const char *bodyData() const override
+    {
+        if (_cacheFilePtr)
+        {
+            return _cacheFilePtr->getStringView().data();
+        }
+        return _content.data();
+    }
+    virtual size_t bodyLength() const override
+    {
+        if (_cacheFilePtr)
+        {
+            return _cacheFilePtr->getStringView().length();
+        }
+        return _content.length();
     }
 
     void appendToBody(const char *data, size_t length)
@@ -146,9 +162,9 @@ class HttpRequestImpl : public HttpRequest
 
     void reserveBodySize();
 
-    virtual string_view query() const override
+    string_view queryView() const
     {
-        if (_query != "")
+        if (!_query.empty())
             return _query;
         if (_method == Post)
         {
@@ -156,6 +172,11 @@ class HttpRequestImpl : public HttpRequest
                 return _cacheFilePtr->getStringView();
             return _content;
         }
+        return _query;
+    }
+
+    virtual const std::string &query() const override
+    {
         return _query;
     }
 
@@ -323,9 +344,13 @@ class HttpRequestImpl : public HttpRequest
         return _contentType;
     }
 
-    virtual const string_view &matchedPathPattern() const override
+    virtual const char *matchedPathPatternData() const override
     {
-        return _matchedPathPattern;
+        return _matchedPathPattern.data();
+    }
+    virtual size_t matchedPathPatternLength() const override
+    {
+        return _matchedPathPattern.length();
     }
 
     void setMatchedPathPattern(const std::string &pathPattern)

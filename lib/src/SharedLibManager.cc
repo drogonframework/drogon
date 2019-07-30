@@ -13,9 +13,9 @@
  */
 
 #include "SharedLibManager.h"
+#include <drogon/config.h>
 #include <dirent.h>
 #include <dlfcn.h>
-#include <drogon/config.h>
 #include <fstream>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -154,7 +154,7 @@ void SharedLibManager::managerLibs()
 void *SharedLibManager::loadLibs(const std::string &sourceFile, void *oldHld)
 {
     LOG_TRACE << "src:" << sourceFile;
-    std::string cmd = compilerCommand;
+    std::string cmd = COMPILER_COMMAND;
     auto pos = cmd.rfind("/");
     if (pos != std::string::npos)
     {
@@ -163,10 +163,10 @@ void *SharedLibManager::loadLibs(const std::string &sourceFile, void *oldHld)
     cmd.append(" ")
         .append(sourceFile)
         .append(" ")
-        .append(compileFlags)
+        .append(COMPILATION_FLAGS)
         .append(" ")
-        .append(includeDirs);
-    if (std::string(compilerId).find("Clang") != std::string::npos)
+        .append(INCLUDING_DIRS);
+    if (std::string(COMPILER_ID).find("Clang") != std::string::npos)
         cmd.append(" -shared -fPIC -undefined dynamic_lookup -o ");
     else
         cmd.append(" -shared -fPIC --no-gnu-unique -o ");

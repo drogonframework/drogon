@@ -16,13 +16,14 @@
 #include "AOPAdvice.h"
 #include "FiltersFunction.h"
 #include "HttpAppFrameworkImpl.h"
+#include <drogon/utils/HttpConstraint.h>
 
 using namespace drogon;
 
 void HttpSimpleControllersRouter::registerHttpSimpleController(
     const std::string &pathName,
     const std::string &ctrlName,
-    const std::vector<any> &filtersAndMethods)
+    const std::vector<internal::HttpConstraint> &filtersAndMethods)
 {
     assert(!pathName.empty());
     assert(!ctrlName.empty());
@@ -34,22 +35,16 @@ void HttpSimpleControllersRouter::registerHttpSimpleController(
     std::vector<std::string> filters;
     for (auto const &filterOrMethod : filtersAndMethods)
     {
-        if (filterOrMethod.type() == typeid(std::string))
+        if (filterOrMethod.type() == internal::ConstraintType::HttpFilter)
         {
-            filters.push_back(*any_cast<std::string>(&filterOrMethod));
+            filters.push_back(filterOrMethod.getFilterName());
         }
-        else if (filterOrMethod.type() == typeid(const char *))
+        else if (filterOrMethod.type() == internal::ConstraintType::HttpMethod)
         {
-            filters.push_back(*any_cast<const char *>(&filterOrMethod));
-        }
-        else if (filterOrMethod.type() == typeid(HttpMethod))
-        {
-            validMethods.push_back(*any_cast<HttpMethod>(&filterOrMethod));
+            validMethods.push_back(filterOrMethod.getHttpMethod());
         }
         else
         {
-            std::cerr << "Invalid controller constraint type:"
-                      << filterOrMethod.type().name() << std::endl;
             LOG_ERROR << "Invalid controller constraint type";
             exit(1);
         }
@@ -242,7 +237,7 @@ void HttpSimpleControllersRouter::doControllerHandler(
             {
                 // make a copy response;
                 auto newResp = std::make_shared<HttpResponseImpl>(
-                    *std::dynamic_pointer_cast<HttpResponseImpl>(responsePtr));
+                    *static_cast<HttpResponseImpl *>(responsePtr.get()));
                 newResp->setExpiredTime(-1);  // make it temporary
                 newResp->addCookie("JSESSIONID", sessionId);
                 invokeCallback(callback, req, newResp);
@@ -262,7 +257,7 @@ void HttpSimpleControllersRouter::doControllerHandler(
                     if (resp->expiredTime() >= 0)
                     {
                         // cache the response;
-                        std::dynamic_pointer_cast<HttpResponseImpl>(resp)
+                        static_cast<HttpResponseImpl *>(resp.get())
                             ->makeHeaderString();
                         auto loop = req->getLoop();
                         if (loop->isInLoopThread())
@@ -282,8 +277,7 @@ void HttpSimpleControllersRouter::doControllerHandler(
                         {
                             // make a copy
                             newResp = std::make_shared<HttpResponseImpl>(
-                                *std::dynamic_pointer_cast<HttpResponseImpl>(
-                                    resp));
+                                *static_cast<HttpResponseImpl *>(resp.get()));
                             newResp->setExpiredTime(-1);  // make it temporary
                         }
                         newResp->addCookie("JSESSIONID", sessionId);

@@ -16,6 +16,7 @@
 #include "HttpAppFrameworkImpl.h"
 #include "HttpRequestImpl.h"
 #include "HttpResponseParser.h"
+#include <drogon/config.h>
 #include <algorithm>
 #include <stdlib.h>
 
@@ -205,7 +206,7 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
                                                               _server,
                                                               "httpClient");
 
-#ifdef USE_OPENSSL
+#ifdef OpenSSL_FOUND
             if (_useSSL)
             {
                 _tcpClient->enableSSL();
@@ -227,7 +228,8 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
                         return;
                     if (connPtr->connected())
                     {
-                        connPtr->setContext(HttpResponseParser(connPtr));
+                        connPtr->setContext(
+                            std::make_shared<HttpResponseParser>());
                         // send request;
                         LOG_TRACE << "Connection established!";
                         while (thisPtr->_pipeliningCallbacks.size() <=
@@ -316,8 +318,8 @@ void HttpClientImpl::sendReq(const trantor::TcpConnectionPtr &connPtr,
                              const HttpRequestPtr &req)
 {
     trantor::MsgBuffer buffer;
-    auto implPtr = std::dynamic_pointer_cast<HttpRequestImpl>(req);
-    assert(implPtr);
+    assert(req);
+    auto implPtr = static_cast<HttpRequestImpl *>(req.get());
     implPtr->appendToBuffer(&buffer);
     LOG_TRACE << "Send request:"
               << std::string(buffer.peek(), buffer.readableBytes());
@@ -328,8 +330,7 @@ void HttpClientImpl::sendReq(const trantor::TcpConnectionPtr &connPtr,
 void HttpClientImpl::onRecvMessage(const trantor::TcpConnectionPtr &connPtr,
                                    trantor::MsgBuffer *msg)
 {
-    HttpResponseParser *responseParser =
-        any_cast<HttpResponseParser>(connPtr->getMutableContext());
+    auto responseParser = connPtr->getContext<HttpResponseParser>();
 
     // LOG_TRACE << "###:" << msg->readableBytes();
     auto msgSize = msg->readableBytes();

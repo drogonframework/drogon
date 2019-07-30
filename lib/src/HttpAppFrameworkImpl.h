@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include "DbClientManager.h"
 #include "HttpClientImpl.h"
 #include "HttpControllersRouter.h"
 #include "HttpRequestImpl.h"
@@ -26,9 +27,7 @@
 #include "WebsocketControllersRouter.h"
 #include "StaticFileRouter.h"
 #include "SessionManager.h"
-#if USE_ORM
-#include "../../orm_lib/src/DbClientManager.h"
-#endif
+#include <drogon/config.h>
 #include <drogon/HttpAppFramework.h>
 #include <drogon/HttpSimpleController.h>
 #include <drogon/version.h>
@@ -106,8 +105,8 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     virtual void registerHttpSimpleController(
         const std::string &pathName,
         const std::string &crtlName,
-        const std::vector<any> &filtersAndMethods =
-            std::vector<any>()) override;
+        const std::vector<internal::HttpConstraint> &filtersAndMethods =
+            std::vector<internal::HttpConstraint>{}) override;
 
     virtual void setCustom404Page(const HttpResponsePtr &resp) override
     {
@@ -344,7 +343,6 @@ class HttpAppFrameworkImpl : public HttpAppFramework
         return _serverHeader;
     }
 
-#if USE_ORM
     virtual orm::DbClientPtr getDbClient(
         const std::string &name = "default") override
     {
@@ -378,7 +376,6 @@ class HttpAppFrameworkImpl : public HttpAppFramework
                                         name,
                                         isFast);
     }
-#endif
 
     inline static HttpAppFrameworkImpl &instance()
     {
@@ -461,9 +458,7 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     Json::Value _jsonConfig;
     PluginsManager _pluginsManager;
     HttpResponsePtr _custom404;
-#if USE_ORM
     orm::DbClientManager _dbClientManager;
-#endif
     static InitBeforeMainFunction _initFirst;
     std::vector<std::function<bool(const trantor::InetAddress &,
                                    const trantor::InetAddress &)>>

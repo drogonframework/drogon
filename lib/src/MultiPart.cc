@@ -17,7 +17,8 @@
 #include <drogon/HttpAppFramework.h>
 #include <drogon/MultiPart.h>
 #include <drogon/utils/Utilities.h>
-#ifdef USE_OPENSSL
+#include <drogon/config.h>
+#ifdef OpenSSL_FOUND
 #include <openssl/md5.h>
 #else
 #include "ssl_funcs/Md5.h"
@@ -46,7 +47,7 @@ int MultiPartParser::parse(const HttpRequestPtr &req)
     if (req->method() != Post)
         return -1;
     const std::string &contentType =
-        std::dynamic_pointer_cast<HttpRequestImpl>(req)->getHeaderBy(
+        static_cast<HttpRequestImpl *>(req.get())->getHeaderBy(
             "content-type");
     if (contentType.empty())
     {
@@ -64,7 +65,8 @@ int MultiPartParser::parse(const HttpRequestPtr &req)
     if (pos == std::string::npos)
         return -1;
     std::string boundary = contentType.substr(pos + 9);
-    return parse(req->query(), boundary);
+
+    return parse(req, boundary);
 }
 
 int MultiPartParser::parseEntity(const char *begin, const char *end)
@@ -108,11 +110,12 @@ int MultiPartParser::parseEntity(const char *begin, const char *end)
     }
 }
 
-int MultiPartParser::parse(const string_view &content,
+int MultiPartParser::parse(const HttpRequestPtr &req,
                            const std::string &boundary)
 {
     string_view::size_type pos1, pos2;
     pos1 = 0;
+    auto content = static_cast<HttpRequestImpl *>(req.get())->bodyView();
     pos2 = content.find(boundary);
     while (1)
     {
@@ -222,7 +225,7 @@ int HttpFile::saveTo(const std::string &pathAndFilename) const
 }
 const std::string HttpFile::getMd5() const
 {
-#ifdef USE_OPENSSL
+#ifdef OpenSSL_FOUND
     MD5_CTX c;
     unsigned char md5[16] = {0};
     MD5_Init(&c);

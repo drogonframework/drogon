@@ -341,7 +341,7 @@ void create_controller::createController(const std::string &className,
     if (!oHeadFile || !oSourceFile)
     {
         perror("");
-        exit(-1);
+        exit(1);
     }
     if (type == Http)
     {

@@ -13,9 +13,8 @@
  */
 
 #include "ListenerManager.h"
-#include <trantor/utils/config.h>
+#include <drogon/config.h>
 #include <trantor/utils/Logger.h>
-
 #include <fcntl.h>
 #include <sys/file.h>
 #include <sys/stat.h>
@@ -53,7 +52,7 @@ void ListenerManager::addListener(const std::string &ip,
                                   const std::string &certFile,
                                   const std::string &keyFile)
 {
-#ifndef USE_OPENSSL
+#ifndef OpenSSL_FOUND
     if (useSSL)
     {
         LOG_ERROR << "Can't use SSL without OpenSSL found in your system";
@@ -108,7 +107,7 @@ std::vector<trantor::EventLoop *> ListenerManager::createListeners(
 
             if (listener._useSSL)
             {
-#ifdef USE_OPENSSL
+#ifdef OpenSSL_FOUND
                 auto cert = listener._certFile;
                 auto key = listener._keyFile;
                 if (cert == "")
@@ -149,7 +148,7 @@ std::vector<trantor::EventLoop *> ListenerManager::createListeners(
             "drogon");
         if (listener._useSSL)
         {
-#ifdef USE_OPENSSL
+#ifdef OpenSSL_FOUND
             auto cert = listener._certFile;
             auto key = listener._keyFile;
             if (cert == "")

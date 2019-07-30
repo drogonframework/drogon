@@ -13,9 +13,10 @@
  */
 
 #pragma once
+
+#include <drogon/utils/string_view.h>
 #include <drogon/HttpTypes.h>
 #include <drogon/WebSocketConnection.h>
-#include <drogon/config.h>
 #include <string>
 #include <trantor/utils/MsgBuffer.h>
 

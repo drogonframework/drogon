@@ -16,10 +16,8 @@
 
 #include <drogon/config.h>
 #include <json/json.h>
-#if USE_ORM
 #include <drogon/orm/DbClient.h>
 using namespace drogon::orm;
-#endif
 #include <drogon/DrObject.h>
 #include "CommandHandler.h"
 #include <string>

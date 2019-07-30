@@ -17,13 +17,13 @@
 
 #pragma once
 
+#include <drogon/utils/string_view.h>
 #include <drogon/orm/ArrayParser.h>
 #include <drogon/orm/Result.h>
 #include <drogon/orm/Row.h>
 #include <memory>
 #include <sstream>
 #include <string>
-#include <trantor/utils/config.h>
 #include <vector>
 
 #ifdef __linux__
@@ -195,7 +195,12 @@ char *Field::as<char *>() const;
 template <>
 std::vector<char> Field::as<std::vector<char>>() const;
 template <>
-string_view Field::as<string_view>() const;
+inline drogon::string_view Field::as<drogon::string_view>() const
+{
+    auto first = _result.getValue(_row, _column);
+    auto length = _result.getLength(_row, _column);
+    return drogon::string_view(first, length);
+}
 template <>
 int Field::as<int>() const;
 template <>

@@ -1,5 +1,5 @@
 #include <drogon/config.h>
-#ifdef USE_OPENSSL
+#ifdef OpenSSL_FOUND
 #include <openssl/sha.h>
 #else
 #include "../lib/src/ssl_funcs/Sha1.h"

@@ -38,7 +38,7 @@ std::string press::detail()
 void outputErrorAndExit(const string_view &err)
 {
     std::cout << err << std::endl;
-    exit(-1);
+    exit(1);
 }
 void press::handleCommand(std::vector<std::string> &parameters)
 {

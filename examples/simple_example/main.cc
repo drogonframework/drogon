@@ -1,9 +1,11 @@
-#include <iostream>
+
+#include "CustomCtrl.h"
+#include "CustomHeaderFilter.h"
+#include <drogon/config.h>
 #include <drogon/drogon.h>
 #include <vector>
 #include <string>
-#include "CustomCtrl.h"
-#include "CustomHeaderFilter.h"
+#include <iostream>
 
 using namespace drogon;
 using namespace std::chrono_literals;
@@ -125,7 +127,7 @@ int main()
     std::cout << banner << std::endl;
     // app().addListener("::1", 8848); //ipv6
     app().addListener("0.0.0.0", 8848);
-#ifdef USE_OPENSSL
+#ifdef OpenSSL_FOUND
     // https
     drogon::app().setSSLFiles("server.pem", "server.pem");
     drogon::app().addListener("0.0.0.0", 8849, true);
@@ -206,7 +208,7 @@ int main()
                                        drogon::AdviceCallback &&acb,
                                        drogon::AdviceChainCallback &&accb) {
         LOG_DEBUG << "postRouting1";
-        LOG_DEBUG << "Matched path=" << req->matchedPathPattern();
+        LOG_DEBUG << "Matched path=" << req->matchedPathPatternData();
         for (auto &cookie : req->cookies())
         {
             LOG_DEBUG << "cookie: " << cookie.first << "=" << cookie.second;

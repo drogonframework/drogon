@@ -8,7 +8,6 @@
 #include "Users.h"
 #include <drogon/utils/Utilities.h>
 #include <string>
-#include <trantor/utils/config.h>
 
 using namespace drogon_model::postgres;
 

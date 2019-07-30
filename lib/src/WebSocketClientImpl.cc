@@ -18,8 +18,9 @@
 #include "HttpUtils.h"
 #include <drogon/HttpAppFramework.h>
 #include <drogon/utils/Utilities.h>
+#include <drogon/config.h>
 #include <trantor/net/InetAddress.h>
-#ifdef USE_OPENSSL
+#ifdef OpenSSL_FOUND
 #include <openssl/sha.h>
 #else
 #include "ssl_funcs/Sha1.h"
@@ -89,13 +90,10 @@ void WebSocketClientImpl::connectToServerInLoop()
         LOG_TRACE << "New TcpClient," << _server.toIpPort();
         _tcpClient =
             std::make_shared<trantor::TcpClient>(_loop, _server, "httpClient");
-
-#ifdef USE_OPENSSL
         if (_useSSL)
         {
             _tcpClient->enableSSL();
         }
-#endif
         auto thisPtr = shared_from_this();
         std::weak_ptr<WebSocketClientImpl> weakPtr = thisPtr;
 
@@ -106,7 +104,7 @@ void WebSocketClientImpl::connectToServerInLoop()
                     return;
                 if (connPtr->connected())
                 {
-                    connPtr->setContext(HttpResponseParser(connPtr));
+                    connPtr->setContext(std::make_shared<HttpResponseParser>());
                     // send request;
                     LOG_TRACE << "Connection established!";
                     thisPtr->sendReq(connPtr);
@@ -169,8 +167,7 @@ void WebSocketClientImpl::onRecvMessage(
         onRecvWsMessage(connPtr, msgBuffer);
         return;
     }
-    HttpResponseParser *responseParser =
-        any_cast<HttpResponseParser>(connPtr->getMutableContext());
+    auto responseParser = connPtr->getContext<HttpResponseParser>();
 
     // LOG_TRACE << "###:" << msg->readableBytes();
 
@@ -311,8 +308,8 @@ WebSocketClientImpl::WebSocketClientImpl(trantor::EventLoop *loop,
 void WebSocketClientImpl::sendReq(const trantor::TcpConnectionPtr &connPtr)
 {
     trantor::MsgBuffer buffer;
-    auto implPtr = std::dynamic_pointer_cast<HttpRequestImpl>(_upgradeRequest);
-    assert(implPtr);
+    assert(_upgradeRequest);
+    auto implPtr = static_cast<HttpRequestImpl *>(_upgradeRequest.get());
     implPtr->appendToBuffer(&buffer);
     LOG_TRACE << "Send request:"
               << std::string(buffer.peek(), buffer.readableBytes());

@@ -14,10 +14,10 @@
 
 #pragma once
 
-#include <drogon/config.h>
+#include <trantor/utils/Date.h>
+#include <drogon/utils/string_view.h>
 #include <memory>
 #include <string>
-#include <trantor/utils/Date.h>
 #include <vector>
 
 namespace drogon
@@ -58,9 +58,17 @@ std::string base64Encode(const unsigned char *bytes_to_encode,
 std::string base64Decode(std::string const &encoded_string);
 
 /// Decode from or encode to the URL format string
-std::string urlDecode(const std::string &szToDecode);
-std::string urlDecode(const string_view &szToDecode);
 std::string urlDecode(const char *begin, const char *end);
+inline std::string urlDecode(const std::string &szToDecode)
+{
+    auto begin = szToDecode.data();
+    return urlDecode(begin, begin + szToDecode.length());
+}
+inline std::string urlDecode(const string_view &szToDecode)
+{
+    auto begin = szToDecode.data();
+    return urlDecode(begin, begin + szToDecode.length());
+}
 std::string urlEncode(const std::string &str);
 
 /// Commpress or decompress data using gzip lib.

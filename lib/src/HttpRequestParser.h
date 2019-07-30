@@ -16,15 +16,16 @@
 
 #include "HttpRequestImpl.h"
 #include "WebSocketConnectionImpl.h"
-#include <deque>
 #include <drogon/HttpResponse.h>
-#include <mutex>
+#include <trantor/utils/NonCopyable.h>
 #include <trantor/net/TcpConnection.h>
 #include <trantor/utils/MsgBuffer.h>
+#include <mutex>
+#include <deque>
 
 namespace drogon
 {
-class HttpRequestParser
+class HttpRequestParser : public trantor::NonCopyable
 {
   public:
     enum HttpRequestParseState

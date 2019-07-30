@@ -100,10 +100,11 @@ class HttpResponseImpl : public HttpResponse
 
     virtual void setContentTypeCodeAndCustomString(
         ContentType type,
-        const string_view &typeString) override
+        const char *typeString,
+        size_t typeStringLength) override
     {
         _contentType = type;
-        setContentType(typeString);
+        setContentType(string_view{typeString, typeStringLength});
     }
 
     // virtual void setContentTypeCodeAndCharacterSet(ContentType type, const

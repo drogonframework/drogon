@@ -15,6 +15,7 @@
 #include "DbClientLockFree.h"
 #include "DbConnection.h"
 #include "TransactionImpl.h"
+#include <drogon/config.h>
 #if USE_POSTGRESQL
 #include "postgresql_impl/PgConnection.h"
 #endif

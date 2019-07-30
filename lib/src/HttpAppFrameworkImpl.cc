@@ -16,6 +16,7 @@
 #include "AOPAdvice.h"
 #include "ConfigLoader.h"
 #include "HttpServer.h"
+#include <drogon/config.h>
 #include <algorithm>
 #include <drogon/CacheMap.h>
 #include <drogon/DrClassMap.h>
@@ -128,7 +129,7 @@ void HttpAppFrameworkImpl::registerWebSocketController(
 void HttpAppFrameworkImpl::registerHttpSimpleController(
     const std::string &pathName,
     const std::string &ctrlName,
-    const std::vector<any> &filtersAndMethods)
+    const std::vector<internal::HttpConstraint> &filtersAndMethods)
 {
     assert(!_running);
     _httpSimpleCtrlsRouter.registerHttpSimpleController(pathName,
@@ -292,13 +293,11 @@ void HttpAppFrameworkImpl::run()
         _sslCertPath,
         _sslKeyPath,
         _threadNum);
-#if USE_ORM
     // A fast database client instance should be created in the main event loop,
     // so put the main loop into ioLoops.
     ioLoops.push_back(getLoop());
     _dbClientManager.createDbClients(ioLoops);
     ioLoops.pop_back();
-#endif
     _httpCtrlsRouter.init(ioLoops);
     _httpSimpleCtrlsRouter.init(ioLoops);
     _staticFileRouter.init();
@@ -366,11 +365,7 @@ void HttpAppFrameworkImpl::onConnection(const trantor::TcpConnectionPtr &conn)
     }
     else
     {
-#if CXX_STD >= 17
-        if (!conn->getContext().has_value())
-#else
-        if (conn->getContext().empty())
-#endif
+        if (!conn->hasContext())
         {
             // If the connection is connected to the SSL port and then
             // disconnected before the SSL handshake.
@@ -449,7 +444,6 @@ void HttpAppFrameworkImpl::onAsyncRequest(
         callback(resp);
         return;
     }
-    // LOG_TRACE << "query: " << req->query() ;
 
     std::string sessionId = req->getCookie("JSESSIONID");
     bool needSetJsessionid = false;

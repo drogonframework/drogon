@@ -69,7 +69,7 @@ void StaticFileRouter::route(
             {
                 if (cachedResp)
                 {
-                    if (std::dynamic_pointer_cast<HttpResponseImpl>(cachedResp)
+                    if (static_cast<HttpResponseImpl *>(cachedResp.get())
                             ->getHeaderBy("last-modified") ==
                         req->getHeaderBy("if-modified-since"))
                     {
@@ -124,8 +124,8 @@ void StaticFileRouter::route(
                 {
                     // make a copy
                     auto newCachedResp = std::make_shared<HttpResponseImpl>(
-                        *std::dynamic_pointer_cast<HttpResponseImpl>(
-                            cachedResp));
+                        *static_cast<HttpResponseImpl *>(
+                            cachedResp.get()));
                     newCachedResp->addCookie("JSESSIONID", sessionId);
                     newCachedResp->setExpiredTime(-1);
                     callback(newCachedResp);
@@ -182,7 +182,7 @@ void StaticFileRouter::route(
                     {
                         // make a copy
                         newCachedResp = std::make_shared<HttpResponseImpl>(
-                            *std::dynamic_pointer_cast<HttpResponseImpl>(resp));
+                            *static_cast<HttpResponseImpl *>(resp.get()));
                         newCachedResp->setExpiredTime(-1);
                     }
                     newCachedResp->addCookie("JSESSIONID", sessionId);

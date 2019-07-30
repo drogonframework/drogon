@@ -1,0 +1,12 @@
+#pragma once
+
+#cmakedefine01 USE_POSTGRESQL
+#cmakedefine01 USE_MYSQL
+#cmakedefine01 USE_SQLITE3
+#cmakedefine OpenSSL_FOUND
+
+#cmakedefine COMPILATION_FLAGS "@COMPILATION_FLAGS@@DROGON_CXX_STANDARD@"
+#cmakedefine COMPILER_COMMAND "@COMPILER_COMMAND@"
+#cmakedefine COMPILER_ID "@COMPILER_ID@"
+
+#cmakedefine INCLUDING_DIRS "@INCLUDING_DIRS@"

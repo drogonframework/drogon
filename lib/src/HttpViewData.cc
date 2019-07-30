@@ -16,18 +16,14 @@
 
 using namespace drogon;
 
-std::string HttpViewData::htmlTranslate(const std::string &str)
-{
-    return htmlTranslate(string_view(str));
-}
-
-std::string HttpViewData::htmlTranslate(const string_view &str)
+std::string HttpViewData::htmlTranslate(const char *str, size_t length)
 {
     std::string ret;
-    ret.reserve(str.length() + 64);
-    for (auto &ch : str)
+    ret.reserve(length + 64);
+    auto end = str + length;
+    while (str != end)
     {
-        switch (ch)
+        switch (*str)
         {
             case '"':
                 ret.append("&quot;", 6);
@@ -42,9 +38,10 @@ std::string HttpViewData::htmlTranslate(const string_view &str)
                 ret.append("&gt;", 4);
                 break;
             default:
-                ret.push_back(ch);
+                ret.push_back(*str);
                 break;
         }
+        ++str;
     }
     return ret;
 }

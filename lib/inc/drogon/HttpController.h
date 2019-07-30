@@ -15,6 +15,7 @@
 #pragma once
 
 #include <drogon/DrObject.h>
+#include <drogon/utils/HttpConstraint.h>
 #include <drogon/HttpAppFramework.h>
 #include <iostream>
 #include <string>
@@ -54,7 +55,8 @@ class HttpController : public DrObject<T>, public HttpControllerBase
     static void registerMethod(
         FUNCTION &&function,
         const std::string &pattern,
-        const std::vector<any> &filtersAndMethods = std::vector<any>(),
+        const std::vector<internal::HttpConstraint> &filtersAndMethods =
+            std::vector<internal::HttpConstraint>{},
         bool classNameInPath = true,
         const std::string &handlerName = "")
     {

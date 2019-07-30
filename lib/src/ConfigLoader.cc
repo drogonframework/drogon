@@ -13,7 +13,7 @@
  */
 
 #include "ConfigLoader.h"
-
+#include <drogon/config.h>
 #include <drogon/HttpAppFramework.h>
 #include <fstream>
 #include <iostream>
@@ -160,7 +160,7 @@ static void loadControllers(const Json::Value &controllers)
         auto ctrlName = controller.get("controller", "").asString();
         if (path == "" || ctrlName == "")
             continue;
-        std::vector<any> constraints;
+        std::vector<internal::HttpConstraint> constraints;
         if (!controller["http_methods"].isNull())
         {
             for (auto const &method : controller["http_methods"])
@@ -316,7 +316,7 @@ static void loadApp(const Json::Value &app)
     else
     {
         std::cerr << "Error format of client_max_body_size" << std::endl;
-        exit(-1);
+        exit(1);
     }
     auto maxMemoryBodySize =
         app.get("client_max_memory_body_size", "64K").asString();
@@ -327,7 +327,7 @@ static void loadApp(const Json::Value &app)
     else
     {
         std::cerr << "Error format of client_max_memory_body_size" << std::endl;
-        exit(-1);
+        exit(1);
     }
     auto maxWsMsgSize =
         app.get("client_max_websocket_message_size", "128K").asString();
@@ -339,7 +339,7 @@ static void loadApp(const Json::Value &app)
     {
         std::cerr << "Error format of client_max_websocket_message_size"
                   << std::endl;
-        exit(-1);
+        exit(1);
     }
     drogon::app().setHomePage(app.get("home_page", "index.html").asString());
 }
@@ -347,7 +347,6 @@ static void loadDbClients(const Json::Value &dbClients)
 {
     if (!dbClients)
         return;
-#if USE_ORM
     for (auto const &client : dbClients)
     {
         auto type = client.get("rdbms", "postgresql").asString();
@@ -377,12 +376,6 @@ static void loadDbClients(const Json::Value &dbClients)
                                      name,
                                      isFast);
     }
-#else
-    std::cout << "No database is supported by drogon, please install the "
-                 "database development library first."
-              << std::endl;
-    exit(1);
-#endif
 }
 static void loadListeners(const Json::Value &listeners)
 {

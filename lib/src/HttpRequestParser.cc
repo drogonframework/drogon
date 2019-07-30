@@ -202,8 +202,7 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
                             {
                                 resp->setStatusCode(k413RequestEntityTooLarge);
                                 auto httpString =
-                                    std::dynamic_pointer_cast<HttpResponseImpl>(
-                                        resp)
+                                    static_cast<HttpResponseImpl *>(resp.get())
                                         ->renderToString();
                                 reset();
                                 connPtr->send(httpString);
@@ -212,8 +211,7 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
                             {
                                 resp->setStatusCode(k100Continue);
                                 auto httpString =
-                                    std::dynamic_pointer_cast<HttpResponseImpl>(
-                                        resp)
+                                    static_cast<HttpResponseImpl *>(resp.get())
                                         ->renderToString();
                                 connPtr->send(httpString);
                             }

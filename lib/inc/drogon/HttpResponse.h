@@ -13,6 +13,7 @@
 
 #pragma once
 
+#include <drogon/utils/string_view.h>
 #include <drogon/Cookie.h>
 #include <drogon/HttpTypes.h>
 #include <drogon/HttpViewData.h>
@@ -69,9 +70,23 @@ class HttpResponse
     /// Set the response content type and the content-type string, The string
     /// must contain the header name and CRLF.
     /// For example, "content-type: text/plain\r\n"
-    virtual void setContentTypeCodeAndCustomString(
-        ContentType type,
-        const string_view &typeString) = 0;
+    void setContentTypeCodeAndCustomString(ContentType type,
+                                           const string_view &typeString)
+    {
+        setContentTypeCodeAndCustomString(type,
+                                          typeString.data(),
+                                          typeString.length());
+    }
+    template <int N>
+    void setContentTypeCodeAndCustomString(ContentType type,
+                                           const char (&typeString)[N])
+    {
+        assert(N > 0);
+        setContentTypeCodeAndCustomString(type, typeString, N - 1);
+    }
+    virtual void setContentTypeCodeAndCustomString(ContentType type,
+                                                   const char *typeString,
+                                                   size_t typeStringLength) = 0;
 
     /// Set the reponse content type and the character set.
     /// virtual void setContentTypeCodeAndCharacterSet(ContentType type, const

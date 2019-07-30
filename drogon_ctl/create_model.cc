@@ -768,6 +768,10 @@ void create_model::createModel(const std::string &path,
                 createModelClassFromSqlite3(path, client, tableName);
             }
         }
+#else
+        std::cerr << "Drogon does not support Sqlite3, please install Sqlite3 "
+                     "development environment before installing drogon"
+                  << std::endl;
 #endif
     }
     else if (dbType == "no dbms")
@@ -825,7 +829,6 @@ void create_model::createModel(const std::string &path)
 
 void create_model::handleCommand(std::vector<std::string> &parameters)
 {
-#if USE_ORM
     std::cout << "Create model" << std::endl;
     if (parameters.size() == 0)
     {
@@ -835,10 +838,4 @@ void create_model::handleCommand(std::vector<std::string> &parameters)
     {
         createModel(path);
     }
-#else
-    std::cout
-        << "No database can be found in your system, please install one first!"
-        << std::endl;
-    exit(1);
-#endif
 }

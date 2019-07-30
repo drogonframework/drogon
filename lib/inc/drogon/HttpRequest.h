@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <drogon/utils/string_view.h>
 #include <drogon/HttpTypes.h>
 #include <drogon/Session.h>
 #include <drogon/UploadFile.h>
@@ -88,24 +89,26 @@ class HttpRequest
 
     /// Get the query string of the request.
     /**
-     * If the http method is GET, the query string is the substring after the
-     * '?' in the URL string. If the http method is POST, the query string is
-     * the content(body) string of the HTTP request.
+     * The query string is the substring after the '?' in the URL string.
      */
-    virtual string_view query() const = 0;
-    string_view getQuery() const
+    virtual const std::string &query() const = 0;
+    const std::string &getQuery() const
     {
         return query();
     }
 
     /// Get the content string of the request, which is the body part of the
     /// request.
-    virtual string_view body() const = 0;
+    string_view body() const
+    {
+        return string_view(bodyData(), bodyLength());
+    }
     string_view getBody() const
     {
         return body();
     }
-
+    virtual const char *bodyData() const = 0;
+    virtual size_t bodyLength() const = 0;
     /// Set the content string of the request.
     virtual void setBody(const std::string &body) = 0;
     virtual void setBody(std::string &&body) = 0;
@@ -118,11 +121,17 @@ class HttpRequest
     }
 
     /// Get the matched path pattern after routing
-    virtual const string_view &matchedPathPattern() const = 0;
-    const string_view &getMatchedPathPattern() const
+    string_view getMatchedPathPattern() const
     {
         return matchedPathPattern();
     }
+    string_view matchedPathPattern() const
+    {
+        return string_view(matchedPathPatternData(),
+                           matchedPathPatternLength());
+    }
+    virtual const char *matchedPathPatternData() const = 0;
+    virtual size_t matchedPathPatternLength() const = 0;
 
     /// Return the enum type version of the request.
     /**

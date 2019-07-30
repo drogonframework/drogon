@@ -16,6 +16,7 @@
 #include "HttpControllersRouter.h"
 #include "HttpRequestImpl.h"
 #include "HttpResponseImpl.h"
+#include <drogon/utils/HttpConstraint.h>
 #include <atomic>
 #include <drogon/HttpBinder.h>
 #include <drogon/HttpFilter.h>
@@ -62,7 +63,7 @@ class HttpSimpleControllersRouter : public trantor::NonCopyable
     void registerHttpSimpleController(
         const std::string &pathName,
         const std::string &ctrlName,
-        const std::vector<any> &filtersAndMethods);
+        const std::vector<internal::HttpConstraint> &filtersAndMethods);
     void route(const HttpRequestImplPtr &req,
                std::function<void(const HttpResponsePtr &)> &&callback,
                bool needSetJsessionid,

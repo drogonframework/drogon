@@ -1,4 +1,7 @@
-link_libraries(drogon trantor pthread dl)
+LINK_LIBRARIES(drogon trantor pthread dl)
 
-add_executable(mysql_test1 test1.cc)
-#add_executable(test2 test2.cc)
+ADD_EXECUTABLE(mysql_test1 test1.cc)
+
+SET_PROPERTY(TARGET mysql_test1 PROPERTY CXX_STANDARD ${DROGON_CXX_STANDARD})
+SET_PROPERTY(TARGET mysql_test1 PROPERTY CXX_STANDARD_REQUIRED ON)
+SET_PROPERTY(TARGET mysql_test1 PROPERTY CXX_EXTENSIONS OFF)

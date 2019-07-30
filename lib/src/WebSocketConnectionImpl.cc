@@ -156,19 +156,6 @@ void WebSocketConnectionImpl::WebSocketConnectionImpl::forceClose()
     _tcpConn->forceClose();
 }
 
-void WebSocketConnectionImpl::setContext(const any &context)
-{
-    _context = context;
-}
-const any &WebSocketConnectionImpl::WebSocketConnectionImpl::getContext() const
-{
-    return _context;
-}
-any *WebSocketConnectionImpl::WebSocketConnectionImpl::getMutableContext()
-{
-    return &_context;
-}
-
 void WebSocketConnectionImpl::setPingMessage(
     const std::string &message,
     const std::chrono::duration<long double> &interval)

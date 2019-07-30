@@ -13,7 +13,6 @@
  */
 
 #pragma once
-#include <drogon/config.h>
 #include <drogon/orm/Exception.h>
 #include <drogon/orm/Field.h>
 #include <drogon/orm/Result.h>
@@ -42,45 +41,38 @@ class DbClient : public trantor::NonCopyable
 {
   public:
     virtual ~DbClient(){};
-/// Create a new database client with multiple connections;
-/**
- * @param connInfo: Connection string with some parameters,
- * each parameter setting is in the form keyword = value. Spaces around the
- * equal sign are optional.
- * To write an empty value, or a value containing spaces, surround it with
- * single quotes, e.g.,
- * keyword = 'a value'. Single quotes and backslashes within the value must be
- * escaped with a backslash, i.e., \' and \\.
- * Example:
- *      host=localhost port=5432 dbname=mydb connect_timeout=10 password=''
- * The currently recognized parameter key words are:
- * - host: can be either a host name or an IP address.
- * - port: Port number to connect to at the server host.
- * - dbname: The database name. Defaults to be the same as the user name.
- * - user:  user name to connect as. With PostgreSQL defaults to be the same as
- *          the operating system name of the user running the application.
- * - password: Password to be used if the server demands password
- * authentication.
- *
- * For other key words on PostgreSQL, see the PostgreSQL documentation.
- * Only a pair of key values ​​is valid for Sqlite3, and its keyword is
- * 'filename'.
- *
- * @param connNum: The number of connections to database server;
- */
-#if USE_POSTGRESQL
+    /// Create a new database client with multiple connections;
+    /**
+     * @param connInfo: Connection string with some parameters,
+     * each parameter setting is in the form keyword = value. Spaces around the
+     * equal sign are optional.
+     * To write an empty value, or a value containing spaces, surround it with
+     * single quotes, e.g.,
+     * keyword = 'a value'. Single quotes and backslashes within the value must
+     * be escaped with a backslash, i.e., \' and \\. Example: host=localhost
+     * port=5432 dbname=mydb connect_timeout=10 password='' The currently
+     * recognized parameter key words are:
+     * - host: can be either a host name or an IP address.
+     * - port: Port number to connect to at the server host.
+     * - dbname: The database name. Defaults to be the same as the user name.
+     * - user:  user name to connect as. With PostgreSQL defaults to be the same
+     * as the operating system name of the user running the application.
+     * - password: Password to be used if the server demands password
+     * authentication.
+     *
+     * For other key words on PostgreSQL, see the PostgreSQL documentation.
+     * Only a pair of key values ​​is valid for Sqlite3, and its keyword is
+     * 'filename'.
+     *
+     * @param connNum: The number of connections to database server;
+     */
     static std::shared_ptr<DbClient> newPgClient(const std::string &connInfo,
                                                  const size_t connNum);
-#endif
-#if USE_MYSQL
     static std::shared_ptr<DbClient> newMysqlClient(const std::string &connInfo,
                                                     const size_t connNum);
-#endif
-#if USE_SQLITE3
     static std::shared_ptr<DbClient> newSqlite3Client(
         const std::string &connInfo,
         const size_t connNum);
-#endif
 
     /// Async and nonblocking method
     /**

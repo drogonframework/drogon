@@ -14,7 +14,8 @@
 
 #pragma once
 
-#include <drogon/config.h>
+#include <drogon/utils/string_view.h>
+#include <drogon/utils/any.h>
 #include <trantor/utils/Logger.h>
 #include <trantor/utils/MsgBuffer.h>
 
@@ -135,8 +136,16 @@ class HttpViewData
      * < --> &lt;
      * > --> &gt;
      */
-    static std::string htmlTranslate(const std::string &str);
-    static std::string htmlTranslate(const string_view &str);
+
+    static std::string htmlTranslate(const char *str, size_t length);
+    static std::string htmlTranslate(const std::string &str)
+    {
+        return htmlTranslate(str.data(), str.length());
+    }
+    static std::string htmlTranslate(const string_view &str)
+    {
+        return htmlTranslate(str.data(), str.length());
+    }
     static bool needTranslation(const std::string &str)
     {
         for (auto const &c : str)

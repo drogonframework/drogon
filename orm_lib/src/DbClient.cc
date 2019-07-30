@@ -13,6 +13,7 @@
  */
 
 #include "DbClientImpl.h"
+#include <drogon/config.h>
 #include <drogon/orm/DbClient.h>
 using namespace drogon::orm;
 using namespace drogon;
@@ -27,31 +28,40 @@ internal::SqlBinder DbClient::operator<<(std::string &&sql)
     return internal::SqlBinder(std::move(sql), *this, _type);
 }
 
-#if USE_POSTGRESQL
 std::shared_ptr<DbClient> DbClient::newPgClient(const std::string &connInfo,
                                                 const size_t connNum)
 {
+#if USE_POSTGRESQL
     return std::make_shared<DbClientImpl>(connInfo,
                                           connNum,
                                           ClientType::PostgreSQL);
-}
+#else
+    LOG_FATAL << "PostgreSQL is not supported!";
+    exit(1);
 #endif
+}
 
-#if USE_MYSQL
 std::shared_ptr<DbClient> DbClient::newMysqlClient(const std::string &connInfo,
                                                    const size_t connNum)
 {
+#if USE_MYSQL
     return std::make_shared<DbClientImpl>(connInfo, connNum, ClientType::Mysql);
-}
+#else
+    LOG_FATAL << "Mysql is not supported!";
+    exit(1);
 #endif
+}
 
-#if USE_SQLITE3
 std::shared_ptr<DbClient> DbClient::newSqlite3Client(
     const std::string &connInfo,
     const size_t connNum)
 {
+#if USE_SQLITE3
     return std::make_shared<DbClientImpl>(connInfo,
                                           connNum,
                                           ClientType::Sqlite3);
-}
+#else
+    LOG_FATAL << "Sqlite3 is not supported!";
+    exit(1);
 #endif
+}

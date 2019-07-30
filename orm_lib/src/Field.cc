@@ -84,13 +84,6 @@ std::vector<char> Field::as<std::vector<char>>() const
         return utils::hexToBinaryVector(sv.data() + 2, sv.length() - 2);
     }
 }
-template <>
-string_view Field::as<string_view>() const
-{
-    auto first = _result.getValue(_row, _column);
-    auto length = _result.getLength(_row, _column);
-    return string_view(first, length);
-}
 
 template <>
 int Field::as<int>() const

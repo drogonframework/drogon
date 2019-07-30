@@ -50,7 +50,7 @@ PgConnection::PgConnection(trantor::EventLoop *loop,
         LOG_FATAL << "Socket fd < 0, Usually this is because the number of "
                      "files opened by the program exceeds the system "
                      "limit. Please use the ulimit command to check.";
-        exit(-1);
+        exit(1);
     }
     _channel.setReadCallback([=]() {
         if (_status != ConnectStatus_Ok)

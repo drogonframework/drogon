@@ -50,14 +50,14 @@ int main(int argc, char *argv[])
                                    std::cout << "ws failed!" << std::endl;
                                    if (!continually)
                                    {
-                                       exit(-1);
+                                       exit(1);
                                    }
                                }
                            });
     app().getLoop()->runAfter(5.0, [continually]() {
         if (!continually)
         {
-            exit(-1);
+            exit(1);
         }
     });
     app().run();

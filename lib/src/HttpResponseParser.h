@@ -16,14 +16,15 @@
 
 #include "HttpResponseImpl.h"
 #include <drogon/WebSocketConnection.h>
-#include <list>
-#include <mutex>
+#include <trantor/utils/NonCopyable.h>
 #include <trantor/net/TcpConnection.h>
 #include <trantor/utils/MsgBuffer.h>
+#include <list>
+#include <mutex>
 
 namespace drogon
 {
-class HttpResponseParser
+class HttpResponseParser : public trantor::NonCopyable
 {
   public:
     enum class HttpResponseParseState
@@ -38,7 +39,7 @@ class HttpResponseParser
         kGotAll,
     };
 
-    explicit HttpResponseParser(const trantor::TcpConnectionPtr &connPtr);
+    HttpResponseParser();
 
     // default copy-ctor, dtor and assignment are fine
 
