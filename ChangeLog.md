@@ -4,6 +4,27 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.0.0-beta4] - 2019-07-30
+
+### API change list
+
+- HttpRequest::query() returns a const reference of std::string instead of a string_view
+- WebSocketConnection::setContext(), WebSocketConnection::getContext(), etc.
+- Remove the config.h from public API.
+
+### Added
+
+- None
+
+### Changed
+
+- Modify the CMakeLists.txt
+- Modify the get_version.sh
+
+### Fixed
+
+- None
+
 ## [1.0.0-beta3] - 2019-07-28
 
 ### API change list
@@ -51,7 +72,9 @@ All notable changes to this project will be documented in this file.
 
 ## [1.0.0-beta1] - 2019-06-11
 
-[Unreleased]: https://github.com/an-tao/drogon/compare/v1.0.0-beta3...HEAD
+[Unreleased]: https://github.com/an-tao/drogon/compare/v1.0.0-beta4...HEAD
+
+[1.0.0-beta4]: https://github.com/an-tao/drogon/compare/v1.0.0-beta3...v1.0.0-beta4
 
 [1.0.0-beta3]: https://github.com/an-tao/drogon/compare/v1.0.0-beta2...v1.0.0-beta3
 
