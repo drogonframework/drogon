@@ -338,6 +338,22 @@ class HttpAppFrameworkImpl : public HttpAppFramework
         _serverHeader = "Server: " + server + "\r\n";
     }
 
+    virtual void enableServerHeader(bool flag) override
+    {
+        _enableServerHeader = flag;
+    }
+    virtual void enableDateHeader(bool flag) override
+    {
+        _enableDateHeader = flag;
+    }
+    bool sendServerHeader() const
+    {
+        return _enableServerHeader;
+    }
+    bool sendDateHeader() const
+    {
+        return _enableDateHeader;
+    }
     const std::string &getServerHeaderString() const
     {
         return _serverHeader;
@@ -460,6 +476,8 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     HttpResponsePtr _custom404;
     orm::DbClientManager _dbClientManager;
     static InitBeforeMainFunction _initFirst;
+    bool _enableServerHeader = true;
+    bool _enableDateHeader = true;
     std::vector<std::function<bool(const trantor::InetAddress &,
                                    const trantor::InetAddress &)>>
         _newConnectionAdvices;

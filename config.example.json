@@ -142,9 +142,15 @@
         //idle_connection_timeout: Defaults to 60 seconds, the lifetime 
         //of the connection without read or write
         "idle_connection_timeout": 60,
-        //server_header_field: Set the 'server' header field in each response sent by drogon,
-        //empty string by default with which the 'server' header field is set to "Server: drogon/version string\r\n"
+        //server_header_field: Set the 'Server' header field in each response sent by drogon,
+        //empty string by default with which the 'Server' header field is set to "Server: drogon/version string\r\n"
         "server_header_field": "",
+        //enable_server_header: Set true to force drogon to add a 'Server' header to each HTTP response. The default 
+        //value is true.
+        "enable_server_header": true,
+        //enable_date_header: Set true to force drogon to add a 'Date' header to each HTTP response. The default 
+        //value is true.
+        "enable_date_header": true,
         //keepalive_requests: Set the maximum number of requests that can be served through one keep-alive connection. 
         //After the maximum number of requests are made, the connection is closed.
         //The default value of 0 means no limit.
@@ -179,7 +185,6 @@
         "config": {
             "heartbeat_interval": 2
         }
-        
     }],
     //custom_config: custom configuration for users. This object can be get by the app().getCustomConfig() method. 
     "custom_config": {}
