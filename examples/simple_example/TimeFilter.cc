@@ -11,7 +11,7 @@ void TimeFilter::doFilter(const HttpRequestPtr &req,
     trantor::Date now = trantor::Date::date();
     if (!req->session())
     {
-        //no session support by framework,pls enable session
+        // no session support by framework,pls enable session
         auto resp = HttpResponse::newNotFoundResponse();
         cb(resp);
         return;
@@ -24,7 +24,7 @@ void TimeFilter::doFilter(const HttpRequestPtr &req,
         LOG_TRACE << "update visitDate";
         if (now > lastDate.after(10))
         {
-            //10 sec later can visit again;
+            // 10 sec later can visit again;
             ccb();
             return;
         }

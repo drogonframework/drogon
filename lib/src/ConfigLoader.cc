@@ -301,6 +301,10 @@ static void loadApp(const Json::Value &app)
     auto server = app.get("server_header_field", "").asString();
     if (!server.empty())
         drogon::app().setServerHeaderField(server);
+    auto sendServerHeader = app.get("enable_server_header", true).asBool();
+    drogon::app().enableServerHeader(sendServerHeader);
+    auto sendDateHeader = app.get("enable_date_header", true).asBool();
+    drogon::app().enableDateHeader(sendDateHeader);
     auto keepaliveReqs = app.get("keepalive_requests", 0).asUInt64();
     drogon::app().setKeepaliveRequestsNumber(keepaliveReqs);
     auto pipeliningReqs = app.get("pipelining_requests", 0).asUInt64();

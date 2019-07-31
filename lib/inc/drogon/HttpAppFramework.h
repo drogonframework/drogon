@@ -714,6 +714,16 @@ class HttpAppFramework : public trantor::NonCopyable
      */
     virtual void setServerHeaderField(const std::string &server) = 0;
 
+    /// Control if the 'Server' header or the 'Date' header is added to each
+    /// HTTP response.
+    /**
+     * NOTE:
+     * These operations can be performed by options in the configuration file.
+     * The headers are sent to clients by default.
+     */
+    virtual void enableServerHeader(bool flag) = 0;
+    virtual void enableDateHeader(bool flag) = 0;
+
     /// Set the maximum number of requests that can be served through one
     /// keep-alive connection.
     /**

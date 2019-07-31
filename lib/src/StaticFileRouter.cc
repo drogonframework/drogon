@@ -124,8 +124,7 @@ void StaticFileRouter::route(
                 {
                     // make a copy
                     auto newCachedResp = std::make_shared<HttpResponseImpl>(
-                        *static_cast<HttpResponseImpl *>(
-                            cachedResp.get()));
+                        *static_cast<HttpResponseImpl *>(cachedResp.get()));
                     newCachedResp->addCookie("JSESSIONID", sessionId);
                     newCachedResp->setExpiredTime(-1);
                     callback(newCachedResp);

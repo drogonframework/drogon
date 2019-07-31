@@ -47,8 +47,7 @@ int MultiPartParser::parse(const HttpRequestPtr &req)
     if (req->method() != Post)
         return -1;
     const std::string &contentType =
-        static_cast<HttpRequestImpl *>(req.get())->getHeaderBy(
-            "content-type");
+        static_cast<HttpRequestImpl *>(req.get())->getHeaderBy("content-type");
     if (contentType.empty())
     {
         return -1;
