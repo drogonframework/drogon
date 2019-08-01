@@ -30,7 +30,6 @@
 #include <drogon/config.h>
 #include <drogon/HttpAppFramework.h>
 #include <drogon/HttpSimpleController.h>
-#include <drogon/version.h>
 #include <trantor/net/EventLoop.h>
 #include <trantor/net/EventLoopThread.h>
 

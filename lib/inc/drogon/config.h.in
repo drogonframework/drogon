@@ -1,6 +1,7 @@
 #pragma once
 
 #cmakedefine01 USE_POSTGRESQL
+#cmakedefine01 LIBPQ_SUPPORTS_BATCH_MODE
 #cmakedefine01 USE_MYSQL
 #cmakedefine01 USE_SQLITE3
 #cmakedefine OpenSSL_FOUND

@@ -30,7 +30,6 @@
 #include <drogon/plugins/Plugin.h>
 #include <drogon/utils/ClassTraits.h>
 #include <drogon/utils/Utilities.h>
-#include <drogon/version.h>
 #include <trantor/net/EventLoop.h>
 #include <trantor/utils/NonCopyable.h>
 #include <functional>
@@ -50,14 +49,9 @@ const char banner[] =
     "| (_| | | | (_) | (_| | (_) | | | |\n"
     " \\__,_|_|  \\___/ \\__, |\\___/|_| |_|\n"
     "                 |___/             \n";
-inline std::string getVersion()
-{
-    return VERSION;
-}
-inline std::string getGitCommit()
-{
-    return VERSION_MD5;
-}
+
+std::string getVersion();
+std::string getGitCommit();
 
 class HttpControllerBase;
 class HttpSimpleControllerBase;
