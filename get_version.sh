@@ -5,7 +5,7 @@ MD5=$(git log|head -1|awk '{printf $2}')
 MAJOR=1
 MINOR=0
 PATCH=0
-PRE_RELEASE_STRING="beta4"
+PRE_RELEASE_STRING="beta5"
 TMP_FILE=/tmp/version
 echo "#define MAJOR ${MAJOR}" > ${TMP_FILE}
 echo "#define MINOR ${MINOR}" >> ${TMP_FILE}

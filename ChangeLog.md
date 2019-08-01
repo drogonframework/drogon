@@ -4,6 +4,26 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.0.0-beta5] - 2019-08-01
+
+### API change list
+
+- None
+
+### Added
+
+- Add two methods to control if the Server header or the Date header is sent to clients with HTTP responses.
+  * void HttpAppFramework::enableServerHeader(bool);
+  * void HttpAppFramework::enableDateHeader(bool);
+
+### Changed
+
+- Support high performance batch mode of libpq.
+
+### Fixed
+
+- None
+- 
 ## [1.0.0-beta4] - 2019-07-30
 
 ### API change list
@@ -72,7 +92,9 @@ All notable changes to this project will be documented in this file.
 
 ## [1.0.0-beta1] - 2019-06-11
 
-[Unreleased]: https://github.com/an-tao/drogon/compare/v1.0.0-beta4...HEAD
+[Unreleased]: https://github.com/an-tao/drogon/compare/v1.0.0-beta5...HEAD
+
+[1.0.0-beta5]: https://github.com/an-tao/drogon/compare/v1.0.0-beta4...v1.0.0-beta5
 
 [1.0.0-beta4]: https://github.com/an-tao/drogon/compare/v1.0.0-beta3...v1.0.0-beta4
 
