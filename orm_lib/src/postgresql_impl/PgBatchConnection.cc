@@ -16,9 +16,10 @@
 #include "PostgreSQLResultImpl.h"
 #include <drogon/orm/Exception.h>
 #include <drogon/utils/Utilities.h>
-#include <memory>
-#include <stdio.h>
 #include <trantor/utils/Logger.h>
+#include <memory>
+#include <algorithm>
+#include <stdio.h>
 
 using namespace drogon::orm;
 
@@ -206,12 +207,38 @@ void PgConnection::execSqlInLoop(
                                  std::move(exceptCallback)));
     sendBatchedSql();
 }
-
+int PgConnection::sendBatchEnd()
+{
+    if (!PQsendEndBatch(_connPtr.get()))
+    {
+        _isWorking = false;
+        handleFatalError();
+        handleClosed();
+        return 0;
+    }
+    return 1;
+}
 void PgConnection::sendBatchedSql()
 {
-    assert(!_isWorking);
-    if (_batchSqlCommands.empty())
+    if (_isWorking && _batchSqlCommands.empty())
     {
+        if (_sendBatchEnd)
+        {
+            if (sendBatchEnd())
+            {
+                _sendBatchEnd = false;
+                if (flush())
+                {
+                    return;
+                }
+                else
+                {
+                    if (_channel.isWriting())
+                        _channel.disableWriting();
+                }
+            }
+            return;
+        }
         if (_channel.isWriting())
             _channel.disableWriting();
         return;
@@ -242,7 +269,7 @@ void PgConnection::sendBatchedSql()
             cmd->_preparingStatement = statName;
             if (flush())
             {
-                break;
+                return;
             }
         }
         else
@@ -250,6 +277,24 @@ void PgConnection::sendBatchedSql()
             statName = iter->second;
         }
 
+        if (_batchSqlCommands.size() == 1)
+        {
+            _sendBatchEnd = true;
+        }
+        else
+        {
+            auto sql = cmd->_sql;
+            std::transform(sql.begin(), sql.end(), sql.begin(), tolower);
+            if (sql.find("update") != std::string::npos ||
+                sql.find("insert") != std::string::npos ||
+                sql.find("delete") != std::string::npos ||
+                sql.find("drop") != std::string::npos ||
+                sql.find("truncate") != std::string::npos ||
+                sql.find("lock") != std::string::npos)
+            {
+                _sendBatchEnd = true;
+            }
+        }
         if (PQsendQueryPrepared(_connPtr.get(),
                                 statName.c_str(),
                                 cmd->_paraNum,
@@ -267,19 +312,20 @@ void PgConnection::sendBatchedSql()
         _batchSqlCommands.pop_front();
         if (flush())
         {
-            break;
-        }
-    }
-    if (_batchSqlCommands.empty())
-    {
-        if (!PQsendEndBatch(_connPtr.get()))
-        {
-            _isWorking = false;
-            handleFatalError();
-            handleClosed();
             return;
         }
-        flush();
+        if (_sendBatchEnd)
+        {
+            _sendBatchEnd = false;
+            if (!sendBatchEnd())
+            {
+                return;
+            }
+            if (flush())
+            {
+                return;
+            }
+        }
     }
 }
 void PgConnection::batchSqlInLoop(
@@ -340,11 +386,14 @@ void PgConnection::handleRead()
         }
         if (type == PGRES_BATCH_END)
         {
-            assert(_batchCommandsForWaitingResults.empty());
-            assert(_batchSqlCommands.empty());
-            _isWorking = false;
-            _idleCb();
-            return;
+            if (_batchCommandsForWaitingResults.empty() &&
+                _batchSqlCommands.empty())
+            {
+                _isWorking = false;
+                _idleCb();
+                return;
+            }
+            continue;
         }
         if (!_batchCommandsForWaitingResults.empty())
         {
