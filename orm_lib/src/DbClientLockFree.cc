@@ -102,8 +102,9 @@ void DbClientLockFree::execSql(
         }
         return;
     }
-    else
+    else if(_sqlCmdBuffer.empty() && _transCallbacks.empty())
     {
+#ifndef LIBPQ_SUPPORTS_BATCH_MODE
         for (auto &conn : _connections)
         {
             if (!conn->isWorking() &&
@@ -130,6 +131,72 @@ void DbClientLockFree::execSql(
                 return;
             }
         }
+#else
+        if (_type != ClientType::PostgreSQL)
+        {
+            for (auto &conn : _connections)
+            {
+                if (!conn->isWorking() &&
+                    (_transSet.empty() ||
+                     _transSet.find(conn) == _transSet.end()))
+                {
+                    conn->execSql(
+                        std::move(sql),
+                        paraNum,
+                        std::move(parameters),
+                        std::move(length),
+                        std::move(format),
+                        [rcb = std::move(rcb), this](const Result &r) {
+                            if (_sqlCmdBuffer.empty())
+                            {
+                                rcb(r);
+                            }
+                            else
+                            {
+                                _loop->queueInLoop(
+                                    [rcb = std::move(rcb), r]() { rcb(r); });
+                            }
+                        },
+                        std::move(exceptCallback));
+                    return;
+                }
+            }
+        }
+        else 
+        {
+            /// pg batch mode
+            for (int i = 0; i++; i < _connections.size())
+            {
+                auto &conn = _connections[_connectionPos++];
+                if (_connectionPos >= _connections.size())
+                    _connectionPos = 0;
+                if (_transSet.empty() ||
+                    _transSet.find(conn) == _transSet.end())
+                {
+                    conn->execSql(
+                        std::move(sql),
+                        paraNum,
+                        std::move(parameters),
+                        std::move(length),
+                        std::move(format),
+                        [rcb = std::move(rcb), this](const Result &r) {
+                            if (_sqlCmdBuffer.empty())
+                            {
+                                rcb(r);
+                            }
+                            else
+                            {
+                                _loop->queueInLoop(
+                                    [rcb = std::move(rcb), r]() { rcb(r); });
+                            }
+                        },
+                        std::move(exceptCallback));
+                    return;
+                }
+            }
+        }
+
+#endif
     }
 
     if (_sqlCmdBuffer.size() > 20000)

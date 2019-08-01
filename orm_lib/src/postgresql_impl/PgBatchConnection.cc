@@ -205,7 +205,10 @@ void PgConnection::execSqlInLoop(
                                  std::move(format),
                                  std::move(rcb),
                                  std::move(exceptCallback)));
-    sendBatchedSql();
+    if (_batchSqlCommands.size() == 1 && !_channel.isWriting())
+    {
+        sendBatchedSql();
+    }
 }
 int PgConnection::sendBatchEnd()
 {
@@ -328,12 +331,7 @@ void PgConnection::sendBatchedSql()
         }
     }
 }
-void PgConnection::batchSqlInLoop(
-    std::deque<std::shared_ptr<SqlCmd>> &&sqlCommands)
-{
-    _batchSqlCommands = std::move(sqlCommands);
-    sendBatchedSql();
-}
+
 void PgConnection::handleRead()
 {
     _loop->assertInLoopThread();
@@ -347,7 +345,6 @@ void PgConnection::handleRead()
         {
             _isWorking = false;
             handleFatalError();
-            _cb = nullptr;
         }
         handleClosed();
         return;
@@ -425,27 +422,6 @@ void PgConnection::handleRead()
 
 void PgConnection::doAfterPreparing()
 {
-    _isRreparingStatement = false;
-    _preparedStatementMap[_sql] = _statementName;
-    if (PQsendQueryPrepared(_connPtr.get(),
-                            _statementName.c_str(),
-                            _paraNum,
-                            _parameters.data(),
-                            _length.data(),
-                            _format.data(),
-                            0) == 0)
-    {
-        LOG_ERROR << "send query error: " << PQerrorMessage(_connPtr.get());
-        if (_isWorking)
-        {
-            _isWorking = false;
-            handleFatalError();
-            _cb = nullptr;
-            _idleCb();
-        }
-        return;
-    }
-    flush();
 }
 
 void PgConnection::handleFatalError()
@@ -473,16 +449,7 @@ void PgConnection::handleFatalError()
 
 void PgConnection::batchSql(std::deque<std::shared_ptr<SqlCmd>> &&sqlCommands)
 {
-    if (_loop->isInLoopThread())
-    {
-        batchSqlInLoop(std::move(sqlCommands));
-    }
-    else
-    {
-        auto thisPtr = shared_from_this();
-        _loop->queueInLoop(
-            [thisPtr, sqlCommands = std::move(sqlCommands)]() mutable {
-                thisPtr->batchSqlInLoop(std::move(sqlCommands));
-            });
-    }
+    _loop->assertInLoopThread();
+    _batchSqlCommands = std::move(sqlCommands);
+    sendBatchedSql();
 }

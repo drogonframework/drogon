@@ -114,7 +114,6 @@ class PgConnection : public DbConnection,
 #ifdef LIBPQ_SUPPORTS_BATCH_MODE
     std::list<std::shared_ptr<SqlCmd>> _batchCommandsForWaitingResults;
     std::deque<std::shared_ptr<SqlCmd>> _batchSqlCommands;
-    void batchSqlInLoop(std::deque<std::shared_ptr<SqlCmd>> &&sqlCommands);
     void sendBatchedSql();
     int sendBatchEnd();
     bool _sendBatchEnd = false;
