@@ -18,6 +18,7 @@
 #include "HttpServer.h"
 #include <drogon/config.h>
 #include <algorithm>
+#include <drogon/version.h>
 #include <drogon/CacheMap.h>
 #include <drogon/DrClassMap.h>
 #include <drogon/HttpRequest.h>
@@ -53,6 +54,17 @@ drogon::InitBeforeMainFunction drogon::HttpAppFrameworkImpl::_initFirst([]() {
     });
 });
 
+namespace drogon
+{
+std::string getVersion()
+{
+    return VERSION;
+}
+std::string getGitCommit()
+{
+    return VERSION_MD5;
+}
+}  // namespace drogon
 static void godaemon(void)
 {
     printf("Initializing daemon mode\n");

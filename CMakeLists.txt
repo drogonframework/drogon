@@ -113,12 +113,27 @@ IF(BUILD_ORM)
     #find postgres
     FIND_PACKAGE(PostgreSQL)
     IF(PostgreSQL_FOUND)
-        INCLUDE_DIRECTORIES(${PostgreSQL_INCLUDE_DIR})
         MESSAGE(STATUS "libpq inc path:" ${PostgreSQL_INCLUDE_DIR})
+        MESSAGE(STATUS "libpq lib:" ${PostgreSQL_LIBRARIES})
+        INCLUDE_DIRECTORIES(${PostgreSQL_INCLUDE_DIR})
         LINK_LIBRARIES(${PostgreSQL_LIBRARIES})
-        SET(drogon_sources ${drogon_sources}  
-            orm_lib/src/postgresql_impl/PgConnection.cc
+        SET(drogon_sources ${drogon_sources}
             orm_lib/src/postgresql_impl/PostgreSQLResultImpl.cc)
+        TRY_COMPILE(libpq_supports_batch
+                    ${CMAKE_BINARY_DIR}/cmaketest 
+                    ${PROJECT_SOURCE_DIR}/cmake/tests/test_libpq_batch_mode.cc
+                    LINK_LIBRARIES ${PostgreSQL_LIBRARIES}
+                    CMAKE_FLAGS "-DINCLUDE_DIRECTORIES=${PostgreSQL_INCLUDE_DIR}")
+        IF(libpq_supports_batch)
+            MESSAGE(STATUS "The libpq supports fatch mode")
+            OPTION(LIBPQ_SUPPORTS_BATCH_MODE "ibpq fatch mode" ON)
+            SET(drogon_sources ${drogon_sources}  
+            orm_lib/src/postgresql_impl/PgBatchConnection.cc)
+        ELSE()
+            OPTION(LIBPQ_SUPPORTS_BATCH_MODE "ibpq fatch mode" OFF)
+            SET(drogon_sources ${drogon_sources}  
+            orm_lib/src/postgresql_impl/PgConnection.cc)
+        ENDIF()
     ENDIF()
 
     #Find mysql, only mariadb client liberary is supported

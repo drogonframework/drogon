@@ -115,18 +115,15 @@ void DbClientLockFree::execSql(
                     std::move(parameters),
                     std::move(length),
                     std::move(format),
-                    [callback = std::move(rcb), this](const Result &result) {
+                    [rcb = std::move(rcb), this](const Result &r) {
                         if (_sqlCmdBuffer.empty())
                         {
-                            callback(result);
+                            rcb(r);
                         }
                         else
                         {
                             _loop->queueInLoop(
-                                [callbackInLoop = std::move(callback),
-                                 resultInLoop = std::move(result)]() {
-                                    callbackInLoop(resultInLoop);
-                                });
+                                [rcb = std::move(rcb), r]() { rcb(r); });
                         }
                     },
                     std::move(exceptCallback));
@@ -150,35 +147,23 @@ void DbClientLockFree::execSql(
     }
 
     // LOG_TRACE << "Push query to buffer";
-    _sqlCmdBuffer.emplace_back([sql = std::move(sql),
-                                paraNum,
-                                parameters = std::move(parameters),
-                                length = std::move(length),
-                                format = std::move(format),
-                                rcb = std::move(rcb),
-                                exceptCallback = std::move(exceptCallback),
-                                this](const DbConnectionPtr &conn) mutable {
-        conn->execSql(
-            std::move(sql),
-            paraNum,
-            std::move(parameters),
-            std::move(length),
-            std::move(format),
-            [callback = std::move(rcb), this](const Result &result) {
-                if (_sqlCmdBuffer.empty())
-                {
-                    callback(result);
-                }
-                else
-                {
-                    _loop->queueInLoop([callbackInLoop = std::move(callback),
-                                        resultInLoop = std::move(result)]() {
-                        callbackInLoop(resultInLoop);
-                    });
-                }
-            },
-            std::move(exceptCallback));
-    });
+    _sqlCmdBuffer.emplace_back(std::make_shared<SqlCmd>(
+        std::move(sql),
+        paraNum,
+        std::move(parameters),
+        std::move(length),
+        std::move(format),
+        [rcb = std::move(rcb), this](const Result &r) {
+            if (_sqlCmdBuffer.empty())
+            {
+                rcb(r);
+            }
+            else
+            {
+                _loop->queueInLoop([rcb = std::move(rcb), r]() { rcb(r); });
+            }
+        },
+        std::move(exceptCallback)));
 }
 
 std::shared_ptr<Transaction> DbClientLockFree::newTransaction(
@@ -275,8 +260,37 @@ void DbClientLockFree::handleNewTask(const DbConnectionPtr &conn)
 
     if (!_sqlCmdBuffer.empty())
     {
-        _sqlCmdBuffer.front()(conn);
+#if LIBPQ_SUPPORTS_BATCH_MODE
+        if (_type != ClientType::PostgreSQL)
+        {
+            auto &cmd = _sqlCmdBuffer.front();
+            conn->execSql(std::move(cmd->_sql),
+                          cmd->_paraNum,
+                          std::move(cmd->_parameters),
+                          std::move(cmd->_length),
+                          std::move(cmd->_format),
+                          std::move(cmd->_cb),
+                          std::move(cmd->_exceptCb));
+            _sqlCmdBuffer.pop_front();
+        }
+        else
+        {
+            std::deque<std::shared_ptr<SqlCmd>> cmds;
+            using std::swap;
+            swap(cmds, _sqlCmdBuffer);
+            conn->batchSql(std::move(cmds));
+        }
+#else
+        auto &cmd = _sqlCmdBuffer.front();
+        conn->execSql(std::move(cmd->_sql),
+                      cmd->_paraNum,
+                      std::move(cmd->_parameters),
+                      std::move(cmd->_length),
+                      std::move(cmd->_format),
+                      std::move(cmd->_cb),
+                      std::move(cmd->_exceptCb));
         _sqlCmdBuffer.pop_front();
+#endif
         return;
     }
 }

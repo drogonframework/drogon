@@ -51,6 +51,12 @@ class Sqlite3Connection : public DbConnection,
                          ResultCallback &&rcb,
                          std::function<void(const std::exception_ptr &)>
                              &&exceptCallback) override;
+    virtual void batchSql(
+        std::deque<std::shared_ptr<SqlCmd>> &&sqlCommands) override
+    {
+        LOG_FATAL << "The mysql library does not support batch mode";
+        exit(1);
+    }
     virtual void disconnect() override;
 
   private:

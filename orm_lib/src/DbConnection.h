@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <drogon/config.h>
 #include <drogon/orm/DbClient.h>
 #include <functional>
 #include <iostream>
@@ -41,6 +42,34 @@ enum ConnectStatus
     ConnectStatus_Connecting,
     ConnectStatus_Ok,
     ConnectStatus_Bad
+};
+
+struct SqlCmd
+{
+    std::string _sql;
+    size_t _paraNum;
+    std::vector<const char *> _parameters;
+    std::vector<int> _length;
+    std::vector<int> _format;
+    QueryCallback _cb;
+    ExceptPtrCallback _exceptCb;
+    std::string _preparingStatement;
+    SqlCmd(std::string &&sql,
+           const size_t paraNum,
+           std::vector<const char *> &&parameters,
+           std::vector<int> &&length,
+           std::vector<int> &&format,
+           QueryCallback &&cb,
+           ExceptPtrCallback &&exceptCb)
+        : _sql(std::move(sql)),
+          _paraNum(paraNum),
+          _parameters(std::move(parameters)),
+          _length(std::move(length)),
+          _format(std::move(format)),
+          _cb(std::move(cb)),
+          _exceptCb(std::move(exceptCb))
+    {
+    }
 };
 
 class DbConnection;
@@ -72,6 +101,8 @@ class DbConnection : public trantor::NonCopyable
         std::vector<int> &&format,
         ResultCallback &&rcb,
         std::function<void(const std::exception_ptr &)> &&exceptCallback) = 0;
+    virtual void batchSql(
+        std::deque<std::shared_ptr<SqlCmd>> &&sqlCommands) = 0;
     virtual ~DbConnection()
     {
         LOG_TRACE << "Destruct DbConn" << this;

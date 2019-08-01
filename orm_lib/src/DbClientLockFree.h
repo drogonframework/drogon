@@ -60,8 +60,7 @@ class DbClientLockFree : public DbClient,
     std::vector<DbConnectionPtr> _connections;
     std::vector<DbConnectionPtr> _connectionHolders;
     std::unordered_set<DbConnectionPtr> _transSet;
-
-    std::deque<std::function<void(const DbConnectionPtr &)>> _sqlCmdBuffer;
+    std::deque<std::shared_ptr<SqlCmd>> _sqlCmdBuffer;
 
     std::queue<std::function<void(const std::shared_ptr<Transaction> &)>>
         _transCallbacks;
