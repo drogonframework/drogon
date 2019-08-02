@@ -16,9 +16,10 @@
 #include "PostgreSQLResultImpl.h"
 #include <drogon/orm/Exception.h>
 #include <drogon/utils/Utilities.h>
-#include <memory>
-#include <stdio.h>
 #include <trantor/utils/Logger.h>
+#include <memory>
+#include <algorithm>
+#include <stdio.h>
 
 using namespace drogon::orm;
 
@@ -196,6 +197,7 @@ void PgConnection::execSqlInLoop(
     std::function<void(const std::exception_ptr &)> &&exceptCallback)
 {
     LOG_TRACE << sql;
+    _isWorking = true;
     _batchSqlCommands.emplace_back(
         std::make_shared<SqlCmd>(std::move(sql),
                                  paraNum,
@@ -204,14 +206,45 @@ void PgConnection::execSqlInLoop(
                                  std::move(format),
                                  std::move(rcb),
                                  std::move(exceptCallback)));
-    sendBatchedSql();
+    if (_batchSqlCommands.size() == 1 && !_channel.isWriting())
+    {
+        _loop->queueInLoop([thisPtr = shared_from_this()](){
+            thisPtr->sendBatchedSql();
+        });
+    }
 }
-
+int PgConnection::sendBatchEnd()
+{
+    if (!PQsendEndBatch(_connPtr.get()))
+    {
+        _isWorking = false;
+        handleFatalError();
+        handleClosed();
+        return 0;
+    }
+    return 1;
+}
 void PgConnection::sendBatchedSql()
 {
-    assert(!_isWorking);
-    if (_batchSqlCommands.empty())
+    if (_isWorking && _batchSqlCommands.empty())
     {
+        if (_sendBatchEnd)
+        {
+            if (sendBatchEnd())
+            {
+                _sendBatchEnd = false;
+                if (flush())
+                {
+                    return;
+                }
+                else
+                {
+                    if (_channel.isWriting())
+                        _channel.disableWriting();
+                }
+            }
+            return;
+        }
         if (_channel.isWriting())
             _channel.disableWriting();
         return;
@@ -242,7 +275,7 @@ void PgConnection::sendBatchedSql()
             cmd->_preparingStatement = statName;
             if (flush())
             {
-                break;
+                return;
             }
         }
         else
@@ -250,6 +283,24 @@ void PgConnection::sendBatchedSql()
             statName = iter->second;
         }
 
+        if (_batchSqlCommands.size() == 1)
+        {
+            _sendBatchEnd = true;
+        }
+        else
+        {
+            auto sql = cmd->_sql;
+            std::transform(sql.begin(), sql.end(), sql.begin(), tolower);
+            if (sql.find("update") != std::string::npos ||
+                sql.find("insert") != std::string::npos ||
+                sql.find("delete") != std::string::npos ||
+                sql.find("drop") != std::string::npos ||
+                sql.find("truncate") != std::string::npos ||
+                sql.find("lock") != std::string::npos)
+            {
+                _sendBatchEnd = true;
+            }
+        }
         if (PQsendQueryPrepared(_connPtr.get(),
                                 statName.c_str(),
                                 cmd->_paraNum,
@@ -267,27 +318,23 @@ void PgConnection::sendBatchedSql()
         _batchSqlCommands.pop_front();
         if (flush())
         {
-            break;
-        }
-    }
-    if (_batchSqlCommands.empty())
-    {
-        if (!PQsendEndBatch(_connPtr.get()))
-        {
-            _isWorking = false;
-            handleFatalError();
-            handleClosed();
             return;
         }
-        flush();
+        if (_sendBatchEnd)
+        {
+            _sendBatchEnd = false;
+            if (!sendBatchEnd())
+            {
+                return;
+            }
+            if (flush())
+            {
+                return;
+            }
+        }
     }
 }
-void PgConnection::batchSqlInLoop(
-    std::deque<std::shared_ptr<SqlCmd>> &&sqlCommands)
-{
-    _batchSqlCommands = std::move(sqlCommands);
-    sendBatchedSql();
-}
+
 void PgConnection::handleRead()
 {
     _loop->assertInLoopThread();
@@ -301,7 +348,6 @@ void PgConnection::handleRead()
         {
             _isWorking = false;
             handleFatalError();
-            _cb = nullptr;
         }
         handleClosed();
         return;
@@ -326,8 +372,7 @@ void PgConnection::handleRead()
              */
             if (!PQgetNextQuery(_connPtr.get()))
             {
-                handleFatalError();
-                handleClosed();
+                return;
             }
             continue;
         }
@@ -340,11 +385,14 @@ void PgConnection::handleRead()
         }
         if (type == PGRES_BATCH_END)
         {
-            assert(_batchCommandsForWaitingResults.empty());
-            assert(_batchSqlCommands.empty());
-            _isWorking = false;
-            _idleCb();
-            return;
+            if (_batchCommandsForWaitingResults.empty() &&
+                _batchSqlCommands.empty())
+            {
+                _isWorking = false;
+                _idleCb();
+                return;
+            }
+            continue;
         }
         if (!_batchCommandsForWaitingResults.empty())
         {
@@ -376,27 +424,6 @@ void PgConnection::handleRead()
 
 void PgConnection::doAfterPreparing()
 {
-    _isRreparingStatement = false;
-    _preparedStatementMap[_sql] = _statementName;
-    if (PQsendQueryPrepared(_connPtr.get(),
-                            _statementName.c_str(),
-                            _paraNum,
-                            _parameters.data(),
-                            _length.data(),
-                            _format.data(),
-                            0) == 0)
-    {
-        LOG_ERROR << "send query error: " << PQerrorMessage(_connPtr.get());
-        if (_isWorking)
-        {
-            _isWorking = false;
-            handleFatalError();
-            _cb = nullptr;
-            _idleCb();
-        }
-        return;
-    }
-    flush();
 }
 
 void PgConnection::handleFatalError()
@@ -424,16 +451,7 @@ void PgConnection::handleFatalError()
 
 void PgConnection::batchSql(std::deque<std::shared_ptr<SqlCmd>> &&sqlCommands)
 {
-    if (_loop->isInLoopThread())
-    {
-        batchSqlInLoop(std::move(sqlCommands));
-    }
-    else
-    {
-        auto thisPtr = shared_from_this();
-        _loop->queueInLoop(
-            [thisPtr, sqlCommands = std::move(sqlCommands)]() mutable {
-                thisPtr->batchSqlInLoop(std::move(sqlCommands));
-            });
-    }
+    _loop->assertInLoopThread();
+    _batchSqlCommands = std::move(sqlCommands);
+    sendBatchedSql();
 }

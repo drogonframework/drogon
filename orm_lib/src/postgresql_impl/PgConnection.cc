@@ -101,12 +101,8 @@ PgConnection::PgConnection(trantor::EventLoop *loop,
             pgPoll();
         }
     });
-    _channel.setCloseCallback([=]() {
-        handleClosed();
-    });
-    _channel.setErrorCallback([=]() {
-        handleClosed();
-    });
+    _channel.setCloseCallback([=]() { handleClosed(); });
+    _channel.setErrorCallback([=]() { handleClosed(); });
     _channel.enableReading();
     _channel.enableWriting();
 }
@@ -385,8 +381,7 @@ void PgConnection::handleFatalError()
     }
 }
 
-void PgConnection::batchSql(
-    std::deque<std::shared_ptr<SqlCmd>> &&sqlCommands) 
+void PgConnection::batchSql(std::deque<std::shared_ptr<SqlCmd>> &&sqlCommands)
 {
     assert(false);
 }
