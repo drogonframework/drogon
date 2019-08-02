@@ -102,9 +102,9 @@ void DbClientLockFree::execSql(
         }
         return;
     }
-    else if(_sqlCmdBuffer.empty() && _transCallbacks.empty())
+    else if (_sqlCmdBuffer.empty() && _transCallbacks.empty())
     {
-#ifndef LIBPQ_SUPPORTS_BATCH_MODE
+#if (!LIBPQ_SUPPORTS_BATCH_MODE)
         for (auto &conn : _connections)
         {
             if (!conn->isWorking() &&
@@ -162,7 +162,7 @@ void DbClientLockFree::execSql(
                 }
             }
         }
-        else 
+        else
         {
             /// pg batch mode
             for (size_t i = 0; i < _connections.size(); i++)
@@ -173,14 +173,13 @@ void DbClientLockFree::execSql(
                 if (_transSet.empty() ||
                     _transSet.find(conn) == _transSet.end())
                 {
-                    conn->execSql(
-                        std::move(sql),
-                        paraNum,
-                        std::move(parameters),
-                        std::move(length),
-                        std::move(format),
-                        std::move(rcb),
-                        std::move(exceptCallback));
+                    conn->execSql(std::move(sql),
+                                  paraNum,
+                                  std::move(parameters),
+                                  std::move(length),
+                                  std::move(format),
+                                  std::move(rcb),
+                                  std::move(exceptCallback));
                     return;
                 }
             }
