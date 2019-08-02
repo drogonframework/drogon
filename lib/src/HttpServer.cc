@@ -329,14 +329,18 @@ void HttpServer::onRequests(
                                 else
                                     break;
                             }
-                            sendResponses(conn, resps);
+                            sendResponses(conn,
+                                          resps,
+                                          requestParser->getBuffer());
                         }
                         if (requestParser->isStop() &&
                             requestParser->numberOfRequestsInPipelining() == 0)
                         {
                             if (*loopFlagPtr)
                             {
-                                sendResponses(conn, *responsePtrs);
+                                sendResponses(conn,
+                                              *responsePtrs,
+                                              requestParser->getBuffer());
                                 responsePtrs->clear();
                             }
                             conn->shutdown();
@@ -379,7 +383,9 @@ void HttpServer::onRequests(
                                     else
                                         break;
                                 }
-                                sendResponses(conn, resps);
+                                sendResponses(conn,
+                                              resps,
+                                              requestParser->getBuffer());
                                 if (requestParser->isStop() &&
                                     requestParser
                                             ->numberOfRequestsInPipelining() ==
@@ -402,7 +408,7 @@ void HttpServer::onRequests(
     }
     *loopFlagPtr = false;
     if (conn->connected() && !responsePtrs->empty())
-        sendResponses(conn, *responsePtrs);
+        sendResponses(conn, *responsePtrs, requestParser->getBuffer());
 }
 
 void HttpServer::sendResponse(const TcpConnectionPtr &conn,
@@ -435,7 +441,8 @@ void HttpServer::sendResponse(const TcpConnectionPtr &conn,
 
 void HttpServer::sendResponses(
     const TcpConnectionPtr &conn,
-    const std::vector<std::pair<HttpResponsePtr, bool>> &responses)
+    const std::vector<std::pair<HttpResponsePtr, bool>> &responses,
+    trantor::MsgBuffer &buffer)
 {
     conn->getLoop()->assertInLoopThread();
     if (responses.empty())
@@ -445,7 +452,6 @@ void HttpServer::sendResponses(
         sendResponse(conn, responses[0].first, responses[0].second);
         return;
     }
-    trantor::MsgBuffer buffer(256 * responses.size());
     for (auto const &resp : responses)
     {
         auto respImplPtr = static_cast<HttpResponseImpl *>(resp.first.get());
@@ -474,7 +480,10 @@ void HttpServer::sendResponses(
         if (respImplPtr->ifCloseConnection())
         {
             if (buffer.readableBytes() > 0)
+            {
                 conn->send(buffer);
+                buffer.retrieveAll();
+            }
             conn->shutdown();
             return;
         }
@@ -482,5 +491,6 @@ void HttpServer::sendResponses(
     if (conn->connected() && buffer.readableBytes() > 0)
     {
         conn->send(buffer);
+        buffer.retrieveAll();
     }
 }

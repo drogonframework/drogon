@@ -208,9 +208,8 @@ void PgConnection::execSqlInLoop(
                                  std::move(exceptCallback)));
     if (_batchSqlCommands.size() == 1 && !_channel.isWriting())
     {
-        _loop->queueInLoop([thisPtr = shared_from_this()](){
-            thisPtr->sendBatchedSql();
-        });
+        _loop->queueInLoop(
+            [thisPtr = shared_from_this()]() { thisPtr->sendBatchedSql(); });
     }
 }
 int PgConnection::sendBatchEnd()
@@ -226,63 +225,67 @@ int PgConnection::sendBatchEnd()
 }
 void PgConnection::sendBatchedSql()
 {
-    if (_isWorking && _batchSqlCommands.empty())
+    if (_isWorking)
     {
         if (_sendBatchEnd)
         {
-            if (sendBatchEnd())
+            _sendBatchEnd = false;
+            if (!sendBatchEnd())
             {
-                _sendBatchEnd = false;
-                if (flush())
-                {
-                    return;
-                }
-                else
-                {
-                    if (_channel.isWriting())
-                        _channel.disableWriting();
-                }
+                return;
             }
+            if (flush())
+            {
+                return;
+            }
+        }
+        if (_batchSqlCommands.empty())
+        {
+            if (_channel.isWriting())
+                _channel.disableWriting();
             return;
         }
-        if (_channel.isWriting())
-            _channel.disableWriting();
-        return;
     }
     _isWorking = true;
     while (!_batchSqlCommands.empty())
     {
         auto &cmd = _batchSqlCommands.front();
         std::string statName;
-        auto iter = _preparedStatementMap.find(cmd->_sql);
-        if (iter == _preparedStatementMap.end())
+        if (cmd->_preparingStatement.empty())
         {
-            statName = utils::getUuid();
-            if (PQsendPrepare(_connPtr.get(),
-                              statName.c_str(),
-                              cmd->_sql.c_str(),
-                              cmd->_paraNum,
-                              NULL) == 0)
+            auto iter = _preparedStatementMap.find(cmd->_sql);
+            if (iter == _preparedStatementMap.end())
             {
-                LOG_ERROR << "send query error: "
-                          << PQerrorMessage(_connPtr.get());
+                statName = utils::getUuid();
+                if (PQsendPrepare(_connPtr.get(),
+                                  statName.c_str(),
+                                  cmd->_sql.c_str(),
+                                  cmd->_paraNum,
+                                  NULL) == 0)
+                {
+                    LOG_ERROR << "send query error: "
+                              << PQerrorMessage(_connPtr.get());
 
-                _isWorking = false;
-                handleFatalError();
-                handleClosed();
-                return;
+                    _isWorking = false;
+                    handleFatalError();
+                    handleClosed();
+                    return;
+                }
+                cmd->_preparingStatement = statName;
+                if (flush())
+                {
+                    return;
+                }
             }
-            cmd->_preparingStatement = statName;
-            if (flush())
+            else
             {
-                return;
+                statName = iter->second;
             }
         }
         else
         {
-            statName = iter->second;
+            statName = cmd->_preparingStatement;
         }
-
         if (_batchSqlCommands.size() == 1)
         {
             _sendBatchEnd = true;

@@ -103,7 +103,8 @@ class HttpServer : trantor::NonCopyable
                       bool isHeadMethod);
     void sendResponses(
         const trantor::TcpConnectionPtr &conn,
-        const std::vector<std::pair<HttpResponsePtr, bool>> &responses);
+        const std::vector<std::pair<HttpResponsePtr, bool>> &responses,
+        trantor::MsgBuffer &buffer);
     trantor::TcpServer _server;
     HttpAsyncCallback _httpAsyncCallback;
     WebSocketNewAsyncCallback _newWebsocketCallback;

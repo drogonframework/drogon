@@ -99,6 +99,10 @@ class HttpRequestParser : public trantor::NonCopyable
     {
         return _requestsCounter;
     }
+    trantor::MsgBuffer &getBuffer()
+    {
+        return _sendBuffer;
+    }
 
   private:
     void shutdownConnection(HttpStatusCode code);
@@ -113,6 +117,7 @@ class HttpRequestParser : public trantor::NonCopyable
     size_t _requestsCounter = 0;
     std::weak_ptr<trantor::TcpConnection> _conn;
     bool _stopWorking = false;
+    trantor::MsgBuffer _sendBuffer;
 };
 
 }  // namespace drogon
