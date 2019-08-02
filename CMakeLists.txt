@@ -107,6 +107,9 @@ IF(NOT BUILD_ORM)
    SET(BUILD_ORM TRUE CACHE BOOL INTERNAL)
 ENDIF()
 
+IF(NOT LIBPQ_BATCH_MODE)
+   SET(LIBPQ_BATCH_MODE TRUE CACHE BOOL INTERNAL)
+ENDIF()
 
 IF(BUILD_ORM)
 
@@ -119,11 +122,13 @@ IF(BUILD_ORM)
         LINK_LIBRARIES(${PostgreSQL_LIBRARIES})
         SET(drogon_sources ${drogon_sources}
             orm_lib/src/postgresql_impl/PostgreSQLResultImpl.cc)
+        IF(LIBPQ_BATCH_MODE)
         TRY_COMPILE(libpq_supports_batch
                     ${CMAKE_BINARY_DIR}/cmaketest 
                     ${PROJECT_SOURCE_DIR}/cmake/tests/test_libpq_batch_mode.cc
                     LINK_LIBRARIES ${PostgreSQL_LIBRARIES}
                     CMAKE_FLAGS "-DINCLUDE_DIRECTORIES=${PostgreSQL_INCLUDE_DIR}")
+        ENDIF()
         IF(libpq_supports_batch)
             MESSAGE(STATUS "The libpq supports fatch mode")
             OPTION(LIBPQ_SUPPORTS_BATCH_MODE "ibpq fatch mode" ON)
