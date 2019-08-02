@@ -165,7 +165,7 @@ void DbClientLockFree::execSql(
         else 
         {
             /// pg batch mode
-            for (int i = 0; i++; i < _connections.size())
+            for (size_t i = 0; i < _connections.size(); i++)
             {
                 auto &conn = _connections[_connectionPos++];
                 if (_connectionPos >= _connections.size())
@@ -179,17 +179,7 @@ void DbClientLockFree::execSql(
                         std::move(parameters),
                         std::move(length),
                         std::move(format),
-                        [rcb = std::move(rcb), this](const Result &r) {
-                            if (_sqlCmdBuffer.empty())
-                            {
-                                rcb(r);
-                            }
-                            else
-                            {
-                                _loop->queueInLoop(
-                                    [rcb = std::move(rcb), r]() { rcb(r); });
-                            }
-                        },
+                        std::move(rcb),
                         std::move(exceptCallback));
                     return;
                 }

@@ -197,6 +197,7 @@ void PgConnection::execSqlInLoop(
     std::function<void(const std::exception_ptr &)> &&exceptCallback)
 {
     LOG_TRACE << sql;
+    _isWorking = true;
     _batchSqlCommands.emplace_back(
         std::make_shared<SqlCmd>(std::move(sql),
                                  paraNum,
@@ -207,7 +208,9 @@ void PgConnection::execSqlInLoop(
                                  std::move(exceptCallback)));
     if (_batchSqlCommands.size() == 1 && !_channel.isWriting())
     {
-        sendBatchedSql();
+        _loop->queueInLoop([thisPtr = shared_from_this()](){
+            thisPtr->sendBatchedSql();
+        });
     }
 }
 int PgConnection::sendBatchEnd()
@@ -369,8 +372,7 @@ void PgConnection::handleRead()
              */
             if (!PQgetNextQuery(_connPtr.get()))
             {
-                handleFatalError();
-                handleClosed();
+                return;
             }
             continue;
         }
