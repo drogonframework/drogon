@@ -423,7 +423,7 @@ void create_view::newViewSourceFile(std::ofstream &file,
         buffer = line;
         if (buffer.length() > 0)
         {
-            std::regex re("\\{%[ \\t]*([^ \\t%]*)[^%]*%\\}");
+            std::regex re("\\{%[ \\t]*(((?!%\\}).)*[^ \\t])[ \\t]*%\\}");
             buffer = std::regex_replace(buffer, re, "<%c++$$$$<<$1;%>");
         }
         parseLine(file, buffer, streamName, viewDataName, cxx_flag);
