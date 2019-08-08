@@ -1,62 +1,92 @@
-CMAKE_MINIMUM_REQUIRED (VERSION 3.2)
+cmake_minimum_required (VERSION 3.2)
 
-PROJECT (DROGON CXX)
-MESSAGE (STATUS "os:" ${CMAKE_SYSTEM_NAME})
+project (DROGON CXX)
+
+set(DROGON_MAJOR_VERSION 1)
+set(DROGON_MINOR_VERSION 0)
+set(DROGON_PATCH_VERSION 0)
+set(DROGON_VERSION
+  ${DROGON_MAJOR_VERSION}.${DROGON_MINOR_VERSION}.${DROGON_PATCH_VERSION})
+set(PRE_RELEASE_STRING "beta5")
+
+# Offer the user the choice of overriding the installation directories
+set(INSTALL_LIB_DIR lib CACHE PATH "Installation directory for libraries")
+set(INSTALL_BIN_DIR bin CACHE PATH "Installation directory for executables")
+set(INSTALL_INCLUDE_DIR include CACHE PATH
+  "Installation directory for header files")
+if(WIN32 AND NOT CYGWIN)
+  set(DEF_INSTALL_DROGON_CMAKE_DIR cmake)
+else()
+  set(DEF_INSTALL_DROGON_CMAKE_DIR lib/cmake/Drogon)
+endif()
+set(INSTALL_DROGON_CMAKE_DIR ${DEF_INSTALL_DROGON_CMAKE_DIR} CACHE PATH
+  "Installation directory for cmake files")
+# Make relative paths absolute (needed later on)
+foreach(p LIB BIN INCLUDE DROGON_CMAKE)
+  set(var INSTALL_${p}_DIR)
+  if(NOT IS_ABSOLUTE "${${var}}")
+    set(${var} "${CMAKE_INSTALL_PREFIX}/${${var}}")
+  endif()
+endforeach()
 
 include(CheckIncludeFileCXX)
 
 CHECK_INCLUDE_FILE_CXX(any HAS_ANY)
 CHECK_INCLUDE_FILE_CXX(string_view HAS_STRING_VIEW)
-IF(HAS_ANY AND HAS_STRING_VIEW)
-    SET(DROGON_CXX_STANDARD 17)
-ELSE()
-    SET(DROGON_CXX_STANDARD 14)
-ENDIF()
+if(HAS_ANY AND HAS_STRING_VIEW)
+    set(DROGON_CXX_STANDARD 17)
+else()
+    set(DROGON_CXX_STANDARD 14)
+endif()
 
-IF(DROGON_CXX_STANDARD LESS 17)
+add_subdirectory(trantor)
+set(Trantor_DIR ${PROJECT_BINARY_DIR}/trantor)
+find_package(Trantor CONFIG REQUIRED NO_DEFAULT_PATH)
+message(STATUS "trantor inc:" ${TRANTOR_INCLUDE_DIRS})
+include_directories(${TRANTOR_INCLUDE_DIRS})
+link_libraries(${TRANTOR_LIBRARIES})
+
+if(DROGON_CXX_STANDARD LESS 17)
 #With C++14, use boost to support any and string_view
-    MESSAGE(STATUS "use c++14")
-    FIND_PACKAGE(Boost 1.61.0 REQUIRED)
-    IF(Boost_FOUND)
-        INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
-    ENDIF()
-ELSE()
-    MESSAGE(STATUS "use c++17")
-ENDIF()
+    message(STATUS "use c++14")
+    find_package(Boost 1.61.0 REQUIRED)
+    include_directories(${Boost_INCLUDE_DIRS})
+else()
+    message(STATUS "use c++17")
+endif()
 
-INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/trantor 
-                    ${PROJECT_SOURCE_DIR}/lib/inc 
-                    ${PROJECT_SOURCE_DIR}/orm_lib/inc)
+include_directories(${PROJECT_SOURCE_DIR}/lib/inc 
+                    ${PROJECT_SOURCE_DIR}/orm_lib/inc
+                    ${PROJECT_BINARY_DIR})
 
-SET(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules/)
+set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules/)
 
 #jsoncpp
-FIND_PACKAGE (Jsoncpp REQUIRED)
-INCLUDE_DIRECTORIES(${JSONCPP_INCLUDE_DIRS})
-LINK_LIBRARIES(${JSONCPP_LIBRARIES})
+find_package (Jsoncpp REQUIRED)
+include_directories(${JSONCPP_INCLUDE_DIRS})
+link_libraries(${JSONCPP_LIBRARIES})
+message(STATUS "jsoncpp inc path:" ${JSONCPP_INCLUDE_DIRS})
 
-MESSAGE(STATUS "jsoncpp inc path:" ${JSONCPP_INCLUDE_DIRS})
+#message(STATUS ${JSONCPP_LIBRARIES})
+if(NOT EXISTS ${JSONCPP_INCLUDE_DIRS}/json/version.h)
+    message(FATAL_ERROR "Error: jsoncpp lib is too old.....stop")
+endif()
 
-#MESSAGE(STATUS ${JSONCPP_LIBRARIES})
-IF(NOT EXISTS ${JSONCPP_INCLUDE_DIRS}/json/version.h)
-    MESSAGE(FATAL_ERROR "Error: jsoncpp lib is too old.....stop")
-ENDIF()
+exec_program(cat ARGS "${JSONCPP_INCLUDE_DIRS}/json/version.h |grep JSONCPP_VERSION_STRING|sed s'/.*define/define/'|awk '{printf $3}'|sed s'/\"//g'" OUTPUT_VARIABLE jsoncpp_ver)
+message(STATUS "jsoncpp verson:" ${jsoncpp_ver})
+if(jsoncpp_ver LESS 1.7)
+    message(FATAL_ERROR "jsoncpp lib is too old,please get new version from https://github.com/open-source-parsers/jsoncpp")
+endif()
 
-EXEC_PROGRAM(cat ARGS "${JSONCPP_INCLUDE_DIRS}/json/version.h |grep JSONCPP_VERSION_STRING|sed s'/.*define/define/'|awk '{printf $3}'|sed s'/\"//g'" OUTPUT_VARIABLE jsoncpp_ver)
-MESSAGE(STATUS "jsoncpp verson:" ${jsoncpp_ver})
-IF(jsoncpp_ver LESS 1.7)
-    MESSAGE(FATAL_ERROR "jsoncpp lib is too old,please get new version from https://github.com/open-source-parsers/jsoncpp")
-ENDIF()
+find_package (UUID REQUIRED)
+include_directories(${UUID_INCLUDE_DIR})
+link_libraries(${UUID_LIBRARIES})
 
-FIND_PACKAGE (UUID REQUIRED)
-INCLUDE_DIRECTORIES(${UUID_INCLUDE_DIR})
-LINK_LIBRARIES(${UUID_LIBRARIES})
+find_package(ZLIB REQUIRED)
+include_directories(${ZLIB_INCLUDE_DIR})
+link_libraries(${ZLIB_LIBRARIES})
 
-FIND_PACKAGE(ZLIB REQUIRED)
-INCLUDE_DIRECTORIES(${ZLIB_INCLUDE_DIR})
-LINK_LIBRARIES(${ZLIB_LIBRARIES})
-
-SET(drogon_sources  lib/src/AOPAdvice.cc
+set(DROGON_SOURCES  lib/src/AOPAdvice.cc
                     lib/src/CacheFile.cc
                     lib/src/ConfigLoader.cc
                     lib/src/Cookie.cc
@@ -90,115 +120,117 @@ SET(drogon_sources  lib/src/AOPAdvice.cc
                     lib/src/WebSocketConnectionImpl.cc
                     lib/src/WebsocketControllersRouter.cc)
 
-FIND_PACKAGE (OpenSSL)
-IF(OpenSSL_FOUND)
-    INCLUDE_DIRECTORIES(${OPENSSL_INCLUDE_DIR})
-    LINK_LIBRARIES(${OPENSSL_LIBRARIES})
-    MESSAGE(STATUS "openssl inc path:" ${OPENSSL_INCLUDE_DIR})
-ELSE()
-    SET(drogon_sources ${drogon_sources}  lib/src/ssl_funcs/Md5.cc
+find_package (OpenSSL)
+if(OpenSSL_FOUND)
+    include_directories(${OPENSSL_INCLUDE_DIR})
+    link_libraries(${OPENSSL_LIBRARIES})
+    message(STATUS "openssl inc path:" ${OPENSSL_INCLUDE_DIR})
+else()
+    set(DROGON_SOURCES ${DROGON_SOURCES}  lib/src/ssl_funcs/Md5.cc
                                           lib/src/ssl_funcs/Sha1.cc)
-ENDIF()
+endif()
 
 
 
 
-IF(NOT BUILD_ORM)
-   SET(BUILD_ORM TRUE CACHE BOOL INTERNAL)
-ENDIF()
+if(NOT BUILD_ORM)
+   set(BUILD_ORM TRUE CACHE BOOL INTERNAL)
+endif()
 
-IF(NOT LIBPQ_BATCH_MODE)
-   SET(LIBPQ_BATCH_MODE TRUE CACHE BOOL INTERNAL)
-ENDIF()
+if(NOT LIBPQ_BATCH_MODE)
+   set(LIBPQ_BATCH_MODE TRUE CACHE BOOL INTERNAL)
+endif()
 
-IF(BUILD_ORM)
+if(BUILD_ORM)
 
     #find postgres
-    FIND_PACKAGE(PostgreSQL)
-    IF(PostgreSQL_FOUND)
-        MESSAGE(STATUS "libpq inc path:" ${PostgreSQL_INCLUDE_DIR})
-        MESSAGE(STATUS "libpq lib:" ${PostgreSQL_LIBRARIES})
-        INCLUDE_DIRECTORIES(${PostgreSQL_INCLUDE_DIR})
-        LINK_LIBRARIES(${PostgreSQL_LIBRARIES})
-        SET(drogon_sources ${drogon_sources}
+    find_package(PostgreSQL)
+    if(PostgreSQL_FOUND)
+        message(STATUS "libpq inc path:" ${PostgreSQL_INCLUDE_DIR})
+        message(STATUS "libpq lib:" ${PostgreSQL_LIBRARIES})
+        include_directories(${PostgreSQL_INCLUDE_DIR})
+        link_libraries(${PostgreSQL_LIBRARIES})
+        set(DROGON_SOURCES ${DROGON_SOURCES}
             orm_lib/src/postgresql_impl/PostgreSQLResultImpl.cc)
-        IF(LIBPQ_BATCH_MODE)
-        TRY_COMPILE(libpq_supports_batch
+        if(LIBPQ_BATCH_MODE)
+        try_compile(libpq_supports_batch
                     ${CMAKE_BINARY_DIR}/cmaketest 
                     ${PROJECT_SOURCE_DIR}/cmake/tests/test_libpq_batch_mode.cc
                     LINK_LIBRARIES ${PostgreSQL_LIBRARIES}
-                    CMAKE_FLAGS "-DINCLUDE_DIRECTORIES=${PostgreSQL_INCLUDE_DIR}")
-        ENDIF()
-        IF(libpq_supports_batch)
-            MESSAGE(STATUS "The libpq supports fatch mode")
+                    CMAKE_FLAGS "-Dinclude_directories=${PostgreSQL_INCLUDE_DIR}")
+        endif()
+        if(libpq_supports_batch)
+            message(STATUS "The libpq supports fatch mode")
             OPTION(LIBPQ_SUPPORTS_BATCH_MODE "ibpq fatch mode" ON)
-            SET(drogon_sources ${drogon_sources}  
+            set(DROGON_SOURCES ${DROGON_SOURCES}  
             orm_lib/src/postgresql_impl/PgBatchConnection.cc)
-        ELSE()
+        else()
             OPTION(LIBPQ_SUPPORTS_BATCH_MODE "ibpq fatch mode" OFF)
-            SET(drogon_sources ${drogon_sources}  
+            set(DROGON_SOURCES ${DROGON_SOURCES}  
             orm_lib/src/postgresql_impl/PgConnection.cc)
-        ENDIF()
-    ENDIF()
+        endif()
+    endif()
 
     #Find mysql, only mariadb client liberary is supported
-    FIND_PACKAGE(MySQL)
-    IF(MYSQL_FOUND)
-        MESSAGE(STATUS "inc:" ${MYSQL_INCLUDE_DIR})
-        MESSAGE(STATUS "libs:" ${MYSQL_CLIENT_LIBS})
-        MESSAGE(STATUS "version:" ${MYSQL_VERSION_STRING})
-        IF(MYSQL_VERSION_STRING STREQUAL "")
-            SET(MYSQL_FOUND false)
-            MESSAGE(STATUS "The mysql in your system is not the mariadb, so we can't use it in drogon")
-        ELSE()
-            MESSAGE(STATUS "Ok! We find the mariadb!")
-            INCLUDE_DIRECTORIES(${MYSQL_INCLUDE_DIR})
-            LINK_LIBRARIES(${MYSQL_CLIENT_LIBS})
-            SET(drogon_sources ${drogon_sources}  
+    find_package(MySQL)
+    if(MYSQL_FOUND)
+        message(STATUS "inc:" ${MYSQL_INCLUDE_DIR})
+        message(STATUS "libs:" ${MYSQL_CLIENT_LIBS})
+        message(STATUS "version:" ${MYSQL_VERSION_STRING})
+        if(MYSQL_VERSION_STRING STREQUAL "")
+            set(MYSQL_FOUND false)
+            message(STATUS "The mysql in your system is not the mariadb, so we can't use it in drogon")
+        else()
+            message(STATUS "Ok! We find the mariadb!")
+            include_directories(${MYSQL_INCLUDE_DIR})
+            link_libraries(${MYSQL_CLIENT_LIBS})
+            set(DROGON_SOURCES ${DROGON_SOURCES}  
                 orm_lib/src/mysql_impl/MysqlConnection.cc
                 orm_lib/src/mysql_impl/MysqlResultImpl.cc)
-        ENDIF()
-    ENDIF()
+        endif()
+    endif()
 
     #Find sqlite3.
-    FIND_PACKAGE (SQLite3)
+    find_package (SQLite3)
     if (SQLITE3_FOUND)
-        MESSAGE(STATUS "SQLite3 inc:" ${SQLITE3_INCLUDE_DIRS})
-        INCLUDE_DIRECTORIES(${SQLITE3_INCLUDE_DIRS})
-        LINK_LIBRARIES(${SQLITE3_LIBRARIES})
-        SET(drogon_sources ${drogon_sources}  
+        message(STATUS "SQLite3 inc:" ${SQLITE3_INCLUDE_DIRS})
+        include_directories(${SQLITE3_INCLUDE_DIRS})
+        link_libraries(${SQLITE3_LIBRARIES})
+        set(DROGON_SOURCES ${DROGON_SOURCES}  
             orm_lib/src/sqlite3_impl/Sqlite3Connection.cc
             orm_lib/src/sqlite3_impl/Sqlite3ResultImpl.cc)
-    ENDIF()
-ENDIF()
-
-ADD_SUBDIRECTORY(trantor)
+    endif()
+endif()
 
 add_custom_target(makeVersion)
 add_custom_command(TARGET makeVersion
         COMMAND ${PROJECT_SOURCE_DIR}/get_version.sh
-        ARGS ${PROJECT_SOURCE_DIR}/lib/inc/drogon/version.h
+        ARGS ${PROJECT_SOURCE_DIR}/lib/inc/drogon/version.h 
+             ${DROGON_MAJOR_VERSION}
+             ${DROGON_MINOR_VERSION}
+             ${DROGON_PATCH_VERSION}
+             ${PRE_RELEASE_STRING}
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
         VERBATIM )
 
-IF(NOT BUILD_EXAMPLES)
-  SET(BUILD_EXAMPLES TRUE CACHE BOOL INTERNAL)
-ENDIF()
+if(NOT BUILD_EXAMPLES)
+  set(BUILD_EXAMPLES TRUE CACHE BOOL INTERNAL)
+endif()
 
-IF(BUILD_EXAMPLES)
-    ADD_SUBDIRECTORY(examples)
-ENDIF()
+if(BUILD_EXAMPLES)
+    add_subdirectory(examples)
+endif()
 
-IF(NOT BUILD_CTL)
-  SET(BUILD_CTL TRUE CACHE BOOL INTERNAL)
-ENDIF()
+if(NOT BUILD_CTL)
+  set(BUILD_CTL TRUE CACHE BOOL INTERNAL)
+endif()
 
-IF(BUILD_CTL)
-    ADD_SUBDIRECTORY(drogon_ctl)
-ENDIF()
+if(BUILD_CTL)
+    add_subdirectory(drogon_ctl)
+endif()
 
-IF(PostgreSQL_FOUND OR MYSQL_FOUND OR SQLITE3_FOUND)
-    SET(drogon_sources ${drogon_sources}  
+if(PostgreSQL_FOUND OR MYSQL_FOUND OR SQLITE3_FOUND)
+    set(DROGON_SOURCES ${DROGON_SOURCES}  
         orm_lib/src/ArrayParser.cc
         orm_lib/src/Criteria.cc
         orm_lib/src/DbClient.cc
@@ -211,89 +243,91 @@ IF(PostgreSQL_FOUND OR MYSQL_FOUND OR SQLITE3_FOUND)
         orm_lib/src/Row.cc
         orm_lib/src/SqlBinder.cc
         orm_lib/src/TransactionImpl.cc)
-ELSE()
-    SET(drogon_sources ${drogon_sources} lib/src/DbClientManagerSkipped.cc)
-ENDIF()
+else()
+    set(DROGON_SOURCES ${DROGON_SOURCES} lib/src/DbClientManagerSkipped.cc)
+endif()
 
-ADD_LIBRARY(drogon ${drogon_sources})
+add_library(drogon ${DROGON_SOURCES})
 
-SET_PROPERTY(TARGET drogon PROPERTY CXX_STANDARD ${DROGON_CXX_STANDARD})
-SET_PROPERTY(TARGET drogon PROPERTY CXX_STANDARD_REQUIRED ON)
-SET_PROPERTY(TARGET drogon PROPERTY CXX_EXTENSIONS OFF)
+set_property(TARGET drogon PROPERTY CXX_STANDARD ${DROGON_CXX_STANDARD})
+set_property(TARGET drogon PROPERTY CXX_STANDARD_REQUIRED ON)
+set_property(TARGET drogon PROPERTY CXX_EXTENSIONS OFF)
 
-ADD_DEPENDENCIES(drogon trantor makeVersion)
+add_dependencies(drogon makeVersion)
 
-IF(PostgreSQL_FOUND OR MYSQL_FOUND OR SQLITE3_FOUND)
-    IF(PostgreSQL_FOUND)
+if(PostgreSQL_FOUND OR MYSQL_FOUND OR SQLITE3_FOUND)
+    if(PostgreSQL_FOUND)
         OPTION(USE_POSTGRESQL "Enable PostgreSQL" ON)
-    ELSE()
+    else()
         OPTION(USE_POSTGRESQL "Disable PostgreSQL" OFF)
-    ENDIF()
+    endif()
 
-    IF(MYSQL_FOUND)
+    if(MYSQL_FOUND)
         OPTION(USE_MYSQL "Enable Mysql" ON)
-    ELSE()
+    else()
         OPTION(USE_MYSQL "DisableMysql" OFF)
-    ENDIF()
+    endif()
 
-    IF(SQLITE3_FOUND)
+    if(SQLITE3_FOUND)
         OPTION(USE_SQLITE3 "Enable Sqlite3" ON)
-    ELSE()
+    else()
         OPTION(USE_SQLITE3 "Disable Sqlite3" OFF)
-    ENDIF()
-ENDIF()
+    endif()
+endif()
 
-SET(COMPILER_COMMAND ${CMAKE_CXX_COMPILER})
-SET(COMPILER_ID ${CMAKE_CXX_COMPILER_ID})
+set(COMPILER_COMMAND ${CMAKE_CXX_COMPILER})
+set(COMPILER_ID ${CMAKE_CXX_COMPILER_ID})
 
 
-IF(CMAKE_BUILD_TYPE)
+if(CMAKE_BUILD_TYPE)
     string(TOLOWER ${CMAKE_BUILD_TYPE} _type)
-    IF(_type STREQUAL release)
-        SET(COMPILATION_FLAGS "${CMAKE_CXX_FLAGS_RELEASE} -std=c++")
-    ELSEIF(_type STREQUAL debug)
-        SET(COMPILATION_FLAGS "${CMAKE_CXX_FLAGS_DEBUG} -std=c++")
-    ELSE()
-        SET(COMPILATION_FLAGS "-std=c++")
-    ENDIF()
-ELSE()
-    SET(COMPILATION_FLAGS "-std=c++")
-ENDIF()
+    if(_type STREQUAL release)
+        set(COMPILATION_FLAGS "${CMAKE_CXX_FLAGS_RELEASE} -std=c++")
+    ELSEif(_type STREQUAL debug)
+        set(COMPILATION_FLAGS "${CMAKE_CXX_FLAGS_DEBUG} -std=c++")
+    else()
+        set(COMPILATION_FLAGS "-std=c++")
+    endif()
+else()
+    set(COMPILATION_FLAGS "-std=c++")
+endif()
 
-GET_TARGET_PROPERTY(INS drogon INCLUDE_DIRECTORIES)
-SET(TMP_INS "")
-SET(INS_STRING "")
-FOREACH(loop_var ${INS})
-    IF(TMP_INS MATCHES ";${loop_var};")
-    ELSE()
-        SET(TMP_INS ";${loop_var};${TMP_INS}")
-        SET(INS_STRING "${INS_STRING} -I${loop_var}")
-    ENDIF()
-ENDFOREACH(loop_var)
+get_target_property(INS drogon INCLUDE_DIRECTORIES)
+set(TMP_INS "")
+set(INS_STRING "")
+foreach(loop_var ${INS})
+    if(TMP_INS MATCHES ";${loop_var};")
+    else()
+        set(TMP_INS ";${loop_var};${TMP_INS}")
+        set(INS_STRING "${INS_STRING} -I${loop_var}")
+    endif()
+endforeach(loop_var)
 
-SET(INCLUDING_DIRS ${INS_STRING})
+set(INCLUDING_DIRS ${INS_STRING})
 
-configure_file(${PROJECT_SOURCE_DIR}/lib/inc/drogon/config.h.in 
-               ${PROJECT_SOURCE_DIR}/lib/inc/drogon/config.h @ONLY)
+configure_file(${PROJECT_SOURCE_DIR}/cmake/templates/config.h.in 
+               ${PROJECT_BINARY_DIR}/drogon/config.h @ONLY)
 
 if (MAKETEST STREQUAL YES)
-    ADD_SUBDIRECTORY(lib/tests)
-    IF(PostgreSQL_FOUND)
-        ADD_SUBDIRECTORY(${PROJECT_SOURCE_DIR}/orm_lib/src/postgresql_impl/test)
-        ADD_SUBDIRECTORY(${PROJECT_SOURCE_DIR}/orm_lib/tests)
-    ENDIF()
-    IF(MYSQL_FOUND)
-        ADD_SUBDIRECTORY(${PROJECT_SOURCE_DIR}/orm_lib/src/mysql_impl/test)
-    ENDIF()
-    IF(SQLITE3_FOUND)
-        ADD_SUBDIRECTORY(${PROJECT_SOURCE_DIR}/orm_lib/src/sqlite3_impl/test)
-    ENDIF()
+    add_subdirectory(lib/tests)
+    if(PostgreSQL_FOUND)
+        add_subdirectory(${PROJECT_SOURCE_DIR}/orm_lib/src/postgresql_impl/test)
+        add_subdirectory(${PROJECT_SOURCE_DIR}/orm_lib/tests)
+    endif()
+    if(MYSQL_FOUND)
+        add_subdirectory(${PROJECT_SOURCE_DIR}/orm_lib/src/mysql_impl/test)
+    endif()
+    if(SQLITE3_FOUND)
+        add_subdirectory(${PROJECT_SOURCE_DIR}/orm_lib/src/sqlite3_impl/test)
+    endif()
 endif ()
 
 #Installation
-INSTALL(TARGETS drogon DESTINATION lib)
 
-SET(drogon_headers 
+install(TARGETS drogon EXPORT DrogonTargets
+        ARCHIVE DESTINATION "${INSTALL_LIB_DIR}" COMPONENT lib)
+
+set(DROGON_HEADERS 
     lib/inc/drogon/CacheMap.h
     lib/inc/drogon/Cookie.h
     lib/inc/drogon/DrClassMap.h
@@ -322,9 +356,9 @@ SET(drogon_headers
     lib/inc/drogon/WebSocketController.h
     lib/inc/drogon/drogon.h
     lib/inc/drogon/version.h)
-INSTALL(FILES ${drogon_headers} DESTINATION include/drogon)
+install(FILES ${DROGON_HEADERS} DESTINATION ${INSTALL_INCLUDE_DIR}/drogon)
 
-SET(orm_headers 
+set(ORM_HEADERS 
     orm_lib/inc/drogon/orm/ArrayParser.h
     orm_lib/inc/drogon/orm/Criteria.h
     orm_lib/inc/drogon/orm/DbClient.h
@@ -337,23 +371,74 @@ SET(orm_headers
     orm_lib/inc/drogon/orm/Row.h
     orm_lib/inc/drogon/orm/RowIterator.h
     orm_lib/inc/drogon/orm/SqlBinder.h)
-INSTALL(FILES ${orm_headers} DESTINATION include/drogon/orm)
+install(FILES ${ORM_HEADERS} DESTINATION ${INSTALL_INCLUDE_DIR}/drogon/orm)
 
-SET(drogon_util_headers 
+set(DROGON_UTIL_HEADERS 
     lib/inc/drogon/utils/ClassTraits.h
     lib/inc/drogon/utils/FunctionTraits.h
     lib/inc/drogon/utils/Utilities.h
     lib/inc/drogon/utils/any.h
     lib/inc/drogon/utils/string_view.h
     lib/inc/drogon/utils/HttpConstraint.h)
-INSTALL(FILES ${drogon_util_headers}
-        DESTINATION include/drogon/utils)
+install(FILES ${DROGON_UTIL_HEADERS}
+        DESTINATION ${INSTALL_INCLUDE_DIR}/drogon/utils)
 
-SET(drogon_plugin_headers lib/inc/drogon/plugins/Plugin.h)
-INSTALL(FILES ${drogon_plugin_headers}
-        DESTINATION include/drogon/plugins)
+set(DROGON_PLUGIN_HEADERS lib/inc/drogon/plugins/Plugin.h)
+install(FILES ${DROGON_PLUGIN_HEADERS}
+        DESTINATION ${INSTALL_INCLUDE_DIR}/drogon/plugins)
 
-SOURCE_GROUP( "Public API" FILES ${drogon_headers} 
-                                 ${orm_headers}
-                                 ${drogon_util_headers}
-                                 ${drogon_plugin_headers})
+source_group( "Public API" FILES ${DROGON_HEADERS} 
+                                 ${ORM_HEADERS}
+                                 ${DROGON_UTIL_HEADERS}
+                                 ${DROGON_PLUGIN_HEADERS})
+
+
+
+# Add all targets to the build-tree export set
+export(TARGETS drogon
+  FILE "${PROJECT_BINARY_DIR}/DrogonTargets.cmake")
+
+# Export the package for use from the build-tree
+# (this registers the build-tree with a global cmake-registry)
+# export(PACKAGE Drogon)
+
+include(CMakePackageConfigHelpers)
+# ... for the build tree(locally included)
+set(CONF_INCLUDE_DIRS   "${PROJECT_SOURCE_DIR}/lib/inc"
+                        "${PROJECT_SOURCE_DIR}/orm_lib/inc"
+                        "${PROJECT_SOURCE_DIR}/trantor"
+                        "${JSONCPP_INCLUDE_DIRS}")
+set(TRANTOR_CMAKE_DIR "${CMAKE_CURRENT_BINARY_DIR}/trantor")
+configure_package_config_file(cmake/templates/DrogonConfig.cmake.in
+                              ${CMAKE_CURRENT_BINARY_DIR}/DrogonConfig.cmake
+                              INSTALL_DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
+                              PATH_VARS CONF_INCLUDE_DIRS TRANTOR_CMAKE_DIR)
+# ... for the install tree
+if(JSONCPP_INCLUDE_DIRS STREQUAL INSTALL_INCLUDE_DIR)
+    set(CONF_INCLUDE_DIRS   "${INSTALL_INCLUDE_DIR}")
+else()
+    set(CONF_INCLUDE_DIRS   "${JSONCPP_INCLUDE_DIRS}"
+                            "${INSTALL_INCLUDE_DIR}")
+endif()
+set(TRANTOR_CMAKE_DIR "${INSTALL_LIB_DIR}/cmake/Trantor")
+configure_package_config_file(cmake/templates/DrogonConfig.cmake.in
+                              ${CMAKE_CURRENT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/DrogonConfig.cmake
+                              INSTALL_DESTINATION ${INSTALL_DROGON_CMAKE_DIR}
+                              PATH_VARS CONF_INCLUDE_DIRS TRANTOR_CMAKE_DIR)
+
+# version
+write_basic_package_version_file(${CMAKE_CURRENT_BINARY_DIR}/DrogonConfigVersion.cmake
+                                 VERSION ${DROGON_VERSION}
+                                 COMPATIBILITY SameMajorVersion)
+
+# Install the DrogonConfig.cmake and DrogonConfigVersion.cmake
+install(FILES
+        "${CMAKE_CURRENT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/DrogonConfig.cmake"
+        "${CMAKE_CURRENT_BINARY_DIR}/DrogonConfigVersion.cmake"
+        DESTINATION "${INSTALL_DROGON_CMAKE_DIR}" 
+        COMPONENT dev)
+
+# Install the export set for use with the install-tree
+install(EXPORT DrogonTargets 
+        DESTINATION "${INSTALL_DROGON_CMAKE_DIR}" 
+        COMPONENT dev)

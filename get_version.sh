@@ -2,16 +2,15 @@
 
 GIT_VER=$(git log|grep ^commit|wc -l|sed -e "s/^ *//")
 MD5=$(git log|head -1|awk '{printf $2}')
-MAJOR=1
-MINOR=0
-PATCH=0
-PRE_RELEASE_STRING="beta5"
 TMP_FILE=/tmp/version
-echo "#define MAJOR ${MAJOR}" > ${TMP_FILE}
-echo "#define MINOR ${MINOR}" >> ${TMP_FILE}
-echo "#define PATCH ${PATCH}" >> ${TMP_FILE}
-echo "#define PRE_RELEASE_STRING \"${PRE_RELEASE_STRING}\"" >> ${TMP_FILE}
-echo "#define VERSION \"${MAJOR}.${MINOR}.${PATCH}.${PRE_RELEASE_STRING}.$GIT_VER\"" >> ${TMP_FILE}
+echo "#define MAJOR $2" > ${TMP_FILE}
+echo "#define MINOR $3" >> ${TMP_FILE}
+echo "#define PATCH $4" >> ${TMP_FILE}
+if [ $# -gt 4 ];then
+echo "#define VERSION \"$2.$3.$4.$5.$GIT_VER\"" >> ${TMP_FILE}
+else
+echo "#define VERSION \"$2.$3.$4.$GIT_VER\"" >> ${TMP_FILE}
+fi
 echo "#define VERSION_MD5 \"$MD5\"" >> ${TMP_FILE}
 if [ ! -f $1 ];then
 mv -f ${TMP_FILE} $1
