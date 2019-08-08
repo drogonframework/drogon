@@ -51,30 +51,6 @@ static void newGitIgFile(std::ofstream &gitFile)
     gitFile << templ->genText();
 }
 
-static void newUuidFindFile(std::ofstream &uuidFile)
-{
-    auto templ = DrTemplateBase::newTemplate("FindUUID.csp");
-    uuidFile << templ->genText();
-}
-
-static void newJsonFindFile(std::ofstream &jsonFile)
-{
-    auto templ = DrTemplateBase::newTemplate("FindJsoncpp.csp");
-    jsonFile << templ->genText();
-}
-
-static void newMySQLFindFile(std::ofstream &mysqlFile)
-{
-    auto templ = DrTemplateBase::newTemplate("FindMySQL.csp");
-    mysqlFile << templ->genText();
-}
-
-static void newSQLite3FindFile(std::ofstream &sqlite3File)
-{
-    auto templ = DrTemplateBase::newTemplate("FindSQLite3.csp");
-    sqlite3File << templ->genText();
-}
-
 static void newConfigFile(std::ofstream &configFile)
 {
     auto templ = DrTemplateBase::newTemplate("config");
@@ -109,18 +85,6 @@ void create_project::createProject(const std::string &projectName)
     mkdir("plugins", 0755);
     mkdir("build", 0755);
     mkdir("models", 0755);
-    mkdir("cmake_modules", 0755);
-    std::ofstream jsonFile("cmake_modules/FindJsoncpp.cmake",
-                           std::ofstream::out);
-    newJsonFindFile(jsonFile);
-    std::ofstream uuidFile("cmake_modules/FindUUID.cmake", std::ofstream::out);
-    newUuidFindFile(uuidFile);
-    std::ofstream mysqlFile("cmake_modules/FindMySQL.cmake",
-                            std::ofstream::out);
-    newMySQLFindFile(mysqlFile);
-    std::ofstream sqlite3File("cmake_modules/FindSQLite3.cmake",
-                              std::ofstream::out);
-    newSQLite3FindFile(sqlite3File);
 
     std::ofstream gitFile(".gitignore", std::ofstream::out);
     newGitIgFile(gitFile);

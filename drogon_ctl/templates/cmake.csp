@@ -1,106 +1,52 @@
 cmake_minimum_required (VERSION 3.2)
-PROJECT([[ProjectName]])
+project([[ProjectName]])
 
-LINK_DIRECTORIES(/usr/local/lib)
-LINK_LIBRARIES(drogon trantor pthread dl)
+include(CheckIncludeFileCXX)
 
-INCLUDE(CheckIncludeFileCXX)
+check_include_file_cxx(any HAS_ANY)
+check_include_file_cxx(string_view HAS_STRING_VIEW)
+if(HAS_ANY AND HAS_STRING_VIEW)
+    set(CMAKE_CXX_STANDARD 17)
+else()
+    set(CMAKE_CXX_STANDARD 14)
+endif()
 
-CHECK_INCLUDE_FILE_CXX(any HAS_ANY)
-CHECK_INCLUDE_FILE_CXX(string_view HAS_STRING_VIEW)
-IF(HAS_ANY AND HAS_STRING_VIEW)
-    SET(CMAKE_CXX_STANDARD 17)
-ELSE()
-    SET(CMAKE_CXX_STANDARD 14)
-ENDIF()
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
-SET(CMAKE_CXX_STANDARD_REQUIRED ON)
-SET(CMAKE_CXX_EXTENSIONS OFF)
+find_package(Drogon CONFIG REQUIRED)
+include_directories(${DROGON_INCLUDE_DIRS})
+link_libraries(${DROGON_LIBRARIES})
 
-IF(CMAKE_CXX_STANDARD LESS 17)
+if(CMAKE_CXX_STANDARD LESS 17)
 #With C++14, use boost to support any and string_view
-    MESSAGE(STATUS "use c++14")
-    FIND_PACKAGE(Boost REQUIRED)
-    IF(Boost_FOUND)
-        INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
-    ENDIF()
-ELSE()
-    MESSAGE(STATUS "use c++17")
-ENDIF()
+    message(STATUS "use c++14")
+    find_package(Boost 1.61.0 REQUIRED)
+    include_directories(${Boost_INCLUDE_DIRS})
+else()
+    message(STATUS "use c++17")
+endif()
 
-SET(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules/)
+aux_source_directory(./ SRC_DIR)
+aux_source_directory(controllers CTL_SRC)
+aux_source_directory(filters FILTER_SRC)
+aux_source_directory(plugins PLUGIN_SRC)
+aux_source_directory(models MODEL_SRC)
 
-#jsoncpp
-FIND_PACKAGE (Jsoncpp REQUIRED)
-INCLUDE_DIRECTORIES(${JSONCPP_INCLUDE_DIRS})
-LINK_LIBRARIES(${JSONCPP_LIBRARIES})
+include_directories(/usr/local/include)
 
-#uuid
-FIND_PACKAGE (UUID REQUIRED)
-INCLUDE_DIRECTORIES(${UUID_INCLUDE_DIR})
-LINK_LIBRARIES(${UUID_LIBRARIES})
-
-#OpenSSL
-FIND_PACKAGE (OpenSSL)
-IF(OpenSSL_FOUND)
-    INCLUDE_DIRECTORIES(${OPENSSL_INCLUDE_DIR})
-    LINK_LIBRARIES(${OPENSSL_LIBRARIES})
-ENDIF()
-
-#zlib
-FIND_PACKAGE(ZLIB REQUIRED)
-INCLUDE_DIRECTORIES(${ZLIB_INCLUDE_DIR})
-LINK_LIBRARIES(${ZLIB_LIBRARIES})
-
-#find postgres
-FIND_PACKAGE(PostgreSQL)
-IF(PostgreSQL_FOUND)
-INCLUDE_DIRECTORIES(${PostgreSQL_INCLUDE_DIR})
-LINK_LIBRARIES(${PostgreSQL_LIBRARIES})
-ENDIF()
-
-#Find mysql, only mariadb client liberary is supported
-FIND_PACKAGE(MySQL)
-IF(MYSQL_FOUND)
-    MESSAGE(STATUS "inc:" ${MYSQL_INCLUDE_DIR})
-    MESSAGE(STATUS "libs:" ${MYSQL_CLIENT_LIBS})
-    MESSAGE(STATUS "version:" ${MYSQL_VERSION_STRING})
-    IF(MYSQL_VERSION_STRING STREQUAL "")
-        MESSAGE(STATUS "The mysql in your system is not the mariadb, so we can't use it in drogon")
-    ELSE()
-        MESSAGE(STATUS "Ok! We find the mariadb!")
-        INCLUDE_DIRECTORIES(${MYSQL_INCLUDE_DIR})
-        LINK_LIBRARIES(${MYSQL_CLIENT_LIBS})
-    ENDIF()
-ENDIF()
-
-#Find sqlite3.
-FIND_PACKAGE (SQLite3)
-if (SQLITE3_FOUND)
-  INCLUDE_DIRECTORIES(${SQLITE3_INCLUDE_DIRS})
-  LINK_LIBRARIES(${SQLITE3_LIBRARIES})
-ENDIF()
-
-AUX_SOURCE_DIRECTORY(./ SRC_DIR)
-AUX_SOURCE_DIRECTORY(controllers CTL_SRC)
-AUX_SOURCE_DIRECTORY(filters FILTER_SRC)
-AUX_SOURCE_DIRECTORY(plugins PLUGIN_SRC)
-AUX_SOURCE_DIRECTORY(models MODEL_SRC)
-
-INCLUDE_DIRECTORIES(/usr/local/include)
-
-FILE(GLOB SCP_LIST ${CMAKE_CURRENT_SOURCE_DIR}/views/*.csp)
-FOREACH(cspFile ${SCP_LIST})
-    MESSAGE(STATUS "cspFile:" ${cspFile})
+file(GLOB SCP_LIST ${CMAKE_CURRENT_SOURCE_DIR}/views/*.csp)
+foreach(cspFile ${SCP_LIST})
+    message(STATUS "cspFile:" ${cspFile})
     EXEC_PROGRAM(basename ARGS "${cspFile} .csp" OUTPUT_VARIABLE classname)
-    MESSAGE(STATUS "view classname:" ${classname})
+    message(STATUS "view classname:" ${classname})
     ADD_CUSTOM_COMMAND(OUTPUT ${classname}.h ${classname}.cc
             COMMAND drogon_ctl
             ARGS create view ${cspFile}
             DEPENDS ${cspFile}
             VERBATIM )
-    SET(VIEWSRC ${VIEWSRC} ${classname}.cc)
-ENDFOREACH()
+    set(VIEWSRC ${VIEWSRC} ${classname}.cc)
+endforeach()
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
-ADD_EXECUTABLE([[ProjectName]] ${SRC_DIR} ${CTL_SRC} ${FILTER_SRC} ${VIEWSRC} ${PLUGIN_SRC} ${MODEL_SRC})
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+add_executable([[ProjectName]] ${SRC_DIR} ${CTL_SRC} ${FILTER_SRC} ${VIEWSRC} ${PLUGIN_SRC} ${MODEL_SRC})
