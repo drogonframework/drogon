@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.0.0-beta6] - 2019-08-08
+
+### API change list
+
+- None
+
+### Changed
+
+- Modify the 'create view' sub-command of drogon_ctl
+
+- Optimize the transmission of pipelining responses.
+
+- Add the DrogonConfig.cmake file so that users can use drogon with the `find_package(Drogon)` command.
+
 ## [1.0.0-beta5] - 2019-08-01
 
 ### API change list
@@ -23,7 +37,7 @@ All notable changes to this project will be documented in this file.
 ### Fixed
 
 - None
-- 
+
 ## [1.0.0-beta4] - 2019-07-30
 
 ### API change list
@@ -92,7 +106,9 @@ All notable changes to this project will be documented in this file.
 
 ## [1.0.0-beta1] - 2019-06-11
 
-[Unreleased]: https://github.com/an-tao/drogon/compare/v1.0.0-beta5...HEAD
+[Unreleased]: https://github.com/an-tao/drogon/compare/v1.0.0-beta6...HEAD
+
+[1.0.0-beta6]: https://github.com/an-tao/drogon/compare/v1.0.0-beta5...v1.0.0-beta6
 
 [1.0.0-beta5]: https://github.com/an-tao/drogon/compare/v1.0.0-beta4...v1.0.0-beta5
 
