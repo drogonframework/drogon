@@ -157,7 +157,7 @@ if(BUILD_ORM)
                     ${CMAKE_BINARY_DIR}/cmaketest 
                     ${PROJECT_SOURCE_DIR}/cmake/tests/test_libpq_batch_mode.cc
                     LINK_LIBRARIES ${PostgreSQL_LIBRARIES}
-                    CMAKE_FLAGS "-Dinclude_directories=${PostgreSQL_INCLUDE_DIR}")
+                    CMAKE_FLAGS "-DINCLUDE_DIRECTORIES=${PostgreSQL_INCLUDE_DIR}")
         endif()
         if(libpq_supports_batch)
             message(STATUS "The libpq supports fatch mode")
