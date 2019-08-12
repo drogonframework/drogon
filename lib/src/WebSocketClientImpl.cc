@@ -127,24 +127,26 @@ void WebSocketClientImpl::connectToServerInLoop()
             _domain,
             [thisPtr = shared_from_this(),
              hasIpv6Address](const trantor::InetAddress &addr) {
-                struct sockaddr_in ad;
-                auto port = thisPtr->_server.portNetEndian();
-                thisPtr->_server = addr;
-                thisPtr->_server.setPortNetEndian(port);
-                LOG_TRACE << "dns:domain=" << thisPtr->_domain
-                          << ";ip=" << thisPtr->_server.toIp();
-                if ((thisPtr->_server.ipNetEndian() != 0 || hasIpv6Address) &&
-                    thisPtr->_server.portNetEndian() != 0)
-                {
-                    thisPtr->createTcpClient();
-                }
-                else
-                {
-                    thisPtr->_requestCallback(ReqResult::BadServerAddress,
-                                              nullptr,
-                                              thisPtr);
-                    return;
-                }
+                thisPtr->_loop->runInLoop([thisPtr,addr,hasIpv6Address](){ 
+                    struct sockaddr_in ad;
+                    auto port = thisPtr->_server.portNetEndian();
+                    thisPtr->_server = addr;
+                    thisPtr->_server.setPortNetEndian(port);
+                    LOG_TRACE << "dns:domain=" << thisPtr->_domain
+                            << ";ip=" << thisPtr->_server.toIp();
+                    if ((thisPtr->_server.ipNetEndian() != 0 || hasIpv6Address) &&
+                        thisPtr->_server.portNetEndian() != 0)
+                    {
+                        thisPtr->createTcpClient();
+                    }
+                    else
+                    {
+                        thisPtr->_requestCallback(ReqResult::BadServerAddress,
+                                                nullptr,
+                                                thisPtr);
+                        return;
+                    }
+                });
             });
         return;
     }

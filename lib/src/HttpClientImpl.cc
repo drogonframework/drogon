@@ -262,31 +262,33 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
                     _domain,
                     [thisPtr = shared_from_this(),
                      hasIpv6Address](const trantor::InetAddress &addr) {
-                        struct sockaddr_in ad;
-                        auto port = thisPtr->_server.portNetEndian();
-                        thisPtr->_server = addr;
-                        thisPtr->_server.setPortNetEndian(port);
-                        LOG_TRACE << "dns:domain=" << thisPtr->_domain
-                                  << ";ip=" << thisPtr->_server.toIp();
-                        thisPtr->_dns = false;
-                        if ((thisPtr->_server.ipNetEndian() != 0 ||
-                             hasIpv6Address) &&
-                            thisPtr->_server.portNetEndian() != 0)
-                        {
-                            thisPtr->createTcpClient();
-                        }
-                        else
-                        {
-                            while (!(thisPtr->_requestsBuffer).empty())
+                        thisPtr->_loop->runInLoop([thisPtr,addr,hasIpv6Address](){ 
+                            struct sockaddr_in ad;
+                            auto port = thisPtr->_server.portNetEndian();
+                            thisPtr->_server = addr;
+                            thisPtr->_server.setPortNetEndian(port);
+                            LOG_TRACE << "dns:domain=" << thisPtr->_domain
+                                    << ";ip=" << thisPtr->_server.toIp();
+                            thisPtr->_dns = false;
+                            if ((thisPtr->_server.ipNetEndian() != 0 ||
+                                hasIpv6Address) &&
+                                thisPtr->_server.portNetEndian() != 0)
                             {
-                                auto &reqAndCb =
-                                    (thisPtr->_requestsBuffer).front();
-                                reqAndCb.second(ReqResult::BadServerAddress,
-                                                nullptr);
-                                (thisPtr->_requestsBuffer).pop();
+                                thisPtr->createTcpClient();
                             }
-                            return;
-                        }
+                            else
+                            {
+                                while (!(thisPtr->_requestsBuffer).empty())
+                                {
+                                    auto &reqAndCb =
+                                        (thisPtr->_requestsBuffer).front();
+                                    reqAndCb.second(ReqResult::BadServerAddress,
+                                                    nullptr);
+                                    (thisPtr->_requestsBuffer).pop();
+                                }
+                                return;
+                            }
+                        });
                     });
                 return;
             }
@@ -300,6 +302,7 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
             {
                 _requestsBuffer.pop();
                 callback(ReqResult::BadServerAddress, nullptr);
+                assert(_requestsBuffer.empty());
                 return;
             }
         }
