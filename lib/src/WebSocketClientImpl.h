@@ -97,6 +97,7 @@ class WebSocketClientImpl
     void onRecvWsMessage(const trantor::TcpConnectionPtr &,
                          trantor::MsgBuffer *);
     void reconnect();
+    void createTcpClient();
 };
 
 }  // namespace drogon
