@@ -88,13 +88,16 @@ void HttpClientImpl::createTcpClient()
 HttpClientImpl::HttpClientImpl(trantor::EventLoop *loop,
                                const trantor::InetAddress &addr,
                                bool useSSL)
-    : _loop(loop), _server(addr), _useSSL(useSSL)
+    : _loop(loop),
+      _server(addr),
+      _useSSL(useSSL),
+      _resolver(trantor::Resolver::newResolver(loop))
 {
 }
 
 HttpClientImpl::HttpClientImpl(trantor::EventLoop *loop,
                                const std::string &hostString)
-    : _loop(loop)
+    : _loop(loop), _resolver(trantor::Resolver::newResolver(loop))
 {
     auto lowerHost = hostString;
     std::transform(lowerHost.begin(),
@@ -258,20 +261,22 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
                 !_domain.empty() && _server.portNetEndian() != 0)
             {
                 _dns = true;
-                drogon::app().getResolver()->resolve(
+                _resolver->resolve(
                     _domain,
                     [thisPtr = shared_from_this(),
                      hasIpv6Address](const trantor::InetAddress &addr) {
-                        thisPtr->_loop->runInLoop([thisPtr,addr,hasIpv6Address](){ 
+                        thisPtr->_loop->runInLoop([thisPtr,
+                                                   addr,
+                                                   hasIpv6Address]() {
                             struct sockaddr_in ad;
                             auto port = thisPtr->_server.portNetEndian();
                             thisPtr->_server = addr;
                             thisPtr->_server.setPortNetEndian(port);
                             LOG_TRACE << "dns:domain=" << thisPtr->_domain
-                                    << ";ip=" << thisPtr->_server.toIp();
+                                      << ";ip=" << thisPtr->_server.toIp();
                             thisPtr->_dns = false;
                             if ((thisPtr->_server.ipNetEndian() != 0 ||
-                                hasIpv6Address) &&
+                                 hasIpv6Address) &&
                                 thisPtr->_server.portNetEndian() != 0)
                             {
                                 thisPtr->createTcpClient();

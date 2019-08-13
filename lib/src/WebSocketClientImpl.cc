@@ -123,18 +123,19 @@ void WebSocketClientImpl::connectToServerInLoop()
     if (_server.ipNetEndian() == 0 && !hasIpv6Address && !_domain.empty() &&
         _server.portNetEndian() != 0)
     {
-        drogon::app().getResolver()->resolve(
+        _resolver->resolve(
             _domain,
             [thisPtr = shared_from_this(),
              hasIpv6Address](const trantor::InetAddress &addr) {
-                thisPtr->_loop->runInLoop([thisPtr,addr,hasIpv6Address](){ 
+                thisPtr->_loop->runInLoop([thisPtr, addr, hasIpv6Address]() {
                     struct sockaddr_in ad;
                     auto port = thisPtr->_server.portNetEndian();
                     thisPtr->_server = addr;
                     thisPtr->_server.setPortNetEndian(port);
                     LOG_TRACE << "dns:domain=" << thisPtr->_domain
-                            << ";ip=" << thisPtr->_server.toIp();
-                    if ((thisPtr->_server.ipNetEndian() != 0 || hasIpv6Address) &&
+                              << ";ip=" << thisPtr->_server.toIp();
+                    if ((thisPtr->_server.ipNetEndian() != 0 ||
+                         hasIpv6Address) &&
                         thisPtr->_server.portNetEndian() != 0)
                     {
                         thisPtr->createTcpClient();
@@ -142,8 +143,8 @@ void WebSocketClientImpl::connectToServerInLoop()
                     else
                     {
                         thisPtr->_requestCallback(ReqResult::BadServerAddress,
-                                                nullptr,
-                                                thisPtr);
+                                                  nullptr,
+                                                  thisPtr);
                         return;
                     }
                 });
@@ -257,13 +258,16 @@ void WebSocketClientImpl::reconnect()
 WebSocketClientImpl::WebSocketClientImpl(trantor::EventLoop *loop,
                                          const trantor::InetAddress &addr,
                                          bool useSSL)
-    : _loop(loop), _server(addr), _useSSL(useSSL)
+    : _loop(loop),
+      _server(addr),
+      _useSSL(useSSL),
+      _resolver(trantor::Resolver::newResolver(loop))
 {
 }
 
 WebSocketClientImpl::WebSocketClientImpl(trantor::EventLoop *loop,
                                          const std::string &hostString)
-    : _loop(loop)
+    : _loop(loop), _resolver(trantor::Resolver::newResolver(loop))
 {
     auto lowerHost = hostString;
     std::transform(lowerHost.begin(),

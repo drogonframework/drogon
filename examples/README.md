@@ -10,3 +10,7 @@ The following examples can help you understand how to use Drogon:
 ### [TechEmpower Framework Benchmarks](https://github.com/TechEmpower/FrameworkBenchmarks) test suite
 
 I created a benchmark suite for the `tfb`, see [here](https://github.com/TechEmpower/FrameworkBenchmarks/tree/master/frameworks/C%2B%2B/drogon) for details.
+
+### Another test suite
+
+I also created a test suite for another web frameworks benchmark repository, see [here](https://github.com/the-benchmarker/web-frameworks/tree/master/cpp/drogon), in this project, drogon is used as a sub-module (locally include in the project).
