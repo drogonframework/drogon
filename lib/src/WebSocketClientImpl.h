@@ -98,6 +98,7 @@ class WebSocketClientImpl
                          trantor::MsgBuffer *);
     void reconnect();
     void createTcpClient();
+    std::shared_ptr<trantor::Resolver> _resolver;
 };
 
 }  // namespace drogon

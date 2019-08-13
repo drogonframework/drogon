@@ -95,6 +95,7 @@ class HttpClientImpl : public HttpClient,
     size_t _bytesSent = 0;
     size_t _bytesReceived = 0;
     bool _dns = false;
+    std::shared_ptr<trantor::Resolver> _resolver;
 };
 typedef std::shared_ptr<HttpClientImpl> HttpClientImplPtr;
 }  // namespace drogon
