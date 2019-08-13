@@ -211,7 +211,8 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     {
         return _uploadPath;
     }
-    virtual const std::shared_ptr<trantor::Resolver> &getResolver() const override
+    virtual const std::shared_ptr<trantor::Resolver> &getResolver()
+        const override
     {
         static auto resolver =
             trantor::Resolver::newResolver(drogon::app().getLoop());

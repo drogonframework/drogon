@@ -88,16 +88,13 @@ void HttpClientImpl::createTcpClient()
 HttpClientImpl::HttpClientImpl(trantor::EventLoop *loop,
                                const trantor::InetAddress &addr,
                                bool useSSL)
-    : _loop(loop),
-      _server(addr),
-      _useSSL(useSSL),
-      _resolver(trantor::Resolver::newResolver(loop))
+    : _loop(loop), _server(addr), _useSSL(useSSL)
 {
 }
 
 HttpClientImpl::HttpClientImpl(trantor::EventLoop *loop,
                                const std::string &hostString)
-    : _loop(loop), _resolver(trantor::Resolver::newResolver(loop))
+    : _loop(loop)
 {
     auto lowerHost = hostString;
     std::transform(lowerHost.begin(),
@@ -261,6 +258,10 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
                 !_domain.empty() && _server.portNetEndian() != 0)
             {
                 _dns = true;
+                if (!_resolver)
+                {
+                    _resolver = trantor::Resolver::newResolver(_loop);
+                }
                 _resolver->resolve(
                     _domain,
                     [thisPtr = shared_from_this(),
