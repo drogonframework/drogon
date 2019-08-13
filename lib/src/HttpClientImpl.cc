@@ -24,6 +24,67 @@ using namespace trantor;
 using namespace drogon;
 using namespace std::placeholders;
 
+void HttpClientImpl::createTcpClient()
+{
+    LOG_TRACE << "New TcpClient," << _server.toIpPort();
+    _tcpClient =
+        std::make_shared<trantor::TcpClient>(_loop, _server, "httpClient");
+
+#ifdef OpenSSL_FOUND
+    if (_useSSL)
+    {
+        _tcpClient->enableSSL();
+    }
+#endif
+    auto thisPtr = shared_from_this();
+    std::weak_ptr<HttpClientImpl> weakPtr = thisPtr;
+
+    _tcpClient->setConnectionCallback(
+        [weakPtr](const trantor::TcpConnectionPtr &connPtr) {
+            auto thisPtr = weakPtr.lock();
+            if (!thisPtr)
+                return;
+            if (connPtr->connected())
+            {
+                connPtr->setContext(std::make_shared<HttpResponseParser>());
+                // send request;
+                LOG_TRACE << "Connection established!";
+                while (thisPtr->_pipeliningCallbacks.size() <=
+                           thisPtr->_pipeliningDepth &&
+                       !thisPtr->_requestsBuffer.empty())
+                {
+                    thisPtr->sendReq(connPtr,
+                                     thisPtr->_requestsBuffer.front().first);
+                    thisPtr->_pipeliningCallbacks.push(
+                        std::move(thisPtr->_requestsBuffer.front()));
+                    thisPtr->_requestsBuffer.pop();
+                }
+            }
+            else
+            {
+                LOG_TRACE << "connection disconnect";
+                thisPtr->onError(ReqResult::NetworkFailure);
+            }
+        });
+    _tcpClient->setConnectionErrorCallback([weakPtr]() {
+        auto thisPtr = weakPtr.lock();
+        if (!thisPtr)
+            return;
+        // can't connect to server
+        thisPtr->onError(ReqResult::BadServerAddress);
+    });
+    _tcpClient->setMessageCallback(
+        [weakPtr](const trantor::TcpConnectionPtr &connPtr,
+                  trantor::MsgBuffer *msg) {
+            auto thisPtr = weakPtr.lock();
+            if (thisPtr)
+            {
+                thisPtr->onRecvMessage(connPtr, msg);
+            }
+        });
+    _tcpClient->connect();
+}
+
 HttpClientImpl::HttpClientImpl(trantor::EventLoop *loop,
                                const trantor::InetAddress &addr,
                                bool useSSL)
@@ -100,7 +161,7 @@ HttpClientImpl::HttpClientImpl(trantor::EventLoop *loop,
             auto port = atoi(portStr.c_str());
             if (port > 0 && port < 65536)
             {
-                _server = InetAddress(port);
+                _server = InetAddress(_domain, port);
             }
         }
         else
@@ -113,11 +174,11 @@ HttpClientImpl::HttpClientImpl(trantor::EventLoop *loop,
             }
             if (_useSSL)
             {
-                _server = InetAddress(443);
+                _server = InetAddress(_domain, 443);
             }
             else
             {
-                _server = InetAddress(80);
+                _server = InetAddress(_domain, 80);
             }
         }
     }
@@ -171,107 +232,79 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
 
     if (!_tcpClient)
     {
-        bool hasIpv6Address = false;
-        if (_server.isIpV6())
+        _requestsBuffer.push(
+            {req,
+             [thisPtr = shared_from_this(),
+              callback](ReqResult result, const HttpResponsePtr &response) {
+                 callback(result, response);
+             }});
+        if (!_dns)
         {
-            auto ipaddr = _server.ip6NetEndian();
-            for (int i = 0; i < 4; i++)
+            bool hasIpv6Address = false;
+            if (_server.isIpV6())
             {
-                if (ipaddr[i] != 0)
+                auto ipaddr = _server.ip6NetEndian();
+                for (int i = 0; i < 4; i++)
                 {
-                    hasIpv6Address = true;
-                    break;
+                    if (ipaddr[i] != 0)
+                    {
+                        hasIpv6Address = true;
+                        break;
+                    }
                 }
             }
-        }
 
-        if (_server.ipNetEndian() == 0 && !hasIpv6Address && !_domain.empty() &&
-            _server.portNetEndian() != 0)
-        {
-            // dns
-            // TODO: timeout should be set by user
-            if (InetAddress::resolve(_domain, &_server) == false)
+            if (_server.ipNetEndian() == 0 && !hasIpv6Address &&
+                !_domain.empty() && _server.portNetEndian() != 0)
             {
-                callback(ReqResult::BadServerAddress, nullptr);
+                _dns = true;
+                drogon::app().getResolver()->resolve(
+                    _domain,
+                    [thisPtr = shared_from_this(),
+                     hasIpv6Address](const trantor::InetAddress &addr) {
+                        thisPtr->_loop->runInLoop([thisPtr,addr,hasIpv6Address](){ 
+                            struct sockaddr_in ad;
+                            auto port = thisPtr->_server.portNetEndian();
+                            thisPtr->_server = addr;
+                            thisPtr->_server.setPortNetEndian(port);
+                            LOG_TRACE << "dns:domain=" << thisPtr->_domain
+                                    << ";ip=" << thisPtr->_server.toIp();
+                            thisPtr->_dns = false;
+                            if ((thisPtr->_server.ipNetEndian() != 0 ||
+                                hasIpv6Address) &&
+                                thisPtr->_server.portNetEndian() != 0)
+                            {
+                                thisPtr->createTcpClient();
+                            }
+                            else
+                            {
+                                while (!(thisPtr->_requestsBuffer).empty())
+                                {
+                                    auto &reqAndCb =
+                                        (thisPtr->_requestsBuffer).front();
+                                    reqAndCb.second(ReqResult::BadServerAddress,
+                                                    nullptr);
+                                    (thisPtr->_requestsBuffer).pop();
+                                }
+                                return;
+                            }
+                        });
+                    });
                 return;
             }
-            LOG_TRACE << "dns:domain=" << _domain << ";ip=" << _server.toIp();
-        }
 
-        if ((_server.ipNetEndian() != 0 || hasIpv6Address) &&
-            _server.portNetEndian() != 0)
-        {
-            LOG_TRACE << "New TcpClient," << _server.toIpPort();
-            _tcpClient = std::make_shared<trantor::TcpClient>(_loop,
-                                                              _server,
-                                                              "httpClient");
-
-#ifdef OpenSSL_FOUND
-            if (_useSSL)
+            if ((_server.ipNetEndian() != 0 || hasIpv6Address) &&
+                _server.portNetEndian() != 0)
             {
-                _tcpClient->enableSSL();
+                createTcpClient();
             }
-#endif
-            auto thisPtr = shared_from_this();
-            std::weak_ptr<HttpClientImpl> weakPtr = thisPtr;
-            assert(_requestsBuffer.empty());
-            _requestsBuffer.push(
-                {req,
-                 [thisPtr, callback](ReqResult result,
-                                     const HttpResponsePtr &response) {
-                     callback(result, response);
-                 }});
-            _tcpClient->setConnectionCallback(
-                [weakPtr](const trantor::TcpConnectionPtr &connPtr) {
-                    auto thisPtr = weakPtr.lock();
-                    if (!thisPtr)
-                        return;
-                    if (connPtr->connected())
-                    {
-                        connPtr->setContext(
-                            std::make_shared<HttpResponseParser>());
-                        // send request;
-                        LOG_TRACE << "Connection established!";
-                        while (thisPtr->_pipeliningCallbacks.size() <=
-                                   thisPtr->_pipeliningDepth &&
-                               !thisPtr->_requestsBuffer.empty())
-                        {
-                            thisPtr->sendReq(
-                                connPtr,
-                                thisPtr->_requestsBuffer.front().first);
-                            thisPtr->_pipeliningCallbacks.push(
-                                std::move(thisPtr->_requestsBuffer.front()));
-                            thisPtr->_requestsBuffer.pop();
-                        }
-                    }
-                    else
-                    {
-                        LOG_TRACE << "connection disconnect";
-                        thisPtr->onError(ReqResult::NetworkFailure);
-                    }
-                });
-            _tcpClient->setConnectionErrorCallback([weakPtr]() {
-                auto thisPtr = weakPtr.lock();
-                if (!thisPtr)
-                    return;
-                // can't connect to server
-                thisPtr->onError(ReqResult::BadServerAddress);
-            });
-            _tcpClient->setMessageCallback(
-                [weakPtr](const trantor::TcpConnectionPtr &connPtr,
-                          trantor::MsgBuffer *msg) {
-                    auto thisPtr = weakPtr.lock();
-                    if (thisPtr)
-                    {
-                        thisPtr->onRecvMessage(connPtr, msg);
-                    }
-                });
-            _tcpClient->connect();
-        }
-        else
-        {
-            callback(ReqResult::BadServerAddress, nullptr);
-            return;
+            else
+            {
+                _requestsBuffer.pop();
+                callback(ReqResult::BadServerAddress, nullptr);
+                assert(_requestsBuffer.empty());
+                return;
+            }
         }
     }
     else

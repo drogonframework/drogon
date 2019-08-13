@@ -22,6 +22,7 @@
 #include <vector>
 #include <trantor/net/EventLoop.h>
 #include <trantor/net/TcpClient.h>
+#include <trantor/net/Resolver.h>
 
 namespace drogon
 {
@@ -82,6 +83,7 @@ class HttpClientImpl : public HttpClient,
     void sendRequestInLoop(const HttpRequestPtr &req,
                            const HttpReqCallback &callback);
     void handleCookies(const HttpResponseImplPtr &resp);
+    void createTcpClient();
     std::queue<std::pair<HttpRequestPtr, HttpReqCallback>> _pipeliningCallbacks;
     std::queue<std::pair<HttpRequestPtr, HttpReqCallback>> _requestsBuffer;
     void onRecvMessage(const trantor::TcpConnectionPtr &, trantor::MsgBuffer *);
@@ -92,6 +94,7 @@ class HttpClientImpl : public HttpClient,
     std::vector<Cookie> _validCookies;
     size_t _bytesSent = 0;
     size_t _bytesReceived = 0;
+    bool _dns = false;
 };
 typedef std::shared_ptr<HttpClientImpl> HttpClientImplPtr;
 }  // namespace drogon

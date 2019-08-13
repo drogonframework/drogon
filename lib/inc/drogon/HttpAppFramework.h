@@ -30,6 +30,7 @@
 #include <drogon/plugins/Plugin.h>
 #include <drogon/utils/ClassTraits.h>
 #include <drogon/utils/Utilities.h>
+#include <trantor/net/Resolver.h>
 #include <trantor/net/EventLoop.h>
 #include <trantor/utils/NonCopyable.h>
 #include <functional>
@@ -831,6 +832,14 @@ class HttpAppFramework : public trantor::NonCopyable
                                 const std::string &filename = "",
                                 const std::string &name = "default",
                                 const bool isFast = false) = 0;
+
+    /// Get the DNS resolver
+    /**
+     * NOTE:
+     * When the c-ares library is installed in the system, it runs with the best
+     * performance.
+     */
+    virtual const std::shared_ptr<trantor::Resolver> &getResolver() const = 0;
 
   private:
     virtual void registerHttpController(
