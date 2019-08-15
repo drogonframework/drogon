@@ -14,7 +14,7 @@
 
 #include "HttpRequestImpl.h"
 #include "HttpUtils.h"
-#include <drogon/HttpAppFramework.h>
+#include "HttpAppFrameworkImpl.h"
 #include <drogon/MultiPart.h>
 #include <drogon/utils/Utilities.h>
 #include <drogon/config.h>
@@ -155,7 +155,7 @@ int HttpFile::save(const std::string &path) const
     }
     else
     {
-        auto &uploadPath = drogon::app().getUploadPath();
+        auto &uploadPath = HttpAppFrameworkImpl::instance().getUploadPath();
         if (uploadPath[uploadPath.length() - 1] == '/')
             tmpPath = uploadPath + path;
         else
@@ -176,7 +176,7 @@ int HttpFile::save(const std::string &path) const
 }
 int HttpFile::save() const
 {
-    return save(drogon::app().getUploadPath());
+    return save(HttpAppFrameworkImpl::instance().getUploadPath());
 }
 int HttpFile::saveAs(const std::string &filename) const
 {
@@ -191,7 +191,7 @@ int HttpFile::saveAs(const std::string &filename) const
     }
     else
     {
-        auto &uploadPath = drogon::app().getUploadPath();
+        auto &uploadPath = HttpAppFrameworkImpl::instance().getUploadPath();
         if (uploadPath[uploadPath.length() - 1] == '/')
             pathAndFileName = uploadPath + filename;
         else

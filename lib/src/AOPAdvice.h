@@ -14,7 +14,8 @@
 
 #pragma once
 #include "impl_forwards.h"
-#include <drogon/HttpAppFramework.h>
+#include <drogon/drogon_callbacks.h>
+#include <deque>
 
 namespace drogon
 {

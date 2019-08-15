@@ -18,7 +18,7 @@
 #include "HttpResponseParser.h"
 #include "HttpUtils.h"
 #include "WebSocketConnectionImpl.h"
-#include <drogon/HttpAppFramework.h>
+#include "HttpAppFrameworkImpl.h"
 #include <drogon/utils/Utilities.h>
 #include <drogon/config.h>
 #include <trantor/net/InetAddress.h>
@@ -405,7 +405,7 @@ WebSocketClientPtr WebSocketClient::newWebSocketClient(const std::string &ip,
 {
     bool isIpv6 = ip.find(":") == std::string::npos ? false : true;
     return std::make_shared<WebSocketClientImpl>(
-        loop == nullptr ? app().getLoop() : loop,
+        loop == nullptr ? HttpAppFrameworkImpl::instance().getLoop() : loop,
         trantor::InetAddress(ip, port, isIpv6),
         useSSL);
 }
@@ -415,5 +415,6 @@ WebSocketClientPtr WebSocketClient::newWebSocketClient(
     trantor::EventLoop *loop)
 {
     return std::make_shared<WebSocketClientImpl>(
-        loop == nullptr ? app().getLoop() : loop, hostString);
+        loop == nullptr ? HttpAppFrameworkImpl::instance().getLoop() : loop,
+        hostString);
 }

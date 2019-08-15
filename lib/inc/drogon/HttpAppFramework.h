@@ -22,6 +22,7 @@
 #include <drogon/LocalHostFilter.h>
 #include <drogon/MultiPart.h>
 #include <drogon/NotFound.h>
+#include <drogon/drogon_callbacks.h>
 #include <drogon/utils/ClassTraits.h>
 #include <drogon/utils/Utilities.h>
 #include <drogon/plugins/Plugin.h>
@@ -55,8 +56,6 @@ std::string getGitCommit();
 class HttpControllerBase;
 class HttpSimpleControllerBase;
 class WebSocketControllerBase;
-typedef std::function<void(const HttpResponsePtr &)> AdviceCallback;
-typedef std::function<void()> AdviceChainCallback;
 
 class HttpAppFramework : public trantor::NonCopyable
 {

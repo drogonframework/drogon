@@ -15,7 +15,6 @@
 #pragma once
 
 #include "impl_forwards.h"
-#include "AOPAdvice.h"
 #include <drogon/HttpAppFramework.h>
 #include <drogon/config.h>
 #include <memory>

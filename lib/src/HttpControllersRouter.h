@@ -15,7 +15,8 @@
 #pragma once
 
 #include "impl_forwards.h"
-#include "AOPAdvice.h"
+#include <drogon/drogon_callbacks.h>
+#include <drogon/HttpBinder.h>
 #include <trantor/utils/NonCopyable.h>
 #include <atomic>
 #include <memory>
@@ -23,6 +24,8 @@
 #include <regex>
 #include <string>
 #include <vector>
+#include <map>
+#include <unordered_map>
 
 namespace drogon
 {

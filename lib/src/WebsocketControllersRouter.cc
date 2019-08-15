@@ -17,7 +17,6 @@
 #include "HttpResponseImpl.h"
 #include "WebSocketConnectionImpl.h"
 #include "FiltersFunction.h"
-#include "HttpAppFrameworkImpl.h"
 #include <drogon/HttpFilter.h>
 #include <drogon/WebSocketController.h>
 #include <drogon/config.h>

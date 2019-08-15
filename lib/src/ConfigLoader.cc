@@ -13,8 +13,8 @@
  */
 
 #include "ConfigLoader.h"
+#include "HttpAppFrameworkImpl.h"
 #include <drogon/config.h>
-#include <drogon/HttpAppFramework.h>
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -130,7 +130,7 @@ static void loadLogSetting(const Json::Value &log)
     {
         auto baseName = log.get("logfile_base_name", "").asString();
         auto logSize = log.get("log_size_limit", 100000000).asUInt64();
-        drogon::app().setLogPath(logPath, baseName, logSize);
+        HttpAppFrameworkImpl::instance().setLogPath(logPath, baseName, logSize);
     }
     auto logLevel = log.get("log_level", "DEBUG").asString();
     if (logLevel == "TRACE")

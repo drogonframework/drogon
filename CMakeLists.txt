@@ -353,7 +353,8 @@ set(DROGON_HEADERS
     lib/inc/drogon/WebSocketConnection.h
     lib/inc/drogon/WebSocketController.h
     lib/inc/drogon/drogon.h
-    lib/inc/drogon/version.h)
+    lib/inc/drogon/version.h
+    lib/inc/drogon/drogon_callbacks.h)
 install(FILES ${DROGON_HEADERS} DESTINATION ${INSTALL_INCLUDE_DIR}/drogon)
 
 set(ORM_HEADERS 

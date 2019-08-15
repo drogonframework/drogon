@@ -15,6 +15,7 @@
 #pragma once
 
 #include <drogon/HttpTypes.h>
+#include <drogon/drogon_callbacks.h>
 #include <drogon/HttpResponse.h>
 #include <drogon/HttpRequest.h>
 #include <trantor/utils/NonCopyable.h>
@@ -23,7 +24,6 @@
 #include <memory>
 namespace drogon
 {
-typedef std::function<void(ReqResult, const HttpResponsePtr &)> HttpReqCallback;
 class HttpClient;
 typedef std::shared_ptr<HttpClient> HttpClientPtr;
 
