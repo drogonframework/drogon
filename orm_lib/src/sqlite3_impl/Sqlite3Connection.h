@@ -16,7 +16,6 @@
 
 #include "../DbConnection.h"
 #include "Sqlite3ResultImpl.h"
-#include <drogon/HttpTypes.h>
 #include <drogon/orm/DbClient.h>
 #include <functional>
 #include <iostream>

@@ -18,21 +18,18 @@
 #include "CacheFile.h"
 #include <drogon/utils/Utilities.h>
 #include <drogon/HttpRequest.h>
-#include <drogon/HttpResponse.h>
 #include <drogon/utils/Utilities.h>
-
 #include <trantor/net/EventLoop.h>
 #include <trantor/net/InetAddress.h>
 #include <trantor/utils/Logger.h>
 #include <trantor/utils/MsgBuffer.h>
 #include <trantor/utils/NonCopyable.h>
-
 #include <algorithm>
-#include <assert.h>
-#include <stdio.h>
 #include <string>
 #include <thread>
 #include <unordered_map>
+#include <assert.h>
+#include <stdio.h>
 
 namespace drogon
 {

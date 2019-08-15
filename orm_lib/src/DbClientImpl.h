@@ -15,14 +15,13 @@
 #pragma once
 
 #include "DbConnection.h"
-#include <drogon/HttpTypes.h>
 #include <drogon/orm/DbClient.h>
+#include <trantor/net/EventLoopThreadPool.h>
 #include <functional>
 #include <list>
 #include <memory>
 #include <string>
 #include <thread>
-#include <trantor/net/EventLoopThreadPool.h>
 #include <unordered_set>
 
 namespace drogon

@@ -13,9 +13,11 @@
  */
 
 #include "WebSocketClientImpl.h"
+#include "HttpResponseImpl.h"
 #include "HttpRequestImpl.h"
 #include "HttpResponseParser.h"
 #include "HttpUtils.h"
+#include "WebSocketConnectionImpl.h"
 #include <drogon/HttpAppFramework.h>
 #include <drogon/utils/Utilities.h>
 #include <drogon/config.h>
@@ -31,6 +33,10 @@ using namespace trantor;
 
 WebSocketClientImpl::~WebSocketClientImpl()
 {
+}
+WebSocketConnectionPtr WebSocketClientImpl::getConnection()
+{
+    return _websockConnPtr;
 }
 void WebSocketClientImpl::createTcpClient()
 {

@@ -16,8 +16,8 @@
 
 #include "../ResultImpl.h"
 
-#include <memory>
 #include <sqlite3.h>
+#include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>

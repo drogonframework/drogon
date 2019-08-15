@@ -13,6 +13,7 @@
  */
 
 #include "ListenerManager.h"
+#include "HttpServer.h"
 #include <drogon/config.h>
 #include <trantor/utils/Logger.h>
 #include <fcntl.h>

@@ -16,20 +16,11 @@
 
 #include <memory>
 #include <string>
+#include <drogon/HttpTypes.h>
 #include <trantor/net/InetAddress.h>
 #include <trantor/utils/NonCopyable.h>
 namespace drogon
 {
-enum class WebSocketMessageType
-{
-    Text,
-    Binary,
-    Ping,
-    Pong,
-    Close,
-    Unknown
-};
-
 class WebSocketConnection
 {
   public:

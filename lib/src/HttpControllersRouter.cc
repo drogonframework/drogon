@@ -12,11 +12,12 @@
  *
  */
 
-#include "HttpControllersRouter.h"
-#include "HttpAppFrameworkImpl.h"
-#include "FiltersFunction.h"
 #include "HttpRequestImpl.h"
 #include "HttpResponseImpl.h"
+#include "StaticFileRouter.h"
+#include "HttpAppFrameworkImpl.h"
+#include "FiltersFunction.h"
+#include "HttpControllersRouter.h"
 
 using namespace drogon;
 

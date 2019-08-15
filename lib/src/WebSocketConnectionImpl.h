@@ -14,9 +14,10 @@
 
 #pragma once
 
+#include "impl_forwards.h"
 #include <drogon/WebSocketConnection.h>
-#include <drogon/WebSocketController.h>
 #include <trantor/utils/NonCopyable.h>
+#include <trantor/net/TcpConnection.h>
 
 namespace drogon
 {

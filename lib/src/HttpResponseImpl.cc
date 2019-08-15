@@ -15,8 +15,8 @@
 #include "HttpResponseImpl.h"
 #include "HttpAppFrameworkImpl.h"
 #include "HttpUtils.h"
+#include "HttpViewBase.h"
 #include <drogon/HttpAppFramework.h>
-#include <drogon/HttpViewBase.h>
 #include <drogon/HttpViewData.h>
 #include <fstream>
 #include <memory>

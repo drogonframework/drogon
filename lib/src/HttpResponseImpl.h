@@ -15,15 +15,15 @@
 #pragma once
 
 #include "HttpUtils.h"
-#include <atomic>
 #include <drogon/HttpResponse.h>
 #include <drogon/utils/Utilities.h>
-#include <memory>
-#include <mutex>
-#include <string>
 #include <trantor/net/InetAddress.h>
 #include <trantor/utils/Date.h>
 #include <trantor/utils/MsgBuffer.h>
+#include <memory>
+#include <mutex>
+#include <string>
+#include <atomic>
 #include <unordered_map>
 
 namespace drogon

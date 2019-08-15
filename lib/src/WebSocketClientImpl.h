@@ -14,7 +14,7 @@
 
 #pragma once
 
-#include "WebSocketConnectionImpl.h"
+#include "impl_forwards.h"
 #include <drogon/WebSocketClient.h>
 #include <trantor/net/EventLoop.h>
 #include <trantor/net/TcpClient.h>
@@ -30,10 +30,7 @@ class WebSocketClientImpl
       public std::enable_shared_from_this<WebSocketClientImpl>
 {
   public:
-    virtual WebSocketConnectionPtr getConnection() override
-    {
-        return _websockConnPtr;
-    }
+    virtual WebSocketConnectionPtr getConnection() override;
 
     virtual void setMessageHandler(
         const std::function<void(std::string &&message,

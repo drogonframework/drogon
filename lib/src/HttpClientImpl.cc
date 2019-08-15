@@ -13,6 +13,7 @@
  */
 
 #include "HttpClientImpl.h"
+#include "HttpResponseImpl.h"
 #include "HttpAppFrameworkImpl.h"
 #include "HttpRequestImpl.h"
 #include "HttpResponseParser.h"

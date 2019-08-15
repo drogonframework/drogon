@@ -13,9 +13,11 @@
  */
 
 #include "HttpServer.h"
-
+#include "HttpRequestImpl.h"
+#include "HttpRequestParser.h"
 #include "HttpAppFrameworkImpl.h"
 #include "HttpResponseImpl.h"
+#include "WebSocketConnectionImpl.h"
 #include <drogon/HttpRequest.h>
 #include <drogon/HttpResponse.h>
 #include <drogon/utils/Utilities.h>

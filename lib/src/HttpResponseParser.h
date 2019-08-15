@@ -14,8 +14,7 @@
 
 #pragma once
 
-#include "HttpResponseImpl.h"
-#include <drogon/WebSocketConnection.h>
+#include "impl_forwards.h"
 #include <trantor/utils/NonCopyable.h>
 #include <trantor/net/TcpConnection.h>
 #include <trantor/utils/MsgBuffer.h>
@@ -56,12 +55,7 @@ class HttpResponseParser : public trantor::NonCopyable
         _parseResponseForHeadMethod = true;
     }
 
-    void reset()
-    {
-        _state = HttpResponseParseState::kExpectResponseLine;
-        _response.reset(new HttpResponseImpl);
-        _parseResponseForHeadMethod = false;
-    }
+    void reset();
 
     const HttpResponseImplPtr &responseImpl() const
     {

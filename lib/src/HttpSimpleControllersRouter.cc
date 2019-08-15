@@ -12,10 +12,14 @@
  *
  */
 
+#include "HttpRequestImpl.h"
+#include "HttpResponseImpl.h"
 #include "HttpSimpleControllersRouter.h"
+#include "HttpControllersRouter.h"
 #include "AOPAdvice.h"
 #include "FiltersFunction.h"
 #include "HttpAppFrameworkImpl.h"
+#include <drogon/HttpSimpleController.h>
 #include <drogon/utils/HttpConstraint.h>
 
 using namespace drogon;

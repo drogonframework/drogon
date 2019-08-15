@@ -25,3 +25,9 @@
 #include <drogon/HttpController.h>
 #include <drogon/HttpSimpleController.h>
 #include <drogon/utils/Utilities.h>
+#include <drogon/MultiPart.h>
+#include <drogon/plugins/Plugin.h>
+#include <drogon/Cookie.h>
+#include <drogon/Session.h>
+#include <drogon/UploadFile.h>
+#include <drogon/orm/DbClient.h>

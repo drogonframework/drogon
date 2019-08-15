@@ -16,7 +16,6 @@
 
 #include <drogon/utils/string_view.h>
 #include <drogon/HttpTypes.h>
-#include <drogon/WebSocketConnection.h>
 #include <string>
 #include <trantor/utils/MsgBuffer.h>
 

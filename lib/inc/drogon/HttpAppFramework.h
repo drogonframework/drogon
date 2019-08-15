@@ -14,22 +14,20 @@
 
 #pragma once
 
-#include <drogon/orm/DbClient.h>
 #include <drogon/utils/HttpConstraint.h>
 #include <drogon/CacheMap.h>
 #include <drogon/DrObject.h>
 #include <drogon/HttpBinder.h>
-#include <drogon/HttpClient.h>
-#include <drogon/HttpFilter.h>
-#include <drogon/HttpRequest.h>
-#include <drogon/HttpResponse.h>
 #include <drogon/IntranetIpFilter.h>
 #include <drogon/LocalHostFilter.h>
 #include <drogon/MultiPart.h>
 #include <drogon/NotFound.h>
-#include <drogon/plugins/Plugin.h>
 #include <drogon/utils/ClassTraits.h>
 #include <drogon/utils/Utilities.h>
+#include <drogon/plugins/Plugin.h>
+#include <drogon/HttpRequest.h>
+#include <drogon/HttpResponse.h>
+#include <drogon/orm/DbClient.h>
 #include <trantor/net/Resolver.h>
 #include <trantor/net/EventLoop.h>
 #include <trantor/utils/NonCopyable.h>

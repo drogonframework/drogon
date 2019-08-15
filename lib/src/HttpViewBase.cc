@@ -12,9 +12,9 @@
  *
  */
 
+#include "HttpViewBase.h"
 #include <drogon/DrClassMap.h>
-#include <drogon/HttpViewBase.h>
-
+#include <drogon/HttpResponse.h>
 #include <drogon/DrTemplateBase.h>
 #include <memory>
 #include <trantor/utils/Logger.h>

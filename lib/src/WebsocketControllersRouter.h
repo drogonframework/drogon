@@ -13,17 +13,16 @@
  */
 
 #pragma once
-#include "HttpRequestImpl.h"
-#include "HttpResponseImpl.h"
-#include "WebSocketConnectionImpl.h"
-#include <drogon/HttpFilter.h>
-#include <drogon/WebSocketController.h>
+
+#include "impl_forwards.h"
+#include <drogon/HttpTypes.h>
+#include <trantor/utils/NonCopyable.h>
 #include <memory>
 #include <mutex>
 #include <regex>
 #include <string>
-#include <trantor/utils/NonCopyable.h>
 #include <vector>
+#include <unordered_map>
 
 namespace drogon
 {

@@ -13,7 +13,7 @@
  */
 
 #pragma once
-#include "HttpRequestImpl.h"
+#include "impl_forwards.h"
 #include <drogon/HttpAppFramework.h>
 
 namespace drogon

@@ -13,11 +13,20 @@
  */
 
 #include "HttpResponseParser.h"
+#include "HttpResponseImpl.h"
 #include <iostream>
 #include <trantor/utils/Logger.h>
 #include <trantor/utils/MsgBuffer.h>
 using namespace trantor;
 using namespace drogon;
+
+void HttpResponseParser::reset()
+{
+    _state = HttpResponseParseState::kExpectResponseLine;
+    _response.reset(new HttpResponseImpl);
+    _parseResponseForHeadMethod = false;
+}
+
 HttpResponseParser::HttpResponseParser()
     : _state(HttpResponseParseState::kExpectResponseLine),
       _response(new HttpResponseImpl)

@@ -14,11 +14,10 @@
 
 #pragma once
 
-#include <trantor/utils/NonCopyable.h>
-#include <trantor/net/EventLoop.h>
 #include <drogon/Session.h>
 #include <drogon/CacheMap.h>
-
+#include <trantor/utils/NonCopyable.h>
+#include <trantor/net/EventLoop.h>
 #include <memory>
 #include <string>
 #include <mutex>

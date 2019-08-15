@@ -14,8 +14,8 @@
 
 #pragma once
 
+#include "impl_forwards.h"
 #include <drogon/DrObject.h>
-#include <drogon/HttpResponse.h>
 #include <drogon/HttpViewData.h>
 #include <map>
 #include <string>

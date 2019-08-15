@@ -247,7 +247,7 @@ else()
     set(DROGON_SOURCES ${DROGON_SOURCES} lib/src/DbClientManagerSkipped.cc)
 endif()
 
-add_library(drogon ${DROGON_SOURCES})
+add_library(drogon STATIC ${DROGON_SOURCES})
 
 set_property(TARGET drogon PROPERTY CXX_STANDARD ${DROGON_CXX_STANDARD})
 set_property(TARGET drogon PROPERTY CXX_STANDARD_REQUIRED ON)
@@ -343,7 +343,6 @@ set(DROGON_HEADERS
     lib/inc/drogon/HttpResponse.h
     lib/inc/drogon/HttpSimpleController.h
     lib/inc/drogon/HttpTypes.h
-    lib/inc/drogon/HttpViewBase.h
     lib/inc/drogon/HttpViewData.h
     lib/inc/drogon/IntranetIpFilter.h
     lib/inc/drogon/LocalHostFilter.h

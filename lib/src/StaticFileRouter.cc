@@ -13,6 +13,9 @@
  */
 
 #include "StaticFileRouter.h"
+#include "HttpAppFrameworkImpl.h"
+#include "HttpRequestImpl.h"
+#include "HttpResponseImpl.h"
 
 #include <fstream>
 #include <iostream>
@@ -22,6 +25,17 @@
 #include <sys/stat.h>
 
 using namespace drogon;
+
+void StaticFileRouter::init()
+{
+    _responseCachingMap =
+        std::unique_ptr<CacheMap<std::string, HttpResponsePtr>>(
+            new CacheMap<std::string, HttpResponsePtr>(
+                drogon::app().getLoop(),
+                1.0,
+                4,
+                50));  // Max timeout up to about 70 days;
+}
 
 void StaticFileRouter::route(
     const HttpRequestImplPtr &req,
