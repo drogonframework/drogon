@@ -16,6 +16,9 @@
 #include "impl_forwards.h"
 #include <drogon/drogon_callbacks.h>
 #include <deque>
+#include <functional>
+#include <vector>
+#include <memory>
 
 namespace drogon
 {
