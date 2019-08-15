@@ -24,9 +24,6 @@
 
 namespace drogon
 {
-typedef std::function<void(const HttpRequestImplPtr &,
-                           std::function<void(const HttpResponsePtr &)> &&)>
-    HttpAsyncCallback;
 class ListenerManager : public trantor::NonCopyable
 {
   public:
