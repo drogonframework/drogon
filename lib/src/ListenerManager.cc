@@ -14,6 +14,7 @@
 
 #include "ListenerManager.h"
 #include "HttpServer.h"
+#include <drogon/HttpAppFramework.h>
 #include <drogon/config.h>
 #include <trantor/utils/Logger.h>
 #include <fcntl.h>
