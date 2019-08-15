@@ -32,7 +32,7 @@ void HttpControllersRouter::doWhenNoHandlerFound(
         !HttpAppFrameworkImpl::instance().getHomePage().empty())
     {
         req->setPath("/" + HttpAppFrameworkImpl::instance().getHomePage());
-        drogon::app().forward(req, std::move(callback));
+        HttpAppFrameworkImpl::instance().forward(req, std::move(callback));
         return;
     }
     _fileRouter.route(req,

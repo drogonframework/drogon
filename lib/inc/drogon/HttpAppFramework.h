@@ -102,7 +102,7 @@ class HttpAppFramework : public trantor::NonCopyable
      * User can run some timer tasks or other tasks in this loop;
      * This method can be call in any thread.
      */
-    virtual trantor::EventLoop *getLoop() = 0;
+    virtual trantor::EventLoop *getLoop() const = 0;
 
     /// Set custom 404 page
     /**

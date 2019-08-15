@@ -582,7 +582,7 @@ void HttpAppFrameworkImpl::onAsyncRequest(
     }
 }
 
-trantor::EventLoop *HttpAppFrameworkImpl::getLoop()
+trantor::EventLoop *HttpAppFrameworkImpl::getLoop() const
 {
     static trantor::EventLoop loop;
     return &loop;
