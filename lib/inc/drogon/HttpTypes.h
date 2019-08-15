@@ -118,4 +118,14 @@ enum class ReqResult
     Timeout
 };
 
+enum class WebSocketMessageType
+{
+    Text,
+    Binary,
+    Ping,
+    Pong,
+    Close,
+    Unknown
+};
+
 }  // namespace drogon

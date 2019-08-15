@@ -13,21 +13,20 @@
  */
 
 #pragma once
-#include "HttpControllersRouter.h"
-#include "HttpRequestImpl.h"
-#include "HttpResponseImpl.h"
+
+#include "impl_forwards.h"
+#include <drogon/drogon_callbacks.h>
 #include <drogon/utils/HttpConstraint.h>
+#include <trantor/utils/NonCopyable.h>
 #include <atomic>
-#include <drogon/HttpBinder.h>
-#include <drogon/HttpFilter.h>
-#include <drogon/HttpSimpleController.h>
 #include <memory>
 #include <mutex>
 #include <regex>
 #include <shared_mutex>
 #include <string>
-#include <trantor/utils/NonCopyable.h>
 #include <vector>
+#include <map>
+#include <unordered_map>
 
 namespace drogon
 {

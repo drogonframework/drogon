@@ -14,11 +14,11 @@
 #pragma once
 
 #include "../ResultImpl.h"
+#include <trantor/utils/Logger.h>
 #include <algorithm>
 #include <memory>
 #include <mysql.h>
 #include <string>
-#include <trantor/utils/Logger.h>
 #include <unordered_map>
 #include <vector>
 

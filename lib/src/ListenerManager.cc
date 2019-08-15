@@ -13,6 +13,8 @@
  */
 
 #include "ListenerManager.h"
+#include "HttpServer.h"
+#include "HttpAppFrameworkImpl.h"
 #include <drogon/config.h>
 #include <trantor/utils/Logger.h>
 #include <fcntl.h>
@@ -87,7 +89,7 @@ std::vector<trantor::EventLoop *> ListenerManager::createListeners(
             {
                 DrogonFileLocker lock;
                 // Check whether the port is in use.
-                TcpServer server(app().getLoop(),
+                TcpServer server(HttpAppFrameworkImpl::instance().getLoop(),
                                  InetAddress(ip, listener._port, isIpv6),
                                  "drogonPortTest",
                                  true,

@@ -16,8 +16,6 @@
 
 #include <drogon/DrClassMap.h>
 #include <drogon/DrObject.h>
-#include <drogon/HttpRequest.h>
-#include <drogon/HttpResponse.h>
 #include <drogon/utils/FunctionTraits.h>
 #include <list>
 #include <memory>

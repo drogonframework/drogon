@@ -13,9 +13,10 @@
  */
 
 #include "HttpClientImpl.h"
-#include "HttpAppFrameworkImpl.h"
+#include "HttpResponseImpl.h"
 #include "HttpRequestImpl.h"
 #include "HttpResponseParser.h"
+#include "HttpAppFrameworkImpl.h"
 #include <drogon/config.h>
 #include <algorithm>
 #include <stdlib.h>
@@ -441,7 +442,7 @@ HttpClientPtr HttpClient::newHttpClient(const std::string &ip,
 {
     bool isIpv6 = ip.find(":") == std::string::npos ? false : true;
     return std::make_shared<HttpClientImpl>(
-        loop == nullptr ? app().getLoop() : loop,
+        loop == nullptr ? HttpAppFrameworkImpl::instance().getLoop() : loop,
         trantor::InetAddress(ip, port, isIpv6),
         useSSL);
 }
@@ -449,9 +450,9 @@ HttpClientPtr HttpClient::newHttpClient(const std::string &ip,
 HttpClientPtr HttpClient::newHttpClient(const std::string &hostString,
                                         trantor::EventLoop *loop)
 {
-    return std::make_shared<HttpClientImpl>(loop == nullptr ? app().getLoop()
-                                                            : loop,
-                                            hostString);
+    return std::make_shared<HttpClientImpl>(
+        loop == nullptr ? HttpAppFrameworkImpl::instance().getLoop() : loop,
+        hostString);
 }
 
 void HttpClientImpl::onError(ReqResult result)

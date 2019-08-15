@@ -18,12 +18,11 @@
 #include <drogon/utils/any.h>
 #include <trantor/utils/Logger.h>
 #include <trantor/utils/MsgBuffer.h>
-
 #include <sstream>
-#include <stdarg.h>
-#include <stdio.h>
 #include <string>
 #include <unordered_map>
+#include <stdarg.h>
+#include <stdio.h>
 
 namespace drogon
 {

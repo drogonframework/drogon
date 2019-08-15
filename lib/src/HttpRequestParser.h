@@ -14,9 +14,8 @@
 
 #pragma once
 
-#include "HttpRequestImpl.h"
-#include "WebSocketConnectionImpl.h"
-#include <drogon/HttpResponse.h>
+#include "impl_forwards.h"
+#include <drogon/HttpTypes.h>
 #include <trantor/utils/NonCopyable.h>
 #include <trantor/net/TcpConnection.h>
 #include <trantor/utils/MsgBuffer.h>
@@ -47,11 +46,7 @@ class HttpRequestParser : public trantor::NonCopyable
         return _state == HttpRequestParseState_GotAll;
     }
 
-    void reset()
-    {
-        _state = HttpRequestParseState_ExpectMethod;
-        _request.reset(new HttpRequestImpl(_loop));
-    }
+    void reset();
 
     const HttpRequestImplPtr &requestImpl() const
     {

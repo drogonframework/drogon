@@ -13,6 +13,9 @@
  */
 
 #include "StaticFileRouter.h"
+#include "HttpAppFrameworkImpl.h"
+#include "HttpRequestImpl.h"
+#include "HttpResponseImpl.h"
 
 #include <fstream>
 #include <iostream>
@@ -22,6 +25,17 @@
 #include <sys/stat.h>
 
 using namespace drogon;
+
+void StaticFileRouter::init()
+{
+    _responseCachingMap =
+        std::unique_ptr<CacheMap<std::string, HttpResponsePtr>>(
+            new CacheMap<std::string, HttpResponsePtr>(
+                HttpAppFrameworkImpl::instance().getLoop(),
+                1.0,
+                4,
+                50));  // Max timeout up to about 70 days;
+}
 
 void StaticFileRouter::route(
     const HttpRequestImplPtr &req,
@@ -38,7 +52,8 @@ void StaticFileRouter::route(
         if (_fileTypeSet.find(filetype) != _fileTypeSet.end())
         {
             // LOG_INFO << "file query!" << path;
-            std::string filePath = drogon::app().getDocumentRoot() + path;
+            std::string filePath =
+                HttpAppFrameworkImpl::instance().getDocumentRoot() + path;
             if (filePath.find("/../") != std::string::npos)
             {
                 // Downloading files from the parent folder is forbidden.

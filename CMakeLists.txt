@@ -104,7 +104,6 @@ set(DROGON_SOURCES  lib/src/AOPAdvice.cc
                     lib/src/HttpServer.cc
                     lib/src/HttpSimpleControllersRouter.cc
                     lib/src/HttpUtils.cc
-                    lib/src/HttpViewBase.cc
                     lib/src/HttpViewData.cc
                     lib/src/IntranetIpFilter.cc
                     lib/src/ListenerManager.cc
@@ -247,7 +246,7 @@ else()
     set(DROGON_SOURCES ${DROGON_SOURCES} lib/src/DbClientManagerSkipped.cc)
 endif()
 
-add_library(drogon ${DROGON_SOURCES})
+add_library(drogon STATIC ${DROGON_SOURCES})
 
 set_property(TARGET drogon PROPERTY CXX_STANDARD ${DROGON_CXX_STANDARD})
 set_property(TARGET drogon PROPERTY CXX_STANDARD_REQUIRED ON)
@@ -343,7 +342,6 @@ set(DROGON_HEADERS
     lib/inc/drogon/HttpResponse.h
     lib/inc/drogon/HttpSimpleController.h
     lib/inc/drogon/HttpTypes.h
-    lib/inc/drogon/HttpViewBase.h
     lib/inc/drogon/HttpViewData.h
     lib/inc/drogon/IntranetIpFilter.h
     lib/inc/drogon/LocalHostFilter.h
@@ -355,7 +353,8 @@ set(DROGON_HEADERS
     lib/inc/drogon/WebSocketConnection.h
     lib/inc/drogon/WebSocketController.h
     lib/inc/drogon/drogon.h
-    lib/inc/drogon/version.h)
+    lib/inc/drogon/version.h
+    lib/inc/drogon/drogon_callbacks.h)
 install(FILES ${DROGON_HEADERS} DESTINATION ${INSTALL_INCLUDE_DIR}/drogon)
 
 set(ORM_HEADERS 

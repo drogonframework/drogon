@@ -16,15 +16,15 @@
 
 #include <drogon/config.h>
 #include <drogon/orm/DbClient.h>
+#include <trantor/net/EventLoop.h>
+#include <trantor/net/inner/Channel.h>
+#include <trantor/utils/NonCopyable.h>
 #include <functional>
 #include <iostream>
 #include <memory>
 #include <mutex>
 #include <shared_mutex>
 #include <string>
-#include <trantor/net/EventLoop.h>
-#include <trantor/net/inner/Channel.h>
-#include <trantor/utils/NonCopyable.h>
 
 namespace drogon
 {

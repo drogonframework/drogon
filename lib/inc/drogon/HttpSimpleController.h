@@ -17,9 +17,9 @@
 #include <drogon/DrObject.h>
 #include <drogon/utils/HttpConstraint.h>
 #include <drogon/HttpAppFramework.h>
+#include <trantor/utils/Logger.h>
 #include <iostream>
 #include <string>
-#include <trantor/utils/Logger.h>
 #include <vector>
 #define PATH_LIST_BEGIN           \
     static void initPathRouting() \

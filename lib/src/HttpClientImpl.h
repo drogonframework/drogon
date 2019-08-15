@@ -14,15 +14,15 @@
 
 #pragma once
 
-#include "HttpResponseImpl.h"
+#include "impl_forwards.h"
 #include <drogon/HttpClient.h>
 #include <drogon/Cookie.h>
-#include <mutex>
-#include <queue>
-#include <vector>
 #include <trantor/net/EventLoop.h>
 #include <trantor/net/TcpClient.h>
 #include <trantor/net/Resolver.h>
+#include <mutex>
+#include <queue>
+#include <vector>
 
 namespace drogon
 {

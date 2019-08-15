@@ -14,16 +14,16 @@
 
 #pragma once
 
-#include <cxxabi.h>
 #include <drogon/utils/ClassTraits.h>
+#include <trantor/utils/Logger.h>
 #include <functional>
 #include <memory>
 #include <mutex>
-#include <stdio.h>
 #include <thread>
-#include <trantor/utils/Logger.h>
 #include <unordered_map>
 #include <vector>
+#include <cxxabi.h>
+#include <stdio.h>
 
 namespace drogon
 {

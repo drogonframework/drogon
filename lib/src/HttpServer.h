@@ -14,30 +14,16 @@
 
 #pragma once
 
-#include "HttpRequestImpl.h"
-#include "WebSocketConnectionImpl.h"
-#include "HttpRequestParser.h"
-#include <drogon/WebSocketController.h>
+#include "impl_forwards.h"
 #include <trantor/net/TcpServer.h>
 #include <trantor/net/callbacks.h>
 #include <trantor/utils/NonCopyable.h>
-
 #include <functional>
 #include <string>
 #include <vector>
 
 namespace drogon
 {
-class HttpRequest;
-class HttpResponse;
-typedef std::shared_ptr<HttpRequest> HttpRequestPtr;
-typedef std::function<void(const HttpRequestImplPtr &,
-                           std::function<void(const HttpResponsePtr &)> &&)>
-    HttpAsyncCallback;
-typedef std::function<void(const HttpRequestImplPtr &,
-                           std::function<void(const HttpResponsePtr &)> &&,
-                           const WebSocketConnectionImplPtr &)>
-    WebSocketNewAsyncCallback;
 class HttpServer : trantor::NonCopyable
 {
   public:

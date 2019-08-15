@@ -14,9 +14,10 @@
 
 #pragma once
 
-#include "HttpServer.h"
+#include "impl_forwards.h"
 #include <trantor/utils/NonCopyable.h>
-#include <trantor/net/EventLoopThread.h>
+#include <trantor/net/EventLoopThreadPool.h>
+#include <trantor/net/callbacks.h>
 #include <string>
 #include <vector>
 #include <memory>

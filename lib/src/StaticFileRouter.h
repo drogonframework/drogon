@@ -14,10 +14,8 @@
 
 #pragma once
 
-#include "HttpRequestImpl.h"
-#include "HttpResponseImpl.h"
+#include "impl_forwards.h"
 #include <drogon/CacheMap.h>
-#include <drogon/HttpAppFramework.h>
 #include <functional>
 #include <set>
 #include <string>
@@ -45,16 +43,7 @@ class StaticFileRouter
     {
         _gzipStaticFlag = useGzipStatic;
     }
-    void init()
-    {
-        _responseCachingMap =
-            std::unique_ptr<CacheMap<std::string, HttpResponsePtr>>(
-                new CacheMap<std::string, HttpResponsePtr>(
-                    drogon::app().getLoop(),
-                    1.0,
-                    4,
-                    50));  // Max timeout up to about 70 days;
-    }
+    void init();
 
   private:
     std::set<std::string> _fileTypeSet = {"html",

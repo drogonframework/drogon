@@ -14,19 +14,18 @@
  */
 #pragma once
 
-#include <drogon/HttpRequest.h>
-#include <drogon/HttpResponse.h>
 #include <drogon/HttpTypes.h>
+#include <drogon/drogon_callbacks.h>
+#include <drogon/HttpResponse.h>
+#include <drogon/HttpRequest.h>
+#include <trantor/utils/NonCopyable.h>
+#include <trantor/net/EventLoop.h>
 #include <functional>
 #include <memory>
-#include <trantor/net/EventLoop.h>
-#include <trantor/utils/NonCopyable.h>
 namespace drogon
 {
 class HttpClient;
 typedef std::shared_ptr<HttpClient> HttpClientPtr;
-
-typedef std::function<void(ReqResult, const HttpResponsePtr &)> HttpReqCallback;
 
 /// Asynchronous http client
 /**

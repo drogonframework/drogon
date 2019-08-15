@@ -16,14 +16,14 @@
 
 #include "../DbConnection.h"
 #include <drogon/orm/DbClient.h>
+#include <trantor/net/EventLoop.h>
+#include <trantor/net/inner/Channel.h>
+#include <trantor/utils/NonCopyable.h>
 #include <functional>
 #include <iostream>
 #include <memory>
 #include <mysql.h>
 #include <string>
-#include <trantor/net/EventLoop.h>
-#include <trantor/net/inner/Channel.h>
-#include <trantor/utils/NonCopyable.h>
 
 namespace drogon
 {

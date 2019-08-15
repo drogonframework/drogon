@@ -17,6 +17,7 @@
 #include <drogon/HttpRequest.h>
 #include <drogon/HttpResponse.h>
 #include <drogon/WebSocketConnection.h>
+#include <drogon/HttpTypes.h>
 #include <functional>
 #include <memory>
 #include <string>

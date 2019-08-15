@@ -13,10 +13,12 @@
  */
 
 #include "HttpControllersRouter.h"
-#include "HttpAppFrameworkImpl.h"
-#include "FiltersFunction.h"
+#include "AOPAdvice.h"
 #include "HttpRequestImpl.h"
 #include "HttpResponseImpl.h"
+#include "StaticFileRouter.h"
+#include "HttpAppFrameworkImpl.h"
+#include "FiltersFunction.h"
 
 using namespace drogon;
 
@@ -30,7 +32,7 @@ void HttpControllersRouter::doWhenNoHandlerFound(
         !HttpAppFrameworkImpl::instance().getHomePage().empty())
     {
         req->setPath("/" + HttpAppFrameworkImpl::instance().getHomePage());
-        drogon::app().forward(req, std::move(callback));
+        HttpAppFrameworkImpl::instance().forward(req, std::move(callback));
         return;
     }
     _fileRouter.route(req,

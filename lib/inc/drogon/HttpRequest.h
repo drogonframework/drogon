@@ -19,10 +19,10 @@
 #include <drogon/Session.h>
 #include <drogon/UploadFile.h>
 #include <json/json.h>
-#include <memory>
-#include <string>
 #include <trantor/net/InetAddress.h>
 #include <trantor/utils/Date.h>
+#include <memory>
+#include <string>
 #include <unordered_map>
 
 namespace drogon

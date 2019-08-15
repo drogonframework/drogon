@@ -14,17 +14,17 @@
 
 #pragma once
 
-#include <assert.h>
+#include <trantor/net/EventLoop.h>
+#include <trantor/utils/Logger.h>
 #include <atomic>
 #include <deque>
 #include <map>
 #include <mutex>
 #include <set>
-#include <trantor/net/EventLoop.h>
-#include <trantor/utils/Logger.h>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
+#include <assert.h>
 
 #define WHEELS_NUM 4
 #define BUCKET_NUM_PER_WHEEL 200

@@ -15,6 +15,7 @@
 #pragma once
 
 #include <drogon/DrObject.h>
+#include <drogon/drogon_callbacks.h>
 #include <drogon/HttpRequest.h>
 #include <drogon/HttpResponse.h>
 #include <memory>
@@ -23,8 +24,6 @@
 
 namespace drogon
 {
-typedef std::function<void(const HttpResponsePtr &)> FilterCallback;
-typedef std::function<void()> FilterChainCallback;
 class HttpFilterBase : public virtual DrObjectBase
 {
   public:

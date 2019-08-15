@@ -1,5 +1,7 @@
 
 #include "AOPAdvice.h"
+#include "HttpRequestImpl.h"
+#include "HttpResponseImpl.h"
 
 namespace drogon
 {

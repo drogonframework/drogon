@@ -13,6 +13,7 @@
  */
 
 #include "FiltersFunction.h"
+#include "HttpRequestImpl.h"
 #include "HttpResponseImpl.h"
 #include <drogon/HttpFilter.h>
 

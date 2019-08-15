@@ -17,12 +17,13 @@
 #include <drogon/DrObject.h>
 #include <drogon/HttpAppFramework.h>
 #include <drogon/WebSocketConnection.h>
+#include <drogon/HttpTypes.h>
+#include <trantor/utils/Logger.h>
 #include <iostream>
 #include <memory>
 #include <string>
-#include <trantor/net/TcpConnection.h>
-#include <trantor/utils/Logger.h>
 #include <vector>
+
 #define WS_PATH_LIST_BEGIN                                               \
     static std::vector<std::pair<std::string, std::vector<std::string>>> \
     __paths()                                                            \

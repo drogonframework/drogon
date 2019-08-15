@@ -15,6 +15,7 @@
 #include "HttpRequestParser.h"
 #include "HttpAppFrameworkImpl.h"
 #include "HttpResponseImpl.h"
+#include "HttpRequestImpl.h"
 #include "HttpUtils.h"
 #include <drogon/HttpTypes.h>
 #include <iostream>
@@ -82,7 +83,11 @@ bool HttpRequestParser::processRequestLine(const char *begin, const char *end)
     }
     return succeed;
 }
-
+void HttpRequestParser::reset()
+{
+    _state = HttpRequestParseState_ExpectMethod;
+    _request.reset(new HttpRequestImpl(_loop));
+}
 // Return false if any error
 bool HttpRequestParser::parseRequest(MsgBuffer *buf)
 {

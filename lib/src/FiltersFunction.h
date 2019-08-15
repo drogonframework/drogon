@@ -14,8 +14,7 @@
 
 #pragma once
 
-#include "HttpRequestImpl.h"
-#include <drogon/HttpFilter.h>
+#include "impl_forwards.h"
 #include <memory>
 #include <string>
 #include <vector>

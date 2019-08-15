@@ -31,11 +31,6 @@ std::shared_ptr<DrTemplateBase> DrTemplateBase::newTemplate(
             templateName = templateName.substr(0, pos);
         }
     }
-    auto obj = std::shared_ptr<DrObjectBase>(
-        drogon::DrClassMap::newObject(templateName));
-    if (obj)
-    {
-        return std::dynamic_pointer_cast<DrTemplateBase>(obj);
-    }
-    return nullptr;
+    return std::dynamic_pointer_cast<DrTemplateBase>(
+        drogon::DrClassMap::getSingleInstance(templateName));
 }

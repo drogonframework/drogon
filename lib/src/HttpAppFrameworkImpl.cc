@@ -13,9 +13,23 @@
  */
 
 #include "HttpAppFrameworkImpl.h"
+#include "HttpRequestImpl.h"
+#include "HttpClientImpl.h"
+#include "HttpResponseImpl.h"
+#include "WebSocketConnectionImpl.h"
+#include "StaticFileRouter.h"
+#include "HttpSimpleControllersRouter.h"
+#include "HttpControllersRouter.h"
+#include "WebsocketControllersRouter.h"
+#include "HttpClientImpl.h"
 #include "AOPAdvice.h"
 #include "ConfigLoader.h"
 #include "HttpServer.h"
+#include "PluginsManager.h"
+#include "ListenerManager.h"
+#include "SharedLibManager.h"
+#include "SessionManager.h"
+#include "DbClientManager.h"
 #include <drogon/config.h>
 #include <algorithm>
 #include <drogon/version.h>
@@ -47,6 +61,29 @@
 using namespace drogon;
 using namespace std::placeholders;
 
+HttpAppFrameworkImpl::HttpAppFrameworkImpl()
+    : _staticFileRouterPtr(new (StaticFileRouter)),
+      _httpCtrlsRouterPtr(new HttpControllersRouter(*_staticFileRouterPtr,
+                                                    _postRoutingAdvices,
+                                                    _postRoutingObservers,
+                                                    _preHandlingAdvices,
+                                                    _preHandlingObservers,
+                                                    _postHandlingAdvices)),
+      _httpSimpleCtrlsRouterPtr(
+          new HttpSimpleControllersRouter(*_httpCtrlsRouterPtr,
+                                          _postRoutingAdvices,
+                                          _postRoutingObservers,
+                                          _preHandlingAdvices,
+                                          _preHandlingObservers,
+                                          _postHandlingAdvices)),
+      _websockCtrlsRouterPtr(new WebsocketControllersRouter),
+      _listenerManagerPtr(new ListenerManager),
+      _pluginsManagerPtr(new PluginsManager),
+      _dbClientManagerPtr(new orm::DbClientManager),
+      _uploadPath(_rootPath + "uploads"),
+      _connectionNum(0)
+{
+}
 /// Make sure that the main event loop is initialized in the main thread.
 drogon::InitBeforeMainFunction drogon::HttpAppFrameworkImpl::_initFirst([]() {
     HttpAppFrameworkImpl::instance().getLoop()->runInLoop([]() {
@@ -98,7 +135,24 @@ static void godaemon(void)
 
     return;
 }
-
+HttpAppFrameworkImpl::~HttpAppFrameworkImpl() noexcept
+{
+    // Destroy the following objects before _loop destruction
+    _sharedLibManagerPtr.reset();
+    _sessionManagerPtr.reset();
+}
+void HttpAppFrameworkImpl::setStaticFilesCacheTime(int cacheTime)
+{
+    _staticFileRouterPtr->setStaticFilesCacheTime(cacheTime);
+}
+int HttpAppFrameworkImpl::staticFilesCacheTime() const
+{
+    return _staticFileRouterPtr->staticFilesCacheTime();
+}
+void HttpAppFrameworkImpl::setGzipStatic(bool useGzipStatic)
+{
+    _staticFileRouterPtr->setGzipStatic(useGzipStatic);
+}
 void HttpAppFrameworkImpl::enableDynamicViewsLoading(
     const std::vector<std::string> &libPaths)
 {
@@ -125,7 +179,7 @@ void HttpAppFrameworkImpl::enableDynamicViewsLoading(
 }
 void HttpAppFrameworkImpl::setFileTypes(const std::vector<std::string> &types)
 {
-    _staticFileRouter.setFileTypes(types);
+    _staticFileRouterPtr->setFileTypes(types);
 }
 
 void HttpAppFrameworkImpl::registerWebSocketController(
@@ -134,9 +188,9 @@ void HttpAppFrameworkImpl::registerWebSocketController(
     const std::vector<std::string> &filters)
 {
     assert(!_running);
-    _websockCtrlsRouter.registerWebSocketController(pathName,
-                                                    ctrlName,
-                                                    filters);
+    _websockCtrlsRouterPtr->registerWebSocketController(pathName,
+                                                        ctrlName,
+                                                        filters);
 }
 void HttpAppFrameworkImpl::registerHttpSimpleController(
     const std::string &pathName,
@@ -144,9 +198,9 @@ void HttpAppFrameworkImpl::registerHttpSimpleController(
     const std::vector<internal::HttpConstraint> &filtersAndMethods)
 {
     assert(!_running);
-    _httpSimpleCtrlsRouter.registerHttpSimpleController(pathName,
-                                                        ctrlName,
-                                                        filtersAndMethods);
+    _httpSimpleCtrlsRouterPtr->registerHttpSimpleController(pathName,
+                                                            ctrlName,
+                                                            filtersAndMethods);
 }
 
 void HttpAppFrameworkImpl::registerHttpController(
@@ -159,13 +213,26 @@ void HttpAppFrameworkImpl::registerHttpController(
     assert(!pathPattern.empty());
     assert(binder);
     assert(!_running);
-    _httpCtrlsRouter.addHttpPath(
+    _httpCtrlsRouterPtr->addHttpPath(
         pathPattern, binder, validMethods, filters, handlerName);
 }
 void HttpAppFrameworkImpl::setThreadNum(size_t threadNum)
 {
     assert(threadNum >= 1);
     _threadNum = threadNum;
+}
+PluginBase *HttpAppFrameworkImpl::getPlugin(const std::string &name)
+{
+    return _pluginsManagerPtr->getPlugin(name);
+}
+void HttpAppFrameworkImpl::addListener(const std::string &ip,
+                                       uint16_t port,
+                                       bool useSSL,
+                                       const std::string &certFile,
+                                       const std::string &keyFile)
+{
+    assert(!_running);
+    _listenerManagerPtr->addListener(ip, port, useSSL, certFile, keyFile);
 }
 void HttpAppFrameworkImpl::setMaxConnectionNum(size_t maxConnections)
 {
@@ -297,7 +364,7 @@ void HttpAppFrameworkImpl::run()
             new SharedLibManager(getLoop(), _libFilePaths));
     }
     // Create all listeners.
-    auto ioLoops = _listenerManager.createListeners(
+    auto ioLoops = _listenerManagerPtr->createListeners(
         std::bind(&HttpAppFrameworkImpl::onAsyncRequest, this, _1, _2),
         std::bind(&HttpAppFrameworkImpl::onNewWebsockRequest, this, _1, _2, _3),
         std::bind(&HttpAppFrameworkImpl::onConnection, this, _1),
@@ -308,12 +375,12 @@ void HttpAppFrameworkImpl::run()
     // A fast database client instance should be created in the main event loop,
     // so put the main loop into ioLoops.
     ioLoops.push_back(getLoop());
-    _dbClientManager.createDbClients(ioLoops);
+    _dbClientManagerPtr->createDbClients(ioLoops);
     ioLoops.pop_back();
-    _httpCtrlsRouter.init(ioLoops);
-    _httpSimpleCtrlsRouter.init(ioLoops);
-    _staticFileRouter.init();
-    _websockCtrlsRouter.init();
+    _httpCtrlsRouterPtr->init(ioLoops);
+    _httpSimpleCtrlsRouterPtr->init(ioLoops);
+    _staticFileRouterPtr->init();
+    _websockCtrlsRouterPtr->init();
 
     if (_useSession)
     {
@@ -325,14 +392,14 @@ void HttpAppFrameworkImpl::run()
     const auto &pluginConfig = _jsonConfig["plugins"];
     if (!pluginConfig.isNull())
     {
-        _pluginsManager.initializeAllPlugins(pluginConfig,
-                                             [](PluginBase *plugin) {
-                                                 // TODO: new plugin
-                                             });
+        _pluginsManagerPtr->initializeAllPlugins(pluginConfig,
+                                                 [](PluginBase *plugin) {
+                                                     // TODO: new plugin
+                                                 });
     }
 
     // Let listener event loops run when everything is ready.
-    _listenerManager.startListening();
+    _listenerManagerPtr->startListening();
     getLoop()->loop();
 }
 
@@ -425,16 +492,16 @@ void HttpAppFrameworkImpl::onNewWebsockRequest(
     std::function<void(const HttpResponsePtr &)> &&callback,
     const WebSocketConnectionImplPtr &wsConnPtr)
 {
-    _websockCtrlsRouter.route(req, std::move(callback), wsConnPtr);
+    _websockCtrlsRouterPtr->route(req, std::move(callback), wsConnPtr);
 }
 
 std::vector<std::tuple<std::string, HttpMethod, std::string>>
 HttpAppFrameworkImpl::getHandlersInfo() const
 {
-    auto ret = _httpSimpleCtrlsRouter.getHandlersInfo();
-    auto v = _httpCtrlsRouter.getHandlersInfo();
+    auto ret = _httpSimpleCtrlsRouterPtr->getHandlersInfo();
+    auto v = _httpCtrlsRouterPtr->getHandlersInfo();
     ret.insert(ret.end(), v.begin(), v.end());
-    v = _websockCtrlsRouter.getHandlersInfo();
+    v = _websockCtrlsRouterPtr->getHandlersInfo();
     ret.insert(ret.end(), v.begin(), v.end());
     return ret;
 }
@@ -479,10 +546,10 @@ void HttpAppFrameworkImpl::onAsyncRequest(
     }
     if (_preRoutingAdvices.empty())
     {
-        _httpSimpleCtrlsRouter.route(req,
-                                     std::move(callback),
-                                     needSetJsessionid,
-                                     std::move(sessionId));
+        _httpSimpleCtrlsRouterPtr->route(req,
+                                         std::move(callback),
+                                         needSetJsessionid,
+                                         std::move(sessionId));
     }
     else
     {
@@ -507,15 +574,15 @@ void HttpAppFrameworkImpl::onAsyncRequest(
                     }
                 }),
             [this, callbackPtr, req, needSetJsessionid, sessionIdPtr]() {
-                _httpSimpleCtrlsRouter.route(req,
-                                             std::move(*callbackPtr),
-                                             needSetJsessionid,
-                                             std::move(*sessionIdPtr));
+                _httpSimpleCtrlsRouterPtr->route(req,
+                                                 std::move(*callbackPtr),
+                                                 needSetJsessionid,
+                                                 std::move(*sessionIdPtr));
             });
     }
 }
 
-trantor::EventLoop *HttpAppFrameworkImpl::getLoop()
+trantor::EventLoop *HttpAppFrameworkImpl::getLoop() const
 {
     static trantor::EventLoop loop;
     return &loop;
@@ -529,7 +596,15 @@ HttpAppFramework &HttpAppFramework::instance()
 HttpAppFramework::~HttpAppFramework()
 {
 }
-
+void HttpAppFrameworkImpl::forward(
+    const HttpRequestPtr &req,
+    std::function<void(const HttpResponsePtr &)> &&callback,
+    const std::string &hostString)
+{
+    forward(std::dynamic_pointer_cast<HttpRequestImpl>(req),
+            std::move(callback),
+            hostString);
+}
 void HttpAppFrameworkImpl::forward(
     const HttpRequestImplPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback,
@@ -580,4 +655,36 @@ void HttpAppFrameworkImpl::forward(
                 }
             });
     }
+}
+
+orm::DbClientPtr HttpAppFrameworkImpl::getDbClient(const std::string &name)
+{
+    return _dbClientManagerPtr->getDbClient(name);
+}
+orm::DbClientPtr HttpAppFrameworkImpl::getFastDbClient(const std::string &name)
+{
+    return _dbClientManagerPtr->getFastDbClient(name);
+}
+void HttpAppFrameworkImpl::createDbClient(const std::string &dbType,
+                                          const std::string &host,
+                                          const u_short port,
+                                          const std::string &databaseName,
+                                          const std::string &userName,
+                                          const std::string &password,
+                                          const size_t connectionNum,
+                                          const std::string &filename,
+                                          const std::string &name,
+                                          const bool isFast)
+{
+    assert(!_running);
+    _dbClientManagerPtr->createDbClient(dbType,
+                                        host,
+                                        port,
+                                        databaseName,
+                                        userName,
+                                        password,
+                                        connectionNum,
+                                        filename,
+                                        name,
+                                        isFast);
 }
