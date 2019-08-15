@@ -15,7 +15,6 @@
 #include "HttpResponseImpl.h"
 #include "HttpAppFrameworkImpl.h"
 #include "HttpUtils.h"
-#include "HttpViewBase.h"
 #include <drogon/HttpAppFramework.h>
 #include <drogon/HttpViewData.h>
 #include <fstream>
@@ -26,6 +25,25 @@
 
 using namespace trantor;
 using namespace drogon;
+
+namespace drogon
+{
+static HttpResponsePtr genHttpResponse(std::string viewName,
+                                       const HttpViewData &data)
+{
+    auto templ = DrTemplateBase::newTemplate(viewName);
+    if (templ)
+    {
+        auto res = HttpResponse::newHttpResponse();
+        res->setStatusCode(k200OK);
+        res->setContentTypeCode(CT_TEXT_HTML);
+        res->setBody(templ->genText(data));
+        return res;
+    }
+    return drogon::HttpResponse::newNotFoundResponse();
+}
+}
+
 
 HttpResponsePtr HttpResponse::newHttpResponse()
 {
@@ -78,7 +96,7 @@ HttpResponsePtr HttpResponse::newRedirectionResponse(
 HttpResponsePtr HttpResponse::newHttpViewResponse(const std::string &viewName,
                                                   const HttpViewData &data)
 {
-    return HttpViewBase::genHttpResponse(viewName, data);
+    return genHttpResponse(viewName, data);
 }
 
 HttpResponsePtr HttpResponse::newFileResponse(

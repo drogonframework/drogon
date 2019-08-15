@@ -104,7 +104,6 @@ set(DROGON_SOURCES  lib/src/AOPAdvice.cc
                     lib/src/HttpServer.cc
                     lib/src/HttpSimpleControllersRouter.cc
                     lib/src/HttpUtils.cc
-                    lib/src/HttpViewBase.cc
                     lib/src/HttpViewData.cc
                     lib/src/IntranetIpFilter.cc
                     lib/src/ListenerManager.cc
