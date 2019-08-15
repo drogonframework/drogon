@@ -294,7 +294,8 @@ void PgConnection::sendBatchedSql()
         {
             auto sql = cmd->_sql;
             std::transform(sql.begin(), sql.end(), sql.begin(), tolower);
-            if (sql.find("update") != std::string::npos ||
+            if (sql.length() > 1024 ||
+                sql.find("update") != std::string::npos ||
                 sql.find("insert") != std::string::npos ||
                 sql.find("delete") != std::string::npos ||
                 sql.find("drop") != std::string::npos ||
