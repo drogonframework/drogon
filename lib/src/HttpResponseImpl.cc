@@ -42,8 +42,7 @@ static HttpResponsePtr genHttpResponse(std::string viewName,
     }
     return drogon::HttpResponse::newNotFoundResponse();
 }
-}
-
+}  // namespace drogon
 
 HttpResponsePtr HttpResponse::newHttpResponse()
 {
