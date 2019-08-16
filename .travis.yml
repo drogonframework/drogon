@@ -41,8 +41,7 @@ addons:
     - postgresql
 before_script:
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then 
-       initdb /usr/local/var/postgres; 
-       brew services start postgresql; 
+       brew services restart postgresql; 
        psql -c 'create user postgres superuser;' postgres; 
     fi
 
