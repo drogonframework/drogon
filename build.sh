@@ -24,8 +24,12 @@ function build_drogon() {
     cd $build_dir
 
     echo "Start building drogon ..."
-    cmake ..
-    
+    if [ $1 -eq 1 ]; then
+        cmake .. -DMAKETEST=YES
+    else
+        cmake ..
+    fi
+
     #If errors then exit
     if [ "$?" != "0" ]; then
         exit -1
@@ -46,4 +50,8 @@ function build_drogon() {
     #Ok!
 }
 
-build_drogon
+if [ "$1" = "-t" ]; then
+    build_drogon 1
+else
+    build_drogon 0
+fi

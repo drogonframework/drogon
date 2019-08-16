@@ -1,12 +1,11 @@
-os:
-  - linux
-  - osx
-
-osx_image: xcode10.1
+matrix:
+  include:
+    - os: linux
+      dist: xenial
+    - os: osx
+      osx_image: xcode11
 
 sudo: required
-
-dist: xenial
 
 language: cpp
 
@@ -37,10 +36,16 @@ addons:
     - cmake
     - libtool
     - lz4
-    - postgresql
     - mariadb
     - sqlite3
-    update: true
+before_script:
+  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then 
+       brew services restart postgresql; 
+       sleep 2;
+       psql -c 'create user postgres superuser;' postgres; 
+    fi
 
+services:
+  - postgresql
 script:
-  - ./build.sh && ./test.sh
+  - ./build.sh -t && ./test.sh -t
