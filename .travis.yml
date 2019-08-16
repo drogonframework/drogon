@@ -1,7 +1,3 @@
-# os:
-#   - linux
-#   - osx
-
 matrix:
   include:
     - os: linux
@@ -45,6 +41,7 @@ addons:
     - postgresql
 before_script:
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew services start postgresql; fi
+  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then psql -c 'create user postgres superuser;'; fi
 services:
   - postgresql
 script:
