@@ -18,10 +18,26 @@
 #include <iostream>
 #include <trantor/utils/Logger.h>
 #include <unistd.h>
+#include <stdlib.h>
+
 using namespace drogon::orm;
 #define RESET "\033[0m"
 #define RED "\033[31m"   /* Red */
 #define GREEN "\033[32m" /* Green */
+#define TEST_COUNT 6
+
+int counter = 0;
+std::promise<int> pro;
+auto f = pro.get_future();
+
+void addCount(int &count, std::promise<int> &pro)
+{
+    ++count;
+    if (count == TEST_COUNT)
+    {
+        pro.set_value(1);
+    }
+}
 
 void testOutput(bool isGood, const std::string &testMessage)
 {
@@ -29,6 +45,7 @@ void testOutput(bool isGood, const std::string &testMessage)
     {
         std::cout << GREEN << testMessage << "\t\tOK\n";
         std::cout << RESET;
+        addCount(counter, pro);
     }
     else
     {
@@ -43,13 +60,14 @@ int main()
     trantor::Logger::setLogLevel(trantor::Logger::DEBUG);
 #if USE_POSTGRESQL
     auto clientPtr = DbClient::newPgClient(
-        "host=127.0.0.1 port=5432 dbname=postgres user=antao", 1);
+        "host=127.0.0.1 port=5432 dbname=postgres user=postgres", 1);
 #endif
     LOG_DEBUG << "start!";
     sleep(1);
     // Prepare the test environment
     *clientPtr << "DROP TABLE IF EXISTS USERS" >> [](const Result &r) {
         testOutput(true, "Prepare the test environment(0)");
+        addCount(counter, pro);
     } >> [](const DrogonDbException &e) {
         std::cerr << e.base().what() << std::endl;
         testOutput(false, "Prepare the test environment(0)");
@@ -139,9 +157,6 @@ int main()
             std::cerr << e.base().what() << std::endl;
             testOutput(false, "DbClient streaming-type interface(1)");
         };
-
-    /// 2 DbClient execSqlAsync()...
-    ///
-    /// Model and Mapper....
-    getchar();
+    f.get();
+    return 0;
 }

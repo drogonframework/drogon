@@ -103,5 +103,15 @@ fi
 cd ../../
 rm -rf drogon_test
 
+if [ "$1" = "-t" ];then
+    echo "Test database"
+    cd ../
+    ./orm_lib/tests/db_test
+    if [ $? -ne 0 ];then
+        echo "Error in testing"
+        exit -1
+    fi
+fi
+
 echo "Everything is ok!"
 exit 0
