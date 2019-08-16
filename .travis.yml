@@ -40,8 +40,8 @@ addons:
     - sqlite3
     - postgresql
 before_script:
-  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew services start postgresql; fi
-  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then psql -c 'create user postgres superuser;' postgres; fi
+  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew services start postgresql; psql -c 'create user postgres superuser;' postgres; fi
+  
 services:
   - postgresql
 script:
