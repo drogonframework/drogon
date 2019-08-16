@@ -10,6 +10,9 @@ dist: xenial
 
 language: cpp
 
+services:
+  - postgresql
+  
 addons:
   apt:
     sources:
@@ -37,11 +40,8 @@ addons:
     - cmake
     - libtool
     - lz4
-    - postgresql
     - mariadb
     - sqlite3
     update: true
-services:
-  - postgresql
 script:
   - ./build.sh -t && ./test.sh -t
