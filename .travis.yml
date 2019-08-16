@@ -10,11 +10,7 @@ dist: xenial
 
 language: cpp
 
-services:
-  - postgresql
-
 addons:
-  postgresql: "10"
   apt:
     sources:
     - xenial
@@ -33,6 +29,8 @@ addons:
     - build-essential
     - cmake
     - boost1.67
+    services:
+    - postgresql
   homebrew:
     packages:
     - jsoncpp
@@ -43,6 +41,9 @@ addons:
     - lz4
     - mariadb
     - sqlite3
+    - postgresql
+    before_script:
+    - brew services start postgresql
     update: true
 script:
   - ./build.sh -t && ./test.sh -t
