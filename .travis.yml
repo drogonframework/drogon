@@ -1,14 +1,16 @@
 os:
   - linux
   - osx
-
-osx_image: xcode11
-
 sudo: required
 
-dist: xenial
-
 language: cpp
+
+matrix:
+  include:
+    - os: linux
+      dist: xenial
+    - os: osx
+      osx_image: xcode11
 
 addons:
   apt:
@@ -29,8 +31,6 @@ addons:
     - build-essential
     - cmake
     - boost1.67
-    services:
-    - postgresql
   homebrew:
     packages:
     - jsoncpp
@@ -42,8 +42,9 @@ addons:
     - mariadb
     - sqlite3
     - postgresql
-    before_script:
-    - brew services start postgresql
-    update: true
+before_script:
+  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew services start postgresql; fi
+services:
+  - postgresql
 script:
   - ./build.sh -t && ./test.sh -t
