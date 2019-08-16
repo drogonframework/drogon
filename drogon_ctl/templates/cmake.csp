@@ -14,6 +14,15 @@ endif()
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+##########
+# If you include the drogon source code locally in your project, use this method to add drogon
+# add_subdirectory(drogon)
+# set(Drogon_DIR ${PROJECT_BINARY_DIR}/drogon)
+# find_package(Drogon CONFIG REQUIRED NO_DEFAULT_PATH)
+# include_directories(${DROGON_INCLUDE_DIRS})
+# link_libraries(${DROGON_LIBRARIES})
+##########
+
 find_package(Drogon CONFIG REQUIRED)
 include_directories(${DROGON_INCLUDE_DIRS})
 link_libraries(${DROGON_LIBRARIES})
@@ -32,8 +41,6 @@ aux_source_directory(controllers CTL_SRC)
 aux_source_directory(filters FILTER_SRC)
 aux_source_directory(plugins PLUGIN_SRC)
 aux_source_directory(models MODEL_SRC)
-
-include_directories(/usr/local/include)
 
 file(GLOB SCP_LIST ${CMAKE_CURRENT_SOURCE_DIR}/views/*.csp)
 foreach(cspFile ${SCP_LIST})
