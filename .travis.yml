@@ -41,6 +41,7 @@ addons:
 before_script:
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then 
        brew services restart postgresql; 
+       sleep 2;
        psql -c 'create user postgres superuser;' postgres; 
     fi
 
