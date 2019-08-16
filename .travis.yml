@@ -1,9 +1,6 @@
-os:
-  - linux
-  - osx
-sudo: required
-
-language: cpp
+# os:
+#   - linux
+#   - osx
 
 matrix:
   include:
@@ -11,6 +8,10 @@ matrix:
       dist: xenial
     - os: osx
       osx_image: xcode11
+
+sudo: required
+
+language: cpp
 
 addons:
   apt:
