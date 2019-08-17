@@ -260,7 +260,7 @@ class HttpResponseImpl : public HttpResponse
     {
         return *_bodyPtr;
     }
-    void swap(HttpResponseImpl &that);
+    void swap(HttpResponseImpl &that) noexcept;
     void parseJson() const;
     virtual const std::shared_ptr<Json::Value> jsonObject() const override
     {
@@ -337,4 +337,10 @@ class HttpResponseImpl : public HttpResponse
     }
 };
 typedef std::shared_ptr<HttpResponseImpl> HttpResponseImplPtr;
+
+inline void swap(HttpResponseImpl &one, HttpResponseImpl &two) noexcept
+{
+    one.swap(two);
+}
+
 }  // namespace drogon

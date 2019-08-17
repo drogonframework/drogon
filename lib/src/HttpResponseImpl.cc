@@ -423,7 +423,7 @@ void HttpResponseImpl::addHeader(const char *start,
     }
 }
 
-void HttpResponseImpl::swap(HttpResponseImpl &that)
+void HttpResponseImpl::swap(HttpResponseImpl &that) noexcept
 {
     using std::swap;
     _headers.swap(that._headers);

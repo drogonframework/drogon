@@ -275,7 +275,7 @@ class HttpRequestImpl : public HttpRequest
         return _content;
     }
 
-    void swap(HttpRequestImpl &that);
+    void swap(HttpRequestImpl &that) noexcept;
 
     void setContent(const std::string &content)
     {
@@ -405,5 +405,10 @@ class HttpRequestImpl : public HttpRequest
 };
 
 typedef std::shared_ptr<HttpRequestImpl> HttpRequestImplPtr;
+
+inline void swap(HttpRequestImpl &one, HttpRequestImpl &two) noexcept
+{
+    one.swap(two);
+}
 
 }  // namespace drogon

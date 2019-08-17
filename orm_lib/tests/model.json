@@ -7,7 +7,7 @@
     "port":5432,
     //dbname:Database name;
     "dbname":"postgres",
-    "user":"antao",
+    "user":"postgres",
     "passwd":"",
     //"tables":["group_users"]
     "tables":["users"]
