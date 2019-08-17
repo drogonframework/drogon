@@ -146,5 +146,19 @@ class Result
     {
     }
 };
+inline void swap(Result &one, Result &two) noexcept
+{
+    one.swap(two);
+}
 }  // namespace orm
 }  // namespace drogon
+
+namespace std
+{
+template <>
+inline void swap<drogon::orm::Result>(drogon::orm::Result &one,
+                                      drogon::orm::Result &two) noexcept
+{
+    one.swap(two);
+}
+}  // namespace std
