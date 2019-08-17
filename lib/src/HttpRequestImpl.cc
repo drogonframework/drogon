@@ -394,7 +394,7 @@ HttpRequestPtr HttpRequest::newFileUploadRequest(
     return std::make_shared<HttpFileUploadRequest>(files);
 }
 
-void HttpRequestImpl::swap(HttpRequestImpl &that)
+void HttpRequestImpl::swap(HttpRequestImpl &that) noexcept
 {
     std::swap(_method, that._method);
     std::swap(_version, that._version);

@@ -21,10 +21,12 @@
 #include <stdlib.h>
 
 using namespace drogon::orm;
+using namespace drogon_model::postgres;
+
 #define RESET "\033[0m"
 #define RED "\033[31m"   /* Red */
 #define GREEN "\033[32m" /* Green */
-#define TEST_COUNT 32
+#define TEST_COUNT 34
 
 int counter = 0;
 std::promise<int> pro;
@@ -44,7 +46,7 @@ void testOutput(bool isGood, const std::string &testMessage)
 {
     if (isGood)
     {
-        std::cout << GREEN << testMessage << "\t\tOK\n";
+        std::cout << GREEN << counter + 1 << ".\t" << testMessage << "\t\tOK\n";
         std::cout << RESET;
         addCount(counter, pro);
     }
@@ -510,7 +512,38 @@ int main()
         // std::cerr << e.base().what() << std::endl;
         testOutput(true, "DbClient future interface(5)");
     }
+    /// Test ORM mapper
+    /// 5.1 insert, noneblocking
+    drogon::orm::Mapper<Users> mapper(clientPtr);
+    Users user;
+    user.setUserId("pg");
+    user.setUserName("postgres");
+    user.setPassword("123");
+    user.setOrgName("default");
+    mapper.insert(
+        user,
+        [](Users ret) {
+            testOutput(ret.getPrimaryKey() == 9,
+                       "ORM mapper asynchronous interface(0)");
+        },
+        [](const DrogonDbException &e) {
+            std::cerr << e.base().what() << std::endl;
+            testOutput(false, "ORM mapper asynchronous interface(0)");
+        });
+    /// 5.2 insert
+    user.setUserId("pg1");
+    user.setUserName("postgres1");
+    mapper.insert(
+        user,
+        [](Users ret) {
+            testOutput(ret.getPrimaryKey() == 10,
+                       "ORM mapper asynchronous interface(1)");
+        },
+        [](const DrogonDbException &e) {
+            std::cerr << e.base().what() << std::endl;
+            testOutput(false, "ORM mapper asynchronous interface(1)");
+        });
     globalf.get();
-
+    sleep(1);
     return 0;
 }

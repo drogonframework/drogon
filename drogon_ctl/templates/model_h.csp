@@ -51,7 +51,7 @@ auto cols=@@.get<std::vector<ColumnInfo>>("columns");
     const static std::string primaryKeyName;
 <%c++if(!@@.get<std::string>("primaryKeyType").empty()){%>
     typedef [[primaryKeyType]] PrimaryKeyType;
-    const PrimaryKeyType & getPrimaryKey() const;
+    const PrimaryKeyType &getPrimaryKey() const;
 <%c++}else{%>
     typedef void PrimaryKeyType;
 <%c++}%>

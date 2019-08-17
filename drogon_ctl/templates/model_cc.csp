@@ -128,7 +128,7 @@ const std::string &[[className]]::getColumnName(size_t index) noexcept(false)
         auto & col = cols[i];
         if(!col._colType.empty())
         {
-            $$<<"const "<<col._colType<<" & "<<className<<"::getValueOf"<<col._colTypeName<<"(const "<<col._colType<<" &defaultValue) const noexcept\n";
+            $$<<"const "<<col._colType<<" &"<<className<<"::getValueOf"<<col._colTypeName<<"(const "<<col._colType<<" &defaultValue) const noexcept\n";
             $$<<"{\n";
             $$<<"    if(_"<<col._colValName<<")\n";
             $$<<"        return *_"<<col._colValName<<";\n";
