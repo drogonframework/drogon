@@ -119,21 +119,17 @@ class HttpResponseImpl : public HttpResponse
         return _contentType;
     }
 
-    virtual const std::string &getHeader(
-        const std::string &key,
-        const std::string &defaultVal = std::string()) const override
+    virtual const std::string &getHeader(const std::string &key) const override
     {
         auto field = key;
         transform(field.begin(), field.end(), field.begin(), ::tolower);
-        return getHeaderBy(field, defaultVal);
+        return getHeaderBy(field);
     }
 
-    virtual const std::string &getHeader(
-        std::string &&key,
-        const std::string &defaultVal = std::string()) const override
+    virtual const std::string &getHeader(std::string &&key) const override
     {
         transform(key.begin(), key.end(), key.begin(), ::tolower);
-        return getHeaderBy(key, defaultVal);
+        return getHeaderBy(key);
     }
 
     virtual void removeHeader(const std::string &key) override
@@ -155,10 +151,9 @@ class HttpResponseImpl : public HttpResponse
         return _headers;
     }
 
-    const std::string &getHeaderBy(
-        const std::string &lowerKey,
-        const std::string &defaultVal = std::string()) const
+    const std::string &getHeaderBy(const std::string &lowerKey) const
     {
+        const static std::string defaultVal;
         auto iter = _headers.find(lowerKey);
         if (iter == _headers.end())
         {

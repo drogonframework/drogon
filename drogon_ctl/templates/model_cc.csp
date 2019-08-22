@@ -37,7 +37,7 @@ for(size_t i=0;i<pkName.size();i++)
 }
 %>};
 <%c++}%>
-<%c++ if(@@.get<int>("hasPrimaryKey",0)>0){%>
+<%c++ if(@@.get<int>("hasPrimaryKey")>0){%>
 const bool [[className]]::hasPrimaryKey = true;
 <%c++ }else{%>
 const bool [[className]]::hasPrimaryKey = false;
@@ -128,16 +128,18 @@ const std::string &[[className]]::getColumnName(size_t index) noexcept(false)
         auto & col = cols[i];
         if(!col._colType.empty())
         {
-            $$<<"const "<<col._colType<<" &"<<className<<"::getValueOf"<<col._colTypeName<<"(const "<<col._colType<<" &defaultValue) const noexcept\n";
+            $$<<"const "<<col._colType<<" &"<<className<<"::getValueOf"<<col._colTypeName<<"() const noexcept\n";
             $$<<"{\n";
+            $$<<"    const static "<<col._colType<<" defaultValue = "<<col._colType<<"();\n";
             $$<<"    if(_"<<col._colValName<<")\n";
             $$<<"        return *_"<<col._colValName<<";\n";
             $$<<"    return defaultValue;\n";
             $$<<"}\n";
             if(col._colType=="std::vector<char>")
             {
-                $$<<"std::string "<<className<<"::getValueOf"<<col._colTypeName<<"AsString(const std::string &defaultValue) const noexcept\n";
+                $$<<"std::string "<<className<<"::getValueOf"<<col._colTypeName<<"AsString() const noexcept\n";
                 $$<<"{\n";
+                $$<<"    const static std::string defaultValue = std::string();\n";
                 $$<<"    if(_"<<col._colValName<<")\n";
                 $$<<"        return std::string(_"<<col._colValName<<"->data(),_"<<col._colValName<<"->size());\n";
                 $$<<"    return defaultValue;\n";

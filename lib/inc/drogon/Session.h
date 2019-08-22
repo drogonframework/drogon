@@ -26,8 +26,9 @@ class Session
 {
   public:
     template <typename T>
-    const T &get(const std::string &key, T &&nullVal = T()) const
+    const T &get(const std::string &key) const
     {
+        const static T nullVal = T();
         std::lock_guard<std::mutex> lck(_mutex);
         auto it = _sessionMap.find(key);
         if (it != _sessionMap.end())

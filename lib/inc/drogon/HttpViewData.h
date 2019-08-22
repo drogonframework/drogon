@@ -33,8 +33,9 @@ class HttpViewData
     /// The function template is used to get an item in the data set by the
     /// @param key.
     template <typename T>
-    const T &get(const std::string &key, T &&nullVal = T()) const
+    const T &get(const std::string &key) const
     {
+        const static T nullVal = T();
         auto it = _viewData.find(key);
         if (it != _viewData.end())
         {
