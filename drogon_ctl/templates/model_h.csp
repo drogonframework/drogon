@@ -88,11 +88,11 @@ auto cols=@@.get<std::vector<ColumnInfo>>("columns");
         if(!col._colType.empty())
         {
             $$<<"    ///Get the value of the column "<<col._colName<<", returns the default value if the column is null\n";
-            $$<<"    const "<<col._colType<<" &getValueOf"<<col._colTypeName<<"(const "<<col._colType<<" &defaultValue="<<col._colType<<"()) const noexcept;\n";
+            $$<<"    const "<<col._colType<<" &getValueOf"<<col._colTypeName<<"() const noexcept;\n";
             if(col._colType=="std::vector<char>")
             {
                 $$<<"    ///Return the column value by std::string with binary data\n";
-                $$<<"    std::string getValueOf"<<col._colTypeName<<"AsString(const std::string &defaultValue=\"\") const noexcept;\n";
+                $$<<"    std::string getValueOf"<<col._colTypeName<<"AsString() const noexcept;\n";
             }
             $$<<"    ///Return a shared_ptr object pointing to the column const value, or an empty shared_ptr object if the column is null\n";
             $$<<"    std::shared_ptr<const "<<col._colType<<"> get"<<col._colTypeName<<"() const noexcept;\n";

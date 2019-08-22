@@ -100,14 +100,10 @@ class HttpResponse
     }
 
     /// Get the header string identified by the @param key.
-    /// If there is no the header, the @param defaultVal is retured.
+    /// If there is no the header, a empty string is retured.
     /// The @param key is case insensitive
-    virtual const std::string &getHeader(
-        const std::string &key,
-        const std::string &defaultVal = std::string()) const = 0;
-    virtual const std::string &getHeader(
-        std::string &&key,
-        const std::string &defaultVal = std::string()) const = 0;
+    virtual const std::string &getHeader(const std::string &key) const = 0;
+    virtual const std::string &getHeader(std::string &&key) const = 0;
 
     /// Remove the header identified by the @param key.
     virtual void removeHeader(const std::string &key) = 0;

@@ -95,9 +95,9 @@ class HttpRequestImpl : public HttpRequest
     }
 
     virtual const std::string &getParameter(
-        const std::string &key,
-        const std::string &defaultVal = std::string()) const override
+        const std::string &key) const override
     {
+        const static std::string defaultVal;
         parseParametersOnce();
         auto iter = _parameters.find(key);
         if (iter != _parameters.end())
@@ -209,30 +209,25 @@ class HttpRequestImpl : public HttpRequest
 
     void addHeader(const char *start, const char *colon, const char *end);
 
-    const std::string &getHeader(
-        const std::string &field,
-        const std::string &defaultVal = std::string()) const override
+    const std::string &getHeader(const std::string &field) const override
     {
         auto lowField = field;
         std::transform(lowField.begin(),
                        lowField.end(),
                        lowField.begin(),
                        tolower);
-        return getHeaderBy(lowField, defaultVal);
+        return getHeaderBy(lowField);
     }
 
-    const std::string &getHeader(
-        std::string &&field,
-        const std::string &defaultVal = std::string()) const override
+    const std::string &getHeader(std::string &&field) const override
     {
         std::transform(field.begin(), field.end(), field.begin(), tolower);
-        return getHeaderBy(field, defaultVal);
+        return getHeaderBy(field);
     }
 
-    const std::string &getHeaderBy(
-        const std::string &lowerField,
-        const std::string &defaultVal = std::string()) const
+    const std::string &getHeaderBy(const std::string &lowerField) const
     {
+        const static std::string defaultVal;
         auto it = _headers.find(lowerField);
         if (it != _headers.end())
         {
@@ -241,10 +236,9 @@ class HttpRequestImpl : public HttpRequest
         return defaultVal;
     }
 
-    const std::string &getCookie(
-        const std::string &field,
-        const std::string &defaultVal = std::string()) const override
+    const std::string &getCookie(const std::string &field) const override
     {
+        const static std::string defaultVal;
         auto it = _cookies.find(field);
         if (it != _cookies.end())
         {

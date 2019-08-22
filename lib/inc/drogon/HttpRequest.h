@@ -55,21 +55,15 @@ class HttpRequest
     }
 
     /// Get the header string identified by the @param field
-    virtual const std::string &getHeader(
-        const std::string &field,
-        const std::string &defaultVal = std::string()) const = 0;
-    virtual const std::string &getHeader(
-        std::string &&field,
-        const std::string &defaultVal = std::string()) const = 0;
+    virtual const std::string &getHeader(const std::string &field) const = 0;
+    virtual const std::string &getHeader(std::string &&field) const = 0;
 
     /// Set the header string identified by the @param field
     virtual void addHeader(const std::string &field,
                            const std::string &value) = 0;
 
     /// Get the cookie string identified by the @param field
-    virtual const std::string &getCookie(
-        const std::string &field,
-        const std::string &defaultVal = std::string()) const = 0;
+    virtual const std::string &getCookie(const std::string &field) const = 0;
 
     /// Get all headers of the request
     virtual const std::unordered_map<std::string, std::string> &headers()
@@ -160,9 +154,7 @@ class HttpRequest
     }
 
     /// Get a parameter identified by the @param key
-    virtual const std::string &getParameter(
-        const std::string &key,
-        const std::string &defaultVal = std::string()) const = 0;
+    virtual const std::string &getParameter(const std::string &key) const = 0;
 
     /// Return the remote IP address and port
     virtual const trantor::InetAddress &peerAddr() const = 0;

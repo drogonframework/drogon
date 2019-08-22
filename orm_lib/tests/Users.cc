@@ -25,17 +25,16 @@ const std::string Users::primaryKeyName = "id";
 const bool Users::hasPrimaryKey = true;
 const std::string Users::tableName = "users";
 
-const std::vector<typename Users::MetaData> Users::_metaData={
-{"user_id","std::string","character varying",32,0,0,0},
-{"user_name","std::string","character varying",64,0,0,0},
-{"password","std::string","character varying",64,0,0,0},
-{"org_name","std::string","character varying",20,0,0,0},
-{"signature","std::string","character varying",50,0,0,0},
-{"avatar_id","std::string","character varying",32,0,0,0},
-{"id","int32_t","integer",4,1,1,1},
-{"salt","std::string","character varying",20,0,0,0},
-{"admin","bool","boolean",1,0,0,0}
-};
+const std::vector<typename Users::MetaData> Users::_metaData = {
+    {"user_id", "std::string", "character varying", 32, 0, 0, 0},
+    {"user_name", "std::string", "character varying", 64, 0, 0, 0},
+    {"password", "std::string", "character varying", 64, 0, 0, 0},
+    {"org_name", "std::string", "character varying", 20, 0, 0, 0},
+    {"signature", "std::string", "character varying", 50, 0, 0, 0},
+    {"avatar_id", "std::string", "character varying", 32, 0, 0, 0},
+    {"id", "int32_t", "integer", 4, 1, 1, 1},
+    {"salt", "std::string", "character varying", 20, 0, 0, 0},
+    {"admin", "bool", "boolean", 1, 0, 0, 0}};
 const std::string &Users::getColumnName(size_t index) noexcept(false)
 {
     assert(index < _metaData.size());
@@ -43,46 +42,52 @@ const std::string &Users::getColumnName(size_t index) noexcept(false)
 }
 Users::Users(const Row &r) noexcept
 {
-        if(!r["user_id"].isNull())
-        {
-            _userId=std::make_shared<std::string>(r["user_id"].as<std::string>());
-        }
-        if(!r["user_name"].isNull())
-        {
-            _userName=std::make_shared<std::string>(r["user_name"].as<std::string>());
-        }
-        if(!r["password"].isNull())
-        {
-            _password=std::make_shared<std::string>(r["password"].as<std::string>());
-        }
-        if(!r["org_name"].isNull())
-        {
-            _orgName=std::make_shared<std::string>(r["org_name"].as<std::string>());
-        }
-        if(!r["signature"].isNull())
-        {
-            _signature=std::make_shared<std::string>(r["signature"].as<std::string>());
-        }
-        if(!r["avatar_id"].isNull())
-        {
-            _avatarId=std::make_shared<std::string>(r["avatar_id"].as<std::string>());
-        }
-        if(!r["id"].isNull())
-        {
-            _id=std::make_shared<int32_t>(r["id"].as<int32_t>());
-        }
-        if(!r["salt"].isNull())
-        {
-            _salt=std::make_shared<std::string>(r["salt"].as<std::string>());
-        }
-        if(!r["admin"].isNull())
-        {
-            _admin=std::make_shared<bool>(r["admin"].as<bool>());
-        }
+    if (!r["user_id"].isNull())
+    {
+        _userId = std::make_shared<std::string>(r["user_id"].as<std::string>());
+    }
+    if (!r["user_name"].isNull())
+    {
+        _userName =
+            std::make_shared<std::string>(r["user_name"].as<std::string>());
+    }
+    if (!r["password"].isNull())
+    {
+        _password =
+            std::make_shared<std::string>(r["password"].as<std::string>());
+    }
+    if (!r["org_name"].isNull())
+    {
+        _orgName =
+            std::make_shared<std::string>(r["org_name"].as<std::string>());
+    }
+    if (!r["signature"].isNull())
+    {
+        _signature =
+            std::make_shared<std::string>(r["signature"].as<std::string>());
+    }
+    if (!r["avatar_id"].isNull())
+    {
+        _avatarId =
+            std::make_shared<std::string>(r["avatar_id"].as<std::string>());
+    }
+    if (!r["id"].isNull())
+    {
+        _id = std::make_shared<int32_t>(r["id"].as<int32_t>());
+    }
+    if (!r["salt"].isNull())
+    {
+        _salt = std::make_shared<std::string>(r["salt"].as<std::string>());
+    }
+    if (!r["admin"].isNull())
+    {
+        _admin = std::make_shared<bool>(r["admin"].as<bool>());
+    }
 }
-const std::string &Users::getValueOfUserId(const std::string &defaultValue) const noexcept
+const std::string &Users::getValueOfUserId() const noexcept
 {
-    if(_userId)
+    const static std::string defaultValue = std::string();
+    if (_userId)
         return *_userId;
     return defaultValue;
 }
@@ -101,10 +106,10 @@ void Users::setUserId(std::string &&userId) noexcept
     _dirtyFlag[0] = true;
 }
 
-
-const std::string &Users::getValueOfUserName(const std::string &defaultValue) const noexcept
+const std::string &Users::getValueOfUserName() const noexcept
 {
-    if(_userName)
+    const static std::string defaultValue = std::string();
+    if (_userName)
         return *_userName;
     return defaultValue;
 }
@@ -123,10 +128,10 @@ void Users::setUserName(std::string &&userName) noexcept
     _dirtyFlag[1] = true;
 }
 
-
-const std::string &Users::getValueOfPassword(const std::string &defaultValue) const noexcept
+const std::string &Users::getValueOfPassword() const noexcept
 {
-    if(_password)
+    const static std::string defaultValue = std::string();
+    if (_password)
         return *_password;
     return defaultValue;
 }
@@ -145,10 +150,10 @@ void Users::setPassword(std::string &&password) noexcept
     _dirtyFlag[2] = true;
 }
 
-
-const std::string &Users::getValueOfOrgName(const std::string &defaultValue) const noexcept
+const std::string &Users::getValueOfOrgName() const noexcept
 {
-    if(_orgName)
+    const static std::string defaultValue = std::string();
+    if (_orgName)
         return *_orgName;
     return defaultValue;
 }
@@ -167,10 +172,10 @@ void Users::setOrgName(std::string &&orgName) noexcept
     _dirtyFlag[3] = true;
 }
 
-
-const std::string &Users::getValueOfSignature(const std::string &defaultValue) const noexcept
+const std::string &Users::getValueOfSignature() const noexcept
 {
-    if(_signature)
+    const static std::string defaultValue = std::string();
+    if (_signature)
         return *_signature;
     return defaultValue;
 }
@@ -189,10 +194,10 @@ void Users::setSignature(std::string &&signature) noexcept
     _dirtyFlag[4] = true;
 }
 
-
-const std::string &Users::getValueOfAvatarId(const std::string &defaultValue) const noexcept
+const std::string &Users::getValueOfAvatarId() const noexcept
 {
-    if(_avatarId)
+    const static std::string defaultValue = std::string();
+    if (_avatarId)
         return *_avatarId;
     return defaultValue;
 }
@@ -211,10 +216,10 @@ void Users::setAvatarId(std::string &&avatarId) noexcept
     _dirtyFlag[5] = true;
 }
 
-
-const int32_t &Users::getValueOfId(const int32_t &defaultValue) const noexcept
+const int32_t &Users::getValueOfId() const noexcept
 {
-    if(_id)
+    const static int32_t defaultValue = int32_t();
+    if (_id)
         return *_id;
     return defaultValue;
 }
@@ -222,15 +227,16 @@ std::shared_ptr<const int32_t> Users::getId() const noexcept
 {
     return _id;
 }
-const typename Users::PrimaryKeyType & Users::getPrimaryKey() const
+const typename Users::PrimaryKeyType &Users::getPrimaryKey() const
 {
     assert(_id);
     return *_id;
 }
 
-const std::string &Users::getValueOfSalt(const std::string &defaultValue) const noexcept
+const std::string &Users::getValueOfSalt() const noexcept
 {
-    if(_salt)
+    const static std::string defaultValue = std::string();
+    if (_salt)
         return *_salt;
     return defaultValue;
 }
@@ -249,10 +255,10 @@ void Users::setSalt(std::string &&salt) noexcept
     _dirtyFlag[7] = true;
 }
 
-
-const bool &Users::getValueOfAdmin(const bool &defaultValue) const noexcept
+const bool &Users::getValueOfAdmin() const noexcept
 {
-    if(_admin)
+    const static bool defaultValue = bool();
+    if (_admin)
         return *_admin;
     return defaultValue;
 }
@@ -266,29 +272,26 @@ void Users::setAdmin(const bool &admin) noexcept
     _dirtyFlag[8] = true;
 }
 
-
 void Users::updateId(const uint64_t id)
 {
 }
 
 const std::vector<std::string> &Users::insertColumns() noexcept
 {
-    static const std::vector<std::string> _inCols={
-        "user_id",
-        "user_name",
-        "password",
-        "org_name",
-        "signature",
-        "avatar_id",
-        "salt",
-        "admin"
-    };
+    static const std::vector<std::string> _inCols = {"user_id",
+                                                     "user_name",
+                                                     "password",
+                                                     "org_name",
+                                                     "signature",
+                                                     "avatar_id",
+                                                     "salt",
+                                                     "admin"};
     return _inCols;
 }
 
 void Users::outputArgs(drogon::orm::internal::SqlBinder &binder) const
 {
-    if(getUserId())
+    if (getUserId())
     {
         binder << getValueOfUserId();
     }
@@ -296,7 +299,7 @@ void Users::outputArgs(drogon::orm::internal::SqlBinder &binder) const
     {
         binder << nullptr;
     }
-    if(getUserName())
+    if (getUserName())
     {
         binder << getValueOfUserName();
     }
@@ -304,7 +307,7 @@ void Users::outputArgs(drogon::orm::internal::SqlBinder &binder) const
     {
         binder << nullptr;
     }
-    if(getPassword())
+    if (getPassword())
     {
         binder << getValueOfPassword();
     }
@@ -312,7 +315,7 @@ void Users::outputArgs(drogon::orm::internal::SqlBinder &binder) const
     {
         binder << nullptr;
     }
-    if(getOrgName())
+    if (getOrgName())
     {
         binder << getValueOfOrgName();
     }
@@ -320,7 +323,7 @@ void Users::outputArgs(drogon::orm::internal::SqlBinder &binder) const
     {
         binder << nullptr;
     }
-    if(getSignature())
+    if (getSignature())
     {
         binder << getValueOfSignature();
     }
@@ -328,7 +331,7 @@ void Users::outputArgs(drogon::orm::internal::SqlBinder &binder) const
     {
         binder << nullptr;
     }
-    if(getAvatarId())
+    if (getAvatarId())
     {
         binder << getValueOfAvatarId();
     }
@@ -336,7 +339,7 @@ void Users::outputArgs(drogon::orm::internal::SqlBinder &binder) const
     {
         binder << nullptr;
     }
-    if(getSalt())
+    if (getSalt())
     {
         binder << getValueOfSalt();
     }
@@ -344,7 +347,7 @@ void Users::outputArgs(drogon::orm::internal::SqlBinder &binder) const
     {
         binder << nullptr;
     }
-    if(getAdmin())
+    if (getAdmin())
     {
         binder << getValueOfAdmin();
     }
@@ -357,9 +360,9 @@ void Users::outputArgs(drogon::orm::internal::SqlBinder &binder) const
 const std::vector<std::string> Users::updateColumns() const
 {
     std::vector<std::string> ret;
-    for(size_t i=0;i<sizeof(_dirtyFlag);i++)
+    for (size_t i = 0; i < sizeof(_dirtyFlag); i++)
     {
-        if(_dirtyFlag[i])
+        if (_dirtyFlag[i])
         {
             ret.push_back(getColumnName(i));
         }
@@ -369,9 +372,9 @@ const std::vector<std::string> Users::updateColumns() const
 
 void Users::updateArgs(drogon::orm::internal::SqlBinder &binder) const
 {
-    if(_dirtyFlag[0])
+    if (_dirtyFlag[0])
     {
-        if(getUserId())
+        if (getUserId())
         {
             binder << getValueOfUserId();
         }
@@ -380,9 +383,9 @@ void Users::updateArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
-    if(_dirtyFlag[1])
+    if (_dirtyFlag[1])
     {
-        if(getUserName())
+        if (getUserName())
         {
             binder << getValueOfUserName();
         }
@@ -391,9 +394,9 @@ void Users::updateArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
-    if(_dirtyFlag[2])
+    if (_dirtyFlag[2])
     {
-        if(getPassword())
+        if (getPassword())
         {
             binder << getValueOfPassword();
         }
@@ -402,9 +405,9 @@ void Users::updateArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
-    if(_dirtyFlag[3])
+    if (_dirtyFlag[3])
     {
-        if(getOrgName())
+        if (getOrgName())
         {
             binder << getValueOfOrgName();
         }
@@ -413,9 +416,9 @@ void Users::updateArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
-    if(_dirtyFlag[4])
+    if (_dirtyFlag[4])
     {
-        if(getSignature())
+        if (getSignature())
         {
             binder << getValueOfSignature();
         }
@@ -424,9 +427,9 @@ void Users::updateArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
-    if(_dirtyFlag[5])
+    if (_dirtyFlag[5])
     {
-        if(getAvatarId())
+        if (getAvatarId())
         {
             binder << getValueOfAvatarId();
         }
@@ -435,9 +438,9 @@ void Users::updateArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
-    if(_dirtyFlag[7])
+    if (_dirtyFlag[7])
     {
-        if(getSalt())
+        if (getSalt())
         {
             binder << getValueOfSalt();
         }
@@ -446,9 +449,9 @@ void Users::updateArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
-    if(_dirtyFlag[8])
+    if (_dirtyFlag[8])
     {
-        if(getAdmin())
+        if (getAdmin())
         {
             binder << getValueOfAdmin();
         }
@@ -461,77 +464,77 @@ void Users::updateArgs(drogon::orm::internal::SqlBinder &binder) const
 Json::Value Users::toJson() const
 {
     Json::Value ret;
-    if(getUserId())
+    if (getUserId())
     {
-        ret["user_id"]=getValueOfUserId();
+        ret["user_id"] = getValueOfUserId();
     }
     else
     {
-        ret["user_id"]=Json::Value();
+        ret["user_id"] = Json::Value();
     }
-    if(getUserName())
+    if (getUserName())
     {
-        ret["user_name"]=getValueOfUserName();
-    }
-    else
-    {
-        ret["user_name"]=Json::Value();
-    }
-    if(getPassword())
-    {
-        ret["password"]=getValueOfPassword();
+        ret["user_name"] = getValueOfUserName();
     }
     else
     {
-        ret["password"]=Json::Value();
+        ret["user_name"] = Json::Value();
     }
-    if(getOrgName())
+    if (getPassword())
     {
-        ret["org_name"]=getValueOfOrgName();
-    }
-    else
-    {
-        ret["org_name"]=Json::Value();
-    }
-    if(getSignature())
-    {
-        ret["signature"]=getValueOfSignature();
+        ret["password"] = getValueOfPassword();
     }
     else
     {
-        ret["signature"]=Json::Value();
+        ret["password"] = Json::Value();
     }
-    if(getAvatarId())
+    if (getOrgName())
     {
-        ret["avatar_id"]=getValueOfAvatarId();
-    }
-    else
-    {
-        ret["avatar_id"]=Json::Value();
-    }
-    if(getId())
-    {
-        ret["id"]=getValueOfId();
+        ret["org_name"] = getValueOfOrgName();
     }
     else
     {
-        ret["id"]=Json::Value();
+        ret["org_name"] = Json::Value();
     }
-    if(getSalt())
+    if (getSignature())
     {
-        ret["salt"]=getValueOfSalt();
-    }
-    else
-    {
-        ret["salt"]=Json::Value();
-    }
-    if(getAdmin())
-    {
-        ret["admin"]=getValueOfAdmin();
+        ret["signature"] = getValueOfSignature();
     }
     else
     {
-        ret["admin"]=Json::Value();
+        ret["signature"] = Json::Value();
+    }
+    if (getAvatarId())
+    {
+        ret["avatar_id"] = getValueOfAvatarId();
+    }
+    else
+    {
+        ret["avatar_id"] = Json::Value();
+    }
+    if (getId())
+    {
+        ret["id"] = getValueOfId();
+    }
+    else
+    {
+        ret["id"] = Json::Value();
+    }
+    if (getSalt())
+    {
+        ret["salt"] = getValueOfSalt();
+    }
+    else
+    {
+        ret["salt"] = Json::Value();
+    }
+    if (getAdmin())
+    {
+        ret["admin"] = getValueOfAdmin();
+    }
+    else
+    {
+        ret["admin"] = Json::Value();
     }
     return ret;
 }
