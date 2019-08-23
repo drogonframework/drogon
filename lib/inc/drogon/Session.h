@@ -71,11 +71,30 @@ class Session
         std::lock_guard<std::mutex> lck(_mutex);
         _sessionMap.clear();
     }
+    const std::string &sessionId() const
+    {
+        return _sessionId;
+    }
+    bool needSetToClient() const
+    {
+        return _needToSet;
+    }
+    void hasSet()
+    {
+        _needToSet = false;
+    }
+    Session(const std::string &id, bool needToSet)
+        : _sessionId(id), _needToSet(needToSet)
+    {
+    }
+    Session() = delete;
 
-  protected:
+  private:
     typedef std::map<std::string, any> SessionMap;
     SessionMap _sessionMap;
     mutable std::mutex _mutex;
+    std::string _sessionId;
+    bool _needToSet = false;
 };
 
 typedef std::shared_ptr<Session> SessionPtr;

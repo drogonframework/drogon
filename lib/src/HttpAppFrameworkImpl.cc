@@ -505,7 +505,46 @@ HttpAppFrameworkImpl::getHandlersInfo() const
     ret.insert(ret.end(), v.begin(), v.end());
     return ret;
 }
-
+void HttpAppFrameworkImpl::callCallback(
+    const HttpRequestImplPtr &req,
+    const HttpResponsePtr &resp,
+    const std::function<void(const HttpResponsePtr &)> &callback)
+{
+    if (_useSession)
+    {
+        auto sessionPtr = req->getSession();
+        assert(sessionPtr);
+        if (sessionPtr->needSetToClient())
+        {
+            if (resp->expiredTime() >= 0)
+            {
+                auto newResp = std::make_shared<HttpResponseImpl>(
+                    *static_cast<HttpResponseImpl *>(resp.get()));
+                newResp->setExpiredTime(-1);  // make it temporary
+                newResp->addCookie("JSESSIONID", sessionPtr->sessionId());
+                sessionPtr->hasSet();
+                callback(newResp);
+                return;
+            }
+            else
+            {
+                resp->addCookie("JSESSIONID", sessionPtr->sessionId());
+                sessionPtr->hasSet();
+                callback(resp);
+                return;
+            }
+        }
+        else
+        {
+            callback(resp);
+            return;
+        }
+    }
+    else
+    {
+        callback(resp);
+    }
+}
 void HttpAppFrameworkImpl::onAsyncRequest(
     const HttpRequestImplPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback)
@@ -523,19 +562,18 @@ void HttpAppFrameworkImpl::onAsyncRequest(
         callback(resp);
         return;
     }
-
-    std::string sessionId = req->getCookie("JSESSIONID");
-    bool needSetJsessionid = false;
     if (_useSession)
     {
+        std::string sessionId = req->getCookie("JSESSIONID");
+        bool needSetJsessionid = false;
         if (sessionId.empty())
         {
             sessionId = utils::getUuid().c_str();
             needSetJsessionid = true;
         }
-        req->setSession(_sessionManagerPtr->getSession(sessionId));
+        req->setSession(
+            _sessionManagerPtr->getSession(sessionId, needSetJsessionid));
     }
-
     // Route to controller
     if (!_preRoutingObservers.empty())
     {
@@ -546,38 +584,23 @@ void HttpAppFrameworkImpl::onAsyncRequest(
     }
     if (_preRoutingAdvices.empty())
     {
-        _httpSimpleCtrlsRouterPtr->route(req,
-                                         std::move(callback),
-                                         needSetJsessionid,
-                                         std::move(sessionId));
+        _httpSimpleCtrlsRouterPtr->route(req, std::move(callback));
     }
     else
     {
         auto callbackPtr =
             std::make_shared<std::function<void(const HttpResponsePtr &)>>(
                 std::move(callback));
-        auto sessionIdPtr = std::make_shared<std::string>(std::move(sessionId));
         doAdvicesChain(
             _preRoutingAdvices,
             0,
             req,
             std::make_shared<std::function<void(const HttpResponsePtr &)>>(
-                [callbackPtr, needSetJsessionid, sessionIdPtr](
-                    const HttpResponsePtr &resp) {
-                    if (!needSetJsessionid ||
-                        resp->statusCode() == k404NotFound)
-                        (*callbackPtr)(resp);
-                    else
-                    {
-                        resp->addCookie("JSESSIONID", *sessionIdPtr);
-                        (*callbackPtr)(resp);
-                    }
+                [req, callbackPtr, this](const HttpResponsePtr &resp) {
+                    callCallback(req, resp, *callbackPtr);
                 }),
-            [this, callbackPtr, req, needSetJsessionid, sessionIdPtr]() {
-                _httpSimpleCtrlsRouterPtr->route(req,
-                                                 std::move(*callbackPtr),
-                                                 needSetJsessionid,
-                                                 std::move(*sessionIdPtr));
+            [this, callbackPtr, req]() {
+                _httpSimpleCtrlsRouterPtr->route(req, std::move(*callbackPtr));
             });
     }
 }

@@ -46,7 +46,26 @@ class HttpRequestImpl : public HttpRequest
           _loop(loop)
     {
     }
-
+    void reset()
+    {
+        _method = Invalid;
+        _version = kUnknown;
+        _contentLen = 0;
+        _headers.clear();
+        _cookies.clear();
+        _flagForParsingParameters = false;
+        //_path.clear();
+        _matchedPathPattern = "";
+        _query.clear();
+        _parameters.clear();
+        _jsonPtr.reset();
+        _sessionPtr.reset();
+        _cacheFilePtr.reset();
+        _expect.clear();
+        _content.clear();
+        _contentType = CT_TEXT_PLAIN;
+        _contentTypeString.clear();
+    }
     trantor::EventLoop *getLoop()
     {
         return _loop;
@@ -348,7 +367,10 @@ class HttpRequestImpl : public HttpRequest
     {
         _matchedPathPattern = pathPattern;
     }
-
+    const std::string &expect() const
+    {
+        return _expect;
+    }
     ~HttpRequestImpl();
 
   protected:
@@ -389,6 +411,7 @@ class HttpRequestImpl : public HttpRequest
     trantor::InetAddress _local;
     trantor::Date _date;
     std::unique_ptr<CacheFile> _cacheFilePtr;
+    std::string _expect;
 
   protected:
     std::string _content;

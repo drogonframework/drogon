@@ -78,9 +78,8 @@ std::string urlEncode(const std::string &str);
  * @param zdata: Data after compressing or before decompressing
  * @param nzdata: Data length after compressing or before decompressing
  */
-std::shared_ptr<std::string> gzipCompress(const char *data, const size_t ndata);
-std::shared_ptr<std::string> gzipDecompress(
-    const std::shared_ptr<std::string> &compressedData);
+std::string gzipCompress(const char *data, const size_t ndata);
+std::string gzipDecompress(const char *data, const size_t ndata);
 
 /// Get the http full date string
 /**

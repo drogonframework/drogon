@@ -30,8 +30,6 @@ void doFilters(
     const HttpRequestImplPtr &req,
     const std::shared_ptr<const std::function<void(const HttpResponsePtr &)>>
         &callbackPtr,
-    bool needSetJsessionid,
-    const std::shared_ptr<std::string> &sessionIdPtr,
     std::function<void()> &&missCallback);
 
 }  // namespace filters_function

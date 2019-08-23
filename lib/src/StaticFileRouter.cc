@@ -39,9 +39,7 @@ void StaticFileRouter::init()
 
 void StaticFileRouter::route(
     const HttpRequestImplPtr &req,
-    std::function<void(const HttpResponsePtr &)> &&callback,
-    bool needSetJsessionid,
-    std::string &&sessionId)
+    std::function<void(const HttpResponsePtr &)> &&callback)
 {
     const std::string &path = req->path();
     auto pos = path.rfind(".");
@@ -91,11 +89,9 @@ void StaticFileRouter::route(
                         std::shared_ptr<HttpResponseImpl> resp =
                             std::make_shared<HttpResponseImpl>();
                         resp->setStatusCode(k304NotModified);
-                        if (needSetJsessionid)
-                        {
-                            resp->addCookie("JSESSIONID", sessionId);
-                        }
-                        callback(resp);
+                        HttpAppFrameworkImpl::instance().callCallback(req,
+                                                                      resp,
+                                                                      callback);
                         return;
                     }
                 }
@@ -122,11 +118,8 @@ void StaticFileRouter::route(
                             std::shared_ptr<HttpResponseImpl> resp =
                                 std::make_shared<HttpResponseImpl>();
                             resp->setStatusCode(k304NotModified);
-                            if (needSetJsessionid)
-                            {
-                                resp->addCookie("JSESSIONID", sessionId);
-                            }
-                            callback(resp);
+                            HttpAppFrameworkImpl::instance().callCallback(
+                                req, resp, callback);
                             return;
                         }
                     }
@@ -135,17 +128,9 @@ void StaticFileRouter::route(
 
             if (cachedResp)
             {
-                if (needSetJsessionid)
-                {
-                    // make a copy
-                    auto newCachedResp = std::make_shared<HttpResponseImpl>(
-                        *static_cast<HttpResponseImpl *>(cachedResp.get()));
-                    newCachedResp->addCookie("JSESSIONID", sessionId);
-                    newCachedResp->setExpiredTime(-1);
-                    callback(newCachedResp);
-                    return;
-                }
-                callback(cachedResp);
+                HttpAppFrameworkImpl::instance().callCallback(req,
+                                                              cachedResp,
+                                                              callback);
                 return;
             }
             HttpResponsePtr resp;
@@ -188,21 +173,10 @@ void StaticFileRouter::route(
                         _staticFilesCache[filePath] = resp;
                     }
                 }
-
-                if (needSetJsessionid)
-                {
-                    auto newCachedResp = resp;
-                    if (resp->expiredTime() >= 0)
-                    {
-                        // make a copy
-                        newCachedResp = std::make_shared<HttpResponseImpl>(
-                            *static_cast<HttpResponseImpl *>(resp.get()));
-                        newCachedResp->setExpiredTime(-1);
-                    }
-                    newCachedResp->addCookie("JSESSIONID", sessionId);
-                    callback(newCachedResp);
-                    return;
-                }
+                HttpAppFrameworkImpl::instance().callCallback(req,
+                                                              resp,
+                                                              callback);
+                return;
             }
             callback(resp);
             return;

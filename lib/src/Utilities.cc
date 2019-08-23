@@ -12,24 +12,25 @@
  *
  */
 
-#include <cctype>
-#include <cstdlib>
 #include <drogon/utils/Utilities.h>
-#include <fcntl.h>
+#include <trantor/utils/Logger.h>
+#include <uuid.h>
+#include <zlib.h>
 #include <iomanip>
 #include <mutex>
 #include <sstream>
 #include <stack>
-#include <stdarg.h>
+#include <string>
+#include <thread>
+#include <algorithm>
+#include <cctype>
+#include <cstdlib>
 #include <stdio.h>
 #include <string.h>
-#include <string>
-#include <sys/stat.h>
-#include <thread>
-#include <trantor/utils/Logger.h>
 #include <unistd.h>
-#include <uuid.h>
-#include <zlib.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <stdarg.h>
 
 namespace drogon
 {
@@ -457,80 +458,89 @@ std::string urlEncode(const std::string &src)
 
 std::string urlDecode(const char *begin, const char *end)
 {
-    std::string result;
-    size_t len = end - begin;
-    result.reserve(len);
-    int hex = 0;
-    for (size_t i = 0; i < len; ++i)
+    if (std::find_if(begin, end, [](const char c) {
+            return c == '+' || c == '%';
+        }) != end)
     {
-        switch (begin[i])
+        std::string result;
+        size_t len = end - begin;
+        result.reserve(len);
+        int hex = 0;
+        for (size_t i = 0; i < len; ++i)
         {
-            case '+':
-                result += ' ';
-                break;
-            case '%':
-                if ((i + 2) < len && isxdigit(begin[i + 1]) &&
-                    isxdigit(begin[i + 2]))
-                {
-                    uint x1 = begin[i + 1];
-                    if (x1 >= '0' && x1 <= '9')
+            switch (begin[i])
+            {
+                case '+':
+                    result += ' ';
+                    break;
+                case '%':
+                    if ((i + 2) < len && isxdigit(begin[i + 1]) &&
+                        isxdigit(begin[i + 2]))
                     {
-                        x1 -= '0';
-                    }
-                    else if (x1 >= 'a' && x1 <= 'f')
-                    {
-                        x1 = x1 - 'a' + 10;
-                    }
-                    else if (x1 >= 'A' && x1 <= 'F')
-                    {
-                        x1 = x1 - 'A' + 10;
-                    }
-                    uint x2 = begin[i + 2];
-                    if (x2 >= '0' && x2 <= '9')
-                    {
-                        x2 -= '0';
-                    }
-                    else if (x2 >= 'a' && x2 <= 'f')
-                    {
-                        x2 = x2 - 'a' + 10;
-                    }
-                    else if (x2 >= 'A' && x2 <= 'F')
-                    {
-                        x2 = x2 - 'A' + 10;
-                    }
-                    hex = x1 * 16 + x2;
-                    if (!((hex >= 48 && hex <= 57) ||   // 0-9
-                          (hex >= 97 && hex <= 122) ||  // a-z
-                          (hex >= 65 && hex <= 90) ||   // A-Z
-                          //[$-_.+!*'(),]  [$&+,/:;?@]
-                          hex == 0x21 || hex == 0x24 || hex == 0x26 ||
-                          hex == 0x27 || hex == 0x28 || hex == 0x29 ||
-                          hex == 0x2a || hex == 0x2b || hex == 0x2c ||
-                          hex == 0x2d || hex == 0x2e || hex == 0x2f ||
-                          hex == 0x3A || hex == 0x3B || hex == 0x3f ||
-                          hex == 0x40 || hex == 0x5f))
-                    {
-                        result += char(hex);
-                        i += 2;
+                        uint x1 = begin[i + 1];
+                        if (x1 >= '0' && x1 <= '9')
+                        {
+                            x1 -= '0';
+                        }
+                        else if (x1 >= 'a' && x1 <= 'f')
+                        {
+                            x1 = x1 - 'a' + 10;
+                        }
+                        else if (x1 >= 'A' && x1 <= 'F')
+                        {
+                            x1 = x1 - 'A' + 10;
+                        }
+                        uint x2 = begin[i + 2];
+                        if (x2 >= '0' && x2 <= '9')
+                        {
+                            x2 -= '0';
+                        }
+                        else if (x2 >= 'a' && x2 <= 'f')
+                        {
+                            x2 = x2 - 'a' + 10;
+                        }
+                        else if (x2 >= 'A' && x2 <= 'F')
+                        {
+                            x2 = x2 - 'A' + 10;
+                        }
+                        hex = x1 * 16 + x2;
+                        if (!((hex >= 48 && hex <= 57) ||   // 0-9
+                              (hex >= 97 && hex <= 122) ||  // a-z
+                              (hex >= 65 && hex <= 90) ||   // A-Z
+                              //[$-_.+!*'(),]  [$&+,/:;?@]
+                              hex == 0x21 || hex == 0x24 || hex == 0x26 ||
+                              hex == 0x27 || hex == 0x28 || hex == 0x29 ||
+                              hex == 0x2a || hex == 0x2b || hex == 0x2c ||
+                              hex == 0x2d || hex == 0x2e || hex == 0x2f ||
+                              hex == 0x3A || hex == 0x3B || hex == 0x3f ||
+                              hex == 0x40 || hex == 0x5f))
+                        {
+                            result += char(hex);
+                            i += 2;
+                        }
+                        else
+                            result += '%';
                     }
                     else
+                    {
                         result += '%';
-                }
-                else
-                {
-                    result += '%';
-                }
-                break;
-            default:
-                result += begin[i];
-                break;
+                    }
+                    break;
+                default:
+                    result += begin[i];
+                    break;
+            }
         }
+        return result;
     }
-    return result;
+    else
+    {
+        return std::string(begin, end);
+    }
 }
 
 /* Compress gzip data */
-std::shared_ptr<std::string> gzipCompress(const char *data, const size_t ndata)
+std::string gzipCompress(const char *data, const size_t ndata)
 {
     z_stream strm = {0};
     if (data && ndata > 0)
@@ -542,36 +552,35 @@ std::shared_ptr<std::string> gzipCompress(const char *data, const size_t ndata)
                          8,
                          Z_DEFAULT_STRATEGY) != Z_OK)
             return nullptr;
-        auto outstr = std::make_shared<std::string>();
-        outstr->resize(compressBound(ndata));
+        std::string outstr;
+        outstr.resize(compressBound(ndata));
         strm.next_in = (Bytef *)data;
         strm.avail_in = ndata;
-        strm.next_out = (Bytef *)outstr->data();
-        strm.avail_out = outstr->length();
+        strm.next_out = (Bytef *)outstr.data();
+        strm.avail_out = outstr.length();
         if (deflate(&strm, Z_FINISH) != Z_STREAM_END)
             return nullptr;
         if (deflateEnd(&strm) != Z_OK)
             return nullptr;
-        outstr->resize(strm.total_out);
+        outstr.resize(strm.total_out);
         return outstr;
     }
-    return nullptr;
+    return std::string{};
 }
 
-std::shared_ptr<std::string> gzipDecompress(
-    const std::shared_ptr<std::string> &compressedData)
+std::string gzipDecompress(const char *data, const size_t ndata)
 {
-    if (compressedData->length() == 0)
-        return compressedData;
+    if (ndata == 0)
+        return std::string(data, ndata);
 
-    auto full_length = compressedData->length();
+    auto full_length = ndata;
 
-    auto decompressed = std::make_shared<std::string>(full_length * 2, 0);
+    auto decompressed = std::string(full_length * 2, 0);
     bool done = false;
 
     z_stream strm = {0};
-    strm.next_in = (Bytef *)compressedData->data();
-    strm.avail_in = compressedData->length();
+    strm.next_in = (Bytef *)data;
+    strm.avail_in = ndata;
     strm.total_out = 0;
     strm.zalloc = Z_NULL;
     strm.zfree = Z_NULL;
@@ -580,12 +589,12 @@ std::shared_ptr<std::string> gzipDecompress(
     while (!done)
     {
         // Make sure we have enough room and reset the lengths.
-        if (strm.total_out >= decompressed->length())
+        if (strm.total_out >= decompressed.length())
         {
-            decompressed->resize(decompressed->length() * 2);
+            decompressed.resize(decompressed.length() * 2);
         }
-        strm.next_out = (Bytef *)decompressed->data() + strm.total_out;
-        strm.avail_out = decompressed->length() - strm.total_out;
+        strm.next_out = (Bytef *)decompressed.data() + strm.total_out;
+        strm.avail_out = decompressed.length() - strm.total_out;
         // Inflate another chunk.
         int status = inflate(&strm, Z_SYNC_FLUSH);
         if (status == Z_STREAM_END)
@@ -598,16 +607,16 @@ std::shared_ptr<std::string> gzipDecompress(
         }
     }
     if (inflateEnd(&strm) != Z_OK)
-        return nullptr;
+        return std::string{};
     // Set real length.
     if (done)
     {
-        decompressed->resize(strm.total_out);
+        decompressed.resize(strm.total_out);
         return decompressed;
     }
     else
     {
-        return nullptr;
+        return std::string{};
     }
 }
 

@@ -309,7 +309,6 @@ void HttpRequestImpl::addHeader(const char *start,
     {
         value.resize(value.size() - 1);
     }
-
     if (field == "cookie")
     {
         LOG_TRACE << "cookies!!!:" << value;
@@ -350,7 +349,14 @@ void HttpRequestImpl::addHeader(const char *start,
     }
     else
     {
-        //_headers[std::move(field)] = std::move(value);
+        if (field == "content-length")
+        {
+            _contentLen = std::stoull(value.c_str());
+        }
+        else if (field == "expect")
+        {
+            _expect = value;
+        }
         _headers.emplace(std::move(field), std::move(value));
     }
 }
