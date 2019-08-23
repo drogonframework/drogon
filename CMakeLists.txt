@@ -292,7 +292,7 @@ else()
 endif()
 
 get_target_property(INS drogon INCLUDE_DIRECTORIES)
-list(INSERT INS 0 "${INSTALL_INCLUDE_DIR}")
+list(APPEND INS "${INSTALL_INCLUDE_DIR}")
 list(REMOVE_DUPLICATES INS)
 set(INS_STRING "")
 foreach(loop_var ${INS})
