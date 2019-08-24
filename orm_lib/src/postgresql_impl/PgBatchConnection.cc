@@ -27,6 +27,7 @@ namespace drogon
 {
 namespace orm
 {
+static const unsigned int maxBatchCount = 256;
 Result makeResult(
     const std::shared_ptr<PGresult> &r = std::shared_ptr<PGresult>(nullptr),
     const std::string &query = "")
@@ -286,16 +287,17 @@ void PgConnection::sendBatchedSql()
         {
             statName = cmd->_preparingStatement;
         }
-        if (_batchSqlCommands.size() == 1)
+        if (_batchSqlCommands.size() == 1 || cmd->_sql.length() > 1024 ||
+            _batchCount > maxBatchCount)
         {
             _sendBatchEnd = true;
+            _batchCount = 0;
         }
         else
         {
             auto sql = cmd->_sql;
             std::transform(sql.begin(), sql.end(), sql.begin(), tolower);
-            if (sql.length() > 1024 ||
-                sql.find("update") != std::string::npos ||
+            if (sql.find("update") != std::string::npos ||
                 sql.find("insert") != std::string::npos ||
                 sql.find("delete") != std::string::npos ||
                 sql.find("drop") != std::string::npos ||
@@ -303,8 +305,10 @@ void PgConnection::sendBatchedSql()
                 sql.find("lock") != std::string::npos)
             {
                 _sendBatchEnd = true;
+                _batchCount = 0;
             }
         }
+        ++_batchCount;
         if (PQsendQueryPrepared(_connPtr.get(),
                                 statName.c_str(),
                                 cmd->_paraNum,

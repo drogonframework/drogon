@@ -117,6 +117,7 @@ class PgConnection : public DbConnection,
     void sendBatchedSql();
     int sendBatchEnd();
     bool _sendBatchEnd = false;
+    unsigned int _batchCount = 0;
 #endif
 };
 

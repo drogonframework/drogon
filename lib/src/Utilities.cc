@@ -455,88 +455,84 @@ std::string urlEncode(const std::string &src)
 
     return result;
 }
-
+bool needUrlDecoding(const char *begin, const char *end)
+{
+    return std::find_if(begin, end, [](const char c) {
+               return c == '+' || c == '%';
+           }) != end;
+}
 std::string urlDecode(const char *begin, const char *end)
 {
-    if (std::find_if(begin, end, [](const char c) {
-            return c == '+' || c == '%';
-        }) != end)
+    std::string result;
+    size_t len = end - begin;
+    result.reserve(len * 2);
+    int hex = 0;
+    for (size_t i = 0; i < len; ++i)
     {
-        std::string result;
-        size_t len = end - begin;
-        result.reserve(len);
-        int hex = 0;
-        for (size_t i = 0; i < len; ++i)
+        switch (begin[i])
         {
-            switch (begin[i])
-            {
-                case '+':
-                    result += ' ';
-                    break;
-                case '%':
-                    if ((i + 2) < len && isxdigit(begin[i + 1]) &&
-                        isxdigit(begin[i + 2]))
+            case '+':
+                result += ' ';
+                break;
+            case '%':
+                if ((i + 2) < len && isxdigit(begin[i + 1]) &&
+                    isxdigit(begin[i + 2]))
+                {
+                    uint x1 = begin[i + 1];
+                    if (x1 >= '0' && x1 <= '9')
                     {
-                        uint x1 = begin[i + 1];
-                        if (x1 >= '0' && x1 <= '9')
-                        {
-                            x1 -= '0';
-                        }
-                        else if (x1 >= 'a' && x1 <= 'f')
-                        {
-                            x1 = x1 - 'a' + 10;
-                        }
-                        else if (x1 >= 'A' && x1 <= 'F')
-                        {
-                            x1 = x1 - 'A' + 10;
-                        }
-                        uint x2 = begin[i + 2];
-                        if (x2 >= '0' && x2 <= '9')
-                        {
-                            x2 -= '0';
-                        }
-                        else if (x2 >= 'a' && x2 <= 'f')
-                        {
-                            x2 = x2 - 'a' + 10;
-                        }
-                        else if (x2 >= 'A' && x2 <= 'F')
-                        {
-                            x2 = x2 - 'A' + 10;
-                        }
-                        hex = x1 * 16 + x2;
-                        if (!((hex >= 48 && hex <= 57) ||   // 0-9
-                              (hex >= 97 && hex <= 122) ||  // a-z
-                              (hex >= 65 && hex <= 90) ||   // A-Z
-                              //[$-_.+!*'(),]  [$&+,/:;?@]
-                              hex == 0x21 || hex == 0x24 || hex == 0x26 ||
-                              hex == 0x27 || hex == 0x28 || hex == 0x29 ||
-                              hex == 0x2a || hex == 0x2b || hex == 0x2c ||
-                              hex == 0x2d || hex == 0x2e || hex == 0x2f ||
-                              hex == 0x3A || hex == 0x3B || hex == 0x3f ||
-                              hex == 0x40 || hex == 0x5f))
-                        {
-                            result += char(hex);
-                            i += 2;
-                        }
-                        else
-                            result += '%';
+                        x1 -= '0';
+                    }
+                    else if (x1 >= 'a' && x1 <= 'f')
+                    {
+                        x1 = x1 - 'a' + 10;
+                    }
+                    else if (x1 >= 'A' && x1 <= 'F')
+                    {
+                        x1 = x1 - 'A' + 10;
+                    }
+                    uint x2 = begin[i + 2];
+                    if (x2 >= '0' && x2 <= '9')
+                    {
+                        x2 -= '0';
+                    }
+                    else if (x2 >= 'a' && x2 <= 'f')
+                    {
+                        x2 = x2 - 'a' + 10;
+                    }
+                    else if (x2 >= 'A' && x2 <= 'F')
+                    {
+                        x2 = x2 - 'A' + 10;
+                    }
+                    hex = x1 * 16 + x2;
+                    if (!((hex >= 48 && hex <= 57) ||   // 0-9
+                          (hex >= 97 && hex <= 122) ||  // a-z
+                          (hex >= 65 && hex <= 90) ||   // A-Z
+                          //[$-_.+!*'(),]  [$&+,/:;?@]
+                          hex == 0x21 || hex == 0x24 || hex == 0x26 ||
+                          hex == 0x27 || hex == 0x28 || hex == 0x29 ||
+                          hex == 0x2a || hex == 0x2b || hex == 0x2c ||
+                          hex == 0x2d || hex == 0x2e || hex == 0x2f ||
+                          hex == 0x3A || hex == 0x3B || hex == 0x3f ||
+                          hex == 0x40 || hex == 0x5f))
+                    {
+                        result += char(hex);
+                        i += 2;
                     }
                     else
-                    {
                         result += '%';
-                    }
-                    break;
-                default:
-                    result += begin[i];
-                    break;
-            }
+                }
+                else
+                {
+                    result += '%';
+                }
+                break;
+            default:
+                result += begin[i];
+                break;
         }
-        return result;
     }
-    else
-    {
-        return std::string(begin, end);
-    }
+    return result;
 }
 
 /* Compress gzip data */
