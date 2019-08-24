@@ -97,7 +97,7 @@ const uint64_t &Groups::getValueOfGroupId() const noexcept
         return *_groupId;
     return defaultValue;
 }
-std::shared_ptr<const uint64_t> Groups::getGroupId() const noexcept
+const std::shared_ptr<uint64_t> &Groups::getGroupId() const noexcept
 {
     return _groupId;
 }
@@ -114,7 +114,7 @@ const std::string &Groups::getValueOfGroupName() const noexcept
         return *_groupName;
     return defaultValue;
 }
-std::shared_ptr<const std::string> Groups::getGroupName() const noexcept
+const std::shared_ptr<std::string> &Groups::getGroupName() const noexcept
 {
     return _groupName;
 }
@@ -136,7 +136,7 @@ const uint64_t &Groups::getValueOfCreaterId() const noexcept
         return *_createrId;
     return defaultValue;
 }
-std::shared_ptr<const uint64_t> Groups::getCreaterId() const noexcept
+const std::shared_ptr<uint64_t> &Groups::getCreaterId() const noexcept
 {
     return _createrId;
 }
@@ -153,7 +153,7 @@ const std::string &Groups::getValueOfCreateTime() const noexcept
         return *_createTime;
     return defaultValue;
 }
-std::shared_ptr<const std::string> Groups::getCreateTime() const noexcept
+const std::shared_ptr<std::string> &Groups::getCreateTime() const noexcept
 {
     return _createTime;
 }
@@ -175,7 +175,7 @@ const uint64_t &Groups::getValueOfInviting() const noexcept
         return *_inviting;
     return defaultValue;
 }
-std::shared_ptr<const uint64_t> Groups::getInviting() const noexcept
+const std::shared_ptr<uint64_t> &Groups::getInviting() const noexcept
 {
     return _inviting;
 }
@@ -192,7 +192,7 @@ const uint64_t &Groups::getValueOfInvitingUserId() const noexcept
         return *_invitingUserId;
     return defaultValue;
 }
-std::shared_ptr<const uint64_t> Groups::getInvitingUserId() const noexcept
+const std::shared_ptr<uint64_t> &Groups::getInvitingUserId() const noexcept
 {
     return _invitingUserId;
 }
@@ -209,7 +209,7 @@ const std::string &Groups::getValueOfAvatarId() const noexcept
         return *_avatarId;
     return defaultValue;
 }
-std::shared_ptr<const std::string> Groups::getAvatarId() const noexcept
+const std::shared_ptr<std::string> &Groups::getAvatarId() const noexcept
 {
     return _avatarId;
 }
@@ -231,7 +231,7 @@ const double &Groups::getValueOfUuu() const noexcept
         return *_uuu;
     return defaultValue;
 }
-std::shared_ptr<const double> Groups::getUuu() const noexcept
+const std::shared_ptr<double> &Groups::getUuu() const noexcept
 {
     return _uuu;
 }
@@ -248,7 +248,7 @@ const std::string &Groups::getValueOfText() const noexcept
         return *_text;
     return defaultValue;
 }
-std::shared_ptr<const std::string> Groups::getText() const noexcept
+const std::shared_ptr<std::string> &Groups::getText() const noexcept
 {
     return _text;
 }
@@ -277,7 +277,7 @@ std::string Groups::getValueOfAvatarAsString() const noexcept
         return std::string(_avatar->data(), _avatar->size());
     return defaultValue;
 }
-std::shared_ptr<const std::vector<char>> Groups::getAvatar() const noexcept
+const std::shared_ptr<std::vector<char>> &Groups::getAvatar() const noexcept
 {
     return _avatar;
 }

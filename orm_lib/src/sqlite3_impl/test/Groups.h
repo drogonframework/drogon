@@ -58,7 +58,7 @@ class Groups
     const uint64_t &getValueOfGroupId() const noexcept;
     /// Return a shared_ptr object pointing to the column const value, or an
     /// empty shared_ptr object if the column is null
-    std::shared_ptr<const uint64_t> getGroupId() const noexcept;
+    const std::shared_ptr<uint64_t> &getGroupId() const noexcept;
 
     /**  For column group_name  */
     /// Get the value of the column group_name, returns the default value if the
@@ -66,7 +66,7 @@ class Groups
     const std::string &getValueOfGroupName() const noexcept;
     /// Return a shared_ptr object pointing to the column const value, or an
     /// empty shared_ptr object if the column is null
-    std::shared_ptr<const std::string> getGroupName() const noexcept;
+    const std::shared_ptr<std::string> &getGroupName() const noexcept;
     /// Set the value of the column group_name
     void setGroupName(const std::string &groupName) noexcept;
     void setGroupName(std::string &&groupName) noexcept;
@@ -77,7 +77,7 @@ class Groups
     const uint64_t &getValueOfCreaterId() const noexcept;
     /// Return a shared_ptr object pointing to the column const value, or an
     /// empty shared_ptr object if the column is null
-    std::shared_ptr<const uint64_t> getCreaterId() const noexcept;
+    const std::shared_ptr<uint64_t> &getCreaterId() const noexcept;
     /// Set the value of the column creater_id
     void setCreaterId(const uint64_t &createrId) noexcept;
 
@@ -87,7 +87,7 @@ class Groups
     const std::string &getValueOfCreateTime() const noexcept;
     /// Return a shared_ptr object pointing to the column const value, or an
     /// empty shared_ptr object if the column is null
-    std::shared_ptr<const std::string> getCreateTime() const noexcept;
+    const std::shared_ptr<std::string> &getCreateTime() const noexcept;
     /// Set the value of the column create_time
     void setCreateTime(const std::string &createTime) noexcept;
     void setCreateTime(std::string &&createTime) noexcept;
@@ -98,7 +98,7 @@ class Groups
     const uint64_t &getValueOfInviting() const noexcept;
     /// Return a shared_ptr object pointing to the column const value, or an
     /// empty shared_ptr object if the column is null
-    std::shared_ptr<const uint64_t> getInviting() const noexcept;
+    const std::shared_ptr<uint64_t> &getInviting() const noexcept;
     /// Set the value of the column inviting
     void setInviting(const uint64_t &inviting) noexcept;
 
@@ -108,7 +108,7 @@ class Groups
     const uint64_t &getValueOfInvitingUserId() const noexcept;
     /// Return a shared_ptr object pointing to the column const value, or an
     /// empty shared_ptr object if the column is null
-    std::shared_ptr<const uint64_t> getInvitingUserId() const noexcept;
+    const std::shared_ptr<uint64_t> &getInvitingUserId() const noexcept;
     /// Set the value of the column inviting_user_id
     void setInvitingUserId(const uint64_t &invitingUserId) noexcept;
 
@@ -118,7 +118,7 @@ class Groups
     const std::string &getValueOfAvatarId() const noexcept;
     /// Return a shared_ptr object pointing to the column const value, or an
     /// empty shared_ptr object if the column is null
-    std::shared_ptr<const std::string> getAvatarId() const noexcept;
+    const std::shared_ptr<std::string> &getAvatarId() const noexcept;
     /// Set the value of the column avatar_id
     void setAvatarId(const std::string &avatarId) noexcept;
     void setAvatarId(std::string &&avatarId) noexcept;
@@ -129,7 +129,7 @@ class Groups
     const double &getValueOfUuu() const noexcept;
     /// Return a shared_ptr object pointing to the column const value, or an
     /// empty shared_ptr object if the column is null
-    std::shared_ptr<const double> getUuu() const noexcept;
+    const std::shared_ptr<double> &getUuu() const noexcept;
     /// Set the value of the column uuu
     void setUuu(const double &uuu) noexcept;
 
@@ -139,7 +139,7 @@ class Groups
     const std::string &getValueOfText() const noexcept;
     /// Return a shared_ptr object pointing to the column const value, or an
     /// empty shared_ptr object if the column is null
-    std::shared_ptr<const std::string> getText() const noexcept;
+    const std::shared_ptr<std::string> &getText() const noexcept;
     /// Set the value of the column text
     void setText(const std::string &text) noexcept;
     void setText(std::string &&text) noexcept;
@@ -152,7 +152,7 @@ class Groups
     std::string getValueOfAvatarAsString() const noexcept;
     /// Return a shared_ptr object pointing to the column const value, or an
     /// empty shared_ptr object if the column is null
-    std::shared_ptr<const std::vector<char>> getAvatar() const noexcept;
+    const std::shared_ptr<std::vector<char>> &getAvatar() const noexcept;
     /// Set the value of the column avatar
     void setAvatar(const std::vector<char> &avatar) noexcept;
     void setAvatar(const std::string &avatar) noexcept;

@@ -91,7 +91,7 @@ const std::string &Users::getValueOfUserId() const noexcept
         return *_userId;
     return defaultValue;
 }
-std::shared_ptr<const std::string> Users::getUserId() const noexcept
+const std::shared_ptr<std::string> &Users::getUserId() const noexcept
 {
     return _userId;
 }
@@ -113,7 +113,7 @@ const std::string &Users::getValueOfUserName() const noexcept
         return *_userName;
     return defaultValue;
 }
-std::shared_ptr<const std::string> Users::getUserName() const noexcept
+const std::shared_ptr<std::string> &Users::getUserName() const noexcept
 {
     return _userName;
 }
@@ -135,7 +135,7 @@ const std::string &Users::getValueOfPassword() const noexcept
         return *_password;
     return defaultValue;
 }
-std::shared_ptr<const std::string> Users::getPassword() const noexcept
+const std::shared_ptr<std::string> &Users::getPassword() const noexcept
 {
     return _password;
 }
@@ -157,7 +157,7 @@ const std::string &Users::getValueOfOrgName() const noexcept
         return *_orgName;
     return defaultValue;
 }
-std::shared_ptr<const std::string> Users::getOrgName() const noexcept
+const std::shared_ptr<std::string> &Users::getOrgName() const noexcept
 {
     return _orgName;
 }
@@ -179,7 +179,7 @@ const std::string &Users::getValueOfSignature() const noexcept
         return *_signature;
     return defaultValue;
 }
-std::shared_ptr<const std::string> Users::getSignature() const noexcept
+const std::shared_ptr<std::string> &Users::getSignature() const noexcept
 {
     return _signature;
 }
@@ -201,7 +201,7 @@ const std::string &Users::getValueOfAvatarId() const noexcept
         return *_avatarId;
     return defaultValue;
 }
-std::shared_ptr<const std::string> Users::getAvatarId() const noexcept
+const std::shared_ptr<std::string> &Users::getAvatarId() const noexcept
 {
     return _avatarId;
 }
@@ -223,7 +223,7 @@ const int32_t &Users::getValueOfId() const noexcept
         return *_id;
     return defaultValue;
 }
-std::shared_ptr<const int32_t> Users::getId() const noexcept
+const std::shared_ptr<int32_t> &Users::getId() const noexcept
 {
     return _id;
 }
@@ -240,7 +240,7 @@ const std::string &Users::getValueOfSalt() const noexcept
         return *_salt;
     return defaultValue;
 }
-std::shared_ptr<const std::string> Users::getSalt() const noexcept
+const std::shared_ptr<std::string> &Users::getSalt() const noexcept
 {
     return _salt;
 }
@@ -262,7 +262,7 @@ const bool &Users::getValueOfAdmin() const noexcept
         return *_admin;
     return defaultValue;
 }
-std::shared_ptr<const bool> Users::getAdmin() const noexcept
+const std::shared_ptr<bool> &Users::getAdmin() const noexcept
 {
     return _admin;
 }
