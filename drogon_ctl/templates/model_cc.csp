@@ -145,7 +145,7 @@ const std::string &[[className]]::getColumnName(size_t index) noexcept(false)
                 $$<<"    return defaultValue;\n";
                 $$<<"}\n";
             }
-            $$<<"std::shared_ptr<const "<<col._colType<<"> "<<className<<"::get"<<col._colTypeName<<"() const noexcept\n";
+            $$<<"const std::shared_ptr<"<<col._colType<<"> &"<<className<<"::get"<<col._colTypeName<<"() const noexcept\n";
             $$<<"{\n";
             $$<<"    return _"<<col._colValName<<";\n";
             $$<<"}\n";
