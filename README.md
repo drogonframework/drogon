@@ -45,12 +45,12 @@ Below is the main program of a typical drogon application:
 using namespace drogon;
 int main()
 {
-    app().setLogPath("./");
-    app().setLogLevel(trantor::Logger::WARN);
-    app().addListener("0.0.0.0", 80);
-    app().setThreadNum(16);
-    app().enableRunAsDaemon();
-    app().run();
+    app().setLogPath("./")
+         .setLogLevel(trantor::Logger::WARN)
+         .addListener("0.0.0.0", 80)
+         .setThreadNum(16)
+         .enableRunAsDaemon()
+         .run();
 }
 ```
 
@@ -61,8 +61,7 @@ It can be further simplified by using configuration file as follows:
 using namespace drogon;
 int main()
 {
-    app().loadConfigFile("./config.json");
-    app().run();
+    app().loadConfigFile("./config.json").run();
 }
 ```
 

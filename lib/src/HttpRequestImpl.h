@@ -54,7 +54,7 @@ class HttpRequestImpl : public HttpRequest
         _headers.clear();
         _cookies.clear();
         _flagForParsingParameters = false;
-        //_path.clear();
+        _path.clear();
         _matchedPathPattern = "";
         _query.clear();
         _parameters.clear();
@@ -98,7 +98,14 @@ class HttpRequestImpl : public HttpRequest
 
     void setPath(const char *start, const char *end)
     {
-        _path = utils::urlDecode(start, end);
+        if(utils::needUrlDecoding(start,end))
+        {
+            _path = utils::urlDecode(start, end);
+        }
+        else
+        {
+            _path.append(start, end);
+        }
     }
 
     virtual void setPath(const std::string &path) override
