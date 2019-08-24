@@ -173,9 +173,14 @@ bool HttpResponseParser::parseResponse(MsgBuffer *buf)
                 }
                 break;
             }
+            if (!_response->_bodyPtr)
+            {
+                _response->_bodyPtr = std::make_shared<std::string>();
+            }
             if (_response->_leftBodyLength >= buf->readableBytes())
             {
                 _response->_leftBodyLength -= buf->readableBytes();
+
                 _response->_bodyPtr->append(
                     std::string(buf->peek(), buf->readableBytes()));
                 buf->retrieveAll();

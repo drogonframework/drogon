@@ -27,9 +27,7 @@ class StaticFileRouter
 {
   public:
     void route(const HttpRequestImplPtr &req,
-               std::function<void(const HttpResponsePtr &)> &&callback,
-               bool needSetJsessionid,
-               std::string &&sessionId);
+               std::function<void(const HttpResponsePtr &)> &&callback);
     void setFileTypes(const std::vector<std::string> &types);
     void setStaticFilesCacheTime(int cacheTime)
     {

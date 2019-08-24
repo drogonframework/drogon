@@ -101,7 +101,9 @@ void HttpServer::onConnection(const TcpConnectionPtr &conn)
 {
     if (conn->connected())
     {
-        conn->setContext(std::make_shared<HttpRequestParser>(conn));
+        auto parser = std::make_shared<HttpRequestParser>(conn);
+        parser->reset();
+        conn->setContext(parser);
         _connectionCallback(conn);
     }
     else if (conn->disconnected())
@@ -137,7 +139,7 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn, MsgBuffer *buf)
     }
     else
     {
-        std::vector<HttpRequestImplPtr> requests;
+        auto &requests = requestParser->getRequestBuffer();
         while (buf->readableBytes() > 0)
         {
             if (requestParser->isStop())
@@ -191,6 +193,7 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn, MsgBuffer *buf)
             }
         }
         onRequests(conn, requests, requestParser);
+        requests.clear();
     }
 }
 
@@ -201,19 +204,30 @@ void HttpServer::onRequests(
 {
     if (requests.empty())
         return;
-    auto responsePtrs =
-        std::make_shared<std::vector<std::pair<HttpResponsePtr, bool>>>();
+    if (HttpAppFrameworkImpl::instance().keepaliveRequestsNumber() > 0 &&
+        requestParser->numberOfRequestsParsed() >=
+            HttpAppFrameworkImpl::instance().keepaliveRequestsNumber())
+    {
+        requestParser->stop();
+        conn->shutdown();
+        return;
+    }
+    else if (HttpAppFrameworkImpl::instance().pipeliningRequestsNumber() > 0 &&
+             requestParser->numberOfRequestsInPipelining() + requests.size() >=
+                 HttpAppFrameworkImpl::instance().pipeliningRequestsNumber())
+    {
+        requestParser->stop();
+        conn->shutdown();
+        return;
+    }
+    if (!conn->connected())
+    {
+        return;
+    }
     auto loopFlagPtr = std::make_shared<bool>(true);
+
     for (auto &req : requests)
     {
-        if (!conn->connected())
-        {
-            return;
-        }
-        if (requestParser->isStop())
-        {
-            break;
-        }
         const std::string &connection = req->getHeaderBy("connection");
         bool _close = connection == "close" ||
                       (req->getVersion() == HttpRequestImpl::kHttp10 &&
@@ -224,19 +238,11 @@ void HttpServer::onRequests(
         {
             req->setMethod(Get);
         }
-        requestParser->pushRquestToPipelining(req);
-        if (HttpAppFrameworkImpl::instance().keepaliveRequestsNumber() > 0 &&
-            requestParser->numberOfRequestsParsed() >=
-                HttpAppFrameworkImpl::instance().keepaliveRequestsNumber())
+        bool syncFlag = false;
+        if (!requestParser->emptyPipelining())
         {
-            requestParser->stop();
-        }
-
-        if (HttpAppFrameworkImpl::instance().pipeliningRequestsNumber() > 0 &&
-            requestParser->numberOfRequestsInPipelining() >=
-                HttpAppFrameworkImpl::instance().pipeliningRequestsNumber())
-        {
-            requestParser->stop();
+            requestParser->pushRquestToPipelining(req);
+            syncFlag = true;
         }
 
         _httpAsyncCallback(
@@ -245,7 +251,7 @@ void HttpServer::onRequests(
              _close,
              req,
              loopFlagPtr,
-             responsePtrs,
+             &syncFlag,
              isHeadMethod,
              this,
              requestParser](const HttpResponsePtr &response) {
@@ -274,11 +280,10 @@ void HttpServer::onRequests(
                     auto strCompress =
                         utils::gzipCompress(response->getBody().data(),
                                             response->getBody().length());
-                    if (strCompress)
+                    if (!strCompress.empty())
                     {
                         if (zlen > 0)
                         {
-                            LOG_TRACE << "length after compressing:" << zlen;
                             if (response->expiredTime() >= 0)
                             {
                                 // cached response,we need to make a clone
@@ -287,7 +292,7 @@ void HttpServer::onRequests(
                                         response.get()));
                                 newResp->setExpiredTime(-1);
                             }
-                            newResp->setBody(std::move(*strCompress));
+                            newResp->setBody(std::move(strCompress));
                             newResp->addHeader("Content-Encoding", "gzip");
                         }
                         else
@@ -307,46 +312,39 @@ void HttpServer::onRequests(
                      */
                     if (!conn->connected())
                         return;
-                    if (requestParser->getFirstRequest() == req)
+                    if (*loopFlagPtr)
                     {
-                        requestParser->popFirstRequest();
-                        if (*loopFlagPtr)
+                        syncFlag = true;
+                        if (requestParser->emptyPipelining())
                         {
-                            (*responsePtrs).emplace_back(newResp, isHeadMethod);
+                            requestParser->getResponseBuffer().emplace_back(
+                                newResp, isHeadMethod);
                         }
                         else
                         {
-                            std::vector<std::pair<HttpResponsePtr, bool>> resps;
-                            resps.emplace_back(newResp, isHeadMethod);
-                            while (
-                                requestParser->numberOfRequestsInPipelining() >
-                                0)
-                            {
-                                auto resp = requestParser->getFirstResponse();
-                                if (resp.first)
-                                {
-                                    requestParser->popFirstRequest();
-                                    resps.push_back(std::move(resp));
-                                }
-                                else
-                                    break;
-                            }
-                            sendResponses(conn,
-                                          resps,
-                                          requestParser->getBuffer());
+                            // some earlier requests are waiting for responses;
+                            requestParser->pushResponseToPipelining(
+                                req, newResp, isHeadMethod);
                         }
-                        if (requestParser->isStop() &&
-                            requestParser->numberOfRequestsInPipelining() == 0)
+                    }
+                    else if (requestParser->getFirstRequest() == req)
+                    {
+                        requestParser->popFirstRequest();
+
+                        std::vector<std::pair<HttpResponsePtr, bool>> resps;
+                        resps.emplace_back(newResp, isHeadMethod);
+                        while (!requestParser->emptyPipelining())
                         {
-                            if (*loopFlagPtr)
+                            auto resp = requestParser->getFirstResponse();
+                            if (resp.first)
                             {
-                                sendResponses(conn,
-                                              *responsePtrs,
-                                              requestParser->getBuffer());
-                                responsePtrs->clear();
+                                requestParser->popFirstRequest();
+                                resps.push_back(std::move(resp));
                             }
-                            conn->shutdown();
+                            else
+                                break;
                         }
+                        sendResponses(conn, resps, requestParser->getBuffer());
                     }
                     else
                     {
@@ -372,8 +370,7 @@ void HttpServer::onRequests(
                                 std::vector<std::pair<HttpResponsePtr, bool>>
                                     resps;
                                 resps.emplace_back(newResp, isHeadMethod);
-                                while (requestParser
-                                           ->numberOfRequestsInPipelining() > 0)
+                                while (!requestParser->emptyPipelining())
                                 {
                                     auto resp =
                                         requestParser->getFirstResponse();
@@ -388,13 +385,6 @@ void HttpServer::onRequests(
                                 sendResponses(conn,
                                               resps,
                                               requestParser->getBuffer());
-                                if (requestParser->isStop() &&
-                                    requestParser
-                                            ->numberOfRequestsInPipelining() ==
-                                        0)
-                                {
-                                    conn->shutdown();
-                                }
                             }
                             else
                             {
@@ -407,10 +397,19 @@ void HttpServer::onRequests(
                     });
                 }
             });
+        if (syncFlag == false)
+        {
+            requestParser->pushRquestToPipelining(req);
+        }
     }
     *loopFlagPtr = false;
-    if (conn->connected() && !responsePtrs->empty())
-        sendResponses(conn, *responsePtrs, requestParser->getBuffer());
+    if (conn->connected() && !requestParser->getResponseBuffer().empty())
+    {
+        sendResponses(conn,
+                      requestParser->getResponseBuffer(),
+                      requestParser->getBuffer());
+        requestParser->getResponseBuffer().clear();
+    }
 }
 
 void HttpServer::sendResponse(const TcpConnectionPtr &conn,
@@ -460,18 +459,13 @@ void HttpServer::sendResponses(
         if (!resp.second)
         {
             // Not HEAD method
-            auto httpString = respImplPtr->renderToString();
+            respImplPtr->renderToBuffer(buffer);
             auto &sendfileName = respImplPtr->sendfileName();
             if (!sendfileName.empty())
             {
                 conn->send(buffer);
                 buffer.retrieveAll();
-                conn->send(httpString);
                 conn->sendFile(sendfileName.c_str());
-            }
-            else
-            {
-                buffer.append(httpString->data(), httpString->length());
             }
         }
         else
@@ -493,6 +487,6 @@ void HttpServer::sendResponses(
     if (conn->connected() && buffer.readableBytes() > 0)
     {
         conn->send(buffer);
-        buffer.retrieveAll();
     }
+    buffer.retrieveAll();
 }

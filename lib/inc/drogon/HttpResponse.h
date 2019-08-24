@@ -147,7 +147,12 @@ class HttpResponse
     /// type
     virtual void setBody(const std::string &body) = 0;
     virtual void setBody(std::string &&body) = 0;
-
+    template <int N>
+    void setBody(const char (&body)[N])
+    {
+        assert(strnlen(body, N) == N - 1);
+        setBody(body, N - 1);
+    }
     /// Get the response body.
     virtual const std::string &body() const = 0;
     const std::string &getBody() const
@@ -221,6 +226,9 @@ class HttpResponse
     virtual ~HttpResponse()
     {
     }
+
+  private:
+    virtual void setBody(const char *body, size_t len) = 0;
 };
 
 }  // namespace drogon

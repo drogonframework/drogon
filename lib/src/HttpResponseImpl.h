@@ -38,8 +38,7 @@ class HttpResponseImpl : public HttpResponse
           _creationDate(trantor::Date::now()),
           _closeConnection(false),
           _leftBodyLength(0),
-          _currentChunkLength(0),
-          _bodyPtr(new std::string())
+          _currentChunkLength(0)
     {
     }
     HttpResponseImpl(HttpStatusCode code, ContentType type)
@@ -49,7 +48,6 @@ class HttpResponseImpl : public HttpResponse
           _closeConnection(false),
           _leftBodyLength(0),
           _currentChunkLength(0),
-          _bodyPtr(new std::string()),
           _contentType(type),
           _contentTypeString(webContentTypeToString(type))
     {
@@ -223,10 +221,12 @@ class HttpResponseImpl : public HttpResponse
     virtual void setBody(const std::string &body) override
     {
         _bodyPtr = std::make_shared<std::string>(body);
+        _bodyViewPtr.reset();
     }
     virtual void setBody(std::string &&body) override
     {
         _bodyPtr = std::make_shared<std::string>(std::move(body));
+        _bodyViewPtr.reset();
     }
 
     void redirect(const std::string &url)
@@ -234,6 +234,7 @@ class HttpResponseImpl : public HttpResponse
         _headers["location"] = url;
     }
     std::shared_ptr<std::string> renderToString() const;
+    void renderToBuffer(trantor::MsgBuffer &buffer) const;
     std::shared_ptr<std::string> renderHeaderForHeadMethod() const;
     virtual void clear() override;
 
@@ -249,10 +250,36 @@ class HttpResponseImpl : public HttpResponse
 
     virtual const std::string &body() const override
     {
+        if (!_bodyPtr)
+        {
+            if (_bodyViewPtr)
+            {
+                _bodyPtr =
+                    std::make_shared<std::string>(_bodyViewPtr->data(),
+                                                  _bodyViewPtr->length());
+            }
+            else
+            {
+                _bodyPtr = std::make_shared<std::string>();
+            }
+        }
         return *_bodyPtr;
     }
     virtual std::string &body() override
     {
+        if (!_bodyPtr)
+        {
+            if (_bodyViewPtr)
+            {
+                _bodyPtr =
+                    std::make_shared<std::string>(_bodyViewPtr->data(),
+                                                  _bodyViewPtr->length());
+            }
+            else
+            {
+                _bodyPtr = std::make_shared<std::string>();
+            }
+        }
         return *_bodyPtr;
     }
     void swap(HttpResponseImpl &that) noexcept;
@@ -281,11 +308,19 @@ class HttpResponseImpl : public HttpResponse
 
     void gunzip()
     {
-        auto gunzipBody = utils::gzipDecompress(_bodyPtr);
-        if (gunzipBody)
+        if (_bodyPtr)
         {
+            auto gunzipBody =
+                utils::gzipDecompress(_bodyPtr->data(), _bodyPtr->length());
             removeHeader("content-encoding");
-            _bodyPtr = gunzipBody;
+            _bodyPtr = std::make_shared<std::string>(move(gunzipBody));
+        }
+        else if (_bodyViewPtr)
+        {
+            auto gunzipBody = utils::gzipDecompress(_bodyViewPtr->data(),
+                                                    _bodyViewPtr->length());
+            removeHeader("content-encoding");
+            _bodyPtr = std::make_shared<std::string>(move(gunzipBody));
         }
     }
     ~HttpResponseImpl();
@@ -295,6 +330,11 @@ class HttpResponseImpl : public HttpResponse
         const std::shared_ptr<std::string> &headerStringPtr) const;
 
   private:
+    virtual void setBody(const char *body, size_t len) override
+    {
+        _bodyViewPtr = std::make_shared<string_view>(body, len);
+        _bodyPtr.reset();
+    }
     std::unordered_map<std::string, std::string> _headers;
     std::unordered_map<std::string, Cookie> _cookies;
 
@@ -307,8 +347,8 @@ class HttpResponseImpl : public HttpResponse
 
     size_t _leftBodyLength;
     size_t _currentChunkLength;
-    std::shared_ptr<std::string> _bodyPtr;
-
+    mutable std::shared_ptr<std::string> _bodyPtr;
+    std::shared_ptr<string_view> _bodyViewPtr;
     ssize_t _expriedTime = -1;
     std::string _sendfileName;
     mutable std::shared_ptr<Json::Value> _jsonPtr;

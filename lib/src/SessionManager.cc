@@ -49,14 +49,15 @@ SessionManager::SessionManager(trantor::EventLoop *loop, size_t timeout)
     }
 }
 
-SessionPtr SessionManager::getSession(const std::string &sessionID)
+SessionPtr SessionManager::getSession(const std::string &sessionID,
+                                      bool needToSet)
 {
     assert(!sessionID.empty());
     SessionPtr sessionPtr;
     std::lock_guard<std::mutex> lock(_mapMutex);
     if (_sessionMapPtr->findAndFetch(sessionID, sessionPtr) == false)
     {
-        sessionPtr = std::make_shared<Session>();
+        sessionPtr = std::make_shared<Session>(sessionID, needToSet);
         _sessionMapPtr->insert(sessionID, sessionPtr, _timeout);
         return sessionPtr;
     }

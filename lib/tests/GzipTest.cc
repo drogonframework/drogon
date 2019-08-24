@@ -312,17 +312,17 @@ int main()
         "origin\n"
         "rawpacket";
     auto ret = utils::gzipCompress(inStr.c_str(), inStr.length());
-    if (ret)
+    if (!ret.empty())
     {
         std::cout << "origin length=" << inStr.length()
-                  << " compressing length=" << ret->length() << std::endl;
+                  << " compressing length=" << ret.length() << std::endl;
 
-        auto decompressStr = utils::gzipDecompress(ret);
-        if (decompressStr)
+        auto decompressStr = utils::gzipDecompress(ret.data(), ret.length());
+        if (!decompressStr.empty())
         {
-            std::cout << "decompressing length=" << decompressStr->length()
+            std::cout << "decompressing length=" << decompressStr.length()
                       << std::endl;
-            std::cout << *decompressStr;
+            std::cout << decompressStr;
         }
     }
 

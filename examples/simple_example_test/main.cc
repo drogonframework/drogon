@@ -705,6 +705,7 @@ void doTest(const HttpClientPtr &client,
                                 {
                                     LOG_DEBUG << resp->getBody().length();
                                     LOG_ERROR << "Error!";
+                                    LOG_ERROR << resp->getBody();
                                     exit(1);
                                 }
                             }

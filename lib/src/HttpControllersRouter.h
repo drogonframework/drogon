@@ -64,9 +64,7 @@ class HttpControllersRouter : public trantor::NonCopyable
                      const std::vector<std::string> &filters,
                      const std::string &handlerName = "");
     void route(const HttpRequestImplPtr &req,
-               std::function<void(const HttpResponsePtr &)> &&callback,
-               bool needSetJsessionid,
-               std::string &&sessionId);
+               std::function<void(const HttpResponsePtr &)> &&callback);
     std::vector<std::tuple<std::string, HttpMethod, std::string>>
     getHandlersInfo() const;
 
@@ -83,6 +81,7 @@ class HttpControllersRouter : public trantor::NonCopyable
         std::map<trantor::EventLoop *, std::shared_ptr<HttpResponse>>
             _responsePtrMap;
         bool _isCORS = false;
+        bool _hasCachedResponse = false;
     };
     typedef std::shared_ptr<CtrlBinder> CtrlBinderPtr;
     struct HttpControllerRouterItem
@@ -117,25 +116,19 @@ class HttpControllersRouter : public trantor::NonCopyable
         const CtrlBinderPtr &ctrlBinderPtr,
         const HttpControllerRouterItem &routerItem,
         const HttpRequestImplPtr &req,
-        std::function<void(const HttpResponsePtr &)> &&callback,
-        bool needSetJsessionid,
-        std::string &&sessionId);
+        std::function<void(const HttpResponsePtr &)> &&callback);
 
     void doControllerHandler(
         const CtrlBinderPtr &ctrlBinderPtr,
         const HttpControllerRouterItem &routerItem,
         const HttpRequestImplPtr &req,
-        std::function<void(const HttpResponsePtr &)> &&callback,
-        bool needSetJsessionid,
-        std::string &&sessionId);
+        std::function<void(const HttpResponsePtr &)> &&callback);
     void invokeCallback(
         const std::function<void(const HttpResponsePtr &)> &callback,
         const HttpRequestImplPtr &req,
         const HttpResponsePtr &resp);
     void doWhenNoHandlerFound(
         const HttpRequestImplPtr &req,
-        std::function<void(const HttpResponsePtr &)> &&callback,
-        bool needSetJsessionid,
-        std::string &&sessionId);
+        std::function<void(const HttpResponsePtr &)> &&callback);
 };
 }  // namespace drogon

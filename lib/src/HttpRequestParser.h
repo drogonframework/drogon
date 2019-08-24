@@ -24,7 +24,8 @@
 
 namespace drogon
 {
-class HttpRequestParser : public trantor::NonCopyable
+class HttpRequestParser : public trantor::NonCopyable,
+                          public std::enable_shared_from_this<HttpRequestParser>
 {
   public:
     enum HttpRequestParseState
@@ -82,6 +83,10 @@ class HttpRequestParser : public trantor::NonCopyable
     {
         return _requestPipelining.size();
     }
+    bool emptyPipelining()
+    {
+        return _requestPipelining.empty();
+    }
     bool isStop() const
     {
         return _stopWorking;
@@ -98,8 +103,30 @@ class HttpRequestParser : public trantor::NonCopyable
     {
         return _sendBuffer;
     }
+    std::vector<std::pair<HttpResponsePtr, bool>> &getResponseBuffer()
+    {
+        assert(_loop->isInLoopThread());
+        if (!_responseBuffer)
+        {
+            _responseBuffer =
+                std::unique_ptr<std::vector<std::pair<HttpResponsePtr, bool>>>(
+                    new std::vector<std::pair<HttpResponsePtr, bool>>);
+        }
+        return *_responseBuffer;
+    }
+    std::vector<HttpRequestImplPtr> &getRequestBuffer()
+    {
+        assert(_loop->isInLoopThread());
+        if (!_requestBuffer)
+        {
+            _requestBuffer = std::unique_ptr<std::vector<HttpRequestImplPtr>>(
+                new std::vector<HttpRequestImplPtr>);
+        }
+        return *_requestBuffer;
+    }
 
   private:
+    HttpRequestImplPtr makeRequestForPool(HttpRequestImpl *p);
     void shutdownConnection(HttpStatusCode code);
     bool processRequestLine(const char *begin, const char *end);
     HttpRequestParseState _state;
@@ -113,6 +140,10 @@ class HttpRequestParser : public trantor::NonCopyable
     std::weak_ptr<trantor::TcpConnection> _conn;
     bool _stopWorking = false;
     trantor::MsgBuffer _sendBuffer;
+    std::unique_ptr<std::vector<std::pair<HttpResponsePtr, bool>>>
+        _responseBuffer;
+    std::unique_ptr<std::vector<HttpRequestImplPtr>> _requestBuffer;
+    std::vector<HttpRequestImplPtr> _requestsPool;
 };
 
 }  // namespace drogon

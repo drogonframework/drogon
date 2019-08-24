@@ -329,6 +329,10 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     {
         return _useSendfile;
     }
+    void callCallback(
+        const HttpRequestImplPtr &req,
+        const HttpResponsePtr &resp,
+        const std::function<void(const HttpResponsePtr &)> &callback);
 
   private:
     virtual void registerHttpController(

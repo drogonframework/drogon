@@ -15,6 +15,7 @@
 #include "FiltersFunction.h"
 #include "HttpRequestImpl.h"
 #include "HttpResponseImpl.h"
+#include "HttpAppFrameworkImpl.h"
 #include <drogon/HttpFilter.h>
 
 #include <queue>
@@ -29,8 +30,6 @@ static void doFilterChains(
     const HttpRequestImplPtr &req,
     const std::shared_ptr<const std::function<void(const HttpResponsePtr &)>>
         &callbackPtr,
-    bool needSetJsessionid,
-    const std::shared_ptr<std::string> &sessionIdPtr,
     std::function<void()> &&missCallback)
 {
     if (index < filters.size())
@@ -38,19 +37,16 @@ static void doFilterChains(
         auto &filter = filters[index];
         filter->doFilter(
             req,
-            [needSetJsessionid, callbackPtr, sessionIdPtr](
-                const HttpResponsePtr &res) {
-                if (needSetJsessionid && res->statusCode() != k404NotFound)
-                    res->addCookie("JSESSIONID", *sessionIdPtr);
-                (*callbackPtr)(res);
+            [req, callbackPtr](const HttpResponsePtr &res) {
+                HttpAppFrameworkImpl::instance().callCallback(req,
+                                                              res,
+                                                              *callbackPtr);
             },
             [=, &filters, missCallback = std::move(missCallback)]() mutable {
                 doFilterChains(filters,
                                index + 1,
                                req,
                                callbackPtr,
-                               needSetJsessionid,
-                               sessionIdPtr,
                                std::move(missCallback));
             });
     }
@@ -83,17 +79,9 @@ void doFilters(
     const HttpRequestImplPtr &req,
     const std::shared_ptr<const std::function<void(const HttpResponsePtr &)>>
         &callbackPtr,
-    bool needSetJsessionid,
-    const std::shared_ptr<std::string> &sessionIdPtr,
     std::function<void()> &&missCallback)
 {
-    doFilterChains(filters,
-                   0,
-                   req,
-                   callbackPtr,
-                   needSetJsessionid,
-                   sessionIdPtr,
-                   std::move(missCallback));
+    doFilterChains(filters, 0, req, callbackPtr, std::move(missCallback));
 }
 
 }  // namespace filters_function

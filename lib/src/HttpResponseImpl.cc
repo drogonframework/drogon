@@ -27,6 +27,8 @@ using namespace drogon;
 
 namespace drogon
 {
+// "Fri, 23 Aug 2019 12:58:03 GMT" length = 29
+static const size_t httpFullDateStringLength = 29;
 static HttpResponsePtr genHttpResponse(std::string viewName,
                                        const HttpViewData &data)
 {
@@ -167,10 +169,10 @@ void HttpResponseImpl::makeHeaderString(
     headerStringPtr->append("\r\n");
     if (_sendfileName.empty())
     {
-        len = snprintf(buf,
-                       sizeof buf,
-                       "Content-Length: %lu\r\n",
-                       static_cast<long unsigned int>(_bodyPtr->size()));
+        long unsigned int bodyLength =
+            _bodyPtr ? _bodyPtr->length()
+                     : (_bodyViewPtr ? _bodyViewPtr->length() : 0);
+        len = snprintf(buf, sizeof buf, "Content-Length: %lu\r\n", bodyLength);
     }
     else
     {
@@ -213,7 +215,105 @@ void HttpResponseImpl::makeHeaderString(
             HttpAppFrameworkImpl::instance().getServerHeaderString());
     }
 }
+void HttpResponseImpl::renderToBuffer(trantor::MsgBuffer &buffer) const
+{
+    if (_expriedTime >= 0)
+    {
+        auto strPtr = renderToString();
+        buffer.append(strPtr->data(), strPtr->length());
+        return;
+    }
 
+    if (!_fullHeaderString)
+    {
+        char buf[128];
+        auto len = snprintf(buf, sizeof buf, "HTTP/1.1 %d ", _statusCode);
+        buffer.append(buf, len);
+        if (!_statusMessage.empty())
+            buffer.append(_statusMessage.data(), _statusMessage.length());
+        buffer.append("\r\n");
+        if (_sendfileName.empty())
+        {
+            long unsigned int bodyLength =
+                _bodyPtr ? _bodyPtr->length()
+                         : (_bodyViewPtr ? _bodyViewPtr->length() : 0);
+            len = snprintf(buf,
+                           sizeof buf,
+                           "Content-Length: %lu\r\n",
+                           bodyLength);
+        }
+        else
+        {
+            struct stat filestat;
+            if (stat(_sendfileName.c_str(), &filestat) < 0)
+            {
+                LOG_SYSERR << _sendfileName << " stat error";
+                return;
+            }
+            len =
+                snprintf(buf,
+                         sizeof buf,
+                         "Content-Length: %llu\r\n",
+                         static_cast<long long unsigned int>(filestat.st_size));
+        }
+
+        buffer.append(buf, len);
+        if (_headers.find("Connection") == _headers.end())
+        {
+            if (_closeConnection)
+            {
+                buffer.append("Connection: close\r\n");
+            }
+            else
+            {
+                // output->append("Connection: Keep-Alive\r\n");
+            }
+        }
+        buffer.append(_contentTypeString.data(), _contentTypeString.length());
+        for (auto it = _headers.begin(); it != _headers.end(); ++it)
+        {
+            buffer.append(it->first);
+            buffer.append(": ");
+            buffer.append(it->second);
+            buffer.append("\r\n");
+        }
+        if (HttpAppFrameworkImpl::instance().sendServerHeader())
+        {
+            buffer.append(
+                HttpAppFrameworkImpl::instance().getServerHeaderString());
+        }
+    }
+    else
+    {
+        buffer.append(*_fullHeaderString);
+    }
+
+    // output cookies
+    if (_cookies.size() > 0)
+    {
+        for (auto it = _cookies.begin(); it != _cookies.end(); ++it)
+        {
+            buffer.append(it->second.cookieString());
+        }
+    }
+
+    // output Date header
+    if (drogon::HttpAppFrameworkImpl::instance().sendDateHeader())
+    {
+        buffer.append("Date: ");
+        buffer.append(utils::getHttpFullDate(trantor::Date::date()),
+                      httpFullDateStringLength);
+        buffer.append("\r\n\r\n");
+    }
+    else
+    {
+        buffer.append("\r\n");
+    }
+    if (_bodyPtr)
+        buffer.append(*_bodyPtr);
+    else if (_bodyViewPtr)
+        buffer.append(_bodyViewPtr->data(), _bodyViewPtr->length());
+}
 std::shared_ptr<std::string> HttpResponseImpl::renderToString() const
 {
     if (_expriedTime >= 0)
@@ -236,7 +336,7 @@ std::shared_ptr<std::string> HttpResponseImpl::renderToString() const
                     _httpString = std::make_shared<std::string>(*_httpString);
                     memcpy((void *)&(*_httpString)[_datePos],
                            newDate,
-                           strlen(newDate));
+                           httpFullDateStringLength);
                     return _httpString;
                 }
 
@@ -274,7 +374,8 @@ std::shared_ptr<std::string> HttpResponseImpl::renderToString() const
     {
         httpString->append("Date: ");
         auto datePos = httpString->length();
-        httpString->append(utils::getHttpFullDate(trantor::Date::date()));
+        httpString->append(utils::getHttpFullDate(trantor::Date::date()),
+                           httpFullDateStringLength);
         httpString->append("\r\n\r\n");
         _datePos = datePos;
     }
@@ -284,7 +385,10 @@ std::shared_ptr<std::string> HttpResponseImpl::renderToString() const
     }
 
     LOG_TRACE << "reponse(no body):" << httpString->c_str();
-    httpString->append(*_bodyPtr);
+    if (_bodyPtr)
+        httpString->append(*_bodyPtr);
+    else if (_bodyViewPtr)
+        httpString->append(_bodyViewPtr->data(), _bodyViewPtr->length());
     if (_expriedTime >= 0)
     {
         _httpString = httpString;
@@ -318,7 +422,8 @@ std::shared_ptr<std::string> HttpResponseImpl::renderHeaderForHeadMethod() const
     if (drogon::HttpAppFrameworkImpl::instance().sendDateHeader())
     {
         httpString->append("Date: ");
-        httpString->append(utils::getHttpFullDate(trantor::Date::date()));
+        httpString->append(utils::getHttpFullDate(trantor::Date::date()),
+                           httpFullDateStringLength);
         httpString->append("\r\n\r\n");
     }
     else
@@ -433,6 +538,7 @@ void HttpResponseImpl::swap(HttpResponseImpl &that) noexcept
     swap(_statusMessage, that._statusMessage);
     swap(_closeConnection, that._closeConnection);
     _bodyPtr.swap(that._bodyPtr);
+    _bodyViewPtr.swap(that._bodyViewPtr);
     swap(_leftBodyLength, that._leftBodyLength);
     swap(_currentChunkLength, that._currentChunkLength);
     swap(_contentType, that._contentType);
@@ -450,7 +556,8 @@ void HttpResponseImpl::clear()
     _fullHeaderString.reset();
     _headers.clear();
     _cookies.clear();
-    _bodyPtr.reset(new std::string());
+    _bodyPtr.reset();
+    _bodyViewPtr.reset();
     _leftBodyLength = 0;
     _currentChunkLength = 0;
     _jsonPtr.reset();
@@ -464,14 +571,28 @@ void HttpResponseImpl::parseJson() const
     builder["collectComments"] = false;
     JSONCPP_STRING errs;
     std::unique_ptr<Json::CharReader> reader(builder.newCharReader());
-    if (!reader->parse(_bodyPtr->data(),
-                       _bodyPtr->data() + _bodyPtr->size(),
-                       _jsonPtr.get(),
-                       &errs))
+    if (_bodyPtr)
     {
-        LOG_ERROR << errs;
-        LOG_DEBUG << "body: " << *_bodyPtr;
-        _jsonPtr.reset();
+        if (!reader->parse(_bodyPtr->data(),
+                           _bodyPtr->data() + _bodyPtr->size(),
+                           _jsonPtr.get(),
+                           &errs))
+        {
+            LOG_ERROR << errs;
+            LOG_ERROR << "body: " << *_bodyPtr;
+            _jsonPtr.reset();
+        }
+    }
+    else if (_bodyViewPtr)
+    {
+        if (!reader->parse(_bodyViewPtr->data(),
+                           _bodyViewPtr->data() + _bodyViewPtr->size(),
+                           _jsonPtr.get(),
+                           &errs))
+        {
+            LOG_ERROR << errs;
+            _jsonPtr.reset();
+        }
     }
 }
 

@@ -9,6 +9,7 @@
 #include <drogon/utils/Utilities.h>
 #include <string>
 
+using namespace drogon;
 using namespace drogon_model::sqlite3;
 
 const std::string Groups::Cols::group_id = "group_id";
@@ -89,9 +90,9 @@ Groups::Groups(const Row &r) noexcept
             r["avatar"].as<std::vector<char>>());
     }
 }
-const uint64_t &Groups::getValueOfGroupId(const uint64_t &defaultValue) const
-    noexcept
+const uint64_t &Groups::getValueOfGroupId() const noexcept
 {
+    const static uint64_t defaultValue = uint64_t();
     if (_groupId)
         return *_groupId;
     return defaultValue;
@@ -106,9 +107,9 @@ const typename Groups::PrimaryKeyType &Groups::getPrimaryKey() const
     return *_groupId;
 }
 
-const std::string &Groups::getValueOfGroupName(
-    const std::string &defaultValue) const noexcept
+const std::string &Groups::getValueOfGroupName() const noexcept
 {
+    const static std::string defaultValue = std::string();
     if (_groupName)
         return *_groupName;
     return defaultValue;
@@ -128,9 +129,9 @@ void Groups::setGroupName(std::string &&groupName) noexcept
     _dirtyFlag[1] = true;
 }
 
-const uint64_t &Groups::getValueOfCreaterId(const uint64_t &defaultValue) const
-    noexcept
+const uint64_t &Groups::getValueOfCreaterId() const noexcept
 {
+    const static uint64_t defaultValue = uint64_t();
     if (_createrId)
         return *_createrId;
     return defaultValue;
@@ -145,9 +146,9 @@ void Groups::setCreaterId(const uint64_t &createrId) noexcept
     _dirtyFlag[2] = true;
 }
 
-const std::string &Groups::getValueOfCreateTime(
-    const std::string &defaultValue) const noexcept
+const std::string &Groups::getValueOfCreateTime() const noexcept
 {
+    const static std::string defaultValue = std::string();
     if (_createTime)
         return *_createTime;
     return defaultValue;
@@ -167,9 +168,9 @@ void Groups::setCreateTime(std::string &&createTime) noexcept
     _dirtyFlag[3] = true;
 }
 
-const uint64_t &Groups::getValueOfInviting(const uint64_t &defaultValue) const
-    noexcept
+const uint64_t &Groups::getValueOfInviting() const noexcept
 {
+    const static uint64_t defaultValue = uint64_t();
     if (_inviting)
         return *_inviting;
     return defaultValue;
@@ -184,9 +185,9 @@ void Groups::setInviting(const uint64_t &inviting) noexcept
     _dirtyFlag[4] = true;
 }
 
-const uint64_t &Groups::getValueOfInvitingUserId(
-    const uint64_t &defaultValue) const noexcept
+const uint64_t &Groups::getValueOfInvitingUserId() const noexcept
 {
+    const static uint64_t defaultValue = uint64_t();
     if (_invitingUserId)
         return *_invitingUserId;
     return defaultValue;
@@ -201,9 +202,9 @@ void Groups::setInvitingUserId(const uint64_t &invitingUserId) noexcept
     _dirtyFlag[5] = true;
 }
 
-const std::string &Groups::getValueOfAvatarId(
-    const std::string &defaultValue) const noexcept
+const std::string &Groups::getValueOfAvatarId() const noexcept
 {
+    const static std::string defaultValue = std::string();
     if (_avatarId)
         return *_avatarId;
     return defaultValue;
@@ -223,8 +224,9 @@ void Groups::setAvatarId(std::string &&avatarId) noexcept
     _dirtyFlag[6] = true;
 }
 
-const double &Groups::getValueOfUuu(const double &defaultValue) const noexcept
+const double &Groups::getValueOfUuu() const noexcept
 {
+    const static double defaultValue = double();
     if (_uuu)
         return *_uuu;
     return defaultValue;
@@ -239,9 +241,9 @@ void Groups::setUuu(const double &uuu) noexcept
     _dirtyFlag[7] = true;
 }
 
-const std::string &Groups::getValueOfText(const std::string &defaultValue) const
-    noexcept
+const std::string &Groups::getValueOfText() const noexcept
 {
+    const static std::string defaultValue = std::string();
     if (_text)
         return *_text;
     return defaultValue;
@@ -261,16 +263,16 @@ void Groups::setText(std::string &&text) noexcept
     _dirtyFlag[8] = true;
 }
 
-const std::vector<char> &Groups::getValueOfAvatar(
-    const std::vector<char> &defaultValue) const noexcept
+const std::vector<char> &Groups::getValueOfAvatar() const noexcept
 {
+    const static std::vector<char> defaultValue = std::vector<char>();
     if (_avatar)
         return *_avatar;
     return defaultValue;
 }
-std::string Groups::getValueOfAvatarAsString(
-    const std::string &defaultValue) const noexcept
+std::string Groups::getValueOfAvatarAsString() const noexcept
 {
+    const static std::string defaultValue = std::string();
     if (_avatar)
         return std::string(_avatar->data(), _avatar->size());
     return defaultValue;

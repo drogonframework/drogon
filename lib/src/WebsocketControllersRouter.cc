@@ -72,19 +72,14 @@ void WebsocketControllersRouter::route(
                     auto callbackPtr = std::make_shared<
                         std::function<void(const HttpResponsePtr &)>>(
                         std::move(callback));
-                    filters_function::doFilters(filters,
+                    filters_function::doFilters(
+                        filters, req, callbackPtr, [=]() mutable {
+                            doControllerHandler(ctrlPtr,
+                                                wsKey,
                                                 req,
-                                                callbackPtr,
-                                                false,
-                                                nullptr,
-                                                [=]() mutable {
-                                                    doControllerHandler(
-                                                        ctrlPtr,
-                                                        wsKey,
-                                                        req,
-                                                        std::move(*callbackPtr),
-                                                        wsConnPtr);
-                                                });
+                                                std::move(*callbackPtr),
+                                                wsConnPtr);
+                        });
                 }
                 else
                 {

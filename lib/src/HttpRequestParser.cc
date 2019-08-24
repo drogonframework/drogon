@@ -28,7 +28,6 @@ using namespace drogon;
 HttpRequestParser::HttpRequestParser(const trantor::TcpConnectionPtr &connPtr)
     : _state(HttpRequestParseState_ExpectMethod),
       _loop(connPtr->getLoop()),
-      _request(new HttpRequestImpl(connPtr->getLoop())),
       _conn(connPtr)
 {
 }
@@ -83,10 +82,35 @@ bool HttpRequestParser::processRequestLine(const char *begin, const char *end)
     }
     return succeed;
 }
+HttpRequestImplPtr HttpRequestParser::makeRequestForPool(HttpRequestImpl *ptr)
+{
+    std::weak_ptr<HttpRequestParser> weakPtr = shared_from_this();
+    return std::shared_ptr<HttpRequestImpl>(ptr, [weakPtr](HttpRequestImpl *p) {
+        auto thisPtr = weakPtr.lock();
+        if (thisPtr)
+        {
+            p->reset();
+            thisPtr->_requestsPool.emplace_back(thisPtr->makeRequestForPool(p));
+        }
+        else
+        {
+            delete p;
+        }
+    });
+}
 void HttpRequestParser::reset()
 {
     _state = HttpRequestParseState_ExpectMethod;
-    _request.reset(new HttpRequestImpl(_loop));
+    if (_requestsPool.empty())
+    {
+        _request = makeRequestForPool(new HttpRequestImpl(_loop));
+    }
+    else
+    {
+        _request = _requestsPool.back();
+        _request->setCreationDate(trantor::Date::now());
+        _requestsPool.pop_back();
+    }
 }
 // Return false if any error
 bool HttpRequestParser::parseRequest(MsgBuffer *buf)
@@ -171,22 +195,19 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
                 else
                 {
                     // empty line, end of header
-                    const std::string &len =
-                        _request->getHeaderBy("content-length");
-                    LOG_TRACE << "content len=" << len;
-                    if (!len.empty())
-                    {
-                        _request->_contentLen = std::stoull(len.c_str());
-                        _state = HttpRequestParseState_ExpectBody;
-                    }
+
                     if (_request->_contentLen == 0)
                     {
                         _state = HttpRequestParseState_GotAll;
                         _requestsCounter++;
                         hasMore = false;
                     }
+                    else
+                    {
+                        _state = HttpRequestParseState_ExpectBody;
+                    }
 
-                    auto &expect = _request->getHeaderBy("expect");
+                    auto &expect = _request->expect();
                     if (expect == "100-continue" &&
                         _request->getVersion() >= HttpRequest::kHttp11)
                     {
