@@ -109,7 +109,7 @@ class HttpAppFramework : public trantor::NonCopyable
      * After calling this method, the @param resp object is returned
      * by the HttpResponse::newNotFoundResponse() method.
      */
-    virtual void setCustom404Page(const HttpResponsePtr &resp) = 0;
+    virtual HttpAppFramework &setCustom404Page(const HttpResponsePtr &resp) = 0;
 
     /// Get the plugin object registered in the framework
     /**
@@ -142,7 +142,7 @@ class HttpAppFramework : public trantor::NonCopyable
     /// The following is a series of methods of AOP
 
     /// The @param advice is called immediately after the main event loop runs.
-    virtual void registerBeginningAdvice(
+    virtual HttpAppFramework &registerBeginningAdvice(
         const std::function<void()> &advice) = 0;
 
     /// The @param advice is called immediately when a new connection is
@@ -154,7 +154,7 @@ class HttpAppFramework : public trantor::NonCopyable
      * If the @param advice returns a false value, drogon closes the connection.
      * Users can use this advice to implement some security policies.
      */
-    virtual void registerNewConnectionAdvice(
+    virtual HttpAppFramework &registerNewConnectionAdvice(
         const std::function<bool(const trantor::InetAddress &,
                                  const trantor::InetAddress &)> &advice) = 0;
 
@@ -199,7 +199,7 @@ class HttpAppFramework : public trantor::NonCopyable
      *Post-handling join point o---------------------------------------->+
      *
      */
-    virtual void registerPreRoutingAdvice(
+    virtual HttpAppFramework &registerPreRoutingAdvice(
         const std::function<void(const HttpRequestPtr &,
                                  AdviceCallback &&,
                                  AdviceChainCallback &&)> &advice) = 0;
@@ -212,7 +212,7 @@ class HttpAppFramework : public trantor::NonCopyable
      * If one does not intend to intercept the http request, please use this
      * interface.
      */
-    virtual void registerPreRoutingAdvice(
+    virtual HttpAppFramework &registerPreRoutingAdvice(
         const std::function<void(const HttpRequestPtr &)> &advice) = 0;
 
     /// The @param advice is called immediately after the request matchs a
@@ -221,7 +221,7 @@ class HttpAppFramework : public trantor::NonCopyable
      * The parameters of the @param advice are same as those of the doFilter
      * method of the Filter class.
      */
-    virtual void registerPostRoutingAdvice(
+    virtual HttpAppFramework &registerPostRoutingAdvice(
         const std::function<void(const HttpRequestPtr &,
                                  AdviceCallback &&,
                                  AdviceChainCallback &&)> &advice) = 0;
@@ -234,7 +234,7 @@ class HttpAppFramework : public trantor::NonCopyable
      * If one does not intend to intercept the http request, please use this
      * interface.
      */
-    virtual void registerPostRoutingAdvice(
+    virtual HttpAppFramework &registerPostRoutingAdvice(
         const std::function<void(const HttpRequestPtr &)> &advice) = 0;
 
     /// The @param advice is called immediately after the request is approved by
@@ -243,7 +243,7 @@ class HttpAppFramework : public trantor::NonCopyable
      * The parameters of the @param advice are same as those of the doFilter
      * method of the Filter class.
      */
-    virtual void registerPreHandlingAdvice(
+    virtual HttpAppFramework &registerPreHandlingAdvice(
         const std::function<void(const HttpRequestPtr &,
                                  AdviceCallback &&,
                                  AdviceChainCallback &&)> &advice) = 0;
@@ -255,19 +255,19 @@ class HttpAppFramework : public trantor::NonCopyable
      * If one does not intend to intercept the http request, please use this
      * interface.
      */
-    virtual void registerPreHandlingAdvice(
+    virtual HttpAppFramework &registerPreHandlingAdvice(
         const std::function<void(const HttpRequestPtr &)> &advice) = 0;
 
     /// The @param advice is called immediately after the request is handled and
     /// a response object is created by handlers.
-    virtual void registerPostHandlingAdvice(
+    virtual HttpAppFramework &registerPostHandlingAdvice(
         const std::function<void(const HttpRequestPtr &,
                                  const HttpResponsePtr &)> &advice) = 0;
 
     /// End of AOP methods
 
     /// Load the configuration file with json format.
-    virtual void loadConfigFile(const std::string &fileName) = 0;
+    virtual HttpAppFramework &loadConfigFile(const std::string &fileName) = 0;
 
     /// Register a HttpSimpleController object into the framework.
     /**
@@ -286,7 +286,7 @@ class HttpAppFramework : public trantor::NonCopyable
      * Users can perform the same operation through the configuration file or a
      * macro in the header file.
      */
-    virtual void registerHttpSimpleController(
+    virtual HttpAppFramework &registerHttpSimpleController(
         const std::string &pathName,
         const std::string &ctrlName,
         const std::vector<internal::HttpConstraint> &filtersAndMethods =
@@ -323,7 +323,7 @@ class HttpAppFramework : public trantor::NonCopyable
      * mapping.
      */
     template <typename FUNCTION>
-    void registerHandler(
+    HttpAppFramework &registerHandler(
         const std::string &pathPattern,
         FUNCTION &&function,
         const std::vector<internal::HttpConstraint> &filtersAndMethods =
@@ -357,12 +357,13 @@ class HttpAppFramework : public trantor::NonCopyable
         }
         registerHttpController(
             pathPattern, binder, validMethods, filters, handlerName);
+        return *this;
     }
 
     /// Register a WebSocketController into the framework.
     /// The parameters of this method are the same as those in the
     /// registerHttpSimpleController() method.
-    virtual void registerWebSocketController(
+    virtual HttpAppFramework &registerWebSocketController(
         const std::string &pathName,
         const std::string &crtlName,
         const std::vector<std::string> &filters =
@@ -394,7 +395,7 @@ class HttpAppFramework : public trantor::NonCopyable
      * This method should be called before calling the app().run() method.
      */
     template <typename T>
-    void registerController(const std::shared_ptr<T> &ctrlPtr)
+    HttpAppFramework &registerController(const std::shared_ptr<T> &ctrlPtr)
     {
         static_assert(
             internal::IsSubClass<T, HttpControllerBase>::value ||
@@ -407,6 +408,7 @@ class HttpAppFramework : public trantor::NonCopyable
                       "registered here");
         DrClassMap::setSingleInstance(ctrlPtr);
         T::initPathRouting();
+        return *this;
     }
 
     /// Register filter objects created and initialized by the user
@@ -414,7 +416,7 @@ class HttpAppFramework : public trantor::NonCopyable
      * This method is similar to the above method.
      */
     template <typename T>
-    void registerFilter(const std::shared_ptr<T> &filterPtr)
+    HttpAppFramework &registerFilter(const std::shared_ptr<T> &filterPtr)
     {
         static_assert(internal::IsSubClass<T, HttpFilterBase>::value,
                       "Error! Only fitler objects can be registered here");
@@ -423,6 +425,7 @@ class HttpAppFramework : public trantor::NonCopyable
                       "automatically by drogon cannot be "
                       "registered here");
         DrClassMap::setSingleInstance(filterPtr);
+        return *this;
     }
 
     /// Forward the http request
@@ -471,15 +474,15 @@ class HttpAppFramework : public trantor::NonCopyable
      * This number is usually less than or equal to the number of CPU cores.
      * This number can be configured in the configuration file.
      */
-    virtual void setThreadNum(size_t threadNum) = 0;
+    virtual HttpAppFramework &setThreadNum(size_t threadNum) = 0;
 
     /// Get the number of threads for IO event loops
     virtual size_t getThreadNum() const = 0;
 
     /// Set the global cert file and private key file for https
     /// These options can be configured in the configuration file.
-    virtual void setSSLFiles(const std::string &certPath,
-                             const std::string &keyPath) = 0;
+    virtual HttpAppFramework &setSSLFiles(const std::string &certPath,
+                                          const std::string &keyPath) = 0;
 
     /// Add a listener for http or https service
     /**
@@ -493,11 +496,11 @@ class HttpAppFramework : public trantor::NonCopyable
      * NOTE:
      * This operation can be performed by an option in the configuration file.
      */
-    virtual void addListener(const std::string &ip,
-                             uint16_t port,
-                             bool useSSL = false,
-                             const std::string &certFile = "",
-                             const std::string &keyFile = "") = 0;
+    virtual HttpAppFramework &addListener(const std::string &ip,
+                                          uint16_t port,
+                                          bool useSSL = false,
+                                          const std::string &certFile = "",
+                                          const std::string &keyFile = "") = 0;
 
     /// Enable sessions supporting.
     /**
@@ -509,7 +512,7 @@ class HttpAppFramework : public trantor::NonCopyable
      * NOTE:
      * This operation can be performed by an option in the configuration file.
      */
-    virtual void enableSession(const size_t timeout = 0) = 0;
+    virtual HttpAppFramework &enableSession(const size_t timeout = 0) = 0;
 
     /// A wrapper of the above method.
     /**
@@ -517,9 +520,10 @@ class HttpAppFramework : public trantor::NonCopyable
      *   app().enableSession(0.2h);
      *   app().enableSession(12min);
      */
-    inline void enableSession(const std::chrono::duration<long double> &timeout)
+    inline HttpAppFramework &enableSession(
+        const std::chrono::duration<long double> &timeout)
     {
-        enableSession((size_t)timeout.count());
+        return enableSession((size_t)timeout.count());
     }
 
     /// Disable sessions supporting.
@@ -527,14 +531,14 @@ class HttpAppFramework : public trantor::NonCopyable
      * NOTE:
      * This operation can be performed by an option in the configuration file.
      */
-    virtual void disableSession() = 0;
+    virtual HttpAppFramework &disableSession() = 0;
 
     /// Set the root path of HTTP document, defaut path is ./
     /**
      * NOTE:
      * This operation can be performed by an option in the configuration file.
      */
-    virtual void setDocumentRoot(const std::string &rootPath) = 0;
+    virtual HttpAppFramework &setDocumentRoot(const std::string &rootPath) = 0;
 
     /// Get the document root directory.
     virtual const std::string &getDocumentRoot() const = 0;
@@ -548,7 +552,7 @@ class HttpAppFramework : public trantor::NonCopyable
      * NOTE:
      * This operation can be performed by an option in the configuration file.
      */
-    virtual void setUploadPath(const std::string &uploadPath) = 0;
+    virtual HttpAppFramework &setUploadPath(const std::string &uploadPath) = 0;
 
     /// Get the path to store uploaded files.
     virtual const std::string &getUploadPath() const = 0;
@@ -561,7 +565,8 @@ class HttpAppFramework : public trantor::NonCopyable
      * NOTE:
      * This operation can be performed by an option in the configuration file.
      */
-    virtual void setFileTypes(const std::vector<std::string> &types) = 0;
+    virtual HttpAppFramework &setFileTypes(
+        const std::vector<std::string> &types) = 0;
 
     /// Enable supporting for dynamic views loading.
     /**
@@ -571,7 +576,7 @@ class HttpAppFramework : public trantor::NonCopyable
      * NOTE:
      * This operation can be performed by an option in the configuration file.
      */
-    virtual void enableDynamicViewsLoading(
+    virtual HttpAppFramework &enableDynamicViewsLoading(
         const std::vector<std::string> &libPaths) = 0;
 
     /// Set the maximum number of all connections.
@@ -581,7 +586,7 @@ class HttpAppFramework : public trantor::NonCopyable
      * NOTE:
      * This operation can be performed by an option in the configuration file.
      */
-    virtual void setMaxConnectionNum(size_t maxConnections) = 0;
+    virtual HttpAppFramework &setMaxConnectionNum(size_t maxConnections) = 0;
 
     /// Set the maximum number of connections per remote IP.
     /**
@@ -590,7 +595,8 @@ class HttpAppFramework : public trantor::NonCopyable
      * NOTE:
      * This operation can be performed by an option in the configuration file.
      */
-    virtual void setMaxConnectionNumPerIP(size_t maxConnectionsPerIP) = 0;
+    virtual HttpAppFramework &setMaxConnectionNumPerIP(
+        size_t maxConnectionsPerIP) = 0;
 
     /// Make the application run as a daemon.
     /**
@@ -599,7 +605,7 @@ class HttpAppFramework : public trantor::NonCopyable
      * NOTE:
      * This operation can be performed by an option in the configuration file.
      */
-    virtual void enableRunAsDaemon() = 0;
+    virtual HttpAppFramework &enableRunAsDaemon() = 0;
 
     /// Make the application restart after crashing.
     /**
@@ -608,7 +614,7 @@ class HttpAppFramework : public trantor::NonCopyable
      * NOTE:
      * This operation can be performed by an option in the configuration file.
      */
-    virtual void enableRelaunchOnError() = 0;
+    virtual HttpAppFramework &enableRelaunchOnError() = 0;
 
     /// Set the output path of logs.
     /**
@@ -617,9 +623,10 @@ class HttpAppFramework : public trantor::NonCopyable
      * NOTE:
      * This operation can be performed by an option in the configuration file.
      */
-    virtual void setLogPath(const std::string &logPath,
-                            const std::string &logfileBaseName = "",
-                            size_t logSize = 100000000) = 0;
+    virtual HttpAppFramework &setLogPath(
+        const std::string &logPath,
+        const std::string &logfileBaseName = "",
+        size_t logSize = 100000000) = 0;
 
     /// Set the log level
     /**
@@ -629,7 +636,7 @@ class HttpAppFramework : public trantor::NonCopyable
      * NOTE:
      * This operation can be performed by an option in the configuration file.
      */
-    virtual void setLogLevel(trantor::Logger::LogLevel level) = 0;
+    virtual HttpAppFramework &setLogLevel(trantor::Logger::LogLevel level) = 0;
 
     /// If @param sendFile is true, sendfile() system-call is used to send
     /// static files to clients;
@@ -643,7 +650,7 @@ class HttpAppFramework : public trantor::NonCopyable
      * because the advantages of sendfile() can only be reflected in sending
      * large files.
      */
-    virtual void enableSendfile(bool sendFile) = 0;
+    virtual HttpAppFramework &enableSendfile(bool sendFile) = 0;
 
     /// If @param useGzip is true, use gzip to compress the response body's
     /// content;
@@ -656,7 +663,7 @@ class HttpAppFramework : public trantor::NonCopyable
      * 1. The content type of response is not a binary type.
      * 2. The content length is bigger than 1024 bytes.
      */
-    virtual void enableGzip(bool useGzip) = 0;
+    virtual HttpAppFramework &enableGzip(bool useGzip) = 0;
 
     /// Return true if gzip is enabled.
     virtual bool isGzipEnabled() const = 0;
@@ -669,7 +676,7 @@ class HttpAppFramework : public trantor::NonCopyable
      * NOTE:
      * This operation can be performed by an option in the configuration file.
      */
-    virtual void setStaticFilesCacheTime(int cacheTime) = 0;
+    virtual HttpAppFramework &setStaticFilesCacheTime(int cacheTime) = 0;
 
     /// Get the time set by the above method.
     virtual int staticFilesCacheTime() const = 0;
@@ -682,7 +689,7 @@ class HttpAppFramework : public trantor::NonCopyable
      * NOTE:
      * This operation can be performed by an option in the configuration file.
      */
-    virtual void setIdleConnectionTimeout(size_t timeout) = 0;
+    virtual HttpAppFramework &setIdleConnectionTimeout(size_t timeout) = 0;
 
     /// A wrapper of the above method.
     /**
@@ -690,10 +697,10 @@ class HttpAppFramework : public trantor::NonCopyable
      *   app().setIdleConnectionTimeout(0.5h);
      *   app().setIdleConnectionTimeout(30min);
      */
-    inline void setIdleConnectionTimeout(
+    inline HttpAppFramework &setIdleConnectionTimeout(
         const std::chrono::duration<long double> &timeout)
     {
-        setIdleConnectionTimeout((size_t)timeout.count());
+        return setIdleConnectionTimeout((size_t)timeout.count());
     }
 
     /// Set the 'server' header field in each response sent by drogon.
@@ -704,7 +711,8 @@ class HttpAppFramework : public trantor::NonCopyable
      * NOTE:
      * This operation can be performed by an option in the configuration file.
      */
-    virtual void setServerHeaderField(const std::string &server) = 0;
+    virtual HttpAppFramework &setServerHeaderField(
+        const std::string &server) = 0;
 
     /// Control if the 'Server' header or the 'Date' header is added to each
     /// HTTP response.
@@ -713,8 +721,8 @@ class HttpAppFramework : public trantor::NonCopyable
      * These operations can be performed by options in the configuration file.
      * The headers are sent to clients by default.
      */
-    virtual void enableServerHeader(bool flag) = 0;
-    virtual void enableDateHeader(bool flag) = 0;
+    virtual HttpAppFramework &enableServerHeader(bool flag) = 0;
+    virtual HttpAppFramework &enableDateHeader(bool flag) = 0;
 
     /// Set the maximum number of requests that can be served through one
     /// keep-alive connection.
@@ -725,7 +733,8 @@ class HttpAppFramework : public trantor::NonCopyable
      * NOTE:
      * This operation can be performed by an option in the configuration file.
      */
-    virtual void setKeepaliveRequestsNumber(const size_t number) = 0;
+    virtual HttpAppFramework &setKeepaliveRequestsNumber(
+        const size_t number) = 0;
 
     /// Set the maximum number of unhandled requests that can be cached in
     /// pipelining buffer.
@@ -737,7 +746,8 @@ class HttpAppFramework : public trantor::NonCopyable
      * NOTE:
      * This operation can be performed by an option in the configuration file.
      */
-    virtual void setPipeliningRequestsNumber(const size_t number) = 0;
+    virtual HttpAppFramework &setPipeliningRequestsNumber(
+        const size_t number) = 0;
 
     /// Set the gzip_static option.
     /**
@@ -748,7 +758,7 @@ class HttpAppFramework : public trantor::NonCopyable
      * NOTE:
      * This operation can be performed by an option in the configuration file.
      */
-    virtual void setGzipStatic(bool useGzipStatic) = 0;
+    virtual HttpAppFramework &setGzipStatic(bool useGzipStatic) = 0;
 
     /// Set the max body size of the requests received by drogon. The default
     /// value is 1M.
@@ -756,7 +766,7 @@ class HttpAppFramework : public trantor::NonCopyable
      * NOTE:
      * This operation can be performed by an option in the configuration file.
      */
-    virtual void setClientMaxBodySize(size_t maxSize) = 0;
+    virtual HttpAppFramework &setClientMaxBodySize(size_t maxSize) = 0;
 
     /// Set the maximum body size in memory of HTTP requests received by drogon.
     /**
@@ -767,7 +777,7 @@ class HttpAppFramework : public trantor::NonCopyable
      * NOTE:
      * This operation can be performed by an option in the configuration file.
      */
-    virtual void setClientMaxMemoryBodySize(size_t maxSize) = 0;
+    virtual HttpAppFramework &setClientMaxMemoryBodySize(size_t maxSize) = 0;
 
     /// Set the max size of messages sent by WebSocket client. The default value
     /// is 128K.
@@ -775,7 +785,8 @@ class HttpAppFramework : public trantor::NonCopyable
      * NOTE:
      * This operation can be performed by an option in the configuration file.
      */
-    virtual void setClientMaxWebSocketMessageSize(size_t maxSize) = 0;
+    virtual HttpAppFramework &setClientMaxWebSocketMessageSize(
+        size_t maxSize) = 0;
 
     // Set the HTML file of the home page, the default value is "index.html"
     /**
@@ -785,7 +796,7 @@ class HttpAppFramework : public trantor::NonCopyable
      * NOTE:
      * This operation can be performed by an option in the configuration file.
      */
-    virtual void setHomePage(const std::string &homePageFile) = 0;
+    virtual HttpAppFramework &setHomePage(const std::string &homePageFile) = 0;
 
     /// Get a database client by @param name
     /**
@@ -819,16 +830,17 @@ class HttpAppFramework : public trantor::NonCopyable
      * NOTE:
      * This operation can be performed by an option in the configuration file.
      */
-    virtual void createDbClient(const std::string &dbType,
-                                const std::string &host,
-                                const u_short port,
-                                const std::string &databaseName,
-                                const std::string &userName,
-                                const std::string &password,
-                                const size_t connectionNum = 1,
-                                const std::string &filename = "",
-                                const std::string &name = "default",
-                                const bool isFast = false) = 0;
+    virtual HttpAppFramework &createDbClient(
+        const std::string &dbType,
+        const std::string &host,
+        const u_short port,
+        const std::string &databaseName,
+        const std::string &userName,
+        const std::string &password,
+        const size_t connectionNum = 1,
+        const std::string &filename = "",
+        const std::string &name = "default",
+        const bool isFast = false) = 0;
 
     /// Get the DNS resolver
     /**

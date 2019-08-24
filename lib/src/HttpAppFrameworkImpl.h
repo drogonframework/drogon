@@ -44,34 +44,37 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     }
 
     virtual PluginBase *getPlugin(const std::string &name) override;
-    virtual void addListener(const std::string &ip,
-                             uint16_t port,
-                             bool useSSL = false,
-                             const std::string &certFile = "",
-                             const std::string &keyFile = "") override;
-    virtual void setThreadNum(size_t threadNum) override;
+    virtual HttpAppFramework &addListener(
+        const std::string &ip,
+        uint16_t port,
+        bool useSSL = false,
+        const std::string &certFile = "",
+        const std::string &keyFile = "") override;
+    virtual HttpAppFramework &setThreadNum(size_t threadNum) override;
     virtual size_t getThreadNum() const override
     {
         return _threadNum;
     }
-    virtual void setSSLFiles(const std::string &certPath,
-                             const std::string &keyPath) override;
+    virtual HttpAppFramework &setSSLFiles(const std::string &certPath,
+                                          const std::string &keyPath) override;
     virtual void run() override;
-    virtual void registerWebSocketController(
+    virtual HttpAppFramework &registerWebSocketController(
         const std::string &pathName,
         const std::string &crtlName,
         const std::vector<std::string> &filters =
             std::vector<std::string>()) override;
-    virtual void registerHttpSimpleController(
+    virtual HttpAppFramework &registerHttpSimpleController(
         const std::string &pathName,
         const std::string &crtlName,
         const std::vector<internal::HttpConstraint> &filtersAndMethods =
             std::vector<internal::HttpConstraint>{}) override;
 
-    virtual void setCustom404Page(const HttpResponsePtr &resp) override
+    virtual HttpAppFramework &setCustom404Page(
+        const HttpResponsePtr &resp) override
     {
         resp->setStatusCode(k404NotFound);
         _custom404 = resp;
+        return *this;
     }
 
     const HttpResponsePtr &getCustom404Page()
@@ -88,80 +91,93 @@ class HttpAppFrameworkImpl : public HttpAppFramework
                  std::function<void(const HttpResponsePtr &)> &&callback,
                  const std::string &hostString);
 
-    virtual void registerBeginningAdvice(
+    virtual HttpAppFramework &registerBeginningAdvice(
         const std::function<void()> &advice) override
     {
         getLoop()->runInLoop(advice);
+        return *this;
     }
 
-    virtual void registerNewConnectionAdvice(
+    virtual HttpAppFramework &registerNewConnectionAdvice(
         const std::function<bool(const trantor::InetAddress &,
                                  const trantor::InetAddress &)> &advice)
         override
     {
         _newConnectionAdvices.emplace_back(advice);
+        return *this;
     }
 
-    virtual void registerPreRoutingAdvice(
+    virtual HttpAppFramework &registerPreRoutingAdvice(
         const std::function<void(const HttpRequestPtr &,
                                  AdviceCallback &&,
                                  AdviceChainCallback &&)> &advice) override
     {
         _preRoutingAdvices.emplace_back(advice);
+        return *this;
     }
-    virtual void registerPostRoutingAdvice(
+    virtual HttpAppFramework &registerPostRoutingAdvice(
         const std::function<void(const HttpRequestPtr &,
                                  AdviceCallback &&,
                                  AdviceChainCallback &&)> &advice) override
     {
         _postRoutingAdvices.emplace_back(advice);
+        return *this;
     }
-    virtual void registerPreHandlingAdvice(
+    virtual HttpAppFramework &registerPreHandlingAdvice(
         const std::function<void(const HttpRequestPtr &,
                                  AdviceCallback &&,
                                  AdviceChainCallback &&)> &advice) override
     {
         _preHandlingAdvices.emplace_back(advice);
+        return *this;
     }
 
-    virtual void registerPreRoutingAdvice(
+    virtual HttpAppFramework &registerPreRoutingAdvice(
         const std::function<void(const HttpRequestPtr &)> &advice) override
     {
         _preRoutingObservers.emplace_back(advice);
+        return *this;
     }
-    virtual void registerPostRoutingAdvice(
+    virtual HttpAppFramework &registerPostRoutingAdvice(
         const std::function<void(const HttpRequestPtr &)> &advice) override
     {
         _postRoutingObservers.emplace_back(advice);
+        return *this;
     }
-    virtual void registerPreHandlingAdvice(
+    virtual HttpAppFramework &registerPreHandlingAdvice(
         const std::function<void(const HttpRequestPtr &)> &advice) override
     {
         _preHandlingObservers.emplace_back(advice);
+        return *this;
     }
-    virtual void registerPostHandlingAdvice(
+    virtual HttpAppFramework &registerPostHandlingAdvice(
         const std::function<void(const HttpRequestPtr &,
                                  const HttpResponsePtr &)> &advice) override
     {
         _postHandlingAdvices.emplace_back(advice);
+        return *this;
     }
 
-    virtual void enableSession(const size_t timeout = 0) override
+    virtual HttpAppFramework &enableSession(const size_t timeout = 0) override
     {
         _useSession = true;
         _sessionTimeout = timeout;
+        return *this;
     }
-    virtual void disableSession() override
+    virtual HttpAppFramework &disableSession() override
     {
         _useSession = false;
+        return *this;
     }
     virtual const std::string &getDocumentRoot() const override
     {
         return _rootPath;
     }
-    virtual void setDocumentRoot(const std::string &rootPath) override
+    virtual HttpAppFramework &setDocumentRoot(
+        const std::string &rootPath) override
     {
         _rootPath = rootPath;
+        return *this;
     }
     virtual const std::string &getUploadPath() const override
     {
@@ -173,67 +189,90 @@ class HttpAppFrameworkImpl : public HttpAppFramework
         static auto resolver = trantor::Resolver::newResolver(getLoop());
         return resolver;
     }
-    virtual void setUploadPath(const std::string &uploadPath) override;
-    virtual void setFileTypes(const std::vector<std::string> &types) override;
-    virtual void enableDynamicViewsLoading(
+    virtual HttpAppFramework &setUploadPath(
+        const std::string &uploadPath) override;
+    virtual HttpAppFramework &setFileTypes(
+        const std::vector<std::string> &types) override;
+    virtual HttpAppFramework &enableDynamicViewsLoading(
         const std::vector<std::string> &libPaths) override;
-    virtual void setMaxConnectionNum(size_t maxConnections) override;
-    virtual void setMaxConnectionNumPerIP(size_t maxConnectionsPerIP) override;
-    virtual void loadConfigFile(const std::string &fileName) override;
-    virtual void enableRunAsDaemon() override
+    virtual HttpAppFramework &setMaxConnectionNum(
+        size_t maxConnections) override;
+    virtual HttpAppFramework &setMaxConnectionNumPerIP(
+        size_t maxConnectionsPerIP) override;
+    virtual HttpAppFramework &loadConfigFile(
+        const std::string &fileName) override;
+    virtual HttpAppFramework &enableRunAsDaemon() override
     {
         _runAsDaemon = true;
+        return *this;
     }
-    virtual void enableRelaunchOnError() override
+    virtual HttpAppFramework &enableRelaunchOnError() override
     {
         _relaunchOnError = true;
+        return *this;
     }
-    virtual void setLogPath(const std::string &logPath,
-                            const std::string &logfileBaseName = "",
-                            size_t logfileSize = 100000000) override;
-    virtual void setLogLevel(trantor::Logger::LogLevel level) override;
-    virtual void enableSendfile(bool sendFile) override
+    virtual HttpAppFramework &setLogPath(
+        const std::string &logPath,
+        const std::string &logfileBaseName = "",
+        size_t logfileSize = 100000000) override;
+    virtual HttpAppFramework &setLogLevel(
+        trantor::Logger::LogLevel level) override;
+    virtual HttpAppFramework &enableSendfile(bool sendFile) override
     {
         _useSendfile = sendFile;
+        return *this;
     }
-    virtual void enableGzip(bool useGzip) override
+    virtual HttpAppFramework &enableGzip(bool useGzip) override
     {
         _useGzip = useGzip;
+        return *this;
     }
     virtual bool isGzipEnabled() const override
     {
         return _useGzip;
     }
-    virtual void setStaticFilesCacheTime(int cacheTime) override;
+    virtual HttpAppFramework &setStaticFilesCacheTime(int cacheTime) override;
     virtual int staticFilesCacheTime() const override;
-    virtual void setIdleConnectionTimeout(size_t timeout) override
+    virtual HttpAppFramework &setIdleConnectionTimeout(size_t timeout) override
     {
         _idleConnectionTimeout = timeout;
+        return *this;
     }
-    virtual void setKeepaliveRequestsNumber(const size_t number) override
+    virtual HttpAppFramework &setKeepaliveRequestsNumber(
+        const size_t number) override
     {
         _keepaliveRequestsNumber = number;
+        return *this;
     }
-    virtual void setPipeliningRequestsNumber(const size_t number) override
+    virtual HttpAppFramework &setPipeliningRequestsNumber(
+        const size_t number) override
     {
         _pipeliningRequestsNumber = number;
+        return *this;
     }
-    virtual void setGzipStatic(bool useGzipStatic) override;
-    virtual void setClientMaxBodySize(size_t maxSize) override
+    virtual HttpAppFramework &setGzipStatic(bool useGzipStatic) override;
+    virtual HttpAppFramework &setClientMaxBodySize(size_t maxSize) override
     {
         _clientMaxBodySize = maxSize;
+        return *this;
     }
-    virtual void setClientMaxMemoryBodySize(size_t maxSize) override
+    virtual HttpAppFramework &setClientMaxMemoryBodySize(
+        size_t maxSize) override
     {
         _clientMaxMemoryBodySize = maxSize;
+        return *this;
     }
-    virtual void setClientMaxWebSocketMessageSize(size_t maxSize) override
+    virtual HttpAppFramework &setClientMaxWebSocketMessageSize(
+        size_t maxSize) override
     {
         _clientMaxWebSocketMessageSize = maxSize;
+        return *this;
     }
-    virtual void setHomePage(const std::string &homePageFile) override
+    virtual HttpAppFramework &setHomePage(
+        const std::string &homePageFile) override
     {
         _homePageFile = homePageFile;
+        return *this;
     }
     const std::string &getHomePage() const
     {
@@ -277,20 +316,24 @@ class HttpAppFrameworkImpl : public HttpAppFramework
             getLoop()->quit();
     }
 
-    virtual void setServerHeaderField(const std::string &server) override
+    virtual HttpAppFramework &setServerHeaderField(
+        const std::string &server) override
     {
         assert(!_running);
         assert(server.find("\r\n") == std::string::npos);
         _serverHeader = "Server: " + server + "\r\n";
+        return *this;
     }
 
-    virtual void enableServerHeader(bool flag) override
+    virtual HttpAppFramework &enableServerHeader(bool flag) override
     {
         _enableServerHeader = flag;
+        return *this;
     }
-    virtual void enableDateHeader(bool flag) override
+    virtual HttpAppFramework &enableDateHeader(bool flag) override
     {
         _enableDateHeader = flag;
+        return *this;
     }
     bool sendServerHeader() const
     {
@@ -309,16 +352,17 @@ class HttpAppFrameworkImpl : public HttpAppFramework
         const std::string &name = "default") override;
     virtual orm::DbClientPtr getFastDbClient(
         const std::string &name = "default") override;
-    virtual void createDbClient(const std::string &dbType,
-                                const std::string &host,
-                                const u_short port,
-                                const std::string &databaseName,
-                                const std::string &userName,
-                                const std::string &password,
-                                const size_t connectionNum = 1,
-                                const std::string &filename = "",
-                                const std::string &name = "default",
-                                const bool isFast = false) override;
+    virtual HttpAppFramework &createDbClient(
+        const std::string &dbType,
+        const std::string &host,
+        const u_short port,
+        const std::string &databaseName,
+        const std::string &userName,
+        const std::string &password,
+        const size_t connectionNum = 1,
+        const std::string &filename = "",
+        const std::string &name = "default",
+        const bool isFast = false) override;
 
     inline static HttpAppFrameworkImpl &instance()
     {
