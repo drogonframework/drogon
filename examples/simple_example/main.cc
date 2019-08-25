@@ -235,7 +235,18 @@ int main()
     app().registerPreHandlingAdvice([](const drogon::HttpRequestPtr &req) {
         LOG_DEBUG << "preHanding observer";
     });
-
+    app().registerSyncAdvice([](const HttpRequestPtr &req) -> HttpResponsePtr {
+        static const HttpResponsePtr nullResp;
+        if (req->path() == "/plaintext")
+        {
+            auto resp = HttpResponse::newHttpResponse();
+            resp->setBody("Hello, World!");
+            resp->setContentTypeCodeAndCustomString(
+                CT_TEXT_PLAIN, "Content-Type: text/plain\r\n");
+            return resp;
+        }
+        return nullResp;
+    });
     // Output information of all handlers
     auto handlerInfo = app().getHandlersInfo();
     for (auto &info : handlerInfo)

@@ -391,7 +391,8 @@ void HttpAppFrameworkImpl::run()
         _idleConnectionTimeout,
         _sslCertPath,
         _sslKeyPath,
-        _threadNum);
+        _threadNum,
+        _syncAdvices);
     // A fast database client instance should be created in the main event loop,
     // so put the main loop into ioLoops.
     ioLoops.push_back(getLoop());

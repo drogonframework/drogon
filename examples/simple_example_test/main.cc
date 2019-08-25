@@ -873,56 +873,30 @@ void doTest(const HttpClientPtr &client,
                                 exit(1);
                             }
                         });
-    /// Test pipelining
-    // req = HttpRequest::newHttpRequest();
-    // req->setPath("/pipe");
-    // auto flag = std::make_shared<int>(0);
-    // client->sendRequest(req, [=](ReqResult result, const HttpResponsePtr
-    // &resp) {
-    //     if (result == ReqResult::Ok)
-    //     {
-    //         if (resp->statusCode() == k200OK && *flag == 0)
-    //         {
-    //             ++(*flag);
-    //             outputGood(req, isHttps);
-    //         }
-    //         else
-    //         {
-    //             LOG_DEBUG << resp->getBody();
-    //             LOG_ERROR << "Error!";
-    //             exit(1);
-    //         }
-    //     }
-    //     else
-    //     {
-    //         LOG_ERROR << "Error!";
-    //         exit(1);
-    //     }
-    // });
-    // req = HttpRequest::newHttpRequest();
-    // req->setPath("/pipe");
-    // client->sendRequest(req, [=](ReqResult result, const HttpResponsePtr
-    // &resp) {
-    //     if (result == ReqResult::Ok)
-    //     {
-    //         if (resp->statusCode() == k200OK && *flag == 1)
-    //         {
-    //             ++(*flag);
-    //             outputGood(req, isHttps);
-    //         }
-    //         else
-    //         {
-    //             LOG_DEBUG << resp->getBody();
-    //             LOG_ERROR << "Error!";
-    //             exit(1);
-    //         }
-    //     }
-    //     else
-    //     {
-    //         LOG_ERROR << "Error!";
-    //         exit(1);
-    //     }
-    // });
+    /// Test synchronous advice
+    req = HttpRequest::newHttpRequest();
+    req->setPath("/plaintext");
+    client->sendRequest(req,
+                        [=](ReqResult result, const HttpResponsePtr &resp) {
+                            if (result == ReqResult::Ok)
+                            {
+                                if (resp->getBody() == "Hello, World!")
+                                {
+                                    outputGood(req, isHttps);
+                                }
+                                else
+                                {
+                                    LOG_DEBUG << resp->getBody();
+                                    LOG_ERROR << "Error!";
+                                    exit(1);
+                                }
+                            }
+                            else
+                            {
+                                LOG_ERROR << "Error!";
+                                exit(1);
+                            }
+                        });
     /// Test form post
     req = HttpRequest::newHttpFormPostRequest();
     req->setPath("/api/v1/apitest/form");
