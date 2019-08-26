@@ -129,9 +129,7 @@ class HttpResponse
 
     /// Get the cookie identified by the @param key. If there is no the cookie,
     /// If there is no the cookie, the @param defaultCookie is retured.
-    virtual const Cookie &getCookie(
-        const std::string &key,
-        const Cookie &defaultCookie = Cookie{}) const = 0;
+    virtual const Cookie &getCookie(const std::string &key) const = 0;
 
     /// Get all cookies.
     virtual const std::unordered_map<std::string, Cookie> &cookies() const = 0;

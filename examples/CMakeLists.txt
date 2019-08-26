@@ -44,6 +44,7 @@ add_executable(benchmark ${benchmark_sources})
 add_executable(webapp_test simple_example_test/main.cc)
 add_executable(pipelining_test simple_example_test/HttpPipeliningTest.cc)
 add_executable(websocket_test simple_example_test/WebSocketTest.cc)
+add_executable(multiple_ws_test simple_example_test/MultipleWsTest.cc)
 
 add_custom_command(TARGET webapp POST_BUILD
                    COMMAND gzip
@@ -55,7 +56,7 @@ add_custom_command(TARGET webapp POST_BUILD
                    ${CMAKE_CURRENT_SOURCE_DIR}/simple_example/index.html
                    ${PROJECT_SOURCE_DIR}/trantor/trantor/tests/server.pem $<TARGET_FILE_DIR:webapp>)
 
-set(example_targets webapp webapp_test client benchmark pipelining_test websocket_test)
+set(example_targets webapp webapp_test client benchmark pipelining_test websocket_test multiple_ws_test)
 
 set_property(TARGET ${example_targets} PROPERTY CXX_STANDARD ${DROGON_CXX_STANDARD})
 set_property(TARGET ${example_targets} PROPERTY CXX_STANDARD_REQUIRED ON)
