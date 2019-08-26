@@ -106,7 +106,13 @@ class HttpAppFrameworkImpl : public HttpAppFramework
         _newConnectionAdvices.emplace_back(advice);
         return *this;
     }
-
+    virtual HttpAppFramework &registerSyncAdvice(
+        const std::function<HttpResponsePtr(const HttpRequestPtr &)> &advice)
+        override
+    {
+        _syncAdvices.emplace_back(advice);
+        return *this;
+    }
     virtual HttpAppFramework &registerPreRoutingAdvice(
         const std::function<void(const HttpRequestPtr &,
                                  AdviceCallback &&,
@@ -458,6 +464,8 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     std::vector<std::function<bool(const trantor::InetAddress &,
                                    const trantor::InetAddress &)>>
         _newConnectionAdvices;
+    std::vector<std::function<HttpResponsePtr(const HttpRequestPtr &)>>
+        _syncAdvices;
     std::vector<std::function<void(const HttpRequestPtr &,
                                    AdviceCallback &&,
                                    AdviceChainCallback &&)>>

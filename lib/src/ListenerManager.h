@@ -39,7 +39,10 @@ class ListenerManager : public trantor::NonCopyable
         size_t connectionTimeout,
         const std::string &globalCertFile,
         const std::string &globalKeyFile,
-        size_t threadNum);
+        size_t threadNum,
+        const std::vector<
+            std::function<HttpResponsePtr(const HttpRequestPtr &)>>
+            &syncAdvices);
     void startListening();
 
   private:

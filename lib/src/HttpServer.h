@@ -29,7 +29,10 @@ class HttpServer : trantor::NonCopyable
   public:
     HttpServer(trantor::EventLoop *loop,
                const trantor::InetAddress &listenAddr,
-               const std::string &name);
+               const std::string &name,
+               const std::vector<
+                   std::function<HttpResponsePtr(const HttpRequestPtr &)>>
+                   &syncAdvices);
 
     ~HttpServer();
 
@@ -95,6 +98,8 @@ class HttpServer : trantor::NonCopyable
     HttpAsyncCallback _httpAsyncCallback;
     WebSocketNewAsyncCallback _newWebsocketCallback;
     trantor::ConnectionCallback _connectionCallback;
+    const std::vector<std::function<HttpResponsePtr(const HttpRequestPtr &)>>
+        &_syncAdvices;
 };
 
 }  // namespace drogon

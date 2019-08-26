@@ -27,7 +27,46 @@
 using namespace std::placeholders;
 using namespace drogon;
 using namespace trantor;
-
+namespace drogon
+{
+static HttpResponsePtr getCompressedResponse(const HttpRequestImplPtr &req,
+                                             const HttpResponsePtr &response,
+                                             bool isHeadMethod)
+{  // use gzip
+    LOG_TRACE << "Use gzip to compress the body";
+    auto &sendfileName =
+        static_cast<HttpResponseImpl *>(response.get())->sendfileName();
+    if (app().isGzipEnabled() && sendfileName.empty() &&
+        req->getHeaderBy("accept-encoding").find("gzip") != std::string::npos &&
+        static_cast<HttpResponseImpl *>(response.get())
+            ->getHeaderBy("content-encoding")
+            .empty() &&
+        response->getContentType() < CT_APPLICATION_OCTET_STREAM &&
+        response->getBody().length() > 1024 && !isHeadMethod)
+    {
+        auto newResp = response;
+        auto strCompress = utils::gzipCompress(response->getBody().data(),
+                                               response->getBody().length());
+        if (!strCompress.empty())
+        {
+            if (response->expiredTime() >= 0)
+            {
+                // cached response,we need to make a clone
+                newResp = std::make_shared<HttpResponseImpl>(
+                    *static_cast<HttpResponseImpl *>(response.get()));
+                newResp->setExpiredTime(-1);
+            }
+            newResp->setBody(std::move(strCompress));
+            newResp->addHeader("Content-Encoding", "gzip");
+        }
+        else
+        {
+            LOG_ERROR << "gzip got 0 length result";
+        }
+        return newResp;
+    }
+    return response;
+}
 static bool isWebSocket(const HttpRequestImplPtr &req)
 {
     auto &headers = req->headers();
@@ -67,10 +106,13 @@ static void defaultConnectionCallback(const trantor::TcpConnectionPtr &conn)
 {
     return;
 }
-
-HttpServer::HttpServer(EventLoop *loop,
-                       const InetAddress &listenAddr,
-                       const std::string &name)
+}  // namespace drogon
+HttpServer::HttpServer(
+    EventLoop *loop,
+    const InetAddress &listenAddr,
+    const std::string &name,
+    const std::vector<std::function<HttpResponsePtr(const HttpRequestPtr &)>>
+        &syncAdvices)
 #ifdef __linux__
     : _server(loop, listenAddr, name.c_str()),
 #else
@@ -78,7 +120,8 @@ HttpServer::HttpServer(EventLoop *loop,
 #endif
       _httpAsyncCallback(defaultHttpAsyncCallback),
       _newWebsocketCallback(defaultWebSockAsyncCallback),
-      _connectionCallback(defaultConnectionCallback)
+      _connectionCallback(defaultConnectionCallback),
+      _syncAdvices(syncAdvices)
 {
     _server.setConnectionCallback(
         std::bind(&HttpServer::onConnection, this, _1));
@@ -244,7 +287,24 @@ void HttpServer::onRequests(
             requestParser->pushRquestToPipelining(req);
             syncFlag = true;
         }
-
+        if (!_syncAdvices.empty())
+        {
+            bool adviceFlag = false;
+            for (auto &advice : _syncAdvices)
+            {
+                auto resp = advice(req);
+                if (resp)
+                {
+                    requestParser->getResponseBuffer().emplace_back(
+                        getCompressedResponse(req, resp, isHeadMethod),
+                        isHeadMethod);
+                    adviceFlag = true;
+                    break;
+                }
+            }
+            if (adviceFlag)
+                continue;
+        }
         _httpAsyncCallback(
             req,
             [conn,
@@ -260,47 +320,8 @@ void HttpServer::onRequests(
                 if (!conn->connected())
                     return;
                 response->setCloseConnection(_close);
-                auto newResp = response;
-                auto &sendfileName =
-                    static_cast<HttpResponseImpl *>(newResp.get())
-                        ->sendfileName();
-
-                if (app().isGzipEnabled() && sendfileName.empty() &&
-                    req->getHeaderBy("accept-encoding").find("gzip") !=
-                        std::string::npos &&
-                    static_cast<HttpResponseImpl *>(response.get())
-                        ->getHeaderBy("content-encoding")
-                        .empty() &&
-                    response->getContentType() < CT_APPLICATION_OCTET_STREAM &&
-                    response->getBody().length() > 1024)
-                {
-                    // use gzip
-                    LOG_TRACE << "Use gzip to compress the body";
-                    size_t zlen = response->getBody().length();
-                    auto strCompress =
-                        utils::gzipCompress(response->getBody().data(),
-                                            response->getBody().length());
-                    if (!strCompress.empty())
-                    {
-                        if (zlen > 0)
-                        {
-                            if (response->expiredTime() >= 0)
-                            {
-                                // cached response,we need to make a clone
-                                newResp = std::make_shared<HttpResponseImpl>(
-                                    *static_cast<HttpResponseImpl *>(
-                                        response.get()));
-                                newResp->setExpiredTime(-1);
-                            }
-                            newResp->setBody(std::move(strCompress));
-                            newResp->addHeader("Content-Encoding", "gzip");
-                        }
-                        else
-                        {
-                            LOG_ERROR << "gzip got 0 length result";
-                        }
-                    }
-                }
+                auto newResp =
+                    getCompressedResponse(req, response, isHeadMethod);
                 if (conn->getLoop()->isInLoopThread())
                 {
                     /*

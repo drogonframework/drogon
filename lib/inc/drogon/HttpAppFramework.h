@@ -149,8 +149,7 @@ class HttpAppFramework : public trantor::NonCopyable
     /// established.
     /**
      * The first parameter of the @param advice is the remote address of the new
-     * connection, the second one
-     * is the local address of it.
+     * connection, the second one is the local address of it.
      * If the @param advice returns a false value, drogon closes the connection.
      * Users can use this advice to implement some security policies.
      */
@@ -158,11 +157,10 @@ class HttpAppFramework : public trantor::NonCopyable
         const std::function<bool(const trantor::InetAddress &,
                                  const trantor::InetAddress &)> &advice) = 0;
 
-    /// The @param advice is called immediately after the request is created and
-    /// before it matches any handler paths.
+    /// The @param advice is called immediately after the request is created. If
+    /// a no-empty response is returned by the advice, it is sent to the client
+    /// and no handler is invoked.
     /**
-     * The parameters of the @param advice are same as those of the doFilter
-     * method of the Filter class.
      * The following diagram shows the location of the AOP join points during
      * http request processing.
      *
@@ -171,6 +169,9 @@ class HttpAppFramework : public trantor::NonCopyable
      *                   |  Request  |                             | Response |
      *                   +-----------+                             +----------+
      *                         |                                         ^
+     *                         v                                         |
+     *         sync join point o----------->[HttpResponsePtr]----------->+
+     *                         |                                         |
      *                         v                                         |
      *  Pre-routing join point o----------->[Advice callback]----------->+
      *                         |                                         |
@@ -198,6 +199,16 @@ class HttpAppFramework : public trantor::NonCopyable
      *                         v                                         |
      *Post-handling join point o---------------------------------------->+
      *
+     */
+    virtual HttpAppFramework &registerSyncAdvice(
+        const std::function<HttpResponsePtr(const HttpRequestPtr &)>
+            &advice) = 0;
+
+    /// The @param advice is called after all the synchronous advices return
+    /// nullptr and before the request is routed to any handler.
+    /**
+     * The parameters of the @param advice are same as those of the doFilter
+     * method of the Filter class.
      */
     virtual HttpAppFramework &registerPreRoutingAdvice(
         const std::function<void(const HttpRequestPtr &,
