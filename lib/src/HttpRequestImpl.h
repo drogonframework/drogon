@@ -98,7 +98,7 @@ class HttpRequestImpl : public HttpRequest
 
     void setPath(const char *start, const char *end)
     {
-        if(utils::needUrlDecoding(start,end))
+        if (utils::needUrlDecoding(start, end))
         {
             _path = utils::urlDecode(start, end);
         }
