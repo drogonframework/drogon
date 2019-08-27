@@ -271,11 +271,7 @@ void HttpServer::onRequests(
 
     for (auto &req : requests)
     {
-        const std::string &connection = req->getHeaderBy("connection");
-        bool _close = connection == "close" ||
-                      (req->getVersion() == HttpRequestImpl::kHttp10 &&
-                       connection != "Keep-Alive");
-
+        bool _close = (!req->keepAlive());
         bool isHeadMethod = (req->method() == Head);
         if (isHeadMethod)
         {
