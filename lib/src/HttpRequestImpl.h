@@ -65,6 +65,7 @@ class HttpRequestImpl : public HttpRequest
         _content.clear();
         _contentType = CT_TEXT_PLAIN;
         _contentTypeString.clear();
+        _keepAlive = true;
     }
     trantor::EventLoop *getLoop()
     {
@@ -74,6 +75,10 @@ class HttpRequestImpl : public HttpRequest
     void setVersion(Version v)
     {
         _version = v;
+        if (v == kHttp10)
+        {
+            _keepAlive = false;
+        }
     }
 
     virtual Version version() const override
@@ -378,6 +383,10 @@ class HttpRequestImpl : public HttpRequest
     {
         return _expect;
     }
+    bool keepAlive() const
+    {
+        return _keepAlive;
+    }
     ~HttpRequestImpl();
 
   protected:
@@ -419,6 +428,7 @@ class HttpRequestImpl : public HttpRequest
     trantor::Date _date;
     std::unique_ptr<CacheFile> _cacheFilePtr;
     std::string _expect;
+    bool _keepAlive = true;
 
   protected:
     std::string _content;

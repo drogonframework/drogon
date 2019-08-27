@@ -42,6 +42,10 @@ std::string nameTransform(const std::string &origName, bool isType)
     do
     {
         pos = str.find("_", startPos);
+        if (pos == std::string::npos)
+        {
+            pos = str.find(".", startPos);
+        }
         if (pos != std::string::npos)
             ret += str.substr(startPos, pos - startPos);
         else
@@ -49,7 +53,7 @@ std::string nameTransform(const std::string &origName, bool isType)
             ret += str.substr(startPos);
             break;
         }
-        while (str[pos] == '_')
+        while (str[pos] == '_' || str[pos] == '.')
             pos++;
         if (str[pos] >= 'a' && str[pos] <= 'z')
             str[pos] += ('A' - 'a');
