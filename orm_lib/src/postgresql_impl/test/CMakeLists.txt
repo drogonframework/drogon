@@ -1,4 +1,4 @@
-LINK_LIBRARIES(drogon trantor pthread dl)
+LINK_LIBRARIES(drogon)
 
 ADD_EXECUTABLE(pg_test1 test1.cc)
 ADD_EXECUTABLE(pg_test2 test2.cc)

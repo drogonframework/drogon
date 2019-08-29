@@ -1,12 +1,10 @@
 # - Config file for the Drogon package
-# It defines the following variables
-#  DROGON_INCLUDE_DIRS - include directories for Drogon
-#  DROGON_LIBRARIES    - libraries to link against
-#  DROGON_EXECUTABLE   - the drogon_ctl executable
 
 @PACKAGE_INIT@
 
-set(DROGON_INCLUDE_DIRS "@PACKAGE_CONF_INCLUDE_DIRS@")
+add_library(Drogon::Drogon INTERFACE IMPORTED GLOBAL)
+set_target_properties(Drogon::Drogon PROPERTIES
+                      INTERFACE_INCLUDE_DIRECTORIES "@PACKAGE_CONF_INCLUDE_DIRS@")
 
 # find trantor
 set(Trantor_DIR "@PACKAGE_TRANTOR_CMAKE_DIR@")
@@ -20,5 +18,4 @@ if(NOT TARGET drogon AND NOT Drogon_BINARY_DIR)
 endif()
 
 # These are IMPORTED targets created by DrogonTargets.cmake
-set(DROGON_LIBRARIES drogon dl)
-set(DROGON_EXECUTABLE drogon_ctl)
+target_link_libraries(Drogon::Drogon INTERFACE drogon)

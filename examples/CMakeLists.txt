@@ -1,4 +1,4 @@
-link_libraries(drogon trantor pthread dl)
+link_libraries(drogon)
 
 file(GLOB SCP_LIST ${CMAKE_CURRENT_SOURCE_DIR}/simple_example/*.csp)
 foreach(cspFile ${SCP_LIST})

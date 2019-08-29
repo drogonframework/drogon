@@ -1,6 +1,8 @@
-cmake_minimum_required (VERSION 3.2)
+cmake_minimum_required (VERSION 3.6)
 
-project (DROGON CXX)
+project (drogon CXX)
+
+add_library(${PROJECT_NAME} STATIC)
 
 set(DROGON_MAJOR_VERSION 1)
 set(DROGON_MINOR_VERSION 0)
@@ -39,32 +41,36 @@ else()
     set(DROGON_CXX_STANDARD 14)
 endif()
 
+target_include_directories(${PROJECT_NAME} 
+                            PUBLIC  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/lib/inc>
+                                    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/orm_lib/inc>
+                                    $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}>
+                                    $<INSTALL_INTERFACE:${INSTALL_INCLUDE_DIR}>)
+
 add_subdirectory(trantor)
 set(Trantor_DIR ${PROJECT_BINARY_DIR}/trantor)
 find_package(Trantor CONFIG REQUIRED NO_DEFAULT_PATH)
 message(STATUS "trantor inc:" ${TRANTOR_INCLUDE_DIRS})
-include_directories(${TRANTOR_INCLUDE_DIRS})
-link_libraries(${TRANTOR_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} PUBLIC Trantor::Trantor)
+
+target_link_libraries(${PROJECT_NAME} INTERFACE dl)
 
 if(DROGON_CXX_STANDARD LESS 17)
 #With C++14, use boost to support any and string_view
     message(STATUS "use c++14")
     find_package(Boost 1.61.0 REQUIRED)
-    include_directories(${Boost_INCLUDE_DIRS})
+    target_link_libraries(${PROJECT_NAME} PUBLIC Boost::Boost)
 else()
     message(STATUS "use c++17")
 endif()
 
-include_directories(${PROJECT_SOURCE_DIR}/lib/inc 
-                    ${PROJECT_SOURCE_DIR}/orm_lib/inc
-                    ${PROJECT_BINARY_DIR})
 
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules/)
 
 #jsoncpp
 find_package (Jsoncpp REQUIRED)
-include_directories(${JSONCPP_INCLUDE_DIRS})
-link_libraries(${JSONCPP_LIBRARIES})
+target_include_directories(${PROJECT_NAME} PUBLIC ${JSONCPP_INCLUDE_DIRS})
+target_link_libraries(${PROJECT_NAME} PUBLIC ${JSONCPP_LIBRARIES})
 message(STATUS "jsoncpp inc path:" ${JSONCPP_INCLUDE_DIRS})
 
 #message(STATUS ${JSONCPP_LIBRARIES})
@@ -79,12 +85,12 @@ if(jsoncpp_ver LESS 1.7)
 endif()
 
 find_package (UUID REQUIRED)
-include_directories(${UUID_INCLUDE_DIR})
-link_libraries(${UUID_LIBRARIES})
+target_include_directories(${PROJECT_NAME} PRIVATE ${UUID_INCLUDE_DIR})
+target_link_libraries(${PROJECT_NAME} PRIVATE ${UUID_LIBRARIES})
 
 find_package(ZLIB REQUIRED)
-include_directories(${ZLIB_INCLUDE_DIR})
-link_libraries(${ZLIB_LIBRARIES})
+target_include_directories(${PROJECT_NAME} PRIVATE ${ZLIB_INCLUDE_DIR})
+target_link_libraries(${PROJECT_NAME} PRIVATE ${ZLIB_LIBRARIES})
 
 set(DROGON_SOURCES  lib/src/AOPAdvice.cc
                     lib/src/CacheFile.cc
@@ -121,9 +127,7 @@ set(DROGON_SOURCES  lib/src/AOPAdvice.cc
 
 find_package (OpenSSL)
 if(OpenSSL_FOUND)
-    include_directories(${OPENSSL_INCLUDE_DIR})
-    link_libraries(${OPENSSL_LIBRARIES})
-    message(STATUS "openssl inc path:" ${OPENSSL_INCLUDE_DIR})
+# this is set in trantor
 else()
     set(DROGON_SOURCES ${DROGON_SOURCES}  lib/src/ssl_funcs/Md5.cc
                                           lib/src/ssl_funcs/Sha1.cc)
@@ -147,8 +151,8 @@ if(BUILD_ORM)
     if(PostgreSQL_FOUND)
         message(STATUS "libpq inc path:" ${PostgreSQL_INCLUDE_DIR})
         message(STATUS "libpq lib:" ${PostgreSQL_LIBRARIES})
-        include_directories(${PostgreSQL_INCLUDE_DIR})
-        link_libraries(${PostgreSQL_LIBRARIES})
+        target_include_directories(${PROJECT_NAME} PRIVATE ${PostgreSQL_INCLUDE_DIR})
+        target_link_libraries(${PROJECT_NAME} PRIVATE ${PostgreSQL_LIBRARIES})
         set(DROGON_SOURCES ${DROGON_SOURCES}
             orm_lib/src/postgresql_impl/PostgreSQLResultImpl.cc)
         if(LIBPQ_BATCH_MODE)
@@ -181,8 +185,8 @@ if(BUILD_ORM)
             message(STATUS "The mysql in your system is not the mariadb, so we can't use it in drogon")
         else()
             message(STATUS "Ok! We find the mariadb!")
-            include_directories(${MYSQL_INCLUDE_DIR})
-            link_libraries(${MYSQL_CLIENT_LIBS})
+            target_include_directories(${PROJECT_NAME} PRIVATE ${MYSQL_INCLUDE_DIR})
+            target_link_libraries(${PROJECT_NAME} PRIVATE ${MYSQL_CLIENT_LIBS})
             set(DROGON_SOURCES ${DROGON_SOURCES}  
                 orm_lib/src/mysql_impl/MysqlConnection.cc
                 orm_lib/src/mysql_impl/MysqlResultImpl.cc)
@@ -193,8 +197,8 @@ if(BUILD_ORM)
     find_package (SQLite3)
     if (SQLITE3_FOUND)
         message(STATUS "SQLite3 inc:" ${SQLITE3_INCLUDE_DIRS})
-        include_directories(${SQLITE3_INCLUDE_DIRS})
-        link_libraries(${SQLITE3_LIBRARIES})
+        target_include_directories(${PROJECT_NAME} PRIVATE ${SQLITE3_INCLUDE_DIRS})
+        target_link_libraries(${PROJECT_NAME} PRIVATE ${SQLITE3_LIBRARIES})
         set(DROGON_SOURCES ${DROGON_SOURCES}  
             orm_lib/src/sqlite3_impl/Sqlite3Connection.cc
             orm_lib/src/sqlite3_impl/Sqlite3ResultImpl.cc)
@@ -246,7 +250,7 @@ else()
     set(DROGON_SOURCES ${DROGON_SOURCES} lib/src/DbClientManagerSkipped.cc)
 endif()
 
-add_library(drogon STATIC ${DROGON_SOURCES})
+target_sources(${PROJECT_NAME} PRIVATE ${DROGON_SOURCES})
 
 set_property(TARGET drogon PROPERTY CXX_STANDARD ${DROGON_CXX_STANDARD})
 set_property(TARGET drogon PROPERTY CXX_STANDARD_REQUIRED ON)

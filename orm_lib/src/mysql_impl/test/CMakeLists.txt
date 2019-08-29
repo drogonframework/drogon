@@ -1,4 +1,4 @@
-LINK_LIBRARIES(drogon trantor pthread dl)
+LINK_LIBRARIES(drogon)
 
 ADD_EXECUTABLE(mysql_test1 test1.cc)
 
