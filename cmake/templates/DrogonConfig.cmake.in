@@ -10,13 +10,10 @@
 @PACKAGE_INIT@
 
 add_library(Drogon::Drogon INTERFACE IMPORTED GLOBAL)
-set_target_properties(Drogon::Drogon PROPERTIES
-                      INTERFACE_INCLUDE_DIRECTORIES "@PACKAGE_CONF_INCLUDE_DIRS@")
 
 if(NOT TRANTOR_FOUND)
 # find trantor
-    set(Trantor_DIR "@PACKAGE_TRANTOR_CMAKE_DIR@")
-    find_package(Trantor REQUIRED NO_DEFAULT_PATH)
+    find_package(Trantor REQUIRED)
 endif()
 
 # Our library dependencies (contains definitions for IMPORTED targets)
@@ -29,7 +26,7 @@ endif()
 # These are IMPORTED targets created by DrogonTargets.cmake
 target_link_libraries(Drogon::Drogon INTERFACE drogon)
 
-set(DROGON_INCLUDE_DIRS "@PACKAGE_CONF_INCLUDE_DIRS@")
-set(DROGON_LIBRARIES drogon)
+get_target_property(DROGON_INCLUDE_DIRS drogon INTERFACE_INCLUDE_DIRECTORIES)
+get_target_property(DROGON_LIBRARIES drogon INTERFACE_LINK_LIBRARIES)
 set(DROGON_EXECUTABLE drogon_ctl)
 set(DROGON_FOUND TRUE)

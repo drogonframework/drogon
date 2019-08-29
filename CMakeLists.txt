@@ -411,28 +411,14 @@ export(TARGETS drogon
 # export(PACKAGE Drogon)
 
 include(CMakePackageConfigHelpers)
-# ... for the build tree(locally included)
-set(CONF_INCLUDE_DIRS   "${PROJECT_SOURCE_DIR}/lib/inc"
-                        "${PROJECT_SOURCE_DIR}/orm_lib/inc"
-                        "${PROJECT_SOURCE_DIR}/trantor"
-                        "${JSONCPP_INCLUDE_DIRS}")
-set(TRANTOR_CMAKE_DIR "${CMAKE_CURRENT_BINARY_DIR}/trantor")
+
 configure_package_config_file(cmake/templates/DrogonConfig.cmake.in
                               ${CMAKE_CURRENT_BINARY_DIR}/DrogonConfig.cmake
-                              INSTALL_DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
-                              PATH_VARS CONF_INCLUDE_DIRS TRANTOR_CMAKE_DIR)
+                              INSTALL_DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 # ... for the install tree
-if(JSONCPP_INCLUDE_DIRS STREQUAL INSTALL_INCLUDE_DIR)
-    set(CONF_INCLUDE_DIRS   "${INSTALL_INCLUDE_DIR}")
-else()
-    set(CONF_INCLUDE_DIRS   "${JSONCPP_INCLUDE_DIRS}"
-                            "${INSTALL_INCLUDE_DIR}")
-endif()
-set(TRANTOR_CMAKE_DIR "${INSTALL_LIB_DIR}/cmake/Trantor")
 configure_package_config_file(cmake/templates/DrogonConfig.cmake.in
                               ${CMAKE_CURRENT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/DrogonConfig.cmake
-                              INSTALL_DESTINATION ${INSTALL_DROGON_CMAKE_DIR}
-                              PATH_VARS CONF_INCLUDE_DIRS TRANTOR_CMAKE_DIR)
+                              INSTALL_DESTINATION ${INSTALL_DROGON_CMAKE_DIR})
 
 # version
 write_basic_package_version_file(${CMAKE_CURRENT_BINARY_DIR}/DrogonConfigVersion.cmake
