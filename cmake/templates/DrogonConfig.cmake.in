@@ -13,13 +13,13 @@ add_library(Drogon::Drogon INTERFACE IMPORTED GLOBAL)
 
 if(NOT TRANTOR_FOUND)
 # find trantor
-    find_package(Trantor REQUIRED)
+  find_package(Trantor REQUIRED)
 endif()
 
 # Our library dependencies (contains definitions for IMPORTED targets)
 
 get_filename_component(DROGON_CMAKE_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
-if(NOT TARGET drogon AND NOT Drogon_BINARY_DIR)
+if(NOT TARGET drogon)
   include("${DROGON_CMAKE_DIR}/DrogonTargets.cmake")
 endif()
 

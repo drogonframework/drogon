@@ -398,20 +398,11 @@ source_group( "Public API" FILES ${DROGON_HEADERS}
                                  ${DROGON_PLUGIN_HEADERS})
 
 
-
-# Add all targets to the build-tree export set
-export(TARGETS drogon
-  FILE "${PROJECT_BINARY_DIR}/DrogonTargets.cmake")
-
 # Export the package for use from the build-tree
 # (this registers the build-tree with a global cmake-registry)
 # export(PACKAGE Drogon)
 
 include(CMakePackageConfigHelpers)
-
-configure_package_config_file(cmake/templates/DrogonConfig.cmake.in
-                              ${CMAKE_CURRENT_BINARY_DIR}/DrogonConfig.cmake
-                              INSTALL_DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 # ... for the install tree
 configure_package_config_file(cmake/templates/DrogonConfig.cmake.in
                               ${CMAKE_CURRENT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/DrogonConfig.cmake
