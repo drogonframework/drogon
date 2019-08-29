@@ -44,6 +44,7 @@ endif()
 target_include_directories(${PROJECT_NAME} 
                             PUBLIC  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/lib/inc>
                                     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/orm_lib/inc>
+                                    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/trantor>
                                     $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}>
                                     $<INSTALL_INTERFACE:${INSTALL_INCLUDE_DIR}>)
 
@@ -51,7 +52,7 @@ add_subdirectory(trantor)
 set(Trantor_DIR ${PROJECT_BINARY_DIR}/trantor)
 find_package(Trantor CONFIG REQUIRED NO_DEFAULT_PATH)
 message(STATUS "trantor inc:" ${TRANTOR_INCLUDE_DIRS})
-target_link_libraries(${PROJECT_NAME} PUBLIC Trantor::Trantor)
+target_link_libraries(${PROJECT_NAME} INTERFACE Trantor::Trantor)
 
 target_link_libraries(${PROJECT_NAME} INTERFACE dl)
 
@@ -127,7 +128,7 @@ set(DROGON_SOURCES  lib/src/AOPAdvice.cc
 
 find_package (OpenSSL)
 if(OpenSSL_FOUND)
-# this is set in trantor
+    target_link_libraries(${PROJECT_NAME} PUBLIC OpenSSL::SSL OpenSSL::Crypto)
 else()
     set(DROGON_SOURCES ${DROGON_SOURCES}  lib/src/ssl_funcs/Md5.cc
                                           lib/src/ssl_funcs/Sha1.cc)
