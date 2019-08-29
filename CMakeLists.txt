@@ -48,6 +48,11 @@ target_include_directories(${PROJECT_NAME}
                                     $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}>
                                     $<INSTALL_INTERFACE:${INSTALL_INCLUDE_DIR}>)
 
+# set the include list for dynamic view compiling
+list(APPEND INCLUDE_DIRS_FOR_DYNAMIC_VIEW   ${PROJECT_SOURCE_DIR}/lib/inc
+                                            ${PROJECT_SOURCE_DIR}/orm_lib/inc
+                                            ${PROJECT_SOURCE_DIR}/trantor
+                                            ${INSTALL_INCLUDE_DIR})
 add_subdirectory(trantor)
 set(Trantor_DIR ${PROJECT_BINARY_DIR}/trantor)
 find_package(Trantor CONFIG REQUIRED NO_DEFAULT_PATH)
@@ -60,7 +65,10 @@ if(DROGON_CXX_STANDARD LESS 17)
 #With C++14, use boost to support any and string_view
     message(STATUS "use c++14")
     find_package(Boost 1.61.0 REQUIRED)
-    target_link_libraries(${PROJECT_NAME} PUBLIC Boost::Boost)
+    set_target_properties(${PROJECT_NAME} PROPERTIES
+                                          PUBLIC_INCLUDE_DIRECTORIES
+                                          ${Boost_INCLUDE_DIRS})
+    list(APPEND INCLUDE_DIRS_FOR_DYNAMIC_VIEW ${Boost_INCLUDE_DIRS})
 else()
     message(STATUS "use c++17")
 endif()
@@ -72,6 +80,7 @@ set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules/)
 find_package (Jsoncpp REQUIRED)
 target_include_directories(${PROJECT_NAME} PUBLIC ${JSONCPP_INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME} PUBLIC ${JSONCPP_LIBRARIES})
+list(APPEND INCLUDE_DIRS_FOR_DYNAMIC_VIEW ${JSONCPP_INCLUDE_DIRS})
 message(STATUS "jsoncpp inc path:" ${JSONCPP_INCLUDE_DIRS})
 
 #message(STATUS ${JSONCPP_LIBRARIES})
@@ -146,7 +155,6 @@ if(NOT LIBPQ_BATCH_MODE)
 endif()
 
 if(BUILD_ORM)
-
     #find postgres
     find_package(PostgreSQL)
     if(PostgreSQL_FOUND)
@@ -253,9 +261,11 @@ endif()
 
 target_sources(${PROJECT_NAME} PRIVATE ${DROGON_SOURCES})
 
-set_property(TARGET drogon PROPERTY CXX_STANDARD ${DROGON_CXX_STANDARD})
-set_property(TARGET drogon PROPERTY CXX_STANDARD_REQUIRED ON)
-set_property(TARGET drogon PROPERTY CXX_EXTENSIONS OFF)
+if(DROGON_CXX_STANDARD LESS 17)
+    target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_14)
+else()
+    target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_17)
+endif()
 
 add_dependencies(drogon makeVersion)
 
@@ -296,11 +306,10 @@ else()
     set(COMPILATION_FLAGS "-std=c++")
 endif()
 
-get_target_property(INS drogon INCLUDE_DIRECTORIES)
-list(APPEND INS "${INSTALL_INCLUDE_DIR}")
-list(REMOVE_DUPLICATES INS)
+list(APPEND INCLUDE_DIRS_FOR_DYNAMIC_VIEW  "${INSTALL_INCLUDE_DIR}")
+list(REMOVE_DUPLICATES INCLUDE_DIRS_FOR_DYNAMIC_VIEW)
 set(INS_STRING "")
-foreach(loop_var ${INS})
+foreach(loop_var ${INCLUDE_DIRS_FOR_DYNAMIC_VIEW})
     set(INS_STRING "${INS_STRING} -I${loop_var}")
 endforeach(loop_var)
 
