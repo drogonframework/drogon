@@ -44,7 +44,6 @@ endif()
 target_include_directories(${PROJECT_NAME} 
                             PUBLIC  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/lib/inc>
                                     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/orm_lib/inc>
-                                    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/trantor>
                                     $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}>)
 
 # set the include list for dynamic view compiling
@@ -53,10 +52,8 @@ list(APPEND INCLUDE_DIRS_FOR_DYNAMIC_VIEW   ${PROJECT_SOURCE_DIR}/lib/inc
                                             ${PROJECT_SOURCE_DIR}/trantor
                                             ${INSTALL_INCLUDE_DIR})
 add_subdirectory(trantor)
-set(Trantor_DIR ${PROJECT_BINARY_DIR}/trantor)
-find_package(Trantor CONFIG REQUIRED NO_DEFAULT_PATH)
-message(STATUS "trantor inc:" ${TRANTOR_INCLUDE_DIRS})
-target_link_libraries(${PROJECT_NAME} INTERFACE Trantor::Trantor)
+
+target_link_libraries(${PROJECT_NAME} PUBLIC trantor)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE dl)
 

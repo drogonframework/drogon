@@ -27,6 +27,6 @@ endif()
 target_link_libraries(Drogon::Drogon INTERFACE drogon)
 
 get_target_property(DROGON_INCLUDE_DIRS drogon INTERFACE_INCLUDE_DIRECTORIES)
-get_target_property(DROGON_LIBRARIES drogon INTERFACE_LINK_LIBRARIES)
+set(DROGON_LIBRARIES drogon)
 set(DROGON_EXECUTABLE drogon_ctl)
 set(DROGON_FOUND TRUE)
