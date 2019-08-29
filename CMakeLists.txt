@@ -45,8 +45,7 @@ target_include_directories(${PROJECT_NAME}
                             PUBLIC  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/lib/inc>
                                     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/orm_lib/inc>
                                     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/trantor>
-                                    $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}>
-                                    $<INSTALL_INTERFACE:${INSTALL_INCLUDE_DIR}>)
+                                    $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}>)
 
 # set the include list for dynamic view compiling
 list(APPEND INCLUDE_DIRS_FOR_DYNAMIC_VIEW   ${PROJECT_SOURCE_DIR}/lib/inc
@@ -59,15 +58,13 @@ find_package(Trantor CONFIG REQUIRED NO_DEFAULT_PATH)
 message(STATUS "trantor inc:" ${TRANTOR_INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME} INTERFACE Trantor::Trantor)
 
-target_link_libraries(${PROJECT_NAME} INTERFACE dl)
+target_link_libraries(${PROJECT_NAME} PRIVATE dl)
 
 if(DROGON_CXX_STANDARD LESS 17)
 #With C++14, use boost to support any and string_view
     message(STATUS "use c++14")
     find_package(Boost 1.61.0 REQUIRED)
-    set_target_properties(${PROJECT_NAME} PROPERTIES
-                                          PUBLIC_INCLUDE_DIRECTORIES
-                                          ${Boost_INCLUDE_DIRS})
+    target_include_directories(${PROJECT_NAME} PUBLIC ${Boost_INCLUDE_DIRS})
     list(APPEND INCLUDE_DIRS_FOR_DYNAMIC_VIEW ${Boost_INCLUDE_DIRS})
 else()
     message(STATUS "use c++17")
@@ -79,7 +76,7 @@ set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules/)
 #jsoncpp
 find_package (Jsoncpp REQUIRED)
 target_include_directories(${PROJECT_NAME} PUBLIC ${JSONCPP_INCLUDE_DIRS})
-target_link_libraries(${PROJECT_NAME} PUBLIC ${JSONCPP_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} PRIVATE ${JSONCPP_LIBRARIES})
 list(APPEND INCLUDE_DIRS_FOR_DYNAMIC_VIEW ${JSONCPP_INCLUDE_DIRS})
 message(STATUS "jsoncpp inc path:" ${JSONCPP_INCLUDE_DIRS})
 
@@ -137,7 +134,8 @@ set(DROGON_SOURCES  lib/src/AOPAdvice.cc
 
 find_package (OpenSSL)
 if(OpenSSL_FOUND)
-    target_link_libraries(${PROJECT_NAME} PUBLIC OpenSSL::SSL OpenSSL::Crypto)
+    target_include_directories(${PROJECT_NAME} PRIVATE ${OPENSSL_INCLUDE_DIR})
+    target_link_libraries(${PROJECT_NAME} PRIVATE ${OPENSSL_LIBRARIES})
 else()
     set(DROGON_SOURCES ${DROGON_SOURCES}  lib/src/ssl_funcs/Md5.cc
                                           lib/src/ssl_funcs/Sha1.cc)

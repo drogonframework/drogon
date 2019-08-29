@@ -1,9 +1,4 @@
-#include <drogon/config.h>
-#ifdef OpenSSL_FOUND
-#include <openssl/sha.h>
-#else
 #include "../lib/src/ssl_funcs/Sha1.h"
-#endif
 #include <stdio.h>
 #include <string.h>
 

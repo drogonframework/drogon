@@ -4,10 +4,12 @@
 #  DROGON_LIBRARIES    - libraries to link against
 #  DROGON_EXECUTABLE   - the drogon_ctl executable
 #  DROGON_FOUND
+# This module defines the following IMPORTED target:
+# Drogon::Drogon
 
 @PACKAGE_INIT@
 
-add_library(Drogon::Drogon INTERFACE IMPORTED)
+add_library(Drogon::Drogon INTERFACE IMPORTED GLOBAL)
 set_target_properties(Drogon::Drogon PROPERTIES
                       INTERFACE_INCLUDE_DIRECTORIES "@PACKAGE_CONF_INCLUDE_DIRS@")
 
