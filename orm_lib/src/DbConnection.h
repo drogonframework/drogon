@@ -30,7 +30,7 @@ namespace drogon
 {
 namespace orm
 {
-#if (CXX_STD > 14)
+#if __cplusplus >= 201703L
 typedef std::shared_mutex SharedMutex;
 #else
 typedef std::shared_timed_mutex SharedMutex;
