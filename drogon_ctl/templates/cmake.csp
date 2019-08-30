@@ -29,7 +29,7 @@ if(CMAKE_CXX_STANDARD LESS 17)
 #With C++14, use boost to support any and string_view
     message(STATUS "use c++14")
     find_package(Boost 1.61.0 REQUIRED)
-    target_include_directories([[ProjectName]] PUBLIC ${Boost_INCLUDE_DIRS})
+    target_include_directories([[ProjectName]] PRIVATE ${Boost_INCLUDE_DIRS})
 else()
     message(STATUS "use c++17")
 endif()

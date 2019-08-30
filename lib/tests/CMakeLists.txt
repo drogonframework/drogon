@@ -12,18 +12,20 @@ add_executable(gzip_test GzipTest.cc)
 add_executable(url_codec_test UrlCodecTest.cc)
 add_executable(main_loop_test MainLoopTest.cc)
 
-set(test_targets cache_map_test 
-                cache_map_test2 
-                cookies_test 
-                class_name_test 
-                sha1_test 
-                view_data_test 
-                md5_test
-                http_full_date_test
-                gzip_test
-                url_codec_test
-                main_loop_test)
+set(test_targets
+    cache_map_test
+    cache_map_test2
+    cookies_test
+    class_name_test
+    sha1_test
+    view_data_test
+    md5_test
+    http_full_date_test
+    gzip_test
+    url_codec_test
+    main_loop_test)
 
-set_property(TARGET ${test_targets} PROPERTY CXX_STANDARD ${DROGON_CXX_STANDARD})
+set_property(TARGET ${test_targets}
+             PROPERTY CXX_STANDARD ${DROGON_CXX_STANDARD})
 set_property(TARGET ${test_targets} PROPERTY CXX_STANDARD_REQUIRED ON)
 set_property(TARGET ${test_targets} PROPERTY CXX_EXTENSIONS OFF)
