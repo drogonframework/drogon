@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.6)
+cmake_minimum_required(VERSION 3.5)
 
 project(drogon CXX)
 
@@ -274,11 +274,9 @@ endif()
 
 target_sources(${PROJECT_NAME} PRIVATE ${DROGON_SOURCES})
 
-if(DROGON_CXX_STANDARD LESS 17)
-  target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_14)
-else()
-  target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_17)
-endif()
+set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD ${DROGON_CXX_STANDARD})
+set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD_REQUIRED ON)
+set_target_properties(${PROJECT_NAME} PROPERTIES CXX_EXTENSIONS OFF)
 
 add_dependencies(drogon makeVersion)
 
