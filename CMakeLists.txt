@@ -9,7 +9,7 @@ set(DROGON_MINOR_VERSION 0)
 set(DROGON_PATCH_VERSION 0)
 set(DROGON_VERSION
     ${DROGON_MAJOR_VERSION}.${DROGON_MINOR_VERSION}.${DROGON_PATCH_VERSION})
-set(PRE_RELEASE_STRING "beta6")
+set(PRE_RELEASE_STRING "beta7")
 
 # Offer the user the choice of overriding the installation directories
 set(INSTALL_LIB_DIR lib CACHE PATH "Installation directory for libraries")
@@ -57,8 +57,7 @@ target_include_directories(
 list(APPEND INCLUDE_DIRS_FOR_DYNAMIC_VIEW
             ${PROJECT_SOURCE_DIR}/lib/inc
             ${PROJECT_SOURCE_DIR}/orm_lib/inc
-            ${PROJECT_SOURCE_DIR}/trantor
-            ${INSTALL_INCLUDE_DIR})
+            ${PROJECT_SOURCE_DIR}/trantor)
 add_subdirectory(trantor)
 
 target_link_libraries(${PROJECT_NAME} PUBLIC trantor)
