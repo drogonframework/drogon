@@ -14,7 +14,6 @@
 
 // Make a http client to test the example server app;
 
-#include <drogon/config.h>
 #include <drogon/drogon.h>
 #include <trantor/net/EventLoopThread.h>
 #include <trantor/net/TcpClient.h>
@@ -1007,18 +1006,19 @@ int main(int argc, char *argv[])
             client->addCookie(sessionID);
 
         doTest(client, pro1);
-#ifdef OpenSSL_FOUND
-        std::promise<int> pro2;
-        auto sslClient = HttpClient::newHttpClient("127.0.0.1",
-                                                   8849,
-                                                   true,
-                                                   loop[1].getLoop());
-        if (sessionID)
-            sslClient->addCookie(sessionID);
-        doTest(sslClient, pro2, true);
-        auto f2 = pro2.get_future();
-        f2.get();
-#endif
+        if (app().supportSSL())
+        {
+            std::promise<int> pro2;
+            auto sslClient = HttpClient::newHttpClient("127.0.0.1",
+                                                       8849,
+                                                       true,
+                                                       loop[1].getLoop());
+            if (sessionID)
+                sslClient->addCookie(sessionID);
+            doTest(sslClient, pro2, true);
+            auto f2 = pro2.get_future();
+            f2.get();
+        }
         auto f1 = pro1.get_future();
         f1.get();
         // LOG_DEBUG << sslClient.use_count();

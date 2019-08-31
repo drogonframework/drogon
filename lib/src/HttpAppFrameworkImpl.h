@@ -384,6 +384,14 @@ class HttpAppFrameworkImpl : public HttpAppFramework
         const HttpResponsePtr &resp,
         const std::function<void(const HttpResponsePtr &)> &callback);
 
+    virtual bool supportSSL() const override
+    {
+#ifdef OpenSSL_FOUND
+        return true;
+#endif
+        return false;
+    }
+
   private:
     virtual void registerHttpController(
         const std::string &pathPattern,

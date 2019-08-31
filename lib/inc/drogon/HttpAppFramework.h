@@ -861,6 +861,8 @@ class HttpAppFramework : public trantor::NonCopyable
      */
     virtual const std::shared_ptr<trantor::Resolver> &getResolver() const = 0;
 
+    virtual bool supportSSL() const = 0;
+
   private:
     virtual void registerHttpController(
         const std::string &pathPattern,

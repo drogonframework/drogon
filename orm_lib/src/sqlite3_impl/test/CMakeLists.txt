@@ -1,7 +1,7 @@
-LINK_LIBRARIES(drogon trantor pthread dl)
+link_libraries(drogon)
 
-ADD_EXECUTABLE(sqlite3_test1 test1.cc Groups.cc)
+add_executable(sqlite3_test1 test1.cc Groups.cc)
 
-SET_PROPERTY(TARGET sqlite3_test1 PROPERTY CXX_STANDARD ${DROGON_CXX_STANDARD})
-SET_PROPERTY(TARGET sqlite3_test1 PROPERTY CXX_STANDARD_REQUIRED ON)
-SET_PROPERTY(TARGET sqlite3_test1 PROPERTY CXX_EXTENSIONS OFF)
+set_property(TARGET sqlite3_test1 PROPERTY CXX_STANDARD ${DROGON_CXX_STANDARD})
+set_property(TARGET sqlite3_test1 PROPERTY CXX_STANDARD_REQUIRED ON)
+set_property(TARGET sqlite3_test1 PROPERTY CXX_EXTENSIONS OFF)

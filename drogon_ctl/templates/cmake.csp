@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.2)
+cmake_minimum_required (VERSION 3.5)
 project([[ProjectName]])
 
 include(CheckIncludeFileCXX)
@@ -14,29 +14,26 @@ endif()
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+add_executable([[ProjectName]] main.cc)
+
 ##########
 # If you include the drogon source code locally in your project, use this method to add drogon
 # add_subdirectory(drogon)
-# set(Drogon_DIR ${PROJECT_BINARY_DIR}/drogon)
-# find_package(Drogon CONFIG REQUIRED NO_DEFAULT_PATH)
-# include_directories(${DROGON_INCLUDE_DIRS})
-# link_libraries(${DROGON_LIBRARIES})
+# target_link_libraries([[ProjectName]] PRIVATE drogon)
 ##########
 
 find_package(Drogon CONFIG REQUIRED)
-include_directories(${DROGON_INCLUDE_DIRS})
-link_libraries(${DROGON_LIBRARIES})
+target_link_libraries([[ProjectName]] PRIVATE Drogon::Drogon)
 
 if(CMAKE_CXX_STANDARD LESS 17)
 #With C++14, use boost to support any and string_view
     message(STATUS "use c++14")
     find_package(Boost 1.61.0 REQUIRED)
-    include_directories(${Boost_INCLUDE_DIRS})
+    target_include_directories([[ProjectName]] PRIVATE ${Boost_INCLUDE_DIRS})
 else()
     message(STATUS "use c++17")
 endif()
 
-aux_source_directory(./ SRC_DIR)
 aux_source_directory(controllers CTL_SRC)
 aux_source_directory(filters FILTER_SRC)
 aux_source_directory(plugins PLUGIN_SRC)
@@ -55,5 +52,5 @@ foreach(cspFile ${SCP_LIST})
     set(VIEWSRC ${VIEWSRC} ${classname}.cc)
 endforeach()
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-add_executable([[ProjectName]] ${SRC_DIR} ${CTL_SRC} ${FILTER_SRC} ${VIEWSRC} ${PLUGIN_SRC} ${MODEL_SRC})
+target_include_directories([[ProjectName]] PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_sources([[ProjectName]] PRIVATE ${SRC_DIR} ${CTL_SRC} ${FILTER_SRC} ${VIEWSRC} ${PLUGIN_SRC} ${MODEL_SRC})

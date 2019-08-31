@@ -1,7 +1,7 @@
-LINK_LIBRARIES(drogon trantor pthread dl)
+link_libraries(drogon)
 
-ADD_EXECUTABLE(db_test db_test.cc Users.cc)
+add_executable(db_test db_test.cc Users.cc)
 
-SET_PROPERTY(TARGET db_test PROPERTY CXX_STANDARD ${DROGON_CXX_STANDARD})
-SET_PROPERTY(TARGET db_test PROPERTY CXX_STANDARD_REQUIRED ON)
-SET_PROPERTY(TARGET db_test PROPERTY CXX_EXTENSIONS OFF)
+set_property(TARGET db_test PROPERTY CXX_STANDARD ${DROGON_CXX_STANDARD})
+set_property(TARGET db_test PROPERTY CXX_STANDARD_REQUIRED ON)
+set_property(TARGET db_test PROPERTY CXX_EXTENSIONS OFF)

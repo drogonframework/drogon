@@ -1,7 +1,6 @@
 
 #include "CustomCtrl.h"
 #include "CustomHeaderFilter.h"
-#include <drogon/config.h>
 #include <drogon/drogon.h>
 #include <vector>
 #include <string>
@@ -127,11 +126,13 @@ int main()
     std::cout << banner << std::endl;
     // app().addListener("::1", 8848); //ipv6
     app().addListener("0.0.0.0", 8848);
-#ifdef OpenSSL_FOUND
     // https
-    drogon::app().setSSLFiles("server.pem", "server.pem");
-    drogon::app().addListener("0.0.0.0", 8849, true);
-#endif
+    if (app().supportSSL())
+    {
+        drogon::app()
+            .setSSLFiles("server.pem", "server.pem")
+            .addListener("0.0.0.0", 8849, true);
+    }
     // Class function example
     app().registerHandler("/api/v1/handle1/{1}/{2}/?p3={3}&p4={4}", &A::handle);
     app().registerHandler("/api/v1/handle11/{1}/{2}/?p3={3}&p4={4}",
