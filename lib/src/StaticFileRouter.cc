@@ -42,7 +42,7 @@ void StaticFileRouter::route(
     std::function<void(const HttpResponsePtr &)> &&callback)
 {
     const std::string &path = req->path();
-    auto pos = path.rfind(".");
+    auto pos = path.rfind('.');
     if (pos != std::string::npos)
     {
         std::string filetype = path.substr(pos + 1);

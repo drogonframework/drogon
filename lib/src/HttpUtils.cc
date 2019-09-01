@@ -392,7 +392,7 @@ const string_view &statusCodeToString(int code)
 ContentType getContentType(const std::string &fileName)
 {
     std::string extName;
-    auto pos = fileName.rfind(".");
+    auto pos = fileName.rfind('.');
     if (pos != std::string::npos)
     {
         extName = fileName.substr(pos + 1);

@@ -42,10 +42,10 @@ void HttpRequestImpl::parseParameters() const
             pos++;
         }
         auto value = input.substr(pos);
-        while ((pos = value.find("&")) != string_view::npos)
+        while ((pos = value.find('&')) != string_view::npos)
         {
             auto coo = value.substr(0, pos);
-            auto epos = coo.find("=");
+            auto epos = coo.find('=');
             if (epos != string_view::npos)
             {
                 auto key = coo.substr(0, epos);
@@ -63,7 +63,7 @@ void HttpRequestImpl::parseParameters() const
         if (value.length() > 0)
         {
             auto &coo = value;
-            auto epos = coo.find("=");
+            auto epos = coo.find('=');
             if (epos != string_view::npos)
             {
                 auto key = coo.substr(0, epos);
@@ -313,10 +313,10 @@ void HttpRequestImpl::addHeader(const char *start,
     {
         LOG_TRACE << "cookies!!!:" << value;
         std::string::size_type pos;
-        while ((pos = value.find(";")) != std::string::npos)
+        while ((pos = value.find(';')) != std::string::npos)
         {
             std::string coo = value.substr(0, pos);
-            auto epos = coo.find("=");
+            auto epos = coo.find('=');
             if (epos != std::string::npos)
             {
                 std::string cookie_name = coo.substr(0, epos);
@@ -333,7 +333,7 @@ void HttpRequestImpl::addHeader(const char *start,
         if (value.length() > 0)
         {
             std::string &coo = value;
-            auto epos = coo.find("=");
+            auto epos = coo.find('=');
             if (epos != std::string::npos)
             {
                 std::string cookie_name = coo.substr(0, epos);

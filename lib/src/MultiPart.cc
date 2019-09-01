@@ -52,7 +52,7 @@ int MultiPartParser::parse(const HttpRequestPtr &req)
     {
         return -1;
     }
-    std::string::size_type pos = contentType.find(";");
+    std::string::size_type pos = contentType.find(';');
     if (pos == std::string::npos)
         return -1;
 
@@ -197,7 +197,7 @@ int HttpFile::saveAs(const std::string &filename) const
         else
             pathAndFileName = uploadPath + "/" + filename;
     }
-    auto pathPos = pathAndFileName.rfind("/");
+    auto pathPos = pathAndFileName.rfind('/');
     if (pathPos != std::string::npos)
     {
         std::string path = pathAndFileName.substr(0, pathPos);

@@ -696,7 +696,7 @@ int createPath(const std::string &path)
             return -1;
         while (tmpPath[tmpPath.length() - 1] == '/')
             tmpPath.resize(tmpPath.length() - 1);
-        auto pos = tmpPath.rfind("/");
+        auto pos = tmpPath.rfind('/');
         if (pos != std::string::npos)
         {
             pathStack.push(tmpPath.substr(pos));

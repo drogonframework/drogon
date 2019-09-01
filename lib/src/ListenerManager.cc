@@ -85,7 +85,7 @@ std::vector<trantor::EventLoop *> ListenerManager::createListeners(
         for (auto const &listener : _listeners)
         {
             auto const &ip = listener._ip;
-            bool isIpv6 = ip.find(":") == std::string::npos ? false : true;
+            bool isIpv6 = ip.find(':') == std::string::npos ? false : true;
             std::shared_ptr<HttpServer> serverPtr;
             if (i == 0)
             {
@@ -147,7 +147,7 @@ std::vector<trantor::EventLoop *> ListenerManager::createListeners(
     {
         LOG_TRACE << "thread num=" << threadNum;
         auto ip = listener._ip;
-        bool isIpv6 = ip.find(":") == std::string::npos ? false : true;
+        bool isIpv6 = ip.find(':') == std::string::npos ? false : true;
         auto serverPtr = std::make_shared<HttpServer>(
             loopThreadPtr->getLoop(),
             InetAddress(ip, listener._port, isIpv6),
