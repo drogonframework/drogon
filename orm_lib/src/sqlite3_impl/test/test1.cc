@@ -28,7 +28,7 @@ int main()
      CREATE_TIME TEXT,\
      INVITING INTEGER,\
      INVITING_USER_ID INTEGER,\
-     AVATAR_ID TEXT, uuu double, text VARCHAR(255),avatar blob)"
+     AVATAR_ID TEXT, uuu double, text VARCHAR(255),avatar blob,is_default bool)"
             << Mode::Blocking >>
         [](const Result &r) { LOG_DEBUG << "created"; } >>
         [](const DrogonDbException &e) {
@@ -99,6 +99,19 @@ int main()
         {
             std::cerr << e.base().what() << std::endl;
         }
+        *clientPtr << "select is_default from groups" >> [](const Result &r) {
+            for (auto row : r)
+            {
+                std::cout << "is_default: "
+                          << (row[(size_t)0].isNull() ? "is null, "
+                                                      : "is not null, ")
+                          << "bool value:" << row[(size_t)0].as<bool>() << "("
+                          << row[(size_t)0].as<std::string>() << ")"
+                          << std::endl;
+            }
+        } >> [](const DrogonDbException &e) {
+            std::cerr << e.base().what() << std::endl;
+        };
     }
     getchar();
 }

@@ -102,10 +102,18 @@ class Field
      */
     const char *c_str() const;
 
+    /// Get the length of the plain C string
+    size_t length() const
+    {
+        return _result.getLength(_row, _column);
+    }
+
     /// Convert to a type T value
     template <typename T>
     T as() const
     {
+        if (isNull())
+            return T();
         auto _data = _result.getValue(_row, _column);
         // auto _dataLength = _result.getLength(_row, _column);
         // For binary format!
@@ -211,7 +219,8 @@ template <>
 float Field::as<float>() const;
 template <>
 double Field::as<double>() const;
-
+template <>
+bool Field::as<bool>() const;
 // std::vector<int32_t> Field::as<std::vector<int32_t>>() const;
 // template <>
 // std::vector<int64_t> Field::as<std::vector<int64_t>>() const;

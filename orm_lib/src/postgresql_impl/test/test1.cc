@@ -131,6 +131,13 @@ int main()
             {
                 std::cout << i++ << ": user name is "
                           << row["user_name"].as<std::string>() << std::endl;
+                std::cout << "admin column is "
+                          << (row["admin"].isNull() ? "null" : "not null")
+                          << std::endl;
+                std::cout << "bool value of admin column is :"
+                          << row["admin"].as<bool>() << std::endl;
+                std::cout << "string value of admin column is :"
+                          << row["admin"].as<std::string>() << std::endl;
             }
         },
         [](const DrogonDbException &e) {

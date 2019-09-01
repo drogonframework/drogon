@@ -88,31 +88,54 @@ std::vector<char> Field::as<std::vector<char>>() const
 template <>
 int Field::as<int>() const
 {
+    if (isNull())
+        return 0;
     return atoi(_result.getValue(_row, _column));
 }
 
 template <>
 long Field::as<long>() const
 {
+    if (isNull())
+        return 0;
     return atol(_result.getValue(_row, _column));
 }
 
 template <>
 long long Field::as<long long>() const
 {
+    if (isNull())
+        return 0;
     return atoll(_result.getValue(_row, _column));
 }
 
 template <>
 float Field::as<float>() const
 {
+    if (isNull())
+        return 0.0;
     return atof(_result.getValue(_row, _column));
 }
 
 template <>
 double Field::as<double>() const
 {
+    if (isNull())
+        return 0.0;
     return std::stod(_result.getValue(_row, _column));
+}
+
+template <>
+bool Field::as<bool>() const
+{
+    if (_result.getLength(_row, _column) != 1)
+    {
+        return false;
+    }
+    auto value = _result.getValue(_row, _column);
+    if (*value == 't' || *value == '1')
+        return true;
+    return false;
 }
 
 const char *Field::c_str() const

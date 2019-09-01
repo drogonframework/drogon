@@ -41,6 +41,7 @@ class Groups
         static const std::string uuu;
         static const std::string text;
         static const std::string avatar;
+        static const std::string is_default;
     };
 
     const static int primaryKeyNumber;
@@ -157,9 +158,19 @@ class Groups
     void setAvatar(const std::vector<char> &avatar) noexcept;
     void setAvatar(const std::string &avatar) noexcept;
 
+    /**  For column is_default  */
+    /// Get the value of the column is_default, returns the default value if the
+    /// column is null
+    const bool &getValueOfIsDefault() const noexcept;
+    /// Return a shared_ptr object pointing to the column const value, or an
+    /// empty shared_ptr object if the column is null
+    const std::shared_ptr<bool> &getIsDefault() const noexcept;
+    /// Set the value of the column is_default
+    void setIsDefault(const bool &isDefault) noexcept;
+
     static size_t getColumnNumber() noexcept
     {
-        return 10;
+        return 11;
     }
     static const std::string &getColumnName(size_t index) noexcept(false);
 
@@ -183,6 +194,7 @@ class Groups
     std::shared_ptr<double> _uuu;
     std::shared_ptr<std::string> _text;
     std::shared_ptr<std::vector<char>> _avatar;
+    std::shared_ptr<bool> _isDefault;
     struct MetaData
     {
         const std::string _colName;
@@ -194,7 +206,7 @@ class Groups
         const bool _notNull;
     };
     static const std::vector<MetaData> _metaData;
-    bool _dirtyFlag[10] = {false};
+    bool _dirtyFlag[11] = {false};
 };
 
 }  // namespace sqlite3

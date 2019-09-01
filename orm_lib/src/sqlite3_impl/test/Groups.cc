@@ -22,6 +22,7 @@ const std::string Groups::Cols::avatar_id = "avatar_id";
 const std::string Groups::Cols::uuu = "uuu";
 const std::string Groups::Cols::text = "text";
 const std::string Groups::Cols::avatar = "avatar";
+const std::string Groups::Cols::is_default = "is_default";
 const std::string Groups::primaryKeyName = "group_id";
 const bool Groups::hasPrimaryKey = true;
 const std::string Groups::tableName = "GROUPS";
@@ -36,7 +37,8 @@ const std::vector<typename Groups::MetaData> Groups::_metaData = {
     {"avatar_id", "std::string", "text", 0, 0, 0, 0},
     {"uuu", "double", "double", 8, 0, 0, 0},
     {"text", "std::string", "varchar(255)", 0, 0, 0, 0},
-    {"avatar", "std::vector<char>", "blob", 0, 0, 0, 0}};
+    {"avatar", "std::vector<char>", "blob", 0, 0, 0, 0},
+    {"is_default", "bool", "bool", 1, 0, 0, 0}};
 const std::string &Groups::getColumnName(size_t index) noexcept(false)
 {
     assert(index < _metaData.size());
@@ -88,6 +90,10 @@ Groups::Groups(const Row &r) noexcept
     {
         _avatar = std::make_shared<std::vector<char>>(
             r["avatar"].as<std::vector<char>>());
+    }
+    if (!r["is_default"].isNull())
+    {
+        _isDefault = std::make_shared<bool>(r["is_default"].as<bool>());
     }
 }
 const uint64_t &Groups::getValueOfGroupId() const noexcept
@@ -295,6 +301,23 @@ void Groups::setAvatar(const std::string &avatar) noexcept
     _dirtyFlag[9] = true;
 }
 
+const bool &Groups::getValueOfIsDefault() const noexcept
+{
+    const static bool defaultValue = bool();
+    if (_isDefault)
+        return *_isDefault;
+    return defaultValue;
+}
+const std::shared_ptr<bool> &Groups::getIsDefault() const noexcept
+{
+    return _isDefault;
+}
+void Groups::setIsDefault(const bool &isDefault) noexcept
+{
+    _isDefault = std::make_shared<bool>(isDefault);
+    _dirtyFlag[10] = true;
+}
+
 void Groups::updateId(const uint64_t id)
 {
     _groupId = std::make_shared<uint64_t>(id);
@@ -310,7 +333,8 @@ const std::vector<std::string> &Groups::insertColumns() noexcept
                                                      "avatar_id",
                                                      "uuu",
                                                      "text",
-                                                     "avatar"};
+                                                     "avatar",
+                                                     "is_default"};
     return _inCols;
 }
 
@@ -383,6 +407,14 @@ void Groups::outputArgs(drogon::orm::internal::SqlBinder &binder) const
     if (getAvatar())
     {
         binder << getValueOfAvatar();
+    }
+    else
+    {
+        binder << nullptr;
+    }
+    if (getIsDefault())
+    {
+        binder << getValueOfIsDefault();
     }
     else
     {
@@ -504,6 +536,17 @@ void Groups::updateArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
+    if (_dirtyFlag[10])
+    {
+        if (getIsDefault())
+        {
+            binder << getValueOfIsDefault();
+        }
+        else
+        {
+            binder << nullptr;
+        }
+    }
 }
 Json::Value Groups::toJson() const
 {
@@ -588,6 +631,14 @@ Json::Value Groups::toJson() const
     else
     {
         ret["avatar"] = Json::Value();
+    }
+    if (getIsDefault())
+    {
+        ret["is_default"] = getValueOfIsDefault();
+    }
+    else
+    {
+        ret["is_default"] = Json::Value();
     }
     return ret;
 }
