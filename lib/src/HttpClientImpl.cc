@@ -116,7 +116,7 @@ HttpClientImpl::HttpClientImpl(trantor::EventLoop *loop,
     {
         return;
     }
-    auto pos = lowerHost.find("]");
+    auto pos = lowerHost.find(']');
     if (lowerHost[0] == '[' && pos != std::string::npos)
     {
         // ipv6
@@ -124,7 +124,7 @@ HttpClientImpl::HttpClientImpl(trantor::EventLoop *loop,
         if (lowerHost[pos + 1] == ':')
         {
             auto portStr = lowerHost.substr(pos + 2);
-            pos = portStr.find("/");
+            pos = portStr.find('/');
             if (pos != std::string::npos)
             {
                 portStr = portStr.substr(0, pos);
@@ -149,12 +149,12 @@ HttpClientImpl::HttpClientImpl(trantor::EventLoop *loop,
     }
     else
     {
-        auto pos = lowerHost.find(":");
+        auto pos = lowerHost.find(':');
         if (pos != std::string::npos)
         {
             _domain = lowerHost.substr(0, pos);
             auto portStr = lowerHost.substr(pos + 1);
-            pos = portStr.find("/");
+            pos = portStr.find('/');
             if (pos != std::string::npos)
             {
                 portStr = portStr.substr(0, pos);
@@ -168,7 +168,7 @@ HttpClientImpl::HttpClientImpl(trantor::EventLoop *loop,
         else
         {
             _domain = lowerHost;
-            pos = _domain.find("/");
+            pos = _domain.find('/');
             if (pos != std::string::npos)
             {
                 _domain = _domain.substr(0, pos);
@@ -440,7 +440,7 @@ HttpClientPtr HttpClient::newHttpClient(const std::string &ip,
                                         bool useSSL,
                                         trantor::EventLoop *loop)
 {
-    bool isIpv6 = ip.find(":") == std::string::npos ? false : true;
+    bool isIpv6 = ip.find(':') == std::string::npos ? false : true;
     return std::make_shared<HttpClientImpl>(
         loop == nullptr ? HttpAppFrameworkImpl::instance().getLoop() : loop,
         trantor::InetAddress(ip, port, isIpv6),

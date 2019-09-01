@@ -463,7 +463,7 @@ void HttpResponseImpl::addHeader(const char *start,
             std::string &coo = values[i];
             std::string cookie_name;
             std::string cookie_value;
-            auto epos = coo.find("=");
+            auto epos = coo.find('=');
             if (epos != std::string::npos)
             {
                 cookie_name = coo.substr(0, epos);

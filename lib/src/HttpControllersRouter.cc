@@ -105,7 +105,7 @@ void HttpControllersRouter::addHttpPath(
     std::string paras = "";
     std::regex regex = std::regex("\\{([0-9]+)\\}");
     std::smatch results;
-    auto pos = tmpPath.find("?");
+    auto pos = tmpPath.find('?');
     if (pos != std::string::npos)
     {
         paras = tmpPath.substr(pos + 1);

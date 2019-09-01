@@ -279,11 +279,11 @@ int create_view::createViewFile(const std::string &script_filename)
     std::ifstream infile(script_filename.c_str(), std::ifstream::in);
     if (infile)
     {
-        std::string::size_type pos = script_filename.rfind(".");
+        std::string::size_type pos = script_filename.rfind('.');
         if (pos != std::string::npos)
         {
             std::string className = script_filename.substr(0, pos);
-            if ((pos = className.rfind("/")) != std::string::npos)
+            if ((pos = className.rfind('/')) != std::string::npos)
             {
                 className = className.substr(pos + 1);
             }

@@ -82,7 +82,7 @@ void SharedLibManager::managerLibs()
     {
         forEachFileIn(
             libPath, [=](const std::string &filename, const struct stat &st) {
-                auto pos = filename.rfind(".");
+                auto pos = filename.rfind('.');
                 if (pos != std::string::npos)
                 {
                     auto exName = filename.substr(pos + 1);
@@ -155,7 +155,7 @@ void *SharedLibManager::loadLibs(const std::string &sourceFile, void *oldHld)
 {
     LOG_TRACE << "src:" << sourceFile;
     std::string cmd = COMPILER_COMMAND;
-    auto pos = cmd.rfind("/");
+    auto pos = cmd.rfind('/');
     if (pos != std::string::npos)
     {
         cmd = cmd.substr(pos + 1);
@@ -170,7 +170,7 @@ void *SharedLibManager::loadLibs(const std::string &sourceFile, void *oldHld)
         cmd.append(" -shared -fPIC -undefined dynamic_lookup -o ");
     else
         cmd.append(" -shared -fPIC --no-gnu-unique -o ");
-    pos = sourceFile.rfind(".");
+    pos = sourceFile.rfind('.');
     auto soFile = sourceFile.substr(0, pos);
     soFile.append(".so");
     cmd.append(soFile);

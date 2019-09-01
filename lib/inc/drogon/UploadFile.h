@@ -40,7 +40,7 @@ class UploadFile
         }
         else
         {
-            auto pos = filePath.rfind("/");
+            auto pos = filePath.rfind('/');
             if (pos != std::string::npos)
             {
                 _fileName = filePath.substr(pos + 1);
