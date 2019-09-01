@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### API change list
+
+- Add length() method to the Field class.
+
+- Add `as<bool>()` function template specialization to the Field class.
+
+### Changed
+
+- Use .find('x') instead of .find("x") in a string search.
+
 ## [1.0.0-beta7] - 2019-08-31
 
 ### API change list

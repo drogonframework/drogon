@@ -112,6 +112,11 @@ int main()
     *clientPtr << "select * from users limit ? offset ?" << 2 << 2 >>
         [](const Result &r) {
             std::cout << "select " << r.size() << " records" << std::endl;
+            for (auto row : r)
+            {
+                std::cout << "is admin:" << row["admin"].as<bool>() << "("
+                          << row["admin"].as<std::string>() << ")" << std::endl;
+            }
         } >>
         [](const DrogonDbException &e) {
             std::cerr << e.base().what() << std::endl;

@@ -533,6 +533,11 @@ void create_model::createModelClassFromSqlite3(const std::string &path,
                             info._colType = "double";
                             info._colLength = sizeof(double);
                         }
+                        else if (type == "bool")
+                        {
+                            info._colType = "bool";
+                            info._colLength = 1;
+                        }
                         else if (type == "blob")
                         {
                             info._colType = "std::vector<char>";
