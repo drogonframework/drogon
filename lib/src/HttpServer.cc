@@ -291,9 +291,20 @@ void HttpServer::onRequests(
                 auto resp = advice(req);
                 if (resp)
                 {
-                    requestParser->getResponseBuffer().emplace_back(
-                        getCompressedResponse(req, resp, isHeadMethod),
-                        isHeadMethod);
+                    if (!syncFlag)
+                    {
+                        requestParser->getResponseBuffer().emplace_back(
+                            getCompressedResponse(req, resp, isHeadMethod),
+                            isHeadMethod);
+                    }
+                    else
+                    {
+                        requestParser->pushResponseToPipelining(
+                            req,
+                            getCompressedResponse(req, resp, isHeadMethod),
+                            isHeadMethod);
+                    }
+
                     adviceFlag = true;
                     break;
                 }
