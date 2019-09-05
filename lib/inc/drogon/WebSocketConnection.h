@@ -32,23 +32,28 @@ class WebSocketConnection
         const char *msg,
         uint64_t len,
         const WebSocketMessageType &type = WebSocketMessageType::Text) = 0;
+        
+    /// Send a message to the peer
     virtual void send(
         const std::string &msg,
         const WebSocketMessageType &type = WebSocketMessageType::Text) = 0;
 
     /// Return the local IP address and port number of the connection
     virtual const trantor::InetAddress &localAddr() const = 0;
+
     /// Return the remote IP address and port number of the connection
     virtual const trantor::InetAddress &peerAddr() const = 0;
 
     /// Return true if the connection is open
     virtual bool connected() const = 0;
+
     /// Return true if the connection is closed
     virtual bool disconnected() const = 0;
 
     /// Shut down the write direction, which means that further send operations
     /// are disabled.
     virtual void shutdown() = 0;
+
     /// Close the connection
     virtual void forceClose() = 0;
 
@@ -57,6 +62,8 @@ class WebSocketConnection
     {
         _contextPtr = context;
     }
+
+    /// Set custom data on the connection
     void setContext(std::shared_ptr<void> &&context)
     {
         _contextPtr = std::move(context);

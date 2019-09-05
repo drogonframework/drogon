@@ -61,11 +61,10 @@ class WebSocketClient
     /**
      * If useSSL is set to true, the client connects to the server using SSL.
      *
-     * If the loop parameter is set to nullptr, the client uses the
-     * HttpAppFramework's event loop, otherwise it runs in the loop identified
+     * If the loop parameter is set to nullptr, the client uses the HttpAppFramework's event loop, otherwise it runs in the loop identified
      * by the parameter.
      *
-     * Note: The @param ip support for both ipv4 and ipv6 address
+     * Note: The ip support for both ipv4 and ipv6 address
      */
     static WebSocketClientPtr newWebSocketClient(
         const std::string &ip,
@@ -76,15 +75,17 @@ class WebSocketClient
     /// Use hostString to connect to server
     /**
      * Examples for hostString:
-     * wss://www.google.com
-     * ws://www.google.com
-     * wss://127.0.0.1:8080/
-     * ws://127.0.0.1
-     *
-     * The @param hostString must be prefixed by 'ws://' or 'wss://'
+     * @code
+       wss://www.google.com
+       ws://www.google.com
+       wss://127.0.0.1:8080/
+       ws://127.0.0.1
+       @endcode
+     * 
+     * @param hostString must be prefixed by 'ws://' or 'wss://'
      * and doesn't support for ipv6 address if the host is in ip format
      *
-     * If the @param loop is set to nullptr, the client uses the
+     * @param loop If the loop parameter is set to nullptr, the client uses the
      * HttpAppFramework's main event loop, otherwise it runs in the loop
      * identified by the parameter.
      *
