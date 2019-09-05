@@ -407,17 +407,21 @@ class HttpAppFramework : public trantor::NonCopyable
      *
      * @note
      * The declaration of the controller class must be as follows:
-     *   class ApiTest : public drogon::HttpController<ApiTest, false>
-     *   {
-     *       public:
-     *           ApiTest(const std::string &str);
-     *       ...
-     *   };
+     * @code
+        class ApiTest : public drogon::HttpController<ApiTest, false>
+        {
+            public:
+                ApiTest(const std::string &str);
+            ...
+        };
+       @endcode
      * The second template parameter must be explicitly set to false to disable
      * automatic creation.
      * And then user can create and register it somewhere as follows:
-     *   auto ctrlPtr=std::make_shared<ApiTest>("hello world");
-     *   drogon::app().registerController(ctrlPtr);
+     * @code
+        auto ctrlPtr=std::make_shared<ApiTest>("hello world");
+        drogon::app().registerController(ctrlPtr);
+       @endcode
      * This method should be called before calling the app().run() method.
      */
     template <typename T>
