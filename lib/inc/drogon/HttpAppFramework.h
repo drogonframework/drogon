@@ -204,7 +204,7 @@ class HttpAppFramework : public trantor::NonCopyable
                                |                                         |
                                v                                         |
       Post-handling join point o---------------------------------------->+
-      
+
       @endcode
      *
      */

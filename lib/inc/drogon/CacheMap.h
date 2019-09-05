@@ -170,7 +170,16 @@ class CacheMap
             _map[key] = std::move(v);
         }
     }
-
+    /**
+     * @brief Insert a key-value pair into the cache.
+     *
+     * @param key The key
+     * @param value The value
+     * @param timeout The timeout in seconds, when the timeout expires, the
+     * value is removed automatically. If the timeout is zero, the value exists
+     * until being removed explicitly.
+     * @param timeoutCallback is called when the timeout expires.
+     */
     void insert(const T1 &key,
                 const T2 &value,
                 size_t timeout = 0,
