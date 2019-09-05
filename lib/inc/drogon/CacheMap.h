@@ -30,11 +30,11 @@
 #define BUCKET_NUM_PER_WHEEL 200
 #define TICK_INTERVAL 1.0
 
-// Four wheels with 200 buckets per wheel means the cache map can work with
-// a timeout up to 200^4 seconds,about 50 years;
-
 namespace drogon
 {
+/**
+ * @brief Utility class for CacheMap
+ */
 class CallbackEntry
 {
   public:
@@ -56,6 +56,15 @@ typedef std::weak_ptr<CallbackEntry> WeakCallbackEntryPtr;
 typedef std::unordered_set<CallbackEntryPtr> CallbackBucket;
 typedef std::deque<CallbackBucket> CallbackBucketQueue;
 
+/**
+ * @brief Cache Map
+ *
+ * @tparam T1 The keyword type.
+ * @tparam T2 The value type.
+ * @note
+ * Four wheels with 200 buckets per wheel means the cache map can work with a
+ * timeout up to 200^4 seconds (about 50 years).
+ */
 template <typename T1, typename T2>
 class CacheMap
 {
@@ -139,10 +148,15 @@ class CacheMap
         WeakCallbackEntryPtr _weakEntryPtr;
     } MapValue;
 
-    /// Inserts a value of the keyword
     /**
-     * If timeout>0,the value will be erased
-     * within the 'timeout' seconds after the last access
+     * @brief Insert a key-value pair into the cache.
+     *
+     * @param key The key
+     * @param value The value
+     * @param timeout The timeout in seconds, if timeout > 0, the value will be
+     * erased within the 'timeout' seconds after the last access. If the timeout
+     * is zero, the value exists until being removed explicitly.
+     * @param timeoutCallback is called when the timeout expires.
      */
     void insert(const T1 &key,
                 T2 &&value,
@@ -175,9 +189,9 @@ class CacheMap
      *
      * @param key The key
      * @param value The value
-     * @param timeout The timeout in seconds, when the timeout expires, the
-     * value is removed automatically. If the timeout is zero, the value exists
-     * until being removed explicitly.
+     * @param timeout The timeout in seconds, if timeout > 0, the value will be
+     * erased within the 'timeout' seconds after the last access. If the timeout
+     * is zero, the value exists until being removed explicitly.
      * @param timeoutCallback is called when the timeout expires.
      */
     void insert(const T1 &key,
@@ -224,7 +238,7 @@ class CacheMap
         return _map[key].value;
     }
 
-    /// Determine if the value of the keyword exists
+    /// Check if the value of the keyword exists
     bool find(const T1 &key)
     {
         int timeout = 0;
@@ -268,7 +282,11 @@ class CacheMap
         return flag;
     }
 
-    /// Erases the value of the keyword.
+    /// Erase the value of the keyword.
+    /**
+     * @param key the keyword.
+     * @note This function does not cause the timeout callback to be executed.
+     */
     void erase(const T1 &key)
     {
         // in this case,we don't evoke the timeout callback;
