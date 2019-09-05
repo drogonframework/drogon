@@ -171,40 +171,41 @@ class HttpAppFramework : public trantor::NonCopyable
      * AOP join points during http request processing.
      *
      * @code
-     *                    +-----------+                             +----------+
-     *                    |  Request  |                             | Response |
-     *                    +-----------+                             +----------+
-     *                          |                                         ^
-     *                          v                                         |
-     *          sync join point o----------->[HttpResponsePtr]----------->+
-     *                          |                                         |
-     *                          v                                         |
-     *   Pre-routing join point o----------->[Advice callback]----------->+
-     *                          |                                         |
-     *                          v         Invalid path                    |
-     *                    [Find Handler]---------------->[404]----------->+
-     *                          |                                         |
-     *                          v                                         |
-     *  Post-routing join point o----------->[Advice callback]----------->+
-     *                          |                                         |
-     *                          v        Invalid method                   |
-     *                    [Check Method]---------------->[405]----------->+
-     *                          |                                         |
-     *                          v                                         |
-     *                      [Filters]------->[Filter callback]----------->+
-     *                          |                                         |
-     *                          v             Y                           |
-     *                 [Is OPTIONS method?]------------->[200]----------->+
-     *                          |                                         |
-     *                          v                                         |
-     *  Pre-handling join point o----------->[Advice callback]----------->+
-     *                          |                                         |
-     *                          v                                         |
-     *                      [Handler]                                     |
-     *                          |                                         |
-     *                          v                                         |
-     * Post-handling join point o---------------------------------------->+
-     * @endcode
+                         +-----------+                             +----------+
+                         |  Request  |                             | Response |
+                         +-----------+                             +----------+
+                               |                                         ^
+                               v                                         |
+               sync join point o----------->[HttpResponsePtr]----------->+
+                               |                                         |
+                               v                                         |
+        Pre-routing join point o----------->[Advice callback]----------->+
+                               |                                         |
+                               v         Invalid path                    |
+                         [Find Handler]---------------->[404]----------->+
+                               |                                         |
+                               v                                         |
+       Post-routing join point o----------->[Advice callback]----------->+
+                               |                                         |
+                               v        Invalid method                   |
+                         [Check Method]---------------->[405]----------->+
+                               |                                         |
+                               v                                         |
+                           [Filters]------->[Filter callback]----------->+
+                               |                                         |
+                               v             Y                           |
+                      [Is OPTIONS method?]------------->[200]----------->+
+                               |                                         |
+                               v                                         |
+       Pre-handling join point o----------->[Advice callback]----------->+
+                               |                                         |
+                               v                                         |
+                           [Handler]                                     |
+                               |                                         |
+                               v                                         |
+      Post-handling join point o---------------------------------------->+
+      
+      @endcode
      *
      */
     virtual HttpAppFramework &registerSyncAdvice(
@@ -306,7 +307,7 @@ class HttpAppFramework : public trantor::NonCopyable
      *   Example:
      * @code
        app.registerHttpSimpleController("/userinfo","UserInfoCtrl",{Get,"LoginFilter"});
-     * @endcode
+       @endcode
      *
      * @note
      * Users can perform the same operation through the configuration file or a
@@ -341,7 +342,7 @@ class HttpAppFramework : public trantor::NonCopyable
      resp=HttpResponse::newHttpJsonResponse(json); callback(resp);
                                 },
                              {Get,"LoginFilter"});
-     *@endcode
+     @endcode
      * @note
      * As you can see in the above example, this method supports parameters
      * mapping.
@@ -459,13 +460,13 @@ class HttpAppFramework : public trantor::NonCopyable
      * @param hostString is the address where the request is forwarded. The
      * following strings are valid for the parameter:
      *
-     * @code
-     * https://www.baidu.com
-     * http://www.baidu.com
-     * https://127.0.0.1:8080/
-     * http://127.0.0.1
-     * http://[::1]:8080/
-     * @endcode
+     *  @code
+        https://www.baidu.com
+        http://www.baidu.com
+        https://127.0.0.1:8080/
+        http://127.0.0.1
+        http://[::1]:8080/
+        @endcode
      *
      * @param callback is called when the response is created.
      *
@@ -555,7 +556,7 @@ class HttpAppFramework : public trantor::NonCopyable
      * @code
         app().enableSession(0.2h);
         app().enableSession(12min);
-     * @endcode
+       @endcode
      */
     inline HttpAppFramework &enableSession(
         const std::chrono::duration<long double> &timeout)
@@ -599,7 +600,7 @@ class HttpAppFramework : public trantor::NonCopyable
      *   Example:
      * @code
        app.setFileTypes({"html","txt","png","jpg"});
-     * @endcode
+       @endcode
      *
      * @note
      * This operation can be performed by an option in the configuration file.
@@ -741,7 +742,7 @@ class HttpAppFramework : public trantor::NonCopyable
      * @code
          app().setIdleConnectionTimeout(0.5h);
          app().setIdleConnectionTimeout(30min);
-     * @endcode
+       @endcode
      */
     inline HttpAppFramework &setIdleConnectionTimeout(
         const std::chrono::duration<long double> &timeout)
