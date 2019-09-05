@@ -20,21 +20,22 @@
 #include <drogon/HttpResponse.h>
 #include <memory>
 
-/// For more details on the class, see the wiki site (the 'Filter' section)
-
 namespace drogon
 {
+/// For more details on the class, see the wiki site (the 'Filter' section)
 class HttpFilterBase : public virtual DrObjectBase
 {
   public:
     /// This virtual function should be overrided in subclasses.
     /**
      * This method is an asynchronous interface, user should return the result
-     * via 'FilterCallback' or 'FilterChainCallback'. If @param fcb is called,
-     * the response object is send to the client by the callback, and doFilter
-     * methods of next filters and the handler registed on the path are not
-     * called anymore. If @param fccb is called, the next filter's doFilter
-     * method or the handler registered on the path is called.
+     * via 'FilterCallback' or 'FilterChainCallback'.
+     * @param req is the request object processed by the filter
+     * @param fcb if this is called, the response object is send to the client
+     * by the callback, and doFilter methods of next filters and the handler
+     * registed on the path are not called anymore.
+     * @param fccb if this callback is called, the next filter's doFilter method
+     * or the handler registered on the path is called.
      */
     virtual void doFilter(const HttpRequestPtr &req,
                           FilterCallback &&fcb,
