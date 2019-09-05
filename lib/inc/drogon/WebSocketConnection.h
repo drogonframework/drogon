@@ -83,7 +83,7 @@ class WebSocketConnection
 
     /// Set the heartbeat(ping) message sent to the peer.
     /**
-     * NOTE:
+     * @note
      * Both the server and the client in Drogon automatically send the pong
      * message after receiving the ping message.
      */

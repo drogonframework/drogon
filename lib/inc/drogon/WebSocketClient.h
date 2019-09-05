@@ -88,7 +88,7 @@ class WebSocketClient
      * HttpAppFramework's main event loop, otherwise it runs in the loop
      * identified by the parameter.
      *
-     * NOTE:
+     * @note
      * Don't add path and parameters in hostString, the request path and
      * parameters should be set in HttpRequestPtr when calling the
      * connectToServer() method.

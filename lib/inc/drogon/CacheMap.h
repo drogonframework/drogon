@@ -238,7 +238,7 @@ class CacheMap
     /// Atomically find and get the value of a keyword
     /**
      * Return true when the value is found, and the value
-     * is assigned to the @param value
+     * is assigned to the value argument.
      */
     bool findAndFetch(const T1 &key, T2 &value)
     {

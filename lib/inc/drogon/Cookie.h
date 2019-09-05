@@ -18,9 +18,17 @@
 
 namespace drogon
 {
+/**
+ * @brief this class represents a cookie entity.
+ */
 class Cookie
 {
   public:
+    /// Constructor
+    /**
+     * @param key key of the cookie
+     * @param value value of the cookie
+     */
     Cookie(const std::string &key, const std::string &value)
         : _key(key), _value(value)
     {

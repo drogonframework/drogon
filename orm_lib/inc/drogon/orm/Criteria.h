@@ -38,6 +38,9 @@ enum class CompareOperator
     IsNull,
     IsNotNull
 };
+/**
+ * @brief this class represents a comparison condition.
+ */
 class Criteria
 {
   public:

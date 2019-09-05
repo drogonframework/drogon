@@ -76,14 +76,16 @@ class DbClient : public trantor::NonCopyable
 
     /// Async and nonblocking method
     /**
-     * FUNCTION1 is usually the ResultCallback type;
-     * FUNCTION2 is usually the ExceptionCallback type;
-     * @param args are parameters that are bound to placeholders in the @param
-     * sql.
-     * NOTE:
+     * @param sql is the SQL statement to be executed;
+     * @param FUNCTION1 is usually the ResultCallback type;
+     * @param FUNCTION2 is usually the ExceptionCallback type;
+     * @param args are parameters that are bound to placeholders in the sql
+     * parameter;
      *
-     * If the number of @param args is not zero, make sure that all criteria
-     * in @param sql are set by bind parameters, for example:
+     * @note
+     *
+     * If the number of args parameters is not zero, make sure that all criteria
+     * in the sql parameter set by bind parameters, for example:
      *
      *   1. select * from users where user_id > 10 limit 10 offset 10; //Not
      * bad, no bind parameters are used.
@@ -157,7 +159,7 @@ class DbClient : public trantor::NonCopyable
      * submitting result, The Boolean type parameter in the callback function
      * indicates whether the transaction was submitted successfully.
      *
-     * NOTE: The callback only indicates the result of the 'commit' command,
+     * @note The callback only indicates the result of the 'commit' command,
      * which is the last step of the transaction. If the transaction has been
      * automatically or manually rolled back, the callback will never be
      * executed. You can also use the setCommitCallback() method of a

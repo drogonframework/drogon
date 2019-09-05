@@ -52,11 +52,13 @@ class HttpResponse
     /// Set the http version, http1.0 or http1.1
     virtual void setVersion(const Version v) = 0;
 
-    /// If @param on is false, the connection keeps alive on the condition that
-    /// the client request has a
-    //  'keep-alive' head, otherwise it is closed immediately after sending the
-    //  last byte of the response.
-    //  It's false by default when the response is created.
+    /// Set if close the connection after the request is sent.
+    /**
+     * @param on if the parameter is false, the connection keeps alive on the
+     * condition that the client request has a 'keep-alive' head, otherwise it
+     * is closed immediately after sending the last byte of the response. It's
+     * false by default when the response is created.
+     */
     virtual void setCloseConnection(bool on) = 0;
 
     /// Get the status set by the setCloseConnetion() method.
@@ -99,19 +101,26 @@ class HttpResponse
         return contentType();
     }
 
-    /// Get the header string identified by the @param key.
-    /// If there is no the header, a empty string is retured.
-    /// The @param key is case insensitive
+    /// Get the header string identified by the key parameter.
+    /**
+     * @note
+     * If there is no the header, a empty string is retured.
+     * The key is case insensitive
+     */
     virtual const std::string &getHeader(const std::string &key) const = 0;
     virtual const std::string &getHeader(std::string &&key) const = 0;
 
-    /// Remove the header identified by the @param key.
+    /// Remove the header identified by the key parameter.
     virtual void removeHeader(const std::string &key) = 0;
+
+    /// Remove the header identified by the key parameter.
     virtual void removeHeader(std::string &&key) = 0;
 
     /// Get all headers of the response
     virtual const std::unordered_map<std::string, std::string> &headers()
         const = 0;
+
+    /// Get all headers of the response
     const std::unordered_map<std::string, std::string> &getHeaders() const
     {
         return headers();
@@ -120,44 +129,63 @@ class HttpResponse
     /// Add a header.
     virtual void addHeader(const std::string &key,
                            const std::string &value) = 0;
+
+    /// Add a header.
     virtual void addHeader(const std::string &key, std::string &&value) = 0;
 
     /// Add a cookie
     virtual void addCookie(const std::string &key,
                            const std::string &value) = 0;
+
+    /// Add a cookie
     virtual void addCookie(const Cookie &cookie) = 0;
 
-    /// Get the cookie identified by the @param key. If there is no the cookie,
-    /// If there is no the cookie, the @param defaultCookie is retured.
+    /// Get the cookie identified by the key parameter.
+    /// If there is no the cookie, the empty cookie is retured.
     virtual const Cookie &getCookie(const std::string &key) const = 0;
 
     /// Get all cookies.
     virtual const std::unordered_map<std::string, Cookie> &cookies() const = 0;
+
+    /// Get all cookies.
     const std::unordered_map<std::string, Cookie> &getCookies() const
     {
         return cookies();
     }
 
-    /// Remove the cookie identified by the @param key.
+    /// Remove the cookie identified by the key parameter.
     virtual void removeCookie(const std::string &key) = 0;
 
-    /// Set the response body(content). The @param body must match the content
-    /// type
+    /// Set the response body(content).
+    /**
+     * @note The body must match the content type
+     */
     virtual void setBody(const std::string &body) = 0;
+
+    /// Set the response body(content).
     virtual void setBody(std::string &&body) = 0;
+
+    /// Set the response body(content).
     template <int N>
     void setBody(const char (&body)[N])
     {
         assert(strnlen(body, N) == N - 1);
         setBody(body, N - 1);
     }
+
     /// Get the response body.
     virtual const std::string &body() const = 0;
+
+    /// Get the response body.
     const std::string &getBody() const
     {
         return body();
     }
+
+    /// Get the response body.
     virtual std::string &body() = 0;
+
+    /// Get the response body.
     std::string &getBody()
     {
         return body();
@@ -187,8 +215,8 @@ class HttpResponse
         return jsonObject();
     }
 
-    /// The following methods are a series of factory methods that help users
-    /// create response objects.
+    /* The following methods are a series of factory methods that help users
+     * create response objects. */
 
     /// Create a normal response with a status code of 200ok and a content type
     /// of text/html.
@@ -198,23 +226,27 @@ class HttpResponse
     /// Create a response which returns a json object. Its content type is set
     /// to set/json.
     static HttpResponsePtr newHttpJsonResponse(const Json::Value &data);
-    /// Create a response that returns a page rendered by a view named @param
-    /// viewName.
-    /// @param data is the data displayed on the page.
-    /// For more details, see the wiki pages, the "View" section.
+    /// Create a response that returns a page rendered by a view named viewName.
+    /**
+     * @param viewName The name of the view
+     * @param data is the data displayed on the page.
+     * @note For more details, see the wiki pages, the "View" section.
+     */
     static HttpResponsePtr newHttpViewResponse(
         const std::string &viewName,
         const HttpViewData &data = HttpViewData());
+
     /// Create a response that returns a 302 Found page, redirecting to another
-    /// page located in the @param location.
+    /// page located in the location parameter.
     static HttpResponsePtr newRedirectionResponse(const std::string &location);
+
     /// Create a response that returns a file to the client.
     /**
      * @param fullPath is the full path to the file.
-     * If @param attachmentFileName is not empty, the browser does not open the
-     * file, but saves it as an attachment.
-     * If the @param type is CT_NONE, the content type is set by drogon based on
-     * the file extension.
+     * @param attachmentFileName if the parameter is not empty, the browser
+     * does not open the file, but saves it as an attachment.
+     * @param type if the parameter is CT_NONE, the content type is set by
+     * drogon based on the file extension.
      */
     static HttpResponsePtr newFileResponse(
         const std::string &fullPath,

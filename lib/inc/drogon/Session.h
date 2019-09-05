@@ -22,6 +22,10 @@
 
 namespace drogon
 {
+/**
+ * @brief This class represents a session stored in the framework
+ * One can get or set any type of data to a session object.
+ */
 class Session
 {
   public:

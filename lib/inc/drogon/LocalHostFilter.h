@@ -18,6 +18,9 @@
 
 namespace drogon
 {
+/**
+ * @brief A filter that prohibit access from other hosts.
+ */
 class LocalHostFilter : public HttpFilter<LocalHostFilter>
 {
   public:

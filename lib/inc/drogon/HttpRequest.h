@@ -54,20 +54,24 @@ class HttpRequest
         return method();
     }
 
-    /// Get the header string identified by the @param field
+    /// Get the header string identified by the field parameter
     virtual const std::string &getHeader(const std::string &field) const = 0;
+
+    /// Get the header string identified by the field parameter
     virtual const std::string &getHeader(std::string &&field) const = 0;
 
-    /// Set the header string identified by the @param field
+    /// Set the header string identified by the field parameter
     virtual void addHeader(const std::string &field,
                            const std::string &value) = 0;
 
-    /// Get the cookie string identified by the @param field
+    /// Get the cookie string identified by the field parameter
     virtual const std::string &getCookie(const std::string &field) const = 0;
 
     /// Get all headers of the request
     virtual const std::unordered_map<std::string, std::string> &headers()
         const = 0;
+
+    /// Get all headers of the request
     const std::unordered_map<std::string, std::string> &getHeaders() const
     {
         return headers();
@@ -76,6 +80,8 @@ class HttpRequest
     /// Get all cookies of the request
     virtual const std::unordered_map<std::string, std::string> &cookies()
         const = 0;
+
+    /// Get all cookies of the request
     const std::unordered_map<std::string, std::string> &getCookies() const
     {
         return cookies();
@@ -86,6 +92,8 @@ class HttpRequest
      * The query string is the substring after the '?' in the URL string.
      */
     virtual const std::string &query() const = 0;
+
+    /// Get the query string of the request.
     const std::string &getQuery() const
     {
         return query();
@@ -97,18 +105,26 @@ class HttpRequest
     {
         return string_view(bodyData(), bodyLength());
     }
+
+    /// Get the content string of the request, which is the body part of the
+    /// request.
     string_view getBody() const
     {
         return body();
     }
     virtual const char *bodyData() const = 0;
     virtual size_t bodyLength() const = 0;
+
     /// Set the content string of the request.
     virtual void setBody(const std::string &body) = 0;
+
+    /// Set the content string of the request.
     virtual void setBody(std::string &&body) = 0;
 
     /// Get the path of the request.
     virtual const std::string &path() const = 0;
+
+    /// Get the path of the request.
     const std::string &getPath() const
     {
         return path();
@@ -119,6 +135,8 @@ class HttpRequest
     {
         return matchedPathPattern();
     }
+
+    /// Get the matched path pattern after routing
     string_view matchedPathPattern() const
     {
         return string_view(matchedPathPatternData(),
@@ -133,6 +151,8 @@ class HttpRequest
      * kHttp11 means Http verison is 1.1
      */
     virtual Version version() const = 0;
+
+    /// Return the enum type version of the request.
     Version getVersion() const
     {
         return version();
@@ -140,6 +160,8 @@ class HttpRequest
 
     /// Get the session to which the request belongs.
     virtual SessionPtr session() const = 0;
+
+    /// Get the session to which the request belongs.
     SessionPtr getSession() const
     {
         return session();
@@ -148,6 +170,8 @@ class HttpRequest
     /// Get parameters of the request.
     virtual const std::unordered_map<std::string, std::string> &parameters()
         const = 0;
+
+    /// Get parameters of the request.
     const std::unordered_map<std::string, std::string> &getParameters() const
     {
         return parameters();
@@ -184,6 +208,8 @@ class HttpRequest
      * otherwise the method returns an empty shared_ptr object.
      */
     virtual const std::shared_ptr<Json::Value> jsonObject() const = 0;
+
+    /// Get the Json object of the request
     const std::shared_ptr<Json::Value> getJsonObject() const
     {
         return jsonObject();
