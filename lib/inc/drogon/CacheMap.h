@@ -33,7 +33,7 @@
 namespace drogon
 {
 /**
- * @brief Utility class for CacheMap
+ * @brief A utility class for CacheMap
  */
 class CallbackEntry
 {

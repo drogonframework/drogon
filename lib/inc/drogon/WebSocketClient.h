@@ -94,6 +94,7 @@ class WebSocketClient
     /// Create a websocket client using the given hostString to connect to
     /// server
     /**
+     * @param hostString must be prefixed by 'ws://' or 'wss://'
      * Examples for hostString:
      * @code
        wss://www.google.com
@@ -101,10 +102,6 @@ class WebSocketClient
        wss://127.0.0.1:8080/
        ws://127.0.0.1
        @endcode
-     *
-     * @param hostString must be prefixed by 'ws://' or 'wss://'
-     * and doesn't support for ipv6 address if the host is in ip format
-     *
      * @param loop if the parameter is set to nullptr, the client uses the
      * HttpAppFramework's main event loop, otherwise it runs in the loop
      * identified by the parameter.

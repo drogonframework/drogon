@@ -55,17 +55,20 @@ class WebSocketConnection
 
     /// Return the local IP address and port number of the connection
     virtual const trantor::InetAddress &localAddr() const = 0;
+
     /// Return the remote IP address and port number of the connection
     virtual const trantor::InetAddress &peerAddr() const = 0;
 
     /// Return true if the connection is open
     virtual bool connected() const = 0;
+
     /// Return true if the connection is closed
     virtual bool disconnected() const = 0;
 
     /// Shut down the write direction, which means that further send operations
     /// are disabled.
     virtual void shutdown() = 0;
+
     /// Close the connection
     virtual void forceClose() = 0;
 
