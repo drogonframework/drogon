@@ -314,7 +314,7 @@ class Mapper
      * @brief Update a record.
      *
      * @param obj The record.
-     * @return the number of updated records. It only could be 0 or 1.
+     * @return size_t The number of updated records. It only could be 0 or 1.
      * @note The table must have a primary key.
      */
     size_t update(const T &obj) noexcept(false);
