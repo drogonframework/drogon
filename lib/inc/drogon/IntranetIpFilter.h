@@ -18,6 +18,9 @@
 
 namespace drogon
 {
+/**
+ * @brief A filter that prohibit access from external networks
+ */
 class IntranetIpFilter : public HttpFilter<IntranetIpFilter>
 {
   public:

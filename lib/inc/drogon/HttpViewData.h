@@ -30,8 +30,8 @@ namespace drogon
 class HttpViewData
 {
   public:
-    /// The function template is used to get an item in the data set by the
-    /// @param key.
+    /// The function template is used to get an item in the data set by the key
+    /// parameter.
     template <typename T>
     const T &get(const std::string &key) const
     {
@@ -51,7 +51,7 @@ class HttpViewData
         return nullVal;
     }
 
-    /// Insert an item identified by the @param key into the data set;
+    /// Insert an item identified by the key parameter into the data set;
     void insert(const std::string &key, any &&obj)
     {
         _viewData[key] = std::move(obj);
@@ -61,8 +61,8 @@ class HttpViewData
         _viewData[key] = obj;
     }
 
-    /// Insert an item identified by the @param key into the data set; The item
-    /// is converted to a string.
+    /// Insert an item identified by the key parameter into the data set; The
+    /// item is converted to a string.
     template <typename T>
     void insertAsString(const std::string &key, T &&val)
     {
@@ -71,7 +71,7 @@ class HttpViewData
         _viewData[key] = ss.str();
     }
 
-    /// Insert a formated string identified by the @param key.
+    /// Insert a formated string identified by the key parameter.
     void insertFormattedString(const std::string &key, const char *format, ...)
     {
         std::string strBuffer;
@@ -123,20 +123,22 @@ class HttpViewData
         _viewData[key] = std::move(strBuffer);
     }
 
-    /// Get the 'any' object by the @param key.
+    /// Get the 'any' object by the key parameter.
     any &operator[](const std::string &key) const
     {
         return _viewData[key];
     }
 
-    /// Translate some special characters to HTML format, such as:
+    /// Translate some special characters to HTML format
     /**
-     * " --> &quot;
-     * & --> &amp;
-     * < --> &lt;
-     * > --> &gt;
+     * such as:
+     * @code
+       " --> &quot;
+       & --> &amp;
+       < --> &lt;
+       > --> &gt;
+       @endcode
      */
-
     static std::string htmlTranslate(const char *str, size_t length);
     static std::string htmlTranslate(const std::string &str)
     {

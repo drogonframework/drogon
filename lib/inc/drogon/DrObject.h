@@ -21,14 +21,27 @@
 
 namespace drogon
 {
+/**
+ * @brief The base class for all drogon reflection classes.
+ *
+ */
 class DrObjectBase
 {
   public:
+    /**
+     * @brief Get the class name
+     *
+     * @return const std::string& the class name
+     */
     virtual const std::string &className() const
     {
         static std::string _name = "DrObjectBase";
         return _name;
     }
+
+    /**
+     * @brief Return true if the class name is 'class_name'
+     */
     virtual bool isClass(const std::string &class_name) const
     {
         return (className() == class_name);

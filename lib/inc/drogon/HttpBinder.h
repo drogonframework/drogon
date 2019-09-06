@@ -12,6 +12,9 @@
  *
  */
 
+/// The classes in the file are internal tool classes. Do not include this
+/// file directly and use any of these classes directly.
+
 #pragma once
 
 #include <drogon/DrClassMap.h>
@@ -21,9 +24,6 @@
 #include <memory>
 #include <sstream>
 #include <string>
-
-/// The classes in the file are internal tool classes. Do not include this
-/// file directly and use any of these classes directly.
 
 namespace drogon
 {

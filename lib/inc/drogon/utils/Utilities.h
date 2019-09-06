@@ -29,7 +29,7 @@ bool isInteger(const std::string &str);
 
 /// Generate random a string
 /**
- * @param length: The string length
+ * @param length The string length
  * The returned string consists of uppercase and lowercase letters and numbers
  */
 std::string genRandomString(int length);
@@ -76,10 +76,10 @@ std::string urlEncode(const std::string &str);
 
 /// Commpress or decompress data using gzip lib.
 /**
- * @param data: Data before compressing or after decompressing
- * @param ndata: Data length before compressing or after decompressing
- * @param zdata: Data after compressing or before decompressing
- * @param nzdata: Data length after compressing or before decompressing
+ * @param data Data before compressing or after decompressing
+ * @param ndata Data length before compressing or after decompressing
+ * @param zdata Data after compressing or before decompressing
+ * @param nzdata Data length after compressing or before decompressing
  */
 std::string gzipCompress(const char *data, const size_t ndata);
 std::string gzipDecompress(const char *data, const size_t ndata);
@@ -88,8 +88,11 @@ std::string gzipDecompress(const char *data, const size_t ndata);
 /**
  * rfc2616-3.3.1
  * Full Date format(RFC 822)
- * like this:Sun, 06 Nov 1994 08:49:37 GMT
- *           Wed, 12 Sep 2018 09:22:40 GMT
+ * like this:
+ * @code
+   Sun, 06 Nov 1994 08:49:37 GMT
+   Wed, 12 Sep 2018 09:22:40 GMT
+   @endcode
  */
 char *getHttpFullDate(const trantor::Date &date = trantor::Date::now());
 

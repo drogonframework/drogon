@@ -38,6 +38,10 @@
 
 namespace drogon
 {
+/**
+ * @brief The abstract base class for WebSocket controllers.
+ *
+ */
 class WebSocketControllerBase : public virtual DrObjectBase
 {
   public:
@@ -61,6 +65,13 @@ class WebSocketControllerBase : public virtual DrObjectBase
 
 typedef std::shared_ptr<WebSocketControllerBase> WebSocketControllerBasePtr;
 
+/**
+ * @brief The reflection base class template for WebSocket controllers
+ *
+ * @tparam T the type of the implementation class
+ * @tparam AutoCreation The flag for automatically creating, user can set this
+ * flag to false for classes that have nondefault constructors.
+ */
 template <typename T, bool AutoCreation = true>
 class WebSocketController : public DrObject<T>, public WebSocketControllerBase
 {

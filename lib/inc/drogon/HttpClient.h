@@ -44,17 +44,31 @@ typedef std::shared_ptr<HttpClient> HttpClientPtr;
 class HttpClient : public trantor::NonCopyable
 {
   public:
-    /// Send a request asynchronously to the server
     /**
-     * The response from the http server is obtained
-     * in the callback function.
-     * Note:
+     * @brief Send a request asynchronously to the server
+     *
+     * @param req The request sent to the server.
+     * @param callback The callback is called when the response is received from
+     * the server.
+     * @note
      * The request object is altered(some headers are added to it) before it is
      * sent, so calling this method with a same request object in different
      * thread is dangerous.
      */
     virtual void sendRequest(const HttpRequestPtr &req,
                              const HttpReqCallback &callback) = 0;
+
+    /**
+     * @brief Send a request asynchronously to the server
+     *
+     * @param req The request sent to the server.
+     * @param callback The callback is called when the response is received from
+     * the server.
+     * @note
+     * The request object is altered(some headers are added to it) before it is
+     * sent, so calling this method with a same request object in different
+     * thread is dangerous.
+     */
     virtual void sendRequest(const HttpRequestPtr &req,
                              HttpReqCallback &&callback) = 0;
 
@@ -69,31 +83,44 @@ class HttpClient : public trantor::NonCopyable
 
     /// Enable cookies for the client
     /**
-     * If the @param flag is true, all requests sent by the client carry the
-     * cookies set by the server side. Cookies are disabled by default.
+     * @param flag if the parameter is true, all requests sent by the client
+     * carry the cookies set by the server side. Cookies are disabled by
+     * default.
      */
     virtual void enableCookies(bool flag = true) = 0;
 
     /// Add a cookie to the client
     /**
-     * NOTE:
+     * @note
      * These methods are independent of the enableCookies() method. Whether the
      * enableCookies() is called with true or false, the cookies added by these
      * methods will be sent to the server.
      */
     virtual void addCookie(const std::string &key,
                            const std::string &value) = 0;
+
+    /// Add a cookie to the client
+    /**
+     * @note
+     * These methods are independent of the enableCookies() method. Whether the
+     * enableCookies() is called with true or false, the cookies added by these
+     * methods will be sent to the server.
+     */
     virtual void addCookie(const Cookie &cookie) = 0;
 
-    /// Use ip and port to connect to server
     /**
-     * If useSSL is set to true, the client connects to the server using https.
+     * @brief Creaet a new HTTP client which use ip and port to connect to
+     * server
      *
-     * If the loop parameter is set to nullptr, the client
-     * uses the HttpAppFramework's event loop, otherwise it
-     * runs in the loop identified by the parameter.
-     *
-     * Note: The @param ip support for both ipv4 and ipv6 address
+     * @param ip The ip address of the HTTP server
+     * @param port The port of the HTTP server
+     * @param useSSL if the parameter is set to true, the client connects to the
+     * server using https.
+     * @param loop If the loop parameter is set to nullptr, the client uses the
+     * HttpAppFramework's event loop, otherwise it runs in the loop identified
+     * by the parameter.
+     * @return HttpClientPtr The smart pointer to the new client object.
+     * @note: The ip parameter support for both ipv4 and ipv6 address
      */
     static HttpClientPtr newHttpClient(const std::string &ip,
                                        uint16_t port,
@@ -107,25 +134,29 @@ class HttpClient : public trantor::NonCopyable
     virtual size_t bytesSent() const = 0;
     virtual size_t bytesReceived() const = 0;
 
-    /// Use hostString to connect to server
+    /// Create a Http client using the hostString to connect to server
     /**
+     *
+     * @param hostString this parameter must be prefixed by 'http://' or
+     * 'https://'.
+     *
      * Examples for hostString:
-     * https://www.baidu.com
-     * http://www.baidu.com
-     * https://127.0.0.1:8080/
-     * http://127.0.0.1
-     * http://[::1]:8080/   //IPv6 address must be enclosed in [], rfc2732
+     * @code
+       https://www.baidu.com
+       http://www.baidu.com
+       https://127.0.0.1:8080/
+       http://127.0.0.1
+       http://[::1]:8080/   //IPv6 address must be enclosed in [], rfc2732
+       @endcode
      *
-     * The @param hostString must be prefixed by 'http://' or 'https://'
-     *
-     * If the loop parameter is set to nullptr, the client uses the
+     * @param loop If the loop parameter is set to nullptr, the client uses the
      * HttpAppFramework's event loop, otherwise it runs in the loop identified
      * by the parameter.
      *
-     * NOTE:
-     * Don't add path and parameters in hostString, the request path
-     * and parameters should be set in HttpRequestPtr when calling
-     * the sendRequest() method.
+     * @note
+     * Don't add path and parameters in hostString, the request path and
+     * parameters should be set in HttpRequestPtr when calling the sendRequest()
+     * method.
      *
      */
     static HttpClientPtr newHttpClient(const std::string &hostString,

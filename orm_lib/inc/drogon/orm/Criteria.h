@@ -38,17 +38,41 @@ enum class CompareOperator
     IsNull,
     IsNotNull
 };
+/**
+ * @brief this class represents a comparison condition.
+ */
 class Criteria
 {
   public:
+    /**
+     * @brief Check if the condition is empty.
+     *
+     * @return true means the condition is not empty.
+     * @return false means the condition is empty.
+     */
     explicit operator bool() const
     {
         return !_condString.empty();
     }
+
+    /**
+     * @brief return the condition string in SQL.
+     *
+     * @return std::string
+     */
     std::string criteriaString() const
     {
         return _condString;
     }
+
+    /**
+     * @brief Construct a new Criteria object
+     *
+     * @tparam T the type of the object to be compared with.
+     * @param colName The name of the column.
+     * @param opera The type of the comparison.
+     * @param arg The object to be compared with.
+     */
     template <typename T>
     Criteria(const std::string &colName, const CompareOperator &opera, T &&arg)
     {
@@ -88,12 +112,30 @@ class Criteria
         };
     }
 
+    /**
+     * @brief Construct a new Criteria object presenting a equal expression
+     *
+     * @tparam T The type of the object to be equal to.
+     * @param colName The name of the column.
+     * @param arg The object to be equal to.
+     */
     template <typename T>
     Criteria(const std::string &colName, T &&arg)
         : Criteria(colName, CompareOperator::EQ, arg)
     {
     }
 
+    /**
+     * @brief Construct a new Criteria object presenting a expression without
+     * parameters.
+     *
+     * @param colName The name of the column.
+     * @param opera The type of the comparison. it must be one of the following:
+     * @code
+       CompareOperator::IsNotNull
+       CompareOperator::IsNull
+       @endcode
+     */
     Criteria(const std::string &colName, const CompareOperator &opera)
     {
         assert(opera == CompareOperator::IsNotNull ||
@@ -114,6 +156,13 @@ class Criteria
     Criteria()
     {
     }
+
+    /**
+     * @brief Output arguments to the SQL binder object.
+     *
+     * @param binder The SQL binder object.
+     * @note This method must be called by drogon.
+     */
     void outputArgs(internal::SqlBinder &binder) const
     {
         if (_outputArgumentsFunc)

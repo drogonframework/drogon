@@ -40,10 +40,21 @@
 
 namespace drogon
 {
+/**
+ * @brief The base class for HTTP controllers.
+ *
+ */
 class HttpControllerBase
 {
 };
 
+/**
+ * @brief The reflection base class template for HTTP controllers
+ *
+ * @tparam T the type of the implementation class
+ * @tparam AutoCreation The flag for automatically creating, user can set this
+ * flag to false for classes that have nondefault constructors.
+ */
 template <typename T, bool AutoCreation = true>
 class HttpController : public DrObject<T>, public HttpControllerBase
 {

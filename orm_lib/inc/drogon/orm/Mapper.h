@@ -43,84 +43,361 @@ struct Traits<T, false>
 };
 }  // namespace internal
 
+/**
+ * @brief The mapper template
+ *
+ * @tparam T The type of the model to be mapped.
+ *
+ * @details The mapping between the model object and the database table is
+ * performed by the Mapper class template. The Mapper class template
+ * encapsulates common operations such as adding, deleting, and changing, so
+ * that the user can perform the above operations without writing a SQL
+ * statement.
+ *
+ * The construction of the Mapper object is very simple. The template
+ * parameter is the type of the model you want to access. The constructor has
+ * only one parameter, which is the DbClient smart pointer mentioned earlier. As
+ * mentioned earlier, the Transaction class is a subclass of DbClient, so you
+ * can also construct a Mapper object with a smart pointer to a transaction,
+ * which means that the Mapper mapping also supports transactions.
+ *
+ * Like DbClient, Mapper also provides asynchronous and synchronous interfaces.
+ * The synchronous interface is blocked and may throw an exception. The returned
+ * future object is blocked in the get() method and may throw an exception. The
+ * normal asynchronous interface does not throw an exception, but returns the
+ * result through two callbacks (result callback and exception callback). The
+ * type of the exception callback is the same as that in the DbClient interface.
+ * The result callback is also divided into several categories according to the
+ * interface function.
+ */
 template <typename T>
 class Mapper
 {
   public:
+    /**
+     * @brief Construct a new Mapper object
+     *
+     * @param client The smart pointer to the database client object.
+     */
+    Mapper(const DbClientPtr &client) : _client(client)
+    {
+    }
+
+    /**
+     * @brief Add a limit to the query.
+     *
+     * @param limit The limit
+     * @return Mapper<T>& The Mapper itself.
+     */
     Mapper<T> &limit(size_t limit);
+
+    /**
+     * @brief Add a offset to the query.
+     *
+     * @param offset The offset.
+     * @return Mapper<T>& The Mapper itself.
+     */
     Mapper<T> &offset(size_t offset);
+
+    /**
+     * @brief Set the order of the results.
+     *
+     * @param colName the column name, the results are sorted by that column
+     * @param order Ascending or descending order
+     * @return Mapper<T>& The Mapper itself.
+     */
     Mapper<T> &orderBy(const std::string &colName,
                        const SortOrder &order = SortOrder::ASC);
+
+    /**
+     * @brief Set the order of the results.
+     *
+     * @param colIndex the column index, the results are sorted by that column
+     * @param order Ascending or descending order
+     * @return Mapper<T>& The Mapper itself.
+     */
     Mapper<T> &orderBy(size_t colIndex,
                        const SortOrder &order = SortOrder::ASC);
+
+    /**
+     * @brief Lock the result for updating.
+     *
+     * @return Mapper<T>& The Mapper itself.
+     */
     Mapper<T> &forUpdate();
 
     typedef std::function<void(T)> SingleRowCallback;
     typedef std::function<void(std::vector<T>)> MultipleRowsCallback;
     typedef std::function<void(const size_t)> CountCallback;
 
-    Mapper(const DbClientPtr &client) : _client(client)
-    {
-    }
-
     typedef typename internal::
         Traits<T, !std::is_same<typename T::PrimaryKeyType, void>::value>::type
             TraitsPKType;
 
+    /**
+     * @brief Find a record by the primary key.
+     *
+     * @param key The value of the primary key.
+     * @return T The record of the primary key.
+     * @note If no hit record exists, an UnexpectedRows exception is thrown.
+     */
     T findByPrimaryKey(const TraitsPKType &key) noexcept(false);
 
+    /**
+     * @brief Asynchronously find a record by the primary key.
+     *
+     * @param key The value of the primary key.
+     * @param rcb Is called when a record is found.
+     * @param ecb Is called when an error occurs or a record cannot be found.
+     */
     void findByPrimaryKey(const TraitsPKType &key,
                           const SingleRowCallback &rcb,
                           const ExceptionCallback &ecb) noexcept;
 
+    /**
+     * @brief Asynchronously find a record by the primary key.
+     *
+     * @param key The value of the primary key.
+     * @return std::future<T> The future object with which user can get the
+     * result.
+     * @note If no hit record exists, an UnexpectedRows exception is thrown when
+     * user calls the get() method of the future object.
+     */
     std::future<T> findFutureByPrimaryKey(const TraitsPKType &key) noexcept;
 
+    /**
+     * @brief Find all the records in the table.
+     *
+     * @return std::vector<T> The vector of all the records.
+     */
     std::vector<T> findAll() noexcept(false);
+
+    /**
+     * @brief Asynchronously find all the records in the table.
+     *
+     * @param rcb is called with the result.
+     * @param ecb is called when an error occurs.
+     */
     void findAll(const MultipleRowsCallback &rcb,
                  const ExceptionCallback &ecb) noexcept;
+
+    /**
+     * @brief Asynchronously find all the records in the table.
+     *
+     * @return std::future<std::vector<T>> The future object with which user can
+     * get the result.
+     */
     std::future<std::vector<T>> findFutureAll() noexcept;
 
+    /**
+     * @brief Get the count of rows that match the given criteria.
+     *
+     * @param criteria The criteria.
+     * @return size_t The number of rows.
+     */
     size_t count(const Criteria &criteria = Criteria()) noexcept(false);
+
+    /**
+     * @brief Asynchronously get the number of rows that match the given
+     * criteria.
+     *
+     * @param criteria The criteria.
+     * @param rcb is clalled with the result.
+     * @param ecb is called when an error occurs.
+     */
     void count(const Criteria &criteria,
                const CountCallback &rcb,
                const ExceptionCallback &ecb) noexcept;
+
+    /**
+     * @brief Asynchronously get the number of rows that match the given
+     * criteria.
+     *
+     * @param criteria The criteria.
+     * @return std::future<size_t> The future object with which user can get the
+     * number of rows
+     */
     std::future<size_t> countFuture(
         const Criteria &criteria = Criteria()) noexcept;
 
+    /**
+     * @brief Find one record that matches the given criteria.
+     *
+     * @param criteria The criteria.
+     * @return T The result record.
+     * @note if the number of rows is greater than one or equal to zero, an
+     * UnexpectedRows exception is thrown.
+     */
     T findOne(const Criteria &criteria) noexcept(false);
+
+    /**
+     * @brief Asynchronously find one record that matches the given criteria.
+     *
+     * @param criteria The criteria.
+     * @param rcb is called with the result.
+     * @param ecb is called when an error occurs.
+     */
     void findOne(const Criteria &criteria,
                  const SingleRowCallback &rcb,
                  const ExceptionCallback &ecb) noexcept;
+
+    /**
+     * @brief Asynchronously find one record that matches the given criteria.
+     *
+     * @param criteria The criteria.
+     * @return std::future<T> The future object with which user can get the
+     * result.
+     * @note if the number of rows is greater than one or equal to zero, an
+     * UnexpectedRows exception is thrown when the get() method of the future
+     * object is called.
+     */
     std::future<T> findFutureOne(const Criteria &criteria) noexcept;
 
+    /**
+     * @brief Select the rows that match the given criteria.
+     *
+     * @param criteria The criteria.
+     * @return std::vector<T> The vector of rows that match the given criteria.
+     */
     std::vector<T> findBy(const Criteria &criteria) noexcept(false);
+
+    /**
+     * @brief Asynchronously select the rows that match the given criteria.
+     *
+     * @param criteria The criteria.
+     * @param rcb is called with the result.
+     * @param ecb is called when an error occurs.
+     */
     void findBy(const Criteria &criteria,
                 const MultipleRowsCallback &rcb,
                 const ExceptionCallback &ecb) noexcept;
+
+    /**
+     * @brief Asynchronously select the rows that match the given criteria.
+     *
+     * @param criteria The criteria.
+     * @return std::future<std::vector<T>> The future object with which user can
+     * get the result.
+     */
     std::future<std::vector<T>> findFutureBy(const Criteria &criteria) noexcept;
 
+    /**
+     * @brief Insert a row into the table.
+     *
+     * @param obj The object to be inserted.
+     * @note The auto-increased primary key (if it exists) is set to the obj
+     * argument after the method returns.
+     */
     void insert(T &obj) noexcept(false);
+
+    /**
+     * @brief Asynchronously insert a row into the table.
+     *
+     * @param obj The object to be inserted.
+     * @param rcb is called with the result (with the auto-increased primary key
+     * (if it exists)).
+     * @param ecb is called when an error occurs.
+     */
     void insert(const T &obj,
                 const SingleRowCallback &rcb,
                 const ExceptionCallback &ecb) noexcept;
+
+    /**
+     * @brief Asynchronously insert a row into the table.
+     *
+     * @return std::future<T> The future object with which user can get the
+     * result (with the auto-increased primary key (if it exists)).
+     */
     std::future<T> insertFuture(const T &) noexcept;
 
+    /**
+     * @brief Update a record.
+     *
+     * @param obj The record.
+     * @return size_t The number of updated records. It only could be 0 or 1.
+     * @note The table must have a primary key.
+     */
     size_t update(const T &obj) noexcept(false);
+
+    /**
+     * @brief Asynchronously update a record.
+     *
+     * @param obj The record.
+     * @param rcb is called with the number of updated records.
+     * @param ecb is called when an error occurs.
+     * @note The table must have a primary key.
+     */
     void update(const T &obj,
                 const CountCallback &rcb,
                 const ExceptionCallback &ecb) noexcept;
+
+    /**
+     * @brief Asynchronously update a record.
+     *
+     * @param obj The record.
+     * @return std::future<size_t> The future object with which user can get the
+     * number of updated records.
+     * @note The table must have a primary key.
+     */
     std::future<size_t> updateFuture(const T &obj) noexcept;
 
+    /**
+     * @brief Delete a record from the table.
+     *
+     * @param obj The record.
+     * @return size_t The number of deleted records.
+     * @note The table must have a primary key.
+     */
     size_t deleteOne(const T &obj) noexcept(false);
+
+    /**
+     * @brief Asynchronously delete a record from the table.
+     *
+     * @param obj The record.
+     * @param rcb is called with the number of deleted records.
+     * @param ecb is called when an error occurs.
+     * @note The table must have a primary key.
+     */
     void deleteOne(const T &obj,
                    const CountCallback &rcb,
                    const ExceptionCallback &ecb) noexcept;
+
+    /**
+     * @brief Asynchronously delete a record from the table.
+     *
+     * @param obj The record.
+     * @return std::future<size_t> The future object with which user can get the
+     * number of deleted records.
+     * @note The table must have a primary key.
+     */
     std::future<size_t> deleteFutureOne(const T &obj) noexcept;
 
+    /**
+     * @brief Delete records that satisfy the given criteria.
+     *
+     * @param criteria The criteria.
+     * @return size_t The number of deleted records.
+     */
     size_t deleteBy(const Criteria &criteria) noexcept(false);
+
+    /**
+     * @brief Delete records that match the given criteria asynchronously.
+     *
+     * @param criteria The criteria
+     * @param rcb is called with the number of deleted records.
+     * @param ecb is called when an error occurs.
+     */
     void deleteBy(const Criteria &criteria,
                   const CountCallback &rcb,
                   const ExceptionCallback &ecb) noexcept;
+
+    /**
+     * @brief Delete records that match the given criteria asynchronously.
+     *
+     * @param criteria The criteria
+     * @return std::future<size_t> The future object with which user can get the
+     * number of deleted records
+     */
     std::future<size_t> deleteFutureBy(const Criteria &criteria) noexcept;
 
   private:
