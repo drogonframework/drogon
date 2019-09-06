@@ -28,6 +28,10 @@ enum class PluginState
     Initialized
 };
 
+/**
+ * @brief The abstract base class for plugins.
+ *
+ */
 class PluginBase : public virtual DrObjectBase, public trantor::NonCopyable
 {
   public:
@@ -120,6 +124,11 @@ struct IsPlugin
         (sizeof(test((TYPE *)nullptr)) == sizeof(char));
 };
 
+/**
+ * @brief The reflection base class for plugins.
+ *
+ * @tparam T The type of the implementation plugin classes.
+ */
 template <typename T>
 class Plugin : public PluginBase, public DrObject<T>
 {

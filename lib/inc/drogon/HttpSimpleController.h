@@ -29,9 +29,20 @@
 #define PATH_LIST_END }
 namespace drogon
 {
+/**
+ * @brief The abstract base class for HTTP simple controllers.
+ *
+ */
 class HttpSimpleControllerBase : public virtual DrObjectBase
 {
   public:
+    /**
+     * @brief The function is called when a HTTP request is routed to the
+     * controller.
+     *
+     * @param req The HTTP request.
+     * @param callback The callback via which a response is returned.
+     */
     virtual void asyncHandleHttpRequest(
         const HttpRequestPtr &req,
         std::function<void(const HttpResponsePtr &)> &&callback) = 0;
@@ -40,6 +51,13 @@ class HttpSimpleControllerBase : public virtual DrObjectBase
     }
 };
 
+/**
+ * @brief The reflection base class template for HTTP simple controllers
+ *
+ * @tparam T The type of the implementation class
+ * @tparam AutoCreation The flag for automatically creating, user can set this
+ * flag to false for classes that have nondefault constructors.
+ */
 template <typename T, bool AutoCreation = true>
 class HttpSimpleController : public DrObject<T>, public HttpSimpleControllerBase
 {

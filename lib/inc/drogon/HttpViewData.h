@@ -133,11 +133,11 @@ class HttpViewData
     /**
      * such as:
      * @code
-     * " --> &quot;
-     * & --> &amp;
-     * < --> &lt;
-     * > --> &gt;
-     * @endcode
+       " --> &quot;
+       & --> &amp;
+       < --> &lt;
+       > --> &gt;
+       @endcode
      */
     static std::string htmlTranslate(const char *str, size_t length);
     static std::string htmlTranslate(const std::string &str)

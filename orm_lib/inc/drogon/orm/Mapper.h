@@ -43,38 +43,135 @@ struct Traits<T, false>
 };
 }  // namespace internal
 
+/**
+ * @brief The mapper template
+ *
+ * @tparam T The type of the model to be mapped.
+ *
+ * @details The mapping between the model object and the database table is
+ * performed by the Mapper class template. The Mapper class template
+ * encapsulates common operations such as adding, deleting, and changing, so
+ * that the user can perform the above operations without writing a SQL
+ * statement.
+ *
+ * The construction of the Mapper object is very simple. The template
+ * parameter is the type of the model you want to access. The constructor has
+ * only one parameter, which is the DbClient smart pointer mentioned earlier. As
+ * mentioned earlier, the Transaction class is a subclass of DbClient, so you
+ * can also construct a Mapper object with a smart pointer to a transaction,
+ * which means that the Mapper mapping also supports transactions.
+ *
+ * Like DbClient, Mapper also provides asynchronous and synchronous interfaces.
+ * The difference is that asynchronous interfaces only work in non-blocking
+ * mode. The synchronous interface is blocked and may throw an exception. The
+ * returned future object is blocked in get() and may throw an exception. The
+ * normal asynchronous interface does not throw an exception, but returns the
+ * result through two callbacks (result callback and exception callback). The
+ * type of the exception callback is the same as that in the DbClient interface.
+ * The result callback is also divided into several categories according to the
+ * interface function. The list is as follows (T is the template parameter,
+ * which is the type of the model)
+ */
 template <typename T>
 class Mapper
 {
   public:
+    /**
+     * @brief Construct a new Mapper object
+     *
+     * @param client The smart pointer to the database client object.
+     */
+    Mapper(const DbClientPtr &client) : _client(client)
+    {
+    }
+
+    /**
+     * @brief Add a limit to the query.
+     *
+     * @param limit The limit
+     * @return Mapper<T>& The Mapper itself.
+     */
     Mapper<T> &limit(size_t limit);
+
+    /**
+     * @brief Add a offset to the query.
+     *
+     * @param offset The offset.
+     * @return Mapper<T>& The Mapper itself.
+     */
     Mapper<T> &offset(size_t offset);
+
+    /**
+     * @brief Set the order of the results.
+     *
+     * @param colName the column name, the results are sorted by that column
+     * @param order Ascending or descending order
+     * @return Mapper<T>& The Mapper itself.
+     */
     Mapper<T> &orderBy(const std::string &colName,
                        const SortOrder &order = SortOrder::ASC);
+
+    /**
+     * @brief Set the order of the results.
+     *
+     * @param colIndex the column index, the results are sorted by that column
+     * @param order Ascending or descending order
+     * @return Mapper<T>& The Mapper itself.
+     */
     Mapper<T> &orderBy(size_t colIndex,
                        const SortOrder &order = SortOrder::ASC);
+
+    /**
+     * @brief Lock the result for updating.
+     *
+     * @return Mapper<T>& The Mapper itself.
+     */
     Mapper<T> &forUpdate();
 
     typedef std::function<void(T)> SingleRowCallback;
     typedef std::function<void(std::vector<T>)> MultipleRowsCallback;
     typedef std::function<void(const size_t)> CountCallback;
 
-    Mapper(const DbClientPtr &client) : _client(client)
-    {
-    }
-
     typedef typename internal::
         Traits<T, !std::is_same<typename T::PrimaryKeyType, void>::value>::type
             TraitsPKType;
 
+    /**
+     * @brief Find a record by the primary key.
+     *
+     * @param key The value of the primary key.
+     * @return T The record of the primary key.
+     * @note If no hit record exists, an UnexpectedRows exception is thrown.
+     */
     T findByPrimaryKey(const TraitsPKType &key) noexcept(false);
 
+    /**
+     * @brief Find a record by the primary key.
+     *
+     * @param key The value of the primary key.
+     * @param rcb Is called when a record is found.
+     * @param ecb Is called when an error occurs or a record cannot be found.
+     */
     void findByPrimaryKey(const TraitsPKType &key,
                           const SingleRowCallback &rcb,
                           const ExceptionCallback &ecb) noexcept;
 
+    /**
+     * @brief Find a record by the primary key.
+     *
+     * @param key The value of the primary key.
+     * @return std::future<T> The future object with which user can get the
+     * result.
+     * @note If no hit record exists, an UnexpectedRows exception is thrown when
+     * user calls the get() method of the future object.
+     */
     std::future<T> findFutureByPrimaryKey(const TraitsPKType &key) noexcept;
 
+    /**
+     * @brief Find all the records in the table.
+     *
+     * @return std::vector<T>
+     */
     std::vector<T> findAll() noexcept(false);
     void findAll(const MultipleRowsCallback &rcb,
                  const ExceptionCallback &ecb) noexcept;

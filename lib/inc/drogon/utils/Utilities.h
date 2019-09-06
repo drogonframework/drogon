@@ -88,8 +88,11 @@ std::string gzipDecompress(const char *data, const size_t ndata);
 /**
  * rfc2616-3.3.1
  * Full Date format(RFC 822)
- * like this:Sun, 06 Nov 1994 08:49:37 GMT
- *           Wed, 12 Sep 2018 09:22:40 GMT
+ * like this:
+ * @code
+   Sun, 06 Nov 1994 08:49:37 GMT
+   Wed, 12 Sep 2018 09:22:40 GMT
+   @endcode
  */
 char *getHttpFullDate(const trantor::Date &date = trantor::Date::now());
 

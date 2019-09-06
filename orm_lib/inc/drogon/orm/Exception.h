@@ -53,7 +53,8 @@ class DrogonDbException
     virtual ~DrogonDbException() noexcept;
 
     /// Return std::exception base-class object
-    /** Use this to get at the exception's what() function, or to downcast to a
+    /**
+     * Use this to get at the exception's what() function, or to downcast to a
      * more specific type using dynamic_cast.
      *
      * Casting directly from DrogonDbException to a specific exception type is

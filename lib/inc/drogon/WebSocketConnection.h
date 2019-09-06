@@ -21,17 +21,34 @@
 #include <trantor/utils/NonCopyable.h>
 namespace drogon
 {
+/**
+ * @brief The WebSocket connection abstract class.
+ *
+ */
 class WebSocketConnection
 {
   public:
     WebSocketConnection() = default;
     virtual ~WebSocketConnection(){};
 
-    /// Send a message to the peer
+    /**
+     * @brief Send a message to the peer
+     *
+     * @param msg The message to be sent.
+     * @param len The message length.
+     * @param type The message type.
+     */
     virtual void send(
         const char *msg,
         uint64_t len,
         const WebSocketMessageType &type = WebSocketMessageType::Text) = 0;
+
+    /**
+     * @brief Send a message to the peer
+     *
+     * @param msg The message to be sent.
+     * @param type The message type.
+     */
     virtual void send(
         const std::string &msg,
         const WebSocketMessageType &type = WebSocketMessageType::Text) = 0;
@@ -52,17 +69,32 @@ class WebSocketConnection
     /// Close the connection
     virtual void forceClose() = 0;
 
-    /// Set custom data on the connection
+    /**
+     * @brief Set custom data on the connection
+     *
+     * @param context The custom data.
+     */
     void setContext(const std::shared_ptr<void> &context)
     {
         _contextPtr = context;
     }
+
+    /**
+     * @brief Set custom data on the connection
+     *
+     * @param context The custom data.
+     */
     void setContext(std::shared_ptr<void> &&context)
     {
         _contextPtr = std::move(context);
     }
 
-    /// Get custom data from the connection
+    /**
+     * @brief Get custom data from the connection
+     *
+     * @tparam T The type of the data
+     * @return std::shared_ptr<T> The smart pointer to the data object.
+     */
     template <typename T>
     std::shared_ptr<T> getContext() const
     {
@@ -81,8 +113,11 @@ class WebSocketConnection
         _contextPtr.reset();
     }
 
-    /// Set the heartbeat(ping) message sent to the peer.
     /**
+     * @brief Set the heartbeat(ping) message sent to the peer.
+     *
+     * @param message The ping message.
+     * @param interval The sending interval.
      * @note
      * Both the server and the client in Drogon automatically send the pong
      * message after receiving the ping message.

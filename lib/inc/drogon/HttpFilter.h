@@ -22,7 +22,10 @@
 
 namespace drogon
 {
-/// For more details on the class, see the wiki site (the 'Filter' section)
+/**
+ * @brief The abstract base class for filters
+ * For more details on the class, see the wiki site (the 'Filter' section)
+ */
 class HttpFilterBase : public virtual DrObjectBase
 {
   public:
@@ -44,6 +47,14 @@ class HttpFilterBase : public virtual DrObjectBase
     {
     }
 };
+
+/**
+ * @brief The reflection base class template for filters
+ *
+ * @tparam T The type of the implementation class
+ * @tparam AutoCreation The flag for automatically creating, user can set this
+ * flag to false for classes that have nondefault constructors.
+ */
 template <typename T, bool AutoCreation = true>
 class HttpFilter : public DrObject<T>, public HttpFilterBase
 {
