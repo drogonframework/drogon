@@ -23,7 +23,6 @@
 #include <drogon/MultiPart.h>
 #include <drogon/NotFound.h>
 #include <drogon/drogon_callbacks.h>
-#include <drogon/utils/ClassTraits.h>
 #include <drogon/utils/Utilities.h>
 #include <drogon/plugins/Plugin.h>
 #include <drogon/HttpRequest.h>
@@ -427,11 +426,10 @@ class HttpAppFramework : public trantor::NonCopyable
     template <typename T>
     HttpAppFramework &registerController(const std::shared_ptr<T> &ctrlPtr)
     {
-        static_assert(
-            internal::IsSubClass<T, HttpControllerBase>::value ||
-                internal::IsSubClass<T, HttpSimpleControllerBase>::value ||
-                internal::IsSubClass<T, WebSocketControllerBase>::value,
-            "Error! Only controller objects can be registered here");
+        static_assert((std::is_base_of<HttpControllerBase, T>::value ||
+                       std::is_base_of<HttpSimpleControllerBase, T>::value ||
+                       std::is_base_of<WebSocketControllerBase, T>::value),
+                      "Error! Only controller objects can be registered here");
         static_assert(!T::isAutoCreation,
                       "Controllers created and initialized "
                       "automatically by drogon cannot be "
@@ -448,7 +446,7 @@ class HttpAppFramework : public trantor::NonCopyable
     template <typename T>
     HttpAppFramework &registerFilter(const std::shared_ptr<T> &filterPtr)
     {
-        static_assert(internal::IsSubClass<T, HttpFilterBase>::value,
+        static_assert(std::is_base_of<HttpFilterBase, T>::value,
                       "Error! Only fitler objects can be registered here");
         static_assert(!T::isAutoCreation,
                       "Filters created and initialized "

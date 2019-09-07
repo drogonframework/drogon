@@ -394,7 +394,6 @@ set(ORM_HEADERS
 install(FILES ${ORM_HEADERS} DESTINATION ${INSTALL_INCLUDE_DIR}/drogon/orm)
 
 set(DROGON_UTIL_HEADERS
-    lib/inc/drogon/utils/ClassTraits.h
     lib/inc/drogon/utils/FunctionTraits.h
     lib/inc/drogon/utils/Utilities.h
     lib/inc/drogon/utils/any.h
