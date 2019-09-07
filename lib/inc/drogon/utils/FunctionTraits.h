@@ -15,7 +15,6 @@
 #pragma once
 
 #include <drogon/DrObject.h>
-#include <drogon/utils/ClassTraits.h>
 #include <functional>
 #include <memory>
 #include <tuple>
@@ -54,7 +53,7 @@ struct FunctionTraits<ReturnType (ClassType::*)(Arguments...) const>
 {
     static const bool isClassFunction = true;
     static const bool isDrObjectClass =
-        IsSubClass<ClassType, DrObject<ClassType>>::value;
+        std::is_base_of<DrObject<ClassType>, ClassType>::value;
     typedef ClassType class_type;
     static const std::string name()
     {
@@ -69,7 +68,7 @@ struct FunctionTraits<ReturnType (ClassType::*)(Arguments...)>
 {
     static const bool isClassFunction = true;
     static const bool isDrObjectClass =
-        IsSubClass<ClassType, DrObject<ClassType>>::value;
+        std::is_base_of<DrObject<ClassType>, ClassType>::value;
     typedef ClassType class_type;
     static const std::string name()
     {

@@ -14,7 +14,6 @@
 
 #pragma once
 
-#include <drogon/utils/ClassTraits.h>
 #include <trantor/utils/Logger.h>
 #include <functional>
 #include <memory>
@@ -22,6 +21,8 @@
 #include <thread>
 #include <unordered_map>
 #include <vector>
+#include <type_traits>
+#include <cstdlib>
 #include <cxxabi.h>
 #include <stdio.h>
 
@@ -73,7 +74,7 @@ class DrClassMap
     template <typename T>
     static std::shared_ptr<T> getSingleInstance()
     {
-        static_assert(internal::IsSubClass<T, DrObjectBase>::value,
+        static_assert(std::is_base_of<DrObjectBase, T>::value,
                       "T must be a sub-class of DrObjectBase");
         return std::dynamic_pointer_cast<T>(
             getSingleInstance(T::classTypeName()));
