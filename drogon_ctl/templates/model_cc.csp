@@ -209,7 +209,7 @@ const std::string &[[className]]::getColumnName(size_t index) noexcept(false)
         }
         $$<<"\n";    
     }
-    if(@@.get<std::string>("rdbms")=="postgresql")
+    if(@@.get<std::string>("rdbms")=="postgresql"||@@.get<int>("hasPrimaryKey")!=1)
     {
         $$<<"void "<<className<<"::updateId(const uint64_t id)\n";
         $$<<"{\n";
@@ -223,7 +223,7 @@ const std::string &[[className]]::getColumnName(size_t index) noexcept(false)
         {
             if(col._isAutoVal)
             {
-                $$<<"    _"<<col._colValName<<" = std::make_shared<uint64_t>(id);\n";
+                $$<<"    _"<<col._colValName<<" = std::make_shared<"<<@@.get<std::string>("primaryKeyType")<<">(static_cast<"<<@@.get<std::string>("primaryKeyType")<<">(id));\n";
                 break;
             }
         }
