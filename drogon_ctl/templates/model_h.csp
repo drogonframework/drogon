@@ -29,7 +29,14 @@ namespace drogon_model
 {
 namespace [[dbName]] 
 {
-
+<%c++
+auto &schema=@@.get<std::string>("schema");
+if(!schema.empty())
+{
+    $$<<"namespace "<<schema<<"\n";
+    $$<<"{\n";
+}
+%>
 class [[className]]
 {
   public:
@@ -147,6 +154,11 @@ auto cols=@@.get<std::vector<ColumnInfo>>("columns");
     static const std::vector<MetaData> _metaData;
     bool _dirtyFlag[{%cols.size()%}]={ false };
 };
-
+<%c++
+if(!schema.empty())
+{
+    $$<<"} // namespace "<<schema<<"\n";
+}
+%>
 } // namespace [[dbName]]
 } // namespace drogon_model

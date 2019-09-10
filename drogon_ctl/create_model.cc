@@ -67,7 +67,8 @@ std::string nameTransform(const std::string &origName, bool isType)
 #if USE_POSTGRESQL
 void create_model::createModelClassFromPG(const std::string &path,
                                           const DbClientPtr &client,
-                                          const std::string &tableName)
+                                          const std::string &tableName,
+                                          const std::string &schema)
 {
     auto className = nameTransform(tableName, true);
     HttpViewData data;
@@ -77,12 +78,16 @@ void create_model::createModelClassFromPG(const std::string &path,
     data["primaryKeyName"] = "";
     data["dbName"] = _dbname;
     data["rdbms"] = std::string("postgresql");
+    if (schema != "public")
+    {
+        data["schema"] = schema;
+    }
     std::vector<ColumnInfo> cols;
     *client << "SELECT * \
                 FROM information_schema.columns \
-                WHERE table_schema = 'public' \
-                AND table_name   = $1"
-            << tableName << Mode::Blocking >>
+                WHERE table_schema = $1 \
+                AND table_name   = $2"
+            << schema << tableName << Mode::Blocking >>
         [&](const Result &r) {
             if (r.size() == 0)
             {
@@ -285,7 +290,8 @@ void create_model::createModelClassFromPG(const std::string &path,
     sourceFile << templ->genText(data);
 }
 void create_model::createModelFromPG(const std::string &path,
-                                     const DbClientPtr &client)
+                                     const DbClientPtr &client,
+                                     const std::string &schema)
 {
     *client << "SELECT a.oid,"
                "a.relname AS name,"
@@ -294,9 +300,9 @@ void create_model::createModelFromPG(const std::string &path,
                "LEFT OUTER JOIN pg_description b ON b.objsubid = 0 AND a.oid = "
                "b.objoid "
                "WHERE a.relnamespace = (SELECT oid FROM pg_namespace WHERE "
-               "nspname = 'public') "
+               "nspname = $1) "
                "AND a.relkind = 'r' ORDER BY a.relname"
-            << Mode::Blocking >>
+            << schema << Mode::Blocking >>
         [&](bool isNull,
             size_t oid,
             const std::string &tableName,
@@ -304,7 +310,7 @@ void create_model::createModelFromPG(const std::string &path,
             if (!isNull)
             {
                 std::cout << "table name:" << tableName << std::endl;
-                createModelClassFromPG(path, client, tableName);
+                createModelClassFromPG(path, client, tableName, schema);
             }
         } >>
         [](const DrogonDbException &e) {
@@ -652,6 +658,8 @@ void create_model::createModel(const std::string &path,
             connStr += " password=";
             connStr += password;
         }
+
+        auto schema = config.get("schema", "public").asString();
         DbClientPtr client = drogon::orm::DbClient::newPgClient(connStr, 1);
         std::cout << "Connect to server..." << std::endl;
         std::cout << "Source files in the " << path
@@ -664,14 +672,14 @@ void create_model::createModel(const std::string &path,
         }
         auto tables = config["tables"];
         if (!tables || tables.size() == 0)
-            createModelFromPG(path, client);
+            createModelFromPG(path, client, schema);
         else
         {
             for (int i = 0; i < (int)tables.size(); i++)
             {
                 auto tableName = tables[i].asString();
                 std::cout << "table name:" << tableName << std::endl;
-                createModelClassFromPG(path, client, tableName);
+                createModelClassFromPG(path, client, tableName, schema);
             }
         }
 #else

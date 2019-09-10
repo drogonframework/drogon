@@ -17,7 +17,17 @@ using namespace drogon_ctl;
 %>
 
 using namespace drogon;
-using namespace drogon_model::[[dbName]];
+using namespace drogon_model::[[dbName]]<%c++
+auto &schema=@@.get<std::string>("schema");
+if(!schema.empty())
+{
+    $$<<"::"<<schema<<";\n";
+}
+else
+{
+    $$<<";\n";
+}
+%>
 
 <%c++for(auto col:cols){
 %>

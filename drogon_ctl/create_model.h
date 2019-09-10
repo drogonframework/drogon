@@ -57,8 +57,11 @@ class create_model : public DrObject<create_model>, public CommandHandler
 #if USE_POSTGRESQL
     void createModelClassFromPG(const std::string &path,
                                 const DbClientPtr &client,
-                                const std::string &tableName);
-    void createModelFromPG(const std::string &path, const DbClientPtr &client);
+                                const std::string &tableName,
+                                const std::string &schema);
+    void createModelFromPG(const std::string &path,
+                           const DbClientPtr &client,
+                           const std::string &schema);
 #endif
 #if USE_MYSQL
     void createModelClassFromMysql(const std::string &path,
