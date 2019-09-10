@@ -52,7 +52,12 @@ const bool [[className]]::hasPrimaryKey = true;
 <%c++ }else{%>
 const bool [[className]]::hasPrimaryKey = false;
 <%c++}%>
-const std::string [[className]]::tableName = "[[tableName]]";
+const std::string [[className]]::tableName = "<%c++
+if(!schema.empty())
+{
+    $$<<schema<<".";
+}
+%>[[tableName]]";
 
 const std::vector<typename [[className]]::MetaData> [[className]]::_metaData={
 <%c++for(size_t i=0;i<cols.size();i++){
