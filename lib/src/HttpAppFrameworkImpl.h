@@ -94,7 +94,7 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     virtual HttpAppFramework &registerBeginningAdvice(
         const std::function<void()> &advice) override
     {
-        getLoop()->runInLoop(advice);
+        getLoop()->queueInLoop(advice);
         return *this;
     }
 
