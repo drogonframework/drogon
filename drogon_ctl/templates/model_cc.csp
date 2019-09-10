@@ -209,7 +209,7 @@ const std::string &[[className]]::getColumnName(size_t index) noexcept(false)
         }
         $$<<"\n";    
     }
-    if(@@.get<std::string>("rdbms")=="postgresql")
+    if(@@.get<std::string>("rdbms")=="postgresql"||@@.get<int>("hasPrimaryKey")!=1)
     {
         $$<<"void "<<className<<"::updateId(const uint64_t id)\n";
         $$<<"{\n";
@@ -217,13 +217,21 @@ const std::string &[[className]]::getColumnName(size_t index) noexcept(false)
     }
     else if(@@.get<std::string>("rdbms")=="mysql"||@@.get<std::string>("rdbms")=="sqlite3")
     {
+        auto primaryKeyTypeString=@@.get<std::string>("primaryKeyType");
         $$<<"void "<<className<<"::updateId(const uint64_t id)\n";
         $$<<"{\n";
         for(auto col:cols)
         {
             if(col._isAutoVal)
             {
-                $$<<"    _"<<col._colValName<<" = std::make_shared<uint64_t>(id);\n";
+                if(primaryKeyTypeString!="uint64_t")
+                {
+                    $$<<"    _"<<col._colValName<<" = std::make_shared<"<<primaryKeyTypeString<<">(static_cast<"<<primaryKeyTypeString<<">(id));\n";
+                }
+                else
+                {
+                    $$<<"    _"<<col._colValName<<" = std::make_shared<uint64_t>(id);\n";
+                }
                 break;
             }
         }
