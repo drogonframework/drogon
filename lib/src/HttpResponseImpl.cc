@@ -78,8 +78,13 @@ HttpResponsePtr HttpResponse::newNotFoundResponse()
         std::call_once(once, []() {
             HttpViewData data;
             data.insert("version", getVersion());
-            notFoundResp = HttpResponse::newHttpViewResponse("NotFound", data);
+            notFoundResp =
+                HttpResponse::newHttpViewResponse("drogon::NotFound", data);
             notFoundResp->setStatusCode(k404NotFound);
+            notFoundResp->setExpiredTime(0);
+            auto str = static_cast<HttpResponseImpl *>(notFoundResp.get())
+                           ->renderToString();
+            LOG_TRACE << *str;
         });
         return notFoundResp;
     }

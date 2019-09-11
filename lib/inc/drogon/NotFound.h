@@ -15,7 +15,12 @@
  */
 
 #include <drogon/DrTemplate.h>
-
+namespace drogon
+{
+/**
+ * @brief This class is used by the drogon to generate the 404 page. Users don't
+ * use this class directly.
+ */
 class NotFound : public drogon::DrTemplate<NotFound>
 {
   public:
@@ -23,3 +28,4 @@ class NotFound : public drogon::DrTemplate<NotFound>
     virtual ~NotFound(){};
     virtual std::string genText(const drogon::HttpViewData &) override;
 };
+}  // namespace drogon
