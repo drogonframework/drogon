@@ -12,15 +12,15 @@
 using namespace drogon;
 using namespace drogon_model::postgres;
 
-const std::string Users::Cols::user_id = "user_id";
-const std::string Users::Cols::user_name = "user_name";
-const std::string Users::Cols::password = "password";
-const std::string Users::Cols::org_name = "org_name";
-const std::string Users::Cols::signature = "signature";
-const std::string Users::Cols::avatar_id = "avatar_id";
-const std::string Users::Cols::id = "id";
-const std::string Users::Cols::salt = "salt";
-const std::string Users::Cols::admin = "admin";
+const std::string Users::Cols::_user_id = "user_id";
+const std::string Users::Cols::_user_name = "user_name";
+const std::string Users::Cols::_password = "password";
+const std::string Users::Cols::_org_name = "org_name";
+const std::string Users::Cols::_signature = "signature";
+const std::string Users::Cols::_avatar_id = "avatar_id";
+const std::string Users::Cols::_id = "id";
+const std::string Users::Cols::_salt = "salt";
+const std::string Users::Cols::_admin = "admin";
 const std::string Users::primaryKeyName = "id";
 const bool Users::hasPrimaryKey = true;
 const std::string Users::tableName = "users";

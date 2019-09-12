@@ -31,17 +31,17 @@ class Groups
   public:
     struct Cols
     {
-        static const std::string group_id;
-        static const std::string group_name;
-        static const std::string creater_id;
-        static const std::string create_time;
-        static const std::string inviting;
-        static const std::string inviting_user_id;
-        static const std::string avatar_id;
-        static const std::string uuu;
-        static const std::string text;
-        static const std::string avatar;
-        static const std::string is_default;
+        static const std::string _group_id;
+        static const std::string _group_name;
+        static const std::string _creater_id;
+        static const std::string _create_time;
+        static const std::string _inviting;
+        static const std::string _inviting_user_id;
+        static const std::string _avatar_id;
+        static const std::string _uuu;
+        static const std::string _text;
+        static const std::string _avatar;
+        static const std::string _is_default;
     };
 
     const static int primaryKeyNumber;

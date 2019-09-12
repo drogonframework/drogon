@@ -12,17 +12,17 @@
 using namespace drogon;
 using namespace drogon_model::sqlite3;
 
-const std::string Groups::Cols::group_id = "group_id";
-const std::string Groups::Cols::group_name = "group_name";
-const std::string Groups::Cols::creater_id = "creater_id";
-const std::string Groups::Cols::create_time = "create_time";
-const std::string Groups::Cols::inviting = "inviting";
-const std::string Groups::Cols::inviting_user_id = "inviting_user_id";
-const std::string Groups::Cols::avatar_id = "avatar_id";
-const std::string Groups::Cols::uuu = "uuu";
-const std::string Groups::Cols::text = "text";
-const std::string Groups::Cols::avatar = "avatar";
-const std::string Groups::Cols::is_default = "is_default";
+const std::string Groups::Cols::_group_id = "group_id";
+const std::string Groups::Cols::_group_name = "group_name";
+const std::string Groups::Cols::_creater_id = "creater_id";
+const std::string Groups::Cols::_create_time = "create_time";
+const std::string Groups::Cols::_inviting = "inviting";
+const std::string Groups::Cols::_inviting_user_id = "inviting_user_id";
+const std::string Groups::Cols::_avatar_id = "avatar_id";
+const std::string Groups::Cols::_uuu = "uuu";
+const std::string Groups::Cols::_text = "text";
+const std::string Groups::Cols::_avatar = "avatar";
+const std::string Groups::Cols::_is_default = "is_default";
 const std::string Groups::primaryKeyName = "group_id";
 const bool Groups::hasPrimaryKey = true;
 const std::string Groups::tableName = "GROUPS";

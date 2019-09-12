@@ -31,15 +31,15 @@ class Users
   public:
     struct Cols
     {
-        static const std::string user_id;
-        static const std::string user_name;
-        static const std::string password;
-        static const std::string org_name;
-        static const std::string signature;
-        static const std::string avatar_id;
-        static const std::string id;
-        static const std::string salt;
-        static const std::string admin;
+        static const std::string _user_id;
+        static const std::string _user_name;
+        static const std::string _password;
+        static const std::string _org_name;
+        static const std::string _signature;
+        static const std::string _avatar_id;
+        static const std::string _id;
+        static const std::string _salt;
+        static const std::string _admin;
     };
 
     const static int primaryKeyNumber;
