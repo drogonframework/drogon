@@ -46,7 +46,7 @@ class [[className]]
 auto cols=@@.get<std::vector<ColumnInfo>>("columns");
     for(size_t i=0;i<cols.size();i++)
     {
-        $$<<"        static const std::string "<<cols[i]._colName<<";\n";
+        $$<<"        static const std::string _"<<cols[i]._colName<<";\n";
     }
 %>
     };

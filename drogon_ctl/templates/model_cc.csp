@@ -31,7 +31,7 @@ else
 
 <%c++for(auto col:cols){
 %>
-const std::string [[className]]::Cols::{%col._colName%} = "{%col._colName%}";
+const std::string [[className]]::Cols::_{%col._colName%} = "{%col._colName%}";
 <%c++
 }%>
 <%c++if(@@.get<int>("hasPrimaryKey")<=1){%>
