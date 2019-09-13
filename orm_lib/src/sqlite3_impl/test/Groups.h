@@ -31,17 +31,17 @@ class Groups
   public:
     struct Cols
     {
-        static const std::string group_id;
-        static const std::string group_name;
-        static const std::string creater_id;
-        static const std::string create_time;
-        static const std::string inviting;
-        static const std::string inviting_user_id;
-        static const std::string avatar_id;
-        static const std::string uuu;
-        static const std::string text;
-        static const std::string avatar;
-        static const std::string is_default;
+        static const std::string _group_id;
+        static const std::string _group_name;
+        static const std::string _creater_id;
+        static const std::string _create_time;
+        static const std::string _inviting;
+        static const std::string _inviting_user_id;
+        static const std::string _avatar_id;
+        static const std::string _uuu;
+        static const std::string _text;
+        static const std::string _avatar;
+        static const std::string _is_default;
     };
 
     const static int primaryKeyNumber;
@@ -69,8 +69,8 @@ class Groups
     /// empty shared_ptr object if the column is null
     const std::shared_ptr<std::string> &getGroupName() const noexcept;
     /// Set the value of the column group_name
-    void setGroupName(const std::string &groupName) noexcept;
-    void setGroupName(std::string &&groupName) noexcept;
+    void setGroupName(const std::string &pGroupName) noexcept;
+    void setGroupName(std::string &&pGroupName) noexcept;
 
     /**  For column creater_id  */
     /// Get the value of the column creater_id, returns the default value if the
@@ -80,7 +80,7 @@ class Groups
     /// empty shared_ptr object if the column is null
     const std::shared_ptr<uint64_t> &getCreaterId() const noexcept;
     /// Set the value of the column creater_id
-    void setCreaterId(const uint64_t &createrId) noexcept;
+    void setCreaterId(const uint64_t &pCreaterId) noexcept;
 
     /**  For column create_time  */
     /// Get the value of the column create_time, returns the default value if
@@ -90,8 +90,8 @@ class Groups
     /// empty shared_ptr object if the column is null
     const std::shared_ptr<std::string> &getCreateTime() const noexcept;
     /// Set the value of the column create_time
-    void setCreateTime(const std::string &createTime) noexcept;
-    void setCreateTime(std::string &&createTime) noexcept;
+    void setCreateTime(const std::string &pCreateTime) noexcept;
+    void setCreateTime(std::string &&pCreateTime) noexcept;
 
     /**  For column inviting  */
     /// Get the value of the column inviting, returns the default value if the
@@ -101,7 +101,7 @@ class Groups
     /// empty shared_ptr object if the column is null
     const std::shared_ptr<uint64_t> &getInviting() const noexcept;
     /// Set the value of the column inviting
-    void setInviting(const uint64_t &inviting) noexcept;
+    void setInviting(const uint64_t &pInviting) noexcept;
 
     /**  For column inviting_user_id  */
     /// Get the value of the column inviting_user_id, returns the default value
@@ -111,7 +111,7 @@ class Groups
     /// empty shared_ptr object if the column is null
     const std::shared_ptr<uint64_t> &getInvitingUserId() const noexcept;
     /// Set the value of the column inviting_user_id
-    void setInvitingUserId(const uint64_t &invitingUserId) noexcept;
+    void setInvitingUserId(const uint64_t &pInvitingUserId) noexcept;
 
     /**  For column avatar_id  */
     /// Get the value of the column avatar_id, returns the default value if the
@@ -121,8 +121,8 @@ class Groups
     /// empty shared_ptr object if the column is null
     const std::shared_ptr<std::string> &getAvatarId() const noexcept;
     /// Set the value of the column avatar_id
-    void setAvatarId(const std::string &avatarId) noexcept;
-    void setAvatarId(std::string &&avatarId) noexcept;
+    void setAvatarId(const std::string &pAvatarId) noexcept;
+    void setAvatarId(std::string &&pAvatarId) noexcept;
 
     /**  For column uuu  */
     /// Get the value of the column uuu, returns the default value if the column
@@ -132,7 +132,7 @@ class Groups
     /// empty shared_ptr object if the column is null
     const std::shared_ptr<double> &getUuu() const noexcept;
     /// Set the value of the column uuu
-    void setUuu(const double &uuu) noexcept;
+    void setUuu(const double &pUuu) noexcept;
 
     /**  For column text  */
     /// Get the value of the column text, returns the default value if the
@@ -142,8 +142,8 @@ class Groups
     /// empty shared_ptr object if the column is null
     const std::shared_ptr<std::string> &getText() const noexcept;
     /// Set the value of the column text
-    void setText(const std::string &text) noexcept;
-    void setText(std::string &&text) noexcept;
+    void setText(const std::string &pText) noexcept;
+    void setText(std::string &&pText) noexcept;
 
     /**  For column avatar  */
     /// Get the value of the column avatar, returns the default value if the
@@ -155,8 +155,8 @@ class Groups
     /// empty shared_ptr object if the column is null
     const std::shared_ptr<std::vector<char>> &getAvatar() const noexcept;
     /// Set the value of the column avatar
-    void setAvatar(const std::vector<char> &avatar) noexcept;
-    void setAvatar(const std::string &avatar) noexcept;
+    void setAvatar(const std::vector<char> &pAvatar) noexcept;
+    void setAvatar(const std::string &pAvatar) noexcept;
 
     /**  For column is_default  */
     /// Get the value of the column is_default, returns the default value if the
@@ -166,7 +166,7 @@ class Groups
     /// empty shared_ptr object if the column is null
     const std::shared_ptr<bool> &getIsDefault() const noexcept;
     /// Set the value of the column is_default
-    void setIsDefault(const bool &isDefault) noexcept;
+    void setIsDefault(const bool &pIsDefault) noexcept;
 
     static size_t getColumnNumber() noexcept
     {
@@ -208,6 +208,5 @@ class Groups
     static const std::vector<MetaData> _metaData;
     bool _dirtyFlag[11] = {false};
 };
-
 }  // namespace sqlite3
 }  // namespace drogon_model

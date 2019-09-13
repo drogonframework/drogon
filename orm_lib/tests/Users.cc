@@ -12,15 +12,15 @@
 using namespace drogon;
 using namespace drogon_model::postgres;
 
-const std::string Users::Cols::user_id = "user_id";
-const std::string Users::Cols::user_name = "user_name";
-const std::string Users::Cols::password = "password";
-const std::string Users::Cols::org_name = "org_name";
-const std::string Users::Cols::signature = "signature";
-const std::string Users::Cols::avatar_id = "avatar_id";
-const std::string Users::Cols::id = "id";
-const std::string Users::Cols::salt = "salt";
-const std::string Users::Cols::admin = "admin";
+const std::string Users::Cols::_user_id = "user_id";
+const std::string Users::Cols::_user_name = "user_name";
+const std::string Users::Cols::_password = "password";
+const std::string Users::Cols::_org_name = "org_name";
+const std::string Users::Cols::_signature = "signature";
+const std::string Users::Cols::_avatar_id = "avatar_id";
+const std::string Users::Cols::_id = "id";
+const std::string Users::Cols::_salt = "salt";
+const std::string Users::Cols::_admin = "admin";
 const std::string Users::primaryKeyName = "id";
 const bool Users::hasPrimaryKey = true;
 const std::string Users::tableName = "users";
@@ -95,14 +95,14 @@ const std::shared_ptr<std::string> &Users::getUserId() const noexcept
 {
     return _userId;
 }
-void Users::setUserId(const std::string &userId) noexcept
+void Users::setUserId(const std::string &pUserId) noexcept
 {
-    _userId = std::make_shared<std::string>(userId);
+    _userId = std::make_shared<std::string>(pUserId);
     _dirtyFlag[0] = true;
 }
-void Users::setUserId(std::string &&userId) noexcept
+void Users::setUserId(std::string &&pUserId) noexcept
 {
-    _userId = std::make_shared<std::string>(std::move(userId));
+    _userId = std::make_shared<std::string>(std::move(pUserId));
     _dirtyFlag[0] = true;
 }
 
@@ -117,14 +117,14 @@ const std::shared_ptr<std::string> &Users::getUserName() const noexcept
 {
     return _userName;
 }
-void Users::setUserName(const std::string &userName) noexcept
+void Users::setUserName(const std::string &pUserName) noexcept
 {
-    _userName = std::make_shared<std::string>(userName);
+    _userName = std::make_shared<std::string>(pUserName);
     _dirtyFlag[1] = true;
 }
-void Users::setUserName(std::string &&userName) noexcept
+void Users::setUserName(std::string &&pUserName) noexcept
 {
-    _userName = std::make_shared<std::string>(std::move(userName));
+    _userName = std::make_shared<std::string>(std::move(pUserName));
     _dirtyFlag[1] = true;
 }
 
@@ -139,14 +139,14 @@ const std::shared_ptr<std::string> &Users::getPassword() const noexcept
 {
     return _password;
 }
-void Users::setPassword(const std::string &password) noexcept
+void Users::setPassword(const std::string &pPassword) noexcept
 {
-    _password = std::make_shared<std::string>(password);
+    _password = std::make_shared<std::string>(pPassword);
     _dirtyFlag[2] = true;
 }
-void Users::setPassword(std::string &&password) noexcept
+void Users::setPassword(std::string &&pPassword) noexcept
 {
-    _password = std::make_shared<std::string>(std::move(password));
+    _password = std::make_shared<std::string>(std::move(pPassword));
     _dirtyFlag[2] = true;
 }
 
@@ -161,14 +161,14 @@ const std::shared_ptr<std::string> &Users::getOrgName() const noexcept
 {
     return _orgName;
 }
-void Users::setOrgName(const std::string &orgName) noexcept
+void Users::setOrgName(const std::string &pOrgName) noexcept
 {
-    _orgName = std::make_shared<std::string>(orgName);
+    _orgName = std::make_shared<std::string>(pOrgName);
     _dirtyFlag[3] = true;
 }
-void Users::setOrgName(std::string &&orgName) noexcept
+void Users::setOrgName(std::string &&pOrgName) noexcept
 {
-    _orgName = std::make_shared<std::string>(std::move(orgName));
+    _orgName = std::make_shared<std::string>(std::move(pOrgName));
     _dirtyFlag[3] = true;
 }
 
@@ -183,14 +183,14 @@ const std::shared_ptr<std::string> &Users::getSignature() const noexcept
 {
     return _signature;
 }
-void Users::setSignature(const std::string &signature) noexcept
+void Users::setSignature(const std::string &pSignature) noexcept
 {
-    _signature = std::make_shared<std::string>(signature);
+    _signature = std::make_shared<std::string>(pSignature);
     _dirtyFlag[4] = true;
 }
-void Users::setSignature(std::string &&signature) noexcept
+void Users::setSignature(std::string &&pSignature) noexcept
 {
-    _signature = std::make_shared<std::string>(std::move(signature));
+    _signature = std::make_shared<std::string>(std::move(pSignature));
     _dirtyFlag[4] = true;
 }
 
@@ -205,14 +205,14 @@ const std::shared_ptr<std::string> &Users::getAvatarId() const noexcept
 {
     return _avatarId;
 }
-void Users::setAvatarId(const std::string &avatarId) noexcept
+void Users::setAvatarId(const std::string &pAvatarId) noexcept
 {
-    _avatarId = std::make_shared<std::string>(avatarId);
+    _avatarId = std::make_shared<std::string>(pAvatarId);
     _dirtyFlag[5] = true;
 }
-void Users::setAvatarId(std::string &&avatarId) noexcept
+void Users::setAvatarId(std::string &&pAvatarId) noexcept
 {
-    _avatarId = std::make_shared<std::string>(std::move(avatarId));
+    _avatarId = std::make_shared<std::string>(std::move(pAvatarId));
     _dirtyFlag[5] = true;
 }
 
@@ -244,14 +244,14 @@ const std::shared_ptr<std::string> &Users::getSalt() const noexcept
 {
     return _salt;
 }
-void Users::setSalt(const std::string &salt) noexcept
+void Users::setSalt(const std::string &pSalt) noexcept
 {
-    _salt = std::make_shared<std::string>(salt);
+    _salt = std::make_shared<std::string>(pSalt);
     _dirtyFlag[7] = true;
 }
-void Users::setSalt(std::string &&salt) noexcept
+void Users::setSalt(std::string &&pSalt) noexcept
 {
-    _salt = std::make_shared<std::string>(std::move(salt));
+    _salt = std::make_shared<std::string>(std::move(pSalt));
     _dirtyFlag[7] = true;
 }
 
@@ -266,9 +266,9 @@ const std::shared_ptr<bool> &Users::getAdmin() const noexcept
 {
     return _admin;
 }
-void Users::setAdmin(const bool &admin) noexcept
+void Users::setAdmin(const bool &pAdmin) noexcept
 {
-    _admin = std::make_shared<bool>(admin);
+    _admin = std::make_shared<bool>(pAdmin);
     _dirtyFlag[8] = true;
 }
 

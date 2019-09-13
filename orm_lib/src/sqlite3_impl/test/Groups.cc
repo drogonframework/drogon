@@ -12,17 +12,17 @@
 using namespace drogon;
 using namespace drogon_model::sqlite3;
 
-const std::string Groups::Cols::group_id = "group_id";
-const std::string Groups::Cols::group_name = "group_name";
-const std::string Groups::Cols::creater_id = "creater_id";
-const std::string Groups::Cols::create_time = "create_time";
-const std::string Groups::Cols::inviting = "inviting";
-const std::string Groups::Cols::inviting_user_id = "inviting_user_id";
-const std::string Groups::Cols::avatar_id = "avatar_id";
-const std::string Groups::Cols::uuu = "uuu";
-const std::string Groups::Cols::text = "text";
-const std::string Groups::Cols::avatar = "avatar";
-const std::string Groups::Cols::is_default = "is_default";
+const std::string Groups::Cols::_group_id = "group_id";
+const std::string Groups::Cols::_group_name = "group_name";
+const std::string Groups::Cols::_creater_id = "creater_id";
+const std::string Groups::Cols::_create_time = "create_time";
+const std::string Groups::Cols::_inviting = "inviting";
+const std::string Groups::Cols::_inviting_user_id = "inviting_user_id";
+const std::string Groups::Cols::_avatar_id = "avatar_id";
+const std::string Groups::Cols::_uuu = "uuu";
+const std::string Groups::Cols::_text = "text";
+const std::string Groups::Cols::_avatar = "avatar";
+const std::string Groups::Cols::_is_default = "is_default";
 const std::string Groups::primaryKeyName = "group_id";
 const bool Groups::hasPrimaryKey = true;
 const std::string Groups::tableName = "GROUPS";
@@ -124,14 +124,14 @@ const std::shared_ptr<std::string> &Groups::getGroupName() const noexcept
 {
     return _groupName;
 }
-void Groups::setGroupName(const std::string &groupName) noexcept
+void Groups::setGroupName(const std::string &pGroupName) noexcept
 {
-    _groupName = std::make_shared<std::string>(groupName);
+    _groupName = std::make_shared<std::string>(pGroupName);
     _dirtyFlag[1] = true;
 }
-void Groups::setGroupName(std::string &&groupName) noexcept
+void Groups::setGroupName(std::string &&pGroupName) noexcept
 {
-    _groupName = std::make_shared<std::string>(std::move(groupName));
+    _groupName = std::make_shared<std::string>(std::move(pGroupName));
     _dirtyFlag[1] = true;
 }
 
@@ -146,9 +146,9 @@ const std::shared_ptr<uint64_t> &Groups::getCreaterId() const noexcept
 {
     return _createrId;
 }
-void Groups::setCreaterId(const uint64_t &createrId) noexcept
+void Groups::setCreaterId(const uint64_t &pCreaterId) noexcept
 {
-    _createrId = std::make_shared<uint64_t>(createrId);
+    _createrId = std::make_shared<uint64_t>(pCreaterId);
     _dirtyFlag[2] = true;
 }
 
@@ -163,14 +163,14 @@ const std::shared_ptr<std::string> &Groups::getCreateTime() const noexcept
 {
     return _createTime;
 }
-void Groups::setCreateTime(const std::string &createTime) noexcept
+void Groups::setCreateTime(const std::string &pCreateTime) noexcept
 {
-    _createTime = std::make_shared<std::string>(createTime);
+    _createTime = std::make_shared<std::string>(pCreateTime);
     _dirtyFlag[3] = true;
 }
-void Groups::setCreateTime(std::string &&createTime) noexcept
+void Groups::setCreateTime(std::string &&pCreateTime) noexcept
 {
-    _createTime = std::make_shared<std::string>(std::move(createTime));
+    _createTime = std::make_shared<std::string>(std::move(pCreateTime));
     _dirtyFlag[3] = true;
 }
 
@@ -185,9 +185,9 @@ const std::shared_ptr<uint64_t> &Groups::getInviting() const noexcept
 {
     return _inviting;
 }
-void Groups::setInviting(const uint64_t &inviting) noexcept
+void Groups::setInviting(const uint64_t &pInviting) noexcept
 {
-    _inviting = std::make_shared<uint64_t>(inviting);
+    _inviting = std::make_shared<uint64_t>(pInviting);
     _dirtyFlag[4] = true;
 }
 
@@ -202,9 +202,9 @@ const std::shared_ptr<uint64_t> &Groups::getInvitingUserId() const noexcept
 {
     return _invitingUserId;
 }
-void Groups::setInvitingUserId(const uint64_t &invitingUserId) noexcept
+void Groups::setInvitingUserId(const uint64_t &pInvitingUserId) noexcept
 {
-    _invitingUserId = std::make_shared<uint64_t>(invitingUserId);
+    _invitingUserId = std::make_shared<uint64_t>(pInvitingUserId);
     _dirtyFlag[5] = true;
 }
 
@@ -219,14 +219,14 @@ const std::shared_ptr<std::string> &Groups::getAvatarId() const noexcept
 {
     return _avatarId;
 }
-void Groups::setAvatarId(const std::string &avatarId) noexcept
+void Groups::setAvatarId(const std::string &pAvatarId) noexcept
 {
-    _avatarId = std::make_shared<std::string>(avatarId);
+    _avatarId = std::make_shared<std::string>(pAvatarId);
     _dirtyFlag[6] = true;
 }
-void Groups::setAvatarId(std::string &&avatarId) noexcept
+void Groups::setAvatarId(std::string &&pAvatarId) noexcept
 {
-    _avatarId = std::make_shared<std::string>(std::move(avatarId));
+    _avatarId = std::make_shared<std::string>(std::move(pAvatarId));
     _dirtyFlag[6] = true;
 }
 
@@ -241,9 +241,9 @@ const std::shared_ptr<double> &Groups::getUuu() const noexcept
 {
     return _uuu;
 }
-void Groups::setUuu(const double &uuu) noexcept
+void Groups::setUuu(const double &pUuu) noexcept
 {
-    _uuu = std::make_shared<double>(uuu);
+    _uuu = std::make_shared<double>(pUuu);
     _dirtyFlag[7] = true;
 }
 
@@ -258,14 +258,14 @@ const std::shared_ptr<std::string> &Groups::getText() const noexcept
 {
     return _text;
 }
-void Groups::setText(const std::string &text) noexcept
+void Groups::setText(const std::string &pText) noexcept
 {
-    _text = std::make_shared<std::string>(text);
+    _text = std::make_shared<std::string>(pText);
     _dirtyFlag[8] = true;
 }
-void Groups::setText(std::string &&text) noexcept
+void Groups::setText(std::string &&pText) noexcept
 {
-    _text = std::make_shared<std::string>(std::move(text));
+    _text = std::make_shared<std::string>(std::move(pText));
     _dirtyFlag[8] = true;
 }
 
@@ -287,17 +287,17 @@ const std::shared_ptr<std::vector<char>> &Groups::getAvatar() const noexcept
 {
     return _avatar;
 }
-void Groups::setAvatar(const std::vector<char> &avatar) noexcept
+void Groups::setAvatar(const std::vector<char> &pAvatar) noexcept
 {
-    _avatar = std::make_shared<std::vector<char>>(avatar);
+    _avatar = std::make_shared<std::vector<char>>(pAvatar);
     _dirtyFlag[9] = true;
 }
 
-void Groups::setAvatar(const std::string &avatar) noexcept
+void Groups::setAvatar(const std::string &pAvatar) noexcept
 {
     _avatar =
-        std::make_shared<std::vector<char>>(avatar.c_str(),
-                                            avatar.c_str() + avatar.length());
+        std::make_shared<std::vector<char>>(pAvatar.c_str(),
+                                            pAvatar.c_str() + pAvatar.length());
     _dirtyFlag[9] = true;
 }
 
@@ -312,9 +312,9 @@ const std::shared_ptr<bool> &Groups::getIsDefault() const noexcept
 {
     return _isDefault;
 }
-void Groups::setIsDefault(const bool &isDefault) noexcept
+void Groups::setIsDefault(const bool &pIsDefault) noexcept
 {
-    _isDefault = std::make_shared<bool>(isDefault);
+    _isDefault = std::make_shared<bool>(pIsDefault);
     _dirtyFlag[10] = true;
 }
 

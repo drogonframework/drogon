@@ -46,7 +46,7 @@ class [[className]]
 auto cols=@@.get<std::vector<ColumnInfo>>("columns");
     for(size_t i=0;i<cols.size();i++)
     {
-        $$<<"        static const std::string "<<cols[i]._colName<<";\n";
+        $$<<"        static const std::string _"<<cols[i]._colName<<";\n";
     }
 %>
     };
@@ -89,7 +89,7 @@ auto cols=@@.get<std::vector<ColumnInfo>>("columns");
     [[className]]() = default;
     
 <%c++
-    for(auto col:cols)
+    for(const auto &col:cols)
     {
         $$<<"    /**  For column "<<col._colName<<"  */\n";
         if(!col._colType.empty())
@@ -106,12 +106,12 @@ auto cols=@@.get<std::vector<ColumnInfo>>("columns");
             if(!col._isAutoVal)
             {
             $$<<"    ///Set the value of the column "<<col._colName<<"\n";
-            $$<<"    void set"<<col._colTypeName<<"(const "<<col._colType<<" &"<<col._colValName<<") noexcept;\n";
+            $$<<"    void set"<<col._colTypeName<<"(const "<<col._colType<<" &p"<<col._colTypeName<<") noexcept;\n";
                 if(col._colType=="std::string")
-                    $$<<"    void set"<<col._colTypeName<<"("<<col._colType<<" &&"<<col._colValName<<") noexcept;\n";
+                    $$<<"    void set"<<col._colTypeName<<"("<<col._colType<<" &&p"<<col._colTypeName<<") noexcept;\n";
                 if(col._colType=="std::vector<char>")
                 {
-                    $$<<"    void set"<<col._colTypeName<<"(const std::string &"<<col._colValName<<") noexcept;\n";
+                    $$<<"    void set"<<col._colTypeName<<"(const std::string &p"<<col._colTypeName<<") noexcept;\n";
                 }
             }
         }

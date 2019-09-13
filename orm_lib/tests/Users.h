@@ -31,15 +31,15 @@ class Users
   public:
     struct Cols
     {
-        static const std::string user_id;
-        static const std::string user_name;
-        static const std::string password;
-        static const std::string org_name;
-        static const std::string signature;
-        static const std::string avatar_id;
-        static const std::string id;
-        static const std::string salt;
-        static const std::string admin;
+        static const std::string _user_id;
+        static const std::string _user_name;
+        static const std::string _password;
+        static const std::string _org_name;
+        static const std::string _signature;
+        static const std::string _avatar_id;
+        static const std::string _id;
+        static const std::string _salt;
+        static const std::string _admin;
     };
 
     const static int primaryKeyNumber;
@@ -59,8 +59,8 @@ class Users
     /// empty shared_ptr object if the column is null
     const std::shared_ptr<std::string> &getUserId() const noexcept;
     /// Set the value of the column user_id
-    void setUserId(const std::string &userId) noexcept;
-    void setUserId(std::string &&userId) noexcept;
+    void setUserId(const std::string &pUserId) noexcept;
+    void setUserId(std::string &&pUserId) noexcept;
 
     /**  For column user_name  */
     /// Get the value of the column user_name, returns the default value if the
@@ -70,8 +70,8 @@ class Users
     /// empty shared_ptr object if the column is null
     const std::shared_ptr<std::string> &getUserName() const noexcept;
     /// Set the value of the column user_name
-    void setUserName(const std::string &userName) noexcept;
-    void setUserName(std::string &&userName) noexcept;
+    void setUserName(const std::string &pUserName) noexcept;
+    void setUserName(std::string &&pUserName) noexcept;
 
     /**  For column password  */
     /// Get the value of the column password, returns the default value if the
@@ -81,8 +81,8 @@ class Users
     /// empty shared_ptr object if the column is null
     const std::shared_ptr<std::string> &getPassword() const noexcept;
     /// Set the value of the column password
-    void setPassword(const std::string &password) noexcept;
-    void setPassword(std::string &&password) noexcept;
+    void setPassword(const std::string &pPassword) noexcept;
+    void setPassword(std::string &&pPassword) noexcept;
 
     /**  For column org_name  */
     /// Get the value of the column org_name, returns the default value if the
@@ -92,8 +92,8 @@ class Users
     /// empty shared_ptr object if the column is null
     const std::shared_ptr<std::string> &getOrgName() const noexcept;
     /// Set the value of the column org_name
-    void setOrgName(const std::string &orgName) noexcept;
-    void setOrgName(std::string &&orgName) noexcept;
+    void setOrgName(const std::string &pOrgName) noexcept;
+    void setOrgName(std::string &&pOrgName) noexcept;
 
     /**  For column signature  */
     /// Get the value of the column signature, returns the default value if the
@@ -103,8 +103,8 @@ class Users
     /// empty shared_ptr object if the column is null
     const std::shared_ptr<std::string> &getSignature() const noexcept;
     /// Set the value of the column signature
-    void setSignature(const std::string &signature) noexcept;
-    void setSignature(std::string &&signature) noexcept;
+    void setSignature(const std::string &pSignature) noexcept;
+    void setSignature(std::string &&pSignature) noexcept;
 
     /**  For column avatar_id  */
     /// Get the value of the column avatar_id, returns the default value if the
@@ -114,8 +114,8 @@ class Users
     /// empty shared_ptr object if the column is null
     const std::shared_ptr<std::string> &getAvatarId() const noexcept;
     /// Set the value of the column avatar_id
-    void setAvatarId(const std::string &avatarId) noexcept;
-    void setAvatarId(std::string &&avatarId) noexcept;
+    void setAvatarId(const std::string &pAvatarId) noexcept;
+    void setAvatarId(std::string &&pAvatarId) noexcept;
 
     /**  For column id  */
     /// Get the value of the column id, returns the default value if the column
@@ -133,8 +133,8 @@ class Users
     /// empty shared_ptr object if the column is null
     const std::shared_ptr<std::string> &getSalt() const noexcept;
     /// Set the value of the column salt
-    void setSalt(const std::string &salt) noexcept;
-    void setSalt(std::string &&salt) noexcept;
+    void setSalt(const std::string &pSalt) noexcept;
+    void setSalt(std::string &&pSalt) noexcept;
 
     /**  For column admin  */
     /// Get the value of the column admin, returns the default value if the
@@ -144,7 +144,7 @@ class Users
     /// empty shared_ptr object if the column is null
     const std::shared_ptr<bool> &getAdmin() const noexcept;
     /// Set the value of the column admin
-    void setAdmin(const bool &admin) noexcept;
+    void setAdmin(const bool &pAdmin) noexcept;
 
     static size_t getColumnNumber() noexcept
     {
@@ -184,6 +184,5 @@ class Users
     static const std::vector<MetaData> _metaData;
     bool _dirtyFlag[9] = {false};
 };
-
 }  // namespace postgres
 }  // namespace drogon_model

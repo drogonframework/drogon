@@ -31,7 +31,7 @@ else
 
 <%c++for(auto col:cols){
 %>
-const std::string [[className]]::Cols::{%col._colName%} = "{%col._colName%}";
+const std::string [[className]]::Cols::_{%col._colName%} = "{%col._colName%}";
 <%c++
 }%>
 <%c++if(@@.get<int>("hasPrimaryKey")<=1){%>
@@ -167,33 +167,33 @@ const std::string &[[className]]::getColumnName(size_t index) noexcept(false)
  
             if(!col._isAutoVal)
             {
-                $$<<"void "<<className<<"::set"<<col._colTypeName<<"(const "<<col._colType<<" &"<<col._colValName<<") noexcept\n";
+                $$<<"void "<<className<<"::set"<<col._colTypeName<<"(const "<<col._colType<<" &p"<<col._colTypeName<<") noexcept\n";
                 $$<<"{\n";
                 if(col._colDatabaseType=="date")
                 {
-                    $$<<"    _"<<col._colValName<<" = std::make_shared<"<<col._colType<<">("<<col._colValName<<".roundDay());\n";
+                    $$<<"    _"<<col._colValName<<" = std::make_shared<"<<col._colType<<">(p"<<col._colTypeName<<".roundDay());\n";
                 }
                 else
                 {
-                    $$<<"    _"<<col._colValName<<" = std::make_shared<"<<col._colType<<">("<<col._colValName<<");\n";
+                    $$<<"    _"<<col._colValName<<" = std::make_shared<"<<col._colType<<">(p"<<col._colTypeName<<");\n";
                 }
                 $$<<"    _dirtyFlag["<<i<<"] = true;\n";
                 $$<<"}\n";
                 
                 if(col._colType=="std::string")
                 {
-                    $$<<"void "<<className<<"::set"<<col._colTypeName<<"("<<col._colType<<" &&"<<col._colValName<<") noexcept\n";
+                    $$<<"void "<<className<<"::set"<<col._colTypeName<<"("<<col._colType<<" &&p"<<col._colTypeName<<") noexcept\n";
                     $$<<"{\n";
-                    $$<<"    _"<<col._colValName<<" = std::make_shared<"<<col._colType<<">(std::move("<<col._colValName<<"));\n";
+                    $$<<"    _"<<col._colValName<<" = std::make_shared<"<<col._colType<<">(std::move(p"<<col._colTypeName<<"));\n";
                     $$<<"    _dirtyFlag["<<i<<"] = true;\n";
                     $$<<"}\n";
                 }
 
                 if(col._colType=="std::vector<char>")
                 {
-                    $$<<"void "<<className<<"::set"<<col._colTypeName<<"(const std::string &"<<col._colValName<<") noexcept\n";
+                    $$<<"void "<<className<<"::set"<<col._colTypeName<<"(const std::string &p"<<col._colTypeName<<") noexcept\n";
                     $$<<"{\n";
-                    $$<<"    _"<<col._colValName<<" = std::make_shared<std::vector<char>>("<<col._colValName<<".c_str(),"<<col._colValName<<".c_str()+"<<col._colValName<<".length());\n";
+                    $$<<"    _"<<col._colValName<<" = std::make_shared<std::vector<char>>(p"<<col._colTypeName<<".c_str(),p"<<col._colTypeName<<".c_str()+p"<<col._colTypeName<<".length());\n";
                     $$<<"    _dirtyFlag["<<i<<"] = true;\n";
                     $$<<"}\n";
                 }
