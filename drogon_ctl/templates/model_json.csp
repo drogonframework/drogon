@@ -10,17 +10,20 @@
     //dbname: Database name;
     "dbname": "",
     //schema: valid for postgreSQL, "public" by default;
-    //"schema":"public",
+    "schema":"public",
+    //user: User name
     "user": "",
+    //password: Password
     "passwd": "",
+    //table: An array of tables to be modelized. if the array is empty, all revealed tables are modelized.
     "tables": [],
     "restful_api_controllers": {
         "enabled": false,
-        // resource_uri: The URI to access the resource, default value 
-        // is '/*' in which the '*' represents the table name.
-        // If this option is set to "", the URI is is composed of the namespaces and the class name.
+        // resource_uri: The URI to access the resource, the default value 
+        // is '/*' in which the asterisk represents the table name.
+        // If this option is set to a empty string, the URI is composed of the namespaces and the class name.
         "resource_uri": "/*",
-        // class_name: "Restful*Ctrl" by default, the '*' represents the table name.
+        // class_name: "Restful*Ctrl" by default, the asterisk represents the table name.
         // This option can contain namespaces.
         "class_name": "Restful*Ctrl",
         // filters: an array of filter names.
