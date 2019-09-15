@@ -1,17 +1,36 @@
 {
     //rdbms: server type, postgresql,mysql or sqlite3
-    "rdbms":"postgresql",
+    "rdbms": "postgresql",
     //filename: sqlite3 db file name
     //"filename":"",
     //host: server address,localhost by default;
-    "host":"127.0.0.1",
+    "host": "127.0.0.1",
     //port: server port, 5432 by default;
-    "port":5432,
+    "port": 5432,
     //dbname: Database name;
-    "dbname":"",
+    "dbname": "",
     //schema: valid for postgreSQL, "public" by default;
     //"schema":"public",
-    "user":"",
-    "passwd":"",
-    "tables":[]
+    "user": "",
+    "passwd": "",
+    "tables": [],
+    "restful_api_controllers": {
+        "enabled": false,
+        // resource_uri: The URI to access the resource, default value 
+        // is '/*' in which the '*' represents the table name.
+        // If this option is set to "", the URI is is composed of the namespaces and the class name.
+        "resource_uri": "/*",
+        // class_name: "Restful*Ctrl" by default, the '*' represents the table name.
+        // This option can contain namespaces.
+        "class_name": "Restful*Ctrl",
+        // filters: an array of filter names.
+        "filters": [],
+        // db_client: the database client used by the controller.
+        "db_client": {
+            "name": "",
+            "is_fast": false
+        },
+        // directory: The directory where the controller source files are stored.
+        "directory": "controllers"
+    }
 }

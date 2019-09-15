@@ -434,7 +434,8 @@ void HttpAppFrameworkImpl::onConnection(const trantor::TcpConnectionPtr &conn)
               << " num=" << _connectionNum.load();
     if (conn->connected())
     {
-        if (_connectionNum.fetch_add(1) >= _maxConnectionNum)
+        if (_connectionNum.fetch_add(1, std::memory_order_relaxed) >=
+            _maxConnectionNum)
         {
             LOG_ERROR << "too much connections!force close!";
             conn->forceClose();
@@ -474,7 +475,7 @@ void HttpAppFrameworkImpl::onConnection(const trantor::TcpConnectionPtr &conn)
             // disconnected before the SSL handshake.
             return;
         }
-        _connectionNum--;
+        _connectionNum.fetch_sub(1, std::memory_order_relaxed);
         if (_maxConnectionNumPerIP > 0)
         {
             std::lock_guard<std::mutex> lock(mtx);

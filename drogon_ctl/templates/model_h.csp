@@ -86,8 +86,10 @@ auto cols=@@.get<std::vector<ColumnInfo>>("columns");
     PrimaryKeyType getPrimaryKey() const; 
 <%c++}%>
     explicit [[className]](const Row &r) noexcept;
+    explicit [[className]](const Json::Value &pJson);
     [[className]]() = default;
     
+    void updateByJson(const Json::Value &pJson);
 <%c++
     for(const auto &col:cols)
     {

@@ -14,6 +14,8 @@
 
 #include "create_controller.h"
 #include "cmd.h"
+#include <drogon/DrTemplateBase.h>
+#include <drogon/utils/Utilities.h>
 #include <iostream>
 #include <fstream>
 #include <regex>
@@ -24,7 +26,7 @@ void create_controller::handleCommand(std::vector<std::string> &parameters)
 {
     // std::cout<<"create!"<<std::endl;
     ControllerType type = Simple;
-    for (auto iter = parameters.begin(); iter != parameters.end(); iter++)
+    for (auto iter = parameters.begin(); iter != parameters.end(); ++iter)
     {
         if ((*iter)[0] == '-')
         {
@@ -45,6 +47,12 @@ void create_controller::handleCommand(std::vector<std::string> &parameters)
                 parameters.erase(iter);
                 break;
             }
+            else if (*iter == "-r" || *iter == "--restful")
+            {
+                type = Restful;
+                parameters.erase(iter);
+                break;
+            }
             else
             {
                 std::cout << ARGS_ERROR_STR << std::endl;
@@ -52,7 +60,34 @@ void create_controller::handleCommand(std::vector<std::string> &parameters)
             }
         }
     }
-    createController(parameters, type);
+    if (type != Restful)
+        createController(parameters, type);
+    else
+    {
+        std::string resource;
+        for (auto iter = parameters.begin(); iter != parameters.end(); ++iter)
+        {
+            if ((*iter).find("--resource=") == 0)
+            {
+                resource = (*iter).substr(strlen("--resource="));
+                parameters.erase(iter);
+                break;
+            }
+            if ((*iter)[0] == '-')
+            {
+                std::cerr << "Error parameter for '" << (*iter) << "'"
+                          << std::endl;
+                exit(1);
+            }
+        }
+        if (parameters.size() > 1)
+        {
+            std::cerr << "Too many parameters" << std::endl;
+            exit(1);
+        }
+        auto className = parameters[0];
+        createARestfulController(className, resource);
+    }
 }
 
 void create_controller::newSimpleControllerHeaderFile(
@@ -295,7 +330,7 @@ void create_controller::newHttpControllerSourceFile(
 void create_controller::createController(std::vector<std::string> &httpClasses,
                                          ControllerType type)
 {
-    for (auto iter = httpClasses.begin(); iter != httpClasses.end(); iter++)
+    for (auto iter = httpClasses.begin(); iter != httpClasses.end(); ++iter)
     {
         if ((*iter)[0] == '-')
         {
@@ -362,4 +397,75 @@ void create_controller::createController(const std::string &className,
         newWebsockControllerHeaderFile(oHeadFile, className);
         newWebsockControllerSourceFile(oSourceFile, className, ctlName);
     }
+}
+
+void create_controller::createARestfulController(const std::string &className,
+                                                 const std::string &resource)
+{
+    std::regex regex("::");
+    std::string ctlName =
+        std::regex_replace(className, regex, std::string("_"));
+
+    std::string headFileName = ctlName + ".h";
+    std::string sourceFilename = ctlName + ".cc";
+    {
+        std::ifstream iHeadFile(headFileName.c_str(), std::ifstream::in);
+        std::ifstream iSourceFile(sourceFilename.c_str(), std::ifstream::in);
+
+        if (iHeadFile || iSourceFile)
+        {
+            std::cout << "The file you want to create already exists, "
+                         "overwrite it(y/n)?"
+                      << std::endl;
+            auto in = getchar();
+            (void)getchar();  // get the return key
+            if (in != 'Y' && in != 'y')
+            {
+                std::cout << "Abort!" << std::endl;
+                exit(0);
+            }
+        }
+    }
+    std::ofstream oHeadFile(headFileName.c_str(), std::ofstream::out);
+    std::ofstream oSourceFile(sourceFilename.c_str(), std::ofstream::out);
+    if (!oHeadFile || !oSourceFile)
+    {
+        perror("");
+        exit(1);
+    }
+    auto v = utils::splitString(className, "::");
+    drogon::DrTemplateData data;
+    data.insert("className", v[v.size() - 1]);
+    v.pop_back();
+    data.insert("namespaceVector", v);
+    data.insert("resource", resource);
+    data.insert("fileName", ctlName);
+    if (resource.empty())
+    {
+        data.insert("ctlCommand",
+                    std::string("drogon_ctl create controller -r ") +
+                        className);
+    }
+    else
+    {
+        data.insert("ctlCommand",
+                    std::string("drogon_ctl create controller -r ") +
+                        className + " --resource=" + resource);
+    }
+    try
+    {
+        auto templ = DrTemplateBase::newTemplate("restful_controller_h.csp");
+        oHeadFile << templ->genText(data);
+        templ = DrTemplateBase::newTemplate("restful_controller_cc.csp");
+        oSourceFile << templ->genText(data);
+    }
+    catch (const std::exception &err)
+    {
+        std::cerr << err.what() << std::endl;
+        exit(1);
+    }
+    std::cout << "create a http restful API controller:" << className
+              << std::endl;
+    std::cout << "file name: " << ctlName << ".h and " << ctlName << ".cc"
+              << std::endl;
 }

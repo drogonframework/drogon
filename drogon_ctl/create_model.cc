@@ -68,7 +68,8 @@ std::string nameTransform(const std::string &origName, bool isType)
 void create_model::createModelClassFromPG(const std::string &path,
                                           const DbClientPtr &client,
                                           const std::string &tableName,
-                                          const std::string &schema)
+                                          const std::string &schema,
+                                          const Json::Value &restfulApiConfig)
 {
     auto className = nameTransform(tableName, true);
     HttpViewData data;
@@ -288,10 +289,12 @@ void create_model::createModelClassFromPG(const std::string &path,
     headerFile << templ->genText(data);
     templ = DrTemplateBase::newTemplate("model_cc.csp");
     sourceFile << templ->genText(data);
+    createRestfulAPIController(data, restfulApiConfig);
 }
 void create_model::createModelFromPG(const std::string &path,
                                      const DbClientPtr &client,
-                                     const std::string &schema)
+                                     const std::string &schema,
+                                     const Json::Value &restfulApiConfig)
 {
     *client << "SELECT a.oid,"
                "a.relname AS name,"
@@ -310,7 +313,8 @@ void create_model::createModelFromPG(const std::string &path,
             if (!isNull)
             {
                 std::cout << "table name:" << tableName << std::endl;
-                createModelClassFromPG(path, client, tableName, schema);
+                createModelClassFromPG(
+                    path, client, tableName, schema, restfulApiConfig);
             }
         } >>
         [](const DrogonDbException &e) {
@@ -624,6 +628,7 @@ void create_model::createModel(const std::string &path,
 {
     auto dbType = config.get("rdbms", "no dbms").asString();
     std::transform(dbType.begin(), dbType.end(), dbType.begin(), tolower);
+    auto restfulApiConfig = config["restful_api_controllers"];
     if (dbType == "postgresql")
     {
 #if USE_POSTGRESQL
@@ -672,14 +677,15 @@ void create_model::createModel(const std::string &path,
         }
         auto tables = config["tables"];
         if (!tables || tables.size() == 0)
-            createModelFromPG(path, client, schema);
+            createModelFromPG(path, client, schema, restfulApiConfig);
         else
         {
             for (int i = 0; i < (int)tables.size(); i++)
             {
                 auto tableName = tables[i].asString();
                 std::cout << "table name:" << tableName << std::endl;
-                createModelClassFromPG(path, client, tableName, schema);
+                createModelClassFromPG(
+                    path, client, tableName, schema, restfulApiConfig);
             }
         }
 #else
@@ -855,4 +861,118 @@ void create_model::handleCommand(std::vector<std::string> &parameters)
     {
         createModel(path);
     }
+}
+
+void create_model::createRestfulAPIController(
+    const DrTemplateData &tableInfo,
+    const Json::Value &restfulApiConfig)
+{
+    if (restfulApiConfig.isNull())
+        return;
+    if (!restfulApiConfig.get("enabled", false).asBool())
+    {
+        return;
+    }
+    auto modelClassName = tableInfo.get<std::string>("className");
+    std::regex regex("\\*");
+    auto resource = std::regex_replace(
+        restfulApiConfig.get("resource_uri", "/*").asString(),
+        regex,
+        modelClassName);
+    std::transform(resource.begin(), resource.end(), resource.begin(), tolower);
+    auto ctrlClassName =
+        std::regex_replace(restfulApiConfig.get("class_name", "/*").asString(),
+                           regex,
+                           modelClassName);
+    std::regex regex1("::");
+    std::string ctlName =
+        std::regex_replace(ctrlClassName, regex1, std::string("_"));
+    auto v = utils::splitString(ctrlClassName, "::");
+
+    drogon::DrTemplateData data;
+    data.insert("className", v[v.size() - 1]);
+    v.pop_back();
+    data.insert("namespaceVector", v);
+    data.insert("resource", resource);
+    data.insert("fileName", ctlName);
+    data.insert("isCreatedForDatabase", true);
+    data.insert("tableName", tableInfo.get<std::string>("tableName"));
+    data.insert("tableInfo", tableInfo);
+    auto filters = restfulApiConfig["filters"];
+    if (filters.isNull() || filters.empty() || !filters.isArray())
+    {
+        data.insert("filters", "");
+    }
+    else
+    {
+        std::string filtersStr;
+        for (auto &filterName : filters)
+        {
+            filtersStr += ",\"";
+            filtersStr.append(filterName.asString());
+            filtersStr += '"';
+        }
+        data.insert("filters", filtersStr);
+    }
+    auto dbClientConfig = restfulApiConfig["db_client"];
+    if (dbClientConfig.isNull() || dbClientConfig.empty())
+    {
+        data.insertAsString("dbClientName", "");
+        data.insert("isFastDbClient", false);
+    }
+    else
+    {
+        auto clientName = dbClientConfig.get("name", "").asString();
+        auto isFast = dbClientConfig.get("is_fast", false).asBool();
+        data.insertAsString("dbClientName", clientName);
+        data.insert("isFastDbClient", isFast);
+    }
+    auto dir = restfulApiConfig.get("directory", "controllers").asString();
+    if (dir[dir.length() - 1] != '/')
+    {
+        dir += '/';
+    }
+    std::string headFileName = dir + ctlName + ".h";
+    std::string sourceFilename = dir + ctlName + ".cc";
+    {
+        std::ifstream iHeadFile(headFileName.c_str(), std::ifstream::in);
+        std::ifstream iSourceFile(sourceFilename.c_str(), std::ifstream::in);
+
+        if (iHeadFile || iSourceFile)
+        {
+            std::cout << "The file you want to create already exists, "
+                         "overwrite it(y/n)?"
+                      << std::endl;
+            auto in = getchar();
+            (void)getchar();  // get the return key
+            if (in != 'Y' && in != 'y')
+            {
+                std::cout << "Abort!" << std::endl;
+                exit(0);
+            }
+        }
+    }
+    std::ofstream oHeadFile(headFileName.c_str(), std::ofstream::out);
+    std::ofstream oSourceFile(sourceFilename.c_str(), std::ofstream::out);
+    if (!oHeadFile || !oSourceFile)
+    {
+        perror("");
+        exit(1);
+    }
+    try
+    {
+        auto templ = DrTemplateBase::newTemplate("restful_controller_h.csp");
+        oHeadFile << templ->genText(data);
+        templ = DrTemplateBase::newTemplate("restful_controller_cc.csp");
+        oSourceFile << templ->genText(data);
+    }
+    catch (const std::exception &err)
+    {
+        std::cerr << err.what() << std::endl;
+        exit(1);
+    }
+    std::cout << "create a http restful API controller:" << ctrlClassName
+              << std::endl;
+    std::cout << "file name: " << ctlName << ".h and " << ctlName << ".cc"
+              << std::endl;
 }

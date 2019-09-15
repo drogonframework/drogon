@@ -15,6 +15,7 @@
 #pragma once
 
 #include <drogon/config.h>
+#include <drogon/DrTemplateBase.h>
 #include <json/json.h>
 #include <drogon/orm/DbClient.h>
 using namespace drogon::orm;
@@ -58,10 +59,12 @@ class create_model : public DrObject<create_model>, public CommandHandler
     void createModelClassFromPG(const std::string &path,
                                 const DbClientPtr &client,
                                 const std::string &tableName,
-                                const std::string &schema);
+                                const std::string &schema,
+                                const Json::Value &restfulApiConfig);
     void createModelFromPG(const std::string &path,
                            const DbClientPtr &client,
-                           const std::string &schema);
+                           const std::string &schema,
+                           const Json::Value &restfulApiConfig);
 #endif
 #if USE_MYSQL
     void createModelClassFromMysql(const std::string &path,
@@ -77,6 +80,8 @@ class create_model : public DrObject<create_model>, public CommandHandler
     void createModelFromSqlite3(const std::string &path,
                                 const DbClientPtr &client);
 #endif
+    void createRestfulAPIController(const DrTemplateData &tableInfo,
+                                    const Json::Value &restfulApiConfig);
     std::string _dbname;
 };
 }  // namespace drogon_ctl

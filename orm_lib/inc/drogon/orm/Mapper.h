@@ -400,6 +400,37 @@ class Mapper
      */
     std::future<size_t> deleteFutureBy(const Criteria &criteria) noexcept;
 
+    /**
+     * @brief Delete the record that matches the given primary key.
+     *
+     * @param key The primary key.
+     * @return size_t The number of deleted records (1 or 0).
+     */
+    size_t deleteByPrimaryKey(const TraitsPKType &key) noexcept(false);
+
+    /**
+     * @brief Asynchronously delete the record that matches the given primary
+     * key.
+     *
+     * @param key The primary key.
+     * @param rcb is called with the number of deleted records.
+     * @param ecb is called when an error occurs.
+     */
+    void deleteByPrimaryKey(const TraitsPKType &key,
+                            const CountCallback &rcb,
+                            const ExceptionCallback &ecb) noexcept;
+
+    /**
+     * @brief Delete the record that matches the given primary key
+     * asynchronously.
+     *
+     * @param key The primary key.
+     * @return std::future<size_t> The future object with which user can get the
+     * number of deleted records
+     */
+    std::future<size_t> deleteFutureByPrimaryKey(
+        const TraitsPKType &key) noexcept;
+
   private:
     DbClientPtr _client;
     size_t _limit = 0;
@@ -1500,6 +1531,72 @@ inline std::string Mapper<T>::replaceSqlPlaceHolder(
     {
         return sqlStr;
     }
+}
+
+template <typename T>
+inline size_t Mapper<T>::deleteByPrimaryKey(
+    const typename Mapper<T>::TraitsPKType &key) noexcept(false)
+{
+    static_assert(!std::is_same<typename T::PrimaryKeyType, void>::value,
+                  "No primary key in the table!");
+    // return findOne(Criteria(T::primaryKeyName, key));
+    std::string sql = "delete from ";
+    sql += T::tableName;
+    makePrimaryKeyCriteria(sql);
+    sql = replaceSqlPlaceHolder(sql, "$?");
+    clear();
+    Result r(nullptr);
+    {
+        auto binder = *_client << std::move(sql);
+        outputPrimeryKeyToBinder(key, binder);
+        binder << Mode::Blocking;
+        binder >> [&r](const Result &result) { r = result; };
+        binder.exec();  // exec may be throw exception;
+    }
+    return r.affectedRows();
+}
+
+template <typename T>
+inline void Mapper<T>::deleteByPrimaryKey(
+    const typename Mapper<T>::TraitsPKType &key,
+    const CountCallback &rcb,
+    const ExceptionCallback &ecb) noexcept
+{
+    static_assert(!std::is_same<typename T::PrimaryKeyType, void>::value,
+                  "No primary key in the table!");
+    // findOne(Criteria(T::primaryKeyName, key), rcb, ecb);
+    std::string sql = "delete from ";
+    sql += T::tableName;
+    makePrimaryKeyCriteria(sql);
+    sql = replaceSqlPlaceHolder(sql, "$?");
+    clear();
+    auto binder = *_client << std::move(sql);
+    outputPrimeryKeyToBinder(key, binder);
+    binder >>
+        [rcb = std::move(rcb)](const Result &r) { rcb(r.affectedRows()); };
+    binder >> ecb;
+}
+
+template <typename T>
+inline std::future<size_t> Mapper<T>::deleteFutureByPrimaryKey(
+    const typename Mapper<T>::TraitsPKType &key) noexcept
+{
+    static_assert(!std::is_same<typename T::PrimaryKeyType, void>::value,
+                  "No primary key in the table!");
+    // return findFutureOne(Criteria(T::primaryKeyName, key));
+    std::string sql = "delete from ";
+    sql += T::tableName;
+    makePrimaryKeyCriteria(sql);
+    sql = replaceSqlPlaceHolder(sql, "$?");
+    clear();
+    auto binder = *_client << std::move(sql);
+    outputPrimeryKeyToBinder(key, binder);
+
+    std::shared_ptr<std::promise<T>> prom = std::make_shared<std::promise<T>>();
+    binder >> [prom](const Result &r) { prom->set_value(r.affectedRows()); };
+    binder >> [prom](const std::exception_ptr &e) { prom->set_exception(e); };
+    binder.exec();
+    return prom->get_future();
 }
 
 }  // namespace orm

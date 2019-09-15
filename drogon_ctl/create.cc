@@ -31,6 +31,8 @@ std::string create::detail()
            "create HttpController source files\n\n"
            "drogon_ctl create controller -w <[namespace::]class_name> //"
            "create WebSocketController source files\n\n"
+           "drogon_ctl create controller -r <[namespace::]class_name> [--resource=...]//"
+           "create restful controller source files\n\n"
            "drogon_ctl create filter <[namespace::]class_name> //"
            "create a filter named class_name\n\n"
            "drogon_ctl create plugin <[namespace::]class_name> //"
