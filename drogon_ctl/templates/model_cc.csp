@@ -138,7 +138,7 @@ const std::string &[[className]]::getColumnName(size_t index) noexcept(false)
     %>
 }
 
-[[className]]::[[className]](const Json::Value &pJson)
+[[className]]::[[className]](const Json::Value &pJson) noexcept(false)
 {
 <%c++
     for(auto col:cols)
@@ -232,7 +232,7 @@ const std::string &[[className]]::getColumnName(size_t index) noexcept(false)
     }
     %>
 }
-void [[className]]::updateByJson(const Json::Value &pJson)
+void [[className]]::updateByJson(const Json::Value &pJson) noexcept(false)
 {
 <%c++
     for(size_t i=0;i<cols.size();i++)

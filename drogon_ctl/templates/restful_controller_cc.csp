@@ -184,24 +184,38 @@ void [[className]]::create(const HttpRequestPtr &req,
         callback(resp);
         return;
     }
-    auto dbClientPtr = drogon::app().get{%(@@.get<bool>("isFastDbClient")?"Fast":"")%}DbClient();
-    auto callbackPtr =
-        std::make_shared<std::function<void(const HttpResponsePtr &)>>(
-            std::move(callback));
-    drogon::orm::Mapper<{%modelName%}> mapper(dbClientPtr);
-    {%modelName%} object(*jsonPtr);
-    mapper.insert(object,
-                  [callbackPtr]({%modelName%} newObject){
-                      (*callbackPtr)(HttpResponse::newHttpJsonResponse(newObject.toJson()));
-                  },
-                  [callbackPtr](const DrogonDbException &e){
-                      LOG_ERROR << e.base().what();
-                      Json::Value ret;
-                      ret["error"] = "database error";
-                      auto resp = HttpResponse::newHttpJsonResponse(ret);
-                      resp->setStatusCode(k500InternalServerError);
-                      (*callbackPtr)(resp);   
-                  });   
+    try 
+    {
+        {%modelName%} object(*jsonPtr);
+        auto dbClientPtr = drogon::app().get{%(@@.get<bool>("isFastDbClient")?"Fast":"")%}DbClient();
+        auto callbackPtr =
+            std::make_shared<std::function<void(const HttpResponsePtr &)>>(
+                std::move(callback));
+        drogon::orm::Mapper<{%modelName%}> mapper(dbClientPtr);
+        mapper.insert(
+            object,
+            [callbackPtr]({%modelName%} newObject){
+                (*callbackPtr)(HttpResponse::newHttpJsonResponse(newObject.toJson()));
+            },
+            [callbackPtr](const DrogonDbException &e){
+                LOG_ERROR << e.base().what();
+                Json::Value ret;
+                ret["error"] = "database error";
+                auto resp = HttpResponse::newHttpJsonResponse(ret);
+                resp->setStatusCode(k500InternalServerError);
+                (*callbackPtr)(resp);   
+            });
+    }
+    catch(const Json::Exception &e)
+    {
+        LOG_ERROR << e.what();
+        Json::Value ret;
+        ret["error"]="Json format error.";
+        auto resp= HttpResponse::newHttpJsonResponse(ret);
+        resp->setStatusCode(k400BadRequest);
+        callback(resp);
+        return;        
+    }   
 <%c++
 }
 %>
@@ -225,7 +239,20 @@ void [[className]]::updateOne(const HttpRequestPtr &req,
         return;
     }
     {%modelName%} object;
-    object.updateByJson(*jsonPtr);
+    try
+    {
+        object.updateByJson(*jsonPtr);
+    }
+    catch(const Json::Exception &e)
+    {
+        LOG_ERROR << e.what();
+        Json::Value ret;
+        ret["error"]="Json format error.";
+        auto resp= HttpResponse::newHttpJsonResponse(ret);
+        resp->setStatusCode(k400BadRequest);
+        callback(resp);
+        return;        
+    }
     if(object.getPrimaryKey() != id)
     {
         Json::Value ret;
