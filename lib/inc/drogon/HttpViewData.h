@@ -39,13 +39,13 @@ class HttpViewData
         auto it = _viewData.find(key);
         if (it != _viewData.end())
         {
-            try
+            if (typeid(T) == it->second.type())
             {
                 return *(any_cast<T>(&(it->second)));
             }
-            catch (std::exception &e)
+            else
             {
-                LOG_ERROR << e.what();
+                LOG_ERROR << "Bad type";
             }
         }
         return nullVal;

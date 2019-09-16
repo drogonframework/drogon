@@ -51,7 +51,8 @@ target_include_directories(
   ${PROJECT_NAME}
   PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/lib/inc>
          $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/orm_lib/inc>
-         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}>)
+         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}>
+         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/trantor>)
 
 # set the include list for dynamic view compiling
 list(APPEND INCLUDE_DIRS_FOR_DYNAMIC_VIEW
