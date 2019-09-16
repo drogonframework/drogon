@@ -24,7 +24,7 @@ using namespace drogon::orm;
 
 namespace drogon_model
 {
-namespace sqlite3
+namespace sqlite3 
 {
 class Groups
 {
@@ -50,128 +50,121 @@ class Groups
     const static std::string primaryKeyName;
     typedef uint64_t PrimaryKeyType;
     const PrimaryKeyType &getPrimaryKey() const;
-    explicit Groups(const Row &r) noexcept;
-    Groups() = default;
 
+    /**
+     * @brief constructor
+     * @param r One row of records in the SQL query result.
+     * @param indexOffset Set the offset to -1 to access all columns by column names, 
+     * otherwise access all columns by offsets.
+     * @note If the SQL is not a style of 'select * from table_name ...' (select all 
+     * columns by an asterisk), please set the offset to -1.
+     */
+    explicit Groups(const Row &r, ssize_t indexOffset = 0) noexcept;
+
+    /**
+     * @brief constructor
+     * @param pJson The json object to construct a new instance.
+     */
+    explicit Groups(const Json::Value &pJson) noexcept(false);
+
+    Groups() = default;
+    
+    void updateByJson(const Json::Value &pJson) noexcept(false);
     /**  For column group_id  */
-    /// Get the value of the column group_id, returns the default value if the
-    /// column is null
+    ///Get the value of the column group_id, returns the default value if the column is null
     const uint64_t &getValueOfGroupId() const noexcept;
-    /// Return a shared_ptr object pointing to the column const value, or an
-    /// empty shared_ptr object if the column is null
+    ///Return a shared_ptr object pointing to the column const value, or an empty shared_ptr object if the column is null
     const std::shared_ptr<uint64_t> &getGroupId() const noexcept;
 
     /**  For column group_name  */
-    /// Get the value of the column group_name, returns the default value if the
-    /// column is null
+    ///Get the value of the column group_name, returns the default value if the column is null
     const std::string &getValueOfGroupName() const noexcept;
-    /// Return a shared_ptr object pointing to the column const value, or an
-    /// empty shared_ptr object if the column is null
+    ///Return a shared_ptr object pointing to the column const value, or an empty shared_ptr object if the column is null
     const std::shared_ptr<std::string> &getGroupName() const noexcept;
-    /// Set the value of the column group_name
+    ///Set the value of the column group_name
     void setGroupName(const std::string &pGroupName) noexcept;
     void setGroupName(std::string &&pGroupName) noexcept;
 
     /**  For column creater_id  */
-    /// Get the value of the column creater_id, returns the default value if the
-    /// column is null
+    ///Get the value of the column creater_id, returns the default value if the column is null
     const uint64_t &getValueOfCreaterId() const noexcept;
-    /// Return a shared_ptr object pointing to the column const value, or an
-    /// empty shared_ptr object if the column is null
+    ///Return a shared_ptr object pointing to the column const value, or an empty shared_ptr object if the column is null
     const std::shared_ptr<uint64_t> &getCreaterId() const noexcept;
-    /// Set the value of the column creater_id
+    ///Set the value of the column creater_id
     void setCreaterId(const uint64_t &pCreaterId) noexcept;
 
     /**  For column create_time  */
-    /// Get the value of the column create_time, returns the default value if
-    /// the column is null
+    ///Get the value of the column create_time, returns the default value if the column is null
     const std::string &getValueOfCreateTime() const noexcept;
-    /// Return a shared_ptr object pointing to the column const value, or an
-    /// empty shared_ptr object if the column is null
+    ///Return a shared_ptr object pointing to the column const value, or an empty shared_ptr object if the column is null
     const std::shared_ptr<std::string> &getCreateTime() const noexcept;
-    /// Set the value of the column create_time
+    ///Set the value of the column create_time
     void setCreateTime(const std::string &pCreateTime) noexcept;
     void setCreateTime(std::string &&pCreateTime) noexcept;
 
     /**  For column inviting  */
-    /// Get the value of the column inviting, returns the default value if the
-    /// column is null
+    ///Get the value of the column inviting, returns the default value if the column is null
     const uint64_t &getValueOfInviting() const noexcept;
-    /// Return a shared_ptr object pointing to the column const value, or an
-    /// empty shared_ptr object if the column is null
+    ///Return a shared_ptr object pointing to the column const value, or an empty shared_ptr object if the column is null
     const std::shared_ptr<uint64_t> &getInviting() const noexcept;
-    /// Set the value of the column inviting
+    ///Set the value of the column inviting
     void setInviting(const uint64_t &pInviting) noexcept;
 
     /**  For column inviting_user_id  */
-    /// Get the value of the column inviting_user_id, returns the default value
-    /// if the column is null
+    ///Get the value of the column inviting_user_id, returns the default value if the column is null
     const uint64_t &getValueOfInvitingUserId() const noexcept;
-    /// Return a shared_ptr object pointing to the column const value, or an
-    /// empty shared_ptr object if the column is null
+    ///Return a shared_ptr object pointing to the column const value, or an empty shared_ptr object if the column is null
     const std::shared_ptr<uint64_t> &getInvitingUserId() const noexcept;
-    /// Set the value of the column inviting_user_id
+    ///Set the value of the column inviting_user_id
     void setInvitingUserId(const uint64_t &pInvitingUserId) noexcept;
 
     /**  For column avatar_id  */
-    /// Get the value of the column avatar_id, returns the default value if the
-    /// column is null
+    ///Get the value of the column avatar_id, returns the default value if the column is null
     const std::string &getValueOfAvatarId() const noexcept;
-    /// Return a shared_ptr object pointing to the column const value, or an
-    /// empty shared_ptr object if the column is null
+    ///Return a shared_ptr object pointing to the column const value, or an empty shared_ptr object if the column is null
     const std::shared_ptr<std::string> &getAvatarId() const noexcept;
-    /// Set the value of the column avatar_id
+    ///Set the value of the column avatar_id
     void setAvatarId(const std::string &pAvatarId) noexcept;
     void setAvatarId(std::string &&pAvatarId) noexcept;
 
     /**  For column uuu  */
-    /// Get the value of the column uuu, returns the default value if the column
-    /// is null
+    ///Get the value of the column uuu, returns the default value if the column is null
     const double &getValueOfUuu() const noexcept;
-    /// Return a shared_ptr object pointing to the column const value, or an
-    /// empty shared_ptr object if the column is null
+    ///Return a shared_ptr object pointing to the column const value, or an empty shared_ptr object if the column is null
     const std::shared_ptr<double> &getUuu() const noexcept;
-    /// Set the value of the column uuu
+    ///Set the value of the column uuu
     void setUuu(const double &pUuu) noexcept;
 
     /**  For column text  */
-    /// Get the value of the column text, returns the default value if the
-    /// column is null
+    ///Get the value of the column text, returns the default value if the column is null
     const std::string &getValueOfText() const noexcept;
-    /// Return a shared_ptr object pointing to the column const value, or an
-    /// empty shared_ptr object if the column is null
+    ///Return a shared_ptr object pointing to the column const value, or an empty shared_ptr object if the column is null
     const std::shared_ptr<std::string> &getText() const noexcept;
-    /// Set the value of the column text
+    ///Set the value of the column text
     void setText(const std::string &pText) noexcept;
     void setText(std::string &&pText) noexcept;
 
     /**  For column avatar  */
-    /// Get the value of the column avatar, returns the default value if the
-    /// column is null
+    ///Get the value of the column avatar, returns the default value if the column is null
     const std::vector<char> &getValueOfAvatar() const noexcept;
-    /// Return the column value by std::string with binary data
+    ///Return the column value by std::string with binary data
     std::string getValueOfAvatarAsString() const noexcept;
-    /// Return a shared_ptr object pointing to the column const value, or an
-    /// empty shared_ptr object if the column is null
+    ///Return a shared_ptr object pointing to the column const value, or an empty shared_ptr object if the column is null
     const std::shared_ptr<std::vector<char>> &getAvatar() const noexcept;
-    /// Set the value of the column avatar
+    ///Set the value of the column avatar
     void setAvatar(const std::vector<char> &pAvatar) noexcept;
     void setAvatar(const std::string &pAvatar) noexcept;
 
     /**  For column is_default  */
-    /// Get the value of the column is_default, returns the default value if the
-    /// column is null
+    ///Get the value of the column is_default, returns the default value if the column is null
     const bool &getValueOfIsDefault() const noexcept;
-    /// Return a shared_ptr object pointing to the column const value, or an
-    /// empty shared_ptr object if the column is null
+    ///Return a shared_ptr object pointing to the column const value, or an empty shared_ptr object if the column is null
     const std::shared_ptr<bool> &getIsDefault() const noexcept;
-    /// Set the value of the column is_default
+    ///Set the value of the column is_default
     void setIsDefault(const bool &pIsDefault) noexcept;
 
-    static size_t getColumnNumber() noexcept
-    {
-        return 11;
-    }
+
+    static size_t getColumnNumber() noexcept {  return 11;  }
     static const std::string &getColumnName(size_t index) noexcept(false);
 
     Json::Value toJson() const;
@@ -182,7 +175,7 @@ class Groups
     void outputArgs(drogon::orm::internal::SqlBinder &binder) const;
     const std::vector<std::string> updateColumns() const;
     void updateArgs(drogon::orm::internal::SqlBinder &binder) const;
-    /// For mysql or sqlite3
+    ///For mysql or sqlite3
     void updateId(const uint64_t id);
     std::shared_ptr<uint64_t> _groupId;
     std::shared_ptr<std::string> _groupName;
@@ -206,7 +199,7 @@ class Groups
         const bool _notNull;
     };
     static const std::vector<MetaData> _metaData;
-    bool _dirtyFlag[11] = {false};
+    bool _dirtyFlag[11]={ false };
 };
-}  // namespace sqlite3
-}  // namespace drogon_model
+} // namespace sqlite3
+} // namespace drogon_model
