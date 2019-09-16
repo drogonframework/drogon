@@ -24,7 +24,7 @@ void ApiTest::get(const HttpRequestPtr &req,
 {
     HttpViewData data;
     data.insert("title", std::string("ApiTest::get"));
-    std::map<std::string, std::string> para;
+    std::unordered_map<std::string, std::string> para;
     para["p1"] = std::to_string(p1);
     para["p2"] = p2;
     data.insert("parameters", para);
@@ -41,7 +41,7 @@ void ApiTest::your_method_name(
     LOG_WARN << req->matchedPathPatternData();
     HttpViewData data;
     data.insert("title", std::string("ApiTest::get"));
-    std::map<std::string, std::string> para;
+    std::unordered_map<std::string, std::string> para;
     para["p1"] = std::to_string(p1);
     para["p2"] = std::to_string(p2);
     para["p3"] = HttpViewData::htmlTranslate(string_view(
