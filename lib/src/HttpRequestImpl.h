@@ -194,7 +194,7 @@ class HttpRequestImpl : public HttpRequest
     {
         if (!_query.empty())
             return _query;
-        if (_method == Post)
+        if (_method == Post || _method == Put)
         {
             if (_cacheFilePtr)
                 return _cacheFilePtr->getStringView();
