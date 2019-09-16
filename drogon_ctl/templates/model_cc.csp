@@ -74,7 +74,7 @@ const std::string &[[className]]::getColumnName(size_t index) noexcept(false)
     assert(index < _metaData.size());
     return _metaData[index]._colName;
 }
-[[className]]::[[className]](const Row &r, ssize_t indexOffset) noexcept
+[[className]]::[[className]](const Row &r, const ssize_t indexOffset) noexcept
 {
     if(indexOffset < 0)
     {
@@ -141,7 +141,8 @@ const std::string &[[className]]::getColumnName(size_t index) noexcept(false)
     }
     else
     {
-        if({%cols.size()%}+indexOffset > r.size())
+        size_t offset = (size_t)indexOffset;
+        if(offset + {%cols.size()%} > r.size())
         {
             LOG_FATAL << "Invalid SQL result for this model";
             return;
@@ -154,7 +155,7 @@ const std::string &[[className]]::getColumnName(size_t index) noexcept(false)
         if(col._colType.empty())
             continue;
 %>
-        index = {%i%} + (size_t)indexOffset;
+        index = offset + {%i%};
         if(!r[index].isNull())
         {
 <%c++

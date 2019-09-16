@@ -94,7 +94,7 @@ auto cols=@@.get<std::vector<ColumnInfo>>("columns");
      * @note If the SQL is not a style of 'select * from table_name ...' (select all 
      * columns by an asterisk), please set the offset to -1.
      */
-    explicit [[className]](const Row &r, ssize_t indexOffset = 0) noexcept;
+    explicit [[className]](const Row &r, const ssize_t indexOffset = 0) noexcept;
 
     /**
      * @brief constructor
