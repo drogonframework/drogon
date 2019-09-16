@@ -178,7 +178,7 @@ void [[className]]::create(const HttpRequestPtr &req,
     if(!jsonPtr)
     {
         Json::Value ret;
-        ret["error"]="No json object is found in the request.";
+        ret["error"]="No json object is found in the request";
         auto resp= HttpResponse::newHttpJsonResponse(ret);
         resp->setStatusCode(k400BadRequest);
         callback(resp);
@@ -210,7 +210,7 @@ void [[className]]::create(const HttpRequestPtr &req,
     {
         LOG_ERROR << e.what();
         Json::Value ret;
-        ret["error"]="Json format error.";
+        ret["error"]="Field type error";
         auto resp= HttpResponse::newHttpJsonResponse(ret);
         resp->setStatusCode(k400BadRequest);
         callback(resp);
@@ -232,7 +232,7 @@ void [[className]]::updateOne(const HttpRequestPtr &req,
     if(!jsonPtr)
     {
         Json::Value ret;
-        ret["error"]="No json object is found in the request.";
+        ret["error"]="No json object is found in the request";
         auto resp= HttpResponse::newHttpJsonResponse(ret);
         resp->setStatusCode(k400BadRequest);
         callback(resp);
@@ -247,7 +247,7 @@ void [[className]]::updateOne(const HttpRequestPtr &req,
     {
         LOG_ERROR << e.what();
         Json::Value ret;
-        ret["error"]="Json format error.";
+        ret["error"]="Field type error";
         auto resp= HttpResponse::newHttpJsonResponse(ret);
         resp->setStatusCode(k400BadRequest);
         callback(resp);
@@ -256,7 +256,7 @@ void [[className]]::updateOne(const HttpRequestPtr &req,
     if(object.getPrimaryKey() != id)
     {
         Json::Value ret;
-        ret["error"]="Bad primary key.";
+        ret["error"]="Bad primary key";
         auto resp= HttpResponse::newHttpJsonResponse(ret);
         resp->setStatusCode(k400BadRequest);
         callback(resp);
@@ -347,7 +347,7 @@ void [[className]]::deleteOne(const HttpRequestPtr &req,
             else if(count == 0)
             {
                 Json::Value ret;
-                ret["error"] = "No resources deleted.";
+                ret["error"] = "No resources deleted";
                 auto resp = HttpResponse::newHttpJsonResponse(ret);
                 resp->setStatusCode(k404NotFound);
                 (*callbackPtr)(resp);
@@ -356,7 +356,7 @@ void [[className]]::deleteOne(const HttpRequestPtr &req,
             {
                 LOG_FATAL << "Delete more than one records: " << count;
                 Json::Value ret;
-                ret["error"] = "Database error.";
+                ret["error"] = "Database error";
                 auto resp = HttpResponse::newHttpJsonResponse(ret);
                 resp->setStatusCode(k500InternalServerError);
                 (*callbackPtr)(resp);
