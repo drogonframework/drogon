@@ -97,44 +97,40 @@ void create_controller::newSimpleControllerHeaderFile(
     file << "#pragma once\n";
     file << "#include <drogon/HttpSimpleController.h>\n";
     file << "using namespace drogon;\n";
-    std::string indent = "";
     std::string class_name = className;
     std::string namepace_path = "/";
     auto pos = class_name.find("::");
+    size_t namespaceCount = 0;
     while (pos != std::string::npos)
     {
+        ++namespaceCount;
         auto namespaceName = class_name.substr(0, pos);
         class_name = class_name.substr(pos + 2);
-        file << indent << "namespace " << namespaceName << "\n";
+        file << "namespace " << namespaceName << "\n";
         namepace_path.append(namespaceName).append("/");
-        file << indent << "{\n";
-        indent.append("    ");
+        file << "{\n";
         pos = class_name.find("::");
     }
-    file << indent << "class " << class_name
-         << ":public drogon::HttpSimpleController<" << class_name << ">\n";
-    file << indent << "{\n";
-    file << indent << "public:\n";
-    file << indent
-         << "    virtual void asyncHandleHttpRequest(const HttpRequestPtr& "
+    file << "class " << class_name << ":public drogon::HttpSimpleController<"
+         << class_name << ">\n";
+    file << "{\n";
+    file << "  public:\n";
+    file << "    virtual void asyncHandleHttpRequest(const HttpRequestPtr& "
             "req, std::function<void (const HttpResponsePtr &)> &&callback) "
             "override;\n";
 
-    file << indent << "    PATH_LIST_BEGIN\n";
-    file << indent << "    //list path definitions here;\n";
-    file << indent
-         << "    "
+    file << "    PATH_LIST_BEGIN\n";
+    file << "    //list path definitions here;\n";
+    file << "    "
             "//PATH_ADD(\"/"
             "path\",\"filter1\",\"filter2\",HttpMethod1,HttpMethod2...);\n";
-    file << indent << "    PATH_LIST_END\n";
-    file << indent << "};\n";
-    if (indent == "")
-        return;
+    file << "    PATH_LIST_END\n";
+    file << "};\n";
     do
     {
-        indent.resize(indent.length() - 4);
-        file << indent << "}\n";
-    } while (indent != "");
+        --namespaceCount;
+        file << "}\n";
+    } while (namespaceCount > 0);
 }
 void create_controller::newSimpleControllerSourceFile(
     std::ofstream &file,
@@ -165,52 +161,44 @@ void create_controller::newWebsockControllerHeaderFile(
     file << "#pragma once\n";
     file << "#include <drogon/WebSocketController.h>\n";
     file << "using namespace drogon;\n";
-    std::string indent = "";
     std::string class_name = className;
     std::string namepace_path = "/";
     auto pos = class_name.find("::");
+    size_t namespaceCount = 0;
     while (pos != std::string::npos)
     {
+        ++namespaceCount;
         auto namespaceName = class_name.substr(0, pos);
         class_name = class_name.substr(pos + 2);
-        file << indent << "namespace " << namespaceName << "\n";
+        file << "namespace " << namespaceName << "\n";
         namepace_path.append(namespaceName).append("/");
-        file << indent << "{\n";
-        indent.append("    ");
+        file << "{\n";
         pos = class_name.find("::");
     }
-    file << indent << "class " << class_name
-         << ":public drogon::WebSocketController<" << class_name << ">\n";
-    file << indent << "{\n";
-    file << indent << "public:\n";
+    file << "class " << class_name << ":public drogon::WebSocketController<"
+         << class_name << ">\n";
+    file << "{\n";
+    file << "  public:\n";
     file
-        << indent
         << "    virtual void handleNewMessage(const WebSocketConnectionPtr&,\n";
-    file << indent << "                                  std::string &&,\n";
-    file << indent
-         << "                                  const WebSocketMessageType &) "
+    file << "                                  std::string &&,\n";
+    file << "                                  const WebSocketMessageType &) "
             "override;\n";
-    file << indent
-         << "    virtual void handleNewConnection(const HttpRequestPtr &,\n";
-    file << indent
-         << "                                     const "
+    file << "    virtual void handleNewConnection(const HttpRequestPtr &,\n";
+    file << "                                     const "
             "WebSocketConnectionPtr&)override;\n";
-    file << indent
-         << "    virtual void handleConnectionClosed(const "
+    file << "    virtual void handleConnectionClosed(const "
             "WebSocketConnectionPtr&)override;\n";
-    file << indent << "    WS_PATH_LIST_BEGIN\n";
-    file << indent << "    //list path definitions here;\n";
-    file << indent
-         << "    //WS_PATH_ADD(\"/path\",\"filter1\",\"filter2\",...);\n";
-    file << indent << "    WS_PATH_LIST_END\n";
-    file << indent << "};\n";
-    if (indent == "")
-        return;
+    file << "    WS_PATH_LIST_BEGIN\n";
+    file << "    //list path definitions here;\n";
+    file << "    //WS_PATH_ADD(\"/path\",\"filter1\",\"filter2\",...);\n";
+    file << "    WS_PATH_LIST_END\n";
+    file << "};\n";
     do
     {
-        indent.resize(indent.length() - 4);
-        file << indent << "}\n";
-    } while (indent != "");
+        --namespaceCount;
+        file << "}\n";
+    } while (namespaceCount > 0);
 }
 void create_controller::newWebsockControllerSourceFile(
     std::ofstream &file,
@@ -253,61 +241,53 @@ void create_controller::newHttpControllerHeaderFile(
     file << "#pragma once\n";
     file << "#include <drogon/HttpController.h>\n";
     file << "using namespace drogon;\n";
-    std::string indent = "";
     std::string class_name = className;
     std::string namepace_path = "/";
     auto pos = class_name.find("::");
+    size_t namespaceCount = 0;
     while (pos != std::string::npos)
     {
+        ++namespaceCount;
         auto namespaceName = class_name.substr(0, pos);
         class_name = class_name.substr(pos + 2);
-        file << indent << "namespace " << namespaceName << "\n";
+        file << "namespace " << namespaceName << "\n";
         namepace_path.append(namespaceName).append("/");
-        file << indent << "{\n";
-        indent.append("    ");
+        file << "{\n";
         pos = class_name.find("::");
     }
-    file << indent << "class " << class_name
-         << ":public drogon::HttpController<" << class_name << ">\n";
-    file << indent << "{\n";
-    file << indent << "public:\n";
-    indent.append("    ");
-    file << indent << "METHOD_LIST_BEGIN\n";
-    file << indent
-         << "//use METHOD_ADD to add your custom processing function here;\n";
-    file << indent << "//METHOD_ADD(" << class_name
-         << "::get,\"/get/{2}/{1}\",Get);"
+    file << "class " << class_name << ":public drogon::HttpController<"
+         << class_name << ">\n";
+    file << "{\n";
+    file << "  public:\n";
+    file << "    METHOD_LIST_BEGIN\n";
+    file << "    //use METHOD_ADD to add your custom processing function "
+            "here;\n";
+    file << "    //METHOD_ADD(" << class_name
+         << "::get,\"/{2}/{1}\",Get);"
             "//path is "
-         << namepace_path << class_name << "/get/{arg2}/{arg1}\n";
-    file << indent << "//METHOD_ADD(" << class_name
+         << namepace_path << class_name << "/{arg2}/{arg1}\n";
+    file << "    //METHOD_ADD(" << class_name
          << "::your_method_name,\"/{1}/{2}/list\",Get);"
             "//path is "
          << namepace_path << class_name << "/{arg1}/{arg2}/list\n";
-    file << indent << "//ADD_METHOD_TO(" << class_name
+    file << "    //ADD_METHOD_TO(" << class_name
          << "::your_method_name,\"/absolute/path/{1}/{2}/list\",Get);"
-            "//path is "
-         << namepace_path << "/absolute/path/{arg1}/{arg2}/list\n";
-    file << indent << "\n";
-    file << indent << "METHOD_LIST_END\n";
-    file << indent
-         << "//your declaration of processing function maybe like this:\n";
-    file << indent
-         << "//void get(const HttpRequestPtr& req,"
+            "//path is /absolute/path/{arg1}/{arg2}/list\n";
+    file << "\n";
+    file << "    METHOD_LIST_END\n";
+    file << "    // your declaration of processing function maybe like this:\n";
+    file << "    // void get(const HttpRequestPtr& req,"
             "std::function<void (const HttpResponsePtr &)> &&callback,int "
             "p1,std::string p2);\n";
-    file << indent
-         << "//void your_method_name(const HttpRequestPtr& req,"
+    file << "    // void your_method_name(const HttpRequestPtr& req,"
             "std::function<void (const HttpResponsePtr &)> &&callback,double "
             "p1,int p2) const;\n";
-    indent.resize(indent.length() - 4);
-    file << indent << "};\n";
-    if (indent == "")
-        return;
+    file << "};\n";
     do
     {
-        indent.resize(indent.length() - 4);
-        file << indent << "}\n";
-    } while (indent != "");
+        --namespaceCount;
+        file << "}\n";
+    } while (namespaceCount > 0);
 }
 void create_controller::newHttpControllerSourceFile(
     std::ofstream &file,
