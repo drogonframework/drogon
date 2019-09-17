@@ -200,7 +200,9 @@ void [[className]]::create(const HttpRequestPtr &req,
     }
     try 
     {
-        {%modelName%} object(*jsonPtr);
+        {%modelName%} object = (_masquerading? 
+                                                                {%modelName%}(*jsonPtr, _masqueradingVector) : 
+                                                                {%modelName%}(*jsonPtr));
         auto dbClientPtr = getDbClient();
         auto callbackPtr =
             std::make_shared<std::function<void(const HttpResponsePtr &)>>(
@@ -263,7 +265,14 @@ void [[className]]::updateOne(const HttpRequestPtr &req,
     {%modelName%} object;
     try
     {
-        object.updateByJson(*jsonPtr);
+        if(_masquerading)
+        {
+            object.updateByMasqueradedJson(*jsonPtr, _masqueradingVector);
+        }
+        else
+        {
+            object.updateByJson(*jsonPtr);
+        }
     }
     catch(const Json::Exception &e)
     {

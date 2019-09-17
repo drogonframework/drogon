@@ -152,7 +152,7 @@ if(resource.empty())
     {
         _masquerading = false;
     }
-  private:
+  protected:
     const std::string _dbClientName = "[[dbClientName]]";
     bool _masquerading = true;
     /**

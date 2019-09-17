@@ -102,9 +102,18 @@ auto cols=@@.get<std::vector<ColumnInfo>>("columns");
      */
     explicit [[className]](const Json::Value &pJson) noexcept(false);
 
+    /**
+     * @brief constructor
+     * @param pJson The json object to construct a new instance.
+     * @param pMasqueradingVector The aliases of table columns.
+     */
+     [[className]](const Json::Value &pJson, const std::vector<std::string> &pMasqueradingVector) noexcept(false);
+
     [[className]]() = default;
     
     void updateByJson(const Json::Value &pJson) noexcept(false);
+    void updateByMasqueradedJson(const Json::Value &pJson, 
+                                                                          const std::vector<std::string> &pMasqueradingVector) noexcept(false);
 <%c++
     for(const auto &col:cols)
     {
@@ -142,7 +151,7 @@ auto cols=@@.get<std::vector<ColumnInfo>>("columns");
     static const std::string &getColumnName(size_t index) noexcept(false);
 
     Json::Value toJson() const;
-    Json::Value toMasqueradedJson(const std::vector<std::string> &) const;
+    Json::Value toMasqueradedJson(const std::vector<std::string> &pMasqueradingVector) const;
 
   private:
     friend Mapper<[[className]]>;
