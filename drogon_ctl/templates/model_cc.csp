@@ -644,19 +644,19 @@ Json::Value [[className]]::toMasqueradedJson(
         {
             if(get{%col._colTypeName%}())
             {
-        <%c++if(col._colDatabaseType=="date"){%>
+<%c++if(col._colDatabaseType=="date"){%>
                 ret[pMasqueradingVector[{%i%}]]=get{%col._colTypeName%}()->toDbStringLocal();
-        <%c++}else if(col._colDatabaseType.find("timestamp")!=std::string::npos||col._colDatabaseType.find("datetime")!=std::string::npos){%>
+<%c++}else if(col._colDatabaseType.find("timestamp")!=std::string::npos||col._colDatabaseType.find("datetime")!=std::string::npos){%>
                 ret[pMasqueradingVector[{%i%}]]=get{%col._colTypeName%}()->toDbStringLocal();
-        <%c++}else if(col._colDatabaseType=="bytea"||col._colDatabaseType.find("blob")!=std::string::npos){%>
+<%c++}else if(col._colDatabaseType=="bytea"||col._colDatabaseType.find("blob")!=std::string::npos){%>
                 ret[pMasqueradingVector[{%i%}]]=drogon::utils::base64Encode((const unsigned char *)get{%col._colTypeName%}()->data(),get{%col._colTypeName%}()->size());
-        <%c++}else if(col._colType=="int64_t"){%>
+<%c++}else if(col._colType=="int64_t"){%>
                 ret[pMasqueradingVector[{%i%}]]=(Json::Int64)getValueOf{%col._colTypeName%}();
-        <%c++}else if(col._colType=="uint64_t"){%>
+<%c++}else if(col._colType=="uint64_t"){%>
                 ret[pMasqueradingVector[{%i%}]]=(Json::UInt64)getValueOf{%col._colTypeName%}();
-        <%c++}else{%>
+<%c++}else{%>
                 ret[pMasqueradingVector[{%i%}]]=getValueOf{%col._colTypeName%}();
-        <%c++}%>
+<%c++}%>
             }
             else
             {
