@@ -43,16 +43,23 @@ void [[className]]::getOne(const HttpRequestPtr &req,
      {%indentStr%}         {%modelName%}::PrimaryKeyType &&id)
 {
 
-    auto dbClientPtr = drogon::app().get{%(@@.get<bool>("isFastDbClient")?"Fast":"")%}DbClient(_dbClientName);
+    auto dbClientPtr = getDbClient();
     auto callbackPtr =
         std::make_shared<std::function<void(const HttpResponsePtr &)>>(
             std::move(callback));
     drogon::orm::Mapper<{%modelName%}> mapper(dbClientPtr);
     mapper.findByPrimaryKey(
         id,
-        [callbackPtr]({%modelName%} r) {
-            auto resp = HttpResponse::newHttpJsonResponse(r.toJson());
-            (*callbackPtr)(resp);
+        [callbackPtr, this]({%modelName%} r) {
+            if(_masquerading)
+            {
+                (*callbackPtr)(HttpResponse::newHttpJsonResponse(
+                    r.toMasqueradedJson(_masqueradingVector)));
+            }
+            else
+            {
+                (*callbackPtr)(HttpResponse::newHttpJsonResponse(r.toJson()));
+            }
         },
         [callbackPtr](const DrogonDbException &e) {
             const drogon::orm::UnexpectedRows *s=dynamic_cast<const drogon::orm::UnexpectedRows *>(&e.base());
@@ -87,7 +94,7 @@ void [[className]]::get(const HttpRequestPtr &req,
 <%c++if(isForDb)
 {
 %>
-    auto dbClientPtr = drogon::app().get{%(@@.get<bool>("isFastDbClient")?"Fast":"")%}DbClient(_dbClientName);
+    auto dbClientPtr = getDbClient();
     drogon::orm::Mapper<{%modelName%}> mapper(dbClientPtr);
     auto &parameters = req->parameters();
     auto iter = parameters.find("sort");
@@ -147,12 +154,19 @@ void [[className]]::get(const HttpRequestPtr &req,
     auto callbackPtr =
         std::make_shared<std::function<void(const HttpResponsePtr &)>>(
             std::move(callback));
-    mapper.findAll([callbackPtr](const std::vector<{%modelName%}> &v) {
+    mapper.findAll([callbackPtr, this](const std::vector<{%modelName%}> &v) {
             Json::Value ret;
             ret.resize(0);
             for (auto &obj : v)
             {
-                ret.append(obj.toJson());
+                if(_masquerading)
+                {
+                    ret.append(obj.toMasqueradedJson(_masqueradingVector));
+                }
+                else
+                {
+                    ret.append(obj.toJson());
+                }
             }
             (*callbackPtr)(HttpResponse::newHttpJsonResponse(ret));
         },
@@ -187,15 +201,23 @@ void [[className]]::create(const HttpRequestPtr &req,
     try 
     {
         {%modelName%} object(*jsonPtr);
-        auto dbClientPtr = drogon::app().get{%(@@.get<bool>("isFastDbClient")?"Fast":"")%}DbClient(_dbClientName);
+        auto dbClientPtr = getDbClient();
         auto callbackPtr =
             std::make_shared<std::function<void(const HttpResponsePtr &)>>(
                 std::move(callback));
         drogon::orm::Mapper<{%modelName%}> mapper(dbClientPtr);
         mapper.insert(
             object,
-            [callbackPtr]({%modelName%} newObject){
-                (*callbackPtr)(HttpResponse::newHttpJsonResponse(newObject.toJson()));
+            [callbackPtr, this]({%modelName%} newObject){
+                if(_masquerading)
+                {
+                    (*callbackPtr)(HttpResponse::newHttpJsonResponse(
+                        newObject.toMasqueradedJson(_masqueradingVector)));
+                }
+                else
+                {
+                    (*callbackPtr)(HttpResponse::newHttpJsonResponse(newObject.toJson()));
+                }
             },
             [callbackPtr](const DrogonDbException &e){
                 LOG_ERROR << e.base().what();
@@ -263,7 +285,7 @@ void [[className]]::updateOne(const HttpRequestPtr &req,
         return;
     }
 
-    auto dbClientPtr = drogon::app().get{%(@@.get<bool>("isFastDbClient")?"Fast":"")%}DbClient(_dbClientName);
+    auto dbClientPtr = getDbClient();
     auto callbackPtr =
         std::make_shared<std::function<void(const HttpResponsePtr &)>>(
             std::move(callback));
@@ -330,7 +352,7 @@ void [[className]]::deleteOne(const HttpRequestPtr &req,
      {%indentStr%}            {%modelName%}::PrimaryKeyType &&id)
 {
 
-    auto dbClientPtr = drogon::app().get{%(@@.get<bool>("isFastDbClient")?"Fast":"")%}DbClient(_dbClientName);
+    auto dbClientPtr = getDbClient();
     auto callbackPtr =
         std::make_shared<std::function<void(const HttpResponsePtr &)>>(
             std::move(callback));

@@ -69,16 +69,20 @@ class create_model : public DrObject<create_model>, public CommandHandler
 #if USE_MYSQL
     void createModelClassFromMysql(const std::string &path,
                                    const DbClientPtr &client,
-                                   const std::string &tableName);
+                                   const std::string &tableName,
+                                   const Json::Value &restfulApiConfig);
     void createModelFromMysql(const std::string &path,
-                              const DbClientPtr &client);
+                              const DbClientPtr &client,
+                              const Json::Value &restfulApiConfig);
 #endif
 #if USE_SQLITE3
     void createModelClassFromSqlite3(const std::string &path,
                                      const DbClientPtr &client,
-                                     const std::string &tableName);
+                                     const std::string &tableName,
+                                     const Json::Value &restfulApiConfig);
     void createModelFromSqlite3(const std::string &path,
-                                const DbClientPtr &client);
+                                const DbClientPtr &client,
+                                const Json::Value &restfulApiConfig);
 #endif
     void createRestfulAPIController(const DrTemplateData &tableInfo,
                                     const Json::Value &restfulApiConfig);

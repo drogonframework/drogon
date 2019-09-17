@@ -1,3 +1,6 @@
+<%inc#include "create_model.h"
+using namespace drogon_ctl;
+%>
 /**
  *
  *  [[fileName]].h
@@ -135,13 +138,53 @@ if(resource.empty())
                    std::function<void(const HttpResponsePtr &)> &&callback,
                    {%modelName%}::PrimaryKeyType &&id);
 <%c++}
+%>
+    orm::DbClientPtr getDbClient() 
+    {
+        return drogon::app().get{%(@@.get<bool>("isFastDbClient")?"Fast":"")%}DbClient(_dbClientName);
+    }
+    void enableMasquerading(const std::vector<std::string> &pMasqueradingVector)
+    {
+        _masquerading = true;
+        _masqueradingVector = pMasqueradingVector;
+    }
+    void disableMasquerading()
+    {
+        _masquerading = false;
+    }
+  private:
+    const std::string _dbClientName = "[[dbClientName]]";
+    bool _masquerading = true;
+    /**
+     * The items in the vector are aliases of column names in the table.
+     * if one item is set to an empty string, the related column is not sent to clients.
+     */
+    std::vector<std::string> _masqueradingVector={
+<%c++ 
+tableInfo = @@.get<DrTemplateData>("tableInfo");
+const auto &cols=tableInfo.get<std::vector<ColumnInfo>>("columns");
+for(size_t i=0; i<cols.size(); i++)
+{
+    auto &col = cols[i];
+    if(i < (cols.size()-1))
+    {
+%>
+          "{%col._colName%}", // the alias for the {%col._colName%} column.
+<%c++
+    }else{
+%>
+          "{%col._colName%}"  // the alias for the {%col._colName%} column.
+<%c++
+    }
+}
+%>
+    };
+<%c++
 }else{%>
     void deleteOne(const HttpRequestPtr &req,
                    std::function<void(const HttpResponsePtr &)> &&callback,
                    std::string &&id);
 <%c++}%>
-  private:
-    const std::string _dbClientName = "[[dbClientName]]";
 };
 <%c++ for(size_t i=0;i<namespaceVector.size();++i)
 {

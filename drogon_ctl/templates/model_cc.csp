@@ -12,7 +12,7 @@ using namespace drogon_ctl;
 #include <drogon/utils/Utilities.h>
 #include <string>
 <%c++
-    auto cols=@@.get<std::vector<ColumnInfo>>("columns");
+    const auto &cols=@@.get<std::vector<ColumnInfo>>("columns");
     auto className=@@.get<std::string>("className");
 %>
 
@@ -605,6 +605,69 @@ void [[className]]::updateArgs(drogon::orm::internal::SqlBinder &binder) const
 Json::Value [[className]]::toJson() const
 {
     Json::Value ret;
+<%c++for(auto col:cols){%>
+    if(get{%col._colTypeName%}())
+    {
+<%c++if(col._colDatabaseType=="date"){%>
+        ret["{%col._colName%}"]=get{%col._colTypeName%}()->toDbStringLocal();
+<%c++}else if(col._colDatabaseType.find("timestamp")!=std::string::npos||col._colDatabaseType.find("datetime")!=std::string::npos){%>
+        ret["{%col._colName%}"]=get{%col._colTypeName%}()->toDbStringLocal();
+<%c++}else if(col._colDatabaseType=="bytea"||col._colDatabaseType.find("blob")!=std::string::npos){%>
+        ret["{%col._colName%}"]=drogon::utils::base64Encode((const unsigned char *)get{%col._colTypeName%}()->data(),get{%col._colTypeName%}()->size());
+<%c++}else if(col._colType=="int64_t"){%>
+        ret["{%col._colName%}"]=(Json::Int64)getValueOf{%col._colTypeName%}();
+<%c++}else if(col._colType=="uint64_t"){%>
+        ret["{%col._colName%}"]=(Json::UInt64)getValueOf{%col._colTypeName%}();
+<%c++}else{%>
+        ret["{%col._colName%}"]=getValueOf{%col._colTypeName%}();
+<%c++}%>
+    }
+    else
+    {
+        ret["{%col._colName%}"]=Json::Value();
+    }
+<%c++
+}%>
+    return ret;
+}
+
+Json::Value [[className]]::toMasqueradedJson(
+    const std::vector<std::string> &pMasqueradingVector) const
+{
+    Json::Value ret;
+    if(pMasqueradingVector.size() == {%cols.size()%})
+    {
+<%c++for(size_t i = 0; i < cols.size(); i++){
+    auto &col = cols[i];
+    %>
+        if(!pMasqueradingVector[{%i%}].empty())
+        {
+            if(get{%col._colTypeName%}())
+            {
+        <%c++if(col._colDatabaseType=="date"){%>
+                ret[pMasqueradingVector[{%i%}]]=get{%col._colTypeName%}()->toDbStringLocal();
+        <%c++}else if(col._colDatabaseType.find("timestamp")!=std::string::npos||col._colDatabaseType.find("datetime")!=std::string::npos){%>
+                ret[pMasqueradingVector[{%i%}]]=get{%col._colTypeName%}()->toDbStringLocal();
+        <%c++}else if(col._colDatabaseType=="bytea"||col._colDatabaseType.find("blob")!=std::string::npos){%>
+                ret[pMasqueradingVector[{%i%}]]=drogon::utils::base64Encode((const unsigned char *)get{%col._colTypeName%}()->data(),get{%col._colTypeName%}()->size());
+        <%c++}else if(col._colType=="int64_t"){%>
+                ret[pMasqueradingVector[{%i%}]]=(Json::Int64)getValueOf{%col._colTypeName%}();
+        <%c++}else if(col._colType=="uint64_t"){%>
+                ret[pMasqueradingVector[{%i%}]]=(Json::UInt64)getValueOf{%col._colTypeName%}();
+        <%c++}else{%>
+                ret[pMasqueradingVector[{%i%}]]=getValueOf{%col._colTypeName%}();
+        <%c++}%>
+            }
+            else
+            {
+                ret[pMasqueradingVector[{%i%}]]=Json::Value();
+            }
+        }
+<%c++
+}%>
+        return ret;
+    }
+    LOG_ERROR << "Masquerade failed";
 <%c++for(auto col:cols){%>
     if(get{%col._colTypeName%}())
     {

@@ -325,9 +325,11 @@ void create_model::createModelFromPG(const std::string &path,
 #endif
 
 #if USE_MYSQL
-void create_model::createModelClassFromMysql(const std::string &path,
-                                             const DbClientPtr &client,
-                                             const std::string &tableName)
+void create_model::createModelClassFromMysql(
+    const std::string &path,
+    const DbClientPtr &client,
+    const std::string &tableName,
+    const Json::Value &restfulApiConfig)
 {
     auto className = nameTransform(tableName, true);
     HttpViewData data;
@@ -449,16 +451,21 @@ void create_model::createModelClassFromMysql(const std::string &path,
     headerFile << templ->genText(data);
     templ = DrTemplateBase::newTemplate("model_cc.csp");
     sourceFile << templ->genText(data);
+    createRestfulAPIController(data, restfulApiConfig);
 }
 void create_model::createModelFromMysql(const std::string &path,
-                                        const DbClientPtr &client)
+                                        const DbClientPtr &client,
+                                        const Json::Value &restfulApiConfig)
 {
     *client << "show tables" << Mode::Blocking >>
         [&](bool isNull, const std::string &tableName) {
             if (!isNull)
             {
                 std::cout << "table name:" << tableName << std::endl;
-                createModelClassFromMysql(path, client, tableName);
+                createModelClassFromMysql(path,
+                                          client,
+                                          tableName,
+                                          restfulApiConfig);
             }
         } >>
         [](const DrogonDbException &e) {
@@ -468,9 +475,11 @@ void create_model::createModelFromMysql(const std::string &path,
 }
 #endif
 #if USE_SQLITE3
-void create_model::createModelClassFromSqlite3(const std::string &path,
-                                               const DbClientPtr &client,
-                                               const std::string &tableName)
+void create_model::createModelClassFromSqlite3(
+    const std::string &path,
+    const DbClientPtr &client,
+    const std::string &tableName,
+    const Json::Value &restfulApiConfig)
 {
     *client << "SELECT sql FROM sqlite_master WHERE name=? and (type='table' "
                "or type='view');"
@@ -604,7 +613,8 @@ void create_model::createModelClassFromSqlite3(const std::string &path,
         };
 }
 void create_model::createModelFromSqlite3(const std::string &path,
-                                          const DbClientPtr &client)
+                                          const DbClientPtr &client,
+                                          const Json::Value &restfulApiConfig)
 {
     *client << "SELECT name FROM sqlite_master WHERE name!='sqlite_sequence' "
                "and (type='table' or type='view') ORDER BY name;"
@@ -613,7 +623,10 @@ void create_model::createModelFromSqlite3(const std::string &path,
             if (!isNull)
             {
                 std::cout << "table name:" << tableName << std::endl;
-                createModelClassFromSqlite3(path, client, tableName);
+                createModelClassFromSqlite3(path,
+                                            client,
+                                            tableName,
+                                            restfulApiConfig);
             }
         } >>
         [](const DrogonDbException &e) {
@@ -741,14 +754,17 @@ void create_model::createModel(const std::string &path,
         }
         auto tables = config["tables"];
         if (!tables || tables.size() == 0)
-            createModelFromMysql(path, client);
+            createModelFromMysql(path, client, restfulApiConfig);
         else
         {
             for (int i = 0; i < (int)tables.size(); i++)
             {
                 auto tableName = tables[i].asString();
                 std::cout << "table name:" << tableName << std::endl;
-                createModelClassFromMysql(path, client, tableName);
+                createModelClassFromMysql(path,
+                                          client,
+                                          tableName,
+                                          restfulApiConfig);
             }
         }
 #else
@@ -781,14 +797,17 @@ void create_model::createModel(const std::string &path,
         }
         auto tables = config["tables"];
         if (!tables || tables.size() == 0)
-            createModelFromSqlite3(path, client);
+            createModelFromSqlite3(path, client, restfulApiConfig);
         else
         {
             for (int i = 0; i < (int)tables.size(); i++)
             {
                 auto tableName = tables[i].asString();
                 std::cout << "table name:" << tableName << std::endl;
-                createModelClassFromSqlite3(path, client, tableName);
+                createModelClassFromSqlite3(path,
+                                            client,
+                                            tableName,
+                                            restfulApiConfig);
             }
         }
 #else
