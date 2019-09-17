@@ -226,8 +226,8 @@ const std::string &[[className]]::getColumnName(size_t index) noexcept(false)
         if(col._colType.empty())
             continue;
 %>
-        if(!pMasqueradingVector[{%i%}].empty() && pJson.isMember(pMasqueradingVector[{%i%}]))
-        {
+    if(!pMasqueradingVector[{%i%}].empty() && pJson.isMember(pMasqueradingVector[{%i%}]))
+    {
 <%c++
             if(col._colType == "std::string")
             {
@@ -423,7 +423,7 @@ void [[className]]::updateByMasqueradedJson(const Json::Value &pJson,
         if(col._colType.empty())
             continue;
 %>
-    if(pJson.isMember(pMasqueradingVector[{%i%}]))
+    if(!pMasqueradingVector[{%i%}].empty() && pJson.isMember(pMasqueradingVector[{%i%}]))
     {
 <%c++
             if(!col._isAutoVal && !col._isPrimaryKey)

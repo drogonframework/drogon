@@ -200,9 +200,10 @@ void [[className]]::create(const HttpRequestPtr &req,
     }
     try 
     {
-        {%modelName%} object = (_masquerading? 
-                                                                {%modelName%}(*jsonPtr, _masqueradingVector) : 
-                                                                {%modelName%}(*jsonPtr));
+        {%modelName%} object = 
+            (_masquerading? 
+             {%modelName%}(*jsonPtr, _masqueradingVector) : 
+             {%modelName%}(*jsonPtr));
         auto dbClientPtr = getDbClient();
         auto callbackPtr =
             std::make_shared<std::function<void(const HttpResponsePtr &)>>(
