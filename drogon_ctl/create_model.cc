@@ -501,7 +501,7 @@ void create_model::createModelClassFromSqlite3(
                     data["tableName"] = tableName;
                     data["hasPrimaryKey"] = (int)0;
                     data["primaryKeyName"] = "";
-                    data["dbName"] = "sqlite3";
+                    data["dbName"] = std::string("sqlite3");
                     data["rdbms"] = std::string("sqlite3");
                     // std::cout << sql << std::endl;
                     auto columns = utils::splitString(sql, ",");
@@ -598,6 +598,7 @@ void create_model::createModelClassFromSqlite3(
                     headerFile << templ->genText(data);
                     templ = DrTemplateBase::newTemplate("model_cc.csp");
                     sourceFile << templ->genText(data);
+                    createRestfulAPIController(data, restfulApiConfig);
                 }
                 else
                 {
