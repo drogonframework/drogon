@@ -917,12 +917,12 @@ void create_model::createRestfulAPIController(
     auto dbClientConfig = restfulApiConfig["db_client"];
     if (dbClientConfig.isNull() || dbClientConfig.empty())
     {
-        data.insertAsString("dbClientName", "");
+        data.insertAsString("dbClientName", "default");
         data.insert("isFastDbClient", false);
     }
     else
     {
-        auto clientName = dbClientConfig.get("name", "").asString();
+        auto clientName = dbClientConfig.get("name", "default").asString();
         auto isFast = dbClientConfig.get("is_fast", false).asBool();
         data.insertAsString("dbClientName", clientName);
         data.insert("isFastDbClient", isFast);
