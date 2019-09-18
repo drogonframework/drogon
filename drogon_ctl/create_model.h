@@ -53,8 +53,11 @@ class create_model : public DrObject<create_model>, public CommandHandler
     }
 
   protected:
-    void createModel(const std::string &path);
-    void createModel(const std::string &path, const Json::Value &config);
+    void createModel(const std::string &path,
+                     const std::string &singleModelName);
+    void createModel(const std::string &path,
+                     const Json::Value &config,
+                     const std::string &singleModelName);
 #if USE_POSTGRESQL
     void createModelClassFromPG(const std::string &path,
                                 const DbClientPtr &client,
