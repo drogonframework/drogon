@@ -112,8 +112,8 @@ auto cols=@@.get<std::vector<ColumnInfo>>("columns");
     [[className]]() = default;
     
     void updateByJson(const Json::Value &pJson) noexcept(false);
-    void updateByMasqueradedJson(const Json::Value &pJson, 
-                                                                          const std::vector<std::string> &pMasqueradingVector) noexcept(false);
+    void updateByMasqueradedJson(const Json::Value &pJson,
+                                 const std::vector<std::string> &pMasqueradingVector) noexcept(false);
 <%c++
     for(const auto &col:cols)
     {
@@ -180,6 +180,70 @@ auto cols=@@.get<std::vector<ColumnInfo>>("columns");
     };
     static const std::vector<MetaData> _metaData;
     bool _dirtyFlag[{%cols.size()%}]={ false };
+    static const std::string &sqlForFindingByPrimaryKey()
+    {
+<%c++
+auto rdbms=@@.get<std::string>("rdbms");
+if(@@.get<int>("hasPrimaryKey")<=1){
+        if(!@@.get<std::string>("primaryKeyType").empty()){%>
+        const static std::string sql="select * from [[tableName]] where [[primaryKeyName]] = {%(rdbms=="postgresql"?"$1":"?")%}";
+<%c++}else{%>
+        const static std::string sql="";
+<%c++}%>
+<%c++}else{
+        auto pkName=@@.get<std::vector<std::string>>("primaryKeyName");
+%>
+        const static std::string sql="select * from [[tableName]] where <%c++
+        for(size_t i=0;i<pkName.size();i++)
+        {
+            if(rdbms=="postgresql")
+            {
+                $$<<pkName[i]<<" = $"<<i+1;
+            }
+            else
+            {
+                $$<<pkName[i]<<" = ?";
+            }
+            if(i<(pkName.size()-1))
+                $$<<" and ";
+        }
+        $$<<"\";\n";
+    }
+%>
+        return sql;                   
+    }
+
+    static const std::string &sqlForDeletingByPrimaryKey()
+    {
+<%c++
+if(@@.get<int>("hasPrimaryKey")<=1){
+        if(!@@.get<std::string>("primaryKeyType").empty()){%>
+        const static std::string sql="delete from [[tableName]] where [[primaryKeyName]] = {%(rdbms=="postgresql"?"$1":"?")%}";
+<%c++}else{%>
+        const static std::string sql="";
+<%c++}%>
+<%c++}else{
+        auto pkName=@@.get<std::vector<std::string>>("primaryKeyName");
+%>
+        const static std::string sql="delete from [[tableName]] where <%c++
+        for(size_t i=0;i<pkName.size();i++)
+        {
+            if(rdbms=="postgresql")
+            {
+                $$<<pkName[i]<<" = $"<<i+1;
+            }
+            else
+            {
+                $$<<pkName[i]<<" = ?";
+            }
+            if(i<(pkName.size()-1))
+                $$<<" and ";
+        }
+        $$<<"\";\n";
+    }
+%>
+        return sql;                   
+    }
 };
 <%c++
 if(!schema.empty())

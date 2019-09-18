@@ -57,7 +57,7 @@ class Users
      * @note If the SQL is not a style of 'select * from table_name ...' (select
      * all columns by an asterisk), please set the offset to -1.
      */
-    explicit Users(const Row &r, ssize_t indexOffset = 0) noexcept;
+    explicit Users(const Row &r, const ssize_t indexOffset = 0) noexcept;
 
     /**
      * @brief constructor
@@ -65,9 +65,20 @@ class Users
      */
     explicit Users(const Json::Value &pJson) noexcept(false);
 
+    /**
+     * @brief constructor
+     * @param pJson The json object to construct a new instance.
+     * @param pMasqueradingVector The aliases of table columns.
+     */
+    Users(const Json::Value &pJson,
+          const std::vector<std::string> &pMasqueradingVector) noexcept(false);
+
     Users() = default;
 
     void updateByJson(const Json::Value &pJson) noexcept(false);
+    void updateByMasqueradedJson(
+        const Json::Value &pJson,
+        const std::vector<std::string> &pMasqueradingVector) noexcept(false);
     /**  For column user_id  */
     /// Get the value of the column user_id, returns the default value if the
     /// column is null
@@ -170,6 +181,8 @@ class Users
     static const std::string &getColumnName(size_t index) noexcept(false);
 
     Json::Value toJson() const;
+    Json::Value toMasqueradedJson(
+        const std::vector<std::string> &pMasqueradingVector) const;
 
   private:
     friend Mapper<Users>;
@@ -200,6 +213,17 @@ class Users
     };
     static const std::vector<MetaData> _metaData;
     bool _dirtyFlag[9] = {false};
+    static const std::string &sqlForFindingByPrimaryKey()
+    {
+        const static std::string sql = "select * from users where id = $1";
+        return sql;
+    }
+
+    static const std::string &sqlForDeletingByPrimaryKey()
+    {
+        const static std::string sql = "delete from users where id = $1";
+        return sql;
+    }
 };
 }  // namespace postgres
 }  // namespace drogon_model

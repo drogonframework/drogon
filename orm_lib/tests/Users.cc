@@ -40,7 +40,7 @@ const std::string &Users::getColumnName(size_t index) noexcept(false)
     assert(index < _metaData.size());
     return _metaData[index]._colName;
 }
-Users::Users(const Row &r, ssize_t indexOffset) noexcept
+Users::Users(const Row &r, const ssize_t indexOffset) noexcept
 {
     if (indexOffset < 0)
     {
@@ -89,62 +89,127 @@ Users::Users(const Row &r, ssize_t indexOffset) noexcept
     }
     else
     {
-        if (9 + indexOffset > r.size())
+        size_t offset = (size_t)indexOffset;
+        if (offset + 9 > r.size())
         {
             LOG_FATAL << "Invalid SQL result for this model";
             return;
         }
         size_t index;
-        index = 0 + (size_t)indexOffset;
+        index = offset + 0;
         if (!r[index].isNull())
         {
             _userId = std::make_shared<std::string>(r[index].as<std::string>());
         }
-        index = 1 + (size_t)indexOffset;
+        index = offset + 1;
         if (!r[index].isNull())
         {
             _userName =
                 std::make_shared<std::string>(r[index].as<std::string>());
         }
-        index = 2 + (size_t)indexOffset;
+        index = offset + 2;
         if (!r[index].isNull())
         {
             _password =
                 std::make_shared<std::string>(r[index].as<std::string>());
         }
-        index = 3 + (size_t)indexOffset;
+        index = offset + 3;
         if (!r[index].isNull())
         {
             _orgName =
                 std::make_shared<std::string>(r[index].as<std::string>());
         }
-        index = 4 + (size_t)indexOffset;
+        index = offset + 4;
         if (!r[index].isNull())
         {
             _signature =
                 std::make_shared<std::string>(r[index].as<std::string>());
         }
-        index = 5 + (size_t)indexOffset;
+        index = offset + 5;
         if (!r[index].isNull())
         {
             _avatarId =
                 std::make_shared<std::string>(r[index].as<std::string>());
         }
-        index = 6 + (size_t)indexOffset;
+        index = offset + 6;
         if (!r[index].isNull())
         {
             _id = std::make_shared<int32_t>(r[index].as<int32_t>());
         }
-        index = 7 + (size_t)indexOffset;
+        index = offset + 7;
         if (!r[index].isNull())
         {
             _salt = std::make_shared<std::string>(r[index].as<std::string>());
         }
-        index = 8 + (size_t)indexOffset;
+        index = offset + 8;
         if (!r[index].isNull())
         {
             _admin = std::make_shared<bool>(r[index].as<bool>());
         }
+    }
+}
+
+Users::Users(
+    const Json::Value &pJson,
+    const std::vector<std::string> &pMasqueradingVector) noexcept(false)
+{
+    if (pMasqueradingVector.size() != 9)
+    {
+        LOG_ERROR << "Bad masquerading vector";
+        return;
+    }
+    if (!pMasqueradingVector[0].empty() &&
+        pJson.isMember(pMasqueradingVector[0]))
+    {
+        _userId = std::make_shared<std::string>(
+            pJson[pMasqueradingVector[0]].asString());
+    }
+    if (!pMasqueradingVector[1].empty() &&
+        pJson.isMember(pMasqueradingVector[1]))
+    {
+        _userName = std::make_shared<std::string>(
+            pJson[pMasqueradingVector[1]].asString());
+    }
+    if (!pMasqueradingVector[2].empty() &&
+        pJson.isMember(pMasqueradingVector[2]))
+    {
+        _password = std::make_shared<std::string>(
+            pJson[pMasqueradingVector[2]].asString());
+    }
+    if (!pMasqueradingVector[3].empty() &&
+        pJson.isMember(pMasqueradingVector[3]))
+    {
+        _orgName = std::make_shared<std::string>(
+            pJson[pMasqueradingVector[3]].asString());
+    }
+    if (!pMasqueradingVector[4].empty() &&
+        pJson.isMember(pMasqueradingVector[4]))
+    {
+        _signature = std::make_shared<std::string>(
+            pJson[pMasqueradingVector[4]].asString());
+    }
+    if (!pMasqueradingVector[5].empty() &&
+        pJson.isMember(pMasqueradingVector[5]))
+    {
+        _avatarId = std::make_shared<std::string>(
+            pJson[pMasqueradingVector[5]].asString());
+    }
+    if (!pMasqueradingVector[6].empty() &&
+        pJson.isMember(pMasqueradingVector[6]))
+    {
+        _id = std::make_shared<int32_t>(
+            (int32_t)pJson[pMasqueradingVector[6]].asInt64());
+    }
+    if (!pMasqueradingVector[7].empty() &&
+        pJson.isMember(pMasqueradingVector[7]))
+    {
+        _salt = std::make_shared<std::string>(
+            pJson[pMasqueradingVector[7]].asString());
+    }
+    if (!pMasqueradingVector[8].empty() &&
+        pJson.isMember(pMasqueradingVector[8]))
+    {
+        _admin = std::make_shared<bool>(pJson[pMasqueradingVector[8]].asBool());
     }
 }
 
@@ -190,6 +255,79 @@ Users::Users(const Json::Value &pJson) noexcept(false)
         _admin = std::make_shared<bool>(pJson["admin"].asBool());
     }
 }
+
+void Users::updateByMasqueradedJson(
+    const Json::Value &pJson,
+    const std::vector<std::string> &pMasqueradingVector) noexcept(false)
+{
+    if (pMasqueradingVector.size() != 9)
+    {
+        LOG_ERROR << "Bad masquerading vector";
+        return;
+    }
+    if (!pMasqueradingVector[0].empty() &&
+        pJson.isMember(pMasqueradingVector[0]))
+    {
+        _dirtyFlag[0] = true;
+        _userId = std::make_shared<std::string>(
+            pJson[pMasqueradingVector[0]].asString());
+    }
+    if (!pMasqueradingVector[1].empty() &&
+        pJson.isMember(pMasqueradingVector[1]))
+    {
+        _dirtyFlag[1] = true;
+        _userName = std::make_shared<std::string>(
+            pJson[pMasqueradingVector[1]].asString());
+    }
+    if (!pMasqueradingVector[2].empty() &&
+        pJson.isMember(pMasqueradingVector[2]))
+    {
+        _dirtyFlag[2] = true;
+        _password = std::make_shared<std::string>(
+            pJson[pMasqueradingVector[2]].asString());
+    }
+    if (!pMasqueradingVector[3].empty() &&
+        pJson.isMember(pMasqueradingVector[3]))
+    {
+        _dirtyFlag[3] = true;
+        _orgName = std::make_shared<std::string>(
+            pJson[pMasqueradingVector[3]].asString());
+    }
+    if (!pMasqueradingVector[4].empty() &&
+        pJson.isMember(pMasqueradingVector[4]))
+    {
+        _dirtyFlag[4] = true;
+        _signature = std::make_shared<std::string>(
+            pJson[pMasqueradingVector[4]].asString());
+    }
+    if (!pMasqueradingVector[5].empty() &&
+        pJson.isMember(pMasqueradingVector[5]))
+    {
+        _dirtyFlag[5] = true;
+        _avatarId = std::make_shared<std::string>(
+            pJson[pMasqueradingVector[5]].asString());
+    }
+    if (!pMasqueradingVector[6].empty() &&
+        pJson.isMember(pMasqueradingVector[6]))
+    {
+        _id = std::make_shared<int32_t>(
+            (int32_t)pJson[pMasqueradingVector[6]].asInt64());
+    }
+    if (!pMasqueradingVector[7].empty() &&
+        pJson.isMember(pMasqueradingVector[7]))
+    {
+        _dirtyFlag[7] = true;
+        _salt = std::make_shared<std::string>(
+            pJson[pMasqueradingVector[7]].asString());
+    }
+    if (!pMasqueradingVector[8].empty() &&
+        pJson.isMember(pMasqueradingVector[8]))
+    {
+        _dirtyFlag[8] = true;
+        _admin = std::make_shared<bool>(pJson[pMasqueradingVector[8]].asBool());
+    }
+}
+
 void Users::updateByJson(const Json::Value &pJson) noexcept(false)
 {
     if (pJson.isMember("user_id"))
@@ -621,6 +759,189 @@ void Users::updateArgs(drogon::orm::internal::SqlBinder &binder) const
 Json::Value Users::toJson() const
 {
     Json::Value ret;
+    if (getUserId())
+    {
+        ret["user_id"] = getValueOfUserId();
+    }
+    else
+    {
+        ret["user_id"] = Json::Value();
+    }
+    if (getUserName())
+    {
+        ret["user_name"] = getValueOfUserName();
+    }
+    else
+    {
+        ret["user_name"] = Json::Value();
+    }
+    if (getPassword())
+    {
+        ret["password"] = getValueOfPassword();
+    }
+    else
+    {
+        ret["password"] = Json::Value();
+    }
+    if (getOrgName())
+    {
+        ret["org_name"] = getValueOfOrgName();
+    }
+    else
+    {
+        ret["org_name"] = Json::Value();
+    }
+    if (getSignature())
+    {
+        ret["signature"] = getValueOfSignature();
+    }
+    else
+    {
+        ret["signature"] = Json::Value();
+    }
+    if (getAvatarId())
+    {
+        ret["avatar_id"] = getValueOfAvatarId();
+    }
+    else
+    {
+        ret["avatar_id"] = Json::Value();
+    }
+    if (getId())
+    {
+        ret["id"] = getValueOfId();
+    }
+    else
+    {
+        ret["id"] = Json::Value();
+    }
+    if (getSalt())
+    {
+        ret["salt"] = getValueOfSalt();
+    }
+    else
+    {
+        ret["salt"] = Json::Value();
+    }
+    if (getAdmin())
+    {
+        ret["admin"] = getValueOfAdmin();
+    }
+    else
+    {
+        ret["admin"] = Json::Value();
+    }
+    return ret;
+}
+
+Json::Value Users::toMasqueradedJson(
+    const std::vector<std::string> &pMasqueradingVector) const
+{
+    Json::Value ret;
+    if (pMasqueradingVector.size() == 9)
+    {
+        if (!pMasqueradingVector[0].empty())
+        {
+            if (getUserId())
+            {
+                ret[pMasqueradingVector[0]] = getValueOfUserId();
+            }
+            else
+            {
+                ret[pMasqueradingVector[0]] = Json::Value();
+            }
+        }
+        if (!pMasqueradingVector[1].empty())
+        {
+            if (getUserName())
+            {
+                ret[pMasqueradingVector[1]] = getValueOfUserName();
+            }
+            else
+            {
+                ret[pMasqueradingVector[1]] = Json::Value();
+            }
+        }
+        if (!pMasqueradingVector[2].empty())
+        {
+            if (getPassword())
+            {
+                ret[pMasqueradingVector[2]] = getValueOfPassword();
+            }
+            else
+            {
+                ret[pMasqueradingVector[2]] = Json::Value();
+            }
+        }
+        if (!pMasqueradingVector[3].empty())
+        {
+            if (getOrgName())
+            {
+                ret[pMasqueradingVector[3]] = getValueOfOrgName();
+            }
+            else
+            {
+                ret[pMasqueradingVector[3]] = Json::Value();
+            }
+        }
+        if (!pMasqueradingVector[4].empty())
+        {
+            if (getSignature())
+            {
+                ret[pMasqueradingVector[4]] = getValueOfSignature();
+            }
+            else
+            {
+                ret[pMasqueradingVector[4]] = Json::Value();
+            }
+        }
+        if (!pMasqueradingVector[5].empty())
+        {
+            if (getAvatarId())
+            {
+                ret[pMasqueradingVector[5]] = getValueOfAvatarId();
+            }
+            else
+            {
+                ret[pMasqueradingVector[5]] = Json::Value();
+            }
+        }
+        if (!pMasqueradingVector[6].empty())
+        {
+            if (getId())
+            {
+                ret[pMasqueradingVector[6]] = getValueOfId();
+            }
+            else
+            {
+                ret[pMasqueradingVector[6]] = Json::Value();
+            }
+        }
+        if (!pMasqueradingVector[7].empty())
+        {
+            if (getSalt())
+            {
+                ret[pMasqueradingVector[7]] = getValueOfSalt();
+            }
+            else
+            {
+                ret[pMasqueradingVector[7]] = Json::Value();
+            }
+        }
+        if (!pMasqueradingVector[8].empty())
+        {
+            if (getAdmin())
+            {
+                ret[pMasqueradingVector[8]] = getValueOfAdmin();
+            }
+            else
+            {
+                ret[pMasqueradingVector[8]] = Json::Value();
+            }
+        }
+        return ret;
+    }
+    LOG_ERROR << "Masquerade failed";
     if (getUserId())
     {
         ret["user_id"] = getValueOfUserId();

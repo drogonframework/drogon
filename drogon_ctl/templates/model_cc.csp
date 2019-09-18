@@ -408,8 +408,8 @@ const std::string &[[className]]::getColumnName(size_t index) noexcept(false)
     %>
 }
 
-void [[className]]::updateByMasqueradedJson(const Json::Value &pJson, 
-                                                                                                     const std::vector<std::string> &pMasqueradingVector) noexcept(false)
+void [[className]]::updateByMasqueradedJson(const Json::Value &pJson,
+                                            const std::vector<std::string> &pMasqueradingVector) noexcept(false)
 {
     if(pMasqueradingVector.size() != {%cols.size()%})
     {

@@ -570,10 +570,10 @@ void HttpResponseImpl::clear()
 
 void HttpResponseImpl::parseJson() const
 {
-    // parse json data in reponse
+    static std::once_flag once;
+    static Json::CharReaderBuilder builder;
+    std::call_once(once, []() { builder["collectComments"] = false; });
     _jsonPtr = std::make_shared<Json::Value>();
-    Json::CharReaderBuilder builder;
-    builder["collectComments"] = false;
     JSONCPP_STRING errs;
     std::unique_ptr<Json::CharReader> reader(builder.newCharReader());
     if (_bodyPtr)

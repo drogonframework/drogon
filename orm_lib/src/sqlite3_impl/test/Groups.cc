@@ -44,7 +44,7 @@ const std::string &Groups::getColumnName(size_t index) noexcept(false)
     assert(index < _metaData.size());
     return _metaData[index]._colName;
 }
-Groups::Groups(const Row &r, ssize_t indexOffset) noexcept
+Groups::Groups(const Row &r, const ssize_t indexOffset) noexcept
 {
     if (indexOffset < 0)
     {
@@ -102,72 +102,151 @@ Groups::Groups(const Row &r, ssize_t indexOffset) noexcept
     }
     else
     {
-        if (11 + indexOffset > r.size())
+        size_t offset = (size_t)indexOffset;
+        if (offset + 11 > r.size())
         {
             LOG_FATAL << "Invalid SQL result for this model";
             return;
         }
         size_t index;
-        index = 0 + (size_t)indexOffset;
+        index = offset + 0;
         if (!r[index].isNull())
         {
             _groupId = std::make_shared<uint64_t>(r[index].as<uint64_t>());
         }
-        index = 1 + (size_t)indexOffset;
+        index = offset + 1;
         if (!r[index].isNull())
         {
             _groupName =
                 std::make_shared<std::string>(r[index].as<std::string>());
         }
-        index = 2 + (size_t)indexOffset;
+        index = offset + 2;
         if (!r[index].isNull())
         {
             _createrId = std::make_shared<uint64_t>(r[index].as<uint64_t>());
         }
-        index = 3 + (size_t)indexOffset;
+        index = offset + 3;
         if (!r[index].isNull())
         {
             _createTime =
                 std::make_shared<std::string>(r[index].as<std::string>());
         }
-        index = 4 + (size_t)indexOffset;
+        index = offset + 4;
         if (!r[index].isNull())
         {
             _inviting = std::make_shared<uint64_t>(r[index].as<uint64_t>());
         }
-        index = 5 + (size_t)indexOffset;
+        index = offset + 5;
         if (!r[index].isNull())
         {
             _invitingUserId =
                 std::make_shared<uint64_t>(r[index].as<uint64_t>());
         }
-        index = 6 + (size_t)indexOffset;
+        index = offset + 6;
         if (!r[index].isNull())
         {
             _avatarId =
                 std::make_shared<std::string>(r[index].as<std::string>());
         }
-        index = 7 + (size_t)indexOffset;
+        index = offset + 7;
         if (!r[index].isNull())
         {
             _uuu = std::make_shared<double>(r[index].as<double>());
         }
-        index = 8 + (size_t)indexOffset;
+        index = offset + 8;
         if (!r[index].isNull())
         {
             _text = std::make_shared<std::string>(r[index].as<std::string>());
         }
-        index = 9 + (size_t)indexOffset;
+        index = offset + 9;
         if (!r[index].isNull())
         {
             _avatar = std::make_shared<std::vector<char>>(
                 r[index].as<std::vector<char>>());
         }
-        index = 10 + (size_t)indexOffset;
+        index = offset + 10;
         if (!r[index].isNull())
         {
             _isDefault = std::make_shared<bool>(r[index].as<bool>());
         }
+    }
+}
+
+Groups::Groups(
+    const Json::Value &pJson,
+    const std::vector<std::string> &pMasqueradingVector) noexcept(false)
+{
+    if (pMasqueradingVector.size() != 11)
+    {
+        LOG_ERROR << "Bad masquerading vector";
+        return;
+    }
+    if (!pMasqueradingVector[0].empty() &&
+        pJson.isMember(pMasqueradingVector[0]))
+    {
+        _groupId = std::make_shared<uint64_t>(
+            (uint64_t)pJson[pMasqueradingVector[0]].asUInt64());
+    }
+    if (!pMasqueradingVector[1].empty() &&
+        pJson.isMember(pMasqueradingVector[1]))
+    {
+        _groupName = std::make_shared<std::string>(
+            pJson[pMasqueradingVector[1]].asString());
+    }
+    if (!pMasqueradingVector[2].empty() &&
+        pJson.isMember(pMasqueradingVector[2]))
+    {
+        _createrId = std::make_shared<uint64_t>(
+            (uint64_t)pJson[pMasqueradingVector[2]].asUInt64());
+    }
+    if (!pMasqueradingVector[3].empty() &&
+        pJson.isMember(pMasqueradingVector[3]))
+    {
+        _createTime = std::make_shared<std::string>(
+            pJson[pMasqueradingVector[3]].asString());
+    }
+    if (!pMasqueradingVector[4].empty() &&
+        pJson.isMember(pMasqueradingVector[4]))
+    {
+        _inviting = std::make_shared<uint64_t>(
+            (uint64_t)pJson[pMasqueradingVector[4]].asUInt64());
+    }
+    if (!pMasqueradingVector[5].empty() &&
+        pJson.isMember(pMasqueradingVector[5]))
+    {
+        _invitingUserId = std::make_shared<uint64_t>(
+            (uint64_t)pJson[pMasqueradingVector[5]].asUInt64());
+    }
+    if (!pMasqueradingVector[6].empty() &&
+        pJson.isMember(pMasqueradingVector[6]))
+    {
+        _avatarId = std::make_shared<std::string>(
+            pJson[pMasqueradingVector[6]].asString());
+    }
+    if (!pMasqueradingVector[7].empty() &&
+        pJson.isMember(pMasqueradingVector[7]))
+    {
+        _uuu =
+            std::make_shared<double>(pJson[pMasqueradingVector[7]].asDouble());
+    }
+    if (!pMasqueradingVector[8].empty() &&
+        pJson.isMember(pMasqueradingVector[8]))
+    {
+        _text = std::make_shared<std::string>(
+            pJson[pMasqueradingVector[8]].asString());
+    }
+    if (!pMasqueradingVector[9].empty() &&
+        pJson.isMember(pMasqueradingVector[9]))
+    {
+        auto str = pJson[pMasqueradingVector[9]].asString();
+        _avatar = std::make_shared<std::vector<char>>(
+            drogon::utils::base64DecodeToVector(str));
+    }
+    if (!pMasqueradingVector[10].empty() &&
+        pJson.isMember(pMasqueradingVector[10]))
+    {
+        _isDefault =
+            std::make_shared<bool>(pJson[pMasqueradingVector[10]].asBool());
     }
 }
 
@@ -227,6 +306,95 @@ Groups::Groups(const Json::Value &pJson) noexcept(false)
         _isDefault = std::make_shared<bool>(pJson["is_default"].asBool());
     }
 }
+
+void Groups::updateByMasqueradedJson(
+    const Json::Value &pJson,
+    const std::vector<std::string> &pMasqueradingVector) noexcept(false)
+{
+    if (pMasqueradingVector.size() != 11)
+    {
+        LOG_ERROR << "Bad masquerading vector";
+        return;
+    }
+    if (!pMasqueradingVector[0].empty() &&
+        pJson.isMember(pMasqueradingVector[0]))
+    {
+        _groupId = std::make_shared<uint64_t>(
+            (uint64_t)pJson[pMasqueradingVector[0]].asUInt64());
+    }
+    if (!pMasqueradingVector[1].empty() &&
+        pJson.isMember(pMasqueradingVector[1]))
+    {
+        _dirtyFlag[1] = true;
+        _groupName = std::make_shared<std::string>(
+            pJson[pMasqueradingVector[1]].asString());
+    }
+    if (!pMasqueradingVector[2].empty() &&
+        pJson.isMember(pMasqueradingVector[2]))
+    {
+        _dirtyFlag[2] = true;
+        _createrId = std::make_shared<uint64_t>(
+            (uint64_t)pJson[pMasqueradingVector[2]].asUInt64());
+    }
+    if (!pMasqueradingVector[3].empty() &&
+        pJson.isMember(pMasqueradingVector[3]))
+    {
+        _dirtyFlag[3] = true;
+        _createTime = std::make_shared<std::string>(
+            pJson[pMasqueradingVector[3]].asString());
+    }
+    if (!pMasqueradingVector[4].empty() &&
+        pJson.isMember(pMasqueradingVector[4]))
+    {
+        _dirtyFlag[4] = true;
+        _inviting = std::make_shared<uint64_t>(
+            (uint64_t)pJson[pMasqueradingVector[4]].asUInt64());
+    }
+    if (!pMasqueradingVector[5].empty() &&
+        pJson.isMember(pMasqueradingVector[5]))
+    {
+        _dirtyFlag[5] = true;
+        _invitingUserId = std::make_shared<uint64_t>(
+            (uint64_t)pJson[pMasqueradingVector[5]].asUInt64());
+    }
+    if (!pMasqueradingVector[6].empty() &&
+        pJson.isMember(pMasqueradingVector[6]))
+    {
+        _dirtyFlag[6] = true;
+        _avatarId = std::make_shared<std::string>(
+            pJson[pMasqueradingVector[6]].asString());
+    }
+    if (!pMasqueradingVector[7].empty() &&
+        pJson.isMember(pMasqueradingVector[7]))
+    {
+        _dirtyFlag[7] = true;
+        _uuu =
+            std::make_shared<double>(pJson[pMasqueradingVector[7]].asDouble());
+    }
+    if (!pMasqueradingVector[8].empty() &&
+        pJson.isMember(pMasqueradingVector[8]))
+    {
+        _dirtyFlag[8] = true;
+        _text = std::make_shared<std::string>(
+            pJson[pMasqueradingVector[8]].asString());
+    }
+    if (!pMasqueradingVector[9].empty() &&
+        pJson.isMember(pMasqueradingVector[9]))
+    {
+        _dirtyFlag[9] = true;
+        auto str = pJson[pMasqueradingVector[9]].asString();
+        _avatar = std::make_shared<std::vector<char>>(
+            drogon::utils::base64DecodeToVector(str));
+    }
+    if (!pMasqueradingVector[10].empty() &&
+        pJson.isMember(pMasqueradingVector[10]))
+    {
+        _dirtyFlag[10] = true;
+        _isDefault =
+            std::make_shared<bool>(pJson[pMasqueradingVector[10]].asBool());
+    }
+}
+
 void Groups::updateByJson(const Json::Value &pJson) noexcept(false)
 {
     if (pJson.isMember("group_id"))
@@ -749,6 +917,233 @@ void Groups::updateArgs(drogon::orm::internal::SqlBinder &binder) const
 Json::Value Groups::toJson() const
 {
     Json::Value ret;
+    if (getGroupId())
+    {
+        ret["group_id"] = (Json::UInt64)getValueOfGroupId();
+    }
+    else
+    {
+        ret["group_id"] = Json::Value();
+    }
+    if (getGroupName())
+    {
+        ret["group_name"] = getValueOfGroupName();
+    }
+    else
+    {
+        ret["group_name"] = Json::Value();
+    }
+    if (getCreaterId())
+    {
+        ret["creater_id"] = (Json::UInt64)getValueOfCreaterId();
+    }
+    else
+    {
+        ret["creater_id"] = Json::Value();
+    }
+    if (getCreateTime())
+    {
+        ret["create_time"] = getValueOfCreateTime();
+    }
+    else
+    {
+        ret["create_time"] = Json::Value();
+    }
+    if (getInviting())
+    {
+        ret["inviting"] = (Json::UInt64)getValueOfInviting();
+    }
+    else
+    {
+        ret["inviting"] = Json::Value();
+    }
+    if (getInvitingUserId())
+    {
+        ret["inviting_user_id"] = (Json::UInt64)getValueOfInvitingUserId();
+    }
+    else
+    {
+        ret["inviting_user_id"] = Json::Value();
+    }
+    if (getAvatarId())
+    {
+        ret["avatar_id"] = getValueOfAvatarId();
+    }
+    else
+    {
+        ret["avatar_id"] = Json::Value();
+    }
+    if (getUuu())
+    {
+        ret["uuu"] = getValueOfUuu();
+    }
+    else
+    {
+        ret["uuu"] = Json::Value();
+    }
+    if (getText())
+    {
+        ret["text"] = getValueOfText();
+    }
+    else
+    {
+        ret["text"] = Json::Value();
+    }
+    if (getAvatar())
+    {
+        ret["avatar"] = drogon::utils::base64Encode(
+            (const unsigned char *)getAvatar()->data(), getAvatar()->size());
+    }
+    else
+    {
+        ret["avatar"] = Json::Value();
+    }
+    if (getIsDefault())
+    {
+        ret["is_default"] = getValueOfIsDefault();
+    }
+    else
+    {
+        ret["is_default"] = Json::Value();
+    }
+    return ret;
+}
+
+Json::Value Groups::toMasqueradedJson(
+    const std::vector<std::string> &pMasqueradingVector) const
+{
+    Json::Value ret;
+    if (pMasqueradingVector.size() == 11)
+    {
+        if (!pMasqueradingVector[0].empty())
+        {
+            if (getGroupId())
+            {
+                ret[pMasqueradingVector[0]] = (Json::UInt64)getValueOfGroupId();
+            }
+            else
+            {
+                ret[pMasqueradingVector[0]] = Json::Value();
+            }
+        }
+        if (!pMasqueradingVector[1].empty())
+        {
+            if (getGroupName())
+            {
+                ret[pMasqueradingVector[1]] = getValueOfGroupName();
+            }
+            else
+            {
+                ret[pMasqueradingVector[1]] = Json::Value();
+            }
+        }
+        if (!pMasqueradingVector[2].empty())
+        {
+            if (getCreaterId())
+            {
+                ret[pMasqueradingVector[2]] =
+                    (Json::UInt64)getValueOfCreaterId();
+            }
+            else
+            {
+                ret[pMasqueradingVector[2]] = Json::Value();
+            }
+        }
+        if (!pMasqueradingVector[3].empty())
+        {
+            if (getCreateTime())
+            {
+                ret[pMasqueradingVector[3]] = getValueOfCreateTime();
+            }
+            else
+            {
+                ret[pMasqueradingVector[3]] = Json::Value();
+            }
+        }
+        if (!pMasqueradingVector[4].empty())
+        {
+            if (getInviting())
+            {
+                ret[pMasqueradingVector[4]] =
+                    (Json::UInt64)getValueOfInviting();
+            }
+            else
+            {
+                ret[pMasqueradingVector[4]] = Json::Value();
+            }
+        }
+        if (!pMasqueradingVector[5].empty())
+        {
+            if (getInvitingUserId())
+            {
+                ret[pMasqueradingVector[5]] =
+                    (Json::UInt64)getValueOfInvitingUserId();
+            }
+            else
+            {
+                ret[pMasqueradingVector[5]] = Json::Value();
+            }
+        }
+        if (!pMasqueradingVector[6].empty())
+        {
+            if (getAvatarId())
+            {
+                ret[pMasqueradingVector[6]] = getValueOfAvatarId();
+            }
+            else
+            {
+                ret[pMasqueradingVector[6]] = Json::Value();
+            }
+        }
+        if (!pMasqueradingVector[7].empty())
+        {
+            if (getUuu())
+            {
+                ret[pMasqueradingVector[7]] = getValueOfUuu();
+            }
+            else
+            {
+                ret[pMasqueradingVector[7]] = Json::Value();
+            }
+        }
+        if (!pMasqueradingVector[8].empty())
+        {
+            if (getText())
+            {
+                ret[pMasqueradingVector[8]] = getValueOfText();
+            }
+            else
+            {
+                ret[pMasqueradingVector[8]] = Json::Value();
+            }
+        }
+        if (!pMasqueradingVector[9].empty())
+        {
+            if (getAvatar())
+            {
+                ret[pMasqueradingVector[9]] = drogon::utils::base64Encode(
+                    (const unsigned char *)getAvatar()->data(),
+                    getAvatar()->size());
+            }
+            else
+            {
+                ret[pMasqueradingVector[9]] = Json::Value();
+            }
+        }
+        if (!pMasqueradingVector[10].empty())
+        {
+            if (getIsDefault())
+            {
+                ret[pMasqueradingVector[10]] = getValueOfIsDefault();
+            }
+            else
+            {
+                ret[pMasqueradingVector[10]] = Json::Value();
+            }
+        }
+        return ret;
+    }
+    LOG_ERROR << "Masquerade failed";
     if (getGroupId())
     {
         ret["group_id"] = (Json::UInt64)getValueOfGroupId();

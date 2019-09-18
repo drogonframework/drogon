@@ -59,7 +59,7 @@ class Groups
      * @note If the SQL is not a style of 'select * from table_name ...' (select
      * all columns by an asterisk), please set the offset to -1.
      */
-    explicit Groups(const Row &r, ssize_t indexOffset = 0) noexcept;
+    explicit Groups(const Row &r, const ssize_t indexOffset = 0) noexcept;
 
     /**
      * @brief constructor
@@ -67,9 +67,20 @@ class Groups
      */
     explicit Groups(const Json::Value &pJson) noexcept(false);
 
+    /**
+     * @brief constructor
+     * @param pJson The json object to construct a new instance.
+     * @param pMasqueradingVector The aliases of table columns.
+     */
+    Groups(const Json::Value &pJson,
+           const std::vector<std::string> &pMasqueradingVector) noexcept(false);
+
     Groups() = default;
 
     void updateByJson(const Json::Value &pJson) noexcept(false);
+    void updateByMasqueradedJson(
+        const Json::Value &pJson,
+        const std::vector<std::string> &pMasqueradingVector) noexcept(false);
     /**  For column group_id  */
     /// Get the value of the column group_id, returns the default value if the
     /// column is null
@@ -192,6 +203,8 @@ class Groups
     static const std::string &getColumnName(size_t index) noexcept(false);
 
     Json::Value toJson() const;
+    Json::Value toMasqueradedJson(
+        const std::vector<std::string> &pMasqueradingVector) const;
 
   private:
     friend Mapper<Groups>;
@@ -224,6 +237,18 @@ class Groups
     };
     static const std::vector<MetaData> _metaData;
     bool _dirtyFlag[11] = {false};
+    static const std::string &sqlForFindingByPrimaryKey()
+    {
+        const static std::string sql =
+            "select * from GROUPS where group_id = ?";
+        return sql;
+    }
+
+    static const std::string &sqlForDeletingByPrimaryKey()
+    {
+        const static std::string sql = "delete from GROUPS where group_id = ?";
+        return sql;
+    }
 };
 }  // namespace sqlite3
 }  // namespace drogon_model
