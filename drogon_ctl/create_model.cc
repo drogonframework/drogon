@@ -893,6 +893,8 @@ void create_model::createRestfulAPIController(
     {
         return;
     }
+    auto genBaseOnly =
+        restfulApiConfig.get("generate_base_only", false).asBool();
     auto modelClassName = tableInfo.get<std::string>("className");
     std::regex regex("\\*");
     auto resource = std::regex_replace(
@@ -915,7 +917,6 @@ void create_model::createRestfulAPIController(
     data.insert("namespaceVector", v);
     data.insert("resource", resource);
     data.insert("fileName", ctlName);
-    data.insert("isCreatedForDatabase", true);
     data.insert("tableName", tableInfo.get<std::string>("tableName"));
     data.insert("tableInfo", tableInfo);
     auto filters = restfulApiConfig["filters"];
@@ -952,47 +953,102 @@ void create_model::createRestfulAPIController(
     {
         dir += '/';
     }
-    std::string headFileName = dir + ctlName + ".h";
-    std::string sourceFilename = dir + ctlName + ".cc";
     {
-        std::ifstream iHeadFile(headFileName.c_str(), std::ifstream::in);
-        std::ifstream iSourceFile(sourceFilename.c_str(), std::ifstream::in);
-
-        if (iHeadFile || iSourceFile)
+        std::string headFileName = dir + ctlName + "Base.h";
+        std::string sourceFilename = dir + ctlName + "Base.cc";
         {
-            std::cout << "The file you want to create already exists, "
-                         "overwrite it(y/n)?"
-                      << std::endl;
-            auto in = getchar();
-            (void)getchar();  // get the return key
-            if (in != 'Y' && in != 'y')
+            std::ifstream iHeadFile(headFileName.c_str(), std::ifstream::in);
+            std::ifstream iSourceFile(sourceFilename.c_str(),
+                                      std::ifstream::in);
+
+            if (iHeadFile || iSourceFile)
             {
-                std::cout << "Abort!" << std::endl;
-                exit(0);
+                std::cout << "The file you want to create already exists, "
+                             "overwrite it(y/n)?"
+                          << std::endl;
+                auto in = getchar();
+                (void)getchar();  // get the return key
+                if (in != 'Y' && in != 'y')
+                {
+                    std::cout << "Abort!" << std::endl;
+                    exit(0);
+                }
             }
         }
+        std::ofstream oHeadFile(headFileName.c_str(), std::ofstream::out);
+        std::ofstream oSourceFile(sourceFilename.c_str(), std::ofstream::out);
+        if (!oHeadFile || !oSourceFile)
+        {
+            perror("");
+            exit(1);
+        }
+        try
+        {
+            auto templ =
+                DrTemplateBase::newTemplate("restful_controller_base_h.csp");
+            oHeadFile << templ->genText(data);
+            templ =
+                DrTemplateBase::newTemplate("restful_controller_base_cc.csp");
+            oSourceFile << templ->genText(data);
+        }
+        catch (const std::exception &err)
+        {
+            std::cerr << err.what() << std::endl;
+            exit(1);
+        }
+        std::cout << "create a http restful API controller base class:"
+                  << ctrlClassName << "Base" << std::endl;
+        std::cout << "file name: " << headFileName << ", " << sourceFilename
+                  << std::endl;
     }
-    std::ofstream oHeadFile(headFileName.c_str(), std::ofstream::out);
-    std::ofstream oSourceFile(sourceFilename.c_str(), std::ofstream::out);
-    if (!oHeadFile || !oSourceFile)
+    if (!genBaseOnly)
     {
-        perror("");
-        exit(1);
+        std::string headFileName = dir + ctlName + ".h";
+        std::string sourceFilename = dir + ctlName + ".cc";
+        {
+            std::ifstream iHeadFile(headFileName.c_str(), std::ifstream::in);
+            std::ifstream iSourceFile(sourceFilename.c_str(),
+                                      std::ifstream::in);
+
+            if (iHeadFile || iSourceFile)
+            {
+                std::cout << "The file you want to create already exists, "
+                             "overwrite it(y/n)?"
+                          << std::endl;
+                auto in = getchar();
+                (void)getchar();  // get the return key
+                if (in != 'Y' && in != 'y')
+                {
+                    std::cout << "Abort!" << std::endl;
+                    exit(0);
+                }
+            }
+        }
+        std::ofstream oHeadFile(headFileName.c_str(), std::ofstream::out);
+        std::ofstream oSourceFile(sourceFilename.c_str(), std::ofstream::out);
+        if (!oHeadFile || !oSourceFile)
+        {
+            perror("");
+            exit(1);
+        }
+        try
+        {
+            auto templ =
+                DrTemplateBase::newTemplate("restful_controller_custom_h.csp");
+            oHeadFile << templ->genText(data);
+            templ =
+                DrTemplateBase::newTemplate("restful_controller_custom_cc.csp");
+            oSourceFile << templ->genText(data);
+        }
+        catch (const std::exception &err)
+        {
+            std::cerr << err.what() << std::endl;
+            exit(1);
+        }
+
+        std::cout << "create a http restful API controller class: "
+                  << ctrlClassName << std::endl;
+        std::cout << "file name: " << headFileName << ", " << sourceFilename
+                  << std::endl;
     }
-    try
-    {
-        auto templ = DrTemplateBase::newTemplate("restful_controller_h.csp");
-        oHeadFile << templ->genText(data);
-        templ = DrTemplateBase::newTemplate("restful_controller_cc.csp");
-        oSourceFile << templ->genText(data);
-    }
-    catch (const std::exception &err)
-    {
-        std::cerr << err.what() << std::endl;
-        exit(1);
-    }
-    std::cout << "create a http restful API controller:" << ctrlClassName
-              << std::endl;
-    std::cout << "file name: " << ctlName << ".h and " << ctlName << ".cc"
-              << std::endl;
 }
