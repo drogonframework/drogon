@@ -237,6 +237,8 @@ class Groups
     };
     static const std::vector<MetaData> _metaData;
     bool _dirtyFlag[11] = {false};
+
+  public:
     static const std::string &sqlForFindingByPrimaryKey()
     {
         const static std::string sql =

@@ -180,6 +180,8 @@ auto cols=@@.get<std::vector<ColumnInfo>>("columns");
     };
     static const std::vector<MetaData> _metaData;
     bool _dirtyFlag[{%cols.size()%}]={ false };
+
+  public:
     static const std::string &sqlForFindingByPrimaryKey()
     {
 <%c++

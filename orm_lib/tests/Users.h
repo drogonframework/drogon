@@ -213,6 +213,8 @@ class Users
     };
     static const std::vector<MetaData> _metaData;
     bool _dirtyFlag[9] = {false};
+
+  public:
     static const std::string &sqlForFindingByPrimaryKey()
     {
         const static std::string sql = "select * from users where id = $1";
