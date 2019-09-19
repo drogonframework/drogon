@@ -90,5 +90,6 @@ class create_model : public DrObject<create_model>, public CommandHandler
     void createRestfulAPIController(const DrTemplateData &tableInfo,
                                     const Json::Value &restfulApiConfig);
     std::string _dbname;
+    bool _forceOverwrite = false;
 };
 }  // namespace drogon_ctl

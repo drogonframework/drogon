@@ -188,14 +188,14 @@ auto cols=@@.get<std::vector<ColumnInfo>>("columns");
 auto rdbms=@@.get<std::string>("rdbms");
 if(@@.get<int>("hasPrimaryKey")<=1){
         if(!@@.get<std::string>("primaryKeyType").empty()){%>
-        const static std::string sql="select * from [[tableName]] where [[primaryKeyName]] = {%(rdbms=="postgresql"?"$1":"?")%}";
+        static std::string sql="select * from " + tableName + " where [[primaryKeyName]] = {%(rdbms=="postgresql"?"$1":"?")%}";
 <%c++}else{%>
-        const static std::string sql="";
+        static std::string sql="";
 <%c++}%>
 <%c++}else{
         auto pkName=@@.get<std::vector<std::string>>("primaryKeyName");
 %>
-        const static std::string sql="select * from [[tableName]] where <%c++
+        static std::string sql="select * from " + tableName + " where <%c++
         for(size_t i=0;i<pkName.size();i++)
         {
             if(rdbms=="postgresql")
@@ -220,14 +220,14 @@ if(@@.get<int>("hasPrimaryKey")<=1){
 <%c++
 if(@@.get<int>("hasPrimaryKey")<=1){
         if(!@@.get<std::string>("primaryKeyType").empty()){%>
-        const static std::string sql="delete from [[tableName]] where [[primaryKeyName]] = {%(rdbms=="postgresql"?"$1":"?")%}";
+        static std::string sql="delete from " + tableName + " where [[primaryKeyName]] = {%(rdbms=="postgresql"?"$1":"?")%}";
 <%c++}else{%>
-        const static std::string sql="";
+        static std::string sql="";
 <%c++}%>
 <%c++}else{
         auto pkName=@@.get<std::vector<std::string>>("primaryKeyName");
 %>
-        const static std::string sql="delete from [[tableName]] where <%c++
+        static std::string sql="delete from " + tableName + " where <%c++
         for(size_t i=0;i<pkName.size();i++)
         {
             if(rdbms=="postgresql")
@@ -245,6 +245,51 @@ if(@@.get<int>("hasPrimaryKey")<=1){
     }
 %>
         return sql;                   
+    }
+
+    static const std::string &sqlForInserting()
+    {
+        static std::string sql="insert into " + tableName + " (<%c++
+        for(size_t i=0;i<cols.size();i++)
+        {
+            if(cols[i]._isAutoVal || cols[i]._colType.empty())
+                continue;
+            if(i<cols.size()-1)
+                $$<<cols[i]._colName<<",";
+            else
+                $$<<cols[i]._colName;
+        }
+        $$<<") values (";
+        auto counter = 0;
+        for(size_t i=0;i<cols.size();i++)
+        {
+            if(cols[i]._isAutoVal || cols[i]._colType.empty())
+                continue;
+            if(rdbms=="postgresql")
+            {
+                counter++;
+                $$<<"$"<<counter;
+            }
+            else
+            {
+                $$<<"?";
+            }
+            if(i<cols.size()-1)
+            {
+                $$<<",";
+            }
+        }
+        $$<<")";
+        if(rdbms=="postgresql")
+        {
+            $$<<" returning *\";\n";
+        }
+        else
+        {
+            $$<<"\";\n";
+        }
+%>
+        return sql;   
     }
 };
 <%c++

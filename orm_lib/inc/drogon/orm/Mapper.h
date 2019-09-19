@@ -1101,29 +1101,9 @@ template <typename T>
 inline void Mapper<T>::insert(T &obj) noexcept(false)
 {
     clear();
-    std::string sql = "insert into ";
-    sql += T::tableName;
-    sql += " (";
-    for (auto const &colName : T::insertColumns())
-    {
-        sql += colName;
-        sql += ",";
-    }
-    sql[sql.length() - 1] = ')';  // Replace the last ','
-    sql += " values (";
-    for (size_t i = 0; i < T::insertColumns().size(); i++)
-    {
-        sql += "$?,";
-    }
-    sql[sql.length() - 1] = ')';  // Replace the last ','
-    if (_client->type() == ClientType::PostgreSQL)
-    {
-        sql += " returning *";
-    }
-    sql = replaceSqlPlaceHolder(sql, "$?");
     Result r(nullptr);
     {
-        auto binder = *_client << std::move(sql);
+        auto binder = *_client << T::sqlForInserting();
         obj.outputArgs(binder);
         binder << Mode::Blocking;
         binder >> [&r](const Result &result) { r = result; };
@@ -1146,27 +1126,7 @@ inline void Mapper<T>::insert(const T &obj,
                               const ExceptionCallback &ecb) noexcept
 {
     clear();
-    std::string sql = "insert into ";
-    sql += T::tableName;
-    sql += " (";
-    for (auto const &colName : T::insertColumns())
-    {
-        sql += colName;
-        sql += ",";
-    }
-    sql[sql.length() - 1] = ')';  // Replace the last ','
-    sql += " values (";
-    for (int i = 0; i < T::insertColumns().size(); i++)
-    {
-        sql += "$?,";
-    }
-    sql[sql.length() - 1] = ')';  // Replace the last ','
-    if (_client->type() == ClientType::PostgreSQL)
-    {
-        sql += " returning *";
-    }
-    sql = replaceSqlPlaceHolder(sql, "$?");
-    auto binder = *_client << std::move(sql);
+    auto binder = *_client << T::sqlForInserting();
     obj.outputArgs(binder);
     auto client = _client;
     binder >> [client, rcb, obj](const Result &r) {
@@ -1189,27 +1149,7 @@ template <typename T>
 inline std::future<T> Mapper<T>::insertFuture(const T &obj) noexcept
 {
     clear();
-    std::string sql = "insert into ";
-    sql += T::tableName;
-    sql += " (";
-    for (auto const &colName : T::insertColumns())
-    {
-        sql += colName;
-        sql += ",";
-    }
-    sql[sql.length() - 1] = ')';  // Replace the last ','
-    sql += " values (";
-    for (int i = 0; i < T::insertColumns().size(); i++)
-    {
-        sql += "$?,";
-    }
-    sql[sql.length() - 1] = ')';  // Replace the last ','
-    if (_client->type() == ClientType::PostgreSQL)
-    {
-        sql += " returning *";
-    }
-    sql = replaceSqlPlaceHolder(sql, "$?");
-    auto binder = *_client << std::move(sql);
+    auto binder = *_client << T::sqlForInserting();
     obj.outputArgs(binder);
 
     std::shared_ptr<std::promise<T>> prom = std::make_shared<std::promise<T>>();

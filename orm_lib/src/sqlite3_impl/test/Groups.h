@@ -241,14 +241,24 @@ class Groups
   public:
     static const std::string &sqlForFindingByPrimaryKey()
     {
-        const static std::string sql =
-            "select * from GROUPS where group_id = ?";
+        static std::string sql =
+            "select * from " + tableName + " where group_id = ?";
         return sql;
     }
 
     static const std::string &sqlForDeletingByPrimaryKey()
     {
-        const static std::string sql = "delete from GROUPS where group_id = ?";
+        static std::string sql =
+            "delete from " + tableName + " where group_id = ?";
+        return sql;
+    }
+
+    static const std::string &sqlForInserting()
+    {
+        static std::string sql = "insert into " + tableName +
+                                 " (group_name,creater_id,create_time,inviting,"
+                                 "inviting_user_id,avatar_id,uuu,text,avatar,"
+                                 "is_default) values (?,?,?,?,?,?,?,?,?,?)";
         return sql;
     }
 };

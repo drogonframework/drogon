@@ -682,15 +682,23 @@ void create_model::createModel(const std::string &path,
         auto schema = config.get("schema", "public").asString();
         DbClientPtr client = drogon::orm::DbClient::newPgClient(connStr, 1);
         std::cout << "Connect to server..." << std::endl;
-        std::cout << "Source files in the " << path
-                  << " folder will be overwritten, continue(y/n)?\n";
-        auto in = getchar();
-        (void)getchar();  // get the return key
-        if (in != 'Y' && in != 'y')
+        if (_forceOverwrite)
         {
-            std::cout << "Abort!" << std::endl;
-            exit(0);
+            sleep(2);
         }
+        else
+        {
+            std::cout << "Source files in the " << path
+                      << " folder will be overwritten, continue(y/n)?\n";
+            auto in = getchar();
+            (void)getchar();  // get the return key
+            if (in != 'Y' && in != 'y')
+            {
+                std::cout << "Abort!" << std::endl;
+                exit(0);
+            }
+        }
+
         if (singleModelName.empty())
         {
             auto tables = config["tables"];
@@ -755,15 +763,23 @@ void create_model::createModel(const std::string &path,
         }
         DbClientPtr client = drogon::orm::DbClient::newMysqlClient(connStr, 1);
         std::cout << "Connect to server..." << std::endl;
-        std::cout << "Source files in the " << path
-                  << " folder will be overwritten, continue(y/n)?\n";
-        auto in = getchar();
-        (void)getchar();  // get the return key
-        if (in != 'Y' && in != 'y')
+        if (_forceOverwrite)
         {
-            std::cout << "Abort!" << std::endl;
-            exit(0);
+            sleep(2);
         }
+        else
+        {
+            std::cout << "Source files in the " << path
+                      << " folder will be overwritten, continue(y/n)?\n";
+            auto in = getchar();
+            (void)getchar();  // get the return key
+            if (in != 'Y' && in != 'y')
+            {
+                std::cout << "Abort!" << std::endl;
+                exit(0);
+            }
+        }
+
         if (singleModelName.empty())
         {
             auto tables = config["tables"];
@@ -810,15 +826,23 @@ void create_model::createModel(const std::string &path,
         DbClientPtr client =
             drogon::orm::DbClient::newSqlite3Client(connStr, 1);
         std::cout << "Connect..." << std::endl;
-        std::cout << "Source files in the " << path
-                  << " folder will be overwritten, continue(y/n)?\n";
-        auto in = getchar();
-        (void)getchar();  // get the return key
-        if (in != 'Y' && in != 'y')
+        if (_forceOverwrite)
         {
-            std::cout << "Abort!" << std::endl;
-            exit(0);
+            sleep(1);
         }
+        else
+        {
+            std::cout << "Source files in the " << path
+                      << " folder will be overwritten, continue(y/n)?\n";
+            auto in = getchar();
+            (void)getchar();  // get the return key
+            if (in != 'Y' && in != 'y')
+            {
+                std::cout << "Abort!" << std::endl;
+                exit(0);
+            }
+        }
+
         if (singleModelName.empty())
         {
             auto tables = config["tables"];
@@ -922,6 +946,15 @@ void create_model::handleCommand(std::vector<std::string> &parameters)
             break;
         }
     }
+    for (auto iter = parameters.begin(); iter != parameters.end(); ++iter)
+    {
+        if ((*iter) == "-f")
+        {
+            _forceOverwrite = true;
+            parameters.erase(iter);
+            break;
+        }
+    }
     for (auto const &path : parameters)
     {
         createModel(path, singleModelName);
@@ -1001,26 +1034,27 @@ void create_model::createRestfulAPIController(
     {
         std::string headFileName = dir + ctlName + "Base.h";
         std::string sourceFilename = dir + ctlName + "Base.cc";
-        {
-            std::ifstream iHeadFile(headFileName.c_str(), std::ifstream::in);
-            std::ifstream iSourceFile(sourceFilename.c_str(),
-                                      std::ifstream::in);
+        // {
+        //     std::ifstream iHeadFile(headFileName.c_str(), std::ifstream::in);
+        //     std::ifstream iSourceFile(sourceFilename.c_str(),
+        //                               std::ifstream::in);
 
-            if (iHeadFile || iSourceFile)
-            {
-                std::cout << "The " << headFileName << " and " << sourceFilename
-                          << " you want to create already exist, "
-                             "overwrite it(y/n)?"
-                          << std::endl;
-                auto in = getchar();
-                (void)getchar();  // get the return key
-                if (in != 'Y' && in != 'y')
-                {
-                    std::cout << "Abort!" << std::endl;
-                    exit(0);
-                }
-            }
-        }
+        //     if (iHeadFile || iSourceFile)
+        //     {
+        //         std::cout << "The " << headFileName << " and " <<
+        //         sourceFilename
+        //                   << " you want to create already exist, "
+        //                      "overwrite it(y/n)?"
+        //                   << std::endl;
+        //         auto in = getchar();
+        //         (void)getchar();  // get the return key
+        //         if (in != 'Y' && in != 'y')
+        //         {
+        //             std::cout << "Abort!" << std::endl;
+        //             exit(0);
+        //         }
+        //     }
+        // }
         std::ofstream oHeadFile(headFileName.c_str(), std::ofstream::out);
         std::ofstream oSourceFile(sourceFilename.c_str(), std::ofstream::out);
         if (!oHeadFile || !oSourceFile)
@@ -1052,6 +1086,7 @@ void create_model::createRestfulAPIController(
     {
         std::string headFileName = dir + ctlName + ".h";
         std::string sourceFilename = dir + ctlName + ".cc";
+        if (!_forceOverwrite)
         {
             std::ifstream iHeadFile(headFileName.c_str(), std::ifstream::in);
             std::ifstream iSourceFile(sourceFilename.c_str(),
@@ -1061,7 +1096,7 @@ void create_model::createRestfulAPIController(
             {
                 std::cout << "The " << headFileName << " and " << sourceFilename
                           << " you want to create already exist, "
-                             "overwrite it(y/n)?"
+                             "overwrite them(y/n)?"
                           << std::endl;
                 auto in = getchar();
                 (void)getchar();  // get the return key

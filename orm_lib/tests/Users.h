@@ -217,13 +217,23 @@ class Users
   public:
     static const std::string &sqlForFindingByPrimaryKey()
     {
-        const static std::string sql = "select * from users where id = $1";
+        static std::string sql =
+            "select * from " + tableName + " where id = $1";
         return sql;
     }
 
     static const std::string &sqlForDeletingByPrimaryKey()
     {
-        const static std::string sql = "delete from users where id = $1";
+        static std::string sql = "delete from " + tableName + " where id = $1";
+        return sql;
+    }
+
+    static const std::string &sqlForInserting()
+    {
+        static std::string sql =
+            "insert into " + tableName +
+            " (user_id,user_name,password,org_name,signature,avatar_id,salt,"
+            "admin) values ($1,$2,$3,$4,$5,$6,$7,$8) returning *";
         return sql;
     }
 };
