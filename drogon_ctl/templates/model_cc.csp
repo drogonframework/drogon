@@ -1146,12 +1146,12 @@ bool [[className]]::validJsonOfField(size_t index,
                 if(col._colType == "std::string" && col._colLength>0)
                 {
 %>
-            if(pJson.isString() && pJson.length() > {%col._colLength%})
+            // asString().length() creates a string object, is there any better way to validate the length?
+            if(pJson.isString() && pJson.asString().length() > {%col._colLength%})
             {
                 err="String length exceeds limit for the " +
                     fieldName +
-                    "field (the maximum value is " +
-                    {%col._colLength%} + ")";
+                    "field (the maximum value is {%col._colLength%} )";
                 return false;               
             }
 
