@@ -107,13 +107,27 @@ auto cols=@@.get<std::vector<ColumnInfo>>("columns");
      * @param pJson The json object to construct a new instance.
      * @param pMasqueradingVector The aliases of table columns.
      */
-     [[className]](const Json::Value &pJson, const std::vector<std::string> &pMasqueradingVector) noexcept(false);
+    [[className]](const Json::Value &pJson, const std::vector<std::string> &pMasqueradingVector) noexcept(false);
 
     [[className]]() = default;
     
     void updateByJson(const Json::Value &pJson) noexcept(false);
     void updateByMasqueradedJson(const Json::Value &pJson,
                                  const std::vector<std::string> &pMasqueradingVector) noexcept(false);
+    bool validateJsonForCreation(const Json::Value &pJson, std::string &err);
+    bool validateMasqueradedJsonForCreation(const Json::Value &,
+                                            const std::vector<std::string> &pMasqueradingVector,
+                                            std::string &err);
+    bool validateJsonForUpdate(const Json::Value &pJson, std::string &err);
+    bool validateMasqueradedJsonForUpdate(const Json::Value &,
+                                          const std::vector<std::string> &pMasqueradingVector,
+                                          std::string &err);
+    bool validJsonOfField(size_t index,
+                          const std::string &fieldName,
+                          const Json::Value &pJson, 
+                          std::string &err, 
+                          bool isForCreation);
+
 <%c++
     for(const auto &col:cols)
     {
@@ -188,14 +202,14 @@ auto cols=@@.get<std::vector<ColumnInfo>>("columns");
 auto rdbms=@@.get<std::string>("rdbms");
 if(@@.get<int>("hasPrimaryKey")<=1){
         if(!@@.get<std::string>("primaryKeyType").empty()){%>
-        static std::string sql="select * from " + tableName + " where [[primaryKeyName]] = {%(rdbms=="postgresql"?"$1":"?")%}";
+        static const std::string sql="select * from " + tableName + " where [[primaryKeyName]] = {%(rdbms=="postgresql"?"$1":"?")%}";
 <%c++}else{%>
-        static std::string sql="";
+        static const std::string sql="";
 <%c++}%>
 <%c++}else{
         auto pkName=@@.get<std::vector<std::string>>("primaryKeyName");
 %>
-        static std::string sql="select * from " + tableName + " where <%c++
+        static const std::string sql="select * from " + tableName + " where <%c++
         for(size_t i=0;i<pkName.size();i++)
         {
             if(rdbms=="postgresql")
@@ -220,14 +234,14 @@ if(@@.get<int>("hasPrimaryKey")<=1){
 <%c++
 if(@@.get<int>("hasPrimaryKey")<=1){
         if(!@@.get<std::string>("primaryKeyType").empty()){%>
-        static std::string sql="delete from " + tableName + " where [[primaryKeyName]] = {%(rdbms=="postgresql"?"$1":"?")%}";
+        static const std::string sql="delete from " + tableName + " where [[primaryKeyName]] = {%(rdbms=="postgresql"?"$1":"?")%}";
 <%c++}else{%>
-        static std::string sql="";
+        static const std::string sql="";
 <%c++}%>
 <%c++}else{
         auto pkName=@@.get<std::vector<std::string>>("primaryKeyName");
 %>
-        static std::string sql="delete from " + tableName + " where <%c++
+        static const std::string sql="delete from " + tableName + " where <%c++
         for(size_t i=0;i<pkName.size();i++)
         {
             if(rdbms=="postgresql")
@@ -249,7 +263,7 @@ if(@@.get<int>("hasPrimaryKey")<=1){
 
     static const std::string &sqlForInserting()
     {
-        static std::string sql="insert into " + tableName + " (<%c++
+        static const std::string sql="insert into " + tableName + " (<%c++
         for(size_t i=0;i<cols.size();i++)
         {
             if(cols[i]._isAutoVal || cols[i]._colType.empty())

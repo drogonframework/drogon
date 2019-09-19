@@ -14,6 +14,7 @@ using namespace drogon_ctl;
 <%c++
     const auto &cols=@@.get<std::vector<ColumnInfo>>("columns");
     auto className=@@.get<std::string>("className");
+    std::string indentStr(@@.get<std::string>("className").length(), ' ');
 %>
 
 using namespace drogon;
@@ -900,4 +901,271 @@ Json::Value [[className]]::toMasqueradedJson(
 <%c++
 }%>
     return ret;
+}
+
+bool [[className]]::validateJsonForCreation(const Json::Value &pJson, std::string &err)
+{
+<%c++
+    for(size_t i=0;i<cols.size();i++)
+    {
+        auto &col = cols[i];
+        if(col._colType.empty())
+            continue;
+%>
+    if(pJson.isMember("{%col._colName%}"))
+    {
+        if(!validJsonOfField({%i%}, "{%col._colName%}", pJson["{%col._colName%}"], err, true))
+            return false;
+    }
+<%c++if(col._notNull && !col._isAutoVal && !col._hasDefaultVal){%>
+    else
+    {
+        err="The {%col._colName%} column cannot be null";
+        return false;
+    }
+<%c++}
+}%>
+    return true;
+}
+bool [[className]]::validateMasqueradedJsonForCreation(const Json::Value &pJson,
+     {%indentStr%}                                     const std::vector<std::string> &pMasqueradingVector,
+     {%indentStr%}                                     std::string &err)
+{
+    if(pMasqueradingVector.size() != {%cols.size()%})
+    {
+        err = "Bad masquerading vector";
+        return false;
+    }
+<%c++
+    for(size_t i=0;i<cols.size();i++)
+    {
+        auto &col = cols[i];
+        if(col._colType.empty())
+            continue;
+%>
+    if(!pMasqueradingVector[{%i%}].empty())
+    {
+        if(pJson.isMember(pMasqueradingVector[{%i%}]))
+        {
+            if(!validJsonOfField({%i%}, pMasqueradingVector[{%i%}], pJson[pMasqueradingVector[{%i%}]], err, true))
+                return false;
+        }
+<%c++if(col._notNull && !col._isAutoVal && !col._hasDefaultVal){%>
+        else
+        {
+            err="The " + pMasqueradingVector[{%i%}] + " column cannot be null";
+            return false;
+        }
+<%c++}%>
+    }
+<%c++}%>
+    return true;
+}
+bool [[className]]::validateJsonForUpdate(const Json::Value &pJson, std::string &err)
+{
+<%c++
+    for(size_t i=0;i<cols.size();i++)
+    {
+        auto &col = cols[i];
+        if(col._colType.empty())
+            continue;
+%>
+    if(pJson.isMember("{%col._colName%}"))
+    {
+        if(!validJsonOfField({%i%}, "{%col._colName%}", pJson["{%col._colName%}"], err, false))
+            return false;
+    }
+<%c++
+    if(col._isPrimaryKey)
+    {
+%>
+    else
+    {
+        err = "The value of primary key must be set in the json object for update";
+        return false;
+    }
+<%c++        
+    }
+}%>
+    return true;
+}
+bool [[className]]::validateMasqueradedJsonForUpdate(const Json::Value &pJson,
+     {%indentStr%}                                   const std::vector<std::string> &pMasqueradingVector,
+     {%indentStr%}                                   std::string &err)
+{
+    if(pMasqueradingVector.size() != {%cols.size()%})
+    {
+        err = "Bad masquerading vector";
+        return false;
+    }
+<%c++
+    for(size_t i=0;i<cols.size();i++)
+    {
+        auto &col = cols[i];
+        if(col._colType.empty())
+            continue;
+%>
+    if(!pMasqueradingVector[{%i%}].empty() && pJson.isMember(pMasqueradingVector[{%i%}]))
+    {
+        if(!validJsonOfField({%i%}, pMasqueradingVector[{%i%}], pJson[pMasqueradingVector[{%i%}]], err, false))
+            return false;
+    }
+<%c++    
+    if(col._isPrimaryKey)
+    {
+%>
+    else
+    {
+        err = "The value of primary key must be set in the json object for update";
+        return false;
+    }
+<%c++        
+    }
+}%>
+    return true;
+}
+bool [[className]]::validJsonOfField(size_t index,
+     {%indentStr%}                   const std::string &fieldName,
+     {%indentStr%}                   const Json::Value &pJson, 
+     {%indentStr%}                   std::string &err, 
+     {%indentStr%}                   bool isForCreation)
+{
+    switch(index)
+    {
+<%c++
+    for(size_t i=0;i<cols.size();i++)
+    {
+        auto &col = cols[i];
+        if(col._colType.empty())
+            continue;
+%>
+        case {%i%}:
+<%c++if(col._notNull){%>
+            if(pJson.isNull())
+            {
+                err="The " + fieldName + " column cannot be null";
+                return false;
+            }
+<%c++}
+            if(col._isAutoVal)
+            {  
+                if(col._isPrimaryKey)
+                {
+%>
+            if(isForCreation)
+            {
+                err="The automatic primary key cannot be set";
+                return false;
+            }        
+<%c++                    
+                }else
+                {
+%>
+            if(isForCreation)
+            {
+                err="The automatic primary key cannot be set";
+                return false;
+            }
+            else
+            {
+                err="The automatic primary key cannot be update";
+                return false;
+            }
+<%c++                    
+                }
+            }              
+            if(col._colType == "uint64_t")
+            {
+%>
+            if(!pJson.isUInt64())
+            {
+                err="Type error in the "+fieldName+"field";
+                return false;
+            }
+<%c++
+            }
+            else if(col._colType == "int64_t")
+            {
+%>
+            if(!pJson.isInt64())
+            {
+                err="Type error in the "+fieldName+"field";
+                return false;
+            }
+<%c++
+            }
+            else if(col._colType.find("uint") == 0)
+            {
+%>
+            if(!pJson.isUInt())
+            {
+                err="Type error in the "+fieldName+"field";
+                return false;
+            }
+<%c++
+            }
+            else if(col._colType.find("int") == 0)
+            {
+%>
+            if(!pJson.isInt())
+            {
+                err="Type error in the "+fieldName+"field";
+                return false;
+            }
+<%c++
+            }
+            else if(col._colType == "float" || col._colType == "double")
+            {
+%>
+            if(!pJson.isNumeric())
+            {
+                err="Type error in the "+fieldName+"field";
+                return false;
+            }
+<%c++
+            }
+            else if(col._colType == "bool")
+            {
+%>
+            if(!pJson.isBool())
+            {
+                err="Type error in the "+fieldName+"field";
+                return false;
+            }
+<%c++               
+            }
+            else
+            {
+%>
+            if(!pJson.isString() && !pJson.isNull())
+            {
+                err="Type error in the "+fieldName+"field";
+                return false;                
+            }
+<%c++
+                if(col._colType == "std::string" && col._colLength>0)
+                {
+%>
+            if(pJson.isString() && pJson.length() > {%col._colLength%})
+            {
+                err="String length exceeds limit for the " +
+                    fieldName +
+                    "field (the maximum value is " +
+                    {%col._colLength%} + ")";
+                return false;               
+            }
+
+<%c++
+                }
+            }
+%>
+            break;
+<%c++
+}%>     
+        default:
+            err="Internal error in the server";
+            return false;
+            break;
+    }
+    return true;
 }
