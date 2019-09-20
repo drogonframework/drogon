@@ -21,6 +21,7 @@
 #include <drogon/orm/ArrayParser.h>
 #include <drogon/orm/Result.h>
 #include <drogon/orm/Row.h>
+#include <trantor/utils/Logger.h>
 #include <memory>
 #include <sstream>
 #include <string>
@@ -135,8 +136,15 @@ class Field
         T value = T();
         if (_data)
         {
-            std::stringstream ss(_data);
-            ss >> value;
+            try
+            {
+                std::stringstream ss(_data);
+                ss >> value;
+            }
+            catch (...)
+            {
+                LOG_DEBUG << "Type error";
+            }
         }
         return value;
     }
@@ -209,18 +217,101 @@ inline drogon::string_view Field::as<drogon::string_view>() const
     auto length = _result.getLength(_row, _column);
     return drogon::string_view(first, length);
 }
+
 template <>
-int Field::as<int>() const;
+inline float Field::as<float>() const
+{
+    if (isNull())
+        return 0.0;
+    return atof(_result.getValue(_row, _column));
+}
+
 template <>
-long Field::as<long>() const;
+inline double Field::as<double>() const
+{
+    if (isNull())
+        return 0.0;
+    return std::stod(_result.getValue(_row, _column));
+}
+
 template <>
-long long Field::as<long long>() const;
+inline bool Field::as<bool>() const
+{
+    if (_result.getLength(_row, _column) != 1)
+    {
+        return false;
+    }
+    auto value = _result.getValue(_row, _column);
+    if (*value == 't' || *value == '1')
+        return true;
+    return false;
+}
+
 template <>
-float Field::as<float>() const;
+inline int Field::as<int>() const
+{
+    if (isNull())
+        return 0;
+    return std::stoi(_result.getValue(_row, _column));
+}
+
 template <>
-double Field::as<double>() const;
+inline long Field::as<long>() const
+{
+    if (isNull())
+        return 0;
+    return std::stol(_result.getValue(_row, _column));
+}
+
 template <>
-bool Field::as<bool>() const;
+inline int8_t Field::as<int8_t>() const
+{
+    if (isNull())
+        return 0;
+    return atoi(_result.getValue(_row, _column));
+}
+
+template <>
+inline long long Field::as<long long>() const
+{
+    if (isNull())
+        return 0;
+    return atoll(_result.getValue(_row, _column));
+}
+
+template <>
+inline unsigned int Field::as<unsigned int>() const
+{
+    if (isNull())
+        return 0;
+    return static_cast<unsigned int>(
+        std::stoi(_result.getValue(_row, _column)));
+}
+
+template <>
+inline unsigned long Field::as<unsigned long>() const
+{
+    if (isNull())
+        return 0;
+    return std::stoul(_result.getValue(_row, _column));
+}
+
+template <>
+inline uint8_t Field::as<uint8_t>() const
+{
+    if (isNull())
+        return 0;
+    return static_cast<uint8_t>(atoi(_result.getValue(_row, _column)));
+}
+
+template <>
+inline unsigned long long Field::as<unsigned long long>() const
+{
+    if (isNull())
+        return 0;
+    return std::stoull(_result.getValue(_row, _column));
+}
+
 // std::vector<int32_t> Field::as<std::vector<int32_t>>() const;
 // template <>
 // std::vector<int64_t> Field::as<std::vector<int64_t>>() const;

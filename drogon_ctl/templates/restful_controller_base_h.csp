@@ -10,6 +10,8 @@ using namespace drogon_ctl;
 
 #pragma once
 
+#include <drogon/HttpController.h>
+
 <%c++
 auto tableInfo = @@.get<DrTemplateData>("tableInfo");
 auto modelName = tableInfo.get<std::string>("className");

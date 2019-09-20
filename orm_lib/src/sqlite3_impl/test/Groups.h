@@ -81,6 +81,22 @@ class Groups
     void updateByMasqueradedJson(
         const Json::Value &pJson,
         const std::vector<std::string> &pMasqueradingVector) noexcept(false);
+    bool validateJsonForCreation(const Json::Value &pJson, std::string &err);
+    bool validateMasqueradedJsonForCreation(
+        const Json::Value &,
+        const std::vector<std::string> &pMasqueradingVector,
+        std::string &err);
+    bool validateJsonForUpdate(const Json::Value &pJson, std::string &err);
+    bool validateMasqueradedJsonForUpdate(
+        const Json::Value &,
+        const std::vector<std::string> &pMasqueradingVector,
+        std::string &err);
+    bool validJsonOfField(size_t index,
+                          const std::string &fieldName,
+                          const Json::Value &pJson,
+                          std::string &err,
+                          bool isForCreation);
+
     /**  For column group_id  */
     /// Get the value of the column group_id, returns the default value if the
     /// column is null
@@ -241,24 +257,90 @@ class Groups
   public:
     static const std::string &sqlForFindingByPrimaryKey()
     {
-        static std::string sql =
+        static const std::string sql =
             "select * from " + tableName + " where group_id = ?";
         return sql;
     }
 
     static const std::string &sqlForDeletingByPrimaryKey()
     {
-        static std::string sql =
+        static const std::string sql =
             "delete from " + tableName + " where group_id = ?";
         return sql;
     }
 
-    static const std::string &sqlForInserting()
+    std::string sqlForInserting(bool &needSelection) const
     {
-        static std::string sql = "insert into " + tableName +
-                                 " (group_name,creater_id,create_time,inviting,"
-                                 "inviting_user_id,avatar_id,uuu,text,avatar,"
-                                 "is_default) values (?,?,?,?,?,?,?,?,?,?)";
+        std::string sql = "insert into " + tableName + " (";
+        size_t parametersCount = 0;
+        needSelection = false;
+        if (_dirtyFlag[1])
+        {
+            sql += "group_name,";
+            ++parametersCount;
+        }
+        if (_dirtyFlag[2])
+        {
+            sql += "creater_id,";
+            ++parametersCount;
+        }
+        if (_dirtyFlag[3])
+        {
+            sql += "create_time,";
+            ++parametersCount;
+        }
+        if (_dirtyFlag[4])
+        {
+            sql += "inviting,";
+            ++parametersCount;
+        }
+        if (_dirtyFlag[5])
+        {
+            sql += "inviting_user_id,";
+            ++parametersCount;
+        }
+        if (_dirtyFlag[6])
+        {
+            sql += "avatar_id,";
+            ++parametersCount;
+        }
+        if (_dirtyFlag[7])
+        {
+            sql += "uuu,";
+            ++parametersCount;
+        }
+        if (_dirtyFlag[8])
+        {
+            sql += "text,";
+            ++parametersCount;
+        }
+        if (_dirtyFlag[9])
+        {
+            sql += "avatar,";
+            ++parametersCount;
+        }
+        if (_dirtyFlag[10])
+        {
+            sql += "is_default,";
+            ++parametersCount;
+        }
+        needSelection = true;
+        if (parametersCount > 0)
+        {
+            sql[sql.length() - 1] = ')';
+            sql += " values (";
+        }
+        else
+            sql += ") values (";
+        for (size_t i = 0; i < parametersCount; i++)
+        {
+            sql.append(1, '?');
+            if (i < parametersCount - 1)
+            {
+                sql.append(1, ',');
+            }
+        }
+        sql.append(1, ')');
         return sql;
     }
 };

@@ -79,6 +79,22 @@ class Users
     void updateByMasqueradedJson(
         const Json::Value &pJson,
         const std::vector<std::string> &pMasqueradingVector) noexcept(false);
+    bool validateJsonForCreation(const Json::Value &pJson, std::string &err);
+    bool validateMasqueradedJsonForCreation(
+        const Json::Value &,
+        const std::vector<std::string> &pMasqueradingVector,
+        std::string &err);
+    bool validateJsonForUpdate(const Json::Value &pJson, std::string &err);
+    bool validateMasqueradedJsonForUpdate(
+        const Json::Value &,
+        const std::vector<std::string> &pMasqueradingVector,
+        std::string &err);
+    bool validJsonOfField(size_t index,
+                          const std::string &fieldName,
+                          const Json::Value &pJson,
+                          std::string &err,
+                          bool isForCreation);
+
     /**  For column user_id  */
     /// Get the value of the column user_id, returns the default value if the
     /// column is null
@@ -217,23 +233,97 @@ class Users
   public:
     static const std::string &sqlForFindingByPrimaryKey()
     {
-        static std::string sql =
+        static const std::string sql =
             "select * from " + tableName + " where id = $1";
         return sql;
     }
 
     static const std::string &sqlForDeletingByPrimaryKey()
     {
-        static std::string sql = "delete from " + tableName + " where id = $1";
+        static const std::string sql =
+            "delete from " + tableName + " where id = $1";
         return sql;
     }
 
-    static const std::string &sqlForInserting()
+    std::string sqlForInserting(bool &needSelection) const
     {
-        static std::string sql =
-            "insert into " + tableName +
-            " (user_id,user_name,password,org_name,signature,avatar_id,salt,"
-            "admin) values ($1,$2,$3,$4,$5,$6,$7,$8) returning *";
+        std::string sql = "insert into " + tableName + " (";
+        size_t parametersCount = 0;
+        needSelection = false;
+        if (_dirtyFlag[0])
+        {
+            sql += "user_id,";
+            ++parametersCount;
+        }
+        if (_dirtyFlag[1])
+        {
+            sql += "user_name,";
+            ++parametersCount;
+        }
+        if (_dirtyFlag[2])
+        {
+            sql += "password,";
+            ++parametersCount;
+        }
+        if (_dirtyFlag[3])
+        {
+            sql += "org_name,";
+            ++parametersCount;
+        }
+        if (_dirtyFlag[4])
+        {
+            sql += "signature,";
+            ++parametersCount;
+        }
+        if (_dirtyFlag[5])
+        {
+            sql += "avatar_id,";
+            ++parametersCount;
+        }
+        if (_dirtyFlag[7])
+        {
+            sql += "salt,";
+            ++parametersCount;
+        }
+        if (_dirtyFlag[8])
+        {
+            sql += "admin,";
+            ++parametersCount;
+        }
+        else
+        {
+            needSelection = true;
+        }
+        needSelection = true;
+        if (parametersCount > 0)
+        {
+            sql[sql.length() - 1] = ')';
+            sql += " values (";
+        }
+        else
+            sql += ") values (";
+        for (size_t i = 0; i < parametersCount; i++)
+        {
+            char p[64];
+            auto n = sprintf(p, "$%lu", i + 1);
+            sql.append(p, n);
+            if (i < parametersCount - 1)
+            {
+                sql.append(1, ',');
+            }
+            if (i < parametersCount - 1)
+            {
+                sql.append(1, ',');
+            }
+        }
+        if (needSelection)
+        {
+            sql.append(") returning *");
+        }
+        else
+        {
+            sql.append(1, ')');
+        }
         return sql;
     }
 };

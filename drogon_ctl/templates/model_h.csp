@@ -15,6 +15,7 @@ using namespace drogon_ctl;
 #include <drogon/orm/SqlBinder.h>
 #include <drogon/orm/Mapper.h>
 #include <trantor/utils/Date.h>
+#include <trantor/utils/Logger.h>
 #include <json/json.h>
 #include <string>
 #include <memory>
@@ -61,6 +62,7 @@ auto cols=@@.get<std::vector<ColumnInfo>>("columns");
     const PrimaryKeyType &getPrimaryKey() const;
 <%c++}else{%>
     typedef void PrimaryKeyType;
+    int getPrimaryKey() const { assert(false); return 0; }
 <%c++}%>
 <%c++}else{
     auto pkTypes=@@.get<std::vector<std::string>>("primaryKeyType");   
@@ -260,49 +262,140 @@ if(@@.get<int>("hasPrimaryKey")<=1){
 %>
         return sql;                   
     }
-
-    static const std::string &sqlForInserting()
+    std::string sqlForInserting(bool &needSelection) const
     {
-        static const std::string sql="insert into " + tableName + " (<%c++
+        std::string sql="insert into " + tableName + " (";
+        size_t parametersCount = 0;
+        needSelection = false;
+<%c++
+        bool selFlag=false;
         for(size_t i=0;i<cols.size();i++)
         {
-            if(cols[i]._isAutoVal || cols[i]._colType.empty())
+            if(cols[i]._isAutoVal)
+            {
+                if(@@.get<int>("hasPrimaryKey")>0)
+                {
+                    selFlag = true;
+                }
+                $$<<"            sql += \""<<cols[i]._colName<<",\";\n";
+                $$<<"            ++parametersCount;\n";
                 continue;
-            if(i<cols.size()-1)
-                $$<<cols[i]._colName<<",";
-            else
-                $$<<cols[i]._colName;
+            } 
+            if(cols[i]._colType.empty())
+                continue;
+            if(cols[i]._hasDefaultVal)
+            {
+                $$<<"        sql += \""<<cols[i]._colName<<",\";\n";
+                $$<<"        ++parametersCount;\n";
+                if(@@.get<int>("hasPrimaryKey")>0||@@.get<std::string>("rdbms")=="postgresql")
+                {        
+%>
+        if(!_dirtyFlag[{%i%}])
+        {
+            needSelection=true;
         }
-        $$<<") values (";
-        auto counter = 0;
+<%c++       
+                }
+            }
+            else
+            {
+%>
+        if(_dirtyFlag[{%i%}])
+        {
+            sql += "{%cols[i]._colName%},";
+            ++parametersCount;
+        }
+<%c++    
+            }
+        }
+        if(selFlag)
+        {
+            $$<<"        needSelection=true;\n";
+        }
+%>
+        if(parametersCount > 0)
+        {
+            sql[sql.length()-1]=')';
+            sql += " values (";
+        }
+        else
+            sql += ") values (";
+        
+<%c++
+if(@@.get<std::string>("rdbms")=="postgresql")
+{
+%>
+        int placeholder=1;
+        char placeholderStr[64];
+        size_t n=0;
+<%c++    
+}        
         for(size_t i=0;i<cols.size();i++)
         {
-            if(cols[i]._isAutoVal || cols[i]._colType.empty())
-                continue;
-            if(rdbms=="postgresql")
-            {
-                counter++;
-                $$<<"$"<<counter;
-            }
-            else
-            {
-                $$<<"?";
-            }
-            if(i<cols.size()-1)
-            {
-                $$<<",";
-            }
+        if(cols[i]._isAutoVal)
+        {
+%>
+        sql +="default,";
+<%c++
+            continue;
+        } 
+        if(cols[i]._colType.empty())
+        continue;
+%>
+        if(_dirtyFlag[{%i%}])
+        {
+<%c++
+                if(@@.get<std::string>("rdbms")=="postgresql")
+                {
+%>
+            n = sprintf(placeholderStr,"$%d,",placeholder++);
+            sql.append(placeholderStr, n);
+<%c++
+                }else
+                {
+%>
+            sql.append("?,");
+
+<%c++
+                }
+%>
+        } 
+<%c++
+if(cols[i]._hasDefaultVal)
+{
+%>
+        else
+        {
+            sql +="default,";
         }
-        $$<<")";
+<%c++
+}
+        }
+%>
+        if(parametersCount > 0)
+        {
+            sql.resize(sql.length() - 1);
+        }
+<%c++
         if(rdbms=="postgresql")
         {
-            $$<<" returning *\";\n";
+%>
+        if(needSelection)
+        {
+            sql.append(") returning *");
         }
         else
         {
-            $$<<"\";\n";
+            sql.append(1, ')');
+        }
+<%c++
+        }
+        else
+        {
+            $$<<"        sql.append(1, ')');\n";
         }
 %>
+        LOG_TRACE << sql;
         return sql;   
     }
 };

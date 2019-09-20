@@ -229,81 +229,109 @@ const std::string &[[className]]::getColumnName(size_t index) noexcept(false)
 %>
     if(!pMasqueradingVector[{%i%}].empty() && pJson.isMember(pMasqueradingVector[{%i%}]))
     {
+        _dirtyFlag[{%i%}] = true;
 <%c++
             if(col._colType == "std::string")
             {
-                $$<<"        _"<<col._colValName<<"=std::make_shared<std::string>(pJson[pMasqueradingVector["<<i<<"]].asString());\n";
+                $$<<"        if(!pJson[pMasqueradingVector["<<i<<"]].isNull())";
+                $$<<"        {\n";
+                $$<<"            _"<<col._colValName<<"=std::make_shared<std::string>(pJson[pMasqueradingVector["<<i<<"]].asString());\n";
+                $$<<"        }\n";
                 $$<<"    }\n";
                 continue;
             }
             else if(col._colDatabaseType=="date")
             {
-                $$<<"        auto daysStr = pJson[pMasqueradingVector["<<i<<"]].asString();\n";
-                $$<<"        struct tm stm;\n";
-                $$<<"        memset(&stm,0,sizeof(stm));\n";
-                $$<<"        strptime(daysStr.c_str(),\"%Y-%m-%d\",&stm);\n";
-                $$<<"        long t = timelocal(&stm);\n";
+                $$<<"        if(!pJson[pMasqueradingVector["<<i<<"]].isNull())";
+                $$<<"        {\n";
+                $$<<"            auto daysStr = pJson[pMasqueradingVector["<<i<<"]].asString();\n";
+                $$<<"            struct tm stm;\n";
+                $$<<"            memset(&stm,0,sizeof(stm));\n";
+                $$<<"            strptime(daysStr.c_str(),\"%Y-%m-%d\",&stm);\n";
+                $$<<"            long t = timelocal(&stm);\n";
  //               $$<<"            _"<<col._colValName<<"=std::make_shared<::trantor::Date>(::trantor::Date(946656000000000).after(daysNum*86400));\n";
-                $$<<"        _"<<col._colValName<<"=std::make_shared<::trantor::Date>(t*1000000);\n";
+                $$<<"            _"<<col._colValName<<"=std::make_shared<::trantor::Date>(t*1000000);\n";
+                $$<<"        }\n";
                 $$<<"    }\n";
                 continue;
             }
             else if(col._colDatabaseType.find("timestamp")!=std::string::npos||col._colDatabaseType.find("datetime")!=std::string::npos)
             {
-                $$<<"        auto timeStr = pJson[pMasqueradingVector["<<i<<"]].asString();\n";
-                $$<<"        struct tm stm;\n";
-                $$<<"        memset(&stm,0,sizeof(stm));\n";
-                $$<<"        auto p = strptime(timeStr.c_str(),\"%Y-%m-%d %H:%M:%S\",&stm);\n";
-                $$<<"        size_t t = timelocal(&stm);\n";
-                $$<<"        size_t decimalNum = 0;\n";
-                $$<<"        if(*p=='.')\n";
+                $$<<"        if(!pJson[pMasqueradingVector["<<i<<"]].isNull())";
                 $$<<"        {\n";
-                $$<<"            std::string decimals(p+1,&timeStr[timeStr.length()]);\n";
-                $$<<"            while(decimals.length()<6)\n";
+                $$<<"            auto timeStr = pJson[pMasqueradingVector["<<i<<"]].asString();\n";
+                $$<<"            struct tm stm;\n";
+                $$<<"            memset(&stm,0,sizeof(stm));\n";
+                $$<<"            auto p = strptime(timeStr.c_str(),\"%Y-%m-%d %H:%M:%S\",&stm);\n";
+                $$<<"            size_t t = timelocal(&stm);\n";
+                $$<<"            size_t decimalNum = 0;\n";
+                $$<<"            if(*p=='.')\n";
                 $$<<"            {\n";
-                $$<<"                decimals += \"0\";\n";
+                $$<<"                std::string decimals(p+1,&timeStr[timeStr.length()]);\n";
+                $$<<"                while(decimals.length()<6)\n";
+                $$<<"                {\n";
+                $$<<"                    decimals += \"0\";\n";
+                $$<<"                }\n";
+                $$<<"                decimalNum = (size_t)atol(decimals.c_str());\n";
                 $$<<"            }\n";
-                $$<<"            decimalNum = (size_t)atol(decimals.c_str());\n";
-                $$<<"        }\n";
  //               $$<<"            _"<<col._colValName<<"=std::make_shared<::trantor::Date>(::trantor::Date(946656000000000).after(daysNum*86400));\n";
-                $$<<"        _"<<col._colValName<<"=std::make_shared<::trantor::Date>(t*1000000+decimalNum);\n";
+                $$<<"            _"<<col._colValName<<"=std::make_shared<::trantor::Date>(t*1000000+decimalNum);\n";
+                $$<<"        }\n";
                 $$<<"    }\n";
                 continue;
             } 
             else if(col._colDatabaseType=="bytea" || col._colDatabaseType.find("blob") != std::string::npos)
             {
-                $$<<"        auto str = pJson[pMasqueradingVector["<<i<<"]].asString();\n";
-                $$<<"        _"<<col._colValName<<"=std::make_shared<std::vector<char>>(drogon::utils::base64DecodeToVector(str));\n";
+                $$<<"        if(!pJson[pMasqueradingVector["<<i<<"]].isNull())";
+                $$<<"        {\n";
+                $$<<"            auto str = pJson[pMasqueradingVector["<<i<<"]].asString();\n";
+                $$<<"            _"<<col._colValName<<"=std::make_shared<std::vector<char>>(drogon::utils::base64DecodeToVector(str));\n";
+                $$<<"        }\n";
                 $$<<"    }\n";
                 continue;
             } 
             else if(col._colType.find("uint") == 0 || col._colType == "unsigned short")
             {
-                $$<<"        _"<<col._colValName<<"=std::make_shared<"<<col._colType<<">(("<<col._colType<<")pJson[pMasqueradingVector["<<i<<"]].asUInt64());\n";
+                $$<<"        if(!pJson[pMasqueradingVector["<<i<<"]].isNull())";
+                $$<<"        {\n";
+                $$<<"            _"<<col._colValName<<"=std::make_shared<"<<col._colType<<">(("<<col._colType<<")pJson[pMasqueradingVector["<<i<<"]].asUInt64());\n";
+                $$<<"        }\n";
                 $$<<"    }\n";
                 continue;
             }
             else if(col._colType.find("int") == 0 || col._colType == "short")
             {
-                $$<<"        _"<<col._colValName<<"=std::make_shared<"<<col._colType<<">(("<<col._colType<<")pJson[pMasqueradingVector["<<i<<"]].asInt64());\n";
+                $$<<"        if(!pJson[pMasqueradingVector["<<i<<"]].isNull())";
+                $$<<"        {\n";
+                $$<<"            _"<<col._colValName<<"=std::make_shared<"<<col._colType<<">(("<<col._colType<<")pJson[pMasqueradingVector["<<i<<"]].asInt64());\n";
+                $$<<"        }\n";
                 $$<<"    }\n";
                 continue;
             }
             else if(col._colType == "float")
             {
-                $$<<"        _"<<col._colValName<<"=std::make_shared<float>(pJson[pMasqueradingVector["<<i<<"]].asFloat());\n";
+                $$<<"        if(!pJson[pMasqueradingVector["<<i<<"]].isNull())";
+                $$<<"        {\n";
+                $$<<"            _"<<col._colValName<<"=std::make_shared<float>(pJson[pMasqueradingVector["<<i<<"]].asFloat());\n";
+                $$<<"        }\n";
                 $$<<"     }\n";
                 continue;
             }
             else if(col._colType == "double")
             {
-                $$<<"        _"<<col._colValName<<"=std::make_shared<double>(pJson[pMasqueradingVector["<<i<<"]].asDouble());\n";
+                $$<<"        if(!pJson[pMasqueradingVector["<<i<<"]].isNull())";
+                $$<<"        {\n";
+                $$<<"            _"<<col._colValName<<"=std::make_shared<double>(pJson[pMasqueradingVector["<<i<<"]].asDouble());\n";
+                $$<<"        }\n";
                 $$<<"    }\n";
                 continue;
             }
             else if(col._colType == "bool")
             {
-                $$<<"        _"<<col._colValName<<"=std::make_shared<bool>(pJson[pMasqueradingVector["<<i<<"]].asBool());\n";
+                $$<<"        if(!pJson[pMasqueradingVector["<<i<<"]].isNull())";
+                $$<<"        {\n";
+                $$<<"            _"<<col._colValName<<"=std::make_shared<bool>(pJson[pMasqueradingVector["<<i<<"]].asBool());\n";
+                $$<<"        }\n";
                 $$<<"    }\n";
                 continue;
             }      
@@ -317,88 +345,117 @@ const std::string &[[className]]::getColumnName(size_t index) noexcept(false)
 [[className]]::[[className]](const Json::Value &pJson) noexcept(false)
 {
 <%c++
-    for(auto col:cols)
+    for(size_t i=0;i<cols.size();i++)
     {
+        auto &col = cols[i];
         if(col._colType.empty())
             continue;
 %>
     if(pJson.isMember("{%col._colName%}"))
     {
+        _dirtyFlag[{%i%}]=true;
 <%c++
             if(col._colType == "std::string")
             {
-                $$<<"        _"<<col._colValName<<"=std::make_shared<std::string>(pJson[\""<<col._colName<<"\"].asString());\n";
+                $$<<"        if(!pJson[\"<<col._colName<<\"].isNull())";
+                $$<<"        {\n";
+                $$<<"            _"<<col._colValName<<"=std::make_shared<std::string>(pJson[\""<<col._colName<<"\"].asString());\n";
+                $$<<"        }\n";
                 $$<<"    }\n";
                 continue;
             }
             else if(col._colDatabaseType=="date")
             {
-                $$<<"        auto daysStr = pJson[\""<<col._colName<<"\"].asString();\n";
-                $$<<"        struct tm stm;\n";
-                $$<<"        memset(&stm,0,sizeof(stm));\n";
-                $$<<"        strptime(daysStr.c_str(),\"%Y-%m-%d\",&stm);\n";
-                $$<<"        long t = timelocal(&stm);\n";
+                $$<<"        if(!pJson[\"<<col._colName<<\"].isNull())";
+                $$<<"        {\n";
+                $$<<"            auto daysStr = pJson[\""<<col._colName<<"\"].asString();\n";
+                $$<<"            struct tm stm;\n";
+                $$<<"            memset(&stm,0,sizeof(stm));\n";
+                $$<<"            strptime(daysStr.c_str(),\"%Y-%m-%d\",&stm);\n";
+                $$<<"            long t = timelocal(&stm);\n";
  //               $$<<"            _"<<col._colValName<<"=std::make_shared<::trantor::Date>(::trantor::Date(946656000000000).after(daysNum*86400));\n";
-                $$<<"        _"<<col._colValName<<"=std::make_shared<::trantor::Date>(t*1000000);\n";
+                $$<<"            _"<<col._colValName<<"=std::make_shared<::trantor::Date>(t*1000000);\n";
+                $$<<"        }\n";
                 $$<<"    }\n";
                 continue;
             }
             else if(col._colDatabaseType.find("timestamp")!=std::string::npos||col._colDatabaseType.find("datetime")!=std::string::npos)
             {
-                $$<<"        auto timeStr = pJson[\""<<col._colName<<"\"].asString();\n";
-                $$<<"        struct tm stm;\n";
-                $$<<"        memset(&stm,0,sizeof(stm));\n";
-                $$<<"        auto p = strptime(timeStr.c_str(),\"%Y-%m-%d %H:%M:%S\",&stm);\n";
-                $$<<"        size_t t = timelocal(&stm);\n";
-                $$<<"        size_t decimalNum = 0;\n";
-                $$<<"        if(*p=='.')\n";
+                $$<<"        if(!pJson[\"<<col._colName<<\"].isNull())";
                 $$<<"        {\n";
-                $$<<"            std::string decimals(p+1,&timeStr[timeStr.length()]);\n";
-                $$<<"            while(decimals.length()<6)\n";
+                $$<<"            auto timeStr = pJson[\""<<col._colName<<"\"].asString();\n";
+                $$<<"            struct tm stm;\n";
+                $$<<"            memset(&stm,0,sizeof(stm));\n";
+                $$<<"            auto p = strptime(timeStr.c_str(),\"%Y-%m-%d %H:%M:%S\",&stm);\n";
+                $$<<"            size_t t = timelocal(&stm);\n";
+                $$<<"            size_t decimalNum = 0;\n";
+                $$<<"            if(*p=='.')\n";
                 $$<<"            {\n";
-                $$<<"                decimals += \"0\";\n";
+                $$<<"                std::string decimals(p+1,&timeStr[timeStr.length()]);\n";
+                $$<<"                while(decimals.length()<6)\n";
+                $$<<"                {\n";
+                $$<<"                    decimals += \"0\";\n";
+                $$<<"                }\n";
+                $$<<"                decimalNum = (size_t)atol(decimals.c_str());\n";
                 $$<<"            }\n";
-                $$<<"            decimalNum = (size_t)atol(decimals.c_str());\n";
-                $$<<"        }\n";
  //               $$<<"            _"<<col._colValName<<"=std::make_shared<::trantor::Date>(::trantor::Date(946656000000000).after(daysNum*86400));\n";
-                $$<<"        _"<<col._colValName<<"=std::make_shared<::trantor::Date>(t*1000000+decimalNum);\n";
+                $$<<"            _"<<col._colValName<<"=std::make_shared<::trantor::Date>(t*1000000+decimalNum);\n";
+                 $$<<"        }\n";               
                 $$<<"    }\n";
                 continue;
             } 
             else if(col._colDatabaseType=="bytea" || col._colDatabaseType.find("blob") != std::string::npos)
             {
-                $$<<"        auto str = pJson[\""<<col._colName<<"\"].asString();\n";
-                $$<<"        _"<<col._colValName<<"=std::make_shared<std::vector<char>>(drogon::utils::base64DecodeToVector(str));\n";
+                $$<<"        if(!pJson[\"<<col._colName<<\"].isNull())";
+                $$<<"        {\n";
+                $$<<"            auto str = pJson[\""<<col._colName<<"\"].asString();\n";
+                $$<<"            _"<<col._colValName<<"=std::make_shared<std::vector<char>>(drogon::utils::base64DecodeToVector(str));\n";
+                $$<<"        }\n";                
                 $$<<"    }\n";
                 continue;
             } 
             else if(col._colType.find("uint") == 0 || col._colType == "unsigned short")
             {
-                $$<<"        _"<<col._colValName<<"=std::make_shared<"<<col._colType<<">(("<<col._colType<<")pJson[\""<<col._colName<<"\"].asUInt64());\n";
+                $$<<"        if(!pJson[\"<<col._colName<<\"].isNull())";
+                $$<<"        {\n";
+                $$<<"            _"<<col._colValName<<"=std::make_shared<"<<col._colType<<">(("<<col._colType<<")pJson[\""<<col._colName<<"\"].asUInt64());\n";
+                $$<<"        }\n";                 
                 $$<<"    }\n";
                 continue;
             }
             else if(col._colType.find("int") == 0 || col._colType == "short")
             {
-                $$<<"        _"<<col._colValName<<"=std::make_shared<"<<col._colType<<">(("<<col._colType<<")pJson[\""<<col._colName<<"\"].asInt64());\n";
+                $$<<"        if(!pJson[\"<<col._colName<<\"].isNull())";
+                $$<<"        {\n";
+                $$<<"            _"<<col._colValName<<"=std::make_shared<"<<col._colType<<">(("<<col._colType<<")pJson[\""<<col._colName<<"\"].asInt64());\n";
+                $$<<"        }\n";                  
                 $$<<"    }\n";
                 continue;
             }
             else if(col._colType == "float")
             {
-                $$<<"        _"<<col._colValName<<"=std::make_shared<float>(pJson[\""<<col._colName<<"\"].asFloat());\n";
+                $$<<"        if(!pJson[\"<<col._colName<<\"].isNull())";
+                $$<<"        {\n";
+                $$<<"            _"<<col._colValName<<"=std::make_shared<float>(pJson[\""<<col._colName<<"\"].asFloat());\n";
+                $$<<"        }\n";                 
                 $$<<"     }\n";
                 continue;
             }
             else if(col._colType == "double")
             {
-                $$<<"        _"<<col._colValName<<"=std::make_shared<double>(pJson[\""<<col._colName<<"\"].asDouble());\n";
+                $$<<"        if(!pJson[\"<<col._colName<<\"].isNull())";
+                $$<<"        {\n";
+                $$<<"            _"<<col._colValName<<"=std::make_shared<double>(pJson[\""<<col._colName<<"\"].asDouble());\n";
+                $$<<"        }\n";                 
                 $$<<"    }\n";
                 continue;
             }
             else if(col._colType == "bool")
             {
-                $$<<"        _"<<col._colValName<<"=std::make_shared<bool>(pJson[\""<<col._colName<<"\"].asBool());\n";
+                $$<<"        if(!pJson[\"<<col._colName<<\"].isNull())";
+                $$<<"        {\n";
+                $$<<"            _"<<col._colValName<<"=std::make_shared<bool>(pJson[\""<<col._colName<<"\"].asBool());\n";
+                $$<<"        }\n";  
                 $$<<"    }\n";
                 continue;
             }      
@@ -433,78 +490,105 @@ void [[className]]::updateByMasqueradedJson(const Json::Value &pJson,
             }
             if(col._colType == "std::string")
             {
-                $$<<"        _"<<col._colValName<<"=std::make_shared<std::string>(pJson[pMasqueradingVector["<<i<<"]].asString());\n";
+                $$<<"        if(!pJson[pMasqueradingVector["<<i<<"]].isNull())";
+                $$<<"        {\n";
+                $$<<"            _"<<col._colValName<<"=std::make_shared<std::string>(pJson[pMasqueradingVector["<<i<<"]].asString());\n";
+                $$<<"        }\n";
                 $$<<"    }\n";
                 continue;
             }
             else if(col._colDatabaseType=="date")
             {
-                $$<<"        auto daysStr = pJson[pMasqueradingVector["<<i<<"]].asString();\n";
-                $$<<"        struct tm stm;\n";
-                $$<<"        memset(&stm,0,sizeof(stm));\n";
-                $$<<"        strptime(daysStr.c_str(),\"%Y-%m-%d\",&stm);\n";
-                $$<<"        long t = timelocal(&stm);\n";
+                $$<<"        if(!pJson[pMasqueradingVector["<<i<<"]].isNull())";
+                $$<<"        {\n";
+                $$<<"            auto daysStr = pJson[pMasqueradingVector["<<i<<"]].asString();\n";
+                $$<<"            struct tm stm;\n";
+                $$<<"            memset(&stm,0,sizeof(stm));\n";
+                $$<<"            strptime(daysStr.c_str(),\"%Y-%m-%d\",&stm);\n";
+                $$<<"            long t = timelocal(&stm);\n";
  //               $$<<"            _"<<col._colValName<<"=std::make_shared<::trantor::Date>(::trantor::Date(946656000000000).after(daysNum*86400));\n";
-                $$<<"        _"<<col._colValName<<"=std::make_shared<::trantor::Date>(t*1000000);\n";
+                $$<<"            _"<<col._colValName<<"=std::make_shared<::trantor::Date>(t*1000000);\n";
+                $$<<"        }\n";
                 $$<<"    }\n";
                 continue;
             }
             else if(col._colDatabaseType.find("timestamp")!=std::string::npos||col._colDatabaseType.find("datetime")!=std::string::npos)
             {
-                $$<<"        auto timeStr = pJson[pMasqueradingVector["<<i<<"]].asString();\n";
-                $$<<"        struct tm stm;\n";
-                $$<<"        memset(&stm,0,sizeof(stm));\n";
-                $$<<"        auto p = strptime(timeStr.c_str(),\"%Y-%m-%d %H:%M:%S\",&stm);\n";
-                $$<<"        size_t t = timelocal(&stm);\n";
-                $$<<"        size_t decimalNum = 0;\n";
-                $$<<"        if(*p=='.')\n";
+                $$<<"        if(!pJson[pMasqueradingVector["<<i<<"]].isNull())";
                 $$<<"        {\n";
-                $$<<"            std::string decimals(p+1,&timeStr[timeStr.length()]);\n";
-                $$<<"            while(decimals.length()<6)\n";
+                $$<<"            auto timeStr = pJson[pMasqueradingVector["<<i<<"]].asString();\n";
+                $$<<"            struct tm stm;\n";
+                $$<<"            memset(&stm,0,sizeof(stm));\n";
+                $$<<"            auto p = strptime(timeStr.c_str(),\"%Y-%m-%d %H:%M:%S\",&stm);\n";
+                $$<<"            size_t t = timelocal(&stm);\n";
+                $$<<"            size_t decimalNum = 0;\n";
+                $$<<"            if(*p=='.')\n";
                 $$<<"            {\n";
-                $$<<"                decimals += \"0\";\n";
+                $$<<"                std::string decimals(p+1,&timeStr[timeStr.length()]);\n";
+                $$<<"                while(decimals.length()<6)\n";
+                $$<<"                {\n";
+                $$<<"                    decimals += \"0\";\n";
+                $$<<"                }\n";
+                $$<<"                decimalNum = (size_t)atol(decimals.c_str());\n";
                 $$<<"            }\n";
-                $$<<"            decimalNum = (size_t)atol(decimals.c_str());\n";
-                $$<<"        }\n";
  //               $$<<"            _"<<col._colValName<<"=std::make_shared<::trantor::Date>(::trantor::Date(946656000000000).after(daysNum*86400));\n";
-                $$<<"        _"<<col._colValName<<"=std::make_shared<::trantor::Date>(t*1000000+decimalNum);\n";
+                $$<<"            _"<<col._colValName<<"=std::make_shared<::trantor::Date>(t*1000000+decimalNum);\n";
+                $$<<"        }\n";
                 $$<<"    }\n";
                 continue;
             } 
             else if(col._colDatabaseType=="bytea" || col._colDatabaseType.find("blob") != std::string::npos)
             {
-                $$<<"        auto str = pJson[pMasqueradingVector["<<i<<"]].asString();\n";
-                $$<<"        _"<<col._colValName<<"=std::make_shared<std::vector<char>>(drogon::utils::base64DecodeToVector(str));\n";
+                $$<<"        if(!pJson[pMasqueradingVector["<<i<<"]].isNull())";
+                $$<<"        {\n";
+                $$<<"            auto str = pJson[pMasqueradingVector["<<i<<"]].asString();\n";
+                $$<<"            _"<<col._colValName<<"=std::make_shared<std::vector<char>>(drogon::utils::base64DecodeToVector(str));\n";
+                $$<<"        }\n";
                 $$<<"    }\n";
                 continue;
             } 
             else if(col._colType.find("uint") == 0 || col._colType == "unsigned short")
             {
-                $$<<"        _"<<col._colValName<<"=std::make_shared<"<<col._colType<<">(("<<col._colType<<")pJson[pMasqueradingVector["<<i<<"]].asUInt64());\n";
+                $$<<"        if(!pJson[pMasqueradingVector["<<i<<"]].isNull())";
+                $$<<"        {\n";
+                $$<<"            _"<<col._colValName<<"=std::make_shared<"<<col._colType<<">(("<<col._colType<<")pJson[pMasqueradingVector["<<i<<"]].asUInt64());\n";
+                $$<<"        }\n";
                 $$<<"    }\n";
                 continue;
             }
             else if(col._colType.find("int") == 0 || col._colType == "short")
             {
-                $$<<"        _"<<col._colValName<<"=std::make_shared<"<<col._colType<<">(("<<col._colType<<")pJson[pMasqueradingVector["<<i<<"]].asInt64());\n";
+                $$<<"        if(!pJson[pMasqueradingVector["<<i<<"]].isNull())";
+                $$<<"        {\n";
+                $$<<"            _"<<col._colValName<<"=std::make_shared<"<<col._colType<<">(("<<col._colType<<")pJson[pMasqueradingVector["<<i<<"]].asInt64());\n";
+                $$<<"        }\n";
                 $$<<"    }\n";
                 continue;
             }
             else if(col._colType == "float")
             {
-                $$<<"        _"<<col._colValName<<"=std::make_shared<float>(pJson[pMasqueradingVector["<<i<<"]].asFloat());\n";
+                $$<<"        if(!pJson[pMasqueradingVector["<<i<<"]].isNull())";
+                $$<<"        {\n";
+                $$<<"            _"<<col._colValName<<"=std::make_shared<float>(pJson[pMasqueradingVector["<<i<<"]].asFloat());\n";
+                $$<<"        }\n";
                 $$<<"    }\n";
                 continue;
             }
             else if(col._colType == "double")
             {
-                $$<<"        _"<<col._colValName<<"=std::make_shared<double>(pJson[pMasqueradingVector["<<i<<"]].asDouble());\n";
+                $$<<"        if(!pJson[pMasqueradingVector["<<i<<"]].isNull())";
+                $$<<"        {\n";
+                $$<<"            _"<<col._colValName<<"=std::make_shared<double>(pJson[pMasqueradingVector["<<i<<"]].asDouble());\n";
+                $$<<"        }\n";
                 $$<<"    }\n";
                 continue;
             }
             else if(col._colType == "bool")
             {
-                $$<<"        _"<<col._colValName<<"=std::make_shared<bool>(pJson[pMasqueradingVector["<<i<<"]].asBool());\n";
+                $$<<"        if(!pJson[pMasqueradingVector["<<i<<"]].isNull())";
+                $$<<"        {\n";
+                $$<<"            _"<<col._colValName<<"=std::make_shared<bool>(pJson[pMasqueradingVector["<<i<<"]].asBool());\n";
+                $$<<"        }\n";
                 $$<<"    }\n";
                 continue;
             }      
@@ -533,78 +617,105 @@ void [[className]]::updateByJson(const Json::Value &pJson) noexcept(false)
             }
             if(col._colType == "std::string")
             {
-                $$<<"        _"<<col._colValName<<"=std::make_shared<std::string>(pJson[\""<<col._colName<<"\"].asString());\n";
+                $$<<"        if(!pJson[\"<<col._colName<<\"].isNull())";
+                $$<<"        {\n";
+                $$<<"            _"<<col._colValName<<"=std::make_shared<std::string>(pJson[\""<<col._colName<<"\"].asString());\n";
+                $$<<"        }\n";
                 $$<<"    }\n";
                 continue;
             }
             else if(col._colDatabaseType=="date")
             {
-                $$<<"        auto daysStr = pJson[\""<<col._colName<<"\"].asString();\n";
-                $$<<"        struct tm stm;\n";
-                $$<<"        memset(&stm,0,sizeof(stm));\n";
-                $$<<"        strptime(daysStr.c_str(),\"%Y-%m-%d\",&stm);\n";
-                $$<<"        long t = timelocal(&stm);\n";
+                $$<<"        if(!pJson[\"<<col._colName<<\"].isNull())";
+                $$<<"        {\n";
+                $$<<"            auto daysStr = pJson[\""<<col._colName<<"\"].asString();\n";
+                $$<<"            struct tm stm;\n";
+                $$<<"            memset(&stm,0,sizeof(stm));\n";
+                $$<<"            strptime(daysStr.c_str(),\"%Y-%m-%d\",&stm);\n";
+                $$<<"            long t = timelocal(&stm);\n";
  //               $$<<"            _"<<col._colValName<<"=std::make_shared<::trantor::Date>(::trantor::Date(946656000000000).after(daysNum*86400));\n";
-                $$<<"        _"<<col._colValName<<"=std::make_shared<::trantor::Date>(t*1000000);\n";
+                $$<<"            _"<<col._colValName<<"=std::make_shared<::trantor::Date>(t*1000000);\n";
+                $$<<"        }\n";
                 $$<<"    }\n";
                 continue;
             }
             else if(col._colDatabaseType.find("timestamp")!=std::string::npos||col._colDatabaseType.find("datetime")!=std::string::npos)
             {
-                $$<<"        auto timeStr = pJson[\""<<col._colName<<"\"].asString();\n";
-                $$<<"        struct tm stm;\n";
-                $$<<"        memset(&stm,0,sizeof(stm));\n";
-                $$<<"        auto p = strptime(timeStr.c_str(),\"%Y-%m-%d %H:%M:%S\",&stm);\n";
-                $$<<"        size_t t = timelocal(&stm);\n";
-                $$<<"        size_t decimalNum = 0;\n";
-                $$<<"        if(*p=='.')\n";
+                $$<<"        if(!pJson[\"<<col._colName<<\"].isNull())";
                 $$<<"        {\n";
-                $$<<"            std::string decimals(p+1,&timeStr[timeStr.length()]);\n";
-                $$<<"            while(decimals.length()<6)\n";
+                $$<<"            auto timeStr = pJson[\""<<col._colName<<"\"].asString();\n";
+                $$<<"            struct tm stm;\n";
+                $$<<"            memset(&stm,0,sizeof(stm));\n";
+                $$<<"            auto p = strptime(timeStr.c_str(),\"%Y-%m-%d %H:%M:%S\",&stm);\n";
+                $$<<"            size_t t = timelocal(&stm);\n";
+                $$<<"            size_t decimalNum = 0;\n";
+                $$<<"            if(*p=='.')\n";
                 $$<<"            {\n";
-                $$<<"                decimals += \"0\";\n";
+                $$<<"                std::string decimals(p+1,&timeStr[timeStr.length()]);\n";
+                $$<<"                while(decimals.length()<6)\n";
+                $$<<"                {\n";
+                $$<<"                    decimals += \"0\";\n";
+                $$<<"                }\n";
+                $$<<"                decimalNum = (size_t)atol(decimals.c_str());\n";
                 $$<<"            }\n";
-                $$<<"            decimalNum = (size_t)atol(decimals.c_str());\n";
-                $$<<"        }\n";
  //               $$<<"            _"<<col._colValName<<"=std::make_shared<::trantor::Date>(::trantor::Date(946656000000000).after(daysNum*86400));\n";
-                $$<<"        _"<<col._colValName<<"=std::make_shared<::trantor::Date>(t*1000000+decimalNum);\n";
+                $$<<"            _"<<col._colValName<<"=std::make_shared<::trantor::Date>(t*1000000+decimalNum);\n";
+                $$<<"        }\n";
                 $$<<"    }\n";
                 continue;
             } 
             else if(col._colDatabaseType=="bytea" || col._colDatabaseType.find("blob") != std::string::npos)
             {
-                $$<<"        auto str = pJson[\""<<col._colName<<"\"].asString();\n";
-                $$<<"        _"<<col._colValName<<"=std::make_shared<std::vector<char>>(drogon::utils::base64DecodeToVector(str));\n";
+                $$<<"        if(!pJson[\"<<col._colName<<\"].isNull())";
+                $$<<"        {\n";
+                $$<<"            auto str = pJson[\""<<col._colName<<"\"].asString();\n";
+                $$<<"            _"<<col._colValName<<"=std::make_shared<std::vector<char>>(drogon::utils::base64DecodeToVector(str));\n";
+                $$<<"        }\n";
                 $$<<"    }\n";
                 continue;
             } 
             else if(col._colType.find("uint") == 0 || col._colType == "unsigned short")
             {
-                $$<<"        _"<<col._colValName<<"=std::make_shared<"<<col._colType<<">(("<<col._colType<<")pJson[\""<<col._colName<<"\"].asUInt64());\n";
+                $$<<"        if(!pJson[\"<<col._colName<<\"].isNull())";
+                $$<<"        {\n";
+                $$<<"            _"<<col._colValName<<"=std::make_shared<"<<col._colType<<">(("<<col._colType<<")pJson[\""<<col._colName<<"\"].asUInt64());\n";
+                $$<<"        }\n";
                 $$<<"    }\n";
                 continue;
             }
             else if(col._colType.find("int") == 0 || col._colType == "short")
             {
-                $$<<"        _"<<col._colValName<<"=std::make_shared<"<<col._colType<<">(("<<col._colType<<")pJson[\""<<col._colName<<"\"].asInt64());\n";
+                $$<<"        if(!pJson[\"<<col._colName<<\"].isNull())";
+                $$<<"        {\n";
+                $$<<"            _"<<col._colValName<<"=std::make_shared<"<<col._colType<<">(("<<col._colType<<")pJson[\""<<col._colName<<"\"].asInt64());\n";
+                $$<<"        }\n";
                 $$<<"    }\n";
                 continue;
             }
             else if(col._colType == "float")
             {
-                $$<<"        _"<<col._colValName<<"=std::make_shared<float>(pJson[\""<<col._colName<<"\"].asFloat());\n";
+                $$<<"        if(!pJson[\"<<col._colName<<\"].isNull())";
+                $$<<"        {\n";
+                $$<<"            _"<<col._colValName<<"=std::make_shared<float>(pJson[\""<<col._colName<<"\"].asFloat());\n";
+                $$<<"        }\n";
                 $$<<"    }\n";
                 continue;
             }
             else if(col._colType == "double")
             {
-                $$<<"        _"<<col._colValName<<"=std::make_shared<double>(pJson[\""<<col._colName<<"\"].asDouble());\n";
+                $$<<"        if(!pJson[\"<<col._colName<<\"].isNull())";
+                $$<<"        {\n";
+                $$<<"            _"<<col._colValName<<"=std::make_shared<double>(pJson[\""<<col._colName<<"\"].asDouble());\n";
+                $$<<"        }\n";
                 $$<<"    }\n";
                 continue;
             }
             else if(col._colType == "bool")
             {
-                $$<<"        _"<<col._colValName<<"=std::make_shared<bool>(pJson[\""<<col._colName<<"\"].asBool());\n";
+                $$<<"        if(!pJson[\"<<col._colName<<\"].isNull())";
+                $$<<"        {\n";
+                $$<<"            _"<<col._colValName<<"=std::make_shared<bool>(pJson[\""<<col._colName<<"\"].asBool());\n";
+                $$<<"        }\n";
                 $$<<"    }\n";
                 continue;
             }      
@@ -756,17 +867,21 @@ const std::vector<std::string> &[[className]]::insertColumns() noexcept
 
 void [[className]]::outputArgs(drogon::orm::internal::SqlBinder &binder) const
 {
-<%c++for(auto col:cols){
+<%c++for(size_t i = 0; i < cols.size(); i++){
+    auto &col = cols[i];
     if(!col._isAutoVal&&!col._colType.empty())
     {
 %>
-    if(get{%col._colTypeName%}())
+    if(_dirtyFlag[{%i%}])
     {
-        binder << getValueOf{%col._colTypeName%}();
-    }
-    else
-    {
-        binder << nullptr;
+        if(get{%col._colTypeName%}())
+        {
+            binder << getValueOf{%col._colTypeName%}();
+        }
+        else
+        {
+            binder << nullptr;
+        }
     }
 <%c++
     }

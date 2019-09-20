@@ -5,16 +5,13 @@
  *  Users should implement business logic in the derived class.
  */
 
-#include "[[fileName]].h"
+#include "[[fileName]]Base.h"
 #include <string>
 
 <%c++
-
 auto tableInfo = @@.get<DrTemplateData>("tableInfo");
 auto modelName = tableInfo.get<std::string>("className");
 bool hasPrimaryKey = (tableInfo.get<int>("hasPrimaryKey")==1);
-
-
 auto namespaceVector=@@.get<std::vector<std::string>>("namespaceVector");
 std::string namespaceStr;
 for(auto &name:namespaceVector)
