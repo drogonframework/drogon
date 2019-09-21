@@ -12,6 +12,7 @@
 #include <drogon/orm/SqlBinder.h>
 #include <drogon/orm/Mapper.h>
 #include <trantor/utils/Date.h>
+#include <trantor/utils/Logger.h>
 #include <json/json.h>
 #include <string>
 #include <memory>
@@ -81,21 +82,23 @@ class Groups
     void updateByMasqueradedJson(
         const Json::Value &pJson,
         const std::vector<std::string> &pMasqueradingVector) noexcept(false);
-    bool validateJsonForCreation(const Json::Value &pJson, std::string &err);
-    bool validateMasqueradedJsonForCreation(
+    static bool validateJsonForCreation(const Json::Value &pJson,
+                                        std::string &err);
+    static bool validateMasqueradedJsonForCreation(
         const Json::Value &,
         const std::vector<std::string> &pMasqueradingVector,
         std::string &err);
-    bool validateJsonForUpdate(const Json::Value &pJson, std::string &err);
-    bool validateMasqueradedJsonForUpdate(
+    static bool validateJsonForUpdate(const Json::Value &pJson,
+                                      std::string &err);
+    static bool validateMasqueradedJsonForUpdate(
         const Json::Value &,
         const std::vector<std::string> &pMasqueradingVector,
         std::string &err);
-    bool validJsonOfField(size_t index,
-                          const std::string &fieldName,
-                          const Json::Value &pJson,
-                          std::string &err,
-                          bool isForCreation);
+    static bool validJsonOfField(size_t index,
+                                 const std::string &fieldName,
+                                 const Json::Value &pJson,
+                                 std::string &err,
+                                 bool isForCreation);
 
     /**  For column group_id  */
     /// Get the value of the column group_id, returns the default value if the
@@ -268,12 +271,13 @@ class Groups
             "delete from " + tableName + " where group_id = ?";
         return sql;
     }
-
     std::string sqlForInserting(bool &needSelection) const
     {
         std::string sql = "insert into " + tableName + " (";
         size_t parametersCount = 0;
         needSelection = false;
+        sql += "group_id,";
+        ++parametersCount;
         if (_dirtyFlag[1])
         {
             sql += "group_name,";
@@ -332,15 +336,54 @@ class Groups
         }
         else
             sql += ") values (";
-        for (size_t i = 0; i < parametersCount; i++)
+
+        sql += "default,";
+        if (_dirtyFlag[1])
         {
-            sql.append(1, '?');
-            if (i < parametersCount - 1)
-            {
-                sql.append(1, ',');
-            }
+            sql.append("?,");
+        }
+        if (_dirtyFlag[2])
+        {
+            sql.append("?,");
+        }
+        if (_dirtyFlag[3])
+        {
+            sql.append("?,");
+        }
+        if (_dirtyFlag[4])
+        {
+            sql.append("?,");
+        }
+        if (_dirtyFlag[5])
+        {
+            sql.append("?,");
+        }
+        if (_dirtyFlag[6])
+        {
+            sql.append("?,");
+        }
+        if (_dirtyFlag[7])
+        {
+            sql.append("?,");
+        }
+        if (_dirtyFlag[8])
+        {
+            sql.append("?,");
+        }
+        if (_dirtyFlag[9])
+        {
+            sql.append("?,");
+        }
+        if (_dirtyFlag[10])
+        {
+            sql.append("?,");
+        }
+        if (parametersCount > 0)
+        {
+            sql.resize(sql.length() - 1);
         }
         sql.append(1, ')');
+        LOG_TRACE << sql;
         return sql;
     }
 };

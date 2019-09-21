@@ -12,6 +12,7 @@
 #include <drogon/orm/SqlBinder.h>
 #include <drogon/orm/Mapper.h>
 #include <trantor/utils/Date.h>
+#include <trantor/utils/Logger.h>
 #include <json/json.h>
 #include <string>
 #include <memory>
@@ -79,21 +80,23 @@ class Users
     void updateByMasqueradedJson(
         const Json::Value &pJson,
         const std::vector<std::string> &pMasqueradingVector) noexcept(false);
-    bool validateJsonForCreation(const Json::Value &pJson, std::string &err);
-    bool validateMasqueradedJsonForCreation(
+    static bool validateJsonForCreation(const Json::Value &pJson,
+                                        std::string &err);
+    static bool validateMasqueradedJsonForCreation(
         const Json::Value &,
         const std::vector<std::string> &pMasqueradingVector,
         std::string &err);
-    bool validateJsonForUpdate(const Json::Value &pJson, std::string &err);
-    bool validateMasqueradedJsonForUpdate(
+    static bool validateJsonForUpdate(const Json::Value &pJson,
+                                      std::string &err);
+    static bool validateMasqueradedJsonForUpdate(
         const Json::Value &,
         const std::vector<std::string> &pMasqueradingVector,
         std::string &err);
-    bool validJsonOfField(size_t index,
-                          const std::string &fieldName,
-                          const Json::Value &pJson,
-                          std::string &err,
-                          bool isForCreation);
+    static bool validJsonOfField(size_t index,
+                                 const std::string &fieldName,
+                                 const Json::Value &pJson,
+                                 std::string &err,
+                                 bool isForCreation);
 
     /**  For column user_id  */
     /// Get the value of the column user_id, returns the default value if the
@@ -244,7 +247,6 @@ class Users
             "delete from " + tableName + " where id = $1";
         return sql;
     }
-
     std::string sqlForInserting(bool &needSelection) const
     {
         std::string sql = "insert into " + tableName + " (";
@@ -280,17 +282,16 @@ class Users
             sql += "avatar_id,";
             ++parametersCount;
         }
+        sql += "id,";
+        ++parametersCount;
         if (_dirtyFlag[7])
         {
             sql += "salt,";
             ++parametersCount;
         }
-        if (_dirtyFlag[8])
-        {
-            sql += "admin,";
-            ++parametersCount;
-        }
-        else
+        sql += "admin,";
+        ++parametersCount;
+        if (!_dirtyFlag[8])
         {
             needSelection = true;
         }
@@ -302,19 +303,58 @@ class Users
         }
         else
             sql += ") values (";
-        for (size_t i = 0; i < parametersCount; i++)
+
+        int placeholder = 1;
+        char placeholderStr[64];
+        size_t n = 0;
+        if (_dirtyFlag[0])
         {
-            char p[64];
-            auto n = sprintf(p, "$%lu", i + 1);
-            sql.append(p, n);
-            if (i < parametersCount - 1)
-            {
-                sql.append(1, ',');
-            }
-            if (i < parametersCount - 1)
-            {
-                sql.append(1, ',');
-            }
+            n = sprintf(placeholderStr, "$%d,", placeholder++);
+            sql.append(placeholderStr, n);
+        }
+        if (_dirtyFlag[1])
+        {
+            n = sprintf(placeholderStr, "$%d,", placeholder++);
+            sql.append(placeholderStr, n);
+        }
+        if (_dirtyFlag[2])
+        {
+            n = sprintf(placeholderStr, "$%d,", placeholder++);
+            sql.append(placeholderStr, n);
+        }
+        if (_dirtyFlag[3])
+        {
+            n = sprintf(placeholderStr, "$%d,", placeholder++);
+            sql.append(placeholderStr, n);
+        }
+        if (_dirtyFlag[4])
+        {
+            n = sprintf(placeholderStr, "$%d,", placeholder++);
+            sql.append(placeholderStr, n);
+        }
+        if (_dirtyFlag[5])
+        {
+            n = sprintf(placeholderStr, "$%d,", placeholder++);
+            sql.append(placeholderStr, n);
+        }
+        sql += "default,";
+        if (_dirtyFlag[7])
+        {
+            n = sprintf(placeholderStr, "$%d,", placeholder++);
+            sql.append(placeholderStr, n);
+        }
+        if (_dirtyFlag[8])
+        {
+            n = sprintf(placeholderStr, "$%d,", placeholder++);
+            sql.append(placeholderStr, n);
+        }
+        else
+        {
+            sql += "default,";
+        }
+        if (parametersCount > 0)
+        {
+            sql.resize(sql.length() - 1);
         }
         if (needSelection)
         {
@@ -324,6 +364,7 @@ class Users
         {
             sql.append(1, ')');
         }
+        LOG_TRACE << sql;
         return sql;
     }
 };

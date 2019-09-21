@@ -1266,7 +1266,7 @@ bool [[className]]::validJsonOfField(size_t index,
             {
                 err="String length exceeds limit for the " +
                     fieldName +
-                    " field (the maximum value is {%col._colLength%} )";
+                    " field (the maximum value is {%col._colLength%})";
                 return false;               
             }
 
