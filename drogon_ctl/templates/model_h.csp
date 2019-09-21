@@ -116,15 +116,15 @@ auto cols=@@.get<std::vector<ColumnInfo>>("columns");
     void updateByJson(const Json::Value &pJson) noexcept(false);
     void updateByMasqueradedJson(const Json::Value &pJson,
                                  const std::vector<std::string> &pMasqueradingVector) noexcept(false);
-    bool validateJsonForCreation(const Json::Value &pJson, std::string &err);
-    bool validateMasqueradedJsonForCreation(const Json::Value &,
-                                            const std::vector<std::string> &pMasqueradingVector,
-                                            std::string &err);
-    bool validateJsonForUpdate(const Json::Value &pJson, std::string &err);
-    bool validateMasqueradedJsonForUpdate(const Json::Value &,
+    static bool validateJsonForCreation(const Json::Value &pJson, std::string &err);
+    static bool validateMasqueradedJsonForCreation(const Json::Value &,
+                                                const std::vector<std::string> &pMasqueradingVector,
+                                                    std::string &err);
+    static bool validateJsonForUpdate(const Json::Value &pJson, std::string &err);
+    static bool validateMasqueradedJsonForUpdate(const Json::Value &,
                                           const std::vector<std::string> &pMasqueradingVector,
                                           std::string &err);
-    bool validJsonOfField(size_t index,
+    static bool validJsonOfField(size_t index,
                           const std::string &fieldName,
                           const Json::Value &pJson, 
                           std::string &err, 

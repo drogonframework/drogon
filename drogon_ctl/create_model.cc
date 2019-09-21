@@ -399,6 +399,18 @@ void create_model::createModelClassFromMysql(
                 {
                     info._colType = "std::vector<char>";
                 }
+                else if (type.find("varchar") != std::string::npos)
+                {
+                    info._colType = "std::string";
+                    auto pos1 = type.find("(");
+                    auto pos2 = type.find(")");
+                    if (pos1 != std::string::npos &&
+                        pos2 != std::string::npos && pos2 - pos1 > 1)
+                    {
+                        info._colLength =
+                            std::stoll(type.substr(pos1 + 1, pos2 - pos1 - 1));
+                    }
+                }
                 else
                 {
                     info._colType = "std::string";

@@ -76,11 +76,7 @@ if(resource.empty())
     //ADD_METHOD_TO([[className]]::update,"{%resource%}",Put,Options[[filters]]);
 <%c++}%>
     METHOD_LIST_END
-    
-    /**
-     * Uncomment the following methods to customize for business logic.
-     */
-     /*
+     
 <%c++if(hasPrimaryKey)
 {
 %>
@@ -98,8 +94,8 @@ if(resource.empty())
     void get(const HttpRequestPtr &req,
              std::function<void(const HttpResponsePtr &)> &&callback);
     void create(const HttpRequestPtr &req,
-                std::function<void(const HttpResponsePtr &)> &&callback);
-    */
+             std::function<void(const HttpResponsePtr &)> &&callback);
+
 };
 <%c++ for(size_t i=0;i<namespaceVector.size();++i)
 {

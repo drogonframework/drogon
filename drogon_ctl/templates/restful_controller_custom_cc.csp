@@ -29,10 +29,7 @@ if(!namespaceStr.empty())
 }
 std::string indentStr(@@.get<std::string>("className").length(), ' ');
 %>
-/**
-* Uncomment the following methods to customize for business logic.
-*/
-/*
+
 <%c++
 if(hasPrimaryKey)
 {%>
@@ -40,7 +37,7 @@ void [[className]]::getOne(const HttpRequestPtr &req,
      {%indentStr%}         std::function<void(const HttpResponsePtr &)> &&callback,
      {%indentStr%}         {%modelName%}::PrimaryKeyType &&id)
 {
-    [[className]]Base::getOne(req, callback, id);
+    [[className]]Base::getOne(req, std::move(callback), std::move(id));
 }
 
 
@@ -48,7 +45,7 @@ void [[className]]::updateOne(const HttpRequestPtr &req,
      {%indentStr%}            std::function<void(const HttpResponsePtr &)> &&callback,
      {%indentStr%}            {%modelName%}::PrimaryKeyType &&id)
 {
-    [[className]]Base::updateOne(req, callback, id);
+    [[className]]Base::updateOne(req, std::move(callback), std::move(id));
 }
 
 
@@ -56,20 +53,18 @@ void [[className]]::deleteOne(const HttpRequestPtr &req,
      {%indentStr%}            std::function<void(const HttpResponsePtr &)> &&callback,
      {%indentStr%}            {%modelName%}::PrimaryKeyType &&id)
 {
-    [[className]]Base::deleteOne(req, callback, id);
+    [[className]]Base::deleteOne(req, std::move(callback), std::move(id));
 }
 <%c++}%>
 
 void [[className]]::get(const HttpRequestPtr &req,
      {%indentStr%}      std::function<void(const HttpResponsePtr &)> &&callback)
 {
-    [[className]]Base::get(req, callback);
+    [[className]]Base::get(req, std::move(callback));
 }
 
 void [[className]]::create(const HttpRequestPtr &req,
      {%indentStr%}         std::function<void(const HttpResponsePtr &)> &&callback)
 {
-    [[className]]Base::create(req, callback);
+    [[className]]Base::create(req, std::move(callback));
 }
-
-*/

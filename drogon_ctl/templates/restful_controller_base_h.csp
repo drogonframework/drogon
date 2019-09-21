@@ -65,8 +65,8 @@ class [[className]]Base
                 std::function<void(const HttpResponsePtr &)> &&callback);
 
 
-//    void update(const HttpRequestPtr &req,
-//                std::function<void(const HttpResponsePtr &)> &&callback);
+//  void update(const HttpRequestPtr &req,
+//              std::function<void(const HttpResponsePtr &)> &&callback);
 
     orm::DbClientPtr getDbClient() 
     {
@@ -81,9 +81,27 @@ class [[className]]Base
     {
         _masquerading = false;
     }
+    void registerAJsonValidator(
+        const std::string &fieldName,
+        const std::function<bool(const Json::Value &, std::string &)>
+            &validator)
+    {
+        _validators.emplace_back(fieldName, validator);
+    }
+    void registerAJsonValidator(
+        const std::string &fieldName,
+        std::function<bool(const Json::Value &, std::string &)> &&validator)
+    {
+        _validators.emplace_back(fieldName, std::move(validator));
+    }
   protected:
+    bool doCustomValidations(const Json::Value &pJson, std::string &err);
     const std::string _dbClientName = "[[dbClientName]]";
     bool _masquerading = true;
+    std::vector<
+        std::pair<std::string,
+                  std::function<bool(const Json::Value &, std::string &)>>>
+        _validators;
     /**
      * The items in the vector are aliases of column names in the table.
      * if one item is set to an empty string, the related column is not sent to clients.

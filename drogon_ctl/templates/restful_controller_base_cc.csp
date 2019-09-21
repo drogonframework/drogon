@@ -86,14 +86,42 @@ void [[className]]Base::updateOne(const HttpRequestPtr &req,
         return;
     }
     {%modelName%} object;
+    std::string err;
+    if(!doCustomValidations(*jsonPtr, err))
+    {
+        Json::Value ret;
+        ret["error"] = err;
+        auto resp= HttpResponse::newHttpJsonResponse(ret);
+        resp->setStatusCode(k400BadRequest);
+        callback(resp);
+        return;
+    }
     try
     {
         if(_masquerading)
         {
+            if(!{%modelName%}::validateMasqueradedJsonForUpdate(*jsonPtr, _masqueradingVector, err))
+            {
+                Json::Value ret;
+                ret["error"] = err;
+                auto resp= HttpResponse::newHttpJsonResponse(ret);
+                resp->setStatusCode(k400BadRequest);
+                callback(resp);
+                return;
+            }
             object.updateByMasqueradedJson(*jsonPtr, _masqueradingVector);
         }
         else
         {
+            if(!{%modelName%}::validateJsonForUpdate(*jsonPtr, err))
+            {
+                Json::Value ret;
+                ret["error"] = err;
+                auto resp= HttpResponse::newHttpJsonResponse(ret);
+                resp->setStatusCode(k400BadRequest);
+                callback(resp);
+                return;
+            }
             object.updateByJson(*jsonPtr);
         }
     }
@@ -312,6 +340,40 @@ void [[className]]Base::create(const HttpRequestPtr &req,
         callback(resp);
         return;
     }
+    std::string err;
+    if(!doCustomValidations(*jsonPtr, err))
+    {
+        Json::Value ret;
+        ret["error"] = err;
+        auto resp= HttpResponse::newHttpJsonResponse(ret);
+        resp->setStatusCode(k400BadRequest);
+        callback(resp);
+        return;
+    }
+    if(_masquerading)
+    {
+        if(!{%modelName%}::validateMasqueradedJsonForCreation(*jsonPtr, _masqueradingVector, err))
+        {
+            Json::Value ret;
+            ret["error"] = err;
+            auto resp= HttpResponse::newHttpJsonResponse(ret);
+            resp->setStatusCode(k400BadRequest);
+            callback(resp);
+            return;
+        }
+    }
+    else
+    {
+        if(!{%modelName%}::validateJsonForCreation(*jsonPtr, err))
+        {
+            Json::Value ret;
+            ret["error"] = err;
+            auto resp= HttpResponse::newHttpJsonResponse(ret);
+            resp->setStatusCode(k400BadRequest);
+            callback(resp);
+            return;
+        }
+    }   
     try 
     {
         {%modelName%} object = 
@@ -363,3 +425,18 @@ void [[className]]Base::update(const HttpRequestPtr &req,
 {
 
 }*/
+
+bool [[className]]Base::doCustomValidations(const Json::Value &pJson, std::string &err)
+{
+    for(auto &validator : _validators)
+    {
+        if(pJson.isMember(validator.first))
+        {
+            if(!validator.second(pJson[validator.first], err))
+            {
+                return false;
+            }
+        }
+    }
+    return true;
+}
