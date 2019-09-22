@@ -153,6 +153,15 @@ class Criteria
                 break;
         }
     }
+    Criteria(const std::string &colName, CompareOperator &opera)
+        : Criteria(colName, (const CompareOperator &)opera)
+    {
+    }
+    Criteria(const std::string &colName, CompareOperator &&opera)
+        : Criteria(colName, (const CompareOperator &)opera)
+    {
+    }
+
     Criteria()
     {
     }
