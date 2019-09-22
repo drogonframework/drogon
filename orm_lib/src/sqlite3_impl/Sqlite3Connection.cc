@@ -152,6 +152,7 @@ void Sqlite3Connection::execSqlInQueue(
         if (ret != SQLITE_OK || !stmtPtr)
         {
             onError(sql, exceptCallback);
+            _idleCb();
             return;
         }
         if (!std::all_of(remaining, sql.data() + sql.size(), [](char ch) {
@@ -169,6 +170,7 @@ void Sqlite3Connection::execSqlInQueue(
                 auto exceptPtr = std::current_exception();
                 exceptCallback(exceptPtr);
             }
+            _idleCb();
             return;
         }
     }
@@ -214,6 +216,7 @@ void Sqlite3Connection::execSqlInQueue(
         {
             onError(sql, exceptCallback);
             sqlite3_reset(stmt);
+            _idleCb();
             return;
         }
     }
@@ -253,6 +256,7 @@ void Sqlite3Connection::execSqlInQueue(
     {
         onError(sql, exceptCallback);
         sqlite3_reset(stmt);
+        _idleCb();
         return;
     }
     if (paraNum > 0 && newStmt)
