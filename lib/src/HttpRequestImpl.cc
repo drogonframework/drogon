@@ -136,7 +136,7 @@ void HttpRequestImpl::parseParameters() const
                            _jsonPtr.get(),
                            &errs))
         {
-            LOG_ERROR << errs << "(json string: " << input << ")";
+            LOG_ERROR << errs;
             _jsonPtr.reset();
         }
     }
