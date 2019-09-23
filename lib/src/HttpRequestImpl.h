@@ -192,15 +192,14 @@ class HttpRequestImpl : public HttpRequest
 
     string_view queryView() const
     {
-        if (!_query.empty())
-            return _query;
-        if (_method == Post || _method == Put)
-        {
-            if (_cacheFilePtr)
-                return _cacheFilePtr->getStringView();
-            return _content;
-        }
         return _query;
+    }
+
+    string_view contentView() const
+    {
+        if (_cacheFilePtr)
+            return _cacheFilePtr->getStringView();
+        return _content;
     }
 
     virtual const std::string &query() const override
