@@ -19,6 +19,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <set>
 
 namespace drogon
 {
@@ -46,6 +47,8 @@ std::vector<char> hexToBinaryVector(const char *ptr, size_t length);
 /// Split the string into multiple separated strings.
 std::vector<std::string> splitString(const std::string &str,
                                      const std::string &separator);
+std::set<std::string> splitStringToSet(const std::string &str,
+                                       const std::string &separator);
 
 /// Get UUID string.
 std::string getUuid();

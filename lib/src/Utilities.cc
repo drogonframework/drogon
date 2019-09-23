@@ -232,6 +232,32 @@ std::vector<std::string> splitString(const std::string &str,
         ret.push_back(str.substr(pos2));
     return ret;
 }
+
+std::set<std::string> splitStringToSet(const std::string &str,
+                                       const std::string &separator)
+{
+    std::set<std::string> ret;
+    std::string::size_type pos1, pos2;
+    pos2 = 0;
+    pos1 = str.find(separator);
+    while (pos1 != std::string::npos)
+    {
+        if (pos1 != 0)
+        {
+            std::string item = str.substr(pos2, pos1 - pos2);
+            ret.insert(item);
+        }
+        pos2 = pos1 + separator.length();
+        while (pos2 < str.length() &&
+               str.substr(pos2, separator.length()) == separator)
+            pos2 += separator.length();
+        pos1 = str.find(separator, pos2);
+    }
+    if (pos2 < str.length())
+        ret.insert(str.substr(pos2));
+    return ret;
+}
+
 std::string getUuid()
 {
     uuid_t uu;

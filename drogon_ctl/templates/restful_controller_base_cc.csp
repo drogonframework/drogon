@@ -41,16 +41,8 @@ void [[className]]Base::getOne(const HttpRequestPtr &req,
     drogon::orm::Mapper<{%modelName%}> mapper(dbClientPtr);
     mapper.findByPrimaryKey(
         id,
-        [callbackPtr, this]({%modelName%} r) {
-            if(_masquerading)
-            {
-                (*callbackPtr)(HttpResponse::newHttpJsonResponse(
-                    r.toMasqueradedJson(_masqueradingVector)));
-            }
-            else
-            {
-                (*callbackPtr)(HttpResponse::newHttpJsonResponse(r.toJson()));
-            }
+        [req, callbackPtr, this]({%modelName%} r) {
+            (*callbackPtr)(HttpResponse::newHttpJsonResponse(makeJson(req, r)));
         },
         [callbackPtr](const DrogonDbException &e) {
             const drogon::orm::UnexpectedRows *s=dynamic_cast<const drogon::orm::UnexpectedRows *>(&e.base());
@@ -301,19 +293,12 @@ void [[className]]Base::get(const HttpRequestPtr &req,
     auto callbackPtr =
         std::make_shared<std::function<void(const HttpResponsePtr &)>>(
             std::move(callback));
-    mapper.findAll([callbackPtr, this](const std::vector<{%modelName%}> &v) {
+    mapper.findAll([req, callbackPtr, this](const std::vector<{%modelName%}> &v) {
             Json::Value ret;
             ret.resize(0);
             for (auto &obj : v)
             {
-                if(_masquerading)
-                {
-                    ret.append(obj.toMasqueradedJson(_masqueradingVector));
-                }
-                else
-                {
-                    ret.append(obj.toJson());
-                }
+                ret.append(makeJson(req, obj));
             }
             (*callbackPtr)(HttpResponse::newHttpJsonResponse(ret));
         },
@@ -387,16 +372,9 @@ void [[className]]Base::create(const HttpRequestPtr &req,
         drogon::orm::Mapper<{%modelName%}> mapper(dbClientPtr);
         mapper.insert(
             object,
-            [callbackPtr, this]({%modelName%} newObject){
-                if(_masquerading)
-                {
-                    (*callbackPtr)(HttpResponse::newHttpJsonResponse(
-                        newObject.toMasqueradedJson(_masqueradingVector)));
-                }
-                else
-                {
-                    (*callbackPtr)(HttpResponse::newHttpJsonResponse(newObject.toJson()));
-                }
+            [req, callbackPtr, this]({%modelName%} newObject){
+                (*callbackPtr)(HttpResponse::newHttpJsonResponse(
+                    makeJson(req, newObject)));
             },
             [callbackPtr](const DrogonDbException &e){
                 LOG_ERROR << e.base().what();
@@ -439,4 +417,35 @@ bool [[className]]Base::doCustomValidations(const Json::Value &pJson, std::strin
         }
     }
     return true;
+}
+
+Json::Value [[className]]Base::makeJson(const HttpRequestPtr &req, 
+            {%indentStr%}               const {%modelName%} &obj)
+{
+    auto &paras = req->parameters();
+    auto iter = paras.find("fields");
+    if(_masquerading)
+    {
+        if(iter != paras.end())
+        {
+            auto fields = utils::splitStringToSet(iter->second, ",");
+            return obj.toMasqueradedJson(fieldsSelector(fields));
+        }
+        else
+        {
+            return obj.toMasqueradedJson(_masqueradingVector);
+        }
+    }
+    else
+    {
+        if(iter != paras.end())
+        {
+            auto fields = utils::splitString(iter->second, ",");
+            return obj.toMasqueradedJson(fields);
+        }
+        else
+        {
+            return obj.toJson();
+        }
+    }
 }

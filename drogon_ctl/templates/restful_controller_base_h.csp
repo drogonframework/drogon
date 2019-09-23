@@ -128,6 +128,23 @@ for(size_t i=0; i<cols.size(); i++)
 }
 %>
     };
+    std::vector<std::string> fieldsSelector(const std::set<std::string> &fields)
+    {
+        std::vector<std::string> ret;
+        for(auto &field : _masqueradingVector)
+        {
+            if(!field.empty() && fields.find(field) != fields.end())
+            {
+                ret.emplace_back(field);
+            }
+            else
+            {
+                ret.emplace_back(std::string{});
+            }
+        }
+        return ret;
+    }
+    Json::Value makeJson(const HttpRequestPtr &req, const {%modelName%} &obj);
 };
 <%c++ for(size_t i=0;i<namespaceVector.size();++i)
 {

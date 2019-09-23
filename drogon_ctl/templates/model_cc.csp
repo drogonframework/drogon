@@ -1188,13 +1188,19 @@ bool [[className]]::validJsonOfField(size_t index,
             }
 <%c++                    
                 }
-            }              
+            } 
+if(!col._notNull){%>
+            if(pJson.isNull())
+            {
+                return true;
+            }
+<%c++}            
             if(col._colType == "uint64_t")
             {
 %>
             if(!pJson.isUInt64())
             {
-                err="Type error in the "+fieldName+"field";
+                err="Type error in the "+fieldName+" field";
                 return false;
             }
 <%c++
@@ -1204,7 +1210,7 @@ bool [[className]]::validJsonOfField(size_t index,
 %>
             if(!pJson.isInt64())
             {
-                err="Type error in the "+fieldName+"field";
+                err="Type error in the "+fieldName+" field";
                 return false;
             }
 <%c++
@@ -1214,7 +1220,7 @@ bool [[className]]::validJsonOfField(size_t index,
 %>
             if(!pJson.isUInt())
             {
-                err="Type error in the "+fieldName+"field";
+                err="Type error in the "+fieldName+" field";
                 return false;
             }
 <%c++
@@ -1224,7 +1230,7 @@ bool [[className]]::validJsonOfField(size_t index,
 %>
             if(!pJson.isInt())
             {
-                err="Type error in the "+fieldName+"field";
+                err="Type error in the "+fieldName+" field";
                 return false;
             }
 <%c++
@@ -1234,7 +1240,7 @@ bool [[className]]::validJsonOfField(size_t index,
 %>
             if(!pJson.isNumeric())
             {
-                err="Type error in the "+fieldName+"field";
+                err="Type error in the "+fieldName+" field";
                 return false;
             }
 <%c++
@@ -1244,7 +1250,7 @@ bool [[className]]::validJsonOfField(size_t index,
 %>
             if(!pJson.isBool())
             {
-                err="Type error in the "+fieldName+"field";
+                err="Type error in the "+fieldName+" field";
                 return false;
             }
 <%c++               
@@ -1252,9 +1258,9 @@ bool [[className]]::validJsonOfField(size_t index,
             else
             {
 %>
-            if(!pJson.isString() && !pJson.isNull())
+            if(!pJson.isString())
             {
-                err="Type error in the "+fieldName+"field";
+                err="Type error in the "+fieldName+" field";
                 return false;                
             }
 <%c++
