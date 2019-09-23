@@ -1837,79 +1837,123 @@ bool Groups::validJsonOfField(size_t index,
                 err = "The automatic primary key cannot be set";
                 return false;
             }
+            if (pJson.isNull())
+            {
+                return true;
+            }
             if (!pJson.isUInt64())
             {
-                err = "Type error in the " + fieldName + "field";
+                err = "Type error in the " + fieldName + " field";
                 return false;
             }
             break;
         case 1:
-            if (!pJson.isString() && !pJson.isNull())
+            if (pJson.isNull())
             {
-                err = "Type error in the " + fieldName + "field";
+                return true;
+            }
+            if (!pJson.isString())
+            {
+                err = "Type error in the " + fieldName + " field";
                 return false;
             }
             break;
         case 2:
+            if (pJson.isNull())
+            {
+                return true;
+            }
             if (!pJson.isUInt64())
             {
-                err = "Type error in the " + fieldName + "field";
+                err = "Type error in the " + fieldName + " field";
                 return false;
             }
             break;
         case 3:
-            if (!pJson.isString() && !pJson.isNull())
+            if (pJson.isNull())
             {
-                err = "Type error in the " + fieldName + "field";
+                return true;
+            }
+            if (!pJson.isString())
+            {
+                err = "Type error in the " + fieldName + " field";
                 return false;
             }
             break;
         case 4:
+            if (pJson.isNull())
+            {
+                return true;
+            }
             if (!pJson.isUInt64())
             {
-                err = "Type error in the " + fieldName + "field";
+                err = "Type error in the " + fieldName + " field";
                 return false;
             }
             break;
         case 5:
+            if (pJson.isNull())
+            {
+                return true;
+            }
             if (!pJson.isUInt64())
             {
-                err = "Type error in the " + fieldName + "field";
+                err = "Type error in the " + fieldName + " field";
                 return false;
             }
             break;
         case 6:
-            if (!pJson.isString() && !pJson.isNull())
+            if (pJson.isNull())
             {
-                err = "Type error in the " + fieldName + "field";
+                return true;
+            }
+            if (!pJson.isString())
+            {
+                err = "Type error in the " + fieldName + " field";
                 return false;
             }
             break;
         case 7:
+            if (pJson.isNull())
+            {
+                return true;
+            }
             if (!pJson.isNumeric())
             {
-                err = "Type error in the " + fieldName + "field";
+                err = "Type error in the " + fieldName + " field";
                 return false;
             }
             break;
         case 8:
-            if (!pJson.isString() && !pJson.isNull())
+            if (pJson.isNull())
             {
-                err = "Type error in the " + fieldName + "field";
+                return true;
+            }
+            if (!pJson.isString())
+            {
+                err = "Type error in the " + fieldName + " field";
                 return false;
             }
             break;
         case 9:
-            if (!pJson.isString() && !pJson.isNull())
+            if (pJson.isNull())
             {
-                err = "Type error in the " + fieldName + "field";
+                return true;
+            }
+            if (!pJson.isString())
+            {
+                err = "Type error in the " + fieldName + " field";
                 return false;
             }
             break;
         case 10:
+            if (pJson.isNull())
+            {
+                return true;
+            }
             if (!pJson.isBool())
             {
-                err = "Type error in the " + fieldName + "field";
+                err = "Type error in the " + fieldName + " field";
                 return false;
             }
             break;

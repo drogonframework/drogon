@@ -1518,9 +1518,13 @@ bool Users::validJsonOfField(size_t index,
     switch (index)
     {
         case 0:
-            if (!pJson.isString() && !pJson.isNull())
+            if (pJson.isNull())
             {
-                err = "Type error in the " + fieldName + "field";
+                return true;
+            }
+            if (!pJson.isString())
+            {
+                err = "Type error in the " + fieldName + " field";
                 return false;
             }
             // asString().length() creates a string object, is there any better
@@ -1528,15 +1532,19 @@ bool Users::validJsonOfField(size_t index,
             if (pJson.isString() && pJson.asString().length() > 32)
             {
                 err = "String length exceeds limit for the " + fieldName +
-                      " field (the maximum value is 32 )";
+                      " field (the maximum value is 32)";
                 return false;
             }
 
             break;
         case 1:
-            if (!pJson.isString() && !pJson.isNull())
+            if (pJson.isNull())
             {
-                err = "Type error in the " + fieldName + "field";
+                return true;
+            }
+            if (!pJson.isString())
+            {
+                err = "Type error in the " + fieldName + " field";
                 return false;
             }
             // asString().length() creates a string object, is there any better
@@ -1544,15 +1552,19 @@ bool Users::validJsonOfField(size_t index,
             if (pJson.isString() && pJson.asString().length() > 64)
             {
                 err = "String length exceeds limit for the " + fieldName +
-                      " field (the maximum value is 64 )";
+                      " field (the maximum value is 64)";
                 return false;
             }
 
             break;
         case 2:
-            if (!pJson.isString() && !pJson.isNull())
+            if (pJson.isNull())
             {
-                err = "Type error in the " + fieldName + "field";
+                return true;
+            }
+            if (!pJson.isString())
+            {
+                err = "Type error in the " + fieldName + " field";
                 return false;
             }
             // asString().length() creates a string object, is there any better
@@ -1560,15 +1572,19 @@ bool Users::validJsonOfField(size_t index,
             if (pJson.isString() && pJson.asString().length() > 64)
             {
                 err = "String length exceeds limit for the " + fieldName +
-                      " field (the maximum value is 64 )";
+                      " field (the maximum value is 64)";
                 return false;
             }
 
             break;
         case 3:
-            if (!pJson.isString() && !pJson.isNull())
+            if (pJson.isNull())
             {
-                err = "Type error in the " + fieldName + "field";
+                return true;
+            }
+            if (!pJson.isString())
+            {
+                err = "Type error in the " + fieldName + " field";
                 return false;
             }
             // asString().length() creates a string object, is there any better
@@ -1576,15 +1592,19 @@ bool Users::validJsonOfField(size_t index,
             if (pJson.isString() && pJson.asString().length() > 20)
             {
                 err = "String length exceeds limit for the " + fieldName +
-                      " field (the maximum value is 20 )";
+                      " field (the maximum value is 20)";
                 return false;
             }
 
             break;
         case 4:
-            if (!pJson.isString() && !pJson.isNull())
+            if (pJson.isNull())
             {
-                err = "Type error in the " + fieldName + "field";
+                return true;
+            }
+            if (!pJson.isString())
+            {
+                err = "Type error in the " + fieldName + " field";
                 return false;
             }
             // asString().length() creates a string object, is there any better
@@ -1592,15 +1612,19 @@ bool Users::validJsonOfField(size_t index,
             if (pJson.isString() && pJson.asString().length() > 50)
             {
                 err = "String length exceeds limit for the " + fieldName +
-                      " field (the maximum value is 50 )";
+                      " field (the maximum value is 50)";
                 return false;
             }
 
             break;
         case 5:
-            if (!pJson.isString() && !pJson.isNull())
+            if (pJson.isNull())
             {
-                err = "Type error in the " + fieldName + "field";
+                return true;
+            }
+            if (!pJson.isString())
+            {
+                err = "Type error in the " + fieldName + " field";
                 return false;
             }
             // asString().length() creates a string object, is there any better
@@ -1608,7 +1632,7 @@ bool Users::validJsonOfField(size_t index,
             if (pJson.isString() && pJson.asString().length() > 32)
             {
                 err = "String length exceeds limit for the " + fieldName +
-                      " field (the maximum value is 32 )";
+                      " field (the maximum value is 32)";
                 return false;
             }
 
@@ -1626,14 +1650,18 @@ bool Users::validJsonOfField(size_t index,
             }
             if (!pJson.isInt())
             {
-                err = "Type error in the " + fieldName + "field";
+                err = "Type error in the " + fieldName + " field";
                 return false;
             }
             break;
         case 7:
-            if (!pJson.isString() && !pJson.isNull())
+            if (pJson.isNull())
             {
-                err = "Type error in the " + fieldName + "field";
+                return true;
+            }
+            if (!pJson.isString())
+            {
+                err = "Type error in the " + fieldName + " field";
                 return false;
             }
             // asString().length() creates a string object, is there any better
@@ -1641,15 +1669,19 @@ bool Users::validJsonOfField(size_t index,
             if (pJson.isString() && pJson.asString().length() > 20)
             {
                 err = "String length exceeds limit for the " + fieldName +
-                      " field (the maximum value is 20 )";
+                      " field (the maximum value is 20)";
                 return false;
             }
 
             break;
         case 8:
+            if (pJson.isNull())
+            {
+                return true;
+            }
             if (!pJson.isBool())
             {
-                err = "Type error in the " + fieldName + "field";
+                err = "Type error in the " + fieldName + " field";
                 return false;
             }
             break;
