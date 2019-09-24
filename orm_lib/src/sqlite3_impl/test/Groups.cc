@@ -655,6 +655,12 @@ void Groups::setGroupName(std::string &&pGroupName) noexcept
     _dirtyFlag[1] = true;
 }
 
+void Groups::setGroupNameToNull() noexcept
+{
+    _groupName.reset();
+    _dirtyFlag[1] = true;
+}
+
 const uint64_t &Groups::getValueOfCreaterId() const noexcept
 {
     const static uint64_t defaultValue = uint64_t();
@@ -669,6 +675,12 @@ const std::shared_ptr<uint64_t> &Groups::getCreaterId() const noexcept
 void Groups::setCreaterId(const uint64_t &pCreaterId) noexcept
 {
     _createrId = std::make_shared<uint64_t>(pCreaterId);
+    _dirtyFlag[2] = true;
+}
+
+void Groups::setCreaterIdToNull() noexcept
+{
+    _createrId.reset();
     _dirtyFlag[2] = true;
 }
 
@@ -694,6 +706,12 @@ void Groups::setCreateTime(std::string &&pCreateTime) noexcept
     _dirtyFlag[3] = true;
 }
 
+void Groups::setCreateTimeToNull() noexcept
+{
+    _createTime.reset();
+    _dirtyFlag[3] = true;
+}
+
 const uint64_t &Groups::getValueOfInviting() const noexcept
 {
     const static uint64_t defaultValue = uint64_t();
@@ -711,6 +729,12 @@ void Groups::setInviting(const uint64_t &pInviting) noexcept
     _dirtyFlag[4] = true;
 }
 
+void Groups::setInvitingToNull() noexcept
+{
+    _inviting.reset();
+    _dirtyFlag[4] = true;
+}
+
 const uint64_t &Groups::getValueOfInvitingUserId() const noexcept
 {
     const static uint64_t defaultValue = uint64_t();
@@ -725,6 +749,12 @@ const std::shared_ptr<uint64_t> &Groups::getInvitingUserId() const noexcept
 void Groups::setInvitingUserId(const uint64_t &pInvitingUserId) noexcept
 {
     _invitingUserId = std::make_shared<uint64_t>(pInvitingUserId);
+    _dirtyFlag[5] = true;
+}
+
+void Groups::setInvitingUserIdToNull() noexcept
+{
+    _invitingUserId.reset();
     _dirtyFlag[5] = true;
 }
 
@@ -750,6 +780,12 @@ void Groups::setAvatarId(std::string &&pAvatarId) noexcept
     _dirtyFlag[6] = true;
 }
 
+void Groups::setAvatarIdToNull() noexcept
+{
+    _avatarId.reset();
+    _dirtyFlag[6] = true;
+}
+
 const double &Groups::getValueOfUuu() const noexcept
 {
     const static double defaultValue = double();
@@ -764,6 +800,12 @@ const std::shared_ptr<double> &Groups::getUuu() const noexcept
 void Groups::setUuu(const double &pUuu) noexcept
 {
     _uuu = std::make_shared<double>(pUuu);
+    _dirtyFlag[7] = true;
+}
+
+void Groups::setUuuToNull() noexcept
+{
+    _uuu.reset();
     _dirtyFlag[7] = true;
 }
 
@@ -786,6 +828,12 @@ void Groups::setText(const std::string &pText) noexcept
 void Groups::setText(std::string &&pText) noexcept
 {
     _text = std::make_shared<std::string>(std::move(pText));
+    _dirtyFlag[8] = true;
+}
+
+void Groups::setTextToNull() noexcept
+{
+    _text.reset();
     _dirtyFlag[8] = true;
 }
 
@@ -821,6 +869,12 @@ void Groups::setAvatar(const std::string &pAvatar) noexcept
     _dirtyFlag[9] = true;
 }
 
+void Groups::setAvatarToNull() noexcept
+{
+    _avatar.reset();
+    _dirtyFlag[9] = true;
+}
+
 const bool &Groups::getValueOfIsDefault() const noexcept
 {
     const static bool defaultValue = bool();
@@ -835,6 +889,12 @@ const std::shared_ptr<bool> &Groups::getIsDefault() const noexcept
 void Groups::setIsDefault(const bool &pIsDefault) noexcept
 {
     _isDefault = std::make_shared<bool>(pIsDefault);
+    _dirtyFlag[10] = true;
+}
+
+void Groups::setIsDefaultToNull() noexcept
+{
+    _isDefault.reset();
     _dirtyFlag[10] = true;
 }
 

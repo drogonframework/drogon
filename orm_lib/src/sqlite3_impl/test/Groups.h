@@ -118,6 +118,7 @@ class Groups
     /// Set the value of the column group_name
     void setGroupName(const std::string &pGroupName) noexcept;
     void setGroupName(std::string &&pGroupName) noexcept;
+    void setGroupNameToNull() noexcept;
 
     /**  For column creater_id  */
     /// Get the value of the column creater_id, returns the default value if the
@@ -128,6 +129,7 @@ class Groups
     const std::shared_ptr<uint64_t> &getCreaterId() const noexcept;
     /// Set the value of the column creater_id
     void setCreaterId(const uint64_t &pCreaterId) noexcept;
+    void setCreaterIdToNull() noexcept;
 
     /**  For column create_time  */
     /// Get the value of the column create_time, returns the default value if
@@ -139,6 +141,7 @@ class Groups
     /// Set the value of the column create_time
     void setCreateTime(const std::string &pCreateTime) noexcept;
     void setCreateTime(std::string &&pCreateTime) noexcept;
+    void setCreateTimeToNull() noexcept;
 
     /**  For column inviting  */
     /// Get the value of the column inviting, returns the default value if the
@@ -149,6 +152,7 @@ class Groups
     const std::shared_ptr<uint64_t> &getInviting() const noexcept;
     /// Set the value of the column inviting
     void setInviting(const uint64_t &pInviting) noexcept;
+    void setInvitingToNull() noexcept;
 
     /**  For column inviting_user_id  */
     /// Get the value of the column inviting_user_id, returns the default value
@@ -159,6 +163,7 @@ class Groups
     const std::shared_ptr<uint64_t> &getInvitingUserId() const noexcept;
     /// Set the value of the column inviting_user_id
     void setInvitingUserId(const uint64_t &pInvitingUserId) noexcept;
+    void setInvitingUserIdToNull() noexcept;
 
     /**  For column avatar_id  */
     /// Get the value of the column avatar_id, returns the default value if the
@@ -170,6 +175,7 @@ class Groups
     /// Set the value of the column avatar_id
     void setAvatarId(const std::string &pAvatarId) noexcept;
     void setAvatarId(std::string &&pAvatarId) noexcept;
+    void setAvatarIdToNull() noexcept;
 
     /**  For column uuu  */
     /// Get the value of the column uuu, returns the default value if the column
@@ -180,6 +186,7 @@ class Groups
     const std::shared_ptr<double> &getUuu() const noexcept;
     /// Set the value of the column uuu
     void setUuu(const double &pUuu) noexcept;
+    void setUuuToNull() noexcept;
 
     /**  For column text  */
     /// Get the value of the column text, returns the default value if the
@@ -191,6 +198,7 @@ class Groups
     /// Set the value of the column text
     void setText(const std::string &pText) noexcept;
     void setText(std::string &&pText) noexcept;
+    void setTextToNull() noexcept;
 
     /**  For column avatar  */
     /// Get the value of the column avatar, returns the default value if the
@@ -204,6 +212,7 @@ class Groups
     /// Set the value of the column avatar
     void setAvatar(const std::vector<char> &pAvatar) noexcept;
     void setAvatar(const std::string &pAvatar) noexcept;
+    void setAvatarToNull() noexcept;
 
     /**  For column is_default  */
     /// Get the value of the column is_default, returns the default value if the
@@ -214,6 +223,7 @@ class Groups
     const std::shared_ptr<bool> &getIsDefault() const noexcept;
     /// Set the value of the column is_default
     void setIsDefault(const bool &pIsDefault) noexcept;
+    void setIsDefaultToNull() noexcept;
 
     static size_t getColumnNumber() noexcept
     {

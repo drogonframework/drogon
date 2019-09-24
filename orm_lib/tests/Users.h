@@ -108,6 +108,7 @@ class Users
     /// Set the value of the column user_id
     void setUserId(const std::string &pUserId) noexcept;
     void setUserId(std::string &&pUserId) noexcept;
+    void setUserIdToNull() noexcept;
 
     /**  For column user_name  */
     /// Get the value of the column user_name, returns the default value if the
@@ -119,6 +120,7 @@ class Users
     /// Set the value of the column user_name
     void setUserName(const std::string &pUserName) noexcept;
     void setUserName(std::string &&pUserName) noexcept;
+    void setUserNameToNull() noexcept;
 
     /**  For column password  */
     /// Get the value of the column password, returns the default value if the
@@ -130,6 +132,7 @@ class Users
     /// Set the value of the column password
     void setPassword(const std::string &pPassword) noexcept;
     void setPassword(std::string &&pPassword) noexcept;
+    void setPasswordToNull() noexcept;
 
     /**  For column org_name  */
     /// Get the value of the column org_name, returns the default value if the
@@ -141,6 +144,7 @@ class Users
     /// Set the value of the column org_name
     void setOrgName(const std::string &pOrgName) noexcept;
     void setOrgName(std::string &&pOrgName) noexcept;
+    void setOrgNameToNull() noexcept;
 
     /**  For column signature  */
     /// Get the value of the column signature, returns the default value if the
@@ -152,6 +156,7 @@ class Users
     /// Set the value of the column signature
     void setSignature(const std::string &pSignature) noexcept;
     void setSignature(std::string &&pSignature) noexcept;
+    void setSignatureToNull() noexcept;
 
     /**  For column avatar_id  */
     /// Get the value of the column avatar_id, returns the default value if the
@@ -163,6 +168,7 @@ class Users
     /// Set the value of the column avatar_id
     void setAvatarId(const std::string &pAvatarId) noexcept;
     void setAvatarId(std::string &&pAvatarId) noexcept;
+    void setAvatarIdToNull() noexcept;
 
     /**  For column id  */
     /// Get the value of the column id, returns the default value if the column
@@ -182,6 +188,7 @@ class Users
     /// Set the value of the column salt
     void setSalt(const std::string &pSalt) noexcept;
     void setSalt(std::string &&pSalt) noexcept;
+    void setSaltToNull() noexcept;
 
     /**  For column admin  */
     /// Get the value of the column admin, returns the default value if the
@@ -192,6 +199,7 @@ class Users
     const std::shared_ptr<bool> &getAdmin() const noexcept;
     /// Set the value of the column admin
     void setAdmin(const bool &pAdmin) noexcept;
+    void setAdminToNull() noexcept;
 
     static size_t getColumnNumber() noexcept
     {

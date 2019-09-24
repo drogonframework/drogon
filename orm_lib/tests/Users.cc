@@ -535,6 +535,12 @@ void Users::setUserId(std::string &&pUserId) noexcept
     _dirtyFlag[0] = true;
 }
 
+void Users::setUserIdToNull() noexcept
+{
+    _userId.reset();
+    _dirtyFlag[0] = true;
+}
+
 const std::string &Users::getValueOfUserName() const noexcept
 {
     const static std::string defaultValue = std::string();
@@ -554,6 +560,12 @@ void Users::setUserName(const std::string &pUserName) noexcept
 void Users::setUserName(std::string &&pUserName) noexcept
 {
     _userName = std::make_shared<std::string>(std::move(pUserName));
+    _dirtyFlag[1] = true;
+}
+
+void Users::setUserNameToNull() noexcept
+{
+    _userName.reset();
     _dirtyFlag[1] = true;
 }
 
@@ -579,6 +591,12 @@ void Users::setPassword(std::string &&pPassword) noexcept
     _dirtyFlag[2] = true;
 }
 
+void Users::setPasswordToNull() noexcept
+{
+    _password.reset();
+    _dirtyFlag[2] = true;
+}
+
 const std::string &Users::getValueOfOrgName() const noexcept
 {
     const static std::string defaultValue = std::string();
@@ -598,6 +616,12 @@ void Users::setOrgName(const std::string &pOrgName) noexcept
 void Users::setOrgName(std::string &&pOrgName) noexcept
 {
     _orgName = std::make_shared<std::string>(std::move(pOrgName));
+    _dirtyFlag[3] = true;
+}
+
+void Users::setOrgNameToNull() noexcept
+{
+    _orgName.reset();
     _dirtyFlag[3] = true;
 }
 
@@ -623,6 +647,12 @@ void Users::setSignature(std::string &&pSignature) noexcept
     _dirtyFlag[4] = true;
 }
 
+void Users::setSignatureToNull() noexcept
+{
+    _signature.reset();
+    _dirtyFlag[4] = true;
+}
+
 const std::string &Users::getValueOfAvatarId() const noexcept
 {
     const static std::string defaultValue = std::string();
@@ -642,6 +672,12 @@ void Users::setAvatarId(const std::string &pAvatarId) noexcept
 void Users::setAvatarId(std::string &&pAvatarId) noexcept
 {
     _avatarId = std::make_shared<std::string>(std::move(pAvatarId));
+    _dirtyFlag[5] = true;
+}
+
+void Users::setAvatarIdToNull() noexcept
+{
+    _avatarId.reset();
     _dirtyFlag[5] = true;
 }
 
@@ -684,6 +720,12 @@ void Users::setSalt(std::string &&pSalt) noexcept
     _dirtyFlag[7] = true;
 }
 
+void Users::setSaltToNull() noexcept
+{
+    _salt.reset();
+    _dirtyFlag[7] = true;
+}
+
 const bool &Users::getValueOfAdmin() const noexcept
 {
     const static bool defaultValue = bool();
@@ -698,6 +740,12 @@ const std::shared_ptr<bool> &Users::getAdmin() const noexcept
 void Users::setAdmin(const bool &pAdmin) noexcept
 {
     _admin = std::make_shared<bool>(pAdmin);
+    _dirtyFlag[8] = true;
+}
+
+void Users::setAdminToNull() noexcept
+{
+    _admin.reset();
     _dirtyFlag[8] = true;
 }
 
