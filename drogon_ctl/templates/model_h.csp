@@ -155,6 +155,10 @@ auto cols=@@.get<std::vector<ColumnInfo>>("columns");
                 {
                     $$<<"    void set"<<col._colTypeName<<"(const std::string &p"<<col._colTypeName<<") noexcept;\n";
                 }
+                if(!col._notNull)
+                {
+                    $$<<"    void set"<<col._colTypeName<<"ToNull() noexcept;\n";
+                }
             }
         }
         else

@@ -786,6 +786,15 @@ void [[className]]::updateByJson(const Json::Value &pJson) noexcept(false)
                     $$<<"    _dirtyFlag["<<i<<"] = true;\n";
                     $$<<"}\n";
                 }
+
+                if(!col._notNull)
+                {
+                    $$<<"void "<<className<<"::set"<<col._colTypeName<<"ToNull() noexcept\n";
+                    $$<<"{\n";
+                    $$<<"    _"<<col._colValName<<".reset();\n";
+                    $$<<"    _dirtyFlag["<<i<<"] = true;\n";
+                    $$<<"}\n";
+                }
             }
             if(col._isPrimaryKey&&@@.get<int>("hasPrimaryKey")==1)
             {
