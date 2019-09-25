@@ -1,3 +1,7 @@
+<%inc#include "create_model.h"
+using namespace drogon_ctl;
+%>
+
 /**
  *
  *  [[fileName]]Base.cc
@@ -90,9 +94,9 @@ void [[className]]Base::updateOne(const HttpRequestPtr &req,
     }
     try
     {
-        if(_masquerading)
+        if(isMasquerading())
         {
-            if(!{%modelName%}::validateMasqueradedJsonForUpdate(*jsonPtr, _masqueradingVector, err))
+            if(!{%modelName%}::validateMasqueradedJsonForUpdate(*jsonPtr, masqueradingVector(), err))
             {
                 Json::Value ret;
                 ret["error"] = err;
@@ -101,7 +105,7 @@ void [[className]]Base::updateOne(const HttpRequestPtr &req,
                 callback(resp);
                 return;
             }
-            object.updateByMasqueradedJson(*jsonPtr, _masqueradingVector);
+            object.updateByMasqueradedJson(*jsonPtr, masqueradingVector());
         }
         else
         {
@@ -293,23 +297,61 @@ void [[className]]Base::get(const HttpRequestPtr &req,
     auto callbackPtr =
         std::make_shared<std::function<void(const HttpResponsePtr &)>>(
             std::move(callback));
-    mapper.findAll([req, callbackPtr, this](const std::vector<{%modelName%}> &v) {
+    auto jsonPtr = req->jsonObject();
+    if(jsonPtr && jsonPtr->isMember("filter"))
+    {
+        try{
+            auto criteria = makeCriteria((*jsonPtr)["filter"]);
+            mapper.findBy(criteria,
+                [req, callbackPtr, this](const std::vector<{%modelName%}> &v) {
+                    Json::Value ret;
+                    ret.resize(0);
+                    for (auto &obj : v)
+                    {
+                        ret.append(makeJson(req, obj));
+                    }
+                    (*callbackPtr)(HttpResponse::newHttpJsonResponse(ret));
+                },
+                [callbackPtr](const DrogonDbException &e) { 
+                    LOG_ERROR << e.base().what();
+                    Json::Value ret;
+                    ret["error"] = "database error";
+                    auto resp = HttpResponse::newHttpJsonResponse(ret);
+                    resp->setStatusCode(k500InternalServerError);
+                    (*callbackPtr)(resp);    
+                });
+        }
+        catch(const std::exception &e)
+        {
+            LOG_ERROR << e.what();
             Json::Value ret;
-            ret.resize(0);
-            for (auto &obj : v)
-            {
-                ret.append(makeJson(req, obj));
-            }
-            (*callbackPtr)(HttpResponse::newHttpJsonResponse(ret));
-        },
-        [callbackPtr](const DrogonDbException &e) { 
-            LOG_ERROR << e.base().what();
-            Json::Value ret;
-            ret["error"] = "database error";
+            ret["error"] = e.what();
             auto resp = HttpResponse::newHttpJsonResponse(ret);
-            resp->setStatusCode(k500InternalServerError);
-            (*callbackPtr)(resp);    
-        });
+            resp->setStatusCode(k400BadRequest);
+            (*callbackPtr)(resp);
+            return;    
+        }
+    }
+    else
+    {
+        mapper.findAll([req, callbackPtr, this](const std::vector<{%modelName%}> &v) {
+                Json::Value ret;
+                ret.resize(0);
+                for (auto &obj : v)
+                {
+                    ret.append(makeJson(req, obj));
+                }
+                (*callbackPtr)(HttpResponse::newHttpJsonResponse(ret));
+            },
+            [callbackPtr](const DrogonDbException &e) { 
+                LOG_ERROR << e.base().what();
+                Json::Value ret;
+                ret["error"] = "database error";
+                auto resp = HttpResponse::newHttpJsonResponse(ret);
+                resp->setStatusCode(k500InternalServerError);
+                (*callbackPtr)(resp);    
+            });
+    }
 }
 
 void [[className]]Base::create(const HttpRequestPtr &req,
@@ -335,9 +377,9 @@ void [[className]]Base::create(const HttpRequestPtr &req,
         callback(resp);
         return;
     }
-    if(_masquerading)
+    if(isMasquerading())
     {
-        if(!{%modelName%}::validateMasqueradedJsonForCreation(*jsonPtr, _masqueradingVector, err))
+        if(!{%modelName%}::validateMasqueradedJsonForCreation(*jsonPtr, masqueradingVector(), err))
         {
             Json::Value ret;
             ret["error"] = err;
@@ -362,8 +404,8 @@ void [[className]]Base::create(const HttpRequestPtr &req,
     try 
     {
         {%modelName%} object = 
-            (_masquerading? 
-             {%modelName%}(*jsonPtr, _masqueradingVector) : 
+            (isMasquerading()? 
+             {%modelName%}(*jsonPtr, masqueradingVector()) : 
              {%modelName%}(*jsonPtr));
         auto dbClientPtr = getDbClient();
         auto callbackPtr =
@@ -404,48 +446,49 @@ void [[className]]Base::update(const HttpRequestPtr &req,
 
 }*/
 
-bool [[className]]Base::doCustomValidations(const Json::Value &pJson, std::string &err)
+[[className]]Base::[[className]]Base()
+    : RestfulController({
+<%c++ 
+tableInfo = @@.get<DrTemplateData>("tableInfo");
+const auto &cols=tableInfo.get<std::vector<ColumnInfo>>("columns");
+for(size_t i=0; i<cols.size(); i++)
 {
-    for(auto &validator : _validators)
+    auto &col = cols[i];
+    if(i < (cols.size()-1))
     {
-        if(pJson.isMember(validator.first))
-        {
-            if(!validator.second(pJson[validator.first], err))
-            {
-                return false;
-            }
-        }
+%>
+          "{%col._colName%}",
+<%c++
+    }else{
+%>
+          "{%col._colName%}"
+<%c++
     }
-    return true;
 }
-
-Json::Value [[className]]Base::makeJson(const HttpRequestPtr &req, 
-            {%indentStr%}               const {%modelName%} &obj)
+%>
+      })
 {
-    auto &paras = req->parameters();
-    auto iter = paras.find("fields");
-    if(_masquerading)
+   /**
+    * The items in the vector are aliases of column names in the table.
+    * if one item is set to an empty string, the related column is not sent
+    * to clients.
+    */
+    enableMasquerading({
+<%c++ 
+for(size_t i=0; i<cols.size(); i++)
+{
+    auto &col = cols[i];
+    if(i < (cols.size()-1))
     {
-        if(iter != paras.end())
-        {
-            auto fields = utils::splitStringToSet(iter->second, ",");
-            return obj.toMasqueradedJson(fieldsSelector(fields));
-        }
-        else
-        {
-            return obj.toMasqueradedJson(_masqueradingVector);
-        }
+%>
+        "{%col._colName%}", // the alias for the {%col._colName%} column.
+<%c++
+    }else{
+%>
+        "{%col._colName%}"  // the alias for the {%col._colName%} column.
+<%c++
     }
-    else
-    {
-        if(iter != paras.end())
-        {
-            auto fields = utils::splitString(iter->second, ",");
-            return obj.toMasqueradedJson(fields);
-        }
-        else
-        {
-            return obj.toJson();
-        }
-    }
+}
+%>
+    });
 }

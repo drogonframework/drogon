@@ -15,13 +15,16 @@
 #pragma once
 
 #include <drogon/orm/SqlBinder.h>
-
 #include <assert.h>
 #include <memory>
 #include <string>
 #include <tuple>
 #include <type_traits>
 
+namespace Json
+{
+class Value;
+}
 namespace drogon
 {
 namespace orm
@@ -217,6 +220,22 @@ class Criteria
         : Criteria(colName, (const CompareOperator &)opera)
     {
     }
+
+    /**
+     * @brief Construct a new Criteria object
+     *
+     * @param json A json object representing the criteria
+     * @note the json object must be a array of three items, the first is the
+     * name of the field, the second is the comparison operator and the third is
+     * the value to be compared.
+     * The valid operators are "=","<",">","<=",">=","!=","in"
+     * for example:
+     * ["id","=",1] means 'id = 1'
+     * ["id","!=",null] means 'id is not null'
+     * ["user_name","in",["Tom","Bob"]] means 'user_name in ('Tom', 'Bob')'
+     * ["price","<",1000] means 'price < 1000'
+     */
+    Criteria(const Json::Value &json) noexcept(false);
 
     Criteria()
     {

@@ -398,7 +398,8 @@ set(ORM_HEADERS
     orm_lib/inc/drogon/orm/ResultIterator.h
     orm_lib/inc/drogon/orm/Row.h
     orm_lib/inc/drogon/orm/RowIterator.h
-    orm_lib/inc/drogon/orm/SqlBinder.h)
+    orm_lib/inc/drogon/orm/SqlBinder.h
+    orm_lib/inc/drogon/orm/RestfulController.h)
 install(FILES ${ORM_HEADERS} DESTINATION ${INSTALL_INCLUDE_DIR}/drogon/orm)
 
 set(DROGON_UTIL_HEADERS

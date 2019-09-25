@@ -11,6 +11,7 @@ using namespace drogon_ctl;
 #pragma once
 
 #include <drogon/HttpController.h>
+#include <drogon/orm/RestfulController.h>
 
 <%c++
 auto tableInfo = @@.get<DrTemplateData>("tableInfo");
@@ -42,7 +43,7 @@ namespace {%name%}
  * this class is a restful API controller for reading and writing the [[tableName]] table.
  */
 
-class [[className]]Base
+class [[className]]Base : public RestfulController
 {
   public:
 <%c++if(hasPrimaryKey)
@@ -72,114 +73,11 @@ class [[className]]Base
     {
         return drogon::app().get{%(@@.get<bool>("isFastDbClient")?"Fast":"")%}DbClient(_dbClientName);
     }
-    void enableMasquerading(const std::vector<std::string> &pMasqueradingVector)
-    {
-        _masquerading = true;
-        _masqueradingVector = pMasqueradingVector;
-        _masqueradingMap.clear();
-        for (size_t i = 0; i < _masqueradingVector.size(); ++i)
-        {
-            _masqueradingMap.insert(
-                std::pair<std::string, size_t>(pMasqueradingVector[i], i));
-        }
-    }
-    void disableMasquerading()
-    {
-        _masquerading = false;
-    }
-    void registerAJsonValidator(
-        const std::string &fieldName,
-        const std::function<bool(const Json::Value &, std::string &)>
-            &validator)
-    {
-        _validators.emplace_back(fieldName, validator);
-    }
-    void registerAJsonValidator(
-        const std::string &fieldName,
-        std::function<bool(const Json::Value &, std::string &)> &&validator)
-    {
-        _validators.emplace_back(fieldName, std::move(validator));
-    }
-    ssize_t getFieldIndex(const std::string &fieldName)
-    {
-        auto iter = _masqueradingMap.find(fieldName);
-        if(iter == _masqueradingMap.end())
-        {
-            return static_cast<ssize_t>(iter->second);
-        }
-        return -1;
-    }
+
   protected:
     /// Ensure that subclasses inherited from this class are instantiated.
-    [[className]]Base(){} 
-    bool doCustomValidations(const Json::Value &pJson, std::string &err);
+    [[className]]Base();
     const std::string _dbClientName = "[[dbClientName]]";
-    bool _masquerading = true;
-    std::vector<
-        std::pair<std::string,
-                  std::function<bool(const Json::Value &, std::string &)>>>
-        _validators;
-    /**
-     * The items in the vector are aliases of column names in the table.
-     * if one item is set to an empty string, the related column is not sent to clients.
-     */
-    std::vector<std::string> _masqueradingVector={
-<%c++ 
-tableInfo = @@.get<DrTemplateData>("tableInfo");
-const auto &cols=tableInfo.get<std::vector<ColumnInfo>>("columns");
-for(size_t i=0; i<cols.size(); i++)
-{
-    auto &col = cols[i];
-    if(i < (cols.size()-1))
-    {
-%>
-          "{%col._colName%}", // the alias for the {%col._colName%} column.
-<%c++
-    }else{
-%>
-          "{%col._colName%}"  // the alias for the {%col._colName%} column.
-<%c++
-    }
-}
-%>
-    };
-
-    std::unordered_map<std::string, size_t> _masqueradingMap={
-<%c++ 
-for(size_t i=0; i<cols.size(); i++)
-{
-    auto &col = cols[i];
-    if(i < (cols.size()-1))
-    {
-%>
-          {"{%col._colName%}", {%i%}}, 
-<%c++
-    }else{
-%>
-          {"{%col._colName%}", {%i%}}  
-<%c++
-    }
-}
-%>
-    };
-
-    std::vector<std::string> fieldsSelector(const std::set<std::string> &fields)
-    {
-        std::vector<std::string> ret;
-        for(auto &field : _masqueradingVector)
-        {
-            if(!field.empty() && fields.find(field) != fields.end())
-            {
-                ret.emplace_back(field);
-            }
-            else
-            {
-                ret.emplace_back(std::string{});
-            }
-        }
-        return ret;
-    }
-    Json::Value makeJson(const HttpRequestPtr &req, const {%modelName%} &obj);
 };
 <%c++ for(size_t i=0;i<namespaceVector.size();++i)
 {
