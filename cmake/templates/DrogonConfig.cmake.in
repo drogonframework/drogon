@@ -9,8 +9,6 @@
 
 @PACKAGE_INIT@
 
-add_library(Drogon::Drogon INTERFACE IMPORTED GLOBAL)
-
 if(NOT TRANTOR_FOUND)
 # find trantor
   find_package(Trantor REQUIRED)
@@ -23,8 +21,7 @@ if(NOT TARGET drogon)
   include("${DROGON_CMAKE_DIR}/DrogonTargets.cmake")
 endif()
 
-# These are IMPORTED targets created by DrogonTargets.cmake
-target_link_libraries(Drogon::Drogon INTERFACE drogon)
+add_library(Drogon::Drogon ALIAS drogon)
 
 get_target_property(DROGON_INCLUDE_DIRS drogon INTERFACE_INCLUDE_DIRECTORIES)
 set(DROGON_LIBRARIES drogon)
