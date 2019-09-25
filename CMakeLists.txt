@@ -441,4 +441,5 @@ install(
 # Install the export set for use with the install-tree
 install(EXPORT DrogonTargets
         DESTINATION "${INSTALL_DROGON_CMAKE_DIR}"
+        NAMESPACE Drogon::
         COMPONENT dev)
