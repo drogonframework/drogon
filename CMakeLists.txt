@@ -273,7 +273,8 @@ if(PostgreSQL_FOUND OR MYSQL_FOUND OR SQLITE3_FOUND)
       orm_lib/src/Result.cc
       orm_lib/src/Row.cc
       orm_lib/src/SqlBinder.cc
-      orm_lib/src/TransactionImpl.cc)
+      orm_lib/src/TransactionImpl.cc
+      orm_lib/src/RestfulController.cc)
 else()
   set(DROGON_SOURCES ${DROGON_SOURCES} lib/src/DbClientManagerSkipped.cc)
 endif()

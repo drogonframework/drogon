@@ -81,7 +81,7 @@ Criteria::Criteria(const Json::Value &json) noexcept(false)
     _condString = json[0].asString();
     if (!json[2].isNull() && !json[2].isArray())
     {
-        if(json[1].asString()=="in")
+        if (json[1].asString() == "in")
         {
             throw std::runtime_error("Json format error");
         }

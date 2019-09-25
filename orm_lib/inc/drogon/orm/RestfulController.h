@@ -64,6 +64,7 @@ class RestfulController : trantor::NonCopyable
     {
         _validators.emplace_back(fieldName, std::move(validator));
     }
+
     /**
      * @brief make a criteria object for searching by ORM.
      *
@@ -83,70 +84,7 @@ class RestfulController : trantor::NonCopyable
      * ]
      * @return orm::Criteria
      */
-    orm::Criteria makeCriteria(const Json::Value &pJson) noexcept(false)
-    {
-        if (!pJson.isArray())
-        {
-            throw std::runtime_error("Json format error");
-        }
-        orm::Criteria ret;
-        for (auto &orJson : pJson)
-        {
-            if (!orJson.isArray())
-            {
-                throw std::runtime_error("Json format error");
-            }
-            orm::Criteria orCriteria;
-            for (auto &andJson : orJson)
-            {
-                if(!andJson.isArray() || andJson.size()!=3)
-                {
-                    throw std::runtime_error("Json format error");
-                }
-                if(_masquerading)
-                {
-                    Json::Value newJson(andJson);
-                    auto iter = _masqueradingMap.find(newJson[0].asString());
-                    if(iter != _masqueradingMap.end())
-                    {
-                        newJson[0] = _masqueradingVector[iter->second];
-                        if (!orCriteria)
-                        {
-                            orCriteria = orm::Criteria(newJson);
-                        }
-                        else
-                        {
-                            orCriteria = orCriteria && orm::Criteria(newJson);
-                        }
-                    }
-                    else
-                    {
-                        throw std::runtime_error("Json format error");
-                    }
-                }
-                else
-                {
-                    if (!orCriteria)
-                    {
-                        orCriteria = orm::Criteria(andJson);
-                    }
-                    else
-                    {
-                        orCriteria = orCriteria && orm::Criteria(andJson);
-                    }
-                }
-            }
-            if (!ret)
-            {
-                ret = std::move(orCriteria);
-            }
-            else
-            {
-                ret = ret || orCriteria;
-            }
-        }
-        return ret;
-    }
+    orm::Criteria makeCriteria(const Json::Value &pJson) noexcept(false);
 
   protected:
     RestfulController(const std::vector<std::string> &columnsVector)
