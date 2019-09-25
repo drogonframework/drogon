@@ -1,4 +1,4 @@
-link_libraries(drogon)
+link_libraries(${PROJECT_NAME})
 
 add_executable(sqlite3_test1 test1.cc Groups.cc)
 

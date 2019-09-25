@@ -1,4 +1,4 @@
-link_libraries(drogon)
+link_libraries(${PROJECT_NAME})
 
 file(GLOB SCP_LIST ${CMAKE_CURRENT_SOURCE_DIR}/simple_example/*.csp)
 foreach(cspFile ${SCP_LIST})

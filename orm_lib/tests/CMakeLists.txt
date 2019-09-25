@@ -1,4 +1,4 @@
-link_libraries(drogon)
+link_libraries(${PROJECT_NAME})
 
 add_executable(db_test db_test.cc Users.cc)
 

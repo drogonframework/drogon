@@ -39,3 +39,4 @@ lib/inc/drogon/config.h
 html/
 latex/
 .vscode
+*.kdev4
