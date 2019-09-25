@@ -49,8 +49,7 @@ struct has_sqlForFindingByPrimaryKey
     typedef std::false_type no;
 
     template <typename U>
-    static auto test(int)
-        -> decltype(U::sqlForFindingByPrimaryKey().length() == 1, yes());
+    static auto test(int) -> decltype(U::sqlForFindingByPrimaryKey(), yes());
 
     template <typename>
     static no test(...);
@@ -68,7 +67,7 @@ struct has_sqlForDeletingByPrimaryKey
 
     template <typename U>
     static auto test(int)
-        -> decltype(U::sqlForDeletingByPrimaryKey().length() == 1, yes());
+        -> decltype(U::sqlForDeletingByPrimaryKey().length(), yes());
 
     template <typename>
     static no test(...);
