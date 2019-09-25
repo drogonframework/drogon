@@ -901,6 +901,7 @@ void doTest(const HttpClientPtr &client,
     req->setPath("/api/v1/apitest/form");
     req->setParameter("k1", "1");
     req->setParameter("k2", "安");
+    req->setParameter("k3", "test@example.com");
     client->sendRequest(req,
                         [=](ReqResult result, const HttpResponsePtr &resp) {
                             if (result == ReqResult::Ok)
