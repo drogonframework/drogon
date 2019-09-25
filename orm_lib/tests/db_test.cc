@@ -545,6 +545,7 @@ int main()
             std::cerr << e.base().what() << std::endl;
             testOutput(false, "ORM mapper asynchronous interface(1)");
         });
+    /// 5.3 select where in
     mapper.findBy(
         Criteria(Users::Cols::_id,
                  CompareOperator::IN,
@@ -557,6 +558,18 @@ int main()
             std::cerr << e.base().what() << std::endl;
             testOutput(false, "ORM mapper asynchronous interface(2)");
         });
+
+    /// 5.4 find by primary key. blocking
+    try
+    {
+        auto user = mapper.findByPrimaryKey(10);
+        testOutput(true, "ORM mapper asynchronous interface(3)");
+    }
+    catch (const DrogonDbException &e)
+    {
+        std::cerr << e.base().what() << std::endl;
+        testOutput(false, "ORM mapper asynchronous interface(3)");
+    }
     globalf.get();
     std::this_thread::sleep_for(0.008s);
     return 0;
