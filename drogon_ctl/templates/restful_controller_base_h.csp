@@ -76,6 +76,12 @@ class [[className]]Base
     {
         _masquerading = true;
         _masqueradingVector = pMasqueradingVector;
+        _masqueradingMap.clear();
+        for (size_t i = 0; i < _masqueradingVector.size(); ++i)
+        {
+            _masqueradingMap.insert(
+                std::pair<std::string, size_t>(pMasqueradingVector[i], i));
+        }
     }
     void disableMasquerading()
     {
@@ -93,6 +99,15 @@ class [[className]]Base
         std::function<bool(const Json::Value &, std::string &)> &&validator)
     {
         _validators.emplace_back(fieldName, std::move(validator));
+    }
+    ssize_t getFieldIndex(const std::string &fieldName)
+    {
+        auto iter = _masqueradingMap.find(fieldName);
+        if(iter == _masqueradingMap.end())
+        {
+            return static_cast<ssize_t>(iter->second);
+        }
+        return -1;
     }
   protected:
     /// Ensure that subclasses inherited from this class are instantiated.
@@ -128,6 +143,26 @@ for(size_t i=0; i<cols.size(); i++)
 }
 %>
     };
+
+    std::unordered_map<std::string, size_t> _masqueradingMap={
+<%c++ 
+for(size_t i=0; i<cols.size(); i++)
+{
+    auto &col = cols[i];
+    if(i < (cols.size()-1))
+    {
+%>
+          {"{%col._colName%}", {%i%}}, 
+<%c++
+    }else{
+%>
+          {"{%col._colName%}", {%i%}}  
+<%c++
+    }
+}
+%>
+    };
+
     std::vector<std::string> fieldsSelector(const std::set<std::string> &fields)
     {
         std::vector<std::string> ret;

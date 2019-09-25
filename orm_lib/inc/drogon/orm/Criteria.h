@@ -35,6 +35,7 @@ enum class CompareOperator
     LT,
     LE,
     LIKE,
+    IN,
     IsNull,
     IsNotNull
 };
@@ -110,6 +111,61 @@ class Criteria
         _outputArgumentsFunc = [=](internal::SqlBinder &binder) {
             binder << arg;
         };
+    }
+
+    template <typename T>
+    Criteria(const std::string &colName,
+             const CompareOperator &opera,
+             const std::vector<T> &args)
+    {
+        assert(opera == CompareOperator::IN && args.size() > 0);
+        _condString = colName + " in (";
+        for (size_t i = 0; i < args.size(); ++i)
+        {
+            if (i < args.size() - 1)
+                _condString.append("$?,");
+            else
+                _condString.append("$?");
+        }
+        _condString.append(")");
+        _outputArgumentsFunc = [args](internal::SqlBinder &binder) {
+            for (auto &arg : args)
+            {
+                binder << arg;
+            }
+        };
+    }
+
+    template <typename T>
+    Criteria(const std::string &colName,
+             const CompareOperator &opera,
+             std::vector<T> &&args)
+    {
+        assert(opera == CompareOperator::IN && args.size() > 0);
+        _condString = colName + " in (";
+        for (size_t i = 0; i < args.size(); ++i)
+        {
+            if (i < args.size() - 1)
+                _condString.append("$?,");
+            else
+                _condString.append("$?");
+        }
+        _condString.append(")");
+        _outputArgumentsFunc =
+            [args = std::move(args)](internal::SqlBinder &binder) {
+                for (auto &arg : args)
+                {
+                    binder << arg;
+                }
+            };
+    }
+
+    template <typename T>
+    Criteria(const std::string &colName,
+             const CompareOperator &opera,
+             std::vector<T> &args)
+        : Criteria(colName, opera, (const std::vector<T> &)args)
+    {
     }
 
     /**

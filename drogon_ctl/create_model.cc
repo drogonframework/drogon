@@ -27,7 +27,6 @@
 #include <unistd.h>
 #include <dirent.h>
 #include <dlfcn.h>
-#include <fstream>
 #include <unistd.h>
 
 using namespace drogon_ctl;
