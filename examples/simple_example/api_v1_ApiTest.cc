@@ -400,7 +400,8 @@ void ApiTest::formTest(const HttpRequestPtr &req,
     ret["k2"] = parameters["k2"];
     ret["k3"] = parameters["k3"];
 
-    if (parameters["k1"] == "1" && parameters["k2"] == "安" && parameters["k3"] == "test@example.com")
+    if (parameters["k1"] == "1" && parameters["k2"] == "安" &&
+        parameters["k3"] == "test@example.com")
     {
         ret["result"] = "ok";
     }

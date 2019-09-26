@@ -506,8 +506,8 @@ std::string urlDecode(const char *begin, const char *end)
                     }
                     hex = x1 * 16 + x2;
 
-		    result += char(hex);
-		    i += 2;
+                    result += char(hex);
+                    i += 2;
                 }
                 else
                 {
