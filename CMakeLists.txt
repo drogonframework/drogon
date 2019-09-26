@@ -278,7 +278,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD ${DROGON_CXX_STAND
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD_REQUIRED ON)
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_EXTENSIONS OFF)
 
-add_dependencies(drogon makeVersion)
+add_dependencies(${PROJECT_NAME} makeVersion)
 
 if(PostgreSQL_FOUND OR MYSQL_FOUND OR SQLITE3_FOUND)
   if(PostgreSQL_FOUND)
@@ -344,7 +344,7 @@ endif()
 
 # Installation
 
-install(TARGETS drogon
+install(TARGETS ${PROJECT_NAME}
         EXPORT DrogonTargets
         ARCHIVE DESTINATION "${INSTALL_LIB_DIR}" COMPONENT lib)
 
@@ -441,4 +441,5 @@ install(
 # Install the export set for use with the install-tree
 install(EXPORT DrogonTargets
         DESTINATION "${INSTALL_DROGON_CMAKE_DIR}"
+        NAMESPACE Drogon::
         COMPONENT dev)

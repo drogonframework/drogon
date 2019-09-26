@@ -1,4 +1,4 @@
-link_libraries(drogon)
+link_libraries(${PROJECT_NAME})
 
 add_executable(pg_test1 test1.cc)
 add_executable(pg_test2 test2.cc)

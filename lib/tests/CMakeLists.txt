@@ -1,4 +1,4 @@
-link_libraries(drogon)
+link_libraries(${PROJECT_NAME})
 
 add_executable(cache_map_test CacheMapTest.cc)
 add_executable(cache_map_test2 CacheMapTest2.cc)
