@@ -505,22 +505,9 @@ std::string urlDecode(const char *begin, const char *end)
                         x2 = x2 - 'A' + 10;
                     }
                     hex = x1 * 16 + x2;
-                    if (!((hex >= 48 && hex <= 57) ||   // 0-9
-                          (hex >= 97 && hex <= 122) ||  // a-z
-                          (hex >= 65 && hex <= 90) ||   // A-Z
-                          //[$-_.+!*'(),]  [$&+,/:;?@]
-                          hex == 0x21 || hex == 0x24 || hex == 0x26 ||
-                          hex == 0x27 || hex == 0x28 || hex == 0x29 ||
-                          hex == 0x2a || hex == 0x2b || hex == 0x2c ||
-                          hex == 0x2d || hex == 0x2e || hex == 0x2f ||
-                          hex == 0x3A || hex == 0x3B || hex == 0x3f ||
-                          hex == 0x40 || hex == 0x5f))
-                    {
-                        result += char(hex);
-                        i += 2;
-                    }
-                    else
-                        result += '%';
+
+                    result += char(hex);
+                    i += 2;
                 }
                 else
                 {

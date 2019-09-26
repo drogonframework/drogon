@@ -396,7 +396,12 @@ void ApiTest::formTest(const HttpRequestPtr &req,
 {
     auto parameters = req->getParameters();
     Json::Value ret;
-    if (parameters["k1"] == "1" && parameters["k2"] == "安")
+    ret["k1"] = parameters["k1"];
+    ret["k2"] = parameters["k2"];
+    ret["k3"] = parameters["k3"];
+
+    if (parameters["k1"] == "1" && parameters["k2"] == "安" &&
+        parameters["k3"] == "test@example.com")
     {
         ret["result"] = "ok";
     }
