@@ -232,9 +232,9 @@ class HttpResponseImpl : public HttpResponse
     {
         _headers["location"] = url;
     }
-    std::shared_ptr<std::string> renderToString() const;
-    void renderToBuffer(trantor::MsgBuffer &buffer) const;
-    std::shared_ptr<std::string> renderHeaderForHeadMethod() const;
+    std::shared_ptr<std::string> renderToString();
+    void renderToBuffer(trantor::MsgBuffer &buffer);
+    std::shared_ptr<std::string> renderHeaderForHeadMethod();
     virtual void clear() override;
 
     virtual void setExpiredTime(ssize_t expiredTime) override
@@ -291,6 +291,15 @@ class HttpResponseImpl : public HttpResponse
         }
         return _jsonPtr;
     }
+    void setJsonObject(const Json::Value &pJson)
+    {
+        _jsonPtr = std::make_shared<Json::Value>(pJson);
+    }
+    void setJsonObject(Json::Value &&pJson)
+    {
+        _jsonPtr = std::make_shared<Json::Value>(std::move(pJson));
+    }
+    void generateBodyFromJson();
     const std::string &sendfileName() const
     {
         return _sendfileName;
@@ -325,8 +334,7 @@ class HttpResponseImpl : public HttpResponse
     ~HttpResponseImpl();
 
   protected:
-    void makeHeaderString(
-        const std::shared_ptr<std::string> &headerStringPtr) const;
+    void makeHeaderString(const std::shared_ptr<std::string> &headerStringPtr);
 
   private:
     virtual void setBody(const char *body, size_t len) override
