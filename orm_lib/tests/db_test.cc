@@ -544,6 +544,5 @@ int main()
             testOutput(false, "ORM mapper asynchronous interface(1)");
         });
     globalf.get();
-    sleep(1);
     return 0;
 }
