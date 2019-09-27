@@ -203,7 +203,7 @@ class CallbackHolder : public CallbackHolderBase
     }
     template <typename... Values, std::size_t Boundary = argumentCount>
     typename std::enable_if<(sizeof...(Values) == Boundary), void>::type run(
-        const Row *const row,
+        const Row *const,
         bool isNull,
         Values &&... values)
     {

@@ -415,6 +415,9 @@ void HttpAppFrameworkImpl::run()
     {
         _pluginsManagerPtr->initializeAllPlugins(pluginConfig,
                                                  [](PluginBase *plugin) {
+                                                     LOG_TRACE
+                                                         << "new plugin:"
+                                                         << plugin->className();
                                                      // TODO: new plugin
                                                  });
     }

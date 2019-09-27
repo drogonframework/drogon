@@ -223,7 +223,7 @@ class HttpBinder : public HttpBinderBase
     }
     template <typename... Values, std::size_t Boundary = argument_count>
     typename std::enable_if<(sizeof...(Values) == Boundary), void>::type run(
-        std::list<std::string> &pathArguments,
+        std::list<std::string> &,
         const HttpRequestPtr &req,
         std::function<void(const HttpResponsePtr &)> &&callback,
         Values &&... values)

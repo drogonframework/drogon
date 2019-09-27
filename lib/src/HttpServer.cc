@@ -95,14 +95,14 @@ static void defaultHttpAsyncCallback(
 static void defaultWebSockAsyncCallback(
     const HttpRequestPtr &,
     std::function<void(const HttpResponsePtr &resp)> &&callback,
-    const WebSocketConnectionImplPtr &wsConnPtr)
+    const WebSocketConnectionImplPtr &)
 {
     auto resp = HttpResponse::newNotFoundResponse();
     resp->setCloseConnection(true);
     callback(resp);
 }
 
-static void defaultConnectionCallback(const trantor::TcpConnectionPtr &conn)
+static void defaultConnectionCallback(const trantor::TcpConnectionPtr &)
 {
     return;
 }

@@ -381,7 +381,7 @@ void PgConnection::handleFatalError()
     }
 }
 
-void PgConnection::batchSql(std::deque<std::shared_ptr<SqlCmd>> &&sqlCommands)
+void PgConnection::batchSql(std::deque<std::shared_ptr<SqlCmd>> &&)
 {
     assert(false);
 }

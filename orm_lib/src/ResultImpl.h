@@ -45,6 +45,7 @@ class ResultImpl : public trantor::NonCopyable, public Result
     }
     virtual int oid(row_size_type column) const
     {
+        (void)column;
         return 0;
     }
     virtual ~ResultImpl()

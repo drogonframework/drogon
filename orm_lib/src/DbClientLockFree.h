@@ -69,7 +69,9 @@ class DbClientLockFree : public DbClient,
         std::function<void(const std::shared_ptr<Transaction> &)> &&callback);
 
     void handleNewTask(const DbConnectionPtr &conn);
+#if LIBPQ_SUPPORTS_BATCH_MODE
     size_t _connectionPos = 0;  // Used for pg batch mode.
+#endif
 };
 
 }  // namespace orm

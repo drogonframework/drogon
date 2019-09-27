@@ -77,10 +77,10 @@ class WebSocketClientImpl
     std::string _wsAccept;
 
     HttpRequestPtr _upgradeRequest;
-    std::function<void(std::string &&message,
+    std::function<void(std::string &&,
                        const WebSocketClientPtr &,
                        const WebSocketMessageType &)>
-        _messageCallback = [](std::string &&message,
+        _messageCallback = [](std::string &&,
                               const WebSocketClientPtr &,
                               const WebSocketMessageType &) {};
     std::function<void(const WebSocketClientPtr &)> _connectionClosedCallback =

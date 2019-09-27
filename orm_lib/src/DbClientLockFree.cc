@@ -223,7 +223,7 @@ void DbClientLockFree::execSql(
 }
 
 std::shared_ptr<Transaction> DbClientLockFree::newTransaction(
-    const std::function<void(bool)> &commitCallback)
+    const std::function<void(bool)> &)
 {
     // Don't support transaction;
     assert(0);

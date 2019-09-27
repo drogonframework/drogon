@@ -116,7 +116,6 @@ class HttpSimpleControllersRouter : public trantor::NonCopyable
         std::function<void(const HttpResponsePtr &)> &&callback);
     void doControllerHandler(
         const CtrlBinderPtr &ctrlBinderPtr,
-        const SimpleControllerRouterItem &routerItem,
         const HttpRequestImplPtr &req,
         std::function<void(const HttpResponsePtr &)> &&callback);
     void invokeCallback(
