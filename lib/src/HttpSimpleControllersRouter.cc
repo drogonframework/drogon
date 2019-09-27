@@ -347,9 +347,7 @@ void HttpSimpleControllersRouter::doPreHandlingAdvices(
     }
     if (_preHandlingAdvices.empty())
     {
-        doControllerHandler(ctrlBinderPtr,
-                            req,
-                            std::move(callback));
+        doControllerHandler(ctrlBinderPtr, req, std::move(callback));
     }
     else
     {
