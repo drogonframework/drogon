@@ -112,11 +112,11 @@ struct IsPlugin
         typename std::remove_cv<typename std::remove_reference<T>::type>::type
             TYPE;
 
-    static int test(void *p)
+    static int test(void *)
     {
         return 0;
     }
-    static char test(PluginBase *p)
+    static char test(PluginBase *)
     {
         return 0;
     }

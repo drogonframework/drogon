@@ -49,7 +49,7 @@ TransactionImpl::~TransactionImpl()
                 std::vector<const char *>(),
                 std::vector<int>(),
                 std::vector<int>(),
-                [commitCb](const Result &r) {
+                [commitCb](const Result &) {
                     LOG_TRACE << "Transaction commited!";
                     if (commitCb)
                     {
@@ -153,11 +153,11 @@ void TransactionImpl::rollback()
             SqlCmd cmd;
             cmd._sql = "rollback";
             cmd._paraNum = 0;
-            cmd._cb = [thisPtr](const Result &r) {
+            cmd._cb = [thisPtr](const Result &) {
                 LOG_DEBUG << "Transaction roll back!";
                 thisPtr->_isCommitedOrRolledback = true;
             };
-            cmd._exceptCb = [thisPtr](const std::exception_ptr &ePtr) {
+            cmd._exceptCb = [thisPtr](const std::exception_ptr &) {
                 // clearupCb();
                 thisPtr->_isCommitedOrRolledback = true;
                 LOG_ERROR << "Transaction rool back error";
@@ -176,12 +176,12 @@ void TransactionImpl::rollback()
             std::vector<const char *>(),
             std::vector<int>(),
             std::vector<int>(),
-            [thisPtr](const Result &r) {
+            [thisPtr](const Result &) {
                 LOG_TRACE << "Transaction roll back!";
                 thisPtr->_isCommitedOrRolledback = true;
                 // clearupCb();
             },
-            [thisPtr](const std::exception_ptr &ePtr) {
+            [thisPtr](const std::exception_ptr &) {
                 // clearupCb();
                 LOG_ERROR << "Transaction rool back error";
                 thisPtr->_isCommitedOrRolledback = true;
@@ -279,8 +279,9 @@ void TransactionImpl::doBegin()
             std::vector<const char *>(),
             std::vector<int>(),
             std::vector<int>(),
-            [](const Result &r) { LOG_TRACE << "Transaction begin!"; },
-            [thisPtr](const std::exception_ptr &ePtr) {
+            [](const Result &) { LOG_TRACE << "Transaction begin!"; },
+            [thisPtr](const std::exception_ptr &) {
+                LOG_ERROR << "Error occurred in transaction begin";
                 thisPtr->_isCommitedOrRolledback = true;
             });
     });

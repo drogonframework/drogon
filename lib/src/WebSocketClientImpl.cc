@@ -138,7 +138,6 @@ void WebSocketClientImpl::connectToServerInLoop()
             [thisPtr = shared_from_this(),
              hasIpv6Address](const trantor::InetAddress &addr) {
                 thisPtr->_loop->runInLoop([thisPtr, addr, hasIpv6Address]() {
-                    struct sockaddr_in ad;
                     auto port = thisPtr->_server.portNetEndian();
                     thisPtr->_server = addr;
                     thisPtr->_server.setPortNetEndian(port);
@@ -241,7 +240,7 @@ void WebSocketClientImpl::onRecvMessage(
         auto thisPtr = shared_from_this();
         _websockConnPtr->setMessageCallback(
             [thisPtr](std::string &&message,
-                      const WebSocketConnectionImplPtr &connPtr,
+                      const WebSocketConnectionImplPtr &,
                       const WebSocketMessageType &type) {
                 thisPtr->_messageCallback(std::move(message), thisPtr, type);
             });

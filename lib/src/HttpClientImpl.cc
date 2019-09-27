@@ -270,7 +270,6 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
                         thisPtr->_loop->runInLoop([thisPtr,
                                                    addr,
                                                    hasIpv6Address]() {
-                            struct sockaddr_in ad;
                             auto port = thisPtr->_server.portNetEndian();
                             thisPtr->_server = addr;
                             thisPtr->_server.setPortNetEndian(port);

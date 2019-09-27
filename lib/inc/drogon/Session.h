@@ -56,7 +56,7 @@ class Session
             }
         }
         return nullVal;
-    };
+    }
 
     /**
      * @brief Get the 'any' object identified by the given key
@@ -65,7 +65,7 @@ class Session
     {
         std::lock_guard<std::mutex> lck(_mutex);
         return _sessionMap[key];
-    };
+    }
 
     /**
      * @brief Insert a key-value pair
@@ -78,7 +78,7 @@ class Session
     {
         std::lock_guard<std::mutex> lck(_mutex);
         _sessionMap[key] = obj;
-    };
+    }
 
     /**
      * @brief Insert a key-value pair

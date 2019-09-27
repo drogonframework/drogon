@@ -66,7 +66,7 @@ void PluginsManager::initializeAllPlugins(
             }
         }
         pluginPtr->setInitializedCallback([this](PluginBase *p) {
-            LOG_DEBUG << "Plugin " << p->className() << " initialized!";
+            LOG_TRACE << "Plugin " << p->className() << " initialized!";
             _initializedPlugins.push_back(p);
         });
         plugins.push_back(pluginPtr);
@@ -75,6 +75,7 @@ void PluginsManager::initializeAllPlugins(
     for (auto plugin : plugins)
     {
         plugin->initialize();
+        forEachCallback(plugin);
     }
 }
 

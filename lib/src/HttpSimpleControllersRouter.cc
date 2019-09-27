@@ -188,7 +188,6 @@ void HttpSimpleControllersRouter::route(
 
 void HttpSimpleControllersRouter::doControllerHandler(
     const CtrlBinderPtr &ctrlBinderPtr,
-    const SimpleControllerRouterItem &routerItem,
     const HttpRequestImplPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback)
 {
@@ -348,10 +347,7 @@ void HttpSimpleControllersRouter::doPreHandlingAdvices(
     }
     if (_preHandlingAdvices.empty())
     {
-        doControllerHandler(ctrlBinderPtr,
-                            routerItem,
-                            req,
-                            std::move(callback));
+        doControllerHandler(ctrlBinderPtr, req, std::move(callback));
     }
     else
     {
@@ -368,9 +364,8 @@ void HttpSimpleControllersRouter::doPreHandlingAdvices(
                                                                   resp,
                                                                   *callbackPtr);
                 }),
-            [this, ctrlBinderPtr, &routerItem, req, callbackPtr]() {
+            [this, ctrlBinderPtr, req, callbackPtr]() {
                 doControllerHandler(ctrlBinderPtr,
-                                    routerItem,
                                     req,
                                     std::move(*callbackPtr));
             });

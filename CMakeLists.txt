@@ -4,6 +4,12 @@ project(drogon CXX)
 
 add_library(${PROJECT_NAME} STATIC)
 
+#if(MSVC)
+#  target_compile_options(${PROJECT_NAME} PRIVATE /W4 /WX)
+#else()
+#  target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -pedantic)
+#endif()
+
 set(DROGON_MAJOR_VERSION 1)
 set(DROGON_MINOR_VERSION 0)
 set(DROGON_PATCH_VERSION 0)
