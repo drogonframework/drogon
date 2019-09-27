@@ -27,7 +27,7 @@ using namespace drogon_model::postgres;
 #define RESET "\033[0m"
 #define RED "\033[31m"   /* Red */
 #define GREEN "\033[32m" /* Green */
-#define TEST_COUNT 34
+#define TEST_COUNT 36
 
 int counter = 0;
 std::promise<int> pro;
