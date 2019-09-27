@@ -243,6 +243,7 @@ SqlBinder &SqlBinder::operator<<(double f)
 }
 SqlBinder &SqlBinder::operator<<(std::nullptr_t nullp)
 {
+    (void)nullp;
     _paraNum++;
     _parameters.push_back(NULL);
     _length.push_back(0);
