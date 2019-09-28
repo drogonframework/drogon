@@ -15,8 +15,9 @@
 #include "Users.h"
 #include <drogon/config.h>
 #include <drogon/orm/DbClient.h>
-#include <iostream>
 #include <trantor/utils/Logger.h>
+#include <iostream>
+#include <chrono>
 #include <unistd.h>
 #include <stdlib.h>
 
@@ -32,6 +33,7 @@ int counter = 0;
 std::promise<int> pro;
 auto globalf = pro.get_future();
 
+using namespace std::chrono_literals;
 void addCount(int &count, std::promise<int> &pro)
 {
     ++count;
@@ -544,5 +546,6 @@ int main()
             testOutput(false, "ORM mapper asynchronous interface(1)");
         });
     globalf.get();
+    std::this_thread::sleep_for(0.008s);
     return 0;
 }
