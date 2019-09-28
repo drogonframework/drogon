@@ -60,6 +60,7 @@ class HttpRequestImpl : public HttpRequest
         _parameters.clear();
         _jsonPtr.reset();
         _sessionPtr.reset();
+        _attributesPtr.reset();
         _cacheFilePtr.reset();
         _expect.clear();
         _content.clear();
@@ -340,6 +341,15 @@ class HttpRequestImpl : public HttpRequest
         _sessionPtr = session;
     }
 
+    virtual AttributesPtr attributes() const override
+    {
+        if (!_attributesPtr)
+        {
+            _attributesPtr = std::make_shared<Attributes>();
+        }
+        return _attributesPtr;
+    }
+
     virtual const std::shared_ptr<Json::Value> jsonObject() const override
     {
         parseParametersOnce();
@@ -422,6 +432,7 @@ class HttpRequestImpl : public HttpRequest
     mutable std::unordered_map<std::string, std::string> _parameters;
     mutable std::shared_ptr<Json::Value> _jsonPtr;
     SessionPtr _sessionPtr;
+    mutable AttributesPtr _attributesPtr;
     trantor::InetAddress _peer;
     trantor::InetAddress _local;
     trantor::Date _date;

@@ -925,6 +925,33 @@ void doTest(const HttpClientPtr &client,
                             }
                         });
 
+    /// Test attributes
+    req = HttpRequest::newHttpRequest();
+    req->setMethod(drogon::Get);
+    req->setPath("/api/v1/apitest/attrs");
+    client->sendRequest(req,
+                        [=](ReqResult result, const HttpResponsePtr &resp) {
+                            if (result == ReqResult::Ok)
+                            {
+                                auto ret = resp->getJsonObject();
+                                if (ret && (*ret)["result"].asString() == "ok")
+                                {
+                                    outputGood(req, isHttps);
+                                }
+                                else
+                                {
+                                    LOG_DEBUG << resp->getBody();
+                                    LOG_ERROR << "Error!";
+                                    exit(1);
+                                }
+                            }
+                            else
+                            {
+                                LOG_ERROR << "Error!";
+                                exit(1);
+                            }
+                        });
+
     /// Test attachment download
     req = HttpRequest::newHttpRequest();
     req->setMethod(drogon::Get);

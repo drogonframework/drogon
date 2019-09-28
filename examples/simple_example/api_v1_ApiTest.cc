@@ -412,3 +412,35 @@ void ApiTest::formTest(const HttpRequestPtr &req,
     auto resp = HttpResponse::newHttpJsonResponse(ret);
     callback(resp);
 }
+
+void ApiTest::attributesTest(
+    const HttpRequestPtr &req,
+    std::function<void(const HttpResponsePtr &)> &&callback)
+{
+    AttributesPtr attributes = req->getAttributes();
+    const std::string key = "ATTR_ADDR";
+    Json::Value ret;
+
+    uint64_t data = (uint64_t)req.get();
+
+    if (attributes->find(key))
+    {
+        ret["result"] = "bad";
+        callback(HttpResponse::newHttpJsonResponse(ret));
+        return;
+    }
+
+    attributes->insert(key, data);
+
+    if (!attributes->find(key) || attributes->get<uint64_t>(key) != data)
+    {
+        ret["result"] = "bad";
+    }
+    else
+    {
+        ret["result"] = "ok";
+    }
+
+    callback(HttpResponse::newHttpJsonResponse(ret));
+    return;
+}
