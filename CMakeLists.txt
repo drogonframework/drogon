@@ -355,6 +355,7 @@ install(TARGETS ${PROJECT_NAME}
         ARCHIVE DESTINATION "${INSTALL_LIB_DIR}" COMPONENT lib)
 
 set(DROGON_HEADERS
+    lib/inc/drogon/Attribute.h
     lib/inc/drogon/CacheMap.h
     lib/inc/drogon/Cookie.h
     lib/inc/drogon/DrClassMap.h

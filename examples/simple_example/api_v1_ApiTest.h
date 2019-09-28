@@ -33,6 +33,7 @@ class ApiTest : public drogon::HttpController<ApiTest>
                   Get);  // path is /absolute/{arg1}
     METHOD_ADD(ApiTest::jsonTest, "/json", Post);
     METHOD_ADD(ApiTest::formTest, "/form", Post);
+    METHOD_ADD(ApiTest::attributesTest, "/attrs", Get);
     METHOD_LIST_END
 
     void get(const HttpRequestPtr &req,
@@ -56,6 +57,8 @@ class ApiTest : public drogon::HttpController<ApiTest>
     void jsonTest(const HttpRequestPtr &req,
                   std::function<void(const HttpResponsePtr &)> &&callback);
     void formTest(const HttpRequestPtr &req,
+                  std::function<void(const HttpResponsePtr &)> &&callback);
+    void attributesTest(const HttpRequestPtr &req,
                   std::function<void(const HttpResponsePtr &)> &&callback);
 
   public:

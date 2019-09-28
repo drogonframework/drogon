@@ -17,6 +17,7 @@
 #include <drogon/utils/string_view.h>
 #include <drogon/HttpTypes.h>
 #include <drogon/Session.h>
+#include <drogon/Attribute.h>
 #include <drogon/UploadFile.h>
 #include <json/json.h>
 #include <trantor/net/InetAddress.h>
@@ -165,6 +166,15 @@ class HttpRequest
     SessionPtr getSession() const
     {
         return session();
+    }
+
+    /// Get the attributes store to which the request belongs.
+    virtual AttributesPtr attributes() const = 0;
+
+    /// Get the attributes store to which the request belongs.
+    AttributesPtr getAttributes() const
+    {
+        return attributes();
     }
 
     /// Get parameters of the request.
