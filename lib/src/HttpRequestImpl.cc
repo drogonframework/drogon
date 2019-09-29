@@ -187,13 +187,12 @@ void HttpRequestImpl::appendToBuffer(trantor::MsgBuffer *output) const
     {
         for (auto const &p : _parameters)
         {
-            content.append(p.first);
+            content.append(utils::urlEncodeComponent(p.first));
             content.append("=");
-            content.append(p.second);
+            content.append(utils::urlEncodeComponent(p.second));
             content.append("&");
         }
         content.resize(content.length() - 1);
-        content = utils::urlEncode(content);
         if (_method == Get || _method == Delete || _method == Head)
         {
             auto ret = std::find(output->peek(),
