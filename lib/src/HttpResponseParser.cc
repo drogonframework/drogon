@@ -203,6 +203,10 @@ bool HttpResponseParser::parseResponse(MsgBuffer *buf)
         }
         else if (_state == HttpResponseParseState::kExpectClose)
         {
+            if (!_response->_bodyPtr)
+            {
+                _response->_bodyPtr = std::make_shared<std::string>();
+            }
             _response->_bodyPtr->append(
                 std::string(buf->peek(), buf->readableBytes()));
             buf->retrieveAll();
@@ -242,6 +246,10 @@ bool HttpResponseParser::parseResponse(MsgBuffer *buf)
                 if (*(buf->peek() + _response->_currentChunkLength) == '\r' &&
                     *(buf->peek() + _response->_currentChunkLength + 1) == '\n')
                 {
+                    if (!_response->_bodyPtr)
+                    {
+                        _response->_bodyPtr = std::make_shared<std::string>();
+                    }
                     _response->_bodyPtr->append(
                         std::string(buf->peek(),
                                     _response->_currentChunkLength));
