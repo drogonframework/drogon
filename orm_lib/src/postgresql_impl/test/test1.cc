@@ -154,5 +154,20 @@ int main()
     } >> [](const DrogonDbException &e) {
         std::cerr << "error:" << e.base().what() << std::endl;
     };
+
+    *clientPtr << "select t1.*, t2.* from users t1 left join groups t2 on "
+                  "t1.talkgroup_uuid=t2.g_uuid" >>
+        [](const Result &r) {
+            std::cout << r.size() << " rows selected!" << std::endl;
+            if (r.size() == 0)
+                return;
+            for (auto f : r[0])
+            {
+                std::cout << f.name() << std::endl;
+            }
+        } >>
+        [](const DrogonDbException &e) {
+            std::cerr << "error:" << e.base().what() << std::endl;
+        };
     getchar();
 }

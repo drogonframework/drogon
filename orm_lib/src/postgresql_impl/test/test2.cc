@@ -22,6 +22,12 @@ class User
     }
     std::string _userId;
     std::string _userName;
+    static const std::string &sqlForFindingByPrimaryKey()
+    {
+        const static std::string sql =
+            "select * from users where user_uuid = $1";
+        return sql;
+    }
 };
 const std::string User::primaryKeyName = "user_uuid";
 const bool User::hasPrimaryKey = true;

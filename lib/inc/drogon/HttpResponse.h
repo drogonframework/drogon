@@ -226,7 +226,9 @@ class HttpResponse
     /// Create a response which returns a json object. Its content type is set
     /// to set/json.
     static HttpResponsePtr newHttpJsonResponse(const Json::Value &data);
-    /// Create a response that returns a page rendered by a view named viewName.
+    static HttpResponsePtr newHttpJsonResponse(Json::Value &&data);
+    /// Create a response that returns a page rendered by a view named
+    /// viewName.
     /**
      * @param viewName The name of the view
      * @param data is the data displayed on the page.

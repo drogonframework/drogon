@@ -27,7 +27,6 @@
 #include <unistd.h>
 #include <dirent.h>
 #include <dlfcn.h>
-#include <fstream>
 #include <unistd.h>
 
 using namespace drogon_ctl;
@@ -68,7 +67,8 @@ std::string nameTransform(const std::string &origName, bool isType)
 void create_model::createModelClassFromPG(const std::string &path,
                                           const DbClientPtr &client,
                                           const std::string &tableName,
-                                          const std::string &schema)
+                                          const std::string &schema,
+                                          const Json::Value &restfulApiConfig)
 {
     auto className = nameTransform(tableName, true);
     HttpViewData data;
@@ -288,10 +288,12 @@ void create_model::createModelClassFromPG(const std::string &path,
     headerFile << templ->genText(data);
     templ = DrTemplateBase::newTemplate("model_cc.csp");
     sourceFile << templ->genText(data);
+    createRestfulAPIController(data, restfulApiConfig);
 }
 void create_model::createModelFromPG(const std::string &path,
                                      const DbClientPtr &client,
-                                     const std::string &schema)
+                                     const std::string &schema,
+                                     const Json::Value &restfulApiConfig)
 {
     *client << "SELECT a.oid,"
                "a.relname AS name,"
@@ -310,7 +312,8 @@ void create_model::createModelFromPG(const std::string &path,
             if (!isNull)
             {
                 std::cout << "table name:" << tableName << std::endl;
-                createModelClassFromPG(path, client, tableName, schema);
+                createModelClassFromPG(
+                    path, client, tableName, schema, restfulApiConfig);
             }
         } >>
         [](const DrogonDbException &e) {
@@ -321,9 +324,11 @@ void create_model::createModelFromPG(const std::string &path,
 #endif
 
 #if USE_MYSQL
-void create_model::createModelClassFromMysql(const std::string &path,
-                                             const DbClientPtr &client,
-                                             const std::string &tableName)
+void create_model::createModelClassFromMysql(
+    const std::string &path,
+    const DbClientPtr &client,
+    const std::string &tableName,
+    const Json::Value &restfulApiConfig)
 {
     auto className = nameTransform(tableName, true);
     HttpViewData data;
@@ -393,6 +398,18 @@ void create_model::createModelClassFromMysql(const std::string &path,
                 {
                     info._colType = "std::vector<char>";
                 }
+                else if (type.find("varchar") != std::string::npos)
+                {
+                    info._colType = "std::string";
+                    auto pos1 = type.find("(");
+                    auto pos2 = type.find(")");
+                    if (pos1 != std::string::npos &&
+                        pos2 != std::string::npos && pos2 - pos1 > 1)
+                    {
+                        info._colLength =
+                            std::stoll(type.substr(pos1 + 1, pos2 - pos1 - 1));
+                    }
+                }
                 else
                 {
                     info._colType = "std::string";
@@ -445,16 +462,21 @@ void create_model::createModelClassFromMysql(const std::string &path,
     headerFile << templ->genText(data);
     templ = DrTemplateBase::newTemplate("model_cc.csp");
     sourceFile << templ->genText(data);
+    createRestfulAPIController(data, restfulApiConfig);
 }
 void create_model::createModelFromMysql(const std::string &path,
-                                        const DbClientPtr &client)
+                                        const DbClientPtr &client,
+                                        const Json::Value &restfulApiConfig)
 {
     *client << "show tables" << Mode::Blocking >>
         [&](bool isNull, const std::string &tableName) {
             if (!isNull)
             {
                 std::cout << "table name:" << tableName << std::endl;
-                createModelClassFromMysql(path, client, tableName);
+                createModelClassFromMysql(path,
+                                          client,
+                                          tableName,
+                                          restfulApiConfig);
             }
         } >>
         [](const DrogonDbException &e) {
@@ -464,9 +486,11 @@ void create_model::createModelFromMysql(const std::string &path,
 }
 #endif
 #if USE_SQLITE3
-void create_model::createModelClassFromSqlite3(const std::string &path,
-                                               const DbClientPtr &client,
-                                               const std::string &tableName)
+void create_model::createModelClassFromSqlite3(
+    const std::string &path,
+    const DbClientPtr &client,
+    const std::string &tableName,
+    const Json::Value &restfulApiConfig)
 {
     *client << "SELECT sql FROM sqlite_master WHERE name=? and (type='table' "
                "or type='view');"
@@ -488,7 +512,7 @@ void create_model::createModelClassFromSqlite3(const std::string &path,
                     data["tableName"] = tableName;
                     data["hasPrimaryKey"] = (int)0;
                     data["primaryKeyName"] = "";
-                    data["dbName"] = "sqlite3";
+                    data["dbName"] = std::string("sqlite3");
                     data["rdbms"] = std::string("sqlite3");
                     // std::cout << sql << std::endl;
                     auto columns = utils::splitString(sql, ",");
@@ -585,6 +609,7 @@ void create_model::createModelClassFromSqlite3(const std::string &path,
                     headerFile << templ->genText(data);
                     templ = DrTemplateBase::newTemplate("model_cc.csp");
                     sourceFile << templ->genText(data);
+                    createRestfulAPIController(data, restfulApiConfig);
                 }
                 else
                 {
@@ -600,7 +625,8 @@ void create_model::createModelClassFromSqlite3(const std::string &path,
         };
 }
 void create_model::createModelFromSqlite3(const std::string &path,
-                                          const DbClientPtr &client)
+                                          const DbClientPtr &client,
+                                          const Json::Value &restfulApiConfig)
 {
     *client << "SELECT name FROM sqlite_master WHERE name!='sqlite_sequence' "
                "and (type='table' or type='view') ORDER BY name;"
@@ -609,7 +635,10 @@ void create_model::createModelFromSqlite3(const std::string &path,
             if (!isNull)
             {
                 std::cout << "table name:" << tableName << std::endl;
-                createModelClassFromSqlite3(path, client, tableName);
+                createModelClassFromSqlite3(path,
+                                            client,
+                                            tableName,
+                                            restfulApiConfig);
             }
         } >>
         [](const DrogonDbException &e) {
@@ -620,10 +649,12 @@ void create_model::createModelFromSqlite3(const std::string &path,
 #endif
 
 void create_model::createModel(const std::string &path,
-                               const Json::Value &config)
+                               const Json::Value &config,
+                               const std::string &singleModelName)
 {
     auto dbType = config.get("rdbms", "no dbms").asString();
     std::transform(dbType.begin(), dbType.end(), dbType.begin(), tolower);
+    auto restfulApiConfig = config["restful_api_controllers"];
     if (dbType == "postgresql")
     {
 #if USE_POSTGRESQL
@@ -662,25 +693,43 @@ void create_model::createModel(const std::string &path,
         auto schema = config.get("schema", "public").asString();
         DbClientPtr client = drogon::orm::DbClient::newPgClient(connStr, 1);
         std::cout << "Connect to server..." << std::endl;
-        std::cout << "Source files in the " << path
-                  << " folder will be overwritten, continue(y/n)?\n";
-        auto in = getchar();
-        if (in != 'Y' && in != 'y')
+        if (_forceOverwrite)
         {
-            std::cout << "Abort!" << std::endl;
-            exit(0);
+            sleep(2);
         }
-        auto tables = config["tables"];
-        if (!tables || tables.size() == 0)
-            createModelFromPG(path, client, schema);
         else
         {
-            for (int i = 0; i < (int)tables.size(); i++)
+            std::cout << "Source files in the " << path
+                      << " folder will be overwritten, continue(y/n)?\n";
+            auto in = getchar();
+            (void)getchar();  // get the return key
+            if (in != 'Y' && in != 'y')
             {
-                auto tableName = tables[i].asString();
-                std::cout << "table name:" << tableName << std::endl;
-                createModelClassFromPG(path, client, tableName, schema);
+                std::cout << "Abort!" << std::endl;
+                exit(0);
             }
+        }
+
+        if (singleModelName.empty())
+        {
+            auto tables = config["tables"];
+            if (!tables || tables.size() == 0)
+                createModelFromPG(path, client, schema, restfulApiConfig);
+            else
+            {
+                for (int i = 0; i < (int)tables.size(); i++)
+                {
+                    auto tableName = tables[i].asString();
+                    std::cout << "table name:" << tableName << std::endl;
+                    createModelClassFromPG(
+                        path, client, tableName, schema, restfulApiConfig);
+                }
+            }
+        }
+        else
+        {
+            createModelClassFromPG(
+                path, client, singleModelName, schema, restfulApiConfig);
         }
 #else
         std::cerr
@@ -725,26 +774,49 @@ void create_model::createModel(const std::string &path,
         }
         DbClientPtr client = drogon::orm::DbClient::newMysqlClient(connStr, 1);
         std::cout << "Connect to server..." << std::endl;
-        std::cout << "Source files in the " << path
-                  << " folder will be overwritten, continue(y/n)?\n";
-        auto in = getchar();
-        if (in != 'Y' && in != 'y')
+        if (_forceOverwrite)
         {
-            std::cout << "Abort!" << std::endl;
-            exit(0);
+            sleep(2);
         }
-        auto tables = config["tables"];
-        if (!tables || tables.size() == 0)
-            createModelFromMysql(path, client);
         else
         {
-            for (int i = 0; i < (int)tables.size(); i++)
+            std::cout << "Source files in the " << path
+                      << " folder will be overwritten, continue(y/n)?\n";
+            auto in = getchar();
+            (void)getchar();  // get the return key
+            if (in != 'Y' && in != 'y')
             {
-                auto tableName = tables[i].asString();
-                std::cout << "table name:" << tableName << std::endl;
-                createModelClassFromMysql(path, client, tableName);
+                std::cout << "Abort!" << std::endl;
+                exit(0);
             }
         }
+
+        if (singleModelName.empty())
+        {
+            auto tables = config["tables"];
+            if (!tables || tables.size() == 0)
+                createModelFromMysql(path, client, restfulApiConfig);
+            else
+            {
+                for (int i = 0; i < (int)tables.size(); i++)
+                {
+                    auto tableName = tables[i].asString();
+                    std::cout << "table name:" << tableName << std::endl;
+                    createModelClassFromMysql(path,
+                                              client,
+                                              tableName,
+                                              restfulApiConfig);
+                }
+            }
+        }
+        else
+        {
+            createModelClassFromMysql(path,
+                                      client,
+                                      singleModelName,
+                                      restfulApiConfig);
+        }
+
 #else
         std::cerr << "Drogon does not support Mysql, please install MariaDB "
                      "development environment before installing drogon"
@@ -765,26 +837,49 @@ void create_model::createModel(const std::string &path,
         DbClientPtr client =
             drogon::orm::DbClient::newSqlite3Client(connStr, 1);
         std::cout << "Connect..." << std::endl;
-        std::cout << "Source files in the " << path
-                  << " folder will be overwritten, continue(y/n)?\n";
-        auto in = getchar();
-        if (in != 'Y' && in != 'y')
+        if (_forceOverwrite)
         {
-            std::cout << "Abort!" << std::endl;
-            exit(0);
+            sleep(1);
         }
-        auto tables = config["tables"];
-        if (!tables || tables.size() == 0)
-            createModelFromSqlite3(path, client);
         else
         {
-            for (int i = 0; i < (int)tables.size(); i++)
+            std::cout << "Source files in the " << path
+                      << " folder will be overwritten, continue(y/n)?\n";
+            auto in = getchar();
+            (void)getchar();  // get the return key
+            if (in != 'Y' && in != 'y')
             {
-                auto tableName = tables[i].asString();
-                std::cout << "table name:" << tableName << std::endl;
-                createModelClassFromSqlite3(path, client, tableName);
+                std::cout << "Abort!" << std::endl;
+                exit(0);
             }
         }
+
+        if (singleModelName.empty())
+        {
+            auto tables = config["tables"];
+            if (!tables || tables.size() == 0)
+                createModelFromSqlite3(path, client, restfulApiConfig);
+            else
+            {
+                for (int i = 0; i < (int)tables.size(); i++)
+                {
+                    auto tableName = tables[i].asString();
+                    std::cout << "table name:" << tableName << std::endl;
+                    createModelClassFromSqlite3(path,
+                                                client,
+                                                tableName,
+                                                restfulApiConfig);
+                }
+            }
+        }
+        else
+        {
+            createModelClassFromSqlite3(path,
+                                        client,
+                                        singleModelName,
+                                        restfulApiConfig);
+        }
+
 #else
         std::cerr << "Drogon does not support Sqlite3, please install Sqlite3 "
                      "development environment before installing drogon"
@@ -803,7 +898,8 @@ void create_model::createModel(const std::string &path,
         exit(1);
     }
 }
-void create_model::createModel(const std::string &path)
+void create_model::createModel(const std::string &path,
+                               const std::string &singleModelName)
 {
     DIR *dp;
     if ((dp = opendir(path.c_str())) == NULL)
@@ -832,7 +928,7 @@ void create_model::createModel(const std::string &path)
         try
         {
             infile >> configJsonRoot;
-            createModel(path, configJsonRoot);
+            createModel(path, configJsonRoot, singleModelName);
         }
         catch (const std::exception &exception)
         {
@@ -851,8 +947,203 @@ void create_model::handleCommand(std::vector<std::string> &parameters)
     {
         std::cerr << "Missing Model path name!" << std::endl;
     }
+    std::string singleModelName;
+    for (auto iter = parameters.begin(); iter != parameters.end(); ++iter)
+    {
+        if ((*iter).find("--table=") == 0)
+        {
+            singleModelName = (*iter).substr(8);
+            parameters.erase(iter);
+            break;
+        }
+    }
+    for (auto iter = parameters.begin(); iter != parameters.end(); ++iter)
+    {
+        if ((*iter) == "-f")
+        {
+            _forceOverwrite = true;
+            parameters.erase(iter);
+            break;
+        }
+    }
     for (auto const &path : parameters)
     {
-        createModel(path);
+        createModel(path, singleModelName);
+    }
+}
+
+void create_model::createRestfulAPIController(
+    const DrTemplateData &tableInfo,
+    const Json::Value &restfulApiConfig)
+{
+    if (restfulApiConfig.isNull())
+        return;
+    if (!restfulApiConfig.get("enabled", false).asBool())
+    {
+        return;
+    }
+    auto genBaseOnly =
+        restfulApiConfig.get("generate_base_only", false).asBool();
+    auto modelClassName = tableInfo.get<std::string>("className");
+    std::regex regex("\\*");
+    auto resource = std::regex_replace(
+        restfulApiConfig.get("resource_uri", "/*").asString(),
+        regex,
+        modelClassName);
+    std::transform(resource.begin(), resource.end(), resource.begin(), tolower);
+    auto ctrlClassName =
+        std::regex_replace(restfulApiConfig.get("class_name", "/*").asString(),
+                           regex,
+                           modelClassName);
+    std::regex regex1("::");
+    std::string ctlName =
+        std::regex_replace(ctrlClassName, regex1, std::string("_"));
+    auto v = utils::splitString(ctrlClassName, "::");
+
+    drogon::DrTemplateData data;
+    data.insert("className", v[v.size() - 1]);
+    v.pop_back();
+    data.insert("namespaceVector", v);
+    data.insert("resource", resource);
+    data.insert("fileName", ctlName);
+    data.insert("tableName", tableInfo.get<std::string>("tableName"));
+    data.insert("tableInfo", tableInfo);
+    auto filters = restfulApiConfig["filters"];
+    if (filters.isNull() || filters.empty() || !filters.isArray())
+    {
+        data.insert("filters", "");
+    }
+    else
+    {
+        std::string filtersStr;
+        for (auto &filterName : filters)
+        {
+            filtersStr += ",\"";
+            filtersStr.append(filterName.asString());
+            filtersStr += '"';
+        }
+        data.insert("filters", filtersStr);
+    }
+    auto dbClientConfig = restfulApiConfig["db_client"];
+    if (dbClientConfig.isNull() || dbClientConfig.empty())
+    {
+        data.insertAsString("dbClientName", "default");
+        data.insert("isFastDbClient", false);
+    }
+    else
+    {
+        auto clientName = dbClientConfig.get("name", "default").asString();
+        auto isFast = dbClientConfig.get("is_fast", false).asBool();
+        data.insertAsString("dbClientName", clientName);
+        data.insert("isFastDbClient", isFast);
+    }
+    auto dir = restfulApiConfig.get("directory", "controllers").asString();
+    if (dir[dir.length() - 1] != '/')
+    {
+        dir += '/';
+    }
+    {
+        std::string headFileName = dir + ctlName + "Base.h";
+        std::string sourceFilename = dir + ctlName + "Base.cc";
+        // {
+        //     std::ifstream iHeadFile(headFileName.c_str(), std::ifstream::in);
+        //     std::ifstream iSourceFile(sourceFilename.c_str(),
+        //                               std::ifstream::in);
+
+        //     if (iHeadFile || iSourceFile)
+        //     {
+        //         std::cout << "The " << headFileName << " and " <<
+        //         sourceFilename
+        //                   << " you want to create already exist, "
+        //                      "overwrite it(y/n)?"
+        //                   << std::endl;
+        //         auto in = getchar();
+        //         (void)getchar();  // get the return key
+        //         if (in != 'Y' && in != 'y')
+        //         {
+        //             std::cout << "Abort!" << std::endl;
+        //             exit(0);
+        //         }
+        //     }
+        // }
+        std::ofstream oHeadFile(headFileName.c_str(), std::ofstream::out);
+        std::ofstream oSourceFile(sourceFilename.c_str(), std::ofstream::out);
+        if (!oHeadFile || !oSourceFile)
+        {
+            perror("");
+            exit(1);
+        }
+        try
+        {
+            auto templ =
+                DrTemplateBase::newTemplate("restful_controller_base_h.csp");
+            oHeadFile << templ->genText(data);
+            templ =
+                DrTemplateBase::newTemplate("restful_controller_base_cc.csp");
+            oSourceFile << templ->genText(data);
+        }
+        catch (const std::exception &err)
+        {
+            std::cerr << err.what() << std::endl;
+            exit(1);
+        }
+        std::cout << "create a http restful API controller base class:"
+                  << ctrlClassName << "Base" << std::endl;
+        std::cout << "file name: " << headFileName << ", " << sourceFilename
+                  << std::endl
+                  << std::endl;
+    }
+    if (!genBaseOnly)
+    {
+        std::string headFileName = dir + ctlName + ".h";
+        std::string sourceFilename = dir + ctlName + ".cc";
+        if (!_forceOverwrite)
+        {
+            std::ifstream iHeadFile(headFileName.c_str(), std::ifstream::in);
+            std::ifstream iSourceFile(sourceFilename.c_str(),
+                                      std::ifstream::in);
+
+            if (iHeadFile || iSourceFile)
+            {
+                std::cout << "The " << headFileName << " and " << sourceFilename
+                          << " you want to create already exist, "
+                             "overwrite them(y/n)?"
+                          << std::endl;
+                auto in = getchar();
+                (void)getchar();  // get the return key
+                if (in != 'Y' && in != 'y')
+                {
+                    std::cout << "Abort!" << std::endl;
+                    exit(0);
+                }
+            }
+        }
+        std::ofstream oHeadFile(headFileName.c_str(), std::ofstream::out);
+        std::ofstream oSourceFile(sourceFilename.c_str(), std::ofstream::out);
+        if (!oHeadFile || !oSourceFile)
+        {
+            perror("");
+            exit(1);
+        }
+        try
+        {
+            auto templ =
+                DrTemplateBase::newTemplate("restful_controller_custom_h.csp");
+            oHeadFile << templ->genText(data);
+            templ =
+                DrTemplateBase::newTemplate("restful_controller_custom_cc.csp");
+            oSourceFile << templ->genText(data);
+        }
+        catch (const std::exception &err)
+        {
+            std::cerr << err.what() << std::endl;
+            exit(1);
+        }
+
+        std::cout << "create a http restful API controller class: "
+                  << ctrlClassName << std::endl;
+        std::cout << "file name: " << headFileName << ", " << sourceFilename
+                  << std::endl
+                  << std::endl;
     }
 }

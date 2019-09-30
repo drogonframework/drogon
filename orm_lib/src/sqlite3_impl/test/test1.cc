@@ -9,7 +9,7 @@ using namespace drogon::orm;
 int main()
 {
     trantor::Logger::setLogLevel(trantor::Logger::TRACE);
-    auto clientPtr = DbClient::newSqlite3Client("filename=test.db", 3);
+    auto clientPtr = DbClient::newSqlite3Client("filename=test.db", 1);
     sleep(1);
 
     LOG_DEBUG << "start!";

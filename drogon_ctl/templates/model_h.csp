@@ -15,6 +15,7 @@ using namespace drogon_ctl;
 #include <drogon/orm/SqlBinder.h>
 #include <drogon/orm/Mapper.h>
 #include <trantor/utils/Date.h>
+#include <trantor/utils/Logger.h>
 #include <json/json.h>
 #include <string>
 #include <memory>
@@ -61,6 +62,7 @@ auto cols=@@.get<std::vector<ColumnInfo>>("columns");
     const PrimaryKeyType &getPrimaryKey() const;
 <%c++}else{%>
     typedef void PrimaryKeyType;
+    int getPrimaryKey() const { assert(false); return 0; }
 <%c++}%>
 <%c++}else{
     auto pkTypes=@@.get<std::vector<std::string>>("primaryKeyType");   
@@ -85,9 +87,49 @@ auto cols=@@.get<std::vector<ColumnInfo>>("columns");
 
     PrimaryKeyType getPrimaryKey() const; 
 <%c++}%>
-    explicit [[className]](const Row &r) noexcept;
+
+    /**
+     * @brief constructor
+     * @param r One row of records in the SQL query result.
+     * @param indexOffset Set the offset to -1 to access all columns by column names, 
+     * otherwise access all columns by offsets.
+     * @note If the SQL is not a style of 'select * from table_name ...' (select all 
+     * columns by an asterisk), please set the offset to -1.
+     */
+    explicit [[className]](const Row &r, const ssize_t indexOffset = 0) noexcept;
+
+    /**
+     * @brief constructor
+     * @param pJson The json object to construct a new instance.
+     */
+    explicit [[className]](const Json::Value &pJson) noexcept(false);
+
+    /**
+     * @brief constructor
+     * @param pJson The json object to construct a new instance.
+     * @param pMasqueradingVector The aliases of table columns.
+     */
+    [[className]](const Json::Value &pJson, const std::vector<std::string> &pMasqueradingVector) noexcept(false);
+
     [[className]]() = default;
     
+    void updateByJson(const Json::Value &pJson) noexcept(false);
+    void updateByMasqueradedJson(const Json::Value &pJson,
+                                 const std::vector<std::string> &pMasqueradingVector) noexcept(false);
+    static bool validateJsonForCreation(const Json::Value &pJson, std::string &err);
+    static bool validateMasqueradedJsonForCreation(const Json::Value &,
+                                                const std::vector<std::string> &pMasqueradingVector,
+                                                    std::string &err);
+    static bool validateJsonForUpdate(const Json::Value &pJson, std::string &err);
+    static bool validateMasqueradedJsonForUpdate(const Json::Value &,
+                                          const std::vector<std::string> &pMasqueradingVector,
+                                          std::string &err);
+    static bool validJsonOfField(size_t index,
+                          const std::string &fieldName,
+                          const Json::Value &pJson, 
+                          std::string &err, 
+                          bool isForCreation);
+
 <%c++
     for(const auto &col:cols)
     {
@@ -113,6 +155,10 @@ auto cols=@@.get<std::vector<ColumnInfo>>("columns");
                 {
                     $$<<"    void set"<<col._colTypeName<<"(const std::string &p"<<col._colTypeName<<") noexcept;\n";
                 }
+                if(!col._notNull)
+                {
+                    $$<<"    void set"<<col._colTypeName<<"ToNull() noexcept;\n";
+                }
             }
         }
         else
@@ -125,6 +171,7 @@ auto cols=@@.get<std::vector<ColumnInfo>>("columns");
     static const std::string &getColumnName(size_t index) noexcept(false);
 
     Json::Value toJson() const;
+    Json::Value toMasqueradedJson(const std::vector<std::string> &pMasqueradingVector) const;
 
   private:
     friend Mapper<[[className]]>;
@@ -153,6 +200,208 @@ auto cols=@@.get<std::vector<ColumnInfo>>("columns");
     };
     static const std::vector<MetaData> _metaData;
     bool _dirtyFlag[{%cols.size()%}]={ false };
+
+  public:
+    static const std::string &sqlForFindingByPrimaryKey()
+    {
+<%c++
+auto rdbms=@@.get<std::string>("rdbms");
+if(@@.get<int>("hasPrimaryKey")<=1){
+        if(!@@.get<std::string>("primaryKeyType").empty()){%>
+        static const std::string sql="select * from " + tableName + " where [[primaryKeyName]] = {%(rdbms=="postgresql"?"$1":"?")%}";
+<%c++}else{%>
+        static const std::string sql="";
+<%c++}%>
+<%c++}else{
+        auto pkName=@@.get<std::vector<std::string>>("primaryKeyName");
+%>
+        static const std::string sql="select * from " + tableName + " where <%c++
+        for(size_t i=0;i<pkName.size();i++)
+        {
+            if(rdbms=="postgresql")
+            {
+                $$<<pkName[i]<<" = $"<<i+1;
+            }
+            else
+            {
+                $$<<pkName[i]<<" = ?";
+            }
+            if(i<(pkName.size()-1))
+                $$<<" and ";
+        }
+        $$<<"\";\n";
+    }
+%>
+        return sql;                   
+    }
+
+    static const std::string &sqlForDeletingByPrimaryKey()
+    {
+<%c++
+if(@@.get<int>("hasPrimaryKey")<=1){
+        if(!@@.get<std::string>("primaryKeyType").empty()){%>
+        static const std::string sql="delete from " + tableName + " where [[primaryKeyName]] = {%(rdbms=="postgresql"?"$1":"?")%}";
+<%c++}else{%>
+        static const std::string sql="";
+<%c++}%>
+<%c++}else{
+        auto pkName=@@.get<std::vector<std::string>>("primaryKeyName");
+%>
+        static const std::string sql="delete from " + tableName + " where <%c++
+        for(size_t i=0;i<pkName.size();i++)
+        {
+            if(rdbms=="postgresql")
+            {
+                $$<<pkName[i]<<" = $"<<i+1;
+            }
+            else
+            {
+                $$<<pkName[i]<<" = ?";
+            }
+            if(i<(pkName.size()-1))
+                $$<<" and ";
+        }
+        $$<<"\";\n";
+    }
+%>
+        return sql;                   
+    }
+    std::string sqlForInserting(bool &needSelection) const
+    {
+        std::string sql="insert into " + tableName + " (";
+        size_t parametersCount = 0;
+        needSelection = false;
+<%c++
+        bool selFlag=false;
+        for(size_t i=0;i<cols.size();i++)
+        {
+            if(cols[i]._isAutoVal)
+            {
+                if(@@.get<int>("hasPrimaryKey")>0)
+                {
+                    selFlag = true;
+                }
+                $$<<"            sql += \""<<cols[i]._colName<<",\";\n";
+                $$<<"            ++parametersCount;\n";
+                continue;
+            } 
+            if(cols[i]._colType.empty())
+                continue;
+            if(cols[i]._hasDefaultVal)
+            {
+                $$<<"        sql += \""<<cols[i]._colName<<",\";\n";
+                $$<<"        ++parametersCount;\n";
+                if(@@.get<int>("hasPrimaryKey")>0||@@.get<std::string>("rdbms")=="postgresql")
+                {        
+%>
+        if(!_dirtyFlag[{%i%}])
+        {
+            needSelection=true;
+        }
+<%c++       
+                }
+            }
+            else
+            {
+%>
+        if(_dirtyFlag[{%i%}])
+        {
+            sql += "{%cols[i]._colName%},";
+            ++parametersCount;
+        }
+<%c++    
+            }
+        }
+        if(selFlag)
+        {
+            $$<<"        needSelection=true;\n";
+        }
+%>
+        if(parametersCount > 0)
+        {
+            sql[sql.length()-1]=')';
+            sql += " values (";
+        }
+        else
+            sql += ") values (";
+        
+<%c++
+if(@@.get<std::string>("rdbms")=="postgresql")
+{
+%>
+        int placeholder=1;
+        char placeholderStr[64];
+        size_t n=0;
+<%c++    
+}        
+        for(size_t i=0;i<cols.size();i++)
+        {
+        if(cols[i]._isAutoVal)
+        {
+%>
+        sql +="default,";
+<%c++
+            continue;
+        } 
+        if(cols[i]._colType.empty())
+        continue;
+%>
+        if(_dirtyFlag[{%i%}])
+        {
+<%c++
+                if(@@.get<std::string>("rdbms")=="postgresql")
+                {
+%>
+            n = sprintf(placeholderStr,"$%d,",placeholder++);
+            sql.append(placeholderStr, n);
+<%c++
+                }else
+                {
+%>
+            sql.append("?,");
+
+<%c++
+                }
+%>
+        } 
+<%c++
+if(cols[i]._hasDefaultVal)
+{
+%>
+        else
+        {
+            sql +="default,";
+        }
+<%c++
+}
+        }
+%>
+        if(parametersCount > 0)
+        {
+            sql.resize(sql.length() - 1);
+        }
+<%c++
+        if(rdbms=="postgresql")
+        {
+%>
+        if(needSelection)
+        {
+            sql.append(") returning *");
+        }
+        else
+        {
+            sql.append(1, ')');
+        }
+<%c++
+        }
+        else
+        {
+            $$<<"        sql.append(1, ')');\n";
+        }
+%>
+        LOG_TRACE << sql;
+        return sql;   
+    }
 };
 <%c++
 if(!schema.empty())

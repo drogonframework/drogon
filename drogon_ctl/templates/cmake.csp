@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 3.5)
-project([[ProjectName]])
+project([[ProjectName]] CXX)
 
 include(CheckIncludeFileCXX)
 
@@ -52,5 +52,5 @@ foreach(cspFile ${SCP_LIST})
     set(VIEWSRC ${VIEWSRC} ${classname}.cc)
 endforeach()
 
-target_include_directories([[ProjectName]] PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories([[ProjectName]] PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/models)
 target_sources([[ProjectName]] PRIVATE ${SRC_DIR} ${CTL_SRC} ${FILTER_SRC} ${VIEWSRC} ${PLUGIN_SRC} ${MODEL_SRC})

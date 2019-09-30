@@ -15,13 +15,16 @@
 #pragma once
 
 #include <drogon/orm/SqlBinder.h>
-
 #include <assert.h>
 #include <memory>
 #include <string>
 #include <tuple>
 #include <type_traits>
 
+namespace Json
+{
+class Value;
+}
 namespace drogon
 {
 namespace orm
@@ -35,6 +38,7 @@ enum class CompareOperator
     LT,
     LE,
     LIKE,
+    IN,
     IsNull,
     IsNotNull
 };
@@ -112,6 +116,61 @@ class Criteria
         };
     }
 
+    template <typename T>
+    Criteria(const std::string &colName,
+             const CompareOperator &opera,
+             const std::vector<T> &args)
+    {
+        assert(opera == CompareOperator::IN && args.size() > 0);
+        _condString = colName + " in (";
+        for (size_t i = 0; i < args.size(); ++i)
+        {
+            if (i < args.size() - 1)
+                _condString.append("$?,");
+            else
+                _condString.append("$?");
+        }
+        _condString.append(")");
+        _outputArgumentsFunc = [args](internal::SqlBinder &binder) {
+            for (auto &arg : args)
+            {
+                binder << arg;
+            }
+        };
+    }
+
+    template <typename T>
+    Criteria(const std::string &colName,
+             const CompareOperator &opera,
+             std::vector<T> &&args)
+    {
+        assert(opera == CompareOperator::IN && args.size() > 0);
+        _condString = colName + " in (";
+        for (size_t i = 0; i < args.size(); ++i)
+        {
+            if (i < args.size() - 1)
+                _condString.append("$?,");
+            else
+                _condString.append("$?");
+        }
+        _condString.append(")");
+        _outputArgumentsFunc =
+            [args = std::move(args)](internal::SqlBinder &binder) {
+                for (auto &arg : args)
+                {
+                    binder << arg;
+                }
+            };
+    }
+
+    template <typename T>
+    Criteria(const std::string &colName,
+             const CompareOperator &opera,
+             std::vector<T> &args)
+        : Criteria(colName, opera, (const std::vector<T> &)args)
+    {
+    }
+
     /**
      * @brief Construct a new Criteria object presenting a equal expression
      *
@@ -161,6 +220,22 @@ class Criteria
         : Criteria(colName, (const CompareOperator &)opera)
     {
     }
+
+    /**
+     * @brief Construct a new Criteria object
+     *
+     * @param json A json object representing the criteria
+     * @note the json object must be a array of three items, the first is the
+     * name of the field, the second is the comparison operator and the third is
+     * the value to be compared.
+     * The valid operators are "=","<",">","<=",">=","!=","in"
+     * for example:
+     * ["id","=",1] means 'id = 1'
+     * ["id","!=",null] means 'id is not null'
+     * ["user_name","in",["Tom","Bob"]] means 'user_name in ('Tom', 'Bob')'
+     * ["price","<",1000] means 'price < 1000'
+     */
+    Criteria(const Json::Value &json) noexcept(false);
 
     Criteria()
     {

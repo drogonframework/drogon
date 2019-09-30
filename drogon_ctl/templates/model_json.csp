@@ -1,17 +1,44 @@
 {
     //rdbms: server type, postgresql,mysql or sqlite3
-    "rdbms":"postgresql",
+    "rdbms": "postgresql",
     //filename: sqlite3 db file name
     //"filename":"",
     //host: server address,localhost by default;
-    "host":"127.0.0.1",
+    "host": "127.0.0.1",
     //port: server port, 5432 by default;
-    "port":5432,
+    "port": 5432,
     //dbname: Database name;
-    "dbname":"",
+    "dbname": "",
     //schema: valid for postgreSQL, "public" by default;
-    //"schema":"public",
-    "user":"",
-    "passwd":"",
-    "tables":[]
+    "schema":"public",
+    //user: User name
+    "user": "",
+    //password: Password
+    "passwd": "",
+    //table: An array of tables to be modelized. if the array is empty, all revealed tables are modelized.
+    "tables": [],
+    "restful_api_controllers": {
+        "enabled": false,
+        // resource_uri: The URI to access the resource, the default value 
+        // is '/*' in which the asterisk represents the table name.
+        // If this option is set to a empty string, the URI is composed of the namespaces and the class name.
+        "resource_uri": "/*",
+        // class_name: "Restful*Ctrl" by default, the asterisk represents the table name.
+        // This option can contain namespaces.
+        "class_name": "Restful*Ctrl",
+        // filters: an array of filter names.
+        "filters": [],
+        // db_client: the database client used by the controller. this option must be consistent with
+        // the configuration of the application.
+        "db_client": {
+            //name: Name of the client,'default' by default
+            "name": "default",
+            //is_fast: 
+            "is_fast": false
+        },
+        // directory: The directory where the controller source files are stored.
+        "directory": "controllers",
+        // generate_base_only: false by default. Set to true to avoid overwriting custom subclasses.
+        "generate_base_only": false
+    }
 }

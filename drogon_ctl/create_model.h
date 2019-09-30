@@ -15,6 +15,7 @@
 #pragma once
 
 #include <drogon/config.h>
+#include <drogon/DrTemplateBase.h>
 #include <json/json.h>
 #include <drogon/orm/DbClient.h>
 using namespace drogon::orm;
@@ -52,31 +53,43 @@ class create_model : public DrObject<create_model>, public CommandHandler
     }
 
   protected:
-    void createModel(const std::string &path);
-    void createModel(const std::string &path, const Json::Value &config);
+    void createModel(const std::string &path,
+                     const std::string &singleModelName);
+    void createModel(const std::string &path,
+                     const Json::Value &config,
+                     const std::string &singleModelName);
 #if USE_POSTGRESQL
     void createModelClassFromPG(const std::string &path,
                                 const DbClientPtr &client,
                                 const std::string &tableName,
-                                const std::string &schema);
+                                const std::string &schema,
+                                const Json::Value &restfulApiConfig);
     void createModelFromPG(const std::string &path,
                            const DbClientPtr &client,
-                           const std::string &schema);
+                           const std::string &schema,
+                           const Json::Value &restfulApiConfig);
 #endif
 #if USE_MYSQL
     void createModelClassFromMysql(const std::string &path,
                                    const DbClientPtr &client,
-                                   const std::string &tableName);
+                                   const std::string &tableName,
+                                   const Json::Value &restfulApiConfig);
     void createModelFromMysql(const std::string &path,
-                              const DbClientPtr &client);
+                              const DbClientPtr &client,
+                              const Json::Value &restfulApiConfig);
 #endif
 #if USE_SQLITE3
     void createModelClassFromSqlite3(const std::string &path,
                                      const DbClientPtr &client,
-                                     const std::string &tableName);
+                                     const std::string &tableName,
+                                     const Json::Value &restfulApiConfig);
     void createModelFromSqlite3(const std::string &path,
-                                const DbClientPtr &client);
+                                const DbClientPtr &client,
+                                const Json::Value &restfulApiConfig);
 #endif
+    void createRestfulAPIController(const DrTemplateData &tableInfo,
+                                    const Json::Value &restfulApiConfig);
     std::string _dbname;
+    bool _forceOverwrite = false;
 };
 }  // namespace drogon_ctl

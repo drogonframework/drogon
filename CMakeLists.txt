@@ -273,7 +273,8 @@ if(PostgreSQL_FOUND OR MYSQL_FOUND OR SQLITE3_FOUND)
       orm_lib/src/Result.cc
       orm_lib/src/Row.cc
       orm_lib/src/SqlBinder.cc
-      orm_lib/src/TransactionImpl.cc)
+      orm_lib/src/TransactionImpl.cc
+      orm_lib/src/RestfulController.cc)
 else()
   set(DROGON_SOURCES ${DROGON_SOURCES} lib/src/DbClientManagerSkipped.cc)
 endif()
@@ -398,7 +399,8 @@ set(ORM_HEADERS
     orm_lib/inc/drogon/orm/ResultIterator.h
     orm_lib/inc/drogon/orm/Row.h
     orm_lib/inc/drogon/orm/RowIterator.h
-    orm_lib/inc/drogon/orm/SqlBinder.h)
+    orm_lib/inc/drogon/orm/SqlBinder.h
+    orm_lib/inc/drogon/orm/RestfulController.h)
 install(FILES ${ORM_HEADERS} DESTINATION ${INSTALL_INCLUDE_DIR}/drogon/orm)
 
 set(DROGON_UTIL_HEADERS

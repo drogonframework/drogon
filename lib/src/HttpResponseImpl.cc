@@ -53,15 +53,31 @@ HttpResponsePtr HttpResponse::newHttpResponse()
 
 HttpResponsePtr HttpResponse::newHttpJsonResponse(const Json::Value &data)
 {
+    auto res = std::make_shared<HttpResponseImpl>(k200OK, CT_APPLICATION_JSON);
+    res->setJsonObject(data);
+    return res;
+}
+
+HttpResponsePtr HttpResponse::newHttpJsonResponse(Json::Value &&data)
+{
+    auto res = std::make_shared<HttpResponseImpl>(k200OK, CT_APPLICATION_JSON);
+    res->setJsonObject(std::move(data));
+    return res;
+}
+
+void HttpResponseImpl::generateBodyFromJson()
+{
+    if (!_jsonPtr)
+    {
+        return;
+    }
     static std::once_flag once;
     static Json::StreamWriterBuilder builder;
     std::call_once(once, []() {
         builder["commentStyle"] = "None";
         builder["indentation"] = "";
     });
-    auto res = std::make_shared<HttpResponseImpl>(k200OK, CT_APPLICATION_JSON);
-    res->setBody(writeString(builder, data));
-    return res;
+    setBody(writeString(builder, *_jsonPtr));
 }
 
 HttpResponsePtr HttpResponse::newNotFoundResponse()
@@ -163,7 +179,7 @@ HttpResponsePtr HttpResponse::newFileResponse(
 }
 
 void HttpResponseImpl::makeHeaderString(
-    const std::shared_ptr<std::string> &headerStringPtr) const
+    const std::shared_ptr<std::string> &headerStringPtr)
 {
     char buf[128];
     assert(headerStringPtr);
@@ -172,6 +188,7 @@ void HttpResponseImpl::makeHeaderString(
     if (!_statusMessage.empty())
         headerStringPtr->append(_statusMessage.data(), _statusMessage.length());
     headerStringPtr->append("\r\n");
+    generateBodyFromJson();
     if (_sendfileName.empty())
     {
         long unsigned int bodyLength =
@@ -220,7 +237,7 @@ void HttpResponseImpl::makeHeaderString(
             HttpAppFrameworkImpl::instance().getServerHeaderString());
     }
 }
-void HttpResponseImpl::renderToBuffer(trantor::MsgBuffer &buffer) const
+void HttpResponseImpl::renderToBuffer(trantor::MsgBuffer &buffer)
 {
     if (_expriedTime >= 0)
     {
@@ -237,6 +254,7 @@ void HttpResponseImpl::renderToBuffer(trantor::MsgBuffer &buffer) const
         if (!_statusMessage.empty())
             buffer.append(_statusMessage.data(), _statusMessage.length());
         buffer.append("\r\n");
+        generateBodyFromJson();
         if (_sendfileName.empty())
         {
             long unsigned int bodyLength =
@@ -319,7 +337,7 @@ void HttpResponseImpl::renderToBuffer(trantor::MsgBuffer &buffer) const
     else if (_bodyViewPtr)
         buffer.append(_bodyViewPtr->data(), _bodyViewPtr->length());
 }
-std::shared_ptr<std::string> HttpResponseImpl::renderToString() const
+std::shared_ptr<std::string> HttpResponseImpl::renderToString()
 {
     if (_expriedTime >= 0)
     {
@@ -401,7 +419,7 @@ std::shared_ptr<std::string> HttpResponseImpl::renderToString() const
     return httpString;
 }
 
-std::shared_ptr<std::string> HttpResponseImpl::renderHeaderForHeadMethod() const
+std::shared_ptr<std::string> HttpResponseImpl::renderHeaderForHeadMethod()
 {
     auto httpString = std::make_shared<std::string>();
     httpString->reserve(256);
@@ -570,10 +588,10 @@ void HttpResponseImpl::clear()
 
 void HttpResponseImpl::parseJson() const
 {
-    // parse json data in reponse
+    static std::once_flag once;
+    static Json::CharReaderBuilder builder;
+    std::call_once(once, []() { builder["collectComments"] = false; });
     _jsonPtr = std::make_shared<Json::Value>();
-    Json::CharReaderBuilder builder;
-    builder["collectComments"] = false;
     JSONCPP_STRING errs;
     std::unique_ptr<Json::CharReader> reader(builder.newCharReader());
     if (_bodyPtr)

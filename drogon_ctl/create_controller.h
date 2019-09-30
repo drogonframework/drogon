@@ -15,6 +15,7 @@
 #pragma once
 
 #include <drogon/DrObject.h>
+#include <drogon/DrTemplateBase.h>
 #include "CommandHandler.h"
 using namespace drogon;
 namespace drogon_ctl
@@ -34,12 +35,15 @@ class create_controller : public DrObject<create_controller>,
     {
         Simple = 0,
         Http,
-        WebSocket
+        WebSocket,
+        Restful
     };
 
     void createController(std::vector<std::string> &httpClasses,
                           ControllerType type);
     void createController(const std::string &className, ControllerType type);
+    void createARestfulController(const std::string &className,
+                                  const std::string &resource);
 
     void newSimpleControllerHeaderFile(std::ofstream &file,
                                        const std::string &className);
