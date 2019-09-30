@@ -355,7 +355,11 @@ class HttpRequestImpl : public HttpRequest
         parseParametersOnce();
         return _jsonPtr;
     }
-
+    virtual void setCustomContentTypeString(const std::string &type) override
+    {
+        _contentType = CT_NONE;
+        _contentTypeString = type;
+    }
     virtual void setContentTypeCode(const ContentType type) override
     {
         _contentType = type;

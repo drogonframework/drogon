@@ -245,6 +245,11 @@ class HttpRequest
     /// Set or get the content type
     virtual void setContentTypeCode(const ContentType type) = 0;
 
+    /// Set the request content-type string, The string
+    /// must contain the header name and CRLF.
+    /// For example, "content-type: text/plain\r\n"
+    virtual void setCustomContentTypeString(const std::string &type) = 0;
+
     /// Add a cookie
     virtual void addCookie(const std::string &key,
                            const std::string &value) = 0;

@@ -72,7 +72,9 @@ inline std::string urlDecode(const string_view &szToDecode)
     auto begin = szToDecode.data();
     return urlDecode(begin, begin + szToDecode.length());
 }
-std::string urlEncode(const std::string &str);
+
+std::string urlEncode(const std::string &);
+std::string urlEncodeComponent(const std::string &);
 
 /// Commpress or decompress data using gzip lib.
 /**
