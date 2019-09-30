@@ -225,7 +225,11 @@ void HttpAppFrameworkImpl::registerHttpController(
 }
 HttpAppFramework &HttpAppFrameworkImpl::setThreadNum(size_t threadNum)
 {
-    assert(threadNum >= 1);
+    if (threadNum == 0)
+    {
+        _threadNum = std::thread::hardware_concurrency();
+        return *this;
+    }
     _threadNum = threadNum;
     return *this;
 }
