@@ -80,6 +80,9 @@ class HttpClient : public trantor::NonCopyable
      *
      * @param req
      * @return std::pair<ReqResult, HttpResponsePtr>
+     * @note Never call this function in the event loop thread of the
+     * client (partially in the callback function of the asynchronous
+     * sendRequest method), otherwise the thread will be blocked forever.
      */
     std::pair<ReqResult, HttpResponsePtr> sendRequest(const HttpRequestPtr &req)
     {
