@@ -22,6 +22,8 @@
 #include <trantor/net/EventLoop.h>
 #include <functional>
 #include <memory>
+#include <future>
+
 namespace drogon
 {
 class HttpClient;
@@ -71,6 +73,23 @@ class HttpClient : public trantor::NonCopyable
      */
     virtual void sendRequest(const HttpRequestPtr &req,
                              HttpReqCallback &&callback) = 0;
+
+    /**
+     * @brief Send a request synchronously to the server and return the
+     * response.
+     *
+     * @param req
+     * @return std::pair<ReqResult, HttpResponsePtr>
+     */
+    std::pair<ReqResult, HttpResponsePtr> sendRequest(const HttpRequestPtr &req)
+    {
+        std::promise<std::pair<ReqResult, HttpResponsePtr>> prom;
+        auto f = prom.get_future();
+        sendRequest(req, [&prom](ReqResult r, const HttpResponsePtr &resp) {
+            prom.set_value({r, resp});
+        });
+        return f.get();
+    }
 
     /// Set the pipelining depth, which is the number of requests that are not
     /// responding.
