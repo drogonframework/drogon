@@ -230,8 +230,7 @@ void HttpSimpleControllersRouter::doControllerHandler(
                     else
                     {
                         loop->queueInLoop([loop, resp, &ctrlBinderPtr]() {
-                            ctrlBinderPtr->_responseCache[loop->index()] =
-                                resp;
+                            ctrlBinderPtr->_responseCache[loop->index()] = resp;
                             ctrlBinderPtr->_hasCachedResponse = true;
                         });
                     }
