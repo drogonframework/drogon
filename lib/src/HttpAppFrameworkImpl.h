@@ -23,6 +23,7 @@
 #include <string>
 #include <vector>
 #include <functional>
+#include <limits>
 
 namespace drogon
 {
@@ -399,7 +400,7 @@ class HttpAppFrameworkImpl : public HttpAppFramework
         {
             return loop->index();
         }
-        return -1;
+        return std::numeric_limits<size_t>::max();
     }
 
   private:
