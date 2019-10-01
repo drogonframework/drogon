@@ -910,6 +910,22 @@ class HttpAppFramework : public trantor::NonCopyable
     /// Return true is drogon supports SSL(https)
     virtual bool supportSSL() const = 0;
 
+    /**
+     * @brief Get the Current Thread Index whose range is [0, the total number
+     * of IO threads]
+     *
+     * @return size_t If the current thread is the main thread, the number of
+     * the IO threads is returned. If the current thread is a network IO thread,
+     * the index of it in the range [0, the number of IO threads) is returned.
+     * otherwise the maximum value of type size_t is returned.
+     *
+     * @note Basically this method is used for storing thread-related various in
+     * an array and users can use indexes returned by this method to access
+     * them. This is much faster than using a map. If the array is properly
+     * initialized at the beginning, users can access it without locks.
+     */
+    virtual size_t getCurrentThreadIndex() const = 0;
+
   private:
     virtual void registerHttpController(
         const std::string &pathPattern,

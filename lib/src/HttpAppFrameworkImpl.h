@@ -392,6 +392,16 @@ class HttpAppFrameworkImpl : public HttpAppFramework
         return false;
     }
 
+    virtual size_t getCurrentThreadIndex() const override
+    {
+        auto *loop = trantor::EventLoop::getEventLoopOfCurrentThread();
+        if (loop)
+        {
+            return loop->index();
+        }
+        return -1;
+    }
+
   private:
     virtual void registerHttpController(
         const std::string &pathPattern,
