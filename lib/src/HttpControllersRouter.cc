@@ -54,11 +54,7 @@ void HttpControllersRouter::init(
             {
                 binder->_filters =
                     filters_function::createFilters(binder->_filterNames);
-                for (auto ioloop : ioLoops)
-                {
-                    binder->_responsePtrMap[ioloop] =
-                        std::shared_ptr<HttpResponse>();
-                }
+                binder->_responseCache.resize(ioLoops.size());
             }
         }
     }
@@ -344,7 +340,7 @@ void HttpControllersRouter::doControllerHandler(
     if (ctrlBinderPtr->_hasCachedResponse)
     {
         HttpResponsePtr &responsePtr =
-            ctrlBinderPtr->_responsePtrMap[req->getLoop()];
+            ctrlBinderPtr->_responseCache[req->getLoop()->index()];
         if (responsePtr &&
             (responsePtr->expiredTime() == 0 ||
              (trantor::Date::now() <
@@ -405,13 +401,13 @@ void HttpControllersRouter::doControllerHandler(
                 auto loop = req->getLoop();
                 if (loop->isInLoopThread())
                 {
-                    ctrlBinderPtr->_responsePtrMap[loop] = resp;
+                    ctrlBinderPtr->_responseCache[loop->index()] = resp;
                     ctrlBinderPtr->_hasCachedResponse = true;
                 }
                 else
                 {
                     req->getLoop()->queueInLoop([loop, resp, ctrlBinderPtr]() {
-                        ctrlBinderPtr->_responsePtrMap[loop] = resp;
+                        ctrlBinderPtr->_responseCache[loop->index()] = resp;
                         ctrlBinderPtr->_hasCachedResponse = true;
                     });
                 }

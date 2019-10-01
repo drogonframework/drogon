@@ -23,6 +23,7 @@
 #include <string>
 #include <vector>
 #include <functional>
+#include <limits>
 
 namespace drogon
 {
@@ -390,6 +391,16 @@ class HttpAppFrameworkImpl : public HttpAppFramework
         return true;
 #endif
         return false;
+    }
+
+    virtual size_t getCurrentThreadIndex() const override
+    {
+        auto *loop = trantor::EventLoop::getEventLoopOfCurrentThread();
+        if (loop)
+        {
+            return loop->index();
+        }
+        return std::numeric_limits<size_t>::max();
     }
 
   private:

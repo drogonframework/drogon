@@ -778,8 +778,8 @@ std::string gzipDecompress(const char *data, const size_t ndata)
 
 char *getHttpFullDate(const trantor::Date &date)
 {
-    static __thread int64_t lastSecond = 0;
-    static __thread char lastTimeString[128] = {0};
+    static thread_local int64_t lastSecond = 0;
+    static thread_local char lastTimeString[128] = {0};
     auto nowSecond = date.microSecondsSinceEpoch() / MICRO_SECONDS_PRE_SEC;
     if (nowSecond == lastSecond)
     {

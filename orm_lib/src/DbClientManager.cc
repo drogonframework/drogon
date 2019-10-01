@@ -15,6 +15,7 @@
 #include "../../lib/src/DbClientManager.h"
 #include "DbClientLockFree.h"
 #include <drogon/config.h>
+#include <drogon/HttpAppFramework.h>
 #include <drogon/utils/Utilities.h>
 #include <algorithm>
 
@@ -30,6 +31,7 @@ void DbClientManager::createDbClients(
     {
         if (dbInfo._isFast)
         {
+            _dbFastClientsMap[dbInfo._name].resize(ioloops.size());
             for (auto *loop : ioloops)
             {
                 if (dbInfo._dbType == drogon::orm::ClientType::Sqlite3)
@@ -40,7 +42,7 @@ void DbClientManager::createDbClients(
                 if (dbInfo._dbType == drogon::orm::ClientType::PostgreSQL ||
                     dbInfo._dbType == drogon::orm::ClientType::Mysql)
                 {
-                    _dbFastClientsMap[dbInfo._name][loop] =
+                    _dbFastClientsMap[dbInfo._name][loop->index()] =
                         std::shared_ptr<drogon::orm::DbClient>(
                             new drogon::orm::DbClientLockFree(
                                 dbInfo._connectionInfo,

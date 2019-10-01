@@ -197,7 +197,7 @@ void HttpSimpleControllersRouter::doControllerHandler(
         if (ctrlBinderPtr->_hasCachedResponse)
         {
             HttpResponsePtr &responsePtr =
-                ctrlBinderPtr->_responsePtrMap[req->getLoop()];
+                ctrlBinderPtr->_responseCache[req->getLoop()->index()];
             if (responsePtr &&
                 (responsePtr->expiredTime() == 0 ||
                  (trantor::Date::now() < responsePtr->creationDate().after(
@@ -224,13 +224,14 @@ void HttpSimpleControllersRouter::doControllerHandler(
 
                     if (loop->isInLoopThread())
                     {
-                        ctrlBinderPtr->_responsePtrMap[loop] = resp;
+                        ctrlBinderPtr->_responseCache[loop->index()] = resp;
                         ctrlBinderPtr->_hasCachedResponse = true;
                     }
                     else
                     {
                         loop->queueInLoop([loop, resp, &ctrlBinderPtr]() {
-                            ctrlBinderPtr->_responsePtrMap[loop] = resp;
+                            ctrlBinderPtr->_responseCache[loop->index()] =
+                                resp;
                             ctrlBinderPtr->_hasCachedResponse = true;
                         });
                     }
@@ -284,10 +285,7 @@ void HttpSimpleControllersRouter::init(
             {
                 binder->_filters =
                     filters_function::createFilters(binder->_filterNames);
-                for (auto ioloop : ioLoops)
-                {
-                    binder->_responsePtrMap[ioloop] = nullptr;
-                }
+                binder->_responseCache.resize(ioLoops.size());
             }
         }
     }

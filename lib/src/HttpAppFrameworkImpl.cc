@@ -397,8 +397,14 @@ void HttpAppFrameworkImpl::run()
         _sslKeyPath,
         _threadNum,
         _syncAdvices);
-    // A fast database client instance should be created in the main event loop,
-    // so put the main loop into ioLoops.
+    assert(ioLoops.size() == _threadNum);
+    for (size_t i=0; i < _threadNum; ++i)
+    {
+        ioLoops[i]->setIndex(i);
+    }
+    getLoop()->setIndex(_threadNum);
+    // A fast database client instance should be created in the main event
+    // loop, so put the main loop into ioLoops.
     ioLoops.push_back(getLoop());
     _dbClientManagerPtr->createDbClients(ioLoops);
     ioLoops.pop_back();
