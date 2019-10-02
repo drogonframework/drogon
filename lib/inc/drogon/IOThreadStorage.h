@@ -57,31 +57,33 @@ namespace drogon
  * @endcode
  */
 template <class C,
-          bool ConstructorInitialize = true,
+          bool AutoInit = true,
           template <class> class StoragePtrType = std::shared_ptr>
 class IOThreadStorage
 {
+  private:
+    using IsSharedPtr = std::is_same<StoragePtrType<C>, std::shared_ptr<C>>;
+
+    static_assert(!AutoInit || (AutoInit && IsSharedPtr::value),
+                  "Default initialization only works with std::shared_ptr");
+
   public:
-    static const bool isConstructorInitialized = ConstructorInitialize;
+    static const bool isConstructorInitialized = AutoInit;
     using StoragePtr = StoragePtrType<C>;
     using CreatorCallback = std::function<StoragePtr(size_t idx)>;
 
     template <typename U = C,
               typename = typename std::enable_if<
                   std::is_default_constructible<U>::value &&
-                  std::is_same<StoragePtrType<U>, std::shared_ptr<U>>::value &&
-                  ConstructorInitialize>::type>
+                  IsSharedPtr::value && AutoInit>::type>
     IOThreadStorage()
         : IOThreadStorage([](size_t) { return std::make_shared<C>(); })
     {
     }
 
-    template <
-        typename U = C,
-        typename = typename std::enable_if<
-            !ConstructorInitialize ||
-            !std::is_same<StoragePtrType<U>, std::shared_ptr<U>>::value>::type,
-        typename = U>
+    template <typename U = C,
+              typename = typename std::enable_if<!AutoInit, U>::type,
+              typename = U>
     IOThreadStorage() : IOThreadStorage([](size_t) { return nullptr; })
     {
     }
