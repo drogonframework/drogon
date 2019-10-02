@@ -54,7 +54,6 @@ void HttpControllersRouter::init(
             {
                 binder->_filters =
                     filters_function::createFilters(binder->_filterNames);
-                binder->_responseCache.resize(ioLoops.size());
             }
         }
     }
@@ -153,6 +152,10 @@ void HttpControllersRouter::addHttpPath(
     binderInfo->_binderPtr = binder;
     binderInfo->_parameterPlaces = std::move(places);
     binderInfo->_queryParametersPlaces = std::move(parametersPlaces);
+    drogon::app().getLoop()->queueInLoop([binderInfo]() {
+        binderInfo->_responseCache =
+            std::make_shared<IOThreadStorage<HttpResponse, false>>();
+    });
     {
         std::lock_guard<std::mutex> guard(_ctrlMutex);
         for (auto &router : _ctrlVector)
@@ -337,21 +340,22 @@ void HttpControllersRouter::doControllerHandler(
     const HttpRequestImplPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback)
 {
-    if (ctrlBinderPtr->_hasCachedResponse)
+    auto &responsePtr = **(ctrlBinderPtr->_responseCache);
+    if (responsePtr)
     {
-        HttpResponsePtr &responsePtr =
-            ctrlBinderPtr->_responseCache[req->getLoop()->index()];
-        if (responsePtr &&
-            (responsePtr->expiredTime() == 0 ||
-             (trantor::Date::now() <
-              responsePtr->creationDate().after(responsePtr->expiredTime()))))
+        if (responsePtr->expiredTime() == 0 ||
+            (trantor::Date::now() <
+             responsePtr->creationDate().after(responsePtr->expiredTime())))
         {
             // use cached response!
             LOG_TRACE << "Use cached response";
             invokeCallback(callback, req, responsePtr);
             return;
         }
-        ctrlBinderPtr->_hasCachedResponse = false;
+        else
+        {
+            responsePtr.reset();
+        }
     }
 
     std::vector<std::string> params(ctrlBinderPtr->_parameterPlaces.size());
@@ -401,14 +405,12 @@ void HttpControllersRouter::doControllerHandler(
                 auto loop = req->getLoop();
                 if (loop->isInLoopThread())
                 {
-                    ctrlBinderPtr->_responseCache[loop->index()] = resp;
-                    ctrlBinderPtr->_hasCachedResponse = true;
+                    ctrlBinderPtr->_responseCache->setThreadData(resp);
                 }
                 else
                 {
-                    req->getLoop()->queueInLoop([loop, resp, ctrlBinderPtr]() {
-                        ctrlBinderPtr->_responseCache[loop->index()] = resp;
-                        ctrlBinderPtr->_hasCachedResponse = true;
+                    req->getLoop()->queueInLoop([resp, &ctrlBinderPtr]() {
+                        ctrlBinderPtr->_responseCache->setThreadData(resp);
                     });
                 }
             }

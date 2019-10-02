@@ -17,6 +17,7 @@
 #include "impl_forwards.h"
 #include <drogon/drogon_callbacks.h>
 #include <drogon/utils/HttpConstraint.h>
+#include <drogon/IOThreadStorage.h>
 #include <trantor/utils/NonCopyable.h>
 #include <atomic>
 #include <memory>
@@ -94,9 +95,8 @@ class HttpSimpleControllersRouter : public trantor::NonCopyable
         std::string _controllerName;
         std::vector<std::string> _filterNames;
         std::vector<std::shared_ptr<HttpFilterBase>> _filters;
-        std::vector<std::shared_ptr<HttpResponse>> _responseCache;
+        std::shared_ptr<IOThreadStorage<HttpResponse, false>> _responseCache;
         bool _isCORS = false;
-        bool _hasCachedResponse = false;
     };
 
     typedef std::shared_ptr<CtrlBinder> CtrlBinderPtr;

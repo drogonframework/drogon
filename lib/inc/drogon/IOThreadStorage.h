@@ -93,9 +93,11 @@ class IOThreadStorage
         size_t numThreads = app().getThreadNum();
         assert(numThreads > 0 &&
                numThreads != std::numeric_limits<size_t>::max());
-        _storage.resize(numThreads);
+        // set the size to numThreads+1 to enable access to this in the main
+        // thread.
+        _storage.resize(numThreads + 1);
 
-        for (size_t i = 0; i < numThreads; ++i)
+        for (size_t i = 0; i <= numThreads; ++i)
         {
             _storage[i] = creator(i);
         }

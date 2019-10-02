@@ -36,13 +36,15 @@ void WebsocketControllersRouter::registerWebSocketController(
     assert(!ctrlName.empty());
     std::string path(pathName);
     std::transform(pathName.begin(), pathName.end(), path.begin(), tolower);
-    auto objPtr = DrClassMap::getSingleInstance(ctrlName);
-    auto ctrlPtr = std::dynamic_pointer_cast<WebSocketControllerBase>(objPtr);
-    assert(ctrlPtr);
-    std::lock_guard<std::mutex> guard(_websockCtrlMutex);
+    drogon::app().getLoop()->queueInLoop([=]() {
+        auto objPtr = DrClassMap::getSingleInstance(ctrlName);
+        auto ctrlPtr =
+            std::dynamic_pointer_cast<WebSocketControllerBase>(objPtr);
+        assert(ctrlPtr);
+        _websockCtrlMap[path]._controller = ctrlPtr;
+        _websockCtrlMap[path]._filterNames = filters;
+    });
 
-    _websockCtrlMap[path]._controller = ctrlPtr;
-    _websockCtrlMap[path]._filterNames = filters;
 }
 
 void WebsocketControllersRouter::route(

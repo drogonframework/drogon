@@ -53,7 +53,6 @@ class WebsocketControllersRouter : public trantor::NonCopyable
     };
     std::unordered_map<std::string, WebSocketControllerRouterItem>
         _websockCtrlMap;
-    std::mutex _websockCtrlMutex;
 
     void doControllerHandler(
         const WebSocketControllerBasePtr &ctrlPtr,

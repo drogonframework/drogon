@@ -31,7 +31,6 @@ void HttpSimpleControllersRouter::registerHttpSimpleController(
 {
     assert(!pathName.empty());
     assert(!ctrlName.empty());
-
     std::string path(pathName);
     std::transform(pathName.begin(), pathName.end(), path.begin(), tolower);
     std::lock_guard<std::mutex> guard(_simpCtrlMutex);
@@ -57,10 +56,15 @@ void HttpSimpleControllersRouter::registerHttpSimpleController(
     auto binder = std::make_shared<CtrlBinder>();
     binder->_controllerName = ctrlName;
     binder->_filterNames = filters;
-    auto &_object = DrClassMap::getSingleInstance(ctrlName);
-    auto controller =
-        std::dynamic_pointer_cast<HttpSimpleControllerBase>(_object);
-    binder->_controller = controller;
+    drogon::app().getLoop()->queueInLoop([binder, ctrlName]() {
+        auto &_object = DrClassMap::getSingleInstance(ctrlName);
+        auto controller =
+            std::dynamic_pointer_cast<HttpSimpleControllerBase>(_object);
+        binder->_controller = controller;
+        binder->_responseCache =
+            std::make_shared<IOThreadStorage<HttpResponse, false>>();
+    });
+
     if (validMethods.size() > 0)
     {
         for (auto const &method : validMethods)
@@ -194,22 +198,24 @@ void HttpSimpleControllersRouter::doControllerHandler(
     auto &controller = ctrlBinderPtr->_controller;
     if (controller)
     {
-        if (ctrlBinderPtr->_hasCachedResponse)
+        auto &responsePtr = **(ctrlBinderPtr->_responseCache);
+        if (responsePtr)
         {
-            HttpResponsePtr &responsePtr =
-                ctrlBinderPtr->_responseCache[req->getLoop()->index()];
-            if (responsePtr &&
-                (responsePtr->expiredTime() == 0 ||
-                 (trantor::Date::now() < responsePtr->creationDate().after(
-                                             responsePtr->expiredTime()))))
+            if (responsePtr->expiredTime() == 0 ||
+                (trantor::Date::now() <
+                 responsePtr->creationDate().after(responsePtr->expiredTime())))
             {
                 // use cached response!
                 LOG_TRACE << "Use cached response";
                 invokeCallback(callback, req, responsePtr);
                 return;
             }
-            ctrlBinderPtr->_hasCachedResponse = false;
+            else
+            {
+                responsePtr.reset();
+            }
         }
+
         controller->asyncHandleHttpRequest(
             req,
             [this, req, callback = std::move(callback), &ctrlBinderPtr](
@@ -224,14 +230,12 @@ void HttpSimpleControllersRouter::doControllerHandler(
 
                     if (loop->isInLoopThread())
                     {
-                        ctrlBinderPtr->_responseCache[loop->index()] = resp;
-                        ctrlBinderPtr->_hasCachedResponse = true;
+                        ctrlBinderPtr->_responseCache->setThreadData(resp);
                     }
                     else
                     {
-                        loop->queueInLoop([loop, resp, &ctrlBinderPtr]() {
-                            ctrlBinderPtr->_responseCache[loop->index()] = resp;
-                            ctrlBinderPtr->_hasCachedResponse = true;
+                        loop->queueInLoop([resp, &ctrlBinderPtr]() {
+                            ctrlBinderPtr->_responseCache->setThreadData(resp);
                         });
                     }
                 }
@@ -284,7 +288,6 @@ void HttpSimpleControllersRouter::init(
             {
                 binder->_filters =
                     filters_function::createFilters(binder->_filterNames);
-                binder->_responseCache.resize(ioLoops.size());
             }
         }
     }

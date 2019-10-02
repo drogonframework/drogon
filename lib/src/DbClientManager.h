@@ -16,9 +16,11 @@
 
 #include <drogon/orm/DbClient.h>
 #include <drogon/HttpAppFramework.h>
+#include <drogon/IOThreadStorage.h>
 #include <trantor/utils/NonCopyable.h>
 #include <trantor/net/EventLoop.h>
 #include <string>
+#include <memory>
 
 namespace drogon
 {
@@ -36,11 +38,9 @@ class DbClientManager : public trantor::NonCopyable
 
     DbClientPtr getFastDbClient(const std::string &name)
     {
-        auto index = drogon::app().getCurrentThreadIndex();
         auto iter = _dbFastClientsMap.find(name);
         assert(iter != _dbFastClientsMap.end());
-        assert(index < iter->second.size());
-        return iter->second[index];
+        return iter->second->getThreadData();
     }
     void createDbClient(const std::string &dbType,
                         const std::string &host,
@@ -64,7 +64,8 @@ class DbClientManager : public trantor::NonCopyable
         size_t _connectionNumber;
     };
     std::vector<DbInfo> _dbInfos;
-    std::map<std::string, std::vector<orm::DbClientPtr>> _dbFastClientsMap;
+    std::map<std::string, std::unique_ptr<IOThreadStorage<orm::DbClient>>>
+        _dbFastClientsMap;
 };
 }  // namespace orm
 }  // namespace drogon
