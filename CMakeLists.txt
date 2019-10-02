@@ -374,6 +374,7 @@ set(DROGON_HEADERS
     lib/inc/drogon/HttpTypes.h
     lib/inc/drogon/HttpViewData.h
     lib/inc/drogon/IntranetIpFilter.h
+    lib/inc/drogon/IOThreadStorage.h
     lib/inc/drogon/LocalHostFilter.h
     lib/inc/drogon/MultiPart.h
     lib/inc/drogon/NotFound.h

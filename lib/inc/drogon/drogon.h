@@ -29,6 +29,7 @@
 #include <drogon/plugins/Plugin.h>
 #include <drogon/Cookie.h>
 #include <drogon/Session.h>
+#include <drogon/IOThreadStorage.h>
 #include <drogon/UploadFile.h>
 #include <drogon/orm/DbClient.h>
 

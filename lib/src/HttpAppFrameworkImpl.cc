@@ -398,7 +398,7 @@ void HttpAppFrameworkImpl::run()
         _threadNum,
         _syncAdvices);
     assert(ioLoops.size() == _threadNum);
-    for (size_t i=0; i < _threadNum; ++i)
+    for (size_t i = 0; i < _threadNum; ++i)
     {
         ioLoops[i]->setIndex(i);
     }
