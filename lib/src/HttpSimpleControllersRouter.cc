@@ -61,8 +61,8 @@ void HttpSimpleControllersRouter::registerHttpSimpleController(
         auto controller =
             std::dynamic_pointer_cast<HttpSimpleControllerBase>(_object);
         binder->_controller = controller;
-        binder->_responseCache =
-            std::make_shared<IOThreadStorage<HttpResponse, false>>();
+        // Recreate this with the correct number of threads.
+        binder->_responseCache = IOThreadStorage<HttpResponse, false>();
     });
 
     if (validMethods.size() > 0)
@@ -198,7 +198,7 @@ void HttpSimpleControllersRouter::doControllerHandler(
     auto &controller = ctrlBinderPtr->_controller;
     if (controller)
     {
-        auto &responsePtr = **(ctrlBinderPtr->_responseCache);
+        auto &responsePtr = *(ctrlBinderPtr->_responseCache);
         if (responsePtr)
         {
             if (responsePtr->expiredTime() == 0 ||
@@ -230,12 +230,12 @@ void HttpSimpleControllersRouter::doControllerHandler(
 
                     if (loop->isInLoopThread())
                     {
-                        ctrlBinderPtr->_responseCache->setThreadData(resp);
+                        ctrlBinderPtr->_responseCache.setThreadData(resp);
                     }
                     else
                     {
                         loop->queueInLoop([resp, &ctrlBinderPtr]() {
-                            ctrlBinderPtr->_responseCache->setThreadData(resp);
+                            ctrlBinderPtr->_responseCache.setThreadData(resp);
                         });
                     }
                 }
