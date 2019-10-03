@@ -31,25 +31,29 @@ void DbClientManager::createDbClients(
     {
         if (dbInfo._isFast)
         {
-            _dbFastClientsMap[dbInfo._name].resize(ioloops.size());
-            for (auto *loop : ioloops)
+            if (dbInfo._dbType == drogon::orm::ClientType::Sqlite3)
             {
-                if (dbInfo._dbType == drogon::orm::ClientType::Sqlite3)
-                {
-                    LOG_ERROR << "Sqlite3 don't support fast mode";
-                    abort();
-                }
-                if (dbInfo._dbType == drogon::orm::ClientType::PostgreSQL ||
-                    dbInfo._dbType == drogon::orm::ClientType::Mysql)
-                {
-                    _dbFastClientsMap[dbInfo._name][loop->index()] =
-                        std::shared_ptr<drogon::orm::DbClient>(
-                            new drogon::orm::DbClientLockFree(
-                                dbInfo._connectionInfo,
-                                loop,
-                                dbInfo._dbType,
-                                dbInfo._connectionNumber));
-                }
+                LOG_ERROR << "Sqlite3 don't support fast mode";
+                abort();
+            }
+            if (dbInfo._dbType == drogon::orm::ClientType::PostgreSQL ||
+                dbInfo._dbType == drogon::orm::ClientType::Mysql)
+            {
+                _dbFastClientsMap[dbInfo._name] = std::unique_ptr<
+                    IOThreadStorage<orm::DbClient>>(
+                    new IOThreadStorage<orm::DbClient>(
+                        [&](size_t idx) -> std::shared_ptr<orm::DbClient> {
+                            assert(idx == ioloops[idx]->index());
+                            LOG_TRACE
+                                << "create fast database client for the thread "
+                                << idx;
+                            return std::shared_ptr<orm::DbClient>(
+                                new drogon::orm::DbClientLockFree(
+                                    dbInfo._connectionInfo,
+                                    ioloops[idx],
+                                    dbInfo._dbType,
+                                    dbInfo._connectionNumber));
+                        }));
             }
         }
         else

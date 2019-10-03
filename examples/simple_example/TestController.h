@@ -1,5 +1,6 @@
 #pragma once
 #include <drogon/HttpSimpleController.h>
+#include <drogon/IOThreadStorage.h>
 using namespace drogon;
 namespace example
 {
@@ -21,5 +22,7 @@ class TestController : public drogon::HttpSimpleController<TestController>
     {
         LOG_DEBUG << "TestController constructor";
     }
+  private:
+    drogon::IOThreadStorage<int> _threadIndex;
 };
 }  // namespace example

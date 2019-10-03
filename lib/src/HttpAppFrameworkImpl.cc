@@ -432,8 +432,15 @@ void HttpAppFrameworkImpl::run()
                                                  });
     }
 
-    // Let listener event loops run when everything is ready.
-    _listenerManagerPtr->startListening();
+    getLoop()->queueInLoop([this]() {
+        // Let listener event loops run when everything is ready.
+        _listenerManagerPtr->startListening();
+        for (auto &adv : _beginningAdvices)
+        {
+            adv();
+        }
+        _beginningAdvices.clear();
+    });
     getLoop()->loop();
 }
 

@@ -4,6 +4,7 @@ cd build/examples/
 #Make webapp run as a daemon
 sed -i -e "s/\"run_as_daemon.*$/\"run_as_daemon\": true\,/" config.example.json
 sed -i -e "s/\"relaunch_on_error.*$/\"relaunch_on_error\": true\,/" config.example.json
+sed -i -e "s/\"threads_num.*$/\"threads_num\": 0\,/" config.example.json
 
 if [ ! -f "webapp" ]; then
     echo "Build failed"
