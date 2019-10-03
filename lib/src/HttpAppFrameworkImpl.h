@@ -95,7 +95,7 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     virtual HttpAppFramework &registerBeginningAdvice(
         const std::function<void()> &advice) override
     {
-        getLoop()->queueInLoop(advice);
+        _beginningAdvices.emplace_back(advice);
         return *this;
     }
 
@@ -480,6 +480,7 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     static InitBeforeMainFunction _initFirst;
     bool _enableServerHeader = true;
     bool _enableDateHeader = true;
+    std::vector<std::function<void()>> _beginningAdvices;
     std::vector<std::function<bool(const trantor::InetAddress &,
                                    const trantor::InetAddress &)>>
         _newConnectionAdvices;
