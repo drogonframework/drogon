@@ -79,7 +79,7 @@ class HttpControllersRouter : public trantor::NonCopyable
         std::vector<std::shared_ptr<HttpFilterBase>> _filters;
         std::vector<size_t> _parameterPlaces;
         std::map<std::string, size_t> _queryParametersPlaces;
-        IOThreadStorage<HttpResponse, false> _responseCache;
+        IOThreadStorage<std::shared_ptr<HttpResponse>> _responseCache;
         bool _isCORS = false;
     };
     typedef std::shared_ptr<CtrlBinder> CtrlBinderPtr;

@@ -154,7 +154,8 @@ void HttpControllersRouter::addHttpPath(
     binderInfo->_queryParametersPlaces = std::move(parametersPlaces);
     drogon::app().getLoop()->queueInLoop([binderInfo]() {
         // Recreate this with the correct number of threads.
-        binderInfo->_responseCache = IOThreadStorage<HttpResponse, false>();
+        binderInfo->_responseCache =
+            IOThreadStorage<std::shared_ptr<HttpResponse>>();
     });
     {
         std::lock_guard<std::mutex> guard(_ctrlMutex);

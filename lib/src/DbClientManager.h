@@ -64,7 +64,7 @@ class DbClientManager : public trantor::NonCopyable
         size_t _connectionNumber;
     };
     std::vector<DbInfo> _dbInfos;
-    std::map<std::string, IOThreadStorage<orm::DbClient>>
+    std::map<std::string, IOThreadStorage<std::shared_ptr<orm::DbClient>>>
         _dbFastClientsMap;
 };
 }  // namespace orm

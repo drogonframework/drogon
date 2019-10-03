@@ -95,7 +95,7 @@ class HttpSimpleControllersRouter : public trantor::NonCopyable
         std::string _controllerName;
         std::vector<std::string> _filterNames;
         std::vector<std::shared_ptr<HttpFilterBase>> _filters;
-        IOThreadStorage<HttpResponse, false> _responseCache;
+        IOThreadStorage<std::shared_ptr<HttpResponse>> _responseCache;
         bool _isCORS = false;
     };
 
