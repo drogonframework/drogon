@@ -98,6 +98,13 @@ class IOThreadStorage
         return _storage[idx];
     }
 
+    inline const C &getThreadData() const
+    {
+        size_t idx = app().getCurrentThreadIndex();
+        assert(idx < _storage.size());
+        return _storage[idx];
+    }
+
     /**
      * @brief Sets the thread data for the current thread
      *
@@ -125,6 +132,11 @@ class IOThreadStorage
     }
 
     inline C &operator*()
+    {
+        return getThreadData();
+    }
+
+    inline const C &operator*() const
     {
         return getThreadData();
     }
