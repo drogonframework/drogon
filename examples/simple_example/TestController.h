@@ -22,6 +22,7 @@ class TestController : public drogon::HttpSimpleController<TestController>
     {
         LOG_DEBUG << "TestController constructor";
     }
+
   private:
     drogon::IOThreadStorage<int> _threadIndex;
 };

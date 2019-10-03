@@ -62,7 +62,7 @@ void HttpSimpleControllersRouter::registerHttpSimpleController(
             std::dynamic_pointer_cast<HttpSimpleControllerBase>(_object);
         binder->_controller = controller;
         // Recreate this with the correct number of threads.
-        binder->_responseCache = IOThreadStorage<HttpResponse, false>();
+        binder->_responseCache = IOThreadStorage<HttpResponsePtr>();
     });
 
     if (validMethods.size() > 0)

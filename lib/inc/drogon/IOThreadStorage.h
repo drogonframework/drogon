@@ -56,50 +56,33 @@ namespace drogon
  * };
  * @endcode
  */
-template <class C,
-          bool AutoInit = true,
-          template <class> class StoragePtrType = std::shared_ptr>
+template <typename C, typename... Args>
 class IOThreadStorage
 {
-  private:
-    using IsSharedPtr = std::is_same<StoragePtrType<C>, std::shared_ptr<C>>;
-
-    static_assert(!AutoInit || (AutoInit && IsSharedPtr::value),
-                  "Default initialization only works with std::shared_ptr");
+    static_assert(std::is_constructible<C, Args &&...>::value,
+                  "Unable to construct storage with given signature");
 
   public:
-    static const bool isConstructorInitialized = AutoInit;
-    using StoragePtr = StoragePtrType<C>;
-    using CreatorCallback = std::function<StoragePtr(size_t idx)>;
+    using InitCallback = std::function<void(C &, size_t)>;
 
-    template <typename U = C,
-              typename = typename std::enable_if<
-                  std::is_default_constructible<U>::value &&
-                  IsSharedPtr::value && AutoInit>::type>
-    IOThreadStorage()
-        : IOThreadStorage([](size_t) { return std::make_shared<C>(); })
+    IOThreadStorage(Args &&... args)
+        : IOThreadStorage(std::forward(args)..., [](C &, size_t) {})
     {
     }
 
-    template <typename U = C,
-              typename = typename std::enable_if<!AutoInit, U>::type,
-              typename = U>
-    IOThreadStorage() : IOThreadStorage([](size_t) { return nullptr; })
-    {
-    }
-
-    IOThreadStorage(const CreatorCallback &creator)
+    IOThreadStorage(Args &&... args, const InitCallback &initCB)
     {
         size_t numThreads = app().getThreadNum();
         assert(numThreads > 0 &&
                numThreads != std::numeric_limits<size_t>::max());
         // set the size to numThreads+1 to enable access to this in the main
         // thread.
-        _storage.resize(numThreads + 1);
+        _storage.reserve(numThreads + 1);
 
         for (size_t i = 0; i <= numThreads; ++i)
         {
-            _storage[i] = creator(i);
+            _storage.emplace_back(std::forward(args)...);
+            initCB(_storage[i], i);
         }
     }
 
@@ -108,7 +91,14 @@ class IOThreadStorage
      *
      * This function may only be called in a request handler
      */
-    inline StoragePtr &getThreadData()
+    inline C &getThreadData()
+    {
+        size_t idx = app().getCurrentThreadIndex();
+        assert(idx < _storage.size());
+        return _storage[idx];
+    }
+
+    inline const C &getThreadData() const
     {
         size_t idx = app().getCurrentThreadIndex();
         assert(idx < _storage.size());
@@ -120,14 +110,14 @@ class IOThreadStorage
      *
      * This function may only be called in a request handler
      */
-    inline void setThreadData(const StoragePtr &newData)
+    inline void setThreadData(const C &newData)
     {
         size_t idx = app().getCurrentThreadIndex();
         assert(idx < _storage.size());
         _storage[idx] = newData;
     }
 
-    inline void setThreadData(StoragePtr &&newData)
+    inline void setThreadData(C &&newData)
     {
         size_t idx = app().getCurrentThreadIndex();
         assert(idx < _storage.size());
@@ -138,21 +128,21 @@ class IOThreadStorage
     {
         size_t idx = app().getCurrentThreadIndex();
         assert(idx < _storage.size());
-        return _storage[idx].get();
+        return &_storage[idx];
     }
 
-    inline StoragePtr &operator*()
+    inline C &operator*()
     {
         return getThreadData();
     }
 
-    inline explicit operator bool() const
+    inline const C &operator*() const
     {
-        return (bool)getThreadData();
+        return getThreadData();
     }
 
   private:
-    std::vector<StoragePtr> _storage;
+    std::vector<C> _storage;
 };
 
 }  // namespace drogon

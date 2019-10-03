@@ -44,7 +44,6 @@ void WebsocketControllersRouter::registerWebSocketController(
         _websockCtrlMap[path]._controller = ctrlPtr;
         _websockCtrlMap[path]._filterNames = filters;
     });
-
 }
 
 void WebsocketControllersRouter::route(

@@ -41,14 +41,13 @@ void DbClientManager::createDbClients(
             {
                 _dbFastClientsMap.insert(
                     {dbInfo._name,
-                     IOThreadStorage<
-                         orm::DbClient>([&](size_t idx)
-                                            -> std::shared_ptr<orm::DbClient> {
+                     IOThreadStorage<orm::DbClientPtr>([&](orm::DbClientPtr &c,
+                                                           size_t idx) {
                          assert(idx == ioloops[idx]->index());
                          LOG_TRACE
                              << "create fast database client for the thread "
                              << idx;
-                         return std::shared_ptr<orm::DbClient>(
+                         c = std::shared_ptr<orm::DbClient>(
                              new drogon::orm::DbClientLockFree(
                                  dbInfo._connectionInfo,
                                  ioloops[idx],
