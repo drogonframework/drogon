@@ -39,21 +39,22 @@ void DbClientManager::createDbClients(
             if (dbInfo._dbType == drogon::orm::ClientType::PostgreSQL ||
                 dbInfo._dbType == drogon::orm::ClientType::Mysql)
             {
-                _dbFastClientsMap[dbInfo._name] = std::unique_ptr<
-                    IOThreadStorage<orm::DbClient>>(
-                    new IOThreadStorage<orm::DbClient>(
-                        [&](size_t idx) -> std::shared_ptr<orm::DbClient> {
-                            assert(idx == ioloops[idx]->index());
-                            LOG_TRACE
-                                << "create fast database client for the thread "
-                                << idx;
-                            return std::shared_ptr<orm::DbClient>(
-                                new drogon::orm::DbClientLockFree(
-                                    dbInfo._connectionInfo,
-                                    ioloops[idx],
-                                    dbInfo._dbType,
-                                    dbInfo._connectionNumber));
-                        }));
+                _dbFastClientsMap.insert(
+                    {dbInfo._name,
+                     IOThreadStorage<
+                         orm::DbClient>([&](size_t idx)
+                                            -> std::shared_ptr<orm::DbClient> {
+                         assert(idx == ioloops[idx]->index());
+                         LOG_TRACE
+                             << "create fast database client for the thread "
+                             << idx;
+                         return std::shared_ptr<orm::DbClient>(
+                             new drogon::orm::DbClientLockFree(
+                                 dbInfo._connectionInfo,
+                                 ioloops[idx],
+                                 dbInfo._dbType,
+                                 dbInfo._connectionNumber));
+                     })});
             }
         }
         else

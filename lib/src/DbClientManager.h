@@ -40,7 +40,7 @@ class DbClientManager : public trantor::NonCopyable
     {
         auto iter = _dbFastClientsMap.find(name);
         assert(iter != _dbFastClientsMap.end());
-        return iter->second->getThreadData();
+        return iter->second.getThreadData();
     }
     void createDbClient(const std::string &dbType,
                         const std::string &host,
@@ -64,7 +64,7 @@ class DbClientManager : public trantor::NonCopyable
         size_t _connectionNumber;
     };
     std::vector<DbInfo> _dbInfos;
-    std::map<std::string, std::unique_ptr<IOThreadStorage<orm::DbClient>>>
+    std::map<std::string, IOThreadStorage<orm::DbClient>>
         _dbFastClientsMap;
 };
 }  // namespace orm

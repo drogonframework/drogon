@@ -153,8 +153,8 @@ void HttpControllersRouter::addHttpPath(
     binderInfo->_parameterPlaces = std::move(places);
     binderInfo->_queryParametersPlaces = std::move(parametersPlaces);
     drogon::app().getLoop()->queueInLoop([binderInfo]() {
-        binderInfo->_responseCache =
-            std::make_shared<IOThreadStorage<HttpResponse, false>>();
+        // Recreate this with the correct number of threads.
+        binderInfo->_responseCache = IOThreadStorage<HttpResponse, false>();
     });
     {
         std::lock_guard<std::mutex> guard(_ctrlMutex);
@@ -340,7 +340,7 @@ void HttpControllersRouter::doControllerHandler(
     const HttpRequestImplPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback)
 {
-    auto &responsePtr = **(ctrlBinderPtr->_responseCache);
+    auto &responsePtr = *(ctrlBinderPtr->_responseCache);
     if (responsePtr)
     {
         if (responsePtr->expiredTime() == 0 ||
@@ -405,12 +405,12 @@ void HttpControllersRouter::doControllerHandler(
                 auto loop = req->getLoop();
                 if (loop->isInLoopThread())
                 {
-                    ctrlBinderPtr->_responseCache->setThreadData(resp);
+                    ctrlBinderPtr->_responseCache.setThreadData(resp);
                 }
                 else
                 {
                     req->getLoop()->queueInLoop([resp, &ctrlBinderPtr]() {
-                        ctrlBinderPtr->_responseCache->setThreadData(resp);
+                        ctrlBinderPtr->_responseCache.setThreadData(resp);
                     });
                 }
             }
