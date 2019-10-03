@@ -41,9 +41,8 @@ void DbClientManager::createDbClients(
             {
                 _dbFastClientsMap.insert(
                     {dbInfo._name,
-                     IOThreadStorage<std::shared_ptr<
-                         orm::DbClient>>([&](std::shared_ptr<orm::DbClient> &c,
-                                             size_t idx) {
+                     IOThreadStorage<orm::DbClientPtr>([&](orm::DbClientPtr &c,
+                                                           size_t idx) {
                          assert(idx == ioloops[idx]->index());
                          LOG_TRACE
                              << "create fast database client for the thread "
