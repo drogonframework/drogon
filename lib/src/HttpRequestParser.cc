@@ -89,8 +89,20 @@ HttpRequestImplPtr HttpRequestParser::makeRequestForPool(HttpRequestImpl *ptr)
         auto thisPtr = weakPtr.lock();
         if (thisPtr)
         {
-            p->reset();
-            thisPtr->_requestsPool.emplace_back(thisPtr->makeRequestForPool(p));
+            if (thisPtr->_loop->isInLoopThread())
+            {
+                p->reset();
+                thisPtr->_requestsPool.emplace_back(
+                    thisPtr->makeRequestForPool(p));
+            }
+            else
+            {
+                thisPtr->_loop->queueInLoop([thisPtr, p]() {
+                    p->reset();
+                    thisPtr->_requestsPool.emplace_back(
+                        thisPtr->makeRequestForPool(p));
+                });
+            }
         }
         else
         {
@@ -100,6 +112,7 @@ HttpRequestImplPtr HttpRequestParser::makeRequestForPool(HttpRequestImpl *ptr)
 }
 void HttpRequestParser::reset()
 {
+    assert(_loop->isInLoopThread());
     _state = HttpRequestParseState_ExpectMethod;
     if (_requestsPool.empty())
     {
