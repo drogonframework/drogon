@@ -284,6 +284,7 @@ target_sources(${PROJECT_NAME} PRIVATE ${DROGON_SOURCES})
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD ${DROGON_CXX_STANDARD})
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD_REQUIRED ON)
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_EXTENSIONS OFF)
+set_target_properties(${PROJECT_NAME} PROPERTIES EXPORT_NAME Drogon)
 
 add_dependencies(${PROJECT_NAME} makeVersion)
 
