@@ -30,7 +30,7 @@ int main()
         {
             for (auto const &f : row)
             {
-                std::cout << f.name() << " : " << f.as<int>() << std::endl;
+                std::cout << f.name() << " : " << std::endl;
             }
         }
     }

@@ -76,12 +76,10 @@ class DbClientImpl : public DbClient,
     std::unordered_set<DbConnectionPtr> _readyConnections;
     std::unordered_set<DbConnectionPtr> _busyConnections;
 
-    std::mutex _transMutex;
     std::queue<std::function<void(const std::shared_ptr<Transaction> &)>>
         _transCallbacks;
 
     std::deque<std::shared_ptr<SqlCmd>> _sqlCmdBuffer;
-    std::mutex _bufferMutex;
 
     void handleNewTask(const DbConnectionPtr &connPtr);
 };
