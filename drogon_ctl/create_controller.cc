@@ -126,11 +126,11 @@ void create_controller::newSimpleControllerHeaderFile(
             "path\",\"filter1\",\"filter2\",HttpMethod1,HttpMethod2...);\n";
     file << "    PATH_LIST_END\n";
     file << "};\n";
-    do
+    while (namespaceCount > 0)
     {
         --namespaceCount;
         file << "}\n";
-    } while (namespaceCount > 0);
+    }
 }
 void create_controller::newSimpleControllerSourceFile(
     std::ofstream &file,
