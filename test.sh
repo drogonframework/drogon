@@ -57,8 +57,16 @@ cd drogon_test/controllers
 drogon_ctl create controller Test::SimpleCtrl
 drogon_ctl create controller -h Test::HttpCtrl
 drogon_ctl create controller -w Test::WebsockCtrl
+drogon_ctl create controller SimpleCtrl
+drogon_ctl create controller -h HttpCtrl
+drogon_ctl create controller -w WebsockCtrl
 
 if [ ! -f "Test_SimpleCtrl.h" -o ! -f "Test_SimpleCtrl.cc" -o ! -f "Test_HttpCtrl.h" -o ! -f "Test_HttpCtrl.cc" -o ! -f "Test_WebsockCtrl.h" -o ! -f "Test_WebsockCtrl.cc" ];then
+    echo "Failed to create controllers"
+    exit -1
+fi
+
+if [ ! -f "SimpleCtrl.h" -o ! -f "SimpleCtrl.cc" -o ! -f "HttpCtrl.h" -o ! -f "HttpCtrl.cc" -o ! -f "WebsockCtrl.h" -o ! -f "WebsockCtrl.cc" ];then
     echo "Failed to create controllers"
     exit -1
 fi

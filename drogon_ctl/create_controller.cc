@@ -126,11 +126,11 @@ void create_controller::newSimpleControllerHeaderFile(
             "path\",\"filter1\",\"filter2\",HttpMethod1,HttpMethod2...);\n";
     file << "    PATH_LIST_END\n";
     file << "};\n";
-    do
+    while (namespaceCount > 0)
     {
         --namespaceCount;
         file << "}\n";
-    } while (namespaceCount > 0);
+    }
 }
 void create_controller::newSimpleControllerSourceFile(
     std::ofstream &file,
@@ -194,11 +194,11 @@ void create_controller::newWebsockControllerHeaderFile(
     file << "    //WS_PATH_ADD(\"/path\",\"filter1\",\"filter2\",...);\n";
     file << "    WS_PATH_LIST_END\n";
     file << "};\n";
-    do
+    while (namespaceCount > 0)
     {
         --namespaceCount;
         file << "}\n";
-    } while (namespaceCount > 0);
+    }
 }
 void create_controller::newWebsockControllerSourceFile(
     std::ofstream &file,
@@ -283,11 +283,11 @@ void create_controller::newHttpControllerHeaderFile(
             "std::function<void (const HttpResponsePtr &)> &&callback,double "
             "p1,int p2) const;\n";
     file << "};\n";
-    do
+    while (namespaceCount > 0)
     {
         --namespaceCount;
         file << "}\n";
-    } while (namespaceCount > 0);
+    }
 }
 void create_controller::newHttpControllerSourceFile(
     std::ofstream &file,
