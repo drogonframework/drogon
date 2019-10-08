@@ -75,13 +75,17 @@ class HttpFile
         return _fileContent.length();
     };
     /// Return the file content.
-    char * fileData() noexcept
+    char *fileData() noexcept
     {
-      return _fileContent.data();
+#if __cplusplus >= 201703L
+        return _fileContent.data();
+#else
+        return (char *)(_fileContent.data());
+#endif
     }
-    const char * fileData() const noexcept
+    const char *fileData() const noexcept
     {
-      return _fileContent.data();
+        return _fileContent.data();
     }
     std::string &fileContent() noexcept
     {
@@ -89,7 +93,7 @@ class HttpFile
     }
     const std::string &fileContent() const noexcept
     {
-      return _fileContent;
+        return _fileContent;
     }
     /// Return the md5 string of the file
     std::string getMd5() const;
