@@ -70,13 +70,33 @@ class HttpFile
     int saveAs(const std::string &filename) const;
 
     /// Return the file length.
-    int64_t fileLength() const
+    int64_t fileLength() const noexcept
     {
         return _fileContent.length();
     };
-
+    /// Return the file content.
+    char *fileData() noexcept
+    {
+#if __cplusplus >= 201703L
+        return _fileContent.data();
+#else
+        return (char *)(_fileContent.data());
+#endif
+    }
+    const char *fileData() const noexcept
+    {
+        return _fileContent.data();
+    }
+    std::string &fileContent() noexcept
+    {
+        return _fileContent;
+    }
+    const std::string &fileContent() const noexcept
+    {
+        return _fileContent;
+    }
     /// Return the md5 string of the file
-    const std::string getMd5() const;
+    std::string getMd5() const;
 
   protected:
     int saveTo(const std::string &pathAndFilename) const;
