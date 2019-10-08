@@ -222,7 +222,7 @@ int HttpFile::saveTo(const std::string &pathAndFilename) const
         return -1;
     }
 }
-const std::string HttpFile::getMd5() const
+std::string HttpFile::getMd5() const
 {
 #ifdef OpenSSL_FOUND
     MD5_CTX c;
