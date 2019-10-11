@@ -191,3 +191,17 @@ void ListenerManager::startListening()
         loopThread->run();
     }
 }
+
+ListenerManager::~ListenerManager()
+{
+    for (size_t i = 0; i < _servers.size(); ++i)
+    {
+        std::promise<int> pro;
+        auto f = pro.get_future();
+        _servers[i]->getLoop()->runInLoop([&pro, this, i] {
+            _servers[i].reset();
+            pro.set_value(1);
+        });
+        (void)f.get();
+    }
+}

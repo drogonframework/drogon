@@ -757,3 +757,11 @@ HttpAppFramework &HttpAppFrameworkImpl::createDbClient(
                                         isFast);
     return *this;
 }
+
+void HttpAppFrameworkImpl::quit()
+{
+    if (getLoop()->isRunning())
+    {
+        getLoop()->queueInLoop([this]() { getLoop()->quit(); });
+    }
+}
