@@ -44,6 +44,7 @@ class ListenerManager : public trantor::NonCopyable
             std::function<HttpResponsePtr(const HttpRequestPtr &)>>
             &syncAdvices);
     void startListening();
+    ~ListenerManager();
 
   private:
     struct ListenerInfo

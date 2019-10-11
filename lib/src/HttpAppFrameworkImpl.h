@@ -317,11 +317,7 @@ class HttpAppFrameworkImpl : public HttpAppFramework
 
     virtual trantor::EventLoop *getLoop() const override;
 
-    virtual void quit() override
-    {
-        if (getLoop()->isRunning())
-            getLoop()->quit();
-    }
+    virtual void quit() override;
 
     virtual HttpAppFramework &setServerHeaderField(
         const std::string &server) override
