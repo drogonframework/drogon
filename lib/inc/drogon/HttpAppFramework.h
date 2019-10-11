@@ -108,8 +108,11 @@ class HttpAppFramework : public trantor::NonCopyable
      * @param resp is the object set to 404 response
      * After calling this method, the resp object is returned
      * by the HttpResponse::newNotFoundResponse() method.
+     * @param set404 if true, the status code of the resp will
+     * be set to 404 automatically
      */
-    virtual HttpAppFramework &setCustom404Page(const HttpResponsePtr &resp) = 0;
+    virtual HttpAppFramework &setCustom404Page(const HttpResponsePtr &resp,
+                                               bool set404 = true) = 0;
 
     /// Get the plugin object registered in the framework
     /**

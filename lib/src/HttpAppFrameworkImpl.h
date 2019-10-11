@@ -70,10 +70,13 @@ class HttpAppFrameworkImpl : public HttpAppFramework
         const std::vector<internal::HttpConstraint> &filtersAndMethods =
             std::vector<internal::HttpConstraint>{}) override;
 
-    virtual HttpAppFramework &setCustom404Page(
-        const HttpResponsePtr &resp) override
+    virtual HttpAppFramework &setCustom404Page(const HttpResponsePtr &resp,
+                                               bool set404) override
     {
-        resp->setStatusCode(k404NotFound);
+        if (set404)
+        {
+            resp->setStatusCode(k404NotFound);
+        }
         _custom404 = resp;
         return *this;
     }
