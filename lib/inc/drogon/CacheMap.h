@@ -24,6 +24,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
+#include <future>
 #include <assert.h>
 
 #define WHEELS_NUM 4
@@ -127,17 +128,17 @@ class CacheMap
     };
     ~CacheMap()
     {
-        _loop->invalidateTimer(_timerId);
         {
             std::lock_guard<std::mutex> guard(_mtx);
             _map.clear();
         }
-
-        for (int i = _wheels.size() - 1; i >= 0; i--)
         {
-            _wheels[i].clear();
+            std::lock_guard<std::mutex> lock(_bucketMutex);
+            for (int i = _wheels.size() - 1; i >= 0; i--)
+            {
+                _wheels[i].clear();
+            }
         }
-
         LOG_TRACE << "CacheMap destruct!";
     }
     typedef struct MapValue
@@ -292,6 +293,15 @@ class CacheMap
         // in this case,we don't evoke the timeout callback;
         std::lock_guard<std::mutex> lock(_mtx);
         _map.erase(key);
+    }
+    /**
+     * @brief Get the event loop object
+     *
+     * @return trantor::EventLoop*
+     */
+    trantor::EventLoop *getLoop()
+    {
+        return _loop;
     }
 
   private:
