@@ -28,13 +28,20 @@ using namespace drogon;
 
 void StaticFileRouter::init()
 {
-    _responseCachingMap =
-        std::unique_ptr<CacheMap<std::string, HttpResponsePtr>>(
-            new CacheMap<std::string, HttpResponsePtr>(
-                HttpAppFrameworkImpl::instance().getLoop(),
-                1.0,
-                4,
-                50));  // Max timeout up to about 70 days;
+    // Max timeout up to about 70 days;
+    _staticFilesCacheMap = decltype(_staticFilesCacheMap)(
+        new IOThreadStorage<
+            std::unique_ptr<CacheMap<std::string, HttpResponsePtr>>>);
+    _staticFilesCacheMap->init(
+        [](std::unique_ptr<CacheMap<std::string, HttpResponsePtr>> &mapPtr,
+           size_t i) {
+            mapPtr = std::unique_ptr<CacheMap<std::string, HttpResponsePtr>>(
+                new CacheMap<std::string, HttpResponsePtr>(
+                    HttpAppFrameworkImpl::instance().getLoop(), 1.0, 4, 50));
+        });
+    _staticFilesCache = decltype(_staticFilesCache)(
+        new IOThreadStorage<
+            std::unordered_map<std::string, HttpResponsePtr>>{});
 }
 
 void StaticFileRouter::route(
@@ -62,16 +69,11 @@ void StaticFileRouter::route(
             }
             // find cached response
             HttpResponsePtr cachedResp;
+            auto &cacheMap = _staticFilesCache->getThreadData();
+            auto iter = cacheMap.find(filePath);
+            if (iter != cacheMap.end())
             {
-                std::lock_guard<std::mutex> guard(_staticFilesCacheMutex);
-                if (_staticFilesCache.find(filePath) != _staticFilesCache.end())
-                {
-                    cachedResp = _staticFilesCache[filePath].lock();
-                    if (!cachedResp)
-                    {
-                        _staticFilesCache.erase(filePath);
-                    }
-                }
+                cachedResp = iter->second;
             }
 
             // check last modified time,rfc2616-14.25
@@ -128,6 +130,7 @@ void StaticFileRouter::route(
 
             if (cachedResp)
             {
+                LOG_TRACE << "Using file cache";
                 HttpAppFrameworkImpl::instance().callCallback(req,
                                                               cachedResp,
                                                               callback);
@@ -161,17 +164,11 @@ void StaticFileRouter::route(
                 if (_staticFilesCacheTime >= 0)
                 {
                     resp->setExpiredTime(_staticFilesCacheTime);
-                    _responseCachingMap->insert(
-                        filePath, resp, resp->expiredTime(), [=]() {
-                            std::lock_guard<std::mutex> guard(
-                                _staticFilesCacheMutex);
-                            _staticFilesCache.erase(filePath);
+                    _staticFilesCache->getThreadData()[filePath] = resp;
+                    _staticFilesCacheMap->getThreadData()->insert(
+                        filePath, resp, _staticFilesCacheTime, [=]() {
+                            _staticFilesCache->getThreadData().erase(filePath);
                         });
-                    {
-                        std::lock_guard<std::mutex> guard(
-                            _staticFilesCacheMutex);
-                        _staticFilesCache[filePath] = resp;
-                    }
                 }
                 HttpAppFrameworkImpl::instance().callCallback(req,
                                                               resp,
