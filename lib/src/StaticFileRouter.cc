@@ -26,18 +26,17 @@
 
 using namespace drogon;
 
-void StaticFileRouter::init()
+void StaticFileRouter::init(const std::vector<trantor::EventLoop *> &ioloops)
 {
     // Max timeout up to about 70 days;
     _staticFilesCacheMap = decltype(_staticFilesCacheMap)(
-        new IOThreadStorage<
-            std::unique_ptr<CacheMap<std::string, HttpResponsePtr>>>);
+        new IOThreadStorage<std::unique_ptr<CacheMap<std::string, char>>>);
     _staticFilesCacheMap->init(
-        [](std::unique_ptr<CacheMap<std::string, HttpResponsePtr>> &mapPtr,
-           size_t i) {
-            mapPtr = std::unique_ptr<CacheMap<std::string, HttpResponsePtr>>(
-                new CacheMap<std::string, HttpResponsePtr>(
-                    HttpAppFrameworkImpl::instance().getLoop(), 1.0, 4, 50));
+        [&ioloops](std::unique_ptr<CacheMap<std::string, char>> &mapPtr,
+                   size_t i) {
+            assert(i == ioloops[i]->index());
+            mapPtr = std::unique_ptr<CacheMap<std::string, char>>(
+                new CacheMap<std::string, char>(ioloops[i], 1.0, 4, 50));
         });
     _staticFilesCache = decltype(_staticFilesCache)(
         new IOThreadStorage<
@@ -163,10 +162,16 @@ void StaticFileRouter::route(
                 // cache the response for 5 seconds by default
                 if (_staticFilesCacheTime >= 0)
                 {
+                    LOG_TRACE << "Save in cache for " << _staticFilesCacheTime
+                              << " seconds";
                     resp->setExpiredTime(_staticFilesCacheTime);
                     _staticFilesCache->getThreadData()[filePath] = resp;
                     _staticFilesCacheMap->getThreadData()->insert(
-                        filePath, resp, _staticFilesCacheTime, [=]() {
+                        filePath, 0, _staticFilesCacheTime, [this, filePath]() {
+                            LOG_TRACE << "Erase cache";
+                            assert(_staticFilesCache->getThreadData().find(
+                                       filePath) !=
+                                   _staticFilesCache->getThreadData().end());
                             _staticFilesCache->getThreadData().erase(filePath);
                         });
                 }

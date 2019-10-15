@@ -410,7 +410,7 @@ void HttpAppFrameworkImpl::run()
     ioLoops.pop_back();
     _httpCtrlsRouterPtr->init(ioLoops);
     _httpSimpleCtrlsRouterPtr->init(ioLoops);
-    _staticFileRouterPtr->init();
+    _staticFileRouterPtr->init(ioLoops);
     _websockCtrlsRouterPtr->init();
 
     if (_useSession)
