@@ -39,9 +39,8 @@ void DbClientManager::createDbClients(
             if (dbInfo._dbType == drogon::orm::ClientType::PostgreSQL ||
                 dbInfo._dbType == drogon::orm::ClientType::Mysql)
             {
-                _dbFastClientsMap.insert(
-                    {dbInfo._name,
-                     IOThreadStorage<orm::DbClientPtr>()});
+                _dbFastClientsMap[dbInfo._name] =
+                    IOThreadStorage<orm::DbClientPtr>();
                 _dbFastClientsMap[dbInfo._name].init([&](orm::DbClientPtr &c,
                                                          size_t idx) {
                     assert(idx == ioloops[idx]->index());
