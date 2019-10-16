@@ -240,6 +240,7 @@ class HttpResponseImpl : public HttpResponse
     virtual void setExpiredTime(ssize_t expiredTime) override
     {
         _expriedTime = expiredTime;
+        _datePos = std::string::npos;
     }
 
     virtual ssize_t expiredTime() const override

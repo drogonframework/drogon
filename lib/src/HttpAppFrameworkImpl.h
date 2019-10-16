@@ -81,10 +81,7 @@ class HttpAppFrameworkImpl : public HttpAppFramework
         return *this;
     }
 
-    const HttpResponsePtr &getCustom404Page()
-    {
-        return _custom404;
-    }
+    const HttpResponsePtr &getCustom404Page();
 
     virtual void forward(
         const HttpRequestPtr &req,

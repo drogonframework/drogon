@@ -16,6 +16,7 @@
 #include "HttpAppFrameworkImpl.h"
 #include "HttpUtils.h"
 #include <drogon/HttpViewData.h>
+#include <drogon/IOThreadStorage.h>
 #include <fstream>
 #include <memory>
 #include <stdio.h>
@@ -82,27 +83,50 @@ void HttpResponseImpl::generateBodyFromJson()
 
 HttpResponsePtr HttpResponse::newNotFoundResponse()
 {
+    auto loop = trantor::EventLoop::getEventLoopOfCurrentThread();
     auto &resp = HttpAppFrameworkImpl::instance().getCustom404Page();
     if (resp)
     {
-        return resp;
+        if (loop && loop->index() < app().getThreadNum())
+        {
+            return resp;
+        }
+        else
+        {
+            return HttpResponsePtr{new HttpResponseImpl(
+                *static_cast<HttpResponseImpl *>(resp.get()))};
+        }
     }
     else
     {
-        static std::once_flag once;
-        static HttpResponsePtr notFoundResp;
-        std::call_once(once, []() {
+        if (loop && loop->index() < app().getThreadNum())
+        {
+            // If the current thread is an IO thread
+            static std::once_flag threadOnce;
+            static IOThreadStorage<HttpResponsePtr> thread404Pages;
+            std::call_once(threadOnce, [] {
+                thread404Pages.init([](drogon::HttpResponsePtr &resp,
+                                       size_t index) {
+                    HttpViewData data;
+                    data.insert("version", getVersion());
+                    resp = HttpResponse::newHttpViewResponse("drogon::NotFound",
+                                                             data);
+                    resp->setStatusCode(k404NotFound);
+                    resp->setExpiredTime(0);
+                });
+            });
+            LOG_TRACE << "Use cached 404 response";
+            return thread404Pages.getThreadData();
+        }
+        else
+        {
             HttpViewData data;
             data.insert("version", getVersion());
-            notFoundResp =
+            auto notFoundResp =
                 HttpResponse::newHttpViewResponse("drogon::NotFound", data);
             notFoundResp->setStatusCode(k404NotFound);
-            notFoundResp->setExpiredTime(0);
-            auto str = static_cast<HttpResponseImpl *>(notFoundResp.get())
-                           ->renderToString();
-            LOG_TRACE << *str;
-        });
-        return notFoundResp;
+            return notFoundResp;
+        }
     }
 }
 HttpResponsePtr HttpResponse::newRedirectionResponse(
@@ -584,6 +608,8 @@ void HttpResponseImpl::clear()
     _leftBodyLength = 0;
     _currentChunkLength = 0;
     _jsonPtr.reset();
+    _expriedTime = -1;
+    _datePos = std::string::npos;
 }
 
 void HttpResponseImpl::parseJson() const
