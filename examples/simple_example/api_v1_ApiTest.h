@@ -18,10 +18,10 @@ class ApiTest : public drogon::HttpController<ApiTest>
                "drogon::IntranetIpFilter");
     METHOD_ADD(ApiTest::rootPost, "", Post, Options);
     METHOD_ADD(ApiTest::get,
-               "/get/{2}/{1}",
+               "/get/{2:p2}/{1}",
                Get);  // path is /api/v1/apitest/get/{arg2}/{arg1}
     METHOD_ADD(ApiTest::your_method_name,
-               "/{1}/List?P2={2}",
+               "/{PI}/List?P2={}",
                Get);  // path is /api/v1/apitest/{arg1}/list
     METHOD_ADD(ApiTest::staticApi, "/static", Get, Options);  // CORS
     METHOD_ADD(ApiTest::staticApi, "/static", Post, Put, Delete);
