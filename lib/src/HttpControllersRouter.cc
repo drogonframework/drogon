@@ -19,6 +19,7 @@
 #include "StaticFileRouter.h"
 #include "HttpAppFrameworkImpl.h"
 #include "FiltersFunction.h"
+#include <algorithm>
 
 using namespace drogon;
 
@@ -98,7 +99,7 @@ void HttpControllersRouter::addHttpPath(
     std::vector<size_t> places;
     std::string tmpPath = path;
     std::string paras = "";
-    std::regex regex = std::regex("\\{([0-9]+)\\}");
+    std::regex regex = std::regex("\\{([^/]*)\\}");
     std::smatch results;
     auto pos = tmpPath.find('?');
     if (pos != std::string::npos)
@@ -107,39 +108,193 @@ void HttpControllersRouter::addHttpPath(
         tmpPath = tmpPath.substr(0, pos);
     }
     std::string originPath = tmpPath;
+    size_t placeIndex = 1;
     while (std::regex_search(tmpPath, results, regex))
     {
         if (results.size() > 1)
         {
-            size_t place = (size_t)std::stoi(results[1].str());
-            if (place > binder->paramCount() || place == 0)
+            auto result = results[1].str();
+            if (!result.empty() &&
+                std::all_of(result.begin(), result.end(), [](const char c) {
+                    return std::isdigit(c);
+                }))
             {
-                LOG_ERROR << "parameter placeholder(value=" << place
-                          << ") out of range (1 to " << binder->paramCount()
-                          << ")";
-                exit(0);
+                size_t place = (size_t)std::stoi(result);
+                if (place > binder->paramCount() || place == 0)
+                {
+                    LOG_ERROR << "Parameter placeholder(value=" << place
+                              << ") out of range (1 to " << binder->paramCount()
+                              << ")";
+                    LOG_ERROR << "Path pattern: " << path;
+                    exit(1);
+                }
+                if (!std::all_of(places.begin(),
+                                 places.end(),
+                                 [place](size_t i) { return i != place; }))
+                {
+                    LOG_ERROR << "Parameter placeholders are duplicated: index="
+                              << place;
+                    LOG_ERROR << "Path pattern: " << path;
+                    exit(1);
+                }
+                places.push_back(place);
             }
-            places.push_back(place);
+            else
+            {
+                std::regex regNumberAndName("([0-9]+):.*");
+                std::smatch regexResult;
+                if (std::regex_match(result, regexResult, regNumberAndName))
+                {
+                    assert(regexResult.size() == 2 && regexResult[1].matched);
+                    auto num = regexResult[1].str();
+                    size_t place = (size_t)std::stoi(num);
+                    if (place > binder->paramCount() || place == 0)
+                    {
+                        LOG_ERROR << "Parameter placeholder(value=" << place
+                                  << ") out of range (1 to "
+                                  << binder->paramCount() << ")";
+                        LOG_ERROR << "Path pattern: " << path;
+                        exit(1);
+                    }
+                    if (!std::all_of(places.begin(),
+                                     places.end(),
+                                     [place](size_t i) { return i != place; }))
+                    {
+                        LOG_ERROR
+                            << "Parameter placeholders are duplicated: index="
+                            << place;
+                        LOG_ERROR << "Path pattern: " << path;
+                        exit(1);
+                    }
+                    places.push_back(place);
+                }
+                else
+                {
+                    if (!std::all_of(places.begin(),
+                                     places.end(),
+                                     [placeIndex](size_t i) {
+                                         return i != placeIndex;
+                                     }))
+                    {
+                        LOG_ERROR
+                            << "Parameter placeholders are duplicated: index="
+                            << placeIndex;
+                        LOG_ERROR << "Path pattern: " << path;
+                        exit(1);
+                    }
+                    places.push_back(placeIndex);
+                }
+            }
+            ++placeIndex;
         }
         tmpPath = results.suffix();
     }
     std::map<std::string, size_t> parametersPlaces;
     if (!paras.empty())
     {
-        std::regex pregex("([^&]*)=\\{([0-9]+)\\}&*");
+        std::regex pregex("([^&]*)=\\{([^&]*)\\}&*");
         while (std::regex_search(paras, results, pregex))
         {
             if (results.size() > 2)
             {
-                size_t place = (size_t)std::stoi(results[2].str());
-                if (place > binder->paramCount() || place == 0)
+                auto result = results[2].str();
+                if (!result.empty() &&
+                    std::all_of(result.begin(), result.end(), [](const char c) {
+                        return std::isdigit(c);
+                    }))
                 {
-                    LOG_ERROR << "parameter placeholder(value=" << place
-                              << ") out of range (1 to " << binder->paramCount()
-                              << ")";
-                    exit(0);
+                    size_t place = (size_t)std::stoi(result);
+                    if (place > binder->paramCount() || place == 0)
+                    {
+                        LOG_ERROR << "Parameter placeholder(value=" << place
+                                  << ") out of range (1 to "
+                                  << binder->paramCount() << ")";
+                        LOG_ERROR << "Path pattern: " << path;
+                        exit(1);
+                    }
+                    if (!std::all_of(places.begin(),
+                                     places.end(),
+                                     [place](size_t i) {
+                                         return i != place;
+                                     }) ||
+                        !all_of(parametersPlaces.begin(),
+                                parametersPlaces.end(),
+                                [place](const std::pair<std::string, size_t>
+                                            &item) {
+                                    return item.second != place;
+                                }))
+                    {
+                        LOG_ERROR << "Parameter placeholders are "
+                                     "duplicated: index="
+                                  << place;
+                        LOG_ERROR << "Path pattern: " << path;
+                        exit(1);
+                    }
+                    parametersPlaces[results[1].str()] = place;
                 }
-                parametersPlaces[results[1].str()] = place;
+                else
+                {
+                    std::regex regNumberAndName("([0-9]+):.*");
+                    std::smatch regexResult;
+                    if (std::regex_match(result, regexResult, regNumberAndName))
+                    {
+                        assert(regexResult.size() == 2 &&
+                               regexResult[1].matched);
+                        auto num = regexResult[1].str();
+                        size_t place = (size_t)std::stoi(num);
+                        if (place > binder->paramCount() || place == 0)
+                        {
+                            LOG_ERROR << "Parameter placeholder(value=" << place
+                                      << ") out of range (1 to "
+                                      << binder->paramCount() << ")";
+                            LOG_ERROR << "Path pattern: " << path;
+                            exit(1);
+                        }
+                        if (!std::all_of(places.begin(),
+                                         places.end(),
+                                         [place](size_t i) {
+                                             return i != place;
+                                         }) ||
+                            !all_of(parametersPlaces.begin(),
+                                    parametersPlaces.end(),
+                                    [place](const std::pair<std::string, size_t>
+                                                &item) {
+                                        return item.second != place;
+                                    }))
+                        {
+                            LOG_ERROR << "Parameter placeholders are "
+                                         "duplicated: index="
+                                      << place;
+                            LOG_ERROR << "Path pattern: " << path;
+                            exit(1);
+                        }
+                        parametersPlaces[results[1].str()] = place;
+                    }
+                    else
+                    {
+                        if (!std::all_of(places.begin(),
+                                         places.end(),
+                                         [placeIndex](size_t i) {
+                                             return i != placeIndex;
+                                         }) ||
+                            !all_of(parametersPlaces.begin(),
+                                    parametersPlaces.end(),
+                                    [placeIndex](
+                                        const std::pair<std::string, size_t>
+                                            &item) {
+                                        return item.second != placeIndex;
+                                    }))
+                        {
+                            LOG_ERROR << "Parameter placeholders are "
+                                         "duplicated: index="
+                                      << placeIndex;
+                            LOG_ERROR << "Path pattern: " << path;
+                            exit(1);
+                        }
+                        parametersPlaces[results[1].str()] = placeIndex;
+                    }
+                }
+                ++placeIndex;
             }
             paras = results.suffix();
         }
