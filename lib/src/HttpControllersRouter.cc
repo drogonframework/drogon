@@ -398,7 +398,7 @@ void HttpControllersRouter::doControllerHandler(
         paraList,
         req,
         [=, callback = std::move(callback)](const HttpResponsePtr &resp) {
-            if (resp->expiredTime() >= 0)
+            if (resp->expiredTime() >= 0 && resp->statusCode() != k404NotFound)
             {
                 // cache the response;
                 static_cast<HttpResponseImpl *>(resp.get())->makeHeaderString();

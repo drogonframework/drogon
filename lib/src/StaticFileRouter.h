@@ -16,6 +16,7 @@
 
 #include "impl_forwards.h"
 #include <drogon/CacheMap.h>
+#include <drogon/IOThreadStorage.h>
 #include <functional>
 #include <set>
 #include <string>
@@ -41,7 +42,7 @@ class StaticFileRouter
     {
         _gzipStaticFlag = useGzipStatic;
     }
-    void init();
+    void init(const std::vector<trantor::EventLoop *> &ioloops);
 
   private:
     std::set<std::string> _fileTypeSet = {"html",
@@ -64,14 +65,14 @@ class StaticFileRouter
                                           "ico",
                                           "icns"};
 
-    std::unique_ptr<drogon::CacheMap<std::string, HttpResponsePtr>>
-        _responseCachingMap;
-
     int _staticFilesCacheTime = 5;
     bool _enableLastModify = true;
     bool _gzipStaticFlag = true;
-    std::unordered_map<std::string, std::weak_ptr<HttpResponse>>
+    std::unique_ptr<
+        IOThreadStorage<std::unique_ptr<CacheMap<std::string, char>>>>
+        _staticFilesCacheMap;
+    std::unique_ptr<
+        IOThreadStorage<std::unordered_map<std::string, HttpResponsePtr>>>
         _staticFilesCache;
-    std::mutex _staticFilesCacheMutex;
 };
 }  // namespace drogon

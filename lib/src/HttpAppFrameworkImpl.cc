@@ -410,7 +410,7 @@ void HttpAppFrameworkImpl::run()
     ioLoops.pop_back();
     _httpCtrlsRouterPtr->init(ioLoops);
     _httpSimpleCtrlsRouterPtr->init(ioLoops);
-    _staticFileRouterPtr->init();
+    _staticFileRouterPtr->init(ioLoops);
     _websockCtrlsRouterPtr->init();
 
     if (_useSession)
@@ -763,5 +763,31 @@ void HttpAppFrameworkImpl::quit()
     if (getLoop()->isRunning())
     {
         getLoop()->queueInLoop([this]() { getLoop()->quit(); });
+    }
+}
+
+const HttpResponsePtr &HttpAppFrameworkImpl::getCustom404Page()
+{
+    if (!_custom404)
+    {
+        return _custom404;
+    }
+    auto loop = trantor::EventLoop::getEventLoopOfCurrentThread();
+    if (loop && loop->index() < app().getThreadNum())
+    {
+        // If the current thread is an IO thread
+        static IOThreadStorage<HttpResponsePtr> thread404Pages;
+        static std::once_flag once;
+        std::call_once(once, [this] {
+            thread404Pages.init([this](HttpResponsePtr &resp, size_t index) {
+                resp = std::make_shared<HttpResponseImpl>(
+                    *static_cast<HttpResponseImpl *>(_custom404.get()));
+            });
+        });
+        return thread404Pages.getThreadData();
+    }
+    else
+    {
+        return _custom404;
     }
 }

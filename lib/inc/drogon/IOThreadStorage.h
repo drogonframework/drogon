@@ -14,12 +14,12 @@
 
 #pragma once
 
+#include <drogon/HttpAppFramework.h>
+#include <trantor/utils/NonCopyable.h>
 #include <memory>
 #include <vector>
 #include <limits>
 #include <functional>
-
-#include <drogon/HttpAppFramework.h>
 
 namespace drogon
 {
@@ -56,22 +56,17 @@ namespace drogon
  * };
  * @endcode
  */
-template <typename C, typename... Args>
-class IOThreadStorage
+template <typename C>
+class IOThreadStorage : public trantor::NonCopyable
 {
-    static_assert(std::is_constructible<C, Args &&...>::value,
-                  "Unable to construct storage with given signature");
-
   public:
     using InitCallback = std::function<void(C &, size_t)>;
 
+    template <typename... Args>
     IOThreadStorage(Args &&... args)
-        : IOThreadStorage(std::forward(args)..., [](C &, size_t) {})
     {
-    }
-
-    IOThreadStorage(Args &&... args, const InitCallback &initCB)
-    {
+        static_assert(std::is_constructible<C, Args &&...>::value,
+                      "Unable to construct storage with given signature");
         size_t numThreads = app().getThreadNum();
         assert(numThreads > 0 &&
                numThreads != std::numeric_limits<size_t>::max());
@@ -81,7 +76,14 @@ class IOThreadStorage
 
         for (size_t i = 0; i <= numThreads; ++i)
         {
-            _storage.emplace_back(std::forward(args)...);
+            _storage.emplace_back(std::forward<Args>(args)...);
+        }
+    }
+
+    void init(const InitCallback &initCB)
+    {
+        for (size_t i = 0; i < _storage.size(); ++i)
+        {
             initCB(_storage[i], i);
         }
     }

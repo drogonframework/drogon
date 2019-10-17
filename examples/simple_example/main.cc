@@ -278,6 +278,8 @@ int main()
         }
         std::cout << std::get<2>(info) << std::endl;
     }
-
+    auto resp = HttpResponse::newFileResponse("index.html");
+    resp->setExpiredTime(0);
+    app().setCustom404Page(resp);
     app().run();
 }

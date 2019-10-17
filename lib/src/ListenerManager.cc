@@ -186,6 +186,8 @@ std::vector<trantor::EventLoop *> ListenerManager::createListeners(
 
 void ListenerManager::startListening()
 {
+    if (_listeners.size() == 0)
+        return;
     for (auto &loopThread : _listeningloopThreads)
     {
         loopThread->run();

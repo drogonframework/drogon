@@ -221,7 +221,8 @@ void HttpSimpleControllersRouter::doControllerHandler(
             [this, req, callback = std::move(callback), &ctrlBinderPtr](
                 const HttpResponsePtr &resp) {
                 auto newResp = resp;
-                if (resp->expiredTime() >= 0)
+                if (resp->expiredTime() >= 0 &&
+                    resp->statusCode() != k404NotFound)
                 {
                     // cache the response;
                     static_cast<HttpResponseImpl *>(resp.get())
