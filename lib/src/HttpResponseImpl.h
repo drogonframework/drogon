@@ -286,8 +286,11 @@ class HttpResponseImpl : public HttpResponse
     void parseJson() const;
     virtual const std::shared_ptr<Json::Value> jsonObject() const override
     {
-        if (!_jsonPtr)
+        // Not multi-thread safe but good, because we basically call this
+        // function in a single thread
+        if (!_flagForParsingJson)
         {
+            _flagForParsingJson = true;
             parseJson();
         }
         return _jsonPtr;
@@ -366,7 +369,7 @@ class HttpResponseImpl : public HttpResponse
     mutable std::shared_ptr<std::string> _httpString;
     mutable std::string::size_type _datePos = std::string::npos;
     mutable int64_t _httpStringDate = -1;
-
+    mutable bool _flagForParsingJson = false;
     ContentType _contentType = CT_TEXT_HTML;
     string_view _contentTypeString =
         "Content-Type: text/html; charset=utf-8\r\n";

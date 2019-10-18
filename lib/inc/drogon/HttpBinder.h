@@ -20,6 +20,7 @@
 #include <drogon/DrClassMap.h>
 #include <drogon/DrObject.h>
 #include <drogon/utils/FunctionTraits.h>
+#include <drogon/HttpRequest.h>
 #include <list>
 #include <memory>
 #include <sstream>
@@ -129,14 +130,42 @@ class HttpBinder : public HttpBinderBase
 
     static const size_t argument_count = traits::arity;
     std::string _handlerName;
+
     template <typename T>
-    void getHandlerArgumentValue(T &value, std::string &&p)
+    struct CanConvertFromStringStream
+    {
+      private:
+        typedef std::true_type yes;
+        typedef std::false_type no;
+
+        template <typename U>
+        static auto test(U *p, std::stringstream &&ss)
+            -> decltype((ss >> *p), yes());
+
+        template <typename>
+        static no test(...);
+
+      public:
+        static constexpr bool value =
+            std::is_same<decltype(test<T>(nullptr, std::stringstream())),
+                         yes>::value;
+    };
+
+    template <typename T>
+    typename std::enable_if<CanConvertFromStringStream<T>::value, void>::type
+    getHandlerArgumentValue(T &value, std::string &&p)
     {
         if (!p.empty())
         {
             std::stringstream ss(std::move(p));
             ss >> value;
         }
+    }
+
+    template <typename T>
+    typename std::enable_if<!(CanConvertFromStringStream<T>::value), void>::type
+    getHandlerArgumentValue(T &value, std::string &&p)
+    {
     }
 
     void getHandlerArgumentValue(std::string &value, std::string &&p)
@@ -211,6 +240,18 @@ class HttpBinder : public HttpBinderBase
             catch (...)
             {
                 LOG_ERROR << "Error converting string \"" << v << "\" to the "
+                          << sizeof...(Values) + 1 << "th argument";
+            }
+        }
+        else
+        {
+            try
+            {
+                value = req->as<ValueType>();
+            }
+            catch (const std::exception &)
+            {
+                LOG_ERROR << "Error converting HttpRequest to the "
                           << sizeof...(Values) + 1 << "th argument";
             }
         }
