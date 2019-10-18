@@ -375,9 +375,9 @@ void ApiTest::get2(const HttpRequestPtr &req,
 }
 
 void ApiTest::jsonTest(const HttpRequestPtr &req,
-                       std::function<void(const HttpResponsePtr &)> &&callback)
+                       std::function<void(const HttpResponsePtr &)> &&callback,
+                       std::shared_ptr<Json::Value> &&json)
 {
-    auto json = req->getJsonObject();
     Json::Value ret;
     if (json)
     {
@@ -387,7 +387,7 @@ void ApiTest::jsonTest(const HttpRequestPtr &req,
     {
         ret["result"] = "bad";
     }
-    auto resp = HttpResponse::newHttpJsonResponse(ret);
+    auto resp = HttpResponse::newCustomHttpResponse(ret);
     callback(resp);
 }
 

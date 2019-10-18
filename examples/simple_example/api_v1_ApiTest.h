@@ -55,7 +55,8 @@ class ApiTest : public drogon::HttpController<ApiTest>
     void rootPost(const HttpRequestPtr &req,
                   std::function<void(const HttpResponsePtr &)> &&callback);
     void jsonTest(const HttpRequestPtr &req,
-                  std::function<void(const HttpResponsePtr &)> &&callback);
+                  std::function<void(const HttpResponsePtr &)> &&callback,
+                  std::shared_ptr<Json::Value> &&json);
     void formTest(const HttpRequestPtr &req,
                   std::function<void(const HttpResponsePtr &)> &&callback);
     void attributesTest(

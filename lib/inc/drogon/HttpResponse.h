@@ -14,6 +14,7 @@
 #pragma once
 
 #include <drogon/utils/string_view.h>
+#include <drogon/DrClassMap.h>
 #include <drogon/Cookie.h>
 #include <drogon/HttpTypes.h>
 #include <drogon/HttpViewData.h>
@@ -26,12 +27,73 @@ namespace drogon
 /// Abstract class for webapp developer to get or set the Http response;
 class HttpResponse;
 typedef std::shared_ptr<HttpResponse> HttpResponsePtr;
+
+/**
+ * @brief This template is used to convert a response object to a custom
+ * type object. Users must specialize the template for a particular type.
+ */
+template <typename T>
+T fromResponse(const HttpResponse &resp)
+{
+    LOG_ERROR
+        << "You must specialize the fromResponse template for the type of "
+        << DrClassMap::demangle(typeid(T).name());
+    exit(1);
+}
+
+/**
+ * @brief This template is used to create a response object from a custom
+ * type object by calling the newCustomHttpResponse(). Users must specialize
+ * the template for a particular type.
+ */
+template <typename T>
+HttpResponsePtr toResponse(T &&)
+{
+    LOG_ERROR << "You must specialize the toResponse template for the type of "
+              << DrClassMap::demangle(typeid(T).name());
+    exit(1);
+}
+template <>
+HttpResponsePtr toResponse(const Json::Value &pJson);
+template <>
+HttpResponsePtr toResponse(Json::Value &&pJson);
+template <>
+inline HttpResponsePtr toResponse(Json::Value &pJson)
+{
+    return toResponse((const Json::Value &)pJson);
+}
+
 class HttpResponse
 {
   public:
-    HttpResponse()
+    /**
+     * @brief This template enables automatic type conversion. For using this
+     * template, user must specialize the fromResponse template. For example a
+     * shared_ptr<Json::Value> specialization version is available above, so
+     * we can use the following code to get a json object:
+     * @code
+     *  std::shared_ptr<Json::Value> jsonPtr = *responsePtr;
+     *  @endcode
+     * With this template, user can use their favorite JSON library instead of
+     * the default jsoncpp library or convert the response to an object of any
+     * custom type.
+     */
+    template <typename T>
+    operator T() const
     {
+        return fromResponse<T>(*this);
     }
+
+    /**
+     * @brief This template enables explicit type conversion, see the above
+     * template.
+     */
+    template <typename T>
+    T as() const
+    {
+        return fromResponse<T>(*this);
+    }
+
     /// Get the status code such as 200, 404
     virtual HttpStatusCode statusCode() const = 0;
     HttpStatusCode getStatusCode() const
@@ -255,6 +317,16 @@ class HttpResponse
         const std::string &attachmentFileName = "",
         ContentType type = CT_NONE);
 
+    /**
+     * @brief Create a custom HTTP response object. For using this template,
+     * users must specialize the toResponse template.
+     */
+    template <typename T>
+    static HttpResponsePtr newCustomHttpResponse(T &&obj)
+    {
+        return toResponse(std::forward<T>(obj));
+    }
+
     virtual ~HttpResponse()
     {
     }
@@ -262,5 +334,21 @@ class HttpResponse
   private:
     virtual void setBody(const char *body, size_t len) = 0;
 };
+template <>
+inline HttpResponsePtr toResponse(const Json::Value &pJson)
+{
+    return HttpResponse::newHttpJsonResponse(pJson);
+}
 
+template <>
+inline HttpResponsePtr toResponse(Json::Value &&pJson)
+{
+    return HttpResponse::newHttpJsonResponse(std::move(pJson));
+}
+
+template <>
+inline std::shared_ptr<Json::Value> fromResponse(const HttpResponse &resp)
+{
+    return resp.getJsonObject();
+}
 }  // namespace drogon

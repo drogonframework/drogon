@@ -352,9 +352,16 @@ class HttpRequestImpl : public HttpRequest
 
     virtual const std::shared_ptr<Json::Value> jsonObject() const override
     {
-        parseParametersOnce();
+        // Not multi-thread safe but good, because we basically call this
+        // function in a single thread
+        if (!_flagForParsingJson)
+        {
+            _flagForParsingJson = true;
+            parseJson();
+        }
         return _jsonPtr;
     }
+
     virtual void setCustomContentTypeString(const std::string &type) override
     {
         _contentType = CT_NONE;
@@ -425,7 +432,10 @@ class HttpRequestImpl : public HttpRequest
             parseParameters();
         }
     }
+
+    void parseJson() const;
     mutable bool _flagForParsingParameters = false;
+    mutable bool _flagForParsingJson = false;
     HttpMethod _method;
     Version _version;
     std::string _path;

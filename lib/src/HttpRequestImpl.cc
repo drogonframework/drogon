@@ -22,7 +22,31 @@
 #include <unistd.h>
 
 using namespace drogon;
-
+void HttpRequestImpl::parseJson() const
+{
+    auto input = contentView();
+    if (input.empty())
+        return;
+    std::string type = getHeaderBy("content-type");
+    std::transform(type.begin(), type.end(), type.begin(), tolower);
+    if (type.find("application/json") != std::string::npos)
+    {
+        static std::once_flag once;
+        static Json::CharReaderBuilder builder;
+        std::call_once(once, []() { builder["collectComments"] = false; });
+        _jsonPtr = std::make_shared<Json::Value>();
+        JSONCPP_STRING errs;
+        std::unique_ptr<Json::CharReader> reader(builder.newCharReader());
+        if (!reader->parse(input.data(),
+                           input.data() + input.size(),
+                           _jsonPtr.get(),
+                           &errs))
+        {
+            LOG_ERROR << errs;
+            _jsonPtr.reset();
+        }
+    }
+}
 void HttpRequestImpl::parseParameters() const
 {
     auto input = queryView();
@@ -123,28 +147,6 @@ void HttpRequestImpl::parseParameters() const
             }
         }
     }
-    else if (type.find("application/json") != std::string::npos)
-    {
-        static std::once_flag once;
-        static Json::CharReaderBuilder builder;
-        std::call_once(once, []() { builder["collectComments"] = false; });
-        _jsonPtr = std::make_shared<Json::Value>();
-        JSONCPP_STRING errs;
-        std::unique_ptr<Json::CharReader> reader(builder.newCharReader());
-        if (!reader->parse(input.data(),
-                           input.data() + input.size(),
-                           _jsonPtr.get(),
-                           &errs))
-        {
-            LOG_ERROR << errs;
-            _jsonPtr.reset();
-        }
-    }
-    // LOG_TRACE << "_parameters:";
-    // for (auto iter : _parameters)
-    // {
-    //     LOG_TRACE << iter.first << "=" << iter.second;
-    // }
 }
 
 void HttpRequestImpl::appendToBuffer(trantor::MsgBuffer *output) const

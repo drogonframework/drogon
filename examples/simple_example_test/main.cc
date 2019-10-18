@@ -164,14 +164,14 @@ void doTest(const HttpClientPtr &client,
     /// Post json
     Json::Value json;
     json["request"] = "json";
-    req = HttpRequest::newHttpJsonRequest(json);
+    req = HttpRequest::newCustomHttpRequest(json);
     req->setMethod(drogon::Post);
     req->setPath("/api/v1/apitest/json");
     client->sendRequest(req,
                         [=](ReqResult result, const HttpResponsePtr &resp) {
                             if (result == ReqResult::Ok)
                             {
-                                auto ret = resp->getJsonObject();
+                                std::shared_ptr<Json::Value> ret = *resp;
                                 if (ret && (*ret)["result"].asString() == "ok")
                                 {
                                     outputGood(req, isHttps);
