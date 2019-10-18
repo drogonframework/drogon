@@ -169,7 +169,7 @@ int main()
             data.insert("parameters", para);
             auto res = HttpResponse::newHttpViewResponse("ListParaView", data);
             callback(res);
-            LOG_DEBUG << body;
+            LOG_DEBUG << body.data();
             assert(!jsonPtr);
         });
 
