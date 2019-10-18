@@ -34,7 +34,7 @@ typedef std::shared_ptr<HttpRequest> HttpRequestPtr;
 
 /**
  * @brief This template is used to convert a request object to a custom
- * type of object. Users must specialize the template for a particular type.
+ * type object. Users must specialize the template for a particular type.
  */
 template <typename T>
 T fromRequest(const HttpRequest &req)
@@ -46,7 +46,7 @@ T fromRequest(const HttpRequest &req)
 
 /**
  * @brief This template is used to create a request object from a custom
- * type of object by calling the newCustomHttpRequest(). Users must specialize
+ * type object by calling the newCustomHttpRequest(). Users must specialize
  * the template for a particular type.
  */
 template <typename T>

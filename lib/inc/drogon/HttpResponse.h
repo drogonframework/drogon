@@ -30,7 +30,7 @@ typedef std::shared_ptr<HttpResponse> HttpResponsePtr;
 
 /**
  * @brief This template is used to convert a response object to a custom
- * type of object. Users must specialize the template for a particular type.
+ * type object. Users must specialize the template for a particular type.
  */
 template <typename T>
 T fromResponse(const HttpResponse &resp)
@@ -43,7 +43,7 @@ T fromResponse(const HttpResponse &resp)
 
 /**
  * @brief This template is used to create a response object from a custom
- * type of object by calling the newCustomHttpResponse(). Users must specialize
+ * type object by calling the newCustomHttpResponse(). Users must specialize
  * the template for a particular type.
  */
 template <typename T>
