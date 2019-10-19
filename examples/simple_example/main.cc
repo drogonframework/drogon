@@ -122,7 +122,7 @@ using namespace drogon;
 namespace drogon
 {
 template <>
-string_view fromRequest<string_view>(const HttpRequest &req)
+string_view fromRequest(const HttpRequest &req)
 {
     return req.body();
 }
@@ -143,12 +143,13 @@ int main()
             .addListener("0.0.0.0", 8849, true);
     }
     // Class function example
-    app().registerHandler("/api/v1/handle1/{1}/{2}/?p3={3}&p4={4}", &A::handle);
-    app().registerHandler("/api/v1/handle11/{1}/{2}/?p3={3}&p4={4}",
-                          &A::staticHandle);
+    app().registerHandler("/api/v1/handle1/{}/{}/?p3={}&p4={}", &A::handle);
+    app().registerHandler(
+        "/api/v1/handle11/{int p1}/{string p2}/?p3={string p3}&p4={int p4}",
+        &A::staticHandle);
     // Lambda example
     app().registerHandler(
-        "/api/v1/handle2/{1}/{2}",
+        "/api/v1/handle2/{int a}/{float b}",
         [](const HttpRequestPtr &req,
            std::function<void(const HttpResponsePtr &)> &&callback,
            int a,    // here the `a` parameter is converted from the number 1
@@ -186,7 +187,7 @@ int main()
                        const std::string &,
                        int)>
         func = std::bind(&A::handle, &tmp, _1, _2, _3, _4, _5, _6);
-    app().registerHandler("/api/v1/handle4/{4}/{3}/{1}", func);
+    app().registerHandler("/api/v1/handle4/{4:p4}/{3:p3}/{1:p1}", func);
 
     app().setDocumentRoot("./");
     app().enableSession(60);

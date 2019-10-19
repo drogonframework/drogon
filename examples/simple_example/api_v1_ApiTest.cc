@@ -374,9 +374,8 @@ void ApiTest::get2(const HttpRequestPtr &req,
     callback(res);
 }
 
-void ApiTest::jsonTest(const HttpRequestPtr &req,
-                       std::function<void(const HttpResponsePtr &)> &&callback,
-                       std::shared_ptr<Json::Value> &&json)
+void ApiTest::jsonTest(std::shared_ptr<Json::Value> &&json,
+                       std::function<void(const HttpResponsePtr &)> &&callback)
 {
     Json::Value ret;
     if (json)
