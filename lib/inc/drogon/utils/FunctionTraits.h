@@ -85,6 +85,39 @@ struct FunctionTraits<
 {
     static const bool isHTTPFunction = true;
     typedef void class_type;
+    typedef HttpRequestPtr first_param_type;
+};
+
+template <typename ReturnType, typename... Arguments>
+struct FunctionTraits<
+    ReturnType (*)(HttpRequestPtr &req,
+                   std::function<void(const HttpResponsePtr &)> &&callback,
+                   Arguments...)> : FunctionTraits<ReturnType (*)(Arguments...)>
+{
+    static const bool isHTTPFunction = false;
+    typedef void class_type;
+};
+
+template <typename ReturnType, typename... Arguments>
+struct FunctionTraits<
+    ReturnType (*)(HttpRequestPtr &&req,
+                   std::function<void(const HttpResponsePtr &)> &&callback,
+                   Arguments...)> : FunctionTraits<ReturnType (*)(Arguments...)>
+{
+    static const bool isHTTPFunction = false;
+    typedef void class_type;
+};
+
+// normal function for HTTP handling
+template <typename T, typename ReturnType, typename... Arguments>
+struct FunctionTraits<
+    ReturnType (*)(T &&customReq,
+                   std::function<void(const HttpResponsePtr &)> &&callback,
+                   Arguments...)> : FunctionTraits<ReturnType (*)(Arguments...)>
+{
+    static const bool isHTTPFunction = true;
+    typedef void class_type;
+    typedef T first_param_type;
 };
 
 // normal function

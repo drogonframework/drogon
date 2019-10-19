@@ -273,8 +273,11 @@ class HttpBinder : public HttpBinderBase
     }
     template <typename... Values,
               bool isClassFunction = traits::isClassFunction,
-              bool isDrObjectClass = traits::isDrObjectClass>
-    typename std::enable_if<isClassFunction && !isDrObjectClass, void>::type
+              bool isDrObjectClass = traits::isDrObjectClass,
+              bool isNormal = std::is_same<typename traits::first_param_type,
+                                           HttpRequestPtr>::value>
+    typename std::enable_if<isClassFunction && !isDrObjectClass && isNormal,
+                            void>::type
     callFunction(const HttpRequestPtr &req,
                  std::function<void(const HttpResponsePtr &)> &&callback,
                  Values &&... values)
@@ -284,8 +287,11 @@ class HttpBinder : public HttpBinderBase
     }
     template <typename... Values,
               bool isClassFunction = traits::isClassFunction,
-              bool isDrObjectClass = traits::isDrObjectClass>
-    typename std::enable_if<isClassFunction && isDrObjectClass, void>::type
+              bool isDrObjectClass = traits::isDrObjectClass,
+              bool isNormal = std::is_same<typename traits::first_param_type,
+                                           HttpRequestPtr>::value>
+    typename std::enable_if<isClassFunction && isDrObjectClass && isNormal,
+                            void>::type
     callFunction(const HttpRequestPtr &req,
                  std::function<void(const HttpResponsePtr &)> &&callback,
                  Values &&... values)
@@ -295,14 +301,58 @@ class HttpBinder : public HttpBinderBase
         (*objPtr.*_func)(req, std::move(callback), std::move(values)...);
     }
     template <typename... Values,
-              bool isClassFunction = traits::isClassFunction>
-    typename std::enable_if<!isClassFunction, void>::type callFunction(
-        const HttpRequestPtr &req,
-        std::function<void(const HttpResponsePtr &)> &&callback,
-        Values &&... values)
+              bool isClassFunction = traits::isClassFunction,
+              bool isNormal = std::is_same<typename traits::first_param_type,
+                                           HttpRequestPtr>::value>
+    typename std::enable_if<!isClassFunction && isNormal, void>::type
+    callFunction(const HttpRequestPtr &req,
+                 std::function<void(const HttpResponsePtr &)> &&callback,
+                 Values &&... values)
     {
         _func(req, std::move(callback), std::move(values)...);
     }
+    ////////////////////////////////////////////////////////////////
+    template <typename... Values,
+              bool isClassFunction = traits::isClassFunction,
+              bool isDrObjectClass = traits::isDrObjectClass,
+              bool isNormal = std::is_same<typename traits::first_param_type,
+                                           HttpRequestPtr>::value>
+    typename std::enable_if<isClassFunction && !isDrObjectClass && !isNormal,
+                            void>::type
+    callFunction(const HttpRequestPtr &req,
+                 std::function<void(const HttpResponsePtr &)> &&callback,
+                 Values &&... values)
+    {
+        static auto &obj = getControllerObj<typename traits::class_type>();
+        (obj.*_func)((*req), std::move(callback), std::move(values)...);
+    }
+    template <typename... Values,
+              bool isClassFunction = traits::isClassFunction,
+              bool isDrObjectClass = traits::isDrObjectClass,
+              bool isNormal = std::is_same<typename traits::first_param_type,
+                                           HttpRequestPtr>::value>
+    typename std::enable_if<isClassFunction && isDrObjectClass && !isNormal,
+                            void>::type
+    callFunction(const HttpRequestPtr &req,
+                 std::function<void(const HttpResponsePtr &)> &&callback,
+                 Values &&... values)
+    {
+        static auto objPtr =
+            DrClassMap::getSingleInstance<typename traits::class_type>();
+        (*objPtr.*_func)((*req), std::move(callback), std::move(values)...);
+    }
+    template <typename... Values,
+              bool isClassFunction = traits::isClassFunction,
+              bool isNormal = std::is_same<typename traits::first_param_type,
+                                           HttpRequestPtr>::value>
+    typename std::enable_if<!isClassFunction && !isNormal, void>::type
+    callFunction(const HttpRequestPtr &req,
+                 std::function<void(const HttpResponsePtr &)> &&callback,
+                 Values &&... values)
+    {
+        _func((*req), std::move(callback), std::move(values)...);
+    }
+    /////////////
 };
 
 }  // namespace internal

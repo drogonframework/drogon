@@ -68,7 +68,7 @@ int main()
 Drogon provides some interfaces for adding controller logic directly in the main() function, for example, user can register a handler like this in Drogon:
 
 ```c++
-app.registerHandler("/test?username={1}",
+app.registerHandler("/test?username={name}",
                     [](const HttpRequestPtr& req,
                        std::function<void (const HttpResponsePtr &)> &&callback,
                        const std::string &name)
@@ -158,9 +158,9 @@ class User : public drogon::HttpController<User>
   public:
     METHOD_LIST_BEGIN
     //use METHOD_ADD to add your custom processing function here;
-    METHOD_ADD(User::getInfo, "/{1}", Get);                  //path is /api/v1/User/{arg1}
-    METHOD_ADD(User::getDetailInfo, "/{1}/detailinfo", Get);  //path is /api/v1/User/{arg1}/detailinfo
-    METHOD_ADD(User::newUser, "/{1}", Post);                 //path is /api/v1/User/{arg1}
+    METHOD_ADD(User::getInfo, "/{id}", Get);                  //path is /api/v1/User/{arg1}
+    METHOD_ADD(User::getDetailInfo, "/{id}/detailinfo", Get);  //path is /api/v1/User/{arg1}/detailinfo
+    METHOD_ADD(User::newUser, "/{name}", Post);                 //path is /api/v1/User/{arg1}
     METHOD_LIST_END
     //your declaration of processing function maybe like this:
     void getInfo(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback, int userId) const;

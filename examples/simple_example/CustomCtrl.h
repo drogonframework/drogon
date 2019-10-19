@@ -7,7 +7,7 @@ class CustomCtrl : public drogon::HttpController<CustomCtrl, false>
     METHOD_LIST_BEGIN
     // use METHOD_ADD to add your custom processing function here;
     METHOD_ADD(CustomCtrl::hello,
-               "/{1}",
+               "/{userName}",
                Get,
                "CustomHeaderFilter");  // path is /customctrl/{arg1}
     METHOD_LIST_END
