@@ -9,7 +9,30 @@ using namespace drogon_ctl;
  */
 
 #include "[[className]].h"
+<%c++
+auto &relationships=@@.get<std::vector<Relationship>>("relationships");
+for(auto &relationship : relationships)
+{
+    if(relationship.targetKey().empty() || relationship.originalKey().empty())
+    {
+        continue;
+    }
+    if(relationship.type() == Relationship::Type::HasOne)
+    {
+        auto &name=relationship.targetTableName();
+        auto relationshipClassName=nameTransform(name, true);
+        auto originalClassName=nameTransform(relationship.originalTableName(),true);
+        if(relationshipClassName!=originalClassName)
+        {
+%>
+#include "{%relationshipClassName%}.h"
+<%c++
+        }
+    }
+}
+%>
 #include <drogon/utils/Utilities.h>
+#include <drogon/orm/Mapper.h>
 #include <string>
 <%c++
     const auto &cols=@@.get<std::vector<ColumnInfo>>("columns");
@@ -1299,3 +1322,50 @@ if(!col._notNull){%>
     }
     return true;
 }
+<%c++
+for(auto &relationship : relationships)
+{
+    if(relationship.targetKey().empty() || relationship.originalKey().empty())
+        {
+            continue;
+        }
+        if(relationship.type() == Relationship::Type::HasOne)
+        {
+            auto &name=relationship.targetTableName();
+            auto relationshipClassName=nameTransform(name, true);
+            auto relationshipValName=nameTransform(name, false);
+            auto alias=relationship.targetTableAlias();
+            auto aliasValName=nameTransform(alias, false);
+            if(!alias.empty())
+            {
+                if(alias[0] <= 'z' && alias[0] >= 'a')
+                {
+                    alias[0] += ('A' - 'a');
+                }
+                std::string alind(alias.length(), ' ');
+%>
+void [[className]]::get{%alias%}(const DbClientPtr &clientPtr, 
+     {%indentStr%}     {%alind%} const std::function<void({%relationshipClassName%})> &rcb,
+     {%indentStr%}     {%alind%} const ExceptionCallback &ecb) const
+<%c++
+            }
+            else
+            {
+                std::string relationshipClassInde(relationshipClassName.length(), ' ');
+%>
+void [[className]]::get{%relationshipClassName%}(const DbClientPtr &clientPtr, 
+     {%indentStr%}     {%relationshipClassInde%} const std::function<void({%relationshipClassName%})> &rcb,
+     {%indentStr%}     {%relationshipClassInde%} const ExceptionCallback &ecb) const
+<%c++
+            }
+%>
+{
+    Mapper<{%relationshipClassName%}> mapper(clientPtr);
+    mapper.findOne(Criteria("{%relationship.targetKey()%}", CompareOperator::EQ, *_{%nameTransform(relationship.originalKey(), false)%}),
+                   rcb,
+                   ecb);
+}
+<%c++
+        }
+    }
+%>
