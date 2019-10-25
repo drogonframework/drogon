@@ -48,41 +48,21 @@ static std::map<std::string, std::vector<Relationship>> getRelationships(
     }
     for (auto &relationship : items)
     {
-        Relationship r;
-        auto type = relationship.get("type", "has one").asString();
-        if (type == "has one")
+        try
         {
-            r.setType(Relationship::Type::HasOne);
+            Relationship r(relationship);
+            ret[r.originalTableName()].push_back(r);
+            if (r.enableReverse() &&
+                r.originalTableName() != r.targetTableName())
+            {
+                auto reverse = r.reverse();
+                ret[reverse.originalTableName()].push_back(reverse);
+            }
         }
-        else if (type == "has many")
+        catch (const std::runtime_error &e)
         {
-            r.setType(Relationship::Type::HasMany);
-        }
-        else if (type == "many to many")
-        {
-            r.setType(Relationship::Type::ManyToMany);
-        }
-        else
-        {
-            std::cerr << "Invalid relationship type: " << type << std::endl;
+            std::cerr << e.what() << std::endl;
             exit(1);
-        }
-        r.setOriginalTableName(
-            relationship.get("original_table_name", "").asString());
-        r.setOriginalKey(relationship.get("original_key", "").asString());
-        r.setOriginalTableAlias(
-            relationship.get("original_table_alias", "").asString());
-        r.setTargetTableName(
-            relationship.get("target_table_name", "").asString());
-        r.setTargetKey(relationship.get("target_key", "").asString());
-        r.setTargetTableAlias(
-            relationship.get("target_table_alias", "").asString());
-        r.setEnableReverse(relationship.get("enable_reverse", false).asBool());
-        ret[r.originalTableName()].push_back(r);
-        if (r.enableReverse() && r.originalTableName() != r.targetTableName())
-        {
-            auto reverse = r.reverse();
-            ret[reverse.originalTableName()].push_back(reverse);
         }
     }
     return ret;

@@ -75,8 +75,55 @@ inline std::string nameTransform(const std::string &origName, bool isType)
         ret[0] += ('A' - 'a');
     return ret;
 }
+class PivotTable
+{
+  public:
+    PivotTable() = default;
+    PivotTable(const Json::Value &json)
+    {
+        _tableName = json.get("table_name", "").asString();
+        if (_tableName.empty())
+        {
+            throw std::runtime_error("table_name can't be empty");
+        }
+        _originalKey = json.get("original_key", "").asString();
+        if (_originalKey.empty())
+        {
+            throw std::runtime_error("original_key can't be empty");
+        }
+        _targetKey = json.get("target_key", "").asString();
+        if (_targetKey.empty())
+        {
+            throw std::runtime_error("target_key can't be empty");
+        }
+    }
+    PivotTable reverse() const
+    {
+        PivotTable pivot;
+        pivot._tableName = _tableName;
+        pivot._originalKey = _targetKey;
+        pivot._targetKey = _originalKey;
+        return pivot;
+    }
+    const std::string &tableName() const
+    {
+        return _tableName;
+    }
+    const std::string &originalKey() const
+    {
+        return _originalKey;
+    }
+    const std::string &targetKey() const
+    {
+        return _targetKey;
+    }
 
-struct Relationship
+  private:
+    std::string _tableName;
+    std::string _originalKey;
+    std::string _targetKey;
+};
+class Relationship
 {
   public:
     enum class Type
@@ -85,7 +132,65 @@ struct Relationship
         HasMany,
         ManyToMany
     };
-
+    Relationship(const Json::Value &relationship)
+    {
+        auto type = relationship.get("type", "has one").asString();
+        if (type == "has one")
+        {
+            _type = Relationship::Type::HasOne;
+        }
+        else if (type == "has many")
+        {
+            _type = Relationship::Type::HasMany;
+        }
+        else if (type == "many to many")
+        {
+            _type = Relationship::Type::ManyToMany;
+        }
+        else
+        {
+            char message[128];
+            sprintf(message, "Invalid relationship type: %s", type.data());
+            throw std::runtime_error(message);
+        }
+        _originalTableName =
+            relationship.get("original_table_name", "").asString();
+        if (_originalTableName.empty())
+        {
+            throw std::runtime_error("original_table_name can't be empty");
+        }
+        _originalKey = relationship.get("original_key", "").asString();
+        if (_originalKey.empty())
+        {
+            throw std::runtime_error("original_key can't be empty");
+        }
+        _originalTableAlias =
+            relationship.get("original_table_alias", "").asString();
+        _targetTableName = relationship.get("target_table_name", "").asString();
+        if (_targetTableName.empty())
+        {
+            throw std::runtime_error("target_table_name can't be empty");
+        }
+        _targetKey = relationship.get("target_key", "").asString();
+        if (_targetKey.empty())
+        {
+            throw std::runtime_error("target_key can't be empty");
+        }
+        _targetTableAlias =
+            relationship.get("target_table_alias", "").asString();
+        _enableReverse = relationship.get("enable_reverse", false).asBool();
+        if (_type == Type::ManyToMany)
+        {
+            auto &pivot = relationship["pivot_table"];
+            if (pivot.isNull())
+            {
+                throw std::runtime_error(
+                    "ManyToMany relationship needs a pivot table");
+            }
+            _pivotTable = PivotTable(pivot);
+        }
+    }
+    Relationship() = default;
     Relationship reverse() const
     {
         Relationship r;
@@ -104,50 +209,9 @@ struct Relationship
         r._targetTableAlias = _originalTableAlias;
         r._targetKey = _originalKey;
         r._enableReverse = _enableReverse;
+        r._pivotTable = _pivotTable.reverse();
         return r;
     }
-
-    void setOriginalTableName(const std::string &tableName)
-    {
-        _originalTableName = tableName;
-        std::transform(_originalTableName.begin(),
-                       _originalTableName.end(),
-                       _originalTableName.begin(),
-                       tolower);
-    }
-    void setOriginalTableAlias(const std::string &alias)
-    {
-        _originalTableAlias = alias;
-    }
-    void setTargetTableName(const std::string &tableName)
-    {
-        _targetTableName = tableName;
-        std::transform(_targetTableName.begin(),
-                       _targetTableName.end(),
-                       _targetTableName.begin(),
-                       tolower);
-    }
-    void setTargetTableAlias(const std::string &alias)
-    {
-        _targetTableAlias = alias;
-    }
-    void setOriginalKey(const std::string &key)
-    {
-        _originalKey = key;
-    }
-    void setTargetKey(const std::string &key)
-    {
-        _targetKey = key;
-    }
-    void setType(Type type)
-    {
-        _type = type;
-    }
-    void setEnableReverse(bool reverse)
-    {
-        _enableReverse = reverse;
-    }
-
     Type type() const
     {
         return _type;
@@ -180,6 +244,10 @@ struct Relationship
     {
         return _targetKey;
     }
+    const PivotTable &pivotTable() const
+    {
+        return _pivotTable;
+    }
 
   private:
     Type _type = Type::HasOne;
@@ -190,6 +258,7 @@ struct Relationship
     std::string _originalKey;
     std::string _targetKey;
     bool _enableReverse = false;
+    PivotTable _pivotTable;
 };
 class create_model : public DrObject<create_model>, public CommandHandler
 {
