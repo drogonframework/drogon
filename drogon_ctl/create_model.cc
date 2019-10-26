@@ -31,44 +31,51 @@
 
 using namespace drogon_ctl;
 
-std::string nameTransform(const std::string &origName, bool isType)
+static std::map<std::string, std::vector<Relationship>> getRelationships(
+    const Json::Value &relationships)
 {
-    auto str = origName;
-    std::transform(str.begin(), str.end(), str.begin(), tolower);
-    std::string::size_type startPos = 0;
-    std::string::size_type pos;
-    std::string ret;
-    do
+    std::map<std::string, std::vector<Relationship>> ret;
+    auto enabled = relationships.get("enabled", false).asBool();
+    if (!enabled)
+        return ret;
+    auto items = relationships["items"];
+    if (items.isNull())
+        return ret;
+    if (!items.isArray())
     {
-        pos = str.find("_", startPos);
-        if (pos == std::string::npos)
+        std::cerr << "items must be an array\n";
+        exit(1);
+    }
+    for (auto &relationship : items)
+    {
+        try
         {
-            pos = str.find(".", startPos);
+            Relationship r(relationship);
+            ret[r.originalTableName()].push_back(r);
+            if (r.enableReverse() &&
+                r.originalTableName() != r.targetTableName())
+            {
+                auto reverse = r.reverse();
+                ret[reverse.originalTableName()].push_back(reverse);
+            }
         }
-        if (pos != std::string::npos)
-            ret += str.substr(startPos, pos - startPos);
-        else
+        catch (const std::runtime_error &e)
         {
-            ret += str.substr(startPos);
-            break;
+            std::cerr << e.what() << std::endl;
+            exit(1);
         }
-        while (str[pos] == '_' || str[pos] == '.')
-            pos++;
-        if (str[pos] >= 'a' && str[pos] <= 'z')
-            str[pos] += ('A' - 'a');
-        startPos = pos;
-    } while (1);
-    if (isType && ret[0] >= 'a' && ret[0] <= 'z')
-        ret[0] += ('A' - 'a');
+    }
     return ret;
 }
 
 #if USE_POSTGRESQL
-void create_model::createModelClassFromPG(const std::string &path,
-                                          const DbClientPtr &client,
-                                          const std::string &tableName,
-                                          const std::string &schema,
-                                          const Json::Value &restfulApiConfig)
+void create_model::createModelClassFromPG(
+    const std::string &path,
+    const DbClientPtr &client,
+    const std::string &tableName,
+    const std::string &schema,
+    const Json::Value &restfulApiConfig,
+    const std::vector<Relationship> &relationships)
 {
     auto className = nameTransform(tableName, true);
     HttpViewData data;
@@ -78,6 +85,7 @@ void create_model::createModelClassFromPG(const std::string &path,
     data["primaryKeyName"] = "";
     data["dbName"] = _dbname;
     data["rdbms"] = std::string("postgresql");
+    data["relationships"] = relationships;
     if (schema != "public")
     {
         data["schema"] = schema;
@@ -290,10 +298,12 @@ void create_model::createModelClassFromPG(const std::string &path,
     sourceFile << templ->genText(data);
     createRestfulAPIController(data, restfulApiConfig);
 }
-void create_model::createModelFromPG(const std::string &path,
-                                     const DbClientPtr &client,
-                                     const std::string &schema,
-                                     const Json::Value &restfulApiConfig)
+void create_model::createModelFromPG(
+    const std::string &path,
+    const DbClientPtr &client,
+    const std::string &schema,
+    const Json::Value &restfulApiConfig,
+    std::map<std::string, std::vector<Relationship>> &relationships)
 {
     *client << "SELECT a.oid,"
                "a.relname AS name,"
@@ -307,13 +317,22 @@ void create_model::createModelFromPG(const std::string &path,
             << schema << Mode::Blocking >>
         [&](bool isNull,
             size_t oid,
-            const std::string &tableName,
+            std::string &&tableName,
             const std::string &comment) {
             if (!isNull)
             {
+                std::transform(tableName.begin(),
+                               tableName.end(),
+                               tableName.begin(),
+                               tolower);
                 std::cout << "table name:" << tableName << std::endl;
-                createModelClassFromPG(
-                    path, client, tableName, schema, restfulApiConfig);
+
+                createModelClassFromPG(path,
+                                       client,
+                                       tableName,
+                                       schema,
+                                       restfulApiConfig,
+                                       relationships[tableName]);
             }
         } >>
         [](const DrogonDbException &e) {
@@ -328,7 +347,8 @@ void create_model::createModelClassFromMysql(
     const std::string &path,
     const DbClientPtr &client,
     const std::string &tableName,
-    const Json::Value &restfulApiConfig)
+    const Json::Value &restfulApiConfig,
+    const std::vector<Relationship> &relationships)
 {
     auto className = nameTransform(tableName, true);
     HttpViewData data;
@@ -338,6 +358,7 @@ void create_model::createModelClassFromMysql(
     data["primaryKeyName"] = "";
     data["dbName"] = _dbname;
     data["rdbms"] = std::string("mysql");
+    data["relationships"] = relationships;
     std::vector<ColumnInfo> cols;
     int i = 0;
     *client << "desc " + tableName << Mode::Blocking >>
@@ -464,25 +485,31 @@ void create_model::createModelClassFromMysql(
     sourceFile << templ->genText(data);
     createRestfulAPIController(data, restfulApiConfig);
 }
-void create_model::createModelFromMysql(const std::string &path,
-                                        const DbClientPtr &client,
-                                        const Json::Value &restfulApiConfig)
+void create_model::createModelFromMysql(
+    const std::string &path,
+    const DbClientPtr &client,
+    const Json::Value &restfulApiConfig,
+    std::map<std::string, std::vector<Relationship>> &relationships)
 {
-    *client << "show tables" << Mode::Blocking >>
-        [&](bool isNull, const std::string &tableName) {
-            if (!isNull)
-            {
-                std::cout << "table name:" << tableName << std::endl;
-                createModelClassFromMysql(path,
-                                          client,
-                                          tableName,
-                                          restfulApiConfig);
-            }
-        } >>
-        [](const DrogonDbException &e) {
-            std::cerr << e.base().what() << std::endl;
-            exit(1);
-        };
+    *client << "show tables" << Mode::Blocking >> [&](bool isNull,
+                                                      std::string &&tableName) {
+        if (!isNull)
+        {
+            std::transform(tableName.begin(),
+                           tableName.end(),
+                           tableName.begin(),
+                           tolower);
+            std::cout << "table name:" << tableName << std::endl;
+            createModelClassFromMysql(path,
+                                      client,
+                                      tableName,
+                                      restfulApiConfig,
+                                      relationships[tableName]);
+        }
+    } >> [](const DrogonDbException &e) {
+        std::cerr << e.base().what() << std::endl;
+        exit(1);
+    };
 }
 #endif
 #if USE_SQLITE3
@@ -490,7 +517,8 @@ void create_model::createModelClassFromSqlite3(
     const std::string &path,
     const DbClientPtr &client,
     const std::string &tableName,
-    const Json::Value &restfulApiConfig)
+    const Json::Value &restfulApiConfig,
+    const std::vector<Relationship> &relationships)
 {
     *client << "SELECT sql FROM sqlite_master WHERE name=? and (type='table' "
                "or type='view');"
@@ -514,6 +542,8 @@ void create_model::createModelClassFromSqlite3(
                     data["primaryKeyName"] = "";
                     data["dbName"] = std::string("sqlite3");
                     data["rdbms"] = std::string("sqlite3");
+                    data["relationships"] = relationships;
+
                     // std::cout << sql << std::endl;
                     auto columns = utils::splitString(sql, ",");
                     int i = 0;
@@ -624,21 +654,28 @@ void create_model::createModelClassFromSqlite3(
             exit(1);
         };
 }
-void create_model::createModelFromSqlite3(const std::string &path,
-                                          const DbClientPtr &client,
-                                          const Json::Value &restfulApiConfig)
+void create_model::createModelFromSqlite3(
+    const std::string &path,
+    const DbClientPtr &client,
+    const Json::Value &restfulApiConfig,
+    std::map<std::string, std::vector<Relationship>> &relationships)
 {
     *client << "SELECT name FROM sqlite_master WHERE name!='sqlite_sequence' "
                "and (type='table' or type='view') ORDER BY name;"
             << Mode::Blocking >>
-        [=](bool isNull, const std::string &tableName) {
+        [&](bool isNull, std::string &&tableName) mutable {
             if (!isNull)
             {
+                std::transform(tableName.begin(),
+                               tableName.end(),
+                               tableName.begin(),
+                               tolower);
                 std::cout << "table name:" << tableName << std::endl;
                 createModelClassFromSqlite3(path,
                                             client,
                                             tableName,
-                                            restfulApiConfig);
+                                            restfulApiConfig,
+                                            relationships[tableName]);
             }
         } >>
         [](const DrogonDbException &e) {
@@ -655,6 +692,7 @@ void create_model::createModel(const std::string &path,
     auto dbType = config.get("rdbms", "no dbms").asString();
     std::transform(dbType.begin(), dbType.end(), dbType.begin(), tolower);
     auto restfulApiConfig = config["restful_api_controllers"];
+    auto relationships = getRelationships(config["relationships"]);
     if (dbType == "postgresql")
     {
 #if USE_POSTGRESQL
@@ -714,22 +752,35 @@ void create_model::createModel(const std::string &path,
         {
             auto tables = config["tables"];
             if (!tables || tables.size() == 0)
-                createModelFromPG(path, client, schema, restfulApiConfig);
+                createModelFromPG(
+                    path, client, schema, restfulApiConfig, relationships);
             else
             {
                 for (int i = 0; i < (int)tables.size(); i++)
                 {
                     auto tableName = tables[i].asString();
+                    std::transform(tableName.begin(),
+                                   tableName.end(),
+                                   tableName.begin(),
+                                   tolower);
                     std::cout << "table name:" << tableName << std::endl;
-                    createModelClassFromPG(
-                        path, client, tableName, schema, restfulApiConfig);
+                    createModelClassFromPG(path,
+                                           client,
+                                           tableName,
+                                           schema,
+                                           restfulApiConfig,
+                                           relationships[tableName]);
                 }
             }
         }
         else
         {
-            createModelClassFromPG(
-                path, client, singleModelName, schema, restfulApiConfig);
+            createModelClassFromPG(path,
+                                   client,
+                                   singleModelName,
+                                   schema,
+                                   restfulApiConfig,
+                                   relationships[singleModelName]);
         }
 #else
         std::cerr
@@ -795,17 +846,25 @@ void create_model::createModel(const std::string &path,
         {
             auto tables = config["tables"];
             if (!tables || tables.size() == 0)
-                createModelFromMysql(path, client, restfulApiConfig);
+                createModelFromMysql(path,
+                                     client,
+                                     restfulApiConfig,
+                                     relationships);
             else
             {
                 for (int i = 0; i < (int)tables.size(); i++)
                 {
                     auto tableName = tables[i].asString();
+                    std::transform(tableName.begin(),
+                                   tableName.end(),
+                                   tableName.begin(),
+                                   tolower);
                     std::cout << "table name:" << tableName << std::endl;
                     createModelClassFromMysql(path,
                                               client,
                                               tableName,
-                                              restfulApiConfig);
+                                              restfulApiConfig,
+                                              relationships[tableName]);
                 }
             }
         }
@@ -814,7 +873,8 @@ void create_model::createModel(const std::string &path,
             createModelClassFromMysql(path,
                                       client,
                                       singleModelName,
-                                      restfulApiConfig);
+                                      restfulApiConfig,
+                                      relationships[singleModelName]);
         }
 
 #else
@@ -858,17 +918,25 @@ void create_model::createModel(const std::string &path,
         {
             auto tables = config["tables"];
             if (!tables || tables.size() == 0)
-                createModelFromSqlite3(path, client, restfulApiConfig);
+                createModelFromSqlite3(path,
+                                       client,
+                                       restfulApiConfig,
+                                       relationships);
             else
             {
                 for (int i = 0; i < (int)tables.size(); i++)
                 {
                     auto tableName = tables[i].asString();
+                    std::transform(tableName.begin(),
+                                   tableName.end(),
+                                   tableName.begin(),
+                                   tolower);
                     std::cout << "table name:" << tableName << std::endl;
                     createModelClassFromSqlite3(path,
                                                 client,
                                                 tableName,
-                                                restfulApiConfig);
+                                                restfulApiConfig,
+                                                relationships[tableName]);
                 }
             }
         }
@@ -877,7 +945,8 @@ void create_model::createModel(const std::string &path,
             createModelClassFromSqlite3(path,
                                         client,
                                         singleModelName,
-                                        restfulApiConfig);
+                                        restfulApiConfig,
+                                        relationships[singleModelName]);
         }
 
 #else

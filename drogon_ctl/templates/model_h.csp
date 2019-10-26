@@ -25,7 +25,14 @@ using namespace drogon_ctl;
 #include <iostream>
 
 using namespace drogon::orm;
-
+namespace drogon
+{
+namespace orm
+{
+class DbClient;
+typedef std::shared_ptr<DbClient> DbClientPtr;
+}
+}
 namespace drogon_model
 {
 namespace [[dbName]] 
@@ -37,7 +44,25 @@ if(!schema.empty())
     $$<<"namespace "<<schema<<"\n";
     $$<<"{\n";
 }
+auto &relationships=@@.get<std::vector<Relationship>>("relationships");
+    for(auto &relationship : relationships)
+    {
+        auto &name=relationship.targetTableName();
+        auto relationshipClassName=nameTransform(name, true);
 %>
+class {%relationshipClassName%};
+<%c++
+        if(relationship.type() == Relationship::Type::ManyToMany)
+        {
+            auto &pivotTableName=relationship.pivotTable().tableName();
+            auto pivotTableClassName=nameTransform(pivotTableName, true);
+%>
+class {%pivotTableClassName%};
+<%c++
+        }
+    }
+%>
+
 class [[className]]
 {
   public:
@@ -172,7 +197,98 @@ auto cols=@@.get<std::vector<ColumnInfo>>("columns");
 
     Json::Value toJson() const;
     Json::Value toMasqueradedJson(const std::vector<std::string> &pMasqueradingVector) const;
-
+    /// Relationship interfaces
+<%c++ 
+    for(auto &relationship : relationships)
+    {
+        if(relationship.targetKey().empty() || relationship.originalKey().empty())
+        {
+            continue;
+        }
+        auto &name=relationship.targetTableName();
+        auto relationshipClassName=nameTransform(name, true);
+        auto relationshipValName=nameTransform(name, false);
+        auto alias=relationship.targetTableAlias();
+        auto aliasValName=nameTransform(alias, false);
+        if(relationship.type() == Relationship::Type::HasOne)
+        {
+            if(!alias.empty())
+            {
+                if(alias[0] <= 'z' && alias[0] >= 'a')
+                {
+                    alias[0] += ('A' - 'a');
+                }
+                std::string alind(alias.length(), ' ');
+%>
+    void get{%alias%}(const DbClientPtr &clientPtr, 
+            {%alind%} const std::function<void({%relationshipClassName%})> &rcb,
+            {%alind%} const ExceptionCallback &ecb) const;
+<%c++
+            }
+            else
+            {
+                std::string relationshipClassInde(relationshipClassName.length(), ' ');
+%>
+    void get{%relationshipClassName%}(const DbClientPtr &clientPtr, 
+            {%relationshipClassInde%} const std::function<void({%relationshipClassName%})> &rcb,
+            {%relationshipClassInde%} const ExceptionCallback &ecb) const;
+<%c++
+            }
+        }
+        else if(relationship.type() == Relationship::Type::HasMany)
+        {
+            if(!alias.empty())
+            {
+                if(alias[0] <= 'z' && alias[0] >= 'a')
+                {
+                    alias[0] += ('A' - 'a');
+                }
+                std::string alind(alias.length(), ' ');
+%>
+    void get{%alias%}(const DbClientPtr &clientPtr, 
+            {%alind%} const std::function<void(std::vector<{%relationshipClassName%}>)> &rcb,
+            {%alind%} const ExceptionCallback &ecb) const;
+<%c++
+            }
+            else
+            {
+                std::string relationshipClassInde(relationshipClassName.length(), ' ');
+%>
+    void get{%relationshipClassName%}(const DbClientPtr &clientPtr, 
+            {%relationshipClassInde%} const std::function<void(std::vector<{%relationshipClassName%}>)> &rcb,
+            {%relationshipClassInde%} const ExceptionCallback &ecb) const;
+<%c++
+            }
+        }
+        else if(relationship.type() == Relationship::Type::ManyToMany)
+        {
+            auto &pivotTableName=relationship.pivotTable().tableName();
+            auto pivotTableClassName=nameTransform(pivotTableName, true);
+            if(!alias.empty())
+            {
+                if(alias[0] <= 'z' && alias[0] >= 'a')
+                {
+                    alias[0] += ('A' - 'a');
+                }
+                std::string alind(alias.length(), ' ');
+%>
+    void get{%alias%}(const DbClientPtr &clientPtr, 
+            {%alind%} const std::function<void(std::vector<std::pair<{%relationshipClassName%},{%pivotTableClassName%}>>)> &rcb,
+            {%alind%} const ExceptionCallback &ecb) const;
+<%c++
+            }
+            else
+            {
+                std::string relationshipClassInde(relationshipClassName.length(), ' ');
+%>
+    void get{%relationshipClassName%}(const DbClientPtr &clientPtr, 
+            {%relationshipClassInde%} const std::function<void(std::vector<std::pair<{%relationshipClassName%},{%pivotTableClassName%}>>)> &rcb,
+            {%relationshipClassInde%} const ExceptionCallback &ecb) const;
+<%c++
+            }
+        }
+    }
+%>
   private:
     friend Mapper<[[className]]>;
     static const std::vector<std::string> &insertColumns() noexcept;
@@ -200,7 +316,6 @@ auto cols=@@.get<std::vector<ColumnInfo>>("columns");
     };
     static const std::vector<MetaData> _metaData;
     bool _dirtyFlag[{%cols.size()%}]={ false };
-
   public:
     static const std::string &sqlForFindingByPrimaryKey()
     {

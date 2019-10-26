@@ -9,6 +9,35 @@ using namespace drogon_ctl;
  */
 
 #include "[[className]].h"
+<%c++
+auto &relationships=@@.get<std::vector<Relationship>>("relationships");
+auto rdbms=@@.get<std::string>("rdbms");
+for(auto &relationship : relationships)
+{
+    if(relationship.type() == Relationship::Type::HasOne ||
+       relationship.type() == Relationship::Type::HasMany ||
+       relationship.type() == Relationship::Type::ManyToMany)
+    {
+        auto &name=relationship.targetTableName();
+        auto relationshipClassName=nameTransform(name, true);
+        auto originalClassName=nameTransform(relationship.originalTableName(),true);
+        if(relationshipClassName!=originalClassName)
+        {
+%>
+#include "{%relationshipClassName%}.h"
+<%c++
+        }
+    }
+    if(relationship.type() == Relationship::Type::ManyToMany)
+    {
+        auto &pivotTableName=relationship.pivotTable().tableName();
+        auto pivotTableClassName=nameTransform(pivotTableName, true);
+%>
+#include "{%pivotTableClassName%}.h"
+<%c++
+    }
+}
+%>
 #include <drogon/utils/Utilities.h>
 #include <string>
 <%c++
@@ -1299,3 +1328,177 @@ if(!col._notNull){%>
     }
     return true;
 }
+<%c++
+for(auto &relationship : relationships)
+{
+    if(relationship.targetKey().empty() || relationship.originalKey().empty())
+        {
+            continue;
+        }
+        auto &name=relationship.targetTableName();
+        auto relationshipClassName=nameTransform(name, true);
+        auto relationshipValName=nameTransform(name, false);
+        auto alias=relationship.targetTableAlias();
+        auto aliasValName=nameTransform(alias, false);
+        if(relationship.type() == Relationship::Type::HasOne)
+        {
+            if(!alias.empty())
+            {
+                if(alias[0] <= 'z' && alias[0] >= 'a')
+                {
+                    alias[0] += ('A' - 'a');
+                }
+                std::string alind(alias.length(), ' ');
+%>
+void [[className]]::get{%alias%}(const DbClientPtr &clientPtr, 
+     {%indentStr%}     {%alind%} const std::function<void({%relationshipClassName%})> &rcb,
+     {%indentStr%}     {%alind%} const ExceptionCallback &ecb) const
+<%c++
+            }
+            else
+            {
+                std::string relationshipClassInde(relationshipClassName.length(), ' ');
+%>
+void [[className]]::get{%relationshipClassName%}(const DbClientPtr &clientPtr, 
+     {%indentStr%}     {%relationshipClassInde%} const std::function<void({%relationshipClassName%})> &rcb,
+     {%indentStr%}     {%relationshipClassInde%} const ExceptionCallback &ecb) const
+<%c++
+            }
+%>
+{
+    const static std::string sql = "select * from {%name%} where {%relationship.targetKey()%} = <%c++
+            if(rdbms=="postgresql")
+            {
+                $$<<"$1";
+            }
+            else
+            {
+                $$<<"?";
+            }%>";
+    *clientPtr << sql
+               << *_{%nameTransform(relationship.originalKey(), false)%} 
+               >> [rcb = std::move(rcb), ecb](const Result &r){
+                    if (r.size() == 0)
+                    {
+                        ecb(UnexpectedRows("0 rows found"));
+                    }
+                    else if (r.size() > 1)
+                    {
+                        ecb(UnexpectedRows("Found more than one row"));
+                    }
+                    else
+                    {
+                        rcb({%relationshipClassName%}(r[0]));
+                    }
+               }
+               >> ecb;
+}
+<%c++
+        }
+        else if(relationship.type() == Relationship::Type::HasMany)
+        {
+            if(!alias.empty())
+            {
+                if(alias[0] <= 'z' && alias[0] >= 'a')
+                {
+                    alias[0] += ('A' - 'a');
+                }
+                std::string alind(alias.length(), ' ');
+%>
+void [[className]]::get{%alias%}(const DbClientPtr &clientPtr, 
+     {%indentStr%}     {%alind%} const std::function<void(std::vector<{%relationshipClassName%}>)> &rcb,
+     {%indentStr%}     {%alind%} const ExceptionCallback &ecb) const
+<%c++
+            }
+            else
+            {
+                std::string relationshipClassInde(relationshipClassName.length(), ' ');
+%>
+void [[className]]::get{%relationshipClassName%}(const DbClientPtr &clientPtr, 
+     {%indentStr%}     {%relationshipClassInde%} const std::function<void(std::vector<{%relationshipClassName%}>)> &rcb,
+     {%indentStr%}     {%relationshipClassInde%} const ExceptionCallback &ecb) const
+<%c++
+            }
+%>
+{
+    const static std::string sql = "select * from {%name%} where {%relationship.targetKey()%} = <%c++
+            if(rdbms=="postgresql")
+            {
+                $$<<"$1";
+            }
+            else
+            {
+                $$<<"?";
+            }%>";
+    *clientPtr << sql
+               << *_{%nameTransform(relationship.originalKey(), false)%} 
+               >> [rcb = std::move(rcb)](const Result &r){
+                   std::vector<{%relationshipClassName%}> ret;
+                   ret.reserve(ret.size());
+                   for (auto const &row : r)
+                   {
+                       ret.emplace_back({%relationshipClassName%}(row));
+                   }
+                   rcb(ret);
+               }
+               >> ecb;
+}
+<%c++
+        }
+        else if(relationship.type() == Relationship::Type::ManyToMany)
+        {
+            auto &pivotTableName=relationship.pivotTable().tableName();
+            auto pivotTableClassName=nameTransform(pivotTableName, true);
+            auto &pivotOriginalKey=relationship.pivotTable().originalKey();
+            auto &pivotTargetKey=relationship.pivotTable().targetKey();
+            if(!alias.empty())
+            {
+                if(alias[0] <= 'z' && alias[0] >= 'a')
+                {
+                    alias[0] += ('A' - 'a');
+                }
+                std::string alind(alias.length(), ' ');
+%>
+void [[className]]::get{%alias%}(const DbClientPtr &clientPtr, 
+     {%indentStr%}     {%alind%} const std::function<void(std::vector<std::pair<{%relationshipClassName%},{%pivotTableClassName%}>>) &rcb,
+     {%indentStr%}     {%alind%} const ExceptionCallback &ecb) const
+<%c++
+            }
+            else
+            {
+                std::string relationshipClassInde(relationshipClassName.length(), ' ');
+%>
+void [[className]]::get{%relationshipClassName%}(const DbClientPtr &clientPtr, 
+     {%indentStr%}     {%relationshipClassInde%} const std::function<void(std::vector<std::pair<{%relationshipClassName%},{%pivotTableClassName%}>>)> &rcb,
+     {%indentStr%}     {%relationshipClassInde%} const ExceptionCallback &ecb) const
+<%c++
+            }
+%>
+{
+    const static std::string sql = "select * from {%name%},{%pivotTableName%} where {%pivotTableName%}.{%pivotOriginalKey%} = <%c++
+            if(rdbms=="postgresql")
+            {
+                $$<<"$1";
+            }
+            else
+            {
+                $$<<"?";
+            }%> and {%pivotTableName%}.{%pivotTargetKey%} = {%name%}.{%relationship.targetKey()%}";
+    *clientPtr << sql
+               << *_{%nameTransform(relationship.originalKey(), false)%} 
+               >> [rcb = std::move(rcb)](const Result &r){
+                   std::vector<std::pair<{%relationshipClassName%},{%pivotTableClassName%}>> ret;
+                   ret.reserve(ret.size());
+                   for (auto const &row : r)
+                   {
+                       ret.emplace_back(std::pair<{%relationshipClassName%},{%pivotTableClassName%}>(
+                           {%relationshipClassName%}(row),{%pivotTableClassName%}(row,{%relationshipClassName%}::getColumnNumber())));
+                   }
+                   rcb(ret);
+               }
+               >> ecb;
+}
+<%c++
+        }
+    }
+%>
