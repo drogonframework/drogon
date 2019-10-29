@@ -4,6 +4,35 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.0.0-beta9] - 2019-10-28
+
+### API change list
+
+- Add interfaces for accessing content of attachments.
+
+- Add option to disable setting the 404 status code of the custom 404 page.
+
+- Make user can use any string as a placeholder's name in routing patterns.
+
+- Add type conversion methods to the HttpRequest and HttpResponse classes.
+
+### Changed
+
+- Modify cmake configuration.
+
+- Modify the quit() method.
+
+- Implement relationships in ORM.
+
+### Fixed
+
+- Fix size_t underflow of drogon_ctl.
+
+- Fix some race conditions.
+
+- Fix a busy loop bug when connections to mysql server are timeout.
+
+
 ## [1.0.0-beta8] - 2019-10-03
 
 ### API change list
@@ -178,7 +207,9 @@ All notable changes to this project will be documented in this file.
 
 ## [1.0.0-beta1] - 2019-06-11
 
-[Unreleased]: https://github.com/an-tao/drogon/compare/v1.0.0-beta8...HEAD
+[Unreleased]: https://github.com/an-tao/drogon/compare/v1.0.0-beta9...HEAD
+
+[1.0.0-beta9]: https://github.com/an-tao/drogon/compare/v1.0.0-beta8...v1.0.0-beta9
 
 [1.0.0-beta8]: https://github.com/an-tao/drogon/compare/v1.0.0-beta7...v1.0.0-beta8
 
