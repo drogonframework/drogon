@@ -186,6 +186,14 @@ class HttpAppFrameworkImpl : public HttpAppFramework
         _rootPath = rootPath;
         return *this;
     }
+
+    virtual HttpAppFramework &setStaticFileHeaders(
+        const std::vector<std::pair<std::string, std::string>> &headers)
+        override
+    {
+        _staticFileHeaders = headers;
+        return *this;
+    }
     virtual const std::string &getUploadPath() const override
     {
         return _uploadPath;
@@ -439,6 +447,7 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     const std::unique_ptr<orm::DbClientManager> _dbClientManagerPtr;
 
     std::string _rootPath = "./";
+    std::vector<std::pair<std::string, std::string>> _staticFileHeaders;
     std::string _uploadPath;
     std::atomic_bool _running;
 

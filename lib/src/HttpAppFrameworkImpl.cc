@@ -62,7 +62,7 @@ using namespace drogon;
 using namespace std::placeholders;
 
 HttpAppFrameworkImpl::HttpAppFrameworkImpl()
-    : _staticFileRouterPtr(new (StaticFileRouter)),
+    : _staticFileRouterPtr(new StaticFileRouter(_staticFileHeaders)),
       _httpCtrlsRouterPtr(new HttpControllersRouter(*_staticFileRouterPtr,
                                                     _postRoutingAdvices,
                                                     _postRoutingObservers,

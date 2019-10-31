@@ -65,6 +65,13 @@
         //If there isn't any handler registered to the path "/", the home page file in the "document_root" is send to clients as a response
         //to the request for "/".
         "home_page": "index.html",
+        //static_file_headers: Headers for static files
+        /*"static_file_headers": [
+          {
+                "name": "field-name",
+                "value": "field-value"
+          }
+        ],*/
         //upload_path: The path to save the uploaded file. "uploads" by default. 
         //If the path isn't prefixed with /, ./ or ../,
         //it is relative path of document_root path

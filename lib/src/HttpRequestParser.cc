@@ -94,6 +94,7 @@ HttpRequestImplPtr HttpRequestParser::makeRequestForPool(HttpRequestImpl *ptr)
                 p->reset();
                 thisPtr->_requestsPool.emplace_back(
                     thisPtr->makeRequestForPool(p));
+                LOG_WARN << "pool size=" << thisPtr->_requestsPool.size();
             }
             else
             {
@@ -120,9 +121,10 @@ void HttpRequestParser::reset()
     }
     else
     {
-        _request = _requestsPool.back();
-        _request->setCreationDate(trantor::Date::now());
+        auto req = _requestsPool.back();
         _requestsPool.pop_back();
+        _request = std::move(req);
+        _request->setCreationDate(trantor::Date::now());
     }
 }
 // Return false if any error

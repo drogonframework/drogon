@@ -585,15 +585,24 @@ class HttpAppFramework : public trantor::NonCopyable
 
     /// Get the document root directory.
     virtual const std::string &getDocumentRoot() const = 0;
+    /**
+     * @brief Set the Static File Headers
+     *
+     * @param headers Each pair object in the vector presents the field name and
+     * field value of a header in an static file response.
+     */
+    virtual HttpAppFramework &setStaticFileHeaders(
+        const std::vector<std::pair<std::string, std::string>> &headers) = 0;
 
     /// Set the path to store uploaded files.
     /**
-     * @param uploadPath is the dictionary where the uploaded files are stored.
-     * if it isn't prefixed with /, ./ or ../, it is relative path of
-     * document_root path, The default value is 'uploads'.
+     * @param uploadPath is the dictionary where the uploaded files are
+     * stored. if it isn't prefixed with /, ./ or ../, it is relative path
+     * of document_root path, The default value is 'uploads'.
      *
      * @note
-     * This operation can be performed by an option in the configuration file.
+     * This operation can be performed by an option in the configuration
+     * file.
      */
     virtual HttpAppFramework &setUploadPath(const std::string &uploadPath) = 0;
 
