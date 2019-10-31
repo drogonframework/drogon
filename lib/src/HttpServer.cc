@@ -194,6 +194,7 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn, MsgBuffer *buf)
             if (!requestParser->parseRequest(buf))
             {
                 requestParser->reset();
+                conn->forceClose();
                 return;
             }
             if (requestParser->gotAll())

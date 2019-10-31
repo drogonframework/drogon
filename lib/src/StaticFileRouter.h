@@ -43,6 +43,11 @@ class StaticFileRouter
         _gzipStaticFlag = useGzipStatic;
     }
     void init(const std::vector<trantor::EventLoop *> &ioloops);
+    StaticFileRouter(
+        const std::vector<std::pair<std::string, std::string>> &headers)
+        : _headers(headers)
+    {
+    }
 
   private:
     std::set<std::string> _fileTypeSet = {"html",
@@ -74,5 +79,6 @@ class StaticFileRouter
     std::unique_ptr<
         IOThreadStorage<std::unordered_map<std::string, HttpResponsePtr>>>
         _staticFilesCache;
+    const std::vector<std::pair<std::string, std::string>> &_headers;
 };
 }  // namespace drogon

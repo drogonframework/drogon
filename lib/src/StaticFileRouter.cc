@@ -159,6 +159,13 @@ void StaticFileRouter::route(
                     resp->addHeader("Last-Modified", timeStr);
                     resp->addHeader("Expires", "Thu, 01 Jan 1970 00:00:00 GMT");
                 }
+                if (!_headers.empty())
+                {
+                    for (auto &header : _headers)
+                    {
+                        resp->addHeader(header.first, header.second);
+                    }
+                }
                 // cache the response for 5 seconds by default
                 if (_staticFilesCacheTime >= 0)
                 {

@@ -230,6 +230,24 @@ static void loadApp(const Json::Value &app)
     {
         drogon::app().setDocumentRoot(documentRoot);
     }
+    if (!app["static_file_headers"].empty())
+    {
+        if (app["static_file_headers"].isArray())
+        {
+            std::vector<std::pair<std::string, std::string>> headers;
+            for (auto &header : app["static_file_headers"])
+            {
+                headers.emplace_back(std::make_pair<std::string, std::string>(
+                    header["name"].asString(), header["value"].asString()));
+            }
+            drogon::app().setStaticFileHeaders(headers);
+        }
+        else
+        {
+            std::cerr << "The static_file_headers option must be an array\n";
+            exit(1);
+        }
+    }
     // upload path
     auto uploadPath = app.get("upload_path", "uploads").asString();
     drogon::app().setUploadPath(uploadPath);
