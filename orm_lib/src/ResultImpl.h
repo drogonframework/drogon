@@ -26,15 +26,15 @@ class ResultImpl : public trantor::NonCopyable, public Result
     ResultImpl(const std::string &query) : _query(query)
     {
     }
-    virtual size_type size() const noexcept = 0;
-    virtual row_size_type columns() const noexcept = 0;
-    virtual const char *columnName(row_size_type Number) const = 0;
-    virtual size_type affectedRows() const noexcept = 0;
-    virtual row_size_type columnNumber(const char colName[]) const = 0;
-    virtual const char *getValue(size_type row, row_size_type column) const = 0;
-    virtual bool isNull(size_type row, row_size_type column) const = 0;
-    virtual field_size_type getLength(size_type row,
-                                      row_size_type column) const = 0;
+    virtual SizeType size() const noexcept = 0;
+    virtual RowSizeType columns() const noexcept = 0;
+    virtual const char *columnName(RowSizeType Number) const = 0;
+    virtual SizeType affectedRows() const noexcept = 0;
+    virtual RowSizeType columnNumber(const char colName[]) const = 0;
+    virtual const char *getValue(SizeType row, RowSizeType column) const = 0;
+    virtual bool isNull(SizeType row, RowSizeType column) const = 0;
+    virtual FieldSizeType getLength(SizeType row,
+                                      RowSizeType column) const = 0;
     virtual const std::string &sql() const
     {
         return _query;
@@ -43,7 +43,7 @@ class ResultImpl : public trantor::NonCopyable, public Result
     {
         return 0;
     }
-    virtual int oid(row_size_type column) const
+    virtual int oid(RowSizeType column) const
     {
         (void)column;
         return 0;

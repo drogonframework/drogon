@@ -32,17 +32,17 @@ class PostgreSQLResultImpl : public ResultImpl
         : ResultImpl(query), _result(r)
     {
     }
-    virtual size_type size() const noexcept override;
-    virtual row_size_type columns() const noexcept override;
-    virtual const char *columnName(row_size_type number) const override;
-    virtual size_type affectedRows() const noexcept override;
-    virtual row_size_type columnNumber(const char colName[]) const override;
-    virtual const char *getValue(size_type row,
-                                 row_size_type column) const override;
-    virtual bool isNull(size_type row, row_size_type column) const override;
-    virtual field_size_type getLength(size_type row,
-                                      row_size_type column) const override;
-    virtual int oid(row_size_type column) const override;
+    virtual SizeType size() const noexcept override;
+    virtual RowSizeType columns() const noexcept override;
+    virtual const char *columnName(RowSizeType number) const override;
+    virtual SizeType affectedRows() const noexcept override;
+    virtual RowSizeType columnNumber(const char colName[]) const override;
+    virtual const char *getValue(SizeType row,
+                                 RowSizeType column) const override;
+    virtual bool isNull(SizeType row, RowSizeType column) const override;
+    virtual FieldSizeType getLength(SizeType row,
+                                      RowSizeType column) const override;
+    virtual int oid(RowSizeType column) const override;
 
   private:
     std::shared_ptr<PGresult> _result;

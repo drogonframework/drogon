@@ -121,7 +121,7 @@ void HttpRequestParser::reset()
     }
     else
     {
-        auto req = _requestsPool.back();
+        auto req = std::move(_requestsPool.back());
         _requestsPool.pop_back();
         _request = std::move(req);
         _request->setCreationDate(trantor::Date::now());

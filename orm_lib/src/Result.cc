@@ -22,7 +22,7 @@ using namespace drogon::orm;
 
 Result::ConstIterator Result::begin() const noexcept
 {
-    return ConstIterator(*this, (size_type)0);
+    return ConstIterator(*this, (SizeType)0);
 }
 Result::ConstIterator Result::cbegin() const noexcept
 {
@@ -60,22 +60,22 @@ Result::ConstIterator Result::ConstReverseIterator::base() const noexcept
     return ++tmp;
 }
 
-Result::reference Result::front() const noexcept
+Result::Reference Result::front() const noexcept
 {
     return Row(*this, 0);
 }
 
-Result::reference Result::back() const noexcept
+Result::Reference Result::back() const noexcept
 {
     return Row(*this, size() - 1);
 }
 
-Result::reference Result::operator[](size_type index) const
+Result::Reference Result::operator[](SizeType index) const
 {
     assert(index < size());
     return Row(*this, index);
 }
-Result::reference Result::at(size_type index) const
+Result::Reference Result::at(SizeType index) const
 {
     return operator[](index);
 }
@@ -107,7 +107,7 @@ ConstReverseResultIterator ConstReverseResultIterator::operator--(int)
     return old;
 }
 
-Result::size_type Result::size() const noexcept
+Result::SizeType Result::size() const noexcept
 {
     return _resultPtr->size();
 }
@@ -115,33 +115,33 @@ void Result::swap(Result &other) noexcept
 {
     _resultPtr.swap(other._resultPtr);
 }
-Result::row_size_type Result::columns() const noexcept
+Result::RowSizeType Result::columns() const noexcept
 {
     return _resultPtr->columns();
 }
-const char *Result::columnName(Result::row_size_type number) const
+const char *Result::columnName(Result::RowSizeType number) const
 {
     return _resultPtr->columnName(number);
 }
-Result::size_type Result::affectedRows() const noexcept
+Result::SizeType Result::affectedRows() const noexcept
 {
     return _resultPtr->affectedRows();
 }
-Result::row_size_type Result::columnNumber(const char colName[]) const
+Result::RowSizeType Result::columnNumber(const char colName[]) const
 {
     return _resultPtr->columnNumber(colName);
 }
-const char *Result::getValue(Result::size_type row,
-                             Result::row_size_type column) const
+const char *Result::getValue(Result::SizeType row,
+                             Result::RowSizeType column) const
 {
     return _resultPtr->getValue(row, column);
 }
-bool Result::isNull(Result::size_type row, Result::row_size_type column) const
+bool Result::isNull(Result::SizeType row, Result::RowSizeType column) const
 {
     return _resultPtr->isNull(row, column);
 }
-Result::field_size_type Result::getLength(Result::size_type row,
-                                          Result::row_size_type column) const
+Result::FieldSizeType Result::getLength(Result::SizeType row,
+                                          Result::RowSizeType column) const
 {
     return _resultPtr->getLength(row, column);
 }
@@ -154,7 +154,7 @@ const std::string &Result::sql() const noexcept
     return _resultPtr->sql();
 }
 
-int Result::oid(row_size_type column) const noexcept
+int Result::oid(RowSizeType column) const noexcept
 {
     return _resultPtr->oid(column);
 }

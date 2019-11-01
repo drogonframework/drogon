@@ -19,6 +19,7 @@
 
 #include <memory>
 #include <string>
+#include <algorithm>
 #ifdef _WIN32
 #define noexcept _NOEXCEPT
 #endif
@@ -45,10 +46,10 @@ enum class SqlStatus
  * number:
  *
  * @code
- *	for (result::size_type i=0; i < R.size(); ++i) Process(R[i]);
+ *	for (Result::SizeType i=0; i < R.size(); ++i) Process(R[i]);
  * @endcode
  *
- * Result sets in libpqxx are lightweight, reference-counted wrapper objects
+ * Result sets in libpqxx are lightweight, Reference-counted wrapper objects
  * which are relatively small and cheap to copy.  Think of a result object as
  * a "smart pointer" to an underlying result set.
  */
@@ -58,19 +59,19 @@ class Result
     Result(const ResultImplPtr &ptr) : _resultPtr(ptr)
     {
     }
-    using difference_type = long;
-    using size_type = unsigned long;
-    using reference = Row;
+    using DifferenceType = long;
+    using SizeType = unsigned long;
+    using Reference = Row;
     using ConstIterator = ConstResultIterator;
     using Iterator = ConstIterator;
-    using row_size_type = unsigned long;
-    using field_size_type = unsigned long;
+    using RowSizeType = unsigned long;
+    using FieldSizeType = unsigned long;
 
     using ConstReverseIterator = ConstReverseResultIterator;
     using ReverseIterator = ConstReverseIterator;
 
-    size_type size() const noexcept;
-    size_type capacity() const noexcept
+    SizeType size() const noexcept;
+    SizeType capacity() const noexcept
     {
         return size();
     }
@@ -89,18 +90,18 @@ class Result
         return size() == 0;
     }
 
-    reference front() const noexcept;
-    reference back() const noexcept;
+    Reference front() const noexcept;
+    Reference back() const noexcept;
 
-    reference operator[](size_type index) const;
-    reference at(size_type index) const;
+    Reference operator[](SizeType index) const;
+    Reference at(SizeType index) const;
     void swap(Result &) noexcept;
 
     /// Number of columns in result.
-    row_size_type columns() const noexcept;
+    RowSizeType columns() const noexcept;
 
     /// Name of column with this number (throws exception if it doesn't exist)
-    const char *columnName(row_size_type number) const;
+    const char *columnName(RowSizeType number) const;
 
     /// If command was @c INSERT, @c UPDATE, or @c DELETE: number of affected
     /// rows
@@ -108,7 +109,7 @@ class Result
      * @return Number of affected rows if last command was @c INSERT, @c UPDATE,
      * or @c DELETE; zero for all other commands.
      */
-    size_type affectedRows() const noexcept;
+    SizeType affectedRows() const noexcept;
 
     /// For Mysql, Sqlite3 databases, return the auto-incrementing primary key
     /// after inserting
@@ -128,18 +129,18 @@ class Result
     friend class Field;
     friend class Row;
     /// Number of given column (throws exception if it doesn't exist).
-    row_size_type columnNumber(const char colName[]) const;
+    RowSizeType columnNumber(const char colName[]) const;
     /// Number of given column (throws exception if it doesn't exist).
-    row_size_type columnNumber(const std::string &name) const
+    RowSizeType columnNumber(const std::string &name) const
     {
         return columnNumber(name.c_str());
     }
     /// Get the column oid, for postgresql database
-    int oid(row_size_type column) const noexcept;
+    int oid(RowSizeType column) const noexcept;
 
-    const char *getValue(size_type row, row_size_type column) const;
-    bool isNull(size_type row, row_size_type column) const;
-    field_size_type getLength(size_type row, row_size_type column) const;
+    const char *getValue(SizeType row, RowSizeType column) const;
+    bool isNull(SizeType row, RowSizeType column) const;
+    FieldSizeType getLength(SizeType row, RowSizeType column) const;
 
   protected:
     Result()
@@ -156,8 +157,7 @@ inline void swap(Result &one, Result &two) noexcept
 namespace std
 {
 template <>
-inline void swap<drogon::orm::Result>(drogon::orm::Result &one,
-                                      drogon::orm::Result &two) noexcept
+inline void swap(drogon::orm::Result &one, drogon::orm::Result &two) noexcept
 {
     one.swap(two);
 }

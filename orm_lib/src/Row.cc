@@ -18,28 +18,28 @@
 #include <drogon/orm/RowIterator.h>
 
 using namespace drogon::orm;
-Row::Row(const Result &r, size_type index) noexcept
+Row::Row(const Result &r, SizeType index) noexcept
     : _result(r), _index(long(index)), _end(r.columns())
 {
 }
-Row::size_type Row::size() const
+Row::SizeType Row::size() const
 {
     return _end;
 }
-Row::reference Row::operator[](size_type index) const
+Row::Reference Row::operator[](SizeType index) const
 {
     if (index >= _end)
         throw RangeError("The indwx out of range");
     return Field(*this, index);
 }
 
-Row::reference Row::operator[](const char columnName[]) const
+Row::Reference Row::operator[](const char columnName[]) const
 {
     auto N = _result.columnNumber(columnName);
     return Field(*this, N);
 }
 
-Row::reference Row::operator[](const std::string &columnName) const
+Row::Reference Row::operator[](const std::string &columnName) const
 {
     return operator[](columnName.c_str());
 }

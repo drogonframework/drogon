@@ -196,7 +196,7 @@ class CallbackHolder : public CallbackHolderBase
             //     ; // value =
             //     (*row)[sizeof...(Values)].asArray<VectorTypeTraits<ValueType>::ItemsType>();
             value =
-                makeValue<ValueType>((*row)[(Row::size_type)sizeof...(Values)]);
+                makeValue<ValueType>((*row)[(Row::SizeType)sizeof...(Values)]);
         }
 
         run(row, isNull, std::forward<Values>(values)..., std::move(value));
