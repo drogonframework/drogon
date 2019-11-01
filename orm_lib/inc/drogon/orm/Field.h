@@ -86,7 +86,7 @@ namespace orm
 class Field
 {
   public:
-    using size_type = unsigned long;
+    using SizeType = unsigned long;
 
     /// Column name
     const char *name() const;
@@ -189,7 +189,7 @@ class Field
     }
 
   protected:
-    Result::size_type _row;
+    Result::SizeType _row;
     /**
      * Column number
      * You'd expect this to be a size_t, but due to the way reverse iterators
@@ -197,7 +197,7 @@ class Field
      */
     long _column;
     friend class Row;
-    Field(const Row &row, Row::size_type columnNum) noexcept;
+    Field(const Row &row, Row::SizeType columnNum) noexcept;
 
   private:
     const Result _result;

@@ -25,7 +25,7 @@ namespace orm
 {
 class ConstRowIterator : public std::iterator<std::random_access_iterator_tag,
                                               const Field,
-                                              Row::difference_type,
+                                              Row::DifferenceType,
                                               ConstRowIterator,
                                               Field>,
                          protected Field
@@ -33,8 +33,8 @@ class ConstRowIterator : public std::iterator<std::random_access_iterator_tag,
   public:
     using pointer = const Field *;
     using reference = Field;
-    using size_type = Row::size_type;
-    using difference_type = Row::difference_type;
+    using SizeType = Row::SizeType;
+    using DifferenceType = Row::DifferenceType;
     // ConstRowIterator(const Field &t) noexcept : Field(t) {}
 
     pointer operator->()
@@ -58,12 +58,12 @@ class ConstRowIterator : public std::iterator<std::random_access_iterator_tag,
         --_column;
         return *this;
     }
-    ConstRowIterator &operator+=(difference_type i)
+    ConstRowIterator &operator+=(DifferenceType i)
     {
         _column += i;
         return *this;
     }
-    ConstRowIterator &operator-=(difference_type i)
+    ConstRowIterator &operator-=(DifferenceType i)
     {
         _column -= i;
         return *this;
@@ -96,7 +96,7 @@ class ConstRowIterator : public std::iterator<std::random_access_iterator_tag,
 
   private:
     friend class Row;
-    ConstRowIterator(const Row &r, size_type column) noexcept : Field(r, column)
+    ConstRowIterator(const Row &r, SizeType column) noexcept : Field(r, column)
     {
     }
 };
@@ -106,7 +106,7 @@ class ConstReverseRowIterator : private ConstRowIterator
   public:
     using super = ConstRowIterator;
     using iterator_type = ConstRowIterator;
-    using iterator_type::difference_type;
+    using iterator_type::DifferenceType;
     using iterator_type::iterator_category;
     using iterator_type::pointer;
     using value_type = iterator_type::value_type;
@@ -139,12 +139,12 @@ class ConstReverseRowIterator : private ConstRowIterator
         iterator_type::operator++();
         return *this;
     }
-    ConstReverseRowIterator &operator+=(difference_type i)
+    ConstReverseRowIterator &operator+=(DifferenceType i)
     {
         iterator_type::operator-=(i);
         return *this;
     }
-    ConstReverseRowIterator &operator-=(difference_type i)
+    ConstReverseRowIterator &operator-=(DifferenceType i)
     {
         iterator_type::operator+=(i);
         return *this;

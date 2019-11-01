@@ -60,7 +60,8 @@ template <typename C>
 class IOThreadStorage : public trantor::NonCopyable
 {
   public:
-    using InitCallback = std::function<void(C &, size_t)>;
+    using ValueType = C;
+    using InitCallback = std::function<void(ValueType &, size_t)>;
 
     template <typename... Args>
     IOThreadStorage(Args &&... args)
@@ -93,14 +94,14 @@ class IOThreadStorage : public trantor::NonCopyable
      *
      * This function may only be called in a request handler
      */
-    inline C &getThreadData()
+    inline ValueType &getThreadData()
     {
         size_t idx = app().getCurrentThreadIndex();
         assert(idx < _storage.size());
         return _storage[idx];
     }
 
-    inline const C &getThreadData() const
+    inline const ValueType &getThreadData() const
     {
         size_t idx = app().getCurrentThreadIndex();
         assert(idx < _storage.size());
@@ -112,39 +113,46 @@ class IOThreadStorage : public trantor::NonCopyable
      *
      * This function may only be called in a request handler
      */
-    inline void setThreadData(const C &newData)
+    inline void setThreadData(const ValueType &newData)
     {
         size_t idx = app().getCurrentThreadIndex();
         assert(idx < _storage.size());
         _storage[idx] = newData;
     }
 
-    inline void setThreadData(C &&newData)
+    inline void setThreadData(ValueType &&newData)
     {
         size_t idx = app().getCurrentThreadIndex();
         assert(idx < _storage.size());
         _storage[idx] = std::move(newData);
     }
 
-    inline C *operator->()
+    inline ValueType *operator->()
     {
         size_t idx = app().getCurrentThreadIndex();
         assert(idx < _storage.size());
         return &_storage[idx];
     }
 
-    inline C &operator*()
+    inline ValueType &operator*()
     {
         return getThreadData();
     }
 
-    inline const C &operator*() const
+    inline const ValueType *operator->() const
+    {
+        size_t idx = app().getCurrentThreadIndex();
+        assert(idx < _storage.size());
+        return &_storage[idx];
+    }
+
+    inline const ValueType &operator*() const
     {
         return getThreadData();
     }
 
   private:
-    std::vector<C> _storage;
+    std::vector<ValueType> _storage;
 };
 
 }  // namespace drogon

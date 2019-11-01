@@ -44,19 +44,19 @@ class ConstReverseRowIterator;
 class Row
 {
   public:
-    using size_type = unsigned long;
-    using reference = Field;
+    using SizeType = unsigned long;
+    using Reference = Field;
     using ConstIterator = ConstRowIterator;
     using Iterator = ConstIterator;
     using ConstReverseIterator = ConstReverseRowIterator;
 
-    using difference_type = long;
+    using DifferenceType = long;
 
-    reference operator[](size_type index) const;
-    reference operator[](const char columnName[]) const;
-    reference operator[](const std::string &columnName) const;
-    size_type size() const;
-    size_type capacity() const noexcept
+    Reference operator[](SizeType index) const;
+    Reference operator[](const char columnName[]) const;
+    Reference operator[](const std::string &columnName) const;
+    SizeType size() const;
+    SizeType capacity() const noexcept
     {
         return size();
     }
@@ -83,7 +83,7 @@ class Row
     long _index = 0;
     size_t _end = 0;
     friend class Result;
-    Row(const Result &r, size_type index) noexcept;
+    Row(const Result &r, SizeType index) noexcept;
 };
 
 }  // namespace orm

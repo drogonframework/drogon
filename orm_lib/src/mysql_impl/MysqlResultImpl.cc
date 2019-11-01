@@ -18,26 +18,26 @@
 
 using namespace drogon::orm;
 
-Result::size_type MysqlResultImpl::size() const noexcept
+Result::SizeType MysqlResultImpl::size() const noexcept
 {
     return _rowsNum;
 }
-Result::row_size_type MysqlResultImpl::columns() const noexcept
+Result::RowSizeType MysqlResultImpl::columns() const noexcept
 {
     return _fieldNum;
 }
-const char *MysqlResultImpl::columnName(row_size_type number) const
+const char *MysqlResultImpl::columnName(RowSizeType number) const
 {
     assert(number < _fieldNum);
     if (_fieldArray)
         return _fieldArray[number].name;
     return "";
 }
-Result::size_type MysqlResultImpl::affectedRows() const noexcept
+Result::SizeType MysqlResultImpl::affectedRows() const noexcept
 {
     return _affectedRows;
 }
-Result::row_size_type MysqlResultImpl::columnNumber(const char colName[]) const
+Result::RowSizeType MysqlResultImpl::columnNumber(const char colName[]) const
 {
     if (!_fieldMapPtr)
         return -1;
@@ -47,7 +47,7 @@ Result::row_size_type MysqlResultImpl::columnNumber(const char colName[]) const
         return (*_fieldMapPtr)[col];
     return -1;
 }
-const char *MysqlResultImpl::getValue(size_type row, row_size_type column) const
+const char *MysqlResultImpl::getValue(SizeType row, RowSizeType column) const
 {
     if (_rowsNum == 0 || _fieldNum == 0)
         return NULL;
@@ -55,12 +55,12 @@ const char *MysqlResultImpl::getValue(size_type row, row_size_type column) const
     assert(column < _fieldNum);
     return (*_rowsPtr)[row].first[column];
 }
-bool MysqlResultImpl::isNull(size_type row, row_size_type column) const
+bool MysqlResultImpl::isNull(SizeType row, RowSizeType column) const
 {
     return getValue(row, column) == NULL;
 }
-Result::field_size_type MysqlResultImpl::getLength(size_type row,
-                                                   row_size_type column) const
+Result::FieldSizeType MysqlResultImpl::getLength(SizeType row,
+                                                   RowSizeType column) const
 {
     if (_rowsNum == 0 || _fieldNum == 0)
         return 0;

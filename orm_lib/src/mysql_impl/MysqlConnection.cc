@@ -27,7 +27,7 @@ namespace orm
 Result makeResult(
     const std::shared_ptr<MYSQL_RES> &r = std::shared_ptr<MYSQL_RES>(nullptr),
     const std::string &query = "",
-    Result::size_type affectedRows = 0,
+    Result::SizeType affectedRows = 0,
     unsigned long long insertId = 0)
 {
     return Result(std::shared_ptr<MysqlResultImpl>(
