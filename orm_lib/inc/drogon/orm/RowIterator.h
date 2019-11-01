@@ -32,9 +32,10 @@ class ConstRowIterator : public std::iterator<std::random_access_iterator_tag,
 {
   public:
     using pointer = const Field *;
-    using reference = Field;
-    using SizeType = Row::SizeType;
-    using DifferenceType = Row::DifferenceType;
+    using reference = const Field &;
+    using value_type = const Field;
+    using size_type = Row::SizeType;
+    using difference_type = Row::DifferenceType;
     // ConstRowIterator(const Field &t) noexcept : Field(t) {}
 
     pointer operator->()
@@ -43,7 +44,7 @@ class ConstRowIterator : public std::iterator<std::random_access_iterator_tag,
     }
     reference operator*()
     {
-        return Field(*this);
+        return *this;
     }
 
     ConstRowIterator operator++(int);
@@ -58,12 +59,12 @@ class ConstRowIterator : public std::iterator<std::random_access_iterator_tag,
         --_column;
         return *this;
     }
-    ConstRowIterator &operator+=(DifferenceType i)
+    ConstRowIterator &operator+=(difference_type i)
     {
         _column += i;
         return *this;
     }
-    ConstRowIterator &operator-=(DifferenceType i)
+    ConstRowIterator &operator-=(difference_type i)
     {
         _column -= i;
         return *this;
@@ -106,11 +107,11 @@ class ConstReverseRowIterator : private ConstRowIterator
   public:
     using super = ConstRowIterator;
     using iterator_type = ConstRowIterator;
-    using iterator_type::DifferenceType;
+    using iterator_type::difference_type;
     using iterator_type::iterator_category;
     using iterator_type::pointer;
-    using value_type = iterator_type::value_type;
-    using reference = iterator_type::reference;
+    using iterator_type::reference;
+    using iterator_type::value_type;
 
     ConstReverseRowIterator(const ConstReverseRowIterator &rhs)
         : ConstRowIterator(rhs)
@@ -139,12 +140,12 @@ class ConstReverseRowIterator : private ConstRowIterator
         iterator_type::operator++();
         return *this;
     }
-    ConstReverseRowIterator &operator+=(DifferenceType i)
+    ConstReverseRowIterator &operator+=(difference_type i)
     {
         iterator_type::operator-=(i);
         return *this;
     }
-    ConstReverseRowIterator &operator-=(DifferenceType i)
+    ConstReverseRowIterator &operator-=(difference_type i)
     {
         iterator_type::operator+=(i);
         return *this;

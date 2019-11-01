@@ -33,9 +33,10 @@ class ConstResultIterator
 {
   public:
     using pointer = const Row *;
-    using reference = Row;
-    using SizeType = Result::SizeType;
-    using DifferenceType = Result::DifferenceType;
+    using reference = const Row &;
+    using value_type = const Row;
+    using size_type = Result::SizeType;
+    using difference_type = Result::DifferenceType;
     // ConstResultIterator(const Row &t) noexcept : Row(t) {}
 
     pointer operator->()
@@ -44,7 +45,7 @@ class ConstResultIterator
     }
     reference operator*()
     {
-        return Row(*this);
+        return *this;
     }
 
     ConstResultIterator operator++(int);
@@ -59,12 +60,12 @@ class ConstResultIterator
         --_index;
         return *this;
     }
-    ConstResultIterator &operator+=(DifferenceType i)
+    ConstResultIterator &operator+=(difference_type i)
     {
         _index += i;
         return *this;
     }
-    ConstResultIterator &operator-=(DifferenceType i)
+    ConstResultIterator &operator-=(difference_type i)
     {
         _index -= i;
         return *this;
@@ -108,11 +109,11 @@ class ConstReverseResultIterator : private ConstResultIterator
   public:
     using super = ConstResultIterator;
     using iterator_type = ConstResultIterator;
-    using iterator_type::DifferenceType;
+    using iterator_type::difference_type;
     using iterator_type::iterator_category;
     using iterator_type::pointer;
-    using value_type = iterator_type::value_type;
-    using reference = iterator_type::reference;
+    using iterator_type::value_type;
+    using iterator_type::reference;
 
     ConstReverseResultIterator(const ConstReverseResultIterator &rhs)
         : ConstResultIterator(rhs)
@@ -141,12 +142,12 @@ class ConstReverseResultIterator : private ConstResultIterator
         iterator_type::operator++();
         return *this;
     }
-    ConstReverseResultIterator &operator+=(DifferenceType i)
+    ConstReverseResultIterator &operator+=(difference_type i)
     {
         iterator_type::operator-=(i);
         return *this;
     }
-    ConstReverseResultIterator &operator-=(DifferenceType i)
+    ConstReverseResultIterator &operator-=(difference_type i)
     {
         iterator_type::operator+=(i);
         return *this;
