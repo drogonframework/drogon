@@ -44,7 +44,7 @@ class DbClientManager : public trantor::NonCopyable
     }
     void createDbClient(const std::string &dbType,
                         const std::string &host,
-                        const u_short port,
+                        const unsigned short port,
                         const std::string &databaseName,
                         const std::string &userName,
                         const std::string &password,

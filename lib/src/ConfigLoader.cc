@@ -389,7 +389,7 @@ static void loadDbClients(const Json::Value &dbClients)
         auto isFast = client.get("is_fast", false).asBool();
         drogon::app().createDbClient(type,
                                      host,
-                                     (u_short)port,
+                                     (unsigned short)port,
                                      dbname,
                                      user,
                                      password,
