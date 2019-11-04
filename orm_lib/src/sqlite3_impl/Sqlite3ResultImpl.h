@@ -42,7 +42,7 @@ class Sqlite3ResultImpl : public ResultImpl
                                  RowSizeType column) const override;
     virtual bool isNull(SizeType row, RowSizeType column) const override;
     virtual FieldSizeType getLength(SizeType row,
-                                      RowSizeType column) const override;
+                                    RowSizeType column) const override;
     virtual unsigned long long insertId() const noexcept override;
 
   private:

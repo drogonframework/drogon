@@ -112,8 +112,8 @@ class ConstReverseResultIterator : private ConstResultIterator
     using iterator_type::difference_type;
     using iterator_type::iterator_category;
     using iterator_type::pointer;
-    using iterator_type::value_type;
     using iterator_type::reference;
+    using iterator_type::value_type;
 
     ConstReverseResultIterator(const ConstReverseResultIterator &rhs)
         : ConstResultIterator(rhs)

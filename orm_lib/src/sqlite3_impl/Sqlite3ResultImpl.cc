@@ -35,8 +35,7 @@ Result::SizeType Sqlite3ResultImpl::affectedRows() const noexcept
 {
     return _affectedRows;
 }
-Result::RowSizeType Sqlite3ResultImpl::columnNumber(
-    const char colName[]) const
+Result::RowSizeType Sqlite3ResultImpl::columnNumber(const char colName[]) const
 {
     auto name = std::string(colName);
     std::transform(name.begin(), name.end(), name.begin(), tolower);
@@ -47,8 +46,7 @@ Result::RowSizeType Sqlite3ResultImpl::columnNumber(
     }
     throw std::string("there is no column named ") + colName;
 }
-const char *Sqlite3ResultImpl::getValue(SizeType row,
-                                        RowSizeType column) const
+const char *Sqlite3ResultImpl::getValue(SizeType row, RowSizeType column) const
 {
     auto col = _result[row][column];
     return col ? col->c_str() : nullptr;
@@ -58,7 +56,7 @@ bool Sqlite3ResultImpl::isNull(SizeType row, RowSizeType column) const
     return !_result[row][column];
 }
 Result::FieldSizeType Sqlite3ResultImpl::getLength(SizeType row,
-                                                     RowSizeType column) const
+                                                   RowSizeType column) const
 {
     auto col = _result[row][column];
     return col ? col->length() : 0;

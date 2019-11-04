@@ -67,9 +67,8 @@ bool PostgreSQLResultImpl::isNull(SizeType row, RowSizeType column) const
 {
     return PQgetisnull(_result.get(), int(row), int(column)) != 0;
 }
-Result::FieldSizeType PostgreSQLResultImpl::getLength(
-    SizeType row,
-    RowSizeType column) const
+Result::FieldSizeType PostgreSQLResultImpl::getLength(SizeType row,
+                                                      RowSizeType column) const
 {
     return PQgetlength(_result.get(), int(row), int(column));
 }

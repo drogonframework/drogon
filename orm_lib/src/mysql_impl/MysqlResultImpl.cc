@@ -60,7 +60,7 @@ bool MysqlResultImpl::isNull(SizeType row, RowSizeType column) const
     return getValue(row, column) == NULL;
 }
 Result::FieldSizeType MysqlResultImpl::getLength(SizeType row,
-                                                   RowSizeType column) const
+                                                 RowSizeType column) const
 {
     if (_rowsNum == 0 || _fieldNum == 0)
         return 0;

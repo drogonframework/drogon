@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.0.0-beta10] - 2019-11-04
+
+### API change list
+
+- None
+
+### Changed
+
+- Add the headers configuration option for static files
+
+### Fixed
+
+- Fix(compilation on alpine): Replace u_short alias.
+
+
 ## [1.0.0-beta9] - 2019-10-28
 
 ### API change list
@@ -207,7 +222,9 @@ All notable changes to this project will be documented in this file.
 
 ## [1.0.0-beta1] - 2019-06-11
 
-[Unreleased]: https://github.com/an-tao/drogon/compare/v1.0.0-beta9...HEAD
+[Unreleased]: https://github.com/an-tao/drogon/compare/v1.0.0-beta10...HEAD
+
+[1.0.0-beta10]: https://github.com/an-tao/drogon/compare/v1.0.0-beta9...v1.0.0-beta10
 
 [1.0.0-beta9]: https://github.com/an-tao/drogon/compare/v1.0.0-beta8...v1.0.0-beta9
 

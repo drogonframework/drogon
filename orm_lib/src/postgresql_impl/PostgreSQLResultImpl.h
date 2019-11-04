@@ -41,7 +41,7 @@ class PostgreSQLResultImpl : public ResultImpl
                                  RowSizeType column) const override;
     virtual bool isNull(SizeType row, RowSizeType column) const override;
     virtual FieldSizeType getLength(SizeType row,
-                                      RowSizeType column) const override;
+                                    RowSizeType column) const override;
     virtual int oid(RowSizeType column) const override;
 
   private:

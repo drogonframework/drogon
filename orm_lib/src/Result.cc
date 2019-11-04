@@ -141,7 +141,7 @@ bool Result::isNull(Result::SizeType row, Result::RowSizeType column) const
     return _resultPtr->isNull(row, column);
 }
 Result::FieldSizeType Result::getLength(Result::SizeType row,
-                                          Result::RowSizeType column) const
+                                        Result::RowSizeType column) const
 {
     return _resultPtr->getLength(row, column);
 }
