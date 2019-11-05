@@ -94,7 +94,6 @@ HttpRequestImplPtr HttpRequestParser::makeRequestForPool(HttpRequestImpl *ptr)
                 p->reset();
                 thisPtr->_requestsPool.emplace_back(
                     thisPtr->makeRequestForPool(p));
-                LOG_WARN << "pool size=" << thisPtr->_requestsPool.size();
             }
             else
             {
