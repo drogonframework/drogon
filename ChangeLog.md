@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.0.0-beta11] - 2019-11-06
+
+### Changed
+
+- Delete useless log output
+
 ## [1.0.0-beta10] - 2019-11-04
 
 ### API change list
@@ -222,7 +228,9 @@ All notable changes to this project will be documented in this file.
 
 ## [1.0.0-beta1] - 2019-06-11
 
-[Unreleased]: https://github.com/an-tao/drogon/compare/v1.0.0-beta10...HEAD
+[Unreleased]: https://github.com/an-tao/drogon/compare/v1.0.0-beta11...HEAD
+
+[1.0.0-beta11]: https://github.com/an-tao/drogon/compare/v1.0.0-beta10...v1.0.0-beta11
 
 [1.0.0-beta10]: https://github.com/an-tao/drogon/compare/v1.0.0-beta9...v1.0.0-beta10
 
