@@ -45,10 +45,34 @@ add_dependencies(drogon_ctl
                  _drogon_ctl)
 message(STATUS "bin:" ${INSTALL_BIN_DIR})
 install(TARGETS drogon_ctl RUNTIME DESTINATION ${INSTALL_BIN_DIR})
-install(PROGRAMS $<TARGET_FILE_DIR:drogon_ctl>/drogon_ctl
-        DESTINATION ${INSTALL_BIN_DIR}
-        RENAME dg_ctl)
+install(CODE "execute_process( \
+    COMMAND ${CMAKE_COMMAND} -E create_symlink \
+    ${INSTALL_BIN_DIR}/drogon_ctl \
+    ${INSTALL_BIN_DIR}/dg_ctl \
+    )")
 set(ctl_targets _drogon_ctl drogon_ctl)
 set_property(TARGET ${ctl_targets} PROPERTY CXX_STANDARD ${DROGON_CXX_STANDARD})
 set_property(TARGET ${ctl_targets} PROPERTY CXX_STANDARD_REQUIRED ON)
 set_property(TARGET ${ctl_targets} PROPERTY CXX_EXTENSIONS OFF)
+
+find_program(STRIP strip)
+if(STRIP STREQUAL "STRIP-NOTFOUND")
+  message(STATUS "strip not found")
+else()
+  if(CMAKE_SYSTEM_NAME STREQUAL Darwin)
+    add_custom_command(TARGET
+                       ${ctl_targets}
+                       POST_BUILD
+                       VERBATIM
+                       COMMAND ${STRIP}
+                               -u
+                               -r
+                               ${ctl_targets})
+  else()
+    add_custom_command(TARGET
+                       ${ctl_targets}
+                       POST_BUILD
+                       VERBATIM
+                       COMMAND ${STRIP} -s ${ctl_targets})
+  endif()
+endif()
