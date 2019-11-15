@@ -130,10 +130,11 @@ HttpResponsePtr HttpResponse::newNotFoundResponse()
     }
 }
 HttpResponsePtr HttpResponse::newRedirectionResponse(
-    const std::string &location)
+    const std::string &location,
+    HttpStatusCode status)
 {
     auto res = std::make_shared<HttpResponseImpl>();
-    res->setStatusCode(k302Found);
+    res->setStatusCode(status);
     res->redirect(location);
     return res;
 }
