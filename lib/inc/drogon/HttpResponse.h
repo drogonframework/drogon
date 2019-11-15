@@ -201,6 +201,7 @@ class HttpResponse
 
     /// Add a cookie
     virtual void addCookie(const Cookie &cookie) = 0;
+    virtual void addCookie(Cookie &&cookie) = 0;
 
     /// Get the cookie identified by the key parameter.
     /// If there is no the cookie, the empty cookie is retured.
@@ -300,9 +301,16 @@ class HttpResponse
         const std::string &viewName,
         const HttpViewData &data = HttpViewData());
 
-    /// Create a response that returns a 302 Found page, redirecting to another
-    /// page located in the location parameter.
-    static HttpResponsePtr newRedirectionResponse(const std::string &location);
+    /// Create a response that returns a redirection page, redirecting to
+    /// another page located in the location parameter.
+    /**
+     * @param location The location to redirect
+     * @param status The HTTP status code, k302Found by default. Users could set
+     * it to one of the 301, 302, 303, 307, ...
+     */
+    static HttpResponsePtr newRedirectionResponse(
+        const std::string &location,
+        HttpStatusCode status = k302Found);
 
     /// Create a response that returns a file to the client.
     /**

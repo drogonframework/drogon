@@ -34,9 +34,6 @@ class Cookie
     {
     }
     Cookie() = default;
-    ~Cookie()
-    {
-    }
 
     /**
      * @brief Set the Expires Date
@@ -71,6 +68,10 @@ class Cookie
     {
         _domain = domain;
     }
+    void setDomain(std::string &&domain)
+    {
+        _domain = std::move(domain);
+    }
 
     /**
      * @brief Set the path of the cookie.
@@ -78,6 +79,10 @@ class Cookie
     void setPath(const std::string &path)
     {
         _path = path;
+    }
+    void setPath(std::string &&path)
+    {
+        _path = std::move(path);
     }
 
     /**
@@ -87,13 +92,20 @@ class Cookie
     {
         _key = key;
     }
-
+    void setKey(std::string &&key)
+    {
+        _key = std::move(key);
+    }
     /**
      * @brief Set the value of the cookie.
      */
     void setValue(const std::string &value)
     {
         _value = value;
+    }
+    void setValue(std::string &&value)
+    {
+        _value = std::move(value);
     }
 
     /**

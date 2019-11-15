@@ -195,6 +195,11 @@ class HttpResponseImpl : public HttpResponse
         _cookies[cookie.key()] = cookie;
     }
 
+    virtual void addCookie(Cookie &&cookie) override
+    {
+        _cookies[cookie.key()] = std::move(cookie);
+    }
+
     virtual const Cookie &getCookie(const std::string &key) const override
     {
         static const Cookie defaultCookie;
