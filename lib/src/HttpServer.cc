@@ -114,18 +114,18 @@ HttpServer::HttpServer(
     const std::vector<std::function<HttpResponsePtr(const HttpRequestPtr &)>>
         &syncAdvices)
 #ifdef __linux__
-    : _server(loop, listenAddr, name.c_str()),
+    : server_(loop, listenAddr, name.c_str()),
 #else
-    : _server(loop, listenAddr, name.c_str(), true, false),
+    : server_(loop, listenAddr, name.c_str(), true, false),
 #endif
-      _httpAsyncCallback(defaultHttpAsyncCallback),
-      _newWebsocketCallback(defaultWebSockAsyncCallback),
-      _connectionCallback(defaultConnectionCallback),
-      _syncAdvices(syncAdvices)
+      httpAsyncCallback_(defaultHttpAsyncCallback),
+      newWebsocketCallback_(defaultWebSockAsyncCallback),
+      connectionCallback_(defaultConnectionCallback),
+      syncAdvices_(syncAdvices)
 {
-    _server.setConnectionCallback(
+    server_.setConnectionCallback(
         std::bind(&HttpServer::onConnection, this, _1));
-    _server.setRecvMessageCallback(
+    server_.setRecvMessageCallback(
         std::bind(&HttpServer::onMessage, this, _1, _2));
 }
 
@@ -135,9 +135,9 @@ HttpServer::~HttpServer()
 
 void HttpServer::start()
 {
-    LOG_TRACE << "HttpServer[" << _server.name() << "] starts listenning on "
-              << _server.ipPort();
-    _server.start();
+    LOG_TRACE << "HttpServer[" << server_.name() << "] starts listenning on "
+              << server_.ipPort();
+    server_.start();
 }
 
 void HttpServer::onConnection(const TcpConnectionPtr &conn)
@@ -147,12 +147,12 @@ void HttpServer::onConnection(const TcpConnectionPtr &conn)
         auto parser = std::make_shared<HttpRequestParser>(conn);
         parser->reset();
         conn->setContext(parser);
-        _connectionCallback(conn);
+        connectionCallback_(conn);
     }
     else if (conn->disconnected())
     {
         LOG_TRACE << "conn disconnected!";
-        _connectionCallback(conn);
+        connectionCallback_(conn);
         auto requestParser = conn->getContext<HttpRequestParser>();
         if (requestParser)
         {
@@ -208,7 +208,7 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn, MsgBuffer *buf)
                 {
                     auto wsConn =
                         std::make_shared<WebSocketConnectionImpl>(conn);
-                    _newWebsocketCallback(
+                    newWebsocketCallback_(
                         requestParser->requestImpl(),
                         [conn, wsConn, requestParser](
                             const HttpResponsePtr &resp) mutable {
@@ -272,7 +272,7 @@ void HttpServer::onRequests(
 
     for (auto &req : requests)
     {
-        bool _close = (!req->keepAlive());
+        bool close_ = (!req->keepAlive());
         bool isHeadMethod = (req->method() == Head);
         if (isHeadMethod)
         {
@@ -284,10 +284,10 @@ void HttpServer::onRequests(
             requestParser->pushRquestToPipelining(req);
             syncFlag = true;
         }
-        if (!_syncAdvices.empty())
+        if (!syncAdvices_.empty())
         {
             bool adviceFlag = false;
-            for (auto &advice : _syncAdvices)
+            for (auto &advice : syncAdvices_)
             {
                 auto resp = advice(req);
                 if (resp)
@@ -313,10 +313,10 @@ void HttpServer::onRequests(
             if (adviceFlag)
                 continue;
         }
-        _httpAsyncCallback(
+        httpAsyncCallback_(
             req,
             [conn,
-             _close,
+             close_,
              req,
              loopFlagPtr,
              &syncFlag,
@@ -327,7 +327,7 @@ void HttpServer::onRequests(
                     return;
                 if (!conn->connected())
                     return;
-                response->setCloseConnection(_close);
+                response->setCloseConnection(close_);
                 auto newResp =
                     getCompressedResponse(req, response, isHeadMethod);
                 if (conn->getLoop()->isInLoopThread())

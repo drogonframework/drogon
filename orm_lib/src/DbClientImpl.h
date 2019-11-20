@@ -51,9 +51,9 @@ class DbClientImpl : public DbClient,
             &callback) override;
 
   private:
-    size_t _connectNum;
-    trantor::EventLoopThreadPool _loops;
-    std::shared_ptr<SharedMutex> _sharedMutexPtr;
+    size_t connectionsNumber_;
+    trantor::EventLoopThreadPool loops_;
+    std::shared_ptr<SharedMutex> sharedMutexPtr_;
 
     void execSql(
         const DbConnectionPtr &conn,
@@ -71,15 +71,15 @@ class DbClientImpl : public DbClient,
         const DbConnectionPtr &conn,
         std::function<void(const std::shared_ptr<Transaction> &)> &&callback);
 
-    std::mutex _connectionsMutex;
-    std::unordered_set<DbConnectionPtr> _connections;
-    std::unordered_set<DbConnectionPtr> _readyConnections;
-    std::unordered_set<DbConnectionPtr> _busyConnections;
+    std::mutex connectionsMutex_;
+    std::unordered_set<DbConnectionPtr> connections_;
+    std::unordered_set<DbConnectionPtr> readyConnections_;
+    std::unordered_set<DbConnectionPtr> busyConnections_;
 
     std::queue<std::function<void(const std::shared_ptr<Transaction> &)>>
-        _transCallbacks;
+        transCallbacks_;
 
-    std::deque<std::shared_ptr<SqlCmd>> _sqlCmdBuffer;
+    std::deque<std::shared_ptr<SqlCmd>> sqlCmdBuffer_;
 
     void handleNewTask(const DbConnectionPtr &connPtr);
 };

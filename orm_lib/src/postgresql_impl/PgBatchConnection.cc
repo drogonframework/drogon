@@ -40,19 +40,19 @@ Result makeResult(
 }  // namespace drogon
 int PgConnection::flush()
 {
-    auto ret = PQflush(_connPtr.get());
+    auto ret = PQflush(connectionPtr_.get());
     if (ret == 1)
     {
-        if (!_channel.isWriting())
+        if (!channel_.isWriting())
         {
-            _channel.enableWriting();
+            channel_.enableWriting();
         }
     }
     else if (ret == 0)
     {
-        if (_channel.isWriting())
+        if (channel_.isWriting())
         {
-            _channel.disableWriting();
+            channel_.disableWriting();
         }
     }
     return ret;
@@ -60,20 +60,21 @@ int PgConnection::flush()
 PgConnection::PgConnection(trantor::EventLoop *loop,
                            const std::string &connInfo)
     : DbConnection(loop),
-      _connPtr(std::shared_ptr<PGconn>(PQconnectStart(connInfo.c_str()),
-                                       [](PGconn *conn) { PQfinish(conn); })),
-      _channel(loop, PQsocket(_connPtr.get()))
+      connectionPtr_(
+          std::shared_ptr<PGconn>(PQconnectStart(connInfo.c_str()),
+                                  [](PGconn *conn) { PQfinish(conn); })),
+      channel_(loop, PQsocket(connectionPtr_.get()))
 {
-    PQsetnonblocking(_connPtr.get(), 1);
-    if (_channel.fd() < 0)
+    PQsetnonblocking(connectionPtr_.get(), 1);
+    if (channel_.fd() < 0)
     {
         LOG_FATAL << "Socket fd < 0, Usually this is because the number of "
                      "files opened by the program exceeds the system "
                      "limit. Please use the ulimit command to check.";
         exit(1);
     }
-    _channel.setReadCallback([=]() {
-        if (_status != ConnectStatus_Ok)
+    channel_.setReadCallback([=]() {
+        if (status_ != ConnectStatus::Ok)
         {
             pgPoll();
         }
@@ -82,10 +83,10 @@ PgConnection::PgConnection(trantor::EventLoop *loop,
             handleRead();
         }
     });
-    _channel.setWriteCallback([=]() {
-        if (_status == ConnectStatus_Ok)
+    channel_.setWriteCallback([=]() {
+        if (status_ == ConnectStatus::Ok)
         {
-            auto ret = PQflush(_connPtr.get());
+            auto ret = PQflush(connectionPtr_.get());
             if (ret == 0)
             {
                 sendBatchedSql();
@@ -93,8 +94,9 @@ PgConnection::PgConnection(trantor::EventLoop *loop,
             }
             else if (ret < 0)
             {
-                _channel.disableWriting();
-                LOG_ERROR << "PQflush error:" << PQerrorMessage(_connPtr.get());
+                channel_.disableWriting();
+                LOG_ERROR << "PQflush error:"
+                          << PQerrorMessage(connectionPtr_.get());
                 return;
             }
         }
@@ -103,23 +105,23 @@ PgConnection::PgConnection(trantor::EventLoop *loop,
             pgPoll();
         }
     });
-    _channel.setCloseCallback([=]() { handleClosed(); });
-    _channel.setErrorCallback([=]() { handleClosed(); });
-    _channel.enableReading();
-    _channel.enableWriting();
+    channel_.setCloseCallback([=]() { handleClosed(); });
+    channel_.setErrorCallback([=]() { handleClosed(); });
+    channel_.enableReading();
+    channel_.enableWriting();
 }
 
 void PgConnection::handleClosed()
 {
-    _loop->assertInLoopThread();
-    if (_status == ConnectStatus_Bad)
+    loop_->assertInLoopThread();
+    if (status_ == ConnectStatus::Bad)
         return;
-    _status = ConnectStatus_Bad;
-    _channel.disableAll();
-    _channel.remove();
-    assert(_closeCb);
+    status_ = ConnectStatus::Bad;
+    channel_.disableAll();
+    channel_.remove();
+    assert(closeCallback_);
     auto thisPtr = shared_from_this();
-    _closeCb(thisPtr);
+    closeCallback_(thisPtr);
 }
 
 void PgConnection::disconnect()
@@ -127,11 +129,11 @@ void PgConnection::disconnect()
     std::promise<int> pro;
     auto f = pro.get_future();
     auto thisPtr = shared_from_this();
-    _loop->runInLoop([thisPtr, &pro]() {
-        thisPtr->_status = ConnectStatus_Bad;
-        thisPtr->_channel.disableAll();
-        thisPtr->_channel.remove();
-        thisPtr->_connPtr.reset();
+    loop_->runInLoop([thisPtr, &pro]() {
+        thisPtr->status_ = ConnectStatus::Bad;
+        thisPtr->channel_.disableAll();
+        thisPtr->channel_.remove();
+        thisPtr->connectionPtr_.reset();
         pro.set_value(1);
     });
     f.get();
@@ -139,46 +141,46 @@ void PgConnection::disconnect()
 
 void PgConnection::pgPoll()
 {
-    _loop->assertInLoopThread();
-    auto connStatus = PQconnectPoll(_connPtr.get());
+    loop_->assertInLoopThread();
+    auto connStatus = PQconnectPoll(connectionPtr_.get());
 
     switch (connStatus)
     {
         case PGRES_POLLING_FAILED:
             LOG_ERROR << "!!!Pg connection failed: "
-                      << PQerrorMessage(_connPtr.get());
-            if (_status == ConnectStatus_None)
+                      << PQerrorMessage(connectionPtr_.get());
+            if (status_ == ConnectStatus::None)
             {
                 handleClosed();
             }
             break;
         case PGRES_POLLING_WRITING:
-            if (!_channel.isWriting())
-                _channel.enableWriting();
+            if (!channel_.isWriting())
+                channel_.enableWriting();
             break;
         case PGRES_POLLING_READING:
-            if (!_channel.isReading())
-                _channel.enableReading();
-            if (_channel.isWriting())
-                _channel.disableWriting();
+            if (!channel_.isReading())
+                channel_.enableReading();
+            if (channel_.isWriting())
+                channel_.disableWriting();
             break;
 
         case PGRES_POLLING_OK:
-            if (_status != ConnectStatus_Ok)
+            if (status_ != ConnectStatus::Ok)
             {
-                _status = ConnectStatus_Ok;
-                if (!PQbeginBatchMode(_connPtr.get()))
+                status_ = ConnectStatus::Ok;
+                if (!PQbeginBatchMode(connectionPtr_.get()))
                 {
                     handleClosed();
                     return;
                 }
-                assert(_okCb);
-                _okCb(shared_from_this());
+                assert(okCallback_);
+                okCallback_(shared_from_this());
             }
-            if (!_channel.isReading())
-                _channel.enableReading();
-            if (_channel.isWriting())
-                _channel.disableWriting();
+            if (!channel_.isReading())
+                channel_.enableReading();
+            if (channel_.isWriting())
+                channel_.disableWriting();
             break;
         case PGRES_POLLING_ACTIVE:
             // unused!
@@ -198,8 +200,8 @@ void PgConnection::execSqlInLoop(
     std::function<void(const std::exception_ptr &)> &&exceptCallback)
 {
     LOG_TRACE << sql;
-    _isWorking = true;
-    _batchSqlCommands.emplace_back(
+    isWorking_ = true;
+    batchSqlCommands_.emplace_back(
         std::make_shared<SqlCmd>(std::move(sql),
                                  paraNum,
                                  std::move(parameters),
@@ -207,17 +209,17 @@ void PgConnection::execSqlInLoop(
                                  std::move(format),
                                  std::move(rcb),
                                  std::move(exceptCallback)));
-    if (_batchSqlCommands.size() == 1 && !_channel.isWriting())
+    if (batchSqlCommands_.size() == 1 && !channel_.isWriting())
     {
-        _loop->queueInLoop(
+        loop_->queueInLoop(
             [thisPtr = shared_from_this()]() { thisPtr->sendBatchedSql(); });
     }
 }
 int PgConnection::sendBatchEnd()
 {
-    if (!PQsendEndBatch(_connPtr.get()))
+    if (!PQsendEndBatch(connectionPtr_.get()))
     {
-        _isWorking = false;
+        isWorking_ = false;
         handleFatalError();
         handleClosed();
         return 0;
@@ -226,11 +228,11 @@ int PgConnection::sendBatchEnd()
 }
 void PgConnection::sendBatchedSql()
 {
-    if (_isWorking)
+    if (isWorking_)
     {
-        if (_sendBatchEnd)
+        if (sendBatchEnd_)
         {
-            _sendBatchEnd = false;
+            sendBatchEnd_ = false;
             if (!sendBatchEnd())
             {
                 return;
@@ -240,39 +242,39 @@ void PgConnection::sendBatchedSql()
                 return;
             }
         }
-        if (_batchSqlCommands.empty())
+        if (batchSqlCommands_.empty())
         {
-            if (_channel.isWriting())
-                _channel.disableWriting();
+            if (channel_.isWriting())
+                channel_.disableWriting();
             return;
         }
     }
-    _isWorking = true;
-    while (!_batchSqlCommands.empty())
+    isWorking_ = true;
+    while (!batchSqlCommands_.empty())
     {
-        auto &cmd = _batchSqlCommands.front();
+        auto &cmd = batchSqlCommands_.front();
         std::string statName;
-        if (cmd->_preparingStatement.empty())
+        if (cmd->preparingStatement_.empty())
         {
-            auto iter = _preparedStatementMap.find(cmd->_sql);
-            if (iter == _preparedStatementMap.end())
+            auto iter = preparedStatementsMap_.find(cmd->sql_);
+            if (iter == preparedStatementsMap_.end())
             {
                 statName = utils::getUuid();
-                if (PQsendPrepare(_connPtr.get(),
+                if (PQsendPrepare(connectionPtr_.get(),
                                   statName.c_str(),
-                                  cmd->_sql.c_str(),
-                                  cmd->_paraNum,
+                                  cmd->sql_.c_str(),
+                                  cmd->parametersNumber_,
                                   NULL) == 0)
                 {
                     LOG_ERROR << "send query error: "
-                              << PQerrorMessage(_connPtr.get());
+                              << PQerrorMessage(connectionPtr_.get());
 
-                    _isWorking = false;
+                    isWorking_ = false;
                     handleFatalError();
                     handleClosed();
                     return;
                 }
-                cmd->_preparingStatement = statName;
+                cmd->preparingStatement_ = statName;
                 if (flush())
                 {
                     return;
@@ -285,17 +287,17 @@ void PgConnection::sendBatchedSql()
         }
         else
         {
-            statName = cmd->_preparingStatement;
+            statName = cmd->preparingStatement_;
         }
-        if (_batchSqlCommands.size() == 1 || cmd->_sql.length() > 1024 ||
-            _batchCount > maxBatchCount)
+        if (batchSqlCommands_.size() == 1 || cmd->sql_.length() > 1024 ||
+            batchCount_ > maxBatchCount)
         {
-            _sendBatchEnd = true;
-            _batchCount = 0;
+            sendBatchEnd_ = true;
+            batchCount_ = 0;
         }
         else
         {
-            auto sql = cmd->_sql;
+            auto sql = cmd->sql_;
             std::transform(sql.begin(), sql.end(), sql.begin(), tolower);
             if (sql.find("update") != std::string::npos ||
                 sql.find("insert") != std::string::npos ||
@@ -304,33 +306,33 @@ void PgConnection::sendBatchedSql()
                 sql.find("truncate") != std::string::npos ||
                 sql.find("lock") != std::string::npos)
             {
-                _sendBatchEnd = true;
-                _batchCount = 0;
+                sendBatchEnd_ = true;
+                batchCount_ = 0;
             }
         }
-        ++_batchCount;
-        if (PQsendQueryPrepared(_connPtr.get(),
+        ++batchCount_;
+        if (PQsendQueryPrepared(connectionPtr_.get(),
                                 statName.c_str(),
-                                cmd->_paraNum,
-                                cmd->_parameters.data(),
-                                cmd->_length.data(),
-                                cmd->_format.data(),
+                                cmd->parametersNumber_,
+                                cmd->parameters_.data(),
+                                cmd->lengths_.data(),
+                                cmd->formats_.data(),
                                 0) == 0)
         {
-            _isWorking = false;
+            isWorking_ = false;
             handleFatalError();
             handleClosed();
             return;
         }
-        _batchCommandsForWaitingResults.push_back(std::move(cmd));
-        _batchSqlCommands.pop_front();
+        batchCommandsForWaitingResults_.push_back(std::move(cmd));
+        batchSqlCommands_.pop_front();
         if (flush())
         {
             return;
         }
-        if (_sendBatchEnd)
+        if (sendBatchEnd_)
         {
-            _sendBatchEnd = false;
+            sendBatchEnd_ = false;
             if (!sendBatchEnd())
             {
                 return;
@@ -345,32 +347,32 @@ void PgConnection::sendBatchedSql()
 
 void PgConnection::handleRead()
 {
-    _loop->assertInLoopThread();
+    loop_->assertInLoopThread();
     std::shared_ptr<PGresult> res;
 
-    if (!PQconsumeInput(_connPtr.get()))
+    if (!PQconsumeInput(connectionPtr_.get()))
     {
         LOG_ERROR << "Failed to consume pg input:"
-                  << PQerrorMessage(_connPtr.get());
-        if (_isWorking)
+                  << PQerrorMessage(connectionPtr_.get());
+        if (isWorking_)
         {
-            _isWorking = false;
+            isWorking_ = false;
             handleFatalError();
         }
         handleClosed();
         return;
     }
-    if (PQisBusy(_connPtr.get()))
+    if (PQisBusy(connectionPtr_.get()))
     {
         // need read more data from socket;
         return;
     }
-    assert((!_batchCommandsForWaitingResults.empty() ||
-            !_batchSqlCommands.empty()));
+    assert((!batchCommandsForWaitingResults_.empty() ||
+            !batchSqlCommands_.empty()));
 
-    while (!PQisBusy(_connPtr.get()))
+    while (!PQisBusy(connectionPtr_.get()))
     {
-        res = std::shared_ptr<PGresult>(PQgetResult(_connPtr.get()),
+        res = std::shared_ptr<PGresult>(PQgetResult(connectionPtr_.get()),
                                         [](PGresult *p) { PQclear(p); });
         if (!res)
         {
@@ -378,7 +380,7 @@ void PgConnection::handleRead()
              * No more results from this query, advance to
              * the next result
              */
-            if (!PQgetNextQuery(_connPtr.get()))
+            if (!PQgetNextQuery(connectionPtr_.get()))
             {
                 return;
             }
@@ -393,38 +395,38 @@ void PgConnection::handleRead()
         }
         if (type == PGRES_BATCH_END)
         {
-            if (_batchCommandsForWaitingResults.empty() &&
-                _batchSqlCommands.empty())
+            if (batchCommandsForWaitingResults_.empty() &&
+                batchSqlCommands_.empty())
             {
-                _isWorking = false;
-                _idleCb();
+                isWorking_ = false;
+                idleCb_();
                 return;
             }
             continue;
         }
-        if (!_batchCommandsForWaitingResults.empty())
+        if (!batchCommandsForWaitingResults_.empty())
         {
-            auto &cmd = _batchCommandsForWaitingResults.front();
-            if (!cmd->_preparingStatement.empty())
+            auto &cmd = batchCommandsForWaitingResults_.front();
+            if (!cmd->preparingStatement_.empty())
             {
-                _preparedStatementMap[cmd->_sql] =
-                    std::move(cmd->_preparingStatement);
-                cmd->_preparingStatement.clear();
+                preparedStatementsMap_[cmd->sql_] =
+                    std::move(cmd->preparingStatement_);
+                cmd->preparingStatement_.clear();
                 continue;
             }
-            auto r = makeResult(res, _sql);
-            cmd->_cb(r);
-            _batchCommandsForWaitingResults.pop_front();
+            auto r = makeResult(res, sql_);
+            cmd->callback_(r);
+            batchCommandsForWaitingResults_.pop_front();
             continue;
         }
-        assert(!_batchSqlCommands.empty());
-        assert(!_batchSqlCommands.front()->_preparingStatement.empty());
-        auto &cmd = _batchSqlCommands.front();
-        if (!cmd->_preparingStatement.empty())
+        assert(!batchSqlCommands_.empty());
+        assert(!batchSqlCommands_.front()->preparingStatement_.empty());
+        auto &cmd = batchSqlCommands_.front();
+        if (!cmd->preparingStatement_.empty())
         {
-            _preparedStatementMap[cmd->_sql] =
-                std::move(cmd->_preparingStatement);
-            cmd->_preparingStatement.clear();
+            preparedStatementsMap_[cmd->sql_] =
+                std::move(cmd->preparingStatement_);
+            cmd->preparingStatement_.clear();
             continue;
         }
     }
@@ -436,30 +438,30 @@ void PgConnection::doAfterPreparing()
 
 void PgConnection::handleFatalError()
 {
-    LOG_ERROR << PQerrorMessage(_connPtr.get());
+    LOG_ERROR << PQerrorMessage(connectionPtr_.get());
     try
     {
-        throw Failure(PQerrorMessage(_connPtr.get()));
+        throw Failure(PQerrorMessage(connectionPtr_.get()));
     }
     catch (...)
     {
         auto exceptPtr = std::current_exception();
-        for (auto &cmd : _batchCommandsForWaitingResults)
+        for (auto &cmd : batchCommandsForWaitingResults_)
         {
-            cmd->_exceptCb(exceptPtr);
+            cmd->exceptionCallback_(exceptPtr);
         }
-        for (auto &cmd : _batchSqlCommands)
+        for (auto &cmd : batchSqlCommands_)
         {
-            cmd->_exceptCb(exceptPtr);
+            cmd->exceptionCallback_(exceptPtr);
         }
-        _batchCommandsForWaitingResults.clear();
-        _batchSqlCommands.clear();
+        batchCommandsForWaitingResults_.clear();
+        batchSqlCommands_.clear();
     }
 }
 
 void PgConnection::batchSql(std::deque<std::shared_ptr<SqlCmd>> &&sqlCommands)
 {
-    _loop->assertInLoopThread();
-    _batchSqlCommands = std::move(sqlCommands);
+    loop_->assertInLoopThread();
+    batchSqlCommands_ = std::move(sqlCommands);
     sendBatchedSql();
 }

@@ -6,25 +6,25 @@
 namespace drogon
 {
 class HttpRequest;
-typedef std::shared_ptr<HttpRequest> HttpRequestPtr;
+using HttpRequestPtr = std::shared_ptr<HttpRequest>;
 class HttpResponse;
-typedef std::shared_ptr<HttpResponse> HttpResponsePtr;
+using HttpResponsePtr = std::shared_ptr<HttpResponse>;
 class Cookie;
 class Session;
-typedef std::shared_ptr<Session> SessionPtr;
+using SessionPtr = std::shared_ptr<Session>;
 class UploadFile;
 class WebSocketControllerBase;
-typedef std::shared_ptr<WebSocketControllerBase> WebSocketControllerBasePtr;
+using WebSocketControllerBasePtr = std::shared_ptr<WebSocketControllerBase>;
 class HttpFilterBase;
-typedef std::shared_ptr<HttpFilterBase> HttpFilterBasePtr;
+using HttpFilterBasePtr = std::shared_ptr<HttpFilterBase>;
 class HttpSimpleControllerBase;
-typedef std::shared_ptr<HttpSimpleControllerBase> HttpSimpleControllerBasePtr;
+using HttpSimpleControllerBasePtr = std::shared_ptr<HttpSimpleControllerBase>;
 class HttpRequestImpl;
-typedef std::shared_ptr<HttpRequestImpl> HttpRequestImplPtr;
+using HttpRequestImplPtr = std::shared_ptr<HttpRequestImpl>;
 class HttpResponseImpl;
-typedef std::shared_ptr<HttpResponseImpl> HttpResponseImplPtr;
+using HttpResponseImplPtr = std::shared_ptr<HttpResponseImpl>;
 class WebSocketConnectionImpl;
-typedef std::shared_ptr<WebSocketConnectionImpl> WebSocketConnectionImplPtr;
+using WebSocketConnectionImplPtr = std::shared_ptr<WebSocketConnectionImpl>;
 class HttpRequestParser;
 class StaticFileRouter;
 class HttpControllersRouter;
@@ -39,7 +39,7 @@ class HttpServer;
 namespace orm
 {
 class DbClient;
-typedef std::shared_ptr<DbClient> DbClientPtr;
+using DbClientPtr = std::shared_ptr<DbClient>;
 class DbClientManager;
 }  // namespace orm
 }  // namespace drogon
@@ -48,17 +48,17 @@ namespace trantor
 {
 class EventLoop;
 class TcpConnection;
-typedef std::shared_ptr<TcpConnection> TcpConnectionPtr;
+using TcpConnectionPtr = std::shared_ptr<TcpConnection>;
 class Resolver;
 }  // namespace trantor
 
 namespace drogon
 {
-typedef std::function<void(const HttpRequestImplPtr &,
-                           std::function<void(const HttpResponsePtr &)> &&)>
-    HttpAsyncCallback;
-typedef std::function<void(const HttpRequestImplPtr &,
-                           std::function<void(const HttpResponsePtr &)> &&,
-                           const WebSocketConnectionImplPtr &)>
-    WebSocketNewAsyncCallback;
+using HttpAsyncCallback =
+    std::function<void(const HttpRequestImplPtr &,
+                       std::function<void(const HttpResponsePtr &)> &&)>;
+using WebSocketNewAsyncCallback =
+    std::function<void(const HttpRequestImplPtr &,
+                       std::function<void(const HttpResponsePtr &)> &&,
+                       const WebSocketConnectionImplPtr &)>;
 }  // namespace drogon

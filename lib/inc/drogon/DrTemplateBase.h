@@ -21,7 +21,7 @@
 
 namespace drogon
 {
-typedef HttpViewData DrTemplateData;
+using DrTemplateData = HttpViewData;
 
 /// The templating engine class
 /**

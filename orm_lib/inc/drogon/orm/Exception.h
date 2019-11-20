@@ -130,9 +130,9 @@ class BrokenConnection : public Failure
 class SqlError : public Failure
 {
     /// Query string.  Empty if unknown.
-    const std::string _query;
+    const std::string query_;
     /// SQLSTATE string describing the error type, if known; or empty string.
-    const std::string _sqlState;
+    const std::string sqlState_;
 
   public:
     explicit SqlError(const std::string &msg = "",
@@ -395,13 +395,13 @@ class SyntaxError : public SqlError
 {
   public:
     /// Approximate position in string where error occurred, or -1 if unknown.
-    const int _errorPosition;
+    const int errorPosition_;
 
     explicit SyntaxError(const std::string &err,
                          const std::string &Q = "",
                          const char sqlstate[] = nullptr,
                          int pos = -1)
-        : SqlError(err, Q, sqlstate), _errorPosition(pos)
+        : SqlError(err, Q, sqlstate), errorPosition_(pos)
     {
     }
 };
@@ -531,7 +531,7 @@ class TooManyConnections : public BrokenConnection
 //       const std::string &Q = "",
 //       const char sqlstate[] = nullptr) : plpgsql_error(err, Q, sqlstate) {}
 // };
-typedef std::function<void(const DrogonDbException &)>
-    DrogonDbExceptionCallback;
+using DrogonDbExceptionCallback =
+    std::function<void(const DrogonDbException &)>;
 }  // namespace orm
 }  // namespace drogon

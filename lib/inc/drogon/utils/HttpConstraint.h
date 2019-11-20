@@ -31,34 +31,34 @@ class HttpConstraint
 {
   public:
     HttpConstraint(HttpMethod method)
-        : _type(ConstraintType::HttpMethod), _method(method)
+        : type_(ConstraintType::HttpMethod), method_(method)
     {
     }
     HttpConstraint(const std::string &filterName)
-        : _type(ConstraintType::HttpFilter), _filterName(filterName)
+        : type_(ConstraintType::HttpFilter), filterName_(filterName)
     {
     }
     HttpConstraint(const char *filterName)
-        : _type(ConstraintType::HttpFilter), _filterName(filterName)
+        : type_(ConstraintType::HttpFilter), filterName_(filterName)
     {
     }
     ConstraintType type() const
     {
-        return _type;
+        return type_;
     }
     HttpMethod getHttpMethod() const
     {
-        return _method;
+        return method_;
     }
     const std::string &getFilterName() const
     {
-        return _filterName;
+        return filterName_;
     }
 
   private:
-    ConstraintType _type = ConstraintType::None;
-    HttpMethod _method;
-    std::string _filterName;
+    ConstraintType type_{ConstraintType::None};
+    HttpMethod method_;
+    std::string filterName_;
 };
 }  // namespace internal
 }  // namespace drogon

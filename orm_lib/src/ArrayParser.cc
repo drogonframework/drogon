@@ -177,7 +177,7 @@ std::string parse_unquoted_string(const char begin[], const char end[])
 
 }  // namespace
 
-ArrayParser::ArrayParser(const char input[]) : m_pos(input)
+ArrayParser::ArrayParser(const char input[]) : pos_(input)
 {
 }
 
@@ -187,39 +187,39 @@ std::pair<ArrayParser::juncture, std::string> ArrayParser::getNext()
     std::string value;
     const char *end;
 
-    if (m_pos == nullptr)
+    if (pos_ == nullptr)
     {
         found = juncture::done;
         end = nullptr;
     }
     else
-        switch (*m_pos)
+        switch (*pos_)
         {
             case '\0':
                 found = juncture::done;
-                end = m_pos;
+                end = pos_;
                 break;
             case '{':
                 found = juncture::row_start;
-                end = m_pos + 1;
+                end = pos_ + 1;
                 break;
             case '}':
                 found = juncture::row_end;
-                end = m_pos + 1;
+                end = pos_ + 1;
                 break;
             case '\'':
                 found = juncture::string_value;
-                end = scan_single_quoted_string(m_pos);
-                value = parse_single_quoted_string(m_pos, end);
+                end = scan_single_quoted_string(pos_);
+                value = parse_single_quoted_string(pos_, end);
                 break;
             case '"':
                 found = juncture::string_value;
-                end = scan_double_quoted_string(m_pos);
-                value = parse_double_quoted_string(m_pos, end);
+                end = scan_double_quoted_string(pos_);
+                value = parse_double_quoted_string(pos_, end);
                 break;
             default:
-                end = scan_unquoted_string(m_pos);
-                value = parse_unquoted_string(m_pos, end);
+                end = scan_unquoted_string(pos_);
+                value = parse_unquoted_string(pos_, end);
                 if (value == "NULL")
                 {
                     // In this one situation, as a special case, NULL means a
@@ -240,6 +240,6 @@ std::pair<ArrayParser::juncture, std::string> ArrayParser::getNext()
     if (end != nullptr && (*end == ',' || *end == ';'))
         end++;
 
-    m_pos = end;
+    pos_ = end;
     return std::make_pair(found, value);
 }

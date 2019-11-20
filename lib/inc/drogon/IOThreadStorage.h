@@ -46,13 +46,13 @@ namespace drogon
  *
  *      void login(const HttpRequestPtr &req,
  *                 std::function<void (const HttpResponsePtr &)> &&callback) {
- *          assert(_storage->threadLocal == 42);
+ *          assert(storage_->threadLocal == 42);
  *
  *          // handle the request
  *      }
  *
  *    private:
- *      IOThreadStorage<MyThreadData> _storage;
+ *      IOThreadStorage<MyThreadData> storage_;
  * };
  * @endcode
  */
@@ -73,19 +73,19 @@ class IOThreadStorage : public trantor::NonCopyable
                numThreads != std::numeric_limits<size_t>::max());
         // set the size to numThreads+1 to enable access to this in the main
         // thread.
-        _storage.reserve(numThreads + 1);
+        storage_.reserve(numThreads + 1);
 
         for (size_t i = 0; i <= numThreads; ++i)
         {
-            _storage.emplace_back(std::forward<Args>(args)...);
+            storage_.emplace_back(std::forward<Args>(args)...);
         }
     }
 
     void init(const InitCallback &initCB)
     {
-        for (size_t i = 0; i < _storage.size(); ++i)
+        for (size_t i = 0; i < storage_.size(); ++i)
         {
-            initCB(_storage[i], i);
+            initCB(storage_[i], i);
         }
     }
 
@@ -97,15 +97,15 @@ class IOThreadStorage : public trantor::NonCopyable
     inline ValueType &getThreadData()
     {
         size_t idx = app().getCurrentThreadIndex();
-        assert(idx < _storage.size());
-        return _storage[idx];
+        assert(idx < storage_.size());
+        return storage_[idx];
     }
 
     inline const ValueType &getThreadData() const
     {
         size_t idx = app().getCurrentThreadIndex();
-        assert(idx < _storage.size());
-        return _storage[idx];
+        assert(idx < storage_.size());
+        return storage_[idx];
     }
 
     /**
@@ -116,22 +116,22 @@ class IOThreadStorage : public trantor::NonCopyable
     inline void setThreadData(const ValueType &newData)
     {
         size_t idx = app().getCurrentThreadIndex();
-        assert(idx < _storage.size());
-        _storage[idx] = newData;
+        assert(idx < storage_.size());
+        storage_[idx] = newData;
     }
 
     inline void setThreadData(ValueType &&newData)
     {
         size_t idx = app().getCurrentThreadIndex();
-        assert(idx < _storage.size());
-        _storage[idx] = std::move(newData);
+        assert(idx < storage_.size());
+        storage_[idx] = std::move(newData);
     }
 
     inline ValueType *operator->()
     {
         size_t idx = app().getCurrentThreadIndex();
-        assert(idx < _storage.size());
-        return &_storage[idx];
+        assert(idx < storage_.size());
+        return &storage_[idx];
     }
 
     inline ValueType &operator*()
@@ -142,8 +142,8 @@ class IOThreadStorage : public trantor::NonCopyable
     inline const ValueType *operator->() const
     {
         size_t idx = app().getCurrentThreadIndex();
-        assert(idx < _storage.size());
-        return &_storage[idx];
+        assert(idx < storage_.size());
+        return &storage_[idx];
     }
 
     inline const ValueType &operator*() const
@@ -152,7 +152,7 @@ class IOThreadStorage : public trantor::NonCopyable
     }
 
   private:
-    std::vector<ValueType> _storage;
+    std::vector<ValueType> storage_;
 };
 
 }  // namespace drogon

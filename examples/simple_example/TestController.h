@@ -24,6 +24,6 @@ class TestController : public drogon::HttpSimpleController<TestController>
     }
 
   private:
-    drogon::IOThreadStorage<int> _threadIndex;
+    drogon::IOThreadStorage<int> threadIndex_;
 };
 }  // namespace example

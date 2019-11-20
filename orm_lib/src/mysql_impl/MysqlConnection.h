@@ -30,7 +30,7 @@ namespace drogon
 namespace orm
 {
 class MysqlConnection;
-typedef std::shared_ptr<MysqlConnection> MysqlConnectionPtr;
+using MysqlConnectionPtr = std::shared_ptr<MysqlConnection>;
 class MysqlConnection : public DbConnection,
                         public std::enable_shared_from_this<MysqlConnection>
 {
@@ -48,7 +48,7 @@ class MysqlConnection : public DbConnection,
                          std::function<void(const std::exception_ptr &)>
                              &&exceptCallback) override
     {
-        if (_loop->isInLoopThread())
+        if (loop_->isInLoopThread())
         {
             execSqlInLoop(std::move(sql),
                           paraNum,
@@ -61,7 +61,7 @@ class MysqlConnection : public DbConnection,
         else
         {
             auto thisPtr = shared_from_this();
-            _loop->queueInLoop(
+            loop_->queueInLoop(
                 [thisPtr,
                  sql = std::move(sql),
                  paraNum,
@@ -97,8 +97,8 @@ class MysqlConnection : public DbConnection,
         ResultCallback &&rcb,
         std::function<void(const std::exception_ptr &)> &&exceptCallback);
 
-    std::unique_ptr<trantor::Channel> _channelPtr;
-    std::shared_ptr<MYSQL> _mysqlPtr;
+    std::unique_ptr<trantor::Channel> channelPtr_;
+    std::shared_ptr<MYSQL> mysqlPtr_;
 
     void handleTimeout();
 
@@ -106,19 +106,16 @@ class MysqlConnection : public DbConnection,
     void handleEvent();
     void setChannel();
     void getResult(MYSQL_RES *res);
-    int _waitStatus;
-    enum ExecStatus
+    int waitStatus_;
+    enum class ExecStatus
     {
-        ExecStatus_None = 0,
-        ExecStatus_RealQuery,
-        ExecStatus_StoreResult
+        None = 0,
+        RealQuery,
+        StoreResult
     };
-    ExecStatus _execStatus = ExecStatus_None;
+    ExecStatus execStatus_{ExecStatus::None};
 
     void outputError();
-    std::vector<MYSQL_BIND> _binds;
-    std::vector<unsigned long> _lengths;
-    std::vector<my_bool> _isNulls;
 };
 
 }  // namespace orm

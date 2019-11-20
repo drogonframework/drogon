@@ -20,40 +20,40 @@ using namespace drogon::orm;
 
 Result::SizeType MysqlResultImpl::size() const noexcept
 {
-    return _rowsNum;
+    return rowsNumber_;
 }
 Result::RowSizeType MysqlResultImpl::columns() const noexcept
 {
-    return _fieldNum;
+    return fieldsNumber_;
 }
 const char *MysqlResultImpl::columnName(RowSizeType number) const
 {
-    assert(number < _fieldNum);
-    if (_fieldArray)
-        return _fieldArray[number].name;
+    assert(number < fieldsNumber_);
+    if (fieldArray_)
+        return fieldArray_[number].name;
     return "";
 }
 Result::SizeType MysqlResultImpl::affectedRows() const noexcept
 {
-    return _affectedRows;
+    return affectedRows_;
 }
 Result::RowSizeType MysqlResultImpl::columnNumber(const char colName[]) const
 {
-    if (!_fieldMapPtr)
+    if (!fieldsMapPtr_)
         return -1;
     std::string col(colName);
     std::transform(col.begin(), col.end(), col.begin(), tolower);
-    if (_fieldMapPtr->find(col) != _fieldMapPtr->end())
-        return (*_fieldMapPtr)[col];
+    if (fieldsMapPtr_->find(col) != fieldsMapPtr_->end())
+        return (*fieldsMapPtr_)[col];
     return -1;
 }
 const char *MysqlResultImpl::getValue(SizeType row, RowSizeType column) const
 {
-    if (_rowsNum == 0 || _fieldNum == 0)
+    if (rowsNumber_ == 0 || fieldsNumber_ == 0)
         return NULL;
-    assert(row < _rowsNum);
-    assert(column < _fieldNum);
-    return (*_rowsPtr)[row].first[column];
+    assert(row < rowsNumber_);
+    assert(column < fieldsNumber_);
+    return (*rowsPtr_)[row].first[column];
 }
 bool MysqlResultImpl::isNull(SizeType row, RowSizeType column) const
 {
@@ -62,13 +62,13 @@ bool MysqlResultImpl::isNull(SizeType row, RowSizeType column) const
 Result::FieldSizeType MysqlResultImpl::getLength(SizeType row,
                                                  RowSizeType column) const
 {
-    if (_rowsNum == 0 || _fieldNum == 0)
+    if (rowsNumber_ == 0 || fieldsNumber_ == 0)
         return 0;
-    assert(row < _rowsNum);
-    assert(column < _fieldNum);
-    return (*_rowsPtr)[row].second[column];
+    assert(row < rowsNumber_);
+    assert(column < fieldsNumber_);
+    return (*rowsPtr_)[row].second[column];
 }
 unsigned long long MysqlResultImpl::insertId() const noexcept
 {
-    return _insertId;
+    return insertId_;
 }

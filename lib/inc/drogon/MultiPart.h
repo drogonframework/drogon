@@ -26,23 +26,23 @@ class HttpFile
     /// Return the file name;
     const std::string &getFileName() const
     {
-        return _fileName;
+        return fileName_;
     };
 
     /// Set the file name
     void setFileName(const std::string &filename)
     {
-        _fileName = filename;
+        fileName_ = filename;
     };
 
     /// Set the contents of the file, usually called by the FileUpload parser.
     void setFile(const std::string &file)
     {
-        _fileContent = file;
+        fileContent_ = file;
     };
     void setFile(std::string &&file)
     {
-        _fileContent = std::move(file);
+        fileContent_ = std::move(file);
     }
 
     /// Save the file to the file system.
@@ -72,36 +72,36 @@ class HttpFile
     /// Return the file length.
     int64_t fileLength() const noexcept
     {
-        return _fileContent.length();
+        return fileContent_.length();
     };
     /// Return the file content.
     char *fileData() noexcept
     {
 #if __cplusplus >= 201703L
-        return _fileContent.data();
+        return fileContent_.data();
 #else
-        return (char *)(_fileContent.data());
+        return (char *)(fileContent_.data());
 #endif
     }
     const char *fileData() const noexcept
     {
-        return _fileContent.data();
+        return fileContent_.data();
     }
     std::string &fileContent() noexcept
     {
-        return _fileContent;
+        return fileContent_;
     }
     const std::string &fileContent() const noexcept
     {
-        return _fileContent;
+        return fileContent_;
     }
     /// Return the md5 string of the file
     std::string getMd5() const;
 
   protected:
     int saveTo(const std::string &pathAndFilename) const;
-    std::string _fileName;
-    std::string _fileContent;
+    std::string fileName_;
+    std::string fileContent_;
 };
 
 /// A parser class which help the user to get the files and the parameters in
@@ -123,13 +123,13 @@ class MultiPartParser
     int parse(const HttpRequestPtr &req);
 
   protected:
-    std::vector<HttpFile> _files;
-    std::map<std::string, std::string> _parameters;
+    std::vector<HttpFile> files_;
+    std::map<std::string, std::string> parameters_;
     int parse(const HttpRequestPtr &req, const std::string &boundary);
     int parseEntity(const char *begin, const char *end);
 };
 
 /// In order to be compatible with old interfaces
-typedef MultiPartParser FileUpload;
+using FileUpload = MultiPartParser;
 
 }  // namespace drogon

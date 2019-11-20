@@ -26,7 +26,7 @@ namespace drogon
 class HttpResponseParser : public trantor::NonCopyable
 {
   public:
-    enum class HttpResponseParseState
+    enum class HttpResponseParseStatus
     {
         kExpectResponseLine,
         kExpectHeaders,
@@ -47,27 +47,27 @@ class HttpResponseParser : public trantor::NonCopyable
 
     bool gotAll() const
     {
-        return _state == HttpResponseParseState::kGotAll;
+        return status_ == HttpResponseParseStatus::kGotAll;
     }
 
     void setForHeadMethod()
     {
-        _parseResponseForHeadMethod = true;
+        parseResponseForHeadMethod_ = true;
     }
 
     void reset();
 
     const HttpResponseImplPtr &responseImpl() const
     {
-        return _response;
+        return responsePtr_;
     }
 
   private:
     bool processResponseLine(const char *begin, const char *end);
 
-    HttpResponseParseState _state;
-    HttpResponseImplPtr _response;
-    bool _parseResponseForHeadMethod = false;
+    HttpResponseParseStatus status_;
+    HttpResponseImplPtr responsePtr_;
+    bool parseResponseForHeadMethod_{false};
 };
 
 }  // namespace drogon

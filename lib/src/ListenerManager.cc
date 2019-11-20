@@ -31,16 +31,16 @@ class DrogonFileLocker : public trantor::NonCopyable
   public:
     DrogonFileLocker()
     {
-        _fd = open("/tmp/drogon.lock", O_TRUNC | O_CREAT, 0755);
-        flock(_fd, LOCK_EX);
+        fd_ = open("/tmp/drogon.lock", O_TRUNC | O_CREAT, 0755);
+        flock(fd_, LOCK_EX);
     }
     ~DrogonFileLocker()
     {
-        close(_fd);
+        close(fd_);
     }
 
   private:
-    int _fd = 0;
+    int fd_{0};
 };
 
 }  // namespace drogon
@@ -60,7 +60,7 @@ void ListenerManager::addListener(const std::string &ip,
         LOG_ERROR << "Can't use SSL without OpenSSL found in your system";
     }
 #endif
-    _listeners.emplace_back(ip, port, useSSL, certFile, keyFile);
+    listeners_.emplace_back(ip, port, useSSL, certFile, keyFile);
 }
 
 std::vector<trantor::EventLoop *> ListenerManager::createListeners(
@@ -76,15 +76,15 @@ std::vector<trantor::EventLoop *> ListenerManager::createListeners(
 {
 #ifdef __linux__
     std::vector<trantor::EventLoop *> ioLoops;
-    for (size_t i = 0; i < threadNum; i++)
+    for (size_t i = 0; i < threadNum; ++i)
     {
         LOG_TRACE << "thread num=" << threadNum;
         auto loopThreadPtr = std::make_shared<EventLoopThread>("DrogonIoLoop");
-        _listeningloopThreads.push_back(loopThreadPtr);
+        listeningloopThreads_.push_back(loopThreadPtr);
         ioLoops.push_back(loopThreadPtr->getLoop());
-        for (auto const &listener : _listeners)
+        for (auto const &listener : listeners_)
         {
-            auto const &ip = listener._ip;
+            auto const &ip = listener.ip_;
             bool isIpv6 = ip.find(':') == std::string::npos ? false : true;
             std::shared_ptr<HttpServer> serverPtr;
             if (i == 0)
@@ -92,13 +92,13 @@ std::vector<trantor::EventLoop *> ListenerManager::createListeners(
                 DrogonFileLocker lock;
                 // Check whether the port is in use.
                 TcpServer server(HttpAppFrameworkImpl::instance().getLoop(),
-                                 InetAddress(ip, listener._port, isIpv6),
+                                 InetAddress(ip, listener.port_, isIpv6),
                                  "drogonPortTest",
                                  true,
                                  false);
                 serverPtr = std::make_shared<HttpServer>(
                     loopThreadPtr->getLoop(),
-                    InetAddress(ip, listener._port, isIpv6),
+                    InetAddress(ip, listener.port_, isIpv6),
                     "drogon",
                     syncAdvices);
             }
@@ -106,16 +106,16 @@ std::vector<trantor::EventLoop *> ListenerManager::createListeners(
             {
                 serverPtr = std::make_shared<HttpServer>(
                     loopThreadPtr->getLoop(),
-                    InetAddress(ip, listener._port, isIpv6),
+                    InetAddress(ip, listener.port_, isIpv6),
                     "drogon",
                     syncAdvices);
             }
 
-            if (listener._useSSL)
+            if (listener.useSSL_)
             {
 #ifdef OpenSSL_FOUND
-                auto cert = listener._certFile;
-                auto key = listener._keyFile;
+                auto cert = listener.certFile_;
+                auto key = listener.keyFile_;
                 if (cert == "")
                     cert = globalCertFile;
                 if (key == "")
@@ -135,29 +135,29 @@ std::vector<trantor::EventLoop *> ListenerManager::createListeners(
             serverPtr->setConnectionCallback(connectionCallback);
             serverPtr->kickoffIdleConnections(connectionTimeout);
             serverPtr->start();
-            _servers.push_back(serverPtr);
+            servers_.push_back(serverPtr);
         }
     }
 #else
     auto loopThreadPtr =
         std::make_shared<EventLoopThread>("DrogonListeningLoop");
-    _listeningloopThreads.push_back(loopThreadPtr);
-    _ioLoopThreadPoolPtr = std::make_shared<EventLoopThreadPool>(threadNum);
-    for (auto const &listener : _listeners)
+    listeningloopThreads_.push_back(loopThreadPtr);
+    ioLoopThreadPoolPtr_ = std::make_shared<EventLoopThreadPool>(threadNum);
+    for (auto const &listener : listeners_)
     {
         LOG_TRACE << "thread num=" << threadNum;
-        auto ip = listener._ip;
+        auto ip = listener.ip_;
         bool isIpv6 = ip.find(':') == std::string::npos ? false : true;
         auto serverPtr = std::make_shared<HttpServer>(
             loopThreadPtr->getLoop(),
-            InetAddress(ip, listener._port, isIpv6),
+            InetAddress(ip, listener.port_, isIpv6),
             "drogon",
             syncAdvices);
-        if (listener._useSSL)
+        if (listener.useSSL_)
         {
 #ifdef OpenSSL_FOUND
-            auto cert = listener._certFile;
-            auto key = listener._keyFile;
+            auto cert = listener.certFile_;
+            auto key = listener.keyFile_;
             if (cert == "")
                 cert = globalCertFile;
             if (key == "")
@@ -171,24 +171,24 @@ std::vector<trantor::EventLoop *> ListenerManager::createListeners(
             serverPtr->enableSSL(cert, key);
 #endif
         }
-        serverPtr->setIoLoopThreadPool(_ioLoopThreadPoolPtr);
+        serverPtr->setIoLoopThreadPool(ioLoopThreadPoolPtr_);
         serverPtr->setHttpAsyncCallback(httpCallback);
         serverPtr->setNewWebsocketCallback(webSocketCallback);
         serverPtr->setConnectionCallback(connectionCallback);
         serverPtr->kickoffIdleConnections(connectionTimeout);
         serverPtr->start();
-        _servers.push_back(serverPtr);
+        servers_.push_back(serverPtr);
     }
-    auto ioLoops = _ioLoopThreadPoolPtr->getLoops();
+    auto ioLoops = ioLoopThreadPoolPtr_->getLoops();
 #endif
     return ioLoops;
 }
 
 void ListenerManager::startListening()
 {
-    if (_listeners.size() == 0)
+    if (listeners_.size() == 0)
         return;
-    for (auto &loopThread : _listeningloopThreads)
+    for (auto &loopThread : listeningloopThreads_)
     {
         loopThread->run();
     }
@@ -196,12 +196,12 @@ void ListenerManager::startListening()
 
 ListenerManager::~ListenerManager()
 {
-    for (size_t i = 0; i < _servers.size(); ++i)
+    for (size_t i = 0; i < servers_.size(); ++i)
     {
         std::promise<int> pro;
         auto f = pro.get_future();
-        _servers[i]->getLoop()->runInLoop([&pro, this, i] {
-            _servers[i].reset();
+        servers_[i]->getLoop()->runInLoop([&pro, this, i] {
+            servers_[i].reset();
             pro.set_value(1);
         });
         (void)f.get();

@@ -30,14 +30,14 @@ class SessionManager : public trantor::NonCopyable
     SessionManager(trantor::EventLoop *loop, size_t timeout);
     ~SessionManager()
     {
-        _sessionMapPtr.reset();
+        sessionMapPtr_.reset();
     }
     SessionPtr getSession(const std::string &sessionID, bool needToSet);
 
   private:
-    std::unique_ptr<CacheMap<std::string, SessionPtr>> _sessionMapPtr;
-    std::mutex _mapMutex;
-    trantor::EventLoop *_loop;
-    size_t _timeout;
+    std::unique_ptr<CacheMap<std::string, SessionPtr>> sessionMapPtr_;
+    std::mutex mapMutex_;
+    trantor::EventLoop *loop_;
+    size_t timeout_;
 };
 }  // namespace drogon

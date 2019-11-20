@@ -251,7 +251,7 @@ void create_view::handleCommand(std::vector<std::string> &parameters)
             iter = parameters.erase(iter);
             if (iter != parameters.end())
             {
-                _outputPath = *iter;
+                outputPath_ = *iter;
                 iter = parameters.erase(iter);
             }
             break;
@@ -288,8 +288,8 @@ int create_view::createViewFile(const std::string &script_filename)
                 className = className.substr(pos + 1);
             }
             std::cout << "className=" << className << std::endl;
-            std::string headFileName = _outputPath + "/" + className + ".h";
-            std::string sourceFilename = _outputPath + "/" + className + ".cc";
+            std::string headFileName = outputPath_ + "/" + className + ".h";
+            std::string sourceFilename = outputPath_ + "/" + className + ".cc";
             std::ofstream oHeadFile(headFileName.c_str(), std::ofstream::out);
             std::ofstream oSourceFile(sourceFilename.c_str(),
                                       std::ofstream::out);

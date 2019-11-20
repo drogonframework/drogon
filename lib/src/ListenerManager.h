@@ -54,26 +54,24 @@ class ListenerManager : public trantor::NonCopyable
                      bool useSSL,
                      const std::string &certFile,
                      const std::string &keyFile)
-            : _ip(ip),
-              _port(port),
-              _useSSL(useSSL),
-              _certFile(certFile),
-              _keyFile(keyFile)
+            : ip_(ip),
+              port_(port),
+              useSSL_(useSSL),
+              certFile_(certFile),
+              keyFile_(keyFile)
         {
         }
-        std::string _ip;
-        uint16_t _port;
-        bool _useSSL;
-        std::string _certFile;
-        std::string _keyFile;
+        std::string ip_;
+        uint16_t port_;
+        bool useSSL_;
+        std::string certFile_;
+        std::string keyFile_;
     };
-    std::vector<ListenerInfo> _listeners;
-    std::vector<std::shared_ptr<HttpServer>> _servers;
+    std::vector<ListenerInfo> listeners_;
+    std::vector<std::shared_ptr<HttpServer>> servers_;
     std::vector<std::shared_ptr<trantor::EventLoopThread>>
-        _listeningloopThreads;
-    std::string _sslCertPath;
-    std::string _sslKeyPath;
-    std::shared_ptr<trantor::EventLoopThreadPool> _ioLoopThreadPoolPtr;
+        listeningloopThreads_;
+    std::shared_ptr<trantor::EventLoopThreadPool> ioLoopThreadPoolPtr_;
 };
 
 }  // namespace drogon

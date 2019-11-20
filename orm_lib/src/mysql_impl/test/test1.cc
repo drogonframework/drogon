@@ -14,7 +14,7 @@ int main()
     auto clientPtr = DbClient::newMysqlClient(
         "host= 127.0.0.1    port  =3306 dbname= test user = root  ", 1);
     sleep(1);
-    // for (int i = 0; i < 10; i++)
+    // for (int i = 0; i < 10; ++i)
     // {
     //     std::string str = formattedString("insert into users
     //     (user_id,user_name,org_name) values('%d','antao','default')",

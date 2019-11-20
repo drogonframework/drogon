@@ -56,7 +56,7 @@ class Criteria
      */
     explicit operator bool() const
     {
-        return !_condString.empty();
+        return !conditionString_.empty();
     }
 
     /**
@@ -66,7 +66,7 @@ class Criteria
      */
     std::string criteriaString() const
     {
-        return _condString;
+        return conditionString_;
     }
 
     /**
@@ -82,36 +82,36 @@ class Criteria
     {
         assert(opera != CompareOperator::IsNotNull &&
                opera != CompareOperator::IsNull);
-        _condString = colName;
+        conditionString_ = colName;
         switch (opera)
         {
             case CompareOperator::EQ:
-                _condString += " = $?";
+                conditionString_ += " = $?";
                 break;
             case CompareOperator::NE:
-                _condString += " != $?";
+                conditionString_ += " != $?";
                 break;
             case CompareOperator::GT:
-                _condString += " > $?";
+                conditionString_ += " > $?";
                 break;
             case CompareOperator::GE:
-                _condString += " >= $?";
+                conditionString_ += " >= $?";
                 break;
             case CompareOperator::LT:
-                _condString += " < $?";
+                conditionString_ += " < $?";
                 break;
             case CompareOperator::LE:
-                _condString += " <= $?";
+                conditionString_ += " <= $?";
                 break;
             case CompareOperator::LIKE:
-                _condString += " like $?";
+                conditionString_ += " like $?";
                 break;
             case CompareOperator::IsNull:
             case CompareOperator::IsNotNull:
             default:
                 break;
         }
-        _outputArgumentsFunc = [=](internal::SqlBinder &binder) {
+        outputArgumentsFunc_ = [=](internal::SqlBinder &binder) {
             binder << arg;
         };
     }
@@ -122,16 +122,16 @@ class Criteria
              const std::vector<T> &args)
     {
         assert(opera == CompareOperator::IN && args.size() > 0);
-        _condString = colName + " in (";
+        conditionString_ = colName + " in (";
         for (size_t i = 0; i < args.size(); ++i)
         {
             if (i < args.size() - 1)
-                _condString.append("$?,");
+                conditionString_.append("$?,");
             else
-                _condString.append("$?");
+                conditionString_.append("$?");
         }
-        _condString.append(")");
-        _outputArgumentsFunc = [args](internal::SqlBinder &binder) {
+        conditionString_.append(")");
+        outputArgumentsFunc_ = [args](internal::SqlBinder &binder) {
             for (auto &arg : args)
             {
                 binder << arg;
@@ -145,16 +145,16 @@ class Criteria
              std::vector<T> &&args)
     {
         assert(opera == CompareOperator::IN && args.size() > 0);
-        _condString = colName + " in (";
+        conditionString_ = colName + " in (";
         for (size_t i = 0; i < args.size(); ++i)
         {
             if (i < args.size() - 1)
-                _condString.append("$?,");
+                conditionString_.append("$?,");
             else
-                _condString.append("$?");
+                conditionString_.append("$?");
         }
-        _condString.append(")");
-        _outputArgumentsFunc =
+        conditionString_.append(")");
+        outputArgumentsFunc_ =
             [args = std::move(args)](internal::SqlBinder &binder) {
                 for (auto &arg : args)
                 {
@@ -199,14 +199,14 @@ class Criteria
     {
         assert(opera == CompareOperator::IsNotNull ||
                opera == CompareOperator::IsNull);
-        _condString = colName;
+        conditionString_ = colName;
         switch (opera)
         {
             case CompareOperator::IsNull:
-                _condString += " is null";
+                conditionString_ += " is null";
                 break;
             case CompareOperator::IsNotNull:
-                _condString += " is not null";
+                conditionString_ += " is not null";
                 break;
             default:
                 break;
@@ -249,15 +249,15 @@ class Criteria
      */
     void outputArgs(internal::SqlBinder &binder) const
     {
-        if (_outputArgumentsFunc)
-            _outputArgumentsFunc(binder);
+        if (outputArgumentsFunc_)
+            outputArgumentsFunc_(binder);
     }
 
   private:
     friend const Criteria operator&&(Criteria cond1, Criteria cond2);
     friend const Criteria operator||(Criteria cond1, Criteria cond2);
-    std::string _condString;
-    std::function<void(internal::SqlBinder &)> _outputArgumentsFunc;
+    std::string conditionString_;
+    std::function<void(internal::SqlBinder &)> outputArgumentsFunc_;
 };  // namespace orm
 
 const Criteria operator&&(Criteria cond1, Criteria cond2);

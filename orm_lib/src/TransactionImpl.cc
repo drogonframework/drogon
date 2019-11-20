@@ -22,23 +22,23 @@ TransactionImpl::TransactionImpl(
     const DbConnectionPtr &connPtr,
     const std::function<void(bool)> &commitCallback,
     const std::function<void()> &usedUpCallback)
-    : _connectionPtr(connPtr),
-      _usedUpCallback(usedUpCallback),
-      _loop(connPtr->loop()),
-      _commitCallback(commitCallback)
+    : connectionPtr_(connPtr),
+      usedUpCallback_(usedUpCallback),
+      loop_(connPtr->loop()),
+      commitCallback_(commitCallback)
 {
-    _type = type;
+    type_ = type;
 }
 TransactionImpl::~TransactionImpl()
 {
     LOG_TRACE << "Destruct";
-    assert(_sqlCmdBuffer.empty());
-    if (!_isCommitedOrRolledback)
+    assert(sqlCmdBuffer_.empty());
+    if (!isCommitedOrRolledback_)
     {
-        auto loop = _connectionPtr->loop();
-        loop->queueInLoop([conn = _connectionPtr,
-                           ucb = std::move(_usedUpCallback),
-                           commitCb = std::move(_commitCallback)]() {
+        auto loop = connectionPtr_->loop();
+        loop->queueInLoop([conn = connectionPtr_,
+                           ucb = std::move(usedUpCallback_),
+                           commitCb = std::move(commitCallback_)]() {
             conn->setIdleCallback([ucb = std::move(ucb)]() {
                 if (ucb)
                     ucb();
@@ -75,9 +75,9 @@ TransactionImpl::~TransactionImpl()
     }
     else
     {
-        if (_usedUpCallback)
+        if (usedUpCallback_)
         {
-            _usedUpCallback();
+            usedUpCallback_();
         }
     }
 }
@@ -90,15 +90,15 @@ void TransactionImpl::execSqlInLoop(
     ResultCallback &&rcb,
     std::function<void(const std::exception_ptr &)> &&exceptCallback)
 {
-    _loop->assertInLoopThread();
-    if (!_isCommitedOrRolledback)
+    loop_->assertInLoopThread();
+    if (!isCommitedOrRolledback_)
     {
         auto thisPtr = shared_from_this();
-        if (!_isWorking)
+        if (!isWorking_)
         {
-            _isWorking = true;
-            _thisPtr = thisPtr;
-            _connectionPtr->execSql(std::move(sql),
+            isWorking_ = true;
+            thisPtr_ = thisPtr;
+            connectionPtr_->execSql(std::move(sql),
                                     paraNum,
                                     std::move(parameters),
                                     std::move(length),
@@ -115,15 +115,15 @@ void TransactionImpl::execSqlInLoop(
         {
             // push sql cmd to buffer;
             SqlCmd cmd;
-            cmd._sql = std::move(sql);
-            cmd._paraNum = paraNum;
-            cmd._parameters = std::move(parameters);
-            cmd._length = std::move(length);
-            cmd._format = std::move(format);
-            cmd._cb = std::move(rcb);
-            cmd._exceptCb = std::move(exceptCallback);
-            cmd._thisPtr = thisPtr;
-            thisPtr->_sqlCmdBuffer.push_back(std::move(cmd));
+            cmd.sql_ = std::move(sql);
+            cmd.parametersNumber_ = paraNum;
+            cmd.parameters_ = std::move(parameters);
+            cmd.lengths_ = std::move(length);
+            cmd.formats_ = std::move(format);
+            cmd.callback_ = std::move(rcb);
+            cmd.exceptionCallback_ = std::move(exceptCallback);
+            cmd.thisPtr_ = thisPtr;
+            thisPtr->sqlCmdBuffer_.push_back(std::move(cmd));
         }
     }
     else
@@ -144,33 +144,33 @@ void TransactionImpl::rollback()
 {
     auto thisPtr = shared_from_this();
 
-    _loop->runInLoop([thisPtr]() {
-        if (thisPtr->_isCommitedOrRolledback)
+    loop_->runInLoop([thisPtr]() {
+        if (thisPtr->isCommitedOrRolledback_)
             return;
-        if (thisPtr->_isWorking)
+        if (thisPtr->isWorking_)
         {
             // push sql cmd to buffer;
             SqlCmd cmd;
-            cmd._sql = "rollback";
-            cmd._paraNum = 0;
-            cmd._cb = [thisPtr](const Result &) {
+            cmd.sql_ = "rollback";
+            cmd.parametersNumber_ = 0;
+            cmd.callback_ = [thisPtr](const Result &) {
                 LOG_DEBUG << "Transaction roll back!";
-                thisPtr->_isCommitedOrRolledback = true;
+                thisPtr->isCommitedOrRolledback_ = true;
             };
-            cmd._exceptCb = [thisPtr](const std::exception_ptr &) {
+            cmd.exceptionCallback_ = [thisPtr](const std::exception_ptr &) {
                 // clearupCb();
-                thisPtr->_isCommitedOrRolledback = true;
+                thisPtr->isCommitedOrRolledback_ = true;
                 LOG_ERROR << "Transaction rool back error";
             };
-            cmd._isRollbackCmd = true;
+            cmd.isRollbackCmd_ = true;
             // Rollback cmd should be executed firstly, so we push it in front
             // of the list
-            thisPtr->_sqlCmdBuffer.push_front(std::move(cmd));
+            thisPtr->sqlCmdBuffer_.push_front(std::move(cmd));
             return;
         }
-        thisPtr->_isWorking = true;
-        thisPtr->_thisPtr = thisPtr;
-        thisPtr->_connectionPtr->execSql(
+        thisPtr->isWorking_ = true;
+        thisPtr->thisPtr_ = thisPtr;
+        thisPtr->connectionPtr_->execSql(
             "rollback",
             0,
             std::vector<const char *>(),
@@ -178,62 +178,63 @@ void TransactionImpl::rollback()
             std::vector<int>(),
             [thisPtr](const Result &) {
                 LOG_TRACE << "Transaction roll back!";
-                thisPtr->_isCommitedOrRolledback = true;
+                thisPtr->isCommitedOrRolledback_ = true;
                 // clearupCb();
             },
             [thisPtr](const std::exception_ptr &) {
                 // clearupCb();
                 LOG_ERROR << "Transaction rool back error";
-                thisPtr->_isCommitedOrRolledback = true;
+                thisPtr->isCommitedOrRolledback_ = true;
             });
     });
 }
 
 void TransactionImpl::execNewTask()
 {
-    _loop->assertInLoopThread();
-    _thisPtr.reset();
-    assert(_isWorking);
-    if (!_isCommitedOrRolledback)
+    loop_->assertInLoopThread();
+    thisPtr_.reset();
+    assert(isWorking_);
+    if (!isCommitedOrRolledback_)
     {
         auto thisPtr = shared_from_this();
-        if (!_sqlCmdBuffer.empty())
+        if (!sqlCmdBuffer_.empty())
         {
-            auto cmd = std::move(_sqlCmdBuffer.front());
-            _sqlCmdBuffer.pop_front();
-            auto conn = _connectionPtr;
+            auto cmd = std::move(sqlCmdBuffer_.front());
+            sqlCmdBuffer_.pop_front();
+            auto conn = connectionPtr_;
             conn->execSql(
-                std::move(cmd._sql),
-                cmd._paraNum,
-                std::move(cmd._parameters),
-                std::move(cmd._length),
-                std::move(cmd._format),
-                [callback = std::move(cmd._cb), cmd, thisPtr](const Result &r) {
-                    if (cmd._isRollbackCmd)
+                std::move(cmd.sql_),
+                cmd.parametersNumber_,
+                std::move(cmd.parameters_),
+                std::move(cmd.lengths_),
+                std::move(cmd.formats_),
+                [callback = std::move(cmd.callback_), cmd, thisPtr](
+                    const Result &r) {
+                    if (cmd.isRollbackCmd_)
                     {
-                        thisPtr->_isCommitedOrRolledback = true;
+                        thisPtr->isCommitedOrRolledback_ = true;
                     }
                     if (callback)
                         callback(r);
                 },
                 [cmd, thisPtr](const std::exception_ptr &ePtr) {
-                    if (!cmd._isRollbackCmd)
+                    if (!cmd.isRollbackCmd_)
                         thisPtr->rollback();
                     else
                     {
-                        thisPtr->_isCommitedOrRolledback = true;
+                        thisPtr->isCommitedOrRolledback_ = true;
                     }
-                    if (cmd._exceptCb)
-                        cmd._exceptCb(ePtr);
+                    if (cmd.exceptionCallback_)
+                        cmd.exceptionCallback_(ePtr);
                 });
             return;
         }
-        _isWorking = false;
+        isWorking_ = false;
     }
     else
     {
-        _isWorking = false;
-        if (!_sqlCmdBuffer.empty())
+        isWorking_ = false;
+        if (!sqlCmdBuffer_.empty())
         {
             try
             {
@@ -242,38 +243,38 @@ void TransactionImpl::execNewTask()
             }
             catch (...)
             {
-                for (auto const &cmd : _sqlCmdBuffer)
+                for (auto const &cmd : sqlCmdBuffer_)
                 {
-                    if (cmd._exceptCb)
+                    if (cmd.exceptionCallback_)
                     {
-                        cmd._exceptCb(std::current_exception());
+                        cmd.exceptionCallback_(std::current_exception());
                     }
                 }
             }
-            _sqlCmdBuffer.clear();
+            sqlCmdBuffer_.clear();
         }
-        if (_usedUpCallback)
+        if (usedUpCallback_)
         {
-            _usedUpCallback();
+            usedUpCallback_();
         }
     }
 }
 
 void TransactionImpl::doBegin()
 {
-    _loop->queueInLoop([thisPtr = shared_from_this()]() {
+    loop_->queueInLoop([thisPtr = shared_from_this()]() {
         std::weak_ptr<TransactionImpl> weakPtr = thisPtr;
-        thisPtr->_connectionPtr->setIdleCallback([weakPtr]() {
+        thisPtr->connectionPtr_->setIdleCallback([weakPtr]() {
             auto thisPtr = weakPtr.lock();
             if (!thisPtr)
                 return;
             thisPtr->execNewTask();
         });
-        assert(!thisPtr->_isWorking);
-        assert(!thisPtr->_isCommitedOrRolledback);
-        thisPtr->_isWorking = true;
-        thisPtr->_thisPtr = thisPtr;
-        thisPtr->_connectionPtr->execSql(
+        assert(!thisPtr->isWorking_);
+        assert(!thisPtr->isCommitedOrRolledback_);
+        thisPtr->isWorking_ = true;
+        thisPtr->thisPtr_ = thisPtr;
+        thisPtr->connectionPtr_->execSql(
             "begin",
             0,
             std::vector<const char *>(),
@@ -282,7 +283,7 @@ void TransactionImpl::doBegin()
             [](const Result &) { LOG_TRACE << "Transaction begin!"; },
             [thisPtr](const std::exception_ptr &) {
                 LOG_ERROR << "Error occurred in transaction begin";
-                thisPtr->_isCommitedOrRolledback = true;
+                thisPtr->isCommitedOrRolledback_ = true;
             });
     });
 }

@@ -62,10 +62,10 @@ std::vector<std::shared_ptr<HttpFilterBase>> createFilters(
     std::vector<std::shared_ptr<HttpFilterBase>> filters;
     for (auto const &filter : filterNames)
     {
-        auto _object = DrClassMap::getSingleInstance(filter);
-        auto _filter = std::dynamic_pointer_cast<HttpFilterBase>(_object);
-        if (_filter)
-            filters.push_back(_filter);
+        auto object_ = DrClassMap::getSingleInstance(filter);
+        auto filter_ = std::dynamic_pointer_cast<HttpFilterBase>(object_);
+        if (filter_)
+            filters.push_back(filter_);
         else
         {
             LOG_ERROR << "filter " << filter << " not found";

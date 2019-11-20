@@ -38,47 +38,47 @@ class HttpServer : trantor::NonCopyable
 
     trantor::EventLoop *getLoop() const
     {
-        return _server.getLoop();
+        return server_.getLoop();
     }
 
     void setHttpAsyncCallback(const HttpAsyncCallback &cb)
     {
-        _httpAsyncCallback = cb;
+        httpAsyncCallback_ = cb;
     }
     void setNewWebsocketCallback(const WebSocketNewAsyncCallback &cb)
     {
-        _newWebsocketCallback = cb;
+        newWebsocketCallback_ = cb;
     }
     void setConnectionCallback(const trantor::ConnectionCallback &cb)
     {
-        _connectionCallback = cb;
+        connectionCallback_ = cb;
     }
     void setIoLoopThreadPool(
         const std::shared_ptr<trantor::EventLoopThreadPool> &pool)
     {
-        _server.setIoLoopThreadPool(pool);
+        server_.setIoLoopThreadPool(pool);
     }
     void setIoLoopNum(int numThreads)
     {
-        _server.setIoLoopNum(numThreads);
+        server_.setIoLoopNum(numThreads);
     }
     void kickoffIdleConnections(size_t timeout)
     {
-        _server.kickoffIdleConnections(timeout);
+        server_.kickoffIdleConnections(timeout);
     }
     trantor::EventLoop *getLoop()
     {
-        return _server.getLoop();
+        return server_.getLoop();
     }
     std::vector<trantor::EventLoop *> getIoLoops()
     {
-        return _server.getIoLoops();
+        return server_.getIoLoops();
     }
     void start();
 
     void enableSSL(const std::string &certPath, const std::string &keyPath)
     {
-        _server.enableSSL(certPath, keyPath);
+        server_.enableSSL(certPath, keyPath);
     }
 
   private:
@@ -94,12 +94,12 @@ class HttpServer : trantor::NonCopyable
         const trantor::TcpConnectionPtr &conn,
         const std::vector<std::pair<HttpResponsePtr, bool>> &responses,
         trantor::MsgBuffer &buffer);
-    trantor::TcpServer _server;
-    HttpAsyncCallback _httpAsyncCallback;
-    WebSocketNewAsyncCallback _newWebsocketCallback;
-    trantor::ConnectionCallback _connectionCallback;
+    trantor::TcpServer server_;
+    HttpAsyncCallback httpAsyncCallback_;
+    WebSocketNewAsyncCallback newWebsocketCallback_;
+    trantor::ConnectionCallback connectionCallback_;
     const std::vector<std::function<HttpResponsePtr(const HttpRequestPtr &)>>
-        &_syncAdvices;
+        &syncAdvices_;
 };
 
 }  // namespace drogon

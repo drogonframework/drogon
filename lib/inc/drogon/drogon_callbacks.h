@@ -21,10 +21,10 @@
 namespace drogon
 {
 class HttpResponse;
-typedef std::shared_ptr<HttpResponse> HttpResponsePtr;
-typedef std::function<void(const HttpResponsePtr &)> AdviceCallback;
-typedef std::function<void()> AdviceChainCallback;
-typedef std::function<void(const HttpResponsePtr &)> FilterCallback;
-typedef std::function<void()> FilterChainCallback;
-typedef std::function<void(ReqResult, const HttpResponsePtr &)> HttpReqCallback;
+using HttpResponsePtr = std::shared_ptr<HttpResponse>;
+using AdviceCallback = std::function<void(const HttpResponsePtr &)>;
+using AdviceChainCallback = std::function<void()>;
+using FilterCallback = std::function<void(const HttpResponsePtr &)>;
+using FilterChainCallback = std::function<void()>;
+using HttpReqCallback = std::function<void(ReqResult, const HttpResponsePtr &)>;
 }  // namespace drogon

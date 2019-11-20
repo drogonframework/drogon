@@ -22,7 +22,7 @@
 namespace drogon
 {
 class WebSocketConnectionImpl;
-typedef std::shared_ptr<WebSocketConnectionImpl> WebSocketConnectionImplPtr;
+using WebSocketConnectionImplPtr = std::shared_ptr<WebSocketConnectionImpl>;
 
 class WebSocketMessageParser
 {
@@ -31,17 +31,17 @@ class WebSocketMessageParser
     bool gotAll(std::string &message, WebSocketMessageType &type)
     {
         assert(message.empty());
-        if (!_gotAll)
+        if (!gotAll_)
             return false;
-        message.swap(_message);
-        type = _type;
+        message.swap(message_);
+        type = type_;
         return true;
     }
 
   private:
-    std::string _message;
-    WebSocketMessageType _type;
-    bool _gotAll = false;
+    std::string message_;
+    WebSocketMessageType type_;
+    bool gotAll_{false};
 };
 
 class WebSocketConnectionImpl
@@ -79,13 +79,13 @@ class WebSocketConnectionImpl
                                  const WebSocketConnectionImplPtr &,
                                  const WebSocketMessageType &)> &callback)
     {
-        _messageCallback = callback;
+        messageCallback_ = callback;
     }
 
     void setCloseCallback(
         const std::function<void(const WebSocketConnectionImplPtr &)> &callback)
     {
-        _closeCallback = callback;
+        closeCallback_ = callback;
     }
 
     void onNewMessage(const trantor::TcpConnectionPtr &connPtr,
@@ -93,26 +93,26 @@ class WebSocketConnectionImpl
 
     void onClose()
     {
-        if (_pingTimerId != trantor::InvalidTimerId)
-            _tcpConn->getLoop()->invalidateTimer(_pingTimerId);
-        _closeCallback(shared_from_this());
+        if (pingTimerId_ != trantor::InvalidTimerId)
+            tcpConnectionPtr_->getLoop()->invalidateTimer(pingTimerId_);
+        closeCallback_(shared_from_this());
     }
 
   private:
-    trantor::TcpConnectionPtr _tcpConn;
-    trantor::InetAddress _localAddr;
-    trantor::InetAddress _peerAddr;
-    bool _isServer = true;
-    WebSocketMessageParser _parser;
-    trantor::TimerId _pingTimerId = trantor::InvalidTimerId;
+    trantor::TcpConnectionPtr tcpConnectionPtr_;
+    trantor::InetAddress localAddr_;
+    trantor::InetAddress peerAddr_;
+    bool isServer_{true};
+    WebSocketMessageParser parser_;
+    trantor::TimerId pingTimerId_{trantor::InvalidTimerId};
 
     std::function<void(std::string &&,
                        const WebSocketConnectionImplPtr &,
                        const WebSocketMessageType &)>
-        _messageCallback = [](std::string &&,
+        messageCallback_ = [](std::string &&,
                               const WebSocketConnectionImplPtr &,
                               const WebSocketMessageType &) {};
-    std::function<void(const WebSocketConnectionImplPtr &)> _closeCallback =
+    std::function<void(const WebSocketConnectionImplPtr &)> closeCallback_ =
         [](const WebSocketConnectionImplPtr &) {};
     void sendWsData(const char *msg, uint64_t len, unsigned char opcode);
 };

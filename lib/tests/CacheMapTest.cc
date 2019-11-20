@@ -18,7 +18,7 @@ int main()
                                                      4,
                                                      30);
     sleep(3);
-    for (int i = 0; i < 40; i++)
+    for (int i = 0; i < 40; ++i)
     {
         cache.insert(drogon::utils::formattedString("aaa%d", i),
                      "hehe",

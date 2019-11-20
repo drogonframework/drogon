@@ -27,20 +27,20 @@ using namespace std::placeholders;
 
 void HttpClientImpl::createTcpClient()
 {
-    LOG_TRACE << "New TcpClient," << _server.toIpPort();
-    _tcpClient =
-        std::make_shared<trantor::TcpClient>(_loop, _server, "httpClient");
+    LOG_TRACE << "New TcpClient," << serverAddr_.toIpPort();
+    tcpClientPtr_ =
+        std::make_shared<trantor::TcpClient>(loop_, serverAddr_, "httpClient");
 
 #ifdef OpenSSL_FOUND
-    if (_useSSL)
+    if (useSSL_)
     {
-        _tcpClient->enableSSL();
+        tcpClientPtr_->enableSSL();
     }
 #endif
     auto thisPtr = shared_from_this();
     std::weak_ptr<HttpClientImpl> weakPtr = thisPtr;
 
-    _tcpClient->setConnectionCallback(
+    tcpClientPtr_->setConnectionCallback(
         [weakPtr](const trantor::TcpConnectionPtr &connPtr) {
             auto thisPtr = weakPtr.lock();
             if (!thisPtr)
@@ -50,15 +50,15 @@ void HttpClientImpl::createTcpClient()
                 connPtr->setContext(std::make_shared<HttpResponseParser>());
                 // send request;
                 LOG_TRACE << "Connection established!";
-                while (thisPtr->_pipeliningCallbacks.size() <=
-                           thisPtr->_pipeliningDepth &&
-                       !thisPtr->_requestsBuffer.empty())
+                while (thisPtr->pipeliningCallbacks_.size() <=
+                           thisPtr->pipeliningDepth_ &&
+                       !thisPtr->requestsBuffer_.empty())
                 {
                     thisPtr->sendReq(connPtr,
-                                     thisPtr->_requestsBuffer.front().first);
-                    thisPtr->_pipeliningCallbacks.push(
-                        std::move(thisPtr->_requestsBuffer.front()));
-                    thisPtr->_requestsBuffer.pop();
+                                     thisPtr->requestsBuffer_.front().first);
+                    thisPtr->pipeliningCallbacks_.push(
+                        std::move(thisPtr->requestsBuffer_.front()));
+                    thisPtr->requestsBuffer_.pop();
                 }
             }
             else
@@ -67,14 +67,14 @@ void HttpClientImpl::createTcpClient()
                 thisPtr->onError(ReqResult::NetworkFailure);
             }
         });
-    _tcpClient->setConnectionErrorCallback([weakPtr]() {
+    tcpClientPtr_->setConnectionErrorCallback([weakPtr]() {
         auto thisPtr = weakPtr.lock();
         if (!thisPtr)
             return;
         // can't connect to server
         thisPtr->onError(ReqResult::BadServerAddress);
     });
-    _tcpClient->setMessageCallback(
+    tcpClientPtr_->setMessageCallback(
         [weakPtr](const trantor::TcpConnectionPtr &connPtr,
                   trantor::MsgBuffer *msg) {
             auto thisPtr = weakPtr.lock();
@@ -83,19 +83,19 @@ void HttpClientImpl::createTcpClient()
                 thisPtr->onRecvMessage(connPtr, msg);
             }
         });
-    _tcpClient->connect();
+    tcpClientPtr_->connect();
 }
 
 HttpClientImpl::HttpClientImpl(trantor::EventLoop *loop,
                                const trantor::InetAddress &addr,
                                bool useSSL)
-    : _loop(loop), _server(addr), _useSSL(useSSL)
+    : loop_(loop), serverAddr_(addr), useSSL_(useSSL)
 {
 }
 
 HttpClientImpl::HttpClientImpl(trantor::EventLoop *loop,
                                const std::string &hostString)
-    : _loop(loop)
+    : loop_(loop)
 {
     auto lowerHost = hostString;
     std::transform(lowerHost.begin(),
@@ -104,12 +104,12 @@ HttpClientImpl::HttpClientImpl(trantor::EventLoop *loop,
                    tolower);
     if (lowerHost.find("https://") != std::string::npos)
     {
-        _useSSL = true;
+        useSSL_ = true;
         lowerHost = lowerHost.substr(8);
     }
     else if (lowerHost.find("http://") != std::string::npos)
     {
-        _useSSL = false;
+        useSSL_ = false;
         lowerHost = lowerHost.substr(7);
     }
     else
@@ -120,7 +120,7 @@ HttpClientImpl::HttpClientImpl(trantor::EventLoop *loop,
     if (lowerHost[0] == '[' && pos != std::string::npos)
     {
         // ipv6
-        _domain = lowerHost.substr(1, pos - 1);
+        domain_ = lowerHost.substr(1, pos - 1);
         if (lowerHost[pos + 1] == ':')
         {
             auto portStr = lowerHost.substr(pos + 2);
@@ -132,18 +132,18 @@ HttpClientImpl::HttpClientImpl(trantor::EventLoop *loop,
             auto port = atoi(portStr.c_str());
             if (port > 0 && port < 65536)
             {
-                _server = InetAddress(_domain, port, true);
+                serverAddr_ = InetAddress(domain_, port, true);
             }
         }
         else
         {
-            if (_useSSL)
+            if (useSSL_)
             {
-                _server = InetAddress(_domain, 443, true);
+                serverAddr_ = InetAddress(domain_, 443, true);
             }
             else
             {
-                _server = InetAddress(_domain, 80, true);
+                serverAddr_ = InetAddress(domain_, 80, true);
             }
         }
     }
@@ -152,7 +152,7 @@ HttpClientImpl::HttpClientImpl(trantor::EventLoop *loop,
         auto pos = lowerHost.find(':');
         if (pos != std::string::npos)
         {
-            _domain = lowerHost.substr(0, pos);
+            domain_ = lowerHost.substr(0, pos);
             auto portStr = lowerHost.substr(pos + 1);
             pos = portStr.find('/');
             if (pos != std::string::npos)
@@ -162,28 +162,28 @@ HttpClientImpl::HttpClientImpl(trantor::EventLoop *loop,
             auto port = atoi(portStr.c_str());
             if (port > 0 && port < 65536)
             {
-                _server = InetAddress(_domain, port);
+                serverAddr_ = InetAddress(domain_, port);
             }
         }
         else
         {
-            _domain = lowerHost;
-            pos = _domain.find('/');
+            domain_ = lowerHost;
+            pos = domain_.find('/');
             if (pos != std::string::npos)
             {
-                _domain = _domain.substr(0, pos);
+                domain_ = domain_.substr(0, pos);
             }
-            if (_useSSL)
+            if (useSSL_)
             {
-                _server = InetAddress(_domain, 443);
+                serverAddr_ = InetAddress(domain_, 443);
             }
             else
             {
-                _server = InetAddress(_domain, 80);
+                serverAddr_ = InetAddress(domain_, 80);
             }
         }
     }
-    LOG_TRACE << "userSSL=" << _useSSL << " domain=" << _domain;
+    LOG_TRACE << "userSSL=" << useSSL_ << " domain=" << domain_;
 }
 
 HttpClientImpl::~HttpClientImpl()
@@ -195,7 +195,7 @@ void HttpClientImpl::sendRequest(const drogon::HttpRequestPtr &req,
                                  const drogon::HttpReqCallback &callback)
 {
     auto thisPtr = shared_from_this();
-    _loop->runInLoop([thisPtr, req, callback]() {
+    loop_->runInLoop([thisPtr, req, callback]() {
         thisPtr->sendRequestInLoop(req, callback);
     });
 }
@@ -204,7 +204,7 @@ void HttpClientImpl::sendRequest(const drogon::HttpRequestPtr &req,
                                  drogon::HttpReqCallback &&callback)
 {
     auto thisPtr = shared_from_this();
-    _loop->runInLoop([thisPtr, req, callback = std::move(callback)]() {
+    loop_->runInLoop([thisPtr, req, callback = std::move(callback)]() {
         thisPtr->sendRequestInLoop(req, callback);
     });
 }
@@ -212,16 +212,16 @@ void HttpClientImpl::sendRequest(const drogon::HttpRequestPtr &req,
 void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
                                        const drogon::HttpReqCallback &callback)
 {
-    _loop->assertInLoopThread();
+    loop_->assertInLoopThread();
     req->addHeader("Connection", "Keep-Alive");
     // req->addHeader("Accept", "*/*");
-    if (!_domain.empty())
+    if (!domain_.empty())
     {
-        req->addHeader("Host", _domain);
+        req->addHeader("Host", domain_);
     }
     req->addHeader("User-Agent", "DrogonClient");
 
-    for (auto &cookie : _validCookies)
+    for (auto &cookie : validCookies_)
     {
         if ((cookie.expiresDate().microSecondsSinceEpoch() == 0 ||
              cookie.expiresDate() > trantor::Date::now()) &&
@@ -231,21 +231,21 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
         }
     }
 
-    if (!_tcpClient)
+    if (!tcpClientPtr_)
     {
-        _requestsBuffer.push(
+        requestsBuffer_.push(
             {req,
              [thisPtr = shared_from_this(),
               callback](ReqResult result, const HttpResponsePtr &response) {
                  callback(result, response);
              }});
-        if (!_dns)
+        if (!dns_)
         {
             bool hasIpv6Address = false;
-            if (_server.isIpV6())
+            if (serverAddr_.isIpV6())
             {
-                auto ipaddr = _server.ip6NetEndian();
-                for (int i = 0; i < 4; i++)
+                auto ipaddr = serverAddr_.ip6NetEndian();
+                for (int i = 0; i < 4; ++i)
                 {
                     if (ipaddr[i] != 0)
                     {
@@ -255,42 +255,42 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
                 }
             }
 
-            if (_server.ipNetEndian() == 0 && !hasIpv6Address &&
-                !_domain.empty() && _server.portNetEndian() != 0)
+            if (serverAddr_.ipNetEndian() == 0 && !hasIpv6Address &&
+                !domain_.empty() && serverAddr_.portNetEndian() != 0)
             {
-                _dns = true;
-                if (!_resolver)
+                dns_ = true;
+                if (!resolverPtr_)
                 {
-                    _resolver = trantor::Resolver::newResolver(_loop);
+                    resolverPtr_ = trantor::Resolver::newResolver(loop_);
                 }
-                _resolver->resolve(
-                    _domain,
+                resolverPtr_->resolve(
+                    domain_,
                     [thisPtr = shared_from_this(),
                      hasIpv6Address](const trantor::InetAddress &addr) {
-                        thisPtr->_loop->runInLoop([thisPtr,
+                        thisPtr->loop_->runInLoop([thisPtr,
                                                    addr,
                                                    hasIpv6Address]() {
-                            auto port = thisPtr->_server.portNetEndian();
-                            thisPtr->_server = addr;
-                            thisPtr->_server.setPortNetEndian(port);
-                            LOG_TRACE << "dns:domain=" << thisPtr->_domain
-                                      << ";ip=" << thisPtr->_server.toIp();
-                            thisPtr->_dns = false;
-                            if ((thisPtr->_server.ipNetEndian() != 0 ||
+                            auto port = thisPtr->serverAddr_.portNetEndian();
+                            thisPtr->serverAddr_ = addr;
+                            thisPtr->serverAddr_.setPortNetEndian(port);
+                            LOG_TRACE << "dns:domain=" << thisPtr->domain_
+                                      << ";ip=" << thisPtr->serverAddr_.toIp();
+                            thisPtr->dns_ = false;
+                            if ((thisPtr->serverAddr_.ipNetEndian() != 0 ||
                                  hasIpv6Address) &&
-                                thisPtr->_server.portNetEndian() != 0)
+                                thisPtr->serverAddr_.portNetEndian() != 0)
                             {
                                 thisPtr->createTcpClient();
                             }
                             else
                             {
-                                while (!(thisPtr->_requestsBuffer).empty())
+                                while (!(thisPtr->requestsBuffer_).empty())
                                 {
                                     auto &reqAndCb =
-                                        (thisPtr->_requestsBuffer).front();
+                                        (thisPtr->requestsBuffer_).front();
                                     reqAndCb.second(ReqResult::BadServerAddress,
                                                     nullptr);
-                                    (thisPtr->_requestsBuffer).pop();
+                                    (thisPtr->requestsBuffer_).pop();
                                 }
                                 return;
                             }
@@ -299,16 +299,16 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
                 return;
             }
 
-            if ((_server.ipNetEndian() != 0 || hasIpv6Address) &&
-                _server.portNetEndian() != 0)
+            if ((serverAddr_.ipNetEndian() != 0 || hasIpv6Address) &&
+                serverAddr_.portNetEndian() != 0)
             {
                 createTcpClient();
             }
             else
             {
-                _requestsBuffer.pop();
+                requestsBuffer_.pop();
                 callback(ReqResult::BadServerAddress, nullptr);
-                assert(_requestsBuffer.empty());
+                assert(requestsBuffer_.empty());
                 return;
             }
         }
@@ -316,15 +316,15 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
     else
     {
         // send request;
-        auto connPtr = _tcpClient->connection();
+        auto connPtr = tcpClientPtr_->connection();
         auto thisPtr = shared_from_this();
         if (connPtr && connPtr->connected())
         {
-            if (_pipeliningCallbacks.size() <= _pipeliningDepth &&
-                _requestsBuffer.empty())
+            if (pipeliningCallbacks_.size() <= pipeliningDepth_ &&
+                requestsBuffer_.empty())
             {
                 sendReq(connPtr, req);
-                _pipeliningCallbacks.push(
+                pipeliningCallbacks_.push(
                     {req,
                      [thisPtr, callback](ReqResult result,
                                          const HttpResponsePtr &response) {
@@ -333,7 +333,7 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
             }
             else
             {
-                _requestsBuffer.push(
+                requestsBuffer_.push(
                     {req,
                      [thisPtr, callback](ReqResult result,
                                          const HttpResponsePtr &response) {
@@ -343,7 +343,7 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
         }
         else
         {
-            _requestsBuffer.push(
+            requestsBuffer_.push(
                 {req,
                  [thisPtr, callback](ReqResult result,
                                      const HttpResponsePtr &response) {
@@ -362,7 +362,7 @@ void HttpClientImpl::sendReq(const trantor::TcpConnectionPtr &connPtr,
     implPtr->appendToBuffer(&buffer);
     LOG_TRACE << "Send request:"
               << std::string(buffer.peek(), buffer.readableBytes());
-    _bytesSent += buffer.readableBytes();
+    bytesSent_ += buffer.readableBytes();
     connPtr->send(std::move(buffer));
 }
 
@@ -375,8 +375,8 @@ void HttpClientImpl::onRecvMessage(const trantor::TcpConnectionPtr &connPtr,
     auto msgSize = msg->readableBytes();
     while (msg->readableBytes() > 0)
     {
-        assert(!_pipeliningCallbacks.empty());
-        auto &firstReq = _pipeliningCallbacks.front();
+        assert(!pipeliningCallbacks_.empty());
+        auto &firstReq = pipeliningCallbacks_.front();
         if (firstReq.first->method() == Head)
         {
             responseParser->setForHeadMethod();
@@ -384,14 +384,14 @@ void HttpClientImpl::onRecvMessage(const trantor::TcpConnectionPtr &connPtr,
         if (!responseParser->parseResponse(msg))
         {
             onError(ReqResult::BadResponse);
-            _bytesReceived += (msgSize - msg->readableBytes());
+            bytesReceived_ += (msgSize - msg->readableBytes());
             return;
         }
         if (responseParser->gotAll())
         {
             auto resp = responseParser->responseImpl();
             responseParser->reset();
-            assert(!_pipeliningCallbacks.empty());
+            assert(!pipeliningCallbacks_.empty());
             auto &type = resp->getHeaderBy("content-type");
             if (resp->getHeaderBy("content-encoding") == "gzip")
             {
@@ -402,28 +402,28 @@ void HttpClientImpl::onRecvMessage(const trantor::TcpConnectionPtr &connPtr,
                 resp->parseJson();
             }
             auto cb = std::move(firstReq);
-            _pipeliningCallbacks.pop();
+            pipeliningCallbacks_.pop();
             handleCookies(resp);
-            _bytesReceived += (msgSize - msg->readableBytes());
+            bytesReceived_ += (msgSize - msg->readableBytes());
             msgSize = msg->readableBytes();
             cb.second(ReqResult::Ok, resp);
 
             // LOG_TRACE << "pipelining buffer size=" <<
-            // _pipeliningCallbacks.size(); LOG_TRACE << "requests buffer size="
-            // << _requestsBuffer.size();
+            // pipeliningCallbacks_.size(); LOG_TRACE << "requests buffer size="
+            // << requestsBuffer_.size();
 
-            if (!_requestsBuffer.empty())
+            if (!requestsBuffer_.empty())
             {
-                auto &reqAndCb = _requestsBuffer.front();
+                auto &reqAndCb = requestsBuffer_.front();
                 sendReq(connPtr, reqAndCb.first);
-                _pipeliningCallbacks.push(std::move(reqAndCb));
-                _requestsBuffer.pop();
+                pipeliningCallbacks_.push(std::move(reqAndCb));
+                requestsBuffer_.pop();
             }
             else
             {
-                if (resp->ifCloseConnection() && _pipeliningCallbacks.empty())
+                if (resp->ifCloseConnection() && pipeliningCallbacks_.empty())
                 {
-                    _tcpClient.reset();
+                    tcpClientPtr_.reset();
                 }
             }
         }
@@ -456,43 +456,43 @@ HttpClientPtr HttpClient::newHttpClient(const std::string &hostString,
 
 void HttpClientImpl::onError(ReqResult result)
 {
-    while (!_pipeliningCallbacks.empty())
+    while (!pipeliningCallbacks_.empty())
     {
-        auto cb = std::move(_pipeliningCallbacks.front());
-        _pipeliningCallbacks.pop();
+        auto cb = std::move(pipeliningCallbacks_.front());
+        pipeliningCallbacks_.pop();
         cb.second(result, nullptr);
     }
-    while (!_requestsBuffer.empty())
+    while (!requestsBuffer_.empty())
     {
-        auto cb = std::move(_requestsBuffer.front().second);
-        _requestsBuffer.pop();
+        auto cb = std::move(requestsBuffer_.front().second);
+        requestsBuffer_.pop();
         cb(result, nullptr);
     }
-    _tcpClient.reset();
+    tcpClientPtr_.reset();
 }
 
 void HttpClientImpl::handleCookies(const HttpResponseImplPtr &resp)
 {
-    _loop->assertInLoopThread();
-    if (!_enableCookies)
+    loop_->assertInLoopThread();
+    if (!enableCookies_)
         return;
     for (auto &iter : resp->getCookies())
     {
         auto &cookie = iter.second;
-        if (!cookie.domain().empty() && cookie.domain() != _domain)
+        if (!cookie.domain().empty() && cookie.domain() != domain_)
         {
             continue;
         }
         if (cookie.isSecure())
         {
-            if (_useSSL)
+            if (useSSL_)
             {
-                _validCookies.emplace_back(cookie);
+                validCookies_.emplace_back(cookie);
             }
         }
         else
         {
-            _validCookies.emplace_back(cookie);
+            validCookies_.emplace_back(cookie);
         }
     }
 }

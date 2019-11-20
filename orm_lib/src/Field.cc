@@ -19,31 +19,31 @@
 
 using namespace drogon::orm;
 Field::Field(const Row &row, Row::SizeType columnNum) noexcept
-    : _row(Result::SizeType(row._index)),
-      _column(columnNum),
-      _result(row._result)
+    : row_(Result::SizeType(row.index_)),
+      column_(columnNum),
+      result_(row.result_)
 {
 }
 
 const char *Field::name() const
 {
-    return _result.columnName(_column);
+    return result_.columnName(column_);
 }
 
 bool Field::isNull() const
 {
-    return _result.isNull(_row, _column);
+    return result_.isNull(row_, column_);
 }
 
 template <>
 std::string Field::as<std::string>() const
 {
-    if (_result.oid(_column) != 17)
+    if (result_.oid(column_) != 17)
     {
-        auto _data = _result.getValue(_row, _column);
-        auto _dataLength = _result.getLength(_row, _column);
-        //    LOG_DEBUG << "_dataLength=" << _dataLength << " str=" << _data;
-        return std::string(_data, _dataLength);
+        auto data_ = result_.getValue(row_, column_);
+        auto dataLength_ = result_.getLength(row_, column_);
+        //    LOG_DEBUG << "dataLength_=" << dataLength_ << " str=" << data_;
+        return std::string(data_, dataLength_);
     }
     else
     {
@@ -57,22 +57,22 @@ std::string Field::as<std::string>() const
 template <>
 const char *Field::as<const char *>() const
 {
-    auto _data = _result.getValue(_row, _column);
-    return _data;
+    auto data_ = result_.getValue(row_, column_);
+    return data_;
 }
 template <>
 char *Field::as<char *>() const
 {
-    auto _data = _result.getValue(_row, _column);
-    return (char *)_data;
+    auto data_ = result_.getValue(row_, column_);
+    return (char *)data_;
 }
 template <>
 std::vector<char> Field::as<std::vector<char>>() const
 {
-    if (_result.oid(_column) != 17)
+    if (result_.oid(column_) != 17)
     {
-        char *first = (char *)_result.getValue(_row, _column);
-        char *last = first + _result.getLength(_row, _column);
+        char *first = (char *)result_.getValue(row_, column_);
+        char *last = first + result_.getLength(row_, column_);
         return std::vector<char>(first, last);
     }
     else
@@ -92,31 +92,31 @@ const char *Field::c_str() const
 // template <>
 // std::vector<short> Field::as<std::vector<short>>() const
 // {
-//     auto _data = _result.getValue(_row, _column);
-//     auto _dataLength = _result.getLength(_row, _column);
-//     LOG_DEBUG<<"_dataLength="<<_dataLength;
-//     for(int i=0;i<_dataLength;i++)
+//     auto data_ = result_.getValue(row_, column_);
+//     auto dataLength_ = result_.getLength(row_, column_);
+//     LOG_DEBUG<<"dataLength_="<<dataLength_;
+//     for(int i=0;i<dataLength_;i++)
 //     {
-//         LOG_DEBUG<<"data["<<i<<"]="<<(int)_data[i];
+//         LOG_DEBUG<<"data["<<i<<"]="<<(int)data_[i];
 //     }
-//     LOG_DEBUG<<_data;
-//     return std::vector<short>((short *)_data,(short *)(_data + _dataLength));
+//     LOG_DEBUG<<data_;
+//     return std::vector<short>((short *)data_,(short *)(data_ + dataLength_));
 // }
 
 // template <>
 // std::vector<int32_t> Field::as<std::vector<int32_t>>() const
 // {
-//     auto _data = _result.getValue(_row, _column);
-//     auto _dataLength = _result.getLength(_row, _column);
-//     return std::vector<int32_t>((int32_t *)_data,(int32_t *)(_data +
-//     _dataLength));
+//     auto data_ = result_.getValue(row_, column_);
+//     auto dataLength_ = result_.getLength(row_, column_);
+//     return std::vector<int32_t>((int32_t *)data_,(int32_t *)(data_ +
+//     dataLength_));
 // }
 
 // template <>
 // std::vector<int64_t> Field::as<std::vector<int64_t>>() const
 // {
-//     auto _data = _result.getValue(_row, _column);
-//     auto _dataLength = _result.getLength(_row, _column);
-//     return std::vector<int64_t>((int64_t *)_data,(int64_t *)(_data +
-//     _dataLength));
+//     auto data_ = result_.getValue(row_, column_);
+//     auto dataLength_ = result_.getLength(row_, column_);
+//     return std::vector<int64_t>((int64_t *)data_,(int64_t *)(data_ +
+//     dataLength_));
 // }

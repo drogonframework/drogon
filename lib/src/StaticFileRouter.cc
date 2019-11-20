@@ -29,16 +29,16 @@ using namespace drogon;
 void StaticFileRouter::init(const std::vector<trantor::EventLoop *> &ioloops)
 {
     // Max timeout up to about 70 days;
-    _staticFilesCacheMap = decltype(_staticFilesCacheMap)(
+    staticFilesCacheMap_ = decltype(staticFilesCacheMap_)(
         new IOThreadStorage<std::unique_ptr<CacheMap<std::string, char>>>);
-    _staticFilesCacheMap->init(
+    staticFilesCacheMap_->init(
         [&ioloops](std::unique_ptr<CacheMap<std::string, char>> &mapPtr,
                    size_t i) {
             assert(i == ioloops[i]->index());
             mapPtr = std::unique_ptr<CacheMap<std::string, char>>(
                 new CacheMap<std::string, char>(ioloops[i], 1.0, 4, 50));
         });
-    _staticFilesCache = decltype(_staticFilesCache)(
+    staticFilesCache_ = decltype(staticFilesCache_)(
         new IOThreadStorage<
             std::unordered_map<std::string, HttpResponsePtr>>{});
 }
@@ -53,7 +53,7 @@ void StaticFileRouter::route(
     {
         std::string filetype = path.substr(pos + 1);
         transform(filetype.begin(), filetype.end(), filetype.begin(), tolower);
-        if (_fileTypeSet.find(filetype) != _fileTypeSet.end())
+        if (fileTypeSet_.find(filetype) != fileTypeSet_.end())
         {
             // LOG_INFO << "file query!" << path;
             std::string filePath =
@@ -68,7 +68,7 @@ void StaticFileRouter::route(
             }
             // find cached response
             HttpResponsePtr cachedResp;
-            auto &cacheMap = _staticFilesCache->getThreadData();
+            auto &cacheMap = staticFilesCache_->getThreadData();
             auto iter = cacheMap.find(filePath);
             if (iter != cacheMap.end())
             {
@@ -79,7 +79,7 @@ void StaticFileRouter::route(
             // If-Modified-Since: Mon, 15 Oct 2018 06:26:33 GMT
 
             std::string timeStr;
-            if (_enableLastModify)
+            if (enableLastModify_)
             {
                 if (cachedResp)
                 {
@@ -136,7 +136,7 @@ void StaticFileRouter::route(
                 return;
             }
             HttpResponsePtr resp;
-            if (_gzipStaticFlag &&
+            if (gzipStaticFlag_ &&
                 req->getHeaderBy("accept-encoding").find("gzip") !=
                     std::string::npos)
             {
@@ -159,27 +159,27 @@ void StaticFileRouter::route(
                     resp->addHeader("Last-Modified", timeStr);
                     resp->addHeader("Expires", "Thu, 01 Jan 1970 00:00:00 GMT");
                 }
-                if (!_headers.empty())
+                if (!headers_.empty())
                 {
-                    for (auto &header : _headers)
+                    for (auto &header : headers_)
                     {
                         resp->addHeader(header.first, header.second);
                     }
                 }
                 // cache the response for 5 seconds by default
-                if (_staticFilesCacheTime >= 0)
+                if (staticFilesCacheTime_ >= 0)
                 {
-                    LOG_TRACE << "Save in cache for " << _staticFilesCacheTime
+                    LOG_TRACE << "Save in cache for " << staticFilesCacheTime_
                               << " seconds";
-                    resp->setExpiredTime(_staticFilesCacheTime);
-                    _staticFilesCache->getThreadData()[filePath] = resp;
-                    _staticFilesCacheMap->getThreadData()->insert(
-                        filePath, 0, _staticFilesCacheTime, [this, filePath]() {
+                    resp->setExpiredTime(staticFilesCacheTime_);
+                    staticFilesCache_->getThreadData()[filePath] = resp;
+                    staticFilesCacheMap_->getThreadData()->insert(
+                        filePath, 0, staticFilesCacheTime_, [this, filePath]() {
                             LOG_TRACE << "Erase cache";
-                            assert(_staticFilesCache->getThreadData().find(
+                            assert(staticFilesCache_->getThreadData().find(
                                        filePath) !=
-                                   _staticFilesCache->getThreadData().end());
-                            _staticFilesCache->getThreadData().erase(filePath);
+                                   staticFilesCache_->getThreadData().end());
+                            staticFilesCache_->getThreadData().erase(filePath);
                         });
                 }
                 HttpAppFrameworkImpl::instance().callCallback(req,
@@ -197,9 +197,9 @@ void StaticFileRouter::route(
 
 void StaticFileRouter::setFileTypes(const std::vector<std::string> &types)
 {
-    _fileTypeSet.clear();
+    fileTypeSet_.clear();
     for (auto const &type : types)
     {
-        _fileTypeSet.insert(type);
+        fileTypeSet_.insert(type);
     }
 }

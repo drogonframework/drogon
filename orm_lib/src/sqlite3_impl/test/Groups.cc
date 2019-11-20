@@ -25,9 +25,9 @@ const std::string Groups::Cols::_avatar = "avatar";
 const std::string Groups::Cols::_is_default = "is_default";
 const std::string Groups::primaryKeyName = "group_id";
 const bool Groups::hasPrimaryKey = true;
-const std::string Groups::tableName = "GROUPS";
+const std::string Groups::tableName = "groups";
 
-const std::vector<typename Groups::MetaData> Groups::_metaData = {
+const std::vector<typename Groups::MetaData> Groups::metaData_ = {
     {"group_id", "uint64_t", "integer", 8, 1, 1, 0},
     {"group_name", "std::string", "text", 0, 0, 0, 0},
     {"creater_id", "uint64_t", "integer", 8, 0, 0, 0},
@@ -41,8 +41,8 @@ const std::vector<typename Groups::MetaData> Groups::_metaData = {
     {"is_default", "bool", "bool", 1, 0, 0, 0}};
 const std::string &Groups::getColumnName(size_t index) noexcept(false)
 {
-    assert(index < _metaData.size());
-    return _metaData[index]._colName;
+    assert(index < metaData_.size());
+    return metaData_[index].colName_;
 }
 Groups::Groups(const Row &r, const ssize_t indexOffset) noexcept
 {
@@ -50,54 +50,54 @@ Groups::Groups(const Row &r, const ssize_t indexOffset) noexcept
     {
         if (!r["group_id"].isNull())
         {
-            _groupId = std::make_shared<uint64_t>(r["group_id"].as<uint64_t>());
+            groupId_ = std::make_shared<uint64_t>(r["group_id"].as<uint64_t>());
         }
         if (!r["group_name"].isNull())
         {
-            _groupName = std::make_shared<std::string>(
+            groupName_ = std::make_shared<std::string>(
                 r["group_name"].as<std::string>());
         }
         if (!r["creater_id"].isNull())
         {
-            _createrId =
+            createrId_ =
                 std::make_shared<uint64_t>(r["creater_id"].as<uint64_t>());
         }
         if (!r["create_time"].isNull())
         {
-            _createTime = std::make_shared<std::string>(
+            createTime_ = std::make_shared<std::string>(
                 r["create_time"].as<std::string>());
         }
         if (!r["inviting"].isNull())
         {
-            _inviting =
+            inviting_ =
                 std::make_shared<uint64_t>(r["inviting"].as<uint64_t>());
         }
         if (!r["inviting_user_id"].isNull())
         {
-            _invitingUserId = std::make_shared<uint64_t>(
+            invitingUserId_ = std::make_shared<uint64_t>(
                 r["inviting_user_id"].as<uint64_t>());
         }
         if (!r["avatar_id"].isNull())
         {
-            _avatarId =
+            avatarId_ =
                 std::make_shared<std::string>(r["avatar_id"].as<std::string>());
         }
         if (!r["uuu"].isNull())
         {
-            _uuu = std::make_shared<double>(r["uuu"].as<double>());
+            uuu_ = std::make_shared<double>(r["uuu"].as<double>());
         }
         if (!r["text"].isNull())
         {
-            _text = std::make_shared<std::string>(r["text"].as<std::string>());
+            text_ = std::make_shared<std::string>(r["text"].as<std::string>());
         }
         if (!r["avatar"].isNull())
         {
-            _avatar = std::make_shared<std::vector<char>>(
+            avatar_ = std::make_shared<std::vector<char>>(
                 r["avatar"].as<std::vector<char>>());
         }
         if (!r["is_default"].isNull())
         {
-            _isDefault = std::make_shared<bool>(r["is_default"].as<bool>());
+            isDefault_ = std::make_shared<bool>(r["is_default"].as<bool>());
         }
     }
     else
@@ -112,62 +112,62 @@ Groups::Groups(const Row &r, const ssize_t indexOffset) noexcept
         index = offset + 0;
         if (!r[index].isNull())
         {
-            _groupId = std::make_shared<uint64_t>(r[index].as<uint64_t>());
+            groupId_ = std::make_shared<uint64_t>(r[index].as<uint64_t>());
         }
         index = offset + 1;
         if (!r[index].isNull())
         {
-            _groupName =
+            groupName_ =
                 std::make_shared<std::string>(r[index].as<std::string>());
         }
         index = offset + 2;
         if (!r[index].isNull())
         {
-            _createrId = std::make_shared<uint64_t>(r[index].as<uint64_t>());
+            createrId_ = std::make_shared<uint64_t>(r[index].as<uint64_t>());
         }
         index = offset + 3;
         if (!r[index].isNull())
         {
-            _createTime =
+            createTime_ =
                 std::make_shared<std::string>(r[index].as<std::string>());
         }
         index = offset + 4;
         if (!r[index].isNull())
         {
-            _inviting = std::make_shared<uint64_t>(r[index].as<uint64_t>());
+            inviting_ = std::make_shared<uint64_t>(r[index].as<uint64_t>());
         }
         index = offset + 5;
         if (!r[index].isNull())
         {
-            _invitingUserId =
+            invitingUserId_ =
                 std::make_shared<uint64_t>(r[index].as<uint64_t>());
         }
         index = offset + 6;
         if (!r[index].isNull())
         {
-            _avatarId =
+            avatarId_ =
                 std::make_shared<std::string>(r[index].as<std::string>());
         }
         index = offset + 7;
         if (!r[index].isNull())
         {
-            _uuu = std::make_shared<double>(r[index].as<double>());
+            uuu_ = std::make_shared<double>(r[index].as<double>());
         }
         index = offset + 8;
         if (!r[index].isNull())
         {
-            _text = std::make_shared<std::string>(r[index].as<std::string>());
+            text_ = std::make_shared<std::string>(r[index].as<std::string>());
         }
         index = offset + 9;
         if (!r[index].isNull())
         {
-            _avatar = std::make_shared<std::vector<char>>(
+            avatar_ = std::make_shared<std::vector<char>>(
                 r[index].as<std::vector<char>>());
         }
         index = offset + 10;
         if (!r[index].isNull())
         {
-            _isDefault = std::make_shared<bool>(r[index].as<bool>());
+            isDefault_ = std::make_shared<bool>(r[index].as<bool>());
         }
     }
 }
@@ -184,111 +184,111 @@ Groups::Groups(
     if (!pMasqueradingVector[0].empty() &&
         pJson.isMember(pMasqueradingVector[0]))
     {
-        _dirtyFlag[0] = true;
+        dirtyFlag_[0] = true;
         if (!pJson[pMasqueradingVector[0]].isNull())
         {
-            _groupId = std::make_shared<uint64_t>(
+            groupId_ = std::make_shared<uint64_t>(
                 (uint64_t)pJson[pMasqueradingVector[0]].asUInt64());
         }
     }
     if (!pMasqueradingVector[1].empty() &&
         pJson.isMember(pMasqueradingVector[1]))
     {
-        _dirtyFlag[1] = true;
+        dirtyFlag_[1] = true;
         if (!pJson[pMasqueradingVector[1]].isNull())
         {
-            _groupName = std::make_shared<std::string>(
+            groupName_ = std::make_shared<std::string>(
                 pJson[pMasqueradingVector[1]].asString());
         }
     }
     if (!pMasqueradingVector[2].empty() &&
         pJson.isMember(pMasqueradingVector[2]))
     {
-        _dirtyFlag[2] = true;
+        dirtyFlag_[2] = true;
         if (!pJson[pMasqueradingVector[2]].isNull())
         {
-            _createrId = std::make_shared<uint64_t>(
+            createrId_ = std::make_shared<uint64_t>(
                 (uint64_t)pJson[pMasqueradingVector[2]].asUInt64());
         }
     }
     if (!pMasqueradingVector[3].empty() &&
         pJson.isMember(pMasqueradingVector[3]))
     {
-        _dirtyFlag[3] = true;
+        dirtyFlag_[3] = true;
         if (!pJson[pMasqueradingVector[3]].isNull())
         {
-            _createTime = std::make_shared<std::string>(
+            createTime_ = std::make_shared<std::string>(
                 pJson[pMasqueradingVector[3]].asString());
         }
     }
     if (!pMasqueradingVector[4].empty() &&
         pJson.isMember(pMasqueradingVector[4]))
     {
-        _dirtyFlag[4] = true;
+        dirtyFlag_[4] = true;
         if (!pJson[pMasqueradingVector[4]].isNull())
         {
-            _inviting = std::make_shared<uint64_t>(
+            inviting_ = std::make_shared<uint64_t>(
                 (uint64_t)pJson[pMasqueradingVector[4]].asUInt64());
         }
     }
     if (!pMasqueradingVector[5].empty() &&
         pJson.isMember(pMasqueradingVector[5]))
     {
-        _dirtyFlag[5] = true;
+        dirtyFlag_[5] = true;
         if (!pJson[pMasqueradingVector[5]].isNull())
         {
-            _invitingUserId = std::make_shared<uint64_t>(
+            invitingUserId_ = std::make_shared<uint64_t>(
                 (uint64_t)pJson[pMasqueradingVector[5]].asUInt64());
         }
     }
     if (!pMasqueradingVector[6].empty() &&
         pJson.isMember(pMasqueradingVector[6]))
     {
-        _dirtyFlag[6] = true;
+        dirtyFlag_[6] = true;
         if (!pJson[pMasqueradingVector[6]].isNull())
         {
-            _avatarId = std::make_shared<std::string>(
+            avatarId_ = std::make_shared<std::string>(
                 pJson[pMasqueradingVector[6]].asString());
         }
     }
     if (!pMasqueradingVector[7].empty() &&
         pJson.isMember(pMasqueradingVector[7]))
     {
-        _dirtyFlag[7] = true;
+        dirtyFlag_[7] = true;
         if (!pJson[pMasqueradingVector[7]].isNull())
         {
-            _uuu = std::make_shared<double>(
+            uuu_ = std::make_shared<double>(
                 pJson[pMasqueradingVector[7]].asDouble());
         }
     }
     if (!pMasqueradingVector[8].empty() &&
         pJson.isMember(pMasqueradingVector[8]))
     {
-        _dirtyFlag[8] = true;
+        dirtyFlag_[8] = true;
         if (!pJson[pMasqueradingVector[8]].isNull())
         {
-            _text = std::make_shared<std::string>(
+            text_ = std::make_shared<std::string>(
                 pJson[pMasqueradingVector[8]].asString());
         }
     }
     if (!pMasqueradingVector[9].empty() &&
         pJson.isMember(pMasqueradingVector[9]))
     {
-        _dirtyFlag[9] = true;
+        dirtyFlag_[9] = true;
         if (!pJson[pMasqueradingVector[9]].isNull())
         {
             auto str = pJson[pMasqueradingVector[9]].asString();
-            _avatar = std::make_shared<std::vector<char>>(
+            avatar_ = std::make_shared<std::vector<char>>(
                 drogon::utils::base64DecodeToVector(str));
         }
     }
     if (!pMasqueradingVector[10].empty() &&
         pJson.isMember(pMasqueradingVector[10]))
     {
-        _dirtyFlag[10] = true;
+        dirtyFlag_[10] = true;
         if (!pJson[pMasqueradingVector[10]].isNull())
         {
-            _isDefault =
+            isDefault_ =
                 std::make_shared<bool>(pJson[pMasqueradingVector[10]].asBool());
         }
     }
@@ -298,99 +298,99 @@ Groups::Groups(const Json::Value &pJson) noexcept(false)
 {
     if (pJson.isMember("group_id"))
     {
-        _dirtyFlag[0] = true;
+        dirtyFlag_[0] = true;
         if (!pJson["group_id"].isNull())
         {
-            _groupId = std::make_shared<uint64_t>(
+            groupId_ = std::make_shared<uint64_t>(
                 (uint64_t)pJson["group_id"].asUInt64());
         }
     }
     if (pJson.isMember("group_name"))
     {
-        _dirtyFlag[1] = true;
+        dirtyFlag_[1] = true;
         if (!pJson["group_name"].isNull())
         {
-            _groupName =
+            groupName_ =
                 std::make_shared<std::string>(pJson["group_name"].asString());
         }
     }
     if (pJson.isMember("creater_id"))
     {
-        _dirtyFlag[2] = true;
+        dirtyFlag_[2] = true;
         if (!pJson["creater_id"].isNull())
         {
-            _createrId = std::make_shared<uint64_t>(
+            createrId_ = std::make_shared<uint64_t>(
                 (uint64_t)pJson["creater_id"].asUInt64());
         }
     }
     if (pJson.isMember("create_time"))
     {
-        _dirtyFlag[3] = true;
+        dirtyFlag_[3] = true;
         if (!pJson["create_time"].isNull())
         {
-            _createTime =
+            createTime_ =
                 std::make_shared<std::string>(pJson["create_time"].asString());
         }
     }
     if (pJson.isMember("inviting"))
     {
-        _dirtyFlag[4] = true;
+        dirtyFlag_[4] = true;
         if (!pJson["inviting"].isNull())
         {
-            _inviting = std::make_shared<uint64_t>(
+            inviting_ = std::make_shared<uint64_t>(
                 (uint64_t)pJson["inviting"].asUInt64());
         }
     }
     if (pJson.isMember("inviting_user_id"))
     {
-        _dirtyFlag[5] = true;
+        dirtyFlag_[5] = true;
         if (!pJson["inviting_user_id"].isNull())
         {
-            _invitingUserId = std::make_shared<uint64_t>(
+            invitingUserId_ = std::make_shared<uint64_t>(
                 (uint64_t)pJson["inviting_user_id"].asUInt64());
         }
     }
     if (pJson.isMember("avatar_id"))
     {
-        _dirtyFlag[6] = true;
+        dirtyFlag_[6] = true;
         if (!pJson["avatar_id"].isNull())
         {
-            _avatarId =
+            avatarId_ =
                 std::make_shared<std::string>(pJson["avatar_id"].asString());
         }
     }
     if (pJson.isMember("uuu"))
     {
-        _dirtyFlag[7] = true;
+        dirtyFlag_[7] = true;
         if (!pJson["uuu"].isNull())
         {
-            _uuu = std::make_shared<double>(pJson["uuu"].asDouble());
+            uuu_ = std::make_shared<double>(pJson["uuu"].asDouble());
         }
     }
     if (pJson.isMember("text"))
     {
-        _dirtyFlag[8] = true;
+        dirtyFlag_[8] = true;
         if (!pJson["text"].isNull())
         {
-            _text = std::make_shared<std::string>(pJson["text"].asString());
+            text_ = std::make_shared<std::string>(pJson["text"].asString());
         }
     }
     if (pJson.isMember("avatar"))
     {
-        _dirtyFlag[9] = true;
+        dirtyFlag_[9] = true;
         if (!pJson["avatar"].isNull())
         {
             auto str = pJson["avatar"].asString();
-            _avatar = std::make_shared<std::vector<char>>(
+            avatar_ = std::make_shared<std::vector<char>>(
                 drogon::utils::base64DecodeToVector(str));
         }
     }
     if (pJson.isMember("is_default"))
     {
-        _dirtyFlag[10] = true;
+        dirtyFlag_[10] = true;
         if (!pJson["is_default"].isNull())
         {
-            _isDefault = std::make_shared<bool>(pJson["is_default"].asBool());
+            isDefault_ = std::make_shared<bool>(pJson["is_default"].asBool());
         }
     }
 }
@@ -409,108 +409,108 @@ void Groups::updateByMasqueradedJson(
     {
         if (!pJson[pMasqueradingVector[0]].isNull())
         {
-            _groupId = std::make_shared<uint64_t>(
+            groupId_ = std::make_shared<uint64_t>(
                 (uint64_t)pJson[pMasqueradingVector[0]].asUInt64());
         }
     }
     if (!pMasqueradingVector[1].empty() &&
         pJson.isMember(pMasqueradingVector[1]))
     {
-        _dirtyFlag[1] = true;
+        dirtyFlag_[1] = true;
         if (!pJson[pMasqueradingVector[1]].isNull())
         {
-            _groupName = std::make_shared<std::string>(
+            groupName_ = std::make_shared<std::string>(
                 pJson[pMasqueradingVector[1]].asString());
         }
     }
     if (!pMasqueradingVector[2].empty() &&
         pJson.isMember(pMasqueradingVector[2]))
     {
-        _dirtyFlag[2] = true;
+        dirtyFlag_[2] = true;
         if (!pJson[pMasqueradingVector[2]].isNull())
         {
-            _createrId = std::make_shared<uint64_t>(
+            createrId_ = std::make_shared<uint64_t>(
                 (uint64_t)pJson[pMasqueradingVector[2]].asUInt64());
         }
     }
     if (!pMasqueradingVector[3].empty() &&
         pJson.isMember(pMasqueradingVector[3]))
     {
-        _dirtyFlag[3] = true;
+        dirtyFlag_[3] = true;
         if (!pJson[pMasqueradingVector[3]].isNull())
         {
-            _createTime = std::make_shared<std::string>(
+            createTime_ = std::make_shared<std::string>(
                 pJson[pMasqueradingVector[3]].asString());
         }
     }
     if (!pMasqueradingVector[4].empty() &&
         pJson.isMember(pMasqueradingVector[4]))
     {
-        _dirtyFlag[4] = true;
+        dirtyFlag_[4] = true;
         if (!pJson[pMasqueradingVector[4]].isNull())
         {
-            _inviting = std::make_shared<uint64_t>(
+            inviting_ = std::make_shared<uint64_t>(
                 (uint64_t)pJson[pMasqueradingVector[4]].asUInt64());
         }
     }
     if (!pMasqueradingVector[5].empty() &&
         pJson.isMember(pMasqueradingVector[5]))
     {
-        _dirtyFlag[5] = true;
+        dirtyFlag_[5] = true;
         if (!pJson[pMasqueradingVector[5]].isNull())
         {
-            _invitingUserId = std::make_shared<uint64_t>(
+            invitingUserId_ = std::make_shared<uint64_t>(
                 (uint64_t)pJson[pMasqueradingVector[5]].asUInt64());
         }
     }
     if (!pMasqueradingVector[6].empty() &&
         pJson.isMember(pMasqueradingVector[6]))
     {
-        _dirtyFlag[6] = true;
+        dirtyFlag_[6] = true;
         if (!pJson[pMasqueradingVector[6]].isNull())
         {
-            _avatarId = std::make_shared<std::string>(
+            avatarId_ = std::make_shared<std::string>(
                 pJson[pMasqueradingVector[6]].asString());
         }
     }
     if (!pMasqueradingVector[7].empty() &&
         pJson.isMember(pMasqueradingVector[7]))
     {
-        _dirtyFlag[7] = true;
+        dirtyFlag_[7] = true;
         if (!pJson[pMasqueradingVector[7]].isNull())
         {
-            _uuu = std::make_shared<double>(
+            uuu_ = std::make_shared<double>(
                 pJson[pMasqueradingVector[7]].asDouble());
         }
     }
     if (!pMasqueradingVector[8].empty() &&
         pJson.isMember(pMasqueradingVector[8]))
     {
-        _dirtyFlag[8] = true;
+        dirtyFlag_[8] = true;
         if (!pJson[pMasqueradingVector[8]].isNull())
         {
-            _text = std::make_shared<std::string>(
+            text_ = std::make_shared<std::string>(
                 pJson[pMasqueradingVector[8]].asString());
         }
     }
     if (!pMasqueradingVector[9].empty() &&
         pJson.isMember(pMasqueradingVector[9]))
     {
-        _dirtyFlag[9] = true;
+        dirtyFlag_[9] = true;
         if (!pJson[pMasqueradingVector[9]].isNull())
         {
             auto str = pJson[pMasqueradingVector[9]].asString();
-            _avatar = std::make_shared<std::vector<char>>(
+            avatar_ = std::make_shared<std::vector<char>>(
                 drogon::utils::base64DecodeToVector(str));
         }
     }
     if (!pMasqueradingVector[10].empty() &&
         pJson.isMember(pMasqueradingVector[10]))
     {
-        _dirtyFlag[10] = true;
+        dirtyFlag_[10] = true;
         if (!pJson[pMasqueradingVector[10]].isNull())
         {
-            _isDefault =
+            isDefault_ =
                 std::make_shared<bool>(pJson[pMasqueradingVector[10]].asBool());
         }
     }
@@ -522,96 +522,96 @@ void Groups::updateByJson(const Json::Value &pJson) noexcept(false)
     {
         if (!pJson["group_id"].isNull())
         {
-            _groupId = std::make_shared<uint64_t>(
+            groupId_ = std::make_shared<uint64_t>(
                 (uint64_t)pJson["group_id"].asUInt64());
         }
     }
     if (pJson.isMember("group_name"))
     {
-        _dirtyFlag[1] = true;
+        dirtyFlag_[1] = true;
         if (!pJson["group_name"].isNull())
         {
-            _groupName =
+            groupName_ =
                 std::make_shared<std::string>(pJson["group_name"].asString());
         }
     }
     if (pJson.isMember("creater_id"))
     {
-        _dirtyFlag[2] = true;
+        dirtyFlag_[2] = true;
         if (!pJson["creater_id"].isNull())
         {
-            _createrId = std::make_shared<uint64_t>(
+            createrId_ = std::make_shared<uint64_t>(
                 (uint64_t)pJson["creater_id"].asUInt64());
         }
     }
     if (pJson.isMember("create_time"))
     {
-        _dirtyFlag[3] = true;
+        dirtyFlag_[3] = true;
         if (!pJson["create_time"].isNull())
         {
-            _createTime =
+            createTime_ =
                 std::make_shared<std::string>(pJson["create_time"].asString());
         }
     }
     if (pJson.isMember("inviting"))
     {
-        _dirtyFlag[4] = true;
+        dirtyFlag_[4] = true;
         if (!pJson["inviting"].isNull())
         {
-            _inviting = std::make_shared<uint64_t>(
+            inviting_ = std::make_shared<uint64_t>(
                 (uint64_t)pJson["inviting"].asUInt64());
         }
     }
     if (pJson.isMember("inviting_user_id"))
     {
-        _dirtyFlag[5] = true;
+        dirtyFlag_[5] = true;
         if (!pJson["inviting_user_id"].isNull())
         {
-            _invitingUserId = std::make_shared<uint64_t>(
+            invitingUserId_ = std::make_shared<uint64_t>(
                 (uint64_t)pJson["inviting_user_id"].asUInt64());
         }
     }
     if (pJson.isMember("avatar_id"))
     {
-        _dirtyFlag[6] = true;
+        dirtyFlag_[6] = true;
         if (!pJson["avatar_id"].isNull())
         {
-            _avatarId =
+            avatarId_ =
                 std::make_shared<std::string>(pJson["avatar_id"].asString());
         }
     }
     if (pJson.isMember("uuu"))
     {
-        _dirtyFlag[7] = true;
+        dirtyFlag_[7] = true;
         if (!pJson["uuu"].isNull())
         {
-            _uuu = std::make_shared<double>(pJson["uuu"].asDouble());
+            uuu_ = std::make_shared<double>(pJson["uuu"].asDouble());
         }
     }
     if (pJson.isMember("text"))
     {
-        _dirtyFlag[8] = true;
+        dirtyFlag_[8] = true;
         if (!pJson["text"].isNull())
         {
-            _text = std::make_shared<std::string>(pJson["text"].asString());
+            text_ = std::make_shared<std::string>(pJson["text"].asString());
         }
     }
     if (pJson.isMember("avatar"))
     {
-        _dirtyFlag[9] = true;
+        dirtyFlag_[9] = true;
         if (!pJson["avatar"].isNull())
         {
             auto str = pJson["avatar"].asString();
-            _avatar = std::make_shared<std::vector<char>>(
+            avatar_ = std::make_shared<std::vector<char>>(
                 drogon::utils::base64DecodeToVector(str));
         }
     }
     if (pJson.isMember("is_default"))
     {
-        _dirtyFlag[10] = true;
+        dirtyFlag_[10] = true;
         if (!pJson["is_default"].isNull())
         {
-            _isDefault = std::make_shared<bool>(pJson["is_default"].asBool());
+            isDefault_ = std::make_shared<bool>(pJson["is_default"].asBool());
         }
     }
 }
@@ -619,308 +619,308 @@ void Groups::updateByJson(const Json::Value &pJson) noexcept(false)
 const uint64_t &Groups::getValueOfGroupId() const noexcept
 {
     const static uint64_t defaultValue = uint64_t();
-    if (_groupId)
-        return *_groupId;
+    if (groupId_)
+        return *groupId_;
     return defaultValue;
 }
 const std::shared_ptr<uint64_t> &Groups::getGroupId() const noexcept
 {
-    return _groupId;
+    return groupId_;
 }
 const typename Groups::PrimaryKeyType &Groups::getPrimaryKey() const
 {
-    assert(_groupId);
-    return *_groupId;
+    assert(groupId_);
+    return *groupId_;
 }
 
 const std::string &Groups::getValueOfGroupName() const noexcept
 {
     const static std::string defaultValue = std::string();
-    if (_groupName)
-        return *_groupName;
+    if (groupName_)
+        return *groupName_;
     return defaultValue;
 }
 const std::shared_ptr<std::string> &Groups::getGroupName() const noexcept
 {
-    return _groupName;
+    return groupName_;
 }
 void Groups::setGroupName(const std::string &pGroupName) noexcept
 {
-    _groupName = std::make_shared<std::string>(pGroupName);
-    _dirtyFlag[1] = true;
+    groupName_ = std::make_shared<std::string>(pGroupName);
+    dirtyFlag_[1] = true;
 }
 void Groups::setGroupName(std::string &&pGroupName) noexcept
 {
-    _groupName = std::make_shared<std::string>(std::move(pGroupName));
-    _dirtyFlag[1] = true;
+    groupName_ = std::make_shared<std::string>(std::move(pGroupName));
+    dirtyFlag_[1] = true;
 }
 
 void Groups::setGroupNameToNull() noexcept
 {
-    _groupName.reset();
-    _dirtyFlag[1] = true;
+    groupName_.reset();
+    dirtyFlag_[1] = true;
 }
 
 const uint64_t &Groups::getValueOfCreaterId() const noexcept
 {
     const static uint64_t defaultValue = uint64_t();
-    if (_createrId)
-        return *_createrId;
+    if (createrId_)
+        return *createrId_;
     return defaultValue;
 }
 const std::shared_ptr<uint64_t> &Groups::getCreaterId() const noexcept
 {
-    return _createrId;
+    return createrId_;
 }
 void Groups::setCreaterId(const uint64_t &pCreaterId) noexcept
 {
-    _createrId = std::make_shared<uint64_t>(pCreaterId);
-    _dirtyFlag[2] = true;
+    createrId_ = std::make_shared<uint64_t>(pCreaterId);
+    dirtyFlag_[2] = true;
 }
 
 void Groups::setCreaterIdToNull() noexcept
 {
-    _createrId.reset();
-    _dirtyFlag[2] = true;
+    createrId_.reset();
+    dirtyFlag_[2] = true;
 }
 
 const std::string &Groups::getValueOfCreateTime() const noexcept
 {
     const static std::string defaultValue = std::string();
-    if (_createTime)
-        return *_createTime;
+    if (createTime_)
+        return *createTime_;
     return defaultValue;
 }
 const std::shared_ptr<std::string> &Groups::getCreateTime() const noexcept
 {
-    return _createTime;
+    return createTime_;
 }
 void Groups::setCreateTime(const std::string &pCreateTime) noexcept
 {
-    _createTime = std::make_shared<std::string>(pCreateTime);
-    _dirtyFlag[3] = true;
+    createTime_ = std::make_shared<std::string>(pCreateTime);
+    dirtyFlag_[3] = true;
 }
 void Groups::setCreateTime(std::string &&pCreateTime) noexcept
 {
-    _createTime = std::make_shared<std::string>(std::move(pCreateTime));
-    _dirtyFlag[3] = true;
+    createTime_ = std::make_shared<std::string>(std::move(pCreateTime));
+    dirtyFlag_[3] = true;
 }
 
 void Groups::setCreateTimeToNull() noexcept
 {
-    _createTime.reset();
-    _dirtyFlag[3] = true;
+    createTime_.reset();
+    dirtyFlag_[3] = true;
 }
 
 const uint64_t &Groups::getValueOfInviting() const noexcept
 {
     const static uint64_t defaultValue = uint64_t();
-    if (_inviting)
-        return *_inviting;
+    if (inviting_)
+        return *inviting_;
     return defaultValue;
 }
 const std::shared_ptr<uint64_t> &Groups::getInviting() const noexcept
 {
-    return _inviting;
+    return inviting_;
 }
 void Groups::setInviting(const uint64_t &pInviting) noexcept
 {
-    _inviting = std::make_shared<uint64_t>(pInviting);
-    _dirtyFlag[4] = true;
+    inviting_ = std::make_shared<uint64_t>(pInviting);
+    dirtyFlag_[4] = true;
 }
 
 void Groups::setInvitingToNull() noexcept
 {
-    _inviting.reset();
-    _dirtyFlag[4] = true;
+    inviting_.reset();
+    dirtyFlag_[4] = true;
 }
 
 const uint64_t &Groups::getValueOfInvitingUserId() const noexcept
 {
     const static uint64_t defaultValue = uint64_t();
-    if (_invitingUserId)
-        return *_invitingUserId;
+    if (invitingUserId_)
+        return *invitingUserId_;
     return defaultValue;
 }
 const std::shared_ptr<uint64_t> &Groups::getInvitingUserId() const noexcept
 {
-    return _invitingUserId;
+    return invitingUserId_;
 }
 void Groups::setInvitingUserId(const uint64_t &pInvitingUserId) noexcept
 {
-    _invitingUserId = std::make_shared<uint64_t>(pInvitingUserId);
-    _dirtyFlag[5] = true;
+    invitingUserId_ = std::make_shared<uint64_t>(pInvitingUserId);
+    dirtyFlag_[5] = true;
 }
 
 void Groups::setInvitingUserIdToNull() noexcept
 {
-    _invitingUserId.reset();
-    _dirtyFlag[5] = true;
+    invitingUserId_.reset();
+    dirtyFlag_[5] = true;
 }
 
 const std::string &Groups::getValueOfAvatarId() const noexcept
 {
     const static std::string defaultValue = std::string();
-    if (_avatarId)
-        return *_avatarId;
+    if (avatarId_)
+        return *avatarId_;
     return defaultValue;
 }
 const std::shared_ptr<std::string> &Groups::getAvatarId() const noexcept
 {
-    return _avatarId;
+    return avatarId_;
 }
 void Groups::setAvatarId(const std::string &pAvatarId) noexcept
 {
-    _avatarId = std::make_shared<std::string>(pAvatarId);
-    _dirtyFlag[6] = true;
+    avatarId_ = std::make_shared<std::string>(pAvatarId);
+    dirtyFlag_[6] = true;
 }
 void Groups::setAvatarId(std::string &&pAvatarId) noexcept
 {
-    _avatarId = std::make_shared<std::string>(std::move(pAvatarId));
-    _dirtyFlag[6] = true;
+    avatarId_ = std::make_shared<std::string>(std::move(pAvatarId));
+    dirtyFlag_[6] = true;
 }
 
 void Groups::setAvatarIdToNull() noexcept
 {
-    _avatarId.reset();
-    _dirtyFlag[6] = true;
+    avatarId_.reset();
+    dirtyFlag_[6] = true;
 }
 
 const double &Groups::getValueOfUuu() const noexcept
 {
     const static double defaultValue = double();
-    if (_uuu)
-        return *_uuu;
+    if (uuu_)
+        return *uuu_;
     return defaultValue;
 }
 const std::shared_ptr<double> &Groups::getUuu() const noexcept
 {
-    return _uuu;
+    return uuu_;
 }
 void Groups::setUuu(const double &pUuu) noexcept
 {
-    _uuu = std::make_shared<double>(pUuu);
-    _dirtyFlag[7] = true;
+    uuu_ = std::make_shared<double>(pUuu);
+    dirtyFlag_[7] = true;
 }
 
 void Groups::setUuuToNull() noexcept
 {
-    _uuu.reset();
-    _dirtyFlag[7] = true;
+    uuu_.reset();
+    dirtyFlag_[7] = true;
 }
 
 const std::string &Groups::getValueOfText() const noexcept
 {
     const static std::string defaultValue = std::string();
-    if (_text)
-        return *_text;
+    if (text_)
+        return *text_;
     return defaultValue;
 }
 const std::shared_ptr<std::string> &Groups::getText() const noexcept
 {
-    return _text;
+    return text_;
 }
 void Groups::setText(const std::string &pText) noexcept
 {
-    _text = std::make_shared<std::string>(pText);
-    _dirtyFlag[8] = true;
+    text_ = std::make_shared<std::string>(pText);
+    dirtyFlag_[8] = true;
 }
 void Groups::setText(std::string &&pText) noexcept
 {
-    _text = std::make_shared<std::string>(std::move(pText));
-    _dirtyFlag[8] = true;
+    text_ = std::make_shared<std::string>(std::move(pText));
+    dirtyFlag_[8] = true;
 }
 
 void Groups::setTextToNull() noexcept
 {
-    _text.reset();
-    _dirtyFlag[8] = true;
+    text_.reset();
+    dirtyFlag_[8] = true;
 }
 
 const std::vector<char> &Groups::getValueOfAvatar() const noexcept
 {
     const static std::vector<char> defaultValue = std::vector<char>();
-    if (_avatar)
-        return *_avatar;
+    if (avatar_)
+        return *avatar_;
     return defaultValue;
 }
 std::string Groups::getValueOfAvatarAsString() const noexcept
 {
     const static std::string defaultValue = std::string();
-    if (_avatar)
-        return std::string(_avatar->data(), _avatar->size());
+    if (avatar_)
+        return std::string(avatar_->data(), avatar_->size());
     return defaultValue;
 }
 const std::shared_ptr<std::vector<char>> &Groups::getAvatar() const noexcept
 {
-    return _avatar;
+    return avatar_;
 }
 void Groups::setAvatar(const std::vector<char> &pAvatar) noexcept
 {
-    _avatar = std::make_shared<std::vector<char>>(pAvatar);
-    _dirtyFlag[9] = true;
+    avatar_ = std::make_shared<std::vector<char>>(pAvatar);
+    dirtyFlag_[9] = true;
 }
 
 void Groups::setAvatar(const std::string &pAvatar) noexcept
 {
-    _avatar =
+    avatar_ =
         std::make_shared<std::vector<char>>(pAvatar.c_str(),
                                             pAvatar.c_str() + pAvatar.length());
-    _dirtyFlag[9] = true;
+    dirtyFlag_[9] = true;
 }
 
 void Groups::setAvatarToNull() noexcept
 {
-    _avatar.reset();
-    _dirtyFlag[9] = true;
+    avatar_.reset();
+    dirtyFlag_[9] = true;
 }
 
 const bool &Groups::getValueOfIsDefault() const noexcept
 {
     const static bool defaultValue = bool();
-    if (_isDefault)
-        return *_isDefault;
+    if (isDefault_)
+        return *isDefault_;
     return defaultValue;
 }
 const std::shared_ptr<bool> &Groups::getIsDefault() const noexcept
 {
-    return _isDefault;
+    return isDefault_;
 }
 void Groups::setIsDefault(const bool &pIsDefault) noexcept
 {
-    _isDefault = std::make_shared<bool>(pIsDefault);
-    _dirtyFlag[10] = true;
+    isDefault_ = std::make_shared<bool>(pIsDefault);
+    dirtyFlag_[10] = true;
 }
 
 void Groups::setIsDefaultToNull() noexcept
 {
-    _isDefault.reset();
-    _dirtyFlag[10] = true;
+    isDefault_.reset();
+    dirtyFlag_[10] = true;
 }
 
 void Groups::updateId(const uint64_t id)
 {
-    _groupId = std::make_shared<uint64_t>(id);
+    groupId_ = std::make_shared<uint64_t>(id);
 }
 
 const std::vector<std::string> &Groups::insertColumns() noexcept
 {
-    static const std::vector<std::string> _inCols = {"group_name",
-                                                     "creater_id",
-                                                     "create_time",
-                                                     "inviting",
-                                                     "inviting_user_id",
-                                                     "avatar_id",
-                                                     "uuu",
-                                                     "text",
-                                                     "avatar",
-                                                     "is_default"};
-    return _inCols;
+    static const std::vector<std::string> inCols = {"group_name",
+                                                    "creater_id",
+                                                    "create_time",
+                                                    "inviting",
+                                                    "inviting_user_id",
+                                                    "avatar_id",
+                                                    "uuu",
+                                                    "text",
+                                                    "avatar",
+                                                    "is_default"};
+    return inCols;
 }
 
 void Groups::outputArgs(drogon::orm::internal::SqlBinder &binder) const
 {
-    if (_dirtyFlag[1])
+    if (dirtyFlag_[1])
     {
         if (getGroupName())
         {
@@ -931,7 +931,7 @@ void Groups::outputArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
-    if (_dirtyFlag[2])
+    if (dirtyFlag_[2])
     {
         if (getCreaterId())
         {
@@ -942,7 +942,7 @@ void Groups::outputArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
-    if (_dirtyFlag[3])
+    if (dirtyFlag_[3])
     {
         if (getCreateTime())
         {
@@ -953,7 +953,7 @@ void Groups::outputArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
-    if (_dirtyFlag[4])
+    if (dirtyFlag_[4])
     {
         if (getInviting())
         {
@@ -964,7 +964,7 @@ void Groups::outputArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
-    if (_dirtyFlag[5])
+    if (dirtyFlag_[5])
     {
         if (getInvitingUserId())
         {
@@ -975,7 +975,7 @@ void Groups::outputArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
-    if (_dirtyFlag[6])
+    if (dirtyFlag_[6])
     {
         if (getAvatarId())
         {
@@ -986,7 +986,7 @@ void Groups::outputArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
-    if (_dirtyFlag[7])
+    if (dirtyFlag_[7])
     {
         if (getUuu())
         {
@@ -997,7 +997,7 @@ void Groups::outputArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
-    if (_dirtyFlag[8])
+    if (dirtyFlag_[8])
     {
         if (getText())
         {
@@ -1008,7 +1008,7 @@ void Groups::outputArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
-    if (_dirtyFlag[9])
+    if (dirtyFlag_[9])
     {
         if (getAvatar())
         {
@@ -1019,7 +1019,7 @@ void Groups::outputArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
-    if (_dirtyFlag[10])
+    if (dirtyFlag_[10])
     {
         if (getIsDefault())
         {
@@ -1035,9 +1035,9 @@ void Groups::outputArgs(drogon::orm::internal::SqlBinder &binder) const
 const std::vector<std::string> Groups::updateColumns() const
 {
     std::vector<std::string> ret;
-    for (size_t i = 0; i < sizeof(_dirtyFlag); i++)
+    for (size_t i = 0; i < sizeof(dirtyFlag_); i++)
     {
-        if (_dirtyFlag[i])
+        if (dirtyFlag_[i])
         {
             ret.push_back(getColumnName(i));
         }
@@ -1047,7 +1047,7 @@ const std::vector<std::string> Groups::updateColumns() const
 
 void Groups::updateArgs(drogon::orm::internal::SqlBinder &binder) const
 {
-    if (_dirtyFlag[1])
+    if (dirtyFlag_[1])
     {
         if (getGroupName())
         {
@@ -1058,7 +1058,7 @@ void Groups::updateArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
-    if (_dirtyFlag[2])
+    if (dirtyFlag_[2])
     {
         if (getCreaterId())
         {
@@ -1069,7 +1069,7 @@ void Groups::updateArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
-    if (_dirtyFlag[3])
+    if (dirtyFlag_[3])
     {
         if (getCreateTime())
         {
@@ -1080,7 +1080,7 @@ void Groups::updateArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
-    if (_dirtyFlag[4])
+    if (dirtyFlag_[4])
     {
         if (getInviting())
         {
@@ -1091,7 +1091,7 @@ void Groups::updateArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
-    if (_dirtyFlag[5])
+    if (dirtyFlag_[5])
     {
         if (getInvitingUserId())
         {
@@ -1102,7 +1102,7 @@ void Groups::updateArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
-    if (_dirtyFlag[6])
+    if (dirtyFlag_[6])
     {
         if (getAvatarId())
         {
@@ -1113,7 +1113,7 @@ void Groups::updateArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
-    if (_dirtyFlag[7])
+    if (dirtyFlag_[7])
     {
         if (getUuu())
         {
@@ -1124,7 +1124,7 @@ void Groups::updateArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
-    if (_dirtyFlag[8])
+    if (dirtyFlag_[8])
     {
         if (getText())
         {
@@ -1135,7 +1135,7 @@ void Groups::updateArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
-    if (_dirtyFlag[9])
+    if (dirtyFlag_[9])
     {
         if (getAvatar())
         {
@@ -1146,7 +1146,7 @@ void Groups::updateArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
-    if (_dirtyFlag[10])
+    if (dirtyFlag_[10])
     {
         if (getIsDefault())
         {

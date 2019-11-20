@@ -27,12 +27,12 @@ class ConfigLoader : public trantor::NonCopyable
     ~ConfigLoader();
     const Json::Value &jsonValue() const
     {
-        return _configJsonRoot;
+        return configJsonRoot_;
     }
     void load();
 
   private:
-    std::string _configFile;
-    Json::Value _configJsonRoot;
+    std::string configFile_;
+    Json::Value configJsonRoot_;
 };
 }  // namespace drogon

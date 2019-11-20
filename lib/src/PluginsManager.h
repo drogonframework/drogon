@@ -18,7 +18,7 @@
 
 namespace drogon
 {
-typedef std::unique_ptr<PluginBase> PluginBasePtr;
+using PluginBasePtr = std::unique_ptr<PluginBase>;
 
 class PluginsManager : trantor::NonCopyable
 {
@@ -31,8 +31,8 @@ class PluginsManager : trantor::NonCopyable
     ~PluginsManager();
 
   private:
-    std::map<std::string, PluginBasePtr> _pluginsMap;
-    std::vector<PluginBase *> _initializedPlugins;
+    std::map<std::string, PluginBasePtr> pluginsMap_;
+    std::vector<PluginBase *> initializedPlugins_;
 };
 
 }  // namespace drogon

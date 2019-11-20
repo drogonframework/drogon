@@ -6,8 +6,8 @@ void TestController::asyncHandleHttpRequest(
 {
     // write your application logic here
     LOG_WARN << req->matchedPathPatternData();
-    LOG_DEBUG << "index=" << _threadIndex.getThreadData();
-    ++(_threadIndex.getThreadData());
+    LOG_DEBUG << "index=" << threadIndex_.getThreadData();
+    ++(threadIndex_.getThreadData());
     auto resp = HttpResponse::newHttpResponse();
     resp->setContentTypeCodeAndCustomString(CT_TEXT_PLAIN,
                                             "Content-Type: plaintext\r\n");

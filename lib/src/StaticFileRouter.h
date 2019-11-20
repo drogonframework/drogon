@@ -32,53 +32,53 @@ class StaticFileRouter
     void setFileTypes(const std::vector<std::string> &types);
     void setStaticFilesCacheTime(int cacheTime)
     {
-        _staticFilesCacheTime = cacheTime;
+        staticFilesCacheTime_ = cacheTime;
     }
     int staticFilesCacheTime() const
     {
-        return _staticFilesCacheTime;
+        return staticFilesCacheTime_;
     }
     void setGzipStatic(bool useGzipStatic)
     {
-        _gzipStaticFlag = useGzipStatic;
+        gzipStaticFlag_ = useGzipStatic;
     }
     void init(const std::vector<trantor::EventLoop *> &ioloops);
     StaticFileRouter(
         const std::vector<std::pair<std::string, std::string>> &headers)
-        : _headers(headers)
+        : headers_(headers)
     {
     }
 
   private:
-    std::set<std::string> _fileTypeSet = {"html",
-                                          "js",
-                                          "css",
-                                          "xml",
-                                          "xsl",
-                                          "txt",
-                                          "svg",
-                                          "ttf",
-                                          "otf",
-                                          "woff2",
-                                          "woff",
-                                          "eot",
-                                          "png",
-                                          "jpg",
-                                          "jpeg",
-                                          "gif",
-                                          "bmp",
-                                          "ico",
-                                          "icns"};
+    std::set<std::string> fileTypeSet_{"html",
+                                       "js",
+                                       "css",
+                                       "xml",
+                                       "xsl",
+                                       "txt",
+                                       "svg",
+                                       "ttf",
+                                       "otf",
+                                       "woff2",
+                                       "woff",
+                                       "eot",
+                                       "png",
+                                       "jpg",
+                                       "jpeg",
+                                       "gif",
+                                       "bmp",
+                                       "ico",
+                                       "icns"};
 
-    int _staticFilesCacheTime = 5;
-    bool _enableLastModify = true;
-    bool _gzipStaticFlag = true;
+    int staticFilesCacheTime_{5};
+    bool enableLastModify_{true};
+    bool gzipStaticFlag_{true};
     std::unique_ptr<
         IOThreadStorage<std::unique_ptr<CacheMap<std::string, char>>>>
-        _staticFilesCacheMap;
+        staticFilesCacheMap_;
     std::unique_ptr<
         IOThreadStorage<std::unordered_map<std::string, HttpResponsePtr>>>
-        _staticFilesCache;
-    const std::vector<std::pair<std::string, std::string>> &_headers;
+        staticFilesCache_;
+    const std::vector<std::pair<std::string, std::string>> &headers_;
 };
 }  // namespace drogon

@@ -50,49 +50,49 @@ class ConstRowIterator : public std::iterator<std::random_access_iterator_tag,
     ConstRowIterator operator++(int);
     ConstRowIterator &operator++()
     {
-        ++_column;
+        ++column_;
         return *this;
     }
     ConstRowIterator operator--(int);
     ConstRowIterator &operator--()
     {
-        --_column;
+        --column_;
         return *this;
     }
     ConstRowIterator &operator+=(difference_type i)
     {
-        _column += i;
+        column_ += i;
         return *this;
     }
     ConstRowIterator &operator-=(difference_type i)
     {
-        _column -= i;
+        column_ -= i;
         return *this;
     }
 
     bool operator==(const ConstRowIterator &other) const
     {
-        return _column == other._column;
+        return column_ == other.column_;
     }
     bool operator!=(const ConstRowIterator &other) const
     {
-        return _column != other._column;
+        return column_ != other.column_;
     }
     bool operator>(const ConstRowIterator &other) const
     {
-        return _column > other._column;
+        return column_ > other.column_;
     }
     bool operator<(const ConstRowIterator &other) const
     {
-        return _column < other._column;
+        return column_ < other.column_;
     }
     bool operator>=(const ConstRowIterator &other) const
     {
-        return _column >= other._column;
+        return column_ >= other.column_;
     }
     bool operator<=(const ConstRowIterator &other) const
     {
-        return _column <= other._column;
+        return column_ <= other.column_;
     }
 
   private:
@@ -153,27 +153,27 @@ class ConstReverseRowIterator : private ConstRowIterator
 
     bool operator==(const ConstReverseRowIterator &other) const
     {
-        return _column == other._column;
+        return column_ == other.column_;
     }
     bool operator!=(const ConstReverseRowIterator &other) const
     {
-        return _column != other._column;
+        return column_ != other.column_;
     }
     bool operator>(const ConstReverseRowIterator &other) const
     {
-        return _column < other._column;
+        return column_ < other.column_;
     }
     bool operator<(const ConstReverseRowIterator &other) const
     {
-        return _column > other._column;
+        return column_ > other.column_;
     }
     bool operator>=(const ConstReverseRowIterator &other) const
     {
-        return _column <= other._column;
+        return column_ <= other.column_;
     }
     bool operator<=(const ConstReverseRowIterator &other) const
     {
-        return _column >= other._column;
+        return column_ >= other.column_;
     }
 };
 

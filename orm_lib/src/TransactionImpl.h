@@ -36,11 +36,11 @@ class TransactionImpl : public Transaction,
     virtual void setCommitCallback(
         const std::function<void(bool)> &commitCallback) override
     {
-        _commitCallback = commitCallback;
+        commitCallback_ = commitCallback;
     }
 
   private:
-    DbConnectionPtr _connectionPtr;
+    DbConnectionPtr connectionPtr_;
     virtual void execSql(std::string &&sql,
                          size_t paraNum,
                          std::vector<const char *> &&parameters,
@@ -50,7 +50,7 @@ class TransactionImpl : public Transaction,
                          std::function<void(const std::exception_ptr &)>
                              &&exceptCallback) override
     {
-        if (_loop->isInLoopThread())
+        if (loop_->isInLoopThread())
         {
             execSqlInLoop(std::move(sql),
                           paraNum,
@@ -62,7 +62,7 @@ class TransactionImpl : public Transaction,
         }
         else
         {
-            _loop->queueInLoop(
+            loop_->queueInLoop(
                 [thisPtr = shared_from_this(),
                  sql = std::move(sql),
                  paraNum,
@@ -102,30 +102,30 @@ class TransactionImpl : public Transaction,
     {
         callback(shared_from_this());
     }
-    std::function<void()> _usedUpCallback;
-    bool _isCommitedOrRolledback = false;
-    bool _isWorking = false;
+    std::function<void()> usedUpCallback_;
+    bool isCommitedOrRolledback_{false};
+    bool isWorking_{false};
     void execNewTask();
     struct SqlCmd
     {
-        std::string _sql;
-        size_t _paraNum;
-        std::vector<const char *> _parameters;
-        std::vector<int> _length;
-        std::vector<int> _format;
-        QueryCallback _cb;
-        ExceptPtrCallback _exceptCb;
-        bool _isRollbackCmd = false;
-        std::shared_ptr<TransactionImpl> _thisPtr;
+        std::string sql_;
+        size_t parametersNumber_;
+        std::vector<const char *> parameters_;
+        std::vector<int> lengths_;
+        std::vector<int> formats_;
+        QueryCallback callback_;
+        ExceptPtrCallback exceptionCallback_;
+        bool isRollbackCmd_{false};
+        std::shared_ptr<TransactionImpl> thisPtr_;
     };
-    std::list<SqlCmd> _sqlCmdBuffer;
+    std::list<SqlCmd> sqlCmdBuffer_;
     //   std::mutex _bufferMutex;
     friend class DbClientImpl;
     friend class DbClientLockFree;
     void doBegin();
-    trantor::EventLoop *_loop;
-    std::function<void(bool)> _commitCallback;
-    std::shared_ptr<TransactionImpl> _thisPtr;
+    trantor::EventLoop *loop_;
+    std::function<void(bool)> commitCallback_;
+    std::shared_ptr<TransactionImpl> thisPtr_;
 };
 }  // namespace orm
 }  // namespace drogon

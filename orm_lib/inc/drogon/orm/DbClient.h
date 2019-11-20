@@ -31,8 +31,8 @@ namespace drogon
 {
 namespace orm
 {
-typedef std::function<void(const Result &)> ResultCallback;
-typedef std::function<void(const DrogonDbException &)> ExceptionCallback;
+using ResultCallback = std::function<void(const Result &)>;
+using ExceptionCallback = std::function<void(const DrogonDbException &)>;
 
 class Transaction;
 
@@ -175,11 +175,11 @@ class DbClient : public trantor::NonCopyable
 
     ClientType type() const
     {
-        return _type;
+        return type_;
     }
     const std::string &connectionInfo()
     {
-        return _connInfo;
+        return connectionInfo_;
     }
 
   private:
@@ -194,10 +194,10 @@ class DbClient : public trantor::NonCopyable
         std::function<void(const std::exception_ptr &)> &&exceptCallback) = 0;
 
   protected:
-    ClientType _type;
-    std::string _connInfo;
+    ClientType type_;
+    std::string connectionInfo_;
 };
-typedef std::shared_ptr<DbClient> DbClientPtr;
+using DbClientPtr = std::shared_ptr<DbClient>;
 
 class Transaction : public DbClient
 {

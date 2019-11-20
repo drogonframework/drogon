@@ -20,57 +20,57 @@
 using namespace drogon;
 
 CacheFile::CacheFile(const std::string &path, bool autoDelete)
-    : _autoDelete(autoDelete), _path(path)
+    : autoDelete_(autoDelete), path_(path)
 {
-    _file = fopen(_path.data(), "w+");
+    file_ = fopen(path_.data(), "w+");
 }
 
 CacheFile::~CacheFile()
 {
-    if (_data)
+    if (data_)
     {
-        munmap(_data, _dataLength);
+        munmap(data_, dataLength_);
     }
-    if (_autoDelete && _file)
+    if (autoDelete_ && file_)
     {
-        fclose(_file);
-        unlink(_path.data());
+        fclose(file_);
+        unlink(path_.data());
     }
-    else if (_file)
+    else if (file_)
     {
-        fclose(_file);
+        fclose(file_);
     }
 }
 
 void CacheFile::append(const char *data, size_t length)
 {
-    if (_file)
-        fwrite(data, length, 1, _file);
+    if (file_)
+        fwrite(data, length, 1, file_);
 }
 
 size_t CacheFile::length()
 {
-    if (_file)
-        return ftell(_file);
+    if (file_)
+        return ftell(file_);
     return 0;
 }
 
 char *CacheFile::data()
 {
-    if (!_file)
+    if (!file_)
         return nullptr;
-    if (!_data)
+    if (!data_)
     {
-        fflush(_file);
-        auto fd = fileno(_file);
-        _dataLength = length();
-        _data = static_cast<char *>(
-            mmap(nullptr, _dataLength, PROT_READ, MAP_SHARED, fd, 0));
-        if (_data == MAP_FAILED)
+        fflush(file_);
+        auto fd = fileno(file_);
+        dataLength_ = length();
+        data_ = static_cast<char *>(
+            mmap(nullptr, dataLength_, PROT_READ, MAP_SHARED, fd, 0));
+        if (data_ == MAP_FAILED)
         {
-            _data = nullptr;
+            data_ = nullptr;
             LOG_SYSERR << "mmap:";
         }
     }
-    return _data;
+    return data_;
 }

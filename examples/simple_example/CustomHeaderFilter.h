@@ -13,7 +13,7 @@ class CustomHeaderFilter : public HttpFilter<CustomHeaderFilter, false>
 {
   public:
     CustomHeaderFilter(const std::string &field, const std::string &value)
-        : _field(field), _value(value)
+        : field_(field), value_(value)
     {
     }
     virtual void doFilter(const HttpRequestPtr &req,
@@ -21,6 +21,6 @@ class CustomHeaderFilter : public HttpFilter<CustomHeaderFilter, false>
                           FilterChainCallback &&fccb) override;
 
   private:
-    std::string _field;
-    std::string _value;
+    std::string field_;
+    std::string value_;
 };

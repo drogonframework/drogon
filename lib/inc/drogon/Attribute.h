@@ -40,8 +40,8 @@ class Attributes
     const T &get(const std::string &key) const
     {
         const static T nullVal = T();
-        auto it = _attributesMap.find(key);
-        if (it != _attributesMap.end())
+        auto it = attributesMap_.find(key);
+        if (it != attributesMap_.end())
         {
             if (typeid(T) == it->second.type())
             {
@@ -60,7 +60,7 @@ class Attributes
      */
     any &operator[](const std::string &key)
     {
-        return _attributesMap[key];
+        return attributesMap_[key];
     }
 
     /**
@@ -72,7 +72,7 @@ class Attributes
      */
     void insert(const std::string &key, const any &obj)
     {
-        _attributesMap[key] = obj;
+        attributesMap_[key] = obj;
     }
 
     /**
@@ -84,7 +84,7 @@ class Attributes
      */
     void insert(const std::string &key, any &&obj)
     {
-        _attributesMap[key] = std::move(obj);
+        attributesMap_[key] = std::move(obj);
     }
 
     /**
@@ -92,7 +92,7 @@ class Attributes
      */
     void erase(const std::string &key)
     {
-        _attributesMap.erase(key);
+        attributesMap_.erase(key);
     }
 
     /**
@@ -100,7 +100,7 @@ class Attributes
      */
     bool find(const std::string &key)
     {
-        if (_attributesMap.find(key) == _attributesMap.end())
+        if (attributesMap_.find(key) == attributesMap_.end())
         {
             return false;
         }
@@ -112,7 +112,7 @@ class Attributes
      */
     void clear()
     {
-        _attributesMap.clear();
+        attributesMap_.clear();
     }
 
     /**
@@ -123,10 +123,10 @@ class Attributes
     }
 
   private:
-    typedef std::map<std::string, any> AttributesMap;
-    AttributesMap _attributesMap;
+    using AttributesMap = std::map<std::string, any>;
+    AttributesMap attributesMap_;
 };
 
-typedef std::shared_ptr<Attributes> AttributesPtr;
+using AttributesPtr = std::shared_ptr<Attributes>;
 
 }  // namespace drogon

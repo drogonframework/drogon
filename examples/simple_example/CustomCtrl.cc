@@ -6,6 +6,6 @@ void CustomCtrl::hello(const HttpRequestPtr &req,
                        const std::string &userName) const
 {
     auto resp = HttpResponse::newHttpResponse();
-    resp->setBody("<P>" + _greetings + ", " + userName + "</P>");
+    resp->setBody("<P>" + greetings_ + ", " + userName + "</P>");
     callback(resp);
 }

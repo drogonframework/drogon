@@ -40,62 +40,62 @@ class HttpClientImpl : public HttpClient,
                              HttpReqCallback &&callback) override;
     virtual trantor::EventLoop *getLoop() override
     {
-        return _loop;
+        return loop_;
     }
     virtual void setPipeliningDepth(size_t depth) override
     {
-        _pipeliningDepth = depth;
+        pipeliningDepth_ = depth;
     }
     ~HttpClientImpl();
 
     virtual void enableCookies(bool flag = true) override
     {
-        _enableCookies = flag;
+        enableCookies_ = flag;
     }
 
     virtual void addCookie(const std::string &key,
                            const std::string &value) override
     {
-        _validCookies.emplace_back(Cookie(key, value));
+        validCookies_.emplace_back(Cookie(key, value));
     }
 
     virtual void addCookie(const Cookie &cookie) override
     {
-        _validCookies.emplace_back(cookie);
+        validCookies_.emplace_back(cookie);
     }
 
     virtual size_t bytesSent() const override
     {
-        return _bytesSent;
+        return bytesSent_;
     }
     virtual size_t bytesReceived() const override
     {
-        return _bytesReceived;
+        return bytesReceived_;
     }
 
   private:
-    std::shared_ptr<trantor::TcpClient> _tcpClient;
-    trantor::EventLoop *_loop;
-    trantor::InetAddress _server;
-    bool _useSSL;
+    std::shared_ptr<trantor::TcpClient> tcpClientPtr_;
+    trantor::EventLoop *loop_;
+    trantor::InetAddress serverAddr_;
+    bool useSSL_;
     void sendReq(const trantor::TcpConnectionPtr &connPtr,
                  const HttpRequestPtr &req);
     void sendRequestInLoop(const HttpRequestPtr &req,
                            const HttpReqCallback &callback);
     void handleCookies(const HttpResponseImplPtr &resp);
     void createTcpClient();
-    std::queue<std::pair<HttpRequestPtr, HttpReqCallback>> _pipeliningCallbacks;
-    std::queue<std::pair<HttpRequestPtr, HttpReqCallback>> _requestsBuffer;
+    std::queue<std::pair<HttpRequestPtr, HttpReqCallback>> pipeliningCallbacks_;
+    std::queue<std::pair<HttpRequestPtr, HttpReqCallback>> requestsBuffer_;
     void onRecvMessage(const trantor::TcpConnectionPtr &, trantor::MsgBuffer *);
     void onError(ReqResult result);
-    std::string _domain;
-    size_t _pipeliningDepth = 0;
-    bool _enableCookies = false;
-    std::vector<Cookie> _validCookies;
-    size_t _bytesSent = 0;
-    size_t _bytesReceived = 0;
-    bool _dns = false;
-    std::shared_ptr<trantor::Resolver> _resolver;
+    std::string domain_;
+    size_t pipeliningDepth_{0};
+    bool enableCookies_{false};
+    std::vector<Cookie> validCookies_;
+    size_t bytesSent_{0};
+    size_t bytesReceived_{0};
+    bool dns_{false};
+    std::shared_ptr<trantor::Resolver> resolverPtr_;
 };
-typedef std::shared_ptr<HttpClientImpl> HttpClientImplPtr;
+using HttpClientImplPtr = std::shared_ptr<HttpClientImpl>;
 }  // namespace drogon

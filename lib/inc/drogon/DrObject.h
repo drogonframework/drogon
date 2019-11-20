@@ -35,8 +35,8 @@ class DrObjectBase
      */
     virtual const std::string &className() const
     {
-        static std::string _name = "DrObjectBase";
-        return _name;
+        static const std::string name{"DrObjectBase"};
+        return name;
     }
 
     /**
@@ -61,11 +61,11 @@ class DrObject : public virtual DrObjectBase
   public:
     virtual const std::string &className() const override
     {
-        return _alloc.className();
+        return alloc_.className();
     }
     static const std::string &classTypeName()
     {
-        return _alloc.className();
+        return alloc_.className();
     }
 
     virtual bool isClass(const std::string &class_name) const override
@@ -110,9 +110,9 @@ class DrObject : public virtual DrObjectBase
     };
 
     // use static val to register allocator function for class T;
-    static DrAllocator _alloc;
+    static DrAllocator alloc_;
 };
 template <typename T>
-typename DrObject<T>::DrAllocator DrObject<T>::_alloc;
+typename DrObject<T>::DrAllocator DrObject<T>::alloc_;
 
 }  // namespace drogon

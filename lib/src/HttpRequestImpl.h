@@ -39,65 +39,61 @@ class HttpRequestImpl : public HttpRequest
     friend class HttpRequestParser;
 
     explicit HttpRequestImpl(trantor::EventLoop *loop)
-        : _method(Invalid),
-          _version(kUnknown),
-          _date(trantor::Date::now()),
-          _contentLen(0),
-          _loop(loop)
+        : creationDate_(trantor::Date::now()), loop_(loop)
     {
     }
     void reset()
     {
-        _method = Invalid;
-        _version = kUnknown;
-        _contentLen = 0;
-        _headers.clear();
-        _cookies.clear();
-        _flagForParsingParameters = false;
-        _path.clear();
-        _matchedPathPattern = "";
-        _query.clear();
-        _parameters.clear();
-        _jsonPtr.reset();
-        _sessionPtr.reset();
-        _attributesPtr.reset();
-        _cacheFilePtr.reset();
-        _expect.clear();
-        _content.clear();
-        _contentType = CT_TEXT_PLAIN;
-        _contentTypeString.clear();
-        _keepAlive = true;
+        method_ = Invalid;
+        version_ = kUnknown;
+        contentLen_ = 0;
+        headers_.clear();
+        cookies_.clear();
+        flagForParsingParameters_ = false;
+        path_.clear();
+        matchedPathPattern_ = "";
+        query_.clear();
+        parameters_.clear();
+        jsonPtr_.reset();
+        sessionPtr_.reset();
+        attributesPtr_.reset();
+        cacheFilePtr_.reset();
+        expect_.clear();
+        content_.clear();
+        contentType_ = CT_TEXT_PLAIN;
+        contentTypeString_.clear();
+        keepAlive_ = true;
     }
     trantor::EventLoop *getLoop()
     {
-        return _loop;
+        return loop_;
     }
 
     void setVersion(Version v)
     {
-        _version = v;
+        version_ = v;
         if (v == kHttp10)
         {
-            _keepAlive = false;
+            keepAlive_ = false;
         }
     }
 
     virtual Version version() const override
     {
-        return _version;
+        return version_;
     }
 
     bool setMethod(const char *start, const char *end);
 
     virtual void setMethod(const HttpMethod method) override
     {
-        _method = method;
+        method_ = method;
         return;
     }
 
     virtual HttpMethod method() const override
     {
-        return _method;
+        return method_;
     }
 
     virtual const char *methodString() const override;
@@ -106,24 +102,24 @@ class HttpRequestImpl : public HttpRequest
     {
         if (utils::needUrlDecoding(start, end))
         {
-            _path = utils::urlDecode(start, end);
+            path_ = utils::urlDecode(start, end);
         }
         else
         {
-            _path.append(start, end);
+            path_.append(start, end);
         }
     }
 
     virtual void setPath(const std::string &path) override
     {
-        _path = path;
+        path_ = path;
     }
 
     virtual const std::unordered_map<std::string, std::string> &parameters()
         const override
     {
         parseParametersOnce();
-        return _parameters;
+        return parameters_;
     }
 
     virtual const std::string &getParameter(
@@ -131,61 +127,61 @@ class HttpRequestImpl : public HttpRequest
     {
         const static std::string defaultVal;
         parseParametersOnce();
-        auto iter = _parameters.find(key);
-        if (iter != _parameters.end())
+        auto iter = parameters_.find(key);
+        if (iter != parameters_.end())
             return iter->second;
         return defaultVal;
     }
 
     virtual const std::string &path() const override
     {
-        return _path;
+        return path_;
     }
 
     void setQuery(const char *start, const char *end)
     {
-        _query.assign(start, end);
+        query_.assign(start, end);
     }
 
     void setQuery(const std::string &query)
     {
-        _query = query;
+        query_ = query;
     }
 
     string_view bodyView() const
     {
-        if (_cacheFilePtr)
+        if (cacheFilePtr_)
         {
-            return _cacheFilePtr->getStringView();
+            return cacheFilePtr_->getStringView();
         }
-        return _content;
+        return content_;
     }
     virtual const char *bodyData() const override
     {
-        if (_cacheFilePtr)
+        if (cacheFilePtr_)
         {
-            return _cacheFilePtr->getStringView().data();
+            return cacheFilePtr_->getStringView().data();
         }
-        return _content.data();
+        return content_.data();
     }
     virtual size_t bodyLength() const override
     {
-        if (_cacheFilePtr)
+        if (cacheFilePtr_)
         {
-            return _cacheFilePtr->getStringView().length();
+            return cacheFilePtr_->getStringView().length();
         }
-        return _content.length();
+        return content_.length();
     }
 
     void appendToBody(const char *data, size_t length)
     {
-        if (_cacheFilePtr)
+        if (cacheFilePtr_)
         {
-            _cacheFilePtr->append(data, length);
+            cacheFilePtr_->append(data, length);
         }
         else
         {
-            _content.append(data, length);
+            content_.append(data, length);
         }
     }
 
@@ -193,49 +189,49 @@ class HttpRequestImpl : public HttpRequest
 
     string_view queryView() const
     {
-        return _query;
+        return query_;
     }
 
     string_view contentView() const
     {
-        if (_cacheFilePtr)
-            return _cacheFilePtr->getStringView();
-        return _content;
+        if (cacheFilePtr_)
+            return cacheFilePtr_->getStringView();
+        return content_;
     }
 
     virtual const std::string &query() const override
     {
-        return _query;
+        return query_;
     }
 
     virtual const trantor::InetAddress &peerAddr() const override
     {
-        return _peer;
+        return peer_;
     }
 
     virtual const trantor::InetAddress &localAddr() const override
     {
-        return _local;
+        return local_;
     }
 
     virtual const trantor::Date &creationDate() const override
     {
-        return _date;
+        return creationDate_;
     }
 
     void setCreationDate(const trantor::Date &date)
     {
-        _date = date;
+        creationDate_ = date;
     }
 
     void setPeerAddr(const trantor::InetAddress &peer)
     {
-        _peer = peer;
+        peer_ = peer;
     }
 
     void setLocalAddr(const trantor::InetAddress &local)
     {
-        _local = local;
+        local_ = local;
     }
 
     void addHeader(const char *start, const char *colon, const char *end);
@@ -259,8 +255,8 @@ class HttpRequestImpl : public HttpRequest
     const std::string &getHeaderBy(const std::string &lowerField) const
     {
         const static std::string defaultVal;
-        auto it = _headers.find(lowerField);
-        if (it != _headers.end())
+        auto it = headers_.find(lowerField);
+        if (it != headers_.end())
         {
             return it->second;
         }
@@ -270,8 +266,8 @@ class HttpRequestImpl : public HttpRequest
     const std::string &getCookie(const std::string &field) const override
     {
         const static std::string defaultVal;
-        auto it = _cookies.find(field);
-        if (it != _cookies.end())
+        auto it = cookies_.find(field);
+        if (it != cookies_.end())
         {
             return it->second;
         }
@@ -280,96 +276,96 @@ class HttpRequestImpl : public HttpRequest
 
     const std::unordered_map<std::string, std::string> &headers() const override
     {
-        return _headers;
+        return headers_;
     }
 
     const std::unordered_map<std::string, std::string> &cookies() const override
     {
-        return _cookies;
+        return cookies_;
     }
 
     virtual void setParameter(const std::string &key,
                               const std::string &value) override
     {
-        _flagForParsingParameters = true;
-        _parameters[key] = value;
+        flagForParsingParameters_ = true;
+        parameters_[key] = value;
     }
 
     const std::string &getContent() const
     {
-        return _content;
+        return content_;
     }
 
     void swap(HttpRequestImpl &that) noexcept;
 
     void setContent(const std::string &content)
     {
-        _content = content;
+        content_ = content;
     }
 
     virtual void setBody(const std::string &body) override
     {
-        _content = body;
+        content_ = body;
     }
 
     virtual void setBody(std::string &&body) override
     {
-        _content = std::move(body);
+        content_ = std::move(body);
     }
 
     virtual void addHeader(const std::string &key,
                            const std::string &value) override
     {
-        _headers[key] = value;
+        headers_[key] = value;
     }
 
     virtual void addCookie(const std::string &key,
                            const std::string &value) override
     {
-        _cookies[key] = value;
+        cookies_[key] = value;
     }
 
     void appendToBuffer(trantor::MsgBuffer *output) const;
 
     virtual SessionPtr session() const override
     {
-        return _sessionPtr;
+        return sessionPtr_;
     }
 
     void setSession(const SessionPtr &session)
     {
-        _sessionPtr = session;
+        sessionPtr_ = session;
     }
 
     virtual AttributesPtr attributes() const override
     {
-        if (!_attributesPtr)
+        if (!attributesPtr_)
         {
-            _attributesPtr = std::make_shared<Attributes>();
+            attributesPtr_ = std::make_shared<Attributes>();
         }
-        return _attributesPtr;
+        return attributesPtr_;
     }
 
     virtual const std::shared_ptr<Json::Value> jsonObject() const override
     {
         // Not multi-thread safe but good, because we basically call this
         // function in a single thread
-        if (!_flagForParsingJson)
+        if (!flagForParsingJson_)
         {
-            _flagForParsingJson = true;
+            flagForParsingJson_ = true;
             parseJson();
         }
-        return _jsonPtr;
+        return jsonPtr_;
     }
 
     virtual void setCustomContentTypeString(const std::string &type) override
     {
-        _contentType = CT_NONE;
-        _contentTypeString = type;
+        contentType_ = CT_NONE;
+        contentTypeString_ = type;
     }
     virtual void setContentTypeCode(const ContentType type) override
     {
-        _contentType = type;
+        contentType_ = type;
         auto &typeStr = webContentTypeToString(type);
         setContentType(std::string(typeStr.data(), typeStr.length()));
     }
@@ -377,35 +373,35 @@ class HttpRequestImpl : public HttpRequest
     // virtual void setContentTypeCodeAndCharacterSet(ContentType type, const
     // std::string &charSet = "utf-8") override
     // {
-    //     _contentType = type;
+    //     contentType_ = type;
     //     setContentType(webContentTypeAndCharsetToString(type, charSet));
     // }
 
     virtual ContentType contentType() const override
     {
-        return _contentType;
+        return contentType_;
     }
 
     virtual const char *matchedPathPatternData() const override
     {
-        return _matchedPathPattern.data();
+        return matchedPathPattern_.data();
     }
     virtual size_t matchedPathPatternLength() const override
     {
-        return _matchedPathPattern.length();
+        return matchedPathPattern_.length();
     }
 
     void setMatchedPathPattern(const std::string &pathPattern)
     {
-        _matchedPathPattern = pathPattern;
+        matchedPathPattern_ = pathPattern;
     }
     const std::string &expect() const
     {
-        return _expect;
+        return expect_;
     }
     bool keepAlive() const
     {
-        return _keepAlive;
+        return keepAlive_;
     }
     ~HttpRequestImpl();
 
@@ -413,11 +409,11 @@ class HttpRequestImpl : public HttpRequest
     friend class HttpRequest;
     void setContentType(const std::string &contentType)
     {
-        _contentTypeString = contentType;
+        contentTypeString_ = contentType;
     }
     void setContentType(std::string &&contentType)
     {
-        _contentTypeString = std::move(contentType);
+        contentTypeString_ = std::move(contentType);
     }
 
   private:
@@ -426,43 +422,43 @@ class HttpRequestImpl : public HttpRequest
     {
         // Not multi-thread safe but good, because we basically call this
         // function in a single thread
-        if (!_flagForParsingParameters)
+        if (!flagForParsingParameters_)
         {
-            _flagForParsingParameters = true;
+            flagForParsingParameters_ = true;
             parseParameters();
         }
     }
 
     void parseJson() const;
-    mutable bool _flagForParsingParameters = false;
-    mutable bool _flagForParsingJson = false;
-    HttpMethod _method;
-    Version _version;
-    std::string _path;
-    string_view _matchedPathPattern = "";
-    std::string _query;
-    std::unordered_map<std::string, std::string> _headers;
-    std::unordered_map<std::string, std::string> _cookies;
-    mutable std::unordered_map<std::string, std::string> _parameters;
-    mutable std::shared_ptr<Json::Value> _jsonPtr;
-    SessionPtr _sessionPtr;
-    mutable AttributesPtr _attributesPtr;
-    trantor::InetAddress _peer;
-    trantor::InetAddress _local;
-    trantor::Date _date;
-    std::unique_ptr<CacheFile> _cacheFilePtr;
-    std::string _expect;
-    bool _keepAlive = true;
+    mutable bool flagForParsingParameters_{false};
+    mutable bool flagForParsingJson_{false};
+    HttpMethod method_{Invalid};
+    Version version_{kUnknown};
+    std::string path_;
+    string_view matchedPathPattern_{""};
+    std::string query_;
+    std::unordered_map<std::string, std::string> headers_;
+    std::unordered_map<std::string, std::string> cookies_;
+    mutable std::unordered_map<std::string, std::string> parameters_;
+    mutable std::shared_ptr<Json::Value> jsonPtr_;
+    SessionPtr sessionPtr_;
+    mutable AttributesPtr attributesPtr_;
+    trantor::InetAddress peer_;
+    trantor::InetAddress local_;
+    trantor::Date creationDate_;
+    std::unique_ptr<CacheFile> cacheFilePtr_;
+    std::string expect_;
+    bool keepAlive_{true};
 
   protected:
-    std::string _content;
-    size_t _contentLen;
-    trantor::EventLoop *_loop;
-    ContentType _contentType = CT_TEXT_PLAIN;
-    std::string _contentTypeString;
+    std::string content_;
+    size_t contentLen_{0};
+    trantor::EventLoop *loop_;
+    ContentType contentType_{CT_TEXT_PLAIN};
+    std::string contentTypeString_;
 };
 
-typedef std::shared_ptr<HttpRequestImpl> HttpRequestImplPtr;
+using HttpRequestImplPtr = std::shared_ptr<HttpRequestImpl>;
 
 inline void swap(HttpRequestImpl &one, HttpRequestImpl &two) noexcept
 {

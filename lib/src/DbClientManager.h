@@ -32,14 +32,14 @@ class DbClientManager : public trantor::NonCopyable
     void createDbClients(const std::vector<trantor::EventLoop *> &ioloops);
     DbClientPtr getDbClient(const std::string &name)
     {
-        assert(_dbClientsMap.find(name) != _dbClientsMap.end());
-        return _dbClientsMap[name];
+        assert(dbClientsMap_.find(name) != dbClientsMap_.end());
+        return dbClientsMap_[name];
     }
 
     DbClientPtr getFastDbClient(const std::string &name)
     {
-        auto iter = _dbFastClientsMap.find(name);
-        assert(iter != _dbFastClientsMap.end());
+        auto iter = dbFastClientsMap_.find(name);
+        assert(iter != dbFastClientsMap_.end());
         return iter->second.getThreadData();
     }
     void createDbClient(const std::string &dbType,
@@ -54,17 +54,17 @@ class DbClientManager : public trantor::NonCopyable
                         const bool isFast);
 
   private:
-    std::map<std::string, DbClientPtr> _dbClientsMap;
+    std::map<std::string, DbClientPtr> dbClientsMap_;
     struct DbInfo
     {
-        std::string _name;
-        std::string _connectionInfo;
-        ClientType _dbType;
-        bool _isFast;
-        size_t _connectionNumber;
+        std::string name_;
+        std::string connectionInfo_;
+        ClientType dbType_;
+        bool isFast_;
+        size_t connectionNumber_;
     };
-    std::vector<DbInfo> _dbInfos;
-    std::map<std::string, IOThreadStorage<orm::DbClientPtr>> _dbFastClientsMap;
+    std::vector<DbInfo> dbInfos_;
+    std::map<std::string, IOThreadStorage<orm::DbClientPtr>> dbFastClientsMap_;
 };
 }  // namespace orm
 }  // namespace drogon

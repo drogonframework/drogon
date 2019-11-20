@@ -64,7 +64,7 @@ int main()
 
     auto request = HttpRequest::newHttpRequest();
     request->setPath("/pipe");
-    for (int i = 0; i < 19; i++)
+    for (int i = 0; i < 19; ++i)
     {
         client->sendRequest(
             request, [&counter, &n](ReqResult r, const HttpResponsePtr &resp) {
