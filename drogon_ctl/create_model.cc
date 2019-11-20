@@ -30,7 +30,12 @@
 #include <unistd.h>
 
 using namespace drogon_ctl;
-
+static std::string toLower(const std::string &str)
+{
+    auto ret = str;
+    std::transform(ret.begin(), ret.end(), ret.begin(), tolower);
+    return ret;
+}
 static std::map<std::string, std::vector<Relationship>> getRelationships(
     const Json::Value &relationships)
 {
@@ -80,7 +85,7 @@ void create_model::createModelClassFromPG(
     auto className = nameTransform(tableName, true);
     HttpViewData data;
     data["className"] = className;
-    data["tableName"] = tableName;
+    data["tableName"] = toLower(tableName);
     data["hasPrimaryKey"] = (int)0;
     data["primaryKeyName"] = "";
     data["dbName"] = _dbname;
@@ -321,10 +326,6 @@ void create_model::createModelFromPG(
             const std::string &comment) {
             if (!isNull)
             {
-                std::transform(tableName.begin(),
-                               tableName.end(),
-                               tableName.begin(),
-                               tolower);
                 std::cout << "table name:" << tableName << std::endl;
 
                 createModelClassFromPG(path,
@@ -353,7 +354,7 @@ void create_model::createModelClassFromMysql(
     auto className = nameTransform(tableName, true);
     HttpViewData data;
     data["className"] = className;
-    data["tableName"] = tableName;
+    data["tableName"] = toLower(tableName);
     data["hasPrimaryKey"] = (int)0;
     data["primaryKeyName"] = "";
     data["dbName"] = _dbname;
@@ -495,10 +496,6 @@ void create_model::createModelFromMysql(
                                                       std::string &&tableName) {
         if (!isNull)
         {
-            std::transform(tableName.begin(),
-                           tableName.end(),
-                           tableName.begin(),
-                           tolower);
             std::cout << "table name:" << tableName << std::endl;
             createModelClassFromMysql(path,
                                       client,
@@ -537,7 +534,7 @@ void create_model::createModelClassFromSqlite3(
                     auto className = nameTransform(tableName, true);
                     HttpViewData data;
                     data["className"] = className;
-                    data["tableName"] = tableName;
+                    data["tableName"] = toLower(tableName);
                     data["hasPrimaryKey"] = (int)0;
                     data["primaryKeyName"] = "";
                     data["dbName"] = std::string("sqlite3");
@@ -666,10 +663,6 @@ void create_model::createModelFromSqlite3(
         [&](bool isNull, std::string &&tableName) mutable {
             if (!isNull)
             {
-                std::transform(tableName.begin(),
-                               tableName.end(),
-                               tableName.begin(),
-                               tolower);
                 std::cout << "table name:" << tableName << std::endl;
                 createModelClassFromSqlite3(path,
                                             client,
