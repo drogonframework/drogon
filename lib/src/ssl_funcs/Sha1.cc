@@ -151,7 +151,7 @@ unsigned char *SHA1(const unsigned char *dataIn,
         for (int r = 3; r >= 0; r--)
         {
             dataOut[ct] = buf[r];
-            ct++;
+            ++ct;
         }
     }
 

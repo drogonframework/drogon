@@ -874,7 +874,7 @@ void [[className]]::updateByJson(const Json::Value &pJson) noexcept(false)
         {
             if(col.isPrimaryKey_)
             {
-                count++;
+                ++count;
                 $$<<"*"<<col.colValName_<<"_";
                 if(count<@@.get<int>("hasPrimaryKey"))
                     $$<<",";

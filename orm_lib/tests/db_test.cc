@@ -150,7 +150,7 @@ void doTest(const drogon::orm::DbClientPtr &clientPtr)
                  std::string user_id,
                  int id) {
             if (!isNull)
-                count++;
+                ++count;
             else
             {
                 testOutput(count == 2, "DbClient streaming-type interface(4)");

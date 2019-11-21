@@ -70,7 +70,7 @@ class DbClientLockFree : public DbClient,
 
     void handleNewTask(const DbConnectionPtr &conn);
 #if LIBPQ_SUPPORTS_BATCH_MODE
-    size_t connectionPos_ = 0;  // Used for pg batch mode.
+    size_t connectionPos_{0};  // Used for pg batch mode.
 #endif
 };
 

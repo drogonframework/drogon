@@ -29,6 +29,6 @@ class create_plugin : public DrObject<create_plugin>, public CommandHandler
     }
 
   protected:
-    std::string outputPath_ = ".";
+    std::string outputPath_{"."};
 };
 }  // namespace drogon_ctl

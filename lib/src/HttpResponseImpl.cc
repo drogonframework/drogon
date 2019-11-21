@@ -529,7 +529,7 @@ void HttpResponseImpl::addHeader(const char *start,
             {
                 std::string::size_type cpos = 0;
                 while (cpos < coo.length() && isspace(coo[cpos]))
-                    cpos++;
+                    ++cpos;
                 cookie_name = coo.substr(cpos);
             }
             if (i == 0)

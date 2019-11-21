@@ -161,7 +161,7 @@ class RestfulController : trantor::NonCopyable
     }
 
   private:
-    bool masquerading_ = true;
+    bool masquerading_{true};
     std::vector<std::string> masqueradingVector_;
     std::vector<
         std::pair<std::string,

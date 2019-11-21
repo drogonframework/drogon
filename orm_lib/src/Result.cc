@@ -83,13 +83,13 @@ Result::Reference Result::at(SizeType index) const
 ConstResultIterator ConstResultIterator::operator++(int)
 {
     ConstResultIterator old(*this);
-    index_++;
+    ++index_;
     return old;
 }
 ConstResultIterator ConstResultIterator::operator--(int)
 {
     ConstResultIterator old(*this);
-    index_--;
+    --index_;
     return old;
 }
 

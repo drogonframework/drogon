@@ -31,11 +31,11 @@ namespace drogon_ctl
 {
 struct Statistics
 {
-    std::atomic_size_t numOfRequestsSent_ = ATOMIC_VAR_INIT(0);
-    std::atomic_size_t bytesRecieved_ = ATOMIC_VAR_INIT(0);
-    std::atomic_size_t numOfGoodResponse_ = ATOMIC_VAR_INIT(0);
-    std::atomic_size_t numOfBadResponse_ = ATOMIC_VAR_INIT(0);
-    std::atomic_size_t totalDelay_ = ATOMIC_VAR_INIT(0);
+    std::atomic_size_t numOfRequestsSent_{0};
+    std::atomic_size_t bytesRecieved_{0};
+    std::atomic_size_t numOfGoodResponse_{0};
+    std::atomic_size_t numOfBadResponse_{0};
+    std::atomic_size_t totalDelay_{0};
     trantor::Date startDate_;
     trantor::Date endDate_;
 };
@@ -55,11 +55,11 @@ class press : public DrObject<press>, public CommandHandler
     virtual std::string detail() override;
 
   private:
-    size_t numOfThreads_ = 1;
-    size_t numOfRequests_ = 1;
-    size_t numOfConnections_ = 1;
+    size_t numOfThreads_{1};
+    size_t numOfRequests_{1};
+    size_t numOfConnections_{1};
     // bool keepAlive_ = false;
-    bool processIndication_ = true;
+    bool processIndication_{true};
     std::string url_;
     std::string host_;
     std::string path_;

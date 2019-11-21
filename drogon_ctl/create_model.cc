@@ -443,7 +443,7 @@ void create_model::createModelClassFromMysql(
                     info.isAutoVal_ = true;
                 }
                 cols.push_back(std::move(info));
-                i++;
+                ++i;
             }
         } >>
         [](const DrogonDbException &e) {
@@ -594,7 +594,7 @@ void create_model::createModelClassFromSqlite3(
                             info.colType_ = "std::string";
                         }
                         cols.push_back(std::move(info));
-                        i++;
+                        ++i;
                     }
 
                     std::vector<std::string> pkNames, pkTypes;

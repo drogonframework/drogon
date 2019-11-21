@@ -34,7 +34,7 @@ SessionManager::SessionManager(trantor::EventLoop *loop, size_t timeout)
             bucketNum = 100;
             while (tmpTimeout > 100)
             {
-                wheelNum++;
+                ++wheelNum;
                 tmpTimeout = tmpTimeout / 100;
             }
         }

@@ -161,7 +161,7 @@ class Session
     SessionMap sessionMap_;
     mutable std::mutex mutex_;
     std::string sessionId_;
-    bool needToSet_ = false;
+    bool needToSet_{false};
 };
 
 using SessionPtr = std::shared_ptr<Session>;

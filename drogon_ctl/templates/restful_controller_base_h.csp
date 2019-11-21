@@ -77,7 +77,7 @@ class [[className]]Base : public RestfulController
   protected:
     /// Ensure that subclasses inherited from this class are instantiated.
     [[className]]Base();
-    const std::string dbClientName_ = "[[dbClientName]]";
+    const std::string dbClientName_{"[[dbClientName]]"};
 };
 <%c++ for(size_t i=0;i<namespaceVector.size();++i)
 {

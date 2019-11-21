@@ -326,7 +326,7 @@ std::vector<char> base64DecodeToVector(const std::string &encoded_string)
            isBase64(encoded_string[in_]))
     {
         char_array_4[i++] = encoded_string[in_];
-        in_++;
+        ++in_;
         if (i == 4)
         {
             for (i = 0; i < 4; ++i)
@@ -377,7 +377,7 @@ std::string base64Decode(const std::string &encoded_string)
            isBase64(encoded_string[in_]))
     {
         char_array_4[i++] = encoded_string[in_];
-        in_++;
+        ++in_;
         if (i == 4)
         {
             for (i = 0; i < 4; ++i)

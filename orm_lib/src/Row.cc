@@ -87,13 +87,13 @@ Row::ConstIterator Row::ConstReverseIterator::base() const noexcept
 ConstRowIterator ConstRowIterator::operator++(int)
 {
     ConstRowIterator old(*this);
-    column_++;
+    ++column_;
     return old;
 }
 ConstRowIterator ConstRowIterator::operator--(int)
 {
     ConstRowIterator old(*this);
-    column_--;
+    --column_;
     return old;
 }
 

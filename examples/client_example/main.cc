@@ -22,7 +22,7 @@ int main()
                 [&count](ReqResult result, const HttpResponsePtr &response) {
                     std::cout << "receive response!" << std::endl;
                     // auto headers=response.
-                    count++;
+                    ++count;
                     std::cout << response->getBody() << std::endl;
                     auto cookies = response->cookies();
                     for (auto const &cookie : cookies)

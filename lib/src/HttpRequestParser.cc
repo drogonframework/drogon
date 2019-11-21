@@ -213,7 +213,7 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
                     if (request_->contentLen_ == 0)
                     {
                         status_ = HttpRequestParseStatus::GotAll;
-                        requestsCounter_++;
+                        ++requestsCounter_;
                         hasMore = false;
                     }
                     else
@@ -302,7 +302,7 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
                 if (request_->contentLen_ == 0)
                 {
                     status_ = HttpRequestParseStatus::GotAll;
-                    requestsCounter_++;
+                    ++requestsCounter_;
                 }
                 break;
             }
@@ -321,7 +321,7 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
             if (request_->contentLen_ == 0)
             {
                 status_ = HttpRequestParseStatus::GotAll;
-                requestsCounter_++;
+                ++requestsCounter_;
                 hasMore = false;
             }
         }

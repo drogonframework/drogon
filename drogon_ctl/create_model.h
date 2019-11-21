@@ -66,7 +66,7 @@ inline std::string nameTransform(const std::string &origName, bool isType)
             break;
         }
         while (str[pos] == '_' || str[pos] == '.')
-            pos++;
+            ++pos;
         if (str[pos] >= 'a' && str[pos] <= 'z')
             str[pos] += ('A' - 'a');
         startPos = pos;
@@ -318,6 +318,6 @@ class create_model : public DrObject<create_model>, public CommandHandler
     void createRestfulAPIController(const DrTemplateData &tableInfo,
                                     const Json::Value &restfulApiConfig);
     std::string dbname_;
-    bool forceOverwrite_ = false;
+    bool forceOverwrite_{false};
 };
 }  // namespace drogon_ctl

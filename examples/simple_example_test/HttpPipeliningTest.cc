@@ -31,7 +31,7 @@ int main()
                 else
                 {
                     counter = c;
-                    n++;
+                    ++n;
                 }
                 if (resp->getBody().length() > 0)
                 {
@@ -81,7 +81,7 @@ int main()
                     else
                     {
                         counter = c;
-                        n++;
+                        ++n;
                         if (n == 20)
                         {
                             LOG_DEBUG << "Good!";

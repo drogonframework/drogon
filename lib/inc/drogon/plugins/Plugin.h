@@ -86,7 +86,7 @@ class PluginBase : public virtual DrObjectBase, public trantor::NonCopyable
     }
 
   private:
-    PluginStatus status_ = PluginStatus::None;
+    PluginStatus status_{PluginStatus::None};
     friend class PluginsManager;
     void setConfig(const Json::Value &config)
     {

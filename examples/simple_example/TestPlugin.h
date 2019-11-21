@@ -25,6 +25,6 @@ class TestPlugin : public Plugin<TestPlugin>
 
   private:
     std::thread workThread_;
-    bool stop_ = false;
+    bool stop_{false};
     int interval_;
 };

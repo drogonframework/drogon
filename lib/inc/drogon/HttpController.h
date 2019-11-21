@@ -109,10 +109,10 @@ class HttpController : public DrObject<T>, public HttpControllerBase
     }
 
   private:
-    class methodRegistrtor
+    class methodRegistrator
     {
       public:
-        methodRegistrtor()
+        methodRegistrator()
         {
             if (AutoCreation)
                 T::initPathRouting();
@@ -120,13 +120,13 @@ class HttpController : public DrObject<T>, public HttpControllerBase
     };
     // use static value to register controller method in framework before
     // main();
-    static methodRegistrtor registrator_;
+    static methodRegistrator registrator_;
     virtual void *touch()
     {
         return &registrator_;
     }
 };
 template <typename T, bool AutoCreation>
-typename HttpController<T, AutoCreation>::methodRegistrtor
+typename HttpController<T, AutoCreation>::methodRegistrator
     HttpController<T, AutoCreation>::registrator_;
 }  // namespace drogon

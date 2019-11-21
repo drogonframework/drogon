@@ -100,8 +100,7 @@ class CacheMap
         if (tickInterval_ > 0 && wheelsNumber_ > 0 && bucketsNumPerWheel_ > 0)
         {
             timerId_ = loop_->runEvery(tickInterval_, [=]() {
-                ticksCounter_++;
-                size_t t = ticksCounter_;
+                size_t t = ++ticksCounter_;
                 size_t pow = 1;
                 for (size_t i = 0; i < wheelsNumber_; ++i)
                 {
@@ -309,7 +308,7 @@ class CacheMap
 
     std::vector<CallbackBucketQueue> wheels_;
 
-    std::atomic<size_t> ticksCounter_ = ATOMIC_VAR_INIT(0);
+    std::atomic<size_t> ticksCounter_{0};
 
     std::mutex mtx_;
     std::mutex bucketMutex_;
@@ -320,7 +319,7 @@ class CacheMap
     size_t wheelsNumber_;
     size_t bucketsNumPerWheel_;
 
-    bool noWheels_ = false;
+    bool noWheels_{false};
 
     void insertEntry(size_t delay, CallbackEntryPtr entryPtr)
     {

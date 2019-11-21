@@ -49,7 +49,7 @@ void press::handleCommand(std::vector<std::string> &parameters)
         {
             if (param == "-n")
             {
-                iter++;
+                ++iter;
                 if (iter == parameters.end())
                 {
                     outputErrorAndExit("No number of requests!");
@@ -83,7 +83,7 @@ void press::handleCommand(std::vector<std::string> &parameters)
         {
             if (param == "-t")
             {
-                iter++;
+                ++iter;
                 if (iter == parameters.end())
                 {
                     outputErrorAndExit("No number of threads!");
@@ -117,7 +117,7 @@ void press::handleCommand(std::vector<std::string> &parameters)
         {
             if (param == "-c")
             {
-                iter++;
+                ++iter;
                 if (iter == parameters.end())
                 {
                     outputErrorAndExit("No number of connections!");

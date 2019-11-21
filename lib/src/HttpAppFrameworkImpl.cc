@@ -498,7 +498,7 @@ void HttpAppFrameworkImpl::onConnection(const trantor::TcpConnectionPtr &conn)
             auto iter = connectionsNumMap_.find(conn->peerAddr().toIp());
             if (iter != connectionsNumMap_.end())
             {
-                iter->second--;
+                --iter->second;
                 if (iter->second <= 0)
                 {
                     connectionsNumMap_.erase(iter);

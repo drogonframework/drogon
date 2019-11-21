@@ -276,7 +276,7 @@ class SqlBinder
         self &>::type
     operator<<(T &&parameter)
     {
-        parametersNumber_++;
+        ++parametersNumber_;
         using ParaType = typename std::remove_cv<
             typename std::remove_reference<T>::type>::type;
         std::shared_ptr<void> obj = std::make_shared<ParaType>(parameter);

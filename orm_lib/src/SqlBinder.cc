@@ -134,7 +134,7 @@ SqlBinder &SqlBinder::operator<<(const std::string &str)
 {
     std::shared_ptr<std::string> obj = std::make_shared<std::string>(str);
     objs_.push_back(obj);
-    parametersNumber_++;
+    ++parametersNumber_;
     parameters_.push_back((char *)obj->c_str());
     lengths_.push_back(obj->length());
     if (type_ == ClientType::PostgreSQL)
@@ -159,7 +159,7 @@ SqlBinder &SqlBinder::operator<<(std::string &&str)
     std::shared_ptr<std::string> obj =
         std::make_shared<std::string>(std::move(str));
     objs_.push_back(obj);
-    parametersNumber_++;
+    ++parametersNumber_;
     parameters_.push_back((char *)obj->c_str());
     lengths_.push_back(obj->length());
     if (type_ == ClientType::PostgreSQL)
@@ -184,7 +184,7 @@ SqlBinder &SqlBinder::operator<<(const std::vector<char> &v)
     std::shared_ptr<std::vector<char>> obj =
         std::make_shared<std::vector<char>>(v);
     objs_.push_back(obj);
-    parametersNumber_++;
+    ++parametersNumber_;
     parameters_.push_back((char *)obj->data());
     lengths_.push_back(obj->size());
     if (type_ == ClientType::PostgreSQL)
@@ -208,7 +208,7 @@ SqlBinder &SqlBinder::operator<<(std::vector<char> &&v)
     std::shared_ptr<std::vector<char>> obj =
         std::make_shared<std::vector<char>>(std::move(v));
     objs_.push_back(obj);
-    parametersNumber_++;
+    ++parametersNumber_;
     parameters_.push_back((char *)obj->data());
     lengths_.push_back(obj->size());
     if (type_ == ClientType::PostgreSQL)
@@ -232,7 +232,7 @@ SqlBinder &SqlBinder::operator<<(double f)
 {
     if (type_ == ClientType::Sqlite3)
     {
-        parametersNumber_++;
+        ++parametersNumber_;
         auto obj = std::make_shared<double>(f);
         objs_.push_back(obj);
         formats_.push_back(Sqlite3TypeDouble);
@@ -245,7 +245,7 @@ SqlBinder &SqlBinder::operator<<(double f)
 SqlBinder &SqlBinder::operator<<(std::nullptr_t nullp)
 {
     (void)nullp;
-    parametersNumber_++;
+    ++parametersNumber_;
     parameters_.push_back(NULL);
     lengths_.push_back(0);
     if (type_ == ClientType::PostgreSQL)

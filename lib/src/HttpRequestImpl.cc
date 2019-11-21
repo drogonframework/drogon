@@ -56,7 +56,7 @@ void HttpRequestImpl::parseParameters() const
         while ((input[pos] == '?' || isspace(input[pos])) &&
                pos < input.length())
         {
-            pos++;
+            ++pos;
         }
         auto value = input.substr(pos);
         while ((pos = value.find('&')) != string_view::npos)
@@ -68,7 +68,7 @@ void HttpRequestImpl::parseParameters() const
                 auto key = coo.substr(0, epos);
                 string_view::size_type cpos = 0;
                 while (cpos < key.length() && isspace(key[cpos]))
-                    cpos++;
+                    ++cpos;
                 key = key.substr(cpos);
                 auto pvalue = coo.substr(epos + 1);
                 std::string pdecode = utils::urlDecode(pvalue);
@@ -86,7 +86,7 @@ void HttpRequestImpl::parseParameters() const
                 auto key = coo.substr(0, epos);
                 string_view::size_type cpos = 0;
                 while (cpos < key.length() && isspace(key[cpos]))
-                    cpos++;
+                    ++cpos;
                 key = key.substr(cpos);
                 auto pvalue = coo.substr(epos + 1);
                 std::string pdecode = utils::urlDecode(pvalue);
@@ -108,7 +108,7 @@ void HttpRequestImpl::parseParameters() const
         while ((input[pos] == '?' || isspace(input[pos])) &&
                pos < input.length())
         {
-            pos++;
+            ++pos;
         }
         auto value = input.substr(pos);
         while ((pos = value.find('&')) != string_view::npos)
@@ -120,7 +120,7 @@ void HttpRequestImpl::parseParameters() const
                 auto key = coo.substr(0, epos);
                 string_view::size_type cpos = 0;
                 while (cpos < key.length() && isspace(key[cpos]))
-                    cpos++;
+                    ++cpos;
                 key = key.substr(cpos);
                 auto pvalue = coo.substr(epos + 1);
                 std::string pdecode = utils::urlDecode(pvalue);
@@ -138,7 +138,7 @@ void HttpRequestImpl::parseParameters() const
                 auto key = coo.substr(0, epos);
                 string_view::size_type cpos = 0;
                 while (cpos < key.length() && isspace(key[cpos]))
-                    cpos++;
+                    ++cpos;
                 key = key.substr(cpos);
                 auto pvalue = coo.substr(epos + 1);
                 std::string pdecode = utils::urlDecode(pvalue);
@@ -369,7 +369,7 @@ void HttpRequestImpl::addHeader(const char *start,
                 std::string::size_type cpos = 0;
                 while (cpos < cookie_name.length() &&
                        isspace(cookie_name[cpos]))
-                    cpos++;
+                    ++cpos;
                 cookie_name = cookie_name.substr(cpos);
                 std::string cookie_value = coo.substr(epos + 1);
                 cookies_[std::move(cookie_name)] = std::move(cookie_value);
@@ -386,7 +386,7 @@ void HttpRequestImpl::addHeader(const char *start,
                 std::string::size_type cpos = 0;
                 while (cpos < cookie_name.length() &&
                        isspace(cookie_name[cpos]))
-                    cpos++;
+                    ++cpos;
                 cookie_name = cookie_name.substr(cpos);
                 std::string cookie_value = coo.substr(epos + 1);
                 cookies_[std::move(cookie_name)] = std::move(cookie_value);
