@@ -41,8 +41,8 @@ void WebsocketControllersRouter::registerWebSocketController(
         auto ctrlPtr =
             std::dynamic_pointer_cast<WebSocketControllerBase>(objPtr);
         assert(ctrlPtr);
-        _websockCtrlMap[path]._controller = ctrlPtr;
-        _websockCtrlMap[path]._filterNames = filters;
+        websockCtrlMap_[path].controller_ = ctrlPtr;
+        websockCtrlMap_[path].filterNames_ = filters;
     });
 }
 
@@ -61,11 +61,11 @@ void WebsocketControllersRouter::route(
                        pathLower.end(),
                        pathLower.begin(),
                        tolower);
-        auto iter = _websockCtrlMap.find(pathLower);
-        if (iter != _websockCtrlMap.end())
+        auto iter = websockCtrlMap_.find(pathLower);
+        if (iter != websockCtrlMap_.end())
         {
-            auto &ctrlPtr = iter->second._controller;
-            auto &filters = iter->second._filters;
+            auto &ctrlPtr = iter->second.controller_;
+            auto &filters = iter->second.filters_;
             if (ctrlPtr)
             {
                 if (!filters.empty())
@@ -100,13 +100,13 @@ std::vector<std::tuple<std::string, HttpMethod, std::string>>
 WebsocketControllersRouter::getHandlersInfo() const
 {
     std::vector<std::tuple<std::string, HttpMethod, std::string>> ret;
-    for (auto &item : _websockCtrlMap)
+    for (auto &item : websockCtrlMap_)
     {
         auto info = std::tuple<std::string, HttpMethod, std::string>(
             item.first,
             Get,
             std::string("WebsocketController: ") +
-                item.second._controller->className());
+                item.second.controller_->className());
         ret.emplace_back(std::move(info));
     }
     return ret;
@@ -147,9 +147,9 @@ void WebsocketControllersRouter::doControllerHandler(
 
 void WebsocketControllersRouter::init()
 {
-    for (auto &iter : _websockCtrlMap)
+    for (auto &iter : websockCtrlMap_)
     {
-        iter.second._filters =
-            filters_function::createFilters(iter.second._filterNames);
+        iter.second.filters_ =
+            filters_function::createFilters(iter.second.filterNames_);
     }
 }

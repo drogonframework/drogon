@@ -31,29 +31,29 @@ namespace drogon
 namespace orm
 {
 #if __cplusplus >= 201703L
-typedef std::shared_mutex SharedMutex;
+using SharedMutex = std::shared_mutex;
 #else
-typedef std::shared_timed_mutex SharedMutex;
+using SharedMutex = std::shared_timed_mutex;
 #endif
 
-enum ConnectStatus
+enum class ConnectStatus
 {
-    ConnectStatus_None = 0,
-    ConnectStatus_Connecting,
-    ConnectStatus_Ok,
-    ConnectStatus_Bad
+    None = 0,
+    Connecting,
+    Ok,
+    Bad
 };
 
 struct SqlCmd
 {
-    std::string _sql;
-    size_t _paraNum;
-    std::vector<const char *> _parameters;
-    std::vector<int> _length;
-    std::vector<int> _format;
-    QueryCallback _cb;
-    ExceptPtrCallback _exceptCb;
-    std::string _preparingStatement;
+    std::string sql_;
+    size_t parametersNumber_;
+    std::vector<const char *> parameters_;
+    std::vector<int> lengths_;
+    std::vector<int> formats_;
+    QueryCallback callback_;
+    ExceptPtrCallback exceptionCallback_;
+    std::string preparingStatement_;
     SqlCmd(std::string &&sql,
            const size_t paraNum,
            std::vector<const char *> &&parameters,
@@ -61,37 +61,37 @@ struct SqlCmd
            std::vector<int> &&format,
            QueryCallback &&cb,
            ExceptPtrCallback &&exceptCb)
-        : _sql(std::move(sql)),
-          _paraNum(paraNum),
-          _parameters(std::move(parameters)),
-          _length(std::move(length)),
-          _format(std::move(format)),
-          _cb(std::move(cb)),
-          _exceptCb(std::move(exceptCb))
+        : sql_(std::move(sql)),
+          parametersNumber_(paraNum),
+          parameters_(std::move(parameters)),
+          lengths_(std::move(length)),
+          formats_(std::move(format)),
+          callback_(std::move(cb)),
+          exceptionCallback_(std::move(exceptCb))
     {
     }
 };
 
 class DbConnection;
-typedef std::shared_ptr<DbConnection> DbConnectionPtr;
+using DbConnectionPtr = std::shared_ptr<DbConnection>;
 class DbConnection : public trantor::NonCopyable
 {
   public:
-    typedef std::function<void(const DbConnectionPtr &)> DbConnectionCallback;
-    DbConnection(trantor::EventLoop *loop) : _loop(loop)
+    using DbConnectionCallback = std::function<void(const DbConnectionPtr &)>;
+    DbConnection(trantor::EventLoop *loop) : loop_(loop)
     {
     }
     void setOkCallback(const DbConnectionCallback &cb)
     {
-        _okCb = cb;
+        okCallback_ = cb;
     }
     void setCloseCallback(const DbConnectionCallback &cb)
     {
-        _closeCb = cb;
+        closeCallback_ = cb;
     }
     void setIdleCallback(const std::function<void()> &cb)
     {
-        _idleCb = cb;
+        idleCb_ = cb;
     }
     virtual void execSql(
         std::string &&sql,
@@ -109,28 +109,28 @@ class DbConnection : public trantor::NonCopyable
     }
     ConnectStatus status() const
     {
-        return _status;
+        return status_;
     }
     trantor::EventLoop *loop()
     {
-        return _loop;
+        return loop_;
     }
     virtual void disconnect() = 0;
     bool isWorking()
     {
-        return _isWorking;
+        return isWorking_;
     }
 
   protected:
-    QueryCallback _cb;
-    trantor::EventLoop *_loop;
-    std::function<void()> _idleCb;
-    ConnectStatus _status = ConnectStatus_None;
-    DbConnectionCallback _closeCb = [](const DbConnectionPtr &) {};
-    DbConnectionCallback _okCb = [](const DbConnectionPtr &) {};
-    std::function<void(const std::exception_ptr &)> _exceptCb;
-    bool _isWorking = false;
-    std::string _sql = "";
+    QueryCallback callback_;
+    trantor::EventLoop *loop_;
+    std::function<void()> idleCb_;
+    ConnectStatus status_{ConnectStatus::None};
+    DbConnectionCallback closeCallback_{[](const DbConnectionPtr &) {}};
+    DbConnectionCallback okCallback_{[](const DbConnectionPtr &) {}};
+    std::function<void(const std::exception_ptr &)> exceptionCallback_;
+    bool isWorking_{false};
+    std::string sql_;
 };
 
 }  // namespace orm

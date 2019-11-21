@@ -88,12 +88,12 @@ T &getControllerObj()
     return obj;
 }
 
-typedef std::shared_ptr<HttpBinderBase> HttpBinderBasePtr;
+using HttpBinderBasePtr = std::shared_ptr<HttpBinderBase>;
 template <typename FUNCTION>
 class HttpBinder : public HttpBinderBase
 {
   public:
-    typedef FUNCTION FunctionType;
+    using FunctionType = FUNCTION;
     virtual void handleHttpRequest(
         std::list<std::string> &pathArguments,
         const HttpRequestPtr &req,
@@ -105,11 +105,11 @@ class HttpBinder : public HttpBinderBase
     {
         return traits::arity;
     }
-    HttpBinder(FUNCTION &&func) : _func(std::forward<FUNCTION>(func))
+    HttpBinder(FUNCTION &&func) : func_(std::forward<FUNCTION>(func))
     {
         static_assert(traits::isHTTPFunction,
                       "Your API handler function interface is wrong!");
-        _handlerName = DrClassMap::demangle(typeid(FUNCTION).name());
+        handlerName_ = DrClassMap::demangle(typeid(FUNCTION).name());
     }
     void test()
     {
@@ -118,25 +118,25 @@ class HttpBinder : public HttpBinderBase
     }
     virtual const std::string &handlerName() const override
     {
-        return _handlerName;
+        return handlerName_;
     }
 
   private:
-    FUNCTION _func;
+    FUNCTION func_;
 
-    typedef FunctionTraits<FUNCTION> traits;
+    using traits = FunctionTraits<FUNCTION>;
     template <std::size_t Index>
     using nth_argument_type = typename traits::template argument<Index>;
 
     static const size_t argument_count = traits::arity;
-    std::string _handlerName;
+    std::string handlerName_;
 
     template <typename T>
     struct CanConvertFromStringStream
     {
       private:
-        typedef std::true_type yes;
-        typedef std::false_type no;
+        using yes = std::true_type;
+        using no = std::false_type;
 
         template <typename U>
         static auto test(U *p, std::stringstream &&ss)
@@ -226,8 +226,9 @@ class HttpBinder : public HttpBinderBase
             BinderArgTypeTraits<nth_argument_type<sizeof...(Values)>>::isValid,
             "your handler argument type must be value type or const left "
             "reference type or right reference type");
-        typedef typename std::remove_cv<typename std::remove_reference<
-            nth_argument_type<sizeof...(Values)>>::type>::type ValueType;
+        using ValueType =
+            typename std::remove_cv<typename std::remove_reference<
+                nth_argument_type<sizeof...(Values)>>::type>::type;
         ValueType value = ValueType();
         if (!pathArguments.empty())
         {
@@ -283,7 +284,7 @@ class HttpBinder : public HttpBinderBase
                  Values &&... values)
     {
         static auto &obj = getControllerObj<typename traits::class_type>();
-        (obj.*_func)(req, std::move(callback), std::move(values)...);
+        (obj.*func_)(req, std::move(callback), std::move(values)...);
     }
     template <typename... Values,
               bool isClassFunction = traits::isClassFunction,
@@ -298,7 +299,7 @@ class HttpBinder : public HttpBinderBase
     {
         static auto objPtr =
             DrClassMap::getSingleInstance<typename traits::class_type>();
-        (*objPtr.*_func)(req, std::move(callback), std::move(values)...);
+        (*objPtr.*func_)(req, std::move(callback), std::move(values)...);
     }
     template <typename... Values,
               bool isClassFunction = traits::isClassFunction,
@@ -309,9 +310,9 @@ class HttpBinder : public HttpBinderBase
                  std::function<void(const HttpResponsePtr &)> &&callback,
                  Values &&... values)
     {
-        _func(req, std::move(callback), std::move(values)...);
+        func_(req, std::move(callback), std::move(values)...);
     }
-    ////////////////////////////////////////////////////////////////
+
     template <typename... Values,
               bool isClassFunction = traits::isClassFunction,
               bool isDrObjectClass = traits::isDrObjectClass,
@@ -324,7 +325,7 @@ class HttpBinder : public HttpBinderBase
                  Values &&... values)
     {
         static auto &obj = getControllerObj<typename traits::class_type>();
-        (obj.*_func)((*req), std::move(callback), std::move(values)...);
+        (obj.*func_)((*req), std::move(callback), std::move(values)...);
     }
     template <typename... Values,
               bool isClassFunction = traits::isClassFunction,
@@ -339,7 +340,7 @@ class HttpBinder : public HttpBinderBase
     {
         static auto objPtr =
             DrClassMap::getSingleInstance<typename traits::class_type>();
-        (*objPtr.*_func)((*req), std::move(callback), std::move(values)...);
+        (*objPtr.*func_)((*req), std::move(callback), std::move(values)...);
     }
     template <typename... Values,
               bool isClassFunction = traits::isClassFunction,
@@ -350,9 +351,8 @@ class HttpBinder : public HttpBinderBase
                  std::function<void(const HttpResponsePtr &)> &&callback,
                  Values &&... values)
     {
-        _func((*req), std::move(callback), std::move(values)...);
+        func_((*req), std::move(callback), std::move(values)...);
     }
-    /////////////
 };
 
 }  // namespace internal

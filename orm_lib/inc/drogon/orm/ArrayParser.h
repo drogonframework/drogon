@@ -65,7 +65,7 @@ class ArrayParser
 
   private:
     /// Current parsing position in the input.
-    const char *m_pos;
+    const char *pos_;
 };
 
 }  // namespace orm

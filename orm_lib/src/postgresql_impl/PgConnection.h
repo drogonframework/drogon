@@ -32,7 +32,7 @@ namespace drogon
 namespace orm
 {
 class PgConnection;
-typedef std::shared_ptr<PgConnection> PgConnectionPtr;
+using PgConnectionPtr = std::shared_ptr<PgConnection>;
 class PgConnection : public DbConnection,
                      public std::enable_shared_from_this<PgConnection>
 {
@@ -48,7 +48,7 @@ class PgConnection : public DbConnection,
                          std::function<void(const std::exception_ptr &)>
                              &&exceptCallback) override
     {
-        if (_loop->isInLoopThread())
+        if (loop_->isInLoopThread())
         {
             execSqlInLoop(std::move(sql),
                           paraNum,
@@ -61,7 +61,7 @@ class PgConnection : public DbConnection,
         else
         {
             auto thisPtr = shared_from_this();
-            _loop->queueInLoop(
+            loop_->queueInLoop(
                 [thisPtr,
                  sql = std::move(sql),
                  paraNum,
@@ -87,10 +87,10 @@ class PgConnection : public DbConnection,
     virtual void disconnect() override;
 
   private:
-    std::shared_ptr<PGconn> _connPtr;
-    trantor::Channel _channel;
-    std::unordered_map<std::string, std::string> _preparedStatementMap;
-    bool _isRreparingStatement = false;
+    std::shared_ptr<PGconn> connectionPtr_;
+    trantor::Channel channel_;
+    std::unordered_map<std::string, std::string> preparedStatementsMap_;
+    bool isRreparingStatement_{false};
     void handleRead();
     void pgPoll();
     void handleClosed();
@@ -104,20 +104,20 @@ class PgConnection : public DbConnection,
         ResultCallback &&rcb,
         std::function<void(const std::exception_ptr &)> &&exceptCallback);
     void doAfterPreparing();
-    std::string _statementName;
-    int _paraNum;
-    std::vector<const char *> _parameters;
-    std::vector<int> _length;
-    std::vector<int> _format;
+    std::string statementName_;
+    int parametersNumber_;
+    std::vector<const char *> parameters_;
+    std::vector<int> lengths_;
+    std::vector<int> formats_;
     int flush();
     void handleFatalError();
 #if LIBPQ_SUPPORTS_BATCH_MODE
-    std::list<std::shared_ptr<SqlCmd>> _batchCommandsForWaitingResults;
-    std::deque<std::shared_ptr<SqlCmd>> _batchSqlCommands;
+    std::list<std::shared_ptr<SqlCmd>> batchCommandsForWaitingResults_;
+    std::deque<std::shared_ptr<SqlCmd>> batchSqlCommands_;
     void sendBatchedSql();
     int sendBatchEnd();
-    bool _sendBatchEnd = false;
-    unsigned int _batchCount = 0;
+    bool sendBatchEnd_{false};
+    unsigned int batchCount_{0};
 #endif
 };
 

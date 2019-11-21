@@ -14,14 +14,14 @@ class User
     const static bool hasPrimaryKey;
     const static std::string tableName;
 
-    typedef int PrimaryKeyType;
+    using PrimaryKeyType = int;
     explicit User(const Row &r)
-        : _userId(r["user_id"].as<std::string>()),
-          _userName(r["user_name"].as<std::string>())
+        : userId_(r["user_id"].as<std::string>()),
+          userName_(r["user_name"].as<std::string>())
     {
     }
-    std::string _userId;
-    std::string _userName;
+    std::string userId_;
+    std::string userName_;
     static const std::string &sqlForFindingByPrimaryKey()
     {
         const static std::string sql =
@@ -68,8 +68,8 @@ int main()
 
     Mapper<User> mapper(client);
     auto U = mapper.findByPrimaryKey(2);
-    std::cout << "id=" << U._userId << std::endl;
-    std::cout << "name=" << U._userName << std::endl;
+    std::cout << "id=" << U.userId_ << std::endl;
+    std::cout << "name=" << U.userName_ << std::endl;
     *client << "select * from array_test" >>
         [=](bool isNull,
             const std::vector<std::shared_ptr<int>> &a,
@@ -78,7 +78,7 @@ int main()
             if (!isNull)
             {
                 std::cout << "a.len=" << a.size() << std::endl;
-                for (size_t i = 0; i < a.size(); i++)
+                for (size_t i = 0; i < a.size(); ++i)
                 {
                     std::cout << "a[" << i << "]=" << *a[i] << " ";
                 }
@@ -90,7 +90,7 @@ int main()
         [](const DrogonDbException &e) {
             std::cout << e.base().what() << std::endl;
         };
-    for (int i = 0; i < 100; i++)
+    for (int i = 0; i < 100; ++i)
         mapper.findByPrimaryKey(
             2,
             [](User u) { std::cout << "get a user by pk" << std::endl; },

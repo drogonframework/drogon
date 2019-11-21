@@ -51,49 +51,49 @@ class ConstResultIterator
     ConstResultIterator operator++(int);
     ConstResultIterator &operator++()
     {
-        ++_index;
+        ++index_;
         return *this;
     }
     ConstResultIterator operator--(int);
     ConstResultIterator &operator--()
     {
-        --_index;
+        --index_;
         return *this;
     }
     ConstResultIterator &operator+=(difference_type i)
     {
-        _index += i;
+        index_ += i;
         return *this;
     }
     ConstResultIterator &operator-=(difference_type i)
     {
-        _index -= i;
+        index_ -= i;
         return *this;
     }
 
     bool operator==(const ConstResultIterator &other) const
     {
-        return _index == other._index;
+        return index_ == other.index_;
     }
     bool operator!=(const ConstResultIterator &other) const
     {
-        return _index != other._index;
+        return index_ != other.index_;
     }
     bool operator>(const ConstResultIterator &other) const
     {
-        return _index > other._index;
+        return index_ > other.index_;
     }
     bool operator<(const ConstResultIterator &other) const
     {
-        return _index < other._index;
+        return index_ < other.index_;
     }
     bool operator>=(const ConstResultIterator &other) const
     {
-        return _index >= other._index;
+        return index_ >= other.index_;
     }
     bool operator<=(const ConstResultIterator &other) const
     {
-        return _index <= other._index;
+        return index_ <= other.index_;
     }
 
   private:
@@ -155,27 +155,27 @@ class ConstReverseResultIterator : private ConstResultIterator
 
     bool operator==(const ConstReverseResultIterator &other) const
     {
-        return _index == other._index;
+        return index_ == other.index_;
     }
     bool operator!=(const ConstReverseResultIterator &other) const
     {
-        return _index != other._index;
+        return index_ != other.index_;
     }
     bool operator>(const ConstReverseResultIterator &other) const
     {
-        return _index < other._index;
+        return index_ < other.index_;
     }
     bool operator<(const ConstReverseResultIterator &other) const
     {
-        return _index > other._index;
+        return index_ > other.index_;
     }
     bool operator>=(const ConstReverseResultIterator &other) const
     {
-        return _index <= other._index;
+        return index_ <= other.index_;
     }
     bool operator<=(const ConstReverseResultIterator &other) const
     {
-        return _index >= other._index;
+        return index_ >= other.index_;
     }
 };
 

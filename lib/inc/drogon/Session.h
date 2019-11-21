@@ -42,9 +42,9 @@ class Session
     const T &get(const std::string &key) const
     {
         const static T nullVal = T();
-        std::lock_guard<std::mutex> lck(_mutex);
-        auto it = _sessionMap.find(key);
-        if (it != _sessionMap.end())
+        std::lock_guard<std::mutex> lck(mutex_);
+        auto it = sessionMap_.find(key);
+        if (it != sessionMap_.end())
         {
             if (typeid(T) == it->second.type())
             {
@@ -63,8 +63,8 @@ class Session
      */
     any &operator[](const std::string &key)
     {
-        std::lock_guard<std::mutex> lck(_mutex);
-        return _sessionMap[key];
+        std::lock_guard<std::mutex> lck(mutex_);
+        return sessionMap_[key];
     }
 
     /**
@@ -76,8 +76,8 @@ class Session
      */
     void insert(const std::string &key, const any &obj)
     {
-        std::lock_guard<std::mutex> lck(_mutex);
-        _sessionMap[key] = obj;
+        std::lock_guard<std::mutex> lck(mutex_);
+        sessionMap_[key] = obj;
     }
 
     /**
@@ -89,8 +89,8 @@ class Session
      */
     void insert(const std::string &key, any &&obj)
     {
-        std::lock_guard<std::mutex> lck(_mutex);
-        _sessionMap[key] = std::move(obj);
+        std::lock_guard<std::mutex> lck(mutex_);
+        sessionMap_[key] = std::move(obj);
     }
 
     /**
@@ -98,8 +98,8 @@ class Session
      */
     void erase(const std::string &key)
     {
-        std::lock_guard<std::mutex> lck(_mutex);
-        _sessionMap.erase(key);
+        std::lock_guard<std::mutex> lck(mutex_);
+        sessionMap_.erase(key);
     }
 
     /**
@@ -107,8 +107,8 @@ class Session
      */
     bool find(const std::string &key)
     {
-        std::lock_guard<std::mutex> lck(_mutex);
-        if (_sessionMap.find(key) == _sessionMap.end())
+        std::lock_guard<std::mutex> lck(mutex_);
+        if (sessionMap_.find(key) == sessionMap_.end())
         {
             return false;
         }
@@ -120,8 +120,8 @@ class Session
      */
     void clear()
     {
-        std::lock_guard<std::mutex> lck(_mutex);
-        _sessionMap.clear();
+        std::lock_guard<std::mutex> lck(mutex_);
+        sessionMap_.clear();
     }
 
     /**
@@ -129,7 +129,7 @@ class Session
      */
     const std::string &sessionId() const
     {
-        return _sessionId;
+        return sessionId_;
     }
 
     /**
@@ -138,32 +138,32 @@ class Session
      */
     bool needSetToClient() const
     {
-        return _needToSet;
+        return needToSet_;
     }
     /**
      * @brief Change the state of the session, usually called by the framework
      */
     void hasSet()
     {
-        _needToSet = false;
+        needToSet_ = false;
     }
     /**
      * @brief Constructor, usually called by the framework
      */
     Session(const std::string &id, bool needToSet)
-        : _sessionId(id), _needToSet(needToSet)
+        : sessionId_(id), needToSet_(needToSet)
     {
     }
     Session() = delete;
 
   private:
-    typedef std::map<std::string, any> SessionMap;
-    SessionMap _sessionMap;
-    mutable std::mutex _mutex;
-    std::string _sessionId;
-    bool _needToSet = false;
+    using SessionMap = std::map<std::string, any>;
+    SessionMap sessionMap_;
+    mutable std::mutex mutex_;
+    std::string sessionId_;
+    bool needToSet_{false};
 };
 
-typedef std::shared_ptr<Session> SessionPtr;
+using SessionPtr = std::shared_ptr<Session>;
 
 }  // namespace drogon

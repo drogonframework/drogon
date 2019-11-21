@@ -14,12 +14,12 @@ void TestPlugin::initAndStart(const Json::Value &config)
     /// Initialize and start the plugin
     if (config.isNull())
         LOG_DEBUG << "Configuration not defined";
-    _interval = config.get("heartbeat_interval", 1).asInt();
-    _workThread = std::thread([this]() {
-        while (!_stop)
+    interval_ = config.get("heartbeat_interval", 1).asInt();
+    workThread_ = std::thread([this]() {
+        while (!stop_)
         {
             LOG_DEBUG << "TestPlugin heartbeat!";
-            sleep(_interval);
+            sleep(interval_);
         }
     });
 }
@@ -27,6 +27,6 @@ void TestPlugin::initAndStart(const Json::Value &config)
 void TestPlugin::shutdown()
 {
     /// Shutdown the plugin
-    _stop = true;
-    _workThread.join();
+    stop_ = true;
+    workThread_.join();
 }

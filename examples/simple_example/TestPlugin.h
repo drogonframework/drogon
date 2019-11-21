@@ -24,7 +24,7 @@ class TestPlugin : public Plugin<TestPlugin>
     virtual void shutdown() override;
 
   private:
-    std::thread _workThread;
-    bool _stop = false;
-    int _interval;
+    std::thread workThread_;
+    bool stop_{false};
+    int interval_;
 };

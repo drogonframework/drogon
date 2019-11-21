@@ -451,17 +451,17 @@ void [[className]]Base::update(const HttpRequestPtr &req,
 <%c++ 
 tableInfo = @@.get<DrTemplateData>("tableInfo");
 const auto &cols=tableInfo.get<std::vector<ColumnInfo>>("columns");
-for(size_t i=0; i<cols.size(); i++)
+for(size_t i=0; i<cols.size(); ++i)
 {
     auto &col = cols[i];
     if(i < (cols.size()-1))
     {
 %>
-          "{%col._colName%}",
+          "{%col.colName_%}",
 <%c++
     }else{
 %>
-          "{%col._colName%}"
+          "{%col.colName_%}"
 <%c++
     }
 }
@@ -475,17 +475,17 @@ for(size_t i=0; i<cols.size(); i++)
     */
     enableMasquerading({
 <%c++ 
-for(size_t i=0; i<cols.size(); i++)
+for(size_t i=0; i<cols.size(); ++i)
 {
     auto &col = cols[i];
     if(i < (cols.size()-1))
     {
 %>
-        "{%col._colName%}", // the alias for the {%col._colName%} column.
+        "{%col.colName_%}", // the alias for the {%col.colName_%} column.
 <%c++
     }else{
 %>
-        "{%col._colName%}"  // the alias for the {%col._colName%} column.
+        "{%col.colName_%}"  // the alias for the {%col.colName_%} column.
 <%c++
     }
 }

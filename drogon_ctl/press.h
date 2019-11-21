@@ -31,13 +31,13 @@ namespace drogon_ctl
 {
 struct Statistics
 {
-    std::atomic_size_t _numOfRequestsSent = ATOMIC_VAR_INIT(0);
-    std::atomic_size_t _bytesRecieved = ATOMIC_VAR_INIT(0);
-    std::atomic_size_t _numOfGoodResponse = ATOMIC_VAR_INIT(0);
-    std::atomic_size_t _numOfBadResponse = ATOMIC_VAR_INIT(0);
-    std::atomic_size_t _totalDelay = ATOMIC_VAR_INIT(0);
-    trantor::Date _startDate;
-    trantor::Date _endDate;
+    std::atomic_size_t numOfRequestsSent_{0};
+    std::atomic_size_t bytesRecieved_{0};
+    std::atomic_size_t numOfGoodResponse_{0};
+    std::atomic_size_t numOfBadResponse_{0};
+    std::atomic_size_t totalDelay_{0};
+    trantor::Date startDate_;
+    trantor::Date endDate_;
 };
 class press : public DrObject<press>, public CommandHandler
 {
@@ -55,20 +55,20 @@ class press : public DrObject<press>, public CommandHandler
     virtual std::string detail() override;
 
   private:
-    size_t _numOfThreads = 1;
-    size_t _numOfRequests = 1;
-    size_t _numOfConnections = 1;
-    // bool _keepAlive = false;
-    bool _processIndication = true;
-    std::string _url;
-    std::string _host;
-    std::string _path;
+    size_t numOfThreads_{1};
+    size_t numOfRequests_{1};
+    size_t numOfConnections_{1};
+    // bool keepAlive_ = false;
+    bool processIndication_{true};
+    std::string url_;
+    std::string host_;
+    std::string path_;
     void doTesting();
     void createRequestAndClients();
     void sendRequest(const HttpClientPtr &client);
     void outputResults();
-    std::unique_ptr<trantor::EventLoopThreadPool> _loopPool;
-    std::vector<HttpClientPtr> _clients;
-    Statistics _stat;
+    std::unique_ptr<trantor::EventLoopThreadPool> loopPool_;
+    std::vector<HttpClientPtr> clients_;
+    Statistics statistics_;
 };
 }  // namespace drogon_ctl

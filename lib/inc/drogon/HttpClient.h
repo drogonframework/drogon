@@ -27,7 +27,7 @@
 namespace drogon
 {
 class HttpClient;
-typedef std::shared_ptr<HttpClient> HttpClientPtr;
+using HttpClientPtr = std::shared_ptr<HttpClient>;
 
 /// Asynchronous http client
 /**

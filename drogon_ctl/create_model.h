@@ -30,18 +30,18 @@ namespace drogon_ctl
 {
 struct ColumnInfo
 {
-    std::string _colName;
-    std::string _colValName;
-    std::string _colTypeName;
-    std::string _colType;
-    std::string _colDatabaseType;
-    std::string _dbType;
-    ssize_t _colLength = 0;
-    size_t _index = 0;
-    bool _isAutoVal = false;
-    bool _isPrimaryKey = false;
-    bool _notNull = false;
-    bool _hasDefaultVal = false;
+    std::string colName_;
+    std::string colValName_;
+    std::string colTypeName_;
+    std::string colType_;
+    std::string colDatabaseType_;
+    std::string dbType_;
+    ssize_t colLength_{0};
+    size_t index_{0};
+    bool isAutoVal_{false};
+    bool isPrimaryKey_{false};
+    bool notNull_{false};
+    bool hasDefaultVal_{false};
 };
 
 inline std::string nameTransform(const std::string &origName, bool isType)
@@ -66,7 +66,7 @@ inline std::string nameTransform(const std::string &origName, bool isType)
             break;
         }
         while (str[pos] == '_' || str[pos] == '.')
-            pos++;
+            ++pos;
         if (str[pos] >= 'a' && str[pos] <= 'z')
             str[pos] += ('A' - 'a');
         startPos = pos;
@@ -81,18 +81,18 @@ class PivotTable
     PivotTable() = default;
     PivotTable(const Json::Value &json)
     {
-        _tableName = json.get("table_name", "").asString();
-        if (_tableName.empty())
+        tableName_ = json.get("table_name", "").asString();
+        if (tableName_.empty())
         {
             throw std::runtime_error("table_name can't be empty");
         }
-        _originalKey = json.get("original_key", "").asString();
-        if (_originalKey.empty())
+        originalKey_ = json.get("original_key", "").asString();
+        if (originalKey_.empty())
         {
             throw std::runtime_error("original_key can't be empty");
         }
-        _targetKey = json.get("target_key", "").asString();
-        if (_targetKey.empty())
+        targetKey_ = json.get("target_key", "").asString();
+        if (targetKey_.empty())
         {
             throw std::runtime_error("target_key can't be empty");
         }
@@ -100,28 +100,28 @@ class PivotTable
     PivotTable reverse() const
     {
         PivotTable pivot;
-        pivot._tableName = _tableName;
-        pivot._originalKey = _targetKey;
-        pivot._targetKey = _originalKey;
+        pivot.tableName_ = tableName_;
+        pivot.originalKey_ = targetKey_;
+        pivot.targetKey_ = originalKey_;
         return pivot;
     }
     const std::string &tableName() const
     {
-        return _tableName;
+        return tableName_;
     }
     const std::string &originalKey() const
     {
-        return _originalKey;
+        return originalKey_;
     }
     const std::string &targetKey() const
     {
-        return _targetKey;
+        return targetKey_;
     }
 
   private:
-    std::string _tableName;
-    std::string _originalKey;
-    std::string _targetKey;
+    std::string tableName_;
+    std::string originalKey_;
+    std::string targetKey_;
 };
 class Relationship
 {
@@ -137,15 +137,15 @@ class Relationship
         auto type = relationship.get("type", "has one").asString();
         if (type == "has one")
         {
-            _type = Relationship::Type::HasOne;
+            type_ = Relationship::Type::HasOne;
         }
         else if (type == "has many")
         {
-            _type = Relationship::Type::HasMany;
+            type_ = Relationship::Type::HasMany;
         }
         else if (type == "many to many")
         {
-            _type = Relationship::Type::ManyToMany;
+            type_ = Relationship::Type::ManyToMany;
         }
         else
         {
@@ -153,33 +153,33 @@ class Relationship
             sprintf(message, "Invalid relationship type: %s", type.data());
             throw std::runtime_error(message);
         }
-        _originalTableName =
+        originalTableName_ =
             relationship.get("original_table_name", "").asString();
-        if (_originalTableName.empty())
+        if (originalTableName_.empty())
         {
             throw std::runtime_error("original_table_name can't be empty");
         }
-        _originalKey = relationship.get("original_key", "").asString();
-        if (_originalKey.empty())
+        originalKey_ = relationship.get("original_key", "").asString();
+        if (originalKey_.empty())
         {
             throw std::runtime_error("original_key can't be empty");
         }
-        _originalTableAlias =
+        originalTableAlias_ =
             relationship.get("original_table_alias", "").asString();
-        _targetTableName = relationship.get("target_table_name", "").asString();
-        if (_targetTableName.empty())
+        targetTableName_ = relationship.get("target_table_name", "").asString();
+        if (targetTableName_.empty())
         {
             throw std::runtime_error("target_table_name can't be empty");
         }
-        _targetKey = relationship.get("target_key", "").asString();
-        if (_targetKey.empty())
+        targetKey_ = relationship.get("target_key", "").asString();
+        if (targetKey_.empty())
         {
             throw std::runtime_error("target_key can't be empty");
         }
-        _targetTableAlias =
+        targetTableAlias_ =
             relationship.get("target_table_alias", "").asString();
-        _enableReverse = relationship.get("enable_reverse", false).asBool();
-        if (_type == Type::ManyToMany)
+        enableReverse_ = relationship.get("enable_reverse", false).asBool();
+        if (type_ == Type::ManyToMany)
         {
             auto &pivot = relationship["pivot_table"];
             if (pivot.isNull())
@@ -187,78 +187,78 @@ class Relationship
                 throw std::runtime_error(
                     "ManyToMany relationship needs a pivot table");
             }
-            _pivotTable = PivotTable(pivot);
+            pivotTable_ = PivotTable(pivot);
         }
     }
     Relationship() = default;
     Relationship reverse() const
     {
         Relationship r;
-        if (_type == Type::HasMany)
+        if (type_ == Type::HasMany)
         {
-            r._type = Type::HasOne;
+            r.type_ = Type::HasOne;
         }
         else
         {
-            r._type = _type;
+            r.type_ = type_;
         }
-        r._originalTableName = _targetTableName;
-        r._originalTableAlias = _targetTableAlias;
-        r._originalKey = _targetKey;
-        r._targetTableName = _originalTableName;
-        r._targetTableAlias = _originalTableAlias;
-        r._targetKey = _originalKey;
-        r._enableReverse = _enableReverse;
-        r._pivotTable = _pivotTable.reverse();
+        r.originalTableName_ = targetTableName_;
+        r.originalTableAlias_ = targetTableAlias_;
+        r.originalKey_ = targetKey_;
+        r.targetTableName_ = originalTableName_;
+        r.targetTableAlias_ = originalTableAlias_;
+        r.targetKey_ = originalKey_;
+        r.enableReverse_ = enableReverse_;
+        r.pivotTable_ = pivotTable_.reverse();
         return r;
     }
     Type type() const
     {
-        return _type;
+        return type_;
     }
     bool enableReverse() const
     {
-        return _enableReverse;
+        return enableReverse_;
     }
     const std::string &originalTableName() const
     {
-        return _originalTableName;
+        return originalTableName_;
     }
     const std::string &originalTableAlias() const
     {
-        return _originalTableAlias;
+        return originalTableAlias_;
     }
     const std::string &originalKey() const
     {
-        return _originalKey;
+        return originalKey_;
     }
     const std::string &targetTableName() const
     {
-        return _targetTableName;
+        return targetTableName_;
     }
     const std::string &targetTableAlias() const
     {
-        return _targetTableAlias;
+        return targetTableAlias_;
     }
     const std::string &targetKey() const
     {
-        return _targetKey;
+        return targetKey_;
     }
     const PivotTable &pivotTable() const
     {
-        return _pivotTable;
+        return pivotTable_;
     }
 
   private:
-    Type _type = Type::HasOne;
-    std::string _originalTableName;
-    std::string _originalTableAlias;
-    std::string _targetTableName;
-    std::string _targetTableAlias;
-    std::string _originalKey;
-    std::string _targetKey;
-    bool _enableReverse = false;
-    PivotTable _pivotTable;
+    Type type_{Type::HasOne};
+    std::string originalTableName_;
+    std::string originalTableAlias_;
+    std::string targetTableName_;
+    std::string targetTableAlias_;
+    std::string originalKey_;
+    std::string targetKey_;
+    bool enableReverse_{false};
+    PivotTable pivotTable_;
 };
 class create_model : public DrObject<create_model>, public CommandHandler
 {
@@ -317,7 +317,7 @@ class create_model : public DrObject<create_model>, public CommandHandler
 #endif
     void createRestfulAPIController(const DrTemplateData &tableInfo,
                                     const Json::Value &restfulApiConfig);
-    std::string _dbname;
-    bool _forceOverwrite = false;
+    std::string dbname_;
+    bool forceOverwrite_{false};
 };
 }  // namespace drogon_ctl

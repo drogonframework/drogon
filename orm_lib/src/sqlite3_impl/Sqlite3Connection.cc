@@ -19,7 +19,7 @@
 
 using namespace drogon::orm;
 
-std::once_flag Sqlite3Connection::_once;
+std::once_flag Sqlite3Connection::once_;
 
 void Sqlite3Connection::onError(
     const std::string &sql,
@@ -27,7 +27,7 @@ void Sqlite3Connection::onError(
 {
     try
     {
-        throw SqlError(sqlite3_errmsg(_conn.get()), sql);
+        throw SqlError(sqlite3_errmsg(connectionPtr_.get()), sql);
     }
     catch (...)
     {
@@ -40,11 +40,11 @@ Sqlite3Connection::Sqlite3Connection(
     trantor::EventLoop *loop,
     const std::string &connInfo,
     const std::shared_ptr<SharedMutex> &sharedMutex)
-    : DbConnection(loop), _sharedMutexPtr(sharedMutex)
+    : DbConnection(loop), sharedMutexPtr_(sharedMutex)
 {
-    _loopThread.run();
-    _loop = _loopThread.getLoop();
-    std::call_once(_once, []() {
+    loopThread_.run();
+    loop_ = loopThread_.getLoop();
+    std::call_once(once_, []() {
         auto ret = sqlite3_config(SQLITE_CONFIG_MULTITHREAD);
         if (ret != SQLITE_OK)
         {
@@ -73,22 +73,22 @@ Sqlite3Connection::Sqlite3Connection(
             filename = value;
         }
     }
-    _loop->runInLoop([this, filename = std::move(filename)]() {
+    loop_->runInLoop([this, filename = std::move(filename)]() {
         sqlite3 *tmp = nullptr;
         auto ret = sqlite3_open(filename.data(), &tmp);
-        _conn = std::shared_ptr<sqlite3>(tmp, [=](sqlite3 *ptr) {
+        connectionPtr_ = std::shared_ptr<sqlite3>(tmp, [=](sqlite3 *ptr) {
             sqlite3_close(ptr);
         });
         auto thisPtr = shared_from_this();
         if (ret != SQLITE_OK)
         {
-            LOG_FATAL << sqlite3_errmsg(_conn.get());
-            _closeCb(thisPtr);
+            LOG_FATAL << sqlite3_errmsg(connectionPtr_.get());
+            closeCallback_(thisPtr);
         }
         else
         {
             sqlite3_extended_result_codes(tmp, true);
-            _okCb(thisPtr);
+            okCallback_(thisPtr);
         }
     });
 }
@@ -103,7 +103,7 @@ void Sqlite3Connection::execSql(
     std::function<void(const std::exception_ptr &)> &&exceptCallback)
 {
     auto thisPtr = shared_from_this();
-    _loopThread.getLoop()->runInLoop(
+    loopThread_.getLoop()->runInLoop(
         [thisPtr,
          sql = std::move(sql),
          paraNum,
@@ -131,8 +131,8 @@ void Sqlite3Connection::execSqlInQueue(
     bool newStmt = false;
     if (paraNum > 0)
     {
-        auto iter = _stmtMap.find(sql);
-        if (iter != _stmtMap.end())
+        auto iter = stmtsMap_.find(sql);
+        if (iter != stmtsMap_.end())
         {
             stmtPtr = iter->second;
         }
@@ -142,8 +142,8 @@ void Sqlite3Connection::execSqlInQueue(
         sqlite3_stmt *stmt = nullptr;
         newStmt = true;
         const char *remaining;
-        auto ret =
-            sqlite3_prepare_v2(_conn.get(), sql.data(), -1, &stmt, &remaining);
+        auto ret = sqlite3_prepare_v2(
+            connectionPtr_.get(), sql.data(), -1, &stmt, &remaining);
         stmtPtr = stmt ? std::shared_ptr<sqlite3_stmt>(stmt,
                                                        [](sqlite3_stmt *p) {
                                                            sqlite3_finalize(p);
@@ -152,7 +152,7 @@ void Sqlite3Connection::execSqlInQueue(
         if (ret != SQLITE_OK || !stmtPtr)
         {
             onError(sql, exceptCallback);
-            _idleCb();
+            idleCb_();
             return;
         }
         if (!std::all_of(remaining, sql.data() + sql.size(), [](char ch) {
@@ -170,13 +170,13 @@ void Sqlite3Connection::execSqlInQueue(
                 auto exceptPtr = std::current_exception();
                 exceptCallback(exceptPtr);
             }
-            _idleCb();
+            idleCb_();
             return;
         }
     }
     assert(stmtPtr);
     auto stmt = stmtPtr.get();
-    for (int i = 0; i < (int)parameters.size(); i++)
+    for (int i = 0; i < (int)parameters.size(); ++i)
     {
         int bindRet;
         switch (format[i])
@@ -216,38 +216,39 @@ void Sqlite3Connection::execSqlInQueue(
         {
             onError(sql, exceptCallback);
             sqlite3_reset(stmt);
-            _idleCb();
+            idleCb_();
             return;
         }
     }
     int r;
     int columnNum = sqlite3_column_count(stmt);
     auto resultPtr = std::make_shared<Sqlite3ResultImpl>(sql);
-    for (int i = 0; i < columnNum; i++)
+    for (int i = 0; i < columnNum; ++i)
     {
         auto name = std::string(sqlite3_column_name(stmt, i));
         std::transform(name.begin(), name.end(), name.begin(), tolower);
         LOG_TRACE << "column name:" << name;
-        resultPtr->_columnNames.push_back(name);
-        resultPtr->_columnNameMap.insert({name, i});
+        resultPtr->columnNames_.push_back(name);
+        resultPtr->columnNamesMap_.insert({name, i});
     }
 
     if (sqlite3_stmt_readonly(stmt))
     {
         // Readonly, hold read lock;
-        std::shared_lock<SharedMutex> lock(*_sharedMutexPtr);
+        std::shared_lock<SharedMutex> lock(*sharedMutexPtr_);
         r = stmtStep(stmt, resultPtr, columnNum);
         sqlite3_reset(stmt);
     }
     else
     {
         // Hold write lock
-        std::unique_lock<SharedMutex> lock(*_sharedMutexPtr);
+        std::unique_lock<SharedMutex> lock(*sharedMutexPtr_);
         r = stmtStep(stmt, resultPtr, columnNum);
         if (r == SQLITE_DONE)
         {
-            resultPtr->_affectedRows = sqlite3_changes(_conn.get());
-            resultPtr->_insertId = sqlite3_last_insert_rowid(_conn.get());
+            resultPtr->affectedRows_ = sqlite3_changes(connectionPtr_.get());
+            resultPtr->insertId_ =
+                sqlite3_last_insert_rowid(connectionPtr_.get());
         }
         sqlite3_reset(stmt);
     }
@@ -256,13 +257,13 @@ void Sqlite3Connection::execSqlInQueue(
     {
         onError(sql, exceptCallback);
         sqlite3_reset(stmt);
-        _idleCb();
+        idleCb_();
         return;
     }
     if (paraNum > 0 && newStmt)
-        _stmtMap[sql] = stmtPtr;
+        stmtsMap_[sql] = stmtPtr;
     rcb(Result(resultPtr));
-    _idleCb();
+    idleCb_();
 }
 
 int Sqlite3Connection::stmtStep(
@@ -274,7 +275,7 @@ int Sqlite3Connection::stmtStep(
     while ((r = sqlite3_step(stmt)) == SQLITE_ROW)
     {
         std::vector<std::shared_ptr<std::string>> row;
-        for (int i = 0; i < columnNum; i++)
+        for (int i = 0; i < columnNum; ++i)
         {
             switch (sqlite3_column_type(stmt, i))
             {
@@ -305,7 +306,7 @@ int Sqlite3Connection::stmtStep(
                     break;
             }
         }
-        resultPtr->_result.push_back(std::move(row));
+        resultPtr->result_.push_back(std::move(row));
     }
     return r;
 }
@@ -314,8 +315,8 @@ void Sqlite3Connection::disconnect()
     std::promise<int> pro;
     auto f = pro.get_future();
     auto thisPtr = shared_from_this();
-    _loopThread.getLoop()->runInLoop([thisPtr, &pro]() {
-        thisPtr->_conn.reset();
+    loopThread_.getLoop()->runInLoop([thisPtr, &pro]() {
+        thisPtr->connectionPtr_.reset();
         pro.set_value(1);
     });
     f.get();

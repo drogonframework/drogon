@@ -33,22 +33,22 @@ class RestfulController : trantor::NonCopyable
   public:
     void enableMasquerading(const std::vector<std::string> &pMasqueradingVector)
     {
-        _masquerading = true;
-        _masqueradingVector = pMasqueradingVector;
-        for (size_t i = 0; i < _masqueradingVector.size(); ++i)
+        masquerading_ = true;
+        masqueradingVector_ = pMasqueradingVector;
+        for (size_t i = 0; i < masqueradingVector_.size(); ++i)
         {
-            _masqueradingMap.insert(
-                std::pair<std::string, size_t>{_masqueradingVector[i], i});
+            masqueradingMap_.insert(
+                std::pair<std::string, size_t>{masqueradingVector_[i], i});
         }
     }
     void disableMasquerading()
     {
-        _masquerading = false;
-        _masqueradingVector = _columnsVector;
-        for (size_t i = 0; i < _masqueradingVector.size(); ++i)
+        masquerading_ = false;
+        masqueradingVector_ = columnsVector_;
+        for (size_t i = 0; i < masqueradingVector_.size(); ++i)
         {
-            _masqueradingMap.insert(
-                std::pair<std::string, size_t>{_masqueradingVector[i], i});
+            masqueradingMap_.insert(
+                std::pair<std::string, size_t>{masqueradingVector_[i], i});
         }
     }
     void registerAJsonValidator(
@@ -56,13 +56,13 @@ class RestfulController : trantor::NonCopyable
         const std::function<bool(const Json::Value &, std::string &)>
             &validator)
     {
-        _validators.emplace_back(fieldName, validator);
+        validators_.emplace_back(fieldName, validator);
     }
     void registerAJsonValidator(
         const std::string &fieldName,
         std::function<bool(const Json::Value &, std::string &)> &&validator)
     {
-        _validators.emplace_back(fieldName, std::move(validator));
+        validators_.emplace_back(fieldName, std::move(validator));
     }
 
     /**
@@ -88,13 +88,13 @@ class RestfulController : trantor::NonCopyable
 
   protected:
     RestfulController(const std::vector<std::string> &columnsVector)
-        : _columnsVector(columnsVector)
+        : columnsVector_(columnsVector)
     {
     }
     std::vector<std::string> fieldsSelector(const std::set<std::string> &fields)
     {
         std::vector<std::string> ret;
-        for (auto &field : _masqueradingVector)
+        for (auto &field : masqueradingVector_)
         {
             if (!field.empty() && fields.find(field) != fields.end())
             {
@@ -112,7 +112,7 @@ class RestfulController : trantor::NonCopyable
     {
         auto &queryParams = req->parameters();
         auto iter = queryParams.find("fields");
-        if (_masquerading)
+        if (masquerading_)
         {
             if (iter != queryParams.end())
             {
@@ -121,7 +121,7 @@ class RestfulController : trantor::NonCopyable
             }
             else
             {
-                return obj.toMasqueradedJson(_masqueradingVector);
+                return obj.toMasqueradedJson(masqueradingVector_);
             }
         }
         else
@@ -139,7 +139,7 @@ class RestfulController : trantor::NonCopyable
     }
     bool doCustomValidations(const Json::Value &pJson, std::string &err)
     {
-        for (auto &validator : _validators)
+        for (auto &validator : validators_)
         {
             if (pJson.isMember(validator.first))
             {
@@ -153,21 +153,21 @@ class RestfulController : trantor::NonCopyable
     }
     bool isMasquerading() const
     {
-        return _masquerading;
+        return masquerading_;
     }
     const std::vector<std::string> &masqueradingVector() const
     {
-        return _masqueradingVector;
+        return masqueradingVector_;
     }
 
   private:
-    bool _masquerading = true;
-    std::vector<std::string> _masqueradingVector;
+    bool masquerading_{true};
+    std::vector<std::string> masqueradingVector_;
     std::vector<
         std::pair<std::string,
                   std::function<bool(const Json::Value &, std::string &)>>>
-        _validators;
-    std::unordered_map<std::string, size_t> _masqueradingMap;
-    const std::vector<std::string> _columnsVector;
+        validators_;
+    std::unordered_map<std::string, size_t> masqueradingMap_;
+    const std::vector<std::string> columnsVector_;
 };
 }  // namespace drogon

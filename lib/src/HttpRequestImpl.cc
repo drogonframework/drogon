@@ -34,16 +34,16 @@ void HttpRequestImpl::parseJson() const
         static std::once_flag once;
         static Json::CharReaderBuilder builder;
         std::call_once(once, []() { builder["collectComments"] = false; });
-        _jsonPtr = std::make_shared<Json::Value>();
+        jsonPtr_ = std::make_shared<Json::Value>();
         JSONCPP_STRING errs;
         std::unique_ptr<Json::CharReader> reader(builder.newCharReader());
         if (!reader->parse(input.data(),
                            input.data() + input.size(),
-                           _jsonPtr.get(),
+                           jsonPtr_.get(),
                            &errs))
         {
             LOG_ERROR << errs;
-            _jsonPtr.reset();
+            jsonPtr_.reset();
         }
     }
 }
@@ -56,7 +56,7 @@ void HttpRequestImpl::parseParameters() const
         while ((input[pos] == '?' || isspace(input[pos])) &&
                pos < input.length())
         {
-            pos++;
+            ++pos;
         }
         auto value = input.substr(pos);
         while ((pos = value.find('&')) != string_view::npos)
@@ -68,12 +68,12 @@ void HttpRequestImpl::parseParameters() const
                 auto key = coo.substr(0, epos);
                 string_view::size_type cpos = 0;
                 while (cpos < key.length() && isspace(key[cpos]))
-                    cpos++;
+                    ++cpos;
                 key = key.substr(cpos);
                 auto pvalue = coo.substr(epos + 1);
                 std::string pdecode = utils::urlDecode(pvalue);
                 std::string keydecode = utils::urlDecode(key);
-                _parameters[keydecode] = pdecode;
+                parameters_[keydecode] = pdecode;
             }
             value = value.substr(pos + 1);
         }
@@ -86,12 +86,12 @@ void HttpRequestImpl::parseParameters() const
                 auto key = coo.substr(0, epos);
                 string_view::size_type cpos = 0;
                 while (cpos < key.length() && isspace(key[cpos]))
-                    cpos++;
+                    ++cpos;
                 key = key.substr(cpos);
                 auto pvalue = coo.substr(epos + 1);
                 std::string pdecode = utils::urlDecode(pvalue);
                 std::string keydecode = utils::urlDecode(key);
-                _parameters[keydecode] = pdecode;
+                parameters_[keydecode] = pdecode;
             }
         }
     }
@@ -108,7 +108,7 @@ void HttpRequestImpl::parseParameters() const
         while ((input[pos] == '?' || isspace(input[pos])) &&
                pos < input.length())
         {
-            pos++;
+            ++pos;
         }
         auto value = input.substr(pos);
         while ((pos = value.find('&')) != string_view::npos)
@@ -120,12 +120,12 @@ void HttpRequestImpl::parseParameters() const
                 auto key = coo.substr(0, epos);
                 string_view::size_type cpos = 0;
                 while (cpos < key.length() && isspace(key[cpos]))
-                    cpos++;
+                    ++cpos;
                 key = key.substr(cpos);
                 auto pvalue = coo.substr(epos + 1);
                 std::string pdecode = utils::urlDecode(pvalue);
                 std::string keydecode = utils::urlDecode(key);
-                _parameters[keydecode] = pdecode;
+                parameters_[keydecode] = pdecode;
             }
             value = value.substr(pos + 1);
         }
@@ -138,12 +138,12 @@ void HttpRequestImpl::parseParameters() const
                 auto key = coo.substr(0, epos);
                 string_view::size_type cpos = 0;
                 while (cpos < key.length() && isspace(key[cpos]))
-                    cpos++;
+                    ++cpos;
                 key = key.substr(cpos);
                 auto pvalue = coo.substr(epos + 1);
                 std::string pdecode = utils::urlDecode(pvalue);
                 std::string keydecode = utils::urlDecode(key);
-                _parameters[keydecode] = pdecode;
+                parameters_[keydecode] = pdecode;
             }
         }
     }
@@ -151,7 +151,7 @@ void HttpRequestImpl::parseParameters() const
 
 void HttpRequestImpl::appendToBuffer(trantor::MsgBuffer *output) const
 {
-    switch (_method)
+    switch (method_)
     {
         case Get:
             output->append("GET ");
@@ -175,9 +175,9 @@ void HttpRequestImpl::appendToBuffer(trantor::MsgBuffer *output) const
             return;
     }
 
-    if (!_path.empty())
+    if (!path_.empty())
     {
-        output->append(utils::urlEncode(_path));
+        output->append(utils::urlEncode(path_));
     }
     else
     {
@@ -185,9 +185,9 @@ void HttpRequestImpl::appendToBuffer(trantor::MsgBuffer *output) const
     }
 
     std::string content;
-    if (!_parameters.empty() && _contentType != CT_MULTIPART_FORM_DATA)
+    if (!parameters_.empty() && contentType_ != CT_MULTIPART_FORM_DATA)
     {
-        for (auto const &p : _parameters)
+        for (auto const &p : parameters_)
         {
             content.append(utils::urlEncodeComponent(p.first));
             content.append("=");
@@ -195,7 +195,7 @@ void HttpRequestImpl::appendToBuffer(trantor::MsgBuffer *output) const
             content.append("&");
         }
         content.resize(content.length() - 1);
-        if (_method == Get || _method == Delete || _method == Head)
+        if (method_ == Get || method_ == Delete || method_ == Head)
         {
             auto ret = std::find(output->peek(),
                                  (const char *)output->beginWrite(),
@@ -214,7 +214,7 @@ void HttpRequestImpl::appendToBuffer(trantor::MsgBuffer *output) const
             output->append(content);
             content.clear();
         }
-        else if (_contentType == CT_APPLICATION_JSON)
+        else if (contentType_ == CT_APPLICATION_JSON)
         {
             /// Can't set parameters in content in this case
             LOG_ERROR
@@ -229,11 +229,11 @@ void HttpRequestImpl::appendToBuffer(trantor::MsgBuffer *output) const
     }
 
     output->append(" ");
-    if (_version == kHttp11)
+    if (version_ == kHttp11)
     {
         output->append("HTTP/1.1");
     }
-    else if (_version == kHttp10)
+    else if (version_ == kHttp10)
     {
         output->append("HTTP/1.0");
     }
@@ -242,7 +242,7 @@ void HttpRequestImpl::appendToBuffer(trantor::MsgBuffer *output) const
         return;
     }
     output->append("\r\n");
-    if (_contentType == CT_MULTIPART_FORM_DATA)
+    if (contentType_ == CT_MULTIPART_FORM_DATA)
     {
         auto mReq = dynamic_cast<const HttpFileUploadRequest *>(this);
         if (mReq)
@@ -290,37 +290,37 @@ void HttpRequestImpl::appendToBuffer(trantor::MsgBuffer *output) const
             content.append("--");
         }
     }
-    assert(!(!content.empty() && !_content.empty()));
-    if (!content.empty() || !_content.empty())
+    assert(!(!content.empty() && !content_.empty()));
+    if (!content.empty() || !content_.empty())
     {
         char buf[64];
         auto len = snprintf(buf,
                             sizeof(buf),
                             "Content-Length: %lu\r\n",
                             static_cast<long unsigned int>(content.length() +
-                                                           _content.length()));
+                                                           content_.length()));
         output->append(buf, len);
-        if (_contentTypeString.empty())
+        if (contentTypeString_.empty())
         {
-            auto &type = webContentTypeToString(_contentType);
+            auto &type = webContentTypeToString(contentType_);
             output->append(type.data(), type.length());
         }
     }
-    if (!_contentTypeString.empty())
+    if (!contentTypeString_.empty())
     {
-        output->append(_contentTypeString);
+        output->append(contentTypeString_);
     }
-    for (auto it = _headers.begin(); it != _headers.end(); ++it)
+    for (auto it = headers_.begin(); it != headers_.end(); ++it)
     {
         output->append(it->first);
         output->append(": ");
         output->append(it->second);
         output->append("\r\n");
     }
-    if (_cookies.size() > 0)
+    if (cookies_.size() > 0)
     {
         output->append("Cookie: ");
-        for (auto it = _cookies.begin(); it != _cookies.end(); ++it)
+        for (auto it = cookies_.begin(); it != cookies_.end(); ++it)
         {
             output->append(it->first);
             output->append("= ");
@@ -334,8 +334,8 @@ void HttpRequestImpl::appendToBuffer(trantor::MsgBuffer *output) const
     output->append("\r\n");
     if (!content.empty())
         output->append(content);
-    if (!_content.empty())
-        output->append(_content);
+    if (!content_.empty())
+        output->append(content_);
 }
 
 void HttpRequestImpl::addHeader(const char *start,
@@ -369,10 +369,10 @@ void HttpRequestImpl::addHeader(const char *start,
                 std::string::size_type cpos = 0;
                 while (cpos < cookie_name.length() &&
                        isspace(cookie_name[cpos]))
-                    cpos++;
+                    ++cpos;
                 cookie_name = cookie_name.substr(cpos);
                 std::string cookie_value = coo.substr(epos + 1);
-                _cookies[std::move(cookie_name)] = std::move(cookie_value);
+                cookies_[std::move(cookie_name)] = std::move(cookie_value);
             }
             value = value.substr(pos + 1);
         }
@@ -386,10 +386,10 @@ void HttpRequestImpl::addHeader(const char *start,
                 std::string::size_type cpos = 0;
                 while (cpos < cookie_name.length() &&
                        isspace(cookie_name[cpos]))
-                    cpos++;
+                    ++cpos;
                 cookie_name = cookie_name.substr(cpos);
                 std::string cookie_value = coo.substr(epos + 1);
-                _cookies[std::move(cookie_name)] = std::move(cookie_value);
+                cookies_[std::move(cookie_name)] = std::move(cookie_value);
             }
         }
     }
@@ -400,22 +400,22 @@ void HttpRequestImpl::addHeader(const char *start,
             case 6:
                 if (field == "expect")
                 {
-                    _expect = value;
+                    expect_ = value;
                 }
                 break;
             case 10:
             {
                 if (field == "connection")
                 {
-                    if (_version == kHttp11)
+                    if (version_ == kHttp11)
                     {
                         if (value.length() == 5 && value == "close")
-                            _keepAlive = false;
+                            keepAlive_ = false;
                     }
                     else if (value.length() == 10 &&
                              (value == "Keep-Alive" || value == "keep-alive"))
                     {
-                        _keepAlive = true;
+                        keepAlive_ = true;
                     }
                 }
             }
@@ -423,13 +423,13 @@ void HttpRequestImpl::addHeader(const char *start,
             case 14:
                 if (field == "content-length")
                 {
-                    _contentLen = std::stoull(value.c_str());
+                    contentLen_ = std::stoull(value.c_str());
                 }
                 break;
             default:
                 break;
         }
-        _headers.emplace(std::move(field), std::move(value));
+        headers_.emplace(std::move(field), std::move(value));
     }
 }
 
@@ -446,7 +446,7 @@ HttpRequestPtr HttpRequest::newHttpFormPostRequest()
     auto req = std::make_shared<HttpRequestImpl>(nullptr);
     req->setMethod(drogon::Post);
     req->setVersion(drogon::HttpRequest::kHttp11);
-    req->_contentType = CT_APPLICATION_X_FORM;
+    req->contentType_ = CT_APPLICATION_X_FORM;
     return req;
 }
 
@@ -461,7 +461,7 @@ HttpRequestPtr HttpRequest::newHttpJsonRequest(const Json::Value &data)
     auto req = std::make_shared<HttpRequestImpl>(nullptr);
     req->setMethod(drogon::Get);
     req->setVersion(drogon::HttpRequest::kHttp11);
-    req->_contentType = CT_APPLICATION_JSON;
+    req->contentType_ = CT_APPLICATION_JSON;
     req->setContent(writeString(builder, data));
     return req;
 }
@@ -474,28 +474,28 @@ HttpRequestPtr HttpRequest::newFileUploadRequest(
 
 void HttpRequestImpl::swap(HttpRequestImpl &that) noexcept
 {
-    std::swap(_method, that._method);
-    std::swap(_version, that._version);
-    _path.swap(that._path);
-    _query.swap(that._query);
+    std::swap(method_, that.method_);
+    std::swap(version_, that.version_);
+    path_.swap(that.path_);
+    query_.swap(that.query_);
 
-    _headers.swap(that._headers);
-    _cookies.swap(that._cookies);
-    _parameters.swap(that._parameters);
-    _jsonPtr.swap(that._jsonPtr);
-    _sessionPtr.swap(that._sessionPtr);
+    headers_.swap(that.headers_);
+    cookies_.swap(that.cookies_);
+    parameters_.swap(that.parameters_);
+    jsonPtr_.swap(that.jsonPtr_);
+    sessionPtr_.swap(that.sessionPtr_);
 
-    std::swap(_peer, that._peer);
-    std::swap(_local, that._local);
-    _date.swap(that._date);
-    _content.swap(that._content);
-    std::swap(_contentLen, that._contentLen);
+    std::swap(peer_, that.peer_);
+    std::swap(local_, that.local_);
+    creationDate_.swap(that.creationDate_);
+    content_.swap(that.content_);
+    std::swap(contentLen_, that.contentLen_);
 }
 
 const char *HttpRequestImpl::methodString() const
 {
     const char *result = "UNKNOWN";
-    switch (_method)
+    switch (method_)
     {
         case Get:
             result = "GET";
@@ -523,72 +523,72 @@ const char *HttpRequestImpl::methodString() const
 
 bool HttpRequestImpl::setMethod(const char *start, const char *end)
 {
-    assert(_method == Invalid);
+    assert(method_ == Invalid);
     string_view m(start, end - start);
     switch (m.length())
     {
         case 3:
             if (m == "GET")
             {
-                _method = Get;
+                method_ = Get;
             }
             else if (m == "PUT")
             {
-                _method = Put;
+                method_ = Put;
             }
             else
             {
-                _method = Invalid;
+                method_ = Invalid;
             }
             break;
         case 4:
             if (m == "POST")
             {
-                _method = Post;
+                method_ = Post;
             }
             else if (m == "HEAD")
             {
-                _method = Head;
+                method_ = Head;
             }
             else
             {
-                _method = Invalid;
+                method_ = Invalid;
             }
             break;
         case 6:
             if (m == "DELETE")
             {
-                _method = Delete;
+                method_ = Delete;
             }
             else
             {
-                _method = Invalid;
+                method_ = Invalid;
             }
             break;
         case 7:
             if (m == "OPTIONS")
             {
-                _method = Options;
+                method_ = Options;
             }
             else
             {
-                _method = Invalid;
+                method_ = Invalid;
             }
             break;
         default:
-            _method = Invalid;
+            method_ = Invalid;
             break;
     }
 
-    // if (_method != Invalid)
+    // if (method_ != Invalid)
     // {
-    //     _content = "";
-    //     _query = "";
-    //     _cookies.clear();
-    //     _parameters.clear();
-    //     _headers.clear();
+    //     content_ = "";
+    //     query_ = "";
+    //     cookies_.clear();
+    //     parameters_.clear();
+    //     headers_.clear();
     // }
-    return _method != Invalid;
+    return method_ != Invalid;
 }
 
 HttpRequestImpl::~HttpRequestImpl()
@@ -597,10 +597,10 @@ HttpRequestImpl::~HttpRequestImpl()
 
 void HttpRequestImpl::reserveBodySize()
 {
-    if (_contentLen <=
+    if (contentLen_ <=
         HttpAppFrameworkImpl::instance().getClientMaxMemoryBodySize())
     {
-        _content.reserve(_contentLen);
+        content_.reserve(contentLen_);
     }
     else
     {
@@ -612,6 +612,6 @@ void HttpRequestImpl::reserveBodySize()
             .append(1, fileName[1])
             .append("/")
             .append(fileName);
-        _cacheFilePtr = std::make_unique<CacheFile>(tmpfile);
+        cacheFilePtr_ = std::make_unique<CacheFile>(tmpfile);
     }
 }

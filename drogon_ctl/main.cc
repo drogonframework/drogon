@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
         return 0;
     }
     std::vector<std::string> args;
-    for (int i = 1; i < argc; i++)
+    for (int i = 1; i < argc; ++i)
     {
         args.push_back(argv[i]);
     }

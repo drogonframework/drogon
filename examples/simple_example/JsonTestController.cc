@@ -8,7 +8,7 @@ void JsonTestController::asyncHandleHttpRequest(
     json["path"] = "json";
     json["name"] = "json test";
     Json::Value array;
-    for (int i = 0; i < 5; i++)
+    for (int i = 0; i < 5; ++i)
     {
         Json::Value user;
         user["id"] = i;

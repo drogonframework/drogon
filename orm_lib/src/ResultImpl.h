@@ -23,7 +23,7 @@ namespace orm
 class ResultImpl : public trantor::NonCopyable, public Result
 {
   public:
-    ResultImpl(const std::string &query) : _query(query)
+    ResultImpl(const std::string &query) : query_(query)
     {
     }
     virtual SizeType size() const noexcept = 0;
@@ -36,7 +36,7 @@ class ResultImpl : public trantor::NonCopyable, public Result
     virtual FieldSizeType getLength(SizeType row, RowSizeType column) const = 0;
     virtual const std::string &sql() const
     {
-        return _query;
+        return query_;
     }
     virtual unsigned long long insertId() const noexcept
     {
@@ -52,7 +52,7 @@ class ResultImpl : public trantor::NonCopyable, public Result
     }
 
   private:
-    std::string _query;
+    std::string query_;
 };
 
 }  // namespace orm

@@ -29,7 +29,7 @@ class PostgreSQLResultImpl : public ResultImpl
   public:
     PostgreSQLResultImpl(const std::shared_ptr<PGresult> &r,
                          const std::string &query) noexcept
-        : ResultImpl(query), _result(r)
+        : ResultImpl(query), result_(r)
     {
     }
     virtual SizeType size() const noexcept override;
@@ -45,7 +45,7 @@ class PostgreSQLResultImpl : public ResultImpl
     virtual int oid(RowSizeType column) const override;
 
   private:
-    std::shared_ptr<PGresult> _result;
+    std::shared_ptr<PGresult> result_;
 };
 
 }  // namespace orm

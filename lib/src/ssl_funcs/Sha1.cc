@@ -26,7 +26,7 @@ static void writeBigEndian64(unsigned char *p, unsigned int v)
     memset(p, 0, 8);
     memcpy(p, &v, 4);
     int i = 0;
-    for (i = 0; i < 4; i++)
+    for (i = 0; i < 4; ++i)
     {
         unsigned char t = p[i];
         p[i] = p[7 - i];
@@ -81,7 +81,7 @@ unsigned char *SHA1(const unsigned char *dataIn,
         c = H[2];
         d = H[3];
         e = H[4];
-        for (i = 0; i < 80; i++)
+        for (i = 0; i < 80; ++i)
         {
             if (i < 16)
             {
@@ -144,14 +144,14 @@ unsigned char *SHA1(const unsigned char *dataIn,
         H[4] += e;
     }
     int ct = 0;
-    for (i = 0; i < 5; i++)
+    for (i = 0; i < 5; ++i)
     {
         unsigned char buf[4] = {0};
         memcpy(buf, &(H[i]), 4);
         for (int r = 3; r >= 0; r--)
         {
             dataOut[ct] = buf[r];
-            ct++;
+            ++ct;
         }
     }
 

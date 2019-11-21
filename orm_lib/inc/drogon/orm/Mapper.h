@@ -34,19 +34,19 @@ namespace internal
 template <typename T, bool hasPrimaryKey = true>
 struct Traits
 {
-    typedef typename T::PrimaryKeyType type;
+    using type = typename T::PrimaryKeyType;
 };
 template <typename T>
 struct Traits<T, false>
 {
-    typedef int type;
+    using type = int;
 };
 template <typename T>
 struct has_sqlForFindingByPrimaryKey
 {
   private:
-    typedef std::true_type yes;
-    typedef std::false_type no;
+    using yes = std::true_type;
+    using no = std::false_type;
 
     template <typename U>
     static auto test(int) -> decltype(U::sqlForFindingByPrimaryKey(), yes());
@@ -62,8 +62,8 @@ template <typename T>
 struct has_sqlForDeletingByPrimaryKey
 {
   private:
-    typedef std::true_type yes;
-    typedef std::false_type no;
+    using yes = std::true_type;
+    using no = std::false_type;
 
     template <typename U>
     static auto test(int)
@@ -114,7 +114,7 @@ class Mapper
      *
      * @param client The smart pointer to the database client object.
      */
-    Mapper(const DbClientPtr &client) : _client(client)
+    Mapper(const DbClientPtr &client) : client_(client)
     {
     }
 
@@ -161,13 +161,12 @@ class Mapper
      */
     Mapper<T> &forUpdate();
 
-    typedef std::function<void(T)> SingleRowCallback;
-    typedef std::function<void(std::vector<T>)> MultipleRowsCallback;
-    typedef std::function<void(const size_t)> CountCallback;
+    using SingleRowCallback = std::function<void(T)>;
+    using MultipleRowsCallback = std::function<void(std::vector<T>)>;
+    using CountCallback = std::function<void(const size_t)>;
 
-    typedef typename internal::
-        Traits<T, !std::is_same<typename T::PrimaryKeyType, void>::value>::type
-            TraitsPKType;
+    using TraitsPKType = typename internal::
+        Traits<T, !std::is_same<typename T::PrimaryKeyType, void>::value>::type;
 
     /**
      * @brief Find a record by the primary key.
@@ -192,14 +191,14 @@ class Mapper
             "version of drogon_ctl");
         // return findOne(Criteria(T::primaryKeyName, key));
         std::string sql = T::sqlForFindingByPrimaryKey();
-        if (_forUpdate)
+        if (forUpdate_)
         {
             sql += " for update";
         }
         clear();
         Result r(nullptr);
         {
-            auto binder = *_client << std::move(sql);
+            auto binder = *client_ << std::move(sql);
             outputPrimeryKeyToBinder(key, binder);
             binder << Mode::Blocking;
             binder >> [&r](const Result &result) { r = result; };
@@ -251,12 +250,12 @@ class Mapper
             "version of drogon_ctl");
         // findOne(Criteria(T::primaryKeyName, key), rcb, ecb);
         std::string sql = T::sqlForFindingByPrimaryKey();
-        if (_forUpdate)
+        if (forUpdate_)
         {
             sql += " for update";
         }
         clear();
-        auto binder = *_client << std::move(sql);
+        auto binder = *client_ << std::move(sql);
         outputPrimeryKeyToBinder(key, binder);
         binder >> [=](const Result &r) {
             if (r.size() == 0)
@@ -310,12 +309,12 @@ class Mapper
             "version of drogon_ctl");
         // return findFutureOne(Criteria(T::primaryKeyName, key));
         std::string sql = T::sqlForFindingByPrimaryKey();
-        if (_forUpdate)
+        if (forUpdate_)
         {
             sql += " for update";
         }
         clear();
-        auto binder = *_client << std::move(sql);
+        auto binder = *client_ << std::move(sql);
         outputPrimeryKeyToBinder(key, binder);
 
         std::shared_ptr<std::promise<T>> prom =
@@ -630,17 +629,17 @@ class Mapper
         const TraitsPKType &key) noexcept;
 
   private:
-    DbClientPtr _client;
-    size_t _limit = 0;
-    size_t _offset = 0;
-    std::string _orderbyString;
-    bool _forUpdate = false;
+    DbClientPtr client_;
+    size_t limit_{0};
+    size_t offset_{0};
+    std::string orderByString_;
+    bool forUpdate_{false};
     void clear()
     {
-        _limit = 0;
-        _offset = 0;
-        _orderbyString.clear();
-        _forUpdate = false;
+        limit_ = 0;
+        offset_ = 0;
+        orderByString_.clear();
+        forUpdate_ = false;
     }
     template <typename PKType = decltype(T::primaryKeyName)>
     typename std::enable_if<std::is_same<const std::string, PKType>::value,
@@ -658,7 +657,7 @@ class Mapper
     makePrimaryKeyCriteria(std::string &sql)
     {
         sql += " where ";
-        for (size_t i = 0; i < T::primaryKeyName.size(); i++)
+        for (size_t i = 0; i < T::primaryKeyName.size(); ++i)
         {
             sql += T::primaryKeyName[i];
             sql += " = $?";
@@ -718,32 +717,32 @@ inline T Mapper<T>::findOne(const Criteria &criteria) noexcept(false)
         sql += criteria.criteriaString();
         hasParameters = true;
     }
-    sql.append(_orderbyString);
-    if (_limit > 0)
+    sql.append(orderByString_);
+    if (limit_ > 0)
     {
         hasParameters = true;
         sql.append(" limit $?");
     }
-    if (_offset > 0)
+    if (offset_ > 0)
     {
         hasParameters = true;
         sql.append(" offset $?");
     }
     if (hasParameters)
         sql = replaceSqlPlaceHolder(sql, "$?");
-    if (_forUpdate)
+    if (forUpdate_)
     {
         sql += " for update";
     }
     Result r(nullptr);
     {
-        auto binder = *_client << std::move(sql);
+        auto binder = *client_ << std::move(sql);
         if (criteria)
             criteria.outputArgs(binder);
-        if (_limit > 0)
-            binder << _limit;
-        if (_offset)
-            binder << _offset;
+        if (limit_ > 0)
+            binder << limit_;
+        if (offset_)
+            binder << offset_;
         clear();
         binder << Mode::Blocking;
         binder >> [&r](const Result &result) { r = result; };
@@ -775,30 +774,30 @@ inline void Mapper<T>::findOne(const Criteria &criteria,
         sql += criteria.criteriaString();
         hasParameters = true;
     }
-    sql.append(_orderbyString);
-    if (_limit > 0)
+    sql.append(orderByString_);
+    if (limit_ > 0)
     {
         hasParameters = true;
         sql.append(" limit $?");
     }
-    if (_offset > 0)
+    if (offset_ > 0)
     {
         hasParameters = true;
         sql.append(" offset $?");
     }
     if (hasParameters)
         sql = replaceSqlPlaceHolder(sql, "$?");
-    if (_forUpdate)
+    if (forUpdate_)
     {
         sql += " for update";
     }
-    auto binder = *_client << std::move(sql);
+    auto binder = *client_ << std::move(sql);
     if (criteria)
         criteria.outputArgs(binder);
-    if (_limit > 0)
-        binder << _limit;
-    if (_offset)
-        binder << _offset;
+    if (limit_ > 0)
+        binder << limit_;
+    if (offset_)
+        binder << offset_;
     clear();
     binder >> [=](const Result &r) {
         if (r.size() == 0)
@@ -830,30 +829,30 @@ inline std::future<T> Mapper<T>::findFutureOne(
         sql += criteria.criteriaString();
         hasParameters = true;
     }
-    sql.append(_orderbyString);
-    if (_limit > 0)
+    sql.append(orderByString_);
+    if (limit_ > 0)
     {
         hasParameters = true;
         sql.append(" limit $?");
     }
-    if (_offset > 0)
+    if (offset_ > 0)
     {
         hasParameters = true;
         sql.append(" offset $?");
     }
     if (hasParameters)
         sql = replaceSqlPlaceHolder(sql, "$?");
-    if (_forUpdate)
+    if (forUpdate_)
     {
         sql += " for update";
     }
-    auto binder = *_client << std::move(sql);
+    auto binder = *client_ << std::move(sql);
     if (criteria)
         criteria.outputArgs(binder);
-    if (_limit > 0)
-        binder << _limit;
-    if (_offset)
-        binder << _offset;
+    if (limit_ > 0)
+        binder << limit_;
+    if (offset_)
+        binder << offset_;
     clear();
     std::shared_ptr<std::promise<T>> prom = std::make_shared<std::promise<T>>();
     binder >> [=](const Result &r) {
@@ -901,32 +900,32 @@ inline std::vector<T> Mapper<T>::findBy(const Criteria &criteria) noexcept(
         sql += " where ";
         sql += criteria.criteriaString();
     }
-    sql.append(_orderbyString);
-    if (_limit > 0)
+    sql.append(orderByString_);
+    if (limit_ > 0)
     {
         hasParameters = true;
         sql.append(" limit $?");
     }
-    if (_offset > 0)
+    if (offset_ > 0)
     {
         hasParameters = true;
         sql.append(" offset $?");
     }
     if (hasParameters)
         sql = replaceSqlPlaceHolder(sql, "$?");
-    if (_forUpdate)
+    if (forUpdate_)
     {
         sql += " for update";
     }
     Result r(nullptr);
     {
-        auto binder = *_client << std::move(sql);
+        auto binder = *client_ << std::move(sql);
         if (criteria)
             criteria.outputArgs(binder);
-        if (_limit > 0)
-            binder << _limit;
-        if (_offset)
-            binder << _offset;
+        if (limit_ > 0)
+            binder << limit_;
+        if (offset_)
+            binder << offset_;
         clear();
         binder << Mode::Blocking;
         binder >> [&r](const Result &result) { r = result; };
@@ -953,30 +952,30 @@ inline void Mapper<T>::findBy(const Criteria &criteria,
         sql += " where ";
         sql += criteria.criteriaString();
     }
-    sql.append(_orderbyString);
-    if (_limit > 0)
+    sql.append(orderByString_);
+    if (limit_ > 0)
     {
         hasParameters = true;
         sql.append(" limit $?");
     }
-    if (_offset > 0)
+    if (offset_ > 0)
     {
         hasParameters = true;
         sql.append(" offset $?");
     }
     if (hasParameters)
         sql = replaceSqlPlaceHolder(sql, "$?");
-    if (_forUpdate)
+    if (forUpdate_)
     {
         sql += " for update";
     }
-    auto binder = *_client << std::move(sql);
+    auto binder = *client_ << std::move(sql);
     if (criteria)
         criteria.outputArgs(binder);
-    if (_limit > 0)
-        binder << _limit;
-    if (_offset)
-        binder << _offset;
+    if (limit_ > 0)
+        binder << limit_;
+    if (offset_)
+        binder << offset_;
     clear();
     binder >> [=](const Result &r) {
         std::vector<T> ret;
@@ -1001,30 +1000,30 @@ inline std::future<std::vector<T>> Mapper<T>::findFutureBy(
         sql += " where ";
         sql += criteria.criteriaString();
     }
-    sql.append(_orderbyString);
-    if (_limit > 0)
+    sql.append(orderByString_);
+    if (limit_ > 0)
     {
         hasParameters = true;
         sql.append(" limit $?");
     }
-    if (_offset > 0)
+    if (offset_ > 0)
     {
         hasParameters = true;
         sql.append(" offset $?");
     }
     if (hasParameters)
         sql = replaceSqlPlaceHolder(sql, "$?");
-    if (_forUpdate)
+    if (forUpdate_)
     {
         sql += " for update";
     }
-    auto binder = *_client << std::move(sql);
+    auto binder = *client_ << std::move(sql);
     if (criteria)
         criteria.outputArgs(binder);
-    if (_limit > 0)
-        binder << _limit;
-    if (_offset)
-        binder << _offset;
+    if (limit_ > 0)
+        binder << limit_;
+    if (offset_)
+        binder << offset_;
     clear();
     std::shared_ptr<std::promise<std::vector<T>>> prom =
         std::make_shared<std::promise<std::vector<T>>>();
@@ -1070,7 +1069,7 @@ inline size_t Mapper<T>::count(const Criteria &criteria) noexcept(false)
     clear();
     Result r(nullptr);
     {
-        auto binder = *_client << std::move(sql);
+        auto binder = *client_ << std::move(sql);
         if (criteria)
             criteria.outputArgs(binder);
         binder << Mode::Blocking;
@@ -1094,7 +1093,7 @@ inline void Mapper<T>::count(const Criteria &criteria,
         sql = replaceSqlPlaceHolder(sql, "$?");
     }
     clear();
-    auto binder = *_client << std::move(sql);
+    auto binder = *client_ << std::move(sql);
     if (criteria)
         criteria.outputArgs(binder);
     binder >> [=](const Result &r) {
@@ -1116,7 +1115,7 @@ inline std::future<size_t> Mapper<T>::countFuture(
         sql = replaceSqlPlaceHolder(sql, "$?");
     }
     clear();
-    auto binder = *_client << std::move(sql);
+    auto binder = *client_ << std::move(sql);
     if (criteria)
         criteria.outputArgs(binder);
 
@@ -1137,14 +1136,14 @@ inline void Mapper<T>::insert(T &obj) noexcept(false)
     Result r(nullptr);
     bool needSelection = false;
     {
-        auto binder = *_client << obj.sqlForInserting(needSelection);
+        auto binder = *client_ << obj.sqlForInserting(needSelection);
         obj.outputArgs(binder);
         binder << Mode::Blocking;
         binder >> [&r](const Result &result) { r = result; };
         binder.exec();  // Maybe throw exception;
     }
     assert(r.affectedRows() == 1);
-    if (_client->type() == ClientType::PostgreSQL)
+    if (client_->type() == ClientType::PostgreSQL)
     {
         if (needSelection)
         {
@@ -1169,9 +1168,9 @@ inline void Mapper<T>::insert(const T &obj,
 {
     clear();
     bool needSelection = false;
-    auto binder = *_client << obj.sqlForInserting(needSelection);
+    auto binder = *client_ << obj.sqlForInserting(needSelection);
     obj.outputArgs(binder);
-    auto client = _client;
+    auto client = client_;
     binder >> [client, rcb, obj, needSelection, ecb](const Result &r) {
         assert(r.affectedRows() == 1);
         if (client->type() == ClientType::PostgreSQL)
@@ -1209,11 +1208,11 @@ inline std::future<T> Mapper<T>::insertFuture(const T &obj) noexcept
 {
     clear();
     bool needSelection = false;
-    auto binder = *_client << obj.sqlForInserting(needSelection);
+    auto binder = *client_ << obj.sqlForInserting(needSelection);
     obj.outputArgs(binder);
 
     std::shared_ptr<std::promise<T>> prom = std::make_shared<std::promise<T>>();
-    auto client = _client;
+    auto client = client_;
     binder >> [client, prom, obj, needSelection](const Result &r) {
         assert(r.affectedRows() == 1);
         if (client->type() == ClientType::PostgreSQL)
@@ -1274,7 +1273,7 @@ inline size_t Mapper<T>::update(const T &obj) noexcept(false)
     sql = replaceSqlPlaceHolder(sql, "$?");
     Result r(nullptr);
     {
-        auto binder = *_client << std::move(sql);
+        auto binder = *client_ << std::move(sql);
         obj.updateArgs(binder);
         outputPrimeryKeyToBinder(obj.getPrimaryKey(), binder);
         binder << Mode::Blocking;
@@ -1304,7 +1303,7 @@ inline void Mapper<T>::update(const T &obj,
     makePrimaryKeyCriteria(sql);
 
     sql = replaceSqlPlaceHolder(sql, "$?");
-    auto binder = *_client << std::move(sql);
+    auto binder = *client_ << std::move(sql);
     obj.updateArgs(binder);
     outputPrimeryKeyToBinder(obj.getPrimaryKey(), binder);
     binder >> [=](const Result &r) { rcb(r.affectedRows()); };
@@ -1329,7 +1328,7 @@ inline std::future<size_t> Mapper<T>::updateFuture(const T &obj) noexcept
     makePrimaryKeyCriteria(sql);
 
     sql = replaceSqlPlaceHolder(sql, "$?");
-    auto binder = *_client << std::move(sql);
+    auto binder = *client_ << std::move(sql);
     obj.updateArgs(binder);
     outputPrimeryKeyToBinder(obj.getPrimaryKey(), binder);
 
@@ -1357,7 +1356,7 @@ inline size_t Mapper<T>::deleteOne(const T &obj) noexcept(false)
     sql = replaceSqlPlaceHolder(sql, "$?");
     Result r(nullptr);
     {
-        auto binder = *_client << std::move(sql);
+        auto binder = *client_ << std::move(sql);
         outputPrimeryKeyToBinder(obj.getPrimaryKey(), binder);
         binder << Mode::Blocking;
         binder >> [&r](const Result &result) { r = result; };
@@ -1380,7 +1379,7 @@ inline void Mapper<T>::deleteOne(const T &obj,
     makePrimaryKeyCriteria(sql);
 
     sql = replaceSqlPlaceHolder(sql, "$?");
-    auto binder = *_client << std::move(sql);
+    auto binder = *client_ << std::move(sql);
     outputPrimeryKeyToBinder(obj.getPrimaryKey(), binder);
     binder >> [=](const Result &r) { rcb(r.affectedRows()); };
     binder >> ecb;
@@ -1398,7 +1397,7 @@ inline std::future<size_t> Mapper<T>::deleteFutureOne(const T &obj) noexcept
     makePrimaryKeyCriteria(sql);
 
     sql = replaceSqlPlaceHolder(sql, "$?");
-    auto binder = *_client << std::move(sql);
+    auto binder = *client_ << std::move(sql);
     outputPrimeryKeyToBinder(obj.getPrimaryKey(), binder);
 
     std::shared_ptr<std::promise<size_t>> prom =
@@ -1427,7 +1426,7 @@ inline size_t Mapper<T>::deleteBy(const Criteria &criteria) noexcept(false)
 
     Result r(nullptr);
     {
-        auto binder = *_client << std::move(sql);
+        auto binder = *client_ << std::move(sql);
         if (criteria)
         {
             criteria.outputArgs(binder);
@@ -1456,7 +1455,7 @@ inline void Mapper<T>::deleteBy(const Criteria &criteria,
         sql = replaceSqlPlaceHolder(sql, "$?");
     }
 
-    auto binder = *_client << std::move(sql);
+    auto binder = *client_ << std::move(sql);
     if (criteria)
     {
         criteria.outputArgs(binder);
@@ -1479,7 +1478,7 @@ inline std::future<size_t> Mapper<T>::deleteFutureBy(
         sql += criteria.criteriaString();
         sql = replaceSqlPlaceHolder(sql, "$?");
     }
-    auto binder = *_client << std::move(sql);
+    auto binder = *client_ << std::move(sql);
     if (criteria)
     {
         criteria.outputArgs(binder);
@@ -1497,35 +1496,35 @@ template <typename T>
 inline Mapper<T> &Mapper<T>::limit(size_t limit)
 {
     assert(limit > 0);
-    _limit = limit;
+    limit_ = limit;
     return *this;
 }
 template <typename T>
 inline Mapper<T> &Mapper<T>::offset(size_t offset)
 {
-    _offset = offset;
+    offset_ = offset;
     return *this;
 }
 template <typename T>
 inline Mapper<T> &Mapper<T>::orderBy(const std::string &colName,
                                      const SortOrder &order)
 {
-    if (_orderbyString.empty())
+    if (orderByString_.empty())
     {
-        _orderbyString =
+        orderByString_ =
             utils::formattedString(" order by %s", colName.c_str());
         if (order == SortOrder::DESC)
         {
-            _orderbyString += " desc";
+            orderByString_ += " desc";
         }
     }
     else
     {
-        _orderbyString += ",";
-        _orderbyString += colName;
+        orderByString_ += ",";
+        orderByString_ += colName;
         if (order == SortOrder::DESC)
         {
-            _orderbyString += " desc";
+            orderByString_ += " desc";
         }
     }
     return *this;
@@ -1540,7 +1539,7 @@ inline Mapper<T> &Mapper<T>::orderBy(size_t colIndex, const SortOrder &order)
 template <typename T>
 inline Mapper<T> &Mapper<T>::forUpdate()
 {
-    _forUpdate = true;
+    forUpdate_ = true;
     return *this;
 }
 template <typename T>
@@ -1548,7 +1547,7 @@ inline std::string Mapper<T>::replaceSqlPlaceHolder(
     const std::string &sqlStr,
     const std::string &holderStr) const
 {
-    if (_client->type() == ClientType::PostgreSQL)
+    if (client_->type() == ClientType::PostgreSQL)
     {
         std::string::size_type startPos = 0;
         std::string::size_type pos;
@@ -1568,8 +1567,8 @@ inline std::string Mapper<T>::replaceSqlPlaceHolder(
             startPos = pos + holderStr.length();
         } while (1);
     }
-    else if (_client->type() == ClientType::Mysql ||
-             _client->type() == ClientType::Sqlite3)
+    else if (client_->type() == ClientType::Mysql ||
+             client_->type() == ClientType::Sqlite3)
     {
         std::string::size_type startPos = 0;
         std::string::size_type pos;
@@ -1606,7 +1605,7 @@ inline size_t Mapper<T>::deleteByPrimaryKey(
     clear();
     Result r(nullptr);
     {
-        auto binder = *_client << T::sqlForDeletingByPrimaryKey();
+        auto binder = *client_ << T::sqlForDeletingByPrimaryKey();
         outputPrimeryKeyToBinder(key, binder);
         binder << Mode::Blocking;
         binder >> [&r](const Result &result) { r = result; };
@@ -1628,7 +1627,7 @@ inline void Mapper<T>::deleteByPrimaryKey(
                   "make sure that the model class is generated by the latest "
                   "version of drogon_ctl");
     clear();
-    auto binder = *_client << T::sqlForDeletingByPrimaryKey();
+    auto binder = *client_ << T::sqlForDeletingByPrimaryKey();
     outputPrimeryKeyToBinder(key, binder);
     binder >>
         [rcb = std::move(rcb)](const Result &r) { rcb(r.affectedRows()); };
@@ -1646,7 +1645,7 @@ inline std::future<size_t> Mapper<T>::deleteFutureByPrimaryKey(
                   "make sure that the model class is generated by the latest "
                   "version of drogon_ctl");
     clear();
-    auto binder = *_client << T::sqlForDeletingByPrimaryKey();
+    auto binder = *client_ << T::sqlForDeletingByPrimaryKey();
     outputPrimeryKeyToBinder(key, binder);
 
     std::shared_ptr<std::promise<T>> prom = std::make_shared<std::promise<T>>();

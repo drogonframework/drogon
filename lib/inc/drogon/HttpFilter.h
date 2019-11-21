@@ -59,7 +59,7 @@ template <typename T, bool AutoCreation = true>
 class HttpFilter : public DrObject<T>, public HttpFilterBase
 {
   public:
-    static const bool isAutoCreation = AutoCreation;
+    static constexpr bool isAutoCreation{AutoCreation};
     virtual ~HttpFilter()
     {
     }

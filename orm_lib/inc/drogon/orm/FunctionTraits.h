@@ -31,7 +31,7 @@ struct FunctionTraits;
 template <>
 struct FunctionTraits<void (*)()>
 {
-    typedef void result_type;
+    using result_type = void;
     template <std::size_t Index>
     using argument = void;
     static const std::size_t arity = 0;
@@ -98,7 +98,7 @@ struct FunctionTraits<ReturnType (*)(bool, Arguments...)>
 template <typename ReturnType, typename... Arguments>
 struct FunctionTraits<ReturnType (*)(Arguments...)>
 {
-    typedef ReturnType result_type;
+    using result_type = ReturnType;
 
     template <std::size_t Index>
     using argument =

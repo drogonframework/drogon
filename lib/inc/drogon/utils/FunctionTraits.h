@@ -24,8 +24,8 @@ namespace drogon
 {
 class HttpRequest;
 class HttpResponse;
-typedef std::shared_ptr<HttpRequest> HttpRequestPtr;
-typedef std::shared_ptr<HttpResponse> HttpResponsePtr;
+using HttpRequestPtr = std::shared_ptr<HttpRequest>;
+using HttpResponsePtr = std::shared_ptr<HttpResponse>;
 
 namespace internal
 {
@@ -39,7 +39,7 @@ struct FunctionTraits : public FunctionTraits<decltype(
 {
     static const bool isClassFunction = false;
     static const bool isDrObjectClass = false;
-    typedef void class_type;
+    using class_type = void;
     static const std::string name()
     {
         return std::string("Functor");
@@ -54,7 +54,7 @@ struct FunctionTraits<ReturnType (ClassType::*)(Arguments...) const>
     static const bool isClassFunction = true;
     static const bool isDrObjectClass =
         std::is_base_of<DrObject<ClassType>, ClassType>::value;
-    typedef ClassType class_type;
+    using class_type = ClassType;
     static const std::string name()
     {
         return std::string("Class Function");
@@ -69,7 +69,7 @@ struct FunctionTraits<ReturnType (ClassType::*)(Arguments...)>
     static const bool isClassFunction = true;
     static const bool isDrObjectClass =
         std::is_base_of<DrObject<ClassType>, ClassType>::value;
-    typedef ClassType class_type;
+    using class_type = ClassType;
     static const std::string name()
     {
         return std::string("Class Function");
@@ -84,8 +84,8 @@ struct FunctionTraits<
                    Arguments...)> : FunctionTraits<ReturnType (*)(Arguments...)>
 {
     static const bool isHTTPFunction = true;
-    typedef void class_type;
-    typedef HttpRequestPtr first_param_type;
+    using class_type = void;
+    using first_param_type = HttpRequestPtr;
 };
 
 template <typename ReturnType, typename... Arguments>
@@ -95,7 +95,7 @@ struct FunctionTraits<
                    Arguments...)> : FunctionTraits<ReturnType (*)(Arguments...)>
 {
     static const bool isHTTPFunction = false;
-    typedef void class_type;
+    using class_type = void;
 };
 
 template <typename ReturnType, typename... Arguments>
@@ -105,7 +105,7 @@ struct FunctionTraits<
                    Arguments...)> : FunctionTraits<ReturnType (*)(Arguments...)>
 {
     static const bool isHTTPFunction = false;
-    typedef void class_type;
+    using class_type = void;
 };
 
 // normal function for HTTP handling
@@ -116,22 +116,22 @@ struct FunctionTraits<
                    Arguments...)> : FunctionTraits<ReturnType (*)(Arguments...)>
 {
     static const bool isHTTPFunction = true;
-    typedef void class_type;
-    typedef T first_param_type;
+    using class_type = void;
+    using first_param_type = T;
 };
 
 // normal function
 template <typename ReturnType, typename... Arguments>
 struct FunctionTraits<ReturnType (*)(Arguments...)>
 {
-    typedef ReturnType result_type;
+    using result_type = ReturnType;
 
     template <std::size_t Index>
     using argument =
         typename std::tuple_element<Index, std::tuple<Arguments...>>::type;
 
     static const std::size_t arity = sizeof...(Arguments);
-    typedef void class_type;
+    using class_type = void;
     static const bool isHTTPFunction = false;
     static const bool isClassFunction = false;
     static const bool isDrObjectClass = false;

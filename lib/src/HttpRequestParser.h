@@ -28,13 +28,13 @@ class HttpRequestParser : public trantor::NonCopyable,
                           public std::enable_shared_from_this<HttpRequestParser>
 {
   public:
-    enum HttpRequestParseState
+    enum class HttpRequestParseStatus
     {
-        HttpRequestParseState_ExpectMethod,
-        HttpRequestParseState_ExpectRequestLine,
-        HttpRequestParseState_ExpectHeaders,
-        HttpRequestParseState_ExpectBody,
-        HttpRequestParseState_GotAll,
+        ExpectMethod,
+        ExpectRequestLine,
+        ExpectHeaders,
+        ExpectBody,
+        GotAll,
     };
 
     explicit HttpRequestParser(const trantor::TcpConnectionPtr &connPtr);
@@ -44,32 +44,32 @@ class HttpRequestParser : public trantor::NonCopyable,
 
     bool gotAll() const
     {
-        return _state == HttpRequestParseState_GotAll;
+        return status_ == HttpRequestParseStatus::GotAll;
     }
 
     void reset();
 
     const HttpRequestImplPtr &requestImpl() const
     {
-        return _request;
+        return request_;
     }
 
     bool firstReq()
     {
-        if (_firstRequest)
+        if (firstRequest_)
         {
-            _firstRequest = false;
+            firstRequest_ = false;
             return true;
         }
         return false;
     }
     const WebSocketConnectionImplPtr &webSocketConn() const
     {
-        return _websockConnPtr;
+        return websockConnPtr_;
     }
     void setWebsockConnection(const WebSocketConnectionImplPtr &conn)
     {
-        _websockConnPtr = conn;
+        websockConnPtr_ = conn;
     }
     // to support request pipelining(rfc2616-8.1.2.2)
     void pushRquestToPipelining(const HttpRequestPtr &req);
@@ -81,69 +81,69 @@ class HttpRequestParser : public trantor::NonCopyable,
                                   bool isHeadMethod);
     size_t numberOfRequestsInPipelining() const
     {
-        return _requestPipelining.size();
+        return requestPipelining_.size();
     }
     bool emptyPipelining()
     {
-        return _requestPipelining.empty();
+        return requestPipelining_.empty();
     }
     bool isStop() const
     {
-        return _stopWorking;
+        return stopWorking_;
     }
     void stop()
     {
-        _stopWorking = true;
+        stopWorking_ = true;
     }
     size_t numberOfRequestsParsed() const
     {
-        return _requestsCounter;
+        return requestsCounter_;
     }
     trantor::MsgBuffer &getBuffer()
     {
-        return _sendBuffer;
+        return sendBuffer_;
     }
     std::vector<std::pair<HttpResponsePtr, bool>> &getResponseBuffer()
     {
-        assert(_loop->isInLoopThread());
-        if (!_responseBuffer)
+        assert(loop_->isInLoopThread());
+        if (!responseBuffer_)
         {
-            _responseBuffer =
+            responseBuffer_ =
                 std::unique_ptr<std::vector<std::pair<HttpResponsePtr, bool>>>(
                     new std::vector<std::pair<HttpResponsePtr, bool>>);
         }
-        return *_responseBuffer;
+        return *responseBuffer_;
     }
     std::vector<HttpRequestImplPtr> &getRequestBuffer()
     {
-        assert(_loop->isInLoopThread());
-        if (!_requestBuffer)
+        assert(loop_->isInLoopThread());
+        if (!requestBuffer_)
         {
-            _requestBuffer = std::unique_ptr<std::vector<HttpRequestImplPtr>>(
+            requestBuffer_ = std::unique_ptr<std::vector<HttpRequestImplPtr>>(
                 new std::vector<HttpRequestImplPtr>);
         }
-        return *_requestBuffer;
+        return *requestBuffer_;
     }
 
   private:
     HttpRequestImplPtr makeRequestForPool(HttpRequestImpl *p);
     void shutdownConnection(HttpStatusCode code);
     bool processRequestLine(const char *begin, const char *end);
-    HttpRequestParseState _state;
-    trantor::EventLoop *_loop;
-    HttpRequestImplPtr _request;
-    bool _firstRequest = true;
-    WebSocketConnectionImplPtr _websockConnPtr;
+    HttpRequestParseStatus status_;
+    trantor::EventLoop *loop_;
+    HttpRequestImplPtr request_;
+    bool firstRequest_{true};
+    WebSocketConnectionImplPtr websockConnPtr_;
     std::deque<std::pair<HttpRequestPtr, std::pair<HttpResponsePtr, bool>>>
-        _requestPipelining;
-    size_t _requestsCounter = 0;
-    std::weak_ptr<trantor::TcpConnection> _conn;
-    bool _stopWorking = false;
-    trantor::MsgBuffer _sendBuffer;
+        requestPipelining_;
+    size_t requestsCounter_{0};
+    std::weak_ptr<trantor::TcpConnection> conn_;
+    bool stopWorking_{false};
+    trantor::MsgBuffer sendBuffer_;
     std::unique_ptr<std::vector<std::pair<HttpResponsePtr, bool>>>
-        _responseBuffer;
-    std::unique_ptr<std::vector<HttpRequestImplPtr>> _requestBuffer;
-    std::vector<HttpRequestImplPtr> _requestsPool;
+        responseBuffer_;
+    std::unique_ptr<std::vector<HttpRequestImplPtr>> requestBuffer_;
+    std::vector<HttpRequestImplPtr> requestsPool_;
 };
 
 }  // namespace drogon

@@ -24,7 +24,7 @@
 #define PATH_LIST_BEGIN           \
     static void initPathRouting() \
     {
-#define PATH_ADD(path, filters...) __registerSelf(path, {filters});
+#define PATH_ADD(path, filters...) registerSelf__(path, {filters});
 
 #define PATH_LIST_END }
 namespace drogon
@@ -71,7 +71,7 @@ class HttpSimpleController : public DrObject<T>, public HttpSimpleControllerBase
     HttpSimpleController()
     {
     }
-    static void __registerSelf(
+    static void registerSelf__(
         const std::string &path,
         const std::vector<internal::HttpConstraint> &filtersAndMethods)
     {
@@ -83,10 +83,10 @@ class HttpSimpleController : public DrObject<T>, public HttpSimpleControllerBase
     }
 
   private:
-    class pathRegister
+    class pathRegistrator
     {
       public:
-        pathRegister()
+        pathRegistrator()
         {
             if (AutoCreation)
             {
@@ -94,15 +94,15 @@ class HttpSimpleController : public DrObject<T>, public HttpSimpleControllerBase
             }
         }
     };
-    friend pathRegister;
-    static pathRegister _register;
+    friend pathRegistrator;
+    static pathRegistrator registrator_;
     virtual void *touch()
     {
-        return &_register;
+        return &registrator_;
     }
 };
 template <typename T, bool AutoCreation>
-typename HttpSimpleController<T, AutoCreation>::pathRegister
-    HttpSimpleController<T, AutoCreation>::_register;
+typename HttpSimpleController<T, AutoCreation>::pathRegistrator
+    HttpSimpleController<T, AutoCreation>::registrator_;
 
 }  // namespace drogon

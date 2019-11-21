@@ -26,15 +26,15 @@ using namespace trantor;
 using namespace drogon;
 
 HttpRequestParser::HttpRequestParser(const trantor::TcpConnectionPtr &connPtr)
-    : _state(HttpRequestParseState_ExpectMethod),
-      _loop(connPtr->getLoop()),
-      _conn(connPtr)
+    : status_(HttpRequestParseStatus::ExpectMethod),
+      loop_(connPtr->getLoop()),
+      conn_(connPtr)
 {
 }
 
 void HttpRequestParser::shutdownConnection(HttpStatusCode code)
 {
-    auto connPtr = _conn.lock();
+    auto connPtr = conn_.lock();
     if (connPtr)
     {
         connPtr->send(utils::formattedString(
@@ -55,12 +55,12 @@ bool HttpRequestParser::processRequestLine(const char *begin, const char *end)
         const char *question = std::find(start, space, '?');
         if (question != space)
         {
-            _request->setPath(start, question);
-            _request->setQuery(question + 1, space);
+            request_->setPath(start, question);
+            request_->setQuery(question + 1, space);
         }
         else
         {
-            _request->setPath(start, space);
+            request_->setPath(start, space);
         }
         start = space + 1;
         succeed = end - start == 8 && std::equal(start, end - 1, "HTTP/1.");
@@ -68,11 +68,11 @@ bool HttpRequestParser::processRequestLine(const char *begin, const char *end)
         {
             if (*(end - 1) == '1')
             {
-                _request->setVersion(HttpRequest::kHttp11);
+                request_->setVersion(HttpRequest::kHttp11);
             }
             else if (*(end - 1) == '0')
             {
-                _request->setVersion(HttpRequest::kHttp10);
+                request_->setVersion(HttpRequest::kHttp10);
             }
             else
             {
@@ -89,17 +89,17 @@ HttpRequestImplPtr HttpRequestParser::makeRequestForPool(HttpRequestImpl *ptr)
         auto thisPtr = weakPtr.lock();
         if (thisPtr)
         {
-            if (thisPtr->_loop->isInLoopThread())
+            if (thisPtr->loop_->isInLoopThread())
             {
                 p->reset();
-                thisPtr->_requestsPool.emplace_back(
+                thisPtr->requestsPool_.emplace_back(
                     thisPtr->makeRequestForPool(p));
             }
             else
             {
-                thisPtr->_loop->queueInLoop([thisPtr, p]() {
+                thisPtr->loop_->queueInLoop([thisPtr, p]() {
                     p->reset();
-                    thisPtr->_requestsPool.emplace_back(
+                    thisPtr->requestsPool_.emplace_back(
                         thisPtr->makeRequestForPool(p));
                 });
             }
@@ -112,18 +112,18 @@ HttpRequestImplPtr HttpRequestParser::makeRequestForPool(HttpRequestImpl *ptr)
 }
 void HttpRequestParser::reset()
 {
-    assert(_loop->isInLoopThread());
-    _state = HttpRequestParseState_ExpectMethod;
-    if (_requestsPool.empty())
+    assert(loop_->isInLoopThread());
+    status_ = HttpRequestParseStatus::ExpectMethod;
+    if (requestsPool_.empty())
     {
-        _request = makeRequestForPool(new HttpRequestImpl(_loop));
+        request_ = makeRequestForPool(new HttpRequestImpl(loop_));
     }
     else
     {
-        auto req = std::move(_requestsPool.back());
-        _requestsPool.pop_back();
-        _request = std::move(req);
-        _request->setCreationDate(trantor::Date::now());
+        auto req = std::move(requestsPool_.back());
+        requestsPool_.pop_back();
+        request_ = std::move(req);
+        request_->setCreationDate(trantor::Date::now());
     }
 }
 // Return false if any error
@@ -134,15 +134,15 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
     //  std::cout<<std::string(buf->peek(),buf->readableBytes())<<std::endl;
     while (hasMore)
     {
-        if (_state == HttpRequestParseState_ExpectMethod)
+        if (status_ == HttpRequestParseStatus::ExpectMethod)
         {
             auto *space =
                 std::find(buf->peek(), (const char *)buf->beginWrite(), ' ');
             if (space != buf->beginWrite())
             {
-                if (_request->setMethod(buf->peek(), space))
+                if (request_->setMethod(buf->peek(), space))
                 {
-                    _state = HttpRequestParseState_ExpectRequestLine;
+                    status_ = HttpRequestParseStatus::ExpectRequestLine;
                     buf->retrieveUntil(space + 1);
                     continue;
                 }
@@ -164,7 +164,7 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
                 hasMore = false;
             }
         }
-        else if (_state == HttpRequestParseState_ExpectRequestLine)
+        else if (status_ == HttpRequestParseStatus::ExpectRequestLine)
         {
             const char *crlf = buf->findCRLF();
             if (crlf)
@@ -173,7 +173,7 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
                 if (ok)
                 {
                     buf->retrieveUntil(crlf + 2);
-                    _state = HttpRequestParseState_ExpectHeaders;
+                    status_ = HttpRequestParseStatus::ExpectHeaders;
                 }
                 else
                 {
@@ -196,7 +196,7 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
                 hasMore = false;
             }
         }
-        else if (_state == HttpRequestParseState_ExpectHeaders)
+        else if (status_ == HttpRequestParseStatus::ExpectHeaders)
         {
             const char *crlf = buf->findCRLF();
             if (crlf)
@@ -204,39 +204,39 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
                 const char *colon = std::find(buf->peek(), crlf, ':');
                 if (colon != crlf)
                 {
-                    _request->addHeader(buf->peek(), colon, crlf);
+                    request_->addHeader(buf->peek(), colon, crlf);
                 }
                 else
                 {
                     // empty line, end of header
 
-                    if (_request->_contentLen == 0)
+                    if (request_->contentLen_ == 0)
                     {
-                        _state = HttpRequestParseState_GotAll;
-                        _requestsCounter++;
+                        status_ = HttpRequestParseStatus::GotAll;
+                        ++requestsCounter_;
                         hasMore = false;
                     }
                     else
                     {
-                        _state = HttpRequestParseState_ExpectBody;
+                        status_ = HttpRequestParseStatus::ExpectBody;
                     }
 
-                    auto &expect = _request->expect();
+                    auto &expect = request_->expect();
                     if (expect == "100-continue" &&
-                        _request->getVersion() >= HttpRequest::kHttp11)
+                        request_->getVersion() >= HttpRequest::kHttp11)
                     {
-                        if (_request->_contentLen == 0)
+                        if (request_->contentLen_ == 0)
                         {
                             buf->retrieveAll();
                             shutdownConnection(k400BadRequest);
                             return false;
                         }
                         // rfc2616-8.2.3
-                        auto connPtr = _conn.lock();
+                        auto connPtr = conn_.lock();
                         if (connPtr)
                         {
                             auto resp = HttpResponse::newHttpResponse();
-                            if (_request->_contentLen >
+                            if (request_->contentLen_ >
                                 HttpAppFrameworkImpl::instance()
                                     .getClientMaxBodySize())
                             {
@@ -261,7 +261,7 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
                     {
                         LOG_WARN << "417ExpectationFailed for \"" << expect
                                  << "\"";
-                        auto connPtr = _conn.lock();
+                        auto connPtr = conn_.lock();
                         if (connPtr)
                         {
                             buf->retrieveAll();
@@ -269,7 +269,7 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
                             return false;
                         }
                     }
-                    else if (_request->_contentLen >
+                    else if (request_->contentLen_ >
                              HttpAppFrameworkImpl::instance()
                                  .getClientMaxBodySize())
                     {
@@ -277,7 +277,7 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
                         shutdownConnection(k413RequestEntityTooLarge);
                         return false;
                     }
-                    _request->reserveBodySize();
+                    request_->reserveBodySize();
                 }
 
                 buf->retrieveUntil(crlf + 2);
@@ -295,33 +295,33 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
                 hasMore = false;
             }
         }
-        else if (_state == HttpRequestParseState_ExpectBody)
+        else if (status_ == HttpRequestParseStatus::ExpectBody)
         {
             if (buf->readableBytes() == 0)
             {
-                if (_request->_contentLen == 0)
+                if (request_->contentLen_ == 0)
                 {
-                    _state = HttpRequestParseState_GotAll;
-                    _requestsCounter++;
+                    status_ = HttpRequestParseStatus::GotAll;
+                    ++requestsCounter_;
                 }
                 break;
             }
-            if (_request->_contentLen >= buf->readableBytes())
+            if (request_->contentLen_ >= buf->readableBytes())
             {
-                _request->_contentLen -= buf->readableBytes();
-                _request->appendToBody(buf->peek(), buf->readableBytes());
+                request_->contentLen_ -= buf->readableBytes();
+                request_->appendToBody(buf->peek(), buf->readableBytes());
                 buf->retrieveAll();
             }
             else
             {
-                _request->appendToBody(buf->peek(), _request->_contentLen);
-                buf->retrieve(_request->_contentLen);
-                _request->_contentLen = 0;
+                request_->appendToBody(buf->peek(), request_->contentLen_);
+                buf->retrieve(request_->contentLen_);
+                request_->contentLen_ = 0;
             }
-            if (_request->_contentLen == 0)
+            if (request_->contentLen_ == 0)
             {
-                _state = HttpRequestParseState_GotAll;
-                _requestsCounter++;
+                status_ = HttpRequestParseStatus::GotAll;
+                ++requestsCounter_;
                 hasMore = false;
             }
         }
@@ -332,27 +332,27 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
 void HttpRequestParser::pushRquestToPipelining(const HttpRequestPtr &req)
 {
 #ifndef NDEBUG
-    auto conn = _conn.lock();
+    auto conn = conn_.lock();
     if (conn)
     {
         conn->getLoop()->assertInLoopThread();
     }
 #endif
-    _requestPipelining.push_back({req, {nullptr, false}});
+    requestPipelining_.push_back({req, {nullptr, false}});
 }
 
 HttpRequestPtr HttpRequestParser::getFirstRequest() const
 {
 #ifndef NDEBUG
-    auto conn = _conn.lock();
+    auto conn = conn_.lock();
     if (conn)
     {
         conn->getLoop()->assertInLoopThread();
     }
 #endif
-    if (!_requestPipelining.empty())
+    if (!requestPipelining_.empty())
     {
-        return _requestPipelining.front().first;
+        return requestPipelining_.front().first;
     }
     return nullptr;
 }
@@ -360,15 +360,15 @@ HttpRequestPtr HttpRequestParser::getFirstRequest() const
 std::pair<HttpResponsePtr, bool> HttpRequestParser::getFirstResponse() const
 {
 #ifndef NDEBUG
-    auto conn = _conn.lock();
+    auto conn = conn_.lock();
     if (conn)
     {
         conn->getLoop()->assertInLoopThread();
     }
 #endif
-    if (!_requestPipelining.empty())
+    if (!requestPipelining_.empty())
     {
-        return _requestPipelining.front().second;
+        return requestPipelining_.front().second;
     }
     return {nullptr, false};
 }
@@ -376,13 +376,13 @@ std::pair<HttpResponsePtr, bool> HttpRequestParser::getFirstResponse() const
 void HttpRequestParser::popFirstRequest()
 {
 #ifndef NDEBUG
-    auto conn = _conn.lock();
+    auto conn = conn_.lock();
     if (conn)
     {
         conn->getLoop()->assertInLoopThread();
     }
 #endif
-    _requestPipelining.pop_front();
+    requestPipelining_.pop_front();
 }
 
 void HttpRequestParser::pushResponseToPipelining(const HttpRequestPtr &req,
@@ -390,13 +390,13 @@ void HttpRequestParser::pushResponseToPipelining(const HttpRequestPtr &req,
                                                  bool isHeadMethod)
 {
 #ifndef NDEBUG
-    auto conn = _conn.lock();
+    auto conn = conn_.lock();
     if (conn)
     {
         conn->getLoop()->assertInLoopThread();
     }
 #endif
-    for (auto &iter : _requestPipelining)
+    for (auto &iter : requestPipelining_)
     {
         if (iter.first == req)
         {

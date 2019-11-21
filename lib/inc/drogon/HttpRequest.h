@@ -30,7 +30,7 @@
 namespace drogon
 {
 class HttpRequest;
-typedef std::shared_ptr<HttpRequest> HttpRequestPtr;
+using HttpRequestPtr = std::shared_ptr<HttpRequest>;
 
 /**
  * @brief This template is used to convert a request object to a custom

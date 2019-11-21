@@ -31,7 +31,7 @@ class ConstResultIterator;
 class ConstReverseResultIterator;
 class Row;
 class ResultImpl;
-typedef std::shared_ptr<ResultImpl> ResultImplPtr;
+using ResultImplPtr = std::shared_ptr<ResultImpl>;
 
 enum class SqlStatus
 {
@@ -56,7 +56,7 @@ enum class SqlStatus
 class Result
 {
   public:
-    Result(const ResultImplPtr &ptr) : _resultPtr(ptr)
+    Result(const ResultImplPtr &ptr) : resultPtr_(ptr)
     {
     }
     using DifferenceType = long;
@@ -124,7 +124,7 @@ class Result
     const std::string &sql() const noexcept;
 
   private:
-    ResultImplPtr _resultPtr;
+    ResultImplPtr resultPtr_;
 
     friend class Field;
     friend class Row;

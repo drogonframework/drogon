@@ -29,7 +29,7 @@
 namespace drogon
 {
 class DrObjectBase;
-typedef std::function<DrObjectBase *()> DrAllocFunc;
+using DrAllocFunc = std::function<DrObjectBase *()>;
 
 /**
  * @brief A map class which can create DrObjects from names.

@@ -29,15 +29,15 @@ class SharedLibManager : public trantor::NonCopyable
 
   private:
     void managerLibs();
-    trantor::EventLoop *_loop;
-    std::vector<std::string> _libPaths;
+    trantor::EventLoop *loop_;
+    std::vector<std::string> libPaths_;
     struct DLStat
     {
-        void *handle = nullptr;
+        void *handle{nullptr};
         struct timespec mTime = {0};
     };
-    std::unordered_map<std::string, DLStat> _dlMap;
+    std::unordered_map<std::string, DLStat> dlMap_;
     void *loadLibs(const std::string &sourceFile, void *oldHld);
-    trantor::TimerId _timeId;
+    trantor::TimerId timeId_;
 };
 }  // namespace drogon

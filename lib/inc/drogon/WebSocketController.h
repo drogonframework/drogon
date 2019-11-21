@@ -26,7 +26,7 @@
 
 #define WS_PATH_LIST_BEGIN                                               \
     static std::vector<std::pair<std::string, std::vector<std::string>>> \
-    __paths()                                                            \
+    paths()                                                              \
     {                                                                    \
         std::vector<std::pair<std::string, std::vector<std::string>>> vet;
 
@@ -63,7 +63,7 @@ class WebSocketControllerBase : public virtual DrObjectBase
     }
 };
 
-typedef std::shared_ptr<WebSocketControllerBase> WebSocketControllerBasePtr;
+using WebSocketControllerBasePtr = std::shared_ptr<WebSocketControllerBase>;
 
 /**
  * @brief The reflection base class template for WebSocket controllers
@@ -82,7 +82,7 @@ class WebSocketController : public DrObject<T>, public WebSocketControllerBase
     }
     static void initPathRouting()
     {
-        auto vPaths = T::__paths();
+        auto vPaths = T::paths();
         for (auto const &path : vPaths)
         {
             LOG_TRACE << "register websocket controller ("
@@ -101,10 +101,10 @@ class WebSocketController : public DrObject<T>, public WebSocketControllerBase
     }
 
   private:
-    class pathRegister
+    class pathRegistrator
     {
       public:
-        pathRegister()
+        pathRegistrator()
         {
             if (AutoCreation)
             {
@@ -112,15 +112,15 @@ class WebSocketController : public DrObject<T>, public WebSocketControllerBase
             }
         }
     };
-    friend pathRegister;
-    static pathRegister _register;
+    friend pathRegistrator;
+    static pathRegistrator registrator_;
     virtual void *touch()
     {
-        return &_register;
+        return &registrator_;
     }
 };
 template <typename T, bool AutoCreation>
-typename WebSocketController<T, AutoCreation>::pathRegister
-    WebSocketController<T, AutoCreation>::_register;
+typename WebSocketController<T, AutoCreation>::pathRegistrator
+    WebSocketController<T, AutoCreation>::registrator_;
 
 }  // namespace drogon

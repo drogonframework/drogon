@@ -20,8 +20,8 @@ using namespace drogon;
 PluginsManager::~PluginsManager()
 {
     // Shut down all plugins in reverse order of initializaiton.
-    for (auto iter = _initializedPlugins.rbegin();
-         iter != _initializedPlugins.rend();
+    for (auto iter = initializedPlugins_.rbegin();
+         iter != initializedPlugins_.rend();
          iter++)
     {
         (*iter)->shutdown();
@@ -67,7 +67,7 @@ void PluginsManager::initializeAllPlugins(
         }
         pluginPtr->setInitializedCallback([this](PluginBase *p) {
             LOG_TRACE << "Plugin " << p->className() << " initialized!";
-            _initializedPlugins.push_back(p);
+            initializedPlugins_.push_back(p);
         });
         plugins.push_back(pluginPtr);
     }
@@ -81,8 +81,8 @@ void PluginsManager::initializeAllPlugins(
 
 PluginBase *PluginsManager::getPlugin(const std::string &pluginName)
 {
-    auto iter = _pluginsMap.find(pluginName);
-    if (iter == _pluginsMap.end())
+    auto iter = pluginsMap_.find(pluginName);
+    if (iter == pluginsMap_.end())
     {
         auto *p = DrClassMap::newObject(pluginName);
         auto *pluginPtr = dynamic_cast<PluginBase *>(p);
@@ -93,7 +93,7 @@ PluginBase *PluginsManager::getPlugin(const std::string &pluginName)
             LOG_ERROR << "Plugin " << pluginName << " undefined!";
             return nullptr;
         }
-        _pluginsMap[pluginName].reset(pluginPtr);
+        pluginsMap_[pluginName].reset(pluginPtr);
         return pluginPtr;
     }
     else

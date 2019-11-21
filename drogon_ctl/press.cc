@@ -49,7 +49,7 @@ void press::handleCommand(std::vector<std::string> &parameters)
         {
             if (param == "-n")
             {
-                iter++;
+                ++iter;
                 if (iter == parameters.end())
                 {
                     outputErrorAndExit("No number of requests!");
@@ -57,7 +57,7 @@ void press::handleCommand(std::vector<std::string> &parameters)
                 auto &num = *iter;
                 try
                 {
-                    _numOfRequests = std::stoll(num);
+                    numOfRequests_ = std::stoll(num);
                 }
                 catch (...)
                 {
@@ -70,7 +70,7 @@ void press::handleCommand(std::vector<std::string> &parameters)
                 auto num = param.substr(2);
                 try
                 {
-                    _numOfRequests = std::stoll(num);
+                    numOfRequests_ = std::stoll(num);
                 }
                 catch (...)
                 {
@@ -83,7 +83,7 @@ void press::handleCommand(std::vector<std::string> &parameters)
         {
             if (param == "-t")
             {
-                iter++;
+                ++iter;
                 if (iter == parameters.end())
                 {
                     outputErrorAndExit("No number of threads!");
@@ -91,7 +91,7 @@ void press::handleCommand(std::vector<std::string> &parameters)
                 auto &num = *iter;
                 try
                 {
-                    _numOfThreads = std::stoll(num);
+                    numOfThreads_ = std::stoll(num);
                 }
                 catch (...)
                 {
@@ -104,7 +104,7 @@ void press::handleCommand(std::vector<std::string> &parameters)
                 auto num = param.substr(2);
                 try
                 {
-                    _numOfThreads = std::stoll(num);
+                    numOfThreads_ = std::stoll(num);
                 }
                 catch (...)
                 {
@@ -117,7 +117,7 @@ void press::handleCommand(std::vector<std::string> &parameters)
         {
             if (param == "-c")
             {
-                iter++;
+                ++iter;
                 if (iter == parameters.end())
                 {
                     outputErrorAndExit("No number of connections!");
@@ -125,7 +125,7 @@ void press::handleCommand(std::vector<std::string> &parameters)
                 auto &num = *iter;
                 try
                 {
-                    _numOfConnections = std::stoll(num);
+                    numOfConnections_ = std::stoll(num);
                 }
                 catch (...)
                 {
@@ -138,7 +138,7 @@ void press::handleCommand(std::vector<std::string> &parameters)
                 auto num = param.substr(2);
                 try
                 {
-                    _numOfConnections = std::stoll(num);
+                    numOfConnections_ = std::stoll(num);
                 }
                 catch (...)
                 {
@@ -149,85 +149,85 @@ void press::handleCommand(std::vector<std::string> &parameters)
         }
         // else if (param == "-k")
         // {
-        //     _keepAlive = true;
+        //     keepAlive_ = true;
         //     continue;
         // }
         else if (param == "-q")
         {
-            _processIndication = false;
+            processIndication_ = false;
         }
         else if (param[0] != '-')
         {
-            _url = param;
+            url_ = param;
         }
     }
-    // std::cout << "n=" << _numOfRequests << std::endl;
-    // std::cout << "t=" << _numOfThreads << std::endl;
-    // std::cout << "c=" << _numOfConnections << std::endl;
-    // std::cout << "q=" << _processIndication << std::endl;
-    // std::cout << "url=" << _url << std::endl;
-    if (_url.empty() || _url.find("http") != 0 ||
-        _url.find("://") == std::string::npos)
+    // std::cout << "n=" << numOfRequests_ << std::endl;
+    // std::cout << "t=" << numOfThreads_ << std::endl;
+    // std::cout << "c=" << numOfConnections_ << std::endl;
+    // std::cout << "q=" << processIndication_ << std::endl;
+    // std::cout << "url=" << url_ << std::endl;
+    if (url_.empty() || url_.find("http") != 0 ||
+        url_.find("://") == std::string::npos)
     {
         outputErrorAndExit("Invalid URL");
     }
     else
     {
-        auto pos = _url.find("://");
-        auto posOfPath = _url.find("/", pos + 3);
+        auto pos = url_.find("://");
+        auto posOfPath = url_.find("/", pos + 3);
         if (posOfPath == std::string::npos)
         {
-            _host = _url;
-            _path = "/";
+            host_ = url_;
+            path_ = "/";
         }
         else
         {
-            _host = _url.substr(0, posOfPath);
-            _path = _url.substr(posOfPath);
+            host_ = url_.substr(0, posOfPath);
+            path_ = url_.substr(posOfPath);
         }
     }
-    // std::cout << "host=" << _host << std::endl;
-    // std::cout << "path=" << _path << std::endl;
+    // std::cout << "host=" << host_ << std::endl;
+    // std::cout << "path=" << path_ << std::endl;
     doTesting();
 }
 
 void press::doTesting()
 {
     createRequestAndClients();
-    if (_clients.empty())
+    if (clients_.empty())
     {
         outputErrorAndExit("No connection!");
     }
-    _stat._startDate = trantor::Date::now();
-    for (auto &client : _clients)
+    statistics_.startDate_ = trantor::Date::now();
+    for (auto &client : clients_)
     {
         sendRequest(client);
     }
-    _loopPool->wait();
+    loopPool_->wait();
 }
 
 void press::createRequestAndClients()
 {
-    _loopPool = std::make_unique<trantor::EventLoopThreadPool>(_numOfThreads);
-    _loopPool->start();
-    for (size_t i = 0; i < _numOfConnections; i++)
+    loopPool_ = std::make_unique<trantor::EventLoopThreadPool>(numOfThreads_);
+    loopPool_->start();
+    for (size_t i = 0; i < numOfConnections_; ++i)
     {
         auto client =
-            HttpClient::newHttpClient(_host, _loopPool->getNextLoop());
+            HttpClient::newHttpClient(host_, loopPool_->getNextLoop());
         client->enableCookies();
-        _clients.push_back(client);
+        clients_.push_back(client);
     }
 }
 
 void press::sendRequest(const HttpClientPtr &client)
 {
-    auto numOfRequest = _stat._numOfRequestsSent++;
-    if (numOfRequest >= _numOfRequests)
+    auto numOfRequest = statistics_.numOfRequestsSent_++;
+    if (numOfRequest >= numOfRequests_)
     {
         return;
     }
     auto request = HttpRequest::newHttpRequest();
-    request->setPath(_path);
+    request->setPath(path_);
     request->setMethod(Get);
     // std::cout << "send!" << std::endl;
     client->sendRequest(
@@ -237,23 +237,23 @@ void press::sendRequest(const HttpClientPtr &client)
             if (r == ReqResult::Ok)
             {
                 // std::cout << "OK" << std::endl;
-                goodNum = ++_stat._numOfGoodResponse;
-                badNum = _stat._numOfBadResponse;
-                _stat._bytesRecieved += resp->body().length();
+                goodNum = ++statistics_.numOfGoodResponse_;
+                badNum = statistics_.numOfBadResponse_;
+                statistics_.bytesRecieved_ += resp->body().length();
                 auto delay = trantor::Date::now().microSecondsSinceEpoch() -
                              request->creationDate().microSecondsSinceEpoch();
-                _stat._totalDelay += delay;
+                statistics_.totalDelay_ += delay;
             }
             else
             {
-                goodNum = _stat._numOfGoodResponse;
-                badNum = ++_stat._numOfBadResponse;
-                if (badNum > _numOfRequests / 10)
+                goodNum = statistics_.numOfGoodResponse_;
+                badNum = ++statistics_.numOfBadResponse_;
+                if (badNum > numOfRequests_ / 10)
                 {
                     outputErrorAndExit("Too many errors");
                 }
             }
-            if (goodNum + badNum >= _numOfRequests)
+            if (goodNum + badNum >= numOfRequests_)
             {
                 outputResults();
             }
@@ -266,7 +266,7 @@ void press::sendRequest(const HttpClientPtr &client)
                 });
             }
 
-            if (_processIndication)
+            if (processIndication_)
             {
                 auto rec = goodNum + badNum;
                 if (rec % 100000 == 0)
@@ -283,31 +283,35 @@ void press::outputResults()
     static std::mutex mtx;
     size_t totalSent = 0;
     size_t totalRecv = 0;
-    for (auto &client : _clients)
+    for (auto &client : clients_)
     {
         totalSent += client->bytesSent();
         totalRecv += client->bytesReceived();
     }
     auto now = trantor::Date::now();
     auto microSecs = now.microSecondsSinceEpoch() -
-                     _stat._startDate.microSecondsSinceEpoch();
+                     statistics_.startDate_.microSecondsSinceEpoch();
     double seconds = (double)microSecs / 1000000.0;
-    size_t rps = _stat._numOfGoodResponse / seconds;
+    size_t rps = statistics_.numOfGoodResponse_ / seconds;
     std::cout << std::endl;
-    std::cout << "TOTALS:   " << _numOfConnections << " connect, "
-              << _numOfRequests << " requests, " << _stat._numOfGoodResponse
-              << " success, " << _stat._numOfBadResponse << " fail"
-              << std::endl;
+    std::cout << "TOTALS:   " << numOfConnections_ << " connect, "
+              << numOfRequests_ << " requests, "
+              << statistics_.numOfGoodResponse_ << " success, "
+              << statistics_.numOfBadResponse_ << " fail" << std::endl;
 
-    std::cout << "TRAFFIC:  " << _stat._bytesRecieved / _stat._numOfGoodResponse
+    std::cout << "TRAFFIC:  "
+              << statistics_.bytesRecieved_ / statistics_.numOfGoodResponse_
               << " avg bytes, "
-              << (totalRecv - _stat._bytesRecieved) / _stat._numOfGoodResponse
-              << " avg overhead, " << _stat._bytesRecieved << " bytes, "
-              << totalRecv - _stat._bytesRecieved << " overhead" << std::endl;
+              << (totalRecv - statistics_.bytesRecieved_) /
+                     statistics_.numOfGoodResponse_
+              << " avg overhead, " << statistics_.bytesRecieved_ << " bytes, "
+              << totalRecv - statistics_.bytesRecieved_ << " overhead"
+              << std::endl;
 
     std::cout << std::setiosflags(std::ios::fixed) << std::setprecision(3)
               << "TIMING:   " << seconds << " seconds, " << rps << " rps, "
-              << (double)(_stat._totalDelay) / _stat._numOfGoodResponse / 1000
+              << (double)(statistics_.totalDelay_) /
+                     statistics_.numOfGoodResponse_ / 1000
               << " ms avg req time" << std::endl;
 
     std::cout << "SPEED:    download " << totalRecv / seconds / 1000

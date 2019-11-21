@@ -45,7 +45,7 @@ void outputGood(const HttpRequestPtr &req, bool isHttps)
     static std::mutex mtx;
     {
         std::lock_guard<std::mutex> lock(mtx);
-        i++;
+        ++i;
         std::cout << i << GREEN << '\t' << "Good" << '\t' << RED
                   << req->methodString() << " " << req->path();
         if (isHttps)

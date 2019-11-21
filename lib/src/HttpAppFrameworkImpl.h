@@ -41,7 +41,7 @@ class HttpAppFrameworkImpl : public HttpAppFramework
 
     virtual const Json::Value &getCustomConfig() const override
     {
-        return _jsonConfig["custom_config"];
+        return jsonConfig_["custom_config"];
     }
 
     virtual PluginBase *getPlugin(const std::string &name) override;
@@ -54,7 +54,7 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     virtual HttpAppFramework &setThreadNum(size_t threadNum) override;
     virtual size_t getThreadNum() const override
     {
-        return _threadNum;
+        return threadNum_;
     }
     virtual HttpAppFramework &setSSLFiles(const std::string &certPath,
                                           const std::string &keyPath) override;
@@ -77,7 +77,7 @@ class HttpAppFrameworkImpl : public HttpAppFramework
         {
             resp->setStatusCode(k404NotFound);
         }
-        _custom404 = resp;
+        custom404_ = resp;
         return *this;
     }
 
@@ -95,7 +95,7 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     virtual HttpAppFramework &registerBeginningAdvice(
         const std::function<void()> &advice) override
     {
-        _beginningAdvices.emplace_back(advice);
+        beginningAdvices_.emplace_back(advice);
         return *this;
     }
 
@@ -104,14 +104,14 @@ class HttpAppFrameworkImpl : public HttpAppFramework
                                  const trantor::InetAddress &)> &advice)
         override
     {
-        _newConnectionAdvices.emplace_back(advice);
+        newConnectionAdvices_.emplace_back(advice);
         return *this;
     }
     virtual HttpAppFramework &registerSyncAdvice(
         const std::function<HttpResponsePtr(const HttpRequestPtr &)> &advice)
         override
     {
-        _syncAdvices.emplace_back(advice);
+        syncAdvices_.emplace_back(advice);
         return *this;
     }
     virtual HttpAppFramework &registerPreRoutingAdvice(
@@ -119,7 +119,7 @@ class HttpAppFrameworkImpl : public HttpAppFramework
                                  AdviceCallback &&,
                                  AdviceChainCallback &&)> &advice) override
     {
-        _preRoutingAdvices.emplace_back(advice);
+        preRoutingAdvices_.emplace_back(advice);
         return *this;
     }
     virtual HttpAppFramework &registerPostRoutingAdvice(
@@ -127,7 +127,7 @@ class HttpAppFrameworkImpl : public HttpAppFramework
                                  AdviceCallback &&,
                                  AdviceChainCallback &&)> &advice) override
     {
-        _postRoutingAdvices.emplace_back(advice);
+        postRoutingAdvices_.emplace_back(advice);
         return *this;
     }
     virtual HttpAppFramework &registerPreHandlingAdvice(
@@ -135,55 +135,55 @@ class HttpAppFrameworkImpl : public HttpAppFramework
                                  AdviceCallback &&,
                                  AdviceChainCallback &&)> &advice) override
     {
-        _preHandlingAdvices.emplace_back(advice);
+        preHandlingAdvices_.emplace_back(advice);
         return *this;
     }
 
     virtual HttpAppFramework &registerPreRoutingAdvice(
         const std::function<void(const HttpRequestPtr &)> &advice) override
     {
-        _preRoutingObservers.emplace_back(advice);
+        preRoutingObservers_.emplace_back(advice);
         return *this;
     }
     virtual HttpAppFramework &registerPostRoutingAdvice(
         const std::function<void(const HttpRequestPtr &)> &advice) override
     {
-        _postRoutingObservers.emplace_back(advice);
+        postRoutingObservers_.emplace_back(advice);
         return *this;
     }
     virtual HttpAppFramework &registerPreHandlingAdvice(
         const std::function<void(const HttpRequestPtr &)> &advice) override
     {
-        _preHandlingObservers.emplace_back(advice);
+        preHandlingObservers_.emplace_back(advice);
         return *this;
     }
     virtual HttpAppFramework &registerPostHandlingAdvice(
         const std::function<void(const HttpRequestPtr &,
                                  const HttpResponsePtr &)> &advice) override
     {
-        _postHandlingAdvices.emplace_back(advice);
+        postHandlingAdvices_.emplace_back(advice);
         return *this;
     }
 
     virtual HttpAppFramework &enableSession(const size_t timeout = 0) override
     {
-        _useSession = true;
-        _sessionTimeout = timeout;
+        useSession_ = true;
+        sessionTimeout_ = timeout;
         return *this;
     }
     virtual HttpAppFramework &disableSession() override
     {
-        _useSession = false;
+        useSession_ = false;
         return *this;
     }
     virtual const std::string &getDocumentRoot() const override
     {
-        return _rootPath;
+        return rootPath_;
     }
     virtual HttpAppFramework &setDocumentRoot(
         const std::string &rootPath) override
     {
-        _rootPath = rootPath;
+        rootPath_ = rootPath;
         return *this;
     }
 
@@ -191,12 +191,12 @@ class HttpAppFrameworkImpl : public HttpAppFramework
         const std::vector<std::pair<std::string, std::string>> &headers)
         override
     {
-        _staticFileHeaders = headers;
+        staticFileHeaders_ = headers;
         return *this;
     }
     virtual const std::string &getUploadPath() const override
     {
-        return _uploadPath;
+        return uploadPath_;
     }
     virtual const std::shared_ptr<trantor::Resolver> &getResolver()
         const override
@@ -218,12 +218,12 @@ class HttpAppFrameworkImpl : public HttpAppFramework
         const std::string &fileName) override;
     virtual HttpAppFramework &enableRunAsDaemon() override
     {
-        _runAsDaemon = true;
+        runAsDaemon_ = true;
         return *this;
     }
     virtual HttpAppFramework &enableRelaunchOnError() override
     {
-        _relaunchOnError = true;
+        relaunchOnError_ = true;
         return *this;
     }
     virtual HttpAppFramework &setLogPath(
@@ -234,93 +234,93 @@ class HttpAppFrameworkImpl : public HttpAppFramework
         trantor::Logger::LogLevel level) override;
     virtual HttpAppFramework &enableSendfile(bool sendFile) override
     {
-        _useSendfile = sendFile;
+        useSendfile_ = sendFile;
         return *this;
     }
     virtual HttpAppFramework &enableGzip(bool useGzip) override
     {
-        _useGzip = useGzip;
+        useGzip_ = useGzip;
         return *this;
     }
     virtual bool isGzipEnabled() const override
     {
-        return _useGzip;
+        return useGzip_;
     }
     virtual HttpAppFramework &setStaticFilesCacheTime(int cacheTime) override;
     virtual int staticFilesCacheTime() const override;
     virtual HttpAppFramework &setIdleConnectionTimeout(size_t timeout) override
     {
-        _idleConnectionTimeout = timeout;
+        idleConnectionTimeout_ = timeout;
         return *this;
     }
     virtual HttpAppFramework &setKeepaliveRequestsNumber(
         const size_t number) override
     {
-        _keepaliveRequestsNumber = number;
+        keepaliveRequestsNumber_ = number;
         return *this;
     }
     virtual HttpAppFramework &setPipeliningRequestsNumber(
         const size_t number) override
     {
-        _pipeliningRequestsNumber = number;
+        pipeliningRequestsNumber_ = number;
         return *this;
     }
     virtual HttpAppFramework &setGzipStatic(bool useGzipStatic) override;
     virtual HttpAppFramework &setClientMaxBodySize(size_t maxSize) override
     {
-        _clientMaxBodySize = maxSize;
+        clientMaxBodySize_ = maxSize;
         return *this;
     }
     virtual HttpAppFramework &setClientMaxMemoryBodySize(
         size_t maxSize) override
     {
-        _clientMaxMemoryBodySize = maxSize;
+        clientMaxMemoryBodySize_ = maxSize;
         return *this;
     }
     virtual HttpAppFramework &setClientMaxWebSocketMessageSize(
         size_t maxSize) override
     {
-        _clientMaxWebSocketMessageSize = maxSize;
+        clientMaxWebSocketMessageSize_ = maxSize;
         return *this;
     }
     virtual HttpAppFramework &setHomePage(
         const std::string &homePageFile) override
     {
-        _homePageFile = homePageFile;
+        homePageFile_ = homePageFile;
         return *this;
     }
     const std::string &getHomePage() const
     {
-        return _homePageFile;
+        return homePageFile_;
     }
     size_t getClientMaxBodySize() const
     {
-        return _clientMaxBodySize;
+        return clientMaxBodySize_;
     }
     size_t getClientMaxMemoryBodySize() const
     {
-        return _clientMaxMemoryBodySize;
+        return clientMaxMemoryBodySize_;
     }
     size_t getClientMaxWebSocketMessageSize() const
     {
-        return _clientMaxWebSocketMessageSize;
+        return clientMaxWebSocketMessageSize_;
     }
     virtual std::vector<std::tuple<std::string, HttpMethod, std::string>>
     getHandlersInfo() const override;
 
     size_t keepaliveRequestsNumber() const
     {
-        return _keepaliveRequestsNumber;
+        return keepaliveRequestsNumber_;
     }
     size_t pipeliningRequestsNumber() const
     {
-        return _pipeliningRequestsNumber;
+        return pipeliningRequestsNumber_;
     }
 
     virtual ~HttpAppFrameworkImpl() noexcept;
     virtual bool isRunning() override
     {
-        return _running;
+        return running_;
     }
 
     virtual trantor::EventLoop *getLoop() const override;
@@ -330,33 +330,33 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     virtual HttpAppFramework &setServerHeaderField(
         const std::string &server) override
     {
-        assert(!_running);
+        assert(!running_);
         assert(server.find("\r\n") == std::string::npos);
-        _serverHeader = "Server: " + server + "\r\n";
+        serverHeader_ = "Server: " + server + "\r\n";
         return *this;
     }
 
     virtual HttpAppFramework &enableServerHeader(bool flag) override
     {
-        _enableServerHeader = flag;
+        enableServerHeader_ = flag;
         return *this;
     }
     virtual HttpAppFramework &enableDateHeader(bool flag) override
     {
-        _enableDateHeader = flag;
+        enableDateHeader_ = flag;
         return *this;
     }
     bool sendServerHeader() const
     {
-        return _enableServerHeader;
+        return enableServerHeader_;
     }
     bool sendDateHeader() const
     {
-        return _enableDateHeader;
+        return enableDateHeader_;
     }
     const std::string &getServerHeaderString() const
     {
-        return _serverHeader;
+        return serverHeader_;
     }
 
     virtual orm::DbClientPtr getDbClient(
@@ -377,12 +377,12 @@ class HttpAppFrameworkImpl : public HttpAppFramework
 
     inline static HttpAppFrameworkImpl &instance()
     {
-        static HttpAppFrameworkImpl _instance;
-        return _instance;
+        static HttpAppFrameworkImpl instance;
+        return instance;
     }
     bool useSendfile()
     {
-        return _useSendfile;
+        return useSendfile_;
     }
     void callCallback(
         const HttpRequestImplPtr &req,
@@ -428,91 +428,90 @@ class HttpAppFrameworkImpl : public HttpAppFramework
                      const std::vector<std::string> &filters);
 
     // We use a uuid string as session id;
-    // set _sessionTimeout=0 to make location session valid forever based on
+    // set sessionTimeout_=0 to make location session valid forever based on
     // cookies;
-    size_t _sessionTimeout = 0;
-    size_t _idleConnectionTimeout = 60;
-    bool _useSession = false;
-    std::string _serverHeader =
-        "Server: drogon/" + drogon::getVersion() + "\r\n";
+    size_t sessionTimeout_{0};
+    size_t idleConnectionTimeout_{60};
+    bool useSession_{false};
+    std::string serverHeader_{"Server: drogon/" + drogon::getVersion() +
+                              "\r\n"};
 
-    const std::unique_ptr<StaticFileRouter> _staticFileRouterPtr;
-    const std::unique_ptr<HttpControllersRouter> _httpCtrlsRouterPtr;
+    const std::unique_ptr<StaticFileRouter> staticFileRouterPtr_;
+    const std::unique_ptr<HttpControllersRouter> httpCtrlsRouterPtr_;
     const std::unique_ptr<HttpSimpleControllersRouter>
-        _httpSimpleCtrlsRouterPtr;
-    const std::unique_ptr<WebsocketControllersRouter> _websockCtrlsRouterPtr;
+        httpSimpleCtrlsRouterPtr_;
+    const std::unique_ptr<WebsocketControllersRouter> websockCtrlsRouterPtr_;
 
-    const std::unique_ptr<ListenerManager> _listenerManagerPtr;
-    const std::unique_ptr<PluginsManager> _pluginsManagerPtr;
-    const std::unique_ptr<orm::DbClientManager> _dbClientManagerPtr;
+    const std::unique_ptr<ListenerManager> listenerManagerPtr_;
+    const std::unique_ptr<PluginsManager> pluginsManagerPtr_;
+    const std::unique_ptr<orm::DbClientManager> dbClientManagerPtr_;
 
-    std::string _rootPath = "./";
-    std::vector<std::pair<std::string, std::string>> _staticFileHeaders;
-    std::string _uploadPath;
-    std::atomic_bool _running;
+    std::string rootPath_{"./"};
+    std::vector<std::pair<std::string, std::string>> staticFileHeaders_;
+    std::string uploadPath_;
+    std::atomic_bool running_{false};
 
-    size_t _threadNum = 1;
-    std::vector<std::string> _libFilePaths;
+    size_t threadNum_{1};
+    std::vector<std::string> libFilePaths_;
 
-    std::unique_ptr<SharedLibManager> _sharedLibManagerPtr;
+    std::unique_ptr<SharedLibManager> sharedLibManagerPtr_;
 
-    std::string _sslCertPath;
-    std::string _sslKeyPath;
+    std::string sslCertPath_;
+    std::string sslKeyPath_;
 
-    size_t _maxConnectionNumPerIP = 0;
-    std::unordered_map<std::string, size_t> _connectionsNumMap;
+    size_t maxConnectionNumPerIP_{0};
+    std::unordered_map<std::string, size_t> connectionsNumMap_;
 
-    int64_t _maxConnectionNum = 100000;
-    std::atomic<int64_t> _connectionNum;
+    int64_t maxConnectionNum_{100000};
+    std::atomic<int64_t> connectionNum_{0};
 
-    bool _runAsDaemon = false;
-    bool _relaunchOnError = false;
-    std::string _logPath = "";
-    std::string _logfileBaseName = "";
-    size_t _logfileSize = 100000000;
-    size_t _keepaliveRequestsNumber = 0;
-    size_t _pipeliningRequestsNumber = 0;
-    bool _useSendfile = true;
-    bool _useGzip = true;
-    size_t _clientMaxBodySize = 1024 * 1024;
-    size_t _clientMaxMemoryBodySize = 64 * 1024;
-    size_t _clientMaxWebSocketMessageSize = 128 * 1024;
-    std::string _homePageFile = "index.html";
-    std::unique_ptr<SessionManager> _sessionManagerPtr;
-    // Json::Value _customConfig;
-    Json::Value _jsonConfig;
-    HttpResponsePtr _custom404;
-    static InitBeforeMainFunction _initFirst;
-    bool _enableServerHeader = true;
-    bool _enableDateHeader = true;
-    std::vector<std::function<void()>> _beginningAdvices;
+    bool runAsDaemon_{false};
+    bool relaunchOnError_{false};
+    std::string logPath_{""};
+    std::string logfileBaseName_{""};
+    size_t logfileSize_{100000000};
+    size_t keepaliveRequestsNumber_{0};
+    size_t pipeliningRequestsNumber_{0};
+    bool useSendfile_{true};
+    bool useGzip_{true};
+    size_t clientMaxBodySize_{1024 * 1024};
+    size_t clientMaxMemoryBodySize_{64 * 1024};
+    size_t clientMaxWebSocketMessageSize_{128 * 1024};
+    std::string homePageFile_{"index.html"};
+    std::unique_ptr<SessionManager> sessionManagerPtr_;
+    Json::Value jsonConfig_;
+    HttpResponsePtr custom404_;
+    static InitBeforeMainFunction initFirst_;
+    bool enableServerHeader_{true};
+    bool enableDateHeader_{true};
+    std::vector<std::function<void()>> beginningAdvices_;
     std::vector<std::function<bool(const trantor::InetAddress &,
                                    const trantor::InetAddress &)>>
-        _newConnectionAdvices;
+        newConnectionAdvices_;
     std::vector<std::function<HttpResponsePtr(const HttpRequestPtr &)>>
-        _syncAdvices;
+        syncAdvices_;
     std::vector<std::function<void(const HttpRequestPtr &,
                                    AdviceCallback &&,
                                    AdviceChainCallback &&)>>
-        _preRoutingAdvices;
+        preRoutingAdvices_;
     std::vector<std::function<void(const HttpRequestPtr &,
                                    AdviceCallback &&,
                                    AdviceChainCallback &&)>>
-        _postRoutingAdvices;
+        postRoutingAdvices_;
     std::vector<std::function<void(const HttpRequestPtr &,
                                    AdviceCallback &&,
                                    AdviceChainCallback &&)>>
-        _preHandlingAdvices;
+        preHandlingAdvices_;
     std::vector<
         std::function<void(const HttpRequestPtr &, const HttpResponsePtr &)>>
-        _postHandlingAdvices;
+        postHandlingAdvices_;
 
     std::vector<std::function<void(const HttpRequestPtr &)>>
-        _preRoutingObservers;
+        preRoutingObservers_;
     std::vector<std::function<void(const HttpRequestPtr &)>>
-        _postRoutingObservers;
+        postRoutingObservers_;
     std::vector<std::function<void(const HttpRequestPtr &)>>
-        _preHandlingObservers;
+        preHandlingObservers_;
 };
 
 }  // namespace drogon

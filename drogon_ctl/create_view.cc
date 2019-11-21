@@ -45,7 +45,7 @@ static std::string &replace_all(std::string &str,
         {
             str = str.replace(pos, old_value.length(), new_value);
             pos += new_value.length() - old_value.length();
-            pos++;
+            ++pos;
         }
         else
             break;
@@ -149,10 +149,10 @@ static void parseLine(std::ofstream &oSrcFile,
                     std::string keyName = newLine.substr(0, pos);
                     auto iter = keyName.begin();
                     while (iter != keyName.end() && *iter == ' ')
-                        iter++;
+                        ++iter;
                     auto iterEnd = iter;
                     while (iterEnd != keyName.end() && *iterEnd != ' ')
-                        iterEnd++;
+                        ++iterEnd;
                     keyName = std::string(iter, iterEnd);
                     outputVal(oSrcFile, streamName, viewDataName, keyName);
                     std::string tailLine =
@@ -182,10 +182,10 @@ static void parseLine(std::ofstream &oSrcFile,
                     std::string keyName = newLine.substr(0, pos);
                     auto iter = keyName.begin();
                     while (iter != keyName.end() && *iter == ' ')
-                        iter++;
+                        ++iter;
                     auto iterEnd = iter;
                     while (iterEnd != keyName.end() && *iterEnd != ' ')
-                        iterEnd++;
+                        ++iterEnd;
                     keyName = std::string(iter, iterEnd);
                     outputSubView(oSrcFile, streamName, viewDataName, keyName);
                     std::string tailLine =
@@ -251,7 +251,7 @@ void create_view::handleCommand(std::vector<std::string> &parameters)
             iter = parameters.erase(iter);
             if (iter != parameters.end())
             {
-                _outputPath = *iter;
+                outputPath_ = *iter;
                 iter = parameters.erase(iter);
             }
             break;
@@ -288,8 +288,8 @@ int create_view::createViewFile(const std::string &script_filename)
                 className = className.substr(pos + 1);
             }
             std::cout << "className=" << className << std::endl;
-            std::string headFileName = _outputPath + "/" + className + ".h";
-            std::string sourceFilename = _outputPath + "/" + className + ".cc";
+            std::string headFileName = outputPath_ + "/" + className + ".h";
+            std::string sourceFilename = outputPath_ + "/" + className + ".cc";
             std::ofstream oHeadFile(headFileName.c_str(), std::ofstream::out);
             std::ofstream oSourceFile(sourceFilename.c_str(),
                                       std::ofstream::out);

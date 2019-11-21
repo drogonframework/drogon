@@ -101,13 +101,13 @@ ConfigLoader::ConfigLoader(const std::string &configFile)
                   << std::endl;
         exit(1);
     }
-    _configFile = configFile;
+    configFile_ = configFile;
     std::ifstream infile(configFile.c_str(), std::ifstream::in);
     if (infile)
     {
         try
         {
-            infile >> _configJsonRoot;
+            infile >> configJsonRoot_;
         }
         catch (const std::exception &exception)
         {
@@ -425,9 +425,9 @@ static void loadSSL(const Json::Value &sslFiles)
 }
 void ConfigLoader::load()
 {
-    // std::cout<<_configJsonRoot<<std::endl;
-    loadApp(_configJsonRoot["app"]);
-    loadSSL(_configJsonRoot["ssl"]);
-    loadListeners(_configJsonRoot["listeners"]);
-    loadDbClients(_configJsonRoot["db_clients"]);
+    // std::cout<<configJsonRoot_<<std::endl;
+    loadApp(configJsonRoot_["app"]);
+    loadSSL(configJsonRoot_["ssl"]);
+    loadListeners(configJsonRoot_["listeners"]);
+    loadDbClients(configJsonRoot_["db_clients"]);
 }

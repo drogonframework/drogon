@@ -36,8 +36,8 @@ class HttpViewData
     const T &get(const std::string &key) const
     {
         const static T nullVal = T();
-        auto it = _viewData.find(key);
-        if (it != _viewData.end())
+        auto it = viewData_.find(key);
+        if (it != viewData_.end())
         {
             if (typeid(T) == it->second.type())
             {
@@ -54,11 +54,11 @@ class HttpViewData
     /// Insert an item identified by the key parameter into the data set;
     void insert(const std::string &key, any &&obj)
     {
-        _viewData[key] = std::move(obj);
+        viewData_[key] = std::move(obj);
     }
     void insert(const std::string &key, const any &obj)
     {
-        _viewData[key] = obj;
+        viewData_[key] = obj;
     }
 
     /// Insert an item identified by the key parameter into the data set; The
@@ -68,7 +68,7 @@ class HttpViewData
     {
         std::stringstream ss;
         ss << val;
-        _viewData[key] = ss.str();
+        viewData_[key] = ss.str();
     }
 
     /// Insert a formated string identified by the key parameter.
@@ -120,13 +120,13 @@ class HttpViewData
             }
         }
         va_end(ap);
-        _viewData[key] = std::move(strBuffer);
+        viewData_[key] = std::move(strBuffer);
     }
 
     /// Get the 'any' object by the key parameter.
     any &operator[](const std::string &key) const
     {
-        return _viewData[key];
+        return viewData_[key];
     }
 
     /// Translate some special characters to HTML format
@@ -184,8 +184,8 @@ class HttpViewData
     }
 
   protected:
-    typedef std::unordered_map<std::string, any> ViewDataMap;
-    mutable ViewDataMap _viewData;
+    using ViewDataMap = std::unordered_map<std::string, any>;
+    mutable ViewDataMap viewData_;
 };
 
 }  // namespace drogon

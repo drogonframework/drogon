@@ -20,12 +20,12 @@ using namespace drogon;
 
 internal::SqlBinder DbClient::operator<<(const std::string &sql)
 {
-    return internal::SqlBinder(sql, *this, _type);
+    return internal::SqlBinder(sql, *this, type_);
 }
 
 internal::SqlBinder DbClient::operator<<(std::string &&sql)
 {
-    return internal::SqlBinder(std::move(sql), *this, _type);
+    return internal::SqlBinder(std::move(sql), *this, type_);
 }
 
 std::shared_ptr<DbClient> DbClient::newPgClient(const std::string &connInfo,

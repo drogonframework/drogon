@@ -34,12 +34,12 @@ using namespace drogon;
 
 const std::vector<HttpFile> &MultiPartParser::getFiles()
 {
-    return _files;
+    return files_;
 }
 
 const std::map<std::string, std::string> &MultiPartParser::getParameters() const
 {
-    return _parameters;
+    return parameters_;
 }
 
 int MultiPartParser::parse(const HttpRequestPtr &req)
@@ -89,7 +89,7 @@ int MultiPartParser::parseEntity(const char *begin, const char *end)
         pos1 = std::search(pos1, end, CRLF, CRLF + 4);
         if (pos1 == end)
             return -1;
-        _parameters[name] = std::string(pos1 + 4, end);
+        parameters_[name] = std::string(pos1 + 4, end);
         return 0;
     }
     else
@@ -104,7 +104,7 @@ int MultiPartParser::parseEntity(const char *begin, const char *end)
         if (pos1 == end)
             return -1;
         file.setFile(std::string(pos1 + 4, end));
-        _files.push_back(std::move(file));
+        files_.push_back(std::move(file));
         return 0;
     }
 }
@@ -141,7 +141,7 @@ int MultiPartParser::parse(const HttpRequestPtr &req,
 int HttpFile::save(const std::string &path) const
 {
     assert(!path.empty());
-    if (_fileName == "")
+    if (fileName_ == "")
         return -1;
     std::string filename;
     auto tmpPath = path;
@@ -167,10 +167,10 @@ int HttpFile::save(const std::string &path) const
 
     if (tmpPath[tmpPath.length() - 1] != '/')
     {
-        filename = tmpPath + "/" + _fileName;
+        filename = tmpPath + "/" + fileName_;
     }
     else
-        filename = tmpPath + _fileName;
+        filename = tmpPath + fileName_;
 
     return saveTo(filename);
 }
@@ -212,7 +212,7 @@ int HttpFile::saveTo(const std::string &pathAndFilename) const
     std::ofstream file(pathAndFilename);
     if (file.is_open())
     {
-        file << _fileContent;
+        file << fileContent_;
         file.close();
         return 0;
     }
@@ -228,10 +228,10 @@ std::string HttpFile::getMd5() const
     MD5_CTX c;
     unsigned char md5[16] = {0};
     MD5_Init(&c);
-    MD5_Update(&c, _fileContent.c_str(), _fileContent.size());
+    MD5_Update(&c, fileContent_.c_str(), fileContent_.size());
     MD5_Final(md5, &c);
     return utils::binaryStringToHex(md5, 16);
 #else
-    return Md5Encode::encode(_fileContent);
+    return Md5Encode::encode(fileContent_);
 #endif
 }

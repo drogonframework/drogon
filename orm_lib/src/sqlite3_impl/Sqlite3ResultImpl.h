@@ -47,12 +47,12 @@ class Sqlite3ResultImpl : public ResultImpl
 
   private:
     friend class Sqlite3Connection;
-    std::vector<std::vector<std::shared_ptr<std::string>>> _result;
-    std::string _query;
-    std::vector<std::string> _columnNames;
-    std::unordered_map<std::string, size_t> _columnNameMap;
-    size_t _affectedRows = 0;
-    size_t _insertId = 0;
+    std::vector<std::vector<std::shared_ptr<std::string>>> result_;
+    std::string query_;
+    std::vector<std::string> columnNames_;
+    std::unordered_map<std::string, size_t> columnNamesMap_;
+    size_t affectedRows_{0};
+    size_t insertId_{0};
 };
 }  // namespace orm
 }  // namespace drogon

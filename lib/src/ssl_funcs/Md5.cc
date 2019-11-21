@@ -306,7 +306,7 @@ std::string Md5Encode::getHexStr(unsigned int numStr)
                    'F'};
     unsigned char *tmptr = (unsigned char *)&numStr;
     int len = sizeof(numStr);
-    for (int i = 0; i < len; i++)
+    for (int i = 0; i < len; ++i)
     {
         unsigned char ch = tmptr[i] & 0xF0;
         ch = ch >> 4;

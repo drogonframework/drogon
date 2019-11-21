@@ -37,13 +37,13 @@ orm::Criteria RestfulController::makeCriteria(
             {
                 throw std::runtime_error("Json format error");
             }
-            if (_masquerading)
+            if (masquerading_)
             {
                 Json::Value newJson(andJson);
-                auto iter = _masqueradingMap.find(newJson[0].asString());
-                if (iter != _masqueradingMap.end())
+                auto iter = masqueradingMap_.find(newJson[0].asString());
+                if (iter != masqueradingMap_.end())
                 {
-                    newJson[0] = _masqueradingVector[iter->second];
+                    newJson[0] = masqueradingVector_[iter->second];
                     if (!orCriteria)
                     {
                         orCriteria = orm::Criteria(newJson);

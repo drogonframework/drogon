@@ -31,7 +31,7 @@ int main()
                 else
                 {
                     counter = c;
-                    n++;
+                    ++n;
                 }
                 if (resp->getBody().length() > 0)
                 {
@@ -64,7 +64,7 @@ int main()
 
     auto request = HttpRequest::newHttpRequest();
     request->setPath("/pipe");
-    for (int i = 0; i < 19; i++)
+    for (int i = 0; i < 19; ++i)
     {
         client->sendRequest(
             request, [&counter, &n](ReqResult r, const HttpResponsePtr &resp) {
@@ -81,7 +81,7 @@ int main()
                     else
                     {
                         counter = c;
-                        n++;
+                        ++n;
                         if (n == 20)
                         {
                             LOG_DEBUG << "Good!";

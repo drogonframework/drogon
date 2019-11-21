@@ -22,7 +22,14 @@
 #include <iostream>
 
 using namespace drogon::orm;
-
+namespace drogon
+{
+namespace orm
+{
+class DbClient;
+using DbClientPtr = std::shared_ptr<DbClient>;
+}  // namespace orm
+}  // namespace drogon
 namespace drogon_model
 {
 namespace postgres
@@ -47,7 +54,7 @@ class Users
     const static std::string tableName;
     const static bool hasPrimaryKey;
     const static std::string primaryKeyName;
-    typedef int32_t PrimaryKeyType;
+    using PrimaryKeyType = int32_t;
     const PrimaryKeyType &getPrimaryKey() const;
 
     /**
@@ -210,7 +217,7 @@ class Users
     Json::Value toJson() const;
     Json::Value toMasqueradedJson(
         const std::vector<std::string> &pMasqueradingVector) const;
-
+    /// Relationship interfaces
   private:
     friend Mapper<Users>;
     static const std::vector<std::string> &insertColumns() noexcept;
@@ -219,27 +226,27 @@ class Users
     void updateArgs(drogon::orm::internal::SqlBinder &binder) const;
     /// For mysql or sqlite3
     void updateId(const uint64_t id);
-    std::shared_ptr<std::string> _userId;
-    std::shared_ptr<std::string> _userName;
-    std::shared_ptr<std::string> _password;
-    std::shared_ptr<std::string> _orgName;
-    std::shared_ptr<std::string> _signature;
-    std::shared_ptr<std::string> _avatarId;
-    std::shared_ptr<int32_t> _id;
-    std::shared_ptr<std::string> _salt;
-    std::shared_ptr<bool> _admin;
+    std::shared_ptr<std::string> userId_;
+    std::shared_ptr<std::string> userName_;
+    std::shared_ptr<std::string> password_;
+    std::shared_ptr<std::string> orgName_;
+    std::shared_ptr<std::string> signature_;
+    std::shared_ptr<std::string> avatarId_;
+    std::shared_ptr<int32_t> id_;
+    std::shared_ptr<std::string> salt_;
+    std::shared_ptr<bool> admin_;
     struct MetaData
     {
-        const std::string _colName;
-        const std::string _colType;
-        const std::string _colDatabaseType;
-        const ssize_t _colLength;
-        const bool _isAutoVal;
-        const bool _isPrimaryKey;
-        const bool _notNull;
+        const std::string colName_;
+        const std::string colType_;
+        const std::string colDatabaseType_;
+        const ssize_t colLength_;
+        const bool isAutoVal_;
+        const bool isPrimaryKey_;
+        const bool notNull_;
     };
-    static const std::vector<MetaData> _metaData;
-    bool _dirtyFlag[9] = {false};
+    static const std::vector<MetaData> metaData_;
+    bool dirtyFlag_[9] = {false};
 
   public:
     static const std::string &sqlForFindingByPrimaryKey()
@@ -260,46 +267,46 @@ class Users
         std::string sql = "insert into " + tableName + " (";
         size_t parametersCount = 0;
         needSelection = false;
-        if (_dirtyFlag[0])
+        if (dirtyFlag_[0])
         {
             sql += "user_id,";
             ++parametersCount;
         }
-        if (_dirtyFlag[1])
+        if (dirtyFlag_[1])
         {
             sql += "user_name,";
             ++parametersCount;
         }
-        if (_dirtyFlag[2])
+        if (dirtyFlag_[2])
         {
             sql += "password,";
             ++parametersCount;
         }
-        if (_dirtyFlag[3])
+        if (dirtyFlag_[3])
         {
             sql += "org_name,";
             ++parametersCount;
         }
-        if (_dirtyFlag[4])
+        if (dirtyFlag_[4])
         {
             sql += "signature,";
             ++parametersCount;
         }
-        if (_dirtyFlag[5])
+        if (dirtyFlag_[5])
         {
             sql += "avatar_id,";
             ++parametersCount;
         }
         sql += "id,";
         ++parametersCount;
-        if (_dirtyFlag[7])
+        if (dirtyFlag_[7])
         {
             sql += "salt,";
             ++parametersCount;
         }
         sql += "admin,";
         ++parametersCount;
-        if (!_dirtyFlag[8])
+        if (!dirtyFlag_[8])
         {
             needSelection = true;
         }
@@ -315,43 +322,43 @@ class Users
         int placeholder = 1;
         char placeholderStr[64];
         size_t n = 0;
-        if (_dirtyFlag[0])
+        if (dirtyFlag_[0])
         {
             n = sprintf(placeholderStr, "$%d,", placeholder++);
             sql.append(placeholderStr, n);
         }
-        if (_dirtyFlag[1])
+        if (dirtyFlag_[1])
         {
             n = sprintf(placeholderStr, "$%d,", placeholder++);
             sql.append(placeholderStr, n);
         }
-        if (_dirtyFlag[2])
+        if (dirtyFlag_[2])
         {
             n = sprintf(placeholderStr, "$%d,", placeholder++);
             sql.append(placeholderStr, n);
         }
-        if (_dirtyFlag[3])
+        if (dirtyFlag_[3])
         {
             n = sprintf(placeholderStr, "$%d,", placeholder++);
             sql.append(placeholderStr, n);
         }
-        if (_dirtyFlag[4])
+        if (dirtyFlag_[4])
         {
             n = sprintf(placeholderStr, "$%d,", placeholder++);
             sql.append(placeholderStr, n);
         }
-        if (_dirtyFlag[5])
+        if (dirtyFlag_[5])
         {
             n = sprintf(placeholderStr, "$%d,", placeholder++);
             sql.append(placeholderStr, n);
         }
         sql += "default,";
-        if (_dirtyFlag[7])
+        if (dirtyFlag_[7])
         {
             n = sprintf(placeholderStr, "$%d,", placeholder++);
             sql.append(placeholderStr, n);
         }
-        if (_dirtyFlag[8])
+        if (dirtyFlag_[8])
         {
             n = sprintf(placeholderStr, "$%d,", placeholder++);
             sql.append(placeholderStr, n);

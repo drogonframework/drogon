@@ -21,7 +21,7 @@
 
 namespace drogon
 {
-enum class PluginState
+enum class PluginStatus
 {
     None,
     Initializing,
@@ -37,27 +37,27 @@ class PluginBase : public virtual DrObjectBase, public trantor::NonCopyable
   public:
     /// This method is usually called by drogon.
     /// It always returns PlugiinState::Initialized if the user calls it.
-    PluginState stat() const
+    PluginStatus stat() const
     {
-        return _stat;
+        return status_;
     }
 
     /// This method must be called by drogon.
     void initialize()
     {
-        if (_stat == PluginState::None)
+        if (status_ == PluginStatus::None)
         {
-            _stat = PluginState::Initializing;
-            for (auto dependency : _dependencies)
+            status_ = PluginStatus::Initializing;
+            for (auto dependency : dependencies_)
             {
                 dependency->initialize();
             }
-            initAndStart(_config);
-            _stat = PluginState::Initialized;
-            if (_initializedCallback)
-                _initializedCallback(this);
+            initAndStart(config_);
+            status_ = PluginStatus::Initialized;
+            if (initializedCallback_)
+                initializedCallback_(this);
         }
-        else if (_stat == PluginState::Initialized)
+        else if (status_ == PluginStatus::Initialized)
         {
             // Do nothing;
         }
@@ -86,31 +86,30 @@ class PluginBase : public virtual DrObjectBase, public trantor::NonCopyable
     }
 
   private:
-    PluginState _stat = PluginState::None;
+    PluginStatus status_{PluginStatus::None};
     friend class PluginsManager;
     void setConfig(const Json::Value &config)
     {
-        _config = config;
+        config_ = config;
     }
     void addDependency(PluginBase *dp)
     {
-        _dependencies.push_back(dp);
+        dependencies_.push_back(dp);
     }
     void setInitializedCallback(const std::function<void(PluginBase *)> &cb)
     {
-        _initializedCallback = cb;
+        initializedCallback_ = cb;
     }
-    Json::Value _config;
-    std::vector<PluginBase *> _dependencies;
-    std::function<void(PluginBase *)> _initializedCallback;
+    Json::Value config_;
+    std::vector<PluginBase *> dependencies_;
+    std::function<void(PluginBase *)> initializedCallback_;
 };
 
 template <typename T>
 struct IsPlugin
 {
-    typedef
-        typename std::remove_cv<typename std::remove_reference<T>::type>::type
-            TYPE;
+    using TYPE =
+        typename std::remove_cv<typename std::remove_reference<T>::type>::type;
 
     static int test(void *)
     {

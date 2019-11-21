@@ -29,6 +29,6 @@ class create_filter : public DrObject<create_filter>, public CommandHandler
     }
 
   protected:
-    std::string _outputPath = ".";
+    std::string outputPath_{"."};
 };
 }  // namespace drogon_ctl

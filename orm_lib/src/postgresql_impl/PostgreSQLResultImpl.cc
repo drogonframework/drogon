@@ -19,16 +19,16 @@ using namespace drogon::orm;
 
 Result::SizeType PostgreSQLResultImpl::size() const noexcept
 {
-    return _result ? PQntuples(_result.get()) : 0;
+    return result_ ? PQntuples(result_.get()) : 0;
 }
 Result::RowSizeType PostgreSQLResultImpl::columns() const noexcept
 {
-    auto ptr = const_cast<PGresult *>(_result.get());
+    auto ptr = const_cast<PGresult *>(result_.get());
     return ptr ? Result::RowSizeType(PQnfields(ptr)) : 0;
 }
 const char *PostgreSQLResultImpl::columnName(RowSizeType number) const
 {
-    auto ptr = const_cast<PGresult *>(_result.get());
+    auto ptr = const_cast<PGresult *>(result_.get());
     if (ptr)
     {
         auto N = PQfname(ptr, int(number));
@@ -39,7 +39,7 @@ const char *PostgreSQLResultImpl::columnName(RowSizeType number) const
 }
 Result::SizeType PostgreSQLResultImpl::affectedRows() const noexcept
 {
-    char *str = PQcmdTuples(_result.get());
+    char *str = PQcmdTuples(result_.get());
     if (str == nullptr || str[0] == '\0')
         return 0;
     return atol(str);
@@ -47,7 +47,7 @@ Result::SizeType PostgreSQLResultImpl::affectedRows() const noexcept
 Result::RowSizeType PostgreSQLResultImpl::columnNumber(
     const char colName[]) const
 {
-    auto ptr = const_cast<PGresult *>(_result.get());
+    auto ptr = const_cast<PGresult *>(result_.get());
     if (ptr)
     {
         auto N = PQfnumber(ptr, colName);
@@ -61,18 +61,18 @@ Result::RowSizeType PostgreSQLResultImpl::columnNumber(
 const char *PostgreSQLResultImpl::getValue(SizeType row,
                                            RowSizeType column) const
 {
-    return PQgetvalue(_result.get(), int(row), int(column));
+    return PQgetvalue(result_.get(), int(row), int(column));
 }
 bool PostgreSQLResultImpl::isNull(SizeType row, RowSizeType column) const
 {
-    return PQgetisnull(_result.get(), int(row), int(column)) != 0;
+    return PQgetisnull(result_.get(), int(row), int(column)) != 0;
 }
 Result::FieldSizeType PostgreSQLResultImpl::getLength(SizeType row,
                                                       RowSizeType column) const
 {
-    return PQgetlength(_result.get(), int(row), int(column));
+    return PQgetlength(result_.get(), int(row), int(column));
 }
 int PostgreSQLResultImpl::oid(RowSizeType column) const
 {
-    return PQftype(_result.get(), (int)column);
+    return PQftype(result_.get(), (int)column);
 }

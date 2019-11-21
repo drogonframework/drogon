@@ -25,7 +25,7 @@ const std::string Users::primaryKeyName = "id";
 const bool Users::hasPrimaryKey = true;
 const std::string Users::tableName = "users";
 
-const std::vector<typename Users::MetaData> Users::_metaData = {
+const std::vector<typename Users::MetaData> Users::metaData_ = {
     {"user_id", "std::string", "character varying", 32, 0, 0, 0},
     {"user_name", "std::string", "character varying", 64, 0, 0, 0},
     {"password", "std::string", "character varying", 64, 0, 0, 0},
@@ -37,8 +37,8 @@ const std::vector<typename Users::MetaData> Users::_metaData = {
     {"admin", "bool", "boolean", 1, 0, 0, 0}};
 const std::string &Users::getColumnName(size_t index) noexcept(false)
 {
-    assert(index < _metaData.size());
-    return _metaData[index]._colName;
+    assert(index < metaData_.size());
+    return metaData_[index].colName_;
 }
 Users::Users(const Row &r, const ssize_t indexOffset) noexcept
 {
@@ -46,45 +46,45 @@ Users::Users(const Row &r, const ssize_t indexOffset) noexcept
     {
         if (!r["user_id"].isNull())
         {
-            _userId =
+            userId_ =
                 std::make_shared<std::string>(r["user_id"].as<std::string>());
         }
         if (!r["user_name"].isNull())
         {
-            _userName =
+            userName_ =
                 std::make_shared<std::string>(r["user_name"].as<std::string>());
         }
         if (!r["password"].isNull())
         {
-            _password =
+            password_ =
                 std::make_shared<std::string>(r["password"].as<std::string>());
         }
         if (!r["org_name"].isNull())
         {
-            _orgName =
+            orgName_ =
                 std::make_shared<std::string>(r["org_name"].as<std::string>());
         }
         if (!r["signature"].isNull())
         {
-            _signature =
+            signature_ =
                 std::make_shared<std::string>(r["signature"].as<std::string>());
         }
         if (!r["avatar_id"].isNull())
         {
-            _avatarId =
+            avatarId_ =
                 std::make_shared<std::string>(r["avatar_id"].as<std::string>());
         }
         if (!r["id"].isNull())
         {
-            _id = std::make_shared<int32_t>(r["id"].as<int32_t>());
+            id_ = std::make_shared<int32_t>(r["id"].as<int32_t>());
         }
         if (!r["salt"].isNull())
         {
-            _salt = std::make_shared<std::string>(r["salt"].as<std::string>());
+            salt_ = std::make_shared<std::string>(r["salt"].as<std::string>());
         }
         if (!r["admin"].isNull())
         {
-            _admin = std::make_shared<bool>(r["admin"].as<bool>());
+            admin_ = std::make_shared<bool>(r["admin"].as<bool>());
         }
     }
     else
@@ -99,52 +99,52 @@ Users::Users(const Row &r, const ssize_t indexOffset) noexcept
         index = offset + 0;
         if (!r[index].isNull())
         {
-            _userId = std::make_shared<std::string>(r[index].as<std::string>());
+            userId_ = std::make_shared<std::string>(r[index].as<std::string>());
         }
         index = offset + 1;
         if (!r[index].isNull())
         {
-            _userName =
+            userName_ =
                 std::make_shared<std::string>(r[index].as<std::string>());
         }
         index = offset + 2;
         if (!r[index].isNull())
         {
-            _password =
+            password_ =
                 std::make_shared<std::string>(r[index].as<std::string>());
         }
         index = offset + 3;
         if (!r[index].isNull())
         {
-            _orgName =
+            orgName_ =
                 std::make_shared<std::string>(r[index].as<std::string>());
         }
         index = offset + 4;
         if (!r[index].isNull())
         {
-            _signature =
+            signature_ =
                 std::make_shared<std::string>(r[index].as<std::string>());
         }
         index = offset + 5;
         if (!r[index].isNull())
         {
-            _avatarId =
+            avatarId_ =
                 std::make_shared<std::string>(r[index].as<std::string>());
         }
         index = offset + 6;
         if (!r[index].isNull())
         {
-            _id = std::make_shared<int32_t>(r[index].as<int32_t>());
+            id_ = std::make_shared<int32_t>(r[index].as<int32_t>());
         }
         index = offset + 7;
         if (!r[index].isNull())
         {
-            _salt = std::make_shared<std::string>(r[index].as<std::string>());
+            salt_ = std::make_shared<std::string>(r[index].as<std::string>());
         }
         index = offset + 8;
         if (!r[index].isNull())
         {
-            _admin = std::make_shared<bool>(r[index].as<bool>());
+            admin_ = std::make_shared<bool>(r[index].as<bool>());
         }
     }
 }
@@ -161,90 +161,90 @@ Users::Users(
     if (!pMasqueradingVector[0].empty() &&
         pJson.isMember(pMasqueradingVector[0]))
     {
-        _dirtyFlag[0] = true;
+        dirtyFlag_[0] = true;
         if (!pJson[pMasqueradingVector[0]].isNull())
         {
-            _userId = std::make_shared<std::string>(
+            userId_ = std::make_shared<std::string>(
                 pJson[pMasqueradingVector[0]].asString());
         }
     }
     if (!pMasqueradingVector[1].empty() &&
         pJson.isMember(pMasqueradingVector[1]))
     {
-        _dirtyFlag[1] = true;
+        dirtyFlag_[1] = true;
         if (!pJson[pMasqueradingVector[1]].isNull())
         {
-            _userName = std::make_shared<std::string>(
+            userName_ = std::make_shared<std::string>(
                 pJson[pMasqueradingVector[1]].asString());
         }
     }
     if (!pMasqueradingVector[2].empty() &&
         pJson.isMember(pMasqueradingVector[2]))
     {
-        _dirtyFlag[2] = true;
+        dirtyFlag_[2] = true;
         if (!pJson[pMasqueradingVector[2]].isNull())
         {
-            _password = std::make_shared<std::string>(
+            password_ = std::make_shared<std::string>(
                 pJson[pMasqueradingVector[2]].asString());
         }
     }
     if (!pMasqueradingVector[3].empty() &&
         pJson.isMember(pMasqueradingVector[3]))
     {
-        _dirtyFlag[3] = true;
+        dirtyFlag_[3] = true;
         if (!pJson[pMasqueradingVector[3]].isNull())
         {
-            _orgName = std::make_shared<std::string>(
+            orgName_ = std::make_shared<std::string>(
                 pJson[pMasqueradingVector[3]].asString());
         }
     }
     if (!pMasqueradingVector[4].empty() &&
         pJson.isMember(pMasqueradingVector[4]))
     {
-        _dirtyFlag[4] = true;
+        dirtyFlag_[4] = true;
         if (!pJson[pMasqueradingVector[4]].isNull())
         {
-            _signature = std::make_shared<std::string>(
+            signature_ = std::make_shared<std::string>(
                 pJson[pMasqueradingVector[4]].asString());
         }
     }
     if (!pMasqueradingVector[5].empty() &&
         pJson.isMember(pMasqueradingVector[5]))
     {
-        _dirtyFlag[5] = true;
+        dirtyFlag_[5] = true;
         if (!pJson[pMasqueradingVector[5]].isNull())
         {
-            _avatarId = std::make_shared<std::string>(
+            avatarId_ = std::make_shared<std::string>(
                 pJson[pMasqueradingVector[5]].asString());
         }
     }
     if (!pMasqueradingVector[6].empty() &&
         pJson.isMember(pMasqueradingVector[6]))
     {
-        _dirtyFlag[6] = true;
+        dirtyFlag_[6] = true;
         if (!pJson[pMasqueradingVector[6]].isNull())
         {
-            _id = std::make_shared<int32_t>(
+            id_ = std::make_shared<int32_t>(
                 (int32_t)pJson[pMasqueradingVector[6]].asInt64());
         }
     }
     if (!pMasqueradingVector[7].empty() &&
         pJson.isMember(pMasqueradingVector[7]))
     {
-        _dirtyFlag[7] = true;
+        dirtyFlag_[7] = true;
         if (!pJson[pMasqueradingVector[7]].isNull())
         {
-            _salt = std::make_shared<std::string>(
+            salt_ = std::make_shared<std::string>(
                 pJson[pMasqueradingVector[7]].asString());
         }
     }
     if (!pMasqueradingVector[8].empty() &&
         pJson.isMember(pMasqueradingVector[8]))
     {
-        _dirtyFlag[8] = true;
+        dirtyFlag_[8] = true;
         if (!pJson[pMasqueradingVector[8]].isNull())
         {
-            _admin =
+            admin_ =
                 std::make_shared<bool>(pJson[pMasqueradingVector[8]].asBool());
         }
     }
@@ -254,80 +254,80 @@ Users::Users(const Json::Value &pJson) noexcept(false)
 {
     if (pJson.isMember("user_id"))
     {
-        _dirtyFlag[0] = true;
+        dirtyFlag_[0] = true;
         if (!pJson["user_id"].isNull())
         {
-            _userId =
+            userId_ =
                 std::make_shared<std::string>(pJson["user_id"].asString());
         }
     }
     if (pJson.isMember("user_name"))
     {
-        _dirtyFlag[1] = true;
+        dirtyFlag_[1] = true;
         if (!pJson["user_name"].isNull())
         {
-            _userName =
+            userName_ =
                 std::make_shared<std::string>(pJson["user_name"].asString());
         }
     }
     if (pJson.isMember("password"))
     {
-        _dirtyFlag[2] = true;
+        dirtyFlag_[2] = true;
         if (!pJson["password"].isNull())
         {
-            _password =
+            password_ =
                 std::make_shared<std::string>(pJson["password"].asString());
         }
     }
     if (pJson.isMember("org_name"))
     {
-        _dirtyFlag[3] = true;
+        dirtyFlag_[3] = true;
         if (!pJson["org_name"].isNull())
         {
-            _orgName =
+            orgName_ =
                 std::make_shared<std::string>(pJson["org_name"].asString());
         }
     }
     if (pJson.isMember("signature"))
     {
-        _dirtyFlag[4] = true;
+        dirtyFlag_[4] = true;
         if (!pJson["signature"].isNull())
         {
-            _signature =
+            signature_ =
                 std::make_shared<std::string>(pJson["signature"].asString());
         }
     }
     if (pJson.isMember("avatar_id"))
     {
-        _dirtyFlag[5] = true;
+        dirtyFlag_[5] = true;
         if (!pJson["avatar_id"].isNull())
         {
-            _avatarId =
+            avatarId_ =
                 std::make_shared<std::string>(pJson["avatar_id"].asString());
         }
     }
     if (pJson.isMember("id"))
     {
-        _dirtyFlag[6] = true;
+        dirtyFlag_[6] = true;
         if (!pJson["id"].isNull())
         {
-            _id = std::make_shared<int32_t>((int32_t)pJson["id"].asInt64());
+            id_ = std::make_shared<int32_t>((int32_t)pJson["id"].asInt64());
         }
     }
     if (pJson.isMember("salt"))
     {
-        _dirtyFlag[7] = true;
+        dirtyFlag_[7] = true;
         if (!pJson["salt"].isNull())
         {
-            _salt = std::make_shared<std::string>(pJson["salt"].asString());
+            salt_ = std::make_shared<std::string>(pJson["salt"].asString());
         }
     }
     if (pJson.isMember("admin"))
     {
-        _dirtyFlag[8] = true;
+        dirtyFlag_[8] = true;
         if (!pJson["admin"].isNull())
         {
-            _admin = std::make_shared<bool>(pJson["admin"].asBool());
+            admin_ = std::make_shared<bool>(pJson["admin"].asBool());
         }
     }
 }
@@ -344,60 +344,60 @@ void Users::updateByMasqueradedJson(
     if (!pMasqueradingVector[0].empty() &&
         pJson.isMember(pMasqueradingVector[0]))
     {
-        _dirtyFlag[0] = true;
+        dirtyFlag_[0] = true;
         if (!pJson[pMasqueradingVector[0]].isNull())
         {
-            _userId = std::make_shared<std::string>(
+            userId_ = std::make_shared<std::string>(
                 pJson[pMasqueradingVector[0]].asString());
         }
     }
     if (!pMasqueradingVector[1].empty() &&
         pJson.isMember(pMasqueradingVector[1]))
     {
-        _dirtyFlag[1] = true;
+        dirtyFlag_[1] = true;
         if (!pJson[pMasqueradingVector[1]].isNull())
         {
-            _userName = std::make_shared<std::string>(
+            userName_ = std::make_shared<std::string>(
                 pJson[pMasqueradingVector[1]].asString());
         }
     }
     if (!pMasqueradingVector[2].empty() &&
         pJson.isMember(pMasqueradingVector[2]))
     {
-        _dirtyFlag[2] = true;
+        dirtyFlag_[2] = true;
         if (!pJson[pMasqueradingVector[2]].isNull())
         {
-            _password = std::make_shared<std::string>(
+            password_ = std::make_shared<std::string>(
                 pJson[pMasqueradingVector[2]].asString());
         }
     }
     if (!pMasqueradingVector[3].empty() &&
         pJson.isMember(pMasqueradingVector[3]))
     {
-        _dirtyFlag[3] = true;
+        dirtyFlag_[3] = true;
         if (!pJson[pMasqueradingVector[3]].isNull())
         {
-            _orgName = std::make_shared<std::string>(
+            orgName_ = std::make_shared<std::string>(
                 pJson[pMasqueradingVector[3]].asString());
         }
     }
     if (!pMasqueradingVector[4].empty() &&
         pJson.isMember(pMasqueradingVector[4]))
     {
-        _dirtyFlag[4] = true;
+        dirtyFlag_[4] = true;
         if (!pJson[pMasqueradingVector[4]].isNull())
         {
-            _signature = std::make_shared<std::string>(
+            signature_ = std::make_shared<std::string>(
                 pJson[pMasqueradingVector[4]].asString());
         }
     }
     if (!pMasqueradingVector[5].empty() &&
         pJson.isMember(pMasqueradingVector[5]))
     {
-        _dirtyFlag[5] = true;
+        dirtyFlag_[5] = true;
         if (!pJson[pMasqueradingVector[5]].isNull())
         {
-            _avatarId = std::make_shared<std::string>(
+            avatarId_ = std::make_shared<std::string>(
                 pJson[pMasqueradingVector[5]].asString());
         }
     }
@@ -406,27 +406,27 @@ void Users::updateByMasqueradedJson(
     {
         if (!pJson[pMasqueradingVector[6]].isNull())
         {
-            _id = std::make_shared<int32_t>(
+            id_ = std::make_shared<int32_t>(
                 (int32_t)pJson[pMasqueradingVector[6]].asInt64());
         }
     }
     if (!pMasqueradingVector[7].empty() &&
         pJson.isMember(pMasqueradingVector[7]))
     {
-        _dirtyFlag[7] = true;
+        dirtyFlag_[7] = true;
         if (!pJson[pMasqueradingVector[7]].isNull())
         {
-            _salt = std::make_shared<std::string>(
+            salt_ = std::make_shared<std::string>(
                 pJson[pMasqueradingVector[7]].asString());
         }
     }
     if (!pMasqueradingVector[8].empty() &&
         pJson.isMember(pMasqueradingVector[8]))
     {
-        _dirtyFlag[8] = true;
+        dirtyFlag_[8] = true;
         if (!pJson[pMasqueradingVector[8]].isNull())
         {
-            _admin =
+            admin_ =
                 std::make_shared<bool>(pJson[pMasqueradingVector[8]].asBool());
         }
     }
@@ -436,55 +436,55 @@ void Users::updateByJson(const Json::Value &pJson) noexcept(false)
 {
     if (pJson.isMember("user_id"))
     {
-        _dirtyFlag[0] = true;
+        dirtyFlag_[0] = true;
         if (!pJson["user_id"].isNull())
         {
-            _userId =
+            userId_ =
                 std::make_shared<std::string>(pJson["user_id"].asString());
         }
     }
     if (pJson.isMember("user_name"))
     {
-        _dirtyFlag[1] = true;
+        dirtyFlag_[1] = true;
         if (!pJson["user_name"].isNull())
         {
-            _userName =
+            userName_ =
                 std::make_shared<std::string>(pJson["user_name"].asString());
         }
     }
     if (pJson.isMember("password"))
     {
-        _dirtyFlag[2] = true;
+        dirtyFlag_[2] = true;
         if (!pJson["password"].isNull())
         {
-            _password =
+            password_ =
                 std::make_shared<std::string>(pJson["password"].asString());
         }
     }
     if (pJson.isMember("org_name"))
     {
-        _dirtyFlag[3] = true;
+        dirtyFlag_[3] = true;
         if (!pJson["org_name"].isNull())
         {
-            _orgName =
+            orgName_ =
                 std::make_shared<std::string>(pJson["org_name"].asString());
         }
     }
     if (pJson.isMember("signature"))
     {
-        _dirtyFlag[4] = true;
+        dirtyFlag_[4] = true;
         if (!pJson["signature"].isNull())
         {
-            _signature =
+            signature_ =
                 std::make_shared<std::string>(pJson["signature"].asString());
         }
     }
     if (pJson.isMember("avatar_id"))
     {
-        _dirtyFlag[5] = true;
+        dirtyFlag_[5] = true;
         if (!pJson["avatar_id"].isNull())
         {
-            _avatarId =
+            avatarId_ =
                 std::make_shared<std::string>(pJson["avatar_id"].asString());
         }
     }
@@ -492,23 +492,23 @@ void Users::updateByJson(const Json::Value &pJson) noexcept(false)
     {
         if (!pJson["id"].isNull())
         {
-            _id = std::make_shared<int32_t>((int32_t)pJson["id"].asInt64());
+            id_ = std::make_shared<int32_t>((int32_t)pJson["id"].asInt64());
         }
     }
     if (pJson.isMember("salt"))
     {
-        _dirtyFlag[7] = true;
+        dirtyFlag_[7] = true;
         if (!pJson["salt"].isNull())
         {
-            _salt = std::make_shared<std::string>(pJson["salt"].asString());
+            salt_ = std::make_shared<std::string>(pJson["salt"].asString());
         }
     }
     if (pJson.isMember("admin"))
     {
-        _dirtyFlag[8] = true;
+        dirtyFlag_[8] = true;
         if (!pJson["admin"].isNull())
         {
-            _admin = std::make_shared<bool>(pJson["admin"].asBool());
+            admin_ = std::make_shared<bool>(pJson["admin"].asBool());
         }
     }
 }
@@ -516,237 +516,237 @@ void Users::updateByJson(const Json::Value &pJson) noexcept(false)
 const std::string &Users::getValueOfUserId() const noexcept
 {
     const static std::string defaultValue = std::string();
-    if (_userId)
-        return *_userId;
+    if (userId_)
+        return *userId_;
     return defaultValue;
 }
 const std::shared_ptr<std::string> &Users::getUserId() const noexcept
 {
-    return _userId;
+    return userId_;
 }
 void Users::setUserId(const std::string &pUserId) noexcept
 {
-    _userId = std::make_shared<std::string>(pUserId);
-    _dirtyFlag[0] = true;
+    userId_ = std::make_shared<std::string>(pUserId);
+    dirtyFlag_[0] = true;
 }
 void Users::setUserId(std::string &&pUserId) noexcept
 {
-    _userId = std::make_shared<std::string>(std::move(pUserId));
-    _dirtyFlag[0] = true;
+    userId_ = std::make_shared<std::string>(std::move(pUserId));
+    dirtyFlag_[0] = true;
 }
 
 void Users::setUserIdToNull() noexcept
 {
-    _userId.reset();
-    _dirtyFlag[0] = true;
+    userId_.reset();
+    dirtyFlag_[0] = true;
 }
 
 const std::string &Users::getValueOfUserName() const noexcept
 {
     const static std::string defaultValue = std::string();
-    if (_userName)
-        return *_userName;
+    if (userName_)
+        return *userName_;
     return defaultValue;
 }
 const std::shared_ptr<std::string> &Users::getUserName() const noexcept
 {
-    return _userName;
+    return userName_;
 }
 void Users::setUserName(const std::string &pUserName) noexcept
 {
-    _userName = std::make_shared<std::string>(pUserName);
-    _dirtyFlag[1] = true;
+    userName_ = std::make_shared<std::string>(pUserName);
+    dirtyFlag_[1] = true;
 }
 void Users::setUserName(std::string &&pUserName) noexcept
 {
-    _userName = std::make_shared<std::string>(std::move(pUserName));
-    _dirtyFlag[1] = true;
+    userName_ = std::make_shared<std::string>(std::move(pUserName));
+    dirtyFlag_[1] = true;
 }
 
 void Users::setUserNameToNull() noexcept
 {
-    _userName.reset();
-    _dirtyFlag[1] = true;
+    userName_.reset();
+    dirtyFlag_[1] = true;
 }
 
 const std::string &Users::getValueOfPassword() const noexcept
 {
     const static std::string defaultValue = std::string();
-    if (_password)
-        return *_password;
+    if (password_)
+        return *password_;
     return defaultValue;
 }
 const std::shared_ptr<std::string> &Users::getPassword() const noexcept
 {
-    return _password;
+    return password_;
 }
 void Users::setPassword(const std::string &pPassword) noexcept
 {
-    _password = std::make_shared<std::string>(pPassword);
-    _dirtyFlag[2] = true;
+    password_ = std::make_shared<std::string>(pPassword);
+    dirtyFlag_[2] = true;
 }
 void Users::setPassword(std::string &&pPassword) noexcept
 {
-    _password = std::make_shared<std::string>(std::move(pPassword));
-    _dirtyFlag[2] = true;
+    password_ = std::make_shared<std::string>(std::move(pPassword));
+    dirtyFlag_[2] = true;
 }
 
 void Users::setPasswordToNull() noexcept
 {
-    _password.reset();
-    _dirtyFlag[2] = true;
+    password_.reset();
+    dirtyFlag_[2] = true;
 }
 
 const std::string &Users::getValueOfOrgName() const noexcept
 {
     const static std::string defaultValue = std::string();
-    if (_orgName)
-        return *_orgName;
+    if (orgName_)
+        return *orgName_;
     return defaultValue;
 }
 const std::shared_ptr<std::string> &Users::getOrgName() const noexcept
 {
-    return _orgName;
+    return orgName_;
 }
 void Users::setOrgName(const std::string &pOrgName) noexcept
 {
-    _orgName = std::make_shared<std::string>(pOrgName);
-    _dirtyFlag[3] = true;
+    orgName_ = std::make_shared<std::string>(pOrgName);
+    dirtyFlag_[3] = true;
 }
 void Users::setOrgName(std::string &&pOrgName) noexcept
 {
-    _orgName = std::make_shared<std::string>(std::move(pOrgName));
-    _dirtyFlag[3] = true;
+    orgName_ = std::make_shared<std::string>(std::move(pOrgName));
+    dirtyFlag_[3] = true;
 }
 
 void Users::setOrgNameToNull() noexcept
 {
-    _orgName.reset();
-    _dirtyFlag[3] = true;
+    orgName_.reset();
+    dirtyFlag_[3] = true;
 }
 
 const std::string &Users::getValueOfSignature() const noexcept
 {
     const static std::string defaultValue = std::string();
-    if (_signature)
-        return *_signature;
+    if (signature_)
+        return *signature_;
     return defaultValue;
 }
 const std::shared_ptr<std::string> &Users::getSignature() const noexcept
 {
-    return _signature;
+    return signature_;
 }
 void Users::setSignature(const std::string &pSignature) noexcept
 {
-    _signature = std::make_shared<std::string>(pSignature);
-    _dirtyFlag[4] = true;
+    signature_ = std::make_shared<std::string>(pSignature);
+    dirtyFlag_[4] = true;
 }
 void Users::setSignature(std::string &&pSignature) noexcept
 {
-    _signature = std::make_shared<std::string>(std::move(pSignature));
-    _dirtyFlag[4] = true;
+    signature_ = std::make_shared<std::string>(std::move(pSignature));
+    dirtyFlag_[4] = true;
 }
 
 void Users::setSignatureToNull() noexcept
 {
-    _signature.reset();
-    _dirtyFlag[4] = true;
+    signature_.reset();
+    dirtyFlag_[4] = true;
 }
 
 const std::string &Users::getValueOfAvatarId() const noexcept
 {
     const static std::string defaultValue = std::string();
-    if (_avatarId)
-        return *_avatarId;
+    if (avatarId_)
+        return *avatarId_;
     return defaultValue;
 }
 const std::shared_ptr<std::string> &Users::getAvatarId() const noexcept
 {
-    return _avatarId;
+    return avatarId_;
 }
 void Users::setAvatarId(const std::string &pAvatarId) noexcept
 {
-    _avatarId = std::make_shared<std::string>(pAvatarId);
-    _dirtyFlag[5] = true;
+    avatarId_ = std::make_shared<std::string>(pAvatarId);
+    dirtyFlag_[5] = true;
 }
 void Users::setAvatarId(std::string &&pAvatarId) noexcept
 {
-    _avatarId = std::make_shared<std::string>(std::move(pAvatarId));
-    _dirtyFlag[5] = true;
+    avatarId_ = std::make_shared<std::string>(std::move(pAvatarId));
+    dirtyFlag_[5] = true;
 }
 
 void Users::setAvatarIdToNull() noexcept
 {
-    _avatarId.reset();
-    _dirtyFlag[5] = true;
+    avatarId_.reset();
+    dirtyFlag_[5] = true;
 }
 
 const int32_t &Users::getValueOfId() const noexcept
 {
     const static int32_t defaultValue = int32_t();
-    if (_id)
-        return *_id;
+    if (id_)
+        return *id_;
     return defaultValue;
 }
 const std::shared_ptr<int32_t> &Users::getId() const noexcept
 {
-    return _id;
+    return id_;
 }
 const typename Users::PrimaryKeyType &Users::getPrimaryKey() const
 {
-    assert(_id);
-    return *_id;
+    assert(id_);
+    return *id_;
 }
 
 const std::string &Users::getValueOfSalt() const noexcept
 {
     const static std::string defaultValue = std::string();
-    if (_salt)
-        return *_salt;
+    if (salt_)
+        return *salt_;
     return defaultValue;
 }
 const std::shared_ptr<std::string> &Users::getSalt() const noexcept
 {
-    return _salt;
+    return salt_;
 }
 void Users::setSalt(const std::string &pSalt) noexcept
 {
-    _salt = std::make_shared<std::string>(pSalt);
-    _dirtyFlag[7] = true;
+    salt_ = std::make_shared<std::string>(pSalt);
+    dirtyFlag_[7] = true;
 }
 void Users::setSalt(std::string &&pSalt) noexcept
 {
-    _salt = std::make_shared<std::string>(std::move(pSalt));
-    _dirtyFlag[7] = true;
+    salt_ = std::make_shared<std::string>(std::move(pSalt));
+    dirtyFlag_[7] = true;
 }
 
 void Users::setSaltToNull() noexcept
 {
-    _salt.reset();
-    _dirtyFlag[7] = true;
+    salt_.reset();
+    dirtyFlag_[7] = true;
 }
 
 const bool &Users::getValueOfAdmin() const noexcept
 {
     const static bool defaultValue = bool();
-    if (_admin)
-        return *_admin;
+    if (admin_)
+        return *admin_;
     return defaultValue;
 }
 const std::shared_ptr<bool> &Users::getAdmin() const noexcept
 {
-    return _admin;
+    return admin_;
 }
 void Users::setAdmin(const bool &pAdmin) noexcept
 {
-    _admin = std::make_shared<bool>(pAdmin);
-    _dirtyFlag[8] = true;
+    admin_ = std::make_shared<bool>(pAdmin);
+    dirtyFlag_[8] = true;
 }
 
 void Users::setAdminToNull() noexcept
 {
-    _admin.reset();
-    _dirtyFlag[8] = true;
+    admin_.reset();
+    dirtyFlag_[8] = true;
 }
 
 void Users::updateId(const uint64_t id)
@@ -755,20 +755,20 @@ void Users::updateId(const uint64_t id)
 
 const std::vector<std::string> &Users::insertColumns() noexcept
 {
-    static const std::vector<std::string> _inCols = {"user_id",
-                                                     "user_name",
-                                                     "password",
-                                                     "org_name",
-                                                     "signature",
-                                                     "avatar_id",
-                                                     "salt",
-                                                     "admin"};
-    return _inCols;
+    static const std::vector<std::string> inCols = {"user_id",
+                                                    "user_name",
+                                                    "password",
+                                                    "org_name",
+                                                    "signature",
+                                                    "avatar_id",
+                                                    "salt",
+                                                    "admin"};
+    return inCols;
 }
 
 void Users::outputArgs(drogon::orm::internal::SqlBinder &binder) const
 {
-    if (_dirtyFlag[0])
+    if (dirtyFlag_[0])
     {
         if (getUserId())
         {
@@ -779,7 +779,7 @@ void Users::outputArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
-    if (_dirtyFlag[1])
+    if (dirtyFlag_[1])
     {
         if (getUserName())
         {
@@ -790,7 +790,7 @@ void Users::outputArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
-    if (_dirtyFlag[2])
+    if (dirtyFlag_[2])
     {
         if (getPassword())
         {
@@ -801,7 +801,7 @@ void Users::outputArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
-    if (_dirtyFlag[3])
+    if (dirtyFlag_[3])
     {
         if (getOrgName())
         {
@@ -812,7 +812,7 @@ void Users::outputArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
-    if (_dirtyFlag[4])
+    if (dirtyFlag_[4])
     {
         if (getSignature())
         {
@@ -823,7 +823,7 @@ void Users::outputArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
-    if (_dirtyFlag[5])
+    if (dirtyFlag_[5])
     {
         if (getAvatarId())
         {
@@ -834,7 +834,7 @@ void Users::outputArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
-    if (_dirtyFlag[7])
+    if (dirtyFlag_[7])
     {
         if (getSalt())
         {
@@ -845,7 +845,7 @@ void Users::outputArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
-    if (_dirtyFlag[8])
+    if (dirtyFlag_[8])
     {
         if (getAdmin())
         {
@@ -861,9 +861,9 @@ void Users::outputArgs(drogon::orm::internal::SqlBinder &binder) const
 const std::vector<std::string> Users::updateColumns() const
 {
     std::vector<std::string> ret;
-    for (size_t i = 0; i < sizeof(_dirtyFlag); i++)
+    for (size_t i = 0; i < sizeof(dirtyFlag_); i++)
     {
-        if (_dirtyFlag[i])
+        if (dirtyFlag_[i])
         {
             ret.push_back(getColumnName(i));
         }
@@ -873,7 +873,7 @@ const std::vector<std::string> Users::updateColumns() const
 
 void Users::updateArgs(drogon::orm::internal::SqlBinder &binder) const
 {
-    if (_dirtyFlag[0])
+    if (dirtyFlag_[0])
     {
         if (getUserId())
         {
@@ -884,7 +884,7 @@ void Users::updateArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
-    if (_dirtyFlag[1])
+    if (dirtyFlag_[1])
     {
         if (getUserName())
         {
@@ -895,7 +895,7 @@ void Users::updateArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
-    if (_dirtyFlag[2])
+    if (dirtyFlag_[2])
     {
         if (getPassword())
         {
@@ -906,7 +906,7 @@ void Users::updateArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
-    if (_dirtyFlag[3])
+    if (dirtyFlag_[3])
     {
         if (getOrgName())
         {
@@ -917,7 +917,7 @@ void Users::updateArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
-    if (_dirtyFlag[4])
+    if (dirtyFlag_[4])
     {
         if (getSignature())
         {
@@ -928,7 +928,7 @@ void Users::updateArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
-    if (_dirtyFlag[5])
+    if (dirtyFlag_[5])
     {
         if (getAvatarId())
         {
@@ -939,7 +939,7 @@ void Users::updateArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
-    if (_dirtyFlag[7])
+    if (dirtyFlag_[7])
     {
         if (getSalt())
         {
@@ -950,7 +950,7 @@ void Users::updateArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
-    if (_dirtyFlag[8])
+    if (dirtyFlag_[8])
     {
         if (getAdmin())
         {

@@ -38,19 +38,19 @@ Result makeResult(
 }  // namespace drogon
 int PgConnection::flush()
 {
-    auto ret = PQflush(_connPtr.get());
+    auto ret = PQflush(connectionPtr_.get());
     if (ret == 1)
     {
-        if (!_channel.isWriting())
+        if (!channel_.isWriting())
         {
-            _channel.enableWriting();
+            channel_.enableWriting();
         }
     }
     else if (ret == 0)
     {
-        if (_channel.isWriting())
+        if (channel_.isWriting())
         {
-            _channel.disableWriting();
+            channel_.disableWriting();
         }
     }
     return ret;
@@ -58,20 +58,21 @@ int PgConnection::flush()
 PgConnection::PgConnection(trantor::EventLoop *loop,
                            const std::string &connInfo)
     : DbConnection(loop),
-      _connPtr(std::shared_ptr<PGconn>(PQconnectStart(connInfo.c_str()),
-                                       [](PGconn *conn) { PQfinish(conn); })),
-      _channel(loop, PQsocket(_connPtr.get()))
+      connectionPtr_(
+          std::shared_ptr<PGconn>(PQconnectStart(connInfo.c_str()),
+                                  [](PGconn *conn) { PQfinish(conn); })),
+      channel_(loop, PQsocket(connectionPtr_.get()))
 {
-    PQsetnonblocking(_connPtr.get(), 1);
-    if (_channel.fd() < 0)
+    PQsetnonblocking(connectionPtr_.get(), 1);
+    if (channel_.fd() < 0)
     {
         LOG_FATAL << "Socket fd < 0, Usually this is because the number of "
                      "files opened by the program exceeds the system "
                      "limit. Please use the ulimit command to check.";
         exit(1);
     }
-    _channel.setReadCallback([=]() {
-        if (_status != ConnectStatus_Ok)
+    channel_.setReadCallback([=]() {
+        if (status_ != ConnectStatus::Ok)
         {
             pgPoll();
         }
@@ -80,19 +81,20 @@ PgConnection::PgConnection(trantor::EventLoop *loop,
             handleRead();
         }
     });
-    _channel.setWriteCallback([=]() {
-        if (_status == ConnectStatus_Ok)
+    channel_.setWriteCallback([=]() {
+        if (status_ == ConnectStatus::Ok)
         {
-            auto ret = PQflush(_connPtr.get());
+            auto ret = PQflush(connectionPtr_.get());
             if (ret == 0)
             {
-                _channel.disableWriting();
+                channel_.disableWriting();
                 return;
             }
             else if (ret < 0)
             {
-                _channel.disableWriting();
-                LOG_ERROR << "PQflush error:" << PQerrorMessage(_connPtr.get());
+                channel_.disableWriting();
+                LOG_ERROR << "PQflush error:"
+                          << PQerrorMessage(connectionPtr_.get());
                 return;
             }
         }
@@ -101,23 +103,23 @@ PgConnection::PgConnection(trantor::EventLoop *loop,
             pgPoll();
         }
     });
-    _channel.setCloseCallback([=]() { handleClosed(); });
-    _channel.setErrorCallback([=]() { handleClosed(); });
-    _channel.enableReading();
-    _channel.enableWriting();
+    channel_.setCloseCallback([=]() { handleClosed(); });
+    channel_.setErrorCallback([=]() { handleClosed(); });
+    channel_.enableReading();
+    channel_.enableWriting();
 }
 
 void PgConnection::handleClosed()
 {
-    _loop->assertInLoopThread();
-    if (_status == ConnectStatus_Bad)
+    loop_->assertInLoopThread();
+    if (status_ == ConnectStatus::Bad)
         return;
-    _status = ConnectStatus_Bad;
-    _channel.disableAll();
-    _channel.remove();
-    assert(_closeCb);
+    status_ = ConnectStatus::Bad;
+    channel_.disableAll();
+    channel_.remove();
+    assert(closeCallback_);
     auto thisPtr = shared_from_this();
-    _closeCb(thisPtr);
+    closeCallback_(thisPtr);
 }
 
 void PgConnection::disconnect()
@@ -125,11 +127,11 @@ void PgConnection::disconnect()
     std::promise<int> pro;
     auto f = pro.get_future();
     auto thisPtr = shared_from_this();
-    _loop->runInLoop([thisPtr, &pro]() {
-        thisPtr->_status = ConnectStatus_Bad;
-        thisPtr->_channel.disableAll();
-        thisPtr->_channel.remove();
-        thisPtr->_connPtr.reset();
+    loop_->runInLoop([thisPtr, &pro]() {
+        thisPtr->status_ = ConnectStatus::Bad;
+        thisPtr->channel_.disableAll();
+        thisPtr->channel_.remove();
+        thisPtr->connectionPtr_.reset();
         pro.set_value(1);
     });
     f.get();
@@ -137,41 +139,41 @@ void PgConnection::disconnect()
 
 void PgConnection::pgPoll()
 {
-    _loop->assertInLoopThread();
-    auto connStatus = PQconnectPoll(_connPtr.get());
+    loop_->assertInLoopThread();
+    auto connStatus = PQconnectPoll(connectionPtr_.get());
 
     switch (connStatus)
     {
         case PGRES_POLLING_FAILED:
             LOG_ERROR << "!!!Pg connection failed: "
-                      << PQerrorMessage(_connPtr.get());
-            if (_status == ConnectStatus_None)
+                      << PQerrorMessage(connectionPtr_.get());
+            if (status_ == ConnectStatus::None)
             {
                 handleClosed();
             }
             break;
         case PGRES_POLLING_WRITING:
-            if (!_channel.isWriting())
-                _channel.enableWriting();
+            if (!channel_.isWriting())
+                channel_.enableWriting();
             break;
         case PGRES_POLLING_READING:
-            if (!_channel.isReading())
-                _channel.enableReading();
-            if (_channel.isWriting())
-                _channel.disableWriting();
+            if (!channel_.isReading())
+                channel_.enableReading();
+            if (channel_.isWriting())
+                channel_.disableWriting();
             break;
 
         case PGRES_POLLING_OK:
-            if (_status != ConnectStatus_Ok)
+            if (status_ != ConnectStatus::Ok)
             {
-                _status = ConnectStatus_Ok;
-                assert(_okCb);
-                _okCb(shared_from_this());
+                status_ = ConnectStatus::Ok;
+                assert(okCallback_);
+                okCallback_(shared_from_this());
             }
-            if (!_channel.isReading())
-                _channel.enableReading();
-            if (_channel.isWriting())
-                _channel.disableWriting();
+            if (!channel_.isReading())
+                channel_.enableReading();
+            if (channel_.isWriting())
+                channel_.disableWriting();
             break;
         case PGRES_POLLING_ACTIVE:
             // unused!
@@ -191,30 +193,31 @@ void PgConnection::execSqlInLoop(
     std::function<void(const std::exception_ptr &)> &&exceptCallback)
 {
     LOG_TRACE << sql;
-    _loop->assertInLoopThread();
+    loop_->assertInLoopThread();
     assert(paraNum == parameters.size());
     assert(paraNum == length.size());
     assert(paraNum == format.size());
     assert(rcb);
-    assert(!_isWorking);
+    assert(!isWorking_);
     assert(!sql.empty());
-    _sql = std::move(sql);
-    _cb = std::move(rcb);
-    _isWorking = true;
-    _exceptCb = std::move(exceptCallback);
+    sql_ = std::move(sql);
+    callback_ = std::move(rcb);
+    isWorking_ = true;
+    exceptionCallback_ = std::move(exceptCallback);
     if (paraNum == 0)
     {
-        _isRreparingStatement = false;
-        if (PQsendQuery(_connPtr.get(), _sql.c_str()) == 0)
+        isRreparingStatement_ = false;
+        if (PQsendQuery(connectionPtr_.get(), sql_.c_str()) == 0)
         {
-            LOG_ERROR << "send query error: " << PQerrorMessage(_connPtr.get());
-            if (_isWorking)
+            LOG_ERROR << "send query error: "
+                      << PQerrorMessage(connectionPtr_.get());
+            if (isWorking_)
             {
-                _isWorking = false;
-                _isRreparingStatement = false;
+                isWorking_ = false;
+                isRreparingStatement_ = false;
                 handleFatalError();
-                _cb = nullptr;
-                _idleCb();
+                callback_ = nullptr;
+                idleCb_();
             }
             return;
         }
@@ -222,11 +225,11 @@ void PgConnection::execSqlInLoop(
     }
     else
     {
-        auto iter = _preparedStatementMap.find(_sql);
-        if (iter != _preparedStatementMap.end())
+        auto iter = preparedStatementsMap_.find(sql_);
+        if (iter != preparedStatementsMap_.end())
         {
-            _isRreparingStatement = false;
-            if (PQsendQueryPrepared(_connPtr.get(),
+            isRreparingStatement_ = false;
+            if (PQsendQueryPrepared(connectionPtr_.get(),
                                     iter->second.c_str(),
                                     paraNum,
                                     parameters.data(),
@@ -235,43 +238,43 @@ void PgConnection::execSqlInLoop(
                                     0) == 0)
             {
                 LOG_ERROR << "send query error: "
-                          << PQerrorMessage(_connPtr.get());
-                if (_isWorking)
+                          << PQerrorMessage(connectionPtr_.get());
+                if (isWorking_)
                 {
-                    _isWorking = false;
-                    _isRreparingStatement = false;
+                    isWorking_ = false;
+                    isRreparingStatement_ = false;
                     handleFatalError();
-                    _cb = nullptr;
-                    _idleCb();
+                    callback_ = nullptr;
+                    idleCb_();
                 }
                 return;
             }
         }
         else
         {
-            _isRreparingStatement = true;
-            _statementName = utils::getUuid();
-            if (PQsendPrepare(_connPtr.get(),
-                              _statementName.c_str(),
-                              _sql.c_str(),
+            isRreparingStatement_ = true;
+            statementName_ = utils::getUuid();
+            if (PQsendPrepare(connectionPtr_.get(),
+                              statementName_.c_str(),
+                              sql_.c_str(),
                               paraNum,
                               NULL) == 0)
             {
                 LOG_ERROR << "send query error: "
-                          << PQerrorMessage(_connPtr.get());
-                if (_isWorking)
+                          << PQerrorMessage(connectionPtr_.get());
+                if (isWorking_)
                 {
-                    _isWorking = false;
+                    isWorking_ = false;
                     handleFatalError();
-                    _cb = nullptr;
-                    _idleCb();
+                    callback_ = nullptr;
+                    idleCb_();
                 }
                 return;
             }
-            _paraNum = paraNum;
-            _parameters = std::move(parameters);
-            _length = std::move(length);
-            _format = std::move(format);
+            parametersNumber_ = paraNum;
+            parameters_ = std::move(parameters);
+            lengths_ = std::move(length);
+            formats_ = std::move(format);
         }
         flush();
     }
@@ -279,88 +282,89 @@ void PgConnection::execSqlInLoop(
 
 void PgConnection::handleRead()
 {
-    _loop->assertInLoopThread();
+    loop_->assertInLoopThread();
     std::shared_ptr<PGresult> res;
 
-    if (!PQconsumeInput(_connPtr.get()))
+    if (!PQconsumeInput(connectionPtr_.get()))
     {
         LOG_ERROR << "Failed to consume pg input:"
-                  << PQerrorMessage(_connPtr.get());
-        if (_isWorking)
+                  << PQerrorMessage(connectionPtr_.get());
+        if (isWorking_)
         {
-            _isWorking = false;
+            isWorking_ = false;
             handleFatalError();
-            _cb = nullptr;
+            callback_ = nullptr;
         }
         handleClosed();
         return;
     }
-    if (PQisBusy(_connPtr.get()))
+    if (PQisBusy(connectionPtr_.get()))
     {
         // need read more data from socket;
         return;
     }
-    while ((res = std::shared_ptr<PGresult>(PQgetResult(_connPtr.get()),
+    while ((res = std::shared_ptr<PGresult>(PQgetResult(connectionPtr_.get()),
                                             [](PGresult *p) { PQclear(p); })))
     {
         auto type = PQresultStatus(res.get());
         if (type == PGRES_BAD_RESPONSE || type == PGRES_FATAL_ERROR)
         {
-            LOG_WARN << PQerrorMessage(_connPtr.get());
-            if (_isWorking)
+            LOG_WARN << PQerrorMessage(connectionPtr_.get());
+            if (isWorking_)
             {
                 handleFatalError();
-                _cb = nullptr;
+                callback_ = nullptr;
             }
         }
         else
         {
-            if (_isWorking)
+            if (isWorking_)
             {
-                if (!_isRreparingStatement)
+                if (!isRreparingStatement_)
                 {
-                    auto r = makeResult(res, _sql);
-                    _cb(r);
-                    _cb = nullptr;
-                    _exceptCb = nullptr;
+                    auto r = makeResult(res, sql_);
+                    callback_(r);
+                    callback_ = nullptr;
+                    exceptionCallback_ = nullptr;
                 }
             }
         }
     }
-    if (_isWorking)
+    if (isWorking_)
     {
-        if (_isRreparingStatement && _cb)
+        if (isRreparingStatement_ && callback_)
         {
             doAfterPreparing();
         }
         else
         {
-            _isWorking = false;
-            _isRreparingStatement = false;
-            _idleCb();
+            isWorking_ = false;
+            isRreparingStatement_ = false;
+            idleCb_();
         }
     }
 }
 
 void PgConnection::doAfterPreparing()
 {
-    _isRreparingStatement = false;
-    _preparedStatementMap[_sql] = _statementName;
-    if (PQsendQueryPrepared(_connPtr.get(),
-                            _statementName.c_str(),
-                            _paraNum,
-                            _parameters.data(),
-                            _length.data(),
-                            _format.data(),
+    isRreparingStatement_ = false;
+    preparedStatementsMap_[sql_] = statementName_;
+    if (PQsendQueryPrepared(connectionPtr_.get(),
+                            statementName_.c_str(),
+                            parametersNumber_,
+                            parameters_.data(),
+                            lengths_.data(),
+                            formats_.data(),
                             0) == 0)
     {
-        LOG_ERROR << "send query error: " << PQerrorMessage(_connPtr.get());
-        if (_isWorking)
+        LOG_ERROR << "send query error: "
+                  << PQerrorMessage(connectionPtr_.get());
+        if (isWorking_)
         {
-            _isWorking = false;
+            isWorking_ = false;
             handleFatalError();
-            _cb = nullptr;
-            _idleCb();
+            callback_ = nullptr;
+            idleCb_();
         }
         return;
     }
@@ -371,13 +375,13 @@ void PgConnection::handleFatalError()
 {
     try
     {
-        throw Failure(PQerrorMessage(_connPtr.get()));
+        throw Failure(PQerrorMessage(connectionPtr_.get()));
     }
     catch (...)
     {
         auto exceptPtr = std::current_exception();
-        _exceptCb(exceptPtr);
-        _exceptCb = nullptr;
+        exceptionCallback_(exceptPtr);
+        exceptionCallback_ = nullptr;
     }
 }
 

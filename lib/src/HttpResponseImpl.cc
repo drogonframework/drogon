@@ -68,7 +68,7 @@ HttpResponsePtr HttpResponse::newHttpJsonResponse(Json::Value &&data)
 
 void HttpResponseImpl::generateBodyFromJson()
 {
-    if (!_jsonPtr)
+    if (!jsonPtr_)
     {
         return;
     }
@@ -78,7 +78,7 @@ void HttpResponseImpl::generateBodyFromJson()
         builder["commentStyle"] = "None";
         builder["indentation"] = "";
     });
-    setBody(writeString(builder, *_jsonPtr));
+    setBody(writeString(builder, *jsonPtr_));
 }
 
 HttpResponsePtr HttpResponse::newNotFoundResponse()
@@ -208,25 +208,25 @@ void HttpResponseImpl::makeHeaderString(
 {
     char buf[128];
     assert(headerStringPtr);
-    auto len = snprintf(buf, sizeof buf, "HTTP/1.1 %d ", _statusCode);
+    auto len = snprintf(buf, sizeof buf, "HTTP/1.1 %d ", statusCode_);
     headerStringPtr->append(buf, len);
-    if (!_statusMessage.empty())
-        headerStringPtr->append(_statusMessage.data(), _statusMessage.length());
+    if (!statusMessage_.empty())
+        headerStringPtr->append(statusMessage_.data(), statusMessage_.length());
     headerStringPtr->append("\r\n");
     generateBodyFromJson();
-    if (_sendfileName.empty())
+    if (sendfileName_.empty())
     {
         long unsigned int bodyLength =
-            _bodyPtr ? _bodyPtr->length()
-                     : (_bodyViewPtr ? _bodyViewPtr->length() : 0);
+            bodyPtr_ ? bodyPtr_->length()
+                     : (bodyViewPtr_ ? bodyViewPtr_->length() : 0);
         len = snprintf(buf, sizeof buf, "Content-Length: %lu\r\n", bodyLength);
     }
     else
     {
         struct stat filestat;
-        if (stat(_sendfileName.c_str(), &filestat) < 0)
+        if (stat(sendfileName_.c_str(), &filestat) < 0)
         {
-            LOG_SYSERR << _sendfileName << " stat error";
+            LOG_SYSERR << sendfileName_ << " stat error";
             return;
         }
         len = snprintf(buf,
@@ -236,9 +236,9 @@ void HttpResponseImpl::makeHeaderString(
     }
 
     headerStringPtr->append(buf, len);
-    if (_headers.find("Connection") == _headers.end())
+    if (headers_.find("Connection") == headers_.end())
     {
-        if (_closeConnection)
+        if (closeConnection_)
         {
             headerStringPtr->append("Connection: close\r\n");
         }
@@ -247,9 +247,9 @@ void HttpResponseImpl::makeHeaderString(
             // output->append("Connection: Keep-Alive\r\n");
         }
     }
-    headerStringPtr->append(_contentTypeString.data(),
-                            _contentTypeString.length());
-    for (auto it = _headers.begin(); it != _headers.end(); ++it)
+    headerStringPtr->append(contentTypeString_.data(),
+                            contentTypeString_.length());
+    for (auto it = headers_.begin(); it != headers_.end(); ++it)
     {
         headerStringPtr->append(it->first);
         headerStringPtr->append(": ");
@@ -264,27 +264,27 @@ void HttpResponseImpl::makeHeaderString(
 }
 void HttpResponseImpl::renderToBuffer(trantor::MsgBuffer &buffer)
 {
-    if (_expriedTime >= 0)
+    if (expriedTime_ >= 0)
     {
         auto strPtr = renderToString();
         buffer.append(strPtr->data(), strPtr->length());
         return;
     }
 
-    if (!_fullHeaderString)
+    if (!fullHeaderString_)
     {
         char buf[128];
-        auto len = snprintf(buf, sizeof buf, "HTTP/1.1 %d ", _statusCode);
+        auto len = snprintf(buf, sizeof buf, "HTTP/1.1 %d ", statusCode_);
         buffer.append(buf, len);
-        if (!_statusMessage.empty())
-            buffer.append(_statusMessage.data(), _statusMessage.length());
+        if (!statusMessage_.empty())
+            buffer.append(statusMessage_.data(), statusMessage_.length());
         buffer.append("\r\n");
         generateBodyFromJson();
-        if (_sendfileName.empty())
+        if (sendfileName_.empty())
         {
             long unsigned int bodyLength =
-                _bodyPtr ? _bodyPtr->length()
-                         : (_bodyViewPtr ? _bodyViewPtr->length() : 0);
+                bodyPtr_ ? bodyPtr_->length()
+                         : (bodyViewPtr_ ? bodyViewPtr_->length() : 0);
             len = snprintf(buf,
                            sizeof buf,
                            "Content-Length: %lu\r\n",
@@ -293,9 +293,9 @@ void HttpResponseImpl::renderToBuffer(trantor::MsgBuffer &buffer)
         else
         {
             struct stat filestat;
-            if (stat(_sendfileName.c_str(), &filestat) < 0)
+            if (stat(sendfileName_.c_str(), &filestat) < 0)
             {
-                LOG_SYSERR << _sendfileName << " stat error";
+                LOG_SYSERR << sendfileName_ << " stat error";
                 return;
             }
             len =
@@ -306,9 +306,9 @@ void HttpResponseImpl::renderToBuffer(trantor::MsgBuffer &buffer)
         }
 
         buffer.append(buf, len);
-        if (_headers.find("Connection") == _headers.end())
+        if (headers_.find("Connection") == headers_.end())
         {
-            if (_closeConnection)
+            if (closeConnection_)
             {
                 buffer.append("Connection: close\r\n");
             }
@@ -317,8 +317,8 @@ void HttpResponseImpl::renderToBuffer(trantor::MsgBuffer &buffer)
                 // output->append("Connection: Keep-Alive\r\n");
             }
         }
-        buffer.append(_contentTypeString.data(), _contentTypeString.length());
-        for (auto it = _headers.begin(); it != _headers.end(); ++it)
+        buffer.append(contentTypeString_.data(), contentTypeString_.length());
+        for (auto it = headers_.begin(); it != headers_.end(); ++it)
         {
             buffer.append(it->first);
             buffer.append(": ");
@@ -333,13 +333,13 @@ void HttpResponseImpl::renderToBuffer(trantor::MsgBuffer &buffer)
     }
     else
     {
-        buffer.append(*_fullHeaderString);
+        buffer.append(*fullHeaderString_);
     }
 
     // output cookies
-    if (_cookies.size() > 0)
+    if (cookies_.size() > 0)
     {
-        for (auto it = _cookies.begin(); it != _cookies.end(); ++it)
+        for (auto it = cookies_.begin(); it != cookies_.end(); ++it)
         {
             buffer.append(it->second.cookieString());
         }
@@ -357,61 +357,61 @@ void HttpResponseImpl::renderToBuffer(trantor::MsgBuffer &buffer)
     {
         buffer.append("\r\n");
     }
-    if (_bodyPtr)
-        buffer.append(*_bodyPtr);
-    else if (_bodyViewPtr)
-        buffer.append(_bodyViewPtr->data(), _bodyViewPtr->length());
+    if (bodyPtr_)
+        buffer.append(*bodyPtr_);
+    else if (bodyViewPtr_)
+        buffer.append(bodyViewPtr_->data(), bodyViewPtr_->length());
 }
 std::shared_ptr<std::string> HttpResponseImpl::renderToString()
 {
-    if (_expriedTime >= 0)
+    if (expriedTime_ >= 0)
     {
         if (drogon::HttpAppFrameworkImpl::instance().sendDateHeader())
         {
-            if (_datePos != std::string::npos)
+            if (datePos_ != std::string::npos)
             {
                 auto now = trantor::Date::now();
                 bool isDateChanged =
                     ((now.microSecondsSinceEpoch() / MICRO_SECONDS_PRE_SEC) !=
-                     _httpStringDate);
-                assert(_httpString);
+                     httpStringDate_);
+                assert(httpString_);
                 if (isDateChanged)
                 {
-                    _httpStringDate =
+                    httpStringDate_ =
                         now.microSecondsSinceEpoch() / MICRO_SECONDS_PRE_SEC;
                     auto newDate = utils::getHttpFullDate(now);
 
-                    _httpString = std::make_shared<std::string>(*_httpString);
-                    memcpy((void *)&(*_httpString)[_datePos],
+                    httpString_ = std::make_shared<std::string>(*httpString_);
+                    memcpy((void *)&(*httpString_)[datePos_],
                            newDate,
                            httpFullDateStringLength);
-                    return _httpString;
+                    return httpString_;
                 }
 
-                return _httpString;
+                return httpString_;
             }
         }
         else
         {
-            if (_httpString)
-                return _httpString;
+            if (httpString_)
+                return httpString_;
         }
     }
     auto httpString = std::make_shared<std::string>();
     httpString->reserve(256);
-    if (!_fullHeaderString)
+    if (!fullHeaderString_)
     {
         makeHeaderString(httpString);
     }
     else
     {
-        httpString->append(*_fullHeaderString);
+        httpString->append(*fullHeaderString_);
     }
 
     // output cookies
-    if (_cookies.size() > 0)
+    if (cookies_.size() > 0)
     {
-        for (auto it = _cookies.begin(); it != _cookies.end(); ++it)
+        for (auto it = cookies_.begin(); it != cookies_.end(); ++it)
         {
             httpString->append(it->second.cookieString());
         }
@@ -425,7 +425,7 @@ std::shared_ptr<std::string> HttpResponseImpl::renderToString()
         httpString->append(utils::getHttpFullDate(trantor::Date::date()),
                            httpFullDateStringLength);
         httpString->append("\r\n\r\n");
-        _datePos = datePos;
+        datePos_ = datePos;
     }
     else
     {
@@ -433,13 +433,13 @@ std::shared_ptr<std::string> HttpResponseImpl::renderToString()
     }
 
     LOG_TRACE << "reponse(no body):" << httpString->c_str();
-    if (_bodyPtr)
-        httpString->append(*_bodyPtr);
-    else if (_bodyViewPtr)
-        httpString->append(_bodyViewPtr->data(), _bodyViewPtr->length());
-    if (_expriedTime >= 0)
+    if (bodyPtr_)
+        httpString->append(*bodyPtr_);
+    else if (bodyViewPtr_)
+        httpString->append(bodyViewPtr_->data(), bodyViewPtr_->length());
+    if (expriedTime_ >= 0)
     {
-        _httpString = httpString;
+        httpString_ = httpString;
     }
     return httpString;
 }
@@ -448,19 +448,19 @@ std::shared_ptr<std::string> HttpResponseImpl::renderHeaderForHeadMethod()
 {
     auto httpString = std::make_shared<std::string>();
     httpString->reserve(256);
-    if (!_fullHeaderString)
+    if (!fullHeaderString_)
     {
         makeHeaderString(httpString);
     }
     else
     {
-        httpString->append(*_fullHeaderString);
+        httpString->append(*fullHeaderString_);
     }
 
     // output cookies
-    if (_cookies.size() > 0)
+    if (cookies_.size() > 0)
     {
-        for (auto it = _cookies.begin(); it != _cookies.end(); ++it)
+        for (auto it = cookies_.begin(); it != cookies_.end(); ++it)
         {
             httpString->append(it->second.cookieString());
         }
@@ -486,7 +486,7 @@ void HttpResponseImpl::addHeader(const char *start,
                                  const char *colon,
                                  const char *end)
 {
-    _fullHeaderString.reset();
+    fullHeaderString_.reset();
     std::string field(start, colon);
     transform(field.begin(), field.end(), field.begin(), ::tolower);
     ++colon;
@@ -506,7 +506,7 @@ void HttpResponseImpl::addHeader(const char *start,
         auto values = utils::splitString(value, ";");
         Cookie cookie;
         cookie.setHttpOnly(false);
-        for (size_t i = 0; i < values.size(); i++)
+        for (size_t i = 0; i < values.size(); ++i)
         {
             std::string &coo = values[i];
             std::string cookie_name;
@@ -529,7 +529,7 @@ void HttpResponseImpl::addHeader(const char *start,
             {
                 std::string::size_type cpos = 0;
                 while (cpos < coo.length() && isspace(coo[cpos]))
-                    cpos++;
+                    ++cpos;
                 cookie_name = coo.substr(cpos);
             }
             if (i == 0)
@@ -567,50 +567,50 @@ void HttpResponseImpl::addHeader(const char *start,
         }
         if (!cookie.key().empty())
         {
-            _cookies[cookie.key()] = cookie;
+            cookies_[cookie.key()] = cookie;
         }
     }
     else
     {
-        _headers[std::move(field)] = std::move(value);
+        headers_[std::move(field)] = std::move(value);
     }
 }
 
 void HttpResponseImpl::swap(HttpResponseImpl &that) noexcept
 {
     using std::swap;
-    _headers.swap(that._headers);
-    _cookies.swap(that._cookies);
-    swap(_statusCode, that._statusCode);
-    swap(_v, that._v);
-    swap(_statusMessage, that._statusMessage);
-    swap(_closeConnection, that._closeConnection);
-    _bodyPtr.swap(that._bodyPtr);
-    _bodyViewPtr.swap(that._bodyViewPtr);
-    swap(_leftBodyLength, that._leftBodyLength);
-    swap(_currentChunkLength, that._currentChunkLength);
-    swap(_contentType, that._contentType);
-    _jsonPtr.swap(that._jsonPtr);
-    _fullHeaderString.swap(that._fullHeaderString);
-    _httpString.swap(that._httpString);
-    swap(_datePos, that._datePos);
+    headers_.swap(that.headers_);
+    cookies_.swap(that.cookies_);
+    swap(statusCode_, that.statusCode_);
+    swap(version_, that.version_);
+    swap(statusMessage_, that.statusMessage_);
+    swap(closeConnection_, that.closeConnection_);
+    bodyPtr_.swap(that.bodyPtr_);
+    bodyViewPtr_.swap(that.bodyViewPtr_);
+    swap(leftBodyLength_, that.leftBodyLength_);
+    swap(currentChunkLength_, that.currentChunkLength_);
+    swap(contentType_, that.contentType_);
+    jsonPtr_.swap(that.jsonPtr_);
+    fullHeaderString_.swap(that.fullHeaderString_);
+    httpString_.swap(that.httpString_);
+    swap(datePos_, that.datePos_);
 }
 
 void HttpResponseImpl::clear()
 {
-    _statusCode = kUnknown;
-    _v = kHttp11;
-    _statusMessage = string_view{};
-    _fullHeaderString.reset();
-    _headers.clear();
-    _cookies.clear();
-    _bodyPtr.reset();
-    _bodyViewPtr.reset();
-    _leftBodyLength = 0;
-    _currentChunkLength = 0;
-    _jsonPtr.reset();
-    _expriedTime = -1;
-    _datePos = std::string::npos;
+    statusCode_ = kUnknown;
+    version_ = kHttp11;
+    statusMessage_ = string_view{};
+    fullHeaderString_.reset();
+    headers_.clear();
+    cookies_.clear();
+    bodyPtr_.reset();
+    bodyViewPtr_.reset();
+    leftBodyLength_ = 0;
+    currentChunkLength_ = 0;
+    jsonPtr_.reset();
+    expriedTime_ = -1;
+    datePos_ = std::string::npos;
 }
 
 void HttpResponseImpl::parseJson() const
@@ -618,30 +618,30 @@ void HttpResponseImpl::parseJson() const
     static std::once_flag once;
     static Json::CharReaderBuilder builder;
     std::call_once(once, []() { builder["collectComments"] = false; });
-    _jsonPtr = std::make_shared<Json::Value>();
+    jsonPtr_ = std::make_shared<Json::Value>();
     JSONCPP_STRING errs;
     std::unique_ptr<Json::CharReader> reader(builder.newCharReader());
-    if (_bodyPtr)
+    if (bodyPtr_)
     {
-        if (!reader->parse(_bodyPtr->data(),
-                           _bodyPtr->data() + _bodyPtr->size(),
-                           _jsonPtr.get(),
+        if (!reader->parse(bodyPtr_->data(),
+                           bodyPtr_->data() + bodyPtr_->size(),
+                           jsonPtr_.get(),
                            &errs))
         {
             LOG_ERROR << errs;
-            LOG_ERROR << "body: " << *_bodyPtr;
-            _jsonPtr.reset();
+            LOG_ERROR << "body: " << *bodyPtr_;
+            jsonPtr_.reset();
         }
     }
-    else if (_bodyViewPtr)
+    else if (bodyViewPtr_)
     {
-        if (!reader->parse(_bodyViewPtr->data(),
-                           _bodyViewPtr->data() + _bodyViewPtr->size(),
-                           _jsonPtr.get(),
+        if (!reader->parse(bodyViewPtr_->data(),
+                           bodyViewPtr_->data() + bodyViewPtr_->size(),
+                           jsonPtr_.get(),
                            &errs))
         {
             LOG_ERROR << errs;
-            _jsonPtr.reset();
+            jsonPtr_.reset();
         }
     }
 }

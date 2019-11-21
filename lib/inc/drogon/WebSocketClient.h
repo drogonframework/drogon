@@ -26,10 +26,9 @@
 namespace drogon
 {
 class WebSocketClient;
-typedef std::shared_ptr<WebSocketClient> WebSocketClientPtr;
-typedef std::function<
-    void(ReqResult, const HttpResponsePtr &, const WebSocketClientPtr &)>
-    WebSocketRequestCallback;
+using WebSocketClientPtr = std::shared_ptr<WebSocketClient>;
+using WebSocketRequestCallback = std::function<
+    void(ReqResult, const HttpResponsePtr &, const WebSocketClientPtr &)>;
 
 /**
  * @brief WebSocket client abstract class

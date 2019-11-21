@@ -24,17 +24,17 @@ class HttpFileUploadRequest : public HttpRequestImpl
   public:
     const std::string &boundary() const
     {
-        return _boundary;
+        return boundary_;
     }
     const std::vector<UploadFile> &files() const
     {
-        return _files;
+        return files_;
     }
     explicit HttpFileUploadRequest(const std::vector<UploadFile> &files);
 
   private:
-    std::string _boundary;
-    std::vector<UploadFile> _files;
+    std::string boundary_;
+    std::vector<UploadFile> files_;
 };
 
 }  // namespace drogon

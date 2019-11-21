@@ -88,7 +88,7 @@ void create_model::createModelClassFromPG(
     data["tableName"] = toLower(tableName);
     data["hasPrimaryKey"] = (int)0;
     data["primaryKeyName"] = "";
-    data["dbName"] = _dbname;
+    data["dbName"] = dbname_;
     data["rdbms"] = std::string("postgresql");
     data["relationships"] = relationships;
     if (schema != "public")
@@ -110,83 +110,81 @@ void create_model::createModelClassFromPG(
                           << std::endl;
                 return;
             }
-            for (size_t i = 0; i < r.size(); i++)
+            for (size_t i = 0; i < r.size(); ++i)
             {
                 auto row = r[i];
                 ColumnInfo info;
-                info._index = i;
-                info._dbType = "pg";
-                info._colName = row["column_name"].as<std::string>();
-                info._colTypeName = nameTransform(info._colName, true);
-                info._colValName = nameTransform(info._colName, false);
+                info.index_ = i;
+                info.dbType_ = "pg";
+                info.colName_ = row["column_name"].as<std::string>();
+                info.colTypeName_ = nameTransform(info.colName_, true);
+                info.colValName_ = nameTransform(info.colName_, false);
                 auto isNullAble = row["is_nullable"].as<std::string>();
-
-                info._notNull = isNullAble == "YES" ? false : true;
+                info.notNull_ = isNullAble == "YES" ? false : true;
                 auto type = row["data_type"].as<std::string>();
-                info._colDatabaseType = type;
+                info.colDatabaseType_ = type;
                 if (type == "smallint")
                 {
-                    info._colType = "short";
-                    info._colLength = 2;
+                    info.colType_ = "short";
+                    info.colLength_ = 2;
                 }
                 else if (type == "integer")
                 {
-                    info._colType = "int32_t";
-                    info._colLength = 4;
+                    info.colType_ = "int32_t";
+                    info.colLength_ = 4;
                 }
                 else if (type == "bigint" ||
                          type == "numeric")  /// TODO:Use int64 to represent
                                              /// numeric type?
                 {
-                    info._colType = "int64_t";
-                    info._colLength = 8;
+                    info.colType_ = "int64_t";
+                    info.colLength_ = 8;
                 }
                 else if (type == "real")
                 {
-                    info._colType = "float";
-                    info._colLength = sizeof(float);
+                    info.colType_ = "float";
+                    info.colLength_ = sizeof(float);
                 }
                 else if (type == "double precision")
                 {
-                    info._colType = "double";
-                    info._colLength = sizeof(double);
+                    info.colType_ = "double";
+                    info.colLength_ = sizeof(double);
                 }
                 else if (type == "character varying")
                 {
-                    info._colType = "std::string";
+                    info.colType_ = "std::string";
                     if (!row["character_maximum_length"].isNull())
-                        info._colLength =
+                        info.colLength_ =
                             row["character_maximum_length"].as<ssize_t>();
                 }
                 else if (type == "boolean")
                 {
-                    info._colType = "bool";
-                    info._colLength = 1;
+                    info.colType_ = "bool";
+                    info.colLength_ = 1;
                 }
                 else if (type == "date")
                 {
-                    info._colType = "::trantor::Date";
+                    info.colType_ = "::trantor::Date";
                 }
                 else if (type.find("timestamp") != std::string::npos)
                 {
-                    info._colType = "::trantor::Date";
+                    info.colType_ = "::trantor::Date";
                 }
                 else if (type == "bytea")
                 {
-                    info._colType = "std::vector<char>";
+                    info.colType_ = "std::vector<char>";
                 }
                 else
                 {
-                    info._colType = "std::string";
+                    info.colType_ = "std::string";
                 }
                 auto defaultVal = row["column_default"].as<std::string>();
-
                 if (!defaultVal.empty())
                 {
-                    info._hasDefaultVal = true;
+                    info.hasDefaultVal_ = true;
                     if (defaultVal.find("nextval(") == 0)
                     {
-                        info._isAutoVal = true;
+                        info.isAutoVal_ = true;
                     }
                 }
                 cols.push_back(std::move(info));
@@ -196,7 +194,6 @@ void create_model::createModelClassFromPG(
             std::cerr << e.base().what() << std::endl;
             exit(1);
         };
-
     size_t pkNumber = 0;
     *client << "SELECT \
                 pg_constraint.conname AS pk_name,\
@@ -212,8 +209,6 @@ void create_model::createModelClassFromPG(
             const std::vector<std::shared_ptr<short>> &pk) {
             if (!isNull)
             {
-                // std::cout << tableName << " Primary key = " << pk.size() <<
-                // std::endl;
                 pkNumber = pk.size();
             }
         } >>
@@ -242,10 +237,10 @@ void create_model::createModelClassFromPG(
                 data["primaryKeyName"] = colName;
                 for (auto &col : cols)
                 {
-                    if (col._colName == colName)
+                    if (col.colName_ == colName)
                     {
-                        col._isPrimaryKey = true;
-                        data["primaryKeyType"] = col._colType;
+                        col.isPrimaryKey_ = true;
+                        data["primaryKeyType"] = col.colType_;
                     }
                 }
             } >>
@@ -257,7 +252,7 @@ void create_model::createModelClassFromPG(
     else if (pkNumber > 1)
     {
         std::vector<std::string> pkNames, pkTypes;
-        for (size_t i = 1; i <= pkNumber; i++)
+        for (size_t i = 1; i <= pkNumber; ++i)
         {
             *client << "SELECT \
                 pg_attribute.attname AS colname,\
@@ -273,14 +268,13 @@ void create_model::createModelClassFromPG(
                 [&](bool isNull, std::string colName, const std::string &type) {
                     if (isNull)
                         return;
-                    // std::cout << "primary key name=" << colName << std::endl;
                     pkNames.push_back(colName);
                     for (auto &col : cols)
                     {
-                        if (col._colName == colName)
+                        if (col.colName_ == colName)
                         {
-                            col._isPrimaryKey = true;
-                            pkTypes.push_back(col._colType);
+                            col.isPrimaryKey_ = true;
+                            pkTypes.push_back(col.colType_);
                         }
                     }
                 } >>
@@ -357,7 +351,7 @@ void create_model::createModelClassFromMysql(
     data["tableName"] = toLower(tableName);
     data["hasPrimaryKey"] = (int)0;
     data["primaryKeyName"] = "";
-    data["dbName"] = _dbname;
+    data["dbName"] = dbname_;
     data["rdbms"] = std::string("mysql");
     data["relationships"] = relationships;
     std::vector<ColumnInfo> cols;
@@ -373,83 +367,83 @@ void create_model::createModelClassFromMysql(
             if (!isNull)
             {
                 ColumnInfo info;
-                info._index = i;
-                info._dbType = "mysql";
-                info._colName = field;
-                info._colTypeName = nameTransform(info._colName, true);
-                info._colValName = nameTransform(info._colName, false);
-                info._notNull = isNullAble == "YES" ? false : true;
-                info._colDatabaseType = type;
-                info._isPrimaryKey = key == "PRI" ? true : false;
+                info.index_ = i;
+                info.dbType_ = "mysql";
+                info.colName_ = field;
+                info.colTypeName_ = nameTransform(info.colName_, true);
+                info.colValName_ = nameTransform(info.colName_, false);
+                info.notNull_ = isNullAble == "YES" ? false : true;
+                info.colDatabaseType_ = type;
+                info.isPrimaryKey_ = key == "PRI" ? true : false;
                 if (type.find("tinyint") == 0)
                 {
-                    info._colType = "int8_t";
-                    info._colLength = 1;
+                    info.colType_ = "int8_t";
+                    info.colLength_ = 1;
                 }
                 else if (type.find("smallint") == 0)
                 {
-                    info._colType = "int16_t";
-                    info._colLength = 2;
+                    info.colType_ = "int16_t";
+                    info.colLength_ = 2;
                 }
                 else if (type.find("int") == 0)
                 {
-                    info._colType = "int32_t";
-                    info._colLength = 4;
+                    info.colType_ = "int32_t";
+                    info.colLength_ = 4;
                 }
                 else if (type.find("bigint") == 0)
                 {
-                    info._colType = "int64_t";
-                    info._colLength = 8;
+                    info.colType_ = "int64_t";
+                    info.colLength_ = 8;
                 }
                 else if (type.find("float") == 0)
                 {
-                    info._colType = "float";
-                    info._colLength = sizeof(float);
+                    info.colType_ = "float";
+                    info.colLength_ = sizeof(float);
                 }
                 else if (type.find("double") == 0)
                 {
-                    info._colType = "double";
-                    info._colLength = sizeof(double);
+                    info.colType_ = "double";
+                    info.colLength_ = sizeof(double);
                 }
                 else if (type.find("date") == 0 || type.find("datetime") == 0 ||
                          type.find("timestamp") == 0)
                 {
-                    info._colType = "::trantor::Date";
+                    info.colType_ = "::trantor::Date";
                 }
                 else if (type.find("blob") != std::string::npos)
                 {
-                    info._colType = "std::vector<char>";
+                    info.colType_ = "std::vector<char>";
                 }
                 else if (type.find("varchar") != std::string::npos)
                 {
-                    info._colType = "std::string";
+                    info.colType_ = "std::string";
                     auto pos1 = type.find("(");
                     auto pos2 = type.find(")");
                     if (pos1 != std::string::npos &&
                         pos2 != std::string::npos && pos2 - pos1 > 1)
                     {
-                        info._colLength =
+                        info.colLength_ =
                             std::stoll(type.substr(pos1 + 1, pos2 - pos1 - 1));
                     }
                 }
                 else
                 {
-                    info._colType = "std::string";
+                    info.colType_ = "std::string";
                 }
                 if (type.find("unsigned") != std::string::npos)
                 {
-                    info._colType = "u" + info._colType;
+                    info.colType_ = "u" + info.colType_;
                 }
                 if (!defaultVal.empty())
                 {
-                    info._hasDefaultVal = true;
+                    info.hasDefaultVal_ = true;
                 }
                 if (extra.find("auto_") == 0)
                 {
-                    info._isAutoVal = true;
+                    info.isAutoVal_ = true;
                 }
                 cols.push_back(std::move(info));
-                i++;
+                ++i;
             }
         } >>
         [](const DrogonDbException &e) {
@@ -459,10 +453,10 @@ void create_model::createModelClassFromMysql(
     std::vector<std::string> pkNames, pkTypes;
     for (auto const &col : cols)
     {
-        if (col._isPrimaryKey)
+        if (col.isPrimaryKey_)
         {
-            pkNames.push_back(col._colName);
-            pkTypes.push_back(col._colType);
+            pkNames.push_back(col.colName_);
+            pkTypes.push_back(col.colType_);
         }
     }
     data["hasPrimaryKey"] = (int)pkNames.size();
@@ -540,8 +534,6 @@ void create_model::createModelClassFromSqlite3(
                     data["dbName"] = std::string("sqlite3");
                     data["rdbms"] = std::string("sqlite3");
                     data["relationships"] = relationships;
-
-                    // std::cout << sql << std::endl;
                     auto columns = utils::splitString(sql, ",");
                     int i = 0;
                     std::vector<ColumnInfo> cols;
@@ -561,59 +553,57 @@ void create_model::createModelClassFromSqlite3(
                             (column.find("autoincrement") != std::string::npos);
                         bool primary =
                             (column.find("primary key") != std::string::npos);
-
-                        // std::cout << "field:" << field << std::endl;
                         ColumnInfo info;
-                        info._index = i;
-                        info._dbType = "sqlite3";
-                        info._colName = field;
-                        info._colTypeName = nameTransform(info._colName, true);
-                        info._colValName = nameTransform(info._colName, false);
-                        info._notNull = notnull;
-                        info._colDatabaseType = type;
-                        info._isPrimaryKey = primary;
-                        info._isAutoVal = autoVal;
+                        info.index_ = i;
+                        info.dbType_ = "sqlite3";
+                        info.colName_ = field;
+                        info.colTypeName_ = nameTransform(info.colName_, true);
+                        info.colValName_ = nameTransform(info.colName_, false);
+                        info.notNull_ = notnull;
+                        info.colDatabaseType_ = type;
+                        info.isPrimaryKey_ = primary;
+                        info.isAutoVal_ = autoVal;
 
                         if (type.find("int") != std::string::npos)
                         {
-                            info._colType = "uint64_t";
-                            info._colLength = 8;
+                            info.colType_ = "uint64_t";
+                            info.colLength_ = 8;
                         }
                         else if (type.find("char") != std::string::npos ||
                                  type == "text" || type == "clob")
                         {
-                            info._colType = "std::string";
+                            info.colType_ = "std::string";
                         }
                         else if (type.find("double") != std::string::npos ||
                                  type == "real" || type == "float")
                         {
-                            info._colType = "double";
-                            info._colLength = sizeof(double);
+                            info.colType_ = "double";
+                            info.colLength_ = sizeof(double);
                         }
                         else if (type == "bool")
                         {
-                            info._colType = "bool";
-                            info._colLength = 1;
+                            info.colType_ = "bool";
+                            info.colLength_ = 1;
                         }
                         else if (type == "blob")
                         {
-                            info._colType = "std::vector<char>";
+                            info.colType_ = "std::vector<char>";
                         }
                         else
                         {
-                            info._colType = "std::string";
+                            info.colType_ = "std::string";
                         }
                         cols.push_back(std::move(info));
-                        i++;
+                        ++i;
                     }
 
                     std::vector<std::string> pkNames, pkTypes;
                     for (auto const &col : cols)
                     {
-                        if (col._isPrimaryKey)
+                        if (col.isPrimaryKey_)
                         {
-                            pkNames.push_back(col._colName);
-                            pkTypes.push_back(col._colType);
+                            pkNames.push_back(col.colName_);
+                            pkTypes.push_back(col.colType_);
                         }
                     }
                     data["hasPrimaryKey"] = (int)pkNames.size();
@@ -699,7 +689,7 @@ void create_model::createModel(const std::string &path,
                       << std::endl;
             exit(1);
         }
-        _dbname = dbname;
+        dbname_ = dbname;
         auto user = config.get("user", "").asString();
         if (user == "")
         {
@@ -724,7 +714,7 @@ void create_model::createModel(const std::string &path,
         auto schema = config.get("schema", "public").asString();
         DbClientPtr client = drogon::orm::DbClient::newPgClient(connStr, 1);
         std::cout << "Connect to server..." << std::endl;
-        if (_forceOverwrite)
+        if (forceOverwrite_)
         {
             sleep(2);
         }
@@ -749,7 +739,7 @@ void create_model::createModel(const std::string &path,
                     path, client, schema, restfulApiConfig, relationships);
             else
             {
-                for (int i = 0; i < (int)tables.size(); i++)
+                for (int i = 0; i < (int)tables.size(); ++i)
                 {
                     auto tableName = tables[i].asString();
                     std::transform(tableName.begin(),
@@ -795,7 +785,7 @@ void create_model::createModel(const std::string &path,
                       << std::endl;
             exit(1);
         }
-        _dbname = dbname;
+        dbname_ = dbname;
         auto user = config.get("user", "").asString();
         if (user == "")
         {
@@ -818,7 +808,7 @@ void create_model::createModel(const std::string &path,
         }
         DbClientPtr client = drogon::orm::DbClient::newMysqlClient(connStr, 1);
         std::cout << "Connect to server..." << std::endl;
-        if (_forceOverwrite)
+        if (forceOverwrite_)
         {
             sleep(2);
         }
@@ -845,7 +835,7 @@ void create_model::createModel(const std::string &path,
                                      relationships);
             else
             {
-                for (int i = 0; i < (int)tables.size(); i++)
+                for (int i = 0; i < (int)tables.size(); ++i)
                 {
                     auto tableName = tables[i].asString();
                     std::transform(tableName.begin(),
@@ -890,7 +880,7 @@ void create_model::createModel(const std::string &path,
         DbClientPtr client =
             drogon::orm::DbClient::newSqlite3Client(connStr, 1);
         std::cout << "Connect..." << std::endl;
-        if (_forceOverwrite)
+        if (forceOverwrite_)
         {
             sleep(1);
         }
@@ -917,7 +907,7 @@ void create_model::createModel(const std::string &path,
                                        relationships);
             else
             {
-                for (int i = 0; i < (int)tables.size(); i++)
+                for (int i = 0; i < (int)tables.size(); ++i)
                 {
                     auto tableName = tables[i].asString();
                     std::transform(tableName.begin(),
@@ -1023,7 +1013,7 @@ void create_model::handleCommand(std::vector<std::string> &parameters)
     {
         if ((*iter) == "-f")
         {
-            _forceOverwrite = true;
+            forceOverwrite_ = true;
             parameters.erase(iter);
             break;
         }
@@ -1159,7 +1149,7 @@ void create_model::createRestfulAPIController(
     {
         std::string headFileName = dir + ctlName + ".h";
         std::string sourceFilename = dir + ctlName + ".cc";
-        if (!_forceOverwrite)
+        if (!forceOverwrite_)
         {
             std::ifstream iHeadFile(headFileName.c_str(), std::ifstream::in);
             std::ifstream iSourceFile(sourceFilename.c_str(),

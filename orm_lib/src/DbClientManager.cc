@@ -25,60 +25,60 @@ using namespace drogon;
 void DbClientManager::createDbClients(
     const std::vector<trantor::EventLoop *> &ioloops)
 {
-    assert(_dbClientsMap.empty());
-    assert(_dbFastClientsMap.empty());
-    for (auto &dbInfo : _dbInfos)
+    assert(dbClientsMap_.empty());
+    assert(dbFastClientsMap_.empty());
+    for (auto &dbInfo : dbInfos_)
     {
-        if (dbInfo._isFast)
+        if (dbInfo.isFast_)
         {
-            if (dbInfo._dbType == drogon::orm::ClientType::Sqlite3)
+            if (dbInfo.dbType_ == drogon::orm::ClientType::Sqlite3)
             {
                 LOG_ERROR << "Sqlite3 don't support fast mode";
                 abort();
             }
-            if (dbInfo._dbType == drogon::orm::ClientType::PostgreSQL ||
-                dbInfo._dbType == drogon::orm::ClientType::Mysql)
+            if (dbInfo.dbType_ == drogon::orm::ClientType::PostgreSQL ||
+                dbInfo.dbType_ == drogon::orm::ClientType::Mysql)
             {
-                _dbFastClientsMap[dbInfo._name] =
+                dbFastClientsMap_[dbInfo.name_] =
                     IOThreadStorage<orm::DbClientPtr>();
-                _dbFastClientsMap[dbInfo._name].init([&](orm::DbClientPtr &c,
+                dbFastClientsMap_[dbInfo.name_].init([&](orm::DbClientPtr &c,
                                                          size_t idx) {
                     assert(idx == ioloops[idx]->index());
                     LOG_TRACE << "create fast database client for the thread "
                               << idx;
                     c = std::shared_ptr<orm::DbClient>(
                         new drogon::orm::DbClientLockFree(
-                            dbInfo._connectionInfo,
+                            dbInfo.connectionInfo_,
                             ioloops[idx],
-                            dbInfo._dbType,
-                            dbInfo._connectionNumber));
+                            dbInfo.dbType_,
+                            dbInfo.connectionNumber_));
                 });
             }
         }
         else
         {
-            if (dbInfo._dbType == drogon::orm::ClientType::PostgreSQL)
+            if (dbInfo.dbType_ == drogon::orm::ClientType::PostgreSQL)
             {
 #if USE_POSTGRESQL
-                _dbClientsMap[dbInfo._name] =
+                dbClientsMap_[dbInfo.name_] =
                     drogon::orm::DbClient::newPgClient(
-                        dbInfo._connectionInfo, dbInfo._connectionNumber);
+                        dbInfo.connectionInfo_, dbInfo.connectionNumber_);
 #endif
             }
-            else if (dbInfo._dbType == drogon::orm::ClientType::Mysql)
+            else if (dbInfo.dbType_ == drogon::orm::ClientType::Mysql)
             {
 #if USE_MYSQL
-                _dbClientsMap[dbInfo._name] =
+                dbClientsMap_[dbInfo.name_] =
                     drogon::orm::DbClient::newMysqlClient(
-                        dbInfo._connectionInfo, dbInfo._connectionNumber);
+                        dbInfo.connectionInfo_, dbInfo.connectionNumber_);
 #endif
             }
-            else if (dbInfo._dbType == drogon::orm::ClientType::Sqlite3)
+            else if (dbInfo.dbType_ == drogon::orm::ClientType::Sqlite3)
             {
 #if USE_SQLITE3
-                _dbClientsMap[dbInfo._name] =
+                dbClientsMap_[dbInfo.name_] =
                     drogon::orm::DbClient::newSqlite3Client(
-                        dbInfo._connectionInfo, dbInfo._connectionNumber);
+                        dbInfo.connectionInfo_, dbInfo.connectionNumber_);
 #endif
             }
         }
@@ -109,16 +109,16 @@ void DbClientManager::createDbClient(const std::string &dbType,
     std::string type = dbType;
     std::transform(type.begin(), type.end(), type.begin(), tolower);
     DbInfo info;
-    info._connectionInfo = connStr;
-    info._connectionNumber = connectionNum;
-    info._isFast = isFast;
-    info._name = name;
+    info.connectionInfo_ = connStr;
+    info.connectionNumber_ = connectionNum;
+    info.isFast_ = isFast;
+    info.name_ = name;
 
     if (type == "postgresql")
     {
 #if USE_POSTGRESQL
-        info._dbType = orm::ClientType::PostgreSQL;
-        _dbInfos.push_back(info);
+        info.dbType_ = orm::ClientType::PostgreSQL;
+        dbInfos_.push_back(info);
 #else
         std::cout
             << "The PostgreSQL is not supported by drogon, please install "
@@ -130,8 +130,8 @@ void DbClientManager::createDbClient(const std::string &dbType,
     else if (type == "mysql")
     {
 #if USE_MYSQL
-        info._dbType = orm::ClientType::Mysql;
-        _dbInfos.push_back(info);
+        info.dbType_ = orm::ClientType::Mysql;
+        dbInfos_.push_back(info);
 #else
         std::cout << "The Mysql is not supported by drogon, please install the "
                      "development library first."
@@ -143,9 +143,9 @@ void DbClientManager::createDbClient(const std::string &dbType,
     {
 #if USE_SQLITE3
         std::string sqlite3ConnStr = "filename=" + filename;
-        info._connectionInfo = sqlite3ConnStr;
-        info._dbType = orm::ClientType::Sqlite3;
-        _dbInfos.push_back(info);
+        info.connectionInfo_ = sqlite3ConnStr;
+        info.dbType_ = orm::ClientType::Sqlite3;
+        dbInfos_.push_back(info);
 #else
         std::cout
             << "The Sqlite3 is not supported by drogon, please install the "

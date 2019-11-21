@@ -15,14 +15,14 @@ int main()
         req->setPath("/s");
         req->setParameter("wd", "weixin");
 
-        for (int i = 0; i < 10; i++)
+        for (int i = 0; i < 10; ++i)
         {
             client->sendRequest(
                 req,
                 [&count](ReqResult result, const HttpResponsePtr &response) {
                     std::cout << "receive response!" << std::endl;
                     // auto headers=response.
-                    count++;
+                    ++count;
                     std::cout << response->getBody() << std::endl;
                     auto cookies = response->cookies();
                     for (auto const &cookie : cookies)

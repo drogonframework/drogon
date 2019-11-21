@@ -51,12 +51,12 @@ class HttpSimpleControllersRouter : public trantor::NonCopyable
         const std::vector<std::function<void(const HttpRequestPtr &,
                                              const HttpResponsePtr &)>>
             &postHandlingAdvices)
-        : _httpCtrlsRouter(httpCtrlRouter),
-          _postRoutingAdvices(postRoutingAdvices),
-          _preHandlingAdvices(preHandlingAdvices),
-          _postRoutingObservers(postRoutingObservers),
-          _preHandlingObservers(preHandlingObservers),
-          _postHandlingAdvices(postHandlingAdvices)
+        : httpCtrlsRouter_(httpCtrlRouter),
+          postRoutingAdvices_(postRoutingAdvices),
+          preHandlingAdvices_(preHandlingAdvices),
+          postRoutingObservers_(postRoutingObservers),
+          preHandlingObservers_(preHandlingObservers),
+          postHandlingAdvices_(postHandlingAdvices)
     {
     }
 
@@ -72,41 +72,41 @@ class HttpSimpleControllersRouter : public trantor::NonCopyable
     getHandlersInfo() const;
 
   private:
-    HttpControllersRouter &_httpCtrlsRouter;
+    HttpControllersRouter &httpCtrlsRouter_;
     const std::vector<std::function<void(const HttpRequestPtr &,
                                          AdviceCallback &&,
                                          AdviceChainCallback &&)>>
-        &_postRoutingAdvices;
+        &postRoutingAdvices_;
     const std::vector<std::function<void(const HttpRequestPtr &,
                                          AdviceCallback &&,
                                          AdviceChainCallback &&)>>
-        &_preHandlingAdvices;
+        &preHandlingAdvices_;
     const std::vector<std::function<void(const HttpRequestPtr &)>>
-        &_postRoutingObservers;
+        &postRoutingObservers_;
     const std::vector<std::function<void(const HttpRequestPtr &)>>
-        &_preHandlingObservers;
+        &preHandlingObservers_;
 
     const std::vector<
         std::function<void(const HttpRequestPtr &, const HttpResponsePtr &)>>
-        &_postHandlingAdvices;
+        &postHandlingAdvices_;
     struct CtrlBinder
     {
-        std::shared_ptr<HttpSimpleControllerBase> _controller;
-        std::string _controllerName;
-        std::vector<std::string> _filterNames;
-        std::vector<std::shared_ptr<HttpFilterBase>> _filters;
-        IOThreadStorage<HttpResponsePtr> _responseCache;
-        bool _isCORS = false;
+        std::shared_ptr<HttpSimpleControllerBase> controller_;
+        std::string controllerName_;
+        std::vector<std::string> filterNames_;
+        std::vector<std::shared_ptr<HttpFilterBase>> filters_;
+        IOThreadStorage<HttpResponsePtr> responseCache_;
+        bool isCORS_{false};
     };
 
-    typedef std::shared_ptr<CtrlBinder> CtrlBinderPtr;
+    using CtrlBinderPtr = std::shared_ptr<CtrlBinder>;
 
     struct SimpleControllerRouterItem
     {
-        CtrlBinderPtr _binders[Invalid] = {nullptr};
+        CtrlBinderPtr binders_[Invalid];
     };
-    std::unordered_map<std::string, SimpleControllerRouterItem> _simpCtrlMap;
-    std::mutex _simpCtrlMutex;
+    std::unordered_map<std::string, SimpleControllerRouterItem> simpleCtrlMap_;
+    std::mutex simpleCtrlMutex_;
 
     void doPreHandlingAdvices(
         const CtrlBinderPtr &ctrlBinderPtr,

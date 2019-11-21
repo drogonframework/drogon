@@ -83,13 +83,13 @@ Result::Reference Result::at(SizeType index) const
 ConstResultIterator ConstResultIterator::operator++(int)
 {
     ConstResultIterator old(*this);
-    _index++;
+    ++index_;
     return old;
 }
 ConstResultIterator ConstResultIterator::operator--(int)
 {
     ConstResultIterator old(*this);
-    _index--;
+    --index_;
     return old;
 }
 
@@ -109,52 +109,52 @@ ConstReverseResultIterator ConstReverseResultIterator::operator--(int)
 
 Result::SizeType Result::size() const noexcept
 {
-    return _resultPtr->size();
+    return resultPtr_->size();
 }
 void Result::swap(Result &other) noexcept
 {
-    _resultPtr.swap(other._resultPtr);
+    resultPtr_.swap(other.resultPtr_);
 }
 Result::RowSizeType Result::columns() const noexcept
 {
-    return _resultPtr->columns();
+    return resultPtr_->columns();
 }
 const char *Result::columnName(Result::RowSizeType number) const
 {
-    return _resultPtr->columnName(number);
+    return resultPtr_->columnName(number);
 }
 Result::SizeType Result::affectedRows() const noexcept
 {
-    return _resultPtr->affectedRows();
+    return resultPtr_->affectedRows();
 }
 Result::RowSizeType Result::columnNumber(const char colName[]) const
 {
-    return _resultPtr->columnNumber(colName);
+    return resultPtr_->columnNumber(colName);
 }
 const char *Result::getValue(Result::SizeType row,
                              Result::RowSizeType column) const
 {
-    return _resultPtr->getValue(row, column);
+    return resultPtr_->getValue(row, column);
 }
 bool Result::isNull(Result::SizeType row, Result::RowSizeType column) const
 {
-    return _resultPtr->isNull(row, column);
+    return resultPtr_->isNull(row, column);
 }
 Result::FieldSizeType Result::getLength(Result::SizeType row,
                                         Result::RowSizeType column) const
 {
-    return _resultPtr->getLength(row, column);
+    return resultPtr_->getLength(row, column);
 }
 unsigned long long Result::insertId() const noexcept
 {
-    return _resultPtr->insertId();
+    return resultPtr_->insertId();
 }
 const std::string &Result::sql() const noexcept
 {
-    return _resultPtr->sql();
+    return resultPtr_->sql();
 }
 
 int Result::oid(RowSizeType column) const noexcept
 {
-    return _resultPtr->oid(column);
+    return resultPtr_->oid(column);
 }

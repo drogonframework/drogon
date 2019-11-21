@@ -79,7 +79,7 @@ class WebSocketConnection
      */
     void setContext(const std::shared_ptr<void> &context)
     {
-        _contextPtr = context;
+        contextPtr_ = context;
     }
 
     /**
@@ -89,7 +89,7 @@ class WebSocketConnection
      */
     void setContext(std::shared_ptr<void> &&context)
     {
-        _contextPtr = std::move(context);
+        contextPtr_ = std::move(context);
     }
 
     /**
@@ -101,19 +101,19 @@ class WebSocketConnection
     template <typename T>
     std::shared_ptr<T> getContext() const
     {
-        return std::static_pointer_cast<T>(_contextPtr);
+        return std::static_pointer_cast<T>(contextPtr_);
     }
 
     /// Return true if the context is set by user.
     bool hasContext()
     {
-        return (bool)_contextPtr;
+        return (bool)contextPtr_;
     }
 
     /// Clear the context.
     void clearContext()
     {
-        _contextPtr.reset();
+        contextPtr_.reset();
     }
 
     /**
@@ -130,7 +130,7 @@ class WebSocketConnection
         const std::chrono::duration<long double> &interval) = 0;
 
   private:
-    std::shared_ptr<void> _contextPtr;
+    std::shared_ptr<void> contextPtr_;
 };
-typedef std::shared_ptr<WebSocketConnection> WebSocketConnectionPtr;
+using WebSocketConnectionPtr = std::shared_ptr<WebSocketConnection>;
 }  // namespace drogon

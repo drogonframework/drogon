@@ -68,17 +68,17 @@ static void forEachFileIn(
 using namespace drogon;
 SharedLibManager::SharedLibManager(trantor::EventLoop *loop,
                                    const std::vector<std::string> &libPaths)
-    : _loop(loop), _libPaths(libPaths)
+    : loop_(loop), libPaths_(libPaths)
 {
-    _timeId = _loop->runEvery(5.0, [=]() { managerLibs(); });
+    timeId_ = loop_->runEvery(5.0, [=]() { managerLibs(); });
 }
 SharedLibManager::~SharedLibManager()
 {
-    _loop->invalidateTimer(_timeId);
+    loop_->invalidateTimer(timeId_);
 }
 void SharedLibManager::managerLibs()
 {
-    for (auto const &libPath : _libPaths)
+    for (auto const &libPath : libPaths_)
     {
         forEachFileIn(
             libPath, [=](const std::string &filename, const struct stat &st) {
@@ -97,18 +97,18 @@ void SharedLibManager::managerLibs()
                         }
 
                         void *oldHandle = nullptr;
-                        if (_dlMap.find(filename) != _dlMap.end())
+                        if (dlMap_.find(filename) != dlMap_.end())
                         {
 #ifdef __linux__
                             if (st.st_mtim.tv_sec >
-                                _dlMap[filename].mTime.tv_sec)
+                                dlMap_[filename].mTime.tv_sec)
 #else
                           if (st.st_mtimespec.tv_sec >
-                              _dlMap[filename].mTime.tv_sec)
+                              dlMap_[filename].mTime.tv_sec)
 #endif
                             {
                                 LOG_TRACE << "new csp file:" << filename;
-                                oldHandle = _dlMap[filename].handle;
+                                oldHandle = dlMap_[filename].handle;
                             }
                             else
                                 return;
@@ -134,14 +134,14 @@ void SharedLibManager::managerLibs()
 #endif
                         if (dlStat.handle)
                         {
-                            _dlMap[filename] = dlStat;
+                            dlMap_[filename] = dlStat;
                         }
                         else
                         {
-                            dlStat.handle = _dlMap[filename].handle;
-                            _dlMap[filename] = dlStat;
+                            dlStat.handle = dlMap_[filename].handle;
+                            dlMap_[filename] = dlStat;
                         }
-                        _loop->runAfter(3.5, [=]() {
+                        loop_->runAfter(3.5, [=]() {
                             LOG_TRACE << "remove file " << lockFile;
                             if (unlink(lockFile.c_str()) == -1)
                                 perror("");

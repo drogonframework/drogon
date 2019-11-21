@@ -53,8 +53,8 @@ enum Sqlite3Type
 };
 
 class DbClient;
-typedef std::function<void(const Result &)> QueryCallback;
-typedef std::function<void(const std::exception_ptr &)> ExceptPtrCallback;
+using QueryCallback = std::function<void(const Result &)>;
+using ExceptPtrCallback = std::function<void(const std::exception_ptr &)>;
 enum class Mode
 {
     NonBlocking,
@@ -67,28 +67,21 @@ struct VectorTypeTraits
 {
     static const bool isVector = false;
     static const bool isPtrVector = false;
-    typedef T ItemsType;
+    using ItemsType = T;
 };
 template <typename T>
 struct VectorTypeTraits<std::vector<std::shared_ptr<T>>>
 {
     static const bool isVector = true;
     static const bool isPtrVector = true;
-    typedef T ItemsType;
+    using ItemsType = T;
 };
-// template <typename T>
-// struct VectorTypeTraits<std::vector<T>>
-// {
-//     static const bool isVector = true;
-//     static const bool isPtrVector = false;
-//     typedef T ItemsType;
-// };
 template <>
 struct VectorTypeTraits<std::string>
 {
     static const bool isVector = false;
     static const bool isPtrVector = false;
-    typedef std::string ItemsType;
+    using ItemsType = std::string;
 };
 
 // we only accept value type or const lreference type or rreference type as
@@ -137,15 +130,15 @@ class CallbackHolder : public CallbackHolderBase
     }
 
     CallbackHolder(Function &&function)
-        : _function(std::forward<Function>(function))
+        : function_(std::forward<Function>(function))
     {
         static_assert(traits::isSqlCallback,
                       "Your sql callback function type is wrong!");
     }
 
   private:
-    Function _function;
-    typedef FunctionTraits<Function> traits;
+    Function function_;
+    using traits = FunctionTraits<Function>;
     template <std::size_t Index>
     using NthArgumentType = typename traits::template argument<Index>;
     static const size_t argumentCount = traits::arity;
@@ -169,7 +162,7 @@ class CallbackHolder : public CallbackHolderBase
     {
         static_assert(argumentCount == 0,
                       "Your sql callback function type is wrong!");
-        _function(result);
+        function_(result);
     }
     template <typename... Values, std::size_t Boundary = argumentCount>
     typename std::enable_if<(sizeof...(Values) < Boundary), void>::type run(
@@ -185,8 +178,9 @@ class CallbackHolder : public CallbackHolderBase
             "type or "
             "const "
             "left-reference type");
-        typedef typename std::remove_cv<typename std::remove_reference<
-            NthArgumentType<sizeof...(Values)>>::type>::type ValueType;
+        using ValueType =
+            typename std::remove_cv<typename std::remove_reference<
+                NthArgumentType<sizeof...(Values)>>::type>::type;
         ValueType value = ValueType();
         if (row && row->size() > sizeof...(Values))
         {
@@ -207,7 +201,7 @@ class CallbackHolder : public CallbackHolderBase
         bool isNull,
         Values &&... values)
     {
-        _function(isNull, std::move(values)...);
+        function_(isNull, std::move(values)...);
     }
     template <typename ValueType>
     typename std::enable_if<VectorTypeTraits<ValueType>::isVector,
@@ -226,17 +220,17 @@ class CallbackHolder : public CallbackHolderBase
 };
 class SqlBinder
 {
-    typedef SqlBinder self;
+    using self = SqlBinder;
 
   public:
     friend class Dbclient;
 
     SqlBinder(const std::string &sql, DbClient &client, ClientType type)
-        : _sql(sql), _client(client), _type(type)
+        : sql_(sql), client_(client), type_(type)
     {
     }
     SqlBinder(std::string &&sql, DbClient &client, ClientType type)
-        : _sql(std::move(sql)), _client(client), _type(type)
+        : sql_(std::move(sql)), client_(client), type_(type)
     {
     }
     ~SqlBinder();
@@ -247,8 +241,8 @@ class SqlBinder
     operator>>(CallbackType &&callback)
     {
         // LOG_DEBUG << "ptr callback";
-        _isExceptPtr = true;
-        _exceptPtrCallback = std::forward<CallbackType>(callback);
+        isExceptionPtr_ = true;
+        exceptionPtrCallback_ = std::forward<CallbackType>(callback);
         return *this;
     }
 
@@ -258,8 +252,8 @@ class SqlBinder
                             self>::type &
     operator>>(CallbackType &&callback)
     {
-        _isExceptPtr = false;
-        _exceptCallback = std::forward<CallbackType>(callback);
+        isExceptionPtr_ = false;
+        exceptionCallback_ = std::forward<CallbackType>(callback);
         return *this;
     }
 
@@ -268,7 +262,7 @@ class SqlBinder
     typename std::enable_if<traits::isSqlCallback, self>::type &operator>>(
         CallbackType &&callback)
     {
-        _callbackHolder = std::shared_ptr<CallbackHolderBase>(
+        callbackHolder_ = std::shared_ptr<CallbackHolderBase>(
             new CallbackHolder<CallbackType>(
                 std::forward<CallbackType>(callback)));
         return *this;
@@ -282,11 +276,11 @@ class SqlBinder
         self &>::type
     operator<<(T &&parameter)
     {
-        _paraNum++;
-        typedef typename std::remove_cv<
-            typename std::remove_reference<T>::type>::type ParaType;
+        ++parametersNumber_;
+        using ParaType = typename std::remove_cv<
+            typename std::remove_reference<T>::type>::type;
         std::shared_ptr<void> obj = std::make_shared<ParaType>(parameter);
-        if (_type == ClientType::PostgreSQL)
+        if (type_ == ClientType::PostgreSQL)
         {
             switch (sizeof(T))
             {
@@ -304,36 +298,36 @@ class SqlBinder
 
                     break;
             }
-            _objs.push_back(obj);
-            _parameters.push_back((char *)obj.get());
-            _length.push_back(sizeof(T));
-            _format.push_back(1);
+            objs_.push_back(obj);
+            parameters_.push_back((char *)obj.get());
+            lengths_.push_back(sizeof(T));
+            formats_.push_back(1);
         }
-        else if (_type == ClientType::Mysql)
+        else if (type_ == ClientType::Mysql)
         {
-            _objs.push_back(obj);
-            _parameters.push_back((char *)obj.get());
-            _length.push_back(0);
-            _format.push_back(getMysqlTypeBySize(sizeof(T)));
+            objs_.push_back(obj);
+            parameters_.push_back((char *)obj.get());
+            lengths_.push_back(0);
+            formats_.push_back(getMysqlTypeBySize(sizeof(T)));
         }
-        else if (_type == ClientType::Sqlite3)
+        else if (type_ == ClientType::Sqlite3)
         {
-            _objs.push_back(obj);
-            _parameters.push_back((char *)obj.get());
-            _length.push_back(0);
+            objs_.push_back(obj);
+            parameters_.push_back((char *)obj.get());
+            lengths_.push_back(0);
             switch (sizeof(T))
             {
                 case 1:
-                    _format.push_back(Sqlite3TypeChar);
+                    formats_.push_back(Sqlite3TypeChar);
                     break;
                 case 2:
-                    _format.push_back(Sqlite3TypeShort);
+                    formats_.push_back(Sqlite3TypeShort);
                     break;
                 case 4:
-                    _format.push_back(Sqlite3TypeInt);
+                    formats_.push_back(Sqlite3TypeInt);
                     break;
                 case 8:
-                    _format.push_back(Sqlite3TypeInt64);
+                    formats_.push_back(Sqlite3TypeInt64);
                 default:
                     break;
             }
@@ -368,7 +362,7 @@ class SqlBinder
     self &operator<<(std::vector<char> &&v);
     self &operator<<(float f)
     {
-        if (_type == ClientType::Sqlite3)
+        if (type_ == ClientType::Sqlite3)
         {
             return operator<<((double)f);
         }
@@ -378,12 +372,12 @@ class SqlBinder
     self &operator<<(std::nullptr_t nullp);
     self &operator<<(const Mode &mode)
     {
-        _mode = mode;
+        mode_ = mode;
         return *this;
     }
     self &operator<<(Mode &&mode)
     {
-        _mode = mode;
+        mode_ = mode;
         return *this;
     }
 
@@ -391,21 +385,21 @@ class SqlBinder
 
   private:
     int getMysqlTypeBySize(size_t size);
-    std::string _sql;
-    DbClient &_client;
-    size_t _paraNum = 0;
-    std::vector<const char *> _parameters;
-    std::vector<int> _length;
-    std::vector<int> _format;
-    std::vector<std::shared_ptr<void>> _objs;
-    Mode _mode = Mode::NonBlocking;
-    std::shared_ptr<CallbackHolderBase> _callbackHolder;
-    DrogonDbExceptionCallback _exceptCallback;
-    ExceptPtrCallback _exceptPtrCallback;
-    bool _execed = false;
-    bool _destructed = false;
-    bool _isExceptPtr = false;
-    ClientType _type;
+    std::string sql_;
+    DbClient &client_;
+    size_t parametersNumber_{0};
+    std::vector<const char *> parameters_;
+    std::vector<int> lengths_;
+    std::vector<int> formats_;
+    std::vector<std::shared_ptr<void>> objs_;
+    Mode mode_{Mode::NonBlocking};
+    std::shared_ptr<CallbackHolderBase> callbackHolder_;
+    DrogonDbExceptionCallback exceptionCallback_;
+    ExceptPtrCallback exceptionPtrCallback_;
+    bool execed_{false};
+    bool destructed_{false};
+    bool isExceptionPtr_{false};
+    ClientType type_;
 };
 
 }  // namespace internal

@@ -26,7 +26,7 @@ namespace drogon
 {
 /// Abstract class for webapp developer to get or set the Http response;
 class HttpResponse;
-typedef std::shared_ptr<HttpResponse> HttpResponsePtr;
+using HttpResponsePtr = std::shared_ptr<HttpResponse>;
 
 /**
  * @brief This template is used to convert a response object to a custom

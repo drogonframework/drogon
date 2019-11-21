@@ -21,10 +21,10 @@ using namespace drogon;
 WebSocketConnectionImpl::WebSocketConnectionImpl(
     const trantor::TcpConnectionPtr &conn,
     bool isServer)
-    : _tcpConn(conn),
-      _localAddr(conn->localAddr()),
-      _peerAddr(conn->peerAddr()),
-      _isServer(isServer)
+    : tcpConnectionPtr_(conn),
+      localAddr_(conn->localAddr()),
+      peerAddr_(conn->peerAddr()),
+      isServer_(isServer)
 {
 }
 
@@ -101,7 +101,7 @@ void WebSocketConnectionImpl::sendWsData(const char *msg,
 
         indexStartRawData = 10;
     }
-    if (!_isServer)
+    if (!isServer_)
     {
         // Add masking key;
         static std::once_flag once;
@@ -111,7 +111,7 @@ void WebSocketConnectionImpl::sendWsData(const char *msg,
         bytesFormatted[1] = (bytesFormatted[1] | 0x80);
         bytesFormatted.resize(indexStartRawData + 4 + len);
         *((int *)&bytesFormatted[indexStartRawData]) = random;
-        for (size_t i = 0; i < len; i++)
+        for (size_t i = 0; i < len; ++i)
         {
             bytesFormatted[indexStartRawData + 4 + i] =
                 (msg[i] ^ bytesFormatted[indexStartRawData + (i % 4)]);
@@ -122,7 +122,7 @@ void WebSocketConnectionImpl::sendWsData(const char *msg,
         bytesFormatted.resize(indexStartRawData);
         bytesFormatted.append(msg, len);
     }
-    _tcpConn->send(std::move(bytesFormatted));
+    tcpConnectionPtr_->send(std::move(bytesFormatted));
 }
 void WebSocketConnectionImpl::send(const std::string &msg,
                                    const WebSocketMessageType &type)
@@ -131,28 +131,28 @@ void WebSocketConnectionImpl::send(const std::string &msg,
 }
 const trantor::InetAddress &WebSocketConnectionImpl::localAddr() const
 {
-    return _localAddr;
+    return localAddr_;
 }
 const trantor::InetAddress &WebSocketConnectionImpl::peerAddr() const
 {
-    return _peerAddr;
+    return peerAddr_;
 }
 
 bool WebSocketConnectionImpl::connected() const
 {
-    return _tcpConn->connected();
+    return tcpConnectionPtr_->connected();
 }
 bool WebSocketConnectionImpl::disconnected() const
 {
-    return _tcpConn->disconnected();
+    return tcpConnectionPtr_->disconnected();
 }
 void WebSocketConnectionImpl::WebSocketConnectionImpl::shutdown()
 {
-    _tcpConn->shutdown();
+    tcpConnectionPtr_->shutdown();
 }
 void WebSocketConnectionImpl::WebSocketConnectionImpl::forceClose()
 {
-    _tcpConn->forceClose();
+    tcpConnectionPtr_->forceClose();
 }
 
 void WebSocketConnectionImpl::setPingMessage(
@@ -160,8 +160,8 @@ void WebSocketConnectionImpl::setPingMessage(
     const std::chrono::duration<long double> &interval)
 {
     std::weak_ptr<WebSocketConnectionImpl> weakPtr = shared_from_this();
-    _pingTimerId =
-        _tcpConn->getLoop()->runEvery(interval.count(), [weakPtr, message]() {
+    pingTimerId_ = tcpConnectionPtr_->getLoop()->runEvery(
+        interval.count(), [weakPtr, message]() {
             auto thisPtr = weakPtr.lock();
             if (thisPtr)
             {
@@ -173,7 +173,7 @@ void WebSocketConnectionImpl::setPingMessage(
 bool WebSocketMessageParser::parse(trantor::MsgBuffer *buffer)
 {
     // According to the rfc6455
-    _gotAll = false;
+    gotAll_ = false;
     if (buffer->readableBytes() >= 2)
     {
         unsigned char opcode = (*buffer)[0] & 0x0f;
@@ -184,21 +184,21 @@ bool WebSocketMessageParser::parse(trantor::MsgBuffer *buffer)
                 // continuation frame
                 break;
             case 1:
-                _type = WebSocketMessageType::Text;
+                type_ = WebSocketMessageType::Text;
                 break;
             case 2:
-                _type = WebSocketMessageType::Binary;
+                type_ = WebSocketMessageType::Binary;
                 break;
             case 8:
-                _type = WebSocketMessageType::Close;
+                type_ = WebSocketMessageType::Close;
                 isControlFrame = true;
                 break;
             case 9:
-                _type = WebSocketMessageType::Ping;
+                type_ = WebSocketMessageType::Ping;
                 isControlFrame = true;
                 break;
             case 10:
-                _type = WebSocketMessageType::Pong;
+                type_ = WebSocketMessageType::Pong;
                 isControlFrame = true;
                 break;
             default:
@@ -280,14 +280,14 @@ bool WebSocketMessageParser::parse(trantor::MsgBuffer *buffer)
                 auto masks = buffer->peek() + indexFirstMask;
                 int indexFirstDataByte = indexFirstMask + 4;
                 auto rawData = buffer->peek() + indexFirstDataByte;
-                auto oldLen = _message.length();
-                _message.resize(oldLen + length);
-                for (size_t i = 0; i < length; i++)
+                auto oldLen = message_.length();
+                message_.resize(oldLen + length);
+                for (size_t i = 0; i < length; ++i)
                 {
-                    _message[oldLen + i] = (rawData[i] ^ masks[i % 4]);
+                    message_[oldLen + i] = (rawData[i] ^ masks[i % 4]);
                 }
                 if (isFin)
-                    _gotAll = true;
+                    gotAll_ = true;
                 buffer->retrieve(indexFirstMask + 4 + length);
                 return true;
             }
@@ -297,9 +297,9 @@ bool WebSocketMessageParser::parse(trantor::MsgBuffer *buffer)
             if (buffer->readableBytes() >= (indexFirstMask + length))
             {
                 auto rawData = buffer->peek() + indexFirstMask;
-                _message.append(rawData, length);
+                message_.append(rawData, length);
                 if (isFin)
-                    _gotAll = true;
+                    gotAll_ = true;
                 buffer->retrieve(indexFirstMask + length);
                 return true;
             }
@@ -314,12 +314,12 @@ void WebSocketConnectionImpl::onNewMessage(
 {
     while (buffer->readableBytes() > 0)
     {
-        auto success = _parser.parse(buffer);
+        auto success = parser_.parse(buffer);
         if (success)
         {
             std::string message;
             WebSocketMessageType type;
-            if (_parser.gotAll(message, type))
+            if (parser_.gotAll(message, type))
             {
                 if (type == WebSocketMessageType::Ping)
                 {
@@ -335,7 +335,7 @@ void WebSocketConnectionImpl::onNewMessage(
                 {
                     return;
                 }
-                _messageCallback(std::move(message), shared_from_this(), type);
+                messageCallback_(std::move(message), shared_from_this(), type);
             }
             else
             {

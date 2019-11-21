@@ -22,7 +22,14 @@
 #include <iostream>
 
 using namespace drogon::orm;
-
+namespace drogon
+{
+namespace orm
+{
+class DbClient;
+using DbClientPtr = std::shared_ptr<DbClient>;
+}  // namespace orm
+}  // namespace drogon
 namespace drogon_model
 {
 namespace sqlite3
@@ -49,7 +56,7 @@ class Groups
     const static std::string tableName;
     const static bool hasPrimaryKey;
     const static std::string primaryKeyName;
-    typedef uint64_t PrimaryKeyType;
+    using PrimaryKeyType = uint64_t;
     const PrimaryKeyType &getPrimaryKey() const;
 
     /**
@@ -234,7 +241,7 @@ class Groups
     Json::Value toJson() const;
     Json::Value toMasqueradedJson(
         const std::vector<std::string> &pMasqueradingVector) const;
-
+    /// Relationship interfaces
   private:
     friend Mapper<Groups>;
     static const std::vector<std::string> &insertColumns() noexcept;
@@ -243,29 +250,29 @@ class Groups
     void updateArgs(drogon::orm::internal::SqlBinder &binder) const;
     /// For mysql or sqlite3
     void updateId(const uint64_t id);
-    std::shared_ptr<uint64_t> _groupId;
-    std::shared_ptr<std::string> _groupName;
-    std::shared_ptr<uint64_t> _createrId;
-    std::shared_ptr<std::string> _createTime;
-    std::shared_ptr<uint64_t> _inviting;
-    std::shared_ptr<uint64_t> _invitingUserId;
-    std::shared_ptr<std::string> _avatarId;
-    std::shared_ptr<double> _uuu;
-    std::shared_ptr<std::string> _text;
-    std::shared_ptr<std::vector<char>> _avatar;
-    std::shared_ptr<bool> _isDefault;
+    std::shared_ptr<uint64_t> groupId_;
+    std::shared_ptr<std::string> groupName_;
+    std::shared_ptr<uint64_t> createrId_;
+    std::shared_ptr<std::string> createTime_;
+    std::shared_ptr<uint64_t> inviting_;
+    std::shared_ptr<uint64_t> invitingUserId_;
+    std::shared_ptr<std::string> avatarId_;
+    std::shared_ptr<double> uuu_;
+    std::shared_ptr<std::string> text_;
+    std::shared_ptr<std::vector<char>> avatar_;
+    std::shared_ptr<bool> isDefault_;
     struct MetaData
     {
-        const std::string _colName;
-        const std::string _colType;
-        const std::string _colDatabaseType;
-        const ssize_t _colLength;
-        const bool _isAutoVal;
-        const bool _isPrimaryKey;
-        const bool _notNull;
+        const std::string colName_;
+        const std::string colType_;
+        const std::string colDatabaseType_;
+        const ssize_t colLength_;
+        const bool isAutoVal_;
+        const bool isPrimaryKey_;
+        const bool notNull_;
     };
-    static const std::vector<MetaData> _metaData;
-    bool _dirtyFlag[11] = {false};
+    static const std::vector<MetaData> metaData_;
+    bool dirtyFlag_[11] = {false};
 
   public:
     static const std::string &sqlForFindingByPrimaryKey()
@@ -288,52 +295,52 @@ class Groups
         needSelection = false;
         sql += "group_id,";
         ++parametersCount;
-        if (_dirtyFlag[1])
+        if (dirtyFlag_[1])
         {
             sql += "group_name,";
             ++parametersCount;
         }
-        if (_dirtyFlag[2])
+        if (dirtyFlag_[2])
         {
             sql += "creater_id,";
             ++parametersCount;
         }
-        if (_dirtyFlag[3])
+        if (dirtyFlag_[3])
         {
             sql += "create_time,";
             ++parametersCount;
         }
-        if (_dirtyFlag[4])
+        if (dirtyFlag_[4])
         {
             sql += "inviting,";
             ++parametersCount;
         }
-        if (_dirtyFlag[5])
+        if (dirtyFlag_[5])
         {
             sql += "inviting_user_id,";
             ++parametersCount;
         }
-        if (_dirtyFlag[6])
+        if (dirtyFlag_[6])
         {
             sql += "avatar_id,";
             ++parametersCount;
         }
-        if (_dirtyFlag[7])
+        if (dirtyFlag_[7])
         {
             sql += "uuu,";
             ++parametersCount;
         }
-        if (_dirtyFlag[8])
+        if (dirtyFlag_[8])
         {
             sql += "text,";
             ++parametersCount;
         }
-        if (_dirtyFlag[9])
+        if (dirtyFlag_[9])
         {
             sql += "avatar,";
             ++parametersCount;
         }
-        if (_dirtyFlag[10])
+        if (dirtyFlag_[10])
         {
             sql += "is_default,";
             ++parametersCount;
@@ -348,43 +355,43 @@ class Groups
             sql += ") values (";
 
         sql += "default,";
-        if (_dirtyFlag[1])
+        if (dirtyFlag_[1])
         {
             sql.append("?,");
         }
-        if (_dirtyFlag[2])
+        if (dirtyFlag_[2])
         {
             sql.append("?,");
         }
-        if (_dirtyFlag[3])
+        if (dirtyFlag_[3])
         {
             sql.append("?,");
         }
-        if (_dirtyFlag[4])
+        if (dirtyFlag_[4])
         {
             sql.append("?,");
         }
-        if (_dirtyFlag[5])
+        if (dirtyFlag_[5])
         {
             sql.append("?,");
         }
-        if (_dirtyFlag[6])
+        if (dirtyFlag_[6])
         {
             sql.append("?,");
         }
-        if (_dirtyFlag[7])
+        if (dirtyFlag_[7])
         {
             sql.append("?,");
         }
-        if (_dirtyFlag[8])
+        if (dirtyFlag_[8])
         {
             sql.append("?,");
         }
-        if (_dirtyFlag[9])
+        if (dirtyFlag_[9])
         {
             sql.append("?,");
         }
-        if (_dirtyFlag[10])
+        if (dirtyFlag_[10])
         {
             sql.append("?,");
         }

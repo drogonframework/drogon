@@ -17,35 +17,35 @@
 using namespace drogon;
 
 SessionManager::SessionManager(trantor::EventLoop *loop, size_t timeout)
-    : _loop(loop), _timeout(timeout)
+    : loop_(loop), timeout_(timeout)
 {
-    assert(_timeout >= 0);
-    if (_timeout > 0)
+    assert(timeout_ >= 0);
+    if (timeout_ > 0)
     {
         size_t wheelNum = 1;
         size_t bucketNum = 0;
-        if (_timeout < 500)
+        if (timeout_ < 500)
         {
-            bucketNum = _timeout + 1;
+            bucketNum = timeout_ + 1;
         }
         else
         {
-            auto tmpTimeout = _timeout;
+            auto tmpTimeout = timeout_;
             bucketNum = 100;
             while (tmpTimeout > 100)
             {
-                wheelNum++;
+                ++wheelNum;
                 tmpTimeout = tmpTimeout / 100;
             }
         }
-        _sessionMapPtr = std::unique_ptr<CacheMap<std::string, SessionPtr>>(
+        sessionMapPtr_ = std::unique_ptr<CacheMap<std::string, SessionPtr>>(
             new CacheMap<std::string, SessionPtr>(
-                _loop, 1.0, wheelNum, bucketNum));
+                loop_, 1.0, wheelNum, bucketNum));
     }
-    else if (_timeout == 0)
+    else if (timeout_ == 0)
     {
-        _sessionMapPtr = std::unique_ptr<CacheMap<std::string, SessionPtr>>(
-            new CacheMap<std::string, SessionPtr>(_loop, 0, 0, 0));
+        sessionMapPtr_ = std::unique_ptr<CacheMap<std::string, SessionPtr>>(
+            new CacheMap<std::string, SessionPtr>(loop_, 0, 0, 0));
     }
 }
 
@@ -54,11 +54,11 @@ SessionPtr SessionManager::getSession(const std::string &sessionID,
 {
     assert(!sessionID.empty());
     SessionPtr sessionPtr;
-    std::lock_guard<std::mutex> lock(_mapMutex);
-    if (_sessionMapPtr->findAndFetch(sessionID, sessionPtr) == false)
+    std::lock_guard<std::mutex> lock(mapMutex_);
+    if (sessionMapPtr_->findAndFetch(sessionID, sessionPtr) == false)
     {
         sessionPtr = std::make_shared<Session>(sessionID, needToSet);
-        _sessionMapPtr->insert(sessionID, sessionPtr, _timeout);
+        sessionMapPtr_->insert(sessionID, sessionPtr, timeout_);
         return sessionPtr;
     }
     return sessionPtr;

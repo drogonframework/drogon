@@ -46,7 +46,7 @@ BrokenConnection::BrokenConnection(const std::string &whatarg)
 SqlError::SqlError(const std::string &whatarg,
                    const std::string &Q,
                    const char sqlstate[])
-    : Failure(whatarg), _query(Q), _sqlState(sqlstate ? sqlstate : "")
+    : Failure(whatarg), query_(Q), sqlState_(sqlstate ? sqlstate : "")
 {
 }
 
@@ -56,12 +56,12 @@ SqlError::~SqlError() noexcept
 
 const std::string &SqlError::query() const noexcept
 {
-    return _query;
+    return query_;
 }
 
 const std::string &SqlError::sqlState() const noexcept
 {
-    return _sqlState;
+    return sqlState_;
 }
 
 InDoubtError::InDoubtError(const std::string &whatarg) : Failure(whatarg)

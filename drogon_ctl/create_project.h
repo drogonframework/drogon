@@ -28,7 +28,7 @@ class create_project : public DrObject<create_project>, public CommandHandler
     }
 
   protected:
-    std::string _outputPath = ".";
+    std::string outputPath_{"."};
     void createProject(const std::string &projectName);
 };
 }  // namespace drogon_ctl

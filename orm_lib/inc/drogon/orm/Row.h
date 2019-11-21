@@ -71,7 +71,7 @@ class Row
     ConstReverseIterator crend() const;
 
   private:
-    const Result _result;
+    const Result result_;
 
   protected:
     friend class Field;
@@ -80,8 +80,8 @@ class Row
      * You'd expect this to be a size_t, but due to the way reverse iterators
      * are related to regular iterators, it must be allowed to underflow to -1.
      */
-    long _index = 0;
-    size_t _end = 0;
+    long index_{0};
+    size_t end_{0};
     friend class Result;
     Row(const Result &r, SizeType index) noexcept;
 };

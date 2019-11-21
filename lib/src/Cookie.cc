@@ -18,26 +18,26 @@ using namespace drogon;
 std::string Cookie::cookieString() const
 {
     std::string ret = "Set-Cookie: ";
-    ret.append(_key).append("= ").append(_value).append("; ");
-    if (_expiresDate.microSecondsSinceEpoch() > 0)
+    ret.append(key_).append("= ").append(value_).append("; ");
+    if (expiresDate_.microSecondsSinceEpoch() > 0)
     {
         ret.append("Expires= ")
-            .append(utils::getHttpFullDate(_expiresDate))
+            .append(utils::getHttpFullDate(expiresDate_))
             .append("; ");
     }
-    if (!_domain.empty())
+    if (!domain_.empty())
     {
-        ret.append("Domain= ").append(_domain).append("; ");
+        ret.append("Domain= ").append(domain_).append("; ");
     }
-    if (!_path.empty())
+    if (!path_.empty())
     {
-        ret.append("Path= ").append(_path).append("; ");
+        ret.append("Path= ").append(path_).append("; ");
     }
-    if (_secure)
+    if (secure_)
     {
         ret.append("Secure; ");
     }
-    if (_httpOnly)
+    if (httpOnly_)
     {
         ret.append("HttpOnly; ");
     }

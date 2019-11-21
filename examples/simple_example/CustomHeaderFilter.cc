@@ -12,7 +12,7 @@ void CustomHeaderFilter::doFilter(const HttpRequestPtr &req,
                                   FilterCallback &&fcb,
                                   FilterChainCallback &&fccb)
 {
-    if (req->getHeader(_field) == _value)
+    if (req->getHeader(field_) == value_)
     {
         // Passed
         fccb();

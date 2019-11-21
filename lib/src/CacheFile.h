@@ -34,17 +34,17 @@ class CacheFile : public trantor::NonCopyable
     string_view getStringView()
     {
         if (data())
-            return string_view(_data, _dataLength);
+            return string_view(data_, dataLength_);
         return string_view();
     }
 
   private:
     char *data();
     size_t length();
-    FILE *_file = nullptr;
-    bool _autoDelete = true;
-    const std::string _path;
-    char *_data = nullptr;
-    size_t _dataLength = 0;
+    FILE *file_{nullptr};
+    bool autoDelete_{true};
+    const std::string path_;
+    char *data_{nullptr};
+    size_t dataLength_{0};
 };
 }  // namespace drogon

@@ -35,41 +35,41 @@ class UploadFile
     explicit UploadFile(const std::string &filePath,
                         const std::string &fileName = "",
                         const std::string &itemName = "file")
-        : _path(filePath), _itemName(itemName)
+        : path_(filePath), itemName_(itemName)
     {
         if (!fileName.empty())
         {
-            _fileName = fileName;
+            fileName_ = fileName;
         }
         else
         {
             auto pos = filePath.rfind('/');
             if (pos != std::string::npos)
             {
-                _fileName = filePath.substr(pos + 1);
+                fileName_ = filePath.substr(pos + 1);
             }
             else
             {
-                _fileName = filePath;
+                fileName_ = filePath;
             }
         }
     }
     const std::string &path() const
     {
-        return _path;
+        return path_;
     }
     const std::string &fileName() const
     {
-        return _fileName;
+        return fileName_;
     }
     const std::string &itemName() const
     {
-        return _itemName;
+        return itemName_;
     }
 
   private:
-    std::string _path;
-    std::string _fileName;
-    std::string _itemName;
+    std::string path_;
+    std::string fileName_;
+    std::string itemName_;
 };
 }  // namespace drogon
