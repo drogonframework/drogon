@@ -564,14 +564,18 @@ void HttpAppFrameworkImpl::callCallback(
                 auto newResp = std::make_shared<HttpResponseImpl>(
                     *static_cast<HttpResponseImpl *>(resp.get()));
                 newResp->setExpiredTime(-1);  // make it temporary
-                newResp->addCookie("JSESSIONID", sessionPtr->sessionId());
+                auto jsessionid = Cookie("JSESSIONID", sessionPtr->sessionId());
+                jsessionid.setPath("/");
+                newResp->addCookie(std::move(jsessionid));
                 sessionPtr->hasSet();
                 callback(newResp);
                 return;
             }
             else
             {
-                resp->addCookie("JSESSIONID", sessionPtr->sessionId());
+                auto jsessionid = Cookie("JSESSIONID", sessionPtr->sessionId());
+                jsessionid.setPath("/");
+                resp->addCookie(std::move(jsessionid));
                 sessionPtr->hasSet();
                 callback(resp);
                 return;
