@@ -474,22 +474,31 @@ HttpRequestPtr HttpRequest::newFileUploadRequest(
 
 void HttpRequestImpl::swap(HttpRequestImpl &that) noexcept
 {
-    std::swap(method_, that.method_);
-    std::swap(version_, that.version_);
-    path_.swap(that.path_);
-    query_.swap(that.query_);
-
-    headers_.swap(that.headers_);
-    cookies_.swap(that.cookies_);
-    parameters_.swap(that.parameters_);
-    jsonPtr_.swap(that.jsonPtr_);
-    sessionPtr_.swap(that.sessionPtr_);
-
-    std::swap(peer_, that.peer_);
-    std::swap(local_, that.local_);
-    creationDate_.swap(that.creationDate_);
-    content_.swap(that.content_);
-    std::swap(contentLen_, that.contentLen_);
+    using std::swap;
+    swap(method_, that.method_);
+    swap(version_, that.version_);
+    swap(flagForParsingJson_, that.flagForParsingJson_);
+    swap(flagForParsingParameters_, that.flagForParsingParameters_);
+    swap(matchedPathPattern_, that.matchedPathPattern_);
+    swap(path_, that.path_);
+    swap(query_, that.query_);
+    swap(headers_, that.headers_);
+    swap(cookies_, that.cookies_);
+    swap(parameters_, that.parameters_);
+    swap(jsonPtr_, that.jsonPtr_);
+    swap(sessionPtr_, that.sessionPtr_);
+    swap(attributesPtr_, that.attributesPtr_);
+    swap(cacheFilePtr_, that.cacheFilePtr_);
+    swap(peer_, that.peer_);
+    swap(local_, that.local_);
+    swap(creationDate_, that.creationDate_);
+    swap(content_, that.content_);
+    swap(contentLen_, that.contentLen_);
+    swap(expect_, that.expect_);
+    swap(contentType_, that.contentType_);
+    swap(contentTypeString_, that.contentTypeString_);
+    swap(keepAlive_, that.keepAlive_);
+    swap(loop_, that.loop_);
 }
 
 const char *HttpRequestImpl::methodString() const

@@ -47,6 +47,7 @@ class HttpRequestImpl : public HttpRequest
         method_ = Invalid;
         version_ = kUnknown;
         contentLen_ = 0;
+        flagForParsingJson_ = false;
         headers_.clear();
         cookies_.clear();
         flagForParsingParameters_ = false;
