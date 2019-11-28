@@ -707,7 +707,10 @@ std::string gzipCompress(const char *data, const size_t ndata)
                          MAX_WBITS + 16,
                          8,
                          Z_DEFAULT_STRATEGY) != Z_OK)
-            return nullptr;
+        {
+            LOG_ERROR << "deflateInit2 error!";
+            return std::string{};
+        }
         std::string outstr;
         outstr.resize(compressBound(ndata));
         strm.next_in = (Bytef *)data;
@@ -715,9 +718,15 @@ std::string gzipCompress(const char *data, const size_t ndata)
         strm.next_out = (Bytef *)outstr.data();
         strm.avail_out = outstr.length();
         if (deflate(&strm, Z_FINISH) != Z_STREAM_END)
-            return nullptr;
+        {
+            LOG_ERROR << "deflate error!";
+            return std::string{};
+        }
         if (deflateEnd(&strm) != Z_OK)
-            return nullptr;
+        {
+            LOG_ERROR << "deflateEnd error!";
+            return std::string{};
+        }
         outstr.resize(strm.total_out);
         return outstr;
     }
@@ -741,7 +750,10 @@ std::string gzipDecompress(const char *data, const size_t ndata)
     strm.zalloc = Z_NULL;
     strm.zfree = Z_NULL;
     if (inflateInit2(&strm, (15 + 32)) != Z_OK)
-        return nullptr;
+    {
+        LOG_ERROR << "inflateInit2 error!";
+        return std::string{};
+    }
     while (!done)
     {
         // Make sure we have enough room and reset the lengths.
