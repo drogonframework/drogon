@@ -189,6 +189,59 @@ void doTest(const HttpClientPtr &client,
                                 exit(1);
                             }
                         });
+    // Post json again
+    req = HttpRequest::newHttpJsonRequest(json);
+    req->setMethod(drogon::Post);
+    req->setPath("/api/v1/apitest/json");
+    client->sendRequest(req,
+                        [=](ReqResult result, const HttpResponsePtr &resp) {
+                            if (result == ReqResult::Ok)
+                            {
+                                std::shared_ptr<Json::Value> ret = *resp;
+                                if (ret && (*ret)["result"].asString() == "ok")
+                                {
+                                    outputGood(req, isHttps);
+                                }
+                                else
+                                {
+                                    LOG_DEBUG << resp->getBody();
+                                    LOG_ERROR << "Error!";
+                                    exit(1);
+                                }
+                            }
+                            else
+                            {
+                                LOG_ERROR << "Error!";
+                                exit(1);
+                            }
+                        });
+    // Post json again
+    req = HttpRequest::newHttpJsonRequest(json);
+    req->setMethod(drogon::Post);
+    req->setPath("/api/v1/apitest/json");
+    client->sendRequest(req,
+                        [=](ReqResult result, const HttpResponsePtr &resp) {
+                            if (result == ReqResult::Ok)
+                            {
+                                std::shared_ptr<Json::Value> ret = *resp;
+                                if (ret && (*ret)["result"].asString() == "ok")
+                                {
+                                    outputGood(req, isHttps);
+                                }
+                                else
+                                {
+                                    LOG_DEBUG << resp->getBody();
+                                    LOG_ERROR << "Error!";
+                                    exit(1);
+                                }
+                            }
+                            else
+                            {
+                                LOG_ERROR << "Error!";
+                                exit(1);
+                            }
+                        });
+
     /// 1 Get /
     req = HttpRequest::newHttpRequest();
     req->setMethod(drogon::Get);
