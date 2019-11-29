@@ -25,18 +25,19 @@ namespace plugin
       "name": "drogon::plugin::SecureSSLRedirector",
       "dependencies": [],
       "config": {
-            "ssl_redirect_exempt": [],
+            "ssl_redirect_exempt": ["^/.*\\.jpg", ...],
             "secure_ssl_host": "localhost:8849"
       }
    }
    @endcode
  *
- * ssl_redirect_exempt: a regular expression list for URLs that don't have to be
- * redirected.
+ * ssl_redirect_exempt: a regular expression (for matching the path of a
+ * request) list for URLs that don't have to be redirected.
  * secure_ssl_host: If this string is not empty, all SSL redirects
  * will be directed to this host rather than the originally-requested host.
- * Adding the configuration to the plugin list of the configuration file enables
- * the plugin.
+ *
+ * Enable the plugin by adding the configuration to the list of plugins in the
+ * configuration file.
  *
  */
 class SecureSSLRedirector : public drogon::Plugin<SecureSSLRedirector>
