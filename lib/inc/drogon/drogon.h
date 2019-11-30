@@ -27,6 +27,7 @@
 #include <drogon/utils/Utilities.h>
 #include <drogon/MultiPart.h>
 #include <drogon/plugins/Plugin.h>
+#include <drogon/plugins/SecureSSLRedirector.h>
 #include <drogon/Cookie.h>
 #include <drogon/Session.h>
 #include <drogon/IOThreadStorage.h>

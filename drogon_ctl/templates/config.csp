@@ -184,13 +184,14 @@
     //plugins: Define all plugins running in the application
     "plugins": [{
         //name: The class name of the plugin
-        //"name": "TestPlugin",
+        //"name": "drogon::plugin::SecureSSLRedirector",
         //dependencies: Plugins that the plugin depends on. It can be commented out
         "dependencies": [],
         //config: The configuration of the plugin. This json object is the parameter to initialize the plugin.
         //It can be commented out
         "config": {
-            "heartbeat_interval": 2
+            "ssl_redirect_exempt": [".*\\.jpg"],
+            "secure_ssl_host": "localhost:8849"
         }
     }],
     //custom_config: custom configuration for users. This object can be get by the app().getCustomConfig() method. 

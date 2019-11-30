@@ -359,6 +359,8 @@ class HttpRequest
         return toRequest(std::forward<T>(obj));
     }
 
+    virtual bool isOnSecureConnection() const noexcept = 0;
+
     virtual ~HttpRequest()
     {
     }

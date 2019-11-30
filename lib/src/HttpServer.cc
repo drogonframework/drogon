@@ -203,6 +203,8 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn, MsgBuffer *buf)
                 requestParser->requestImpl()->setLocalAddr(conn->localAddr());
                 requestParser->requestImpl()->setCreationDate(
                     trantor::Date::date());
+                requestParser->requestImpl()->setSecure(
+                    conn->isSSLConnection());
                 if (requestParser->firstReq() &&
                     isWebSocket(requestParser->requestImpl()))
                 {

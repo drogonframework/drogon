@@ -4,12 +4,6 @@ project(drogon CXX)
 
 add_library(${PROJECT_NAME} STATIC)
 
-#if(MSVC)
-#  target_compile_options(${PROJECT_NAME} PRIVATE /W4 /WX)
-#else()
-#  target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -pedantic)
-#endif()
-
 set(DROGON_MAJOR_VERSION 1)
 set(DROGON_MINOR_VERSION 0)
 set(DROGON_PATCH_VERSION 0)
@@ -143,6 +137,7 @@ set(DROGON_SOURCES
     lib/src/MultiPart.cc
     lib/src/NotFound.cc
     lib/src/PluginsManager.cc
+    lib/src/SecureSSLRedirector.cc
     lib/src/SessionManager.cc
     lib/src/SharedLibManager.cc
     lib/src/StaticFileRouter.cc
@@ -281,7 +276,8 @@ endif()
 
 target_sources(${PROJECT_NAME} PRIVATE ${DROGON_SOURCES})
 
-set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD ${DROGON_CXX_STANDARD})
+set_target_properties(${PROJECT_NAME}
+                      PROPERTIES CXX_STANDARD ${DROGON_CXX_STANDARD})
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD_REQUIRED ON)
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_EXTENSIONS OFF)
 set_target_properties(${PROJECT_NAME} PROPERTIES EXPORT_NAME Drogon)
@@ -414,7 +410,8 @@ set(DROGON_UTIL_HEADERS
 install(FILES ${DROGON_UTIL_HEADERS}
         DESTINATION ${INSTALL_INCLUDE_DIR}/drogon/utils)
 
-set(DROGON_PLUGIN_HEADERS lib/inc/drogon/plugins/Plugin.h)
+set(DROGON_PLUGIN_HEADERS lib/inc/drogon/plugins/Plugin.h
+                          lib/inc/drogon/plugins/SecureSSLRedirector.h)
 install(FILES ${DROGON_PLUGIN_HEADERS}
         DESTINATION ${INSTALL_INCLUDE_DIR}/drogon/plugins)
 

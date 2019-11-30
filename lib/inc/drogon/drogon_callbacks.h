@@ -22,6 +22,8 @@ namespace drogon
 {
 class HttpResponse;
 using HttpResponsePtr = std::shared_ptr<HttpResponse>;
+class HttpRequest;
+using HttpRequestPtr = std::shared_ptr<HttpRequest>;
 using AdviceCallback = std::function<void(const HttpResponsePtr &)>;
 using AdviceChainCallback = std::function<void()>;
 using FilterCallback = std::function<void(const HttpResponsePtr &)>;

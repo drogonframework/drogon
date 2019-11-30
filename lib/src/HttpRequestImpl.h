@@ -85,6 +85,10 @@ class HttpRequestImpl : public HttpRequest
     }
 
     bool setMethod(const char *start, const char *end);
+    void setSecure(bool secure)
+    {
+        isOnSecureConnection_ = secure;
+    }
 
     virtual void setMethod(const HttpMethod method) override
     {
@@ -404,6 +408,11 @@ class HttpRequestImpl : public HttpRequest
     {
         return keepAlive_;
     }
+    virtual bool isOnSecureConnection() const noexcept override
+    {
+        return isOnSecureConnection_;
+    }
+
     ~HttpRequestImpl();
 
   protected:
@@ -450,6 +459,7 @@ class HttpRequestImpl : public HttpRequest
     std::unique_ptr<CacheFile> cacheFilePtr_;
     std::string expect_;
     bool keepAlive_{true};
+    bool isOnSecureConnection_{false};
 
   protected:
     std::string content_;
