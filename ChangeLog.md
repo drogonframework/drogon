@@ -4,6 +4,26 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.0.0-beta12] - 2019-11-30
+
+### Changed
+
+- Make dg_ctl a symlink
+
+- Modify some code styles
+
+- Explicitly set path to '/' for JSESSIONID cookie
+
+- Handle gzip errors safely
+
+- Add the SecureSSLRedirector plugin
+
+### Fixed
+
+- Fix a bug in dg_ctl for creating models of sqlite3
+
+- Reset the flag used to parse json to false before recycling HttpRequest objects
+
 ## [1.0.0-beta11] - 2019-11-06
 
 ### Changed
@@ -228,7 +248,9 @@ All notable changes to this project will be documented in this file.
 
 ## [1.0.0-beta1] - 2019-06-11
 
-[Unreleased]: https://github.com/an-tao/drogon/compare/v1.0.0-beta11...HEAD
+[Unreleased]: https://github.com/an-tao/drogon/compare/v1.0.0-beta12...HEAD
+
+[1.0.0-beta12]: https://github.com/an-tao/drogon/compare/v1.0.0-beta11...v1.0.0-beta12
 
 [1.0.0-beta11]: https://github.com/an-tao/drogon/compare/v1.0.0-beta10...v1.0.0-beta11
 
