@@ -718,6 +718,10 @@ std::string gzipCompress(const char *data, const size_t ndata)
         int ret;
         do
         {
+            if (strm.total_out >= outstr.size())
+            {
+                outstr.resize(strm.total_out * 2);
+            }
             assert(outstr.size() >= strm.total_out);
             strm.avail_out = outstr.size() - strm.total_out;
             strm.next_out = (Bytef *)outstr.data() + strm.total_out;
@@ -726,10 +730,6 @@ std::string gzipCompress(const char *data, const size_t ndata)
             {
                 (void)deflateEnd(&strm);
                 return std::string{};
-            }
-            if (strm.total_out >= outstr.size())
-            {
-                outstr.resize(strm.total_out * 2);
             }
         } while (strm.avail_out == 0);
         assert(strm.avail_in == 0);
