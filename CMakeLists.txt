@@ -332,7 +332,7 @@ set(INCLUDING_DIRS ${INS_STRING})
 configure_file(${PROJECT_SOURCE_DIR}/cmake/templates/config.h.in
                ${PROJECT_BINARY_DIR}/drogon/config.h @ONLY)
 
-if(MAKETEST STREQUAL YES)
+if(MAKE_TESTING)
   add_subdirectory(lib/tests)
   if(PostgreSQL_FOUND)
     add_subdirectory(${PROJECT_SOURCE_DIR}/orm_lib/src/postgresql_impl/test)
@@ -344,6 +344,9 @@ if(MAKETEST STREQUAL YES)
   if(SQLITE3_FOUND)
     add_subdirectory(${PROJECT_SOURCE_DIR}/orm_lib/src/sqlite3_impl/test)
   endif()
+  enable_testing()
+  add_subdirectory(third_party/googletest)
+  add_subdirectory(unittest)
 endif()
 
 # Installation
