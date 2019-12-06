@@ -715,19 +715,28 @@ std::string gzipCompress(const char *data, const size_t ndata)
         outstr.resize(compressBound(ndata));
         strm.next_in = (Bytef *)data;
         strm.avail_in = ndata;
-        strm.next_out = (Bytef *)outstr.data();
-        strm.avail_out = outstr.length();
-        if (deflate(&strm, Z_FINISH) != Z_STREAM_END)
+        int ret;
+        do
         {
-            LOG_ERROR << "deflate error!";
-            return std::string{};
-        }
-        if (deflateEnd(&strm) != Z_OK)
-        {
-            LOG_ERROR << "deflateEnd error!";
-            return std::string{};
-        }
+            if (strm.total_out >= outstr.size())
+            {
+                outstr.resize(strm.total_out * 2);
+            }
+            assert(outstr.size() >= strm.total_out);
+            strm.avail_out = outstr.size() - strm.total_out;
+            strm.next_out = (Bytef *)outstr.data() + strm.total_out;
+            ret = deflate(&strm, Z_FINISH); /* no bad return value */
+            if (ret == Z_STREAM_ERROR)
+            {
+                (void)deflateEnd(&strm);
+                return std::string{};
+            }
+        } while (strm.avail_out == 0);
+        assert(strm.avail_in == 0);
+        assert(ret == Z_STREAM_END); /* stream will be complete */
         outstr.resize(strm.total_out);
+        /* clean up and return */
+        (void)deflateEnd(&strm);
         return outstr;
     }
     return std::string{};
