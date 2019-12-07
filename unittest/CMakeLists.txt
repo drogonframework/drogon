@@ -1,11 +1,9 @@
 add_executable(msgbuffer_unittest MsgBufferUnittest.cpp)
-add_executable(timer_unittest TimerUnittest.cpp)
 add_executable(drobject_unittest DrObjectUnittest.cpp)
 add_executable(gzip_unittest GzipUnittest.cpp)
 
 set(UNITTEST_TARGETS
     msgbuffer_unittest
-    timer_unittest
     drobject_unittest
     gzip_unittest)
 set_property(TARGET ${UNITTEST_TARGETS}

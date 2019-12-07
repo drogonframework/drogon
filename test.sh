@@ -1,4 +1,5 @@
 #!/bin/bash
+
 cd build/examples/
 
 #Make webapp run as a daemon
@@ -23,7 +24,7 @@ sleep 4
 echo "Test http requests and responses."
 ./webapp_test
 
-if [ $? -ne 0 ];then
+if [ $? -ne 0 ]; then
     echo "Error in testing"
     exit -1
 fi
@@ -31,7 +32,7 @@ fi
 #Test WebSocket
 echo "Test the WebSocket"
 ./websocket_test -t
-if [ $? -ne 0 ];then
+if [ $? -ne 0 ]; then
     echo "Error in testing"
     exit -1
 fi
@@ -39,7 +40,7 @@ fi
 #Test pipelining
 echo "Test the pipelining"
 ./pipelining_test
-if [ $? -ne 0 ];then
+if [ $? -ne 0 ]; then
     echo "Error in testing"
     exit -1
 fi
@@ -61,12 +62,12 @@ drogon_ctl create controller SimpleCtrl
 drogon_ctl create controller -h HttpCtrl
 drogon_ctl create controller -w WebsockCtrl
 
-if [ ! -f "Test_SimpleCtrl.h" -o ! -f "Test_SimpleCtrl.cc" -o ! -f "Test_HttpCtrl.h" -o ! -f "Test_HttpCtrl.cc" -o ! -f "Test_WebsockCtrl.h" -o ! -f "Test_WebsockCtrl.cc" ];then
+if [ ! -f "Test_SimpleCtrl.h" -o ! -f "Test_SimpleCtrl.cc" -o ! -f "Test_HttpCtrl.h" -o ! -f "Test_HttpCtrl.cc" -o ! -f "Test_WebsockCtrl.h" -o ! -f "Test_WebsockCtrl.cc" ]; then
     echo "Failed to create controllers"
     exit -1
 fi
 
-if [ ! -f "SimpleCtrl.h" -o ! -f "SimpleCtrl.cc" -o ! -f "HttpCtrl.h" -o ! -f "HttpCtrl.cc" -o ! -f "WebsockCtrl.h" -o ! -f "WebsockCtrl.cc" ];then
+if [ ! -f "SimpleCtrl.h" -o ! -f "SimpleCtrl.cc" -o ! -f "HttpCtrl.h" -o ! -f "HttpCtrl.cc" -o ! -f "WebsockCtrl.h" -o ! -f "WebsockCtrl.cc" ]; then
     echo "Failed to create controllers"
     exit -1
 fi
@@ -75,7 +76,7 @@ cd ../filters
 
 drogon_ctl create filter Test::TestFilter
 
-if [ ! -f "Test_TestFilter.h" -o ! -f "Test_TestFilter.cc" ];then
+if [ ! -f "Test_TestFilter.h" -o ! -f "Test_TestFilter.cc" ]; then
     echo "Failed to create filters"
     exit -1
 fi
@@ -84,7 +85,7 @@ cd ../plugins
 
 drogon_ctl create plugin Test::TestPlugin
 
-if [ ! -f "Test_TestPlugin.h" -o ! -f "Test_TestPlugin.cc" ];then
+if [ ! -f "Test_TestPlugin.h" -o ! -f "Test_TestPlugin.cc" ]; then
     echo "Failed to create plugins"
     exit -1
 fi
@@ -92,19 +93,19 @@ fi
 cd ../build
 cmake ..
 
-if [ $? -ne 0 ];then
+if [ $? -ne 0 ]; then
     echo "Error in testing"
     exit -1
 fi
 
 make
 
-if [ $? -ne 0 ];then
+if [ $? -ne 0 ]; then
     echo "Error in testing"
     exit -1
 fi
 
-if [ ! -f "drogon_test" ];then
+if [ ! -f "drogon_test" ]; then
     echo "Failed to build drogon_test"
     exit -1
 fi
@@ -112,11 +113,18 @@ fi
 cd ../../
 rm -rf drogon_test
 
-if [ "$1" = "-t" ];then
-    echo "Test database"
+if [ "$1" = "-t" ]; then
+    #unit testing
     cd ../
+    echo "Unit testing"
+    make test
+    if [ $? -ne 0 ]; then
+        echo "Error in unit testing"
+        exit -1
+    fi
+    echo "Test database"
     ./orm_lib/tests/db_test
-    if [ $? -ne 0 ];then
+    if [ $? -ne 0 ]; then
         echo "Error in testing"
         exit -1
     fi
