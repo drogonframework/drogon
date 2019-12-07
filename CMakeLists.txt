@@ -332,7 +332,7 @@ set(INCLUDING_DIRS ${INS_STRING})
 configure_file(${PROJECT_SOURCE_DIR}/cmake/templates/config.h.in
                ${PROJECT_BINARY_DIR}/drogon/config.h @ONLY)
 
-if(MAKE_TESTING)
+if(BUILD_TESTING)
   add_subdirectory(lib/tests)
   if(PostgreSQL_FOUND)
     add_subdirectory(${PROJECT_SOURCE_DIR}/orm_lib/src/postgresql_impl/test)

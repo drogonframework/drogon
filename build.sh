@@ -28,7 +28,7 @@ function build_drogon() {
 
     echo "Start building drogon ..."
     if [ $1 -eq 1 ]; then
-        cmake .. -DMAKE_TESTING=YES
+        cmake .. -DBUILD_TESTING=YES
     else
         cmake ..
     fi
