@@ -67,15 +67,15 @@ class Md5Encode
     static void roundH(char *data512Ptr, ParamDynamic &param);
     static void roundI(char *data512Ptr, ParamDynamic &param);
     static void rotationCalculate(char *data512Ptr, ParamDynamic &param);
-    static std::string getHexStr(unsigned int numStr);
+    static std::string getHexStr(uint32_t numStr);
     static uint32_t fillData(const char *inDataPtr,
                              int dataByteLen,
                              char **outDataPtr);
 
   private:
-    static const int kA;
-    static const int kB;
-    static const int kC;
-    static const int kD;
-    static const unsigned long long tiNumInteger;
+    static const uint32_t kA;
+    static const uint32_t kB;
+    static const uint32_t kC;
+    static const uint32_t kD;
+    static const uint64_t tiNumInteger;
 };
