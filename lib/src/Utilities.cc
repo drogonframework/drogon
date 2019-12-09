@@ -268,7 +268,7 @@ std::string getUuid()
     size_t len{0};
     uuid_export(uuid, UUID_FMT_BIN, &str, &len);
     uuid_destroy(uuid);
-    std::string ret(binaryStringToHex((const unsigned char *)str, len));
+    std::string ret{binaryStringToHex((const unsigned char *)str, len)};
     free(str);
     return ret;
 #else
