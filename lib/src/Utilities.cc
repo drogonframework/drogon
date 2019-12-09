@@ -260,9 +260,22 @@ std::set<std::string> splitStringToSet(const std::string &str,
 
 std::string getUuid()
 {
+#if USE_OSSP_UUID
+    uuid_t *uuid;
+    uuid_create(&uuid);
+    uuid_make(uuid, UUID_MAKE_V4);
+    char *str{nullptr};
+    size_t len{0};
+    uuid_export(uuid, UUID_FMT_BIN, &str, &len);
+    uuid_destroy(uuid);
+    std::string ret{binaryStringToHex((const unsigned char *)str, len)};
+    free(str);
+    return ret;
+#else
     uuid_t uu;
     uuid_generate(uu);
     return binaryStringToHex(uu, 16);
+#endif
 }
 
 std::string base64Encode(const unsigned char *bytes_to_encode,
