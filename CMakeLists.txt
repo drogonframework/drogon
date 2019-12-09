@@ -107,6 +107,22 @@ find_package(UUID REQUIRED)
 target_include_directories(${PROJECT_NAME} PRIVATE ${UUID_INCLUDE_DIR})
 target_link_libraries(${PROJECT_NAME} PRIVATE ${UUID_LIBRARIES})
 
+try_compile(normal_uuid ${CMAKE_BINARY_DIR}/cmaketest
+                  ${PROJECT_SOURCE_DIR}/cmake/tests/normal_uuid_lib_test.cc
+                  LINK_LIBRARIES ${UUID_LIBRARIES}
+                  CMAKE_FLAGS "-DINCLUDE_DIRECTORIES=${UUID_INCLUDE_DIR}")
+try_compile(ossp_uuid ${CMAKE_BINARY_DIR}/cmaketest
+                  ${PROJECT_SOURCE_DIR}/cmake/tests/ossp_uuid_lib_test.cc
+                  LINK_LIBRARIES ${UUID_LIBRARIES}
+                  CMAKE_FLAGS "-DINCLUDE_DIRECTORIES=${UUID_INCLUDE_DIR}")
+if(normal_uuid)
+    add_definitions(-DUSE_OSSP_UUID=0)
+elseif(ossp_uuid)
+    add_definitions(-DUSE_OSSP_UUID=1)
+else()
+    message(FATAL_ERROR "uuid lib error")
+endif()
+
 find_package(ZLIB REQUIRED)
 target_include_directories(${PROJECT_NAME} PRIVATE ${ZLIB_INCLUDE_DIR})
 target_link_libraries(${PROJECT_NAME} PRIVATE ${ZLIB_LIBRARIES})
