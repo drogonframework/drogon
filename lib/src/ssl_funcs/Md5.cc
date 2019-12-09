@@ -13,16 +13,15 @@
  */
 
 #include "Md5.h"
-#include <iostream>
 #include <math.h>
 #include <string.h>
 
-const int Md5Encode::kA = 0x67452301;
-const int Md5Encode::kB = 0xefcdab89;
-const int Md5Encode::kC = 0x98badcfe;
-const int Md5Encode::kD = 0x10325476;
+const uint32_t Md5Encode::kA = 0x67452301;
+const uint32_t Md5Encode::kB = 0xefcdab89;
+const uint32_t Md5Encode::kC = 0x98badcfe;
+const uint32_t Md5Encode::kD = 0x10325476;
 
-const unsigned long long Md5Encode::tiNumInteger = 4294967296;
+const uint64_t Md5Encode::tiNumInteger = 4294967296;
 
 // function: CycleMoveLeft
 // @param srcNum: the number to be moved left
@@ -90,7 +89,7 @@ void Md5Encode::roundF(char *data512Ptr, ParamDynamic &param)
     int s[] = {7, 12, 17, 22};
     for (int i = 0; i < 16; ++i)
     {
-        uint32_t ti = tiNumInteger * abs(sin(i + 1));
+        uint64_t ti = tiNumInteger * fabs(sin(i + 1));
         if (i % 4 == 0)
         {
             FF(param.ua_, param.ub_, param.uc_, param.ud_, M[i], s[i % 4], ti);
@@ -116,7 +115,8 @@ void Md5Encode::roundG(char *data512Ptr, ParamDynamic &param)
     int s[] = {5, 9, 14, 20};
     for (int i = 0; i < 16; ++i)
     {
-        uint32_t ti = tiNumInteger * abs(sin(i + 1 + 16));
+        auto sss = sin(i + 1 + 16);
+        uint64_t ti = tiNumInteger * fabs(sss);
         int index = (i * 5 + 1) % 16;
         if (i % 4 == 0)
         {
@@ -167,7 +167,7 @@ void Md5Encode::roundH(char *data512Ptr, ParamDynamic &param)
     int s[] = {4, 11, 16, 23};
     for (int i = 0; i < 16; ++i)
     {
-        uint32_t ti = tiNumInteger * abs(sin(i + 1 + 32));
+        uint64_t ti = tiNumInteger * fabs(sin(i + 1 + 32));
         int index = (i * 3 + 5) % 16;
         if (i % 4 == 0)
         {
@@ -218,7 +218,7 @@ void Md5Encode::roundI(char *data512Ptr, ParamDynamic &param)
     int s[] = {6, 10, 15, 21};
     for (int i = 0; i < 16; ++i)
     {
-        uint32_t ti = tiNumInteger * abs(sin(i + 1 + 48));
+        uint64_t ti = tiNumInteger * fabs(sin(i + 1 + 48));
         int index = (i * 7 + 0) % 16;
         if (i % 4 == 0)
         {
@@ -265,7 +265,7 @@ void Md5Encode::roundI(char *data512Ptr, ParamDynamic &param)
 
 void Md5Encode::rotationCalculate(char *data512Ptr, ParamDynamic &param)
 {
-    if (NULL == data512Ptr)
+    if (nullptr == data512Ptr)
     {
         return;
     }
@@ -285,7 +285,7 @@ void Md5Encode::rotationCalculate(char *data512Ptr, ParamDynamic &param)
 }
 
 // Convert to hex format string
-std::string Md5Encode::getHexStr(unsigned int numStr)
+std::string Md5Encode::getHexStr(uint32_t numStr)
 {
     std::string hexstr = "";
     char szch[] = {'0',
@@ -333,16 +333,16 @@ std::string Md5Encode::encode(const std::string &srcInfo)
     param.vd_last_ = kD;
 
     std::string result;
-    char *outDataPtr = NULL;
+    char *outDataPtr = nullptr;
     int totalByte = fillData(srcInfo.c_str(), srcInfo.length(), &outDataPtr);
-    // char * dataBitOfGroup = outDataPtr;
+
     for (int i = 0; i < totalByte / (BIT_OF_GROUP / BIT_OF_BYTE); ++i)
     {
         char *dataBitOfGroup = outDataPtr;
         dataBitOfGroup += i * (BIT_OF_GROUP / BIT_OF_BYTE);
         rotationCalculate(dataBitOfGroup, param);
     }
-    delete[] outDataPtr, outDataPtr = NULL;
+    delete[] outDataPtr, outDataPtr = nullptr;
     result.append(getHexStr(param.ua_));
     result.append(getHexStr(param.ub_));
     result.append(getHexStr(param.uc_));
