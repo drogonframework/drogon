@@ -2,7 +2,18 @@ cmake_minimum_required(VERSION 3.5)
 
 project(drogon CXX)
 
-add_library(${PROJECT_NAME} STATIC)
+option(BUILD_CTL "Build drogon_ctl" ON)
+option(BUILD_EXAMPLES "Build drogon_ctl" ON)
+option(BUILD_ORM "Build orm" ON)
+option(LIBPQ_BATCH_MODE "Use batch mode for libpq" ON)
+option(BUILD_DROGON_SHARED "Build drogon as a shared lib" OFF)
+
+if(BUILD_DROGON_SHARED)
+  set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
+  add_library(${PROJECT_NAME} SHARED)
+else()
+  add_library(${PROJECT_NAME} STATIC)
+endif()
 
 set(DROGON_MAJOR_VERSION 1)
 set(DROGON_MINOR_VERSION 0)
@@ -171,14 +182,6 @@ else()
                      lib/src/ssl_funcs/Sha1.cc)
 endif()
 
-if(NOT BUILD_ORM)
-  set(BUILD_ORM TRUE CACHE BOOL INTERNAL)
-endif()
-
-if(NOT LIBPQ_BATCH_MODE)
-  set(LIBPQ_BATCH_MODE TRUE CACHE BOOL INTERNAL)
-endif()
-
 if(BUILD_ORM)
   # find postgres
   find_package(PostgreSQL)
@@ -254,16 +257,8 @@ add_custom_command(TARGET makeVersion
                    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
                    VERBATIM)
 
-if(NOT BUILD_EXAMPLES)
-  set(BUILD_EXAMPLES TRUE CACHE BOOL INTERNAL)
-endif()
-
 if(BUILD_EXAMPLES)
   add_subdirectory(examples)
-endif()
-
-if(NOT BUILD_CTL)
-  set(BUILD_CTL TRUE CACHE BOOL INTERNAL)
 endif()
 
 if(BUILD_CTL)
