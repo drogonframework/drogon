@@ -6,7 +6,8 @@ option(BUILD_CTL "Build drogon_ctl" ON)
 option(BUILD_EXAMPLES "Build drogon_ctl" ON)
 option(BUILD_ORM "Build orm" ON)
 option(LIBPQ_BATCH_MODE "Use batch mode for libpq" ON)
-option(BUILD_DROGON_SHARED "Build drogon as a shared lib" OFF)
+option(BUILD_DROGON_SHARED "Build drogon as a shared lib" ON)
+option(BUILD_TESTING "Build tests" ON)
 
 if(BUILD_DROGON_SHARED)
   set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
@@ -91,7 +92,7 @@ set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules/)
 # jsoncpp
 find_package(Jsoncpp REQUIRED)
 target_include_directories(${PROJECT_NAME} PUBLIC ${JSONCPP_INCLUDE_DIRS})
-target_link_libraries(${PROJECT_NAME} PRIVATE ${JSONCPP_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} PUBLIC ${JSONCPP_LIBRARIES})
 list(APPEND INCLUDE_DIRS_FOR_DYNAMIC_VIEW ${JSONCPP_INCLUDE_DIRS})
 message(STATUS "jsoncpp inc path:" ${JSONCPP_INCLUDE_DIRS})
 

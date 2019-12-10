@@ -17,7 +17,6 @@ add_executable(_drogon_ctl
                create.cc
                create_view.cc)
 target_link_libraries(_drogon_ctl ${PROJECT_NAME})
-target_link_libraries(_drogon_ctl ${JSONCPP_LIBRARIES})
 file(GLOB SCP_LIST ${CMAKE_CURRENT_SOURCE_DIR}/templates/*.csp)
 foreach(cspFile ${SCP_LIST})
   message(STATUS "cspFile:" ${cspFile})
@@ -39,7 +38,6 @@ foreach(cspFile ${SCP_LIST})
 endforeach()
 add_executable(drogon_ctl ${ctl_sources} ${TEMPL_SRC})
 target_link_libraries(drogon_ctl PRIVATE ${PROJECT_NAME})
-target_link_libraries(drogon_ctl PRIVATE ${JSONCPP_LIBRARIES})
 target_include_directories(drogon_ctl PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 add_dependencies(drogon_ctl
                  trantor
