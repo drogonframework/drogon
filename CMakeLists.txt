@@ -7,7 +7,7 @@ option(BUILD_EXAMPLES "Build drogon_ctl" ON)
 option(BUILD_ORM "Build orm" ON)
 option(LIBPQ_BATCH_MODE "Use batch mode for libpq" ON)
 option(BUILD_DROGON_SHARED "Build drogon as a shared lib" ON)
-option(BUILD_TESTING "Build tests" ON)
+option(BUILD_TESTING "Build tests" OFF)
 
 if(BUILD_DROGON_SHARED)
   set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
@@ -365,7 +365,8 @@ endif()
 
 install(TARGETS ${PROJECT_NAME}
         EXPORT DrogonTargets
-        ARCHIVE DESTINATION "${INSTALL_LIB_DIR}" COMPONENT lib)
+        ARCHIVE DESTINATION "${INSTALL_LIB_DIR}" COMPONENT lib
+        LIBRARY DESTINATION "${INSTALL_LIB_DIR}" COMPONENT lib)
 
 set(DROGON_HEADERS
     lib/inc/drogon/Attribute.h
