@@ -112,6 +112,7 @@ class PgConnection : public DbConnection,
     int flush();
     void handleFatalError();
 #if LIBPQ_SUPPORTS_BATCH_MODE
+    void handleFatalError(bool clearAll);
     std::list<std::shared_ptr<SqlCmd>> batchCommandsForWaitingResults_;
     std::deque<std::shared_ptr<SqlCmd>> batchSqlCommands_;
     void sendBatchedSql();

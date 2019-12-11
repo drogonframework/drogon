@@ -220,7 +220,7 @@ int PgConnection::sendBatchEnd()
     if (!PQsendEndBatch(connectionPtr_.get()))
     {
         isWorking_ = false;
-        handleFatalError();
+        handleFatalError(true);
         handleClosed();
         return 0;
     }
@@ -270,7 +270,7 @@ void PgConnection::sendBatchedSql()
                               << PQerrorMessage(connectionPtr_.get());
 
                     isWorking_ = false;
-                    handleFatalError();
+                    handleFatalError(true);
                     handleClosed();
                     return;
                 }
@@ -320,7 +320,7 @@ void PgConnection::sendBatchedSql()
                                 0) == 0)
         {
             isWorking_ = false;
-            handleFatalError();
+            handleFatalError(true);
             handleClosed();
             return;
         }
@@ -357,7 +357,7 @@ void PgConnection::handleRead()
         if (isWorking_)
         {
             isWorking_ = false;
-            handleFatalError();
+            handleFatalError(true);
         }
         handleClosed();
         return;
@@ -367,8 +367,8 @@ void PgConnection::handleRead()
         // need read more data from socket;
         return;
     }
-    assert((!batchCommandsForWaitingResults_.empty() ||
-            !batchSqlCommands_.empty()));
+    // assert((!batchCommandsForWaitingResults_.empty() ||
+    //         !batchSqlCommands_.empty()));
 
     while (!PQisBusy(connectionPtr_.get()))
     {
@@ -390,7 +390,7 @@ void PgConnection::handleRead()
         if (type == PGRES_BAD_RESPONSE || type == PGRES_FATAL_ERROR ||
             type == PGRES_BATCH_ABORTED)
         {
-            handleFatalError();
+            handleFatalError(false);
             continue;
         }
         if (type == PGRES_BATCH_END)
@@ -436,7 +436,7 @@ void PgConnection::doAfterPreparing()
 {
 }
 
-void PgConnection::handleFatalError()
+void PgConnection::handleFatalError(bool clearAll)
 {
     LOG_ERROR << PQerrorMessage(connectionPtr_.get());
     try
@@ -446,16 +446,45 @@ void PgConnection::handleFatalError()
     catch (...)
     {
         auto exceptPtr = std::current_exception();
-        for (auto &cmd : batchCommandsForWaitingResults_)
+        if (clearAll)
         {
-            cmd->exceptionCallback_(exceptPtr);
+            for (auto &cmd : batchCommandsForWaitingResults_)
+            {
+                cmd->exceptionCallback_(exceptPtr);
+            }
+            for (auto &cmd : batchSqlCommands_)
+            {
+                cmd->exceptionCallback_(exceptPtr);
+            }
+            batchCommandsForWaitingResults_.clear();
+            batchSqlCommands_.clear();
         }
-        for (auto &cmd : batchSqlCommands_)
+        else
         {
-            cmd->exceptionCallback_(exceptPtr);
+            if (!batchSqlCommands_.empty() &&
+                !batchSqlCommands_.front()->preparingStatement_.empty())
+            {
+                batchSqlCommands_.front()->exceptionCallback_(exceptPtr);
+                batchSqlCommands_.pop_front();
+            }
+            else if (!batchCommandsForWaitingResults_.empty())
+            {
+                auto &cmd = batchCommandsForWaitingResults_.front();
+                if (!cmd->preparingStatement_.empty())
+                {
+                    cmd->preparingStatement_.clear();
+                }
+                else
+                {
+                    cmd->exceptionCallback_(exceptPtr);
+                    batchCommandsForWaitingResults_.pop_front();
+                }
+            }
+            else
+            {
+                assert(false);
+            }
         }
-        batchCommandsForWaitingResults_.clear();
-        batchSqlCommands_.clear();
     }
 }
 
