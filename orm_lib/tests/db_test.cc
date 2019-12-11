@@ -392,7 +392,7 @@ void doTest(const drogon::orm::DbClientPtr &clientPtr)
     try
     {
         auto r = clientPtr->execSqlSync(
-            "select * from users where user_id=$1 and user_name='12'",
+            "select * from users where user_id=$1 and user_name='1234'",
             "pg111",
             "postgresql1");
         testOutput(r.size() == 0, "DbClient synchronous interface(4)");
