@@ -110,7 +110,7 @@ class PgConnection : public DbConnection,
     std::vector<int> lengths_;
     std::vector<int> formats_;
     int flush();
-    void handleFatalError();
+    void handleFatalError(bool clearAll);
 #if LIBPQ_SUPPORTS_BATCH_MODE
     std::list<std::shared_ptr<SqlCmd>> batchCommandsForWaitingResults_;
     std::deque<std::shared_ptr<SqlCmd>> batchSqlCommands_;
