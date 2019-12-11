@@ -367,8 +367,8 @@ void PgConnection::handleRead()
         // need read more data from socket;
         return;
     }
-    assert((!batchCommandsForWaitingResults_.empty() ||
-            !batchSqlCommands_.empty()));
+    // assert((!batchCommandsForWaitingResults_.empty() ||
+    //         !batchSqlCommands_.empty()));
 
     while (!PQisBusy(connectionPtr_.get()))
     {
