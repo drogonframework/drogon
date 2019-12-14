@@ -185,7 +185,9 @@ void HttpRequestImpl::appendToBuffer(trantor::MsgBuffer *output) const
     }
 
     std::string content;
-    if (!parameters_.empty() && contentType_ != CT_MULTIPART_FORM_DATA)
+
+    if (!passThrough_ &&
+        (!parameters_.empty() && contentType_ != CT_MULTIPART_FORM_DATA))
     {
         for (auto const &p : parameters_)
         {
@@ -221,9 +223,9 @@ void HttpRequestImpl::appendToBuffer(trantor::MsgBuffer *output) const
                 << "You can't set parameters in the query string when the "
                    "request content type is JSON and http method "
                    "is POST or PUT";
-            LOG_ERROR
-                << "Please put these parameters into the path or into the json "
-                   "string";
+            LOG_ERROR << "Please put these parameters into the path or "
+                         "into the json "
+                         "string";
             content.clear();
         }
     }
@@ -242,7 +244,8 @@ void HttpRequestImpl::appendToBuffer(trantor::MsgBuffer *output) const
         return;
     }
     output->append("\r\n");
-    if (contentType_ == CT_MULTIPART_FORM_DATA)
+
+    if (!passThrough_ && contentType_ == CT_MULTIPART_FORM_DATA)
     {
         auto mReq = dynamic_cast<const HttpFileUploadRequest *>(this);
         if (mReq)
@@ -291,7 +294,7 @@ void HttpRequestImpl::appendToBuffer(trantor::MsgBuffer *output) const
         }
     }
     assert(!(!content.empty() && !content_.empty()));
-    if (!content.empty() || !content_.empty())
+    if (!passThrough_ && (!content.empty() || !content_.empty()))
     {
         char buf[64];
         auto len = snprintf(buf,
@@ -306,7 +309,7 @@ void HttpRequestImpl::appendToBuffer(trantor::MsgBuffer *output) const
             output->append(type.data(), type.length());
         }
     }
-    if (!contentTypeString_.empty())
+    if (!passThrough_ && !contentTypeString_.empty())
     {
         output->append(contentTypeString_);
     }

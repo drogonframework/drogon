@@ -214,72 +214,8 @@ void HttpResponseImpl::makeHeaderString(
         headerStringPtr->append(statusMessage_.data(), statusMessage_.length());
     headerStringPtr->append("\r\n");
     generateBodyFromJson();
-    if (sendfileName_.empty())
+    if (!passThrough_)
     {
-        long unsigned int bodyLength =
-            bodyPtr_ ? bodyPtr_->length()
-                     : (bodyViewPtr_ ? bodyViewPtr_->length() : 0);
-        len = snprintf(buf, sizeof buf, "Content-Length: %lu\r\n", bodyLength);
-    }
-    else
-    {
-        struct stat filestat;
-        if (stat(sendfileName_.c_str(), &filestat) < 0)
-        {
-            LOG_SYSERR << sendfileName_ << " stat error";
-            return;
-        }
-        len = snprintf(buf,
-                       sizeof buf,
-                       "Content-Length: %llu\r\n",
-                       static_cast<long long unsigned int>(filestat.st_size));
-    }
-
-    headerStringPtr->append(buf, len);
-    if (headers_.find("Connection") == headers_.end())
-    {
-        if (closeConnection_)
-        {
-            headerStringPtr->append("Connection: close\r\n");
-        }
-        else
-        {
-            // output->append("Connection: Keep-Alive\r\n");
-        }
-    }
-    headerStringPtr->append(contentTypeString_.data(),
-                            contentTypeString_.length());
-    for (auto it = headers_.begin(); it != headers_.end(); ++it)
-    {
-        headerStringPtr->append(it->first);
-        headerStringPtr->append(": ");
-        headerStringPtr->append(it->second);
-        headerStringPtr->append("\r\n");
-    }
-    if (HttpAppFrameworkImpl::instance().sendServerHeader())
-    {
-        headerStringPtr->append(
-            HttpAppFrameworkImpl::instance().getServerHeaderString());
-    }
-}
-void HttpResponseImpl::renderToBuffer(trantor::MsgBuffer &buffer)
-{
-    if (expriedTime_ >= 0)
-    {
-        auto strPtr = renderToString();
-        buffer.append(strPtr->data(), strPtr->length());
-        return;
-    }
-
-    if (!fullHeaderString_)
-    {
-        char buf[128];
-        auto len = snprintf(buf, sizeof buf, "HTTP/1.1 %d ", statusCode_);
-        buffer.append(buf, len);
-        if (!statusMessage_.empty())
-            buffer.append(statusMessage_.data(), statusMessage_.length());
-        buffer.append("\r\n");
-        generateBodyFromJson();
         if (sendfileName_.empty())
         {
             long unsigned int bodyLength =
@@ -305,30 +241,107 @@ void HttpResponseImpl::renderToBuffer(trantor::MsgBuffer &buffer)
                          static_cast<long long unsigned int>(filestat.st_size));
         }
 
-        buffer.append(buf, len);
+        headerStringPtr->append(buf, len);
         if (headers_.find("Connection") == headers_.end())
         {
             if (closeConnection_)
             {
-                buffer.append("Connection: close\r\n");
+                headerStringPtr->append("Connection: close\r\n");
             }
             else
             {
                 // output->append("Connection: Keep-Alive\r\n");
             }
         }
-        buffer.append(contentTypeString_.data(), contentTypeString_.length());
+        headerStringPtr->append(contentTypeString_.data(),
+                                contentTypeString_.length());
+        if (HttpAppFrameworkImpl::instance().sendServerHeader())
+        {
+            headerStringPtr->append(
+                HttpAppFrameworkImpl::instance().getServerHeaderString());
+        }
+    }
+
+    for (auto it = headers_.begin(); it != headers_.end(); ++it)
+    {
+        headerStringPtr->append(it->first);
+        headerStringPtr->append(": ");
+        headerStringPtr->append(it->second);
+        headerStringPtr->append("\r\n");
+    }
+}
+void HttpResponseImpl::renderToBuffer(trantor::MsgBuffer &buffer)
+{
+    if (expriedTime_ >= 0)
+    {
+        auto strPtr = renderToString();
+        buffer.append(strPtr->data(), strPtr->length());
+        return;
+    }
+
+    if (!fullHeaderString_)
+    {
+        char buf[128];
+        auto len = snprintf(buf, sizeof buf, "HTTP/1.1 %d ", statusCode_);
+        buffer.append(buf, len);
+        if (!statusMessage_.empty())
+            buffer.append(statusMessage_.data(), statusMessage_.length());
+        buffer.append("\r\n");
+        generateBodyFromJson();
+        if (!passThrough_)
+        {
+            if (sendfileName_.empty())
+            {
+                long unsigned int bodyLength =
+                    bodyPtr_ ? bodyPtr_->length()
+                             : (bodyViewPtr_ ? bodyViewPtr_->length() : 0);
+                len = snprintf(buf,
+                               sizeof buf,
+                               "Content-Length: %lu\r\n",
+                               bodyLength);
+            }
+            else
+            {
+                struct stat filestat;
+                if (stat(sendfileName_.c_str(), &filestat) < 0)
+                {
+                    LOG_SYSERR << sendfileName_ << " stat error";
+                    return;
+                }
+                len = snprintf(buf,
+                               sizeof buf,
+                               "Content-Length: %llu\r\n",
+                               static_cast<long long unsigned int>(
+                                   filestat.st_size));
+            }
+
+            buffer.append(buf, len);
+            if (headers_.find("Connection") == headers_.end())
+            {
+                if (closeConnection_)
+                {
+                    buffer.append("Connection: close\r\n");
+                }
+                else
+                {
+                    // output->append("Connection: Keep-Alive\r\n");
+                }
+            }
+            buffer.append(contentTypeString_.data(),
+                          contentTypeString_.length());
+            if (HttpAppFrameworkImpl::instance().sendServerHeader())
+            {
+                buffer.append(
+                    HttpAppFrameworkImpl::instance().getServerHeaderString());
+            }
+        }
+
         for (auto it = headers_.begin(); it != headers_.end(); ++it)
         {
             buffer.append(it->first);
             buffer.append(": ");
             buffer.append(it->second);
             buffer.append("\r\n");
-        }
-        if (HttpAppFrameworkImpl::instance().sendServerHeader())
-        {
-            buffer.append(
-                HttpAppFrameworkImpl::instance().getServerHeaderString());
         }
     }
     else
@@ -346,7 +359,8 @@ void HttpResponseImpl::renderToBuffer(trantor::MsgBuffer &buffer)
     }
 
     // output Date header
-    if (drogon::HttpAppFrameworkImpl::instance().sendDateHeader())
+    if (!passThrough_ &&
+        drogon::HttpAppFrameworkImpl::instance().sendDateHeader())
     {
         buffer.append("Date: ");
         buffer.append(utils::getHttpFullDate(trantor::Date::date()),
@@ -366,7 +380,8 @@ std::shared_ptr<std::string> HttpResponseImpl::renderToString()
 {
     if (expriedTime_ >= 0)
     {
-        if (drogon::HttpAppFrameworkImpl::instance().sendDateHeader())
+        if (!passThrough_ &&
+            drogon::HttpAppFrameworkImpl::instance().sendDateHeader())
         {
             if (datePos_ != std::string::npos)
             {
@@ -418,7 +433,8 @@ std::shared_ptr<std::string> HttpResponseImpl::renderToString()
     }
 
     // output Date header
-    if (drogon::HttpAppFrameworkImpl::instance().sendDateHeader())
+    if (!passThrough_ &&
+        drogon::HttpAppFrameworkImpl::instance().sendDateHeader())
     {
         httpString->append("Date: ");
         auto datePos = httpString->length();
@@ -467,7 +483,8 @@ std::shared_ptr<std::string> HttpResponseImpl::renderHeaderForHeadMethod()
     }
 
     // output Date header
-    if (drogon::HttpAppFrameworkImpl::instance().sendDateHeader())
+    if (!passThrough_ &&
+        drogon::HttpAppFrameworkImpl::instance().sendDateHeader())
     {
         httpString->append("Date: ");
         httpString->append(utils::getHttpFullDate(trantor::Date::date()),

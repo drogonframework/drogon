@@ -18,7 +18,7 @@
     "app": {
         //threads_num: The number of IO threads, 1 by default, if the value is set to 0, the number of threads
         //is the number of CPU cores
-        "threads_num": 0,
+        "threads_num": 2,
         //enable_session: False by default
         "enable_session": false,
         "session_timeout": 0,
@@ -141,12 +141,12 @@
         //config: The configuration of the plugin. This json object is the parameter to initialize the plugin.
         //It can be commented out
         "config": {
+            // The pipelining depth of HTTP clients.
             "pipelining": 16,
-            "backends": ["http://127.0.0.1:8848", "https://localhost:8849"],
-            "same_client_to_same_backend": {
-                "enabled": false,
-                "cache_timeout": 3600
-            }
+            "backends": ["http://127.0.0.1:8848"],
+            "same_client_to_same_backend": false,
+            //The number of connections created by proxy for each backend in very event loop (IO thread).
+            "connection_factor": 1
         }
     }],
     //custom_config: custom configuration for users. This object can be get by the app().getCustomConfig() method. 

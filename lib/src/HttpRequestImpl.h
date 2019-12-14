@@ -330,6 +330,11 @@ class HttpRequestImpl : public HttpRequest
         cookies_[key] = value;
     }
 
+    virtual void setPassThrough(bool flag) override
+    {
+        passThrough_ = flag;
+    }
+
     void appendToBuffer(trantor::MsgBuffer *output) const;
 
     virtual SessionPtr session() const override
@@ -460,6 +465,7 @@ class HttpRequestImpl : public HttpRequest
     std::string expect_;
     bool keepAlive_{true};
     bool isOnSecureConnection_{false};
+    bool passThrough_{false};
 
   protected:
     std::string content_;

@@ -180,4 +180,4 @@ As you can see, users can use the `HttpController` to map paths and parameters a
 
 In addition, you can also find that all handler interfaces are in asynchronous mode, where the response is returned by a callback object. This design is for performance reasons because in asynchronous mode the drogon application can handle a large number of concurrent requests with a small number of threads.
 
-After compiling all of the above source files, we get a very simple web application. This is a good start. **for more information, please visit the [wiki](https://github.com/an-tao/drogon/wiki/01-Overview) site**
+After compiling all of the above source files, we get a very simple web application. This is a good start. **for more information, please visit the [wiki](https://github.com/an-tao/drogon/wiki/01-Overview) or the [doxiz](https://doxiz.com/drogon/master/overview/)**
