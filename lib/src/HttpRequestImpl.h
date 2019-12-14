@@ -335,6 +335,11 @@ class HttpRequestImpl : public HttpRequest
         passThrough_ = flag;
     }
 
+    bool passThrough() const
+    {
+        return passThrough_;
+    }
+
     void appendToBuffer(trantor::MsgBuffer *output) const;
 
     virtual SessionPtr session() const override
