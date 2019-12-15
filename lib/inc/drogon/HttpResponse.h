@@ -278,6 +278,17 @@ class HttpResponse
         return jsonObject();
     }
 
+    /**
+     * @brief Set the reponse object to the pass-through mode or not. It's not
+     * by default when a new response object is created.
+     * In pass-through mode, no addtional headers (including server, date,
+     * content-type and content-length, etc.) are added to the response. This
+     * mode is useful for some applications such as a proxy.
+     *
+     * @param flag
+     */
+    virtual void setPassThrough(bool flag) = 0;
+
     /* The following methods are a series of factory methods that help users
      * create response objects. */
 

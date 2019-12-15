@@ -44,6 +44,10 @@ class HttpResponseImpl : public HttpResponse
           contentTypeString_(webContentTypeToString(type))
     {
     }
+    virtual void setPassThrough(bool flag) override
+    {
+        passThrough_ = flag;
+    }
     virtual HttpStatusCode statusCode() const override
     {
         return statusCode_;
@@ -363,6 +367,7 @@ class HttpResponseImpl : public HttpResponse
     ContentType contentType_{CT_TEXT_HTML};
     string_view contentTypeString_{
         "Content-Type: text/html; charset=utf-8\r\n"};
+    bool passThrough_{false};
     void setContentType(const string_view &contentType)
     {
         contentTypeString_ = contentType;

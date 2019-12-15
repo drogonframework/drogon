@@ -213,14 +213,16 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
                                        const drogon::HttpReqCallback &callback)
 {
     loop_->assertInLoopThread();
-    req->addHeader("Connection", "Keep-Alive");
-    // req->addHeader("Accept", "*/*");
-    if (!domain_.empty())
+    if (!static_cast<drogon::HttpRequestImpl *>(req.get())->passThrough())
     {
-        req->addHeader("Host", domain_);
+        req->addHeader("Connection", "Keep-Alive");
+        // req->addHeader("Accept", "*/*");
+        if (!domain_.empty())
+        {
+            req->addHeader("Host", domain_);
+        }
+        req->addHeader("User-Agent", "DrogonClient");
     }
-    req->addHeader("User-Agent", "DrogonClient");
-
     for (auto &cookie : validCookies_)
     {
         if ((cookie.expiresDate().microSecondsSinceEpoch() == 0 ||

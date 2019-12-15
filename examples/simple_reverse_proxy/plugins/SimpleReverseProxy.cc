@@ -30,23 +30,17 @@ void SimpleReverseProxy::initAndStart(const Json::Value &config)
         abort();
     }
     pipeliningDepth_ = config.get("pipelining", 0).asInt();
-    if (config.isMember("same_client_to_same_backend"))
+    sameClientToSameBackend_ =
+        config.get("same_client_to_same_backend", false).asBool();
+    connectionFactor_ = config.get("connection_factor", 1).asInt();
+    if (connectionFactor_ == 0 || connectionFactor_ > 100)
     {
-        sameClientToSameBackend_ = config["same_client_to_same_backend"]
-                                       .get("enabled", false)
-                                       .asBool();
-        cacheTimeout_ = config["same_client_to_same_backend"]
-                            .get("cache_timeout", 0)
-                            .asInt();
-    }
-    if (sameClientToSameBackend_)
-    {
-        clientMap_ = std::make_unique<drogon::CacheMap<std::string, size_t>>(
-            app().getLoop());
+        LOG_ERROR << "invalid number of connection factor";
+        abort();
     }
     clients_.init(
         [this](std::vector<HttpClientPtr> &clients, size_t ioLoopIndex) {
-            clients.resize(backendAddrs_.size());
+            clients.resize(backendAddrs_.size() * connectionFactor_);
         });
     clientIndex_.init(
         [this](size_t &index, size_t ioLoopIndex) { index = ioLoopIndex; });
@@ -69,13 +63,10 @@ void SimpleReverseProxy::preRouting(const HttpRequestPtr &req,
     auto &clientsVector = *clients_;
     if (sameClientToSameBackend_)
     {
-        std::lock_guard<std::mutex> lock(mapMutex_);
-        auto ip = req->peerAddr().toIp();
-        if (!clientMap_->findAndFetch(ip, index))
-        {
-            index = (++*clientIndex_) % clientsVector.size();
-            clientMap_->insert(ip, index, cacheTimeout_);
-        }
+        index = std::hash<uint32_t>{}(req->getPeerAddr().ipNetEndian()) %
+                clientsVector.size();
+        index = (index + (++(*clientIndex_)) * backendAddrs_.size()) %
+                clientsVector.size();
     }
     else
     {
@@ -84,17 +75,19 @@ void SimpleReverseProxy::preRouting(const HttpRequestPtr &req,
     auto &clientPtr = clientsVector[index];
     if (!clientPtr)
     {
-        auto &addr = backendAddrs_[index];
+        auto &addr = backendAddrs_[index % backendAddrs_.size()];
         clientPtr = HttpClient::newHttpClient(
             addr, trantor::EventLoop::getEventLoopOfCurrentThread());
         clientPtr->setPipeliningDepth(pipeliningDepth_);
     }
+    req->setPassThrough(true);
     clientPtr->sendRequest(
         req,
         [callback = std::move(callback)](ReqResult result,
                                          const HttpResponsePtr &resp) {
             if (result == ReqResult::Ok)
             {
+                resp->setPassThrough(true);
                 callback(resp);
             }
             else
