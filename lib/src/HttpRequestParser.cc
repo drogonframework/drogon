@@ -68,11 +68,11 @@ bool HttpRequestParser::processRequestLine(const char *begin, const char *end)
         {
             if (*(end - 1) == '1')
             {
-                request_->setVersion(HttpRequest::kHttp11);
+                request_->setVersion(Version::kHttp11);
             }
             else if (*(end - 1) == '0')
             {
-                request_->setVersion(HttpRequest::kHttp10);
+                request_->setVersion(Version::kHttp10);
             }
             else
             {
@@ -223,7 +223,7 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
 
                     auto &expect = request_->expect();
                     if (expect == "100-continue" &&
-                        request_->getVersion() >= HttpRequest::kHttp11)
+                        request_->getVersion() >= Version::kHttp11)
                     {
                         if (request_->contentLen_ == 0)
                         {

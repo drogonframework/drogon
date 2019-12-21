@@ -294,6 +294,7 @@ void HttpServer::onRequests(
                 auto resp = advice(req);
                 if (resp)
                 {
+                    resp->setVersion(req->getVersion());
                     if (!syncFlag)
                     {
                         requestParser->getResponseBuffer().emplace_back(
@@ -329,6 +330,8 @@ void HttpServer::onRequests(
                     return;
                 if (!conn->connected())
                     return;
+
+                response->setVersion(req->getVersion());
                 response->setCloseConnection(close_);
                 auto newResp =
                     getCompressedResponse(req, response, isHeadMethod);

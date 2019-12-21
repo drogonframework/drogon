@@ -108,7 +108,7 @@ HttpResponsePtr HttpResponse::newNotFoundResponse()
                 thread404Pages.init([](drogon::HttpResponsePtr &resp,
                                        size_t index) {
                     HttpViewData data;
-                    data.insert("version", getVersion());
+                    data.insert("version", drogon::getVersion());
                     resp = HttpResponse::newHttpViewResponse("drogon::NotFound",
                                                              data);
                     resp->setStatusCode(k404NotFound);
@@ -121,7 +121,7 @@ HttpResponsePtr HttpResponse::newNotFoundResponse()
         else
         {
             HttpViewData data;
-            data.insert("version", getVersion());
+            data.insert("version", drogon::getVersion());
             auto notFoundResp =
                 HttpResponse::newHttpViewResponse("drogon::NotFound", data);
             notFoundResp->setStatusCode(k404NotFound);
@@ -208,8 +208,17 @@ void HttpResponseImpl::makeHeaderString(
 {
     char buf[128];
     assert(headerStringPtr);
-    auto len = snprintf(buf, sizeof buf, "HTTP/1.1 %d ", statusCode_);
+    int len{0};
+    if (version_ == Version::kHttp11)
+    {
+        len = snprintf(buf, sizeof buf, "HTTP/1.1 %d ", statusCode_);
+    }
+    else
+    {
+        len = snprintf(buf, sizeof buf, "HTTP/1.0 %d ", statusCode_);
+    }
     headerStringPtr->append(buf, len);
+
     if (!statusMessage_.empty())
         headerStringPtr->append(statusMessage_.data(), statusMessage_.length());
     headerStringPtr->append("\r\n");
@@ -248,9 +257,9 @@ void HttpResponseImpl::makeHeaderString(
             {
                 headerStringPtr->append("Connection: close\r\n");
             }
-            else
+            else if (version_ == Version::kHttp10)
             {
-                // output->append("Connection: Keep-Alive\r\n");
+                headerStringPtr->append("Connection: Keep-Alive\r\n");
             }
         }
         headerStringPtr->append(contentTypeString_.data(),
@@ -282,8 +291,17 @@ void HttpResponseImpl::renderToBuffer(trantor::MsgBuffer &buffer)
     if (!fullHeaderString_)
     {
         char buf[128];
-        auto len = snprintf(buf, sizeof buf, "HTTP/1.1 %d ", statusCode_);
+        int len{0};
+        if (version_ == Version::kHttp11)
+        {
+            len = snprintf(buf, sizeof buf, "HTTP/1.1 %d ", statusCode_);
+        }
+        else
+        {
+            len = snprintf(buf, sizeof buf, "HTTP/1.0 %d ", statusCode_);
+        }
         buffer.append(buf, len);
+
         if (!statusMessage_.empty())
             buffer.append(statusMessage_.data(), statusMessage_.length());
         buffer.append("\r\n");
@@ -322,9 +340,9 @@ void HttpResponseImpl::renderToBuffer(trantor::MsgBuffer &buffer)
                 {
                     buffer.append("Connection: close\r\n");
                 }
-                else
+                else if (version_ == Version::kHttp10)
                 {
-                    // output->append("Connection: Keep-Alive\r\n");
+                    buffer.append("Connection: Keep-Alive\r\n");
                 }
             }
             buffer.append(contentTypeString_.data(),
@@ -616,7 +634,7 @@ void HttpResponseImpl::swap(HttpResponseImpl &that) noexcept
 void HttpResponseImpl::clear()
 {
     statusCode_ = kUnknown;
-    version_ = kHttp11;
+    version_ = Version::kHttp11;
     statusMessage_ = string_view{};
     fullHeaderString_.reset();
     headers_.clear();

@@ -45,7 +45,7 @@ class HttpRequestImpl : public HttpRequest
     void reset()
     {
         method_ = Invalid;
-        version_ = kUnknown;
+        version_ = Version::kUnknown;
         contentLen_ = 0;
         flagForParsingJson_ = false;
         headers_.clear();
@@ -73,7 +73,7 @@ class HttpRequestImpl : public HttpRequest
     void setVersion(Version v)
     {
         version_ = v;
-        if (v == kHttp10)
+        if (version_ == Version::kHttp10)
         {
             keepAlive_ = false;
         }
@@ -453,7 +453,7 @@ class HttpRequestImpl : public HttpRequest
     mutable bool flagForParsingParameters_{false};
     mutable bool flagForParsingJson_{false};
     HttpMethod method_{Invalid};
-    Version version_{kUnknown};
+    Version version_{Version::kUnknown};
     std::string path_;
     string_view matchedPathPattern_{""};
     std::string query_;
