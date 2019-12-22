@@ -42,11 +42,11 @@ bool HttpResponseParser::processResponseLine(const char *begin, const char *end)
         LOG_TRACE << *(space - 1);
         if (*(space - 1) == '1')
         {
-            responsePtr_->setVersion(kHttp11);
+            responsePtr_->setVersion(Version::kHttp11);
         }
         else if (*(space - 1) == '0')
         {
-            responsePtr_->setVersion(kHttp10);
+            responsePtr_->setVersion(Version::kHttp10);
         }
         else
         {

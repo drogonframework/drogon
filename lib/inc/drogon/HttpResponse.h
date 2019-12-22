@@ -254,6 +254,19 @@ class HttpResponse
         return body();
     }
 
+    /// Return the enum type version of the response.
+    /**
+     * kHttp10 means Http version is 1.0
+     * kHttp11 means Http verison is 1.1
+     */
+    virtual Version version() const = 0;
+
+    /// Return the enum type version of the response.
+    Version getVersion() const
+    {
+        return version();
+    }
+
     /// Reset the reponse object to its initial state
     virtual void clear() = 0;
 

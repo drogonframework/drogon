@@ -231,11 +231,11 @@ void HttpRequestImpl::appendToBuffer(trantor::MsgBuffer *output) const
     }
 
     output->append(" ");
-    if (version_ == kHttp11)
+    if (version_ == Version::kHttp11)
     {
         output->append("HTTP/1.1");
     }
-    else if (version_ == kHttp10)
+    else if (version_ == Version::kHttp10)
     {
         output->append("HTTP/1.0");
     }
@@ -410,7 +410,7 @@ void HttpRequestImpl::addHeader(const char *start,
             {
                 if (field == "connection")
                 {
-                    if (version_ == kHttp11)
+                    if (version_ == Version::kHttp11)
                     {
                         if (value.length() == 5 && value == "close")
                             keepAlive_ = false;
@@ -440,7 +440,7 @@ HttpRequestPtr HttpRequest::newHttpRequest()
 {
     auto req = std::make_shared<HttpRequestImpl>(nullptr);
     req->setMethod(drogon::Get);
-    req->setVersion(drogon::HttpRequest::kHttp11);
+    req->setVersion(drogon::Version::kHttp11);
     return req;
 }
 
@@ -448,7 +448,7 @@ HttpRequestPtr HttpRequest::newHttpFormPostRequest()
 {
     auto req = std::make_shared<HttpRequestImpl>(nullptr);
     req->setMethod(drogon::Post);
-    req->setVersion(drogon::HttpRequest::kHttp11);
+    req->setVersion(drogon::Version::kHttp11);
     req->contentType_ = CT_APPLICATION_X_FORM;
     return req;
 }
@@ -463,7 +463,7 @@ HttpRequestPtr HttpRequest::newHttpJsonRequest(const Json::Value &data)
     });
     auto req = std::make_shared<HttpRequestImpl>(nullptr);
     req->setMethod(drogon::Get);
-    req->setVersion(drogon::HttpRequest::kHttp11);
+    req->setVersion(drogon::Version::kHttp11);
     req->contentType_ = CT_APPLICATION_JSON;
     req->setContent(writeString(builder, data));
     return req;

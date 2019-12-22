@@ -581,6 +581,14 @@ void HttpAppFrameworkImpl::callCallback(
                 return;
             }
         }
+        else if (resp->version() != req->version())
+        {
+            auto newResp = std::make_shared<HttpResponseImpl>(
+                *static_cast<HttpResponseImpl *>(resp.get()));
+            newResp->setExpiredTime(-1);  // make it temporary
+            callback(newResp);
+            return;
+        }
         else
         {
             callback(resp);

@@ -67,6 +67,15 @@ class HttpResponseImpl : public HttpResponse
     virtual void setVersion(const Version v) override
     {
         version_ = v;
+        if (version_ == Version::kHttp10)
+        {
+            closeConnection_ = true;
+        }
+    }
+
+    virtual Version version() const override
+    {
+        return version_;
     }
 
     virtual void setCloseConnection(bool on) override
@@ -347,7 +356,7 @@ class HttpResponseImpl : public HttpResponse
     string_view statusMessage_;
 
     trantor::Date creationDate_;
-    Version version_;
+    Version version_{Version::kHttp11};
     bool closeConnection_{false};
 
     size_t leftBodyLength_{0};

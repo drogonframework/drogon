@@ -102,12 +102,6 @@ class HttpRequest
         return fromRequest<T>(*this);
     }
 
-    enum Version
-    {
-        kUnknown = 0,
-        kHttp10 = 1,
-        kHttp11 = 2
-    };
     /// Return the method string of the request, such as GET, POST, etc.
     virtual const char *methodString() const = 0;
     const char *getMethodString() const

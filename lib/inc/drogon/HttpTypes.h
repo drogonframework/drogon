@@ -63,8 +63,9 @@ enum HttpStatusCode
     k505HTTPVersionnotsupported = 505,
 };
 
-enum Version
+enum class Version
 {
+    kUnknown = 0,
     kHttp10,
     kHttp11
 };
