@@ -244,6 +244,10 @@ class HttpResponseImpl : public HttpResponse
     {
         expriedTime_ = expiredTime;
         datePos_ = std::string::npos;
+        if (expriedTime_ < 0 && version_ == Version::kHttp10)
+        {
+            fullHeaderString_.reset();
+        }
     }
 
     virtual ssize_t expiredTime() const override

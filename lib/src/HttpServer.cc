@@ -295,6 +295,7 @@ void HttpServer::onRequests(
                 if (resp)
                 {
                     resp->setVersion(req->getVersion());
+                    resp->setCloseConnection(close_);
                     if (!syncFlag)
                     {
                         requestParser->getResponseBuffer().emplace_back(

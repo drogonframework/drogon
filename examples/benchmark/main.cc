@@ -3,14 +3,20 @@
 using namespace drogon;
 int main()
 {
-    app().setLogPath("./");
-    app().setLogLevel(trantor::Logger::WARN);
-    app().addListener("0.0.0.0", 7770);
-    app().setThreadNum(16);
-    app().enableRunAsDaemon();
-    // app().enableRelaunchOnError();
-    // app().loop()->runEvery(1, []() {
-    //     LOG_WARN << "HAHA";
-    // });
-    app().run();
+    app()
+        .setLogPath("./")
+        .setLogLevel(trantor::Logger::WARN)
+        .addListener("0.0.0.0", 7770)
+        .setThreadNum(0)
+        .registerSyncAdvice([](const HttpRequestPtr &req) -> HttpResponsePtr {
+            const auto &path = req->path();
+            if (path.length() == 1 && path[0] == '/')
+            {
+                auto response = HttpResponse::newHttpResponse();
+                response->setBody("<p>Hello, world!</p>");
+                return response;
+            }
+            return nullptr;
+        })
+        .run();
 }
