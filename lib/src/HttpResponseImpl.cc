@@ -255,7 +255,7 @@ void HttpResponseImpl::makeHeaderString(
         {
             if (closeConnection_)
             {
-                if(version_ == Version::kHttp11)
+                if (version_ == Version::kHttp11)
                 {
                     headerStringPtr->append("Connection: close\r\n");
                 }
