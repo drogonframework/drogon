@@ -37,8 +37,6 @@ static HttpResponsePtr genHttpResponse(std::string viewName,
     if (templ)
     {
         auto res = HttpResponse::newHttpResponse();
-        res->setStatusCode(k200OK);
-        res->setContentTypeCode(CT_TEXT_HTML);
         res->setBody(templ->genText(data));
         return res;
     }
@@ -255,7 +253,7 @@ void HttpResponseImpl::makeHeaderString(
         {
             if (closeConnection_)
             {
-                if(version_ == Version::kHttp11)
+                if (version_ == Version::kHttp11)
                 {
                     headerStringPtr->append("Connection: close\r\n");
                 }
