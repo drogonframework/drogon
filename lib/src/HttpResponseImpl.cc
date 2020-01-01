@@ -37,8 +37,6 @@ static HttpResponsePtr genHttpResponse(std::string viewName,
     if (templ)
     {
         auto res = HttpResponse::newHttpResponse();
-        res->setStatusCode(k200OK);
-        res->setContentTypeCode(CT_TEXT_HTML);
         res->setBody(templ->genText(data));
         return res;
     }
