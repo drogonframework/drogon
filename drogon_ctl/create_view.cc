@@ -428,6 +428,6 @@ void create_view::newViewSourceFile(std::ofstream &file,
         }
         parseLine(file, buffer, streamName, viewDataName, cxx_flag);
     }
-    file << "std::string ret=std::move(" << streamName << ".str());\n";
+    file << "std::string ret{std::move(" << streamName << ".str())};\n";
     file << "return ret;\n}\n";
 }
