@@ -27,9 +27,8 @@ namespace orm
 class PostgreSQLResultImpl : public ResultImpl
 {
   public:
-    PostgreSQLResultImpl(const std::shared_ptr<PGresult> &r,
-                         const std::string &query) noexcept
-        : ResultImpl(query), result_(r)
+    PostgreSQLResultImpl(const std::shared_ptr<PGresult> &r) noexcept
+        : result_(r)
     {
     }
     virtual SizeType size() const noexcept override;

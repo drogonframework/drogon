@@ -114,7 +114,7 @@ DbClientImpl::~DbClientImpl() noexcept
 
 void DbClientImpl::execSql(
     const DbConnectionPtr &conn,
-    std::string &&sql,
+    string_view &&sql,
     size_t paraNum,
     std::vector<const char *> &&parameters,
     std::vector<int> &&length,
@@ -143,7 +143,8 @@ void DbClientImpl::execSql(
                   std::move(exceptCallback));
 }
 void DbClientImpl::execSql(
-    std::string &&sql,
+    const char *sql,
+    size_t sqlLength,
     size_t paraNum,
     std::vector<const char *> &&parameters,
     std::vector<int> &&length,
@@ -183,7 +184,7 @@ void DbClientImpl::execSql(
             {
                 // LOG_TRACE << "Push query to buffer";
                 std::shared_ptr<SqlCmd> cmd =
-                    std::make_shared<SqlCmd>(std::move(sql),
+                    std::make_shared<SqlCmd>(string_view(sql, sqlLength),
                                              paraNum,
                                              std::move(parameters),
                                              std::move(length),
@@ -204,7 +205,7 @@ void DbClientImpl::execSql(
     if (conn)
     {
         execSql(conn,
-                std::move(sql),
+                string_view(sql, sqlLength),
                 paraNum,
                 std::move(parameters),
                 std::move(length),

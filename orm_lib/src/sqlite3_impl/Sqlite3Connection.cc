@@ -22,12 +22,12 @@ using namespace drogon::orm;
 std::once_flag Sqlite3Connection::once_;
 
 void Sqlite3Connection::onError(
-    const std::string &sql,
+    const string_view &sql,
     const std::function<void(const std::exception_ptr &)> &exceptCallback)
 {
     try
     {
-        throw SqlError(sqlite3_errmsg(connectionPtr_.get()), sql);
+        throw SqlError(sqlite3_errmsg(connectionPtr_.get()), std::string{sql});
     }
     catch (...)
     {
@@ -94,7 +94,7 @@ Sqlite3Connection::Sqlite3Connection(
 }
 
 void Sqlite3Connection::execSql(
-    std::string &&sql,
+    string_view &&sql,
     size_t paraNum,
     std::vector<const char *> &&parameters,
     std::vector<int> &&length,
@@ -118,7 +118,7 @@ void Sqlite3Connection::execSql(
 }
 
 void Sqlite3Connection::execSqlInQueue(
-    const std::string &sql,
+    const string_view &sql,
     size_t paraNum,
     const std::vector<const char *> &parameters,
     const std::vector<int> &length,
@@ -163,7 +163,7 @@ void Sqlite3Connection::execSqlInQueue(
             {
                 throw SqlError(
                     "Multiple semicolon separated statements are unsupported",
-                    sql);
+                    std::string{sql});
             }
             catch (...)
             {
@@ -222,7 +222,7 @@ void Sqlite3Connection::execSqlInQueue(
     }
     int r;
     int columnNum = sqlite3_column_count(stmt);
-    auto resultPtr = std::make_shared<Sqlite3ResultImpl>(sql);
+    auto resultPtr = std::make_shared<Sqlite3ResultImpl>();
     for (int i = 0; i < columnNum; ++i)
     {
         auto name = std::string(sqlite3_column_name(stmt, i));
@@ -261,7 +261,10 @@ void Sqlite3Connection::execSqlInQueue(
         return;
     }
     if (paraNum > 0 && newStmt)
-        stmtsMap_[sql] = stmtPtr;
+    {
+        auto r = stmts_.insert(std::string{sql});
+        stmtsMap_[std::string{r.first->data(), r.first->length()}] = stmtPtr;
+    }
     rcb(Result(resultPtr));
     idleCb_();
 }

@@ -37,7 +37,8 @@ class DbClientLockFree : public DbClient,
                      ClientType type,
                      size_t connectionNumberPerLoop);
     virtual ~DbClientLockFree() noexcept;
-    virtual void execSql(std::string &&sql,
+    virtual void execSql(const char *sql,
+                         size_t sqlLength,
                          size_t paraNum,
                          std::vector<const char *> &&parameters,
                          std::vector<int> &&length,

@@ -152,6 +152,11 @@ class DbClient : public trantor::NonCopyable
     /// wiki page.
     internal::SqlBinder operator<<(const std::string &sql);
     internal::SqlBinder operator<<(std::string &&sql);
+    template <int N>
+    internal::SqlBinder operator<<(const char (&sql)[N])
+    {
+        return internal::SqlBinder(string_view{sql, N - 1}, *this, type_);
+    }
 
     /// Create a transaction object.
     /**
@@ -185,7 +190,8 @@ class DbClient : public trantor::NonCopyable
   private:
     friend internal::SqlBinder;
     virtual void execSql(
-        std::string &&sql,
+        const char *sql,
+        size_t sqlLength,
         size_t paraNum,
         std::vector<const char *> &&parameters,
         std::vector<int> &&length,

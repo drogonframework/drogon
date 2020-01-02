@@ -17,6 +17,7 @@
 #include <string_view>
 #else
 #include <boost/utility/string_view.hpp>
+#include <boost/functional/hash.hpp>
 #endif
 namespace drogon
 {
@@ -26,3 +27,26 @@ using std::string_view;
 using boost::string_view;
 #endif
 }  // namespace drogon
+
+#if __cplusplus < 201703L
+namespace std
+{
+template <>
+struct hash<drogon::string_view>
+{
+    size_t operator()(const drogon::string_view &v) const
+    {
+        return boost::hash_value(v);
+    }
+};
+}  // namespace std
+#include <trantor/utils/LogStream.h>
+namespace trantor
+{
+inline LogStream &operator<<(LogStream &ls, const drogon::string_view &v)
+{
+    ls.append(v.data(), v.length());
+    return ls;
+}
+}  // namespace trantor
+#endif

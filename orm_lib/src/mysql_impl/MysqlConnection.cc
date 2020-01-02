@@ -26,12 +26,11 @@ namespace orm
 {
 Result makeResult(
     const std::shared_ptr<MYSQL_RES> &r = std::shared_ptr<MYSQL_RES>(nullptr),
-    const std::string &query = "",
     Result::SizeType affectedRows = 0,
     unsigned long long insertId = 0)
 {
     return Result(std::shared_ptr<MysqlResultImpl>(
-        new MysqlResultImpl(r, query, affectedRows, insertId)));
+        new MysqlResultImpl(r, affectedRows, insertId)));
 }
 
 }  // namespace orm
@@ -308,7 +307,7 @@ void MysqlConnection::handleEvent()
 }
 
 void MysqlConnection::execSqlInLoop(
-    std::string &&sql,
+    string_view &&sql,
     size_t paraNum,
     std::vector<const char *> &&parameters,
     std::vector<int> &&length,
@@ -461,7 +460,6 @@ void MysqlConnection::getResult(MYSQL_RES *res)
         mysql_free_result(r);
     });
     auto Result = makeResult(resultPtr,
-                             sql_,
                              mysql_affected_rows(mysqlPtr_.get()),
                              mysql_insert_id(mysqlPtr_.get()));
     if (isWorking_)
