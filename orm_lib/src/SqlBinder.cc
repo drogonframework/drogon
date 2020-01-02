@@ -31,13 +31,15 @@ void SqlBinder::exec()
         // nonblocking mode,default mode
         // Retain shared_ptrs of parameters until we get the result;
         client_.execSql(
-            std::move(sql_),
+            sqlView_.data(),
+            sqlView_.length(),
             parametersNumber_,
             std::move(parameters_),
             std::move(lengths_),
             std::move(formats_),
             [holder = std::move(callbackHolder_),
-             objs = std::move(objs_)](const Result &r) mutable {
+             objs = std::move(objs_),
+             sqlptr = sqlPtr_](const Result &r) mutable {
                 objs.clear();
                 if (holder)
                 {
@@ -46,8 +48,8 @@ void SqlBinder::exec()
             },
             [exceptCb = std::move(exceptionCallback_),
              exceptPtrCb = std::move(exceptionPtrCallback_),
-             isExceptPtr =
-                 isExceptionPtr_](const std::exception_ptr &exception) {
+             isExceptPtr = isExceptionPtr_,
+             sqlptr = sqlPtr_](const std::exception_ptr &exception) {
                 // LOG_DEBUG<<"exp callback "<<isExceptPtr;
                 if (!isExceptPtr)
                 {
@@ -77,7 +79,8 @@ void SqlBinder::exec()
         auto f = pro->get_future();
 
         client_.execSql(
-            std::move(sql_),
+            sqlView_.data(),
+            sqlView_.length(),
             parametersNumber_,
             std::move(parameters_),
             std::move(lengths_),
@@ -93,29 +96,27 @@ void SqlBinder::exec()
                     assert(0);
                 }
             });
-        if (callbackHolder_ || exceptionCallback_)
+
+        try
         {
-            try
+            const Result &v = f.get();
+            if (callbackHolder_)
             {
-                const Result &v = f.get();
-                if (callbackHolder_)
-                {
-                    callbackHolder_->execCallback(v);
-                }
+                callbackHolder_->execCallback(v);
             }
-            catch (const DrogonDbException &exception)
+        }
+        catch (const DrogonDbException &exception)
+        {
+            if (!destructed_)
             {
-                if (!destructed_)
+                // throw exception
+                std::rethrow_exception(std::current_exception());
+            }
+            else
+            {
+                if (exceptionCallback_)
                 {
-                    // throw exception
-                    std::rethrow_exception(std::current_exception());
-                }
-                else
-                {
-                    if (exceptionCallback_)
-                    {
-                        exceptionCallback_(exception);
-                    }
+                    exceptionCallback_(exception);
                 }
             }
         }

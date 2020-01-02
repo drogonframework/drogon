@@ -29,10 +29,7 @@ namespace orm
 class Sqlite3ResultImpl : public ResultImpl
 {
   public:
-    explicit Sqlite3ResultImpl(const std::string &query) noexcept
-        : ResultImpl(query)
-    {
-    }
+    Sqlite3ResultImpl() = default;
     virtual SizeType size() const noexcept override;
     virtual RowSizeType columns() const noexcept override;
     virtual const char *columnName(RowSizeType number) const override;

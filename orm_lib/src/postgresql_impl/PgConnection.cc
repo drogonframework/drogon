@@ -27,11 +27,10 @@ namespace drogon
 namespace orm
 {
 Result makeResult(
-    const std::shared_ptr<PGresult> &r = std::shared_ptr<PGresult>(nullptr),
-    const std::string &query = "")
+    const std::shared_ptr<PGresult> &r = std::shared_ptr<PGresult>(nullptr))
 {
-    return Result(std::shared_ptr<PostgreSQLResultImpl>(
-        new PostgreSQLResultImpl(r, query)));
+    return Result(
+        std::shared_ptr<PostgreSQLResultImpl>(new PostgreSQLResultImpl(r)));
 }
 
 }  // namespace orm
@@ -184,7 +183,7 @@ void PgConnection::pgPoll()
 }
 
 void PgConnection::execSqlInLoop(
-    std::string &&sql,
+    string_view &&sql,
     size_t paraNum,
     std::vector<const char *> &&parameters,
     std::vector<int> &&length,
@@ -207,7 +206,7 @@ void PgConnection::execSqlInLoop(
     if (paraNum == 0)
     {
         isRreparingStatement_ = false;
-        if (PQsendQuery(connectionPtr_.get(), sql_.c_str()) == 0)
+        if (PQsendQuery(connectionPtr_.get(), sql_.data()) == 0)
         {
             LOG_ERROR << "send query error: "
                       << PQerrorMessage(connectionPtr_.get());
@@ -256,7 +255,7 @@ void PgConnection::execSqlInLoop(
             statementName_ = utils::getUuid();
             if (PQsendPrepare(connectionPtr_.get(),
                               statementName_.c_str(),
-                              sql_.c_str(),
+                              sql_.data(),
                               paraNum,
                               NULL) == 0)
             {
@@ -322,7 +321,7 @@ void PgConnection::handleRead()
             {
                 if (!isRreparingStatement_)
                 {
-                    auto r = makeResult(res, sql_);
+                    auto r = makeResult(res);
                     callback_(r);
                     callback_ = nullptr;
                     exceptionCallback_ = nullptr;
@@ -348,7 +347,9 @@ void PgConnection::handleRead()
 void PgConnection::doAfterPreparing()
 {
     isRreparingStatement_ = false;
-    preparedStatementsMap_[sql_] = statementName_;
+    auto r = preparedStatements_.insert(std::string{sql_});
+    preparedStatementsMap_[string_view{r.first->data(), r.first->length()}] =
+        statementName_;
     if (PQsendQueryPrepared(connectionPtr_.get(),
                             statementName_.c_str(),
                             parametersNumber_,

@@ -79,7 +79,8 @@ DbClientLockFree::~DbClientLockFree() noexcept
 }
 
 void DbClientLockFree::execSql(
-    std::string &&sql,
+    const char *sql,
+    size_t sqlLength,
     size_t paraNum,
     std::vector<const char *> &&parameters,
     std::vector<int> &&length,
@@ -113,7 +114,7 @@ void DbClientLockFree::execSql(
                 (transSet_.empty() || transSet_.find(conn) == transSet_.end()))
             {
                 conn->execSql(
-                    std::move(sql),
+                    string_view{sql, sqlLength},
                     paraNum,
                     std::move(parameters),
                     std::move(length),
@@ -143,7 +144,7 @@ void DbClientLockFree::execSql(
                      transSet_.find(conn) == transSet_.end()))
                 {
                     conn->execSql(
-                        std::move(sql),
+                        string_view{sql, sqlLength},
                         paraNum,
                         std::move(parameters),
                         std::move(length),
@@ -175,7 +176,7 @@ void DbClientLockFree::execSql(
                 if (transSet_.empty() ||
                     transSet_.find(conn) == transSet_.end())
                 {
-                    conn->execSql(std::move(sql),
+                    conn->execSql(string_view{sql, sqlLength},
                                   paraNum,
                                   std::move(parameters),
                                   std::move(length),
@@ -206,7 +207,7 @@ void DbClientLockFree::execSql(
 
     // LOG_TRACE << "Push query to buffer";
     sqlCmdBuffer_.emplace_back(std::make_shared<SqlCmd>(
-        std::move(sql),
+        string_view{sql, sqlLength},
         paraNum,
         std::move(parameters),
         std::move(length),

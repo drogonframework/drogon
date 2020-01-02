@@ -29,15 +29,29 @@ namespace orm
 {
 static const unsigned int maxBatchCount = 256;
 Result makeResult(
-    const std::shared_ptr<PGresult> &r = std::shared_ptr<PGresult>(nullptr),
-    const std::string &query = "")
+    const std::shared_ptr<PGresult> &r = std::shared_ptr<PGresult>(nullptr))
 {
-    return Result(std::shared_ptr<PostgreSQLResultImpl>(
-        new PostgreSQLResultImpl(r, query)));
+    return Result(
+        std::shared_ptr<PostgreSQLResultImpl>(new PostgreSQLResultImpl(r)));
+}
+
+bool checkSql(const string_view &sql_)
+{
+    if (sql_.length() > 1024)
+        return true;
+    std::string sql{sql_.data(), sql_.length()};
+    std::transform(sql.begin(), sql.end(), sql.begin(), tolower);
+    return (sql.find("update") != std::string::npos ||
+            sql.find("insert") != std::string::npos ||
+            sql.find("delete") != std::string::npos ||
+            sql.find("drop") != std::string::npos ||
+            sql.find("truncate") != std::string::npos ||
+            sql.find("lock") != std::string::npos);
 }
 
 }  // namespace orm
 }  // namespace drogon
+
 int PgConnection::flush()
 {
     auto ret = PQflush(connectionPtr_.get());
@@ -191,7 +205,7 @@ void PgConnection::pgPoll()
 }
 
 void PgConnection::execSqlInLoop(
-    std::string &&sql,
+    string_view &&sql,
     size_t paraNum,
     std::vector<const char *> &&parameters,
     std::vector<int> &&length,
@@ -262,7 +276,7 @@ void PgConnection::sendBatchedSql()
                 statName = utils::getUuid();
                 if (PQsendPrepare(connectionPtr_.get(),
                                   statName.c_str(),
-                                  cmd->sql_.c_str(),
+                                  cmd->sql_.data(),
                                   cmd->parametersNumber_,
                                   NULL) == 0)
                 {
@@ -275,6 +289,7 @@ void PgConnection::sendBatchedSql()
                     return;
                 }
                 cmd->preparingStatement_ = statName;
+                cmd->isChanging_ = checkSql(cmd->sql_);
                 if (flush())
                 {
                     return;
@@ -282,7 +297,8 @@ void PgConnection::sendBatchedSql()
             }
             else
             {
-                statName = iter->second;
+                statName = iter->second.first;
+                cmd->isChanging_ = iter->second.second;
             }
         }
         else
@@ -295,20 +311,10 @@ void PgConnection::sendBatchedSql()
             sendBatchEnd_ = true;
             batchCount_ = 0;
         }
-        else
+        else if (cmd->isChanging_)
         {
-            auto sql = cmd->sql_;
-            std::transform(sql.begin(), sql.end(), sql.begin(), tolower);
-            if (sql.find("update") != std::string::npos ||
-                sql.find("insert") != std::string::npos ||
-                sql.find("delete") != std::string::npos ||
-                sql.find("drop") != std::string::npos ||
-                sql.find("truncate") != std::string::npos ||
-                sql.find("lock") != std::string::npos)
-            {
-                sendBatchEnd_ = true;
-                batchCount_ = 0;
-            }
+            sendBatchEnd_ = true;
+            batchCount_ = 0;
         }
         ++batchCount_;
         if (PQsendQueryPrepared(connectionPtr_.get(),
@@ -409,12 +415,15 @@ void PgConnection::handleRead()
             auto &cmd = batchCommandsForWaitingResults_.front();
             if (!cmd->preparingStatement_.empty())
             {
-                preparedStatementsMap_[cmd->sql_] =
-                    std::move(cmd->preparingStatement_);
+                auto r = preparedStatements_.insert(
+                    std::string{cmd->sql_.data(), cmd->sql_.length()});
+                preparedStatementsMap_[string_view{r.first->c_str(),
+                                                   r.first->length()}] = {
+                    std::move(cmd->preparingStatement_), cmd->isChanging_};
                 cmd->preparingStatement_.clear();
                 continue;
             }
-            auto r = makeResult(res, sql_);
+            auto r = makeResult(res);
             cmd->callback_(r);
             batchCommandsForWaitingResults_.pop_front();
             continue;
@@ -424,8 +433,11 @@ void PgConnection::handleRead()
         auto &cmd = batchSqlCommands_.front();
         if (!cmd->preparingStatement_.empty())
         {
-            preparedStatementsMap_[cmd->sql_] =
-                std::move(cmd->preparingStatement_);
+            auto r = preparedStatements_.insert(
+                std::string{cmd->sql_.data(), cmd->sql_.length()});
+            preparedStatementsMap_[string_view{r.first->c_str(),
+                                               r.first->length()}] = {
+                std::move(cmd->preparingStatement_), cmd->isChanging_};
             cmd->preparingStatement_.clear();
             continue;
         }

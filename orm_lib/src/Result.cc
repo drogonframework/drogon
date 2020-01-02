@@ -149,10 +149,6 @@ unsigned long long Result::insertId() const noexcept
 {
     return resultPtr_->insertId();
 }
-const std::string &Result::sql() const noexcept
-{
-    return resultPtr_->sql();
-}
 
 int Result::oid(RowSizeType column) const noexcept
 {

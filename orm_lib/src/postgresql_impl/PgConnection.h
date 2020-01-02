@@ -26,6 +26,7 @@
 #include <functional>
 #include <iostream>
 #include <list>
+#include <set>
 
 namespace drogon
 {
@@ -39,7 +40,7 @@ class PgConnection : public DbConnection,
   public:
     PgConnection(trantor::EventLoop *loop, const std::string &connInfo);
 
-    virtual void execSql(std::string &&sql,
+    virtual void execSql(string_view &&sql,
                          size_t paraNum,
                          std::vector<const char *> &&parameters,
                          std::vector<int> &&length,
@@ -89,14 +90,13 @@ class PgConnection : public DbConnection,
   private:
     std::shared_ptr<PGconn> connectionPtr_;
     trantor::Channel channel_;
-    std::unordered_map<std::string, std::string> preparedStatementsMap_;
     bool isRreparingStatement_{false};
     void handleRead();
     void pgPoll();
     void handleClosed();
 
     void execSqlInLoop(
-        std::string &&sql,
+        string_view &&sql,
         size_t paraNum,
         std::vector<const char *> &&parameters,
         std::vector<int> &&length,
@@ -111,6 +111,8 @@ class PgConnection : public DbConnection,
     std::vector<int> formats_;
     int flush();
     void handleFatalError();
+    std::set<std::string> preparedStatements_;
+    string_view sql_;
 #if LIBPQ_SUPPORTS_BATCH_MODE
     void handleFatalError(bool clearAll);
     std::list<std::shared_ptr<SqlCmd>> batchCommandsForWaitingResults_;
@@ -119,6 +121,10 @@ class PgConnection : public DbConnection,
     int sendBatchEnd();
     bool sendBatchEnd_{false};
     unsigned int batchCount_{0};
+    std::unordered_map<string_view, std::pair<std::string, bool>>
+        preparedStatementsMap_;
+#else
+    std::unordered_map<string_view, std::string> preparedStatementsMap_;
 #endif
 };
 

@@ -41,7 +41,8 @@ class TransactionImpl : public Transaction,
 
   private:
     DbConnectionPtr connectionPtr_;
-    virtual void execSql(std::string &&sql,
+    virtual void execSql(const char *sql,
+                         size_t sqlLength,
                          size_t paraNum,
                          std::vector<const char *> &&parameters,
                          std::vector<int> &&length,
@@ -52,7 +53,7 @@ class TransactionImpl : public Transaction,
     {
         if (loop_->isInLoopThread())
         {
-            execSqlInLoop(std::move(sql),
+            execSqlInLoop(string_view(sql, sqlLength),
                           paraNum,
                           std::move(parameters),
                           std::move(length),
@@ -64,7 +65,7 @@ class TransactionImpl : public Transaction,
         {
             loop_->queueInLoop(
                 [thisPtr = shared_from_this(),
-                 sql = std::move(sql),
+                 sql = string_view(sql, sqlLength),
                  paraNum,
                  parameters = std::move(parameters),
                  length = std::move(length),
@@ -83,7 +84,7 @@ class TransactionImpl : public Transaction,
     }
 
     void execSqlInLoop(
-        std::string &&sql,
+        string_view &&sql,
         size_t paraNum,
         std::vector<const char *> &&parameters,
         std::vector<int> &&length,
@@ -108,7 +109,7 @@ class TransactionImpl : public Transaction,
     void execNewTask();
     struct SqlCmd
     {
-        std::string sql_;
+        string_view sql_;
         size_t parametersNumber_;
         std::vector<const char *> parameters_;
         std::vector<int> lengths_;

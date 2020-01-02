@@ -36,7 +36,8 @@ class DbClientImpl : public DbClient,
                  const size_t connNum,
                  ClientType type);
     virtual ~DbClientImpl() noexcept;
-    virtual void execSql(std::string &&sql,
+    virtual void execSql(const char *sql,
+                         size_t sqlLength,
                          size_t paraNum,
                          std::vector<const char *> &&parameters,
                          std::vector<int> &&length,
@@ -57,7 +58,7 @@ class DbClientImpl : public DbClient,
 
     void execSql(
         const DbConnectionPtr &conn,
-        std::string &&sql,
+        string_view &&sql,
         size_t paraNum,
         std::vector<const char *> &&parameters,
         std::vector<int> &&length,

@@ -39,7 +39,7 @@ class MysqlConnection : public DbConnection,
     ~MysqlConnection()
     {
     }
-    virtual void execSql(std::string &&sql,
+    virtual void execSql(string_view &&sql,
                          size_t paraNum,
                          std::vector<const char *> &&parameters,
                          std::vector<int> &&length,
@@ -89,7 +89,7 @@ class MysqlConnection : public DbConnection,
 
   private:
     void execSqlInLoop(
-        std::string &&sql,
+        string_view &&sql,
         size_t paraNum,
         std::vector<const char *> &&parameters,
         std::vector<int> &&length,
@@ -116,6 +116,7 @@ class MysqlConnection : public DbConnection,
     ExecStatus execStatus_{ExecStatus::None};
 
     void outputError();
+    std::string sql_;
 };
 
 }  // namespace orm

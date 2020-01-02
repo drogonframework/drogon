@@ -16,6 +16,7 @@
 
 #include <drogon/config.h>
 #include <drogon/orm/DbClient.h>
+#include <drogon/utils/string_view.h>
 #include <trantor/net/EventLoop.h>
 #include <trantor/net/inner/Channel.h>
 #include <trantor/utils/NonCopyable.h>
@@ -46,7 +47,7 @@ enum class ConnectStatus
 
 struct SqlCmd
 {
-    std::string sql_;
+    string_view sql_;
     size_t parametersNumber_;
     std::vector<const char *> parameters_;
     std::vector<int> lengths_;
@@ -54,7 +55,10 @@ struct SqlCmd
     QueryCallback callback_;
     ExceptPtrCallback exceptionCallback_;
     std::string preparingStatement_;
-    SqlCmd(std::string &&sql,
+#if LIBPQ_SUPPORTS_BATCH_MODE
+    bool isChanging_;
+#endif
+    SqlCmd(string_view &&sql,
            const size_t paraNum,
            std::vector<const char *> &&parameters,
            std::vector<int> &&length,
@@ -94,7 +98,7 @@ class DbConnection : public trantor::NonCopyable
         idleCb_ = cb;
     }
     virtual void execSql(
-        std::string &&sql,
+        string_view &&sql,
         size_t paraNum,
         std::vector<const char *> &&parameters,
         std::vector<int> &&length,
@@ -130,7 +134,6 @@ class DbConnection : public trantor::NonCopyable
     DbConnectionCallback okCallback_{[](const DbConnectionPtr &) {}};
     std::function<void(const std::exception_ptr &)> exceptionCallback_;
     bool isWorking_{false};
-    std::string sql_;
 };
 
 }  // namespace orm

@@ -19,6 +19,7 @@
 #include <drogon/orm/ResultIterator.h>
 #include <drogon/orm/Row.h>
 #include <drogon/orm/RowIterator.h>
+#include <drogon/utils/string_view.h>
 #include <trantor/utils/Logger.h>
 #include <functional>
 #include <iostream>
@@ -226,11 +227,25 @@ class SqlBinder
     friend class Dbclient;
 
     SqlBinder(const std::string &sql, DbClient &client, ClientType type)
-        : sql_(sql), client_(client), type_(type)
+        : sqlPtr_(std::make_shared<std::string>(sql)),
+          client_(client),
+          type_(type),
+          sqlView_(sqlPtr_->data(), sqlPtr_->length())
     {
     }
     SqlBinder(std::string &&sql, DbClient &client, ClientType type)
-        : sql_(std::move(sql)), client_(client), type_(type)
+        : sqlPtr_(std::make_shared<std::string>(std::move(sql))),
+          client_(client),
+          type_(type),
+          sqlView_(sqlPtr_->data(), sqlPtr_->length())
+    {
+    }
+    SqlBinder(const string_view &sql, DbClient &client, ClientType type)
+        : sqlView_(sql), client_(client), type_(type)
+    {
+    }
+    SqlBinder(string_view &&sql, DbClient &client, ClientType type)
+        : sqlView_(std::move(sql)), client_(client), type_(type)
     {
     }
     ~SqlBinder();
@@ -385,7 +400,8 @@ class SqlBinder
 
   private:
     int getMysqlTypeBySize(size_t size);
-    std::string sql_;
+    std::shared_ptr<std::string> sqlPtr_;
+    string_view sqlView_;
     DbClient &client_;
     size_t parametersNumber_{0};
     std::vector<const char *> parameters_;

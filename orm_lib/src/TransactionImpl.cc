@@ -82,7 +82,7 @@ TransactionImpl::~TransactionImpl()
     }
 }
 void TransactionImpl::execSqlInLoop(
-    std::string &&sql,
+    string_view &&sql,
     size_t paraNum,
     std::vector<const char *> &&parameters,
     std::vector<int> &&length,
