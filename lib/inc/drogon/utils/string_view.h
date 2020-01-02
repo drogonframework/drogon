@@ -34,9 +34,37 @@ namespace std
 template <>
 struct hash<drogon::string_view>
 {
-    size_t operator()(const drogon::string_view &v) const
+    size_t operator()(const drogon::string_view &__str) const noexcept
     {
-        return boost::hash_value(v);
+        // Take from memory header file
+        const size_t __m = 0x5bd1e995;
+        const size_t __r = 24;
+        size_t __h = __str.length();
+        auto __len = __h;
+        const unsigned char *__data = (const unsigned char *)(__str.data());
+        for (; __len >= 4; __data += 4, __len -= 4)
+        {
+            size_t __k = *((size_t *)__data);
+            __k *= __m;
+            __k ^= __k >> __r;
+            __k *= __m;
+            __h *= __m;
+            __h ^= __k;
+        }
+        switch (__len)
+        {
+            case 3:
+                __h ^= __data[2] << 16;
+            case 2:
+                __h ^= __data[1] << 8;
+            case 1:
+                __h ^= __data[0];
+                __h *= __m;
+        }
+        __h ^= __h >> 13;
+        __h *= __m;
+        __h ^= __h >> 15;
+        return __h;
     }
 };
 }  // namespace std
