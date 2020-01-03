@@ -62,13 +62,19 @@ const std::shared_ptr<DrObjectBase> &DrClassMap::getSingleInstance(
 {
     auto &mtx = internal::getMapMutex();
     auto &singleInstanceMap = internal::getObjsMap();
-    std::lock_guard<std::mutex> lock(mtx);
-    auto iter = singleInstanceMap.find(className);
-    if (iter != singleInstanceMap.end())
-        return iter->second;
-    singleInstanceMap[className] =
-        std::shared_ptr<DrObjectBase>(newObject(className));
-    return singleInstanceMap[className];
+    {
+        std::lock_guard<std::mutex> lock(mtx);
+        auto iter = singleInstanceMap.find(className);
+        if (iter != singleInstanceMap.end())
+            return iter->second;
+    }
+    auto newObj = std::shared_ptr<DrObjectBase>(newObject(className));
+    {
+        std::lock_guard<std::mutex> lock(mtx);
+        auto ret = singleInstanceMap.insert(
+            std::make_pair(className, std::move(newObj)));
+        return ret.first->second;
+    }
 }
 
 void DrClassMap::setSingleInstance(const std::shared_ptr<DrObjectBase> &ins)

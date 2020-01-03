@@ -128,7 +128,9 @@ class HttpAppFramework : public trantor::NonCopyable
                       "The Template parameter must be a subclass of "
                       "PluginBase");
         assert(isRunning());
-        return dynamic_cast<T *>(getPlugin(T::classTypeName()));
+        static auto pluginPtr =
+            dynamic_cast<T *>(getPlugin(T::classTypeName()));
+        return pluginPtr;
     }
 
     /// Get the plugin object registered in the framework

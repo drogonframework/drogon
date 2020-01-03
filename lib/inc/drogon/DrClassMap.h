@@ -76,8 +76,10 @@ class DrClassMap
     {
         static_assert(std::is_base_of<DrObjectBase, T>::value,
                       "T must be a sub-class of DrObjectBase");
-        return std::dynamic_pointer_cast<T>(
-            getSingleInstance(T::classTypeName()));
+        static auto const singleton =
+            std::dynamic_pointer_cast<T>(getSingleInstance(T::classTypeName()));
+        assert(singleton);
+        return singleton;
     }
 
     /**
