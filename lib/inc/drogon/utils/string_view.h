@@ -36,7 +36,16 @@ struct hash<drogon::string_view>
 {
     size_t operator()(const drogon::string_view &__str) const noexcept
     {
-        // Take from memory header file
+        // Take from the memory header file
+        //===-------------------------- memory
+        //------------------------------------===//
+        //
+        //                     The LLVM Compiler Infrastructure
+        //
+        // This file is dual licensed under the MIT and the University of
+        // Illinois Open Source Licenses. See LICENSE.TXT for details.
+        //
+        //===----------------------------------------------------------------------===//
         const size_t __m = 0x5bd1e995;
         const size_t __r = 24;
         size_t __h = __str.length();

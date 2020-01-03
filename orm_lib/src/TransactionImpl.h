@@ -53,7 +53,7 @@ class TransactionImpl : public Transaction,
     {
         if (loop_->isInLoopThread())
         {
-            execSqlInLoop(string_view(sql, sqlLength),
+            execSqlInLoop(string_view{sql, sqlLength},
                           paraNum,
                           std::move(parameters),
                           std::move(length),
@@ -65,7 +65,7 @@ class TransactionImpl : public Transaction,
         {
             loop_->queueInLoop(
                 [thisPtr = shared_from_this(),
-                 sql = string_view(sql, sqlLength),
+                 sql = string_view{sql, sqlLength},
                  paraNum,
                  parameters = std::move(parameters),
                  length = std::move(length),

@@ -155,7 +155,11 @@ class DbClient : public trantor::NonCopyable
     template <int N>
     internal::SqlBinder operator<<(const char (&sql)[N])
     {
-        return internal::SqlBinder(string_view{sql, N - 1}, *this, type_);
+        return internal::SqlBinder(sql, N - 1, *this, type_);
+    }
+    internal::SqlBinder operator<<(const string_view &sql)
+    {
+        return internal::SqlBinder(sql.data(), sql.length(), *this, type_);
     }
 
     /// Create a transaction object.
