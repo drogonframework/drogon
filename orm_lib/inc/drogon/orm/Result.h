@@ -120,9 +120,6 @@ class Result
      */
     unsigned long long insertId() const noexcept;
 
-    // /// Query that produced this result, if available (empty string
-    // otherwise) const std::string &sql() const noexcept;
-
   private:
     ResultImplPtr resultPtr_;
 
