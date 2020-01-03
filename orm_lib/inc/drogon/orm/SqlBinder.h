@@ -230,22 +230,26 @@ class SqlBinder
         : sqlPtr_(std::make_shared<std::string>(sql)),
           client_(client),
           type_(type),
-          sqlView_(sqlPtr_->data(), sqlPtr_->length())
+          sqlViewPtr_(sqlPtr_->data()),
+          sqlViewLength_(sqlPtr_->length())
     {
     }
     SqlBinder(std::string &&sql, DbClient &client, ClientType type)
         : sqlPtr_(std::make_shared<std::string>(std::move(sql))),
           client_(client),
           type_(type),
-          sqlView_(sqlPtr_->data(), sqlPtr_->length())
+          sqlViewPtr_(sqlPtr_->data()),
+          sqlViewLength_(sqlPtr_->length())
     {
     }
-    SqlBinder(const string_view &sql, DbClient &client, ClientType type)
-        : sqlView_(sql), client_(client), type_(type)
-    {
-    }
-    SqlBinder(string_view &&sql, DbClient &client, ClientType type)
-        : sqlView_(std::move(sql)), client_(client), type_(type)
+    SqlBinder(const char *sql,
+              size_t sqlLength,
+              DbClient &client,
+              ClientType type)
+        : sqlViewPtr_(sql),
+          sqlViewLength_(sqlLength),
+          client_(client),
+          type_(type)
     {
     }
     ~SqlBinder();
@@ -401,7 +405,8 @@ class SqlBinder
   private:
     int getMysqlTypeBySize(size_t size);
     std::shared_ptr<std::string> sqlPtr_;
-    string_view sqlView_;
+    const char *sqlViewPtr_;
+    const size_t sqlViewLength_;
     DbClient &client_;
     size_t parametersNumber_{0};
     std::vector<const char *> parameters_;

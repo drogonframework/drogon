@@ -184,7 +184,7 @@ void DbClientImpl::execSql(
             {
                 // LOG_TRACE << "Push query to buffer";
                 std::shared_ptr<SqlCmd> cmd =
-                    std::make_shared<SqlCmd>(string_view(sql, sqlLength),
+                    std::make_shared<SqlCmd>(string_view{sql, sqlLength},
                                              paraNum,
                                              std::move(parameters),
                                              std::move(length),
@@ -205,7 +205,7 @@ void DbClientImpl::execSql(
     if (conn)
     {
         execSql(conn,
-                string_view(sql, sqlLength),
+                string_view{sql, sqlLength},
                 paraNum,
                 std::move(parameters),
                 std::move(length),

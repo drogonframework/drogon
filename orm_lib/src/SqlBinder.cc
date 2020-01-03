@@ -31,15 +31,15 @@ void SqlBinder::exec()
         // nonblocking mode,default mode
         // Retain shared_ptrs of parameters until we get the result;
         client_.execSql(
-            sqlView_.data(),
-            sqlView_.length(),
+            sqlViewPtr_,
+            sqlViewLength_,
             parametersNumber_,
             std::move(parameters_),
             std::move(lengths_),
             std::move(formats_),
             [holder = std::move(callbackHolder_),
              objs = std::move(objs_),
-             sqlptr = sqlPtr_](const Result &r) mutable {
+             sqlptr = std::move(sqlPtr_)](const Result &r) mutable {
                 objs.clear();
                 if (holder)
                 {
@@ -48,8 +48,8 @@ void SqlBinder::exec()
             },
             [exceptCb = std::move(exceptionCallback_),
              exceptPtrCb = std::move(exceptionPtrCallback_),
-             isExceptPtr = isExceptionPtr_,
-             sqlptr = sqlPtr_](const std::exception_ptr &exception) {
+             isExceptPtr =
+                 isExceptionPtr_](const std::exception_ptr &exception) {
                 // LOG_DEBUG<<"exp callback "<<isExceptPtr;
                 if (!isExceptPtr)
                 {
@@ -79,8 +79,8 @@ void SqlBinder::exec()
         auto f = pro->get_future();
 
         client_.execSql(
-            sqlView_.data(),
-            sqlView_.length(),
+            sqlViewPtr_,
+            sqlViewLength_,
             parametersNumber_,
             std::move(parameters_),
             std::move(lengths_),
