@@ -31,6 +31,6 @@ std::shared_ptr<DrTemplateBase> DrTemplateBase::newTemplate(
             templateName = templateName.substr(0, pos);
         }
     }
-    return std::dynamic_pointer_cast<DrTemplateBase>(
-        drogon::DrClassMap::getSingleInstance(templateName));
+    return std::shared_ptr<DrTemplateBase>(dynamic_cast<DrTemplateBase*>(
+        drogon::DrClassMap::newObject(templateName)));
 }
