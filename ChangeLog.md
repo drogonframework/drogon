@@ -4,6 +4,34 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.0.0-beta13] - 2020-01-04
+
+### API change list
+
+- None
+
+### Changed
+
+- Add some unit tests (based on gtest)
+
+- Add a reverse proxy example
+
+- Make a patch to support the ossp UUID library
+
+- Make shared linking possible
+
+- Add the drogon::OStringStream class
+
+- Optimize ORM
+
+- Modify singleton logic of DrClassMap
+
+### Fixed
+
+- Fix an error in the batch mode of libpq
+
+- Fix an error when clients use HTTP1.0
+
 ## [1.0.0-beta12] - 2019-11-30
 
 ### Changed
@@ -248,7 +276,9 @@ All notable changes to this project will be documented in this file.
 
 ## [1.0.0-beta1] - 2019-06-11
 
-[Unreleased]: https://github.com/an-tao/drogon/compare/v1.0.0-beta12...HEAD
+[Unreleased]: https://github.com/an-tao/drogon/compare/v1.0.0-beta13...HEAD
+
+[1.0.0-beta13]: https://github.com/an-tao/drogon/compare/v1.0.0-beta12...v1.0.0-beta13
 
 [1.0.0-beta12]: https://github.com/an-tao/drogon/compare/v1.0.0-beta11...v1.0.0-beta12
 
