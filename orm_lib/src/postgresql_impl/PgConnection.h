@@ -91,6 +91,12 @@ class PgConnection : public DbConnection,
     std::shared_ptr<PGconn> connectionPtr_;
     trantor::Channel channel_;
     bool isRreparingStatement_{false};
+    size_t preparedStatementsID_{0};
+    std::string newStmtName()
+    {
+        loop_->assertInLoopThread();
+        return std::to_string(++preparedStatementsID_);
+    }
     void handleRead();
     void pgPoll();
     void handleClosed();

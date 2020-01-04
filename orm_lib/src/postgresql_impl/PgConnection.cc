@@ -252,7 +252,7 @@ void PgConnection::execSqlInLoop(
         else
         {
             isRreparingStatement_ = true;
-            statementName_ = utils::getUuid();
+            statementName_ = newStmtName();
             if (PQsendPrepare(connectionPtr_.get(),
                               statementName_.c_str(),
                               sql_.data(),

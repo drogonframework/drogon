@@ -46,7 +46,9 @@ bool checkSql(const string_view &sql_)
             sql.find("delete") != std::string::npos ||
             sql.find("drop") != std::string::npos ||
             sql.find("truncate") != std::string::npos ||
-            sql.find("lock") != std::string::npos);
+            sql.find("lock") != std::string::npos ||
+            sql.find("create") != std::string::npos ||
+            sql.find("alter") != std::string::npos);
 }
 
 }  // namespace orm
@@ -273,7 +275,7 @@ void PgConnection::sendBatchedSql()
             auto iter = preparedStatementsMap_.find(cmd->sql_);
             if (iter == preparedStatementsMap_.end())
             {
-                statName = utils::getUuid();
+                statName = newStmtName();
                 if (PQsendPrepare(connectionPtr_.get(),
                                   statName.c_str(),
                                   cmd->sql_.data(),
