@@ -556,6 +556,8 @@ void HttpControllersRouter::doControllerHandler(
 
     for (size_t j = 1; j < matchResult.size(); ++j)
     {
+        if (!matchResult[j].matched)
+            continue;
         size_t place = j;
         if (j <= ctrlBinderPtr->parameterPlaces_.size())
         {
