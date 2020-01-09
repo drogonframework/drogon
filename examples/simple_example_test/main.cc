@@ -562,6 +562,34 @@ void doTest(const HttpClientPtr &client,
 
     req = HttpRequest::newHttpRequest();
     req->setMethod(drogon::Get);
+    req->setPath("/reg/123/rest/of/the/path");
+    client->sendRequest(
+        req, [=](ReqResult result, const HttpResponsePtr &resp) {
+            if (result == ReqResult::Ok && resp->getJsonObject())
+            {
+                auto &json = resp->getJsonObject();
+                if (json->isMember("p1") && json->get("p1", 0).asInt() == 123 &&
+                    json->isMember("p2") &&
+                    json->get("p2", "").asString() == "rest/of/the/path")
+                {
+                    outputGood(req, isHttps);
+                }
+                else
+                {
+                    LOG_DEBUG << resp->getBody();
+                    LOG_ERROR << "Error!";
+                    exit(1);
+                }
+            }
+            else
+            {
+                LOG_ERROR << "Error!";
+                exit(1);
+            }
+        });
+
+    req = HttpRequest::newHttpRequest();
+    req->setMethod(drogon::Get);
     req->setPath("/api/v1/apitest/static");
     client->sendRequest(req,
                         [=](ReqResult result, const HttpResponsePtr &resp) {

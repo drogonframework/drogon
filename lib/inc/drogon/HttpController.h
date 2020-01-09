@@ -34,6 +34,9 @@
 #define ADD_METHOD_TO(method, path_pattern, filters...) \
     registerMethod(&method, path_pattern, {filters}, false, #method)
 
+#define ADD_METHOD_VIA_REGEX(method, regex, filters...) \
+    registerMethodViaRegex(&method, regex, {filters}, #method)
+
 #define METHOD_LIST_END \
     return;             \
     }
@@ -106,6 +109,20 @@ class HttpController : public DrObject<T>, public HttpControllerBase
                                   filtersAndMethods,
                                   handlerName);
         }
+    }
+
+    template <typename FUNCTION>
+    static void registerMethodViaRegex(
+        FUNCTION &&function,
+        const std::string &regExp,
+        const std::vector<internal::HttpConstraint> &filtersAndMethods =
+            std::vector<internal::HttpConstraint>{},
+        const std::string &handlerName = "")
+    {
+        app().registerHandlerViaRegex(regExp,
+                                      std::forward<FUNCTION>(function),
+                                      filtersAndMethods,
+                                      handlerName);
     }
 
   private:
