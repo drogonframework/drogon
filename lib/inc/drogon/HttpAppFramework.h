@@ -388,6 +388,58 @@ class HttpAppFramework : public trantor::NonCopyable
             pathPattern, binder, validMethods, filters, handlerName);
         return *this;
     }
+    /**
+     * @brief Register a handler into the framework via a regular expression.
+     *
+     * @param regExp A regular expression string, when the path of a http
+     * request matches the regular expression, the handler indicated by the
+     * function parameter is called.
+     * @note When the match is successful, Each string that matches a
+     * subexpression is sequentially mapped to a handler parameter.
+     * @param function indicates any type of callable object with a valid
+     * processing interface.
+     * @param filtersAndMethods is the same as the third parameter in the above
+     * method.
+     * @param handlerName a name for the handler.
+     * @return HttpAppFramework&
+     */
+    template <typename FUNCTION>
+    HttpAppFramework &registerHandlerViaRegex(
+        const std::string &regExp,
+        FUNCTION &&function,
+        const std::vector<internal::HttpConstraint> &filtersAndMethods =
+            std::vector<internal::HttpConstraint>{},
+        const std::string &handlerName = "")
+    {
+        LOG_TRACE << "regex:" << regExp;
+        internal::HttpBinderBasePtr binder;
+
+        binder = std::make_shared<internal::HttpBinder<FUNCTION>>(
+            std::forward<FUNCTION>(function));
+
+        std::vector<HttpMethod> validMethods;
+        std::vector<std::string> filters;
+        for (auto const &filterOrMethod : filtersAndMethods)
+        {
+            if (filterOrMethod.type() == internal::ConstraintType::HttpFilter)
+            {
+                filters.push_back(filterOrMethod.getFilterName());
+            }
+            else if (filterOrMethod.type() ==
+                     internal::ConstraintType::HttpMethod)
+            {
+                validMethods.push_back(filterOrMethod.getHttpMethod());
+            }
+            else
+            {
+                LOG_ERROR << "Invalid controller constraint type";
+                exit(1);
+            }
+        }
+        registerHttpControllerViaRegex(
+            regExp, binder, validMethods, filters, handlerName);
+        return *this;
+    }
 
     /// Register a WebSocketController into the framework.
     /**
@@ -947,6 +999,12 @@ class HttpAppFramework : public trantor::NonCopyable
         const std::vector<HttpMethod> &validMethods = std::vector<HttpMethod>(),
         const std::vector<std::string> &filters = std::vector<std::string>(),
         const std::string &handlerName = "") = 0;
+    virtual void registerHttpControllerViaRegex(
+        const std::string &regExp,
+        const internal::HttpBinderBasePtr &binder,
+        const std::vector<HttpMethod> &validMethods,
+        const std::vector<std::string> &filters,
+        const std::string &handlerName) = 0;
 };
 
 /// A wrapper of the instance() method

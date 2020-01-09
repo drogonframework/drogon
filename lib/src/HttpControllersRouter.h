@@ -64,6 +64,11 @@ class HttpControllersRouter : public trantor::NonCopyable
                      const std::vector<HttpMethod> &validMethods,
                      const std::vector<std::string> &filters,
                      const std::string &handlerName = "");
+    void addHttpRegex(const std::string &regExp,
+                      const internal::HttpBinderBasePtr &binder,
+                      const std::vector<HttpMethod> &validMethods,
+                      const std::vector<std::string> &filters,
+                      const std::string &handlerName = "");
     void route(const HttpRequestImplPtr &req,
                std::function<void(const HttpResponsePtr &)> &&callback);
     std::vector<std::tuple<std::string, HttpMethod, std::string>>
@@ -92,8 +97,6 @@ class HttpControllersRouter : public trantor::NonCopyable
             nullptr};  // The enum value of Invalid is the http methods number
     };
     std::vector<HttpControllerRouterItem> ctrlVector_;
-    std::mutex ctrlMutex_;
-    std::regex ctrlRegex_;
 
     const std::vector<std::function<void(const HttpRequestPtr &,
                                          AdviceCallback &&,
@@ -115,12 +118,14 @@ class HttpControllersRouter : public trantor::NonCopyable
         const CtrlBinderPtr &ctrlBinderPtr,
         const HttpControllerRouterItem &routerItem,
         const HttpRequestImplPtr &req,
+        std::smatch &&matchResult,
         std::function<void(const HttpResponsePtr &)> &&callback);
 
     void doControllerHandler(
         const CtrlBinderPtr &ctrlBinderPtr,
         const HttpControllerRouterItem &routerItem,
         const HttpRequestImplPtr &req,
+        const std::smatch &matchResult,
         std::function<void(const HttpResponsePtr &)> &&callback);
     void invokeCallback(
         const std::function<void(const HttpResponsePtr &)> &callback,

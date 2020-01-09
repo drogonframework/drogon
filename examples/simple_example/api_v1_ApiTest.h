@@ -34,6 +34,7 @@ class ApiTest : public drogon::HttpController<ApiTest>
     METHOD_ADD(ApiTest::jsonTest, "/json", Post);
     METHOD_ADD(ApiTest::formTest, "/form", Post);
     METHOD_ADD(ApiTest::attributesTest, "/attrs", Get);
+    ADD_METHOD_VIA_REGEX(ApiTest::regexTest, "/reg/([0-9]*)/(.*)", Get);
     METHOD_LIST_END
 
     void get(const HttpRequestPtr &req,
@@ -61,6 +62,10 @@ class ApiTest : public drogon::HttpController<ApiTest>
     void attributesTest(
         const HttpRequestPtr &req,
         std::function<void(const HttpResponsePtr &)> &&callback);
+    void regexTest(const HttpRequestPtr &req,
+                   std::function<void(const HttpResponsePtr &)> &&callback,
+                   int p1,
+                   std::string &&p2);
 
   public:
     ApiTest()

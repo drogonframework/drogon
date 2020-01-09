@@ -414,6 +414,12 @@ class HttpAppFrameworkImpl : public HttpAppFramework
         const std::vector<HttpMethod> &validMethods = std::vector<HttpMethod>(),
         const std::vector<std::string> &filters = std::vector<std::string>(),
         const std::string &handlerName = "") override;
+    virtual void registerHttpControllerViaRegex(
+        const std::string &regExp,
+        const internal::HttpBinderBasePtr &binder,
+        const std::vector<HttpMethod> &validMethods,
+        const std::vector<std::string> &filters,
+        const std::string &handlerName) override;
     void onAsyncRequest(
         const HttpRequestImplPtr &req,
         std::function<void(const HttpResponsePtr &)> &&callback);

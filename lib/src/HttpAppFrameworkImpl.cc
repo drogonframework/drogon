@@ -222,6 +222,21 @@ void HttpAppFrameworkImpl::registerHttpController(
     httpCtrlsRouterPtr_->addHttpPath(
         pathPattern, binder, validMethods, filters, handlerName);
 }
+
+void HttpAppFrameworkImpl::registerHttpControllerViaRegex(
+    const std::string &regExp,
+    const internal::HttpBinderBasePtr &binder,
+    const std::vector<HttpMethod> &validMethods,
+    const std::vector<std::string> &filters,
+    const std::string &handlerName)
+{
+    assert(!regExp.empty());
+    assert(binder);
+    assert(!running_);
+    httpCtrlsRouterPtr_->addHttpRegex(
+        regExp, binder, validMethods, filters, handlerName);
+}
+
 HttpAppFramework &HttpAppFrameworkImpl::setThreadNum(size_t threadNum)
 {
     if (threadNum == 0)

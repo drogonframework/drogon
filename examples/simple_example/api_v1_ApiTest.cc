@@ -443,3 +443,15 @@ void ApiTest::attributesTest(
     callback(HttpResponse::newHttpJsonResponse(ret));
     return;
 }
+
+void ApiTest::regexTest(const HttpRequestPtr &req,
+                        std::function<void(const HttpResponsePtr &)> &&callback,
+                        int p1,
+                        std::string &&p2)
+{
+    Json::Value ret;
+    ret["p1"] = p1;
+    ret["p2"] = std::move(p2);
+    auto resp = HttpResponse::newHttpJsonResponse(std::move(ret));
+    callback(resp);
+}

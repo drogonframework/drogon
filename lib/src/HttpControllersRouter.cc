@@ -40,15 +40,10 @@ void HttpControllersRouter::doWhenNoHandlerFound(
 void HttpControllersRouter::init(
     const std::vector<trantor::EventLoop *> &ioLoops)
 {
-    std::string regString;
     for (auto &router : ctrlVector_)
     {
-        std::regex reg("\\(\\[\\^/\\]\\*\\)");
-        std::string tmp =
-            std::regex_replace(router.pathParameterPattern_, reg, "[^/]*");
         router.regex_ = std::regex(router.pathParameterPattern_,
                                    std::regex_constants::icase);
-        regString.append("(").append(tmp).append(")|");
         for (auto &binder : router.binders_)
         {
             if (binder)
@@ -58,10 +53,6 @@ void HttpControllersRouter::init(
             }
         }
     }
-    if (regString.length() > 0)
-        regString.resize(regString.length() - 1);  // remove the last '|'
-    LOG_TRACE << "regex string:" << regString;
-    ctrlRegex_ = std::regex(regString, std::regex_constants::icase);
 }
 
 std::vector<std::tuple<std::string, HttpMethod, std::string>>
@@ -87,6 +78,66 @@ HttpControllersRouter::getHandlersInfo() const
         }
     }
     return ret;
+}
+
+void HttpControllersRouter::addHttpRegex(
+    const std::string &regExp,
+    const internal::HttpBinderBasePtr &binder,
+    const std::vector<HttpMethod> &validMethods,
+    const std::vector<std::string> &filters,
+    const std::string &handlerName)
+{
+    auto binderInfo = std::make_shared<CtrlBinder>();
+    binderInfo->filterNames_ = filters;
+    binderInfo->handlerName_ = handlerName;
+    binderInfo->binderPtr_ = binder;
+    drogon::app().getLoop()->queueInLoop([binderInfo]() {
+        // Recreate this with the correct number of threads.
+        binderInfo->responseCache_ = IOThreadStorage<HttpResponsePtr>();
+    });
+    {
+        for (auto &router : ctrlVector_)
+        {
+            if (router.pathParameterPattern_ == regExp)
+            {
+                if (validMethods.size() > 0)
+                {
+                    for (auto const &method : validMethods)
+                    {
+                        router.binders_[method] = binderInfo;
+                        if (method == Options)
+                            binderInfo->isCORS_ = true;
+                    }
+                }
+                else
+                {
+                    binderInfo->isCORS_ = true;
+                    for (int i = 0; i < Invalid; ++i)
+                        router.binders_[i] = binderInfo;
+                }
+                return;
+            }
+        }
+    }
+    struct HttpControllerRouterItem router;
+    router.pathParameterPattern_ = regExp;
+    router.pathPattern_ = regExp;
+    if (validMethods.size() > 0)
+    {
+        for (auto const &method : validMethods)
+        {
+            router.binders_[method] = binderInfo;
+            if (method == Options)
+                binderInfo->isCORS_ = true;
+        }
+    }
+    else
+    {
+        binderInfo->isCORS_ = true;
+        for (int i = 0; i < Invalid; ++i)
+            router.binders_[i] = binderInfo;
+    }
+    ctrlVector_.push_back(std::move(router));
 }
 void HttpControllersRouter::addHttpPath(
     const std::string &path,
@@ -312,7 +363,6 @@ void HttpControllersRouter::addHttpPath(
         binderInfo->responseCache_ = IOThreadStorage<HttpResponsePtr>();
     });
     {
-        std::lock_guard<std::mutex> guard(ctrlMutex_);
         for (auto &router : ctrlVector_)
         {
             if (router.pathParameterPattern_ == pathParameterPattern)
@@ -354,10 +404,7 @@ void HttpControllersRouter::addHttpPath(
         for (int i = 0; i < Invalid; ++i)
             router.binders_[i] = binderInfo;
     }
-    {
-        std::lock_guard<std::mutex> guard(ctrlMutex_);
-        ctrlVector_.push_back(std::move(router));
-    }
+    ctrlVector_.push_back(std::move(router));
 }
 
 void HttpControllersRouter::route(
@@ -365,62 +412,100 @@ void HttpControllersRouter::route(
     std::function<void(const HttpResponsePtr &)> &&callback)
 {
     // Find http controller
-    if (ctrlRegex_.mark_count() > 0)
+    for (auto &routerItem : ctrlVector_)
     {
         std::smatch result;
-        if (std::regex_match(req->path(), result, ctrlRegex_))
+        auto const &ctrlRegex = routerItem.regex_;
+        if (std::regex_match(req->path(), result, ctrlRegex))
         {
-            for (size_t i = 1; i < result.size(); ++i)
+            assert(Invalid > req->method());
+            req->setMatchedPathPattern(routerItem.pathPattern_);
+            auto &binder = routerItem.binders_[req->method()];
+            if (!binder)
             {
-                // TODO: Is there any better way to find the sub-match index
-                // without using loop?
-                if (!result[i].matched)
-                    continue;
-                if (i <= ctrlVector_.size())
+                // Invalid Http Method
+                auto res = drogon::HttpResponse::newHttpResponse();
+                if (req->method() != Options)
                 {
-                    size_t ctlIndex = i - 1;
-                    auto &routerItem = ctrlVector_[ctlIndex];
-                    assert(Invalid > req->method());
-                    req->setMatchedPathPattern(routerItem.pathPattern_);
-                    auto &binder = routerItem.binders_[req->method()];
-                    if (!binder)
-                    {
-                        // Invalid Http Method
-                        auto res = drogon::HttpResponse::newHttpResponse();
-                        if (req->method() != Options)
-                        {
-                            res->setStatusCode(k405MethodNotAllowed);
-                        }
-                        else
-                        {
-                            res->setStatusCode(k403Forbidden);
-                        }
-                        callback(res);
-                        return;
-                    }
-                    if (!postRoutingObservers_.empty())
-                    {
-                        for (auto &observer : postRoutingObservers_)
-                        {
-                            observer(req);
-                        }
-                    }
-                    if (postRoutingAdvices_.empty())
-                    {
+                    res->setStatusCode(k405MethodNotAllowed);
+                }
+                else
+                {
+                    res->setStatusCode(k403Forbidden);
+                }
+                callback(res);
+                return;
+            }
+            if (!postRoutingObservers_.empty())
+            {
+                for (auto &observer : postRoutingObservers_)
+                {
+                    observer(req);
+                }
+            }
+            if (postRoutingAdvices_.empty())
+            {
+                if (!binder->filters_.empty())
+                {
+                    auto &filters = binder->filters_;
+                    auto callbackPtr = std::make_shared<
+                        std::function<void(const HttpResponsePtr &)>>(
+                        std::move(callback));
+                    filters_function::doFilters(
+                        filters,
+                        req,
+                        callbackPtr,
+                        [=,
+                         &binder,
+                         &routerItem,
+                         result = std::move(result)]() mutable {
+                            doPreHandlingAdvices(binder,
+                                                 routerItem,
+                                                 req,
+                                                 std::move(result),
+                                                 std::move(*callbackPtr));
+                        });
+                }
+                else
+                {
+                    doPreHandlingAdvices(binder,
+                                         routerItem,
+                                         req,
+                                         std::move(result),
+                                         std::move(callback));
+                }
+            }
+            else
+            {
+                auto callbackPtr = std::make_shared<
+                    std::function<void(const HttpResponsePtr &)>>(
+                    std::move(callback));
+                doAdvicesChain(
+                    postRoutingAdvices_,
+                    0,
+                    req,
+                    callbackPtr,
+                    [&binder,
+                     callbackPtr,
+                     req,
+                     this,
+                     &routerItem,
+                     result = std::move(result)]() mutable {
                         if (!binder->filters_.empty())
                         {
                             auto &filters = binder->filters_;
-                            auto callbackPtr = std::make_shared<
-                                std::function<void(const HttpResponsePtr &)>>(
-                                std::move(callback));
                             filters_function::doFilters(
                                 filters,
                                 req,
                                 callbackPtr,
-                                [=, &binder, &routerItem]() {
+                                [=,
+                                 &binder,
+                                 &routerItem,
+                                 result = std::move(result)]() mutable {
                                     doPreHandlingAdvices(binder,
                                                          routerItem,
                                                          req,
+                                                         std::move(result),
                                                          std::move(
                                                              *callbackPtr));
                                 });
@@ -430,69 +515,23 @@ void HttpControllersRouter::route(
                             doPreHandlingAdvices(binder,
                                                  routerItem,
                                                  req,
-                                                 std::move(callback));
+                                                 std::move(result),
+                                                 std::move(*callbackPtr));
                         }
-                    }
-                    else
-                    {
-                        auto callbackPtr = std::make_shared<
-                            std::function<void(const HttpResponsePtr &)>>(
-                            std::move(callback));
-                        doAdvicesChain(postRoutingAdvices_,
-                                       0,
-                                       req,
-                                       callbackPtr,
-                                       [&binder,
-                                        callbackPtr,
-                                        req,
-                                        this,
-                                        &routerItem]() mutable {
-                                           if (!binder->filters_.empty())
-                                           {
-                                               auto &filters = binder->filters_;
-                                               filters_function::doFilters(
-                                                   filters,
-                                                   req,
-                                                   callbackPtr,
-                                                   [=, &binder, &routerItem]() {
-                                                       doPreHandlingAdvices(
-                                                           binder,
-                                                           routerItem,
-                                                           req,
-                                                           std::move(
-                                                               *callbackPtr));
-                                                   });
-                                           }
-                                           else
-                                           {
-                                               doPreHandlingAdvices(
-                                                   binder,
-                                                   routerItem,
-                                                   req,
-                                                   std::move(*callbackPtr));
-                                           }
-                                       });
-                    }
-                }
+                    });
             }
-        }
-        else
-        {
-            // No handler found
-            doWhenNoHandlerFound(req, std::move(callback));
+            return;
         }
     }
-    else
-    {
-        // No handler found
-        doWhenNoHandlerFound(req, std::move(callback));
-    }
+    // No handler found
+    doWhenNoHandlerFound(req, std::move(callback));
 }
 
 void HttpControllersRouter::doControllerHandler(
     const CtrlBinderPtr &ctrlBinderPtr,
     const HttpControllerRouterItem &routerItem,
     const HttpRequestImplPtr &req,
+    const std::smatch &matchResult,
     std::function<void(const HttpResponsePtr &)> &&callback)
 {
     auto &responsePtr = *(ctrlBinderPtr->responseCache_);
@@ -514,18 +553,22 @@ void HttpControllersRouter::doControllerHandler(
     }
 
     std::vector<std::string> params(ctrlBinderPtr->parameterPlaces_.size());
-    std::smatch r;
-    if (std::regex_match(req->path(), r, routerItem.regex_))
+
+    for (size_t j = 1; j < matchResult.size(); ++j)
     {
-        for (size_t j = 1; j < r.size(); ++j)
+        if (!matchResult[j].matched)
+            continue;
+        size_t place = j;
+        if (j <= ctrlBinderPtr->parameterPlaces_.size())
         {
-            size_t place = ctrlBinderPtr->parameterPlaces_[j - 1];
-            if (place > params.size())
-                params.resize(place);
-            params[place - 1] = r[j].str();
-            LOG_TRACE << "place=" << place << " para:" << params[place - 1];
+            place = ctrlBinderPtr->parameterPlaces_[j - 1];
         }
+        if (place > params.size())
+            params.resize(place);
+        params[place - 1] = matchResult[j].str();
+        LOG_TRACE << "place=" << place << " para:" << params[place - 1];
     }
+
     if (ctrlBinderPtr->queryParametersPlaces_.size() > 0)
     {
         auto qureyPara = req->getParameters();
@@ -578,6 +621,7 @@ void HttpControllersRouter::doPreHandlingAdvices(
     const CtrlBinderPtr &ctrlBinderPtr,
     const HttpControllerRouterItem &routerItem,
     const HttpRequestImplPtr &req,
+    std::smatch &&matchResult,
     std::function<void(const HttpResponsePtr &)> &&callback)
 {
     if (req->method() == Options)
@@ -627,10 +671,8 @@ void HttpControllersRouter::doPreHandlingAdvices(
     }
     if (preHandlingAdvices_.empty())
     {
-        doControllerHandler(ctrlBinderPtr,
-                            routerItem,
-                            req,
-                            std::move(callback));
+        doControllerHandler(
+            ctrlBinderPtr, routerItem, req, matchResult, std::move(callback));
     }
     else
     {
@@ -647,10 +689,16 @@ void HttpControllersRouter::doPreHandlingAdvices(
                                                                   resp,
                                                                   *callbackPtr);
                 }),
-            [this, ctrlBinderPtr, &routerItem, req, callbackPtr]() {
+            [this,
+             ctrlBinderPtr,
+             &routerItem,
+             req,
+             callbackPtr,
+             result = std::move(matchResult)]() {
                 doControllerHandler(ctrlBinderPtr,
                                     routerItem,
                                     req,
+                                    result,
                                     std::move(*callbackPtr));
             });
     }
