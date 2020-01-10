@@ -1098,7 +1098,7 @@ void doTest(const HttpClientPtr &client,
 int main(int argc, char *argv[])
 {
     trantor::EventLoopThread loop[2];
-    trantor::Logger::setLogLevel(trantor::Logger::LogLevel::DEBUG);
+    trantor::Logger::setLogLevel(trantor::Logger::LogLevel::TRANTOR_DEBUG);
     bool ever = false;
     if (argc > 1 && std::string(argv[1]) == "-f")
         ever = true;

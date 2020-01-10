@@ -46,7 +46,7 @@ using namespace drogon;
 int main()
 {
     app().setLogPath("./")
-         .setLogLevel(trantor::Logger::WARN)
+         .setLogLevel(trantor::Logger::TRANTOR_WARN)
          .addListener("0.0.0.0", 80)
          .setThreadNum(16)
          .enableRunAsDaemon()

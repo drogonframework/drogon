@@ -102,6 +102,9 @@ void SharedLibManager::managerLibs()
 #ifdef __linux__
                             if (st.st_mtim.tv_sec >
                                 dlMap_[filename].mTime.tv_sec)
+#elif defined _WIN32
+                            if (st.st_mtime >
+                                dlMap_[filename].mTime.tv_sec)
 #else
                           if (st.st_mtimespec.tv_sec >
                               dlMap_[filename].mTime.tv_sec)
@@ -129,6 +132,8 @@ void SharedLibManager::managerLibs()
                         dlStat.handle = loadLibs(srcFile, oldHandle);
 #ifdef __linux__
                         dlStat.mTime = st.st_mtim;
+#elif defined _WIN32
+                        dlStat.mTime.tv_sec = st.st_mtime;
 #else
                         dlStat.mTime = st.st_mtimespec;
 #endif

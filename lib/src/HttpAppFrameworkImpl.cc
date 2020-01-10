@@ -54,9 +54,12 @@
 #include <sys/file.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#ifndef _WIN32
 #include <sys/wait.h>
-#include <unistd.h>
 #include <uuid.h>
+#endif
+#include <unistd.h>
+
 
 using namespace drogon;
 using namespace std::placeholders;
@@ -104,7 +107,7 @@ std::string getGitCommit()
 static void godaemon(void)
 {
     printf("Initializing daemon mode\n");
-
+#ifndef _WIN32
     if (getppid() != 1)
     {
         pid_t pid;
@@ -131,6 +134,7 @@ static void godaemon(void)
     ret = dup(0);
     (void)ret;
     umask(0);
+#endif
 
     return;
 }
@@ -342,6 +346,7 @@ void HttpAppFrameworkImpl::run()
     // set relaunching
     if (relaunchOnError_)
     {
+#ifndef _WIN32
         while (true)
         {
             int child_status = 0;
@@ -361,6 +366,7 @@ void HttpAppFrameworkImpl::run()
             LOG_INFO << "start new process";
         }
         getLoop()->resetAfterFork();
+#endif
     }
 
     // set logger

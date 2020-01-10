@@ -567,7 +567,7 @@ void doTest(const drogon::orm::DbClientPtr &clientPtr)
 }
 int main(int argc, char *argv[])
 {
-    trantor::Logger::setLogLevel(trantor::Logger::DEBUG);
+    trantor::Logger::setLogLevel(trantor::Logger::TRANTOR_DEBUG);
 #if USE_POSTGRESQL
     auto clientPtr = DbClient::newPgClient(
         "host=127.0.0.1 port=5432 dbname=postgres user=postgres", 1);

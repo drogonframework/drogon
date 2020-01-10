@@ -21,7 +21,9 @@
 #include <sys/file.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#ifndef _WIN32
 #include <sys/wait.h>
+#endif
 #include <unistd.h>
 
 namespace drogon
@@ -31,8 +33,10 @@ class DrogonFileLocker : public trantor::NonCopyable
   public:
     DrogonFileLocker()
     {
+#ifndef _WIN32
         fd_ = open("/tmp/drogon.lock", O_TRUNC | O_CREAT, 0755);
         flock(fd_, LOCK_EX);
+#endif
     }
     ~DrogonFileLocker()
     {

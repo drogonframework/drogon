@@ -71,7 +71,11 @@ void create_project::createProject(const std::string &projectName)
         exit(1);
     }
     std::cout << "create a project named " << projectName << std::endl;
+#ifdef _WIN32
+    mkdir(projectName.data());
+#else
     mkdir(projectName.data(), 0755);
+#endif
     // 1.create CMakeLists.txt
     auto r = chdir(projectName.data());
     (void)(r);
@@ -79,12 +83,21 @@ void create_project::createProject(const std::string &projectName)
     newCmakeFile(cmakeFile, projectName);
     std::ofstream mainFile("main.cc", std::ofstream::out);
     newMainFile(mainFile);
+#ifdef _WIN32
+    mkdir("views");
+    mkdir("controllers");
+    mkdir("filters");
+    mkdir("plugins");
+    mkdir("build");
+    mkdir("models");
+#else
     mkdir("views", 0755);
     mkdir("controllers", 0755);
     mkdir("filters", 0755);
     mkdir("plugins", 0755);
     mkdir("build", 0755);
     mkdir("models", 0755);
+#endif
 
     std::ofstream gitFile(".gitignore", std::ofstream::out);
     newGitIgFile(gitFile);

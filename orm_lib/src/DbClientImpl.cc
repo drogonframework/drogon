@@ -32,7 +32,9 @@
 #include <memory>
 #include <sstream>
 #include <stdio.h>
+#ifndef _WIN32
 #include <sys/select.h>
+#endif
 #include <thread>
 #include <trantor/net/EventLoop.h>
 #include <trantor/net/inner/Channel.h>

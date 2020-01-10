@@ -67,18 +67,21 @@ target_include_directories(
   PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/lib/inc>
          $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/orm_lib/inc>
          $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}>
-         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/trantor>)
+         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/trantor>
+	$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/mman-win32>)
 
 # set the include list for dynamic view compiling
 list(APPEND INCLUDE_DIRS_FOR_DYNAMIC_VIEW
             ${PROJECT_SOURCE_DIR}/lib/inc
             ${PROJECT_SOURCE_DIR}/orm_lib/inc
             ${PROJECT_SOURCE_DIR}/trantor)
+			
+add_subdirectory(mman-win32)		
 add_subdirectory(trantor)
 
 target_link_libraries(${PROJECT_NAME} PUBLIC trantor)
 
-target_link_libraries(${PROJECT_NAME} PRIVATE dl)
+target_link_libraries(${PROJECT_NAME} PRIVATE dl mman)
 
 if(DROGON_CXX_STANDARD LESS 17)
   # With C++14, use boost to support any and string_view
@@ -118,29 +121,15 @@ if(jsoncpp_ver LESS 1.7)
     )
 endif()
 
-find_package(UUID REQUIRED)
-target_include_directories(${PROJECT_NAME} PRIVATE ${UUID_INCLUDE_DIR})
-target_link_libraries(${PROJECT_NAME} PRIVATE ${UUID_LIBRARIES})
-
-try_compile(normal_uuid ${CMAKE_BINARY_DIR}/cmaketest
-                  ${PROJECT_SOURCE_DIR}/cmake/tests/normal_uuid_lib_test.cc
-                  LINK_LIBRARIES ${UUID_LIBRARIES}
-                  CMAKE_FLAGS "-DINCLUDE_DIRECTORIES=${UUID_INCLUDE_DIR}")
-try_compile(ossp_uuid ${CMAKE_BINARY_DIR}/cmaketest
-                  ${PROJECT_SOURCE_DIR}/cmake/tests/ossp_uuid_lib_test.cc
-                  LINK_LIBRARIES ${UUID_LIBRARIES}
-                  CMAKE_FLAGS "-DINCLUDE_DIRECTORIES=${UUID_INCLUDE_DIR}")
-if(normal_uuid)
-    add_definitions(-DUSE_OSSP_UUID=0)
-elseif(ossp_uuid)
-    add_definitions(-DUSE_OSSP_UUID=1)
-else()
-    message(FATAL_ERROR "uuid lib error")
-endif()
+#find_package(UUID REQUIRED)
+#target_include_directories(${PROJECT_NAME} PRIVATE ${UUID_INCLUDE_DIR})
+#target_link_libraries(${PROJECT_NAME} PRIVATE ${UUID_LIBRARIES})
 
 find_package(ZLIB REQUIRED)
 target_include_directories(${PROJECT_NAME} PRIVATE ${ZLIB_INCLUDE_DIR})
 target_link_libraries(${PROJECT_NAME} PRIVATE ${ZLIB_LIBRARIES})
+
+add_definitions(-D_POSIX_THREAD_SAFE_FUNCTIONS -D_POSIX -D_POSIX_SOURCE -D_NO_W32_PSEUDO_MODIFIERS)
 
 set(DROGON_SOURCES
     lib/src/AOPAdvice.cc

@@ -39,3 +39,7 @@ html/
 latex/
 .vscode
 *.kdev4
+.cproject
+.project
+.settings/
+

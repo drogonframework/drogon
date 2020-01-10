@@ -6,7 +6,7 @@ using namespace drogon;
 
 int main()
 {
-    trantor::Logger::setLogLevel(trantor::Logger::TRACE);
+    trantor::Logger::setLogLevel(trantor::Logger::TRANTOR_TRACE);
     {
         int count = 0;
         auto client = HttpClient::newHttpClient("http://www.baidu.com");

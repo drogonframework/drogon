@@ -20,9 +20,7 @@
 #include <memory>
 #include <string>
 #include <algorithm>
-#ifdef _WIN32
-#define noexcept _NOEXCEPT
-#endif
+
 namespace drogon
 {
 namespace orm

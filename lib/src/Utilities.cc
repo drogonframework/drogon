@@ -14,7 +14,11 @@
 
 #include <drogon/utils/Utilities.h>
 #include <trantor/utils/Logger.h>
+#ifdef _WIN32
+#include <Rpc.h>
+#else
 #include <uuid.h>
+#endif
 #include <zlib.h>
 #include <iomanip>
 #include <mutex>
@@ -181,6 +185,32 @@ std::string hexToBinaryString(const char *ptr, size_t length)
     }
     return ret;
 }
+#ifdef _WIN32
+char* strptime(const char* s,
+                          const char* f,
+                          struct tm* tm) {
+  // std::get_time is defined such that its
+  // format parameters are the exact same as strptime.
+  std::istringstream input(s);
+  input.imbue(std::locale(setlocale(LC_ALL, nullptr)));
+  input >> std::get_time(tm, f);
+  if (input.fail()) {
+    return nullptr;
+  }
+  return (char*)(s + input.tellg());
+}
+time_t timegm(struct tm *tm)
+{
+  struct tm my_tm;
+
+  memcpy(&my_tm, tm, sizeof(struct tm));
+
+  /* _mkgmtime() changes the value of the struct tm* you pass in, so
+   * use a copy
+   */
+  return _mkgmtime(&my_tm);
+}
+#endif
 std::string binaryStringToHex(const unsigned char *ptr, size_t length)
 {
     std::string idString;
@@ -271,6 +301,13 @@ std::string getUuid()
     std::string ret{binaryStringToHex((const unsigned char *)str, len)};
     free(str);
     return ret;
+#elif defined _WIN32
+	uuid_t uu;
+	UuidCreate(&uu);
+	char tempStr[100];
+	unsigned char *pChar = reinterpret_cast<unsigned char *>(tempStr);
+	UuidToString(&uu, &pChar);
+	return tempStr;
 #else
     uuid_t uu;
     uuid_generate(uu);
@@ -664,7 +701,7 @@ std::string urlDecode(const char *begin, const char *end)
                 if ((i + 2) < len && isxdigit(begin[i + 1]) &&
                     isxdigit(begin[i + 2]))
                 {
-                    uint x1 = begin[i + 1];
+                    unsigned int x1 = begin[i + 1];
                     if (x1 >= '0' && x1 <= '9')
                     {
                         x1 -= '0';
@@ -677,7 +714,7 @@ std::string urlDecode(const char *begin, const char *end)
                     {
                         x1 = x1 - 'A' + 10;
                     }
-                    uint x2 = begin[i + 2];
+                    unsigned int x2 = begin[i + 2];
                     if (x2 >= '0' && x2 <= '9')
                     {
                         x2 -= '0';
@@ -922,7 +959,11 @@ int createPath(const std::string &path)
         }
         pathStack.pop();
 
+#ifdef _WIN32
+        if (mkdir(tmpPath.c_str()) == -1)
+#else
         if (mkdir(tmpPath.c_str(), 0755) == -1)
+#endif
         {
             LOG_ERROR << "Can't create path:" << path;
             return -1;
