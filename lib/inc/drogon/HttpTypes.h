@@ -96,7 +96,8 @@ enum ContentType
     CT_IMAGE_XICON,
     CT_IMAGE_ICNS,
     CT_IMAGE_BMP,
-    CT_MULTIPART_FORM_DATA
+    CT_MULTIPART_FORM_DATA,
+    CT_CUSTOM
 };
 
 enum HttpMethod

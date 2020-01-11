@@ -648,6 +648,28 @@ class HttpAppFramework : public trantor::NonCopyable
     virtual HttpAppFramework &setStaticFileHeaders(
         const std::vector<std::pair<std::string, std::string>> &headers) = 0;
 
+    /**
+     * @brief Add a location of static files for GET requests.
+     *
+     * @param uriPrefix The URI prefix of the location prefixed with "/"
+     * @param defaultContentType The default content type of the static files
+     * without an extension.
+     * @param alias The location in file system, if it is prefixed with "/", it
+     * presents an absolute path, otherwise it presents a relative path to the
+     * document_root path.
+     * @param isCaseSensitive
+     * @param allowAll If it is set to false, only static files with a valid extension can be accessed.
+     * @param isRecursive If it is set to false, files in sub directories can't be accessed.
+     * @return HttpAppFramework&
+     */
+    virtual HttpAppFramework &addALocation(
+        const std::string &uriPrefix,
+        const std::string &defaultContentType = "",
+        const std::string &alias = "",
+        bool isCaseSensitive = false,
+        bool allowAll = true,
+        bool isRecursive = true) = 0;
+
     /// Set the path to store uploaded files.
     /**
      * @param uploadPath is the dictionary where the uploaded files are

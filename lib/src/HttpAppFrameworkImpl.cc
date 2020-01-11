@@ -62,7 +62,7 @@ using namespace drogon;
 using namespace std::placeholders;
 
 HttpAppFrameworkImpl::HttpAppFrameworkImpl()
-    : staticFileRouterPtr_(new StaticFileRouter(staticFileHeaders_)),
+    : staticFileRouterPtr_(new StaticFileRouter{}),
       httpCtrlsRouterPtr_(new HttpControllersRouter(*staticFileRouterPtr_,
                                                     postRoutingAdvices_,
                                                     postRoutingObservers_,
@@ -829,4 +829,28 @@ const HttpResponsePtr &HttpAppFrameworkImpl::getCustom404Page()
     {
         return custom404_;
     }
+}
+
+HttpAppFramework &HttpAppFrameworkImpl::setStaticFileHeaders(
+    const std::vector<std::pair<std::string, std::string>> &headers)
+{
+    staticFileRouterPtr_->setStaticFileHeaders(headers);
+    return *this;
+}
+
+HttpAppFramework &HttpAppFrameworkImpl::addALocation(
+    const std::string &uriPrefix,
+    const std::string &defaultContentType,
+    const std::string &alias,
+    bool isCaseSensitive,
+    bool allowAll,
+    bool isRecursive)
+{
+    staticFileRouterPtr_->addALocation(uriPrefix,
+                                       defaultContentType,
+                                       alias,
+                                       isCaseSensitive,
+                                       allowAll,
+                                       isRecursive);
+    return *this;
 }
