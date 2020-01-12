@@ -107,7 +107,7 @@ void StaticFileRouter::route(
         {
             string_view restOfThePath{path.data() + URI.length(),
                                       path.length() - URI.length()};
-            auto pos = restOfThePath.find('/');
+            auto pos = restOfThePath.rfind('/');
             if (pos != 0 && pos != string_view::npos && !location.isRecursive_)
             {
                 auto resp = HttpResponse::newHttpResponse();
