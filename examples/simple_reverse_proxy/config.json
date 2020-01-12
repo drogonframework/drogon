@@ -89,7 +89,7 @@
         "run_as_daemon": false,
         //relaunch_on_error: False by default, if true, the program will be restart by the parent after exiting;
         "relaunch_on_error": false,
-        //use_sendfile: True by default, if ture, the program 
+        //use_sendfile: True by default, if true, the program 
         //uses sendfile() system-call to send static files to clients;
         "use_sendfile": true,
         //use_gzip: True by default, use gzip to compress the response body's content;

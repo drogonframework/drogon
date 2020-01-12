@@ -43,10 +43,32 @@ class StaticFileRouter
         gzipStaticFlag_ = useGzipStatic;
     }
     void init(const std::vector<trantor::EventLoop *> &ioloops);
-    StaticFileRouter(
-        const std::vector<std::pair<std::string, std::string>> &headers)
-        : headers_(headers)
+
+    void sendStaticFileResponse(
+        const std::string &filePath,
+        const HttpRequestImplPtr &req,
+        const std::function<void(const HttpResponsePtr &)> &callback,
+        const string_view &defaultContentType);
+
+    void addALocation(const std::string &uriPrefix,
+                      const std::string &defaultContentType,
+                      const std::string &alias,
+                      bool isCaseSensitive,
+                      bool allowAll,
+                      bool isRecursive)
     {
+        locations_.emplace_back(uriPrefix,
+                                defaultContentType,
+                                alias,
+                                isCaseSensitive,
+                                allowAll,
+                                isRecursive);
+    }
+
+    void setStaticFileHeaders(
+        const std::vector<std::pair<std::string, std::string>> &headers)
+    {
+        headers_ = headers;
     }
 
   private:
@@ -79,6 +101,36 @@ class StaticFileRouter
     std::unique_ptr<
         IOThreadStorage<std::unordered_map<std::string, HttpResponsePtr>>>
         staticFilesCache_;
-    const std::vector<std::pair<std::string, std::string>> &headers_;
+    std::vector<std::pair<std::string, std::string>> headers_;
+    struct Location
+    {
+        std::string uriPrefix_;
+        std::string defaultContentType_;
+        std::string alias_;
+        std::string realLocation_;
+        bool isCaseSensitive_;
+        bool allowAll_;
+        bool isRecursive_;
+        Location(const std::string &uriPrefix,
+                 const std::string &defaultContentType,
+                 const std::string &alias,
+                 bool isCaseSensitive,
+                 bool allowAll,
+                 bool isRecursive)
+            : uriPrefix_(uriPrefix),
+              alias_(alias),
+              isCaseSensitive_(isCaseSensitive),
+              allowAll_(allowAll),
+              isRecursive_(isRecursive)
+        {
+            if (!defaultContentType.empty())
+            {
+                defaultContentType_ =
+                    std::string{"Content-Type: "} + defaultContentType + "\r\n";
+            }
+        }
+    };
+    std::unique_ptr<IOThreadStorage<std::vector<Location>>> ioLocationsPtr_;
+    std::vector<Location> locations_;
 };
 }  // namespace drogon
