@@ -27,7 +27,7 @@
 #define GREEN "\033[32m" /* Green */
 
 #define JPG_LEN 44618
-#define INDEX_LEN 10605
+#define INDEX_LEN 10613
 
 using namespace drogon;
 
