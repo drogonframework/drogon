@@ -25,7 +25,7 @@ echo "Test http requests and responses."
 ./webapp_test
 
 if [ $? -ne 0 ]; then
-    echo "Error in testing"
+    echo "Error in testing http requests"
     exit -1
 fi
 
@@ -33,7 +33,7 @@ fi
 echo "Test the WebSocket"
 ./websocket_test -t
 if [ $? -ne 0 ]; then
-    echo "Error in testing"
+    echo "Error in testing WebSocket"
     exit -1
 fi
 
@@ -41,7 +41,7 @@ fi
 echo "Test the pipelining"
 ./pipelining_test
 if [ $? -ne 0 ]; then
-    echo "Error in testing"
+    echo "Error in testing pipelining"
     exit -1
 fi
 

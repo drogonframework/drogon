@@ -43,7 +43,9 @@ add_dependencies(drogon_ctl
                  trantor
                  makeVersion
                  _drogon_ctl)
-target_link_libraries(drogon_ctl PRIVATE ws2_32 Rpcrt4)				 
+if(WIN32)
+  target_link_libraries(drogon_ctl PRIVATE ws2_32 Rpcrt4)
+endif(WIN32)
 message(STATUS "bin:" ${INSTALL_BIN_DIR})
 install(TARGETS drogon_ctl RUNTIME DESTINATION ${INSTALL_BIN_DIR})
 install(CODE "execute_process( \

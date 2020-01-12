@@ -102,12 +102,11 @@ int main()
         *clientPtr << "select is_default from groups" >> [](const Result &r) {
             for (auto row : r)
             {
-            	size_t zero_row = 0; //to avoid ambiguous operator[]
                 std::cout << "is_default: "
-                          << (row[zero_row].isNull() ? "is null, "
+                          << (row[(size_t)0].isNull() ? "is null, "
                                                       : "is not null, ")
-                          << "bool value:" << row[zero_row].as<bool>() << "("
-                          << row[zero_row].as<std::string>() << ")"
+                          << "bool value:" << row[(size_t)0].as<bool>() << "("
+                          << row[(size_t)0].as<std::string>() << ")"
                           << std::endl;
             }
         } >> [](const DrogonDbException &e) {
