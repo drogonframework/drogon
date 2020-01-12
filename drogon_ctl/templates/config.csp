@@ -95,6 +95,25 @@
             "cur",
             "xml"
         ],
+        //locations: An array of locations of static files for GET requests.
+        "locations": [{
+            //uri_prefix: The URI prefix of the location prefixed with "/", the default value is "" that disables the location.
+            //"uri_prefix": "/.well-known/acme-challenge/",
+            //default_content_type: The default content type of the static files without
+            //an extension. empty string by default.
+            "default_content_type": "text/plain",
+            //alias: The location in file system, if it is prefixed with "/", it 
+            //presents an absolute path, otherwise it presents a relative path to 
+            //the document_root path. 
+            //The default value is "" which means use the document root path as the location base path.
+            "alias": "",
+            //is_case_sensitive: indicates whether the URI prefix is case sensitive.
+            "is_case_sensitive": false,
+            //allow_all: true by default. If it is set to false, only static files with a valid extension can be accessed.
+            "allow_all": true,
+            //is_recursive: true by default. If it is set to false, files in sub directories can't be accessed.
+            "is_recursive": true
+        }],
         //max_connections: maximum connections number,100000 by default
         "max_connections": 100000,
         //max_connections_per_ip: maximum connections number per clinet,0 by default which means no limit
@@ -126,7 +145,7 @@
         "run_as_daemon": false,
         //relaunch_on_error: False by default, if true, the program will be restart by the parent after exiting;
         "relaunch_on_error": false,
-        //use_sendfile: True by default, if ture, the program 
+        //use_sendfile: True by default, if true, the program 
         //uses sendfile() system-call to send static files to clients;
         "use_sendfile": true,
         //use_gzip: True by default, use gzip to compress the response body's content;

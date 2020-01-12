@@ -263,6 +263,35 @@ static void loadApp(const Json::Value &app)
         }
         drogon::app().setFileTypes(types);
     }
+    // locations
+    if (app.isMember("locations"))
+    {
+        auto &locations = app["locations"];
+        if (!locations.isArray())
+        {
+            std::cerr << "The locations option must be an array\n";
+            exit(1);
+        }
+        for (auto &location : locations)
+        {
+            auto uri = location.get("uri_prefix", "").asString();
+            if (uri.empty())
+                continue;
+            auto defaultContentType =
+                location.get("default_content_type", "").asString();
+            auto alias = location.get("alias", "").asString();
+            auto isCaseSensitive =
+                location.get("is_case_sensitive", false).asBool();
+            auto allAll = location.get("allow_all", true).asBool();
+            auto isRecursive = location.get("is_recursive", true).asBool();
+            drogon::app().addALocation(uri,
+                                       defaultContentType,
+                                       alias,
+                                       isCaseSensitive,
+                                       allAll,
+                                       isRecursive);
+        }
+    }
     // max connections
     auto maxConns = app.get("max_connections", 0).asUInt64();
     if (maxConns > 0)

@@ -189,11 +189,16 @@ class HttpAppFrameworkImpl : public HttpAppFramework
 
     virtual HttpAppFramework &setStaticFileHeaders(
         const std::vector<std::pair<std::string, std::string>> &headers)
-        override
-    {
-        staticFileHeaders_ = headers;
-        return *this;
-    }
+        override;
+
+    virtual HttpAppFramework &addALocation(
+        const std::string &uriPrefix,
+        const std::string &defaultContentType = "",
+        const std::string &alias = "",
+        bool isCaseSensitive = false,
+        bool allowAll = true,
+        bool isRecursive = true) override;
+
     virtual const std::string &getUploadPath() const override
     {
         return uploadPath_;
@@ -453,7 +458,6 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     const std::unique_ptr<orm::DbClientManager> dbClientManagerPtr_;
 
     std::string rootPath_{"./"};
-    std::vector<std::pair<std::string, std::string>> staticFileHeaders_;
     std::string uploadPath_;
     std::atomic_bool running_{false};
 
