@@ -72,7 +72,7 @@ target_include_directories(
 if(WIN32)
   target_include_directories(
   ${PROJECT_NAME}
-  PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/mman-win32>)
+  PRIVATE $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/mman-win32>)
 endif(WIN32)
          
 # set the include list for dynamic view compiling

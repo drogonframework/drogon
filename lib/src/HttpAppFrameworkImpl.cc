@@ -133,6 +133,9 @@ static void godaemon(void)
     ret = dup(0);
     (void)ret;
     umask(0);
+#else
+    LOG_ERROR << "Cannot run as daemon in Windows";
+    exit(1);
 #endif
 
     return;

@@ -103,10 +103,10 @@ int main()
             for (auto row : r)
             {
                 std::cout << "is_default: "
-                          << (row[(size_t)0].isNull() ? "is null, "
+                          << (row[(unsigned long)0].isNull() ? "is null, "
                                                       : "is not null, ")
-                          << "bool value:" << row[(size_t)0].as<bool>() << "("
-                          << row[(size_t)0].as<std::string>() << ")"
+                          << "bool value:" << row[(unsigned long)0].as<bool>() << "("
+                          << row[(unsigned long)0].as<std::string>() << ")"
                           << std::endl;
             }
         } >> [](const DrogonDbException &e) {
