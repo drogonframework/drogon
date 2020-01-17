@@ -6,7 +6,7 @@ using namespace drogon::orm;
 
 int main()
 {
-    trantor::Logger::setLogLevel(trantor::Logger::TRANTOR_TRACE);
+    trantor::Logger::setLogLevel(trantor::Logger::kTrace);
     auto clientPtr =
         DbClient::newPgClient("host=127.0.0.1 port=5432 dbname=test user=antao",
                               3);

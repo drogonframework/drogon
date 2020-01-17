@@ -27,7 +27,7 @@
 #define GREEN "\033[32m" /* Green */
 
 #define JPG_LEN 44618
-#define INDEX_LEN 10613
+#define INDEX_LEN 10606
 
 using namespace drogon;
 
@@ -1098,7 +1098,7 @@ void doTest(const HttpClientPtr &client,
 int main(int argc, char *argv[])
 {
     trantor::EventLoopThread loop[2];
-    trantor::Logger::setLogLevel(trantor::Logger::LogLevel::TRANTOR_DEBUG);
+    trantor::Logger::setLogLevel(trantor::Logger::LogLevel::kDebug);
     bool ever = false;
     if (argc > 1 && std::string(argv[1]) == "-f")
         ever = true;

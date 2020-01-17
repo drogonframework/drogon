@@ -10,7 +10,7 @@
 
 int main()
 {
-    trantor::Logger::setLogLevel(trantor::Logger::TRANTOR_TRACE);
+    trantor::Logger::setLogLevel(trantor::Logger::kTrace);
     trantor::EventLoopThread loopThread;
     loopThread.run();
 

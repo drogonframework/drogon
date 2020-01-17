@@ -135,19 +135,19 @@ static void loadLogSetting(const Json::Value &log)
     auto logLevel = log.get("log_level", "DEBUG").asString();
     if (logLevel == "TRACE")
     {
-        trantor::Logger::setLogLevel(trantor::Logger::TRANTOR_TRACE);
+        trantor::Logger::setLogLevel(trantor::Logger::kTrace);
     }
     else if (logLevel == "DEBUG")
     {
-        trantor::Logger::setLogLevel(trantor::Logger::TRANTOR_DEBUG);
+        trantor::Logger::setLogLevel(trantor::Logger::kDebug);
     }
     else if (logLevel == "INFO")
     {
-        trantor::Logger::setLogLevel(trantor::Logger::TRANTOR_INFO);
+        trantor::Logger::setLogLevel(trantor::Logger::kInfo);
     }
     else if (logLevel == "WARN")
     {
-        trantor::Logger::setLogLevel(trantor::Logger::TRANTOR_WARN);
+        trantor::Logger::setLogLevel(trantor::Logger::kWarn);
     }
 }
 static void loadControllers(const Json::Value &controllers)

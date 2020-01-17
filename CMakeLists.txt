@@ -72,7 +72,7 @@ target_include_directories(
 if(WIN32)
   target_include_directories(
   ${PROJECT_NAME}
-  PRIVATE $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/mman-win32>)
+  PRIVATE $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/third_party/mman-win32>)
 endif(WIN32)
          
 # set the include list for dynamic view compiling
@@ -82,7 +82,7 @@ list(APPEND INCLUDE_DIRS_FOR_DYNAMIC_VIEW
             ${PROJECT_SOURCE_DIR}/trantor)
 
 if(WIN32)
-add_subdirectory(mman-win32)
+  add_subdirectory(third_party/mman-win32)
 endif(WIN32)
 add_subdirectory(trantor)
 
@@ -379,9 +379,11 @@ if(BUILD_TESTING)
   if(SQLITE3_FOUND)
     add_subdirectory(${PROJECT_SOURCE_DIR}/orm_lib/src/sqlite3_impl/test)
   endif()
-  enable_testing()
-  add_subdirectory(third_party/googletest)
-  add_subdirectory(unittest)
+  find_package(GTest)
+  if(GTest_FOUND)
+    enable_testing()
+    add_subdirectory(unittest)
+  endif()
 endif()
 
 # Installation

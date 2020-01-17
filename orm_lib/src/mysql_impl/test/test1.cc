@@ -10,7 +10,7 @@ using namespace drogon;
 
 int main()
 {
-    trantor::Logger::setLogLevel(trantor::Logger::TRANTOR_TRACE);
+    trantor::Logger::setLogLevel(trantor::Logger::kTrace);
     auto clientPtr = DbClient::newMysqlClient(
         "host= 127.0.0.1    port  =3306 dbname= test user = root  ", 1);
     sleep(1);

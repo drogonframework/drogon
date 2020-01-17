@@ -18,7 +18,7 @@ install (TARGETS mman
                       ARCHIVE DESTINATION lib${LIB_SUFFIX})
 
 install(EXPORT MMANTargets
-        DESTINATION "${INSTALL_TRANTOR_CMAKE_DIR}"
+        DESTINATION "${INSTALL_DROGON_CMAKE_DIR}"
         COMPONENT dev)
 
 install (FILES ${headers} DESTINATION include/sys)
