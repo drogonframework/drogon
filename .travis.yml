@@ -1,7 +1,7 @@
 matrix:
   include:
     - os: linux
-      dist: xenial
+      dist: bionic
     - os: osx
       osx_image: xcode11
 
