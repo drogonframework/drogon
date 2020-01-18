@@ -51,14 +51,16 @@
 #include <tuple>
 
 #include <fcntl.h>
-#include <sys/file.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #ifndef _WIN32
 #include <sys/wait.h>
+#include <sys/file.h>
 #include <uuid.h>
-#endif
 #include <unistd.h>
+#else
+#include <io.h>
+#endif
 
 using namespace drogon;
 using namespace std::placeholders;
@@ -142,8 +144,10 @@ static void godaemon(void)
 }
 HttpAppFrameworkImpl::~HttpAppFrameworkImpl() noexcept
 {
-    // Destroy the following objects before the loop destruction
+// Destroy the following objects before the loop destruction
+#ifndef _WIN32
     sharedLibManagerPtr_.reset();
+#endif
     sessionManagerPtr_.reset();
 }
 HttpAppFramework &HttpAppFrameworkImpl::setStaticFilesCacheTime(int cacheTime)
@@ -160,6 +164,7 @@ HttpAppFramework &HttpAppFrameworkImpl::setGzipStatic(bool useGzipStatic)
     staticFileRouterPtr_->setGzipStatic(useGzipStatic);
     return *this;
 }
+#ifndef _WIN32
 HttpAppFramework &HttpAppFrameworkImpl::enableDynamicViewsLoading(
     const std::vector<std::string> &libPaths)
 {
@@ -185,6 +190,7 @@ HttpAppFramework &HttpAppFrameworkImpl::enableDynamicViewsLoading(
     }
     return *this;
 }
+#endif
 HttpAppFramework &HttpAppFrameworkImpl::setFileTypes(
     const std::vector<std::string> &types)
 {
@@ -299,7 +305,11 @@ HttpAppFramework &HttpAppFrameworkImpl::setLogPath(
         std::cerr << "Log path dose not exist!\n";
         exit(1);
     }
+#ifdef _WIN32
+    if (access(logPath.c_str(), 06) != 0)
+#else
     if (access(logPath.c_str(), R_OK | W_OK) != 0)
+#endif
     {
         std::cerr << "Unable to access log path!\n";
         exit(1);
@@ -374,7 +384,11 @@ void HttpAppFrameworkImpl::run()
     // set logger
     if (!logPath_.empty())
     {
-        if (access(logPath_.c_str(), R_OK | W_OK) >= 0)
+#ifdef _WIN32
+        if (access(logPath_.c_str(), 06) != 0)
+#else
+        if (access(logPath_.c_str(), R_OK | W_OK) != 0)
+#endif
         {
             std::string baseName = logfileBaseName_;
             if (baseName == "")
@@ -403,12 +417,13 @@ void HttpAppFrameworkImpl::run()
     // now start runing!!
 
     running_ = true;
-
+#ifndef _WIN32
     if (!libFilePaths_.empty())
     {
         sharedLibManagerPtr_ = std::unique_ptr<SharedLibManager>(
             new SharedLibManager(getLoop(), libFilePaths_));
     }
+#endif
     // Create all listeners.
     auto ioLoops = listenerManagerPtr_->createListeners(
         std::bind(&HttpAppFrameworkImpl::onAsyncRequest, this, _1, _2),

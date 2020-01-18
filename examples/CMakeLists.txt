@@ -3,11 +3,7 @@ link_libraries(${PROJECT_NAME})
 file(GLOB SCP_LIST ${CMAKE_CURRENT_SOURCE_DIR}/simple_example/*.csp)
 foreach(cspFile ${SCP_LIST})
   message(STATUS "cspFile:" ${cspFile})
-  exec_program(basename
-               ARGS
-               "${cspFile} .csp"
-               OUTPUT_VARIABLE
-               classname)
+  get_filename_component(classname ${cspFile} NAME_WE)
   message(STATUS "view classname:" ${classname})
   add_custom_command(OUTPUT ${classname}.h ${classname}.cc
                      COMMAND drogon_ctl

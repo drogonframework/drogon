@@ -1,6 +1,5 @@
 #include <drogon/drogon.h>
 #include <thread>
-#include <unistd.h>
 
 int main()
 {

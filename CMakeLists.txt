@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.5)
 
 project(drogon CXX)
-
+message(STATUS "compiler: " ${CMAKE_CXX_COMPILER_ID})
 option(BUILD_CTL "Build drogon_ctl" ON)
 option(BUILD_EXAMPLES "Build examples" ON)
 option(BUILD_ORM "Build orm" ON)
@@ -88,10 +88,10 @@ add_subdirectory(trantor)
 
 target_link_libraries(${PROJECT_NAME} PUBLIC trantor)
 
-target_link_libraries(${PROJECT_NAME} PRIVATE dl)
-
 if(WIN32)
   target_link_libraries(${PROJECT_NAME} PRIVATE mman)
+else()
+  target_link_libraries(${PROJECT_NAME} PRIVATE dl)
 endif(WIN32)
 
 if(DROGON_CXX_STANDARD LESS 17)
@@ -118,6 +118,7 @@ if(NOT EXISTS ${JSONCPP_INCLUDE_DIRS}/json/version.h)
   message(FATAL_ERROR "Error: jsoncpp lib is too old.....stop")
 endif()
 
+if(NOT WIN32)
 exec_program(
   cat
   ARGS
@@ -132,7 +133,6 @@ if(jsoncpp_ver LESS 1.7)
     )
 endif()
 
-if(NOT WIN32)
   find_package(UUID REQUIRED)
   target_include_directories(${PROJECT_NAME} PRIVATE ${UUID_INCLUDE_DIR})
   target_link_libraries(${PROJECT_NAME} PRIVATE ${UUID_LIBRARIES})
@@ -190,12 +190,15 @@ set(DROGON_SOURCES
     lib/src/PluginsManager.cc
     lib/src/SecureSSLRedirector.cc
     lib/src/SessionManager.cc
-    lib/src/SharedLibManager.cc
     lib/src/StaticFileRouter.cc
     lib/src/Utilities.cc
     lib/src/WebSocketClientImpl.cc
     lib/src/WebSocketConnectionImpl.cc
     lib/src/WebsocketControllersRouter.cc)
+
+if(!WIN32)
+    set(DROGON_SOURCES ${DROGON_SOURCES} lib/src/SharedLibManager.cc)
+endif(WIN32)
 
 find_package(OpenSSL)
 if(OpenSSL_FOUND)
@@ -381,6 +384,7 @@ if(BUILD_TESTING)
   endif()
   find_package(GTest)
   if(GTest_FOUND)
+    message(STATUS "gtest found")
     enable_testing()
     add_subdirectory(unittest)
   endif()

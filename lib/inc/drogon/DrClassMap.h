@@ -23,7 +23,9 @@
 #include <vector>
 #include <type_traits>
 #include <cstdlib>
+#ifndef _WIN32
 #include <cxxabi.h>
+#endif
 #include <stdio.h>
 
 namespace drogon
@@ -104,6 +106,7 @@ class DrClassMap
      */
     static std::string demangle(const char *mangled_name)
     {
+#ifndef _WIN32
         std::size_t len = 0;
         int status = 0;
         std::unique_ptr<char, decltype(&std::free)> ptr(
@@ -115,6 +118,8 @@ class DrClassMap
         }
         LOG_ERROR << "Demangle error!";
         return "";
+#endif
+        return std::string{mangled_name};
     }
 
   protected:

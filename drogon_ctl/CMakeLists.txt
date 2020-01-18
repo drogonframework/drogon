@@ -20,20 +20,16 @@ target_link_libraries(_drogon_ctl ${PROJECT_NAME})
 file(GLOB SCP_LIST ${CMAKE_CURRENT_SOURCE_DIR}/templates/*.csp)
 foreach(cspFile ${SCP_LIST})
   message(STATUS "cspFile:" ${cspFile})
-  exec_program(basename
-               ARGS
-               "${cspFile} .csp"
-               OUTPUT_VARIABLE
-               classname)
+  get_filename_component(classname ${cspFile} NAME_WE)
   message(STATUS "view classname:" ${classname})
   add_custom_command(OUTPUT ${classname}.h ${classname}.cc
-                     COMMAND _drogon_ctl
-                             ARGS
-                             create
-                             view
-                             ${cspFile}
-                     DEPENDS ${cspFile}
-                     VERBATIM)
+                    COMMAND _drogon_ctl
+                            ARGS
+                            create
+                            view
+                            ${cspFile}
+                    DEPENDS ${cspFile}
+                    VERBATIM)
   set(TEMPL_SRC ${TEMPL_SRC} ${classname}.cc)
 endforeach()
 add_executable(drogon_ctl ${ctl_sources} ${TEMPL_SRC})

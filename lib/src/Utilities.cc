@@ -16,6 +16,8 @@
 #include <trantor/utils/Logger.h>
 #ifdef _WIN32
 #include <Rpc.h>
+#include <direct.h>
+#include <io.h>
 #else
 #include <uuid.h>
 #endif
@@ -31,7 +33,9 @@
 #include <cstdlib>
 #include <stdio.h>
 #include <string.h>
+#ifndef _WIN32
 #include <unistd.h>
+#endif
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <stdarg.h>
@@ -186,29 +190,29 @@ std::string hexToBinaryString(const char *ptr, size_t length)
     return ret;
 }
 #ifdef _WIN32
-char* strptime(const char* s,
-                          const char* f,
-                          struct tm* tm) {
-  // std::get_time is defined such that its
-  // format parameters are the exact same as strptime.
-  std::istringstream input(s);
-  input.imbue(std::locale(setlocale(LC_ALL, nullptr)));
-  input >> std::get_time(tm, f);
-  if (input.fail()) {
-    return nullptr;
-  }
-  return (char*)(s + input.tellg());
+char *strptime(const char *s, const char *f, struct tm *tm)
+{
+    // std::get_time is defined such that its
+    // format parameters are the exact same as strptime.
+    std::istringstream input(s);
+    input.imbue(std::locale(setlocale(LC_ALL, nullptr)));
+    input >> std::get_time(tm, f);
+    if (input.fail())
+    {
+        return nullptr;
+    }
+    return (char *)(s + input.tellg());
 }
 time_t timegm(struct tm *tm)
 {
-  struct tm my_tm;
+    struct tm my_tm;
 
-  memcpy(&my_tm, tm, sizeof(struct tm));
+    memcpy(&my_tm, tm, sizeof(struct tm));
 
-  /* _mkgmtime() changes the value of the struct tm* you pass in, so
-   * use a copy
-   */
-  return _mkgmtime(&my_tm);
+    /* _mkgmtime() changes the value of the struct tm* you pass in, so
+     * use a copy
+     */
+    return _mkgmtime(&my_tm);
 }
 #endif
 std::string binaryStringToHex(const unsigned char *ptr, size_t length)
@@ -302,12 +306,12 @@ std::string getUuid()
     free(str);
     return ret;
 #elif defined _WIN32
-	uuid_t uu;
-	UuidCreate(&uu);
-	char tempStr[100];
-	unsigned char *pChar = reinterpret_cast<unsigned char *>(tempStr);
-	UuidToString(&uu, &pChar);
-	return tempStr;
+    uuid_t uu;
+    UuidCreate(&uu);
+    char tempStr[100];
+    unsigned char *pChar = reinterpret_cast<unsigned char *>(tempStr);
+    UuidToString(&uu, &pChar);
+    return tempStr;
 #else
     uuid_t uu;
     uuid_generate(uu);
@@ -921,7 +925,11 @@ int createPath(const std::string &path)
 {
     auto tmpPath = path;
     std::stack<std::string> pathStack;
+#ifdef _WIN32
+    while (access(tmpPath.c_str(), 06) != 0)
+#else
     while (access(tmpPath.c_str(), F_OK) != 0)
+#endif
     {
         if (tmpPath == "./" || tmpPath == "/")
             return -1;

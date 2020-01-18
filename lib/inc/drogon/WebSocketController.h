@@ -29,8 +29,11 @@
     paths()                                                              \
     {                                                                    \
         std::vector<std::pair<std::string, std::vector<std::string>>> vet;
-
+#ifndef _WIN32
 #define WS_PATH_ADD(path, filters...) vet.push_back({path, {filters}})
+#else
+#define WS_PATH_ADD(path, ...) vet.push_back({path, {##__VA_ARGS__}})
+#endif
 
 #define WS_PATH_LIST_END \
     return vet;          \

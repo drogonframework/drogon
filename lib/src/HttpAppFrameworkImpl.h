@@ -213,8 +213,10 @@ class HttpAppFrameworkImpl : public HttpAppFramework
         const std::string &uploadPath) override;
     virtual HttpAppFramework &setFileTypes(
         const std::vector<std::string> &types) override;
+#ifndef _WIN32
     virtual HttpAppFramework &enableDynamicViewsLoading(
         const std::vector<std::string> &libPaths) override;
+#endif
     virtual HttpAppFramework &setMaxConnectionNum(
         size_t maxConnections) override;
     virtual HttpAppFramework &setMaxConnectionNumPerIP(
@@ -409,7 +411,11 @@ class HttpAppFrameworkImpl : public HttpAppFramework
         {
             return loop->index();
         }
+#ifdef _WIN32
+        return size_t(-1);
+#else
         return std::numeric_limits<size_t>::max();
+#endif
     }
 
   private:
@@ -463,8 +469,9 @@ class HttpAppFrameworkImpl : public HttpAppFramework
 
     size_t threadNum_{1};
     std::vector<std::string> libFilePaths_;
-
+#ifndef _WIN32
     std::unique_ptr<SharedLibManager> sharedLibManagerPtr_;
+#endif
 
     std::string sslCertPath_;
     std::string sslKeyPath_;

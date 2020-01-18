@@ -707,8 +707,10 @@ class HttpAppFramework : public trantor::NonCopyable
      * It is disabled by default.
      * This operation can be performed by an option in the configuration file.
      */
+    #ifndef _WIN32
     virtual HttpAppFramework &enableDynamicViewsLoading(
         const std::vector<std::string> &libPaths) = 0;
+    #endif
 
     /// Set the maximum number of all connections.
     /**

@@ -42,4 +42,6 @@ latex/
 .cproject
 .project
 .settings/
+.vs/
+CMakeSettings.json
 

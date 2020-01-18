@@ -13,7 +13,7 @@
  */
 
 #pragma once
-#if __cplusplus >= 201703L
+#if __cplusplus >= 201703L | defined _WIN32
 #include <string_view>
 #else
 #include <boost/utility/string_view.hpp>
@@ -21,7 +21,7 @@
 #endif
 namespace drogon
 {
-#if __cplusplus >= 201703L
+#if __cplusplus >= 201703L | defined _WIN32
 using std::string_view;
 #else
 using boost::string_view;

@@ -14,10 +14,10 @@
 
 #include "CacheFile.h"
 #include <trantor/utils/Logger.h>
-#include <unistd.h>
 #ifdef _WIN32
 #include <mman.h>
 #else
+#include <unistd.h>
 #include <sys/mman.h>
 #endif
 

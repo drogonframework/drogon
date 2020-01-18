@@ -14,10 +14,16 @@
 
 #include "create_project.h"
 #include <drogon/DrTemplateBase.h>
+#include <drogon/utils/Utilities.h>
 #include <iostream>
 #include <sys/stat.h>
 #include <sys/types.h>
+#ifndef _WIN32
 #include <unistd.h>
+#else
+#include <io.h>
+#include <direct.h>
+#endif
 #include <fstream>
 
 using namespace drogon_ctl;
@@ -71,11 +77,8 @@ void create_project::createProject(const std::string &projectName)
         exit(1);
     }
     std::cout << "create a project named " << projectName << std::endl;
-#ifdef _WIN32
-    mkdir(projectName.data());
-#else
-    mkdir(projectName.data(), 0755);
-#endif
+
+    drogon::utils::createPath(projectName);
     // 1.create CMakeLists.txt
     auto r = chdir(projectName.data());
     (void)(r);
@@ -83,21 +86,12 @@ void create_project::createProject(const std::string &projectName)
     newCmakeFile(cmakeFile, projectName);
     std::ofstream mainFile("main.cc", std::ofstream::out);
     newMainFile(mainFile);
-#ifdef _WIN32
-    mkdir("views");
-    mkdir("controllers");
-    mkdir("filters");
-    mkdir("plugins");
-    mkdir("build");
-    mkdir("models");
-#else
-    mkdir("views", 0755);
-    mkdir("controllers", 0755);
-    mkdir("filters", 0755);
-    mkdir("plugins", 0755);
-    mkdir("build", 0755);
-    mkdir("models", 0755);
-#endif
+    drogon::utils::createPath("views");
+    drogon::utils::createPath("controllers");
+    drogon::utils::createPath("filters");
+    drogon::utils::createPath("plugins");
+    drogon::utils::createPath("build");
+    drogon::utils::createPath("models");
 
     std::ofstream gitFile(".gitignore", std::ofstream::out);
     newGitIgFile(gitFile);
