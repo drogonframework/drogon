@@ -5,7 +5,9 @@
  */
 
 #include "TestPlugin.h"
-#include <unistd.h>
+#include <thread>
+#include <chrono>
+using namespace std::chrono_literals;
 
 using namespace drogon;
 
@@ -19,7 +21,7 @@ void TestPlugin::initAndStart(const Json::Value &config)
         while (!stop_)
         {
             LOG_DEBUG << "TestPlugin heartbeat!";
-            sleep(interval_);
+            std::this_thread::sleep_for(std::chrono::seconds(interval_));
         }
     });
 }

@@ -13,7 +13,6 @@
  */
 
 #include "cmd.h"
-
 #include <string>
 #include <vector>
 #include <iostream>

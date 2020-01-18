@@ -48,6 +48,7 @@ add_executable(pipelining_test simple_example_test/HttpPipeliningTest.cc)
 add_executable(websocket_test simple_example_test/WebSocketTest.cc)
 add_executable(multiple_ws_test simple_example_test/MultipleWsTest.cc)
 
+if(!WIN32)
 add_custom_command(TARGET webapp POST_BUILD
                    COMMAND gzip
                            ARGS
@@ -56,6 +57,7 @@ add_custom_command(TARGET webapp POST_BUILD
                            >
                            ${CMAKE_CURRENT_BINARY_DIR}/index.html.gz
                    VERBATIM)
+endif()
 add_custom_command(
   TARGET webapp POST_BUILD
   COMMAND ${CMAKE_COMMAND}
