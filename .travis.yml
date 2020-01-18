@@ -44,7 +44,7 @@ before_install:
   - cd googletest-release-1.10.0
   - cmake .
   - make
-  - make install
+  - sudo make install
   - cd -
 before_script:
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then 
