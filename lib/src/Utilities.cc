@@ -309,9 +309,21 @@ std::string getUuid()
     uuid_t uu;
     UuidCreate(&uu);
     char tempStr[100];
-    unsigned char *pChar = reinterpret_cast<unsigned char *>(tempStr);
-    UuidToString(&uu, &pChar);
-    return tempStr;
+    auto len = snprintf(tempStr,
+                        sizeof(tempStr),
+                        "%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X",
+                        uu.Data1,
+                        uu.Data2,
+                        uu.Data3,
+                        uu.Data4[0],
+                        uu.Data4[1],
+                        uu.Data4[2],
+                        uu.Data4[3],
+                        uu.Data4[4],
+                        uu.Data4[5],
+                        uu.Data4[6],
+                        uu.Data4[7]);
+    return std::string{tempStr, static_cast<size_t>(len)};
 #else
     uuid_t uu;
     uuid_generate(uu);

@@ -673,7 +673,7 @@ void HttpAppFrameworkImpl::onAsyncRequest(
         bool needSetJsessionid = false;
         if (sessionId.empty())
         {
-            sessionId = utils::getUuid().c_str();
+            sessionId = utils::getUuid();
             needSetJsessionid = true;
         }
         req->setSession(

@@ -106,7 +106,7 @@ class DrClassMap
      */
     static std::string demangle(const char *mangled_name)
     {
-#ifndef _WIN32
+#ifndef _MSC_VER
         std::size_t len = 0;
         int status = 0;
         std::unique_ptr<char, decltype(&std::free)> ptr(
@@ -118,12 +118,13 @@ class DrClassMap
         }
         LOG_ERROR << "Demangle error!";
         return "";
-#endif
+#else
         auto pos = strstr(mangled_name, " ");
         if (pos == nullptr)
             return std::string{mangled_name};
         else
             return std::string{pos + 1};
+#endif
     }
 
   protected:
