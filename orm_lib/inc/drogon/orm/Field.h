@@ -52,7 +52,7 @@ inline uint64_t htonll(const uint64_t &input)
 }
 #endif
 //#ifdef _WIN32
-//inline uint64_t ntohll(const uint64_t &input)
+// inline uint64_t ntohll(const uint64_t &input)
 //{
 //    uint64_t rval;
 //    uint8_t *data = (uint8_t *)&rval;
@@ -69,7 +69,7 @@ inline uint64_t htonll(const uint64_t &input)
 //    return rval;
 //}
 //
-//inline uint64_t htonll(const uint64_t &input)
+// inline uint64_t htonll(const uint64_t &input)
 //{
 //    return (ntohll(input));
 //}

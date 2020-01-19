@@ -48,16 +48,17 @@ add_executable(pipelining_test simple_example_test/HttpPipeliningTest.cc)
 add_executable(websocket_test simple_example_test/WebSocketTest.cc)
 add_executable(multiple_ws_test simple_example_test/MultipleWsTest.cc)
 
-if(!WIN32)
-add_custom_command(TARGET webapp POST_BUILD
-                   COMMAND gzip
-                           ARGS
-                           -c
-                           ${CMAKE_CURRENT_SOURCE_DIR}/simple_example/index.html
-                           >
-                           ${CMAKE_CURRENT_BINARY_DIR}/index.html.gz
-                   VERBATIM)
-endif()
+if(NOT WIN32)
+  add_custom_command(
+    TARGET webapp POST_BUILD
+    COMMAND gzip
+            ARGS
+            -c
+            ${CMAKE_CURRENT_SOURCE_DIR}/simple_example/index.html
+            >
+            ${CMAKE_CURRENT_BINARY_DIR}/index.html.gz
+    VERBATIM)
+endif(NOT WIN32)
 add_custom_command(
   TARGET webapp POST_BUILD
   COMMAND ${CMAKE_COMMAND}

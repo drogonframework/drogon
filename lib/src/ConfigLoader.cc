@@ -312,7 +312,7 @@ static void loadApp(const Json::Value &app)
     {
         drogon::app().setMaxConnectionNumPerIP(maxConnsPerIP);
     }
-    #ifndef _WIN32
+#ifndef _WIN32
     // dynamic views
     auto enableDynamicViews = app.get("load_dynamic_views", false).asBool();
     if (enableDynamicViews)
@@ -329,7 +329,7 @@ static void loadApp(const Json::Value &app)
             drogon::app().enableDynamicViewsLoading(paths);
         }
     }
-    #endif
+#endif
     // log
     loadLogSetting(app["log"]);
     // run as daemon

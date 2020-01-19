@@ -43,9 +43,10 @@ endforeach()
 
 if(BUILD_DROGON_SHARED)
   set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
-  list(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "${INSTALL_LIB_DIR}" isSystemDir)
+  list(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "${INSTALL_LIB_DIR}"
+            isSystemDir)
   if("${isSystemDir}" STREQUAL "-1")
-     set(CMAKE_INSTALL_RPATH "${INSTALL_LIB_DIR}")
+    set(CMAKE_INSTALL_RPATH "${INSTALL_LIB_DIR}")
   endif("${isSystemDir}" STREQUAL "-1")
   add_library(${PROJECT_NAME} SHARED)
 else()
@@ -71,10 +72,10 @@ target_include_directories(
 
 if(WIN32)
   target_include_directories(
-  ${PROJECT_NAME}
-  PRIVATE $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/third_party/mman-win32>)
+    ${PROJECT_NAME}
+    PRIVATE $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/third_party/mman-win32>)
 endif(WIN32)
-         
+
 # set the include list for dynamic view compiling
 list(APPEND INCLUDE_DIRS_FOR_DYNAMIC_VIEW
             ${PROJECT_SOURCE_DIR}/lib/inc
@@ -119,38 +120,38 @@ if(NOT EXISTS ${JSONCPP_INCLUDE_DIRS}/json/version.h)
 endif()
 
 if(NOT WIN32)
-exec_program(
-  cat
-  ARGS
-  "${JSONCPP_INCLUDE_DIRS}/json/version.h |grep JSONCPP_VERSION_STRING|sed s'/.*define/define/'|awk '{printf $3}'|sed s'/\"//g'"
-  OUTPUT_VARIABLE
-  jsoncpp_ver)
-message(STATUS "jsoncpp verson:" ${jsoncpp_ver})
-if(jsoncpp_ver LESS 1.7)
-  message(
-    FATAL_ERROR
-      "jsoncpp lib is too old,please get new version from https://github.com/open-source-parsers/jsoncpp"
-    )
-endif()
+  exec_program(
+    cat
+    ARGS
+    "${JSONCPP_INCLUDE_DIRS}/json/version.h |grep JSONCPP_VERSION_STRING|sed s'/.*define/define/'|awk '{printf $3}'|sed s'/\"//g'"
+    OUTPUT_VARIABLE
+    jsoncpp_ver)
+  message(STATUS "jsoncpp verson:" ${jsoncpp_ver})
+  if(jsoncpp_ver LESS 1.7)
+    message(
+      FATAL_ERROR
+        "jsoncpp lib is too old,please get new version from https://github.com/open-source-parsers/jsoncpp"
+      )
+  endif()
 
   find_package(UUID REQUIRED)
   target_include_directories(${PROJECT_NAME} PRIVATE ${UUID_INCLUDE_DIR})
   target_link_libraries(${PROJECT_NAME} PRIVATE ${UUID_LIBRARIES})
 
   try_compile(normal_uuid ${CMAKE_BINARY_DIR}/cmaketest
-                  ${PROJECT_SOURCE_DIR}/cmake/tests/normal_uuid_lib_test.cc
-                  LINK_LIBRARIES ${UUID_LIBRARIES}
-                  CMAKE_FLAGS "-DINCLUDE_DIRECTORIES=${UUID_INCLUDE_DIR}")
+              ${PROJECT_SOURCE_DIR}/cmake/tests/normal_uuid_lib_test.cc
+              LINK_LIBRARIES ${UUID_LIBRARIES}
+              CMAKE_FLAGS "-DINCLUDE_DIRECTORIES=${UUID_INCLUDE_DIR}")
   try_compile(ossp_uuid ${CMAKE_BINARY_DIR}/cmaketest
-                  ${PROJECT_SOURCE_DIR}/cmake/tests/ossp_uuid_lib_test.cc
-                  LINK_LIBRARIES ${UUID_LIBRARIES}
-                  CMAKE_FLAGS "-DINCLUDE_DIRECTORIES=${UUID_INCLUDE_DIR}")
+              ${PROJECT_SOURCE_DIR}/cmake/tests/ossp_uuid_lib_test.cc
+              LINK_LIBRARIES ${UUID_LIBRARIES}
+              CMAKE_FLAGS "-DINCLUDE_DIRECTORIES=${UUID_INCLUDE_DIR}")
   if(normal_uuid)
-      add_definitions(-DUSE_OSSP_UUID=0)
+    add_definitions(-DUSE_OSSP_UUID=0)
   elseif(ossp_uuid)
-      add_definitions(-DUSE_OSSP_UUID=1)
+    add_definitions(-DUSE_OSSP_UUID=1)
   else()
-      message(FATAL_ERROR "uuid lib error")
+    message(FATAL_ERROR "uuid lib error")
   endif()
 endif(NOT WIN32)
 
@@ -159,9 +160,12 @@ target_include_directories(${PROJECT_NAME} PRIVATE ${ZLIB_INCLUDE_DIR})
 target_link_libraries(${PROJECT_NAME} PRIVATE ${ZLIB_LIBRARIES})
 
 if(WIN32)
-  add_definitions(-D_POSIX_THREAD_SAFE_FUNCTIONS -D_POSIX -D_POSIX_SOURCE -D_NO_W32_PSEUDO_MODIFIERS)
+  add_definitions(-D_POSIX_THREAD_SAFE_FUNCTIONS
+                  -D_POSIX
+                  -D_POSIX_SOURCE
+                  -D_NO_W32_PSEUDO_MODIFIERS)
 endif(WIN32)
-  
+
 set(DROGON_SOURCES
     lib/src/AOPAdvice.cc
     lib/src/CacheFile.cc
@@ -196,9 +200,9 @@ set(DROGON_SOURCES
     lib/src/WebSocketConnectionImpl.cc
     lib/src/WebsocketControllersRouter.cc)
 
-if(!WIN32)
-    set(DROGON_SOURCES ${DROGON_SOURCES} lib/src/SharedLibManager.cc)
-endif(WIN32)
+if(NOT WIN32)
+  set(DROGON_SOURCES ${DROGON_SOURCES} lib/src/SharedLibManager.cc)
+endif(NOT WIN32)
 
 find_package(OpenSSL)
 if(OpenSSL_FOUND)
