@@ -26,7 +26,7 @@ using namespace drogon;
 CacheFile::CacheFile(const std::string &path, bool autoDelete)
     : autoDelete_(autoDelete), path_(path)
 {
-    file_ = fopen(path_.data(), "w+");
+    file_ = fopen(path_.data(), "wb+");
 }
 
 CacheFile::~CacheFile()
