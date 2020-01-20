@@ -61,8 +61,8 @@ class Result
     }
     Result(const Result &r) noexcept = default;
     Result(Result &&) noexcept = default;
-    Result &operator=(const Result &r) noexcept = default;
-    Result &operator=(Result &&) noexcept = default;
+    Result &operator=(const Result &r) noexcept;
+    Result &operator=(Result &&) noexcept;
     using DifferenceType = long;
     using SizeType = unsigned long;
     using Reference = Row;

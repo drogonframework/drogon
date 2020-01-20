@@ -97,8 +97,6 @@ class ConstResultIterator
     }
     ConstResultIterator(const ConstResultIterator &) noexcept = default;
     ConstResultIterator(ConstResultIterator &&) noexcept = default;
-    ConstResultIterator &operator=(const ConstResultIterator &) = default;
-    ConstResultIterator &operator=(ConstResultIterator &&) = default;
 
   private:
     friend class Result;

@@ -39,7 +39,6 @@ inline LogStream &operator<<(LogStream &ls, const drogon::string_view &v)
 }
 }  // namespace trantor
 
-
 #if __cplusplus < 201703L
 namespace std
 {

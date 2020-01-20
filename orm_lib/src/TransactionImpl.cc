@@ -16,7 +16,6 @@
 #include <drogon/utils/string_view.h>
 #include <trantor/utils/Logger.h>
 
-
 using namespace drogon::orm;
 using namespace drogon;
 
