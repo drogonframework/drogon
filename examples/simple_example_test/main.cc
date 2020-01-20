@@ -833,7 +833,7 @@ void doTest(const HttpClientPtr &client,
                 if (resp->getBody().length() == JPG_LEN)
                 {
                     outputGood(req, isHttps);
-                    auto lastModified = resp->getHeader("last-modified");
+                    auto &lastModified = resp->getHeader("last-modified");
                     // LOG_DEBUG << lastModified;
                     // Test 'Not Modified'
                     auto req = HttpRequest::newHttpRequest();
