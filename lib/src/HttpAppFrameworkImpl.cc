@@ -421,7 +421,6 @@ void HttpAppFrameworkImpl::run()
     // loop, so put the main loop into ioLoops.
     ioLoops.push_back(getLoop());
     dbClientManagerPtr_->createDbClients(ioLoops);
-    ioLoops.pop_back();
     httpCtrlsRouterPtr_->init(ioLoops);
     httpSimpleCtrlsRouterPtr_->init(ioLoops);
     staticFileRouterPtr_->init(ioLoops);
