@@ -873,7 +873,7 @@ char *getHttpFullDate(const trantor::Date &date)
         return lastTimeString;
     }
     lastSecond = nowSecond;
-    date.toCustomedFormattedString("%a, %d %b %Y %T GMT",
+    date.toCustomedFormattedString("%a, %d %b %Y %H:%M:%S GMT",
                                    lastTimeString,
                                    sizeof(lastTimeString));
     return lastTimeString;
@@ -881,7 +881,7 @@ char *getHttpFullDate(const trantor::Date &date)
 trantor::Date getHttpDate(const std::string &httpFullDateString)
 {
     struct tm tmptm;
-    strptime(httpFullDateString.c_str(), "%a, %d %b %Y %T", &tmptm);
+    strptime(httpFullDateString.c_str(), "%a, %d %b %Y %H:%M:%S", &tmptm);
     auto epoch = timegm(&tmptm);
     return trantor::Date(epoch * MICRO_SECONDS_PRE_SEC);
 }
