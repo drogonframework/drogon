@@ -23,7 +23,7 @@
 #include <vector>
 #include <type_traits>
 #include <cstdlib>
-#ifndef _WIN32
+#ifndef _MSC_VER
 #include <cxxabi.h>
 #endif
 #include <stdio.h>
