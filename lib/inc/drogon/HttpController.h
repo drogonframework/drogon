@@ -28,7 +28,7 @@
 #define METHOD_LIST_BEGIN         \
     static void initPathRouting() \
     {
-#ifndef _WIN32
+#ifndef _MSC_VER
 #define METHOD_ADD(method, pattern, filters...) \
     registerMethod(&method, pattern, {filters}, true, #method)
 

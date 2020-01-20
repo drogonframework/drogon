@@ -29,7 +29,7 @@
     paths()                                                              \
     {                                                                    \
         std::vector<std::pair<std::string, std::vector<std::string>>> vet;
-#ifndef _WIN32
+#ifndef _MSC_VER
 #define WS_PATH_ADD(path, filters...) vet.push_back({path, {filters}})
 #else
 #define WS_PATH_ADD(path, ...) vet.push_back({path, {##__VA_ARGS__}})

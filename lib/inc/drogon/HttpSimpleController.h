@@ -24,7 +24,7 @@
 #define PATH_LIST_BEGIN           \
     static void initPathRouting() \
     {
-#ifndef _WIN32
+#ifndef _MSC_VER
 #define PATH_ADD(path, filters...) registerSelf__(path, {filters});
 #else
 #define PATH_ADD(path, ...) registerSelf__(path, {##__VA_ARGS__});
