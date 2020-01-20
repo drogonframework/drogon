@@ -26,9 +26,11 @@
 #include <sstream>
 #include <string>
 #include <vector>
-
-#ifdef __linux__ | defined __MINGW32__
+#ifdef __linux__
 #include <arpa/inet.h>
+#endif
+
+#if (defined __linux__) | (defined __MINGW32__)
 inline uint64_t ntohll(const uint64_t &input)
 {
     uint64_t rval;

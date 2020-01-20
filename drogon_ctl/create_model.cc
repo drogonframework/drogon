@@ -816,7 +816,7 @@ void create_model::createModel(const std::string &path,
         std::cout << "Connect to server..." << std::endl;
         if (forceOverwrite_)
         {
-            sleep(2);
+            std::this_thread::sleep_for(2s);
         }
         else
         {
@@ -888,7 +888,7 @@ void create_model::createModel(const std::string &path,
         std::cout << "Connect..." << std::endl;
         if (forceOverwrite_)
         {
-            sleep(1);
+            std::this_thread::sleep_for(1s);
         }
         else
         {

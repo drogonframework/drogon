@@ -103,7 +103,7 @@ class Criteria
             case CompareOperator::LE:
                 conditionString_ += " <= $?";
                 break;
-            case CompareOperator::LIKE:
+            case CompareOperator::Like:
                 conditionString_ += " like $?";
                 break;
             case CompareOperator::IsNull:
