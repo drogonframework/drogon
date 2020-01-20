@@ -219,7 +219,7 @@ void StaticFileRouter::sendStaticFileResponse(
                 timeStr.resize(64);
                 auto len = strftime((char *)timeStr.data(),
                                     timeStr.size(),
-                                    "%a, %d %b %Y %T GMT",
+                                    "%a, %d %b %Y %H:%M:%S GMT",
                                     &tm1);
                 timeStr.resize(len);
                 const std::string &modiStr =
