@@ -1,7 +1,9 @@
 #include <drogon/orm/DbClient.h>
 #include <iostream>
 #include <trantor/utils/Logger.h>
-#include <unistd.h>
+#include <thread>
+#include <chrono>
+using namespace std::chrono_literals;
 using namespace drogon::orm;
 
 int main()
@@ -11,7 +13,7 @@ int main()
         DbClient::newPgClient("host=127.0.0.1 port=5432 dbname=test user=antao",
                               3);
     LOG_DEBUG << "start!";
-    sleep(1);
+    std::this_thread::sleep_for(1s);
     *clientPtr << "update group_users set join_date=$1,relationship=$2 where "
                   "g_uuid=420040 and u_uuid=2"
                << nullptr << nullptr << Mode::Blocking >>

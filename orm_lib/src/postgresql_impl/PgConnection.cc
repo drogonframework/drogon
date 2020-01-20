@@ -16,10 +16,12 @@
 #include "PostgreSQLResultImpl.h"
 #include <drogon/orm/Exception.h>
 #include <drogon/utils/Utilities.h>
+#include <drogon/utils/string_view.h>
+#include <trantor/utils/Logger.h>
 #include <memory>
 #include <stdio.h>
-#include <trantor/utils/Logger.h>
 
+using namespace drogon;
 using namespace drogon::orm;
 
 namespace drogon

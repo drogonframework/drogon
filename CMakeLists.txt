@@ -159,13 +159,6 @@ find_package(ZLIB REQUIRED)
 target_include_directories(${PROJECT_NAME} PRIVATE ${ZLIB_INCLUDE_DIR})
 target_link_libraries(${PROJECT_NAME} PRIVATE ${ZLIB_LIBRARIES})
 
-if(WIN32)
-  add_definitions(-D_POSIX_THREAD_SAFE_FUNCTIONS
-                  -D_POSIX
-                  -D_POSIX_SOURCE
-                  -D_NO_W32_PSEUDO_MODIFIERS)
-endif(WIN32)
-
 set(DROGON_SOURCES
     lib/src/AOPAdvice.cc
     lib/src/CacheFile.cc

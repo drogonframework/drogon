@@ -115,14 +115,14 @@ class DbClient : public trantor::NonCopyable
 
     /// Async and nonblocking method
     template <typename... Arguments>
-    std::future<const Result> execSqlAsyncFuture(const std::string &sql,
-                                                 Arguments &&... args) noexcept
+    std::future<Result> execSqlAsyncFuture(const std::string &sql,
+                                           Arguments &&... args) noexcept
     {
         auto binder = *this << sql;
         (void)std::initializer_list<int>{
             (binder << std::forward<Arguments>(args), 0)...};
-        std::shared_ptr<std::promise<const Result>> prom =
-            std::make_shared<std::promise<const Result>>();
+        std::shared_ptr<std::promise<Result>> prom =
+            std::make_shared<std::promise<Result>>();
         binder >> [=](const Result &r) { prom->set_value(r); };
         binder >> [=](const std::exception_ptr &e) { prom->set_exception(e); };
         binder.exec();

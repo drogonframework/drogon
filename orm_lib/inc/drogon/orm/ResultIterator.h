@@ -95,6 +95,10 @@ class ConstResultIterator
     {
         return index_ <= other.index_;
     }
+    ConstResultIterator(const ConstResultIterator &) noexcept = default;
+    ConstResultIterator(ConstResultIterator &&) noexcept = default;
+    ConstResultIterator &operator=(const ConstResultIterator &) = default;
+    ConstResultIterator &operator=(ConstResultIterator &&) = default;
 
   private:
     friend class Result;

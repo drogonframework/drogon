@@ -70,6 +70,11 @@ class Row
     ConstReverseIterator rend() const;
     ConstReverseIterator crend() const;
 
+    Row(const Row &r) noexcept = default;
+    Row(Row &&) noexcept = default;
+    Row &operator=(const Row &) noexcept = default;
+    Row &operator=(Row &&) noexcept = default;
+
   private:
     const Result result_;
 

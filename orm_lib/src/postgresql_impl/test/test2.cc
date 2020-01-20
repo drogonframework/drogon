@@ -4,8 +4,10 @@
 #include <iostream>
 #include <string>
 #include <trantor/utils/Logger.h>
-#include <unistd.h>
+#include <thread>
+#include <chrono>
 
+using namespace std::chrono_literals;
 using namespace drogon::orm;
 class User
 {
@@ -39,7 +41,7 @@ int main()
     auto client =
         DbClient::newPgClient("host=127.0.0.1 port=5432 dbname=test user=antao",
                               1);
-    sleep(1);
+    std::this_thread::sleep_for(1s);
     LOG_DEBUG << "start!";
     {
         auto trans = client->newTransaction([](bool committed) {

@@ -19,7 +19,9 @@
 
 #include <memory>
 #include <string>
+#include <future>
 #include <algorithm>
+#include <assert.h>
 
 namespace drogon
 {
@@ -57,6 +59,10 @@ class Result
     Result(const ResultImplPtr &ptr) : resultPtr_(ptr)
     {
     }
+    Result(const Result &r) noexcept = default;
+    Result(Result &&) noexcept = default;
+    Result &operator=(const Result &r) noexcept = default;
+    Result &operator=(Result &&) noexcept = default;
     using DifferenceType = long;
     using SizeType = unsigned long;
     using Reference = Row;
@@ -136,10 +142,14 @@ class Result
     const char *getValue(SizeType row, RowSizeType column) const;
     bool isNull(SizeType row, RowSizeType column) const;
     FieldSizeType getLength(SizeType row, RowSizeType column) const;
-
+#ifdef _MSC_VER
+  public:
+#else
   protected:
+#endif
     Result()
     {
+        assert(false);
     }
 };
 inline void swap(Result &one, Result &two) noexcept
@@ -149,6 +159,7 @@ inline void swap(Result &one, Result &two) noexcept
 }  // namespace orm
 }  // namespace drogon
 
+#ifndef _MSC_VER
 namespace std
 {
 template <>
@@ -157,3 +168,4 @@ inline void swap(drogon::orm::Result &one, drogon::orm::Result &two) noexcept
     one.swap(two);
 }
 }  // namespace std
+#endif

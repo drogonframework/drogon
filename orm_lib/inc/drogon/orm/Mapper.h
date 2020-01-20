@@ -20,6 +20,10 @@
 #include <type_traits>
 #include <vector>
 
+#ifdef _WIN32
+using ssize_t = std::intptr_t;
+#endif
+
 namespace drogon
 {
 namespace orm

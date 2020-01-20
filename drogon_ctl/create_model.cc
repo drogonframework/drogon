@@ -31,7 +31,10 @@
 #else
 #include <io.h>
 #endif
+#include <thread>
+#include <chrono>
 
+using namespace std::chrono_literals;
 using namespace drogon_ctl;
 static std::string toLower(const std::string &str)
 {
@@ -719,7 +722,7 @@ void create_model::createModel(const std::string &path,
         std::cout << "Connect to server..." << std::endl;
         if (forceOverwrite_)
         {
-            sleep(2);
+            std::this_thread::sleep_for(2s);
         }
         else
         {
