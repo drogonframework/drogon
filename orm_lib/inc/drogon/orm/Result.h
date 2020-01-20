@@ -149,7 +149,6 @@ class Result
 #endif
     Result()
     {
-        assert(false);
     }
 };
 inline void swap(Result &one, Result &two) noexcept
