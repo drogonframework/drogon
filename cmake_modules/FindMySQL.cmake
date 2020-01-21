@@ -109,7 +109,7 @@ IF (MYSQL_INCLUDE_DIR AND MYSQL_LIB_DIR)
 #    SET(MYSQL_CLIENT_LIBS ${MYSQL_CLIENT_LIBS} taocrypt)
 #  ENDIF (MYSQL_TAOCRYPT)
   # Added needed mysqlclient dependencies on Windows
-  IF (WIN32)
+  IF (MSVC)
     SET(MYSQL_CLIENT_LIBS ${MYSQL_CLIENT_LIBS} shlwapi)
   ENDIF (WIN32)
 
