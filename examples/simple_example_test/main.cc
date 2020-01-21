@@ -1,4 +1,4 @@
-/**
+﻿/**
  *
  *  test.cc
  *  An Tao
@@ -983,9 +983,7 @@ void doTest(const HttpClientPtr &client,
     req = HttpRequest::newHttpFormPostRequest();
     req->setPath("/api/v1/apitest/form");
     req->setParameter("k1", "1");
-#ifndef _WIN32
     req->setParameter("k2", "安");
-#endif
     req->setParameter("k3", "test@example.com");
     client->sendRequest(req,
                         [=](ReqResult result, const HttpResponsePtr &resp) {

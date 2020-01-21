@@ -1,4 +1,4 @@
-#include "api_v1_ApiTest.h"
+﻿#include "api_v1_ApiTest.h"
 using namespace api::v1;
 // add definition of your processing function here
 void ApiTest::rootGet(const HttpRequestPtr &req,
@@ -398,11 +398,7 @@ void ApiTest::formTest(const HttpRequestPtr &req,
     ret["k1"] = parameters["k1"];
     ret["k2"] = parameters["k2"];
     ret["k3"] = parameters["k3"];
-#ifndef _WIN32
     if (parameters["k1"] == "1" && parameters["k2"] == "安" &&
-#else
-    if (parameters["k1"] == "1" &&
-#endif
         parameters["k3"] == "test@example.com")
     {
         ret["result"] = "ok";

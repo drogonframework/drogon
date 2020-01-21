@@ -1,14 +1,10 @@
-#include <drogon/utils/string_view.h>
+﻿#include <drogon/utils/string_view.h>
 #include <drogon/utils/Utilities.h>
 #include <iostream>
 
 int main()
 {
-#ifndef _WIN32
     std::string input = "k1=1&k2=安";
-#else
-    std::string input = "k1=1&k2=2";
-#endif
     auto output = drogon::utils::urlEncode(input);
     std::cout << output << std::endl;
     auto output2 = drogon::utils::urlDecode(output);
