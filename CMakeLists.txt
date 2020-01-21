@@ -264,7 +264,6 @@ if(BUILD_ORM)
     endif(MSVC)
   endif(MYSQL_FOUND)
 
-
   # Find sqlite3.
   find_package(SQLite3)
   if(SQLITE3_FOUND)
