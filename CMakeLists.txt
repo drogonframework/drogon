@@ -153,11 +153,10 @@ if(NOT WIN32)
   else()
     message(FATAL_ERROR "uuid lib error")
   endif()
+  find_package(ZLIB REQUIRED)
+  target_include_directories(${PROJECT_NAME} PRIVATE ${ZLIB_INCLUDE_DIR})
+  target_link_libraries(${PROJECT_NAME} PRIVATE ${ZLIB_LIBRARIES})
 endif(NOT WIN32)
-
-find_package(ZLIB REQUIRED)
-target_include_directories(${PROJECT_NAME} PRIVATE ${ZLIB_INCLUDE_DIR})
-target_link_libraries(${PROJECT_NAME} PRIVATE ${ZLIB_LIBRARIES})
 
 set(DROGON_SOURCES
     lib/src/AOPAdvice.cc
@@ -255,7 +254,14 @@ if(BUILD_ORM)
                          orm_lib/src/mysql_impl/MysqlConnection.cc
                          orm_lib/src/mysql_impl/MysqlResultImpl.cc)
     endif()
-  endif()
+  else(MYSQL_FOUND)
+    if(WIN32)
+      find_package(ZLIB REQUIRED)
+      target_include_directories(${PROJECT_NAME} PRIVATE ${ZLIB_INCLUDE_DIR})
+      target_link_libraries(${PROJECT_NAME} PRIVATE ${ZLIB_LIBRARIES})
+    endif(WIN32)
+  endif(MYSQL_FOUND)
+
 
   # Find sqlite3.
   find_package(SQLite3)

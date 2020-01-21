@@ -30,7 +30,8 @@
 
 
 #-------------- FIND MYSQL_INCLUDE_DIR ------------------
-FIND_PATH(MYSQL_INCLUDE_DIR mysql.h
+FIND_PATH(MYSQL_INCLUDE_DIR NAMES mysql.h 
+  SUFFIX mysql
   /usr/include/mysql
   /usr/local/include/mysql
   /opt/mysql/mysql/include
@@ -41,6 +42,11 @@ FIND_PATH(MYSQL_INCLUDE_DIR mysql.h
   /usr/local/mysql/include/mysql
   $ENV{ProgramFiles}/MySQL/*/include
   $ENV{SystemDrive}/MySQL/*/include)
+
+if(EXISTS "${MYSQL_INCLUDE_DIR}/mysql.h")
+elseif(EXISTS "${MYSQL_INCLUDE_DIR}/mysql/mysql.h")
+   set(MYSQL_INCLUDE_DIR ${MYSQL_INCLUDE_DIR}/mysql)
+endif()
 
 #----------------- FIND MYSQL_LIB_DIR -------------------
 IF (WIN32)
@@ -56,7 +62,7 @@ IF (WIN32)
     ADD_DEFINITIONS(-DDBUG_OFF)
   ENDIF (CMAKE_BUILD_TYPE STREQUAL Debug)
 
-  FIND_LIBRARY(MYSQL_LIB NAMES mysqlclient
+  FIND_LIBRARY(MYSQL_LIB NAMES mariadbclient
     PATHS
     $ENV{MYSQL_DIR}/lib/${libsuffixDist}
     $ENV{MYSQL_DIR}/libmysql
@@ -89,22 +95,22 @@ EXEC_PROGRAM (grep ARGS "MARIADB_BASE_VERSION ${MYSQL_INCLUDE_DIR}/*.h|awk '{pri
 IF (MYSQL_INCLUDE_DIR AND MYSQL_LIB_DIR)
   SET(MYSQL_FOUND TRUE)
 
-  FIND_LIBRARY(MYSQL_ZLIB zlib PATHS ${MYSQL_LIB_DIR})
-  FIND_LIBRARY(MYSQL_TAOCRYPT taocrypt PATHS ${MYSQL_LIB_DIR})
+#  FIND_LIBRARY(MYSQL_ZLIB zlib PATHS ${MYSQL_LIB_DIR})
+#  FIND_LIBRARY(MYSQL_TAOCRYPT taocrypt PATHS ${MYSQL_LIB_DIR})
   IF (MYSQL_LIB)
     SET(MYSQL_CLIENT_LIBS ${MYSQL_LIB})
   ELSE()
     SET(MYSQL_CLIENT_LIBS mysqlclient_r)
   ENDIF()
-  IF (MYSQL_ZLIB)
-    SET(MYSQL_CLIENT_LIBS ${MYSQL_CLIENT_LIBS} zlib)
-  ENDIF (MYSQL_ZLIB)
-  IF (MYSQL_TAOCRYPT)
-    SET(MYSQL_CLIENT_LIBS ${MYSQL_CLIENT_LIBS} taocrypt)
-  ENDIF (MYSQL_TAOCRYPT)
+#  IF (MYSQL_ZLIB)
+#    SET(MYSQL_CLIENT_LIBS ${MYSQL_CLIENT_LIBS} zlib)
+#  ENDIF (MYSQL_ZLIB)
+#  IF (MYSQL_TAOCRYPT)
+#    SET(MYSQL_CLIENT_LIBS ${MYSQL_CLIENT_LIBS} taocrypt)
+#  ENDIF (MYSQL_TAOCRYPT)
   # Added needed mysqlclient dependencies on Windows
   IF (WIN32)
-    SET(MYSQL_CLIENT_LIBS ${MYSQL_CLIENT_LIBS} ws2_32)
+    SET(MYSQL_CLIENT_LIBS ${MYSQL_CLIENT_LIBS} shlwapi)
   ENDIF (WIN32)
 
   MESSAGE(STATUS "MySQL Include dir: ${MYSQL_INCLUDE_DIR}  library dir: ${MYSQL_LIB_DIR}")
