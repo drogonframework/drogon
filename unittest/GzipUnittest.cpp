@@ -5,7 +5,11 @@
 using namespace drogon::utils;
 TEST(GzipTest, shortText)
 {
+#ifndef _MSC_VER
     std::string source{"123中文顶替要枯械"};
+#else
+    std::string source{"123hello world!"};
+#endif
     auto compressed = gzipCompress(source.data(), source.length());
     auto decompressed = gzipDecompress(compressed.data(), compressed.length());
     EXPECT_EQ(source, decompressed);
