@@ -158,7 +158,7 @@ if(NOT MSVC)
   find_package(ZLIB REQUIRED)
   target_include_directories(${PROJECT_NAME} PRIVATE ${ZLIB_INCLUDE_DIR})
   target_link_libraries(${PROJECT_NAME} PRIVATE ${ZLIB_LIBRARIES})
-endif(NOT WIN32 OR MINGW)
+endif(NOT MSVC)
 
 set(DROGON_SOURCES
     lib/src/AOPAdvice.cc
@@ -261,7 +261,7 @@ if(BUILD_ORM)
       find_package(ZLIB REQUIRED)
       target_include_directories(${PROJECT_NAME} PRIVATE ${ZLIB_INCLUDE_DIR})
       target_link_libraries(${PROJECT_NAME} PRIVATE ${ZLIB_LIBRARIES})
-    endif(WIN32)
+    endif(MSVC)
   endif(MYSQL_FOUND)
 
 

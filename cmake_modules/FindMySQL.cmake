@@ -111,7 +111,7 @@ IF (MYSQL_INCLUDE_DIR AND MYSQL_LIB_DIR)
   # Added needed mysqlclient dependencies on Windows
   IF (MSVC)
     SET(MYSQL_CLIENT_LIBS ${MYSQL_CLIENT_LIBS} shlwapi)
-  ENDIF (WIN32)
+  ENDIF (MSVC)
 
   MESSAGE(STATUS "MySQL Include dir: ${MYSQL_INCLUDE_DIR}  library dir: ${MYSQL_LIB_DIR}")
   MESSAGE(STATUS "MySQL client libraries: ${MYSQL_CLIENT_LIBS}")
