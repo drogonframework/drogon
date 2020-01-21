@@ -85,24 +85,12 @@ if(MYSQL_LIB)
   get_filename_component(MYSQL_LIB_DIR ${MYSQL_LIB} PATH)
 endif(MYSQL_LIB)
 
-set(MYSQL_VERSION_STRING "")
-
-exec_program(grep
-             ARGS
-             "MARIADB_BASE_VERSION ${MYSQL_INCLUDE_DIR}/*.h|awk '{print $3}'"
-             OUTPUT_VARIABLE
-             MYSQL_VERSION_STRING)
-
 if(MYSQL_INCLUDE_DIR AND MYSQL_LIB_DIR)
   set(MYSQL_FOUND TRUE)
 
   # FIND_LIBRARY(MYSQL_ZLIB zlib PATHS ${MYSQL_LIB_DIR})
   # FIND_LIBRARY(MYSQL_TAOCRYPT taocrypt PATHS ${MYSQL_LIB_DIR})
-  if(MYSQL_LIB)
-    set(MYSQL_CLIENT_LIBS ${MYSQL_LIB})
-  else()
-    set(MYSQL_CLIENT_LIBS mysqlclient_r)
-  endif()
+  set(MYSQL_CLIENT_LIBS ${MYSQL_LIB})
   # IF (MYSQL_ZLIB) SET(MYSQL_CLIENT_LIBS ${MYSQL_CLIENT_LIBS} zlib) ENDIF
   # (MYSQL_ZLIB) IF (MYSQL_TAOCRYPT) SET(MYSQL_CLIENT_LIBS ${MYSQL_CLIENT_LIBS}
   # taocrypt) ENDIF (MYSQL_TAOCRYPT) Added needed mysqlclient dependencies on

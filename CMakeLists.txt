@@ -242,20 +242,12 @@ if(BUILD_ORM)
     message(STATUS "inc:" ${MYSQL_INCLUDE_DIR})
     message(STATUS "libs:" ${MYSQL_CLIENT_LIBS})
     message(STATUS "version:" ${MYSQL_VERSION_STRING})
-    if(MYSQL_VERSION_STRING STREQUAL "")
-      set(MYSQL_FOUND false)
-      message(
-        STATUS
-          "The mysql in your system is not the mariadb, so we can't use it in drogon"
-        )
-    else()
-      message(STATUS "Ok! We find the mariadb!")
-      target_include_directories(${PROJECT_NAME} PRIVATE ${MYSQL_INCLUDE_DIR})
-      target_link_libraries(${PROJECT_NAME} PRIVATE ${MYSQL_CLIENT_LIBS})
-      set(DROGON_SOURCES ${DROGON_SOURCES}
-                         orm_lib/src/mysql_impl/MysqlConnection.cc
-                         orm_lib/src/mysql_impl/MysqlResultImpl.cc)
-    endif()
+    message(STATUS "Ok! We find the mariadb!")
+    target_include_directories(${PROJECT_NAME} PRIVATE ${MYSQL_INCLUDE_DIR})
+    target_link_libraries(${PROJECT_NAME} PRIVATE ${MYSQL_CLIENT_LIBS})
+    set(DROGON_SOURCES ${DROGON_SOURCES}
+                       orm_lib/src/mysql_impl/MysqlConnection.cc
+                       orm_lib/src/mysql_impl/MysqlResultImpl.cc)
   else(MYSQL_FOUND)
     if(MSVC)
       find_package(ZLIB REQUIRED)
