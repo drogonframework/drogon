@@ -383,8 +383,8 @@ if(BUILD_TESTING)
     message(STATUS "gtest found")
     enable_testing()
     add_subdirectory(unittest)
-  endif()
-endif()
+  endif(GTest_FOUND)
+endif(BUILD_TESTING)
 
 # Installation
 
