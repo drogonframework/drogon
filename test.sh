@@ -1,5 +1,7 @@
 #!/bin/bash
 
+drogon_ctl_exec=`pwd`/build/drogon_ctl/drogon_ctl
+echo ${drogon_ctl_exec}
 cd build/examples/
 
 #Make webapp run as a daemon
@@ -25,7 +27,7 @@ echo "Test http requests and responses."
 ./webapp_test
 
 if [ $? -ne 0 ]; then
-    echo "Error in testing"
+    echo "Error in testing http requests"
     exit -1
 fi
 
@@ -33,7 +35,7 @@ fi
 echo "Test the WebSocket"
 ./websocket_test -t
 if [ $? -ne 0 ]; then
-    echo "Error in testing"
+    echo "Error in testing WebSocket"
     exit -1
 fi
 
@@ -41,7 +43,7 @@ fi
 echo "Test the pipelining"
 ./pipelining_test
 if [ $? -ne 0 ]; then
-    echo "Error in testing"
+    echo "Error in testing pipelining"
     exit -1
 fi
 
@@ -51,16 +53,16 @@ killall -9 webapp
 echo "Test the drogon_ctl"
 rm -rf drogon_test
 
-drogon_ctl create project drogon_test
+${drogon_ctl_exec} create project drogon_test
 
 cd drogon_test/controllers
 
-drogon_ctl create controller Test::SimpleCtrl
-drogon_ctl create controller -h Test::HttpCtrl
-drogon_ctl create controller -w Test::WebsockCtrl
-drogon_ctl create controller SimpleCtrl
-drogon_ctl create controller -h HttpCtrl
-drogon_ctl create controller -w WebsockCtrl
+${drogon_ctl_exec} create controller Test::SimpleCtrl
+${drogon_ctl_exec} create controller -h Test::HttpCtrl
+${drogon_ctl_exec} create controller -w Test::WebsockCtrl
+${drogon_ctl_exec} create controller SimpleCtrl
+${drogon_ctl_exec} create controller -h HttpCtrl
+${drogon_ctl_exec} create controller -w WebsockCtrl
 
 if [ ! -f "Test_SimpleCtrl.h" -o ! -f "Test_SimpleCtrl.cc" -o ! -f "Test_HttpCtrl.h" -o ! -f "Test_HttpCtrl.cc" -o ! -f "Test_WebsockCtrl.h" -o ! -f "Test_WebsockCtrl.cc" ]; then
     echo "Failed to create controllers"
@@ -74,7 +76,7 @@ fi
 
 cd ../filters
 
-drogon_ctl create filter Test::TestFilter
+${drogon_ctl_exec} create filter Test::TestFilter
 
 if [ ! -f "Test_TestFilter.h" -o ! -f "Test_TestFilter.cc" ]; then
     echo "Failed to create filters"
@@ -83,7 +85,7 @@ fi
 
 cd ../plugins
 
-drogon_ctl create plugin Test::TestPlugin
+${drogon_ctl_exec} create plugin Test::TestPlugin
 
 if [ ! -f "Test_TestPlugin.h" -o ! -f "Test_TestPlugin.cc" ]; then
     echo "Failed to create plugins"

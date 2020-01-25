@@ -18,14 +18,17 @@
 #include <drogon/config.h>
 #include <trantor/utils/Logger.h>
 #include <fcntl.h>
-#include <sys/file.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#ifndef _WIN32
 #include <sys/wait.h>
+#include <sys/file.h>
 #include <unistd.h>
+#endif
 
 namespace drogon
 {
+#ifndef _WIN32
 class DrogonFileLocker : public trantor::NonCopyable
 {
   public:
@@ -43,6 +46,7 @@ class DrogonFileLocker : public trantor::NonCopyable
     int fd_{0};
 };
 
+#endif
 }  // namespace drogon
 
 using namespace trantor;

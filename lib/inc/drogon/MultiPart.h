@@ -77,7 +77,7 @@ class HttpFile
     /// Return the file content.
     char *fileData() noexcept
     {
-#if __cplusplus >= 201703L
+#if __cplusplus >= 201703L | defined _WIN32
         return fileContent_.data();
 #else
         return (char *)(fileContent_.data());

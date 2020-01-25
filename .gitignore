@@ -39,3 +39,9 @@ html/
 latex/
 .vscode
 *.kdev4
+.cproject
+.project
+.settings/
+.vs/
+CMakeSettings.json
+

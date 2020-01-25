@@ -37,8 +37,8 @@ enum class CompareOperator
     GE,
     LT,
     LE,
-    LIKE,
-    IN,
+    Like,
+    In,
     IsNull,
     IsNotNull
 };
@@ -103,7 +103,7 @@ class Criteria
             case CompareOperator::LE:
                 conditionString_ += " <= $?";
                 break;
-            case CompareOperator::LIKE:
+            case CompareOperator::Like:
                 conditionString_ += " like $?";
                 break;
             case CompareOperator::IsNull:
@@ -121,7 +121,7 @@ class Criteria
              const CompareOperator &opera,
              const std::vector<T> &args)
     {
-        assert(opera == CompareOperator::IN && args.size() > 0);
+        assert(opera == CompareOperator::In && args.size() > 0);
         conditionString_ = colName + " in (";
         for (size_t i = 0; i < args.size(); ++i)
         {
@@ -144,7 +144,7 @@ class Criteria
              const CompareOperator &opera,
              std::vector<T> &&args)
     {
-        assert(opera == CompareOperator::IN && args.size() > 0);
+        assert(opera == CompareOperator::In && args.size() > 0);
         conditionString_ = colName + " in (";
         for (size_t i = 0; i < args.size(); ++i)
         {

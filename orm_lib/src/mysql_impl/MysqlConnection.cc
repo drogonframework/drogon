@@ -16,9 +16,13 @@
 #include "MysqlResultImpl.h"
 #include <algorithm>
 #include <drogon/utils/Utilities.h>
+#include <drogon/utils/string_view.h>
+#ifndef _WIN32
 #include <poll.h>
+#endif
 #include <regex>
 
+using namespace drogon;
 using namespace drogon::orm;
 namespace drogon
 {

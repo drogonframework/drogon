@@ -19,7 +19,9 @@
 #include <drogon/utils/Utilities.h>
 #include <fstream>
 #include <iostream>
+#ifndef _WIN32
 #include <unistd.h>
+#endif
 
 using namespace drogon;
 void HttpRequestImpl::parseJson() const

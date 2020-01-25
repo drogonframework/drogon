@@ -3,14 +3,20 @@
 #include <drogon/orm/DbClient.h>
 #include <iostream>
 #include <trantor/utils/Logger.h>
+#ifndef _WIN32
 #include <unistd.h>
+#endif
+#include <thread>
+#include <chrono>
+
+using namespace std::chrono_literals;
 using namespace drogon::orm;
 
 int main()
 {
-    trantor::Logger::setLogLevel(trantor::Logger::TRACE);
+    trantor::Logger::setLogLevel(trantor::Logger::kTrace);
     auto clientPtr = DbClient::newSqlite3Client("filename=test.db", 1);
-    sleep(1);
+    std::this_thread::sleep_for(1s);
 
     LOG_DEBUG << "start!";
     // *clientPtr << "Drop table groups;" << Mode::Blocking >>
@@ -103,11 +109,11 @@ int main()
             for (auto row : r)
             {
                 std::cout << "is_default: "
-                          << (row[(size_t)0].isNull() ? "is null, "
-                                                      : "is not null, ")
-                          << "bool value:" << row[(size_t)0].as<bool>() << "("
-                          << row[(size_t)0].as<std::string>() << ")"
-                          << std::endl;
+                          << (row[(unsigned long)0].isNull() ? "is null, "
+                                                             : "is not null, ")
+                          << "bool value:" << row[(unsigned long)0].as<bool>()
+                          << "(" << row[(unsigned long)0].as<std::string>()
+                          << ")" << std::endl;
             }
         } >> [](const DrogonDbException &e) {
             std::cerr << e.base().what() << std::endl;

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.5)
 
 project(drogon CXX)
-
+message(STATUS "compiler: " ${CMAKE_CXX_COMPILER_ID})
 option(BUILD_CTL "Build drogon_ctl" ON)
 option(BUILD_EXAMPLES "Build examples" ON)
 option(BUILD_ORM "Build orm" ON)
@@ -43,9 +43,10 @@ endforeach()
 
 if(BUILD_DROGON_SHARED)
   set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
-  list(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "${INSTALL_LIB_DIR}" isSystemDir)
+  list(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "${INSTALL_LIB_DIR}"
+            isSystemDir)
   if("${isSystemDir}" STREQUAL "-1")
-     set(CMAKE_INSTALL_RPATH "${INSTALL_LIB_DIR}")
+    set(CMAKE_INSTALL_RPATH "${INSTALL_LIB_DIR}")
   endif("${isSystemDir}" STREQUAL "-1")
   add_library(${PROJECT_NAME} SHARED)
 else()
@@ -69,16 +70,30 @@ target_include_directories(
          $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}>
          $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/trantor>)
 
+if(WIN32)
+  target_include_directories(
+    ${PROJECT_NAME}
+    PRIVATE $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/third_party/mman-win32>)
+endif(WIN32)
+
 # set the include list for dynamic view compiling
 list(APPEND INCLUDE_DIRS_FOR_DYNAMIC_VIEW
             ${PROJECT_SOURCE_DIR}/lib/inc
             ${PROJECT_SOURCE_DIR}/orm_lib/inc
             ${PROJECT_SOURCE_DIR}/trantor)
+
+if(WIN32)
+  add_subdirectory(third_party/mman-win32)
+endif(WIN32)
 add_subdirectory(trantor)
 
 target_link_libraries(${PROJECT_NAME} PUBLIC trantor)
 
-target_link_libraries(${PROJECT_NAME} PRIVATE dl)
+if(WIN32)
+  target_link_libraries(${PROJECT_NAME} PRIVATE mman)
+else()
+  target_link_libraries(${PROJECT_NAME} PRIVATE dl)
+endif(WIN32)
 
 if(DROGON_CXX_STANDARD LESS 17)
   # With C++14, use boost to support any and string_view
@@ -104,43 +119,46 @@ if(NOT EXISTS ${JSONCPP_INCLUDE_DIRS}/json/version.h)
   message(FATAL_ERROR "Error: jsoncpp lib is too old.....stop")
 endif()
 
-exec_program(
-  cat
-  ARGS
-  "${JSONCPP_INCLUDE_DIRS}/json/version.h |grep JSONCPP_VERSION_STRING|sed s'/.*define/define/'|awk '{printf $3}'|sed s'/\"//g'"
-  OUTPUT_VARIABLE
-  jsoncpp_ver)
-message(STATUS "jsoncpp verson:" ${jsoncpp_ver})
-if(jsoncpp_ver LESS 1.7)
-  message(
-    FATAL_ERROR
-      "jsoncpp lib is too old,please get new version from https://github.com/open-source-parsers/jsoncpp"
-    )
-endif()
+if(NOT WIN32)
+  exec_program(
+    cat
+    ARGS
+    "${JSONCPP_INCLUDE_DIRS}/json/version.h |grep JSONCPP_VERSION_STRING|sed s'/.*define/define/'|awk '{printf $3}'|sed s'/\"//g'"
+    OUTPUT_VARIABLE
+    jsoncpp_ver)
+  message(STATUS "jsoncpp verson:" ${jsoncpp_ver})
+  if(jsoncpp_ver LESS 1.7)
+    message(
+      FATAL_ERROR
+        "jsoncpp lib is too old,please get new version from https://github.com/open-source-parsers/jsoncpp"
+      )
+  endif()
 
-find_package(UUID REQUIRED)
-target_include_directories(${PROJECT_NAME} PRIVATE ${UUID_INCLUDE_DIR})
-target_link_libraries(${PROJECT_NAME} PRIVATE ${UUID_LIBRARIES})
+  find_package(UUID REQUIRED)
+  target_include_directories(${PROJECT_NAME} PRIVATE ${UUID_INCLUDE_DIR})
+  target_link_libraries(${PROJECT_NAME} PRIVATE ${UUID_LIBRARIES})
 
-try_compile(normal_uuid ${CMAKE_BINARY_DIR}/cmaketest
-                  ${PROJECT_SOURCE_DIR}/cmake/tests/normal_uuid_lib_test.cc
-                  LINK_LIBRARIES ${UUID_LIBRARIES}
-                  CMAKE_FLAGS "-DINCLUDE_DIRECTORIES=${UUID_INCLUDE_DIR}")
-try_compile(ossp_uuid ${CMAKE_BINARY_DIR}/cmaketest
-                  ${PROJECT_SOURCE_DIR}/cmake/tests/ossp_uuid_lib_test.cc
-                  LINK_LIBRARIES ${UUID_LIBRARIES}
-                  CMAKE_FLAGS "-DINCLUDE_DIRECTORIES=${UUID_INCLUDE_DIR}")
-if(normal_uuid)
+  try_compile(normal_uuid ${CMAKE_BINARY_DIR}/cmaketest
+              ${PROJECT_SOURCE_DIR}/cmake/tests/normal_uuid_lib_test.cc
+              LINK_LIBRARIES ${UUID_LIBRARIES}
+              CMAKE_FLAGS "-DINCLUDE_DIRECTORIES=${UUID_INCLUDE_DIR}")
+  try_compile(ossp_uuid ${CMAKE_BINARY_DIR}/cmaketest
+              ${PROJECT_SOURCE_DIR}/cmake/tests/ossp_uuid_lib_test.cc
+              LINK_LIBRARIES ${UUID_LIBRARIES}
+              CMAKE_FLAGS "-DINCLUDE_DIRECTORIES=${UUID_INCLUDE_DIR}")
+  if(normal_uuid)
     add_definitions(-DUSE_OSSP_UUID=0)
-elseif(ossp_uuid)
+  elseif(ossp_uuid)
     add_definitions(-DUSE_OSSP_UUID=1)
-else()
+  else()
     message(FATAL_ERROR "uuid lib error")
-endif()
-
-find_package(ZLIB REQUIRED)
-target_include_directories(${PROJECT_NAME} PRIVATE ${ZLIB_INCLUDE_DIR})
-target_link_libraries(${PROJECT_NAME} PRIVATE ${ZLIB_LIBRARIES})
+  endif()
+endif(NOT WIN32)
+if(NOT MSVC)
+  find_package(ZLIB REQUIRED)
+  target_include_directories(${PROJECT_NAME} PRIVATE ${ZLIB_INCLUDE_DIR})
+  target_link_libraries(${PROJECT_NAME} PRIVATE ${ZLIB_LIBRARIES})
+endif(NOT MSVC)
 
 set(DROGON_SOURCES
     lib/src/AOPAdvice.cc
@@ -170,12 +188,15 @@ set(DROGON_SOURCES
     lib/src/PluginsManager.cc
     lib/src/SecureSSLRedirector.cc
     lib/src/SessionManager.cc
-    lib/src/SharedLibManager.cc
     lib/src/StaticFileRouter.cc
     lib/src/Utilities.cc
     lib/src/WebSocketClientImpl.cc
     lib/src/WebSocketConnectionImpl.cc
     lib/src/WebsocketControllersRouter.cc)
+
+if(NOT WIN32)
+  set(DROGON_SOURCES ${DROGON_SOURCES} lib/src/SharedLibManager.cc)
+endif(NOT WIN32)
 
 find_package(OpenSSL)
 if(OpenSSL_FOUND)
@@ -221,21 +242,19 @@ if(BUILD_ORM)
     message(STATUS "inc:" ${MYSQL_INCLUDE_DIR})
     message(STATUS "libs:" ${MYSQL_CLIENT_LIBS})
     message(STATUS "version:" ${MYSQL_VERSION_STRING})
-    if(MYSQL_VERSION_STRING STREQUAL "")
-      set(MYSQL_FOUND false)
-      message(
-        STATUS
-          "The mysql in your system is not the mariadb, so we can't use it in drogon"
-        )
-    else()
-      message(STATUS "Ok! We find the mariadb!")
-      target_include_directories(${PROJECT_NAME} PRIVATE ${MYSQL_INCLUDE_DIR})
-      target_link_libraries(${PROJECT_NAME} PRIVATE ${MYSQL_CLIENT_LIBS})
-      set(DROGON_SOURCES ${DROGON_SOURCES}
-                         orm_lib/src/mysql_impl/MysqlConnection.cc
-                         orm_lib/src/mysql_impl/MysqlResultImpl.cc)
-    endif()
-  endif()
+    message(STATUS "Ok! We find the mariadb!")
+    target_include_directories(${PROJECT_NAME} PRIVATE ${MYSQL_INCLUDE_DIR})
+    target_link_libraries(${PROJECT_NAME} PRIVATE ${MYSQL_CLIENT_LIBS})
+    set(DROGON_SOURCES ${DROGON_SOURCES}
+                       orm_lib/src/mysql_impl/MysqlConnection.cc
+                       orm_lib/src/mysql_impl/MysqlResultImpl.cc)
+  else(MYSQL_FOUND)
+    if(MSVC)
+      find_package(ZLIB REQUIRED)
+      target_include_directories(${PROJECT_NAME} PRIVATE ${ZLIB_INCLUDE_DIR})
+      target_link_libraries(${PROJECT_NAME} PRIVATE ${ZLIB_LIBRARIES})
+    endif(MSVC)
+  endif(MYSQL_FOUND)
 
   # Find sqlite3.
   find_package(SQLite3)
@@ -359,10 +378,13 @@ if(BUILD_TESTING)
   if(SQLITE3_FOUND)
     add_subdirectory(${PROJECT_SOURCE_DIR}/orm_lib/src/sqlite3_impl/test)
   endif()
-  enable_testing()
-  add_subdirectory(third_party/googletest)
-  add_subdirectory(unittest)
-endif()
+  find_package(GTest)
+  if(GTest_FOUND)
+    message(STATUS "gtest found")
+    enable_testing()
+    add_subdirectory(unittest)
+  endif(GTest_FOUND)
+endif(BUILD_TESTING)
 
 # Installation
 

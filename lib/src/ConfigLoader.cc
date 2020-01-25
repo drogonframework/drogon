@@ -20,7 +20,11 @@
 #include <sstream>
 #include <thread>
 #include <trantor/utils/Logger.h>
+#ifndef _WIN32
 #include <unistd.h>
+#else
+#include <io.h>
+#endif
 
 using namespace drogon;
 static bool bytesSize(std::string &sizeStr, size_t &size)
@@ -95,7 +99,11 @@ ConfigLoader::ConfigLoader(const std::string &configFile)
         std::cerr << "Config file " << configFile << " not found!" << std::endl;
         exit(1);
     }
+#ifdef _WIN32
+    if (access(configFile.c_str(), 04) != 0)
+#else
     if (access(configFile.c_str(), R_OK) != 0)
+#endif
     {
         std::cerr << "No permission to read config file " << configFile
                   << std::endl;
@@ -135,19 +143,19 @@ static void loadLogSetting(const Json::Value &log)
     auto logLevel = log.get("log_level", "DEBUG").asString();
     if (logLevel == "TRACE")
     {
-        trantor::Logger::setLogLevel(trantor::Logger::TRACE);
+        trantor::Logger::setLogLevel(trantor::Logger::kTrace);
     }
     else if (logLevel == "DEBUG")
     {
-        trantor::Logger::setLogLevel(trantor::Logger::DEBUG);
+        trantor::Logger::setLogLevel(trantor::Logger::kDebug);
     }
     else if (logLevel == "INFO")
     {
-        trantor::Logger::setLogLevel(trantor::Logger::INFO);
+        trantor::Logger::setLogLevel(trantor::Logger::kInfo);
     }
     else if (logLevel == "WARN")
     {
-        trantor::Logger::setLogLevel(trantor::Logger::WARN);
+        trantor::Logger::setLogLevel(trantor::Logger::kWarn);
     }
 }
 static void loadControllers(const Json::Value &controllers)
@@ -304,7 +312,7 @@ static void loadApp(const Json::Value &app)
     {
         drogon::app().setMaxConnectionNumPerIP(maxConnsPerIP);
     }
-
+#ifndef _WIN32
     // dynamic views
     auto enableDynamicViews = app.get("load_dynamic_views", false).asBool();
     if (enableDynamicViews)
@@ -321,6 +329,7 @@ static void loadApp(const Json::Value &app)
             drogon::app().enableDynamicViewsLoading(paths);
         }
     }
+#endif
     // log
     loadLogSetting(app["log"]);
     // run as daemon

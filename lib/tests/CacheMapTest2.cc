@@ -6,11 +6,10 @@
 #include <thread>
 #include <trantor/net/EventLoopThread.h>
 #include <trantor/utils/Logger.h>
-#include <unistd.h>
 
 int main()
 {
-    trantor::Logger::setLogLevel(trantor::Logger::TRACE);
+    trantor::Logger::setLogLevel(trantor::Logger::kTrace);
     trantor::EventLoopThread loopThread;
     loopThread.run();
 

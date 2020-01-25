@@ -301,5 +301,9 @@ int main()
     auto resp = HttpResponse::newFileResponse("index.html");
     resp->setExpiredTime(0);
     app().setCustom404Page(resp);
+    std::cout << "Date: "
+              << std::string{drogon::utils::getHttpFullDate(
+                     trantor::Date::now())}
+              << std::endl;
     app().run();
 }

@@ -1,4 +1,4 @@
-/**
+﻿/**
  *
  *  test.cc
  *  An Tao
@@ -20,14 +20,16 @@
 
 #include <mutex>
 #include <future>
+#ifndef _WIN32
 #include <unistd.h>
+#endif
 
 #define RESET "\033[0m"
 #define RED "\033[31m"   /* Red */
 #define GREEN "\033[32m" /* Green */
 
 #define JPG_LEN 44618
-#define INDEX_LEN 10605
+#define INDEX_LEN 10606
 
 using namespace drogon;
 
@@ -831,7 +833,7 @@ void doTest(const HttpClientPtr &client,
                 if (resp->getBody().length() == JPG_LEN)
                 {
                     outputGood(req, isHttps);
-                    auto lastModified = resp->getHeader("last-modified");
+                    auto &lastModified = resp->getHeader("last-modified");
                     // LOG_DEBUG << lastModified;
                     // Test 'Not Modified'
                     auto req = HttpRequest::newHttpRequest();
@@ -1098,7 +1100,7 @@ void doTest(const HttpClientPtr &client,
 int main(int argc, char *argv[])
 {
     trantor::EventLoopThread loop[2];
-    trantor::Logger::setLogLevel(trantor::Logger::LogLevel::DEBUG);
+    trantor::Logger::setLogLevel(trantor::Logger::LogLevel::kDebug);
     bool ever = false;
     if (argc > 1 && std::string(argv[1]) == "-f")
         ever = true;
@@ -1113,7 +1115,6 @@ int main(int argc, char *argv[])
         client->setPipeliningDepth(10);
         if (sessionID)
             client->addCookie(sessionID);
-
         doTest(client, pro1);
         if (app().supportSSL())
         {
@@ -1130,7 +1131,6 @@ int main(int argc, char *argv[])
         }
         auto f1 = pro1.get_future();
         f1.get();
-        // LOG_DEBUG << sslClient.use_count();
     } while (ever);
     // getchar();
     loop[0].getLoop()->quit();

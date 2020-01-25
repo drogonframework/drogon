@@ -13,7 +13,7 @@
  */
 
 #pragma once
-#if __cplusplus >= 201703L
+#if __cplusplus >= 201703L | defined _WIN32
 #include <any>
 #else
 #include <boost/any.hpp>
@@ -21,7 +21,7 @@
 
 namespace drogon
 {
-#if __cplusplus >= 201703L
+#if __cplusplus >= 201703L | defined _WIN32
 using std::any;
 using std::any_cast;
 #else

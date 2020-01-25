@@ -15,8 +15,10 @@
 #include "Sqlite3Connection.h"
 #include "Sqlite3ResultImpl.h"
 #include <drogon/utils/Utilities.h>
+#include <drogon/utils/string_view.h>
 #include <regex>
 
+using namespace drogon;
 using namespace drogon::orm;
 
 std::once_flag Sqlite3Connection::once_;

@@ -24,11 +24,17 @@
 #include <fstream>
 #include <regex>
 #include <algorithm>
+#ifndef _WIN32
 #include <unistd.h>
 #include <dirent.h>
 #include <dlfcn.h>
-#include <unistd.h>
+#else
+#include <io.h>
+#endif
+#include <thread>
+#include <chrono>
 
+using namespace std::chrono_literals;
 using namespace drogon_ctl;
 static std::string toLower(const std::string &str)
 {
@@ -716,7 +722,7 @@ void create_model::createModel(const std::string &path,
         std::cout << "Connect to server..." << std::endl;
         if (forceOverwrite_)
         {
-            sleep(2);
+            std::this_thread::sleep_for(2s);
         }
         else
         {
@@ -810,7 +816,7 @@ void create_model::createModel(const std::string &path,
         std::cout << "Connect to server..." << std::endl;
         if (forceOverwrite_)
         {
-            sleep(2);
+            std::this_thread::sleep_for(2s);
         }
         else
         {
@@ -882,7 +888,7 @@ void create_model::createModel(const std::string &path,
         std::cout << "Connect..." << std::endl;
         if (forceOverwrite_)
         {
-            sleep(1);
+            std::this_thread::sleep_for(1s);
         }
         else
         {
@@ -953,6 +959,7 @@ void create_model::createModel(const std::string &path,
 void create_model::createModel(const std::string &path,
                                const std::string &singleModelName)
 {
+#ifndef _WIN32
     DIR *dp;
     if ((dp = opendir(path.c_str())) == NULL)
     {
@@ -960,13 +967,18 @@ void create_model::createModel(const std::string &path,
         return;
     }
     closedir(dp);
+#endif
     auto configFile = path + "/model.json";
     if (access(configFile.c_str(), 0) != 0)
     {
         std::cerr << "Config file " << configFile << " not found!" << std::endl;
         exit(1);
     }
+#ifdef _WIN32
+    if (access(configFile.c_str(), 04) != 0)
+#else
     if (access(configFile.c_str(), R_OK) != 0)
+#endif
     {
         std::cerr << "No permission to read config file " << configFile
                   << std::endl;

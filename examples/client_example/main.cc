@@ -6,10 +6,10 @@ using namespace drogon;
 
 int main()
 {
-    trantor::Logger::setLogLevel(trantor::Logger::TRACE);
+    trantor::Logger::setLogLevel(trantor::Logger::kTrace);
     {
         int count = 0;
-        auto client = HttpClient::newHttpClient("http://www.baidu.com");
+        auto client = HttpClient::newHttpClient("https://www.baidu.com");
         auto req = HttpRequest::newHttpRequest();
         req->setMethod(drogon::Get);
         req->setPath("/s");

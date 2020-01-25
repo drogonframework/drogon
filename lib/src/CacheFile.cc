@@ -14,15 +14,19 @@
 
 #include "CacheFile.h"
 #include <trantor/utils/Logger.h>
+#ifdef _WIN32
+#include <mman.h>
+#else
 #include <unistd.h>
 #include <sys/mman.h>
+#endif
 
 using namespace drogon;
 
 CacheFile::CacheFile(const std::string &path, bool autoDelete)
     : autoDelete_(autoDelete), path_(path)
 {
-    file_ = fopen(path_.data(), "w+");
+    file_ = fopen(path_.data(), "wb+");
 }
 
 CacheFile::~CacheFile()

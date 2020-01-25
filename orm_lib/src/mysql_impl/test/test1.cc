@@ -1,19 +1,21 @@
 #include <drogon/orm/DbClient.h>
 #include <drogon/utils/Utilities.h>
+#include <trantor/utils/Logger.h>
 #include <fstream>
 #include <iostream>
-#include <trantor/utils/Logger.h>
-#include <unistd.h>
+#include <thread>
+#include <chrono>
 
+using namespace std::chrono_literals;
 using namespace drogon::orm;
 using namespace drogon;
 
 int main()
 {
-    trantor::Logger::setLogLevel(trantor::Logger::TRACE);
+    trantor::Logger::setLogLevel(trantor::Logger::kTrace);
     auto clientPtr = DbClient::newMysqlClient(
         "host= 127.0.0.1    port  =3306 dbname= test user = root  ", 1);
-    sleep(1);
+    std::this_thread::sleep_for(1s);
     // for (int i = 0; i < 10; ++i)
     // {
     //     std::string str = formattedString("insert into users

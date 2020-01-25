@@ -3,11 +3,7 @@ link_libraries(${PROJECT_NAME})
 file(GLOB SCP_LIST ${CMAKE_CURRENT_SOURCE_DIR}/simple_example/*.csp)
 foreach(cspFile ${SCP_LIST})
   message(STATUS "cspFile:" ${cspFile})
-  exec_program(basename
-               ARGS
-               "${cspFile} .csp"
-               OUTPUT_VARIABLE
-               classname)
+  get_filename_component(classname ${cspFile} NAME_WE)
   message(STATUS "view classname:" ${classname})
   add_custom_command(OUTPUT ${classname}.h ${classname}.cc
                      COMMAND drogon_ctl
@@ -52,14 +48,17 @@ add_executable(pipelining_test simple_example_test/HttpPipeliningTest.cc)
 add_executable(websocket_test simple_example_test/WebSocketTest.cc)
 add_executable(multiple_ws_test simple_example_test/MultipleWsTest.cc)
 
-add_custom_command(TARGET webapp POST_BUILD
-                   COMMAND gzip
-                           ARGS
-                           -c
-                           ${CMAKE_CURRENT_SOURCE_DIR}/simple_example/index.html
-                           >
-                           ${CMAKE_CURRENT_BINARY_DIR}/index.html.gz
-                   VERBATIM)
+if(NOT WIN32)
+  add_custom_command(
+    TARGET webapp POST_BUILD
+    COMMAND gzip
+            ARGS
+            -c
+            ${CMAKE_CURRENT_SOURCE_DIR}/simple_example/index.html
+            >
+            ${CMAKE_CURRENT_BINARY_DIR}/index.html.gz
+    VERBATIM)
+endif(NOT WIN32)
 add_custom_command(
   TARGET webapp POST_BUILD
   COMMAND ${CMAKE_COMMAND}

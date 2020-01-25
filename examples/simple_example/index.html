@@ -49,7 +49,7 @@ using namespace drogon;
 int main()
 {
     app().setLogPath("./");
-    app().setLogLevel(trantor::Logger::WARN);
+    app().setLogLevel(trantor::Logger::kWarn);
     app().addListener("0.0.0.0", 80);
     app().setThreadNum(16);
     app().enableRunAsDaemon();

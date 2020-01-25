@@ -20,7 +20,9 @@
 #include <iostream>
 #include <algorithm>
 #include <fcntl.h>
+#ifndef _WIN32
 #include <sys/file.h>
+#endif
 #include <sys/stat.h>
 
 using namespace drogon;
@@ -209,11 +211,15 @@ void StaticFileRouter::sendStaticFileResponse(
             {
                 LOG_TRACE << "last modify time:" << fileStat.st_mtime;
                 struct tm tm1;
+#ifdef _WIN32
+                gmtime_s(&tm1, &fileStat.st_mtime);
+#else
                 gmtime_r(&fileStat.st_mtime, &tm1);
+#endif
                 timeStr.resize(64);
                 auto len = strftime((char *)timeStr.data(),
                                     timeStr.size(),
-                                    "%a, %d %b %Y %T GMT",
+                                    "%a, %d %b %Y %H:%M:%S GMT",
                                     &tm1);
                 timeStr.resize(len);
                 const std::string &modiStr =

@@ -1,7 +1,7 @@
 matrix:
   include:
     - os: linux
-      dist: xenial
+      dist: bionic
     - os: osx
       osx_image: xcode11
 
@@ -38,6 +38,14 @@ addons:
     - lz4
     - mariadb
     - sqlite3
+before_install:
+  - wget https://github.com/google/googletest/archive/release-1.10.0.tar.gz
+  - tar xf release-1.10.0.tar.gz
+  - cd googletest-release-1.10.0
+  - cmake .
+  - make
+  - sudo make install
+  - cd -
 before_script:
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then 
        brew services restart postgresql; 

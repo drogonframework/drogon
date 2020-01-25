@@ -5,11 +5,12 @@
 #include <thread>
 #include <trantor/net/EventLoopThread.h>
 #include <trantor/utils/Logger.h>
-#include <unistd.h>
-
+#include <chrono>
+#include <thread>
+using namespace std::chrono_literals;
 int main()
 {
-    trantor::Logger::setLogLevel(trantor::Logger::TRACE);
+    trantor::Logger::setLogLevel(trantor::Logger::kTrace);
     trantor::EventLoopThread loopThread;
     loopThread.run();
 
@@ -17,7 +18,7 @@ int main()
                                                      0.1,
                                                      4,
                                                      30);
-    sleep(3);
+    std::this_thread::sleep_for(3s);
     for (int i = 0; i < 40; ++i)
     {
         cache.insert(drogon::utils::formattedString("aaa%d", i),
@@ -33,10 +34,10 @@ int main()
     cache.insert("2", "second", 5);
     cache.insert("3", "third", 5);
     std::thread thread1([&] {
-        sleep(1);
+        std::this_thread::sleep_for(1s);
         cache.erase("3");
         cache.insert("3", "THIRD");
-        sleep(10);
+        std::this_thread::sleep_for(10s);
         if (cache.find("1"))
         {
             LOG_DEBUG << "sleep 10,1 item:" << cache["1"];
@@ -45,7 +46,7 @@ int main()
         {
             LOG_DEBUG << "can't find 1 item";
         }
-        sleep(15);
+        std::this_thread::sleep_for(15s);
         if (cache.find("1"))
         {
             LOG_DEBUG << "sleep 15,1 item:" << cache["1"];
@@ -54,7 +55,7 @@ int main()
         {
             LOG_DEBUG << "can't find 1 item";
         }
-        sleep(20);
+        std::this_thread::sleep_for(20s);
         if (cache.find("1"))
         {
             LOG_DEBUG << "sleep 20,1 item:" << cache["1"];
@@ -63,7 +64,7 @@ int main()
         {
             LOG_DEBUG << "can't find 1 item";
         }
-        sleep(22);
+        std::this_thread::sleep_for(22s);
         if (cache.find("1"))
         {
             LOG_DEBUG << "sleep22,1 item:" << cache["1"];

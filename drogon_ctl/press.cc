@@ -19,7 +19,9 @@
 #include <memory>
 #include <iomanip>
 #include <stdlib.h>
+#ifndef _WIN32
 #include <unistd.h>
+#endif
 
 using namespace drogon_ctl;
 std::string press::detail()

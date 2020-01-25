@@ -18,9 +18,10 @@
 #include <trantor/utils/Logger.h>
 #include <iostream>
 #include <chrono>
-#include <unistd.h>
+#include <thread>
 #include <stdlib.h>
 
+using namespace std::chrono_literals;
 using namespace drogon::orm;
 using namespace drogon_model::postgres;
 
@@ -542,7 +543,7 @@ void doTest(const drogon::orm::DbClientPtr &clientPtr)
     /// 5.3 select where in
     mapper.findBy(
         Criteria(Users::Cols::_id,
-                 CompareOperator::IN,
+                 CompareOperator::In,
                  std::vector<int32_t>{10, 200}),
         [](std::vector<Users> users) {
             testOutput(users.size() == 1,
@@ -567,13 +568,13 @@ void doTest(const drogon::orm::DbClientPtr &clientPtr)
 }
 int main(int argc, char *argv[])
 {
-    trantor::Logger::setLogLevel(trantor::Logger::DEBUG);
+    trantor::Logger::setLogLevel(trantor::Logger::kDebug);
 #if USE_POSTGRESQL
     auto clientPtr = DbClient::newPgClient(
         "host=127.0.0.1 port=5432 dbname=postgres user=postgres", 1);
 #endif
     LOG_DEBUG << "start!";
-    sleep(1);
+    std::this_thread::sleep_for(1s);
     if (argc == 2)
     {
         gLoops = atoi(argv[1]);

@@ -20,11 +20,7 @@ target_link_libraries(_drogon_ctl ${PROJECT_NAME})
 file(GLOB SCP_LIST ${CMAKE_CURRENT_SOURCE_DIR}/templates/*.csp)
 foreach(cspFile ${SCP_LIST})
   message(STATUS "cspFile:" ${cspFile})
-  exec_program(basename
-               ARGS
-               "${cspFile} .csp"
-               OUTPUT_VARIABLE
-               classname)
+  get_filename_component(classname ${cspFile} NAME_WE)
   message(STATUS "view classname:" ${classname})
   add_custom_command(OUTPUT ${classname}.h ${classname}.cc
                      COMMAND _drogon_ctl
@@ -43,6 +39,9 @@ add_dependencies(drogon_ctl
                  trantor
                  makeVersion
                  _drogon_ctl)
+if(WIN32)
+  target_link_libraries(drogon_ctl PRIVATE ws2_32 Rpcrt4)
+endif(WIN32)
 message(STATUS "bin:" ${INSTALL_BIN_DIR})
 install(TARGETS drogon_ctl RUNTIME DESTINATION ${INSTALL_BIN_DIR})
 install(CODE "execute_process( \
@@ -54,25 +53,3 @@ set(ctl_targets _drogon_ctl drogon_ctl)
 set_property(TARGET ${ctl_targets} PROPERTY CXX_STANDARD ${DROGON_CXX_STANDARD})
 set_property(TARGET ${ctl_targets} PROPERTY CXX_STANDARD_REQUIRED ON)
 set_property(TARGET ${ctl_targets} PROPERTY CXX_EXTENSIONS OFF)
-
-find_program(STRIP strip)
-if(STRIP STREQUAL "STRIP-NOTFOUND")
-  message(STATUS "strip not found")
-else()
-  if(CMAKE_SYSTEM_NAME STREQUAL Darwin)
-    add_custom_command(TARGET
-                       ${ctl_targets}
-                       POST_BUILD
-                       VERBATIM
-                       COMMAND ${STRIP}
-                               -u
-                               -r
-                               ${ctl_targets})
-  else()
-    add_custom_command(TARGET
-                       ${ctl_targets}
-                       POST_BUILD
-                       VERBATIM
-                       COMMAND ${STRIP} -s ${ctl_targets})
-  endif()
-endif()

@@ -14,7 +14,13 @@
 
 #include <drogon/utils/Utilities.h>
 #include <trantor/utils/Logger.h>
+#ifdef _WIN32
+#include <Rpc.h>
+#include <direct.h>
+#include <io.h>
+#else
 #include <uuid.h>
+#endif
 #include <zlib.h>
 #include <iomanip>
 #include <mutex>
@@ -27,7 +33,9 @@
 #include <cstdlib>
 #include <stdio.h>
 #include <string.h>
+#ifndef _WIN32
 #include <unistd.h>
+#endif
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <stdarg.h>
@@ -181,6 +189,32 @@ std::string hexToBinaryString(const char *ptr, size_t length)
     }
     return ret;
 }
+#ifdef _WIN32
+char *strptime(const char *s, const char *f, struct tm *tm)
+{
+    // std::get_time is defined such that its
+    // format parameters are the exact same as strptime.
+    std::istringstream input(s);
+    input.imbue(std::locale(setlocale(LC_ALL, nullptr)));
+    input >> std::get_time(tm, f);
+    if (input.fail())
+    {
+        return nullptr;
+    }
+    return (char *)(s + input.tellg());
+}
+time_t timegm(struct tm *tm)
+{
+    struct tm my_tm;
+
+    memcpy(&my_tm, tm, sizeof(struct tm));
+
+    /* _mkgmtime() changes the value of the struct tm* you pass in, so
+     * use a copy
+     */
+    return _mkgmtime(&my_tm);
+}
+#endif
 std::string binaryStringToHex(const unsigned char *ptr, size_t length)
 {
     std::string idString;
@@ -271,6 +305,25 @@ std::string getUuid()
     std::string ret{binaryStringToHex((const unsigned char *)str, len)};
     free(str);
     return ret;
+#elif defined _WIN32
+    uuid_t uu;
+    UuidCreate(&uu);
+    char tempStr[100];
+    auto len = snprintf(tempStr,
+                        sizeof(tempStr),
+                        "%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X",
+                        uu.Data1,
+                        uu.Data2,
+                        uu.Data3,
+                        uu.Data4[0],
+                        uu.Data4[1],
+                        uu.Data4[2],
+                        uu.Data4[3],
+                        uu.Data4[4],
+                        uu.Data4[5],
+                        uu.Data4[6],
+                        uu.Data4[7]);
+    return std::string{tempStr, static_cast<size_t>(len)};
 #else
     uuid_t uu;
     uuid_generate(uu);
@@ -664,7 +717,7 @@ std::string urlDecode(const char *begin, const char *end)
                 if ((i + 2) < len && isxdigit(begin[i + 1]) &&
                     isxdigit(begin[i + 2]))
                 {
-                    uint x1 = begin[i + 1];
+                    unsigned int x1 = begin[i + 1];
                     if (x1 >= '0' && x1 <= '9')
                     {
                         x1 -= '0';
@@ -677,7 +730,7 @@ std::string urlDecode(const char *begin, const char *end)
                     {
                         x1 = x1 - 'A' + 10;
                     }
-                    uint x2 = begin[i + 2];
+                    unsigned int x2 = begin[i + 2];
                     if (x2 >= '0' && x2 <= '9')
                     {
                         x2 -= '0';
@@ -820,7 +873,7 @@ char *getHttpFullDate(const trantor::Date &date)
         return lastTimeString;
     }
     lastSecond = nowSecond;
-    date.toCustomedFormattedString("%a, %d %b %Y %T GMT",
+    date.toCustomedFormattedString("%a, %d %b %Y %H:%M:%S GMT",
                                    lastTimeString,
                                    sizeof(lastTimeString));
     return lastTimeString;
@@ -828,7 +881,7 @@ char *getHttpFullDate(const trantor::Date &date)
 trantor::Date getHttpDate(const std::string &httpFullDateString)
 {
     struct tm tmptm;
-    strptime(httpFullDateString.c_str(), "%a, %d %b %Y %T", &tmptm);
+    strptime(httpFullDateString.c_str(), "%a, %d %b %Y %H:%M:%S", &tmptm);
     auto epoch = timegm(&tmptm);
     return trantor::Date(epoch * MICRO_SECONDS_PRE_SEC);
 }
@@ -884,7 +937,11 @@ int createPath(const std::string &path)
 {
     auto tmpPath = path;
     std::stack<std::string> pathStack;
+#ifdef _WIN32
+    while (access(tmpPath.c_str(), 06) != 0)
+#else
     while (access(tmpPath.c_str(), F_OK) != 0)
+#endif
     {
         if (tmpPath == "./" || tmpPath == "/")
             return -1;
@@ -922,7 +979,11 @@ int createPath(const std::string &path)
         }
         pathStack.pop();
 
+#ifdef _WIN32
+        if (mkdir(tmpPath.c_str()) == -1)
+#else
         if (mkdir(tmpPath.c_str(), 0755) == -1)
+#endif
         {
             LOG_ERROR << "Can't create path:" << path;
             return -1;

@@ -658,8 +658,10 @@ class HttpAppFramework : public trantor::NonCopyable
      * presents an absolute path, otherwise it presents a relative path to the
      * document_root path.
      * @param isCaseSensitive
-     * @param allowAll If it is set to false, only static files with a valid extension can be accessed.
-     * @param isRecursive If it is set to false, files in sub directories can't be accessed.
+     * @param allowAll If it is set to false, only static files with a valid
+     * extension can be accessed.
+     * @param isRecursive If it is set to false, files in sub directories can't
+     * be accessed.
      * @return HttpAppFramework&
      */
     virtual HttpAppFramework &addALocation(
@@ -698,17 +700,19 @@ class HttpAppFramework : public trantor::NonCopyable
     virtual HttpAppFramework &setFileTypes(
         const std::vector<std::string> &types) = 0;
 
-    /// Enable supporting for dynamic views loading.
-    /**
-     *
-     * @param libPaths is a vactor that contains paths to view files.
-     *
-     * @note
-     * It is disabled by default.
-     * This operation can be performed by an option in the configuration file.
-     */
+/// Enable supporting for dynamic views loading.
+/**
+ *
+ * @param libPaths is a vactor that contains paths to view files.
+ *
+ * @note
+ * It is disabled by default.
+ * This operation can be performed by an option in the configuration file.
+ */
+#ifndef _WIN32
     virtual HttpAppFramework &enableDynamicViewsLoading(
         const std::vector<std::string> &libPaths) = 0;
+#endif
 
     /// Set the maximum number of all connections.
     /**
