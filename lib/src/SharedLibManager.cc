@@ -56,10 +56,15 @@ static void forEachFileIn(
             return;
         }
 
-        /* if dirent is a directory, continue */
+        /* if dirent is a directory, find files recursively */
         if (S_ISDIR(st.st_mode))
-            continue;
-        cb(fullname, st);
+        {
+            forEachFileIn(fullname, cb);
+        }
+        else
+        {
+            cb(fullname, st);
+        }
     }
     closedir(dp);
     return;
@@ -67,8 +72,9 @@ static void forEachFileIn(
 
 using namespace drogon;
 SharedLibManager::SharedLibManager(trantor::EventLoop *loop,
-                                   const std::vector<std::string> &libPaths)
-    : loop_(loop), libPaths_(libPaths)
+                                   const std::vector<std::string> &libPaths,
+                                   const std::string &outputPath)
+    : loop_(loop), libPaths_(libPaths), outputPath_(outputPath)
 {
     timeId_ = loop_->runEvery(5.0, [=]() { managerLibs(); });
 }
@@ -121,21 +127,38 @@ void SharedLibManager::managerLibs()
                             std::ofstream fout(lockFile);
                         }
                         std::string cmd = "drogon_ctl create view ";
-                        cmd.append(filename).append(" -o ").append(libPath);
+                        if (!outputPath_.empty())
+                        {
+                            cmd.append(filename).append(" -o ").append(
+                                outputPath_);
+                        }
+                        else
+                        {
+                            cmd.append(filename).append(" -o ").append(libPath);
+                        }
                         LOG_TRACE << cmd;
                         auto r = system(cmd.c_str());
                         // TODO: handle r
                         (void)(r);
                         auto srcFile = filename.substr(0, pos);
+                        if (!outputPath_.empty())
+                        {
+                            pos = srcFile.rfind("/");
+                            if (pos != std::string::npos)
+                            {
+                                srcFile = srcFile.substr(pos + 1);
+                            }
+                            srcFile = outputPath_ + "/" + srcFile;
+                        }
                         srcFile.append(".cc");
                         DLStat dlStat;
                         dlStat.handle = loadLibs(srcFile, oldHandle);
 #ifdef __linux__
                         dlStat.mTime = st.st_mtim;
 #elif defined _WIN32
-                        dlStat.mTime.tv_sec = st.st_mtime;
+                            dlStat.mTime.tv_sec = st.st_mtime;
 #else
-                        dlStat.mTime = st.st_mtimespec;
+                            dlStat.mTime = st.st_mtimespec;
 #endif
                         if (dlStat.handle)
                         {

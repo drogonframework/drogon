@@ -24,13 +24,15 @@ class SharedLibManager : public trantor::NonCopyable
 {
   public:
     SharedLibManager(trantor::EventLoop *loop,
-                     const std::vector<std::string> &libPaths);
+                     const std::vector<std::string> &libPaths,
+                     const std::string &outputPath);
     ~SharedLibManager();
 
   private:
     void managerLibs();
     trantor::EventLoop *loop_;
     std::vector<std::string> libPaths_;
+    std::string outputPath_;
     struct DLStat
     {
         void *handle{nullptr};

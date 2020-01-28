@@ -298,7 +298,11 @@ int create_view::createViewFile(const std::string &script_filename)
             std::ofstream oSourceFile(sourceFilename.c_str(),
                                       std::ofstream::out);
             if (!oHeadFile || !oSourceFile)
+            {
+                std::cerr << "Can't open " << headFileName << " or "
+                          << sourceFilename << "\n";
                 return -1;
+            }
 
             newViewHeaderFile(oHeadFile, className);
             newViewSourceFile(oSourceFile, className, infile);

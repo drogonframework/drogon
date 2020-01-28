@@ -215,7 +215,8 @@ class HttpAppFrameworkImpl : public HttpAppFramework
         const std::vector<std::string> &types) override;
 #ifndef _WIN32
     virtual HttpAppFramework &enableDynamicViewsLoading(
-        const std::vector<std::string> &libPaths) override;
+        const std::vector<std::string> &libPaths,
+        const std::string &outputPath) override;
 #endif
     virtual HttpAppFramework &setMaxConnectionNum(
         size_t maxConnections) override;
@@ -470,8 +471,9 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     std::atomic_bool running_{false};
 
     size_t threadNum_{1};
-    std::vector<std::string> libFilePaths_;
 #ifndef _WIN32
+    std::vector<std::string> libFilePaths_;
+    std::string libFileOutputPath_;
     std::unique_ptr<SharedLibManager> sharedLibManagerPtr_;
 #endif
 
