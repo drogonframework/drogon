@@ -716,7 +716,9 @@ class HttpAppFramework : public trantor::NonCopyable
  * @param libPaths is a vactor that contains paths to view files.
  *
  * @param outputPath is the directory where the output source files locate. if
- * it is set to an empty string, drogon use libPaths as output paths.
+ * it is set to an empty string, drogon use libPaths as output paths. If the
+ * path isn't prefixed with /, it is relative path of the current working
+ * directory.
  *
  * @note
  * It is disabled by default.
