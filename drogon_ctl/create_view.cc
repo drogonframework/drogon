@@ -109,6 +109,10 @@ static void parseLine(std::ofstream &oSrcFile,
 {
     std::string::size_type pos(0);
     // std::cout<<line<<"("<<line.length()<<")\n";
+    if (line.length() > 0 && line[line.length() - 1] == '\r')
+    {
+        line.resize(line.length() - 1);
+    }
     if (line.length() == 0)
     {
         // std::cout<<"blank line!"<<std::endl;
