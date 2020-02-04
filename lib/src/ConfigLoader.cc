@@ -421,6 +421,10 @@ static void loadDbClients(const Json::Value &dbClients)
         }
         auto user = client.get("user", "postgres").asString();
         auto password = client.get("passwd", "").asString();
+        if (password.empty())
+        {
+            password = client.get("password", "").asString();
+        }
         auto connNum = client.get("connection_number", 1).asUInt();
         auto name = client.get("name", "default").asString();
         auto filename = client.get("filename", "").asString();
