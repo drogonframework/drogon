@@ -704,6 +704,10 @@ void create_model::createModel(const std::string &path,
             exit(1);
         }
         auto password = config.get("passwd", "").asString();
+        if (password.empty())
+        {
+            password = config.get("password", "").asString();
+        }
 
         auto connStr =
             utils::formattedString("host=%s port=%u dbname=%s user=%s",

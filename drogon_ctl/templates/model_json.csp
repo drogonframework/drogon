@@ -13,7 +13,7 @@
     "schema": "public",
     //user: User name
     "user": "",
-    //password: Password
+    //passwd: Password
     "passwd": "",
     //table: An array of tables to be modelized. if the array is empty, all revealed tables are modelized.
     "tables": [],
