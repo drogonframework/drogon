@@ -98,11 +98,11 @@ namespace drogon
 {
 std::string getVersion()
 {
-    return VERSION;
+    return DROGON_VERSION;
 }
 std::string getGitCommit()
 {
-    return VERSION_MD5;
+    return DROGON_VERSION_SHA1;
 }
 }  // namespace drogon
 static void godaemon(void)

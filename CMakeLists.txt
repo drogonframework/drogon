@@ -13,7 +13,7 @@ set(DROGON_MINOR_VERSION 0)
 set(DROGON_PATCH_VERSION 0)
 set(DROGON_VERSION
     ${DROGON_MAJOR_VERSION}.${DROGON_MINOR_VERSION}.${DROGON_PATCH_VERSION})
-set(PRE_RELEASE_STRING "beta13")
+set(DROGON_VERSION_STRING "${DROGON_VERSION}.beta13")
 
 # Offer the user the choice of overriding the installation directories
 set(INSTALL_LIB_DIR lib CACHE PATH "Installation directory for libraries")
@@ -268,17 +268,12 @@ if(BUILD_ORM)
   endif()
 endif()
 
-add_custom_target(makeVersion)
-add_custom_command(TARGET makeVersion
-                   COMMAND ${PROJECT_SOURCE_DIR}/get_version.sh
-                           ARGS
-                           ${PROJECT_SOURCE_DIR}/lib/inc/drogon/version.h
-                           ${DROGON_MAJOR_VERSION}
-                           ${DROGON_MINOR_VERSION}
-                           ${DROGON_PATCH_VERSION}
-                           ${PRE_RELEASE_STRING}
-                   WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-                   VERBATIM)
+execute_process(COMMAND "git" rev-parse HEAD
+                WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+                OUTPUT_VARIABLE GIT_SHA1
+                ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
+configure_file("${PROJECT_SOURCE_DIR}/cmake/templates/version.h.in"
+               "${PROJECT_SOURCE_DIR}/lib/inc/drogon/version.h" @ONLY)
 
 if(BUILD_EXAMPLES)
   add_subdirectory(examples)
@@ -315,8 +310,6 @@ set_target_properties(${PROJECT_NAME}
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD_REQUIRED ON)
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_EXTENSIONS OFF)
 set_target_properties(${PROJECT_NAME} PROPERTIES EXPORT_NAME Drogon)
-
-add_dependencies(${PROJECT_NAME} makeVersion)
 
 if(PostgreSQL_FOUND OR MYSQL_FOUND OR SQLITE3_FOUND)
   if(PostgreSQL_FOUND)
