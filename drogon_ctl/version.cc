@@ -30,8 +30,8 @@ void version::handleCommand(std::vector<std::string> &parameters)
 {
     std::cout << banner << std::endl;
     std::cout << "A utility for drogon" << std::endl;
-    std::cout << "Version:" << VERSION << std::endl;
-    std::cout << "Git commit:" << VERSION_MD5 << std::endl;
-    std::cout << "Compile config:" << COMPILATION_FLAGS << " " << INCLUDING_DIRS
+    std::cout << "Version: " << DROGON_VERSION << std::endl;
+    std::cout << "Git commit: " << DROGON_VERSION_SHA1 << std::endl;
+    std::cout << "Compile config: " << COMPILATION_FLAGS << " " << INCLUDING_DIRS
               << std::endl;
 }

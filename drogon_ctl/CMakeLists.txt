@@ -37,7 +37,6 @@ target_link_libraries(drogon_ctl PRIVATE ${PROJECT_NAME})
 target_include_directories(drogon_ctl PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 add_dependencies(drogon_ctl
                  trantor
-                 makeVersion
                  _drogon_ctl)
 if(WIN32)
   target_link_libraries(drogon_ctl PRIVATE ws2_32 Rpcrt4)
