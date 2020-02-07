@@ -32,7 +32,6 @@
 *.app
 
 build
-install
 cmake-build-debug
 .idea
 lib/inc/drogon/version.h
@@ -45,4 +44,5 @@ latex/
 .settings/
 .vs/
 CMakeSettings.json
-
+install
+.gitmodules
