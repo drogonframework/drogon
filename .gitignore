@@ -32,6 +32,7 @@
 *.app
 
 build
+install
 cmake-build-debug
 .idea
 lib/inc/drogon/version.h
