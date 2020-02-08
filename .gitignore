@@ -45,4 +45,3 @@ latex/
 .vs/
 CMakeSettings.json
 install
-.gitmodules
