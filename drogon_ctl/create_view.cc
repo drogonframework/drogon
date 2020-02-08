@@ -375,7 +375,7 @@ void create_view::newViewSourceFile(std::ofstream &file,
                            lowerBuffer.begin(),
                            ::tolower);
             std::smatch results;
-            if (std::regex_search(lowerBuffer, results, layoutReg))
+            if (std::regex_search(buffer, results, layoutReg))
             {
                 if (results.size() > 1)
                 {
