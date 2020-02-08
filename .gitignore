@@ -44,4 +44,4 @@ latex/
 .settings/
 .vs/
 CMakeSettings.json
-
+install
