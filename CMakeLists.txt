@@ -68,8 +68,7 @@ target_include_directories(
   PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/lib/inc>
          $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/orm_lib/inc>
          $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}>
-         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/trantor>
-         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/${BASE64_CHOICE}>)
+         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/trantor>)
 
 if(WIN32)
   target_include_directories(
@@ -81,8 +80,7 @@ endif(WIN32)
 list(APPEND INCLUDE_DIRS_FOR_DYNAMIC_VIEW
             ${PROJECT_SOURCE_DIR}/lib/inc
             ${PROJECT_SOURCE_DIR}/orm_lib/inc
-            ${PROJECT_SOURCE_DIR}/trantor
-            ${PROJECT_SOURCE_DIR}/${BASE64_CHOICE})
+            ${PROJECT_SOURCE_DIR}/trantor)
 
 if(WIN32)
   add_subdirectory(third_party/mman-win32)
@@ -202,15 +200,12 @@ endif(NOT WIN32)
 
 find_package(OpenSSL)
 if(OpenSSL_FOUND)
-  set(BASE64_CHOICE base64/openssl)
   target_include_directories(${PROJECT_NAME} PRIVATE ${OPENSSL_INCLUDE_DIR})
   target_link_libraries(${PROJECT_NAME} PRIVATE ${OPENSSL_LIBRARIES})
 else()
   set(DROGON_SOURCES ${DROGON_SOURCES} lib/src/ssl_funcs/Md5.cc
                      lib/src/ssl_funcs/Sha1.cc)
-  set(BASE64_CHOICE base64/cpp-base64)
 endif()
-set(DROGON_SOURCES ${DROGON_SOURCES} ${BASE64_CHOICE}/base64.cpp)
 
 if(BUILD_ORM)
   # find postgres
@@ -456,12 +451,6 @@ set(DROGON_UTIL_HEADERS
     lib/inc/drogon/utils/OStringStream.h)
 install(FILES ${DROGON_UTIL_HEADERS}
         DESTINATION ${INSTALL_INCLUDE_DIR}/drogon/utils)
-
-set(BASE64_HEADERS
-    ${BASE64_CHOICE}/base64.h)
-
-install(FILES ${BASE64_HEADERS}
-        DESTINATION ${INSTALL_INCLUDE_DIR}/base64)
 
 set(DROGON_PLUGIN_HEADERS lib/inc/drogon/plugins/Plugin.h
                           lib/inc/drogon/plugins/SecureSSLRedirector.h)

@@ -724,7 +724,7 @@ trantor::EventLoop *HttpAppFrameworkImpl::getIOLoop(const unsigned int &id) cons
     unsigned int id_( id );
     if ( id_ >= threadNum_ ){
         id_ %= threadNum_;
-LOG_WARN << "Invalid loop id : " << id << " will be truncated to : " << id_;
+LOG_WARN << "Invalid loop id : " << id << " will be rounded to : " << id_;
     }
     return listenerManagerPtr_->getIOLoop(id_);
 }
