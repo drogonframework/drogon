@@ -98,11 +98,11 @@ namespace drogon
 {
 std::string getVersion()
 {
-    return DROGON_VERSION;
+    return VERSION;
 }
 std::string getGitCommit()
 {
-    return DROGON_VERSION_SHA1;
+    return VERSION_MD5;
 }
 }  // namespace drogon
 static void godaemon(void)
@@ -714,6 +714,19 @@ trantor::EventLoop *HttpAppFrameworkImpl::getLoop() const
 {
     static trantor::EventLoop loop;
     return &loop;
+}
+
+
+
+trantor::EventLoop *HttpAppFrameworkImpl::getIOLoop(const unsigned int &id) const
+{
+    assert(listenerManagerPtr_);
+    unsigned int id_( id );
+    if ( id_ >= threadNum_ ){
+        id_ %= threadNum_;
+LOG_WARN << "Invalid loop id : " << id << " will be truncated to : " << id_;
+    }
+    return listenerManagerPtr_->getIOLoop(id_);
 }
 
 HttpAppFramework &HttpAppFramework::instance()

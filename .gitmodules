@@ -2,3 +2,6 @@
 	path = trantor
 	url = https://github.com/an-tao/trantor.git
 
+[submodule "base64/cpp-base64"]
+	path = base64/cpp-base64
+	url = https://github.com/ReneNyffenegger/cpp-base64.git

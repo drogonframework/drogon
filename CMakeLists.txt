@@ -13,7 +13,7 @@ set(DROGON_MINOR_VERSION 0)
 set(DROGON_PATCH_VERSION 0)
 set(DROGON_VERSION
     ${DROGON_MAJOR_VERSION}.${DROGON_MINOR_VERSION}.${DROGON_PATCH_VERSION})
-set(DROGON_VERSION_STRING "${DROGON_VERSION}.beta13")
+set(PRE_RELEASE_STRING "beta13")
 
 # Offer the user the choice of overriding the installation directories
 set(INSTALL_LIB_DIR lib CACHE PATH "Installation directory for libraries")
@@ -68,7 +68,8 @@ target_include_directories(
   PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/lib/inc>
          $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/orm_lib/inc>
          $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}>
-         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/trantor>)
+         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/trantor>
+         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/${BASE64_CHOICE}>)
 
 if(WIN32)
   target_include_directories(
@@ -80,7 +81,8 @@ endif(WIN32)
 list(APPEND INCLUDE_DIRS_FOR_DYNAMIC_VIEW
             ${PROJECT_SOURCE_DIR}/lib/inc
             ${PROJECT_SOURCE_DIR}/orm_lib/inc
-            ${PROJECT_SOURCE_DIR}/trantor)
+            ${PROJECT_SOURCE_DIR}/trantor
+            ${PROJECT_SOURCE_DIR}/${BASE64_CHOICE})
 
 if(WIN32)
   add_subdirectory(third_party/mman-win32)
@@ -200,12 +202,15 @@ endif(NOT WIN32)
 
 find_package(OpenSSL)
 if(OpenSSL_FOUND)
+  set(BASE64_CHOICE base64/openssl)
   target_include_directories(${PROJECT_NAME} PRIVATE ${OPENSSL_INCLUDE_DIR})
   target_link_libraries(${PROJECT_NAME} PRIVATE ${OPENSSL_LIBRARIES})
 else()
   set(DROGON_SOURCES ${DROGON_SOURCES} lib/src/ssl_funcs/Md5.cc
                      lib/src/ssl_funcs/Sha1.cc)
+  set(BASE64_CHOICE base64/cpp-base64)
 endif()
+set(DROGON_SOURCES ${DROGON_SOURCES} ${BASE64_CHOICE}/base64.cpp)
 
 if(BUILD_ORM)
   # find postgres
@@ -268,12 +273,17 @@ if(BUILD_ORM)
   endif()
 endif()
 
-execute_process(COMMAND "git" rev-parse HEAD
-                WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-                OUTPUT_VARIABLE GIT_SHA1
-                ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
-configure_file("${PROJECT_SOURCE_DIR}/cmake/templates/version.h.in"
-               "${PROJECT_SOURCE_DIR}/lib/inc/drogon/version.h" @ONLY)
+add_custom_target(makeVersion)
+add_custom_command(TARGET makeVersion
+                   COMMAND ${PROJECT_SOURCE_DIR}/get_version.sh
+                           ARGS
+                           ${PROJECT_SOURCE_DIR}/lib/inc/drogon/version.h
+                           ${DROGON_MAJOR_VERSION}
+                           ${DROGON_MINOR_VERSION}
+                           ${DROGON_PATCH_VERSION}
+                           ${PRE_RELEASE_STRING}
+                   WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+                   VERBATIM)
 
 if(BUILD_EXAMPLES)
   add_subdirectory(examples)
@@ -310,6 +320,8 @@ set_target_properties(${PROJECT_NAME}
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD_REQUIRED ON)
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_EXTENSIONS OFF)
 set_target_properties(${PROJECT_NAME} PROPERTIES EXPORT_NAME Drogon)
+
+add_dependencies(${PROJECT_NAME} makeVersion)
 
 if(PostgreSQL_FOUND OR MYSQL_FOUND OR SQLITE3_FOUND)
   if(PostgreSQL_FOUND)
@@ -444,6 +456,12 @@ set(DROGON_UTIL_HEADERS
     lib/inc/drogon/utils/OStringStream.h)
 install(FILES ${DROGON_UTIL_HEADERS}
         DESTINATION ${INSTALL_INCLUDE_DIR}/drogon/utils)
+
+set(BASE64_HEADERS
+    ${BASE64_CHOICE}/base64.h)
+
+install(FILES ${BASE64_HEADERS}
+        DESTINATION ${INSTALL_INCLUDE_DIR}/base64)
 
 set(DROGON_PLUGIN_HEADERS lib/inc/drogon/plugins/Plugin.h
                           lib/inc/drogon/plugins/SecureSSLRedirector.h)
