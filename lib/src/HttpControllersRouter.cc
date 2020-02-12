@@ -20,6 +20,7 @@
 #include "HttpAppFrameworkImpl.h"
 #include "FiltersFunction.h"
 #include <algorithm>
+#include <cctype>
 
 using namespace drogon;
 
