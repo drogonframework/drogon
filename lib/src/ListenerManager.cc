@@ -211,3 +211,27 @@ ListenerManager::~ListenerManager()
         (void)f.get();
     }
 }
+
+trantor::EventLoop *ListenerManager::getIOLoop(size_t id) const
+{
+#ifdef __linux__
+    if (id >= listeningloopThreads_.size())
+    {
+        LOG_TRACE << "Loop id (" << id << ") out of range [0-"
+                  << listeningloopThreads_.size() << ").";
+        id %= listeningloopThreads_.size();
+        LOG_TRACE << "Rounded to : " << id;
+    }
+    assert(listeningloopThreads_[id]);
+    return listeningloopThreads_[id]->getLoop();
+#else
+    if (id >= ioLoopThreadPoolPtr_->size())
+    {
+        LOG_TRACE << "Loop id (" << id << ") out of range [0-"
+                  << listeningloopThreads_.size() << ").";
+        id %= ioLoopThreadPoolPtr_->size();
+        LOG_TRACE << "Rounded to : " << id;
+    }
+    return ioLoopThreadPoolPtr_->getLoop(id);
+#endif
+}

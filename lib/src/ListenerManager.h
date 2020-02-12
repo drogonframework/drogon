@@ -45,6 +45,8 @@ class ListenerManager : public trantor::NonCopyable
             &syncAdvices);
     void startListening();
     ~ListenerManager();
+    
+    trantor::EventLoop *getIOLoop(size_t id) const;
 
   private:
     struct ListenerInfo
