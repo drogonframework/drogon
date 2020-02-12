@@ -331,6 +331,8 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     }
 
     virtual trantor::EventLoop *getLoop() const override;
+    
+    virtual trantor::EventLoop *getIOLoop(const unsigned int &id) const override;
 
     virtual void quit() override;
 
