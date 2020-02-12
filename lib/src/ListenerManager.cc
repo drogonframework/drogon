@@ -212,10 +212,10 @@ ListenerManager::~ListenerManager()
     }
 }
 
-trantor::EventLoop *ListenerManager::getIOLoop(const unsigned int &id) const
+trantor::EventLoop *ListenerManager::getIOLoop( size_t id ) const
 {
     //auto ioLoops = ioLoopThreadPoolPtr_->getLoops();  //Not initialized in linux environment   
-    unsigned int id_( id );
+    size_t id_( id );
     if ( id >= listeningloopThreads_.size()){
         id_ %= listeningloopThreads_.size();
 LOG_WARN << "Loop id ("<< id << ") out of range [0-" << listeningloopThreads_.size() << "). Rounded to : " << id_;

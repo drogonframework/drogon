@@ -716,17 +716,11 @@ trantor::EventLoop *HttpAppFrameworkImpl::getLoop() const
     return &loop;
 }
 
-
-
-trantor::EventLoop *HttpAppFrameworkImpl::getIOLoop(const unsigned int &id) const
+trantor::EventLoop *HttpAppFrameworkImpl::getIOLoop( size_t  id ) const
 {
     assert(listenerManagerPtr_);
-    unsigned int id_( id );
-    if ( id_ >= threadNum_ ){
-        id_ %= threadNum_;
-LOG_WARN << "Invalid loop id : " << id << " will be rounded to : " << id_;
-    }
-    return listenerManagerPtr_->getIOLoop(id_);
+
+    return listenerManagerPtr_->getIOLoop( id );
 }
 
 HttpAppFramework &HttpAppFramework::instance()

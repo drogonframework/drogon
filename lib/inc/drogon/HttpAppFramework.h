@@ -111,7 +111,7 @@ class HttpAppFramework : public trantor::NonCopyable
      * REMAKRS : Function assumed the number of threads will not exceed 2^32.
      *           Change to long long for alien computers.
      */
-    virtual trantor::EventLoop *getIOLoop(const unsigned int &id) const = 0;
+    virtual trantor::EventLoop *getIOLoop( size_t id ) const = 0;
 
     /// Set custom 404 page
     /**
