@@ -103,6 +103,16 @@ class HttpAppFramework : public trantor::NonCopyable
      */
     virtual trantor::EventLoop *getLoop() const = 0;
 
+    /// Get an IO loop with id. E.g. 0 <= id < #Total thread-loops
+    /**
+     * @note
+     * The event loop is one of the network IO loops. Use the loop
+     * for events/actions rather then the main thread.
+     * REMAKRS : Function assumed the number of threads will not exceed 2^32.
+     *           Change to long long for alien computers.
+     */
+    virtual trantor::EventLoop *getIOLoop(size_t id) const = 0;
+
     /// Set custom 404 page
     /**
      * @param resp is the object set to 404 response
