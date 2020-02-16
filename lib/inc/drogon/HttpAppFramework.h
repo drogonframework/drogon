@@ -102,7 +102,7 @@ class HttpAppFramework : public trantor::NonCopyable
      * This method can be call in any thread.
      */
     virtual trantor::EventLoop *getLoop() const = 0;
-    
+
     /// Get an IO loop with id. E.g. 0 <= id < #Total thread-loops
     /**
      * @note
