@@ -32,6 +32,6 @@ void version::handleCommand(std::vector<std::string> &parameters)
     std::cout << "A utility for drogon" << std::endl;
     std::cout << "Version: " << DROGON_VERSION << std::endl;
     std::cout << "Git commit: " << DROGON_VERSION_SHA1 << std::endl;
-    std::cout << "Compile config: " << COMPILATION_FLAGS << " " << INCLUDING_DIRS
-              << std::endl;
+    std::cout << "Compile config: " << COMPILATION_FLAGS << " "
+              << INCLUDING_DIRS << std::endl;
 }

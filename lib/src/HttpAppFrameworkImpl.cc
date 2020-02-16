@@ -716,11 +716,11 @@ trantor::EventLoop *HttpAppFrameworkImpl::getLoop() const
     return &loop;
 }
 
-trantor::EventLoop *HttpAppFrameworkImpl::getIOLoop( size_t  id ) const
+trantor::EventLoop *HttpAppFrameworkImpl::getIOLoop(size_t id) const
 {
     assert(listenerManagerPtr_);
 
-    return listenerManagerPtr_->getIOLoop( id );
+    return listenerManagerPtr_->getIOLoop(id);
 }
 
 HttpAppFramework &HttpAppFramework::instance()
