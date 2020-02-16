@@ -166,7 +166,8 @@ HttpAppFramework &HttpAppFrameworkImpl::setGzipStatic(bool useGzipStatic)
 }
 #ifndef _WIN32
 HttpAppFramework &HttpAppFrameworkImpl::enableDynamicViewsLoading(
-    const std::vector<std::string> &libPaths)
+    const std::vector<std::string> &libPaths,
+    const std::string &outputPath)
 {
     assert(!running_);
 
@@ -188,6 +189,17 @@ HttpAppFramework &HttpAppFrameworkImpl::enableDynamicViewsLoading(
                 libFilePaths_.push_back(rootPath_ + "/" + libpath);
         }
     }
+    libFileOutputPath_ = outputPath;
+    if (!libFileOutputPath_.empty())
+    {
+        if (drogon::utils::createPath(libFileOutputPath_) == -1)
+        {
+            LOG_FATAL << "Can't create " << libFileOutputPath_
+                      << " path for dynamic views";
+            exit(-1);
+        }
+    }
+
     return *this;
 }
 #endif
@@ -421,7 +433,7 @@ void HttpAppFrameworkImpl::run()
     if (!libFilePaths_.empty())
     {
         sharedLibManagerPtr_ = std::unique_ptr<SharedLibManager>(
-            new SharedLibManager(getLoop(), libFilePaths_));
+            new SharedLibManager(getLoop(), libFilePaths_, libFileOutputPath_));
     }
 #endif
     // Create all listeners.

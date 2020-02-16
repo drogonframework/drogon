@@ -684,7 +684,7 @@ class HttpAppFramework : public trantor::NonCopyable
 
     /// Set the path to store uploaded files.
     /**
-     * @param uploadPath is the dictionary where the uploaded files are
+     * @param uploadPath is the directory where the uploaded files are
      * stored. if it isn't prefixed with /, ./ or ../, it is relative path
      * of document_root path, The default value is 'uploads'.
      *
@@ -715,13 +715,19 @@ class HttpAppFramework : public trantor::NonCopyable
  *
  * @param libPaths is a vactor that contains paths to view files.
  *
+ * @param outputPath is the directory where the output source files locate. if
+ * it is set to an empty string, drogon use libPaths as output paths. If the
+ * path isn't prefixed with /, it is relative path of the current working
+ * directory.
+ *
  * @note
  * It is disabled by default.
  * This operation can be performed by an option in the configuration file.
  */
 #ifndef _WIN32
     virtual HttpAppFramework &enableDynamicViewsLoading(
-        const std::vector<std::string> &libPaths) = 0;
+        const std::vector<std::string> &libPaths,
+        const std::string &outputPath = "") = 0;
 #endif
 
     /// Set the maximum number of all connections.

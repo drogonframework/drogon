@@ -6,8 +6,7 @@ The following examples can help you understand how to use Drogon:
 2. [client_example](https://github.com/an-tao/drogon/tree/master/examples/client_example/main.cc) - A client example.
 3. [simple_example](https://github.com/an-tao/drogon/tree/master/examples/simple_example) - A simple example showing how to create a web application using Drogon.
 4. [simple_example_test](https://github.com/an-tao/drogon/tree/master/examples/simple_example_test) - Some tests for the `simple_example`.
-5. [simple_reverse_proxy](https://github.com/an-tao/drogon/tree/master/examples/simple_reverse_proxy)
-- A Example showing how to use drogon as a http reverse proxy with a simple round robin.
+5. [simple_reverse_proxy](https://github.com/an-tao/drogon/tree/master/examples/simple_reverse_proxy) - A Example showing how to use drogon as a http reverse proxy with a simple round robin.
 
 ### [TechEmpower Framework Benchmarks](https://github.com/TechEmpower/FrameworkBenchmarks) test suite
 

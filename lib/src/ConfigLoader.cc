@@ -326,7 +326,9 @@ static void loadApp(const Json::Value &app)
                 paths.push_back(viewsPath.asString());
                 LOG_TRACE << "views path:" << paths.back();
             }
-            drogon::app().enableDynamicViewsLoading(paths);
+            auto outputPath =
+                app.get("dynamic_views_output_path", "").asString();
+            drogon::app().enableDynamicViewsLoading(paths, outputPath);
         }
     }
 #endif

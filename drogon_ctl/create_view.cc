@@ -298,7 +298,11 @@ int create_view::createViewFile(const std::string &script_filename)
             std::ofstream oSourceFile(sourceFilename.c_str(),
                                       std::ofstream::out);
             if (!oHeadFile || !oSourceFile)
+            {
+                std::cerr << "Can't open " << headFileName << " or "
+                          << sourceFilename << "\n";
                 return -1;
+            }
 
             newViewHeaderFile(oHeadFile, className);
             newViewSourceFile(oSourceFile, className, infile);
@@ -355,7 +359,8 @@ void create_view::newViewSourceFile(std::ofstream &file,
     std::string buffer;
     char line[8192];
     int import_flag = 0;
-
+    std::string layoutName;
+    std::regex layoutReg("<%layout[ \\t]+(((?!%\\}).)*[^ \\t])[ \\t]*%>");
     while (infile.getline(line, sizeof(line)))
     {
         buffer = line;
@@ -369,6 +374,15 @@ void create_view::newViewSourceFile(std::ofstream &file,
                            lowerBuffer.end(),
                            lowerBuffer.begin(),
                            ::tolower);
+            std::smatch results;
+            if (std::regex_search(buffer, results, layoutReg))
+            {
+                if (results.size() > 1)
+                {
+                    layoutName = results[1].str();
+                    continue;
+                }
+            }
             if ((pos = lowerBuffer.find(cxx_include)) != std::string::npos)
             {
                 // std::cout<<"haha find it!"<<endl;
@@ -421,17 +435,37 @@ void create_view::newViewSourceFile(std::ofstream &file,
 
     // oSrcFile <<"\tstd::string "<<bodyName<<";\n";
     file << "\tdrogon::OStringStream " << streamName << ";\n";
+    file << "\tstd::string layoutName{\"" << layoutName << "\"};\n";
     int cxx_flag = 0;
     while (infile.getline(line, sizeof(line)))
     {
         buffer = line;
         if (buffer.length() > 0)
         {
+            std::smatch results;
+            if (std::regex_search(buffer, results, layoutReg))
+            {
+                if (results.size() > 1)
+                {
+                    continue;
+                }
+            }
+
             std::regex re("\\{%[ \\t]*(((?!%\\}).)*[^ \\t])[ \\t]*%\\}");
             buffer = std::regex_replace(buffer, re, "<%c++$$$$<<$1;%>");
         }
         parseLine(file, buffer, streamName, viewDataName, cxx_flag);
     }
+    file << "if(layoutName.empty())\n{\n";
     file << "std::string ret{std::move(" << streamName << ".str())};\n";
-    file << "return ret;\n}\n";
+    file << "return ret;\n}else\n{\n";
+    file << "auto static templ = DrTemplateBase::newTemplate(layoutName);\n";
+    file << "if(!templ) return \"\";\n";
+    file << "HttpViewData data;\n";
+    file << "auto str = std::move(" << streamName << ".str());\n";
+    file << "if(!str.empty() && str[str.length()-1] == '\\n') "
+            "str.resize(str.length()-1);\n";
+    file << "data[\"\"] = std::move(str);\n";
+    file << "return templ->genText(data);\n";
+    file << "}\n}\n";
 }

@@ -127,6 +127,10 @@
         "dynamic_views_path": [
             "./views"
         ],
+        //dynamic_views_output_path: Default by an empty string which means the output path of source 
+        //files is the path where the csp files locate. If the path isn't prefixed with /, it is relative 
+        //path of the current working directory.
+        "dynamic_views_output_path": "",
         //log: Set log output, drogon output logs to stdout by default
         "log": {
             //log_path: Log file path,empty by default,in which case,logs are output to the stdout
