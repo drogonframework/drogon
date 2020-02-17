@@ -4,6 +4,36 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.0.0-beta14] - 2020-02-17
+
+### API change list
+
+- None
+
+### Added
+
+- Add IOLoop access function
+
+### Changed
+
+- Add support for regular expressions when routing
+
+- Add location configuration for static resources
+
+- Port drogon to Windows
+
+- Support 'password' keyword in configuration files
+
+- Remove get_version.sh
+
+- Modify dynamic view loading algorithm, add 'layout' tag for view generation.
+
+### Fixed
+
+- Fix an issue of out-of-range (#334)
+
+- Fix a bug in views generation (#341)
+
 ## [1.0.0-beta13] - 2020-01-04
 
 ### API change list
@@ -276,7 +306,9 @@ All notable changes to this project will be documented in this file.
 
 ## [1.0.0-beta1] - 2019-06-11
 
-[Unreleased]: https://github.com/an-tao/drogon/compare/v1.0.0-beta13...HEAD
+[Unreleased]: https://github.com/an-tao/drogon/compare/v1.0.0-beta14...HEAD
+
+[1.0.0-beta14]: https://github.com/an-tao/drogon/compare/v1.0.0-beta13...v1.0.0-beta14
 
 [1.0.0-beta13]: https://github.com/an-tao/drogon/compare/v1.0.0-beta12...v1.0.0-beta13
 
