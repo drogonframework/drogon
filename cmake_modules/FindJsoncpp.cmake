@@ -50,7 +50,7 @@ find_path(
 	PATH_SUFFIXES jsoncpp/json json
 )
 
-if (${JSONCPP_INCLUDE_PREFIX} MATCHES "jsoncpp")
+if (${JSONCPP_INCLUDE_PREFIX} MATCHES "jsoncpp/json$")
 	set(JSONCPP_INCLUDE_PREFIX "jsoncpp")
 	set(JSONCPP_INCLUDE_DIRS "${JSONCPP_INCLUDE_DIRS}/jsoncpp")
 else()
