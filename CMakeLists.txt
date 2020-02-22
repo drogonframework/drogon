@@ -13,7 +13,7 @@ set(DROGON_MINOR_VERSION 0)
 set(DROGON_PATCH_VERSION 0)
 set(DROGON_VERSION
     ${DROGON_MAJOR_VERSION}.${DROGON_MINOR_VERSION}.${DROGON_PATCH_VERSION})
-set(DROGON_VERSION_STRING "${DROGON_VERSION}.beta13")
+set(DROGON_VERSION_STRING "${DROGON_VERSION}.beta14")
 
 # Offer the user the choice of overriding the installation directories
 set(INSTALL_LIB_DIR lib CACHE PATH "Installation directory for libraries")
@@ -68,7 +68,8 @@ target_include_directories(
   PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/lib/inc>
          $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/orm_lib/inc>
          $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}>
-         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/trantor>)
+         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/trantor>
+         $<INSTALL_INTERFACE:${INSTALL_INCLUDE_DIR}>)
 
 if(WIN32)
   target_include_directories(
