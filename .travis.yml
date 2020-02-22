@@ -38,6 +38,7 @@ addons:
     - lz4
     - mariadb
     - sqlite3
+    update: true
 before_install:
   - wget https://github.com/google/googletest/archive/release-1.10.0.tar.gz
   - tar xf release-1.10.0.tar.gz
