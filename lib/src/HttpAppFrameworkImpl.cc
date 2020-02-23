@@ -164,6 +164,11 @@ HttpAppFramework &HttpAppFrameworkImpl::setGzipStatic(bool useGzipStatic)
     staticFileRouterPtr_->setGzipStatic(useGzipStatic);
     return *this;
 }
+HttpAppFramework &HttpAppFrameworkImpl::setBrStatic(bool useGzipStatic)
+{
+    staticFileRouterPtr_->setBrStatic(useGzipStatic);
+    return *this;
+}
 #ifndef _WIN32
 HttpAppFramework &HttpAppFrameworkImpl::enableDynamicViewsLoading(
     const std::vector<std::string> &libPaths,

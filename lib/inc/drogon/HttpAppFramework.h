@@ -923,6 +923,17 @@ class HttpAppFramework : public trantor::NonCopyable
      */
     virtual HttpAppFramework &setGzipStatic(bool useGzipStatic) = 0;
 
+    /// Set the br_static option.
+    /**
+     * If it is set to true, when the client requests a static file, drogon
+     * first finds the compressed file with the extension ".br" in the same path
+     * and send the compressed file to the client. The default value is true.
+     *
+     * @note
+     * This operation can be performed by an option in the configuration file.
+     */
+    virtual HttpAppFramework &setBrStatic(bool useGzipStatic) = 0;
+
     /// Set the max body size of the requests received by drogon.
     /**
      * The default value is 1M.

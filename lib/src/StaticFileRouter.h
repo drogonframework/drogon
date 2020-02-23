@@ -42,6 +42,10 @@ class StaticFileRouter
     {
         gzipStaticFlag_ = useGzipStatic;
     }
+    void setBrStatic(bool useBrStatic)
+    {
+        brStaticFlag_ = useBrStatic;
+    }
     void init(const std::vector<trantor::EventLoop *> &ioloops);
 
     void sendStaticFileResponse(
@@ -95,6 +99,7 @@ class StaticFileRouter
     int staticFilesCacheTime_{5};
     bool enableLastModify_{true};
     bool gzipStaticFlag_{true};
+    bool brStaticFlag_{true};
     std::unique_ptr<
         IOThreadStorage<std::unique_ptr<CacheMap<std::string, char>>>>
         staticFilesCacheMap_;
