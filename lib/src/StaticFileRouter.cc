@@ -248,7 +248,22 @@ void StaticFileRouter::sendStaticFileResponse(
         return;
     }
     HttpResponsePtr resp;
-    if (gzipStaticFlag_ &&
+    if (brStaticFlag_ &&
+        req->getHeaderBy("accept-encoding").find("br") != std::string::npos)
+    {
+        // Find compressed file first.
+        auto gzipFileName = filePath + ".br";
+        std::ifstream infile(gzipFileName, std::ifstream::binary);
+        if (infile)
+        {
+            resp =
+                HttpResponse::newFileResponse(gzipFileName,
+                                              "",
+                                              drogon::getContentType(filePath));
+            resp->addHeader("Content-Encoding", "br");
+        }
+    }
+    if (!resp && gzipStaticFlag_ &&
         req->getHeaderBy("accept-encoding").find("gzip") != std::string::npos)
     {
         // Find compressed file first.
@@ -263,6 +278,7 @@ void StaticFileRouter::sendStaticFileResponse(
             resp->addHeader("Content-Encoding", "gzip");
         }
     }
+
     if (!resp)
         resp = HttpResponse::newFileResponse(filePath);
     if (resp->statusCode() != k404NotFound)

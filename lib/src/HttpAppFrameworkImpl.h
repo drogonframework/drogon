@@ -274,6 +274,7 @@ class HttpAppFrameworkImpl : public HttpAppFramework
         return *this;
     }
     virtual HttpAppFramework &setGzipStatic(bool useGzipStatic) override;
+    virtual HttpAppFramework &setBrStatic(bool useGzipStatic) override;
     virtual HttpAppFramework &setClientMaxBodySize(size_t maxSize) override
     {
         clientMaxBodySize_ = maxSize;

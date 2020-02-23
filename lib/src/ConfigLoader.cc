@@ -369,6 +369,8 @@ static void loadApp(const Json::Value &app)
     drogon::app().setPipeliningRequestsNumber(pipeliningReqs);
     auto useGzipStatic = app.get("gzip_static", true).asBool();
     drogon::app().setGzipStatic(useGzipStatic);
+    auto useBrStatic = app.get("br_static", true).asBool();
+    drogon::app().setBrStatic(useBrStatic);
     auto maxBodySize = app.get("client_max_body_size", "1M").asString();
     size_t size;
     if (bytesSize(maxBodySize, size))
