@@ -448,7 +448,7 @@ ContentType getContentType(const std::string &fileName)
                 case 'p':
                     if (extName == "png")
                         return CT_IMAGE_PNG;
-                    else if(extName == "pdf")
+                    else if (extName == "pdf")
                         return CT_APPLICATION_PDF;
                     break;
                 case 's':
