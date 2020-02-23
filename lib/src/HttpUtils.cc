@@ -106,6 +106,11 @@ const string_view &webContentTypeToString(ContentType contenttype)
                 "Content-Type: application/vnd.ms-fontobject\r\n";
             return sv;
         }
+        case CT_APPLICATION_PDF:
+        {
+            static string_view sv = "Content-Type: application/pdf\r\n";
+            return sv;
+        }
         case CT_IMAGE_PNG:
         {
             static string_view sv = "Content-Type: image/png\r\n";
@@ -443,6 +448,8 @@ ContentType getContentType(const std::string &fileName)
                 case 'p':
                     if (extName == "png")
                         return CT_IMAGE_PNG;
+                    else if(extName == "pdf")
+                        return CT_APPLICATION_PDF;
                     break;
                 case 's':
                     if (extName == "svg")
