@@ -407,6 +407,11 @@ void HttpAppFrameworkImpl::run()
         if (access(logPath_.c_str(), R_OK | W_OK) != 0)
 #endif
         {
+            LOG_ERROR << "log file path not exist";
+            abort();
+        }
+        else
+        {
             std::string baseName = logfileBaseName_;
             if (baseName == "")
             {
@@ -420,11 +425,6 @@ void HttpAppFrameworkImpl::run()
                 },
                 [&]() { asyncFileLogger.flush(); });
             asyncFileLogger.setFileSizeLimit(logfileSize_);
-        }
-        else
-        {
-            LOG_ERROR << "log file path not exist";
-            abort();
         }
     }
     if (relaunchOnError_)
