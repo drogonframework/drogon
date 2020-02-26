@@ -64,7 +64,7 @@ HttpRequestPtr toRequest(Json::Value &&pJson);
 template <>
 inline HttpRequestPtr toRequest<Json::Value &>(Json::Value &pJson)
 {
-   return toRequest((const Json::Value &)pJson);
+    return toRequest((const Json::Value &)pJson);
 }
 
 template <>
@@ -361,7 +361,7 @@ class HttpRequest
     template <typename T>
     static HttpRequestPtr newCustomHttpRequest(T &&obj)
     {
-       return toRequest(std::forward<T>(obj));
+        return toRequest(std::forward<T>(obj));
     }
 
     virtual bool isOnSecureConnection() const noexcept = 0;

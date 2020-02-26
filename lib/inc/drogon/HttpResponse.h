@@ -367,7 +367,7 @@ class HttpResponse
     virtual void setBody(const char *body, size_t len) = 0;
 };
 template <>
-inline HttpResponsePtr toResponse<const Json::Value&>(const Json::Value &pJson)
+inline HttpResponsePtr toResponse<const Json::Value &>(const Json::Value &pJson)
 {
     return HttpResponse::newHttpJsonResponse(pJson);
 }
