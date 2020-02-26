@@ -43,6 +43,13 @@ if(WIN32)
 endif(WIN32)
 message(STATUS "bin:" ${INSTALL_BIN_DIR})
 install(TARGETS drogon_ctl RUNTIME DESTINATION ${INSTALL_BIN_DIR})
+if(MSVC)
+add_custom_command(TARGET drogon_ctl POST_BUILD 
+                   COMMAND ${CMAKE_COMMAND}
+                   -DINSTALL_BIN_DIR=${INSTALL_BIN_DIR}
+                   -P ${CMAKE_CURRENT_SOURCE_DIR}/CopyDlls.cmake )
+endif(MSVC)
+
 install(CODE "execute_process( \
     COMMAND ${CMAKE_COMMAND} -E create_symlink \
     ${INSTALL_BIN_DIR}/drogon_ctl \

@@ -1,0 +1,5 @@
+make_directory("${INSTALL_BIN_DIR}")
+file(GLOB DLL_FILES ${CMAKE_CURRENT_BINARY_DIR}/*.dll)
+message(STATUS "dll:" ${DLL_FILES})
+message(STATUS "bin:" ${INSTALL_BIN_DIR})
+file(COPY ${DLL_FILES} DESTINATION "${INSTALL_BIN_DIR}")
