@@ -94,12 +94,7 @@ static std::function<void()> f = [] {
 
 /// Make sure that the main event loop is initialized in the main thread.
 drogon::InitBeforeMainFunction drogon::HttpAppFrameworkImpl::initFirst_([]() {
-    HttpAppFrameworkImpl::instance().getLoop()->runInLoop(
-        f
-        //    []() {
-        //    LOG_TRACE << "Initialize the main event loop in the main thread";
-        //}
-    );
+    HttpAppFrameworkImpl::instance().getLoop()->runInLoop(f);
 });
 
 namespace drogon
