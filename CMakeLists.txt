@@ -155,11 +155,11 @@ if(NOT WIN32)
     message(FATAL_ERROR "uuid lib error")
   endif()
 endif(NOT WIN32)
-if(NOT MSVC)
+if(NOT MSVC OR NOT BUILD_ORM)
   find_package(ZLIB REQUIRED)
   target_include_directories(${PROJECT_NAME} PRIVATE ${ZLIB_INCLUDE_DIR})
   target_link_libraries(${PROJECT_NAME} PRIVATE ${ZLIB_LIBRARIES})
-endif(NOT MSVC)
+endif(NOT MSVC OR NOT BUILD_ORM)
 
 set(DROGON_SOURCES
     lib/src/AOPAdvice.cc

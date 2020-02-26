@@ -58,11 +58,11 @@ HttpRequestPtr toRequest(T &&)
 }
 
 template <>
-HttpRequestPtr toRequest(const Json::Value &pJson);
+HttpRequestPtr toRequest<const Json::Value &>(const Json::Value &pJson);
 template <>
 HttpRequestPtr toRequest(Json::Value &&pJson);
 template <>
-inline HttpRequestPtr toRequest(Json::Value &pJson)
+inline HttpRequestPtr toRequest<Json::Value &>(Json::Value &pJson)
 {
     return toRequest((const Json::Value &)pJson);
 }
@@ -372,7 +372,7 @@ class HttpRequest
 };
 
 template <>
-inline HttpRequestPtr toRequest(const Json::Value &pJson)
+inline HttpRequestPtr toRequest<const Json::Value &>(const Json::Value &pJson)
 {
     return HttpRequest::newHttpJsonRequest(pJson);
 }

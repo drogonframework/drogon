@@ -54,11 +54,11 @@ HttpResponsePtr toResponse(T &&)
     exit(1);
 }
 template <>
-HttpResponsePtr toResponse(const Json::Value &pJson);
+HttpResponsePtr toResponse<const Json::Value &>(const Json::Value &pJson);
 template <>
 HttpResponsePtr toResponse(Json::Value &&pJson);
 template <>
-inline HttpResponsePtr toResponse(Json::Value &pJson)
+inline HttpResponsePtr toResponse<Json::Value &>(Json::Value &pJson)
 {
     return toResponse((const Json::Value &)pJson);
 }
@@ -367,7 +367,7 @@ class HttpResponse
     virtual void setBody(const char *body, size_t len) = 0;
 };
 template <>
-inline HttpResponsePtr toResponse(const Json::Value &pJson)
+inline HttpResponsePtr toResponse<const Json::Value &>(const Json::Value &pJson)
 {
     return HttpResponse::newHttpJsonResponse(pJson);
 }

@@ -87,11 +87,14 @@ HttpAppFrameworkImpl::HttpAppFrameworkImpl()
       uploadPath_(rootPath_ + "uploads")
 {
 }
+
+static std::function<void()> f = [] {
+    LOG_TRACE << "Initialize the main event loop in the main thread";
+};
+
 /// Make sure that the main event loop is initialized in the main thread.
 drogon::InitBeforeMainFunction drogon::HttpAppFrameworkImpl::initFirst_([]() {
-    HttpAppFrameworkImpl::instance().getLoop()->runInLoop([]() {
-        LOG_TRACE << "Initialize the main event loop in the main thread";
-    });
+    HttpAppFrameworkImpl::instance().getLoop()->runInLoop(f);
 });
 
 namespace drogon

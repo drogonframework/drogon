@@ -111,7 +111,7 @@ class ConstReverseRowIterator : private ConstRowIterator
     using iterator_type::iterator_category;
     using iterator_type::pointer;
     using iterator_type::reference;
-    using iterator_type::value_type;
+    // using iterator_type::value_type;
 
     ConstReverseRowIterator(const ConstReverseRowIterator &rhs)
         : ConstRowIterator(rhs)

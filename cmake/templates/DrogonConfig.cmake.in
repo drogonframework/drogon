@@ -3,15 +3,15 @@
 #  DROGON_INCLUDE_DIRS - include directories for Drogon
 #  DROGON_LIBRARIES    - libraries to link against
 #  DROGON_EXECUTABLE   - the drogon_ctl executable
-#  DROGON_FOUND
+#  Drogon_FOUND
 # This module defines the following IMPORTED target:
 # Drogon::Drogon
 
 @PACKAGE_INIT@
 
-if(NOT TRANTOR_FOUND)
+if(NOT Trantor_FOUND)
 # find trantor
-  find_package(Trantor REQUIRED)
+  find_package(Trantor CONFIG REQUIRED)
 endif()
 
 # Our library dependencies (contains definitions for IMPORTED targets)
@@ -24,4 +24,3 @@ endif()
 get_target_property(DROGON_INCLUDE_DIRS Drogon::Drogon INTERFACE_INCLUDE_DIRECTORIES)
 set(DROGON_LIBRARIES Drogon::Drogon)
 set(DROGON_EXECUTABLE drogon_ctl)
-set(DROGON_FOUND TRUE)
