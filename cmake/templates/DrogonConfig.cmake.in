@@ -9,10 +9,9 @@
 
 @PACKAGE_INIT@
 
-if(NOT Trantor_FOUND)
-# find trantor
-  find_package(Trantor CONFIG REQUIRED)
-endif()
+include(CMakeFindDependencyMacro)
+find_dependency(Trantor)
+
 
 # Our library dependencies (contains definitions for IMPORTED targets)
 
