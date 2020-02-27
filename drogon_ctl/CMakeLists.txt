@@ -44,8 +44,10 @@ endif(WIN32)
 message(STATUS "bin:" ${INSTALL_BIN_DIR})
 install(TARGETS drogon_ctl RUNTIME DESTINATION ${INSTALL_BIN_DIR})
 if(WIN32)
+set(CTL_FILE $<TARGET_FILE:drogon_ctl>)
 add_custom_command(TARGET drogon_ctl POST_BUILD 
                    COMMAND ${CMAKE_COMMAND}
+                   -DCTL_FILE=${CTL_FILE}
                    -DINSTALL_BIN_DIR=${INSTALL_BIN_DIR}
                    -P ${CMAKE_CURRENT_SOURCE_DIR}/CopyDlls.cmake )
 endif(WIN32)
