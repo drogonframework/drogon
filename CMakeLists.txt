@@ -21,11 +21,7 @@ set(INSTALL_BIN_DIR bin CACHE PATH "Installation directory for executables")
 set(INSTALL_INCLUDE_DIR
     include
     CACHE PATH "Installation directory for header files")
-if(WIN32 AND NOT CYGWIN)
-  set(DEF_INSTALL_DROGON_CMAKE_DIR cmake)
-else()
-  set(DEF_INSTALL_DROGON_CMAKE_DIR lib/cmake/Drogon)
-endif()
+set(DEF_INSTALL_DROGON_CMAKE_DIR lib/cmake/Drogon)
 set(INSTALL_DROGON_CMAKE_DIR
     ${DEF_INSTALL_DROGON_CMAKE_DIR}
     CACHE PATH "Installation directory for cmake files")
@@ -155,11 +151,6 @@ if(NOT WIN32)
     message(FATAL_ERROR "uuid lib error")
   endif()
 endif(NOT WIN32)
-if(NOT MSVC OR NOT BUILD_ORM)
-  find_package(ZLIB REQUIRED)
-  target_include_directories(${PROJECT_NAME} PRIVATE ${ZLIB_INCLUDE_DIR})
-  target_link_libraries(${PROJECT_NAME} PRIVATE ${ZLIB_LIBRARIES})
-endif(NOT MSVC OR NOT BUILD_ORM)
 
 set(DROGON_SOURCES
     lib/src/AOPAdvice.cc
@@ -199,14 +190,6 @@ if(NOT WIN32)
   set(DROGON_SOURCES ${DROGON_SOURCES} lib/src/SharedLibManager.cc)
 endif(NOT WIN32)
 
-find_package(OpenSSL)
-if(OpenSSL_FOUND)
-  target_include_directories(${PROJECT_NAME} PRIVATE ${OPENSSL_INCLUDE_DIR})
-  target_link_libraries(${PROJECT_NAME} PRIVATE ${OPENSSL_LIBRARIES})
-else()
-  set(DROGON_SOURCES ${DROGON_SOURCES} lib/src/ssl_funcs/Md5.cc
-                     lib/src/ssl_funcs/Sha1.cc)
-endif()
 
 if(BUILD_ORM)
   # find postgres
@@ -268,6 +251,25 @@ if(BUILD_ORM)
                        orm_lib/src/sqlite3_impl/Sqlite3ResultImpl.cc)
   endif()
 endif()
+
+if((NOT MSVC) OR (NOT BUILD_ORM))
+  find_package(ZLIB REQUIRED)
+  target_include_directories(${PROJECT_NAME} PRIVATE ${ZLIB_INCLUDE_DIR})
+  target_link_libraries(${PROJECT_NAME} PRIVATE ${ZLIB_LIBRARIES})
+  message(STATUS "zlib:" ${ZLIB_LIBRARIES})
+endif((NOT MSVC) OR (NOT BUILD_ORM))
+
+find_package(OpenSSL)
+if(OpenSSL_FOUND)
+  target_include_directories(${PROJECT_NAME} PRIVATE ${OPENSSL_INCLUDE_DIR})
+  target_link_libraries(${PROJECT_NAME} PRIVATE ${OPENSSL_LIBRARIES})
+else()
+  set(DROGON_SOURCES ${DROGON_SOURCES} lib/src/ssl_funcs/Md5.cc
+                     lib/src/ssl_funcs/Sha1.cc)
+endif()
+if(WIN32)
+  target_link_libraries(${PROJECT_NAME} PRIVATE ws2_32)
+endif(WIN32)
 
 execute_process(COMMAND "git" rev-parse HEAD
                 WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
