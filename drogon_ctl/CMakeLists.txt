@@ -50,14 +50,13 @@ add_custom_command(TARGET drogon_ctl POST_BUILD
                    -DCTL_FILE=${CTL_FILE}
                    -DINSTALL_BIN_DIR=${INSTALL_BIN_DIR}
                    -P ${CMAKE_CURRENT_SOURCE_DIR}/CopyDlls.cmake )
-endif(WIN32)
-if(NOT WIN32)
+else(WIN32)
 install(CODE "execute_process( \
     COMMAND ${CMAKE_COMMAND} -E create_symlink \
     ${INSTALL_BIN_DIR}/drogon_ctl \
     ${INSTALL_BIN_DIR}/dg_ctl \
     )")
-endif(NOT WIN32)
+endif(WIN32)
 set(ctl_targets _drogon_ctl drogon_ctl)
 set_property(TARGET ${ctl_targets} PROPERTY CXX_STANDARD ${DROGON_CXX_STANDARD})
 set_property(TARGET ${ctl_targets} PROPERTY CXX_STANDARD_REQUIRED ON)
