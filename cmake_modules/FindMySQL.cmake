@@ -98,6 +98,9 @@ if(MYSQL_INCLUDE_DIR AND MYSQL_LIB_DIR)
   if(MSVC)
     set(MYSQL_CLIENT_LIBS ${MYSQL_CLIENT_LIBS} shlwapi)
   endif(MSVC)
+  if(WIN32)
+    set(MYSQL_CLIENT_LIBS ${MYSQL_CLIENT_LIBS} ws2_32)
+  endif(WIN32)
 
   message(
     STATUS
