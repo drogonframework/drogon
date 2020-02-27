@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
 
-project(drogon CXX)
+project(drogon)
 message(STATUS "compiler: " ${CMAKE_CXX_COMPILER_ID})
 option(BUILD_CTL "Build drogon_ctl" ON)
 option(BUILD_EXAMPLES "Build examples" ON)
@@ -79,18 +79,13 @@ list(APPEND INCLUDE_DIRS_FOR_DYNAMIC_VIEW
             ${PROJECT_SOURCE_DIR}/orm_lib/inc
             ${PROJECT_SOURCE_DIR}/trantor)
 
-if(WIN32)
-  add_subdirectory(third_party/mman-win32)
-endif(WIN32)
 add_subdirectory(trantor)
 
 target_link_libraries(${PROJECT_NAME} PUBLIC trantor)
 
-if(WIN32)
-  target_link_libraries(${PROJECT_NAME} PRIVATE mman)
-else()
+if(NOT WIN32)
   target_link_libraries(${PROJECT_NAME} PRIVATE dl)
-endif(WIN32)
+endif(NOT WIN32)
 
 if(DROGON_CXX_STANDARD LESS 17)
   # With C++14, use boost to support any and string_view
@@ -188,6 +183,8 @@ set(DROGON_SOURCES
 
 if(NOT WIN32)
   set(DROGON_SOURCES ${DROGON_SOURCES} lib/src/SharedLibManager.cc)
+else(NOT WIN32)
+  set(DROGON_SOURCES ${DROGON_SOURCES} third_party/mman-win32/mman.c)
 endif(NOT WIN32)
 
 
