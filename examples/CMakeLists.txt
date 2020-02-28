@@ -48,17 +48,6 @@ add_executable(pipelining_test simple_example_test/HttpPipeliningTest.cc)
 add_executable(websocket_test simple_example_test/WebSocketTest.cc)
 add_executable(multiple_ws_test simple_example_test/MultipleWsTest.cc)
 
-if(NOT WIN32)
-  add_custom_command(
-    TARGET webapp POST_BUILD
-    COMMAND gzip
-            ARGS
-            -c
-            ${CMAKE_CURRENT_SOURCE_DIR}/simple_example/index.html
-            >
-            ${CMAKE_CURRENT_BINARY_DIR}/index.html.gz
-    VERBATIM)
-endif(NOT WIN32)
 add_custom_command(
   TARGET webapp POST_BUILD
   COMMAND ${CMAKE_COMMAND}
@@ -67,6 +56,7 @@ add_custom_command(
           ${PROJECT_SOURCE_DIR}/config.example.json
           ${PROJECT_SOURCE_DIR}/drogon.jpg
           ${CMAKE_CURRENT_SOURCE_DIR}/simple_example/index.html
+          ${CMAKE_CURRENT_SOURCE_DIR}/simple_example/index.html.gz
           ${PROJECT_SOURCE_DIR}/trantor/trantor/tests/server.pem
           $<TARGET_FILE_DIR:webapp>)
 
