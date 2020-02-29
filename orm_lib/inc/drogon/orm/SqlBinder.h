@@ -50,7 +50,7 @@ inline uint64_t htonll(uint64_t value)
 {
     return htonT<uint64_t>(value);
 }
-inline uint64_t ntonll(uint64_t value)
+inline uint64_t ntohll(uint64_t value)
 {
     return htonll(value);
 }
@@ -330,13 +330,13 @@ class SqlBinder
             switch (sizeof(T))
             {
                 case 2:
-                    *std::static_pointer_cast<short>(obj) = htons(parameter);
+                    *std::static_pointer_cast<uint16_t>(obj) = htons(parameter);
                     break;
                 case 4:
-                    *std::static_pointer_cast<int>(obj) = htonl(parameter);
+                    *std::static_pointer_cast<uint32_t>(obj) = htonl(parameter);
                     break;
                 case 8:
-                    *std::static_pointer_cast<int64_t>(obj) = htonll(parameter);
+                    *std::static_pointer_cast<uint64_t>(obj) = htonll(parameter);
                     break;
                 case 1:
                 default:
