@@ -294,7 +294,7 @@ void press::outputResults()
     auto microSecs = now.microSecondsSinceEpoch() -
                      statistics_.startDate_.microSecondsSinceEpoch();
     double seconds = (double)microSecs / 1000000.0;
-    size_t rps = statistics_.numOfGoodResponse_ / seconds;
+    size_t rps = static_cast<size_t>(statistics_.numOfGoodResponse_ / seconds);
     std::cout << std::endl;
     std::cout << "TOTALS:   " << numOfConnections_ << " connect, "
               << numOfRequests_ << " requests, "

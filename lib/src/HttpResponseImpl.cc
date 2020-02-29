@@ -225,13 +225,13 @@ void HttpResponseImpl::makeHeaderString(
     {
         if (sendfileName_.empty())
         {
-            long unsigned int bodyLength =
+            size_t bodyLength =
                 bodyPtr_ ? bodyPtr_->length()
                          : (bodyViewPtr_ ? bodyViewPtr_->length() : 0);
             len = snprintf(buf,
                            sizeof buf,
                            "Content-Length: %lu\r\n",
-                           bodyLength);
+                           static_cast<unsigned long>(bodyLength));
         }
         else
         {
@@ -311,13 +311,13 @@ void HttpResponseImpl::renderToBuffer(trantor::MsgBuffer &buffer)
         {
             if (sendfileName_.empty())
             {
-                long unsigned int bodyLength =
+                auto bodyLength =
                     bodyPtr_ ? bodyPtr_->length()
                              : (bodyViewPtr_ ? bodyViewPtr_->length() : 0);
                 len = snprintf(buf,
                                sizeof buf,
                                "Content-Length: %lu\r\n",
-                               bodyLength);
+                               static_cast<unsigned long>(bodyLength));
             }
             else
             {
@@ -329,9 +329,8 @@ void HttpResponseImpl::renderToBuffer(trantor::MsgBuffer &buffer)
                 }
                 len = snprintf(buf,
                                sizeof buf,
-                               "Content-Length: %llu\r\n",
-                               static_cast<long long unsigned int>(
-                                   filestat.st_size));
+                               "Content-Length: %lu\r\n",
+                               static_cast<unsigned long>(filestat.st_size));
             }
 
             buffer.append(buf, len);

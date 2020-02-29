@@ -320,13 +320,17 @@ HttpAppFramework &HttpAppFrameworkImpl::setLogPath(
 {
     if (logPath == "")
         return *this;
+#ifdef _WIN32
+    if (_access(logPath.c_str(), 0) != 0)
+#else
     if (access(logPath.c_str(), 0) != 0)
+#endif
     {
         std::cerr << "Log path dose not exist!\n";
         exit(1);
     }
 #ifdef _WIN32
-    if (access(logPath.c_str(), 06) != 0)
+    if (_access(logPath.c_str(), 06) != 0)
 #else
     if (access(logPath.c_str(), R_OK | W_OK) != 0)
 #endif
@@ -362,7 +366,7 @@ void HttpAppFrameworkImpl::run()
     for (int i = 0; i < 256; ++i)
     {
         char dirName[4];
-        sprintf(dirName, "%02x", i);
+        snprintf(dirName, sizeof(dirName), "%02x", i);
         std::transform(dirName, dirName + 2, dirName, toupper);
         utils::createPath(getUploadPath() + "/tmp/" + dirName);
     }
@@ -405,7 +409,7 @@ void HttpAppFrameworkImpl::run()
     if (!logPath_.empty())
     {
 #ifdef _WIN32
-        if (access(logPath_.c_str(), 06) != 0)
+        if (_access(logPath_.c_str(), 06) != 0)
 #else
         if (access(logPath_.c_str(), R_OK | W_OK) != 0)
 #endif

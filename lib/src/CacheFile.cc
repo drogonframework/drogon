@@ -26,7 +26,14 @@ using namespace drogon;
 CacheFile::CacheFile(const std::string &path, bool autoDelete)
     : autoDelete_(autoDelete), path_(path)
 {
+#ifndef _MSC_VER
     file_ = fopen(path_.data(), "wb+");
+#else
+    if (fopen_s(&file_, path_.data(), "wb+") != 0)
+    {
+        file_ = nullptr;
+    }
+#endif
 }
 
 CacheFile::~CacheFile()
@@ -38,7 +45,11 @@ CacheFile::~CacheFile()
     if (autoDelete_ && file_)
     {
         fclose(file_);
+#ifdef _WIN32
+        _unlink(path_.data());
+#else
         unlink(path_.data());
+#endif
     }
     else if (file_)
     {
@@ -66,7 +77,11 @@ char *CacheFile::data()
     if (!data_)
     {
         fflush(file_);
+#ifdef _WIN32
+        auto fd = _fileno(file_);
+#else
         auto fd = fileno(file_);
+#endif
         dataLength_ = length();
         data_ = static_cast<char *>(
             mmap(nullptr, dataLength_, PROT_READ, MAP_SHARED, fd, 0));

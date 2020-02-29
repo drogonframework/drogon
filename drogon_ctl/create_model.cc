@@ -116,7 +116,7 @@ void create_model::createModelClassFromPG(
                           << std::endl;
                 return;
             }
-            for (size_t i = 0; i < r.size(); ++i)
+            for (Result::SizeType i = 0; i < r.size(); ++i)
             {
                 auto row = r[i];
                 ColumnInfo info;
@@ -977,13 +977,17 @@ void create_model::createModel(const std::string &path,
     closedir(dp);
 #endif
     auto configFile = path + "/model.json";
+#ifdef _WIN32
+    if (_access(configFile.c_str(), 0) != 0)
+#else
     if (access(configFile.c_str(), 0) != 0)
+#endif
     {
         std::cerr << "Config file " << configFile << " not found!" << std::endl;
         exit(1);
     }
 #ifdef _WIN32
-    if (access(configFile.c_str(), 04) != 0)
+    if (_access(configFile.c_str(), 04) != 0)
 #else
     if (access(configFile.c_str(), R_OK) != 0)
 #endif

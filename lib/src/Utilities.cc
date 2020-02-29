@@ -69,9 +69,11 @@ std::string genRandomString(int length)
     static const char char_space[] =
         "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
     static std::once_flag once;
-    static const int len = strlen(char_space);
-    static const int randMax = RAND_MAX - (RAND_MAX % len);
-    std::call_once(once, []() { std::srand(time(nullptr)); });
+    static const size_t len = strlen(char_space);
+    static const size_t randMax = RAND_MAX - (RAND_MAX % len);
+    std::call_once(once, []() {
+        std::srand(static_cast<unsigned int>(time(nullptr)));
+    });
 
     int i;
     std::string str;
@@ -381,7 +383,7 @@ std::string base64Encode(const unsigned char *bytes_to_encode,
 
 std::vector<char> base64DecodeToVector(const std::string &encoded_string)
 {
-    int in_len = encoded_string.size();
+    auto in_len = encoded_string.size();
     int i = 0;
     int in_{0};
     char char_array_4[4], char_array_3[3];
@@ -396,7 +398,8 @@ std::vector<char> base64DecodeToVector(const std::string &encoded_string)
         if (i == 4)
         {
             for (i = 0; i < 4; ++i)
-                char_array_4[i] = base64Chars.find(char_array_4[i]);
+                char_array_4[i] =
+                    static_cast<char>(base64Chars.find(char_array_4[i]));
 
             char_array_3[0] =
                 (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
@@ -416,7 +419,8 @@ std::vector<char> base64DecodeToVector(const std::string &encoded_string)
             char_array_4[j] = 0;
 
         for (int j = 0; j < 4; ++j)
-            char_array_4[j] = base64Chars.find(char_array_4[j]);
+            char_array_4[j] =
+                static_cast<char>(base64Chars.find(char_array_4[j]));
 
         char_array_3[0] =
             (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
@@ -433,7 +437,7 @@ std::vector<char> base64DecodeToVector(const std::string &encoded_string)
 
 std::string base64Decode(const std::string &encoded_string)
 {
-    int in_len = encoded_string.size();
+    auto in_len = encoded_string.size();
     int i = 0;
     int in_{0};
     unsigned char char_array_4[4], char_array_3[3];
@@ -447,7 +451,8 @@ std::string base64Decode(const std::string &encoded_string)
         if (i == 4)
         {
             for (i = 0; i < 4; ++i)
-                char_array_4[i] = base64Chars.find(char_array_4[i]);
+                char_array_4[i] = static_cast<unsigned char>(
+                    base64Chars.find(char_array_4[i]));
 
             char_array_3[0] =
                 (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
@@ -467,7 +472,8 @@ std::string base64Decode(const std::string &encoded_string)
             char_array_4[j] = 0;
 
         for (int j = 0; j < 4; ++j)
-            char_array_4[j] = base64Chars.find(char_array_4[j]);
+            char_array_4[j] =
+                static_cast<unsigned char>(base64Chars.find(char_array_4[j]));
 
         char_array_3[0] =
             (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
@@ -778,9 +784,9 @@ std::string gzipCompress(const char *data, const size_t ndata)
             return std::string{};
         }
         std::string outstr;
-        outstr.resize(compressBound(ndata));
+        outstr.resize(compressBound(static_cast<uLong>(ndata)));
         strm.next_in = (Bytef *)data;
-        strm.avail_in = ndata;
+        strm.avail_in = static_cast<uInt>(ndata);
         int ret;
         do
         {
@@ -789,7 +795,7 @@ std::string gzipCompress(const char *data, const size_t ndata)
                 outstr.resize(strm.total_out * 2);
             }
             assert(outstr.size() >= strm.total_out);
-            strm.avail_out = outstr.size() - strm.total_out;
+            strm.avail_out = static_cast<uInt>(outstr.size() - strm.total_out);
             strm.next_out = (Bytef *)outstr.data() + strm.total_out;
             ret = deflate(&strm, Z_FINISH); /* no bad return value */
             if (ret == Z_STREAM_ERROR)
@@ -820,7 +826,7 @@ std::string gzipDecompress(const char *data, const size_t ndata)
 
     z_stream strm = {0};
     strm.next_in = (Bytef *)data;
-    strm.avail_in = ndata;
+    strm.avail_in = static_cast<uInt>(ndata);
     strm.total_out = 0;
     strm.zalloc = Z_NULL;
     strm.zfree = Z_NULL;
@@ -837,7 +843,8 @@ std::string gzipDecompress(const char *data, const size_t ndata)
             decompressed.resize(decompressed.length() * 2);
         }
         strm.next_out = (Bytef *)decompressed.data() + strm.total_out;
-        strm.avail_out = decompressed.length() - strm.total_out;
+        strm.avail_out =
+            static_cast<uInt>(decompressed.length() - strm.total_out);
         // Inflate another chunk.
         int status = inflate(&strm, Z_SYNC_FLUSH);
         if (status == Z_STREAM_END)
@@ -938,7 +945,7 @@ int createPath(const std::string &path)
     auto tmpPath = path;
     std::stack<std::string> pathStack;
 #ifdef _WIN32
-    while (access(tmpPath.c_str(), 06) != 0)
+    while (_access(tmpPath.c_str(), 06) != 0)
 #else
     while (access(tmpPath.c_str(), F_OK) != 0)
 #endif
@@ -980,7 +987,7 @@ int createPath(const std::string &path)
         pathStack.pop();
 
 #ifdef _WIN32
-        if (mkdir(tmpPath.c_str()) == -1)
+        if (_mkdir(tmpPath.c_str()) == -1)
 #else
         if (mkdir(tmpPath.c_str(), 0755) == -1)
 #endif

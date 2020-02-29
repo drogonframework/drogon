@@ -75,7 +75,7 @@ void WebSocketConnectionImpl::sendWsData(const char *msg,
 
     if (len <= 125)
     {
-        bytesFormatted[1] = len;
+        bytesFormatted[1] = static_cast<char>(len);
         indexStartRawData = 2;
     }
     else if (len <= 65535)
@@ -105,7 +105,9 @@ void WebSocketConnectionImpl::sendWsData(const char *msg,
     {
         // Add masking key;
         static std::once_flag once;
-        std::call_once(once, []() { std::srand(time(nullptr)); });
+        std::call_once(once, []() {
+            std::srand(static_cast<unsigned int>(time(nullptr)));
+        });
         int random = std::rand();
 
         bytesFormatted[1] = (bytesFormatted[1] | 0x80);
@@ -278,7 +280,7 @@ bool WebSocketMessageParser::parse(trantor::MsgBuffer *buffer)
             if (buffer->readableBytes() >= (indexFirstMask + 4 + length))
             {
                 auto masks = buffer->peek() + indexFirstMask;
-                int indexFirstDataByte = indexFirstMask + 4;
+                auto indexFirstDataByte = indexFirstMask + 4;
                 auto rawData = buffer->peek() + indexFirstDataByte;
                 auto oldLen = message_.length();
                 message_.resize(oldLen + length);

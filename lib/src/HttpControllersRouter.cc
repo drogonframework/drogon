@@ -540,7 +540,8 @@ void HttpControllersRouter::doControllerHandler(
     {
         if (responsePtr->expiredTime() == 0 ||
             (trantor::Date::now() <
-             responsePtr->creationDate().after(responsePtr->expiredTime())))
+             responsePtr->creationDate().after(
+                 static_cast<double>(responsePtr->expiredTime()))))
         {
             // use cached response!
             LOG_TRACE << "Use cached response";
