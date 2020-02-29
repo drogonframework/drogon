@@ -1,0 +1,6 @@
+make_directory("${INSTALL_BIN_DIR}")
+get_filename_component(CTL_PATH ${CTL_FILE} DIRECTORY)
+file(GLOB DLL_FILES ${CTL_PATH}/*.dll)
+file(COPY ${DLL_FILES} DESTINATION ${INSTALL_BIN_DIR})
+file(COPY ${CTL_FILE} DESTINATION ${INSTALL_BIN_DIR})
+file(RENAME ${INSTALL_BIN_DIR}/drogon_ctl.exe ${INSTALL_BIN_DIR}/dg_ctl.exe)

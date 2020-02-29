@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
 
-project(drogon CXX)
+project(drogon)
 message(STATUS "compiler: " ${CMAKE_CXX_COMPILER_ID})
 option(BUILD_CTL "Build drogon_ctl" ON)
 option(BUILD_EXAMPLES "Build examples" ON)
@@ -21,11 +21,7 @@ set(INSTALL_BIN_DIR bin CACHE PATH "Installation directory for executables")
 set(INSTALL_INCLUDE_DIR
     include
     CACHE PATH "Installation directory for header files")
-if(WIN32 AND NOT CYGWIN)
-  set(DEF_INSTALL_DROGON_CMAKE_DIR cmake)
-else()
-  set(DEF_INSTALL_DROGON_CMAKE_DIR lib/cmake/Drogon)
-endif()
+set(DEF_INSTALL_DROGON_CMAKE_DIR lib/cmake/Drogon)
 set(INSTALL_DROGON_CMAKE_DIR
     ${DEF_INSTALL_DROGON_CMAKE_DIR}
     CACHE PATH "Installation directory for cmake files")
@@ -49,9 +45,9 @@ if(BUILD_DROGON_SHARED)
     set(CMAKE_INSTALL_RPATH "${INSTALL_LIB_DIR}")
   endif("${isSystemDir}" STREQUAL "-1")
   add_library(${PROJECT_NAME} SHARED)
-else()
+else(BUILD_DROGON_SHARED)
   add_library(${PROJECT_NAME} STATIC)
-endif()
+endif(BUILD_DROGON_SHARED)
 
 include(CheckIncludeFileCXX)
 
@@ -59,9 +55,9 @@ check_include_file_cxx(any HAS_ANY)
 check_include_file_cxx(string_view HAS_STRING_VIEW)
 if(HAS_ANY AND HAS_STRING_VIEW)
   set(DROGON_CXX_STANDARD 17)
-else()
+else(HAS_ANY AND HAS_STRING_VIEW)
   set(DROGON_CXX_STANDARD 14)
-endif()
+endif(HAS_ANY AND HAS_STRING_VIEW)
 
 target_include_directories(
   ${PROJECT_NAME}
@@ -83,18 +79,13 @@ list(APPEND INCLUDE_DIRS_FOR_DYNAMIC_VIEW
             ${PROJECT_SOURCE_DIR}/orm_lib/inc
             ${PROJECT_SOURCE_DIR}/trantor)
 
-if(WIN32)
-  add_subdirectory(third_party/mman-win32)
-endif(WIN32)
 add_subdirectory(trantor)
 
 target_link_libraries(${PROJECT_NAME} PUBLIC trantor)
 
-if(WIN32)
-  target_link_libraries(${PROJECT_NAME} PRIVATE mman)
-else()
+if(NOT WIN32)
   target_link_libraries(${PROJECT_NAME} PRIVATE dl)
-endif(WIN32)
+endif(NOT WIN32)
 
 if(DROGON_CXX_STANDARD LESS 17)
   # With C++14, use boost to support any and string_view
@@ -102,9 +93,9 @@ if(DROGON_CXX_STANDARD LESS 17)
   find_package(Boost 1.61.0 REQUIRED)
   target_include_directories(${PROJECT_NAME} PUBLIC ${Boost_INCLUDE_DIRS})
   list(APPEND INCLUDE_DIRS_FOR_DYNAMIC_VIEW ${Boost_INCLUDE_DIRS})
-else()
+else(DROGON_CXX_STANDARD LESS 17)
   message(STATUS "use c++17")
-endif()
+endif(DROGON_CXX_STANDARD LESS 17)
 
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules/)
 
@@ -133,7 +124,7 @@ if(NOT WIN32)
       FATAL_ERROR
         "jsoncpp lib is too old,please get new version from https://github.com/open-source-parsers/jsoncpp"
       )
-  endif()
+  endif(jsoncpp_ver LESS 1.7)
 
   find_package(UUID REQUIRED)
   target_include_directories(${PROJECT_NAME} PRIVATE ${UUID_INCLUDE_DIR})
@@ -155,11 +146,6 @@ if(NOT WIN32)
     message(FATAL_ERROR "uuid lib error")
   endif()
 endif(NOT WIN32)
-if(NOT MSVC OR NOT BUILD_ORM)
-  find_package(ZLIB REQUIRED)
-  target_include_directories(${PROJECT_NAME} PRIVATE ${ZLIB_INCLUDE_DIR})
-  target_link_libraries(${PROJECT_NAME} PRIVATE ${ZLIB_LIBRARIES})
-endif(NOT MSVC OR NOT BUILD_ORM)
 
 set(DROGON_SOURCES
     lib/src/AOPAdvice.cc
@@ -197,16 +183,9 @@ set(DROGON_SOURCES
 
 if(NOT WIN32)
   set(DROGON_SOURCES ${DROGON_SOURCES} lib/src/SharedLibManager.cc)
+else(NOT WIN32)
+  set(DROGON_SOURCES ${DROGON_SOURCES} third_party/mman-win32/mman.c)
 endif(NOT WIN32)
-
-find_package(OpenSSL)
-if(OpenSSL_FOUND)
-  target_include_directories(${PROJECT_NAME} PRIVATE ${OPENSSL_INCLUDE_DIR})
-  target_link_libraries(${PROJECT_NAME} PRIVATE ${OPENSSL_LIBRARIES})
-else()
-  set(DROGON_SOURCES ${DROGON_SOURCES} lib/src/ssl_funcs/Md5.cc
-                     lib/src/ssl_funcs/Sha1.cc)
-endif()
 
 if(BUILD_ORM)
   # find postgres
@@ -224,18 +203,18 @@ if(BUILD_ORM)
                   ${PROJECT_SOURCE_DIR}/cmake/tests/test_libpq_batch_mode.cc
                   LINK_LIBRARIES ${PostgreSQL_LIBRARIES}
                   CMAKE_FLAGS "-DINCLUDE_DIRECTORIES=${PostgreSQL_INCLUDE_DIR}")
-    endif()
+    endif(LIBPQ_BATCH_MODE)
     if(libpq_supports_batch)
       message(STATUS "The libpq supports batch mode")
       option(LIBPQ_SUPPORTS_BATCH_MODE "libpq batch mode" ON)
       set(DROGON_SOURCES ${DROGON_SOURCES}
                          orm_lib/src/postgresql_impl/PgBatchConnection.cc)
-    else()
+    else(libpq_supports_batch)
       option(LIBPQ_SUPPORTS_BATCH_MODE "libpq batch mode" OFF)
       set(DROGON_SOURCES ${DROGON_SOURCES}
                          orm_lib/src/postgresql_impl/PgConnection.cc)
-    endif()
-  endif()
+    endif(libpq_supports_batch)
+  endif(PostgreSQL_FOUND)
 
   # Find mysql, only mariadb client liberary is supported
   find_package(MySQL)
@@ -266,8 +245,24 @@ if(BUILD_ORM)
     set(DROGON_SOURCES ${DROGON_SOURCES}
                        orm_lib/src/sqlite3_impl/Sqlite3Connection.cc
                        orm_lib/src/sqlite3_impl/Sqlite3ResultImpl.cc)
-  endif()
-endif()
+  endif(SQLITE3_FOUND)
+endif(BUILD_ORM)
+
+if((NOT MSVC) OR (NOT BUILD_ORM))
+  find_package(ZLIB REQUIRED)
+  target_include_directories(${PROJECT_NAME} PRIVATE ${ZLIB_INCLUDE_DIR})
+  target_link_libraries(${PROJECT_NAME} PRIVATE ${ZLIB_LIBRARIES})
+  message(STATUS "zlib:" ${ZLIB_LIBRARIES})
+endif((NOT MSVC) OR (NOT BUILD_ORM))
+
+find_package(OpenSSL)
+if(OpenSSL_FOUND)
+  target_include_directories(${PROJECT_NAME} PRIVATE ${OPENSSL_INCLUDE_DIR})
+  target_link_libraries(${PROJECT_NAME} PRIVATE ${OPENSSL_LIBRARIES})
+else(OpenSSL_FOUND)
+  set(DROGON_SOURCES ${DROGON_SOURCES} lib/src/ssl_funcs/Md5.cc
+                     lib/src/ssl_funcs/Sha1.cc)
+endif(OpenSSL_FOUND)
 
 execute_process(COMMAND "git" rev-parse HEAD
                 WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
@@ -278,11 +273,11 @@ configure_file("${PROJECT_SOURCE_DIR}/cmake/templates/version.h.in"
 
 if(BUILD_EXAMPLES)
   add_subdirectory(examples)
-endif()
+endif(BUILD_EXAMPLES)
 
 if(BUILD_CTL)
   add_subdirectory(drogon_ctl)
-endif()
+endif(BUILD_CTL)
 
 if(PostgreSQL_FOUND OR MYSQL_FOUND OR SQLITE3_FOUND)
   set(DROGON_SOURCES
@@ -300,9 +295,9 @@ if(PostgreSQL_FOUND OR MYSQL_FOUND OR SQLITE3_FOUND)
       orm_lib/src/SqlBinder.cc
       orm_lib/src/TransactionImpl.cc
       orm_lib/src/RestfulController.cc)
-else()
+else(PostgreSQL_FOUND OR MYSQL_FOUND OR SQLITE3_FOUND)
   set(DROGON_SOURCES ${DROGON_SOURCES} lib/src/DbClientManagerSkipped.cc)
-endif()
+endif(PostgreSQL_FOUND OR MYSQL_FOUND OR SQLITE3_FOUND)
 
 target_sources(${PROJECT_NAME} PRIVATE ${DROGON_SOURCES})
 
@@ -315,22 +310,22 @@ set_target_properties(${PROJECT_NAME} PROPERTIES EXPORT_NAME Drogon)
 if(PostgreSQL_FOUND OR MYSQL_FOUND OR SQLITE3_FOUND)
   if(PostgreSQL_FOUND)
     option(USE_POSTGRESQL "Enable PostgreSQL" ON)
-  else()
+  else(PostgreSQL_FOUND)
     option(USE_POSTGRESQL "Disable PostgreSQL" OFF)
-  endif()
+  endif(PostgreSQL_FOUND)
 
   if(MYSQL_FOUND)
     option(USE_MYSQL "Enable Mysql" ON)
-  else()
+  else(MYSQL_FOUND)
     option(USE_MYSQL "DisableMysql" OFF)
-  endif()
+  endif(MYSQL_FOUND)
 
   if(SQLITE3_FOUND)
     option(USE_SQLITE3 "Enable Sqlite3" ON)
-  else()
+  else(SQLITE3_FOUND)
     option(USE_SQLITE3 "Disable Sqlite3" OFF)
-  endif()
-endif()
+  endif(SQLITE3_FOUND)
+endif(PostgreSQL_FOUND OR MYSQL_FOUND OR SQLITE3_FOUND)
 
 set(COMPILER_COMMAND ${CMAKE_CXX_COMPILER})
 set(COMPILER_ID ${CMAKE_CXX_COMPILER_ID})
@@ -344,9 +339,9 @@ if(CMAKE_BUILD_TYPE)
   else()
     set(COMPILATION_FLAGS "-std=c++")
   endif()
-else()
+else(CMAKE_BUILD_TYPE)
   set(COMPILATION_FLAGS "-std=c++")
-endif()
+endif(CMAKE_BUILD_TYPE)
 
 list(APPEND INCLUDE_DIRS_FOR_DYNAMIC_VIEW "${INSTALL_INCLUDE_DIR}")
 list(REMOVE_DUPLICATES INCLUDE_DIRS_FOR_DYNAMIC_VIEW)
@@ -365,13 +360,13 @@ if(BUILD_TESTING)
   if(PostgreSQL_FOUND)
     add_subdirectory(${PROJECT_SOURCE_DIR}/orm_lib/src/postgresql_impl/test)
     add_subdirectory(${PROJECT_SOURCE_DIR}/orm_lib/tests)
-  endif()
+  endif(PostgreSQL_FOUND)
   if(MYSQL_FOUND)
     add_subdirectory(${PROJECT_SOURCE_DIR}/orm_lib/src/mysql_impl/test)
-  endif()
+  endif(MYSQL_FOUND)
   if(SQLITE3_FOUND)
     add_subdirectory(${PROJECT_SOURCE_DIR}/orm_lib/src/sqlite3_impl/test)
-  endif()
+  endif(SQLITE3_FOUND)
   find_package(GTest)
   if(GTest_FOUND)
     message(STATUS "gtest found")

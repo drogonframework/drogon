@@ -43,11 +43,21 @@ if(WIN32)
 endif(WIN32)
 message(STATUS "bin:" ${INSTALL_BIN_DIR})
 install(TARGETS drogon_ctl RUNTIME DESTINATION ${INSTALL_BIN_DIR})
-install(CODE "execute_process( \
+if(WIN32)
+  set(CTL_FILE $<TARGET_FILE:drogon_ctl>)
+  add_custom_command(TARGET drogon_ctl POST_BUILD
+                     COMMAND ${CMAKE_COMMAND}
+                             -DCTL_FILE=${CTL_FILE}
+                             -DINSTALL_BIN_DIR=${INSTALL_BIN_DIR}
+                             -P
+                             ${CMAKE_CURRENT_SOURCE_DIR}/CopyDlls.cmake)
+else(WIN32)
+  install(CODE "execute_process( \
     COMMAND ${CMAKE_COMMAND} -E create_symlink \
     ${INSTALL_BIN_DIR}/drogon_ctl \
     ${INSTALL_BIN_DIR}/dg_ctl \
     )")
+endif(WIN32)
 set(ctl_targets _drogon_ctl drogon_ctl)
 set_property(TARGET ${ctl_targets} PROPERTY CXX_STANDARD ${DROGON_CXX_STANDARD})
 set_property(TARGET ${ctl_targets} PROPERTY CXX_STANDARD_REQUIRED ON)
