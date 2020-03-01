@@ -33,6 +33,29 @@
 #include <winsock2.h>
 #endif
 
+#ifdef __linux__
+#include <endian.h>   // __BYTE_ORDER __LITTLE_ENDIAN
+#include <algorithm>  // std::reverse()
+
+template <typename T>
+constexpr T htonT(T value) noexcept
+{
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+    char *ptr = reinterpret_cast<char *>(&value);
+    std::reverse(ptr, ptr + sizeof(T));
+#endif
+    return value;
+}
+inline uint64_t htonll(uint64_t value)
+{
+    return htonT<uint64_t>(value);
+}
+inline uint64_t ntohll(uint64_t value)
+{
+    return htonll(value);
+}
+#endif
+
 namespace drogon
 {
 namespace orm
@@ -307,13 +330,13 @@ class SqlBinder
             switch (sizeof(T))
             {
                 case 2:
-                    *std::static_pointer_cast<short>(obj) = ntohs(parameter);
+                    *std::static_pointer_cast<uint16_t>(obj) = htons(parameter);
                     break;
                 case 4:
-                    *std::static_pointer_cast<int>(obj) = ntohl(parameter);
+                    *std::static_pointer_cast<uint32_t>(obj) = htonl(parameter);
                     break;
                 case 8:
-                    *std::static_pointer_cast<long>(obj) = ntohll(parameter);
+                    *std::static_pointer_cast<uint64_t>(obj) = htonll(parameter);
                     break;
                 case 1:
                 default:

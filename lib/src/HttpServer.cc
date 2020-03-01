@@ -340,7 +340,7 @@ void HttpServer::onRequests(
                 {
                     /*
                      * A client that supports persistent connections MAY
-                     * “pipeline” its requests (i.e., send multiple requests
+                     * "pipeline" its requests (i.e., send multiple requests
                      * without waiting for each response). A server MUST send
                      * its responses to those requests in the same order that
                      * the requests were received. rfc2616-8.1.1.2

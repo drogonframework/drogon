@@ -84,7 +84,7 @@ class Row
      * are related to regular iterators, it must be allowed to underflow to -1.
      */
     long index_{0};
-    size_t end_{0};
+    Row::SizeType end_{0};
     friend class Result;
     Row(const Result &r, SizeType index) noexcept;
 };

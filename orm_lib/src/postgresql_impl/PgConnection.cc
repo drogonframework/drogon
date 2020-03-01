@@ -232,7 +232,7 @@ void PgConnection::execSqlInLoop(
             isRreparingStatement_ = false;
             if (PQsendQueryPrepared(connectionPtr_.get(),
                                     iter->second.c_str(),
-                                    paraNum,
+                                    static_cast<int>(paraNum),
                                     parameters.data(),
                                     length.data(),
                                     format.data(),
@@ -258,8 +258,8 @@ void PgConnection::execSqlInLoop(
             if (PQsendPrepare(connectionPtr_.get(),
                               statementName_.c_str(),
                               sql_.data(),
-                              paraNum,
-                              NULL) == 0)
+                              static_cast<int>(paraNum),
+                              nullptr) == 0)
             {
                 LOG_ERROR << "send query error: "
                           << PQerrorMessage(connectionPtr_.get());
@@ -272,7 +272,7 @@ void PgConnection::execSqlInLoop(
                 }
                 return;
             }
-            parametersNumber_ = paraNum;
+            parametersNumber_ = static_cast<int>(paraNum);
             parameters_ = std::move(parameters);
             lengths_ = std::move(length);
             formats_ = std::move(format);

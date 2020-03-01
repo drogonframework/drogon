@@ -19,6 +19,10 @@
 #include <string>
 #include <type_traits>
 
+#ifdef _MSC_VER
+#pragma warning(disable : 4250)
+#endif
+
 namespace drogon
 {
 /**

@@ -94,13 +94,17 @@ static bool bytesSize(std::string &sizeStr, size_t &size)
 }
 ConfigLoader::ConfigLoader(const std::string &configFile)
 {
+#ifdef _WIN32
+    if (_access(configFile.c_str(), 0) != 0)
+#else
     if (access(configFile.c_str(), 0) != 0)
+#endif
     {
         std::cerr << "Config file " << configFile << " not found!" << std::endl;
         exit(1);
     }
 #ifdef _WIN32
-    if (access(configFile.c_str(), 04) != 0)
+    if (_access(configFile.c_str(), 04) != 0)
 #else
     if (access(configFile.c_str(), R_OK) != 0)
 #endif

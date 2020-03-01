@@ -133,9 +133,9 @@ class CacheMap
         }
         {
             std::lock_guard<std::mutex> lock(bucketMutex_);
-            for (int i = wheels_.size() - 1; i >= 0; --i)
+            for (auto iter = wheels_.rbegin(); iter != wheels_.rend(); ++iter)
             {
-                wheels_[i].clear();
+                iter->clear();
             }
         }
         LOG_TRACE << "CacheMap destruct!";
@@ -265,7 +265,7 @@ class CacheMap
      */
     bool findAndFetch(const T1 &key, T2 &value)
     {
-        int timeout = 0;
+        size_t timeout = 0;
         bool flag = false;
         std::lock_guard<std::mutex> lock(mtx_);
         auto iter = map_.find(key);
@@ -326,7 +326,7 @@ class CacheMap
         // protected by bucketMutex;
         if (delay <= 0)
             return;
-        delay = delay / tickInterval_ + 1;
+        delay = static_cast<size_t>(delay / tickInterval_ + 1);
         size_t t = ticksCounter_;
         for (size_t i = 0; i < wheelsNumber_; ++i)
         {

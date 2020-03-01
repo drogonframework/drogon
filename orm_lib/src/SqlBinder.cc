@@ -137,7 +137,7 @@ SqlBinder &SqlBinder::operator<<(const std::string &str)
     objs_.push_back(obj);
     ++parametersNumber_;
     parameters_.push_back((char *)obj->c_str());
-    lengths_.push_back(obj->length());
+    lengths_.push_back(static_cast<int>(obj->length()));
     if (type_ == ClientType::PostgreSQL)
     {
         formats_.push_back(0);
@@ -162,7 +162,7 @@ SqlBinder &SqlBinder::operator<<(std::string &&str)
     objs_.push_back(obj);
     ++parametersNumber_;
     parameters_.push_back((char *)obj->c_str());
-    lengths_.push_back(obj->length());
+    lengths_.push_back(static_cast<int>(obj->length()));
     if (type_ == ClientType::PostgreSQL)
     {
         formats_.push_back(0);
@@ -187,7 +187,7 @@ SqlBinder &SqlBinder::operator<<(const std::vector<char> &v)
     objs_.push_back(obj);
     ++parametersNumber_;
     parameters_.push_back((char *)obj->data());
-    lengths_.push_back(obj->size());
+    lengths_.push_back(static_cast<int>(obj->size()));
     if (type_ == ClientType::PostgreSQL)
     {
         formats_.push_back(1);
@@ -211,7 +211,7 @@ SqlBinder &SqlBinder::operator<<(std::vector<char> &&v)
     objs_.push_back(obj);
     ++parametersNumber_;
     parameters_.push_back((char *)obj->data());
-    lengths_.push_back(obj->size());
+    lengths_.push_back(static_cast<int>(obj->size()));
     if (type_ == ClientType::PostgreSQL)
     {
         formats_.push_back(1);

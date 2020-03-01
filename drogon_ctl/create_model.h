@@ -150,7 +150,10 @@ class Relationship
         else
         {
             char message[128];
-            sprintf(message, "Invalid relationship type: %s", type.data());
+            snprintf(message,
+                     sizeof(message),
+                     "Invalid relationship type: %s",
+                     type.data());
             throw std::runtime_error(message);
         }
         originalTableName_ =

@@ -69,7 +69,11 @@ static void newModelConfigFile(std::ofstream &configFile)
 }
 void create_project::createProject(const std::string &projectName)
 {
+#ifdef _WIN32
+    if (_access(projectName.data(), 0) == 0)
+#else
     if (access(projectName.data(), 0) == 0)
+#endif
     {
         std::cerr
             << "The directory already exists, please use another project name!"
@@ -79,8 +83,12 @@ void create_project::createProject(const std::string &projectName)
     std::cout << "create a project named " << projectName << std::endl;
 
     drogon::utils::createPath(projectName);
-    // 1.create CMakeLists.txt
+// 1.create CMakeLists.txt
+#ifdef _WIN32
+    auto r = _chdir(projectName.data());
+#else
     auto r = chdir(projectName.data());
+#endif
     (void)(r);
     std::ofstream cmakeFile("CMakeLists.txt", std::ofstream::out);
     newCmakeFile(cmakeFile, projectName);
