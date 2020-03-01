@@ -64,7 +64,8 @@ static std::map<std::string, std::vector<Relationship>> getRelationships(
             Relationship r(relationship);
             ret[r.originalTableName()].push_back(r);
             if (r.enableReverse() &&
-                r.originalTableName() != r.targetTableName())
+                (r.originalTableName() != r.targetTableName() ||
+                 r.originalTableAlias() != r.targetTableAlias()))
             {
                 auto reverse = r.reverse();
                 ret[reverse.originalTableName()].push_back(reverse);
