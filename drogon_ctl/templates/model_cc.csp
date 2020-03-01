@@ -1460,7 +1460,7 @@ void [[className]]::get{%relationshipClassName%}(const DbClientPtr &clientPtr,
                 std::string alind(alias.length(), ' ');
 %>
 void [[className]]::get{%alias%}(const DbClientPtr &clientPtr, 
-     {%indentStr%}     {%alind%} const std::function<void(std::vector<std::pair<{%relationshipClassName%},{%pivotTableClassName%}>>) &rcb,
+     {%indentStr%}     {%alind%} const std::function<void(std::vector<std::pair<{%relationshipClassName%},{%pivotTableClassName%}>>)> &rcb,
      {%indentStr%}     {%alind%} const ExceptionCallback &ecb) const
 <%c++
             }
