@@ -17,5 +17,6 @@ void JsonTestController::asyncHandleHttpRequest(
     }
     json["rows"] = array;
     auto resp = HttpResponse::newHttpJsonResponse(json);
+    assert(resp->jsonObject().get());
     callback(resp);
 }
