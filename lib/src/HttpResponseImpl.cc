@@ -679,6 +679,10 @@ void HttpResponseImpl::parseJson() const
             jsonPtr_.reset();
         }
     }
+    else
+    {
+        jsonPtr_.reset();
+    }
 }
 
 HttpResponseImpl::~HttpResponseImpl()

@@ -304,10 +304,12 @@ class HttpResponseImpl : public HttpResponse
     }
     void setJsonObject(const Json::Value &pJson)
     {
+        flagForParsingJson_ = true;
         jsonPtr_ = std::make_shared<Json::Value>(pJson);
     }
     void setJsonObject(Json::Value &&pJson)
     {
+        flagForParsingJson_ = true;
         jsonPtr_ = std::make_shared<Json::Value>(std::move(pJson));
     }
     void generateBodyFromJson();
