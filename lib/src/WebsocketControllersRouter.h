@@ -48,6 +48,7 @@ class WebsocketControllersRouter : public trantor::NonCopyable
     struct WebSocketControllerRouterItem
     {
         WebSocketControllerBasePtr controller_;
+        std::string controllerName_;
         std::vector<std::string> filterNames_;
         std::vector<std::shared_ptr<HttpFilterBase>> filters_;
     };
