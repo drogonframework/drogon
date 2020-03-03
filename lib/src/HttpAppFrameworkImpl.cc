@@ -80,7 +80,9 @@ HttpAppFrameworkImpl::HttpAppFrameworkImpl()
                                           preHandlingAdvices_,
                                           preHandlingObservers_,
                                           postHandlingAdvices_)),
-      websockCtrlsRouterPtr_(new WebsocketControllersRouter),
+      websockCtrlsRouterPtr_(
+          new WebsocketControllersRouter(postRoutingAdvices_,
+                                         postRoutingObservers_)),
       listenerManagerPtr_(new ListenerManager),
       pluginsManagerPtr_(new PluginsManager),
       dbClientManagerPtr_(new orm::DbClientManager),
@@ -221,12 +223,12 @@ HttpAppFramework &HttpAppFrameworkImpl::setFileTypes(
 HttpAppFramework &HttpAppFrameworkImpl::registerWebSocketController(
     const std::string &pathName,
     const std::string &ctrlName,
-    const std::vector<std::string> &filters)
+    const std::vector<internal::HttpConstraint> &filtersAndMethods)
 {
     assert(!running_);
     websockCtrlsRouterPtr_->registerWebSocketController(pathName,
                                                         ctrlName,
-                                                        filters);
+                                                        filtersAndMethods);
     return *this;
 }
 HttpAppFramework &HttpAppFrameworkImpl::registerHttpSimpleController(
@@ -596,7 +598,37 @@ void HttpAppFrameworkImpl::onNewWebsockRequest(
     std::function<void(const HttpResponsePtr &)> &&callback,
     const WebSocketConnectionImplPtr &wsConnPtr)
 {
-    websockCtrlsRouterPtr_->route(req, std::move(callback), wsConnPtr);
+    // Route to controller
+    if (!preRoutingObservers_.empty())
+    {
+        for (auto &observer : preRoutingObservers_)
+        {
+            observer(req);
+        }
+    }
+    if (preRoutingAdvices_.empty())
+    {
+        websockCtrlsRouterPtr_->route(req, std::move(callback), wsConnPtr);
+    }
+    else
+    {
+        auto callbackPtr =
+            std::make_shared<std::function<void(const HttpResponsePtr &)>>(
+                std::move(callback));
+        doAdvicesChain(
+            preRoutingAdvices_,
+            0,
+            req,
+            std::make_shared<std::function<void(const HttpResponsePtr &)>>(
+                [req, callbackPtr, this](const HttpResponsePtr &resp) {
+                    callCallback(req, resp, *callbackPtr);
+                }),
+            [this, callbackPtr, req, wsConnPtr]() {
+                websockCtrlsRouterPtr_->route(req,
+                                              std::move(*callbackPtr),
+                                              wsConnPtr);
+            });
+    }
 }
 
 std::vector<std::tuple<std::string, HttpMethod, std::string>>

@@ -15,6 +15,7 @@
 #include "WebsocketControllersRouter.h"
 #include "HttpRequestImpl.h"
 #include "HttpResponseImpl.h"
+#include "AOPAdvice.h"
 #include "WebSocketConnectionImpl.h"
 #include "FiltersFunction.h"
 #include <drogon/HttpFilter.h>
@@ -30,20 +31,61 @@ using namespace drogon;
 void WebsocketControllersRouter::registerWebSocketController(
     const std::string &pathName,
     const std::string &ctrlName,
-    const std::vector<std::string> &filters)
+    const std::vector<internal::HttpConstraint> &filtersAndMethods)
 {
     assert(!pathName.empty());
     assert(!ctrlName.empty());
     std::string path(pathName);
     std::transform(pathName.begin(), pathName.end(), path.begin(), tolower);
-    drogon::app().getLoop()->queueInLoop([=]() {
-        auto objPtr = DrClassMap::getSingleInstance(ctrlName);
-        auto ctrlPtr =
-            std::dynamic_pointer_cast<WebSocketControllerBase>(objPtr);
-        assert(ctrlPtr);
-        websockCtrlMap_[path].controller_ = ctrlPtr;
-        websockCtrlMap_[path].filterNames_ = filters;
+    std::vector<HttpMethod> validMethods;
+    std::vector<std::string> filters;
+    for (auto const &filterOrMethod : filtersAndMethods)
+    {
+        if (filterOrMethod.type() == internal::ConstraintType::HttpFilter)
+        {
+            filters.push_back(filterOrMethod.getFilterName());
+        }
+        else if (filterOrMethod.type() == internal::ConstraintType::HttpMethod)
+        {
+            validMethods.push_back(filterOrMethod.getHttpMethod());
+        }
+        else
+        {
+            LOG_ERROR << "Invalid controller constraint type";
+            exit(1);
+        }
+    }
+    auto &item = wsCtrlMap_[path];
+    auto binder = std::make_shared<CtrlBinder>();
+    binder->controllerName_ = ctrlName;
+    binder->filterNames_ = filters;
+    drogon::app().getLoop()->queueInLoop([binder, ctrlName]() {
+        auto &object_ = DrClassMap::getSingleInstance(ctrlName);
+        auto controller =
+            std::dynamic_pointer_cast<WebSocketControllerBase>(object_);
+        binder->controller_ = controller;
     });
+
+    if (validMethods.size() > 0)
+    {
+        for (auto const &method : validMethods)
+        {
+            item.binders_[method] = binder;
+            if (method == Options)
+            {
+                binder->isCORS_ = true;
+            }
+        }
+    }
+    else
+    {
+        // All HTTP methods are valid
+        for (size_t i = 0; i < Invalid; ++i)
+        {
+            item.binders_[i] = binder;
+        }
+        binder->isCORS_ = true;
+    }
 }
 
 void WebsocketControllersRouter::route(
@@ -54,41 +96,119 @@ void WebsocketControllersRouter::route(
     std::string wsKey = req->getHeaderBy("sec-websocket-key");
     if (!wsKey.empty())
     {
-        // magic="258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
-
-        std::string pathLower(req->path());
-        std::transform(pathLower.begin(),
-                       pathLower.end(),
+        std::string pathLower(req->path().length(), 0);
+        std::transform(req->path().begin(),
+                       req->path().end(),
                        pathLower.begin(),
                        tolower);
-        auto iter = websockCtrlMap_.find(pathLower);
-        if (iter != websockCtrlMap_.end())
+        auto iter = wsCtrlMap_.find(pathLower);
+        if (iter != wsCtrlMap_.end())
         {
-            auto &ctrlPtr = iter->second.controller_;
-            auto &filters = iter->second.filters_;
-            if (ctrlPtr)
+            auto &ctrlInfo = iter->second;
+            req->setMatchedPathPattern(iter->first);
+            auto &binder = ctrlInfo.binders_[req->method()];
+            if (!binder)
+            {
+                // Invalid Http Method
+                auto res = drogon::HttpResponse::newHttpResponse();
+                if (req->method() != Options)
+                {
+                    res->setStatusCode(k405MethodNotAllowed);
+                }
+                else
+                {
+                    res->setStatusCode(k403Forbidden);
+                }
+                callback(res);
+                return;
+            }
+            // Do post routing advices.
+            if (!postRoutingObservers_.empty())
+            {
+                for (auto &observer : postRoutingObservers_)
+                {
+                    observer(req);
+                }
+            }
+            auto &filters = ctrlInfo.binders_[req->method()]->filters_;
+            if (postRoutingAdvices_.empty())
             {
                 if (!filters.empty())
                 {
                     auto callbackPtr = std::make_shared<
                         std::function<void(const HttpResponsePtr &)>>(
                         std::move(callback));
-                    filters_function::doFilters(
-                        filters, req, callbackPtr, [=]() mutable {
-                            doControllerHandler(ctrlPtr,
-                                                wsKey,
+                    filters_function::doFilters(filters,
                                                 req,
-                                                std::move(*callbackPtr),
-                                                wsConnPtr);
-                        });
+                                                callbackPtr,
+                                                [wsKey = std::move(wsKey),
+                                                 req,
+                                                 callbackPtr,
+                                                 wsConnPtr,
+                                                 &ctrlInfo,
+                                                 this]() mutable {
+                                                    doControllerHandler(
+                                                        ctrlInfo,
+                                                        wsKey,
+                                                        req,
+                                                        std::move(*callbackPtr),
+                                                        wsConnPtr);
+                                                });
                 }
                 else
                 {
                     doControllerHandler(
-                        ctrlPtr, wsKey, req, std::move(callback), wsConnPtr);
+                        ctrlInfo, wsKey, req, std::move(callback), wsConnPtr);
                 }
                 return;
             }
+            else
+            {
+                auto callbackPtr = std::make_shared<
+                    std::function<void(const HttpResponsePtr &)>>(
+                    std::move(callback));
+                doAdvicesChain(
+                    postRoutingAdvices_,
+                    0,
+                    req,
+                    callbackPtr,
+                    [callbackPtr,
+                     &filters,
+                     req,
+                     &ctrlInfo,
+                     this,
+                     wsKey = std::move(wsKey),
+                     wsConnPtr]() mutable {
+                        if (!filters.empty())
+                        {
+                            filters_function::doFilters(
+                                filters,
+                                req,
+                                callbackPtr,
+                                [this,
+                                 wsKey = std::move(wsKey),
+                                 callbackPtr,
+                                 wsConnPtr = std::move(wsConnPtr),
+                                 req,
+                                 &ctrlInfo]() mutable {
+                                    doControllerHandler(ctrlInfo,
+                                                        wsKey,
+                                                        req,
+                                                        std::move(*callbackPtr),
+                                                        wsConnPtr);
+                                });
+                        }
+                        else
+                        {
+                            doControllerHandler(ctrlInfo,
+                                                wsKey,
+                                                req,
+                                                std::move(*callbackPtr),
+                                                wsConnPtr);
+                        }
+                    });
+            }
+            return;
         }
     }
     auto resp = drogon::HttpResponse::newNotFoundResponse();
@@ -100,25 +220,70 @@ std::vector<std::tuple<std::string, HttpMethod, std::string>>
 WebsocketControllersRouter::getHandlersInfo() const
 {
     std::vector<std::tuple<std::string, HttpMethod, std::string>> ret;
-    for (auto &item : websockCtrlMap_)
+    for (auto &item : wsCtrlMap_)
     {
-        auto info = std::tuple<std::string, HttpMethod, std::string>(
-            item.first,
-            Get,
-            std::string("WebsocketController: ") +
-                item.second.controller_->className());
-        ret.emplace_back(std::move(info));
+        for (size_t i = 0; i < Invalid; ++i)
+        {
+            if (item.second.binders_[i])
+            {
+                auto info = std::tuple<std::string, HttpMethod, std::string>(
+                    item.first,
+                    (HttpMethod)i,
+                    std::string("WebsocketController: ") +
+                        item.second.binders_[i]->controllerName_);
+                ret.emplace_back(std::move(info));
+            }
+        }
     }
     return ret;
 }
 
 void WebsocketControllersRouter::doControllerHandler(
-    const WebSocketControllerBasePtr &ctrlPtr,
+    const WebSocketControllerRouterItem &routerItem,
     std::string &wsKey,
     const HttpRequestImplPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback,
     const WebSocketConnectionImplPtr &wsConnPtr)
 {
+    if (req->method() == Options)
+    {
+        auto resp = HttpResponse::newHttpResponse();
+        resp->setContentTypeCode(ContentType::CT_TEXT_PLAIN);
+        std::string methods = "OPTIONS,";
+        if (routerItem.binders_[Get] && routerItem.binders_[Get]->isCORS_)
+        {
+            methods.append("GET,HEAD,");
+        }
+        if (routerItem.binders_[Post] && routerItem.binders_[Post]->isCORS_)
+        {
+            methods.append("POST,");
+        }
+        if (routerItem.binders_[Put] && routerItem.binders_[Put]->isCORS_)
+        {
+            methods.append("PUT,");
+        }
+        if (routerItem.binders_[Delete] && routerItem.binders_[Delete]->isCORS_)
+        {
+            methods.append("DELETE,");
+        }
+        methods.resize(methods.length() - 1);
+        resp->addHeader("ALLOW", methods);
+
+        auto &origin = req->getHeader("Origin");
+        if (origin.empty())
+        {
+            resp->addHeader("Access-Control-Allow-Origin", "*");
+        }
+        else
+        {
+            resp->addHeader("Access-Control-Allow-Origin", origin);
+        }
+        resp->addHeader("Access-Control-Allow-Methods", methods);
+        resp->addHeader("Access-Control-Allow-Headers",
+                        "x-requested-with,content-type");
+        callback(resp);
+        return;
+    }
     wsKey.append("258EAFA5-E914-47DA-95CA-C5AB0DC85B11");
     unsigned char accKey[SHA_DIGEST_LENGTH];
     SHA1(reinterpret_cast<const unsigned char *>(wsKey.c_str()),
@@ -131,6 +296,7 @@ void WebsocketControllersRouter::doControllerHandler(
     resp->addHeader("Connection", "Upgrade");
     resp->addHeader("Sec-WebSocket-Accept", base64Key);
     callback(resp);
+    auto ctrlPtr = routerItem.binders_[req->method()]->controller_;
     wsConnPtr->setMessageCallback(
         [ctrlPtr](std::string &&message,
                   const WebSocketConnectionImplPtr &connPtr,
@@ -147,9 +313,17 @@ void WebsocketControllersRouter::doControllerHandler(
 
 void WebsocketControllersRouter::init()
 {
-    for (auto &iter : websockCtrlMap_)
+    for (auto &iter : wsCtrlMap_)
     {
-        iter.second.filters_ =
-            filters_function::createFilters(iter.second.filterNames_);
+        auto &item = iter.second;
+        for (size_t i = 0; i < Invalid; ++i)
+        {
+            auto &binder = item.binders_[i];
+            if (binder)
+            {
+                binder->filters_ =
+                    filters_function::createFilters(binder->filterNames_);
+            }
+        }
     }
 }

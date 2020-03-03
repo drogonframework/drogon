@@ -459,8 +459,8 @@ class HttpAppFramework : public trantor::NonCopyable
     virtual HttpAppFramework &registerWebSocketController(
         const std::string &pathName,
         const std::string &crtlName,
-        const std::vector<std::string> &filters =
-            std::vector<std::string>()) = 0;
+        const std::vector<internal::HttpConstraint> &filtersAndMethods =
+            std::vector<internal::HttpConstraint>{}) = 0;
 
     /// Register controller objects created and initialized by the user
     /**

@@ -16,6 +16,8 @@
 
 #include "impl_forwards.h"
 #include <drogon/HttpTypes.h>
+#include <drogon/utils/HttpConstraint.h>
+#include <drogon/drogon_callbacks.h>
 #include <trantor/utils/NonCopyable.h>
 #include <memory>
 #include <mutex>
@@ -30,12 +32,21 @@ class HttpAppFrameworkImpl;
 class WebsocketControllersRouter : public trantor::NonCopyable
 {
   public:
-    WebsocketControllersRouter()
+    WebsocketControllersRouter(
+        const std::vector<std::function<void(const HttpRequestPtr &,
+                                             AdviceCallback &&,
+                                             AdviceChainCallback &&)>>
+            &postRoutingAdvices,
+        const std::vector<std::function<void(const HttpRequestPtr &)>>
+            &postRoutingObservers)
+        : postRoutingAdvices_(postRoutingAdvices),
+          postRoutingObservers_(postRoutingObservers)
     {
     }
-    void registerWebSocketController(const std::string &pathName,
-                                     const std::string &ctrlName,
-                                     const std::vector<std::string> &filters);
+    void registerWebSocketController(
+        const std::string &pathName,
+        const std::string &ctrlName,
+        const std::vector<internal::HttpConstraint> &filtersAndMethods);
     void route(const HttpRequestImplPtr &req,
                std::function<void(const HttpResponsePtr &)> &&callback,
                const WebSocketConnectionImplPtr &wsConnPtr);
@@ -45,17 +56,30 @@ class WebsocketControllersRouter : public trantor::NonCopyable
     getHandlersInfo() const;
 
   private:
-    struct WebSocketControllerRouterItem
+    struct CtrlBinder
     {
-        WebSocketControllerBasePtr controller_;
+        std::shared_ptr<WebSocketControllerBase> controller_;
+        std::string controllerName_;
         std::vector<std::string> filterNames_;
         std::vector<std::shared_ptr<HttpFilterBase>> filters_;
+        bool isCORS_{false};
     };
-    std::unordered_map<std::string, WebSocketControllerRouterItem>
-        websockCtrlMap_;
 
+    using CtrlBinderPtr = std::shared_ptr<CtrlBinder>;
+
+    struct WebSocketControllerRouterItem
+    {
+        CtrlBinderPtr binders_[Invalid];
+    };
+    std::unordered_map<std::string, WebSocketControllerRouterItem> wsCtrlMap_;
+    const std::vector<std::function<void(const HttpRequestPtr &,
+                                         AdviceCallback &&,
+                                         AdviceChainCallback &&)>>
+        &postRoutingAdvices_;
+    const std::vector<std::function<void(const HttpRequestPtr &)>>
+        &postRoutingObservers_;
     void doControllerHandler(
-        const WebSocketControllerBasePtr &ctrlPtr,
+        const WebSocketControllerRouterItem &routerItem,
         std::string &wsKey,
         const HttpRequestImplPtr &req,
         std::function<void(const HttpResponsePtr &)> &&callback,
