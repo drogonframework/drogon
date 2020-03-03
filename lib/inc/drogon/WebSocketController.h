@@ -24,20 +24,16 @@
 #include <string>
 #include <vector>
 
-#define WS_PATH_LIST_BEGIN                                               \
-    static std::vector<std::pair<std::string, std::vector<std::string>>> \
-    paths()                                                              \
-    {                                                                    \
-        std::vector<std::pair<std::string, std::vector<std::string>>> vet;
+#define WS_PATH_LIST_BEGIN        \
+    static void initPathRouting() \
+    {
 #ifndef _MSC_VER
-#define WS_PATH_ADD(path, filters...) vet.push_back({path, {filters}})
+#define WS_PATH_ADD(path, filters...) registerSelf__(path, {filters});
 #else
-#define WS_PATH_ADD(path, ...) vet.push_back({path, {##__VA_ARGS__}})
+#define WS_PATH_ADD(path, ...) registerSelf__(path, {##__VA_ARGS__});
 #endif
 
-#define WS_PATH_LIST_END \
-    return vet;          \
-    }
+#define WS_PATH_LIST_END }
 
 namespace drogon
 {
@@ -83,24 +79,20 @@ class WebSocketController : public DrObject<T>, public WebSocketControllerBase
     virtual ~WebSocketController()
     {
     }
-    static void initPathRouting()
-    {
-        auto vPaths = T::paths();
-        for (auto const &path : vPaths)
-        {
-            LOG_TRACE << "register websocket controller ("
-                      << WebSocketController<T>::classTypeName()
-                      << ") on path:" << path.first;
-            app().registerWebSocketController(
-                path.first,
-                WebSocketController<T>::classTypeName(),
-                path.second);
-        }
-    }
 
   protected:
     WebSocketController()
     {
+    }
+    static void registerSelf__(
+        const std::string &path,
+        const std::vector<internal::HttpConstraint> &filtersAndMethods)
+    {
+        LOG_TRACE << "register websocket controller("
+                  << WebSocketController<T>::classTypeName()
+                  << ") on path:" << path;
+        app().registerWebSocketController(
+            path, WebSocketController<T>::classTypeName(), filtersAndMethods);
     }
 
   private:
