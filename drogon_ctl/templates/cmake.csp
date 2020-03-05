@@ -14,22 +14,22 @@ endif()
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-add_executable([[ProjectName]] main.cc)
+add_executable(${PROJECT_NAME} main.cc)
 
 ##########
 # If you include the drogon source code locally in your project, use this method to add drogon
 # add_subdirectory(drogon)
-# target_link_libraries([[ProjectName]] PRIVATE drogon)
+# target_link_libraries(${PROJECT_NAME} PRIVATE drogon)
 ##########
 
 find_package(Drogon CONFIG REQUIRED)
-target_link_libraries([[ProjectName]] PRIVATE Drogon::Drogon)
+target_link_libraries(${PROJECT_NAME} PRIVATE Drogon::Drogon)
 
 if(CMAKE_CXX_STANDARD LESS 17)
 #With C++14, use boost to support any and string_view
     message(STATUS "use c++14")
     find_package(Boost 1.61.0 REQUIRED)
-    target_include_directories([[ProjectName]] PRIVATE ${Boost_INCLUDE_DIRS})
+    target_include_directories(${PROJECT_NAME} PRIVATE ${Boost_INCLUDE_DIRS})
 else()
     message(STATUS "use c++17")
 endif()
@@ -52,5 +52,8 @@ foreach(cspFile ${SCP_LIST})
     set(VIEWSRC ${VIEWSRC} ${classname}.cc)
 endforeach()
 
-target_include_directories([[ProjectName]] PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/models)
-target_sources([[ProjectName]] PRIVATE ${SRC_DIR} ${CTL_SRC} ${FILTER_SRC} ${VIEWSRC} ${PLUGIN_SRC} ${MODEL_SRC})
+target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/models)
+target_sources(${PROJECT_NAME} PRIVATE ${SRC_DIR} ${CTL_SRC} ${FILTER_SRC} ${VIEWSRC} ${PLUGIN_SRC} ${MODEL_SRC})
+################################
+# uncomment the following line for dynamically loading views 
+#set_property(TARGET ${PROJECT_NAME} PROPERTY ENABLE_EXPORTS ON)
