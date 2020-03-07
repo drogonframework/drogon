@@ -336,7 +336,8 @@ class SqlBinder
                     *std::static_pointer_cast<uint32_t>(obj) = htonl(parameter);
                     break;
                 case 8:
-                    *std::static_pointer_cast<uint64_t>(obj) = htonll(parameter);
+                    *std::static_pointer_cast<uint64_t>(obj) =
+                        htonll(parameter);
                     break;
                 case 1:
                 default:

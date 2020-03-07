@@ -15,6 +15,7 @@
 #pragma once
 
 #include "HttpUtils.h"
+#include "HttpMessageBody.h"
 #include <drogon/HttpResponse.h>
 #include <drogon/utils/Utilities.h>
 #include <trantor/net/InetAddress.h>
@@ -92,15 +93,6 @@ class HttpResponseImpl : public HttpResponse
     {
         contentType_ = type;
         setContentType(webContentTypeToString(type));
-    }
-
-    virtual void setContentTypeCodeAndCustomString(
-        ContentType type,
-        const char *typeString,
-        size_t typeStringLength) override
-    {
-        contentType_ = type;
-        setContentType(string_view{typeString, typeStringLength});
     }
 
     // virtual void setContentTypeCodeAndCharacterSet(ContentType type, const
@@ -222,22 +214,20 @@ class HttpResponseImpl : public HttpResponse
 
     virtual void setBody(const std::string &body) override
     {
-        bodyPtr_ = std::make_shared<std::string>(body);
-        bodyViewPtr_.reset();
+        bodyPtr_ = std::make_shared<HttpMessageStringBody>(body);
     }
     virtual void setBody(std::string &&body) override
     {
-        bodyPtr_ = std::make_shared<std::string>(std::move(body));
-        bodyViewPtr_.reset();
+        bodyPtr_ = std::make_shared<HttpMessageStringBody>(std::move(body));
     }
 
     void redirect(const std::string &url)
     {
         headers_["location"] = url;
     }
-    std::shared_ptr<std::string> renderToString();
+    std::shared_ptr<trantor::MsgBuffer> renderToBuffer();
     void renderToBuffer(trantor::MsgBuffer &buffer);
-    std::shared_ptr<std::string> renderHeaderForHeadMethod();
+    std::shared_ptr<trantor::MsgBuffer> renderHeaderForHeadMethod();
     virtual void clear() override;
 
     virtual void setExpiredTime(ssize_t expiredTime) override
@@ -259,35 +249,17 @@ class HttpResponseImpl : public HttpResponse
     {
         if (!bodyPtr_)
         {
-            if (bodyViewPtr_)
-            {
-                bodyPtr_ =
-                    std::make_shared<std::string>(bodyViewPtr_->data(),
-                                                  bodyViewPtr_->length());
-            }
-            else
-            {
-                bodyPtr_ = std::make_shared<std::string>();
-            }
+            bodyPtr_ = std::make_shared<HttpMessageStringBody>();
         }
-        return *bodyPtr_;
+        return bodyPtr_->getString();
     }
     virtual std::string &body() override
     {
         if (!bodyPtr_)
         {
-            if (bodyViewPtr_)
-            {
-                bodyPtr_ =
-                    std::make_shared<std::string>(bodyViewPtr_->data(),
-                                                  bodyViewPtr_->length());
-            }
-            else
-            {
-                bodyPtr_ = std::make_shared<std::string>();
-            }
+            bodyPtr_ = std::make_shared<HttpMessageStringBody>();
         }
-        return *bodyPtr_;
+        return bodyPtr_->getString();
     }
     void swap(HttpResponseImpl &that) noexcept;
     void parseJson() const;
@@ -323,8 +295,8 @@ class HttpResponseImpl : public HttpResponse
     }
     void makeHeaderString()
     {
-        fullHeaderString_ = std::make_shared<std::string>();
-        makeHeaderString(fullHeaderString_);
+        fullHeaderString_ = std::make_shared<trantor::MsgBuffer>(128);
+        makeHeaderString(*fullHeaderString_);
     }
 
     void gunzip()
@@ -334,27 +306,29 @@ class HttpResponseImpl : public HttpResponse
             auto gunzipBody =
                 utils::gzipDecompress(bodyPtr_->data(), bodyPtr_->length());
             removeHeader("content-encoding");
-            bodyPtr_ = std::make_shared<std::string>(move(gunzipBody));
-        }
-        else if (bodyViewPtr_)
-        {
-            auto gunzipBody = utils::gzipDecompress(bodyViewPtr_->data(),
-                                                    bodyViewPtr_->length());
-            removeHeader("content-encoding");
-            bodyPtr_ = std::make_shared<std::string>(move(gunzipBody));
+            bodyPtr_ =
+                std::make_shared<HttpMessageStringBody>(move(gunzipBody));
         }
     }
     ~HttpResponseImpl();
 
   protected:
-    void makeHeaderString(const std::shared_ptr<std::string> &headerStringPtr);
+    void makeHeaderString(trantor::MsgBuffer &headerString);
 
   private:
     virtual void setBody(const char *body, size_t len) override
     {
-        bodyViewPtr_ = std::make_shared<string_view>(body, len);
-        bodyPtr_.reset();
+        bodyPtr_ = std::make_shared<HttpMessageStringViewBody>(body, len);
     }
+    virtual void setContentTypeCodeAndCustomString(
+        ContentType type,
+        const char *typeString,
+        size_t typeStringLength) override
+    {
+        contentType_ = type;
+        setContentType(string_view{typeString, typeStringLength});
+    }
+
     std::unordered_map<std::string, std::string> headers_;
     std::unordered_map<std::string, Cookie> cookies_;
 
@@ -367,16 +341,14 @@ class HttpResponseImpl : public HttpResponse
 
     size_t leftBodyLength_{0};
     size_t currentChunkLength_{0};
-    mutable std::shared_ptr<std::string> bodyPtr_;
-    std::shared_ptr<string_view> bodyViewPtr_;
+    mutable std::shared_ptr<HttpMessageBody> bodyPtr_;
     ssize_t expriedTime_{-1};
     std::string sendfileName_;
     mutable std::shared_ptr<Json::Value> jsonPtr_;
 
-    std::shared_ptr<std::string> fullHeaderString_;
-
-    mutable std::shared_ptr<std::string> httpString_;
-    mutable std::string::size_type datePos_{std::string::npos};
+    std::shared_ptr<trantor::MsgBuffer> fullHeaderString_;
+    mutable std::shared_ptr<trantor::MsgBuffer> httpString_;
+    mutable size_t datePos_{static_cast<size_t>(-1)};
     mutable int64_t httpStringDate_{-1};
     mutable bool flagForParsingJson_{false};
     ContentType contentType_{CT_TEXT_HTML};

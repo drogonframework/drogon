@@ -201,166 +201,94 @@ HttpResponsePtr HttpResponse::newFileResponse(
     return resp;
 }
 
-void HttpResponseImpl::makeHeaderString(
-    const std::shared_ptr<std::string> &headerStringPtr)
+void HttpResponseImpl::makeHeaderString(trantor::MsgBuffer &buffer)
 {
-    char buf[128];
-    assert(headerStringPtr);
+    buffer.ensureWritableBytes(128);
     int len{0};
     if (version_ == Version::kHttp11)
     {
-        len = snprintf(buf, sizeof buf, "HTTP/1.1 %d ", statusCode_);
+        len = snprintf(buffer.beginWrite(),
+                       buffer.writableBytes(),
+                       "HTTP/1.1 %d ",
+                       statusCode_);
     }
     else
     {
-        len = snprintf(buf, sizeof buf, "HTTP/1.0 %d ", statusCode_);
+        len = snprintf(buffer.beginWrite(),
+                       buffer.writableBytes(),
+                       "HTTP/1.0 %d ",
+                       statusCode_);
     }
-    headerStringPtr->append(buf, len);
+    buffer.hasWritten(len);
 
     if (!statusMessage_.empty())
-        headerStringPtr->append(statusMessage_.data(), statusMessage_.length());
-    headerStringPtr->append("\r\n");
+        buffer.append(statusMessage_.data(), statusMessage_.length());
+    buffer.append("\r\n");
     generateBodyFromJson();
     if (!passThrough_)
     {
+        buffer.ensureWritableBytes(64);
         if (sendfileName_.empty())
         {
-            size_t bodyLength =
-                bodyPtr_ ? bodyPtr_->length()
-                         : (bodyViewPtr_ ? bodyViewPtr_->length() : 0);
-            len = snprintf(buf,
-                           sizeof buf,
+            auto bodyLength = bodyPtr_ ? bodyPtr_->length() : 0;
+            len = snprintf(buffer.beginWrite(),
+                           buffer.writableBytes(),
                            "Content-Length: %lu\r\n",
                            static_cast<unsigned long>(bodyLength));
         }
         else
         {
             struct stat filestat;
-            if (stat(sendfileName_.c_str(), &filestat) < 0)
+            if (stat(sendfileName_.data(), &filestat) < 0)
             {
                 LOG_SYSERR << sendfileName_ << " stat error";
                 return;
             }
-            len =
-                snprintf(buf,
-                         sizeof buf,
-                         "Content-Length: %llu\r\n",
-                         static_cast<long long unsigned int>(filestat.st_size));
+            len = snprintf(buffer.beginWrite(),
+                           buffer.writableBytes(),
+                           "Content-Length: %lu\r\n",
+                           static_cast<unsigned long>(filestat.st_size));
         }
-
-        headerStringPtr->append(buf, len);
+        buffer.hasWritten(len);
         if (headers_.find("Connection") == headers_.end())
         {
             if (closeConnection_)
             {
-                if (version_ == Version::kHttp11)
-                {
-                    headerStringPtr->append("Connection: close\r\n");
-                }
+                buffer.append("Connection: close\r\n");
             }
             else if (version_ == Version::kHttp10)
             {
-                headerStringPtr->append("Connection: Keep-Alive\r\n");
+                buffer.append("Connection: Keep-Alive\r\n");
             }
         }
-        headerStringPtr->append(contentTypeString_.data(),
-                                contentTypeString_.length());
+        buffer.append(contentTypeString_.data(), contentTypeString_.length());
         if (HttpAppFrameworkImpl::instance().sendServerHeader())
         {
-            headerStringPtr->append(
+            buffer.append(
                 HttpAppFrameworkImpl::instance().getServerHeaderString());
         }
     }
 
     for (auto it = headers_.begin(); it != headers_.end(); ++it)
     {
-        headerStringPtr->append(it->first);
-        headerStringPtr->append(": ");
-        headerStringPtr->append(it->second);
-        headerStringPtr->append("\r\n");
+        buffer.append(it->first);
+        buffer.append(": ");
+        buffer.append(it->second);
+        buffer.append("\r\n");
     }
 }
 void HttpResponseImpl::renderToBuffer(trantor::MsgBuffer &buffer)
 {
     if (expriedTime_ >= 0)
     {
-        auto strPtr = renderToString();
-        buffer.append(strPtr->data(), strPtr->length());
+        auto strPtr = renderToBuffer();
+        buffer.append(strPtr->peek(), strPtr->readableBytes());
         return;
     }
 
     if (!fullHeaderString_)
     {
-        char buf[128];
-        int len{0};
-        if (version_ == Version::kHttp11)
-        {
-            len = snprintf(buf, sizeof buf, "HTTP/1.1 %d ", statusCode_);
-        }
-        else
-        {
-            len = snprintf(buf, sizeof buf, "HTTP/1.0 %d ", statusCode_);
-        }
-        buffer.append(buf, len);
-
-        if (!statusMessage_.empty())
-            buffer.append(statusMessage_.data(), statusMessage_.length());
-        buffer.append("\r\n");
-        generateBodyFromJson();
-        if (!passThrough_)
-        {
-            if (sendfileName_.empty())
-            {
-                auto bodyLength =
-                    bodyPtr_ ? bodyPtr_->length()
-                             : (bodyViewPtr_ ? bodyViewPtr_->length() : 0);
-                len = snprintf(buf,
-                               sizeof buf,
-                               "Content-Length: %lu\r\n",
-                               static_cast<unsigned long>(bodyLength));
-            }
-            else
-            {
-                struct stat filestat;
-                if (stat(sendfileName_.c_str(), &filestat) < 0)
-                {
-                    LOG_SYSERR << sendfileName_ << " stat error";
-                    return;
-                }
-                len = snprintf(buf,
-                               sizeof buf,
-                               "Content-Length: %lu\r\n",
-                               static_cast<unsigned long>(filestat.st_size));
-            }
-
-            buffer.append(buf, len);
-            if (headers_.find("Connection") == headers_.end())
-            {
-                if (closeConnection_)
-                {
-                    buffer.append("Connection: close\r\n");
-                }
-                else if (version_ == Version::kHttp10)
-                {
-                    buffer.append("Connection: Keep-Alive\r\n");
-                }
-            }
-            buffer.append(contentTypeString_.data(),
-                          contentTypeString_.length());
-            if (HttpAppFrameworkImpl::instance().sendServerHeader())
-            {
-                buffer.append(
-                    HttpAppFrameworkImpl::instance().getServerHeaderString());
-            }
-        }
-
-        for (auto it = headers_.begin(); it != headers_.end(); ++it)
-        {
-            buffer.append(it->first);
-            buffer.append(": ");
-            buffer.append(it->second);
-            buffer.append("\r\n");
-        }
+        makeHeaderString(buffer);
     }
     else
     {
@@ -390,18 +318,16 @@ void HttpResponseImpl::renderToBuffer(trantor::MsgBuffer &buffer)
         buffer.append("\r\n");
     }
     if (bodyPtr_)
-        buffer.append(*bodyPtr_);
-    else if (bodyViewPtr_)
-        buffer.append(bodyViewPtr_->data(), bodyViewPtr_->length());
+        buffer.append(bodyPtr_->data(), bodyPtr_->length());
 }
-std::shared_ptr<std::string> HttpResponseImpl::renderToString()
+std::shared_ptr<trantor::MsgBuffer> HttpResponseImpl::renderToBuffer()
 {
     if (expriedTime_ >= 0)
     {
         if (!passThrough_ &&
             drogon::HttpAppFrameworkImpl::instance().sendDateHeader())
         {
-            if (datePos_ != std::string::npos)
+            if (datePos_ != static_cast<size_t>(-1))
             {
                 auto now = trantor::Date::now();
                 bool isDateChanged =
@@ -414,7 +340,8 @@ std::shared_ptr<std::string> HttpResponseImpl::renderToString()
                         now.microSecondsSinceEpoch() / MICRO_SECONDS_PRE_SEC;
                     auto newDate = utils::getHttpFullDate(now);
 
-                    httpString_ = std::make_shared<std::string>(*httpString_);
+                    httpString_ =
+                        std::make_shared<trantor::MsgBuffer>(*httpString_);
                     memcpy((void *)&(*httpString_)[datePos_],
                            newDate,
                            httpFullDateStringLength);
@@ -430,11 +357,10 @@ std::shared_ptr<std::string> HttpResponseImpl::renderToString()
                 return httpString_;
         }
     }
-    auto httpString = std::make_shared<std::string>();
-    httpString->reserve(256);
+    auto httpString = std::make_shared<trantor::MsgBuffer>(256);
     if (!fullHeaderString_)
     {
-        makeHeaderString(httpString);
+        makeHeaderString(*httpString);
     }
     else
     {
@@ -455,7 +381,7 @@ std::shared_ptr<std::string> HttpResponseImpl::renderToString()
         drogon::HttpAppFrameworkImpl::instance().sendDateHeader())
     {
         httpString->append("Date: ");
-        auto datePos = httpString->length();
+        auto datePos = httpString->readableBytes();
         httpString->append(utils::getHttpFullDate(trantor::Date::date()),
                            httpFullDateStringLength);
         httpString->append("\r\n\r\n");
@@ -466,11 +392,10 @@ std::shared_ptr<std::string> HttpResponseImpl::renderToString()
         httpString->append("\r\n");
     }
 
-    LOG_TRACE << "reponse(no body):" << httpString->c_str();
+    LOG_TRACE << "reponse(no body):"
+              << string_view{httpString->peek(), httpString->readableBytes()};
     if (bodyPtr_)
-        httpString->append(*bodyPtr_);
-    else if (bodyViewPtr_)
-        httpString->append(bodyViewPtr_->data(), bodyViewPtr_->length());
+        httpString->append(bodyPtr_->data(), bodyPtr_->length());
     if (expriedTime_ >= 0)
     {
         httpString_ = httpString;
@@ -478,13 +403,13 @@ std::shared_ptr<std::string> HttpResponseImpl::renderToString()
     return httpString;
 }
 
-std::shared_ptr<std::string> HttpResponseImpl::renderHeaderForHeadMethod()
+std::shared_ptr<trantor::MsgBuffer> HttpResponseImpl::
+    renderHeaderForHeadMethod()
 {
-    auto httpString = std::make_shared<std::string>();
-    httpString->reserve(256);
+    auto httpString = std::make_shared<trantor::MsgBuffer>(256);
     if (!fullHeaderString_)
     {
-        makeHeaderString(httpString);
+        makeHeaderString(*httpString);
     }
     else
     {
@@ -621,10 +546,10 @@ void HttpResponseImpl::swap(HttpResponseImpl &that) noexcept
     swap(statusMessage_, that.statusMessage_);
     swap(closeConnection_, that.closeConnection_);
     bodyPtr_.swap(that.bodyPtr_);
-    bodyViewPtr_.swap(that.bodyViewPtr_);
     swap(leftBodyLength_, that.leftBodyLength_);
     swap(currentChunkLength_, that.currentChunkLength_);
     swap(contentType_, that.contentType_);
+    swap(sendfileName_, that.sendfileName_);
     jsonPtr_.swap(that.jsonPtr_);
     fullHeaderString_.swap(that.fullHeaderString_);
     httpString_.swap(that.httpString_);
@@ -637,10 +562,10 @@ void HttpResponseImpl::clear()
     version_ = Version::kHttp11;
     statusMessage_ = string_view{};
     fullHeaderString_.reset();
+    sendfileName_.clear();
     headers_.clear();
     cookies_.clear();
     bodyPtr_.reset();
-    bodyViewPtr_.reset();
     leftBodyLength_ = 0;
     currentChunkLength_ = 0;
     jsonPtr_.reset();
@@ -653,29 +578,18 @@ void HttpResponseImpl::parseJson() const
     static std::once_flag once;
     static Json::CharReaderBuilder builder;
     std::call_once(once, []() { builder["collectComments"] = false; });
-    jsonPtr_ = std::make_shared<Json::Value>();
     JSONCPP_STRING errs;
     std::unique_ptr<Json::CharReader> reader(builder.newCharReader());
     if (bodyPtr_)
     {
+        jsonPtr_ = std::make_shared<Json::Value>();
         if (!reader->parse(bodyPtr_->data(),
-                           bodyPtr_->data() + bodyPtr_->size(),
+                           bodyPtr_->data() + bodyPtr_->length(),
                            jsonPtr_.get(),
                            &errs))
         {
             LOG_ERROR << errs;
-            LOG_ERROR << "body: " << *bodyPtr_;
-            jsonPtr_.reset();
-        }
-    }
-    else if (bodyViewPtr_)
-    {
-        if (!reader->parse(bodyViewPtr_->data(),
-                           bodyViewPtr_->data() + bodyViewPtr_->size(),
-                           jsonPtr_.get(),
-                           &errs))
-        {
-            LOG_ERROR << errs;
+            LOG_ERROR << "body: " << bodyPtr_->getString();
             jsonPtr_.reset();
         }
     }

@@ -223,7 +223,7 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn, MsgBuffer *buf)
                                 }
                                 auto httpString =
                                     ((HttpResponseImpl *)resp.get())
-                                        ->renderToString();
+                                        ->renderToBuffer();
                                 conn->send(httpString);
                             }
                         },
@@ -455,7 +455,7 @@ void HttpServer::sendResponse(const TcpConnectionPtr &conn,
     auto respImplPtr = static_cast<HttpResponseImpl *>(response.get());
     if (!isHeadMethod)
     {
-        auto httpString = respImplPtr->renderToString();
+        auto httpString = respImplPtr->renderToBuffer();
         conn->send(httpString);
         auto &sendfileName = respImplPtr->sendfileName();
         if (!sendfileName.empty())
@@ -466,7 +466,7 @@ void HttpServer::sendResponse(const TcpConnectionPtr &conn,
     else
     {
         auto httpString = respImplPtr->renderHeaderForHeadMethod();
-        conn->send(httpString);
+        conn->send(std::move(*httpString));
     }
 
     if (response->ifCloseConnection())
@@ -506,7 +506,7 @@ void HttpServer::sendResponses(
         else
         {
             auto httpString = respImplPtr->renderHeaderForHeadMethod();
-            buffer.append(httpString->data(), httpString->length());
+            buffer.append(httpString->peek(), httpString->readableBytes());
         }
         if (respImplPtr->ifCloseConnection())
         {
