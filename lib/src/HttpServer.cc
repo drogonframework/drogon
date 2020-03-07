@@ -224,7 +224,7 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn, MsgBuffer *buf)
                                 auto httpString =
                                     ((HttpResponseImpl *)resp.get())
                                         ->renderToBuffer();
-                                conn->send(*httpString);
+                                conn->send(httpString);
                             }
                         },
                         wsConn);
@@ -456,7 +456,7 @@ void HttpServer::sendResponse(const TcpConnectionPtr &conn,
     if (!isHeadMethod)
     {
         auto httpString = respImplPtr->renderToBuffer();
-        conn->send(*httpString);
+        conn->send(httpString);
         auto &sendfileName = respImplPtr->sendfileName();
         if (!sendfileName.empty())
         {

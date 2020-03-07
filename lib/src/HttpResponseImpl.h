@@ -295,7 +295,7 @@ class HttpResponseImpl : public HttpResponse
     }
     void makeHeaderString()
     {
-        fullHeaderString_ = std::make_shared<trantor::MsgBuffer>(256);
+        fullHeaderString_ = std::make_shared<trantor::MsgBuffer>(128);
         makeHeaderString(*fullHeaderString_);
     }
 
