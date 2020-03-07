@@ -225,9 +225,9 @@ class HttpResponseImpl : public HttpResponse
     {
         headers_["location"] = url;
     }
-    std::shared_ptr<std::string> renderToString();
+    std::shared_ptr<trantor::MsgBuffer> renderToBuffer();
     void renderToBuffer(trantor::MsgBuffer &buffer);
-    std::shared_ptr<std::string> renderHeaderForHeadMethod();
+    std::shared_ptr<trantor::MsgBuffer> renderHeaderForHeadMethod();
     virtual void clear() override;
 
     virtual void setExpiredTime(ssize_t expiredTime) override
@@ -295,8 +295,8 @@ class HttpResponseImpl : public HttpResponse
     }
     void makeHeaderString()
     {
-        fullHeaderString_ = std::make_shared<std::string>();
-        makeHeaderString(fullHeaderString_);
+        fullHeaderString_ = std::make_shared<trantor::MsgBuffer>(256);
+        makeHeaderString(*fullHeaderString_);
     }
 
     void gunzip()
@@ -313,7 +313,7 @@ class HttpResponseImpl : public HttpResponse
     ~HttpResponseImpl();
 
   protected:
-    void makeHeaderString(const std::shared_ptr<std::string> &headerStringPtr);
+    void makeHeaderString(trantor::MsgBuffer &headerString);
 
   private:
     virtual void setBody(const char *body, size_t len) override
@@ -346,10 +346,9 @@ class HttpResponseImpl : public HttpResponse
     std::string sendfileName_;
     mutable std::shared_ptr<Json::Value> jsonPtr_;
 
-    std::shared_ptr<std::string> fullHeaderString_;
-
-    mutable std::shared_ptr<std::string> httpString_;
-    mutable std::string::size_type datePos_{std::string::npos};
+    std::shared_ptr<trantor::MsgBuffer> fullHeaderString_;
+    mutable std::shared_ptr<trantor::MsgBuffer> httpString_;
+    mutable size_t datePos_{static_cast<size_t>(-1)};
     mutable int64_t httpStringDate_{-1};
     mutable bool flagForParsingJson_{false};
     ContentType contentType_{CT_TEXT_HTML};

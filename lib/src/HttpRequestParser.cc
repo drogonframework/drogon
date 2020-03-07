@@ -243,17 +243,17 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
                                 resp->setStatusCode(k413RequestEntityTooLarge);
                                 auto httpString =
                                     static_cast<HttpResponseImpl *>(resp.get())
-                                        ->renderToString();
+                                        ->renderToBuffer();
                                 reset();
-                                connPtr->send(httpString);
+                                connPtr->send(std::move(*httpString));
                             }
                             else
                             {
                                 resp->setStatusCode(k100Continue);
                                 auto httpString =
                                     static_cast<HttpResponseImpl *>(resp.get())
-                                        ->renderToString();
-                                connPtr->send(httpString);
+                                        ->renderToBuffer();
+                                connPtr->send(std::move(*httpString));
                             }
                         }
                     }
