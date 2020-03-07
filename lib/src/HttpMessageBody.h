@@ -25,8 +25,7 @@ class HttpMessageBody
     {
         kNone = 0,
         kString,
-        kStringView,
-        kFile
+        kStringView
     };
     BodyType bodyType()
     {
@@ -56,7 +55,10 @@ class HttpMessageBody
 class HttpMessageStringBody : public HttpMessageBody
 {
   public:
-    HttpMessageStringBody() = default;
+    HttpMessageStringBody()
+    {
+        type_ = BodyType::kString;
+    }
     HttpMessageStringBody(const std::string &body) : body_(body)
     {
         type_ = BodyType::kString;
@@ -149,26 +151,6 @@ class HttpMessageStringViewBody : public HttpMessageBody
   private:
     string_view body_;
     mutable std::unique_ptr<std::string> bodyString_;
-};
-
-class HttpMessageFileBody : public HttpMessageBody
-{
-  public:
-    HttpMessageFileBody(const std::string &fileName) : fileName_(fileName)
-    {
-        type_ = BodyType::kFile;
-    }
-    virtual const std::string &getString() const override
-    {
-        return fileName_;
-    }
-    virtual std::string &getString() override
-    {
-        return fileName_;
-    }
-
-  private:
-    std::string fileName_;
 };
 
 }  // namespace drogon

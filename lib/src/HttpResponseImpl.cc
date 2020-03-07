@@ -232,8 +232,7 @@ void HttpResponseImpl::makeHeaderString(
     {
         totalLen = headerStringPtr->length();
         headerStringPtr->resize(totalLen + 64);
-        if (!bodyPtr_ ||
-            bodyPtr_->bodyType() != HttpMessageBody::BodyType::kFile)
+        if (sendfileName_.empty())
         {
             size_t bodyLength = bodyPtr_ ? bodyPtr_->length() : 0;
             len =
@@ -245,9 +244,9 @@ void HttpResponseImpl::makeHeaderString(
         else
         {
             struct stat filestat;
-            if (stat(sendfileName().data(), &filestat) < 0)
+            if (stat(sendfileName_.data(), &filestat) < 0)
             {
-                LOG_SYSERR << sendfileName() << " stat error";
+                LOG_SYSERR << sendfileName_ << " stat error";
                 headerStringPtr->resize(totalLen);
                 return;
             }
@@ -326,8 +325,7 @@ void HttpResponseImpl::renderToBuffer(trantor::MsgBuffer &buffer)
         if (!passThrough_)
         {
             buffer.ensureWritableBytes(64);
-            if (!bodyPtr_ ||
-                bodyPtr_->bodyType() != HttpMessageBody::BodyType::kFile)
+            if (sendfileName_.empty())
             {
                 auto bodyLength = bodyPtr_ ? bodyPtr_->length() : 0;
                 len = snprintf(buffer.beginWrite(),
@@ -338,9 +336,9 @@ void HttpResponseImpl::renderToBuffer(trantor::MsgBuffer &buffer)
             else
             {
                 struct stat filestat;
-                if (stat(sendfileName().data(), &filestat) < 0)
+                if (stat(sendfileName_.data(), &filestat) < 0)
                 {
-                    LOG_SYSERR << sendfileName() << " stat error";
+                    LOG_SYSERR << sendfileName_ << " stat error";
                     return;
                 }
                 len = snprintf(buffer.beginWrite(),
@@ -635,6 +633,7 @@ void HttpResponseImpl::swap(HttpResponseImpl &that) noexcept
     swap(leftBodyLength_, that.leftBodyLength_);
     swap(currentChunkLength_, that.currentChunkLength_);
     swap(contentType_, that.contentType_);
+    swap(sendfileName_, that.sendfileName_);
     jsonPtr_.swap(that.jsonPtr_);
     fullHeaderString_.swap(that.fullHeaderString_);
     httpString_.swap(that.httpString_);
@@ -647,6 +646,7 @@ void HttpResponseImpl::clear()
     version_ = Version::kHttp11;
     statusMessage_ = string_view{};
     fullHeaderString_.reset();
+    sendfileName_.clear();
     headers_.clear();
     cookies_.clear();
     bodyPtr_.reset();

@@ -287,17 +287,11 @@ class HttpResponseImpl : public HttpResponse
     void generateBodyFromJson();
     const std::string &sendfileName() const
     {
-        if (bodyPtr_ == nullptr ||
-            bodyPtr_->bodyType() != HttpMessageBody::BodyType::kFile)
-        {
-            const static std::string emptyString{};
-            return emptyString;
-        }
-        return bodyPtr_->getString();
+        return sendfileName_;
     }
     void setSendfile(const std::string &filename)
     {
-        bodyPtr_ = std::make_shared<HttpMessageFileBody>(filename);
+        sendfileName_ = filename;
     }
     void makeHeaderString()
     {
@@ -349,6 +343,7 @@ class HttpResponseImpl : public HttpResponse
     size_t currentChunkLength_{0};
     mutable std::shared_ptr<HttpMessageBody> bodyPtr_;
     ssize_t expriedTime_{-1};
+    std::string sendfileName_;
     mutable std::shared_ptr<Json::Value> jsonPtr_;
 
     std::shared_ptr<std::string> fullHeaderString_;
