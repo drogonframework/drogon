@@ -148,9 +148,6 @@ class HttpResponse
         assert(N > 0);
         setContentTypeCodeAndCustomString(type, typeString, N - 1);
     }
-    virtual void setContentTypeCodeAndCustomString(ContentType type,
-                                                   const char *typeString,
-                                                   size_t typeStringLength) = 0;
 
     /// Set the reponse content type and the character set.
     /// virtual void setContentTypeCodeAndCharacterSet(ContentType type, const
@@ -365,6 +362,9 @@ class HttpResponse
 
   private:
     virtual void setBody(const char *body, size_t len) = 0;
+    virtual void setContentTypeCodeAndCustomString(ContentType type,
+                                                   const char *typeString,
+                                                   size_t typeStringLength) = 0;
 };
 template <>
 inline HttpResponsePtr toResponse<const Json::Value &>(const Json::Value &pJson)

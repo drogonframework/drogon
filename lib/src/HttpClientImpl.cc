@@ -24,7 +24,10 @@
 using namespace trantor;
 using namespace drogon;
 using namespace std::placeholders;
-
+namespace trantor
+{
+const static size_t kDefaultDNSTimeout{600};
+}
 void HttpClientImpl::createTcpClient()
 {
     LOG_TRACE << "New TcpClient," << serverAddr_.toIpPort();
@@ -263,7 +266,9 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
                 dns_ = true;
                 if (!resolverPtr_)
                 {
-                    resolverPtr_ = trantor::Resolver::newResolver(loop_);
+                    resolverPtr_ =
+                        trantor::Resolver::newResolver(loop_,
+                                                       kDefaultDNSTimeout);
                 }
                 resolverPtr_->resolve(
                     domain_,
