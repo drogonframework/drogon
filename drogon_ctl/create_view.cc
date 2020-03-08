@@ -459,7 +459,7 @@ void create_view::newViewSourceFile(std::ofstream &file,
     file << "if(layoutName.empty())\n{\n";
     file << "std::string ret{std::move(" << streamName << ".str())};\n";
     file << "return ret;\n}else\n{\n";
-    file << "auto static templ = DrTemplateBase::newTemplate(layoutName);\n";
+    file << "auto templ = DrTemplateBase::newTemplate(layoutName);\n";
     file << "if(!templ) return \"\";\n";
     file << "HttpViewData data;\n";
     file << "auto str = std::move(" << streamName << ".str());\n";
