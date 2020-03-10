@@ -43,8 +43,10 @@ Result makeResult(
 MysqlConnection::MysqlConnection(trantor::EventLoop *loop,
                                  const std::string &connInfo)
     : DbConnection(loop),
-      mysqlPtr_(
-          std::shared_ptr<MYSQL>(new MYSQL, [](MYSQL *p) { mysql_close(p); }))
+      mysqlPtr_(std::shared_ptr<MYSQL>(new MYSQL, [](MYSQL *p) {
+          mysql_close(p);
+          delete p;
+      }))
 {
     mysql_init(mysqlPtr_.get());
     mysql_options(mysqlPtr_.get(), MYSQL_OPT_NONBLOCK, 0);
@@ -52,7 +54,7 @@ MysqlConnection::MysqlConnection(trantor::EventLoop *loop,
     // Get the key and value
     std::regex r(" *= *");
     auto tmpStr = std::regex_replace(connInfo, r, "=");
-    std::string host, user, passwd, dbname, port;
+
     auto keyValues = utils::splitString(tmpStr, " ");
     for (auto const &kvs : keyValues)
     {
@@ -68,37 +70,37 @@ MysqlConnection::MysqlConnection(trantor::EventLoop *loop,
         // LOG_TRACE << key << "=" << value;
         if (key == "host")
         {
-            host = value;
+            host_ = value;
         }
         else if (key == "user")
         {
-            user = value;
+            user_ = value;
         }
         else if (key == "dbname")
         {
             // LOG_DEBUG << "database:[" << value << "]";
-            dbname = value;
+            dbname_ = value;
         }
         else if (key == "port")
         {
-            port = value;
+            port_ = value;
         }
         else if (key == "password")
         {
-            passwd = value;
+            passwd_ = value;
         }
     }
-    loop_->queueInLoop([=]() {
+    loop_->queueInLoop([this]() {
         MYSQL *ret;
         status_ = ConnectStatus::Connecting;
         waitStatus_ =
             mysql_real_connect_start(&ret,
                                      mysqlPtr_.get(),
-                                     host.empty() ? NULL : host.c_str(),
-                                     user.empty() ? NULL : user.c_str(),
-                                     passwd.empty() ? NULL : passwd.c_str(),
-                                     dbname.empty() ? NULL : dbname.c_str(),
-                                     port.empty() ? 3306 : atol(port.c_str()),
+                                     host_.empty() ? NULL : host_.c_str(),
+                                     user_.empty() ? NULL : user_.c_str(),
+                                     passwd_.empty() ? NULL : passwd_.c_str(),
+                                     dbname_.empty() ? NULL : dbname_.c_str(),
+                                     port_.empty() ? 3306 : atol(port_.c_str()),
                                      NULL,
                                      0);
         // LOG_DEBUG << ret;
@@ -111,7 +113,7 @@ MysqlConnection::MysqlConnection(trantor::EventLoop *loop,
             exit(1);
         }
         channelPtr_ =
-            std::unique_ptr<trantor::Channel>(new trantor::Channel(loop, fd));
+            std::unique_ptr<trantor::Channel>(new trantor::Channel(loop_, fd));
         channelPtr_->setCloseCallback([=]() {
             perror("sock close");
             handleClosed();
@@ -426,7 +428,9 @@ void MysqlConnection::execSqlInLoop(
                 outputError();
                 return;
             }
-            getResult(ret);
+            loop_->queueInLoop([thisPtr = shared_from_this(), ret] {
+                thisPtr->getResult(ret);
+            });
         }
     }
     setChannel();

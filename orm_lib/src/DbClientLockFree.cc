@@ -52,19 +52,12 @@ DbClientLockFree::DbClientLockFree(const std::string &connInfo,
 {
     type_ = type;
     LOG_TRACE << "type=" << (int)type;
-    if (type == ClientType::PostgreSQL)
+    if (type == ClientType::PostgreSQL || type == ClientType::Mysql)
     {
         loop_->queueInLoop([this]() {
             for (size_t i = 0; i < connectionsNumber_; ++i)
                 connectionHolders_.push_back(newConnection());
         });
-    }
-    else if (type == ClientType::Mysql)
-    {
-        for (size_t i = 0; i < connectionsNumber_; ++i)
-            loop_->runAfter(0.1 * (i + 1), [this]() {
-                connectionHolders_.push_back(newConnection());
-            });
     }
     else
     {
@@ -231,6 +224,9 @@ std::shared_ptr<Transaction> DbClientLockFree::newTransaction(
     const std::function<void(bool)> &)
 {
     // Don't support transaction;
+    LOG_ERROR
+        << "You can't use the synchronous interface in the fast Database "
+           "client, please use the asynchronous version (newTransactionAsync)";
     assert(0);
     return nullptr;
 }

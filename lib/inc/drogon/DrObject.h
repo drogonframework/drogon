@@ -110,6 +110,7 @@ class DrObject : public virtual DrObjectBase
                                 void>::type
         registerClass()
         {
+            LOG_ERROR << "Can't register classes without a default constructor";
         }
     };
 
