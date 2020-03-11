@@ -259,13 +259,13 @@ bool SharedLibManager::shouldCompileLib(const std::string &soFile, const struct 
         return true;
     }
 
-    #ifdef __linux__
-        auto soModifiedTime = soStat.st_mtim.tv_sec;
-    #elif defined _WIN32
-        auto soModifiedTime = soStat.st_mtime;
-    #else
-        auto soModifiedTime = soStat.st_mtimespec.tv_sec;
-    #endif
+#ifdef __linux__
+    auto soModifiedTime = soStat.st_mtim.tv_sec;
+#elif defined _WIN32
+    auto soModifiedTime = soStat.st_mtime;
+#else
+    auto soModifiedTime = soStat.st_mtimespec.tv_sec;
+#endif
 
     return (sourceModifiedTime > soModifiedTime);
 }
