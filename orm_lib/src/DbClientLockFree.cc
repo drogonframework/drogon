@@ -320,7 +320,8 @@ void DbClientLockFree::handleNewTask(const DbConnectionPtr &conn)
 #if LIBPQ_SUPPORTS_BATCH_MODE
         if (type_ != ClientType::PostgreSQL)
         {
-            auto &cmd = sqlCmdBuffer_.front();
+            std::shared_ptr<SqlCmd> cmd = std::move(sqlCmdBuffer_.front());
+            sqlCmdBuffer_.pop_front();
             conn->execSql(std::move(cmd->sql_),
                           cmd->parametersNumber_,
                           std::move(cmd->parameters_),
@@ -328,7 +329,6 @@ void DbClientLockFree::handleNewTask(const DbConnectionPtr &conn)
                           std::move(cmd->formats_),
                           std::move(cmd->callback_),
                           std::move(cmd->exceptionCallback_));
-            sqlCmdBuffer_.pop_front();
         }
         else
         {
@@ -338,7 +338,8 @@ void DbClientLockFree::handleNewTask(const DbConnectionPtr &conn)
             conn->batchSql(std::move(cmds));
         }
 #else
-        auto &cmd = sqlCmdBuffer_.front();
+        std::shared_ptr<SqlCmd> cmd = std::move(sqlCmdBuffer_.front());
+        sqlCmdBuffer_.pop_front();
         conn->execSql(std::move(cmd->sql_),
                       cmd->parametersNumber_,
                       std::move(cmd->parameters_),
@@ -346,7 +347,6 @@ void DbClientLockFree::handleNewTask(const DbConnectionPtr &conn)
                       std::move(cmd->formats_),
                       std::move(cmd->callback_),
                       std::move(cmd->exceptionCallback_));
-        sqlCmdBuffer_.pop_front();
 #endif
         return;
     }
