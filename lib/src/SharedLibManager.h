@@ -18,6 +18,8 @@
 #include <trantor/utils/NonCopyable.h>
 #include <unordered_map>
 #include <vector>
+#include <sys/stat.h>
+
 namespace drogon
 {
 class SharedLibManager : public trantor::NonCopyable
@@ -39,7 +41,8 @@ class SharedLibManager : public trantor::NonCopyable
         struct timespec mTime = {0};
     };
     std::unordered_map<std::string, DLStat> dlMap_;
-    void *loadLibs(const std::string &sourceFile, void *oldHld);
+    void *loadLibs(const std::string &sourceFile, const struct stat &sourceStat, void *oldHld);
+    bool shouldCompileLib(const std::string &soFile, const struct stat &sourceStat);
     trantor::TimerId timeId_;
 };
 }  // namespace drogon
