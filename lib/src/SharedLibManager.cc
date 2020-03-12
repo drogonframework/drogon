@@ -70,16 +70,16 @@ static void forEachFileIn(
 }
 
 using namespace drogon;
-SharedLibManager::SharedLibManager(trantor::EventLoop *loop,
-                                   const std::vector<std::string> &libPaths,
+SharedLibManager::SharedLibManager(const std::vector<std::string> &libPaths,
                                    const std::string &outputPath)
-    : loop_(loop), libPaths_(libPaths), outputPath_(outputPath)
+    : libPaths_(libPaths), outputPath_(outputPath)
 {
-    timeId_ = loop_->runEvery(5.0, [=]() { managerLibs(); });
+    workingThread_.run();
+    timeId_ = workingThread_.getLoop()->runEvery(5.0, [=]() { managerLibs(); });
 }
 SharedLibManager::~SharedLibManager()
 {
-    loop_->invalidateTimer(timeId_);
+    workingThread_.getLoop()->invalidateTimer(timeId_);
 }
 void SharedLibManager::managerLibs()
 {
@@ -125,20 +125,7 @@ void SharedLibManager::managerLibs()
                         {
                             std::ofstream fout(lockFile);
                         }
-                        std::string cmd = "drogon_ctl create view ";
-                        if (!outputPath_.empty())
-                        {
-                            cmd.append(filename).append(" -o ").append(
-                                outputPath_);
-                        }
-                        else
-                        {
-                            cmd.append(filename).append(" -o ").append(libPath);
-                        }
-                        LOG_TRACE << cmd;
-                        auto r = system(cmd.c_str());
-                        // TODO: handle r
-                        (void)(r);
+
                         auto srcFile = filename.substr(0, pos);
                         if (!outputPath_.empty())
                         {
@@ -149,9 +136,36 @@ void SharedLibManager::managerLibs()
                             }
                             srcFile = outputPath_ + "/" + srcFile;
                         }
-                        srcFile.append(".cc");
+                        auto soFile = srcFile + ".so";
                         DLStat dlStat;
-                        dlStat.handle = loadLibs(srcFile, st, oldHandle);
+                        if (!shouldCompileLib(soFile, st))
+                        {
+                            LOG_TRACE << "Using already compiled library:"
+                                      << soFile;
+                            dlStat.handle = loadLib(soFile, oldHandle);
+                        }
+                        else
+                        {
+                            // generate source code and compile it.
+                            std::string cmd = "drogon_ctl create view ";
+                            if (!outputPath_.empty())
+                            {
+                                cmd.append(filename).append(" -o ").append(
+                                    outputPath_);
+                            }
+                            else
+                            {
+                                cmd.append(filename).append(" -o ").append(
+                                    libPath);
+                            }
+                            srcFile.append(".cc");
+                            LOG_TRACE << cmd;
+                            auto r = system(cmd.c_str());
+                            // TODO: handle r
+                            (void)(r);
+                            dlStat.handle =
+                                compileAndLoadLib(srcFile, oldHandle);
+                        }
 #ifdef __linux__
                         dlStat.mTime = st.st_mtim;
 #elif defined _WIN32
@@ -168,7 +182,7 @@ void SharedLibManager::managerLibs()
                             dlStat.handle = dlMap_[filename].handle;
                             dlMap_[filename] = dlStat;
                         }
-                        loop_->runAfter(3.5, [=]() {
+                        workingThread_.getLoop()->runAfter(3.5, [=]() {
                             LOG_TRACE << "remove file " << lockFile;
                             if (unlink(lockFile.c_str()) == -1)
                                 perror("");
@@ -179,7 +193,8 @@ void SharedLibManager::managerLibs()
     }
 }
 
-void *SharedLibManager::loadLibs(const std::string &sourceFile, const struct stat &sourceStat, void *oldHld)
+void *SharedLibManager::compileAndLoadLib(const std::string &sourceFile,
+                                          void *oldHld)
 {
     LOG_TRACE << "src:" << sourceFile;
     std::string cmd = COMPILER_COMMAND;
@@ -205,45 +220,21 @@ void *SharedLibManager::loadLibs(const std::string &sourceFile, const struct sta
     void *Handle = nullptr;
     LOG_TRACE << cmd;
 
-    if (shouldCompileLib(soFile, sourceStat))
+    if (system(cmd.c_str()) == 0)
     {
-        if (system(cmd.c_str()) == 0)
-        {
-            LOG_TRACE << "Compiled successfully:" << soFile;
-            if (oldHld)
-            {
-                if (dlclose(oldHld) == 0)
-                {
-                    LOG_TRACE << "Successfully closed dynamic library:" << oldHld;
-                }
-                else
-                {
-                    LOG_TRACE << dlerror();
-                }
-            }
-        } else {
-            LOG_DEBUG << "Could not compile library.";
-        }
-    } else {
-        LOG_TRACE << "Using already compiled library:" << soFile;
-    }
-
-    // loading so file;
-    Handle = dlopen(soFile.c_str(), RTLD_LAZY);
-    if (!Handle)
-    {
-        LOG_ERROR << "load " << soFile << " error!";
-        LOG_ERROR << dlerror();
+        LOG_TRACE << "Compiled successfully:" << soFile;
+        return loadLib(soFile, oldHld);
     }
     else
     {
-        LOG_TRACE << "Successfully loaded library file " << soFile;
+        LOG_DEBUG << "Could not compile library.";
+        return nullptr;
     }
-
-    return Handle;
 }
 
-bool SharedLibManager::shouldCompileLib(const std::string &soFile, const struct stat &sourceStat) {
+bool SharedLibManager::shouldCompileLib(const std::string &soFile,
+                                        const struct stat &sourceStat)
+{
 #ifdef __linux__
     auto sourceModifiedTime = sourceStat.st_mtim.tv_sec;
 #elif defined _WIN32
@@ -268,4 +259,31 @@ bool SharedLibManager::shouldCompileLib(const std::string &soFile, const struct 
 #endif
 
     return (sourceModifiedTime > soModifiedTime);
+}
+
+void *SharedLibManager::loadLib(const std::string &soFile, void *oldHld)
+{
+    if (oldHld)
+    {
+        if (dlclose(oldHld) == 0)
+        {
+            LOG_TRACE << "Successfully closed dynamic library:" << oldHld;
+        }
+        else
+        {
+            LOG_TRACE << dlerror();
+        }
+    }
+    auto Handle = dlopen(soFile.c_str(), RTLD_LAZY);
+    if (!Handle)
+    {
+        LOG_ERROR << "load " << soFile << " error!";
+        LOG_ERROR << dlerror();
+    }
+    else
+    {
+        LOG_TRACE << "Successfully loaded library file " << soFile;
+    }
+
+    return Handle;
 }
