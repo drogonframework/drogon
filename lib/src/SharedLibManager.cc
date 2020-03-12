@@ -17,7 +17,6 @@
 #include <dirent.h>
 #include <dlfcn.h>
 #include <fstream>
-#include <sys/stat.h>
 #include <sys/types.h>
 #include <trantor/utils/Logger.h>
 #include <unistd.h>
@@ -152,7 +151,7 @@ void SharedLibManager::managerLibs()
                         }
                         srcFile.append(".cc");
                         DLStat dlStat;
-                        dlStat.handle = loadLibs(srcFile, oldHandle);
+                        dlStat.handle = loadLibs(srcFile, st, oldHandle);
 #ifdef __linux__
                         dlStat.mTime = st.st_mtim;
 #elif defined _WIN32
@@ -179,7 +178,8 @@ void SharedLibManager::managerLibs()
             });
     }
 }
-void *SharedLibManager::loadLibs(const std::string &sourceFile, void *oldHld)
+
+void *SharedLibManager::loadLibs(const std::string &sourceFile, const struct stat &sourceStat, void *oldHld)
 {
     LOG_TRACE << "src:" << sourceFile;
     std::string cmd = COMPILER_COMMAND;
@@ -204,32 +204,68 @@ void *SharedLibManager::loadLibs(const std::string &sourceFile, void *oldHld)
     cmd.append(soFile);
     void *Handle = nullptr;
     LOG_TRACE << cmd;
-    if (system(cmd.c_str()) == 0)
-    {
-        LOG_TRACE << "Compiled successfully";
-        if (oldHld)
-        {
-            if (dlclose(oldHld) == 0)
-            {
-                LOG_TRACE << "close dynamic lib successfully:" << oldHld;
-            }
-            else
-            {
-                LOG_TRACE << dlerror();
-            }
-        }
 
-        // loading so file;
-        Handle = dlopen(soFile.c_str(), RTLD_LAZY);
-        if (!Handle)
+    if (shouldCompileLib(soFile, sourceStat))
+    {
+        if (system(cmd.c_str()) == 0)
         {
-            LOG_ERROR << "load " << soFile << " error!";
-            LOG_ERROR << dlerror();
+            LOG_TRACE << "Compiled successfully:" << soFile;
+            if (oldHld)
+            {
+                if (dlclose(oldHld) == 0)
+                {
+                    LOG_TRACE << "Successfully closed dynamic library:" << oldHld;
+                }
+                else
+                {
+                    LOG_TRACE << dlerror();
+                }
+            }
+        } else {
+            LOG_DEBUG << "Could not compile library.";
         }
-        else
-        {
-            LOG_TRACE << "Successfully loaded library file " << soFile;
-        }
+    } else {
+        LOG_TRACE << "Using already compiled library:" << soFile;
     }
+
+    // loading so file;
+    Handle = dlopen(soFile.c_str(), RTLD_LAZY);
+    if (!Handle)
+    {
+        LOG_ERROR << "load " << soFile << " error!";
+        LOG_ERROR << dlerror();
+    }
+    else
+    {
+        LOG_TRACE << "Successfully loaded library file " << soFile;
+    }
+
     return Handle;
+}
+
+bool SharedLibManager::shouldCompileLib(const std::string &soFile, const struct stat &sourceStat) {
+#ifdef __linux__
+    auto sourceModifiedTime = sourceStat.st_mtim.tv_sec;
+#elif defined _WIN32
+    auto sourceModifiedTime = sourceStat.st_mtime;
+#else
+    auto sourceModifiedTime = sourceStat.st_mtimespec.tv_sec;
+#endif
+
+    struct stat soStat;
+    if (stat(soFile.c_str(), &soStat) == -1)
+    {
+        LOG_TRACE << "Cannot determine modification time for:" << soFile;
+        return true;
+    }
+
+#ifdef __linux__
+    auto soModifiedTime = soStat.st_mtim.tv_sec;
+#elif defined _WIN32
+    auto soModifiedTime = soStat.st_mtime;
+#else
+    auto soModifiedTime = soStat.st_mtimespec.tv_sec;
+#endif
+
+    return (sourceModifiedTime > soModifiedTime);
 }
