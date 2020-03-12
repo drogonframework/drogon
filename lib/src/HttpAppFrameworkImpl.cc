@@ -447,7 +447,7 @@ void HttpAppFrameworkImpl::run()
     if (!libFilePaths_.empty())
     {
         sharedLibManagerPtr_ = std::unique_ptr<SharedLibManager>(
-            new SharedLibManager(getLoop(), libFilePaths_, libFileOutputPath_));
+            new SharedLibManager(libFilePaths_, libFileOutputPath_));
     }
 #endif
     // Create all listeners.
