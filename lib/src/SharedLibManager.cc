@@ -164,7 +164,7 @@ void SharedLibManager::managerLibs()
                             // TODO: handle r
                             (void)(r);
                             dlStat.handle =
-                                compileAndLoadLib(srcFile, st, oldHandle);
+                                compileAndLoadLib(srcFile, oldHandle);
                         }
 #ifdef __linux__
                         dlStat.mTime = st.st_mtim;
@@ -194,7 +194,6 @@ void SharedLibManager::managerLibs()
 }
 
 void *SharedLibManager::compileAndLoadLib(const std::string &sourceFile,
-                                          const struct stat &sourceStat,
                                           void *oldHld)
 {
     LOG_TRACE << "src:" << sourceFile;

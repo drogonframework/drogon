@@ -40,7 +40,6 @@ class SharedLibManager : public trantor::NonCopyable
     };
     std::unordered_map<std::string, DLStat> dlMap_;
     void *compileAndLoadLib(const std::string &sourceFile,
-                            const struct stat &sourceStat,
                             void *oldHld);
     void *loadLib(const std::string &soFile, void *oldHld);
     bool shouldCompileLib(const std::string &soFile,
