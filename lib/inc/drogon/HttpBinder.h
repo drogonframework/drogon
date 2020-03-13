@@ -21,7 +21,7 @@
 #include <drogon/DrObject.h>
 #include <drogon/utils/FunctionTraits.h>
 #include <drogon/HttpRequest.h>
-#include <list>
+#include <deque>
 #include <memory>
 #include <sstream>
 #include <string>
@@ -67,7 +67,7 @@ class HttpBinderBase
 {
   public:
     virtual void handleHttpRequest(
-        std::list<std::string> &pathArguments,
+        std::deque<std::string> &pathArguments,
         const HttpRequestPtr &req,
         std::function<void(const HttpResponsePtr &)> &&callback) = 0;
     virtual size_t paramCount() = 0;
@@ -95,7 +95,7 @@ class HttpBinder : public HttpBinderBase
   public:
     using FunctionType = FUNCTION;
     virtual void handleHttpRequest(
-        std::list<std::string> &pathArguments,
+        std::deque<std::string> &pathArguments,
         const HttpRequestPtr &req,
         std::function<void(const HttpResponsePtr &)> &&callback) override
     {
@@ -215,7 +215,7 @@ class HttpBinder : public HttpBinderBase
 
     template <typename... Values, std::size_t Boundary = argument_count>
     typename std::enable_if<(sizeof...(Values) < Boundary), void>::type run(
-        std::list<std::string> &pathArguments,
+        std::deque<std::string> &pathArguments,
         const HttpRequestPtr &req,
         std::function<void(const HttpResponsePtr &)> &&callback,
         Values &&... values)
@@ -265,7 +265,7 @@ class HttpBinder : public HttpBinderBase
     }
     template <typename... Values, std::size_t Boundary = argument_count>
     typename std::enable_if<(sizeof...(Values) == Boundary), void>::type run(
-        std::list<std::string> &,
+        std::deque<std::string> &,
         const HttpRequestPtr &req,
         std::function<void(const HttpResponsePtr &)> &&callback,
         Values &&... values)

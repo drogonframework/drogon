@@ -83,7 +83,7 @@ class HttpControllersRouter : public trantor::NonCopyable
         std::vector<std::string> filterNames_;
         std::vector<std::shared_ptr<HttpFilterBase>> filters_;
         std::vector<size_t> parameterPlaces_;
-        std::map<std::string, size_t> queryParametersPlaces_;
+        std::vector<std::pair<std::string, size_t>> queryParametersPlaces_;
         IOThreadStorage<HttpResponsePtr> responseCache_;
         bool isCORS_{false};
     };

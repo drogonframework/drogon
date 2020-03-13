@@ -21,6 +21,7 @@
 #include "FiltersFunction.h"
 #include <algorithm>
 #include <cctype>
+#include <deque>
 
 using namespace drogon;
 
@@ -241,7 +242,7 @@ void HttpControllersRouter::addHttpPath(
         }
         tmpPath = results.suffix();
     }
-    std::map<std::string, size_t> parametersPlaces;
+    std::vector<std::pair<std::string, size_t>> parametersPlaces;
     if (!paras.empty())
     {
         std::regex pregex("([^&]*)=\\{([^&]*)\\}&*");
@@ -282,7 +283,7 @@ void HttpControllersRouter::addHttpPath(
                         LOG_ERROR << "Path pattern: " << path;
                         exit(1);
                     }
-                    parametersPlaces[results[1].str()] = place;
+                    parametersPlaces.emplace_back(results[1].str(), place);
                 }
                 else
                 {
@@ -320,7 +321,7 @@ void HttpControllersRouter::addHttpPath(
                             LOG_ERROR << "Path pattern: " << path;
                             exit(1);
                         }
-                        parametersPlaces[results[1].str()] = place;
+                        parametersPlaces.emplace_back(results[1].str(), place);
                     }
                     else
                     {
@@ -343,7 +344,8 @@ void HttpControllersRouter::addHttpPath(
                             LOG_ERROR << "Path pattern: " << path;
                             exit(1);
                         }
-                        parametersPlaces[results[1].str()] = placeIndex;
+                        parametersPlaces.emplace_back(results[1].str(),
+                                                      placeIndex);
                     }
                 }
                 ++placeIndex;
@@ -554,7 +556,7 @@ void HttpControllersRouter::doControllerHandler(
         }
     }
 
-    std::vector<std::string> params(ctrlBinderPtr->parameterPlaces_.size());
+    std::deque<std::string> params(ctrlBinderPtr->parameterPlaces_.size());
 
     for (size_t j = 1; j < matchResult.size(); ++j)
     {
@@ -571,31 +573,27 @@ void HttpControllersRouter::doControllerHandler(
         LOG_TRACE << "place=" << place << " para:" << params[place - 1];
     }
 
-    if (ctrlBinderPtr->queryParametersPlaces_.size() > 0)
+    if (!ctrlBinderPtr->queryParametersPlaces_.empty())
     {
-        auto qureyPara = req->getParameters();
-        for (auto const &parameter : qureyPara)
+        auto &queryPara = req->getParameters();
+        for (auto const &paraPlace : ctrlBinderPtr->queryParametersPlaces_)
         {
-            if (ctrlBinderPtr->queryParametersPlaces_.find(parameter.first) !=
-                ctrlBinderPtr->queryParametersPlaces_.end())
+            auto place = paraPlace.second;
+            if (place > params.size())
+                params.resize(place);
+            auto iter = queryPara.find(paraPlace.first);
+            if (iter != queryPara.end())
             {
-                auto place =
-                    ctrlBinderPtr->queryParametersPlaces_.find(parameter.first)
-                        ->second;
-                if (place > params.size())
-                    params.resize(place);
-                params[place - 1] = parameter.second;
+                params[place - 1] = iter->second;
+            }
+            else
+            {
+                params[place - 1] = std::string{};
             }
         }
     }
-    std::list<std::string> paraList;
-    for (auto &p : params)  /// Use reference
-    {
-        LOG_TRACE << p;
-        paraList.push_back(std::move(p));
-    }
     ctrlBinderPtr->binderPtr_->handleHttpRequest(
-        paraList,
+        params,
         req,
         [=, callback = std::move(callback)](const HttpResponsePtr &resp) {
             if (resp->expiredTime() >= 0 && resp->statusCode() != k404NotFound)
