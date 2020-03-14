@@ -704,7 +704,42 @@ void doTest(const HttpClientPtr &client,
                 exit(1);
             }
         });
-
+    /// Test Incomplete URL
+    req = HttpRequest::newHttpRequest();
+    req->setMethod(drogon::Get);
+    req->setPath("/api/v1/handle11/11/2 2/");
+    client->sendRequest(
+        req, [=](ReqResult result, const HttpResponsePtr &resp) {
+            if (result == ReqResult::Ok)
+            {
+                if (resp->getBody().find(
+                        "<td>int p1</td>\n        <td>11</td>") !=
+                        std::string::npos &&
+                    resp->getBody().find(
+                        "<td>int p4</td>\n        <td>0</td>") !=
+                        std::string::npos &&
+                    resp->getBody().find(
+                        "<td>string p2</td>\n        <td>2 2</td>") !=
+                        std::string::npos &&
+                    resp->getBody().find(
+                        "<td>string p3</td>\n        <td></td>") !=
+                        std::string::npos)
+                {
+                    outputGood(req, isHttps);
+                }
+                else
+                {
+                    LOG_DEBUG << resp->getBody();
+                    LOG_ERROR << "Error!";
+                    exit(1);
+                }
+            }
+            else
+            {
+                LOG_ERROR << "Error!";
+                exit(1);
+            }
+        });
     /// Test lambda
     req = HttpRequest::newHttpRequest();
     req->setMethod(drogon::Get);
