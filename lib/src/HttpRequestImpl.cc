@@ -29,9 +29,9 @@ void HttpRequestImpl::parseJson() const
     auto input = contentView();
     if (input.empty())
         return;
-    std::string type = getHeaderBy("content-type");
-    std::transform(type.begin(), type.end(), type.begin(), tolower);
-    if (type.find("application/json") != std::string::npos)
+    if (contentType_ == CT_APPLICATION_JSON ||
+        getHeaderBy("content-type").find("application/json") !=
+            std::string::npos)
     {
         static std::once_flag once;
         static Json::CharReaderBuilder builder;
@@ -47,6 +47,10 @@ void HttpRequestImpl::parseJson() const
             LOG_ERROR << errs;
             jsonPtr_.reset();
         }
+    }
+    else
+    {
+        jsonPtr_.reset();
     }
 }
 void HttpRequestImpl::parseParameters() const

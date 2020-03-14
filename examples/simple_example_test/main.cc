@@ -193,6 +193,7 @@ void doTest(const HttpClientPtr &client,
                         });
     // Post json again
     req = HttpRequest::newHttpJsonRequest(json);
+    assert(req->jsonObject());
     req->setMethod(drogon::Post);
     req->setPath("/api/v1/apitest/json");
     client->sendRequest(req,
