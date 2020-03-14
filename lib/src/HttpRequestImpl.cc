@@ -47,6 +47,8 @@ void HttpRequestImpl::parseJson() const
             LOG_ERROR << errs;
             jsonPtr_.reset();
         }
+    }else{
+        jsonPtr_.reset();
     }
 }
 void HttpRequestImpl::parseParameters() const
@@ -468,6 +470,7 @@ HttpRequestPtr HttpRequest::newHttpJsonRequest(const Json::Value &data)
     req->setVersion(drogon::Version::kHttp11);
     req->contentType_ = CT_APPLICATION_JSON;
     req->setContent(writeString(builder, data));
+    req->addHeader("content-type","application/json");
     return req;
 }
 
