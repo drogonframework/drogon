@@ -22,8 +22,8 @@
 namespace drogon
 {
 /**
- * @brief This class represents a attribute stored in the request context.
- * One can get or set any type of data to a attribute object.
+ * @brief This class represents the attributes stored in the HTTP request.
+ * One can add/get any type of data to/from an Attributes object.
  */
 class Attributes
 {
@@ -118,9 +118,7 @@ class Attributes
     /**
      * @brief Constructor, usually called by the framework
      */
-    Attributes()
-    {
-    }
+    Attributes() = default;
 
   private:
     using AttributesMap = std::map<std::string, any>;

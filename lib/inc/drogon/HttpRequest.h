@@ -229,11 +229,13 @@ class HttpRequest
         return session();
     }
 
-    /// Get the attributes store to which the request belongs.
-    virtual AttributesPtr attributes() const = 0;
+    /// Get the attributes store, users can add/get any type of data to/from
+    /// this store
+    virtual const AttributesPtr &attributes() const = 0;
 
-    /// Get the attributes store to which the request belongs.
-    AttributesPtr getAttributes() const
+    /// Get the attributes store, users can add/get any type of data to/from
+    /// this store
+    const AttributesPtr &getAttributes() const
     {
         return attributes();
     }

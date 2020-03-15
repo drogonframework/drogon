@@ -352,7 +352,7 @@ class HttpRequestImpl : public HttpRequest
         sessionPtr_ = session;
     }
 
-    virtual AttributesPtr attributes() const override
+    virtual const AttributesPtr &attributes() const override
     {
         if (!attributesPtr_)
         {
