@@ -23,7 +23,7 @@ namespace drogon
 {
 /**
  * @brief This class represents the attributes stored in the HTTP request.
- * One can get/set any type of data to/from a Attributes object.
+ * One can add/get any type of data to/from an Attributes object.
  */
 class Attributes
 {
