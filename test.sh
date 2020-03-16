@@ -4,6 +4,31 @@ drogon_ctl_exec=`pwd`/build/drogon_ctl/drogon_ctl
 echo ${drogon_ctl_exec}
 cd build/examples/
 
+make_program=make
+make_flags=''
+cmake_gen=''
+parallel=1
+
+# simulate ninja's parallelism
+case $(nproc) in
+ 1)
+    parallel=$(( $(nproc) + 1 ))
+    ;;
+ 2)
+    parallel=$(( $(nproc) + 1 ))
+    ;;
+ *)
+    parallel=$(( $(nproc) + 2 ))
+    ;;
+esac
+
+if [ -f /bin/ninja ]; then
+    make_program=ninja
+    cmake_gen='-G Ninja'
+else
+    make_flags="$make_flags -j$parallel"
+fi
+
 #Make webapp run as a daemon
 sed -i -e "s/\"run_as_daemon.*$/\"run_as_daemon\": true\,/" config.example.json
 sed -i -e "s/\"relaunch_on_error.*$/\"relaunch_on_error\": true\,/" config.example.json
@@ -93,14 +118,14 @@ if [ ! -f "Test_TestPlugin.h" -o ! -f "Test_TestPlugin.cc" ]; then
 fi
 
 cd ../build
-cmake ..
+cmake .. $cmake_gen
 
 if [ $? -ne 0 ]; then
     echo "Error in testing"
     exit -1
 fi
 
-make
+$make_program $make_flags
 
 if [ $? -ne 0 ]; then
     echo "Error in testing"
@@ -119,7 +144,7 @@ if [ "$1" = "-t" ]; then
     #unit testing
     cd ../
     echo "Unit testing"
-    make test
+    $make_program $make_flags test
     if [ $? -ne 0 ]; then
         echo "Error in unit testing"
         exit -1
