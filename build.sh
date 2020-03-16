@@ -38,7 +38,7 @@ function build_drogon() {
         exit -1
     fi
     
-    $make_program
+    $make_program $make_flags
     
     #If errors then exit
     if [ "$?" != "0" ]; then
@@ -54,12 +54,29 @@ function build_drogon() {
 }
 
 make_program=make
+make_flags=''
 cmake_gen=''
+parallel=1
+
+# simulate ninja's parallelism
+case $(nproc) in
+ 1)
+    parallel=$(( $(nproc) + 1 ))
+    ;;
+ 2)
+    parallel=$(( $(nproc) + 1 ))
+    ;;
+ *)
+    parallel=$(( $(nproc) + 2 ))
+    ;;
+esac
 
 if [ -f /bin/ninja ]; then
     make_program=ninja
     cmake_gen='-G Ninja'
-fi 
+else
+    make_flags="$make_flags -j$parallel"
+fi
 
 if [ "$1" = "-t" ]; then
     build_drogon 1
