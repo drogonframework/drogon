@@ -972,6 +972,13 @@ class HttpAppFramework : public trantor::NonCopyable
      */
     virtual HttpAppFramework &setHomePage(const std::string &homePageFile) = 0;
 
+    /// Get homepage, default is "index.html"
+    /**
+     * @note
+     * This method must be called after the framework has been run.
+     */
+    virtual const std::string &getHomePage() const = 0;
+
     /// Get a database client by name
     /**
      * @note
