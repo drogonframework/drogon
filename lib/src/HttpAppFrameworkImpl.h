@@ -298,7 +298,7 @@ class HttpAppFrameworkImpl : public HttpAppFramework
         homePageFile_ = homePageFile;
         return *this;
     }
-    const std::string &getHomePage() const
+    const std::string &getHomePage() const override
     {
         return homePageFile_;
     }
