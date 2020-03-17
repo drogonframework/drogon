@@ -81,12 +81,7 @@ else(WIN32)
                      /opt/mysql/lib/mysql)
 endif(WIN32)
 
-if(MYSQL_LIB)
-  get_filename_component(MYSQL_LIB_DIR ${MYSQL_LIB} PATH)
-endif(MYSQL_LIB)
-
-if(MYSQL_INCLUDE_DIR AND MYSQL_LIB_DIR)
-  set(MYSQL_FOUND TRUE)
+if(MYSQL_INCLUDE_DIR AND MYSQL_LIB)
 
   # FIND_LIBRARY(MYSQL_ZLIB zlib PATHS ${MYSQL_LIB_DIR})
   # FIND_LIBRARY(MYSQL_TAOCRYPT taocrypt PATHS ${MYSQL_LIB_DIR})
@@ -95,23 +90,17 @@ if(MYSQL_INCLUDE_DIR AND MYSQL_LIB_DIR)
   # (MYSQL_ZLIB) IF (MYSQL_TAOCRYPT) SET(MYSQL_CLIENT_LIBS ${MYSQL_CLIENT_LIBS}
   # taocrypt) ENDIF (MYSQL_TAOCRYPT) Added needed mysqlclient dependencies on
   # Windows
-  if(MSVC)
-    set(MYSQL_CLIENT_LIBS ${MYSQL_CLIENT_LIBS} shlwapi)
-  endif(MSVC)
-  if(WIN32)
-    set(MYSQL_CLIENT_LIBS ${MYSQL_CLIENT_LIBS} ws2_32)
-  endif(WIN32)
 
   message(
     STATUS
-      "MySQL Include dir: ${MYSQL_INCLUDE_DIR}  library dir: ${MYSQL_LIB_DIR}")
+      "MySQL Include dir: ${MYSQL_INCLUDE_DIR}")
   message(STATUS "MySQL client libraries: ${MYSQL_CLIENT_LIBS}")
 elseif(MySQL_FIND_REQUIRED)
   message(
     FATAL_ERROR
       "Cannot find MySQL. Include dir: ${MYSQL_INCLUDE_DIR}  library dir: ${MYSQL_LIB_DIR}"
     )
-endif(MYSQL_INCLUDE_DIR AND MYSQL_LIB_DIR)
+endif(MYSQL_INCLUDE_DIR AND MYSQL_LIB)
 
 
 include(FindPackageHandleStandardArgs)

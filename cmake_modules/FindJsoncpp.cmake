@@ -24,19 +24,19 @@ set(JSONCPP_LIBRARIES ${JSONCPP_LIBRARY})
 # debug library on windows same naming convention as in qt (appending debug
 # library with d) boost is using the same "hack" as us with "optimized" and
 # "debug"
-if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
-  find_library(JSONCPP_LIBRARY_DEBUG NAMES jsoncppd DOC "jsoncpp debug library")
-  if("${JSONCPP_LIBRARY_DEBUG}" STREQUAL "JSONCPP_LIBRARY_DEBUG-NOTFOUND")
-    set(JSONCPP_LIBRARY_DEBUG ${JSONCPP_LIBRARIES})
-  endif()
+#if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+#  find_library(JSONCPP_LIBRARY_DEBUG NAMES jsoncppd DOC "jsoncpp debug library")
+#  if("${JSONCPP_LIBRARY_DEBUG}" STREQUAL "JSONCPP_LIBRARY_DEBUG-NOTFOUND")
+#    set(JSONCPP_LIBRARY_DEBUG ${JSONCPP_LIBRARIES})
+#  endif()
 
-  set(JSONCPP_LIBRARIES
-      optimized
-      ${JSONCPP_LIBRARIES}
-      debug
-      ${JSONCPP_LIBRARY_DEBUG})
+#  set(JSONCPP_LIBRARIES
+#      optimized
+#      ${JSONCPP_LIBRARIES}
+#      debug
+#      ${JSONCPP_LIBRARY_DEBUG})
 
-endif()
+#endif()
 
 # handle the QUIETLY and REQUIRED arguments and set JSONCPP_FOUND to TRUE if all
 # listed variables are TRUE, hide their existence from configuration view

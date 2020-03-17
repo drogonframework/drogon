@@ -74,6 +74,8 @@ target_link_libraries(${PROJECT_NAME} PUBLIC trantor)
 
 if(NOT WIN32)
   target_link_libraries(${PROJECT_NAME} PRIVATE dl)
+else(NOT WIN32)
+  target_link_libraries(${PROJECT_NAME} PRIVATE shlwapi)
 endif(NOT WIN32)
 
 if(DROGON_CXX_STANDARD LESS 17)
