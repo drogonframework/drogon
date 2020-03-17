@@ -112,3 +112,26 @@ elseif(MySQL_FIND_REQUIRED)
       "Cannot find MySQL. Include dir: ${MYSQL_INCLUDE_DIR}  library dir: ${MYSQL_LIB_DIR}"
     )
 endif(MYSQL_INCLUDE_DIR AND MYSQL_LIB_DIR)
+
+
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(MySQL
+                                  DEFAULT_MSG
+                                  MYSQL_CLIENT_LIBS
+                                  MYSQL_INCLUDE_DIR)
+# Copy the results to the output variables.
+if(MySQL_FOUND)
+  set(MYSQL_LIBRARIES ${MYSQL_CLIENT_LIBS})
+  set(MYSQL_INCLUDE_DIRS ${MYSQL_INCLUDE_DIR})
+  add_library(MySQL_lib INTERFACE IMPORTED)
+  set_target_properties(MySQL_lib
+                        PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
+                                   ${MYSQL_INCLUDE_DIR}
+                                   INTERFACE_LINK_LIBRARIES
+                                   ${MYSQL_CLIENT_LIBS})
+else(MySQL_FOUND)
+  set(MYSQL_LIBRARIES)
+  set(MYSQL_INCLUDE_DIRS)
+endif(MySQL_FOUND)
+
+mark_as_advanced(MYSQL_INCLUDE_DIRS MYSQL_LIBRARIES)

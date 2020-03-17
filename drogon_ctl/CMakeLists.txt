@@ -35,9 +35,7 @@ endforeach()
 add_executable(drogon_ctl ${ctl_sources} ${TEMPL_SRC})
 target_link_libraries(drogon_ctl PRIVATE ${PROJECT_NAME})
 target_include_directories(drogon_ctl PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-add_dependencies(drogon_ctl
-                 trantor
-                 _drogon_ctl)
+add_dependencies(drogon_ctl trantor _drogon_ctl)
 if(WIN32)
   target_link_libraries(drogon_ctl PRIVATE ws2_32 Rpcrt4)
 endif(WIN32)
@@ -54,9 +52,11 @@ if(WIN32)
 else(WIN32)
   install(CODE "execute_process( \
     COMMAND ${CMAKE_COMMAND} -E create_symlink \
-    ${INSTALL_BIN_DIR}/drogon_ctl \
-    ${INSTALL_BIN_DIR}/dg_ctl \
-    )")
+    ./drogon_ctl \
+    ./dg_ctl \
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})")
+  install(FILES "${CMAKE_CURRENT_BINARY_DIR}/dg_ctl"
+          DESTINATION ${INSTALL_BIN_DIR})
 endif(WIN32)
 set(ctl_targets _drogon_ctl drogon_ctl)
 set_property(TARGET ${ctl_targets} PROPERTY CXX_STANDARD ${DROGON_CXX_STANDARD})
