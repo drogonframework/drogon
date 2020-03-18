@@ -25,17 +25,6 @@ set(DEF_INSTALL_DROGON_CMAKE_DIR lib/cmake/Drogon)
 set(INSTALL_DROGON_CMAKE_DIR
     ${DEF_INSTALL_DROGON_CMAKE_DIR}
     CACHE PATH "Installation directory for cmake files")
-# Make relative paths absolute (needed later on)
-foreach(p
-        LIB
-        BIN
-        INCLUDE
-        DROGON_CMAKE)
-  set(var INSTALL_${p}_DIR)
-  if(NOT IS_ABSOLUTE "${${var}}")
-    set(${var} "${CMAKE_INSTALL_PREFIX}/${${var}}")
-  endif()
-endforeach()
 
 if(BUILD_DROGON_SHARED)
   set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
@@ -74,10 +63,10 @@ if(WIN32)
 endif(WIN32)
 
 # set the include list for dynamic view compiling
-list(APPEND INCLUDE_DIRS_FOR_DYNAMIC_VIEW
-            ${PROJECT_SOURCE_DIR}/lib/inc
-            ${PROJECT_SOURCE_DIR}/orm_lib/inc
-            ${PROJECT_SOURCE_DIR}/trantor)
+# list(APPEND INCLUDE_DIRS_FOR_DYNAMIC_VIEW
+#             ${PROJECT_SOURCE_DIR}/lib/inc
+#             ${PROJECT_SOURCE_DIR}/orm_lib/inc
+#             ${PROJECT_SOURCE_DIR}/trantor)
 
 add_subdirectory(trantor)
 
@@ -85,14 +74,17 @@ target_link_libraries(${PROJECT_NAME} PUBLIC trantor)
 
 if(NOT WIN32)
   target_link_libraries(${PROJECT_NAME} PRIVATE dl)
+else(NOT WIN32)
+  target_link_libraries(${PROJECT_NAME} PRIVATE shlwapi)
 endif(NOT WIN32)
 
 if(DROGON_CXX_STANDARD LESS 17)
   # With C++14, use boost to support any and string_view
   message(STATUS "use c++14")
   find_package(Boost 1.61.0 REQUIRED)
-  target_include_directories(${PROJECT_NAME} PUBLIC ${Boost_INCLUDE_DIRS})
-  list(APPEND INCLUDE_DIRS_FOR_DYNAMIC_VIEW ${Boost_INCLUDE_DIRS})
+  message(STATUS "boost include dir:" ${Boost_INCLUDE_DIR})
+  target_link_libraries(${PROJECT_NAME} PUBLIC Boost::boost)
+  list(APPEND INCLUDE_DIRS_FOR_DYNAMIC_VIEW ${Boost_INCLUDE_DIR})
 else(DROGON_CXX_STANDARD LESS 17)
   message(STATUS "use c++17")
 endif(DROGON_CXX_STANDARD LESS 17)
@@ -101,43 +93,19 @@ set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules/)
 
 # jsoncpp
 find_package(Jsoncpp REQUIRED)
-target_include_directories(${PROJECT_NAME} PUBLIC ${JSONCPP_INCLUDE_DIRS})
-target_link_libraries(${PROJECT_NAME} PUBLIC ${JSONCPP_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} PUBLIC Jsoncpp_lib)
 list(APPEND INCLUDE_DIRS_FOR_DYNAMIC_VIEW ${JSONCPP_INCLUDE_DIRS})
-message(STATUS "jsoncpp inc path:" ${JSONCPP_INCLUDE_DIRS})
-
-# message(STATUS ${JSONCPP_LIBRARIES})
-if(NOT EXISTS ${JSONCPP_INCLUDE_DIRS}/json/version.h)
-  message(FATAL_ERROR "Error: jsoncpp lib is too old.....stop")
-endif()
 
 if(NOT WIN32)
-  exec_program(
-    cat
-    ARGS
-    "${JSONCPP_INCLUDE_DIRS}/json/version.h |grep JSONCPP_VERSION_STRING|sed s'/.*define/define/'|awk '{printf $3}'|sed s'/\"//g'"
-    OUTPUT_VARIABLE
-    jsoncpp_ver)
-  message(STATUS "jsoncpp verson:" ${jsoncpp_ver})
-  if(jsoncpp_ver LESS 1.7)
-    message(
-      FATAL_ERROR
-        "jsoncpp lib is too old,please get new version from https://github.com/open-source-parsers/jsoncpp"
-      )
-  endif(jsoncpp_ver LESS 1.7)
-
   find_package(UUID REQUIRED)
-  target_include_directories(${PROJECT_NAME} PRIVATE ${UUID_INCLUDE_DIR})
-  target_link_libraries(${PROJECT_NAME} PRIVATE ${UUID_LIBRARIES})
+  target_link_libraries(${PROJECT_NAME} PRIVATE PkgConfig::libuuid)
 
   try_compile(normal_uuid ${CMAKE_BINARY_DIR}/cmaketest
               ${PROJECT_SOURCE_DIR}/cmake/tests/normal_uuid_lib_test.cc
-              LINK_LIBRARIES ${UUID_LIBRARIES}
-              CMAKE_FLAGS "-DINCLUDE_DIRECTORIES=${UUID_INCLUDE_DIR}")
+              LINK_LIBRARIES PkgConfig::libuuid)
   try_compile(ossp_uuid ${CMAKE_BINARY_DIR}/cmaketest
               ${PROJECT_SOURCE_DIR}/cmake/tests/ossp_uuid_lib_test.cc
-              LINK_LIBRARIES ${UUID_LIBRARIES}
-              CMAKE_FLAGS "-DINCLUDE_DIRECTORIES=${UUID_INCLUDE_DIR}")
+              LINK_LIBRARIES PkgConfig::libuuid)
   if(normal_uuid)
     add_definitions(-DUSE_OSSP_UUID=0)
   elseif(ossp_uuid)
@@ -189,13 +157,11 @@ endif(NOT WIN32)
 
 if(BUILD_ORM)
   # find postgres
-  find_package(PostgreSQL)
-  if(PostgreSQL_FOUND)
-    message(STATUS "libpq inc path:" ${PostgreSQL_INCLUDE_DIR})
-    message(STATUS "libpq lib:" ${PostgreSQL_LIBRARIES})
-    target_include_directories(${PROJECT_NAME}
-                               PRIVATE ${PostgreSQL_INCLUDE_DIR})
-    target_link_libraries(${PROJECT_NAME} PRIVATE ${PostgreSQL_LIBRARIES})
+  find_package(pg)
+  if(pg_FOUND)
+    message(STATUS "libpq inc path:" ${PG_INCLUDE_DIRS})
+    message(STATUS "libpq lib:" ${PG_LIBRARIES})
+    target_link_libraries(${PROJECT_NAME} PRIVATE pg_lib)
     set(DROGON_SOURCES ${DROGON_SOURCES}
                        orm_lib/src/postgresql_impl/PostgreSQLResultImpl.cc)
     if(LIBPQ_BATCH_MODE)
@@ -214,51 +180,41 @@ if(BUILD_ORM)
       set(DROGON_SOURCES ${DROGON_SOURCES}
                          orm_lib/src/postgresql_impl/PgConnection.cc)
     endif(libpq_supports_batch)
-  endif(PostgreSQL_FOUND)
+  endif(pg_FOUND)
 
   # Find mysql, only mariadb client liberary is supported
   find_package(MySQL)
-  if(MYSQL_FOUND)
-    message(STATUS "inc:" ${MYSQL_INCLUDE_DIR})
-    message(STATUS "libs:" ${MYSQL_CLIENT_LIBS})
-    message(STATUS "version:" ${MYSQL_VERSION_STRING})
+  if(MySQL_FOUND)
     message(STATUS "Ok! We find the mariadb!")
-    target_include_directories(${PROJECT_NAME} PRIVATE ${MYSQL_INCLUDE_DIR})
-    target_link_libraries(${PROJECT_NAME} PRIVATE ${MYSQL_CLIENT_LIBS})
+    target_link_libraries(${PROJECT_NAME} PRIVATE MySQL_lib)
     set(DROGON_SOURCES ${DROGON_SOURCES}
                        orm_lib/src/mysql_impl/MysqlConnection.cc
                        orm_lib/src/mysql_impl/MysqlResultImpl.cc)
-  else(MYSQL_FOUND)
+  else(MySQL_FOUND)
     if(MSVC)
       find_package(ZLIB REQUIRED)
-      target_include_directories(${PROJECT_NAME} PRIVATE ${ZLIB_INCLUDE_DIR})
-      target_link_libraries(${PROJECT_NAME} PRIVATE ${ZLIB_LIBRARIES})
+      target_link_libraries(${PROJECT_NAME} PRIVATE ZLIB::ZLIB)
     endif(MSVC)
-  endif(MYSQL_FOUND)
+  endif(MySQL_FOUND)
 
   # Find sqlite3.
   find_package(SQLite3)
-  if(SQLITE3_FOUND)
-    message(STATUS "SQLite3 inc:" ${SQLITE3_INCLUDE_DIRS})
-    target_include_directories(${PROJECT_NAME} PRIVATE ${SQLITE3_INCLUDE_DIRS})
-    target_link_libraries(${PROJECT_NAME} PRIVATE ${SQLITE3_LIBRARIES})
+  if(SQLite3_FOUND)
+    target_link_libraries(${PROJECT_NAME} PRIVATE SQLite3_lib)
     set(DROGON_SOURCES ${DROGON_SOURCES}
                        orm_lib/src/sqlite3_impl/Sqlite3Connection.cc
                        orm_lib/src/sqlite3_impl/Sqlite3ResultImpl.cc)
-  endif(SQLITE3_FOUND)
+  endif(SQLite3_FOUND)
 endif(BUILD_ORM)
 
 if((NOT MSVC) OR (NOT BUILD_ORM))
   find_package(ZLIB REQUIRED)
-  target_include_directories(${PROJECT_NAME} PRIVATE ${ZLIB_INCLUDE_DIR})
-  target_link_libraries(${PROJECT_NAME} PRIVATE ${ZLIB_LIBRARIES})
-  message(STATUS "zlib:" ${ZLIB_LIBRARIES})
+  target_link_libraries(${PROJECT_NAME} PRIVATE ZLIB::ZLIB)
 endif((NOT MSVC) OR (NOT BUILD_ORM))
 
 find_package(OpenSSL)
 if(OpenSSL_FOUND)
-  target_include_directories(${PROJECT_NAME} PRIVATE ${OPENSSL_INCLUDE_DIR})
-  target_link_libraries(${PROJECT_NAME} PRIVATE ${OPENSSL_LIBRARIES})
+  target_link_libraries(${PROJECT_NAME} PRIVATE OpenSSL::SSL OpenSSL::Crypto)
 else(OpenSSL_FOUND)
   set(DROGON_SOURCES ${DROGON_SOURCES} lib/src/ssl_funcs/Md5.cc
                      lib/src/ssl_funcs/Sha1.cc)
@@ -279,7 +235,7 @@ if(BUILD_CTL)
   add_subdirectory(drogon_ctl)
 endif(BUILD_CTL)
 
-if(PostgreSQL_FOUND OR MYSQL_FOUND OR SQLITE3_FOUND)
+if(pg_FOUND OR MySQL_FOUND OR SQLite3_FOUND)
   set(DROGON_SOURCES
       ${DROGON_SOURCES}
       orm_lib/src/ArrayParser.cc
@@ -295,9 +251,9 @@ if(PostgreSQL_FOUND OR MYSQL_FOUND OR SQLITE3_FOUND)
       orm_lib/src/SqlBinder.cc
       orm_lib/src/TransactionImpl.cc
       orm_lib/src/RestfulController.cc)
-else(PostgreSQL_FOUND OR MYSQL_FOUND OR SQLITE3_FOUND)
+else(pg_FOUND OR MySQL_FOUND OR SQLite3_FOUND)
   set(DROGON_SOURCES ${DROGON_SOURCES} lib/src/DbClientManagerSkipped.cc)
-endif(PostgreSQL_FOUND OR MYSQL_FOUND OR SQLITE3_FOUND)
+endif(pg_FOUND OR MySQL_FOUND OR SQLite3_FOUND)
 
 target_sources(${PROJECT_NAME} PRIVATE ${DROGON_SOURCES})
 
@@ -307,25 +263,25 @@ set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD_REQUIRED ON)
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_EXTENSIONS OFF)
 set_target_properties(${PROJECT_NAME} PROPERTIES EXPORT_NAME Drogon)
 
-if(PostgreSQL_FOUND OR MYSQL_FOUND OR SQLITE3_FOUND)
-  if(PostgreSQL_FOUND)
+if(pg_FOUND OR MySQL_FOUND OR SQLite3_FOUND)
+  if(pg_FOUND)
     option(USE_POSTGRESQL "Enable PostgreSQL" ON)
-  else(PostgreSQL_FOUND)
+  else(pg_FOUND)
     option(USE_POSTGRESQL "Disable PostgreSQL" OFF)
-  endif(PostgreSQL_FOUND)
+  endif(pg_FOUND)
 
-  if(MYSQL_FOUND)
+  if(MySQL_FOUND)
     option(USE_MYSQL "Enable Mysql" ON)
-  else(MYSQL_FOUND)
+  else(MySQL_FOUND)
     option(USE_MYSQL "DisableMysql" OFF)
-  endif(MYSQL_FOUND)
+  endif(MySQL_FOUND)
 
-  if(SQLITE3_FOUND)
+  if(SQLite3_FOUND)
     option(USE_SQLITE3 "Enable Sqlite3" ON)
-  else(SQLITE3_FOUND)
+  else(SQLite3_FOUND)
     option(USE_SQLITE3 "Disable Sqlite3" OFF)
-  endif(SQLITE3_FOUND)
-endif(PostgreSQL_FOUND OR MYSQL_FOUND OR SQLITE3_FOUND)
+  endif(SQLite3_FOUND)
+endif(pg_FOUND OR MySQL_FOUND OR SQLite3_FOUND)
 
 set(COMPILER_COMMAND ${CMAKE_CXX_COMPILER})
 set(COMPILER_ID ${CMAKE_CXX_COMPILER_ID})
@@ -343,7 +299,7 @@ else(CMAKE_BUILD_TYPE)
   set(COMPILATION_FLAGS "-std=c++")
 endif(CMAKE_BUILD_TYPE)
 
-list(APPEND INCLUDE_DIRS_FOR_DYNAMIC_VIEW "${INSTALL_INCLUDE_DIR}")
+list(APPEND INCLUDE_DIRS_FOR_DYNAMIC_VIEW "${CMAKE_INSTALL_PREFIX}/${INSTALL_INCLUDE_DIR}")
 list(REMOVE_DUPLICATES INCLUDE_DIRS_FOR_DYNAMIC_VIEW)
 set(INS_STRING "")
 foreach(loop_var ${INCLUDE_DIRS_FOR_DYNAMIC_VIEW})
@@ -357,16 +313,16 @@ configure_file(${PROJECT_SOURCE_DIR}/cmake/templates/config.h.in
 
 if(BUILD_TESTING)
   add_subdirectory(lib/tests)
-  if(PostgreSQL_FOUND)
+  if(pg_FOUND)
     add_subdirectory(${PROJECT_SOURCE_DIR}/orm_lib/src/postgresql_impl/test)
     add_subdirectory(${PROJECT_SOURCE_DIR}/orm_lib/tests)
-  endif(PostgreSQL_FOUND)
-  if(MYSQL_FOUND)
+  endif(pg_FOUND)
+  if(MySQL_FOUND)
     add_subdirectory(${PROJECT_SOURCE_DIR}/orm_lib/src/mysql_impl/test)
-  endif(MYSQL_FOUND)
-  if(SQLITE3_FOUND)
+  endif(MySQL_FOUND)
+  if(SQLite3_FOUND)
     add_subdirectory(${PROJECT_SOURCE_DIR}/orm_lib/src/sqlite3_impl/test)
-  endif(SQLITE3_FOUND)
+  endif(SQLite3_FOUND)
   find_package(GTest)
   if(GTest_FOUND)
     message(STATUS "gtest found")
@@ -474,6 +430,11 @@ write_basic_package_version_file(
 install(
   FILES "${CMAKE_CURRENT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/DrogonConfig.cmake"
         "${CMAKE_CURRENT_BINARY_DIR}/DrogonConfigVersion.cmake"
+        "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules/FindUUID.cmake"
+        "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules/FindJsoncpp.cmake"
+        "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules/FindSQLite3.cmake"
+        "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules/FindMySQL.cmake"
+        "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules/Findpg.cmake"
   DESTINATION "${INSTALL_DROGON_CMAKE_DIR}"
   COMPONENT dev)
 

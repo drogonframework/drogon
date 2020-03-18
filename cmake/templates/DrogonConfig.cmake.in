@@ -10,8 +10,24 @@
 @PACKAGE_INIT@
 
 include(CMakeFindDependencyMacro)
-find_dependency(Trantor)
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR})
 
+find_dependency(Jsoncpp REQUIRED)
+find_dependency(Trantor REQUIRED)
+find_dependency(UUID REQUIRED)
+find_dependency(ZLIB REQUIRED)
+if(@pg_FOUND@)
+find_dependency(pg)
+endif()
+if(@SQLite3_FOUND@)
+find_dependency(SQLite3)
+endif()
+if(@MySQL_FOUND@)
+find_dependency(MySQL)
+endif()
+if(@Boost_FOUND@)
+find_dependency(Boost)
+endif()
 
 # Our library dependencies (contains definitions for IMPORTED targets)
 

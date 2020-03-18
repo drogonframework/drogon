@@ -22,11 +22,12 @@
 # MySQL Connectors. There are special exceptions to the terms and conditions of
 # the GPL as it is applied to this software, see the FLOSS License Exception
 # available on mysql.com.
+# MySQL_lib - The imported target library.
 
 # ##############################################################################
 
-# -------------- FIND MYSQL_INCLUDE_DIR ------------------
-find_path(MYSQL_INCLUDE_DIR
+# -------------- FIND MYSQL_INCLUDE_DIRS ------------------
+find_path(MYSQL_INCLUDE_DIRS
           NAMES mysql.h
           PATH_SUFFIXES mysql
           PATHS /usr/include/mysql
@@ -40,13 +41,13 @@ find_path(MYSQL_INCLUDE_DIR
                 $ENV{ProgramFiles}/MySQL/*/include
                 $ENV{SystemDrive}/MySQL/*/include)
 
-if(EXISTS "${MYSQL_INCLUDE_DIR}/mysql.h")
+if(EXISTS "${MYSQL_INCLUDE_DIRS}/mysql.h")
 
-elseif(EXISTS "${MYSQL_INCLUDE_DIR}/mysql/mysql.h")
-  set(MYSQL_INCLUDE_DIR ${MYSQL_INCLUDE_DIR}/mysql)
+elseif(EXISTS "${MYSQL_INCLUDE_DIRS}/mysql/mysql.h")
+  set(MYSQL_INCLUDE_DIRS ${MYSQL_INCLUDE_DIRS}/mysql)
 endif()
 
-# ----------------- FIND MYSQL_LIB_DIR -------------------
+# ----------------- FIND MYSQL_LIBRARIES_DIR -------------------
 if(WIN32)
   # Set lib path suffixes dist = for mysql binary distributions build = for
   # custom built tree
@@ -59,7 +60,7 @@ if(WIN32)
     add_definitions(-DDBUG_OFF)
   endif(CMAKE_BUILD_TYPE STREQUAL Debug)
 
-  find_library(MYSQL_LIB
+  find_library(MYSQL_LIBRARIES
                NAMES mariadbclient
                PATHS $ENV{MYSQL_DIR}/lib/${libsuffixDist}
                      $ENV{MYSQL_DIR}/libmysql
@@ -69,7 +70,7 @@ if(WIN32)
                      $ENV{ProgramFiles}/MySQL/*/lib/${libsuffixDist}
                      $ENV{SystemDrive}/MySQL/*/lib/${libsuffixDist})
 else(WIN32)
-  find_library(MYSQL_LIB
+  find_library(MYSQL_LIBRARIES
                NAMES mysqlclient_r mariadbclient
                PATHS /usr/lib/mysql
                      /usr/local/lib/mysql
@@ -81,34 +82,32 @@ else(WIN32)
                      /opt/mysql/lib/mysql)
 endif(WIN32)
 
-if(MYSQL_LIB)
-  get_filename_component(MYSQL_LIB_DIR ${MYSQL_LIB} PATH)
-endif(MYSQL_LIB)
-
-if(MYSQL_INCLUDE_DIR AND MYSQL_LIB_DIR)
-  set(MYSQL_FOUND TRUE)
-
-  # FIND_LIBRARY(MYSQL_ZLIB zlib PATHS ${MYSQL_LIB_DIR})
-  # FIND_LIBRARY(MYSQL_TAOCRYPT taocrypt PATHS ${MYSQL_LIB_DIR})
-  set(MYSQL_CLIENT_LIBS ${MYSQL_LIB})
-  # IF (MYSQL_ZLIB) SET(MYSQL_CLIENT_LIBS ${MYSQL_CLIENT_LIBS} zlib) ENDIF
-  # (MYSQL_ZLIB) IF (MYSQL_TAOCRYPT) SET(MYSQL_CLIENT_LIBS ${MYSQL_CLIENT_LIBS}
-  # taocrypt) ENDIF (MYSQL_TAOCRYPT) Added needed mysqlclient dependencies on
-  # Windows
-  if(MSVC)
-    set(MYSQL_CLIENT_LIBS ${MYSQL_CLIENT_LIBS} shlwapi)
-  endif(MSVC)
-  if(WIN32)
-    set(MYSQL_CLIENT_LIBS ${MYSQL_CLIENT_LIBS} ws2_32)
-  endif(WIN32)
-
-  message(
-    STATUS
-      "MySQL Include dir: ${MYSQL_INCLUDE_DIR}  library dir: ${MYSQL_LIB_DIR}")
-  message(STATUS "MySQL client libraries: ${MYSQL_CLIENT_LIBS}")
+if(MYSQL_INCLUDE_DIRS AND MYSQL_LIBRARIES)
+  message(STATUS "MySQL Include dir: ${MYSQL_INCLUDE_DIRS}")
+  message(STATUS "MySQL client libraries: ${MYSQL_LIBRARIES}")
 elseif(MySQL_FIND_REQUIRED)
   message(
     FATAL_ERROR
-      "Cannot find MySQL. Include dir: ${MYSQL_INCLUDE_DIR}  library dir: ${MYSQL_LIB_DIR}"
+      "Cannot find MySQL. Include dir: ${MYSQL_INCLUDE_DIRS}  library dir: ${MYSQL_LIBRARIES_DIR}"
     )
-endif(MYSQL_INCLUDE_DIR AND MYSQL_LIB_DIR)
+endif(MYSQL_INCLUDE_DIRS AND MYSQL_LIBRARIES)
+
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(MySQL
+                                  DEFAULT_MSG
+                                  MYSQL_LIBRARIES
+                                  MYSQL_INCLUDE_DIRS)
+# Copy the results to the output variables.
+if(MySQL_FOUND)
+  add_library(MySQL_lib INTERFACE IMPORTED)
+  set_target_properties(MySQL_lib
+                        PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
+                                   "${MYSQL_INCLUDE_DIRS}"
+                                   INTERFACE_LINK_LIBRARIES
+                                   "${MYSQL_LIBRARIES}")
+else(MySQL_FOUND)
+  set(MYSQL_LIBRARIES)
+  set(MYSQL_INCLUDE_DIRS)
+endif(MySQL_FOUND)
+
+mark_as_advanced(MYSQL_INCLUDE_DIRS MYSQL_LIBRARIES)
