@@ -199,16 +199,6 @@ void ListenerManager::startListening()
 
 ListenerManager::~ListenerManager()
 {
-    for (size_t i = 0; i < servers_.size(); ++i)
-    {
-        std::promise<int> pro;
-        auto f = pro.get_future();
-        servers_[i]->getLoop()->runInLoop([&pro, this, i] {
-            servers_[i].reset();
-            pro.set_value(1);
-        });
-        (void)f.get();
-    }
 }
 
 trantor::EventLoop *ListenerManager::getIOLoop(size_t id) const
@@ -238,13 +228,7 @@ void ListenerManager::stopListening()
 {
     for (auto &serverPtr : servers_)
     {
-        std::promise<int> pro;
-        auto f = pro.get_future();
-        serverPtr->getLoop()->runInLoop([&serverPtr, &pro]() {
-            serverPtr->stop();
-            pro.set_value(1);
-        });
-        (void)f.get();
+        serverPtr->stop();
     }
     for (auto loop : ioLoops_)
     {
