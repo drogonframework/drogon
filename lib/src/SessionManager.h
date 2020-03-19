@@ -30,6 +30,7 @@ class SessionManager : public trantor::NonCopyable
     SessionManager(trantor::EventLoop *loop, size_t timeout);
     ~SessionManager()
     {
+        LOG_ERROR << "SessionManager dector";
         sessionMapPtr_.reset();
     }
     SessionPtr getSession(const std::string &sessionID, bool needToSet);

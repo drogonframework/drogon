@@ -885,7 +885,10 @@ void HttpAppFrameworkImpl::quit()
 {
     if (getLoop()->isRunning())
     {
-        getLoop()->queueInLoop([this]() { getLoop()->quit(); });
+        getLoop()->queueInLoop([this]() {
+            listenerManagerPtr_->stopListening();
+            getLoop()->quit();
+        });
     }
 }
 

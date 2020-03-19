@@ -139,7 +139,10 @@ void HttpServer::start()
               << server_.ipPort();
     server_.start();
 }
-
+void HttpServer::stop()
+{
+    server_.stop();
+}
 void HttpServer::onConnection(const TcpConnectionPtr &conn)
 {
     if (conn->connected())
