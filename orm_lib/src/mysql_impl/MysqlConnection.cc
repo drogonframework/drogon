@@ -267,9 +267,9 @@ void MysqlConnection::handleEvent()
                     if (waitStatus_ == 0)
                     {
                         execStatus_ = ExecStatus::None;
-                        if (err)
+                        if (!ret && mysql_errno(mysqlPtr_.get()))
                         {
-                            LOG_ERROR << "error";
+                            LOG_ERROR << "error in: " << sql_;
                             outputError();
                             return;
                         }
@@ -287,7 +287,7 @@ void MysqlConnection::handleEvent()
                 LOG_TRACE << "store_result:" << waitStatus_;
                 if (waitStatus_ == 0)
                 {
-                    if (!ret)
+                    if (!ret && mysql_errno(mysqlPtr_.get()))
                     {
                         execStatus_ = ExecStatus::None;
                         LOG_ERROR << "error";
@@ -411,7 +411,8 @@ void MysqlConnection::execSqlInLoop(
         if (err)
         {
             LOG_ERROR << "error";
-            outputError();
+            loop_->queueInLoop(
+                [thisPtr = shared_from_this()] { thisPtr->outputError(); });
             return;
         }
 
@@ -422,10 +423,11 @@ void MysqlConnection::execSqlInLoop(
         if (waitStatus_ == 0)
         {
             execStatus_ = ExecStatus::None;
-            if (!ret)
+            if (!ret && mysql_errno(mysqlPtr_.get()))
             {
-                LOG_ERROR << "error";
-                outputError();
+                LOG_ERROR << "error in: " << sql_;
+                loop_->queueInLoop(
+                    [thisPtr = shared_from_this()] { thisPtr->outputError(); });
                 return;
             }
             loop_->queueInLoop([thisPtr = shared_from_this(), ret] {
