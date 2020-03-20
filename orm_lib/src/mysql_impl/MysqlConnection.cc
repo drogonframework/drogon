@@ -267,12 +267,12 @@ void MysqlConnection::handleEvent()
                     if (waitStatus_ == 0)
                     {
                         execStatus_ = ExecStatus::None;
-                        if (err)
-                        {
-                            LOG_ERROR << "error";
-                            outputError();
-                            return;
-                        }
+                        // if (!ret)
+                        // {
+                        //     LOG_ERROR << "error in: " << sql_;
+                        //     outputError();
+                        //     return;
+                        // }
                         getResult(ret);
                     }
                 }
@@ -422,12 +422,12 @@ void MysqlConnection::execSqlInLoop(
         if (waitStatus_ == 0)
         {
             execStatus_ = ExecStatus::None;
-            if (!ret)
-            {
-                LOG_ERROR << "error";
-                outputError();
-                return;
-            }
+            // if (!ret)
+            // {
+            //     LOG_ERROR << "error in: " << sql_;
+            //     outputError();
+            //     return;
+            // }
             loop_->queueInLoop([thisPtr = shared_from_this(), ret] {
                 thisPtr->getResult(ret);
             });
