@@ -79,13 +79,12 @@ std::vector<trantor::EventLoop *> ListenerManager::createListeners(
         &syncAdvices)
 {
 #ifdef __linux__
-    std::vector<trantor::EventLoop *> ioLoops;
     for (size_t i = 0; i < threadNum; ++i)
     {
         LOG_TRACE << "thread num=" << threadNum;
         auto loopThreadPtr = std::make_shared<EventLoopThread>("DrogonIoLoop");
         listeningloopThreads_.push_back(loopThreadPtr);
-        ioLoops.push_back(loopThreadPtr->getLoop());
+        ioLoops_.push_back(loopThreadPtr->getLoop());
         for (auto const &listener : listeners_)
         {
             auto const &ip = listener.ip_;
@@ -183,9 +182,9 @@ std::vector<trantor::EventLoop *> ListenerManager::createListeners(
         serverPtr->start();
         servers_.push_back(serverPtr);
     }
-    auto ioLoops = ioLoopThreadPoolPtr_->getLoops();
+    ioLoops_ = ioLoopThreadPoolPtr_->getLoops();
 #endif
-    return ioLoops;
+    return ioLoops_;
 }
 
 void ListenerManager::startListening()
@@ -200,16 +199,6 @@ void ListenerManager::startListening()
 
 ListenerManager::~ListenerManager()
 {
-    for (size_t i = 0; i < servers_.size(); ++i)
-    {
-        std::promise<int> pro;
-        auto f = pro.get_future();
-        servers_[i]->getLoop()->runInLoop([&pro, this, i] {
-            servers_[i].reset();
-            pro.set_value(1);
-        });
-        (void)f.get();
-    }
 }
 
 trantor::EventLoop *ListenerManager::getIOLoop(size_t id) const
@@ -234,4 +223,25 @@ trantor::EventLoop *ListenerManager::getIOLoop(size_t id) const
     }
     return ioLoopThreadPoolPtr_->getLoop(id);
 #endif
+}
+void ListenerManager::stopListening()
+{
+    for (auto &serverPtr : servers_)
+    {
+        serverPtr->stop();
+    }
+    for (auto loop : ioLoops_)
+    {
+        assert(!loop->isInLoopThread());
+        if (loop->isRunning())
+        {
+            std::promise<int> pro;
+            auto f = pro.get_future();
+            loop->queueInLoop([loop, &pro]() {
+                loop->quit();
+                pro.set_value(1);
+            });
+            (void)f.get();
+        }
+    }
 }

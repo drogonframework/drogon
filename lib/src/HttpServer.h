@@ -75,6 +75,7 @@ class HttpServer : trantor::NonCopyable
         return server_.getIoLoops();
     }
     void start();
+    void stop();
 
     void enableSSL(const std::string &certPath, const std::string &keyPath)
     {
