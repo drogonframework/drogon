@@ -28,8 +28,8 @@ set(INSTALL_DROGON_CMAKE_DIR
 
 if(BUILD_DROGON_SHARED)
   set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
-  list(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/${INSTALL_LIB_DIR}"
-            isSystemDir)
+  list(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES
+            "${CMAKE_INSTALL_PREFIX}/${INSTALL_LIB_DIR}" isSystemDir)
   if("${isSystemDir}" STREQUAL "-1")
     set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${INSTALL_LIB_DIR}")
   endif("${isSystemDir}" STREQUAL "-1")
@@ -62,12 +62,6 @@ if(WIN32)
     PRIVATE $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/third_party/mman-win32>)
 endif(WIN32)
 
-# set the include list for dynamic view compiling
-# list(APPEND INCLUDE_DIRS_FOR_DYNAMIC_VIEW
-#             ${PROJECT_SOURCE_DIR}/lib/inc
-#             ${PROJECT_SOURCE_DIR}/orm_lib/inc
-#             ${PROJECT_SOURCE_DIR}/trantor)
-
 add_subdirectory(trantor)
 
 target_link_libraries(${PROJECT_NAME} PUBLIC trantor)
@@ -98,14 +92,14 @@ list(APPEND INCLUDE_DIRS_FOR_DYNAMIC_VIEW ${JSONCPP_INCLUDE_DIRS})
 
 if(NOT WIN32)
   find_package(UUID REQUIRED)
-  target_link_libraries(${PROJECT_NAME} PRIVATE PkgConfig::libuuid)
+  target_link_libraries(${PROJECT_NAME} PRIVATE UUID_lib)
 
   try_compile(normal_uuid ${CMAKE_BINARY_DIR}/cmaketest
               ${PROJECT_SOURCE_DIR}/cmake/tests/normal_uuid_lib_test.cc
-              LINK_LIBRARIES PkgConfig::libuuid)
+              LINK_LIBRARIES UUID_lib)
   try_compile(ossp_uuid ${CMAKE_BINARY_DIR}/cmaketest
               ${PROJECT_SOURCE_DIR}/cmake/tests/ossp_uuid_lib_test.cc
-              LINK_LIBRARIES PkgConfig::libuuid)
+              LINK_LIBRARIES UUID_lib)
   if(normal_uuid)
     add_definitions(-DUSE_OSSP_UUID=0)
   elseif(ossp_uuid)
@@ -299,7 +293,8 @@ else(CMAKE_BUILD_TYPE)
   set(COMPILATION_FLAGS "-std=c++")
 endif(CMAKE_BUILD_TYPE)
 
-list(APPEND INCLUDE_DIRS_FOR_DYNAMIC_VIEW "${CMAKE_INSTALL_PREFIX}/${INSTALL_INCLUDE_DIR}")
+list(APPEND INCLUDE_DIRS_FOR_DYNAMIC_VIEW
+            "${CMAKE_INSTALL_PREFIX}/${INSTALL_INCLUDE_DIR}")
 list(REMOVE_DUPLICATES INCLUDE_DIRS_FOR_DYNAMIC_VIEW)
 set(INS_STRING "")
 foreach(loop_var ${INCLUDE_DIRS_FOR_DYNAMIC_VIEW})
