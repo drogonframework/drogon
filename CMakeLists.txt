@@ -98,14 +98,14 @@ list(APPEND INCLUDE_DIRS_FOR_DYNAMIC_VIEW ${JSONCPP_INCLUDE_DIRS})
 
 if(NOT WIN32)
   find_package(UUID REQUIRED)
-  target_link_libraries(${PROJECT_NAME} PRIVATE PkgConfig::libuuid)
+  target_link_libraries(${PROJECT_NAME} PRIVATE UUID_lib)
 
   try_compile(normal_uuid ${CMAKE_BINARY_DIR}/cmaketest
               ${PROJECT_SOURCE_DIR}/cmake/tests/normal_uuid_lib_test.cc
-              LINK_LIBRARIES PkgConfig::libuuid)
+              LINK_LIBRARIES UUID_lib)
   try_compile(ossp_uuid ${CMAKE_BINARY_DIR}/cmaketest
               ${PROJECT_SOURCE_DIR}/cmake/tests/ossp_uuid_lib_test.cc
-              LINK_LIBRARIES PkgConfig::libuuid)
+              LINK_LIBRARIES UUID_lib)
   if(normal_uuid)
     add_definitions(-DUSE_OSSP_UUID=0)
   elseif(ossp_uuid)
