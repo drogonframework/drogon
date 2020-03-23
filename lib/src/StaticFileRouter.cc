@@ -20,7 +20,6 @@
 #include <iostream>
 #include <algorithm>
 #include <fcntl.h>
-
 #ifndef _WIN32
 #include <sys/file.h>
 #else
@@ -250,7 +249,6 @@ void StaticFileRouter::sendStaticFileResponse(
             }
         }
     }
-
     if (cachedResp)
     {
         LOG_TRACE << "Using file cache";
@@ -258,6 +256,16 @@ void StaticFileRouter::sendStaticFileResponse(
                                                       cachedResp,
                                                       callback);
         return;
+    }
+    if (!fileExists)
+    {
+        struct stat fileStat;
+        if (stat(filePath.c_str(), &fileStat) != 0 ||
+            !S_ISREG(fileStat.st_mode))
+        {
+            callback(HttpResponse::newNotFoundResponse());
+            return;
+        }
     }
     HttpResponsePtr resp;
     auto &acceptEncoding = req->getHeaderBy("accept-encoding");
@@ -291,17 +299,6 @@ void StaticFileRouter::sendStaticFileResponse(
                                               "",
                                               drogon::getContentType(filePath));
             resp->addHeader("Content-Encoding", "gzip");
-        }
-    }
-
-    if (!fileExists)
-    {
-        struct stat fileStat;
-        if (stat(filePath.c_str(), &fileStat) != 0 ||
-            !S_ISREG(fileStat.st_mode))
-        {
-            callback(HttpResponse::newNotFoundResponse());
-            return;
         }
     }
     if (!resp)
