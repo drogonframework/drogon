@@ -20,8 +20,12 @@
 #include <iostream>
 #include <algorithm>
 #include <fcntl.h>
+
 #ifndef _WIN32
 #include <sys/file.h>
+#else
+#define S_ISREG(m) (((m)&0170000) == (0100000))
+#define S_ISDIR(m) (((m)&0170000) == (0040000))
 #endif
 #include <sys/stat.h>
 
