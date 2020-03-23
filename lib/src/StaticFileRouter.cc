@@ -261,7 +261,6 @@ void StaticFileRouter::sendStaticFileResponse(
     if (brStaticFlag_ && acceptEncoding.find("br") != std::string::npos)
     {
         // Find compressed file first.
-        fileExists = true;
         auto brFileName = filePath + ".br";
         struct stat filestat;
         if (stat(brFileName.c_str(), &filestat) == 0 &&
@@ -278,7 +277,6 @@ void StaticFileRouter::sendStaticFileResponse(
         acceptEncoding.find("gzip") != std::string::npos)
     {
         // Find compressed file first.
-        fileExists = true;
         auto gzipFileName = filePath + ".gz";
         struct stat filestat;
         if (stat(gzipFileName.c_str(), &filestat) == 0 &&
