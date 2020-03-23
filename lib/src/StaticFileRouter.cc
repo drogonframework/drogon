@@ -295,10 +295,8 @@ void StaticFileRouter::sendStaticFileResponse(
     if (!fileExists)
     {
         struct stat fileStat;
-        if (stat(filePath.c_str(), &fileStat) == 0 && S_ISREG(fileStat.st_mode))
-        {
-        }
-        else
+        if (stat(filePath.c_str(), &fileStat) != 0 ||
+            !S_ISREG(fileStat.st_mode))
         {
             callback(HttpResponse::newNotFoundResponse());
             return;
