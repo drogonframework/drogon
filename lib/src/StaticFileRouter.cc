@@ -186,6 +186,7 @@ void StaticFileRouter::sendStaticFileResponse(
     // If-Modified-Since: Mon, 15 Oct 2018 06:26:33 GMT
 
     std::string timeStr;
+    bool fileExists{false};
     if (enableLastModify_)
     {
         if (cachedResp)
@@ -207,8 +208,10 @@ void StaticFileRouter::sendStaticFileResponse(
         {
             struct stat fileStat;
             LOG_TRACE << "enabled LastModify";
-            if (stat(filePath.c_str(), &fileStat) >= 0)
+            if (stat(filePath.c_str(), &fileStat) == 0 &&
+                S_ISREG(fileStat.st_mode))
             {
+                fileExists = true;
                 LOG_TRACE << "last modify time:" << fileStat.st_mtime;
                 struct tm tm1;
 #ifdef _WIN32
@@ -236,6 +239,11 @@ void StaticFileRouter::sendStaticFileResponse(
                     return;
                 }
             }
+            else
+            {
+                callback(HttpResponse::newNotFoundResponse());
+                return;
+            }
         }
     }
 
@@ -253,9 +261,11 @@ void StaticFileRouter::sendStaticFileResponse(
     if (brStaticFlag_ && acceptEncoding.find("br") != std::string::npos)
     {
         // Find compressed file first.
+        fileExists = true;
         auto brFileName = filePath + ".br";
         struct stat filestat;
-        if (stat(brFileName.c_str(), &filestat) == 0)
+        if (stat(brFileName.c_str(), &filestat) == 0 &&
+            S_ISREG(filestat.st_mode))
         {
             resp =
                 HttpResponse::newFileResponse(brFileName,
@@ -268,9 +278,11 @@ void StaticFileRouter::sendStaticFileResponse(
         acceptEncoding.find("gzip") != std::string::npos)
     {
         // Find compressed file first.
+        fileExists = true;
         auto gzipFileName = filePath + ".gz";
         struct stat filestat;
-        if (stat(gzipFileName.c_str(), &filestat) == 0)
+        if (stat(gzipFileName.c_str(), &filestat) == 0 &&
+            S_ISREG(filestat.st_mode))
         {
             resp =
                 HttpResponse::newFileResponse(gzipFileName,
@@ -280,6 +292,18 @@ void StaticFileRouter::sendStaticFileResponse(
         }
     }
 
+    if (!fileExists)
+    {
+        struct stat fileStat;
+        if (stat(filePath.c_str(), &fileStat) == 0 && S_ISREG(fileStat.st_mode))
+        {
+        }
+        else
+        {
+            callback(HttpResponse::newNotFoundResponse());
+            return;
+        }
+    }
     if (!resp)
         resp = HttpResponse::newFileResponse(filePath);
     if (resp->statusCode() != k404NotFound)
