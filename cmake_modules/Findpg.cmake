@@ -19,5 +19,9 @@ if(PostgreSQL_FOUND)
                                    INTERFACE_LINK_LIBRARIES
                                    "${PostgreSQL_LIBRARIES}")
   mark_as_advanced(PG_INCLUDE_DIRS PG_LIBRARIES)
-  set(pg_FOUND TRUE)
-endif()
+endif(PostgreSQL_FOUND)
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(pg
+                                  DEFAULT_MSG
+                                  PG_LIBRARIES
+                                  PG_INCLUDE_DIRS)
