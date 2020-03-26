@@ -244,4 +244,21 @@ void ListenerManager::stopListening()
             (void)f.get();
         }
     }
+#ifndef __linux__
+    for (auto &listenerLoopPtr : listeningloopThreads_)
+    {
+        auto loop = listenerLoopPtr->getLoop();
+        assert(!loop->isInLoopThread());
+        if (loop->isRunning())
+        {
+            std::promise<int> pro;
+            auto f = pro.get_future();
+            loop->queueInLoop([loop, &pro]() {
+                loop->quit();
+                pro.set_value(1);
+            });
+            (void)f.get();
+        }
+    }
+#endif
 }
