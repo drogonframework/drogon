@@ -4,6 +4,44 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.0.0-beta15] - 2020-03-28
+
+### API change list
+
+- Modify the Attributes interface of the HttpRequest class
+
+- Add the getHomePage() method to HttpAppFramework
+
+### Changed
+
+- Support br compression files
+
+- Update Content-Type support for PDF
+
+- Add support for MSVC 2015
+
+- Optimize the rendering of HTTP responses
+
+- Update the Dynamic Views Loading, add the `layout` tag
+
+- Graceful shutdown
+
+### Fixed
+
+- Fix error when finding the jsoncpp library
+
+- Fix the 'many to many' relationship in ORM
+
+- Fix a bug when creating json responses
+
+- Fix a bug on filters with WebSocketControllers
+
+- Fix a fatal bug in the MysqlConnection class
+
+- Fix crash with partial matched url
+
+- Fix null jsonObject from newHttpJsonRequest
+
 ## [1.0.0-beta14] - 2020-02-17
 
 ### API change list
@@ -306,7 +344,9 @@ All notable changes to this project will be documented in this file.
 
 ## [1.0.0-beta1] - 2019-06-11
 
-[Unreleased]: https://github.com/an-tao/drogon/compare/v1.0.0-beta14...HEAD
+[Unreleased]: https://github.com/an-tao/drogon/compare/v1.0.0-beta15...HEAD
+
+[1.0.0-beta15]: https://github.com/an-tao/drogon/compare/v1.0.0-beta14...v1.0.0-beta15
 
 [1.0.0-beta14]: https://github.com/an-tao/drogon/compare/v1.0.0-beta13...v1.0.0-beta14
 
