@@ -109,6 +109,13 @@ if(NOT WIN32)
   endif()
 endif(NOT WIN32)
 
+find_package(Brotli)
+if(Brotli_FOUND)
+  message(STATUS "Brotli found")
+  add_definitions(-DUSE_BROTLI)
+  target_link_libraries(${PROJECT_NAME} PRIVATE Brotli_lib)
+endif(Brotli_FOUND)
+
 set(DROGON_SOURCES
     lib/src/AOPAdvice.cc
     lib/src/CacheFile.cc

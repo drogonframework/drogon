@@ -154,6 +154,8 @@
         "use_sendfile": true,
         //use_gzip: True by default, use gzip to compress the response body's content;
         "use_gzip": true,
+        //use_brotli: False by default, use brotli to compress the response body's content;
+        "use_brotli": false,
         //static_files_cache_time: 5 (seconds) by default, the time in which the static file response is cached,
         //0 means cache forever, the negative value means no cache
         "static_files_cache_time": 5,

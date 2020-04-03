@@ -354,6 +354,8 @@ static void loadApp(const Json::Value &app)
     drogon::app().enableSendfile(useSendfile);
     auto useGzip = app.get("use_gzip", true).asBool();
     drogon::app().enableGzip(useGzip);
+    auto useBr = app.get("use_brotli", false).asBool();
+    drogon::app().enableBrotli(useBr);
     auto staticFilesCacheTime = app.get("static_files_cache_time", 5).asInt();
     drogon::app().setStaticFilesCacheTime(staticFilesCacheTime);
     loadControllers(app["simple_controllers_map"]);

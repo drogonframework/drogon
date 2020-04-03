@@ -254,6 +254,15 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     {
         return useGzip_;
     }
+    virtual HttpAppFramework &enableBrotli(bool useBrotli) override
+    {
+        useBrotli_ = useBrotli;
+        return *this;
+    }
+    virtual bool isBrotliEnabled() const override
+    {
+        return useBrotli_;
+    }
     virtual HttpAppFramework &setStaticFilesCacheTime(int cacheTime) override;
     virtual int staticFilesCacheTime() const override;
     virtual HttpAppFramework &setIdleConnectionTimeout(size_t timeout) override
@@ -496,6 +505,7 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     size_t pipeliningRequestsNumber_{0};
     bool useSendfile_{true};
     bool useGzip_{true};
+    bool useBrotli_{false};
     size_t clientMaxBodySize_{1024 * 1024};
     size_t clientMaxMemoryBodySize_{64 * 1024};
     size_t clientMaxWebSocketMessageSize_{128 * 1024};

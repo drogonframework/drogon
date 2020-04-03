@@ -36,13 +36,43 @@ static HttpResponsePtr getCompressedResponse(const HttpRequestImplPtr &req,
     LOG_TRACE << "Use gzip to compress the body";
     auto &sendfileName =
         static_cast<HttpResponseImpl *>(response.get())->sendfileName();
-    if (app().isGzipEnabled() && sendfileName.empty() &&
-        req->getHeaderBy("accept-encoding").find("gzip") != std::string::npos &&
-        static_cast<HttpResponseImpl *>(response.get())
-            ->getHeaderBy("content-encoding")
-            .empty() &&
-        response->getContentType() < CT_APPLICATION_OCTET_STREAM &&
-        response->getBody().length() > 1024 && !isHeadMethod)
+    if (!sendfileName.empty() ||
+        response->getContentType() >= CT_APPLICATION_OCTET_STREAM ||
+        response->getBody().length() < 1024 || isHeadMethod ||
+        !(static_cast<HttpResponseImpl *>(response.get())
+              ->getHeaderBy("content-encoding")
+              .empty()))
+    {
+        return response;
+    }
+#ifdef USE_BROTLI
+    if (app().isBrotliEnabled() &&
+        req->getHeaderBy("accept-encoding").find("br") != std::string::npos)
+    {
+        auto newResp = response;
+        auto strCompress = utils::brotliCompress(response->getBody().data(),
+                                                 response->getBody().length());
+        if (!strCompress.empty())
+        {
+            if (response->expiredTime() >= 0)
+            {
+                // cached response,we need to make a clone
+                newResp = std::make_shared<HttpResponseImpl>(
+                    *static_cast<HttpResponseImpl *>(response.get()));
+                newResp->setExpiredTime(-1);
+            }
+            newResp->setBody(std::move(strCompress));
+            newResp->addHeader("Content-Encoding", "br");
+        }
+        else
+        {
+            LOG_ERROR << "brotli got 0 length result";
+        }
+        return newResp;
+    }
+#endif
+    if (app().isGzipEnabled() &&
+        req->getHeaderBy("accept-encoding").find("gzip") != std::string::npos)
     {
         auto newResp = response;
         auto strCompress = utils::gzipCompress(response->getBody().data(),

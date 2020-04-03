@@ -822,6 +822,23 @@ class HttpAppFramework : public trantor::NonCopyable
     /// Return true if gzip is enabled.
     virtual bool isGzipEnabled() const = 0;
 
+    /// Enable brotli compression.
+    /**
+     * @param useBrotli if the parameter is true, use brotli to compress the
+     * response body's content;
+     * The default value is true.
+     *
+     * @note
+     * This operation can be performed by an option in the configuration file.
+     * After brotli is enabled, brotli is used under the following conditions:
+     * 1. The content type of response is not a binary type.
+     * 2. The content length is bigger than 1024 bytes.
+     */
+    virtual HttpAppFramework &enableBrotli(bool useBrotli) = 0;
+
+    /// Return true if brotli is enabled.
+    virtual bool isBrotliEnabled() const = 0;
+
     /// Set the time in which the static file response is cached in memory.
     /**
      * @param cacheTime in seconds. 0 means always cached, negative means no
