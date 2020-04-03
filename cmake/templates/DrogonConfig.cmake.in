@@ -32,7 +32,7 @@ find_dependency(Boost)
 endif()
 if(@Brotli_FOUND@)
 find_dependency(Brotli)
-endif
+endif()
 
 # Our library dependencies (contains definitions for IMPORTED targets)
 
