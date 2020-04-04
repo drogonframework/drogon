@@ -24,7 +24,7 @@ Drogon是一个跨平台框架，它支持Linux，也支持Mac OS、FreeBSD，�
 * 支持websocket(server端和client端);
 * 支持Json格式请求和应答, 对Restful API应用开发非常友好;
 * 支持文件下载和上传,支持sendfile系统调用；
-* 支持gzip压缩传输；
+* 支持gzip/brotli压缩传输；
 * 支持pipelining；
 * 提供一个轻量的命令行工具drogon_ctl，帮助简化各种类的创建和视图代码的生成过程；
 * 基于非阻塞IO实现的异步数据库读写，目前支持PostgreSQL和MySQL(MariaDB)数据库；

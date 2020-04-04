@@ -163,6 +163,34 @@ void doTest(const HttpClientPtr &client,
                                 exit(1);
                             }
                         });
+/// Test brotli
+#ifdef USE_BROTLI
+    req = HttpRequest::newHttpRequest();
+    req->setMethod(drogon::Get);
+    req->addHeader("accept-encoding", "br");
+    req->setPath("/api/v1/apitest/get/111");
+    client->sendRequest(req,
+                        [=](ReqResult result, const HttpResponsePtr &resp) {
+                            if (result == ReqResult::Ok)
+                            {
+                                if (resp->getBody().length() == 4994)
+                                {
+                                    outputGood(req, isHttps);
+                                }
+                                else
+                                {
+                                    LOG_DEBUG << resp->getBody().length();
+                                    LOG_ERROR << "Error!";
+                                    exit(1);
+                                }
+                            }
+                            else
+                            {
+                                LOG_ERROR << "Error!";
+                                exit(1);
+                            }
+                        });
+#endif
     /// Post json
     Json::Value json;
     json["request"] = "json";

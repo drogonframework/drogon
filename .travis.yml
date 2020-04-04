@@ -28,6 +28,7 @@ addons:
     - build-essential
     - cmake
     - boost1.67
+    - libbrotli-dev
   homebrew:
     packages:
     - jsoncpp

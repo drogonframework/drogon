@@ -400,10 +400,17 @@ void HttpClientImpl::onRecvMessage(const trantor::TcpConnectionPtr &connPtr,
             responseParser->reset();
             assert(!pipeliningCallbacks_.empty());
             auto &type = resp->getHeaderBy("content-type");
-            if (resp->getHeaderBy("content-encoding") == "gzip")
+            auto &coding = resp->getHeaderBy("content-encoding");
+            if (coding == "gzip")
             {
                 resp->gunzip();
             }
+#ifdef USE_BROTLI
+            else if (coding == "br")
+            {
+                resp->brDecompress();
+            }
+#endif
             if (type.find("application/json") != std::string::npos)
             {
                 resp->parseJson();

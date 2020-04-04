@@ -437,6 +437,7 @@ install(
         "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules/FindSQLite3.cmake"
         "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules/FindMySQL.cmake"
         "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules/Findpg.cmake"
+        "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules/FindBrotli.cmake"
   DESTINATION "${INSTALL_DROGON_CMAKE_DIR}"
   COMPONENT dev)
 
