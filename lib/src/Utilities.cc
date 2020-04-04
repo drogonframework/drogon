@@ -1014,9 +1014,9 @@ std::string brotliCompress(const char *data, const size_t ndata)
                                    BROTLI_DEFAULT_WINDOW,
                                    BROTLI_DEFAULT_MODE,
                                    ndata,
-                                   reinterpret_cast<const uint8_t *>(data),
+                                   (const uint8_t *)(data),
                                    &encodedSize,
-                                   reinterpret_cast<uint8_t *>(ret.data()));
+                                   (uint8_t *)(ret.data()));
     if (r == BROTLI_FALSE)
         ret.resize(0);
     else
@@ -1029,10 +1029,10 @@ std::string brotliDecompress(const char *data, const size_t ndata)
         return std::string(data, ndata);
 
     size_t availableIn = ndata;
-    auto nextIn = reinterpret_cast<const uint8_t *>(data);
+    auto nextIn = (const uint8_t *)(data);
     auto decompressed = std::string(availableIn * 3, 0);
     size_t availableOut = decompressed.size();
-    auto nextOut = reinterpret_cast<uint8_t *>(decompressed.data());
+    auto nextOut = (uint8_t *)(decompressed.data());
     size_t totalOut{0};
     bool done = false;
     auto s = BrotliDecoderCreateInstance(nullptr, nullptr, nullptr);
@@ -1049,8 +1049,7 @@ std::string brotliDecompress(const char *data, const size_t ndata)
         {
             assert(totalOut == decompressed.size());
             decompressed.resize(totalOut * 2);
-            nextOut =
-                reinterpret_cast<uint8_t *>(decompressed.data() + totalOut);
+            nextOut = (uint8_t *)(decompressed.data() + totalOut);
             availableOut = totalOut;
         }
         else
