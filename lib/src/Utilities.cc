@@ -14,6 +14,10 @@
 
 #include <drogon/utils/Utilities.h>
 #include <trantor/utils/Logger.h>
+#ifdef USE_BROTLI
+#include <brotli/decode.h>
+#include <brotli/encode.h>
+#endif
 #ifdef _WIN32
 #include <Rpc.h>
 #include <direct.h>
@@ -998,6 +1002,79 @@ int createPath(const std::string &path)
     }
     return 0;
 }
+#ifdef USE_BROTLI
+std::string brotliCompress(const char *data, const size_t ndata)
+{
+    std::string ret;
+    if (ndata == 0)
+        return ret;
+    ret.resize(BrotliEncoderMaxCompressedSize(ndata));
+    size_t encodedSize{ret.size()};
+    auto r = BrotliEncoderCompress(5,
+                                   BROTLI_DEFAULT_WINDOW,
+                                   BROTLI_DEFAULT_MODE,
+                                   ndata,
+                                   (const uint8_t *)(data),
+                                   &encodedSize,
+                                   (uint8_t *)(ret.data()));
+    if (r == BROTLI_FALSE)
+        ret.resize(0);
+    else
+        ret.resize(encodedSize);
+    return ret;
+}
+std::string brotliDecompress(const char *data, const size_t ndata)
+{
+    if (ndata == 0)
+        return std::string(data, ndata);
+
+    size_t availableIn = ndata;
+    auto nextIn = (const uint8_t *)(data);
+    auto decompressed = std::string(availableIn * 3, 0);
+    size_t availableOut = decompressed.size();
+    auto nextOut = (uint8_t *)(decompressed.data());
+    size_t totalOut{0};
+    bool done = false;
+    auto s = BrotliDecoderCreateInstance(nullptr, nullptr, nullptr);
+    while (!done)
+    {
+        auto result = BrotliDecoderDecompressStream(
+            s, &availableIn, &nextIn, &availableOut, &nextOut, &totalOut);
+        if (result == BROTLI_DECODER_RESULT_SUCCESS)
+        {
+            decompressed.resize(totalOut);
+            done = true;
+        }
+        else if (result == BROTLI_DECODER_RESULT_NEEDS_MORE_OUTPUT)
+        {
+            assert(totalOut == decompressed.size());
+            decompressed.resize(totalOut * 2);
+            nextOut = (uint8_t *)(decompressed.data() + totalOut);
+            availableOut = totalOut;
+        }
+        else
+        {
+            decompressed.resize(0);
+            done = true;
+        }
+    }
+    BrotliDecoderDestroyInstance(s);
+    return decompressed;
+}
+#else
+std::string brotliCompress(const char *data, const size_t ndata)
+{
+    LOG_ERROR << "If you do not have the brotli package installed, you cannot "
+                 "use brotliCompress()";
+    abort();
+}
+std::string brotliDecompress(const char *data, const size_t ndata)
+{
+    LOG_ERROR << "If you do not have the brotli package installed, you cannot "
+                 "use brotliDecompress()";
+    abort();
+}
+#endif
 
 }  // namespace utils
 }  // namespace drogon

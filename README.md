@@ -25,7 +25,7 @@ Drogon is a cross-platform framework, It supports Linux, Mac OS, FreeBSD and Win
 * Support WebSocket (server side and client side);
 * Support JSON format request and response, very friendly to the Restful API application development;
 * Support file download and upload;
-* Support gzip compression transmission;
+* Support gzip, brotli compression transmission;
 * Support pipelining;
 * Provide a lightweight command line tool, drogon_ctl, to simplify the creation of various classes in Drogon and the generation of view code;
 * Support non-blocking I/O based asynchronously reading and writing database (PostgreSQL and MySQL(MariaDB) database);

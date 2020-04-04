@@ -82,13 +82,19 @@ std::string urlEncodeComponent(const std::string &);
 
 /// Commpress or decompress data using gzip lib.
 /**
- * @param data Data before compressing or after decompressing
- * @param ndata Data length before compressing or after decompressing
- * @param zdata Data after compressing or before decompressing
- * @param nzdata Data length after compressing or before decompressing
+ * @param data the input data
+ * @param ndata the input data length
  */
 std::string gzipCompress(const char *data, const size_t ndata);
 std::string gzipDecompress(const char *data, const size_t ndata);
+
+/// Commpress or decompress data using brotli lib.
+/**
+ * @param data the input data
+ * @param ndata the input data length
+ */
+std::string brotliCompress(const char *data, const size_t ndata);
+std::string brotliDecompress(const char *data, const size_t ndata);
 
 /// Get the http full date string
 /**

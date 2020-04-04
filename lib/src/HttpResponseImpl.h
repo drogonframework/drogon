@@ -310,6 +310,19 @@ class HttpResponseImpl : public HttpResponse
                 std::make_shared<HttpMessageStringBody>(move(gunzipBody));
         }
     }
+#ifdef USE_BROTLI
+    void brDecompress()
+    {
+        if (bodyPtr_)
+        {
+            auto gunzipBody =
+                utils::brotliDecompress(bodyPtr_->data(), bodyPtr_->length());
+            removeHeader("content-encoding");
+            bodyPtr_ =
+                std::make_shared<HttpMessageStringBody>(move(gunzipBody));
+        }
+    }
+#endif
     ~HttpResponseImpl();
 
   protected:

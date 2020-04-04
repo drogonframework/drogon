@@ -109,6 +109,13 @@ if(NOT WIN32)
   endif()
 endif(NOT WIN32)
 
+find_package(Brotli)
+if(Brotli_FOUND)
+  message(STATUS "Brotli found")
+  add_definitions(-DUSE_BROTLI)
+  target_link_libraries(${PROJECT_NAME} PRIVATE Brotli_lib)
+endif(Brotli_FOUND)
+
 set(DROGON_SOURCES
     lib/src/AOPAdvice.cc
     lib/src/CacheFile.cc
@@ -430,6 +437,7 @@ install(
         "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules/FindSQLite3.cmake"
         "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules/FindMySQL.cmake"
         "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules/Findpg.cmake"
+        "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules/FindBrotli.cmake"
   DESTINATION "${INSTALL_DROGON_CMAKE_DIR}"
   COMPONENT dev)
 
