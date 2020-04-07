@@ -456,6 +456,7 @@ HttpRequestPtr HttpRequest::newHttpFormPostRequest()
     req->setMethod(drogon::Post);
     req->setVersion(drogon::Version::kHttp11);
     req->contentType_ = CT_APPLICATION_X_FORM;
+    req->flagForParsingContentType_ = true;
     return req;
 }
 
@@ -472,6 +473,7 @@ HttpRequestPtr HttpRequest::newHttpJsonRequest(const Json::Value &data)
     req->setVersion(drogon::Version::kHttp11);
     req->contentType_ = CT_APPLICATION_JSON;
     req->setContent(writeString(builder, data));
+    req->flagForParsingContentType_ = true;
     return req;
 }
 
@@ -508,6 +510,7 @@ void HttpRequestImpl::swap(HttpRequestImpl &that) noexcept
     swap(contentTypeString_, that.contentTypeString_);
     swap(keepAlive_, that.keepAlive_);
     swap(loop_, that.loop_);
+    swap(flagForParsingContentType_, that.flagForParsingContentType_);
 }
 
 const char *HttpRequestImpl::methodString() const

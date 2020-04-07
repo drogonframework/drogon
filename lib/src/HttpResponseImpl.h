@@ -42,6 +42,7 @@ class HttpResponseImpl : public HttpResponse
           statusMessage_(statusCodeToString(code)),
           creationDate_(trantor::Date::now()),
           contentType_(type),
+          flagForParsingContentType_(true),
           contentTypeString_(webContentTypeToString(type))
     {
     }
@@ -93,6 +94,7 @@ class HttpResponseImpl : public HttpResponse
     {
         contentType_ = type;
         setContentType(webContentTypeToString(type));
+        flagForParsingContentType_ = true;
     }
 
     // virtual void setContentTypeCodeAndCharacterSet(ContentType type, const
@@ -104,6 +106,29 @@ class HttpResponseImpl : public HttpResponse
 
     virtual ContentType contentType() const override
     {
+        if (!flagForParsingContentType_)
+        {
+            flagForParsingContentType_ = true;
+            auto &contentTypeString = getHeaderBy("content-type");
+            if (contentTypeString == "")
+            {
+                contentType_ = CT_NONE;
+            }
+            else
+            {
+                auto pos = contentTypeString.find(';');
+                if (pos != std::string::npos)
+                {
+                    contentType_ = parseContentType(
+                        string_view(contentTypeString.data(), pos));
+                }
+                else
+                {
+                    contentType_ =
+                        parseContentType(string_view(contentTypeString));
+                }
+            }
+        }
         return contentType_;
     }
 
@@ -339,6 +364,7 @@ class HttpResponseImpl : public HttpResponse
         size_t typeStringLength) override
     {
         contentType_ = type;
+        flagForParsingContentType_ = true;
         setContentType(string_view{typeString, typeStringLength});
     }
 
@@ -364,7 +390,8 @@ class HttpResponseImpl : public HttpResponse
     mutable size_t datePos_{static_cast<size_t>(-1)};
     mutable int64_t httpStringDate_{-1};
     mutable bool flagForParsingJson_{false};
-    ContentType contentType_{CT_TEXT_HTML};
+    mutable ContentType contentType_{CT_TEXT_PLAIN};
+    mutable bool flagForParsingContentType_{false};
     string_view contentTypeString_{
         "Content-Type: text/html; charset=utf-8\r\n"};
     bool passThrough_{false};

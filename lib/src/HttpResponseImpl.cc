@@ -549,6 +549,8 @@ void HttpResponseImpl::swap(HttpResponseImpl &that) noexcept
     swap(leftBodyLength_, that.leftBodyLength_);
     swap(currentChunkLength_, that.currentChunkLength_);
     swap(contentType_, that.contentType_);
+    swap(flagForParsingContentType_, that.flagForParsingContentType_);
+    swap(flagForParsingJson_, that.flagForParsingJson_);
     swap(sendfileName_, that.sendfileName_);
     jsonPtr_.swap(that.jsonPtr_);
     fullHeaderString_.swap(that.fullHeaderString_);
@@ -571,6 +573,8 @@ void HttpResponseImpl::clear()
     jsonPtr_.reset();
     expriedTime_ = -1;
     datePos_ = std::string::npos;
+    flagForParsingContentType_ = false;
+    flagForParsingJson_ = false;
 }
 
 void HttpResponseImpl::parseJson() const

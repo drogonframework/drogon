@@ -62,6 +62,7 @@ class HttpRequestImpl : public HttpRequest
         expect_.clear();
         content_.clear();
         contentType_ = CT_TEXT_PLAIN;
+        flagForParsingContentType_ = false;
         contentTypeString_.clear();
         keepAlive_ = true;
     }
@@ -376,11 +377,13 @@ class HttpRequestImpl : public HttpRequest
     virtual void setCustomContentTypeString(const std::string &type) override
     {
         contentType_ = CT_NONE;
+        flagForParsingContentType_ = true;
         contentTypeString_ = type;
     }
     virtual void setContentTypeCode(const ContentType type) override
     {
         contentType_ = type;
+        flagForParsingContentType_ = true;
         auto &typeStr = webContentTypeToString(type);
         setContentType(std::string(typeStr.data(), typeStr.length()));
     }
@@ -394,6 +397,29 @@ class HttpRequestImpl : public HttpRequest
 
     virtual ContentType contentType() const override
     {
+        if (!flagForParsingContentType_)
+        {
+            flagForParsingContentType_ = true;
+            auto &contentTypeString = getHeaderBy("content-type");
+            if (contentTypeString == "")
+            {
+                contentType_ = CT_NONE;
+            }
+            else
+            {
+                auto pos = contentTypeString.find(';');
+                if (pos != std::string::npos)
+                {
+                    contentType_ = parseContentType(
+                        string_view(contentTypeString.data(), pos));
+                }
+                else
+                {
+                    contentType_ =
+                        parseContentType(string_view(contentTypeString));
+                }
+            }
+        }
         return contentType_;
     }
 
@@ -476,7 +502,8 @@ class HttpRequestImpl : public HttpRequest
     std::string content_;
     size_t contentLen_{0};
     trantor::EventLoop *loop_;
-    ContentType contentType_{CT_TEXT_PLAIN};
+    mutable ContentType contentType_{CT_TEXT_PLAIN};
+    mutable bool flagForParsingContentType_{false};
     std::string contentTypeString_;
 };
 
