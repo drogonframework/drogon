@@ -62,7 +62,7 @@ class HttpRequestImpl : public HttpRequest
         expect_.clear();
         content_.clear();
         contentType_ = CT_TEXT_PLAIN;
-        flagForParsingJson_ = false;
+        flagForParsingContentType_ = false;
         contentTypeString_.clear();
         keepAlive_ = true;
     }
