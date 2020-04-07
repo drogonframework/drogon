@@ -15,6 +15,7 @@
 #include "HttpUtils.h"
 #include <drogon/utils/Utilities.h>
 #include <trantor/utils/Logger.h>
+#include <unordered_map>
 
 namespace drogon
 {
@@ -493,6 +494,39 @@ ContentType getContentType(const std::string &fileName)
         default:
             return CT_APPLICATION_OCTET_STREAM;
     }
+}
+
+ContentType parseContentType(const string_view &contentType)
+{
+    static const std::unordered_map<string_view, ContentType> map_{
+        {"text/html", CT_TEXT_HTML},
+        {"application/x-www-form-urlencoded", CT_APPLICATION_X_FORM},
+        {"application/xml", CT_APPLICATION_XML},
+        {"application/json", CT_APPLICATION_JSON},
+        {"application/x-javascript", CT_APPLICATION_X_JAVASCRIPT},
+        {"text/css", CT_TEXT_CSS},
+        {"text/xml", CT_TEXT_XML},
+        {"text/xsl", CT_TEXT_XSL},
+        {"application/octet-stream", CT_APPLICATION_OCTET_STREAM},
+        {"image/svg+xml", CT_IMAGE_SVG_XML},
+        {"application/x-font-truetype", CT_APPLICATION_X_FONT_TRUETYPE},
+        {"application/x-font-opentype", CT_APPLICATION_X_FONT_OPENTYPE},
+        {"application/font-woff", CT_APPLICATION_FONT_WOFF},
+        {"application/font-woff2", CT_APPLICATION_FONT_WOFF2},
+        {"application/vnd.ms-fontobject", CT_APPLICATION_VND_MS_FONTOBJ},
+        {"application/pdf", CT_APPLICATION_PDF},
+        {"image/png", CT_IMAGE_PNG},
+        {"image/jpeg", CT_IMAGE_JPG},
+        {"image/gif", CT_IMAGE_GIF},
+        {"image/x-icon", CT_IMAGE_XICON},
+        {"image/bmp", CT_IMAGE_BMP},
+        {"image/icns", CT_IMAGE_ICNS},
+        {"application/wasm", CT_APPLICATION_WASM},
+        {"text/plain", CT_TEXT_PLAIN}};
+    auto iter = map_.find(contentType);
+    if (iter == map_.end())
+        return CT_NONE;
+    return iter->second;
 }
 
 }  // namespace drogon

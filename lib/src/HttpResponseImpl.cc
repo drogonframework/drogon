@@ -549,6 +549,7 @@ void HttpResponseImpl::swap(HttpResponseImpl &that) noexcept
     swap(leftBodyLength_, that.leftBodyLength_);
     swap(currentChunkLength_, that.currentChunkLength_);
     swap(contentType_, that.contentType_);
+    swap(flagForParsingContentType_, that.flagForParsingContentType_);
     swap(sendfileName_, that.sendfileName_);
     jsonPtr_.swap(that.jsonPtr_);
     fullHeaderString_.swap(that.fullHeaderString_);

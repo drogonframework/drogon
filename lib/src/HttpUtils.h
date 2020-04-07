@@ -21,8 +21,8 @@
 
 namespace drogon
 {
+ContentType parseContentType(const string_view &contentType);
 const string_view &webContentTypeToString(ContentType contenttype);
 const string_view &statusCodeToString(int code);
 ContentType getContentType(const std::string &fileName);
-
 }  // namespace drogon
