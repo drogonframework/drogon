@@ -14,7 +14,8 @@
 
 #include "MysqlResultImpl.h"
 #include <algorithm>
-#include <assert.h>
+#include <cassert>
+#include <drogon/orm/Exception.h>
 
 using namespace drogon::orm;
 
@@ -22,10 +23,12 @@ Result::SizeType MysqlResultImpl::size() const noexcept
 {
     return rowsNumber_;
 }
+
 Result::RowSizeType MysqlResultImpl::columns() const noexcept
 {
     return fieldsNumber_;
 }
+
 const char *MysqlResultImpl::columnName(RowSizeType number) const
 {
     assert(number < fieldsNumber_);
@@ -33,10 +36,12 @@ const char *MysqlResultImpl::columnName(RowSizeType number) const
         return fieldArray_[number].name;
     return "";
 }
+
 Result::SizeType MysqlResultImpl::affectedRows() const noexcept
 {
     return affectedRows_;
 }
+
 Result::RowSizeType MysqlResultImpl::columnNumber(const char colName[]) const
 {
     if (!fieldsMapPtr_)
@@ -45,8 +50,9 @@ Result::RowSizeType MysqlResultImpl::columnNumber(const char colName[]) const
     std::transform(col.begin(), col.end(), col.begin(), tolower);
     if (fieldsMapPtr_->find(col) != fieldsMapPtr_->end())
         return (*fieldsMapPtr_)[col];
-    return -1;
+    throw RangeError(std::string("no column named ") + colName);
 }
+
 const char *MysqlResultImpl::getValue(SizeType row, RowSizeType column) const
 {
     if (rowsNumber_ == 0 || fieldsNumber_ == 0)
@@ -55,10 +61,12 @@ const char *MysqlResultImpl::getValue(SizeType row, RowSizeType column) const
     assert(column < fieldsNumber_);
     return (*rowsPtr_)[row].first[column];
 }
+
 bool MysqlResultImpl::isNull(SizeType row, RowSizeType column) const
 {
     return getValue(row, column) == NULL;
 }
+
 Result::FieldSizeType MysqlResultImpl::getLength(SizeType row,
                                                  RowSizeType column) const
 {
@@ -68,6 +76,7 @@ Result::FieldSizeType MysqlResultImpl::getLength(SizeType row,
     assert(column < fieldsNumber_);
     return (*rowsPtr_)[row].second[column];
 }
+
 unsigned long long MysqlResultImpl::insertId() const noexcept
 {
     return insertId_;
