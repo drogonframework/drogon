@@ -551,7 +551,17 @@ void create_model::createModelClassFromSqlite3(
                                        column.begin(),
                                        tolower);
                         auto columnVector = utils::splitString(column, " ");
+                        if (columnVector.size() < 2)
+                            continue;
                         auto field = columnVector[0];
+                        if (field[0] == '\r' && field[1] == '\n')
+                        {
+                            field = field.substr(2);
+                        }
+                        else if (field[0] == '\r' || field[0] == '\n')
+                        {
+                            field = field.substr(1);
+                        }
                         auto type = columnVector[1];
 
                         bool notnull =
@@ -595,6 +605,10 @@ void create_model::createModelClassFromSqlite3(
                         else if (type == "blob")
                         {
                             info.colType_ = "std::vector<char>";
+                        }
+                        else if (field == "constraint")
+                        {
+                            continue;
                         }
                         else
                         {
