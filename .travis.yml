@@ -54,6 +54,9 @@ before_script:
        brew services restart postgresql; 
        sleep 2;
        psql -c 'create user postgres superuser;' postgres; 
+       brew services start mariadb;
+       sleep 2;
+       mysql -uroot -e "create database drogonTest";
     fi
 
 services:
