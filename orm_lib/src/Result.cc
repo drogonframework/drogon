@@ -85,7 +85,7 @@ Result::Reference Result::operator[](SizeType index) const noexcept
 
 Result::Reference Result::at(SizeType index) const
 {
-    if(index >= size())
+    if (index >= size())
         throw RangeError("Result index is out of range");
     return operator[](index);
 }

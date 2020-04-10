@@ -366,5 +366,5 @@ class Users
         return sql;
     }
 };
-}  // namespace drogonTest
+}  // namespace drogonTestMysql
 }  // namespace drogon_model

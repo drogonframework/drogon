@@ -268,8 +268,6 @@ class Users
         std::string sql = "insert into " + tableName + " (";
         size_t parametersCount = 0;
         needSelection = false;
-        sql += "id,";
-        ++parametersCount;
         if (dirtyFlag_[1])
         {
             sql += "user_id,";
@@ -310,7 +308,6 @@ class Users
             sql += "admin,";
             ++parametersCount;
         }
-        needSelection = true;
         if (parametersCount > 0)
         {
             sql[sql.length() - 1] = ')';
@@ -319,7 +316,6 @@ class Users
         else
             sql += ") values (";
 
-        sql += "default,";
         if (dirtyFlag_[1])
         {
             sql.append("?,");
