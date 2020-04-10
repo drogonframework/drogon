@@ -14,11 +14,11 @@
  */
 #include <drogon/config.h>
 #include <drogon/orm/DbClient.h>
-#include <stdlib.h>
 #include <trantor/utils/Logger.h>
 #include <chrono>
 #include <iostream>
 #include <thread>
+#include <stdlib.h>
 
 #include "mysql/Users.h"
 #include "postgresql/Users.h"
@@ -32,7 +32,7 @@ using namespace drogon::orm;
 #define GREEN "\033[32m" /* Green */
 
 constexpr int postgre_tests = 41;
-constexpr int mysql_tests = 42;
+constexpr int mysql_tests = 43;
 constexpr int sqlite_tests = 46;
 
 int test_count = 0;
@@ -703,6 +703,12 @@ void doMysqlTest(const drogon::orm::DbClientPtr &clientPtr)
             std::cerr << e.base().what() << std::endl;
             testOutput(false, "mysql - Prepare the test environment(0)");
         };
+    *clientPtr << "USE drogonTestMysql" >> [](const Result &r) {
+        testOutput(true, "mysql - Prepare the test environment(0)");
+    } >> [](const DrogonDbException &e) {
+        std::cerr << e.base().what() << std::endl;
+        testOutput(false, "mysql - Prepare the test environment(0)");
+    };
     // mysql is case sensitive
     *clientPtr << "DROP TABLE IF EXISTS users" >> [](const Result &r) {
         testOutput(true, "mysql - Prepare the test environment(1)");
@@ -1933,8 +1939,8 @@ int main(int argc, char *argv[])
         "host=127.0.0.1 port=5432 dbname=postgres user=postgres", 1);
 #endif
 #if USE_MYSQL
-    auto mysql_client = DbClient::newMysqlClient(
-        "host=localhost port=3306 dbname=drogonTest user=root", 1);
+    auto mysql_client =
+        DbClient::newMysqlClient("host=localhost port=3306 user=root", 1);
 #endif
 #if USE_SQLITE3
     auto sqlite_client = DbClient::newSqlite3Client("filename=:memory:", 1);
