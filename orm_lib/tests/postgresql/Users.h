@@ -6,20 +6,20 @@
  */
 
 #pragma once
+#include <drogon/orm/Field.h>
+#include <drogon/orm/Mapper.h>
 #include <drogon/orm/Result.h>
 #include <drogon/orm/Row.h>
-#include <drogon/orm/Field.h>
 #include <drogon/orm/SqlBinder.h>
-#include <drogon/orm/Mapper.h>
+#include <json/json.h>
+#include <stdint.h>
 #include <trantor/utils/Date.h>
 #include <trantor/utils/Logger.h>
-#include <json/json.h>
-#include <string>
-#include <memory>
-#include <vector>
-#include <tuple>
-#include <stdint.h>
 #include <iostream>
+#include <memory>
+#include <string>
+#include <tuple>
+#include <vector>
 
 using namespace drogon::orm;
 namespace drogon
@@ -30,6 +30,7 @@ class DbClient;
 using DbClientPtr = std::shared_ptr<DbClient>;
 }  // namespace orm
 }  // namespace drogon
+
 namespace drogon_model
 {
 namespace postgres
