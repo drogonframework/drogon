@@ -48,19 +48,18 @@ before_install:
   - make
   - sudo make install
   - cd -
-  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then 
-       mysql -h127.0.0.1 -uroot -e "create database drogonTest";
-    fi
 before_script:
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then 
        brew tap homebrew/services;
        brew services restart postgresql; 
        sleep 2;
        psql -c 'create user postgres superuser;' postgres; 
+       brew services restart mariadb;
+       sleep 2;
+       mysql -h127.0.0.1 -uroot -e "create database drogonTest";
     fi
 services:
   - postgresql
-  - mysql
 script:
   - ./build.sh -t
   - ./test.sh -t
