@@ -392,6 +392,10 @@ if(@@.get<int>("hasPrimaryKey")<=1){
         {
             if(cols[i].isAutoVal_)
             {
+                if(@@.get<std::string>("rdbms")=="sqlite3")
+                {
+                    continue;
+                }
                 if(@@.get<int>("hasPrimaryKey")>0)
                 {
                     selFlag = true;
@@ -453,9 +457,12 @@ if(@@.get<std::string>("rdbms")=="postgresql")
         {
         if(cols[i].isAutoVal_)
         {
+            if(@@.get<std::string>("rdbms")!="sqlite3")
+            {
 %>
         sql +="default,";
 <%c++
+            }
             continue;
         } 
         if(cols[i].colType_.empty())

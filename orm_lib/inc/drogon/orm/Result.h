@@ -97,7 +97,7 @@ class Result
     Reference front() const noexcept;
     Reference back() const noexcept;
 
-    Reference operator[](SizeType index) const;
+    Reference operator[](SizeType index) const noexcept;
     Reference at(SizeType index) const;
     void swap(Result &) noexcept;
 

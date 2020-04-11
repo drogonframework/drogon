@@ -52,9 +52,14 @@ class Row
 
     using DifferenceType = long;
 
-    Reference operator[](SizeType index) const;
+    Reference operator[](SizeType index) const noexcept;
     Reference operator[](const char columnName[]) const;
     Reference operator[](const std::string &columnName) const;
+
+    Reference at(SizeType index) const;
+    Reference at(const char columnName[]) const;
+    Reference at(const std::string &columnName) const;
+
     SizeType size() const;
     SizeType capacity() const noexcept
     {

@@ -13,10 +13,11 @@
  */
 
 #include "ResultImpl.h"
-#include <assert.h>
+#include <cassert>
 #include <drogon/orm/Result.h>
 #include <drogon/orm/ResultIterator.h>
 #include <drogon/orm/Row.h>
+#include <drogon/orm/Exception.h>
 
 using namespace drogon::orm;
 
@@ -24,14 +25,17 @@ Result::ConstIterator Result::begin() const noexcept
 {
     return ConstIterator(*this, (SizeType)0);
 }
+
 Result::ConstIterator Result::cbegin() const noexcept
 {
     return begin();
 }
+
 Result::ConstIterator Result::end() const noexcept
 {
     return ConstIterator(*this, size());
 }
+
 Result::ConstIterator Result::cend() const noexcept
 {
     return end();
@@ -41,14 +45,17 @@ Result::ConstReverseIterator Result::rbegin() const
 {
     return ConstReverseResultIterator(end());
 }
+
 Result::ConstReverseIterator Result::crbegin() const
 {
     return rbegin();
 }
+
 Result::ConstReverseIterator Result::rend() const
 {
     return ConstReverseResultIterator(begin());
 }
+
 Result::ConstReverseIterator Result::crend() const
 {
     return rend();
@@ -70,13 +77,16 @@ Result::Reference Result::back() const noexcept
     return Row(*this, size() - 1);
 }
 
-Result::Reference Result::operator[](SizeType index) const
+Result::Reference Result::operator[](SizeType index) const noexcept
 {
     assert(index < size());
     return Row(*this, index);
 }
+
 Result::Reference Result::at(SizeType index) const
 {
+    if (index >= size())
+        throw RangeError("Result index is out of range");
     return operator[](index);
 }
 
@@ -86,6 +96,7 @@ ConstResultIterator ConstResultIterator::operator++(int)
     ++index_;
     return old;
 }
+
 ConstResultIterator ConstResultIterator::operator--(int)
 {
     ConstResultIterator old(*this);
@@ -111,40 +122,49 @@ Result::SizeType Result::size() const noexcept
 {
     return resultPtr_->size();
 }
+
 void Result::swap(Result &other) noexcept
 {
     resultPtr_.swap(other.resultPtr_);
 }
+
 Result::RowSizeType Result::columns() const noexcept
 {
     return resultPtr_->columns();
 }
+
 const char *Result::columnName(Result::RowSizeType number) const
 {
     return resultPtr_->columnName(number);
 }
+
 Result::SizeType Result::affectedRows() const noexcept
 {
     return resultPtr_->affectedRows();
 }
+
 Result::RowSizeType Result::columnNumber(const char colName[]) const
 {
     return resultPtr_->columnNumber(colName);
 }
+
 const char *Result::getValue(Result::SizeType row,
                              Result::RowSizeType column) const
 {
     return resultPtr_->getValue(row, column);
 }
+
 bool Result::isNull(Result::SizeType row, Result::RowSizeType column) const
 {
     return resultPtr_->isNull(row, column);
 }
+
 Result::FieldSizeType Result::getLength(Result::SizeType row,
                                         Result::RowSizeType column) const
 {
     return resultPtr_->getLength(row, column);
 }
+
 unsigned long long Result::insertId() const noexcept
 {
     return resultPtr_->insertId();

@@ -1,0 +1,8 @@
+{
+    "rdbms":"mysql",
+    "host":"localhost",
+    "port":3306,
+    "dbname":"drogonTestMysql",
+    "user":"root",
+    "tables":["users"]
+}
