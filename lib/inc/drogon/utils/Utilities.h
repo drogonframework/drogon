@@ -46,9 +46,8 @@ std::string hexToBinaryString(const char *ptr, size_t length);
 std::vector<char> hexToBinaryVector(const char *ptr, size_t length);
 
 /// Split the string into multiple separated strings.
-inline auto splitString = std::bind(&trantor::splitString,
-                                    std::placeholders::_1,
-                                    std::placeholders::_2);
+std::vector<std::string> splitStringToSet(const std::string &str,
+                                          const std::string &separator);
   
 std::set<std::string> splitStringToSet(const std::string &str,
                                        const std::string &separator);
