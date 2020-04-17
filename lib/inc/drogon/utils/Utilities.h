@@ -15,6 +15,7 @@
 #pragma once
 
 #include <trantor/utils/Date.h>
+#include <trantor/utils/Funcs.h>
 #include <drogon/utils/string_view.h>
 #include <memory>
 #include <string>
@@ -45,8 +46,9 @@ std::string hexToBinaryString(const char *ptr, size_t length);
 std::vector<char> hexToBinaryVector(const char *ptr, size_t length);
 
 /// Split the string into multiple separated strings.
-std::vector<std::string> splitString(const std::string &str,
-                                     const std::string &separator);
+inline auto splitString = std::bind (&trantor::strsplit,
+                            std::placeholders::_1,
+                            std::placeholders::_2);
 std::set<std::string> splitStringToSet(const std::string &str,
                                        const std::string &separator);
 
