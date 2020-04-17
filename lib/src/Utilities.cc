@@ -248,6 +248,11 @@ std::string binaryStringToHex(const unsigned char *ptr, size_t length)
     }
     return idString;
 }
+std::vector<std::string> splitString(const std::string &str,
+                                     const std::string &separator)
+{
+  return trantor::plitString(str, separator);
+}
 std::set<std::string> splitStringToSet(const std::string &str,
                                        const std::string &separator)
 {
