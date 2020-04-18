@@ -15,6 +15,7 @@
 #pragma once
 
 #include <trantor/utils/Date.h>
+#include <trantor/utils/Funcs.h>
 #include <drogon/utils/string_view.h>
 #include <memory>
 #include <string>
@@ -45,8 +46,18 @@ std::string hexToBinaryString(const char *ptr, size_t length);
 std::vector<char> hexToBinaryVector(const char *ptr, size_t length);
 
 /// Split the string into multiple separated strings.
-std::vector<std::string> splitString(const std::string &str,
-                                     const std::string &separator);
+/**
+ * @param acceptEmptyString if true, empty strings are accepted in the
+ * result, for example, splitting the ",1,2,,3," by "," produces
+ * ["","1","2","","3",""]
+ */
+inline std::vector<std::string> splitString(const std::string &str,
+                                            const std::string &separator,
+                                            bool acceptEmptyString = false)
+{
+    return trantor::splitString(str, separator, acceptEmptyString);
+}
+
 std::set<std::string> splitStringToSet(const std::string &str,
                                        const std::string &separator);
 

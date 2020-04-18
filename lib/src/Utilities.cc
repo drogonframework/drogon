@@ -248,30 +248,6 @@ std::string binaryStringToHex(const unsigned char *ptr, size_t length)
     }
     return idString;
 }
-std::vector<std::string> splitString(const std::string &str,
-                                     const std::string &separator)
-{
-    std::vector<std::string> ret;
-    std::string::size_type pos1, pos2;
-    pos2 = 0;
-    pos1 = str.find(separator);
-    while (pos1 != std::string::npos)
-    {
-        if (pos1 != 0)
-        {
-            std::string item = str.substr(pos2, pos1 - pos2);
-            ret.push_back(item);
-        }
-        pos2 = pos1 + separator.length();
-        while (pos2 < str.length() &&
-               str.substr(pos2, separator.length()) == separator)
-            pos2 += separator.length();
-        pos1 = str.find(separator, pos2);
-    }
-    if (pos2 < str.length())
-        ret.push_back(str.substr(pos2));
-    return ret;
-}
 
 std::set<std::string> splitStringToSet(const std::string &str,
                                        const std::string &separator)
