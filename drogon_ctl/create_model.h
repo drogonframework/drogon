@@ -80,8 +80,8 @@ class PivotTable
   public:
     PivotTable() = default;
     PivotTable(const Json::Value &json)
+        : tableName_(json.get("table_name", "").asString())
     {
-        tableName_ = json.get("table_name", "").asString();
         if (tableName_.empty())
         {
             throw std::runtime_error("table_name can't be empty");

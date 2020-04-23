@@ -95,7 +95,7 @@ int main()
     for (int i = 0; i < 100; ++i)
         mapper.findByPrimaryKey(
             2,
-            [](User u) { std::cout << "get a user by pk" << std::endl; },
+            [](const User &u) { std::cout << "get a user by pk" << std::endl; },
             [](const DrogonDbException &e) { throw std::exception(); });
     getchar();
 }
