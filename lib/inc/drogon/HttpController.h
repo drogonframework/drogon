@@ -28,26 +28,12 @@
 #define METHOD_LIST_BEGIN         \
     static void initPathRouting() \
     {
-#ifndef _MSC_VER
-#define METHOD_ADD(method, pattern, filters...) \
-    registerMethod(&method, pattern, {filters}, true, #method)
-
-#define ADD_METHOD_TO(method, path_pattern, filters...) \
-    registerMethod(&method, path_pattern, {filters}, false, #method)
-
-#define ADD_METHOD_VIA_REGEX(method, regex, filters...) \
-    registerMethodViaRegex(&method, regex, {filters}, #method)
-#else
 #define METHOD_ADD(method, pattern, ...) \
-    registerMethod(&method, pattern, {##__VA_ARGS__}, true, #method)
-
+    registerMethod(&method, pattern, {__VA_ARGS__}, true, #method)
 #define ADD_METHOD_TO(method, path_pattern, ...) \
-    registerMethod(&method, path_pattern, {##__VA_ARGS__}, false, #method)
-
+    registerMethod(&method, path_pattern, {__VA_ARGS__}, false, #method)
 #define ADD_METHOD_VIA_REGEX(method, regex, ...) \
-    registerMethodViaRegex(&method, regex, {##__VA_ARGS__}, #method)
-#endif
-
+    registerMethodViaRegex(&method, regex, {__VA_ARGS__}, #method)
 #define METHOD_LIST_END \
     return;             \
     }

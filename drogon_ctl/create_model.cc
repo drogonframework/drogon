@@ -237,7 +237,9 @@ void create_model::createModelClassFromPG(
                 INNER JOIN pg_type ON pg_type.oid = pg_attribute.atttypid \
                 WHERE pg_class.relname = $1 and pg_constraint.contype='p'"
                 << tableName << Mode::Blocking >>
-            [&](bool isNull, std::string colName, const std::string &type) {
+            [&](bool isNull,
+                const std::string &colName,
+                const std::string &type) {
                 if (isNull)
                     return;
 

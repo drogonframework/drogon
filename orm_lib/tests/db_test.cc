@@ -163,7 +163,7 @@ void doPostgreTest(const drogon::orm::DbClientPtr &clientPtr)
                << Mode::Blocking >>
         [&count](bool isNull,
                  const std::string &name,
-                 std::string user_id,
+                 std::string &&user_id,
                  int id) {
             if (!isNull)
                 ++count;
@@ -793,7 +793,7 @@ void doMysqlTest(const drogon::orm::DbClientPtr &clientPtr)
                << Mode::Blocking >>
         [&count](bool isNull,
                  const std::string &name,
-                 std::string user_id,
+                 std::string &&user_id,
                  int id) {
             if (!isNull)
                 ++count;
@@ -1381,7 +1381,7 @@ void doSqliteTest(const drogon::orm::DbClientPtr &clientPtr)
                << Mode::Blocking >>
         [&count](bool isNull,
                  const std::string &name,
-                 std::string user_id,
+                 std::string &&user_id,
                  int id) {
             if (!isNull)
                 ++count;
