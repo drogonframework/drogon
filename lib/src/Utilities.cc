@@ -314,7 +314,7 @@ std::string getUuid()
 }
 
 std::string base64Encode(const unsigned char *bytes_to_encode,
-                         unsigned int in_len)
+                         unsigned int in_len, bool url_safe)
 {
     std::string ret;
     int i = 0;
@@ -357,7 +357,17 @@ std::string base64Encode(const unsigned char *bytes_to_encode,
         while ((i++ < 3))
             ret += '=';
     }
-
+    if ( url_safe )
+    {
+        char r;
+        std::map<char, char> rs = {{'+', '-'}, {'/', '_'}};
+        std::replace_if(ret.begin(), ret.end(), 
+            [&](const char &c)
+            {
+                return (rs.find(c) != rs.end()) && (r = rs[c]);
+            },
+        r); 
+    }
     return ret;
 }
 
