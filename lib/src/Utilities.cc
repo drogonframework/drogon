@@ -314,7 +314,8 @@ std::string getUuid()
 }
 
 std::string base64Encode(const unsigned char *bytes_to_encode,
-                         unsigned int in_len, bool url_safe)
+                         unsigned int in_len, 
+                         bool url_safe)
 {
     std::string ret;
     int i = 0;
