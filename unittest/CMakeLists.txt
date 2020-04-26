@@ -4,6 +4,7 @@ add_executable(gzip_unittest GzipUnittest.cpp)
 add_executable(md5_unittest MD5Unittest.cpp ../lib/src/ssl_funcs/Md5.cc)
 add_executable(sha1_unittest SHA1Unittest.cpp ../lib/src/ssl_funcs/Sha1.cc)
 add_executable(ostringstream_unittest OStringStreamUnitttest.cpp)
+add_executable(base64_unittest Base64Unittest.cpp)
 if(Brotli_FOUND)
   add_executable(brotli_unittest BrotliUnittest.cpp)
 endif()
@@ -14,7 +15,8 @@ set(UNITTEST_TARGETS
     gzip_unittest
     md5_unittest
     sha1_unittest
-    ostringstream_unittest)
+    ostringstream_unittest
+    base64_unittest)
 if(Brotli_FOUND)
   set(UNITTEST_TARGETS ${UNITTEST_TARGETS} brotli_unittest)
 endif()

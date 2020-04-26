@@ -57,10 +57,20 @@ static const std::string urlBase64Chars =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
     "abcdefghijklmnopqrstuvwxyz"
     "0123456789-_";
-    
+
 static inline bool isBase64(unsigned char c)
 {
-    return (isalnum(c) || (c == '+') || (c == '/'));
+    if (isalnum(c))
+        return true;
+    switch (c)
+    {
+        case '+':
+        case '/':
+        case '-':
+        case '_':
+            return true;
+    }
+    return false;
 }
 
 bool isInteger(const std::string &str)
@@ -319,7 +329,7 @@ std::string getUuid()
 }
 
 std::string base64Encode(const unsigned char *bytes_to_encode,
-                         unsigned int in_len, 
+                         unsigned int in_len,
                          bool url_safe)
 {
     std::string ret;
@@ -328,7 +338,7 @@ std::string base64Encode(const unsigned char *bytes_to_encode,
     unsigned char char_array_4[4];
 
     const std::string &charSet = url_safe ? urlBase64Chars : base64Chars;
-    
+
     while (in_len--)
     {
         char_array_3[i++] = *(bytes_to_encode++);
@@ -365,6 +375,7 @@ std::string base64Encode(const unsigned char *bytes_to_encode,
         while ((i++ < 3))
             ret += '=';
     }
+    return ret;
 }
 
 std::vector<char> base64DecodeToVector(const std::string &encoded_string)
@@ -384,8 +395,14 @@ std::vector<char> base64DecodeToVector(const std::string &encoded_string)
         if (i == 4)
         {
             for (i = 0; i < 4; ++i)
+            {
+                if (char_array_4[i] == '-')
+                    char_array_4[i] = '+';
+                else if (char_array_4[i] == '_')
+                    char_array_4[i] = '/';
                 char_array_4[i] =
                     static_cast<char>(base64Chars.find(char_array_4[i]));
+            }
 
             char_array_3[0] =
                 (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
@@ -405,8 +422,14 @@ std::vector<char> base64DecodeToVector(const std::string &encoded_string)
             char_array_4[j] = 0;
 
         for (int j = 0; j < 4; ++j)
+        {
+            if (char_array_4[j] == '-')
+                char_array_4[j] = '+';
+            else if (char_array_4[j] == '_')
+                char_array_4[j] = '/';
             char_array_4[j] =
                 static_cast<char>(base64Chars.find(char_array_4[j]));
+        }
 
         char_array_3[0] =
             (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
@@ -437,9 +460,14 @@ std::string base64Decode(const std::string &encoded_string)
         if (i == 4)
         {
             for (i = 0; i < 4; ++i)
+            {
+                if (char_array_4[i] == '-')
+                    char_array_4[i] = '+';
+                else if (char_array_4[i] == '_')
+                    char_array_4[i] = '/';
                 char_array_4[i] = static_cast<unsigned char>(
                     base64Chars.find(char_array_4[i]));
-
+            }
             char_array_3[0] =
                 (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
             char_array_3[1] = ((char_array_4[1] & 0xf) << 4) +
@@ -458,8 +486,14 @@ std::string base64Decode(const std::string &encoded_string)
             char_array_4[j] = 0;
 
         for (int j = 0; j < 4; ++j)
+        {
+            if (char_array_4[j] == '-')
+                char_array_4[j] = '+';
+            else if (char_array_4[j] == '_')
+                char_array_4[j] = '/';
             char_array_4[j] =
                 static_cast<unsigned char>(base64Chars.find(char_array_4[j]));
+        }
 
         char_array_3[0] =
             (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
