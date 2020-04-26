@@ -43,7 +43,6 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <stdarg.h>
-#include <map>
 
 namespace drogon
 {
@@ -54,6 +53,11 @@ static const std::string base64Chars =
     "abcdefghijklmnopqrstuvwxyz"
     "0123456789+/";
 
+static const std::string urlBase64Chars =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    "abcdefghijklmnopqrstuvwxyz"
+    "0123456789-_";
+    
 static inline bool isBase64(unsigned char c)
 {
     return (isalnum(c) || (c == '+') || (c == '/'));
@@ -323,6 +327,8 @@ std::string base64Encode(const unsigned char *bytes_to_encode,
     unsigned char char_array_3[3];
     unsigned char char_array_4[4];
 
+    const std::string &charSet = url_safe ? urlBase64Chars : base64Chars;
+    
     while (in_len--)
     {
         char_array_3[i++] = *(bytes_to_encode++);
@@ -336,7 +342,7 @@ std::string base64Encode(const unsigned char *bytes_to_encode,
             char_array_4[3] = char_array_3[2] & 0x3f;
 
             for (i = 0; (i < 4); ++i)
-                ret += base64Chars[char_array_4[i]];
+                ret += charSet[char_array_4[i]];
             i = 0;
         }
     }
@@ -354,23 +360,11 @@ std::string base64Encode(const unsigned char *bytes_to_encode,
         char_array_4[3] = char_array_3[2] & 0x3f;
 
         for (int j = 0; (j < i + 1); ++j)
-            ret += base64Chars[char_array_4[j]];
+            ret += charSet[char_array_4[j]];
 
         while ((i++ < 3))
             ret += '=';
     }
-    if ( url_safe )
-    {
-        char r;
-        std::map<char, char> rs = {{'+', '-'}, {'/', '_'}};
-        std::replace_if(ret.begin(), ret.end(), 
-            [&](const char &c)
-            {
-                return (rs.find(c) != rs.end()) && (r = rs[c]);
-            },
-        r); 
-    }
-    return ret;
 }
 
 std::vector<char> base64DecodeToVector(const std::string &encoded_string)
