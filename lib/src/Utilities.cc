@@ -57,6 +57,37 @@ static const std::string urlBase64Chars =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
     "abcdefghijklmnopqrstuvwxyz"
     "0123456789-_";
+class Base64CharMap
+{
+  public:
+    Base64CharMap()
+    {
+        char index = 0;
+        for (char c = 'A'; c <= 'Z'; ++c)
+        {
+            charMap_[c] = index++;
+        }
+        for (char c = 'a'; c <= 'z'; ++c)
+        {
+            charMap_[c] = index++;
+        }
+        for (char c = '0'; c <= '9'; ++c)
+        {
+            charMap_[c] = index++;
+        }
+        charMap_['+'] = charMap_['-'] = index++;
+        charMap_['/'] = charMap_['_'] = index;
+        charMap_[0] = 0xff;
+    }
+    char getIndex(const char c) const noexcept
+    {
+        return charMap_[c];
+    }
+
+  private:
+    char charMap_[256]{0};
+};
+const static Base64CharMap base64CharMap;
 
 static inline bool isBase64(unsigned char c)
 {
@@ -396,12 +427,7 @@ std::vector<char> base64DecodeToVector(const std::string &encoded_string)
         {
             for (i = 0; i < 4; ++i)
             {
-                if (char_array_4[i] == '-')
-                    char_array_4[i] = '+';
-                else if (char_array_4[i] == '_')
-                    char_array_4[i] = '/';
-                char_array_4[i] =
-                    static_cast<char>(base64Chars.find(char_array_4[i]));
+                char_array_4[i] = base64CharMap.getIndex(char_array_4[i]);
             }
 
             char_array_3[0] =
@@ -423,12 +449,7 @@ std::vector<char> base64DecodeToVector(const std::string &encoded_string)
 
         for (int j = 0; j < 4; ++j)
         {
-            if (char_array_4[j] == '-')
-                char_array_4[j] = '+';
-            else if (char_array_4[j] == '_')
-                char_array_4[j] = '/';
-            char_array_4[j] =
-                static_cast<char>(base64Chars.find(char_array_4[j]));
+            char_array_4[j] = base64CharMap.getIndex(char_array_4[j]);
         }
 
         char_array_3[0] =
@@ -461,12 +482,7 @@ std::string base64Decode(const std::string &encoded_string)
         {
             for (i = 0; i < 4; ++i)
             {
-                if (char_array_4[i] == '-')
-                    char_array_4[i] = '+';
-                else if (char_array_4[i] == '_')
-                    char_array_4[i] = '/';
-                char_array_4[i] = static_cast<unsigned char>(
-                    base64Chars.find(char_array_4[i]));
+                char_array_4[i] = base64CharMap.getIndex(char_array_4[i]);
             }
             char_array_3[0] =
                 (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
@@ -487,12 +503,7 @@ std::string base64Decode(const std::string &encoded_string)
 
         for (int j = 0; j < 4; ++j)
         {
-            if (char_array_4[j] == '-')
-                char_array_4[j] = '+';
-            else if (char_array_4[j] == '_')
-                char_array_4[j] = '/';
-            char_array_4[j] =
-                static_cast<unsigned char>(base64Chars.find(char_array_4[j]));
+            char_array_4[j] = base64CharMap.getIndex(char_array_4[j]);
         }
 
         char_array_3[0] =
