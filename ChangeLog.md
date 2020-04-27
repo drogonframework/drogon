@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.0.0-beta16] - 2020-04-27
+
+### API change list
+
+- Standardize Row and Result api in ORM
+
+### Changed
+
+- Add support for brotli compression
+
+- Parse content-type of HTTP requests
+
+- Remove non standard macros
+
+- Support url safe base64 codec
+
 ## [1.0.0-beta15] - 2020-03-28
 
 ### API change list
@@ -344,7 +360,9 @@ All notable changes to this project will be documented in this file.
 
 ## [1.0.0-beta1] - 2019-06-11
 
-[Unreleased]: https://github.com/an-tao/drogon/compare/v1.0.0-beta15...HEAD
+[Unreleased]: https://github.com/an-tao/drogon/compare/v1.0.0-beta16...HEAD
+
+[1.0.0-beta16]: https://github.com/an-tao/drogon/compare/v1.0.0-beta15...v1.0.0-beta16
 
 [1.0.0-beta15]: https://github.com/an-tao/drogon/compare/v1.0.0-beta14...v1.0.0-beta15
 
