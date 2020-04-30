@@ -33,6 +33,9 @@ endif()
 if(@Brotli_FOUND@)
 find_dependency(Brotli)
 endif()
+if(@COZ-PROFILER_FOUND@)
+find_dependency(coz-profiler)
+endif()
 
 # Our library dependencies (contains definitions for IMPORTED targets)
 

@@ -24,6 +24,15 @@
 #include <functional>
 #include <trantor/utils/Logger.h>
 
+#if COZ_PROFILING
+#include <coz.h>
+#else
+#define COZ_PROGRESS
+#define COZ_PROGRESS_NAMED(name)
+#define COZ_BEGIN(name)
+#define COZ_END(name)
+#endif
+
 using namespace std::placeholders;
 using namespace drogon;
 using namespace trantor;
@@ -258,6 +267,7 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn, MsgBuffer *buf)
                                     ((HttpResponseImpl *)resp.get())
                                         ->renderToBuffer();
                                 conn->send(httpString);
+                                COZ_PROGRESS
                             }
                         },
                         wsConn);
@@ -495,16 +505,19 @@ void HttpServer::sendResponse(const TcpConnectionPtr &conn,
         {
             conn->sendFile(sendfileName.c_str());
         }
+        COZ_PROGRESS
     }
     else
     {
         auto httpString = respImplPtr->renderHeaderForHeadMethod();
         conn->send(std::move(*httpString));
+        COZ_PROGRESS
     }
 
     if (response->ifCloseConnection())
     {
         conn->shutdown();
+        COZ_PROGRESS
     }
 }
 
@@ -534,6 +547,7 @@ void HttpServer::sendResponses(
                 conn->send(buffer);
                 buffer.retrieveAll();
                 conn->sendFile(sendfileName.c_str());
+                COZ_PROGRESS
             }
         }
         else
@@ -547,6 +561,7 @@ void HttpServer::sendResponses(
             {
                 conn->send(buffer);
                 buffer.retrieveAll();
+                COZ_PROGRESS
             }
             conn->shutdown();
             return;
@@ -555,6 +570,7 @@ void HttpServer::sendResponses(
     if (conn->connected() && buffer.readableBytes() > 0)
     {
         conn->send(buffer);
+        COZ_PROGRESS
     }
     buffer.retrieveAll();
 }

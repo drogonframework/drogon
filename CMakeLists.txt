@@ -5,6 +5,7 @@ message(STATUS "compiler: " ${CMAKE_CXX_COMPILER_ID})
 option(BUILD_CTL "Build drogon_ctl" ON)
 option(BUILD_EXAMPLES "Build examples" ON)
 option(BUILD_ORM "Build orm" ON)
+option(COZ_PROFILING "Use coz for profiling" OFF)
 option(LIBPQ_BATCH_MODE "Use batch mode for libpq" ON)
 option(BUILD_DROGON_SHARED "Build drogon as a shared lib" OFF)
 
@@ -237,6 +238,16 @@ if(BUILD_CTL)
   add_subdirectory(drogon_ctl)
 endif(BUILD_CTL)
 
+if(COZ_PROFILING)
+  find_package(coz-profiler REQUIRED)
+  target_compile_definitions(${PROJECT_NAME} PRIVATE -DCOZ_PROFILING=1)
+  # If linked will not need to be ran with `coz run --- [executable]` to run the
+  # profiler, but drogon_ctl currently won't build because it doesn't find debug
+  # information while trying to generate it's own sources
+  # target_link_libraries(${PROJECT_NAME} PUBLIC coz::coz)
+  target_include_directories(${PROJECT_NAME} PUBLIC ${COZ_INCLUDE_DIRS})
+endif(COZ_PROFILING)
+
 if(pg_FOUND OR MySQL_FOUND OR SQLite3_FOUND)
   set(DROGON_SOURCES
       ${DROGON_SOURCES}
@@ -439,6 +450,7 @@ install(
         "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules/FindMySQL.cmake"
         "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules/Findpg.cmake"
         "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules/FindBrotli.cmake"
+        "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules/Findcoz-profiler.cmake"
   DESTINATION "${INSTALL_DROGON_CMAKE_DIR}"
   COMPONENT dev)
 
