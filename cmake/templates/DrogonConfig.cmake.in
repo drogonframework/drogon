@@ -33,7 +33,7 @@ endif()
 if(@Brotli_FOUND@)
 find_dependency(Brotli)
 endif()
-if(@COZ-PROFILER_FOUND)
+if(@COZ-PROFILER_FOUND@)
 find_dependency(coz-profiler)
 endif()
 
