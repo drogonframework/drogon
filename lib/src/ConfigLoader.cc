@@ -296,12 +296,39 @@ static void loadApp(const Json::Value &app)
                 location.get("is_case_sensitive", false).asBool();
             auto allAll = location.get("allow_all", true).asBool();
             auto isRecursive = location.get("is_recursive", true).asBool();
-            drogon::app().addALocation(uri,
-                                       defaultContentType,
-                                       alias,
-                                       isCaseSensitive,
-                                       allAll,
-                                       isRecursive);
+            if (!location["filters"].isNull())
+            {
+                if (location["filters"].isArray())
+                {
+                    std::vector<std::string> filters;
+                    for (auto const &filter : location["filters"])
+                    {
+                        filters.push_back(filter.asString());
+                    }
+                    drogon::app().addALocation(uri,
+                                               defaultContentType,
+                                               alias,
+                                               isCaseSensitive,
+                                               allAll,
+                                               isRecursive,
+                                               filters);
+                }
+                else
+                {
+                    std::cerr << "the filters of location '" << uri
+                              << "' should be an array" << std::endl;
+                    exit(1);
+                }
+            }
+            else
+            {
+                drogon::app().addALocation(uri,
+                                           defaultContentType,
+                                           alias,
+                                           isCaseSensitive,
+                                           allAll,
+                                           isRecursive);
+            }
         }
     }
     // max connections

@@ -147,10 +147,35 @@ void StaticFileRouter::route(
             std::string filePath =
                 location.realLocation_ +
                 std::string{restOfThePath.data(), restOfThePath.length()};
-            sendStaticFileResponse(filePath,
-                                   req,
-                                   callback,
-                                   string_view{location.defaultContentType_});
+            if (location.filters_.empty())
+            {
+                sendStaticFileResponse(filePath,
+                                       req,
+                                       callback,
+                                       string_view{
+                                           location.defaultContentType_});
+            }
+            else
+            {
+                auto callbackPtr = std::make_shared<
+                    std::function<void(const drogon::HttpResponsePtr &)>>(
+                    std::move(callback));
+                filters_function::doFilters(
+                    location.filters_,
+                    req,
+                    callbackPtr,
+                    [callbackPtr,
+                     this,
+                     req,
+                     filePath = std::move(filePath),
+                     &contentType = location.defaultContentType_]() {
+                        sendStaticFileResponse(filePath,
+                                               req,
+                                               *callbackPtr,
+                                               string_view{contentType});
+                    });
+            }
+
             return;
         }
     }

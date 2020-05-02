@@ -931,13 +931,15 @@ HttpAppFramework &HttpAppFrameworkImpl::addALocation(
     const std::string &alias,
     bool isCaseSensitive,
     bool allowAll,
-    bool isRecursive)
+    bool isRecursive,
+    const std::vector<std::string> &filters)
 {
     staticFileRouterPtr_->addALocation(uriPrefix,
                                        defaultContentType,
                                        alias,
                                        isCaseSensitive,
                                        allowAll,
-                                       isRecursive);
+                                       isRecursive,
+                                       filters);
     return *this;
 }

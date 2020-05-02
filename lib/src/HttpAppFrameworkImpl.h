@@ -197,7 +197,8 @@ class HttpAppFrameworkImpl : public HttpAppFramework
         const std::string &alias = "",
         bool isCaseSensitive = false,
         bool allowAll = true,
-        bool isRecursive = true) override;
+        bool isRecursive = true,
+        const std::vector<std::string> &filters = {}) override;
 
     virtual const std::string &getUploadPath() const override
     {
