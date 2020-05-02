@@ -672,7 +672,7 @@ class HttpAppFramework : public trantor::NonCopyable
      * extension can be accessed.
      * @param isRecursive If it is set to false, files in sub directories can't
      * be accessed.
-     * @param filters The list of filters which apply on the location.
+     * @param filters The list of filters which acting on the location.
      * @return HttpAppFramework&
      */
     virtual HttpAppFramework &addALocation(
