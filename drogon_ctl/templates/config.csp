@@ -112,7 +112,9 @@
             //allow_all: true by default. If it is set to false, only static files with a valid extension can be accessed.
             "allow_all": true,
             //is_recursive: true by default. If it is set to false, files in sub directories can't be accessed.
-            "is_recursive": true
+            "is_recursive": true,
+            //filters: string array, the filters applied to the location.
+            "filters":[]
         }],
         //max_connections: maximum connections number,100000 by default
         "max_connections": 100000,

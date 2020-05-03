@@ -672,6 +672,7 @@ class HttpAppFramework : public trantor::NonCopyable
      * extension can be accessed.
      * @param isRecursive If it is set to false, files in sub directories can't
      * be accessed.
+     * @param filters The list of filters which acting on the location.
      * @return HttpAppFramework&
      */
     virtual HttpAppFramework &addALocation(
@@ -680,7 +681,8 @@ class HttpAppFramework : public trantor::NonCopyable
         const std::string &alias = "",
         bool isCaseSensitive = false,
         bool allowAll = true,
-        bool isRecursive = true) = 0;
+        bool isRecursive = true,
+        const std::vector<std::string> &filters = {}) = 0;
 
     /// Set the path to store uploaded files.
     /**

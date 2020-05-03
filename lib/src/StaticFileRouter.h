@@ -15,6 +15,7 @@
 #pragma once
 
 #include "impl_forwards.h"
+#include "FiltersFunction.h"
 #include <drogon/CacheMap.h>
 #include <drogon/IOThreadStorage.h>
 #include <functional>
@@ -59,14 +60,16 @@ class StaticFileRouter
                       const std::string &alias,
                       bool isCaseSensitive,
                       bool allowAll,
-                      bool isRecursive)
+                      bool isRecursive,
+                      const std::vector<std::string> &filters)
     {
         locations_.emplace_back(uriPrefix,
                                 defaultContentType,
                                 alias,
                                 isCaseSensitive,
                                 allowAll,
-                                isRecursive);
+                                isRecursive,
+                                filters);
     }
 
     void setStaticFileHeaders(
@@ -116,17 +119,20 @@ class StaticFileRouter
         bool isCaseSensitive_;
         bool allowAll_;
         bool isRecursive_;
+        std::vector<std::shared_ptr<drogon::HttpFilterBase>> filters_;
         Location(const std::string &uriPrefix,
                  const std::string &defaultContentType,
                  const std::string &alias,
                  bool isCaseSensitive,
                  bool allowAll,
-                 bool isRecursive)
+                 bool isRecursive,
+                 const std::vector<std::string> &filters)
             : uriPrefix_(uriPrefix),
               alias_(alias),
               isCaseSensitive_(isCaseSensitive),
               allowAll_(allowAll),
-              isRecursive_(isRecursive)
+              isRecursive_(isRecursive),
+              filters_(filters_function::createFilters(filters))
         {
             if (!defaultContentType.empty())
             {
