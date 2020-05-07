@@ -356,15 +356,11 @@ void create_view::newViewSourceFile(std::ofstream &file,
     //    file <<"{std::cout<<\"dynamic lib start to load!\"<<std::endl;}\n";
     //    file <<"void __attribute__((destructor)) shutdown()\n";
     //    file <<"{std::cout<<\"dynamic lib start to unload!\"<<std::endl;}\n";
-    std::string buffer;
-    char line[8192];
     int import_flag = 0;
     std::string layoutName;
     std::regex layoutReg("<%layout[ \\t]+(((?!%\\}).)*[^ \\t])[ \\t]*%>");
-    while (infile.getline(line, sizeof(line)))
+    for (std::string buffer; std::getline(infile, buffer);)
     {
-        buffer = line;
-
         std::string::size_type pos(0);
 
         if (!import_flag)
@@ -437,9 +433,8 @@ void create_view::newViewSourceFile(std::ofstream &file,
     file << "\tdrogon::OStringStream " << streamName << ";\n";
     file << "\tstd::string layoutName{\"" << layoutName << "\"};\n";
     int cxx_flag = 0;
-    while (infile.getline(line, sizeof(line)))
+    for (std::string buffer; std::getline(infile, buffer);)
     {
-        buffer = line;
         if (buffer.length() > 0)
         {
             std::smatch results;
