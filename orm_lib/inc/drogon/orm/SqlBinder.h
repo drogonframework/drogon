@@ -254,18 +254,18 @@ class SqlBinder
 
     SqlBinder(const std::string &sql, DbClient &client, ClientType type)
         : sqlPtr_(std::make_shared<std::string>(sql)),
-          client_(client),
-          type_(type),
           sqlViewPtr_(sqlPtr_->data()),
-          sqlViewLength_(sqlPtr_->length())
+          sqlViewLength_(sqlPtr_->length()),
+          client_(client),
+          type_(type)
     {
     }
     SqlBinder(std::string &&sql, DbClient &client, ClientType type)
         : sqlPtr_(std::make_shared<std::string>(std::move(sql))),
-          client_(client),
-          type_(type),
           sqlViewPtr_(sqlPtr_->data()),
-          sqlViewLength_(sqlPtr_->length())
+          sqlViewLength_(sqlPtr_->length()),
+          client_(client),
+          type_(type)
     {
     }
     SqlBinder(const char *sql,

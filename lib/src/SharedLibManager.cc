@@ -217,7 +217,6 @@ void *SharedLibManager::compileAndLoadLib(const std::string &sourceFile,
     auto soFile = sourceFile.substr(0, pos);
     soFile.append(".so");
     cmd.append(soFile);
-    void *Handle = nullptr;
     LOG_TRACE << cmd;
 
     if (system(cmd.c_str()) == 0)

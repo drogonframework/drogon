@@ -63,25 +63,27 @@ class Base64CharMap
     Base64CharMap()
     {
         char index = 0;
-        for (char c = 'A'; c <= 'Z'; ++c)
+        for (int c = 'A'; c <= 'Z'; ++c)
         {
             charMap_[c] = index++;
         }
-        for (char c = 'a'; c <= 'z'; ++c)
+        for (int c = 'a'; c <= 'z'; ++c)
         {
             charMap_[c] = index++;
         }
-        for (char c = '0'; c <= '9'; ++c)
+        for (int c = '0'; c <= '9'; ++c)
         {
             charMap_[c] = index++;
         }
-        charMap_['+'] = charMap_['-'] = index++;
-        charMap_['/'] = charMap_['_'] = index;
+        charMap_[static_cast<int>('+')] = charMap_[static_cast<int>('-')] =
+            index++;
+        charMap_[static_cast<int>('/')] = charMap_[static_cast<int>('_')] =
+            index;
         charMap_[0] = 0xff;
     }
     char getIndex(const char c) const noexcept
     {
-        return charMap_[c];
+        return charMap_[static_cast<int>(c)];
     }
 
   private:
@@ -120,7 +122,7 @@ std::string genRandomString(int length)
         "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
     static std::once_flag once;
     static const size_t len = strlen(char_space);
-    static const size_t randMax = RAND_MAX - (RAND_MAX % len);
+    static const int randMax = RAND_MAX - (RAND_MAX % len);
     std::call_once(once, []() {
         std::srand(static_cast<unsigned int>(time(nullptr)));
     });
