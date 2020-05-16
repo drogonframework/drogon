@@ -38,6 +38,10 @@ class TransactionImpl : public Transaction,
     {
         commitCallback_ = commitCallback;
     }
+    virtual bool hasAvailableConnections() const noexcept override
+    {
+        return connectionPtr_->status() == ConnectStatus::Ok;
+    }
 
   private:
     DbConnectionPtr connectionPtr_;

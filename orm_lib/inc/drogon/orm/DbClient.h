@@ -181,6 +181,13 @@ class DbClient : public trantor::NonCopyable
     virtual void newTransactionAsync(
         const std::function<void(const std::shared_ptr<Transaction> &)>
             &callback) = 0;
+    /**
+     * @brief Check if there is a connection successfully established.
+     *
+     * @return true
+     * @return false
+     */
+    virtual bool hasAvailableConnections() const noexcept = 0;
 
     ClientType type() const
     {

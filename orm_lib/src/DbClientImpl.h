@@ -50,6 +50,7 @@ class DbClientImpl : public DbClient,
     virtual void newTransactionAsync(
         const std::function<void(const std::shared_ptr<Transaction> &)>
             &callback) override;
+    virtual bool hasAvailableConnections() const noexcept override;
 
   private:
     size_t connectionsNumber_;
@@ -72,7 +73,7 @@ class DbClientImpl : public DbClient,
         const DbConnectionPtr &conn,
         std::function<void(const std::shared_ptr<Transaction> &)> &&callback);
 
-    std::mutex connectionsMutex_;
+    mutable std::mutex connectionsMutex_;
     std::unordered_set<DbConnectionPtr> connections_;
     std::unordered_set<DbConnectionPtr> readyConnections_;
     std::unordered_set<DbConnectionPtr> busyConnections_;
