@@ -72,7 +72,6 @@ void StaticFileRouter::route(
     for (auto &location : **ioLocationsPtr_)
     {
         auto &URI = location.uriPrefix_;
-        auto &defaultContentType = location.defaultContentType_;
         if (location.realLocation_.empty())
         {
             if (!location.alias_.empty())

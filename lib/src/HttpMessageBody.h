@@ -48,6 +48,9 @@ class HttpMessageBody
     virtual void append(const char *buf, size_t len)
     {
     }
+    virtual ~HttpMessageBody()
+    {
+    }
 
   protected:
     BodyType type_{BodyType::kNone};
