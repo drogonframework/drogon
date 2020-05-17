@@ -17,6 +17,7 @@
 #include <algorithm>
 #include <drogon/utils/Utilities.h>
 #include <drogon/utils/string_view.h>
+#include <errmsg.h>
 #ifndef _WIN32
 #include <poll.h>
 #endif
@@ -442,9 +443,10 @@ void MysqlConnection::execSqlInLoop(
 void MysqlConnection::outputError()
 {
     channelPtr_->disableAll();
-    LOG_ERROR << "Error(" << mysql_errno(mysqlPtr_.get()) << ") ["
-              << mysql_sqlstate(mysqlPtr_.get()) << "] \""
-              << mysql_error(mysqlPtr_.get()) << "\"";
+    auto errorNo = mysql_errno(mysqlPtr_.get());
+    LOG_ERROR << "Error(" << errorNo << ") [" << mysql_sqlstate(mysqlPtr_.get())
+              << "] \"" << mysql_error(mysqlPtr_.get()) << "\"";
+
     if (isWorking_)
     {
         try
@@ -461,6 +463,10 @@ void MysqlConnection::outputError()
         callback_ = nullptr;
         isWorking_ = false;
         idleCb_();
+    }
+    if (errorNo == CR_SERVER_GONE_ERROR)
+    {
+        handleClosed();
     }
 }
 
