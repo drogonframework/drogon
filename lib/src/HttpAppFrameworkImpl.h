@@ -432,6 +432,8 @@ class HttpAppFrameworkImpl : public HttpAppFramework
 #endif
     }
 
+    virtual bool areAllDbClientsAvailable() const noexcept override;
+
   private:
     virtual void registerHttpController(
         const std::string &pathPattern,

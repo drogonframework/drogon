@@ -328,7 +328,7 @@ HttpAppFramework &HttpAppFrameworkImpl::setLogPath(
     if (access(logPath.c_str(), 0) != 0)
 #endif
     {
-        std::cerr << "Log path dose not exist!\n";
+        std::cerr << "Log path does not exist!\n";
         exit(1);
     }
 #ifdef _WIN32
@@ -942,4 +942,9 @@ HttpAppFramework &HttpAppFrameworkImpl::addALocation(
                                        isRecursive,
                                        filters);
     return *this;
+}
+
+bool HttpAppFrameworkImpl::areAllDbClientsAvailable() const noexcept
+{
+    return dbClientManagerPtr_->areAllDbClientsAvailable();
 }
