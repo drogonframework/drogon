@@ -61,9 +61,7 @@ void StaticFileRouter::route(
     if (path.find("/../") != std::string::npos)
     {
         // Downloading files from the parent folder is forbidden.
-        auto resp = HttpResponse::newHttpResponse();
-        resp->setStatusCode(k403Forbidden);
-        callback(resp);
+        callback(app().getCustomErrorHandler()(k403Forbidden));
         return;
     }
     auto lPath = path;
@@ -114,9 +112,7 @@ void StaticFileRouter::route(
             auto pos = restOfThePath.rfind('/');
             if (pos != 0 && pos != string_view::npos && !location.isRecursive_)
             {
-                auto resp = HttpResponse::newHttpResponse();
-                resp->setStatusCode(k403Forbidden);
-                callback(resp);
+                callback(app().getCustomErrorHandler()(k403Forbidden));
                 return;
             }
             if (!location.allowAll_)
@@ -124,9 +120,7 @@ void StaticFileRouter::route(
                 pos = restOfThePath.rfind('.');
                 if (pos == string_view::npos)
                 {
-                    auto resp = HttpResponse::newHttpResponse();
-                    resp->setStatusCode(k403Forbidden);
-                    callback(resp);
+                    callback(app().getCustomErrorHandler()(k403Forbidden));
                     return;
                 }
                 std::string extension{restOfThePath.data() + pos + 1,
@@ -137,9 +131,7 @@ void StaticFileRouter::route(
                                tolower);
                 if (fileTypeSet_.find(extension) == fileTypeSet_.end())
                 {
-                    auto resp = HttpResponse::newHttpResponse();
-                    resp->setStatusCode(k403Forbidden);
-                    callback(resp);
+                    callback(app().getCustomErrorHandler()(k403Forbidden));
                     return;
                 }
             }
