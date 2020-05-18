@@ -948,3 +948,16 @@ bool HttpAppFrameworkImpl::areAllDbClientsAvailable() const noexcept
 {
     return dbClientManagerPtr_->areAllDbClientsAvailable();
 }
+
+HttpAppFramework &HttpAppFrameworkImpl::setCustomErrorHandler(
+    std::function<HttpResponsePtr(HttpStatusCode)> &&resp_generator)
+{
+    customErrorHandler_ = resp_generator;
+    return *this;
+}
+
+const std::function<HttpResponsePtr(HttpStatusCode)>
+    &HttpAppFrameworkImpl::getCustomErrorHandler() const
+{
+    return customErrorHandler_;
+}
