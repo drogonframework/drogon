@@ -109,6 +109,12 @@ std::string getGitCommit()
 {
     return DROGON_VERSION_SHA1;
 }
+HttpResponsePtr defaultErrorHandler(HttpStatusCode code)
+{
+    auto out = HttpResponse::newHttpResponse();
+    out->setStatusCode(code);
+    return out;
+}
 }  // namespace drogon
 static void godaemon(void)
 {
