@@ -51,6 +51,7 @@ class DbClientLockFree : public DbClient,
     virtual void newTransactionAsync(
         const std::function<void(const std::shared_ptr<Transaction> &)>
             &callback) override;
+    virtual bool hasAvailableConnections() const noexcept override;
 
   private:
     std::string connectionInfo_;

@@ -1013,6 +1013,11 @@ class HttpAppFramework : public trantor::NonCopyable
      */
     virtual orm::DbClientPtr getFastDbClient(
         const std::string &name = "default") = 0;
+    /**
+     * @brief Check if all database clients in the framework are available
+     * (connect to the database successfully).
+     */
+    virtual bool areAllDbClientsAvailable() const noexcept = 0;
 
     /// Create a database client
     /**

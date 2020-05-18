@@ -52,6 +52,7 @@ class DbClientManager : public trantor::NonCopyable
                         const std::string &filename,
                         const std::string &name,
                         const bool isFast);
+    bool areAllDbClientsAvailable() const noexcept;
 
   private:
     std::map<std::string, DbClientPtr> dbClientsMap_;

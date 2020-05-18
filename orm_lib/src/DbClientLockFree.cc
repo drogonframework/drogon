@@ -434,3 +434,8 @@ DbConnectionPtr DbClientLockFree::newConnection()
     // std::cout<<"newConn end"<<connPtr<<std::endl;
     return connPtr;
 }
+
+bool DbClientLockFree::hasAvailableConnections() const noexcept
+{
+    return !connections_.empty();
+}

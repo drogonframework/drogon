@@ -155,3 +155,22 @@ void DbClientManager::createDbClient(const std::string &dbType,
 #endif
     }
 }
+
+bool DbClientManager::areAllDbClientsAvailable() const noexcept
+{
+    for (auto const &pair : dbClientsMap_)
+    {
+        if (!(pair.second)->hasAvailableConnections())
+            return false;
+    }
+    auto loop = trantor::EventLoop::getEventLoopOfCurrentThread();
+    if (loop && loop->index() < app().getThreadNum())
+    {
+        for (auto const &pair : dbFastClientsMap_)
+        {
+            if (!(*(pair.second))->hasAvailableConnections())
+                return false;
+        }
+    }
+    return true;
+}

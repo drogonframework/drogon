@@ -440,3 +440,9 @@ DbConnectionPtr DbClientImpl::newConnection(trantor::EventLoop *loop)
     // std::cout<<"newConn end"<<connPtr<<std::endl;
     return connPtr;
 }
+
+bool DbClientImpl::hasAvailableConnections() const noexcept
+{
+    std::lock_guard<std::mutex> lock(connectionsMutex_);
+    return (!readyConnections_.empty()) || (!busyConnections_.empty());
+}

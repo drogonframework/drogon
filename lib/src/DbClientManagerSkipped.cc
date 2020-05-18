@@ -42,3 +42,10 @@ void DbClientManager::createDbClient(const std::string &dbType,
                  "database development library first.";
     abort();
 }
+
+bool DbClientManager::areAllDbClientsAvailable() const noexcept
+{
+    LOG_FATAL << "No database is supported by drogon, please install the "
+                 "database development library first.";
+    abort();
+}
