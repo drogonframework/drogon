@@ -124,6 +124,23 @@ class HttpAppFramework : public trantor::NonCopyable
     virtual HttpAppFramework &setCustom404Page(const HttpResponsePtr &resp,
                                                bool set404 = true) = 0;
 
+    /// Set custom error handler
+    /**
+     * @param resp_generator is invoked when an error in the framework needs to
+     * be sent to the client to provide a custom layout.
+     */
+    virtual HttpAppFramework &setCustomErrorHandler(
+        std::function<HttpResponsePtr(HttpStatusCode)> &&resp_generator) = 0;
+
+    /// Get custom error handler
+    /**
+     * @return A const-reference to the error handler set using
+     * setCustomErrorHandler. If none was provided, the default error handler is
+     * returned.
+     */
+    virtual const std::function<HttpResponsePtr(HttpStatusCode)>
+        &getCustomErrorHandler() const = 0;
+
     /// Get the plugin object registered in the framework
     /**
      * @note
