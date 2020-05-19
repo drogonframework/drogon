@@ -92,7 +92,7 @@ find_package(Jsoncpp REQUIRED)
 target_link_libraries(${PROJECT_NAME} PUBLIC Jsoncpp_lib)
 list(APPEND INCLUDE_DIRS_FOR_DYNAMIC_VIEW ${JSONCPP_INCLUDE_DIRS})
 
-if(NOT WIN32)
+if(NOT ${CMAKE_SYSTEM_NAME} STREQUAL "FreeBSD" AND NOT WIN32)
   find_package(UUID REQUIRED)
   target_link_libraries(${PROJECT_NAME} PRIVATE UUID_lib)
 
@@ -109,7 +109,7 @@ if(NOT WIN32)
   else()
     message(FATAL_ERROR "uuid lib error")
   endif()
-endif(NOT WIN32)
+endif(NOT ${CMAKE_SYSTEM_NAME} STREQUAL "FreeBSD" AND NOT WIN32)
 
 find_package(Brotli)
 if(Brotli_FOUND)

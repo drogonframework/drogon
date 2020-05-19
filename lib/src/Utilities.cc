@@ -335,6 +335,19 @@ std::string getUuid()
     std::string ret{binaryStringToHex((const unsigned char *)str, len)};
     free(str);
     return ret;
+#elif defined __FreeBSD__
+    uuid_t *uuid = new uuid_t;
+    char* binstr = (char *) malloc(16);
+    uuidgen(uuid, 1);
+#if _BYTE_ORDER == _LITTLE_ENDIAN
+    uuid_enc_le(binstr, uuid);
+#else /* _BYTE_ORDER != _LITTLE_ENDIAN */
+    uuid_enc_be(binstr, uuid);
+#endif /* _BYTE_ORDER == _LITTLE_ENDIAN */
+    delete uuid;
+    std::string ret{binaryStringToHex((const unsigned char *)binstr, 16)};
+    free(binstr);
+    return ret;
 #elif defined _WIN32
     uuid_t uu;
     UuidCreate(&uu);
