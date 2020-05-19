@@ -111,9 +111,7 @@ std::string getGitCommit()
 }
 HttpResponsePtr defaultErrorHandler(HttpStatusCode code)
 {
-    auto out = HttpResponse::newHttpResponse();
-    out->setStatusCode(code);
-    return out;
+    return std::make_shared<HttpResponseImpl>(code, CT_TEXT_HTML);
 }
 }  // namespace drogon
 static void godaemon(void)
