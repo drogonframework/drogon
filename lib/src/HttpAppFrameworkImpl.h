@@ -27,6 +27,8 @@
 
 namespace drogon
 {
+HttpResponsePtr defaultErrorHandler(HttpStatusCode code);
+
 struct InitBeforeMainFunction
 {
     explicit InitBeforeMainFunction(const std::function<void()> &func)
@@ -34,6 +36,7 @@ struct InitBeforeMainFunction
         func();
     }
 };
+
 class HttpAppFrameworkImpl : public HttpAppFramework
 {
   public:
@@ -80,6 +83,10 @@ class HttpAppFrameworkImpl : public HttpAppFramework
         custom404_ = resp;
         return *this;
     }
+
+    HttpAppFramework &setCustomErrorHandler(
+        std::function<HttpResponsePtr(HttpStatusCode)> &&resp_generator)
+        override;
 
     const HttpResponsePtr &getCustom404Page();
 
@@ -433,6 +440,8 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     }
 
     virtual bool areAllDbClientsAvailable() const noexcept override;
+    const std::function<HttpResponsePtr(HttpStatusCode)>
+        &getCustomErrorHandler() const override;
 
   private:
     virtual void registerHttpController(
@@ -516,6 +525,8 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     std::unique_ptr<SessionManager> sessionManagerPtr_;
     Json::Value jsonConfig_;
     HttpResponsePtr custom404_;
+    std::function<HttpResponsePtr(HttpStatusCode)> customErrorHandler_ =
+        &defaultErrorHandler;
     static InitBeforeMainFunction initFirst_;
     bool enableServerHeader_{true};
     bool enableDateHeader_{true};

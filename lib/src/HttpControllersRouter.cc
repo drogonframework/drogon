@@ -427,16 +427,15 @@ void HttpControllersRouter::route(
             if (!binder)
             {
                 // Invalid Http Method
-                auto res = drogon::HttpResponse::newHttpResponse();
                 if (req->method() != Options)
                 {
-                    res->setStatusCode(k405MethodNotAllowed);
+                    callback(
+                        app().getCustomErrorHandler()(k405MethodNotAllowed));
                 }
                 else
                 {
-                    res->setStatusCode(k403Forbidden);
+                    callback(app().getCustomErrorHandler()(k403Forbidden));
                 }
-                callback(res);
                 return;
             }
             if (!postRoutingObservers_.empty())

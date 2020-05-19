@@ -241,6 +241,11 @@ const string_view &statusCodeToString(int code)
             static string_view sv = "Temporary Redirect";
             return sv;
         }
+        case 308:
+        {
+            static string_view sv = "Permanent Redirect";
+            return sv;
+        }
         case 400:
         {
             static string_view sv = "Bad Request";
@@ -323,12 +328,47 @@ const string_view &statusCodeToString(int code)
         }
         case 416:
         {
-            static string_view sv = "Requested range not satisfiable";
+            static string_view sv = "Requested Range Not Satisfiable";
             return sv;
         }
         case 417:
         {
             static string_view sv = "Expectation Failed";
+            return sv;
+        }
+        case 421:
+        {
+            static string_view sv = "Misdirected Request";
+            return sv;
+        }
+        case 425:
+        {
+            static string_view sv = "Too Early";
+            return sv;
+        }
+        case 426:
+        {
+            static string_view sv = "Upgrade Required";
+            return sv;
+        }
+        case 428:
+        {
+            static string_view sv = "Precondition Required";
+            return sv;
+        }
+        case 429:
+        {
+            static string_view sv = "Too Many Requests";
+            return sv;
+        }
+        case 431:
+        {
+            static string_view sv = "Request Header Fields Too Large";
+            return sv;
+        }
+        case 451:
+        {
+            static string_view sv = "Unavailable For Legal Reasons";
             return sv;
         }
         case 500:
@@ -358,7 +398,12 @@ const string_view &statusCodeToString(int code)
         }
         case 505:
         {
-            static string_view sv = "HTTP Version not supported";
+            static string_view sv = "HTTP Version Not Supported";
+            return sv;
+        }
+        case 510:
+        {
+            static string_view sv = "Not Extended";
             return sv;
         }
         default:

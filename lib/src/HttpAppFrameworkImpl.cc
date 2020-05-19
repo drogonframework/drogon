@@ -109,6 +109,10 @@ std::string getGitCommit()
 {
     return DROGON_VERSION_SHA1;
 }
+HttpResponsePtr defaultErrorHandler(HttpStatusCode code)
+{
+    return std::make_shared<HttpResponseImpl>(code, CT_TEXT_HTML);
+}
 }  // namespace drogon
 static void godaemon(void)
 {
@@ -947,4 +951,17 @@ HttpAppFramework &HttpAppFrameworkImpl::addALocation(
 bool HttpAppFrameworkImpl::areAllDbClientsAvailable() const noexcept
 {
     return dbClientManagerPtr_->areAllDbClientsAvailable();
+}
+
+HttpAppFramework &HttpAppFrameworkImpl::setCustomErrorHandler(
+    std::function<HttpResponsePtr(HttpStatusCode)> &&resp_generator)
+{
+    customErrorHandler_ = std::move(resp_generator);
+    return *this;
+}
+
+const std::function<HttpResponsePtr(HttpStatusCode)>
+    &HttpAppFrameworkImpl::getCustomErrorHandler() const
+{
+    return customErrorHandler_;
 }
