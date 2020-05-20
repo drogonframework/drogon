@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 #build drogon
 function build_drogon() {
@@ -58,16 +58,22 @@ make_flags=''
 cmake_gen=''
 parallel=1
 
+if [ $(uname) = 'FreeBSD' ]; then
+  nproc=$(sysctl -n hw.ncpu)
+else
+  nproc=$(nproc)
+fi
+
 # simulate ninja's parallelism
-case $(nproc) in
+case nproc in
  1)
-    parallel=$(( $(nproc) + 1 ))
+    parallel=$(( nproc + 1 ))
     ;;
  2)
-    parallel=$(( $(nproc) + 1 ))
+    parallel=$(( nproc + 1 ))
     ;;
  *)
-    parallel=$(( $(nproc) + 2 ))
+    parallel=$(( nproc + 2 ))
     ;;
 esac
 
