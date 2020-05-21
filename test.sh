@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 drogon_ctl_exec=`pwd`/build/drogon_ctl/drogon_ctl
 echo ${drogon_ctl_exec}
