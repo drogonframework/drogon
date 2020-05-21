@@ -68,10 +68,6 @@ add_subdirectory(trantor)
 
 target_link_libraries(${PROJECT_NAME} PUBLIC trantor)
 
-if(c-ares_FOUND)
-  set(USE_C_ARES)
-endif(c-ares_FOUND)
-
 if(NOT WIN32)
   target_link_libraries(${PROJECT_NAME} PRIVATE dl)
 else(NOT WIN32)

@@ -6,7 +6,6 @@
 #cmakedefine01 USE_SQLITE3
 #cmakedefine OpenSSL_FOUND
 #cmakedefine Boost_FOUND
-#cmakedefine USE_C_ARES
 
 #cmakedefine COMPILATION_FLAGS "@COMPILATION_FLAGS@@DROGON_CXX_STANDARD@"
 #cmakedefine COMPILER_COMMAND "@COMPILER_COMMAND@"
