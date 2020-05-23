@@ -337,11 +337,11 @@ std::string getUuid()
     return ret;
 #elif defined __FreeBSD__
     uuid_t *uuid = new uuid_t;
-    char* binstr = (char *) malloc(16);
+    char *binstr = (char *)malloc(16);
     uuidgen(uuid, 1);
 #if _BYTE_ORDER == _LITTLE_ENDIAN
     uuid_enc_le(binstr, uuid);
-#else /* _BYTE_ORDER != _LITTLE_ENDIAN */
+#else  /* _BYTE_ORDER != _LITTLE_ENDIAN */
     uuid_enc_be(binstr, uuid);
 #endif /* _BYTE_ORDER == _LITTLE_ENDIAN */
     delete uuid;
