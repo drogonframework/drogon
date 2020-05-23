@@ -17,7 +17,7 @@
 #include "../DbConnection.h"
 #include <drogon/orm/DbClient.h>
 #include <trantor/net/EventLoop.h>
-#include <trantor/net/inner/Channel.h>
+#include <trantor/net/Channel.h>
 #include <trantor/utils/NonCopyable.h>
 #include <libpq-fe.h>
 #include <unordered_map>

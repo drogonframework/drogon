@@ -15,7 +15,6 @@
 #include "WebSocketConnectionImpl.h"
 #include "HttpAppFrameworkImpl.h"
 #include <thread>
-#include <trantor/net/inner/TcpConnectionImpl.h>
 
 using namespace drogon;
 WebSocketConnectionImpl::WebSocketConnectionImpl(

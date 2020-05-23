@@ -18,7 +18,6 @@
 #include <drogon/orm/DbClient.h>
 #include <drogon/utils/string_view.h>
 #include <trantor/net/EventLoop.h>
-#include <trantor/net/inner/Channel.h>
 #include <trantor/utils/NonCopyable.h>
 #include <functional>
 #include <iostream>

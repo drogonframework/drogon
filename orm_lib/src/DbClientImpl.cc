@@ -39,7 +39,7 @@
 #endif
 #include <thread>
 #include <trantor/net/EventLoop.h>
-#include <trantor/net/inner/Channel.h>
+#include <trantor/net/Channel.h>
 #include <unordered_set>
 #include <vector>
 

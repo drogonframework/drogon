@@ -4,6 +4,30 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.0.0-beta17] - 2020-05-22
+
+### API change list
+
+- Add methods to get DbClient connection status
+
+### Changed
+
+- Add causal profiling with coz
+
+- Add filters on static file locations
+
+- Pass data from view to its layout container
+
+- Add additional HttpStatusCodes and implement a custom error handler
+
+- Modify drogon_ctl to show more compilation information
+
+### Fixed
+
+- Fix a bug in drogon_ctl (when size of a line is larger than buffer size)
+
+- Fix a connection bug of mariadb clients
+
 ## [1.0.0-beta16] - 2020-04-27
 
 ### API change list
@@ -360,7 +384,9 @@ All notable changes to this project will be documented in this file.
 
 ## [1.0.0-beta1] - 2019-06-11
 
-[Unreleased]: https://github.com/an-tao/drogon/compare/v1.0.0-beta16...HEAD
+[Unreleased]: https://github.com/an-tao/drogon/compare/v1.0.0-beta17...HEAD
+
+[1.0.0-beta17]: https://github.com/an-tao/drogon/compare/v1.0.0-beta16...v1.0.0-beta17
 
 [1.0.0-beta16]: https://github.com/an-tao/drogon/compare/v1.0.0-beta15...v1.0.0-beta16
 
