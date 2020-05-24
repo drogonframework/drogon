@@ -31,10 +31,20 @@
 #include <vector>
 #ifdef _WIN32
 #include <winsock2.h>
+#else  // some Unix-like OS
+#include <arpa/inet.h>
 #endif
 
+#if defined __linux__ || defined __FreeBSD__
+
 #ifdef __linux__
-#include <endian.h>   // __BYTE_ORDER __LITTLE_ENDIAN
+#include <endian.h>  // __BYTE_ORDER __LITTLE_ENDIAN
+#elif defined __FreeBSD__
+#include <sys/endian.h>  // _BYTE_ORDER _LITTLE_ENDIAN
+#define __BYTE_ORDER _BYTE_ORDER
+#define __LITTLE_ENDIAN _LITTLE_ENDIAN
+#endif
+
 #include <algorithm>  // std::reverse()
 
 template <typename T>
