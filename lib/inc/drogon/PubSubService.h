@@ -55,7 +55,7 @@ class Topic : public trantor::NonCopyable
     }
 
     /**
-     * @brief Subcribe the topic.
+     * @brief Subcribe to the topic.
      *
      * @param handler is invoked when a message arrives.
      * @return SubscriberID
@@ -68,7 +68,7 @@ class Topic : public trantor::NonCopyable
     }
 
     /**
-     * @brief Subcribe the topic.
+     * @brief Subcribe to the topic.
      *
      * @param handler is invoked when a message arrives.
      * @return SubscriberID
@@ -157,8 +157,8 @@ class PubSubService : public trantor::NonCopyable
     }
 
     /**
-     * @brief Subscribe a topic. When a message is published to the topic, the
-     * handler is invoked by passing the topic and message as parameters.
+     * @brief Subscribe to a topic. When a message is published to the topic,
+     * the handler is invoked by passing the topic and message as parameters.
      */
     SubscriberID subscribe(const std::string &topicName,
                            const MessageHandler &handler)
@@ -166,12 +166,12 @@ class PubSubService : public trantor::NonCopyable
         auto topicHandler = [topicName, handler](const MessageType &message) {
             handler(topicName, message);
         };
-        return subscribeToATopic(topicName, std::move(topicHandler));
+        return subscribeToTopic(topicName, std::move(topicHandler));
     }
 
     /**
-     * @brief Subscribe a topic. When a message is published to the topic, the
-     * handler is invoked by passing the topic and message as parameters.
+     * @brief Subscribe to a topic. When a message is published to the topic,
+     * the handler is invoked by passing the topic and message as parameters.
      */
     SubscriberID subscribe(const std::string &topicName,
                            MessageHandler &&handler)
@@ -180,7 +180,7 @@ class PubSubService : public trantor::NonCopyable
                                 const MessageType &message) {
             handler(topicName, message);
         };
-        return subscribeToATopic(topicName, std::move(topicHandler));
+        return subscribeToTopic(topicName, std::move(topicHandler));
     }
 
     /**
@@ -234,7 +234,7 @@ class PubSubService : public trantor::NonCopyable
      * @brief Remove a topic
      *
      */
-    void removeATopic(const std::string &topicName)
+    void removeTopic(const std::string &topicName)
     {
         std::unique_lock<SharedMutex> lock(mutex_);
         topicMap_.erase(topicName);
@@ -245,7 +245,7 @@ class PubSubService : public trantor::NonCopyable
         topicMap_;
     mutable SharedMutex mutex_;
     SubscriberID subID_ = 0;
-    SubscriberID subscribeToATopic(
+    SubscriberID subscribeToTopic(
         const std::string &topicName,
         typename Topic<MessageType>::MessageHandler &&handler)
     {
