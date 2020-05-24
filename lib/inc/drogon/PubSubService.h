@@ -24,10 +24,8 @@ namespace drogon
 {
 using SubscriberID = uint64_t;
 
-namespace inner
-{
 /**
- * @brief this class is a helper class, don't use it directly.
+ * @brief This class template presents an unnamed topic.
  *
  * @tparam MessageType
  */
@@ -35,56 +33,92 @@ template <typename MessageType>
 class Topic : public trantor::NonCopyable
 {
   public:
-    using MessageHandler =
-        std::function<void(const std::string &, const MessageType &)>;
+    using MessageHandler = std::function<void(const MessageType &)>;
 #if __cplusplus >= 201703L | defined _WIN32
     using SharedMutex = std::shared_mutex;
 #else
     using SharedMutex = std::shared_timed_mutex;
 #endif
-    Topic(const std::string &topic) : topic_(topic)
-    {
-    }
+    /**
+     * @brief Publish a message, every subscriber in the topic will receive the
+     * message.
+     *
+     * @param message
+     */
     void publish(const MessageType &message) const
     {
         std::shared_lock<SharedMutex> lock(mutex_);
         for (auto &pair : handlersMap_)
         {
-            pair.second(topic_, message);
+            pair.second(message);
         }
     }
+
+    /**
+     * @brief Subcribe the topic.
+     *
+     * @param handler is invoked when a message arrives.
+     * @return SubscriberID
+     */
     SubscriberID subscribe(const MessageHandler &handler)
     {
         std::unique_lock<SharedMutex> lock(mutex_);
         handlersMap_[++id_] = handler;
         return id_;
     }
+
+    /**
+     * @brief Subcribe the topic.
+     *
+     * @param handler is invoked when a message arrives.
+     * @return SubscriberID
+     */
     SubscriberID subscribe(MessageHandler &&handler)
     {
         std::unique_lock<SharedMutex> lock(mutex_);
         handlersMap_[++id_] = std::move(handler);
         return id_;
     }
+
+    /**
+     * @brief Unsubscribe from the topic.
+     */
     void unsubscribe(SubscriberID id)
     {
         std::unique_lock<SharedMutex> lock(mutex_);
         handlersMap_.erase(id);
     }
-    bool empty()
+
+    /**
+     * @brief Check if the topic is empty.
+     *
+     * @return true means there are no subscribers.
+     * @return false means there are subscribers in the topic.
+     */
+    bool empty() const
     {
         std::shared_lock<SharedMutex> lock(mutex_);
         return handlersMap_.empty();
     }
+    /**
+     * @brief Remove all subscribers from the topic.
+     *
+     */
+    void clear()
+    {
+        std::unique_lock<SharedMutex> lock(mutex_);
+        handlersMap_.clear();
+    }
 
   private:
     std::unordered_map<SubscriberID, MessageHandler> handlersMap_;
-    const std::string topic_;
     mutable SharedMutex mutex_;
     SubscriberID id_;
 };
-}  // namespace inner
+
 /**
- * @brief This class template implements a publish-subscribe pattern.
+ * @brief This class template implements a publish-subscribe pattern with
+ * multiple named topics.
  *
  * @tparam MessageType The message type.
  */
@@ -99,16 +133,17 @@ class PubSubService : public trantor::NonCopyable
 #else
     using SharedMutex = std::shared_timed_mutex;
 #endif
+
     /**
      * @brief Publish a message to a topic. The message will be broadcasted to
      * every subscriber.
      */
-    void publish(const std::string &topic, const MessageType &message) const
+    void publish(const std::string &topicName, const MessageType &message) const
     {
-        std::shared_ptr<inner::Topic<MessageType>> topicPtr;
+        std::shared_ptr<Topic<MessageType>> topicPtr;
         {
             std::shared_lock<SharedMutex> lock(mutex_);
-            auto iter = topicMap_.find(topic);
+            auto iter = topicMap_.find(topicName);
             if (iter != topicMap_.end())
             {
                 topicPtr = iter->second;
@@ -120,56 +155,32 @@ class PubSubService : public trantor::NonCopyable
         }
         topicPtr->publish(message);
     }
+
     /**
      * @brief Subscribe a topic. When a message is published to the topic, the
      * handler is invoked by passing the topic and message as parameters.
      */
-    SubscriberID subscribe(const std::string &topic,
+    SubscriberID subscribe(const std::string &topicName,
                            const MessageHandler &handler)
     {
-        {
-            std::shared_lock<SharedMutex> lock(mutex_);
-            auto iter = topicMap_.find(topic);
-            if (iter != topicMap_.end())
-            {
-                return iter->second->subscribe(handler);
-            }
-        }
-        std::unique_lock<SharedMutex> lock(mutex_);
-        auto iter = topicMap_.find(topic);
-        if (iter != topicMap_.end())
-        {
-            return iter->second->subscribe(handler);
-        }
-        auto topicPtr = std::make_shared<inner::Topic<MessageType>>(topic);
-        auto id = topicPtr->subscribe(handler);
-        topicMap_[topic] = std::move(topicPtr);
-        return id;
+        auto topicHandler = [topicName, handler](const MessageType &message) {
+            handler(topicName, message);
+        };
+        return subscribeToATopic(topicName, std::move(topicHandler));
     }
+
     /**
      * @brief Subscribe a topic. When a message is published to the topic, the
      * handler is invoked by passing the topic and message as parameters.
      */
-    SubscriberID subscribe(const std::string &topic, MessageHandler &&handler)
+    SubscriberID subscribe(const std::string &topicName,
+                           MessageHandler &&handler)
     {
-        {
-            std::shared_lock<SharedMutex> lock(mutex_);
-            auto iter = topicMap_.find(topic);
-            if (iter != topicMap_.end())
-            {
-                return iter->second->subscribe(std::move(handler));
-            }
-        }
-        std::unique_lock<SharedMutex> lock(mutex_);
-        auto iter = topicMap_.find(topic);
-        if (iter != topicMap_.end())
-        {
-            return iter->second->subscribe(std::move(handler));
-        }
-        auto topicPtr = std::make_shared<inner::Topic<MessageType>>(topic);
-        auto id = topicPtr->subscribe(std::move(handler));
-        topicMap_[topic] = std::move(topicPtr);
-        return id;
+        auto topicHandler = [topicName, handler = std::move(handler)](
+                                const MessageType &message) {
+            handler(topicName, message);
+        };
+        return subscribeToATopic(topicName, std::move(topicHandler));
     }
 
     /**
@@ -178,11 +189,11 @@ class PubSubService : public trantor::NonCopyable
      * @param topic
      * @param id The subscriber ID returned from the subscribe method.
      */
-    void unsubscribe(const std::string &topic, SubscriberID id)
+    void unsubscribe(const std::string &topicName, SubscriberID id)
     {
         {
             std::shared_lock<SharedMutex> lock(mutex_);
-            auto iter = topicMap_.find(topic);
+            auto iter = topicMap_.find(topicName);
             if (iter == topicMap_.end())
             {
                 return;
@@ -192,7 +203,7 @@ class PubSubService : public trantor::NonCopyable
                 return;
         }
         std::unique_lock<SharedMutex> lock(mutex_);
-        auto iter = topicMap_.find(topic);
+        auto iter = topicMap_.find(topicName);
         if (iter == topicMap_.end())
         {
             return;
@@ -200,6 +211,7 @@ class PubSubService : public trantor::NonCopyable
         if (iter->second->empty())
             topicMap_.erase(iter);
     }
+
     /**
      * @brief return the number of topics.
      */
@@ -209,10 +221,52 @@ class PubSubService : public trantor::NonCopyable
         return topicMap_.size();
     }
 
+    /**
+     * @brief remove all topics.
+     */
+    void clear()
+    {
+        std::unique_lock<SharedMutex> lock(mutex_);
+        topicMap_.clear();
+    }
+
+    /**
+     * @brief Remove a topic
+     *
+     */
+    void removeATopic(const std::string &topicName)
+    {
+        std::unique_lock<SharedMutex> lock(mutex_);
+        topicMap_.erase(topicName);
+    }
+
   private:
-    std::unordered_map<std::string, std::shared_ptr<inner::Topic<MessageType>>>
+    std::unordered_map<std::string, std::shared_ptr<Topic<MessageType>>>
         topicMap_;
     mutable SharedMutex mutex_;
     SubscriberID subID_ = 0;
+    SubscriberID subscribeToATopic(
+        const std::string &topicName,
+        typename Topic<MessageType>::MessageHandler &&handler)
+    {
+        {
+            std::shared_lock<SharedMutex> lock(mutex_);
+            auto iter = topicMap_.find(topicName);
+            if (iter != topicMap_.end())
+            {
+                return iter->second->subscribe(std::move(handler));
+            }
+        }
+        std::unique_lock<SharedMutex> lock(mutex_);
+        auto iter = topicMap_.find(topicName);
+        if (iter != topicMap_.end())
+        {
+            return iter->second->subscribe(std::move(handler));
+        }
+        auto topicPtr = std::make_shared<Topic<MessageType>>();
+        auto id = topicPtr->subscribe(std::move(handler));
+        topicMap_[topicName] = std::move(topicPtr);
+        return id;
+    }
 };
 }  // namespace drogon
