@@ -11,7 +11,9 @@ Now you can create branches, start adding features & bugfixes to the code, and [
 
 ## Pull Requests
 
-Feel free to [create a pull request](https://github.com/an-tao/drogon/compare) if you think you can contribute to the project. You will be listed as a [contributor](https://github.com/an-tao/drogon/graphs/contributors), agree to this document, and the [LICENSE](https://github.com/an-tao/drogon/blob/master/LICENSE). There are some recommendations you can follow. These aren’t requirements, but they will make the development more straightforward:
+Feel free to [create a pull request](https://github.com/an-tao/drogon/compare) if you think you can contribute to the project. You will be listed as a [contributor](https://github.com/an-tao/drogon/graphs/contributors), agree to this document, and the [LICENSE](https://github.com/an-tao/drogon/blob/master/LICENSE).
+
+There are also some recommendations you can follow. These aren’t requirements, but they will make the development more straightforward:
 
 1. If you are unsure about a specific change, have questions, or want to get feedback about a feature you want to introduce, [open a new issue](https://github.com/an-tao/drogon/issues) (please make sure that there is no previous issue about a similar topic).
 1. You should branch off the current state of the `master` branch, and also merge it into your local branch before creating a pull request if there were other changes introduced in the meantime.
@@ -24,6 +26,7 @@ Feel free to [create a pull request](https://github.com/an-tao/drogon/compare) i
 If you follow these recommendations your pull request will have more success:
 
 1. Keep the style consistent to the project, when in doubt refer to the [Google C++ Style Guide](https://google.github.io/styleguide/cppguide.html#C++_Version).
+1. Format the code with `clang-format` (>= 8.0.0). The configuration is already provided in the `.clang-format` file, just run the `./format.sh` script before submitting your pull request.
 1. Install [Google Test](https://github.com/google/googletest), and write a test case.
     1. In case it is a bugfix, it’s best to write a test that breaks in the old version, but works in the new one. This way regressions can be tracked over time.
     1. If you add a feature, it is best to write the test as if it would be an example how to use the newly introduced feature and to test all major, newly introduced code.
