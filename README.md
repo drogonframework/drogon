@@ -3,16 +3,16 @@
 [![Build Status](https://travis-ci.com/an-tao/drogon.svg?branch=master)](https://travis-ci.com/an-tao/drogon)
 [![Build status](https://ci.appveyor.com/api/projects/status/12ffuf6j5vankgyb/branch/master?svg=true)](https://ci.appveyor.com/project/an-tao/drogon/branch/master)
 [![Total alerts](https://img.shields.io/lgtm/alerts/g/an-tao/drogon.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/an-tao/drogon/alerts/)
-[![Language grade: C/C++](https://img.shields.io/lgtm/grade/cpp/g/an-tao/drogon.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/an-tao/drogon/context:cpp) 
+[![Language grade: C/C++](https://img.shields.io/lgtm/grade/cpp/g/an-tao/drogon.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/an-tao/drogon/context:cpp)
 [![Join the chat at https://gitter.im/drogon-web/community](https://badges.gitter.im/drogon-web/community.svg)](https://gitter.im/drogon-web/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Docker image](https://img.shields.io/badge/Docker-image-blue.svg)](https://cloud.docker.com/u/drogonframework/repository/docker/drogonframework/drogon)
 
 ### Overview
-**Drogon** is a C++14/17-based HTTP application framework. Drogon can be used to easily build various types of web application server programs using C++. **Drogon** is the name of a dragon in the American TV series "Game of Thrones" that I really like. 
+**Drogon** is a C++14/17-based HTTP application framework. Drogon can be used to easily build various types of web application server programs using C++. **Drogon** is the name of a dragon in the American TV series "Game of Thrones" that I really like.
 
-Drogon is a cross-platform framework, It supports Linux, Mac OS, FreeBSD and Windows. Its main features are as follows:
+Drogon is a cross-platform framework, It supports Linux, macOS, FreeBSD, and Windows. Its main features are as follows:
 
-* Use a non-blocking I/O network lib based on epoll (kqueue under MacOS/FreeBSD) to provide high-concurrency, high-performance network IO, please visit the [benchmarks](https://github.com/an-tao/drogon/wiki/13-Benchmarks) page and [TFB Live Results](https://tfb-status.techempower.com/) for more details;
+* Use a non-blocking I/O network lib based on epoll (kqueue under macOS/FreeBSD) to provide high-concurrency, high-performance network IO, please visit the [benchmarks](https://github.com/an-tao/drogon/wiki/13-Benchmarks) page and [TFB Live Results](https://tfb-status.techempower.com/) for more details;
 * Provide a completely asynchronous programming mode;
 * Support Http1.0/1.1 (server side and client side);
 * Based on template, a simple reflection mechanism is implemented to completely decouple the main program framework, controllers and views.
@@ -82,7 +82,7 @@ app.registerHandler("/test?username={name}",
                     },
                     {Get,"LoginFilter"});
 ```
-                                                              
+
 While such interfaces look intuitive, they are not suitable for complex business logic scenarios. Assuming there are tens or even hundreds of handlers that need to be registered in the framework, isn't it a better practice to implement them separately in their respective classes? So unless your logic is very simple, we don't recommend using above interfaces. Instead, we can create an HttpSimpleController as follows:
 
 ```c++
@@ -177,8 +177,11 @@ class User : public drogon::HttpController<User>
 } // namespace api
 ```
 
-As you can see, users can use the `HttpController` to map paths and parameters at the same time. This is a very convenient way to create a RESTful API application. 
+As you can see, users can use the `HttpController` to map paths and parameters at the same time. This is a very convenient way to create a RESTful API application.
 
 In addition, you can also find that all handler interfaces are in asynchronous mode, where the response is returned by a callback object. This design is for performance reasons because in asynchronous mode the drogon application can handle a large number of concurrent requests with a small number of threads.
 
-After compiling all of the above source files, we get a very simple web application. This is a good start. **for more information, please visit the [wiki](https://github.com/an-tao/drogon/wiki/01-Overview) or [docsforge](https://drogon.docsforge.com/master/overview/)**
+After compiling all of the above source files, we get a very simple web application. This is a good start. **For more information, please visit the [wiki](https://github.com/an-tao/drogon/wiki/01-Overview) or [DocsForge](https://drogon.docsforge.com/master/overview/)**
+
+## Contributions
+Every contribution is welcome. Please refer to the [contribution guidelines](CONTRIBUTING.md) for more information.

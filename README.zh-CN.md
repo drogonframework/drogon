@@ -2,16 +2,16 @@
 
 [![Build Status](https://travis-ci.com/an-tao/drogon.svg?branch=master)](https://travis-ci.com/an-tao/drogon)
 [![Total alerts](https://img.shields.io/lgtm/alerts/g/an-tao/drogon.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/an-tao/drogon/alerts/)
-[![Language grade: C/C++](https://img.shields.io/lgtm/grade/cpp/g/an-tao/drogon.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/an-tao/drogon/context:cpp) 
+[![Language grade: C/C++](https://img.shields.io/lgtm/grade/cpp/g/an-tao/drogon.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/an-tao/drogon/context:cpp)
 [![Join the chat at https://gitter.im/drogon-web/community](https://badges.gitter.im/drogon-web/community.svg)](https://gitter.im/drogon-web/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Docker image](https://img.shields.io/badge/Docker-image-blue.svg)](https://cloud.docker.com/u/drogonframework/repository/docker/drogonframework/drogon)
 
 **Drogon**是一个基于C++14/17的Http应用框架，使用Drogon可以方便的使用C++构建各种类型的Web应用服务端程序。
 本版本库是github上[Drogon工程](https://github.com/an-tao/drogon)的镜像库。**Drogon**是作者非常喜欢的美剧《权力的游戏》中的一条龙的名字(汉译作卓耿)，和龙有关但并不是dragon的误写，为了不至于引起不必要的误会这里说明一下。
 
-Drogon是一个跨平台框架，它支持Linux，也支持Mac OS、FreeBSD，和Windows。它的主要特点如下：
+Drogon是一个跨平台框架，它支持Linux，也支持macOS、FreeBSD，和Windows。它的主要特点如下：
 
-* 网络层使用基于epoll(MacOS/FreeBSD下是kqueue)的非阻塞IO框架，提供高并发、高性能的网络IO。详细请见[性能测试](https://github.com/an-tao/drogon/wiki/13-%E6%80%A7%E8%83%BD%E6%B5%8B%E8%AF%95)和[TFB Live Results](https://tfb-status.techempower.com/)；
+* 网络层使用基于epoll(macOS/FreeBSD下是kqueue)的非阻塞IO框架，提供高并发、高性能的网络IO。详细请见[性能测试](https://github.com/an-tao/drogon/wiki/13-%E6%80%A7%E8%83%BD%E6%B5%8B%E8%AF%95)和[TFB Live Results](https://tfb-status.techempower.com/)；
 * 全异步编程模式；
 * 支持Http1.0/1.1(server端和client端)；
 * 基于template实现了简单的反射机制，使主程序框架、控制器(controller)和视图(view)完全解耦；
@@ -176,10 +176,14 @@ class User : public drogon::HttpController<User>
 };
 } // namespace v1
 } // namespace api
-``` 
+```
 
 如你所见，通过`HttpController`类，用户可以同时映射路径和路径参数，这对RESTful API应用来说非常方便。
 
 另外，你可以发现前面所有的处理函数接口都是异步的，处理器的响应是通过回调对象返回的。这种设计是出于对高性能的考虑，因为在异步模式下，可以使用少量的线程（比如和处理器核心数相等的线程）处理大量的并发请求。
 
 编译上述的所有源文件后，我们得到了一个非常简单的web应用程序，这是一个不错的开始。**请访问[wiki](https://github.com/an-tao/drogon/wiki/01-Overview)或者[doxiz](https://doxiz.com/drogon/master/overview/)以获取更多的信息**
+
+## 贡献方式
+
+欢迎您的贡献。 请阅读[贡献指南](CONTRIBUTING.md)以获取更多的信息。
