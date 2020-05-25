@@ -64,7 +64,7 @@ If you follow these recommendations your pull request will have more success:
 ## Project Maintainers & Collaborators
 
 In addition to the guidelines mentioned above, collaborators with write access
-to the repository should also follow these additional guidelines:
+to the repository should also follow these guidelines:
 
 1. If there are new tests as part of the pull request, you should make sure that
    they succeed.
