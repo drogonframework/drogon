@@ -184,6 +184,4 @@ In addition, you can also find that all handler interfaces are in asynchronous m
 After compiling all of the above source files, we get a very simple web application. This is a good start. **For more information, please visit the [wiki](https://github.com/an-tao/drogon/wiki/01-Overview) or [DocsForge](https://drogon.docsforge.com/master/overview/)**
 
 ## Contributions
-Every contribution is welcome. Please refer to the [contribution
-guidelines](https://github.com/an-tao/drogon/blob/master/CONTRIBUTING.md) for
-more information.
+Every contribution is welcome. Please refer to the [contribution guidelines](CONTRIBUTING.md) for more information.

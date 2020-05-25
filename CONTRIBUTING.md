@@ -41,14 +41,15 @@ but they will make the development more straightforward:
       internationalization (i18n) as a new feature to the project.
     * If there’s no open issue and no need to open one you can skip the number,
       and just use the descriptive part: `bugfix/fix-typo-in-docs`.
-1. Write a brief, but good, and descriptive commit message / pull request title,
+1. Write a brief, but good, and descriptive commit message / pull request title in English,
    e. g. “Added Internationalization and Localization”.
 
 If you follow these recommendations your pull request will have more success:
 
 1. Keep the style consistent to the project, when in doubt refer to the [Google
-   C++ Style
-   Guide](https://google.github.io/styleguide/cppguide.html#C++_Version).
+   C++ Style Guide](https://google.github.io/styleguide/cppguide.html#C++_Version).
+1. Please write all comments in English. Comments for new public API introduced by
+   your pull request must be added and written in [Doxygen](http://www.doxygen.nl/) format.
 1. Format the code with `clang-format` (>= 8.0.0). The configuration is already
    provided in the `.clang-format` file, just run the `./format.sh` script
    before submitting your pull request.
