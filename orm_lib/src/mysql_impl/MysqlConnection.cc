@@ -20,6 +20,10 @@
 #include <errmsg.h>
 #ifndef _WIN32
 #include <poll.h>
+#else
+#define POLLIN (1U << 0)
+#define POLLPRI (1U << 1)
+#define POLLOUT (1U << 2)
 #endif
 #include <regex>
 
@@ -186,10 +190,13 @@ void MysqlConnection::handleTimeout()
         waitStatus_ = mysql_real_connect_cont(&ret, mysqlPtr_.get(), status);
         if (waitStatus_ == 0)
         {
-            if (!ret)
+            auto errorNo = mysql_errno(mysqlPtr_.get());
+            if (!ret && errorNo)
             {
-                handleClosed();
+                LOG_ERROR << "Error(" << errorNo << ") \""
+                          << mysql_error(mysqlPtr_.get()) << "\"";
                 LOG_ERROR << "Failed to mysql_real_connect()";
+                handleClosed();
                 return;
             }
             // I don't think the programe can run to here.
@@ -225,11 +232,13 @@ void MysqlConnection::handleEvent()
         waitStatus_ = mysql_real_connect_cont(&ret, mysqlPtr_.get(), status);
         if (waitStatus_ == 0)
         {
-            if (!ret)
+            auto errorNo = mysql_errno(mysqlPtr_.get());
+            if (!ret && errorNo)
             {
-                handleClosed();
-                // perror("");
+                LOG_ERROR << "Error(" << errorNo << ") \""
+                          << mysql_error(mysqlPtr_.get()) << "\"";
                 LOG_ERROR << "Failed to mysql_real_connect()";
+                handleClosed();
                 return;
             }
             status_ = ConnectStatus::Ok;
