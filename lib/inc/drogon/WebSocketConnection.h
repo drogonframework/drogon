@@ -79,7 +79,7 @@ enum class CloseCode
        expecting a status code to indicate that the connection was closed due to
        a failure to perform a TLS handshake (e.g., the server certificate can't
        be verified).*/
-    kTSLFailed = 1015
+    kTLSFailed = 1015
 };
 /**
  * @brief The WebSocket connection abstract class.
