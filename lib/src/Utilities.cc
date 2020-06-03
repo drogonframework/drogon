@@ -45,7 +45,7 @@
 #include <stdarg.h>
 
 #ifdef _WIN32
-inline char *strptime(const char *s, const char *f, struct tm *tm)
+char *strptime(const char *s, const char *f, struct tm *tm)
 {
     // std::get_time is defined such that its
     // format parameters are the exact same as strptime.
@@ -58,7 +58,7 @@ inline char *strptime(const char *s, const char *f, struct tm *tm)
     }
     return (char *)(s + input.tellg());
 }
-inline time_t timegm(struct tm *tm)
+time_t timegm(struct tm *tm)
 {
     struct tm my_tm;
 
