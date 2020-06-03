@@ -155,10 +155,9 @@ void WebSocketConnectionImpl::WebSocketConnectionImpl::shutdown(
     std::string message;
     message.resize(reason.length() + 2);
     auto c = htons(static_cast<unsigned short>(code));
-    memcpy(static_cast<void *>(message.data()), &c, sizeof(c));
-    memcpy(static_cast<void *>(message.data()) + sizeof(c),
-           reason.data(),
-           reason.length());
+    memcpy(&message[0], &c, 2);
+    if (!reason.empty())
+        memcpy(&message[2], reason.data(), reason.length());
     send(message, WebSocketMessageType::Close);
     tcpConnectionPtr_->shutdown();
 }

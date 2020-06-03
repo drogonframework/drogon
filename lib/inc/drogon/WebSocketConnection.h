@@ -25,7 +25,7 @@ enum class CloseCode
 {
     /*1000 indicates a normal closure, meaning that the purpose for which the
        connection was established has been fulfilled.*/
-    kNomalClosure = 1000,
+    kNormalClosure = 1000,
     /*1001 indicates that an endpoint is "going away", such as a server going
        down or a browser having navigated away from a page.*/
     kEndpointGone = 1001,
@@ -132,7 +132,7 @@ class WebSocketConnection
      * @param code Please refer to the enum class CloseCode. (RFC6455 7.4.1)
      * @param reason The reason for closing the connection.
      */
-    virtual void shutdown(const CloseCode code = CloseCode::kNomalClosure,
+    virtual void shutdown(const CloseCode code = CloseCode::kNormalClosure,
                           const std::string &reason = "") = 0;
 
     /// Close the connection

@@ -68,7 +68,7 @@ class WebSocketConnectionImpl
     virtual bool disconnected() const override;
 
     virtual void shutdown(
-        const CloseCode code = CloseCode::kNomalClosure,
+        const CloseCode code = CloseCode::kNormalClosure,
         const std::string &reason = "") override;  // close write
     virtual void forceClose() override;            // close
 
