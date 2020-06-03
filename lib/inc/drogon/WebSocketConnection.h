@@ -104,6 +104,18 @@ class WebSocketConnection
         return std::static_pointer_cast<T>(contextPtr_);
     }
 
+    /**
+     * @brief Get the custom data reference from the connection.
+     * @note Please make sure that the context is available.
+     * @tparam T The type of the data stored in the context.
+     * @return T&
+     */
+    template <typename T>
+    T &getContextRef() const
+    {
+        return *((T *)(contextPtr_.get()));
+    }
+
     /// Return true if the context is set by user.
     bool hasContext()
     {
