@@ -56,10 +56,10 @@ class WebSocketConnectionImpl
     virtual void send(
         const char *msg,
         uint64_t len,
-        const WebSocketMessageType &type = WebSocketMessageType::Text) override;
+        const WebSocketMessageType type = WebSocketMessageType::Text) override;
     virtual void send(
         const std::string &msg,
-        const WebSocketMessageType &type = WebSocketMessageType::Text) override;
+        const WebSocketMessageType type = WebSocketMessageType::Text) override;
 
     virtual const trantor::InetAddress &localAddr() const override;
     virtual const trantor::InetAddress &peerAddr() const override;
@@ -67,8 +67,10 @@ class WebSocketConnectionImpl
     virtual bool connected() const override;
     virtual bool disconnected() const override;
 
-    virtual void shutdown() override;    // close write
-    virtual void forceClose() override;  // close
+    virtual void shutdown(
+        const CloseCode code = CloseCode::kNormalClosure,
+        const std::string &reason = "") override;  // close write
+    virtual void forceClose() override;            // close
 
     virtual void setPingMessage(
         const std::string &message,

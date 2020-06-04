@@ -29,7 +29,7 @@ WebSocketConnectionImpl::WebSocketConnectionImpl(
 
 void WebSocketConnectionImpl::send(const char *msg,
                                    uint64_t len,
-                                   const WebSocketMessageType &type)
+                                   const WebSocketMessageType type)
 {
     unsigned char opcode;
     if (type == WebSocketMessageType::Text)
@@ -126,7 +126,7 @@ void WebSocketConnectionImpl::sendWsData(const char *msg,
     tcpConnectionPtr_->send(std::move(bytesFormatted));
 }
 void WebSocketConnectionImpl::send(const std::string &msg,
-                                   const WebSocketMessageType &type)
+                                   const WebSocketMessageType type)
 {
     send(msg.data(), msg.length(), type);
 }
@@ -147,8 +147,18 @@ bool WebSocketConnectionImpl::disconnected() const
 {
     return tcpConnectionPtr_->disconnected();
 }
-void WebSocketConnectionImpl::WebSocketConnectionImpl::shutdown()
+void WebSocketConnectionImpl::WebSocketConnectionImpl::shutdown(
+    const CloseCode code,
+    const std::string &reason)
 {
+    tcpConnectionPtr_->getLoop()->invalidateTimer(pingTimerId_);
+    std::string message;
+    message.resize(reason.length() + 2);
+    auto c = htons(static_cast<unsigned short>(code));
+    memcpy(&message[0], &c, 2);
+    if (!reason.empty())
+        memcpy(&message[2], reason.data(), reason.length());
+    send(message, WebSocketMessageType::Close);
     tcpConnectionPtr_->shutdown();
 }
 void WebSocketConnectionImpl::WebSocketConnectionImpl::forceClose()
