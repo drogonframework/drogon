@@ -17,7 +17,7 @@ TEST(HttpDate, redditFormat)
 TEST(HttpDate, invalidFormat)
 {
     auto date = utils::getHttpDate("Fri, this format is invalid");
-    EXPECT_EQ(date.microSecondsSinceEpoch(), std::numeric_limits<int64_t>::max());
+    EXPECT_EQ(date.microSecondsSinceEpoch(), (std::numeric_limits<int64_t>::max)());
 }
 
 TEST(HttpDate, asctimeFormat)

@@ -956,7 +956,7 @@ trantor::Date getHttpDate(const std::string &httpFullDateString)
         }
     }
     LOG_WARN << "invalid datetime format: '" << httpFullDateString << "'";
-    return trantor::Date(std::numeric_limits<int64_t>::max());
+    return trantor::Date((std::numeric_limits<int64_t>::max)());
 }
 std::string formattedString(const char *format, ...)
 {
