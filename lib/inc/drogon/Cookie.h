@@ -13,8 +13,9 @@
  */
 #pragma once
 
-#include <string>
 #include <trantor/utils/Date.h>
+#include <string>
+#include <limits>
 
 namespace drogon
 {
