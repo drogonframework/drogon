@@ -365,7 +365,10 @@ HttpAppFramework &HttpAppFrameworkImpl::setSSLFiles(const std::string &certPath,
 
 void HttpAppFrameworkImpl::run()
 {
-    //
+    if (!getLoop()->isInLoopThread())
+    {
+        getLoop()->moveToCurrentThread();
+    }
     LOG_TRACE << "Start to run...";
     trantor::AsyncFileLogger asyncFileLogger;
     // Create dirs for cache files

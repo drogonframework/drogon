@@ -329,7 +329,7 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
     return ok;
 }
 
-void HttpRequestParser::pushRquestToPipelining(const HttpRequestPtr &req)
+void HttpRequestParser::pushRequestToPipelining(const HttpRequestPtr &req)
 {
 #ifndef NDEBUG
     auto conn = conn_.lock();

@@ -326,7 +326,7 @@ void HttpServer::onRequests(
         bool syncFlag = false;
         if (!requestParser->emptyPipelining())
         {
-            requestParser->pushRquestToPipelining(req);
+            requestParser->pushRequestToPipelining(req);
             syncFlag = true;
         }
         if (!syncAdvices_.empty())
@@ -477,7 +477,7 @@ void HttpServer::onRequests(
             });
         if (syncFlag == false)
         {
-            requestParser->pushRquestToPipelining(req);
+            requestParser->pushRequestToPipelining(req);
         }
     }
     *loopFlagPtr = false;
