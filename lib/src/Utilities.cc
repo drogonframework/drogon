@@ -935,8 +935,32 @@ char *getHttpFullDate(const trantor::Date &date)
 }
 trantor::Date getHttpDate(const std::string &httpFullDateString)
 {
+    const std::array<const char *, 4> formats = {
+        // RFC822 (default)
+        "%a, %d %b %Y %H:%M:%S",
+        // RFC 850 (deprecated)
+        "%a, %d-%b-%y %H:%M:%S",
+        // ansi asctime format
+        "%a %b %d %H:%M:%S %Y",
+        // weird RFC 850-hybrid thing that reddit uses
+        "%a, %d-%b-%Y %H:%M:%S",
+    };
     struct tm tmptm;
-    strptime(httpFullDateString.c_str(), "%a, %d %b %Y %H:%M:%S", &tmptm);
+    bool found = false;
+    for (const char *format : formats)
+    {
+        if (strptime(httpFullDateString.c_str(), format, &tmptm) != NULL)
+        {
+            found = true;
+            break;
+        }
+    }
+    if (!found)
+    {
+        LOG_WARN << "invalid datetime format: '" << httpFullDateString << "'";
+        return trantor::Date(-1);
+    }
+
     auto epoch = timegm(&tmptm);
     return trantor::Date(epoch * MICRO_SECONDS_PRE_SEC);
 }
