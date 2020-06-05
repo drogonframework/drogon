@@ -33,6 +33,7 @@
 #include <string>
 #include <thread>
 #include <algorithm>
+#include <array>
 #include <cctype>
 #include <cstdlib>
 #include <stdio.h>

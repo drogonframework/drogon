@@ -21,6 +21,7 @@
 #include <string>
 #include <vector>
 #include <set>
+#include <limits>
 #ifdef _WIN32
 #include <time.h>
 char *strptime(const char *s, const char *f, struct tm *tm);
@@ -126,7 +127,7 @@ char *getHttpFullDate(const trantor::Date &date = trantor::Date::now());
 
 /// Get the trantor::Date object according to the http full date string
 /**
- * Returns trantor::Date(-1) upon failure.
+ * Returns trantor::Date(std::numeric_limits<int64_t>::max()) upon failure.
  */
 trantor::Date getHttpDate(const std::string &httpFullDateString);
 

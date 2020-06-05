@@ -235,7 +235,7 @@ class Cookie
     }
 
   private:
-    trantor::Date expiresDate_;
+    trantor::Date expiresDate_{std::numeric_limits<int64_t>::max()};
     bool httpOnly_{true};
     bool secure_{false};
     std::string domain_;
