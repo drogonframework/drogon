@@ -946,7 +946,6 @@ trantor::Date getHttpDate(const std::string &httpFullDateString)
         "%a, %d-%b-%Y %H:%M:%S",
     };
     struct tm tmptm;
-    bool found = false;
     for (const char *format : formats)
     {
         if (strptime(httpFullDateString.c_str(), format, &tmptm) != NULL)
