@@ -19,7 +19,9 @@ std::string Cookie::cookieString() const
 {
     std::string ret = "Set-Cookie: ";
     ret.append(key_).append("= ").append(value_).append("; ");
-    if (expiresDate_.microSecondsSinceEpoch() > 0)
+    if (expiresDate_.microSecondsSinceEpoch() !=
+            (std::numeric_limits<int64_t>::max)() &&
+        expiresDate_.microSecondsSinceEpoch() >= 0)
     {
         ret.append("Expires= ")
             .append(utils::getHttpFullDate(expiresDate_))

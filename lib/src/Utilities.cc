@@ -33,6 +33,7 @@
 #include <string>
 #include <thread>
 #include <algorithm>
+#include <array>
 #include <cctype>
 #include <cstdlib>
 #include <stdio.h>
@@ -935,10 +936,27 @@ char *getHttpFullDate(const trantor::Date &date)
 }
 trantor::Date getHttpDate(const std::string &httpFullDateString)
 {
+    static const std::array<const char *, 4> formats = {
+        // RFC822 (default)
+        "%a, %d %b %Y %H:%M:%S",
+        // RFC 850 (deprecated)
+        "%a, %d-%b-%y %H:%M:%S",
+        // ansi asctime format
+        "%a %b %d %H:%M:%S %Y",
+        // weird RFC 850-hybrid thing that reddit uses
+        "%a, %d-%b-%Y %H:%M:%S",
+    };
     struct tm tmptm;
-    strptime(httpFullDateString.c_str(), "%a, %d %b %Y %H:%M:%S", &tmptm);
-    auto epoch = timegm(&tmptm);
-    return trantor::Date(epoch * MICRO_SECONDS_PRE_SEC);
+    for (const char *format : formats)
+    {
+        if (strptime(httpFullDateString.c_str(), format, &tmptm) != NULL)
+        {
+            auto epoch = timegm(&tmptm);
+            return trantor::Date(epoch * MICRO_SECONDS_PRE_SEC);
+        }
+    }
+    LOG_WARN << "invalid datetime format: '" << httpFullDateString << "'";
+    return trantor::Date((std::numeric_limits<int64_t>::max)());
 }
 std::string formattedString(const char *format, ...)
 {

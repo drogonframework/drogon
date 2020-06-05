@@ -13,8 +13,9 @@
  */
 #pragma once
 
-#include <string>
 #include <trantor/utils/Date.h>
+#include <string>
+#include <limits>
 
 namespace drogon
 {
@@ -235,7 +236,7 @@ class Cookie
     }
 
   private:
-    trantor::Date expiresDate_;
+    trantor::Date expiresDate_{(std::numeric_limits<int64_t>::max)()};
     bool httpOnly_{true};
     bool secure_{false};
     std::string domain_;
