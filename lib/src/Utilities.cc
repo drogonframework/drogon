@@ -935,7 +935,7 @@ char *getHttpFullDate(const trantor::Date &date)
 }
 trantor::Date getHttpDate(const std::string &httpFullDateString)
 {
-    const std::array<const char *, 4> formats = {
+    static const std::array<const char *, 4> formats = {
         // RFC822 (default)
         "%a, %d %b %Y %H:%M:%S",
         // RFC 850 (deprecated)
@@ -951,18 +951,12 @@ trantor::Date getHttpDate(const std::string &httpFullDateString)
     {
         if (strptime(httpFullDateString.c_str(), format, &tmptm) != NULL)
         {
-            found = true;
-            break;
+            auto epoch = timegm(&tmptm);
+            return trantor::Date(epoch * MICRO_SECONDS_PRE_SEC);
         }
     }
-    if (!found)
-    {
-        LOG_WARN << "invalid datetime format: '" << httpFullDateString << "'";
-        return trantor::Date(-1);
-    }
-
-    auto epoch = timegm(&tmptm);
-    return trantor::Date(epoch * MICRO_SECONDS_PRE_SEC);
+    LOG_WARN << "invalid datetime format: '" << httpFullDateString << "'";
+    return trantor::Date(std::numeric_limits<int64_t>::max());
 }
 std::string formattedString(const char *format, ...)
 {
