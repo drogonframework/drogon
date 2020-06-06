@@ -203,17 +203,16 @@ ListenerManager::~ListenerManager()
 
 trantor::EventLoop *ListenerManager::getIOLoop(size_t id) const
 {
-    const size_t &&n = listeningloopThreads_.size();
+    auto const n = listeningloopThreads_.size();
     if (0 == n)
     {
-      	LOG_WARN << "Please call getIOLoop() after drogon::app().run()";
+        LOG_WARN << "Please call getIOLoop() after drogon::app().run()";
         return nullptr;
     }
 #ifdef __linux__
     if (id >= n)
     {
-        LOG_TRACE << "Loop id (" << id << ") out of range [0-"
-                  << n << ").";
+        LOG_TRACE << "Loop id (" << id << ") out of range [0-" << n << ").";
         id %= n;
         LOG_TRACE << "Rounded to : " << id;
     }
@@ -222,8 +221,7 @@ trantor::EventLoop *ListenerManager::getIOLoop(size_t id) const
 #else
     if (id >= n)
     {
-        LOG_TRACE << "Loop id (" << id << ") out of range [0-"
-                  << n << ").";
+        LOG_TRACE << "Loop id (" << id << ") out of range [0-" << n << ").";
         id %= n;
         LOG_TRACE << "Rounded to : " << id;
     }
