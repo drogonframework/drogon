@@ -30,8 +30,21 @@ namespace drogon
 {
 // "Fri, 23 Aug 2019 12:58:03 GMT" length = 29
 static const size_t httpFullDateStringLength = 29;
-static HttpResponsePtr genHttpResponse(std::string viewName,
-                                       const HttpViewData &data)
+static inline void doResponseCreateAdvices(
+    const HttpResponseImplPtr &responsePtr)
+{
+    auto &advices =
+        HttpAppFrameworkImpl::instance().getResponseCreationAdvices();
+    if (!advices.empty())
+    {
+        for (auto &advice : advices)
+        {
+            advice(responsePtr);
+        }
+    }
+}
+static inline HttpResponsePtr genHttpResponse(std::string viewName,
+                                              const HttpViewData &data)
 {
     auto templ = DrTemplateBase::newTemplate(viewName);
     if (templ)
@@ -47,6 +60,7 @@ static HttpResponsePtr genHttpResponse(std::string viewName,
 HttpResponsePtr HttpResponse::newHttpResponse()
 {
     auto res = std::make_shared<HttpResponseImpl>(k200OK, CT_TEXT_HTML);
+    doResponseCreateAdvices(res);
     return res;
 }
 
@@ -54,6 +68,7 @@ HttpResponsePtr HttpResponse::newHttpJsonResponse(const Json::Value &data)
 {
     auto res = std::make_shared<HttpResponseImpl>(k200OK, CT_APPLICATION_JSON);
     res->setJsonObject(data);
+    doResponseCreateAdvices(res);
     return res;
 }
 
@@ -61,6 +76,7 @@ HttpResponsePtr HttpResponse::newHttpJsonResponse(Json::Value &&data)
 {
     auto res = std::make_shared<HttpResponseImpl>(k200OK, CT_APPLICATION_JSON);
     res->setJsonObject(std::move(data));
+    doResponseCreateAdvices(res);
     return res;
 }
 
@@ -134,6 +150,7 @@ HttpResponsePtr HttpResponse::newRedirectionResponse(
     auto res = std::make_shared<HttpResponseImpl>();
     res->setStatusCode(status);
     res->redirect(location);
+    doResponseCreateAdvices(res);
     return res;
 }
 
@@ -197,7 +214,7 @@ HttpResponsePtr HttpResponse::newFileResponse(
         resp->addHeader("Content-Disposition",
                         "attachment; filename=" + attachmentFileName);
     }
-
+    doResponseCreateAdvices(resp);
     return resp;
 }
 
