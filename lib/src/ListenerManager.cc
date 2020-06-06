@@ -210,21 +210,21 @@ trantor::EventLoop *ListenerManager::getIOLoop(size_t id) const
 		    return nullptr;
     }
 #ifdef __linux__
-    if (id >= listeningloopThreads_.size())
+    if (id >= n)
     {
         LOG_TRACE << "Loop id (" << id << ") out of range [0-"
                   << listeningloopThreads_.size() << ").";
-        id %= listeningloopThreads_.size();
+        id %= n;
         LOG_TRACE << "Rounded to : " << id;
     }
     assert(listeningloopThreads_[id]);
     return listeningloopThreads_[id]->getLoop();
 #else
-    if (id >= ioLoopThreadPoolPtr_->size())
+    if (id >= n)
     {
         LOG_TRACE << "Loop id (" << id << ") out of range [0-"
                   << listeningloopThreads_.size() << ").";
-        id %= ioLoopThreadPoolPtr_->size();
+        id %= n;
         LOG_TRACE << "Rounded to : " << id;
     }
     return ioLoopThreadPoolPtr_->getLoop(id);
