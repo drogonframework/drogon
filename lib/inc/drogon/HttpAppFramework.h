@@ -73,8 +73,8 @@ class HttpAppFramework : public trantor::NonCopyable
     /**
      * Calling this method starts the IO event loops and the main loop of the
      * application;
-     * This method MUST be called in the main thread.
-     * This method blocks the main thread until the main event loop exits.
+     * This method can be called in the main thread or any other thread.
+     * This method blocks the current thread until the main event loop exits.
      */
     virtual void run() = 0;
 
@@ -85,7 +85,8 @@ class HttpAppFramework : public trantor::NonCopyable
     /**
      * Calling this method results in stopping all network IO in the
      * framework and interrupting the blocking of the run() method. Usually,
-     * after calling this method, the application exits.
+     * after calling this method, the application exits (when the run() method
+     * is called in the main thread).
      *
      * @note
      * This method can be called in any thread and anywhere.
@@ -183,7 +184,7 @@ class HttpAppFramework : public trantor::NonCopyable
     /// Register an advice for new connections
     /**
      * @param advice is called immediately when a new connection is
-     * established.the first parameter of it is the remote address of the new
+     * established. the first parameter of it is the remote address of the new
      * connection, the second one is the local address of it.
      * If the advice returns a false value, drogon closes the connection.
      * Users can use this advice to implement some security policies.
@@ -191,6 +192,20 @@ class HttpAppFramework : public trantor::NonCopyable
     virtual HttpAppFramework &registerNewConnectionAdvice(
         const std::function<bool(const trantor::InetAddress &,
                                  const trantor::InetAddress &)> &advice) = 0;
+
+    /**
+     * @brief Register an advice for new HTTP responses.
+     *
+     * @param advice is called immediately when a new HTTP response is created.
+     * Users can use the callback to modify the response if they want.
+     * @note This advice is called before any subsequent operation on the
+     * response is performed by drogon or applications, so some modification
+     * (e.g. modification on the status code) in this callback may be overrided
+     * by subsequent operations.
+     * @return HttpAppFramework&
+     */
+    virtual HttpAppFramework &registerHttpResponseCreationAdvice(
+        const std::function<void(const HttpResponsePtr &)> &advice) = 0;
 
     /// Register a synchronous advice
     /**
@@ -1081,10 +1096,11 @@ class HttpAppFramework : public trantor::NonCopyable
      * @brief Get the Current Thread Index whose range is [0, the total number
      * of IO threads]
      *
-     * @return size_t If the current thread is the main thread, the number of
-     * the IO threads is returned. If the current thread is a network IO thread,
-     * the index of it in the range [0, the number of IO threads) is returned.
-     * otherwise the maximum value of type size_t is returned.
+     * @return size_t If the current thread is the main EventLoop thread (in
+     * which the app().run() is called), the number of the IO threads is
+     * returned. If the current thread is a network IO thread, the index of it
+     * in the range [0, the number of IO threads) is returned. otherwise the
+     * maximum value of type size_t is returned.
      *
      * @note Basically this method is used for storing thread-related various in
      * an array and users can use indexes returned by this method to access
