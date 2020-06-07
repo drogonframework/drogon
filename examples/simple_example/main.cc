@@ -75,14 +75,10 @@ class C : public drogon::HttpController<C>
 {
   public:
     METHOD_LIST_BEGIN
-    METHOD_ADD(C::priv, 
-                "/priv/resource", 
-                Get, 
-                "DigestAuthFilter");
+    ADD_METHOD_TO(C::priv, "/priv/resource", Get, "DigestAuthFilter");
     METHOD_LIST_END
-    void priv(
-        const HttpRequestPtr &req,
-        std::function<void(const HttpResponsePtr &)> &&callback) const
+    void priv(const HttpRequestPtr &req,
+              std::function<void(const HttpResponsePtr &)> &&callback) const
     {
         auto resp = HttpResponse::newHttpResponse();
         resp->setBody("<P>private content, only for authenticated users</P>");
@@ -222,11 +218,15 @@ int main()
     if (json.empty())
     {
         std::cout << "empty custom config!" << std::endl;
-    }else{
-        if(!json["realm"].empty()){
+    }
+    else
+    {
+        if (!json["realm"].empty())
+        {
             realm = json["realm"].asString();
         }
-        if(!json["opaque"].empty()){
+        if (!json["opaque"].empty())
+        {
             opaque = json["opaque"].asString();
         }
         for (auto &&i : json["credentials"])
@@ -235,8 +235,10 @@ int main()
         }
     }
 
-    // Install Digest Authentication Filter using custom config credentials, used by C HttpController (/C/priv/resource)
-    auto auth_filter = std::make_shared<DigestAuthFilter>(config_credentials, realm, opaque);
+    // Install Digest Authentication Filter using custom config credentials,
+    // used by C HttpController (/C/priv/resource)
+    auto auth_filter =
+        std::make_shared<DigestAuthFilter>(config_credentials, realm, opaque);
     app().registerFilter(auth_filter);
 
     // Install custom controller

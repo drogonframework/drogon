@@ -1,10 +1,6 @@
 #include "DigestAuthFilter.h"
 
-#ifdef OpenSSL_FOUND
-#include <openssl/md5.h>
-#else
-#include "../../lib/src/ssl_funcs/Md5.h"
-#endif
+#include <drogon/utils/Utilities.h>
 #include <algorithm>
 #include <cctype>
 #include <string>
@@ -13,20 +9,20 @@ std::string method2String(HttpMethod m)
 {
     switch (m)
     {
-    case Get:
-        return "GET";
-    case Post:
-        return "POST";
-    case Head:
-        return "HEAD";
-    case Put:
-        return "PUT";
-    case Delete:
-        return "DELETE";
-    case Options:
-        return "OPTIONS";
-    default:
-        return "INVALID";
+        case Get:
+            return "GET";
+        case Post:
+            return "POST";
+        case Head:
+            return "HEAD";
+        case Put:
+            return "PUT";
+        case Delete:
+            return "DELETE";
+        case Options:
+            return "OPTIONS";
+        default:
+            return "INVALID";
     }
 }
 
@@ -39,14 +35,16 @@ std::string toLower(const std::string &in)
     return out;
 }
 
-bool DigestAuthFilter::isEndOfAttributeName(size_t pos, size_t len, const char *data)
+bool DigestAuthFilter::isEndOfAttributeName(size_t pos,
+                                            size_t len,
+                                            const char *data)
 {
     if (pos >= len)
         return true;
     if (isspace(static_cast<unsigned char>(data[pos])))
         return true;
-    // The reason for this complexity is that some attributes may contain trailing
-    // equal signs (like base64 tokens in Negotiate auth headers)
+    // The reason for this complexity is that some attributes may contain
+    // trailing equal signs (like base64 tokens in Negotiate auth headers)
     if ((pos + 1 < len) && (data[pos] == '=') &&
         !isspace(static_cast<unsigned char>(data[pos + 1])) &&
         (data[pos + 1] != '='))
@@ -86,7 +84,7 @@ void DigestAuthFilter::httpParseAttributes(const char *data,
         // Attribute has value?
         if ((pos < len) && (data[pos] == '='))
         {
-            ++pos; // Skip '='
+            ++pos;  // Skip '='
             // Check if quoted value
             if ((pos < len) && (data[pos] == '"'))
             {
@@ -104,7 +102,8 @@ void DigestAuthFilter::httpParseAttributes(const char *data,
             }
             else
             {
-                while ((pos < len) && !isspace(static_cast<unsigned char>(data[pos])) &&
+                while ((pos < len) &&
+                       !isspace(static_cast<unsigned char>(data[pos])) &&
                        (data[pos] != ','))
                 {
                     attribute.second.append(1, data[pos++]);
@@ -114,7 +113,7 @@ void DigestAuthFilter::httpParseAttributes(const char *data,
 
         attributes.push_back(attribute);
         if ((pos < len) && (data[pos] == ','))
-            ++pos; // Skip ','
+            ++pos;  // Skip ','
     }
 }
 
@@ -123,7 +122,8 @@ bool DigestAuthFilter::httpHasAttribute(const HttpAttributeList &attributes,
                                         std::string *value)
 {
     for (HttpAttributeList::const_iterator it = attributes.begin();
-         it != attributes.end(); ++it)
+         it != attributes.end();
+         ++it)
     {
         if (it->first == name)
         {
@@ -137,12 +137,11 @@ bool DigestAuthFilter::httpHasAttribute(const HttpAttributeList &attributes,
     return false;
 }
 
-DigestAuthFilter::DigestAuthFilter(const std::map<std::string, std::string> &credentials, 
-    const std::string& realm, 
-    const std::string& opaque) : 
-        credentials(credentials),
-        realm(realm),
-        opaque(opaque)
+DigestAuthFilter::DigestAuthFilter(
+    const std::map<std::string, std::string> &credentials,
+    const std::string &realm,
+    const std::string &opaque)
+    : credentials(credentials), realm(realm), opaque(opaque)
 {
 }
 
@@ -164,19 +163,23 @@ void DigestAuthFilter::doFilter(const HttpRequestPtr &req,
         HttpAttributeList att_list;
         httpParseAttributes(auth_header.c_str(), auth_header.size(), att_list);
         std::string username, realm, nonce, uri, opaque, response;
-        if (httpHasAttribute(att_list, "username", &username) 
-            && httpHasAttribute(att_list, "realm", &realm) 
-            && httpHasAttribute(att_list, "nonce", &nonce) 
-            && httpHasAttribute(att_list, "uri", &uri) 
-            && httpHasAttribute(att_list, "opaque", &opaque) 
-            && httpHasAttribute(att_list, "response", &response))
+        if (httpHasAttribute(att_list, "username", &username) &&
+            httpHasAttribute(att_list, "realm", &realm) &&
+            httpHasAttribute(att_list, "nonce", &nonce) &&
+            httpHasAttribute(att_list, "uri", &uri) &&
+            httpHasAttribute(att_list, "opaque", &opaque) &&
+            httpHasAttribute(att_list, "response", &response))
         {
             if (credentials.find(username) != credentials.end())
             {
-                std::string A1 = username + ":" + realm + ":" + credentials.at(username);
+                std::string A1 =
+                    username + ":" + realm + ":" + credentials.at(username);
                 std::string A2 = method2String(req->getMethod()) + ":" + uri;
-                std::string A1_middle_A2 = toLower(Md5Encode::encode(A1)) + ":" + nonce + ":" + toLower(Md5Encode::encode(A2));
-                std::string calculated_response = toLower(Md5Encode::encode(A1_middle_A2));
+                std::string A1_middle_A2 = toLower(utils::getMd5(A1)) + ":" +
+                                           nonce + ":" +
+                                           toLower(utils::getMd5(A2));
+                std::string calculated_response =
+                    toLower(utils::getMd5(A1_middle_A2));
                 if (response == calculated_response)
                 {
                     // Passed
@@ -185,7 +188,8 @@ void DigestAuthFilter::doFilter(const HttpRequestPtr &req,
                 }
                 else
                 {
-                    LOG_DEBUG << "invalid response " << response << ", calculated " << calculated_response;
+                    LOG_DEBUG << "invalid response " << response
+                              << ", calculated " << calculated_response;
                 }
             }
             else
@@ -195,13 +199,17 @@ void DigestAuthFilter::doFilter(const HttpRequestPtr &req,
         }
         else
         {
-            LOG_DEBUG << "missing attributes in WWW-Authenticate header" << auth_header;
+            LOG_DEBUG << "missing attributes in WWW-Authenticate header"
+                      << auth_header;
         }
     }
     // not Passed
     auto resp = HttpResponse::newHttpResponse();
     resp->setStatusCode(k401Unauthorized);
-    resp->addHeader("WWW-Authenticate", " Digest realm=\"" + realm + "\", nonce=\"" + toLower(Md5Encode::encode(std::to_string(time(0)))) + "\", opaque=\"" + opaque + "\"");
+    resp->addHeader("WWW-Authenticate",
+                    " Digest realm=\"" + realm + "\", nonce=\"" +
+                        toLower(utils::getMd5(std::to_string(time(0)))) +
+                        "\", opaque=\"" + opaque + "\"");
     cb(resp);
     return;
 }
