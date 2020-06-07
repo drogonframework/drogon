@@ -14,6 +14,12 @@
 
 #include <drogon/utils/Utilities.h>
 #include <trantor/utils/Logger.h>
+#include <drogon/config.h>
+#ifdef OpenSSL_FOUND
+#include <openssl/md5.h>
+#else
+#include "ssl_funcs/Md5.h"
+#endif
 #ifdef USE_BROTLI
 #include <brotli/decode.h>
 #include <brotli/encode.h>
@@ -1137,6 +1143,20 @@ std::string brotliDecompress(const char *data, const size_t ndata)
     abort();
 }
 #endif
+
+std::string getMd5(const std::string &originalString)
+{
+#ifdef OpenSSL_FOUND
+    MD5_CTX c;
+    unsigned char md5[16] = {0};
+    MD5_Init(&c);
+    MD5_Update(&c, originalString.c_str(), originalString.size());
+    MD5_Final(md5, &c);
+    return utils::binaryStringToHex(md5, 16);
+#else
+    return Md5Encode::encode(originalString);
+#endif
+}
 
 }  // namespace utils
 }  // namespace drogon

@@ -18,11 +18,6 @@
 #include <drogon/MultiPart.h>
 #include <drogon/utils/Utilities.h>
 #include <drogon/config.h>
-#ifdef OpenSSL_FOUND
-#include <openssl/md5.h>
-#else
-#include "ssl_funcs/Md5.h"
-#endif
 #include <algorithm>
 #include <fcntl.h>
 #include <fstream>
@@ -226,14 +221,5 @@ int HttpFile::saveTo(const std::string &pathAndFilename) const
 }
 std::string HttpFile::getMd5() const
 {
-#ifdef OpenSSL_FOUND
-    MD5_CTX c;
-    unsigned char md5[16] = {0};
-    MD5_Init(&c);
-    MD5_Update(&c, fileContent_.c_str(), fileContent_.size());
-    MD5_Final(md5, &c);
-    return utils::binaryStringToHex(md5, 16);
-#else
-    return Md5Encode::encode(fileContent_);
-#endif
+    return utils::getMd5(fileContent_);
 }

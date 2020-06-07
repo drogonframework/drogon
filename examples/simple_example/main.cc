@@ -1,6 +1,7 @@
 
 #include "CustomCtrl.h"
 #include "CustomHeaderFilter.h"
+#include "DigestAuthFilter.h"
 #include <drogon/drogon.h>
 #include <vector>
 #include <string>
@@ -69,6 +70,22 @@ class B : public DrObjectBase
         callback(res);
     }
 };
+
+class C : public drogon::HttpController<C>
+{
+  public:
+    METHOD_LIST_BEGIN
+    ADD_METHOD_TO(C::priv, "/priv/resource", Get, "DigestAuthFilter");
+    METHOD_LIST_END
+    void priv(const HttpRequestPtr &req,
+              std::function<void(const HttpResponsePtr &)> &&callback) const
+    {
+        auto resp = HttpResponse::newHttpResponse();
+        resp->setBody("<P>private content, only for authenticated users</P>");
+        callback(resp);
+    }
+};
+
 namespace api
 {
 namespace v1
@@ -192,6 +209,9 @@ int main()
     app().setDocumentRoot("./");
     app().enableSession(60);
 
+    std::map<std::string, std::string> config_credentials;
+    std::string realm("drogonRealm");
+    std::string opaque("drogonOpaque");
     // Load configuration
     app().loadConfigFile("config.example.json");
     auto &json = app().getCustomConfig();
@@ -199,6 +219,27 @@ int main()
     {
         std::cout << "empty custom config!" << std::endl;
     }
+    else
+    {
+        if (!json["realm"].empty())
+        {
+            realm = json["realm"].asString();
+        }
+        if (!json["opaque"].empty())
+        {
+            opaque = json["opaque"].asString();
+        }
+        for (auto &&i : json["credentials"])
+        {
+            config_credentials[i["user"].asString()] = i["password"].asString();
+        }
+    }
+
+    // Install Digest Authentication Filter using custom config credentials,
+    // used by C HttpController (/C/priv/resource)
+    auto auth_filter =
+        std::make_shared<DigestAuthFilter>(config_credentials, realm, opaque);
+    app().registerFilter(auth_filter);
 
     // Install custom controller
     auto ctrlPtr = std::make_shared<CustomCtrl>("Hi");

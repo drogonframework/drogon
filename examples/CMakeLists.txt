@@ -31,6 +31,7 @@ set(simple_example_sources
     simple_example/api_Attachment.cc
     simple_example/api_v1_ApiTest.cc
     simple_example/TimeFilter.cc
+    simple_example/DigestAuthFilter.cc
     simple_example/main.cc)
 
 add_executable(webapp ${simple_example_sources} ${VIEWSRC})

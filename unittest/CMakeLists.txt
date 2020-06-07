@@ -1,7 +1,7 @@
 add_executable(drogon_msgbuffer_unittest MsgBufferUnittest.cpp)
 add_executable(drobject_unittest DrObjectUnittest.cpp)
 add_executable(gzip_unittest GzipUnittest.cpp)
-add_executable(md5_unittest MD5Unittest.cpp ../lib/src/ssl_funcs/Md5.cc)
+add_executable(md5_unittest MD5Unittest.cpp)
 add_executable(sha1_unittest SHA1Unittest.cpp ../lib/src/ssl_funcs/Sha1.cc)
 add_executable(ostringstream_unittest OStringStreamUnitttest.cpp)
 add_executable(base64_unittest Base64Unittest.cpp)
