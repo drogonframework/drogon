@@ -375,7 +375,7 @@ class HttpResponseImpl : public HttpResponse
     {
         contentType_ = type;
         flagForParsingContentType_ = true;
-		setContentType(string_view{typeString, typeStringLength});
+	setContentType(string_view{typeString, typeStringLength});
     }
 
     std::unordered_map<std::string, std::string> headers_;
