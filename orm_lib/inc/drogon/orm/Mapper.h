@@ -1081,7 +1081,7 @@ inline size_t Mapper<T>::count(const Criteria &criteria) noexcept(false)
         binder.exec();  // exec may be throw exception;
     }
     assert(r.size() == 1);
-    return r[0]["count"].as<size_t>();
+    return r[0][(size_t)0].as<size_t>();
 }
 template <typename T>
 inline void Mapper<T>::count(const Criteria &criteria,
@@ -1102,7 +1102,7 @@ inline void Mapper<T>::count(const Criteria &criteria,
         criteria.outputArgs(binder);
     binder >> [=](const Result &r) {
         assert(r.size() == 1);
-        rcb(r[0]["count"].as<size_t>());
+        rcb(r[0][(size_t)0].as<size_t>());
     };
     binder >> ecb;
 }
@@ -1127,7 +1127,7 @@ inline std::future<size_t> Mapper<T>::countFuture(
         std::make_shared<std::promise<size_t>>();
     binder >> [=](const Result &r) {
         assert(r.size() == 1);
-        prom->set_value(r[0]["count"].as<size_t>());
+        prom->set_value(r[0][(size_t)0].as<size_t>());
     };
     binder >> [=](const std::exception_ptr &e) { prom->set_exception(e); };
     binder.exec();
