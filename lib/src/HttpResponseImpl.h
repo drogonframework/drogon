@@ -90,6 +90,16 @@ class HttpResponseImpl : public HttpResponse
         return closeConnection_;
     }
 
+    virtual void inferContentTypeFromHeader() override
+    {
+	auto &contentTypeString = getHeaderBy("content-type");
+    	if(contentTypeString.length()>0) {
+		contentTypeString__ = "content-type: " + contentTypeString + "\r\n";
+		setContentType(string_view(contentTypeString__));
+		removeHeader("content-type");
+	}	
+    }
+
     virtual void setContentTypeCode(ContentType type) override
     {
         contentType_ = type;
@@ -365,7 +375,7 @@ class HttpResponseImpl : public HttpResponse
     {
         contentType_ = type;
         flagForParsingContentType_ = true;
-        setContentType(string_view{typeString, typeStringLength});
+		setContentType(string_view{typeString, typeStringLength});
     }
 
     std::unordered_map<std::string, std::string> headers_;
@@ -392,6 +402,7 @@ class HttpResponseImpl : public HttpResponse
     mutable bool flagForParsingJson_{false};
     mutable ContentType contentType_{CT_TEXT_PLAIN};
     mutable bool flagForParsingContentType_{false};
+    std::string contentTypeString__;
     string_view contentTypeString_{
         "Content-Type: text/html; charset=utf-8\r\n"};
     bool passThrough_{false};

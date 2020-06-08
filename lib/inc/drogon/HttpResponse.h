@@ -126,6 +126,8 @@ class HttpResponse
     /// Get the status set by the setCloseConnetion() method.
     virtual bool ifCloseConnection() const = 0;
 
+    virtual void inferContentTypeFromHeader() = 0;
+
     /// Set the response content type, such as text/html, text/plaint, image/png
     /// and so on. If the content type
     /// is a text type, the character set is utf8.
