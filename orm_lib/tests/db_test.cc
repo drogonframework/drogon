@@ -694,12 +694,12 @@ void doPostgreTest(const drogon::orm::DbClientPtr &clientPtr)
     try
     {
         auto user = mapper.findByPrimaryKey(2);
-        testOutput(true, "postgresql - ORM mapper asynchronous interface(4)");
+        testOutput(true, "postgresql - ORM mapper synchronous interface(0)");
     }
     catch (const DrogonDbException &e)
     {
         std::cerr << e.base().what() << std::endl;
-        testOutput(false, "postgresql - ORM mapper asynchronous interface(4)");
+        testOutput(false, "postgresql - ORM mapper synchronous interface(0)");
     }
 }
 
@@ -1307,12 +1307,12 @@ void doMysqlTest(const drogon::orm::DbClientPtr &clientPtr)
     try
     {
         auto user = mapper.findByPrimaryKey(1);
-        testOutput(true, "mysql - ORM mapper asynchronous interface(4)");
+        testOutput(true, "mysql - ORM mapper synchronous interface(0)");
     }
     catch (const DrogonDbException &e)
     {
         std::cerr << e.base().what() << std::endl;
-        testOutput(false, "mysql - ORM mapper asynchronous interface(4)");
+        testOutput(false, "mysql - ORM mapper synchronous interface(0)");
     }
 }
 
