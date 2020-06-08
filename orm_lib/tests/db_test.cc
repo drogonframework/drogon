@@ -31,9 +31,9 @@ using namespace drogon::orm;
 #define RED "\033[31m"   /* Red */
 #define GREEN "\033[32m" /* Green */
 
-constexpr int postgre_tests = 41;
-constexpr int mysql_tests = 43;
-constexpr int sqlite_tests = 46;
+constexpr int postgre_tests = 42;
+constexpr int mysql_tests = 44;
+constexpr int sqlite_tests = 47;
 
 int test_count = 0;
 int counter = 0;
@@ -678,17 +678,28 @@ void doPostgreTest(const drogon::orm::DbClientPtr &clientPtr)
             testOutput(false,
                        "postgresql - ORM mapper asynchronous interface(2)");
         });
-
+    /// 6.3.5 count
+    mapper.count(
+        drogon::orm::Criteria(Users::Cols::_id, CompareOperator::EQ, 2020),
+        [](const size_t c) {
+            testOutput(c == 0,
+                       "postgresql - ORM mapper asynchronous interface(3)");
+        },
+        [](const DrogonDbException &e) {
+            std::cerr << e.base().what() << std::endl;
+            testOutput(false,
+                       "postgresql - ORM mapper asynchronous interface(3)");
+        });
     /// 6.4 find by primary key. blocking
     try
     {
         auto user = mapper.findByPrimaryKey(2);
-        testOutput(true, "postgresql - ORM mapper asynchronous interface(3)");
+        testOutput(true, "postgresql - ORM mapper synchronous interface(0)");
     }
     catch (const DrogonDbException &e)
     {
         std::cerr << e.base().what() << std::endl;
-        testOutput(false, "postgresql - ORM mapper asynchronous interface(3)");
+        testOutput(false, "postgresql - ORM mapper synchronous interface(0)");
     }
 }
 
@@ -1255,6 +1266,16 @@ void doMysqlTest(const drogon::orm::DbClientPtr &clientPtr)
             std::cerr << e.base().what() << std::endl;
             testOutput(false, "mysql - ORM mapper asynchronous interface(0)");
         });
+    /// 6.1.5 count
+    mapper.count(
+        drogon::orm::Criteria(Users::Cols::_id, CompareOperator::EQ, 1),
+        [](const size_t c) {
+            testOutput(c == 1, "mysql - ORM mapper asynchronous interface(1)");
+        },
+        [](const DrogonDbException &e) {
+            std::cerr << e.base().what() << std::endl;
+            testOutput(false, "mysql - ORM mapper asynchronous interface(1)");
+        });
     /// 6.2 insert
     user.setUserId("pg1");
     user.setUserName("postgres1");
@@ -1262,11 +1283,11 @@ void doMysqlTest(const drogon::orm::DbClientPtr &clientPtr)
         user,
         [](Users ret) {
             testOutput(ret.getPrimaryKey() == 2,
-                       "mysql - ORM mapper asynchronous interface(1)");
+                       "mysql - ORM mapper asynchronous interface(2)");
         },
         [](const DrogonDbException &e) {
             std::cerr << e.base().what() << std::endl;
-            testOutput(false, "mysql - ORM mapper asynchronous interface(1)");
+            testOutput(false, "mysql - ORM mapper asynchronous interface(2)");
         });
     /// 6.3 select where in
     mapper.findBy(
@@ -1275,23 +1296,23 @@ void doMysqlTest(const drogon::orm::DbClientPtr &clientPtr)
                  std::vector<int32_t>{2, 200}),
         [](std::vector<Users> users) {
             testOutput(users.size() == 1,
-                       "mysql - ORM mapper asynchronous interface(2)");
+                       "mysql - ORM mapper asynchronous interface(3)");
         },
         [](const DrogonDbException &e) {
             std::cerr << e.base().what() << std::endl;
-            testOutput(false, "mysql - ORM mapper asynchronous interface(2)");
+            testOutput(false, "mysql - ORM mapper asynchronous interface(3)");
         });
 
     /// 6.4 find by primary key. blocking
     try
     {
         auto user = mapper.findByPrimaryKey(1);
-        testOutput(true, "mysql - ORM mapper asynchronous interface(3)");
+        testOutput(true, "mysql - ORM mapper synchronous interface(0)");
     }
     catch (const DrogonDbException &e)
     {
         std::cerr << e.base().what() << std::endl;
-        testOutput(false, "mysql - ORM mapper asynchronous interface(3)");
+        testOutput(false, "mysql - ORM mapper synchronous interface(0)");
     }
 }
 
@@ -1917,17 +1938,27 @@ void doSqliteTest(const drogon::orm::DbClientPtr &clientPtr)
             std::cerr << e.base().what() << std::endl;
             testOutput(false, "sqlite3 - ORM mapper asynchronous interface(2)");
         });
-
+    /// 5.3.5 count
+    mapper.count(
+        drogon::orm::Criteria(Users::Cols::_id, CompareOperator::EQ, 2),
+        [](const size_t c) {
+            testOutput(c == 1,
+                       "sqlite3 - ORM mapper asynchronous interface(3)");
+        },
+        [](const DrogonDbException &e) {
+            std::cerr << e.base().what() << std::endl;
+            testOutput(false, "sqlite3 - ORM mapper asynchronous interface(3)");
+        });
     /// 5.4 find by primary key. blocking
     try
     {
         auto user = mapper.findByPrimaryKey(1);
-        testOutput(true, "sqlite3 - ORM mapper asynchronous interface(3)");
+        testOutput(true, "sqlite3 - ORM mapper synchronous interface(0)");
     }
     catch (const DrogonDbException &e)
     {
         std::cerr << e.base().what() << std::endl;
-        testOutput(false, "sqlite3 - ORM mapper asynchronous interface(3)");
+        testOutput(false, "sqlite3 - ORM mapper synchronous interface(0)");
     }
 }
 
