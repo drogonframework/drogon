@@ -126,6 +126,8 @@ class HttpResponse
     /// Get the status set by the setCloseConnetion() method.
     virtual bool ifCloseConnection() const = 0;
 
+    /// Test to check whether the content-type header is set already
+    /// If found then assign it as the final Content Type value 
     virtual void inferContentTypeFromHeader() = 0;
 
     /// Set the response content type, such as text/html, text/plaint, image/png
