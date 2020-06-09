@@ -121,7 +121,7 @@ class MultiPartParser
     ~MultiPartParser(){};
     /// Get files, This method should be called after calling the parse()
     /// method.
-    const std::vector<HttpFile> &getFiles();
+    const std::vector<HttpFile> &getFiles() const;
 
     /// Get parameters, This method should be called after calling the parse ()
     /// method.

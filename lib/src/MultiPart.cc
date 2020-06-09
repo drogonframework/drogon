@@ -29,7 +29,7 @@
 
 using namespace drogon;
 
-const std::vector<HttpFile> &MultiPartParser::getFiles()
+const std::vector<HttpFile> &MultiPartParser::getFiles() const
 {
     return files_;
 }
