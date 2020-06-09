@@ -320,7 +320,7 @@ std::string Md5Encode::getHexStr(uint32_t numStr)
 // function: Encode
 // @param srcInfo: the string to be encoded.
 // return : the string after encoding
-std::string Md5Encode::encode(const std::string &srcInfo)
+std::string Md5Encode::encode(const char *data, const size_t dataLen)
 {
     ParamDynamic param;
     param.ua_ = kA;
@@ -334,7 +334,7 @@ std::string Md5Encode::encode(const std::string &srcInfo)
 
     std::string result;
     char *outDataPtr = nullptr;
-    int totalByte = fillData(srcInfo.c_str(), srcInfo.length(), &outDataPtr);
+    int totalByte = fillData(data, dataLen, &outDataPtr);
 
     for (int i = 0; i < totalByte / (BIT_OF_GROUP / BIT_OF_BYTE); ++i)
     {

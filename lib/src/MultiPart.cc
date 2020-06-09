@@ -60,8 +60,10 @@ int MultiPartParser::parse(const HttpRequestPtr &req)
     pos = contentType.find("boundary=");
     if (pos == std::string::npos)
         return -1;
-    std::string boundary = contentType.substr(pos + 9);
-
+    string_view boundary{contentType.data() + (pos + 9),
+                         contentType.size() - (pos + 9)};
+    if (boundary.size() > 2 && boundary[0] == '\"')
+        boundary = boundary.substr(1, boundary.size() - 2);
     return parse(req, boundary);
 }
 
@@ -96,19 +98,21 @@ int MultiPartParser::parseEntity(const char *begin, const char *end)
         if (pos1 == end)
             return -1;
         HttpFile file;
-        file.setFileName(std::string(pos, pos1));
+        file.setRequest(requestPtr_);
+        file.setFileName(string_view(pos, pos1 - pos));
         pos1 = std::search(pos1, end, CRLF, CRLF + 4);
         if (pos1 == end)
             return -1;
-        file.setFile(std::string(pos1 + 4, end));
+        file.setFile(string_view(pos1 + 4, end - pos1 - 4));
         files_.push_back(std::move(file));
         return 0;
     }
 }
 
 int MultiPartParser::parse(const HttpRequestPtr &req,
-                           const std::string &boundary)
+                           const string_view &boundary)
 {
+    requestPtr_ = req;
     string_view::size_type pos1, pos2;
     pos1 = 0;
     auto content = static_cast<HttpRequestImpl *>(req.get())->bodyView();
@@ -164,10 +168,11 @@ int HttpFile::save(const std::string &path) const
 
     if (tmpPath[tmpPath.length() - 1] != '/')
     {
-        filename = tmpPath + "/" + fileName_;
+        filename = tmpPath + "/";
+        filename.append(fileName_.data(), fileName_.length());
     }
     else
-        filename = tmpPath + fileName_;
+        filename = tmpPath.append(fileName_.data(), fileName_.length());
 
     return saveTo(filename);
 }
@@ -209,7 +214,7 @@ int HttpFile::saveTo(const std::string &pathAndFilename) const
     std::ofstream file(pathAndFilename);
     if (file.is_open())
     {
-        file << fileContent_;
+        file.write(fileContent_.data(), fileContent_.size());
         file.close();
         return 0;
     }
@@ -221,5 +226,5 @@ int HttpFile::saveTo(const std::string &pathAndFilename) const
 }
 std::string HttpFile::getMd5() const
 {
-    return utils::getMd5(fileContent_);
+    return utils::getMd5(fileContent_.data(), fileContent_.size());
 }
