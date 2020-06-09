@@ -89,7 +89,7 @@ if [ -f /bin/ninja ]; then
     make_program=ninja
     cmake_gen='-GNinja'
 else
-    make_flags="$make_flags -j$parallel"
+    make_flags="$make_flags -j $parallel"
 fi
 
 if [ "$1" = "-t" ]; then

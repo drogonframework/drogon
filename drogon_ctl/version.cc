@@ -18,7 +18,6 @@
 #include <trantor/net/Resolver.h>
 #include <iostream>
 
-using namespace drogon_ctl;
 static const char banner[] =
     R"(     _
   __| |_ __ ___   __ _  ___  _ __
@@ -28,7 +27,7 @@ static const char banner[] =
                  |___/
 )";
 
-void version::handleCommand(std::vector<std::string> &parameters)
+void drogon_ctl::version::handleCommand(std::vector<std::string> &parameters)
 {
     std::cout << banner << std::endl;
     std::cout << "A utility for drogon" << std::endl;
