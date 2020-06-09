@@ -1154,7 +1154,7 @@ std::string getMd5(const char *data, const size_t dataLen)
     MD5_Final(md5, &c);
     return utils::binaryStringToHex(md5, 16);
 #else
-    return Md5Encode::encode(originalString);
+    return Md5Encode::encode(data, dataLen);
 #endif
 }
 
