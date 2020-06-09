@@ -17,7 +17,7 @@ void Attachment::upload(const HttpRequestPtr &req,
     if (fileUpload.parse(req) == 0)
     {
         // LOG_DEBUG << "upload good!";
-        auto files = fileUpload.getFiles();
+        auto &files = fileUpload.getFiles();
         // LOG_DEBUG << "file num=" << files.size();
         for (auto const &file : files)
         {

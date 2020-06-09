@@ -1,6 +1,6 @@
 /**
  *
- *  MultiPart.h
+ *  HttpFileImpl.h
  *  An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
@@ -13,33 +13,36 @@
  */
 
 #pragma once
-
+#include <drogon/utils/string_view.h>
 #include <drogon/HttpRequest.h>
+
 #include <map>
 #include <string>
 #include <vector>
 #include <memory>
-
 namespace drogon
 {
-class HttpFileImpl;
-/**
- * @brief This class represents a uploaded file by a HTTP request.
- *
- */
-class HttpFile
+class HttpFileImpl
 {
   public:
-    HttpFile(std::shared_ptr<HttpFileImpl> &&implPtr);
     /// Return the file name;
-    const std::string &getFileName() const;
+    const std::string &getFileName() const
+    {
+        return fileName_;
+    };
 
     /// Set the file name, usually called by the MultiPartParser parser.
-    void setFileName(const std::string &filename);
+    void setFileName(const std::string &filename)
+    {
+        fileName_ = filename;
+    };
 
     /// Set the contents of the file, usually called by the MultiPartParser
     /// parser.
-    void setFile(const char *data, size_t length);
+    void setFile(const char *data, size_t length)
+    {
+        fileContent_ = string_view{data, length};
+    };
 
     /// Save the file to the file system.
     /**
@@ -66,47 +69,32 @@ class HttpFile
     int saveAs(const std::string &filename) const;
 
     /// Return the file length.
-    size_t fileLength() const noexcept;
+    size_t fileLength() const noexcept
+    {
+        return fileContent_.length();
+    };
 
-    /// Return the file data.
-    const char *fileData() const noexcept;
+    const char *fileData() const noexcept
+    {
+        return fileContent_.data();
+    }
+
+    const string_view &fileContent() const noexcept
+    {
+        return fileContent_;
+    }
 
     /// Return the md5 string of the file
     std::string getMd5() const;
+    int saveTo(const std::string &pathAndFilename) const;
+    void setRequest(const HttpRequestPtr &req)
+    {
+        requestPtr_ = req;
+    }
 
   private:
-    std::shared_ptr<HttpFileImpl> implPtr_;
-};
-
-/// A parser class which help the user to get the files and the parameters in
-/// the multipart format request.
-class MultiPartParser
-{
-  public:
-    MultiPartParser(){};
-    ~MultiPartParser(){};
-    /// Get files, This method should be called after calling the parse()
-    /// method.
-    const std::vector<HttpFile> &getFiles() const;
-
-    /// Get parameters, This method should be called after calling the parse ()
-    /// method.
-    const std::map<std::string, std::string> &getParameters() const;
-
-    /// Parse the http request stream to get files and parameters.
-    int parse(const HttpRequestPtr &req);
-
-  protected:
-    std::vector<HttpFile> files_;
-    std::map<std::string, std::string> parameters_;
-    int parse(const HttpRequestPtr &req,
-              const char *boundaryData,
-              size_t boundaryLen);
-    int parseEntity(const char *begin, const char *end);
+    std::string fileName_;
+    string_view fileContent_;
     HttpRequestPtr requestPtr_;
 };
-
-/// In order to be compatible with old interfaces
-using FileUpload = MultiPartParser;
-
 }  // namespace drogon
