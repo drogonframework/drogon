@@ -194,6 +194,10 @@ void create_model::createModelClassFromPG(
                         info.isAutoVal_ = true;
                     }
                 }
+                auto isIdentity = row["is_identity"].as<std::string>();
+                if (isIdentity == "YES") {
+                    info.isAutoVal_ = true;
+                }
                 cols.push_back(std::move(info));
             }
         } >>
