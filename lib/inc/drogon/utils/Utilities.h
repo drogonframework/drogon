@@ -98,7 +98,11 @@ std::string urlEncode(const std::string &);
 std::string urlEncodeComponent(const std::string &);
 
 /// Get the MD5 digest of a string.
-std::string getMd5(const std::string &originalString);
+std::string getMd5(const char *data, const size_t dataLen);
+inline std::string getMd5(const std::string &originalString)
+{
+    return getMd5(originalString.data(), originalString.length());
+}
 
 /// Commpress or decompress data using gzip lib.
 /**

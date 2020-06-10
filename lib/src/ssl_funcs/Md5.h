@@ -58,7 +58,7 @@ class Md5Encode
     };
 
   public:
-    static std::string encode(const std::string &srcInfo);
+    static std::string encode(const char *data, const size_t dataLen);
 
   protected:
     static uint32_t cycleMoveLeft(uint32_t srcNum, int bitNumToMove);

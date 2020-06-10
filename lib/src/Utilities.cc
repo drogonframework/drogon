@@ -1144,17 +1144,17 @@ std::string brotliDecompress(const char *data, const size_t ndata)
 }
 #endif
 
-std::string getMd5(const std::string &originalString)
+std::string getMd5(const char *data, const size_t dataLen)
 {
 #ifdef OpenSSL_FOUND
     MD5_CTX c;
     unsigned char md5[16] = {0};
     MD5_Init(&c);
-    MD5_Update(&c, originalString.c_str(), originalString.size());
+    MD5_Update(&c, data, dataLen);
     MD5_Final(md5, &c);
     return utils::binaryStringToHex(md5, 16);
 #else
-    return Md5Encode::encode(originalString);
+    return Md5Encode::encode(data, dataLen);
 #endif
 }
 
