@@ -195,7 +195,8 @@ void create_model::createModelClassFromPG(
                     }
                 }
                 auto isIdentity = row["is_identity"].as<std::string>();
-                if (isIdentity == "YES") {
+                if (isIdentity == "YES")
+                {
                     info.isAutoVal_ = true;
                 }
                 cols.push_back(std::move(info));
@@ -556,20 +557,20 @@ void create_model::createModelClassFromSqlite3(
                                        column.end(),
                                        column.begin(),
                                        tolower);
+                        while (column.size() > 0 && column[0] == '\n')
+                        {
+                            column = column.substr(1);
+                        }
+                        while (column.size() > 1 && column[0] == '\r' &&
+                               column[1] == '\n')
+                        {
+                            column = column.substr(2);
+                        }
                         auto columnVector = utils::splitString(column, " ");
                         if (columnVector.size() < 2)
                             continue;
                         auto field = columnVector[0];
-                        if (field[0] == '\r' && field[1] == '\n')
-                        {
-                            field = field.substr(2);
-                        }
-                        else if (field[0] == '\r' || field[0] == '\n')
-                        {
-                            field = field.substr(1);
-                        }
                         auto type = columnVector[1];
-
                         bool notnull =
                             (column.find("not null") != std::string::npos);
                         bool autoVal =
@@ -579,6 +580,25 @@ void create_model::createModelClassFromSqlite3(
                         ColumnInfo info;
                         info.index_ = i;
                         info.dbType_ = "sqlite3";
+                        while (field.size() > 0 &&
+                               (field[0] == '\t' || field[0] == ' '))
+                        {
+                            field = field.substr(1);
+                        }
+                        while (field.size() > 0 &&
+                               (field[field.size() - 1] == '\t' ||
+                                field[field.size() - 1] == ' '))
+                        {
+                            field = field.substr(0, field.size() - 1);
+                        }
+                        if (field.size() > 2 &&
+                            ((field[0] == '\"' &&
+                              field[field.size() - 1] == '\"') ||
+                             (field[0] == '\'' &&
+                              field[field.size() - 1] == '\'')))
+                        {
+                            field = field.substr(1, field.size() - 2);
+                        }
                         info.colName_ = field;
                         info.colTypeName_ = nameTransform(info.colName_, true);
                         info.colValName_ = nameTransform(info.colName_, false);
