@@ -4,6 +4,48 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.0.0-beta18] - 2020-06-14
+
+### API change list
+
+- Add a new joinpoint of AOP for modification on each HTTP response.
+
+- Add a method for the TERM signal handling.
+
+- Add getContextRef method to the WebSocketConnection class.
+
+### Changed
+
+- Create a class template for publish subscribe pattern.
+
+- Add contribution recommendations.
+
+- Send a close message when closing a web socket connection.
+
+- Add additional formats for getHttpDate function.
+
+- Make app().run() method callable on a non-main thread.
+
+- Add digest filter in examples.
+
+- Use string_view to parse multipart/form-data requests.
+
+### Fixed
+
+- Fix building of ORM on FreeBSD.
+
+- Fix a Mysql connection error on Windows.
+
+- Fix a bug in ListenerManager::getIOLoop().
+
+- Fix the count() method of Mysql ORM.
+
+- Fix a compilation issue on windows.
+
+- Fix model generation for PostgreSQL primary keys.
+
+- Fix a bug with quoted column names in sqlite3 databases.
+
 ## [1.0.0-beta17] - 2020-05-22
 
 ### API change list
@@ -384,7 +426,9 @@ All notable changes to this project will be documented in this file.
 
 ## [1.0.0-beta1] - 2019-06-11
 
-[Unreleased]: https://github.com/an-tao/drogon/compare/v1.0.0-beta17...HEAD
+[Unreleased]: https://github.com/an-tao/drogon/compare/v1.0.0-beta18...HEAD
+
+[1.0.0-beta18]: https://github.com/an-tao/drogon/compare/v1.0.0-beta17...v1.0.0-beta18
 
 [1.0.0-beta17]: https://github.com/an-tao/drogon/compare/v1.0.0-beta16...v1.0.0-beta17
 
