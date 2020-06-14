@@ -1023,6 +1023,19 @@ class HttpAppFramework : public trantor::NonCopyable
      */
     virtual HttpAppFramework &setHomePage(const std::string &homePageFile) = 0;
 
+    /**
+     * @brief Set the TERM Signal Handler. This method provides a way to users
+     * for exiting program gracefully. When the TERM signal is received after
+     * app().run() is called, the handler is invoked. Drogon uses a default
+     * signal handler for the TERM signal, which calls the 'app().quit()' method
+     * when the TERM signal is received.
+     *
+     * @param handler
+     * @return HttpAppFramework&
+     */
+    virtual HttpAppFramework &setTermSignalHandler(
+        const std::function<void()> &handler) = 0;
+
     /// Get homepage, default is "index.html"
     /**
      * @note
