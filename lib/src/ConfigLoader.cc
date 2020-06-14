@@ -202,6 +202,10 @@ static void loadControllers(const Json::Value &controllers)
                 {
                     constraints.push_back(Delete);
                 }
+                else if (strMethod == "patch")
+                {
+                    constraints.push_back(Patch);
+                }
             }
         }
         if (!controller["filters"].isNull())

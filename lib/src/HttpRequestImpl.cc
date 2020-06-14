@@ -536,6 +536,9 @@ const char *HttpRequestImpl::methodString() const
         case Options:
             result = "OPTIONS";
             break;
+        case Patch:
+            result = "PATCH";
+            break;
         default:
             break;
     }
