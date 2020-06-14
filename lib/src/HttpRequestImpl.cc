@@ -536,6 +536,9 @@ const char *HttpRequestImpl::methodString() const
         case Options:
             result = "OPTIONS";
             break;
+        case Patch:
+            result = "PATCH";
+            break;
         default:
             break;
     }
@@ -570,6 +573,16 @@ bool HttpRequestImpl::setMethod(const char *start, const char *end)
             else if (m == "HEAD")
             {
                 method_ = Head;
+            }
+            else
+            {
+                method_ = Invalid;
+            }
+            break;
+        case 5:
+            if (m == "PATCH")
+            {
+                method_ = Patch;
             }
             else
             {

@@ -21,6 +21,8 @@ std::string method2String(HttpMethod m)
             return "DELETE";
         case Options:
             return "OPTIONS";
+        case Patch:
+            return "PATCH";
         default:
             return "INVALID";
     }

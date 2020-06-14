@@ -334,6 +334,9 @@ int main()
             case Head:
                 std::cout << " (Head) ";
                 break;
+            case Patch:
+                std::cout << " (PATCH) ";
+                break;
             default:
                 break;
         }
