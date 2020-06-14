@@ -576,6 +576,16 @@ bool HttpRequestImpl::setMethod(const char *start, const char *end)
                 method_ = Invalid;
             }
             break;
+        case 5:
+            if (m == "PATCH")
+            {
+                method_ = Patch;
+            }
+            else
+            {
+                method_ = Invalid;
+            }
+            break;
         case 6:
             if (m == "DELETE")
             {

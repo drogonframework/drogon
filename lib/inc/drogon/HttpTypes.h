@@ -118,6 +118,7 @@ enum HttpMethod
     Put,
     Delete,
     Options,
+    Patch,
     Invalid
 };
 
