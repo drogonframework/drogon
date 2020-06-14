@@ -105,15 +105,17 @@ std::string getVersion()
 {
     return DROGON_VERSION;
 }
+
 std::string getGitCommit()
 {
     return DROGON_VERSION_SHA1;
 }
+
 HttpResponsePtr defaultErrorHandler(HttpStatusCode code)
 {
     return std::make_shared<HttpResponseImpl>(code, CT_TEXT_HTML);
 }
-}  // namespace drogon
+
 static void godaemon(void)
 {
     printf("Initializing daemon mode\n");
@@ -151,6 +153,18 @@ static void godaemon(void)
 
     return;
 }
+
+static void TERMFunction(int sig)
+{
+    if (sig == SIGTERM)
+    {
+        LOG_WARN << "SIGTERM signal received.";
+        HttpAppFrameworkImpl::instance().getTermSignalHandler()();
+    }
+}
+
+}  // namespace drogon
+
 HttpAppFrameworkImpl::~HttpAppFrameworkImpl() noexcept
 {
 // Destroy the following objects before the loop destruction
@@ -413,7 +427,7 @@ void HttpAppFrameworkImpl::run()
         getLoop()->resetAfterFork();
 #endif
     }
-
+    signal(SIGTERM, TERMFunction);
     // set logger
     if (!logPath_.empty())
     {

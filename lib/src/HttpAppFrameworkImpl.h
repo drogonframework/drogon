@@ -333,6 +333,16 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     {
         return homePageFile_;
     }
+    virtual HttpAppFramework &setTermSignalHandler(
+        const std::function<void()> &handler) override
+    {
+        termSignalHandler_ = handler;
+        return *this;
+    }
+    const std::function<void()> &getTermSignalHandler() const
+    {
+        return termSignalHandler_;
+    }
     size_t getClientMaxBodySize() const
     {
         return clientMaxBodySize_;
@@ -536,6 +546,7 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     size_t clientMaxMemoryBodySize_{64 * 1024};
     size_t clientMaxWebSocketMessageSize_{128 * 1024};
     std::string homePageFile_{"index.html"};
+    std::function<void()> termSignalHandler_{[]() { app().quit(); }};
     std::unique_ptr<SessionManager> sessionManagerPtr_;
     Json::Value jsonConfig_;
     HttpResponsePtr custom404_;
