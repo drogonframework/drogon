@@ -26,7 +26,7 @@ using namespace trantor;
 using namespace drogon;
 
 HttpRequestParser::HttpRequestParser(const trantor::TcpConnectionPtr &connPtr)
-    : status_(HttpRequestParseStatus::ExpectMethod),
+    : status_(HttpRequestParseStatus::kExpectMethod),
       loop_(connPtr->getLoop()),
       conn_(connPtr)
 {
@@ -113,7 +113,7 @@ HttpRequestImplPtr HttpRequestParser::makeRequestForPool(HttpRequestImpl *ptr)
 void HttpRequestParser::reset()
 {
     assert(loop_->isInLoopThread());
-    status_ = HttpRequestParseStatus::ExpectMethod;
+    status_ = HttpRequestParseStatus::kExpectMethod;
     if (requestsPool_.empty())
     {
         request_ = makeRequestForPool(new HttpRequestImpl(loop_));
@@ -134,7 +134,7 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
     //  std::cout<<std::string(buf->peek(),buf->readableBytes())<<std::endl;
     while (hasMore)
     {
-        if (status_ == HttpRequestParseStatus::ExpectMethod)
+        if (status_ == HttpRequestParseStatus::kExpectMethod)
         {
             auto *space =
                 std::find(buf->peek(), (const char *)buf->beginWrite(), ' ');
@@ -142,7 +142,7 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
             {
                 if (request_->setMethod(buf->peek(), space))
                 {
-                    status_ = HttpRequestParseStatus::ExpectRequestLine;
+                    status_ = HttpRequestParseStatus::kExpectRequestLine;
                     buf->retrieveUntil(space + 1);
                     continue;
                 }
@@ -164,7 +164,7 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
                 hasMore = false;
             }
         }
-        else if (status_ == HttpRequestParseStatus::ExpectRequestLine)
+        else if (status_ == HttpRequestParseStatus::kExpectRequestLine)
         {
             const char *crlf = buf->findCRLF();
             if (crlf)
@@ -173,7 +173,7 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
                 if (ok)
                 {
                     buf->retrieveUntil(crlf + 2);
-                    status_ = HttpRequestParseStatus::ExpectHeaders;
+                    status_ = HttpRequestParseStatus::kExpectHeaders;
                 }
                 else
                 {
@@ -196,7 +196,7 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
                 hasMore = false;
             }
         }
-        else if (status_ == HttpRequestParseStatus::ExpectHeaders)
+        else if (status_ == HttpRequestParseStatus::kExpectHeaders)
         {
             const char *crlf = buf->findCRLF();
             if (crlf)
@@ -209,16 +209,53 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
                 else
                 {
                     // empty line, end of header
-
-                    if (request_->contentLen_ == 0)
+                    const std::string &len =
+                        request_->getHeaderBy("content-length");
+                    if (!len.empty())
                     {
-                        status_ = HttpRequestParseStatus::GotAll;
-                        ++requestsCounter_;
-                        hasMore = false;
+                        request_->contentLen_ = std::stoull(len.c_str());
+                        if (request_->contentLen_ == 0)
+                        {
+                            status_ = HttpRequestParseStatus::kGotAll;
+                            ++requestsCounter_;
+                            hasMore = false;
+                        }
+                        else
+                        {
+                            status_ = HttpRequestParseStatus::kExpectBody;
+                        }
                     }
                     else
                     {
-                        status_ = HttpRequestParseStatus::ExpectBody;
+                        const std::string &encode =
+                            request_->getHeaderBy("transfer-encoding");
+                        if (encode.empty())
+                        {
+                            request_->contentLen_ = 0;
+                            status_ = HttpRequestParseStatus::kGotAll;
+                            ++requestsCounter_;
+                            hasMore = false;
+                        }
+                        else if (encode == "chunked")
+                        {
+                            status_ = HttpRequestParseStatus::kExpectChunkLen;
+                            ++requestsCounter_;
+                            hasMore = true;
+                        }
+                        else
+                        {
+                            auto connPtr = conn_.lock();
+                            if (connPtr)
+                            {
+                                auto resp = HttpResponse::newHttpResponse();
+                                resp->setStatusCode(k501NotImplemented);
+                                auto httpString =
+                                    static_cast<HttpResponseImpl *>(resp.get())
+                                        ->renderToBuffer();
+                                reset();
+                                connPtr->send(std::move(*httpString));
+                            }
+                        }
                     }
 
                     auto &expect = request_->expect();
@@ -295,13 +332,13 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
                 hasMore = false;
             }
         }
-        else if (status_ == HttpRequestParseStatus::ExpectBody)
+        else if (status_ == HttpRequestParseStatus::kExpectBody)
         {
             if (buf->readableBytes() == 0)
             {
                 if (request_->contentLen_ == 0)
                 {
-                    status_ = HttpRequestParseStatus::GotAll;
+                    status_ = HttpRequestParseStatus::kGotAll;
                     ++requestsCounter_;
                 }
                 break;
@@ -320,8 +357,75 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
             }
             if (request_->contentLen_ == 0)
             {
-                status_ = HttpRequestParseStatus::GotAll;
+                status_ = HttpRequestParseStatus::kGotAll;
                 ++requestsCounter_;
+                hasMore = false;
+            }
+        }
+        else if (status_ == HttpRequestParseStatus::kExpectChunkLen)
+        {
+            const char *crlf = buf->findCRLF();
+            if (crlf)
+            {
+                // chunk length line
+                std::string len(buf->peek(), crlf - buf->peek());
+                char *end;
+                currentChunkLength_ = strtol(len.c_str(), &end, 16);
+                // LOG_TRACE << "chun length : " <<
+                // responsePtr_->currentChunkLength_;
+                if (currentChunkLength_ != 0)
+                {
+                    status_ = HttpRequestParseStatus::kExpectChunkBody;
+                }
+                else
+                {
+                    status_ = HttpRequestParseStatus::kExpectLastEmptyChunk;
+                }
+                buf->retrieveUntil(crlf + 2);
+            }
+            else
+            {
+                hasMore = false;
+            }
+        }
+        else if (status_ == HttpRequestParseStatus::kExpectChunkBody)
+        {
+            // LOG_TRACE<<"expect chunk
+            // len="<<responsePtr_->currentChunkLength_;
+            if (buf->readableBytes() >= (currentChunkLength_ + 2))
+            {
+                if (*(buf->peek() + currentChunkLength_) == '\r' &&
+                    *(buf->peek() + currentChunkLength_ + 1) == '\n')
+                {
+                    request_->appendToBody(buf->peek(), currentChunkLength_);
+                    buf->retrieve(currentChunkLength_ + 2);
+                    currentChunkLength_ = 0;
+                    status_ = HttpRequestParseStatus::kExpectChunkLen;
+                }
+                else
+                {
+                    // error!
+                    buf->retrieveAll();
+                    return false;
+                }
+            }
+            else
+            {
+                hasMore = false;
+            }
+        }
+        else if (status_ == HttpRequestParseStatus::kExpectLastEmptyChunk)
+        {
+            // last empty chunk
+            const char *crlf = buf->findCRLF();
+            if (crlf)
+            {
+                buf->retrieveUntil(crlf + 2);
+                status_ = HttpRequestParseStatus::kGotAll;
+                break;
+            }
+            else
+            {
                 hasMore = false;
             }
         }

@@ -432,12 +432,7 @@ void HttpRequestImpl::addHeader(const char *start,
                 }
             }
             break;
-            case 14:
-                if (field == "content-length")
-                {
-                    contentLen_ = std::stoull(value.c_str());
-                }
-                break;
+
             default:
                 break;
         }
