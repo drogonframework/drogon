@@ -244,17 +244,9 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
                         }
                         else
                         {
-                            auto connPtr = conn_.lock();
-                            if (connPtr)
-                            {
-                                auto resp = HttpResponse::newHttpResponse();
-                                resp->setStatusCode(k501NotImplemented);
-                                auto httpString =
-                                    static_cast<HttpResponseImpl *>(resp.get())
-                                        ->renderToBuffer();
-                                reset();
-                                connPtr->send(std::move(*httpString));
-                            }
+                            buf->retrieveAll();
+                            shutdownConnection(k501NotImplemented);
+                            return false;
                         }
                     }
 
@@ -375,6 +367,13 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
                 // responsePtr_->currentChunkLength_;
                 if (currentChunkLength_ != 0)
                 {
+                    if (currentChunkLength_ + request_->bodyView().length() >
+                        HttpAppFrameworkImpl::instance().getClientMaxBodySize())
+                    {
+                        buf->retrieveAll();
+                        shutdownConnection(k413RequestEntityTooLarge);
+                        return false;
+                    }
                     status_ = HttpRequestParseStatus::kExpectChunkBody;
                 }
                 else
