@@ -644,6 +644,10 @@ void HttpControllersRouter::doPreHandlingAdvices(
         {
             methods.append("DELETE,");
         }
+        if (routerItem.binders_[Patch] && routerItem.binders_[Patch]->isCORS_)
+        {
+            methods.append("PATCH,");
+        }
         methods.resize(methods.length() - 1);
         resp->addHeader("ALLOW", methods);
         auto &origin = req->getHeader("Origin");

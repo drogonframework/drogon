@@ -739,7 +739,7 @@ void HttpAppFrameworkImpl::onAsyncRequest(
     {
         auto resp = HttpResponse::newHttpResponse();
         resp->setContentTypeCode(ContentType::CT_TEXT_PLAIN);
-        resp->addHeader("ALLOW", "GET,HEAD,POST,PUT,DELETE,OPTIONS");
+        resp->addHeader("ALLOW", "GET,HEAD,POST,PUT,DELETE,OPTIONS,PATCH");
         resp->setExpiredTime(0);
         callback(resp);
         return;

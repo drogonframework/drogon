@@ -437,7 +437,7 @@ void doTest(const HttpClientPtr &client,
                                 // LOG_DEBUG << resp->getBody();
                                 auto allow = resp->getHeader("allow");
                                 if (resp->statusCode() == k200OK &&
-                                    allow == "GET,HEAD,POST,PUT,DELETE,OPTIONS")
+                                    allow == "GET,HEAD,POST,PUT,DELETE,OPTIONS,PATCH")
                                 {
                                     outputGood(req, isHttps);
                                 }
