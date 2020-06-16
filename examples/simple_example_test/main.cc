@@ -430,29 +430,29 @@ void doTest(const HttpClientPtr &client,
     req = HttpRequest::newHttpRequest();
     req->setMethod(drogon::Options);
     req->setPath("/*");
-    client->sendRequest(req,
-                        [=](ReqResult result, const HttpResponsePtr &resp) {
-                            if (result == ReqResult::Ok)
-                            {
-                                // LOG_DEBUG << resp->getBody();
-                                auto allow = resp->getHeader("allow");
-                                if (resp->statusCode() == k200OK &&
-                                    allow == "GET,HEAD,POST,PUT,DELETE,OPTIONS,PATCH")
-                                {
-                                    outputGood(req, isHttps);
-                                }
-                                else
-                                {
-                                    LOG_ERROR << "Error!";
-                                    exit(1);
-                                }
-                            }
-                            else
-                            {
-                                LOG_ERROR << "Error!";
-                                exit(1);
-                            }
-                        });
+    client->sendRequest(
+        req, [=](ReqResult result, const HttpResponsePtr &resp) {
+            if (result == ReqResult::Ok)
+            {
+                // LOG_DEBUG << resp->getBody();
+                auto allow = resp->getHeader("allow");
+                if (resp->statusCode() == k200OK &&
+                    allow == "GET,HEAD,POST,PUT,DELETE,OPTIONS,PATCH")
+                {
+                    outputGood(req, isHttps);
+                }
+                else
+                {
+                    LOG_ERROR << "Error!";
+                    exit(1);
+                }
+            }
+            else
+            {
+                LOG_ERROR << "Error!";
+                exit(1);
+            }
+        });
 
     req = HttpRequest::newHttpRequest();
     req->setMethod(drogon::Options);

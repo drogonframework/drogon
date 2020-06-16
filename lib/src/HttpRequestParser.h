@@ -30,11 +30,14 @@ class HttpRequestParser : public trantor::NonCopyable,
   public:
     enum class HttpRequestParseStatus
     {
-        ExpectMethod,
-        ExpectRequestLine,
-        ExpectHeaders,
-        ExpectBody,
-        GotAll,
+        kExpectMethod,
+        kExpectRequestLine,
+        kExpectHeaders,
+        kExpectBody,
+        kExpectChunkLen,
+        kExpectChunkBody,
+        kExpectLastEmptyChunk,
+        kGotAll,
     };
 
     explicit HttpRequestParser(const trantor::TcpConnectionPtr &connPtr);
@@ -44,7 +47,7 @@ class HttpRequestParser : public trantor::NonCopyable,
 
     bool gotAll() const
     {
-        return status_ == HttpRequestParseStatus::GotAll;
+        return status_ == HttpRequestParseStatus::kGotAll;
     }
 
     void reset();
@@ -144,6 +147,8 @@ class HttpRequestParser : public trantor::NonCopyable,
         responseBuffer_;
     std::unique_ptr<std::vector<HttpRequestImplPtr>> requestBuffer_;
     std::vector<HttpRequestImplPtr> requestsPool_;
+    size_t currentChunkLength_;
+    size_t currentContentLength_{0};
 };
 
 }  // namespace drogon

@@ -377,9 +377,6 @@ class HttpResponseImpl : public HttpResponse
     trantor::Date creationDate_;
     Version version_{Version::kHttp11};
     bool closeConnection_{false};
-
-    size_t leftBodyLength_{0};
-    size_t currentChunkLength_{0};
     mutable std::shared_ptr<HttpMessageBody> bodyPtr_;
     ssize_t expriedTime_{-1};
     std::string sendfileName_;

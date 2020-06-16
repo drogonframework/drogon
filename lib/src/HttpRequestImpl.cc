@@ -432,12 +432,7 @@ void HttpRequestImpl::addHeader(const char *start,
                 }
             }
             break;
-            case 14:
-                if (field == "content-length")
-                {
-                    contentLen_ = std::stoull(value.c_str());
-                }
-                break;
+
             default:
                 break;
         }
@@ -507,7 +502,6 @@ void HttpRequestImpl::swap(HttpRequestImpl &that) noexcept
     swap(local_, that.local_);
     swap(creationDate_, that.creationDate_);
     swap(content_, that.content_);
-    swap(contentLen_, that.contentLen_);
     swap(expect_, that.expect_);
     swap(contentType_, that.contentType_);
     swap(contentTypeString_, that.contentTypeString_);
@@ -632,23 +626,50 @@ HttpRequestImpl::~HttpRequestImpl()
 {
 }
 
-void HttpRequestImpl::reserveBodySize()
+void HttpRequestImpl::reserveBodySize(size_t length)
 {
-    if (contentLen_ <=
-        HttpAppFrameworkImpl::instance().getClientMaxMemoryBodySize())
+    if (length <= HttpAppFrameworkImpl::instance().getClientMaxMemoryBodySize())
     {
-        content_.reserve(contentLen_);
+        content_.reserve(length);
     }
     else
     {
         // Store data of body to a temperary file
-        auto tmpfile = HttpAppFrameworkImpl::instance().getUploadPath();
-        auto fileName = utils::getUuid();
-        tmpfile.append("/tmp/")
-            .append(1, fileName[0])
-            .append(1, fileName[1])
-            .append("/")
-            .append(fileName);
-        cacheFilePtr_ = std::make_unique<CacheFile>(tmpfile);
+        createTmpFile();
     }
+}
+
+void HttpRequestImpl::appendToBody(const char *data, size_t length)
+{
+    if (cacheFilePtr_)
+    {
+        cacheFilePtr_->append(data, length);
+    }
+    else
+    {
+        if (content_.length() + length <=
+            HttpAppFrameworkImpl::instance().getClientMaxMemoryBodySize())
+        {
+            content_.append(data, length);
+        }
+        else
+        {
+            createTmpFile();
+            cacheFilePtr_->append(content_);
+            cacheFilePtr_->append(data, length);
+            content_.clear();
+        }
+    }
+}
+
+void HttpRequestImpl::createTmpFile()
+{
+    auto tmpfile = HttpAppFrameworkImpl::instance().getUploadPath();
+    auto fileName = utils::getUuid();
+    tmpfile.append("/tmp/")
+        .append(1, fileName[0])
+        .append(1, fileName[1])
+        .append("/")
+        .append(fileName);
+    cacheFilePtr_ = std::make_unique<CacheFile>(tmpfile);
 }
