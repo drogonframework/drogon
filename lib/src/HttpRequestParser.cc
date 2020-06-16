@@ -239,8 +239,6 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
                         else if (encode == "chunked")
                         {
                             status_ = HttpRequestParseStatus::kExpectChunkLen;
-                            ++requestsCounter_;
-                            hasMore = true;
                         }
                         else
                         {
@@ -308,7 +306,6 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
                     }
                     request_->reserveBodySize(currentContentLength_);
                 }
-
                 buf->retrieveUntil(crlf + 2);
             }
             else
@@ -422,6 +419,7 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
             {
                 buf->retrieveUntil(crlf + 2);
                 status_ = HttpRequestParseStatus::kGotAll;
+                ++requestsCounter_;
                 break;
             }
             else
