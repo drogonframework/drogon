@@ -188,7 +188,7 @@ class SessionStorageProvider
      * is zero, the value exists until being removed explicitly.
      */
     virtual void insert(const std::string &key,
-                        SessionPtr &&value,
+                        const SessionPtr &value,
                         size_t timeout) = 0;
 };
 

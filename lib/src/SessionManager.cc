@@ -37,10 +37,10 @@ class CacheMapSessionStorageProvider : public SessionStorageProvider
     }
 
     void insert(const std::string &key,
-                SessionPtr &&value,
+                const SessionPtr &value,
                 size_t timeout) override
     {
-        data_->insert(key, std::forward<SessionPtr>(value), timeout);
+        data_->insert(key, value, timeout);
     }
 
   private:
@@ -62,7 +62,7 @@ SessionPtr SessionManager::getSession(const std::string &sessionID,
     if (!provider_->findAndFetch(sessionID, sessionPtr))
     {
         sessionPtr = std::make_shared<Session>(sessionID, needToSet);
-        provider_->insert(sessionID, std::move(sessionPtr), timeout_);
+        provider_->insert(sessionID, sessionPtr, timeout_);
         return sessionPtr;
     }
     return sessionPtr;
