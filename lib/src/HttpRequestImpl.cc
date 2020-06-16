@@ -635,13 +635,41 @@ void HttpRequestImpl::reserveBodySize(size_t length)
     else
     {
         // Store data of body to a temperary file
-        auto tmpfile = HttpAppFrameworkImpl::instance().getUploadPath();
-        auto fileName = utils::getUuid();
-        tmpfile.append("/tmp/")
-            .append(1, fileName[0])
-            .append(1, fileName[1])
-            .append("/")
-            .append(fileName);
-        cacheFilePtr_ = std::make_unique<CacheFile>(tmpfile);
+        createTmpFile();
     }
+}
+
+void HttpRequestImpl::appendToBody(const char *data, size_t length)
+{
+    if (cacheFilePtr_)
+    {
+        cacheFilePtr_->append(data, length);
+    }
+    else
+    {
+        if (content_.length() + length <=
+            HttpAppFrameworkImpl::instance().getClientMaxMemoryBodySize())
+        {
+            content_.append(data, length);
+        }
+        else
+        {
+            createTmpFile();
+            cacheFilePtr_->append(content_);
+            cacheFilePtr_->append(data, length);
+            content_.clear();
+        }
+    }
+}
+
+void HttpRequestImpl::createTmpFile()
+{
+    auto tmpfile = HttpAppFrameworkImpl::instance().getUploadPath();
+    auto fileName = utils::getUuid();
+    tmpfile.append("/tmp/")
+        .append(1, fileName[0])
+        .append(1, fileName[1])
+        .append("/")
+        .append(fileName);
+    cacheFilePtr_ = std::make_unique<CacheFile>(tmpfile);
 }

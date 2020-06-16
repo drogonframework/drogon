@@ -178,17 +178,7 @@ class HttpRequestImpl : public HttpRequest
         return content_.length();
     }
 
-    void appendToBody(const char *data, size_t length)
-    {
-        if (cacheFilePtr_)
-        {
-            cacheFilePtr_->append(data, length);
-        }
-        else
-        {
-            content_.append(data, length);
-        }
-    }
+    void appendToBody(const char *data, size_t length);
 
     void reserveBodySize(size_t length);
 
@@ -473,7 +463,7 @@ class HttpRequestImpl : public HttpRequest
             parseParameters();
         }
     }
-
+    void createTmpFile();
     void parseJson() const;
     mutable bool flagForParsingParameters_{false};
     mutable bool flagForParsingJson_{false};
