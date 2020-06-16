@@ -498,8 +498,9 @@ void HttpAppFrameworkImpl::run()
 
     if (useSession_)
     {
-        sessionManagerPtr_ = std::unique_ptr<SessionManager>(
-            new SessionManager(getLoop(), sessionTimeout_));
+        sessionManagerPtr_ = std::make_unique<SessionManager>(
+            sessionStorageCreator_(getLoop(), sessionTimeout_),
+            sessionTimeout_);
     }
 
     // Initialize plugins
@@ -981,4 +982,19 @@ const std::function<HttpResponsePtr(HttpStatusCode)>
     &HttpAppFrameworkImpl::getCustomErrorHandler() const
 {
     return customErrorHandler_;
+}
+
+HttpAppFramework &HttpAppFrameworkImpl::setCustomSessionStorageCreator(
+    std::function<std::unique_ptr<SessionStorageProvider>(trantor::EventLoop *,
+                                                          size_t)> &&creator)
+{
+    sessionStorageCreator_ = std::move(creator);
+    return *this;
+}
+
+const std::function<
+    std::unique_ptr<SessionStorageProvider>(trantor::EventLoop *, size_t)>
+    &HttpAppFrameworkImpl::getCustomSessionStorageCreator() const
+{
+    return sessionStorageCreator_;
 }

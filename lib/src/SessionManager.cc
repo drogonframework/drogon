@@ -16,37 +16,41 @@
 
 using namespace drogon;
 
-SessionManager::SessionManager(trantor::EventLoop *loop, size_t timeout)
-    : loop_(loop), timeout_(timeout)
+class CacheMapSessionStorageProvider : public SessionStorageProvider
 {
-    assert(timeout_ >= 0);
-    if (timeout_ > 0)
+  public:
+    CacheMapSessionStorageProvider(trantor::EventLoop *loop,
+                                   float tickInterval,
+                                   size_t wheelsNum,
+                                   size_t bucketsNumPerWheel)
+        : data_(std::make_unique<CacheMap<std::string, SessionPtr>>(
+              loop,
+              tickInterval,
+              wheelsNum,
+              bucketsNumPerWheel))
     {
-        size_t wheelNum = 1;
-        size_t bucketNum = 0;
-        if (timeout_ < 500)
-        {
-            bucketNum = timeout_ + 1;
-        }
-        else
-        {
-            auto tmpTimeout = timeout_;
-            bucketNum = 100;
-            while (tmpTimeout > 100)
-            {
-                ++wheelNum;
-                tmpTimeout = tmpTimeout / 100;
-            }
-        }
-        sessionMapPtr_ = std::unique_ptr<CacheMap<std::string, SessionPtr>>(
-            new CacheMap<std::string, SessionPtr>(
-                loop_, 1.0, wheelNum, bucketNum));
     }
-    else if (timeout_ == 0)
+
+    bool findAndFetch(const std::string &key, SessionPtr &value) override
     {
-        sessionMapPtr_ = std::unique_ptr<CacheMap<std::string, SessionPtr>>(
-            new CacheMap<std::string, SessionPtr>(loop_, 0, 0, 0));
+        return data_->findAndFetch(key, value);
     }
+
+    void insert(const std::string &key,
+                SessionPtr &&value,
+                size_t timeout) override
+    {
+        data_->insert(key, std::forward<SessionPtr>(value), timeout);
+    }
+
+  private:
+    std::unique_ptr<CacheMap<std::string, SessionPtr>> data_;
+};
+
+SessionManager::SessionManager(std::unique_ptr<SessionStorageProvider> provider,
+                               size_t timeout)
+    : provider_(std::move(provider)), timeout_(timeout)
+{
 }
 
 SessionPtr SessionManager::getSession(const std::string &sessionID,
@@ -55,11 +59,49 @@ SessionPtr SessionManager::getSession(const std::string &sessionID,
     assert(!sessionID.empty());
     SessionPtr sessionPtr;
     std::lock_guard<std::mutex> lock(mapMutex_);
-    if (sessionMapPtr_->findAndFetch(sessionID, sessionPtr) == false)
+    if (!provider_->findAndFetch(sessionID, sessionPtr))
     {
         sessionPtr = std::make_shared<Session>(sessionID, needToSet);
-        sessionMapPtr_->insert(sessionID, sessionPtr, timeout_);
+        provider_->insert(sessionID, std::move(sessionPtr), timeout_);
         return sessionPtr;
     }
     return sessionPtr;
+}
+
+SessionStorageProvider::~SessionStorageProvider() = default;
+
+std::unique_ptr<SessionStorageProvider> drogon::createCacheMapProvider(
+    trantor::EventLoop *loop,
+    size_t timeout)
+{
+    assert(timeout >= 0);
+    if (timeout > 0)
+    {
+        size_t wheelNum = 1;
+        size_t bucketNum = 0;
+        if (timeout < 500)
+        {
+            bucketNum = timeout + 1;
+        }
+        else
+        {
+            auto tmpTimeout = timeout;
+            bucketNum = 100;
+            while (tmpTimeout > 100)
+            {
+                ++wheelNum;
+                tmpTimeout = tmpTimeout / 100;
+            }
+        }
+        return std::make_unique<CacheMapSessionStorageProvider>(loop,
+                                                                1.0,
+                                                                wheelNum,
+                                                                bucketNum);
+    }
+    else if (timeout == 0)
+    {
+        return std::make_unique<CacheMapSessionStorageProvider>(loop, 0, 0, 0);
+    }
+
+    return nullptr;
 }

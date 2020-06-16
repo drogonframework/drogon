@@ -15,6 +15,7 @@
 #pragma once
 
 #include "impl_forwards.h"
+#include "SessionManager.h"
 #include <drogon/HttpAppFramework.h>
 #include <drogon/config.h>
 #include <memory>
@@ -197,6 +198,15 @@ class HttpAppFrameworkImpl : public HttpAppFramework
         useSession_ = false;
         return *this;
     }
+
+    HttpAppFramework &setCustomSessionStorageCreator(
+        std::function<std::unique_ptr<SessionStorageProvider>(
+            trantor::EventLoop *,
+            size_t)> &&creator) override;
+    const std::function<
+        std::unique_ptr<SessionStorageProvider>(trantor::EventLoop *, size_t)>
+        &getCustomSessionStorageCreator() const override;
+
     virtual const std::string &getDocumentRoot() const override
     {
         return rootPath_;
@@ -547,6 +557,7 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     size_t clientMaxWebSocketMessageSize_{128 * 1024};
     std::string homePageFile_{"index.html"};
     std::function<void()> termSignalHandler_{[]() { app().quit(); }};
+    std::function<std::unique_ptr<SessionStorageProvider>(trantor::EventLoop*, size_t)> sessionStorageCreator_{createCacheMapProvider};
     std::unique_ptr<SessionManager> sessionManagerPtr_;
     Json::Value jsonConfig_;
     HttpResponsePtr custom404_;

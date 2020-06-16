@@ -142,6 +142,28 @@ class HttpAppFramework : public trantor::NonCopyable
     virtual const std::function<HttpResponsePtr(HttpStatusCode)>
         &getCustomErrorHandler() const = 0;
 
+    /// Set custom session storage creator
+    /**
+     * @param resp_generator is invoked when the system starts running and is
+     * used to provide backing data storage for the built-in session handler.
+     * The two parameters are the event loop of the system and the timeout for
+     * keys.
+     */
+    virtual HttpAppFramework &setCustomSessionStorageCreator(
+        std::function<
+            std::unique_ptr<SessionStorageProvider>(trantor::EventLoop *,
+                                                    size_t)> &&creator) = 0;
+
+    /// Get custom session storage creator
+    /**
+     * @return A const-reference to the session storage creator set using
+     * setCustomSessionStorageCreator. If none was provided, the default creator
+     * is returned.
+     */
+    virtual const std::function<
+        std::unique_ptr<SessionStorageProvider>(trantor::EventLoop *, size_t)>
+        &getCustomSessionStorageCreator() const = 0;
+
     /// Get the plugin object registered in the framework
     /**
      * @note
