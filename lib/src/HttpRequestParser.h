@@ -148,6 +148,7 @@ class HttpRequestParser : public trantor::NonCopyable,
     std::unique_ptr<std::vector<HttpRequestImplPtr>> requestBuffer_;
     std::vector<HttpRequestImplPtr> requestsPool_;
     size_t currentChunkLength_;
+    size_t currentContentLength_{0};
 };
 
 }  // namespace drogon

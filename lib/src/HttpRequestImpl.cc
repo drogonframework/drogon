@@ -502,7 +502,6 @@ void HttpRequestImpl::swap(HttpRequestImpl &that) noexcept
     swap(local_, that.local_);
     swap(creationDate_, that.creationDate_);
     swap(content_, that.content_);
-    swap(contentLen_, that.contentLen_);
     swap(expect_, that.expect_);
     swap(contentType_, that.contentType_);
     swap(contentTypeString_, that.contentTypeString_);
@@ -627,12 +626,11 @@ HttpRequestImpl::~HttpRequestImpl()
 {
 }
 
-void HttpRequestImpl::reserveBodySize()
+void HttpRequestImpl::reserveBodySize(size_t length)
 {
-    if (contentLen_ <=
-        HttpAppFrameworkImpl::instance().getClientMaxMemoryBodySize())
+    if (length <= HttpAppFrameworkImpl::instance().getClientMaxMemoryBodySize())
     {
-        content_.reserve(contentLen_);
+        content_.reserve(length);
     }
     else
     {

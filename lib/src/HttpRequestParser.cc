@@ -113,6 +113,7 @@ HttpRequestImplPtr HttpRequestParser::makeRequestForPool(HttpRequestImpl *ptr)
 void HttpRequestParser::reset()
 {
     assert(loop_->isInLoopThread());
+    currentContentLength_ = 0;
     status_ = HttpRequestParseStatus::kExpectMethod;
     if (requestsPool_.empty())
     {
@@ -213,8 +214,8 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
                         request_->getHeaderBy("content-length");
                     if (!len.empty())
                     {
-                        request_->contentLen_ = std::stoull(len.c_str());
-                        if (request_->contentLen_ == 0)
+                        currentContentLength_ = std::stoull(len.c_str());
+                        if (currentContentLength_ == 0)
                         {
                             status_ = HttpRequestParseStatus::kGotAll;
                             ++requestsCounter_;
@@ -231,7 +232,6 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
                             request_->getHeaderBy("transfer-encoding");
                         if (encode.empty())
                         {
-                            request_->contentLen_ = 0;
                             status_ = HttpRequestParseStatus::kGotAll;
                             ++requestsCounter_;
                             hasMore = false;
@@ -254,7 +254,7 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
                     if (expect == "100-continue" &&
                         request_->getVersion() >= Version::kHttp11)
                     {
-                        if (request_->contentLen_ == 0)
+                        if (currentContentLength_ == 0)
                         {
                             buf->retrieveAll();
                             shutdownConnection(k400BadRequest);
@@ -265,7 +265,7 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
                         if (connPtr)
                         {
                             auto resp = HttpResponse::newHttpResponse();
-                            if (request_->contentLen_ >
+                            if (currentContentLength_ >
                                 HttpAppFrameworkImpl::instance()
                                     .getClientMaxBodySize())
                             {
@@ -298,7 +298,7 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
                             return false;
                         }
                     }
-                    else if (request_->contentLen_ >
+                    else if (currentContentLength_ >
                              HttpAppFrameworkImpl::instance()
                                  .getClientMaxBodySize())
                     {
@@ -306,7 +306,7 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
                         shutdownConnection(k413RequestEntityTooLarge);
                         return false;
                     }
-                    request_->reserveBodySize();
+                    request_->reserveBodySize(currentContentLength_);
                 }
 
                 buf->retrieveUntil(crlf + 2);
@@ -328,26 +328,26 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
         {
             if (buf->readableBytes() == 0)
             {
-                if (request_->contentLen_ == 0)
+                if (currentContentLength_ == 0)
                 {
                     status_ = HttpRequestParseStatus::kGotAll;
                     ++requestsCounter_;
                 }
                 break;
             }
-            if (request_->contentLen_ >= buf->readableBytes())
+            if (currentContentLength_ >= buf->readableBytes())
             {
-                request_->contentLen_ -= buf->readableBytes();
+                currentContentLength_ -= buf->readableBytes();
                 request_->appendToBody(buf->peek(), buf->readableBytes());
                 buf->retrieveAll();
             }
             else
             {
-                request_->appendToBody(buf->peek(), request_->contentLen_);
-                buf->retrieve(request_->contentLen_);
-                request_->contentLen_ = 0;
+                request_->appendToBody(buf->peek(), currentContentLength_);
+                buf->retrieve(currentContentLength_);
+                currentContentLength_ = 0;
             }
-            if (request_->contentLen_ == 0)
+            if (currentContentLength_ == 0)
             {
                 status_ = HttpRequestParseStatus::kGotAll;
                 ++requestsCounter_;
@@ -367,7 +367,7 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
                 // responsePtr_->currentChunkLength_;
                 if (currentChunkLength_ != 0)
                 {
-                    if (currentChunkLength_ + request_->bodyView().length() >
+                    if (currentChunkLength_ + currentContentLength_ >
                         HttpAppFrameworkImpl::instance().getClientMaxBodySize())
                     {
                         buf->retrieveAll();
@@ -398,6 +398,7 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
                 {
                     request_->appendToBody(buf->peek(), currentChunkLength_);
                     buf->retrieve(currentChunkLength_ + 2);
+                    currentContentLength_ += currentChunkLength_;
                     currentChunkLength_ = 0;
                     status_ = HttpRequestParseStatus::kExpectChunkLen;
                 }

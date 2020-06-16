@@ -46,7 +46,6 @@ class HttpRequestImpl : public HttpRequest
     {
         method_ = Invalid;
         version_ = Version::kUnknown;
-        contentLen_ = 0;
         flagForParsingJson_ = false;
         headers_.clear();
         cookies_.clear();
@@ -191,7 +190,7 @@ class HttpRequestImpl : public HttpRequest
         }
     }
 
-    void reserveBodySize();
+    void reserveBodySize(size_t length);
 
     string_view queryView() const
     {
@@ -500,7 +499,6 @@ class HttpRequestImpl : public HttpRequest
 
   protected:
     std::string content_;
-    size_t contentLen_{0};
     trantor::EventLoop *loop_;
     mutable ContentType contentType_{CT_TEXT_PLAIN};
     mutable bool flagForParsingContentType_{false};
