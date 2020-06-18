@@ -350,15 +350,24 @@ void create_view::newViewSourceFile(std::ofstream &file,
     file << "#include <list>\n";
     file << "#include <deque>\n";
     file << "#include <queue>\n";
-
-    //    file << "using namespace std;\n";
-    //    file <<"void __attribute__((constructor)) startup()\n";
-    //    file <<"{std::cout<<\"dynamic lib start to load!\"<<std::endl;}\n";
-    //    file <<"void __attribute__((destructor)) shutdown()\n";
-    //    file <<"{std::cout<<\"dynamic lib start to unload!\"<<std::endl;}\n";
-    int import_flag = 0;
+    // Find layout tag
     std::string layoutName;
     std::regex layoutReg("<%layout[ \\t]+(((?!%\\}).)*[^ \\t])[ \\t]*%>");
+    for (std::string buffer; std::getline(infile, buffer);)
+    {
+        std::smatch results;
+        if (std::regex_search(buffer, results, layoutReg))
+        {
+            if (results.size() > 1)
+            {
+                layoutName = results[1].str();
+                break;
+            }
+        }
+    }
+    infile.clear();
+    infile.seekg(0, std::ifstream::beg);
+    bool import_flag{false};
     for (std::string buffer; std::getline(infile, buffer);)
     {
         std::string::size_type pos(0);
@@ -370,20 +379,11 @@ void create_view::newViewSourceFile(std::ofstream &file,
                            lowerBuffer.end(),
                            lowerBuffer.begin(),
                            ::tolower);
-            std::smatch results;
-            if (std::regex_search(buffer, results, layoutReg))
-            {
-                if (results.size() > 1)
-                {
-                    layoutName = results[1].str();
-                    continue;
-                }
-            }
             if ((pos = lowerBuffer.find(cxx_include)) != std::string::npos)
             {
                 // std::cout<<"haha find it!"<<endl;
                 std::string newLine = buffer.substr(pos + cxx_include.length());
-                import_flag = 1;
+                import_flag = true;
                 if ((pos = newLine.find(cxx_end)) != std::string::npos)
                 {
                     newLine = newLine.substr(0, pos);
@@ -403,7 +403,6 @@ void create_view::newViewSourceFile(std::ofstream &file,
             {
                 std::string newLine = buffer.substr(0, pos);
                 file << newLine << "\n";
-
                 break;
             }
             else
@@ -414,7 +413,7 @@ void create_view::newViewSourceFile(std::ofstream &file,
         }
     }
     // std::cout<<"import_flag="<<import_flag<<std::endl;
-    if (import_flag == 0)
+    if (!import_flag)
     {
         infile.clear();
         infile.seekg(0, std::ifstream::beg);
