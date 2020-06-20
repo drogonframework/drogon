@@ -425,7 +425,8 @@ class HttpAppFrameworkImpl : public HttpAppFramework
         const size_t connectionNum = 1,
         const std::string &filename = "",
         const std::string &name = "default",
-        const bool isFast = false) override;
+        const bool isFast = false,
+        const std::string &characterSet = "") override;
 
     inline static HttpAppFrameworkImpl &instance()
     {

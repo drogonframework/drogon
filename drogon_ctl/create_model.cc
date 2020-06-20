@@ -722,6 +722,12 @@ void create_model::createModel(const std::string &path,
             connStr += " password=";
             connStr += password;
         }
+        auto characterSet = config.get("client_encoding", "").asString();
+        if (!characterSet.empty())
+        {
+            connStr += " client_encoding=";
+            connStr += characterSet;
+        }
 
         auto schema = config.get("schema", "public").asString();
         DbClientPtr client = drogon::orm::DbClient::newPgClient(connStr, 1);
@@ -821,6 +827,12 @@ void create_model::createModel(const std::string &path,
         {
             connStr += " password=";
             connStr += password;
+        }
+        auto characterSet = config.get("client_encoding", "").asString();
+        if (!characterSet.empty())
+        {
+            connStr += " client_encoding=";
+            connStr += characterSet;
         }
         DbClientPtr client = drogon::orm::DbClient::newMysqlClient(connStr, 1);
         std::cout << "Connect to server..." << std::endl;

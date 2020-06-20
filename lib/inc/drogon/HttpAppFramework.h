@@ -1092,7 +1092,8 @@ class HttpAppFramework : public trantor::NonCopyable
         const size_t connectionNum = 1,
         const std::string &filename = "",
         const std::string &name = "default",
-        const bool isFast = false) = 0;
+        const bool isFast = false,
+        const std::string &characterSet = "") = 0;
 
     /// Get the DNS resolver
     /**

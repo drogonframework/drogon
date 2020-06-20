@@ -1967,15 +1967,17 @@ int main(int argc, char *argv[])
     trantor::Logger::setLogLevel(trantor::Logger::kDebug);
 #if USE_POSTGRESQL
     auto postgre_client = DbClient::newPgClient(
-        "host=127.0.0.1 port=5432 dbname=postgres user=postgres", 1);
+        "host=127.0.0.1 port=5432 dbname=postgres user=postgres "
+        "client_encoding=utf8",
+        1);
     while (!postgre_client->hasAvailableConnections())
     {
         std::this_thread::sleep_for(1s);
     }
 #endif
 #if USE_MYSQL
-    auto mysql_client =
-        DbClient::newMysqlClient("host=localhost port=3306 user=root", 1);
+    auto mysql_client = DbClient::newMysqlClient(
+        "host=localhost port=3306 user=root client_encoding=utf8mb4", 1);
     while (!mysql_client->hasAvailableConnections())
     {
         std::this_thread::sleep_for(1s);

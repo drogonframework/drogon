@@ -59,6 +59,7 @@ class DbClient : public trantor::NonCopyable
      * as the operating system name of the user running the application.
      * - password: Password to be used if the server demands password
      * authentication.
+     * - client_encoding: The character set to be used on database connections.
      *
      * For other key words on PostgreSQL, see the PostgreSQL documentation.
      * Only a pair of key values ​​is valid for Sqlite3, and its keyword is

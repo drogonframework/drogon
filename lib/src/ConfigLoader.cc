@@ -470,6 +470,11 @@ static void loadDbClients(const Json::Value &dbClients)
         auto name = client.get("name", "default").asString();
         auto filename = client.get("filename", "").asString();
         auto isFast = client.get("is_fast", false).asBool();
+        auto characterSet = client.get("characterSet", "").asString();
+        if (characterSet.empty())
+        {
+            characterSet = client.get("client_encoding", "").asString();
+        }
         drogon::app().createDbClient(type,
                                      host,
                                      (unsigned short)port,
@@ -479,7 +484,8 @@ static void loadDbClients(const Json::Value &dbClients)
                                      connNum,
                                      filename,
                                      name,
-                                     isFast);
+                                     isFast,
+                                     characterSet);
     }
 }
 static void loadListeners(const Json::Value &listeners)

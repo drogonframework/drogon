@@ -94,6 +94,10 @@ MysqlConnection::MysqlConnection(trantor::EventLoop *loop,
         {
             passwd_ = value;
         }
+        else if (key == "client_encoding")
+        {
+            characterSet_ = value;
+        }
     }
     loop_->queueInLoop([this]() {
         MYSQL *ret;
@@ -200,14 +204,26 @@ void MysqlConnection::handleTimeout()
                 return;
             }
             // I don't think the programe can run to here.
-            status_ = ConnectStatus::Ok;
-            if (okCallback_)
+            if (characterSet_.empty())
             {
-                auto thisPtr = shared_from_this();
-                okCallback_(thisPtr);
+                status_ = ConnectStatus::Ok;
+                if (okCallback_)
+                {
+                    auto thisPtr = shared_from_this();
+                    okCallback_(thisPtr);
+                }
+            }
+            else
+            {
+                startSetCharacterSet();
+                return;
             }
         }
         setChannel();
+    }
+    else if (status_ == ConnectStatus::SettingCharacterSet)
+    {
+        continueSetCharacterSet(status);
     }
     else if (status_ == ConnectStatus::Ok)
     {
@@ -241,11 +257,19 @@ void MysqlConnection::handleEvent()
                 handleClosed();
                 return;
             }
-            status_ = ConnectStatus::Ok;
-            if (okCallback_)
+            if (characterSet_.empty())
             {
-                auto thisPtr = shared_from_this();
-                okCallback_(thisPtr);
+                status_ = ConnectStatus::Ok;
+                if (okCallback_)
+                {
+                    auto thisPtr = shared_from_this();
+                    okCallback_(thisPtr);
+                }
+            }
+            else
+            {
+                startSetCharacterSet();
+                return;
             }
         }
         setChannel();
@@ -320,8 +344,62 @@ void MysqlConnection::handleEvent()
                 return;
         }
     }
+    else if (status_ == ConnectStatus::SettingCharacterSet)
+    {
+        continueSetCharacterSet(status);
+    }
 }
-
+void MysqlConnection::continueSetCharacterSet(int status)
+{
+    int err;
+    waitStatus_ = mysql_set_character_set_cont(&err, mysqlPtr_.get(), status);
+    if (waitStatus_ == 0)
+    {
+        if (err)
+        {
+            LOG_ERROR << "Error(" << err << ") \""
+                      << mysql_error(mysqlPtr_.get()) << "\"";
+            LOG_ERROR << "Failed to mysql_real_connect()";
+            handleClosed();
+            return;
+        }
+        status_ = ConnectStatus::Ok;
+        if (okCallback_)
+        {
+            auto thisPtr = shared_from_this();
+            okCallback_(thisPtr);
+        }
+    }
+    setChannel();
+}
+void MysqlConnection::startSetCharacterSet()
+{
+    int err;
+    waitStatus_ = mysql_set_character_set_start(&err,
+                                                mysqlPtr_.get(),
+                                                characterSet_.data());
+    if (waitStatus_ == 0)
+    {
+        if (err)
+        {
+            LOG_ERROR << "error";
+            loop_->queueInLoop(
+                [thisPtr = shared_from_this()] { thisPtr->outputError(); });
+            return;
+        }
+        status_ = ConnectStatus::Ok;
+        if (okCallback_)
+        {
+            auto thisPtr = shared_from_this();
+            okCallback_(thisPtr);
+        }
+    }
+    else
+    {
+        status_ = ConnectStatus::SettingCharacterSet;
+    }
+    setChannel();
+}
 void MysqlConnection::execSqlInLoop(
     string_view &&sql,
     size_t paraNum,

@@ -40,6 +40,7 @@ enum class ConnectStatus
 {
     None = 0,
     Connecting,
+    SettingCharacterSet,
     Ok,
     Bad
 };
