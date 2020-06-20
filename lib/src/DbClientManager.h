@@ -51,7 +51,8 @@ class DbClientManager : public trantor::NonCopyable
                         const size_t connectionNum,
                         const std::string &filename,
                         const std::string &name,
-                        const bool isFast);
+                        const bool isFast,
+                        const std::string &characterSet);
     bool areAllDbClientsAvailable() const noexcept;
 
   private:

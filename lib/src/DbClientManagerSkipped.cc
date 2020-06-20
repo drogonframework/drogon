@@ -36,7 +36,8 @@ void DbClientManager::createDbClient(const std::string &dbType,
                                      const size_t connectionNum,
                                      const std::string &filename,
                                      const std::string &name,
-                                     const bool isFast)
+                                     const bool isFast,
+                                     const std::string &characterSet)
 {
     LOG_FATAL << "No database is supported by drogon, please install the "
                  "database development library first.";

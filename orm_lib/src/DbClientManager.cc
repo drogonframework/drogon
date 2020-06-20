@@ -94,7 +94,8 @@ void DbClientManager::createDbClient(const std::string &dbType,
                                      const size_t connectionNum,
                                      const std::string &filename,
                                      const std::string &name,
-                                     const bool isFast)
+                                     const bool isFast,
+                                     const std::string &characterSet)
 {
     auto connStr = utils::formattedString("host=%s port=%u dbname=%s user=%s",
                                           host.c_str(),
@@ -108,6 +109,11 @@ void DbClientManager::createDbClient(const std::string &dbType,
     }
     std::string type = dbType;
     std::transform(type.begin(), type.end(), type.begin(), tolower);
+    if (!characterSet.empty())
+    {
+        connStr += " client_encoding=";
+        connStr += characterSet;
+    }
     DbInfo info;
     info.connectionInfo_ = connStr;
     info.connectionNumber_ = connectionNum;

@@ -47,6 +47,9 @@
             //is_fast: false by default, if it is true, the client is faster but user can't call
             //any synchronous interface of it.
             "is_fast": false,
+            //client_encoding: The character set used by the client. it is empty string by default which 
+            //means use the default character set.
+            //"client_encoding": "",
             //connection_number: 1 by default, if the 'is_fast' is true, the number is the number of  
             //connections per IO thread, otherwise it is the total number of all connections.  
             "connection_number": 1
@@ -114,7 +117,7 @@
             //is_recursive: true by default. If it is set to false, files in sub directories can't be accessed.
             "is_recursive": true,
             //filters: string array, the filters applied to the location.
-            "filters":[]
+            "filters": []
         }],
         //max_connections: maximum connections number,100000 by default
         "max_connections": 100000,

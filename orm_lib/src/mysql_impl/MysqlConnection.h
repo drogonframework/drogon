@@ -96,10 +96,11 @@ class MysqlConnection : public DbConnection,
         std::vector<int> &&format,
         ResultCallback &&rcb,
         std::function<void(const std::exception_ptr &)> &&exceptCallback);
-
+    void startSetCharacterSet();
+    void continueSetCharacterSet(int status);
     std::unique_ptr<trantor::Channel> channelPtr_;
     std::shared_ptr<MYSQL> mysqlPtr_;
-
+    std::string characterSet_;
     void handleTimeout();
 
     void handleClosed();
