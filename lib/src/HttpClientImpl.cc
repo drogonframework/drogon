@@ -192,6 +192,11 @@ HttpClientImpl::HttpClientImpl(trantor::EventLoop *loop,
 HttpClientImpl::~HttpClientImpl()
 {
     LOG_TRACE << "Deconstruction HttpClient";
+    if (resolverPtr_ && !(loop_->isInLoopThread()))
+    {
+        // Make sure the resolverPtr_ is destroyed in the correct thread.
+        loop_->queueInLoop([reolverPtr = resolverPtr_]() {});
+    }
 }
 
 void HttpClientImpl::sendRequest(const drogon::HttpRequestPtr &req,
