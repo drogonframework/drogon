@@ -1058,11 +1058,27 @@ class HttpAppFramework : public trantor::NonCopyable
      */
     virtual orm::DbClientPtr getFastDbClient(
         const std::string &name = "default") = 0;
+
     /**
      * @brief Check if all database clients in the framework are available
      * (connect to the database successfully).
      */
     virtual bool areAllDbClientsAvailable() const noexcept = 0;
+
+    /**
+     * @brief This method is to enable or disable the unicode escaping (\u) in
+     * the json string of HTTP responses or requests. it works (disable
+     * successfully) when the version of JsonCpp >= 1.9.3, the unicode escaping
+     * is enabled by default.
+     */
+    virtual HttpAppFramework &setUnicodeEscapingInJson(
+        bool enable) noexcept = 0;
+
+    /**
+     * @brief Check if the unicode escaping is used in the json string of HTTP
+     * requests and responses.
+     */
+    virtual bool isUnicodeEscapingUsedInJson() const noexcept = 0;
 
     /// Create a database client
     /**

@@ -13,6 +13,7 @@ void JsonTestController::asyncHandleHttpRequest(
         Json::Value user;
         user["id"] = i;
         user["name"] = "none";
+        user["c_name"] = "张三";
         array.append(user);
     }
     json["rows"] = array;

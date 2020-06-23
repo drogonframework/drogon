@@ -373,6 +373,18 @@ class HttpAppFrameworkImpl : public HttpAppFramework
         return running_;
     }
 
+    virtual HttpAppFramework &setUnicodeEscapingInJson(
+        bool enable) noexcept override
+    {
+        usingUnicodeEscaping_ = enable;
+        return *this;
+    }
+
+    virtual bool isUnicodeEscapingUsedInJson() const noexcept override
+    {
+        return usingUnicodeEscaping_;
+    }
+
     virtual trantor::EventLoop *getLoop() const override;
 
     virtual trantor::EventLoop *getIOLoop(size_t id) const override;
@@ -543,6 +555,7 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     bool useSendfile_{true};
     bool useGzip_{true};
     bool useBrotli_{false};
+    bool usingUnicodeEscaping_{true};
     size_t clientMaxBodySize_{1024 * 1024};
     size_t clientMaxMemoryBodySize_{64 * 1024};
     size_t clientMaxWebSocketMessageSize_{128 * 1024};

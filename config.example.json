@@ -136,6 +136,8 @@
         //files is the path where the csp files locate. If the path isn't prefixed with /, it is relative 
         //path of the current working directory.
         "dynamic_views_output_path": "",
+        //enable_unicode_escaping_in_json: true by default, enable unicode escaping in json.
+        "enable_unicode_escaping_in_json": true,
         //log: Set log output, drogon output logs to stdout by default
         "log": {
             //log_path: Log file path,empty by default,in which case,logs are output to the stdout
