@@ -465,6 +465,10 @@ HttpRequestPtr HttpRequest::newHttpJsonRequest(const Json::Value &data)
     std::call_once(once, []() {
         builder["commentStyle"] = "None";
         builder["indentation"] = "";
+        if (!app().isUnicodeEscapingUsedInJson())
+        {
+            builder["emitUTF8"] = true;
+        }
     });
     auto req = std::make_shared<HttpRequestImpl>(nullptr);
     req->setMethod(drogon::Get);

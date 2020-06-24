@@ -91,6 +91,10 @@ void HttpResponseImpl::generateBodyFromJson()
     std::call_once(once, []() {
         builder["commentStyle"] = "None";
         builder["indentation"] = "";
+        if (!app().isUnicodeEscapingUsedInJson())
+        {
+            builder["emitUTF8"] = true;
+        }
     });
     setBody(writeString(builder, *jsonPtr_));
 }

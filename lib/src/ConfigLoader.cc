@@ -367,6 +367,9 @@ static void loadApp(const Json::Value &app)
         }
     }
 #endif
+    auto unicodeEscaping =
+        app.get("enable_unicode_escaping_in_json", true).asBool();
+    drogon::app().setUnicodeEscapingInJson(unicodeEscaping);
     // log
     loadLogSetting(app["log"]);
     // run as daemon
