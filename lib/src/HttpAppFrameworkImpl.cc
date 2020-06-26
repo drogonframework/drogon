@@ -1,6 +1,6 @@
 /**
  *
- *  HttpAppFrameworkImpl.cc
+ *  @file HttpAppFrameworkImpl.cc
  *  An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
@@ -810,16 +810,19 @@ HttpAppFramework::~HttpAppFramework()
 void HttpAppFrameworkImpl::forward(
     const HttpRequestPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback,
-    const std::string &hostString)
+    const std::string &hostString,
+    double timeout)
 {
     forward(std::dynamic_pointer_cast<HttpRequestImpl>(req),
             std::move(callback),
-            hostString);
+            hostString,
+            timeout);
 }
 void HttpAppFrameworkImpl::forward(
     const HttpRequestImplPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback,
-    const std::string &hostString)
+    const std::string &hostString,
+    double timeout)
 {
     if (hostString.empty())
     {
@@ -864,7 +867,8 @@ void HttpAppFrameworkImpl::forward(
                 {
                     callback(HttpResponse::newNotFoundResponse());
                 }
-            });
+            },
+            timeout);
     }
 }
 

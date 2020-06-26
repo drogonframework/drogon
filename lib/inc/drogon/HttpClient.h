@@ -1,6 +1,6 @@
 /**
  *
- *  HttpClient.h
+ *  @file HttpClient.h
  *
  *  An Tao
  *
@@ -52,13 +52,19 @@ class HttpClient : public trantor::NonCopyable
      * @param req The request sent to the server.
      * @param callback The callback is called when the response is received from
      * the server.
+     * @param timeout In seconds. If the response is not received within the
+     * timeout, the callback is called with `ReqResult::Timeout` and an empty
+     * response. The zero value by default disables the timeout.
+     *
      * @note
      * The request object is altered(some headers are added to it) before it is
      * sent, so calling this method with a same request object in different
      * thread is dangerous.
+     * Please be careful when using timeout on an non-idempotent request.
      */
     virtual void sendRequest(const HttpRequestPtr &req,
-                             const HttpReqCallback &callback) = 0;
+                             const HttpReqCallback &callback,
+                             double timeout = 0) = 0;
 
     /**
      * @brief Send a request asynchronously to the server
@@ -66,31 +72,46 @@ class HttpClient : public trantor::NonCopyable
      * @param req The request sent to the server.
      * @param callback The callback is called when the response is received from
      * the server.
+     * @param timeout In seconds. If the response is not received within
+     * the timeout, the callback is called with `ReqResult::Timeout` and an
+     * empty response. The zero value by default disables the timeout.
+     *
      * @note
      * The request object is altered(some headers are added to it) before it is
      * sent, so calling this method with a same request object in different
      * thread is dangerous.
+     * Please be careful when using timeout on an non-idempotent request.
      */
     virtual void sendRequest(const HttpRequestPtr &req,
-                             HttpReqCallback &&callback) = 0;
+                             HttpReqCallback &&callback,
+                             double timeout = 0) = 0;
 
     /**
      * @brief Send a request synchronously to the server and return the
      * response.
      *
      * @param req
+     * @param timeout In seconds. If the response is not received within the
+     * timeout, the `ReqResult::Timeout` and an empty response is returned. The
+     * zero value by default disables the timeout.
+     *
      * @return std::pair<ReqResult, HttpResponsePtr>
      * @note Never call this function in the event loop thread of the
      * client (partially in the callback function of the asynchronous
      * sendRequest method), otherwise the thread will be blocked forever.
+     * Please be careful when using timeout on an non-idempotent request.
      */
-    std::pair<ReqResult, HttpResponsePtr> sendRequest(const HttpRequestPtr &req)
+    std::pair<ReqResult, HttpResponsePtr> sendRequest(const HttpRequestPtr &req,
+                                                      double timeout = 0)
     {
         std::promise<std::pair<ReqResult, HttpResponsePtr>> prom;
         auto f = prom.get_future();
-        sendRequest(req, [&prom](ReqResult r, const HttpResponsePtr &resp) {
-            prom.set_value({r, resp});
-        });
+        sendRequest(
+            req,
+            [&prom](ReqResult r, const HttpResponsePtr &resp) {
+                prom.set_value({r, resp});
+            },
+            timeout);
         return f.get();
     }
 

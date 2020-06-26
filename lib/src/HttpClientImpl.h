@@ -1,6 +1,6 @@
 /**
  *
- *  HttpClientImpl.h
+ *  @file HttpClientImpl.h
  *  An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
@@ -35,9 +35,11 @@ class HttpClientImpl : public HttpClient,
                    bool useSSL = false);
     HttpClientImpl(trantor::EventLoop *loop, const std::string &hostString);
     virtual void sendRequest(const HttpRequestPtr &req,
-                             const HttpReqCallback &callback) override;
+                             const HttpReqCallback &callback,
+                             double timeout = 0) override;
     virtual void sendRequest(const HttpRequestPtr &req,
-                             HttpReqCallback &&callback) override;
+                             HttpReqCallback &&callback,
+                             double timeout = 0) override;
     virtual trantor::EventLoop *getLoop() override
     {
         return loop_;
@@ -81,7 +83,10 @@ class HttpClientImpl : public HttpClient,
     void sendReq(const trantor::TcpConnectionPtr &connPtr,
                  const HttpRequestPtr &req);
     void sendRequestInLoop(const HttpRequestPtr &req,
-                           const HttpReqCallback &callback);
+                           HttpReqCallback &&callback);
+    void sendRequestInLoop(const HttpRequestPtr &req,
+                           HttpReqCallback &&callback,
+                           double timeout);
     void handleCookies(const HttpResponseImplPtr &resp);
     void createTcpClient();
     std::queue<std::pair<HttpRequestPtr, HttpReqCallback>> pipeliningCallbacks_;
