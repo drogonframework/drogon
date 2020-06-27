@@ -17,6 +17,7 @@
 #include <drogon/utils/Utilities.h>
 #include <drogon/utils/string_view.h>
 #include <regex>
+#include <cctype>
 
 using namespace drogon;
 using namespace drogon::orm;
