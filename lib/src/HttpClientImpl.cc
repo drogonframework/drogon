@@ -1,6 +1,6 @@
 /**
  *
- *  HttpClientImpl.cc
+ *  @file HttpClientImpl.cc
  *  An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
@@ -200,25 +200,61 @@ HttpClientImpl::~HttpClientImpl()
 }
 
 void HttpClientImpl::sendRequest(const drogon::HttpRequestPtr &req,
-                                 const drogon::HttpReqCallback &callback)
+                                 const drogon::HttpReqCallback &callback,
+                                 double timeout)
 {
     auto thisPtr = shared_from_this();
-    loop_->runInLoop([thisPtr, req, callback]() {
-        thisPtr->sendRequestInLoop(req, callback);
+    loop_->runInLoop([thisPtr, req, callback = callback, timeout]() mutable {
+        thisPtr->sendRequestInLoop(req, std::move(callback), timeout);
     });
 }
 
 void HttpClientImpl::sendRequest(const drogon::HttpRequestPtr &req,
-                                 drogon::HttpReqCallback &&callback)
+                                 drogon::HttpReqCallback &&callback,
+                                 double timeout)
 {
     auto thisPtr = shared_from_this();
-    loop_->runInLoop([thisPtr, req, callback = std::move(callback)]() {
-        thisPtr->sendRequestInLoop(req, callback);
-    });
+    loop_->runInLoop(
+        [thisPtr, req, callback = std::move(callback), timeout]() mutable {
+            thisPtr->sendRequestInLoop(req, std::move(callback), timeout);
+        });
 }
-
+void HttpClientImpl::sendRequestInLoop(const HttpRequestPtr &req,
+                                       HttpReqCallback &&callback,
+                                       double timeout)
+{
+    if (timeout <= 0)
+    {
+        sendRequestInLoop(req, std::move(callback));
+    }
+    else
+    {
+        auto timeoutFlag = std::make_shared<bool>(false);
+        auto callbackPtr =
+            std::make_shared<drogon::HttpReqCallback>(std::move(callback));
+        loop_->runAfter(timeout, [timeoutFlag, callbackPtr] {
+            if (*timeoutFlag)
+            {
+                return;
+            }
+            *timeoutFlag = true;
+            (*callbackPtr)(ReqResult::Timeout, nullptr);
+        });
+        sendRequestInLoop(req,
+                          [timeoutFlag,
+                           callbackPtr](ReqResult r,
+                                        const HttpResponsePtr &resp) {
+                              if (*timeoutFlag)
+                              {
+                                  return;
+                              }
+                              *timeoutFlag = true;
+                              (*callbackPtr)(r, resp);
+                          });
+    }
+}
 void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
-                                       const drogon::HttpReqCallback &callback)
+                                       drogon::HttpReqCallback &&callback)
 {
     loop_->assertInLoopThread();
     if (!static_cast<drogon::HttpRequestImpl *>(req.get())->passThrough())
@@ -246,7 +282,8 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
         requestsBuffer_.push(
             {req,
              [thisPtr = shared_from_this(),
-              callback](ReqResult result, const HttpResponsePtr &response) {
+              callback = std::move(callback)](ReqResult result,
+                                              const HttpResponsePtr &response) {
                  callback(result, response);
              }});
         if (!dns_)
@@ -338,8 +375,8 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
                 sendReq(connPtr, req);
                 pipeliningCallbacks_.push(
                     {req,
-                     [thisPtr, callback](ReqResult result,
-                                         const HttpResponsePtr &response) {
+                     [thisPtr, callback = std::move(callback)](
+                         ReqResult result, const HttpResponsePtr &response) {
                          callback(result, response);
                      }});
             }
@@ -347,8 +384,8 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
             {
                 requestsBuffer_.push(
                     {req,
-                     [thisPtr, callback](ReqResult result,
-                                         const HttpResponsePtr &response) {
+                     [thisPtr, callback = std::move(callback)](
+                         ReqResult result, const HttpResponsePtr &response) {
                          callback(result, response);
                      }});
             }
@@ -357,8 +394,8 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
         {
             requestsBuffer_.push(
                 {req,
-                 [thisPtr, callback](ReqResult result,
-                                     const HttpResponsePtr &response) {
+                 [thisPtr, callback = std::move(callback)](
+                     ReqResult result, const HttpResponsePtr &response) {
                      callback(result, response);
                  }});
         }

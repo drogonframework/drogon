@@ -1,6 +1,6 @@
 /**
  *
- *  HttpAppFramework.h
+ *  @file HttpAppFramework.h
  *  An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
@@ -569,6 +569,9 @@ class HttpAppFramework : public trantor::NonCopyable
         http://[::1]:8080/
         @endcode
      *
+     * @param timeout See the timeout parameter of the sendRequest method of the
+     * HttpClient class. this parameter is only valid when the hostString is not
+     * empty.
      * @param callback is called when the response is created.
      *
      * @note
@@ -583,7 +586,8 @@ class HttpAppFramework : public trantor::NonCopyable
     virtual void forward(
         const HttpRequestPtr &req,
         std::function<void(const HttpResponsePtr &)> &&callback,
-        const std::string &hostString = "") = 0;
+        const std::string &hostString = "",
+        double timeout = 0) = 0;
 
     /// Get information about the handlers registered to drogon
     /**

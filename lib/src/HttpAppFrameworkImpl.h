@@ -1,6 +1,6 @@
 /**
  *
- *  HttpAppFrameworkImpl.h
+ *  @file HttpAppFrameworkImpl.h
  *  An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
@@ -93,11 +93,13 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     virtual void forward(
         const HttpRequestPtr &req,
         std::function<void(const HttpResponsePtr &)> &&callback,
-        const std::string &hostString = "") override;
+        const std::string &hostString = "",
+        double timeout = 0) override;
 
     void forward(const HttpRequestImplPtr &req,
                  std::function<void(const HttpResponsePtr &)> &&callback,
-                 const std::string &hostString);
+                 const std::string &hostString,
+                 double timeout = 0);
 
     virtual HttpAppFramework &registerBeginningAdvice(
         const std::function<void()> &advice) override
