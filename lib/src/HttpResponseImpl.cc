@@ -123,21 +123,35 @@ HttpResponsePtr HttpResponse::newNotFoundResponse()
             static std::once_flag threadOnce;
             static IOThreadStorage<HttpResponsePtr> thread404Pages;
             std::call_once(threadOnce, [] {
-                thread404Pages.init([](drogon::HttpResponsePtr &resp,
-                                       size_t index) {
-                    HttpViewData data;
-                    data.insert("version", drogon::getVersion());
-                    resp = HttpResponse::newHttpViewResponse("drogon::NotFound",
-                                                             data);
-                    resp->setStatusCode(k404NotFound);
-                    resp->setExpiredTime(0);
-                });
+                thread404Pages.init(
+                    [](drogon::HttpResponsePtr &resp, size_t index) {
+                        if (HttpAppFrameworkImpl::instance()
+                                .isUsingCustomErrorHandler())
+                        {
+                            resp = app().getCustomErrorHandler()(k404NotFound);
+                            resp->setExpiredTime(0);
+                        }
+                        else
+                        {
+                            HttpViewData data;
+                            data.insert("version", drogon::getVersion());
+                            resp = HttpResponse::newHttpViewResponse(
+                                "drogon::NotFound", data);
+                            resp->setStatusCode(k404NotFound);
+                            resp->setExpiredTime(0);
+                        }
+                    });
             });
             LOG_TRACE << "Use cached 404 response";
             return thread404Pages.getThreadData();
         }
         else
         {
+            if (HttpAppFrameworkImpl::instance().isUsingCustomErrorHandler())
+            {
+                auto resp = app().getCustomErrorHandler()(k404NotFound);
+                return resp;
+            }
             HttpViewData data;
             data.insert("version", drogon::getVersion());
             auto notFoundResp =

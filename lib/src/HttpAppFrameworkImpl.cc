@@ -980,6 +980,7 @@ HttpAppFramework &HttpAppFrameworkImpl::setCustomErrorHandler(
     std::function<HttpResponsePtr(HttpStatusCode)> &&resp_generator)
 {
     customErrorHandler_ = std::move(resp_generator);
+    usingCustomErrorHandler_ = true;
     return *this;
 }
 

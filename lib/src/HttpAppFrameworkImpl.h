@@ -481,6 +481,10 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     virtual bool areAllDbClientsAvailable() const noexcept override;
     const std::function<HttpResponsePtr(HttpStatusCode)>
         &getCustomErrorHandler() const override;
+    bool isUsingCustomErrorHandler() const
+    {
+        return usingCustomErrorHandler_;
+    }
 
   private:
     virtual void registerHttpController(
@@ -558,6 +562,7 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     bool useGzip_{true};
     bool useBrotli_{false};
     bool usingUnicodeEscaping_{true};
+    bool usingCustomErrorHandler_{false};
     size_t clientMaxBodySize_{1024 * 1024};
     size_t clientMaxMemoryBodySize_{64 * 1024};
     size_t clientMaxWebSocketMessageSize_{128 * 1024};
