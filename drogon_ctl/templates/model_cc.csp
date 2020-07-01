@@ -783,8 +783,6 @@ void [[className]]::updateByJson(const Json::Value &pJson) noexcept(false)
             $$<<"    return "<<col.colValName_<<"_;\n";
             $$<<"}\n";
  
-            if(!col.isAutoVal_)
-            {
                 $$<<"void "<<className<<"::set"<<col.colTypeName_<<"(const "<<col.colType_<<" &p"<<col.colTypeName_<<") noexcept\n";
                 $$<<"{\n";
                 if(col.colDatabaseType_=="date")
@@ -824,7 +822,7 @@ void [[className]]::updateByJson(const Json::Value &pJson) noexcept(false)
                     $$<<"    dirtyFlag_["<<i<<"] = true;\n";
                     $$<<"}\n";
                 }
-            }
+
             if(col.isPrimaryKey_&&@@.get<int>("hasPrimaryKey")==1)
             {
                 $$<<"const typename "<<className<<"::PrimaryKeyType & "<<className<<"::getPrimaryKey() const\n";
