@@ -31,8 +31,8 @@ using namespace drogon::orm;
 #define RED "\033[31m"   /* Red */
 #define GREEN "\033[32m" /* Green */
 
-constexpr int postgre_tests = 42;
-constexpr int mysql_tests = 44;
+constexpr int postgre_tests = 43;
+constexpr int mysql_tests = 45;
 constexpr int sqlite_tests = 47;
 
 int test_count = 0;
@@ -695,6 +695,11 @@ void doPostgreTest(const drogon::orm::DbClientPtr &clientPtr)
     {
         auto user = mapper.findByPrimaryKey(2);
         testOutput(true, "postgresql - ORM mapper synchronous interface(0)");
+        Users newUser;
+        newUser.setId(user.getValueOfId());
+        newUser.setSalt("xxx");
+        auto c = mapper.update(newUser);
+        testOutput(c == 1, "postgresql - ORM mapper synchronous interface(1)");
     }
     catch (const DrogonDbException &e)
     {
@@ -1308,6 +1313,11 @@ void doMysqlTest(const drogon::orm::DbClientPtr &clientPtr)
     {
         auto user = mapper.findByPrimaryKey(1);
         testOutput(true, "mysql - ORM mapper synchronous interface(0)");
+        Users newUser;
+        newUser.setId(user.getValueOfId());
+        newUser.setSalt("xxx");
+        auto c = mapper.update(newUser);
+        testOutput(c == 1, "mysql - ORM mapper synchronous interface(1)");
     }
     catch (const DrogonDbException &e)
     {

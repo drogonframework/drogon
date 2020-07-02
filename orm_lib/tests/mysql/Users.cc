@@ -524,6 +524,12 @@ const std::shared_ptr<int32_t> &Users::getId() const noexcept
 {
     return id_;
 }
+void Users::setId(const int32_t &pId) noexcept
+{
+    id_ = std::make_shared<int32_t>(pId);
+    dirtyFlag_[0] = true;
+}
+
 const typename Users::PrimaryKeyType &Users::getPrimaryKey() const
 {
     assert(id_);
@@ -862,12 +868,37 @@ void Users::outputArgs(drogon::orm::internal::SqlBinder &binder) const
 const std::vector<std::string> Users::updateColumns() const
 {
     std::vector<std::string> ret;
-    for (size_t i = 0; i < sizeof(dirtyFlag_); i++)
+    if (dirtyFlag_[1])
     {
-        if (dirtyFlag_[i])
-        {
-            ret.push_back(getColumnName(i));
-        }
+        ret.push_back(getColumnName(1));
+    }
+    if (dirtyFlag_[2])
+    {
+        ret.push_back(getColumnName(2));
+    }
+    if (dirtyFlag_[3])
+    {
+        ret.push_back(getColumnName(3));
+    }
+    if (dirtyFlag_[4])
+    {
+        ret.push_back(getColumnName(4));
+    }
+    if (dirtyFlag_[5])
+    {
+        ret.push_back(getColumnName(5));
+    }
+    if (dirtyFlag_[6])
+    {
+        ret.push_back(getColumnName(6));
+    }
+    if (dirtyFlag_[7])
+    {
+        ret.push_back(getColumnName(7));
+    }
+    if (dirtyFlag_[8])
+    {
+        ret.push_back(getColumnName(8));
     }
     return ret;
 }
