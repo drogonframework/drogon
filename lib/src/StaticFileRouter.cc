@@ -64,6 +64,11 @@ void StaticFileRouter::route(
         callback(app().getCustomErrorHandler()(k403Forbidden));
         return;
     }
+    if (req->method() != Get)
+    {
+        callback(app().getCustomErrorHandler()(k405MethodNotAllowed));
+        return;
+    }
     auto lPath = path;
     std::transform(lPath.begin(), lPath.end(), lPath.begin(), tolower);
 
