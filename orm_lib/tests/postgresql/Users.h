@@ -6,20 +6,20 @@
  */
 
 #pragma once
-#include <drogon/orm/Field.h>
-#include <drogon/orm/Mapper.h>
 #include <drogon/orm/Result.h>
 #include <drogon/orm/Row.h>
+#include <drogon/orm/Field.h>
 #include <drogon/orm/SqlBinder.h>
-#include <json/json.h>
-#include <stdint.h>
+#include <drogon/orm/Mapper.h>
 #include <trantor/utils/Date.h>
 #include <trantor/utils/Logger.h>
-#include <iostream>
-#include <memory>
+#include <json/json.h>
 #include <string>
-#include <tuple>
+#include <memory>
 #include <vector>
+#include <tuple>
+#include <stdint.h>
+#include <iostream>
 
 using namespace drogon::orm;
 namespace drogon
@@ -30,7 +30,6 @@ class DbClient;
 using DbClientPtr = std::shared_ptr<DbClient>;
 }  // namespace orm
 }  // namespace drogon
-
 namespace drogon_model
 {
 namespace postgres
@@ -113,6 +112,7 @@ class Users
     /// Return a shared_ptr object pointing to the column const value, or an
     /// empty shared_ptr object if the column is null
     const std::shared_ptr<std::string> &getUserId() const noexcept;
+
     /// Set the value of the column user_id
     void setUserId(const std::string &pUserId) noexcept;
     void setUserId(std::string &&pUserId) noexcept;
@@ -125,6 +125,7 @@ class Users
     /// Return a shared_ptr object pointing to the column const value, or an
     /// empty shared_ptr object if the column is null
     const std::shared_ptr<std::string> &getUserName() const noexcept;
+
     /// Set the value of the column user_name
     void setUserName(const std::string &pUserName) noexcept;
     void setUserName(std::string &&pUserName) noexcept;
@@ -137,6 +138,7 @@ class Users
     /// Return a shared_ptr object pointing to the column const value, or an
     /// empty shared_ptr object if the column is null
     const std::shared_ptr<std::string> &getPassword() const noexcept;
+
     /// Set the value of the column password
     void setPassword(const std::string &pPassword) noexcept;
     void setPassword(std::string &&pPassword) noexcept;
@@ -149,6 +151,7 @@ class Users
     /// Return a shared_ptr object pointing to the column const value, or an
     /// empty shared_ptr object if the column is null
     const std::shared_ptr<std::string> &getOrgName() const noexcept;
+
     /// Set the value of the column org_name
     void setOrgName(const std::string &pOrgName) noexcept;
     void setOrgName(std::string &&pOrgName) noexcept;
@@ -161,6 +164,7 @@ class Users
     /// Return a shared_ptr object pointing to the column const value, or an
     /// empty shared_ptr object if the column is null
     const std::shared_ptr<std::string> &getSignature() const noexcept;
+
     /// Set the value of the column signature
     void setSignature(const std::string &pSignature) noexcept;
     void setSignature(std::string &&pSignature) noexcept;
@@ -173,6 +177,7 @@ class Users
     /// Return a shared_ptr object pointing to the column const value, or an
     /// empty shared_ptr object if the column is null
     const std::shared_ptr<std::string> &getAvatarId() const noexcept;
+
     /// Set the value of the column avatar_id
     void setAvatarId(const std::string &pAvatarId) noexcept;
     void setAvatarId(std::string &&pAvatarId) noexcept;
@@ -186,6 +191,9 @@ class Users
     /// empty shared_ptr object if the column is null
     const std::shared_ptr<int32_t> &getId() const noexcept;
 
+    /// Set the value of the column id
+    void setId(const int32_t &pId) noexcept;
+
     /**  For column salt  */
     /// Get the value of the column salt, returns the default value if the
     /// column is null
@@ -193,6 +201,7 @@ class Users
     /// Return a shared_ptr object pointing to the column const value, or an
     /// empty shared_ptr object if the column is null
     const std::shared_ptr<std::string> &getSalt() const noexcept;
+
     /// Set the value of the column salt
     void setSalt(const std::string &pSalt) noexcept;
     void setSalt(std::string &&pSalt) noexcept;
@@ -205,6 +214,7 @@ class Users
     /// Return a shared_ptr object pointing to the column const value, or an
     /// empty shared_ptr object if the column is null
     const std::shared_ptr<bool> &getAdmin() const noexcept;
+
     /// Set the value of the column admin
     void setAdmin(const bool &pAdmin) noexcept;
     void setAdminToNull() noexcept;

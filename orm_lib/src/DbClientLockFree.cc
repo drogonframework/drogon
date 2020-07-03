@@ -88,19 +88,8 @@ void DbClientLockFree::execSql(
     assert(paraNum == format.size());
     assert(rcb);
     loop_->assertInLoopThread();
-    if (connections_.empty())
-    {
-        try
-        {
-            throw BrokenConnection("No connection to database server");
-        }
-        catch (...)
-        {
-            exceptCallback(std::current_exception());
-        }
-        return;
-    }
-    else if (sqlCmdBuffer_.empty() && transCallbacks_.empty())
+    if (!connections_.empty() && sqlCmdBuffer_.empty() &&
+        transCallbacks_.empty())
     {
 #if (!LIBPQ_SUPPORTS_BATCH_MODE)
         for (auto &conn : connections_)

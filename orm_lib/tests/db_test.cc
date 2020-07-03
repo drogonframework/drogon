@@ -31,8 +31,8 @@ using namespace drogon::orm;
 #define RED "\033[31m"   /* Red */
 #define GREEN "\033[32m" /* Green */
 
-constexpr int postgre_tests = 42;
-constexpr int mysql_tests = 44;
+constexpr int postgre_tests = 43;
+constexpr int mysql_tests = 45;
 constexpr int sqlite_tests = 47;
 
 int test_count = 0;
@@ -695,6 +695,11 @@ void doPostgreTest(const drogon::orm::DbClientPtr &clientPtr)
     {
         auto user = mapper.findByPrimaryKey(2);
         testOutput(true, "postgresql - ORM mapper synchronous interface(0)");
+        Users newUser;
+        newUser.setId(user.getValueOfId());
+        newUser.setSalt("xxx");
+        auto c = mapper.update(newUser);
+        testOutput(c == 1, "postgresql - ORM mapper synchronous interface(1)");
     }
     catch (const DrogonDbException &e)
     {
@@ -1308,6 +1313,11 @@ void doMysqlTest(const drogon::orm::DbClientPtr &clientPtr)
     {
         auto user = mapper.findByPrimaryKey(1);
         testOutput(true, "mysql - ORM mapper synchronous interface(0)");
+        Users newUser;
+        newUser.setId(user.getValueOfId());
+        newUser.setSalt("xxx");
+        auto c = mapper.update(newUser);
+        testOutput(c == 1, "mysql - ORM mapper synchronous interface(1)");
     }
     catch (const DrogonDbException &e)
     {
@@ -1970,25 +1980,13 @@ int main(int argc, char *argv[])
         "host=127.0.0.1 port=5432 dbname=postgres user=postgres "
         "client_encoding=utf8",
         1);
-    while (!postgre_client->hasAvailableConnections())
-    {
-        std::this_thread::sleep_for(1s);
-    }
 #endif
 #if USE_MYSQL
     auto mysql_client = DbClient::newMysqlClient(
         "host=localhost port=3306 user=root client_encoding=utf8mb4", 1);
-    while (!mysql_client->hasAvailableConnections())
-    {
-        std::this_thread::sleep_for(1s);
-    }
 #endif
 #if USE_SQLITE3
     auto sqlite_client = DbClient::newSqlite3Client("filename=:memory:", 1);
-    while (!sqlite_client->hasAvailableConnections())
-    {
-        std::this_thread::sleep_for(1s);
-    }
 #endif
     LOG_DEBUG << "start!";
     std::this_thread::sleep_for(1s);

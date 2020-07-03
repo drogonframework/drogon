@@ -170,8 +170,7 @@ auto cols=@@.get<std::vector<ColumnInfo>>("columns");
             }
             $$<<"    ///Return a shared_ptr object pointing to the column const value, or an empty shared_ptr object if the column is null\n";
             $$<<"    const std::shared_ptr<"<<col.colType_<<"> &get"<<col.colTypeName_<<"() const noexcept;\n";
-            if(!col.isAutoVal_)
-            {
+
             $$<<"    ///Set the value of the column "<<col.colName_<<"\n";
             $$<<"    void set"<<col.colTypeName_<<"(const "<<col.colType_<<" &p"<<col.colTypeName_<<") noexcept;\n";
                 if(col.colType_=="std::string")
@@ -184,7 +183,7 @@ auto cols=@@.get<std::vector<ColumnInfo>>("columns");
                 {
                     $$<<"    void set"<<col.colTypeName_<<"ToNull() noexcept;\n";
                 }
-            }
+
         }
         else
             $$<<"    //FIXME!!"<<" getValueOf"<<col.colTypeName_<<"() const noexcept;\n";

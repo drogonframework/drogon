@@ -126,18 +126,7 @@ void DbClientImpl::execSql(
     ResultCallback &&rcb,
     std::function<void(const std::exception_ptr &)> &&exceptCallback)
 {
-    if (!conn)
-    {
-        try
-        {
-            throw BrokenConnection("There is no connection to PG server!");
-        }
-        catch (...)
-        {
-            exceptCallback(std::current_exception());
-        }
-        return;
-    }
+    assert(conn);
     conn->execSql(std::move(sql),
                   paraNum,
                   std::move(parameters),
@@ -167,18 +156,6 @@ void DbClientImpl::execSql(
 
         if (readyConnections_.size() == 0)
         {
-            if (busyConnections_.size() == 0)
-            {
-                try
-                {
-                    throw BrokenConnection("No connection to database server");
-                }
-                catch (...)
-                {
-                    exceptCallback(std::current_exception());
-                }
-                return;
-            }
             if (sqlCmdBuffer_.size() > 200000)
             {
                 // too many queries in buffer;
