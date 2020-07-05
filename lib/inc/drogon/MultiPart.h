@@ -1,6 +1,6 @@
 /**
  *
- *  MultiPart.h
+ *  @file MultiPart.h
  *  An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
@@ -64,6 +64,16 @@ class HttpFile
      * is saved as the filename
      */
     int saveAs(const std::string &filename) const;
+
+    /**
+     * @brief return the content of the file.
+     *
+     * @return string_view
+     */
+    string_view fileContent() const
+    {
+        return string_view{fileData(), fileLength()};
+    }
 
     /// Return the file length.
     size_t fileLength() const noexcept;

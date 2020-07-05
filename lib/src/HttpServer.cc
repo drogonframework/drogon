@@ -1,6 +1,6 @@
 /**
  *
- *  HttpServer.cc
+ *  @file HttpServer.cc
  *  An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
@@ -41,16 +41,9 @@ namespace drogon
 static HttpResponsePtr getCompressedResponse(const HttpRequestImplPtr &req,
                                              const HttpResponsePtr &response,
                                              bool isHeadMethod)
-{  // use gzip
-    LOG_TRACE << "Use gzip to compress the body";
-    auto &sendfileName =
-        static_cast<HttpResponseImpl *>(response.get())->sendfileName();
-    if (!sendfileName.empty() ||
-        response->getContentType() >= CT_APPLICATION_OCTET_STREAM ||
-        response->getBody().length() < 1024 || isHeadMethod ||
-        !(static_cast<HttpResponseImpl *>(response.get())
-              ->getHeaderBy("content-encoding")
-              .empty()))
+{
+    if (isHeadMethod ||
+        !static_cast<HttpResponseImpl *>(response.get())->shouldBeCompressed())
     {
         return response;
     }
