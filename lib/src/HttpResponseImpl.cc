@@ -1,6 +1,6 @@
 /**
  *
- *  HttpResponseImpl.cc
+ *  @file HttpResponseImpl.cc
  *  An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
@@ -80,12 +80,13 @@ HttpResponsePtr HttpResponse::newHttpJsonResponse(Json::Value &&data)
     return res;
 }
 
-void HttpResponseImpl::generateBodyFromJson()
+void HttpResponseImpl::generateBodyFromJson() const
 {
-    if (!jsonPtr_)
+    if (!jsonPtr_ || flagForSerializingJson_)
     {
         return;
     }
+    flagForSerializingJson_ = true;
     static std::once_flag once;
     static Json::StreamWriterBuilder builder;
     std::call_once(once, []() {
@@ -96,7 +97,8 @@ void HttpResponseImpl::generateBodyFromJson()
             builder["emitUTF8"] = true;
         }
     });
-    setBody(writeString(builder, *jsonPtr_));
+    bodyPtr_ = std::make_shared<HttpMessageStringBody>(
+        writeString(builder, *jsonPtr_));
 }
 
 HttpResponsePtr HttpResponse::newNotFoundResponse()
@@ -636,4 +638,15 @@ void HttpResponseImpl::parseJson() const
 
 HttpResponseImpl::~HttpResponseImpl()
 {
+}
+
+bool HttpResponseImpl::shouldBeCompressed() const
+{
+    if (!sendfileName_.empty() ||
+        contentType() >= CT_APPLICATION_OCTET_STREAM ||
+        getBody().length() < 1024 || !(getHeaderBy("content-encoding").empty()))
+    {
+        return false;
+    }
+    return true;
 }

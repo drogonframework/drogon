@@ -1,6 +1,6 @@
 /**
  *
- *  HttpResponseImpl.h
+ *  @file HttpResponseImpl.h
  *  An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
@@ -270,22 +270,25 @@ class HttpResponseImpl : public HttpResponse
         return expriedTime_;
     }
 
-    virtual const std::string &body() const override
+    virtual const char *getBodyData() const override
     {
-        if (!bodyPtr_)
+        if (!flagForSerializingJson_ && jsonPtr_)
         {
-            bodyPtr_ = std::make_shared<HttpMessageStringBody>();
+            generateBodyFromJson();
         }
-        return bodyPtr_->getString();
+        else if (!bodyPtr_)
+        {
+            return nullptr;
+        }
+        return bodyPtr_->data();
     }
-    virtual std::string &body() override
+    virtual size_t getBodyLength() const override
     {
-        if (!bodyPtr_)
-        {
-            bodyPtr_ = std::make_shared<HttpMessageStringBody>();
-        }
-        return bodyPtr_->getString();
+        if (bodyPtr_)
+            return bodyPtr_->length();
+        return 0;
     }
+
     void swap(HttpResponseImpl &that) noexcept;
     void parseJson() const;
     virtual const std::shared_ptr<Json::Value> jsonObject() const override
@@ -302,14 +305,17 @@ class HttpResponseImpl : public HttpResponse
     void setJsonObject(const Json::Value &pJson)
     {
         flagForParsingJson_ = true;
+        flagForSerializingJson_ = false;
         jsonPtr_ = std::make_shared<Json::Value>(pJson);
     }
     void setJsonObject(Json::Value &&pJson)
     {
         flagForParsingJson_ = true;
+        flagForSerializingJson_ = false;
         jsonPtr_ = std::make_shared<Json::Value>(std::move(pJson));
     }
-    void generateBodyFromJson();
+    bool shouldBeCompressed() const;
+    void generateBodyFromJson() const;
     const std::string &sendfileName() const
     {
         return sendfileName_;
@@ -387,6 +393,7 @@ class HttpResponseImpl : public HttpResponse
     mutable size_t datePos_{static_cast<size_t>(-1)};
     mutable int64_t httpStringDate_{-1};
     mutable bool flagForParsingJson_{false};
+    mutable bool flagForSerializingJson_{true};
     mutable ContentType contentType_{CT_TEXT_PLAIN};
     mutable bool flagForParsingContentType_{false};
     string_view contentTypeString_{

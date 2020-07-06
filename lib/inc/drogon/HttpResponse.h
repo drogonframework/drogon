@@ -1,5 +1,5 @@
 /**
- *  HttpResponse.h
+ *  @file HttpResponse.h
  *  An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
@@ -234,19 +234,13 @@ class HttpResponse
     }
 
     /// Get the response body.
-    virtual const std::string &body() const = 0;
-
-    /// Get the response body.
-    const std::string &getBody() const
+    string_view body() const
     {
-        return body();
+        return string_view{getBodyData(), getBodyLength()};
     }
 
     /// Get the response body.
-    virtual std::string &body() = 0;
-
-    /// Get the response body.
-    std::string &getBody()
+    string_view getBody() const
     {
         return body();
     }
@@ -362,6 +356,8 @@ class HttpResponse
 
   private:
     virtual void setBody(const char *body, size_t len) = 0;
+    virtual const char *getBodyData() const = 0;
+    virtual size_t getBodyLength() const = 0;
     virtual void setContentTypeCodeAndCustomString(ContentType type,
                                                    const char *typeString,
                                                    size_t typeStringLength) = 0;
