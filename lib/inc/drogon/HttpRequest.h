@@ -1,6 +1,6 @@
 /**
  *
- *  HttpRequest.h
+ *  @file HttpRequest.h
  *  An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
@@ -287,6 +287,16 @@ class HttpRequest
     {
         return jsonObject();
     }
+
+    /**
+     * @brief Get the error message of parsing the JSON body received from peer.
+     * This method usually is called after getting a empty shared_ptr object
+     * by the getJsonObject() method.
+     *
+     * @return const std::string& The error message. An empty string is returned
+     * when no error occurs.
+     */
+    virtual const std::string &getJsonError() const = 0;
 
     /// Get the content type
     virtual ContentType contentType() const = 0;

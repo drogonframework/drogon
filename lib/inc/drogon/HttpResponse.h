@@ -283,6 +283,16 @@ class HttpResponse
     }
 
     /**
+     * @brief Get the error message of parsing the JSON body received from peer.
+     * This method usually is called after getting a empty shared_ptr object
+     * by the getJsonObject() method.
+     *
+     * @return const std::string& The error message. An empty string is returned
+     * when no error occurs.
+     */
+    virtual const std::string &getJsonError() const = 0;
+
+    /**
      * @brief Set the reponse object to the pass-through mode or not. It's not
      * by default when a new response object is created.
      * In pass-through mode, no addtional headers (including server, date,

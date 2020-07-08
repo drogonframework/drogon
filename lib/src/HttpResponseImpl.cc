@@ -591,6 +591,7 @@ void HttpResponseImpl::swap(HttpResponseImpl &that) noexcept
     fullHeaderString_.swap(that.fullHeaderString_);
     httpString_.swap(that.httpString_);
     swap(datePos_, that.datePos_);
+    swap(jsonParsingErrorPtr_, that.jsonParsingErrorPtr_);
 }
 
 void HttpResponseImpl::clear()
@@ -599,6 +600,7 @@ void HttpResponseImpl::clear()
     version_ = Version::kHttp11;
     statusMessage_ = string_view{};
     fullHeaderString_.reset();
+    jsonParsingErrorPtr_.reset();
     sendfileName_.clear();
     headers_.clear();
     cookies_.clear();
@@ -628,11 +630,19 @@ void HttpResponseImpl::parseJson() const
             LOG_ERROR << errs;
             LOG_ERROR << "body: " << bodyPtr_->getString();
             jsonPtr_.reset();
+            jsonParsingErrorPtr_ =
+                std::make_shared<std::string>(std::move(errs));
+        }
+        else
+        {
+            jsonParsingErrorPtr_.reset();
         }
     }
     else
     {
         jsonPtr_.reset();
+        jsonParsingErrorPtr_ =
+            std::make_shared<std::string>("empty response body");
     }
 }
 
