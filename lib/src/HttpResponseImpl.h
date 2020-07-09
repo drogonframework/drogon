@@ -291,7 +291,7 @@ class HttpResponseImpl : public HttpResponse
 
     void swap(HttpResponseImpl &that) noexcept;
     void parseJson() const;
-    virtual const std::shared_ptr<Json::Value> jsonObject() const override
+    virtual const std::shared_ptr<Json::Value> &jsonObject() const override
     {
         // Not multi-thread safe but good, because we basically call this
         // function in a single thread
@@ -301,6 +301,13 @@ class HttpResponseImpl : public HttpResponse
             parseJson();
         }
         return jsonPtr_;
+    }
+    virtual const std::string &getJsonError() const override
+    {
+        const static std::string none{""};
+        if (jsonParsingErrorPtr_)
+            return *jsonParsingErrorPtr_;
+        return none;
     }
     void setJsonObject(const Json::Value &pJson)
     {
@@ -396,6 +403,7 @@ class HttpResponseImpl : public HttpResponse
     mutable bool flagForSerializingJson_{true};
     mutable ContentType contentType_{CT_TEXT_PLAIN};
     mutable bool flagForParsingContentType_{false};
+    mutable std::shared_ptr<std::string> jsonParsingErrorPtr_;
     string_view contentTypeString_{
         "Content-Type: text/html; charset=utf-8\r\n"};
     bool passThrough_{false};

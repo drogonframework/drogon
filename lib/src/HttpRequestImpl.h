@@ -1,6 +1,6 @@
 /**
  *
- *  HttpRequestImpl.h
+ *  @file HttpRequestImpl.h
  *  An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
@@ -58,12 +58,13 @@ class HttpRequestImpl : public HttpRequest
         sessionPtr_.reset();
         attributesPtr_.reset();
         cacheFilePtr_.reset();
-        expect_.clear();
+        expectPtr_.reset();
         content_.clear();
         contentType_ = CT_TEXT_PLAIN;
         flagForParsingContentType_ = false;
         contentTypeString_.clear();
         keepAlive_ = true;
+        jsonParsingErrorPtr_.reset();
     }
     trantor::EventLoop *getLoop()
     {
@@ -351,7 +352,7 @@ class HttpRequestImpl : public HttpRequest
         return attributesPtr_;
     }
 
-    virtual const std::shared_ptr<Json::Value> jsonObject() const override
+    virtual const std::shared_ptr<Json::Value> &jsonObject() const override
     {
         // Not multi-thread safe but good, because we basically call this
         // function in a single thread
@@ -427,7 +428,10 @@ class HttpRequestImpl : public HttpRequest
     }
     const std::string &expect() const
     {
-        return expect_;
+        const static std::string none{""};
+        if (expectPtr_)
+            return *expectPtr_;
+        return none;
     }
     bool keepAlive() const
     {
@@ -436,6 +440,13 @@ class HttpRequestImpl : public HttpRequest
     virtual bool isOnSecureConnection() const noexcept override
     {
         return isOnSecureConnection_;
+    }
+    virtual const std::string &getJsonError() const override
+    {
+        const static std::string none{""};
+        if (jsonParsingErrorPtr_)
+            return *jsonParsingErrorPtr_;
+        return none;
     }
 
     ~HttpRequestImpl();
@@ -482,7 +493,8 @@ class HttpRequestImpl : public HttpRequest
     trantor::InetAddress local_;
     trantor::Date creationDate_;
     std::unique_ptr<CacheFile> cacheFilePtr_;
-    std::string expect_;
+    mutable std::unique_ptr<std::string> jsonParsingErrorPtr_;
+    std::unique_ptr<std::string> expectPtr_;
     bool keepAlive_{true};
     bool isOnSecureConnection_{false};
     bool passThrough_{false};

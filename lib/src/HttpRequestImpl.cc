@@ -1,6 +1,6 @@
 /**
  *
- *  HttpRequestImpl.cc
+ *  @file HttpRequestImpl.cc
  *  An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
@@ -46,11 +46,19 @@ void HttpRequestImpl::parseJson() const
         {
             LOG_ERROR << errs;
             jsonPtr_.reset();
+            jsonParsingErrorPtr_ =
+                std::make_unique<std::string>(std::move(errs));
+        }
+        else
+        {
+            jsonParsingErrorPtr_.reset();
         }
     }
     else
     {
         jsonPtr_.reset();
+        jsonParsingErrorPtr_ =
+            std::make_unique<std::string>("content type error");
     }
 }
 void HttpRequestImpl::parseParameters() const
@@ -412,7 +420,7 @@ void HttpRequestImpl::addHeader(const char *start,
             case 6:
                 if (field == "expect")
                 {
-                    expect_ = value;
+                    expectPtr_ = std::make_unique<std::string>(value);
                 }
                 break;
             case 10:
@@ -506,12 +514,13 @@ void HttpRequestImpl::swap(HttpRequestImpl &that) noexcept
     swap(local_, that.local_);
     swap(creationDate_, that.creationDate_);
     swap(content_, that.content_);
-    swap(expect_, that.expect_);
+    swap(expectPtr_, that.expectPtr_);
     swap(contentType_, that.contentType_);
     swap(contentTypeString_, that.contentTypeString_);
     swap(keepAlive_, that.keepAlive_);
     swap(loop_, that.loop_);
     swap(flagForParsingContentType_, that.flagForParsingContentType_);
+    swap(jsonParsingErrorPtr_, that.jsonParsingErrorPtr_);
 }
 
 const char *HttpRequestImpl::methodString() const

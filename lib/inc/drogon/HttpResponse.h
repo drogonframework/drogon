@@ -276,11 +276,21 @@ class HttpResponse
     /// Get the json object from the server response.
     /// If the response is not in json format, then a empty shared_ptr is
     /// retured.
-    virtual const std::shared_ptr<Json::Value> jsonObject() const = 0;
-    const std::shared_ptr<Json::Value> getJsonObject() const
+    virtual const std::shared_ptr<Json::Value> &jsonObject() const = 0;
+    const std::shared_ptr<Json::Value> &getJsonObject() const
     {
         return jsonObject();
     }
+
+    /**
+     * @brief Get the error message of parsing the JSON body received from peer.
+     * This method usually is called after getting a empty shared_ptr object
+     * by the getJsonObject() method.
+     *
+     * @return const std::string& The error message. An empty string is returned
+     * when no error occurs.
+     */
+    virtual const std::string &getJsonError() const = 0;
 
     /**
      * @brief Set the reponse object to the pass-through mode or not. It's not

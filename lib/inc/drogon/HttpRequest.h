@@ -1,6 +1,6 @@
 /**
  *
- *  HttpRequest.h
+ *  @file HttpRequest.h
  *  An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
@@ -280,13 +280,23 @@ class HttpRequest
      * string (the part after the question mark in the URI) must be empty,
      * otherwise the method returns an empty shared_ptr object.
      */
-    virtual const std::shared_ptr<Json::Value> jsonObject() const = 0;
+    virtual const std::shared_ptr<Json::Value> &jsonObject() const = 0;
 
     /// Get the Json object of the request
-    const std::shared_ptr<Json::Value> getJsonObject() const
+    const std::shared_ptr<Json::Value> &getJsonObject() const
     {
         return jsonObject();
     }
+
+    /**
+     * @brief Get the error message of parsing the JSON body received from peer.
+     * This method usually is called after getting a empty shared_ptr object
+     * by the getJsonObject() method.
+     *
+     * @return const std::string& The error message. An empty string is returned
+     * when no error occurs.
+     */
+    virtual const std::string &getJsonError() const = 0;
 
     /// Get the content type
     virtual ContentType contentType() const = 0;
