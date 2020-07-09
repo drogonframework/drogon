@@ -280,10 +280,10 @@ class HttpRequest
      * string (the part after the question mark in the URI) must be empty,
      * otherwise the method returns an empty shared_ptr object.
      */
-    virtual const std::shared_ptr<Json::Value> jsonObject() const = 0;
+    virtual const std::shared_ptr<Json::Value> &jsonObject() const = 0;
 
     /// Get the Json object of the request
-    const std::shared_ptr<Json::Value> getJsonObject() const
+    const std::shared_ptr<Json::Value> &getJsonObject() const
     {
         return jsonObject();
     }

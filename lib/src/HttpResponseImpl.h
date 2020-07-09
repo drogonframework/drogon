@@ -291,7 +291,7 @@ class HttpResponseImpl : public HttpResponse
 
     void swap(HttpResponseImpl &that) noexcept;
     void parseJson() const;
-    virtual const std::shared_ptr<Json::Value> jsonObject() const override
+    virtual const std::shared_ptr<Json::Value> &jsonObject() const override
     {
         // Not multi-thread safe but good, because we basically call this
         // function in a single thread
