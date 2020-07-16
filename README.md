@@ -7,12 +7,13 @@
 [![Join the chat at https://gitter.im/drogon-web/community](https://badges.gitter.im/drogon-web/community.svg)](https://gitter.im/drogon-web/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Docker image](https://img.shields.io/badge/Docker-image-blue.svg)](https://cloud.docker.com/u/drogonframework/repository/docker/drogonframework/drogon)
 
+English | [简体中文](./README.zh-CN.md)
 ### Overview
 **Drogon** is a C++14/17-based HTTP application framework. Drogon can be used to easily build various types of web application server programs using C++. **Drogon** is the name of a dragon in the American TV series "Game of Thrones" that I really like.
 
 Drogon is a cross-platform framework, It supports Linux, macOS, FreeBSD, and Windows. Its main features are as follows:
 
-* Use a non-blocking I/O network lib based on epoll (kqueue under macOS/FreeBSD) to provide high-concurrency, high-performance network IO, please visit the [benchmarks](https://github.com/an-tao/drogon/wiki/13-Benchmarks) page and [TFB Live Results](https://tfb-status.techempower.com/) for more details;
+* Use a non-blocking I/O network lib based on epoll (kqueue under macOS/FreeBSD) to provide high-concurrency, high-performance network IO, please visit the [TFB Tests Results](https://www.techempower.com/benchmarks/#section=data-r19&hw=ph&test=composite) for more details;
 * Provide a completely asynchronous programming mode;
 * Support Http1.0/1.1 (server side and client side);
 * Based on template, a simple reflection mechanism is implemented to completely decouple the main program framework, controllers and views.

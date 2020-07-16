@@ -4,6 +4,38 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.0.0-beta19] - 2020-07-16
+
+### API change list
+
+- Add a method to disable unicode escaping in json string.
+
+- Add a timeout parameter when sending HTTP requests.
+
+- Add the getJsonError method.
+
+### Changed
+
+- Remove the restriction on the location of layout tags in views.
+
+- Add a way to set the character set when creating DbClient objects.
+
+- Make `GET` as the only method for accessing static files.
+
+- Modify the 404 pages generator.
+
+- Modify the DbClient class.
+
+- Optimize the HttpResponse class.
+
+### Fixed
+
+- Properly handle chunked encoding requests.
+
+- Destroy DNS resolver of HttpClient in the correct thread.
+
+- Add the header <cctype> to resolve build errors in VS2017.
+
 ## [1.0.0-beta18] - 2020-06-14
 
 ### API change list
@@ -426,7 +458,9 @@ All notable changes to this project will be documented in this file.
 
 ## [1.0.0-beta1] - 2019-06-11
 
-[Unreleased]: https://github.com/an-tao/drogon/compare/v1.0.0-beta18...HEAD
+[Unreleased]: https://github.com/an-tao/drogon/compare/v1.0.0-beta19...HEAD
+
+[1.0.0-beta19]: https://github.com/an-tao/drogon/compare/v1.0.0-beta18...v1.0.0-beta19
 
 [1.0.0-beta18]: https://github.com/an-tao/drogon/compare/v1.0.0-beta17...v1.0.0-beta18
 
