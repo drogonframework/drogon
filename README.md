@@ -70,7 +70,7 @@ int main()
 Drogon provides some interfaces for adding controller logic directly in the main() function, for example, user can register a handler like this in Drogon:
 
 ```c++
-app.registerHandler("/test?username={name}",
+app().registerHandler("/test?username={name}",
                     [](const HttpRequestPtr& req,
                        std::function<void (const HttpResponsePtr &)> &&callback,
                        const std::string &name)

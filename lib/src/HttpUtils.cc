@@ -567,7 +567,8 @@ ContentType parseContentType(const string_view &contentType)
         {"image/bmp", CT_IMAGE_BMP},
         {"image/icns", CT_IMAGE_ICNS},
         {"application/wasm", CT_APPLICATION_WASM},
-        {"text/plain", CT_TEXT_PLAIN}};
+        {"text/plain", CT_TEXT_PLAIN},
+        {"multipart/form-data", CT_MULTIPART_FORM_DATA}};
     auto iter = map_.find(contentType);
     if (iter == map_.end())
         return CT_NONE;

@@ -70,7 +70,7 @@ int main()
 当然，Drogon也提供了一些接口，使用户可以在main()函数中直接添加控制器逻辑，比如，用户可以注册一个lambda处理器到drogon框架中，如下所示：
 
 ```c++
-app.registerHandler("/test?username={name}",
+app().registerHandler("/test?username={name}",
                     [](const HttpRequestPtr& req,
                        std::function<void (const HttpResponsePtr &)> &&callback,
                        const std::string &name)
