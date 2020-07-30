@@ -30,7 +30,7 @@ function build_drogon() {
     if [ $1 -eq 1 ]; then
         cmake .. -DBUILD_TESTING=YES $cmake_gen
     else
-        cmake .. $cmake_gen
+        cmake .. -DCMAKE_BUILD_TYPE=release $cmake_gen
     fi
 
     #If errors then exit
