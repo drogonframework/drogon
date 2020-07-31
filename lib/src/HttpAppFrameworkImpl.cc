@@ -514,7 +514,6 @@ void HttpAppFrameworkImpl::run()
                                                      // TODO: new plugin
                                                  });
     }
-
     getLoop()->queueInLoop([this]() {
         // Let listener event loops run when everything is ready.
         listenerManagerPtr_->startListening();
@@ -614,11 +613,27 @@ HttpAppFramework &HttpAppFrameworkImpl::setUploadPath(
     }
     return *this;
 }
+void HttpAppFrameworkImpl::findSessionForRequest(const HttpRequestImplPtr &req)
+{
+    if (useSession_)
+    {
+        std::string sessionId = req->getCookie("JSESSIONID");
+        bool needSetJsessionid = false;
+        if (sessionId.empty())
+        {
+            sessionId = utils::getUuid();
+            needSetJsessionid = true;
+        }
+        req->setSession(
+            sessionManagerPtr_->getSession(sessionId, needSetJsessionid));
+    }
+}
 void HttpAppFrameworkImpl::onNewWebsockRequest(
     const HttpRequestImplPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback,
     const WebSocketConnectionImplPtr &wsConnPtr)
 {
+    findSessionForRequest(req);
     // Route to controller
     if (!preRoutingObservers_.empty())
     {
@@ -744,18 +759,7 @@ void HttpAppFrameworkImpl::onAsyncRequest(
         callback(resp);
         return;
     }
-    if (useSession_)
-    {
-        std::string sessionId = req->getCookie("JSESSIONID");
-        bool needSetJsessionid = false;
-        if (sessionId.empty())
-        {
-            sessionId = utils::getUuid();
-            needSetJsessionid = true;
-        }
-        req->setSession(
-            sessionManagerPtr_->getSession(sessionId, needSetJsessionid));
-    }
+    findSessionForRequest(req);
     // Route to controller
     if (!preRoutingObservers_.empty())
     {

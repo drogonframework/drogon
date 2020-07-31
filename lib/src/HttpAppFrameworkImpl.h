@@ -512,6 +512,8 @@ class HttpAppFrameworkImpl : public HttpAppFramework
                      const std::vector<HttpMethod> &validMethods,
                      const std::vector<std::string> &filters);
 
+    void findSessionForRequest(const HttpRequestImplPtr &req);
+
     // We use a uuid string as session id;
     // set sessionTimeout_=0 to make location session valid forever based on
     // cookies;
