@@ -73,7 +73,12 @@ void SessionManager::changeSessionId(const SessionPtr &sessionPtr)
     sessionPtr->setSessionId(newId);
     {
         std::lock_guard<std::mutex> lock(mapMutex_);
-        sessionMapPtr_->erase(oldId);
+        // For requests sent before setting the new session ID to the client, we
+        // reserve the old session slot for a period of time.
+        sessionMapPtr_->runAfter(10, [this, oldId = std::move(oldId)]() {
+            LOG_TRACE << "remove the old slot of the session";
+            sessionMapPtr_->erase(oldId);
+        });
         sessionMapPtr_->insert(newId, sessionPtr, timeout_);
     }
 }
