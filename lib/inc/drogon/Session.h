@@ -127,32 +127,21 @@ class Session
     /**
      * @brief Get the session ID of the current session.
      */
-    const std::string &sessionId() const
+    std::string sessionId() const
     {
+        std::lock_guard<std::mutex> lck(mutex_);
         return sessionId_;
     }
 
     /**
-     * @brief If the session ID needs to be set to the client through cookie,
-     * return true
+     * @brief Let the framework create a new session ID for this session and set
+     * it to the client.
+     * @note This method does not change the session ID now.
      */
-    bool needSetToClient() const
+    void changeSessionIdToClient()
     {
-        return needToSet_;
-    }
-    /**
-     * @brief Change the state of the session, usually called by the framework
-     */
-    void hasSet()
-    {
-        needToSet_ = false;
-    }
-    /**
-     * @brief Constructor, usually called by the framework
-     */
-    Session(const std::string &id, bool needToSet)
-        : sessionId_(id), needToSet_(needToSet)
-    {
+        needToChange_ = true;
+        needToSet_ = true;
     }
     Session() = delete;
 
@@ -162,6 +151,44 @@ class Session
     mutable std::mutex mutex_;
     std::string sessionId_;
     bool needToSet_{false};
+    bool needToChange_{false};
+    friend class SessionManager;
+    friend class HttpAppFrameworkImpl;
+    /**
+     * @brief Constructor, usually called by the framework
+     */
+    Session(const std::string &id, bool needToSet)
+        : sessionId_(id), needToSet_(needToSet)
+    {
+    }
+    /**
+     * @brief Change the state of the session, usually called by the framework
+     */
+    void hasSet()
+    {
+        needToSet_ = false;
+    }
+    /**
+     * @brief If the session ID needs to be changed.
+     *
+     */
+    bool needToChangeSessionId() const
+    {
+        return needToChange_;
+    }
+    /**
+     * @brief If the session ID needs to be set to the client through cookie,
+     * return true
+     */
+    bool needSetToClient() const
+    {
+        return needToSet_;
+    }
+    void setSessionId(const std::string &id)
+    {
+        std::lock_guard<std::mutex> lck(mutex_);
+        sessionId_ = id;
+    }
 };
 
 using SessionPtr = std::shared_ptr<Session>;

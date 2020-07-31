@@ -13,6 +13,7 @@
  */
 
 #include "SessionManager.h"
+#include <drogon/utils/Utilities.h>
 
 using namespace drogon;
 
@@ -57,9 +58,22 @@ SessionPtr SessionManager::getSession(const std::string &sessionID,
     std::lock_guard<std::mutex> lock(mapMutex_);
     if (sessionMapPtr_->findAndFetch(sessionID, sessionPtr) == false)
     {
-        sessionPtr = std::make_shared<Session>(sessionID, needToSet);
+        sessionPtr =
+            std::shared_ptr<Session>(new Session(sessionID, needToSet));
         sessionMapPtr_->insert(sessionID, sessionPtr, timeout_);
         return sessionPtr;
     }
     return sessionPtr;
+}
+
+void SessionManager::changeSessionId(const SessionPtr &sessionPtr)
+{
+    auto oldId = sessionPtr->sessionId();
+    auto newId = utils::getUuid();
+    sessionPtr->setSessionId(newId);
+    {
+        std::lock_guard<std::mutex> lock(mapMutex_);
+        sessionMapPtr_->erase(oldId);
+        sessionMapPtr_->insert(newId, sessionPtr, timeout_);
+    }
 }
