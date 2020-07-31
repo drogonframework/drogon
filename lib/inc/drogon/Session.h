@@ -166,4 +166,30 @@ class Session
 
 using SessionPtr = std::shared_ptr<Session>;
 
+class SessionStorageProvider
+{
+  public:
+    virtual ~SessionStorageProvider();
+
+    /// Atomically find and get the value of a keyword
+    /**
+     * Return true when the value is found, and the value
+     * is assigned to the value argument.
+     */
+    virtual bool findAndFetch(const std::string &key, SessionPtr &value) = 0;
+
+    /**
+     * @brief Insert a key-value pair into the storage provider.
+     *
+     * @param key The key
+     * @param value The value
+     * @param timeout The timeout in seconds, if timeout > 0, the value will be
+     * erased within the 'timeout' seconds after the last access. If the timeout
+     * is zero, the value exists until being removed explicitly.
+     */
+    virtual void insert(const std::string &key,
+                        const SessionPtr &value,
+                        size_t timeout) = 0;
+};
+
 }  // namespace drogon

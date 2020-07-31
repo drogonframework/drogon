@@ -24,20 +24,24 @@
 
 namespace drogon
 {
+std::unique_ptr<SessionStorageProvider> createCacheMapProvider(
+    trantor::EventLoop *loop,
+    size_t timeout);
+
 class SessionManager : public trantor::NonCopyable
 {
   public:
-    SessionManager(trantor::EventLoop *loop, size_t timeout);
+    SessionManager(std::unique_ptr<SessionStorageProvider> provider,
+                   size_t timeout);
     ~SessionManager()
     {
-        sessionMapPtr_.reset();
+        provider_.reset();
     }
     SessionPtr getSession(const std::string &sessionID, bool needToSet);
 
   private:
-    std::unique_ptr<CacheMap<std::string, SessionPtr>> sessionMapPtr_;
+    std::unique_ptr<SessionStorageProvider> provider_;
     std::mutex mapMutex_;
-    trantor::EventLoop *loop_;
     size_t timeout_;
 };
 }  // namespace drogon
