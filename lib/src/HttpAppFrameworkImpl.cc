@@ -686,6 +686,10 @@ void HttpAppFrameworkImpl::callCallback(
     {
         auto sessionPtr = req->getSession();
         assert(sessionPtr);
+        if (sessionPtr->needToChangeSessionId())
+        {
+            sessionManagerPtr_->changeSessionId(sessionPtr);
+        }
         if (sessionPtr->needSetToClient())
         {
             if (resp->expiredTime() >= 0)

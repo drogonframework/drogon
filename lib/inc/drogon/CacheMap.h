@@ -303,6 +303,26 @@ class CacheMap
         return loop_;
     }
 
+    /**
+     * @brief run the task function after a period of time.
+     *
+     * @param delay in seconds
+     * @param task
+     * @note This timer is a low-precision timer whose accuracy depends on the
+     * tickInterval parameter of the cache. The advantage of the timer is its
+     * low cost.
+     */
+    void runAfter(size_t delay, std::function<void()> &&task)
+    {
+        std::lock_guard<std::mutex> lock(bucketMutex_);
+        insertEntry(delay, std::make_shared<CallbackEntry>(std::move(task)));
+    }
+    void runAfter(size_t delay, const std::function<void()> &task)
+    {
+        std::lock_guard<std::mutex> lock(bucketMutex_);
+        insertEntry(delay, std::make_shared<CallbackEntry>(task));
+    }
+
   private:
     std::unordered_map<T1, MapValue> map_;
 
@@ -394,10 +414,8 @@ class CacheMap
                     }
                 }
             };
-
-            entryPtr = std::make_shared<CallbackEntry>(cb);
+            entryPtr = std::make_shared<CallbackEntry>(std::move(cb));
             map_[key].weakEntryPtr_ = entryPtr;
-
             {
                 std::lock_guard<std::mutex> lock(bucketMutex_);
                 insertEntry(delay, entryPtr);

@@ -34,6 +34,10 @@ class Cookie
         : key_(key), value_(value)
     {
     }
+    Cookie(std::string &&key, std::string &&value)
+        : key_(std::move(key)), value_(std::move(value))
+    {
+    }
     Cookie() = default;
 
     /**

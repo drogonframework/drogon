@@ -33,6 +33,7 @@ class SessionManager : public trantor::NonCopyable
         sessionMapPtr_.reset();
     }
     SessionPtr getSession(const std::string &sessionID, bool needToSet);
+    void changeSessionId(const SessionPtr &sessionPtr);
 
   private:
     std::unique_ptr<CacheMap<std::string, SessionPtr>> sessionMapPtr_;
