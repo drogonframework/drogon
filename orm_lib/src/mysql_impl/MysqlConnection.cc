@@ -123,10 +123,6 @@ MysqlConnection::MysqlConnection(trantor::EventLoop *loop,
         }
         channelPtr_ =
             std::unique_ptr<trantor::Channel>(new trantor::Channel(loop_, fd));
-        channelPtr_->setCloseCallback([=]() {
-            perror("sock close");
-            handleClosed();
-        });
         channelPtr_->setEventCallback([=]() { handleEvent(); });
         setChannel();
     });
@@ -549,9 +545,12 @@ void MysqlConnection::outputError()
 
         callback_ = nullptr;
         isWorking_ = false;
-        idleCb_();
+        if (errorNo != CR_SERVER_GONE_ERROR && errorNo != CR_SERVER_LOST)
+        {
+            idleCb_();
+        }
     }
-    if (errorNo == CR_SERVER_GONE_ERROR)
+    if (errorNo == CR_SERVER_GONE_ERROR || errorNo == CR_SERVER_LOST)
     {
         handleClosed();
     }
