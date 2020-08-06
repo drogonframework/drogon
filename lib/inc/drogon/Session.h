@@ -188,6 +188,7 @@ class Session
     {
         std::lock_guard<std::mutex> lck(mutex_);
         sessionId_ = id;
+        needToChange_ = false;
     }
 };
 
