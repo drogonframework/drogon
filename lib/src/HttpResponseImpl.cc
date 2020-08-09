@@ -22,7 +22,9 @@
 #include <stdio.h>
 #include <sys/stat.h>
 #include <trantor/utils/Logger.h>
-
+#ifdef _WIN32
+#define stat _stati64
+#endif
 using namespace trantor;
 using namespace drogon;
 
@@ -271,7 +273,7 @@ void HttpResponseImpl::makeHeaderString(trantor::MsgBuffer &buffer)
             len = snprintf(buffer.beginWrite(),
                            buffer.writableBytes(),
                            "Content-Length: %lu\r\n",
-                           static_cast<unsigned long>(bodyLength));
+                           bodyLength);
         }
         else
         {
@@ -283,8 +285,8 @@ void HttpResponseImpl::makeHeaderString(trantor::MsgBuffer &buffer)
             }
             len = snprintf(buffer.beginWrite(),
                            buffer.writableBytes(),
-                           "Content-Length: %lu\r\n",
-                           static_cast<unsigned long>(filestat.st_size));
+                           "Content-Length: %lld\r\n",
+                           filestat.st_size);
         }
         buffer.hasWritten(len);
         if (headers_.find("Connection") == headers_.end())

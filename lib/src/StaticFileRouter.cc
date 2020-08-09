@@ -23,6 +23,7 @@
 #ifndef _WIN32
 #include <sys/file.h>
 #else
+#define stat _stati64
 #define S_ISREG(m) (((m)&0170000) == (0100000))
 #define S_ISDIR(m) (((m)&0170000) == (0040000))
 #endif
