@@ -317,8 +317,7 @@ void HttpRequestImpl::appendToBuffer(trantor::MsgBuffer *output) const
         auto len = snprintf(buf,
                             sizeof(buf),
                             "Content-Length: %lu\r\n",
-                            static_cast<long unsigned int>(content.length() +
-                                                           content_.length()));
+                            content.length() + content_.length());
         output->append(buf, len);
         if (contentTypeString_.empty())
         {
