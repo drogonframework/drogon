@@ -285,7 +285,7 @@ void HttpResponseImpl::makeHeaderString(trantor::MsgBuffer &buffer)
             }
             len = snprintf(buffer.beginWrite(),
                            buffer.writableBytes(),
-                           "Content-Length: %lu\r\n",
+                           "Content-Length: %lld\r\n",
                            filestat.st_size);
         }
         buffer.hasWritten(len);
