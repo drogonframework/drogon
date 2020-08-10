@@ -426,13 +426,15 @@ void MysqlConnection::execSqlInLoop(
             seekPos = sql.find("?", pos);
             if (seekPos == std::string::npos)
             {
-                sql_.append(sql.substr(pos));
+                auto sub = sql.substr(pos);
+                sql_.append(sub.data(), sub.length());
                 pos = seekPos;
                 break;
             }
             else
             {
-                sql_.append(sql.substr(pos, seekPos - pos));
+                auto sub = sql.substr(pos, seekPos - pos);
+                sql_.append(sub.data(), sub.length());
                 pos = seekPos + 1;
                 switch (format[i])
                 {
@@ -473,12 +475,13 @@ void MysqlConnection::execSqlInLoop(
         }
         if (pos < sql.length())
         {
-            sql_.append(sql.substr(pos));
+            auto sub = sql.substr(pos);
+            sql_.append(sub.data(), sub.length());
         }
     }
     else
     {
-        sql_ = sql;
+        sql_ = std::string(sql.data(), sql.length());
     }
     LOG_TRACE << sql_;
     int err;
