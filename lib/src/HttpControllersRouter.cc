@@ -660,8 +660,11 @@ void HttpControllersRouter::doPreHandlingAdvices(
             resp->addHeader("Access-Control-Allow-Origin", origin);
         }
         resp->addHeader("Access-Control-Allow-Methods", methods);
-        resp->addHeader("Access-Control-Allow-Headers",
-                        "x-requested-with,content-type");
+        auto &headers = req->getHeaderBy("access-control-request-headers");
+        if (!headers.empty())
+        {
+            resp->addHeader("Access-Control-Allow-Headers", headers);
+        }
         callback(resp);
         return;
     }
