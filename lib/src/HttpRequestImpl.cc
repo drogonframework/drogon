@@ -316,7 +316,7 @@ void HttpRequestImpl::appendToBuffer(trantor::MsgBuffer *output) const
         char buf[64];
         auto len = snprintf(buf,
                             sizeof(buf),
-                            "Content-Length: %lu\r\n",
+                            contentLengthFormatString<decltype(content.length())>(),
                             content.length() + content_.length());
         output->append(buf, len);
         if (contentTypeString_.empty())

@@ -25,4 +25,34 @@ ContentType parseContentType(const string_view &contentType);
 const string_view &webContentTypeToString(ContentType contenttype);
 const string_view &statusCodeToString(int code);
 ContentType getContentType(const std::string &fileName);
+template <typename T>
+inline constexpr const char *contentLengthFormatString()
+{
+    return "Content-Length: %d\r\n";
+}
+template <>
+inline constexpr const char *contentLengthFormatString<unsigned int>()
+{
+    return "Content-Length: %u\r\n";
+}
+template <>
+inline constexpr const char *contentLengthFormatString<long>()
+{
+    return "Content-Length: %ld\r\n";
+}
+template <>
+inline constexpr const char *contentLengthFormatString<unsigned long>()
+{
+    return "Content-Length: %lu\r\n";
+}
+template <>
+inline constexpr const char *contentLengthFormatString<long long>()
+{
+    return "Content-Length: %lld\r\n";
+}
+template <>
+inline constexpr const char *contentLengthFormatString<unsigned long long>()
+{
+    return "Content-Length: %llu\r\n";
+}
 }  // namespace drogon
