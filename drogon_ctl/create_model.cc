@@ -624,29 +624,28 @@ void create_model::createModelClassFromSqlite3(
             pkNames.push_back(col.colName_);
             pkTypes.push_back(col.colType_);
         }
-
-        data["hasPrimaryKey"] = (int)pkNames.size();
-        if (pkNames.size() == 1)
-        {
-            data["primaryKeyName"] = pkNames[0];
-            data["primaryKeyType"] = pkTypes[0];
-        }
-        else if (pkNames.size() > 1)
-        {
-            data["primaryKeyName"] = pkNames;
-            data["primaryKeyType"] = pkTypes;
-        }
-        data["columns"] = cols;
-        std::ofstream headerFile(path + "/" + className + ".h",
-                                 std::ofstream::out);
-        std::ofstream sourceFile(path + "/" + className + ".cc",
-                                 std::ofstream::out);
-        auto templ = DrTemplateBase::newTemplate("model_h.csp");
-        headerFile << templ->genText(data);
-        templ = DrTemplateBase::newTemplate("model_cc.csp");
-        sourceFile << templ->genText(data);
-        createRestfulAPIController(data, restfulApiConfig);
     }
+    data["hasPrimaryKey"] = (int)pkNames.size();
+    if (pkNames.size() == 1)
+    {
+        data["primaryKeyName"] = pkNames[0];
+        data["primaryKeyType"] = pkTypes[0];
+    }
+    else if (pkNames.size() > 1)
+    {
+        data["primaryKeyName"] = pkNames;
+        data["primaryKeyType"] = pkTypes;
+    }
+    data["columns"] = cols;
+    std::ofstream headerFile(path + "/" + className + ".h",
+                                std::ofstream::out);
+    std::ofstream sourceFile(path + "/" + className + ".cc",
+                                std::ofstream::out);
+    auto templ = DrTemplateBase::newTemplate("model_h.csp");
+    headerFile << templ->genText(data);
+    templ = DrTemplateBase::newTemplate("model_cc.csp");
+    sourceFile << templ->genText(data);
+    createRestfulAPIController(data, restfulApiConfig);
 }
 
 void create_model::createModelFromSqlite3(
