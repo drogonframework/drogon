@@ -4,6 +4,40 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.0.0-beta20] - 2020-08-15
+
+### API change list
+
+- Provide users with a method to change the session ID of a session.
+
+### Changed
+
+- Modify parseContentType function.
+
+- Modify the docker file to build release version in docker.
+
+- Set session to requests for websockets.
+
+- Modify parseContentType function.
+
+- Change the return value type of the mktime() function in models.
+
+- Fix compilation warning of sprintf function.
+
+### Fixed
+
+- Fix a bug when saving uploaded files on Windows.
+
+- Fix a mysql issue when connections are lost.
+
+- Resolve an issue when sending big files (>=2gB) on Windows.
+
+- Fix boost::string_view compilation error of MysqlConnection class.
+
+- Set the response Access-Control-Allow-Headers header correctly for CORS.
+
+- Fix a bug in drogon_ctl when creating a model, that causes to write source files multiple times.
+
 ## [1.0.0-beta19] - 2020-07-16
 
 ### API change list
@@ -458,7 +492,9 @@ All notable changes to this project will be documented in this file.
 
 ## [1.0.0-beta1] - 2019-06-11
 
-[Unreleased]: https://github.com/an-tao/drogon/compare/v1.0.0-beta19...HEAD
+[Unreleased]: https://github.com/an-tao/drogon/compare/v1.0.0-beta20...HEAD
+
+[1.0.0-beta20]: https://github.com/an-tao/drogon/compare/v1.0.0-beta19...v1.0.0-beta20
 
 [1.0.0-beta19]: https://github.com/an-tao/drogon/compare/v1.0.0-beta18...v1.0.0-beta19
 
