@@ -59,7 +59,6 @@ class Result
     Result(const ResultImplPtr &ptr) : resultPtr_(ptr)
     {
     }
-    Result() = default;
     Result(const Result &r) noexcept = default;
     Result(Result &&) noexcept = default;
     Result &operator=(const Result &r) noexcept;
@@ -124,6 +123,9 @@ class Result
      *   insert into table_name volumn1, volumn2 values(....) returning id;
      */
     unsigned long long insertId() const noexcept;
+
+  protected:
+    Result() = default;
 
   private:
     ResultImplPtr resultPtr_;
