@@ -59,6 +59,7 @@ class Result
     Result(const ResultImplPtr &ptr) : resultPtr_(ptr)
     {
     }
+    Result() = default;
     Result(const Result &r) noexcept = default;
     Result(Result &&) noexcept = default;
     Result &operator=(const Result &r) noexcept;
