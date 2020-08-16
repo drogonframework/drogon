@@ -124,8 +124,9 @@ class Result
      */
     unsigned long long insertId() const noexcept;
 
-  protected:
+#ifdef _MSC_VER
     Result() = default;
+#endif
 
   private:
     ResultImplPtr resultPtr_;
