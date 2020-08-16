@@ -637,10 +637,9 @@ void create_model::createModelClassFromSqlite3(
         data["primaryKeyType"] = pkTypes;
     }
     data["columns"] = cols;
-    std::ofstream headerFile(path + "/" + className + ".h",
-                                std::ofstream::out);
+    std::ofstream headerFile(path + "/" + className + ".h", std::ofstream::out);
     std::ofstream sourceFile(path + "/" + className + ".cc",
-                                std::ofstream::out);
+                             std::ofstream::out);
     auto templ = DrTemplateBase::newTemplate("model_h.csp");
     headerFile << templ->genText(data);
     templ = DrTemplateBase::newTemplate("model_cc.csp");

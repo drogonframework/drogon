@@ -30,7 +30,6 @@ using namespace drogon;
 
 namespace drogon
 {
-
 // "Fri, 23 Aug 2019 12:58:03 GMT" length = 29
 static const size_t httpFullDateStringLength = 29;
 static inline void doResponseCreateAdvices(
@@ -284,10 +283,11 @@ void HttpResponseImpl::makeHeaderString(trantor::MsgBuffer &buffer)
                 LOG_SYSERR << sendfileName_ << " stat error";
                 return;
             }
-            len = snprintf(buffer.beginWrite(),
-                           buffer.writableBytes(),
-                           contentLengthFormatString<decltype(filestat.st_size)>(),
-                           filestat.st_size);
+            len = snprintf(
+                buffer.beginWrite(),
+                buffer.writableBytes(),
+                contentLengthFormatString<decltype(filestat.st_size)>(),
+                filestat.st_size);
         }
         buffer.hasWritten(len);
         if (headers_.find("Connection") == headers_.end())

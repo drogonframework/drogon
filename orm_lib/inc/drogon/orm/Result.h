@@ -124,6 +124,10 @@ class Result
      */
     unsigned long long insertId() const noexcept;
 
+#ifdef _MSC_VER
+    Result() = default;
+#endif
+
   private:
     ResultImplPtr resultPtr_;
 
@@ -142,14 +146,6 @@ class Result
     const char *getValue(SizeType row, RowSizeType column) const;
     bool isNull(SizeType row, RowSizeType column) const;
     FieldSizeType getLength(SizeType row, RowSizeType column) const;
-#ifdef _MSC_VER
-  public:
-#else
-  protected:
-#endif
-    Result()
-    {
-    }
 };
 inline void swap(Result &one, Result &two) noexcept
 {

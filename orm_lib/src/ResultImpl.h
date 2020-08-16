@@ -20,10 +20,13 @@ namespace drogon
 {
 namespace orm
 {
-class ResultImpl : public trantor::NonCopyable, public Result
+class ResultImpl : public trantor::NonCopyable
 {
   public:
     ResultImpl() = default;
+    using SizeType = Result::SizeType;
+    using RowSizeType = Result::RowSizeType;
+    using FieldSizeType = Result::FieldSizeType;
     virtual SizeType size() const noexcept = 0;
     virtual RowSizeType columns() const noexcept = 0;
     virtual const char *columnName(RowSizeType Number) const = 0;
