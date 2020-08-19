@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.0.0-beta21] - 2020-08-19
+
+### Changed
+
+- Modify the Result class in orm.
+
+### Fixed
+
+- Fix zlib link error on Windows for the latest vcpkg.
+
 ## [1.0.0-beta20] - 2020-08-15
 
 ### API change list
@@ -492,7 +502,9 @@ All notable changes to this project will be documented in this file.
 
 ## [1.0.0-beta1] - 2019-06-11
 
-[Unreleased]: https://github.com/an-tao/drogon/compare/v1.0.0-beta20...HEAD
+[Unreleased]: https://github.com/an-tao/drogon/compare/v1.0.0-beta21...HEAD
+
+[1.0.0-beta21]: https://github.com/an-tao/drogon/compare/v1.0.0-beta20...v1.0.0-beta21
 
 [1.0.0-beta20]: https://github.com/an-tao/drogon/compare/v1.0.0-beta19...v1.0.0-beta20
 
