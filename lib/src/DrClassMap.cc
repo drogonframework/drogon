@@ -43,7 +43,15 @@ void DrClassMap::registerClass(const std::string &className,
                                const DrAllocFunc &func)
 {
     LOG_TRACE << "Register class:" << className;
-    getMap().insert(std::make_pair(className, func));
+    auto &classMap = getMap();
+    if (classMap.find(className) != classMap.end())
+    {
+        LOG_ERROR << "Different classes have the same name: " << className
+                  << ", Please rename one of them or use namespaces to "
+                     "distinguish them";
+        exit(1);
+    }
+    classMap.insert(std::make_pair(className, func));
 }
 
 DrObjectBase *DrClassMap::newObject(const std::string &className)
