@@ -236,8 +236,8 @@ void MysqlConnection::handleEvent()
     if (revents & POLLPRI)
         status |= MYSQL_WAIT_EXCEPT;
     status = (status & waitStatus_);
-    if (status == 0 && waitStatus_ != 0)
-        return;
+    //if (status == 0 && waitStatus_ != 0)
+    //    return;
     MYSQL *ret;
     if (status_ == ConnectStatus::Connecting)
     {
