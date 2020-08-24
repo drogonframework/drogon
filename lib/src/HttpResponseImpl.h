@@ -240,10 +240,18 @@ class HttpResponseImpl : public HttpResponse
     virtual void setBody(const std::string &body) override
     {
         bodyPtr_ = std::make_shared<HttpMessageStringBody>(body);
+        if (passThrough_)
+        {
+            addHeader("content-length", std::to_string(bodyPtr_->length()));
+        }
     }
     virtual void setBody(std::string &&body) override
     {
         bodyPtr_ = std::make_shared<HttpMessageStringBody>(std::move(body));
+        if (passThrough_)
+        {
+            addHeader("content-length", std::to_string(bodyPtr_->length()));
+        }
     }
 
     void redirect(const std::string &url)
@@ -346,6 +354,7 @@ class HttpResponseImpl : public HttpResponse
             removeHeader("content-encoding");
             bodyPtr_ =
                 std::make_shared<HttpMessageStringBody>(move(gunzipBody));
+            addHeader("content-length", std::to_string(bodyPtr_->length()));
         }
     }
 #ifdef USE_BROTLI
@@ -358,6 +367,7 @@ class HttpResponseImpl : public HttpResponse
             removeHeader("content-encoding");
             bodyPtr_ =
                 std::make_shared<HttpMessageStringBody>(move(gunzipBody));
+            addHeader("content-length", std::to_string(bodyPtr_->length()));
         }
     }
 #endif
@@ -370,6 +380,10 @@ class HttpResponseImpl : public HttpResponse
     virtual void setBody(const char *body, size_t len) override
     {
         bodyPtr_ = std::make_shared<HttpMessageStringViewBody>(body, len);
+        if (passThrough_)
+        {
+            addHeader("content-length", std::to_string(bodyPtr_->length()));
+        }
     }
     virtual void setContentTypeCodeAndCustomString(
         ContentType type,
