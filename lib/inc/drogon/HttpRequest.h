@@ -126,6 +126,12 @@ class HttpRequest
     virtual void addHeader(const std::string &field,
                            const std::string &value) = 0;
 
+    /// Remove the header identified by the key parameter.
+    virtual void removeHeader(const std::string &key) = 0;
+
+    /// Remove the header identified by the key parameter.
+    virtual void removeHeader(std::string &&key) = 0;
+
     /// Get the cookie string identified by the field parameter
     virtual const std::string &getCookie(const std::string &field) const = 0;
 

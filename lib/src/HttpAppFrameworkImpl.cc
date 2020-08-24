@@ -865,10 +865,11 @@ void HttpAppFrameworkImpl::forward(
                                              const HttpResponsePtr &resp) {
                 if (result == ReqResult::Ok)
                 {
-                    resp->removeHeader("server");
-                    resp->removeHeader("date");
-                    resp->removeHeader("content-length");
-                    resp->removeHeader("transfer-encoding");
+                    auto respPtr =
+                        reinterpret_cast<HttpResponseImpl *>(resp.get());
+                    respPtr->removeHeaderBy("server");
+                    respPtr->removeHeaderBy("date");
+                    respPtr->removeHeaderBy("content-length");
                     callback(resp);
                 }
                 else

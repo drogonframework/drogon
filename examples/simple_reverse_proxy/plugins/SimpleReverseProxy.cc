@@ -88,7 +88,6 @@ void SimpleReverseProxy::preRouting(const HttpRequestPtr &req,
             if (result == ReqResult::Ok)
             {
                 resp->setPassThrough(true);
-                resp->removeHeader("transfer-encoding");
                 callback(resp);
             }
             else
