@@ -1,6 +1,6 @@
 /**
  *
- *  plugin_SimpleReverseProxy.cc
+ *  @file SimpleReverseProxy.cc
  *
  */
 

@@ -1,6 +1,6 @@
 /**
  *
- *  plugin_SimpleReverseProxy.h
+ *  @file SimpleReverseProxy.h
  *
  */
 

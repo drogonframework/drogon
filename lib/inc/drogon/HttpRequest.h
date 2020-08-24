@@ -336,9 +336,9 @@ class HttpRequest
     /**
      * @brief Set the request object to the pass-through mode or not. It's not
      * by default when a new request object is created.
-     * In pass-through mode, no addtional headers (including server, date,
-     * content-type and content-length, etc.) are added to the request. This
-     * mode is useful for some applications such as a proxy.
+     * In pass-through mode, no addtional headers (including user-agent,
+     * connection, etc.) are added to the request. This mode is useful for some
+     * applications such as a proxy.
      *
      * @param flag
      */
