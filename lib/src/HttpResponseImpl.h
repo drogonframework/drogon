@@ -132,27 +132,13 @@ class HttpResponseImpl : public HttpResponse
         return contentType_;
     }
 
-    virtual const std::string &getHeader(const std::string &key) const override
-    {
-        auto field = key;
-        transform(field.begin(), field.end(), field.begin(), ::tolower);
-        return getHeaderBy(field);
-    }
-
-    virtual const std::string &getHeader(std::string &&key) const override
+    virtual const std::string &getHeader(std::string key) const override
     {
         transform(key.begin(), key.end(), key.begin(), ::tolower);
         return getHeaderBy(key);
     }
 
-    virtual void removeHeader(const std::string &key) override
-    {
-        auto field = key;
-        transform(field.begin(), field.end(), field.begin(), ::tolower);
-        removeHeaderBy(field);
-    }
-
-    virtual void removeHeader(std::string &&key) override
+    virtual void removeHeader(std::string key) override
     {
         transform(key.begin(), key.end(), key.begin(), ::tolower);
         removeHeaderBy(key);
@@ -180,19 +166,16 @@ class HttpResponseImpl : public HttpResponse
         headers_.erase(lowerKey);
     }
 
-    virtual void addHeader(const std::string &key,
-                           const std::string &value) override
+    virtual void addHeader(std::string field, const std::string &value) override
     {
         fullHeaderString_.reset();
-        auto field = key;
         transform(field.begin(), field.end(), field.begin(), ::tolower);
         headers_[std::move(field)] = value;
     }
 
-    virtual void addHeader(const std::string &key, std::string &&value) override
+    virtual void addHeader(std::string field, std::string &&value) override
     {
         fullHeaderString_.reset();
-        auto field = key;
         transform(field.begin(), field.end(), field.begin(), ::tolower);
         headers_[std::move(field)] = std::move(value);
     }
