@@ -236,8 +236,6 @@ void MysqlConnection::handleEvent()
     if (revents & POLLPRI)
         status |= MYSQL_WAIT_EXCEPT;
     status = (status & waitStatus_);
-    if (status == 0 && waitStatus_ != 0)
-        return;
     MYSQL *ret;
     if (status_ == ConnectStatus::Connecting)
     {
@@ -355,7 +353,7 @@ void MysqlConnection::continueSetCharacterSet(int status)
         {
             LOG_ERROR << "Error(" << err << ") \""
                       << mysql_error(mysqlPtr_.get()) << "\"";
-            LOG_ERROR << "Failed to mysql_real_connect()";
+            LOG_ERROR << "Failed to mysql_set_character_set_cont()";
             handleClosed();
             return;
         }
@@ -378,9 +376,10 @@ void MysqlConnection::startSetCharacterSet()
     {
         if (err)
         {
-            LOG_ERROR << "error";
-            loop_->queueInLoop(
-                [thisPtr = shared_from_this()] { thisPtr->outputError(); });
+            LOG_ERROR << "Error(" << err << ") \""
+                      << mysql_error(mysqlPtr_.get()) << "\"";
+            LOG_ERROR << "Failed to mysql_set_character_set_start()";
+            handleClosed();
             return;
         }
         status_ = ConnectStatus::Ok;
