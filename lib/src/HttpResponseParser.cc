@@ -280,6 +280,10 @@ bool HttpResponseParser::parseResponse(MsgBuffer *buf)
             {
                 buf->retrieveUntil(crlf + 2);
                 status_ = HttpResponseParseStatus::kGotAll;
+                responsePtr_->addHeader("content-length",
+                                        std::to_string(
+                                            responsePtr_->getBody().length()));
+                responsePtr_->removeHeaderBy("transfer-encoding");
                 break;
             }
             else

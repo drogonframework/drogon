@@ -126,6 +126,12 @@ class HttpRequest
     virtual void addHeader(const std::string &field,
                            const std::string &value) = 0;
 
+    /// Remove the header identified by the key parameter.
+    virtual void removeHeader(const std::string &key) = 0;
+
+    /// Remove the header identified by the key parameter.
+    virtual void removeHeader(std::string &&key) = 0;
+
     /// Get the cookie string identified by the field parameter
     virtual const std::string &getCookie(const std::string &field) const = 0;
 
@@ -330,9 +336,9 @@ class HttpRequest
     /**
      * @brief Set the request object to the pass-through mode or not. It's not
      * by default when a new request object is created.
-     * In pass-through mode, no addtional headers (including server, date,
-     * content-type and content-length, etc.) are added to the request. This
-     * mode is useful for some applications such as a proxy.
+     * In pass-through mode, no addtional headers (including user-agent,
+     * connection, etc.) are added to the request. This mode is useful for some
+     * applications such as a proxy.
      *
      * @param flag
      */

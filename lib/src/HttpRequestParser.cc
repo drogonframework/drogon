@@ -419,6 +419,10 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
             {
                 buf->retrieveUntil(crlf + 2);
                 status_ = HttpRequestParseStatus::kGotAll;
+                request_->addHeader("content-length",
+                                    std::to_string(
+                                        request_->getBody().length()));
+                request_->removeHeaderBy("transfer-encoding");
                 ++requestsCounter_;
                 break;
             }

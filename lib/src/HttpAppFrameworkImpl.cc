@@ -859,16 +859,14 @@ void HttpAppFrameworkImpl::forward(
                 clientsMap[hostString] = clientPtr;
             }
         }
+        req->setPassThrough(true);
         clientPtr->sendRequest(
             req,
             [callback = std::move(callback)](ReqResult result,
                                              const HttpResponsePtr &resp) {
                 if (result == ReqResult::Ok)
                 {
-                    resp->removeHeader("server");
-                    resp->removeHeader("date");
-                    resp->removeHeader("content-length");
-                    resp->removeHeader("transfer-encoding");
+                    resp->setPassThrough(true);
                     callback(resp);
                 }
                 else

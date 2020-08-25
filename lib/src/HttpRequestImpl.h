@@ -231,6 +231,23 @@ class HttpRequestImpl : public HttpRequest
     }
 
     void addHeader(const char *start, const char *colon, const char *end);
+    virtual void removeHeader(const std::string &key) override
+    {
+        auto field = key;
+        transform(field.begin(), field.end(), field.begin(), ::tolower);
+        removeHeaderBy(field);
+    }
+
+    virtual void removeHeader(std::string &&key) override
+    {
+        transform(key.begin(), key.end(), key.begin(), ::tolower);
+        removeHeaderBy(key);
+    }
+
+    void removeHeaderBy(const std::string &lowerKey)
+    {
+        headers_.erase(lowerKey);
+    }
 
     const std::string &getHeader(const std::string &field) const override
     {

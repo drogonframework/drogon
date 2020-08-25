@@ -259,13 +259,35 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
     loop_->assertInLoopThread();
     if (!static_cast<drogon::HttpRequestImpl *>(req.get())->passThrough())
     {
-        req->addHeader("Connection", "Keep-Alive");
-        // req->addHeader("Accept", "*/*");
-        if (!domain_.empty())
+        req->addHeader("connection", "Keep-Alive");
+        req->addHeader("user-agent", "DrogonClient");
+    }
+    // Set the host header.
+    if (!domain_.empty())
+    {
+        if ((useSSL_ && serverAddr_.toPort() != 443) ||
+            (!useSSL_ && serverAddr_.toPort() != 80))
         {
-            req->addHeader("Host", domain_);
+            std::string host =
+                domain_ + ":" + std::to_string(serverAddr_.toPort());
+            req->addHeader("host", host);
         }
-        req->addHeader("User-Agent", "DrogonClient");
+        else
+        {
+            req->addHeader("host", domain_);
+        }
+    }
+    else
+    {
+        if ((useSSL_ && serverAddr_.toPort() != 443) ||
+            (!useSSL_ && serverAddr_.toPort() != 80))
+        {
+            req->addHeader("host", serverAddr_.toIpPort());
+        }
+        else
+        {
+            req->addHeader("host", serverAddr_.toIp());
+        }
     }
     for (auto &cookie : validCookies_)
     {
