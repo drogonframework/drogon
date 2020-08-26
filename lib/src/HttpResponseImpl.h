@@ -140,7 +140,6 @@ class HttpResponseImpl : public HttpResponse
 
     virtual void removeHeader(std::string key) override
     {
-        fullHeaderString_.reset();
         transform(key.begin(), key.end(), key.begin(), ::tolower);
         removeHeaderBy(key);
     }
@@ -164,6 +163,7 @@ class HttpResponseImpl : public HttpResponse
 
     void removeHeaderBy(const std::string &lowerKey)
     {
+        fullHeaderString_.reset();
         headers_.erase(lowerKey);
     }
 
