@@ -116,21 +116,30 @@ class HttpRequest
         return method();
     }
 
-    /// Get the header string identified by the field parameter
-    virtual const std::string &getHeader(const std::string &field) const = 0;
+    /// Get the header string identified by the key parameter.
+    /**
+     * @note
+     * If there is no the header, a empty string is retured.
+     * The key is case insensitive
+     */
+    virtual const std::string &getHeader(std::string key) const = 0;
 
-    /// Get the header string identified by the field parameter
-    virtual const std::string &getHeader(std::string &&field) const = 0;
+    /**
+     * @brief Set the header string identified by the field parameter
+     *
+     * @param field The field parameter is transformed to lower case before
+     * storing.
+     * @param value The value of the header.
+     */
+    virtual void addHeader(std::string field, const std::string &value) = 0;
+    virtual void addHeader(std::string field, std::string &&value) = 0;
 
-    /// Set the header string identified by the field parameter
-    virtual void addHeader(const std::string &field,
-                           const std::string &value) = 0;
-
-    /// Remove the header identified by the key parameter.
-    virtual void removeHeader(const std::string &key) = 0;
-
-    /// Remove the header identified by the key parameter.
-    virtual void removeHeader(std::string &&key) = 0;
+    /**
+     * @brief  Remove the header identified by the key parameter.
+     *
+     * @param key The key is case insensitive
+     */
+    virtual void removeHeader(std::string key) = 0;
 
     /// Get the cookie string identified by the field parameter
     virtual const std::string &getCookie(const std::string &field) const = 0;

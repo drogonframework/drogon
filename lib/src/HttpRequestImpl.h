@@ -231,14 +231,8 @@ class HttpRequestImpl : public HttpRequest
     }
 
     void addHeader(const char *start, const char *colon, const char *end);
-    virtual void removeHeader(const std::string &key) override
-    {
-        auto field = key;
-        transform(field.begin(), field.end(), field.begin(), ::tolower);
-        removeHeaderBy(field);
-    }
 
-    virtual void removeHeader(std::string &&key) override
+    virtual void removeHeader(std::string key) override
     {
         transform(key.begin(), key.end(), key.begin(), ::tolower);
         removeHeaderBy(key);
@@ -249,17 +243,7 @@ class HttpRequestImpl : public HttpRequest
         headers_.erase(lowerKey);
     }
 
-    const std::string &getHeader(const std::string &field) const override
-    {
-        auto lowField = field;
-        std::transform(lowField.begin(),
-                       lowField.end(),
-                       lowField.begin(),
-                       tolower);
-        return getHeaderBy(lowField);
-    }
-
-    const std::string &getHeader(std::string &&field) const override
+    const std::string &getHeader(std::string field) const override
     {
         std::transform(field.begin(), field.end(), field.begin(), tolower);
         return getHeaderBy(field);
@@ -326,10 +310,16 @@ class HttpRequestImpl : public HttpRequest
         content_ = std::move(body);
     }
 
-    virtual void addHeader(const std::string &key,
-                           const std::string &value) override
+    virtual void addHeader(std::string field, const std::string &value) override
     {
-        headers_[key] = value;
+        transform(field.begin(), field.end(), field.begin(), ::tolower);
+        headers_[std::move(field)] = value;
+    }
+
+    virtual void addHeader(std::string field, std::string &&value) override
+    {
+        transform(field.begin(), field.end(), field.begin(), ::tolower);
+        headers_[std::move(field)] = std::move(value);
     }
 
     virtual void addCookie(const std::string &key,
