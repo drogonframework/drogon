@@ -140,6 +140,7 @@ class HttpResponseImpl : public HttpResponse
 
     virtual void removeHeader(std::string key) override
     {
+        fullHeaderString_.reset();
         transform(key.begin(), key.end(), key.begin(), ::tolower);
         removeHeaderBy(key);
     }
@@ -334,7 +335,7 @@ class HttpResponseImpl : public HttpResponse
         {
             auto gunzipBody =
                 utils::gzipDecompress(bodyPtr_->data(), bodyPtr_->length());
-            removeHeader("content-encoding");
+            removeHeaderBy("content-encoding");
             bodyPtr_ =
                 std::make_shared<HttpMessageStringBody>(move(gunzipBody));
             addHeader("content-length", std::to_string(bodyPtr_->length()));
@@ -347,7 +348,7 @@ class HttpResponseImpl : public HttpResponse
         {
             auto gunzipBody =
                 utils::brotliDecompress(bodyPtr_->data(), bodyPtr_->length());
-            removeHeader("content-encoding");
+            removeHeaderBy("content-encoding");
             bodyPtr_ =
                 std::make_shared<HttpMessageStringBody>(move(gunzipBody));
             addHeader("content-length", std::to_string(bodyPtr_->length()));
