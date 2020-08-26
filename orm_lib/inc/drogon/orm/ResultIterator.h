@@ -23,15 +23,10 @@ namespace drogon
 {
 namespace orm
 {
-class ConstResultIterator
-    : public std::iterator<std::random_access_iterator_tag,
-                           const Row,
-                           Result::DifferenceType,
-                           ConstResultIterator,
-                           Row>,
-      protected Row
+class ConstResultIterator : protected Row
 {
   public:
+    using iterator_category = std::random_access_iterator_tag;
     using pointer = const Row *;
     using reference = const Row &;
     using value_type = const Row;

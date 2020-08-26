@@ -23,12 +23,7 @@ namespace drogon
 {
 namespace orm
 {
-class ConstRowIterator : public std::iterator<std::random_access_iterator_tag,
-                                              const Field,
-                                              Row::DifferenceType,
-                                              ConstRowIterator,
-                                              Field>,
-                         protected Field
+class ConstRowIterator : protected Field
 {
   public:
     using pointer = const Field *;
@@ -36,6 +31,7 @@ class ConstRowIterator : public std::iterator<std::random_access_iterator_tag,
     using value_type = const Field;
     using size_type = Row::SizeType;
     using difference_type = Row::DifferenceType;
+    using iterator_category = std::random_access_iterator_tag;
     // ConstRowIterator(const Field &t) noexcept : Field(t) {}
 
     pointer operator->()
