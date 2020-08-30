@@ -39,7 +39,6 @@ class CouchBaseConnection
     CouchBaseConnection(const drogon::string_view &connStr,
                         const drogon::string_view &username,
                         const drogon::string_view &password,
-                        const drogon::string_view &bucket,
                         trantor::EventLoop *loop);
     ~CouchBaseConnection();
     void setOkCallback(const ConnectionCallback &cb)
@@ -103,7 +102,6 @@ class CouchBaseConnection
     drogon::string_view connString_;
     drogon::string_view userName_;
     drogon::string_view password_;
-    drogon::string_view bucket_;
 
     void connect();
     void handleClose();

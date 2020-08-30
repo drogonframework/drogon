@@ -35,7 +35,6 @@ class CouchBaseClientImpl
     CouchBaseClientImpl(const std::string &connectString,
                         const std::string &userName,
                         const std::string &password,
-                        const std::string &bucket,
                         size_t connNum);
     virtual void get(const std::string &key,
                      CBCallback &&callback,
@@ -45,7 +44,6 @@ class CouchBaseClientImpl
     const std::string connectString_;
     const std::string userName_;
     const std::string password_;
-    const std::string bucket_;
     const size_t connectionsNumber_;
     std::mutex connectionsMutex_;
     std::unordered_set<CouchBaseConnectionPtr> connections_;

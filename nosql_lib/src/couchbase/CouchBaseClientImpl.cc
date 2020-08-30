@@ -23,12 +23,10 @@ using namespace std::chrono_literals;
 CouchBaseClientImpl::CouchBaseClientImpl(const std::string &connectString,
                                          const std::string &userName,
                                          const std::string &password,
-                                         const std::string &bucket,
                                          size_t connNum)
     : connectString_(connectString),
       userName_(userName),
       password_(password),
-      bucket_(bucket),
       connectionsNumber_(connNum),
       loops_(connNum < std::thread::hardware_concurrency()
                  ? connNum
@@ -52,8 +50,10 @@ CouchBaseClientImpl::CouchBaseClientImpl(const std::string &connectString,
 CouchBaseConnectionPtr CouchBaseClientImpl::newConnection(
     trantor::EventLoop *loop)
 {
-    auto connPtr = std::make_shared<CouchBaseConnection>(
-        connectString_, userName_, password_, bucket_, loop);
+    auto connPtr = std::make_shared<CouchBaseConnection>(connectString_,
+                                                         userName_,
+                                                         password_,
+                                                         loop);
     std::weak_ptr<CouchBaseClientImpl> weakPtr = shared_from_this();
     connPtr->setCloseCallback(
         [weakPtr](const CouchBaseConnectionPtr &closeConnPtr) {
@@ -197,9 +197,10 @@ std::shared_ptr<CouchBaseClient> CouchBaseClient::newClient(
     const std::string &connectString,
     const std::string &userName,
     const std::string &password,
-    const std::string &bucket,
     size_t connNum)
 {
-    return std::make_shared<CouchBaseClientImpl>(
-        connectString, userName, password, bucket, connNum);
+    return std::make_shared<CouchBaseClientImpl>(connectString,
+                                                 userName,
+                                                 password,
+                                                 connNum);
 }

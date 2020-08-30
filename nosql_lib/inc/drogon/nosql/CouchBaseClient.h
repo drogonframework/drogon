@@ -31,7 +31,6 @@ class CouchBaseClient
         const std::string &connectString,
         const std::string &userName = "",
         const std::string &password = "",
-        const std::string &bucket = "",
         size_t connNum = 1);
     virtual void get(const std::string &key,
                      CBCallback &&callback,

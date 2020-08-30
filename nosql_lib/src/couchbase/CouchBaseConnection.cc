@@ -211,13 +211,11 @@ void CouchBaseConnection::procs2TrantorCallback(
 CouchBaseConnection::CouchBaseConnection(const drogon::string_view &connStr,
                                          const drogon::string_view &username,
                                          const drogon::string_view &password,
-                                         const drogon::string_view &bucket,
                                          trantor::EventLoop *loop)
     : loop_(loop),
       connString_(connStr),
       userName_(username),
-      password_(password),
-      bucket_(bucket)
+      password_(password)
 {
     LOG_DEBUG << "Connect to " << connString_;
     loop->queueInLoop([this]() { connect(); });
@@ -256,10 +254,6 @@ void CouchBaseConnection::connect()
                                    userName_.size(),
                                    password_.data(),
                                    password_.size());
-    }
-    if (!bucket_.empty())
-    {
-        lcb_createopts_bucket(options, bucket_.data(), bucket_.size());
     }
     lcb_createopts_io(options, ioop_.get());
     error = lcb_create(&instance_, options);

@@ -4,7 +4,7 @@ using namespace drogon::nosql;
 int main()
 {
     auto client = drogon::nosql::CouchBaseClient::newClient(
-        "couchbase://127.0.0.1", "root", "123456", "beer-sample");
+        "couchbase://127.0.0.1/beer-sample", "root", "123456");
     client->get(
         "21st_amendment_brewery_cafe",
         [](const CouchBaseResult &r) { LOG_INFO << "value: " << r.getValue(); },
