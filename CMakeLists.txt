@@ -5,6 +5,7 @@ message(STATUS "compiler: " ${CMAKE_CXX_COMPILER_ID})
 option(BUILD_CTL "Build drogon_ctl" ON)
 option(BUILD_EXAMPLES "Build examples" ON)
 option(BUILD_ORM "Build orm" ON)
+option(BUILD_NOSQL "Build nosql" ON)
 option(COZ_PROFILING "Use coz for profiling" OFF)
 option(LIBPQ_BATCH_MODE "Use batch mode for libpq" ON)
 option(BUILD_DROGON_SHARED "Build drogon as a shared lib" OFF)
@@ -54,6 +55,7 @@ target_include_directories(
   ${PROJECT_NAME}
   PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/lib/inc>
          $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/orm_lib/inc>
+         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/nosql_lib/inc>
          $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}>
          $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/trantor>
          $<INSTALL_INTERFACE:${INSTALL_INCLUDE_DIR}>)
@@ -206,6 +208,18 @@ if(BUILD_ORM)
   endif(SQLite3_FOUND)
 endif(BUILD_ORM)
 
+if(BUILD_NOSQL)
+  find_package(CouchBase)
+  if(CouchBase_FOUND)
+    set(DROGON_SOURCES ${DROGON_SOURCES}
+                       nosql_lib/src/couchbase/CouchBaseClientImpl.cc
+                       nosql_lib/src/couchbase/CouchBaseConnection.cc
+                       nosql_lib/src/couchbase/CouchBaseResultImpl.cc)
+    target_link_libraries(${PROJECT_NAME} PRIVATE CouchBase_lib)
+  endif(CouchBase_FOUND)
+
+endif(BUILD_NOSQL)
+
 find_package(ZLIB REQUIRED)
 target_link_libraries(${PROJECT_NAME} PRIVATE ZLIB::ZLIB)
 
@@ -333,6 +347,9 @@ if(BUILD_TESTING)
   if(pg_FOUND OR MySQL_FOUND OR SQLite3_FOUND)
     add_subdirectory(${PROJECT_SOURCE_DIR}/orm_lib/tests)
   endif(pg_FOUND OR MySQL_FOUND OR SQLite3_FOUND)
+  if(CouchBase_FOUND)
+    add_subdirectory(${PROJECT_SOURCE_DIR}/nosql_lib/src/couchbase/tests)
+  endif(CouchBase_FOUND)
   find_package(GTest)
   if(GTest_FOUND)
     message(STATUS "gtest found")
@@ -398,6 +415,10 @@ set(ORM_HEADERS
     orm_lib/inc/drogon/orm/RestfulController.h)
 install(FILES ${ORM_HEADERS} DESTINATION ${INSTALL_INCLUDE_DIR}/drogon/orm)
 
+set(NOSQL_HEADERS nosql_lib/inc/drogon/nosql/CouchBaseResult.h
+                  nosql_lib/inc/drogon/nosql/CouchBaseClient.h)
+install(FILES ${NOSQL_HEADERS} DESTINATION ${INSTALL_INCLUDE_DIR}/drogon/nosql)
+
 set(DROGON_UTIL_HEADERS
     lib/inc/drogon/utils/FunctionTraits.h
     lib/inc/drogon/utils/Utilities.h
@@ -448,6 +469,7 @@ install(
         "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules/Findpg.cmake"
         "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules/FindBrotli.cmake"
         "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules/Findcoz-profiler.cmake"
+        "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules/FindCouchBase.cmake"
   DESTINATION "${INSTALL_DROGON_CMAKE_DIR}"
   COMPONENT dev)
 
