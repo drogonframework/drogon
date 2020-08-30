@@ -35,6 +35,10 @@ class CouchBaseClient
     virtual void get(const std::string &key,
                      CBCallback &&callback,
                      ExceptionCallback &&errorCallback) = 0;
+    virtual void store(const std::string &key,
+                       const std::string &value,
+                       CBCallback &&callback,
+                       ExceptionCallback &&errorCallback) = 0;
 };
 using CouchBaseClientPtr = std::shared_ptr<CouchBaseClient>;
 }  // namespace nosql

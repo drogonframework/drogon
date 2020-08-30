@@ -315,18 +315,23 @@ void CouchBaseConnection::getCallback(lcb_INSTANCE *instance,
     const char *value;
     size_t nvalue;
     lcb_STATUS rc = lcb_respget_status(rg);
-
-    if (rc != LCB_SUCCESS)
-    {
-        LOG_ERROR << "Failed to get key: " << lcb_strerror_short(rc);
-        // TODO: exception callback here;
-    }
-    std::shared_ptr<CouchBaseResultImpl> resultImplPtr =
-        std::make_shared<GetLcbResult>(rg);
-    LOG_DEBUG << "Success to get key";
     CouchBaseConnection *self =
         (CouchBaseConnection *)(lcb_get_cookie(instance));
-    self->callback_(CouchBaseResult(std::move(resultImplPtr)));
+    if (rc != LCB_SUCCESS)
+    {
+        auto err = lcb_strerror_short(rc);
+        LOG_ERROR << "Failed to get key: " << err;
+        self->errorCallback_(NosqlException(err));
+    }
+    else
+    {
+        std::shared_ptr<CouchBaseResultImpl> resultImplPtr =
+            std::make_shared<GetLcbResult>(rg);
+        LOG_DEBUG << "Success to get key";
+
+        self->callback_(CouchBaseResult(std::move(resultImplPtr)));
+    }
+    self->idleCallback_();
 }
 
 void CouchBaseConnection::storeCallback(lcb_INSTANCE *instance,
@@ -334,16 +339,22 @@ void CouchBaseConnection::storeCallback(lcb_INSTANCE *instance,
                                         const lcb_RESPSTORE *resp)
 {
     lcb_STATUS rc = lcb_respstore_status(resp);
+    CouchBaseConnection *self =
+        (CouchBaseConnection *)(lcb_get_cookie(instance));
     if (rc != LCB_SUCCESS)
     {
-        LOG_ERROR << "failed to store key: " << lcb_strerror_short(rc);
-        // TODO:: call exception callback;
+        auto err = lcb_strerror_short(rc);
+        LOG_ERROR << "failed to store key: " << err;
+        self->errorCallback_(NosqlException(err));
     }
-    printf("stored key 'foo'\n");
+    else
+    {
+        std::shared_ptr<CouchBaseResultImpl> resultImplPtr =
+            std::make_shared<StoreLcbResult>(resp);
+        self->callback_(CouchBaseResult(std::move(resultImplPtr)));
+    }
 
-    std::shared_ptr<CouchBaseResultImpl> resultImplPtr =
-        std::make_shared<StoreLcbResult>(resp);
-    // TODO: callback;
+    self->idleCallback_();
     (void)cbtype;
 }
 
@@ -363,6 +374,29 @@ void CouchBaseConnection::getInLoop(const std::string &key,
     {
         LOG_ERROR << "failed to schedule get request:"
                   << lcb_strerror_short(rc);
+        lcb_destroy(instance_);
+        handleClose();
+        return;
+    }
+}
+
+void CouchBaseConnection::storeInLoop(const std::string &key,
+                                      const std::string &value,
+                                      CBCallback &&callback,
+                                      ExceptionCallback &&errorCallback)
+{
+    lcb_CMDSTORE *cmd;
+    callback_ = std::move(callback);
+    errorCallback_ = std::move(errorCallback);
+    lcb_cmdstore_create(&cmd, LCB_STORE_UPSERT);
+    lcb_cmdstore_key(cmd, key.data(), key.size());
+    lcb_cmdstore_value(cmd, value.data(), value.size());
+    auto err = lcb_store(instance_, NULL, cmd);
+    lcb_cmdstore_destroy(cmd);
+    if (err != LCB_SUCCESS)
+    {
+        LOG_ERROR << "failed to set up store request: "
+                  << lcb_strerror_short(err);
         lcb_destroy(instance_);
         handleClose();
         return;

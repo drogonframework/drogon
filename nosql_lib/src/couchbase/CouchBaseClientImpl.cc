@@ -41,7 +41,7 @@ CouchBaseClientImpl::CouchBaseClientImpl(const std::string &connectString,
             auto loop = loops_.getNextLoop();
             loop->queueInLoop([this, loop]() {
                 std::lock_guard<std::mutex> lock(connectionsMutex_);
-                connections_.insert(newConnection(loop));
+                connectionsPool_.addNewConnection(newConnection(loop));
             });
         }
     }).detach();
@@ -64,11 +64,7 @@ CouchBaseConnectionPtr CouchBaseClientImpl::newConnection(
                 return;
             {
                 std::lock_guard<std::mutex> guard(thisPtr->connectionsMutex_);
-                thisPtr->readyConnections_.erase(closeConnPtr);
-                thisPtr->busyConnections_.erase(closeConnPtr);
-                assert(thisPtr->connections_.find(closeConnPtr) !=
-                       thisPtr->connections_.end());
-                thisPtr->connections_.erase(closeConnPtr);
+                thisPtr->connectionsPool_.removeConnection(closeConnPtr);
             }
             // Reconnect after 1 second
             auto loop = closeConnPtr->loop();
@@ -77,7 +73,8 @@ CouchBaseConnectionPtr CouchBaseClientImpl::newConnection(
                 if (!thisPtr)
                     return;
                 std::lock_guard<std::mutex> guard(thisPtr->connectionsMutex_);
-                thisPtr->connections_.insert(thisPtr->newConnection(loop));
+                thisPtr->connectionsPool_.addNewConnection(
+                    thisPtr->newConnection(loop));
             });
         });
     connPtr->setOkCallback([weakPtr](const CouchBaseConnectionPtr &okConnPtr) {
@@ -87,7 +84,7 @@ CouchBaseConnectionPtr CouchBaseClientImpl::newConnection(
             return;
         {
             std::lock_guard<std::mutex> guard(thisPtr->connectionsMutex_);
-            thisPtr->busyConnections_.insert(
+            thisPtr->connectionsPool_.addBusyConnection(
                 okConnPtr);  // For new connections, this sentence is necessary
         }
         thisPtr->handleNewTask(okConnPtr);
@@ -111,29 +108,37 @@ void CouchBaseClientImpl::handleNewTask(const CouchBaseConnectionPtr &connPtr)
     CouchBaseCommandPtr cmd;
     {
         std::lock_guard<std::mutex> guard(connectionsMutex_);
-        if (!commandsBuffer_.empty())
+        if (connectionsPool_.hasCommand())
         {
-            cmd = std::move(commandsBuffer_.front());
-            commandsBuffer_.pop_front();
+            cmd = connectionsPool_.getCommand();
         }
         else
         {
             // Connection is idle, put it into the readyConnections_ set;
-            busyConnections_.erase(connPtr);
-            readyConnections_.insert(connPtr);
+            connectionsPool_.setConnectionIdle(connPtr);
         }
     }
     if (cmd)
     {
-        switch (cmd->type_)
+        switch (cmd->type())
         {
             case CommandType::kGet:
-                connPtr->get(cmd->key_,
-                             std::move(cmd->callback_),
-                             std::move(cmd->errorCallback_));
-                break;
+            {
+                auto getCommand = reinterpret_cast<GetCommand *>(cmd.get());
+                connPtr->get(getCommand->key_,
+                             std::move(getCommand->callback_),
+                             std::move(getCommand->errorCallback_));
+            }
+            break;
             case CommandType::kStore:
-                break;
+            {
+                auto storeCommand = reinterpret_cast<StoreCommand *>(cmd.get());
+                connPtr->store(storeCommand->key_,
+                               storeCommand->value_,
+                               std::move(storeCommand->callback_),
+                               std::move(storeCommand->errorCallback_));
+            }
+            break;
             default:
                 break;
         }
@@ -144,53 +149,62 @@ void CouchBaseClientImpl::get(const std::string &key,
                               CBCallback &&callback,
                               ExceptionCallback &&errorCallback)
 {
-    bool busy{false};
-    CouchBaseConnectionPtr conn;
+    std::pair<bool, CouchBaseConnectionPtr> r;
     {
         std::lock_guard<std::mutex> guard(connectionsMutex_);
-        if (readyConnections_.size() == 0)
+        r = connectionsPool_.getIdleConnection();
+        if (r.first && !r.second)
         {
-            if (commandsBuffer_.size() > 200000)
-            {
-                // too many queries in buffer;
-                busy = true;
-            }
-            else
-            {
-                // LOG_TRACE << "Push query to buffer";
-                // TODO: make command
-                auto cmd = std::make_shared<CouchBaseCommand>();
-                cmd->key_ = key;
-                cmd->type_ = CommandType::kGet;
-                cmd->callback_ = std::move(callback);
-                cmd->errorCallback_ = std::move(errorCallback);
-                commandsBuffer_.push_back(std::move(cmd));
-            }
-        }
-        else
-        {
-            auto iter = readyConnections_.begin();
-            busyConnections_.insert(*iter);
-            conn = *iter;
-            readyConnections_.erase(iter);
+            auto cmd = std::make_shared<GetCommand>(key,
+                                                    std::move(callback),
+                                                    std::move(errorCallback));
+            connectionsPool_.putCommandToBuffer(std::move(cmd));
         }
     }
-    if (conn)
+    if (r.second)
     {
-        conn->get(key, std::move(callback), std::move(errorCallback));
+        r.second->get(key, std::move(callback), std::move(errorCallback));
         return;
     }
-    if (busy)
+    if (!r.first)
     {
+        // too many queries in buffer;
         // TODO exceptCallback
         return;
     }
 }
-
-CouchBaseConnectionPtr CouchBaseClientImpl::getIdleConnection()
+void CouchBaseClientImpl::store(const std::string &key,
+                                const std::string &value,
+                                CBCallback &&callback,
+                                ExceptionCallback &&errorCallback)
 {
-    std::lock_guard<std::mutex> guard(connectionsMutex_);
-    return nullptr;
+    std::pair<bool, CouchBaseConnectionPtr> r;
+    {
+        std::lock_guard<std::mutex> guard(connectionsMutex_);
+        r = connectionsPool_.getIdleConnection();
+        if (r.first && !r.second)
+        {
+            auto cmd = std::make_shared<StoreCommand>(key,
+                                                      value,
+                                                      std::move(callback),
+                                                      std::move(errorCallback));
+            connectionsPool_.putCommandToBuffer(std::move(cmd));
+        }
+    }
+    if (r.second)
+    {
+        r.second->store(key,
+                        value,
+                        std::move(callback),
+                        std::move(errorCallback));
+        return;
+    }
+    if (!r.first)
+    {
+        // too many queries in buffer;
+        // TODO exceptCallback
+        return;
+    }
 }
 
 std::shared_ptr<CouchBaseClient> CouchBaseClient::newClient(

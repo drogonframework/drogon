@@ -18,6 +18,7 @@
 #include <unordered_set>
 #include <mutex>
 #include <deque>
+#include "../ConnectionsPool.h"
 
 namespace drogon
 {
@@ -39,6 +40,10 @@ class CouchBaseClientImpl
     virtual void get(const std::string &key,
                      CBCallback &&callback,
                      ExceptionCallback &&errorCallback) override;
+    virtual void store(const std::string &key,
+                       const std::string &value,
+                       CBCallback &&callback,
+                       ExceptionCallback &&errorCallback) override;
 
   private:
     const std::string connectString_;
@@ -46,13 +51,10 @@ class CouchBaseClientImpl
     const std::string password_;
     const size_t connectionsNumber_;
     std::mutex connectionsMutex_;
-    std::unordered_set<CouchBaseConnectionPtr> connections_;
-    std::unordered_set<CouchBaseConnectionPtr> readyConnections_;
-    std::unordered_set<CouchBaseConnectionPtr> busyConnections_;
-    std::deque<CouchBaseCommandPtr> commandsBuffer_;
+    ConnectionsPool<CouchBaseConnectionPtr, CouchBaseCommandPtr>
+        connectionsPool_;
     trantor::EventLoopThreadPool loops_;
     CouchBaseConnectionPtr newConnection(trantor::EventLoop *loop);
-    CouchBaseConnectionPtr getIdleConnection();
     void handleNewTask(const CouchBaseConnectionPtr &connPtr);
 };
 }  // namespace nosql

@@ -23,10 +23,50 @@ enum class CommandType
     kGet = 0,
     kStore
 };
-struct CouchBaseCommand
+class CouchBaseCommand
 {
-    CommandType type_;
+  public:
+    virtual ~CouchBaseCommand()
+    {
+    }
+    virtual CommandType type() const = 0;
+};
+class GetCommand : public CouchBaseCommand
+{
+  public:
+    virtual CommandType type() const override
+    {
+        return CommandType::kGet;
+    }
+    GetCommand(const std::string &key,
+               CBCallback &&callback,
+               ExceptionCallback &&errorCallback)
+        : key_(key), callback_(callback), errorCallback_(errorCallback)
+    {
+    }
     std::string key_;
+    CBCallback callback_;
+    ExceptionCallback errorCallback_;
+};
+class StoreCommand : public CouchBaseCommand
+{
+  public:
+    virtual CommandType type() const override
+    {
+        return CommandType::kStore;
+    }
+    StoreCommand(const std::string &key,
+                 const std::string &value,
+                 CBCallback &&callback,
+                 ExceptionCallback &&errorCallback)
+        : key_(key),
+          value_(value),
+          callback_(callback),
+          errorCallback_(errorCallback)
+    {
+    }
+    std::string key_;
+    std::string value_;
     CBCallback callback_;
     ExceptionCallback errorCallback_;
 };

@@ -12,12 +12,27 @@
  *
  */
 #pragma once
+#include <string>
 namespace drogon
 {
 namespace nosql
 {
 class NosqlException
 {
+  public:
+    NosqlException(const std::string& message) : message_(message)
+    {
+    }
+    NosqlException(std::string&& message) : message_(std::move(message))
+    {
+    }
+    const std::string& what() const
+    {
+        return message_;
+    }
+
+  private:
+    std::string message_;
 };
 }  // namespace nosql
 }  // namespace drogon

@@ -57,9 +57,7 @@ class CouchBaseConnection
     {
         return loop_;
     }
-    void getInLoop(const std::string &key,
-                   CBCallback &&callback,
-                   ExceptionCallback &&errorCallback);
+
     void get(const std::string &key,
              CBCallback &&callback,
              ExceptionCallback &&errorCallback)
@@ -77,6 +75,32 @@ class CouchBaseConnection
                 thisPtr->getInLoop(key,
                                    std::move(callback),
                                    std::move(errorCallback));
+            });
+        }
+    }
+    void store(const std::string &key,
+               const std::string &value,
+               CBCallback &&callback,
+               ExceptionCallback &&errorCallback)
+    {
+        if (loop_->isInLoopThread())
+        {
+            storeInLoop(key,
+                        value,
+                        std::move(callback),
+                        std::move(errorCallback));
+        }
+        else
+        {
+            loop_->queueInLoop([key,
+                                value,
+                                callback = std::move(callback),
+                                errorCallback = std::move(errorCallback),
+                                thisPtr = shared_from_this()]() mutable {
+                thisPtr->storeInLoop(key,
+                                     value,
+                                     std::move(callback),
+                                     std::move(errorCallback));
             });
         }
     }
@@ -103,6 +127,13 @@ class CouchBaseConnection
     drogon::string_view userName_;
     drogon::string_view password_;
 
+    void storeInLoop(const std::string &key,
+                     const std::string &value,
+                     CBCallback &&callback,
+                     ExceptionCallback &&errorCallback);
+    void getInLoop(const std::string &key,
+                   CBCallback &&callback,
+                   ExceptionCallback &&errorCallback);
     void connect();
     void handleClose();
     static void lcbDestroyIoOpts(struct lcb_io_opt_st *iops);
