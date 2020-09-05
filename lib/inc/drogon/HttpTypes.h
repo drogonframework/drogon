@@ -56,6 +56,7 @@ enum HttpStatusCode
     k415UnsupportedMediaType = 415,
     k416RequestedRangeNotSatisfiable = 416,
     k417ExpectationFailed = 417,
+    k418ImATeapot = 418,
     k421MisdirectedRequest = 421,
     k425TooEarly = 425,
     k426UpgradeRequired = 426,

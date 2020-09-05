@@ -336,6 +336,11 @@ const string_view &statusCodeToString(int code)
             static string_view sv = "Expectation Failed";
             return sv;
         }
+        case 418:
+        {
+            static string_view sv = "I'm a Teapot";
+            return sv;
+        }
         case 421:
         {
             static string_view sv = "Misdirected Request";
