@@ -345,6 +345,14 @@ int main()
     auto resp = HttpResponse::newFileResponse("index.html");
     resp->setExpiredTime(0);
     app().setCustom404Page(resp);
+    app().addListener("0.0.0.0", 0);
+    app().registerBeginningAdvice([]() {
+        auto addresses = app().getListeners();
+        for (auto &address : addresses)
+        {
+            LOG_INFO << address.toIpPort() << " LISTEN";
+        }
+    });
     std::cout << "Date: "
               << std::string{drogon::utils::getHttpFullDate(
                      trantor::Date::now())}
