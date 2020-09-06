@@ -1143,6 +1143,15 @@ class HttpAppFramework : public trantor::NonCopyable
      */
     virtual size_t getCurrentThreadIndex() const = 0;
 
+    /**
+     * @brief Get the addresses of listeners.
+     *
+     * @return std::vector<trantor::InetAddress>
+     * @note This method should be called after calling the app().run(). One
+     * could run this method in an AOP join point (such as the BeginningAdvice).
+     */
+    virtual std::vector<trantor::InetAddress> getListeners() const = 0;
+
   private:
     virtual void registerHttpController(
         const std::string &pathPattern,

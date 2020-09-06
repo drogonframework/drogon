@@ -21,7 +21,10 @@
 #include <string>
 #include <vector>
 #include <memory>
-
+namespace trantor
+{
+class InetAddress;
+}
 namespace drogon
 {
 class ListenerManager : public trantor::NonCopyable
@@ -44,6 +47,7 @@ class ListenerManager : public trantor::NonCopyable
             std::function<HttpResponsePtr(const HttpRequestPtr &)>>
             &syncAdvices);
     void startListening();
+    std::vector<trantor::InetAddress> getListeners() const;
     ~ListenerManager();
 
     trantor::EventLoop *getIOLoop(size_t id) const;

@@ -995,3 +995,8 @@ const std::function<HttpResponsePtr(HttpStatusCode)>
 {
     return customErrorHandler_;
 }
+
+std::vector<trantor::InetAddress> HttpAppFrameworkImpl::getListeners() const
+{
+    return listenerManagerPtr_->getListeners();
+}

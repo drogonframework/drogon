@@ -260,3 +260,13 @@ void ListenerManager::stopListening()
     }
 #endif
 }
+
+std::vector<trantor::InetAddress> ListenerManager::getListeners() const
+{
+    std::vector<trantor::InetAddress> listeners;
+    for (auto &server : servers_)
+    {
+        listeners.emplace_back(server->address());
+    }
+    return listeners;
+}
