@@ -441,7 +441,7 @@ class HttpAppFrameworkImpl : public HttpAppFramework
         const std::string &name = "default",
         const bool isFast = false,
         const std::string &characterSet = "") override;
-
+    virtual std::vector<trantor::InetAddress> getListeners() const override;
     inline static HttpAppFrameworkImpl &instance()
     {
         static HttpAppFrameworkImpl instance;

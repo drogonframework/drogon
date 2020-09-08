@@ -82,6 +82,11 @@ class HttpServer : trantor::NonCopyable
         server_.enableSSL(certPath, keyPath);
     }
 
+    const trantor::InetAddress &address() const
+    {
+        return server_.address();
+    }
+
   private:
     void onConnection(const trantor::TcpConnectionPtr &conn);
     void onMessage(const trantor::TcpConnectionPtr &, trantor::MsgBuffer *);
