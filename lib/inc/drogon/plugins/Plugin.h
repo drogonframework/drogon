@@ -35,13 +35,6 @@ enum class PluginStatus
 class PluginBase : public virtual DrObjectBase, public trantor::NonCopyable
 {
   public:
-    /// This method is usually called by drogon.
-    /// It always returns PlugiinState::Initialized if the user calls it.
-    PluginStatus stat() const
-    {
-        return status_;
-    }
-
     /// This method must be called by drogon.
     void initialize()
     {
