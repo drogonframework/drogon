@@ -113,7 +113,8 @@ class Session
     /**
      * @brief Modify the session data.
      *
-     * @tparam Callable
+     * @tparam Callable: The signature of the callable should be equivalent to
+     * `void (SessionMap &)` or `void (const SessionMap &)`
      * @param handler A callable that can modify the sessionMap_ inside the
      * session.
      * @note This function is multiple-thread safe.
