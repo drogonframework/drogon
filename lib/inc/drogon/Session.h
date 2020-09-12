@@ -75,7 +75,7 @@ class Session
        auto &anydata = (*sessionPtr)[key];
        // protected by the mutex of the data
        std::lock_guard<std::mutex> lck(mutexForTheData);
-       if(data.has_value())
+       if(anydata.has_value())
        {
            doSomething(*any_cast<DataType>(&anydata));
        }
