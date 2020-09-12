@@ -57,7 +57,73 @@ class Session
         }
         return nullVal;
     }
-
+    /**
+     * @brief Modify the data identified by the key parameter.
+     *
+     * @tparam T the type of the data.
+     * @param key
+     * @param handler A callable that can modify the data.
+     *
+     * @note This function is multiple-thread safe. if the data identified by
+     * the key doesn't exist, a new one is created and passed to the handler.
+     * The changing of the data is protected by the mutex which protects the
+     * whole session, if one wants to access the data by a separated mutex,
+     * please create a mutex for it and do something like:
+     *
+     * @code
+       // protected by the mutex of the session
+       auto &anydata = (*sessionPtr)[key];
+       // protected by the mutex of the data
+       std::lock_guard<std::mutex> lck(mutexForTheData);
+       if(data.has_value())
+       {
+           doSomething(*any_cast<DataType>(&anydata));
+       }
+       else
+       {
+           auto data = createData();
+           doSomething(data);
+           anydata = std::move(data);
+       }
+       @endcode
+     */
+    template <typename T>
+    void modify(const std::string &key, const std::function<void(T &)> &handler)
+    {
+        std::lock_guard<std::mutex> lck(mutex_);
+        auto it = sessionMap_.find(key);
+        if (it != sessionMap_.end())
+        {
+            if (typeid(T) == it->second.type())
+            {
+                handler(*(any_cast<T>(&(it->second))));
+            }
+            else
+            {
+                LOG_ERROR << "Bad type";
+            }
+        }
+        else
+        {
+            auto iterm = T();
+            handler(iterm);
+            sessionMap_[key] = std::move(iterm);
+        }
+    }
+    /**
+     * @brief Modify the session data.
+     *
+     * @tparam Callable
+     * @param handler A callable that can modify the sessionMap_ inside the
+     * session.
+     * @note This function is multiple-thread safe.
+     */
+    template <typename Callable>
+    void modify(Callable &&handler)
+    {
+        std::lock_guard<std::mutex> lck(mutex_);
+        handler(sessionMap_);
+    }
     /**
      * @brief Get the 'any' object identified by the given key
      */
