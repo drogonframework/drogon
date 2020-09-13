@@ -99,7 +99,7 @@ class CacheMap
         }
         if (tickInterval_ > 0 && wheelsNumber_ > 0 && bucketsNumPerWheel_ > 0)
         {
-            timerId_ = loop_->runEvery(tickInterval_, [=]() {
+            timerId_ = loop_->runEvery(tickInterval_, [this]() {
                 size_t t = ++ticksCounter_;
                 size_t pow = 1;
                 for (size_t i = 0; i < wheelsNumber_; ++i)
@@ -409,15 +409,16 @@ class CacheMap
             }
             if (i < (wheelsNumber_ - 1))
             {
-                entryPtr = std::make_shared<CallbackEntry>([=]() {
-                    if (delay > 0)
-                    {
-                        std::lock_guard<std::mutex> lock(bucketMutex_);
-                        wheels_[i][(delay + (t % bucketsNumPerWheel_) - 1) %
-                                   bucketsNumPerWheel_]
-                            .insert(entryPtr);
-                    }
-                });
+                entryPtr = std::make_shared<CallbackEntry>(
+                    [this, delay, i, t, entryPtr]() {
+                        if (delay > 0)
+                        {
+                            std::lock_guard<std::mutex> lock(bucketMutex_);
+                            wheels_[i][(delay + (t % bucketsNumPerWheel_) - 1) %
+                                       bucketsNumPerWheel_]
+                                .insert(entryPtr);
+                        }
+                    });
             }
             else
             {
@@ -449,7 +450,7 @@ class CacheMap
         }
         else
         {
-            std::function<void()> cb = [=]() {
+            std::function<void()> cb = [this, key]() {
                 std::lock_guard<std::mutex> lock(mtx_);
                 if (map_.find(key) != map_.end())
                 {
