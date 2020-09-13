@@ -30,6 +30,7 @@ namespace drogon
 class Session
 {
   public:
+    using SessionMap = std::map<std::string, any>;
     /**
      * @brief Get the data identified by the key parameter.
      * @note if the data is not found, a default value is returned.
@@ -98,7 +99,7 @@ class Session
      * @brief Modify or visit the session data.
      *
      * @tparam Callable: The signature of the callable should be equivalent to
-     * `void (SessionMap &)` or `void (const SessionMap &)`
+     * `void (Session::SessionMap &)` or `void (const Session::SessionMap &)`
      * @param handler A callable that can modify the sessionMap_ inside the
      * session.
      * @note This function is multiple-thread safe.
@@ -189,7 +190,6 @@ class Session
     Session() = delete;
 
   private:
-    using SessionMap = std::map<std::string, any>;
     SessionMap sessionMap_;
     mutable std::mutex mutex_;
     std::string sessionId_;

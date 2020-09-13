@@ -127,6 +127,7 @@ class CacheMap
     };
     ~CacheMap()
     {
+        loop_->invalidateTimer(timerId_);
         map_.clear();
         for (auto iter = wheels_.rbegin(); iter != wheels_.rend(); ++iter)
         {
