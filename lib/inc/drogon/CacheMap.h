@@ -127,16 +127,10 @@ class CacheMap
     };
     ~CacheMap()
     {
+        map_.clear();
+        for (auto iter = wheels_.rbegin(); iter != wheels_.rend(); ++iter)
         {
-            std::lock_guard<std::mutex> guard(mtx_);
-            map_.clear();
-        }
-        {
-            std::lock_guard<std::mutex> lock(bucketMutex_);
-            for (auto iter = wheels_.rbegin(); iter != wheels_.rend(); ++iter)
-            {
-                iter->clear();
-            }
+            iter->clear();
         }
         LOG_TRACE << "CacheMap destruct!";
     }

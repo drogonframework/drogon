@@ -30,7 +30,7 @@ int main()
         cachePtr->insert("2", "2", 10, []() { LOG_DEBUG << "2 timeout"; });
     });
     trantor::EventLoop mainLoop;
-    mainLoop.runAt(now.after(5).roundSecond().after(0.1013), [&]() {
+    mainLoop.runAt(now.after(4).roundSecond().after(0.1013), [&]() {
         main_cachePtr->insert("new", "new");
         if (main_cachePtr->find("1"))
         {
