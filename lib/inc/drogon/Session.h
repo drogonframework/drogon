@@ -35,60 +35,44 @@ class Session
      * @note if the data is not found, a default value is returned.
      * For example:
      * @code
-       auto &userName = sessionPtr->get<std::string>("user name");
+       auto userName = sessionPtr->get<std::string>("user name");
        @endcode
      */
     template <typename T>
-    const T &get(const std::string &key) const
+    T get(const std::string &key) const
     {
-        const static T nullVal = T();
-        std::lock_guard<std::mutex> lck(mutex_);
-        auto it = sessionMap_.find(key);
-        if (it != sessionMap_.end())
         {
-            if (typeid(T) == it->second.type())
+            std::lock_guard<std::mutex> lck(mutex_);
+            auto it = sessionMap_.find(key);
+            if (it != sessionMap_.end())
             {
-                return *(any_cast<T>(&(it->second)));
-            }
-            else
-            {
-                LOG_ERROR << "Bad type";
+                if (typeid(T) == it->second.type())
+                {
+                    return *(any_cast<T>(&(it->second)));
+                }
+                else
+                {
+                    LOG_ERROR << "Bad type";
+                }
             }
         }
-        return nullVal;
+        return T();
     }
     /**
-     * @brief Modify the data identified by the key parameter.
+     * @brief Modify or visit the data identified by the key parameter.
      *
      * @tparam T the type of the data.
      * @param key
-     * @param handler A callable that can modify the data.
+     * @param handler A callable that can modify or visit the data. The
+     * signature of the handler should be equivalent to 'void(T&)' or
+     * 'void(const T&)'
      *
      * @note This function is multiple-thread safe. if the data identified by
      * the key doesn't exist, a new one is created and passed to the handler.
-     * The changing of the data is protected by the mutex which protects the
-     * whole session, if one wants to access the data by a separated mutex,
-     * please create a mutex for it and do something like:
-     *
-     * @code
-       // protected by the mutex of the session
-       auto &anydata = (*sessionPtr)[key];
-       // protected by the mutex of the data
-       std::lock_guard<std::mutex> lck(mutexForTheData);
-       if(anydata.has_value())
-       {
-           doSomething(*any_cast<DataType>(&anydata));
-       }
-       else
-       {
-           auto data = createData();
-           doSomething(data);
-           anydata = std::move(data);
-       }
-       @endcode
+     * The changing of the data is protected by the mutex of the session.
      */
-    template <typename T>
-    void modify(const std::string &key, const std::function<void(T &)> &handler)
+    template <typename T, typename Callable>
+    void modify(const std::string &key, Callable &&handler)
     {
         std::lock_guard<std::mutex> lck(mutex_);
         auto it = sessionMap_.find(key);
@@ -105,13 +89,13 @@ class Session
         }
         else
         {
-            auto iterm = T();
-            handler(iterm);
-            sessionMap_[key] = std::move(iterm);
+            auto item = T();
+            handler(item);
+            sessionMap_.insert(std::make_pair(key, any(std::move(item))));
         }
     }
     /**
-     * @brief Modify the session data.
+     * @brief Modify or visit the session data.
      *
      * @tparam Callable: The signature of the callable should be equivalent to
      * `void (SessionMap &)` or `void (const SessionMap &)`
@@ -125,14 +109,6 @@ class Session
         std::lock_guard<std::mutex> lck(mutex_);
         handler(sessionMap_);
     }
-    /**
-     * @brief Get the 'any' object identified by the given key
-     */
-    any &operator[](const std::string &key)
-    {
-        std::lock_guard<std::mutex> lck(mutex_);
-        return sessionMap_[key];
-    }
 
     /**
      * @brief Insert a key-value pair
@@ -144,7 +120,7 @@ class Session
     void insert(const std::string &key, const any &obj)
     {
         std::lock_guard<std::mutex> lck(mutex_);
-        sessionMap_[key] = obj;
+        sessionMap_.insert(std::make_pair(key, obj));
     }
 
     /**
@@ -157,7 +133,7 @@ class Session
     void insert(const std::string &key, any &&obj)
     {
         std::lock_guard<std::mutex> lck(mutex_);
-        sessionMap_[key] = std::move(obj);
+        sessionMap_.insert(std::make_pair(key, std::move(obj)));
     }
 
     /**
