@@ -684,7 +684,7 @@ void HttpAppFrameworkImpl::callCallback(
 {
     if (useSession_)
     {
-        auto sessionPtr = req->getSession();
+        auto &sessionPtr = req->getSession();
         assert(sessionPtr);
         if (sessionPtr->needToChangeSessionId())
         {

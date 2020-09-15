@@ -1,6 +1,6 @@
 /**
  *
- *  Session.h
+ *  @file Session.h
  *  An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
@@ -30,41 +30,85 @@ namespace drogon
 class Session
 {
   public:
+    using SessionMap = std::map<std::string, any>;
     /**
      * @brief Get the data identified by the key parameter.
      * @note if the data is not found, a default value is returned.
      * For example:
      * @code
-       auto &userName = sessionPtr->get<std::string>("user name");
+       auto userName = sessionPtr->get<std::string>("user name");
        @endcode
      */
     template <typename T>
-    const T &get(const std::string &key) const
+    T get(const std::string &key) const
     {
-        const static T nullVal = T();
+        {
+            std::lock_guard<std::mutex> lck(mutex_);
+            auto it = sessionMap_.find(key);
+            if (it != sessionMap_.end())
+            {
+                if (typeid(T) == it->second.type())
+                {
+                    return *(any_cast<T>(&(it->second)));
+                }
+                else
+                {
+                    LOG_ERROR << "Bad type";
+                }
+            }
+        }
+        return T();
+    }
+    /**
+     * @brief Modify or visit the data identified by the key parameter.
+     *
+     * @tparam T the type of the data.
+     * @param key
+     * @param handler A callable that can modify or visit the data. The
+     * signature of the handler should be equivalent to 'void(T&)' or
+     * 'void(const T&)'
+     *
+     * @note This function is multiple-thread safe. if the data identified by
+     * the key doesn't exist, a new one is created and passed to the handler.
+     * The changing of the data is protected by the mutex of the session.
+     */
+    template <typename T, typename Callable>
+    void modify(const std::string &key, Callable &&handler)
+    {
         std::lock_guard<std::mutex> lck(mutex_);
         auto it = sessionMap_.find(key);
         if (it != sessionMap_.end())
         {
             if (typeid(T) == it->second.type())
             {
-                return *(any_cast<T>(&(it->second)));
+                handler(*(any_cast<T>(&(it->second))));
             }
             else
             {
                 LOG_ERROR << "Bad type";
             }
         }
-        return nullVal;
+        else
+        {
+            auto item = T();
+            handler(item);
+            sessionMap_.insert(std::make_pair(key, any(std::move(item))));
+        }
     }
-
     /**
-     * @brief Get the 'any' object identified by the given key
+     * @brief Modify or visit the session data.
+     *
+     * @tparam Callable: The signature of the callable should be equivalent to
+     * `void (Session::SessionMap &)` or `void (const Session::SessionMap &)`
+     * @param handler A callable that can modify the sessionMap_ inside the
+     * session.
+     * @note This function is multiple-thread safe.
      */
-    any &operator[](const std::string &key)
+    template <typename Callable>
+    void modify(Callable &&handler)
     {
         std::lock_guard<std::mutex> lck(mutex_);
-        return sessionMap_[key];
+        handler(sessionMap_);
     }
 
     /**
@@ -77,7 +121,7 @@ class Session
     void insert(const std::string &key, const any &obj)
     {
         std::lock_guard<std::mutex> lck(mutex_);
-        sessionMap_[key] = obj;
+        sessionMap_.insert(std::make_pair(key, obj));
     }
 
     /**
@@ -90,7 +134,7 @@ class Session
     void insert(const std::string &key, any &&obj)
     {
         std::lock_guard<std::mutex> lck(mutex_);
-        sessionMap_[key] = std::move(obj);
+        sessionMap_.insert(std::make_pair(key, std::move(obj)));
     }
 
     /**
@@ -146,7 +190,6 @@ class Session
     Session() = delete;
 
   private:
-    using SessionMap = std::map<std::string, any>;
     SessionMap sessionMap_;
     mutable std::mutex mutex_;
     std::string sessionId_;

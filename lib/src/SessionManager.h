@@ -1,6 +1,6 @@
 /**
  *
- *  SessionManager.h
+ *  @file SessionManager.h
  *  An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
@@ -37,7 +37,6 @@ class SessionManager : public trantor::NonCopyable
 
   private:
     std::unique_ptr<CacheMap<std::string, SessionPtr>> sessionMapPtr_;
-    std::mutex mapMutex_;
     trantor::EventLoop *loop_;
     size_t timeout_;
 };

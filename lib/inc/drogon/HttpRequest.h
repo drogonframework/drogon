@@ -236,10 +236,10 @@ class HttpRequest
     }
 
     /// Get the session to which the request belongs.
-    virtual SessionPtr session() const = 0;
+    virtual const SessionPtr &session() const = 0;
 
     /// Get the session to which the request belongs.
-    SessionPtr getSession() const
+    const SessionPtr &getSession() const
     {
         return session();
     }

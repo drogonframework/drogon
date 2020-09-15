@@ -30,12 +30,13 @@ int main()
         cachePtr->insert("2", "2", 10, []() { LOG_DEBUG << "2 timeout"; });
     });
     trantor::EventLoop mainLoop;
-    mainLoop.runAt(now.after(3).roundSecond().after(0.0013), [&]() {
-        (*main_cachePtr)["new"] = "new";
+    mainLoop.runAt(now.after(4).roundSecond().after(0.1013), [&]() {
+        main_cachePtr->insert("new", "new");
         if (main_cachePtr->find("1"))
         {
             LOG_DEBUG << "find item 1:" << (*main_cachePtr)["1"];
-            (*main_cachePtr)["1"] = "22";
+            //(*main_cachePtr)["1"] = "22";
+            main_cachePtr->modify("1", [](std::string &item) { item = "22"; });
             LOG_DEBUG << (*main_cachePtr)["1"];
         }
         else
