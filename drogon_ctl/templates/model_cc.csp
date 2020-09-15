@@ -868,15 +868,13 @@ void [[className]]::updateByJson(const Json::Value &pJson) noexcept(false)
         $$<<"{\n";
         $$<<"    return std::make_tuple(";
         int count=0;
-        for(auto col:cols)
+        auto pkNames=@@.get<std::vector<std::string>>("primaryKeyValNames");
+        for(auto pkName:pkNames)
         {
-            if(col.isPrimaryKey_)
-            {
-                ++count;
-                $$<<"*"<<col.colValName_<<"_";
-                if(count<@@.get<int>("hasPrimaryKey"))
-                    $$<<",";
-            }
+            ++count;
+            $$<<"*"<<pkName<<"_";
+            if(count<@@.get<int>("hasPrimaryKey"))
+                $$<<",";
         }
         $$<<");\n";
         $$<<"}\n";
