@@ -1,6 +1,6 @@
 /**
  *
- *  DrObject.h
+ *  @file DrObject.h
  *  An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
@@ -110,7 +110,6 @@ class DrObject : public virtual DrObjectBase
                                 void>::type
         registerClass()
         {
-            LOG_ERROR << "Can't register classes without a default constructor";
         }
     };
 
