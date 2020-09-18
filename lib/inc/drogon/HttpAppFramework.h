@@ -340,6 +340,23 @@ class HttpAppFramework : public trantor::NonCopyable
      */
     virtual HttpAppFramework &loadConfigFile(const std::string &fileName) = 0;
 
+    /// Load the configuration from a Json::Value Object.
+    /**
+     * @param Json::Value Object containing the configuration.
+     * @note Please refer to the configuration file for the content of the json
+     * object.
+     */
+    virtual HttpAppFramework &loadConfigJson(const Json::Value &data) = 0;
+
+    /// Load the configuration from a Json::Value Object.
+    /**
+     * @param rvalue reference to a Json::Value object containing the
+     * configuration.
+     * @note Please refer to the configuration file for the content of the json
+     * object.
+     */
+    virtual HttpAppFramework &loadConfigJson(Json::Value &&data) = 0;
+
     /// Register a HttpSimpleController object into the framework.
     /**
      * @param pathName When the path of a http request is equal to the

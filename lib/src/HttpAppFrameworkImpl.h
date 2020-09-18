@@ -17,6 +17,7 @@
 #include "impl_forwards.h"
 #include <drogon/HttpAppFramework.h>
 #include <drogon/config.h>
+#include <json/json.h>
 #include <memory>
 #include <mutex>
 #include <regex>
@@ -248,6 +249,8 @@ class HttpAppFrameworkImpl : public HttpAppFramework
         size_t maxConnectionsPerIP) override;
     virtual HttpAppFramework &loadConfigFile(
         const std::string &fileName) override;
+    virtual HttpAppFramework &loadConfigJson(const Json::Value &data) override;
+    virtual HttpAppFramework &loadConfigJson(Json::Value &&data) override;
     virtual HttpAppFramework &enableRunAsDaemon() override
     {
         runAsDaemon_ = true;

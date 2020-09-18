@@ -333,6 +333,20 @@ HttpAppFramework &HttpAppFrameworkImpl::loadConfigFile(
     jsonConfig_ = loader.jsonValue();
     return *this;
 }
+HttpAppFramework &HttpAppFrameworkImpl::loadConfigJson(const Json::Value &data)
+{
+    ConfigLoader loader(data);
+    loader.load();
+    jsonConfig_ = loader.jsonValue();
+    return *this;
+}
+HttpAppFramework &HttpAppFrameworkImpl::loadConfigJson(Json::Value &&data)
+{
+    ConfigLoader loader(std::move(data));
+    loader.load();
+    jsonConfig_ = loader.jsonValue();
+    return *this;
+}
 HttpAppFramework &HttpAppFrameworkImpl::setLogPath(
     const std::string &logPath,
     const std::string &logfileBaseName,
