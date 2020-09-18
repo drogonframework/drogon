@@ -135,7 +135,7 @@ ConfigLoader::ConfigLoader(const Json::Value &data)
 {
 }
 ConfigLoader::ConfigLoader(Json::Value &&data)
-    : configJsonRoot_(data)
+    : configJsonRoot_(std::move(data))
 {
 }
 ConfigLoader::~ConfigLoader()
