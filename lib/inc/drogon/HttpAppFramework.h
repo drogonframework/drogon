@@ -343,12 +343,17 @@ class HttpAppFramework : public trantor::NonCopyable
     /// Load the configuration from a Json::Value Object.
     /**
      * @param Json::Value Object containing the configuration.
+     * @note Please refer to the configuration file for the content of the json
+     * object.
      */
     virtual HttpAppFramework &loadConfigJson(const Json::Value &data) = 0;
 
     /// Load the configuration from a Json::Value Object.
     /**
-     * @param rvalue reference to a Json::Value object containing the configuration.
+     * @param rvalue reference to a Json::Value object containing the
+     * configuration.
+     * @note Please refer to the configuration file for the content of the json
+     * object.
      */
     virtual HttpAppFramework &loadConfigJson(Json::Value &&data) = 0;
 

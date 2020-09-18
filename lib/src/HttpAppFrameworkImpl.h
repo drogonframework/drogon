@@ -249,10 +249,8 @@ class HttpAppFrameworkImpl : public HttpAppFramework
         size_t maxConnectionsPerIP) override;
     virtual HttpAppFramework &loadConfigFile(
         const std::string &fileName) override;
-    virtual HttpAppFramework &loadConfigJson(
-        const Json::Value &data) override;
-    virtual HttpAppFramework &loadConfigJson(
-        Json::Value &&data) override;
+    virtual HttpAppFramework &loadConfigJson(const Json::Value &data) override;
+    virtual HttpAppFramework &loadConfigJson(Json::Value &&data) override;
     virtual HttpAppFramework &enableRunAsDaemon() override
     {
         runAsDaemon_ = true;
