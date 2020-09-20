@@ -34,7 +34,7 @@ class DrogonFileLocker : public trantor::NonCopyable
   public:
     DrogonFileLocker()
     {
-        fd_ = open("/tmp/drogon.lock", O_TRUNC | O_CREAT, 0755);
+        fd_ = open("/tmp/drogon.lock", O_TRUNC | O_CREAT, 0666);
         flock(fd_, LOCK_EX);
     }
     ~DrogonFileLocker()

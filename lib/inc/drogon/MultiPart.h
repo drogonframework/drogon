@@ -78,7 +78,16 @@ class HttpFile
     /// Return the file length.
     size_t fileLength() const noexcept;
 
-    /// Return the file data.
+    /**
+     * @brief return the pointer of the file data.
+     *
+     * @return const char*
+     * @note This function just returns the beginning of the file data in
+     * memory. Users mustn't assume that there is an \0 character at the end of
+     * the file data even if the type of the file is text. One should get the
+     * length of the file by the fileLength() method, or use the fileContent()
+     * method.
+     */
     const char *fileData() const noexcept;
 
     /// Return the md5 string of the file

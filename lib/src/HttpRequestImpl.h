@@ -340,7 +340,7 @@ class HttpRequestImpl : public HttpRequest
 
     void appendToBuffer(trantor::MsgBuffer *output) const;
 
-    virtual SessionPtr session() const override
+    virtual const SessionPtr &session() const override
     {
         return sessionPtr_;
     }

@@ -1,6 +1,6 @@
 /**
  *
- *  CacheMap.h
+ *  @file CacheMap.h
  *  An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
@@ -99,7 +99,7 @@ class CacheMap
         }
         if (tickInterval_ > 0 && wheelsNumber_ > 0 && bucketsNumPerWheel_ > 0)
         {
-            timerId_ = loop_->runEvery(tickInterval_, [=]() {
+            timerId_ = loop_->runEvery(tickInterval_, [this]() {
                 size_t t = ++ticksCounter_;
                 size_t pow = 1;
                 for (size_t i = 0; i < wheelsNumber_; ++i)
@@ -127,23 +127,46 @@ class CacheMap
     };
     ~CacheMap()
     {
+        map_.clear();
+        for (auto iter = wheels_.rbegin(); iter != wheels_.rend(); ++iter)
         {
-            std::lock_guard<std::mutex> guard(mtx_);
-            map_.clear();
-        }
-        {
-            std::lock_guard<std::mutex> lock(bucketMutex_);
-            for (auto iter = wheels_.rbegin(); iter != wheels_.rend(); ++iter)
-            {
-                iter->clear();
-            }
+            iter->clear();
         }
         LOG_TRACE << "CacheMap destruct!";
     }
     struct MapValue
     {
-        size_t timeout = 0;
-        T2 value;
+        MapValue(const T2 &value,
+                 size_t timeout,
+                 std::function<void()> &&callback)
+            : value_(value),
+              timeout_(timeout),
+              timeoutCallback_(std::move(callback))
+        {
+        }
+        MapValue(T2 &&value, size_t timeout, std::function<void()> &&callback)
+            : value_(std::move(value)),
+              timeout_(timeout),
+              timeoutCallback_(std::move(callback))
+        {
+        }
+        MapValue(T2 &&value, size_t timeout)
+            : value_(std::move(value)), timeout_(timeout)
+        {
+        }
+        MapValue(const T2 &value, size_t timeout)
+            : value_(value), timeout_(timeout)
+        {
+        }
+        MapValue(T2 &&value) : value_(std::move(value))
+        {
+        }
+        MapValue(const T2 &value) : value_(value)
+        {
+        }
+        MapValue() = default;
+        T2 value_;
+        size_t timeout_{0};
         std::function<void()> timeoutCallback_;
         WeakCallbackEntryPtr weakEntryPtr_;
     };
@@ -165,23 +188,16 @@ class CacheMap
     {
         if (timeout > 0)
         {
-            MapValue v;
-            v.value = std::move(value);
-            v.timeout = timeout;
-            v.timeoutCallback_ = std::move(timeoutCallback);
+            MapValue v{std::move(value), timeout, std::move(timeoutCallback)};
             std::lock_guard<std::mutex> lock(mtx_);
-            map_[key] = std::move(v);
+            map_.insert(std::make_pair(key, std::move(v)));
             eraseAfter(timeout, key);
         }
         else
         {
-            MapValue v;
-            v.value = std::move(value);
-            v.timeout = timeout;
-            v.timeoutCallback_ = std::function<void()>();
-            v.weakEntryPtr_ = WeakCallbackEntryPtr();
+            MapValue v{std::move(value)};
             std::lock_guard<std::mutex> lock(mtx_);
-            map_[key] = std::move(v);
+            map_.insert(std::make_pair(key, std::move(v)));
         }
     }
     /**
@@ -201,43 +217,79 @@ class CacheMap
     {
         if (timeout > 0)
         {
-            MapValue v;
-            v.value = value;
-            v.timeout = timeout;
-            v.timeoutCallback_ = std::move(timeoutCallback);
+            MapValue v{value, timeout, std::move(timeoutCallback)};
             std::lock_guard<std::mutex> lock(mtx_);
-            map_[key] = std::move(v);
+            map_.insert(std::make_pair(key, std::move(v)));
             eraseAfter(timeout, key);
         }
         else
         {
-            MapValue v;
-            v.value = value;
-            v.timeout = timeout;
-            v.timeoutCallback_ = std::function<void()>();
-            v.weakEntryPtr_ = WeakCallbackEntryPtr();
+            MapValue v{value};
             std::lock_guard<std::mutex> lock(mtx_);
-            map_[key] = std::move(v);
+            map_.insert(std::make_pair(key, std::move(v)));
         }
     }
 
-    /// Return the reference to the value of the keyword.
-    T2 &operator[](const T1 &key)
+    /**
+     * @brief Return the value of the keyword.
+     *
+     * @param key
+     * @return T2
+     * @note This function returns a copy of the data in the cache. If the data
+     * is not found, a default T2 type value is returned and nothing is inserted
+     * into the cache.
+     */
+    T2 operator[](const T1 &key)
     {
         int timeout = 0;
-
         std::lock_guard<std::mutex> lock(mtx_);
         auto iter = map_.find(key);
         if (iter != map_.end())
         {
-            timeout = iter->second.timeout;
+            timeout = iter->second.timeout_;
             if (timeout > 0)
                 eraseAfter(timeout, key);
-            return iter->second.value;
+            return iter->second.value_;
         }
-        return map_[key].value;
+        return T2();
     }
 
+    /**
+     * @brief Modify or visit the data identified by the key parameter.
+     *
+     * @tparam Callable the type of the handler.
+     * @param key
+     * @param handler A callable that can modify or visit the data. The
+     * signature of the handler should be equivalent to 'void(T2&)' or
+     * 'void(const T2&)'
+     * @param timeout In seconds.
+     *
+     * @note This function is multiple-thread safe. if the data identified by
+     * the key doesn't exist, a new one is created and passed to the handler and
+     * stored in the cache with the timeout parameter. The changing of the data
+     * is protected by the mutex of the cache.
+     */
+    template <typename Callable>
+    void modify(const T1 &key, Callable &&handler, size_t timeout = 0)
+    {
+        std::lock_guard<std::mutex> lock(mtx_);
+        auto iter = map_.find(key);
+        if (iter != map_.end())
+        {
+            timeout = iter->second.timeout_;
+            handler(iter->second.value_);
+            if (timeout > 0)
+                eraseAfter(timeout, key);
+            return;
+        }
+        MapValue v{T2(), timeout};
+        handler(v.value_);
+        map_.insert(std::make_pair(key, std::move(v)));
+        if (timeout > 0)
+        {
+            eraseAfter(timeout, key);
+        }
+    }
     /// Check if the value of the keyword exists
     bool find(const T1 &key)
     {
@@ -248,7 +300,7 @@ class CacheMap
         auto iter = map_.find(key);
         if (iter != map_.end())
         {
-            timeout = iter->second.timeout;
+            timeout = iter->second.timeout_;
             flag = true;
         }
 
@@ -271,9 +323,9 @@ class CacheMap
         auto iter = map_.find(key);
         if (iter != map_.end())
         {
-            timeout = iter->second.timeout;
+            timeout = iter->second.timeout_;
             flag = true;
-            value = iter->second.value;
+            value = iter->second.value_;
         }
 
         if (timeout > 0)
@@ -357,15 +409,16 @@ class CacheMap
             }
             if (i < (wheelsNumber_ - 1))
             {
-                entryPtr = std::make_shared<CallbackEntry>([=]() {
-                    if (delay > 0)
-                    {
-                        std::lock_guard<std::mutex> lock(bucketMutex_);
-                        wheels_[i][(delay + (t % bucketsNumPerWheel_) - 1) %
-                                   bucketsNumPerWheel_]
-                            .insert(entryPtr);
-                    }
-                });
+                entryPtr = std::make_shared<CallbackEntry>(
+                    [this, delay, i, t, entryPtr]() {
+                        if (delay > 0)
+                        {
+                            std::lock_guard<std::mutex> lock(bucketMutex_);
+                            wheels_[i][(delay + (t % bucketsNumPerWheel_) - 1) %
+                                       bucketsNumPerWheel_]
+                                .insert(entryPtr);
+                        }
+                    });
             }
             else
             {
@@ -397,14 +450,14 @@ class CacheMap
         }
         else
         {
-            std::function<void()> cb = [=]() {
+            std::function<void()> cb = [this, key]() {
                 std::lock_guard<std::mutex> lock(mtx_);
                 if (map_.find(key) != map_.end())
                 {
                     auto &value = map_[key];
                     auto entryPtr = value.weakEntryPtr_.lock();
                     // entryPtr is used to avoid race conditions
-                    if (value.timeout > 0 && !entryPtr)
+                    if (value.timeout_ > 0 && !entryPtr)
                     {
                         if (value.timeoutCallback_)
                         {

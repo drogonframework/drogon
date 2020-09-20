@@ -130,6 +130,13 @@ ConfigLoader::ConfigLoader(const std::string &configFile)
         }
     }
 }
+ConfigLoader::ConfigLoader(const Json::Value &data) : configJsonRoot_(data)
+{
+}
+ConfigLoader::ConfigLoader(Json::Value &&data)
+    : configJsonRoot_(std::move(data))
+{
+}
 ConfigLoader::~ConfigLoader()
 {
 }

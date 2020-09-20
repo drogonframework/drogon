@@ -8,7 +8,7 @@
         //File uploading method
         function UpladFile() {
             var fileObj = document.getElementById("file").files[0]; // js get file object
-            var url =  "http://localhost:8848" + "/api/attachment/upload"; 
+            var url =  "/api/attachment/upload"; 
 
             var form = new FormData(); // FormData object
             form.append("file", fileObj); // File object

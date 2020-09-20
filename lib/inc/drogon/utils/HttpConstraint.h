@@ -57,7 +57,7 @@ class HttpConstraint
 
   private:
     ConstraintType type_{ConstraintType::None};
-    HttpMethod method_;
+    HttpMethod method_{HttpMethod::Invalid};
     std::string filterName_;
 };
 }  // namespace internal

@@ -265,7 +265,7 @@ void create_model::createModelClassFromPG(
     }
     else if (pkNumber > 1)
     {
-        std::vector<std::string> pkNames, pkTypes;
+        std::vector<std::string> pkNames, pkTypes, pkValNames;
         for (size_t i = 1; i <= pkNumber; ++i)
         {
             *client << "SELECT \
@@ -283,6 +283,7 @@ void create_model::createModelClassFromPG(
                     if (isNull)
                         return;
                     pkNames.push_back(colName);
+                    pkValNames.push_back(nameTransform(colName, false));
                     for (auto &col : cols)
                     {
                         if (col.colName_ == colName)
@@ -299,6 +300,7 @@ void create_model::createModelClassFromPG(
         }
         data["primaryKeyName"] = pkNames;
         data["primaryKeyType"] = pkTypes;
+        data["primaryKeyValNames"] = pkValNames;
     }
 
     data["columns"] = cols;
