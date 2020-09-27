@@ -14,7 +14,7 @@ set(DROGON_MINOR_VERSION 0)
 set(DROGON_PATCH_VERSION 0)
 set(DROGON_VERSION
     ${DROGON_MAJOR_VERSION}.${DROGON_MINOR_VERSION}.${DROGON_PATCH_VERSION})
-set(DROGON_VERSION_STRING "${DROGON_VERSION}.beta21")
+set(DROGON_VERSION_STRING "${DROGON_VERSION}")
 
 # Offer the user the choice of overriding the installation directories
 set(INSTALL_LIB_DIR lib CACHE PATH "Installation directory for libraries")

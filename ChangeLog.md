@@ -4,6 +4,40 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.0.0] - 2020-09-27
+
+### Fixed
+
+- Fix an issue of simple_reverse_proxy when handling chunked transfer-encoding.
+
+- Fix a bug when losting connection to MySQL server during query.
+
+- Remove the expired std::iterator template.
+
+- Fix a bug when creating models in some special cases.
+
+### API changes list
+
+- Modify methods related to headers.
+
+- Remove the expired std::iterator template.
+
+- Add getListeners() method to the HttpAppFramework class.
+
+- Remove the useless method stat() from the PluginBase class.
+
+- Add ConfigLoader::ConfigLoader(const Json::Value &data).
+
+### Changed
+
+- Add support for status code 418.
+
+- Modify session handling.
+
+- Modify the FileUpload.csp in simple_example to avoid CORS.
+
+- remove execution permission on /tmp/drogon.lock.
+
 ## [1.0.0-beta21] - 2020-08-19
 
 ### Changed
@@ -502,7 +536,9 @@ All notable changes to this project will be documented in this file.
 
 ## [1.0.0-beta1] - 2019-06-11
 
-[Unreleased]: https://github.com/an-tao/drogon/compare/v1.0.0-beta21...HEAD
+[Unreleased]: https://github.com/an-tao/drogon/compare/v1.0.0...HEAD
+
+[1.0.0]: https://github.com/an-tao/drogon/compare/v1.0.0-beta21...v1.0.0
 
 [1.0.0-beta21]: https://github.com/an-tao/drogon/compare/v1.0.0-beta20...v1.0.0-beta21
 

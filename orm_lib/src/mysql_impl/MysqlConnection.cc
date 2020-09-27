@@ -181,7 +181,6 @@ void MysqlConnection::disconnect()
 }
 void MysqlConnection::handleTimeout()
 {
-    LOG_TRACE << "channel index:" << channelPtr_->index();
     int status = 0;
     status |= MYSQL_WAIT_TIMEOUT;
     MYSQL *ret;
