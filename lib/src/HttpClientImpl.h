@@ -32,8 +32,11 @@ class HttpClientImpl : public HttpClient,
   public:
     HttpClientImpl(trantor::EventLoop *loop,
                    const trantor::InetAddress &addr,
-                   bool useSSL = false);
-    HttpClientImpl(trantor::EventLoop *loop, const std::string &hostString);
+                   bool useSSL = false,
+                   bool useOldTLS = false);
+    HttpClientImpl(trantor::EventLoop *loop,
+                   const std::string &hostString,
+                   bool useOldTLS = false);
     virtual void sendRequest(const HttpRequestPtr &req,
                              const HttpReqCallback &callback,
                              double timeout = 0) override;
@@ -101,6 +104,7 @@ class HttpClientImpl : public HttpClient,
     size_t bytesReceived_{0};
     bool dns_{false};
     std::shared_ptr<trantor::Resolver> resolverPtr_;
+    bool useOldTLS_{false};
 };
 using HttpClientImplPtr = std::shared_ptr<HttpClientImpl>;
 }  // namespace drogon

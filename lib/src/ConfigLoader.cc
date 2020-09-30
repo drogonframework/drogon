@@ -510,8 +510,9 @@ static void loadListeners(const Json::Value &listeners)
         auto useSSL = listener.get("https", false).asBool();
         auto cert = listener.get("cert", "").asString();
         auto key = listener.get("key", "").asString();
+        auto useOldTLS = listener.get("use_old_tls", false).asBool();
         LOG_TRACE << "Add listener:" << addr << ":" << port;
-        drogon::app().addListener(addr, port, useSSL, cert, key);
+        drogon::app().addListener(addr, port, useSSL, cert, key, useOldTLS);
     }
 }
 static void loadSSL(const Json::Value &sslFiles)
