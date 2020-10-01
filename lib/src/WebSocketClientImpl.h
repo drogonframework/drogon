@@ -59,10 +59,12 @@ class WebSocketClientImpl
 
     WebSocketClientImpl(trantor::EventLoop *loop,
                         const trantor::InetAddress &addr,
-                        bool useSSL = false);
+                        bool useSSL = false,
+                        bool useOldTLS = false);
 
     WebSocketClientImpl(trantor::EventLoop *loop,
-                        const std::string &hostString);
+                        const std::string &hostString,
+                        bool useOldTLS = false);
 
     ~WebSocketClientImpl();
 
@@ -71,7 +73,8 @@ class WebSocketClientImpl
     trantor::EventLoop *loop_;
     trantor::InetAddress serverAddr_;
     std::string domain_;
-    bool useSSL_;
+    bool useSSL_{false};
+    bool useOldTLS_{false};
     bool upgraded_{false};
     std::string wsKey_;
     std::string wsAccept_;
