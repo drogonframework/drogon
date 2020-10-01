@@ -134,6 +134,9 @@ class DbConnection : public trantor::NonCopyable
     DbConnectionCallback okCallback_{[](const DbConnectionPtr &) {}};
     std::function<void(const std::exception_ptr &)> exceptionCallback_;
     bool isWorking_{false};
+
+    static std::map<std::string, std::string> parseConnString(
+        const std::string &);
 };
 
 }  // namespace orm
