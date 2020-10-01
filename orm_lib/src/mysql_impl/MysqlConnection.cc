@@ -1,7 +1,7 @@
 /**
  *
- *  MysqlConnection.cc
- *  An Tao
+ *  @file MysqlConnection.cc
+ *  @author An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
@@ -57,20 +57,12 @@ MysqlConnection::MysqlConnection(trantor::EventLoop *loop,
     mysql_options(mysqlPtr_.get(), MYSQL_OPT_NONBLOCK, 0);
 
     // Get the key and value
-    std::regex r(" *= *");
-    auto tmpStr = std::regex_replace(connInfo, r, "=");
-
-    auto keyValues = utils::splitString(tmpStr, " ");
-    for (auto const &kvs : keyValues)
+    auto connParams = parseConnString(connInfo);
+    for (auto const &kv : connParams)
     {
-        auto kv = utils::splitString(kvs, "=");
-        assert(kv.size() == 2);
-        auto key = kv[0];
-        auto value = kv[1];
-        if (value[0] == '\'' && value[value.length() - 1] == '\'')
-        {
-            value = value.substr(1, value.length() - 2);
-        }
+        auto key = kv.first;
+        auto value = kv.second;
+
         std::transform(key.begin(), key.end(), key.begin(), tolower);
         // LOG_TRACE << key << "=" << value;
         if (key == "host")

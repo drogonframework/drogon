@@ -251,6 +251,7 @@ if(pg_FOUND OR MySQL_FOUND OR SQLite3_FOUND)
       orm_lib/src/DbClientImpl.cc
       orm_lib/src/DbClientLockFree.cc
       orm_lib/src/DbClientManager.cc
+      orm_lib/src/DbConnection.cc
       orm_lib/src/Exception.cc
       orm_lib/src/Field.cc
       orm_lib/src/Result.cc

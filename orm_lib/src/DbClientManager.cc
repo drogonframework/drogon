@@ -1,7 +1,7 @@
 /**
  *
- *  DbClientManager.cc
- *  An Tao
+ *  @file DbClientManager.cc
+ *  @author An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
@@ -21,6 +21,26 @@
 
 using namespace drogon::orm;
 using namespace drogon;
+
+inline std::string escapeConnString(const std::string &str)
+{
+    bool beQuoted = str.empty() || (str.find(' ') != std::string::npos);
+
+    std::string escaped;
+    escaped.reserve(str.size());
+    for (auto ch : str)
+    {
+        if (ch == '\'')
+            escaped.push_back('\\');
+        else if (ch == '\\')
+            escaped.push_back('\\');
+        escaped.push_back(ch);
+    }
+
+    if (beQuoted)
+        return "'" + escaped + "'";
+    return escaped;
+}
 
 void DbClientManager::createDbClients(
     const std::vector<trantor::EventLoop *> &ioloops)
@@ -97,22 +117,23 @@ void DbClientManager::createDbClient(const std::string &dbType,
                                      const bool isFast,
                                      const std::string &characterSet)
 {
-    auto connStr = utils::formattedString("host=%s port=%u dbname=%s user=%s",
-                                          host.c_str(),
-                                          port,
-                                          databaseName.c_str(),
-                                          userName.c_str());
+    auto connStr =
+        utils::formattedString("host=%s port=%u dbname=%s user=%s",
+                               escapeConnString(host).c_str(),
+                               port,
+                               escapeConnString(databaseName).c_str(),
+                               escapeConnString(userName).c_str());
     if (!password.empty())
     {
         connStr += " password=";
-        connStr += password;
+        connStr += escapeConnString(password);
     }
     std::string type = dbType;
     std::transform(type.begin(), type.end(), type.begin(), tolower);
     if (!characterSet.empty())
     {
         connStr += " client_encoding=";
-        connStr += characterSet;
+        connStr += escapeConnString(characterSet);
     }
     DbInfo info;
     info.connectionInfo_ = connStr;
