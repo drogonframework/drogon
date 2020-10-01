@@ -1,7 +1,7 @@
 /**
  *
- *  DbConnection.cc
- *  Martin Chang
+ *  @file DbConnection.cc
+ *  @author Martin Chang
  *
  *  Copyright 2020, Martin Chang.  All rights reserved.
  *  https://github.com/an-tao/drogon
