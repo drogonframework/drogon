@@ -1,7 +1,7 @@
 /**
  *
  *  @file HttpAppFramework.h
- *  An Tao
+ *  @author An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
@@ -649,6 +649,8 @@ class HttpAppFramework : public trantor::NonCopyable
      * @param keyFile specify the cert file and the private key file for this
      * listener. If they are empty, the global configuration set by the above
      * method is used.
+     * @param useOldTLS If true, the TLS1.0/1.1 are enabled for HTTPS
+     * connections.
      *
      * @note
      * This operation can be performed by an option in the configuration file.
@@ -657,7 +659,8 @@ class HttpAppFramework : public trantor::NonCopyable
                                           uint16_t port,
                                           bool useSSL = false,
                                           const std::string &certFile = "",
-                                          const std::string &keyFile = "") = 0;
+                                          const std::string &keyFile = "",
+                                          bool useOldTLS = false) = 0;
 
     /// Enable sessions supporting.
     /**

@@ -1,7 +1,7 @@
 /**
  *
- *  DbClientImpl.cc
- *  An Tao
+ *  @file DbClientImpl.cc
+ *  @author An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
@@ -250,11 +250,14 @@ void DbClientImpl::makeTrans(
             {
                 std::lock_guard<std::mutex> guard(thisPtr->connectionsMutex_);
                 if (thisPtr->connections_.find(conn) ==
-                        thisPtr->connections_.end() &&
-                    thisPtr->busyConnections_.find(conn) ==
-                        thisPtr->busyConnections_.find(conn))
+                    thisPtr->connections_.end())
                 {
                     // connection is broken and removed
+                    assert(thisPtr->busyConnections_.find(conn) ==
+                               thisPtr->busyConnections_.end() &&
+                           thisPtr->readyConnections_.find(conn) ==
+                               thisPtr->readyConnections_.end());
+
                     return;
                 }
             }

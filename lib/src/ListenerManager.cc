@@ -1,7 +1,7 @@
 /**
  *
- *  ListenerManager.cc
- *  An Tao
+ *  @file ListenerManager.cc
+ *  @author An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
@@ -56,7 +56,8 @@ void ListenerManager::addListener(const std::string &ip,
                                   uint16_t port,
                                   bool useSSL,
                                   const std::string &certFile,
-                                  const std::string &keyFile)
+                                  const std::string &keyFile,
+                                  bool useOldTLS)
 {
 #ifndef OpenSSL_FOUND
     if (useSSL)
@@ -64,7 +65,7 @@ void ListenerManager::addListener(const std::string &ip,
         LOG_ERROR << "Can't use SSL without OpenSSL found in your system";
     }
 #endif
-    listeners_.emplace_back(ip, port, useSSL, certFile, keyFile);
+    listeners_.emplace_back(ip, port, useSSL, certFile, keyFile, useOldTLS);
 }
 
 std::vector<trantor::EventLoop *> ListenerManager::createListeners(
@@ -130,7 +131,7 @@ std::vector<trantor::EventLoop *> ListenerManager::createListeners(
                         << std::endl;
                     exit(1);
                 }
-                serverPtr->enableSSL(cert, key);
+                serverPtr->enableSSL(cert, key, listener.useOldTLS_);
 #endif
             }
             serverPtr->setHttpAsyncCallback(httpCallback);
@@ -171,7 +172,7 @@ std::vector<trantor::EventLoop *> ListenerManager::createListeners(
                           << std::endl;
                 exit(1);
             }
-            serverPtr->enableSSL(cert, key);
+            serverPtr->enableSSL(cert, key, listener.useOldTLS_);
 #endif
         }
         serverPtr->setIoLoopThreadPool(ioLoopThreadPoolPtr_);

@@ -1,7 +1,7 @@
 /**
  *
- *  WebSocketClientImpl.cc
- *  An Tao
+ *  @file WebSocketClientImpl.cc
+ *  @author An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
@@ -45,7 +45,7 @@ void WebSocketClientImpl::createTcpClient()
         std::make_shared<trantor::TcpClient>(loop_, serverAddr_, "httpClient");
     if (useSSL_)
     {
-        tcpClientPtr_->enableSSL();
+        tcpClientPtr_->enableSSL(useOldTLS_);
     }
     auto thisPtr = shared_from_this();
     std::weak_ptr<WebSocketClientImpl> weakPtr = thisPtr;
@@ -266,14 +266,16 @@ void WebSocketClientImpl::reconnect()
 
 WebSocketClientImpl::WebSocketClientImpl(trantor::EventLoop *loop,
                                          const trantor::InetAddress &addr,
-                                         bool useSSL)
-    : loop_(loop), serverAddr_(addr), useSSL_(useSSL)
+                                         bool useSSL,
+                                         bool useOldTLS)
+    : loop_(loop), serverAddr_(addr), useSSL_(useSSL), useOldTLS_(useOldTLS)
 {
 }
 
 WebSocketClientImpl::WebSocketClientImpl(trantor::EventLoop *loop,
-                                         const std::string &hostString)
-    : loop_(loop)
+                                         const std::string &hostString,
+                                         bool useOldTLS)
+    : loop_(loop), useOldTLS_(useOldTLS)
 {
     auto lowerHost = hostString;
     std::transform(lowerHost.begin(),
@@ -400,20 +402,24 @@ void WebSocketClientImpl::connectToServer(
 WebSocketClientPtr WebSocketClient::newWebSocketClient(const std::string &ip,
                                                        uint16_t port,
                                                        bool useSSL,
-                                                       trantor::EventLoop *loop)
+                                                       trantor::EventLoop *loop,
+                                                       bool useOldTLS)
 {
     bool isIpv6 = ip.find(':') == std::string::npos ? false : true;
     return std::make_shared<WebSocketClientImpl>(
         loop == nullptr ? HttpAppFrameworkImpl::instance().getLoop() : loop,
         trantor::InetAddress(ip, port, isIpv6),
-        useSSL);
+        useSSL,
+        useOldTLS);
 }
 
 WebSocketClientPtr WebSocketClient::newWebSocketClient(
     const std::string &hostString,
-    trantor::EventLoop *loop)
+    trantor::EventLoop *loop,
+    bool useOldTLS)
 {
     return std::make_shared<WebSocketClientImpl>(
         loop == nullptr ? HttpAppFrameworkImpl::instance().getLoop() : loop,
-        hostString);
+        hostString,
+        useOldTLS);
 }

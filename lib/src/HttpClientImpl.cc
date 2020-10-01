@@ -1,7 +1,7 @@
 /**
  *
  *  @file HttpClientImpl.cc
- *  An Tao
+ *  @author An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
@@ -37,7 +37,7 @@ void HttpClientImpl::createTcpClient()
 #ifdef OpenSSL_FOUND
     if (useSSL_)
     {
-        tcpClientPtr_->enableSSL();
+        tcpClientPtr_->enableSSL(useOldTLS_);
     }
 #endif
     auto thisPtr = shared_from_this();
@@ -91,14 +91,16 @@ void HttpClientImpl::createTcpClient()
 
 HttpClientImpl::HttpClientImpl(trantor::EventLoop *loop,
                                const trantor::InetAddress &addr,
-                               bool useSSL)
-    : loop_(loop), serverAddr_(addr), useSSL_(useSSL)
+                               bool useSSL,
+                               bool useOldTLS)
+    : loop_(loop), serverAddr_(addr), useSSL_(useSSL), useOldTLS_(useOldTLS)
 {
 }
 
 HttpClientImpl::HttpClientImpl(trantor::EventLoop *loop,
-                               const std::string &hostString)
-    : loop_(loop)
+                               const std::string &hostString,
+                               bool useOldTLS)
+    : loop_(loop), useOldTLS_(useOldTLS)
 {
     auto lowerHost = hostString;
     std::transform(lowerHost.begin(),
@@ -515,21 +517,25 @@ void HttpClientImpl::onRecvMessage(const trantor::TcpConnectionPtr &connPtr,
 HttpClientPtr HttpClient::newHttpClient(const std::string &ip,
                                         uint16_t port,
                                         bool useSSL,
-                                        trantor::EventLoop *loop)
+                                        trantor::EventLoop *loop,
+                                        bool useOldTLS)
 {
     bool isIpv6 = ip.find(':') == std::string::npos ? false : true;
     return std::make_shared<HttpClientImpl>(
         loop == nullptr ? HttpAppFrameworkImpl::instance().getLoop() : loop,
         trantor::InetAddress(ip, port, isIpv6),
-        useSSL);
+        useSSL,
+        useOldTLS);
 }
 
 HttpClientPtr HttpClient::newHttpClient(const std::string &hostString,
-                                        trantor::EventLoop *loop)
+                                        trantor::EventLoop *loop,
+                                        bool useOldTLS)
 {
     return std::make_shared<HttpClientImpl>(
         loop == nullptr ? HttpAppFrameworkImpl::instance().getLoop() : loop,
-        hostString);
+        hostString,
+        useOldTLS);
 }
 
 void HttpClientImpl::onError(ReqResult result)

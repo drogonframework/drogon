@@ -1,7 +1,7 @@
 /**
  *
  *  @file HttpAppFrameworkImpl.h
- *  An Tao
+ *  @author An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
@@ -49,12 +49,12 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     }
 
     virtual PluginBase *getPlugin(const std::string &name) override;
-    virtual HttpAppFramework &addListener(
-        const std::string &ip,
-        uint16_t port,
-        bool useSSL = false,
-        const std::string &certFile = "",
-        const std::string &keyFile = "") override;
+    virtual HttpAppFramework &addListener(const std::string &ip,
+                                          uint16_t port,
+                                          bool useSSL = false,
+                                          const std::string &certFile = "",
+                                          const std::string &keyFile = "",
+                                          bool useOldTLS = false) override;
     virtual HttpAppFramework &setThreadNum(size_t threadNum) override;
     virtual size_t getThreadNum() const override
     {

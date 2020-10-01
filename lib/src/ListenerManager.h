@@ -1,7 +1,7 @@
 /**
  *
- *  ListenerManager.h
- *  An Tao
+ *  @file ListenerManager.h
+ *  @author An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
@@ -34,7 +34,8 @@ class ListenerManager : public trantor::NonCopyable
                      uint16_t port,
                      bool useSSL = false,
                      const std::string &certFile = "",
-                     const std::string &keyFile = "");
+                     const std::string &keyFile = "",
+                     bool useOldTLS = false);
     std::vector<trantor::EventLoop *> createListeners(
         const HttpAsyncCallback &httpCallback,
         const WebSocketNewAsyncCallback &webSocketCallback,
@@ -61,12 +62,14 @@ class ListenerManager : public trantor::NonCopyable
                      uint16_t port,
                      bool useSSL,
                      const std::string &certFile,
-                     const std::string &keyFile)
+                     const std::string &keyFile,
+                     bool useOldTLS)
             : ip_(ip),
               port_(port),
               useSSL_(useSSL),
               certFile_(certFile),
-              keyFile_(keyFile)
+              keyFile_(keyFile),
+              useOldTLS_(useOldTLS)
         {
         }
         std::string ip_;
@@ -74,6 +77,7 @@ class ListenerManager : public trantor::NonCopyable
         bool useSSL_;
         std::string certFile_;
         std::string keyFile_;
+        bool useOldTLS_;
     };
     std::vector<ListenerInfo> listeners_;
     std::vector<std::shared_ptr<HttpServer>> servers_;

@@ -1,7 +1,7 @@
 /**
  *
- *  WebSocketClient.h
- *  An Tao
+ *  @file WebSocketClient.h
+ *  @author An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
@@ -81,6 +81,8 @@ class WebSocketClient
      * @param loop If the loop parameter is set to nullptr, the client uses the
      * HttpAppFramework's event loop, otherwise it runs in the loop identified
      * by the parameter.
+     * @param useOldTLS If the parameter is set to true, the TLS1.0/1.1 are
+     * enabled for HTTPS.
      * @return WebSocketClientPtr The smart pointer to the WebSocket client.
      * @note The ip parameter support for both ipv4 and ipv6 address
      */
@@ -88,7 +90,8 @@ class WebSocketClient
         const std::string &ip,
         uint16_t port,
         bool useSSL = false,
-        trantor::EventLoop *loop = nullptr);
+        trantor::EventLoop *loop = nullptr,
+        bool useOldTLS = false);
 
     /// Create a websocket client using the given hostString to connect to
     /// server
@@ -104,7 +107,8 @@ class WebSocketClient
      * @param loop if the parameter is set to nullptr, the client uses the
      * HttpAppFramework's main event loop, otherwise it runs in the loop
      * identified by the parameter.
-     *
+     * @param useOldTLS If the parameter is set to true, the TLS1.0/1.1 are
+     * enabled for HTTPS.
      * @note
      * Don't add path and parameters in hostString, the request path and
      * parameters should be set in HttpRequestPtr when calling the
@@ -113,7 +117,8 @@ class WebSocketClient
      */
     static WebSocketClientPtr newWebSocketClient(
         const std::string &hostString,
-        trantor::EventLoop *loop = nullptr);
+        trantor::EventLoop *loop = nullptr,
+        bool useOldTLS = false);
 
     virtual ~WebSocketClient()
     {

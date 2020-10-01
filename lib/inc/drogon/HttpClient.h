@@ -2,7 +2,7 @@
  *
  *  @file HttpClient.h
  *
- *  An Tao
+ *  @author An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
@@ -158,17 +158,20 @@ class HttpClient : public trantor::NonCopyable
      * @param ip The ip address of the HTTP server
      * @param port The port of the HTTP server
      * @param useSSL if the parameter is set to true, the client connects to the
-     * server using https.
+     * server using HTTPS.
      * @param loop If the loop parameter is set to nullptr, the client uses the
      * HttpAppFramework's event loop, otherwise it runs in the loop identified
      * by the parameter.
+     * @param useOldTLS If the parameter is set to true, the TLS1.0/1.1 are
+     * eanbled for HTTPS.
      * @return HttpClientPtr The smart pointer to the new client object.
      * @note: The ip parameter support for both ipv4 and ipv6 address
      */
     static HttpClientPtr newHttpClient(const std::string &ip,
                                        uint16_t port,
                                        bool useSSL = false,
-                                       trantor::EventLoop *loop = nullptr);
+                                       trantor::EventLoop *loop = nullptr,
+                                       bool useOldTLS = false);
 
     /// Get the event loop of the client;
     virtual trantor::EventLoop *getLoop() = 0;
@@ -196,6 +199,8 @@ class HttpClient : public trantor::NonCopyable
      * HttpAppFramework's event loop, otherwise it runs in the loop identified
      * by the parameter.
      *
+     * @param useOldTLS If the parameter is set to true, the TLS1.0/1.1 are
+     * enabled for HTTPS.
      * @note
      * Don't add path and parameters in hostString, the request path and
      * parameters should be set in HttpRequestPtr when calling the sendRequest()
@@ -203,7 +208,8 @@ class HttpClient : public trantor::NonCopyable
      *
      */
     static HttpClientPtr newHttpClient(const std::string &hostString,
-                                       trantor::EventLoop *loop = nullptr);
+                                       trantor::EventLoop *loop = nullptr,
+                                       bool useOldTLS = false);
 
     virtual ~HttpClient()
     {

@@ -1,7 +1,7 @@
 /**
  *
- *  HttpServer.h
- *  An Tao
+ *  @file HttpServer.h
+ *  @author An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
@@ -77,9 +77,11 @@ class HttpServer : trantor::NonCopyable
     void start();
     void stop();
 
-    void enableSSL(const std::string &certPath, const std::string &keyPath)
+    void enableSSL(const std::string &certPath,
+                   const std::string &keyPath,
+                   bool useOldTLS)
     {
-        server_.enableSSL(certPath, keyPath);
+        server_.enableSSL(certPath, keyPath, useOldTLS);
     }
 
     const trantor::InetAddress &address() const

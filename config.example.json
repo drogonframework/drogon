@@ -23,7 +23,9 @@
             //cert,key: Cert file path and key file path, empty by default,
             //if empty, use the global setting
             "cert": "",
-            "key": ""
+            "key": "",
+            //use_old_tls: enable the TLS1.0/1.1, false by default
+            "use_old_tls": false
         }
     ],
     "db_clients": [
