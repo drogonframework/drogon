@@ -24,7 +24,7 @@ using namespace drogon;
 
 inline std::string escapeConnString(const std::string &str)
 {
-    bool be_quoted = str.empty() || (str.find(' ') != std::string::npos);
+    bool beQuoted = str.empty() || (str.find(' ') != std::string::npos);
 
     std::string escaped;
     escaped.reserve(str.size());
@@ -37,7 +37,7 @@ inline std::string escapeConnString(const std::string &str)
         escaped.push_back(ch);
     }
 
-    if (be_quoted)
+    if (beQuoted)
         return "'" + escaped + "'";
     return escaped;
 }
