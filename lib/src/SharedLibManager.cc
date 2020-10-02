@@ -1,7 +1,7 @@
 /**
  *
- *  SharedLibManager.cc
- *  An Tao
+ *  @file SharedLibManager.cc
+ *  @author An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
@@ -75,7 +75,8 @@ SharedLibManager::SharedLibManager(const std::vector<std::string> &libPaths,
     : libPaths_(libPaths), outputPath_(outputPath)
 {
     workingThread_.run();
-    timeId_ = workingThread_.getLoop()->runEvery(5.0, [=]() { managerLibs(); });
+    timeId_ =
+        workingThread_.getLoop()->runEvery(5.0, [this]() { managerLibs(); });
 }
 SharedLibManager::~SharedLibManager()
 {
@@ -86,7 +87,9 @@ void SharedLibManager::managerLibs()
     for (auto const &libPath : libPaths_)
     {
         forEachFileIn(
-            libPath, [=](const std::string &filename, const struct stat &st) {
+            libPath,
+            [this, libPath](const std::string &filename,
+                            const struct stat &st) {
                 auto pos = filename.rfind('.');
                 if (pos != std::string::npos)
                 {
@@ -108,11 +111,10 @@ void SharedLibManager::managerLibs()
                             if (st.st_mtim.tv_sec >
                                 dlMap_[filename].mTime.tv_sec)
 #elif defined _WIN32
-                            if (st.st_mtime >
-                                dlMap_[filename].mTime.tv_sec)
+                            if (st.st_mtime > dlMap_[filename].mTime.tv_sec)
 #else
-                          if (st.st_mtimespec.tv_sec >
-                              dlMap_[filename].mTime.tv_sec)
+                            if (st.st_mtimespec.tv_sec >
+                                dlMap_[filename].mTime.tv_sec)
 #endif
                             {
                                 LOG_TRACE << "new csp file:" << filename;
@@ -169,9 +171,9 @@ void SharedLibManager::managerLibs()
 #ifdef __linux__
                         dlStat.mTime = st.st_mtim;
 #elif defined _WIN32
-                            dlStat.mTime.tv_sec = st.st_mtime;
+                        dlStat.mTime.tv_sec = st.st_mtime;
 #else
-                            dlStat.mTime = st.st_mtimespec;
+                        dlStat.mTime = st.st_mtimespec;
 #endif
                         if (dlStat.handle)
                         {
@@ -182,7 +184,7 @@ void SharedLibManager::managerLibs()
                             dlStat.handle = dlMap_[filename].handle;
                             dlMap_[filename] = dlStat;
                         }
-                        workingThread_.getLoop()->runAfter(3.5, [=]() {
+                        workingThread_.getLoop()->runAfter(3.5, [lockFile]() {
                             LOG_TRACE << "remove file " << lockFile;
                             if (unlink(lockFile.c_str()) == -1)
                                 perror("");

@@ -1,7 +1,7 @@
 /**
  *
- *  Criteria.cc
- *  An Tao
+ *  @file Criteria.cc
+ *  @author An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
@@ -31,7 +31,8 @@ const Criteria operator&&(Criteria cond1, Criteria cond2)
     cond.conditionString_ += " )";
     auto cond1Ptr = std::make_shared<Criteria>(std::move(cond1));
     auto cond2Ptr = std::make_shared<Criteria>(std::move(cond2));
-    cond.outputArgumentsFunc_ = [=](internal::SqlBinder &binder) {
+    cond.outputArgumentsFunc_ = [cond1Ptr,
+                                 cond2Ptr](internal::SqlBinder &binder) {
         if (cond1Ptr->outputArgumentsFunc_)
         {
             cond1Ptr->outputArgumentsFunc_(binder);
@@ -55,7 +56,8 @@ const Criteria operator||(Criteria cond1, Criteria cond2)
     cond.conditionString_ += " )";
     auto cond1Ptr = std::make_shared<Criteria>(std::move(cond1));
     auto cond2Ptr = std::make_shared<Criteria>(std::move(cond2));
-    cond.outputArgumentsFunc_ = [=](internal::SqlBinder &binder) {
+    cond.outputArgumentsFunc_ = [cond1Ptr,
+                                 cond2Ptr](internal::SqlBinder &binder) {
         if (cond1Ptr->outputArgumentsFunc_)
         {
             cond1Ptr->outputArgumentsFunc_(binder);

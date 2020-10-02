@@ -1,7 +1,7 @@
 /**
  *
- *  HttpSimpleControllersRouter.cc
- *  An Tao
+ *  @file HttpSimpleControllersRouter.cc
+ *  @author An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
@@ -132,7 +132,10 @@ void HttpSimpleControllersRouter::route(
                     std::function<void(const HttpResponsePtr &)>>(
                     std::move(callback));
                 filters_function::doFilters(
-                    filters, req, callbackPtr, [=, &binder]() mutable {
+                    filters,
+                    req,
+                    callbackPtr,
+                    [this, &ctrlInfo, req, callbackPtr, &binder]() mutable {
                         doPreHandlingAdvices(binder,
                                              ctrlInfo,
                                              req,
@@ -167,7 +170,14 @@ void HttpSimpleControllersRouter::route(
                     if (!filters.empty())
                     {
                         filters_function::doFilters(
-                            filters, req, callbackPtr, [=, &binder]() mutable {
+                            filters,
+                            req,
+                            callbackPtr,
+                            [this,
+                             &ctrlInfo,
+                             req,
+                             callbackPtr,
+                             &binder]() mutable {
                                 doPreHandlingAdvices(binder,
                                                      ctrlInfo,
                                                      req,

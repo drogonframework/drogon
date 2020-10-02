@@ -1,7 +1,7 @@
 /**
  *
- *  DbClient.h
- *  An Tao
+ *  @file DbClient.h
+ *  @author An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
@@ -124,8 +124,9 @@ class DbClient : public trantor::NonCopyable
             (binder << std::forward<Arguments>(args), 0)...};
         std::shared_ptr<std::promise<Result>> prom =
             std::make_shared<std::promise<Result>>();
-        binder >> [=](const Result &r) { prom->set_value(r); };
-        binder >> [=](const std::exception_ptr &e) { prom->set_exception(e); };
+        binder >> [prom](const Result &r) { prom->set_value(r); };
+        binder >>
+            [prom](const std::exception_ptr &e) { prom->set_exception(e); };
         binder.exec();
         return prom->get_future();
     }

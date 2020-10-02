@@ -86,7 +86,7 @@ int main()
                     group.setAvatarId("xixi");
                     mapper.update(
                         group,
-                        [=](const size_t count) {
+                        [](const size_t count) {
                             LOG_DEBUG << "update " << count << " rows";
                         },
                         [](const DrogonDbException &e) {

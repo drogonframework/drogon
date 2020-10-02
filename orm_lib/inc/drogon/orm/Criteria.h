@@ -1,7 +1,7 @@
 /**
  *
- *  Criteria.h
- *  An Tao
+ *  @file Criteria.h
+ *  @author An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
@@ -111,9 +111,10 @@ class Criteria
             default:
                 break;
         }
-        outputArgumentsFunc_ = [=](internal::SqlBinder &binder) {
-            binder << arg;
-        };
+        outputArgumentsFunc_ =
+            [arg = std::forward<T>(arg)](internal::SqlBinder &binder) {
+                binder << arg;
+            };
     }
 
     template <typename T>

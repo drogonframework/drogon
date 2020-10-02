@@ -1,7 +1,7 @@
 /**
  *
- *  FiltersFunction.cc
- *  An Tao
+ *  @file FiltersFunction.cc
+ *  @author An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
@@ -42,7 +42,11 @@ static void doFilterChains(
                                                               res,
                                                               *callbackPtr);
             },
-            [=, &filters, missCallback = std::move(missCallback)]() mutable {
+            [index,
+             req,
+             callbackPtr,
+             &filters,
+             missCallback = std::move(missCallback)]() mutable {
                 doFilterChains(filters,
                                index + 1,
                                req,

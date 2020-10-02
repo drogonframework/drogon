@@ -24,11 +24,11 @@ int main()
         cache.insert(drogon::utils::formattedString("aaa%d", i),
                      "hehe",
                      i,
-                     [=]() {
+                     [i]() {
                          std::cout << i << " cache item erased!" << std::endl;
                      });
     }
-    cache.insert("1", "first", 20, [=] {
+    cache.insert("1", "first", 20, [] {
         LOG_DEBUG << "first item in cache timeout,erase!";
     });
     cache.insert("2", "second", 5);

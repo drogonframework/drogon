@@ -1,7 +1,7 @@
 /**
  *
- *  HttpControllersRouter.cc
- *  An Tao
+ *  @file HttpControllersRouter.cc
+ *  @author An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
@@ -457,7 +457,9 @@ void HttpControllersRouter::route(
                         filters,
                         req,
                         callbackPtr,
-                        [=,
+                        [req,
+                         callbackPtr,
+                         this,
                          &binder,
                          &routerItem,
                          result = std::move(result)]() mutable {
@@ -500,7 +502,9 @@ void HttpControllersRouter::route(
                                 filters,
                                 req,
                                 callbackPtr,
-                                [=,
+                                [this,
+                                 req,
+                                 callbackPtr,
                                  &binder,
                                  &routerItem,
                                  result = std::move(result)]() mutable {
@@ -594,7 +598,8 @@ void HttpControllersRouter::doControllerHandler(
     ctrlBinderPtr->binderPtr_->handleHttpRequest(
         params,
         req,
-        [=, callback = std::move(callback)](const HttpResponsePtr &resp) {
+        [this, req, ctrlBinderPtr, callback = std::move(callback)](
+            const HttpResponsePtr &resp) {
             if (resp->expiredTime() >= 0 && resp->statusCode() != k404NotFound)
             {
                 // cache the response;
