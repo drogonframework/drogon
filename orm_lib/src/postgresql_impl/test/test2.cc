@@ -73,10 +73,10 @@ int main()
     std::cout << "id=" << U.userId_ << std::endl;
     std::cout << "name=" << U.userName_ << std::endl;
     *client << "select * from array_test" >>
-        [=](bool isNull,
-            const std::vector<std::shared_ptr<int>> &a,
-            const std::string &b,
-            int c) {
+        [](bool isNull,
+           const std::vector<std::shared_ptr<int>> &a,
+           const std::string &b,
+           int c) {
             if (!isNull)
             {
                 std::cout << "a.len=" << a.size() << std::endl;

@@ -115,7 +115,7 @@ MysqlConnection::MysqlConnection(trantor::EventLoop *loop,
         }
         channelPtr_ =
             std::unique_ptr<trantor::Channel>(new trantor::Channel(loop_, fd));
-        channelPtr_->setEventCallback([=]() { handleEvent(); });
+        channelPtr_->setEventCallback([this]() { handleEvent(); });
         setChannel();
     });
 }

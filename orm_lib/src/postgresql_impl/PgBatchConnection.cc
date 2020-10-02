@@ -89,7 +89,7 @@ PgConnection::PgConnection(trantor::EventLoop *loop,
                      "limit. Please use the ulimit command to check.";
         exit(1);
     }
-    channel_.setReadCallback([=]() {
+    channel_.setReadCallback([this]() {
         if (status_ != ConnectStatus::Ok)
         {
             pgPoll();
@@ -99,7 +99,7 @@ PgConnection::PgConnection(trantor::EventLoop *loop,
             handleRead();
         }
     });
-    channel_.setWriteCallback([=]() {
+    channel_.setWriteCallback([this]() {
         if (status_ == ConnectStatus::Ok)
         {
             auto ret = PQflush(connectionPtr_.get());
@@ -121,8 +121,8 @@ PgConnection::PgConnection(trantor::EventLoop *loop,
             pgPoll();
         }
     });
-    channel_.setCloseCallback([=]() { handleClosed(); });
-    channel_.setErrorCallback([=]() { handleClosed(); });
+    channel_.setCloseCallback([this]() { handleClosed(); });
+    channel_.setErrorCallback([this]() { handleClosed(); });
     channel_.enableReading();
     channel_.enableWriting();
 }

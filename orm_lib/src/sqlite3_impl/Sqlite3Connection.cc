@@ -70,7 +70,7 @@ Sqlite3Connection::Sqlite3Connection(
     loop_->runInLoop([this, filename = std::move(filename)]() {
         sqlite3 *tmp = nullptr;
         auto ret = sqlite3_open(filename.data(), &tmp);
-        connectionPtr_ = std::shared_ptr<sqlite3>(tmp, [=](sqlite3 *ptr) {
+        connectionPtr_ = std::shared_ptr<sqlite3>(tmp, [](sqlite3 *ptr) {
             sqlite3_close(ptr);
         });
         auto thisPtr = shared_from_this();

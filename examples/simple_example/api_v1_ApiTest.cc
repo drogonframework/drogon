@@ -11,7 +11,7 @@ void ApiTest::rootGet(const HttpRequestPtr &req,
 void ApiTest::rootPost(const HttpRequestPtr &req,
                        std::function<void(const HttpResponsePtr &)> &&callback)
 {
-    std::thread([=]() {
+    std::thread([callback = std::move(callback)]() {
         auto res = HttpResponse::newHttpResponse();
         res->setBody("ROOT Post!!!");
         callback(res);
