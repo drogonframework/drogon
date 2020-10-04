@@ -110,8 +110,13 @@ static bool isWebSocket(const HttpRequestImplPtr &req)
                    connectionField.end(),
                    connectionField.begin(),
                    tolower);
+    auto upgradeField = req->getHeaderBy("upgrade");
+    std::transform(upgradeField.begin(),
+                   upgradeField.end(),
+                   upgradeField.begin(),
+                   tolower);
     if (connectionField.find("upgrade") != std::string::npos &&
-        req->getHeaderBy("upgrade") == "websocket")
+        upgradeField == "websocket")
     {
         LOG_TRACE << "new websocket request";
 
