@@ -477,9 +477,7 @@ void HttpAppFrameworkImpl::run()
     {
         LOG_INFO << "Start child process";
     }
-    // now start runing!!
 
-    running_ = true;
 #ifndef _WIN32
     if (!libFilePaths_.empty())
     {
@@ -507,10 +505,6 @@ void HttpAppFrameworkImpl::run()
     // loop, so put the main loop into ioLoops.
     ioLoops.push_back(getLoop());
     dbClientManagerPtr_->createDbClients(ioLoops);
-    httpCtrlsRouterPtr_->init(ioLoops);
-    httpSimpleCtrlsRouterPtr_->init(ioLoops);
-    staticFileRouterPtr_->init(ioLoops);
-    websockCtrlsRouterPtr_->init();
 
     if (useSession_)
     {
@@ -530,6 +524,13 @@ void HttpAppFrameworkImpl::run()
                                                      // TODO: new plugin
                                                  });
     }
+
+    // now start runing!!
+    running_ = true;
+    httpCtrlsRouterPtr_->init(ioLoops);
+    httpSimpleCtrlsRouterPtr_->init(ioLoops);
+    staticFileRouterPtr_->init(ioLoops);
+    websockCtrlsRouterPtr_->init();
     getLoop()->queueInLoop([this]() {
         // Let listener event loops run when everything is ready.
         listenerManagerPtr_->startListening();
