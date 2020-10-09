@@ -14,6 +14,7 @@
 
 #include "create_view.h"
 #include "cmd.h"
+#include <drogon/utils/Utilities.h>
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -247,9 +248,9 @@ static void parseLine(std::ofstream &oSrcFile,
 
 void create_view::handleCommand(std::vector<std::string> &parameters)
 {
-    for (auto iter = parameters.begin(); iter != parameters.end(); iter++)
+    for (auto iter = parameters.begin(); iter != parameters.end();)
     {
-        auto file = *iter;
+        auto &file = *iter;
         if (file == "-o" || file == "--output")
         {
             iter = parameters.erase(iter);
@@ -258,13 +259,24 @@ void create_view::handleCommand(std::vector<std::string> &parameters)
                 outputPath_ = *iter;
                 iter = parameters.erase(iter);
             }
-            break;
+            continue;
+        }
+        else if (file == "-n" || file == "--namespace")
+        {
+            iter = parameters.erase(iter);
+            if (iter != parameters.end())
+            {
+                namespaces_ = utils::splitString(*iter, "::");
+                iter = parameters.erase(iter);
+            }
+            continue;
         }
         else if (file[0] == '-')
         {
             std::cout << ARGS_ERROR_STR << std::endl;
             return;
         }
+        ++iter;
     }
     createViewFiles(parameters);
 }
@@ -324,11 +336,21 @@ void create_view::newViewHeaderFile(std::ofstream &file,
             "it!\n";
     file << "#include <drogon/DrTemplate.h>\n";
     file << "using namespace drogon;\n";
+    for (auto &np : namespaces_)
+    {
+        file << "namespace " << np << "\n";
+        file << "{\n";
+    }
     file << "class " << className << ":public DrTemplate<" << className
          << ">\n";
     file << "{\npublic:\n\t" << className << "(){};\n\tvirtual ~" << className
          << "(){};\n\t"
-            "virtual std::string genText(const DrTemplateData &) override;\n};";
+            "virtual std::string genText(const DrTemplateData &) "
+            "override;\n};\n";
+    for (auto i = 0; i < namespaces_.size(); ++i)
+    {
+        file << "}\n";
+    }
 }
 
 void create_view::newViewSourceFile(std::ofstream &file,
@@ -350,6 +372,22 @@ void create_view::newViewSourceFile(std::ofstream &file,
     file << "#include <list>\n";
     file << "#include <deque>\n";
     file << "#include <queue>\n";
+    if (!namespaces_.empty())
+    {
+        file << "using namespace ";
+        for (int i = 0; i < namespaces_.size(); ++i)
+        {
+            if (i != namespaces_.size() - 1)
+            {
+                file << namespaces_[i] << "::";
+            }
+            else
+            {
+                file << namespaces_[i] << ";";
+            }
+        }
+        file << "\n";
+    }
     // Find layout tag
     std::string layoutName;
     std::regex layoutReg("<%layout[ \\t]+(((?!%\\}).)*[^ \\t])[ \\t]*%>");
