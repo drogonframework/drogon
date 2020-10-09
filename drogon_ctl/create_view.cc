@@ -250,7 +250,7 @@ void create_view::handleCommand(std::vector<std::string> &parameters)
 {
     for (auto iter = parameters.begin(); iter != parameters.end();)
     {
-        auto file = *iter;
+        auto &file = *iter;
         if (file == "-o" || file == "--output")
         {
             iter = parameters.erase(iter);
@@ -336,7 +336,7 @@ void create_view::newViewHeaderFile(std::ofstream &file,
             "it!\n";
     file << "#include <drogon/DrTemplate.h>\n";
     file << "using namespace drogon;\n";
-    for (auto np : namespaces_)
+    for (auto &np : namespaces_)
     {
         file << "namespace " << np << "\n";
         file << "{\n";
