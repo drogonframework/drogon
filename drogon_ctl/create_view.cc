@@ -502,7 +502,7 @@ void create_view::newViewSourceFile(std::ofstream &file,
         }
         file << "\n";
     }
-
+    file << "using namespace drogon;\n";
     std::string viewDataName = className + "_view_data";
     // virtual std::string genText(const DrTemplateData &)
     file << "std::string " << className << "::genText(const DrTemplateData& "
