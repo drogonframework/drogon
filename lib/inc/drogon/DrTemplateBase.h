@@ -1,7 +1,7 @@
 /**
  *
- *  DrTemplateBase.h
- *  An Tao
+ *  @file DrTemplateBase.h
+ *  @author An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
@@ -40,7 +40,7 @@ class DrTemplateBase : public virtual DrObjectBase
      * drogon_ctl tool to create c++ source files.
      */
     static std::shared_ptr<DrTemplateBase> newTemplate(
-        std::string templateName);
+        const std::string &templateName);
 
     /// Generate the text string
     /**

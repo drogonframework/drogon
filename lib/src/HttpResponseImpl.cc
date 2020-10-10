@@ -1,7 +1,7 @@
 /**
  *
  *  @file HttpResponseImpl.cc
- *  An Tao
+ *  @author An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
@@ -45,7 +45,7 @@ static inline void doResponseCreateAdvices(
         }
     }
 }
-static inline HttpResponsePtr genHttpResponse(std::string viewName,
+static inline HttpResponsePtr genHttpResponse(const std::string &viewName,
                                               const HttpViewData &data)
 {
     auto templ = DrTemplateBase::newTemplate(viewName);
