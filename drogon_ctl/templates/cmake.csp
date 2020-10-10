@@ -81,7 +81,6 @@ function(drogon_create_view arg)
     set(${ARGV1} ${${ARGV1}} ${outputFile}.cc PARENT_SCOPE)
   else()
     get_filename_component(classname ${cspFile} NAME_WE)
-    message(STATUS "view classname:" ${classname})
     add_custom_command(OUTPUT ${classname}.h ${classname}.cc
                        COMMAND drogon_ctl
                                ARGS
@@ -101,6 +100,7 @@ file(GLOB_RECURSE SCP_LIST ${CMAKE_CURRENT_SOURCE_DIR}/views/*.csp)
 foreach(cspFile ${SCP_LIST})
   message(STATUS "cspFile:" ${cspFile})
   drogon_create_view(${cspFile} VIEWSRC)
+  # use the following line to create views with namespaces.
   # drogon_create_view(${cspFile} VIEWSRC TRUE)
 endforeach()
 
