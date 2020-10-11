@@ -7,6 +7,7 @@ function(drogon_create_views arg)
     message(STATUS "arguments error when calling drogon_create_views")
     return()
   endif()
+  file(MAKE_DIRECTORY ${ARGV2})
   file(GLOB_RECURSE SCP_LIST ${ARGV1}/*.csp)
   foreach(cspFile ${SCP_LIST})
     file(RELATIVE_PATH
