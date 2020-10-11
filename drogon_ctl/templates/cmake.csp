@@ -18,8 +18,9 @@ add_executable(${PROJECT_NAME} main.cc)
 
 # ##############################################################################
 # If you include the drogon source code locally in your project, use this method
-# to add drogon add_subdirectory(drogon) target_link_libraries(${PROJECT_NAME}
-# PRIVATE drogon)
+# to add drogon 
+# add_subdirectory(drogon) 
+# target_link_libraries(${PROJECT_NAME} PRIVATE drogon)
 # ##############################################################################
 
 find_package(Drogon CONFIG REQUIRED)
@@ -39,70 +40,11 @@ aux_source_directory(filters FILTER_SRC)
 aux_source_directory(plugins PLUGIN_SRC)
 aux_source_directory(models MODEL_SRC)
 
-# ##############################################################################
-# function drogon_create_view(csp_file_full_path source_files_list_var
-# [use_path_as_namespace])
-# ##############################################################################
-function(drogon_create_view arg)
-  if(ARGC LESS 2)
-    return()
-  endif()
-  set(cspFile ${ARGV0})
-  file(RELATIVE_PATH
-       inFile
-       ${CMAKE_CURRENT_SOURCE_DIR}
-       ${cspFile})
-
-  if(ARGC GREATER 2 AND ARGV2)
-    string(REPLACE "/"
-                   "_"
-                   f1
-                   ${inFile})
-    string(REPLACE "\\"
-                   "_"
-                   f2
-                   ${f1})
-    string(REPLACE ".csp"
-                   ""
-                   outputFile
-                   ${f2})
-    add_custom_command(OUTPUT ${outputFile}.h ${outputFile}.cc
-                       COMMAND drogon_ctl
-                               ARGS
-                               create
-                               view
-                               ${inFile}
-                               --path-to-namespace
-                               -o
-                               ${CMAKE_CURRENT_BINARY_DIR}
-                       DEPENDS ${cspFile}
-                       WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-                       VERBATIM)
-    set(${ARGV1} ${${ARGV1}} ${outputFile}.cc PARENT_SCOPE)
-  else()
-    get_filename_component(classname ${cspFile} NAME_WE)
-    add_custom_command(OUTPUT ${classname}.h ${classname}.cc
-                       COMMAND drogon_ctl
-                               ARGS
-                               create
-                               view
-                               ${inFile}
-                               -o
-                               ${CMAKE_CURRENT_BINARY_DIR}
-                       DEPENDS ${cspFile}
-                       WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-                       VERBATIM)
-    set(${ARGV1} ${${ARGV1}} ${classname}.cc PARENT_SCOPE)
-  endif()
-endfunction(drogon_create_view)
-
-file(GLOB_RECURSE SCP_LIST ${CMAKE_CURRENT_SOURCE_DIR}/views/*.csp)
-foreach(cspFile ${SCP_LIST})
-  message(STATUS "cspFile:" ${cspFile})
-  drogon_create_view(${cspFile} VIEWSRC)
-  # use the following line to create views with namespaces.
-  # drogon_create_view(${cspFile} VIEWSRC TRUE)
-endforeach()
+drogon_create_views(${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/views
+                    ${CMAKE_CURRENT_BINARY_DIR})
+# use the following line to create views with namespaces.
+# drogon_create_views(${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/views
+#                     ${CMAKE_CURRENT_BINARY_DIR} TRUE)
 
 target_include_directories(${PROJECT_NAME}
                            PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -116,5 +58,5 @@ target_sources(${PROJECT_NAME}
                ${PLUGIN_SRC}
                ${MODEL_SRC})
 # ##############################################################################
-# uncomment the following line for dynamically loading views set_property(TARGET
-# ${PROJECT_NAME} PROPERTY ENABLE_EXPORTS ON)
+# uncomment the following line for dynamically loading views 
+# set_property(TARGET ${PROJECT_NAME} PROPERTY ENABLE_EXPORTS ON)

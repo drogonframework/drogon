@@ -42,6 +42,7 @@ endif()
 get_filename_component(DROGON_CMAKE_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
 if(NOT TARGET Drogon::Drogon)
   include("${DROGON_CMAKE_DIR}/DrogonTargets.cmake")
+  include("${DROGON_CMAKE_DIR}/DrogonUtilities.cmake")
 endif()
 
 get_target_property(DROGON_INCLUDE_DIRS Drogon::Drogon INTERFACE_INCLUDE_DIRECTORIES)

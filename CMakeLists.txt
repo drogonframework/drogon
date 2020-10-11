@@ -47,6 +47,7 @@ else(BUILD_DROGON_SHARED)
   add_library(${PROJECT_NAME} STATIC)
 endif(BUILD_DROGON_SHARED)
 
+include(cmake/DrogonUtilities.cmake)
 include(CheckIncludeFileCXX)
 
 check_include_file_cxx(any HAS_ANY)
@@ -456,6 +457,7 @@ install(
         "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules/Findpg.cmake"
         "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules/FindBrotli.cmake"
         "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules/Findcoz-profiler.cmake"
+        "${CMAKE_CURRENT_SOURCE_DIR}/cmake/DrogonUtilities.cmake"
   DESTINATION "${INSTALL_DROGON_CMAKE_DIR}"
   COMPONENT dev)
 
