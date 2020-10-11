@@ -26,7 +26,7 @@ function(drogon_create_views arg)
                      ""
                      outputFile
                      ${f2})
-      add_custom_command(OUTPUT ${outputFile}.h ${outputFile}.cc
+      add_custom_command(OUTPUT ${ARGV2}/${outputFile}.h ${ARGV2}/${outputFile}.cc
                          COMMAND drogon_ctl
                                  ARGS
                                  create
@@ -38,10 +38,10 @@ function(drogon_create_views arg)
                          DEPENDS ${cspFile}
                          WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
                          VERBATIM)
-      set(VIEWSRC ${VIEWSRC} ${outputFile}.cc)
+      set(VIEWSRC ${VIEWSRC} ${ARGV2}/${outputFile}.cc)
     else()
       get_filename_component(classname ${cspFile} NAME_WE)
-      add_custom_command(OUTPUT ${classname}.h ${classname}.cc
+      add_custom_command(OUTPUT ${ARGV2}/${classname}.h ${ARGV2}/${classname}.cc
                          COMMAND drogon_ctl
                                  ARGS
                                  create
@@ -52,7 +52,7 @@ function(drogon_create_views arg)
                          DEPENDS ${cspFile}
                          WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
                          VERBATIM)
-      set(VIEWSRC ${VIEWSRC} ${classname}.cc)
+      set(VIEWSRC ${VIEWSRC} ${ARGV2}/${classname}.cc)
     endif()
   endforeach()
   target_sources(${ARGV0} PRIVATE ${VIEWSRC})
