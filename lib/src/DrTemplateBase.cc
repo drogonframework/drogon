@@ -1,7 +1,7 @@
 /**
  *
- *  DrTemplateBase.cc
- *  An Tao
+ *  @file DrTemplateBase.cc
+ *  @author An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
@@ -14,23 +14,50 @@
 
 #include <drogon/DrClassMap.h>
 #include <drogon/DrTemplateBase.h>
-#include <memory>
 #include <trantor/utils/Logger.h>
+#include <memory>
+#include <regex>
 
 using namespace drogon;
 
 std::shared_ptr<DrTemplateBase> DrTemplateBase::newTemplate(
-    std::string templateName)
+    const std::string &templateName)
 {
     LOG_TRACE << "http view name=" << templateName;
-    auto pos = templateName.find(".csp");
-    if (pos != std::string::npos)
+    auto l = templateName.length();
+    if (l >= 4 && templateName[l - 4] == '.' && templateName[l - 3] == 'c' &&
+        templateName[l - 2] == 's' && templateName[l - 1] == 'p')
     {
-        if (pos == templateName.length() - 4)
+        std::string::size_type pos = 0;
+        std::string newName;
+        newName.reserve(templateName.size());
+        if (templateName[0] == '/' || templateName[0] == '\\')
         {
-            templateName = templateName.substr(0, pos);
+            pos = 1;
         }
+        else if (templateName[0] == '.' &&
+                 (templateName[1] == '/' || templateName[1] == '\\'))
+        {
+            pos = 2;
+        }
+        while (pos < l - 4)
+        {
+            if (templateName[pos] == '/' || templateName[pos] == '\\')
+            {
+                newName.append("::");
+            }
+            else
+            {
+                newName.append(1, templateName[pos]);
+            }
+            ++pos;
+        }
+        return std::shared_ptr<DrTemplateBase>(dynamic_cast<DrTemplateBase *>(
+            drogon::DrClassMap::newObject(newName)));
     }
-    return std::shared_ptr<DrTemplateBase>(dynamic_cast<DrTemplateBase*>(
-        drogon::DrClassMap::newObject(templateName)));
+    else
+    {
+        return std::shared_ptr<DrTemplateBase>(dynamic_cast<DrTemplateBase *>(
+            drogon::DrClassMap::newObject(templateName)));
+    }
 }

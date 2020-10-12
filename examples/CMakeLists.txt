@@ -1,21 +1,5 @@
 link_libraries(${PROJECT_NAME})
 
-file(GLOB SCP_LIST ${CMAKE_CURRENT_SOURCE_DIR}/simple_example/*.csp)
-foreach(cspFile ${SCP_LIST})
-  message(STATUS "cspFile:" ${cspFile})
-  get_filename_component(classname ${cspFile} NAME_WE)
-  message(STATUS "view classname:" ${classname})
-  add_custom_command(OUTPUT ${classname}.h ${classname}.cc
-                     COMMAND drogon_ctl
-                             ARGS
-                             create
-                             view
-                             ${cspFile}
-                     DEPENDS ${cspFile}
-                     VERBATIM)
-  set(VIEWSRC ${VIEWSRC} ${classname}.cc)
-endforeach()
-
 set(simple_example_sources
     simple_example/CustomCtrl.cc
     simple_example/CustomHeaderFilter.cc
@@ -34,7 +18,8 @@ set(simple_example_sources
     simple_example/DigestAuthFilter.cc
     simple_example/main.cc)
 
-add_executable(webapp ${simple_example_sources} ${VIEWSRC})
+add_executable(webapp ${simple_example_sources})
+drogon_create_views(webapp ${CMAKE_CURRENT_SOURCE_DIR}/simple_example ${CMAKE_CURRENT_BINARY_DIR})
 add_dependencies(webapp drogon_ctl)
 
 set(client_example_sources client_example/main.cc)

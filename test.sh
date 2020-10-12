@@ -118,6 +118,10 @@ if [ ! -f "Test_TestPlugin.h" -o ! -f "Test_TestPlugin.cc" ]; then
     exit -1
 fi
 
+cd ../views
+
+echo "Hello, world!" >> hello.csp
+
 cd ../build
 cmake .. $cmake_gen
 
