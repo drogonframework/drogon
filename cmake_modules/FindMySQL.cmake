@@ -32,12 +32,16 @@ find_path(MYSQL_INCLUDE_DIRS
           PATH_SUFFIXES mysql
           PATHS /usr/include/mysql
                 /usr/local/include/mysql
+                /usr/include/mariadb
+                /usr/local/include/mariadb
                 /opt/mysql/mysql/include
                 /opt/mysql/mysql/include/mysql
                 /opt/mysql/include
                 /opt/local/include/mysql5
                 /usr/local/mysql/include
                 /usr/local/mysql/include/mysql
+                /usr/local/mariadb/include
+                /usr/local/mariadb/include/mariadb
                 $ENV{ProgramFiles}/MySQL/*/include
                 $ENV{SystemDrive}/MySQL/*/include)
 
