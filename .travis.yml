@@ -65,7 +65,7 @@ before_script:
        mariadb -e "FLUSH PRIVILEGES";
        sleep 2;
        brew services restart mariadb;
-       psql -c 'create user postgres superuser;' postgres;
+       psql -h 127.0.0.1 -c 'create user postgres superuser;' postgres;
     fi
 
 services:
