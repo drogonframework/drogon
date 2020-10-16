@@ -63,9 +63,9 @@ before_script:
        mariadb -e "SET PASSWORD FOR 'root'@'localhost' = PASSWORD('')";
        mariadb -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost'";
        mariadb -e "FLUSH PRIVILEGES";
-       sleep 2;
+       sleep 4;
        brew services restart mariadb;
-       psql -h 127.0.0.1 -c 'create user postgres superuser;' postgres;
+       psql -c 'create user postgres superuser;' postgres;
     fi
 
 services:
