@@ -11,13 +11,20 @@ int main(int argc, char *argv[])
 {
     auto wsPtr = WebSocketClient::newWebSocketClient("127.0.0.1", 8848);
     auto req = HttpRequest::newHttpRequest();
+    req->setPath("/chat");
     bool continually = true;
     if (argc > 1)
     {
         if (std::string(argv[1]) == "-t")
             continually = false;
+        else if (std::string(argv[1]) == "-p")
+        {
+            // Connect to a public web socket server.
+            wsPtr =
+                WebSocketClient::newWebSocketClient("wss://echo.websocket.org");
+            req->setPath("/");
+        }
     }
-    req->setPath("/chat");
     wsPtr->setMessageHandler([continually](const std::string &message,
                                            const WebSocketClientPtr &wsPtr,
                                            const WebSocketMessageType &type) {
@@ -60,5 +67,6 @@ int main(int argc, char *argv[])
             exit(1);
         }
     });
+    app().setLogLevel(trantor::Logger::kTrace);
     app().run();
 }
