@@ -3,7 +3,7 @@ matrix:
     - os: linux
       dist: xenial
     - os: osx
-      osx_image: xcode11.2
+      osx_image: xcode12.2
 
 sudo: required
 
@@ -58,13 +58,13 @@ before_script:
        brew tap homebrew/services;
        brew services restart postgresql;
        brew services start mariadb;
-       sleep 2;
+       sleep 4;
        mariadb -e "CREATE USER 'root'@'localhost' IDENTIFIED BY ''";
        mariadb -e "SET PASSWORD FOR 'root'@'localhost' = PASSWORD('')";
        mariadb -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost'";
        mariadb -e "FLUSH PRIVILEGES";
-       sleep 2;
        brew services restart mariadb;
+       sleep 4;
        psql -c 'create user postgres superuser;' postgres;
     fi
 
