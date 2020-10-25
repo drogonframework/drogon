@@ -95,6 +95,15 @@ void WebSocketClientImpl::connectToServerInLoop()
     loop_->assertInLoopThread();
     upgradeRequest_->addHeader("Connection", "Upgrade");
     upgradeRequest_->addHeader("Upgrade", "websocket");
+    bool usePort = ((serverAddr_.toPort() != 80 && !useSSL_) ||
+                    (serverAddr_.toPort() != 443 && useSSL_));
+    upgradeRequest_->addHeader(
+        "Host",
+        domain_.empty()
+            ? (usePort ? serverAddr_.toIpPort() : serverAddr_.toIp())
+            : (usePort ? domain_ + ":" + std::to_string(serverAddr_.toPort())
+                       : domain_));
+    upgradeRequest_->addHeader("Sec-WebSocket-Version", "13");
     auto randStr = utils::genRandomString(16);
     wsKey_ = utils::base64Encode((const unsigned char *)randStr.data(),
                                  (unsigned int)randStr.length());
