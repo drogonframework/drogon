@@ -461,10 +461,11 @@ static void loadDbClients(const Json::Value &dbClients)
     for (auto const &client : dbClients)
     {
         auto type = client.get("rdbms", "postgresql").asString();
+        std::transform(type.begin(), type.end(), type.begin(), ::tolower);
         auto host = client.get("host", "127.0.0.1").asString();
         auto port = client.get("port", 5432).asUInt();
         auto dbname = client.get("dbname", "").asString();
-        if (dbname == "")
+        if (dbname == "" && type != "sqlite3")
         {
             std::cerr << "Please configure dbname in the configuration file"
                       << std::endl;
