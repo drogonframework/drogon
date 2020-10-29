@@ -31,7 +31,7 @@ using namespace drogon::orm;
 #define RED "\033[31m"   /* Red */
 #define GREEN "\033[32m" /* Green */
 
-constexpr int postgre_tests = 43;
+constexpr int postgre_tests = 44;
 constexpr int mysql_tests = 45;
 constexpr int sqlite_tests = 47;
 
@@ -650,13 +650,30 @@ void doPostgreTest(const drogon::orm::DbClientPtr &clientPtr)
             testOutput(false,
                        "postgresql - ORM mapper asynchronous interface(0)");
         });
+
+    /// 6.1.5 insert future
+    user.setUserId("pg_future");
+    auto fu = mapper.insertFuture(user);
+    try
+    {
+        auto u = fu.get();
+        testOutput(true,
+                   "postgresql - ORM mapper asynchronous future interface(0)");
+    }
+    catch (const DrogonDbException &e)
+    {
+        std::cerr << e.base().what() << std::endl;
+        testOutput(false,
+                   "postgresql - ORM mapper asynchronous future interface(0)");
+    }
+
     /// 6.2 insert
     user.setUserId("pg1");
     user.setUserName("postgres1");
     mapper.insert(
         user,
         [](Users ret) {
-            testOutput(ret.getPrimaryKey() == 2,
+            testOutput(ret.getPrimaryKey() == 3,
                        "postgresql - ORM mapper asynchronous interface(1)");
         },
         [](const DrogonDbException &e) {
