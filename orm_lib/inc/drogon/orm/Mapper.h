@@ -1243,8 +1243,15 @@ inline std::future<T> Mapper<T>::insertFuture(const T &obj) noexcept
                 tmp.findByPrimaryKey(
                     newObj.getPrimaryKey(),
                     [prom](T selObj) { prom->set_value(selObj); },
-                    [prom](const std::exception_ptr &e) {
-                        prom->set_exception(e);
+                    [prom](const DrogonDbException &e) {
+                        try
+                        {
+                            throw e;
+                        }
+                        catch (...)
+                        {
+                            prom->set_exception(std::current_exception());
+                        }
                     });
             }
             else
