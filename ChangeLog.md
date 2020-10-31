@@ -4,6 +4,36 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.1.0] - 2020-10-31
+
+### Fixed
+
+- Fix failing to connect to DB if parameters contains spaces.
+
+- Fix a CMAKE bug when SHARED and EXAMPLES are on.
+
+- Fix the HttpServer::isWebSocket method.
+
+- Find mariadb client library correctly on Ubuntu 20.04.
+
+- Fix a bug when creating sqlite3 database models.
+
+- Fix a bug in the Mapper::insertFuture method.
+
+### Changed
+
+- Disable TLS1.0/1.1 on HTTPS by default.
+
+- Use explicit lambda capture lists.
+
+- Modify the procedure of the app().run() method.
+
+- Support namespaces when creating view source files.
+
+- Add --path-to-namespace option to drogon_ctl for creating views.
+
+- Add the Host and Sec-WebSocket-Version headers when connecting to a websocket server.
+
 ## [1.0.0] - 2020-09-27
 
 ### Fixed
@@ -536,7 +566,9 @@ All notable changes to this project will be documented in this file.
 
 ## [1.0.0-beta1] - 2019-06-11
 
-[Unreleased]: https://github.com/an-tao/drogon/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/an-tao/drogon/compare/v1.1.0...HEAD
+
+[1.1.0]: https://github.com/an-tao/drogon/compare/v1.0.0...v1.1.0
 
 [1.0.0]: https://github.com/an-tao/drogon/compare/v1.0.0-beta21...v1.0.0
 
