@@ -81,7 +81,6 @@ void HttpClientImpl::createTcpClient()
                     responseParser->reset();
                     thisPtr->handleResponse(resp, std::move(firstReq));
                     thisPtr->tcpClientPtr_.reset();
-                    return;
                 }
                 thisPtr->onError(ReqResult::NetworkFailure);
             }
