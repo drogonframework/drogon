@@ -50,7 +50,8 @@ void HttpClientImpl::createTcpClient()
                 return;
             if (connPtr->connected())
             {
-                connPtr->setContext(std::make_shared<HttpResponseParser>());
+                connPtr->setContext(
+                    std::make_shared<HttpResponseParser>(connPtr));
                 // send request;
                 LOG_TRACE << "Connection established!";
                 while (thisPtr->pipeliningCallbacks_.size() <=
@@ -67,6 +68,20 @@ void HttpClientImpl::createTcpClient()
             else
             {
                 LOG_TRACE << "connection disconnect";
+                auto responseParser = connPtr->getContext<HttpResponseParser>();
+                if (responseParser->parseResponseOnClose() &&
+                    responseParser->gotAll())
+                {
+                    auto &firstReq = thisPtr->pipeliningCallbacks_.front();
+                    if (firstReq.first->method() == Head)
+                    {
+                        responseParser->setForHeadMethod();
+                    }
+                    auto resp = responseParser->responseImpl();
+                    responseParser->reset();
+                    thisPtr->handleResponse(resp, std::move(firstReq));
+                    thisPtr->tcpClientPtr_.reset();
+                }
                 thisPtr->onError(ReqResult::NetworkFailure);
             }
         });
@@ -439,6 +454,52 @@ void HttpClientImpl::sendReq(const trantor::TcpConnectionPtr &connPtr,
     connPtr->send(std::move(buffer));
 }
 
+void HttpClientImpl::handleResponse(
+    const HttpResponseImplPtr &resp,
+    std::pair<HttpRequestPtr, HttpReqCallback> &&reqAndCb,
+    const trantor::TcpConnectionPtr &connPtr)
+{
+    assert(!pipeliningCallbacks_.empty());
+    auto &type = resp->getHeaderBy("content-type");
+    auto &coding = resp->getHeaderBy("content-encoding");
+    if (coding == "gzip")
+    {
+        resp->gunzip();
+    }
+#ifdef USE_BROTLI
+    else if (coding == "br")
+    {
+        resp->brDecompress();
+    }
+#endif
+    if (type.find("application/json") != std::string::npos)
+    {
+        resp->parseJson();
+    }
+    auto cb = std::move(reqAndCb);
+    pipeliningCallbacks_.pop();
+    handleCookies(resp);
+    cb.second(ReqResult::Ok, resp);
+
+    // LOG_TRACE << "pipelining buffer size=" <<
+    // pipeliningCallbacks_.size(); LOG_TRACE << "requests buffer size="
+    // << requestsBuffer_.size();
+
+    if (!requestsBuffer_.empty())
+    {
+        auto &reqAndCallback = requestsBuffer_.front();
+        sendReq(connPtr, reqAndCallback.first);
+        pipeliningCallbacks_.push(std::move(reqAndCallback));
+        requestsBuffer_.pop();
+    }
+    else
+    {
+        if (resp->ifCloseConnection() && pipeliningCallbacks_.empty())
+        {
+            tcpClientPtr_.reset();
+        }
+    }
+}
 void HttpClientImpl::onRecvMessage(const trantor::TcpConnectionPtr &connPtr,
                                    trantor::MsgBuffer *msg)
 {
@@ -464,48 +525,9 @@ void HttpClientImpl::onRecvMessage(const trantor::TcpConnectionPtr &connPtr,
         {
             auto resp = responseParser->responseImpl();
             responseParser->reset();
-            assert(!pipeliningCallbacks_.empty());
-            auto &type = resp->getHeaderBy("content-type");
-            auto &coding = resp->getHeaderBy("content-encoding");
-            if (coding == "gzip")
-            {
-                resp->gunzip();
-            }
-#ifdef USE_BROTLI
-            else if (coding == "br")
-            {
-                resp->brDecompress();
-            }
-#endif
-            if (type.find("application/json") != std::string::npos)
-            {
-                resp->parseJson();
-            }
-            auto cb = std::move(firstReq);
-            pipeliningCallbacks_.pop();
-            handleCookies(resp);
             bytesReceived_ += (msgSize - msg->readableBytes());
             msgSize = msg->readableBytes();
-            cb.second(ReqResult::Ok, resp);
-
-            // LOG_TRACE << "pipelining buffer size=" <<
-            // pipeliningCallbacks_.size(); LOG_TRACE << "requests buffer size="
-            // << requestsBuffer_.size();
-
-            if (!requestsBuffer_.empty())
-            {
-                auto &reqAndCb = requestsBuffer_.front();
-                sendReq(connPtr, reqAndCb.first);
-                pipeliningCallbacks_.push(std::move(reqAndCb));
-                requestsBuffer_.pop();
-            }
-            else
-            {
-                if (resp->ifCloseConnection() && pipeliningCallbacks_.empty())
-                {
-                    tcpClientPtr_.reset();
-                }
-            }
+            handleResponse(resp, std::move(firstReq), connPtr);
         }
         else
         {

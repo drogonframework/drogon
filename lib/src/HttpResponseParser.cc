@@ -1,7 +1,7 @@
 /**
  *
- *  HttpResponseParser.cc
- *  An Tao
+ *  @file HttpResponseParser.cc
+ *  @author An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
@@ -29,9 +29,10 @@ void HttpResponseParser::reset()
     currentChunkLength_ = 0;
 }
 
-HttpResponseParser::HttpResponseParser()
+HttpResponseParser::HttpResponseParser(const trantor::TcpConnectionPtr &connPtr)
     : status_(HttpResponseParseStatus::kExpectResponseLine),
-      responsePtr_(new HttpResponseImpl)
+      responsePtr_(new HttpResponseImpl),
+      conn_(connPtr)
 {
 }
 
@@ -70,7 +71,15 @@ bool HttpResponseParser::processResponseLine(const char *begin, const char *end)
     }
     return false;
 }
-
+bool HttpResponseParser::parseResponseOnClose()
+{
+    if (status_ == HttpResponseParseStatus::kExpectClose)
+    {
+        status_ = HttpResponseParseStatus::kGotAll;
+        return true;
+    }
+    return false;
+}
 // return false if any error
 bool HttpResponseParser::parseResponse(MsgBuffer *buf)
 {
@@ -145,6 +154,8 @@ bool HttpResponseParser::parseResponse(MsgBuffer *buf)
                             else
                             {
                                 status_ = HttpResponseParseStatus::kExpectClose;
+                                auto connPtr = conn_.lock();
+                                connPtr->shutdown();
                                 hasMore = true;
                             }
                         }

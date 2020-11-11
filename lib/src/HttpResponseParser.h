@@ -1,7 +1,7 @@
 /**
  *
- *  HttpResponseParser.h
- *  An Tao
+ *  @file HttpResponseParser.h
+ *  @author An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
@@ -38,12 +38,13 @@ class HttpResponseParser : public trantor::NonCopyable
         kGotAll,
     };
 
-    HttpResponseParser();
+    explicit HttpResponseParser(const trantor::TcpConnectionPtr &connPtr);
 
     // default copy-ctor, dtor and assignment are fine
 
     // return false if any error
     bool parseResponse(trantor::MsgBuffer *buf);
+    bool parseResponseOnClose();
 
     bool gotAll() const
     {
@@ -70,6 +71,7 @@ class HttpResponseParser : public trantor::NonCopyable
     bool parseResponseForHeadMethod_{false};
     size_t leftBodyLength_{0};
     size_t currentChunkLength_{0};
+    std::weak_ptr<trantor::TcpConnection> conn_;
 };
 
 }  // namespace drogon
