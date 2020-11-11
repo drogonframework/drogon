@@ -57,7 +57,8 @@ void WebSocketClientImpl::createTcpClient()
                 return;
             if (connPtr->connected())
             {
-                connPtr->setContext(std::make_shared<HttpResponseParser>());
+                connPtr->setContext(
+                    std::make_shared<HttpResponseParser>(connPtr));
                 // send request;
                 LOG_TRACE << "Connection established!";
                 thisPtr->sendReq(connPtr);

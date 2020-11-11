@@ -91,6 +91,9 @@ class HttpClientImpl : public HttpClient,
                            HttpReqCallback &&callback,
                            double timeout);
     void handleCookies(const HttpResponseImplPtr &resp);
+    void handleResponse(const HttpResponseImplPtr &resp,
+                        std::pair<HttpRequestPtr, HttpReqCallback> &&reqAndCb,
+                        const trantor::TcpConnectionPtr &connPtr = nullptr);
     void createTcpClient();
     std::queue<std::pair<HttpRequestPtr, HttpReqCallback>> pipeliningCallbacks_;
     std::queue<std::pair<HttpRequestPtr, HttpReqCallback>> requestsBuffer_;
