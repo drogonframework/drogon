@@ -488,9 +488,9 @@ void HttpClientImpl::handleResponse(
 
     if (!requestsBuffer_.empty())
     {
-        auto &reqAndCb = requestsBuffer_.front();
-        sendReq(connPtr, reqAndCb.first);
-        pipeliningCallbacks_.push(std::move(reqAndCb));
+        auto &reqAndCallback = requestsBuffer_.front();
+        sendReq(connPtr, reqAndCallback.first);
+        pipeliningCallbacks_.push(std::move(reqAndCallback));
         requestsBuffer_.pop();
     }
     else
