@@ -1,7 +1,7 @@
 /**
  *
- *  PubSubService.h
- *  An Tao
+ *  @file PubSubService.h
+ *  @author An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
@@ -113,7 +113,7 @@ class Topic : public trantor::NonCopyable
   private:
     std::unordered_map<SubscriberID, MessageHandler> handlersMap_;
     mutable SharedMutex mutex_;
-    SubscriberID id_;
+    SubscriberID id_{0};
 };
 
 /**
