@@ -35,11 +35,11 @@
 #include <arpa/inet.h>
 #endif
 
-#if defined __linux__ || defined __FreeBSD__
+#if defined __linux__ || defined __FreeBSD__ || defined __OpenBSD__
 
 #ifdef __linux__
 #include <endian.h>  // __BYTE_ORDER __LITTLE_ENDIAN
-#elif defined __FreeBSD__
+#elif defined __FreeBSD__ || defined __OpenBSD__
 #include <sys/endian.h>  // _BYTE_ORDER _LITTLE_ENDIAN
 #define __BYTE_ORDER _BYTE_ORDER
 #define __LITTLE_ENDIAN _LITTLE_ENDIAN
