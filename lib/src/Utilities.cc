@@ -344,10 +344,15 @@ std::string getUuid()
     std::string ret{binaryStringToHex((const unsigned char *)str, len)};
     free(str);
     return ret;
-#elif defined __FreeBSD__
+#elif defined __FreeBSD__ || defined __OpenBSD__
     uuid_t *uuid = new uuid_t;
     char *binstr = (char *)malloc(16);
+#if defined __FreeBSD__
     uuidgen(uuid, 1);
+#else
+    uint32_t status;
+    uuid_create(uuid, &status);
+#endif
 #if _BYTE_ORDER == _LITTLE_ENDIAN
     uuid_enc_le(binstr, uuid);
 #else  /* _BYTE_ORDER != _LITTLE_ENDIAN */
