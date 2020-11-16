@@ -13,6 +13,7 @@
 
 #pragma once
 
+#include <drogon/MultiPart.h>
 #include <drogon/utils/string_view.h>
 #include <drogon/DrClassMap.h>
 #include <drogon/Cookie.h>
@@ -353,6 +354,16 @@ class HttpResponse
         const std::string &attachmentFileName = "",
         ContentType type = CT_NONE);
 
+    /// Create a response that returns a file to the client.
+    /**
+     * @param HttpFile drogon:HttpFile object
+     * @param type if the parameter is CT_NONE, the content type is set by
+     * drogon based on the file extension.
+     */
+    static HttpResponsePtr newFileResponse(
+        const HttpFile &pFile,
+        ContentType type = CT_NONE);
+    
     /**
      * @brief Create a custom HTTP response object. For using this template,
      * users must specialize the toResponse template.
@@ -375,6 +386,12 @@ class HttpResponse
                                                    const char *typeString,
                                                    size_t typeStringLength) = 0;
 };
+template <>
+inline HttpResponsePtr toResponse<const drogon::HttpFile &>(const drogon::HttpFile &pFile)
+{
+    return HttpResponse::newFileResponse(pFile);
+}
+
 template <>
 inline HttpResponsePtr toResponse<const Json::Value &>(const Json::Value &pJson)
 {

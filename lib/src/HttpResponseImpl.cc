@@ -183,6 +183,15 @@ HttpResponsePtr HttpResponse::newHttpViewResponse(const std::string &viewName,
 }
 
 HttpResponsePtr HttpResponse::newFileResponse(
+    const drogon::HttpFile &pFile,
+    ContentType type)
+{
+    auto resp = HttpResponse::newNotFoundResponse();
+    return resp;
+}
+
+
+HttpResponsePtr HttpResponse::newFileResponse(
     const std::string &fullPath,
     const std::string &attachmentFileName,
     ContentType type)
