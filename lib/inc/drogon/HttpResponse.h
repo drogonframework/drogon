@@ -341,7 +341,7 @@ class HttpResponse
         const std::string &location,
         HttpStatusCode status = k302Found);
 
-    /// Create a response that returns a file to the client.
+    /// Create a response that returns a file to the client from file in storage
     /**
      * @param fullPath is the full path to the file.
      * @param attachmentFileName if the parameter is not empty, the browser
@@ -354,14 +354,16 @@ class HttpResponse
         const std::string &attachmentFileName = "",
         ContentType type = CT_NONE);
 
-    /// Create a response that returns a file to the client.
+    /// Create a response that returns a file to the client from buffer in memory/stack
     /**
-     * @param HttpFile drogon:HttpFile object
+     * @param pBuffer uint 8 bit flat buffer for image
+     * @param attachmentFileName if the parameter is not empty, the browser
      * @param type if the parameter is CT_NONE, the content type is set by
      * drogon based on the file extension.
      */
     static HttpResponsePtr newFileResponse(
-        const HttpFile &pFile,
+        std::unique_ptr<uint8_t[]> &pBuffer,
+        const std::string &attachmentFileName = "",
         ContentType type = CT_NONE);
     
     /**
@@ -386,11 +388,6 @@ class HttpResponse
                                                    const char *typeString,
                                                    size_t typeStringLength) = 0;
 };
-template <>
-inline HttpResponsePtr toResponse<const drogon::HttpFile &>(const drogon::HttpFile &pFile)
-{
-    return HttpResponse::newFileResponse(pFile);
-}
 
 template <>
 inline HttpResponsePtr toResponse<const Json::Value &>(const Json::Value &pJson)
