@@ -19,6 +19,14 @@
 #include <drogon/IOThreadStorage.h>
 #include <fstream>
 #include <memory>
+
+#include <string>
+#include <sstream>
+#include <array>
+#include <type_traits>
+#include <iostream>
+#include <iomanip>
+
 #include <stdio.h>
 #include <sys/stat.h>
 #include <trantor/utils/Logger.h>
@@ -27,6 +35,7 @@
 #endif
 using namespace trantor;
 using namespace drogon;
+using byte = unsigned char ;
 
 namespace drogon
 {
@@ -188,11 +197,73 @@ HttpResponsePtr HttpResponse::newHttpViewResponse(const std::string &viewName,
     return genHttpResponse(viewName, data);
 }
 
-HttpResponsePtr HttpResponse::newFileResponse(
-    const drogon::HttpFile &pFile,
-    ContentType type)
+
+
+template< typename T > 
+std::array< byte, sizeof(T) >  to_bytes( const T& object )
 {
-    auto resp = HttpResponse::newNotFoundResponse();
+    std::array< byte, sizeof(T) > bytes ;
+
+    const byte* begin = reinterpret_cast< const byte* >( std::addressof(object) ) ;
+    const byte* end = begin + sizeof(T) ;
+    std::copy( begin, end, std::begin(bytes) ) ;
+
+    return bytes ;
+}
+
+HttpResponsePtr HttpResponse::newFileResponse(
+    std::unique_ptr<uint8_t[]> &pBuffer,
+    const std::string &attachmentFileName,
+    ContentType type)
+{   
+    // Make Raw HttpResponse
+    auto resp = std::make_shared<HttpResponseImpl>();
+
+    // Convert uint array to bytes
+    const auto array_bytes = to_bytes(pBuffer);
+
+    // Convert to sstream
+    std::ostringstream os;
+    for(auto i: array_bytes)
+    {
+        os << i;
+    }
+    
+    // Create Buffer from array bytes
+    std::streambuf *pbuf = os.rdbuf();
+    std::streamsize filesize = pbuf->pubseekoff(0, os.end);
+    pbuf->pubseekoff(0, os.beg);  // rewind
+
+    // Set response body and length
+    std::string str;
+    str.resize(filesize);
+    pbuf->sgetn(&str[0], filesize);
+    resp->setBody(std::move(str));
+
+    // Check for type and assign proper content type in header
+    if (type == CT_NONE)
+    {
+        resp->setContentTypeCode(CT_IMAGE_JPG);
+    }
+    else
+    {
+        resp->setContentTypeCode(type);
+    }
+
+    // Add additional header values
+    if (!attachmentFileName.empty())
+    {
+        resp->addHeader("Content-Disposition",
+                        "attachment; filename=" + attachmentFileName);
+    }
+    else
+    {
+        resp->addHeader("Content-Disposition",
+                            "attachment; filename=processed_image.jpg");
+    }
+    
+    // Finalize and return response
+    doResponseCreateAdvices(resp);
     return resp;
 }
 
