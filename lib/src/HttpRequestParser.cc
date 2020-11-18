@@ -214,7 +214,16 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
                         request_->getHeaderBy("content-length");
                     if (!len.empty())
                     {
-                        currentContentLength_ = std::stoull(len.c_str());
+                        try
+                        {
+                            currentContentLength_ = std::stoull(len.c_str());
+                        }
+                        catch (...)
+                        {
+                            buf->retrieveAll();
+                            shutdownConnection(k400BadRequest);
+                            return false;
+                        }
                         if (currentContentLength_ == 0)
                         {
                             status_ = HttpRequestParseStatus::kGotAll;
