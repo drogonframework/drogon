@@ -147,6 +147,11 @@ const string_view &webContentTypeToString(ContentType contenttype)
             static string_view sv = "Content-Type: application/wasm\r\n";
             return sv;
         }
+        case CT_NONE:
+        {
+            static string_view sv = "";
+            return sv;
+        }
         default:
         case CT_TEXT_PLAIN:
         {
