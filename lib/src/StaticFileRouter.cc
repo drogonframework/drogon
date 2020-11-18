@@ -223,6 +223,7 @@ void StaticFileRouter::sendStaticFileResponse(
                 std::shared_ptr<HttpResponseImpl> resp =
                     std::make_shared<HttpResponseImpl>();
                 resp->setStatusCode(k304NotModified);
+                resp->setContentTypeCode(CT_NONE);
                 HttpAppFrameworkImpl::instance().callCallback(req,
                                                               resp,
                                                               callback);
@@ -258,6 +259,7 @@ void StaticFileRouter::sendStaticFileResponse(
                     std::shared_ptr<HttpResponseImpl> resp =
                         std::make_shared<HttpResponseImpl>();
                     resp->setStatusCode(k304NotModified);
+                    resp->setContentTypeCode(CT_NONE);
                     HttpAppFrameworkImpl::instance().callCallback(req,
                                                                   resp,
                                                                   callback);
