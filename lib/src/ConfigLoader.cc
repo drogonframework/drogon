@@ -452,6 +452,7 @@ static void loadApp(const Json::Value &app)
                   << std::endl;
         exit(1);
     }
+    drogon::app().enableReusePort(app.get("reuse_port", false).asBool());
     drogon::app().setHomePage(app.get("home_page", "index.html").asString());
 }
 static void loadDbClients(const Json::Value &dbClients)
