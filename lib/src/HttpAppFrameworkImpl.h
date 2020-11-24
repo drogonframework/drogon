@@ -492,7 +492,7 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     {
         reusePort_ = enable;
     }
-    virtual bool isReusePort() const override
+    virtual bool reusePort() const override
     {
         return reusePort_;
     }

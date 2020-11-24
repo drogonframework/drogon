@@ -1185,7 +1185,7 @@ class HttpAppFramework : public trantor::NonCopyable
     /**
      * @brief Return if the ReusePort mode is enabled.
      */
-    virtual bool isReusePort() const = 0;
+    virtual bool reusePort() const = 0;
 
   private:
     virtual void registerHttpController(

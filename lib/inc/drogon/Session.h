@@ -1,7 +1,7 @@
 /**
  *
  *  @file Session.h
- *  An Tao
+ *  @author An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
@@ -117,6 +117,7 @@ class Session
      * @code
        sessionPtr->insert("user name", userNameString);
        @endcode
+     * @note If the key already exists, the element is not inserted.
      */
     void insert(const std::string &key, const any &obj)
     {
@@ -130,6 +131,7 @@ class Session
      * @code
        sessionPtr->insert("user name", userNameString);
        @endcode
+     * @note If the key already exists, the element is not inserted.
      */
     void insert(const std::string &key, any &&obj)
     {
