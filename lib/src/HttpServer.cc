@@ -1,7 +1,7 @@
 /**
  *
  *  @file HttpServer.cc
- *  An Tao
+ *  @author An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
@@ -158,7 +158,7 @@ HttpServer::HttpServer(
 #ifdef __linux__
     : server_(loop, listenAddr, name.c_str()),
 #else
-    : server_(loop, listenAddr, name.c_str(), true, false),
+    : server_(loop, listenAddr, name.c_str(), true, app().reusePort()),
 #endif
       httpAsyncCallback_(defaultHttpAsyncCallback),
       newWebsocketCallback_(defaultWebSockAsyncCallback),

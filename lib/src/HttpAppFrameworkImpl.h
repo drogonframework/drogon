@@ -488,6 +488,14 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     {
         return usingCustomErrorHandler_;
     }
+    virtual void enableReusePort(bool enable = true) override
+    {
+        reusePort_ = enable;
+    }
+    virtual bool reusePort() const override
+    {
+        return reusePort_;
+    }
 
   private:
     virtual void registerHttpController(
@@ -581,6 +589,7 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     static InitBeforeMainFunction initFirst_;
     bool enableServerHeader_{true};
     bool enableDateHeader_{true};
+    bool reusePort_{false};
     std::vector<std::function<void()>> beginningAdvices_;
     std::vector<std::function<bool(const trantor::InetAddress &,
                                    const trantor::InetAddress &)>>

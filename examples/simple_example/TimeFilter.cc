@@ -20,7 +20,10 @@ void TimeFilter::doFilter(const HttpRequestPtr &req,
     {
         auto lastDate = req->session()->get<trantor::Date>(VDate);
         LOG_TRACE << "last:" << lastDate.toFormattedString(false);
-        req->session()->insert(VDate, now);
+        req->session()->modify<trantor::Date>(VDate,
+                                              [now](trantor::Date &vdate) {
+                                                  vdate = now;
+                                              });
         LOG_TRACE << "update visitDate";
         if (now > lastDate.after(10))
         {

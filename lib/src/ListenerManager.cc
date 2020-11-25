@@ -91,7 +91,7 @@ std::vector<trantor::EventLoop *> ListenerManager::createListeners(
             auto const &ip = listener.ip_;
             bool isIpv6 = ip.find(':') == std::string::npos ? false : true;
             std::shared_ptr<HttpServer> serverPtr;
-            if (i == 0)
+            if (i == 0 && !app().reusePort())
             {
                 DrogonFileLocker lock;
                 // Check whether the port is in use.

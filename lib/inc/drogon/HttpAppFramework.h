@@ -1172,6 +1172,21 @@ class HttpAppFramework : public trantor::NonCopyable
      */
     virtual std::vector<trantor::InetAddress> getListeners() const = 0;
 
+    /**
+     * @brief Enable ReusePort mode or not. If the mode is enabled, one can run
+     * multiple processes listening to the same port at the same time. If this
+     * method is not called, the feature is disabled.
+     *
+     * @note
+     * This operation can be performed by an option in the configuration file.
+     */
+    virtual void enableReusePort(bool enable = true) = 0;
+
+    /**
+     * @brief Return if the ReusePort mode is enabled.
+     */
+    virtual bool reusePort() const = 0;
+
   private:
     virtual void registerHttpController(
         const std::string &pathPattern,
