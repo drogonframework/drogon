@@ -32,6 +32,8 @@ namespace drogon
 class HttpRequest;
 using HttpRequestPtr = std::shared_ptr<HttpRequest>;
 
+template<class> constexpr bool always_false_v = false;
+
 /**
  * @brief This template is used to convert a request object to a custom
  * type object. Users must specialize the template for a particular type.
@@ -39,9 +41,7 @@ using HttpRequestPtr = std::shared_ptr<HttpRequest>;
 template <typename T>
 T fromRequest(const HttpRequest &req)
 {
-    LOG_ERROR << "You must specialize the fromRequest template for the type of "
-              << DrClassMap::demangle(typeid(T).name());
-    exit(1);
+    static_assert(always_false_v<T>, "You must specialize the fromRequest template function");
 }
 
 /**
@@ -52,9 +52,7 @@ T fromRequest(const HttpRequest &req)
 template <typename T>
 HttpRequestPtr toRequest(T &&)
 {
-    LOG_ERROR << "You must specialize the toRequest template for the type of "
-              << DrClassMap::demangle(typeid(T).name());
-    exit(1);
+    static_assert(always_false_v<T>, "You must specialize the toRequest template function");
 }
 
 template <>
