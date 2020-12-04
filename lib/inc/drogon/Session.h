@@ -15,6 +15,7 @@
 #pragma once
 
 #include <drogon/utils/any.h>
+#include <drogon/utils/optional.h>
 #include <trantor/utils/Logger.h>
 #include <map>
 #include <memory>
@@ -58,6 +59,35 @@ class Session
             }
         }
         return T();
+    }
+
+    /**
+     * @brief Get the data identified by the key parameter and return an
+     * optional object that wraps the data.
+     *
+     * @tparam T
+     * @param key
+     * @return optional<T>
+     */
+    template <typename T>
+    optional<T> getOptional(const std::string &key) const
+    {
+        {
+            std::lock_guard<std::mutex> lck(mutex_);
+            auto it = sessionMap_.find(key);
+            if (it != sessionMap_.end())
+            {
+                if (typeid(T) == it->second.type())
+                {
+                    return optional<T>{*(any_cast<T>(&(it->second)))};
+                }
+                else
+                {
+                    LOG_ERROR << "Bad type";
+                }
+            }
+        }
+        return optional<T>{};
     }
     /**
      * @brief Modify or visit the data identified by the key parameter.
