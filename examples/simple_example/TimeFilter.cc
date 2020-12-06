@@ -16,16 +16,16 @@ void TimeFilter::doFilter(const HttpRequestPtr &req,
         cb(resp);
         return;
     }
-    if (req->session()->find(VDate))
+    auto lastDate = req->session()->getOptional<trantor::Date>(VDate);
+    if (lastDate)
     {
-        auto lastDate = req->session()->get<trantor::Date>(VDate);
-        LOG_TRACE << "last:" << lastDate.toFormattedString(false);
+        LOG_TRACE << "last:" << lastDate.value().toFormattedString(false);
         req->session()->modify<trantor::Date>(VDate,
                                               [now](trantor::Date &vdate) {
                                                   vdate = now;
                                               });
         LOG_TRACE << "update visitDate";
-        if (now > lastDate.after(10))
+        if (now > lastDate.value().after(10))
         {
             // 10 sec later can visit again;
             ccb();
