@@ -348,6 +348,10 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     {
         return termSignalHandler_;
     }
+    virtual HttpAppFramework &setImplicitPageEnable(bool useImplicitPage) override;
+    bool isImplicitPageEnabled() const override;
+    virtual HttpAppFramework &setImplicitPage(const std::string &implicitPageFile) override;
+    const std::string &getImplicitPage() const override;
     size_t getClientMaxBodySize() const
     {
         return clientMaxBodySize_;

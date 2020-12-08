@@ -1,0 +1,187 @@
+<p><img src="https://github.com/an-tao/drogon/wiki/images/drogon-white.jpg" alt="" /></p>
+
+<p><a href="https://travis-ci.com/an-tao/drogon"><img src="https://travis-ci.com/an-tao/drogon.svg?branch=master" alt="Build Status" /></a>
+<a href="https://app.codacy.com/app/an-tao/drogon?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=an-tao/drogon&amp;utm_campaign=Badge_Grade_Dashboard"><img src="https://api.codacy.com/project/badge/Grade/45f8a65ca1844788b9109c0044a618f8" alt="Codacy Badge" /></a>
+<a href="https://lgtm.com/projects/g/an-tao/drogon/alerts/"><img src="https://img.shields.io/lgtm/alerts/g/an-tao/drogon.svg?logo=lgtm&amp;logoWidth=18" alt="Total alerts" /></a>
+<a href="https://lgtm.com/projects/g/an-tao/drogon/context:cpp"><img src="https://img.shields.io/lgtm/grade/cpp/g/an-tao/drogon.svg?logo=lgtm&amp;logoWidth=18" alt="Language grade: C/C++" /></a> 
+<a href="https://gitter.im/drogon-web/community?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://badges.gitter.im/drogon-web/community.svg" alt="Join the chat at https://gitter.im/drogon-web/community" /></a>
+<a href="https://cloud.docker.com/u/drogonframework/repository/docker/drogonframework/drogon"><img src="https://img.shields.io/badge/Docker-image-blue.svg" alt="Docker image" /></a></p>
+
+<h3 id="overview">Overview (from an implicit page)</h3>
+<p><strong>Drogon</strong> is a C++14/17-based HTTP application framework. Drogon can be used to easily build various types of web application server programs using C++. <strong>Drogon</strong> is the name of a dragon in the American TV series “Game of Thrones” that I really like.</p>
+
+<p>Drogon’s main application platform is Linux. It also supports Mac OS and FreeBSD. Currently, it does not support windows. Its main features are as follows:</p>
+
+<ul>
+  <li>Use a non-blocking I/O network lib based on epoll (kqueue under MacOS/FreeBSD) to provide high-concurrency, high-performance network IO, please visit the <a href="https://github.com/an-tao/drogon/wiki/benchmarks">benchmarks</a> page for more details;</li>
+  <li>Provide a completely asynchronous programming mode;</li>
+  <li>Support Http1.0/1.1 (server side and client side);</li>
+  <li>Based on template, a simple reflection mechanism is implemented to completely decouple the main program framework, controllers and views.</li>
+  <li>Support cookies and built-in sessions;</li>
+  <li>Support back-end rendering, the controller generates the data to the view to generate the Html page, the view is described by a “JSP-like” CSP file, the C++ code is embedded into the Html page by the CSP tag, and the drogon command-line tool automatically generates the C++ code file for compilation;</li>
+  <li>Support view page dynamic loading (dynamic compilation and loading at runtime);</li>
+  <li>Provide a convenient and flexible routing solution from the path to the controller handler;</li>
+  <li>Support filter chains to facilitate the execution of unified logic (such as login verification, Http Method constraint verification, etc.) before controllers;</li>
+  <li>Support https (based on OpenSSL);</li>
+  <li>Support WebSocket (server side and client side);</li>
+  <li>Support JSON format request and response, very friendly to the Restful API application development;</li>
+  <li>Support file download and upload;</li>
+  <li>Support gzip compression transmission;</li>
+  <li>Support pipelining;</li>
+  <li>Provide a lightweight command line tool, drogon_ctl, to simplify the creation of various classes in Drogon and the generation of view code;</li>
+  <li>Support non-blocking I/O based asynchronously reading and writing database (PostgreSQL and MySQL(MariaDB) database);</li>
+  <li>Support asynchronously reading and writing sqlite3 database based on thread pool;</li>
+  <li>Support ARM Architecture;</li>
+  <li>Provide a convenient lightweight ORM implementation that supports for regular object-to-database bidirectional mapping;</li>
+  <li>Support plugins which can be installed by the configuration file at load time;</li>
+  <li>Support AOP with build-in joinpoints.</li>
+</ul>
+
+<h2 id="a-very-simple-example">A very simple example</h2>
+
+<p>Unlike most C++ frameworks, the main program of the drogon application can be kept clean and simple. Drogon uses a few tricks to decouple controllers from the main program. The routing settings of controllers can be done through macros or configuration file.</p>
+
+<p>Below is the main program of a typical drogon application:</p>
+
+<p><code>c++
+#include &lt;drogon/drogon.h&gt;
+using namespace drogon;
+int main()
+{
+    app().setLogPath("./");
+    app().setLogLevel(trantor::Logger::kWarn);
+    app().addListener("0.0.0.0", 80);
+    app().setThreadNum(16);
+    app().enableRunAsDaemon();
+    app().run();
+}
+</code></p>
+
+<p>It can be further simplified by using configuration file as follows:</p>
+
+<p><code>c++
+#include &lt;drogon/drogon.h&gt;
+using namespace drogon;
+int main()
+{
+    app().loadConfigFile("./config.json");
+    app().run();
+}
+</code></p>
+
+<p>Drogon provides some interfaces for adding controller logic directly in the main() function, for example, user can register a handler like this in Drogon:</p>
+
+<p><code>c++
+app.registerHandler("/test?username={1}",
+                    [](const HttpRequestPtr&amp; req,
+                       const std::function&lt;void (const HttpResponsePtr &amp;)&gt; &amp; callback,
+                       const std::string &amp;name)
+                    {
+                        Json::Value json;
+                        json["result"]="ok";
+                        json["message"]=std::string("hello,")+name;
+                        auto resp=HttpResponse::newHttpJsonResponse(json);
+                        callback(resp);
+                    },
+                    {Get,"LoginFilter"});
+</code></p>
+
+<p>While such interfaces look intuitive, they are not suitable for complex business logic scenarios. Assuming there are tens or even hundreds of handlers that need to be registered in the framework, isn’t it a better practice to implement them separately in their respective classes? So unless your logic is very simple, we don’t recommend using above interfaces. Instead, we can create an HttpSimpleController as follows:</p>
+
+<p>```c++
+/// The TestCtrl.h file
+#pragma once
+#include &lt;drogon/HttpSimpleController.h&gt;
+using namespace drogon;
+class TestCtrl:public drogon::HttpSimpleController<testctrl>
+{
+public:
+    virtual void asyncHandleHttpRequest(const HttpRequestPtr&amp; req,const std::function&lt;void (const HttpResponsePtr &amp;)&gt; &amp; callback)override;
+    PATH_LIST_BEGIN
+    PATH_ADD("/test",Get);
+    PATH_LIST_END
+};</testctrl></p>
+
+<p>/// The TestCtrl.cc file
+#include “TestCtrl.h”
+void TestCtrl::asyncHandleHttpRequest(const HttpRequestPtr&amp; req,
+                                      const std::function&lt;void (const HttpResponsePtr &amp;)&gt; &amp; callback)
+{
+    //write your application logic here
+    auto resp = HttpResponse::newHttpResponse();
+    resp-&gt;setBody(“&lt;p&gt;Hello, world!&lt;/p&gt;”);
+    resp-&gt;setExpiredTime(0);
+    callback(resp);
+}
+```</p>
+
+<p><strong>Most of the above programs can be automatically generated by the command line tool <code>drogon_ctl</code> provided by drogon</strong> (The cammand is <code>drogon_ctl create controller TestCtrl</code>). All the user needs to do is add their own business logic. In the example, the controller returns a <code>Hello, world!</code> string when the client accesses the <code>http://ip/test</code> URL.</p>
+
+<p>For JSON format response, we create the controller as follows:</p>
+
+<p>```c++
+/// The header file
+#pragma once
+#include &lt;drogon/HttpSimpleController.h&gt;
+using namespace drogon;
+class JsonCtrl : public drogon::HttpSimpleController<jsonctrl>
+{
+  public:
+    virtual void asyncHandleHttpRequest(const HttpRequestPtr &amp;req, const std::function&lt;void(const HttpResponsePtr &amp;)&gt; &amp;callback) override;
+    PATH_LIST_BEGIN
+    //list path definitions here;
+    PATH_ADD("/json", Get);
+    PATH_LIST_END
+};</jsonctrl></p>
+
+<p>/// The source file
+#include “JsonCtrl.h”
+void JsonCtrl::asyncHandleHttpRequest(const HttpRequestPtr &amp;req,
+                                      const std::function&lt;void(const HttpResponsePtr &amp;)&gt; &amp;callback)
+{
+    Json::Value ret;
+    ret[“message”] = “Hello, World!”;
+    auto resp = HttpResponse::newHttpJsonResponse(ret);
+    callback(resp);
+}
+```</p>
+
+<p>Let’s go a step further and create a demo RESTful API with the HttpController class, as shown below (Omit the source file):</p>
+
+<p><code>c++
+/// The header file
+#pragma once
+#include &lt;drogon/HttpController.h&gt;
+using namespace drogon;
+namespace api
+{
+namespace v1
+{
+class User : public drogon::HttpController&lt;User&gt;
+{
+  public:
+    METHOD_LIST_BEGIN
+    //use METHOD_ADD to add your custom processing function here;
+    METHOD_ADD(User::getInfo, "/{1}", Get);                  //path is /api/v1/User/{arg1}
+    METHOD_ADD(User::getDetailInfo, "/{1}/detailinfo", Get);  //path is /api/v1/User/{arg1}/detailinfo
+    METHOD_ADD(User::newUser, "/{1}", Post);                 //path is /api/v1/User/{arg1}
+    METHOD_LIST_END
+    //your declaration of processing function maybe like this:
+    void getInfo(const HttpRequestPtr &amp;req, const std::function&lt;void(const HttpResponsePtr &amp;)&gt; &amp;callback, int userId) const;
+    void getDetailInfo(const HttpRequestPtr &amp;req, const std::function&lt;void(const HttpResponsePtr &amp;)&gt; &amp;callback, int userId) const;
+    void newUser(const HttpRequestPtr &amp;req, const std::function&lt;void(const HttpResponsePtr &amp;)&gt; &amp;callback, std::string &amp;&amp;userName);
+  public:
+    User()
+    {
+        LOG_DEBUG &lt;&lt; "User constructor!";
+    }
+};
+} // namespace v1
+} // namespace api
+</code></p>
+
+<p>As you can see, users can use the <code>HttpController</code> to map paths and parameters at the same time. This is a very convenient way to create a RESTful API application.</p>
+
+<p>In addition, you can also find that all handler interfaces are in asynchronous mode, where the response is returned by a callback object. This design is for performance reasons because in asynchronous mode the drogon application can handle a large number of concurrent requests with a small number of threads.</p>
+
+<p>After compiling all of the above source files, we get a very simple web application. This is a good start. <strong>for more information, please visit the <a href="https://github.com/an-tao/drogon/wiki">wiki</a> site</strong></p>

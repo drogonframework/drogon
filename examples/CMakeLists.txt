@@ -43,6 +43,7 @@ add_custom_command(
           ${PROJECT_SOURCE_DIR}/drogon.jpg
           ${CMAKE_CURRENT_SOURCE_DIR}/simple_example/index.html
           ${CMAKE_CURRENT_SOURCE_DIR}/simple_example/index.html.gz
+          ${CMAKE_CURRENT_SOURCE_DIR}/simple_example/a-directory/page.html
           ${PROJECT_SOURCE_DIR}/trantor/trantor/tests/server.pem
           $<TARGET_FILE_DIR:webapp>)
 

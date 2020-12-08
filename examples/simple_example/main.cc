@@ -207,6 +207,8 @@ int main()
     app().registerHandler("/api/v1/handle4/{4:p4}/{3:p3}/{1:p1}", func);
 
     app().setDocumentRoot("./");
+    app().setImplicitPageEnable(true);
+    app().setImplicitPage("page.html");
     app().enableSession(60);
 
     std::map<std::string, std::string> config_credentials;

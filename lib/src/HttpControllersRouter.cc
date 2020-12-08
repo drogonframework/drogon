@@ -22,13 +22,6 @@
 #include <algorithm>
 #include <cctype>
 #include <deque>
-#ifndef _WIN32
-#include <sys/file.h>
-#else
-#define stat _stati64
-#define S_ISDIR(m) (((m)&0170000) == (0040000))
-#endif
-#include <sys/stat.h>
 
 using namespace drogon;
 
@@ -43,30 +36,6 @@ void HttpControllersRouter::doWhenNoHandlerFound(
         HttpAppFrameworkImpl::instance().forward(req, std::move(callback));
         return;
     }
-
-    //Check if path is eligible for an implicit index.html
-    std::string path = req->path();
-    auto pos = path.rfind('.');
-    if (pos == std::string::npos) 
-    {
-        req->setPath(path + "/index.html");
-        HttpAppFrameworkImpl::instance().forward(req, std::move(callback));
-        return;
-    }
-    else
-    {
-        std::string checkIfDirPath = 
-            HttpAppFrameworkImpl::instance().getDocumentRoot() + req->path();
-        struct stat fileStat;
-        if(stat(checkIfDirPath.c_str(), &fileStat) == 0 &&
-            S_ISDIR(fileStat.st_mode))
-        {
-            req->setPath(path + "/index.html");
-            HttpAppFrameworkImpl::instance().forward(req, std::move(callback));
-            return;
-        }
-    }
-
     fileRouter_.route(req, std::move(callback));
 }
 

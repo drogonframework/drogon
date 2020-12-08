@@ -30,6 +30,7 @@
 
 #define JPG_LEN 44618
 #define INDEX_LEN 10606
+#define INDEX_IMPLICIT_LEN 10817
 
 using namespace drogon;
 
@@ -1142,6 +1143,61 @@ void doTest(const HttpClientPtr &client,
                                 {
                                     LOG_DEBUG << resp->getBody().length();
                                     LOG_ERROR << "Error!";
+                                    exit(1);
+                                }
+                            }
+                            else
+                            {
+                                LOG_ERROR << "Error!";
+                                exit(1);
+                            }
+                        });
+    //Test implicit pages
+    std::string body;
+    req = HttpRequest::newHttpRequest();
+    req->setMethod(drogon::Get);
+    req->setPath("/a-directory");
+    client->sendRequest(req,
+                        [req, isHttps, &body](ReqResult result,
+                                       const HttpResponsePtr &resp) {
+                            if (result == ReqResult::Ok)
+                            {
+                                if (resp->getBody().length() == INDEX_IMPLICIT_LEN)
+                                {
+                                    body = resp->getBody();
+                                    outputGood(req, isHttps);
+                                }
+                                else
+                                {
+                                    LOG_DEBUG << resp->getBody().length();
+                                    LOG_ERROR << "Error!";
+                                    LOG_ERROR << resp->getBody();
+                                    exit(1);
+                                }
+                            }
+                            else
+                            {
+                                LOG_ERROR << "Error!";
+                                exit(1);
+                            }
+                        });
+    req = HttpRequest::newHttpRequest();
+    req->setMethod(drogon::Get);
+    req->setPath("/a-directory/page.html");
+    client->sendRequest(req,
+                        [req, isHttps, body](ReqResult result,
+                                       const HttpResponsePtr &resp) {
+                            if (result == ReqResult::Ok)
+                            {
+                                if (resp->getBody().length() == INDEX_IMPLICIT_LEN && body == resp->getBody())
+                                {
+                                    outputGood(req, isHttps);
+                                }
+                                else
+                                {
+                                    LOG_DEBUG << resp->getBody().length();
+                                    LOG_ERROR << "Error!";
+                                    LOG_ERROR << resp->getBody();
                                     exit(1);
                                 }
                             }

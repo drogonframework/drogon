@@ -176,17 +176,45 @@ void StaticFileRouter::route(
             return;
         }
     }
-    auto pos = lPath.rfind('.');
-    if (pos != std::string::npos)
+
+    
+    //Check if path is eligible for an implicit index.html
+    if(implicitPageEnable_)
     {
-        std::string filetype = lPath.substr(pos + 1);
-        if (fileTypeSet_.find(filetype) != fileTypeSet_.end())
+        std::string directoryPath = 
+            HttpAppFrameworkImpl::instance().getDocumentRoot() + path;
+        auto pos = path.rfind('.');
+        if (pos == std::string::npos) 
         {
-            // LOG_INFO << "file query!" << path;
-            std::string filePath =
-                HttpAppFrameworkImpl::instance().getDocumentRoot() + path;
+            std::string filePath = 
+                directoryPath + "/" + implicitPage_;
             sendStaticFileResponse(filePath, req, callback, "");
             return;
+        }
+        else
+        {
+            struct stat fileStat;
+            if(stat(directoryPath.c_str(), &fileStat) == 0 &&
+                S_ISDIR(fileStat.st_mode))
+            {
+                std::string filePath = 
+                    directoryPath + "/" + implicitPage_;
+                sendStaticFileResponse(filePath, req, callback, "");
+                return;
+            }
+            else
+            {
+                //This is a normal page
+                std::string filetype = lPath.substr(pos + 1);
+                if (fileTypeSet_.find(filetype) != fileTypeSet_.end())
+                {
+                    // LOG_INFO << "file query!" << path;
+                    std::string filePath =
+                        directoryPath;
+                    sendStaticFileResponse(filePath, req, callback, "");
+                    return;
+                }
+            }
         }
     }
 
