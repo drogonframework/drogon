@@ -19,7 +19,8 @@ set(simple_example_sources
     simple_example/main.cc)
 
 add_executable(webapp ${simple_example_sources})
-drogon_create_views(webapp ${CMAKE_CURRENT_SOURCE_DIR}/simple_example ${CMAKE_CURRENT_BINARY_DIR})
+drogon_create_views(webapp ${CMAKE_CURRENT_SOURCE_DIR}/simple_example
+                    ${CMAKE_CURRENT_BINARY_DIR})
 add_dependencies(webapp drogon_ctl)
 
 set(client_example_sources client_example/main.cc)
@@ -43,10 +44,15 @@ add_custom_command(
           ${PROJECT_SOURCE_DIR}/drogon.jpg
           ${CMAKE_CURRENT_SOURCE_DIR}/simple_example/index.html
           ${CMAKE_CURRENT_SOURCE_DIR}/simple_example/index.html.gz
-          ${CMAKE_CURRENT_SOURCE_DIR}/simple_example/a-directory/page.html
           ${PROJECT_SOURCE_DIR}/trantor/trantor/tests/server.pem
           $<TARGET_FILE_DIR:webapp>)
-
+add_custom_command(
+  TARGET webapp POST_BUILD
+  COMMAND ${CMAKE_COMMAND}
+          -E
+          copy_directory
+          ${CMAKE_CURRENT_SOURCE_DIR}/simple_example/a-directory
+          $<TARGET_FILE_DIR:webapp>/a-directory)
 set(example_targets
     webapp
     webapp_test

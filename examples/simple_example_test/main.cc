@@ -30,7 +30,7 @@
 
 #define JPG_LEN 44618
 #define INDEX_LEN 10606
-#define INDEX_IMPLICIT_LEN 10817
+#define INDEX_IMPLICIT_LEN 10630
 
 using namespace drogon;
 
@@ -1152,17 +1152,18 @@ void doTest(const HttpClientPtr &client,
                                 exit(1);
                             }
                         });
-    //Test implicit pages
+    // Test implicit pages
     std::string body;
     req = HttpRequest::newHttpRequest();
     req->setMethod(drogon::Get);
     req->setPath("/a-directory");
     client->sendRequest(req,
                         [req, isHttps, &body](ReqResult result,
-                                       const HttpResponsePtr &resp) {
+                                              const HttpResponsePtr &resp) {
                             if (result == ReqResult::Ok)
                             {
-                                if (resp->getBody().length() == INDEX_IMPLICIT_LEN)
+                                if (resp->getBody().length() ==
+                                    INDEX_IMPLICIT_LEN)
                                 {
                                     body = resp->getBody();
                                     outputGood(req, isHttps);
@@ -1185,11 +1186,13 @@ void doTest(const HttpClientPtr &client,
     req->setMethod(drogon::Get);
     req->setPath("/a-directory/page.html");
     client->sendRequest(req,
-                        [req, isHttps, body](ReqResult result,
-                                       const HttpResponsePtr &resp) {
+                        [req, isHttps, &body](ReqResult result,
+                                              const HttpResponsePtr &resp) {
                             if (result == ReqResult::Ok)
                             {
-                                if (resp->getBody().length() == INDEX_IMPLICIT_LEN && body == resp->getBody())
+                                if (resp->getBody().length() ==
+                                        INDEX_IMPLICIT_LEN &&
+                                    body == resp->getBody())
                                 {
                                     outputGood(req, isHttps);
                                 }

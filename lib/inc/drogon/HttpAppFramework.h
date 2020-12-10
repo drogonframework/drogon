@@ -1069,11 +1069,12 @@ class HttpAppFramework : public trantor::NonCopyable
 
     /// Set to enable implicit pages, enabled by default
     /**
-     * @brief Implicit pages are used when the server detects if the user requested a directory.
-     * By default, it will try to append index.html to the path, see setImplicitPage() if you
-     * want to customize this 
-     * (http://localhost/a-directory resolves to http://localhost/a-directory/index.html by default).
-     * 
+     * @brief Implicit pages are used when the server detects if the user
+     * requested a directory. By default, it will try to append index.html to
+     * the path, see setImplicitPage() if you want to customize this
+     * (http://localhost/a-directory resolves to
+     * http://localhost/a-directory/index.html by default).
+     *
      * @note
      * This operation can be performed by an option in the configuration file.
      */
@@ -1086,15 +1087,17 @@ class HttpAppFramework : public trantor::NonCopyable
      */
     virtual bool isImplicitPageEnabled() const = 0;
 
-    /// Set the HTML file that a directory would resolve to by default, default is "index.html"
+    /// Set the HTML file that a directory would resolve to by default, default
+    /// is "index.html"
     /**
-     * @brief Sets the page which would the server load in if it detects that the user
-     * requested a directory
-     * 
+     * @brief Sets the page which would the server load in if it detects that
+     * the user requested a directory
+     *
      * @note
      * This operation can be performed by an option in the configuration file.
      */
-    virtual HttpAppFramework &setImplicitPage(const std::string &implicitPageFile) = 0;
+    virtual HttpAppFramework &setImplicitPage(
+        const std::string &implicitPageFile) = 0;
 
     /// Get the implicit HTML page
     /**

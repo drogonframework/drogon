@@ -89,7 +89,7 @@ class StaticFileRouter
     {
         implicitPage_ = implicitPageFile;
     }
-    const std::string& getImplicitPage() const
+    const std::string &getImplicitPage() const
     {
         return implicitPage_;
     }

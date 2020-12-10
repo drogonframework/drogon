@@ -192,7 +192,8 @@ HttpAppFramework &HttpAppFrameworkImpl::setBrStatic(bool useGzipStatic)
     staticFileRouterPtr_->setBrStatic(useGzipStatic);
     return *this;
 }
-HttpAppFramework& HttpAppFrameworkImpl::setImplicitPageEnable(bool useImplicitPage)
+HttpAppFramework &HttpAppFrameworkImpl::setImplicitPageEnable(
+    bool useImplicitPage)
 {
     staticFileRouterPtr_->setImplicitPageEnable(useImplicitPage);
     return *this;
@@ -201,12 +202,13 @@ bool HttpAppFrameworkImpl::isImplicitPageEnabled() const
 {
     return staticFileRouterPtr_->isImplicitPageEnabled();
 }
-HttpAppFramework& HttpAppFrameworkImpl::setImplicitPage(const std::string &implicitPageFile)
+HttpAppFramework &HttpAppFrameworkImpl::setImplicitPage(
+    const std::string &implicitPageFile)
 {
     staticFileRouterPtr_->setImplicitPage(implicitPageFile);
     return *this;
 }
-const std::string& HttpAppFrameworkImpl::getImplicitPage() const
+const std::string &HttpAppFrameworkImpl::getImplicitPage() const
 {
     return staticFileRouterPtr_->getImplicitPage();
 }
