@@ -20,6 +20,7 @@
 
 #include <mutex>
 #include <future>
+#include <filesystem>
 #ifndef _WIN32
 #include <unistd.h>
 #endif
@@ -29,8 +30,8 @@
 #define GREEN "\033[32m" /* Green */
 
 #define JPG_LEN 44618
-#define INDEX_LEN 10606
-#define INDEX_IMPLICIT_LEN 10630
+size_t indexLen;
+size_t indexImplicitLen;
 
 using namespace drogon;
 
@@ -861,7 +862,7 @@ void doTest(const HttpClientPtr &client,
                                        const HttpResponsePtr &resp) {
                             if (result == ReqResult::Ok)
                             {
-                                if (resp->getBody().length() == INDEX_LEN)
+                                if (resp->getBody().length() == indexLen)
                                 {
                                     outputGood(req, isHttps);
                                 }
@@ -888,7 +889,7 @@ void doTest(const HttpClientPtr &client,
                                        const HttpResponsePtr &resp) {
                             if (result == ReqResult::Ok)
                             {
-                                if (resp->getBody().length() == INDEX_LEN)
+                                if (resp->getBody().length() == indexLen)
                                 {
                                     outputGood(req, isHttps);
                                 }
@@ -1163,7 +1164,7 @@ void doTest(const HttpClientPtr &client,
                             if (result == ReqResult::Ok)
                             {
                                 if (resp->getBody().length() ==
-                                    INDEX_IMPLICIT_LEN)
+                                    indexImplicitLen)
                                 {
                                     body = resp->getBody();
                                     outputGood(req, isHttps);
@@ -1191,7 +1192,7 @@ void doTest(const HttpClientPtr &client,
                             if (result == ReqResult::Ok)
                             {
                                 if (resp->getBody().length() ==
-                                        INDEX_IMPLICIT_LEN &&
+                                        indexImplicitLen &&
                                     body == resp->getBody())
                                 {
                                     outputGood(req, isHttps);
@@ -1245,6 +1246,16 @@ void doTest(const HttpClientPtr &client,
             }
         });
 }
+void loadFileLengths()
+{
+    try{
+        indexLen = std::filesystem::file_size("index.html");
+        indexImplicitLen = std::filesystem::file_size("a-directory/page.html");
+    }catch(std::exception e){
+        LOG_ERROR << "Unable to retrieve HTML file sizes: " << e.what();
+        exit(1);
+    }
+}
 int main(int argc, char *argv[])
 {
     trantor::EventLoopThread loop[2];
@@ -1254,7 +1265,7 @@ int main(int argc, char *argv[])
         ever = true;
     loop[0].run();
     loop[1].run();
-
+    loadFileLengths();
     do
     {
         std::promise<int> pro1;
