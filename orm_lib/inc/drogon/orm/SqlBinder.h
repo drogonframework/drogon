@@ -36,7 +36,8 @@
 #include <arpa/inet.h>
 #endif
 
-#if defined __linux__ || defined __FreeBSD__ || defined __OpenBSD__
+#if defined __linux__ || defined __FreeBSD__ || defined __OpenBSD__ || \
+    defined __MINGW32__
 
 #ifdef __linux__
 #include <endian.h>  // __BYTE_ORDER __LITTLE_ENDIAN
@@ -44,6 +45,10 @@
 #include <sys/endian.h>  // _BYTE_ORDER _LITTLE_ENDIAN
 #define __BYTE_ORDER _BYTE_ORDER
 #define __LITTLE_ENDIAN _LITTLE_ENDIAN
+#elif defined __MINGW32__
+#include <sys/param.h>  // BYTE_ORDER LITTLE_ENDIAN
+#define __BYTE_ORDER BYTE_ORDER
+#define __LITTLE_ENDIAN LITTLE_ENDIAN
 #endif
 
 #include <algorithm>  // std::reverse()
