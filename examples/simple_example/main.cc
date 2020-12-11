@@ -214,6 +214,8 @@ int main()
     std::string opaque("drogonOpaque");
     // Load configuration
     app().loadConfigFile("config.example.json");
+    app().setImplicitPageEnable(true);
+    app().setImplicitPage("page.html");
     auto &json = app().getCustomConfig();
     if (json.empty())
     {

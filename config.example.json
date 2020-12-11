@@ -70,6 +70,11 @@
         //If there isn't any handler registered to the path "/", the home page file in the "document_root" is send to clients as a response
         //to the request for "/".
         "home_page": "index.html",
+        //use_implicit_page: enable implicit pages if true, true by default
+        "use_implicit_page": true,
+        //implicit_page: Set the file which would the server access in a directory that a user accessed.
+        //For example, by default, http://localhost/a-directory resolves to http://localhost/a-directory/index.html.
+        "implicit_page": "index.html",
         //static_file_headers: Headers for static files
         /*"static_file_headers": [
           {

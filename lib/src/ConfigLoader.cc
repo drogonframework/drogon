@@ -454,6 +454,10 @@ static void loadApp(const Json::Value &app)
     }
     drogon::app().enableReusePort(app.get("reuse_port", false).asBool());
     drogon::app().setHomePage(app.get("home_page", "index.html").asString());
+    drogon::app().setImplicitPageEnable(
+        app.get("use_implicit_page", true).asBool());
+    drogon::app().setImplicitPage(
+        app.get("implicit_page", "index.html").asString());
 }
 static void loadDbClients(const Json::Value &dbClients)
 {

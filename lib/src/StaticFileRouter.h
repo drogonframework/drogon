@@ -77,6 +77,22 @@ class StaticFileRouter
     {
         headers_ = headers;
     }
+    void setImplicitPageEnable(bool useImplicitPage)
+    {
+        implicitPageEnable_ = useImplicitPage;
+    }
+    bool isImplicitPageEnabled() const
+    {
+        return implicitPageEnable_;
+    }
+    void setImplicitPage(const std::string &implicitPageFile)
+    {
+        implicitPage_ = implicitPageFile;
+    }
+    const std::string &getImplicitPage() const
+    {
+        return implicitPage_;
+    }
 
   private:
     std::set<std::string> fileTypeSet_{"html",
@@ -110,6 +126,8 @@ class StaticFileRouter
         IOThreadStorage<std::unordered_map<std::string, HttpResponsePtr>>>
         staticFilesCache_;
     std::vector<std::pair<std::string, std::string>> headers_;
+    bool implicitPageEnable_{true};
+    std::string implicitPage_{"index.html"};
     struct Location
     {
         std::string uriPrefix_;
