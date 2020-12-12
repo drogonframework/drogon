@@ -23,11 +23,11 @@ foreach(cspFile ${SCP_LIST})
   get_filename_component(classname ${cspFile} NAME_WE)
   message(STATUS "view classname:" ${classname})
   add_custom_command(OUTPUT ${classname}.h ${classname}.cc
-                     _drogon_ctl
-                           ARGS
-                           create
-                           view
-                           ${cspFile}
+                     COMMAND _drogon_ctl
+                              ARGS
+                              create
+                              view
+                              ${cspFile}
                      DEPENDS ${cspFile}
                      VERBATIM)
   set(TEMPL_SRC ${TEMPL_SRC} ${classname}.cc)
