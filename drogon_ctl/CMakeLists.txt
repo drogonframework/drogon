@@ -17,29 +17,21 @@ add_executable(_drogon_ctl
                create.cc
                create_view.cc)
 target_link_libraries(_drogon_ctl ${PROJECT_NAME})
-if(BUILD_TEMPLATES)
-  file(GLOB SCP_LIST ${CMAKE_CURRENT_SOURCE_DIR}/templates/*.csp)
-  foreach(cspFile ${SCP_LIST})
-    message(STATUS "cspFile:" ${cspFile})
-    get_filename_component(classname ${cspFile} NAME_WE)
-    message(STATUS "view classname:" ${classname})
-    add_custom_command(OUTPUT ${classname}.h ${classname}.cc
-                       _drogon_ctl
-                             ARGS
-                             create
-                             view
-                             ${cspFile}
-                       DEPENDS ${cspFile}
-                       VERBATIM)
-    set(TEMPL_SRC ${TEMPL_SRC} ${classname}.cc)
-  endforeach()
-else(BUILD_TEMPLATES)
-  file(GLOB cc_list ${CMAKE_CURRENT_SOURCE_DIR}/generated-templates/*.cc)
-  file(GLOB h_list ${CMAKE_CURRENT_SOURCE_DIR}/generated-templates/*.h)
-  file(COPY ${cc_list} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-  file(COPY ${h_list} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-  set(TEMPL_SRC ${cc_list})
-endif(BUILD_TEMPLATES)
+file(GLOB SCP_LIST ${CMAKE_CURRENT_SOURCE_DIR}/templates/*.csp)
+foreach(cspFile ${SCP_LIST})
+  message(STATUS "cspFile:" ${cspFile})
+  get_filename_component(classname ${cspFile} NAME_WE)
+  message(STATUS "view classname:" ${classname})
+  add_custom_command(OUTPUT ${classname}.h ${classname}.cc
+                     _drogon_ctl
+                           ARGS
+                           create
+                           view
+                           ${cspFile}
+                     DEPENDS ${cspFile}
+                     VERBATIM)
+  set(TEMPL_SRC ${TEMPL_SRC} ${classname}.cc)
+endforeach()
 add_executable(drogon_ctl ${ctl_sources} ${TEMPL_SRC})
 target_link_libraries(drogon_ctl PRIVATE ${PROJECT_NAME})
 target_include_directories(drogon_ctl PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})

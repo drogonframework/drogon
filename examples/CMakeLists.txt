@@ -19,17 +19,8 @@ set(simple_example_sources
     simple_example/main.cc)
 
 add_executable(webapp ${simple_example_sources})
-if(BUILD_TEMPLATES)
-  drogon_create_views(webapp ${CMAKE_CURRENT_SOURCE_DIR}/simple_example
-                      ${CMAKE_CURRENT_BINARY_DIR})
-else(BUILD_TEMPLATES)
-  file(GLOB cc_list 
-       ${CMAKE_CURRENT_SOURCE_DIR}/simple_example/generated-templates/*.cc)
-  file(GLOB h_list 
-       ${CMAKE_CURRENT_SOURCE_DIR}/simple_example/generated-templates/*.h)
-  file(COPY ${cc_list} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-  file(COPY ${h_list} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-endif(BUILD_TEMPLATES)
+drogon_create_views(webapp ${CMAKE_CURRENT_SOURCE_DIR}/simple_example
+                    ${CMAKE_CURRENT_BINARY_DIR})
 add_dependencies(webapp drogon_ctl)
 
 set(client_example_sources client_example/main.cc)
