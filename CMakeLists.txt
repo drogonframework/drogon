@@ -9,7 +9,7 @@ check_cxx_source_runs(
         binary_exe_result)
 
 option(BUILD_CTL "Build drogon_ctl" ON)
-option(BUILD_CTL_TEMPLATES 
+option(BUILD_TEMPLATES 
        "Build drogon_ctl template files with the fresh drogon_ctl. Untick if you are cross compiling" 
        ${build_ctl_templates_default})
 option(BUILD_EXAMPLES "Build examples" ON)
