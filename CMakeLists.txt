@@ -1,8 +1,20 @@
 cmake_minimum_required(VERSION 3.5)
 
 project(drogon)
+try_run(binary_exe_result binary_compile_result 
+        ${CMAKE_BINARY_DIR}/cmaketest 
+        ${PROJECT_SOURCE_DIR}/cmake/tests/binary_compatibility_test.cc)
+if(binary_exe_result EQUAL 42)
+  set(build_ctl_templates_default ON)
+elseif(binary_exe_result STREQUAL "FAILED_TO_RUN")
+  set(build_ctl_templates_default OFF)
+endif(binary_exe_result STREQUAL "FAILED_TO_RUN")
+
 message(STATUS "compiler: " ${CMAKE_CXX_COMPILER_ID})
 option(BUILD_CTL "Build drogon_ctl" ON)
+option(BUILD_CTL_TEMPLATES 
+       "Build drogon_ctl template files with the fresh drogon_ctl. Untick if you are cross compiling" 
+       ${build_ctl_templates_default})
 option(BUILD_EXAMPLES "Build examples" ON)
 option(BUILD_ORM "Build orm" ON)
 option(COZ_PROFILING "Use coz for profiling" OFF)
