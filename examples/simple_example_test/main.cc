@@ -20,10 +20,11 @@
 
 #include <mutex>
 #include <future>
-#include <filesystem>
 #ifndef _WIN32
 #include <unistd.h>
 #endif
+
+#include <sys/stat.h>
 
 #define RESET "\033[0m"
 #define RED "\033[31m"   /* Red */
@@ -1248,16 +1249,19 @@ void doTest(const HttpClientPtr &client,
 }
 void loadFileLengths()
 {
-    try
+    struct stat filestat;
+    if (stat("index.html", &filestat) < 0)
     {
-        indexLen = std::filesystem::file_size("index.html");
-        indexImplicitLen = std::filesystem::file_size("a-directory/page.html");
-    }
-    catch (const std::exception &e)
-    {
-        LOG_ERROR << "Unable to retrieve HTML file sizes: " << e.what();
+        LOG_SYSERR << "Unable to retrieve index.html file sizes";
         exit(1);
     }
+    indexLen = filestat.st_size;
+    if (stat("a-directory/page.html", &filestat) < 0)
+    {
+        LOG_SYSERR << "Unable to retrieve a-directory/page.html file sizes";
+        exit(1);
+    }
+    indexImplicitLen = filestat.st_size;
 }
 int main(int argc, char *argv[])
 {
