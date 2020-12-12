@@ -1253,7 +1253,7 @@ void loadFileLengths()
         indexLen = std::filesystem::file_size("index.html");
         indexImplicitLen = std::filesystem::file_size("a-directory/page.html");
     }
-    catch (std::exception e)
+    catch (const std::exception &e)
     {
         LOG_ERROR << "Unable to retrieve HTML file sizes: " << e.what();
         exit(1);

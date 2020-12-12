@@ -4,6 +4,32 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.2.0] - 2020-12-12
+
+### Fixed
+
+- Fix error when receiving response without content-length header.
+
+- Fix a stack-overflow error when high concurrency happening on sqlite3.
+
+- Fix MinGW ORM building by enabling htonll and ntohll.
+
+### Changed
+
+- Modify the WebSocketTest controller to create a simple chat room.
+
+- Add support for OpenBSD.
+
+- Return 400 if the content-length is invalid.
+
+- Don't send content type in a 304 response.
+
+- Add the reuse_port option to app() interface.
+
+- Add the 'std::optional' support in the SqlBinder class and the Session class.
+
+- Add implicit page resolving capability.
+
 ## [1.1.0] - 2020-10-31
 
 ### Fixed
@@ -566,7 +592,9 @@ All notable changes to this project will be documented in this file.
 
 ## [1.0.0-beta1] - 2019-06-11
 
-[Unreleased]: https://github.com/an-tao/drogon/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/an-tao/drogon/compare/v1.2.0...HEAD
+
+[1.2.0]: https://github.com/an-tao/drogon/compare/v1.1.0...v1.2.0
 
 [1.1.0]: https://github.com/an-tao/drogon/compare/v1.0.0...v1.1.0
 
