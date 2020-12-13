@@ -168,8 +168,8 @@ void press::handleCommand(std::vector<std::string> &parameters)
     // std::cout << "c=" << numOfConnections_ << std::endl;
     // std::cout << "q=" << processIndication_ << std::endl;
     // std::cout << "url=" << url_ << std::endl;
-    if (url_.empty() || url_.find("http") != 0 ||
-        url_.find("://") == std::string::npos)
+    if (url_.empty() || url_.compare(0, 4, "http") != 0 ||
+        (url_.compare(4, 3, "://") != 0 && url_.compare(4, 4, "s://") != 0))
     {
         outputErrorAndExit("Invalid URL");
     }

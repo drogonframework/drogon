@@ -56,7 +56,7 @@ struct SqlCmd
     ExceptPtrCallback exceptionCallback_;
     std::string preparingStatement_;
 #if LIBPQ_SUPPORTS_BATCH_MODE
-    bool isChanging_;
+    bool isChanging_{false};
 #endif
     SqlCmd(string_view &&sql,
            const size_t paraNum,

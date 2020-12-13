@@ -238,12 +238,17 @@ void WebSocketClientImpl::onRecvMessage(
         {
             resp->parseJson();
         }
-
-        if (resp->getHeaderBy("content-encoding") == "gzip")
+        auto &coding = resp->getHeaderBy("content-encoding");
+        if (coding == "gzip")
         {
             resp->gunzip();
         }
-
+#ifdef USE_BROTLI
+        else if (coding == "br")
+        {
+            resp->brDecompress();
+        }
+#endif
         upgraded_ = true;
         websockConnPtr_ =
             std::make_shared<WebSocketConnectionImpl>(connPtr, false);
