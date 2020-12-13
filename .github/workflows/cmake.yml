@@ -50,14 +50,8 @@ jobs:
         # Installing packages might fail as the github image becomes outdated
         sudo apt update
         # These aren't available or don't work well in vcpkg
-        sudo apt install mysql-server
         sudo apt install libjsoncpp-dev uuid-dev openssl libssl-dev zlib1g-dev postgresql-all libsqlite3-dev
         sudo apt install libbrotli-dev
-
-    - name: (Linux) Install mariadb development
-      if: matrix.os == 'ubuntu-20.04'
-      run: |
-        sudo apt install libmariadbclient-dev
 
     - name: (Linux) Install boost
       if: matrix.os == 'ubuntu-16.04'
@@ -112,14 +106,14 @@ jobs:
       run: |
         sudo systemctl start postgresql
         sleep 1
-        sudo -u postgres psql -c "ALTER USER postgres WITH PASSWORD ''" postgres
+        sudo -u postgres psql -c "ALTER USER postgres WITH PASSWORD '12345'" postgres
     
     - name: Prepare for testing (ubuntu 1604)
       if: matrix.os == 'ubuntu-16.04'
       run: |
         sudo systemctl start postgresql
         sleep 1
-        sudo -u postgres psql -c "ALTER USER postgres WITH PASSWORD ''" postgres
+        sudo -u postgres psql -c "ALTER USER postgres WITH PASSWORD '12345'" postgres
 
     - name: Test
       working-directory: ${{env.GITHUB_WORKSPACE}}
