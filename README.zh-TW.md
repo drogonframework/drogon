@@ -1,6 +1,7 @@
 ![](https://github.com/an-tao/drogon/wiki/images/drogon-white.jpg)
 
 [![Build Status](https://travis-ci.com/an-tao/drogon.svg?branch=master)](https://travis-ci.com/an-tao/drogon)
+![Build Status](https://github.com/an-tao/drogon/workflows/Build%20Drogon/badge.svg?branch=master)
 [![Build status](https://ci.appveyor.com/api/projects/status/12ffuf6j5vankgyb/branch/master?svg=true)](https://ci.appveyor.com/project/an-tao/drogon/branch/master)
 [![Total alerts](https://img.shields.io/lgtm/alerts/g/an-tao/drogon.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/an-tao/drogon/alerts/)
 [![Join the chat at https://gitter.im/drogon-web/community](https://badges.gitter.im/drogon-web/community.svg)](https://gitter.im/drogon-web/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)

@@ -1994,7 +1994,7 @@ int main(int argc, char *argv[])
     trantor::Logger::setLogLevel(trantor::Logger::kDebug);
 #if USE_POSTGRESQL
     auto postgre_client = DbClient::newPgClient(
-        "host=127.0.0.1 port=5432 dbname=postgres user=postgres "
+        "host=127.0.0.1 port=5432 dbname=postgres user=postgres password=12345 "
         "client_encoding=utf8",
         1);
 #endif

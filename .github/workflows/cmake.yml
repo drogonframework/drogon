@@ -1,0 +1,116 @@
+name: Build Drogon
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+env:
+  # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
+  BUILD_TYPE: Release
+
+jobs:
+  build:
+    name: ${{matrix.buildname}}
+    runs-on: ${{matrix.os}}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-20.04
+            buildname: 'ubuntu-20.04/gcc'
+            triplet: x64-linux
+            compiler: gcc_64
+          - os: ubuntu-16.04
+            buildname: 'ubuntu-16.04/gcc'
+            triplet: x64-linux
+            compiler: gcc_64
+          - os: macos-latest
+            buildname: 'macos/clang'
+            triplet: x64-osx
+            compiler: clang_64
+
+    steps:
+    - name: Checkout Drogon source code
+      uses: actions/checkout@v2
+      with:
+        submodules: true
+        fetch-depth: 0
+
+    - name: (macOS) Install dependencies
+      if: runner.os == 'macOS'
+      run: |
+        brew install jsoncpp ossp-uuid brotli zlib
+        brew install openssl lz4 mariadb sqlite3 postgresql
+
+    - name: (Linux) Install dependencies
+      if: runner.os == 'Linux'
+      run: |
+        # Installing packages might fail as the github image becomes outdated
+        sudo apt update
+        # These aren't available or don't work well in vcpkg
+        sudo apt install libjsoncpp-dev uuid-dev openssl libssl-dev zlib1g-dev postgresql-all libsqlite3-dev
+        sudo apt install libbrotli-dev
+
+    - name: (Linux) Install boost
+      if: matrix.os == 'ubuntu-16.04'
+      run: |
+        sudo add-apt-repository ppa:mhier/libboost-latest
+        sudo apt update
+        sudo apt install boost1.67
+
+    - name: install gtest
+      run: |
+        wget https://github.com/google/googletest/archive/release-1.10.0.tar.gz
+        tar xf release-1.10.0.tar.gz
+        cd googletest-release-1.10.0
+        cmake .
+        make
+        sudo make install
+  
+    - name: Create Build Environment & Configure Cmake
+      # Some projects don't allow in-source building, so create a separate build directory
+      # We'll use this as our working directory for all subsequent commands
+      shell: bash
+      working-directory: ${{env.GITHUB_WORKSPACE}}
+      run: |
+        mkdir build
+        cd build
+        cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_TESTING=on
+
+    - name: Build
+      working-directory: ${{env.GITHUB_WORKSPACE}}
+      shell: bash
+      # Execute the build.  You can specify a specific target with "--target <NAME>"
+      run: |
+        cd build
+        sudo make && sudo make install
+
+    - name: Prepare for testing (macOS)
+      if: runner.os == 'macOS'
+      run: |
+        brew tap homebrew/services;
+        brew services restart postgresql;
+        brew services start mariadb;
+        sleep 4;
+        mariadb -e "SET PASSWORD FOR 'root'@'localhost' = PASSWORD('')";
+        mariadb -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost'";
+        mariadb -e "FLUSH PRIVILEGES";
+        brew services restart mariadb;
+        sleep 4;
+        psql -c 'create user postgres superuser;' postgres;
+
+    - name: Prepare for testing (Linux)
+      if: runner.os == 'Linux'
+      run: |
+        sudo systemctl start postgresql
+        sleep 1
+        sudo -u postgres psql -c "ALTER USER postgres WITH PASSWORD '12345'" postgres
+
+    - name: Test
+      working-directory: ${{env.GITHUB_WORKSPACE}}
+      shell: bash
+      # Execute tests defined by the CMake configuration.  
+      # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
+      run: ./test.sh -t
