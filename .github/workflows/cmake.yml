@@ -101,15 +101,8 @@ jobs:
         sleep 4;
         psql -c 'create user postgres superuser;' postgres;
 
-    - name: Prepare for testing (ubuntu 2004)
-      if: matrix.os == 'ubuntu-20.04'
-      run: |
-        sudo systemctl start postgresql
-        sleep 1
-        sudo -u postgres psql -c "ALTER USER postgres WITH PASSWORD '12345'" postgres
-    
-    - name: Prepare for testing (ubuntu 1604)
-      if: matrix.os == 'ubuntu-16.04'
+    - name: Prepare for testing (Linux)
+      if: runner.os == 'Linux'
       run: |
         sudo systemctl start postgresql
         sleep 1
