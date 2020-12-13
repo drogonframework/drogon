@@ -111,11 +111,15 @@ jobs:
       if: matrix.os == 'ubuntu-20.04'
       run: |
         sudo systemctl start postgresql
+        sleep 1
+        psql -c "ALTER USER postgres WITH PASSWORD ''" postgres
     
     - name: Prepare for testing (ubuntu 1604)
       if: matrix.os == 'ubuntu-16.04'
       run: |
         sudo systemctl start postgresql
+        sleep 1
+        psql -c "ALTER USER postgres WITH PASSWORD ''" postgres
 
     - name: Test
       working-directory: ${{env.GITHUB_WORKSPACE}}
