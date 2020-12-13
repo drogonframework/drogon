@@ -20,6 +20,8 @@
 
 #include <mutex>
 #include <future>
+#include <algorithm>
+
 #ifndef _WIN32
 #include <unistd.h>
 #endif
@@ -1159,31 +1161,31 @@ void doTest(const HttpClientPtr &client,
     req = HttpRequest::newHttpRequest();
     req->setMethod(drogon::Get);
     req->setPath("/a-directory");
-    client->sendRequest(req,
-                        [req, isHttps, &body](ReqResult result,
-                                              const HttpResponsePtr &resp) {
-                            if (result == ReqResult::Ok)
-                            {
-                                if (resp->getBody().length() ==
-                                    indexImplicitLen)
-                                {
-                                    body = resp->getBody();
-                                    outputGood(req, isHttps);
-                                }
-                                else
-                                {
-                                    LOG_DEBUG << resp->getBody().length();
-                                    LOG_ERROR << "Error!";
-                                    LOG_ERROR << resp->getBody();
-                                    exit(1);
-                                }
-                            }
-                            else
-                            {
-                                LOG_ERROR << "Error!";
-                                exit(1);
-                            }
-                        });
+    client->sendRequest(
+        req,
+        [req, isHttps, &body](ReqResult result, const HttpResponsePtr &resp) {
+            if (result == ReqResult::Ok)
+            {
+                if (resp->getBody().length() == indexImplicitLen)
+                {
+                    body = std::string(resp->getBody().data(),
+                                       resp->getBody().length());
+                    outputGood(req, isHttps);
+                }
+                else
+                {
+                    LOG_DEBUG << resp->getBody().length();
+                    LOG_ERROR << "Error!";
+                    LOG_ERROR << resp->getBody();
+                    exit(1);
+                }
+            }
+            else
+            {
+                LOG_ERROR << "Error!";
+                exit(1);
+            }
+        });
     req = HttpRequest::newHttpRequest();
     req->setMethod(drogon::Get);
     req->setPath("/a-directory/page.html");
@@ -1194,7 +1196,9 @@ void doTest(const HttpClientPtr &client,
                             {
                                 if (resp->getBody().length() ==
                                         indexImplicitLen &&
-                                    body == resp->getBody())
+                                    std::equal(body.begin(),
+                                               body.end(),
+                                               resp->getBody().begin()))
                                 {
                                     outputGood(req, isHttps);
                                 }
