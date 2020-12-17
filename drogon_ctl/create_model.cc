@@ -140,9 +140,7 @@ void create_model::createModelClassFromPG(
                     info.colType_ = "int32_t";
                     info.colLength_ = 4;
                 }
-                else if (type == "bigint" ||
-                         type == "numeric")  /// TODO:Use int64 to represent
-                                             /// numeric type?
+                else if (type == "bigint")
                 {
                     info.colType_ = "int64_t";
                     info.colLength_ = 8;
@@ -180,6 +178,10 @@ void create_model::createModelClassFromPG(
                 else if (type == "bytea")
                 {
                     info.colType_ = "std::vector<char>";
+                }
+                else if (type.find("numeric") != std::string::npos)
+                {
+                    info.colType_ = "std::string";
                 }
                 else
                 {
@@ -446,7 +448,8 @@ void create_model::createModelClassFromMysql(
                 {
                     info.colType_ = "std::string";
                 }
-                if (type.find("unsigned") != std::string::npos)
+                if (type.find("unsigned") != std::string::npos &&
+                    info.colType_ != "std::string")
                 {
                     info.colType_ = "u" + info.colType_;
                 }
@@ -466,12 +469,13 @@ void create_model::createModelClassFromMysql(
             std::cerr << e.base().what() << std::endl;
             exit(1);
         };
-    std::vector<std::string> pkNames, pkTypes;
+    std::vector<std::string> pkNames, pkTypes, pkValNames;
     for (auto const &col : cols)
     {
         if (col.isPrimaryKey_)
         {
             pkNames.push_back(col.colName_);
+            pkValNames.push_back(nameTransform(col.colName_, false));
             pkTypes.push_back(col.colType_);
         }
     }
@@ -485,6 +489,7 @@ void create_model::createModelClassFromMysql(
     {
         data["primaryKeyName"] = pkNames;
         data["primaryKeyType"] = pkTypes;
+        data["primaryKeyValNames"] = pkValNames;
     }
     data["columns"] = cols;
     std::ofstream headerFile(path + "/" + className + ".h", std::ofstream::out);
