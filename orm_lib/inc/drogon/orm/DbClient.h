@@ -29,6 +29,49 @@
 
 namespace drogon
 {
+struct JSStyleFuture
+{
+    using FuncSuccess = void(const orm::Result &r);
+    using FuncFail = void(const orm::DrogonDbException &);
+
+    JSStyleFuture& then(const FuncSuccess& success) {
+        if(resultHolder_.has_value()) {
+            success_(resultHolder_.value());
+            resultHolder_ = std::nullopt;
+        }
+        success_ = success;
+        return *this;
+    }
+
+    JSStyleFuture& except(const FuncFail& fail) {
+        fail_ = fail;
+        if(errorHolder_.has_value()) {
+            fail(errorHolder_.value());
+            errorHolder_ = std::nullopt;
+        }
+        fail_ = fail;
+        return *this;
+    }
+
+    void __success_handler(const orm::Result &result) {
+        if((bool)success_)
+            success_(result);
+        else
+            resultHolder_ = result;
+    }
+
+    void __fail_handler(const orm::DrogonDbException &e) {
+        if((bool)fail_)
+            fail_(e);
+        else
+            errorHolder_ = e;
+    }
+protected:
+    std::function<FuncSuccess> success_;
+    std::function<FuncFail> fail_;
+    std::optional<orm::DrogonDbException> errorHolder_;
+    std::optional<orm::Result> resultHolder_;
+};
 namespace orm
 {
 using ResultCallback = std::function<void(const Result &)>;
@@ -112,6 +155,19 @@ class DbClient : public trantor::NonCopyable
             (binder << std::forward<Arguments>(args), 0)...};
         binder >> std::forward<FUNCTION1>(rCallback);
         binder >> std::forward<FUNCTION2>(exceptCallback);
+    }
+
+    /// JS style future
+    template <typename... Arguments>
+    std::shared_ptr<JSStyleFuture> execSqlFuture(const std::string& sql,
+                              Arguments &&... args) noexcept
+    {
+        std::shared_ptr<JSStyleFuture> fut = std::make_shared<JSStyleFuture>();
+        execSqlAsync(sql,
+            [fut](const drogon::orm::Result &e){fut->__success_handler(e);},
+            [fut](const drogon::orm::DrogonDbException &e){fut->__fail_handler(e);},
+            args...);
+        return fut;
     }
 
     /// Async and nonblocking method
