@@ -29,56 +29,84 @@
 
 namespace drogon
 {
-
-template<typename> struct func_param;
-template <typename Ret, typename ...Args>
+template <typename>
+struct func_param;
+template <typename Ret, typename... Args>
 struct func_param<Ret(Args...)>
 {
     using type = std::tuple<Args...>;
 };
 
-template<typename FuncSuccess, typename FuncFail>
+template <typename FuncSuccess, typename FuncFail>
 struct JSStyleFuture
+    : public std::enable_shared_from_this<JSStyleFuture<FuncSuccess, FuncFail>>
 {
-    JSStyleFuture& then(const std::function<FuncSuccess>& success) {
+    // Hold a shared_ptr of ourselves to prevent us going out of scope
+    // before the callback is called
+    JSStypeFuture() : self_(share_from_this())
+    {
+    }
+
+    JSStyleFuture &then(const std::function<FuncSuccess> &success)
+    {
         success_ = success;
-        if(resultHolder_.has_value()) {
+        if (resultHolder_.has_value())
+        {
             std::apply(success_, resultHolder_.value());
             resultHolder_ = std::nullopt;
         }
         return *this;
     }
 
-    JSStyleFuture& except(const std::function<FuncFail>& fail) {
+    JSStyleFuture &except(const std::function<FuncFail> &fail)
+    {
         fail_ = fail;
-        if(errorHolder_.has_value()) {
+        if (errorHolder_.has_value())
+        {
             std::apply(fail_, errorHolder_.value());
             errorHolder_ = std::nullopt;
         }
         return *this;
     }
 
-    template<typename ...Params>
-    void __success_handler(Params&& ...params) {
-        if((bool)success_)
+    template <typename... Params>
+    void __success_handler(Params &&...params)
+    {
+        if ((bool)success_)
+        {
             std::apply(success_, params...);
+            // Remove the functors as then may have a copy of shared_ptr to this
+            success_ = nullptr;
+            fail_ = nullptr;
+            // Always clear self_ the last. It might call the destructor
+            self_ = nullptr;
+        }
         else
             resultHolder_ = std::tuple<Params...>(params...);
     }
 
-    template<typename ...Params>
-    void __fail_handler(Params&& ...params) {
-        if((bool)fail_)
+    template <typename... Params>
+    void __fail_handler(Params &&...params)
+    {
+        if ((bool)fail_)
+        {
             std::apply(fail_, params...);
+            success_ = nullptr;
+            fail_ = nullptr;
+            self_ = nullptr;
+        }
         else
             errorHolder_ = std::tuple<Params...>(params...);
     }
-protected:
+
+  protected:
+    std::shared_ptr<JSStyleFuture> self_;
     std::function<FuncSuccess> success_;
     std::function<FuncFail> fail_;
     std::optional<typename func_param<FuncFail>::type> errorHolder_;
     std::optional<typename func_param<FuncSuccess>::type> resultHolder_;
 };
+
 namespace orm
 {
 using ResultCallback = std::function<void(const Result &)>;
@@ -155,7 +183,7 @@ class DbClient : public trantor::NonCopyable
     void execSqlAsync(const std::string &sql,
                       FUNCTION1 &&rCallback,
                       FUNCTION2 &&exceptCallback,
-                      Arguments &&... args) noexcept
+                      Arguments &&...args) noexcept
     {
         auto binder = *this << sql;
         (void)std::initializer_list<int>{
@@ -166,14 +194,19 @@ class DbClient : public trantor::NonCopyable
 
     /// JS style future
     template <typename... Arguments>
-    std::shared_ptr<JSStyleFuture<void(const Result&), void(const DrogonDbException&)>> execSqlFuture(const std::string& sql,
-                              Arguments &&... args) noexcept
+    std::shared_ptr<
+        JSStyleFuture<void(const Result &), void(const DrogonDbException &)>>
+    execSqlFuture(const std::string &sql, Arguments &&...args) noexcept
     {
-        using Fut = JSStyleFuture<void(const Result&), void(const DrogonDbException&)>;
+        using Fut = JSStyleFuture<void(const Result &),
+                                  void(const DrogonDbException &)>;
         std::shared_ptr<Fut> fut = std::make_shared<Fut>();
-        execSqlAsync(sql,
-            [fut](const drogon::orm::Result &e){fut->__success_handler(e);},
-            [fut](const drogon::orm::DrogonDbException &e){fut->__fail_handler(e);},
+        execSqlAsync(
+            sql,
+            [fut](const drogon::orm::Result &e) { fut->__success_handler(e); },
+            [fut](const drogon::orm::DrogonDbException &e) {
+                fut->__fail_handler(e);
+            },
             args...);
         return fut;
     }
@@ -181,7 +214,7 @@ class DbClient : public trantor::NonCopyable
     /// Async and nonblocking method
     template <typename... Arguments>
     std::future<Result> execSqlAsyncFuture(const std::string &sql,
-                                           Arguments &&... args) noexcept
+                                           Arguments &&...args) noexcept
     {
         auto binder = *this << sql;
         (void)std::initializer_list<int>{
@@ -198,7 +231,7 @@ class DbClient : public trantor::NonCopyable
     // Sync and blocking method
     template <typename... Arguments>
     const Result execSqlSync(const std::string &sql,
-                             Arguments &&... args) noexcept(false)
+                             Arguments &&...args) noexcept(false)
     {
         Result r(nullptr);
         {
