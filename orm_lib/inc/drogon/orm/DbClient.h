@@ -29,48 +29,55 @@
 
 namespace drogon
 {
+
+template<typename> struct func_param;
+template <typename Ret, typename ...Args>
+struct func_param<Ret(Args...)>
+{
+    using type = std::tuple<Args...>;
+};
+
+template<typename FuncSuccess, typename FuncFail>
 struct JSStyleFuture
 {
-    using FuncSuccess = void(const orm::Result &r);
-    using FuncFail = void(const orm::DrogonDbException &);
-
-    JSStyleFuture& then(const FuncSuccess& success) {
+    JSStyleFuture& then(const std::function<FuncSuccess>& success) {
+        success_ = success;
         if(resultHolder_.has_value()) {
-            success_(resultHolder_.value());
+            std::apply(success_, resultHolder_.value());
             resultHolder_ = std::nullopt;
         }
-        success_ = success;
         return *this;
     }
 
-    JSStyleFuture& except(const FuncFail& fail) {
+    JSStyleFuture& except(const std::function<FuncFail>& fail) {
         fail_ = fail;
         if(errorHolder_.has_value()) {
-            fail(errorHolder_.value());
+            std::apply(fail_, errorHolder_.value());
             errorHolder_ = std::nullopt;
         }
-        fail_ = fail;
         return *this;
     }
 
-    void __success_handler(const orm::Result &result) {
+    template<typename ...Params>
+    void __success_handler(Params&& ...params) {
         if((bool)success_)
-            success_(result);
+            std::apply(success_, params...);
         else
-            resultHolder_ = result;
+            resultHolder_ = std::tuple<Params...>(params...);
     }
 
-    void __fail_handler(const orm::DrogonDbException &e) {
+    template<typename ...Params>
+    void __fail_handler(Params&& ...params) {
         if((bool)fail_)
-            fail_(e);
+            std::apply(fail_, params...);
         else
-            errorHolder_ = e;
+            errorHolder_ = std::tuple<Params...>(params...);
     }
 protected:
     std::function<FuncSuccess> success_;
     std::function<FuncFail> fail_;
-    std::optional<orm::DrogonDbException> errorHolder_;
-    std::optional<orm::Result> resultHolder_;
+    std::optional<typename func_param<FuncFail>::type> errorHolder_;
+    std::optional<typename func_param<FuncSuccess>::type> resultHolder_;
 };
 namespace orm
 {
@@ -159,10 +166,11 @@ class DbClient : public trantor::NonCopyable
 
     /// JS style future
     template <typename... Arguments>
-    std::shared_ptr<JSStyleFuture> execSqlFuture(const std::string& sql,
+    std::shared_ptr<JSStyleFuture<void(const Result&), void(const DrogonDbException&)>> execSqlFuture(const std::string& sql,
                               Arguments &&... args) noexcept
     {
-        std::shared_ptr<JSStyleFuture> fut = std::make_shared<JSStyleFuture>();
+        using Fut = JSStyleFuture<void(const Result&), void(const DrogonDbException&)>;
+        std::shared_ptr<Fut> fut = std::make_shared<Fut>();
         execSqlAsync(sql,
             [fut](const drogon::orm::Result &e){fut->__success_handler(e);},
             [fut](const drogon::orm::DrogonDbException &e){fut->__fail_handler(e);},
