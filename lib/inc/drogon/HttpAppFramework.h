@@ -1143,6 +1143,26 @@ class HttpAppFramework : public trantor::NonCopyable
      */
     virtual bool isUnicodeEscapingUsedInJson() const noexcept = 0;
 
+    /**
+     * @brief Set the float precision in Json string of HTTP requests or
+     * responses with json content.
+     *
+     * @param precision The maximum digits length.
+     * @param precisionType Must be "significant" or "decimal", defaults to
+     * "significant" that means setting max number of significant digits in
+     * string, "decimal" means setting max number of digits after "." in string
+     * @return HttpAppFramework&
+     */
+    virtual HttpAppFramework &setFloatPrecisionInJson(
+        unsigned int precision,
+        const std::string &precisionType = "significant") noexcept = 0;
+    /**
+     * @brief Get the float precision set by the above method.
+     *
+     * @return std::pair<size_t, std::string>
+     */
+    virtual const std::pair<unsigned int, std::string>
+        &getFloatPrecisionInJson() const noexcept = 0;
     /// Create a database client
     /**
      * @param dbType The database type is one of
