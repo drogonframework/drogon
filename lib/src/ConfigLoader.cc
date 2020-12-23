@@ -377,8 +377,8 @@ static void loadApp(const Json::Value &app)
     auto unicodeEscaping =
         app.get("enable_unicode_escaping_in_json", true).asBool();
     drogon::app().setUnicodeEscapingInJson(unicodeEscaping);
-    auto precision = app["float_precision_in_json"];
-    if (precision)
+    auto &precision = app["float_precision_in_json"];
+    if (!precision.isNull())
     {
         auto precisionLength = precision.get("precision", 0).asUInt64();
         auto precisionType =
