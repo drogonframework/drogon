@@ -397,14 +397,14 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     }
     virtual HttpAppFramework &setFloatPrecisionInJson(
         unsigned int precision,
-        const std::string &precisionType = "significant") noexcept
+        const std::string &precisionType = "significant") noexcept override
     {
         floatPrecisionInJson_ = std::make_pair(precision, precisionType);
         return *this;
     }
 
     virtual const std::pair<unsigned int, std::string>
-        &getFloatPrecisionInJson() const noexcept
+        &getFloatPrecisionInJson() const noexcept override
     {
         return floatPrecisionInJson_;
     }
