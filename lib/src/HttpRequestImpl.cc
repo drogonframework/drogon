@@ -1,7 +1,7 @@
 /**
  *
  *  @file HttpRequestImpl.cc
- *  An Tao
+ *  @author An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
@@ -476,6 +476,12 @@ HttpRequestPtr HttpRequest::newHttpJsonRequest(const Json::Value &data)
         if (!app().isUnicodeEscapingUsedInJson())
         {
             builder["emitUTF8"] = true;
+        }
+        auto &precision = app().getFloatPrecisionInJson();
+        if (precision.first != 0)
+        {
+            builder["precision"] = precision.first;
+            builder["precisionType"] = precision.second;
         }
     });
     auto req = std::make_shared<HttpRequestImpl>(nullptr);

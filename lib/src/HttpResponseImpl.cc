@@ -98,6 +98,12 @@ void HttpResponseImpl::generateBodyFromJson() const
         {
             builder["emitUTF8"] = true;
         }
+        auto &precision = app().getFloatPrecisionInJson();
+        if (precision.first != 0)
+        {
+            builder["precision"] = precision.first;
+            builder["precisionType"] = precision.second;
+        }
     });
     bodyPtr_ = std::make_shared<HttpMessageStringBody>(
         writeString(builder, *jsonPtr_));
