@@ -1220,7 +1220,7 @@ class HttpAppFramework : public trantor::NonCopyable
      * them. This is much faster than using a map. If the array is properly
      * initialized at the beginning, users can access it without locks.
      */
-    virtual size_t getCurrentThreadIndex() const = 0;
+    virtual size_t       getCurrentThreadIndex() const = 0;
 
     /**
      * @brief Get the addresses of listeners.
