@@ -43,7 +43,7 @@ jobs:
       run: |
         brew install jsoncpp ossp-uuid brotli zlib
         brew install openssl lz4 mariadb sqlite3 postgresql
-        brew install clang-format
+        brew install clang-format-10
 
     - name: (Linux) Install dependencies
       if: runner.os == 'Linux'
