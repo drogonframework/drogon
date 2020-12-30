@@ -407,8 +407,21 @@ if(@@.get<int>("hasPrimaryKey")<=1){
                 continue;
             if(cols[i].hasDefaultVal_)
             {
-                $$<<"        sql += \""<<cols[i].colName_<<",\";\n";
-                $$<<"        ++parametersCount;\n";
+                if(@@.get<std::string>("rdbms")!="sqlite3")
+                {
+                    $$<<"        sql += \""<<cols[i].colName_<<",\";\n";
+                    $$<<"        ++parametersCount;\n";
+                }
+                else
+                {
+%>
+        if(dirtyFlag_[{%i%}])
+        {
+            sql += "{%cols[i].colName_%},";
+            ++parametersCount;
+        }
+<%c++
+                }
                 if(@@.get<int>("hasPrimaryKey")>0||@@.get<std::string>("rdbms")=="postgresql")
                 {        
 %>
@@ -486,7 +499,7 @@ if(@@.get<std::string>("rdbms")=="postgresql")
 %>
         } 
 <%c++
-if(cols[i].hasDefaultVal_)
+if(cols[i].hasDefaultVal_&&@@.get<std::string>("rdbms")!="sqlite3")
 {
 %>
         else
