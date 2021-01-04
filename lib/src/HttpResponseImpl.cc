@@ -192,28 +192,25 @@ HttpResponsePtr HttpResponse::newHttpViewResponse(const std::string &viewName,
 HttpResponsePtr HttpResponse::newFileResponse(
     unsigned char *pBuffer,
     const std::string &attachmentFileName,
-    ContentType type)
+    ContentType type,
+    int bufferLength)
 {   
-    std::cout << "Creating new response..." << std::endl;
     // Make Raw HttpResponse
     auto resp = std::make_shared<HttpResponseImpl>();
 
-    std::cout << "Creating char stream of bytes..." << std::endl;
     // Convert to sstream
     std::ostringstream os;
-    for(int i = 0; i < 224*224; i++)
+    for(int i = 0; i < bufferLength; i++)
     {
         os << pBuffer[i];
     }
 
-    std::cout << "Body setup for resp..." << std::endl;
     // Set response body and length
     resp->setBody(std::move(os.str()));
 
     // Set status of message
     resp->setStatusCode(k200OK);
 
-    std::cout << "Setting header content..." << std::endl;
     // Check for type and assign proper content type in header
     if (type == CT_NONE)
     {
@@ -236,7 +233,6 @@ HttpResponsePtr HttpResponse::newFileResponse(
                             "attachment; filename=processed_image.jpg");
     }
     
-    std::cout << "Sending..." << std::endl;
     // Finalize and return response
     doResponseCreateAdvices(resp);
     return resp;
