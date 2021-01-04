@@ -19,14 +19,12 @@
 #include <drogon/IOThreadStorage.h>
 #include <fstream>
 #include <memory>
-
 #include <string>
 #include <sstream>
 #include <array>
 #include <type_traits>
 #include <iostream>
 #include <iomanip>
-
 #include <stdio.h>
 #include <sys/stat.h>
 #include <trantor/utils/Logger.h>
@@ -191,49 +189,31 @@ HttpResponsePtr HttpResponse::newHttpViewResponse(const std::string &viewName,
     return genHttpResponse(viewName, data);
 }
 
-
-
-template< typename T > 
-std::array< byte, sizeof(T) >  to_bytes( const T& object )
-{
-    std::array< byte, sizeof(T) > bytes ;
-
-    const byte* begin = reinterpret_cast< const byte* >( std::addressof(object) ) ;
-    const byte* end = begin + sizeof(T) ;
-    std::copy( begin, end, std::begin(bytes) ) ;
-
-    return bytes ;
-}
-
 HttpResponsePtr HttpResponse::newFileResponse(
-    std::unique_ptr<uint8_t[]> &pBuffer,
+    unsigned char *pBuffer,
     const std::string &attachmentFileName,
     ContentType type)
 {   
+    std::cout << "Creating new response..." << std::endl;
     // Make Raw HttpResponse
     auto resp = std::make_shared<HttpResponseImpl>();
 
-    // Convert uint array to bytes
-    const auto array_bytes = to_bytes(pBuffer);
-
+    std::cout << "Creating char stream of bytes..." << std::endl;
     // Convert to sstream
     std::ostringstream os;
-    for(auto i: array_bytes)
+    for(int i = 0; i < 224*224; i++)
     {
-        os << i;
+        os << pBuffer[i];
     }
-    
-    // Create Buffer from array bytes
-    std::streambuf *pbuf = os.rdbuf();
-    std::streamsize filesize = pbuf->pubseekoff(0, os.end);
-    pbuf->pubseekoff(0, os.beg);  // rewind
 
+    std::cout << "Body setup for resp..." << std::endl;
     // Set response body and length
-    std::string str;
-    str.resize(filesize);
-    pbuf->sgetn(&str[0], filesize);
-    resp->setBody(std::move(str));
+    resp->setBody(std::move(os.str()));
 
+    // Set status of message
+    resp->setStatusCode(k200OK);
+
+    std::cout << "Setting header content..." << std::endl;
     // Check for type and assign proper content type in header
     if (type == CT_NONE)
     {
@@ -256,6 +236,7 @@ HttpResponsePtr HttpResponse::newFileResponse(
                             "attachment; filename=processed_image.jpg");
     }
     
+    std::cout << "Sending..." << std::endl;
     // Finalize and return response
     doResponseCreateAdvices(resp);
     return resp;

@@ -362,7 +362,7 @@ class HttpResponse
      * drogon based on the file extension.
      */
     static HttpResponsePtr newFileResponse(
-        std::unique_ptr<uint8_t[]> &pBuffer,
+        unsigned char *pBuffer,
         const std::string &attachmentFileName = "",
         ContentType type = CT_NONE);
     
