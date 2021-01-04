@@ -1,7 +1,7 @@
 /**
  *
- *  @file HttpUtils.h
- *  An Tao
+ *  @file HttpUtils.cc
+ *  @author An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
@@ -145,6 +145,11 @@ const string_view &webContentTypeToString(ContentType contenttype)
         case CT_APPLICATION_WASM:
         {
             static string_view sv = "Content-Type: application/wasm\r\n";
+            return sv;
+        }
+        case CT_NONE:
+        {
+            static string_view sv = "";
             return sv;
         }
         default:
@@ -531,6 +536,8 @@ ContentType getContentType(const std::string &fileName)
                 return CT_IMAGE_JPG;
             else if (extName == "icns")
                 return CT_IMAGE_ICNS;
+            else if (extName == "wasm")
+                return CT_APPLICATION_WASM;
             else if (extName == "woff")
                 return CT_APPLICATION_FONT_WOFF;
             return CT_APPLICATION_OCTET_STREAM;

@@ -97,7 +97,7 @@ void Sqlite3Connection::execSql(
     std::function<void(const std::exception_ptr &)> &&exceptCallback)
 {
     auto thisPtr = shared_from_this();
-    loopThread_.getLoop()->runInLoop(
+    loopThread_.getLoop()->queueInLoop(
         [thisPtr,
          sql = std::move(sql),
          paraNum,
@@ -257,7 +257,7 @@ void Sqlite3Connection::execSqlInQueue(
     if (paraNum > 0 && newStmt)
     {
         auto r = stmts_.insert(std::string{sql});
-        stmtsMap_[std::string{r.first->data(), r.first->length()}] = stmtPtr;
+        stmtsMap_[string_view{r.first->data(), r.first->length()}] = stmtPtr;
     }
     rcb(Result(resultPtr));
     idleCb_();

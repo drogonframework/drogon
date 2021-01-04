@@ -21,10 +21,12 @@ add_executable(${PROJECT_NAME} main.cc)
 # to add drogon 
 # add_subdirectory(drogon) 
 # target_link_libraries(${PROJECT_NAME} PRIVATE drogon)
-# ##############################################################################
-
+#
+# and comment out the following lines
 find_package(Drogon CONFIG REQUIRED)
 target_link_libraries(${PROJECT_NAME} PRIVATE Drogon::Drogon)
+
+# ##############################################################################
 
 if(CMAKE_CXX_STANDARD LESS 17)
   # With C++14, use boost to support any and string_view

@@ -20,6 +20,7 @@
 #include <drogon/orm/Row.h>
 #include <drogon/orm/RowIterator.h>
 #include <drogon/utils/string_view.h>
+#include <drogon/utils/optional.h>
 #include <trantor/utils/Logger.h>
 #include <functional>
 #include <iostream>
@@ -35,7 +36,8 @@
 #include <arpa/inet.h>
 #endif
 
-#if defined __linux__ || defined __FreeBSD__ || defined __OpenBSD__
+#if defined __linux__ || defined __FreeBSD__ || defined __OpenBSD__ || \
+    defined __MINGW32__
 
 #ifdef __linux__
 #include <endian.h>  // __BYTE_ORDER __LITTLE_ENDIAN
@@ -43,6 +45,10 @@
 #include <sys/endian.h>  // _BYTE_ORDER _LITTLE_ENDIAN
 #define __BYTE_ORDER _BYTE_ORDER
 #define __LITTLE_ENDIAN _LITTLE_ENDIAN
+#elif defined __MINGW32__
+#include <sys/param.h>  // BYTE_ORDER LITTLE_ENDIAN
+#define __BYTE_ORDER BYTE_ORDER
+#define __LITTLE_ENDIAN LITTLE_ENDIAN
 #endif
 
 #include <algorithm>  // std::reverse()
@@ -436,7 +442,24 @@ class SqlBinder
         mode_ = mode;
         return *this;
     }
-
+    template <typename T>
+    self &operator<<(const optional<T> &parameter)
+    {
+        if (parameter)
+        {
+            return *this << parameter.value();
+        }
+        return *this << nullptr;
+    }
+    template <typename T>
+    self &operator<<(optional<T> &&parameter)
+    {
+        if (parameter)
+        {
+            return *this << std::move(parameter.value());
+        }
+        return *this << nullptr;
+    }
     void exec() noexcept(false);
 
   private:

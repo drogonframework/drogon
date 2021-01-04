@@ -1,16 +1,28 @@
 cmake_minimum_required(VERSION 3.5)
 
 project(drogon)
+
 message(STATUS "compiler: " ${CMAKE_CXX_COMPILER_ID})
-option(BUILD_CTL "Build drogon_ctl" ON)
-option(BUILD_EXAMPLES "Build examples" ON)
+include(CheckCXXSourceRuns)
+check_cxx_source_runs(
+        ${PROJECT_SOURCE_DIR}/cmake/tests/binary_compatibility_test.cc
+        cross_compiling)
+		
+if(cross_compiling)
+  set(BUILD_PROGRAMS OFF)
+else(cross_compiling)
+  set(BUILD_PROGRAMS ON)
+endif()
+
+option(BUILD_CTL "Build drogon_ctl" ${BUILD_PROGRAMS})
+option(BUILD_EXAMPLES "Build examples" ${BUILD_PROGRAMS})
 option(BUILD_ORM "Build orm" ON)
 option(COZ_PROFILING "Use coz for profiling" OFF)
 option(LIBPQ_BATCH_MODE "Use batch mode for libpq" ON)
 option(BUILD_DROGON_SHARED "Build drogon as a shared lib" OFF)
 
 set(DROGON_MAJOR_VERSION 1)
-set(DROGON_MINOR_VERSION 1)
+set(DROGON_MINOR_VERSION 2)
 set(DROGON_PATCH_VERSION 0)
 set(DROGON_VERSION
     ${DROGON_MAJOR_VERSION}.${DROGON_MINOR_VERSION}.${DROGON_PATCH_VERSION})
@@ -414,6 +426,7 @@ set(DROGON_UTIL_HEADERS
     lib/inc/drogon/utils/Utilities.h
     lib/inc/drogon/utils/any.h
     lib/inc/drogon/utils/string_view.h
+    lib/inc/drogon/utils/optional.h
     lib/inc/drogon/utils/HttpConstraint.h
     lib/inc/drogon/utils/OStringStream.h)
 install(FILES ${DROGON_UTIL_HEADERS}

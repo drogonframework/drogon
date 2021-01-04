@@ -377,6 +377,14 @@ static void loadApp(const Json::Value &app)
     auto unicodeEscaping =
         app.get("enable_unicode_escaping_in_json", true).asBool();
     drogon::app().setUnicodeEscapingInJson(unicodeEscaping);
+    auto &precision = app["float_precision_in_json"];
+    if (!precision.isNull())
+    {
+        auto precisionLength = precision.get("precision", 0).asUInt64();
+        auto precisionType =
+            precision.get("precision_type", "significant").asString();
+        drogon::app().setFloatPrecisionInJson(precisionLength, precisionType);
+    }
     // log
     loadLogSetting(app["log"]);
     // run as daemon
@@ -452,7 +460,12 @@ static void loadApp(const Json::Value &app)
                   << std::endl;
         exit(1);
     }
+    drogon::app().enableReusePort(app.get("reuse_port", false).asBool());
     drogon::app().setHomePage(app.get("home_page", "index.html").asString());
+    drogon::app().setImplicitPageEnable(
+        app.get("use_implicit_page", true).asBool());
+    drogon::app().setImplicitPage(
+        app.get("implicit_page", "index.html").asString());
 }
 static void loadDbClients(const Json::Value &dbClients)
 {

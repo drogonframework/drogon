@@ -37,8 +37,8 @@ find_package_handle_standard_args(Brotli
                                   "Could NOT find BROTLI")
 
 set(BROTLI_INCLUDE_DIRS ${BROTLI_INCLUDE_DIR})
-set(BROTLI_LIBRARIES ${BROTLICOMMON_LIBRARY} ${BROTLIDEC_LIBRARY}
-                     ${BROTLIENC_LIBRARY})
+set(BROTLI_LIBRARIES ${BROTLIDEC_LIBRARY}
+                     ${BROTLIENC_LIBRARY} ${BROTLICOMMON_LIBRARY})
 
 if(Brotli_FOUND)
   add_library(Brotli_lib INTERFACE IMPORTED)

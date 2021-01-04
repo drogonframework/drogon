@@ -20,16 +20,21 @@
 
 #include <mutex>
 #include <future>
+#include <algorithm>
+
 #ifndef _WIN32
 #include <unistd.h>
 #endif
+
+#include <sys/stat.h>
 
 #define RESET "\033[0m"
 #define RED "\033[31m"   /* Red */
 #define GREEN "\033[32m" /* Green */
 
 #define JPG_LEN 44618
-#define INDEX_LEN 10606
+size_t indexLen;
+size_t indexImplicitLen;
 
 using namespace drogon;
 
@@ -860,7 +865,7 @@ void doTest(const HttpClientPtr &client,
                                        const HttpResponsePtr &resp) {
                             if (result == ReqResult::Ok)
                             {
-                                if (resp->getBody().length() == INDEX_LEN)
+                                if (resp->getBody().length() == indexLen)
                                 {
                                     outputGood(req, isHttps);
                                 }
@@ -887,7 +892,7 @@ void doTest(const HttpClientPtr &client,
                                        const HttpResponsePtr &resp) {
                             if (result == ReqResult::Ok)
                             {
-                                if (resp->getBody().length() == INDEX_LEN)
+                                if (resp->getBody().length() == indexLen)
                                 {
                                     outputGood(req, isHttps);
                                 }
@@ -1151,6 +1156,66 @@ void doTest(const HttpClientPtr &client,
                                 exit(1);
                             }
                         });
+    // Test implicit pages
+    std::string body;
+    req = HttpRequest::newHttpRequest();
+    req->setMethod(drogon::Get);
+    req->setPath("/a-directory");
+    client->sendRequest(
+        req,
+        [req, isHttps, &body](ReqResult result, const HttpResponsePtr &resp) {
+            if (result == ReqResult::Ok)
+            {
+                if (resp->getBody().length() == indexImplicitLen)
+                {
+                    body = std::string(resp->getBody().data(),
+                                       resp->getBody().length());
+                    outputGood(req, isHttps);
+                }
+                else
+                {
+                    LOG_DEBUG << resp->getBody().length();
+                    LOG_ERROR << "Error!";
+                    LOG_ERROR << resp->getBody();
+                    exit(1);
+                }
+            }
+            else
+            {
+                LOG_ERROR << "Error!";
+                exit(1);
+            }
+        });
+    req = HttpRequest::newHttpRequest();
+    req->setMethod(drogon::Get);
+    req->setPath("/a-directory/page.html");
+    client->sendRequest(req,
+                        [req, isHttps, &body](ReqResult result,
+                                              const HttpResponsePtr &resp) {
+                            if (result == ReqResult::Ok)
+                            {
+                                if (resp->getBody().length() ==
+                                        indexImplicitLen &&
+                                    std::equal(body.begin(),
+                                               body.end(),
+                                               resp->getBody().begin()))
+                                {
+                                    outputGood(req, isHttps);
+                                }
+                                else
+                                {
+                                    LOG_DEBUG << resp->getBody().length();
+                                    LOG_ERROR << "Error!";
+                                    LOG_ERROR << resp->getBody();
+                                    exit(1);
+                                }
+                            }
+                            else
+                            {
+                                LOG_ERROR << "Error!";
+                                exit(1);
+                            }
+                        });
     // return;
     // Test file upload
     UploadFile file1("./drogon.jpg");
@@ -1186,6 +1251,22 @@ void doTest(const HttpClientPtr &client,
             }
         });
 }
+void loadFileLengths()
+{
+    struct stat filestat;
+    if (stat("index.html", &filestat) < 0)
+    {
+        LOG_SYSERR << "Unable to retrieve index.html file sizes";
+        exit(1);
+    }
+    indexLen = filestat.st_size;
+    if (stat("a-directory/page.html", &filestat) < 0)
+    {
+        LOG_SYSERR << "Unable to retrieve a-directory/page.html file sizes";
+        exit(1);
+    }
+    indexImplicitLen = filestat.st_size;
+}
 int main(int argc, char *argv[])
 {
     trantor::EventLoopThread loop[2];
@@ -1195,7 +1276,7 @@ int main(int argc, char *argv[])
         ever = true;
     loop[0].run();
     loop[1].run();
-
+    loadFileLengths();
     do
     {
         std::promise<int> pro1;

@@ -1067,6 +1067,45 @@ class HttpAppFramework : public trantor::NonCopyable
      */
     virtual const std::string &getHomePage() const = 0;
 
+    /// Set to enable implicit pages, enabled by default
+    /**
+     * @brief Implicit pages are used when the server detects if the user
+     * requested a directory. By default, it will try to append index.html to
+     * the path, see setImplicitPage() if you want to customize this
+     * (http://localhost/a-directory resolves to
+     * http://localhost/a-directory/index.html by default).
+     *
+     * @note
+     * This operation can be performed by an option in the configuration file.
+     */
+    virtual HttpAppFramework &setImplicitPageEnable(bool useImplicitPage) = 0;
+
+    /// Return true if implicit pages are enabled
+    /**
+     * @note
+     * This method must be called after the framework has been run.
+     */
+    virtual bool isImplicitPageEnabled() const = 0;
+
+    /// Set the HTML file that a directory would resolve to by default, default
+    /// is "index.html"
+    /**
+     * @brief Sets the page which would the server load in if it detects that
+     * the user requested a directory
+     *
+     * @note
+     * This operation can be performed by an option in the configuration file.
+     */
+    virtual HttpAppFramework &setImplicitPage(
+        const std::string &implicitPageFile) = 0;
+
+    /// Get the implicit HTML page
+    /**
+     * @note
+     * This method must be called after the framework has been run.
+     */
+    virtual const std::string &getImplicitPage() const = 0;
+
     /// Get a database client by name
     /**
      * @note
@@ -1104,6 +1143,26 @@ class HttpAppFramework : public trantor::NonCopyable
      */
     virtual bool isUnicodeEscapingUsedInJson() const noexcept = 0;
 
+    /**
+     * @brief Set the float precision in Json string of HTTP requests or
+     * responses with json content.
+     *
+     * @param precision The maximum digits length.
+     * @param precisionType Must be "significant" or "decimal", defaults to
+     * "significant" that means setting max number of significant digits in
+     * string, "decimal" means setting max number of digits after "." in string
+     * @return HttpAppFramework&
+     */
+    virtual HttpAppFramework &setFloatPrecisionInJson(
+        unsigned int precision,
+        const std::string &precisionType = "significant") noexcept = 0;
+    /**
+     * @brief Get the float precision set by the above method.
+     *
+     * @return std::pair<size_t, std::string>
+     */
+    virtual const std::pair<unsigned int, std::string>
+        &getFloatPrecisionInJson() const noexcept = 0;
     /// Create a database client
     /**
      * @param dbType The database type is one of
@@ -1171,6 +1230,21 @@ class HttpAppFramework : public trantor::NonCopyable
      * could run this method in an AOP join point (such as the BeginningAdvice).
      */
     virtual std::vector<trantor::InetAddress> getListeners() const = 0;
+
+    /**
+     * @brief Enable ReusePort mode or not. If the mode is enabled, one can run
+     * multiple processes listening to the same port at the same time. If this
+     * method is not called, the feature is disabled.
+     *
+     * @note
+     * This operation can be performed by an option in the configuration file.
+     */
+    virtual void enableReusePort(bool enable = true) = 0;
+
+    /**
+     * @brief Return if the ReusePort mode is enabled.
+     */
+    virtual bool reusePort() const = 0;
 
   private:
     virtual void registerHttpController(
