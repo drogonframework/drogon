@@ -364,7 +364,8 @@ class HttpResponse
     static HttpResponsePtr newFileResponse(
         unsigned char *pBuffer,
         const std::string &attachmentFileName = "",
-        ContentType type = CT_NONE);
+        ContentType type = CT_NONE,
+        int bufferLength=0);
     
     /**
      * @brief Create a custom HTTP response object. For using this template,
