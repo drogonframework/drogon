@@ -395,7 +395,19 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     {
         return usingUnicodeEscaping_;
     }
+    virtual HttpAppFramework &setFloatPrecisionInJson(
+        unsigned int precision,
+        const std::string &precisionType = "significant") noexcept override
+    {
+        floatPrecisionInJson_ = std::make_pair(precision, precisionType);
+        return *this;
+    }
 
+    virtual const std::pair<unsigned int, std::string>
+        &getFloatPrecisionInJson() const noexcept override
+    {
+        return floatPrecisionInJson_;
+    }
     virtual trantor::EventLoop *getLoop() const override;
 
     virtual trantor::EventLoop *getIOLoop(size_t id) const override;
@@ -581,6 +593,8 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     bool useGzip_{true};
     bool useBrotli_{false};
     bool usingUnicodeEscaping_{true};
+    std::pair<unsigned int, std::string> floatPrecisionInJson_{0,
+                                                               "significant"};
     bool usingCustomErrorHandler_{false};
     size_t clientMaxBodySize_{1024 * 1024};
     size_t clientMaxMemoryBodySize_{64 * 1024};

@@ -1,7 +1,7 @@
 /**
  *
- *  @file HttpUtils.h
- *  An Tao
+ *  @file HttpUtils.cc
+ *  @author An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
@@ -536,6 +536,8 @@ ContentType getContentType(const std::string &fileName)
                 return CT_IMAGE_JPG;
             else if (extName == "icns")
                 return CT_IMAGE_ICNS;
+            else if (extName == "wasm")
+                return CT_APPLICATION_WASM;
             else if (extName == "woff")
                 return CT_APPLICATION_FONT_WOFF;
             return CT_APPLICATION_OCTET_STREAM;
