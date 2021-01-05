@@ -548,7 +548,7 @@ void create_model::createModelClassFromSqlite3(
         for (auto &row : result)
         {
             bool notnull = row["notnull"].as<bool>();
-            bool primary = row["pk"].as<bool>();
+            bool primary = row["pk"].as<int>();
             auto type = row["type"].as<std::string>();
             std::transform(type.begin(), type.end(), type.begin(), tolower);
             ColumnInfo info;
@@ -627,13 +627,14 @@ void create_model::createModelClassFromSqlite3(
         std::cerr << e.base().what() << std::endl;
         exit(1);
     };
-    std::vector<std::string> pkNames, pkTypes;
+    std::vector<std::string> pkNames, pkTypes, pkValNames;
     for (auto const &col : cols)
     {
         if (col.isPrimaryKey_)
         {
             pkNames.push_back(col.colName_);
             pkTypes.push_back(col.colType_);
+            pkValNames.push_back(nameTransform(col.colName_, false));
         }
     }
     data["hasPrimaryKey"] = (int)pkNames.size();
@@ -646,6 +647,7 @@ void create_model::createModelClassFromSqlite3(
     {
         data["primaryKeyName"] = pkNames;
         data["primaryKeyType"] = pkTypes;
+        data["primaryKeyValNames"] = pkValNames;
     }
     data["columns"] = cols;
     std::ofstream headerFile(path + "/" + className + ".h", std::ofstream::out);
