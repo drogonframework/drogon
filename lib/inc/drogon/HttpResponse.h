@@ -363,10 +363,10 @@ class HttpResponse
      * drogon based on the file extension.
      */
     static HttpResponsePtr newFileResponse(
-        unsigned char *pBuffer,
+        const unsigned char *pBuffer,
+        size_t bufferLength,
         const std::string &attachmentFileName = "",
-        ContentType type = CT_NONE,
-        int bufferLength=0);
+        ContentType type = CT_NONE);
     
     /**
      * @brief Create a custom HTTP response object. For using this template,

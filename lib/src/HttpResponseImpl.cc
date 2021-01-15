@@ -196,10 +196,10 @@ HttpResponsePtr HttpResponse::newHttpViewResponse(const std::string &viewName,
 }
 
 HttpResponsePtr HttpResponse::newFileResponse(
-    unsigned char *pBuffer,
+    const unsigned char *pBuffer,
+    size_t bufferLength,
     const std::string &attachmentFileName,
-    ContentType type,
-    int bufferLength)
+    ContentType type)
 {   
     // Make Raw HttpResponse
     auto resp = std::make_shared<HttpResponseImpl>();
@@ -218,13 +218,14 @@ HttpResponsePtr HttpResponse::newFileResponse(
     resp->setStatusCode(k200OK);
 
     // Check for type and assign proper content type in header
-    if (type == CT_NONE)
+    if (!attachmentFileName.empty())
     {
-        resp->setContentTypeCode(CT_IMAGE_JPG);
+        resp->setContentTypeCode(
+            drogon::getContentType(attachmentFileName));
     }
     else
     {
-        resp->setContentTypeCode(type);
+            resp->setContentTypeCode(type);
     }
 
     // Add additional header values
@@ -232,11 +233,6 @@ HttpResponsePtr HttpResponse::newFileResponse(
     {
         resp->addHeader("Content-Disposition",
                         "attachment; filename=" + attachmentFileName);
-    }
-    else
-    {
-        resp->addHeader("Content-Disposition",
-                            "attachment; filename=processed_image.jpg");
     }
     
     // Finalize and return response
