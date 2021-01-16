@@ -4,6 +4,34 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.3.0] - 2021-01-16
+
+### API change list
+
+- Add an option for setting float precision in Json string.
+
+### Fixed
+
+- Fix brotli link order.
+
+- Fix cmake with drogonctl cross-compilation.
+
+- sqlite3: Insert into stmtsMap_ as string_view.
+
+- Fix some bugs when creating models via drogon_ctl.
+
+- Fix an error in sqlite3 ORM generator.
+
+- Fix an error with missing composite key to sqlite3 ORM generator.
+
+### Changed
+
+- Remove the use of std::filesystem to adapt to old compilers.
+
+- Add github actions.
+
+- Serve wasm files with the correct MIME type.
+
 ## [1.2.0] - 2020-12-12
 
 ### Fixed
@@ -592,7 +620,9 @@ All notable changes to this project will be documented in this file.
 
 ## [1.0.0-beta1] - 2019-06-11
 
-[Unreleased]: https://github.com/an-tao/drogon/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/an-tao/drogon/compare/v1.3.0...HEAD
+
+[1.3.0]: https://github.com/an-tao/drogon/compare/v1.2.0...v1.3.0
 
 [1.2.0]: https://github.com/an-tao/drogon/compare/v1.1.0...v1.2.0
 
