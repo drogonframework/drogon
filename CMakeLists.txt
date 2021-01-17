@@ -7,7 +7,7 @@ include(CheckCXXSourceRuns)
 check_cxx_source_runs(
         ${PROJECT_SOURCE_DIR}/cmake/tests/binary_compatibility_test.cc
         cross_compiling)
-		
+
 if(cross_compiling)
   set(BUILD_PROGRAMS OFF)
 else(cross_compiling)
@@ -22,7 +22,7 @@ option(LIBPQ_BATCH_MODE "Use batch mode for libpq" ON)
 option(BUILD_DROGON_SHARED "Build drogon as a shared lib" OFF)
 
 set(DROGON_MAJOR_VERSION 1)
-set(DROGON_MINOR_VERSION 2)
+set(DROGON_MINOR_VERSION 3)
 set(DROGON_PATCH_VERSION 0)
 set(DROGON_VERSION
     ${DROGON_MAJOR_VERSION}.${DROGON_MINOR_VERSION}.${DROGON_PATCH_VERSION})
