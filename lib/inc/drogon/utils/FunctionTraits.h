@@ -20,6 +20,10 @@
 #include <tuple>
 #include <type_traits>
 
+#ifdef __cpp_impl_coroutine
+#include <drogon/utils/coroutine.h>
+#endif
+
 namespace drogon
 {
 class HttpRequest;
@@ -97,6 +101,19 @@ struct FunctionTraits<
     static const bool isHTTPFunction = false;
     using class_type = void;
 };
+
+#ifdef __cpp_impl_coroutine
+template <typename... Arguments>
+struct FunctionTraits<
+    AsyncTask (*)(HttpRequestPtr req,
+                   std::function<void(const HttpResponsePtr &)> callback,
+                   Arguments...)> : FunctionTraits<AsyncTask (*)(Arguments...)>
+{
+    static const bool isHTTPFunction = true;
+    using class_type = void;
+    using first_param_type = HttpRequestPtr;
+};
+#endif
 
 template <typename ReturnType, typename... Arguments>
 struct FunctionTraits<
