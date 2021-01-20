@@ -41,7 +41,8 @@ void version::handleCommand(std::vector<std::string> &parameters)
               << (USE_POSTGRESQL ? "yes" : "no") << "  (batch mode: "
               << (LIBPQ_SUPPORTS_BATCH_MODE ? "yes)\n" : "no)\n")
               << "  mariadb: " << (USE_MYSQL ? "yes\n" : "no\n")
-              << "  sqlite3: " << (USE_SQLITE3 ? "yes\n" : "no\n");
+              << "  sqlite3: " << (USE_SQLITE3 ? "yes\n" : "no\n")
+              << "  coroutine: " << (USE_COROUTINE ? "yes\n": "no\n");
 #ifdef OpenSSL_FOUND
     std::cout << "  openssl: yes\n";
 #else
