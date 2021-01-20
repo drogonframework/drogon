@@ -56,11 +56,11 @@ struct AsyncTask final
 /// Helper class that provices the infrastructure for turning callback into corourines
 // The user is responsible to fill in `await_suspend()` and construtors.
 template <typename T>
-struct AwaitCallback
+struct CallbackAwaiter
 {
-    bool await_ready() noexcept final { return false; }
+    bool await_ready() noexcept { return false; }
 
-    const T& await_resume() noexcept(false) final
+    const T& await_resume() noexcept(false)
     {
         // await_resume() should always be called after co_await (await_suspend()) is called.
         // Therefor the value should always be set (or there's an exception)
@@ -77,7 +77,7 @@ private:
     std::exception_ptr exception_ = nullptr;
 protected:
     void setException(const std::exception_ptr& e) { exception_ = e; }
-    void setValue(T&& v) { result_.emplace(std::move(v)); }
+    void setValue(const T& v) { result_.emplace(v); }
 };
 
 }

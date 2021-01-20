@@ -27,6 +27,10 @@
 #include <trantor/utils/Logger.h>
 #include <trantor/utils/NonCopyable.h>
 
+#ifdef __cpp_impl_coroutine
+#include <drogon/utils/coroutine.h>
+#endif
+
 namespace drogon
 {
 namespace orm
@@ -35,6 +39,35 @@ using ResultCallback = std::function<void(const Result &)>;
 using ExceptionCallback = std::function<void(const DrogonDbException &)>;
 
 class Transaction;
+
+namespace internal
+{
+
+#ifdef __cpp_impl_coroutine
+struct SqlAwaiter : public CallbackAwaiter<Result>
+{
+  SqlAwaiter(internal::SqlBinder&& binder)
+    : binder_(binder)
+  {}
+
+  void await_suspend(std::coroutine_handle<> handle)
+  {
+    binder_ >>  [handle, this](const drogon::orm::Result& result) {
+      setValue(result);
+      handle.resume();
+    };
+    binder_ >> [handle, this](const std::exception_ptr& e) {
+      setException(e);
+      handle.resume();
+    };
+    binder_.exec();
+  }
+private:
+  internal::SqlBinder binder_;
+};
+#endif
+
+}
 
 /// Database client abstract class
 class DbClient : public trantor::NonCopyable
@@ -149,6 +182,18 @@ class DbClient : public trantor::NonCopyable
         }
         return r;
     }
+
+#ifdef __cpp_impl_coroutine
+    template <typename... Arguments>
+      const cppcoro::task<Result> execSqlCoro(const std::string sql,
+                                              Arguments ... args) noexcept
+      {
+        auto binder = *this << sql;
+        (void)std::initializer_list<int>{
+            (binder << std::forward<Arguments>(args), 0)...};
+        co_return co_await internal::SqlAwaiter(std::move(binder));
+      }
+#endif
 
     /// Streaming-like method for sql execution. For more information, see the
     /// wiki page.
