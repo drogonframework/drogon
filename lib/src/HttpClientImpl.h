@@ -43,6 +43,11 @@ class HttpClientImpl : public HttpClient,
     virtual void sendRequest(const HttpRequestPtr &req,
                              HttpReqCallback &&callback,
                              double timeout = 0) override;
+#ifdef __cpp_impl_coroutine
+    virtual cppcoro::task<HttpResponsePtr> sendRequestCoro(HttpRequestPtr req,
+                                                            double timeout = 0) override;
+#endif
+
     virtual trantor::EventLoop *getLoop() override
     {
         return loop_;

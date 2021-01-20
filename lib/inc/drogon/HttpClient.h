@@ -24,6 +24,10 @@
 #include <memory>
 #include <future>
 
+#ifdef __cpp_impl_coroutine
+#include <drogon/utils/coroutine.h>
+#endif
+
 namespace drogon
 {
 class HttpClient;
@@ -114,6 +118,22 @@ class HttpClient : public trantor::NonCopyable
             timeout);
         return f.get();
     }
+
+#ifdef __cpp_impl_coroutine
+    /**
+     * @brief Send a request via coroutines to the server and return the
+     * response.
+     *
+     * @param req
+     * @param timeout In seconds. If the response is not received within the
+     * timeout, the `ReqResult::Timeout` and an empty response is returned. The
+     * zero value by default disables the timeout.
+     *
+     * @return cppcoro::task
+     */
+    virtual cppcoro::task<HttpResponsePtr> sendRequestCoro(HttpRequestPtr req,
+                                                            double timeout = 0) = 0;
+#endif
 
     /// Set the pipelining depth, which is the number of requests that are not
     /// responding.
