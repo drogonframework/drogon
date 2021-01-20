@@ -286,7 +286,7 @@ struct HttpRespAwaiter : public CallbackAwaiter<HttpResponsePtr>
     double timeout_;
 };
 
-cppcoro::task<HttpResponsePtr> HttpClientImpl::sendRequestCoro(
+Task<HttpResponsePtr> HttpClientImpl::sendRequestCoro(
     drogon::HttpRequestPtr req,
     double timeout)
 {

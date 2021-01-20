@@ -17,12 +17,18 @@
 #include <exception>
 #include <drogon/utils/optional.h>
 #include <cppcoro/task.hpp>
-#include <cppcoro/awaitable_traits.hpp>
+#include <cppcoro/is_awaitable.hpp>
 
 namespace drogon
 {
 template <typename T>
-using task = cppcoro::task<T>;
+using Task = cppcoro::task<T>;
+
+template <typename T>
+using is_awaitable = cppcoro::is_awaitable<T>;
+
+template <typename T>
+constexpr bool is_awaitable_v = is_awaitable<T>::value;
 
 /// Fires a coroutine and doesn't force waiting nor deallocates upon promise
 /// destructs
@@ -93,7 +99,7 @@ struct CallbackAwaiter
     }
 
   private:
-    // HACK: Not all desired value will default contructable. But we need the
+    // HACK: Not all desired types are default contructable. But we need the
     // entire struct to be constructed for awaiting. std::optional takes care of
     // that.
     optional<T> result_;

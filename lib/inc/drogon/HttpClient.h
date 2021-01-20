@@ -129,9 +129,9 @@ class HttpClient : public trantor::NonCopyable
      * timeout, the `ReqResult::Timeout` and an empty response is returned. The
      * zero value by default disables the timeout.
      *
-     * @return cppcoro::task
+     * @return task<HttpResponsePtr>
      */
-    virtual cppcoro::task<HttpResponsePtr> sendRequestCoro(
+    virtual Task<HttpResponsePtr> sendRequestCoro(
         HttpRequestPtr req,
         double timeout = 0) = 0;
 #endif

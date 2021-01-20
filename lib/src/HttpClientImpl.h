@@ -44,7 +44,7 @@ class HttpClientImpl : public HttpClient,
                              HttpReqCallback &&callback,
                              double timeout = 0) override;
 #ifdef __cpp_impl_coroutine
-    virtual cppcoro::task<HttpResponsePtr> sendRequestCoro(
+    virtual Task<HttpResponsePtr> sendRequestCoro(
         HttpRequestPtr req,
         double timeout = 0) override;
 #endif
