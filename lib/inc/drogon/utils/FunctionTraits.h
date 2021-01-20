@@ -106,8 +106,8 @@ struct FunctionTraits<
 template <typename... Arguments>
 struct FunctionTraits<
     AsyncTask (*)(HttpRequestPtr req,
-                   std::function<void(const HttpResponsePtr &)> callback,
-                   Arguments...)> : FunctionTraits<AsyncTask (*)(Arguments...)>
+                  std::function<void(const HttpResponsePtr &)> callback,
+                  Arguments...)> : FunctionTraits<AsyncTask (*)(Arguments...)>
 {
     static const bool isHTTPFunction = true;
     using class_type = void;

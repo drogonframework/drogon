@@ -244,40 +244,51 @@ void HttpClientImpl::sendRequest(const drogon::HttpRequestPtr &req,
 #ifdef __cpp_impl_coroutine
 struct HttpRespAwaiter : public CallbackAwaiter<HttpResponsePtr>
 {
-    HttpRespAwaiter(HttpClient* client, HttpRequestPtr req, double timeout)
+    HttpRespAwaiter(HttpClient *client, HttpRequestPtr req, double timeout)
         : client_(client), req_(std::move(req)), timeout_(timeout)
-    {}
+    {
+    }
 
     void await_suspend(std::coroutine_handle<> handle)
     {
-        client_->sendRequest(req_, [handle=std::move(handle), this](ReqResult result, const HttpResponsePtr& resp) {
-            if(result == ReqResult::Ok) {
-                setValue(resp);
-                handle.resume();
-            }
-            else {
-                std::string reason;
-                if(result == ReqResult::BadResponse)
-                    reason = "BadResponse";
-                else if(result == ReqResult::NetworkFailure)
-                    reason = "NetworkFailure";
-                else if(result == ReqResult::BadServerAddress)
-                    reason = "BadServerAddress";
-                else if(result == ReqResult::Timeout);
+        client_->sendRequest(
+            req_,
+            [handle = std::move(handle), this](ReqResult result,
+                                               const HttpResponsePtr &resp) {
+                if (result == ReqResult::Ok)
+                {
+                    setValue(resp);
+                    handle.resume();
+                }
+                else
+                {
+                    std::string reason;
+                    if (result == ReqResult::BadResponse)
+                        reason = "BadResponse";
+                    else if (result == ReqResult::NetworkFailure)
+                        reason = "NetworkFailure";
+                    else if (result == ReqResult::BadServerAddress)
+                        reason = "BadServerAddress";
+                    else if (result == ReqResult::Timeout)
+                        ;
                     reason = "Timeout";
-                setException(std::make_exception_ptr(std::runtime_error(reason)));
-                handle.resume();
-            }
-        }, timeout_);
+                    setException(
+                        std::make_exception_ptr(std::runtime_error(reason)));
+                    handle.resume();
+                }
+            },
+            timeout_);
     }
-private:
-    HttpClient* client_;
+
+  private:
+    HttpClient *client_;
     HttpRequestPtr req_;
     double timeout_;
 };
 
-cppcoro::task<HttpResponsePtr> HttpClientImpl::sendRequestCoro(drogon::HttpRequestPtr req,
-                                                                double timeout)
+cppcoro::task<HttpResponsePtr> HttpClientImpl::sendRequestCoro(
+    drogon::HttpRequestPtr req,
+    double timeout)
 {
     co_return co_await HttpRespAwaiter(this, std::move(req), timeout);
 }

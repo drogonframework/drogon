@@ -218,7 +218,7 @@ class HttpBinder : public HttpBinderBase
         std::deque<std::string> &pathArguments,
         const HttpRequestPtr &req,
         std::function<void(const HttpResponsePtr &)> &&callback,
-        Values &&... values)
+        Values &&...values)
     {
         // Call this function recursively until parameter's count equals to the
         // count of target function parameters
@@ -268,7 +268,7 @@ class HttpBinder : public HttpBinderBase
         std::deque<std::string> &,
         const HttpRequestPtr &req,
         std::function<void(const HttpResponsePtr &)> &&callback,
-        Values &&... values)
+        Values &&...values)
     {
         callFunction(req, std::move(callback), std::move(values)...);
     }
@@ -281,7 +281,7 @@ class HttpBinder : public HttpBinderBase
                             void>::type
     callFunction(const HttpRequestPtr &req,
                  std::function<void(const HttpResponsePtr &)> &&callback,
-                 Values &&... values)
+                 Values &&...values)
     {
         static auto &obj = getControllerObj<typename traits::class_type>();
         (obj.*func_)(req, std::move(callback), std::move(values)...);
@@ -295,7 +295,7 @@ class HttpBinder : public HttpBinderBase
                             void>::type
     callFunction(const HttpRequestPtr &req,
                  std::function<void(const HttpResponsePtr &)> &&callback,
-                 Values &&... values)
+                 Values &&...values)
     {
         static auto objPtr =
             DrClassMap::getSingleInstance<typename traits::class_type>();
@@ -308,7 +308,7 @@ class HttpBinder : public HttpBinderBase
     typename std::enable_if<!isClassFunction && isNormal, void>::type
     callFunction(const HttpRequestPtr &req,
                  std::function<void(const HttpResponsePtr &)> &&callback,
-                 Values &&... values)
+                 Values &&...values)
     {
         func_(req, std::move(callback), std::move(values)...);
     }
@@ -322,7 +322,7 @@ class HttpBinder : public HttpBinderBase
                             void>::type
     callFunction(const HttpRequestPtr &req,
                  std::function<void(const HttpResponsePtr &)> &&callback,
-                 Values &&... values)
+                 Values &&...values)
     {
         static auto &obj = getControllerObj<typename traits::class_type>();
         (obj.*func_)((*req), std::move(callback), std::move(values)...);
@@ -336,7 +336,7 @@ class HttpBinder : public HttpBinderBase
                             void>::type
     callFunction(const HttpRequestPtr &req,
                  std::function<void(const HttpResponsePtr &)> &&callback,
-                 Values &&... values)
+                 Values &&...values)
     {
         static auto objPtr =
             DrClassMap::getSingleInstance<typename traits::class_type>();
@@ -349,7 +349,7 @@ class HttpBinder : public HttpBinderBase
     typename std::enable_if<!isClassFunction && !isNormal, void>::type
     callFunction(const HttpRequestPtr &req,
                  std::function<void(const HttpResponsePtr &)> &&callback,
-                 Values &&... values)
+                 Values &&...values)
     {
         func_((*req), std::move(callback), std::move(values)...);
     }

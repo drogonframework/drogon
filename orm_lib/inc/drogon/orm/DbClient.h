@@ -42,32 +42,32 @@ class Transaction;
 
 namespace internal
 {
-
 #ifdef __cpp_impl_coroutine
 struct SqlAwaiter : public CallbackAwaiter<Result>
 {
-  SqlAwaiter(internal::SqlBinder&& binder)
-    : binder_(binder)
-  {}
+    SqlAwaiter(internal::SqlBinder &&binder) : binder_(binder)
+    {
+    }
 
-  void await_suspend(std::coroutine_handle<> handle)
-  {
-    binder_ >>  [handle, this](const drogon::orm::Result& result) {
-      setValue(result);
-      handle.resume();
-    };
-    binder_ >> [handle, this](const std::exception_ptr& e) {
-      setException(e);
-      handle.resume();
-    };
-    binder_.exec();
-  }
-private:
-  internal::SqlBinder binder_;
+    void await_suspend(std::coroutine_handle<> handle)
+    {
+        binder_ >> [handle, this](const drogon::orm::Result &result) {
+            setValue(result);
+            handle.resume();
+        };
+        binder_ >> [handle, this](const std::exception_ptr &e) {
+            setException(e);
+            handle.resume();
+        };
+        binder_.exec();
+    }
+
+  private:
+    internal::SqlBinder binder_;
 };
 #endif
 
-}
+}  // namespace internal
 
 /// Database client abstract class
 class DbClient : public trantor::NonCopyable
@@ -138,7 +138,7 @@ class DbClient : public trantor::NonCopyable
     void execSqlAsync(const std::string &sql,
                       FUNCTION1 &&rCallback,
                       FUNCTION2 &&exceptCallback,
-                      Arguments &&... args) noexcept
+                      Arguments &&...args) noexcept
     {
         auto binder = *this << sql;
         (void)std::initializer_list<int>{
@@ -150,7 +150,7 @@ class DbClient : public trantor::NonCopyable
     /// Async and nonblocking method
     template <typename... Arguments>
     std::future<Result> execSqlAsyncFuture(const std::string &sql,
-                                           Arguments &&... args) noexcept
+                                           Arguments &&...args) noexcept
     {
         auto binder = *this << sql;
         (void)std::initializer_list<int>{
@@ -167,7 +167,7 @@ class DbClient : public trantor::NonCopyable
     // Sync and blocking method
     template <typename... Arguments>
     const Result execSqlSync(const std::string &sql,
-                             Arguments &&... args) noexcept(false)
+                             Arguments &&...args) noexcept(false)
     {
         Result r(nullptr);
         {
@@ -185,14 +185,14 @@ class DbClient : public trantor::NonCopyable
 
 #ifdef __cpp_impl_coroutine
     template <typename... Arguments>
-      const cppcoro::task<Result> execSqlCoro(const std::string sql,
-                                              Arguments ... args) noexcept
-      {
+    const cppcoro::task<Result> execSqlCoro(const std::string sql,
+                                            Arguments... args) noexcept
+    {
         auto binder = *this << sql;
         (void)std::initializer_list<int>{
             (binder << std::forward<Arguments>(args), 0)...};
         co_return co_await internal::SqlAwaiter(std::move(binder));
-      }
+    }
 #endif
 
     /// Streaming-like method for sql execution. For more information, see the

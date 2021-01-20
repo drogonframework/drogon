@@ -11,7 +11,8 @@ namespace drogon
 template <typename T>
 using task = cppcoro::task<T>;
 
-/// Fires a coroutine and doesn't force waiting nor deallocates upon promise destructs
+/// Fires a coroutine and doesn't force waiting nor deallocates upon promise
+/// destructs
 struct AsyncTask final
 {
     struct promise_type final
@@ -26,7 +27,9 @@ struct AsyncTask final
             return std::suspend_never{};
         }
 
-        void return_void() noexcept {}
+        void return_void() noexcept
+        {
+        }
 
         void unhandled_exception() noexcept(false)
         {
@@ -40,11 +43,11 @@ struct AsyncTask final
 
         void result()
         {
-            if(exception_ != nullptr)
+            if (exception_ != nullptr)
                 std::rethrow_exception(exception_);
         }
 
-    protected:
+      protected:
         std::exception_ptr exception_ = nullptr;
     };
     AsyncTask(const promise_type*) noexcept
@@ -53,31 +56,45 @@ struct AsyncTask final
     }
 };
 
-/// Helper class that provices the infrastructure for turning callback into corourines
+/// Helper class that provices the infrastructure for turning callback into
+/// corourines
 // The user is responsible to fill in `await_suspend()` and construtors.
 template <typename T>
 struct CallbackAwaiter
 {
-    bool await_ready() noexcept { return false; }
+    bool await_ready() noexcept
+    {
+        return false;
+    }
 
     const T& await_resume() noexcept(false)
     {
-        // await_resume() should always be called after co_await (await_suspend()) is called.
-        // Therefor the value should always be set (or there's an exception)
+        // await_resume() should always be called after co_await
+        // (await_suspend()) is called. Therefor the value should always be set
+        // (or there's an exception)
         assert(result_.has_value() == true || exception_ != nullptr);
 
-        if(exception_)
+        if (exception_)
             std::rethrow_exception(exception_);
         return result_.value();
     }
-private:
-    // HACK: Not all desired value will default contructable. But we need the entire struct
-    // to be constructed for awaiting. std::optional takes care of that.
+
+  private:
+    // HACK: Not all desired value will default contructable. But we need the
+    // entire struct to be constructed for awaiting. std::optional takes care of
+    // that.
     optional<T> result_;
     std::exception_ptr exception_ = nullptr;
-protected:
-    void setException(const std::exception_ptr& e) { exception_ = e; }
-    void setValue(const T& v) { result_.emplace(v); }
+
+  protected:
+    void setException(const std::exception_ptr& e)
+    {
+        exception_ = e;
+    }
+    void setValue(const T& v)
+    {
+        result_.emplace(v);
+    }
 };
 
-}
+}  // namespace drogon
