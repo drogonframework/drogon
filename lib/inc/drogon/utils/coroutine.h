@@ -1,3 +1,16 @@
+/**
+ *
+ *  coroutine.h
+ *  Martin Chang
+ *
+ *  Copyright 2021, Martin Chang.  All rights reserved.
+ *  https://github.com/an-tao/drogon
+ *  Use of this source code is governed by a MIT license
+ *  that can be found in the License file.
+ *
+ *  Drogon
+ *
+ */
 #pragma once
 
 #include <coroutine>
