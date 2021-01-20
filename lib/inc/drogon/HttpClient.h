@@ -131,9 +131,8 @@ class HttpClient : public trantor::NonCopyable
      *
      * @return task<HttpResponsePtr>
      */
-    virtual Task<HttpResponsePtr> sendRequestCoro(
-        HttpRequestPtr req,
-        double timeout = 0) = 0;
+    virtual Task<HttpResponsePtr> sendRequestCoro(HttpRequestPtr req,
+                                                  double timeout = 0) = 0;
 #endif
 
     /// Set the pipelining depth, which is the number of requests that are not
