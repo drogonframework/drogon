@@ -211,7 +211,7 @@ class CallbackHolder : public CallbackHolderBase
     typename std::enable_if<(sizeof...(Values) < Boundary), void>::type run(
         const Row *const row,
         bool isNull,
-        Values &&...values)
+        Values &&... values)
     {
         // call this function recursively until parameter's count equals to the
         // count of target function parameters
@@ -242,7 +242,7 @@ class CallbackHolder : public CallbackHolderBase
     typename std::enable_if<(sizeof...(Values) == Boundary), void>::type run(
         const Row *const,
         bool isNull,
-        Values &&...values)
+        Values &&... values)
     {
         function_(isNull, std::move(values)...);
     }
