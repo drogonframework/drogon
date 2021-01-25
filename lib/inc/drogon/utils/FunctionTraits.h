@@ -88,8 +88,10 @@ struct FunctionTraits<
                    Arguments...)> : FunctionTraits<ReturnType (*)(Arguments...)>
 {
     static const bool isHTTPFunction = true;
+    static const bool isCoroutine = false;
     using class_type = void;
     using first_param_type = HttpRequestPtr;
+    using return_type = ReturnType;
 };
 
 template <typename ReturnType, typename... Arguments>
@@ -110,8 +112,22 @@ struct FunctionTraits<
                   Arguments...)> : FunctionTraits<AsyncTask (*)(Arguments...)>
 {
     static const bool isHTTPFunction = true;
+    static const bool isCoroutine = true;
     using class_type = void;
     using first_param_type = HttpRequestPtr;
+    using return_type = AsyncTask;
+};
+template <typename... Arguments>
+struct FunctionTraits<
+    Task<> (*)(HttpRequestPtr req,
+               std::function<void(const HttpResponsePtr &)> callback,
+               Arguments...)> : FunctionTraits<AsyncTask (*)(Arguments...)>
+{
+    static const bool isHTTPFunction = true;
+    static const bool isCoroutine = true;
+    using class_type = void;
+    using first_param_type = HttpRequestPtr;
+    using return_type = Task<>;
 };
 #endif
 
@@ -133,8 +149,10 @@ struct FunctionTraits<
                    Arguments...)> : FunctionTraits<ReturnType (*)(Arguments...)>
 {
     static const bool isHTTPFunction = true;
+    static const bool isCoroutine = false;
     using class_type = void;
     using first_param_type = T;
+    using return_type = ReturnType;
 };
 
 // normal function
@@ -149,9 +167,11 @@ struct FunctionTraits<ReturnType (*)(Arguments...)>
 
     static const std::size_t arity = sizeof...(Arguments);
     using class_type = void;
+    using return_type = ReturnType;
     static const bool isHTTPFunction = false;
     static const bool isClassFunction = false;
     static const bool isDrObjectClass = false;
+    static const bool isCoroutine = false;
     static const std::string name()
     {
         return std::string("Normal or Static Function");

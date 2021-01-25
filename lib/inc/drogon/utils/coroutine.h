@@ -21,7 +21,7 @@
 
 namespace drogon
 {
-template <typename T>
+template <typename T = void>
 using Task = cppcoro::task<T>;
 
 template <typename T>
