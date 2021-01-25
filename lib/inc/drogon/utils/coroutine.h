@@ -19,6 +19,8 @@
 #include <cppcoro/task.hpp>
 #include <cppcoro/is_awaitable.hpp>
 #include <type_traits>
+#include <trantor/utils/Logger.h>
+#include <iostream>
 
 namespace drogon
 {
@@ -33,7 +35,8 @@ constexpr bool is_awaitable_v = is_awaitable<T>::value;
 
 /// Fires a coroutine and doesn't force waiting nor deallocates upon promise
 /// destructs
-// NOTE: AsyncTask is designed to be not awaitable. 
+// NOTE: AsyncTask is designed to be not awaitable. And kills the entire process
+// if exception escaped.
 struct AsyncTask final
 {
     struct promise_type final
@@ -52,9 +55,9 @@ struct AsyncTask final
         {
         }
 
-        void unhandled_exception() noexcept(false)
+        void unhandled_exception()
         {
-            exception_ = std::current_exception();
+            std::terminate();
         }
 
         promise_type* get_return_object() noexcept
@@ -64,12 +67,7 @@ struct AsyncTask final
 
         void result()
         {
-            if (exception_ != nullptr)
-                std::rethrow_exception(exception_);
         }
-
-      protected:
-        std::exception_ptr exception_ = nullptr;
     };
     AsyncTask(const promise_type*) noexcept
     {
