@@ -286,7 +286,7 @@ class HttpBinder : public HttpBinderBase
         std::function<void(const HttpResponsePtr &)> &&callback,
         Values &&... values)
     {
-        [this](HttpRequestPtr req, std::function<void(const HttpResponsePtr &)> callback, auto &&... values) -> AsyncTask {
+        [this](HttpRequestPtr req, std::function<void(const HttpResponsePtr &)> callback, Values &&... values) -> AsyncTask {
             try
             {
                 if constexpr (std::is_same_v<AsyncTask,
@@ -306,11 +306,9 @@ class HttpBinder : public HttpBinderBase
                 else if constexpr (std::is_same_v<Task<HttpResponsePtr>,
                                         typename traits::return_type>)
                 {
-                    // Doesn't work. GCC considers if-constexpr a constexpr function
-                    // Why.... fix in later commit
-                    // auto resp = co_await callFunction(req,
-                    //                                   std::move(values)...);
-                    // callback(std::move(resp));
+                    auto resp = co_await callFunction(req,
+                                                      std::move(values)...);
+                    callback(std::move(resp));
                 }       
             }
             catch (const std::exception &e)
