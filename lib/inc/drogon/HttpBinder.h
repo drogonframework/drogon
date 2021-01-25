@@ -286,7 +286,7 @@ class HttpBinder : public HttpBinderBase
         std::function<void(const HttpResponsePtr &)> &&callback,
         Values &&... values)
     {
-        [&]() -> AsyncTask {
+        [this](HttpRequestPtr req, std::function<void(const HttpResponsePtr &)> callback, auto &&... values) -> AsyncTask {
             try
             {
                 if constexpr (std::is_same_v<AsyncTask,
@@ -303,7 +303,15 @@ class HttpBinder : public HttpBinderBase
                                           std::move(callback),
                                           std::move(values)...);
                 }
-                // TODO: Handle more cases
+                else if constexpr (std::is_same_v<Task<HttpResponsePtr>,
+                                        typename traits::return_type>)
+                {
+                    // Doesn't work. GCC considers if-constexpr a constexpr function
+                    // Why.... fix in later commit
+                    // auto resp = co_await callFunction(req,
+                    //                                   std::move(values)...);
+                    // callback(std::move(resp));
+                }       
             }
             catch (const std::exception &e)
             {
@@ -314,7 +322,7 @@ class HttpBinder : public HttpBinderBase
             {
                 LOG_ERROR << "Uncaught unknown exception in " << req->path();
             }
-        }();
+        }(req, std::move(callback), std::move(values)...);
     }
 #endif
     template <typename... Values,
@@ -325,11 +333,10 @@ class HttpBinder : public HttpBinderBase
     typename std::enable_if<isClassFunction && !isDrObjectClass && isNormal,
                             typename traits::return_type>::type
     callFunction(const HttpRequestPtr &req,
-                 std::function<void(const HttpResponsePtr &)> &&callback,
                  Values &&... values)
     {
         static auto &obj = getControllerObj<typename traits::class_type>();
-        return (obj.*func_)(req, std::move(callback), std::move(values)...);
+        return (obj.*func_)(req, std::move(values)...);
     }
     template <typename... Values,
               bool isClassFunction = traits::isClassFunction,
@@ -339,12 +346,11 @@ class HttpBinder : public HttpBinderBase
     typename std::enable_if<isClassFunction && isDrObjectClass && isNormal,
                             typename traits::return_type>::type
     callFunction(const HttpRequestPtr &req,
-                 std::function<void(const HttpResponsePtr &)> &&callback,
                  Values &&... values)
     {
         static auto objPtr =
             DrClassMap::getSingleInstance<typename traits::class_type>();
-        return (*objPtr.*func_)(req, std::move(callback), std::move(values)...);
+        return (*objPtr.*func_)(req, std::move(values)...);
     }
     template <typename... Values,
               bool isClassFunction = traits::isClassFunction,
@@ -353,10 +359,9 @@ class HttpBinder : public HttpBinderBase
     typename std::enable_if<!isClassFunction && isNormal,
                             typename traits::return_type>::type
     callFunction(const HttpRequestPtr &req,
-                 std::function<void(const HttpResponsePtr &)> &&callback,
                  Values &&... values)
     {
-        return func_(req, std::move(callback), std::move(values)...);
+        return func_(req, std::move(values)...);
     }
 
     template <typename... Values,
@@ -367,11 +372,10 @@ class HttpBinder : public HttpBinderBase
     typename std::enable_if<isClassFunction && !isDrObjectClass && !isNormal,
                             typename traits::return_type>::type
     callFunction(const HttpRequestPtr &req,
-                 std::function<void(const HttpResponsePtr &)> &&callback,
                  Values &&... values)
     {
         static auto &obj = getControllerObj<typename traits::class_type>();
-        return (obj.*func_)((*req), std::move(callback), std::move(values)...);
+        return (obj.*func_)((*req), std::move(values)...);
     }
     template <typename... Values,
               bool isClassFunction = traits::isClassFunction,
@@ -381,13 +385,12 @@ class HttpBinder : public HttpBinderBase
     typename std::enable_if<isClassFunction && isDrObjectClass && !isNormal,
                             typename traits::return_type>::type
     callFunction(const HttpRequestPtr &req,
-                 std::function<void(const HttpResponsePtr &)> &&callback,
                  Values &&... values)
     {
         static auto objPtr =
             DrClassMap::getSingleInstance<typename traits::class_type>();
         return (*objPtr.*
-                func_)((*req), std::move(callback), std::move(values)...);
+                func_)((*req), std::move(values)...);
     }
     template <typename... Values,
               bool isClassFunction = traits::isClassFunction,
@@ -396,10 +399,9 @@ class HttpBinder : public HttpBinderBase
     typename std::enable_if<!isClassFunction && !isNormal,
                             typename traits::return_type>::type
     callFunction(const HttpRequestPtr &req,
-                 std::function<void(const HttpResponsePtr &)> &&callback,
                  Values &&... values)
     {
-        return func_((*req), std::move(callback), std::move(values)...);
+        return func_((*req), std::move(values)...);
     }
 };
 

@@ -18,6 +18,7 @@
 #include <drogon/utils/optional.h>
 #include <cppcoro/task.hpp>
 #include <cppcoro/is_awaitable.hpp>
+#include <type_traits>
 
 namespace drogon
 {
@@ -32,6 +33,7 @@ constexpr bool is_awaitable_v = is_awaitable<T>::value;
 
 /// Fires a coroutine and doesn't force waiting nor deallocates upon promise
 /// destructs
+// NOTE: AsyncTask is designed to be not awaitable. 
 struct AsyncTask final
 {
     struct promise_type final
