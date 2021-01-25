@@ -19,8 +19,6 @@
 #include <cppcoro/task.hpp>
 #include <cppcoro/is_awaitable.hpp>
 #include <type_traits>
-#include <trantor/utils/Logger.h>
-#include <iostream>
 
 namespace drogon
 {
