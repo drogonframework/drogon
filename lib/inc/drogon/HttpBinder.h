@@ -218,7 +218,7 @@ class HttpBinder : public HttpBinderBase
         std::deque<std::string> &pathArguments,
         const HttpRequestPtr &req,
         std::function<void(const HttpResponsePtr &)> &&callback,
-        Values &&... values)
+        Values &&...values)
     {
         // Call this function recursively until parameter's count equals to the
         // count of target function parameters
@@ -286,7 +286,9 @@ class HttpBinder : public HttpBinderBase
         std::function<void(const HttpResponsePtr &)> &&callback,
         Values &&... values)
     {
-        [this](HttpRequestPtr req, std::function<void(const HttpResponsePtr &)> callback, Values &&... values) -> AsyncTask {
+        [this](HttpRequestPtr req,
+               std::function<void(const HttpResponsePtr &)> callback,
+               Values &&... values) -> AsyncTask {
             try
             {
                 if constexpr (std::is_same_v<AsyncTask,
@@ -304,12 +306,12 @@ class HttpBinder : public HttpBinderBase
                                           std::move(values)...);
                 }
                 else if constexpr (std::is_same_v<Task<HttpResponsePtr>,
-                                        typename traits::return_type>)
+                                                  typename traits::return_type>)
                 {
-                    auto resp = co_await callFunction(req,
-                                                      std::move(values)...);
+                    auto resp =
+                        co_await callFunction(req, std::move(values)...);
                     callback(std::move(resp));
-                }       
+                }
             }
             catch (const std::exception &e)
             {
@@ -330,8 +332,7 @@ class HttpBinder : public HttpBinderBase
                                            HttpRequestPtr>::value>
     typename std::enable_if<isClassFunction && !isDrObjectClass && isNormal,
                             typename traits::return_type>::type
-    callFunction(const HttpRequestPtr &req,
-                 Values &&... values)
+    callFunction(const HttpRequestPtr &req, Values &&... values)
     {
         static auto &obj = getControllerObj<typename traits::class_type>();
         return (obj.*func_)(req, std::move(values)...);
@@ -343,8 +344,7 @@ class HttpBinder : public HttpBinderBase
                                            HttpRequestPtr>::value>
     typename std::enable_if<isClassFunction && isDrObjectClass && isNormal,
                             typename traits::return_type>::type
-    callFunction(const HttpRequestPtr &req,
-                 Values &&... values)
+    callFunction(const HttpRequestPtr &req, Values &&... values)
     {
         static auto objPtr =
             DrClassMap::getSingleInstance<typename traits::class_type>();
@@ -356,8 +356,7 @@ class HttpBinder : public HttpBinderBase
                                            HttpRequestPtr>::value>
     typename std::enable_if<!isClassFunction && isNormal,
                             typename traits::return_type>::type
-    callFunction(const HttpRequestPtr &req,
-                 Values &&... values)
+    callFunction(const HttpRequestPtr &req, Values &&... values)
     {
         return func_(req, std::move(values)...);
     }
@@ -369,8 +368,7 @@ class HttpBinder : public HttpBinderBase
                                            HttpRequestPtr>::value>
     typename std::enable_if<isClassFunction && !isDrObjectClass && !isNormal,
                             typename traits::return_type>::type
-    callFunction(const HttpRequestPtr &req,
-                 Values &&... values)
+    callFunction(const HttpRequestPtr &req, Values &&... values)
     {
         static auto &obj = getControllerObj<typename traits::class_type>();
         return (obj.*func_)((*req), std::move(values)...);
@@ -382,13 +380,11 @@ class HttpBinder : public HttpBinderBase
                                            HttpRequestPtr>::value>
     typename std::enable_if<isClassFunction && isDrObjectClass && !isNormal,
                             typename traits::return_type>::type
-    callFunction(const HttpRequestPtr &req,
-                 Values &&... values)
+    callFunction(const HttpRequestPtr &req, Values &&... values)
     {
         static auto objPtr =
             DrClassMap::getSingleInstance<typename traits::class_type>();
-        return (*objPtr.*
-                func_)((*req), std::move(values)...);
+        return (*objPtr.*func_)((*req), std::move(values)...);
     }
     template <typename... Values,
               bool isClassFunction = traits::isClassFunction,
@@ -396,8 +392,7 @@ class HttpBinder : public HttpBinderBase
                                            HttpRequestPtr>::value>
     typename std::enable_if<!isClassFunction && !isNormal,
                             typename traits::return_type>::type
-    callFunction(const HttpRequestPtr &req,
-                 Values &&... values)
+    callFunction(const HttpRequestPtr &req, Values &&... values)
     {
         return func_((*req), std::move(values)...);
     }

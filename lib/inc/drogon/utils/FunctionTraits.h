@@ -130,9 +130,9 @@ struct FunctionTraits<
     using return_type = Task<>;
 };
 template <typename... Arguments>
-struct FunctionTraits<
-    Task<HttpResponsePtr> (*)(HttpRequestPtr req,
-               Arguments...)> : FunctionTraits<AsyncTask (*)(Arguments...)>
+struct FunctionTraits<Task<HttpResponsePtr> (*)(HttpRequestPtr req,
+                                                Arguments...)>
+    : FunctionTraits<AsyncTask (*)(Arguments...)>
 {
     static const bool isHTTPFunction = true;
     static const bool isCoroutine = true;
