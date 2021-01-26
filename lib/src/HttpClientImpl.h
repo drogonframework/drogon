@@ -26,56 +26,6 @@
 
 namespace drogon
 {
-namespace internal
-{
-#ifdef __cpp_impl_coroutine
-struct HttpRespAwaiter : public CallbackAwaiter<HttpResponsePtr>
-{
-    HttpRespAwaiter(HttpClient *client, HttpRequestPtr req, double timeout)
-        : client_(client), req_(std::move(req)), timeout_(timeout)
-    {
-    }
-
-    void await_suspend(std::coroutine_handle<> handle)
-    {
-        client_->sendRequest(
-            req_,
-            [handle = std::move(handle), this](ReqResult result,
-                                               const HttpResponsePtr &resp) {
-                if (result == ReqResult::Ok)
-                {
-                    setValue(resp);
-                    handle.resume();
-                }
-                else
-                {
-                    std::string reason;
-                    if (result == ReqResult::BadResponse)
-                        reason = "BadResponse";
-                    else if (result == ReqResult::NetworkFailure)
-                        reason = "NetworkFailure";
-                    else if (result == ReqResult::BadServerAddress)
-                        reason = "BadServerAddress";
-                    else if (result == ReqResult::Timeout)
-                        ;
-                    reason = "Timeout";
-                    setException(
-                        std::make_exception_ptr(std::runtime_error(reason)));
-                    handle.resume();
-                }
-            },
-            timeout_);
-    }
-
-  private:
-    HttpClient *client_;
-    HttpRequestPtr req_;
-    double timeout_;
-};
-#endif
-
-}  // namespace internal
-
 class HttpClientImpl : public HttpClient,
                        public std::enable_shared_from_this<HttpClientImpl>
 {
@@ -93,16 +43,6 @@ class HttpClientImpl : public HttpClient,
     virtual void sendRequest(const HttpRequestPtr &req,
                              HttpReqCallback &&callback,
                              double timeout = 0) override;
-#ifdef __cpp_impl_coroutine
-    virtual Task<HttpResponsePtr> sendRequestCoro(HttpRequestPtr req,
-                                                  double timeout = 0) override
-    {
-        co_return co_await internal::HttpRespAwaiter(this,
-                                                     std::move(req),
-                                                     timeout);
-    }
-#endif
-
     virtual trantor::EventLoop *getLoop() override
     {
         return loop_;
