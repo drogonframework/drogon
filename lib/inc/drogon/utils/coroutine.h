@@ -183,6 +183,9 @@ struct Task<void>
         {
             return {};
         }
+        void return_void()
+        {
+        }
         void return_value()
         {
         }
