@@ -228,6 +228,11 @@ class DbClient : public trantor::NonCopyable
     virtual void newTransactionAsync(
         const std::function<void(const std::shared_ptr<Transaction> &)>
             &callback) = 0;
+
+#ifdef __cpp_impl_coroutine
+    Task<std::shared_ptr<Transaction>> newTransactionCoro();
+#endif
+
     /**
      * @brief Check if there is a connection successfully established.
      *

@@ -15,6 +15,9 @@
 #include "DbClientImpl.h"
 #include <drogon/config.h>
 #include <drogon/orm/DbClient.h>
+#ifdef __cpp_impl_coroutine
+#include <drogon/utils/coroutine.h>
+#endif
 using namespace drogon::orm;
 using namespace drogon;
 
@@ -65,3 +68,33 @@ std::shared_ptr<DbClient> DbClient::newSqlite3Client(
     exit(1);
 #endif
 }
+
+#ifdef __cpp_impl_coroutine
+
+struct TrasactionAwaiter : public CallbackAwaiter<std::shared_ptr<Transaction>>
+{
+    TrasactionAwaiter(DbClient* client)
+        : client_(client)
+    {
+    }
+
+    void await_suspend(std::coroutine_handle<> handle)
+    {
+        assert(client_ != nullptr);
+        client_->newTransactionAsync([this](const std::shared_ptr<Transaction> transacton) {
+            if(transacton == nullptr)
+                setException(std::make_exception_ptr(std::runtime_error("Failed to create transaction")));
+            else
+                setValue(transacton);
+        });
+    }
+
+  private:
+    DbClient *client_;
+};
+
+Task<std::shared_ptr<Transaction>> DbClient::newTransactionCoro()
+{
+    co_return co_await TrasactionAwaiter(this);
+}
+#endif
