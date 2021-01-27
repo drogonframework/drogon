@@ -81,7 +81,7 @@ struct TrasactionAwaiter : public CallbackAwaiter<std::shared_ptr<Transaction>>
     {
         assert(client_ != nullptr);
         client_->newTransactionAsync(
-            [this](const std::shared_ptr<Transaction> transacton) {
+            [this, handle](const std::shared_ptr<Transaction> transacton) {
                 if (transacton == nullptr)
                     setException(std::make_exception_ptr(
                         std::runtime_error("Failed to create transaction")));
