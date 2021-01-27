@@ -237,11 +237,10 @@ class HttpClient : public trantor::NonCopyable
     }
 
   protected:
+#ifdef __cpp_impl_coroutine
     void await_suspend(std::coroutine_handle<> handle);
+#endif
     HttpClient() = default;
 };
-
-#ifdef __cpp_impl_coroutine
-#endif
 
 }  // namespace drogon
