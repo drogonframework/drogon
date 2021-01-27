@@ -16,20 +16,211 @@
 #include <coroutine>
 #include <exception>
 #include <drogon/utils/optional.h>
-#include <cppcoro/task.hpp>
-#include <cppcoro/is_awaitable.hpp>
 #include <type_traits>
 
 namespace drogon
 {
-template <typename T = void>
-using Task = cppcoro::task<T>;
 
 template <typename T>
-using is_awaitable = cppcoro::is_awaitable<T>;
+struct final_awiter {
+    bool await_ready() noexcept { return false; }
+    auto await_suspend(std::coroutine_handle<T> handle) noexcept {
+        return handle.promise().continuation_;
+    }
+    void await_resume() noexcept {}
+};
 
-template <typename T>
-constexpr bool is_awaitable_v = is_awaitable<T>::value;
+template <typename T=void>
+struct Task
+{
+    struct promise_type;
+    using handle_type = std::coroutine_handle<promise_type>;
+
+    Task(handle_type h)
+        : coro_(h)
+    {}
+    Task(const Task &) = delete;
+    Task(Task &&other)
+    {
+        coro_ = other.coro_;
+        other.coro_ = nullptr;
+    }
+    ~Task()
+    {
+        if (coro_)
+            coro_.destroy();
+    }
+    Task &operator=(const Task &) = delete;
+    Task &operator=(Task &&other)
+    {
+        coro_ = other.coro_;
+        other.coro_ = nullptr;
+        return *this;
+    }
+
+    struct promise_type
+    {
+        Task<T> get_return_object()
+        {
+            return Task<T>{handle_type::from_promise(*this)};
+        }
+        std::suspend_always initial_suspend()
+        {
+            return {};
+        }
+        void return_value(const T& v)
+        {
+            value = v;
+        }
+
+        auto final_suspend() noexcept {
+            return final_awiter<promise_type>{};
+        }
+
+        void unhandled_exception()
+        {
+            exception_ = std::current_exception();
+        }
+        const T& result() const
+        {
+          if(exception_ != nullptr)
+              std::rethrow_exception(exception_);
+          assert(value.has_value() == true);
+          return value.value();
+        }
+
+        void setContinuation(std::coroutine_handle<> handle)
+        {
+            continuation_ = handle;
+        }
+
+        optional<T> value;
+        std::exception_ptr exception_;
+        std::coroutine_handle<> continuation_;
+    };
+    bool await_ready() const
+    {
+        return coro_.done();
+    }
+    std::coroutine_handle<> await_suspend(std::coroutine_handle<> awaiting)
+    {
+        coro_.promise().setContinuation(awaiting);
+        return coro_;
+    }
+
+    auto operator co_await() const noexcept {
+        struct awaiter {
+        public:
+            explicit awaiter(handle_type coro) : coro_(coro) {}
+            bool await_ready() noexcept {
+                return false;
+            }
+            auto await_suspend(std::coroutine_handle<> handle) noexcept {
+                coro_.promise().setContinuation(handle);
+                return coro_;
+            }
+            T await_resume() {
+                return coro_.promise().result();
+            }
+        private:
+            handle_type coro_;
+        };
+        return awaiter(coro_);
+    }
+    handle_type coro_;
+};
+
+
+template <>
+struct Task<void>
+{
+    struct promise_type;
+    using handle_type = std::coroutine_handle<promise_type>;
+
+    Task(handle_type handle)
+        : coro_(handle)
+    {}
+    Task(const Task &) = delete;
+    Task(Task &&other)
+    {
+        coro_ = other.coro_;
+        other.coro_ = nullptr;
+    }
+    ~Task()
+    {
+        if (coro_)
+            coro_.destroy();
+    }
+    Task &operator=(const Task &) = delete;
+    Task &operator=(Task &&other)
+    {
+        coro_ = other.coro_;
+        other.coro_ = nullptr;
+        return *this;
+    }
+
+    struct promise_type
+    {
+        Task<> get_return_object()
+        {
+            return Task<>{handle_type::from_promise(*this)};
+        }
+        std::suspend_always initial_suspend()
+        {
+            return {};
+        }
+        void return_value()
+        {
+        }
+        auto final_suspend() noexcept {
+            return final_awiter<promise_type>{};
+        }
+        void unhandled_exception()
+        {
+           exception_ = std::current_exception(); 
+        }
+        void result()
+        {
+            if(exception_ != nullptr)
+                std::rethrow_exception(exception_);
+        }
+        void setContinuation(std::coroutine_handle<> handle)
+        {
+            continuation_ = handle;
+        }
+        std::exception_ptr exception_;
+        std::coroutine_handle<> continuation_;
+    };
+    bool await_ready()
+    {
+        return coro_.done();
+    }
+    std::coroutine_handle<> await_suspend(std::coroutine_handle<> awaiting)
+    {
+        coro_.promise().setContinuation(awaiting);
+        return coro_;
+    }
+    auto operator co_await() const noexcept {
+        struct awaiter {
+        public:
+            explicit awaiter(handle_type coro) : coro_(coro) {}
+            bool await_ready() noexcept {
+                return false;
+            }
+            auto await_suspend(std::coroutine_handle<> handle) noexcept {
+                coro_.promise().setContinuation(handle);
+                return coro_;
+            }
+            void await_resume() {
+                coro_.promise().result();
+            }
+        private:
+            handle_type coro_;
+        };
+        return awaiter(coro_);
+    }
+    handle_type coro_;
+};
 
 /// Fires a coroutine and doesn't force waiting nor deallocates upon promise
 /// destructs

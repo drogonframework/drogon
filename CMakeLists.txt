@@ -252,8 +252,6 @@ configure_file("${PROJECT_SOURCE_DIR}/cmake/templates/version.h.in"
                "${PROJECT_SOURCE_DIR}/lib/inc/drogon/version.h" @ONLY)
 
 if(DROGON_CXX_STANDARD EQUAL 20)
-  find_package(cppcoro CONFIG REQUIRED)
-  target_link_libraries(${PROJECT_NAME} PRIVATE cppcoro)
   option(USE_COROUTINE "Enable C++20 coroutine support" ON)
 else(DROGON_CXX_STANDARD EQUAL 20)
   option(USE_COROUTINE "Enable C++20 coroutine support" OFF)
