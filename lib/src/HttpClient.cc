@@ -52,7 +52,7 @@ struct HttpRespAwaiter : public CallbackAwaiter<HttpResponsePtr>
                     handle.resume();
                 }
             },
-        timeout_);
+            timeout_);
     }
 
   private:
@@ -62,10 +62,8 @@ struct HttpRespAwaiter : public CallbackAwaiter<HttpResponsePtr>
 };
 
 Task<HttpResponsePtr> HttpClient::sendRequestCoro(HttpRequestPtr req,
-					double timeout)
+                                                  double timeout)
 {
-    co_return co_await internal::HttpRespAwaiter(this,
-                                                std::move(req),
-                                                timeout);
+    co_return co_await internal::HttpRespAwaiter(this, std::move(req), timeout);
 }
 #endif

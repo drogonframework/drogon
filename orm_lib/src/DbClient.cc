@@ -73,20 +73,21 @@ std::shared_ptr<DbClient> DbClient::newSqlite3Client(
 
 struct TrasactionAwaiter : public CallbackAwaiter<std::shared_ptr<Transaction>>
 {
-    TrasactionAwaiter(DbClient* client)
-        : client_(client)
+    TrasactionAwaiter(DbClient *client) : client_(client)
     {
     }
 
     void await_suspend(std::coroutine_handle<> handle)
     {
         assert(client_ != nullptr);
-        client_->newTransactionAsync([this](const std::shared_ptr<Transaction> transacton) {
-            if(transacton == nullptr)
-                setException(std::make_exception_ptr(std::runtime_error("Failed to create transaction")));
-            else
-                setValue(transacton);
-        });
+        client_->newTransactionAsync(
+            [this](const std::shared_ptr<Transaction> transacton) {
+                if (transacton == nullptr)
+                    setException(std::make_exception_ptr(
+                        std::runtime_error("Failed to create transaction")));
+                else
+                    setValue(transacton);
+            });
     }
 
   private:

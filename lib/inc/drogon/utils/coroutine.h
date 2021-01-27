@@ -20,25 +20,31 @@
 
 namespace drogon
 {
-
 template <typename T>
-struct final_awiter {
-    bool await_ready() noexcept { return false; }
-    auto await_suspend(std::coroutine_handle<T> handle) noexcept {
+struct final_awiter
+{
+    bool await_ready() noexcept
+    {
+        return false;
+    }
+    auto await_suspend(std::coroutine_handle<T> handle) noexcept
+    {
         return handle.promise().continuation_;
     }
-    void await_resume() noexcept {}
+    void await_resume() noexcept
+    {
+    }
 };
 
-template <typename T=void>
+template <typename T = void>
 struct Task
 {
     struct promise_type;
     using handle_type = std::coroutine_handle<promise_type>;
 
-    Task(handle_type h)
-        : coro_(h)
-    {}
+    Task(handle_type h) : coro_(h)
+    {
+    }
     Task(const Task &) = delete;
     Task(Task &&other)
     {
@@ -68,12 +74,13 @@ struct Task
         {
             return {};
         }
-        void return_value(const T& v)
+        void return_value(const T &v)
         {
             value = v;
         }
 
-        auto final_suspend() noexcept {
+        auto final_suspend() noexcept
+        {
             return final_awiter<promise_type>{};
         }
 
@@ -81,12 +88,12 @@ struct Task
         {
             exception_ = std::current_exception();
         }
-        const T& result() const
+        const T &result() const
         {
-          if(exception_ != nullptr)
-              std::rethrow_exception(exception_);
-          assert(value.has_value() == true);
-          return value.value();
+            if (exception_ != nullptr)
+                std::rethrow_exception(exception_);
+            assert(value.has_value() == true);
+            return value.value();
         }
 
         void setContinuation(std::coroutine_handle<> handle)
@@ -108,21 +115,29 @@ struct Task
         return coro_;
     }
 
-    auto operator co_await() const noexcept {
-        struct awaiter {
-        public:
-            explicit awaiter(handle_type coro) : coro_(coro) {}
-            bool await_ready() noexcept {
+    auto operator co_await() const noexcept
+    {
+        struct awaiter
+        {
+          public:
+            explicit awaiter(handle_type coro) : coro_(coro)
+            {
+            }
+            bool await_ready() noexcept
+            {
                 return false;
             }
-            auto await_suspend(std::coroutine_handle<> handle) noexcept {
+            auto await_suspend(std::coroutine_handle<> handle) noexcept
+            {
                 coro_.promise().setContinuation(handle);
                 return coro_;
             }
-            T await_resume() {
+            T await_resume()
+            {
                 return coro_.promise().result();
             }
-        private:
+
+          private:
             handle_type coro_;
         };
         return awaiter(coro_);
@@ -130,16 +145,15 @@ struct Task
     handle_type coro_;
 };
 
-
 template <>
 struct Task<void>
 {
     struct promise_type;
     using handle_type = std::coroutine_handle<promise_type>;
 
-    Task(handle_type handle)
-        : coro_(handle)
-    {}
+    Task(handle_type handle) : coro_(handle)
+    {
+    }
     Task(const Task &) = delete;
     Task(Task &&other)
     {
@@ -172,16 +186,17 @@ struct Task<void>
         void return_value()
         {
         }
-        auto final_suspend() noexcept {
+        auto final_suspend() noexcept
+        {
             return final_awiter<promise_type>{};
         }
         void unhandled_exception()
         {
-           exception_ = std::current_exception(); 
+            exception_ = std::current_exception();
         }
         void result()
         {
-            if(exception_ != nullptr)
+            if (exception_ != nullptr)
                 std::rethrow_exception(exception_);
         }
         void setContinuation(std::coroutine_handle<> handle)
@@ -200,21 +215,29 @@ struct Task<void>
         coro_.promise().setContinuation(awaiting);
         return coro_;
     }
-    auto operator co_await() const noexcept {
-        struct awaiter {
-        public:
-            explicit awaiter(handle_type coro) : coro_(coro) {}
-            bool await_ready() noexcept {
+    auto operator co_await() const noexcept
+    {
+        struct awaiter
+        {
+          public:
+            explicit awaiter(handle_type coro) : coro_(coro)
+            {
+            }
+            bool await_ready() noexcept
+            {
                 return false;
             }
-            auto await_suspend(std::coroutine_handle<> handle) noexcept {
+            auto await_suspend(std::coroutine_handle<> handle) noexcept
+            {
                 coro_.promise().setContinuation(handle);
                 return coro_;
             }
-            void await_resume() {
+            void await_resume()
+            {
                 coro_.promise().result();
             }
-        private:
+
+          private:
             handle_type coro_;
         };
         return awaiter(coro_);
@@ -249,7 +272,7 @@ struct AsyncTask final
             std::terminate();
         }
 
-        promise_type* get_return_object() noexcept
+        promise_type *get_return_object() noexcept
         {
             return this;
         }
@@ -258,7 +281,7 @@ struct AsyncTask final
         {
         }
     };
-    AsyncTask(const promise_type*) noexcept
+    AsyncTask(const promise_type *) noexcept
     {
         // the type truncates all given info about its frame
     }
@@ -275,7 +298,7 @@ struct CallbackAwaiter
         return false;
     }
 
-    const T& await_resume() noexcept(false)
+    const T &await_resume() noexcept(false)
     {
         // await_resume() should always be called after co_await
         // (await_suspend()) is called. Therefor the value should always be set
@@ -295,11 +318,11 @@ struct CallbackAwaiter
     std::exception_ptr exception_ = nullptr;
 
   protected:
-    void setException(const std::exception_ptr& e)
+    void setException(const std::exception_ptr &e)
     {
         exception_ = e;
     }
-    void setValue(const T& v)
+    void setValue(const T &v)
     {
         result_.emplace(v);
     }
