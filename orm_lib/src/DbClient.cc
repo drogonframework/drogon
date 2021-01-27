@@ -87,6 +87,7 @@ struct TrasactionAwaiter : public CallbackAwaiter<std::shared_ptr<Transaction>>
                         std::runtime_error("Failed to create transaction")));
                 else
                     setValue(transacton);
+                handle.resume();
             });
     }
 
