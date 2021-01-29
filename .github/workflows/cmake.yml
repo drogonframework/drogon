@@ -44,6 +44,7 @@ jobs:
     - name: (macOS) Install dependencies
       if: runner.os == 'macOS'
       run: |
+        brew update
         brew install jsoncpp ossp-uuid brotli zlib
         brew install openssl lz4 mariadb sqlite3 postgresql
 
