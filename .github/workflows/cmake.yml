@@ -44,9 +44,9 @@ jobs:
     - name: (macOS) Install dependencies
       if: runner.os == 'macOS'
       run: |
+        rm -f /etc/my.cnf
         brew install jsoncpp ossp-uuid brotli zlib
         brew install openssl lz4 mariadb sqlite3 postgresql
-
     - name: (Linux) Install dependencies
       if: runner.os == 'Linux'
       run: |
@@ -114,12 +114,13 @@ jobs:
         brew tap homebrew/services;
         brew services restart postgresql;
         brew services start mariadb;
-        sleep 4;
-        mariadb -e "SET PASSWORD FOR 'root'@'localhost' = PASSWORD('')";
-        mariadb -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost'";
-        mariadb -e "FLUSH PRIVILEGES";
+        mkdir /usr/local/etc/my.cnf.d
+        sleep 32;
+        mariadb -uroot -e "SET PASSWORD FOR 'root'@'localhost' = PASSWORD('')";
+        mariadb -uroot -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost'";
+        mariadb -uroot -e "FLUSH PRIVILEGES";
         brew services restart mariadb;
-        sleep 4;
+        sleep 32;
         psql -c 'create user postgres superuser;' postgres;
 
     - name: Prepare for testing (Linux)

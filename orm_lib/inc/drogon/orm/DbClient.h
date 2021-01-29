@@ -65,6 +65,31 @@ struct SqlAwaiter : public CallbackAwaiter<Result>
   private:
     internal::SqlBinder binder_;
 };
+
+struct TrasactionAwaiter : public CallbackAwaiter<std::shared_ptr<Transaction>>
+{
+    TrasactionAwaiter(DbClient *client) : client_(client)
+    {
+    }
+
+    void await_suspend(std::coroutine_handle<> handle)
+    {
+        assert(client_ != nullptr);
+        client_->newTransactionAsync(
+            [this, handle](const std::shared_ptr<Transaction> transacton) {
+                if (transacton == nullptr)
+                    setException(std::make_exception_ptr(
+                        std::runtime_error("Failed to create transaction")));
+                else
+                    setValue(transacton);
+                handle.resume();
+            });
+    }
+
+  private:
+    DbClient *client_;
+};
+
 #endif
 
 }  // namespace internal
@@ -230,7 +255,10 @@ class DbClient : public trantor::NonCopyable
             &callback) = 0;
 
 #ifdef __cpp_impl_coroutine
-    Task<std::shared_ptr<Transaction>> newTransactionCoro();
+    Task<std::shared_ptr<Transaction>> newTransactionCoro()
+    {
+        co_return co_await TrasactionAwaiter(this);
+    }
 #endif
 
     /**
