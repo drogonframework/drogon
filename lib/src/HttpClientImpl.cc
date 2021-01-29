@@ -21,10 +21,6 @@
 #include <algorithm>
 #include <stdlib.h>
 
-#ifdef __cpp_impl_coroutine
-#include <drogon/utils/coroutine.h>
-#endif
-
 using namespace trantor;
 using namespace drogon;
 using namespace std::placeholders;
@@ -240,9 +236,6 @@ void HttpClientImpl::sendRequest(const drogon::HttpRequestPtr &req,
             thisPtr->sendRequestInLoop(req, std::move(callback), timeout);
         });
 }
-
-#ifdef __cpp_impl_coroutine
-#endif
 
 void HttpClientImpl::sendRequestInLoop(const HttpRequestPtr &req,
                                        HttpReqCallback &&callback,
