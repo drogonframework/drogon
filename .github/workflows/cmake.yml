@@ -44,7 +44,6 @@ jobs:
     - name: (macOS) Install dependencies
       if: runner.os == 'macOS'
       run: |
-        brew update
         brew install jsoncpp ossp-uuid brotli zlib
         brew install openssl lz4 mariadb sqlite3 postgresql
 
@@ -115,12 +114,12 @@ jobs:
         brew tap homebrew/services;
         brew services restart postgresql;
         brew services start mariadb;
-        sleep 16;
+        sleep 32;
         mariadb -e "SET PASSWORD FOR 'root'@'localhost' = PASSWORD('')";
         mariadb -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost'";
         mariadb -e "FLUSH PRIVILEGES";
         brew services restart mariadb;
-        sleep 16;
+        sleep 32;
         psql -c 'create user postgres superuser;' postgres;
 
     - name: Prepare for testing (Linux)
