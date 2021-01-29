@@ -74,6 +74,7 @@ struct TrasactionAwaiter : public CallbackAwaiter<std::shared_ptr<Transaction>>
     }
 
     void await_suspend(std::coroutine_handle<> handle);
+
   private:
     DbClient *client_;
 };
@@ -294,7 +295,8 @@ class Transaction : public DbClient
 };
 
 #ifdef __cpp_impl_coroutine
-inline void internal::TrasactionAwaiter::await_suspend(std::coroutine_handle<> handle)
+inline void internal::TrasactionAwaiter::await_suspend(
+    std::coroutine_handle<> handle)
 {
     assert(client_ != nullptr);
     client_->newTransactionAsync(
@@ -311,4 +313,3 @@ inline void internal::TrasactionAwaiter::await_suspend(std::coroutine_handle<> h
 
 }  // namespace orm
 }  // namespace drogon
-
