@@ -39,6 +39,7 @@ using ResultCallback = std::function<void(const Result &)>;
 using ExceptionCallback = std::function<void(const DrogonDbException &)>;
 
 class Transaction;
+class DbClient;
 
 namespace internal
 {
@@ -72,20 +73,7 @@ struct TrasactionAwaiter : public CallbackAwaiter<std::shared_ptr<Transaction>>
     {
     }
 
-    void await_suspend(std::coroutine_handle<> handle)
-    {
-        assert(client_ != nullptr);
-        client_->newTransactionAsync(
-            [this, handle](const std::shared_ptr<Transaction> transacton) {
-                if (transacton == nullptr)
-                    setException(std::make_exception_ptr(
-                        std::runtime_error("Failed to create transaction")));
-                else
-                    setValue(transacton);
-                handle.resume();
-            });
-    }
-
+    void await_suspend(std::coroutine_handle<> handle);
   private:
     DbClient *client_;
 };
@@ -257,7 +245,7 @@ class DbClient : public trantor::NonCopyable
 #ifdef __cpp_impl_coroutine
     Task<std::shared_ptr<Transaction>> newTransactionCoro()
     {
-        co_return co_await TrasactionAwaiter(this);
+        co_return co_await orm::internal::TrasactionAwaiter(this);
     }
 #endif
 
@@ -305,5 +293,22 @@ class Transaction : public DbClient
         const std::function<void(bool)> &commitCallback) = 0;
 };
 
+#ifdef __cpp_impl_coroutine
+inline void internal::TrasactionAwaiter::await_suspend(std::coroutine_handle<> handle)
+{
+    assert(client_ != nullptr);
+    client_->newTransactionAsync(
+        [this, handle](const std::shared_ptr<Transaction> transacton) {
+            if (transacton == nullptr)
+                setException(std::make_exception_ptr(
+                    std::runtime_error("Failed to create transaction")));
+            else
+                setValue(transacton);
+            handle.resume();
+        });
+}
+#endif
+
 }  // namespace orm
 }  // namespace drogon
+
