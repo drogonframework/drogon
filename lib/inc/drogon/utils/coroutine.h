@@ -329,6 +329,10 @@ struct CallbackAwaiter
     {
         result_.emplace(v);
     }
+    void setValue(T &&v)
+    {
+        result_.emplace(std::move(v));
+    }
 };
 
 }  // namespace drogon
