@@ -113,13 +113,13 @@ jobs:
       run: |
         brew tap homebrew/services;
         brew services restart postgresql;
-        brew services start mysql;
-        until echo | mysql -uroot; do sleep 1; done
-        mysql -uroot -e "SET PASSWORD FOR 'root'@'localhost' = PASSWORD('')";
-        mysql -uroot -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost'";
-        mysql -uroot -e "FLUSH PRIVILEGES";
-        brew services restart mysql;
-        until echo | mysql -uroot; do sleep 1; done
+        brew services start mariadb;
+        until echo | mariadb -uroot -h127.0.0.1; do sleep 1; done
+        mariadb -uroot -h127.0.0.1 -e "SET PASSWORD FOR 'root'@'localhost' = PASSWORD('')";
+        mariadb -uroot -h127.0.0.1 -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost'";
+        mariadb -uroot -h127.0.0.1 -e "FLUSH PRIVILEGES";
+        brew services restart mariadb;
+        until echo | mariadb -uroot -h127.0.0.1; do sleep 1; done
         psql -c 'create user postgres superuser;' postgres;
       timeout-minutes: 5
 
