@@ -29,7 +29,7 @@ jobs:
             buildname: 'ubuntu-16.04/gcc'
             triplet: x64-linux
             compiler: gcc_64
-          - os: macos-latest
+          - os: macos-10.15
             buildname: 'macos/clang'
             triplet: x64-osx
             compiler: clang_64
@@ -114,12 +114,12 @@ jobs:
         brew tap homebrew/services;
         brew services restart postgresql;
         brew services start mariadb;
-        until echo | sudo mariadb -uroot; do sleep 1; done
-        sudo mariadb -uroot -e "SET PASSWORD FOR 'root'@'localhost' = PASSWORD('')";
-        sudo mariadb -uroot -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost'";
-        sudo mariadb -uroot -e "FLUSH PRIVILEGES";
+        until echo | mariadb -uroot; do sleep 1; done
+        mariadb -uroot -e "SET PASSWORD FOR 'root'@'localhost' = PASSWORD('')";
+        mariadb -uroot -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost'";
+        mariadb -uroot -e "FLUSH PRIVILEGES";
         brew services restart mariadb;
-        until echo | sudo mariadb -uroot; do sleep 1; done
+        until echo | mariadb -uroot; do sleep 1; done
         psql -c 'create user postgres superuser;' postgres;
       timeout-minutes: 5
 
