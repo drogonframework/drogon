@@ -28,7 +28,7 @@ jobs:
     - name: (macOS) Install dependencies
       run: |
         brew install jsoncpp ossp-uuid brotli zlib
-        brew install openssl lz4 mariadb mysql sqlite3 postgresql
+        brew install openssl lz4 mariadb sqlite3 postgresql
     - name: install gtest
       run: |
         wget https://github.com/google/googletest/archive/release-1.10.0.tar.gz
