@@ -24,7 +24,49 @@ jobs:
       with:
         submodules: true
         fetch-depth: 0
+      
+    - name: (macOS) Install dependencies
+      run: |
+        brew install jsoncpp ossp-uuid brotli zlib
+        brew install openssl lz4 mariadb mysql sqlite3 postgresql
+    - name: install gtest
+      run: |
+        wget https://github.com/google/googletest/archive/release-1.10.0.tar.gz
+        tar xf release-1.10.0.tar.gz
+        cd googletest-release-1.10.0
+        cmake .
+        make
+        sudo make install
+  
+    - name: Create Build Environment & Configure Cmake
+      # Some projects don't allow in-source building, so create a separate build directory
+      # We'll use this as our working directory for all subsequent commands
+      shell: bash
+      working-directory: ${{env.GITHUB_WORKSPACE}}
+      run: |
+        mkdir build
+        cd build
+        cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_TESTING=on
 
+    - name: Build
+      working-directory: ${{env.GITHUB_WORKSPACE}}
+      shell: bash
+      # Execute the build.  You can specify a specific target with "--target <NAME>"
+      run: |
+        cd build
+        sudo make && sudo make install
+    - name: Prepare for testing (macOS)
+      run: |
+        brew tap homebrew/services;
+        brew services restart postgresql;
+        brew services start mysql;
+        sleep 4;
+        mysql -e "SET PASSWORD FOR 'root'@'localhost' = PASSWORD('')";
+        mysql -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost'";
+        mysql -e "FLUSH PRIVILEGES";
+        brew services restart mysql;
+        sleep 4;
+        psql -c 'create user postgres superuser;' postgres;
     - name: Create Build Environment
       # Some projects don't allow in-source building, so create a separate build directory
       # We'll use this as our working directory for all subsequent commands
