@@ -13,13 +13,53 @@
  */
 #pragma once
 
+#include <algorithm>
 #include <coroutine>
 #include <exception>
-#include <drogon/utils/optional.h>
 #include <type_traits>
+#include <condition_variable>
+#include <drogon/utils/optional.h>
 
 namespace drogon
 {
+namespace internal
+{
+template <typename T>
+auto getAwaiterImpl(T &&value) noexcept(
+    noexcept(static_cast<T &&>(value).operator co_await()))
+    -> decltype(static_cast<T &&>(value).operator co_await())
+{
+    return static_cast<T &&>(value).operator co_await();
+}
+
+template <typename T>
+auto getAwaiterImpl(T &&value) noexcept(
+    noexcept(operator co_await(static_cast<T &&>(value))))
+    -> decltype(operator co_await(static_cast<T &&>(value)))
+{
+    return operator co_await(static_cast<T &&>(value));
+}
+
+template <typename T>
+auto getAwaiter(T &&value) noexcept(
+    noexcept(getAwaiterImpl(static_cast<T &&>(value))))
+    -> decltype(getAwaiterImpl(static_cast<T &&>(value)))
+{
+    return getAwaiterImpl(static_cast<T &&>(value));
+}
+
+}  // end namespace internal
+
+template <typename T>
+struct await_result
+{
+    using awaiter_t = decltype(internal::getAwaiter(std::declval<T>()));
+    using type = decltype(std::declval<awaiter_t>().await_resume());
+};
+
+template <typename T>
+using await_result_t = await_result<T>::type;
+
 template <typename T>
 struct final_awiter
 {
@@ -334,5 +374,62 @@ struct CallbackAwaiter
         result_.emplace(std::move(v));
     }
 };
+
+// An ok implementation of sync_await. This allows one to call
+// coroutines and wait for the result from a function.
+template <typename AWAIT>
+auto sync_wait(AWAIT &&await)
+{
+    using value_type = typename await_result<AWAIT>::type;
+    std::condition_variable cv;
+    std::mutex mtx;
+    std::atomic<bool> flag = false;
+    std::exception_ptr exception_ptr;
+
+    if constexpr (std::is_same_v<value_type, void>)
+    {
+        [&, lk = std::unique_lock(mtx)]() -> AsyncTask {
+            try
+            {
+                co_await await;
+            }
+            catch (const std::exception &e)
+            {
+                exception_ptr = std::current_exception();
+            }
+
+            flag = true;
+            cv.notify_one();
+        }();
+
+        std::unique_lock lk(mtx);
+        cv.wait(lk, [&]() { return (bool)flag; });
+        if (exception_ptr)
+            std::rethrow_exception(exception_ptr);
+    }
+    else
+    {
+        optional<value_type> value;
+        [&, lk = std::unique_lock(mtx)]() -> AsyncTask {
+            try
+            {
+                value = co_await await;
+            }
+            catch (const std::exception &e)
+            {
+                exception_ptr = std::current_exception();
+            }
+            flag = true;
+        }();
+
+        std::unique_lock lk(mtx);
+        cv.wait(lk, [&]() { return (bool)flag; });
+
+        assert(value.has_value() == true || exception_ptr);
+        if (exception_ptr)
+            std::rethrow_exception(exception_ptr);
+        return value.value();
+    }
+}
 
 }  // namespace drogon
