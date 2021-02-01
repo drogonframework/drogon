@@ -18,6 +18,9 @@
 #include <drogon/HttpResponse.h>
 #include <drogon/WebSocketConnection.h>
 #include <drogon/HttpTypes.h>
+#ifdef __cpp_impl_coroutine
+#include <drogon/utils/coroutine.h>
+#endif
 #include <functional>
 #include <memory>
 #include <string>
@@ -66,6 +69,48 @@ class WebSocketClient
     /// Connect to the server.
     virtual void connectToServer(const HttpRequestPtr &request,
                                  const WebSocketRequestCallback &callback) = 0;
+
+#ifdef __cpp_impl_coroutine
+    /**
+     * @brief Set messages handler. When a message is recieved from the server,
+     * the callback is called.
+     *
+     * @param callback The function to call when a message is received.
+     */
+    void setMessageHandler(
+        const std::function<Task<>(std::string &&message,
+                                   const WebSocketClientPtr &,
+                                   const WebSocketMessageType &)> &callback)
+    {
+        setMessageHandler([callback](std::string &&message,
+                                     const WebSocketClientPtr &client,
+                                     const WebSocketMessageType &type) -> void {
+            [callback](std::string &&message,
+                       const WebSocketClientPtr client,
+                       const WebSocketMessageType type) -> Task<> {
+                co_await callback(std::move(message), client, type);
+            }(std::move(message), client, type);
+        });
+    }
+
+    /// Set the connection closing handler. When the connection is established
+    /// or closed, the @param callback is called with a bool parameter.
+
+    /**
+     * @brief Set the connection closing handler. When the websocket connection
+     * is closed, the  callback is called
+     *
+     * @param callback The function to call when the connection is closed.
+     */
+    void setConnectionClosedHandler(
+        const std::function<Task<>(const WebSocketClientPtr &)> &callback)
+    {
+        setConnectionClosedHandler(
+            [callback](const WebSocketClientPtr &client) {
+                [=]() -> Task<> { co_await callback(client); }();
+            });
+    }
+#endif
 
     /// Get the event loop of the client;
     virtual trantor::EventLoop *getLoop() = 0;
