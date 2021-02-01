@@ -31,9 +31,15 @@ using namespace drogon::orm;
 #define RED "\033[31m"   /* Red */
 #define GREEN "\033[32m" /* Green */
 
+#ifdef __cpp_impl_coroutine
 constexpr int postgre_tests = 46;
 constexpr int mysql_tests = 47;
 constexpr int sqlite_tests = 49;
+#else
+constexpr int postgre_tests = 44;
+constexpr int mysql_tests = 45;
+constexpr int sqlite_tests = 47;
+#endif
 
 int test_count = 0;
 int counter = 0;
