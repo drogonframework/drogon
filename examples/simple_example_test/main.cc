@@ -1250,6 +1250,54 @@ void doTest(const HttpClientPtr &client,
                 exit(1);
             }
         });
+
+#ifdef __cpp_impl_coroutine
+    // Test coroutine requests
+    sync_wait([client, isHttps]() -> Task<> {
+        try
+        {
+            auto req = HttpRequest::newHttpRequest();
+            req->setPath("/api/v1/corotest/get");
+            auto resp = co_await client->sendRequestCoro(req);
+            if (resp->getBody() != "DEADBEEF")
+            {
+                LOG_ERROR << resp->getBody();
+                LOG_ERROR << "Error!";
+                exit(1);
+            }
+            outputGood(req, isHttps);
+        }
+        catch (const std::exception &e)
+        {
+            LOG_DEBUG << e.what();
+            LOG_ERROR << "Error!";
+            exit(1);
+        }
+    }());
+
+    // Test coroutine request with co_return
+    sync_wait([client, isHttps]() -> Task<> {
+        try
+        {
+            auto req = HttpRequest::newHttpRequest();
+            req->setPath("/api/v1/corotest/get2");
+            auto resp = co_await client->sendRequestCoro(req);
+            if (resp->getBody() != "BADDBEEF")
+            {
+                LOG_ERROR << resp->getBody();
+                LOG_ERROR << "Error!";
+                exit(1);
+            }
+            outputGood(req, isHttps);
+        }
+        catch (const std::exception &e)
+        {
+            LOG_DEBUG << e.what();
+            LOG_ERROR << "Error!";
+            exit(1);
+        }
+    }());
+#endif
 }
 void loadFileLengths()
 {

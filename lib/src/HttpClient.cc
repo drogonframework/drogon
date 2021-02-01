@@ -12,7 +12,7 @@
  *
  */
 
-#ifdef __cpp_impl_coro
+#ifdef __cpp_impl_coroutine
 #include <drogon/HttpClient.h>
 #include <drogon/utils/coroutine.h>
 
@@ -64,6 +64,6 @@ struct HttpRespAwaiter : public CallbackAwaiter<HttpResponsePtr>
 Task<HttpResponsePtr> HttpClient::sendRequestCoro(HttpRequestPtr req,
                                                   double timeout)
 {
-    co_return co_await internal::HttpRespAwaiter(this, std::move(req), timeout);
+    co_return co_await HttpRespAwaiter(this, std::move(req), timeout);
 }
 #endif

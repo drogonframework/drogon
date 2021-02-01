@@ -18,6 +18,11 @@ set(simple_example_sources
     simple_example/DigestAuthFilter.cc
     simple_example/main.cc)
 
+if(DROGON_CXX_STANDARD GREATER_EQUAL 20)
+    set(simple_example_sources ${simple_example_sources}
+        simple_example/api_v1_CoroTest.cc)
+endif(DROGON_CXX_STANDARD GREATER_EQUAL 20)
+
 add_executable(webapp ${simple_example_sources})
 drogon_create_views(webapp ${CMAKE_CURRENT_SOURCE_DIR}/simple_example
                     ${CMAKE_CURRENT_BINARY_DIR})
