@@ -62,6 +62,22 @@ struct await_result
 template <typename T>
 using await_result_t = await_result<T>::type;
 
+template <typename T, typename = std::void_t<>>
+struct is_awaitable : std::false_type
+{
+};
+
+template <typename T>
+struct is_awaitable<
+    T,
+    std::void_t<decltype(internal::getAwaiter(std::declval<T>()))>>
+    : std::true_type
+{
+};
+
+template <typename T>
+constexpr bool is_awaitable_v = is_awaitable<T>::value;
+
 template <typename T>
 struct final_awiter
 {
