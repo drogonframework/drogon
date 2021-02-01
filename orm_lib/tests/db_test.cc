@@ -724,27 +724,33 @@ void doPostgreTest(const drogon::orm::DbClientPtr &clientPtr)
         testOutput(false, "postgresql - ORM mapper synchronous interface(0)");
     }
 #ifdef __cpp_impl_coroutine
-    auto coro_test = [clientPtr]()->drogon::Task<> {
+    auto coro_test = [clientPtr]() -> drogon::Task<> {
         /// 7 Test coroutines.
-        /// This is by no means comprehensive. But coroutine API is esentially a wrapper
-        /// arround callbacks. The purpose is to test the interface works
-        /// 7.1 Basic queries
-        try {
-            auto result = co_await clientPtr->execSqlCoro("select * from users;");
+        /// This is by no means comprehensive. But coroutine API is esentially a
+        /// wrapper arround callbacks. The purpose is to test the interface
+        /// works 7.1 Basic queries
+        try
+        {
+            auto result =
+                co_await clientPtr->execSqlCoro("select * from users;");
             testOutput(result.size() != 0,
                        "postgresql - DbClient coroutine interface(0)");
         }
-        catch(const Failure& e) {
+        catch (const Failure &e)
+        {
             std::cerr << e.what() << std::endl;
             testOutput(false, "postgresql - DbClient coroutine interface(0)");
         }
         /// 7.2 Parameter binding
-        try {
-            auto result = co_await clientPtr->execSqlCoro("select * from users where 1=$1;", 1);
+        try
+        {
+            auto result = co_await clientPtr->execSqlCoro(
+                "select * from users where 1=$1;", 1);
             testOutput(result.size() != 0,
                        "postgresql - DbClient coroutine interface(1)");
         }
-        catch(const Failure& e) {
+        catch (const Failure &e)
+        {
             std::cerr << e.what() << std::endl;
             testOutput(false, "postgresql - DbClient coroutine interface(1)");
         }
@@ -1370,27 +1376,33 @@ void doMysqlTest(const drogon::orm::DbClientPtr &clientPtr)
         testOutput(false, "mysql - ORM mapper synchronous interface(0)");
     }
 #ifdef __cpp_impl_coroutine
-    auto coro_test = [clientPtr]()->drogon::Task<> {
+    auto coro_test = [clientPtr]() -> drogon::Task<> {
         /// 7 Test coroutines.
-        /// This is by no means comprehensive. But coroutine API is esentially a wrapper
-        /// arround callbacks. The purpose is to test the interface works
-        /// 7.1 Basic queries
-        try {
-            auto result = co_await clientPtr->execSqlCoro("select * from users;");
+        /// This is by no means comprehensive. But coroutine API is esentially a
+        /// wrapper arround callbacks. The purpose is to test the interface
+        /// works 7.1 Basic queries
+        try
+        {
+            auto result =
+                co_await clientPtr->execSqlCoro("select * from users;");
             testOutput(result.size() != 0,
                        "postgresql - DbClient coroutine interface(0)");
         }
-        catch(const Failure& e) {
+        catch (const Failure &e)
+        {
             std::cerr << e.what() << std::endl;
             testOutput(false, "postgresql - DbClient coroutine interface(0)");
         }
         /// 7.2 Parameter binding
-        try {
-            auto result = co_await clientPtr->execSqlCoro("select * from users where 1=?;", 1);
+        try
+        {
+            auto result = co_await clientPtr->execSqlCoro(
+                "select * from users where 1=?;", 1);
             testOutput(result.size() != 0,
                        "postgresql - DbClient coroutine interface(1)");
         }
-        catch(const Failure& e) {
+        catch (const Failure &e)
+        {
             std::cerr << e.what() << std::endl;
             testOutput(false, "postgresql - DbClient coroutine interface(1)");
         }
@@ -2044,27 +2056,33 @@ void doSqliteTest(const drogon::orm::DbClientPtr &clientPtr)
         testOutput(false, "sqlite3 - ORM mapper synchronous interface(0)");
     }
 #ifdef __cpp_impl_coroutine
-    auto coro_test = [clientPtr]()->drogon::Task<> {
+    auto coro_test = [clientPtr]() -> drogon::Task<> {
         /// 7 Test coroutines.
-        /// This is by no means comprehensive. But coroutine API is esentially a wrapper
-        /// arround callbacks. The purpose is to test the interface works
-        /// 7.1 Basic queries
-        try {
-            auto result = co_await clientPtr->execSqlCoro("select * from users;");
+        /// This is by no means comprehensive. But coroutine API is esentially a
+        /// wrapper arround callbacks. The purpose is to test the interface
+        /// works 7.1 Basic queries
+        try
+        {
+            auto result =
+                co_await clientPtr->execSqlCoro("select * from users;");
             testOutput(result.size() != 0,
                        "postgresql - DbClient coroutine interface(0)");
         }
-        catch(const Failure& e) {
+        catch (const Failure &e)
+        {
             std::cerr << e.what() << std::endl;
             testOutput(false, "postgresql - DbClient coroutine interface(0)");
         }
         /// 7.2 Parameter binding
-        try {
-            auto result = co_await clientPtr->execSqlCoro("select * from users where 1=?;", 1);
+        try
+        {
+            auto result = co_await clientPtr->execSqlCoro(
+                "select * from users where 1=?;", 1);
             testOutput(result.size() != 0,
                        "postgresql - DbClient coroutine interface(1)");
         }
-        catch(const Failure& e) {
+        catch (const Failure &e)
+        {
             std::cerr << e.what() << std::endl;
             testOutput(false, "postgresql - DbClient coroutine interface(1)");
         }

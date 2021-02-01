@@ -33,6 +33,26 @@ namespace drogon
 {
 class HttpClient;
 using HttpClientPtr = std::shared_ptr<HttpClient>;
+#ifdef __cpp_impl_coroutine
+namespace internal
+{
+struct HttpRespAwaiter : public CallbackAwaiter<HttpResponsePtr>
+{
+    HttpRespAwaiter(HttpClient *client, HttpRequestPtr req, double timeout)
+        : client_(client), req_(std::move(req)), timeout_(timeout)
+    {
+    }
+
+    void await_suspend(std::coroutine_handle<> handle);
+
+  private:
+    HttpClient *client_;
+    HttpRequestPtr req_;
+    double timeout_;
+};
+
+}  // namespace internal
+#endif
 
 /// Asynchronous http client
 /**
@@ -133,7 +153,12 @@ class HttpClient : public trantor::NonCopyable
      * @return task<HttpResponsePtr>
      */
     Task<HttpResponsePtr> sendRequestCoro(HttpRequestPtr req,
-                                          double timeout = 0);
+                                          double timeout = 0)
+    {
+        co_return co_await internal::HttpRespAwaiter(this,
+                                                     std::move(req),
+                                                     timeout);
+    }
 #endif
 
     /// Set the pipelining depth, which is the number of requests that are not
@@ -239,5 +264,38 @@ class HttpClient : public trantor::NonCopyable
   protected:
     HttpClient() = default;
 };
+
+#ifdef __cpp_impl_coroutine
+inline void internal::HttpRespAwaiter::await_suspend(
+    std::coroutine_handle<> handle)
+{
+    client_->sendRequest(
+        req_,
+        [handle = std::move(handle), this](ReqResult result,
+                                           const HttpResponsePtr &resp) {
+            if (result == ReqResult::Ok)
+            {
+                setValue(resp);
+                handle.resume();
+            }
+            else
+            {
+                std::string reason;
+                if (result == ReqResult::BadResponse)
+                    reason = "BadResponse";
+                else if (result == ReqResult::NetworkFailure)
+                    reason = "NetworkFailure";
+                else if (result == ReqResult::BadServerAddress)
+                    reason = "BadServerAddress";
+                else if (result == ReqResult::Timeout)
+                    reason = "Timeout";
+                setException(
+                    std::make_exception_ptr(std::runtime_error(reason)));
+                handle.resume();
+            }
+        },
+        timeout_);
+}
+#endif
 
 }  // namespace drogon

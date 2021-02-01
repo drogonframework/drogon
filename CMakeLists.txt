@@ -154,7 +154,6 @@ set(DROGON_SOURCES
     lib/src/DrTemplateBase.cc
     lib/src/FiltersFunction.cc
     lib/src/HttpAppFrameworkImpl.cc
-    lib/src/HttpClient.cc
     lib/src/HttpClientImpl.cc
     lib/src/HttpControllersRouter.cc
     lib/src/HttpFileImpl.cc
