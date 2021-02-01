@@ -10,9 +10,6 @@ add_executable(gzip_test GzipTest.cc)
 add_executable(url_codec_test UrlCodecTest.cc)
 add_executable(main_loop_test MainLoopTest.cc)
 add_executable(main_loop_test2 MainLoopTest2.cc)
-if(DROGON_CXX_STANDARD GREATER_EQUAL 20)
-    add_executable(coroutine_test CoroutineTest.cc)
-endif(DROGON_CXX_STANDARD GREATER_EQUAL 20)
 
 set(test_targets
     cache_map_test
@@ -24,8 +21,11 @@ set(test_targets
     gzip_test
     url_codec_test
     main_loop_test
-    main_loop_test2
-    coroutine_test)
+    main_loop_test2)
+if(DROGON_CXX_STANDARD GREATER_EQUAL 20)
+    add_executable(coroutine_test CoroutineTest.cc)
+    set(test_targets ${test_targets} coroutine_test)
+endif(DROGON_CXX_STANDARD GREATER_EQUAL 20)
 
 set_property(TARGET ${test_targets}
              PROPERTY CXX_STANDARD ${DROGON_CXX_STANDARD})
