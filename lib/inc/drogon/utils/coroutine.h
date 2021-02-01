@@ -18,6 +18,8 @@
 #include <exception>
 #include <type_traits>
 #include <condition_variable>
+#include <atomic>
+#include <cassert>
 #include <drogon/utils/optional.h>
 
 namespace drogon
