@@ -98,8 +98,7 @@ jobs:
         #sudo mysql_install_db --user=_mysql
         #echo "initalized mysql"
         brew services restart mariadb;
-        #mysql.server start
-        echo "starting mysql"
+        mysql.server status
         sleep 4;
         mariadb -e "SET PASSWORD FOR 'root'@'localhost' = PASSWORD('')";
         mariadb -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost'";
