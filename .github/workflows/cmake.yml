@@ -103,7 +103,8 @@ jobs:
         mariadb -e "SET PASSWORD FOR 'root'@'localhost' = PASSWORD('')";
         mariadb -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost'";
         mariadb -e "FLUSH PRIVILEGES";
-        brew services restart mariadb;
+        #brew services restart mariadb;
+        mysql.server restart
         sleep 4;
         psql -c 'create user postgres superuser;' postgres;
 
