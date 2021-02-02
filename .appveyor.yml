@@ -16,27 +16,24 @@ environment:
 init:
 - cmake --version
 install:
-- echo "dummy"
-#- cd C:\Tools\vcpkg
-#- git pull
-#- .\bootstrap-vcpkg.bat
-#- vcpkg install jsoncpp:x86-windows
-#- vcpkg install jsoncpp:x64-windows
-#- vcpkg install zlib:x86-windows
-#- vcpkg install zlib:x64-windows
-#- vcpkg install libpq:x86-windows
-#- vcpkg install libpq:x64-windows
-#- vcpkg integrate install
-#- cd %APPVEYOR_BUILD_FOLDER%
+- cd C:\Tools\vcpkg
+- git pull
+- .\bootstrap-vcpkg.bat
+- vcpkg install jsoncpp:x86-windows
+- vcpkg install jsoncpp:x64-windows
+- vcpkg install zlib:x86-windows
+- vcpkg install zlib:x64-windows
+- vcpkg install libpq:x86-windows
+- vcpkg install libpq:x64-windows
+- vcpkg integrate install
+- cd %APPVEYOR_BUILD_FOLDER%
 before_build:
-- echo "dummy"
-#- git submodule update --init
-#- md build
-#- cd build
-#- cmake --config "%CONFIGURATION%" -G "%GENERATOR%" -DCMAKE_TOOLCHAIN_FILE=c:/tools/vcpkg/scripts/buildsystems/vcpkg.cmake ..
+- git submodule update --init
+- md build
+- cd build
+- cmake --config "%CONFIGURATION%" -G "%GENERATOR%" -DCMAKE_TOOLCHAIN_FILE=c:/tools/vcpkg/scripts/buildsystems/vcpkg.cmake ..
 build_script:
-  - echo "dummy"
-  #- cmake --build . --config "%CONFIGURATION%"
+- cmake --build . --config "%CONFIGURATION%"
 build:
   project: build\ALL_BUILD.vcxproj
   verbosity: minimal
