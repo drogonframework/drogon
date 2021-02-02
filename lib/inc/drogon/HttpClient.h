@@ -274,10 +274,7 @@ inline void internal::HttpRespAwaiter::await_suspend(
         [handle = std::move(handle), this](ReqResult result,
                                            const HttpResponsePtr &resp) {
             if (result == ReqResult::Ok)
-            {
                 setValue(resp);
-                handle.resume();
-            }
             else
             {
                 std::string reason;
@@ -291,8 +288,8 @@ inline void internal::HttpRespAwaiter::await_suspend(
                     reason = "Timeout";
                 setException(
                     std::make_exception_ptr(std::runtime_error(reason)));
-                handle.resume();
             }
+            handle.resume();
         },
         timeout_);
 }

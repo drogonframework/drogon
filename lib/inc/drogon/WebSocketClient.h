@@ -33,6 +33,26 @@ using WebSocketClientPtr = std::shared_ptr<WebSocketClient>;
 using WebSocketRequestCallback = std::function<
     void(ReqResult, const HttpResponsePtr &, const WebSocketClientPtr &)>;
 
+#ifdef __cpp_impl_coroutine
+namespace internal
+{
+struct WebSocketConnectionAwaiter : public CallbackAwaiter<HttpResponsePtr>
+{
+    WebSocketConnectionAwaiter(WebSocketClient *client, HttpRequestPtr req)
+        : client_(client), req_(std::move(req))
+    {
+    }
+
+    void await_suspend(std::coroutine_handle<> handle);
+
+  private:
+    WebSocketClient *client_;
+    HttpRequestPtr req_;
+};
+
+}  // namespace internal
+#endif
+
 /**
  * @brief WebSocket client abstract class
  *
@@ -110,6 +130,13 @@ class WebSocketClient
                 [=]() -> Task<> { co_await callback(client); }();
             });
     }
+
+    /// Connect to the server.
+    internal::WebSocketConnectionAwaiter connectToServerCoro(
+        const HttpRequestPtr &request)
+    {
+        return internal::WebSocketConnectionAwaiter(this, request);
+    }
 #endif
 
     /// Get the event loop of the client;
@@ -169,5 +196,36 @@ class WebSocketClient
     {
     }
 };
+
+#ifdef __cpp_impl_coroutine
+inline void internal::WebSocketConnectionAwaiter::await_suspend(
+    std::coroutine_handle<> handle)
+{
+    client_->connectToServer(req_,
+                             [this, handle](ReqResult result,
+                                            const HttpResponsePtr &resp,
+                                            const WebSocketClientPtr &) {
+                                 if (result == ReqResult::Ok)
+                                     setValue(resp);
+                                 else
+                                 {
+                                     std::string reason;
+                                     if (result == ReqResult::BadResponse)
+                                         reason = "BadResponse";
+                                     else if (result ==
+                                              ReqResult::NetworkFailure)
+                                         reason = "NetworkFailure";
+                                     else if (result ==
+                                              ReqResult::BadServerAddress)
+                                         reason = "BadServerAddress";
+                                     else if (result == ReqResult::Timeout)
+                                         reason = "Timeout";
+                                     setException(std::make_exception_ptr(
+                                         std::runtime_error(reason)));
+                                 }
+                                 handle.resume();
+                             });
+}
+#endif
 
 }  // namespace drogon
