@@ -92,18 +92,18 @@ jobs:
       run: |
         brew tap homebrew/services;
         brew services restart postgresql;
-        sudo mkdir -p /usr/local/var/mysql
-        sudo chown -R _mysql:_mysql /usr/local/var/mysql
+        #sudo mkdir -p /usr/local/var/mysql
+        #sudo chown -R _mysql:_mysql /usr/local/var/mysql
         #echo "initalizing mysql"
         #sudo mysql_install_db --user=_mysql
         #echo "initalized mysql"
-        brew services restart mariadb;
+        brew services start mariadb@10.4;
         mysql.server status
         sleep 4;
         mariadb -e "SET PASSWORD FOR 'root'@'localhost' = PASSWORD('')";
         mariadb -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost'";
         mariadb -e "FLUSH PRIVILEGES";
-        brew services restart mariadb;
+        brew services restart mariadb@10.4;
         #echo "restarting mysql"
         #mysql.server restart
         #echo "restarted mysql"
