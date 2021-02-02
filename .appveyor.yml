@@ -33,7 +33,8 @@ before_build:
 - cd build
 - cmake --config "%CONFIGURATION%" -G "%GENERATOR%" -DCMAKE_TOOLCHAIN_FILE=c:/tools/vcpkg/scripts/buildsystems/vcpkg.cmake ..
 build_script:
-- cmake --build . --config "%CONFIGURATION%"
+  - echo "dummy"
+  #- cmake --build . --config "%CONFIGURATION%"
 build:
   project: build\ALL_BUILD.vcxproj
   verbosity: minimal
