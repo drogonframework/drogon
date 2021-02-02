@@ -99,9 +99,9 @@ jobs:
         #echo "initalized mysql"
         brew services start mariadb@10.4;
         sleep 4;
-        mariadb -e "SET PASSWORD FOR 'root'@'localhost' = PASSWORD('')";
-        mariadb -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost'";
-        mariadb -e "FLUSH PRIVILEGES";
+        mysql -e "SET PASSWORD FOR 'root'@'localhost' = PASSWORD('')";
+        mysql -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost'";
+        mysql -e "FLUSH PRIVILEGES";
         brew services restart mariadb@10.4;
         #echo "restarting mysql"
         #mysql.server restart
