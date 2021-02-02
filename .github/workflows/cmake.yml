@@ -42,7 +42,7 @@ jobs:
       if: runner.os == 'macOS'
       run: |
         brew install jsoncpp ossp-uuid brotli zlib
-        brew install openssl lz4 mysql sqlite3 postgresql
+        brew install openssl lz4 mysql mysql-client sqlite3 postgresql
 
     - name: (Linux) Install dependencies
       if: runner.os == 'Linux'
