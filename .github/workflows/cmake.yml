@@ -99,7 +99,7 @@ jobs:
         #echo "initalized mysql"
         brew services start mysql``;
         sleep 4;
-        mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED BY 'PASSWORD';";
+        mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '';";
         mysql -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost'";
         mysql -e "FLUSH PRIVILEGES";
         brew services restart mysql;
