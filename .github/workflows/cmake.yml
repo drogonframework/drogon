@@ -43,6 +43,7 @@ jobs:
       run: |
         brew install jsoncpp ossp-uuid brotli zlib
         brew install openssl lz4 mysql mariadb-connector-c sqlite3 postgresql
+        mv /usr/local/include/mysql /usr/local/include/mysql_not_used
 
     - name: (Linux) Install dependencies
       if: runner.os == 'Linux'
