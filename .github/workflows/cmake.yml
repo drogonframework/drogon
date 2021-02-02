@@ -92,6 +92,7 @@ jobs:
       run: |
         brew tap homebrew/services;
         brew services restart postgresql;
+        sudo mkdir -p /usr/local/var/mysql
         sudo mysqld --initialize-insecure
         brew services start mariadb;
         sleep 4;
