@@ -94,7 +94,7 @@ jobs:
         brew services restart postgresql;
         sudo mkdir -p /usr/local/var/mysql
         sudo chown -R _mysql:_mysql /usr/local/var/mysql
-        sudo su _mysql bash -c "mysqld --initialize-insecure"
+        sudo su _mysql -c mysqld --initialize-insecure
         brew services start mariadb;
         sleep 4;
         mariadb -e "SET PASSWORD FOR 'root'@'localhost' = PASSWORD('')";
