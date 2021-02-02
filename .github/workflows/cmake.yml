@@ -95,7 +95,7 @@ jobs:
         sudo mkdir -p /usr/local/var/mysql
         sudo chown -R _mysql:_mysql /usr/local/var/mysql
         echo "initalizing mysql"
-        sudo ysqld --initialize-insecure --user=_mysql
+        sudo mysqld --initialize-insecure --user=_mysql
         echo "initalized mysql"
         brew services start mariadb;
         sleep 4;
