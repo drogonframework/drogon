@@ -92,7 +92,7 @@ jobs:
       run: |
         brew tap homebrew/services;
         brew services restart postgresql;
-        mysqld --initialize-insecure
+        sudo mysqld --initialize-insecure
         brew services start mariadb;
         sleep 4;
         mariadb -e "SET PASSWORD FOR 'root'@'localhost' = PASSWORD('')";
