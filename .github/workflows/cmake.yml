@@ -99,12 +99,15 @@ jobs:
         echo "initalized mysql"
         #brew services start mariadb;
         mysql.server start
+        echo "starting mysql"
         sleep 4;
         mariadb -e "SET PASSWORD FOR 'root'@'localhost' = PASSWORD('')";
         mariadb -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost'";
         mariadb -e "FLUSH PRIVILEGES";
         #brew services restart mariadb;
+        echo "restarting mysql"
         mysql.server restart
+        echo "restarted mysql"
         sleep 4;
         psql -c 'create user postgres superuser;' postgres;
 
