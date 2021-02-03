@@ -411,7 +411,7 @@ auto sync_wait(AWAIT &&await)
             {
                 co_await await;
             }
-            catch (const std::exception &e)
+            catch (...)
             {
                 exception_ptr = std::current_exception();
             }
