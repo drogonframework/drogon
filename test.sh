@@ -1,5 +1,29 @@
 #!/usr/bin/env bash
 
+usage()
+{
+    echo "$0: [=t] [--extra-cmake-flags <extra flags>]"
+}
+
+args=( "$@" )
+testing=0
+ignore_next=0
+extra_cmake_flags=''
+for i in `seq 0 $((${#args[@]} - 1))`; do
+    if [ $ignore_next = 1 ]; then ignore_next=0; continue; fi
+
+    if [ "${args[$i]}" = '-t' ]; then
+        testing=1
+    elif [ "${args[$i]}" = '--extra-cmake-flags' ]; then
+        extra_cmake_flags=${args[$(( i+1 ))]}
+        ignore_next=1
+    elif [ "${args[$i]}" = '-h' ]; then
+        usage; exit
+    else
+        usage; exit 1
+    fi
+done
+
 drogon_ctl_exec=`pwd`/build/drogon_ctl/drogon_ctl
 echo ${drogon_ctl_exec}
 cd build/examples/
@@ -123,7 +147,7 @@ cd ../views
 echo "Hello, world!" >> hello.csp
 
 cd ../build
-cmake .. $cmake_gen
+cmake .. $cmake_gen $extra_cmake_flags
 
 if [ $? -ne 0 ]; then
     echo "Error in testing"
@@ -145,7 +169,7 @@ fi
 cd ../../
 rm -rf drogon_test
 
-if [ "$1" = "-t" ]; then
+if [ $testing = 1 ]; then
     #unit testing
     cd ../
     echo "Unit testing"
