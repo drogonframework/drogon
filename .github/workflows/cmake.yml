@@ -22,14 +22,11 @@ jobs:
             buildname: 'ubuntu-20.04/gcc'
             triplet: x64-linux
             compiler: gcc_64
-          - os: ubuntu-20.04
-            buildname: 'ubuntu-20.04/gcc-10'
-            triplet: x64-linux
           - os: ubuntu-16.04
             buildname: 'ubuntu-16.04/gcc'
             triplet: x64-linux
             compiler: gcc_64
-          - os: macos-10.15
+          - os: macos-latest
             buildname: 'macos/clang'
             triplet: x64-osx
             compiler: clang_64
@@ -44,9 +41,10 @@ jobs:
     - name: (macOS) Install dependencies
       if: runner.os == 'macOS'
       run: |
-        rm -f /etc/my.cnf
         brew install jsoncpp ossp-uuid brotli zlib
-        brew install openssl lz4 mariadb sqlite3 postgresql
+        brew install openssl lz4 mysql mariadb-connector-c sqlite3 postgresql
+        mv /usr/local/include/mysql /usr/local/include/mysql_not_used
+
     - name: (Linux) Install dependencies
       if: runner.os == 'Linux'
       run: |
@@ -63,10 +61,6 @@ jobs:
         sudo apt update
         sudo apt install boost1.67
 
-    - name: (Linux) Install gcc-10
-      if: matrix.buildname == 'ubuntu-20.04/gcc-10'
-      run: |
-        sudo apt install gcc-10 g++-10
     - name: install gtest
       run: |
         wget https://github.com/google/googletest/archive/release-1.10.0.tar.gz
@@ -81,25 +75,23 @@ jobs:
       # We'll use this as our working directory for all subsequent commands
       shell: bash
       working-directory: ${{env.GITHUB_WORKSPACE}}
-      if: matrix.buildname != 'ubuntu-20.04/gcc-10'
+      if: runner.os != 'macOS'
       run: |
         mkdir build
         cd build
         cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_TESTING=on
 
-    - name: Create Build Environment & Configure Cmake (gcc-10)
+    - name: Create Build Environment & Configure Cmake (MacOS)
       # Some projects don't allow in-source building, so create a separate build directory
       # We'll use this as our working directory for all subsequent commands
       shell: bash
       working-directory: ${{env.GITHUB_WORKSPACE}}
-      if: matrix.buildname == 'ubuntu-20.04/gcc-10'
+      if: runner.os == 'macOS'
       run: |
         mkdir build
         cd build
-        cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_TESTING=on -DCMAKE_CXX_FLAGS="-fcoroutines"
-      env:
-        CC: gcc-10
-        CXX: g++-10
+        cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_TESTING=on -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl
+
     - name: Build
       working-directory: ${{env.GITHUB_WORKSPACE}}
       shell: bash
@@ -113,15 +105,15 @@ jobs:
       run: |
         brew tap homebrew/services;
         brew services restart postgresql;
-        brew services start mariadb;
-        until echo | mariadb -uroot; do sleep 1; done
-        mariadb -uroot -e "SET PASSWORD FOR 'root'@'localhost' = PASSWORD('')";
-        mariadb -uroot -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost'";
-        mariadb -uroot -e "FLUSH PRIVILEGES";
-        brew services restart mariadb;
-        until echo | mariadb -uroot; do sleep 1; done
+        mysqld --initialize-insecure
+        brew services start mysql;
+        sleep 4;
+        mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '';";
+        mysql -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost'";
+        mysql -e "FLUSH PRIVILEGES";
+        brew services restart mysql;
+        sleep 4;
         psql -c 'create user postgres superuser;' postgres;
-      timeout-minutes: 5
 
     - name: Prepare for testing (Linux)
       if: runner.os == 'Linux'
@@ -133,9 +125,18 @@ jobs:
     - name: Test
       working-directory: ${{env.GITHUB_WORKSPACE}}
       shell: bash
+      if: runner.os != 'macOS'
       # Execute tests defined by the CMake configuration.  
       # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
       run: ./test.sh -t
+
+    - name: Test (MacOS)
+      working-directory: ${{env.GITHUB_WORKSPACE}}
+      shell: bash
+      if: runner.os == 'macOS'
+      # Execute tests defined by the CMake configuration.  
+      # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
+      run: ./test.sh -t --extra-cmake-flags "-DOPENSSL_ROOT_DIR=/usr/local/opt/openssl"
 
     - name: Lint
       if: runner.os == 'Linux'

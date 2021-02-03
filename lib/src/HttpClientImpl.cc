@@ -79,8 +79,12 @@ void HttpClientImpl::createTcpClient()
                     }
                     auto resp = responseParser->responseImpl();
                     responseParser->reset();
-                    thisPtr->handleResponse(resp, std::move(firstReq));
-                    thisPtr->tcpClientPtr_.reset();
+                    thisPtr->handleResponse(resp, std::move(firstReq), connPtr);
+                    if (!thisPtr->requestsBuffer_.empty())
+                    {
+                        thisPtr->createTcpClient();
+                    }
+                    return;
                 }
                 thisPtr->onError(ReqResult::NetworkFailure);
             }
@@ -486,18 +490,30 @@ void HttpClientImpl::handleResponse(
     // pipeliningCallbacks_.size(); LOG_TRACE << "requests buffer size="
     // << requestsBuffer_.size();
 
-    if (!requestsBuffer_.empty())
+    if (connPtr->connected())
     {
-        auto &reqAndCallback = requestsBuffer_.front();
-        sendReq(connPtr, reqAndCallback.first);
-        pipeliningCallbacks_.push(std::move(reqAndCallback));
-        requestsBuffer_.pop();
+        if (!requestsBuffer_.empty())
+        {
+            auto &reqAndCallback = requestsBuffer_.front();
+            sendReq(connPtr, reqAndCallback.first);
+            pipeliningCallbacks_.push(std::move(reqAndCallback));
+            requestsBuffer_.pop();
+        }
+        else
+        {
+            if (resp->ifCloseConnection() && pipeliningCallbacks_.empty())
+            {
+                tcpClientPtr_.reset();
+            }
+        }
     }
     else
     {
-        if (resp->ifCloseConnection() && pipeliningCallbacks_.empty())
+        while (!pipeliningCallbacks_.empty())
         {
-            tcpClientPtr_.reset();
+            auto cb = std::move(pipeliningCallbacks_.front());
+            pipeliningCallbacks_.pop();
+            cb.second(ReqResult::NetworkFailure, nullptr);
         }
     }
 }

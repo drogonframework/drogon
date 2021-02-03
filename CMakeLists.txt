@@ -5,13 +5,13 @@ project(drogon)
 message(STATUS "compiler: " ${CMAKE_CXX_COMPILER_ID})
 include(CheckCXXSourceRuns)
 check_cxx_source_runs(
-        ${PROJECT_SOURCE_DIR}/cmake/tests/binary_compatibility_test.cc
-        cross_compiling)
+        "int main(){return 0;}"
+        not_cross_compiling)
 
-if(cross_compiling)
-  set(BUILD_PROGRAMS OFF)
-else(cross_compiling)
+if(not_cross_compiling)
   set(BUILD_PROGRAMS ON)
+else()
+  set(BUILD_PROGRAMS OFF)
 endif()
 
 option(BUILD_CTL "Build drogon_ctl" ${BUILD_PROGRAMS})
