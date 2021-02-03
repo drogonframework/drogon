@@ -22,6 +22,9 @@ jobs:
             buildname: 'ubuntu-20.04/gcc'
             triplet: x64-linux
             compiler: gcc_64
+          - os: ubuntu-20.04
+            buildname: 'ubuntu-20.04/gcc-10'
+            triplet: x64-linux
           - os: ubuntu-16.04
             buildname: 'ubuntu-16.04/gcc'
             triplet: x64-linux
@@ -53,7 +56,10 @@ jobs:
         # These aren't available or don't work well in vcpkg
         sudo apt install libjsoncpp-dev uuid-dev openssl libssl-dev zlib1g-dev postgresql-all libsqlite3-dev
         sudo apt install libbrotli-dev
-
+    - name: (Linux) Install gcc-10
+      if: matrix.buildname == 'ubuntu-20.04/gcc-10'
+      run: |
+        sudo apt install gcc-10 g++-10
     - name: (Linux) Install boost
       if: matrix.os == 'ubuntu-16.04'
       run: |
@@ -75,12 +81,24 @@ jobs:
       # We'll use this as our working directory for all subsequent commands
       shell: bash
       working-directory: ${{env.GITHUB_WORKSPACE}}
-      if: runner.os != 'macOS'
+      if: runner.os != 'macOS' && matrix.buildname != 'ubuntu-20.04/gcc-10'
       run: |
         mkdir build
         cd build
         cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_TESTING=on
-
+    - name: Create Build Environment & Configure Cmake (gcc-10)
+      # Some projects don't allow in-source building, so create a separate build directory
+      # We'll use this as our working directory for all subsequent commands
+      shell: bash
+      working-directory: ${{env.GITHUB_WORKSPACE}}
+      if: matrix.buildname == 'ubuntu-20.04/gcc-10'
+      run: |
+        mkdir build
+        cd build
+        cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_TESTING=on -DCMAKE_CXX_FLAGS="-fcoroutines"
+      env:
+        CC: gcc-10
+        CXX: g++-10
     - name: Create Build Environment & Configure Cmake (MacOS)
       # Some projects don't allow in-source building, so create a separate build directory
       # We'll use this as our working directory for all subsequent commands
