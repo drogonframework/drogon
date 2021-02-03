@@ -8,6 +8,7 @@ usage()
 args=( "$@" )
 testing=0
 ignore_next=0
+extra_cmake_flags=''
 for i in `seq 0 $((${#args[@]} - 1))`; do
     if [ $ignore_next = 1 ]; then ignore_next=0; continue; fi
 
