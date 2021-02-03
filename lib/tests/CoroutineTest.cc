@@ -23,6 +23,14 @@ int main()
         exit(1);
     }
 
+    // co_future converts coroutine into futures
+    auto fut = co_future([]() -> Task<std::string> { co_return "zxc"; }());
+    if (fut.get() != "zxc")
+    {
+        std::cerr << "Expected future return \'zxc\'. Didn't get that\n";
+        exit(1);
+    }
+
     // Testing that exceptions can propergate through coroutines
     auto throw_in_task = []() -> Task<> {
         auto f = []() -> Task<> { throw std::runtime_error("test error"); };

@@ -19,6 +19,7 @@
 #include <type_traits>
 #include <condition_variable>
 #include <atomic>
+#include <future>
 #include <cassert>
 #include <drogon/utils/optional.h>
 
@@ -448,6 +449,32 @@ auto sync_wait(AWAIT &&await)
             std::rethrow_exception(exception_ptr);
         return value.value();
     }
+}
+
+// Converts a task (or task like) promise into std::future for old-style async
+template <typename Await>
+inline auto co_future(Await await) noexcept -> std::future<await_result_t<Await>>
+{
+    using Result = await_result_t<Await>;
+    std::promise<Result> prom;
+    auto fut = prom.get_future();
+    [](std::promise<Result> &&prom, Await &&await) -> AsyncTask {
+        try
+        {
+            if constexpr (std::is_void_v<Result>)
+            {
+                co_await std::move(await);
+                prom.set_value();
+            }
+            else
+                prom.set_value(co_await std::move(await));
+        }
+        catch (...)
+        {
+            prom.set_exception(std::current_exception());
+        }
+    }(std::move(prom), std::move(await));
+    return fut;
 }
 
 }  // namespace drogon
