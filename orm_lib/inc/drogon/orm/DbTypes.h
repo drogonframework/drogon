@@ -19,8 +19,9 @@ namespace drogon
 {
 namespace orm
 {
-
-class DefaultValue {};
+class DefaultValue
+{
+};
 
 namespace internal
 {

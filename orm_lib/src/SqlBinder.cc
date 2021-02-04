@@ -268,7 +268,7 @@ SqlBinder &SqlBinder::operator<<(DefaultValue dv)
     lengths_.push_back(0);
     if (type_ == ClientType::PostgreSQL)
     {
-        formats_.push_back(0); // TODO
+        formats_.push_back(0);  // TODO
     }
     else if (type_ == ClientType::Mysql)
     {

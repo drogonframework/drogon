@@ -813,12 +813,11 @@ void doMysqlTest(const drogon::orm::DbClientPtr &clientPtr)
     /// 1.1 insert,non-blocking
     *clientPtr
             << "insert into users (user_id,user_name,password,org_name,admin) "
-            "values(?,?,?,?,?)"
+               "values(?,?,?,?,?)"
             << "pg"
             << "postgresql"
             << "123"
-            << "default"
-            << drogon::orm::DefaultValue{} >>
+            << "default" << drogon::orm::DefaultValue{} >>
         [](const Result &r) {
             testOutput(r.insertId() == 1,
                        "mysql - DbClient streaming-type interface(0)");
