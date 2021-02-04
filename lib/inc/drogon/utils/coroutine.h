@@ -453,7 +453,8 @@ auto sync_wait(AWAIT &&await)
 
 // Converts a task (or task like) promise into std::future for old-style async
 template <typename Await>
-inline auto co_future(Await await) noexcept -> std::future<await_result_t<Await>>
+inline auto co_future(Await await) noexcept
+    -> std::future<await_result_t<Await>>
 {
     using Result = await_result_t<Await>;
     std::promise<Result> prom;
