@@ -15,9 +15,11 @@
 #include <drogon/config.h>
 #include <drogon/orm/DbClient.h>
 #include <drogon/orm/SqlBinder.h>
+#include "drogon/orm/DbTypes.h"
 #include <future>
 #include <iostream>
 #include <stdio.h>
+#include <trantor/utils/Logger.h>
 #if USE_MYSQL
 #include <mysql.h>
 #endif
@@ -144,9 +146,7 @@ SqlBinder &SqlBinder::operator<<(const std::string &str)
     }
     else if (type_ == ClientType::Mysql)
     {
-#if USE_MYSQL
-        formats_.push_back(MYSQL_TYPE_STRING);
-#endif
+        formats_.push_back(MySqlString);
     }
     else if (type_ == ClientType::Sqlite3)
     {
@@ -169,9 +169,7 @@ SqlBinder &SqlBinder::operator<<(std::string &&str)
     }
     else if (type_ == ClientType::Mysql)
     {
-#if USE_MYSQL
-        formats_.push_back(MYSQL_TYPE_STRING);
-#endif
+        formats_.push_back(MySqlString);
     }
     else if (type_ == ClientType::Sqlite3)
     {
@@ -194,9 +192,7 @@ SqlBinder &SqlBinder::operator<<(const std::vector<char> &v)
     }
     else if (type_ == ClientType::Mysql)
     {
-#if USE_MYSQL
-        formats_.push_back(MYSQL_TYPE_STRING);
-#endif
+        formats_.push_back(MySqlString);
     }
     else if (type_ == ClientType::Sqlite3)
     {
@@ -204,6 +200,7 @@ SqlBinder &SqlBinder::operator<<(const std::vector<char> &v)
     }
     return *this;
 }
+
 SqlBinder &SqlBinder::operator<<(std::vector<char> &&v)
 {
     std::shared_ptr<std::vector<char>> obj =
@@ -218,9 +215,7 @@ SqlBinder &SqlBinder::operator<<(std::vector<char> &&v)
     }
     else if (type_ == ClientType::Mysql)
     {
-#if USE_MYSQL
-        formats_.push_back(MYSQL_TYPE_STRING);
-#endif
+        formats_.push_back(MySqlString);
     }
     else if (type_ == ClientType::Sqlite3)
     {
@@ -243,6 +238,7 @@ SqlBinder &SqlBinder::operator<<(double f)
     }
     return operator<<(std::to_string(f));
 }
+
 SqlBinder &SqlBinder::operator<<(std::nullptr_t nullp)
 {
     (void)nullp;
@@ -255,13 +251,33 @@ SqlBinder &SqlBinder::operator<<(std::nullptr_t nullp)
     }
     else if (type_ == ClientType::Mysql)
     {
-#if USE_MYSQL
-        formats_.push_back(MYSQL_TYPE_NULL);
-#endif
+        formats_.push_back(MySqlNull);
     }
     else if (type_ == ClientType::Sqlite3)
     {
         formats_.push_back(Sqlite3TypeNull);
+    }
+    return *this;
+}
+
+SqlBinder &SqlBinder::operator<<(DefaultValue dv)
+{
+    (void)dv;
+    ++parametersNumber_;
+    parameters_.push_back(NULL);
+    lengths_.push_back(0);
+    if (type_ == ClientType::PostgreSQL)
+    {
+        formats_.push_back(0); // TODO
+    }
+    else if (type_ == ClientType::Mysql)
+    {
+        formats_.push_back(DrogonDefaultValue);
+    }
+    else if (type_ == ClientType::Sqlite3)
+    {
+        LOG_FATAL << "default not supported in sqlite3";
+        exit(1);
     }
     return *this;
 }
@@ -272,16 +288,16 @@ int SqlBinder::getMysqlTypeBySize(size_t size)
     switch (size)
     {
         case 1:
-            return MYSQL_TYPE_TINY;
+            return MySqlTiny;
             break;
         case 2:
-            return MYSQL_TYPE_SHORT;
+            return MySqlShort;
             break;
         case 4:
-            return MYSQL_TYPE_LONG;
+            return MySqlLong;
             break;
         case 8:
-            return MYSQL_TYPE_LONGLONG;
+            return MySqlLongLong;
             break;
         default:
             return 0;

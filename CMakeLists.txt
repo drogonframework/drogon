@@ -420,6 +420,7 @@ set(ORM_HEADERS
     orm_lib/inc/drogon/orm/ArrayParser.h
     orm_lib/inc/drogon/orm/Criteria.h
     orm_lib/inc/drogon/orm/DbClient.h
+    orm_lib/inc/drogon/orm/DbTypes.h
     orm_lib/inc/drogon/orm/Exception.h
     orm_lib/inc/drogon/orm/Field.h
     orm_lib/inc/drogon/orm/FunctionTraits.h

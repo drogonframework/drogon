@@ -13,6 +13,7 @@
  */
 
 #pragma once
+#include <drogon/orm/DbTypes.h>
 #include <drogon/orm/Exception.h>
 #include <drogon/orm/Field.h>
 #include <drogon/orm/FunctionTraits.h>
@@ -432,6 +433,7 @@ class SqlBinder
     }
     self &operator<<(double f);
     self &operator<<(std::nullptr_t nullp);
+    self &operator<<(DefaultValue dv);
     self &operator<<(const Mode &mode)
     {
         mode_ = mode;
