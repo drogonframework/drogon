@@ -22,9 +22,8 @@ namespace orm
 
 class DefaultValue {};
 
-}  // namespace orm
-}  // namespace drogon
-
+namespace internal
+{
 enum FieldType
 {
     MySqlTiny,
@@ -35,5 +34,9 @@ enum FieldType
     MySqlString,
     DrogonDefaultValue,
 };
+
+}  // namespace internal
+}  // namespace orm
+}  // namespace drogon
 
 #endif  // DBTYPES_HPP
