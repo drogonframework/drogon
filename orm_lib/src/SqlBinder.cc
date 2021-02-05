@@ -15,11 +15,10 @@
 #include <drogon/config.h>
 #include <drogon/orm/DbClient.h>
 #include <drogon/orm/SqlBinder.h>
-#include "drogon/orm/DbTypes.h"
+#include <drogon/utils/Utilities.h>
 #include <future>
 #include <iostream>
 #include <stdio.h>
-#include <trantor/utils/Logger.h>
 #if USE_MYSQL
 #include <mysql.h>
 #endif
@@ -263,15 +262,30 @@ SqlBinder &SqlBinder::operator<<(std::nullptr_t nullp)
 SqlBinder &SqlBinder::operator<<(DefaultValue dv)
 {
     (void)dv;
-    ++parametersNumber_;
-    parameters_.push_back(NULL);
-    lengths_.push_back(0);
     if (type_ == ClientType::PostgreSQL)
     {
-        formats_.push_back(0);  // TODO
+        utils::replaceAll(*sqlPtr_,
+                          "$" + std::to_string(parametersNumber_ + 1),
+                          "default");
+
+        // decrement all other $n parameters by 1
+        int i = parametersNumber_ + 2;
+        while ((sqlPtr_->find("$" + std::to_string(parametersNumber_ + i))) !=
+               std::string::npos)
+        {
+            utils::replaceAll(*sqlPtr_,
+                              "$" + std::to_string(parametersNumber_ + i),
+                              "$" + std::to_string(parametersNumber_ + i - 1));
+            ++i;
+        }
+        sqlViewPtr_ = sqlPtr_->data();
+        sqlViewLength_ = sqlPtr_->length();
     }
     else if (type_ == ClientType::Mysql)
     {
+        ++parametersNumber_;
+        parameters_.push_back(NULL);
+        lengths_.push_back(0);
         formats_.push_back(DrogonDefaultValue);
     }
     else if (type_ == ClientType::Sqlite3)

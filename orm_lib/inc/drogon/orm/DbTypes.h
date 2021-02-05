@@ -1,9 +1,9 @@
 /**
  *
  *  @file DbTypes.h
- *  @author An Tao
+ *  @author interfector18
  *
- *  Copyright 2018, An Tao.  All rights reserved.
+ *  Copyright 2020, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
  *  Use of this source code is governed by a MIT license
  *  that can be found in the License file.
@@ -12,8 +12,7 @@
  *
  */
 
-#ifndef DBTYPES_HPP
-#define DBTYPES_HPP
+#pragma once
 
 namespace drogon
 {
@@ -39,5 +38,3 @@ enum FieldType
 }  // namespace internal
 }  // namespace orm
 }  // namespace drogon
-
-#endif  // DBTYPES_HPP

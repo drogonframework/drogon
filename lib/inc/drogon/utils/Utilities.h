@@ -147,5 +147,12 @@ std::string formattedString(const char *format, ...);
  */
 int createPath(const std::string &path);
 
+/// Replace all occurances of from to to inplace
+/**
+ * @param from string to replace
+ * @param to string to replace with
+ */
+void replaceAll(std::string &s, const std::string &from, const std::string &to);
+
 }  // namespace utils
 }  // namespace drogon
