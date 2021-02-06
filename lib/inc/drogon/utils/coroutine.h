@@ -245,9 +245,6 @@ struct Task<void>
         void return_void()
         {
         }
-        //void return_value()
-        //{
-        //}
         auto final_suspend() noexcept
         {
             return final_awiter<promise_type>{};
