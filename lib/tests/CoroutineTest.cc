@@ -8,6 +8,8 @@ using namespace drogon;
 int main()
 {
     // Basic checks making sure coroutine works as expected
+    static_assert(is_awaitable_v<Task<>>);
+    static_assert(is_awaitable_v<Task<int>>);
     static_assert(std::is_same_v<await_result_t<Task<int>>, int>);
     static_assert(std::is_same_v<await_result_t<Task<>>, void>);
     static_assert(is_awaitable_v<Task<>>);

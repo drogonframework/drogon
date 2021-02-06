@@ -396,6 +396,9 @@ struct CallbackAwaiter
 
 // An ok implementation of sync_await. This allows one to call
 // coroutines and wait for the result from a function.
+//
+// NOTE: Not sure if this is a compiler bug. But causes use after free in some
+// cases. Don't use it in production code.
 template <typename AWAIT>
 auto sync_wait(AWAIT &&await)
 {
@@ -452,6 +455,8 @@ auto sync_wait(AWAIT &&await)
 }
 
 // Converts a task (or task like) promise into std::future for old-style async
+// NOTE: Not sure if this is a compiler bug. But causes use after free in some
+// cases. Don't use it in production code.
 template <typename Await>
 inline auto co_future(Await await) noexcept
     -> std::future<await_result_t<Await>>
