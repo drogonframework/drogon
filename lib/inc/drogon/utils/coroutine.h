@@ -61,7 +61,7 @@ struct await_result
 };
 
 template <typename T>
-using await_result_t = await_result<T>::type;
+using await_result_t = typename await_result<T>::type;
 
 template <typename T, typename = std::void_t<>>
 struct is_awaitable : std::false_type
@@ -243,9 +243,6 @@ struct Task<void>
             return {};
         }
         void return_void()
-        {
-        }
-        void return_value()
         {
         }
         auto final_suspend() noexcept
