@@ -107,7 +107,7 @@ class WebSocketClient
                                      const WebSocketMessageType &type) -> void {
             [callback](std::string &&message,
                        const WebSocketClientPtr client,
-                       const WebSocketMessageType type) -> Task<> {
+                       const WebSocketMessageType type) -> AsyncTask {
                 co_await callback(std::move(message), client, type);
             }(std::move(message), client, type);
         });
@@ -127,7 +127,7 @@ class WebSocketClient
     {
         setConnectionClosedHandler(
             [callback](const WebSocketClientPtr &client) {
-                [=]() -> Task<> { co_await callback(client); }();
+                [=]() -> AsyncTask { co_await callback(client); }();
             });
     }
 
