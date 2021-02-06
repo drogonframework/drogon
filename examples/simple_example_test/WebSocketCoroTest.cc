@@ -9,7 +9,7 @@ using namespace std::chrono_literals;
 
 Task<> doTest(WebSocketClientPtr wsPtr, HttpRequestPtr req, bool continually)
 {
-    wsPtr->setCoroMessageHandler(
+    wsPtr->setAsyncMessageHandler(
         [continually](std::string&& message,
                       const WebSocketClientPtr wsPtr,
                       const WebSocketMessageType type) -> Task<> {
@@ -24,7 +24,7 @@ Task<> doTest(WebSocketClientPtr wsPtr, HttpRequestPtr req, bool continually)
             }
             co_return;
         });
-    wsPtr->setCoroConnectionClosedHandler(
+    wsPtr->setAsyncConnectionClosedHandler(
         [](const WebSocketClientPtr wsPtr) -> Task<> {
             std::cout << "ws closed!" << std::endl;
             co_return;
