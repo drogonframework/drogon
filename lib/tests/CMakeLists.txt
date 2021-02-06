@@ -22,6 +22,10 @@ set(test_targets
     url_codec_test
     main_loop_test
     main_loop_test2)
+if(DROGON_CXX_STANDARD GREATER_EQUAL 20)
+    add_executable(coroutine_test CoroutineTest.cc)
+    set(test_targets ${test_targets} coroutine_test)
+endif(DROGON_CXX_STANDARD GREATER_EQUAL 20)
 
 set_property(TARGET ${test_targets}
              PROPERTY CXX_STANDARD ${DROGON_CXX_STANDARD})

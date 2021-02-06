@@ -18,14 +18,14 @@
 using namespace drogon::orm;
 using namespace drogon;
 
-internal::SqlBinder DbClient::operator<<(const std::string &sql)
+orm::internal::SqlBinder DbClient::operator<<(const std::string &sql)
 {
-    return internal::SqlBinder(sql, *this, type_);
+    return orm::internal::SqlBinder(sql, *this, type_);
 }
 
-internal::SqlBinder DbClient::operator<<(std::string &&sql)
+orm::internal::SqlBinder DbClient::operator<<(std::string &&sql)
 {
-    return internal::SqlBinder(std::move(sql), *this, type_);
+    return orm::internal::SqlBinder(std::move(sql), *this, type_);
 }
 
 std::shared_ptr<DbClient> DbClient::newPgClient(const std::string &connInfo,

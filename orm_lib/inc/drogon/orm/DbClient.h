@@ -27,6 +27,10 @@
 #include <trantor/utils/Logger.h>
 #include <trantor/utils/NonCopyable.h>
 
+#ifdef __cpp_impl_coroutine
+#include <drogon/utils/coroutine.h>
+#endif
+
 namespace drogon
 {
 namespace orm
@@ -35,6 +39,49 @@ using ResultCallback = std::function<void(const Result &)>;
 using ExceptionCallback = std::function<void(const DrogonDbException &)>;
 
 class Transaction;
+class DbClient;
+
+namespace internal
+{
+#ifdef __cpp_impl_coroutine
+struct SqlAwaiter : public CallbackAwaiter<Result>
+{
+    SqlAwaiter(internal::SqlBinder &&binder) : binder_(binder)
+    {
+    }
+
+    void await_suspend(std::coroutine_handle<> handle)
+    {
+        binder_ >> [handle, this](const drogon::orm::Result &result) {
+            setValue(result);
+            handle.resume();
+        };
+        binder_ >> [handle, this](const std::exception_ptr &e) {
+            setException(e);
+            handle.resume();
+        };
+        binder_.exec();
+    }
+
+  private:
+    internal::SqlBinder binder_;
+};
+
+struct TrasactionAwaiter : public CallbackAwaiter<std::shared_ptr<Transaction>>
+{
+    TrasactionAwaiter(DbClient *client) : client_(client)
+    {
+    }
+
+    void await_suspend(std::coroutine_handle<> handle);
+
+  private:
+    DbClient *client_;
+};
+
+#endif
+
+}  // namespace internal
 
 /// Database client abstract class
 class DbClient : public trantor::NonCopyable
@@ -150,6 +197,18 @@ class DbClient : public trantor::NonCopyable
         return r;
     }
 
+#ifdef __cpp_impl_coroutine
+    template <typename... Arguments>
+    const Task<Result> execSqlCoro(const std::string sql,
+                                   Arguments... args) noexcept
+    {
+        auto binder = *this << sql;
+        (void)std::initializer_list<int>{
+            (binder << std::forward<Arguments>(args), 0)...};
+        co_return co_await internal::SqlAwaiter(std::move(binder));
+    }
+#endif
+
     /// Streaming-like method for sql execution. For more information, see the
     /// wiki page.
     internal::SqlBinder operator<<(const std::string &sql);
@@ -183,6 +242,14 @@ class DbClient : public trantor::NonCopyable
     virtual void newTransactionAsync(
         const std::function<void(const std::shared_ptr<Transaction> &)>
             &callback) = 0;
+
+#ifdef __cpp_impl_coroutine
+    Task<std::shared_ptr<Transaction>> newTransactionCoro()
+    {
+        co_return co_await orm::internal::TrasactionAwaiter(this);
+    }
+#endif
+
     /**
      * @brief Check if there is a connection successfully established.
      *
@@ -226,6 +293,23 @@ class Transaction : public DbClient
     virtual void setCommitCallback(
         const std::function<void(bool)> &commitCallback) = 0;
 };
+
+#ifdef __cpp_impl_coroutine
+inline void internal::TrasactionAwaiter::await_suspend(
+    std::coroutine_handle<> handle)
+{
+    assert(client_ != nullptr);
+    client_->newTransactionAsync(
+        [this, handle](const std::shared_ptr<Transaction> transacton) {
+            if (transacton == nullptr)
+                setException(std::make_exception_ptr(
+                    std::runtime_error("Failed to create transaction")));
+            else
+                setValue(transacton);
+            handle.resume();
+        });
+}
+#endif
 
 }  // namespace orm
 }  // namespace drogon

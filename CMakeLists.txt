@@ -64,11 +64,14 @@ include(CheckIncludeFileCXX)
 
 check_include_file_cxx(any HAS_ANY)
 check_include_file_cxx(string_view HAS_STRING_VIEW)
-if(HAS_ANY AND HAS_STRING_VIEW)
+check_include_file_cxx(coroutine HAS_COROUTINE)
+if(HAS_ANY AND HAS_STRING_VIEW AND HAS_COROUTINE)
+  set(DROGON_CXX_STANDARD 20)
+elseif(HAS_ANY AND HAS_STRING_VIEW)
   set(DROGON_CXX_STANDARD 17)
-else(HAS_ANY AND HAS_STRING_VIEW)
+else()
   set(DROGON_CXX_STANDARD 14)
-endif(HAS_ANY AND HAS_STRING_VIEW)
+endif()
 
 target_include_directories(
   ${PROJECT_NAME}
@@ -96,16 +99,18 @@ else(NOT WIN32)
   target_link_libraries(${PROJECT_NAME} PRIVATE shlwapi)
 endif(NOT WIN32)
 
-if(DROGON_CXX_STANDARD LESS 17)
+if(DROGON_CXX_STANDARD EQUAL 14)
   # With C++14, use boost to support any and string_view
   message(STATUS "use c++14")
   find_package(Boost 1.61.0 REQUIRED)
   message(STATUS "boost include dir:" ${Boost_INCLUDE_DIR})
   target_link_libraries(${PROJECT_NAME} PUBLIC Boost::boost)
   list(APPEND INCLUDE_DIRS_FOR_DYNAMIC_VIEW ${Boost_INCLUDE_DIR})
-else(DROGON_CXX_STANDARD LESS 17)
+elseif(DROGON_CXX_STANDARD EQUAL 17)
   message(STATUS "use c++17")
-endif(DROGON_CXX_STANDARD LESS 17)
+else()
+  message(STATUS "use c++20")
+endif()
 
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules/)
 
@@ -245,6 +250,12 @@ execute_process(COMMAND "git" rev-parse HEAD
                 ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
 configure_file("${PROJECT_SOURCE_DIR}/cmake/templates/version.h.in"
                "${PROJECT_SOURCE_DIR}/lib/inc/drogon/version.h" @ONLY)
+
+if(DROGON_CXX_STANDARD EQUAL 20)
+  option(USE_COROUTINE "Enable C++20 coroutine support" ON)
+else(DROGON_CXX_STANDARD EQUAL 20)
+  option(USE_COROUTINE "Enable C++20 coroutine support" OFF)
+endif(DROGON_CXX_STANDARD EQUAL 20)
 
 if(BUILD_EXAMPLES)
   add_subdirectory(examples)
@@ -427,6 +438,7 @@ set(DROGON_UTIL_HEADERS
     lib/inc/drogon/utils/any.h
     lib/inc/drogon/utils/string_view.h
     lib/inc/drogon/utils/optional.h
+    lib/inc/drogon/utils/coroutine.h
     lib/inc/drogon/utils/HttpConstraint.h
     lib/inc/drogon/utils/OStringStream.h)
 install(FILES ${DROGON_UTIL_HEADERS}

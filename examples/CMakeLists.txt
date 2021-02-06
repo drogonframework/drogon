@@ -18,6 +18,13 @@ set(simple_example_sources
     simple_example/DigestAuthFilter.cc
     simple_example/main.cc)
 
+if(DROGON_CXX_STANDARD GREATER_EQUAL 20)
+    set(simple_example_sources ${simple_example_sources}
+        simple_example/api_v1_CoroTest.cc)
+    set(CMAKE_CXX_STANDARD 20)
+    set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
+endif(DROGON_CXX_STANDARD GREATER_EQUAL 20)
+
 add_executable(webapp ${simple_example_sources})
 drogon_create_views(webapp ${CMAKE_CURRENT_SOURCE_DIR}/simple_example
                     ${CMAKE_CURRENT_BINARY_DIR})
@@ -61,6 +68,10 @@ set(example_targets
     pipelining_test
     websocket_test
     multiple_ws_test)
+if(DROGON_CXX_STANDARD GREATER_EQUAL 20)
+    add_executable(websocket_coro_test simple_example_test/WebSocketCoroTest.cc)
+    set(simple_example ${simple_example} websocket_coro_test)
+endif(DROGON_CXX_STANDARD GREATER_EQUAL 20)
 
 set_property(TARGET ${example_targets}
              PROPERTY CXX_STANDARD ${DROGON_CXX_STANDARD})
