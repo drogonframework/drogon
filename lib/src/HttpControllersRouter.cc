@@ -33,8 +33,10 @@ void HttpControllersRouter::doWhenNoHandlerFound(
         !HttpAppFrameworkImpl::instance().getHomePage().empty())
     {
         req->setPath("/" + HttpAppFrameworkImpl::instance().getHomePage());
-        HttpAppFrameworkImpl::instance().forward(req, std::move(callback));
-        return;
+        // Just call the fileRouter_.route instead of forwarding. so comment out
+        // those sentences.
+        // HttpAppFrameworkImpl::instance().forward(req, std::move(callback));
+        // return;
     }
     fileRouter_.route(req, std::move(callback));
 }
