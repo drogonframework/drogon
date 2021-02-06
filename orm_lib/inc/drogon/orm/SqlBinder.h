@@ -289,8 +289,7 @@ class SqlBinder
               size_t sqlLength,
               DbClient &client,
               ClientType type)
-        : sqlPtr_(std::make_shared<std::string>(sql, sqlLength)),
-          sqlViewPtr_(sql),
+        : sqlViewPtr_(sql),
           sqlViewLength_(sqlLength),
           client_(client),
           type_(type)

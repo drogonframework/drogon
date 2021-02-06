@@ -18,6 +18,7 @@
 #include <drogon/utils/Utilities.h>
 #include <future>
 #include <iostream>
+#include <regex>
 #include <stdio.h>
 #if USE_MYSQL
 #include <mysql.h>
@@ -264,18 +265,26 @@ SqlBinder &SqlBinder::operator<<(DefaultValue dv)
     (void)dv;
     if (type_ == ClientType::PostgreSQL)
     {
-        utils::replaceAll(*sqlPtr_,
-                          "$" + std::to_string(parametersNumber_ + 1),
-                          "default");
+        std::regex r("\\$" + std::to_string(parametersNumber_ + 1) + "\\b");
+        // initialize with empty, as the next line will make a copy anyway
+        if (!sqlPtr_)
+            sqlPtr_ = std::make_shared<std::string>();
+
+        *sqlPtr_ = std::regex_replace(sqlViewPtr_, r, "default");
 
         // decrement all other $n parameters by 1
-        int i = parametersNumber_ + 2;
+        size_t i = parametersNumber_ + 2;
         while ((sqlPtr_->find("$" + std::to_string(parametersNumber_ + i))) !=
                std::string::npos)
         {
-            utils::replaceAll(*sqlPtr_,
-                              "$" + std::to_string(parametersNumber_ + i),
-                              "$" + std::to_string(parametersNumber_ + i - 1));
+            r = "\\$" + std::to_string(parametersNumber_ + i) + "\\b";
+            // use sed format to avoid $n regex group substitution,
+            // and use ->data() to compile in C++14 mode
+            *sqlPtr_ = std::regex_replace(sqlPtr_->data(),
+                                          r,
+                                          "$" + std::to_string(
+                                                    parametersNumber_ + i - 1),
+                                          std::regex_constants::format_sed);
             ++i;
         }
         sqlViewPtr_ = sqlPtr_->data();
