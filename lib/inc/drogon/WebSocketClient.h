@@ -97,7 +97,7 @@ class WebSocketClient
      *
      * @param callback The function to call when a message is received.
      */
-    void setMessageHandler(
+    void setCoroMessageHandler(
         const std::function<Task<>(std::string &&message,
                                    const WebSocketClientPtr &,
                                    const WebSocketMessageType &)> &callback)
@@ -122,7 +122,7 @@ class WebSocketClient
      *
      * @param callback The function to call when the connection is closed.
      */
-    void setConnectionClosedHandler(
+    void setCoroConnectionClosedHandler(
         const std::function<Task<>(const WebSocketClientPtr &)> &callback)
     {
         setConnectionClosedHandler(
