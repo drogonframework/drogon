@@ -127,12 +127,11 @@ void doPostgreTest(const drogon::orm::DbClientPtr &clientPtr)
         };
     /// 1.2 insert,blocking
     *clientPtr
-            << "insert into users (user_id,user_name,password,org_name,admin) "
+            << "insert into users (user_id,user_name,admin,password,org_name) "
                "values($1,$2,$3,$4,$5) returning *"
             << "pg1"
-            << "postgresql1"
-            << "123"
-            << "default" << drogon::orm::DefaultValue{} << Mode::Blocking >>
+            << "postgresql1" << drogon::orm::DefaultValue{} << "123"
+            << "default" << Mode::Blocking >>
         [](const Result &r) {
             // std::cout << "id=" << r[0]["id"].as<int64_t>() << std::endl;
             testOutput(r[0]["id"].as<int64_t>() == 2,

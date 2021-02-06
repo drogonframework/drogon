@@ -274,16 +274,14 @@ SqlBinder &SqlBinder::operator<<(DefaultValue dv)
 
         // decrement all other $n parameters by 1
         size_t i = parametersNumber_ + 2;
-        while ((sqlPtr_->find("$" + std::to_string(parametersNumber_ + i))) !=
-               std::string::npos)
+        while ((sqlPtr_->find("$" + std::to_string(i))) != std::string::npos)
         {
-            r = "\\$" + std::to_string(parametersNumber_ + i) + "\\b";
+            r = "\\$" + std::to_string(i) + "\\b";
             // use sed format to avoid $n regex group substitution,
             // and use ->data() to compile in C++14 mode
             *sqlPtr_ = std::regex_replace(sqlPtr_->data(),
                                           r,
-                                          "$" + std::to_string(
-                                                    parametersNumber_ + i - 1),
+                                          "$" + std::to_string(i - 1),
                                           std::regex_constants::format_sed);
             ++i;
         }
