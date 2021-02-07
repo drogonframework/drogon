@@ -4,11 +4,12 @@
 
 using namespace drogon;
 
+int nth_resp = 0;
+
 int main()
 {
     trantor::Logger::setLogLevel(trantor::Logger::kTrace);
     {
-        int count = 0;
         auto client = HttpClient::newHttpClient("http://www.baidu.com");
         auto req = HttpRequest::newHttpRequest();
         req->setMethod(drogon::Get);
@@ -19,11 +20,10 @@ int main()
         for (int i = 0; i < 10; ++i)
         {
             client->sendRequest(
-                req,
-                [&count](ReqResult result, const HttpResponsePtr &response) {
+                req, [](ReqResult result, const HttpResponsePtr &response) {
                     std::cout << "receive response!" << std::endl;
                     // auto headers=response.
-                    ++count;
+                    ++nth_resp;
                     std::cout << response->getBody() << std::endl;
                     auto cookies = response->cookies();
                     for (auto const &cookie : cookies)
@@ -33,7 +33,7 @@ int main()
                                   << ":domain=" << cookie.second.domain()
                                   << std::endl;
                     }
-                    std::cout << "count=" << count << std::endl;
+                    std::cout << "count=" << nth_resp << std::endl;
                 });
         }
     }
