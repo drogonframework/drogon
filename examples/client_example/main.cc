@@ -20,8 +20,7 @@ int main()
         for (int i = 0; i < 10; ++i)
         {
             client->sendRequest(
-                req,
-                [](ReqResult result, const HttpResponsePtr &response) {
+                req, [](ReqResult result, const HttpResponsePtr &response) {
                     std::cout << "receive response!" << std::endl;
                     // auto headers=response.
                     ++nth_resp;
