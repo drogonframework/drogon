@@ -15,6 +15,7 @@
 #include "MysqlConnection.h"
 #include "MysqlResultImpl.h"
 #include <algorithm>
+#include <drogon/orm/DbTypes.h>
 #include <drogon/utils/Utilities.h>
 #include <drogon/utils/string_view.h>
 #include <errmsg.h>
@@ -428,24 +429,24 @@ void MysqlConnection::execSqlInLoop(
                 pos = seekPos + 1;
                 switch (format[i])
                 {
-                    case MYSQL_TYPE_TINY:
+                    case internal::MySqlTiny:
                         sql_.append(std::to_string(*((char *)parameters[i])));
                         break;
-                    case MYSQL_TYPE_SHORT:
+                    case internal::MySqlShort:
                         sql_.append(std::to_string(*((short *)parameters[i])));
                         break;
-                    case MYSQL_TYPE_LONG:
+                    case internal::MySqlLong:
                         sql_.append(
                             std::to_string(*((int32_t *)parameters[i])));
                         break;
-                    case MYSQL_TYPE_LONGLONG:
+                    case internal::MySqlLongLong:
                         sql_.append(
                             std::to_string(*((int64_t *)parameters[i])));
                         break;
-                    case MYSQL_TYPE_NULL:
+                    case internal::MySqlNull:
                         sql_.append("NULL");
                         break;
-                    case MYSQL_TYPE_STRING:
+                    case internal::MySqlString:
                     {
                         sql_.append("'");
                         std::string to(length[i] * 2, '\0');
@@ -458,6 +459,9 @@ void MysqlConnection::execSqlInLoop(
                         sql_.append("'");
                     }
                     break;
+                    case internal::DrogonDefaultValue:
+                        sql_.append("default");
+                        break;
                     default:
                         break;
                 }

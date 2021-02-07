@@ -13,6 +13,7 @@
  */
 
 #pragma once
+#include <drogon/orm/DbTypes.h>
 #include <drogon/orm/Exception.h>
 #include <drogon/orm/Field.h>
 #include <drogon/orm/FunctionTraits.h>
@@ -432,6 +433,7 @@ class SqlBinder
     }
     self &operator<<(double f);
     self &operator<<(std::nullptr_t nullp);
+    self &operator<<(DefaultValue dv);
     self &operator<<(const Mode &mode)
     {
         mode_ = mode;
@@ -466,7 +468,7 @@ class SqlBinder
     int getMysqlTypeBySize(size_t size);
     std::shared_ptr<std::string> sqlPtr_;
     const char *sqlViewPtr_;
-    const size_t sqlViewLength_;
+    size_t sqlViewLength_;
     DbClient &client_;
     size_t parametersNumber_{0};
     std::vector<const char *> parameters_;

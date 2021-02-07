@@ -1163,5 +1163,15 @@ std::string getMd5(const char *data, const size_t dataLen)
 #endif
 }
 
+void replaceAll(std::string &s, const std::string &from, const std::string &to)
+{
+    size_t pos = 0;
+    while ((pos = s.find(from, pos)) != std::string::npos)
+    {
+        s.replace(pos, from.size(), to);
+        pos += to.size();
+    }
+}
+
 }  // namespace utils
 }  // namespace drogon

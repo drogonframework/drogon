@@ -14,6 +14,7 @@
  */
 #include <drogon/config.h>
 #include <drogon/orm/DbClient.h>
+#include <drogon/orm/DbTypes.h>
 #include <trantor/utils/Logger.h>
 #include <chrono>
 #include <iostream>
@@ -125,12 +126,12 @@ void doPostgreTest(const drogon::orm::DbClientPtr &clientPtr)
                        "postgresql - DbClient streaming-type interface(0)");
         };
     /// 1.2 insert,blocking
-    *clientPtr << "insert into users (user_id,user_name,password,org_name) "
-                  "values($1,$2,$3,$4) returning *"
-               << "pg1"
-               << "postgresql1"
-               << "123"
-               << "default" << Mode::Blocking >>
+    *clientPtr
+            << "insert into users (user_id,user_name,admin,password,org_name) "
+               "values($1,$2,$3,$4,$5) returning *"
+            << "pg1"
+            << "postgresql1" << drogon::orm::DefaultValue{} << "123"
+            << "default" << Mode::Blocking >>
         [](const Result &r) {
             // std::cout << "id=" << r[0]["id"].as<int64_t>() << std::endl;
             testOutput(r[0]["id"].as<int64_t>() == 2,
@@ -811,12 +812,13 @@ void doMysqlTest(const drogon::orm::DbClientPtr &clientPtr)
         };
     /// Test1:DbClient streaming-type interface
     /// 1.1 insert,non-blocking
-    *clientPtr << "insert into users (user_id,user_name,password,org_name) "
-                  "values(?,?,?,?)"
-               << "pg"
-               << "postgresql"
-               << "123"
-               << "default" >>
+    *clientPtr
+            << "insert into users (user_id,user_name,password,org_name,admin) "
+               "values(?,?,?,?,?)"
+            << "pg"
+            << "postgresql"
+            << "123"
+            << "default" << drogon::orm::DefaultValue{} >>
         [](const Result &r) {
             testOutput(r.insertId() == 1,
                        "mysql - DbClient streaming-type interface(0)");
