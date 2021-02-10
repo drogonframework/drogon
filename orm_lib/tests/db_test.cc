@@ -15,6 +15,7 @@
 #include <drogon/config.h>
 #include <drogon/orm/DbClient.h>
 #include <drogon/orm/DbTypes.h>
+#include <drogon/orm/CoroMapper.h>
 #include <trantor/utils/Logger.h>
 #include <chrono>
 #include <iostream>
@@ -775,6 +776,30 @@ void doPostgreTest(const drogon::orm::DbClientPtr &clientPtr)
         {
             std::cerr << e.base().what() << std::endl;
             testOutput(false, "postgresql - DbClient coroutine interface(2)");
+        }
+        /// 7.4 CoroMapper
+        try
+        {
+            CoroMapper<Users> mapper(clientPtr);
+            auto user = co_await mapper.findByPrimaryKey(2);
+            testOutput(true, "postgresql - ORM mapper coroutine interface(0)");
+        }
+        catch (const DrogonDbException &e)
+        {
+            std::cerr << e.base().what() << std::endl;
+            testOutput(false,
+                       "postgresql - ORM mapper coroutine  interface(0)");
+        }
+        try
+        {
+            CoroMapper<Users> mapper(clientPtr);
+            auto user = co_await mapper.findByPrimaryKey(314);
+            testOutput(false, "postgresql - ORM mapper coroutine interface(0)");
+        }
+        catch (const DrogonDbException &e)
+        {
+            std::cerr << e.base().what() << std::endl;
+            testOutput(true, "postgresql - ORM mapper coroutine  interface(0)");
         }
     };
     drogon::sync_wait(coro_test());
