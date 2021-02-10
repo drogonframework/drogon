@@ -743,9 +743,9 @@ void doPostgreTest(const drogon::orm::DbClientPtr &clientPtr)
             testOutput(result.size() != 0,
                        "postgresql - DbClient coroutine interface(0)");
         }
-        catch (const Failure &e)
+        catch (const DrogonDbException &e)
         {
-            std::cerr << e.what() << std::endl;
+            std::cerr << e.base().what() << std::endl;
             testOutput(false, "postgresql - DbClient coroutine interface(0)");
         }
         /// 7.2 Parameter binding
@@ -756,9 +756,9 @@ void doPostgreTest(const drogon::orm::DbClientPtr &clientPtr)
             testOutput(result.size() != 0,
                        "postgresql - DbClient coroutine interface(1)");
         }
-        catch (const Failure &e)
+        catch (const DrogonDbException &e)
         {
-            std::cerr << e.what() << std::endl;
+            std::cerr << e.base().what() << std::endl;
             testOutput(false, "postgresql - DbClient coroutine interface(1)");
         }
         /// 7.3 Transactions
@@ -771,9 +771,9 @@ void doPostgreTest(const drogon::orm::DbClientPtr &clientPtr)
             testOutput(result.size() != 0,
                        "postgresql - DbClient coroutine interface(2)");
         }
-        catch (const Failure &e)
+        catch (const DrogonDbException &e)
         {
-            std::cerr << e.what() << std::endl;
+            std::cerr << e.base().what() << std::endl;
             testOutput(false, "postgresql - DbClient coroutine interface(2)");
         }
     };
@@ -1411,9 +1411,9 @@ void doMysqlTest(const drogon::orm::DbClientPtr &clientPtr)
             testOutput(result.size() != 0,
                        "mysql - DbClient coroutine interface(0)");
         }
-        catch (const Failure &e)
+        catch (const DrogonDbException &e)
         {
-            std::cerr << e.what() << std::endl;
+            std::cerr << e.base().what() << std::endl;
             testOutput(false, "mysql - DbClient coroutine interface(0)");
         }
         /// 7.2 Parameter binding
@@ -1424,9 +1424,9 @@ void doMysqlTest(const drogon::orm::DbClientPtr &clientPtr)
             testOutput(result.size() != 0,
                        "mysql - DbClient coroutine interface(1)");
         }
-        catch (const Failure &e)
+        catch (const DrogonDbException &e)
         {
-            std::cerr << e.what() << std::endl;
+            std::cerr << e.base().what() << std::endl;
             testOutput(false, "mysql - DbClient coroutine interface(1)");
         }
     };
@@ -2091,9 +2091,9 @@ void doSqliteTest(const drogon::orm::DbClientPtr &clientPtr)
             testOutput(result.size() != 0,
                        "sqlite3 - DbClient coroutine interface(0)");
         }
-        catch (const Failure &e)
+        catch (const DrogonDbException &e)
         {
-            std::cerr << e.what() << std::endl;
+            std::cerr << e.base().what() << std::endl;
             testOutput(false, "sqlite3 - DbClient coroutine interface(0)");
         }
         /// 7.2 Parameter binding
@@ -2104,9 +2104,9 @@ void doSqliteTest(const drogon::orm::DbClientPtr &clientPtr)
             testOutput(result.size() != 0,
                        "sqlite3 - DbClient coroutine interface(1)");
         }
-        catch (const Failure &e)
+        catch (const DrogonDbException &e)
         {
-            std::cerr << e.what() << std::endl;
+            std::cerr << e.base().what() << std::endl;
             testOutput(false, "sqlite3 - DbClient coroutine interface(1)");
         }
     };
