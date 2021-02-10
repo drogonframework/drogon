@@ -33,7 +33,7 @@ using namespace drogon::orm;
 #define GREEN "\033[32m" /* Green */
 
 #ifdef __cpp_impl_coroutine
-constexpr int postgre_tests = 46;
+constexpr int postgre_tests = 47;
 constexpr int mysql_tests = 47;
 constexpr int sqlite_tests = 49;
 #else
@@ -760,6 +760,19 @@ void doPostgreTest(const drogon::orm::DbClientPtr &clientPtr)
         {
             std::cerr << e.what() << std::endl;
             testOutput(false, "postgresql - DbClient coroutine interface(1)");
+        }
+        /// 7.3 Transactions
+        try
+        {
+            auto trans = co_await clientPtr->newTransactionCoro();
+            auto result =
+                co_await trans->execSqlCoro("select * from users where 1=$1;",
+                                            1);
+            testOutput(result.size() != 0,
+                       "postgresql - DbClient coroutine interface(1)");
+        }
+        catch (const Failure &e)
+        {
         }
     };
     drogon::sync_wait(coro_test());
