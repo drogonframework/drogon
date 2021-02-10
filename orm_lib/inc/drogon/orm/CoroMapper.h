@@ -39,7 +39,7 @@ struct MapperAwaiter : public CallbackAwaiter<ReturnType>
                 handle.resume();
             },
             [handle, this](const DrogonDbException &e) {
-                setException(std::make_exception_ptr(e));
+                this->setException(std::make_exception_ptr(e));
                 handle.resume();
             });
     }
@@ -63,13 +63,9 @@ class CoroMapper : public Mapper<T>
             [mapper = *this, key](
                 std::function<void(T)> &&callback,
                 std::function<void(const DrogonDbException &)> &&errCallback) {
-                mapper.findByPrimaryKey(
-                    key,
-                    [callback = std::move(callback)](T result) {
-                        callback(std::move(result));
-                    },
-                    [errCallback = std::move(errCallback)](
-                        const DrogonDbException &err) { errCallback(err); });
+                mapper.findByPrimaryKey(key,
+                                        std::move(callback),
+                                        std::move(errCallback));
             });
     }
 };

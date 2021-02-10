@@ -46,7 +46,7 @@ namespace internal
 #ifdef __cpp_impl_coroutine
 struct SqlAwaiter : public CallbackAwaiter<Result>
 {
-    SqlAwaiter(internal::SqlBinder &&binder) : binder_(binder)
+    SqlAwaiter(internal::SqlBinder &&binder) : binder_(std::move(binder))
     {
     }
 

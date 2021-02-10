@@ -374,7 +374,7 @@ struct CallbackAwaiter
     // entire struct to be constructed for awaiting. std::optional takes care of
     // that.
     optional<T> result_;
-    std::exception_ptr exception_ = nullptr;
+    std::exception_ptr exception_{nullptr};
 
   protected:
     void setException(const std::exception_ptr &e)
