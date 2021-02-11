@@ -86,36 +86,40 @@ class CoroMapper : public Mapper<T>
     }
     inline const Task<size_t> count(Criteria criteria = Criteria())
     {
-        co_return co_await internal::MapperAwaiter<size_t>(
+        auto lb =
             [this, criteria](
                 std::function<void(const size_t)> &&callback,
                 std::function<void(const DrogonDbException &)> &&errCallback) {
                 Mapper<T>::count(criteria,
                                  std::move(callback),
                                  std::move(errCallback));
-            });
+            };
+        co_return co_await internal::MapperAwaiter<size_t>(std::move(lb));
     }
     inline const Task<T> findOne(Criteria criteria)
     {
-        co_return co_await internal::MapperAwaiter<T>(
+        auto lb =
             [this, criteria](
                 std::function<void(T)> &&callback,
                 std::function<void(const DrogonDbException &)> &&errCallback) {
                 Mapper<T>::findOne(criteria,
                                    std::move(callback),
                                    std::move(errCallback));
-            });
+            };
+        co_return co_await internal::MapperAwaiter<T>(std::move(lb));
     }
     inline const Task<std::vector<T>> findBy(Criteria criteria)
     {
-        co_return co_await internal::MapperAwaiter<std::vector<T>>(
+        auto lb =
             [this, criteria](
                 std::function<void(std::vector<T>)> &&callback,
                 std::function<void(const DrogonDbException &)> &&errCallback) {
                 Mapper<T>::findBy(criteria,
                                   std::move(callback),
                                   std::move(errCallback));
-            });
+            };
+        co_return co_await internal::MapperAwaiter<std::vector<T>>(
+            std::move(lb));
     }
 };
 }  // namespace orm
