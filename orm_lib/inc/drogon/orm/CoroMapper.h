@@ -79,7 +79,7 @@ class CoroMapper : public Mapper<T>
     }
     inline const Task<const size_t> count(const Criteria &criteria = Criteria())
     {
-        co_return co_await internal::MapperAwaiter<const size_t>(
+        co_return co_await internal::MapperAwaiter<size_t>(
             [this, criteria](
                 std::function<void(const size_t)> &&callback,
                 std::function<void(const DrogonDbException &)> &&errCallback) {
