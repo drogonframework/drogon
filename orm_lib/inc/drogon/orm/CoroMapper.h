@@ -72,16 +72,16 @@ class CoroMapper : public Mapper<T>
     {
         co_return co_await internal::MapperAwaiter<std::vector<T>>(
             [this](
-                std::function<void(T)> &&callback,
+                std::function<void(std::vector<T>)> &&callback,
                 std::function<void(const DrogonDbException &)> &&errCallback) {
                 Mapper<T>::findAll(std::move(callback), std::move(errCallback));
             });
     }
-    inline const Task<size_t> count(const Criteria &criteria = Criteria())
+    inline const Task<const size_t> count(const Criteria &criteria = Criteria())
     {
-        co_return co_await internal::MapperAwaiter<size_t>(
+        co_return co_await internal::MapperAwaiter<const size_t>(
             [this, criteria](
-                std::function<void(T)> &&callback,
+                std::function<void(const size_t)> &&callback,
                 std::function<void(const DrogonDbException &)> &&errCallback) {
                 Mapper<T>::count(criteria,
                                  std::move(callback),
