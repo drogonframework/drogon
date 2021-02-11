@@ -64,27 +64,30 @@ class CoroMapper : public Mapper<T>
     {
     }
     using TraitsPKType = typename Mapper<T>::TraitsPKType;
-    inline const Task<T> findByPrimaryKey(TraitsPKType key)
+    inline const Task<T> findByPrimaryKey(const TraitsPKType &key)
     {
-        co_return co_await internal::MapperAwaiter<T>(
+        auto lb =
             [this, key](
                 std::function<void(T)> &&callback,
                 std::function<void(const DrogonDbException &)> &&errCallback) {
                 Mapper<T>::findByPrimaryKey(key,
                                             std::move(callback),
                                             std::move(errCallback));
-            });
+            };
+        co_return co_await internal::MapperAwaiter<T>(std::move(lb));
     }
     inline const Task<std::vector<T>> findAll()
     {
-        co_return co_await internal::MapperAwaiter<std::vector<T>>(
+        auto lb =
             [this](
                 std::function<void(std::vector<T>)> &&callback,
                 std::function<void(const DrogonDbException &)> &&errCallback) {
                 Mapper<T>::findAll(std::move(callback), std::move(errCallback));
-            });
+            };
+        co_return co_await internal::MapperAwaiter<std::vector<T>>(
+            std::move(lb));
     }
-    inline const Task<size_t> count(Criteria criteria = Criteria())
+    inline const Task<size_t> count(const Criteria &criteria = Criteria())
     {
         auto lb =
             [this, criteria](
@@ -96,7 +99,7 @@ class CoroMapper : public Mapper<T>
             };
         co_return co_await internal::MapperAwaiter<size_t>(std::move(lb));
     }
-    inline const Task<T> findOne(Criteria criteria)
+    inline const Task<T> findOne(const Criteria &criteria)
     {
         auto lb =
             [this, criteria](
@@ -108,7 +111,7 @@ class CoroMapper : public Mapper<T>
             };
         co_return co_await internal::MapperAwaiter<T>(std::move(lb));
     }
-    inline const Task<std::vector<T>> findBy(Criteria criteria)
+    inline const Task<std::vector<T>> findBy(const Criteria &criteria)
     {
         auto lb =
             [this, criteria](
@@ -120,6 +123,24 @@ class CoroMapper : public Mapper<T>
             };
         co_return co_await internal::MapperAwaiter<std::vector<T>>(
             std::move(lb));
+    }
+    inline const Task<T> insert(const T &obj)
+    {
+        auto lb = [this, obj](std::function<void(T)> &&callback,
+                              std::function<void(const DrogonDbException &)>
+                                  &&errCallback) {
+            Mapper<T>::insert(obj, std::move(callback), std::move(errCallback));
+        };
+        co_return co_await internal::MapperAwaiter<T>(std::move(lb));
+    }
+    inline const Task<size_t> update(const T &obj)
+    {
+        auto lb = [this, obj](std::function<void(const size_t)> &&callback,
+                              std::function<void(const DrogonDbException &)>
+                                  &&errCallback) {
+            Mapper<T>::update(obj, std::move(callback), std::move(errCallback));
+        };
+        co_return co_await internal::MapperAwaiter<size_t>(std::move(lb));
     }
 };
 }  // namespace orm
