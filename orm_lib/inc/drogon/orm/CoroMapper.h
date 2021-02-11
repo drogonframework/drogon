@@ -49,6 +49,13 @@ struct MapperAwaiter : public CallbackAwaiter<ReturnType>
 };
 }  // namespace internal
 
+/**
+ * @brief This template implements coroutine interfaces of ORM. All the methods
+ * of this template are coroutine versions of the synchronous interfaces of the
+ * orm::Mapper template.
+ *
+ * @tparam T The type of the model.
+ */
 template <typename T>
 class CoroMapper : public Mapper<T>
 {
@@ -77,7 +84,7 @@ class CoroMapper : public Mapper<T>
                 Mapper<T>::findAll(std::move(callback), std::move(errCallback));
             });
     }
-    inline const Task<const size_t> count(const Criteria &criteria = Criteria())
+    inline const Task<size_t> count(const Criteria &criteria = Criteria())
     {
         co_return co_await internal::MapperAwaiter<size_t>(
             [this, criteria](
