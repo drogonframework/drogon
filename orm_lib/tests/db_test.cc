@@ -36,7 +36,7 @@ using namespace drogon::orm;
 #ifdef __cpp_impl_coroutine
 constexpr int postgre_tests = 50;
 constexpr int mysql_tests = 47;
-constexpr int sqlite_tests = 49;
+constexpr int sqlite_tests = 51;
 #else
 constexpr int postgre_tests = 44;
 constexpr int mysql_tests = 45;
@@ -762,23 +762,7 @@ void doPostgreTest(const drogon::orm::DbClientPtr &clientPtr)
             std::cerr << e.base().what() << std::endl;
             testOutput(false, "postgresql - DbClient coroutine interface(1)");
         }
-        /// 7.3 Transactions
-        try
-        {
-            auto trans = co_await clientPtr->newTransactionCoro();
-            auto result =
-                co_await trans->execSqlCoro("select * from users where 1=$1;",
-                                            1);
-            testOutput(result.size() != 0,
-                       "postgresql - DbClient coroutine interface(2)");
-        }
-        catch (const DrogonDbException &e)
-        {
-            std::cerr << e.base().what() << std::endl;
-            testOutput(false, "postgresql - DbClient coroutine interface(2)");
-        }
-        std::cout<<"7.4"<<std::endl;
-        /// 7.4 CoroMapper
+        /// 7.3 CoroMapper
         try
         {
             CoroMapper<Users> mapper(clientPtr);
@@ -787,12 +771,11 @@ void doPostgreTest(const drogon::orm::DbClientPtr &clientPtr)
         }
         catch (const DrogonDbException &e)
         {
-            std::cerr<<"error";
+            std::cerr << "error";
             std::cerr << e.base().what() << std::endl;
             testOutput(false,
                        "postgresql - ORM mapper coroutine  interface(0)");
         }
-      std::cout<<"7.5"<<std::endl;
         try
         {
             CoroMapper<Users> mapper(clientPtr);
@@ -816,6 +799,24 @@ void doPostgreTest(const drogon::orm::DbClientPtr &clientPtr)
         {
             std::cerr << e.base().what() << std::endl;
             testOutput(true, "postgresql - ORM mapper coroutine  interface(2)");
+        }
+        /// 7.4 Transactions
+        try
+        {
+            auto trans = co_await clientPtr->newTransactionCoro();
+            auto result =
+                co_await trans->execSqlCoro("select * from users where 1=$1;",
+                                            1);
+            testOutput(
+                result.size() != 0,
+                "postgresql - DbClient coroutine transaction interface(0)");
+        }
+        catch (const DrogonDbException &e)
+        {
+            std::cerr << e.base().what() << std::endl;
+            testOutput(
+                false,
+                "postgresql - DbClient coroutine transaction interface(0)");
         }
     };
     drogon::sync_wait(coro_test());
@@ -2149,6 +2150,32 @@ void doSqliteTest(const drogon::orm::DbClientPtr &clientPtr)
         {
             std::cerr << e.base().what() << std::endl;
             testOutput(false, "sqlite3 - DbClient coroutine interface(1)");
+        }
+        /// 7.3 ORM CoroMapper
+        try
+        {
+            auto mapper = CoroMapper<Users>(clientPtr);
+            auto user = co_await mapper.findOne(
+                Criteria(Users::Cols::_id, CompareOperator::EQ, 1));
+            testOutput(true, "sqlite3 - CoroMapper coroutine interface(0)");
+        }
+        catch (const DrogonDbException &e)
+        {
+            std::cerr << e.base().what() << std::endl;
+            testOutput(false, "sqlite3 - CoroMapper coroutine interface(0)");
+        }
+        try
+        {
+            auto mapper = CoroMapper<Users>(clientPtr);
+            auto users = co_await mapper.findBy(
+                Criteria(Users::Cols::_id, CompareOperator::EQ, 1));
+            testOutput(users.size() == 1,
+                       "sqlite3 - CoroMapper coroutine interface(1)");
+        }
+        catch (const DrogonDbException &e)
+        {
+            std::cerr << e.base().what() << std::endl;
+            testOutput(false, "sqlite3 - CoroMapper coroutine interface(1)");
         }
     };
     drogon::sync_wait(coro_test());
