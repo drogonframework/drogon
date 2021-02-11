@@ -60,12 +60,12 @@ class CoroMapper : public Mapper<T>
     inline const Task<T> findByPrimaryKey(const TraitsPKType &key)
     {
         co_return co_await internal::MapperAwaiter<T>(
-            [mapper = *this, key](
+            [this, key](
                 std::function<void(T)> &&callback,
                 std::function<void(const DrogonDbException &)> &&errCallback) {
-                mapper.findByPrimaryKey(key,
-                                        std::move(callback),
-                                        std::move(errCallback));
+                Mapper<T>::findByPrimaryKey(key,
+                                            std::move(callback),
+                                            std::move(errCallback));
             });
     }
 };
