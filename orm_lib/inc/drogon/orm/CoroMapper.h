@@ -68,6 +68,26 @@ class CoroMapper : public Mapper<T>
                                             std::move(errCallback));
             });
     }
+    inline const Task<std::vector<T>> findAll()
+    {
+        co_return co_await internal::MapperAwaiter<std::vector<T>>(
+            [this](
+                std::function<void(T)> &&callback,
+                std::function<void(const DrogonDbException &)> &&errCallback) {
+                Mapper<T>::findAll(std::move(callback), std::move(errCallback));
+            });
+    }
+    inline const Task<size_t> count(const Criteria &criteria = Criteria())
+    {
+        co_return co_await internal::MapperAwaiter<size_t>(
+            [this, criteria](
+                std::function<void(T)> &&callback,
+                std::function<void(const DrogonDbException &)> &&errCallback) {
+                Mapper<T>::count(criteria,
+                                 std::move(callback),
+                                 std::move(errCallback));
+            });
+    }
 };
 }  // namespace orm
 }  // namespace drogon

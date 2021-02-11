@@ -794,12 +794,25 @@ void doPostgreTest(const drogon::orm::DbClientPtr &clientPtr)
         {
             CoroMapper<Users> mapper(clientPtr);
             auto user = co_await mapper.findByPrimaryKey(314);
-            testOutput(false, "postgresql - ORM mapper coroutine interface(0)");
+            testOutput(false, "postgresql - ORM mapper coroutine interface(1)");
         }
         catch (const DrogonDbException &e)
         {
             std::cerr << e.base().what() << std::endl;
-            testOutput(true, "postgresql - ORM mapper coroutine  interface(0)");
+            testOutput(true, "postgresql - ORM mapper coroutine  interface(1)");
+        }
+        try
+        {
+            CoroMapper<Users> mapper(clientPtr);
+            auto users = co_await mapper.findAll();
+            auto count = co_await mapper.count();
+            testOutput(users.size() == count,
+                       "postgresql - ORM mapper coroutine  interface(2)");
+        }
+        catch (const DrogonDbException &e)
+        {
+            std::cerr << e.base().what() << std::endl;
+            testOutput(true, "postgresql - ORM mapper coroutine  interface(2)");
         }
     };
     drogon::sync_wait(coro_test());
