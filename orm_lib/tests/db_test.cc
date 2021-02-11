@@ -34,7 +34,7 @@ using namespace drogon::orm;
 #define GREEN "\033[32m" /* Green */
 
 #ifdef __cpp_impl_coroutine
-constexpr int postgre_tests = 49;
+constexpr int postgre_tests = 50;
 constexpr int mysql_tests = 47;
 constexpr int sqlite_tests = 51;
 #else
@@ -787,21 +787,19 @@ void doPostgreTest(const drogon::orm::DbClientPtr &clientPtr)
             std::cerr << e.base().what() << std::endl;
             testOutput(true, "postgresql - ORM mapper coroutine  interface(1)");
         }
-        //        try
-        //        {
-        //            CoroMapper<Users> mapper(clientPtr);
-        //            auto users = co_await mapper.findAll();
-        //            auto count = co_await mapper.count();
-        //            testOutput(users.size() == count,
-        //                       "postgresql - ORM mapper coroutine
-        //                       interface(2)");
-        //        }
-        //        catch (const DrogonDbException &e)
-        //        {
-        //            std::cerr << e.base().what() << std::endl;
-        //            testOutput(true, "postgresql - ORM mapper coroutine
-        //            interface(2)");
-        //        }
+        try
+        {
+            CoroMapper<Users> mapper(clientPtr);
+            auto users = co_await mapper.findAll();
+            auto count = co_await mapper.count();
+            testOutput(users.size() == count,
+                       "postgresql - ORM mapper coroutine  interface(2)");
+        }
+        catch (const DrogonDbException &e)
+        {
+            std::cerr << e.base().what() << std::endl;
+            testOutput(true, "postgresql - ORM mapper coroutine  interface(2)");
+        }
         /// 7.4 Transactions
         try
         {
@@ -2022,23 +2020,17 @@ void doSqliteTest(const drogon::orm::DbClientPtr &clientPtr)
     // 5.4 try to access nonexistent column by index
     try
     {
-        std::cout << "5.4.1\n";
         auto r = clientPtr->execSqlSync("select * from users");
-        std::cout << "5.4.2\n";
         auto row = r.at(0);
-        std::cout << "5.4.3\n";
         row.at(420);
-        std::cout << "5.4.4\n";
         testOutput(false, "sqlite3 - Row throwing exceptions(2)");
     }
     catch (const DrogonDbException &e)
     {
-        std::cout << "5.4.5\n";
-        std::cout << e.base().what() << std::endl;
-        std::cout << "5.4.6\n";
+        std::cerr << e.base().what() << std::endl;
         testOutput(true, "sqlite3 -  Row throwing exceptions(2)");
     }
-    std::cout << "5.5.1\n";
+
     // 5.5 cleanup
     try
     {

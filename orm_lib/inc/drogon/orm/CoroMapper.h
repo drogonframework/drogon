@@ -64,7 +64,7 @@ class CoroMapper : public Mapper<T>
     {
     }
     using TraitsPKType = typename Mapper<T>::TraitsPKType;
-    inline const Task<T> findByPrimaryKey(const TraitsPKType &key)
+    inline const Task<T> findByPrimaryKey(TraitsPKType key)
     {
         co_return co_await internal::MapperAwaiter<T>(
             [this, key](
@@ -84,7 +84,7 @@ class CoroMapper : public Mapper<T>
                 Mapper<T>::findAll(std::move(callback), std::move(errCallback));
             });
     }
-    inline const Task<size_t> count(const Criteria &criteria = Criteria())
+    inline const Task<size_t> count(Criteria criteria = Criteria())
     {
         co_return co_await internal::MapperAwaiter<size_t>(
             [this, criteria](
@@ -95,7 +95,7 @@ class CoroMapper : public Mapper<T>
                                  std::move(errCallback));
             });
     }
-    inline const Task<T> findOne(const Criteria &criteria)
+    inline const Task<T> findOne(Criteria criteria)
     {
         co_return co_await internal::MapperAwaiter<T>(
             [this, criteria](
@@ -106,7 +106,7 @@ class CoroMapper : public Mapper<T>
                                    std::move(errCallback));
             });
     }
-    inline const Task<std::vector<T>> findBy(const Criteria &criteria)
+    inline const Task<std::vector<T>> findBy(Criteria criteria)
     {
         co_return co_await internal::MapperAwaiter<std::vector<T>>(
             [this, criteria](
