@@ -142,6 +142,42 @@ class CoroMapper : public Mapper<T>
         };
         co_return co_await internal::MapperAwaiter<size_t>(std::move(lb));
     }
+    inline const Task<size_t> deleteOne(const T &obj)
+    {
+        auto lb =
+            [this, obj](
+                std::function<void(const size_t)> &&callback,
+                std::function<void(const DrogonDbException &)> &&errCallback) {
+                Mapper<T>::deleteOne(obj,
+                                     std::move(callback),
+                                     std::move(errCallback));
+            };
+        co_return co_await internal::MapperAwaiter<size_t>(std::move(lb));
+    }
+    inline const Task<size_t> deleteBy(const Criteria &criteria)
+    {
+        auto lb =
+            [this, criteria](
+                std::function<void(const size_t)> &&callback,
+                std::function<void(const DrogonDbException &)> &&errCallback) {
+                Mapper<T>::deleteBy(criteria,
+                                    std::move(callback),
+                                    std::move(errCallback));
+            };
+        co_return co_await internal::MapperAwaiter<size_t>(std::move(lb));
+    }
+    inline const Task<size_t> deleteByPrimaryKey(const TraitsPKType &key)
+    {
+        auto lb =
+            [this, key](
+                std::function<void(const size_t)> &&callback,
+                std::function<void(const DrogonDbException &)> &&errCallback) {
+                Mapper<T>::deleteByPrimaryKey(key,
+                                              std::move(callback),
+                                              std::move(errCallback));
+            };
+        co_return co_await internal::MapperAwaiter<size_t>(std::move(lb));
+    }
 };
 }  // namespace orm
 }  // namespace drogon
