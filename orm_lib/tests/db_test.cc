@@ -2034,7 +2034,7 @@ void doSqliteTest(const drogon::orm::DbClientPtr &clientPtr)
     catch (const DrogonDbException &e)
     {
         std::cout << "5.4.5\n";
-        std::cerr << e.base().what() << std::endl;
+        std::cout << e.base().what() << std::endl;
         std::cout << "5.4.6\n";
         testOutput(true, "sqlite3 -  Row throwing exceptions(2)");
     }
