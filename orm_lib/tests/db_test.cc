@@ -2022,17 +2022,23 @@ void doSqliteTest(const drogon::orm::DbClientPtr &clientPtr)
     // 5.4 try to access nonexistent column by index
     try
     {
+        std::cout << "5.4.1\n";
         auto r = clientPtr->execSqlSync("select * from users");
+        std::cout << "5.4.2\n";
         auto row = r.at(0);
+        std::cout << "5.4.3\n";
         row.at(420);
+        std::cout << "5.4.4\n";
         testOutput(false, "sqlite3 - Row throwing exceptions(2)");
     }
     catch (const DrogonDbException &e)
     {
+        std::cout << "5.4.5\n";
         std::cerr << e.base().what() << std::endl;
+        std::cout << "5.4.6\n";
         testOutput(true, "sqlite3 -  Row throwing exceptions(2)");
     }
-
+    std::cout << "5.5.1\n";
     // 5.5 cleanup
     try
     {
