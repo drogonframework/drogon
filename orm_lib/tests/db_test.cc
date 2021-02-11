@@ -777,6 +777,7 @@ void doPostgreTest(const drogon::orm::DbClientPtr &clientPtr)
             std::cerr << e.base().what() << std::endl;
             testOutput(false, "postgresql - DbClient coroutine interface(2)");
         }
+        std::cout<<"7.4"<<std::endl;
         /// 7.4 CoroMapper
         try
         {
@@ -786,10 +787,12 @@ void doPostgreTest(const drogon::orm::DbClientPtr &clientPtr)
         }
         catch (const DrogonDbException &e)
         {
+            std::cerr<<"error";
             std::cerr << e.base().what() << std::endl;
             testOutput(false,
                        "postgresql - ORM mapper coroutine  interface(0)");
         }
+      std::cout<<"7.5"<<std::endl;
         try
         {
             CoroMapper<Users> mapper(clientPtr);
