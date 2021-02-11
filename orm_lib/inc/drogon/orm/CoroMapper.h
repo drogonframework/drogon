@@ -35,7 +35,7 @@ struct MapperAwaiter : public CallbackAwaiter<ReturnType>
     {
         function_(
             [handle, this](ReturnType result) {
-                setValue(std::move(result));
+                this->setValue(std::move(result));
                 handle.resume();
             },
             [handle, this](const DrogonDbException &e) {
