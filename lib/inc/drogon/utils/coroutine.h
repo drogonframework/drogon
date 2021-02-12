@@ -81,7 +81,7 @@ template <typename T>
 constexpr bool is_awaitable_v = is_awaitable<T>::value;
 
 template <typename T>
-struct final_awiter
+struct final_awaiter
 {
     bool await_ready() noexcept
     {
@@ -141,7 +141,7 @@ struct Task
 
         auto final_suspend() noexcept
         {
-            return final_awiter<promise_type>{};
+            return final_awaiter<promise_type>{};
         }
 
         void unhandled_exception()
@@ -248,7 +248,7 @@ struct Task<void>
         }
         auto final_suspend() noexcept
         {
-            return final_awiter<promise_type>{};
+            return final_awaiter<promise_type>{};
         }
         void unhandled_exception()
         {
@@ -511,14 +511,15 @@ struct TimerAwaiter
     double delay_;
 };
 }  // namespace internal
-inline Task<void> sleepCoro(trantor::EventLoop *loop,
-                            const std::chrono::duration<long double> &delay)
+inline Task<void> sleepCoro(
+    trantor::EventLoop *loop,
+    const std::chrono::duration<long double> &delay) noexcept
 {
     assert(loop);
     co_return co_await internal::TimerAwaiter(loop, delay);
 }
 
-inline Task<void> sleepCoro(trantor::EventLoop *loop, double delay)
+inline Task<void> sleepCoro(trantor::EventLoop *loop, double delay) noexcept
 {
     assert(loop);
     co_return co_await internal::TimerAwaiter(loop, delay);
