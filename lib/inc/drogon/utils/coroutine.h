@@ -13,6 +13,8 @@
  */
 #pragma once
 
+#include <drogon/utils/optional.h>
+#include <trantor/net/EventLoop.h>
 #include <algorithm>
 #include <coroutine>
 #include <exception>
@@ -21,7 +23,6 @@
 #include <atomic>
 #include <future>
 #include <cassert>
-#include <drogon/utils/optional.h>
 
 namespace drogon
 {
@@ -478,6 +479,49 @@ inline auto co_future(Await await) noexcept
         }
     }(std::move(prom), std::move(await));
     return fut;
+}
+namespace internal
+{
+struct TimerAwaiter
+{
+    TimerAwaiter(trantor::EventLoop *loop,
+                 const std::chrono::duration<long double> &delay)
+        : loop_(loop), delay_(delay.count())
+    {
+    }
+    TimerAwaiter(trantor::EventLoop *loop, double delay)
+        : loop_(loop), delay_(delay)
+    {
+    }
+    void await_suspend(std::coroutine_handle<> handle)
+    {
+        loop_->runAfter(delay_, [handle, this]() { handle.resume(); });
+    }
+    bool await_ready() noexcept
+    {
+        return false;
+    }
+
+    void await_resume() noexcept(false)
+    {
+    }
+
+  private:
+    trantor::EventLoop *loop_;
+    double delay_;
+};
+}  // namespace internal
+inline Task<void> sleepCoro(trantor::EventLoop *loop,
+                            const std::chrono::duration<long double> &delay)
+{
+    assert(loop);
+    co_return co_await internal::TimerAwaiter(loop, delay);
+}
+
+inline Task<void> sleepCoro(trantor::EventLoop *loop, double delay)
+{
+    assert(loop);
+    co_return co_await internal::TimerAwaiter(loop, delay);
 }
 
 }  // namespace drogon

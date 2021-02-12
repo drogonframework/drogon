@@ -2177,6 +2177,8 @@ void doSqliteTest(const drogon::orm::DbClientPtr &clientPtr)
             std::cerr << e.base().what() << std::endl;
             testOutput(false, "sqlite3 - CoroMapper coroutine interface(1)");
         }
+        co_await drogon::sleepCoro(
+            trantor::EventLoop::getEventLoopOfCurrentThread(), 1.0s);
     };
     drogon::sync_wait(coro_test());
 #endif
