@@ -12,13 +12,16 @@
  *
  */
 #pragma once
-
+#include <memory>
 namespace drogon
 {
 namespace nosql
 {
 class RedisClient
 {
+  public:
+    static std::shared_ptr<RedisClient> newRedisClient(
+        const std::string &connectionString);
 };
 }  // namespace nosql
 }  // namespace drogon
