@@ -400,7 +400,7 @@ struct CallbackAwaiter<void>
         return false;
     }
 
-    void &await_resume() noexcept(false)
+    void await_resume() noexcept(false)
     {
         if (exception_)
             std::rethrow_exception(exception_);
