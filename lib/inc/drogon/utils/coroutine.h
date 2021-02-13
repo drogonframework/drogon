@@ -350,7 +350,7 @@ struct AsyncTask final
 /// Helper class that provices the infrastructure for turning callback into
 /// corourines
 // The user is responsible to fill in `await_suspend()` and construtors.
-template <typename T>
+template <typename T = void>
 struct CallbackAwaiter
 {
     bool await_ready() noexcept
@@ -389,6 +389,30 @@ struct CallbackAwaiter
     void setValue(T &&v)
     {
         result_.emplace(std::move(v));
+    }
+};
+
+template <>
+struct CallbackAwaiter<void>
+{
+    bool await_ready() noexcept
+    {
+        return false;
+    }
+
+    void &await_resume() noexcept(false)
+    {
+        if (exception_)
+            std::rethrow_exception(exception_);
+    }
+
+  private:
+    std::exception_ptr exception_{nullptr};
+
+  protected:
+    void setException(const std::exception_ptr &e)
+    {
+        exception_ = e;
     }
 };
 
@@ -482,7 +506,7 @@ inline auto co_future(Await await) noexcept
 }
 namespace internal
 {
-struct TimerAwaiter
+struct TimerAwaiter : CallbackAwaiter<void>
 {
     TimerAwaiter(trantor::EventLoop *loop,
                  const std::chrono::duration<long double> &delay)
@@ -495,15 +519,7 @@ struct TimerAwaiter
     }
     void await_suspend(std::coroutine_handle<> handle)
     {
-        loop_->runAfter(delay_, [handle, this]() { handle.resume(); });
-    }
-    bool await_ready() noexcept
-    {
-        return false;
-    }
-
-    void await_resume() noexcept(false)
-    {
+        loop_->runAfter(delay_, [handle]() { handle.resume(); });
     }
 
   private:
@@ -511,6 +527,7 @@ struct TimerAwaiter
     double delay_;
 };
 }  // namespace internal
+
 inline Task<void> sleepCoro(
     trantor::EventLoop *loop,
     const std::chrono::duration<long double> &delay) noexcept
