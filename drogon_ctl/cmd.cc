@@ -33,11 +33,10 @@ void exeCommand(std::vector<std::string> &parameters)
     parameters.erase(parameters.begin());
 
     // new command handler to do cmd
-    auto obj = std::shared_ptr<DrObjectBase>(
-        drogon::DrClassMap::newObject(handlerName));
+    auto obj = drogon::DrClassMap::newObject(handlerName);
     if (obj)
     {
-        auto ctl = std::dynamic_pointer_cast<CommandHandler>(obj);
+        auto ctl = dynamic_cast<CommandHandler *>(obj);
         if (ctl)
         {
             ctl->handleCommand(parameters);
