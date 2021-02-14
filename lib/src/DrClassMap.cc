@@ -91,7 +91,8 @@ std::unordered_map<std::string, DrAllocFunc> &DrClassMap::getMap()
     return map;
 }
 
-std::shared_ptr<DrObjectBase> DrClassMap::createUniqueObject(const std::string& className)
+std::shared_ptr<DrObjectBase> DrClassMap::createUniqueObject(
+    const std::string &className)
 {
     auto iter = getMap().find(className);
     if (iter != getMap().end())
