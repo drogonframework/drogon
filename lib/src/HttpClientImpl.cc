@@ -69,7 +69,7 @@ void HttpClientImpl::createTcpClient()
             {
                 LOG_TRACE << "connection disconnect";
                 auto responseParser = connPtr->getContext<HttpResponseParser>();
-                if (responseParser->parseResponseOnClose() &&
+                if (responseParser && responseParser->parseResponseOnClose() &&
                     responseParser->gotAll())
                 {
                     auto &firstReq = thisPtr->pipeliningCallbacks_.front();
