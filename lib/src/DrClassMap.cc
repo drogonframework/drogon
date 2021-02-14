@@ -48,13 +48,9 @@ void DrClassMap::registerClass(const std::string &className,
 
 DrObjectBase *DrClassMap::newObject(const std::string &className)
 {
-    auto iter = getMap().find(className);
-    if (iter != getMap().end())
-    {
-        return iter->second();
-    }
-    else
-        return nullptr;
+    static std::vector<std::shared_ptr<DrObjectBase>> objectHolder;
+    objectHolder.push_back(std::move(createUniqueObject(className)));
+    return objectHolder.back().get();
 }
 
 const std::shared_ptr<DrObjectBase> &DrClassMap::getSingleInstance(
@@ -62,19 +58,13 @@ const std::shared_ptr<DrObjectBase> &DrClassMap::getSingleInstance(
 {
     auto &mtx = internal::getMapMutex();
     auto &singleInstanceMap = internal::getObjsMap();
-    {
-        std::lock_guard<std::mutex> lock(mtx);
-        auto iter = singleInstanceMap.find(className);
-        if (iter != singleInstanceMap.end())
-            return iter->second;
-    }
-    auto newObj = std::shared_ptr<DrObjectBase>(newObject(className));
-    {
-        std::lock_guard<std::mutex> lock(mtx);
-        auto ret = singleInstanceMap.insert(
-            std::make_pair(className, std::move(newObj)));
-        return ret.first->second;
-    }
+    std::lock_guard<std::mutex> lock(mtx);
+    auto iter = singleInstanceMap.find(className);
+    if (iter != singleInstanceMap.end())
+        return iter->second;
+    singleInstanceMap[className] =
+        std::shared_ptr<DrObjectBase>(createUniqueObject(className));
+    return singleInstanceMap[className];
 }
 
 void DrClassMap::setSingleInstance(const std::shared_ptr<DrObjectBase> &ins)
@@ -99,4 +89,13 @@ std::unordered_map<std::string, DrAllocFunc> &DrClassMap::getMap()
 {
     static std::unordered_map<std::string, DrAllocFunc> map;
     return map;
+}
+
+std::shared_ptr<DrObjectBase> DrClassMap::createUniqueObject(const std::string& className)
+{
+    auto iter = getMap().find(className);
+    if (iter != getMap().end())
+        return iter->second();
+    else
+        return nullptr;
 }

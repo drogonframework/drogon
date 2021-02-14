@@ -31,7 +31,7 @@
 namespace drogon
 {
 class DrObjectBase;
-using DrAllocFunc = std::function<DrObjectBase *()>;
+using DrAllocFunc = std::function<std::unique_ptr<DrObjectBase>()>;
 
 /**
  * @brief A map class which can create DrObjects from names.
@@ -78,10 +78,8 @@ class DrClassMap
     {
         static_assert(std::is_base_of<DrObjectBase, T>::value,
                       "T must be a sub-class of DrObjectBase");
-        static auto const singleton =
-            std::dynamic_pointer_cast<T>(getSingleInstance(T::classTypeName()));
-        assert(singleton);
-        return singleton;
+        return std::dynamic_pointer_cast<T>(
+            getSingleInstance(T::classTypeName()));
     }
 
     /**
@@ -119,16 +117,20 @@ class DrClassMap
         LOG_ERROR << "Demangle error!";
         return "";
 #else
-        auto pos = strstr(mangled_name, " ");
-        if (pos == nullptr)
-            return std::string{mangled_name};
-        else
-            return std::string{pos + 1};
+        return mangled_name;
 #endif
     }
 
   protected:
+    static std::shared_ptr<DrObjectBase> createUniqueObject(
+        const std::string &name);
     static std::unordered_map<std::string, DrAllocFunc> &getMap();
 };
+
+template <typename T>
+std::string getTypeName()
+{
+    return drogon::DrClassMap::demangle(typeid(T).name());
+}
 
 }  // namespace drogon

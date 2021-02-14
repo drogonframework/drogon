@@ -23,6 +23,7 @@
 #pragma warning(disable : 4250)
 #endif
 
+
 namespace drogon
 {
 /**
@@ -79,9 +80,8 @@ class DrObject : public virtual DrObjectBase
 
   protected:
     // protect constructor to make this class only inheritable
-    DrObject()
-    {
-    }
+    DrObject() = default;
+    virtual ~DrObject() = default;
 
   private:
     class DrAllocator
@@ -103,7 +103,7 @@ class DrObject : public virtual DrObjectBase
         registerClass()
         {
             DrClassMap::registerClass(className(),
-                                      []() -> DrObjectBase * { return new T; });
+                                      []() { return std::make_unique<T>(); });
         }
         template <typename D>
         typename std::enable_if<!std::is_default_constructible<D>::value,
