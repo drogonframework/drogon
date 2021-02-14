@@ -117,7 +117,11 @@ class DrClassMap
         LOG_ERROR << "Demangle error!";
         return "";
 #else
-        return mangled_name;
+        auto pos = strstr(mangled_name, " ");
+        if (pos == nullptr)
+            return std::string{mangled_name};
+        else
+            return std::string{pos + 1};
 #endif
     }
 
