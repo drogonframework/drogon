@@ -10,7 +10,7 @@ void TestController::asyncHandleHttpRequest(
     ++(threadIndex_.getThreadData());
     auto resp = HttpResponse::newHttpResponse();
     resp->setContentTypeCodeAndCustomString(CT_TEXT_PLAIN,
-                                            "Content-Type: plaintext\r\n");
+                                            "content-type: plaintext\r\n");
     resp->setBody("<p>Hello, world!</p>");
     resp->setExpiredTime(20);
     callback(resp);

@@ -296,15 +296,15 @@ void HttpResponseImpl::makeHeaderString(trantor::MsgBuffer &buffer)
                 filestat.st_size);
         }
         buffer.hasWritten(len);
-        if (headers_.find("Connection") == headers_.end())
+        if (headers_.find("connection") == headers_.end())
         {
             if (closeConnection_)
             {
-                buffer.append("Connection: close\r\n");
+                buffer.append("connection: close\r\n");
             }
             else if (version_ == Version::kHttp10)
             {
-                buffer.append("Connection: Keep-Alive\r\n");
+                buffer.append("connection: Keep-Alive\r\n");
             }
         }
         buffer.append(contentTypeString_.data(), contentTypeString_.length());
@@ -354,7 +354,7 @@ void HttpResponseImpl::renderToBuffer(trantor::MsgBuffer &buffer)
     if (!passThrough_ &&
         drogon::HttpAppFrameworkImpl::instance().sendDateHeader())
     {
-        buffer.append("Date: ");
+        buffer.append("date: ");
         buffer.append(utils::getHttpFullDate(trantor::Date::date()),
                       httpFullDateStringLength);
         buffer.append("\r\n\r\n");
@@ -426,7 +426,7 @@ std::shared_ptr<trantor::MsgBuffer> HttpResponseImpl::renderToBuffer()
     if (!passThrough_ &&
         drogon::HttpAppFrameworkImpl::instance().sendDateHeader())
     {
-        httpString->append("Date: ");
+        httpString->append("date: ");
         auto datePos = httpString->readableBytes();
         httpString->append(utils::getHttpFullDate(trantor::Date::date()),
                            httpFullDateStringLength);
@@ -475,7 +475,7 @@ std::shared_ptr<trantor::MsgBuffer> HttpResponseImpl::
     if (!passThrough_ &&
         drogon::HttpAppFrameworkImpl::instance().sendDateHeader())
     {
-        httpString->append("Date: ");
+        httpString->append("date: ");
         httpString->append(utils::getHttpFullDate(trantor::Date::date()),
                            httpFullDateStringLength);
         httpString->append("\r\n\r\n");

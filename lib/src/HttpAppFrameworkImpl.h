@@ -419,7 +419,7 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     {
         assert(!running_);
         assert(server.find("\r\n") == std::string::npos);
-        serverHeader_ = "Server: " + server + "\r\n";
+        serverHeader_ = "server: " + server + "\r\n";
         return *this;
     }
 
@@ -549,7 +549,7 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     size_t sessionTimeout_{0};
     size_t idleConnectionTimeout_{60};
     bool useSession_{false};
-    std::string serverHeader_{"Server: drogon/" + drogon::getVersion() +
+    std::string serverHeader_{"server: drogon/" + drogon::getVersion() +
                               "\r\n"};
 
     const std::unique_ptr<StaticFileRouter> staticFileRouterPtr_;
