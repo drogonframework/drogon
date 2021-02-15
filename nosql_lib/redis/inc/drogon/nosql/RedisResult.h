@@ -13,13 +13,16 @@
  */
 
 #pragma once
-
+#include <string>
 namespace drogon
 {
 namespace nosql
 {
 class RedisResult
 {
+  public:
+    virtual ~RedisResult() = default;
+    virtual std::string asString() const = 0;
 };
 }  // namespace nosql
 }  // namespace drogon

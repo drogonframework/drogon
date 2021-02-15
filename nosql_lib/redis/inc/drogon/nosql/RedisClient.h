@@ -12,6 +12,8 @@
  *
  */
 #pragma once
+
+#include <trantor/net/InetAddress.h>
 #include <memory>
 namespace drogon
 {
@@ -21,7 +23,10 @@ class RedisClient
 {
   public:
     static std::shared_ptr<RedisClient> newRedisClient(
-        const std::string &connectionString);
+        const trantor::InetAddress &serverAddress,
+        const size_t connectionNumber,
+        const std::string &password = "");
+    virtual ~RedisClient()=default;
 };
 }  // namespace nosql
 }  // namespace drogon
