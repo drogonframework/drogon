@@ -272,7 +272,7 @@ void HttpRequestImpl::appendToBuffer(trantor::MsgBuffer *output) const
                 content.append("--");
                 content.append(mReq->boundary());
                 content.append("\r\n");
-                content.append("Content-Disposition: form-data; name=\"");
+                content.append("content-disposition: form-data; name=\"");
                 content.append(param.first);
                 content.append("\"\r\n\r\n");
                 content.append(param.second);
@@ -283,7 +283,7 @@ void HttpRequestImpl::appendToBuffer(trantor::MsgBuffer *output) const
                 content.append("--");
                 content.append(mReq->boundary());
                 content.append("\r\n");
-                content.append("Content-Disposition: form-data; name=\"");
+                content.append("content-disposition: form-data; name=\"");
                 content.append(file.itemName());
                 content.append("\"; filename=\"");
                 content.append(file.fileName());
@@ -339,7 +339,7 @@ void HttpRequestImpl::appendToBuffer(trantor::MsgBuffer *output) const
     }
     if (cookies_.size() > 0)
     {
-        output->append("Cookie: ");
+        output->append("cookie: ");
         for (auto it = cookies_.begin(); it != cookies_.end(); ++it)
         {
             output->append(it->first);

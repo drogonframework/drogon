@@ -28,31 +28,31 @@ ContentType getContentType(const std::string &fileName);
 template <typename T>
 inline constexpr const char *contentLengthFormatString()
 {
-    return "Content-Length: %d\r\n";
+    return "content-length: %d\r\n";
 }
 template <>
 inline constexpr const char *contentLengthFormatString<unsigned int>()
 {
-    return "Content-Length: %u\r\n";
+    return "content-length: %u\r\n";
 }
 template <>
 inline constexpr const char *contentLengthFormatString<long>()
 {
-    return "Content-Length: %ld\r\n";
+    return "content-length: %ld\r\n";
 }
 template <>
 inline constexpr const char *contentLengthFormatString<unsigned long>()
 {
-    return "Content-Length: %lu\r\n";
+    return "content-length: %lu\r\n";
 }
 template <>
 inline constexpr const char *contentLengthFormatString<long long>()
 {
-    return "Content-Length: %lld\r\n";
+    return "content-length: %lld\r\n";
 }
 template <>
 inline constexpr const char *contentLengthFormatString<unsigned long long>()
 {
-    return "Content-Length: %llu\r\n";
+    return "content-length: %llu\r\n";
 }
 }  // namespace drogon
