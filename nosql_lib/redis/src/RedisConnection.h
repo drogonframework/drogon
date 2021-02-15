@@ -41,10 +41,31 @@ class RedisConnection : public trantor::NonCopyable,
     {
         disconnectCallback_ = callback;
     }
-    void sendCommand(const string_view &command,
-                     std::function<void(const RedisResult &)> &&callback,
-                     std::function<void(const std::exception &)> &&exceptionCallback,
-                     ...);
+    void sendCommand(
+        const std::string &command,
+        std::function<void(const RedisResult &)> &&callback,
+        std::function<void(const std::exception &)> &&exceptionCallback,
+        ...)
+    {
+        if (loop_->isInLoopThread())
+        {
+            sendCommandInloop(command,
+                              std::move(callback),
+                              std::move(exceptionCallback));
+        }
+        else
+        {
+            loop_->queueInLoop(
+                [this,
+                 callback = std::move(callback),
+                 exceptionCallback = std::move(exceptionCallback),
+                 command]() mutable {
+                    sendCommandInloop(command,
+                                      std::move(callback),
+                                      std::move(exceptionCallback));
+                });
+        }
+    }
 
   private:
     redisAsyncContext *redisContext_{nullptr};
@@ -67,6 +88,11 @@ class RedisConnection : public trantor::NonCopyable,
     void handleRedisRead();
     void handleRedisWrite();
     void handleResult(redisReply *result);
+    void sendCommandInloop(
+        const std::string &command,
+        std::function<void(const RedisResult &)> &&callback,
+        std::function<void(const std::exception &)> &&exceptionCallback,
+        ...);
 };
 }  // namespace nosql
 }  // namespace drogon

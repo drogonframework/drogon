@@ -43,9 +43,22 @@ RedisClientImpl::RedisClientImpl(const trantor::InetAddress &serverAddress,
             connections_.insert(newConnection(loop));
         });
     }
+    loops_.start();
 }
 
-std::shared_ptr<RedisConnection> RedisClientImpl::newConnection(trantor::EventLoop *loop)
+std::shared_ptr<RedisConnection> RedisClientImpl::newConnection(
+    trantor::EventLoop *loop)
 {
     return std::make_shared<RedisConnection>(serverAddr_, password_, loop);
+}
+
+void RedisClientImpl::execCommandAsync(
+    const std::string &command,
+    std::function<void(const RedisResult &)> &&commandCallback,
+    std::function<void(const std::exception &)> &&exceptCallback) noexcept
+{
+    (*connections_.begin())
+         ->sendCommand(command,
+                       std::move(commandCallback),
+                       std::move(exceptCallback));
 }

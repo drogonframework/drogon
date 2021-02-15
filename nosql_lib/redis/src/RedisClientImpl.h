@@ -29,7 +29,11 @@ class RedisClientImpl : public RedisClient, public trantor::NonCopyable
     RedisClientImpl(const trantor::InetAddress &serverAddress,
                     const size_t connectionNumber,
                     const std::string &password = "");
-
+    virtual void execCommandAsync(
+        const std::string &command,
+        std::function<void(const RedisResult &)> &&commandCallback,
+        std::function<void(const std::exception &)>
+        &&exceptCallback) noexcept override;
   private:
     trantor::EventLoopThreadPool loops_;
     std::mutex connectionsMutex_;

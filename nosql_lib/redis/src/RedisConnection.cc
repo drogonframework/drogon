@@ -22,8 +22,7 @@ RedisConnection::RedisConnection(const trantor::InetAddress &serverAddress,
     : serverAddr_(serverAddress), password_(password), loop_(loop)
 {
     assert(loop_);
-    auto thisPtr = shared_from_this();
-    loop_->queueInLoop([thisPtr]() { thisPtr->startConnectionInLoop(); });
+    loop_->queueInLoop([this]() { startConnectionInLoop(); });
 }
 
 void RedisConnection::startConnectionInLoop()
@@ -116,17 +115,17 @@ void RedisConnection::handleRedisRead()
 }
 void RedisConnection::handleRedisWrite()
 {
-    if (!(redisContext_->c.flags & REDIS_CONNECTED))
-    {
-        channel_->disableAll();
-        channel_->remove();
-        channel_.reset();
-    }
+//    if (!(redisContext_->c.flags & REDIS_CONNECTED))
+//    {
+//        channel_->disableAll();
+//        channel_->remove();
+//        channel_.reset();
+//    }
     redisAsyncHandleWrite(redisContext_);
 }
 
-void RedisConnection::sendCommand(
-    const string_view &command,
+void RedisConnection::sendCommandInloop(
+    const std::string &command,
     std::function<void(const RedisResult &)> &&callback,
     std::function<void(const std::exception &)> &&exceptionCallback,
     ...)
