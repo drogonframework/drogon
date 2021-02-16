@@ -15,7 +15,8 @@ class TestB : public DrObject<TestB>
 }  // namespace test
 TEST(DrObjectTest, creationTest)
 {
-    auto obj = DrClassMap::newObject("TestA");
+    using PtrType = std::shared_ptr<DrObjectBase>;
+    auto obj = PtrType(DrClassMap::newObject("TestA"));
     EXPECT_NE(obj, nullptr);
 
     auto objPtr = DrClassMap::getSingleInstance("TestA");
@@ -28,7 +29,8 @@ TEST(DrObjectTest, creationTest)
 
 TEST(DrObjectTest, namespaceTest)
 {
-    auto obj = DrClassMap::newObject("test::TestB");
+    using PtrType = std::shared_ptr<DrObjectBase>;
+    auto obj = PtrType(DrClassMap::newObject("test::TestB"));
     EXPECT_NE(obj, nullptr);
 
     auto objPtr = DrClassMap::getSingleInstance("test::TestB");
