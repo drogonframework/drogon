@@ -444,6 +444,11 @@ set(ORM_HEADERS
         orm_lib/inc/drogon/orm/RestfulController.h)
 install(FILES ${ORM_HEADERS} DESTINATION ${INSTALL_INCLUDE_DIR}/drogon/orm)
 
+set(NOSQL_HEADERS
+        nosql_lib/redis/inc/drogon/nosql/RedisClient.h
+        nosql_lib/redis/inc/drogon/nosql/RedisResult.h)
+install(FILES ${NOSQL_HEADERS} DESTINATION ${INSTALL_INCLUDE_DIR}/drogon/nosql)
+
 set(DROGON_UTIL_HEADERS
         lib/inc/drogon/utils/FunctionTraits.h
         lib/inc/drogon/utils/Utilities.h
