@@ -7,7 +7,7 @@ int main()
 {
     drogon::app().setLogLevel(trantor::Logger::kTrace);
     auto redisClient = drogon::nosql::RedisClient::newRedisClient(
-        trantor::InetAddress("127.0.0.1", 6379));
+        trantor::InetAddress("127.0.0.1", 6379), 1, "123");
 
     std::this_thread::sleep_for(1s);
     redisClient->execCommandAsync(
@@ -19,12 +19,12 @@ int main()
             std::cout << err.what() << std::endl;
         });
     redisClient->execCommandAsync(
-        "auth %s",
+        "echo %s",
         [](const drogon::nosql::RedisResult &r) {
             std::cout << "2:" << r.asString() << std::endl;
         },
         [](const std::exception &err) { std::cout << err.what() << std::endl; },
-        "123");
+        "hello");
     redisClient->execCommandAsync(
         "ping",
         [](const drogon::nosql::RedisResult &r) {

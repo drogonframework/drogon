@@ -58,6 +58,20 @@ class RedisConnection : public trantor::NonCopyable,
         const std::string &command,
         std::function<void(const RedisResult &)> &&callback,
         std::function<void(const std::exception &)> &&exceptionCallback,
+        ...)
+    {
+        va_list args;
+        va_start(args, exceptionCallback);
+        sendvCommand(command,
+                     std::move(callback),
+                     std::move(exceptionCallback),
+                     args);
+        va_end(args);
+    }
+    void sendvCommand(
+        const std::string &command,
+        std::function<void(const RedisResult &)> &&callback,
+        std::function<void(const std::exception &)> &&exceptionCallback,
         va_list ap)
     {
         char *cmd;
@@ -101,6 +115,7 @@ class RedisConnection : public trantor::NonCopyable,
     }
     ~RedisConnection()
     {
+        LOG_TRACE << (int)connected_;
         if (redisContext_ && connected_ != ConnectStatus::kEnd)
             redisAsyncDisconnect(redisContext_);
     }

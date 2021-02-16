@@ -62,17 +62,52 @@ void RedisConnection::startConnectionInLoop()
             {
                 LOG_TRACE << "Connected successfully to "
                           << thisPtr->serverAddr_.toIpPort();
-                thisPtr->connected_ = ConnectStatus::kConnected;
-                if (thisPtr->connectCallback_)
+                if (thisPtr->password_.empty())
                 {
-                    thisPtr->connectCallback_(thisPtr->shared_from_this(),
-                                              status);
+                    thisPtr->connected_ = ConnectStatus::kConnected;
+                    if (thisPtr->connectCallback_)
+                    {
+                        thisPtr->connectCallback_(thisPtr->shared_from_this(),
+                                                  status);
+                    }
+                }
+                else
+                {
+                    std::weak_ptr<RedisConnection> weakThisPtr =
+                        thisPtr->shared_from_this();
+                    thisPtr->sendCommand(
+                        "auth %s",
+                        [weakThisPtr](const RedisResult &r) {
+                            auto thisPtr = weakThisPtr.lock();
+                            if (!thisPtr)
+                                return;
+                            if (r.asString() == "OK")
+                            {
+                                if (thisPtr->connectCallback_)
+                                    thisPtr->connectCallback_(
+                                        thisPtr->shared_from_this(), 0);
+                            }
+                            else
+                            {
+                                LOG_ERROR << r.asString();
+                                thisPtr->disconnect();
+                            }
+                        },
+                        [weakThisPtr](const std::exception &err) {
+                            LOG_ERROR << err.what();
+                            auto thisPtr = weakThisPtr.lock();
+                            if (!thisPtr)
+                                return;
+                            thisPtr->disconnect();
+                        },
+                        thisPtr->password_.data());
                 }
             }
         });
     redisAsyncSetDisconnectCallback(
         redisContext_, [](const redisAsyncContext *context, int status) {
             auto thisPtr = static_cast<RedisConnection *>(context->ev.data);
+
             thisPtr->handleDisconnect();
             if (thisPtr->disconnectCallback_)
             {
@@ -87,13 +122,16 @@ void RedisConnection::startConnectionInLoop()
 
 void RedisConnection::handleDisconnect()
 {
+    LOG_TRACE << "handleDisconnect";
     connected_ = ConnectStatus::kEnd;
-    if (channel_)
-    {
-        channel_->disableAll();
-        channel_->remove();
-        channel_.reset();
-    }
+    channel_->disableAll();
+    channel_->remove();
+    redisContext_->ev.addWrite = nullptr;
+    redisContext_->ev.delWrite = nullptr;
+    redisContext_->ev.addRead = nullptr;
+    redisContext_->ev.delRead = nullptr;
+    redisContext_->ev.cleanup = nullptr;
+    redisContext_->ev.data = nullptr;
 }
 void RedisConnection::addWrite(void *userData)
 {

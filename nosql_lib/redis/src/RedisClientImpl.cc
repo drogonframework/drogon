@@ -114,10 +114,10 @@ void RedisClientImpl::execCommandAsync(
     {
         va_list args;
         va_start(args, exceptionCallback);
-        connPtr->sendCommand(command,
-                             std::move(commandCallback),
-                             std::move(exceptionCallback),
-                             args);
+        connPtr->sendvCommand(command,
+                              std::move(commandCallback),
+                              std::move(exceptionCallback),
+                              args);
         va_end(args);
     }
     else
