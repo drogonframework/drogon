@@ -14,6 +14,7 @@
 
 #include "RedisConnection.h"
 #include "RedisResultImpl.h"
+#include <future>
 
 using namespace drogon::nosql;
 RedisConnection::RedisConnection(const trantor::InetAddress &serverAddress,
@@ -50,34 +51,50 @@ void RedisConnection::startConnectionInLoop()
                 LOG_ERROR << "Failed to connect to "
                           << thisPtr->serverAddr_.toIpPort() << "! "
                           << context->errstr;
+                thisPtr->handleDisconnect();
+                if (thisPtr->disconnectCallback_)
+                {
+                    thisPtr->disconnectCallback_(thisPtr->shared_from_this(),
+                                                 status);
+                }
             }
             else
             {
                 LOG_TRACE << "Connected successfully to "
                           << thisPtr->serverAddr_.toIpPort();
-                thisPtr->connected_ = true;
-            }
-            if (thisPtr->connectCallback_)
-            {
-                thisPtr->connectCallback_(status);
+                thisPtr->connected_ = ConnectStatus::kConnected;
+                if (thisPtr->connectCallback_)
+                {
+                    thisPtr->connectCallback_(thisPtr->shared_from_this(),
+                                              status);
+                }
             }
         });
     redisAsyncSetDisconnectCallback(
         redisContext_, [](const redisAsyncContext *context, int status) {
             auto thisPtr = static_cast<RedisConnection *>(context->ev.data);
-            thisPtr->connected_ = false;
+            thisPtr->handleDisconnect();
             if (thisPtr->disconnectCallback_)
             {
-                thisPtr->disconnectCallback_(status);
+                thisPtr->disconnectCallback_(thisPtr->shared_from_this(),
+                                             status);
             }
-            thisPtr->channel_->disableAll();
-            thisPtr->channel_->remove();
-            thisPtr->channel_.reset();
+
             LOG_TRACE << "Disconnected from "
                       << thisPtr->serverAddr_.toIpPort();
         });
 }
 
+void RedisConnection::handleDisconnect()
+{
+    connected_ = ConnectStatus::kEnd;
+    if (channel_)
+    {
+        channel_->disableAll();
+        channel_->remove();
+        channel_.reset();
+    }
+}
 void RedisConnection::addWrite(void *userData)
 {
     auto thisPtr = static_cast<RedisConnection *>(userData);
@@ -104,9 +121,7 @@ void RedisConnection::delRead(void *userData)
 }
 void RedisConnection::cleanup(void *userData)
 {
-    auto thisPtr = static_cast<RedisConnection *>(userData);
-    assert(thisPtr->channel_);
-    thisPtr->channel_->disableAll();
+    LOG_TRACE << "cleanup";
 }
 
 void RedisConnection::handleRedisRead()
@@ -115,12 +130,11 @@ void RedisConnection::handleRedisRead()
 }
 void RedisConnection::handleRedisWrite()
 {
-//    if (!(redisContext_->c.flags & REDIS_CONNECTED))
-//    {
-//        channel_->disableAll();
-//        channel_->remove();
-//        channel_.reset();
-//    }
+    if (redisContext_->c.flags == REDIS_DISCONNECTING)
+    {
+        channel_->disableAll();
+        channel_->remove();
+    }
     redisAsyncHandleWrite(redisContext_);
 }
 
@@ -130,8 +144,8 @@ void RedisConnection::sendCommandInloop(
     std::function<void(const std::exception &)> &&exceptionCallback,
     ...)
 {
-    commandCallback_ = std::move(callback);
-    exceptionCallback_ = std::move(exceptionCallback);
+    commandCallbacks_.emplace(std::move(callback));
+    exceptionCallbacks_.emplace(std::move(exceptionCallback));
     command_ = command;
     va_list args;
     va_start(args, exceptionCallback);
@@ -149,12 +163,28 @@ void RedisConnection::sendCommandInloop(
 
 void RedisConnection::handleResult(redisReply *result)
 {
+    auto commandCallback = std::move(commandCallbacks_.front());
+    commandCallbacks_.pop();
+    auto exceptionCallback = std::move(exceptionCallbacks_.front());
+    exceptionCallbacks_.pop();
     if (result->type != REDIS_REPLY_ERROR)
     {
-        commandCallback_(RedisResultImpl(result));
+        commandCallback(RedisResultImpl(result));
     }
     else
     {
-        exceptionCallback_(std::runtime_error(result->str));
+        exceptionCallback(std::runtime_error(result->str));
     }
+}
+
+void RedisConnection::disconnect()
+{
+    std::promise<int> pro;
+    auto f = pro.get_future();
+    auto thisPtr = shared_from_this();
+    loop_->runInLoop([thisPtr, &pro]() {
+        redisAsyncDisconnect(thisPtr->redisContext_);
+        pro.set_value(1);
+    });
+    f.get();
 }

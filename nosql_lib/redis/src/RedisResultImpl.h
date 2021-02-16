@@ -27,7 +27,7 @@ class RedisResultImpl : public RedisResult
     }
     ~RedisResultImpl()
     {
-      //  freeReplyObject(result_);
+        //  freeReplyObject(result_);
     }
     virtual std::string asString() const override
     {

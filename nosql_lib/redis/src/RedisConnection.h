@@ -19,13 +19,22 @@
 #include <trantor/net/EventLoop.h>
 #include <trantor/net/Channel.h>
 #include <hiredis/async.h>
+#include <hiredis/hiredis.h>
 #include <memory>
+#include <queue>
 
 namespace drogon
 {
 namespace nosql
 {
 class RedisResult;
+enum class ConnectStatus
+{
+    kNone = 0,
+    kConnecting,
+    kConnected,
+    kEnd
+};
 class RedisConnection : public trantor::NonCopyable,
                         public std::enable_shared_from_this<RedisConnection>
 {
@@ -33,11 +42,15 @@ class RedisConnection : public trantor::NonCopyable,
     RedisConnection(const trantor::InetAddress &serverAddress,
                     const std::string &password,
                     trantor::EventLoop *loop);
-    void setConnectCallback(const std::function<void(int)> &callback)
+    void setConnectCallback(
+        const std::function<void(std::shared_ptr<RedisConnection> &&, int)>
+            &callback)
     {
         connectCallback_ = callback;
     }
-    void setDisconnectCallback(const std::function<void(int)> &callback)
+    void setDisconnectCallback(
+        const std::function<void(std::shared_ptr<RedisConnection> &&, int)>
+            &callback)
     {
         disconnectCallback_ = callback;
     }
@@ -66,6 +79,12 @@ class RedisConnection : public trantor::NonCopyable,
                 });
         }
     }
+    ~RedisConnection()
+    {
+        if (redisContext_ && connected_ != ConnectStatus::kEnd)
+            redisAsyncDisconnect(redisContext_);
+    }
+    void disconnect();
 
   private:
     redisAsyncContext *redisContext_{nullptr};
@@ -73,12 +92,14 @@ class RedisConnection : public trantor::NonCopyable,
     const std::string password_;
     trantor::EventLoop *loop_{nullptr};
     std::unique_ptr<trantor::Channel> channel_{nullptr};
-    std::function<void(int)> connectCallback_;
-    std::function<void(int)> disconnectCallback_;
-    std::function<void(const RedisResult &)> commandCallback_;
-    std::function<void(const std::exception &)> exceptionCallback_;
+    std::function<void(std::shared_ptr<RedisConnection> &&, int)>
+        connectCallback_;
+    std::function<void(std::shared_ptr<RedisConnection> &&, int)>
+        disconnectCallback_;
+    std::queue<std::function<void(const RedisResult &)>> commandCallbacks_;
+    std::queue<std::function<void(const std::exception &)>> exceptionCallbacks_;
     string_view command_;
-    bool connected_{false};
+    ConnectStatus connected_{ConnectStatus::kNone};
     void startConnectionInLoop();
     static void addWrite(void *userData);
     static void delWrite(void *userData);
@@ -93,6 +114,8 @@ class RedisConnection : public trantor::NonCopyable,
         std::function<void(const RedisResult &)> &&callback,
         std::function<void(const std::exception &)> &&exceptionCallback,
         ...);
+    void handleDisconnect();
 };
+using RedisConnectionPtr = std::shared_ptr<RedisConnection>;
 }  // namespace nosql
 }  // namespace drogon
