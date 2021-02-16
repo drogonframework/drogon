@@ -35,8 +35,8 @@ class RedisClientImpl : public RedisClient,
     virtual void execCommandAsync(
         const std::string &command,
         std::function<void(const RedisResult &)> &&commandCallback,
-        std::function<void(const std::exception &)> &&exceptCallback) noexcept
-        override;
+        std::function<void(const std::exception &)> &&exceptionCallback,
+        ...) noexcept override;
     virtual ~RedisClientImpl();
 
   private:

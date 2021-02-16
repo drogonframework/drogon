@@ -32,8 +32,8 @@ class RedisClient
     virtual void execCommandAsync(
         const std::string &command,
         std::function<void(const RedisResult &)> &&commandCallback,
-        std::function<void(const std::exception &)>
-            &&exceptCallback) noexcept = 0;
+        std::function<void(const std::exception &)> &&exceptionCallback,
+        ...) noexcept = 0;
     virtual ~RedisClient() = default;
 };
 }  // namespace nosql

@@ -91,7 +91,8 @@ RedisConnectionPtr RedisClientImpl::newConnection(trantor::EventLoop *loop)
 void RedisClientImpl::execCommandAsync(
     const std::string &command,
     std::function<void(const RedisResult &)> &&commandCallback,
-    std::function<void(const std::exception &)> &&exceptCallback) noexcept
+    std::function<void(const std::exception &)> &&exceptionCallback,
+    ...) noexcept
 {
     RedisConnectionPtr connPtr;
     {
@@ -111,13 +112,17 @@ void RedisClientImpl::execCommandAsync(
     }
     if (connPtr)
     {
+        va_list args;
+        va_start(args, exceptionCallback);
         connPtr->sendCommand(command,
                              std::move(commandCallback),
-                             std::move(exceptCallback));
+                             std::move(exceptionCallback),
+                             args);
+        va_end(args);
     }
     else
     {
-        exceptCallback(std::runtime_error("no connection available!"));
+        exceptionCallback(std::runtime_error("no connection available!"));
     }
 }
 

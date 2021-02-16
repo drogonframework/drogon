@@ -58,11 +58,30 @@ class RedisConnection : public trantor::NonCopyable,
         const std::string &command,
         std::function<void(const RedisResult &)> &&callback,
         std::function<void(const std::exception &)> &&exceptionCallback,
-        ...)
+        va_list ap)
     {
+        char *cmd;
+        auto len = redisvFormatCommand(&cmd, command.data(), ap);
+        if (len == -1)
+        {
+            exceptionCallback(std::runtime_error("Out of memory"));
+            return;
+        }
+        else if (len == -2)
+        {
+            exceptionCallback(std::runtime_error("Invalid format string"));
+            return;
+        }
+        else if (len <= 0)
+        {
+            exceptionCallback(std::runtime_error("Unknown format error"));
+            return;
+        }
+        std::string fullCommand{cmd, static_cast<size_t>(len)};
+        free(cmd);
         if (loop_->isInLoopThread())
         {
-            sendCommandInloop(command,
+            sendCommandInloop(fullCommand,
                               std::move(callback),
                               std::move(exceptionCallback));
         }
@@ -72,8 +91,9 @@ class RedisConnection : public trantor::NonCopyable,
                 [this,
                  callback = std::move(callback),
                  exceptionCallback = std::move(exceptionCallback),
-                 command]() mutable {
-                    sendCommandInloop(command,
+                 fullCommand = std::move(fullCommand),
+                 ap]() mutable {
+                    sendCommandInloop(fullCommand,
                                       std::move(callback),
                                       std::move(exceptionCallback));
                 });
@@ -112,8 +132,7 @@ class RedisConnection : public trantor::NonCopyable,
     void sendCommandInloop(
         const std::string &command,
         std::function<void(const RedisResult &)> &&callback,
-        std::function<void(const std::exception &)> &&exceptionCallback,
-        ...);
+        std::function<void(const std::exception &)> &&exceptionCallback);
     void handleDisconnect();
 };
 using RedisConnectionPtr = std::shared_ptr<RedisConnection>;

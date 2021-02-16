@@ -141,24 +141,21 @@ void RedisConnection::handleRedisWrite()
 void RedisConnection::sendCommandInloop(
     const std::string &command,
     std::function<void(const RedisResult &)> &&callback,
-    std::function<void(const std::exception &)> &&exceptionCallback,
-    ...)
+    std::function<void(const std::exception &)> &&exceptionCallback)
 {
     commandCallbacks_.emplace(std::move(callback));
     exceptionCallbacks_.emplace(std::move(exceptionCallback));
     command_ = command;
-    va_list args;
-    va_start(args, exceptionCallback);
-    redisAsyncCommand(
+
+    redisAsyncFormattedCommand(
         redisContext_,
         [](redisAsyncContext *context, void *r, void *userData) {
             auto thisPtr = static_cast<RedisConnection *>(context->ev.data);
             thisPtr->handleResult(static_cast<redisReply *>(r));
         },
         nullptr,
-        command.data(),
-        args);
-    va_end(args);
+        command.c_str(),
+        command.length());
 }
 
 void RedisConnection::handleResult(redisReply *result)

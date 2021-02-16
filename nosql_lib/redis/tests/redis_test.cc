@@ -16,23 +16,22 @@ int main()
             std::cout << "1:" << r.asString() << std::endl;
         },
         [](const std::exception &err) {
-            std::cerr << err.what() << std::endl;
+            std::cout << err.what() << std::endl;
         });
     redisClient->execCommandAsync(
-        "ping",
+        "auth %s",
         [](const drogon::nosql::RedisResult &r) {
             std::cout << "2:" << r.asString() << std::endl;
         },
-        [](const std::exception &err) {
-            std::cerr << err.what() << std::endl;
-        });
+        [](const std::exception &err) { std::cout << err.what() << std::endl; },
+        "123");
     redisClient->execCommandAsync(
         "ping",
         [](const drogon::nosql::RedisResult &r) {
             std::cout << "3:" << r.asString() << std::endl;
         },
         [](const std::exception &err) {
-            std::cerr << err.what() << std::endl;
+            std::cout << err.what() << std::endl;
         });
     std::cout << "start\n";
     getchar();
