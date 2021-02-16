@@ -249,7 +249,8 @@ find_package(Hiredis)
 if (Hiredis_FOUND)
     target_link_libraries(${PROJECT_NAME} PRIVATE Hiredis_lib)
     set(DROGON_SOURCES ${DROGON_SOURCES} nosql_lib/redis/src/RedisClientImpl.cc
-            nosql_lib/redis/src/RedisConnection.cc)
+            nosql_lib/redis/src/RedisConnection.cc
+            nosql_lib/redis/src/RedisResult.cc)
     if (BUILD_TESTING)
         add_subdirectory(nosql_lib/redis/tests)
     endif (BUILD_TESTING)

@@ -13,7 +13,7 @@
  */
 
 #include "RedisConnection.h"
-#include "RedisResultImpl.h"
+#include <drogon/nosql/RedisResult.h>
 #include <future>
 
 using namespace drogon::nosql;
@@ -33,6 +33,14 @@ void RedisConnection::startConnectionInLoop()
 
     redisContext_ =
         ::redisAsyncConnect(serverAddr_.toIp().c_str(), serverAddr_.toPort());
+    if (redisContext_->err)
+    {
+        LOG_ERROR << "Error: " << redisContext_->errstr;
+        if (disconnectCallback_)
+        {
+            disconnectCallback_(shared_from_this());
+        }
+    }
     redisContext_->ev.addWrite = addWrite;
     redisContext_->ev.delWrite = delWrite;
     redisContext_->ev.addRead = addRead;
@@ -54,8 +62,7 @@ void RedisConnection::startConnectionInLoop()
                 thisPtr->handleDisconnect();
                 if (thisPtr->disconnectCallback_)
                 {
-                    thisPtr->disconnectCallback_(thisPtr->shared_from_this(),
-                                                 status);
+                    thisPtr->disconnectCallback_(thisPtr->shared_from_this());
                 }
             }
             else
@@ -67,8 +74,7 @@ void RedisConnection::startConnectionInLoop()
                     thisPtr->connected_ = ConnectStatus::kConnected;
                     if (thisPtr->connectCallback_)
                     {
-                        thisPtr->connectCallback_(thisPtr->shared_from_this(),
-                                                  status);
+                        thisPtr->connectCallback_(thisPtr->shared_from_this());
                     }
                 }
                 else
@@ -85,7 +91,7 @@ void RedisConnection::startConnectionInLoop()
                             {
                                 if (thisPtr->connectCallback_)
                                     thisPtr->connectCallback_(
-                                        thisPtr->shared_from_this(), 0);
+                                        thisPtr->shared_from_this());
                             }
                             else
                             {
@@ -111,8 +117,7 @@ void RedisConnection::startConnectionInLoop()
             thisPtr->handleDisconnect();
             if (thisPtr->disconnectCallback_)
             {
-                thisPtr->disconnectCallback_(thisPtr->shared_from_this(),
-                                             status);
+                thisPtr->disconnectCallback_(thisPtr->shared_from_this());
             }
 
             LOG_TRACE << "Disconnected from "
@@ -198,13 +203,14 @@ void RedisConnection::sendCommandInloop(
 
 void RedisConnection::handleResult(redisReply *result)
 {
+    LOG_TRACE << "redis reply: " << result->type;
     auto commandCallback = std::move(commandCallbacks_.front());
     commandCallbacks_.pop();
     auto exceptionCallback = std::move(exceptionCallbacks_.front());
     exceptionCallbacks_.pop();
     if (result->type != REDIS_REPLY_ERROR)
     {
-        commandCallback(RedisResultImpl(result));
+        commandCallback(RedisResult(result));
     }
     else
     {

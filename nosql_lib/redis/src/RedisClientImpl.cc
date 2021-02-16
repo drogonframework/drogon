@@ -50,41 +50,38 @@ RedisConnectionPtr RedisClientImpl::newConnection(trantor::EventLoop *loop)
 {
     auto conn = std::make_shared<RedisConnection>(serverAddr_, password_, loop);
     std::weak_ptr<RedisClientImpl> thisWeakPtr = shared_from_this();
-    conn->setConnectCallback(
-        [thisWeakPtr](RedisConnectionPtr &&conn, int status) {
-            assert(status == REDIS_OK);
-            auto thisPtr = thisWeakPtr.lock();
-            if (thisPtr)
+    conn->setConnectCallback([thisWeakPtr](RedisConnectionPtr &&conn) {
+        auto thisPtr = thisWeakPtr.lock();
+        if (thisPtr)
+        {
+            std::lock_guard<std::mutex> lock(thisPtr->connectionsMutex_);
+            thisPtr->readyConnections_.emplace_back(std::move(conn));
+        }
+    });
+    conn->setDisconnectCallback([thisWeakPtr](RedisConnectionPtr &&conn) {
+        // assert(status == REDIS_CONNECTED);
+        auto thisPtr = thisWeakPtr.lock();
+        if (thisPtr)
+        {
+            std::lock_guard<std::mutex> lock(thisPtr->connectionsMutex_);
+            thisPtr->connections_.erase(conn);
+            for (auto iter = thisPtr->readyConnections_.begin();
+                 iter != thisPtr->readyConnections_.end();
+                 ++iter)
             {
-                std::lock_guard<std::mutex> lock(thisPtr->connectionsMutex_);
-                thisPtr->readyConnections_.emplace_back(std::move(conn));
-            }
-        });
-    conn->setDisconnectCallback(
-        [thisWeakPtr](RedisConnectionPtr &&conn, int status) {
-            // assert(status == REDIS_CONNECTED);
-            auto thisPtr = thisWeakPtr.lock();
-            if (thisPtr)
-            {
-                std::lock_guard<std::mutex> lock(thisPtr->connectionsMutex_);
-                thisPtr->connections_.erase(conn);
-                for (auto iter = thisPtr->readyConnections_.begin();
-                     iter != thisPtr->readyConnections_.end();
-                     ++iter)
+                if (*iter == conn)
                 {
-                    if (*iter == conn)
-                    {
-                        thisPtr->readyConnections_.erase(iter);
-                        break;
-                    }
+                    thisPtr->readyConnections_.erase(iter);
+                    break;
                 }
-                auto loop = trantor::EventLoop::getEventLoopOfCurrentThread();
-                assert(loop);
-                loop->runAfter(2.0, [thisPtr, loop]() {
-                    thisPtr->connections_.insert(thisPtr->newConnection(loop));
-                });
             }
-        });
+            auto loop = trantor::EventLoop::getEventLoopOfCurrentThread();
+            assert(loop);
+            loop->runAfter(2.0, [thisPtr, loop]() {
+                thisPtr->connections_.insert(thisPtr->newConnection(loop));
+            });
+        }
+    });
     return conn;
 }
 

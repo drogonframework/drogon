@@ -11,9 +11,17 @@ int main()
 
     std::this_thread::sleep_for(1s);
     redisClient->execCommandAsync(
+        "multi",
+        [](const drogon::nosql::RedisResult &r) {
+            std::cout << "0:" << r.getStringForDisplaying() << std::endl;
+        },
+        [](const std::exception &err) {
+            std::cout << err.what() << std::endl;
+        });
+    redisClient->execCommandAsync(
         "ping",
         [](const drogon::nosql::RedisResult &r) {
-            std::cout << "1:" << r.asString() << std::endl;
+            std::cout << "1:" << r.getStringForDisplaying() << std::endl;
         },
         [](const std::exception &err) {
             std::cout << err.what() << std::endl;
@@ -21,14 +29,28 @@ int main()
     redisClient->execCommandAsync(
         "echo %s",
         [](const drogon::nosql::RedisResult &r) {
-            std::cout << "2:" << r.asString() << std::endl;
+            std::cout << "2:" << r.getStringForDisplaying() << std::endl;
         },
         [](const std::exception &err) { std::cout << err.what() << std::endl; },
         "hello");
     redisClient->execCommandAsync(
-        "ping",
+        "hgetall %s",
         [](const drogon::nosql::RedisResult &r) {
-            std::cout << "3:" << r.asString() << std::endl;
+            std::cout << "3:" << r.getStringForDisplaying() << std::endl;
+        },
+        [](const std::exception &err) { std::cout << err.what() << std::endl; },
+        "haha");
+    redisClient->execCommandAsync(
+        "get %s",
+        [](const drogon::nosql::RedisResult &r) {
+            std::cout << "4:" << r.getStringForDisplaying() << std::endl;
+        },
+        [](const std::exception &err) { std::cout << err.what() << std::endl; },
+        "xxxxx");
+    redisClient->execCommandAsync(
+        "exec",
+        [](const drogon::nosql::RedisResult &r) {
+            std::cout << "e:\n" << r.getStringForDisplaying() << std::endl;
         },
         [](const std::exception &err) {
             std::cout << err.what() << std::endl;
