@@ -2,6 +2,7 @@
 #include <drogon/drogon.h>
 #include <iostream>
 #include <thread>
+
 using namespace std::chrono_literals;
 int main()
 {
@@ -56,5 +57,20 @@ int main()
         [](const std::exception &err) { std::cout << err.what() << std::endl; },
         "exec");
     std::cout << "start\n";
+#ifdef __cpp_impl_coroutine
+    auto coro_test = [redisClient]() -> drogon::Task<> {
+        try
+        {
+            auto r = co_await redisClient->execCommandCoro("get %s", "haha");
+            std::cout << "coro: " << r.getStringForDisplaying() << std::endl;
+        }
+        catch (const std::exception &err)
+        {
+            std::cout << "coro error: " << err.what() << std::endl;
+            LOG_ERROR << err.what();
+        }
+    };
+    drogon::sync_wait(coro_test());
+#endif
     getchar();
 }

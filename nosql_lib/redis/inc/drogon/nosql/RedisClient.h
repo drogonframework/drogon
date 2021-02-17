@@ -16,13 +16,47 @@
 #include <drogon/nosql/RedisResult.h>
 #include <drogon/utils/string_view.h>
 #include <trantor/net/InetAddress.h>
+#include <trantor/utils/Logger.h>
 #include <memory>
 #include <functional>
+#ifdef __cpp_impl_coroutine
+#include <drogon/utils/coroutine.h>
+#endif
 
 namespace drogon
 {
 namespace nosql
 {
+#ifdef __cpp_impl_coroutine
+namespace internal
+{
+struct RedisAwaiter : public CallbackAwaiter<RedisResult>
+{
+    using RedisFunction =
+        std::function<void(std::function<void(const RedisResult &result)> &&,
+                           std::function<void(const std::exception &)> &&)>;
+    RedisAwaiter(RedisFunction &&function) : function_(std::move(function))
+    {
+    }
+    void await_suspend(std::coroutine_handle<> handle)
+    {
+        function_(
+            [handle, this](const RedisResult &result) {
+                this->setValue(std::move(result));
+                handle.resume();
+            },
+            [handle, this](const std::exception &e) {
+                LOG_ERROR << e.what();
+                this->setException(std::make_exception_ptr(e));
+                handle.resume();
+            });
+    }
+
+  private:
+    RedisFunction function_;
+};
+}  // namespace internal
+#endif
 /**
  * @brief This class represents a redis client that comtains several connections
  * to a redis server.
@@ -69,6 +103,24 @@ class RedisClient
         string_view command,
         ...) noexcept = 0;
     virtual ~RedisClient() = default;
+#ifdef __cpp_impl_coroutine
+    template <typename... Arguments>
+    Task<RedisResult> execCommandCoro(string_view command, Arguments... args)
+    {
+        co_return co_await internal::RedisAwaiter(
+            [command,
+             this,
+             args...](std::function<void(const RedisResult &result)>
+                          &&commandCallback,
+                      std::function<void(const std::exception &)>
+                          &&exceptionCallback) {
+                execCommandAsync(std::move(commandCallback),
+                                 std::move(exceptionCallback),
+                                 command,
+                                 args...);
+            });
+    }
+#endif
 };
 }  // namespace nosql
 }  // namespace drogon

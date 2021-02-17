@@ -215,7 +215,8 @@ void RedisConnection::handleResult(redisReply *result)
     }
     else
     {
-        exceptionCallback(std::runtime_error(result->str));
+        exceptionCallback(
+            std::runtime_error(std::string{result->str, result->len}));
     }
 }
 
