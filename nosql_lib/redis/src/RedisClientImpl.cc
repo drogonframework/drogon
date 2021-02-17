@@ -25,18 +25,18 @@ std::shared_ptr<RedisClient> RedisClient::newRedisClient(
 }
 
 RedisClientImpl::RedisClientImpl(const trantor::InetAddress &serverAddress,
-                                 const size_t connectionsNumber,
+                                 const size_t numberOfConnections,
                                  const std::string &password)
-    : loops_(connectionsNumber < std::thread::hardware_concurrency()
-                 ? connectionsNumber
+    : loops_(numberOfConnections < std::thread::hardware_concurrency()
+                 ? numberOfConnections
                  : std::thread::hardware_concurrency(),
              "RedisLoop"),
       serverAddr_(serverAddress),
       password_(password),
-      connectionsNumber_(connectionsNumber)
+      numberOfConnections_(numberOfConnections)
 {
     loops_.start();
-    for (size_t i = 0; i < connectionsNumber_; ++i)
+    for (size_t i = 0; i < numberOfConnections_; ++i)
     {
         auto loop = loops_.getNextLoop();
         loop->queueInLoop([this, loop]() {

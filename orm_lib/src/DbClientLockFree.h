@@ -57,7 +57,7 @@ class DbClientLockFree : public DbClient,
     std::string connectionInfo_;
     trantor::EventLoop *loop_;
     DbConnectionPtr newConnection();
-    const size_t connectionsNumber_;
+    const size_t numberOfConnections_;
     std::vector<DbConnectionPtr> connections_;
     std::vector<DbConnectionPtr> connectionHolders_;
     std::unordered_set<DbConnectionPtr> transSet_;

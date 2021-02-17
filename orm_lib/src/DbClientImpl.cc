@@ -49,7 +49,7 @@ using namespace drogon::orm;
 DbClientImpl::DbClientImpl(const std::string &connInfo,
                            const size_t connNum,
                            ClientType type)
-    : connectionsNumber_(connNum),
+    : numberOfConnections_(connNum),
       loops_(type == ClientType::Sqlite3
                  ? 1
                  : (connNum < std::thread::hardware_concurrency()
@@ -66,7 +66,7 @@ DbClientImpl::DbClientImpl(const std::string &connInfo,
     if (type == ClientType::PostgreSQL)
     {
         std::thread([this]() {
-            for (size_t i = 0; i < connectionsNumber_; ++i)
+            for (size_t i = 0; i < numberOfConnections_; ++i)
             {
                 auto loop = loops_.getNextLoop();
                 loop->runInLoop([this, loop]() {
@@ -79,7 +79,7 @@ DbClientImpl::DbClientImpl(const std::string &connInfo,
     else if (type == ClientType::Mysql)
     {
         std::thread([this]() {
-            for (size_t i = 0; i < connectionsNumber_; ++i)
+            for (size_t i = 0; i < numberOfConnections_; ++i)
             {
                 auto loop = loops_.getNextLoop();
                 loop->runAfter(0.1 * (i + 1), [this, loop]() {
@@ -96,7 +96,7 @@ DbClientImpl::DbClientImpl(const std::string &connInfo,
         auto loop = loops_.getNextLoop();
         loop->runInLoop([this]() {
             std::lock_guard<std::mutex> lock(connectionsMutex_);
-            for (size_t i = 0; i < connectionsNumber_; ++i)
+            for (size_t i = 0; i < numberOfConnections_; ++i)
             {
                 connections_.insert(newConnection(nullptr));
             }

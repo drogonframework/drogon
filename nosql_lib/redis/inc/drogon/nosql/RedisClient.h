@@ -22,12 +22,25 @@ namespace drogon
 {
 namespace nosql
 {
+/**
+ * @brief This class represents a redis client that comtains several connections
+ * to a redis server.
+ *
+ */
 class RedisClient
 {
   public:
+    /**
+     * @brief Create a new redis client with multiple connections;
+     *
+     * @param serverAddress The server address.
+     * @param numberOfConnections The number of connections. 1 by default.
+     * @param password The password to authenticate if necessary.
+     * @return std::shared_ptr<RedisClient>
+     */
     static std::shared_ptr<RedisClient> newRedisClient(
         const trantor::InetAddress &serverAddress,
-        const size_t connectionNumber = 1,
+        const size_t numberOfConnections = 1,
         const std::string &password = "");
     virtual void execCommandAsync(
         const std::string &command,

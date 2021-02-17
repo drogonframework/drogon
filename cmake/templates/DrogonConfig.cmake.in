@@ -36,6 +36,9 @@ endif()
 if(@COZ-PROFILER_FOUND@)
 find_dependency(coz-profiler)
 endif()
+if(@Hiredis_FOUND@)
+find_dependency(Hiredis)
+endif()
 
 # Our library dependencies (contains definitions for IMPORTED targets)
 

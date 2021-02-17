@@ -33,6 +33,7 @@ void RedisConnection::startConnectionInLoop()
 
     redisContext_ =
         ::redisAsyncConnect(serverAddr_.toIp().c_str(), serverAddr_.toPort());
+    status_ = ConnectStatus::kConnecting;
     if (redisContext_->err)
     {
         LOG_ERROR << "Error: " << redisContext_->errstr;
@@ -71,7 +72,7 @@ void RedisConnection::startConnectionInLoop()
                           << thisPtr->serverAddr_.toIpPort();
                 if (thisPtr->password_.empty())
                 {
-                    thisPtr->connected_ = ConnectStatus::kConnected;
+                    thisPtr->status_ = ConnectStatus::kConnected;
                     if (thisPtr->connectCallback_)
                     {
                         thisPtr->connectCallback_(thisPtr->shared_from_this());
@@ -128,7 +129,7 @@ void RedisConnection::startConnectionInLoop()
 void RedisConnection::handleDisconnect()
 {
     LOG_TRACE << "handleDisconnect";
-    connected_ = ConnectStatus::kEnd;
+    status_ = ConnectStatus::kEnd;
     channel_->disableAll();
     channel_->remove();
     redisContext_->ev.addWrite = nullptr;

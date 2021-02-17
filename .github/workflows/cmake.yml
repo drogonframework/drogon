@@ -45,7 +45,7 @@ jobs:
       if: runner.os == 'macOS'
       run: |
         brew install jsoncpp ossp-uuid brotli zlib
-        brew install openssl lz4 mariadb sqlite3 postgresql
+        brew install openssl lz4 mariadb sqlite3 postgresql hiredis
 
     - name: (Linux) Install dependencies
       if: runner.os == 'Linux'

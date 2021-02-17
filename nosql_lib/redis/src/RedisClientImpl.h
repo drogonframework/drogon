@@ -30,7 +30,7 @@ class RedisClientImpl : public RedisClient,
 {
   public:
     RedisClientImpl(const trantor::InetAddress &serverAddress,
-                    const size_t connectionNumber,
+                    const size_t numberOfConnections,
                     const std::string &password = "");
     virtual void execCommandAsync(
         const std::string &command,
@@ -48,7 +48,7 @@ class RedisClientImpl : public RedisClient,
     RedisConnectionPtr newConnection(trantor::EventLoop *loop);
     const trantor::InetAddress serverAddr_;
     const std::string password_;
-    const size_t connectionsNumber_;
+    const size_t numberOfConnections_;
 };
 }  // namespace nosql
 }  // namespace drogon

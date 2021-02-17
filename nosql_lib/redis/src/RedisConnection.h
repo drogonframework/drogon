@@ -115,8 +115,8 @@ class RedisConnection : public trantor::NonCopyable,
     }
     ~RedisConnection()
     {
-        LOG_TRACE << (int)connected_;
-        if (redisContext_ && connected_ != ConnectStatus::kEnd)
+        LOG_TRACE << (int)status_;
+        if (redisContext_ && status_ != ConnectStatus::kEnd)
             redisAsyncDisconnect(redisContext_);
     }
     void disconnect();
@@ -133,7 +133,7 @@ class RedisConnection : public trantor::NonCopyable,
     std::queue<std::function<void(const RedisResult &)>> commandCallbacks_;
     std::queue<std::function<void(const std::exception &)>> exceptionCallbacks_;
     string_view command_;
-    ConnectStatus connected_{ConnectStatus::kNone};
+    ConnectStatus status_{ConnectStatus::kNone};
     void startConnectionInLoop();
     static void addWrite(void *userData);
     static void delWrite(void *userData);

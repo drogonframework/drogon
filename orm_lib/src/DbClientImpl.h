@@ -53,7 +53,7 @@ class DbClientImpl : public DbClient,
     virtual bool hasAvailableConnections() const noexcept override;
 
   private:
-    size_t connectionsNumber_;
+    size_t numberOfConnections_;
     trantor::EventLoopThreadPool loops_;
     std::shared_ptr<SharedMutex> sharedMutexPtr_;
 
