@@ -45,8 +45,7 @@ jobs:
       if: runner.os == 'macOS'
       run: |
         brew install jsoncpp ossp-uuid brotli zlib
-        brew install openssl lz4 mysql mariadb-connector-c sqlite3 postgresql
-        mv /usr/local/include/mysql /usr/local/include/mysql_not_used
+        brew install openssl lz4 mariadb sqlite3 postgresql
 
     - name: (Linux) Install dependencies
       if: runner.os == 'Linux'
@@ -81,7 +80,7 @@ jobs:
       # We'll use this as our working directory for all subsequent commands
       shell: bash
       working-directory: ${{env.GITHUB_WORKSPACE}}
-      if: runner.os != 'macOS' && matrix.buildname != 'ubuntu-20.04/gcc-10'
+      if: matrix.buildname != 'ubuntu-20.04/gcc-10'
       run: |
         mkdir build
         cd build
@@ -99,17 +98,6 @@ jobs:
       env:
         CC: gcc-10
         CXX: g++-10
-    - name: Create Build Environment & Configure Cmake (MacOS)
-      # Some projects don't allow in-source building, so create a separate build directory
-      # We'll use this as our working directory for all subsequent commands
-      shell: bash
-      working-directory: ${{env.GITHUB_WORKSPACE}}
-      if: runner.os == 'macOS'
-      run: |
-        mkdir build
-        cd build
-        cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_TESTING=on -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl
-
     - name: Build
       working-directory: ${{env.GITHUB_WORKSPACE}}
       shell: bash
@@ -123,13 +111,12 @@ jobs:
       run: |
         brew tap homebrew/services;
         brew services restart postgresql;
-        mysqld --initialize-insecure
-        brew services start mysql;
+        brew services start mariadb;
         sleep 4;
-        mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '';";
-        mysql -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost'";
-        mysql -e "FLUSH PRIVILEGES";
-        brew services restart mysql;
+        mariadb -e "SET PASSWORD FOR 'root'@'localhost' = PASSWORD('')";
+        mariadb -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost'";
+        mariadb -e "FLUSH PRIVILEGES";
+        brew services restart mariadb;
         sleep 4;
         psql -c 'create user postgres superuser;' postgres;
 
@@ -143,18 +130,9 @@ jobs:
     - name: Test
       working-directory: ${{env.GITHUB_WORKSPACE}}
       shell: bash
-      if: runner.os != 'macOS'
       # Execute tests defined by the CMake configuration.  
       # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
       run: ./test.sh -t
-
-    - name: Test (MacOS)
-      working-directory: ${{env.GITHUB_WORKSPACE}}
-      shell: bash
-      if: runner.os == 'macOS'
-      # Execute tests defined by the CMake configuration.  
-      # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
-      run: ./test.sh -t --extra-cmake-flags "-DOPENSSL_ROOT_DIR=/usr/local/opt/openssl"
 
     - name: Lint
       if: runner.os == 'Linux'

@@ -77,9 +77,7 @@ else(WIN32)
   find_library(MYSQL_LIBRARIES
                NAMES mysqlclient_r mariadbclient
                PATHS /usr/lib/mysql
-                     /usr/lib/mariadb
                      /usr/local/lib/mysql
-                     /usr/local/lib/mariadb
                      /usr/local/mysql/lib
                      /usr/local/mysql/lib/mysql
                      /opt/local/mysql5/lib
