@@ -33,9 +33,9 @@ class RedisClientImpl : public RedisClient,
                     const size_t numberOfConnections,
                     const std::string &password = "");
     virtual void execCommandAsync(
-        const std::string &command,
         std::function<void(const RedisResult &)> &&commandCallback,
         std::function<void(const std::exception &)> &&exceptionCallback,
+        string_view command,
         ...) noexcept override;
     virtual ~RedisClientImpl();
 

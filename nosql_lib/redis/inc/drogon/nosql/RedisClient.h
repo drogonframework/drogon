@@ -14,6 +14,7 @@
 #pragma once
 
 #include <drogon/nosql/RedisResult.h>
+#include <drogon/utils/string_view.h>
 #include <trantor/net/InetAddress.h>
 #include <memory>
 #include <functional>
@@ -43,9 +44,9 @@ class RedisClient
         const size_t numberOfConnections = 1,
         const std::string &password = "");
     virtual void execCommandAsync(
-        const std::string &command,
         std::function<void(const RedisResult &)> &&commandCallback,
         std::function<void(const std::exception &)> &&exceptionCallback,
+        string_view command,
         ...) noexcept = 0;
     virtual ~RedisClient() = default;
 };

@@ -86,9 +86,9 @@ RedisConnectionPtr RedisClientImpl::newConnection(trantor::EventLoop *loop)
 }
 
 void RedisClientImpl::execCommandAsync(
-    const std::string &command,
     std::function<void(const RedisResult &)> &&commandCallback,
     std::function<void(const std::exception &)> &&exceptionCallback,
+    string_view command,
     ...) noexcept
 {
     RedisConnectionPtr connPtr;
@@ -110,7 +110,7 @@ void RedisClientImpl::execCommandAsync(
     if (connPtr)
     {
         va_list args;
-        va_start(args, exceptionCallback);
+        va_start(args, command);
         connPtr->sendvCommand(command,
                               std::move(commandCallback),
                               std::move(exceptionCallback),

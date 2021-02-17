@@ -135,7 +135,7 @@ jobs:
       run: ./test.sh -t
 
     - name: Lint
-      if: runner.os == 'Linux'
+      if: matrix.os == 'ubuntu-20.04'
       working-directory: ${{env.GITHUB_WORKSPACE}}
       shell: bash
       run: ./format.sh && git diff --exit-code

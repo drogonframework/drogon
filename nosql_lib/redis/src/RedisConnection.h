@@ -69,11 +69,12 @@ class RedisConnection : public trantor::NonCopyable,
         va_end(args);
     }
     void sendvCommand(
-        const std::string &command,
+        string_view command,
         std::function<void(const RedisResult &)> &&callback,
         std::function<void(const std::exception &)> &&exceptionCallback,
         va_list ap)
     {
+        LOG_TRACE << "redis command: " << command;
         char *cmd;
         auto len = redisvFormatCommand(&cmd, command.data(), ap);
         if (len == -1)
