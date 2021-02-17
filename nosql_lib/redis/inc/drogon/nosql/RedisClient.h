@@ -43,6 +43,26 @@ class RedisClient
         const trantor::InetAddress &serverAddress,
         const size_t numberOfConnections = 1,
         const std::string &password = "");
+    /**
+     * @brief Execute a redis command
+     *
+     * @param commandCallback The callback is called when a redis reply is
+     * received successfully.
+     * @param exceptionCallback The callback is called when an error occurs.
+     * @note When a redis reply with REDIS_REPLY_ERROR code is received, this
+     * callback is called.
+     * @param command The command to be executed. the command string can contain
+     * some placeholders for parameters, such as '%s', '%d', etc.
+     * @param ... The command parameters.
+     * For example:
+     * @code
+       redisClientPtr->execCommandAsync([](const RedisResult &r){
+           std::cout << r.getStringForDisplaying() << std::endl;
+       },[](const std::exception &err){
+           std::cerr << err.what() << std::endl;
+       }, "get %s", key.data());
+       @endcode
+     */
     virtual void execCommandAsync(
         std::function<void(const RedisResult &)> &&commandCallback,
         std::function<void(const std::exception &)> &&exceptionCallback,
