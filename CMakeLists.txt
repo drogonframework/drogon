@@ -447,7 +447,8 @@ install(FILES ${ORM_HEADERS} DESTINATION ${INSTALL_INCLUDE_DIR}/drogon/orm)
 
 set(NOSQL_HEADERS
         nosql_lib/redis/inc/drogon/nosql/RedisClient.h
-        nosql_lib/redis/inc/drogon/nosql/RedisResult.h)
+        nosql_lib/redis/inc/drogon/nosql/RedisResult.h
+        nosql_lib/redis/inc/drogon/nosql/RedisException.h)
 install(FILES ${NOSQL_HEADERS} DESTINATION ${INSTALL_INCLUDE_DIR}/drogon/nosql)
 
 set(DROGON_UTIL_HEADERS

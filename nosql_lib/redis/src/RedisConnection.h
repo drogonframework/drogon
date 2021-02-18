@@ -14,6 +14,8 @@
 
 #pragma once
 #include <drogon/utils/string_view.h>
+#include <drogon/nosql/RedisException.h>
+#include <drogon/nosql/RedisResult.h>
 #include <trantor/utils/NonCopyable.h>
 #include <trantor/net/InetAddress.h>
 #include <trantor/net/EventLoop.h>
@@ -27,7 +29,6 @@ namespace drogon
 {
 namespace nosql
 {
-class RedisResult;
 enum class ConnectStatus
 {
     kNone = 0,
@@ -54,42 +55,43 @@ class RedisConnection : public trantor::NonCopyable,
     {
         disconnectCallback_ = callback;
     }
-    void sendCommand(
-        const std::string &command,
-        std::function<void(const RedisResult &)> &&callback,
-        std::function<void(const std::exception &)> &&exceptionCallback,
-        ...)
+    void sendCommand(const std::string &command,
+                     RedisResultCallback &&resultCallback,
+                     RedisExceptionCallback &&exceptionCallback,
+                     ...)
     {
         va_list args;
         va_start(args, exceptionCallback);
         sendvCommand(command,
-                     std::move(callback),
+                     std::move(resultCallback),
                      std::move(exceptionCallback),
                      args);
         va_end(args);
     }
-    void sendvCommand(
-        string_view command,
-        std::function<void(const RedisResult &)> &&callback,
-        std::function<void(const std::exception &)> &&exceptionCallback,
-        va_list ap)
+    void sendvCommand(string_view command,
+                      RedisResultCallback &&resultCallback,
+                      RedisExceptionCallback &&exceptionCallback,
+                      va_list ap)
     {
         LOG_TRACE << "redis command: " << command;
         char *cmd;
         auto len = redisvFormatCommand(&cmd, command.data(), ap);
         if (len == -1)
         {
-            exceptionCallback(std::runtime_error("Out of memory"));
+            exceptionCallback(RedisException(RedisErrorCode::kInternalError,
+                                             "Out of memory"));
             return;
         }
         else if (len == -2)
         {
-            exceptionCallback(std::runtime_error("Invalid format string"));
+            exceptionCallback(RedisException(RedisErrorCode::kInternalError,
+                                             "Invalid format string"));
             return;
         }
         else if (len <= 0)
         {
-            exceptionCallback(std::runtime_error("Unknown format error"));
+            exceptionCallback(RedisException(RedisErrorCode::kInternalError,
+                                             "Unknown format error"));
             return;
         }
         std::string fullCommand{cmd, static_cast<size_t>(len)};
@@ -97,14 +99,14 @@ class RedisConnection : public trantor::NonCopyable,
         if (loop_->isInLoopThread())
         {
             sendCommandInloop(fullCommand,
-                              std::move(callback),
+                              std::move(resultCallback),
                               std::move(exceptionCallback));
         }
         else
         {
             loop_->queueInLoop(
                 [this,
-                 callback = std::move(callback),
+                 callback = std::move(resultCallback),
                  exceptionCallback = std::move(exceptionCallback),
                  fullCommand = std::move(fullCommand),
                  ap]() mutable {
@@ -131,8 +133,8 @@ class RedisConnection : public trantor::NonCopyable,
     std::function<void(std::shared_ptr<RedisConnection> &&)> connectCallback_;
     std::function<void(std::shared_ptr<RedisConnection> &&)>
         disconnectCallback_;
-    std::queue<std::function<void(const RedisResult &)>> commandCallbacks_;
-    std::queue<std::function<void(const std::exception &)>> exceptionCallbacks_;
+    std::queue<RedisResultCallback> commandCallbacks_;
+    std::queue<RedisExceptionCallback> exceptionCallbacks_;
     string_view command_;
     ConnectStatus status_{ConnectStatus::kNone};
     void startConnectionInLoop();
@@ -144,10 +146,9 @@ class RedisConnection : public trantor::NonCopyable,
     void handleRedisRead();
     void handleRedisWrite();
     void handleResult(redisReply *result);
-    void sendCommandInloop(
-        const std::string &command,
-        std::function<void(const RedisResult &)> &&callback,
-        std::function<void(const std::exception &)> &&exceptionCallback);
+    void sendCommandInloop(const std::string &command,
+                           RedisResultCallback &&resultCallback,
+                           RedisExceptionCallback &&exceptionCallback);
     void handleDisconnect();
 };
 using RedisConnectionPtr = std::shared_ptr<RedisConnection>;

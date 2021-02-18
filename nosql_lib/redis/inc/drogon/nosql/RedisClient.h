@@ -14,6 +14,7 @@
 #pragma once
 
 #include <drogon/nosql/RedisResult.h>
+#include <drogon/nosql/RedisException.h>
 #include <drogon/utils/string_view.h>
 #include <trantor/net/InetAddress.h>
 #include <trantor/utils/Logger.h>
@@ -33,8 +34,7 @@ namespace internal
 struct RedisAwaiter : public CallbackAwaiter<RedisResult>
 {
     using RedisFunction =
-        std::function<void(std::function<void(const RedisResult &result)> &&,
-                           std::function<void(const std::exception &)> &&)>;
+        std::function<void(RedisResultCallback &&, RedisExceptionCallback &&)>;
     RedisAwaiter(RedisFunction &&function) : function_(std::move(function))
     {
     }
@@ -45,7 +45,7 @@ struct RedisAwaiter : public CallbackAwaiter<RedisResult>
                 this->setValue(std::move(result));
                 handle.resume();
             },
-            [handle, this](const std::exception &e) {
+            [handle, this](const RedisException &e) {
                 LOG_ERROR << e.what();
                 this->setException(std::make_exception_ptr(e));
                 handle.resume();
@@ -80,7 +80,7 @@ class RedisClient
     /**
      * @brief Execute a redis command
      *
-     * @param commandCallback The callback is called when a redis reply is
+     * @param resultCallback The callback is called when a redis reply is
      * received successfully.
      * @param exceptionCallback The callback is called when an error occurs.
      * @note When a redis reply with REDIS_REPLY_ERROR code is received, this
@@ -97,11 +97,10 @@ class RedisClient
        }, "get %s", key.data());
        @endcode
      */
-    virtual void execCommandAsync(
-        std::function<void(const RedisResult &)> &&commandCallback,
-        std::function<void(const std::exception &)> &&exceptionCallback,
-        string_view command,
-        ...) noexcept = 0;
+    virtual void execCommandAsync(RedisResultCallback &&resultCallback,
+                                  RedisExceptionCallback &&exceptionCallback,
+                                  string_view command,
+                                  ...) noexcept = 0;
     virtual ~RedisClient() = default;
 #ifdef __cpp_impl_coroutine
     template <typename... Arguments>
@@ -110,10 +109,8 @@ class RedisClient
         co_return co_await internal::RedisAwaiter(
             [command,
              this,
-             args...](std::function<void(const RedisResult &result)>
-                          &&commandCallback,
-                      std::function<void(const std::exception &)>
-                          &&exceptionCallback) {
+             args...](RedisResultCallback &&commandCallback,
+                      RedisExceptionCallback &&exceptionCallback) {
                 execCommandAsync(std::move(commandCallback),
                                  std::move(exceptionCallback),
                                  command,

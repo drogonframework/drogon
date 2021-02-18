@@ -184,10 +184,10 @@ void RedisConnection::handleRedisWrite()
 
 void RedisConnection::sendCommandInloop(
     const std::string &command,
-    std::function<void(const RedisResult &)> &&callback,
-    std::function<void(const std::exception &)> &&exceptionCallback)
+    RedisResultCallback &&resultCallback,
+    RedisExceptionCallback &&exceptionCallback)
 {
-    commandCallbacks_.emplace(std::move(callback));
+    commandCallbacks_.emplace(std::move(resultCallback));
     exceptionCallbacks_.emplace(std::move(exceptionCallback));
     command_ = command;
 
@@ -216,7 +216,8 @@ void RedisConnection::handleResult(redisReply *result)
     else
     {
         exceptionCallback(
-            std::runtime_error(std::string{result->str, result->len}));
+            RedisException(RedisErrorCode::kRedisError,
+                           std::string{result->str, result->len}));
     }
 }
 

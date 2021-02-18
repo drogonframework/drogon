@@ -32,11 +32,10 @@ class RedisClientImpl : public RedisClient,
     RedisClientImpl(const trantor::InetAddress &serverAddress,
                     const size_t numberOfConnections,
                     const std::string &password = "");
-    virtual void execCommandAsync(
-        std::function<void(const RedisResult &)> &&commandCallback,
-        std::function<void(const std::exception &)> &&exceptionCallback,
-        string_view command,
-        ...) noexcept override;
+    virtual void execCommandAsync(RedisResultCallback &&resultCallback,
+                                  RedisExceptionCallback &&exceptionCallback,
+                                  string_view command,
+                                  ...) noexcept override;
     virtual ~RedisClientImpl();
 
   private:

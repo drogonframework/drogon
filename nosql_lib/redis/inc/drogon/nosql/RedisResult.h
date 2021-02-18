@@ -16,6 +16,7 @@
 #include <vector>
 #include <string>
 #include <memory>
+#include <functional>
 
 struct redisReply;
 namespace drogon
@@ -118,5 +119,6 @@ class RedisResult
   private:
     redisReply *result_;
 };
+using RedisResultCallback=std::function<void(const RedisResult &)>;
 }  // namespace nosql
 }  // namespace drogon
