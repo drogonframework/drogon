@@ -119,6 +119,6 @@ class RedisResult
   private:
     redisReply *result_;
 };
-using RedisResultCallback=std::function<void(const RedisResult &)>;
+using RedisResultCallback = std::function<void(const RedisResult &)>;
 }  // namespace nosql
 }  // namespace drogon
