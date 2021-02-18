@@ -129,6 +129,18 @@ void RedisConnection::startConnectionInLoop()
 void RedisConnection::handleDisconnect()
 {
     LOG_TRACE << "handleDisconnect";
+    loop_->assertInLoopThread();
+    while ((!resultCallbacks_.empty()) && (!exceptionCallbacks_.empty()))
+    {
+        if (exceptionCallbacks_.front())
+        {
+            exceptionCallbacks_.front()(
+                RedisException(RedisErrorCode::kConnectionBroken,
+                               "Connection is broken"));
+        }
+        resultCallbacks_.pop();
+        exceptionCallbacks_.pop();
+    }
     status_ = ConnectStatus::kEnd;
     channel_->disableAll();
     channel_->remove();
@@ -187,7 +199,7 @@ void RedisConnection::sendCommandInloop(
     RedisResultCallback &&resultCallback,
     RedisExceptionCallback &&exceptionCallback)
 {
-    commandCallbacks_.emplace(std::move(resultCallback));
+    resultCallbacks_.emplace(std::move(resultCallback));
     exceptionCallbacks_.emplace(std::move(exceptionCallback));
     command_ = command;
 
@@ -205,8 +217,8 @@ void RedisConnection::sendCommandInloop(
 void RedisConnection::handleResult(redisReply *result)
 {
     LOG_TRACE << "redis reply: " << result->type;
-    auto commandCallback = std::move(commandCallbacks_.front());
-    commandCallbacks_.pop();
+    auto commandCallback = std::move(resultCallbacks_.front());
+    resultCallbacks_.pop();
     auto exceptionCallback = std::move(exceptionCallbacks_.front());
     exceptionCallbacks_.pop();
     if (result->type != REDIS_REPLY_ERROR)

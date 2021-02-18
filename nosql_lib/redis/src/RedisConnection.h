@@ -133,7 +133,7 @@ class RedisConnection : public trantor::NonCopyable,
     std::function<void(std::shared_ptr<RedisConnection> &&)> connectCallback_;
     std::function<void(std::shared_ptr<RedisConnection> &&)>
         disconnectCallback_;
-    std::queue<RedisResultCallback> commandCallbacks_;
+    std::queue<RedisResultCallback> resultCallbacks_;
     std::queue<RedisExceptionCallback> exceptionCallbacks_;
     string_view command_;
     ConnectStatus status_{ConnectStatus::kNone};
