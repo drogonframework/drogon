@@ -344,7 +344,7 @@ class CoroMapper : public Mapper<T>
                 sql = this->replaceSqlPlaceHolder(sql, "$?");
                 auto binder = *(this->client_) << std::move(sql);
                 obj.updateArgs(binder);
-                outputPrimeryKeyToBinder(obj.getPrimaryKey(), binder);
+                this->outputPrimeryKeyToBinder(obj.getPrimaryKey(), binder);
                 binder >> [callback = std::move(callback)](const Result &r) {
                     callback(r.affectedRows());
                 };
@@ -370,7 +370,7 @@ class CoroMapper : public Mapper<T>
 
                 sql = this->replaceSqlPlaceHolder(sql, "$?");
                 auto binder = *(this->client_) << std::move(sql);
-                outputPrimeryKeyToBinder(obj.getPrimaryKey(), binder);
+                this->outputPrimeryKeyToBinder(obj.getPrimaryKey(), binder);
                 binder >> [callback = std::move(callback)](const Result &r) {
                     callback(r.affectedRows());
                 };
@@ -424,7 +424,7 @@ class CoroMapper : public Mapper<T>
                                   &&errCallback) {
             this->clear();
             auto binder = *(this->client_) << T::sqlForDeletingByPrimaryKey();
-            outputPrimeryKeyToBinder(key, binder);
+            this->outputPrimeryKeyToBinder(key, binder);
             binder >> [callback = std::move(callback)](const Result &r) {
                 callback(r.affectedRows());
             };
