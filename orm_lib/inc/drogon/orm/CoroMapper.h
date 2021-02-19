@@ -108,9 +108,7 @@ class CoroMapper : public Mapper<T>
                         callback(T(r[0]));
                     }
                 };
-                binder >> [errCallback](const std::exception_ptr &e) {
-                    errCallback(e);
-                };
+                binder >> std::move(errCallback);
                 binder.exec();
             };
             co_return co_await internal::MapperAwaiter<T>(std::move(lb));
