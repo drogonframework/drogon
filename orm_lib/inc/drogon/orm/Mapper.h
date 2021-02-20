@@ -326,25 +326,13 @@ class Mapper
         binder >> [prom](const Result &r) {
             if (r.size() == 0)
             {
-                try
-                {
-                    throw UnexpectedRows("0 rows found");
-                }
-                catch (...)
-                {
-                    prom->set_exception(std::current_exception());
-                }
+                prom->set_exception(
+                    std::make_exception_ptr(UnexpectedRows("0 rows found")));
             }
             else if (r.size() > 1)
             {
-                try
-                {
-                    throw UnexpectedRows("Found more than one row");
-                }
-                catch (...)
-                {
-                    prom->set_exception(std::current_exception());
-                }
+                prom->set_exception(std::make_exception_ptr(
+                    UnexpectedRows("Found more than one row")));
             }
             else
             {
@@ -633,7 +621,7 @@ class Mapper
     std::future<size_t> deleteFutureByPrimaryKey(
         const TraitsPKType &key) noexcept;
 
-  private:
+  protected:
     DbClientPtr client_;
     size_t limit_{0};
     size_t offset_{0};
@@ -863,25 +851,13 @@ inline std::future<T> Mapper<T>::findFutureOne(
     binder >> [prom](const Result &r) {
         if (r.size() == 0)
         {
-            try
-            {
-                throw UnexpectedRows("0 rows found");
-            }
-            catch (...)
-            {
-                prom->set_exception(std::current_exception());
-            }
+            prom->set_exception(
+                std::make_exception_ptr(UnexpectedRows("0 rows found")));
         }
         else if (r.size() > 1)
         {
-            try
-            {
-                throw UnexpectedRows("Found more than one row");
-            }
-            catch (...)
-            {
-                prom->set_exception(std::current_exception());
-            }
+            prom->set_exception(std::make_exception_ptr(
+                UnexpectedRows("Found more than one row")));
         }
         else
         {
@@ -1244,14 +1220,8 @@ inline std::future<T> Mapper<T>::insertFuture(const T &obj) noexcept
                     newObj.getPrimaryKey(),
                     [prom](T selObj) { prom->set_value(selObj); },
                     [prom](const DrogonDbException &e) {
-                        try
-                        {
-                            throw e;
-                        }
-                        catch (...)
-                        {
-                            prom->set_exception(std::current_exception());
-                        }
+                        prom->set_exception(
+                            std::make_exception_ptr(Failure(e.base().what())));
                     });
             }
             else

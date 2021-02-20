@@ -36,7 +36,7 @@ using namespace drogon::orm;
 #ifdef __cpp_impl_coroutine
 constexpr int postgre_tests = 50;
 constexpr int mysql_tests = 47;
-constexpr int sqlite_tests = 51;
+constexpr int sqlite_tests = 52;
 #else
 constexpr int postgre_tests = 44;
 constexpr int mysql_tests = 45;
@@ -2176,6 +2176,17 @@ void doSqliteTest(const drogon::orm::DbClientPtr &clientPtr)
         {
             std::cerr << e.base().what() << std::endl;
             testOutput(false, "sqlite3 - CoroMapper coroutine interface(1)");
+        }
+        try
+        {
+            auto mapper = CoroMapper<Users>(clientPtr);
+            auto n = co_await mapper.deleteByPrimaryKey(1);
+            testOutput(n == 1, "sqlite3 - CoroMapper coroutine interface(2)");
+        }
+        catch (const DrogonDbException &e)
+        {
+            std::cerr << e.base().what() << std::endl;
+            testOutput(false, "sqlite3 - CoroMapper coroutine interface(2)");
         }
         co_await drogon::sleepCoro(
             trantor::EventLoop::getEventLoopOfCurrentThread(), 1.0s);
