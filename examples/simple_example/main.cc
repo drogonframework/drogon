@@ -306,7 +306,7 @@ int main()
             auto resp = HttpResponse::newHttpResponse();
             resp->setBody("Hello, World!");
             resp->setContentTypeCodeAndCustomString(
-                CT_TEXT_PLAIN, "Content-Type: text/plain\r\n");
+                CT_TEXT_PLAIN, "content-type: text/plain\r\n");
             return resp;
         }
         return nullResp;

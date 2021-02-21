@@ -403,7 +403,7 @@ class HttpResponseImpl : public HttpResponse
     mutable bool flagForParsingContentType_{false};
     mutable std::shared_ptr<std::string> jsonParsingErrorPtr_;
     string_view contentTypeString_{
-        "Content-Type: text/html; charset=utf-8\r\n"};
+        "content-type: text/html; charset=utf-8\r\n"};
     bool passThrough_{false};
     void setContentType(const string_view &contentType)
     {

@@ -37,7 +37,9 @@ void HttpClientImpl::createTcpClient()
 #ifdef OpenSSL_FOUND
     if (useSSL_)
     {
-        tcpClientPtr_->enableSSL(useOldTLS_, validateCert_);
+        LOG_TRACE << "useOldTLS=" << useOldTLS_;
+        LOG_TRACE << "domain=" << domain_;
+        tcpClientPtr_->enableSSL(useOldTLS_, domain_, validateCert_);
     }
 #endif
     auto thisPtr = shared_from_this();
@@ -69,7 +71,7 @@ void HttpClientImpl::createTcpClient()
             {
                 LOG_TRACE << "connection disconnect";
                 auto responseParser = connPtr->getContext<HttpResponseParser>();
-                if (responseParser->parseResponseOnClose() &&
+                if (responseParser && responseParser->parseResponseOnClose() &&
                     responseParser->gotAll())
                 {
                     auto &firstReq = thisPtr->pipeliningCallbacks_.front();

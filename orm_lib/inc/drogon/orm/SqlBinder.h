@@ -23,6 +23,7 @@
 #include <drogon/utils/string_view.h>
 #include <drogon/utils/optional.h>
 #include <trantor/utils/Logger.h>
+#include <trantor/utils/NonCopyable.h>
 #include <functional>
 #include <iostream>
 #include <map>
@@ -262,7 +263,7 @@ class CallbackHolder : public CallbackHolderBase
         return field.as<ValueType>();
     }
 };
-class SqlBinder
+class SqlBinder : public trantor::NonCopyable
 {
     using self = SqlBinder;
 
@@ -295,6 +296,29 @@ class SqlBinder
           type_(type)
     {
     }
+    SqlBinder(SqlBinder &&that)
+        : sqlPtr_(std::move(that.sqlPtr_)),
+          sqlViewPtr_(that.sqlViewPtr_),
+          sqlViewLength_(that.sqlViewLength_),
+          client_(that.client_),
+          parametersNumber_(that.parametersNumber_),
+          parameters_(std::move(that.parameters_)),
+          lengths_(std::move(that.lengths_)),
+          formats_(std::move(that.formats_)),
+          objs_(std::move(that.objs_)),
+          mode_(that.mode_),
+          callbackHolder_(std::move(that.callbackHolder_)),
+          exceptionCallback_(std::move(that.exceptionCallback_)),
+          exceptionPtrCallback_(std::move(that.exceptionPtrCallback_)),
+          execed_(that.execed_),
+          destructed_(that.destructed_),
+          isExceptionPtr_(that.isExceptionPtr_),
+          type_(that.type_)
+    {
+        // set the execed_ to true to avoid the same sql being executed twice.
+        that.execed_ = true;
+    }
+    SqlBinder &operator=(SqlBinder &&that) = delete;
     ~SqlBinder();
     template <typename CallbackType,
               typename traits = FunctionTraits<CallbackType>>

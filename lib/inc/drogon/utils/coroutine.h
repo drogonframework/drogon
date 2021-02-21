@@ -13,6 +13,8 @@
  */
 #pragma once
 
+#include <drogon/utils/optional.h>
+#include <trantor/net/EventLoop.h>
 #include <algorithm>
 #include <coroutine>
 #include <exception>
@@ -21,7 +23,6 @@
 #include <atomic>
 #include <future>
 #include <cassert>
-#include <drogon/utils/optional.h>
 
 namespace drogon
 {
@@ -80,7 +81,7 @@ template <typename T>
 constexpr bool is_awaitable_v = is_awaitable<T>::value;
 
 template <typename T>
-struct final_awiter
+struct final_awaiter
 {
     bool await_ready() noexcept
     {
@@ -140,7 +141,7 @@ struct Task
 
         auto final_suspend() noexcept
         {
-            return final_awiter<promise_type>{};
+            return final_awaiter<promise_type>{};
         }
 
         void unhandled_exception()
@@ -247,7 +248,7 @@ struct Task<void>
         }
         auto final_suspend() noexcept
         {
-            return final_awiter<promise_type>{};
+            return final_awaiter<promise_type>{};
         }
         void unhandled_exception()
         {
@@ -349,7 +350,7 @@ struct AsyncTask final
 /// Helper class that provices the infrastructure for turning callback into
 /// corourines
 // The user is responsible to fill in `await_suspend()` and construtors.
-template <typename T>
+template <typename T = void>
 struct CallbackAwaiter
 {
     bool await_ready() noexcept
@@ -374,7 +375,7 @@ struct CallbackAwaiter
     // entire struct to be constructed for awaiting. std::optional takes care of
     // that.
     optional<T> result_;
-    std::exception_ptr exception_ = nullptr;
+    std::exception_ptr exception_{nullptr};
 
   protected:
     void setException(const std::exception_ptr &e)
@@ -388,6 +389,30 @@ struct CallbackAwaiter
     void setValue(T &&v)
     {
         result_.emplace(std::move(v));
+    }
+};
+
+template <>
+struct CallbackAwaiter<void>
+{
+    bool await_ready() noexcept
+    {
+        return false;
+    }
+
+    void await_resume() noexcept(false)
+    {
+        if (exception_)
+            std::rethrow_exception(exception_);
+    }
+
+  private:
+    std::exception_ptr exception_{nullptr};
+
+  protected:
+    void setException(const std::exception_ptr &e)
+    {
+        exception_ = e;
     }
 };
 
@@ -478,6 +503,43 @@ inline auto co_future(Await await) noexcept
         }
     }(std::move(prom), std::move(await));
     return fut;
+}
+namespace internal
+{
+struct TimerAwaiter : CallbackAwaiter<void>
+{
+    TimerAwaiter(trantor::EventLoop *loop,
+                 const std::chrono::duration<long double> &delay)
+        : loop_(loop), delay_(delay.count())
+    {
+    }
+    TimerAwaiter(trantor::EventLoop *loop, double delay)
+        : loop_(loop), delay_(delay)
+    {
+    }
+    void await_suspend(std::coroutine_handle<> handle)
+    {
+        loop_->runAfter(delay_, [handle]() { handle.resume(); });
+    }
+
+  private:
+    trantor::EventLoop *loop_;
+    double delay_;
+};
+}  // namespace internal
+
+inline Task<void> sleepCoro(
+    trantor::EventLoop *loop,
+    const std::chrono::duration<long double> &delay) noexcept
+{
+    assert(loop);
+    co_return co_await internal::TimerAwaiter(loop, delay);
+}
+
+inline Task<void> sleepCoro(trantor::EventLoop *loop, double delay) noexcept
+{
+    assert(loop);
+    co_return co_await internal::TimerAwaiter(loop, delay);
 }
 
 }  // namespace drogon

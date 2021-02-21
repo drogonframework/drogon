@@ -46,7 +46,7 @@ namespace internal
 #ifdef __cpp_impl_coroutine
 struct SqlAwaiter : public CallbackAwaiter<Result>
 {
-    SqlAwaiter(internal::SqlBinder &&binder) : binder_(binder)
+    SqlAwaiter(internal::SqlBinder &&binder) : binder_(std::move(binder))
     {
     }
 
@@ -300,12 +300,12 @@ inline void internal::TrasactionAwaiter::await_suspend(
 {
     assert(client_ != nullptr);
     client_->newTransactionAsync(
-        [this, handle](const std::shared_ptr<Transaction> transacton) {
-            if (transacton == nullptr)
+        [this, handle](const std::shared_ptr<Transaction> &transaction) {
+            if (transaction == nullptr)
                 setException(std::make_exception_ptr(
-                    std::runtime_error("Failed to create transaction")));
+                    Failure("Failed to create transaction")));
             else
-                setValue(transacton);
+                setValue(transaction);
             handle.resume();
         });
 }
