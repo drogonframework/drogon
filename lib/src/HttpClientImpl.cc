@@ -39,7 +39,7 @@ void HttpClientImpl::createTcpClient()
     {
         LOG_TRACE << "useOldTLS=" << useOldTLS_;
         LOG_TRACE << "domain=" << domain_;
-        tcpClientPtr_->enableSSL(useOldTLS_, domain_);
+        tcpClientPtr_->enableSSL(useOldTLS_, validateCert_, domain_);
     }
 #endif
     auto thisPtr = shared_from_this();
@@ -113,15 +113,21 @@ void HttpClientImpl::createTcpClient()
 HttpClientImpl::HttpClientImpl(trantor::EventLoop *loop,
                                const trantor::InetAddress &addr,
                                bool useSSL,
-                               bool useOldTLS)
-    : loop_(loop), serverAddr_(addr), useSSL_(useSSL), useOldTLS_(useOldTLS)
+                               bool useOldTLS,
+                               bool validateCert)
+    : loop_(loop),
+      serverAddr_(addr),
+      useSSL_(useSSL),
+      useOldTLS_(useOldTLS),
+      validateCert_(validateCert)
 {
 }
 
 HttpClientImpl::HttpClientImpl(trantor::EventLoop *loop,
                                const std::string &hostString,
-                               bool useOldTLS)
-    : loop_(loop), useOldTLS_(useOldTLS)
+                               bool useOldTLS,
+                               bool validateCert)
+    : loop_(loop), useOldTLS_(useOldTLS), validateCert_(validateCert)
 {
     auto lowerHost = hostString;
     std::transform(lowerHost.begin(),
@@ -559,24 +565,28 @@ HttpClientPtr HttpClient::newHttpClient(const std::string &ip,
                                         uint16_t port,
                                         bool useSSL,
                                         trantor::EventLoop *loop,
-                                        bool useOldTLS)
+                                        bool useOldTLS,
+                                        bool validateCert)
 {
     bool isIpv6 = ip.find(':') == std::string::npos ? false : true;
     return std::make_shared<HttpClientImpl>(
         loop == nullptr ? HttpAppFrameworkImpl::instance().getLoop() : loop,
         trantor::InetAddress(ip, port, isIpv6),
         useSSL,
-        useOldTLS);
+        useOldTLS,
+        validateCert);
 }
 
 HttpClientPtr HttpClient::newHttpClient(const std::string &hostString,
                                         trantor::EventLoop *loop,
-                                        bool useOldTLS)
+                                        bool useOldTLS,
+                                        bool validateCert)
 {
     return std::make_shared<HttpClientImpl>(
         loop == nullptr ? HttpAppFrameworkImpl::instance().getLoop() : loop,
         hostString,
-        useOldTLS);
+        useOldTLS,
+        validateCert);
 }
 
 void HttpClientImpl::onError(ReqResult result)
