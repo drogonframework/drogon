@@ -39,7 +39,7 @@ void HttpClientImpl::createTcpClient()
     {
         LOG_TRACE << "useOldTLS=" << useOldTLS_;
         LOG_TRACE << "domain=" << domain_;
-        tcpClientPtr_->enableSSL(useOldTLS_, domain_, validateCert_);
+        tcpClientPtr_->enableSSL(useOldTLS_, validateCert_, domain_);
     }
 #endif
     auto thisPtr = shared_from_this();
@@ -107,6 +107,12 @@ void HttpClientImpl::createTcpClient()
                 thisPtr->onRecvMessage(connPtr, msg);
             }
         });
+    tcpClientPtr_->setSSLErrorCallback([weakPtr](SSLError err) {
+        auto thisPtr = weakPtr.lock();
+        if (!thisPtr)
+            return;
+        thisPtr->onError(ReqResult::NetworkFailure);
+    });
     tcpClientPtr_->connect();
 }
 
