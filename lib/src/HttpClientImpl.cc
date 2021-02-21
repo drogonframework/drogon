@@ -37,7 +37,9 @@ void HttpClientImpl::createTcpClient()
 #ifdef OpenSSL_FOUND
     if (useSSL_)
     {
-        tcpClientPtr_->enableSSL(useOldTLS_);
+        LOG_TRACE << "useOldTLS=" << useOldTLS_;
+        LOG_TRACE << "domain=" << domain_;
+        tcpClientPtr_->enableSSL(useOldTLS_, domain_);
     }
 #endif
     auto thisPtr = shared_from_this();
