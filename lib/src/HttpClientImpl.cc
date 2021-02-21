@@ -111,7 +111,15 @@ void HttpClientImpl::createTcpClient()
         auto thisPtr = weakPtr.lock();
         if (!thisPtr)
             return;
-        thisPtr->onError(ReqResult::NetworkFailure);
+        if (err == trantor::SSLError::kSSLHandshakeError)
+            thisPtr->onError(ReqResult::HandshakeError);
+        else if (err == trantor::SSLError::kSSLInvalidCertificate)
+            thisPtr->onError(ReqResult::InvalidCertificate);
+        else
+        {
+            LOG_FATAL << "Invalid value for SSLError";
+            abort();
+        }
     });
     tcpClientPtr_->connect();
 }

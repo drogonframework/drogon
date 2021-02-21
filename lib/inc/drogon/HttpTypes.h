@@ -131,7 +131,9 @@ enum class ReqResult
     BadResponse,
     NetworkFailure,
     BadServerAddress,
-    Timeout
+    Timeout,
+    HandshakeError,
+    InvalidCertificate,
 };
 
 enum class WebSocketMessageType
