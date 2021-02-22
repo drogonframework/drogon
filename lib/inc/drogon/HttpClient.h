@@ -217,7 +217,8 @@ class HttpClient : public trantor::NonCopyable
                                        uint16_t port,
                                        bool useSSL = false,
                                        trantor::EventLoop *loop = nullptr,
-                                       bool useOldTLS = false);
+                                       bool useOldTLS = false,
+                                       bool validateCert = true);
 
     /// Get the event loop of the client;
     virtual trantor::EventLoop *getLoop() = 0;
@@ -255,7 +256,8 @@ class HttpClient : public trantor::NonCopyable
      */
     static HttpClientPtr newHttpClient(const std::string &hostString,
                                        trantor::EventLoop *loop = nullptr,
-                                       bool useOldTLS = false);
+                                       bool useOldTLS = false,
+                                       bool validateCert = true);
 
     virtual ~HttpClient()
     {

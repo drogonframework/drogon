@@ -39,7 +39,7 @@ void HttpClientImpl::createTcpClient()
     {
         LOG_TRACE << "useOldTLS=" << useOldTLS_;
         LOG_TRACE << "domain=" << domain_;
-        tcpClientPtr_->enableSSL(useOldTLS_, domain_);
+        tcpClientPtr_->enableSSL(useOldTLS_, validateCert_, domain_);
     }
 #endif
     auto thisPtr = shared_from_this();
@@ -107,21 +107,41 @@ void HttpClientImpl::createTcpClient()
                 thisPtr->onRecvMessage(connPtr, msg);
             }
         });
+    tcpClientPtr_->setSSLErrorCallback([weakPtr](SSLError err) {
+        auto thisPtr = weakPtr.lock();
+        if (!thisPtr)
+            return;
+        if (err == trantor::SSLError::kSSLHandshakeError)
+            thisPtr->onError(ReqResult::HandshakeError);
+        else if (err == trantor::SSLError::kSSLInvalidCertificate)
+            thisPtr->onError(ReqResult::InvalidCertificate);
+        else
+        {
+            LOG_FATAL << "Invalid value for SSLError";
+            abort();
+        }
+    });
     tcpClientPtr_->connect();
 }
 
 HttpClientImpl::HttpClientImpl(trantor::EventLoop *loop,
                                const trantor::InetAddress &addr,
                                bool useSSL,
-                               bool useOldTLS)
-    : loop_(loop), serverAddr_(addr), useSSL_(useSSL), useOldTLS_(useOldTLS)
+                               bool useOldTLS,
+                               bool validateCert)
+    : loop_(loop),
+      serverAddr_(addr),
+      useSSL_(useSSL),
+      validateCert_(validateCert),
+      useOldTLS_(useOldTLS)
 {
 }
 
 HttpClientImpl::HttpClientImpl(trantor::EventLoop *loop,
                                const std::string &hostString,
-                               bool useOldTLS)
-    : loop_(loop), useOldTLS_(useOldTLS)
+                               bool useOldTLS,
+                               bool validateCert)
+    : loop_(loop), validateCert_(validateCert), useOldTLS_(useOldTLS)
 {
     auto lowerHost = hostString;
     std::transform(lowerHost.begin(),
@@ -559,24 +579,28 @@ HttpClientPtr HttpClient::newHttpClient(const std::string &ip,
                                         uint16_t port,
                                         bool useSSL,
                                         trantor::EventLoop *loop,
-                                        bool useOldTLS)
+                                        bool useOldTLS,
+                                        bool validateCert)
 {
     bool isIpv6 = ip.find(':') == std::string::npos ? false : true;
     return std::make_shared<HttpClientImpl>(
         loop == nullptr ? HttpAppFrameworkImpl::instance().getLoop() : loop,
         trantor::InetAddress(ip, port, isIpv6),
         useSSL,
-        useOldTLS);
+        useOldTLS,
+        validateCert);
 }
 
 HttpClientPtr HttpClient::newHttpClient(const std::string &hostString,
                                         trantor::EventLoop *loop,
-                                        bool useOldTLS)
+                                        bool useOldTLS,
+                                        bool validateCert)
 {
     return std::make_shared<HttpClientImpl>(
         loop == nullptr ? HttpAppFrameworkImpl::instance().getLoop() : loop,
         hostString,
-        useOldTLS);
+        useOldTLS,
+        validateCert);
 }
 
 void HttpClientImpl::onError(ReqResult result)

@@ -1390,10 +1390,8 @@ int main(int argc, char *argv[])
         if (app().supportSSL())
         {
             std::promise<int> pro2;
-            auto sslClient = HttpClient::newHttpClient("127.0.0.1",
-                                                       8849,
-                                                       true,
-                                                       loop[1].getLoop());
+            auto sslClient = HttpClient::newHttpClient(
+                "127.0.0.1", 8849, true, loop[1].getLoop(), false, false);
             if (sessionID)
                 sslClient->addCookie(sessionID);
             doTest(sslClient, pro2, true);
