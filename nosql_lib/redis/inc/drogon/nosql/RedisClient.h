@@ -57,6 +57,8 @@ struct RedisAwaiter : public CallbackAwaiter<RedisResult>
 };
 }  // namespace internal
 #endif
+
+class RedisTransaction;
 /**
  * @brief This class represents a redis client that comtains several connections
  * to a redis server.
@@ -101,6 +103,22 @@ class RedisClient
                                   RedisExceptionCallback &&exceptionCallback,
                                   string_view command,
                                   ...) noexcept = 0;
+
+    /**
+     * @brief Create a redis transaction object.
+     *
+     * @return std::shared_ptr<RedisTransaction>
+     */
+    virtual std::shared_ptr<RedisTransaction> newTransaction() = 0;
+
+    /**
+     * @brief Create a transaction object in asynchronous mode.
+     *
+     * @return std::shared_ptr<RedisTransaction>
+     */
+    virtual void newTransactionAsync(
+        const std::function<void(const std::shared_ptr<RedisTransaction> &)>
+            &callback) = 0;
     virtual ~RedisClient() = default;
 #ifdef __cpp_impl_coroutine
     template <typename... Arguments>
@@ -118,6 +136,13 @@ class RedisClient
             });
     }
 #endif
+};
+class RedisTransaction : public RedisClient
+{
+  public:
+    // virtual void cancel() = 0;
+    virtual void execute(RedisResultCallback &&resultCallback,
+                         RedisExceptionCallback &&exceptionCallback) = 0;
 };
 }  // namespace nosql
 }  // namespace drogon

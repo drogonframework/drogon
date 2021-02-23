@@ -37,6 +37,16 @@ class RedisClientImpl : public RedisClient,
                                   string_view command,
                                   ...) noexcept override;
     virtual ~RedisClientImpl();
+    virtual std::shared_ptr<RedisTransaction> newTransaction() override
+    {
+        return nullptr;
+    }
+    virtual void newTransactionAsync(
+        const std::function<void(const std::shared_ptr<RedisTransaction> &)>
+            &callback) override
+    {
+        callback(nullptr);
+    }
 
   private:
     trantor::EventLoopThreadPool loops_;
