@@ -13,6 +13,7 @@
  */
 
 #include "RedisClientImpl.h"
+#include "RedisTransactionImpl.h"
 using namespace drogon::nosql;
 std::shared_ptr<RedisClient> RedisClient::newRedisClient(
     const trantor::InetAddress &serverAddress,
@@ -119,8 +120,14 @@ void RedisClientImpl::execCommandAsync(
     }
     else
     {
-        exceptionCallback(RedisException(RedisErrorCode::kNoConnectionAvailable,
-                                         "no connection available!"));
+        std::weak_ptr<RedisClientImpl> thisWeakPtr = shared_from_this();
+        std::lock_guard<std::mutex> lock(connectionsMutex_);
+        tasks_.emplace([thisWeakPtr,
+                        resultCallback = std::move(resultCallback),
+                        exceptionCallback = std::move(exceptionCallback)](
+                           const RedisConnectionPtr &connPtr) mutable {
+            ////////////TODO how to get the args here
+        });
     }
 }
 
@@ -133,4 +140,70 @@ RedisClientImpl::~RedisClientImpl()
     }
     readyConnections_.clear();
     connections_.clear();
+}
+
+void RedisClientImpl::newTransactionAsync(
+    const std::function<void(const std::shared_ptr<RedisTransaction> &)>
+        &callback)
+{
+    RedisConnectionPtr connPtr;
+    {
+        std::lock_guard<std::mutex> lock(connectionsMutex_);
+        if (!readyConnections_.empty())
+        {
+            connPtr = readyConnections_[readyConnections_.size() - 1];
+            readyConnections_.resize(readyConnections_.size() - 1);
+        }
+    }
+    if (connPtr)
+    {
+        callback(makeTransaction(connPtr));
+    }
+    else
+    {
+        std::weak_ptr<RedisClientImpl> thisWeakPtr = shared_from_this();
+        std::lock_guard<std::mutex> lock(connectionsMutex_);
+        tasks_.emplace([callback = std::move(callback),
+                        thisWeakPtr](const RedisConnectionPtr &connPtr) {
+            auto thisPtr = thisWeakPtr.lock();
+            if (thisPtr)
+            {
+                callback(thisPtr->makeTransaction(connPtr));
+            }
+        });
+    }
+}
+
+std::shared_ptr<RedisTransaction> RedisClientImpl::makeTransaction(
+    const RedisConnectionPtr &connPtr)
+{
+    std::weak_ptr<RedisClientImpl> thisWeakPtr = shared_from_this();
+    auto trans = std::shared_ptr<RedisTransactionImpl>(
+        new RedisTransactionImpl(connPtr),
+        [thisWeakPtr, connPtr](RedisTransactionImpl *p) {
+            auto thisPtr = thisWeakPtr.lock();
+            if (thisPtr)
+            {
+                thisPtr->handleNextTask(connPtr);
+            }
+        });
+    return trans;
+}
+
+void RedisClientImpl::handleNextTask(const RedisConnectionPtr &connPtr)
+{
+    std::function<void(const RedisConnectionPtr &)> task;
+    {
+        std::lock_guard<std::mutex> lock(connectionsMutex_);
+        readyConnections_.push_back(connPtr);
+        if (!tasks_.empty())
+        {
+            task = std::move(tasks_.front());
+            tasks_.pop();
+        }
+    }
+    if (task)
+    {
+        task(connPtr);
+    }
 }

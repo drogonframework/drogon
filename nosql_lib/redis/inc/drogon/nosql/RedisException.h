@@ -26,7 +26,8 @@ enum class RedisErrorCode
     kConnectionBroken,
     kNoConnectionAvailable,
     kRedisError,
-    kInternalError
+    kInternalError,
+    kTransactionCancelled
 };
 class RedisException : public std::exception
 {

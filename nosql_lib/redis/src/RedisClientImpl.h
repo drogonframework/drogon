@@ -19,6 +19,7 @@
 #include <trantor/net/EventLoopThreadPool.h>
 #include <vector>
 #include <unordered_set>
+#include <queue>
 
 namespace drogon
 {
@@ -43,10 +44,7 @@ class RedisClientImpl : public RedisClient,
     }
     virtual void newTransactionAsync(
         const std::function<void(const std::shared_ptr<RedisTransaction> &)>
-            &callback) override
-    {
-        callback(nullptr);
-    }
+            &callback) override;
 
   private:
     trantor::EventLoopThreadPool loops_;
@@ -58,6 +56,10 @@ class RedisClientImpl : public RedisClient,
     const trantor::InetAddress serverAddr_;
     const std::string password_;
     const size_t numberOfConnections_;
+    std::queue<std::function<void(const RedisConnectionPtr &)>> tasks_;
+    std::shared_ptr<RedisTransaction> makeTransaction(
+        const RedisConnectionPtr &connPtr);
+    void handleNextTask(const RedisConnectionPtr &connPtr);
 };
 }  // namespace nosql
 }  // namespace drogon

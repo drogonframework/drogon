@@ -46,6 +46,7 @@ class RedisTransactionImpl
         callback(shared_from_this());
     }
     void doBegin();
+    virtual ~RedisTransactionImpl();
 
   private:
     bool isExcutedOrConcelled_{false};
