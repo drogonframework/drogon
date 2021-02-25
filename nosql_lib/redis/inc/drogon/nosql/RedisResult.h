@@ -19,9 +19,7 @@
 #include <functional>
 
 struct redisReply;
-namespace drogon
-{
-namespace nosql
+namespace drogon::nosql
 {
 enum class RedisResultType
 {
@@ -42,7 +40,7 @@ enum class RedisResultType
 class RedisResult
 {
   public:
-    RedisResult(redisReply *result) : result_(result)
+    explicit RedisResult(redisReply *result) : result_(result)
     {
     }
     ~RedisResult() = default;
@@ -111,7 +109,7 @@ class RedisResult
      * @return true
      * @return false
      */
-    operator bool() const
+    explicit operator bool() const
     {
         return !isNil();
     }
@@ -120,5 +118,4 @@ class RedisResult
     redisReply *result_;
 };
 using RedisResultCallback = std::function<void(const RedisResult &)>;
-}  // namespace nosql
-}  // namespace drogon
+}  // namespace drogon::nosql

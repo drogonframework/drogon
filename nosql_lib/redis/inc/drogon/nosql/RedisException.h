@@ -15,9 +15,7 @@
 #include <exception>
 #include <functional>
 
-namespace drogon
-{
-namespace nosql
+namespace drogon::nosql
 {
 enum class RedisErrorCode
 {
@@ -29,10 +27,10 @@ enum class RedisErrorCode
     kInternalError,
     kTransactionCancelled
 };
-class RedisException : public std::exception
+class RedisException final : public std::exception
 {
   public:
-    virtual const char *what() const noexcept override
+    const char *what() const noexcept override
     {
         return message_.data();
     }
@@ -48,11 +46,11 @@ class RedisException : public std::exception
         : code_(code), message_(std::move(message))
     {
     }
+    RedisException() = delete;
 
   private:
     std::string message_;
     RedisErrorCode code_{RedisErrorCode::kNone};
 };
 using RedisExceptionCallback = std::function<void(const RedisException &)>;
-}  // namespace nosql
-}  // namespace drogon
+}  // namespace drogon::nosql

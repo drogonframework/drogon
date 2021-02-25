@@ -16,9 +16,8 @@
 
 using namespace drogon::nosql;
 
-RedisTransactionImpl::RedisTransactionImpl(
-    const RedisConnectionPtr &connPtr) noexcept
-    : connPtr_(connPtr)
+RedisTransactionImpl::RedisTransactionImpl(RedisConnectionPtr connPtr) noexcept
+    : connPtr_(std::move(connPtr))
 {
 }
 
@@ -29,7 +28,7 @@ void RedisTransactionImpl::execute(RedisResultCallback &&resultCallback,
         [thisPtr = shared_from_this(),
          resultCallback =
              std::move(resultCallback)](const RedisResult &result) {
-            thisPtr->isExcutedOrConcelled_ = true;
+            thisPtr->isExecutedOrCancelled_ = true;
             resultCallback(result);
         },
         std::move(exceptionCallback),
@@ -41,7 +40,7 @@ void RedisTransactionImpl::execCommandAsync(
     string_view command,
     ...) noexcept
 {
-    if (isExcutedOrConcelled_)
+    if (isExecutedOrCancelled_)
     {
         exceptionCallback(RedisException(RedisErrorCode::kTransactionCancelled,
                                          "Transaction was cancelled"));
@@ -56,7 +55,7 @@ void RedisTransactionImpl::execCommandAsync(
          exceptionCallback =
              std::move(exceptionCallback)](const RedisException &err) {
             LOG_ERROR << err.what();
-            thisPtr->isExcutedOrConcelled_ = true;
+            thisPtr->isExecutedOrCancelled_ = true;
             exceptionCallback(err);
         },
         args);
@@ -65,20 +64,20 @@ void RedisTransactionImpl::execCommandAsync(
 
 void RedisTransactionImpl::doBegin()
 {
-    assert(!isExcutedOrConcelled_);
+    assert(!isExecutedOrCancelled_);
     execCommandAsync(
         [](const RedisResult &result) {
 
         },
         [thisPtr = shared_from_this()](const RedisException &err) {
-            thisPtr->isExcutedOrConcelled_ = true;
+            thisPtr->isExecutedOrCancelled_ = true;
         },
         "MULTI");
 }
 
 RedisTransactionImpl::~RedisTransactionImpl()
 {
-    if (!isExcutedOrConcelled_)
+    if (!isExecutedOrCancelled_)
     {
         LOG_WARN << "The transaction is not executed before being destroyed";
         execCommandAsync([](const RedisResult &result) {},

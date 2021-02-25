@@ -24,9 +24,7 @@
 #include <drogon/utils/coroutine.h>
 #endif
 
-namespace drogon
-{
-namespace nosql
+namespace drogon::nosql
 {
 #ifdef __cpp_impl_coroutine
 namespace internal
@@ -35,14 +33,15 @@ struct RedisAwaiter : public CallbackAwaiter<RedisResult>
 {
     using RedisFunction =
         std::function<void(RedisResultCallback &&, RedisExceptionCallback &&)>;
-    RedisAwaiter(RedisFunction &&function) : function_(std::move(function))
+    explicit RedisAwaiter(RedisFunction &&function)
+        : function_(std::move(function))
     {
     }
     void await_suspend(std::coroutine_handle<> handle)
     {
         function_(
             [handle, this](const RedisResult &result) {
-                this->setValue(std::move(result));
+                this->setValue(result);
                 handle.resume();
             },
             [handle, this](const RedisException &e) {
@@ -60,7 +59,7 @@ struct RedisAwaiter : public CallbackAwaiter<RedisResult>
 
 class RedisTransaction;
 /**
- * @brief This class represents a redis client that comtains several connections
+ * @brief This class represents a redis client that contains several connections
  * to a redis server.
  *
  */
@@ -77,7 +76,7 @@ class RedisClient
      */
     static std::shared_ptr<RedisClient> newRedisClient(
         const trantor::InetAddress &serverAddress,
-        const size_t numberOfConnections = 1,
+        size_t numberOfConnections = 1,
         const std::string &password = "");
     /**
      * @brief Execute a redis command
@@ -145,5 +144,4 @@ class RedisTransaction : public RedisClient
                          RedisExceptionCallback &&exceptionCallback) = 0;
 };
 using RedisTransactionPtr = std::shared_ptr<RedisTransaction>;
-}  // namespace nosql
-}  // namespace drogon
+}  // namespace drogon::nosql

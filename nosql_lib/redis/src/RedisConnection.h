@@ -25,9 +25,7 @@
 #include <memory>
 #include <queue>
 
-namespace drogon
-{
-namespace nosql
+namespace drogon::nosql
 {
 enum class ConnectStatus
 {
@@ -61,8 +59,8 @@ class RedisConnection : public trantor::NonCopyable,
     {
         idleCallback_ = callback;
     }
-    static std::string getFormatedCommad(const string_view &command,
-                                         va_list ap) noexcept(false)
+    static std::string getFormattedCommand(const string_view &command,
+                                           va_list ap) noexcept(false)
     {
         char *cmd;
         auto len = redisvFormatCommand(&cmd, command.data(), ap);
@@ -85,13 +83,13 @@ class RedisConnection : public trantor::NonCopyable,
         free(cmd);
         return fullCommand;
     }
-    void sendFormattedCommad(std::string &&command,
-                             RedisResultCallback &&resultCallback,
-                             RedisExceptionCallback &&exceptionCallback)
+    void sendFormattedCommand(std::string &&command,
+                              RedisResultCallback &&resultCallback,
+                              RedisExceptionCallback &&exceptionCallback)
     {
         if (loop_->isInLoopThread())
         {
-            sendCommandInloop(command,
+            sendCommandInLoop(command,
                               std::move(resultCallback),
                               std::move(exceptionCallback));
         }
@@ -102,7 +100,7 @@ class RedisConnection : public trantor::NonCopyable,
                  callback = std::move(resultCallback),
                  exceptionCallback = std::move(exceptionCallback),
                  command = std::move(command)]() mutable {
-                    sendCommandInloop(command,
+                    sendCommandInLoop(command,
                                       std::move(callback),
                                       std::move(exceptionCallback));
                 });
@@ -116,10 +114,10 @@ class RedisConnection : public trantor::NonCopyable,
         LOG_TRACE << "redis command: " << command;
         try
         {
-            auto fullCommand = getFormatedCommad(command, ap);
+            auto fullCommand = getFormattedCommand(command, ap);
             if (loop_->isInLoopThread())
             {
-                sendCommandInloop(fullCommand,
+                sendCommandInLoop(fullCommand,
                                   std::move(resultCallback),
                                   std::move(exceptionCallback));
             }
@@ -130,7 +128,7 @@ class RedisConnection : public trantor::NonCopyable,
                      callback = std::move(resultCallback),
                      exceptionCallback = std::move(exceptionCallback),
                      fullCommand = std::move(fullCommand)]() mutable {
-                        sendCommandInloop(fullCommand,
+                        sendCommandInLoop(fullCommand,
                                           std::move(callback),
                                           std::move(exceptionCallback));
                     });
@@ -162,7 +160,6 @@ class RedisConnection : public trantor::NonCopyable,
     std::function<void(const std::shared_ptr<RedisConnection> &)> idleCallback_;
     std::queue<RedisResultCallback> resultCallbacks_;
     std::queue<RedisExceptionCallback> exceptionCallbacks_;
-    string_view command_;
     ConnectStatus status_{ConnectStatus::kNone};
     void startConnectionInLoop();
     static void addWrite(void *userData);
@@ -173,17 +170,17 @@ class RedisConnection : public trantor::NonCopyable,
     void handleRedisRead();
     void handleRedisWrite();
     void handleResult(redisReply *result);
-    void sendCommandInloop(const std::string &command,
+    void sendCommandInLoop(const std::string &command,
                            RedisResultCallback &&resultCallback,
                            RedisExceptionCallback &&exceptionCallback);
     void handleDisconnect();
-    void sendCommand(const std::string &command,
-                     RedisResultCallback &&resultCallback,
+    void sendCommand(RedisResultCallback &&resultCallback,
                      RedisExceptionCallback &&exceptionCallback,
+                     string_view command,
                      ...)
     {
         va_list args;
-        va_start(args, exceptionCallback);
+        va_start(args, command);
         sendvCommand(command,
                      std::move(resultCallback),
                      std::move(exceptionCallback),
@@ -192,5 +189,4 @@ class RedisConnection : public trantor::NonCopyable,
     }
 };
 using RedisConnectionPtr = std::shared_ptr<RedisConnection>;
-}  // namespace nosql
-}  // namespace drogon
+}  // namespace drogon::nosql

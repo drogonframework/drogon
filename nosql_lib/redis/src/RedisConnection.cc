@@ -83,7 +83,7 @@ void RedisConnection::startConnectionInLoop()
                     std::weak_ptr<RedisConnection> weakThisPtr =
                         thisPtr->shared_from_this();
                     thisPtr->sendCommand(
-                        "auth %s",
+
                         [weakThisPtr](const RedisResult &r) {
                             auto thisPtr = weakThisPtr.lock();
                             if (!thisPtr)
@@ -107,6 +107,7 @@ void RedisConnection::startConnectionInLoop()
                                 return;
                             thisPtr->disconnect();
                         },
+                        "auth %s",
                         thisPtr->password_.data());
                 }
             }
@@ -194,14 +195,13 @@ void RedisConnection::handleRedisWrite()
     redisAsyncHandleWrite(redisContext_);
 }
 
-void RedisConnection::sendCommandInloop(
+void RedisConnection::sendCommandInLoop(
     const std::string &command,
     RedisResultCallback &&resultCallback,
     RedisExceptionCallback &&exceptionCallback)
 {
     resultCallbacks_.emplace(std::move(resultCallback));
     exceptionCallbacks_.emplace(std::move(exceptionCallback));
-    command_ = command;
 
     redisAsyncFormattedCommand(
         redisContext_,

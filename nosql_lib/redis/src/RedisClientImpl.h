@@ -22,24 +22,23 @@
 #include <queue>
 #include <future>
 
-namespace drogon
+namespace drogon::nosql
 {
-namespace nosql
-{
-class RedisClientImpl : public RedisClient,
-                        public trantor::NonCopyable,
-                        public std::enable_shared_from_this<RedisClientImpl>
+class RedisClientImpl final
+    : public RedisClient,
+      public trantor::NonCopyable,
+      public std::enable_shared_from_this<RedisClientImpl>
 {
   public:
     RedisClientImpl(const trantor::InetAddress &serverAddress,
-                    const size_t numberOfConnections,
-                    const std::string &password = "");
-    virtual void execCommandAsync(RedisResultCallback &&resultCallback,
-                                  RedisExceptionCallback &&exceptionCallback,
-                                  string_view command,
-                                  ...) noexcept override;
-    virtual ~RedisClientImpl();
-    virtual RedisTransactionPtr newTransaction() override
+                    size_t numberOfConnections,
+                    std::string password = "");
+    void execCommandAsync(RedisResultCallback &&resultCallback,
+                          RedisExceptionCallback &&exceptionCallback,
+                          string_view command,
+                          ...) noexcept override;
+    ~RedisClientImpl() override;
+    RedisTransactionPtr newTransaction() override
     {
         std::promise<RedisTransactionPtr> prom;
         auto f = prom.get_future();
@@ -48,7 +47,7 @@ class RedisClientImpl : public RedisClient,
         });
         return f.get();
     }
-    virtual void newTransactionAsync(
+    void newTransactionAsync(
         const std::function<void(const RedisTransactionPtr &)> &callback)
         override;
 
@@ -67,5 +66,4 @@ class RedisClientImpl : public RedisClient,
         const RedisConnectionPtr &connPtr);
     void handleNextTask(const RedisConnectionPtr &connPtr);
 };
-}  // namespace nosql
-}  // namespace drogon
+}  // namespace drogon::nosql

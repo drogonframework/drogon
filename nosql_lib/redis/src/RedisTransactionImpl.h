@@ -17,40 +17,36 @@
 #include <drogon/nosql/RedisClient.h>
 #include <memory>
 
-namespace drogon
+namespace drogon::nosql
 {
-namespace nosql
-{
-class RedisTransactionImpl
+class RedisTransactionImpl final
     : public RedisTransaction,
       public std::enable_shared_from_this<RedisTransactionImpl>
 {
   public:
-    explicit RedisTransactionImpl(
-        const RedisConnectionPtr &connection) noexcept;
+    explicit RedisTransactionImpl(RedisConnectionPtr connection) noexcept;
     // virtual void cancel() override;
-    virtual void execute(RedisResultCallback &&resultCallback,
-                         RedisExceptionCallback &&exceptionCallback) override;
-    virtual void execCommandAsync(RedisResultCallback &&resultCallback,
-                                  RedisExceptionCallback &&exceptionCallback,
-                                  string_view command,
-                                  ...) noexcept override;
-    virtual std::shared_ptr<RedisTransaction> newTransaction() override
+    void execute(RedisResultCallback &&resultCallback,
+                 RedisExceptionCallback &&exceptionCallback) override;
+    void execCommandAsync(RedisResultCallback &&resultCallback,
+                          RedisExceptionCallback &&exceptionCallback,
+                          string_view command,
+                          ...) noexcept override;
+    std::shared_ptr<RedisTransaction> newTransaction() override
     {
         return shared_from_this();
     }
-    virtual void newTransactionAsync(
+    void newTransactionAsync(
         const std::function<void(const std::shared_ptr<RedisTransaction> &)>
             &callback) override
     {
         callback(shared_from_this());
     }
     void doBegin();
-    virtual ~RedisTransactionImpl();
+    ~RedisTransactionImpl() override;
 
   private:
-    bool isExcutedOrConcelled_{false};
+    bool isExecutedOrCancelled_{false};
     RedisConnectionPtr connPtr_;
 };
-}  // namespace nosql
-}  // namespace drogon
+}  // namespace drogon::nosql

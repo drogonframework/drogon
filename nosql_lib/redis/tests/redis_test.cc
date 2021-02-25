@@ -23,7 +23,9 @@ int main()
             "ping");
         transPtr->execCommandAsync(
             [](const drogon::nosql::RedisResult &r) {
-                std::cout << "1:" << r.getStringForDisplaying() << std::endl;
+                if (r)
+                    std::cout << "1:" << r.getStringForDisplaying()
+                              << std::endl;
             },
             [](const std::exception &err) {
                 std::cout << err.what() << std::endl;

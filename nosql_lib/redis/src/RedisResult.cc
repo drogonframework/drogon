@@ -29,19 +29,14 @@ std::string RedisResult::getStringForDisplayingWithIndent(
     {
         case REDIS_REPLY_STRING:
             return "\"" + std::string{result_->str, result_->len} + "\"";
-            break;
         case REDIS_REPLY_STATUS:
             return std::string{result_->str, result_->len};
-            break;
         case REDIS_REPLY_ERROR:
             return "'ERROR:" + std::string{result_->str, result_->len} + "'";
-            break;
         case REDIS_REPLY_NIL:
             return "(nil)";
-            break;
         case REDIS_REPLY_INTEGER:
             return std::to_string(result_->integer);
-            break;
         case REDIS_REPLY_ARRAY:
         {
             std::string ret;
@@ -62,7 +57,6 @@ std::string RedisResult::getStringForDisplayingWithIndent(
             }
             return ret;
         }
-        break;
         default:
             return "*";
     }
@@ -92,23 +86,17 @@ RedisResultType RedisResult::type() const noexcept
     {
         case REDIS_REPLY_STRING:
             return RedisResultType::kString;
-            break;
         case REDIS_REPLY_ARRAY:
             return RedisResultType::kArray;
-            break;
         case REDIS_REPLY_INTEGER:
             return RedisResultType::kInteger;
-            break;
         case REDIS_REPLY_NIL:
             return RedisResultType::kNil;
-            break;
         case REDIS_REPLY_STATUS:
             return RedisResultType::kStatus;
-            break;
         case REDIS_REPLY_ERROR:
         default:
             return RedisResultType::kError;
-            break;
     }
 }
 

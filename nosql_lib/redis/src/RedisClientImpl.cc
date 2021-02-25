@@ -17,7 +17,7 @@
 using namespace drogon::nosql;
 std::shared_ptr<RedisClient> RedisClient::newRedisClient(
     const trantor::InetAddress &serverAddress,
-    const size_t connectionNumber,
+    size_t connectionNumber,
     const std::string &password)
 {
     return std::make_shared<RedisClientImpl>(serverAddress,
@@ -26,14 +26,14 @@ std::shared_ptr<RedisClient> RedisClient::newRedisClient(
 }
 
 RedisClientImpl::RedisClientImpl(const trantor::InetAddress &serverAddress,
-                                 const size_t numberOfConnections,
-                                 const std::string &password)
+                                 size_t numberOfConnections,
+                                 std::string password)
     : loops_(numberOfConnections < std::thread::hardware_concurrency()
                  ? numberOfConnections
                  : std::thread::hardware_concurrency(),
              "RedisLoop"),
       serverAddr_(serverAddress),
-      password_(password),
+      password_(std::move(password)),
       numberOfConnections_(numberOfConnections)
 {
     loops_.start();
@@ -134,17 +134,17 @@ void RedisClientImpl::execCommandAsync(
         std::weak_ptr<RedisClientImpl> thisWeakPtr = shared_from_this();
         va_list args;
         va_start(args, command);
-        auto formatedCmd = RedisConnection::getFormatedCommad(command, args);
+        auto formattedCmd = RedisConnection::getFormattedCommand(command, args);
         va_end(args);
         std::lock_guard<std::mutex> lock(connectionsMutex_);
         tasks_.emplace([thisWeakPtr,
                         resultCallback = std::move(resultCallback),
                         exceptionCallback = std::move(exceptionCallback),
-                        formatedCmd = std::move(formatedCmd)](
+                        formattedCmd = std::move(formattedCmd)](
                            const RedisConnectionPtr &connPtr) mutable {
-            connPtr->sendFormattedCommad(std::move(formatedCmd),
-                                         std::move(resultCallback),
-                                         std::move(exceptionCallback));
+            connPtr->sendFormattedCommand(std::move(formattedCmd),
+                                          std::move(resultCallback),
+                                          std::move(exceptionCallback));
         });
     }
 }
@@ -181,14 +181,14 @@ void RedisClientImpl::newTransactionAsync(
     {
         std::weak_ptr<RedisClientImpl> thisWeakPtr = shared_from_this();
         std::lock_guard<std::mutex> lock(connectionsMutex_);
-        tasks_.emplace([callback = std::move(callback),
-                        thisWeakPtr](const RedisConnectionPtr &connPtr) {
-            auto thisPtr = thisWeakPtr.lock();
-            if (thisPtr)
-            {
-                thisPtr->newTransactionAsync(callback);
-            }
-        });
+        tasks_.emplace(
+            [callback, thisWeakPtr](const RedisConnectionPtr &connPtr) {
+                auto thisPtr = thisWeakPtr.lock();
+                if (thisPtr)
+                {
+                    thisPtr->newTransactionAsync(callback);
+                }
+            });
     }
 }
 
