@@ -12,6 +12,31 @@ int main()
         trantor::InetAddress("127.0.0.1", 6379), 1, "123");
 
     std::this_thread::sleep_for(1s);
+    redisClient->newTransactionAsync([](const RedisTransactionPtr &transPtr) {
+        transPtr->execCommandAsync(
+            [](const drogon::nosql::RedisResult &r) {
+                std::cout << "1:" << r.getStringForDisplaying() << std::endl;
+            },
+            [](const std::exception &err) {
+                std::cout << err.what() << std::endl;
+            },
+            "ping");
+        transPtr->execCommandAsync(
+            [](const drogon::nosql::RedisResult &r) {
+                std::cout << "1:" << r.getStringForDisplaying() << std::endl;
+            },
+            [](const std::exception &err) {
+                std::cout << err.what() << std::endl;
+            },
+            "ping");
+        transPtr->execute(
+            [](const drogon::nosql::RedisResult &r) {
+                std::cout << "1:" << r.getStringForDisplaying() << std::endl;
+            },
+            [](const std::exception &err) {
+                std::cout << err.what() << std::endl;
+            });
+    });
     redisClient->execCommandAsync(
 
         [](const drogon::nosql::RedisResult &r) {

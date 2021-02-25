@@ -144,5 +144,6 @@ class RedisTransaction : public RedisClient
     virtual void execute(RedisResultCallback &&resultCallback,
                          RedisExceptionCallback &&exceptionCallback) = 0;
 };
+using RedisTransactionPtr = std::shared_ptr<RedisTransaction>;
 }  // namespace nosql
 }  // namespace drogon

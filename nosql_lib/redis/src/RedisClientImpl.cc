@@ -55,8 +55,11 @@ RedisConnectionPtr RedisClientImpl::newConnection(trantor::EventLoop *loop)
         auto thisPtr = thisWeakPtr.lock();
         if (thisPtr)
         {
-            std::lock_guard<std::mutex> lock(thisPtr->connectionsMutex_);
-            thisPtr->readyConnections_.emplace_back(std::move(conn));
+            {
+                std::lock_guard<std::mutex> lock(thisPtr->connectionsMutex_);
+                thisPtr->readyConnections_.push_back(conn);
+            }
+            thisPtr->handleNextTask(conn);
         }
     });
     conn->setDisconnectCallback([thisWeakPtr](RedisConnectionPtr &&conn) {
@@ -81,6 +84,13 @@ RedisConnectionPtr RedisClientImpl::newConnection(trantor::EventLoop *loop)
             loop->runAfter(2.0, [thisPtr, loop]() {
                 thisPtr->connections_.insert(thisPtr->newConnection(loop));
             });
+        }
+    });
+    conn->setIdleCallback([thisWeakPtr](const RedisConnectionPtr &connPtr) {
+        auto thisPtr = thisWeakPtr.lock();
+        if (thisPtr)
+        {
+            thisPtr->handleNextTask(connPtr);
         }
     });
     return conn;
@@ -120,13 +130,21 @@ void RedisClientImpl::execCommandAsync(
     }
     else
     {
+        LOG_TRACE << "no connection available, push command to buffer";
         std::weak_ptr<RedisClientImpl> thisWeakPtr = shared_from_this();
+        va_list args;
+        va_start(args, command);
+        auto formatedCmd = RedisConnection::getFormatedCommad(command, args);
+        va_end(args);
         std::lock_guard<std::mutex> lock(connectionsMutex_);
         tasks_.emplace([thisWeakPtr,
                         resultCallback = std::move(resultCallback),
-                        exceptionCallback = std::move(exceptionCallback)](
+                        exceptionCallback = std::move(exceptionCallback),
+                        formatedCmd = std::move(formatedCmd)](
                            const RedisConnectionPtr &connPtr) mutable {
-            ////////////TODO how to get the args here
+            connPtr->sendFormattedCommad(std::move(formatedCmd),
+                                         std::move(resultCallback),
+                                         std::move(exceptionCallback));
         });
     }
 }
@@ -168,7 +186,7 @@ void RedisClientImpl::newTransactionAsync(
             auto thisPtr = thisWeakPtr.lock();
             if (thisPtr)
             {
-                callback(thisPtr->makeTransaction(connPtr));
+                thisPtr->newTransactionAsync(callback);
             }
         });
     }
@@ -184,9 +202,15 @@ std::shared_ptr<RedisTransaction> RedisClientImpl::makeTransaction(
             auto thisPtr = thisWeakPtr.lock();
             if (thisPtr)
             {
+                {
+                    std::lock_guard<std::mutex> lock(
+                        thisPtr->connectionsMutex_);
+                    thisPtr->readyConnections_.push_back(connPtr);
+                }
                 thisPtr->handleNextTask(connPtr);
             }
         });
+    trans->doBegin();
     return trans;
 }
 
@@ -195,7 +219,6 @@ void RedisClientImpl::handleNextTask(const RedisConnectionPtr &connPtr)
     std::function<void(const RedisConnectionPtr &)> task;
     {
         std::lock_guard<std::mutex> lock(connectionsMutex_);
-        readyConnections_.push_back(connPtr);
         if (!tasks_.empty())
         {
             task = std::move(tasks_.front());

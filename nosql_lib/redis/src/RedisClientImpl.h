@@ -20,6 +20,7 @@
 #include <vector>
 #include <unordered_set>
 #include <queue>
+#include <future>
 
 namespace drogon
 {
@@ -38,13 +39,18 @@ class RedisClientImpl : public RedisClient,
                                   string_view command,
                                   ...) noexcept override;
     virtual ~RedisClientImpl();
-    virtual std::shared_ptr<RedisTransaction> newTransaction() override
+    virtual RedisTransactionPtr newTransaction() override
     {
-        return nullptr;
+        std::promise<RedisTransactionPtr> prom;
+        auto f = prom.get_future();
+        newTransactionAsync([&prom](const RedisTransactionPtr &transPtr) {
+            prom.set_value(transPtr);
+        });
+        return f.get();
     }
     virtual void newTransactionAsync(
-        const std::function<void(const std::shared_ptr<RedisTransaction> &)>
-            &callback) override;
+        const std::function<void(const RedisTransactionPtr &)> &callback)
+        override;
 
   private:
     trantor::EventLoopThreadPool loops_;

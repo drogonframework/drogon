@@ -231,6 +231,14 @@ void RedisConnection::handleResult(redisReply *result)
             RedisException(RedisErrorCode::kRedisError,
                            std::string{result->str, result->len}));
     }
+    if (resultCallbacks_.empty())
+    {
+        assert(exceptionCallbacks_.empty());
+        if (idleCallback_)
+        {
+            idleCallback_(shared_from_this());
+        }
+    }
 }
 
 void RedisConnection::disconnect()
