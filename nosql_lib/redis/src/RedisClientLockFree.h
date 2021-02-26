@@ -46,6 +46,7 @@ class RedisClientLockFree final
                "client, please use the asynchronous version "
                "(newTransactionAsync)";
         assert(0);
+        return nullptr;
     }
     void newTransactionAsync(
         const std::function<void(const RedisTransactionPtr &)> &callback)
