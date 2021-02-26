@@ -231,6 +231,10 @@ static void loadApp(const Json::Value &app)
         return;
     // threads number
     auto threadsNum = app.get("threads_num", 1).asUInt64();
+    if (threadsNum == 1)
+    {
+        threadsNum = app.get("number_of_threads", 1).asUInt64();
+    }
     if (threadsNum == 0)
     {
         // set the number to the number of processors.
@@ -491,6 +495,10 @@ static void loadDbClients(const Json::Value &dbClients)
             password = client.get("password", "").asString();
         }
         auto connNum = client.get("connection_number", 1).asUInt();
+        if (connNum == 1)
+        {
+            connNum = client.get("number_of_connections", 1).asUInt();
+        }
         auto name = client.get("name", "default").asString();
         auto filename = client.get("filename", "").asString();
         auto isFast = client.get("is_fast", false).asBool();
@@ -526,7 +534,11 @@ static void loadRedisClients(const Json::Value &redisClients)
         {
             password = client.get("password", "").asString();
         }
-        auto connNum = client.get("number_of_connections", 1).asUInt();
+        auto connNum = client.get("connection_number", 1).asUInt();
+        if (connNum == 1)
+        {
+            connNum = client.get("number_of_connections", 1).asUInt();
+        }
         auto name = client.get("name", "default").asString();
         auto isFast = client.get("is_fast", false).asBool();
         drogon::app().createRedisClient(

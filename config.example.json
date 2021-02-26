@@ -52,9 +52,9 @@
             //client_encoding: The character set used by the client. it is empty string by default which 
             //means use the default character set.
             //"client_encoding": "",
-            //connection_number: 1 by default, if the 'is_fast' is true, the number is the number of  
+            //number_of_connections: 1 by default, if the 'is_fast' is true, the number is the number of  
             //connections per IO thread, otherwise it is the total number of all connections.  
-            "connection_number": 1
+            "number_of_connections": 1
         }
     ],
     "redis_clients": [
@@ -76,9 +76,9 @@
         }
     ],*/
     "app": {
-        //threads_num: The number of IO threads, 1 by default, if the value is set to 0, the number of threads
+        //number_of_threads: The number of IO threads, 1 by default, if the value is set to 0, the number of threads
         //is the number of CPU cores
-        "threads_num": 1,
+        "number_of_threads": 1,
         //enable_session: False by default
         "enable_session": true,
         "session_timeout": 0,
@@ -146,9 +146,9 @@
                 "filters": []
             }
         ],
-        //max_connections: maximum connections number,100000 by default
+        //max_connections: maximum number of connections, 100000 by default
         "max_connections": 100000,
-        //max_connections_per_ip: maximum connections number per clinet,0 by default which means no limit
+        //max_connections_per_ip: maximum number of connections per clinet, 0 by default which means no limit
         "max_connections_per_ip": 0,
         //Load_dynamic_views: False by default, when set to true, drogon
         //compiles and loads dynamically "CSP View Files" in directories defined
