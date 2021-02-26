@@ -42,6 +42,12 @@ class DbClient;
 using DbClientPtr = std::shared_ptr<DbClient>;
 class DbClientManager;
 }  // namespace orm
+namespace nosql
+{
+class RedisClient;
+using RedisClientPtr = std::shared_ptr<RedisClient>;
+class RedisClientManager;
+}  // namespace nosql
 }  // namespace drogon
 
 namespace trantor

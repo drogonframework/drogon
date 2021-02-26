@@ -251,10 +251,15 @@ if (Hiredis_FOUND)
     set(DROGON_SOURCES ${DROGON_SOURCES} nosql_lib/redis/src/RedisClientImpl.cc
             nosql_lib/redis/src/RedisConnection.cc
             nosql_lib/redis/src/RedisResult.cc
+            nosql_lib/redis/src/RedisClientLockFree.cc
+            nosql_lib/redis/src/RedisClientManager.cc
             nosql_lib/redis/src/RedisTransactionImpl.cc)
+
     if (BUILD_TESTING)
         add_subdirectory(nosql_lib/redis/tests)
     endif (BUILD_TESTING)
+else ()
+    set(DROGON_SOURCES ${DROGON_SOURCES} lib/src/RedisClientManagerSkipped.cc)
 endif (Hiredis_FOUND)
 
 execute_process(COMMAND "git" rev-parse HEAD

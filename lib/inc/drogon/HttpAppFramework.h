@@ -28,6 +28,7 @@
 #include <drogon/HttpRequest.h>
 #include <drogon/HttpResponse.h>
 #include <drogon/orm/DbClient.h>
+#include <drogon/nosql/RedisClient.h>
 #include <trantor/net/Resolver.h>
 #include <trantor/net/EventLoop.h>
 #include <trantor/utils/NonCopyable.h>
@@ -59,7 +60,7 @@ class WebSocketControllerBase;
 class HttpAppFramework : public trantor::NonCopyable
 {
   public:
-    virtual ~HttpAppFramework();
+    virtual ~HttpAppFramework() = default;
     /// Get the instance of HttpAppFramework
     /**
      * HttpAppFramework works at singleton mode, so any calling of this
@@ -1128,6 +1129,22 @@ class HttpAppFramework : public trantor::NonCopyable
      */
     virtual bool areAllDbClientsAvailable() const noexcept = 0;
 
+    /// Get a redis client by name
+    /**
+     * @note
+     * This method must be called after the framework has been run.
+     */
+    virtual nosql::RedisClientPtr getRedisClient(
+        const std::string &name = "default") = 0;
+
+    /// Get a 'fast' redis client by name
+    /**
+     * @note
+     * This method must be called after the framework has been run.
+     */
+    virtual nosql::RedisClientPtr getFastRedisClient(
+        const std::string &name = "default") = 0;
+
     /**
      * @brief This method is to enable or disable the unicode escaping (\u) in
      * the json string of HTTP responses or requests. it works (disable
@@ -1193,6 +1210,26 @@ class HttpAppFramework : public trantor::NonCopyable
         const std::string &name = "default",
         const bool isFast = false,
         const std::string &characterSet = "") = 0;
+
+    /// Create a redis client
+    /**
+     * @param ip IP of redis server.
+     * @param port The port on which the redis server is listening.
+     * @param name The client name.
+     * @param password Password for the redis server
+     * @param connectionNum The number of connections to the redis server.
+     * @param isFast Indicates if the client is a fast database client.
+     *
+     * @note
+     * This operation can be performed by an option in the configuration file.
+     */
+    virtual HttpAppFramework &createRedisClient(
+        const std::string &ip,
+        unsigned short port,
+        const std::string &name = "default",
+        const std::string &password = "",
+        size_t connectionNum = 1,
+        bool isFast = false) = 0;
 
     /// Get the DNS resolver
     /**
