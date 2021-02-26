@@ -512,6 +512,28 @@ static void loadDbClients(const Json::Value &dbClients)
                                      characterSet);
     }
 }
+
+static void loadRedisClients(const Json::Value &redisClients)
+{
+    if (!redisClients)
+        return;
+    for (auto const &client : redisClients)
+    {
+        auto host = client.get("host", "127.0.0.1").asString();
+        auto port = client.get("port", 6379).asUInt();
+        auto password = client.get("passwd", "").asString();
+        if (password.empty())
+        {
+            password = client.get("password", "").asString();
+        }
+        auto connNum = client.get("number_of_connections", 1).asUInt();
+        auto name = client.get("name", "default").asString();
+        auto isFast = client.get("is_fast", false).asBool();
+        drogon::app().createRedisClient(
+            host, port, name, password, connNum, isFast);
+    }
+}
+
 static void loadListeners(const Json::Value &listeners)
 {
     if (!listeners)
@@ -544,4 +566,5 @@ void ConfigLoader::load()
     loadSSL(configJsonRoot_["ssl"]);
     loadListeners(configJsonRoot_["listeners"]);
     loadDbClients(configJsonRoot_["db_clients"]);
+    loadRedisClients(configJsonRoot_["redis_clients"]);
 }
