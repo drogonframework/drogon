@@ -528,7 +528,7 @@ void HttpAppFrameworkImpl::run()
     // loop, so put the main loop into ioLoops.
     ioLoops.push_back(getLoop());
     dbClientManagerPtr_->createDbClients(ioLoops);
-
+    redisClientManagerPtr_->createRedisClients(ioLoops);
     if (useSession_)
     {
         sessionManagerPtr_ =
