@@ -65,14 +65,9 @@ void RedisTransactionImpl::execCommandAsync(
 void RedisTransactionImpl::doBegin()
 {
     assert(!isExecutedOrCancelled_);
-    execCommandAsync(
-        [](const RedisResult &result) {
-
-        },
-        [thisPtr = shared_from_this()](const RedisException &err) {
-            thisPtr->isExecutedOrCancelled_ = true;
-        },
-        "MULTI");
+    execCommandAsync([](const RedisResult &result) {},
+                     [](const RedisException &err) {},
+                     "MULTI");
 }
 
 RedisTransactionImpl::~RedisTransactionImpl()
@@ -80,9 +75,9 @@ RedisTransactionImpl::~RedisTransactionImpl()
     if (!isExecutedOrCancelled_)
     {
         LOG_WARN << "The transaction is not executed before being destroyed";
-        execCommandAsync([](const RedisResult &result) {},
-                         [](const RedisException &err) {},
-                         "DISCARD");
+        connPtr_->sendCommand([](const RedisResult &result) {},
+                              [](const RedisException &err) {},
+                              "DISCARD");
     }
     LOG_TRACE << "transaction is destroyed";
 }

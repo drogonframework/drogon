@@ -178,6 +178,7 @@ std::shared_ptr<RedisTransaction> RedisClientLockFree::makeTransaction(
     auto trans = std::shared_ptr<RedisTransactionImpl>(
         new RedisTransactionImpl(connPtr),
         [thisWeakPtr, connPtr](RedisTransactionImpl *p) {
+            delete p;
             auto thisPtr = thisWeakPtr.lock();
             if (thisPtr)
             {

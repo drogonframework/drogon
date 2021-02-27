@@ -149,6 +149,19 @@ class RedisConnection : public trantor::NonCopyable,
             redisAsyncDisconnect(redisContext_);
     }
     void disconnect();
+    void sendCommand(RedisResultCallback &&resultCallback,
+                     RedisExceptionCallback &&exceptionCallback,
+                     string_view command,
+                     ...)
+    {
+        va_list args;
+        va_start(args, command);
+        sendvCommand(command,
+                     std::move(resultCallback),
+                     std::move(exceptionCallback),
+                     args);
+        va_end(args);
+    }
 
   private:
     redisAsyncContext *redisContext_{nullptr};
@@ -176,19 +189,6 @@ class RedisConnection : public trantor::NonCopyable,
                            RedisResultCallback &&resultCallback,
                            RedisExceptionCallback &&exceptionCallback);
     void handleDisconnect();
-    void sendCommand(RedisResultCallback &&resultCallback,
-                     RedisExceptionCallback &&exceptionCallback,
-                     string_view command,
-                     ...)
-    {
-        va_list args;
-        va_start(args, command);
-        sendvCommand(command,
-                     std::move(resultCallback),
-                     std::move(exceptionCallback),
-                     args);
-        va_end(args);
-    }
 };
 using RedisConnectionPtr = std::shared_ptr<RedisConnection>;
 }  // namespace nosql

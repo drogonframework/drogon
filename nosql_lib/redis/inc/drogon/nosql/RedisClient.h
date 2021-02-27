@@ -29,6 +29,8 @@ namespace drogon
 namespace nosql
 {
 #ifdef __cpp_impl_coroutine
+class RedisClient;
+class RedisTransaction;
 namespace internal
 {
 struct RedisAwaiter : public CallbackAwaiter<RedisResult>
@@ -55,6 +57,19 @@ struct RedisAwaiter : public CallbackAwaiter<RedisResult>
 
   private:
     RedisFunction function_;
+};
+
+struct RedisTrasactionAwaiter
+    : public CallbackAwaiter<std::shared_ptr<RedisTransaction>>
+{
+    RedisTrasactionAwaiter(RedisClient *client) : client_(client)
+    {
+    }
+
+    void await_suspend(std::coroutine_handle<> handle);
+
+  private:
+    RedisClient *client_;
 };
 }  // namespace internal
 #endif
@@ -136,6 +151,10 @@ class RedisClient
                                  args...);
             });
     }
+    Task<std::shared_ptr<RedisTransaction>> newTransactionCoro()
+    {
+        co_return co_await nosql::internal::RedisTrasactionAwaiter(this);
+    }
 #endif
 };
 class RedisTransaction : public RedisClient
@@ -144,8 +163,37 @@ class RedisTransaction : public RedisClient
     // virtual void cancel() = 0;
     virtual void execute(RedisResultCallback &&resultCallback,
                          RedisExceptionCallback &&exceptionCallback) = 0;
+#ifdef __cpp_impl_coroutine
+    Task<RedisResult> executeCoro()
+    {
+        co_return co_await internal::RedisAwaiter(
+            [this](RedisResultCallback &&resultCallback,
+                   RedisExceptionCallback &&exceptionCallback) {
+                execute(std::move(resultCallback),
+                        std::move(exceptionCallback));
+            });
+    }
+#endif
 };
 using RedisClientPtr = std::shared_ptr<RedisClient>;
 using RedisTransactionPtr = std::shared_ptr<RedisTransaction>;
+
+#ifdef __cpp_impl_coroutine
+inline void internal::RedisTrasactionAwaiter::await_suspend(
+    std::coroutine_handle<> handle)
+{
+    assert(client_ != nullptr);
+    client_->newTransactionAsync(
+        [this, &handle](const std::shared_ptr<RedisTransaction> &transaction) {
+            if (transaction == nullptr)
+                setException(std::make_exception_ptr(
+                    RedisException(RedisErrorCode::kInternalError,
+                                   "Failed to create transaction")));
+            else
+                setValue(transaction);
+            handle.resume();
+        });
+}
+#endif
 }  // namespace nosql
 }  // namespace drogon
