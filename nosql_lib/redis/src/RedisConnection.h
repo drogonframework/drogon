@@ -25,7 +25,9 @@
 #include <memory>
 #include <queue>
 
-namespace drogon::nosql
+namespace drogon
+{
+namespace nosql
 {
 enum class ConnectStatus
 {
@@ -189,4 +191,5 @@ class RedisConnection : public trantor::NonCopyable,
     }
 };
 using RedisConnectionPtr = std::shared_ptr<RedisConnection>;
-}  // namespace drogon::nosql
+}  // namespace nosql
+}  // namespace drogon

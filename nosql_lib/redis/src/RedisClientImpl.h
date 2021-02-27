@@ -22,7 +22,9 @@
 #include <queue>
 #include <future>
 
-namespace drogon::nosql
+namespace drogon
+{
+namespace nosql
 {
 class RedisClientImpl final
     : public RedisClient,
@@ -66,4 +68,5 @@ class RedisClientImpl final
         const RedisConnectionPtr &connPtr);
     void handleNextTask(const RedisConnectionPtr &connPtr);
 };
-}  // namespace drogon::nosql
+}  // namespace nosql
+}  // namespace drogon

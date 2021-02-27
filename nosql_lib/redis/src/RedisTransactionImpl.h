@@ -17,7 +17,9 @@
 #include <drogon/nosql/RedisClient.h>
 #include <memory>
 
-namespace drogon::nosql
+namespace drogon
+{
+namespace nosql
 {
 class RedisTransactionImpl final
     : public RedisTransaction,
@@ -49,4 +51,5 @@ class RedisTransactionImpl final
     bool isExecutedOrCancelled_{false};
     RedisConnectionPtr connPtr_;
 };
-}  // namespace drogon::nosql
+}  // namespace nosql
+}  // namespace drogon

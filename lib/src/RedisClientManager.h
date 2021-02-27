@@ -22,7 +22,9 @@
 #include <string>
 #include <memory>
 
-namespace drogon::nosql
+namespace drogon
+{
+namespace nosql
 {
 class RedisClientManager : public trantor::NonCopyable
 {
@@ -62,4 +64,5 @@ class RedisClientManager : public trantor::NonCopyable
     };
     std::vector<RedisInfo> redisInfos_;
 };
-}  // namespace drogon::nosql
+}  // namespace nosql
+}  // namespace drogon

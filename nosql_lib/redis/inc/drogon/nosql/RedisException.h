@@ -15,7 +15,9 @@
 #include <exception>
 #include <functional>
 
-namespace drogon::nosql
+namespace drogon
+{
+namespace nosql
 {
 enum class RedisErrorCode
 {
@@ -53,4 +55,5 @@ class RedisException final : public std::exception
     RedisErrorCode code_{RedisErrorCode::kNone};
 };
 using RedisExceptionCallback = std::function<void(const RedisException &)>;
-}  // namespace drogon::nosql
+}  // namespace nosql
+}  // namespace drogon

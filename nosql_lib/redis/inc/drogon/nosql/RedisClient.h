@@ -24,7 +24,9 @@
 #include <drogon/utils/coroutine.h>
 #endif
 
-namespace drogon::nosql
+namespace drogon
+{
+namespace nosql
 {
 #ifdef __cpp_impl_coroutine
 namespace internal
@@ -145,4 +147,5 @@ class RedisTransaction : public RedisClient
 };
 using RedisClientPtr = std::shared_ptr<RedisClient>;
 using RedisTransactionPtr = std::shared_ptr<RedisTransaction>;
-}  // namespace drogon::nosql
+}  // namespace nosql
+}  // namespace drogon
