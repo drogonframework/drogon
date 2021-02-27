@@ -110,7 +110,7 @@ class HttpAppFramework : public trantor::NonCopyable
      * @note
      * The event loop is one of the network IO loops. Use the loop
      * for events/actions rather then the main thread.
-     * REMAKRS : Function assumed the number of threads will not exceed 2^32.
+     * REMARKS : Function assumed the number of threads will not exceed 2^32.
      *           Change to long long for alien computers.
      */
     virtual trantor::EventLoop *getIOLoop(size_t id) const = 0;
@@ -201,7 +201,7 @@ class HttpAppFramework : public trantor::NonCopyable
      * Users can use the callback to modify the response if they want.
      * @note This advice is called before any subsequent operation on the
      * response is performed by drogon or applications, so some modification
-     * (e.g. modification on the status code) in this callback may be overrided
+     * (e.g. modification on the status code) in this callback may be override
      * by subsequent operations.
      * @return HttpAppFramework&
      */
@@ -283,7 +283,7 @@ class HttpAppFramework : public trantor::NonCopyable
 
     /// Register an advice called after routing
     /**
-     * @param advice is called immediately after the request matchs a handler
+     * @param advice is called immediately after the request matches a handler
      * path and before any 'doFilter' method of filters applies. The parameters
      * of the advice are same as those of the doFilter method of the Filter
      * class.
@@ -508,7 +508,7 @@ class HttpAppFramework : public trantor::NonCopyable
      */
     virtual HttpAppFramework &registerWebSocketController(
         const std::string &pathName,
-        const std::string &crtlName,
+        const std::string &ctrlName,
         const std::vector<internal::HttpConstraint> &filtersAndMethods =
             std::vector<internal::HttpConstraint>{}) = 0;
 
@@ -564,7 +564,7 @@ class HttpAppFramework : public trantor::NonCopyable
     HttpAppFramework &registerFilter(const std::shared_ptr<T> &filterPtr)
     {
         static_assert(std::is_base_of<HttpFilterBase, T>::value,
-                      "Error! Only fitler objects can be registered here");
+                      "Error! Only filter objects can be registered here");
         static_assert(!T::isAutoCreation,
                       "Filters created and initialized "
                       "automatically by drogon cannot be "
@@ -697,7 +697,7 @@ class HttpAppFramework : public trantor::NonCopyable
      */
     virtual HttpAppFramework &disableSession() = 0;
 
-    /// Set the root path of HTTP document, defaut path is ./
+    /// Set the root path of HTTP document, default path is ./
     /**
      * @note
      * This operation can be performed by an option in the configuration file.
@@ -772,7 +772,7 @@ class HttpAppFramework : public trantor::NonCopyable
 /// Enable supporting for dynamic views loading.
 /**
  *
- * @param libPaths is a vactor that contains paths to view files.
+ * @param libPaths is a vector that contains paths to view files.
  *
  * @param outputPath is the directory where the output source files locate. if
  * it is set to an empty string, drogon use libPaths as output paths. If the
