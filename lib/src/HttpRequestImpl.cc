@@ -515,7 +515,7 @@ void HttpRequestImpl::swap(HttpRequestImpl &that) noexcept
     swap(flagForParsingParameters_, that.flagForParsingParameters_);
     swap(matchedPathPattern_, that.matchedPathPattern_);
     swap(path_, that.path_);
-	 swap(pathEncode_, that.pathEncode_);
+    swap(pathEncode_, that.pathEncode_);
     swap(query_, that.query_);
     swap(headers_, that.headers_);
     swap(cookies_, that.cookies_);
