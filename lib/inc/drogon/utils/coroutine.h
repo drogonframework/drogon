@@ -23,7 +23,6 @@
 #include <atomic>
 #include <future>
 #include <cassert>
-#include <iostream>
 
 namespace drogon
 {
@@ -107,7 +106,7 @@ struct [[nodiscard]] Task
     {
     }
     Task(const Task &) = delete;
-    Task(Task && other)
+    Task(Task &&other)
     {
         coro_ = other.coro_;
         other.coro_ = nullptr;
@@ -118,7 +117,7 @@ struct [[nodiscard]] Task
             coro_.destroy();
     }
     Task &operator=(const Task &) = delete;
-    Task &operator=(Task && other)
+    Task &operator=(Task &&other)
     {
         coro_ = other.coro_;
         other.coro_ = nullptr;
@@ -155,7 +154,6 @@ struct [[nodiscard]] Task
             if (exception_ != nullptr)
                 std::rethrow_exception(exception_);
             assert(value.has_value() == true);
-            std::cout << "rvalue" << std::endl;
             return std::move(value.value());
         }
 
@@ -266,7 +264,7 @@ struct [[nodiscard]] Task<void>
             coro_.destroy();
     }
     Task &operator=(const Task &) = delete;
-    Task &operator=(Task && other)
+    Task &operator=(Task &&other)
     {
         coro_ = other.coro_;
         other.coro_ = nullptr;
