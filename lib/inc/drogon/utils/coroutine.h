@@ -13,6 +13,8 @@
  */
 #pragma once
 
+#include <drogon/utils/optional.h>
+#include <trantor/net/EventLoop.h>
 #include <algorithm>
 #include <coroutine>
 #include <exception>
@@ -21,14 +23,10 @@
 #include <atomic>
 #include <future>
 #include <cassert>
-#include <optional>
 #include <iostream>
-#include <trantor/net/EventLoop.h>
 
 namespace drogon
 {
-template <typename T>
-using optional = std::optional<T>;
 namespace internal
 {
 template <typename T>
