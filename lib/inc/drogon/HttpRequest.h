@@ -325,6 +325,7 @@ class HttpRequest
 
     /// Set the path of the request
     virtual void setPath(const std::string &path) = 0;
+    virtual void setPathEncode(bool) = 0;
 
     /// Set the parameter of the request
     virtual void setParameter(const std::string &key,

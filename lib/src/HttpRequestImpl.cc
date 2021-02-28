@@ -194,7 +194,13 @@ void HttpRequestImpl::appendToBuffer(trantor::MsgBuffer *output) const
 
     if (!path_.empty())
     {
+      if ( path_encode_ ) {
         output->append(utils::urlEncode(path_));
+      }
+      else
+      {
+        output->append(path_);
+      }
     }
     else
     {
