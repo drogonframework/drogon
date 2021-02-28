@@ -3,7 +3,6 @@
 #include <memory>
 #include <type_traits>
 #include <iostream>
-#include <cppcoro/task.hpp>
 
 using namespace drogon;
 
