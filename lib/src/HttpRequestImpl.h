@@ -51,6 +51,7 @@ class HttpRequestImpl : public HttpRequest
         cookies_.clear();
         flagForParsingParameters_ = false;
         path_.clear();
+        pathEncode_ = true;
         matchedPathPattern_ = "";
         query_.clear();
         parameters_.clear();
@@ -119,6 +120,11 @@ class HttpRequestImpl : public HttpRequest
     virtual void setPath(const std::string &path) override
     {
         path_ = path;
+    }
+
+    void setPathEncode(bool pathEncode) override
+    {
+        pathEncode_ = pathEncode;
     }
 
     virtual const std::unordered_map<std::string, std::string> &parameters()
@@ -488,6 +494,7 @@ class HttpRequestImpl : public HttpRequest
     HttpMethod method_{Invalid};
     Version version_{Version::kUnknown};
     std::string path_;
+    bool pathEncode_{true};
     string_view matchedPathPattern_{""};
     std::string query_;
     std::unordered_map<std::string, std::string> headers_;

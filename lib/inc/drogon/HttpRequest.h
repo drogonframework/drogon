@@ -326,6 +326,16 @@ class HttpRequest
     /// Set the path of the request
     virtual void setPath(const std::string &path) = 0;
 
+    /**
+     * @brief The default behavior is to encode the value of setPath
+     * using urlEncode. Setting the path encode to false avoid the
+     * value of path will be changed by the library
+     *
+     * @param bool true --> the path will be url encoded
+     *             false --> using value of path as it is set
+     */
+    virtual void setPathEncode(bool) = 0;
+
     /// Set the parameter of the request
     virtual void setParameter(const std::string &key,
                               const std::string &value) = 0;
