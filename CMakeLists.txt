@@ -15,6 +15,7 @@ endif ()
 option(BUILD_CTL "Build drogon_ctl" ${BUILD_PROGRAMS})
 option(BUILD_EXAMPLES "Build examples" ${BUILD_PROGRAMS})
 option(BUILD_ORM "Build orm" ON)
+option(BUILD_REDIS "Build redis client" ON)
 option(COZ_PROFILING "Use coz for profiling" OFF)
 option(LIBPQ_BATCH_MODE "Use batch mode for libpq" ON)
 option(BUILD_DROGON_SHARED "Build drogon as a shared lib" OFF)
@@ -253,25 +254,27 @@ else (OpenSSL_FOUND)
             lib/src/ssl_funcs/Sha1.cc)
 endif (OpenSSL_FOUND)
 
-find_package(Hiredis)
-if (Hiredis_FOUND)
-    add_definitions(-DUSE_REDIS)
-    target_link_libraries(${PROJECT_NAME} PRIVATE Hiredis_lib)
-    set(DROGON_SOURCES
-            ${DROGON_SOURCES}
-            nosql_lib/redis/src/RedisClientImpl.cc
-            nosql_lib/redis/src/RedisConnection.cc
-            nosql_lib/redis/src/RedisResult.cc
-            nosql_lib/redis/src/RedisClientLockFree.cc
-            nosql_lib/redis/src/RedisClientManager.cc
-            nosql_lib/redis/src/RedisTransactionImpl.cc)
+if (BUILD_REDIS)
+    find_package(Hiredis)
+    if (Hiredis_FOUND)
+        add_definitions(-DUSE_REDIS)
+        target_link_libraries(${PROJECT_NAME} PRIVATE Hiredis_lib)
+        set(DROGON_SOURCES
+                ${DROGON_SOURCES}
+                nosql_lib/redis/src/RedisClientImpl.cc
+                nosql_lib/redis/src/RedisConnection.cc
+                nosql_lib/redis/src/RedisResult.cc
+                nosql_lib/redis/src/RedisClientLockFree.cc
+                nosql_lib/redis/src/RedisClientManager.cc
+                nosql_lib/redis/src/RedisTransactionImpl.cc)
 
-    if (BUILD_TESTING)
-        add_subdirectory(nosql_lib/redis/tests)
-    endif (BUILD_TESTING)
-else ()
-    set(DROGON_SOURCES ${DROGON_SOURCES} lib/src/RedisClientManagerSkipped.cc)
-endif (Hiredis_FOUND)
+        if (BUILD_TESTING)
+            add_subdirectory(nosql_lib/redis/tests)
+        endif (BUILD_TESTING)
+    else ()
+        set(DROGON_SOURCES ${DROGON_SOURCES} lib/src/RedisClientManagerSkipped.cc)
+    endif (Hiredis_FOUND)
+endif (BUILD_REDIS)
 
 execute_process(COMMAND "git" rev-parse HEAD
         WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
