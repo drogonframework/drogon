@@ -4,9 +4,7 @@ project(drogon)
 
 message(STATUS "compiler: " ${CMAKE_CXX_COMPILER_ID})
 include(CheckCXXSourceRuns)
-check_cxx_source_runs(
-        "int main(){return 0;}"
-        not_cross_compiling)
+check_cxx_source_runs("int main(){return 0;}" not_cross_compiling)
 
 if (not_cross_compiling)
     set(BUILD_PROGRAMS ON)
@@ -120,7 +118,12 @@ find_package(Jsoncpp REQUIRED)
 target_link_libraries(${PROJECT_NAME} PUBLIC Jsoncpp_lib)
 list(APPEND INCLUDE_DIRS_FOR_DYNAMIC_VIEW ${JSONCPP_INCLUDE_DIRS})
 
-if (NOT ${CMAKE_SYSTEM_NAME} STREQUAL "FreeBSD" AND NOT ${CMAKE_SYSTEM_NAME} STREQUAL "OpenBSD" AND NOT WIN32)
+if (NOT
+        ${CMAKE_SYSTEM_NAME}
+        STREQUAL
+        "FreeBSD"
+        AND NOT ${CMAKE_SYSTEM_NAME} STREQUAL "OpenBSD"
+        AND NOT WIN32)
     find_package(UUID REQUIRED)
     target_link_libraries(${PROJECT_NAME} PRIVATE UUID_lib)
 
@@ -137,7 +140,12 @@ if (NOT ${CMAKE_SYSTEM_NAME} STREQUAL "FreeBSD" AND NOT ${CMAKE_SYSTEM_NAME} STR
     else ()
         message(FATAL_ERROR "uuid lib error")
     endif ()
-endif (NOT ${CMAKE_SYSTEM_NAME} STREQUAL "FreeBSD" AND NOT ${CMAKE_SYSTEM_NAME} STREQUAL "OpenBSD" AND NOT WIN32)
+endif (NOT
+        ${CMAKE_SYSTEM_NAME}
+        STREQUAL
+        "FreeBSD"
+        AND NOT ${CMAKE_SYSTEM_NAME} STREQUAL "OpenBSD"
+        AND NOT WIN32)
 
 find_package(Brotli)
 if (Brotli_FOUND)
@@ -247,8 +255,11 @@ endif (OpenSSL_FOUND)
 
 find_package(Hiredis)
 if (Hiredis_FOUND)
+    add_definitions(-DUSE_REDIS)
     target_link_libraries(${PROJECT_NAME} PRIVATE Hiredis_lib)
-    set(DROGON_SOURCES ${DROGON_SOURCES} nosql_lib/redis/src/RedisClientImpl.cc
+    set(DROGON_SOURCES
+            ${DROGON_SOURCES}
+            nosql_lib/redis/src/RedisClientImpl.cc
             nosql_lib/redis/src/RedisConnection.cc
             nosql_lib/redis/src/RedisResult.cc
             nosql_lib/redis/src/RedisClientLockFree.cc
@@ -451,8 +462,7 @@ set(ORM_HEADERS
         orm_lib/inc/drogon/orm/RestfulController.h)
 install(FILES ${ORM_HEADERS} DESTINATION ${INSTALL_INCLUDE_DIR}/drogon/orm)
 
-set(NOSQL_HEADERS
-        nosql_lib/redis/inc/drogon/nosql/RedisClient.h
+set(NOSQL_HEADERS nosql_lib/redis/inc/drogon/nosql/RedisClient.h
         nosql_lib/redis/inc/drogon/nosql/RedisResult.h
         nosql_lib/redis/inc/drogon/nosql/RedisException.h)
 install(FILES ${NOSQL_HEADERS} DESTINATION ${INSTALL_INCLUDE_DIR}/drogon/nosql)
