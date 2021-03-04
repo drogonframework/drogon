@@ -59,10 +59,10 @@ struct RedisAwaiter : public CallbackAwaiter<RedisResult>
     RedisFunction function_;
 };
 
-struct RedisTrasactionAwaiter
+struct RedisTransactionAwaiter
     : public CallbackAwaiter<std::shared_ptr<RedisTransaction>>
 {
-    RedisTrasactionAwaiter(RedisClient *client) : client_(client)
+    RedisTransactionAwaiter(RedisClient *client) : client_(client)
     {
     }
 
@@ -137,10 +137,32 @@ class RedisClient
             &callback) = 0;
     virtual ~RedisClient() = default;
 #ifdef __cpp_impl_coroutine
+    /**
+     * @brief Send a Redis command and await the RedisResult in a coroutine.
+     *
+     * @tparam Arguments
+     * @param command
+     * @param args
+     * @return internal::RedisAwaiter that can be awaited in a coroutine.
+     * For example:
+     * @code
+        try
+        {
+            auto result = co_await redisClient->execCommandCoro("get %s",
+     "keyname");
+            std::cout << result.getStringForDisplaying() << "\n";
+        }
+        catch(const RedisException &err)
+        {
+            std::cout << err.what() << "\n";
+        }
+       @endcode
+     */
     template <typename... Arguments>
-    Task<RedisResult> execCommandCoro(string_view command, Arguments... args)
+    internal::RedisAwaiter execCommandCoro(string_view command,
+                                           Arguments... args)
     {
-        co_return co_await internal::RedisAwaiter(
+        return internal::RedisAwaiter(
             [command,
              this,
              args...](RedisResultCallback &&commandCallback,
@@ -151,9 +173,27 @@ class RedisClient
                                  args...);
             });
     }
-    Task<std::shared_ptr<RedisTransaction>> newTransactionCoro()
+    /**
+     * @brief await a RedisTransactionPtr in a coroutine.
+     *
+     * @return internal::RedisTransactionAwaiter that can be awaited in a
+     * coroutine.
+     * For example:
+     * @code
+        try
+        {
+            auto transPtr = co_await redisClient->newTransactionCoro();
+            ...
+        }
+        catch(const RedisException &err)
+        {
+            std::cout << err.what() << "\n";
+        }
+       @endcode
+     */
+    internal::RedisTransactionAwaiter newTransactionCoro()
     {
-        co_return co_await nosql::internal::RedisTrasactionAwaiter(this);
+        return internal::RedisTransactionAwaiter(this);
     }
 #endif
 };
@@ -164,9 +204,29 @@ class RedisTransaction : public RedisClient
     virtual void execute(RedisResultCallback &&resultCallback,
                          RedisExceptionCallback &&exceptionCallback) = 0;
 #ifdef __cpp_impl_coroutine
-    Task<RedisResult> executeCoro()
+    /**
+     * @brief Send a "exec" command to execute the transaction and await a
+     * RedisResult in a coroutine.
+     *
+     * @return internal::RedisAwaiter that can be awaited in a coroutine.
+     * For example:
+     * @code
+        try
+        {
+            auto transPtr = co_await redisClient->newTransactionCoro();
+            ...
+            auto result = co_await transPtr->executeCoro();
+            std::cout << result.getStringForDisplaying() << "\n";
+        }
+        catch(const RedisException &err)
+        {
+            std::cout << err.what() << "\n";
+        }
+       @endcode
+     */
+    internal::RedisAwaiter executeCoro()
     {
-        co_return co_await internal::RedisAwaiter(
+        return internal::RedisAwaiter(
             [this](RedisResultCallback &&resultCallback,
                    RedisExceptionCallback &&exceptionCallback) {
                 execute(std::move(resultCallback),
@@ -179,7 +239,7 @@ using RedisClientPtr = std::shared_ptr<RedisClient>;
 using RedisTransactionPtr = std::shared_ptr<RedisTransaction>;
 
 #ifdef __cpp_impl_coroutine
-inline void internal::RedisTrasactionAwaiter::await_suspend(
+inline void internal::RedisTransactionAwaiter::await_suspend(
     std::coroutine_handle<> handle)
 {
     assert(client_ != nullptr);
