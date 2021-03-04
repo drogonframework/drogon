@@ -46,6 +46,7 @@ jobs:
       run: |
         brew install jsoncpp ossp-uuid brotli zlib
         brew install openssl lz4 mariadb sqlite3 postgresql hiredis
+        brew install redis
 
     - name: (Linux) Install dependencies
       if: runner.os == 'Linux'
@@ -112,6 +113,7 @@ jobs:
         brew tap homebrew/services;
         brew services restart postgresql;
         brew services start mariadb;
+        brew services start redis;
         sleep 4;
         mariadb -e "SET PASSWORD FOR 'root'@'localhost' = PASSWORD('')";
         mariadb -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost'";

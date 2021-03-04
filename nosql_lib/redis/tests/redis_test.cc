@@ -2,102 +2,132 @@
 #include <drogon/drogon.h>
 #include <iostream>
 #include <thread>
-
+#define RESET "\033[0m"
+#define RED "\033[31m"   /* Red */
+#define GREEN "\033[32m" /* Green */
 using namespace std::chrono_literals;
 using namespace drogon::nosql;
-int main()
+#ifdef __cpp_impl_coroutine
+#define TEST_COUNT 8
+#else
+#define TEST_COUNT 7
+#endif
+std::promise<int> pro;
+auto globalf = pro.get_future();
+int counter = 0;
+void addCount(int &count, std::promise<int> &pro)
 {
-    drogon::app().setLogLevel(trantor::Logger::kTrace);
-    auto redisClient = drogon::nosql::RedisClient::newRedisClient(
-        trantor::InetAddress("127.0.0.1", 6379), 1, "123");
+    ++count;
+    // LOG_DEBUG << count;
+    if (count == TEST_COUNT)
+    {
+        pro.set_value(1);
+    }
+}
+void testoutput(bool isGood, const std::string &testMessage)
+{
+    if (isGood)
+    {
+        std::cout << GREEN << counter + 1 << ".\t" << testMessage << "\t\tOK\n";
+        std::cout << RESET;
+        addCount(counter, pro);
+    }
+    else
+    {
+        std::cout << RED << testMessage << "\t\tBAD\n";
+        std::cout << RESET;
+        exit(1);
+    }
+}
 
-    std::this_thread::sleep_for(1s);
+void doTest(const RedisClientPtr &redisClient)
+{
+    // std::this_thread::sleep_for(1s);
     redisClient->newTransactionAsync([](const RedisTransactionPtr &transPtr) {
+        // 1
         transPtr->execCommandAsync(
             [](const drogon::nosql::RedisResult &r) {
-                std::cout << "1:" << r.getStringForDisplaying() << std::endl;
+                testoutput(true, r.getStringForDisplaying());
             },
-            [](const std::exception &err) {
-                std::cout << err.what() << std::endl;
-            },
+            [](const std::exception &err) { testoutput(false, err.what()); },
             "ping");
-        transPtr->execCommandAsync(
-            [](const drogon::nosql::RedisResult &r) {
-                if (r)
-                    std::cout << "1:" << r.getStringForDisplaying()
-                              << std::endl;
-            },
-            [](const std::exception &err) {
-                std::cout << err.what() << std::endl;
-            },
-            "ping");
+        // 2
         transPtr->execute(
             [](const drogon::nosql::RedisResult &r) {
-                std::cout << "1:" << r.getStringForDisplaying() << std::endl;
+                testoutput(true, r.getStringForDisplaying());
             },
-            [](const std::exception &err) {
-                std::cout << err.what() << std::endl;
-            });
+            [](const std::exception &err) { testoutput(false, err.what()); });
     });
+    // 3
     redisClient->execCommandAsync(
-
         [](const drogon::nosql::RedisResult &r) {
-            std::cout << "0:" << r.getStringForDisplaying() << std::endl;
+            testoutput(true, r.getStringForDisplaying());
         },
-        [](const std::exception &err) { std::cout << err.what() << std::endl; },
-        "multi");
+        [](const std::exception &err) { testoutput(false, err.what()); },
+        "set %s %s",
+        "id_123",
+        "drogon");
+    // 4
     redisClient->execCommandAsync(
-
         [](const drogon::nosql::RedisResult &r) {
-            std::cout << "1:" << r.getStringForDisplaying() << std::endl;
+            testoutput(r.type() == RedisResultType::kArray &&
+                           r.asArray().size() == 1,
+                       r.getStringForDisplaying());
         },
-        [](const std::exception &err) { std::cout << err.what() << std::endl; },
-        "ping");
+        [](const std::exception &err) { testoutput(false, err.what()); },
+        "keys *");
+    // 5
     redisClient->execCommandAsync(
-
         [](const drogon::nosql::RedisResult &r) {
-            std::cout << "2:" << r.getStringForDisplaying() << std::endl;
+            testoutput(r.asString() == "hello", r.getStringForDisplaying());
         },
-        [](const RedisException &err) { std::cout << err.what() << std::endl; },
+        [](const RedisException &err) { testoutput(false, err.what()); },
         "echo %s",
         "hello");
+    // 6
+    redisClient->execCommandAsync(
+        [](const drogon::nosql::RedisResult &r) {
+            testoutput(true, r.getStringForDisplaying());
+        },
+        [](const RedisException &err) { testoutput(false, err.what()); },
+        "flushall");
+    // 7
     redisClient->execCommandAsync(
 
         [](const drogon::nosql::RedisResult &r) {
-            std::cout << "3:" << r.getStringForDisplaying() << std::endl;
+            testoutput(r.type() == RedisResultType::kNil,
+                       r.getStringForDisplaying());
         },
-        [](const RedisException &err) { std::cout << err.what() << std::endl; },
-        "hgetall %s",
-        "haha");
-    redisClient->execCommandAsync(
-
-        [](const drogon::nosql::RedisResult &r) {
-            std::cout << "4:" << r.getStringForDisplaying() << std::endl;
-        },
-        [](const RedisException &err) { std::cout << err.what() << std::endl; },
+        [](const RedisException &err) { testoutput(false, err.what()); },
         "get %s",
         "xxxxx");
-    redisClient->execCommandAsync(
 
-        [](const drogon::nosql::RedisResult &r) {
-            std::cout << "e:\n" << r.getStringForDisplaying() << std::endl;
-        },
-        [](const RedisException &err) { std::cout << err.what() << std::endl; },
-        "exec");
     std::cout << "start\n";
 #ifdef __cpp_impl_coroutine
     auto coro_test = [redisClient]() -> drogon::Task<> {
+        // 8
         try
         {
             auto r = co_await redisClient->execCommandCoro("get %s", "haha");
-            std::cout << "coro: " << r.getStringForDisplaying() << std::endl;
+            testoutput(r.type() == RedisResultType::kNil,
+                       r.getStringForDisplaying());
         }
         catch (const RedisException &err)
         {
-            std::cout << "coro error: " << err.what() << std::endl;
+            testoutput(false, err.what());
         }
     };
     drogon::sync_wait(coro_test());
 #endif
-    getchar();
+    globalf.get();
+}
+
+int main()
+{
+    drogon::app().setLogLevel(trantor::Logger::kWarn);
+    auto redisClient = drogon::nosql::RedisClient::newRedisClient(
+        trantor::InetAddress("127.0.0.1", 6379), 1);
+    doTest(redisClient);
+    std::cout << "Test successful\n";
+    return 0;
 }
