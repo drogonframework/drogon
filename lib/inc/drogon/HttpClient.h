@@ -142,15 +142,15 @@ class HttpClient : public trantor::NonCopyable
 
 #ifdef __cpp_impl_coroutine
     /**
-     * @brief Send a request via coroutines to the server and return the
-     * response.
+     * @brief Send a request via coroutines to the server and return an
+     * awaiter. Whom could be `co_await`-ed to retrieve the response
      *
      * @param req
      * @param timeout In seconds. If the response is not received within the
-     * timeout, the `ReqResult::Timeout` and an empty response is returned. The
-     * zero value by default disables the timeout.
+     * timeout, A `std::runtime_error` with the message "Timeout" is thrown.
+     * The zero value by default disables the timeout.
      *
-     * @return internal::HttpRespAwaiter
+     * @return internal::HttpRespAwaiter. Await on it to get the response
      */
     internal::HttpRespAwaiter sendRequestCoro(HttpRequestPtr req,
                                               double timeout = 0)
@@ -269,6 +269,8 @@ class HttpClient : public trantor::NonCopyable
 inline void internal::HttpRespAwaiter::await_suspend(
     std::coroutine_handle<> handle)
 {
+    assert(client_ != nullptr);
+    assert(req_ != nullptr);
     client_->sendRequest(
         req_,
         [handle = std::move(handle), this](ReqResult result,
