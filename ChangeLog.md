@@ -4,6 +4,40 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.4.0] - 2021-03-05
+
+### API change list
+
+- Add coroutine support.
+
+- Add default value interface to SqlBinder for MySQL and PostgreSQL.
+
+- Support SNI in the HttpClient class.
+
+- Validate certificate in HttpClient.
+
+- HttpRequest: add a feature to avoid URL encoding of the path.
+
+### Changed
+
+- Handle cross-compiling properly.
+
+- Lowercase all HTTP headers, add webp and avif types.
+
+- Modify FindMySQL.cmake
+
+### Fixed
+
+- Fix an error in the HttpClient class when a response has no content-length.
+
+- Return 404 or 405 responses correctly.
+
+- Fix compilation errors on vs2019.
+
+- Fix stack use after scope error in client_example.
+
+- Fix the error when the SSL handshake fails.
+
 ## [1.3.0] - 2021-01-16
 
 ### API change list
@@ -620,7 +654,9 @@ All notable changes to this project will be documented in this file.
 
 ## [1.0.0-beta1] - 2019-06-11
 
-[Unreleased]: https://github.com/an-tao/drogon/compare/v1.3.0...HEAD
+[Unreleased]: https://github.com/an-tao/drogon/compare/v1.4.0...HEAD
+
+[1.4.0]: https://github.com/an-tao/drogon/compare/v1.3.0...v1.4.0
 
 [1.3.0]: https://github.com/an-tao/drogon/compare/v1.2.0...v1.3.0
 
