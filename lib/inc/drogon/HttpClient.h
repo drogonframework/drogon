@@ -150,7 +150,7 @@ class HttpClient : public trantor::NonCopyable
      * timeout, the `ReqResult::Timeout` and an empty response is returned. The
      * zero value by default disables the timeout.
      *
-     * @return task<HttpResponsePtr>
+     * @return internal::HttpRespAwaiter
      */
     internal::HttpRespAwaiter sendRequestCoro(HttpRequestPtr req,
                                               double timeout = 0)
