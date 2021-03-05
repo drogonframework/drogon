@@ -64,7 +64,7 @@ class CoroMapper : public Mapper<T>
     {
     }
     using TraitsPKType = typename Mapper<T>::TraitsPKType;
-    inline const Task<T> findByPrimaryKey(const TraitsPKType &key)
+    inline internal::MapperAwaiter<T> findByPrimaryKey(const TraitsPKType &key)
     {
         if constexpr (!std::is_same<typename T::PrimaryKeyType, void>::value)
         {
@@ -111,7 +111,7 @@ class CoroMapper : public Mapper<T>
                 binder >> std::move(errCallback);
                 binder.exec();
             };
-            co_return co_await internal::MapperAwaiter<T>(std::move(lb));
+            return internal::MapperAwaiter<T>(std::move(lb));
         }
         else
         {
@@ -119,11 +119,12 @@ class CoroMapper : public Mapper<T>
             abort();
         }
     }
-    inline const Task<std::vector<T>> findAll()
+    inline internal::MapperAwaiter<std::vector<T>> findAll()
     {
-        co_return co_await findBy(Criteria());
+        return findBy(Criteria());
     }
-    inline const Task<size_t> count(const Criteria &criteria = Criteria())
+    inline internal::MapperAwaiter<size_t> count(
+        const Criteria &criteria = Criteria())
     {
         auto lb =
             [this, criteria](
@@ -147,9 +148,9 @@ class CoroMapper : public Mapper<T>
                 };
                 binder >> std::move(errCallback);
             };
-        co_return co_await internal::MapperAwaiter<size_t>(std::move(lb));
+        return internal::MapperAwaiter<size_t>(std::move(lb));
     }
-    inline const Task<T> findOne(const Criteria &criteria)
+    inline internal::MapperAwaiter<T> findOne(const Criteria &criteria)
     {
         auto lb =
             [this, criteria](
@@ -208,9 +209,10 @@ class CoroMapper : public Mapper<T>
                 };
                 binder >> std::move(errCallback);
             };
-        co_return co_await internal::MapperAwaiter<T>(std::move(lb));
+        return internal::MapperAwaiter<T>(std::move(lb));
     }
-    inline const Task<std::vector<T>> findBy(const Criteria &criteria)
+    inline internal::MapperAwaiter<std::vector<T>> findBy(
+        const Criteria &criteria)
     {
         auto lb =
             [this, criteria](
@@ -260,10 +262,9 @@ class CoroMapper : public Mapper<T>
                 };
                 binder >> std::move(errCallback);
             };
-        co_return co_await internal::MapperAwaiter<std::vector<T>>(
-            std::move(lb));
+        return internal::MapperAwaiter<std::vector<T>>(std::move(lb));
     }
-    inline const Task<T> insert(const T &obj)
+    inline internal::MapperAwaiter<T> insert(const T &obj)
     {
         auto lb =
             [this, obj](
@@ -317,9 +318,9 @@ class CoroMapper : public Mapper<T>
                 };
                 binder >> std::move(errCallback);
             };
-        co_return co_await internal::MapperAwaiter<T>(std::move(lb));
+        return internal::MapperAwaiter<T>(std::move(lb));
     }
-    inline const Task<size_t> update(const T &obj)
+    inline internal::MapperAwaiter<size_t> update(const T &obj)
     {
         auto lb =
             [this, obj](
@@ -350,9 +351,9 @@ class CoroMapper : public Mapper<T>
                 };
                 binder >> std::move(errCallback);
             };
-        co_return co_await internal::MapperAwaiter<size_t>(std::move(lb));
+        return internal::MapperAwaiter<size_t>(std::move(lb));
     }
-    inline const Task<size_t> deleteOne(const T &obj)
+    inline internal::MapperAwaiter<size_t> deleteOne(const T &obj)
     {
         auto lb =
             [this, obj](
@@ -376,9 +377,9 @@ class CoroMapper : public Mapper<T>
                 };
                 binder >> std::move(errCallback);
             };
-        co_return co_await internal::MapperAwaiter<size_t>(std::move(lb));
+        return internal::MapperAwaiter<size_t>(std::move(lb));
     }
-    inline const Task<size_t> deleteBy(const Criteria &criteria)
+    inline internal::MapperAwaiter<size_t> deleteBy(const Criteria &criteria)
     {
         auto lb =
             [this, criteria](
@@ -408,9 +409,10 @@ class CoroMapper : public Mapper<T>
                 };
                 binder >> std::move(errCallback);
             };
-        co_return co_await internal::MapperAwaiter<size_t>(std::move(lb));
+        return internal::MapperAwaiter<size_t>(std::move(lb));
     }
-    inline const Task<size_t> deleteByPrimaryKey(const TraitsPKType &key)
+    inline internal::MapperAwaiter<size_t> deleteByPrimaryKey(
+        const TraitsPKType &key)
     {
         static_assert(!std::is_same<typename T::PrimaryKeyType, void>::value,
                       "No primary key in the table!");
@@ -430,7 +432,7 @@ class CoroMapper : public Mapper<T>
             };
             binder >> std::move(errCallback);
         };
-        co_return co_await internal::MapperAwaiter<size_t>(std::move(lb));
+        return internal::MapperAwaiter<size_t>(std::move(lb));
     }
 };
 }  // namespace orm

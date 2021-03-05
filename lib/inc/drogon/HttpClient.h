@@ -152,12 +152,10 @@ class HttpClient : public trantor::NonCopyable
      *
      * @return task<HttpResponsePtr>
      */
-    Task<HttpResponsePtr> sendRequestCoro(HttpRequestPtr req,
-                                          double timeout = 0)
+    internal::HttpRespAwaiter sendRequestCoro(HttpRequestPtr req,
+                                              double timeout = 0)
     {
-        co_return co_await internal::HttpRespAwaiter(this,
-                                                     std::move(req),
-                                                     timeout);
+        return internal::HttpRespAwaiter(this, std::move(req), timeout);
     }
 #endif
 
