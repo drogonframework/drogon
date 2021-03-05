@@ -143,7 +143,8 @@ class HttpClient : public trantor::NonCopyable
 #ifdef __cpp_impl_coroutine
     /**
      * @brief Send a request via coroutines to the server and return an
-     * awaiter. Whom could be `co_await`-ed to retrieve the response
+     * awaiter what could be `co_await`-ed to retrieve the response
+     * (HttpResponsePtr)
      *
      * @param req
      * @param timeout In seconds. If the response is not received within the
