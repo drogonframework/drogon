@@ -424,7 +424,7 @@ struct CallbackAwaiter
         return false;
     }
 
-    const T &await_resume() noexcept(false)
+    const T &await_resume() const noexcept(false)
     {
         // await_resume() should always be called after co_await
         // (await_suspend()) is called. Therefor the value should always be set
@@ -595,18 +595,19 @@ struct TimerAwaiter : CallbackAwaiter<void>
 };
 }  // namespace internal
 
-inline Task<void> sleepCoro(
+inline internal::TimerAwaiter sleepCoro(
     trantor::EventLoop *loop,
     const std::chrono::duration<long double> &delay) noexcept
 {
     assert(loop);
-    co_return co_await internal::TimerAwaiter(loop, delay);
+    return internal::TimerAwaiter(loop, delay);
 }
 
-inline Task<void> sleepCoro(trantor::EventLoop *loop, double delay) noexcept
+inline internal::TimerAwaiter sleepCoro(trantor::EventLoop *loop,
+                                        double delay) noexcept
 {
     assert(loop);
-    co_return co_await internal::TimerAwaiter(loop, delay);
+    return internal::TimerAwaiter(loop, delay);
 }
 
 }  // namespace drogon
