@@ -387,7 +387,7 @@ DbConnectionPtr DbClientImpl::newConnection(trantor::EventLoop *loop)
         }
         // Reconnect after 1 second
         auto loop = closeConnPtr->loop();
-        loop->runAfter(1, [weakPtr, loop] {
+        loop->runAfter(1, [weakPtr, loop, closeConnPtr] {
             auto thisPtr = weakPtr.lock();
             if (!thisPtr)
                 return;
