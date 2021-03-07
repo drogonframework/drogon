@@ -81,7 +81,7 @@ RedisConnectionPtr RedisClientImpl::newConnection(trantor::EventLoop *loop)
             }
             auto loop = trantor::EventLoop::getEventLoopOfCurrentThread();
             assert(loop);
-            loop->runAfter(2.0, [thisPtr, loop]() {
+            loop->runAfter(2.0, [thisPtr, loop, conn]() {
                 thisPtr->connections_.insert(thisPtr->newConnection(loop));
             });
         }

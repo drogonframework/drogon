@@ -63,7 +63,7 @@ RedisConnectionPtr RedisClientLockFree::newConnection()
                     break;
                 }
             }
-            thisPtr->loop_->runAfter(2.0, [thisPtr]() {
+            thisPtr->loop_->runAfter(2.0, [thisPtr, conn]() {
                 thisPtr->connections_.insert(thisPtr->newConnection());
             });
         }
