@@ -13,6 +13,7 @@
  */
 
 #include <drogon/nosql/RedisResult.h>
+#include <drogon/nosql/RedisClient.h>
 #include <hiredis/hiredis.h>
 
 using namespace drogon::nosql;
@@ -76,7 +77,7 @@ std::string RedisResult::asString() const noexcept(false)
     }
     else
     {
-        throw std::runtime_error("type error");
+        throw RedisException(RedisErrorCode::kBadType, "bad type");
     }
 }
 
@@ -112,13 +113,13 @@ std::vector<RedisResult> RedisResult::asArray() const noexcept(false)
         }
         return array;
     }
-    throw std::runtime_error("type error");
+    throw RedisException(RedisErrorCode::kBadType, "bad type");
 }
 long long RedisResult::asInteger() const noexcept(false)
 {
     if (type() == RedisResultType::kInteger)
         return result_->integer;
-    throw std::runtime_error("type error");
+    throw RedisException(RedisErrorCode::kBadType, "bad type");
 }
 bool RedisResult::isNil() const noexcept
 {
