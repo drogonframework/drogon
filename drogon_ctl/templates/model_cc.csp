@@ -39,6 +39,15 @@ for(auto &relationship : relationships)
 }
 %>
 #include <drogon/utils/Utilities.h>
+<%c++
+auto &convertMethods=@@.get<std::vector<ConvertMethod>>("convertMethods");
+for(auto convertMethod : convertMethods ) {
+    for(auto i : convertMethod.includeFiles()) { %>
+<%c++ $$<<"#include "<<i<<"\n";%>
+<%c++
+	} //for
+} //for
+%>
 #include <string>
 <%c++
     const auto &cols=@@.get<std::vector<ColumnInfo>>("columns");
@@ -125,8 +134,12 @@ const std::string &[[className]]::getColumnName(size_t index) noexcept(false)
                 $$<<"            memset(&stm,0,sizeof(stm));\n";
                 $$<<"            strptime(daysStr.c_str(),\"%Y-%m-%d\",&stm);\n";
                 $$<<"            time_t t = mktime(&stm);\n";
- //               $$<<"            "<<col.colValName_<<"_=std::make_shared<::trantor::Date>(::trantor::Date(946656000000000).after(daysNum*86400));\n";
+//                $$<<"            "<<col.colValName_<<"_=std::make_shared<::trantor::Date>(::trantor::Date(946656000000000).after(daysNum*86400));\n";
                 $$<<"            "<<col.colValName_<<"_=std::make_shared<::trantor::Date>(t*1000000);\n";
+                auto convertMethod=std::find_if(convertMethods.begin(),convertMethods.end(),[col](const ConvertMethod& c){ return c.shouldConvert("*", col.colName_); });
+                if (convertMethod != convertMethods.end() ) {
+                    $$<<"            "<< convertMethod->methodName() << "(" << col.colValName_ << ");}\n";
+                } //endif
                 $$<<"        }\n";
                 continue;
             }
@@ -151,6 +164,10 @@ const std::string &[[className]]::getColumnName(size_t index) noexcept(false)
                 $$<<"                }\n";
  //               $$<<"            "<<col.colValName_<<"_=std::make_shared<::trantor::Date>(::trantor::Date(946656000000000).after(daysNum*86400));\n";
                 $$<<"                "<<col.colValName_<<"_=std::make_shared<::trantor::Date>(t*1000000+decimalNum);\n";
+                auto convertMethod=std::find_if(convertMethods.begin(),convertMethods.end(),[col](const ConvertMethod& c){return c.shouldConvert("*", col.colName_); });
+                if (convertMethod != convertMethods.end() ) {
+                    $$<<"            "<< convertMethod->methodName() << "(" << col.colValName_ << ");}\n";
+                } //endif
                 $$<<"            }\n";
                 $$<<"        }\n";
                 continue;
@@ -162,12 +179,21 @@ const std::string &[[className]]::getColumnName(size_t index) noexcept(false)
                 $$<<"                str[0]=='\\\\'&&str[1]=='x')\n";
                 $$<<"            {\n";
                 $$<<"                "<<col.colValName_<<"_=std::make_shared<std::vector<char>>(drogon::utils::hexToBinaryVector(str.data()+2,str.length()-2));\n";
+                auto convertMethod=std::find_if(convertMethods.begin(),convertMethods.end(),[col](const ConvertMethod& c){ return c.shouldConvert("*", col.colName_); });
+                if (convertMethod != convertMethods.end() ) {
+                    $$<<"            "<< convertMethod->methodName() << "(" << col.colValName_ << ");}\n";
+                } //endif
                 $$<<"            }\n";
                 $$<<"        }\n";
                 continue;
             }           
 %>
             {%col.colValName_%}_=std::make_shared<{%col.colType_%}>(r["{%col.colName_%}"].as<{%col.colType_%}>());
+<%c++
+            auto convertMethod=std::find_if(convertMethods.begin(),convertMethods.end(),[col](const ConvertMethod& c){ return c.shouldConvert("*", col.colName_); });
+            if (convertMethod != convertMethods.end() ) {
+                $$<<"            "<< convertMethod->methodName() << "(" << col.colValName_ << "_);\n";
+            } //endif %>
         }
 <%c++}
 %>
