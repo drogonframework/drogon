@@ -131,14 +131,16 @@ class ConvertMethod
     {
         tableName_ = convert.get("table", "*").asString();
         colName_ = convert.get("column", "*").asString();
-		  
-		  auto method = convert["method"];
-		  if ( method.isNull() ) {
-			  throw std::runtime_error("method - object is missing.");
-		} //endif
-		if (! method.isObject()) {
-			throw std::runtime_error("method is not an object.");
-		} //endif
+
+        auto method = convert["method"];
+        if (method.isNull())
+        {
+            throw std::runtime_error("method - object is missing.");
+        }  // endif
+        if (!method.isObject())
+        {
+            throw std::runtime_error("method is not an object.");
+        }  // endif
         methodJson_ = method.get("json", "").asString();
         methodRow_ = method.get("row", "").asString();
 
@@ -186,7 +188,7 @@ class ConvertMethod
     std::string tableName_{"*"};
     std::string colName_{"*"};
     std::string methodJson_;
-	 std::string methodRow_;
+    std::string methodRow_;
     std::vector<std::string> includeFiles_;
 };
 
