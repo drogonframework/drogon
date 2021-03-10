@@ -131,11 +131,16 @@ class ConvertMethod
     {
         tableName_ = convert.get("table", "*").asString();
         colName_ = convert.get("column", "*").asString();
-        methodName_ = convert.get("method", "").asString();
-        if (methodName_.empty())
-        {
-            std::runtime_error("method can't be empty");
-        }  // endif
+		  
+		  auto method = convert["method"];
+		  if ( method.isNull() ) {
+			  throw std::runtime_error("method - object is missing.");
+		} //endif
+		if (! method.isObject()) {
+			throw std::runtime_error("method is not an object.");
+		} //endif
+        methodJson_ = method.get("json", "").asString();
+        methodRow_ = method.get("row", "").asString();
 
         auto includeFiles = convert["includes"];
         if (includeFiles.isNull())
@@ -164,9 +169,13 @@ class ConvertMethod
     {
         return colName_;
     }
-    const std::string &methodName() const
+    const std::string &methodJson() const
     {
-        return methodName_;
+        return methodJson_;
+    }
+    const std::string &methodRow() const
+    {
+        return methodRow_;
     }
     const std::vector<std::string> &includeFiles() const
     {
@@ -176,7 +185,8 @@ class ConvertMethod
   private:
     std::string tableName_{"*"};
     std::string colName_{"*"};
-    std::string methodName_;
+    std::string methodJson_;
+	 std::string methodRow_;
     std::vector<std::string> includeFiles_;
 };
 
