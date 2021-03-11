@@ -4,6 +4,46 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.4.1] - 2021-03-07
+
+### Fixed
+
+- Fix a bug of DbClientImpl class that can lead to a crash when database connections are breaking.
+
+## [1.4.0] - 2021-03-05
+
+### API change list
+
+- Add coroutine support.
+
+- Add default value interface to SqlBinder for MySQL and PostgreSQL.
+
+- Support SNI in the HttpClient class.
+
+- Validate certificate in HttpClient.
+
+- HttpRequest: add a feature to avoid URL encoding of the path.
+
+### Changed
+
+- Handle cross-compiling properly.
+
+- Lowercase all HTTP headers, add webp and avif types.
+
+- Modify FindMySQL.cmake
+
+### Fixed
+
+- Fix an error in the HttpClient class when a response has no content-length.
+
+- Return 404 or 405 responses correctly.
+
+- Fix compilation errors on vs2019.
+
+- Fix stack use after scope error in client_example.
+
+- Fix the error when the SSL handshake fails.
+
 ## [1.3.0] - 2021-01-16
 
 ### API change list
@@ -68,7 +108,7 @@ All notable changes to this project will be documented in this file.
 
 - Fix the HttpServer::isWebSocket method.
 
-- Find mariadb client library correctly on Ubuntu 20.04.
+- Find MariaDB client library correctly on Ubuntu 20.04.
 
 - Fix a bug when creating sqlite3 database models.
 
@@ -126,7 +166,7 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
-- Modify the Result class in orm.
+- Modify the Result class in ORM.
 
 ### Fixed
 
@@ -156,9 +196,9 @@ All notable changes to this project will be documented in this file.
 
 - Fix a bug when saving uploaded files on Windows.
 
-- Fix a mysql issue when connections are lost.
+- Fix a MySQL issue when connections are lost.
 
-- Resolve an issue when sending big files (>=2gB) on Windows.
+- Resolve an issue when sending big files (>=2GB) on Windows.
 
 - Fix boost::string_view compilation error of MysqlConnection class.
 
@@ -262,7 +302,7 @@ All notable changes to this project will be documented in this file.
 
 - Fix a bug in drogon_ctl (when size of a line is larger than buffer size)
 
-- Fix a connection bug of mariadb clients
+- Fix a connection bug of MariaDB clients
 
 ## [1.0.0-beta16] - 2020-04-27
 
@@ -443,7 +483,7 @@ All notable changes to this project will be documented in this file.
 
 - Fix some race conditions.
 
-- Fix a busy loop bug when connections to mysql server are timeout.
+- Fix a busy loop bug when connections to MySQL server are timeout.
 
 
 ## [1.0.0-beta8] - 2019-10-03
@@ -469,7 +509,7 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
-- Fix a bug of creating models for mysql.
+- Fix a bug of creating models for MySQL.
 
 - Fix a bug when HTTP method is PUT.
 
@@ -620,7 +660,11 @@ All notable changes to this project will be documented in this file.
 
 ## [1.0.0-beta1] - 2019-06-11
 
-[Unreleased]: https://github.com/an-tao/drogon/compare/v1.3.0...HEAD
+[Unreleased]: https://github.com/an-tao/drogon/compare/v1.4.1...HEAD
+
+[1.4.1]: https://github.com/an-tao/drogon/compare/v1.4.0...v1.4.1
+
+[1.4.0]: https://github.com/an-tao/drogon/compare/v1.3.0...v1.4.0
 
 [1.3.0]: https://github.com/an-tao/drogon/compare/v1.2.0...v1.3.0
 

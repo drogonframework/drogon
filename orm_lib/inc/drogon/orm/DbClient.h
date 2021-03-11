@@ -199,13 +199,13 @@ class DbClient : public trantor::NonCopyable
 
 #ifdef __cpp_impl_coroutine
     template <typename... Arguments>
-    const Task<Result> execSqlCoro(const std::string sql,
-                                   Arguments... args) noexcept
+    internal::SqlAwaiter execSqlCoro(const std::string sql,
+                                     Arguments... args) noexcept
     {
         auto binder = *this << sql;
         (void)std::initializer_list<int>{
             (binder << std::forward<Arguments>(args), 0)...};
-        co_return co_await internal::SqlAwaiter(std::move(binder));
+        return internal::SqlAwaiter(std::move(binder));
     }
 #endif
 
@@ -244,9 +244,9 @@ class DbClient : public trantor::NonCopyable
             &callback) = 0;
 
 #ifdef __cpp_impl_coroutine
-    Task<std::shared_ptr<Transaction>> newTransactionCoro()
+    orm::internal::TrasactionAwaiter newTransactionCoro()
     {
-        co_return co_await orm::internal::TrasactionAwaiter(this);
+        return orm::internal::TrasactionAwaiter(this);
     }
 #endif
 

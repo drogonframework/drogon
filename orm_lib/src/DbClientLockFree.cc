@@ -395,7 +395,7 @@ DbConnectionPtr DbClientLockFree::newConnection()
 
         thisPtr->transSet_.erase(closeConnPtr);
         // Reconnect after 1 second
-        thisPtr->loop_->runAfter(1, [weakPtr] {
+        thisPtr->loop_->runAfter(1, [weakPtr, closeConnPtr] {
             auto thisPtr = weakPtr.lock();
             if (!thisPtr)
                 return;

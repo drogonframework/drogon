@@ -1,9 +1,34 @@
 #include <drogon/utils/coroutine.h>
 #include <exception>
+#include <memory>
 #include <type_traits>
 #include <iostream>
 
 using namespace drogon;
+
+namespace drogon::internal
+{
+struct SomeStruct
+{
+    ~SomeStruct()
+    {
+        beenDestructed = true;
+    }
+    static bool beenDestructed;
+};
+
+bool SomeStruct::beenDestructed = false;
+
+struct StructAwaiter : public CallbackAwaiter<std::shared_ptr<SomeStruct>>
+{
+    void await_suspend(std::coroutine_handle<> handle)
+    {
+        setValue(std::make_shared<SomeStruct>());
+        handle.resume();
+    }
+};
+
+}  // namespace drogon::internal
 
 int main()
 {
@@ -39,7 +64,7 @@ int main()
 
         try
         {
-            f();
+            co_await f();
             std::cerr << "Exception should have been thrown\n";
             exit(1);
         }
@@ -59,6 +84,25 @@ int main()
         co_return;
     };
     sync_wait(throw_in_task());
+
+    // Test coroutine destruction
+    auto destruct = []() -> Task<> {
+        auto awaitStruct = []() -> Task<std::shared_ptr<internal::SomeStruct>> {
+            co_return co_await internal::StructAwaiter();
+        };
+
+        auto awaitNothing = [awaitStruct]() -> Task<> {
+            co_await awaitStruct();
+        };
+
+        co_await awaitNothing();
+    };
+    sync_wait(destruct());
+    if (internal::SomeStruct::beenDestructed == false)
+    {
+        std::cerr << "Coroutine didn't destruct allocated object.\n";
+        exit(1);
+    }
 
     std::cout << "Done testing coroutines. No error." << std::endl;
 }
