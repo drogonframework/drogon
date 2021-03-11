@@ -338,13 +338,18 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     {
         return homePageFile_;
     }
-#if USE_SIGNAL_SIGTERM
     virtual HttpAppFramework &setTermSignalHandler(
         const std::function<void()> &handler) override
     {
+#if USE_SIGNAL_SIGTERM
         termSignalHandler_ = handler;
         return *this;
+#else
+        LOG_FATAL << "Signal handling is disabled!";
+        exit(1);
+#endif
     }
+#if USE_SIGNAL_SIGTERM
     const std::function<void()> &getTermSignalHandler() const
     {
         return termSignalHandler_;
