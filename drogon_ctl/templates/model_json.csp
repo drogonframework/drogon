@@ -20,6 +20,22 @@
     //"client_encoding": "",
     //table: An array of tables to be modelized. if the array is empty, all revealed tables are modelized.
     "tables": [],
+    //convert: the value can be changed by a function call before it is stored into database (method.json) or 
+    //        is read from database (method.json)
+    "convert": {
+      "enabled": true,
+      "items":[{
+          "table": "user",
+          "column": "password",
+          "method": {
+            "row": "decrypt_password",
+            "json": "encrypt_password"
+          },
+          "includes": [
+            "\"file_local_search_path.h\"","<file_in_global_search_path.h>"
+          ]
+      }]
+    },
     "relationships": {
         "enabled": false,
         "items": [{
