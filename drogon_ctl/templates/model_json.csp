@@ -28,8 +28,8 @@
           "table": "user",
           "column": "password",
           "method": {
-            "row": "decrypt_password",
-            "json": "encrypt_password"
+            "after_db_read": "decrypt_password",
+            "before_db_write": "encrypt_password"
           },
           "includes": [
             "\"file_local_search_path.h\"","<file_in_global_search_path.h>"
