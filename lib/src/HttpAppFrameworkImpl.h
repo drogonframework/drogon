@@ -338,6 +338,7 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     {
         return homePageFile_;
     }
+#if USE_SIGNAL_SIGTERM
     virtual HttpAppFramework &setTermSignalHandler(
         const std::function<void()> &handler) override
     {
@@ -348,6 +349,7 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     {
         return termSignalHandler_;
     }
+#endif
     virtual HttpAppFramework &setImplicitPageEnable(
         bool useImplicitPage) override;
     bool isImplicitPageEnabled() const override;
@@ -600,7 +602,9 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     size_t clientMaxMemoryBodySize_{64 * 1024};
     size_t clientMaxWebSocketMessageSize_{128 * 1024};
     std::string homePageFile_{"index.html"};
+#if USE_SIGNAL_SIGTERM
     std::function<void()> termSignalHandler_{[]() { app().quit(); }};
+#endif
     std::unique_ptr<SessionManager> sessionManagerPtr_;
     Json::Value jsonConfig_;
     HttpResponsePtr custom404_;

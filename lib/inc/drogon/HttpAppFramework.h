@@ -1057,8 +1057,10 @@ class HttpAppFramework : public trantor::NonCopyable
      * @param handler
      * @return HttpAppFramework&
      */
+#if USE_SIGNAL_SIGTERM
     virtual HttpAppFramework &setTermSignalHandler(
         const std::function<void()> &handler) = 0;
+#endif
 
     /// Get homepage, default is "index.html"
     /**
