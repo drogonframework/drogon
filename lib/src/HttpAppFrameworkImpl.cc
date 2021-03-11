@@ -154,7 +154,6 @@ static void godaemon(void)
     return;
 }
 
-#if USE_SIGNAL_SIGTERM
 static void TERMFunction(int sig)
 {
     if (sig == SIGTERM)
@@ -163,7 +162,6 @@ static void TERMFunction(int sig)
         HttpAppFrameworkImpl::instance().getTermSignalHandler()();
     }
 }
-#endif
 
 }  // namespace drogon
 
@@ -465,9 +463,7 @@ void HttpAppFrameworkImpl::run()
         getLoop()->resetAfterFork();
 #endif
     }
-#if USE_SIGNAL_SIGTERM
     signal(SIGTERM, TERMFunction);
-#endif
     // set logger
     if (!logPath_.empty())
     {

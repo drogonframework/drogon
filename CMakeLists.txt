@@ -20,7 +20,6 @@ option(BUILD_ORM "Build orm" ON)
 option(COZ_PROFILING "Use coz for profiling" OFF)
 option(LIBPQ_BATCH_MODE "Use batch mode for libpq" ON)
 option(BUILD_DROGON_SHARED "Build drogon as a shared lib" OFF)
-option(USE_SIGNAL_SIGTERM "Use signal handler for SIGTERM" ON)
 
 set(DROGON_MAJOR_VERSION 1)
 set(DROGON_MINOR_VERSION 4)
