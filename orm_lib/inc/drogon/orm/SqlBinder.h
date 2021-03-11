@@ -368,6 +368,21 @@ class SqlBinder : public trantor::NonCopyable
         std::shared_ptr<void> obj = std::make_shared<ParaType>(parameter);
         if (type_ == ClientType::PostgreSQL)
         {
+#if __cplusplus >= 201703L || (defined _MSC_VER && _MSC_VER > 1900)
+            const size_t size = sizeof(T);
+            if constexpr (size == 2)
+            {
+                *std::static_pointer_cast<uint16_t>(obj) = htons(parameter);
+            }
+            else if constexpr (size == 4)
+            {
+                *std::static_pointer_cast<uint32_t>(obj) = htonl(parameter);
+            }
+            else if constexpr (size == 8)
+            {
+                *std::static_pointer_cast<uint64_t>(obj) = htonll(parameter);
+            }
+#else
             switch (sizeof(T))
             {
                 case 2:
@@ -385,6 +400,7 @@ class SqlBinder : public trantor::NonCopyable
 
                     break;
             }
+#endif
             objs_.push_back(obj);
             parameters_.push_back((char *)obj.get());
             lengths_.push_back(sizeof(T));
