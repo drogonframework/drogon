@@ -393,6 +393,12 @@ static void loadApp(const Json::Value &app)
     {
         drogon::app().enableRunAsDaemon();
     }
+    // handle SIGTERM
+    auto handleSigterm = app.get("handle_sig_term", true).asBool();
+    if (!handleSigterm)
+    {
+        drogon::app().disableSigtermHandling();
+    }
     // relaunch
     auto relaunch = app.get("relaunch_on_error", false).asBool();
     if (relaunch)

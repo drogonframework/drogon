@@ -172,6 +172,8 @@
         },
         //run_as_daemon: False by default
         "run_as_daemon": false,
+        //handle_sig_term: True by default
+        "handle_sig_term": true,
         //relaunch_on_error: False by default, if true, the program will be restart by the parent after exiting;
         "relaunch_on_error": false,
         //use_sendfile: True by default, if true, the program 
