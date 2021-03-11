@@ -395,7 +395,7 @@ static void loadApp(const Json::Value &app)
     }
     // handle SIGTERM
     auto handleSigterm = app.get("handle_sig_term", true).asBool();
-    if (handleSigterm)
+    if (!handleSigterm)
     {
         drogon::app().disableSigtermHandling();
     }
