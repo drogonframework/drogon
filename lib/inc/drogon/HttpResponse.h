@@ -13,6 +13,7 @@
 
 #pragma once
 
+#include <drogon/exports.h>
 #include <drogon/utils/string_view.h>
 #include <drogon/DrClassMap.h>
 #include <drogon/Cookie.h>
@@ -63,7 +64,7 @@ inline HttpResponsePtr toResponse<Json::Value &>(Json::Value &pJson)
     return toResponse((const Json::Value &)pJson);
 }
 
-class HttpResponse
+class DROGON_EXPORT HttpResponse
 {
   public:
     /**

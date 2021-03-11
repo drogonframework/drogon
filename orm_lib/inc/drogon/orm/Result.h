@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include <drogon/exports.h>
 #include <memory>
 #include <string>
 #include <future>
@@ -53,7 +54,7 @@ enum class SqlStatus
  * which are relatively small and cheap to copy.  Think of a result object as
  * a "smart pointer" to an underlying result set.
  */
-class Result
+class DROGON_EXPORT Result
 {
   public:
     Result(const ResultImplPtr &ptr) : resultPtr_(ptr)

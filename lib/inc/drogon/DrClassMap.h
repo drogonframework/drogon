@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <drogon/exports.h>
 #include <trantor/utils/Logger.h>
 #include <functional>
 #include <memory>
@@ -36,7 +37,7 @@ using DrAllocFunc = std::function<DrObjectBase *()>;
 /**
  * @brief A map class which can create DrObjects from names.
  */
-class DrClassMap
+class DROGON_EXPORT DrClassMap
 {
   public:
     /**

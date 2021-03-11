@@ -12,6 +12,7 @@
 
 #pragma once
 
+#include <drogon/exports.h>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -34,7 +35,7 @@ namespace orm
  * @c juncture of "done".  The @c juncture tells you what the parser found in
  * that step: did the array "nest" to a deeper level, or "un-nest" back up?
  */
-class ArrayParser
+class DROGON_EXPORT ArrayParser
 {
   public:
     /// What's the latest thing found in the array?

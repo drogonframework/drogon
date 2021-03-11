@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <drogon/exports.h>
 #include <drogon/utils/HttpConstraint.h>
 #include <drogon/CacheMap.h>
 #include <drogon/DrObject.h>
@@ -56,7 +57,7 @@ class HttpControllerBase;
 class HttpSimpleControllerBase;
 class WebSocketControllerBase;
 
-class HttpAppFramework : public trantor::NonCopyable
+class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
 {
   public:
     virtual ~HttpAppFramework();

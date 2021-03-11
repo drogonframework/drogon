@@ -13,6 +13,7 @@
  */
 
 #pragma once
+#include <drogon/exports.h>
 #include <drogon/orm/DbTypes.h>
 #include <drogon/orm/Exception.h>
 #include <drogon/orm/Field.h>
@@ -263,7 +264,7 @@ class CallbackHolder : public CallbackHolderBase
         return field.as<ValueType>();
     }
 };
-class SqlBinder : public trantor::NonCopyable
+class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
 {
     using self = SqlBinder;
 

@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include <drogon/exports.h>
 #include <drogon/utils/string_view.h>
 #include <drogon/orm/ArrayParser.h>
 #include <drogon/orm/Result.h>
@@ -39,7 +40,7 @@ namespace orm
  * A field represents one entry in a row.  It represents an actual value
  * in the result set, and can be converted to various types.
  */
-class Field
+class DROGON_EXPORT Field
 {
   public:
     using SizeType = unsigned long;

@@ -13,6 +13,7 @@
  */
 
 #pragma once
+#include <drogon/exports.h>
 #include <drogon/orm/Exception.h>
 #include <drogon/orm/Field.h>
 #include <drogon/orm/Result.h>
@@ -84,7 +85,7 @@ struct TrasactionAwaiter : public CallbackAwaiter<std::shared_ptr<Transaction>>
 }  // namespace internal
 
 /// Database client abstract class
-class DbClient : public trantor::NonCopyable
+class DROGON_EXPORT DbClient : public trantor::NonCopyable
 {
   public:
     virtual ~DbClient(){};

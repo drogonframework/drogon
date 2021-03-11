@@ -14,6 +14,7 @@
  */
 #pragma once
 
+#include <drogon/exports.h>
 #include <drogon/HttpTypes.h>
 #include <drogon/drogon_callbacks.h>
 #include <drogon/HttpResponse.h>
@@ -68,7 +69,7 @@ struct HttpRespAwaiter : public CallbackAwaiter<HttpResponsePtr>
  *
  * TODO:SSL server verification
  */
-class HttpClient : public trantor::NonCopyable
+class DROGON_EXPORT HttpClient : public trantor::NonCopyable
 {
   public:
     /**

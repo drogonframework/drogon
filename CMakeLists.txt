@@ -59,6 +59,9 @@ else(BUILD_DROGON_SHARED)
   add_library(${PROJECT_NAME} STATIC)
 endif(BUILD_DROGON_SHARED)
 
+include(GenerateExportHeader)
+generate_export_header(${PROJECT_NAME} EXPORT_FILE_NAME ${CMAKE_CURRENT_BINARY_DIR}/exports/drogon/exports.h)
+
 include(cmake/DrogonUtilities.cmake)
 include(CheckIncludeFileCXX)
 
@@ -79,6 +82,7 @@ target_include_directories(
          $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/orm_lib/inc>
          $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}>
          $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/trantor>
+         $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/exports>
          $<INSTALL_INTERFACE:${INSTALL_INCLUDE_DIR}>)
 
 if(WIN32)

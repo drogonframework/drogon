@@ -5,6 +5,7 @@
  */
 
 #pragma once
+#include <drogon/exports.h>
 #include <drogon/drogon_callbacks.h>
 #include <drogon/plugins/Plugin.h>
 #include <regex>
@@ -40,7 +41,7 @@ namespace plugin
  * configuration file.
  *
  */
-class SecureSSLRedirector : public drogon::Plugin<SecureSSLRedirector>
+class DROGON_EXPORT SecureSSLRedirector : public drogon::Plugin<SecureSSLRedirector>
 {
   public:
     SecureSSLRedirector()
