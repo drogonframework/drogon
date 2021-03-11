@@ -465,7 +465,10 @@ void HttpAppFrameworkImpl::run()
         getLoop()->resetAfterFork();
 #endif
     }
-    signal(SIGTERM, TERMFunction);
+    if (handleSigterm_)
+    {
+        signal(SIGTERM, TERMFunction);
+    }
     // set logger
     if (!logPath_.empty())
     {
