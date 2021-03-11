@@ -141,8 +141,8 @@ class ConvertMethod
         {
             throw std::runtime_error("method is not an object.");
         }  // endif
-        methodBeforeDbWrite_ = method.get("json", "").asString();
-        methodAfterDbRead_ = method.get("row", "").asString();
+        methodBeforeDbWrite_ = method.get("before_db_write", "").asString();
+        methodAfterDbRead_ = method.get("after_db_read", "").asString();
 
         auto includeFiles = convert["includes"];
         if (includeFiles.isNull())
