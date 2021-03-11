@@ -69,7 +69,7 @@ struct HttpRespAwaiter : public CallbackAwaiter<HttpResponsePtr>
  *
  * TODO:SSL server verification
  */
-class DROGON_EXPORT HttpClient : public trantor::NonCopyable
+class HttpClient : public trantor::NonCopyable
 {
   public:
     /**
@@ -213,12 +213,13 @@ class DROGON_EXPORT HttpClient : public trantor::NonCopyable
      * @return HttpClientPtr The smart pointer to the new client object.
      * @note: The ip parameter support for both ipv4 and ipv6 address
      */
-    static HttpClientPtr newHttpClient(const std::string &ip,
-                                       uint16_t port,
-                                       bool useSSL = false,
-                                       trantor::EventLoop *loop = nullptr,
-                                       bool useOldTLS = false,
-                                       bool validateCert = true);
+    DROGON_EXPORT static HttpClientPtr newHttpClient(
+        const std::string &ip,
+        uint16_t port,
+        bool useSSL = false,
+        trantor::EventLoop *loop = nullptr,
+        bool useOldTLS = false,
+        bool validateCert = true);
 
     /// Get the event loop of the client;
     virtual trantor::EventLoop *getLoop() = 0;
@@ -254,10 +255,11 @@ class DROGON_EXPORT HttpClient : public trantor::NonCopyable
      * method.
      *
      */
-    static HttpClientPtr newHttpClient(const std::string &hostString,
-                                       trantor::EventLoop *loop = nullptr,
-                                       bool useOldTLS = false,
-                                       bool validateCert = true);
+    DROGON_EXPORT static HttpClientPtr newHttpClient(
+        const std::string &hostString,
+        trantor::EventLoop *loop = nullptr,
+        bool useOldTLS = false,
+        bool validateCert = true);
 
     virtual ~HttpClient()
     {

@@ -85,7 +85,7 @@ struct TrasactionAwaiter : public CallbackAwaiter<std::shared_ptr<Transaction>>
 }  // namespace internal
 
 /// Database client abstract class
-class DROGON_EXPORT DbClient : public trantor::NonCopyable
+class DbClient : public trantor::NonCopyable
 {
   public:
     virtual ~DbClient(){};
@@ -115,11 +115,13 @@ class DROGON_EXPORT DbClient : public trantor::NonCopyable
      *
      * @param connNum: The number of connections to database server;
      */
-    static std::shared_ptr<DbClient> newPgClient(const std::string &connInfo,
-                                                 const size_t connNum);
-    static std::shared_ptr<DbClient> newMysqlClient(const std::string &connInfo,
-                                                    const size_t connNum);
-    static std::shared_ptr<DbClient> newSqlite3Client(
+    DROGON_EXPORT static std::shared_ptr<DbClient> newPgClient(
+        const std::string &connInfo,
+        const size_t connNum);
+    DROGON_EXPORT static std::shared_ptr<DbClient> newMysqlClient(
+        const std::string &connInfo,
+        const size_t connNum);
+    DROGON_EXPORT static std::shared_ptr<DbClient> newSqlite3Client(
         const std::string &connInfo,
         const size_t connNum);
 
@@ -153,7 +155,7 @@ class DROGON_EXPORT DbClient : public trantor::NonCopyable
     void execSqlAsync(const std::string &sql,
                       FUNCTION1 &&rCallback,
                       FUNCTION2 &&exceptCallback,
-                      Arguments &&... args) noexcept
+                      Arguments &&...args) noexcept
     {
         auto binder = *this << sql;
         (void)std::initializer_list<int>{
@@ -165,7 +167,7 @@ class DROGON_EXPORT DbClient : public trantor::NonCopyable
     /// Async and nonblocking method
     template <typename... Arguments>
     std::future<Result> execSqlAsyncFuture(const std::string &sql,
-                                           Arguments &&... args) noexcept
+                                           Arguments &&...args) noexcept
     {
         auto binder = *this << sql;
         (void)std::initializer_list<int>{
@@ -182,7 +184,7 @@ class DROGON_EXPORT DbClient : public trantor::NonCopyable
     // Sync and blocking method
     template <typename... Arguments>
     const Result execSqlSync(const std::string &sql,
-                             Arguments &&... args) noexcept(false)
+                             Arguments &&...args) noexcept(false)
     {
         Result r(nullptr);
         {
@@ -212,8 +214,8 @@ class DROGON_EXPORT DbClient : public trantor::NonCopyable
 
     /// Streaming-like method for sql execution. For more information, see the
     /// wiki page.
-    internal::SqlBinder operator<<(const std::string &sql);
-    internal::SqlBinder operator<<(std::string &&sql);
+    DROGON_EXPORT internal::SqlBinder operator<<(const std::string &sql);
+    DROGON_EXPORT internal::SqlBinder operator<<(std::string &&sql);
     template <int N>
     internal::SqlBinder operator<<(const char (&sql)[N])
     {

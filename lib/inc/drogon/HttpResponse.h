@@ -64,7 +64,7 @@ inline HttpResponsePtr toResponse<Json::Value &>(Json::Value &pJson)
     return toResponse((const Json::Value &)pJson);
 }
 
-class DROGON_EXPORT HttpResponse
+class HttpResponse
 {
   public:
     /**
@@ -312,13 +312,13 @@ class DROGON_EXPORT HttpResponse
 
     /// Create a normal response with a status code of 200ok and a content type
     /// of text/html.
-    static HttpResponsePtr newHttpResponse();
+    DROGON_EXPORT static HttpResponsePtr newHttpResponse();
     /// Create a response which returns a 404 page.
-    static HttpResponsePtr newNotFoundResponse();
+    DROGON_EXPORT static HttpResponsePtr newNotFoundResponse();
     /// Create a response which returns a json object. Its content type is set
     /// to set/json.
-    static HttpResponsePtr newHttpJsonResponse(const Json::Value &data);
-    static HttpResponsePtr newHttpJsonResponse(Json::Value &&data);
+    DROGON_EXPORT static HttpResponsePtr newHttpJsonResponse(const Json::Value &data);
+    DROGON_EXPORT static HttpResponsePtr newHttpJsonResponse(Json::Value &&data);
     /// Create a response that returns a page rendered by a view named
     /// viewName.
     /**

@@ -72,7 +72,7 @@ template <>
 std::shared_ptr<Json::Value> fromRequest(const HttpRequest &req);
 
 /// Abstract class for webapp developer to get or set the Http request;
-class DROGON_EXPORT HttpRequest
+class HttpRequest
 {
   public:
     /**
@@ -368,7 +368,7 @@ class DROGON_EXPORT HttpRequest
     /// create request objects.
 
     /// Create a normal request with http method Get and version Http1.1.
-    static HttpRequestPtr newHttpRequest();
+    DROGON_EXPORT static HttpRequestPtr newHttpRequest();
 
     /// Create a http request with:
     /// Method: Get

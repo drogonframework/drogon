@@ -264,7 +264,7 @@ class CallbackHolder : public CallbackHolderBase
         return field.as<ValueType>();
     }
 };
-class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
+class SqlBinder : public trantor::NonCopyable
 {
     using self = SqlBinder;
 
@@ -320,7 +320,7 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
         that.execed_ = true;
     }
     SqlBinder &operator=(SqlBinder &&that) = delete;
-    ~SqlBinder();
+    DROGON_EXPORT ~SqlBinder();
     template <typename CallbackType,
               typename traits = FunctionTraits<CallbackType>>
     typename std::enable_if<traits::isExceptCallback && traits::isPtr,
@@ -448,12 +448,12 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
     {
         return operator<<(std::string(str));
     }
-    self &operator<<(const std::string &str);
+    DROGON_EXPORT self &operator<<(const std::string &str);
     self &operator<<(std::string &str)
     {
         return operator<<((const std::string &)str);
     }
-    self &operator<<(std::string &&str);
+    DROGON_EXPORT self &operator<<(std::string &&str);
     self &operator<<(trantor::Date &&date)
     {
         return operator<<(date.toDbStringLocal());
@@ -462,8 +462,8 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
     {
         return operator<<(date.toDbStringLocal());
     }
-    self &operator<<(const std::vector<char> &v);
-    self &operator<<(std::vector<char> &&v);
+    DROGON_EXPORT self &operator<<(const std::vector<char> &v);
+    DROGON_EXPORT self &operator<<(std::vector<char> &&v);
     self &operator<<(float f)
     {
         if (type_ == ClientType::Sqlite3)
@@ -472,9 +472,9 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
         }
         return operator<<(std::to_string(f));
     }
-    self &operator<<(double f);
-    self &operator<<(std::nullptr_t nullp);
-    self &operator<<(DefaultValue dv);
+    DROGON_EXPORT self &operator<<(double f);
+    DROGON_EXPORT self &operator<<(std::nullptr_t nullp);
+    DROGON_EXPORT self &operator<<(DefaultValue dv);
     self &operator<<(const Mode &mode)
     {
         mode_ = mode;
@@ -503,10 +503,10 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
         }
         return *this << nullptr;
     }
-    void exec() noexcept(false);
+    DROGON_EXPORT void exec() noexcept(false);
 
   private:
-    int getMysqlTypeBySize(size_t size);
+    DROGON_EXPORT int getMysqlTypeBySize(size_t size);
     std::shared_ptr<std::string> sqlPtr_;
     const char *sqlViewPtr_;
     size_t sqlViewLength_;

@@ -79,9 +79,8 @@ class DrObject : public virtual DrObjectBase
 
   protected:
     // protect constructor to make this class only inheritable
-    DrObject()
-    {
-    }
+    DrObject() = default;
+    ~DrObject() override = default;
 
   private:
     class DrAllocator

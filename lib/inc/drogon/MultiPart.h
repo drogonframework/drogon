@@ -28,26 +28,26 @@ class HttpFileImpl;
  * @brief This class represents a uploaded file by a HTTP request.
  *
  */
-class DROGON_EXPORT HttpFile
+class HttpFile
 {
   public:
-    HttpFile(std::shared_ptr<HttpFileImpl> &&implPtr);
+    DROGON_EXPORT HttpFile(std::shared_ptr<HttpFileImpl> &&implPtr);
     /// Return the file name;
-    const std::string &getFileName() const;
+    DROGON_EXPORT const std::string &getFileName() const;
 
     /// Set the file name, usually called by the MultiPartParser parser.
-    void setFileName(const std::string &filename);
+    DROGON_EXPORT void setFileName(const std::string &filename);
 
     /// Set the contents of the file, usually called by the MultiPartParser
     /// parser.
-    void setFile(const char *data, size_t length);
+    DROGON_EXPORT void setFile(const char *data, size_t length);
 
     /// Save the file to the file system.
     /**
      * The folder saving the file is app().getUploadPath().
      * The full path is app().getUploadPath()+"/"+this->getFileName()
      */
-    int save() const;
+    DROGON_EXPORT int save() const;
 
     /// Save the file to @param path
     /**
@@ -56,7 +56,7 @@ class DROGON_EXPORT HttpFile
      * otherwise the file is saved as
      * app().getUploadPath()+"/"+path+"/"+this->getFileName()
      */
-    int save(const std::string &path) const;
+    DROGON_EXPORT int save(const std::string &path) const;
 
     /// Save the file to file system with a new name
     /**
@@ -64,7 +64,7 @@ class DROGON_EXPORT HttpFile
      * the full path is app().getUploadPath()+"/"+filename, otherwise the file
      * is saved as the filename
      */
-    int saveAs(const std::string &filename) const;
+    DROGON_EXPORT int saveAs(const std::string &filename) const;
 
     /**
      * @brief return the content of the file.
@@ -77,7 +77,7 @@ class DROGON_EXPORT HttpFile
     }
 
     /// Return the file length.
-    size_t fileLength() const noexcept;
+    DROGON_EXPORT size_t fileLength() const noexcept;
 
     /**
      * @brief return the pointer of the file data.
@@ -89,10 +89,10 @@ class DROGON_EXPORT HttpFile
      * length of the file by the fileLength() method, or use the fileContent()
      * method.
      */
-    const char *fileData() const noexcept;
+    DROGON_EXPORT const char *fileData() const noexcept;
 
     /// Return the md5 string of the file
-    std::string getMd5() const;
+    DROGON_EXPORT std::string getMd5() const;
 
   private:
     std::shared_ptr<HttpFileImpl> implPtr_;
@@ -100,21 +100,21 @@ class DROGON_EXPORT HttpFile
 
 /// A parser class which help the user to get the files and the parameters in
 /// the multipart format request.
-class DROGON_EXPORT MultiPartParser
+class MultiPartParser
 {
   public:
     MultiPartParser(){};
     ~MultiPartParser(){};
     /// Get files, This method should be called after calling the parse()
     /// method.
-    const std::vector<HttpFile> &getFiles() const;
+    DROGON_EXPORT const std::vector<HttpFile> &getFiles() const;
 
     /// Get parameters, This method should be called after calling the parse ()
     /// method.
-    const std::map<std::string, std::string> &getParameters() const;
+    DROGON_EXPORT const std::map<std::string, std::string> &getParameters() const;
 
     /// Parse the http request stream to get files and parameters.
-    int parse(const HttpRequestPtr &req);
+    DROGON_EXPORT int parse(const HttpRequestPtr &req);
 
   protected:
     std::vector<HttpFile> files_;
@@ -122,7 +122,7 @@ class DROGON_EXPORT MultiPartParser
     int parse(const HttpRequestPtr &req,
               const char *boundaryData,
               size_t boundaryLen);
-    int parseEntity(const char *begin, const char *end);
+    DROGON_EXPORT int parseEntity(const char *begin, const char *end);
     HttpRequestPtr requestPtr_;
 };
 

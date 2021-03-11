@@ -41,7 +41,7 @@ namespace plugin
  * configuration file.
  *
  */
-class DROGON_EXPORT SecureSSLRedirector : public drogon::Plugin<SecureSSLRedirector>
+class SecureSSLRedirector : public drogon::Plugin<SecureSSLRedirector>
 {
   public:
     SecureSSLRedirector()
@@ -49,15 +49,15 @@ class DROGON_EXPORT SecureSSLRedirector : public drogon::Plugin<SecureSSLRedirec
     }
     /// This method must be called by drogon to initialize and start the plugin.
     /// It must be implemented by the user.
-    virtual void initAndStart(const Json::Value &config) override;
+    DROGON_EXPORT virtual void initAndStart(const Json::Value &config) override;
 
     /// This method must be called by drogon to shutdown the plugin.
     /// It must be implemented by the user.
-    virtual void shutdown() override;
+    DROGON_EXPORT virtual void shutdown() override;
 
   private:
-    HttpResponsePtr redirectingAdvice(const HttpRequestPtr &) const;
-    HttpResponsePtr redirectToSSL(const HttpRequestPtr &) const;
+    DROGON_EXPORT HttpResponsePtr redirectingAdvice(const HttpRequestPtr &) const;
+    DROGON_EXPORT HttpResponsePtr redirectToSSL(const HttpRequestPtr &) const;
 
     std::regex exemptPegex_;
     bool regexFlag_{false};

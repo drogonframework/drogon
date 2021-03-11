@@ -30,7 +30,7 @@ using DrTemplateData = HttpViewData;
  * data.
  * For more details on the template file, see the wiki site (the 'View' section)
  */
-class DROGON_EXPORT DrTemplateBase : public virtual DrObjectBase
+class DrTemplateBase : public virtual DrObjectBase
 {
   public:
     /// Create an object of the implementation class
@@ -40,7 +40,7 @@ class DROGON_EXPORT DrTemplateBase : public virtual DrObjectBase
      * usually .csp. The user should preprocess the template file with the
      * drogon_ctl tool to create c++ source files.
      */
-    static std::shared_ptr<DrTemplateBase> newTemplate(
+    DROGON_EXPORT static std::shared_ptr<DrTemplateBase> newTemplate(
         const std::string &templateName);
 
     /// Generate the text string

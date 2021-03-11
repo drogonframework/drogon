@@ -23,7 +23,7 @@ namespace drogon
 /**
  * @brief this class represents a cookie entity.
  */
-class DROGON_EXPORT Cookie
+class Cookie
 {
   public:
     /// Constructor
@@ -117,7 +117,7 @@ class DROGON_EXPORT Cookie
     /**
      * @brief Get the string value of the cookie
      */
-    std::string cookieString() const;
+    DROGON_EXPORT std::string cookieString() const;
 
     /**
      * @brief Get the string value of the cookie
