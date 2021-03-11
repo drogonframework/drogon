@@ -256,6 +256,11 @@ class HttpAppFrameworkImpl : public HttpAppFramework
         runAsDaemon_ = true;
         return *this;
     }
+    virtual HttpAppFramework &disableSigtermHandling() override
+    {
+        handleSigterm_ = false;
+        return *this;
+    }
     virtual HttpAppFramework &enableRelaunchOnError() override
     {
         relaunchOnError_ = true;
@@ -583,6 +588,7 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     std::atomic<int64_t> connectionNum_{0};
 
     bool runAsDaemon_{false};
+    bool handleSigterm_{true};
     bool relaunchOnError_{false};
     std::string logPath_{""};
     std::string logfileBaseName_{""};
