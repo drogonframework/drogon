@@ -27,3 +27,6 @@ void IntranetIpFilter::doFilter(const HttpRequestPtr &req,
     auto res = drogon::HttpResponse::newNotFoundResponse();
     fcb(res);
 }
+IntranetIpFilter::IntranetIpFilter()
+{
+}

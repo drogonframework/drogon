@@ -25,9 +25,7 @@ namespace drogon
 class IntranetIpFilter : public HttpFilter<IntranetIpFilter>
 {
   public:
-    IntranetIpFilter()
-    {
-    }
+    IntranetIpFilter();
     DROGON_EXPORT virtual void doFilter(const HttpRequestPtr &req,
                                         FilterCallback &&fcb,
                                         FilterChainCallback &&fccb) override;
