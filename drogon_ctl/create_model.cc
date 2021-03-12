@@ -149,7 +149,7 @@ void create_model::createModelClassFromPG(
     data["dbName"] = dbname_;
     data["rdbms"] = std::string("postgresql");
     data["relationships"] = relationships;
-    data["convertMethods"] = ConvertMethods;
+    data["convertMethods"] = convertMethods;
     if (schema != "public")
     {
         data["schema"] = schema;
@@ -393,13 +393,13 @@ void create_model::createModelFromPG(
             {
                 std::cout << "table name:" << tableName << std::endl;
 
-                createModelClassFromPG(
-                    path,
-                    client,
-                    tableName,
-                    schema,
-                    restfulApiConfig,
-                    relationships[tableName] convertMethods[tableName]);
+                createModelClassFromPG(path,
+                                       client,
+                                       tableName,
+                                       schema,
+                                       restfulApiConfig,
+                                       relationships[tableName],
+                                       convertMethods[tableName]);
             }
         } >>
         [](const DrogonDbException &e) {
@@ -843,13 +843,13 @@ void create_model::createModel(const std::string &path,
                                    tableName.begin(),
                                    tolower);
                     std::cout << "table name:" << tableName << std::endl;
-                    createModelClassFromPG(
-                        path,
-                        client,
-                        tableName,
-                        schema,
-                        restfulApiConfig,
-                        relationships[tableName] convertMethods[tableName]);
+                    createModelClassFromPG(path,
+                                           client,
+                                           tableName,
+                                           schema,
+                                           restfulApiConfig,
+                                           relationships[tableName],
+                                           convertMethods[tableName]);
                 }
             }
         }
@@ -860,7 +860,8 @@ void create_model::createModel(const std::string &path,
                                    singleModelName,
                                    schema,
                                    restfulApiConfig,
-                                   relationships[singleModelName]);
+                                   relationships[singleModelName],
+                                   convertMethods[singleModelName]);
         }
 #else
         std::cerr

@@ -816,6 +816,16 @@ class HttpAppFramework : public trantor::NonCopyable
      */
     virtual HttpAppFramework &enableRunAsDaemon() = 0;
 
+    /// Disable the handling of SIGTERM signal.
+    /**
+     * Enabled by default.
+     *
+     * @note
+     * This operation can be performed by an option in the configuration file.
+     * When disabled setTermSignalHandler() is useless
+     */
+    virtual HttpAppFramework &disableSigtermHandling() = 0;
+
     /// Make the application restart after crashing.
     /**
      * Disabled by default.

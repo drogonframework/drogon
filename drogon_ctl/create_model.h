@@ -141,8 +141,8 @@ class ConvertMethod
         {
             throw std::runtime_error("method is not an object.");
         }  // endif
-        methodJson_ = method.get("json", "").asString();
-        methodRow_ = method.get("row", "").asString();
+        methodBeforeDbWrite_ = method.get("before_db_write", "").asString();
+        methodAfterDbRead_ = method.get("after_db_read", "").asString();
 
         auto includeFiles = convert["includes"];
         if (includeFiles.isNull())
@@ -171,13 +171,13 @@ class ConvertMethod
     {
         return colName_;
     }
-    const std::string &methodJson() const
+    const std::string &methodBeforeDbWrite() const
     {
-        return methodJson_;
+        return methodBeforeDbWrite_;
     }
-    const std::string &methodRow() const
+    const std::string &methodAfterDbRead() const
     {
-        return methodRow_;
+        return methodAfterDbRead_;
     }
     const std::vector<std::string> &includeFiles() const
     {
@@ -187,8 +187,8 @@ class ConvertMethod
   private:
     std::string tableName_{"*"};
     std::string colName_{"*"};
-    std::string methodJson_;
-    std::string methodRow_;
+    std::string methodBeforeDbWrite_;
+    std::string methodAfterDbRead_;
     std::vector<std::string> includeFiles_;
 };
 
