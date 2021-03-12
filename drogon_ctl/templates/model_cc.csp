@@ -1298,6 +1298,7 @@ bool [[className]]::validateMasqueradedJsonForCreation(const Json::Value &pJson,
         err = "Bad masquerading vector";
         return false;
     }
+    try {
 <%c++
     for(size_t i=0;i<cols.size();i++)
     {
@@ -1305,13 +1306,13 @@ bool [[className]]::validateMasqueradedJsonForCreation(const Json::Value &pJson,
         if(col.colType_.empty())
             continue;
 %>
-    if(!pMasqueradingVector[{%i%}].empty())
-    {
-        if(pJson.isMember(pMasqueradingVector[{%i%}]))
-        {
-            if(!validJsonOfField({%i%}, pMasqueradingVector[{%i%}], pJson[pMasqueradingVector[{%i%}]], err, true))
-                return false;
-        }
+      if(!pMasqueradingVector[{%i%}].empty())
+      {
+          if(pJson.isMember(pMasqueradingVector[{%i%}]))
+          {
+              if(!validJsonOfField({%i%}, pMasqueradingVector[{%i%}], pJson[pMasqueradingVector[{%i%}]], err, true))
+                  return false;
+          }
 <%c++if(col.notNull_ && !col.isAutoVal_ && !col.hasDefaultVal_){%>
         else
         {
@@ -1319,8 +1320,14 @@ bool [[className]]::validateMasqueradedJsonForCreation(const Json::Value &pJson,
             return false;
         }
 <%c++}%>
-    }
+      }
 <%c++}%>
+    }
+    catch(const Json::LogicError &e) 
+    {
+      err = e.what();
+      return false;
+    }
     return true;
 }
 bool [[className]]::validateJsonForUpdate(const Json::Value &pJson, std::string &err)
@@ -1360,6 +1367,7 @@ bool [[className]]::validateMasqueradedJsonForUpdate(const Json::Value &pJson,
         err = "Bad masquerading vector";
         return false;
     }
+    try {
 <%c++
     for(size_t i=0;i<cols.size();i++)
     {
@@ -1367,11 +1375,11 @@ bool [[className]]::validateMasqueradedJsonForUpdate(const Json::Value &pJson,
         if(col.colType_.empty())
             continue;
 %>
-    if(!pMasqueradingVector[{%i%}].empty() && pJson.isMember(pMasqueradingVector[{%i%}]))
-    {
-        if(!validJsonOfField({%i%}, pMasqueradingVector[{%i%}], pJson[pMasqueradingVector[{%i%}]], err, false))
-            return false;
-    }
+      if(!pMasqueradingVector[{%i%}].empty() && pJson.isMember(pMasqueradingVector[{%i%}]))
+      {
+          if(!validJsonOfField({%i%}, pMasqueradingVector[{%i%}], pJson[pMasqueradingVector[{%i%}]], err, false))
+              return false;
+      }
 <%c++    
     if(col.isPrimaryKey_)
     {
@@ -1384,6 +1392,12 @@ bool [[className]]::validateMasqueradedJsonForUpdate(const Json::Value &pJson,
 <%c++        
     }
 }%>
+    }
+    catch(const Json::LogicError &e) 
+    {
+      err = e.what();
+      return false;
+    }
     return true;
 }
 bool [[className]]::validJsonOfField(size_t index,
