@@ -416,7 +416,8 @@ set(DROGON_HEADERS
     lib/inc/drogon/drogon.h
     lib/inc/drogon/version.h
     lib/inc/drogon/drogon_callbacks.h
-    lib/inc/drogon/PubSubService.h)
+    lib/inc/drogon/PubSubService.h
+    ${CMAKE_CURRENT_BINARY_DIR}/exports/drogon/exports.h)
 install(FILES ${DROGON_HEADERS} DESTINATION ${INSTALL_INCLUDE_DIR}/drogon)
 
 set(ORM_HEADERS
