@@ -13,6 +13,9 @@
  */
 
 #pragma once
+
+#if defined(USE_POSTGRESQL) || defined(USE_MYSQL) || defined(USE_SQLITE3)
+
 #include <drogon/exports.h>
 #include <drogon/orm/Exception.h>
 #include <drogon/orm/Field.h>
@@ -316,3 +319,23 @@ inline void internal::TrasactionAwaiter::await_suspend(
 
 }  // namespace orm
 }  // namespace drogon
+
+#else
+
+#include <memory>
+
+namespace drogon
+{
+namespace orm
+{
+enum class ClientType
+{
+};
+class DbClient
+{
+};
+using DbClientPtr = std::shared_ptr<DbClient>;
+}
+}
+
+#endif

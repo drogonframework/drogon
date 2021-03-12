@@ -317,8 +317,10 @@ class HttpResponse
     DROGON_EXPORT static HttpResponsePtr newNotFoundResponse();
     /// Create a response which returns a json object. Its content type is set
     /// to set/json.
-    DROGON_EXPORT static HttpResponsePtr newHttpJsonResponse(const Json::Value &data);
-    DROGON_EXPORT static HttpResponsePtr newHttpJsonResponse(Json::Value &&data);
+    DROGON_EXPORT static HttpResponsePtr newHttpJsonResponse(
+        const Json::Value &data);
+    DROGON_EXPORT static HttpResponsePtr newHttpJsonResponse(
+        Json::Value &&data);
     /// Create a response that returns a page rendered by a view named
     /// viewName.
     /**
@@ -326,7 +328,7 @@ class HttpResponse
      * @param data is the data displayed on the page.
      * @note For more details, see the wiki pages, the "View" section.
      */
-    static HttpResponsePtr newHttpViewResponse(
+    DROGON_EXPORT static HttpResponsePtr newHttpViewResponse(
         const std::string &viewName,
         const HttpViewData &data = HttpViewData());
 
@@ -337,7 +339,7 @@ class HttpResponse
      * @param status The HTTP status code, k302Found by default. Users could set
      * it to one of the 301, 302, 303, 307, ...
      */
-    static HttpResponsePtr newRedirectionResponse(
+    DROGON_EXPORT static HttpResponsePtr newRedirectionResponse(
         const std::string &location,
         HttpStatusCode status = k302Found);
 
@@ -349,7 +351,7 @@ class HttpResponse
      * @param type if the parameter is CT_NONE, the content type is set by
      * drogon based on the file extension.
      */
-    static HttpResponsePtr newFileResponse(
+    DROGON_EXPORT static HttpResponsePtr newFileResponse(
         const std::string &fullPath,
         const std::string &attachmentFileName = "",
         ContentType type = CT_NONE);
