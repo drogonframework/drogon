@@ -75,3 +75,6 @@ services:
 script:
   - ./build.sh -t
   - ./test.sh -t
+  - sudo rm /usr/local/lib/libtrantor.a && sudo rm /usr/local/lib/libdrogon.a
+  - ./build.sh -tshared
+  - ./test.sh -t
