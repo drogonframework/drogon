@@ -158,7 +158,7 @@ class WebSocketClient
      * @return WebSocketClientPtr The smart pointer to the WebSocket client.
      * @note The ip parameter support for both ipv4 and ipv6 address
      */
-    static WebSocketClientPtr newWebSocketClient(
+    DROGON_EXPORT static WebSocketClientPtr newWebSocketClient(
         const std::string &ip,
         uint16_t port,
         bool useSSL = false,
@@ -187,7 +187,7 @@ class WebSocketClient
      * connectToServer() method.
      *
      */
-    static WebSocketClientPtr newWebSocketClient(
+    DROGON_EXPORT static WebSocketClientPtr newWebSocketClient(
         const std::string &hostString,
         trantor::EventLoop *loop = nullptr,
         bool useOldTLS = false);

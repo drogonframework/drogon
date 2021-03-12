@@ -375,13 +375,14 @@ class HttpRequest
     /// Version: Http1.1
     /// Content type: application/json, the @param data is serialized into the
     /// content of the request.
-    static HttpRequestPtr newHttpJsonRequest(const Json::Value &data);
+    DROGON_EXPORT static HttpRequestPtr newHttpJsonRequest(
+        const Json::Value &data);
 
     /// Create a http request with:
     /// Method: Post
     /// Version: Http1.1
     /// Content type: application/x-www-form-urlencoded
-    static HttpRequestPtr newHttpFormPostRequest();
+    DROGON_EXPORT static HttpRequestPtr newHttpFormPostRequest();
 
     /// Create a http file upload request with:
     /// Method: Post
@@ -389,7 +390,7 @@ class HttpRequest
     /// Content type: multipart/form-data
     /// The @param files represents pload files which are transferred to the
     /// server via the multipart/form-data format
-    static HttpRequestPtr newFileUploadRequest(
+    DROGON_EXPORT static HttpRequestPtr newFileUploadRequest(
         const std::vector<UploadFile> &files);
 
     /**
