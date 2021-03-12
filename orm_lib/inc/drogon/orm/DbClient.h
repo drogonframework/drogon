@@ -176,7 +176,7 @@ class DbClient : public trantor::NonCopyable
     void execSqlAsync(const std::string &sql,
                       FUNCTION1 &&rCallback,
                       FUNCTION2 &&exceptCallback,
-                      Arguments &&...args) noexcept
+                      Arguments &&... args) noexcept
     {
         auto binder = *this << sql;
         (void)std::initializer_list<int>{
@@ -188,7 +188,7 @@ class DbClient : public trantor::NonCopyable
     /// Async and nonblocking method
     template <typename... Arguments>
     std::future<Result> execSqlAsyncFuture(const std::string &sql,
-                                           Arguments &&...args) noexcept
+                                           Arguments &&... args) noexcept
     {
         auto binder = *this << sql;
         (void)std::initializer_list<int>{
@@ -205,7 +205,7 @@ class DbClient : public trantor::NonCopyable
     // Sync and blocking method
     template <typename... Arguments>
     const Result execSqlSync(const std::string &sql,
-                             Arguments &&...args) noexcept(false)
+                             Arguments &&... args) noexcept(false)
     {
         Result r(nullptr);
         {
