@@ -26,10 +26,6 @@
 
 using namespace drogon::orm;
 
-DrogonDbException::~DrogonDbException() noexcept
-{
-}
-
 Failure::Failure(const std::string &whatarg) : std::runtime_error(whatarg)
 {
 }

@@ -44,9 +44,7 @@ namespace plugin
 class SecureSSLRedirector : public drogon::Plugin<SecureSSLRedirector>
 {
   public:
-    SecureSSLRedirector()
-    {
-    }
+    SecureSSLRedirector();
     /// This method must be called by drogon to initialize and start the plugin.
     /// It must be implemented by the user.
     DROGON_EXPORT virtual void initAndStart(const Json::Value &config) override;

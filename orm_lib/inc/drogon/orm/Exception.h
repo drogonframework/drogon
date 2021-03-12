@@ -51,7 +51,9 @@ class DrogonDbException
 {
   public:
     /// Support run-time polymorphism, and keep this class abstract
-    DROGON_EXPORT virtual ~DrogonDbException() noexcept;
+    DROGON_EXPORT virtual ~DrogonDbException() noexcept
+    {
+    }
 
     /// Return std::exception base-class object
     /**
