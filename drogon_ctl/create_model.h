@@ -123,6 +123,75 @@ class PivotTable
     std::string originalKey_;
     std::string targetKey_;
 };
+
+class ConvertMethod
+{
+  public:
+    ConvertMethod(const Json::Value &convert)
+    {
+        tableName_ = convert.get("table", "*").asString();
+        colName_ = convert.get("column", "*").asString();
+
+        auto method = convert["method"];
+        if (method.isNull())
+        {
+            throw std::runtime_error("method - object is missing.");
+        }  // endif
+        if (!method.isObject())
+        {
+            throw std::runtime_error("method is not an object.");
+        }  // endif
+        methodBeforeDbWrite_ = method.get("before_db_write", "").asString();
+        methodAfterDbRead_ = method.get("after_db_read", "").asString();
+
+        auto includeFiles = convert["includes"];
+        if (includeFiles.isNull())
+        {
+            return;
+        }  // endif
+        if (!includeFiles.isArray())
+        {
+            throw std::runtime_error("includes must be an array");
+        }  // endif
+        for (auto &i : includeFiles)
+        {
+            includeFiles_.push_back(i.asString());
+        }  // for
+    }
+    ConvertMethod() = default;
+
+    bool shouldConvert(const std::string &tableName,
+                       const std::string &colName) const;
+
+    const std::string &tableName() const
+    {
+        return tableName_;
+    }
+    const std::string &colName() const
+    {
+        return colName_;
+    }
+    const std::string &methodBeforeDbWrite() const
+    {
+        return methodBeforeDbWrite_;
+    }
+    const std::string &methodAfterDbRead() const
+    {
+        return methodAfterDbRead_;
+    }
+    const std::vector<std::string> &includeFiles() const
+    {
+        return includeFiles_;
+    }
+
+  private:
+    std::string tableName_{"*"};
+    std::string colName_{"*"};
+    std::string methodBeforeDbWrite_;
+    std::string methodAfterDbRead_;
+    std::vector<std::string> includeFiles_;
+};
+
 class Relationship
 {
   public:
@@ -279,18 +348,22 @@ class create_model : public DrObject<create_model>, public CommandHandler
                      const Json::Value &config,
                      const std::string &singleModelName);
 #if USE_POSTGRESQL
-    void createModelClassFromPG(const std::string &path,
-                                const DbClientPtr &client,
-                                const std::string &tableName,
-                                const std::string &schema,
-                                const Json::Value &restfulApiConfig,
-                                const std::vector<Relationship> &relationships);
+    void createModelClassFromPG(
+        const std::string &path,
+        const DbClientPtr &client,
+        const std::string &tableName,
+        const std::string &schema,
+        const Json::Value &restfulApiConfig,
+        const std::vector<Relationship> &relationships,
+        const std::vector<ConvertMethod> &convertMethods);
+
     void createModelFromPG(
         const std::string &path,
         const DbClientPtr &client,
         const std::string &schema,
         const Json::Value &restfulApiConfig,
-        std::map<std::string, std::vector<Relationship>> &relationships);
+        std::map<std::string, std::vector<Relationship>> &relationships,
+        std::map<std::string, std::vector<ConvertMethod>> &convertMethods);
 #endif
 #if USE_MYSQL
     void createModelClassFromMysql(
@@ -298,12 +371,14 @@ class create_model : public DrObject<create_model>, public CommandHandler
         const DbClientPtr &client,
         const std::string &tableName,
         const Json::Value &restfulApiConfig,
-        const std::vector<Relationship> &relationships);
+        const std::vector<Relationship> &relationships,
+        const std::vector<ConvertMethod> &convertMethods);
     void createModelFromMysql(
         const std::string &path,
         const DbClientPtr &client,
         const Json::Value &restfulApiConfig,
-        std::map<std::string, std::vector<Relationship>> &relationships);
+        std::map<std::string, std::vector<Relationship>> &relationships,
+        std::map<std::string, std::vector<ConvertMethod>> &convertMethods);
 #endif
 #if USE_SQLITE3
     void createModelClassFromSqlite3(
@@ -311,12 +386,14 @@ class create_model : public DrObject<create_model>, public CommandHandler
         const DbClientPtr &client,
         const std::string &tableName,
         const Json::Value &restfulApiConfig,
-        const std::vector<Relationship> &relationships);
+        const std::vector<Relationship> &relationships,
+        const std::vector<ConvertMethod> &convertMethod);
     void createModelFromSqlite3(
         const std::string &path,
         const DbClientPtr &client,
         const Json::Value &restfulApiConfig,
-        std::map<std::string, std::vector<Relationship>> &relationships);
+        std::map<std::string, std::vector<Relationship>> &relationships,
+        std::map<std::string, std::vector<ConvertMethod>> &convertMethod);
 #endif
     void createRestfulAPIController(const DrTemplateData &tableInfo,
                                     const Json::Value &restfulApiConfig);

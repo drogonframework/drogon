@@ -20,6 +20,24 @@
     //"client_encoding": "",
     //table: An array of tables to be modelized. if the array is empty, all revealed tables are modelized.
     "tables": [],
+    //convert: the value can be changed by a function call before it is stored into database or
+    //after it is read from database
+    "convert": {
+      "enabled": false,
+      "items":[{
+          "table": "user",
+          "column": "password",
+          "method": {
+            //after_db_read: name of the method which is called after reading from database, signature: void([const] std::shared_ptr [&])
+            "after_db_read": "decrypt_password",
+            //before_db_write: name of the method which is called before writing to database, signature: void([const] std::shared_ptr [&])
+            "before_db_write": "encrypt_password"
+          },
+          "includes": [
+            "\"file_local_search_path.h\"","<file_in_global_search_path.h>"
+          ]
+      }]
+    },
     "relationships": {
         "enabled": false,
         "items": [{
