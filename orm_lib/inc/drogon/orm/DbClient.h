@@ -14,7 +14,9 @@
 
 #pragma once
 
-#if defined(USE_POSTGRESQL) || defined(USE_MYSQL) || defined(USE_SQLITE3)
+#include <drogon/config.h>
+
+#if USE_POSTGRESQL || USE_MYSQL || USE_SQLITE3
 
 #include <drogon/exports.h>
 #include <drogon/orm/Exception.h>
