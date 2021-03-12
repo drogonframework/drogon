@@ -140,7 +140,8 @@ class HttpViewData
        > --> &gt;
        @endcode
      */
-    DROGON_EXPORT static std::string htmlTranslate(const char *str, size_t length);
+    DROGON_EXPORT static std::string htmlTranslate(const char *str,
+                                                   size_t length);
     static std::string htmlTranslate(const std::string &str)
     {
         return htmlTranslate(str.data(), str.length());

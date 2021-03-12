@@ -29,11 +29,10 @@ class DbClient
 {
 };
 using DbClientPtr = std::shared_ptr<DbClient>;
-}
-}
+}  // namespace orm
+}  // namespace drogon
 
 #else
-
 
 #include <drogon/exports.h>
 #include <drogon/orm/Exception.h>
@@ -90,7 +89,7 @@ struct SqlAwaiter : public CallbackAwaiter<Result>
     internal::SqlBinder binder_;
 };
 
-struct TrasactionAwaiter : public CallbackAwaiter<std::shared_ptr<Transaction>>
+struct TrasactionAwaiter : public CallbackAwaiter<std::shared_ptr<Transaction> >
 {
     TrasactionAwaiter(DbClient *client) : client_(client)
     {
@@ -194,8 +193,8 @@ class DbClient : public trantor::NonCopyable
         auto binder = *this << sql;
         (void)std::initializer_list<int>{
             (binder << std::forward<Arguments>(args), 0)...};
-        std::shared_ptr<std::promise<Result>> prom =
-            std::make_shared<std::promise<Result>>();
+        std::shared_ptr<std::promise<Result> > prom =
+            std::make_shared<std::promise<Result> >();
         binder >> [prom](const Result &r) { prom->set_value(r); };
         binder >>
             [prom](const std::exception_ptr &e) { prom->set_exception(e); };

@@ -111,7 +111,8 @@ class MultiPartParser
 
     /// Get parameters, This method should be called after calling the parse ()
     /// method.
-    DROGON_EXPORT const std::map<std::string, std::string> &getParameters() const;
+    DROGON_EXPORT const std::map<std::string, std::string> &getParameters()
+        const;
 
     /// Parse the http request stream to get files and parameters.
     DROGON_EXPORT int parse(const HttpRequestPtr &req);

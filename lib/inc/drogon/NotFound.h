@@ -28,6 +28,7 @@ class NotFound : public drogon::DrTemplate<NotFound>
   public:
     NotFound(){};
     virtual ~NotFound(){};
-    DROGON_EXPORT virtual std::string genText(const drogon::HttpViewData &) override;
+    DROGON_EXPORT virtual std::string genText(
+        const drogon::HttpViewData &) override;
 };
 }  // namespace drogon

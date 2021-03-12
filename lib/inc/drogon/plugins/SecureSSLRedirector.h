@@ -56,7 +56,8 @@ class SecureSSLRedirector : public drogon::Plugin<SecureSSLRedirector>
     DROGON_EXPORT virtual void shutdown() override;
 
   private:
-    DROGON_EXPORT HttpResponsePtr redirectingAdvice(const HttpRequestPtr &) const;
+    DROGON_EXPORT
+    HttpResponsePtr redirectingAdvice(const HttpRequestPtr &) const;
     DROGON_EXPORT HttpResponsePtr redirectToSSL(const HttpRequestPtr &) const;
 
     std::regex exemptPegex_;

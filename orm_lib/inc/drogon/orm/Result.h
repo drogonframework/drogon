@@ -146,7 +146,8 @@ class Result
 
     DROGON_EXPORT const char *getValue(SizeType row, RowSizeType column) const;
     DROGON_EXPORT bool isNull(SizeType row, RowSizeType column) const;
-    DROGON_EXPORT FieldSizeType getLength(SizeType row, RowSizeType column) const;
+    DROGON_EXPORT FieldSizeType getLength(SizeType row,
+                                          RowSizeType column) const;
 };
 inline void swap(Result &one, Result &two) noexcept
 {
