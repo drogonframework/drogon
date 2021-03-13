@@ -45,7 +45,8 @@ jobs:
       if: runner.os == 'macOS'
       run: |
         brew install jsoncpp ossp-uuid brotli zlib
-        brew install openssl lz4 mariadb sqlite3 postgresql
+        brew install openssl lz4 mariadb sqlite3 postgresql hiredis
+        brew install redis
 
     - name: (Linux) Install dependencies
       if: runner.os == 'Linux'
@@ -112,6 +113,7 @@ jobs:
         brew tap homebrew/services;
         brew services restart postgresql;
         brew services start mariadb;
+        brew services start redis;
         sleep 4;
         mariadb -e "SET PASSWORD FOR 'root'@'localhost' = PASSWORD('')";
         mariadb -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost'";
@@ -135,7 +137,7 @@ jobs:
       run: ./test.sh -t
 
     - name: Lint
-      if: runner.os == 'Linux'
+      if: matrix.os == 'ubuntu-20.04'
       working-directory: ${{env.GITHUB_WORKSPACE}}
       shell: bash
       run: ./format.sh && git diff --exit-code
