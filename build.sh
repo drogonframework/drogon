@@ -63,7 +63,7 @@ case $(uname) in
     nproc=$(sysctl -n hw.ncpu)
     ;;
  Darwin)
-    nproc=$(sysctl -n hw.logicalcpu) # sysctl -n hw.logicalcpu is the equivalent to nproc on macOS.
+    nproc=$(sysctl -n hw.ncpu) # sysctl -n hw.ncpu is the equivalent to nproc on macOS.
     ;;
  *)
     nproc=$(nproc)
