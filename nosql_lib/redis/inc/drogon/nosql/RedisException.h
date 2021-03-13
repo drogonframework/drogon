@@ -13,7 +13,6 @@
  */
 #pragma once
 
-#include <drogon/exports.h>
 #include <exception>
 #include <functional>
 
