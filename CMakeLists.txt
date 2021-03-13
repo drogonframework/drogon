@@ -52,6 +52,13 @@ if (BUILD_DROGON_SHARED)
     target_link_libraries(${PROJECT_NAME} PUBLIC Threads::Threads)
     if(WIN32)
       target_link_libraries(${PROJECT_NAME} PRIVATE Rpcrt4 ws2_32)
+      if(CMAKE_CXX_COMPILER_ID MATCHES MSVC)
+          # Ignore MSVC C4251 warning of exporting std objects with no dll export
+          # We export class to facilitate maintenance, thus if you compile
+          # drogon on windows as a shared library, you will need to use
+          # exact same compiler for drogon and your app.
+          target_compile_options(${PROJECT_NAME} PRIVATE /wd4251)
+      endif()
     endif()
 else (BUILD_DROGON_SHARED)
     add_library(${PROJECT_NAME} STATIC)
