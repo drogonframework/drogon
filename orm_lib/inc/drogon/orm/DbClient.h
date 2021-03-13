@@ -14,7 +14,7 @@
 
 #pragma once
 
-#if defined(USE_POSTGRESQL) && !USE_POSTGRESQL && !USE_MYSQL && !USE_SQLITE3
+#if !USE_ORM
 
 #include <memory>
 

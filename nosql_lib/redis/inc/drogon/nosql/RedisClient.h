@@ -13,6 +13,23 @@
  */
 #pragma once
 
+#if !defined(USE_REDIS)
+
+#include <memory>
+
+namespace drogon
+{
+namespace nosql
+{
+class RedisClient
+{
+};
+using RedisClientPtr = std::shared_ptr<RedisClient>;
+}  // namespace nosql
+}  // namespace drogon
+
+#else
+
 #include <drogon/exports.h>
 #include <drogon/nosql/RedisResult.h>
 #include <drogon/nosql/RedisException.h>
@@ -258,3 +275,5 @@ inline void internal::RedisTransactionAwaiter::await_suspend(
 #endif
 }  // namespace nosql
 }  // namespace drogon
+
+#endif
