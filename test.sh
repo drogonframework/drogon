@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-drogon_ctl_exec=`pwd`/build/drogon_ctl/drogon_ctl
+drogon_ctl_exec=$(pwd)/build/drogon_ctl/drogon_ctl
 echo ${drogon_ctl_exec}
 cd build/examples/
 
@@ -11,14 +11,14 @@ parallel=1
 
 # simulate ninja's parallelism
 case $(nproc) in
- 1)
-    parallel=$(( $(nproc) + 1 ))
+1)
+    parallel=$(($(nproc) + 1))
     ;;
- 2)
-    parallel=$(( $(nproc) + 1 ))
+2)
+    parallel=$(($(nproc) + 1))
     ;;
- *)
-    parallel=$(( $(nproc) + 2 ))
+*)
+    parallel=$(($(nproc) + 2))
     ;;
 esac
 
@@ -130,7 +130,7 @@ fi
 
 cd ../views
 
-echo "Hello, world!" >> hello.csp
+echo "Hello, world!" >>hello.csp
 
 cd ../build
 cmake .. $cmake_gen
@@ -169,6 +169,14 @@ if [ "$1" = "-t" ]; then
     if [ $? -ne 0 ]; then
         echo "Error in testing"
         exit -1
+    fi
+    if [ -f "./nosql_lib/redis/tests/redis_test" ]; then
+        echo "Test redis"
+        ./nosql_lib/redis/tests/redis_test
+        if [ $? -ne 0 ]; then
+            echo "Error in testing"
+            exit -1
+        fi
     fi
 fi
 

@@ -413,9 +413,9 @@ struct AsyncTask final
     }
 };
 
-/// Helper class that provices the infrastructure for turning callback into
-/// corourines
-// The user is responsible to fill in `await_suspend()` and construtors.
+/// Helper class that provides the infrastructure for turning callback into
+/// coroutines
+// The user is responsible to fill in `await_suspend()` and constructors.
 template <typename T = void>
 struct CallbackAwaiter
 {
@@ -427,7 +427,7 @@ struct CallbackAwaiter
     const T &await_resume() const noexcept(false)
     {
         // await_resume() should always be called after co_await
-        // (await_suspend()) is called. Therefor the value should always be set
+        // (await_suspend()) is called. Therefore the value should always be set
         // (or there's an exception)
         assert(result_.has_value() == true || exception_ != nullptr);
 
@@ -437,7 +437,7 @@ struct CallbackAwaiter
     }
 
   private:
-    // HACK: Not all desired types are default contructable. But we need the
+    // HACK: Not all desired types are default constructable. But we need the
     // entire struct to be constructed for awaiting. std::optional takes care of
     // that.
     optional<T> result_;

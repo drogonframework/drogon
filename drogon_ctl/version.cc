@@ -57,6 +57,11 @@ void version::handleCommand(std::vector<std::string> &parameters)
 #else
     std::cout << "  boost: no\n";
 #endif
+#ifdef USE_REDIS
+    std::cout << "  hiredis: yes\n";
+#else
+    std::cout << "  hiredis: no\n";
+#endif
     std::cout << "  c-ares: "
               << (trantor::Resolver::isCAresUsed() ? "yes\n" : "no\n");
 }
