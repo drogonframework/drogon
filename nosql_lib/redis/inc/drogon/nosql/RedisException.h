@@ -32,7 +32,7 @@ enum class RedisErrorCode
     kTransactionCancelled,
     kBadType
 };
-class DROGON_EXPORT RedisException final : public std::exception
+class RedisException final : public std::exception
 {
   public:
     const char *what() const noexcept override
