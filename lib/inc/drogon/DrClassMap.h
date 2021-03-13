@@ -37,7 +37,7 @@ using DrAllocFunc = std::function<DrObjectBase *()>;
 /**
  * @brief A map class which can create DrObjects from names.
  */
-class DrClassMap
+class DROGON_EXPORT DrClassMap
 {
   public:
     /**
@@ -46,8 +46,8 @@ class DrClassMap
      * @param className The name of the class
      * @param func The function which can create a new instance of the class.
      */
-    DROGON_EXPORT static void registerClass(const std::string &className,
-                                            const DrAllocFunc &func);
+    static void registerClass(const std::string &className,
+                              const DrAllocFunc &func);
 
     /**
      * @brief Create a new instance of the class named by className
@@ -55,7 +55,7 @@ class DrClassMap
      * @param className The name of the class
      * @return DrObjectBase* The pointer to the newly created instance.
      */
-    DROGON_EXPORT static DrObjectBase *newObject(const std::string &className);
+    static DrObjectBase *newObject(const std::string &className);
 
     /**
      * @brief Get the singleton object of the class named by className
@@ -64,7 +64,7 @@ class DrClassMap
      * @return const std::shared_ptr<DrObjectBase>& The smart pointer to the
      * instance.
      */
-    DROGON_EXPORT static const std::shared_ptr<DrObjectBase> &getSingleInstance(
+    static const std::shared_ptr<DrObjectBase> &getSingleInstance(
         const std::string &className);
 
     /**
@@ -90,15 +90,14 @@ class DrClassMap
      *
      * @param ins The smart pointer to the instance.
      */
-    DROGON_EXPORT static void setSingleInstance(
-        const std::shared_ptr<DrObjectBase> &ins);
+    static void setSingleInstance(const std::shared_ptr<DrObjectBase> &ins);
 
     /**
      * @brief Get all names of classes registered in the map.
      *
      * @return std::vector<std::string> the vector of class names.
      */
-    DROGON_EXPORT static std::vector<std::string> getAllClassName();
+    static std::vector<std::string> getAllClassName();
 
     /**
      * @brief demangle the type name which is returned by typeid(T).name().
@@ -130,7 +129,7 @@ class DrClassMap
     }
 
   protected:
-    DROGON_EXPORT static std::unordered_map<std::string, DrAllocFunc> &getMap();
+    static std::unordered_map<std::string, DrAllocFunc> &getMap();
 };
 
 }  // namespace drogon

@@ -46,7 +46,7 @@ enum class CompareOperator
 /**
  * @brief this class represents a comparison condition.
  */
-class Criteria
+class DROGON_EXPORT Criteria
 {
   public:
     /**
@@ -237,7 +237,7 @@ class Criteria
      * ["user_name","in",["Tom","Bob"]] means 'user_name in ('Tom', 'Bob')'
      * ["price","<",1000] means 'price < 1000'
      */
-    DROGON_EXPORT Criteria(const Json::Value &json) noexcept(false);
+    Criteria(const Json::Value &json) noexcept(false);
 
     Criteria()
     {
@@ -256,9 +256,8 @@ class Criteria
     }
 
   private:
-    DROGON_EXPORT
     friend const Criteria operator&&(Criteria cond1, Criteria cond2);
-    DROGON_EXPORT
+
     friend const Criteria operator||(Criteria cond1, Criteria cond2);
     std::string conditionString_;
     std::function<void(internal::SqlBinder &)> outputArgumentsFunc_;

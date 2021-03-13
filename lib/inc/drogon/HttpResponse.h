@@ -64,7 +64,7 @@ inline HttpResponsePtr toResponse<Json::Value &>(Json::Value &pJson)
     return toResponse((const Json::Value &)pJson);
 }
 
-class HttpResponse
+class DROGON_EXPORT HttpResponse
 {
   public:
     /**
@@ -312,15 +312,13 @@ class HttpResponse
 
     /// Create a normal response with a status code of 200ok and a content type
     /// of text/html.
-    DROGON_EXPORT static HttpResponsePtr newHttpResponse();
+    static HttpResponsePtr newHttpResponse();
     /// Create a response which returns a 404 page.
-    DROGON_EXPORT static HttpResponsePtr newNotFoundResponse();
+    static HttpResponsePtr newNotFoundResponse();
     /// Create a response which returns a json object. Its content type is set
     /// to set/json.
-    DROGON_EXPORT static HttpResponsePtr newHttpJsonResponse(
-        const Json::Value &data);
-    DROGON_EXPORT static HttpResponsePtr newHttpJsonResponse(
-        Json::Value &&data);
+    static HttpResponsePtr newHttpJsonResponse(const Json::Value &data);
+    static HttpResponsePtr newHttpJsonResponse(Json::Value &&data);
     /// Create a response that returns a page rendered by a view named
     /// viewName.
     /**
@@ -328,7 +326,7 @@ class HttpResponse
      * @param data is the data displayed on the page.
      * @note For more details, see the wiki pages, the "View" section.
      */
-    DROGON_EXPORT static HttpResponsePtr newHttpViewResponse(
+    static HttpResponsePtr newHttpViewResponse(
         const std::string &viewName,
         const HttpViewData &data = HttpViewData());
 
@@ -339,7 +337,7 @@ class HttpResponse
      * @param status The HTTP status code, k302Found by default. Users could set
      * it to one of the 301, 302, 303, 307, ...
      */
-    DROGON_EXPORT static HttpResponsePtr newRedirectionResponse(
+    static HttpResponsePtr newRedirectionResponse(
         const std::string &location,
         HttpStatusCode status = k302Found);
 
@@ -351,7 +349,7 @@ class HttpResponse
      * @param type if the parameter is CT_NONE, the content type is set by
      * drogon based on the file extension.
      */
-    DROGON_EXPORT static HttpResponsePtr newFileResponse(
+    static HttpResponsePtr newFileResponse(
         const std::string &fullPath,
         const std::string &attachmentFileName = "",
         ContentType type = CT_NONE);

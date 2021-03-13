@@ -106,7 +106,7 @@ struct TrasactionAwaiter : public CallbackAwaiter<std::shared_ptr<Transaction> >
 }  // namespace internal
 
 /// Database client abstract class
-class DbClient : public trantor::NonCopyable
+class DROGON_EXPORT DbClient : public trantor::NonCopyable
 {
   public:
     virtual ~DbClient(){};
@@ -136,13 +136,11 @@ class DbClient : public trantor::NonCopyable
      *
      * @param connNum: The number of connections to database server;
      */
-    DROGON_EXPORT static std::shared_ptr<DbClient> newPgClient(
-        const std::string &connInfo,
-        const size_t connNum);
-    DROGON_EXPORT static std::shared_ptr<DbClient> newMysqlClient(
-        const std::string &connInfo,
-        const size_t connNum);
-    DROGON_EXPORT static std::shared_ptr<DbClient> newSqlite3Client(
+    static std::shared_ptr<DbClient> newPgClient(const std::string &connInfo,
+                                                 const size_t connNum);
+    static std::shared_ptr<DbClient> newMysqlClient(const std::string &connInfo,
+                                                    const size_t connNum);
+    static std::shared_ptr<DbClient> newSqlite3Client(
         const std::string &connInfo,
         const size_t connNum);
 
@@ -235,8 +233,8 @@ class DbClient : public trantor::NonCopyable
 
     /// Streaming-like method for sql execution. For more information, see the
     /// wiki page.
-    DROGON_EXPORT internal::SqlBinder operator<<(const std::string &sql);
-    DROGON_EXPORT internal::SqlBinder operator<<(std::string &&sql);
+    internal::SqlBinder operator<<(const std::string &sql);
+    internal::SqlBinder operator<<(std::string &&sql);
     template <int N>
     internal::SqlBinder operator<<(const char (&sql)[N])
     {

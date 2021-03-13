@@ -72,7 +72,7 @@ template <>
 std::shared_ptr<Json::Value> fromRequest(const HttpRequest &req);
 
 /// Abstract class for webapp developer to get or set the Http request;
-class HttpRequest
+class DROGON_EXPORT HttpRequest
 {
   public:
     /**
@@ -368,21 +368,20 @@ class HttpRequest
     /// create request objects.
 
     /// Create a normal request with http method Get and version Http1.1.
-    DROGON_EXPORT static HttpRequestPtr newHttpRequest();
+    static HttpRequestPtr newHttpRequest();
 
     /// Create a http request with:
     /// Method: Get
     /// Version: Http1.1
     /// Content type: application/json, the @param data is serialized into the
     /// content of the request.
-    DROGON_EXPORT static HttpRequestPtr newHttpJsonRequest(
-        const Json::Value &data);
+    static HttpRequestPtr newHttpJsonRequest(const Json::Value &data);
 
     /// Create a http request with:
     /// Method: Post
     /// Version: Http1.1
     /// Content type: application/x-www-form-urlencoded
-    DROGON_EXPORT static HttpRequestPtr newHttpFormPostRequest();
+    static HttpRequestPtr newHttpFormPostRequest();
 
     /// Create a http file upload request with:
     /// Method: Post
@@ -390,7 +389,7 @@ class HttpRequest
     /// Content type: multipart/form-data
     /// The @param files represents pload files which are transferred to the
     /// server via the multipart/form-data format
-    DROGON_EXPORT static HttpRequestPtr newFileUploadRequest(
+    static HttpRequestPtr newFileUploadRequest(
         const std::vector<UploadFile> &files);
 
     /**

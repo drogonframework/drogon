@@ -22,12 +22,12 @@ namespace drogon
 /**
  * @brief A filter that prohibit access from other hosts.
  */
-class LocalHostFilter : public HttpFilter<LocalHostFilter>
+class DROGON_EXPORT LocalHostFilter : public HttpFilter<LocalHostFilter>
 {
   public:
     LocalHostFilter();
-    DROGON_EXPORT virtual void doFilter(const HttpRequestPtr &req,
-                                        FilterCallback &&fcb,
-                                        FilterChainCallback &&fccb) override;
+    virtual void doFilter(const HttpRequestPtr &req,
+                          FilterCallback &&fcb,
+                          FilterChainCallback &&fccb) override;
 };
 }  // namespace drogon

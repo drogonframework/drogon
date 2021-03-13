@@ -40,16 +40,16 @@ namespace orm
  * A field represents one entry in a row.  It represents an actual value
  * in the result set, and can be converted to various types.
  */
-class Field
+class DROGON_EXPORT Field
 {
   public:
     using SizeType = unsigned long;
 
     /// Column name
-    DROGON_EXPORT const char *name() const;
+    const char *name() const;
 
     /// Is this field's value null?
-    DROGON_EXPORT bool isNull() const;
+    bool isNull() const;
 
     /// Read as plain C string
     /**
@@ -58,7 +58,7 @@ class Field
      * to() or as() functions to convert the string to other types such as
      * @c int, or to C++ strings.
      */
-    DROGON_EXPORT const char *c_str() const;
+    const char *c_str() const;
 
     /// Get the length of the plain C string
     size_t length() const
@@ -154,19 +154,19 @@ class Field
      */
     long column_;
     friend class Row;
-    DROGON_EXPORT Field(const Row &row, Row::SizeType columnNum) noexcept;
+    Field(const Row &row, Row::SizeType columnNum) noexcept;
 
   private:
     const Result result_;
 };
 template <>
-DROGON_EXPORT std::string Field::as<std::string>() const;
+std::string Field::as<std::string>() const;
 template <>
-DROGON_EXPORT const char *Field::as<const char *>() const;
+const char *Field::as<const char *>() const;
 template <>
 char *Field::as<char *>() const;
 template <>
-DROGON_EXPORT std::vector<char> Field::as<std::vector<char>>() const;
+std::vector<char> Field::as<std::vector<char>>() const;
 template <>
 inline drogon::string_view Field::as<drogon::string_view>() const
 {

@@ -57,7 +57,7 @@ struct WebSocketConnectionAwaiter : public CallbackAwaiter<HttpResponsePtr>
  * @brief WebSocket client abstract class
  *
  */
-class WebSocketClient
+class DROGON_EXPORT WebSocketClient
 {
   public:
     /// Get the WebSocket connection that is typically used to send messages.
@@ -158,7 +158,7 @@ class WebSocketClient
      * @return WebSocketClientPtr The smart pointer to the WebSocket client.
      * @note The ip parameter support for both ipv4 and ipv6 address
      */
-    DROGON_EXPORT static WebSocketClientPtr newWebSocketClient(
+    static WebSocketClientPtr newWebSocketClient(
         const std::string &ip,
         uint16_t port,
         bool useSSL = false,
@@ -187,7 +187,7 @@ class WebSocketClient
      * connectToServer() method.
      *
      */
-    DROGON_EXPORT static WebSocketClientPtr newWebSocketClient(
+    static WebSocketClientPtr newWebSocketClient(
         const std::string &hostString,
         trantor::EventLoop *loop = nullptr,
         bool useOldTLS = false);

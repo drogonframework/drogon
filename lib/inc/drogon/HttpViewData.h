@@ -28,7 +28,7 @@
 namespace drogon
 {
 /// This class represents the data set displayed in views.
-class HttpViewData
+class DROGON_EXPORT HttpViewData
 {
   public:
     /// The function template is used to get an item in the data set by the key
@@ -140,8 +140,7 @@ class HttpViewData
        > --> &gt;
        @endcode
      */
-    DROGON_EXPORT static std::string htmlTranslate(const char *str,
-                                                   size_t length);
+    static std::string htmlTranslate(const char *str, size_t length);
     static std::string htmlTranslate(const std::string &str)
     {
         return htmlTranslate(str.data(), str.length());

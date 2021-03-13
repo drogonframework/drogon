@@ -35,7 +35,7 @@ namespace orm
  * @c juncture of "done".  The @c juncture tells you what the parser found in
  * that step: did the array "nest" to a deeper level, or "un-nest" back up?
  */
-class ArrayParser
+class DROGON_EXPORT ArrayParser
 {
   public:
     /// What's the latest thing found in the array?
@@ -54,7 +54,7 @@ class ArrayParser
     };
 
     /// Constructor.  You don't need this; use @c field::as_array instead.
-    DROGON_EXPORT explicit ArrayParser(const char input[]);
+    explicit ArrayParser(const char input[]);
 
     /// Parse the next step in the array.
     /** Returns what it found.  If the juncture is @c string_value, the string
@@ -62,7 +62,7 @@ class ArrayParser
      *
      * Call this until the @c juncture it returns is @c done.
      */
-    DROGON_EXPORT std::pair<juncture, std::string> getNext();
+    std::pair<juncture, std::string> getNext();
 
   private:
     /// Current parsing position in the input.

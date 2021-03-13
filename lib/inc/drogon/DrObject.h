@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <drogon/exports.h>
 #include <drogon/DrClassMap.h>
 
 #include <string>
@@ -29,7 +30,7 @@ namespace drogon
  * @brief The base class for all drogon reflection classes.
  *
  */
-class DrObjectBase
+class DROGON_EXPORT DrObjectBase
 {
   public:
     /**

@@ -57,10 +57,10 @@ class HttpControllerBase;
 class HttpSimpleControllerBase;
 class WebSocketControllerBase;
 
-class HttpAppFramework : public trantor::NonCopyable
+class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
 {
   public:
-    DROGON_EXPORT virtual ~HttpAppFramework();
+    virtual ~HttpAppFramework();
     /// Get the instance of HttpAppFramework
     /**
      * HttpAppFramework works at singleton mode, so any calling of this
@@ -68,7 +68,7 @@ class HttpAppFramework : public trantor::NonCopyable
      * Calling drogon::HttpAppFramework::instance()
      * can be replaced by a simple interface -- drogon::app()
      */
-    DROGON_EXPORT static HttpAppFramework &instance();
+    static HttpAppFramework &instance();
 
     /// Run the event loop
     /**

@@ -47,11 +47,11 @@ namespace orm
  * Bart Samwel points out, "catch" is subject to some nasty fineprint in such
  * cases.
  */
-class DrogonDbException
+class DROGON_EXPORT DrogonDbException
 {
   public:
     /// Support run-time polymorphism, and keep this class abstract
-    DROGON_EXPORT virtual ~DrogonDbException() noexcept
+    virtual ~DrogonDbException() noexcept
     {
     }
 

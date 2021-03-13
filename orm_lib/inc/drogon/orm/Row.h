@@ -42,7 +42,7 @@ class ConstReverseRowIterator;
  * The row itself acts like a (non-modifyable) container, complete with its
  * own const_iterator and const_reverse_iterator.
  */
-class Row
+class DROGON_EXPORT Row
 {
   public:
     using SizeType = unsigned long;
@@ -53,28 +53,28 @@ class Row
 
     using DifferenceType = long;
 
-    DROGON_EXPORT Reference operator[](SizeType index) const noexcept;
-    DROGON_EXPORT Reference operator[](const char columnName[]) const;
-    DROGON_EXPORT Reference operator[](const std::string &columnName) const;
+    Reference operator[](SizeType index) const noexcept;
+    Reference operator[](const char columnName[]) const;
+    Reference operator[](const std::string &columnName) const;
 
-    DROGON_EXPORT Reference at(SizeType index) const;
-    DROGON_EXPORT Reference at(const char columnName[]) const;
-    DROGON_EXPORT Reference at(const std::string &columnName) const;
+    Reference at(SizeType index) const;
+    Reference at(const char columnName[]) const;
+    Reference at(const std::string &columnName) const;
 
-    DROGON_EXPORT SizeType size() const;
+    SizeType size() const;
     SizeType capacity() const noexcept
     {
         return size();
     }
-    DROGON_EXPORT ConstIterator begin() const noexcept;
-    DROGON_EXPORT ConstIterator cbegin() const noexcept;
-    DROGON_EXPORT ConstIterator end() const noexcept;
-    DROGON_EXPORT ConstIterator cend() const noexcept;
+    ConstIterator begin() const noexcept;
+    ConstIterator cbegin() const noexcept;
+    ConstIterator end() const noexcept;
+    ConstIterator cend() const noexcept;
 
-    DROGON_EXPORT ConstReverseIterator rbegin() const;
-    DROGON_EXPORT ConstReverseIterator crbegin() const;
-    DROGON_EXPORT ConstReverseIterator rend() const;
-    DROGON_EXPORT ConstReverseIterator crend() const;
+    ConstReverseIterator rbegin() const;
+    ConstReverseIterator crbegin() const;
+    ConstReverseIterator rend() const;
+    ConstReverseIterator crend() const;
 
     Row(const Row &r) noexcept = default;
     Row(Row &&) noexcept = default;

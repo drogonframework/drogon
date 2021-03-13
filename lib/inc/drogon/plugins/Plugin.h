@@ -32,7 +32,8 @@ enum class PluginStatus
  * @brief The abstract base class for plugins.
  *
  */
-class PluginBase : public virtual DrObjectBase, public trantor::NonCopyable
+class DROGON_EXPORT PluginBase : public virtual DrObjectBase,
+                                 public trantor::NonCopyable
 {
   public:
     /// This method must be called by drogon.

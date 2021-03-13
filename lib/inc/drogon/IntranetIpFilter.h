@@ -22,12 +22,12 @@ namespace drogon
 /**
  * @brief A filter that prohibit access from external networks
  */
-class IntranetIpFilter : public HttpFilter<IntranetIpFilter>
+class DROGON_EXPORT IntranetIpFilter : public HttpFilter<IntranetIpFilter>
 {
   public:
     IntranetIpFilter();
-    DROGON_EXPORT virtual void doFilter(const HttpRequestPtr &req,
-                                        FilterCallback &&fcb,
-                                        FilterChainCallback &&fccb) override;
+    virtual void doFilter(const HttpRequestPtr &req,
+                          FilterCallback &&fcb,
+                          FilterChainCallback &&fccb) override;
 };
 }  // namespace drogon
