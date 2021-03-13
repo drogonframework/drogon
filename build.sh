@@ -58,11 +58,17 @@ make_flags=''
 cmake_gen=''
 parallel=1
 
-if [ $(uname) = 'FreeBSD' ]; then
-  nproc=$(sysctl -n hw.ncpu)
-else
-  nproc=$(nproc)
-fi
+case $(uname) in
+ FreeBSD)
+    nproc=$(sysctl -n hw.ncpu)
+    ;;
+ Darwin)
+    nproc=$(sysctl -n hw.ncpu) # sysctl -n hw.ncpu is the equivalent to nproc on macOS.
+    ;;
+ *)
+    nproc=$(nproc)
+    ;;
+esac
 
 # simulate ninja's parallelism
 case nproc in
