@@ -12,6 +12,8 @@
  *
  */
 #pragma once
+
+#include <drogon/exports.h>
 #include <exception>
 #include <functional>
 
@@ -30,7 +32,7 @@ enum class RedisErrorCode
     kTransactionCancelled,
     kBadType
 };
-class RedisException final : public std::exception
+class DROGON_EXPORT RedisException final : public std::exception
 {
   public:
     const char *what() const noexcept override

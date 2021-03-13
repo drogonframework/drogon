@@ -51,9 +51,7 @@ class DROGON_EXPORT DrogonDbException
 {
   public:
     /// Support run-time polymorphism, and keep this class abstract
-    virtual ~DrogonDbException() noexcept
-    {
-    }
+    virtual ~DrogonDbException() noexcept = default;
 
     /// Return std::exception base-class object
     /**
@@ -89,15 +87,16 @@ class DROGON_EXPORT DrogonDbException
 
 /// Run-time Failure encountered by drogon orm lib, similar to
 /// std::runtime_error
-class Failure : public DrogonDbException, public std::runtime_error
+class DROGON_EXPORT Failure : public DrogonDbException,
+                              public std::runtime_error
 {
-    virtual const std::exception &base() const noexcept override
+    const std::exception &base() const noexcept override
     {
         return *this;
     }
 
   public:
-    DROGON_EXPORT explicit Failure(const std::string &);
+    explicit Failure(const std::string &);
 };
 
 /// Exception class for lost or failed backend connection.
@@ -119,18 +118,18 @@ class Failure : public DrogonDbException, public std::runtime_error
  *   // ...
  * @endcode
  */
-class BrokenConnection : public Failure
+class DROGON_EXPORT BrokenConnection : public Failure
 {
   public:
-    DROGON_EXPORT BrokenConnection();
-    DROGON_EXPORT explicit BrokenConnection(const std::string &);
+    BrokenConnection();
+    explicit BrokenConnection(const std::string &);
 };
 
 /// Exception class for failed queries.
 /** Carries, in addition to a regular error message, a copy of the failed query
  * and (if available) the SQLSTATE value accompanying the error.
  */
-class SqlError : public Failure
+class DROGON_EXPORT SqlError : public Failure
 {
     /// Query string.  Empty if unknown.
     const std::string query_;
@@ -138,14 +137,14 @@ class SqlError : public Failure
     const std::string sqlState_;
 
   public:
-    DROGON_EXPORT explicit SqlError(const std::string &msg = "",
-                                    const std::string &Q = "",
-                                    const char sqlstate[] = nullptr);
-    DROGON_EXPORT virtual ~SqlError() noexcept;
+    explicit SqlError(const std::string &msg = "",
+                      const std::string &Q = "",
+                      const char sqlstate[] = nullptr);
+    ~SqlError() noexcept override;
 
     /// The query whose execution triggered the exception
-    DROGON_EXPORT const std::string &query() const noexcept;
-    DROGON_EXPORT const std::string &sqlState() const noexcept;
+    const std::string &query() const noexcept;
+    const std::string &sqlState() const noexcept;
 };
 
 /// "Help, I don't know whether transaction was committed successfully!"
@@ -155,17 +154,17 @@ class SqlError : public Failure
  * the database is left in an indeterminate (but consistent) state, and only
  * manual inspection will tell which is the case.
  */
-class InDoubtError : public Failure
+class DROGON_EXPORT InDoubtError : public Failure
 {
   public:
-    DROGON_EXPORT explicit InDoubtError(const std::string &);
+    explicit InDoubtError(const std::string &);
 };
 
 /// The backend saw itself forced to roll back the ongoing transaction.
-class TransactionRollback : public Failure
+class DROGON_EXPORT TransactionRollback : public Failure
 {
   public:
-    DROGON_EXPORT explicit TransactionRollback(const std::string &);
+    explicit TransactionRollback(const std::string &);
 };
 
 /// Transaction failed to serialize.  Please retry it.
@@ -177,90 +176,95 @@ class TransactionRollback : public Failure
  * ongoing transaction.  The transaction may still succeed if you try to
  * perform it again.
  */
-class SerializationFailure : public TransactionRollback
+class DROGON_EXPORT SerializationFailure : public TransactionRollback
 {
   public:
-    DROGON_EXPORT explicit SerializationFailure(const std::string &);
+    explicit SerializationFailure(const std::string &);
 };
 
 /// We can't tell whether our last statement succeeded.
-class StatementCompletionUnknown : public TransactionRollback
+class DROGON_EXPORT StatementCompletionUnknown : public TransactionRollback
 {
   public:
-    DROGON_EXPORT explicit StatementCompletionUnknown(const std::string &);
+    explicit StatementCompletionUnknown(const std::string &);
 };
 
 /// The ongoing transaction has deadlocked.  Retrying it may help.
-class DeadlockDetected : public TransactionRollback
+class DROGON_EXPORT DeadlockDetected : public TransactionRollback
 {
   public:
-    DROGON_EXPORT explicit DeadlockDetected(const std::string &);
+    explicit DeadlockDetected(const std::string &);
 };
 
 /// Internal error in internal library
-class InternalError : public DrogonDbException, public std::logic_error
+class DROGON_EXPORT InternalError : public DrogonDbException,
+                                    public std::logic_error
 {
-    virtual const std::exception &base() const noexcept override
+    const std::exception &base() const noexcept override
     {
         return *this;
     }
 
   public:
-    DROGON_EXPORT explicit InternalError(const std::string &);
+    explicit InternalError(const std::string &);
 };
 
 /// Error in usage of drogon orm library, similar to std::logic_error
-class UsageError : public DrogonDbException, public std::logic_error
+class DROGON_EXPORT UsageError : public DrogonDbException,
+                                 public std::logic_error
 {
-    virtual const std::exception &base() const noexcept override
+    const std::exception &base() const noexcept override
     {
         return *this;
     }
 
   public:
-    DROGON_EXPORT explicit UsageError(const std::string &);
+    explicit UsageError(const std::string &);
 };
 
 /// Invalid argument passed to drogon orm lib, similar to std::invalid_argument
-class ArgumentError : public DrogonDbException, public std::invalid_argument
+class DROGON_EXPORT ArgumentError : public DrogonDbException,
+                                    public std::invalid_argument
 {
-    virtual const std::exception &base() const noexcept override
+    const std::exception &base() const noexcept override
     {
         return *this;
     }
 
   public:
-    DROGON_EXPORT explicit ArgumentError(const std::string &);
+    explicit ArgumentError(const std::string &);
 };
 
 /// Value conversion failed, e.g. when converting "Hello" to int.
-class ConversionError : public DrogonDbException, public std::domain_error
+class DROGON_EXPORT ConversionError : public DrogonDbException,
+                                      public std::domain_error
 {
-    virtual const std::exception &base() const noexcept override
+    const std::exception &base() const noexcept override
     {
         return *this;
     }
 
   public:
-    DROGON_EXPORT explicit ConversionError(const std::string &);
+    explicit ConversionError(const std::string &);
 };
 
 /// Something is out of range, similar to std::out_of_range
-class RangeError : public DrogonDbException, public std::out_of_range
+class DROGON_EXPORT RangeError : public DrogonDbException,
+                                 public std::out_of_range
 {
-    virtual const std::exception &base() const noexcept override
+    const std::exception &base() const noexcept override
     {
         return *this;
     }
 
   public:
-    DROGON_EXPORT explicit RangeError(const std::string &);
+    explicit RangeError(const std::string &);
 };
 
 /// Query returned an unexpected number of rows.
-class UnexpectedRows : public RangeError
+class DROGON_EXPORT UnexpectedRows : public RangeError
 {
-    virtual const std::exception &base() const noexcept override
+    const std::exception &base() const noexcept override
     {
         return *this;
     }
@@ -272,7 +276,7 @@ class UnexpectedRows : public RangeError
 };
 
 /// Database feature not supported in current setup
-class FeatureNotSupported : public SqlError
+class DROGON_EXPORT FeatureNotSupported : public SqlError
 {
   public:
     explicit FeatureNotSupported(const std::string &err,
@@ -284,7 +288,7 @@ class FeatureNotSupported : public SqlError
 };
 
 /// Error in data provided to SQL statement
-class DataException : public SqlError
+class DROGON_EXPORT DataException : public SqlError
 {
   public:
     explicit DataException(const std::string &err,
@@ -295,7 +299,7 @@ class DataException : public SqlError
     }
 };
 
-class IntegrityConstraintViolation : public SqlError
+class DROGON_EXPORT IntegrityConstraintViolation : public SqlError
 {
   public:
     explicit IntegrityConstraintViolation(const std::string &err,
@@ -306,7 +310,7 @@ class IntegrityConstraintViolation : public SqlError
     }
 };
 
-class RestrictViolation : public IntegrityConstraintViolation
+class DROGON_EXPORT RestrictViolation : public IntegrityConstraintViolation
 {
   public:
     explicit RestrictViolation(const std::string &err,
@@ -317,7 +321,7 @@ class RestrictViolation : public IntegrityConstraintViolation
     }
 };
 
-class NotNullViolation : public IntegrityConstraintViolation
+class DROGON_EXPORT NotNullViolation : public IntegrityConstraintViolation
 {
   public:
     explicit NotNullViolation(const std::string &err,
@@ -328,7 +332,7 @@ class NotNullViolation : public IntegrityConstraintViolation
     }
 };
 
-class ForeignKeyViolation : public IntegrityConstraintViolation
+class DROGON_EXPORT ForeignKeyViolation : public IntegrityConstraintViolation
 {
   public:
     explicit ForeignKeyViolation(const std::string &err,
@@ -339,7 +343,7 @@ class ForeignKeyViolation : public IntegrityConstraintViolation
     }
 };
 
-class UniqueViolation : public IntegrityConstraintViolation
+class DROGON_EXPORT UniqueViolation : public IntegrityConstraintViolation
 {
   public:
     explicit UniqueViolation(const std::string &err,
@@ -350,7 +354,7 @@ class UniqueViolation : public IntegrityConstraintViolation
     }
 };
 
-class CheckViolation : public IntegrityConstraintViolation
+class DROGON_EXPORT CheckViolation : public IntegrityConstraintViolation
 {
   public:
     explicit CheckViolation(const std::string &err,
@@ -361,7 +365,7 @@ class CheckViolation : public IntegrityConstraintViolation
     }
 };
 
-class InvalidCursorState : public SqlError
+class DROGON_EXPORT InvalidCursorState : public SqlError
 {
   public:
     explicit InvalidCursorState(const std::string &err,
@@ -372,7 +376,7 @@ class InvalidCursorState : public SqlError
     }
 };
 
-class InvalidSqlStatementName : public SqlError
+class DROGON_EXPORT InvalidSqlStatementName : public SqlError
 {
   public:
     explicit InvalidSqlStatementName(const std::string &err,
@@ -383,7 +387,7 @@ class InvalidSqlStatementName : public SqlError
     }
 };
 
-class InvalidCursorName : public SqlError
+class DROGON_EXPORT InvalidCursorName : public SqlError
 {
   public:
     explicit InvalidCursorName(const std::string &err,
@@ -394,7 +398,7 @@ class InvalidCursorName : public SqlError
     }
 };
 
-class SyntaxError : public SqlError
+class DROGON_EXPORT SyntaxError : public SqlError
 {
   public:
     /// Approximate position in string where error occurred, or -1 if unknown.
@@ -409,7 +413,7 @@ class SyntaxError : public SqlError
     }
 };
 
-class UndefinedColumn : public SyntaxError
+class DROGON_EXPORT UndefinedColumn : public SyntaxError
 {
   public:
     explicit UndefinedColumn(const std::string &err,
@@ -420,7 +424,7 @@ class UndefinedColumn : public SyntaxError
     }
 };
 
-class UndefinedFunction : public SyntaxError
+class DROGON_EXPORT UndefinedFunction : public SyntaxError
 {
   public:
     explicit UndefinedFunction(const std::string &err,
@@ -431,7 +435,7 @@ class UndefinedFunction : public SyntaxError
     }
 };
 
-class UndefinedTable : public SyntaxError
+class DROGON_EXPORT UndefinedTable : public SyntaxError
 {
   public:
     explicit UndefinedTable(const std::string &err,
@@ -442,7 +446,7 @@ class UndefinedTable : public SyntaxError
     }
 };
 
-class InsufficientPrivilege : public SqlError
+class DROGON_EXPORT InsufficientPrivilege : public SqlError
 {
   public:
     explicit InsufficientPrivilege(const std::string &err,
@@ -454,7 +458,7 @@ class InsufficientPrivilege : public SqlError
 };
 
 /// Resource shortage on the server
-class InsufficientResources : public SqlError
+class DROGON_EXPORT InsufficientResources : public SqlError
 {
   public:
     explicit InsufficientResources(const std::string &err,
@@ -465,7 +469,7 @@ class InsufficientResources : public SqlError
     }
 };
 
-class DiskFull : public InsufficientResources
+class DROGON_EXPORT DiskFull : public InsufficientResources
 {
   public:
     explicit DiskFull(const std::string &err,
@@ -476,7 +480,7 @@ class DiskFull : public InsufficientResources
     }
 };
 
-class OutOfMemory : public InsufficientResources
+class DROGON_EXPORT OutOfMemory : public InsufficientResources
 {
   public:
     explicit OutOfMemory(const std::string &err,
@@ -487,7 +491,7 @@ class OutOfMemory : public InsufficientResources
     }
 };
 
-class TooManyConnections : public BrokenConnection
+class DROGON_EXPORT TooManyConnections : public BrokenConnection
 {
   public:
     explicit TooManyConnections(const std::string &err) : BrokenConnection(err)
