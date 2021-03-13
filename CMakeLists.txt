@@ -53,11 +53,11 @@ if (BUILD_DROGON_SHARED)
     if(WIN32)
       target_link_libraries(${PROJECT_NAME} PRIVATE Rpcrt4 ws2_32)
       if(CMAKE_CXX_COMPILER_ID MATCHES MSVC)
-          # Ignore MSVC C4251 warning of exporting std objects with no dll export
+          # Ignore MSVC C4251 and C4275 warning of exporting std objects with no dll export
           # We export class to facilitate maintenance, thus if you compile
           # drogon on windows as a shared library, you will need to use
           # exact same compiler for drogon and your app.
-          target_compile_options(${PROJECT_NAME} PRIVATE /wd4251)
+          target_compile_options(${PROJECT_NAME} PUBLIC /wd4251 /wd4275)
       endif()
     endif()
 else (BUILD_DROGON_SHARED)
@@ -251,6 +251,10 @@ if (BUILD_ORM)
                 orm_lib/src/sqlite3_impl/Sqlite3Connection.cc
                 orm_lib/src/sqlite3_impl/Sqlite3ResultImpl.cc)
     endif (SQLite3_FOUND)
+
+    if(pg_FOUND OR MySQL_FOUND OR SQLite3_FOUND)
+        add_definitions(-DUSE_ORM)
+    endif()
 endif (BUILD_ORM)
 
 find_package(ZLIB REQUIRED)
