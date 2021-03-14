@@ -1,7 +1,7 @@
 /**
  *
- *  @file string_view.h
- *  @author An Tao
+ *  string_view.h
+ *  An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon

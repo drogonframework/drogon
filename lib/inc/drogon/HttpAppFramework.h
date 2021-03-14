@@ -28,7 +28,6 @@
 #include <drogon/HttpRequest.h>
 #include <drogon/HttpResponse.h>
 #include <drogon/orm/DbClient.h>
-#include <drogon/nosql/RedisClient.h>
 #include <trantor/net/Resolver.h>
 #include <trantor/net/EventLoop.h>
 #include <trantor/utils/NonCopyable.h>
@@ -60,7 +59,7 @@ class WebSocketControllerBase;
 class HttpAppFramework : public trantor::NonCopyable
 {
   public:
-    virtual ~HttpAppFramework() = default;
+    virtual ~HttpAppFramework();
     /// Get the instance of HttpAppFramework
     /**
      * HttpAppFramework works at singleton mode, so any calling of this
@@ -110,7 +109,7 @@ class HttpAppFramework : public trantor::NonCopyable
      * @note
      * The event loop is one of the network IO loops. Use the loop
      * for events/actions rather then the main thread.
-     * REMARKS : Function assumed the number of threads will not exceed 2^32.
+     * REMAKRS : Function assumed the number of threads will not exceed 2^32.
      *           Change to long long for alien computers.
      */
     virtual trantor::EventLoop *getIOLoop(size_t id) const = 0;
@@ -201,7 +200,7 @@ class HttpAppFramework : public trantor::NonCopyable
      * Users can use the callback to modify the response if they want.
      * @note This advice is called before any subsequent operation on the
      * response is performed by drogon or applications, so some modification
-     * (e.g. modification on the status code) in this callback may be override
+     * (e.g. modification on the status code) in this callback may be overrided
      * by subsequent operations.
      * @return HttpAppFramework&
      */
@@ -283,7 +282,7 @@ class HttpAppFramework : public trantor::NonCopyable
 
     /// Register an advice called after routing
     /**
-     * @param advice is called immediately after the request matches a handler
+     * @param advice is called immediately after the request matchs a handler
      * path and before any 'doFilter' method of filters applies. The parameters
      * of the advice are same as those of the doFilter method of the Filter
      * class.
@@ -508,7 +507,7 @@ class HttpAppFramework : public trantor::NonCopyable
      */
     virtual HttpAppFramework &registerWebSocketController(
         const std::string &pathName,
-        const std::string &ctrlName,
+        const std::string &crtlName,
         const std::vector<internal::HttpConstraint> &filtersAndMethods =
             std::vector<internal::HttpConstraint>{}) = 0;
 
@@ -564,7 +563,7 @@ class HttpAppFramework : public trantor::NonCopyable
     HttpAppFramework &registerFilter(const std::shared_ptr<T> &filterPtr)
     {
         static_assert(std::is_base_of<HttpFilterBase, T>::value,
-                      "Error! Only filter objects can be registered here");
+                      "Error! Only fitler objects can be registered here");
         static_assert(!T::isAutoCreation,
                       "Filters created and initialized "
                       "automatically by drogon cannot be "
@@ -697,7 +696,7 @@ class HttpAppFramework : public trantor::NonCopyable
      */
     virtual HttpAppFramework &disableSession() = 0;
 
-    /// Set the root path of HTTP document, default path is ./
+    /// Set the root path of HTTP document, defaut path is ./
     /**
      * @note
      * This operation can be performed by an option in the configuration file.
@@ -772,7 +771,7 @@ class HttpAppFramework : public trantor::NonCopyable
 /// Enable supporting for dynamic views loading.
 /**
  *
- * @param libPaths is a vector that contains paths to view files.
+ * @param libPaths is a vactor that contains paths to view files.
  *
  * @param outputPath is the directory where the output source files locate. if
  * it is set to an empty string, drogon use libPaths as output paths. If the
@@ -1139,22 +1138,6 @@ class HttpAppFramework : public trantor::NonCopyable
      */
     virtual bool areAllDbClientsAvailable() const noexcept = 0;
 
-    /// Get a redis client by name
-    /**
-     * @note
-     * This method must be called after the framework has been run.
-     */
-    virtual nosql::RedisClientPtr getRedisClient(
-        const std::string &name = "default") = 0;
-
-    /// Get a 'fast' redis client by name
-    /**
-     * @note
-     * This method must be called after the framework has been run.
-     */
-    virtual nosql::RedisClientPtr getFastRedisClient(
-        const std::string &name = "default") = 0;
-
     /**
      * @brief This method is to enable or disable the unicode escaping (\u) in
      * the json string of HTTP responses or requests. it works (disable
@@ -1220,26 +1203,6 @@ class HttpAppFramework : public trantor::NonCopyable
         const std::string &name = "default",
         const bool isFast = false,
         const std::string &characterSet = "") = 0;
-
-    /// Create a redis client
-    /**
-     * @param ip IP of redis server.
-     * @param port The port on which the redis server is listening.
-     * @param name The client name.
-     * @param password Password for the redis server
-     * @param connectionNum The number of connections to the redis server.
-     * @param isFast Indicates if the client is a fast database client.
-     *
-     * @note
-     * This operation can be performed by an option in the configuration file.
-     */
-    virtual HttpAppFramework &createRedisClient(
-        const std::string &ip,
-        unsigned short port,
-        const std::string &name = "default",
-        const std::string &password = "",
-        size_t connectionNum = 1,
-        bool isFast = false) = 0;
 
     /// Get the DNS resolver
     /**
