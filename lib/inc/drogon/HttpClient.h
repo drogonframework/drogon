@@ -66,7 +66,6 @@ struct HttpRespAwaiter : public CallbackAwaiter<HttpResponsePtr>
  * implementing the class, the shared_ptr is retained in the framework until all
  * response callbacks are invoked without fear of accidental deconstruction.
  *
- * TODO:SSL server verification
  */
 class HttpClient : public trantor::NonCopyable
 {
