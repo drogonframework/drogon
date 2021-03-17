@@ -281,14 +281,20 @@ if (BUILD_REDIS)
                 nosql_lib/redis/src/RedisClientLockFree.cc
                 nosql_lib/redis/src/RedisClientManager.cc
                 nosql_lib/redis/src/RedisTransactionImpl.cc)
-
-        if (BUILD_TESTING)
-            add_subdirectory(nosql_lib/redis/tests)
-        endif (BUILD_TESTING)
-    else ()
-        set(DROGON_SOURCES ${DROGON_SOURCES} lib/src/RedisClientManagerSkipped.cc)
     endif (Hiredis_FOUND)
 endif (BUILD_REDIS)
+
+if (NOT Hiredis_FOUND)
+    set(DROGON_SOURCES
+            ${DROGON_SOURCES}
+            lib/src/RedisClientSkipped.cc
+            lib/src/RedisResultSkipped.cc
+            lib/src/RedisClientManagerSkipped.cc)
+endif (Hiredis_FOUND)
+
+if (BUILD_TESTING)
+    add_subdirectory(nosql_lib/redis/tests)
+endif (BUILD_TESTING)
 
 execute_process(COMMAND "git" rev-parse HEAD
         WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"

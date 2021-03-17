@@ -124,6 +124,10 @@ void doTest(const RedisClientPtr &redisClient)
 
 int main()
 {
+#ifndef USE_REDIS
+    LOG_DEBUG << "Drogon is built without Redis. No tests executed.";
+    return 0;
+#endif
     drogon::app().setLogLevel(trantor::Logger::kWarn);
     auto redisClient = drogon::nosql::RedisClient::newRedisClient(
         trantor::InetAddress("127.0.0.1", 6379), 1);
