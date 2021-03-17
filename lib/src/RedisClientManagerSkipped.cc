@@ -34,7 +34,7 @@ void RedisClientManager::createRedisClient(const std::string &name,
                                            size_t connectionNum,
                                            bool isFast)
 {
-    LOG_FATAL << "Redis is supported by drogon, please install the "
+    LOG_FATAL << "Redis is not supported by drogon, please install the "
                  "hiredis library first.";
     abort();
 }

@@ -23,7 +23,7 @@ std::shared_ptr<RedisClient> RedisClient::newRedisClient(
     size_t numberOfConnections,
     const std::string &password)
 {
-    LOG_FATAL << "Redis is supported by drogon, please install the "
+    LOG_FATAL << "Redis is not supported by drogon, please install the "
                  "hiredis library first.";
     abort();
 }
