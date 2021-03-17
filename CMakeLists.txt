@@ -290,7 +290,7 @@ if (NOT Hiredis_FOUND)
             lib/src/RedisClientSkipped.cc
             lib/src/RedisResultSkipped.cc
             lib/src/RedisClientManagerSkipped.cc)
-endif (Hiredis_FOUND)
+endif (NOT Hiredis_FOUND)
 
 if (BUILD_TESTING)
     add_subdirectory(nosql_lib/redis/tests)
