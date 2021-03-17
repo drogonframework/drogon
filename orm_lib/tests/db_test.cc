@@ -2230,6 +2230,10 @@ int main(int argc, char *argv[])
         doSqliteTest(sqlite_client);
 #endif
     }
+#if !USE_POSTGRESQL && !USE_MYSQL && !USE_SQLITE3
+    pro.set_value(0);
+    LOG_DEBUG << "Drogon is built with no ORM support.";
+#endif
     globalf.get();
     std::this_thread::sleep_for(0.008s);
     return 0;

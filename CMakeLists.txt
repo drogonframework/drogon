@@ -321,23 +321,25 @@ if (COZ_PROFILING)
     target_include_directories(${PROJECT_NAME} PUBLIC ${COZ_INCLUDE_DIRS})
 endif (COZ_PROFILING)
 
+set(DROGON_SOURCES
+        ${DROGON_SOURCES}
+        orm_lib/src/ArrayParser.cc
+        orm_lib/src/Criteria.cc
+        orm_lib/src/DbClient.cc
+        orm_lib/src/DbClientImpl.cc
+        orm_lib/src/DbClientLockFree.cc
+        orm_lib/src/DbConnection.cc
+        orm_lib/src/Exception.cc
+        orm_lib/src/Field.cc
+        orm_lib/src/Result.cc
+        orm_lib/src/Row.cc
+        orm_lib/src/SqlBinder.cc
+        orm_lib/src/TransactionImpl.cc
+        orm_lib/src/RestfulController.cc)
 if (pg_FOUND OR MySQL_FOUND OR SQLite3_FOUND)
     set(DROGON_SOURCES
             ${DROGON_SOURCES}
-            orm_lib/src/ArrayParser.cc
-            orm_lib/src/Criteria.cc
-            orm_lib/src/DbClient.cc
-            orm_lib/src/DbClientImpl.cc
-            orm_lib/src/DbClientLockFree.cc
-            orm_lib/src/DbClientManager.cc
-            orm_lib/src/DbConnection.cc
-            orm_lib/src/Exception.cc
-            orm_lib/src/Field.cc
-            orm_lib/src/Result.cc
-            orm_lib/src/Row.cc
-            orm_lib/src/SqlBinder.cc
-            orm_lib/src/TransactionImpl.cc
-            orm_lib/src/RestfulController.cc)
+            orm_lib/src/DbClientManager.cc)
 else (pg_FOUND OR MySQL_FOUND OR SQLite3_FOUND)
     set(DROGON_SOURCES ${DROGON_SOURCES} lib/src/DbClientManagerSkipped.cc)
 endif (pg_FOUND OR MySQL_FOUND OR SQLite3_FOUND)
@@ -410,9 +412,7 @@ if (BUILD_TESTING)
     if (SQLite3_FOUND)
         add_subdirectory(${PROJECT_SOURCE_DIR}/orm_lib/src/sqlite3_impl/test)
     endif (SQLite3_FOUND)
-    if (pg_FOUND OR MySQL_FOUND OR SQLite3_FOUND)
-        add_subdirectory(${PROJECT_SOURCE_DIR}/orm_lib/tests)
-    endif (pg_FOUND OR MySQL_FOUND OR SQLite3_FOUND)
+    add_subdirectory(${PROJECT_SOURCE_DIR}/orm_lib/tests)
     find_package(GTest)
     if (GTest_FOUND)
         message(STATUS "gtest found")
