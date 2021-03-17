@@ -14,26 +14,6 @@
 
 #pragma once
 
-#if !USE_ORM
-
-#include <memory>
-
-namespace drogon
-{
-namespace orm
-{
-enum class ClientType
-{
-};
-class DbClient
-{
-};
-using DbClientPtr = std::shared_ptr<DbClient>;
-}  // namespace orm
-}  // namespace drogon
-
-#else
-
 #include <drogon/exports.h>
 #include <drogon/orm/Exception.h>
 #include <drogon/orm/Field.h>
@@ -335,5 +315,3 @@ inline void internal::TrasactionAwaiter::await_suspend(
 
 }  // namespace orm
 }  // namespace drogon
-
-#endif
