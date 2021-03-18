@@ -61,7 +61,7 @@ struct RedisAwaiter : public CallbackAwaiter<RedisResult>
 };
 
 struct RedisTransactionAwaiter
-    : public CallbackAwaiter<std::shared_ptr<RedisTransaction>>
+    : public CallbackAwaiter<std::shared_ptr<RedisTransaction> >
 {
     RedisTransactionAwaiter(RedisClient *client) : client_(client)
     {
