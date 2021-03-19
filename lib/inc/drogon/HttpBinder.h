@@ -33,8 +33,9 @@ namespace drogon
 class BodyParsingException : public std::runtime_error
 {
   public:
-    explicit BodyParsingException(const std::string &msg = "Error converting body",
-                                    HttpStatusCode status = k400BadRequest)
+    explicit BodyParsingException(
+        const std::string &msg = "Error converting body",
+        HttpStatusCode status = k400BadRequest)
         : std::runtime_error(msg), mStatus(status)
     {
     }
