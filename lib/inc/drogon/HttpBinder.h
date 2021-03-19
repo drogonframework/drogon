@@ -39,7 +39,7 @@ class BodyParsingException : public std::runtime_error
     {
     }
 
-    [[nodiscard]] HttpStatusCode getStatus() const
+    HttpStatusCode getStatus() const
     {
         return mStatus;
     }
