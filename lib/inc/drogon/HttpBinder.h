@@ -21,6 +21,7 @@
 #include <drogon/DrObject.h>
 #include <drogon/utils/FunctionTraits.h>
 #include <drogon/HttpRequest.h>
+#include <drogon/HttpResponse.h>
 #include <deque>
 #include <memory>
 #include <sstream>
@@ -28,6 +29,25 @@
 
 namespace drogon
 {
+
+class BodyParsingException : public std::runtime_error
+{
+  public:
+    explicit BodyParsingException(const std::string &msg = "Error converting body",
+                                    HttpStatusCode status = k400BadRequest)
+        : std::runtime_error(msg), mStatus(status)
+    {
+    }
+
+    [[nodiscard]] HttpStatusCode getStatus() const
+    {
+        return mStatus;
+    }
+
+  private:
+    HttpStatusCode mStatus;
+};
+
 namespace internal
 {
 // we only accept value type or const lreference type or right reference type as
@@ -249,6 +269,14 @@ class HttpBinder : public HttpBinderBase
             try
             {
                 value = req->as<ValueType>();
+            }
+            catch (const BodyParsingException &e)
+            {
+                auto resp = HttpResponse::newHttpResponse();
+                resp->setStatusCode(e.getStatus());
+                resp->setBody(e.what());
+                callback(resp);
+                return;
             }
             catch (const std::exception &)
             {
