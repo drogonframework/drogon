@@ -486,11 +486,7 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
         {
             return loop->index();
         }
-#ifdef _WIN32
-        return size_t(-1);
-#else
-        return std::numeric_limits<size_t>::max();
-#endif
+        return (std::numeric_limits<size_t>::max)();
     }
 
     bool areAllDbClientsAvailable() const noexcept override;

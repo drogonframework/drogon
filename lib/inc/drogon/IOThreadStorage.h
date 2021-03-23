@@ -69,12 +69,8 @@ class IOThreadStorage : public trantor::NonCopyable
         static_assert(std::is_constructible<C, Args &&...>::value,
                       "Unable to construct storage with given signature");
         size_t numThreads = app().getThreadNum();
-#ifdef _WIN32
-        assert(numThreads > 0 && numThreads != size_t(-1));
-#else
         assert(numThreads > 0 &&
-               numThreads != std::numeric_limits<size_t>::max());
-#endif
+               numThreads != (std::numeric_limits<size_t>::max)());
         // set the size to numThreads+1 to enable access to this in the main
         // thread.
         storage_.reserve(numThreads + 1);
