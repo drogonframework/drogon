@@ -5,6 +5,7 @@
 [![Build status](https://ci.appveyor.com/api/projects/status/12ffuf6j5vankgyb/branch/master?svg=true)](https://ci.appveyor.com/project/an-tao/drogon/branch/master)
 [![Total alerts](https://img.shields.io/lgtm/alerts/g/an-tao/drogon.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/an-tao/drogon/alerts/)
 [![Join the chat at https://gitter.im/drogon-web/community](https://badges.gitter.im/drogon-web/community.svg)](https://gitter.im/drogon-web/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![Join the telegram group at https://t.me/joinchat/_mMNGv0748ZkMDAx](https://img.shields.io/badge/Telegram-2CA5E0?style=flat&logo=telegram&logoColor=white)](https://t.me/joinchat/_mMNGv0748ZkMDAx)
 [![Docker image](https://img.shields.io/badge/Docker-image-blue.svg)](https://cloud.docker.com/u/drogonframework/repository/docker/drogonframework/drogon)
 
 [English](./README.md) | 简体中文 | [繁體中文](./README.zh-TW.md)
@@ -32,6 +33,7 @@ Drogon是一个跨平台框架，它支持Linux，也支持macOS、FreeBSD，Ope
 * 提供一个轻量的命令行工具drogon_ctl，帮助简化各种类的创建和视图代码的生成过程；
 * 基于非阻塞IO实现的异步数据库读写，目前支持PostgreSQL和MySQL(MariaDB)数据库；
 * 基于线程池实现sqlite3数据库的异步读写，提供与上文数据库相同的接口；
+* 支持Redis异步读写；
 * 支持ARM架构；
 * 方便的轻量级ORM实现，支持常规的对象到数据库的双向映射操作；
 * 支持插件，可通过配置文件在加载期动态拆装；
