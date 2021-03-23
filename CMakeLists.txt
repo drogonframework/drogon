@@ -15,10 +15,15 @@ endif ()
 option(BUILD_CTL "Build drogon_ctl" ${BUILD_PROGRAMS})
 option(BUILD_EXAMPLES "Build examples" ${BUILD_PROGRAMS})
 option(BUILD_ORM "Build orm" ON)
-option(BUILD_REDIS "Build redis client" ON)
 option(COZ_PROFILING "Use coz for profiling" OFF)
-option(LIBPQ_BATCH_MODE "Use batch mode for libpq" ON)
 option(BUILD_DROGON_SHARED "Build drogon as a shared lib" OFF)
+
+include(CMakeDependentOption)
+CMAKE_DEPENDENT_OPTION(BUILD_POSTGRESQL "Build with postgresql support" ON "BUILD_ORM" OFF)
+CMAKE_DEPENDENT_OPTION(LIBPQ_BATCH_MODE "Use batch mode for libpq" ON "BUILD_POSTGRESQL" OFF)
+CMAKE_DEPENDENT_OPTION(BUILD_MYSQL "Build with mysql support" ON "BUILD_ORM" OFF)
+CMAKE_DEPENDENT_OPTION(BUILD_SQLITE "Build with sqlite3 support" ON "BUILD_ORM" OFF)
+CMAKE_DEPENDENT_OPTION(BUILD_REDIS "Build with redis support" ON "BUILD_ORM" OFF)
 
 set(DROGON_MAJOR_VERSION 1)
 set(DROGON_MINOR_VERSION 4)
@@ -196,7 +201,7 @@ else (NOT WIN32)
     set(DROGON_SOURCES ${DROGON_SOURCES} third_party/mman-win32/mman.c)
 endif (NOT WIN32)
 
-if (BUILD_ORM)
+if (BUILD_POSTGRESQL)
     # find postgres
     find_package(pg)
     if (pg_FOUND)
@@ -222,7 +227,9 @@ if (BUILD_ORM)
                     orm_lib/src/postgresql_impl/PgConnection.cc)
         endif (libpq_supports_batch)
     endif (pg_FOUND)
+endif (BUILD_POSTGRESQL)
 
+if (BUILD_MYSQL)
     # Find mysql, only mariadb client liberary is supported
     find_package(MySQL)
     if (MySQL_FOUND)
@@ -232,7 +239,9 @@ if (BUILD_ORM)
                 orm_lib/src/mysql_impl/MysqlConnection.cc
                 orm_lib/src/mysql_impl/MysqlResultImpl.cc)
     endif (MySQL_FOUND)
+endif (BUILD_MYSQL)
 
+if (BUILD_SQLITE)
     # Find sqlite3.
     find_package(SQLite3)
     if (SQLite3_FOUND)
@@ -241,18 +250,7 @@ if (BUILD_ORM)
                 orm_lib/src/sqlite3_impl/Sqlite3Connection.cc
                 orm_lib/src/sqlite3_impl/Sqlite3ResultImpl.cc)
     endif (SQLite3_FOUND)
-endif (BUILD_ORM)
-
-find_package(ZLIB REQUIRED)
-target_link_libraries(${PROJECT_NAME} PRIVATE ZLIB::ZLIB)
-
-find_package(OpenSSL)
-if (OpenSSL_FOUND)
-    target_link_libraries(${PROJECT_NAME} PRIVATE OpenSSL::SSL OpenSSL::Crypto)
-else (OpenSSL_FOUND)
-    set(DROGON_SOURCES ${DROGON_SOURCES} lib/src/ssl_funcs/Md5.cc
-            lib/src/ssl_funcs/Sha1.cc)
-endif (OpenSSL_FOUND)
+endif (BUILD_SQLITE)
 
 if (BUILD_REDIS)
     find_package(Hiredis)
@@ -274,7 +272,20 @@ if (BUILD_REDIS)
     else ()
         set(DROGON_SOURCES ${DROGON_SOURCES} lib/src/RedisClientManagerSkipped.cc)
     endif (Hiredis_FOUND)
+else ()
+    set(DROGON_SOURCES ${DROGON_SOURCES} lib/src/RedisClientManagerSkipped.cc)
 endif (BUILD_REDIS)
+
+find_package(ZLIB REQUIRED)
+target_link_libraries(${PROJECT_NAME} PRIVATE ZLIB::ZLIB)
+
+find_package(OpenSSL)
+if (OpenSSL_FOUND)
+    target_link_libraries(${PROJECT_NAME} PRIVATE OpenSSL::SSL OpenSSL::Crypto)
+else (OpenSSL_FOUND)
+    set(DROGON_SOURCES ${DROGON_SOURCES} lib/src/ssl_funcs/Md5.cc
+            lib/src/ssl_funcs/Sha1.cc)
+endif (OpenSSL_FOUND)
 
 execute_process(COMMAND "git" rev-parse HEAD
         WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
