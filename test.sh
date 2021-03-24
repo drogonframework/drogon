@@ -164,11 +164,13 @@ if [ "$1" = "-t" ]; then
         echo "Error in unit testing"
         exit -1
     fi
-    echo "Test database"
-    ./orm_lib/tests/db_test
-    if [ $? -ne 0 ]; then
-        echo "Error in testing"
-        exit -1
+    if [ -f "./orm_lib/tests/db_test" ]; then
+        echo "Test database"
+        ./orm_lib/tests/db_test
+        if [ $? -ne 0 ]; then
+            echo "Error in testing"
+            exit -1
+        fi
     fi
     if [ -f "./nosql_lib/redis/tests/redis_test" ]; then
         echo "Test redis"

@@ -45,3 +45,4 @@ latex/
 .vs/
 CMakeSettings.json
 install
+trace.json
