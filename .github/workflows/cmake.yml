@@ -17,7 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        link: [ 'static', 'shared' ]
+        link: [ 'STATIC', 'SHARED' ]
     steps:
       - name: Checkout Drogon source code
         uses: actions/checkout@v2
@@ -67,26 +67,26 @@ jobs:
         include:
           - os: ubuntu-20.04
             buildname: 'ubuntu-20.04/gcc'
-            link: shared
+            link: SHARED
             triplet: x64-linux
             compiler: gcc_64
           - os: ubuntu-20.04
             buildname: 'ubuntu-20.04/gcc'
-            link: static
+            link: STATIC
             triplet: x64-linux
             compiler: gcc_64
           - os: ubuntu-20.04
             buildname: 'ubuntu-20.04/gcc-10'
-            link: static
+            link: STATIC
             triplet: x64-linux
           - os: ubuntu-16.04
             buildname: 'ubuntu-16.04/gcc'
-            link: static
+            link: STATIC
             triplet: x64-linux
             compiler: gcc_64
           - os: macos-latest
             buildname: 'macos/clang'
-            link: static
+            link: STATIC
             triplet: x64-osx
             compiler: clang_64
     steps:
