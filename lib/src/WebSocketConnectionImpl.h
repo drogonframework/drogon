@@ -53,28 +53,29 @@ class WebSocketConnectionImpl
     explicit WebSocketConnectionImpl(const trantor::TcpConnectionPtr &conn,
                                      bool isServer = true);
 
-    virtual void send(
+    void send(
         const char *msg,
         uint64_t len,
         const WebSocketMessageType type = WebSocketMessageType::Text) override;
-    virtual void send(
+    void send(
         const std::string &msg,
         const WebSocketMessageType type = WebSocketMessageType::Text) override;
 
-    virtual const trantor::InetAddress &localAddr() const override;
-    virtual const trantor::InetAddress &peerAddr() const override;
+    const trantor::InetAddress &localAddr() const override;
+    const trantor::InetAddress &peerAddr() const override;
 
-    virtual bool connected() const override;
-    virtual bool disconnected() const override;
+    bool connected() const override;
+    bool disconnected() const override;
 
-    virtual void shutdown(
-        const CloseCode code = CloseCode::kNormalClosure,
-        const std::string &reason = "") override;  // close write
-    virtual void forceClose() override;            // close
+    void shutdown(const CloseCode code = CloseCode::kNormalClosure,
+                  const std::string &reason = "") override;  // close write
+    void forceClose() override;                              // close
 
-    virtual void setPingMessage(
+    void setPingMessage(
         const std::string &message,
         const std::chrono::duration<long double> &interval) override;
+
+    void disablePing() override;
 
     void setMessageCallback(
         const std::function<void(std::string &&,
@@ -117,6 +118,10 @@ class WebSocketConnectionImpl
     std::function<void(const WebSocketConnectionImplPtr &)> closeCallback_ =
         [](const WebSocketConnectionImplPtr &) {};
     void sendWsData(const char *msg, uint64_t len, unsigned char opcode);
+    void disablePingInLoop();
+    void setPingMessageInLoop(
+        std::string &&message,
+        const std::chrono::duration<long double> &interval);
 };
 
 }  // namespace drogon
