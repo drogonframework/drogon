@@ -53,7 +53,7 @@ if (BUILD_DROGON_SHARED)
     add_library(${PROJECT_NAME} SHARED)
     target_link_libraries(${PROJECT_NAME} PUBLIC Threads::Threads)
     if(WIN32)
-      target_link_libraries(${PROJECT_NAME} PRIVATE Rpcrt4 ws2_32)
+      target_link_libraries(${PROJECT_NAME} PUBLIC Rpcrt4 ws2_32)
       if(CMAKE_CXX_COMPILER_ID MATCHES MSVC)
           # Ignore MSVC C4251 and C4275 warning of exporting std objects with no dll export
           # We export class to facilitate maintenance, thus if you compile
