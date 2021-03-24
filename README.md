@@ -5,6 +5,7 @@
 [![Build status](https://ci.appveyor.com/api/projects/status/12ffuf6j5vankgyb/branch/master?svg=true)](https://ci.appveyor.com/project/an-tao/drogon/branch/master)
 [![Total alerts](https://img.shields.io/lgtm/alerts/g/an-tao/drogon.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/an-tao/drogon/alerts/)
 [![Join the chat at https://gitter.im/drogon-web/community](https://badges.gitter.im/drogon-web/community.svg)](https://gitter.im/drogon-web/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![Join the telegram group at https://t.me/joinchat/_mMNGv0748ZkMDAx](https://img.shields.io/badge/Telegram-2CA5E0?style=flat&logo=telegram&logoColor=white)](https://t.me/joinchat/_mMNGv0748ZkMDAx)
 [![Docker image](https://img.shields.io/badge/Docker-image-blue.svg)](https://cloud.docker.com/u/drogonframework/repository/docker/drogonframework/drogon)
 
 English | [简体中文](./README.zh-CN.md) | [繁體中文](./README.zh-TW.md)
@@ -31,6 +32,7 @@ Drogon is a cross-platform framework, It supports Linux, macOS, FreeBSD, OpenBSD
 * Provide a lightweight command line tool, drogon_ctl, to simplify the creation of various classes in Drogon and the generation of view code;
 * Support non-blocking I/O based asynchronously reading and writing database (PostgreSQL and MySQL(MariaDB) database);
 * Support asynchronously reading and writing sqlite3 database based on thread pool;
+* Support Redis with asynchronous reading and writing;
 * Support ARM Architecture;
 * Provide a convenient lightweight ORM implementation that supports for regular object-to-database bidirectional mapping;
 * Support plugins which can be installed by the configuration file at load time;

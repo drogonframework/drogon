@@ -622,25 +622,33 @@ void create_model::createModelClassFromSqlite3(
             info.isPrimaryKey_ = primary;
             if (primary)
             {
-                *client << "SELECT sql FROM sqlite_master WHERE name=? and "
-                           "(type='table' or type='view');"
-                        << tableName << Mode::Blocking >>
-                    [&](bool isNull, std::string sql) {
-                        if (!isNull)
-                        {
-                            std::transform(sql.begin(),
-                                           sql.end(),
-                                           sql.begin(),
-                                           tolower);
-                            if (sql.find("autoincrement") != std::string::npos)
+                if (type == "integer")
+                {
+                    info.isAutoVal_ = true;
+                }
+                else
+                {
+                    *client << "SELECT sql FROM sqlite_master WHERE name=? and "
+                               "(type='table' or type='view');"
+                            << tableName << Mode::Blocking >>
+                        [&](bool isNull, std::string sql) {
+                            if (!isNull)
                             {
-                                info.isAutoVal_ = true;
+                                std::transform(sql.begin(),
+                                               sql.end(),
+                                               sql.begin(),
+                                               tolower);
+                                if (sql.find("autoincrement") !=
+                                    std::string::npos)
+                                {
+                                    info.isAutoVal_ = true;
+                                }
                             }
-                        }
-                    } >>
-                    [](const DrogonDbException &e) {
+                        } >>
+                        [](const DrogonDbException &e) {
 
-                    };
+                        };
+                }
             }
             auto defaultVal = row["dflt_value"].as<std::string>();
             if (!defaultVal.empty())

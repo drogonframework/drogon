@@ -91,28 +91,36 @@ std::vector<trantor::EventLoop *> ListenerManager::createListeners(
             auto const &ip = listener.ip_;
             bool isIpv6 = ip.find(':') == std::string::npos ? false : true;
             std::shared_ptr<HttpServer> serverPtr;
+            InetAddress listenAddress(ip, listener.port_, isIpv6);
+            if (listenAddress.isUnspecified())
+            {
+                LOG_FATAL << "Failed to parse IP address '" << ip
+                          << "'. (Note: FQDN/domain names/hostnames are not "
+                             "supported. Including 'localhost')";
+                abort();
+            }
             if (i == 0 && !app().reusePort())
             {
                 DrogonFileLocker lock;
                 // Check whether the port is in use.
                 TcpServer server(HttpAppFrameworkImpl::instance().getLoop(),
-                                 InetAddress(ip, listener.port_, isIpv6),
+                                 std::move(listenAddress),
                                  "drogonPortTest",
                                  true,
                                  false);
-                serverPtr = std::make_shared<HttpServer>(
-                    loopThreadPtr->getLoop(),
-                    InetAddress(ip, listener.port_, isIpv6),
-                    "drogon",
-                    syncAdvices);
+                serverPtr =
+                    std::make_shared<HttpServer>(loopThreadPtr->getLoop(),
+                                                 std::move(listenAddress),
+                                                 "drogon",
+                                                 syncAdvices);
             }
             else
             {
-                serverPtr = std::make_shared<HttpServer>(
-                    loopThreadPtr->getLoop(),
-                    InetAddress(ip, listener.port_, isIpv6),
-                    "drogon",
-                    syncAdvices);
+                serverPtr =
+                    std::make_shared<HttpServer>(loopThreadPtr->getLoop(),
+                                                 std::move(listenAddress),
+                                                 "drogon",
+                                                 syncAdvices);
             }
 
             if (listener.useSSL_)
