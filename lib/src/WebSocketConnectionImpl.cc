@@ -17,7 +17,6 @@
 #include <thread>
 
 using namespace drogon;
-using namespace std::chrono_literals;
 WebSocketConnectionImpl::WebSocketConnectionImpl(
     const trantor::TcpConnectionPtr &conn,
     bool isServer)
@@ -26,9 +25,11 @@ WebSocketConnectionImpl::WebSocketConnectionImpl(
       peerAddr_(conn->peerAddr()),
       isServer_(isServer)
 {
-    conn->getLoop()->queueInLoop([this]() { setPingMessage("", 30s); });
 }
-
+WebSocketConnectionImpl::~WebSocketConnectionImpl()
+{
+    shutdown();
+}
 void WebSocketConnectionImpl::send(const char *msg,
                                    uint64_t len,
                                    const WebSocketMessageType type)
@@ -154,6 +155,8 @@ void WebSocketConnectionImpl::WebSocketConnectionImpl::shutdown(
     const std::string &reason)
 {
     tcpConnectionPtr_->getLoop()->invalidateTimer(pingTimerId_);
+    if (!tcpConnectionPtr_->connected())
+        return;
     std::string message;
     message.resize(reason.length() + 2);
     auto c = htons(static_cast<unsigned short>(code));
@@ -357,8 +360,8 @@ void WebSocketConnectionImpl::onNewMessage(
                 {
                     return;
                 }
-                LOG_TRACE << "new message received: " << message
-                          << "\n(type=" << (int)type << ")";
+                // LOG_TRACE << "new message received: " << message
+                //           << "\n(type=" << (int)type << ")";
                 messageCallback_(std::move(message), shared_from_this(), type);
             }
             else

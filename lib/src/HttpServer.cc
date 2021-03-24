@@ -255,6 +255,7 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn, MsgBuffer *buf)
                 {
                     auto wsConn =
                         std::make_shared<WebSocketConnectionImpl>(conn);
+                    wsConn->setPingMessage("", std::chrono::seconds{30});
                     newWebsocketCallback_(
                         requestParser->requestImpl(),
                         [conn, wsConn, requestParser](

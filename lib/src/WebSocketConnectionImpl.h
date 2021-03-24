@@ -44,7 +44,7 @@ class WebSocketMessageParser
     bool gotAll_{false};
 };
 
-class WebSocketConnectionImpl
+class WebSocketConnectionImpl final
     : public WebSocketConnection,
       public std::enable_shared_from_this<WebSocketConnectionImpl>,
       public trantor::NonCopyable
@@ -53,6 +53,7 @@ class WebSocketConnectionImpl
     explicit WebSocketConnectionImpl(const trantor::TcpConnectionPtr &conn,
                                      bool isServer = true);
 
+    ~WebSocketConnectionImpl() override;
     void send(
         const char *msg,
         uint64_t len,
