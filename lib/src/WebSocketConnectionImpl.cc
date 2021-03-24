@@ -1,7 +1,7 @@
 /**
  *
- *  WebSocketConnectionImpl.cc
- *  An Tao
+ *  @file WebSocketConnectionImpl.cc
+ *  @author An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
@@ -191,8 +191,16 @@ void WebSocketConnectionImpl::setPingMessage(
 
 void WebSocketConnectionImpl::disablePing()
 {
-    tcpConnectionPtr_->getLoop()->queueInLoop(
-        [thisPtr = shared_from_this()]() { thisPtr->disablePingInLoop(); });
+    auto loop = tcpConnectionPtr_->getLoop();
+    if (loop->isInLoopThread())
+    {
+        disablePingInLoop();
+    }
+    else
+    {
+        loop->queueInLoop(
+            [thisPtr = shared_from_this()]() { thisPtr->disablePingInLoop(); });
+    }
 }
 
 bool WebSocketMessageParser::parse(trantor::MsgBuffer *buffer)
