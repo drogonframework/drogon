@@ -356,9 +356,10 @@ class HttpResponse
     /// Create a response that returns a file to the client from buffer in
     /// memory/stack
     /**
-     * @param pBuffer uint 8 bit flat buffer for image
-     * @param bufferLength length of expected buffer
+     * @param pBuffer is a uint 8 bit flat buffer for object/files in memory
+     * @param bufferLength is the length of the expected buffer
      * @param attachmentFileName if the parameter is not empty, the browser
+     * does not open the file, but saves it as an attachment.
      * @param type if the parameter is CT_NONE, the content type is set by
      * drogon based on the file extension.
      */
