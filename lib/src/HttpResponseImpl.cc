@@ -199,7 +199,7 @@ HttpResponsePtr HttpResponse::newFileResponse(
 
     // Set response body and length
     resp->setBody(
-        std::string(reinterpret_cast<const char *>(pBuffer),bufferLength));
+        std::string(reinterpret_cast<const char *>(pBuffer), bufferLength));
 
     // Set status of message
     resp->setStatusCode(k200OK);

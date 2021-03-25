@@ -353,7 +353,8 @@ class HttpResponse
         const std::string &attachmentFileName = "",
         ContentType type = CT_NONE);
 
-    /// Create a response that returns a file to the client from buffer in memory/stack
+    /// Create a response that returns a file to the client from buffer in
+    /// memory/stack
     /**
      * @param pBuffer uint 8 bit flat buffer for image
      * @param attachmentFileName if the parameter is not empty, the browser
