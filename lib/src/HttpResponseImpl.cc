@@ -205,13 +205,17 @@ HttpResponsePtr HttpResponse::newFileResponse(
     resp->setStatusCode(k200OK);
 
     // Check for type and assign proper content type in header
-    if (!attachmentFileName.empty())
+    if (type != CT_NONE)
+    {
+        resp->setContentTypeCode(type);
+    }
+    else if (!attachmentFileName.empty())
     {
         resp->setContentTypeCode(drogon::getContentType(attachmentFileName));
     }
     else
     {
-        resp->setContentTypeCode(type);
+        resp->setContentTypeCode(CT_APPLICATION_OCTET_STREAM);//default content-type for file;
     }
 
     // Add additional header values

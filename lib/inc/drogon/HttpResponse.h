@@ -357,9 +357,9 @@ class HttpResponse
     /// memory/stack
     /**
      * @param pBuffer uint 8 bit flat buffer for image
+     * @param bufferLength length of expected buffer
      * @param attachmentFileName if the parameter is not empty, the browser
      * @param type if the parameter is CT_NONE, the content type is set by
-     * @param bufferLength length of expected buffer
      * drogon based on the file extension.
      */
     static HttpResponsePtr newFileResponse(
