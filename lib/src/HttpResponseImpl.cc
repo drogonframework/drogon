@@ -215,7 +215,8 @@ HttpResponsePtr HttpResponse::newFileResponse(
     }
     else
     {
-        resp->setContentTypeCode(CT_APPLICATION_OCTET_STREAM);//default content-type for file;
+        resp->setContentTypeCode(
+            CT_APPLICATION_OCTET_STREAM);  // default content-type for file;
     }
 
     // Add additional header values
