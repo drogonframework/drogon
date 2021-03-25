@@ -353,6 +353,20 @@ class HttpResponse
         const std::string &attachmentFileName = "",
         ContentType type = CT_NONE);
 
+    /// Create a response that returns a file to the client from buffer in memory/stack
+    /**
+     * @param pBuffer uint 8 bit flat buffer for image
+     * @param attachmentFileName if the parameter is not empty, the browser
+     * @param type if the parameter is CT_NONE, the content type is set by
+     * @param bufferLength length of expected buffer
+     * drogon based on the file extension.
+     */
+    static HttpResponsePtr newFileResponse(
+        const unsigned char *pBuffer,
+        size_t bufferLength,
+        const std::string &attachmentFileName = "",
+        ContentType type = CT_NONE);
+
     /**
      * @brief Create a custom HTTP response object. For using this template,
      * users must specialize the toResponse template.
