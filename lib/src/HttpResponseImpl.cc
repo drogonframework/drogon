@@ -204,15 +204,8 @@ HttpResponsePtr HttpResponse::newFileResponse(
     // Make Raw HttpResponse
     auto resp = std::make_shared<HttpResponseImpl>();
 
-    // Convert to sstream
-    std::ostringstream os;
-    for(int i = 0; i < bufferLength; i++)
-    {
-        os << pBuffer[i];
-    }
-
     // Set response body and length
-    resp->setBody(std::move(os.str()));
+    resp->setBody(std::string(reinterpret_cast<const char *>(pBuffer),bufferLength));
 
     // Set status of message
     resp->setStatusCode(k200OK);
