@@ -23,13 +23,13 @@ if (WIN32 AND BUILD_DROGON_SHARED)
   add_custom_command(TARGET _drogon_ctl POST_BUILD
           COMMAND ${CMAKE_COMMAND}
           -DCTL_FILE=${DROGON_FILE}
-          -DINSTALL_BIN_DIR=${CMAKE_CURRENT_BINARY_DIR}
+          -DINSTALL_BIN_DIR=$<TARGET_FILE_DIR:_drogon_ctl>
           -P
           ${CMAKE_CURRENT_SOURCE_DIR}/CopyDlls.cmake)
   add_custom_command(TARGET _drogon_ctl POST_BUILD
           COMMAND ${CMAKE_COMMAND}
           -DCTL_FILE=${TRANTOR_FILE}
-          -DINSTALL_BIN_DIR=${CMAKE_CURRENT_BINARY_DIR}
+          -DINSTALL_BIN_DIR=$<TARGET_FILE_DIR:_drogon_ctl>
           -P
           ${CMAKE_CURRENT_SOURCE_DIR}/CopyDlls.cmake)
 endif()
