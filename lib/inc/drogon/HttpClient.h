@@ -196,7 +196,7 @@ class HttpClient : public trantor::NonCopyable
     virtual void addCookie(const Cookie &cookie) = 0;
 
     /**
-     * @brief Set the user_agent header, the default value is 'DrogonClient' is
+     * @brief Set the user_agent header, the default value is 'DrogonClient' if
      * this method is not used.
      *
      * @param userAgent The user_agent value, if it is empty, the user_agent
