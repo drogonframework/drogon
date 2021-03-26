@@ -39,7 +39,7 @@ foreach(cspFile ${SCP_LIST})
   get_filename_component(classname ${cspFile} NAME_WE)
   message(STATUS "view classname:" ${classname})
   add_custom_command(OUTPUT ${classname}.h ${classname}.cc
-                     COMMAND _drogon_ctl
+                     COMMAND $<TARGET_FILE:_drogon_ctl>
                              ARGS
                              create
                              view

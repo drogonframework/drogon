@@ -28,7 +28,7 @@ function(drogon_create_views arg)
                      outputFile
                      ${f2})
       add_custom_command(OUTPUT ${ARGV2}/${outputFile}.h ${ARGV2}/${outputFile}.cc
-                         COMMAND drogon_ctl
+                         COMMAND $<TARGET_FILE:drogon_ctl>
                                  ARGS
                                  create
                                  view
@@ -43,7 +43,7 @@ function(drogon_create_views arg)
     else()
       get_filename_component(classname ${cspFile} NAME_WE)
       add_custom_command(OUTPUT ${ARGV2}/${classname}.h ${ARGV2}/${classname}.cc
-                         COMMAND drogon_ctl
+                         COMMAND $<TARGET_FILE:drogon_ctl>
                                  ARGS
                                  create
                                  view
