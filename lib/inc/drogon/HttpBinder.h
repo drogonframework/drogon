@@ -242,10 +242,12 @@ class HttpBinder : public HttpBinderBase
             {
                 getHandlerArgumentValue(value, std::move(v));
             }
-            catch (...)
+            catch (const std::exception &)
             {
-                LOG_ERROR << "Error converting string \"" << v << "\" to the "
-                          << sizeof...(Values) + 1 << "th argument";
+                handleException(std::current_exception(),
+                                req,
+                                std::move(callback));
+                return;
             }
         }
         else
