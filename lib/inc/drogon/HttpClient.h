@@ -196,6 +196,15 @@ class HttpClient : public trantor::NonCopyable
     virtual void addCookie(const Cookie &cookie) = 0;
 
     /**
+     * @brief Set the user_agent header, the default value is 'DrogonClient' if
+     * this method is not used.
+     *
+     * @param userAgent The user_agent value, if it is empty, the user_agent
+     * header is not sent to the server.
+     */
+    virtual void setUserAgent(const std::string &userAgent) = 0;
+
+    /**
      * @brief Creaet a new HTTP client which use ip and port to connect to
      * server
      *
