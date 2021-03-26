@@ -118,6 +118,15 @@ HttpResponsePtr defaultErrorHandler(HttpStatusCode code)
     return std::make_shared<HttpResponseImpl>(code, CT_TEXT_HTML);
 }
 
+void defaultExceptionHandler(
+    std::exception_ptr e,
+    const HttpRequestPtr &req,
+    std::function<void(const HttpResponsePtr &)> &&callback)
+{
+    auto handler = app().getCustomErrorHandler();
+    callback(handler(k500InternalServerError));
+}
+
 static void godaemon()
 {
     printf("Initializing daemon mode\n");

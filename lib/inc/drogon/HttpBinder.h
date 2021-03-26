@@ -88,6 +88,10 @@ T &getControllerObj()
     return obj;
 }
 
+void handleException(std::exception_ptr,
+                     const HttpRequestPtr &,
+                     std::function<void(const HttpResponsePtr &)> &&);
+
 using HttpBinderBasePtr = std::shared_ptr<HttpBinderBase>;
 template <typename FUNCTION>
 class HttpBinder : public HttpBinderBase
@@ -273,7 +277,14 @@ class HttpBinder : public HttpBinderBase
         std::function<void(const HttpResponsePtr &)> &&callback,
         Values &&... values)
     {
-        callFunction(req, std::move(callback), std::move(values)...);
+        try
+        {
+            callFunction(req, callback, std::move(values)...);
+        }
+        catch (...)
+        {
+            handleException(std::current_exception(), req, std::move(callback));
+        }
     }
 #ifdef __cpp_impl_coroutine
     template <typename... Values,
@@ -294,16 +305,12 @@ class HttpBinder : public HttpBinderBase
                 if constexpr (std::is_same_v<AsyncTask,
                                              typename traits::return_type>)
                 {
-                    callFunction(req,
-                                 std::move(callback),
-                                 std::move(values)...);
+                    callFunction(req, callback, std::move(values)...);
                 }
                 else if constexpr (std::is_same_v<Task<>,
                                                   typename traits::return_type>)
                 {
-                    co_await callFunction(req,
-                                          std::move(callback),
-                                          std::move(values)...);
+                    co_await callFunction(req, callback, std::move(values)...);
                 }
                 else if constexpr (std::is_same_v<Task<HttpResponsePtr>,
                                                   typename traits::return_type>)
@@ -313,14 +320,11 @@ class HttpBinder : public HttpBinderBase
                     callback(std::move(resp));
                 }
             }
-            catch (const std::exception &e)
-            {
-                LOG_ERROR << "Uncaught exception in " << req->path()
-                          << " what(): " << e.what();
-            }
             catch (...)
             {
-                LOG_ERROR << "Uncaught unknown exception in " << req->path();
+                handleException(std::current_exception(),
+                                req,
+                                std::move(callback));
             }
         }(req, std::move(callback), std::move(values)...);
     }
