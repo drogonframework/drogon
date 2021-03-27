@@ -240,7 +240,7 @@ class HttpBinder : public HttpBinderBase
             pathArguments.pop_front();
             try
             {
-                if(value.empty() == false)
+                if(v.empty() == false)
                     getHandlerArgumentValue(value, std::move(v));
             }
             catch (const std::exception &e)
