@@ -225,32 +225,46 @@ void HttpSimpleControllersRouter::doControllerHandler(
             }
         }
 
-        controller->asyncHandleHttpRequest(
-            req,
-            [this, req, callback = std::move(callback), &ctrlBinderPtr](
-                const HttpResponsePtr &resp) {
-                auto newResp = resp;
-                if (resp->expiredTime() >= 0 &&
-                    resp->statusCode() != k404NotFound)
-                {
-                    // cache the response;
-                    static_cast<HttpResponseImpl *>(resp.get())
-                        ->makeHeaderString();
-                    auto loop = req->getLoop();
+        try
+        {
+            controller->asyncHandleHttpRequest(
+                req,
+                [this, req, callback, &ctrlBinderPtr](
+                    const HttpResponsePtr &resp) {
+                    auto newResp = resp;
+                    if (resp->expiredTime() >= 0 &&
+                        resp->statusCode() != k404NotFound)
+                    {
+                        // cache the response;
+                        static_cast<HttpResponseImpl *>(resp.get())
+                            ->makeHeaderString();
+                        auto loop = req->getLoop();
 
-                    if (loop->isInLoopThread())
-                    {
-                        ctrlBinderPtr->responseCache_.setThreadData(resp);
-                    }
-                    else
-                    {
-                        loop->queueInLoop([resp, &ctrlBinderPtr]() {
+                        if (loop->isInLoopThread())
+                        {
                             ctrlBinderPtr->responseCache_.setThreadData(resp);
-                        });
+                        }
+                        else
+                        {
+                            loop->queueInLoop([resp, &ctrlBinderPtr]() {
+                                ctrlBinderPtr->responseCache_.setThreadData(
+                                    resp);
+                            });
+                        }
                     }
-                }
-                invokeCallback(callback, req, newResp);
-            });
+                    invokeCallback(callback, req, newResp);
+                });
+        }
+        catch (const std::exception &e)
+        {
+            app().getExceptionHandler()(e, req, std::move(callback));
+            return;
+        }
+        catch (...)
+        {
+            LOG_ERROR << "Exception not derived from std::exception";
+            return;
+        }
 
         return;
     }

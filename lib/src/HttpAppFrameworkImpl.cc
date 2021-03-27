@@ -123,6 +123,8 @@ void defaultExceptionHandler(
     const HttpRequestPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback)
 {
+    LOG_ERROR << "Unhandled exception in " << req->query()
+              << ", what():" << e.what();
     auto handler = app().getCustomErrorHandler();
     callback(handler(k500InternalServerError));
 }
