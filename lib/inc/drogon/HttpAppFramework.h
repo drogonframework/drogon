@@ -57,7 +57,7 @@ class HttpControllerBase;
 class HttpSimpleControllerBase;
 class WebSocketControllerBase;
 using ExceptionHandler =
-    std::function<void(std::exception_ptr,
+    std::function<void(const std::exception &,
                        const HttpRequestPtr &,
                        std::function<void(const HttpResponsePtr &)> &&)>;
 

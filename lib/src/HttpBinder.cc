@@ -19,7 +19,7 @@ namespace drogon
 {
 namespace internal
 {
-void handleException(std::exception_ptr e,
+void handleException(const std::exception& e,
                      const HttpRequestPtr& req,
                      std::function<void(const HttpResponsePtr&)>&& callback)
 {

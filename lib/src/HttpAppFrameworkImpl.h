@@ -29,7 +29,7 @@
 namespace drogon
 {
 HttpResponsePtr defaultErrorHandler(HttpStatusCode code);
-void defaultExceptionHandler(std::exception_ptr,
+void defaultExceptionHandler(const std::exception &,
                              const HttpRequestPtr &,
                              std::function<void(const HttpResponsePtr &)> &&);
 
@@ -639,7 +639,7 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
         postRoutingObservers_;
     std::vector<std::function<void(const HttpRequestPtr &)>>
         preHandlingObservers_;
-    ExceptionHandler exceptionHandler_ = defaultExceptionHandler;
+    ExceptionHandler exceptionHandler_{defaultExceptionHandler};
 };
 
 }  // namespace drogon

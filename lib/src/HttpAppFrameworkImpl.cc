@@ -119,7 +119,7 @@ HttpResponsePtr defaultErrorHandler(HttpStatusCode code)
 }
 
 void defaultExceptionHandler(
-    std::exception_ptr e,
+    const std::exception &e,
     const HttpRequestPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback)
 {
