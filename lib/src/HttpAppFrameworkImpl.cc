@@ -125,7 +125,7 @@ void defaultExceptionHandler(
 {
     LOG_ERROR << "Unhandled exception in " << req->query()
               << ", what():" << e.what();
-    const auto& handler = app().getCustomErrorHandler();
+    const auto &handler = app().getCustomErrorHandler();
     callback(handler(k500InternalServerError));
 }
 
