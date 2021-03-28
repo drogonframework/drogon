@@ -118,6 +118,17 @@ HttpResponsePtr defaultErrorHandler(HttpStatusCode code)
     return std::make_shared<HttpResponseImpl>(code, CT_TEXT_HTML);
 }
 
+void defaultExceptionHandler(
+    const std::exception &e,
+    const HttpRequestPtr &req,
+    std::function<void(const HttpResponsePtr &)> &&callback)
+{
+    LOG_ERROR << "Unhandled exception in " << req->query()
+              << ", what():" << e.what();
+    const auto &handler = app().getCustomErrorHandler();
+    callback(handler(k500InternalServerError));
+}
+
 static void godaemon()
 {
     printf("Initializing daemon mode\n");

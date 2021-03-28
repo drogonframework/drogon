@@ -56,6 +56,10 @@ std::string getGitCommit();
 class HttpControllerBase;
 class HttpSimpleControllerBase;
 class WebSocketControllerBase;
+using ExceptionHandler =
+    std::function<void(const std::exception &,
+                       const HttpRequestPtr &,
+                       std::function<void(const HttpResponsePtr &)> &&)>;
 
 class HttpAppFramework : public trantor::NonCopyable
 {
@@ -1292,6 +1296,16 @@ class HttpAppFramework : public trantor::NonCopyable
      * @brief Return if the ReusePort mode is enabled.
      */
     virtual bool reusePort() const = 0;
+
+    /**
+     * @brief handler will be called upon an exception escapes a request handler
+     */
+    virtual void setExceptionHandler(ExceptionHandler handler) = 0;
+
+    /**
+     * @brief returns the excaption handler
+     */
+    virtual const ExceptionHandler &getExceptionHandler() const = 0;
 
   private:
     virtual void registerHttpController(

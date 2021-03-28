@@ -1303,6 +1303,27 @@ void doTest(const HttpClientPtr &client,
                 exit(1);
             }
         });
+    req = HttpRequest::newHttpRequest();
+    req->setMethod(drogon::Get);
+    req->setPath("/api/v1/this_will_fail");
+    client->sendRequest(
+        req, [req, isHttps](ReqResult result, const HttpResponsePtr &resp) {
+            if (result == ReqResult::Ok)
+            {
+                if (resp->getStatusCode() != k500InternalServerError)
+                {
+                    LOG_DEBUG << resp->getStatusCode();
+                    LOG_ERROR << "Error!";
+                    exit(1);
+                }
+                outputGood(req, isHttps);
+            }
+            else
+            {
+                LOG_ERROR << "Error!";
+                exit(1);
+            }
+        });
 
 #ifdef __cpp_impl_coroutine
     // Test coroutine requests
