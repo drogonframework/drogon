@@ -166,9 +166,9 @@ HttpServer::HttpServer(
       syncAdvices_(syncAdvices)
 {
     server_.setConnectionCallback(
-        [this](const auto &conn) { onConnection(conn); });
+        [this](const auto &conn) { this->onConnection(conn); });
     server_.setRecvMessageCallback(
-        [this](const auto &conn, auto buff) { onMessage(conn, buff); });
+        [this](const auto &conn, auto buff) { this->onMessage(conn, buff); });
 }
 
 HttpServer::~HttpServer()
