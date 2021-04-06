@@ -105,7 +105,7 @@ jobs:
       # Execute the build.  You can specify a specific target with "--target <NAME>"
       run: |
         cd build
-        sudo make && sudo make install
+        sudo make -j $(nproc) && sudo make install
 
     - name: Prepare for testing (macOS)
       if: runner.os == 'macOS'
