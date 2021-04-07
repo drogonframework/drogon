@@ -47,11 +47,11 @@ add_custom_command(
   COMMAND ${CMAKE_COMMAND}
           -E
           copy_if_different
-          ${PROJECT_SOURCE_DIR}/config.example.json
-          ${PROJECT_SOURCE_DIR}/drogon.jpg
+          ${CMAKE_CURRENT_SOURCE_DIR}/../config.example.json
+          ${CMAKE_CURRENT_SOURCE_DIR}/../drogon.jpg
           ${CMAKE_CURRENT_SOURCE_DIR}/simple_example/index.html
           ${CMAKE_CURRENT_SOURCE_DIR}/simple_example/index.html.gz
-          ${PROJECT_SOURCE_DIR}/trantor/trantor/tests/server.pem
+          ${CMAKE_CURRENT_SOURCE_DIR}/../trantor/trantor/tests/server.pem
           $<TARGET_FILE_DIR:webapp>)
 add_custom_command(
   TARGET webapp POST_BUILD

@@ -1,0 +1,4 @@
+{
+  "open-source-parsers/jsoncpp" : {}
+  , "platform" : [ "ZLIB::+ZLIB", "c-ares::+c-ares", "uuid::+uuid", "OpenSSL::+SSL", "OpenSSL::+Crypto" ]
+}
