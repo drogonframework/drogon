@@ -1,0 +1,32 @@
+matrix:
+  include:
+    - os: linux
+      dist: xenial
+    - os: osx
+      osx_image: xcode11
+
+sudo: required
+
+language: cpp
+
+addons:
+  apt:
+    sources:
+    - xenial
+    - sourceline: 'deb http://archive.ubuntu.com/ubuntu xenial main'
+    packages:
+    - openssl
+    - libssl-dev
+    - build-essential
+    - cmake
+    - libgtest-dev
+    - libc-ares-dev
+  homebrew:
+    packages:
+    - openssl
+    - cmake
+    - libtool
+    - gtest
+
+script:
+  - ./build.sh -t
