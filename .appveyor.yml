@@ -1,0 +1,26 @@
+version: 1.1.1.{build}
+image: Visual Studio 2019
+configuration:
+- Release
+- Debug
+
+environment:
+  matrix:
+    - GENERATOR: Visual Studio 16 2019
+      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
+      ARCH: Win32
+      
+    - GENERATOR: Visual Studio 16 2019
+      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
+      ARCH: x64
+      
+init: []
+
+before_build:
+- md build
+- cd build
+- cmake --config "%CONFIGURATION%" -G "%GENERATOR%" ..
+build_script:
+- cmake --build . --config "%CONFIGURATION%"
+build:
+  verbosity: minimal

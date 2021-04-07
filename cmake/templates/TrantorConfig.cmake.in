@@ -1,0 +1,29 @@
+# - Config file for the Trantor package
+# It defines the following variables
+#  TRANTOR_INCLUDE_DIRS - include directories for Trantor
+#  TRANTOR_LIBRARIES    - libraries to link against
+#  Trantor_FOUND
+# This module defines the following IMPORTED target:
+# Trantor::Trantor
+
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR})
+if(@OpenSSL_FOUND@)
+  find_dependency(OpenSSL)
+endif()
+if(@c-ares_FOUND@)
+  find_dependency(c-ares)
+endif()
+find_dependency(Threads)
+# Compute paths
+
+# Our library dependencies (contains definitions for IMPORTED targets)
+get_filename_component(TRANTOR_CMAKE_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
+if(NOT TARGET Trantor::Trantor)
+  include("${TRANTOR_CMAKE_DIR}/TrantorTargets.cmake")
+endif()
+
+get_target_property(TRANTOR_INCLUDE_DIRS Trantor::Trantor INTERFACE_INCLUDE_DIRECTORIES)
+set(TRANTOR_LIBRARIES Trantor::Trantor)
