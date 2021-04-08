@@ -31,9 +31,10 @@ int main(int argc, char *argv[])
         std::cout << "new message:" << message << std::endl;
         if (type == WebSocketMessageType::Pong)
         {
-            std::cout << "recv a pong" << std::endl;
+            LOG_DEBUG << "recv a pong";
             if (!continually)
             {
+                LOG_DEBUG << "quit";
                 app().getLoop()->quit();
             }
         }
@@ -69,4 +70,6 @@ int main(int argc, char *argv[])
     });
     app().setLogLevel(trantor::Logger::kTrace);
     app().run();
+    LOG_DEBUG << "bye!";
+    return 0;
 }
