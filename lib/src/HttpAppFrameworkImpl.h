@@ -29,6 +29,9 @@
 namespace drogon
 {
 HttpResponsePtr defaultErrorHandler(HttpStatusCode code);
+void defaultExceptionHandler(const std::exception &,
+                             const HttpRequestPtr &,
+                             std::function<void(const HttpResponsePtr &)> &&);
 
 struct InitBeforeMainFunction
 {
@@ -505,6 +508,16 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
         return reusePort_;
     }
 
+    void setExceptionHandler(ExceptionHandler handler) override
+    {
+        exceptionHandler_ = std::move(handler);
+    }
+
+    const ExceptionHandler &getExceptionHandler() const override
+    {
+        return exceptionHandler_;
+    }
+
   private:
     void registerHttpController(const std::string &pathPattern,
                                 const internal::HttpBinderBasePtr &binder,
@@ -626,6 +639,7 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
         postRoutingObservers_;
     std::vector<std::function<void(const HttpRequestPtr &)>>
         preHandlingObservers_;
+    ExceptionHandler exceptionHandler_{defaultExceptionHandler};
 };
 
 }  // namespace drogon

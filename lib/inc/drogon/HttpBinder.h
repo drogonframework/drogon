@@ -88,6 +88,10 @@ T &getControllerObj()
     return obj;
 }
 
+void handleException(const std::exception &,
+                     const HttpRequestPtr &,
+                     std::function<void(const HttpResponsePtr &)> &&);
+
 using HttpBinderBasePtr = std::shared_ptr<HttpBinderBase>;
 template <typename FUNCTION>
 class HttpBinder : public HttpBinderBase
@@ -236,12 +240,13 @@ class HttpBinder : public HttpBinderBase
             pathArguments.pop_front();
             try
             {
-                getHandlerArgumentValue(value, std::move(v));
+                if (v.empty() == false)
+                    getHandlerArgumentValue(value, std::move(v));
             }
-            catch (...)
+            catch (const std::exception &e)
             {
-                LOG_ERROR << "Error converting string \"" << v << "\" to the "
-                          << sizeof...(Values) + 1 << "th argument";
+                handleException(e, req, std::move(callback));
+                return;
             }
         }
         else
@@ -250,10 +255,15 @@ class HttpBinder : public HttpBinderBase
             {
                 value = req->as<ValueType>();
             }
-            catch (const std::exception &)
+            catch (const std::exception &e)
             {
-                LOG_ERROR << "Error converting HttpRequest to the "
-                          << sizeof...(Values) + 1 << "th argument";
+                handleException(e, req, std::move(callback));
+                return;
+            }
+            catch (...)
+            {
+                LOG_ERROR << "Exception not derived from std::exception";
+                return;
             }
         }
 
@@ -273,7 +283,19 @@ class HttpBinder : public HttpBinderBase
         std::function<void(const HttpResponsePtr &)> &&callback,
         Values &&... values)
     {
-        callFunction(req, std::move(callback), std::move(values)...);
+        try
+        {
+            callFunction(req, callback, std::move(values)...);
+        }
+        catch (const std::exception &except)
+        {
+            handleException(except, req, std::move(callback));
+        }
+        catch (...)
+        {
+            LOG_ERROR << "Exception not derived from std::exception";
+            return;
+        }
     }
 #ifdef __cpp_impl_coroutine
     template <typename... Values,
@@ -294,16 +316,12 @@ class HttpBinder : public HttpBinderBase
                 if constexpr (std::is_same_v<AsyncTask,
                                              typename traits::return_type>)
                 {
-                    callFunction(req,
-                                 std::move(callback),
-                                 std::move(values)...);
+                    callFunction(req, callback, std::move(values)...);
                 }
                 else if constexpr (std::is_same_v<Task<>,
                                                   typename traits::return_type>)
                 {
-                    co_await callFunction(req,
-                                          std::move(callback),
-                                          std::move(values)...);
+                    co_await callFunction(req, callback, std::move(values)...);
                 }
                 else if constexpr (std::is_same_v<Task<HttpResponsePtr>,
                                                   typename traits::return_type>)
@@ -313,14 +331,13 @@ class HttpBinder : public HttpBinderBase
                     callback(std::move(resp));
                 }
             }
-            catch (const std::exception &e)
+            catch (const std::exception &except)
             {
-                LOG_ERROR << "Uncaught exception in " << req->path()
-                          << " what(): " << e.what();
+                handleException(except, req, std::move(callback));
             }
             catch (...)
             {
-                LOG_ERROR << "Uncaught unknown exception in " << req->path();
+                LOG_ERROR << "Exception not derived from std::exception";
             }
         }(req, std::move(callback), std::move(values)...);
     }

@@ -166,9 +166,9 @@ HttpServer::HttpServer(
       syncAdvices_(syncAdvices)
 {
     server_.setConnectionCallback(
-        std::bind(&HttpServer::onConnection, this, _1));
+        [this](const auto &conn) { this->onConnection(conn); });
     server_.setRecvMessageCallback(
-        std::bind(&HttpServer::onMessage, this, _1, _2));
+        [this](const auto &conn, auto buff) { this->onMessage(conn, buff); });
 }
 
 HttpServer::~HttpServer()
@@ -255,6 +255,7 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn, MsgBuffer *buf)
                 {
                     auto wsConn =
                         std::make_shared<WebSocketConnectionImpl>(conn);
+                    wsConn->setPingMessage("", std::chrono::seconds{30});
                     newWebsocketCallback_(
                         requestParser->requestImpl(),
                         [conn, wsConn, requestParser](

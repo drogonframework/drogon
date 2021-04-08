@@ -189,6 +189,49 @@ HttpResponsePtr HttpResponse::newHttpViewResponse(const std::string &viewName,
 }
 
 HttpResponsePtr HttpResponse::newFileResponse(
+    const unsigned char *pBuffer,
+    size_t bufferLength,
+    const std::string &attachmentFileName,
+    ContentType type)
+{
+    // Make Raw HttpResponse
+    auto resp = std::make_shared<HttpResponseImpl>();
+
+    // Set response body and length
+    resp->setBody(
+        std::string(reinterpret_cast<const char *>(pBuffer), bufferLength));
+
+    // Set status of message
+    resp->setStatusCode(k200OK);
+
+    // Check for type and assign proper content type in header
+    if (type != CT_NONE)
+    {
+        resp->setContentTypeCode(type);
+    }
+    else if (!attachmentFileName.empty())
+    {
+        resp->setContentTypeCode(drogon::getContentType(attachmentFileName));
+    }
+    else
+    {
+        resp->setContentTypeCode(
+            CT_APPLICATION_OCTET_STREAM);  // default content-type for file;
+    }
+
+    // Add additional header values
+    if (!attachmentFileName.empty())
+    {
+        resp->addHeader("Content-Disposition",
+                        "attachment; filename=" + attachmentFileName);
+    }
+
+    // Finalize and return response
+    doResponseCreateAdvices(resp);
+    return resp;
+}
+
+HttpResponsePtr HttpResponse::newFileResponse(
     const std::string &fullPath,
     const std::string &attachmentFileName,
     ContentType type)

@@ -3,10 +3,10 @@ cmake_minimum_required(VERSION 3.5)
 project(drogon)
 
 message(STATUS "compiler: " ${CMAKE_CXX_COMPILER_ID})
-include(CheckCXXSourceRuns)
-check_cxx_source_runs("int main(){return 0;}" not_cross_compiling)
 
-if (not_cross_compiling)
+# If your cross compile is failing, you should set
+# CMAKE_SYSTEM_NAME in your toolchain file
+if (NOT CMAKE_CROSSCOMPILING)
     set(BUILD_PROGRAMS ON)
 else ()
     set(BUILD_PROGRAMS OFF)
@@ -170,6 +170,7 @@ set(DROGON_SOURCES
     lib/src/DrTemplateBase.cc
     lib/src/FiltersFunction.cc
     lib/src/HttpAppFrameworkImpl.cc
+    lib/src/HttpBinder.cc
     lib/src/HttpClientImpl.cc
     lib/src/HttpControllersRouter.cc
     lib/src/HttpFileImpl.cc

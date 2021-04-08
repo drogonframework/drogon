@@ -1,7 +1,7 @@
 /**
  *
- *  WebSocketConnection.h
- *  An Tao
+ *  @file WebSocketConnection.h
+ *  @author An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
@@ -202,10 +202,17 @@ class WebSocketConnection
      * @note
      * Both the server and the client in Drogon automatically send the pong
      * message after receiving the ping message.
+     * An empty ping message is sent every 30 seconds by default. The method
+     * overrides the default behavior.
      */
     virtual void setPingMessage(
         const std::string &message,
         const std::chrono::duration<long double> &interval) = 0;
+
+    /**
+     * @brief Disable sending ping messages to the peer.
+     */
+    virtual void disablePing() = 0;
 
   private:
     std::shared_ptr<void> contextPtr_;

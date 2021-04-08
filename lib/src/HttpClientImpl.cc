@@ -304,7 +304,8 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
     if (!static_cast<drogon::HttpRequestImpl *>(req.get())->passThrough())
     {
         req->addHeader("connection", "Keep-Alive");
-        req->addHeader("user-agent", "DrogonClient");
+        if (!userAgent_.empty())
+            req->addHeader("user-agent", userAgent_);
     }
     // Set the host header.
     if (!domain_.empty())

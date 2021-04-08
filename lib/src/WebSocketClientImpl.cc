@@ -252,6 +252,7 @@ void WebSocketClientImpl::onRecvMessage(
         upgraded_ = true;
         websockConnPtr_ =
             std::make_shared<WebSocketConnectionImpl>(connPtr, false);
+        websockConnPtr_->setPingMessage("", std::chrono::seconds{30});
         auto thisPtr = shared_from_this();
         websockConnPtr_->setMessageCallback(
             [thisPtr](std::string &&message,
