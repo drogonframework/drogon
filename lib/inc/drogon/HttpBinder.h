@@ -1,7 +1,7 @@
 /**
  *
- *  HttpBinder.h
- *  An Tao
+ *  @file HttpBinder.h
+ *  @author An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include <drogon/exports.h>
 #include <drogon/DrClassMap.h>
 #include <drogon/DrObject.h>
 #include <drogon/utils/FunctionTraits.h>
@@ -88,9 +89,10 @@ T &getControllerObj()
     return obj;
 }
 
-void handleException(const std::exception &,
-                     const HttpRequestPtr &,
-                     std::function<void(const HttpResponsePtr &)> &&);
+DROGON_EXPORT void handleException(
+    const std::exception &,
+    const HttpRequestPtr &,
+    std::function<void(const HttpResponsePtr &)> &&);
 
 using HttpBinderBasePtr = std::shared_ptr<HttpBinderBase>;
 template <typename FUNCTION>

@@ -1,6 +1,6 @@
 /**
  *
- *  drogon_plugin_SecureSSLRedirector.h
+ *  @file drogon_plugin_SecureSSLRedirector.h
  *
  */
 
