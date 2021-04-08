@@ -430,75 +430,77 @@ install(TARGETS ${PROJECT_NAME}
     LIBRARY DESTINATION "${INSTALL_LIB_DIR}" COMPONENT lib)
 
 set(DROGON_HEADERS
-    lib/inc/drogon/Attribute.h
-    lib/inc/drogon/CacheMap.h
-    lib/inc/drogon/Cookie.h
-    lib/inc/drogon/DrClassMap.h
-    lib/inc/drogon/DrObject.h
-    lib/inc/drogon/DrTemplate.h
-    lib/inc/drogon/DrTemplateBase.h
-    lib/inc/drogon/HttpAppFramework.h
-    lib/inc/drogon/HttpBinder.h
-    lib/inc/drogon/HttpClient.h
-    lib/inc/drogon/HttpController.h
-    lib/inc/drogon/HttpFilter.h
-    lib/inc/drogon/HttpRequest.h
-    lib/inc/drogon/HttpResponse.h
-    lib/inc/drogon/HttpSimpleController.h
-    lib/inc/drogon/HttpTypes.h
-    lib/inc/drogon/HttpViewData.h
-    lib/inc/drogon/IntranetIpFilter.h
-    lib/inc/drogon/IOThreadStorage.h
-    lib/inc/drogon/LocalHostFilter.h
-    lib/inc/drogon/MultiPart.h
-    lib/inc/drogon/NotFound.h
-    lib/inc/drogon/Session.h
-    lib/inc/drogon/UploadFile.h
-    lib/inc/drogon/WebSocketClient.h
-    lib/inc/drogon/WebSocketConnection.h
-    lib/inc/drogon/WebSocketController.h
-    lib/inc/drogon/drogon.h
-    lib/inc/drogon/version.h
-    lib/inc/drogon/drogon_callbacks.h
-    lib/inc/drogon/PubSubService.h)
+    ${CMAKE_CURRENT_LIST_DIR}/../../lib/inc/drogon/Attribute.h
+    ${CMAKE_CURRENT_LIST_DIR}/../../lib/inc/drogon/CacheMap.h
+    ${CMAKE_CURRENT_LIST_DIR}/../../lib/inc/drogon/Cookie.h
+    ${CMAKE_CURRENT_LIST_DIR}/../../lib/inc/drogon/DrClassMap.h
+    ${CMAKE_CURRENT_LIST_DIR}/../../lib/inc/drogon/DrObject.h
+    ${CMAKE_CURRENT_LIST_DIR}/../../lib/inc/drogon/DrTemplate.h
+    ${CMAKE_CURRENT_LIST_DIR}/../../lib/inc/drogon/DrTemplateBase.h
+    ${CMAKE_CURRENT_LIST_DIR}/../../lib/inc/drogon/HttpAppFramework.h
+    ${CMAKE_CURRENT_LIST_DIR}/../../lib/inc/drogon/HttpBinder.h
+    ${CMAKE_CURRENT_LIST_DIR}/../../lib/inc/drogon/HttpClient.h
+    ${CMAKE_CURRENT_LIST_DIR}/../../lib/inc/drogon/HttpController.h
+    ${CMAKE_CURRENT_LIST_DIR}/../../lib/inc/drogon/HttpFilter.h
+    ${CMAKE_CURRENT_LIST_DIR}/../../lib/inc/drogon/HttpRequest.h
+    ${CMAKE_CURRENT_LIST_DIR}/../../lib/inc/drogon/HttpResponse.h
+    ${CMAKE_CURRENT_LIST_DIR}/../../lib/inc/drogon/HttpSimpleController.h
+    ${CMAKE_CURRENT_LIST_DIR}/../../lib/inc/drogon/HttpTypes.h
+    ${CMAKE_CURRENT_LIST_DIR}/../../lib/inc/drogon/HttpViewData.h
+    ${CMAKE_CURRENT_LIST_DIR}/../../lib/inc/drogon/IntranetIpFilter.h
+    ${CMAKE_CURRENT_LIST_DIR}/../../lib/inc/drogon/IOThreadStorage.h
+    ${CMAKE_CURRENT_LIST_DIR}/../../lib/inc/drogon/LocalHostFilter.h
+    ${CMAKE_CURRENT_LIST_DIR}/../../lib/inc/drogon/MultiPart.h
+    ${CMAKE_CURRENT_LIST_DIR}/../../lib/inc/drogon/NotFound.h
+    ${CMAKE_CURRENT_LIST_DIR}/../../lib/inc/drogon/Session.h
+    ${CMAKE_CURRENT_LIST_DIR}/../../lib/inc/drogon/UploadFile.h
+    ${CMAKE_CURRENT_LIST_DIR}/../../lib/inc/drogon/WebSocketClient.h
+    ${CMAKE_CURRENT_LIST_DIR}/../../lib/inc/drogon/WebSocketConnection.h
+    ${CMAKE_CURRENT_LIST_DIR}/../../lib/inc/drogon/WebSocketController.h
+    ${CMAKE_CURRENT_LIST_DIR}/../../lib/inc/drogon/drogon.h
+    ${CMAKE_CURRENT_LIST_DIR}/../../lib/inc/drogon/version.h
+    ${CMAKE_CURRENT_LIST_DIR}/../../lib/inc/drogon/drogon_callbacks.h
+    ${CMAKE_CURRENT_LIST_DIR}/../../lib/inc/drogon/PubSubService.h)
 install(FILES ${DROGON_HEADERS} DESTINATION ${INSTALL_INCLUDE_DIR}/drogon)
 
 set(ORM_HEADERS
-    orm_lib/inc/drogon/orm/ArrayParser.h
-    orm_lib/inc/drogon/orm/Criteria.h
-    orm_lib/inc/drogon/orm/DbClient.h
-    orm_lib/inc/drogon/orm/DbTypes.h
-    orm_lib/inc/drogon/orm/Exception.h
-    orm_lib/inc/drogon/orm/Field.h
-    orm_lib/inc/drogon/orm/FunctionTraits.h
-    orm_lib/inc/drogon/orm/Mapper.h
-    orm_lib/inc/drogon/orm/Result.h
-    orm_lib/inc/drogon/orm/ResultIterator.h
-    orm_lib/inc/drogon/orm/Row.h
-    orm_lib/inc/drogon/orm/RowIterator.h
-    orm_lib/inc/drogon/orm/SqlBinder.h
-    orm_lib/inc/drogon/orm/RestfulController.h)
+   ${CMAKE_CURRENT_LIST_DIR}/../../orm_lib/inc/drogon/orm/ArrayParser.h
+   ${CMAKE_CURRENT_LIST_DIR}/../../orm_lib/inc/drogon/orm/Criteria.h
+   ${CMAKE_CURRENT_LIST_DIR}/../../orm_lib/inc/drogon/orm/DbClient.h
+   ${CMAKE_CURRENT_LIST_DIR}/../../orm_lib/inc/drogon/orm/DbTypes.h
+   ${CMAKE_CURRENT_LIST_DIR}/../../orm_lib/inc/drogon/orm/Exception.h
+   ${CMAKE_CURRENT_LIST_DIR}/../../orm_lib/inc/drogon/orm/Field.h
+   ${CMAKE_CURRENT_LIST_DIR}/../../orm_lib/inc/drogon/orm/FunctionTraits.h
+   ${CMAKE_CURRENT_LIST_DIR}/../../orm_lib/inc/drogon/orm/Mapper.h
+   ${CMAKE_CURRENT_LIST_DIR}/../../orm_lib/inc/drogon/orm/Result.h
+   ${CMAKE_CURRENT_LIST_DIR}/../../orm_lib/inc/drogon/orm/ResultIterator.h
+   ${CMAKE_CURRENT_LIST_DIR}/../../orm_lib/inc/drogon/orm/Row.h
+   ${CMAKE_CURRENT_LIST_DIR}/../../orm_lib/inc/drogon/orm/RowIterator.h
+   ${CMAKE_CURRENT_LIST_DIR}/../../orm_lib/inc/drogon/orm/SqlBinder.h
+   ${CMAKE_CURRENT_LIST_DIR}/../../orm_lib/inc/drogon/orm/RestfulController.h)
 install(FILES ${ORM_HEADERS} DESTINATION ${INSTALL_INCLUDE_DIR}/drogon/orm)
 
-set(NOSQL_HEADERS nosql_lib/redis/inc/drogon/nosql/RedisClient.h
-    nosql_lib/redis/inc/drogon/nosql/RedisResult.h
-    nosql_lib/redis/inc/drogon/nosql/RedisException.h)
+set(NOSQL_HEADERS 
+   ${CMAKE_CURRENT_LIST_DIR}/../../nosql_lib/redis/inc/drogon/nosql/RedisClient.h
+   ${CMAKE_CURRENT_LIST_DIR}/../../nosql_lib/redis/inc/drogon/nosql/RedisResult.h
+   ${CMAKE_CURRENT_LIST_DIR}/../../nosql_lib/redis/inc/drogon/nosql/RedisException.h)
 install(FILES ${NOSQL_HEADERS} DESTINATION ${INSTALL_INCLUDE_DIR}/drogon/nosql)
 
 set(DROGON_UTIL_HEADERS
-    lib/inc/drogon/utils/FunctionTraits.h
-    lib/inc/drogon/utils/Utilities.h
-    lib/inc/drogon/utils/any.h
-    lib/inc/drogon/utils/string_view.h
-    lib/inc/drogon/utils/optional.h
-    lib/inc/drogon/utils/coroutine.h
-    lib/inc/drogon/utils/HttpConstraint.h
-    lib/inc/drogon/utils/OStringStream.h)
+   ${CMAKE_CURRENT_LIST_DIR}/../../lib/inc/drogon/utils/FunctionTraits.h
+   ${CMAKE_CURRENT_LIST_DIR}/../../lib/inc/drogon/utils/Utilities.h
+   ${CMAKE_CURRENT_LIST_DIR}/../../lib/inc/drogon/utils/any.h
+   ${CMAKE_CURRENT_LIST_DIR}/../../lib/inc/drogon/utils/string_view.h
+   ${CMAKE_CURRENT_LIST_DIR}/../../lib/inc/drogon/utils/optional.h
+   ${CMAKE_CURRENT_LIST_DIR}/../../lib/inc/drogon/utils/coroutine.h
+   ${CMAKE_CURRENT_LIST_DIR}/../../lib/inc/drogon/utils/HttpConstraint.h
+   ${CMAKE_CURRENT_LIST_DIR}/../../lib/inc/drogon/utils/OStringStream.h)
 install(FILES ${DROGON_UTIL_HEADERS}
     DESTINATION ${INSTALL_INCLUDE_DIR}/drogon/utils)
 
-set(DROGON_PLUGIN_HEADERS lib/inc/drogon/plugins/Plugin.h
-    lib/inc/drogon/plugins/SecureSSLRedirector.h)
+set(DROGON_PLUGIN_HEADERS 
+   ${CMAKE_CURRENT_LIST_DIR}/../../lib/inc/drogon/plugins/Plugin.h
+   ${CMAKE_CURRENT_LIST_DIR}/../../lib/inc/drogon/plugins/SecureSSLRedirector.h)
 install(FILES ${DROGON_PLUGIN_HEADERS}
     DESTINATION ${INSTALL_INCLUDE_DIR}/drogon/plugins)
 
