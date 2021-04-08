@@ -48,7 +48,7 @@ set(DROGON_VERSION_STRING "${DROGON_VERSION}")
 set(INSTALL_LIB_DIR lib CACHE PATH "Installation directory for libraries")
 set(INSTALL_BIN_DIR bin CACHE PATH "Installation directory for executables")
 set(INSTALL_INCLUDE_DIR include CACHE PATH "Installation directory for header files")
-set(DEF_INSTALL_DROGON_CMAKE_DIR lib/cmake/Drogon)
+set(DEF_INSTALL_DROGON_CMAKE_DIR lib/cmake/nxxm_drogon)
 set(INSTALL_DROGON_CMAKE_DIR ${DEF_INSTALL_DROGON_CMAKE_DIR}
     CACHE PATH "Installation directory for cmake files")
 
