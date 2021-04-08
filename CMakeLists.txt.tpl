@@ -499,7 +499,7 @@ install(FILES ${DROGON_UTIL_HEADERS}
     DESTINATION ${INSTALL_INCLUDE_DIR}/drogon/utils)
 
 set(DROGON_PLUGIN_HEADERS 
-   $y{CMAKE_CURRENT_LIST_DIR}/../../lib/inc/drogon/plugins/Plugin.h
+   ${CMAKE_CURRENT_LIST_DIR}/../../lib/inc/drogon/plugins/Plugin.h
    ${CMAKE_CURRENT_LIST_DIR}/../../lib/inc/drogon/plugins/SecureSSLRedirector.h)
 install(FILES ${DROGON_PLUGIN_HEADERS}
     DESTINATION ${INSTALL_INCLUDE_DIR}/drogon/plugins)
