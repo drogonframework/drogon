@@ -499,7 +499,7 @@ install(FILES ${DROGON_UTIL_HEADERS}
     DESTINATION ${INSTALL_INCLUDE_DIR}/drogon/utils)
 
 set(DROGON_PLUGIN_HEADERS 
-   ${CMAKE_CURRENT_LIST_DIR}/../../lib/inc/drogon/plugins/Plugin.h
+   $y{CMAKE_CURRENT_LIST_DIR}/../../lib/inc/drogon/plugins/Plugin.h
    ${CMAKE_CURRENT_LIST_DIR}/../../lib/inc/drogon/plugins/SecureSSLRedirector.h)
 install(FILES ${DROGON_PLUGIN_HEADERS}
     DESTINATION ${INSTALL_INCLUDE_DIR}/drogon/plugins)
@@ -533,15 +533,15 @@ write_basic_package_version_file(
 install(FILES
     "${CMAKE_CURRENT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/DrogonConfig.cmake"
     "${CMAKE_CURRENT_BINARY_DIR}/DrogonConfigVersion.cmake"
-    "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules/FindUUID.cmake"
-    "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules/FindJsoncpp.cmake"
-    "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules/FindSQLite3.cmake"
-    "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules/FindMySQL.cmake"
-    "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules/Findpg.cmake"
-    "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules/FindBrotli.cmake"
-    "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules/Findcoz-profiler.cmake"
-    "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules/FindHiredis.cmake"
-    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/DrogonUtilities.cmake"
+    "${CMAKE_CURRENT_LIST_DIR}/../../cmake_modules/FindUUID.cmake"
+    "${CMAKE_CURRENT_LIST_DIR}/../../cmake_modules/FindJsoncpp.cmake"
+    "${CMAKE_CURRENT_LIST_DIR}/../../cmake_modules/FindSQLite3.cmake"
+    "${CMAKE_CURRENT_LIST_DIR}/../../cmake_modules/FindMySQL.cmake"
+    "${CMAKE_CURRENT_LIST_DIR}/../../cmake_modules/Findpg.cmake"
+    "${CMAKE_CURRENT_LIST_DIR}/../../cmake_modules/FindBrotli.cmake"
+    "${CMAKE_CURRENT_LIST_DIR}/../../cmake_modules/Findcoz-profiler.cmake"
+    "${CMAKE_CURRENT_LIST_DIR}/../../cmake_modules/FindHiredis.cmake"
+    "${CMAKE_CURRENT_LIST_DIR}/../../cmake/DrogonUtilities.cmake"
     DESTINATION "${INSTALL_DROGON_CMAKE_DIR}"
     COMPONENT dev)
 
