@@ -42,27 +42,32 @@ namespace [[dbName]]
 {
 <%c++
 auto &schema=@@.get<std::string>("schema");
-if(!schema.empty())
-{
-    $$<<"namespace "<<schema<<"\n";
-    $$<<"{\n";
-}
-auto &relationships=@@.get<std::vector<Relationship>>("relationships");
+    if(!schema.empty())
+    {
+        $$<<"namespace "<<schema<<"\n";
+        $$<<"{\n";
+    }
+    std::vector<std::string> relationshipClassNames;
+    auto &relationships=@@.get<std::vector<Relationship>>("relationships");
     for(auto &relationship : relationships)
     {
-        auto &name=relationship.targetTableName();
-        auto relationshipClassName=nameTransform(name, true);
+        auto &name = relationship.targetTableName();
+        auto relationshipClassName = nameTransform(name, true);
+        relationshipClassNames.push_back(relationshipClassName);
+        if(relationship.type() == Relationship::Type::ManyToMany)
+        {
+            auto &pivotTableName = relationship.pivotTable().tableName();
+            auto pivotTableClassName = nameTransform(pivotTableName, true);
+            relationshipClassNames.push_back(pivotTableClassName);
+        }
+    }
+    std::sort(relationshipClassNames.begin(), relationshipClassNames.end());
+    relationshipClassNames.erase(std::unique(relationshipClassNames.begin(), relationshipClassNames.end()), relationshipClassNames.end());
+    for(std::string &relationshipClassName : relationshipClassNames)
+    {
 %>
 class {%relationshipClassName%};
 <%c++
-        if(relationship.type() == Relationship::Type::ManyToMany)
-        {
-            auto &pivotTableName=relationship.pivotTable().tableName();
-            auto pivotTableClassName=nameTransform(pivotTableName, true);
-%>
-class {%pivotTableClassName%};
-<%c++
-        }
     }
 %>
 
