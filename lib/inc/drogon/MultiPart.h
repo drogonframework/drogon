@@ -1,7 +1,7 @@
 /**
  *
  *  @file MultiPart.h
- *  An Tao
+ *  @author An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <drogon/exports.h>
 #include <drogon/HttpRequest.h>
 #include <map>
 #include <string>
@@ -27,7 +28,7 @@ class HttpFileImpl;
  * @brief This class represents a uploaded file by a HTTP request.
  *
  */
-class HttpFile
+class DROGON_EXPORT HttpFile
 {
   public:
     HttpFile(std::shared_ptr<HttpFileImpl> &&implPtr);
@@ -99,7 +100,7 @@ class HttpFile
 
 /// A parser class which help the user to get the files and the parameters in
 /// the multipart format request.
-class MultiPartParser
+class DROGON_EXPORT MultiPartParser
 {
   public:
     MultiPartParser(){};

@@ -1,7 +1,7 @@
 /**
  *
- *  Field.h
- *  An Tao
+ *  @file Field.h
+ *  @author An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include <drogon/exports.h>
 #include <drogon/utils/string_view.h>
 #include <drogon/orm/ArrayParser.h>
 #include <drogon/orm/Result.h>
@@ -39,7 +40,7 @@ namespace orm
  * A field represents one entry in a row.  It represents an actual value
  * in the result set, and can be converted to various types.
  */
-class Field
+class DROGON_EXPORT Field
 {
   public:
     using SizeType = unsigned long;
@@ -159,13 +160,13 @@ class Field
     const Result result_;
 };
 template <>
-std::string Field::as<std::string>() const;
+DROGON_EXPORT std::string Field::as<std::string>() const;
 template <>
-const char *Field::as<const char *>() const;
+DROGON_EXPORT const char *Field::as<const char *>() const;
 template <>
-char *Field::as<char *>() const;
+DROGON_EXPORT char *Field::as<char *>() const;
 template <>
-std::vector<char> Field::as<std::vector<char>>() const;
+DROGON_EXPORT std::vector<char> Field::as<std::vector<char>>() const;
 template <>
 inline drogon::string_view Field::as<drogon::string_view>() const
 {

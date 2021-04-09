@@ -1,7 +1,7 @@
 /**
  *
- *  Cookis.h
- *  An Tao
+ *  @file Cookis.h
+ *  @author An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
@@ -13,6 +13,7 @@
  */
 #pragma once
 
+#include <drogon/exports.h>
 #include <trantor/utils/Date.h>
 #include <string>
 #include <limits>
@@ -22,7 +23,7 @@ namespace drogon
 /**
  * @brief this class represents a cookie entity.
  */
-class Cookie
+class DROGON_EXPORT Cookie
 {
   public:
     /// Constructor

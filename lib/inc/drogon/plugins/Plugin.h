@@ -1,6 +1,6 @@
 /**
- *  Plugin.h
- *  An Tao
+ *  @file Plugin.h
+ *  @author An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
@@ -32,7 +32,8 @@ enum class PluginStatus
  * @brief The abstract base class for plugins.
  *
  */
-class PluginBase : public virtual DrObjectBase, public trantor::NonCopyable
+class DROGON_EXPORT PluginBase : public virtual DrObjectBase,
+                                 public trantor::NonCopyable
 {
   public:
     /// This method must be called by drogon.

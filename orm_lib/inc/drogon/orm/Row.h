@@ -1,7 +1,7 @@
 /**
  *
- *  Row.h
- *  An Tao
+ *  @file Row.h
+ *  @author An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include <drogon/exports.h>
 #include <drogon/orm/Result.h>
 #include <string>
 namespace drogon
@@ -41,7 +42,7 @@ class ConstReverseRowIterator;
  * The row itself acts like a (non-modifyable) container, complete with its
  * own const_iterator and const_reverse_iterator.
  */
-class Row
+class DROGON_EXPORT Row
 {
   public:
     using SizeType = unsigned long;

@@ -1,7 +1,7 @@
 /**
  *
- *  HttpFilter.h
- *  An Tao
+ *  @file HttpFilter.h
+ *  @author An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
@@ -26,7 +26,7 @@ namespace drogon
  * @brief The abstract base class for filters
  * For more details on the class, see the wiki site (the 'Filter' section)
  */
-class HttpFilterBase : public virtual DrObjectBase
+class DROGON_EXPORT HttpFilterBase : public virtual DrObjectBase
 {
   public:
     /// This virtual function should be overrided in subclasses.

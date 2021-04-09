@@ -13,6 +13,8 @@
  */
 
 #pragma once
+
+#include <drogon/exports.h>
 #include <vector>
 #include <string>
 #include <memory>
@@ -39,7 +41,7 @@ enum class RedisResultType
  * available in the context of the result callback, one can't hold or copy or
  * move a RedisResult object for later use after the callback is returned.
  */
-class RedisResult
+class DROGON_EXPORT RedisResult
 {
   public:
     explicit RedisResult(redisReply *result) : result_(result)

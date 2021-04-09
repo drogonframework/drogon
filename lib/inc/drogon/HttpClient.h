@@ -14,6 +14,7 @@
  */
 #pragma once
 
+#include <drogon/exports.h>
 #include <drogon/HttpTypes.h>
 #include <drogon/drogon_callbacks.h>
 #include <drogon/HttpResponse.h>
@@ -67,7 +68,7 @@ struct HttpRespAwaiter : public CallbackAwaiter<HttpResponsePtr>
  * response callbacks are invoked without fear of accidental deconstruction.
  *
  */
-class HttpClient : public trantor::NonCopyable
+class DROGON_EXPORT HttpClient : public trantor::NonCopyable
 {
   public:
     /**

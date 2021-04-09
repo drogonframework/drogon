@@ -57,7 +57,7 @@ struct WebSocketConnectionAwaiter : public CallbackAwaiter<HttpResponsePtr>
  * @brief WebSocket client abstract class
  *
  */
-class WebSocketClient
+class DROGON_EXPORT WebSocketClient
 {
   public:
     /// Get the WebSocket connection that is typically used to send messages.

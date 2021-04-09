@@ -1,7 +1,7 @@
 /**
  *
  *  @file DrObject.h
- *  An Tao
+ *  @author An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <drogon/exports.h>
 #include <drogon/DrClassMap.h>
 
 #include <string>
@@ -29,7 +30,7 @@ namespace drogon
  * @brief The base class for all drogon reflection classes.
  *
  */
-class DrObjectBase
+class DROGON_EXPORT DrObjectBase
 {
   public:
     /**
@@ -79,9 +80,8 @@ class DrObject : public virtual DrObjectBase
 
   protected:
     // protect constructor to make this class only inheritable
-    DrObject()
-    {
-    }
+    DrObject() = default;
+    ~DrObject() override = default;
 
   private:
     class DrAllocator

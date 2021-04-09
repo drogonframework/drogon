@@ -43,12 +43,7 @@ set(INSTALL_DROGON_CMAKE_DIR ${DEF_INSTALL_DROGON_CMAKE_DIR}
 if (BUILD_DROGON_SHARED)
     set(BUILD_TRANTOR_SHARED TRUE)
     set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
-    set(CMAKE_THREAD_LIBS_INIT "-lpthread")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
-    set(CMAKE_HAVE_THREADS_LIBRARY 1)
-    set(CMAKE_USE_WIN32_THREADS_INIT 0)
-    set(CMAKE_USE_PTHREADS_INIT 1)
-    set(THREADS_PREFER_PTHREAD_FLAG ON)
+    find_package(Threads)
     # set(BUILD_EXAMPLES FALSE)
     list(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES
         "${CMAKE_INSTALL_PREFIX}/${INSTALL_LIB_DIR}" isSystemDir)
@@ -56,9 +51,23 @@ if (BUILD_DROGON_SHARED)
         set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${INSTALL_LIB_DIR}")
     endif ("${isSystemDir}" STREQUAL "-1")
     add_library(${PROJECT_NAME} SHARED)
+    target_link_libraries(${PROJECT_NAME} PUBLIC Threads::Threads)
+    if(WIN32)
+      target_link_libraries(${PROJECT_NAME} PUBLIC Rpcrt4 ws2_32)
+      if(CMAKE_CXX_COMPILER_ID MATCHES MSVC)
+          # Ignore MSVC C4251 and C4275 warning of exporting std objects with no dll export
+          # We export class to facilitate maintenance, thus if you compile
+          # drogon on windows as a shared library, you will need to use
+          # exact same compiler for drogon and your app.
+          target_compile_options(${PROJECT_NAME} PUBLIC /wd4251 /wd4275)
+      endif()
+    endif()
 else (BUILD_DROGON_SHARED)
     add_library(${PROJECT_NAME} STATIC)
 endif (BUILD_DROGON_SHARED)
+
+include(GenerateExportHeader)
+generate_export_header(${PROJECT_NAME} EXPORT_FILE_NAME ${CMAKE_CURRENT_BINARY_DIR}/exports/drogon/exports.h)
 
 include(cmake/DrogonUtilities.cmake)
 include(CheckIncludeFileCXX)
@@ -81,6 +90,7 @@ target_include_directories(
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/nosql_lib/redis/inc>
     $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}>
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/trantor>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/exports>
     $<INSTALL_INTERFACE:${INSTALL_INCLUDE_DIR}>)
 
 if (WIN32)
@@ -258,15 +268,20 @@ if (BUILD_REDIS)
             nosql_lib/redis/src/RedisClientManager.cc
             nosql_lib/redis/src/RedisTransactionImpl.cc)
 
-        if (BUILD_TESTING)
-            add_subdirectory(nosql_lib/redis/tests)
-        endif (BUILD_TESTING)
-    else ()
-        set(DROGON_SOURCES ${DROGON_SOURCES} lib/src/RedisClientManagerSkipped.cc)
     endif (Hiredis_FOUND)
-else ()
-    set(DROGON_SOURCES ${DROGON_SOURCES} lib/src/RedisClientManagerSkipped.cc)
 endif (BUILD_REDIS)
+
+if (NOT Hiredis_FOUND)
+    set(DROGON_SOURCES
+            ${DROGON_SOURCES}
+            lib/src/RedisClientSkipped.cc
+            lib/src/RedisResultSkipped.cc
+            lib/src/RedisClientManagerSkipped.cc)
+endif (NOT Hiredis_FOUND)
+
+if (BUILD_TESTING)
+    add_subdirectory(nosql_lib/redis/tests)
+endif (BUILD_TESTING)
 
 find_package(ZLIB REQUIRED)
 target_link_libraries(${PROJECT_NAME} PRIVATE ZLIB::ZLIB)
@@ -310,15 +325,13 @@ if (COZ_PROFILING)
     target_include_directories(${PROJECT_NAME} PUBLIC ${COZ_INCLUDE_DIRS})
 endif (COZ_PROFILING)
 
-if (pg_FOUND OR MySQL_FOUND OR SQLite3_FOUND)
-    set(DROGON_SOURCES
+set(DROGON_SOURCES
         ${DROGON_SOURCES}
         orm_lib/src/ArrayParser.cc
         orm_lib/src/Criteria.cc
         orm_lib/src/DbClient.cc
         orm_lib/src/DbClientImpl.cc
         orm_lib/src/DbClientLockFree.cc
-        orm_lib/src/DbClientManager.cc
         orm_lib/src/DbConnection.cc
         orm_lib/src/Exception.cc
         orm_lib/src/Field.cc
@@ -327,6 +340,10 @@ if (pg_FOUND OR MySQL_FOUND OR SQLite3_FOUND)
         orm_lib/src/SqlBinder.cc
         orm_lib/src/TransactionImpl.cc
         orm_lib/src/RestfulController.cc)
+if (pg_FOUND OR MySQL_FOUND OR SQLite3_FOUND)
+    set(DROGON_SOURCES
+            ${DROGON_SOURCES}
+            orm_lib/src/DbClientManager.cc)
 else (pg_FOUND OR MySQL_FOUND OR SQLite3_FOUND)
     set(DROGON_SOURCES ${DROGON_SOURCES} lib/src/DbClientManagerSkipped.cc)
 endif (pg_FOUND OR MySQL_FOUND OR SQLite3_FOUND)
@@ -399,9 +416,7 @@ if (BUILD_TESTING)
     if (SQLite3_FOUND)
         add_subdirectory(${PROJECT_SOURCE_DIR}/orm_lib/src/sqlite3_impl/test)
     endif (SQLite3_FOUND)
-    if (pg_FOUND OR MySQL_FOUND OR SQLite3_FOUND)
-        add_subdirectory(${PROJECT_SOURCE_DIR}/orm_lib/tests)
-    endif (pg_FOUND OR MySQL_FOUND OR SQLite3_FOUND)
+    add_subdirectory(${PROJECT_SOURCE_DIR}/orm_lib/tests)
     find_package(GTest)
     if (GTest_FOUND)
         message(STATUS "gtest found")
@@ -414,6 +429,7 @@ endif (BUILD_TESTING)
 
 install(TARGETS ${PROJECT_NAME}
     EXPORT DrogonTargets
+    RUNTIME DESTINATION "${INSTALL_BIN_DIR}" COMPONENT bin
     ARCHIVE DESTINATION "${INSTALL_LIB_DIR}" COMPONENT lib
     LIBRARY DESTINATION "${INSTALL_LIB_DIR}" COMPONENT lib)
 
@@ -448,7 +464,8 @@ set(DROGON_HEADERS
     lib/inc/drogon/drogon.h
     lib/inc/drogon/version.h
     lib/inc/drogon/drogon_callbacks.h
-    lib/inc/drogon/PubSubService.h)
+    lib/inc/drogon/PubSubService.h
+    ${CMAKE_CURRENT_BINARY_DIR}/exports/drogon/exports.h)
 install(FILES ${DROGON_HEADERS} DESTINATION ${INSTALL_INCLUDE_DIR}/drogon)
 
 set(ORM_HEADERS

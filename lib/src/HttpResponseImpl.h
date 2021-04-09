@@ -1,7 +1,7 @@
 /**
  *
  *  @file HttpResponseImpl.h
- *  An Tao
+ *  @author An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
@@ -16,6 +16,7 @@
 
 #include "HttpUtils.h"
 #include "HttpMessageBody.h"
+#include <drogon/exports.h>
 #include <drogon/HttpResponse.h>
 #include <drogon/utils/Utilities.h>
 #include <trantor/net/InetAddress.h>
@@ -29,7 +30,7 @@
 
 namespace drogon
 {
-class HttpResponseImpl : public HttpResponse
+class DROGON_EXPORT HttpResponseImpl : public HttpResponse
 {
     friend class HttpResponseParser;
 

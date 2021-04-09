@@ -96,3 +96,4 @@ HttpResponsePtr SecureSSLRedirector::redirectToSSL(
         }
     }
 }
+SecureSSLRedirector::SecureSSLRedirector() = default;

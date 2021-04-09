@@ -17,13 +17,29 @@ add_executable(_drogon_ctl
                create.cc
                create_view.cc)
 target_link_libraries(_drogon_ctl ${PROJECT_NAME})
+if (WIN32 AND BUILD_DROGON_SHARED)
+  set(DROGON_FILE $<TARGET_FILE:drogon>)
+  set(TRANTOR_FILE $<TARGET_FILE:trantor>)
+  add_custom_command(TARGET _drogon_ctl POST_BUILD
+          COMMAND ${CMAKE_COMMAND}
+          -DCTL_FILE=${DROGON_FILE}
+          -DINSTALL_BIN_DIR=$<TARGET_FILE_DIR:_drogon_ctl>
+          -P
+          ${CMAKE_CURRENT_SOURCE_DIR}/CopyDlls.cmake)
+  add_custom_command(TARGET _drogon_ctl POST_BUILD
+          COMMAND ${CMAKE_COMMAND}
+          -DCTL_FILE=${TRANTOR_FILE}
+          -DINSTALL_BIN_DIR=$<TARGET_FILE_DIR:_drogon_ctl>
+          -P
+          ${CMAKE_CURRENT_SOURCE_DIR}/CopyDlls.cmake)
+endif()
 file(GLOB SCP_LIST ${CMAKE_CURRENT_SOURCE_DIR}/templates/*.csp)
 foreach(cspFile ${SCP_LIST})
   message(STATUS "cspFile:" ${cspFile})
   get_filename_component(classname ${cspFile} NAME_WE)
   message(STATUS "view classname:" ${classname})
   add_custom_command(OUTPUT ${classname}.h ${classname}.cc
-                     COMMAND _drogon_ctl
+                     COMMAND $<TARGET_FILE:_drogon_ctl>
                              ARGS
                              create
                              view
@@ -47,6 +63,7 @@ if(WIN32)
                      COMMAND ${CMAKE_COMMAND}
                              -DCTL_FILE=${CTL_FILE}
                              -DINSTALL_BIN_DIR=${INSTALL_BIN_DIR}
+                             -DRENAME_EXE=ON
                              -P
                              ${CMAKE_CURRENT_SOURCE_DIR}/CopyDlls.cmake)
 else(WIN32)

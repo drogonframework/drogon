@@ -1,10 +1,30 @@
 #!/usr/bin/env bash
 
-drogon_ctl_exec=$(pwd)/build/drogon_ctl/drogon_ctl
+echo "First arg:"
+echo $1
+
+os='linux'
+if [ "$1" = "-w" ]; then
+  os='windows'
+fi
+
+src_dir=$(pwd)
+
+echo "OS:" $os
+
+if [ $os = "linux" ]; then
+  drogon_ctl_exec=$(pwd)/build/drogon_ctl/drogon_ctl
+else
+  drogon_ctl_exec=$(pwd)/build/drogon_ctl/Debug/drogon_ctl.exe
+  export PATH=$PATH:$src_dir/install/bin
+fi
 echo ${drogon_ctl_exec}
 cd build/examples/
 
-make_program=make
+if [ $os = "windows" ]; then
+  cd Debug
+fi
+
 make_flags=''
 cmake_gen=''
 parallel=1
@@ -22,15 +42,18 @@ case $(nproc) in
     ;;
 esac
 
-if [ -f /bin/ninja ]; then
-    make_program=ninja
-    cmake_gen='-G Ninja'
-else
-    make_flags="$make_flags -j$parallel"
+if [ $os = "linux" ]; then
+  if [ -f /bin/ninja ]; then
+      cmake_gen='-G Ninja'
+  else
+      make_flags="$make_flags -j$parallel"
+  fi
 fi
 
 #Make webapp run as a daemon
-sed -i -e "s/\"run_as_daemon.*$/\"run_as_daemon\": true\,/" config.example.json
+if [ $os = "linux" ]; then
+  sed -i -e "s/\"run_as_daemon.*$/\"run_as_daemon\": true\,/" config.example.json
+fi
 sed -i -e "s/\"relaunch_on_error.*$/\"relaunch_on_error\": true\,/" config.example.json
 sed -i -e "s/\"threads_num.*$/\"threads_num\": 0\,/" config.example.json
 sed -i -e "s/\"use_brotli.*$/\"use_brotli\": true\,/" config.example.json
@@ -45,7 +68,8 @@ if [ ! -f "webapp_test" ]; then
 fi
 
 killall -9 webapp
-./webapp
+./webapp &
+webapppid=$!
 
 sleep 4
 
@@ -83,7 +107,7 @@ if [ $? -ne 0 ]; then
     exit -1
 fi
 
-killall -9 webapp
+kill -9 $webapppid
 
 #Test drogon_ctl
 echo "Test the drogon_ctl"
@@ -91,6 +115,7 @@ rm -rf drogon_test
 
 ${drogon_ctl_exec} create project drogon_test
 
+ls -la
 cd drogon_test/controllers
 
 ${drogon_ctl_exec} create controller Test::SimpleCtrl
@@ -133,6 +158,10 @@ cd ../views
 echo "Hello, world!" >>hello.csp
 
 cd ../build
+if [ $os = "windows" ]; then
+  conan install $src_dir -s compiler="Visual Studio" -s compiler.version=16 -sbuild_type=Debug -g cmake_paths
+  cmake_gen="$cmake_gen -DCMAKE_TOOLCHAIN_FILE=conan_paths.cmake -DCMAKE_INSTALL_PREFIX=$src_dir/install"
+fi
 cmake .. $cmake_gen
 
 if [ $? -ne 0 ]; then
@@ -140,16 +169,23 @@ if [ $? -ne 0 ]; then
     exit -1
 fi
 
-$make_program $make_flags
+cmake --build . -- $make_flags
 
 if [ $? -ne 0 ]; then
     echo "Error in testing"
     exit -1
 fi
 
-if [ ! -f "drogon_test" ]; then
-    echo "Failed to build drogon_test"
-    exit -1
+if [ $os = "linux" ]; then
+  if [ ! -f "drogon_test" ]; then
+      echo "Failed to build drogon_test"
+      exit -1
+  fi
+else
+  if [ ! -f "Debug\drogon_test.exe" ]; then
+      echo "Failed to build drogon_test"
+      exit -1
+  fi
 fi
 
 cd ../../
@@ -159,7 +195,7 @@ if [ "$1" = "-t" ]; then
     #unit testing
     cd ../
     echo "Unit testing"
-    $make_program $make_flags test
+    cmake --build . --target test -- $make_flags
     if [ $? -ne 0 ]; then
         echo "Error in unit testing"
         exit -1

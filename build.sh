@@ -29,6 +29,8 @@ function build_drogon() {
     echo "Start building drogon ..."
     if [ $1 -eq 1 ]; then
         cmake .. -DBUILD_TESTING=YES $cmake_gen
+    elif [ $1 -eq 2 ]; then
+        cmake .. -DBUILD_TESTING=YES -DBUILD_DROGON_SHARED=ON -DCMAKE_CXX_VISIBILITY_PRESET=hidden -DCMAKE_VISIBILITY_INLINES_HIDDEN=1 $cmake_gen
     else
         cmake .. -DCMAKE_BUILD_TYPE=release $cmake_gen
     fi
@@ -85,13 +87,15 @@ esac
 
 if [ -f /bin/ninja ]; then
     make_program=ninja
-    cmake_gen='-G Ninja'
+    cmake_gen='-GNinja'
 else
     make_flags="$make_flags -j$parallel"
 fi
 
 if [ "$1" = "-t" ]; then
     build_drogon 1
+elif [ "$1" = "-tshared" ]; then
+    build_drogon 2
 else
     build_drogon 0
 fi

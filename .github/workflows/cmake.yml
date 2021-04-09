@@ -11,7 +11,54 @@ env:
   BUILD_TYPE: Release
 
 jobs:
-  build:
+  windows:
+    name: 'windows/msvc - ${{matrix.link}}'
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        link: [ 'STATIC', 'SHARED' ]
+    steps:
+      - name: Checkout Drogon source code
+        uses: actions/checkout@v2
+        with:
+          submodules: true
+          fetch-depth: 0
+
+      - name: Install dependencies
+        run: |
+          pip install conan
+
+      - name: Create build directory
+        run: |
+          mkdir build
+
+      - name: Install conan packages
+        shell: pwsh
+        working-directory: ./build
+        run: |
+          conan install .. -s compiler="Visual Studio" -s compiler.version=16 -sbuild_type=Debug -g cmake_paths
+
+      - name: Create Build Environment & Configure Cmake
+        shell: bash
+        working-directory: ./build
+        run: |
+          [[ ${{ matrix.link }} == "SHARED" ]] && shared="ON" || shared="OFF"
+          cmake .. -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=on -DBUILD_DROGON_SHARED=$shared -DCMAKE_TOOLCHAIN_FILE="conan_paths.cmake" -DBUILD_CTL=ON -DBUILD_EXAMPLES=ON -DCMAKE_INSTALL_PREFIX=../install
+
+      - name: Build
+        working-directory: ${{env.GITHUB_WORKSPACE}}
+        shell: bash
+        run: |
+          cd build
+          cmake --build . --target install --parallel
+
+      - name: Test
+        working-directory: ${{env.GITHUB_WORKSPACE}}
+        shell: bash
+        run: ./test.sh -w
+
+  unix:
     name: ${{matrix.buildname}}
     runs-on: ${{matrix.os}}
     strategy:
@@ -20,20 +67,28 @@ jobs:
         include:
           - os: ubuntu-20.04
             buildname: 'ubuntu-20.04/gcc'
+            link: SHARED
+            triplet: x64-linux
+            compiler: gcc_64
+          - os: ubuntu-20.04
+            buildname: 'ubuntu-20.04/gcc'
+            link: STATIC
             triplet: x64-linux
             compiler: gcc_64
           - os: ubuntu-20.04
             buildname: 'ubuntu-20.04/gcc-10'
+            link: STATIC
             triplet: x64-linux
           - os: ubuntu-16.04
             buildname: 'ubuntu-16.04/gcc'
+            link: STATIC
             triplet: x64-linux
             compiler: gcc_64
           - os: macos-latest
             buildname: 'macos/clang'
+            link: STATIC
             triplet: x64-osx
             compiler: clang_64
-
     steps:
     - name: Checkout Drogon source code
       uses: actions/checkout@v2
@@ -75,36 +130,39 @@ jobs:
         cmake .
         make
         sudo make install
-  
+
+    - name: Create build directory
+      run: |
+        mkdir build
+
     - name: Create Build Environment & Configure Cmake
       # Some projects don't allow in-source building, so create a separate build directory
       # We'll use this as our working directory for all subsequent commands
       shell: bash
-      working-directory: ${{env.GITHUB_WORKSPACE}}
+      working-directory: ./build
       if: matrix.buildname != 'ubuntu-20.04/gcc-10'
       run: |
-        mkdir build
-        cd build
-        cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_TESTING=on
+        [[ ${{ matrix.link }} == "SHARED" ]] && shared="ON" || shared="OFF"
+        cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_TESTING=on -DBUILD_DROGON_SHARED=$shared
+
     - name: Create Build Environment & Configure Cmake (gcc-10)
       # Some projects don't allow in-source building, so create a separate build directory
       # We'll use this as our working directory for all subsequent commands
       shell: bash
-      working-directory: ${{env.GITHUB_WORKSPACE}}
+      working-directory: ./build
       if: matrix.buildname == 'ubuntu-20.04/gcc-10'
       run: |
-        mkdir build
-        cd build
-        cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_TESTING=on -DCMAKE_CXX_FLAGS="-fcoroutines"
+        [[ ${{ matrix.link }} == "SHARED" ]] && shared="ON" || shared="OFF"
+        cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_TESTING=on -DCMAKE_CXX_FLAGS="-fcoroutines" -DBUILD_DROGON_SHARED=$shared
       env:
         CC: gcc-10
         CXX: g++-10
-    - name: Build
-      working-directory: ${{env.GITHUB_WORKSPACE}}
+
+    - name: (Linux) Build
+      working-directory: ./build
       shell: bash
       # Execute the build.  You can specify a specific target with "--target <NAME>"
       run: |
-        cd build
         sudo make -j $(nproc) && sudo make install
 
     - name: Prepare for testing (macOS)
@@ -132,7 +190,7 @@ jobs:
     - name: Test
       working-directory: ${{env.GITHUB_WORKSPACE}}
       shell: bash
-      # Execute tests defined by the CMake configuration.  
+      # Execute tests defined by the CMake configuration.
       # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
       run: ./test.sh -t
 

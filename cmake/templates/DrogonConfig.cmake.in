@@ -39,6 +39,9 @@ endif()
 if(@Hiredis_FOUND@)
 find_dependency(Hiredis)
 endif()
+if(@BUILD_DROGON_SHARED@)
+find_dependency(Threads)
+endif()
 
 # Our library dependencies (contains definitions for IMPORTED targets)
 

@@ -2,8 +2,8 @@
 
 /**
  *
- *  NotFound.h
- *  An Tao
+ *  @file NotFound.h
+ *  @author An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
@@ -13,7 +13,9 @@
  *  Drogon
  *
  */
+#pragma once
 
+#include <drogon/exports.h>
 #include <drogon/DrTemplate.h>
 namespace drogon
 {
@@ -21,11 +23,10 @@ namespace drogon
  * @brief This class is used by the drogon to generate the 404 page. Users don't
  * use this class directly.
  */
-class NotFound : public drogon::DrTemplate<NotFound>
+class DROGON_EXPORT NotFound : public drogon::DrTemplate<NotFound>
 {
   public:
-    NotFound(){};
-    virtual ~NotFound(){};
+    NotFound();
     virtual std::string genText(const drogon::HttpViewData &) override;
 };
 }  // namespace drogon

@@ -10,8 +10,23 @@
  */
 // Taken from libpqxx and modified
 
+/**
+ *
+ *  @file ArrayParser.h
+ *  @author An Tao
+ *
+ *  Copyright 2018, An Tao.  All rights reserved.
+ *  https://github.com/an-tao/drogon
+ *  Use of this source code is governed by a MIT license
+ *  that can be found in the License file.
+ *
+ *  Drogon
+ *
+ */
+
 #pragma once
 
+#include <drogon/exports.h>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -34,7 +49,7 @@ namespace orm
  * @c juncture of "done".  The @c juncture tells you what the parser found in
  * that step: did the array "nest" to a deeper level, or "un-nest" back up?
  */
-class ArrayParser
+class DROGON_EXPORT ArrayParser
 {
   public:
     /// What's the latest thing found in the array?

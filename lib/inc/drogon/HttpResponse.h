@@ -1,6 +1,6 @@
 /**
  *  @file HttpResponse.h
- *  An Tao
+ *  @author An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
@@ -13,6 +13,7 @@
 
 #pragma once
 
+#include <drogon/exports.h>
 #include <drogon/utils/string_view.h>
 #include <drogon/DrClassMap.h>
 #include <drogon/Cookie.h>
@@ -63,7 +64,7 @@ inline HttpResponsePtr toResponse<Json::Value &>(Json::Value &pJson)
     return toResponse((const Json::Value &)pJson);
 }
 
-class HttpResponse
+class DROGON_EXPORT HttpResponse
 {
   public:
     /**

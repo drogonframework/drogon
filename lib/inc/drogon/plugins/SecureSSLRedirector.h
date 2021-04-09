@@ -1,10 +1,11 @@
 /**
  *
- *  drogon_plugin_SecureSSLRedirector.h
+ *  @file drogon_plugin_SecureSSLRedirector.h
  *
  */
 
 #pragma once
+#include <drogon/exports.h>
 #include <drogon/drogon_callbacks.h>
 #include <drogon/plugins/Plugin.h>
 #include <regex>
@@ -40,12 +41,11 @@ namespace plugin
  * configuration file.
  *
  */
-class SecureSSLRedirector : public drogon::Plugin<SecureSSLRedirector>
+class DROGON_EXPORT SecureSSLRedirector
+    : public drogon::Plugin<SecureSSLRedirector>
 {
   public:
-    SecureSSLRedirector()
-    {
-    }
+    SecureSSLRedirector();
     /// This method must be called by drogon to initialize and start the plugin.
     /// It must be implemented by the user.
     virtual void initAndStart(const Json::Value &config) override;

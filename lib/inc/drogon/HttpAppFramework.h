@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <drogon/exports.h>
 #include <drogon/utils/HttpConstraint.h>
 #include <drogon/CacheMap.h>
 #include <drogon/DrObject.h>
@@ -61,7 +62,7 @@ using ExceptionHandler =
                        const HttpRequestPtr &,
                        std::function<void(const HttpResponsePtr &)> &&)>;
 
-class HttpAppFramework : public trantor::NonCopyable
+class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
 {
   public:
     virtual ~HttpAppFramework() = default;

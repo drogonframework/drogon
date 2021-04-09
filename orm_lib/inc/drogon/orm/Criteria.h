@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <drogon/exports.h>
 #include <drogon/orm/SqlBinder.h>
 #include <assert.h>
 #include <memory>
@@ -45,7 +46,7 @@ enum class CompareOperator
 /**
  * @brief this class represents a comparison condition.
  */
-class Criteria
+class DROGON_EXPORT Criteria
 {
   public:
     /**
@@ -256,6 +257,7 @@ class Criteria
 
   private:
     friend const Criteria operator&&(Criteria cond1, Criteria cond2);
+
     friend const Criteria operator||(Criteria cond1, Criteria cond2);
     std::string conditionString_;
     std::function<void(internal::SqlBinder &)> outputArgumentsFunc_;

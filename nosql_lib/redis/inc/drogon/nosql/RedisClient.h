@@ -13,6 +13,7 @@
  */
 #pragma once
 
+#include <drogon/exports.h>
 #include <drogon/nosql/RedisResult.h>
 #include <drogon/nosql/RedisException.h>
 #include <drogon/utils/string_view.h>
@@ -60,7 +61,7 @@ struct RedisAwaiter : public CallbackAwaiter<RedisResult>
 };
 
 struct RedisTransactionAwaiter
-    : public CallbackAwaiter<std::shared_ptr<RedisTransaction>>
+    : public CallbackAwaiter<std::shared_ptr<RedisTransaction> >
 {
     RedisTransactionAwaiter(RedisClient *client) : client_(client)
     {
@@ -80,7 +81,7 @@ class RedisTransaction;
  * to a redis server.
  *
  */
-class RedisClient
+class DROGON_EXPORT RedisClient
 {
   public:
     /**
@@ -197,7 +198,7 @@ class RedisClient
     }
 #endif
 };
-class RedisTransaction : public RedisClient
+class DROGON_EXPORT RedisTransaction : public RedisClient
 {
   public:
     // virtual void cancel() = 0;

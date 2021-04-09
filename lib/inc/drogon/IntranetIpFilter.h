@@ -1,7 +1,7 @@
 /**
  *
- *  IntranetIpFilter.h
- *  An Tao
+ *  @file IntranetIpFilter.h
+ *  @author An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <drogon/exports.h>
 #include <drogon/HttpFilter.h>
 
 namespace drogon
@@ -21,12 +22,10 @@ namespace drogon
 /**
  * @brief A filter that prohibit access from external networks
  */
-class IntranetIpFilter : public HttpFilter<IntranetIpFilter>
+class DROGON_EXPORT IntranetIpFilter : public HttpFilter<IntranetIpFilter>
 {
   public:
-    IntranetIpFilter()
-    {
-    }
+    IntranetIpFilter();
     virtual void doFilter(const HttpRequestPtr &req,
                           FilterCallback &&fcb,
                           FilterChainCallback &&fccb) override;

@@ -27,3 +27,4 @@ void LocalHostFilter::doFilter(const HttpRequestPtr &req,
     auto res = drogon::HttpResponse::newNotFoundResponse();
     fcb(res);
 }
+LocalHostFilter::LocalHostFilter() = default;

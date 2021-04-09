@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <drogon/exports.h>
 #include <drogon/DrObject.h>
 #include <drogon/HttpViewData.h>
 #include <memory>
@@ -29,7 +30,7 @@ using DrTemplateData = HttpViewData;
  * data.
  * For more details on the template file, see the wiki site (the 'View' section)
  */
-class DrTemplateBase : public virtual DrObjectBase
+class DROGON_EXPORT DrTemplateBase : public virtual DrObjectBase
 {
   public:
     /// Create an object of the implementation class

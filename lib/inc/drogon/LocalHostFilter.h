@@ -1,7 +1,7 @@
 /**
  *
- *  LocalHostFilter.h
- *  An Tao
+ *  @file LocalHostFilter.h
+ *  @author An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <drogon/exports.h>
 #include <drogon/HttpFilter.h>
 
 namespace drogon
@@ -21,12 +22,10 @@ namespace drogon
 /**
  * @brief A filter that prohibit access from other hosts.
  */
-class LocalHostFilter : public HttpFilter<LocalHostFilter>
+class DROGON_EXPORT LocalHostFilter : public HttpFilter<LocalHostFilter>
 {
   public:
-    LocalHostFilter()
-    {
-    }
+    LocalHostFilter();
     virtual void doFilter(const HttpRequestPtr &req,
                           FilterCallback &&fcb,
                           FilterChainCallback &&fccb) override;

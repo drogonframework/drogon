@@ -1,7 +1,7 @@
 /**
  *
- *  Result.h
- *  An Tao
+ *  @file Result.h
+ *  @author An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include <drogon/exports.h>
 #include <memory>
 #include <string>
 #include <future>
@@ -53,7 +54,7 @@ enum class SqlStatus
  * which are relatively small and cheap to copy.  Think of a result object as
  * a "smart pointer" to an underlying result set.
  */
-class Result
+class DROGON_EXPORT Result
 {
   public:
     Result(const ResultImplPtr &ptr) : resultPtr_(ptr)
