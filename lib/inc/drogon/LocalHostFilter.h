@@ -25,7 +25,9 @@ namespace drogon
 class DROGON_EXPORT LocalHostFilter : public HttpFilter<LocalHostFilter>
 {
   public:
-    LocalHostFilter();
+    LocalHostFilter()
+    {
+    }
     virtual void doFilter(const HttpRequestPtr &req,
                           FilterCallback &&fcb,
                           FilterChainCallback &&fccb) override;

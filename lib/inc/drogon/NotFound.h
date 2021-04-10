@@ -23,10 +23,12 @@ namespace drogon
  * @brief This class is used by the drogon to generate the 404 page. Users don't
  * use this class directly.
  */
-class DROGON_EXPORT NotFound : public drogon::DrTemplate<NotFound>
+class DROGON_EXPORT NotFound final : public drogon::DrTemplate<NotFound>
 {
   public:
-    NotFound();
+    NotFound()
+    {
+    }
     virtual std::string genText(const drogon::HttpViewData &) override;
 };
 }  // namespace drogon
