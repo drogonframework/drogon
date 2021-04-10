@@ -49,4 +49,3 @@ std::string NotFound::genText(const HttpViewData &NotFound_view_data)
                            "error page -->\n";
     return NotFound_tmp_stream.str();
 }
-NotFound::NotFound() = default;
