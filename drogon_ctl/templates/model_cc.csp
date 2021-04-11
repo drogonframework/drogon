@@ -10,6 +10,7 @@ using namespace drogon_ctl;
 
 #include "[[className]].h"
 <%c++
+std::vector<std::string> relationshipClassNames;
 auto &relationships=@@.get<std::vector<Relationship>>("relationships");
 auto rdbms=@@.get<std::string>("rdbms");
 for(auto &relationship : relationships)
@@ -23,19 +24,23 @@ for(auto &relationship : relationships)
         auto originalClassName=nameTransform(relationship.originalTableName(),true);
         if(relationshipClassName!=originalClassName)
         {
-%>
-#include "{%relationshipClassName%}.h"
-<%c++
+            relationshipClassNames.push_back(relationshipClassName);
         }
     }
     if(relationship.type() == Relationship::Type::ManyToMany)
     {
         auto &pivotTableName=relationship.pivotTable().tableName();
         auto pivotTableClassName=nameTransform(pivotTableName, true);
-%>
-#include "{%pivotTableClassName%}.h"
-<%c++
+        relationshipClassNames.push_back(pivotTableClassName);
     }
+}
+std::sort(relationshipClassNames.begin(), relationshipClassNames.end());
+relationshipClassNames.erase(std::unique(relationshipClassNames.begin(), relationshipClassNames.end()), relationshipClassNames.end());
+for(std::string &relationshipClassName : relationshipClassNames)
+{
+%>
+#include "{%relationshipClassName%}.h"
+<%c++
 }
 %>
 #include <drogon/utils/Utilities.h>
