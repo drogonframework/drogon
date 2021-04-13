@@ -251,8 +251,8 @@ if (BUILD_SQLITE)
     if (SQLite3_FOUND)
         target_link_libraries(${PROJECT_NAME} PRIVATE SQLite3_lib)
         set(DROGON_SOURCES ${DROGON_SOURCES}
-            orm_lib/src/sqlite3_impl/Sqlite3Connection.cc
-            orm_lib/src/sqlite3_impl/Sqlite3ResultImpl.cc)
+           ${CMAKE_CURRENT_LIST_DIR}/../../orm_lib/src/sqlite3_impl/Sqlite3Connection.cc
+           ${CMAKE_CURRENT_LIST_DIR}/../../orm_lib/src/sqlite3_impl/Sqlite3ResultImpl.cc)
     endif (SQLite3_FOUND)
 endif (BUILD_SQLITE)
 
