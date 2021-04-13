@@ -258,6 +258,7 @@ void TransactionImpl::execNewTask()
         if (usedUpCallback_)
         {
             usedUpCallback_();
+            usedUpCallback_ = std::function<void()>();
         }
     }
 }
