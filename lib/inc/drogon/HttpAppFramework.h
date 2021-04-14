@@ -61,6 +61,9 @@ using ExceptionHandler =
     std::function<void(const std::exception &,
                        const HttpRequestPtr &,
                        std::function<void(const HttpResponsePtr &)> &&)>;
+using DefaultHandler =
+    std::function<void(const HttpRequestPtr &,
+                       std::function<void(const HttpResponsePtr &)> &&)>;
 
 class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
 {
@@ -577,6 +580,14 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
         DrClassMap::setSingleInstance(filterPtr);
         return *this;
     }
+
+    /// Register a default handler into the framework when no handler matches
+    /// the request. If set, it replaces the static file router.
+    /**
+     * @param function indicates any type of callable object with a valid
+     * processing interface.
+     */
+    virtual HttpAppFramework &setDefaultHandler(DefaultHandler handler) = 0;
 
     /// Forward the http request
     /**

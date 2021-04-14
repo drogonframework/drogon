@@ -29,16 +29,23 @@ void HttpControllersRouter::doWhenNoHandlerFound(
     const HttpRequestImplPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback)
 {
-    if (req->path() == "/" &&
-        !HttpAppFrameworkImpl::instance().getHomePage().empty())
+    if (defaultHandler_.has_value())
     {
-        req->setPath("/" + HttpAppFrameworkImpl::instance().getHomePage());
-        // Just call the fileRouter_.route instead of forwarding. so comment out
-        // those sentences.
-        // HttpAppFrameworkImpl::instance().forward(req, std::move(callback));
-        // return;
+        defaultHandler_.value()(req, std::move(callback));
     }
-    fileRouter_.route(req, std::move(callback));
+    else
+    {
+        if (req->path() == "/" &&
+            !HttpAppFrameworkImpl::instance().getHomePage().empty())
+        {
+            req->setPath("/" + HttpAppFrameworkImpl::instance().getHomePage());
+            // Just call the fileRouter_.route instead of forwarding. so comment
+            // out those sentences.
+            // HttpAppFrameworkImpl::instance().forward(req,
+            // std::move(callback)); return;
+        }
+        fileRouter_.route(req, std::move(callback));
+    }
 }
 
 void HttpControllersRouter::init(
@@ -727,4 +734,9 @@ void HttpControllersRouter::invokeCallback(
         advice(req, resp);
     }
     HttpAppFrameworkImpl::instance().callCallback(req, resp, callback);
+}
+
+void HttpControllersRouter::setDefaultHandler(DefaultHandler handler)
+{
+    defaultHandler_ = std::move(handler);
 }
