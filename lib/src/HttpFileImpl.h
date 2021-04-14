@@ -50,18 +50,25 @@ class HttpFileImpl
     };
 
     /// Return the file name with extension;
-    const std::string &getFullFileName() const
+    std::string getFullFileName() const
     {
-        const static std::string fullFileName = fileName_ + "." + fileExtension_;
-        return fullFileName;
+        // If doesn't has any dot, just add the file name and ignore the file
+        // extension
+        return fileName_ + (!fileExtension_.empty() ? "." + fileExtension_ : "");
     };
 
     /// Set the file name with extension, usually called by the MultiPartParser parser.
     void setFullFileName(const std::string &fullFileName)
     {
         auto pos = fullFileName.rfind('.');
-        fileName_ = fullFileName.substr(0, pos);
-        fileExtension_ = fullFileName.substr(pos + 1, fullFileName.length());
+
+        // Doesn't contains any dot
+        if (pos == -1) {
+            fileName_ = fullFileName;
+        } else {
+            fileName_ = fullFileName.substr(0, pos);
+            fileExtension_ = fullFileName.substr(pos + 1, fullFileName.length());
+        }
     };
 
     /// Set the contents of the file, usually called by the MultiPartParser

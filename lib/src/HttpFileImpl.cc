@@ -27,7 +27,7 @@ int HttpFileImpl::save() const
 int HttpFileImpl::save(const std::string &path) const
 {
     assert(!path.empty());
-    if (fileName_ == "")
+    if (fileName_.empty() && fileExtension_.empty())
         return -1;
     std::string fileName;
     std::string tmpPath = path;
@@ -129,7 +129,7 @@ void HttpFile::setFileExtension(const std::string &fileExtension)
     implPtr_->setFileExtension(fileExtension);
 }
 
-const std::string &HttpFile::getFullFileName() const
+std::string HttpFile::getFullFileName() const
 {
     return implPtr_->getFullFileName();
 }

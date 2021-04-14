@@ -40,7 +40,7 @@ class DROGON_EXPORT HttpFile
     const std::string &getFileExtension() const;
 
     /// Return the file name with extension;
-    const std::string &getFullFileName() const;
+    std::string getFullFileName() const;
 
     /// Return the name of the item in multiple parts.
     const std::string &getItemName() const;
