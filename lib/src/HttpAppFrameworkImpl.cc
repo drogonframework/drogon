@@ -1015,7 +1015,7 @@ const HttpResponsePtr &HttpAppFrameworkImpl::getCustom404Page()
             thread404Pages.init(
                 [this](HttpResponsePtr &resp, size_t /*index*/) {
                     resp = std::make_shared<HttpResponseImpl>(
-                        *dynamic_cast<HttpResponseImpl *>(custom404_.get()));
+                        *static_cast<HttpResponseImpl *>(custom404_.get()));
                 });
         });
         return thread404Pages.getThreadData();
