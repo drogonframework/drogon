@@ -34,12 +34,12 @@ const std::vector<HttpFile> &MultiPartParser::getFiles() const
 {
     return files_;
 }
-std::map<std::string, HttpFile> MultiPartParser::getFilesMap() const
+std::unordered_map<std::string, HttpFile> MultiPartParser::getFilesMap() const
 {
-    std::map<std::string, HttpFile> result;
+    std::unordered_map<std::string, HttpFile> result;
     for (auto &file : files_)
     {
-        result.insert({file.getItemName(), file});
+        result.emplace(file.getItemName(), file);
     }
     return result;
 }
