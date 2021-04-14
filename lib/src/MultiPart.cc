@@ -39,7 +39,7 @@ std::map<std::string, HttpFile> MultiPartParser::getFilesMap() const
     std::map<std::string, HttpFile> result;
     for (auto &file : files_)
     {
-        result[file.getItemName()] = file;
+        result.insert({file.getItemName(), file});
     }
     return result;
 }
