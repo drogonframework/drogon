@@ -107,7 +107,7 @@ int MultiPartParser::parseEntity(const char *begin, const char *end)
         auto filePtr = std::make_shared<HttpFileImpl>();
         filePtr->setRequest(requestPtr_);
         filePtr->setItemName(name);
-        filePtr->setFileName(std::string(pos, pos1));
+        filePtr->setFullFileName(std::string(pos, pos1));
         pos1 = std::search(pos1, end, CRLF, CRLF + 4);
         if (pos1 == end)
             return -1;

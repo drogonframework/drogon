@@ -32,9 +32,36 @@ class HttpFileImpl
     };
 
     /// Set the file name, usually called by the MultiPartParser parser.
-    void setFileName(const std::string &filename)
+    void setFileName(const std::string &fileName)
     {
-        fileName_ = filename;
+        fileName_ = fileName;
+    };
+
+    /// Return the file extension;
+    const std::string &getFileExtension() const
+    {
+        return fileExtension_;
+    };
+
+    /// Set the file extension, usually called by the MultiPartParser parser.
+    void setFileExtension(const std::string &fileExtension)
+    {
+        fileExtension_ = fileExtension;
+    };
+
+    /// Return the file name with extension;
+    const std::string &getFullFileName() const
+    {
+        const static std::string fullFileName = fileName_ + "." + fileExtension_;
+        return fullFileName;
+    };
+
+    /// Set the file name with extension, usually called by the MultiPartParser parser.
+    void setFullFileName(const std::string &fullFileName)
+    {
+        auto pos = fullFileName.rfind('.');
+        fileName_ = fullFileName.substr(0, pos);
+        fileExtension_ = fullFileName.substr(pos + 1, fullFileName.length());
     };
 
     /// Set the contents of the file, usually called by the MultiPartParser
@@ -62,11 +89,11 @@ class HttpFileImpl
 
     /// Save the file to file system with a new name
     /**
-     * @param filename if the parameter isn't prefixed with "/", "./" or "../",
+     * @param fileName if the parameter isn't prefixed with "/", "./" or "../",
      * the full path is app().getUploadPath()+"/"+filename, otherwise the file
      * is saved as the filename
      */
-    int saveAs(const std::string &filename) const;
+    int saveAs(const std::string &fileName) const;
 
     /// Return the file length.
     size_t fileLength() const noexcept
@@ -105,6 +132,7 @@ class HttpFileImpl
 
   private:
     std::string fileName_;
+    std::string fileExtension_;
     std::string itemName_;
     string_view fileContent_;
     HttpRequestPtr requestPtr_;
