@@ -17,6 +17,7 @@
 #include <drogon/exports.h>
 #include <drogon/HttpRequest.h>
 #include <map>
+#include <unordered_map>
 #include <string>
 #include <vector>
 #include <memory>
@@ -34,6 +35,9 @@ class DROGON_EXPORT HttpFile
     HttpFile(std::shared_ptr<HttpFileImpl> &&implPtr);
     /// Return the file name;
     const std::string &getFileName() const;
+
+    /// Return the name of the item in multiple parts.
+    const std::string &getItemName() const;
 
     /// Set the file name, usually called by the MultiPartParser parser.
     void setFileName(const std::string &filename);
@@ -108,6 +112,9 @@ class DROGON_EXPORT MultiPartParser
     /// Get files, This method should be called after calling the parse()
     /// method.
     const std::vector<HttpFile> &getFiles() const;
+
+    /// Get files in a map, the keys of the map are item names of the files.
+    std::unordered_map<std::string, HttpFile> getFilesMap() const;
 
     /// Get parameters, This method should be called after calling the parse ()
     /// method.

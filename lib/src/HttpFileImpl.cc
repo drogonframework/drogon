@@ -1,7 +1,7 @@
 /**
  *
- *  HttpFileImpl.cc
- *  An Tao
+ *  @file HttpFileImpl.cc
+ *  @author An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
@@ -158,4 +158,9 @@ std::string HttpFile::getMd5() const
 HttpFile::HttpFile(std::shared_ptr<HttpFileImpl> &&implPtr)
     : implPtr_(std::move(implPtr))
 {
+}
+
+const std::string &HttpFile::getItemName() const
+{
+    return implPtr_->getItemName();
 }
