@@ -369,6 +369,7 @@ DbConnectionPtr DbClientImpl::newConnection(trantor::EventLoop *loop)
     else
     {
         return nullptr;
+        (void)(loop);
     }
 
     std::weak_ptr<DbClientImpl> weakPtr = shared_from_this();
