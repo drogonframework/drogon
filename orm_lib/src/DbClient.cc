@@ -38,6 +38,8 @@ std::shared_ptr<DbClient> DbClient::newPgClient(const std::string &connInfo,
 #else
     LOG_FATAL << "PostgreSQL is not supported!";
     exit(1);
+    (void)(connInfo);
+    (void)(connNum);
 #endif
 }
 

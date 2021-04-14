@@ -43,11 +43,11 @@ class RedisException final : public std::exception
         return code_;
     }
     RedisException(RedisErrorCode code, const std::string &message)
-        : code_(code), message_(message)
+        : message_(message), code_(code)
     {
     }
     RedisException(RedisErrorCode code, std::string &&message)
-        : code_(code), message_(std::move(message))
+        : message_(std::move(message)), code_(code)
     {
     }
     RedisException() = delete;
