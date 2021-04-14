@@ -112,7 +112,7 @@ int MultiPartParser::parseEntity(const char *begin, const char *end)
         if (pos1 == end)
             return -1;
         filePtr->setFile(pos1 + 4, static_cast<size_t>(end - pos1 - 4));
-        files_.emplace_back((std::move(filePtr)));
+        files_.emplace_back(std::move(filePtr));
         return 0;
     }
 }
