@@ -29,7 +29,7 @@ void HttpControllersRouter::doWhenNoHandlerFound(
     const HttpRequestImplPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback)
 {
-    if (defaultHandler_.has_value())
+    if (defaultHandler_)
     {
         defaultHandler_.value()(req, std::move(callback));
     }
