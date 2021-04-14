@@ -22,15 +22,15 @@ using namespace drogon::nosql;
 using namespace drogon;
 
 void RedisClientManager::createRedisClients(
-    const std::vector<trantor::EventLoop *> &/*ioloops*/)
+    const std::vector<trantor::EventLoop *> & /*ioloops*/)
 {
     return;
 }
 
-void RedisClientManager::createRedisClient(const std::string &/*name*/,
-                                           const std::string &/*host*/,
+void RedisClientManager::createRedisClient(const std::string & /*name*/,
+                                           const std::string & /*host*/,
                                            unsigned short /*port*/,
-                                           const std::string &/*password*/,
+                                           const std::string & /*password*/,
                                            size_t /*connectionNum*/,
                                            bool /*isFast*/)
 {
