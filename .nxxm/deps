@@ -1,4 +1,5 @@
 {
-  "open-source-parsers/jsoncpp" : {}
+  "open-source-parsers/jsoncpp" : {},
+    "nxxm/libuuid" : {},
   , "platform" : [ { "packages": ["ZLIB"] , "targets" : [""] }, { "packages": ["c-ares"], "targets" : [""] }, { "packages": ["uuid"], "targets" : [""] }, "OpenSSL::+SSL", "OpenSSL::+Crypto" ]
 }

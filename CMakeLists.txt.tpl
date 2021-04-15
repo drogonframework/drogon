@@ -136,8 +136,8 @@ list(APPEND INCLUDE_DIRS_FOR_DYNAMIC_VIEW ${JSONCPP_INCLUDE_DIRS})
 if (NOT ${CMAKE_SYSTEM_NAME} STREQUAL "FreeBSD"
     AND NOT ${CMAKE_SYSTEM_NAME} STREQUAL "OpenBSD"
     AND NOT WIN32)
-    find_package(uuid CONFIG REQUIRED)
-    target_link_libraries(${PROJECT_NAME} PRIVATE PkgConfig::uuid)
+    find_package(nxxm_libuuid CONFIG REQUIRED)
+    target_link_libraries(${PROJECT_NAME} PRIVATE nxxm_libuuid::libuuid)
 
     try_compile(normal_uuid ${CMAKE_BINARY_DIR}/cmaketest
         ${CMAKE_CURRENT_LIST_DIR}/../../cmake/tests/normal_uuid_lib_test.cc
