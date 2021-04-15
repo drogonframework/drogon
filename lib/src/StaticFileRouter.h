@@ -99,8 +99,9 @@ class StaticFileRouter
     }
 
   private:
-    static void defaultHandler(const HttpRequestPtr &req,
-                        std::function<void(const HttpResponsePtr &)> &&callback);
+    static void defaultHandler(
+        const HttpRequestPtr &req,
+        std::function<void(const HttpResponsePtr &)> &&callback);
 
     std::set<std::string> fileTypeSet_{"html",
                                        "js",
