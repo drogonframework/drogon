@@ -53,8 +53,9 @@ void Attachment::upload(const HttpRequestPtr &req,
     callback(resp);
 }
 
-void Attachment::uploadImage(const HttpRequestPtr &req,
-                        std::function<void(const HttpResponsePtr &)> &&callback)
+void Attachment::uploadImage(
+    const HttpRequestPtr &req,
+    std::function<void(const HttpResponsePtr &)> &&callback)
 {
     MultiPartParser fileUpload;
 

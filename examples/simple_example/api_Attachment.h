@@ -19,7 +19,7 @@ class Attachment : public drogon::HttpController<Attachment>
     void upload(const HttpRequestPtr &req,
                 std::function<void(const HttpResponsePtr &)> &&callback);
     void uploadImage(const HttpRequestPtr &req,
-                std::function<void(const HttpResponsePtr &)> &&callback);
+                     std::function<void(const HttpResponsePtr &)> &&callback);
     void download(const HttpRequestPtr &req,
                   std::function<void(const HttpResponsePtr &)> &&callback);
 };
