@@ -27,7 +27,7 @@ std::string RedisResult::getStringForDisplaying() const noexcept
 }
 
 std::string RedisResult::getStringForDisplayingWithIndent(
-    size_t indent) const noexcept
+    size_t /*indent*/) const noexcept
 {
     LOG_FATAL << "Redis is not supported by drogon, please install the "
                  "hiredis library first.";

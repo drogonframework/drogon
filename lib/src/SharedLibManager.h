@@ -36,7 +36,7 @@ class SharedLibManager : public trantor::NonCopyable
     struct DLStat
     {
         void *handle{nullptr};
-        struct timespec mTime = {0};
+        struct timespec mTime = {0, 0};
     };
     std::unordered_map<std::string, DLStat> dlMap_;
     void *compileAndLoadLib(const std::string &sourceFile, void *oldHld);

@@ -327,5 +327,6 @@ int SqlBinder::getMysqlTypeBySize(size_t size)
     LOG_FATAL << "Mysql is not supported!";
     exit(1);
     return 0;
+    (void)(size);
 #endif
 }

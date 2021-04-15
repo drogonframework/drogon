@@ -42,7 +42,7 @@ void HttpControllersRouter::doWhenNoHandlerFound(
 }
 
 void HttpControllersRouter::init(
-    const std::vector<trantor::EventLoop *> &ioLoops)
+    const std::vector<trantor::EventLoop *> & /*ioLoops*/)
 {
     for (auto &router : ctrlVector_)
     {
@@ -537,7 +537,7 @@ void HttpControllersRouter::route(
 
 void HttpControllersRouter::doControllerHandler(
     const CtrlBinderPtr &ctrlBinderPtr,
-    const HttpControllerRouterItem &routerItem,
+    const HttpControllerRouterItem & /*routerItem*/,
     const HttpRequestImplPtr &req,
     const std::smatch &matchResult,
     std::function<void(const HttpResponsePtr &)> &&callback)
