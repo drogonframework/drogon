@@ -445,7 +445,7 @@ void StaticFileRouter::setFileTypes(const std::vector<std::string> &types)
     }
 }
 void StaticFileRouter::defaultHandler(
-    const HttpRequestPtr &req,
+    const HttpRequestPtr &/*req*/,
     std::function<void(const HttpResponsePtr &)> &&callback)
 {
     callback(HttpResponse::newNotFoundResponse());
