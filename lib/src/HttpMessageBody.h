@@ -45,7 +45,7 @@ class HttpMessageBody
     }
     virtual const std::string &getString() const = 0;
     virtual std::string &getString() = 0;
-    virtual void append(const char *buf, size_t len)
+    virtual void append(const char * /*buf*/, size_t /*len*/)
     {
     }
     virtual ~HttpMessageBody()

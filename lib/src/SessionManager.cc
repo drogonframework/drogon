@@ -20,7 +20,6 @@ using namespace drogon;
 SessionManager::SessionManager(trantor::EventLoop *loop, size_t timeout)
     : loop_(loop), timeout_(timeout)
 {
-    assert(timeout_ >= 0);
     if (timeout_ > 0)
     {
         size_t wheelNum = 1;

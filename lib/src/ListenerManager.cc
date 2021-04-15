@@ -73,8 +73,13 @@ std::vector<trantor::EventLoop *> ListenerManager::createListeners(
     const WebSocketNewAsyncCallback &webSocketCallback,
     const ConnectionCallback &connectionCallback,
     size_t connectionTimeout,
+#ifdef OpenSSL_FOUND
     const std::string &globalCertFile,
     const std::string &globalKeyFile,
+#else
+    const std::string & /*globalCertFile*/,
+    const std::string & /*globalKeyFile*/,
+#endif
     size_t threadNum,
     const std::vector<std::function<HttpResponsePtr(const HttpRequestPtr &)>>
         &syncAdvices)

@@ -22,22 +22,22 @@ using namespace drogon::orm;
 using namespace drogon;
 
 void DbClientManager::createDbClients(
-    const std::vector<trantor::EventLoop *> &ioloops)
+    const std::vector<trantor::EventLoop *> & /*ioloops*/)
 {
     return;
 }
 
-void DbClientManager::createDbClient(const std::string &dbType,
-                                     const std::string &host,
-                                     const unsigned short port,
-                                     const std::string &databaseName,
-                                     const std::string &userName,
-                                     const std::string &password,
-                                     const size_t connectionNum,
-                                     const std::string &filename,
-                                     const std::string &name,
-                                     const bool isFast,
-                                     const std::string &characterSet)
+void DbClientManager::createDbClient(const std::string & /*dbType*/,
+                                     const std::string & /*host*/,
+                                     const unsigned short /*port*/,
+                                     const std::string & /*databaseName*/,
+                                     const std::string & /*userName*/,
+                                     const std::string & /*password*/,
+                                     const size_t /*connectionNum*/,
+                                     const std::string & /*filename*/,
+                                     const std::string & /*name*/,
+                                     const bool /*isFast*/,
+                                     const std::string & /*characterSet*/)
 {
     LOG_FATAL << "No database is supported by drogon, please install the "
                  "database development library first.";

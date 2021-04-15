@@ -1,7 +1,7 @@
 /**
  *
- *  MultiPart.cc
- *  An Tao
+ *  @file MultiPart.cc
+ *  @author An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
@@ -34,7 +34,15 @@ const std::vector<HttpFile> &MultiPartParser::getFiles() const
 {
     return files_;
 }
-
+std::unordered_map<std::string, HttpFile> MultiPartParser::getFilesMap() const
+{
+    std::unordered_map<std::string, HttpFile> result;
+    for (auto &file : files_)
+    {
+        result.emplace(file.getItemName(), file);
+    }
+    return result;
+}
 const std::map<std::string, std::string> &MultiPartParser::getParameters() const
 {
     return parameters_;
@@ -98,12 +106,13 @@ int MultiPartParser::parseEntity(const char *begin, const char *end)
             return -1;
         auto filePtr = std::make_shared<HttpFileImpl>();
         filePtr->setRequest(requestPtr_);
+        filePtr->setItemName(name);
         filePtr->setFileName(std::string(pos, pos1));
         pos1 = std::search(pos1, end, CRLF, CRLF + 4);
         if (pos1 == end)
             return -1;
         filePtr->setFile(pos1 + 4, static_cast<size_t>(end - pos1 - 4));
-        files_.push_back(std::move(HttpFile(std::move(filePtr))));
+        files_.emplace_back(std::move(filePtr));
         return 0;
     }
 }

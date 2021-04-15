@@ -830,7 +830,20 @@ std::string urlDecode(const char *begin, const char *end)
 /* Compress gzip data */
 std::string gzipCompress(const char *data, const size_t ndata)
 {
-    z_stream strm = {0};
+    z_stream strm = {nullptr,
+                     0,
+                     0,
+                     nullptr,
+                     0,
+                     0,
+                     nullptr,
+                     nullptr,
+                     nullptr,
+                     nullptr,
+                     nullptr,
+                     0,
+                     0,
+                     0};
     if (data && ndata > 0)
     {
         if (deflateInit2(&strm,
@@ -884,7 +897,20 @@ std::string gzipDecompress(const char *data, const size_t ndata)
     auto decompressed = std::string(full_length * 2, 0);
     bool done = false;
 
-    z_stream strm = {0};
+    z_stream strm = {nullptr,
+                     0,
+                     0,
+                     nullptr,
+                     0,
+                     0,
+                     nullptr,
+                     nullptr,
+                     nullptr,
+                     nullptr,
+                     nullptr,
+                     0,
+                     0,
+                     0};
     strm.next_in = (Bytef *)data;
     strm.avail_in = static_cast<uInt>(ndata);
     strm.total_out = 0;
@@ -1135,13 +1161,13 @@ std::string brotliDecompress(const char *data, const size_t ndata)
     return decompressed;
 }
 #else
-std::string brotliCompress(const char *data, const size_t ndata)
+std::string brotliCompress(const char * /*data*/, const size_t /*ndata*/)
 {
     LOG_ERROR << "If you do not have the brotli package installed, you cannot "
                  "use brotliCompress()";
     abort();
 }
-std::string brotliDecompress(const char *data, const size_t ndata)
+std::string brotliDecompress(const char * /*data*/, const size_t /*ndata*/)
 {
     LOG_ERROR << "If you do not have the brotli package installed, you cannot "
                  "use brotliDecompress()";

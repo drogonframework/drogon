@@ -134,7 +134,7 @@ HttpResponsePtr HttpResponse::newNotFoundResponse()
             static IOThreadStorage<HttpResponsePtr> thread404Pages;
             std::call_once(threadOnce, [] {
                 thread404Pages.init(
-                    [](drogon::HttpResponsePtr &resp, size_t index) {
+                    [](drogon::HttpResponsePtr &resp, size_t /*index*/) {
                         if (HttpAppFrameworkImpl::instance()
                                 .isUsingCustomErrorHandler())
                         {

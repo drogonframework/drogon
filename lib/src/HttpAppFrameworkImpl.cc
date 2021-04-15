@@ -1012,10 +1012,11 @@ const HttpResponsePtr &HttpAppFrameworkImpl::getCustom404Page()
         static IOThreadStorage<HttpResponsePtr> thread404Pages;
         static std::once_flag once;
         std::call_once(once, [this] {
-            thread404Pages.init([this](HttpResponsePtr &resp, size_t index) {
-                resp = std::make_shared<HttpResponseImpl>(
-                    *static_cast<HttpResponseImpl *>(custom404_.get()));
-            });
+            thread404Pages.init(
+                [this](HttpResponsePtr &resp, size_t /*index*/) {
+                    resp = std::make_shared<HttpResponseImpl>(
+                        *static_cast<HttpResponseImpl *>(custom404_.get()));
+                });
         });
         return thread404Pages.getThreadData();
     }

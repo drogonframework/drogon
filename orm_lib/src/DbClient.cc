@@ -38,6 +38,8 @@ std::shared_ptr<DbClient> DbClient::newPgClient(const std::string &connInfo,
 #else
     LOG_FATAL << "PostgreSQL is not supported!";
     exit(1);
+    (void)(connInfo);
+    (void)(connNum);
 #endif
 }
 
@@ -49,6 +51,8 @@ std::shared_ptr<DbClient> DbClient::newMysqlClient(const std::string &connInfo,
 #else
     LOG_FATAL << "Mysql is not supported!";
     exit(1);
+    (void)(connInfo);
+    (void)(connNum);
 #endif
 }
 
@@ -63,5 +67,7 @@ std::shared_ptr<DbClient> DbClient::newSqlite3Client(
 #else
     LOG_FATAL << "Sqlite3 is not supported!";
     exit(1);
+    (void)(connInfo);
+    (void)(connNum);
 #endif
 }

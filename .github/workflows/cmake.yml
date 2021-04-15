@@ -109,7 +109,7 @@ jobs:
         # Installing packages might fail as the github image becomes outdated
         sudo apt update
         # These aren't available or don't work well in vcpkg
-        sudo apt install libjsoncpp-dev uuid-dev openssl libssl-dev zlib1g-dev postgresql-all libsqlite3-dev
+        sudo apt install libjsoncpp-dev uuid-dev openssl libssl-dev zlib1g-dev libsqlite3-dev
         sudo apt install libbrotli-dev
     - name: (Linux) Install gcc-10
       if: matrix.buildname == 'ubuntu-20.04/gcc-10'
@@ -121,6 +121,11 @@ jobs:
         sudo add-apt-repository ppa:mhier/libboost-latest
         sudo apt update
         sudo apt install boost1.67
+
+    - name: (Linux) Install postgresql
+      if: matrix.os == 'ubuntu-20.04'
+      run: |
+        sudo apt install postgresql-all
 
     - name: install gtest
       run: |

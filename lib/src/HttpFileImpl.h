@@ -1,7 +1,7 @@
 /**
  *
- *  HttpFileImpl.h
- *  An Tao
+ *  @file HttpFileImpl.h
+ *  @author An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
@@ -84,6 +84,17 @@ class HttpFileImpl
         return fileContent_;
     }
 
+    /// Return the name of the item in multiple parts.
+    const std::string &getItemName() const
+    {
+        return itemName_;
+    }
+
+    void setItemName(const std::string &itemName)
+    {
+        itemName_ = itemName;
+    }
+
     /// Return the md5 string of the file
     std::string getMd5() const;
     int saveTo(const std::string &pathAndFilename) const;
@@ -94,6 +105,7 @@ class HttpFileImpl
 
   private:
     std::string fileName_;
+    std::string itemName_;
     string_view fileContent_;
     HttpRequestPtr requestPtr_;
 };
