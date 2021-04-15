@@ -983,9 +983,7 @@ trantor::Date getHttpDate(const std::string &httpFullDateString)
         // weird RFC 850-hybrid thing that reddit uses
         "%a, %d-%b-%Y %H:%M:%S",
     };
-    struct tm tmptm
-    {
-    };
+    struct tm tmptm;
     for (const char *format : formats)
     {
         if (strptime(httpFullDateString.c_str(), format, &tmptm) != NULL)
