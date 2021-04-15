@@ -606,8 +606,22 @@ ContentType parseContentType(const string_view &contentType)
 
 FileType parseFileType(const std::string &fileExtension)
 {
+    // https://en.wikipedia.org/wiki/List_of_file_formats
     static const std::unordered_map<string_view, FileType> map_{
-        {"html", FT_DOCUMENT}
+        {"html", FT_DOCUMENT},
+        {"docx", FT_DOCUMENT},
+        {"zip", FT_ARCHIVE},
+        {"rar", FT_ARCHIVE},
+        {"xz", FT_ARCHIVE},
+        {"mp3", FT_AUDIO},
+        {"wav", FT_AUDIO},
+        {"avi", FT_MEDIA},
+        {"gif", FT_MEDIA},
+        {"mp4", FT_MEDIA},
+        {"mov", FT_MEDIA},
+        {"png", FT_IMAGE},
+        {"jpeg", FT_IMAGE},
+        {"ico", FT_IMAGE}
     };
     auto iter = map_.find(fileExtension);
     if (iter == map_.end())
