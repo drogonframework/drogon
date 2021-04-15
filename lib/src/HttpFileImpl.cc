@@ -139,6 +139,11 @@ void HttpFile::setFullFileName(const std::string &fullFileName)
     implPtr_->setFullFileName(fullFileName);
 }
 
+const FileType &HttpFile::getFileType() const
+{
+    return implPtr_->getFileType();
+}
+
 void HttpFile::setFile(const char *data, size_t length)
 {
     implPtr_->setFile(data, length);

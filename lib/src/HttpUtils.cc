@@ -596,10 +596,22 @@ ContentType parseContentType(const string_view &contentType)
         {"image/icns", CT_IMAGE_ICNS},
         {"application/wasm", CT_APPLICATION_WASM},
         {"text/plain", CT_TEXT_PLAIN},
-        {"multipart/form-data", CT_MULTIPART_FORM_DATA}};
+        {"multipart/form-data", CT_MULTIPART_FORM_DATA}
+    };
     auto iter = map_.find(contentType);
     if (iter == map_.end())
         return CT_NONE;
+    return iter->second;
+}
+
+FileType parseFileType(const std::string &fileExtension)
+{
+    static const std::unordered_map<string_view, FileType> map_{
+        {"html", FT_DOCUMENT}
+    };
+    auto iter = map_.find(fileExtension);
+    if (iter == map_.end())
+        return FT_CUSTOM;
     return iter->second;
 }
 

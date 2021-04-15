@@ -113,6 +113,12 @@ enum ContentType
     CT_CUSTOM
 };
 
+enum FileType
+{
+    FT_CUSTOM,
+    FT_DOCUMENT
+};
+
 enum HttpMethod
 {
     Get = 0,

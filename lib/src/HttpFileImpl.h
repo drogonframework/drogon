@@ -13,6 +13,7 @@
  */
 
 #pragma once
+#include "HttpUtils.h"
 #include <drogon/utils/string_view.h>
 #include <drogon/HttpRequest.h>
 
@@ -47,6 +48,7 @@ class HttpFileImpl
     void setFileExtension(const std::string &fileExtension)
     {
         fileExtension_ = fileExtension;
+        fileType_ = parseFileType(fileExtension_);
     };
 
     /// Return the file name with extension;
@@ -63,11 +65,11 @@ class HttpFileImpl
         auto pos = fullFileName.rfind('.');
 
         // Doesn't contains any dot
-        if (pos == -1) {
-            fileName_ = fullFileName;
+        if (pos == std::string::npos) {
+            setFileName(fullFileName);
         } else {
-            fileName_ = fullFileName.substr(0, pos);
-            fileExtension_ = fullFileName.substr(pos + 1, fullFileName.length());
+            setFileName(fullFileName.substr(0, pos));
+            setFileExtension(fullFileName.substr(pos + 1, fullFileName.length()));
         }
     };
 
@@ -129,6 +131,12 @@ class HttpFileImpl
         itemName_ = itemName;
     }
 
+    /// Return the type of file.
+    const FileType &getFileType() const
+    {
+        return fileType_;
+    }
+
     /// Return the md5 string of the file
     std::string getMd5() const;
     int saveTo(const std::string &pathAndFilename) const;
@@ -142,6 +150,7 @@ class HttpFileImpl
     std::string fileExtension_;
     std::string itemName_;
     string_view fileContent_;
+    FileType fileType_;
     HttpRequestPtr requestPtr_;
 };
 }  // namespace drogon

@@ -21,8 +21,11 @@ void Attachment::upload(const HttpRequestPtr &req,
         // LOG_DEBUG << "file num=" << files.size();
         for (auto const &file : files)
         {
-            LOG_DEBUG << "file:" << file.getFileName()
-                      << "(len=" << file.fileLength()
+            LOG_DEBUG << "file:" << file.getFullFileName()
+                      << "(name=" << file.getFileName()
+                      << ",extension=" << file.getFileExtension()
+                      << ",type=" << file.getFileType()
+                      << ",len=" << file.fileLength()
                       << ",md5=" << file.getMd5() << ")";
             file.save();
             file.save("123");
