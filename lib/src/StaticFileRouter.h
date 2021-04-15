@@ -97,6 +97,7 @@ class StaticFileRouter
     {
         defaultHandler_ = std::move(handler);
     }
+
   private:
     std::set<std::string> fileTypeSet_{"html",
                                        "js",
