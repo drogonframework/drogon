@@ -141,10 +141,10 @@ if (NOT ${CMAKE_SYSTEM_NAME} STREQUAL "FreeBSD"
 
     try_compile(normal_uuid ${CMAKE_BINARY_DIR}/cmaketest
         ${CMAKE_CURRENT_LIST_DIR}/../../cmake/tests/normal_uuid_lib_test.cc
-        LINK_LIBRARIES PkgConfig::uuid)
+        LINK_LIBRARIES nxxm_libuuid::libuuid)
     try_compile(ossp_uuid ${CMAKE_BINARY_DIR}/cmaketest
         ${CMAKE_CURRENT_LIST_DIR}/../../cmake/tests/ossp_uuid_lib_test.cc
-        LINK_LIBRARIES PkgConfig::uuid)
+        LINK_LIBRARIES nxxm_libuuid::libuuid)
     if (normal_uuid)
         add_definitions(-DUSE_OSSP_UUID=0)
     elseif (ossp_uuid)
