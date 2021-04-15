@@ -37,26 +37,16 @@ class DROGON_EXPORT HttpFile
     const std::string &getFileName() const;
 
     /// Return the file extension;
-    const std::string &getFileExtension() const;
-
-    /// Return the file name with extension;
-    std::string getFullFileName() const;
+    std::string getFileExtension() const;
 
     /// Return the name of the item in multiple parts.
     const std::string &getItemName() const;
 
     /// Return the type of file.
-    const FileType &getFileType() const;
+    FileType getFileType() const;
 
     /// Set the file name, usually called by the MultiPartParser parser.
     void setFileName(const std::string &fileName);
-
-    /// Set the file extension, usually called by the MultiPartParser parser.
-    void setFileExtension(const std::string &fileExtension);
-
-    /// Set the file name with extension, usually called by the MultiPartParser
-    /// parser.
-    void setFullFileName(const std::string &fullFileName);
 
     /// Set the contents of the file, usually called by the MultiPartParser
     /// parser.

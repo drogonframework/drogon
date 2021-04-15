@@ -39,44 +39,10 @@ class HttpFileImpl
     };
 
     /// Return the file extension;
-    const std::string &getFileExtension() const
+    std::string getFileExtension() const
     {
-        return fileExtension_;
-    };
-
-    /// Set the file extension, usually called by the MultiPartParser parser.
-    void setFileExtension(const std::string &fileExtension)
-    {
-        fileExtension_ = fileExtension;
-        fileType_ = parseFileType(fileExtension_);
-    };
-
-    /// Return the file name with extension;
-    std::string getFullFileName() const
-    {
-        // If doesn't has any dot, just add the file name and ignore the file
-        // extension
-        return fileName_ +
-               (!fileExtension_.empty() ? "." + fileExtension_ : "");
-    };
-
-    /// Set the file name with extension, usually called by the MultiPartParser
-    /// parser.
-    void setFullFileName(const std::string &fullFileName)
-    {
-        auto pos = fullFileName.rfind('.');
-
-        // Doesn't contains any dot
-        if (pos == std::string::npos)
-        {
-            setFileName(fullFileName);
-        }
-        else
-        {
-            setFileName(fullFileName.substr(0, pos));
-            setFileExtension(
-                fullFileName.substr(pos + 1, fullFileName.length()));
-        }
+        auto pos = fileName_.rfind('.');
+        return fileName_.substr(pos + 1, fileName_.length());
     };
 
     /// Set the contents of the file, usually called by the MultiPartParser
@@ -138,9 +104,9 @@ class HttpFileImpl
     }
 
     /// Return the type of file.
-    const FileType &getFileType() const
+    FileType getFileType() const
     {
-        return fileType_;
+        return parseFileType(getFileExtension());
     }
 
     /// Return the md5 string of the file
@@ -153,10 +119,8 @@ class HttpFileImpl
 
   private:
     std::string fileName_;
-    std::string fileExtension_;
     std::string itemName_;
     string_view fileContent_;
-    FileType fileType_;
     HttpRequestPtr requestPtr_;
 };
 }  // namespace drogon

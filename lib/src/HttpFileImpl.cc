@@ -27,7 +27,7 @@ int HttpFileImpl::save() const
 int HttpFileImpl::save(const std::string &path) const
 {
     assert(!path.empty());
-    if (fileName_.empty() && fileExtension_.empty())
+    if (fileName_.empty())
         return -1;
     std::string fileName;
     std::string tmpPath = path;
@@ -54,9 +54,8 @@ int HttpFileImpl::save(const std::string &path) const
     // Verify if last char of path is an slash, otherwise, add the slash
     fileName = tmpPath + (tmpPath[tmpPath.length() - 1] != '/' ? "/" : "");
 
-    // Append the file name with extension
-    std::string fullFileName = getFullFileName();
-    fileName.append(fullFileName.data(), fullFileName.length());
+    // Append the file name
+    fileName.append(fileName_.data(), fileName_.length());
 
     return saveTo(fileName);
 }
@@ -119,27 +118,12 @@ void HttpFile::setFileName(const std::string &fileName)
     implPtr_->setFileName(fileName);
 }
 
-const std::string &HttpFile::getFileExtension() const
+std::string HttpFile::getFileExtension() const
 {
     return implPtr_->getFileExtension();
 }
 
-void HttpFile::setFileExtension(const std::string &fileExtension)
-{
-    implPtr_->setFileExtension(fileExtension);
-}
-
-std::string HttpFile::getFullFileName() const
-{
-    return implPtr_->getFullFileName();
-}
-
-void HttpFile::setFullFileName(const std::string &fullFileName)
-{
-    implPtr_->setFullFileName(fullFileName);
-}
-
-const FileType &HttpFile::getFileType() const
+FileType HttpFile::getFileType() const
 {
     return implPtr_->getFileType();
 }
