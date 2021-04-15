@@ -161,7 +161,7 @@ void RedisClientLockFree::newTransactionAsync(
     {
         std::weak_ptr<RedisClientLockFree> thisWeakPtr = shared_from_this();
         tasks_.emplace(
-            [callback, thisWeakPtr](const RedisConnectionPtr &connPtr) {
+            [callback, thisWeakPtr](const RedisConnectionPtr & /*connPtr*/) {
                 auto thisPtr = thisWeakPtr.lock();
                 if (thisPtr)
                 {

@@ -182,7 +182,7 @@ void RedisClientImpl::newTransactionAsync(
         std::weak_ptr<RedisClientImpl> thisWeakPtr = shared_from_this();
         std::lock_guard<std::mutex> lock(connectionsMutex_);
         tasks_.emplace(
-            [callback, thisWeakPtr](const RedisConnectionPtr &connPtr) {
+            [callback, thisWeakPtr](const RedisConnectionPtr & /*connPtr*/) {
                 auto thisPtr = thisWeakPtr.lock();
                 if (thisPtr)
                 {
