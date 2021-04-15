@@ -74,7 +74,8 @@ class HttpFileImpl
         else
         {
             setFileName(fullFileName.substr(0, pos));
-            setFileExtension(fullFileName.substr(pos + 1, fullFileName.length()));
+            setFileExtension(
+                fullFileName.substr(pos + 1, fullFileName.length()));
         }
     };
 
