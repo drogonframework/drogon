@@ -12,6 +12,8 @@ project(drogon)
 
 message(STATUS "compiler: " ${CMAKE_CXX_COMPILER_ID})
 
+find_package(Threads REQUIRED)
+
 {{#platform_deps}}
   hunter_add_package({{pkg_name}} COMPONENTS {{#components}}{{component}} {{/components}})
 {{/platform_deps}}
