@@ -603,7 +603,7 @@ ContentType parseContentType(const string_view &contentType)
     return iter->second;
 }
 
-FileType parseFileType(const std::string &fileExtension)
+FileType parseFileType(const string_view &fileExtension)
 {
     // https://en.wikipedia.org/wiki/List_of_file_formats
     static const std::unordered_map<string_view, FileType> map_{

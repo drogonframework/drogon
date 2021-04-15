@@ -25,7 +25,7 @@ const string_view &webContentTypeToString(ContentType contenttype);
 const string_view &statusCodeToString(int code);
 ContentType getContentType(const std::string &fileName);
 ContentType parseContentType(const string_view &contentType);
-FileType parseFileType(const std::string &fileExtension);
+FileType parseFileType(const string_view &fileExtension);
 template <typename T>
 inline constexpr const char *contentLengthFormatString()
 {
