@@ -1,5 +1,10 @@
 {
   "open-source-parsers/jsoncpp" : {},
-    "nxxm/libuuid" : {},
+  "nxxm/libuuid" : { 
+      "@:windows-cxx17" : "empty_for_windows",
+      "@:windows" : "empty_for_windows",
+      "@:vs-15-2017-win64-cxx17" : "empty_for_windows",
+      "@:vs-16-2019-win64-cxx17" : "empty_for_windows"
+  },
   , "platform" : [ { "packages": ["ZLIB"] , "targets" : [""] }, { "packages": ["c-ares"], "targets" : [""] }, { "packages": ["uuid"], "targets" : [""] }, "OpenSSL::+SSL", "OpenSSL::+Crypto" ]
 }
