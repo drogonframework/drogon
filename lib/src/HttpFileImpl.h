@@ -56,18 +56,23 @@ class HttpFileImpl
     {
         // If doesn't has any dot, just add the file name and ignore the file
         // extension
-        return fileName_ + (!fileExtension_.empty() ? "." + fileExtension_ : "");
+        return fileName_ +
+               (!fileExtension_.empty() ? "." + fileExtension_ : "");
     };
 
-    /// Set the file name with extension, usually called by the MultiPartParser parser.
+    /// Set the file name with extension, usually called by the MultiPartParser
+    /// parser.
     void setFullFileName(const std::string &fullFileName)
     {
         auto pos = fullFileName.rfind('.');
 
         // Doesn't contains any dot
-        if (pos == std::string::npos) {
+        if (pos == std::string::npos)
+        {
             setFileName(fullFileName);
-        } else {
+        }
+        else
+        {
             setFileName(fullFileName.substr(0, pos));
             setFileExtension(fullFileName.substr(pos + 1, fullFileName.length()));
         }

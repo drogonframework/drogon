@@ -596,8 +596,7 @@ ContentType parseContentType(const string_view &contentType)
         {"image/icns", CT_IMAGE_ICNS},
         {"application/wasm", CT_APPLICATION_WASM},
         {"text/plain", CT_TEXT_PLAIN},
-        {"multipart/form-data", CT_MULTIPART_FORM_DATA}
-    };
+        {"multipart/form-data", CT_MULTIPART_FORM_DATA}};
     auto iter = map_.find(contentType);
     if (iter == map_.end())
         return CT_NONE;
@@ -621,8 +620,7 @@ FileType parseFileType(const std::string &fileExtension)
         {"mov", FT_MEDIA},
         {"png", FT_IMAGE},
         {"jpeg", FT_IMAGE},
-        {"ico", FT_IMAGE}
-    };
+        {"ico", FT_IMAGE}};
     auto iter = map_.find(fileExtension);
     if (iter == map_.end())
         return FT_CUSTOM;
