@@ -114,7 +114,7 @@ class HttpControllersRouter : public trantor::NonCopyable
     const std::vector<
         std::function<void(const HttpRequestPtr &, const HttpResponsePtr &)>>
         &postHandlingAdvices_;
-    optional<DefaultHandler> defaultHandler_;
+    DefaultHandler defaultHandler_;
 
     void doPreHandlingAdvices(
         const CtrlBinderPtr &ctrlBinderPtr,

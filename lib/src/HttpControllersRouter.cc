@@ -31,7 +31,7 @@ void HttpControllersRouter::doWhenNoHandlerFound(
 {
     if (defaultHandler_)
     {
-        defaultHandler_.value()(req, std::move(callback));
+        defaultHandler_.(req, std::move(callback));
     }
     else
     {
