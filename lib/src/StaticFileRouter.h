@@ -93,7 +93,10 @@ class StaticFileRouter
     {
         return implicitPage_;
     }
-
+    void setDefaultHandler(DefaultHandler handler)
+    {
+        defaultHandler_ = std::move(handler);
+    }
   private:
     std::set<std::string> fileTypeSet_{"html",
                                        "js",
@@ -128,6 +131,7 @@ class StaticFileRouter
     std::vector<std::pair<std::string, std::string>> headers_;
     bool implicitPageEnable_{true};
     std::string implicitPage_{"index.html"};
+    DefaultHandler defaultHandler_;
     struct Location
     {
         std::string uriPrefix_;

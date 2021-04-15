@@ -1077,6 +1077,6 @@ std::vector<trantor::InetAddress> HttpAppFrameworkImpl::getListeners() const
 HttpAppFramework &HttpAppFrameworkImpl::setDefaultHandler(
     DefaultHandler handler)
 {
-    httpCtrlsRouterPtr_->setDefaultHandler(std::move(handler));
+    staticFileRouterPtr_->setDefaultHandler(std::move(handler));
     return *this;
 }

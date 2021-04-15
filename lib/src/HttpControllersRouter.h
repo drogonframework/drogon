@@ -73,7 +73,6 @@ class HttpControllersRouter : public trantor::NonCopyable
                std::function<void(const HttpResponsePtr &)> &&callback);
     std::vector<std::tuple<std::string, HttpMethod, std::string>>
     getHandlersInfo() const;
-    void setDefaultHandler(DefaultHandler handler);
 
   private:
     StaticFileRouter &fileRouter_;
@@ -114,7 +113,6 @@ class HttpControllersRouter : public trantor::NonCopyable
     const std::vector<
         std::function<void(const HttpRequestPtr &, const HttpResponsePtr &)>>
         &postHandlingAdvices_;
-    DefaultHandler defaultHandler_;
 
     void doPreHandlingAdvices(
         const CtrlBinderPtr &ctrlBinderPtr,

@@ -235,7 +235,14 @@ void StaticFileRouter::route(
             }
         }
     }
-    callback(HttpResponse::newNotFoundResponse());
+    if (defaultHandler_)
+    {
+        defaultHandler_(req, std::move(callback));
+    }
+    else
+    {
+        callback(HttpResponse::newNotFoundResponse());
+    }
 }
 
 void StaticFileRouter::sendStaticFileResponse(

@@ -582,7 +582,9 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
     }
 
     /// Register a default handler into the framework when no handler matches
-    /// the request. If set, it replaces the static file router.
+    /// the request. If set, it is executed if the static file router does
+    /// not find any file corresponding to the request. Thus it replaces
+    /// the default 404 not found response.
     /**
      * @param function indicates any type of callable object with a valid
      * processing interface.
