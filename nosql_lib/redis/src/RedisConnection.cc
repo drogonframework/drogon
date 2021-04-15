@@ -113,7 +113,7 @@ void RedisConnection::startConnectionInLoop()
             }
         });
     redisAsyncSetDisconnectCallback(
-        redisContext_, [](const redisAsyncContext *context, int status) {
+        redisContext_, [](const redisAsyncContext *context, int /*status*/) {
             auto thisPtr = static_cast<RedisConnection *>(context->ev.data);
 
             thisPtr->handleDisconnect();
@@ -176,7 +176,7 @@ void RedisConnection::delRead(void *userData)
     assert(thisPtr->channel_);
     thisPtr->channel_->disableReading();
 }
-void RedisConnection::cleanup(void *userData)
+void RedisConnection::cleanup(void * /*userData*/)
 {
     LOG_TRACE << "cleanup";
 }
@@ -205,7 +205,7 @@ void RedisConnection::sendCommandInLoop(
 
     redisAsyncFormattedCommand(
         redisContext_,
-        [](redisAsyncContext *context, void *r, void *userData) {
+        [](redisAsyncContext *context, void *r, void * /*userData*/) {
             auto thisPtr = static_cast<RedisConnection *>(context->ev.data);
             thisPtr->handleResult(static_cast<redisReply *>(r));
         },

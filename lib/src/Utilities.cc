@@ -1161,13 +1161,13 @@ std::string brotliDecompress(const char *data, const size_t ndata)
     return decompressed;
 }
 #else
-std::string brotliCompress(const char *data, const size_t ndata)
+std::string brotliCompress(const char * /*data*/, const size_t /*ndata*/)
 {
     LOG_ERROR << "If you do not have the brotli package installed, you cannot "
                  "use brotliCompress()";
     abort();
 }
-std::string brotliDecompress(const char *data, const size_t ndata)
+std::string brotliDecompress(const char * /*data*/, const size_t /*ndata*/)
 {
     LOG_ERROR << "If you do not have the brotli package installed, you cannot "
                  "use brotliDecompress()";
