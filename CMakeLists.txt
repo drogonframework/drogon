@@ -481,6 +481,7 @@ set(ORM_HEADERS
     orm_lib/inc/drogon/orm/Field.h
     orm_lib/inc/drogon/orm/FunctionTraits.h
     orm_lib/inc/drogon/orm/Mapper.h
+    orm_lib/inc/drogon/orm/CoroMapper.h
     orm_lib/inc/drogon/orm/Result.h
     orm_lib/inc/drogon/orm/ResultIterator.h
     orm_lib/inc/drogon/orm/Row.h
