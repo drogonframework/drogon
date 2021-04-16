@@ -16,6 +16,7 @@
 
 #include <drogon/exports.h>
 #include <drogon/HttpRequest.h>
+#include <drogon/utils/string_view.h>
 #include <map>
 #include <unordered_map>
 #include <string>
@@ -37,7 +38,9 @@ class DROGON_EXPORT HttpFile
     const std::string &getFileName() const;
 
     /// Return the file extension;
-    std::string getFileExtension() const;
+    /// Note: After the HttpFile object is destroyed, do not use this
+    /// string_view object.
+    string_view getFileExtension() const;
 
     /// Return the name of the item in multiple parts.
     const std::string &getItemName() const;

@@ -62,7 +62,7 @@ int HttpFileImpl::save(const std::string &path) const
 int HttpFileImpl::saveAs(const std::string &fileName) const
 {
     assert(!fileName.empty());
-    auto pathAndfileName = fileName;
+    auto pathAndFileName = fileName;
     if (fileName[0] == '/' ||
         (fileName.length() >= 2 && fileName[0] == '.' && fileName[1] == '/') ||
         (fileName.length() >= 3 && fileName[0] == '.' && fileName[1] == '.' &&
@@ -74,23 +74,23 @@ int HttpFileImpl::saveAs(const std::string &fileName) const
     {
         auto &uploadPath = HttpAppFrameworkImpl::instance().getUploadPath();
         if (uploadPath[uploadPath.length() - 1] == '/')
-            pathAndfileName = uploadPath + fileName;
+            pathAndFileName = uploadPath + fileName;
         else
-            pathAndfileName = uploadPath + "/" + fileName;
+            pathAndFileName = uploadPath + "/" + fileName;
     }
-    auto pathPos = pathAndfileName.rfind('/');
+    auto pathPos = pathAndFileName.rfind('/');
     if (pathPos != std::string::npos)
     {
-        std::string path = pathAndfileName.substr(0, pathPos);
+        std::string path = pathAndFileName.substr(0, pathPos);
         if (utils::createPath(path) < 0)
             return -1;
     }
-    return saveTo(pathAndfileName);
+    return saveTo(pathAndFileName);
 }
-int HttpFileImpl::saveTo(const std::string &pathAndFilename) const
+int HttpFileImpl::saveTo(const std::string &pathAndFileName) const
 {
-    LOG_TRACE << "save uploaded file:" << pathAndFilename;
-    std::ofstream file(pathAndFilename, std::ios::binary);
+    LOG_TRACE << "save uploaded file:" << pathAndFileName;
+    std::ofstream file(pathAndFileName, std::ios::binary);
     if (file.is_open())
     {
         file.write(fileContent_.data(), fileContent_.size());
@@ -118,7 +118,7 @@ void HttpFile::setFileName(const std::string &fileName)
     implPtr_->setFileName(fileName);
 }
 
-std::string HttpFile::getFileExtension() const
+string_view HttpFile::getFileExtension() const
 {
     return implPtr_->getFileExtension();
 }

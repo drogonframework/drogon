@@ -115,6 +115,7 @@ enum ContentType
 
 enum FileType
 {
+    FT_UNKNOWN = 0,
     FT_CUSTOM,
     FT_DOCUMENT,
     FT_ARCHIVE,

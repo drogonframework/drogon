@@ -30,27 +30,26 @@ class HttpFileImpl
     const std::string &getFileName() const
     {
         return fileName_;
-    };
+    }
 
     /// Set the file name, usually called by the MultiPartParser parser.
     void setFileName(const std::string &fileName)
     {
         fileName_ = fileName;
-    };
+    }
 
     /// Return the file extension;
-    std::string getFileExtension() const
+    string_view getFileExtension() const
     {
-        auto pos = fileName_.rfind('.');
-        return fileName_.substr(pos + 1, fileName_.length());
-    };
+        return drogon::getFileExtension(fileName_);
+    }
 
     /// Set the contents of the file, usually called by the MultiPartParser
     /// parser.
     void setFile(const char *data, size_t length)
     {
         fileContent_ = string_view{data, length};
-    };
+    }
 
     /// Save the file to the file system.
     /**
@@ -80,7 +79,7 @@ class HttpFileImpl
     size_t fileLength() const noexcept
     {
         return fileContent_.length();
-    };
+    }
 
     const char *fileData() const noexcept
     {
@@ -111,7 +110,7 @@ class HttpFileImpl
 
     /// Return the md5 string of the file
     std::string getMd5() const;
-    int saveTo(const std::string &pathAndFilename) const;
+    int saveTo(const std::string &pathAndFileName) const;
     void setRequest(const HttpRequestPtr &req)
     {
         requestPtr_ = req;

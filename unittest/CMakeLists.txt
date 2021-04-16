@@ -8,6 +8,7 @@ add_executable(base64_unittest Base64Unittest.cpp)
 add_executable(pubsubservice_unittest PubSubServiceUnittest.cpp)
 add_executable(httpdate_unittest HttpDateUnittest.cpp)
 add_executable(httpheader_unittest HttpHeaderUnittest.cpp)
+add_executable(filetype_unittest FileTypeUnittest.cpp)
 if(Brotli_FOUND)
   add_executable(brotli_unittest BrotliUnittest.cpp)
 endif()
@@ -22,7 +23,8 @@ set(UNITTEST_TARGETS
     base64_unittest
     pubsubservice_unittest
     httpdate_unittest
-    httpheader_unittest)
+    httpheader_unittest
+    filetype_unittest)
 if(Brotli_FOUND)
   set(UNITTEST_TARGETS ${UNITTEST_TARGETS} brotli_unittest)
 endif()

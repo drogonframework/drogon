@@ -1303,6 +1303,40 @@ void doTest(const HttpClientPtr &client,
                 exit(1);
             }
         });
+
+    // return;
+    // Test file upload, file type and extension interface.
+    UploadFile image("./drogon.jpg");
+    req = HttpRequest::newFileUploadRequest({image});
+    req->setPath("/api/attachment/uploadImage");
+    req->setParameter("P1", "upload");
+    req->setParameter("P2", "test");
+    client->sendRequest(
+        req, [req, isHttps](ReqResult result, const HttpResponsePtr &resp) {
+            if (result == ReqResult::Ok)
+            {
+                auto json = resp->getJsonObject();
+                if (json && (*json)["isImage"].asBool() &&
+                    (*json)["P1"] == "upload" && (*json)["P2"] == "test")
+                {
+                    outputGood(req, isHttps);
+                    // std::cout << (*json) << std::endl;
+                }
+                else
+                {
+                    LOG_DEBUG << resp->getBody().length();
+                    LOG_DEBUG << resp->getBody();
+                    LOG_ERROR << "Error!";
+                    exit(1);
+                }
+            }
+            else
+            {
+                LOG_ERROR << "Error!";
+                exit(1);
+            }
+        });
+
     req = HttpRequest::newHttpRequest();
     req->setMethod(drogon::Get);
     req->setPath("/api/v1/this_will_fail");

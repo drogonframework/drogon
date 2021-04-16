@@ -74,9 +74,9 @@ void Attachment::uploadImage(
             json["isImage"] = true;
         }
         // Second way
-        const std::string fileExtension = file.getFileExtension();
+        auto fileExtension = file.getFileExtension();
         if (fileExtension == "png" || fileExtension == "jpeg" ||
-            fileExtension == "ico" /* || etc... */)
+            fileExtension == "jpg" || fileExtension == "ico" /* || etc... */)
         {
             json["isImage"] = true;
         }
