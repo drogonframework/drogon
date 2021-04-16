@@ -1,10 +1,25 @@
 {
-    "open-source-parsers/jsoncpp" : {}
-  , "nxxm/libuuid" : { 
-      "@:windows-cxx17" : "empty_for_windows",
-      "@:windows" : "empty_for_windows",
-      "@:vs-15-2017-win64-cxx17" : "empty_for_windows",
-      "@:vs-16-2019-win64-cxx17" : "empty_for_windows"
-  }
-  , "platform" : [ { "packages": ["ZLIB"] , "targets" : [""] }, { "packages": ["c-ares"], "targets" : [""] }, { "packages": ["uuid"], "targets" : [""] }, "OpenSSL::+SSL", "OpenSSL::+Crypto" ]
+  "bfgroup/Lyra" : { "@" : "1.3", "s" : ["include"]  }
+  , "cpp-pre/file" : { }
+  , "nxxm/xxhr" : { "@" : "debug/use_boost_windows_h" }
+  , "nxxm/cli_widgets" : { "@" : "master" }
+  , "nxxm/gh" : { "@" : "debug/fix_cpp_pre" }
+  , "nlohmann/json" : { "@" : "v3.1.2" }
+  , "nxxm/mstch" : { "@" : "master", 
+                     "requires" : { "platform" : ["Boost::+boost"] }  }
+
+  , "nxxm/htmlpp" : { "@" : "master"  }
+  , "nxxm/upgrd" : { "@" : "v0.0.3",
+                      "requires" : { "kuba--/zip" : { "@" : "v0.1.19" } }  }
+
+  , "platform:gcc-7-cxx17" : [ "Boost::system", "Boost::filesystem", "Boost::regex", "target::rt" ]
+  , "platform:clang-cxx17" : [ "Boost::system", "Boost::filesystem", "Boost::regex" ]
+  , "platform:vs-15-2017-win64-cxx17" : [ "Boost::system", "Boost::filesystem", "Boost::regex" ]
+  , "platform:vs-16-2019-win64-cxx17" : [ "Boost::system", "Boost::filesystem", "Boost::regex" ]
+  , "platform:linux" : [ "Boost::system", "Boost::filesystem", "Boost::regex", "target::rt" ]
+  , "platform:linux-cxx17" : [ "Boost::system", "Boost::filesystem", "Boost::regex", "target::rt" ]
+  , "platform:macos" : [ "Boost::system", "Boost::filesystem", "Boost::regex" ]
+  , "platform:macos-cxx17" : [ "Boost::system", "Boost::filesystem", "Boost::regex" ]
+  , "platform:windows" : [ "Boost::system", "Boost::filesystem", "Boost::regex", "target::ws2_32" ]
+  , "platform:windows-cxx17" : [ "Boost::system", "Boost::filesystem", "Boost::regex", "target::ws2_32" ]
 }
