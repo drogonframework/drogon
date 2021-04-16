@@ -1075,3 +1075,9 @@ std::vector<trantor::InetAddress> HttpAppFrameworkImpl::getListeners() const
 {
     return listenerManagerPtr_->getListeners();
 }
+HttpAppFramework &HttpAppFrameworkImpl::setDefaultHandler(
+    DefaultHandler handler)
+{
+    staticFileRouterPtr_->setDefaultHandler(std::move(handler));
+    return *this;
+}

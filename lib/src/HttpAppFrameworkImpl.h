@@ -191,6 +191,8 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
         return *this;
     }
 
+    HttpAppFramework &setDefaultHandler(DefaultHandler handler) override;
+
     HttpAppFramework &enableSession(const size_t timeout) override
     {
         useSession_ = true;

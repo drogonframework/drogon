@@ -52,7 +52,7 @@ class StaticFileRouter
     void sendStaticFileResponse(
         const std::string &filePath,
         const HttpRequestImplPtr &req,
-        const std::function<void(const HttpResponsePtr &)> &callback,
+        std::function<void(const HttpResponsePtr &)> &&callback,
         const string_view &defaultContentType);
 
     void addALocation(const std::string &uriPrefix,
@@ -93,8 +93,16 @@ class StaticFileRouter
     {
         return implicitPage_;
     }
+    void setDefaultHandler(DefaultHandler &&handler)
+    {
+        defaultHandler_ = std::move(handler);
+    }
 
   private:
+    static void defaultHandler(
+        const HttpRequestPtr &req,
+        std::function<void(const HttpResponsePtr &)> &&callback);
+
     std::set<std::string> fileTypeSet_{"html",
                                        "js",
                                        "css",
@@ -128,6 +136,7 @@ class StaticFileRouter
     std::vector<std::pair<std::string, std::string>> headers_;
     bool implicitPageEnable_{true};
     std::string implicitPage_{"index.html"};
+    DefaultHandler defaultHandler_ = StaticFileRouter::defaultHandler;
     struct Location
     {
         std::string uriPrefix_;
