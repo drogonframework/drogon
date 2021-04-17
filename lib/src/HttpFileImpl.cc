@@ -19,18 +19,24 @@
 #include <iostream>
 
 using namespace drogon;
+// Verify if last char of path is a slash, otherwise, add the slash
+static inline void ensureSlashPostfix(std::string &path)
+{
+    if (path[path.length() - 1] != '/')
+        path += '/';
+}
 
 int HttpFileImpl::save() const
 {
     return save(HttpAppFrameworkImpl::instance().getUploadPath());
 }
+
 int HttpFileImpl::save(const std::string &path) const
 {
     assert(!path.empty());
     if (fileName_.empty())
         return -1;
     std::string fileName;
-    std::string tmpPath = path;
     if (path[0] == '/' ||
         (path.length() >= 2 && path[0] == '.' && path[1] == '/') ||
         (path.length() >= 3 && path[0] == '.' && path[1] == '.' &&
@@ -38,45 +44,37 @@ int HttpFileImpl::save(const std::string &path) const
         path == "." || path == "..")
     {
         // Absolute or relative path
+        fileName = path;
     }
     else
     {
-        auto &uploadPath = HttpAppFrameworkImpl::instance().getUploadPath();
-        if (uploadPath[uploadPath.length() - 1] == '/')
-            tmpPath = uploadPath + path;
-        else
-            tmpPath = uploadPath + "/" + path;
+        fileName = HttpAppFrameworkImpl::instance().getUploadPath();
+        ensureSlashPostfix(fileName);
+        fileName += path;
     }
-
-    if (utils::createPath(tmpPath) < 0)
+    if (utils::createPath(fileName) < 0)
         return -1;
-
-    // Verify if last char of path is an slash, otherwise, add the slash
-    fileName = tmpPath + (tmpPath[tmpPath.length() - 1] != '/' ? "/" : "");
-
-    // Append the file name
-    fileName.append(fileName_.data(), fileName_.length());
-
+    ensureSlashPostfix(fileName);
+    fileName += fileName_;
     return saveTo(fileName);
 }
 int HttpFileImpl::saveAs(const std::string &fileName) const
 {
     assert(!fileName.empty());
-    auto pathAndFileName = fileName;
+    std::string pathAndFileName;
     if (fileName[0] == '/' ||
         (fileName.length() >= 2 && fileName[0] == '.' && fileName[1] == '/') ||
         (fileName.length() >= 3 && fileName[0] == '.' && fileName[1] == '.' &&
          fileName[2] == '/'))
     {
         // Absolute or relative path
+        pathAndFileName = fileName;
     }
     else
     {
-        auto &uploadPath = HttpAppFrameworkImpl::instance().getUploadPath();
-        if (uploadPath[uploadPath.length() - 1] == '/')
-            pathAndFileName = uploadPath + fileName;
-        else
-            pathAndFileName = uploadPath + "/" + fileName;
+        pathAndFileName = HttpAppFrameworkImpl::instance().getUploadPath();
+        ensureSlashPostfix(pathAndFileName);
+        pathAndFileName += fileName;
     }
     auto pathPos = pathAndFileName.rfind('/');
     if (pathPos != std::string::npos)
