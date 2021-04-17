@@ -1,7 +1,7 @@
 /**
  *
- *  HttpUtils.h
- *  An Tao
+ *  @file HttpUtils.h
+ *  @author An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
@@ -21,10 +21,19 @@
 
 namespace drogon
 {
-ContentType parseContentType(const string_view &contentType);
 const string_view &webContentTypeToString(ContentType contenttype);
 const string_view &statusCodeToString(int code);
 ContentType getContentType(const std::string &fileName);
+ContentType parseContentType(const string_view &contentType);
+FileType parseFileType(const string_view &fileExtension);
+inline string_view getFileExtension(const std::string &fileName)
+{
+    auto pos = fileName.rfind('.');
+    if (pos == std::string::npos)
+        return "";
+    return string_view(&fileName[pos + 1], fileName.length() - pos - 1);
+}
+
 template <typename T>
 inline constexpr const char *contentLengthFormatString()
 {

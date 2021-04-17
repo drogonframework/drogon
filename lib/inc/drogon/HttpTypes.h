@@ -113,6 +113,17 @@ enum ContentType
     CT_CUSTOM
 };
 
+enum FileType
+{
+    FT_UNKNOWN = 0,
+    FT_CUSTOM,
+    FT_DOCUMENT,
+    FT_ARCHIVE,
+    FT_AUDIO,
+    FT_MEDIA,
+    FT_IMAGE
+};
+
 enum HttpMethod
 {
     Get = 0,

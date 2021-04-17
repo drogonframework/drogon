@@ -19,14 +19,24 @@
 #include <iostream>
 
 using namespace drogon;
+// Verify if last char of path is a slash, otherwise, add the slash
+static inline void ensureSlashPostfix(std::string &path)
+{
+    if (path[path.length() - 1] != '/')
+        path += '/';
+}
+
+int HttpFileImpl::save() const
+{
+    return save(HttpAppFrameworkImpl::instance().getUploadPath());
+}
 
 int HttpFileImpl::save(const std::string &path) const
 {
     assert(!path.empty());
-    if (fileName_ == "")
+    if (fileName_.empty())
         return -1;
-    std::string filename;
-    auto tmpPath = path;
+    std::string fileName;
     if (path[0] == '/' ||
         (path.length() >= 2 && path[0] == '.' && path[1] == '/') ||
         (path.length() >= 3 && path[0] == '.' && path[1] == '.' &&
@@ -34,51 +44,37 @@ int HttpFileImpl::save(const std::string &path) const
         path == "." || path == "..")
     {
         // Absolute or relative path
+        fileName = path;
     }
     else
     {
-        auto &uploadPath = HttpAppFrameworkImpl::instance().getUploadPath();
-        if (uploadPath[uploadPath.length() - 1] == '/')
-            tmpPath = uploadPath + path;
-        else
-            tmpPath = uploadPath + "/" + path;
+        fileName = HttpAppFrameworkImpl::instance().getUploadPath();
+        ensureSlashPostfix(fileName);
+        fileName += path;
     }
-
-    if (utils::createPath(tmpPath) < 0)
+    if (utils::createPath(fileName) < 0)
         return -1;
-
-    if (tmpPath[tmpPath.length() - 1] != '/')
-    {
-        filename = tmpPath + "/";
-        filename.append(fileName_.data(), fileName_.length());
-    }
-    else
-        filename = tmpPath.append(fileName_.data(), fileName_.length());
-
-    return saveTo(filename);
+    ensureSlashPostfix(fileName);
+    fileName += fileName_;
+    return saveTo(fileName);
 }
-int HttpFileImpl::save() const
+int HttpFileImpl::saveAs(const std::string &fileName) const
 {
-    return save(HttpAppFrameworkImpl::instance().getUploadPath());
-}
-int HttpFileImpl::saveAs(const std::string &filename) const
-{
-    assert(!filename.empty());
-    auto pathAndFileName = filename;
-    if (filename[0] == '/' ||
-        (filename.length() >= 2 && filename[0] == '.' && filename[1] == '/') ||
-        (filename.length() >= 3 && filename[0] == '.' && filename[1] == '.' &&
-         filename[2] == '/'))
+    assert(!fileName.empty());
+    std::string pathAndFileName;
+    if (fileName[0] == '/' ||
+        (fileName.length() >= 2 && fileName[0] == '.' && fileName[1] == '/') ||
+        (fileName.length() >= 3 && fileName[0] == '.' && fileName[1] == '.' &&
+         fileName[2] == '/'))
     {
         // Absolute or relative path
+        pathAndFileName = fileName;
     }
     else
     {
-        auto &uploadPath = HttpAppFrameworkImpl::instance().getUploadPath();
-        if (uploadPath[uploadPath.length() - 1] == '/')
-            pathAndFileName = uploadPath + filename;
-        else
-            pathAndFileName = uploadPath + "/" + filename;
+        pathAndFileName = HttpAppFrameworkImpl::instance().getUploadPath();
+        ensureSlashPostfix(pathAndFileName);
+        pathAndFileName += fileName;
     }
     auto pathPos = pathAndFileName.rfind('/');
     if (pathPos != std::string::npos)
@@ -89,10 +85,10 @@ int HttpFileImpl::saveAs(const std::string &filename) const
     }
     return saveTo(pathAndFileName);
 }
-int HttpFileImpl::saveTo(const std::string &pathAndFilename) const
+int HttpFileImpl::saveTo(const std::string &pathAndFileName) const
 {
-    LOG_TRACE << "save uploaded file:" << pathAndFilename;
-    std::ofstream file(pathAndFilename, std::ios::binary);
+    LOG_TRACE << "save uploaded file:" << pathAndFileName;
+    std::ofstream file(pathAndFileName, std::ios::binary);
     if (file.is_open())
     {
         file.write(fileContent_.data(), fileContent_.size());
@@ -115,9 +111,19 @@ const std::string &HttpFile::getFileName() const
     return implPtr_->getFileName();
 }
 
-void HttpFile::setFileName(const std::string &filename)
+void HttpFile::setFileName(const std::string &fileName)
 {
-    implPtr_->setFileName(filename);
+    implPtr_->setFileName(fileName);
+}
+
+string_view HttpFile::getFileExtension() const
+{
+    return implPtr_->getFileExtension();
+}
+
+FileType HttpFile::getFileType() const
+{
+    return implPtr_->getFileType();
 }
 
 void HttpFile::setFile(const char *data, size_t length)
@@ -135,9 +141,9 @@ int HttpFile::save(const std::string &path) const
     return implPtr_->save(path);
 }
 
-int HttpFile::saveAs(const std::string &filename) const
+int HttpFile::saveAs(const std::string &fileName) const
 {
-    return implPtr_->saveAs(filename);
+    return implPtr_->saveAs(fileName);
 }
 
 size_t HttpFile::fileLength() const noexcept

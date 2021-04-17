@@ -22,7 +22,9 @@ void Attachment::upload(const HttpRequestPtr &req,
         for (auto const &file : files)
         {
             LOG_DEBUG << "file:" << file.getFileName()
-                      << "(len=" << file.fileLength()
+                      << "(extension=" << file.getFileExtension()
+                      << ",type=" << file.getFileType()
+                      << ",len=" << file.fileLength()
                       << ",md5=" << file.getMd5() << ")";
             file.save();
             file.save("123");
@@ -43,7 +45,57 @@ void Attachment::upload(const HttpRequestPtr &req,
         return;
     }
     LOG_DEBUG << "upload error!";
-    // LOG_DEBUG<<req->con
+    // LOG_DEBUG << req->con
+    Json::Value json;
+    json["result"] = "failed";
+    auto resp = HttpResponse::newHttpJsonResponse(json);
+    callback(resp);
+}
+
+void Attachment::uploadImage(
+    const HttpRequestPtr &req,
+    std::function<void(const HttpResponsePtr &)> &&callback)
+{
+    MultiPartParser fileUpload;
+
+    // At this endpoint, we only accept one file
+    if (fileUpload.parse(req) == 0 && fileUpload.getFiles().size() == 1)
+    {
+        // LOG_DEBUG << "upload image good!";
+        Json::Value json;
+
+        // Get the first file received
+        auto &file = fileUpload.getFiles()[0];
+
+        // There are 2 ways to check if the file extension is an image.
+        // First way
+        if (file.getFileType() == FT_IMAGE)
+        {
+            json["isImage"] = true;
+        }
+        // Second way
+        auto fileExtension = file.getFileExtension();
+        if (fileExtension == "png" || fileExtension == "jpeg" ||
+            fileExtension == "jpg" || fileExtension == "ico" /* || etc... */)
+        {
+            json["isImage"] = true;
+        }
+        else
+        {
+            json["isImage"] = false;
+        }
+
+        json["result"] = "ok";
+        for (auto &param : fileUpload.getParameters())
+        {
+            json[param.first] = param.second;
+        }
+        auto resp = HttpResponse::newHttpJsonResponse(json);
+        callback(resp);
+        return;
+    }
+    LOG_DEBUG << "upload image error!";
+    // LOG_DEBUG << req->con
     Json::Value json;
     json["result"] = "failed";
     auto resp = HttpResponse::newHttpJsonResponse(json);

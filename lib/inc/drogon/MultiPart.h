@@ -16,6 +16,7 @@
 
 #include <drogon/exports.h>
 #include <drogon/HttpRequest.h>
+#include <drogon/utils/string_view.h>
 #include <map>
 #include <unordered_map>
 #include <string>
@@ -36,11 +37,19 @@ class DROGON_EXPORT HttpFile
     /// Return the file name;
     const std::string &getFileName() const;
 
+    /// Return the file extension;
+    /// Note: After the HttpFile object is destroyed, do not use this
+    /// string_view object.
+    string_view getFileExtension() const;
+
     /// Return the name of the item in multiple parts.
     const std::string &getItemName() const;
 
+    /// Return the type of file.
+    FileType getFileType() const;
+
     /// Set the file name, usually called by the MultiPartParser parser.
-    void setFileName(const std::string &filename);
+    void setFileName(const std::string &fileName);
 
     /// Set the contents of the file, usually called by the MultiPartParser
     /// parser.
@@ -64,11 +73,11 @@ class DROGON_EXPORT HttpFile
 
     /// Save the file to file system with a new name
     /**
-     * @param filename if the parameter isn't prefixed with "/", "./" or "../",
+     * @param fileName if the parameter isn't prefixed with "/", "./" or "../",
      * the full path is app().getUploadPath()+"/"+filename, otherwise the file
      * is saved as the filename
      */
-    int saveAs(const std::string &filename) const;
+    int saveAs(const std::string &fileName) const;
 
     /**
      * @brief return the content of the file.

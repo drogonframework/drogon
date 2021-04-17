@@ -13,6 +13,7 @@
  */
 
 #pragma once
+#include "HttpUtils.h"
 #include <drogon/utils/string_view.h>
 #include <drogon/HttpRequest.h>
 
@@ -29,20 +30,26 @@ class HttpFileImpl
     const std::string &getFileName() const
     {
         return fileName_;
-    };
+    }
 
     /// Set the file name, usually called by the MultiPartParser parser.
-    void setFileName(const std::string &filename)
+    void setFileName(const std::string &fileName)
     {
-        fileName_ = filename;
-    };
+        fileName_ = fileName;
+    }
+
+    /// Return the file extension;
+    string_view getFileExtension() const
+    {
+        return drogon::getFileExtension(fileName_);
+    }
 
     /// Set the contents of the file, usually called by the MultiPartParser
     /// parser.
     void setFile(const char *data, size_t length)
     {
         fileContent_ = string_view{data, length};
-    };
+    }
 
     /// Save the file to the file system.
     /**
@@ -62,17 +69,17 @@ class HttpFileImpl
 
     /// Save the file to file system with a new name
     /**
-     * @param filename if the parameter isn't prefixed with "/", "./" or "../",
+     * @param fileName if the parameter isn't prefixed with "/", "./" or "../",
      * the full path is app().getUploadPath()+"/"+filename, otherwise the file
      * is saved as the filename
      */
-    int saveAs(const std::string &filename) const;
+    int saveAs(const std::string &fileName) const;
 
     /// Return the file length.
     size_t fileLength() const noexcept
     {
         return fileContent_.length();
-    };
+    }
 
     const char *fileData() const noexcept
     {
@@ -95,9 +102,15 @@ class HttpFileImpl
         itemName_ = itemName;
     }
 
+    /// Return the type of file.
+    FileType getFileType() const
+    {
+        return parseFileType(getFileExtension());
+    }
+
     /// Return the md5 string of the file
     std::string getMd5() const;
-    int saveTo(const std::string &pathAndFilename) const;
+    int saveTo(const std::string &pathAndFileName) const;
     void setRequest(const HttpRequestPtr &req)
     {
         requestPtr_ = req;
