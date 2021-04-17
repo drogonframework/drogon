@@ -616,6 +616,7 @@ FileType parseFileType(const string_view &fileExtension)
         {"7z", FT_ARCHIVE},
         {"tgz", FT_ARCHIVE},
         {"gz", FT_ARCHIVE},
+        {"bz2", FT_ARCHIVE},
         {"mp3", FT_AUDIO},
         {"wav", FT_AUDIO},
         {"avi", FT_MEDIA},
