@@ -50,7 +50,7 @@ const std::map<std::string, std::string> &MultiPartParser::getParameters() const
 
 int MultiPartParser::parse(const HttpRequestPtr &req)
 {
-    if (req->method() != Post)
+    if (req->method() != Post && req->method() != Put)
         return -1;
     const std::string &contentType =
         static_cast<HttpRequestImpl *>(req.get())->getHeaderBy("content-type");
