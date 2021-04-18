@@ -214,7 +214,8 @@ void HttpRequestImpl::appendToBuffer(trantor::MsgBuffer *output) const
         output->append("?");
         output->append(query_);
     }
-    if (!passThrough_ && !parameters_.empty())
+    if (!passThrough_ && !parameters_.empty() &&
+        contentType_ != CT_MULTIPART_FORM_DATA)
     {
         for (auto const &p : parameters_)
         {
