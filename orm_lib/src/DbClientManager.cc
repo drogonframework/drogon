@@ -112,7 +112,11 @@ void DbClientManager::createDbClient(const std::string &dbType,
                                      const std::string &userName,
                                      const std::string &password,
                                      const size_t connectionNum,
+#if USE_SQLITE3
                                      const std::string &filename,
+#else
+                                     const std::string &,
+#endif
                                      const std::string &name,
                                      const bool isFast,
                                      const std::string &characterSet)
