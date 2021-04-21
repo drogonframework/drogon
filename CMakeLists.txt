@@ -51,6 +51,9 @@ if (BUILD_DROGON_SHARED)
         set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${INSTALL_LIB_DIR}")
     endif ("${isSystemDir}" STREQUAL "-1")
     add_library(${PROJECT_NAME} SHARED)
+    set_target_properties(${PROJECT_NAME} PROPERTIES
+        VERSION ${DROGON_VERSION}
+        SOVERSION ${DROGON_MAJOR_VERSION})
     target_link_libraries(${PROJECT_NAME} PUBLIC Threads::Threads)
     if(WIN32)
       target_link_libraries(${PROJECT_NAME} PUBLIC Rpcrt4 ws2_32)
