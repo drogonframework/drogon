@@ -1,6 +1,6 @@
 /**
- *  HttpTypes.h
- *  An Tao
+ *  @file HttpTypes.h
+ *  @author An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
@@ -138,7 +138,7 @@ enum HttpMethod
 
 enum class ReqResult
 {
-    Ok,
+    Ok = 0,
     BadResponse,
     NetworkFailure,
     BadServerAddress,
@@ -149,7 +149,7 @@ enum class ReqResult
 
 enum class WebSocketMessageType
 {
-    Text,
+    Text = 0,
     Binary,
     Ping,
     Pong,
