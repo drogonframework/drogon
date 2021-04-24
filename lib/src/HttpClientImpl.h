@@ -22,6 +22,7 @@
 #include <trantor/net/Resolver.h>
 #include <mutex>
 #include <queue>
+#include <list>
 #include <vector>
 
 namespace drogon
@@ -102,7 +103,7 @@ class HttpClientImpl final : public HttpClient,
                         const trantor::TcpConnectionPtr &connPtr);
     void createTcpClient();
     std::queue<std::pair<HttpRequestPtr, HttpReqCallback>> pipeliningCallbacks_;
-    std::queue<std::pair<HttpRequestPtr, HttpReqCallback>> requestsBuffer_;
+    std::list<std::pair<HttpRequestPtr, HttpReqCallback>> requestsBuffer_;
     void onRecvMessage(const trantor::TcpConnectionPtr &, trantor::MsgBuffer *);
     void onError(ReqResult result);
     std::string domain_;

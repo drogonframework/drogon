@@ -64,7 +64,7 @@ void HttpClientImpl::createTcpClient()
                                      thisPtr->requestsBuffer_.front().first);
                     thisPtr->pipeliningCallbacks_.push(
                         std::move(thisPtr->requestsBuffer_.front()));
-                    thisPtr->requestsBuffer_.pop();
+                    thisPtr->requestsBuffer_.pop_front();
                 }
             }
             else
@@ -276,12 +276,23 @@ void HttpClientImpl::sendRequestInLoop(const HttpRequestPtr &req,
         auto timeoutFlag = std::make_shared<bool>(false);
         auto callbackPtr =
             std::make_shared<drogon::HttpReqCallback>(std::move(callback));
-        loop_->runAfter(timeout, [timeoutFlag, callbackPtr] {
+        auto thisPtr = shared_from_this();
+        loop_->runAfter(timeout, [timeoutFlag, callbackPtr, req, thisPtr] {
             if (*timeoutFlag)
             {
                 return;
             }
             *timeoutFlag = true;
+            for (auto iter = thisPtr->requestsBuffer_.begin();
+                 iter != thisPtr->requestsBuffer_.end();
+                 ++iter)
+            {
+                if (iter->first == req)
+                {
+                    thisPtr->requestsBuffer_.erase(iter);
+                    break;
+                }
+            }
             (*callbackPtr)(ReqResult::Timeout, nullptr);
         });
         sendRequestInLoop(req,
@@ -346,7 +357,7 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
 
     if (!tcpClientPtr_)
     {
-        requestsBuffer_.push(
+        requestsBuffer_.push_back(
             {req,
              [thisPtr = shared_from_this(),
               callback = std::move(callback)](ReqResult result,
@@ -406,7 +417,7 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
                                         (thisPtr->requestsBuffer_).front();
                                     reqAndCb.second(ReqResult::BadServerAddress,
                                                     nullptr);
-                                    (thisPtr->requestsBuffer_).pop();
+                                    (thisPtr->requestsBuffer_).pop_front();
                                 }
                                 return;
                             }
@@ -422,7 +433,7 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
             }
             else
             {
-                requestsBuffer_.pop();
+                requestsBuffer_.pop_front();
                 callback(ReqResult::BadServerAddress, nullptr);
                 assert(requestsBuffer_.empty());
                 return;
@@ -449,7 +460,7 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
             }
             else
             {
-                requestsBuffer_.push(
+                requestsBuffer_.push_back(
                     {req,
                      [thisPtr, callback = std::move(callback)](
                          ReqResult result, const HttpResponsePtr &response) {
@@ -459,7 +470,7 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
         }
         else
         {
-            requestsBuffer_.push(
+            requestsBuffer_.push_back(
                 {req,
                  [thisPtr, callback = std::move(callback)](
                      ReqResult result, const HttpResponsePtr &response) {
@@ -520,7 +531,7 @@ void HttpClientImpl::handleResponse(
             auto &reqAndCallback = requestsBuffer_.front();
             sendReq(connPtr, reqAndCallback.first);
             pipeliningCallbacks_.push(std::move(reqAndCallback));
-            requestsBuffer_.pop();
+            requestsBuffer_.pop_front();
         }
         else
         {
@@ -620,7 +631,7 @@ void HttpClientImpl::onError(ReqResult result)
     while (!requestsBuffer_.empty())
     {
         auto cb = std::move(requestsBuffer_.front().second);
-        requestsBuffer_.pop();
+        requestsBuffer_.pop_front();
         cb(result, nullptr);
     }
     tcpClientPtr_.reset();
