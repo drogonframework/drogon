@@ -172,7 +172,7 @@ void Sqlite3Connection::execSqlInQueue(
     auto stmt = stmtPtr.get();
     for (int i = 0; i < (int)parameters.size(); ++i)
     {
-        int bindRet;
+        int bindRet = SQLITE_ERROR;
         switch (format[i])
         {
             case Sqlite3TypeChar:
