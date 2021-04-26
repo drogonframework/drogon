@@ -1222,6 +1222,9 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
      * @param filename The file name of sqlite3 database file.
      * @param name The client name.
      * @param isFast Indicates if the client is a fast database client.
+     * @param characterSet The character set of the database server.
+     * @param timeout The timeout in seconds for executing SQL queries. zero or
+     * negative value means no timeout.
      *
      * @note
      * This operation can be performed by an option in the configuration file.
@@ -1237,7 +1240,8 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
         const std::string &filename = "",
         const std::string &name = "default",
         const bool isFast = false,
-        const std::string &characterSet = "") = 0;
+        const std::string &characterSet = "",
+        long double timeout = -1.0) = 0;
 
     /// Create a redis client
     /**
