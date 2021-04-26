@@ -14,6 +14,7 @@
 
 #include "DbClientImpl.h"
 #include "DbConnection.h"
+#include "../../lib/src/TaskTimeoutFlag.h"
 #include <drogon/config.h>
 #include <drogon/utils/string_view.h>
 #if USE_POSTGRESQL
@@ -149,6 +150,18 @@ void DbClientImpl::execSql(
     assert(paraNum == length.size());
     assert(paraNum == format.size());
     assert(rcb);
+    if (timeout_ > 0.0)
+    {
+        execSqlWithTimeout(sql,
+                           sqlLength,
+                           paraNum,
+                           std::move(parameters),
+                           std::move(length),
+                           std::move(format),
+                           std::move(rcb),
+                           std::move(exceptCallback));
+        return;
+    }
     DbConnectionPtr conn;
     bool busy = false;
     {
@@ -426,4 +439,114 @@ bool DbClientImpl::hasAvailableConnections() const noexcept
 {
     std::lock_guard<std::mutex> lock(connectionsMutex_);
     return (!readyConnections_.empty()) || (!busyConnections_.empty());
+}
+
+void DbClientImpl::execSqlWithTimeout(
+    const char *sql,
+    size_t sqlLength,
+    size_t paraNum,
+    std::vector<const char *> &&parameters,
+    std::vector<int> &&length,
+    std::vector<int> &&format,
+    ResultCallback &&rcb,
+    std::function<void(const std::exception_ptr &)> &&ecb)
+{
+    DbConnectionPtr conn;
+    assert(timeout_ > 0.0);
+    std::shared_ptr<std::shared_ptr<SqlCmd>> cmd =
+        std::make_shared<std::shared_ptr<SqlCmd>>();
+    bool busy = false;
+    auto ecpPtr =
+        std::make_shared<std::function<void(const std::exception_ptr &)>>(
+            std::move(ecb));
+    auto timeoutFlagPtr = std::make_shared<drogon::TaskTimeoutFlag>(
+        loops_.getNextLoop(),
+        std::chrono::duration<long double>(timeout_),
+        [cmd, ecpPtr, thisPtr = shared_from_this()]() {
+            if (*cmd)
+            {
+                std::lock_guard<std::mutex> lock(thisPtr->connectionsMutex_);
+                for (auto iter = thisPtr->sqlCmdBuffer_.begin();
+                     iter != thisPtr->sqlCmdBuffer_.end();
+                     ++iter)
+                {
+                    if (*iter == *cmd)
+                    {
+                        thisPtr->sqlCmdBuffer_.erase(iter);
+                        break;
+                    }
+                }
+            }
+            (*ecpPtr)(
+                std::make_exception_ptr(TimeoutError("SQL execution timeout")));
+        });
+    auto resultCallback = [rcb = std::move(rcb),
+                           timeoutFlagPtr](const Result &result) {
+        if (timeoutFlagPtr->done())
+            return;
+        rcb(result);
+    };
+
+    auto exceptionCallback = [ecpPtr,
+                              timeoutFlagPtr](const std::exception_ptr &err) {
+        if (timeoutFlagPtr->done())
+            return;
+        (*ecpPtr)(err);
+    };
+
+    {
+        std::lock_guard<std::mutex> guard(connectionsMutex_);
+
+        if (readyConnections_.size() == 0)
+        {
+            if (sqlCmdBuffer_.size() > 200000)
+            {
+                // too many queries in buffer;
+                busy = true;
+            }
+            else
+            {
+                // LOG_TRACE << "Push query to buffer";
+                auto command =
+                    std::make_shared<SqlCmd>(string_view{sql, sqlLength},
+                                             paraNum,
+                                             std::move(parameters),
+                                             std::move(length),
+                                             std::move(format),
+                                             std::move(resultCallback),
+                                             std::move(exceptionCallback));
+                sqlCmdBuffer_.emplace_back(command);
+                *cmd = command;
+            }
+        }
+        else
+        {
+            auto iter = readyConnections_.begin();
+            busyConnections_.insert(*iter);
+            conn = *iter;
+            readyConnections_.erase(iter);
+        }
+    }
+    if (conn)
+    {
+        execSql(conn,
+                string_view{sql, sqlLength},
+                paraNum,
+                std::move(parameters),
+                std::move(length),
+                std::move(format),
+                std::move(resultCallback),
+                std::move(exceptionCallback));
+        timeoutFlagPtr->runTimer();
+        return;
+    }
+
+    if (busy)
+    {
+        exceptionCallback(
+            std::make_exception_ptr(Failure("Too many queries in buffer")));
+        return;
+    }
+
+    timeoutFlagPtr->runTimer();
 }

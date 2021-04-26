@@ -209,6 +209,18 @@ class InternalError : public DrogonDbException, public std::logic_error
     DROGON_EXPORT explicit InternalError(const std::string &);
 };
 
+/// Timeout error in when executing the SQL statement.
+class TimeoutError : public DrogonDbException, public std::logic_error
+{
+    virtual const std::exception &base() const noexcept override
+    {
+        return *this;
+    }
+
+  public:
+    DROGON_EXPORT explicit TimeoutError(const std::string &);
+};
+
 /// Error in usage of drogon orm library, similar to std::logic_error
 class UsageError : public DrogonDbException, public std::logic_error
 {

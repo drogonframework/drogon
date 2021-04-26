@@ -49,7 +49,7 @@ struct HttpRespAwaiter : public CallbackAwaiter<HttpResponsePtr>
   private:
     HttpClient *client_;
     HttpRequestPtr req_;
-    double timeout_;
+    long double timeout_;
 };
 
 }  // namespace internal

@@ -1,7 +1,7 @@
 /**
  *
- *  DbClientImpl.h
- *  An Tao
+ *  @file DbClientImpl.h
+ *  @author An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
@@ -35,28 +35,32 @@ class DbClientImpl : public DbClient,
     DbClientImpl(const std::string &connInfo,
                  const size_t connNum,
                  ClientType type);
-    virtual ~DbClientImpl() noexcept;
-    virtual void execSql(const char *sql,
-                         size_t sqlLength,
-                         size_t paraNum,
-                         std::vector<const char *> &&parameters,
-                         std::vector<int> &&length,
-                         std::vector<int> &&format,
-                         ResultCallback &&rcb,
-                         std::function<void(const std::exception_ptr &)>
-                             &&exceptCallback) override;
-    virtual std::shared_ptr<Transaction> newTransaction(
+    ~DbClientImpl() noexcept override;
+    void execSql(const char *sql,
+                 size_t sqlLength,
+                 size_t paraNum,
+                 std::vector<const char *> &&parameters,
+                 std::vector<int> &&length,
+                 std::vector<int> &&format,
+                 ResultCallback &&rcb,
+                 std::function<void(const std::exception_ptr &)>
+                     &&exceptCallback) override;
+    std::shared_ptr<Transaction> newTransaction(
         const std::function<void(bool)> &commitCallback = nullptr) override;
-    virtual void newTransactionAsync(
+    void newTransactionAsync(
         const std::function<void(const std::shared_ptr<Transaction> &)>
             &callback) override;
-    virtual bool hasAvailableConnections() const noexcept override;
+    bool hasAvailableConnections() const noexcept override;
+    void setTimeout(long double timeout) override
+    {
+        timeout_ = timeout;
+    }
 
   private:
     size_t numberOfConnections_;
     trantor::EventLoopThreadPool loops_;
     std::shared_ptr<SharedMutex> sharedMutexPtr_;
-
+    long double timeout_{-1.0};
     void execSql(
         const DbConnectionPtr &conn,
         string_view &&sql,
@@ -84,6 +88,15 @@ class DbClientImpl : public DbClient,
     std::deque<std::shared_ptr<SqlCmd>> sqlCmdBuffer_;
 
     void handleNewTask(const DbConnectionPtr &connPtr);
+    void execSqlWithTimeout(
+        const char *sql,
+        size_t sqlLength,
+        size_t paraNum,
+        std::vector<const char *> &&parameters,
+        std::vector<int> &&length,
+        std::vector<int> &&format,
+        ResultCallback &&rcb,
+        std::function<void(const std::exception_ptr &)> &&exceptCallback);
 };
 
 }  // namespace orm

@@ -269,6 +269,18 @@ class DROGON_EXPORT DbClient : public trantor::NonCopyable
         return connectionInfo_;
     }
 
+    /**
+     * @brief Set the Timeout value of execution of a SQL.
+     *
+     * @param timeout in seconds, if the SQL result is not returned from the
+     * server within the timeout, a TimeoutError exception with "SQL execution
+     * timeout" string is generated and returned to the caller.
+     * @note set the timeout value to zero or negative for no limit on time. The
+     * default value is -1.0, this means there is no time limit if this method
+     * is not called.
+     */
+    virtual void setTimeout(long double timeout) = 0;
+
   private:
     friend internal::SqlBinder;
     virtual void execSql(
