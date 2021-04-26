@@ -223,7 +223,7 @@ void DbClientLockFree::execSql(
 }
 
 std::shared_ptr<Transaction> DbClientLockFree::newTransaction(
-    const std::function<void(bool)> &)
+    const std::function<void(bool)> &) noexcept(false)
 {
     // Don't support transaction;
     LOG_ERROR
@@ -247,7 +247,40 @@ void DbClientLockFree::newTransactionAsync(
             return;
         }
     }
-    transCallbacks_.push(callback);
+
+    auto callbackPtr = std::make_shared<
+        std::function<void(const std::shared_ptr<Transaction> &)>>(callback);
+    if (timeout_ > 0.0)
+    {
+        auto timeoutFlagPtr = std::make_shared<TaskTimeoutFlag>(
+            loop_,
+            std::chrono::duration<long double>(timeout_),
+            [callbackPtr, this]() {
+                {
+                    for (auto iter = transCallbacks_.begin();
+                         iter != transCallbacks_.end();
+                         ++iter)
+                    {
+                        if (callbackPtr == *iter)
+                        {
+                            transCallbacks_.erase(iter);
+                            break;
+                        }
+                    }
+                }
+                (*callbackPtr)(nullptr);
+            });
+        callbackPtr = std::make_shared<
+            std::function<void(const std::shared_ptr<Transaction> &)>>(
+            [callbackPtr,
+             timeoutFlagPtr](const std::shared_ptr<Transaction> &trans) {
+                if (timeoutFlagPtr->done())
+                    return;
+                (*callbackPtr)(trans);
+            });
+        timeoutFlagPtr->runTimer();
+    }
+    transCallbacks_.push_back(callbackPtr);
 }
 
 void DbClientLockFree::makeTrans(
@@ -268,8 +301,8 @@ void DbClientLockFree::makeTrans(
             if (!thisPtr->transCallbacks_.empty())
             {
                 auto callback = std::move(thisPtr->transCallbacks_.front());
-                thisPtr->transCallbacks_.pop();
-                thisPtr->makeTrans(conn, std::move(callback));
+                thisPtr->transCallbacks_.pop_front();
+                thisPtr->makeTrans(conn, std::move(*callback));
                 return;
             }
 
@@ -300,6 +333,10 @@ void DbClientLockFree::makeTrans(
         }));
     transSet_.insert(conn);
     trans->doBegin();
+    if (timeout_ > 0.0)
+    {
+        trans->setTimeout(timeout_);
+    }
     conn->loop()->queueInLoop(
         [callback = std::move(callback), trans] { callback(trans); });
 }
@@ -312,8 +349,8 @@ void DbClientLockFree::handleNewTask(const DbConnectionPtr &conn)
     if (!transCallbacks_.empty())
     {
         auto callback = std::move(transCallbacks_.front());
-        transCallbacks_.pop();
-        makeTrans(conn, std::move(callback));
+        transCallbacks_.pop_front();
+        makeTrans(conn, std::move(*callback));
         return;
     }
 

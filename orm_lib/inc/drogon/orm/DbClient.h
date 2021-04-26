@@ -238,7 +238,8 @@ class DROGON_EXPORT DbClient : public trantor::NonCopyable
      * transaction object to set the callback.
      */
     virtual std::shared_ptr<Transaction> newTransaction(
-        const std::function<void(bool)> &commitCallback = nullptr) = 0;
+        const std::function<void(bool)> &commitCallback =
+            std::function<void(bool)>()) noexcept(false) = 0;
 
     /// Create a transaction object in asynchronous mode.
     virtual void newTransactionAsync(
@@ -316,8 +317,8 @@ inline void internal::TrasactionAwaiter::await_suspend(
     client_->newTransactionAsync(
         [this, handle](const std::shared_ptr<Transaction> &transaction) {
             if (transaction == nullptr)
-                setException(std::make_exception_ptr(
-                    Failure("Failed to create transaction")));
+                setException(std::make_exception_ptr(TimeoutError(
+                    "Timeout, no connection available for transaction")));
             else
                 setValue(transaction);
             handle.resume();

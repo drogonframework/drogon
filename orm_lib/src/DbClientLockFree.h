@@ -23,6 +23,7 @@
 #include <string>
 #include <thread>
 #include <unordered_set>
+#include <list>
 
 namespace drogon
 {
@@ -47,7 +48,8 @@ class DbClientLockFree : public DbClient,
                  std::function<void(const std::exception_ptr &)>
                      &&exceptCallback) override;
     std::shared_ptr<Transaction> newTransaction(
-        const std::function<void(bool)> &commitCallback = nullptr) override;
+        const std::function<void(bool)> &commitCallback =
+            std::function<void(bool)>()) noexcept(false) override;
     void newTransactionAsync(
         const std::function<void(const std::shared_ptr<Transaction> &)>
             &callback) override;
@@ -67,7 +69,8 @@ class DbClientLockFree : public DbClient,
     std::unordered_set<DbConnectionPtr> transSet_;
     std::deque<std::shared_ptr<SqlCmd>> sqlCmdBuffer_;
 
-    std::queue<std::function<void(const std::shared_ptr<Transaction> &)>>
+    std::list<std::shared_ptr<
+        std::function<void(const std::shared_ptr<Transaction> &)>>>
         transCallbacks_;
 
     long double timeout_{-1.0};

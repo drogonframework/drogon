@@ -236,7 +236,41 @@ void DbClientImpl::newTransactionAsync(
         }
         else
         {
-            transCallbacks_.push(callback);
+            auto callbackPtr = std::make_shared<
+                std::function<void(const std::shared_ptr<Transaction> &)>>(
+                callback);
+            if (timeout_ > 0.0)
+            {
+                auto timeoutFlagPtr = std::make_shared<TaskTimeoutFlag>(
+                    loops_.getNextLoop(),
+                    std::chrono::duration<long double>(timeout_),
+                    [callbackPtr, this]() {
+                        {
+                            std::lock_guard<std::mutex> lock(connectionsMutex_);
+                            for (auto iter = transCallbacks_.begin();
+                                 iter != transCallbacks_.end();
+                                 ++iter)
+                            {
+                                if (callbackPtr == *iter)
+                                {
+                                    transCallbacks_.erase(iter);
+                                    break;
+                                }
+                            }
+                        }
+                        (*callbackPtr)(nullptr);
+                    });
+                callbackPtr = std::make_shared<
+                    std::function<void(const std::shared_ptr<Transaction> &)>>(
+                    [callbackPtr, timeoutFlagPtr](
+                        const std::shared_ptr<Transaction> &trans) {
+                        if (timeoutFlagPtr->done())
+                            return;
+                        (*callbackPtr)(trans);
+                    });
+                timeoutFlagPtr->runTimer();
+            }
+            transCallbacks_.push_back(callbackPtr);
         }
     }
     if (conn)
@@ -292,11 +326,15 @@ void DbClientImpl::makeTrans(
             });
         }));
     trans->doBegin();
+    if (timeout_ > 0.0)
+    {
+        trans->setTimeout(timeout_);
+    }
     conn->loop()->queueInLoop(
         [callback = std::move(callback), trans]() { callback(trans); });
 }
 std::shared_ptr<Transaction> DbClientImpl::newTransaction(
-    const std::function<void(bool)> &commitCallback)
+    const std::function<void(bool)> &commitCallback) noexcept(false)
 {
     std::promise<std::shared_ptr<Transaction>> pro;
     auto f = pro.get_future();
@@ -304,6 +342,10 @@ std::shared_ptr<Transaction> DbClientImpl::newTransaction(
         pro.set_value(trans);
     });
     auto trans = f.get();
+    if (!trans)
+    {
+        throw TimeoutError("Timeout, no connection available for transaction");
+    }
     trans->setCommitCallback(commitCallback);
     return trans;
 }
@@ -316,8 +358,8 @@ void DbClientImpl::handleNewTask(const DbConnectionPtr &connPtr)
         std::lock_guard<std::mutex> guard(connectionsMutex_);
         if (!transCallbacks_.empty())
         {
-            transCallback = std::move(transCallbacks_.front());
-            transCallbacks_.pop();
+            transCallback = std::move(*(transCallbacks_.front()));
+            transCallbacks_.pop_front();
         }
         else if (!sqlCmdBuffer_.empty())
         {
