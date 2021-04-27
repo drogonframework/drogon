@@ -463,6 +463,9 @@ void MysqlConnection::execSqlInLoop(
                         sql_.append("default");
                         break;
                     default:
+                        LOG_FATAL
+                            << "MySQL does not recognize the parameter type";
+                        abort();
                         break;
                 }
             }

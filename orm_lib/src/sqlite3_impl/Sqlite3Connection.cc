@@ -172,7 +172,7 @@ void Sqlite3Connection::execSqlInQueue(
     auto stmt = stmtPtr.get();
     for (int i = 0; i < (int)parameters.size(); ++i)
     {
-        int bindRet;
+        int bindRet{SQLITE_OK};
         switch (format[i])
         {
             case Sqlite3TypeChar:
@@ -205,6 +205,9 @@ void Sqlite3Connection::execSqlInQueue(
             case Sqlite3TypeNull:
                 bindRet = sqlite3_bind_null(stmt, i + 1);
                 break;
+            default:
+                LOG_FATAL << "SQLite does not recognize the parameter type";
+                abort();
         }
         if (bindRet != SQLITE_OK)
         {
