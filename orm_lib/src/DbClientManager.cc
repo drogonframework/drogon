@@ -136,7 +136,7 @@ void DbClientManager::createDbClient(const std::string &dbType,
                                      const std::string &name,
                                      const bool isFast,
                                      const std::string &characterSet,
-                                     long double timeout)
+                                     double timeout)
 {
     auto connStr =
         utils::formattedString("host=%s port=%u dbname=%s user=%s",

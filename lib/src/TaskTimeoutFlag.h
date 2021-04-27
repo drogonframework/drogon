@@ -25,7 +25,7 @@ class TaskTimeoutFlag : public trantor::NonCopyable,
 {
   public:
     TaskTimeoutFlag(trantor::EventLoop *loop,
-                    const std::chrono::duration<long double> &timeout,
+                    const std::chrono::duration<double> &timeout,
                     std::function<void()> timeoutCallback);
     bool done();
     void runTimer();
@@ -33,7 +33,7 @@ class TaskTimeoutFlag : public trantor::NonCopyable,
   private:
     std::atomic<bool> isDone_{false};
     trantor::EventLoop *loop_;
-    std::chrono::duration<long double> timeout_;
+    std::chrono::duration<double> timeout_;
     std::function<void()> timeoutFunc_;
 };
 }  // namespace drogon

@@ -54,7 +54,7 @@ class DbClientLockFree : public DbClient,
         const std::function<void(const std::shared_ptr<Transaction> &)>
             &callback) override;
     bool hasAvailableConnections() const noexcept override;
-    void setTimeout(long double timeout) override
+    void setTimeout(double timeout) override
     {
         timeout_ = timeout;
     }
@@ -73,7 +73,7 @@ class DbClientLockFree : public DbClient,
         std::function<void(const std::shared_ptr<Transaction> &)>>>
         transCallbacks_;
 
-    long double timeout_{-1.0};
+    double timeout_{-1.0};
 
     void makeTrans(
         const DbConnectionPtr &conn,

@@ -207,7 +207,7 @@ class WebSocketConnection
      */
     virtual void setPingMessage(
         const std::string &message,
-        const std::chrono::duration<long double> &interval) = 0;
+        const std::chrono::duration<double> &interval) = 0;
 
     /**
      * @brief Disable sending ping messages to the peer.

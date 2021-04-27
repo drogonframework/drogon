@@ -280,7 +280,7 @@ class DROGON_EXPORT DbClient : public trantor::NonCopyable
      * default value is -1.0, this means there is no time limit if this method
      * is not called.
      */
-    virtual void setTimeout(long double timeout) = 0;
+    virtual void setTimeout(double timeout) = 0;
 
   private:
     friend internal::SqlBinder;

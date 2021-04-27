@@ -254,7 +254,7 @@ void DbClientLockFree::newTransactionAsync(
     {
         auto timeoutFlagPtr = std::make_shared<TaskTimeoutFlag>(
             loop_,
-            std::chrono::duration<long double>(timeout_),
+            std::chrono::duration<double>(timeout_),
             [callbackPtr, this]() {
                 {
                     for (auto iter = transCallbacks_.begin();
@@ -496,7 +496,7 @@ void DbClientLockFree::execSqlWithTimeout(
             std::move(ecb));
     auto timeoutFlagPtr = std::make_shared<drogon::TaskTimeoutFlag>(
         loop_,
-        std::chrono::duration<long double>(timeout_),
+        std::chrono::duration<double>(timeout_),
         [commandPtr, ecpPtr, thisPtr = shared_from_this()]() {
             if (*commandPtr)
             {

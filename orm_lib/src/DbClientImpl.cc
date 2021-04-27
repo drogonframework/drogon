@@ -243,7 +243,7 @@ void DbClientImpl::newTransactionAsync(
             {
                 auto timeoutFlagPtr = std::make_shared<TaskTimeoutFlag>(
                     loops_.getNextLoop(),
-                    std::chrono::duration<long double>(timeout_),
+                    std::chrono::duration<double>(timeout_),
                     [callbackPtr, this]() {
                         {
                             std::lock_guard<std::mutex> lock(connectionsMutex_);
@@ -503,7 +503,7 @@ void DbClientImpl::execSqlWithTimeout(
             std::move(ecb));
     auto timeoutFlagPtr = std::make_shared<drogon::TaskTimeoutFlag>(
         loops_.getNextLoop(),
-        std::chrono::duration<long double>(timeout_),
+        std::chrono::duration<double>(timeout_),
         [cmd, ecpPtr, thisPtr = shared_from_this()]() {
             if (*cmd)
             {

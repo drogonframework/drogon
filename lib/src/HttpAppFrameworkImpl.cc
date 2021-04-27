@@ -959,7 +959,7 @@ HttpAppFramework &HttpAppFrameworkImpl::createDbClient(
     const std::string &name,
     const bool isFast,
     const std::string &characterSet,
-    long double timeout)
+    double timeout)
 {
     assert(!running_);
     dbClientManagerPtr_->createDbClient(dbType,

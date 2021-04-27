@@ -319,7 +319,7 @@ void TransactionImpl::execSqlInLoopWithTimeout(
             std::move(ecb));
     auto timeoutFlagPtr = std::make_shared<drogon::TaskTimeoutFlag>(
         loop_,
-        std::chrono::duration<long double>(timeout_),
+        std::chrono::duration<double>(timeout_),
         [commandPtr, thisPtr, ecpPtr]() {
             if (*commandPtr)
             {

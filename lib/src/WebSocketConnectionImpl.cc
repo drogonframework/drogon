@@ -173,7 +173,7 @@ void WebSocketConnectionImpl::WebSocketConnectionImpl::forceClose()
 
 void WebSocketConnectionImpl::setPingMessage(
     const std::string &message,
-    const std::chrono::duration<long double> &interval)
+    const std::chrono::duration<double> &interval)
 {
     auto loop = tcpConnectionPtr_->getLoop();
     if (loop->isInLoopThread())
@@ -397,7 +397,7 @@ void WebSocketConnectionImpl::disablePingInLoop()
 
 void WebSocketConnectionImpl::setPingMessageInLoop(
     std::string &&message,
-    const std::chrono::duration<long double> &interval)
+    const std::chrono::duration<double> &interval)
 {
     std::weak_ptr<WebSocketConnectionImpl> weakPtr = shared_from_this();
     disablePingInLoop();

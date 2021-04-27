@@ -42,7 +42,7 @@ class TransactionImpl : public Transaction,
     {
         return connectionPtr_->status() == ConnectStatus::Ok;
     }
-    void setTimeout(long double timeout) override
+    void setTimeout(double timeout) override
     {
         timeout_ = timeout;
     }
@@ -144,7 +144,7 @@ class TransactionImpl : public Transaction,
     trantor::EventLoop *loop_;
     std::function<void(bool)> commitCallback_;
     std::shared_ptr<TransactionImpl> thisPtr_;
-    long double timeout_{-1.0};
+    double timeout_{-1.0};
 };
 }  // namespace orm
 }  // namespace drogon

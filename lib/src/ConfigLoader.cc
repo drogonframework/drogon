@@ -525,7 +525,7 @@ static void loadDbClients(const Json::Value &dbClients)
                                      name,
                                      isFast,
                                      characterSet,
-                                     static_cast<long double>(timeout));
+                                     timeout);
     }
 }
 

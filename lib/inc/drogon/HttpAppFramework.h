@@ -703,7 +703,7 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
        @endcode
      */
     inline HttpAppFramework &enableSession(
-        const std::chrono::duration<long double> &timeout)
+        const std::chrono::duration<double> &timeout)
     {
         return enableSession((size_t)timeout.count());
     }
@@ -959,7 +959,7 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
        @endcode
      */
     inline HttpAppFramework &setIdleConnectionTimeout(
-        const std::chrono::duration<long double> &timeout)
+        const std::chrono::duration<double> &timeout)
     {
         return setIdleConnectionTimeout((size_t)timeout.count());
     }
@@ -1241,7 +1241,7 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
         const std::string &name = "default",
         const bool isFast = false,
         const std::string &characterSet = "",
-        long double timeout = -1.0) = 0;
+        double timeout = -1.0) = 0;
 
     /// Create a redis client
     /**

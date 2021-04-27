@@ -52,7 +52,7 @@ class DbClientImpl : public DbClient,
         const std::function<void(const std::shared_ptr<Transaction> &)>
             &callback) override;
     bool hasAvailableConnections() const noexcept override;
-    void setTimeout(long double timeout) override
+    void setTimeout(double timeout) override
     {
         timeout_ = timeout;
     }
@@ -61,7 +61,7 @@ class DbClientImpl : public DbClient,
     size_t numberOfConnections_;
     trantor::EventLoopThreadPool loops_;
     std::shared_ptr<SharedMutex> sharedMutexPtr_;
-    long double timeout_{-1.0};
+    double timeout_{-1.0};
     void execSql(
         const DbConnectionPtr &conn,
         string_view &&sql,
