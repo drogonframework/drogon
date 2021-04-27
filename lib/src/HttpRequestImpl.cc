@@ -310,24 +310,32 @@ void HttpRequestImpl::appendToBuffer(trantor::MsgBuffer *output) const
         }
     }
     assert(!(!content.empty() && !content_.empty()));
-    if (!passThrough_ && (!content.empty() || !content_.empty()))
+    if (!passThrough_)
     {
-        char buf[64];
-        auto len =
-            snprintf(buf,
-                     sizeof(buf),
-                     contentLengthFormatString<decltype(content.length())>(),
-                     content.length() + content_.length());
-        output->append(buf, len);
-        if (contentTypeString_.empty())
+        if (!content.empty() || !content_.empty())
         {
-            auto &type = webContentTypeToString(contentType_);
-            output->append(type.data(), type.length());
+            char buf[64];
+            auto len = snprintf(
+                buf,
+                sizeof(buf),
+                contentLengthFormatString<decltype(content.length())>(),
+                content.length() + content_.length());
+            output->append(buf, len);
+            if (contentTypeString_.empty())
+            {
+                auto &type = webContentTypeToString(contentType_);
+                output->append(type.data(), type.length());
+            }
         }
-    }
-    if (!passThrough_ && !contentTypeString_.empty())
-    {
-        output->append(contentTypeString_);
+        else if (method_ == Post || method_ == Put || method_ == Options ||
+                 method_ == Patch)
+        {
+            output->append("content-length: 0\r\n", 19);
+        }
+        if (!contentTypeString_.empty())
+        {
+            output->append(contentTypeString_);
+        }
     }
     for (auto it = headers_.begin(); it != headers_.end(); ++it)
     {
