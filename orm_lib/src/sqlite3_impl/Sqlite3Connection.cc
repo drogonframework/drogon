@@ -206,7 +206,7 @@ void Sqlite3Connection::execSqlInQueue(
                 bindRet = sqlite3_bind_null(stmt, i + 1);
                 break;
             default:
-                LOG_FATAL << "Sqlite3 does not recognize the parameter type";
+                LOG_FATAL << "SQLite does not recognize the parameter type";
                 abort();
         }
         if (bindRet != SQLITE_OK)
