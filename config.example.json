@@ -57,7 +57,7 @@
             "number_of_connections": 1,
             //timeout: -1.0 by default, in seconds, the timeout for executing a SQL query.
             //zero or negative value means no timeout.
-            "tineout": -1.0
+            "timeout": -1.0
         }
     ],
     "redis_clients": [
