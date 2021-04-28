@@ -252,16 +252,20 @@ void DbClientLockFree::newTransactionAsync(
         std::function<void(const std::shared_ptr<Transaction> &)>>(callback);
     if (timeout_ > 0.0)
     {
+        auto newCallbackPtr = std::make_shared<std::weak_ptr<
+            std::function<void(const std::shared_ptr<Transaction> &)>>>();
         auto timeoutFlagPtr = std::make_shared<TaskTimeoutFlag>(
             loop_,
             std::chrono::duration<double>(timeout_),
-            [callbackPtr, this]() {
+            [callbackPtr, this, newCallbackPtr]() {
+                auto cbPtr = (*newCallbackPtr).lock();
+                if (cbPtr)
                 {
                     for (auto iter = transCallbacks_.begin();
                          iter != transCallbacks_.end();
                          ++iter)
                     {
-                        if (callbackPtr == *iter)
+                        if (cbPtr == *iter)
                         {
                             transCallbacks_.erase(iter);
                             break;
@@ -278,6 +282,7 @@ void DbClientLockFree::newTransactionAsync(
                     return;
                 (*callbackPtr)(trans);
             });
+        *newCallbackPtr = callbackPtr;
         timeoutFlagPtr->runTimer();
     }
     transCallbacks_.push_back(callbackPtr);
@@ -489,8 +494,7 @@ void DbClientLockFree::execSqlWithTimeout(
     ResultCallback &&rcb,
     std::function<void(const std::exception_ptr &)> &&ecb)
 {
-    std::shared_ptr<std::shared_ptr<SqlCmd>> commandPtr =
-        std::make_shared<std::shared_ptr<SqlCmd>>();
+    auto commandPtr = std::make_shared<std::weak_ptr<SqlCmd>>();
     auto ecpPtr =
         std::make_shared<std::function<void(const std::exception_ptr &)>>(
             std::move(ecb));
@@ -498,13 +502,14 @@ void DbClientLockFree::execSqlWithTimeout(
         loop_,
         std::chrono::duration<double>(timeout_),
         [commandPtr, ecpPtr, thisPtr = shared_from_this()]() {
-            if (*commandPtr)
+            auto cbPtr = (*commandPtr).lock();
+            if (cbPtr)
             {
                 for (auto iter = thisPtr->sqlCmdBuffer_.begin();
                      iter != thisPtr->sqlCmdBuffer_.end();
                      ++iter)
                 {
-                    if (*iter == *commandPtr)
+                    if (*iter == cbPtr)
                     {
                         thisPtr->sqlCmdBuffer_.erase(iter);
                         break;

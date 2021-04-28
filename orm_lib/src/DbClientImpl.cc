@@ -241,17 +241,22 @@ void DbClientImpl::newTransactionAsync(
                 callback);
             if (timeout_ > 0.0)
             {
+                auto newCallbackPtr =
+                    std::make_shared<std::weak_ptr<std::function<void(
+                        const std::shared_ptr<Transaction> &)>>>();
                 auto timeoutFlagPtr = std::make_shared<TaskTimeoutFlag>(
                     loops_.getNextLoop(),
                     std::chrono::duration<double>(timeout_),
-                    [callbackPtr, this]() {
+                    [newCallbackPtr, callbackPtr, this]() {
+                        auto cbPtr = (*newCallbackPtr).lock();
+                        if (cbPtr)
                         {
                             std::lock_guard<std::mutex> lock(connectionsMutex_);
                             for (auto iter = transCallbacks_.begin();
                                  iter != transCallbacks_.end();
                                  ++iter)
                             {
-                                if (callbackPtr == *iter)
+                                if (cbPtr == *iter)
                                 {
                                     transCallbacks_.erase(iter);
                                     break;
@@ -268,6 +273,7 @@ void DbClientImpl::newTransactionAsync(
                             return;
                         (*callbackPtr)(trans);
                     });
+                (*newCallbackPtr) = callbackPtr;
                 timeoutFlagPtr->runTimer();
             }
             transCallbacks_.push_back(callbackPtr);
@@ -495,8 +501,7 @@ void DbClientImpl::execSqlWithTimeout(
 {
     DbConnectionPtr conn;
     assert(timeout_ > 0.0);
-    std::shared_ptr<std::shared_ptr<SqlCmd>> cmd =
-        std::make_shared<std::shared_ptr<SqlCmd>>();
+    auto cmd = std::make_shared<std::weak_ptr<SqlCmd>>();
     bool busy = false;
     auto ecpPtr =
         std::make_shared<std::function<void(const std::exception_ptr &)>>(
@@ -505,14 +510,15 @@ void DbClientImpl::execSqlWithTimeout(
         loops_.getNextLoop(),
         std::chrono::duration<double>(timeout_),
         [cmd, ecpPtr, thisPtr = shared_from_this()]() {
-            if (*cmd)
+            auto cbPtr = (*cmd).lock();
+            if (cbPtr)
             {
                 std::lock_guard<std::mutex> lock(thisPtr->connectionsMutex_);
                 for (auto iter = thisPtr->sqlCmdBuffer_.begin();
                      iter != thisPtr->sqlCmdBuffer_.end();
                      ++iter)
                 {
-                    if (*iter == *cmd)
+                    if (*iter == cbPtr)
                     {
                         thisPtr->sqlCmdBuffer_.erase(iter);
                         break;
