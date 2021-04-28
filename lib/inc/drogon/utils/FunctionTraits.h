@@ -98,7 +98,7 @@ struct FunctionTraits<
                    std::function<void(const HttpResponsePtr &)> &&callback,
                    Arguments...)> : FunctionTraits<ReturnType (*)(Arguments...)>
 {
-    static const bool isHTTPFunction = !resumable_type<ReturnType>;
+    static const bool isHTTPFunction = !resumable_type<ReturnType>::value;
     static const bool isCoroutine = false;
     using class_type = void;
     using first_param_type = HttpRequestPtr;
