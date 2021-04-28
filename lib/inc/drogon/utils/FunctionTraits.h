@@ -33,6 +33,16 @@ using HttpResponsePtr = std::shared_ptr<HttpResponse>;
 
 namespace internal
 {
+#ifdef __cpp_impl_coroutine
+template <typename T>
+using resumable_type = is_resumable<T>;
+#else
+template <typename T>
+struct resumable_type : std::false_type
+{
+};
+#endif
+
 template <typename>
 struct FunctionTraits;
 
@@ -87,7 +97,7 @@ struct FunctionTraits<
                    std::function<void(const HttpResponsePtr &)> &&callback,
                    Arguments...)> : FunctionTraits<ReturnType (*)(Arguments...)>
 {
-    static const bool isHTTPFunction = true;
+    static const bool isHTTPFunction = !resumable_type<ReturnType>::value;
     static const bool isCoroutine = false;
     using class_type = void;
     using first_param_type = HttpRequestPtr;
@@ -159,7 +169,7 @@ struct FunctionTraits<
                    std::function<void(const HttpResponsePtr &)> &&callback,
                    Arguments...)> : FunctionTraits<ReturnType (*)(Arguments...)>
 {
-    static const bool isHTTPFunction = true;
+    static const bool isHTTPFunction = !resumable_type<ReturnType>::value;
     static const bool isCoroutine = false;
     using class_type = void;
     using first_param_type = T;
