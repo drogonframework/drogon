@@ -351,16 +351,6 @@ void TransactionImpl::execSqlInLoopWithTimeout(
             return;
         rcb(result);
     };
-    auto exceptionCallback =
-        [ecpPtr, timeoutFlagPtr, thisPtr](const std::exception_ptr &ePtr) {
-            if (timeoutFlagPtr->done())
-                return;
-            thisPtr->rollback();
-            if (*ecpPtr)
-            {
-                (*ecpPtr)(ePtr);
-            }
-        };
     if (!isWorking_)
     {
         isWorking_ = true;
@@ -371,7 +361,16 @@ void TransactionImpl::execSqlInLoopWithTimeout(
                                 std::move(length),
                                 std::move(format),
                                 std::move(resultCallback),
-                                std::move(exceptionCallback));
+                                [ecpPtr, timeoutFlagPtr, thisPtr](
+                                    const std::exception_ptr &ePtr) {
+                                    thisPtr->rollback();
+                                    if (timeoutFlagPtr->done())
+                                        return;
+                                    if (*ecpPtr)
+                                    {
+                                        (*ecpPtr)(ePtr);
+                                    }
+                                });
     }
     else
     {
@@ -383,7 +382,16 @@ void TransactionImpl::execSqlInLoopWithTimeout(
         cmdPtr->lengths_ = std::move(length);
         cmdPtr->formats_ = std::move(format);
         cmdPtr->callback_ = std::move(resultCallback);
-        cmdPtr->exceptionCallback_ = std::move(exceptionCallback);
+        cmdPtr->exceptionCallback_ =
+            [ecpPtr, timeoutFlagPtr](const std::exception_ptr &ePtr) {
+                if (timeoutFlagPtr->done())
+                    return;
+                if (*ecpPtr)
+                {
+                    (*ecpPtr)(ePtr);
+                }
+            };
+
         cmdPtr->thisPtr_ = thisPtr;
         thisPtr->sqlCmdBuffer_.push_back(cmdPtr);
         *commandPtr = cmdPtr;
