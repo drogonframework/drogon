@@ -33,7 +33,6 @@ using HttpResponsePtr = std::shared_ptr<HttpResponse>;
 
 namespace internal
 {
-
 #ifdef __cpp_impl_coroutine
 template <typename T>
 using resumable_type = is_resumable<T>;
