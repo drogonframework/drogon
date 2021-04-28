@@ -106,7 +106,7 @@ struct [[nodiscard]] Task
     {
     }
     Task(const Task &) = delete;
-    Task(Task && other)
+    Task(Task &&other)
     {
         coro_ = other.coro_;
         other.coro_ = nullptr;
@@ -253,7 +253,7 @@ struct [[nodiscard]] Task<void>
     {
     }
     Task(const Task &) = delete;
-    Task(Task && other)
+    Task(Task &&other)
     {
         coro_ = other.coro_;
         other.coro_ = nullptr;
@@ -624,10 +624,7 @@ struct is_resumable<
 };
 
 template <>
-struct is_resumable<
-    AsyncTask,
-    std::void_t<AsyncTask>>
-    : std::true_type
+struct is_resumable<AsyncTask, std::void_t<AsyncTask>> : std::true_type
 {
 };
 
