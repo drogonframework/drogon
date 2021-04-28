@@ -313,6 +313,7 @@ void TransactionImpl::execSqlInLoopWithTimeout(
     std::function<void(const std::exception_ptr &)> &&ecb)
 {
     auto thisPtr = shared_from_this();
+    std::weak_ptr<TransactionImpl> weakPtr = thisPtr;
     std::shared_ptr<SqlCmdPtr> commandPtr = std::make_shared<SqlCmdPtr>();
     auto ecpPtr =
         std::make_shared<std::function<void(const std::exception_ptr &)>>(
@@ -320,7 +321,10 @@ void TransactionImpl::execSqlInLoopWithTimeout(
     auto timeoutFlagPtr = std::make_shared<drogon::TaskTimeoutFlag>(
         loop_,
         std::chrono::duration<double>(timeout_),
-        [commandPtr, thisPtr, ecpPtr]() {
+        [commandPtr, weakPtr, ecpPtr]() {
+            auto thisPtr = weakPtr.lock();
+            if (!thisPtr)
+                return;
             if (*commandPtr)
             {
                 for (auto iter = thisPtr->sqlCmdBuffer_.begin();
