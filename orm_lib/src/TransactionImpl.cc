@@ -314,7 +314,7 @@ void TransactionImpl::execSqlInLoopWithTimeout(
 {
     auto thisPtr = shared_from_this();
     std::weak_ptr<TransactionImpl> weakPtr = thisPtr;
-    std::shared_ptr<SqlCmdPtr> commandPtr = std::make_shared<SqlCmdPtr>();
+    auto commandPtr = std::make_shared<std::weak_ptr<SqlCmd>>();
     auto ecpPtr =
         std::make_shared<std::function<void(const std::exception_ptr &)>>(
             std::move(ecb));
@@ -325,13 +325,14 @@ void TransactionImpl::execSqlInLoopWithTimeout(
             auto thisPtr = weakPtr.lock();
             if (!thisPtr)
                 return;
-            if (*commandPtr)
+            auto cmdPtr = (*commandPtr).lock();
+            if (cmdPtr)
             {
                 for (auto iter = thisPtr->sqlCmdBuffer_.begin();
                      iter != thisPtr->sqlCmdBuffer_.end();
                      ++iter)
                 {
-                    if (*commandPtr == *iter)
+                    if (cmdPtr == *iter)
                     {
                         thisPtr->sqlCmdBuffer_.erase(iter);
                         break;
