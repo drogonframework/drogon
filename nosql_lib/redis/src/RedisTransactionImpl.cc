@@ -26,8 +26,8 @@ void RedisTransactionImpl::execute(RedisResultCallback &&resultCallback,
 {
     execCommandAsync(
         [thisPtr = shared_from_this(),
-         resultCallback =
-             std::move(resultCallback)](const RedisResult &result) {
+         resultCallback = std::move(resultCallback)](const RedisResult &result)
+        {
             thisPtr->isExecutedOrCancelled_ = true;
             resultCallback(result);
         },
@@ -55,7 +55,8 @@ void RedisTransactionImpl::execCommandAsync(
             std::move(resultCallback),
             [thisPtr = shared_from_this(),
              exceptionCallback =
-                 std::move(exceptionCallback)](const RedisException &err) {
+                 std::move(exceptionCallback)](const RedisException &err)
+            {
                 LOG_ERROR << err.what();
                 thisPtr->isExecutedOrCancelled_ = true;
                 exceptionCallback(err);
@@ -70,7 +71,8 @@ void RedisTransactionImpl::execCommandAsync(
         auto timeoutFlagPtr = std::make_shared<TaskTimeoutFlag>(
             connPtr_->getLoop(),
             std::chrono::duration<double>(timeout_),
-            [expCbPtr]() {
+            [expCbPtr]()
+            {
                 if (*expCbPtr)
                 {
                     (*expCbPtr)(RedisException(RedisErrorCode::kTimeout,
@@ -82,7 +84,8 @@ void RedisTransactionImpl::execCommandAsync(
         connPtr_->sendvCommand(
             command,
             [resultCallback = std::move(resultCallback),
-             timeoutFlagPtr](const RedisResult &result) {
+             timeoutFlagPtr](const RedisResult &result)
+            {
                 if (timeoutFlagPtr->done())
                 {
                     return;
@@ -90,7 +93,8 @@ void RedisTransactionImpl::execCommandAsync(
                 resultCallback(result);
             },
             [thisPtr = shared_from_this(), expCbPtr, timeoutFlagPtr](
-                const RedisException &err) {
+                const RedisException &err)
+            {
                 if (timeoutFlagPtr->done())
                 {
                     return;
@@ -102,6 +106,7 @@ void RedisTransactionImpl::execCommandAsync(
             },
             args);
         va_end(args);
+        timeoutFlagPtr->runTimer();
     }
 }
 
