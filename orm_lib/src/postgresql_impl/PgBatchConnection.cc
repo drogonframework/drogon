@@ -17,6 +17,7 @@
 #include <drogon/orm/Exception.h>
 #include <drogon/utils/Utilities.h>
 #include <trantor/utils/Logger.h>
+#include <exception>
 #include <memory>
 #include <algorithm>
 #include <stdio.h>
@@ -453,51 +454,45 @@ void PgConnection::doAfterPreparing()
 void PgConnection::handleFatalError(bool clearAll)
 {
     LOG_ERROR << PQerrorMessage(connectionPtr_.get());
-    try
+    auto exceptPtr =
+        std::make_exception_ptr(Failure(PQerrorMessage(connectionPtr_.get())));
+    if (clearAll)
     {
-        throw Failure(PQerrorMessage(connectionPtr_.get()));
-    }
-    catch (...)
-    {
-        auto exceptPtr = std::current_exception();
-        if (clearAll)
+        for (auto &cmd : batchCommandsForWaitingResults_)
         {
-            for (auto &cmd : batchCommandsForWaitingResults_)
-            {
-                cmd->exceptionCallback_(exceptPtr);
-            }
-            for (auto &cmd : batchSqlCommands_)
-            {
-                cmd->exceptionCallback_(exceptPtr);
-            }
-            batchCommandsForWaitingResults_.clear();
-            batchSqlCommands_.clear();
+            cmd->exceptionCallback_(exceptPtr);
         }
-        else
+        for (auto &cmd : batchSqlCommands_)
         {
-            if (!batchSqlCommands_.empty() &&
-                !batchSqlCommands_.front()->preparingStatement_.empty())
+            cmd->exceptionCallback_(exceptPtr);
+        }
+        batchCommandsForWaitingResults_.clear();
+        batchSqlCommands_.clear();
+    }
+    else
+    {
+        if (!batchSqlCommands_.empty() &&
+            !batchSqlCommands_.front()->preparingStatement_.empty())
+        {
+            batchSqlCommands_.front()->exceptionCallback_(exceptPtr);
+            batchSqlCommands_.pop_front();
+        }
+        else if (!batchCommandsForWaitingResults_.empty())
+        {
+            auto &cmd = batchCommandsForWaitingResults_.front();
+            if (!cmd->preparingStatement_.empty())
             {
-                batchSqlCommands_.front()->exceptionCallback_(exceptPtr);
-                batchSqlCommands_.pop_front();
-            }
-            else if (!batchCommandsForWaitingResults_.empty())
-            {
-                auto &cmd = batchCommandsForWaitingResults_.front();
-                if (!cmd->preparingStatement_.empty())
-                {
-                    cmd->preparingStatement_.clear();
-                }
-                else
-                {
-                    cmd->exceptionCallback_(exceptPtr);
-                    batchCommandsForWaitingResults_.pop_front();
-                }
+                cmd->preparingStatement_.clear();
             }
             else
             {
-                assert(false);
+                cmd->exceptionCallback_(exceptPtr);
+                batchCommandsForWaitingResults_.pop_front();
             }
+        }
+        else
+        {
+            assert(false);
         }
     }
 }

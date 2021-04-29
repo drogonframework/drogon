@@ -17,6 +17,7 @@
 #include "TransactionImpl.h"
 #include "../../lib/src/TaskTimeoutFlag.h"
 #include <drogon/config.h>
+#include <exception>
 #if USE_POSTGRESQL
 #include "postgresql_impl/PgConnection.h"
 #endif
@@ -191,14 +192,9 @@ void DbClientLockFree::execSql(
     if (sqlCmdBuffer_.size() > 20000)
     {
         // too many queries in buffer;
-        try
-        {
-            throw Failure("Too many queries in buffer");
-        }
-        catch (...)
-        {
-            exceptCallback(std::current_exception());
-        }
+        auto exceptPtr =
+            std::make_exception_ptr(Failure("Too many queries in buffer"));
+        exceptCallback(exceptPtr);
         return;
     }
 

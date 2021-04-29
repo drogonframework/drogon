@@ -143,14 +143,9 @@ void TransactionImpl::execSqlInLoop(
     else
     {
         // The transaction has been rolled back;
-        try
-        {
-            throw TransactionRollback("The transaction has been rolled back");
-        }
-        catch (...)
-        {
-            exceptCallback(std::current_exception());
-        }
+        auto exceptPtr = std::make_exception_ptr(
+            TransactionRollback("The transaction has been rolled back"));
+        exceptCallback(exceptPtr);
     }
 }
 
@@ -250,19 +245,13 @@ void TransactionImpl::execNewTask()
         isWorking_ = false;
         if (!sqlCmdBuffer_.empty())
         {
-            try
+            auto exceptPtr = std::make_exception_ptr(
+                TransactionRollback("The transaction has been rolled back"));
+            for (auto const &cmd : sqlCmdBuffer_)
             {
-                throw TransactionRollback(
-                    "The transaction has been rolled back");
-            }
-            catch (...)
-            {
-                for (auto const &cmd : sqlCmdBuffer_)
+                if (cmd->exceptionCallback_)
                 {
-                    if (cmd->exceptionCallback_)
-                    {
-                        cmd->exceptionCallback_(std::current_exception());
-                    }
+                    cmd->exceptionCallback_(exceptPtr);
                 }
             }
             sqlCmdBuffer_.clear();
