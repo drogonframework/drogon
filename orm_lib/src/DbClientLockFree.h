@@ -1,7 +1,7 @@
 /**
  *
- *  DbClientLockFree.h
- *  An Tao
+ *  @file DbClientLockFree.h
+ *  @author An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
@@ -23,6 +23,7 @@
 #include <string>
 #include <thread>
 #include <unordered_set>
+#include <list>
 
 namespace drogon
 {
@@ -36,22 +37,27 @@ class DbClientLockFree : public DbClient,
                      trantor::EventLoop *loop,
                      ClientType type,
                      size_t connectionNumberPerLoop);
-    virtual ~DbClientLockFree() noexcept;
-    virtual void execSql(const char *sql,
-                         size_t sqlLength,
-                         size_t paraNum,
-                         std::vector<const char *> &&parameters,
-                         std::vector<int> &&length,
-                         std::vector<int> &&format,
-                         ResultCallback &&rcb,
-                         std::function<void(const std::exception_ptr &)>
-                             &&exceptCallback) override;
-    virtual std::shared_ptr<Transaction> newTransaction(
-        const std::function<void(bool)> &commitCallback = nullptr) override;
-    virtual void newTransactionAsync(
+    ~DbClientLockFree() noexcept override;
+    void execSql(const char *sql,
+                 size_t sqlLength,
+                 size_t paraNum,
+                 std::vector<const char *> &&parameters,
+                 std::vector<int> &&length,
+                 std::vector<int> &&format,
+                 ResultCallback &&rcb,
+                 std::function<void(const std::exception_ptr &)>
+                     &&exceptCallback) override;
+    std::shared_ptr<Transaction> newTransaction(
+        const std::function<void(bool)> &commitCallback =
+            std::function<void(bool)>()) noexcept(false) override;
+    void newTransactionAsync(
         const std::function<void(const std::shared_ptr<Transaction> &)>
             &callback) override;
-    virtual bool hasAvailableConnections() const noexcept override;
+    bool hasAvailableConnections() const noexcept override;
+    void setTimeout(double timeout) override
+    {
+        timeout_ = timeout;
+    }
 
   private:
     std::string connectionInfo_;
@@ -63,13 +69,24 @@ class DbClientLockFree : public DbClient,
     std::unordered_set<DbConnectionPtr> transSet_;
     std::deque<std::shared_ptr<SqlCmd>> sqlCmdBuffer_;
 
-    std::queue<std::function<void(const std::shared_ptr<Transaction> &)>>
+    std::list<std::shared_ptr<
+        std::function<void(const std::shared_ptr<Transaction> &)>>>
         transCallbacks_;
+
+    double timeout_{-1.0};
 
     void makeTrans(
         const DbConnectionPtr &conn,
         std::function<void(const std::shared_ptr<Transaction> &)> &&callback);
-
+    void execSqlWithTimeout(
+        const char *sql,
+        size_t sqlLength,
+        size_t paraNum,
+        std::vector<const char *> &&parameters,
+        std::vector<int> &&length,
+        std::vector<int> &&format,
+        ResultCallback &&rcb,
+        std::function<void(const std::exception_ptr &)> &&ecb);
     void handleNewTask(const DbConnectionPtr &conn);
 #if LIBPQ_SUPPORTS_BATCH_MODE
     size_t connectionPos_{0};  // Used for pg batch mode.

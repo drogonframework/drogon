@@ -576,7 +576,7 @@ namespace internal
 struct TimerAwaiter : CallbackAwaiter<void>
 {
     TimerAwaiter(trantor::EventLoop *loop,
-                 const std::chrono::duration<long double> &delay)
+                 const std::chrono::duration<double> &delay)
         : loop_(loop), delay_(delay.count())
     {
     }
@@ -597,7 +597,7 @@ struct TimerAwaiter : CallbackAwaiter<void>
 
 inline internal::TimerAwaiter sleepCoro(
     trantor::EventLoop *loop,
-    const std::chrono::duration<long double> &delay) noexcept
+    const std::chrono::duration<double> &delay) noexcept
 {
     assert(loop);
     return internal::TimerAwaiter(loop, delay);

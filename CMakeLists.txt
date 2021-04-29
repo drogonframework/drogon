@@ -199,6 +199,7 @@ set(DROGON_SOURCES
     lib/src/SecureSSLRedirector.cc
     lib/src/SessionManager.cc
     lib/src/StaticFileRouter.cc
+    lib/src/TaskTimeoutFlag.cc
     lib/src/Utilities.cc
     lib/src/WebSocketClientImpl.cc
     lib/src/WebSocketConnectionImpl.cc

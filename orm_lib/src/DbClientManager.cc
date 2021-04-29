@@ -72,6 +72,10 @@ void DbClientManager::createDbClients(
                             ioloops[idx],
                             dbInfo.dbType_,
                             dbInfo.connectionNumber_));
+                    if (dbInfo.timeout_ > 0.0)
+                    {
+                        c->setTimeout(dbInfo.timeout_);
+                    }
                 });
             }
         }
@@ -83,6 +87,10 @@ void DbClientManager::createDbClients(
                 dbClientsMap_[dbInfo.name_] =
                     drogon::orm::DbClient::newPgClient(
                         dbInfo.connectionInfo_, dbInfo.connectionNumber_);
+                if (dbInfo.timeout_ > 0.0)
+                {
+                    dbClientsMap_[dbInfo.name_]->setTimeout(dbInfo.timeout_);
+                }
 #endif
             }
             else if (dbInfo.dbType_ == drogon::orm::ClientType::Mysql)
@@ -91,6 +99,10 @@ void DbClientManager::createDbClients(
                 dbClientsMap_[dbInfo.name_] =
                     drogon::orm::DbClient::newMysqlClient(
                         dbInfo.connectionInfo_, dbInfo.connectionNumber_);
+                if (dbInfo.timeout_ > 0.0)
+                {
+                    dbClientsMap_[dbInfo.name_]->setTimeout(dbInfo.timeout_);
+                }
 #endif
             }
             else if (dbInfo.dbType_ == drogon::orm::ClientType::Sqlite3)
@@ -99,6 +111,10 @@ void DbClientManager::createDbClients(
                 dbClientsMap_[dbInfo.name_] =
                     drogon::orm::DbClient::newSqlite3Client(
                         dbInfo.connectionInfo_, dbInfo.connectionNumber_);
+                if (dbInfo.timeout_ > 0.0)
+                {
+                    dbClientsMap_[dbInfo.name_]->setTimeout(dbInfo.timeout_);
+                }
 #endif
             }
         }
@@ -119,7 +135,8 @@ void DbClientManager::createDbClient(const std::string &dbType,
 #endif
                                      const std::string &name,
                                      const bool isFast,
-                                     const std::string &characterSet)
+                                     const std::string &characterSet,
+                                     double timeout)
 {
     auto connStr =
         utils::formattedString("host=%s port=%u dbname=%s user=%s",
@@ -144,6 +161,7 @@ void DbClientManager::createDbClient(const std::string &dbType,
     info.connectionNumber_ = connectionNum;
     info.isFast_ = isFast;
     info.name_ = name;
+    info.timeout_ = timeout;
 
     if (type == "postgresql")
     {

@@ -1,7 +1,7 @@
 /**
  *
- *  DbClientManager.h
- *  An Tao
+ *  @file DbClientManager.h
+ *  @author An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
@@ -52,7 +52,8 @@ class DbClientManager : public trantor::NonCopyable
                         const std::string &filename,
                         const std::string &name,
                         const bool isFast,
-                        const std::string &characterSet);
+                        const std::string &characterSet,
+                        double timeout);
     bool areAllDbClientsAvailable() const noexcept;
 
   private:
@@ -64,6 +65,7 @@ class DbClientManager : public trantor::NonCopyable
         ClientType dbType_;
         bool isFast_;
         size_t connectionNumber_;
+        double timeout_;
     };
     std::vector<DbInfo> dbInfos_;
     std::map<std::string, IOThreadStorage<orm::DbClientPtr>> dbFastClientsMap_;

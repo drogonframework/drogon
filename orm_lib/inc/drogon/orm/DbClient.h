@@ -238,7 +238,8 @@ class DROGON_EXPORT DbClient : public trantor::NonCopyable
      * transaction object to set the callback.
      */
     virtual std::shared_ptr<Transaction> newTransaction(
-        const std::function<void(bool)> &commitCallback = nullptr) = 0;
+        const std::function<void(bool)> &commitCallback =
+            std::function<void(bool)>()) noexcept(false) = 0;
 
     /// Create a transaction object in asynchronous mode.
     virtual void newTransactionAsync(
@@ -268,6 +269,18 @@ class DROGON_EXPORT DbClient : public trantor::NonCopyable
     {
         return connectionInfo_;
     }
+
+    /**
+     * @brief Set the Timeout value of execution of a SQL.
+     *
+     * @param timeout in seconds, if the SQL result is not returned from the
+     * server within the timeout, a TimeoutError exception with "SQL execution
+     * timeout" string is generated and returned to the caller.
+     * @note set the timeout value to zero or negative for no limit on time. The
+     * default value is -1.0, this means there is no time limit if this method
+     * is not called.
+     */
+    virtual void setTimeout(double timeout) = 0;
 
   private:
     friend internal::SqlBinder;
@@ -304,8 +317,8 @@ inline void internal::TrasactionAwaiter::await_suspend(
     client_->newTransactionAsync(
         [this, handle](const std::shared_ptr<Transaction> &transaction) {
             if (transaction == nullptr)
-                setException(std::make_exception_ptr(
-                    Failure("Failed to create transaction")));
+                setException(std::make_exception_ptr(TimeoutError(
+                    "Timeout, no connection available for transaction")));
             else
                 setValue(transaction);
             handle.resume();

@@ -72,9 +72,8 @@ class WebSocketConnectionImpl final
                   const std::string &reason = "") override;  // close write
     void forceClose() override;                              // close
 
-    void setPingMessage(
-        const std::string &message,
-        const std::chrono::duration<long double> &interval) override;
+    void setPingMessage(const std::string &message,
+                        const std::chrono::duration<double> &interval) override;
 
     void disablePing() override;
 
@@ -120,9 +119,8 @@ class WebSocketConnectionImpl final
         [](const WebSocketConnectionImplPtr &) {};
     void sendWsData(const char *msg, uint64_t len, unsigned char opcode);
     void disablePingInLoop();
-    void setPingMessageInLoop(
-        std::string &&message,
-        const std::chrono::duration<long double> &interval);
+    void setPingMessageInLoop(std::string &&message,
+                              const std::chrono::duration<double> &interval);
 };
 
 }  // namespace drogon

@@ -958,7 +958,8 @@ HttpAppFramework &HttpAppFrameworkImpl::createDbClient(
     const std::string &filename,
     const std::string &name,
     const bool isFast,
-    const std::string &characterSet)
+    const std::string &characterSet,
+    double timeout)
 {
     assert(!running_);
     dbClientManagerPtr_->createDbClient(dbType,
@@ -971,7 +972,8 @@ HttpAppFramework &HttpAppFrameworkImpl::createDbClient(
                                         filename,
                                         name,
                                         isFast,
-                                        characterSet);
+                                        characterSet,
+                                        timeout);
     return *this;
 }
 

@@ -33,27 +33,31 @@ class TransactionImpl : public Transaction,
                     const std::function<void()> &usedUpCallback);
     ~TransactionImpl();
     void rollback() override;
-    virtual void setCommitCallback(
+    void setCommitCallback(
         const std::function<void(bool)> &commitCallback) override
     {
         commitCallback_ = commitCallback;
     }
-    virtual bool hasAvailableConnections() const noexcept override
+    bool hasAvailableConnections() const noexcept override
     {
         return connectionPtr_->status() == ConnectStatus::Ok;
+    }
+    void setTimeout(double timeout) override
+    {
+        timeout_ = timeout;
     }
 
   private:
     DbConnectionPtr connectionPtr_;
-    virtual void execSql(const char *sql,
-                         size_t sqlLength,
-                         size_t paraNum,
-                         std::vector<const char *> &&parameters,
-                         std::vector<int> &&length,
-                         std::vector<int> &&format,
-                         ResultCallback &&rcb,
-                         std::function<void(const std::exception_ptr &)>
-                             &&exceptCallback) override
+    void execSql(const char *sql,
+                 size_t sqlLength,
+                 size_t paraNum,
+                 std::vector<const char *> &&parameters,
+                 std::vector<int> &&length,
+                 std::vector<int> &&format,
+                 ResultCallback &&rcb,
+                 std::function<void(const std::exception_ptr &)>
+                     &&exceptCallback) override
     {
         if (loop_->isInLoopThread())
         {
@@ -95,13 +99,21 @@ class TransactionImpl : public Transaction,
         std::vector<int> &&format,
         ResultCallback &&rcb,
         std::function<void(const std::exception_ptr &)> &&exceptCallback);
-    virtual std::shared_ptr<Transaction> newTransaction(
-        const std::function<void(bool)> &) override
+    void execSqlInLoopWithTimeout(
+        string_view &&sql,
+        size_t paraNum,
+        std::vector<const char *> &&parameters,
+        std::vector<int> &&length,
+        std::vector<int> &&format,
+        ResultCallback &&rcb,
+        std::function<void(const std::exception_ptr &)> &&exceptCallback);
+    std::shared_ptr<Transaction> newTransaction(
+        const std::function<void(bool)> &) noexcept(false) override
     {
         return shared_from_this();
     }
 
-    virtual void newTransactionAsync(
+    void newTransactionAsync(
         const std::function<void(const std::shared_ptr<Transaction> &)>
             &callback) override
     {
@@ -123,7 +135,8 @@ class TransactionImpl : public Transaction,
         bool isRollbackCmd_{false};
         std::shared_ptr<TransactionImpl> thisPtr_;
     };
-    std::list<SqlCmd> sqlCmdBuffer_;
+    using SqlCmdPtr = std::shared_ptr<SqlCmd>;
+    std::list<SqlCmdPtr> sqlCmdBuffer_;
     //   std::mutex _bufferMutex;
     friend class DbClientImpl;
     friend class DbClientLockFree;
@@ -131,6 +144,7 @@ class TransactionImpl : public Transaction,
     trantor::EventLoop *loop_;
     std::function<void(bool)> commitCallback_;
     std::shared_ptr<TransactionImpl> thisPtr_;
+    double timeout_{-1.0};
 };
 }  // namespace orm
 }  // namespace drogon
