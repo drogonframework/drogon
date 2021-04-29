@@ -983,11 +983,12 @@ HttpAppFramework &HttpAppFrameworkImpl::createRedisClient(
     const std::string &name,
     const std::string &password,
     size_t connectionNum,
-    bool isFast)
+    bool isFast,
+    double timeout)
 {
     assert(!running_);
     redisClientManagerPtr_->createRedisClient(
-        name, ip, port, password, connectionNum, isFast);
+        name, ip, port, password, connectionNum, isFast, timeout);
     return *this;
 }
 void HttpAppFrameworkImpl::quit()

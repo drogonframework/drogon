@@ -549,8 +549,9 @@ static void loadRedisClients(const Json::Value &redisClients)
         }
         auto name = client.get("name", "default").asString();
         auto isFast = client.get("is_fast", false).asBool();
+        auto timeout = client.get("timeout", -1.0).asDouble();
         drogon::app().createRedisClient(
-            host, port, name, password, connNum, isFast);
+            host, port, name, password, connNum, isFast, timeout);
     }
 }
 

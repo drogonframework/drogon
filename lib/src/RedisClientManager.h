@@ -47,7 +47,8 @@ class RedisClientManager : public trantor::NonCopyable
                            unsigned short port,
                            const std::string &password,
                            size_t connectionNum,
-                           bool isFast);
+                           bool isFast,
+                           double timeout);
     // bool areAllRedisClientsAvailable() const noexcept;
 
   private:
@@ -61,6 +62,7 @@ class RedisClientManager : public trantor::NonCopyable
         unsigned short port_;
         bool isFast_;
         size_t connectionNumber_;
+        double timeout_;
     };
     std::vector<RedisInfo> redisInfos_;
 };
