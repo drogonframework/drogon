@@ -162,6 +162,10 @@ class RedisConnection : public trantor::NonCopyable,
                      args);
         va_end(args);
     }
+    trantor::EventLoop *getLoop() const
+    {
+        return loop_;
+    }
 
   private:
     redisAsyncContext *redisContext_{nullptr};

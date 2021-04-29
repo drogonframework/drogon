@@ -136,6 +136,18 @@ class DROGON_EXPORT RedisClient
     virtual void newTransactionAsync(
         const std::function<void(const std::shared_ptr<RedisTransaction> &)>
             &callback) = 0;
+    /**
+     * @brief Set the Timeout value of execution of a command.
+     *
+     * @param timeout in seconds, if the result is not returned from the
+     * server within the timeout, a RedisException with "Command execution
+     * timeout" string is generated and returned to the caller.
+     * @note set the timeout value to zero or negative for no limit on time. The
+     * default value is -1.0, this means there is no time limit if this method
+     * is not called.
+     */
+    virtual void setTimeout(double timeout) = 0;
+
     virtual ~RedisClient() = default;
 #ifdef __cpp_impl_coroutine
     /**
@@ -247,9 +259,9 @@ inline void internal::RedisTransactionAwaiter::await_suspend(
     client_->newTransactionAsync(
         [this, &handle](const std::shared_ptr<RedisTransaction> &transaction) {
             if (transaction == nullptr)
-                setException(std::make_exception_ptr(
-                    RedisException(RedisErrorCode::kInternalError,
-                                   "Failed to create transaction")));
+                setException(std::make_exception_ptr(RedisException(
+                    RedisErrorCode::kTimeout,
+                    "Timeout, no connection available for transaction")));
             else
                 setValue(transaction);
             handle.resume();
