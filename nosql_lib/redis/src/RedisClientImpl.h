@@ -40,14 +40,21 @@ class RedisClientImpl final
                           string_view command,
                           ...) noexcept override;
     ~RedisClientImpl() override;
-    RedisTransactionPtr newTransaction() override
+    RedisTransactionPtr newTransaction() noexcept(false) override
     {
         std::promise<RedisTransactionPtr> prom;
         auto f = prom.get_future();
         newTransactionAsync([&prom](const RedisTransactionPtr &transPtr) {
             prom.set_value(transPtr);
         });
-        return f.get();
+        auto trans = f.get();
+        if (!trans)
+        {
+            throw RedisException(
+                RedisErrorCode::kTimeout,
+                "Timeout, no connection available for transaction");
+        }
+        return trans;
     }
     void newTransactionAsync(
         const std::function<void(const RedisTransactionPtr &)> &callback)

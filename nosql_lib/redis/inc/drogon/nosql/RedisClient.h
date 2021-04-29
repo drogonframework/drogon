@@ -125,13 +125,18 @@ class DROGON_EXPORT RedisClient
      * @brief Create a redis transaction object.
      *
      * @return std::shared_ptr<RedisTransaction>
+     * @note An exception with kTimeout code is thrown if the operation is
+     * timed out. see RedisException.h
      */
-    virtual std::shared_ptr<RedisTransaction> newTransaction() = 0;
+    virtual std::shared_ptr<RedisTransaction> newTransaction() noexcept(
+        false) = 0;
 
     /**
      * @brief Create a transaction object in asynchronous mode.
      *
      * @return std::shared_ptr<RedisTransaction>
+     * @note An empty shared_ptr object is returned via the callback if the
+     * operation is timed out.
      */
     virtual void newTransactionAsync(
         const std::function<void(const std::shared_ptr<RedisTransaction> &)>
