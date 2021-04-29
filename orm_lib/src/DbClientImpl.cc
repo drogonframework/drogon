@@ -210,14 +210,9 @@ void DbClientImpl::execSql(
     }
     if (busy)
     {
-        try
-        {
-            throw Failure("Too many queries in buffer");
-        }
-        catch (...)
-        {
-            exceptCallback(std::current_exception());
-        }
+        auto exceptPtr =
+            std::make_exception_ptr(Failure("Too many queries in buffer"));
+        exceptCallback(exceptPtr);
         return;
     }
 }

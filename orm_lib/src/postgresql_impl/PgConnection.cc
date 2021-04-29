@@ -376,16 +376,10 @@ void PgConnection::doAfterPreparing()
 
 void PgConnection::handleFatalError()
 {
-    try
-    {
-        throw Failure(PQerrorMessage(connectionPtr_.get()));
-    }
-    catch (...)
-    {
-        auto exceptPtr = std::current_exception();
-        exceptionCallback_(exceptPtr);
-        exceptionCallback_ = nullptr;
-    }
+    auto exceptPtr =
+        std::make_exception_ptr(Failure(PQerrorMessage(connectionPtr_.get())));
+    exceptionCallback_(exceptPtr);
+    exceptionCallback_ = nullptr;
 }
 
 void PgConnection::batchSql(std::deque<std::shared_ptr<SqlCmd>> &&)

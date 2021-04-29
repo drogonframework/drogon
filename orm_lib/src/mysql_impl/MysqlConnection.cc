@@ -15,6 +15,7 @@
 #include "MysqlConnection.h"
 #include "MysqlResultImpl.h"
 #include <algorithm>
+#include <exception>
 #include <drogon/orm/DbTypes.h>
 #include <drogon/utils/Utilities.h>
 #include <drogon/utils/string_view.h>
@@ -532,16 +533,11 @@ void MysqlConnection::outputError()
 
     if (isWorking_)
     {
-        try
-        {
-            // TODO: exception type
-            throw SqlError(mysql_error(mysqlPtr_.get()), sql_);
-        }
-        catch (...)
-        {
-            exceptionCallback_(std::current_exception());
-            exceptionCallback_ = nullptr;
-        }
+        // TODO: exception type
+        auto exceptPtr = std::make_exception_ptr(
+            SqlError(mysql_error(mysqlPtr_.get()), sql_));
+        exceptionCallback_(exceptPtr);
+        exceptionCallback_ = nullptr;
 
         callback_ = nullptr;
         isWorking_ = false;
