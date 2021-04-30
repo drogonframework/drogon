@@ -44,12 +44,17 @@ class RedisTransactionImpl final
     {
         callback(shared_from_this());
     }
+    void setTimeout(double timeout) override
+    {
+        timeout_ = timeout;
+    }
     void doBegin();
     ~RedisTransactionImpl() override;
 
   private:
     bool isExecutedOrCancelled_{false};
     RedisConnectionPtr connPtr_;
+    double timeout_{-1.0};
 };
 }  // namespace nosql
 }  // namespace drogon

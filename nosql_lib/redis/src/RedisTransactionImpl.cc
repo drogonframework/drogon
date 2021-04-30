@@ -13,7 +13,7 @@
  */
 
 #include "RedisTransactionImpl.h"
-
+#include "../../lib/src/TaskTimeoutFlag.h"
 using namespace drogon::nosql;
 
 RedisTransactionImpl::RedisTransactionImpl(RedisConnectionPtr connPtr) noexcept
@@ -46,20 +46,64 @@ void RedisTransactionImpl::execCommandAsync(
                                          "Transaction was cancelled"));
         return;
     }
-    va_list args;
-    va_start(args, command);
-    connPtr_->sendvCommand(
-        command,
-        std::move(resultCallback),
-        [thisPtr = shared_from_this(),
-         exceptionCallback =
-             std::move(exceptionCallback)](const RedisException &err) {
-            LOG_ERROR << err.what();
-            thisPtr->isExecutedOrCancelled_ = true;
-            exceptionCallback(err);
-        },
-        args);
-    va_end(args);
+    if (timeout_ <= 0.0)
+    {
+        va_list args;
+        va_start(args, command);
+        connPtr_->sendvCommand(
+            command,
+            std::move(resultCallback),
+            [thisPtr = shared_from_this(),
+             exceptionCallback =
+                 std::move(exceptionCallback)](const RedisException &err) {
+                LOG_ERROR << err.what();
+                thisPtr->isExecutedOrCancelled_ = true;
+                exceptionCallback(err);
+            },
+            args);
+        va_end(args);
+    }
+    else
+    {
+        auto expCbPtr = std::make_shared<RedisExceptionCallback>(
+            std::move(exceptionCallback));
+        auto timeoutFlagPtr = std::make_shared<TaskTimeoutFlag>(
+            connPtr_->getLoop(),
+            std::chrono::duration<double>(timeout_),
+            [expCbPtr]() {
+                if (*expCbPtr)
+                {
+                    (*expCbPtr)(RedisException(RedisErrorCode::kTimeout,
+                                               "Command execution timeout"));
+                }
+            });
+        va_list args;
+        va_start(args, command);
+        connPtr_->sendvCommand(
+            command,
+            [resultCallback = std::move(resultCallback),
+             timeoutFlagPtr](const RedisResult &result) {
+                if (timeoutFlagPtr->done())
+                {
+                    return;
+                }
+                resultCallback(result);
+            },
+            [thisPtr = shared_from_this(), expCbPtr, timeoutFlagPtr](
+                const RedisException &err) {
+                if (timeoutFlagPtr->done())
+                {
+                    return;
+                }
+                LOG_ERROR << err.what();
+                thisPtr->isExecutedOrCancelled_ = true;
+                if (*expCbPtr)
+                    (*expCbPtr)(err);
+            },
+            args);
+        va_end(args);
+        timeoutFlagPtr->runTimer();
+    }
 }
 
 void RedisTransactionImpl::doBegin()

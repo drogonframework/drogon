@@ -19,7 +19,7 @@
 #include <trantor/net/EventLoopThreadPool.h>
 #include <vector>
 #include <unordered_set>
-#include <queue>
+#include <list>
 #include <future>
 
 namespace drogon
@@ -40,18 +40,29 @@ class RedisClientImpl final
                           string_view command,
                           ...) noexcept override;
     ~RedisClientImpl() override;
-    RedisTransactionPtr newTransaction() override
+    RedisTransactionPtr newTransaction() noexcept(false) override
     {
         std::promise<RedisTransactionPtr> prom;
         auto f = prom.get_future();
         newTransactionAsync([&prom](const RedisTransactionPtr &transPtr) {
             prom.set_value(transPtr);
         });
-        return f.get();
+        auto trans = f.get();
+        if (!trans)
+        {
+            throw RedisException(
+                RedisErrorCode::kTimeout,
+                "Timeout, no connection available for transaction");
+        }
+        return trans;
     }
     void newTransactionAsync(
         const std::function<void(const RedisTransactionPtr &)> &callback)
         override;
+    void setTimeout(double timeout) override
+    {
+        timeout_ = timeout;
+    }
 
   private:
     trantor::EventLoopThreadPool loops_;
@@ -63,10 +74,16 @@ class RedisClientImpl final
     const trantor::InetAddress serverAddr_;
     const std::string password_;
     const size_t numberOfConnections_;
-    std::queue<std::function<void(const RedisConnectionPtr &)>> tasks_;
+    double timeout_{-1.0};
+    std::list<std::shared_ptr<std::function<void(const RedisConnectionPtr &)>>>
+        tasks_;
     std::shared_ptr<RedisTransaction> makeTransaction(
         const RedisConnectionPtr &connPtr);
     void handleNextTask(const RedisConnectionPtr &connPtr);
+    void execCommandAsyncWithTimeout(string_view command,
+                                     RedisResultCallback &&resultCallback,
+                                     RedisExceptionCallback &&exceptionCallback,
+                                     va_list ap);
 };
 }  // namespace nosql
 }  // namespace drogon

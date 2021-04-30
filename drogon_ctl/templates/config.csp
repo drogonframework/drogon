@@ -75,7 +75,10 @@
             "is_fast": false,
             //number_of_connections: 1 by default, if the 'is_fast' is true, the number is the number of  
             //connections per IO thread, otherwise it is the total number of all connections.  
-            "number_of_connections": 1
+            "number_of_connections": 1,
+            //timeout: -1.0 by default, in seconds, the timeout for executing a command.
+            //zero or negative value means no timeout.
+            "timeout": -1.0
         }
     ],*/
     "app": {

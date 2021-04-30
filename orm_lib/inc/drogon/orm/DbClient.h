@@ -236,12 +236,17 @@ class DROGON_EXPORT DbClient : public trantor::NonCopyable
      * automatically or manually rolled back, the callback will never be
      * executed. You can also use the setCommitCallback() method of a
      * transaction object to set the callback.
+     * @note A TimeoutError exception is thrown if the operation is timed out.
      */
     virtual std::shared_ptr<Transaction> newTransaction(
         const std::function<void(bool)> &commitCallback =
             std::function<void(bool)>()) noexcept(false) = 0;
 
     /// Create a transaction object in asynchronous mode.
+    /**
+     * @note An empty shared_ptr object is returned via the callback if the
+     * operation is timed out.
+     */
     virtual void newTransactionAsync(
         const std::function<void(const std::shared_ptr<Transaction> &)>
             &callback) = 0;
