@@ -199,9 +199,7 @@ class DROGON_EXPORT WebSocketClient
         bool useOldTLS = false,
         bool validateCert = true);
 
-    virtual ~WebSocketClient()
-    {
-    }
+    virtual ~WebSocketClient() = default;
 };
 
 #ifdef __cpp_impl_coroutine
