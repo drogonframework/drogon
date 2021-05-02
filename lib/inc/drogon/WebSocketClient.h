@@ -155,6 +155,9 @@ class DROGON_EXPORT WebSocketClient
      * by the parameter.
      * @param useOldTLS If the parameter is set to true, the TLS1.0/1.1 are
      * enabled for HTTPS.
+     * @param validateCert If the parameter is set to true, the client validates
+     * the server certificate when SSL handshaking.
+     * @return HttpClientPtr The smart pointer to the new client object.
      * @return WebSocketClientPtr The smart pointer to the WebSocket client.
      * @note The ip parameter support for both ipv4 and ipv6 address
      */
@@ -163,7 +166,8 @@ class DROGON_EXPORT WebSocketClient
         uint16_t port,
         bool useSSL = false,
         trantor::EventLoop *loop = nullptr,
-        bool useOldTLS = false);
+        bool useOldTLS = false,
+        bool validateCert = true);
 
     /// Create a websocket client using the given hostString to connect to
     /// server
@@ -181,6 +185,8 @@ class DROGON_EXPORT WebSocketClient
      * identified by the parameter.
      * @param useOldTLS If the parameter is set to true, the TLS1.0/1.1 are
      * enabled for HTTPS.
+     * @param validateCert If the parameter is set to true, the client validates
+     * the server certificate when SSL handshaking.
      * @note
      * Don't add path and parameters in hostString, the request path and
      * parameters should be set in HttpRequestPtr when calling the
@@ -190,11 +196,10 @@ class DROGON_EXPORT WebSocketClient
     static WebSocketClientPtr newWebSocketClient(
         const std::string &hostString,
         trantor::EventLoop *loop = nullptr,
-        bool useOldTLS = false);
+        bool useOldTLS = false,
+        bool validateCert = true);
 
-    virtual ~WebSocketClient()
-    {
-    }
+    virtual ~WebSocketClient() = default;
 };
 
 #ifdef __cpp_impl_coroutine

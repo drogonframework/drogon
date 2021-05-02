@@ -218,6 +218,8 @@ class DROGON_EXPORT HttpClient : public trantor::NonCopyable
      * by the parameter.
      * @param useOldTLS If the parameter is set to true, the TLS1.0/1.1 are
      * eanbled for HTTPS.
+     * @param validateCert If the parameter is set to true, the client validates
+     * the server certificate when SSL handshaking.
      * @return HttpClientPtr The smart pointer to the new client object.
      * @note: The ip parameter support for both ipv4 and ipv6 address
      */
@@ -257,7 +259,11 @@ class DROGON_EXPORT HttpClient : public trantor::NonCopyable
      * @param useOldTLS If the parameter is set to true, the TLS1.0/1.1 are
      * enabled for HTTPS.
      * @note
-     * Don't add path and parameters in hostString, the request path and
+     *
+     * @param validateCert If the parameter is set to true, the client validates
+     * the server certificate when SSL handshaking.
+     *
+     * @note Don't add path and parameters in hostString, the request path and
      * parameters should be set in HttpRequestPtr when calling the sendRequest()
      * method.
      *
