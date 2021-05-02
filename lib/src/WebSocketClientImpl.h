@@ -30,9 +30,9 @@ class WebSocketClientImpl
       public std::enable_shared_from_this<WebSocketClientImpl>
 {
   public:
-    virtual WebSocketConnectionPtr getConnection() override;
+    WebSocketConnectionPtr getConnection() override;
 
-    virtual void setMessageHandler(
+    void setMessageHandler(
         const std::function<void(std::string &&message,
                                  const WebSocketClientPtr &,
                                  const WebSocketMessageType &)> &callback)
@@ -41,18 +41,17 @@ class WebSocketClientImpl
         messageCallback_ = callback;
     }
 
-    virtual void setConnectionClosedHandler(
+    void setConnectionClosedHandler(
         const std::function<void(const WebSocketClientPtr &)> &callback)
         override
     {
         connectionClosedCallback_ = callback;
     }
 
-    virtual void connectToServer(
-        const HttpRequestPtr &request,
-        const WebSocketRequestCallback &callback) override;
+    void connectToServer(const HttpRequestPtr &request,
+                         const WebSocketRequestCallback &callback) override;
 
-    virtual trantor::EventLoop *getLoop() override
+    trantor::EventLoop *getLoop() override
     {
         return loop_;
     }
@@ -60,13 +59,15 @@ class WebSocketClientImpl
     WebSocketClientImpl(trantor::EventLoop *loop,
                         const trantor::InetAddress &addr,
                         bool useSSL = false,
-                        bool useOldTLS = false);
+                        bool useOldTLS = false,
+                        bool validateCert = true);
 
     WebSocketClientImpl(trantor::EventLoop *loop,
                         const std::string &hostString,
-                        bool useOldTLS = false);
+                        bool useOldTLS = false,
+                        bool validateCert = true);
 
-    ~WebSocketClientImpl();
+    ~WebSocketClientImpl() override;
 
   private:
     std::shared_ptr<trantor::TcpClient> tcpClientPtr_;
@@ -75,6 +76,7 @@ class WebSocketClientImpl
     std::string domain_;
     bool useSSL_{false};
     bool useOldTLS_{false};
+    bool validateCert_{true};
     bool upgraded_{false};
     std::string wsKey_;
     std::string wsAccept_;
