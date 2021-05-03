@@ -21,7 +21,6 @@
 #include "HttpSimpleControllersRouter.h"
 #include "HttpControllersRouter.h"
 #include "WebsocketControllersRouter.h"
-#include "HttpClientImpl.h"
 #include "AOPAdvice.h"
 #include "ConfigLoader.h"
 #include "HttpServer.h"
