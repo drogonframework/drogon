@@ -38,14 +38,17 @@ RedisClientImpl::RedisClientImpl(const trantor::InetAddress &serverAddress,
       numberOfConnections_(numberOfConnections)
 {
     loops_.start();
-    for (size_t i = 0; i < numberOfConnections_; ++i)
-    {
-        auto loop = loops_.getNextLoop();
-        loop->queueInLoop([this, loop]() {
-            std::lock_guard<std::mutex> lock(connectionsMutex_);
-            connections_.insert(newConnection(loop));
-        });
-    }
+
+    std::thread([this]() {
+        for (size_t i = 0; i < numberOfConnections_; ++i)
+        {
+            auto loop = loops_.getNextLoop();
+            loop->queueInLoop([this, loop]() {
+                std::lock_guard<std::mutex> lock(connectionsMutex_);
+                connections_.insert(newConnection(loop));
+            });
+        }
+    }).detach();
 }
 
 RedisConnectionPtr RedisClientImpl::newConnection(trantor::EventLoop *loop)
