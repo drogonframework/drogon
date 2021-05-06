@@ -15,6 +15,7 @@
 
 #include <drogon/utils/optional.h>
 #include <trantor/net/EventLoop.h>
+#include <trantor/utils/Logger.h>
 #include <algorithm>
 #include <coroutine>
 #include <exception>
@@ -395,6 +396,7 @@ struct AsyncTask final
 
         void unhandled_exception()
         {
+            LOG_FATAL << "Exception escaping AsyncTask";
             std::terminate();
         }
 
