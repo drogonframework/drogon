@@ -396,7 +396,7 @@ struct AsyncTask final
 
         void unhandled_exception()
         {
-            LOG_FATAL << "Unhandled excption in AsyncTask";
+            LOG_FATAL << "Exception escaping AsyncTask";
             std::terminate();
         }
 
