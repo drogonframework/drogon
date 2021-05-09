@@ -67,23 +67,12 @@ void DbClientImpl::init()
 {
     // LOG_DEBUG << loops_.getLoopNum();
     loops_.start();
-    if (type_ == ClientType::PostgreSQL)
+    if (type_ == ClientType::PostgreSQL || type_ == ClientType::Mysql)
     {
         for (size_t i = 0; i < numberOfConnections_; ++i)
         {
             auto loop = loops_.getNextLoop();
             loop->runInLoop([this, loop]() {
-                std::lock_guard<std::mutex> lock(connectionsMutex_);
-                connections_.insert(newConnection(loop));
-            });
-        }
-    }
-    else if (type_ == ClientType::Mysql)
-    {
-        for (size_t i = 0; i < numberOfConnections_; ++i)
-        {
-            auto loop = loops_.getNextLoop();
-            loop->runAfter(0.1 * (i + 1), [this, loop]() {
                 std::lock_guard<std::mutex> lock(connectionsMutex_);
                 connections_.insert(newConnection(loop));
             });
