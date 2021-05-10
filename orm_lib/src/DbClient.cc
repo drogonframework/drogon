@@ -32,9 +32,11 @@ std::shared_ptr<DbClient> DbClient::newPgClient(const std::string &connInfo,
                                                 const size_t connNum)
 {
 #if USE_POSTGRESQL
-    return std::make_shared<DbClientImpl>(connInfo,
-                                          connNum,
-                                          ClientType::PostgreSQL);
+    auto client = std::make_shared<DbClientImpl>(connInfo,
+                                                 connNum,
+                                                 ClientType::PostgreSQL);
+    client->init();
+    return client;
 #else
     LOG_FATAL << "PostgreSQL is not supported!";
     exit(1);
@@ -47,7 +49,10 @@ std::shared_ptr<DbClient> DbClient::newMysqlClient(const std::string &connInfo,
                                                    const size_t connNum)
 {
 #if USE_MYSQL
-    return std::make_shared<DbClientImpl>(connInfo, connNum, ClientType::Mysql);
+    auto client =
+        std::make_shared<DbClientImpl>(connInfo, connNum, ClientType::Mysql);
+    client->init();
+    return client;
 #else
     LOG_FATAL << "Mysql is not supported!";
     exit(1);
@@ -61,9 +66,10 @@ std::shared_ptr<DbClient> DbClient::newSqlite3Client(
     const size_t connNum)
 {
 #if USE_SQLITE3
-    return std::make_shared<DbClientImpl>(connInfo,
-                                          connNum,
-                                          ClientType::Sqlite3);
+    auto client =
+        std::make_shared<DbClientImpl>(connInfo, connNum, ClientType::Sqlite3);
+    client->init();
+    return client;
 #else
     LOG_FATAL << "Sqlite3 is not supported!";
     exit(1);

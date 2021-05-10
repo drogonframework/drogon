@@ -56,6 +56,7 @@ class DbClientImpl : public DbClient,
     {
         timeout_ = timeout;
     }
+    void init();
 
   private:
     size_t numberOfConnections_;

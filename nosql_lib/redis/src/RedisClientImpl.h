@@ -63,6 +63,7 @@ class RedisClientImpl final
     {
         timeout_ = timeout;
     }
+    void init();
 
   private:
     trantor::EventLoopThreadPool loops_;

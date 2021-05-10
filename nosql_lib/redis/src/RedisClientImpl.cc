@@ -21,9 +21,11 @@ std::shared_ptr<RedisClient> RedisClient::newRedisClient(
     size_t connectionNumber,
     const std::string &password)
 {
-    return std::make_shared<RedisClientImpl>(serverAddress,
-                                             connectionNumber,
-                                             password);
+    auto client = std::make_shared<RedisClientImpl>(serverAddress,
+                                                    connectionNumber,
+                                                    password);
+    client->init();
+    return client;
 }
 
 RedisClientImpl::RedisClientImpl(const trantor::InetAddress &serverAddress,
@@ -37,20 +39,20 @@ RedisClientImpl::RedisClientImpl(const trantor::InetAddress &serverAddress,
       password_(std::move(password)),
       numberOfConnections_(numberOfConnections)
 {
-    loops_.start();
-
-    std::thread([this]() {
-        for (size_t i = 0; i < numberOfConnections_; ++i)
-        {
-            auto loop = loops_.getNextLoop();
-            loop->queueInLoop([this, loop]() {
-                std::lock_guard<std::mutex> lock(connectionsMutex_);
-                connections_.insert(newConnection(loop));
-            });
-        }
-    }).detach();
 }
 
+void RedisClientImpl::init()
+{
+    loops_.start();
+    for (size_t i = 0; i < numberOfConnections_; ++i)
+    {
+        auto loop = loops_.getNextLoop();
+        loop->queueInLoop([this, loop]() {
+            std::lock_guard<std::mutex> lock(connectionsMutex_);
+            connections_.insert(newConnection(loop));
+        });
+    }
+}
 RedisConnectionPtr RedisClientImpl::newConnection(trantor::EventLoop *loop)
 {
     auto conn = std::make_shared<RedisConnection>(serverAddr_, password_, loop);
