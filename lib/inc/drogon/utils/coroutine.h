@@ -17,13 +17,14 @@
 #include <trantor/net/EventLoop.h>
 #include <trantor/utils/Logger.h>
 #include <algorithm>
+#include <atomic>
+#include <cassert>
+#include <condition_variable>
 #include <coroutine>
 #include <exception>
-#include <type_traits>
-#include <condition_variable>
-#include <atomic>
 #include <future>
-#include <cassert>
+#include <mutex>
+#include <type_traits>
 
 namespace drogon
 {

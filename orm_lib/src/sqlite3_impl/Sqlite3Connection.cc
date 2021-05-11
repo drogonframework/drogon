@@ -16,9 +16,10 @@
 #include "Sqlite3ResultImpl.h"
 #include <drogon/utils/Utilities.h>
 #include <drogon/utils/string_view.h>
-#include <exception>
-#include <regex>
 #include <cctype>
+#include <exception>
+#include <mutex>
+#include <regex>
 
 using namespace drogon;
 using namespace drogon::orm;
