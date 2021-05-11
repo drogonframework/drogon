@@ -108,7 +108,7 @@ struct [[nodiscard]] Task
     {
     }
     Task(const Task &) = delete;
-    Task(Task && other)
+    Task(Task &&other)
     {
         coro_ = other.coro_;
         other.coro_ = nullptr;
@@ -255,7 +255,7 @@ struct [[nodiscard]] Task<void>
     {
     }
     Task(const Task &) = delete;
-    Task(Task && other)
+    Task(Task &&other)
     {
         coro_ = other.coro_;
         other.coro_ = nullptr;

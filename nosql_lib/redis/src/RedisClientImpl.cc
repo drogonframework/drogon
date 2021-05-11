@@ -59,7 +59,8 @@ void RedisClientImpl::init()
 }
 RedisConnectionPtr RedisClientImpl::newConnection(trantor::EventLoop *loop)
 {
-    auto conn = std::make_shared<RedisConnection>(serverAddr_, password_, db_, loop);
+    auto conn =
+        std::make_shared<RedisConnection>(serverAddr_, password_, db_, loop);
     std::weak_ptr<RedisClientImpl> thisWeakPtr = shared_from_this();
     conn->setConnectCallback([thisWeakPtr](RedisConnectionPtr &&conn) {
         auto thisPtr = thisWeakPtr.lock();
