@@ -40,7 +40,8 @@ void RedisClientManager::createRedisClients(
                     trantor::InetAddress(redisInfo.addr_, redisInfo.port_),
                     redisInfo.connectionNumber_,
                     ioLoops[idx],
-                    redisInfo.password_);
+                    redisInfo.password_,
+                    redisInfo.db_);
                 if (redisInfo.timeout_ > 0.0)
                 {
                     c->setTimeout(redisInfo.timeout_);
@@ -52,11 +53,13 @@ void RedisClientManager::createRedisClients(
             auto clientPtr = std::make_shared<RedisClientImpl>(
                 trantor::InetAddress(redisInfo.addr_, redisInfo.port_),
                 redisInfo.connectionNumber_,
-                redisInfo.password_);
+                redisInfo.password_,
+                redisInfo.db_);
             if (redisInfo.timeout_ > 0.0)
             {
                 clientPtr->setTimeout(redisInfo.timeout_);
             }
+            clientPtr->init();
             redisClientsMap_[redisInfo.name_] = std::move(clientPtr);
         }
     }
@@ -68,7 +71,8 @@ void RedisClientManager::createRedisClient(const std::string &name,
                                            const std::string &password,
                                            const size_t connectionNum,
                                            const bool isFast,
-                                           double timeout)
+                                           double timeout,
+                                           unsigned int db)
 {
     RedisInfo info;
     info.name_ = name;
@@ -78,6 +82,7 @@ void RedisClientManager::createRedisClient(const std::string &name,
     info.connectionNumber_ = connectionNum;
     info.isFast_ = isFast;
     info.timeout_ = timeout;
+    info.db_ = db;
 
     redisInfos_.emplace_back(std::move(info));
 }

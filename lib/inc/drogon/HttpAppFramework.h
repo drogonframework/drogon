@@ -1262,7 +1262,8 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
         const std::string &password = "",
         size_t connectionNum = 1,
         bool isFast = false,
-        double timeout = -1.0) = 0;
+        double timeout = -1.0,
+        unsigned int db = 0) = 0;
 
     /// Get the DNS resolver
     /**

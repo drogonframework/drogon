@@ -42,6 +42,8 @@ find_path(MYSQL_INCLUDE_DIRS
                 /usr/local/mysql/include/mysql
                 /usr/local/mariadb/include
                 /usr/local/mariadb/include/mariadb
+                /opt/rh/rh-mariadb105/root/usr/include
+                /opt/rh/rh-mariadb105/root/usr/include/mysql
                 $ENV{ProgramFiles}/MySQL/*/include
                 $ENV{SystemDrive}/MySQL/*/include)
 
@@ -85,7 +87,8 @@ else(WIN32)
                      /opt/local/mysql5/lib
                      /opt/local/lib/mysql5/mysql
                      /opt/mysql/mysql/lib/mysql
-                     /opt/mysql/lib/mysql)
+                     /opt/mysql/lib/mysql
+                     /opt/rh/rh-mariadb105/root/usr/lib64)
 endif(WIN32)
 
 if(MYSQL_INCLUDE_DIRS AND MYSQL_LIBRARIES)

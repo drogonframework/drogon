@@ -34,7 +34,8 @@ class RedisClientImpl final
   public:
     RedisClientImpl(const trantor::InetAddress &serverAddress,
                     size_t numberOfConnections,
-                    std::string password = "");
+                    std::string password = "",
+                    unsigned int db = 0);
     void execCommandAsync(RedisResultCallback &&resultCallback,
                           RedisExceptionCallback &&exceptionCallback,
                           string_view command,
@@ -74,6 +75,7 @@ class RedisClientImpl final
     RedisConnectionPtr newConnection(trantor::EventLoop *loop);
     const trantor::InetAddress serverAddr_;
     const std::string password_;
+    const unsigned int db_;
     const size_t numberOfConnections_;
     double timeout_{-1.0};
     std::list<std::shared_ptr<std::function<void(const RedisConnectionPtr &)>>>

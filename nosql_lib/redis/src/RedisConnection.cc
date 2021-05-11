@@ -19,8 +19,9 @@
 using namespace drogon::nosql;
 RedisConnection::RedisConnection(const trantor::InetAddress &serverAddress,
                                  const std::string &password,
+                                 const unsigned int db,
                                  trantor::EventLoop *loop)
-    : serverAddr_(serverAddress), password_(password), loop_(loop)
+    : serverAddr_(serverAddress), password_(password), db_(db), loop_(loop)
 {
     assert(loop_);
     loop_->queueInLoop([this]() { startConnectionInLoop(); });
@@ -110,6 +111,41 @@ void RedisConnection::startConnectionInLoop()
                         "auth %s",
                         thisPtr->password_.data());
                 }
+
+                if(thisPtr->db_ != 0)
+                {
+                    LOG_TRACE << "redis db:" << thisPtr->db_;
+                    std::weak_ptr<RedisConnection> weakThisPtr =
+                        thisPtr->shared_from_this();
+                    thisPtr->sendCommand(
+
+                        [weakThisPtr](const RedisResult &r) {
+                            auto thisPtr = weakThisPtr.lock();
+                            if (!thisPtr)
+                                return;
+                            if (r.asString() == "OK")
+                            {   
+                                if (thisPtr->connectCallback_)
+                                    thisPtr->connectCallback_(
+                                        thisPtr->shared_from_this());
+                            }   
+                            else
+                            {   
+                                LOG_ERROR << r.asString();
+                                thisPtr->disconnect();
+                            }   
+                        },  
+                        [weakThisPtr](const std::exception &err) {
+                            LOG_ERROR << err.what();
+                            auto thisPtr = weakThisPtr.lock();
+                            if (!thisPtr)
+                                return;
+                            thisPtr->disconnect();
+                        },  
+                        "select %u",
+                        thisPtr->db_);
+                }
+            
             }
         });
     redisAsyncSetDisconnectCallback(
