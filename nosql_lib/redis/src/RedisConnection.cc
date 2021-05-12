@@ -91,6 +91,7 @@ void RedisConnection::startConnectionInLoop()
                                 return;
                             if (r.asString() == "OK")
                             {
+                                thisPtr->status_ = ConnectStatus::kConnected;
                                 if (thisPtr->connectCallback_)
                                     thisPtr->connectCallback_(
                                         thisPtr->shared_from_this());
@@ -99,6 +100,7 @@ void RedisConnection::startConnectionInLoop()
                             {
                                 LOG_ERROR << r.asString();
                                 thisPtr->disconnect();
+                                thisPtr->status_ = ConnectStatus::kEnd;
                             }
                         },
                         [weakThisPtr](const std::exception &err) {
@@ -107,12 +109,13 @@ void RedisConnection::startConnectionInLoop()
                             if (!thisPtr)
                                 return;
                             thisPtr->disconnect();
+                            thisPtr->status_ = ConnectStatus::kEnd;
                         },
                         "auth %s",
                         thisPtr->password_.data());
                 }
 
-                if (thisPtr->db_ != 0)
+                if (thisPtr->status_ == ConnectStatus::kConnected && thisPtr->db_ != 0)
                 {
                     LOG_TRACE << "redis db:" << thisPtr->db_;
                     std::weak_ptr<RedisConnection> weakThisPtr =
@@ -123,16 +126,11 @@ void RedisConnection::startConnectionInLoop()
                             auto thisPtr = weakThisPtr.lock();
                             if (!thisPtr)
                                 return;
-                            if (r.asString() == "OK")
-                            {
-                                if (thisPtr->connectCallback_)
-                                    thisPtr->connectCallback_(
-                                        thisPtr->shared_from_this());
-                            }
-                            else
+                            if (r.asString() != "OK")
                             {
                                 LOG_ERROR << r.asString();
                                 thisPtr->disconnect();
+                                thisPtr->status_ = ConnectStatus::kEnd;
                             }
                         },
                         [weakThisPtr](const std::exception &err) {
@@ -141,6 +139,7 @@ void RedisConnection::startConnectionInLoop()
                             if (!thisPtr)
                                 return;
                             thisPtr->disconnect();
+                            thisPtr->status_ = ConnectStatus::kEnd;
                         },
                         "select %u",
                         thisPtr->db_);
