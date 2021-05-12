@@ -547,7 +547,8 @@ void HttpAppFrameworkImpl::run()
         sessionManagerPtr_ =
             std::make_unique<SessionManager>(getLoop(), sessionTimeout_);
     }
-
+    // now start runing!!
+    running_ = true;
     // Initialize plugins
     const auto &pluginConfig = jsonConfig_["plugins"];
     if (!pluginConfig.isNull())
@@ -560,9 +561,6 @@ void HttpAppFrameworkImpl::run()
                                                      // TODO: new plugin
                                                  });
     }
-
-    // now start runing!!
-    running_ = true;
     httpCtrlsRouterPtr_->init(ioLoops);
     httpSimpleCtrlsRouterPtr_->init(ioLoops);
     staticFileRouterPtr_->init(ioLoops);
