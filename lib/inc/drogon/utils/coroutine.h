@@ -121,6 +121,11 @@ struct [[nodiscard]] Task
     Task &operator=(const Task &) = delete;
     Task &operator=(Task &&other)
     {
+        if (std::addressof(other) == this)
+            return *this;
+        if (coro_)
+            coro_.destroy();
+
         coro_ = other.coro_;
         other.coro_ = nullptr;
         return *this;
@@ -268,6 +273,11 @@ struct [[nodiscard]] Task<void>
     Task &operator=(const Task &) = delete;
     Task &operator=(Task &&other)
     {
+        if (std::addressof(other) == this)
+            return *this;
+        if (coro_)
+            coro_.destroy();
+
         coro_ = other.coro_;
         other.coro_ = nullptr;
         return *this;
@@ -533,6 +543,7 @@ auto sync_wait(AWAIT &&await)
                 exception_ptr = std::current_exception();
             }
             flag = true;
+            cv.notify_one();
         }();
 
         std::unique_lock lk(mtx);
