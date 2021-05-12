@@ -73,10 +73,14 @@ void RedisConnection::startConnectionInLoop()
                           << thisPtr->serverAddr_.toIpPort();
                 if (thisPtr->password_.empty())
                 {
-                    thisPtr->status_ = ConnectStatus::kConnected;
-                    if (thisPtr->connectCallback_)
+                    if (thisPtr->db_ == 0)
                     {
-                        thisPtr->connectCallback_(thisPtr->shared_from_this());
+                        thisPtr->status_ = ConnectStatus::kConnected;
+                        if (thisPtr->connectCallback_)
+                        {
+                            thisPtr->connectCallback_(
+                                thisPtr->shared_from_this());
+                        }
                     }
                 }
                 else
@@ -84,17 +88,20 @@ void RedisConnection::startConnectionInLoop()
                     std::weak_ptr<RedisConnection> weakThisPtr =
                         thisPtr->shared_from_this();
                     thisPtr->sendCommand(
-
                         [weakThisPtr](const RedisResult &r) {
                             auto thisPtr = weakThisPtr.lock();
                             if (!thisPtr)
                                 return;
                             if (r.asString() == "OK")
                             {
-                                thisPtr->status_ = ConnectStatus::kConnected;
-                                if (thisPtr->connectCallback_)
-                                    thisPtr->connectCallback_(
-                                        thisPtr->shared_from_this());
+                                if (thisPtr->db_ == 0)
+                                {
+                                    thisPtr->status_ =
+                                        ConnectStatus::kConnected;
+                                    if (thisPtr->connectCallback_)
+                                        thisPtr->connectCallback_(
+                                            thisPtr->shared_from_this());
+                                }
                             }
                             else
                             {
@@ -115,19 +122,26 @@ void RedisConnection::startConnectionInLoop()
                         thisPtr->password_.data());
                 }
 
-                if (thisPtr->status_ == ConnectStatus::kConnected &&
-                    thisPtr->db_ != 0)
+                if (thisPtr->db_ != 0)
                 {
                     LOG_TRACE << "redis db:" << thisPtr->db_;
                     std::weak_ptr<RedisConnection> weakThisPtr =
                         thisPtr->shared_from_this();
                     thisPtr->sendCommand(
-
                         [weakThisPtr](const RedisResult &r) {
                             auto thisPtr = weakThisPtr.lock();
                             if (!thisPtr)
                                 return;
-                            if (r.asString() != "OK")
+                            if (r.asString() == "OK")
+                            {
+                                thisPtr->status_ = ConnectStatus::kConnected;
+                                if (thisPtr->connectCallback_)
+                                {
+                                    thisPtr->connectCallback_(
+                                        thisPtr->shared_from_this());
+                                }
+                            }
+                            else
                             {
                                 LOG_ERROR << r.asString();
                                 thisPtr->disconnect();
