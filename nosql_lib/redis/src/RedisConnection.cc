@@ -115,7 +115,8 @@ void RedisConnection::startConnectionInLoop()
                         thisPtr->password_.data());
                 }
 
-                if (thisPtr->status_ == ConnectStatus::kConnected && thisPtr->db_ != 0)
+                if (thisPtr->status_ == ConnectStatus::kConnected &&
+                    thisPtr->db_ != 0)
                 {
                     LOG_TRACE << "redis db:" << thisPtr->db_;
                     std::weak_ptr<RedisConnection> weakThisPtr =
