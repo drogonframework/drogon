@@ -19,24 +19,28 @@ using namespace drogon::nosql;
 std::shared_ptr<RedisClient> RedisClient::newRedisClient(
     const trantor::InetAddress &serverAddress,
     size_t connectionNumber,
-    const std::string &password)
+    const std::string &password,
+    const unsigned int db)
 {
     auto client = std::make_shared<RedisClientImpl>(serverAddress,
                                                     connectionNumber,
-                                                    password);
+                                                    password,
+                                                    db);
     client->init();
     return client;
 }
 
 RedisClientImpl::RedisClientImpl(const trantor::InetAddress &serverAddress,
                                  size_t numberOfConnections,
-                                 std::string password)
+                                 std::string password,
+                                 unsigned int db)
     : loops_(numberOfConnections < std::thread::hardware_concurrency()
                  ? numberOfConnections
                  : std::thread::hardware_concurrency(),
              "RedisLoop"),
       serverAddr_(serverAddress),
       password_(std::move(password)),
+      db_(db),
       numberOfConnections_(numberOfConnections)
 {
 }
@@ -55,7 +59,8 @@ void RedisClientImpl::init()
 }
 RedisConnectionPtr RedisClientImpl::newConnection(trantor::EventLoop *loop)
 {
-    auto conn = std::make_shared<RedisConnection>(serverAddr_, password_, loop);
+    auto conn =
+        std::make_shared<RedisConnection>(serverAddr_, password_, db_, loop);
     std::weak_ptr<RedisClientImpl> thisWeakPtr = shared_from_this();
     conn->setConnectCallback([thisWeakPtr](RedisConnectionPtr &&conn) {
         auto thisPtr = thisWeakPtr.lock();

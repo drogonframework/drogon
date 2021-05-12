@@ -70,6 +70,8 @@
             "port": 6379,
             //passwd: '' by default
             "passwd": "",
+            //db index: 0 by default
+            "db": 0,
             //is_fast: false by default, if it is true, the client is faster but user can't call
             //any synchronous interface of it.
             "is_fast": false,
