@@ -26,8 +26,8 @@ RedisClientLockFree::RedisClientLockFree(
     : loop_(loop),
       serverAddr_(serverAddress),
       password_(std::move(password)),
-      numberOfConnections_(numberOfConnections),
-      db_(db)
+      db_(db),
+      numberOfConnections_(numberOfConnections)
 {
     assert(loop_);
     for (size_t i = 0; i < numberOfConnections_; ++i)
