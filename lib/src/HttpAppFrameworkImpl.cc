@@ -123,8 +123,8 @@ void defaultExceptionHandler(
     std::function<void(const HttpResponsePtr &)> &&callback)
 {
     std::string pathWithQuery = req->path();
-    if(req->query().empty() == false)
-        pathWithQuery += "?"+req->query();
+    if (req->query().empty() == false)
+        pathWithQuery += "?" + req->query();
     LOG_ERROR << "Unhandled exception in " << pathWithQuery
               << ", what(): " << e.what();
     const auto &handler = app().getCustomErrorHandler();
