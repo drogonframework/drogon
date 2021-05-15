@@ -318,12 +318,16 @@ class HttpBinder : public HttpBinderBase
                 if constexpr (std::is_same_v<AsyncTask,
                                              typename traits::return_type>)
                 {
-                    callFunction(req, callback, std::move(values)...);
+                    // Explcit copy because `callFunction` moves it
+                    auto cb = callback;
+                    callFunction(req, cb, std::move(values)...);
                 }
                 else if constexpr (std::is_same_v<Task<>,
                                                   typename traits::return_type>)
                 {
-                    co_await callFunction(req, callback, std::move(values)...);
+                    // Explcit copy because `callFunction` moves it
+                    auto cb = callback;
+                    co_await callFunction(req, cb, std::move(values)...);
                 }
                 else if constexpr (std::is_same_v<Task<HttpResponsePtr>,
                                                   typename traits::return_type>)
