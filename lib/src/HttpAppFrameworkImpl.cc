@@ -122,8 +122,11 @@ void defaultExceptionHandler(
     const HttpRequestPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback)
 {
-    LOG_ERROR << "Unhandled exception in " << req->query()
-              << ", what():" << e.what();
+    std::string pathWithQuery = req->path();
+    if (req->query().empty() == false)
+        pathWithQuery += "?" + req->query();
+    LOG_ERROR << "Unhandled exception in " << pathWithQuery
+              << ", what(): " << e.what();
     const auto &handler = app().getCustomErrorHandler();
     callback(handler(k500InternalServerError));
 }
