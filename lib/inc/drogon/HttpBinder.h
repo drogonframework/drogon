@@ -287,7 +287,9 @@ class HttpBinder : public HttpBinderBase
     {
         try
         {
-            callFunction(req, callback, std::move(values)...);
+            // Explcit copy because `callFunction` moves it
+            auto cb = callback;
+            callFunction(req, cb, std::move(values)...);
         }
         catch (const std::exception &except)
         {
