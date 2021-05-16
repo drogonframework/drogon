@@ -82,7 +82,10 @@ std::vector<trantor::EventLoop *> ListenerManager::createListeners(
 #endif
     size_t threadNum,
     const std::vector<std::function<HttpResponsePtr(const HttpRequestPtr &)>>
-        &syncAdvices)
+        &syncAdvices,
+    const std::vector<
+        std::function<void(const HttpRequestPtr &, const HttpResponsePtr &)>>
+        &preSendingAdvices)
 {
 #ifdef __linux__
     for (size_t i = 0; i < threadNum; ++i)
@@ -117,7 +120,8 @@ std::vector<trantor::EventLoop *> ListenerManager::createListeners(
                     std::make_shared<HttpServer>(loopThreadPtr->getLoop(),
                                                  std::move(listenAddress),
                                                  "drogon",
-                                                 syncAdvices);
+                                                 syncAdvices,
+                                                 preSendingAdvices);
             }
             else
             {
@@ -125,7 +129,8 @@ std::vector<trantor::EventLoop *> ListenerManager::createListeners(
                     std::make_shared<HttpServer>(loopThreadPtr->getLoop(),
                                                  std::move(listenAddress),
                                                  "drogon",
-                                                 syncAdvices);
+                                                 syncAdvices,
+                                                 preSendingAdvices);
             }
 
             if (listener.useSSL_)
@@ -172,17 +177,18 @@ std::vector<trantor::EventLoop *> ListenerManager::createListeners(
                 loopThreadPtr->getLoop(),
                 InetAddress(ip, listener.port_, isIpv6),
                 "drogon",
-                syncAdvices);
+                syncAdvices,
+                preSendingAdvices);
             if (listener.useSSL_)
             {
 #ifdef OpenSSL_FOUND
                 auto cert = listener.certFile_;
                 auto key = listener.keyFile_;
-                if (cert == "")
+                if (cert.empty())
                     cert = globalCertFile;
-                if (key == "")
+                if (key.empty())
                     key = globalKeyFile;
-                if (cert == "" || key == "")
+                if (cert.empty() || key.empty())
                 {
                     std::cerr
                         << "You can't use https without cert file or key file"
@@ -216,10 +222,6 @@ void ListenerManager::startListening()
     {
         loopThread->run();
     }
-}
-
-ListenerManager::~ListenerManager()
-{
 }
 
 trantor::EventLoop *ListenerManager::getIOLoop(size_t id) const

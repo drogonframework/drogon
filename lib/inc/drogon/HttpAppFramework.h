@@ -341,6 +341,15 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
         const std::function<void(const HttpRequestPtr &,
                                  const HttpResponsePtr &)> &advice) = 0;
 
+    /// Register an advice called before a response is sent to the client.
+    /**
+     * @note This advice is different from the PostHandlingAdvice, responses to
+     * static resources are also handled here.
+     */
+    virtual HttpAppFramework &registerPreSendingAdvice(
+        const std::function<void(const HttpRequestPtr &,
+                                 const HttpResponsePtr &)> &advice) = 0;
+
     /* End of AOP methods */
 
     /// Load the configuration file with json format.

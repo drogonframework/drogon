@@ -533,7 +533,8 @@ void HttpAppFrameworkImpl::run()
         sslCertPath_,
         sslKeyPath_,
         threadNum_,
-        syncAdvices_);
+        syncAdvices_,
+        preSendingAdvices_);
     assert(ioLoops.size() == threadNum_);
     for (size_t i = 0; i < threadNum_; ++i)
     {
