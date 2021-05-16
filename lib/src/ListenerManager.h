@@ -46,10 +46,13 @@ class ListenerManager : public trantor::NonCopyable
         size_t threadNum,
         const std::vector<
             std::function<HttpResponsePtr(const HttpRequestPtr &)>>
-            &syncAdvices);
+            &syncAdvices,
+        const std::vector<std::function<void(const HttpRequestPtr &,
+                                             const HttpResponsePtr &)>>
+            &preSendingAdvices);
     void startListening();
     std::vector<trantor::InetAddress> getListeners() const;
-    ~ListenerManager();
+    ~ListenerManager() = default;
 
     trantor::EventLoop *getIOLoop(size_t id) const;
     void stopListening();

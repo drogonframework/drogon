@@ -190,7 +190,13 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
         postHandlingAdvices_.emplace_back(advice);
         return *this;
     }
-
+    HttpAppFramework &registerPreSendingAdvice(
+        const std::function<void(const HttpRequestPtr &,
+                                 const HttpResponsePtr &)> &advice) override
+    {
+        preSendingAdvices_.emplace_back(advice);
+        return *this;
+    }
     HttpAppFramework &setDefaultHandler(DefaultHandler handler) override;
 
     HttpAppFramework &enableSession(const size_t timeout) override
@@ -637,7 +643,9 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     std::vector<
         std::function<void(const HttpRequestPtr &, const HttpResponsePtr &)>>
         postHandlingAdvices_;
-
+    std::vector<
+        std::function<void(const HttpRequestPtr &, const HttpResponsePtr &)>>
+        preSendingAdvices_;
     std::vector<std::function<void(const HttpRequestPtr &)>>
         preRoutingObservers_;
     std::vector<std::function<void(const HttpRequestPtr &)>>

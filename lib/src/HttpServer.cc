@@ -154,7 +154,10 @@ HttpServer::HttpServer(
     const InetAddress &listenAddr,
     const std::string &name,
     const std::vector<std::function<HttpResponsePtr(const HttpRequestPtr &)>>
-        &syncAdvices)
+        &syncAdvices,
+    const std::vector<
+        std::function<void(const HttpRequestPtr &, const HttpResponsePtr &)>>
+        &preSendingAdvices)
 #ifdef __linux__
     : server_(loop, listenAddr, name.c_str()),
 #else
@@ -163,7 +166,8 @@ HttpServer::HttpServer(
       httpAsyncCallback_(defaultHttpAsyncCallback),
       newWebsocketCallback_(defaultWebSockAsyncCallback),
       connectionCallback_(defaultConnectionCallback),
-      syncAdvices_(syncAdvices)
+      syncAdvices_(syncAdvices),
+      preSendingAdvices_(preSendingAdvices)
 {
     server_.setConnectionCallback(
         [this](const auto &conn) { this->onConnection(conn); });
@@ -256,12 +260,17 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn, MsgBuffer *buf)
                     auto wsConn =
                         std::make_shared<WebSocketConnectionImpl>(conn);
                     wsConn->setPingMessage("", std::chrono::seconds{30});
+                    auto req = requestParser->requestImpl();
                     newWebsocketCallback_(
-                        requestParser->requestImpl(),
-                        [conn, wsConn, requestParser](
+                        req,
+                        [conn, wsConn, requestParser, this, req](
                             const HttpResponsePtr &resp) mutable {
                             if (conn->connected())
                             {
+                                for (auto &advice : preSendingAdvices_)
+                                {
+                                    advice(req, resp);
+                                }
                                 if (resp->statusCode() ==
                                     k101SwitchingProtocols)
                                 {
@@ -381,6 +390,10 @@ void HttpServer::onRequests(
 
                 response->setVersion(req->getVersion());
                 response->setCloseConnection(close_);
+                for (auto &advice : preSendingAdvices_)
+                {
+                    advice(req, response);
+                }
                 auto newResp =
                     getCompressedResponse(req, response, isHeadMethod);
                 if (conn->getLoop()->isInLoopThread())
