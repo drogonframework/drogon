@@ -169,10 +169,10 @@ HttpServer::HttpServer(
       syncAdvices_(syncAdvices),
       preSendingAdvices_(preSendingAdvices)
 {
-    server_.setConnectionCallback(
-        [this](const auto &conn) { this->onConnection(conn); });
-    server_.setRecvMessageCallback(
-        [this](const auto &conn, auto buff) { this->onMessage(conn, buff); });
+    server_.setConnectionCallback([this](const auto &conn)
+                                  { this->onConnection(conn); });
+    server_.setRecvMessageCallback([this](const auto &conn, auto buff)
+                                   { this->onMessage(conn, buff); });
 }
 
 HttpServer::~HttpServer()
@@ -260,12 +260,18 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn, MsgBuffer *buf)
                     auto wsConn =
                         std::make_shared<WebSocketConnectionImpl>(conn);
                     wsConn->setPingMessage("", std::chrono::seconds{30});
+                    auto req = requestParser->requestImpl();
                     newWebsocketCallback_(
-                        requestParser->requestImpl(),
-                        [conn, wsConn, requestParser](
-                            const HttpResponsePtr &resp) mutable {
+                        req,
+                        [conn, wsConn, requestParser, this, req](
+                            const HttpResponsePtr &resp) mutable
+                        {
                             if (conn->connected())
                             {
+                                for (auto &advice : preSendingAdvices_)
+                                {
+                                    advice(req, resp);
+                                }
                                 if (resp->statusCode() ==
                                     k101SwitchingProtocols)
                                 {
@@ -377,7 +383,8 @@ void HttpServer::onRequests(
              &syncFlag,
              isHeadMethod,
              this,
-             requestParser](const HttpResponsePtr &response) {
+             requestParser](const HttpResponsePtr &response)
+            {
                 if (!response)
                     return;
                 if (!conn->connected())
@@ -446,45 +453,48 @@ void HttpServer::onRequests(
                 }
                 else
                 {
-                    conn->getLoop()->queueInLoop([conn,
-                                                  req,
-                                                  newResp,
-                                                  this,
-                                                  isHeadMethod,
-                                                  requestParser]() {
-                        if (conn->connected())
+                    conn->getLoop()->queueInLoop(
+                        [conn,
+                         req,
+                         newResp,
+                         this,
+                         isHeadMethod,
+                         requestParser]()
                         {
-                            if (requestParser->getFirstRequest() == req)
+                            if (conn->connected())
                             {
-                                requestParser->popFirstRequest();
-                                std::vector<std::pair<HttpResponsePtr, bool>>
-                                    resps;
-                                resps.emplace_back(newResp, isHeadMethod);
-                                while (!requestParser->emptyPipelining())
+                                if (requestParser->getFirstRequest() == req)
                                 {
-                                    auto resp =
-                                        requestParser->getFirstResponse();
-                                    if (resp.first)
+                                    requestParser->popFirstRequest();
+                                    std::vector<
+                                        std::pair<HttpResponsePtr, bool>>
+                                        resps;
+                                    resps.emplace_back(newResp, isHeadMethod);
+                                    while (!requestParser->emptyPipelining())
                                     {
-                                        requestParser->popFirstRequest();
-                                        resps.push_back(std::move(resp));
+                                        auto resp =
+                                            requestParser->getFirstResponse();
+                                        if (resp.first)
+                                        {
+                                            requestParser->popFirstRequest();
+                                            resps.push_back(std::move(resp));
+                                        }
+                                        else
+                                            break;
                                     }
-                                    else
-                                        break;
+                                    sendResponses(conn,
+                                                  resps,
+                                                  requestParser->getBuffer());
                                 }
-                                sendResponses(conn,
-                                              resps,
-                                              requestParser->getBuffer());
+                                else
+                                {
+                                    // some earlier requests are waiting for
+                                    // responses;
+                                    requestParser->pushResponseToPipelining(
+                                        req, newResp, isHeadMethod);
+                                }
                             }
-                            else
-                            {
-                                // some earlier requests are waiting for
-                                // responses;
-                                requestParser->pushResponseToPipelining(
-                                    req, newResp, isHeadMethod);
-                            }
-                        }
-                    });
+                        });
                 }
             });
         if (syncFlag == false)
