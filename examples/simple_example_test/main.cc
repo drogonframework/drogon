@@ -1404,7 +1404,7 @@ void doTest(const HttpClientPtr &client,
             LOG_ERROR << "Error!";
             exit(1);
         }
-    }());;
+    }());
 #endif
 }
 void loadFileLengths()
