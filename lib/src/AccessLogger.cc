@@ -68,8 +68,8 @@ void AccessLogger::initAndStart(const Json::Value &config)
     if (format.empty())
     {
         format =
-            "$request_date $method $url ($remote_addr - $local_addr) $status "
-            "$body_bytes_sent $processing_time";
+            "$request_date $method $url [$body_bytes_received] ($remote_addr - "
+            "$local_addr) $status $body_bytes_sent $processing_time";
     }
     createLogFunctions(format);
     auto logPath = config.get("log_path", "").asString();
