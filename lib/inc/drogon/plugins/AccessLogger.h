@@ -59,6 +59,9 @@ namespace plugin
  *     $processing_time: request processing time in seconds with a microseconds
  *                       resolution; time elapsed between the request object was
  *                       created and response object was created.
+ * @note If the format string is empty or not configured, a default value of
+ * "$request_date $method $url ($remote_addr - $local_addr) $status
+ * $body_bytes_sent $processing_time" is applied.
  *
  * log_path: Log file path, empty by default,in which case,logs are output to
  * the regular log file (or stdout based on the log configuration).

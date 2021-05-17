@@ -64,7 +64,13 @@ void AccessLogger::initAndStart(const Json::Value &config)
                        {"$processing_time", outputProcessingTime},
                        {"$upstream_http_content-type", outputRespContentType},
                        {"$upstream_http_content_type", outputRespContentType}};
-    auto format = config.get("log_format", "$request_url").asString();
+    auto format = config.get("log_format", "").asString();
+    if (format.empty())
+    {
+        format =
+            "$request_date $method $url ($remote_addr - $local_addr) $status "
+            "$body_bytes_sent $processing_time";
+    }
     createLogFunctions(format);
     auto logPath = config.get("log_path", "").asString();
     if (!logPath.empty())
