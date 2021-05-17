@@ -108,7 +108,7 @@ struct [[nodiscard]] Task
     {
     }
     Task(const Task &) = delete;
-    Task(Task && other)
+    Task(Task &&other)
     {
         coro_ = other.coro_;
         other.coro_ = nullptr;
@@ -260,7 +260,7 @@ struct [[nodiscard]] Task<void>
     {
     }
     Task(const Task &) = delete;
-    Task(Task && other)
+    Task(Task &&other)
     {
         coro_ = other.coro_;
         other.coro_ = nullptr;
@@ -387,43 +387,105 @@ struct [[nodiscard]] Task<void>
 /// destructs
 // NOTE: AsyncTask is designed to be not awaitable. And kills the entire process
 // if exception escaped.
-struct AsyncTask final
+struct AsyncTask
 {
-    struct promise_type final
+    struct promise_type;
+    using handle_type = std::coroutine_handle<promise_type>;
+
+    AsyncTask() = default;
+    AsyncTask(handle_type h) : coro_(h)
     {
-        auto initial_suspend() noexcept
+    }
+    AsyncTask(const AsyncTask &) = delete;
+
+    ~AsyncTask()
+    {
+        if (coro_)
+            coro_.destroy();
+    }
+    AsyncTask &operator=(const AsyncTask &) = delete;
+    AsyncTask &operator=(AsyncTask &&other)
+    {
+        if (std::addressof(other) == this)
+            return *this;
+        if (coro_)
+            coro_.destroy();
+
+        coro_ = other.coro_;
+        other.coro_ = nullptr;
+        return *this;
+    }
+
+    struct promise_type
+    {
+        std::coroutine_handle<> continuation_;
+
+        AsyncTask get_return_object() noexcept
         {
-            return std::suspend_never{};
+            return {std::coroutine_handle<promise_type>::from_promise(*this)};
         }
 
-        auto final_suspend() noexcept
+        std::suspend_never initial_suspend() const noexcept
         {
-            return std::suspend_never{};
+            return {};
+        }
+
+        void unhandled_exception()
+        {
+            LOG_FATAL << "Unhandled exception in AsyncTask.";
+            abort();
         }
 
         void return_void() noexcept
         {
         }
 
-        void unhandled_exception()
+        void setContinuation(std::coroutine_handle<> handle)
         {
-            LOG_FATAL << "Exception escaping AsyncTask";
-            std::terminate();
+            continuation_ = handle;
         }
 
-        promise_type *get_return_object() noexcept
+        auto final_suspend() const noexcept
         {
-            return this;
-        }
+            struct awaiter
+            {
+                bool await_ready() const noexcept
+                {
+                    return false;
+                }
 
-        void result()
-        {
+                void await_resume() const noexcept
+                {
+                }
+
+                std::coroutine_handle<> await_suspend(
+                    std::coroutine_handle<promise_type> handle) noexcept
+                {
+                    auto coro = handle.promise().continuation_;
+                    if (coro)
+                        return coro;
+
+                    return std::noop_coroutine();
+                }
+            };
+            return awaiter{};
         }
     };
-    AsyncTask(const promise_type *) noexcept
+    bool await_ready() const noexcept
     {
-        // the type truncates all given info about its frame
+        return coro_.done();
     }
+
+    void await_resume() const noexcept
+    {
+    }
+
+    void await_suspend(std::coroutine_handle<> coroutine) const noexcept
+    {
+        coro_.promise().setContinuation(coroutine);
+    }
+
+    handle_type coro_;
 };
 
 /// Helper class that provides the infrastructure for turning callback into
@@ -497,21 +559,20 @@ struct CallbackAwaiter<void>
 
 // An ok implementation of sync_await. This allows one to call
 // coroutines and wait for the result from a function.
-//
-// NOTE: Not sure if this is a compiler bug. But causes use after free in some
-// cases. Don't use it in production code.
 template <typename AWAIT>
 auto sync_wait(AWAIT &&await)
 {
+    static_assert(!std::is_same_v<AWAIT, AsyncTask>);
     using value_type = typename await_result<AWAIT>::type;
     std::condition_variable cv;
     std::mutex mtx;
     std::atomic<bool> flag = false;
     std::exception_ptr exception_ptr;
+    std::unique_lock lk(mtx);
 
     if constexpr (std::is_same_v<value_type, void>)
     {
-        [&, lk = std::unique_lock(mtx)]() -> AsyncTask {
+        auto task = [&]() -> AsyncTask {
             try
             {
                 co_await await;
@@ -520,20 +581,23 @@ auto sync_wait(AWAIT &&await)
             {
                 exception_ptr = std::current_exception();
             }
-
+            std::unique_lock lk(mtx);
             flag = true;
-            cv.notify_one();
-        }();
+            cv.notify_all();
+        };
 
-        std::unique_lock lk(mtx);
+        // HACK: Workarround coroutine frame destructing too early by enforcing
+        //       manual lifetime
+        AsyncTask *taskPtr = new AsyncTask{task()};
         cv.wait(lk, [&]() { return (bool)flag; });
+        delete taskPtr;
         if (exception_ptr)
             std::rethrow_exception(exception_ptr);
     }
     else
     {
         optional<value_type> value;
-        [&, lk = std::unique_lock(mtx)]() -> AsyncTask {
+        auto task = [&]() -> AsyncTask {
             try
             {
                 value = co_await await;
@@ -542,14 +606,20 @@ auto sync_wait(AWAIT &&await)
             {
                 exception_ptr = std::current_exception();
             }
+
+            std::unique_lock lk(mtx);
             flag = true;
             cv.notify_one();
-        }();
+        };
 
+        // HACK: Workarround coroutine frame destructing too early by enforcing
+        //       manual lifetime
+        AsyncTask *taskPtr = new AsyncTask{task()};
         std::unique_lock lk(mtx);
         cv.wait(lk, [&]() { return (bool)flag; });
 
         assert(value.has_value() == true || exception_ptr);
+        delete taskPtr;
         if (exception_ptr)
             std::rethrow_exception(exception_ptr);
         return value.value();
@@ -557,8 +627,6 @@ auto sync_wait(AWAIT &&await)
 }
 
 // Converts a task (or task like) promise into std::future for old-style async
-// NOTE: Not sure if this is a compiler bug. But causes use after free in some
-// cases. Don't use it in production code.
 template <typename Await>
 inline auto co_future(Await await) noexcept
     -> std::future<await_result_t<Await>>
@@ -566,7 +634,8 @@ inline auto co_future(Await await) noexcept
     using Result = await_result_t<Await>;
     std::promise<Result> prom;
     auto fut = prom.get_future();
-    [](std::promise<Result> &&prom, Await &&await) -> AsyncTask {
+    AsyncTask *taskPtr = new AsyncTask;
+    auto task = [taskPtr](std::promise<Result> prom, Await await) -> AsyncTask {
         try
         {
             if constexpr (std::is_void_v<Result>)
@@ -581,7 +650,9 @@ inline auto co_future(Await await) noexcept
         {
             prom.set_exception(std::current_exception());
         }
-    }(std::move(prom), std::move(await));
+        delete taskPtr;
+    };
+    *taskPtr = task(std::move(prom), std::move(await));
     return fut;
 }
 
