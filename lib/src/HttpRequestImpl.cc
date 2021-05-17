@@ -350,9 +350,9 @@ void HttpRequestImpl::appendToBuffer(trantor::MsgBuffer *output) const
         for (auto it = cookies_.begin(); it != cookies_.end(); ++it)
         {
             output->append(it->first);
-            output->append('=');
+            output->append("=");
             output->append(it->second);
-            output->append(';');
+            output->append(";");
         }
         output->unwrite(1);  // delete last ';'
         output->append("\r\n");
