@@ -36,19 +36,29 @@ namespace plugin
    }
    @endcode
  *
- * log_format: a format string for logging requests, there are several
+ * log_format: a format string for access logging, there are several
  * placeholders that represent particular data.
  *     $date: the time when the log was printed.
  *     $request_date: the time when the request was created.
- *     $request_path: the path of the request.
- *     $request_query: the query string of the request.
- *     $request_url: the URL of the request, equals to
+ *     $request_path|$path: the path of the request.
+ *     $request_query|$query: the query string of the request.
+ *     $request_url|$url: the URL of the request, equals to
  *                   $request_path+"?"+$request_query.
  *     $remote_addr: the remote address
  *     $local_addr: the local address
- *     $request_len: the content length of the request.
+ *     $request_len|$body_bytes_received: the content length of the request.
  *     $method: the HTTP method of the request.
  *     $thread: the current thread number.
+ *     $response_len|$body_bytes_sent: the content length of the response.
+ *     $http_[header_name]: the header of the request.
+ *     $cookie_[cookie_name]: the cookie of the request.
+ *     $upstream_http_[header_name]: the header of the response sent to the
+ *                                   client.
+ *     $status_code: the status code of the response.
+ *     $status: the status code and string of the response.
+ *     $processing_time: request processing time in seconds with a microseconds
+ *                       resolution; time elapsed between the request object was
+ *                       created and response object was created.
  *
  * log_path: Log file path, empty by default,in which case,logs are output to
  * the regular log file (or stdout based on the log configuration).
@@ -103,11 +113,11 @@ class DROGON_EXPORT AccessLogger : public drogon::Plugin<AccessLogger>
     //$date
     void outputDate(trantor::LogStream &,
                     const drogon::HttpRequestPtr &,
-                    const drogon::HttpResponsePtr &);
+                    const drogon::HttpResponsePtr &) const;
     //$request_date
     void outputReqDate(trantor::LogStream &,
                        const drogon::HttpRequestPtr &,
-                       const drogon::HttpResponsePtr &);
+                       const drogon::HttpResponsePtr &) const;
     //$remote_addr
     static void outputRemoteAddr(trantor::LogStream &,
                                  const drogon::HttpRequestPtr &,
@@ -116,16 +126,50 @@ class DROGON_EXPORT AccessLogger : public drogon::Plugin<AccessLogger>
     static void outputLocalAddr(trantor::LogStream &,
                                 const drogon::HttpRequestPtr &,
                                 const drogon::HttpResponsePtr &);
-    //$request_len
+    //$request_len $body_bytes_received
     static void outputReqLength(trantor::LogStream &,
                                 const drogon::HttpRequestPtr &,
                                 const drogon::HttpResponsePtr &);
+    //$response_len $body_bytes_sent
+    static void outputRespLength(trantor::LogStream &,
+                                 const drogon::HttpRequestPtr &,
+                                 const drogon::HttpResponsePtr &);
+    //$method
     static void outputMethod(trantor::LogStream &,
                              const drogon::HttpRequestPtr &,
                              const drogon::HttpResponsePtr &);
+    //$thread
     static void outputThreadNumber(trantor::LogStream &,
                                    const drogon::HttpRequestPtr &,
                                    const drogon::HttpResponsePtr &);
+    //$http_[header_name]
+    static void outputReqHeader(trantor::LogStream &stream,
+                                const drogon::HttpRequestPtr &req,
+                                const std::string &headerName);
+    //$cookie_[cookie_name]
+    static void outputReqCookie(trantor::LogStream &stream,
+                                const drogon::HttpRequestPtr &req,
+                                const std::string &cookie);
+    //$upstream_http_[header_name]
+    static void outputRespHeader(trantor::LogStream &stream,
+                                 const drogon::HttpResponsePtr &resp,
+                                 const std::string &headerName);
+    //$status
+    static void outputStatusString(trantor::LogStream &,
+                                   const drogon::HttpRequestPtr &,
+                                   const drogon::HttpResponsePtr &);
+    //$status_code
+    static void outputStatusCode(trantor::LogStream &,
+                                 const drogon::HttpRequestPtr &,
+                                 const drogon::HttpResponsePtr &);
+    //$processing_time
+    static void outputProcessingTime(trantor::LogStream &,
+                                     const drogon::HttpRequestPtr &,
+                                     const drogon::HttpResponsePtr &);
+    //$upstream_http_content-type $upstream_http_content_type
+    static void outputRespContentType(trantor::LogStream &,
+                                      const drogon::HttpRequestPtr &,
+                                      const drogon::HttpResponsePtr &);
 };
 }  // namespace plugin
 }  // namespace drogon

@@ -12,6 +12,7 @@
  *
  */
 
+#include "HttpUtils.h"
 #include <drogon/drogon.h>
 #include <drogon/plugins/AccessLogger.h>
 #include <regex>
@@ -33,6 +34,7 @@ void AccessLogger::initAndStart(const Json::Value &config)
 {
     useLocalTime_ = config.get("use_local_time", true).asBool();
     logFunctionMap_ = {{"$request_path", outputReqPath},
+                       {"$path", outputReqPath},
                        {"$date",
                         [this](trantor::LogStream &stream,
                                const drogon::HttpRequestPtr &req,
@@ -47,11 +49,21 @@ void AccessLogger::initAndStart(const Json::Value &config)
                         }},
                        {"$request_query", outputReqQuery},
                        {"$request_url", outputReqURL},
+                       {"$query", outputReqQuery},
+                       {"$url", outputReqURL},
                        {"$remote_addr", outputRemoteAddr},
                        {"$local_addr", outputLocalAddr},
                        {"$request_len", outputReqLength},
+                       {"$body_bytes_received", outputReqLength},
                        {"$method", outputMethod},
-                       {"$thread", outputThreadNumber}};
+                       {"$thread", outputThreadNumber},
+                       {"$response_len", outputRespLength},
+                       {"$body_bytes_sent", outputRespLength},
+                       {"$status", outputStatusString},
+                       {"$status_code", outputStatusCode},
+                       {"$processing_time", outputProcessingTime},
+                       {"$upstream_http_content-type", outputRespContentType},
+                       {"$upstream_http_content_type", outputRespContentType}};
     auto format = config.get("log_format", "$request_url").asString();
     createLogFunctions(format);
     auto logPath = config.get("log_path", "").asString();
@@ -117,7 +129,7 @@ void AccessLogger::createLogFunctions(std::string format)
             rawString += format.substr(0, pos);
 
             format = format.substr(pos);
-            std::regex e{"^\\$[a-z0-9\\-_]+"};
+            std::regex e{"^\\$[a-zA-Z0-9\\-_]+"};
             std::smatch m;
             if (std::regex_search(format, m, e))
             {
@@ -174,6 +186,36 @@ AccessLogger::LogFunction AccessLogger::newLogFunction(
     {
         return iter->second;
     }
+    if (placeholder.find("$http_") == 0 && placeholder.size() > 6)
+    {
+        auto headerName = placeholder.substr(6);
+        return [headerName =
+                    std::move(headerName)](trantor::LogStream &stream,
+                                           const drogon::HttpRequestPtr &req,
+                                           const drogon::HttpResponsePtr &) {
+            outputReqHeader(stream, req, headerName);
+        };
+    }
+    if (placeholder.find("$cookie_") == 0 && placeholder.size() > 8)
+    {
+        auto cookieName = placeholder.substr(8);
+        return [cookieName =
+                    std::move(cookieName)](trantor::LogStream &stream,
+                                           const drogon::HttpRequestPtr &req,
+                                           const drogon::HttpResponsePtr &) {
+            outputReqCookie(stream, req, cookieName);
+        };
+    }
+    if (placeholder.find("$upstream_http_") == 0 && placeholder.size() > 15)
+    {
+        auto headerName = placeholder.substr(15);
+        return [headerName = std::move(
+                    headerName)](trantor::LogStream &stream,
+                                 const drogon::HttpRequestPtr &,
+                                 const drogon::HttpResponsePtr &resp) {
+            outputRespHeader(stream, resp, headerName);
+        };
+    }
     return [placeholder](trantor::LogStream &stream,
                          const drogon::HttpRequestPtr &,
                          const drogon::HttpResponsePtr &) {
@@ -190,7 +232,7 @@ void AccessLogger::outputReqPath(trantor::LogStream &stream,
 
 void AccessLogger::outputDate(trantor::LogStream &stream,
                               const drogon::HttpRequestPtr &,
-                              const drogon::HttpResponsePtr &)
+                              const drogon::HttpResponsePtr &) const
 {
     if (useLocalTime_)
     {
@@ -204,7 +246,7 @@ void AccessLogger::outputDate(trantor::LogStream &stream,
 
 void AccessLogger::outputReqDate(trantor::LogStream &stream,
                                  const drogon::HttpRequestPtr &req,
-                                 const drogon::HttpResponsePtr &)
+                                 const drogon::HttpResponsePtr &) const
 {
     if (useLocalTime_)
     {
@@ -260,6 +302,12 @@ void AccessLogger::outputReqLength(trantor::LogStream &stream,
     stream << req->body().length();
 }
 
+void AccessLogger::outputRespLength(trantor::LogStream &stream,
+                                    const drogon::HttpRequestPtr &,
+                                    const drogon::HttpResponsePtr &resp)
+{
+    stream << resp->body().length();
+}
 void AccessLogger::outputMethod(trantor::LogStream &stream,
                                 const drogon::HttpRequestPtr &req,
                                 const drogon::HttpResponsePtr &)
@@ -303,4 +351,80 @@ void AccessLogger::outputThreadNumber(trantor::LogStream &stream,
     }
 #endif
     stream << threadId_;
+}
+
+//$http_[header_name]
+void AccessLogger::outputReqHeader(trantor::LogStream &stream,
+                                   const drogon::HttpRequestPtr &req,
+                                   const std::string &headerName)
+{
+    stream << headerName << ": " << req->getHeader(headerName);
+}
+
+//$cookie_[cookie_name]
+void AccessLogger::outputReqCookie(trantor::LogStream &stream,
+                                   const drogon::HttpRequestPtr &req,
+                                   const std::string &cookie)
+{
+    stream << "(cookie)" << cookie << "=" << req->getCookie(cookie);
+}
+
+//$upstream_http_[header_name]
+void AccessLogger::outputRespHeader(trantor::LogStream &stream,
+                                    const drogon::HttpResponsePtr &resp,
+                                    const std::string &headerName)
+{
+    stream << headerName << ": " << resp->getHeader(headerName);
+}
+
+//$status
+void AccessLogger::outputStatusString(trantor::LogStream &stream,
+                                      const drogon::HttpRequestPtr &,
+                                      const drogon::HttpResponsePtr &resp)
+{
+    int code = resp->getStatusCode();
+    stream << code << " " << statusCodeToString(code);
+}
+//$status_code
+void AccessLogger::outputStatusCode(trantor::LogStream &stream,
+                                    const drogon::HttpRequestPtr &,
+                                    const drogon::HttpResponsePtr &resp)
+{
+    stream << resp->getStatusCode();
+}
+//$processing_time
+void AccessLogger::outputProcessingTime(trantor::LogStream &stream,
+                                        const drogon::HttpRequestPtr &req,
+                                        const drogon::HttpResponsePtr &)
+{
+    auto start = req->creationDate();
+    auto end = trantor::Date::now();
+    auto duration =
+        end.microSecondsSinceEpoch() - start.microSecondsSinceEpoch();
+    auto seconds = static_cast<double>(duration) / 1000000.0;
+    stream << seconds;
+}
+
+//$upstream_http_content-type $upstream_http_content_type
+void AccessLogger::outputRespContentType(trantor::LogStream &stream,
+                                         const drogon::HttpRequestPtr &,
+                                         const drogon::HttpResponsePtr &resp)
+{
+    auto typeStr = webContentTypeToString(resp->contentType());
+    if (typeStr.empty())
+    {
+        stream << "content-type: ";
+    }
+    else
+    {
+        if (typeStr.size() >= 2 && typeStr[typeStr.size() - 1] == '\n' &&
+            typeStr[typeStr.size() - 2] == '\r')
+        {
+            stream << string_view{typeStr.data(), typeStr.size() - 2};
+        }
+        else
+        {
+            stream << typeStr;
+        }
+    }
 }
