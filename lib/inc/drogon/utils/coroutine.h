@@ -392,7 +392,6 @@ struct AsyncTask
     struct promise_type;
     using handle_type = std::coroutine_handle<promise_type>;
 
-    AsyncTask() = default;
     AsyncTask(handle_type h) : coro_(h)
     {
     }
@@ -559,11 +558,11 @@ struct CallbackAwaiter<void>
 
 // An ok implementation of sync_await. This allows one to call
 // coroutines and wait for the result from a function.
-template <typename AWAIT>
-auto sync_wait(AWAIT &&await)
+template <typename Await>
+auto sync_wait(Await &&await)
 {
-    static_assert(!std::is_same_v<AWAIT, AsyncTask>);
-    using value_type = typename await_result<AWAIT>::type;
+    static_assert(is_awaitable_v<std::decay_t<Await>>);
+    using value_type = typename await_result<Await>::type;
     std::condition_variable cv;
     std::mutex mtx;
     std::atomic<bool> flag = false;
@@ -588,8 +587,10 @@ auto sync_wait(AWAIT &&await)
 
         // HACK: Workarround coroutine frame destructing too early by enforcing
         //       manual lifetime
-        AsyncTask *taskPtr = new AsyncTask{task()};
+        AsyncTask *taskPtr;
+        std::thread thr([&]() { taskPtr = new AsyncTask{task()}; });
         cv.wait(lk, [&]() { return (bool)flag; });
+        thr.join();
         delete taskPtr;
         if (exception_ptr)
             std::rethrow_exception(exception_ptr);
@@ -602,23 +603,22 @@ auto sync_wait(AWAIT &&await)
             {
                 value = co_await await;
             }
-            catch (const std::exception &e)
+            catch (...)
             {
                 exception_ptr = std::current_exception();
             }
-
             std::unique_lock lk(mtx);
             flag = true;
-            cv.notify_one();
+            cv.notify_all();
         };
 
         // HACK: Workarround coroutine frame destructing too early by enforcing
         //       manual lifetime
-        AsyncTask *taskPtr = new AsyncTask{task()};
-        std::unique_lock lk(mtx);
+        AsyncTask *taskPtr;
+        std::thread thr([&]() { taskPtr = new AsyncTask{task()}; });
         cv.wait(lk, [&]() { return (bool)flag; });
-
         assert(value.has_value() == true || exception_ptr);
+        thr.join();
         delete taskPtr;
         if (exception_ptr)
             std::rethrow_exception(exception_ptr);
@@ -634,8 +634,11 @@ inline auto co_future(Await await) noexcept
     using Result = await_result_t<Await>;
     std::promise<Result> prom;
     auto fut = prom.get_future();
-    AsyncTask *taskPtr = new AsyncTask;
-    auto task = [taskPtr](std::promise<Result> prom, Await await) -> AsyncTask {
+    std::promise<AsyncTask *> selfProm;
+    auto selfFut = selfProm.get_future();
+    auto task = [](std::promise<Result> prom,
+                   Await await,
+                   std::future<AsyncTask *> selfFut) -> AsyncTask {
         try
         {
             if constexpr (std::is_void_v<Result>)
@@ -650,9 +653,13 @@ inline auto co_future(Await await) noexcept
         {
             prom.set_exception(std::current_exception());
         }
-        delete taskPtr;
+
+        AsyncTask *self = selfFut.get();
+        delete self;
     };
-    *taskPtr = task(std::move(prom), std::move(await));
+    AsyncTask *taskPtr = new AsyncTask{
+        task(std::move(prom), std::move(await), std::move(selfFut))};
+    selfProm.set_value(taskPtr);
     return fut;
 }
 
