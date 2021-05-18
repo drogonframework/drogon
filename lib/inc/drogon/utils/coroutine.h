@@ -396,13 +396,13 @@ struct AsyncTask
 
     AsyncTask(handle_type h) : coro_(h)
     {
+        if(coro_)
+            coro_.promise().setSelf(coro_);
     }
     AsyncTask(const AsyncTask &) = delete;
 
     ~AsyncTask()
     {
-        if (coro_)
-            coro_.destroy();
     }
     AsyncTask &operator=(const AsyncTask &) = delete;
     AsyncTask &operator=(AsyncTask &&other)
@@ -420,6 +420,7 @@ struct AsyncTask
     struct promise_type
     {
         std::coroutine_handle<> continuation_;
+        handle_type self_;
 
         AsyncTask get_return_object() noexcept
         {
@@ -446,10 +447,18 @@ struct AsyncTask
             continuation_ = handle;
         }
 
+        void setSelf(handle_type handle)
+        {
+            self_ = handle;
+        }
+
         auto final_suspend() const noexcept
         {
             struct awaiter
             {
+                awaiter(handle_type h) : self_(h)
+                {}
+
                 bool await_ready() const noexcept
                 {
                     return false;
@@ -465,11 +474,16 @@ struct AsyncTask
                     auto coro = handle.promise().continuation_;
                     if (coro)
                         return coro;
+                    if(self_)
+                        self_.destroy();
 
                     return std::noop_coroutine();
                 }
+
+                handle_type self_;
             };
-            return awaiter{};
+
+            return awaiter(self_);
         }
     };
     bool await_ready() const noexcept
@@ -481,7 +495,7 @@ struct AsyncTask
     {
     }
 
-    void await_suspend(std::coroutine_handle<> coroutine) const noexcept
+    void await_suspend(std::coroutine_handle<> coroutine) noexcept
     {
         coro_.promise().setContinuation(coroutine);
     }
@@ -587,13 +601,9 @@ auto sync_wait(Await &&await)
             cv.notify_all();
         };
 
-        // HACK: Workarround coroutine frame destructing too early by enforcing
-        //       manual lifetime
-        AsyncTask *taskPtr;
-        std::thread thr([&]() { taskPtr = new AsyncTask{task()}; });
+        std::thread thr([&]() { task(); });
         cv.wait(lk, [&]() { return (bool)flag; });
         thr.join();
-        delete taskPtr;
         if (exception_ptr)
             std::rethrow_exception(exception_ptr);
     }
@@ -614,14 +624,11 @@ auto sync_wait(Await &&await)
             cv.notify_all();
         };
 
-        // HACK: Workarround coroutine frame destructing too early by enforcing
-        //       manual lifetime
-        AsyncTask *taskPtr;
-        std::thread thr([&]() { taskPtr = new AsyncTask{task()}; });
+        std::thread thr([&]() { task(); });
         cv.wait(lk, [&]() { return (bool)flag; });
         assert(value.has_value() == true || exception_ptr);
         thr.join();
-        delete taskPtr;
+
         if (exception_ptr)
             std::rethrow_exception(exception_ptr);
         return value.value();
@@ -636,10 +643,7 @@ inline auto co_future(Await await) noexcept
     using Result = await_result_t<Await>;
     std::promise<Result> prom;
     auto fut = prom.get_future();
-    std::promise<AsyncTask *> selfProm;
-    auto selfFut = selfProm.get_future();
-    auto taskPtr = std::make_shared<AsyncTask>();
-    auto task = [taskPtr](std::promise<Result> prom,
+    [](std::promise<Result> prom,
                    Await await,
                    std::future<AsyncTask *> selfFut) mutable -> AsyncTask {
         try
@@ -657,10 +661,7 @@ inline auto co_future(Await await) noexcept
             prom.set_exception(std::current_exception());
         }
 
-        AsyncTask *self = selfFut.get();
-        delete self;
-    };
-    *taskPtr = task();
+    }();
     return fut;
 }
 

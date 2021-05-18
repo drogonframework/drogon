@@ -312,10 +312,10 @@ class HttpBinder : public HttpBinderBase
         std::function<void(const HttpResponsePtr &)> &&callback,
         Values &&... values)
     {
-        auto taskPtr = std::make_shared<AsyncTask>();
-        *taskPtr = [taskPtr, this](HttpRequestPtr req,
+        // auto taskPtr = new AsyncTask;
+        [this](HttpRequestPtr req,
                std::function<void(const HttpResponsePtr &)> callback,
-               Values &&... values) mutable -> AsyncTask {
+               Values &&... values) -> AsyncTask {
             try
             {
                 if constexpr (std::is_same_v<AsyncTask,
@@ -348,7 +348,6 @@ class HttpBinder : public HttpBinderBase
             {
                 LOG_ERROR << "Exception not derived from std::exception";
             }
-            taskPtr = nullptr;
         }(req, std::move(callback), std::move(values)...);
     }
 #endif
