@@ -454,12 +454,11 @@ struct AsyncTask
         {
             struct awaiter final
             {
-
                 awaiter(handle_type h) : self_(h)
                 {
                 }
 
-                awaiter(const awaiter&) = delete;
+                awaiter(const awaiter &) = delete;
                 awaiter &operator=(const awaiter &) = delete;
 
                 ~awaiter()
