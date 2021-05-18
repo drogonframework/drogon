@@ -396,7 +396,7 @@ struct AsyncTask
 
     AsyncTask(handle_type h) : coro_(h)
     {
-        if(coro_)
+        if (coro_)
             coro_.promise().setSelf(coro_);
     }
     AsyncTask(const AsyncTask &) = delete;
@@ -457,7 +457,8 @@ struct AsyncTask
             struct awaiter
             {
                 awaiter(handle_type h) : self_(h)
-                {}
+                {
+                }
 
                 bool await_ready() const noexcept
                 {
@@ -474,8 +475,10 @@ struct AsyncTask
                     auto coro = handle.promise().continuation_;
                     if (coro)
                         return coro;
-                    if(self_)
+                    if (self_)
+                    {
                         self_.destroy();
+                    }
 
                     return std::noop_coroutine();
                 }
@@ -644,8 +647,8 @@ inline auto co_future(Await await) noexcept
     std::promise<Result> prom;
     auto fut = prom.get_future();
     [](std::promise<Result> prom,
-                   Await await,
-                   std::future<AsyncTask *> selfFut) mutable -> AsyncTask {
+       Await await,
+       std::future<AsyncTask *> selfFut) mutable -> AsyncTask {
         try
         {
             if constexpr (std::is_void_v<Result>)
@@ -660,7 +663,6 @@ inline auto co_future(Await await) noexcept
         {
             prom.set_exception(std::current_exception());
         }
-
     }();
     return fut;
 }
