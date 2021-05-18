@@ -409,8 +409,6 @@ struct AsyncTask
     {
         if (std::addressof(other) == this)
             return *this;
-        if (coro_)
-            coro_.destroy();
 
         coro_ = other.coro_;
         other.coro_ = nullptr;
