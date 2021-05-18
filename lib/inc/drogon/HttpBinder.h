@@ -312,7 +312,6 @@ class HttpBinder : public HttpBinderBase
         std::function<void(const HttpResponsePtr &)> &&callback,
         Values &&... values)
     {
-        // auto taskPtr = new AsyncTask;
         [this](HttpRequestPtr req,
                std::function<void(const HttpResponsePtr &)> callback,
                Values &&... values) -> AsyncTask {
