@@ -74,9 +74,7 @@ int main(int argc, char* argv[])
     });
     app().setLogLevel(trantor::Logger::kTrace);
 
-    auto test = [=]() -> AsyncTask {
-        co_await doTest(wsPtr, req, continually);
-    }();
+    [=]() -> AsyncTask { co_await doTest(wsPtr, req, continually); }();
 
     app().run();
 }

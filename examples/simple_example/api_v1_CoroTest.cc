@@ -4,6 +4,11 @@ using namespace api::v1;
 Task<> CoroTest::get(HttpRequestPtr req,
                      std::function<void(const HttpResponsePtr &)> callback)
 {
+    // Force co_await to test awaiting works
+    co_await drogon::sleepCoro(
+        trantor::EventLoop::getEventLoopOfCurrentThread(),
+        std::chrono::milliseconds(100));
+
     auto resp = HttpResponse::newHttpResponse();
     resp->setBody("DEADBEEF");
     callback(resp);
