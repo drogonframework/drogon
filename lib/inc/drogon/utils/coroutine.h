@@ -392,6 +392,8 @@ struct AsyncTask
     struct promise_type;
     using handle_type = std::coroutine_handle<promise_type>;
 
+    AsyncTask() = default;
+
     AsyncTask(handle_type h) : coro_(h)
     {
     }
@@ -636,9 +638,10 @@ inline auto co_future(Await await) noexcept
     auto fut = prom.get_future();
     std::promise<AsyncTask *> selfProm;
     auto selfFut = selfProm.get_future();
-    auto task = [](std::promise<Result> prom,
+    auto taskPtr = std::make_shared<AsyncTask>();
+    auto task = [taskPtr](std::promise<Result> prom,
                    Await await,
-                   std::future<AsyncTask *> selfFut) -> AsyncTask {
+                   std::future<AsyncTask *> selfFut) mutable -> AsyncTask {
         try
         {
             if constexpr (std::is_void_v<Result>)
@@ -657,9 +660,7 @@ inline auto co_future(Await await) noexcept
         AsyncTask *self = selfFut.get();
         delete self;
     };
-    AsyncTask *taskPtr = new AsyncTask{
-        task(std::move(prom), std::move(await), std::move(selfFut))};
-    selfProm.set_value(taskPtr);
+    *taskPtr = task();
     return fut;
 }
 
