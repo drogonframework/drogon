@@ -452,10 +452,20 @@ struct AsyncTask
 
         auto final_suspend() const noexcept
         {
-            struct awaiter
+            struct awaiter final
             {
+
                 awaiter(handle_type h) : self_(h)
                 {
+                }
+
+                awaiter(const awaiter&) = delete;
+                awaiter &operator=(const awaiter &) = delete;
+
+                ~awaiter()
+                {
+                    if (self_)
+                        self_.destroy();
                 }
 
                 bool await_ready() const noexcept
@@ -473,10 +483,6 @@ struct AsyncTask
                     auto coro = handle.promise().continuation_;
                     if (coro)
                         return coro;
-                    if (self_)
-                    {
-                        self_.destroy();
-                    }
 
                     return std::noop_coroutine();
                 }
