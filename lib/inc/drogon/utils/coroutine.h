@@ -396,14 +396,10 @@ struct AsyncTask
 
     AsyncTask(handle_type h) : coro_(h)
     {
-        if (coro_)
-            coro_.promise().setSelf(coro_);
     }
+
     AsyncTask(const AsyncTask &) = delete;
 
-    ~AsyncTask()
-    {
-    }
     AsyncTask &operator=(const AsyncTask &) = delete;
     AsyncTask &operator=(AsyncTask &&other)
     {
@@ -432,8 +428,8 @@ struct AsyncTask
 
         void unhandled_exception()
         {
-            LOG_FATAL << "Unhandled exception in AsyncTask.";
-            abort();
+            LOG_FATAL << "Exception escaping AsyncTask.";
+            std::terminate();
         }
 
         void return_void() noexcept
@@ -445,51 +441,21 @@ struct AsyncTask
             continuation_ = handle;
         }
 
-        void setSelf(handle_type handle)
-        {
-            self_ = handle;
-        }
-
         auto final_suspend() const noexcept
         {
+            // Can't simply use suspend_never because we need symmetric transfer
             struct awaiter final
             {
-                awaiter(handle_type h) : self_(h)
+                bool await_ready() const noexcept { return true; }
+
+                auto await_suspend(std::coroutine_handle<promise_type> coro) const noexcept
                 {
+                    return coro.promise().continuation_;
                 }
 
-                awaiter(const awaiter &) = delete;
-                awaiter &operator=(const awaiter &) = delete;
-
-                ~awaiter()
-                {
-                    if (self_)
-                        self_.destroy();
-                }
-
-                bool await_ready() const noexcept
-                {
-                    return false;
-                }
-
-                void await_resume() const noexcept
-                {
-                }
-
-                std::coroutine_handle<> await_suspend(
-                    std::coroutine_handle<promise_type> handle) noexcept
-                {
-                    auto coro = handle.promise().continuation_;
-                    if (coro)
-                        return coro;
-
-                    return std::noop_coroutine();
-                }
-
-                handle_type self_;
+                void await_resume() const noexcept {}
             };
-
-            return awaiter(self_);
+            return awaiter{};
         }
     };
     bool await_ready() const noexcept
