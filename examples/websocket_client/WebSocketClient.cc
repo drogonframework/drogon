@@ -54,8 +54,7 @@ int main(int argc, char *argv[])
         LOG_INFO << "WebSocket connection closed!";
     });
 
-    const std::string url = server;
-    LOG_INFO << "Connecting to WebSocket at " << url;
+    LOG_INFO << "Connecting to WebSocket at " << server;
     wsPtr->connectToServer(
         req,
         [](ReqResult r,
