@@ -17,7 +17,8 @@ DROGON_TEST(TestFrameworkSelfTest)
     CHECK(3.14159 > 2.71828);
     CHECK(nullptr == nullptr);
     CHECK_THROWS(throw std::runtime_error("test exception"));
-    CHECK_THROWS_AS(throw std::domain_error("test exception"), std::domain_error);
+    CHECK_THROWS_AS(throw std::domain_error("test exception"),
+                    std::domain_error);
     CHECK_NOTHROW([] { return 0; }());
     STATIC_REQUIRE(std::is_standard_layout<int>::value);
     STATIC_REQUIRE(std::is_default_constructible<test::Case>::value == false);

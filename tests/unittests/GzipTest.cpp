@@ -5,7 +5,7 @@ using namespace drogon;
 
 DROGON_TEST(Gzip)
 {
-	 const std::string inStr =
+    const std::string inStr =
         "Applications\n"
         "Developer\n"
         "Library\n"
@@ -312,8 +312,8 @@ DROGON_TEST(Gzip)
         "origin\n"
         "rawpacket";
     auto ret = utils::gzipCompress(inStr.c_str(), inStr.length());
-	REQUIRE(ret.empty() == false);
+    REQUIRE(ret.empty() == false);
 
-	auto decompressStr = utils::gzipDecompress(ret.data(), ret.length());
-	CHECK(inStr == decompressStr);
+    auto decompressStr = utils::gzipDecompress(ret.data(), ret.length());
+    CHECK(inStr == decompressStr);
 }
