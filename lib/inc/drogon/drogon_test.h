@@ -1,6 +1,7 @@
 #pragma once
 #include <trantor/utils/NonCopyable.h>
 #include <drogon/DrObject.h>
+#include <drogon/utils/string_view.h>
 
 #include <iostream>
 #include <set>
@@ -61,7 +62,7 @@ struct is_printable<
 {
 };
 
-inline std::string escapeString(const std::string_view sv)
+inline std::string escapeString(const string_view sv)
 {
     std::string result;
     result.reserve(sv.size());
@@ -89,6 +90,15 @@ inline std::string escapeString(const std::string_view sv)
     return result;
 }
 
+inline std::string prettifyString(const std::string_view sv, size_t maxLength = 120)
+{
+    if(sv.size() <= maxLength)
+        return "\"" + escapeString(sv) + "\"";
+    
+    const std::string msg = "...\" (truncated)";
+    return "\"" + escapeString(sv.substr(0, maxLength)) + msg;
+}
+
 template <typename T>
 std::string attemptPtrint(const T& v)
 {
@@ -103,7 +113,7 @@ std::string attemptPtrint(const T& v)
     else if constexpr (std::is_same_v<RealType, std::nullptr_t>)
         return "nullptr";
     else if constexpr (std::is_convertible_v<RealType, std::string> || std::is_same_v<RealType, std::string_view>)
-        return "\"" + escapeString(v) + "\"";
+        return prettifyString(string_view(v));
     else if constexpr (std::is_same_v<RealType, char>)
         return "'" + std::string(1, v) + "'";
     else if constexpr (is_printable<RealType>::value)

@@ -145,6 +145,10 @@ struct [[nodiscard]] Task
         {
             value = v;
         }
+        void return_value(T &&v)
+        {
+            value = std::move(v);
+        }
 
         auto final_suspend() noexcept
         {
@@ -211,7 +215,7 @@ struct [[nodiscard]] Task
             T await_resume()
             {
                 auto &&v = coro_.promise().result();
-                return v;
+                return std::move(v);
             }
 
           private:
@@ -603,7 +607,8 @@ auto sync_wait(Await &&await)
 
         if (exception_ptr)
             std::rethrow_exception(exception_ptr);
-        return value.value();
+        
+        return std::move(value.value());
     }
 }
 
