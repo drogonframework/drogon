@@ -41,7 +41,7 @@ add_executable(webapp_test simple_example_test/main.cc)
 add_executable(pipelining_test simple_example_test/HttpPipeliningTest.cc)
 add_executable(websocket_test simple_example_test/WebSocketTest.cc)
 add_executable(multiple_ws_test simple_example_test/MultipleWsTest.cc)
-
+add_executable(websocket_client websocket_client/WebSocketClient.cc)
 add_custom_command(
   TARGET webapp POST_BUILD
   COMMAND ${CMAKE_COMMAND}
@@ -67,7 +67,8 @@ set(example_targets
     benchmark
     pipelining_test
     websocket_test
-    multiple_ws_test)
+    multiple_ws_test
+    websocket_client)
 if(DROGON_CXX_STANDARD GREATER_EQUAL 20 AND HAS_COROUTINE)
     add_executable(websocket_coro_test simple_example_test/WebSocketCoroTest.cc)
     set(simple_example ${simple_example} websocket_coro_test)
