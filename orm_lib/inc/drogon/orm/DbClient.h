@@ -69,9 +69,10 @@ struct SqlAwaiter : public CallbackAwaiter<Result>
     internal::SqlBinder binder_;
 };
 
-struct TrasactionAwaiter : public CallbackAwaiter<std::shared_ptr<Transaction> >
+struct TransactionAwaiter
+    : public CallbackAwaiter<std::shared_ptr<Transaction> >
 {
-    TrasactionAwaiter(DbClient *client) : client_(client)
+    TransactionAwaiter(DbClient *client) : client_(client)
     {
     }
 
@@ -252,9 +253,9 @@ class DROGON_EXPORT DbClient : public trantor::NonCopyable
             &callback) = 0;
 
 #ifdef __cpp_impl_coroutine
-    orm::internal::TrasactionAwaiter newTransactionCoro()
+    orm::internal::TransactionAwaiter newTransactionCoro()
     {
-        return orm::internal::TrasactionAwaiter(this);
+        return orm::internal::TransactionAwaiter(this);
     }
 #endif
 
@@ -315,7 +316,7 @@ class Transaction : public DbClient
 };
 
 #ifdef __cpp_impl_coroutine
-inline void internal::TrasactionAwaiter::await_suspend(
+inline void internal::TransactionAwaiter::await_suspend(
     std::coroutine_handle<> handle)
 {
     assert(client_ != nullptr);
