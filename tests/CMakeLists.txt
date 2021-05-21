@@ -13,14 +13,16 @@ set(UNITTEST_SOURCES unittests/main.cpp
                         unittests/OStringStreamTest.cpp
                         unittests/PubSubServiceUnittest.cpp
                         unittests/Sha1Test.cpp
-                        ../lib/src/ssl_funcs/Sha1.cc)
+                        ../lib/src/ssl_funcs/Sha1.cc
+                        unittests/FileTypeTest.cpp
+                        unittests/DrObjectTest.cpp)
 
 if(DROGON_CXX_STANDARD GREATER_EQUAL 20 AND HAS_COROUTINE)
     set(UNITTEST_SOURCES ${UNITTEST_SOURCES} unittests/CoroutineTest.cpp)
 endif()
 
 if(Brotli_FOUND)
-  set(UNITTEST_SOURCES ${UNITTEST_SOURCES} unittests/BrotliTest.cpp)
+    set(UNITTEST_SOURCES ${UNITTEST_SOURCES} unittests/BrotliTest.cpp)
 endif()
 
 add_executable(unittest ${UNITTEST_SOURCES})
