@@ -1,7 +1,7 @@
 /**
  *
- *  coroutine.h
- *  Martin Chang
+ *  @file coroutine.h
+ *  @author Martin Chang
  *
  *  Copyright 2021, Martin Chang.  All rights reserved.
  *  https://github.com/an-tao/drogon
@@ -108,7 +108,7 @@ struct [[nodiscard]] Task
     {
     }
     Task(const Task &) = delete;
-    Task(Task && other)
+    Task(Task &&other)
     {
         coro_ = other.coro_;
         other.coro_ = nullptr;
@@ -260,7 +260,7 @@ struct [[nodiscard]] Task<void>
     {
     }
     Task(const Task &) = delete;
-    Task(Task && other)
+    Task(Task &&other)
     {
         coro_ = other.coro_;
         other.coro_ = nullptr;

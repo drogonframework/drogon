@@ -1,7 +1,7 @@
 /**
  *
- *  Utilities.cc
- *  An Tao
+ *  @file Utilities.cc
+ *  @author An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
@@ -355,7 +355,7 @@ std::string getUuid()
 #endif
 #if _BYTE_ORDER == _LITTLE_ENDIAN
     uuid_enc_le(binstr, uuid);
-#else  /* _BYTE_ORDER != _LITTLE_ENDIAN */
+#else /* _BYTE_ORDER != _LITTLE_ENDIAN */
     uuid_enc_be(binstr, uuid);
 #endif /* _BYTE_ORDER == _LITTLE_ENDIAN */
     delete uuid;

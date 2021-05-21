@@ -1,7 +1,7 @@
 /**
  *
- *  db_test.cc
- *  An Tao
+ *  @file db_test.cc
+ *  @author An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  Use of this source code is governed by a MIT license
@@ -30,7 +30,7 @@ using namespace std::chrono_literals;
 using namespace drogon::orm;
 
 #define RESET "\033[0m"
-#define RED "\033[31m"   /* Red */
+#define RED "\033[31m" /* Red */
 #define GREEN "\033[32m" /* Green */
 
 #ifdef __cpp_impl_coroutine
