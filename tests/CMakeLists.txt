@@ -4,7 +4,11 @@ set(UNITTEST_SOURCES unittests/main.cpp
                         unittests/UrlCodecTest.cpp
                         unittests/GzipTest.cpp
                         unittests/HttpViewDataTest.cpp
-                        unittests/CookieTest.cpp)
+                        unittests/CookieTest.cpp
+                        unittests/ClassNameTest.cpp
+                        unittests/HttpDateTest.cpp
+                        unittests/HttpHeaderTest.cpp
+                        unittests/MD5Test.cpp)
 
 if(DROGON_CXX_STANDARD GREATER_EQUAL 20 AND HAS_COROUTINE)
     set(UNITTEST_SOURCES ${UNITTEST_SOURCES} unittests/CoroutineTest.cpp)
