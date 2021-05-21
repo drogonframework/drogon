@@ -534,6 +534,10 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
                 break;
         }
     }
+    self &operator<<(Json::Value &j) noexcept(true)
+    {
+        return *this << static_cast<const Json::Value &>(j);
+    }
     void exec() noexcept(false);
 
   private:
