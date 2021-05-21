@@ -26,16 +26,16 @@ DROGON_TEST(HttpViewData)
 
     // Bad key returns a default constructed value
     CHECK_NOTHROW(data.get<int>("this_does_not_exist"));
-}
 
-DROGON_TEST(HttpViewDataHtmlTranslate)
-{
-    CHECK(HttpViewData::needTranslation("") == false);
-    CHECK(HttpViewData::needTranslation("!)(*#") == false);
-    CHECK(HttpViewData::needTranslation("#include <iostream>") == true);
-    CHECK(HttpViewData::needTranslation("<body></body>") == true);
+    SUBSECTION(Translate)
+    {
+        CHECK(HttpViewData::needTranslation("") == false);
+        CHECK(HttpViewData::needTranslation("!)(*#") == false);
+        CHECK(HttpViewData::needTranslation("#include <iostream>") == true);
+        CHECK(HttpViewData::needTranslation("<body></body>") == true);
 
-    CHECK(HttpViewData::htmlTranslate("#include <iostream>") ==
-          "#include &lt;iostream&gt;");
-    CHECK(HttpViewData::htmlTranslate("&gt;") == "&amp;gt;");
+        CHECK(HttpViewData::htmlTranslate("#include <iostream>") ==
+              "#include &lt;iostream&gt;");
+        CHECK(HttpViewData::htmlTranslate("&gt;") == "&amp;gt;");
+    }
 }

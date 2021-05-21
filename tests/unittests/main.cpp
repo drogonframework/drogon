@@ -25,6 +25,13 @@ DROGON_TEST(TestFrameworkSelfTest)
 
     auto child_test = std::make_shared<test::Case>(TEST_CTX, "ChildTest");
     CHECK(child_test->fullname() == "TestFrameworkSelfTest.ChildTest");
+
+    // Unlike Catch2, a subsection in drogon test does not provide a fixture
+    // It's only a way to signify testing different for things
+    SUBSECTION(Subsection)
+    {
+        CHECK(TEST_CTX->fullname() == "TestFrameworkSelfTest.Subsection");
+    }
 }
 
 int main(int argc, char** argv)

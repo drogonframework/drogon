@@ -269,23 +269,17 @@ inline ThreadSafeStream printErr()
     return ThreadSafeStream(std::cerr);
 }
 
-class Case : public trantor::NonCopyable
+class CaseBase : public trantor::NonCopyable
 {
-  public:
-    Case(const std::string& name) : name_(name)
-    {
-        internal::registerCase(this);
-    }
-
-    Case(std::shared_ptr<Case> parent, const std::string& name) : parent_(parent), name_(name)
-    {
-        internal::registerCase(this);
-    }
-
-    virtual ~Case()
-    {
-        internal::unregisterCase(this);
-    }
+public:
+    CaseBase() = default;
+    CaseBase(const std::string& name)
+        : name_(name)
+    {}
+    CaseBase(std::shared_ptr<CaseBase> parent, const std::string& name)
+        : parent_(parent), name_(name)
+    {}
+    virtual ~CaseBase() = default;
 
     std::string fullname() const
     {
@@ -323,13 +317,37 @@ class Case : public trantor::NonCopyable
   protected:
     bool failed_ = false;
     std::string name_;
-    std::shared_ptr<Case> parent_ = nullptr;
+    std::shared_ptr<CaseBase> parent_ = nullptr;
 };
 
-struct TestCase
+class Case : public CaseBase
 {
+  public:
+    Case(const std::string& name)
+        : CaseBase(name)
+    {
+        internal::registerCase(this);
+    }
+
+    Case(std::shared_ptr<Case> parent, const std::string& name)
+        : CaseBase(parent, name)
+    {
+        internal::registerCase(this);
+    }
+
+    virtual ~Case()
+    {
+        internal::unregisterCase(this);
+    }
+};
+
+struct TestCase : public CaseBase
+{
+    TestCase(const std::string& name)
+        : CaseBase(name)
+    {}
+    virtual ~TestCase() = default;
     virtual void doTest_(std::shared_ptr<Case>) = 0;
-    std::string name;
 };
 
 #ifdef DROGON_TEST_MAIN
@@ -360,7 +378,7 @@ int run(int argc, char** argv)
                 LOG_WARN << "Class " << name << " seems to be a test case. But type information disagrees.";
                 continue;
             }
-            ptr->doTest_(std::move(std::make_shared<Case>(ptr->name)));
+            ptr->doTest_(std::move(std::make_shared<Case>(ptr->name())));
             internal::numTestCases++;
             testCases.emplace_back(std::move(test));
         }
@@ -667,14 +685,16 @@ inline std::shared_ptr<Case> newTest(const std::string& name)
     struct DROGON_TEST_CLASS_NAME_(test_name)                                                        \
         : public drogon::DrObject<DROGON_TEST_CLASS_NAME_(test_name)>, public drogon::test::TestCase \
     {                                                                                                \
-        DROGON_TEST_CLASS_NAME_(test_name)()                                                         \
+        DROGON_TEST_CLASS_NAME_(test_name)() :                                                       \
+            drogon::test::TestCase(#test_name)                                                       \
         {                                                                                            \
-            name = #test_name;                                                                       \
         }                                                                                            \
-        inline void doTest_(std::shared_ptr<drogon::test::Case>) override;                            \
+        inline void doTest_(std::shared_ptr<drogon::test::Case>) override;                           \
     };                                                                                               \
     void DROGON_TEST_CLASS_NAME_(test_name)::doTest_(std::shared_ptr<drogon::test::Case> TEST_CTX)
-#define SUBTEST(name) (std::make_shared<drogon::test::TestCase>(TEST_CTX, name))
+#define SUBTEST(name) (std::make_shared<drogon::test::Case>(TEST_CTX, name))
+#define SUBSECTION(name) for(std::shared_ptr<drogon::test::Case> ctx_hold__ = TEST_CTX, ctx_tmp__ = SUBTEST(#name); ctx_tmp__ != nullptr; TEST_CTX = ctx_hold__, ctx_tmp__ = nullptr)\
+                        if(TEST_CTX = ctx_tmp__, TEST_CTX != nullptr)
 
 #ifdef DROGON_TEST_MAIN
 namespace drogon::test
