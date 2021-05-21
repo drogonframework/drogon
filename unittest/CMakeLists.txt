@@ -34,8 +34,8 @@ set_property(TARGET ${UNITTEST_TARGETS}
 set_property(TARGET ${UNITTEST_TARGETS} PROPERTY CXX_STANDARD_REQUIRED ON)
 set_property(TARGET ${UNITTEST_TARGETS} PROPERTY CXX_EXTENSIONS OFF)
 
-include(GoogleTest)
-foreach(T ${UNITTEST_TARGETS})
-  target_link_libraries(${T} PRIVATE drogon GTest::GTest)
-  gtest_discover_tests(${T})
-endforeach()
+# include(GoogleTest)
+# foreach(T ${UNITTEST_TARGETS})
+#   target_link_libraries(${T} PRIVATE drogon GTest::GTest)
+#   gtest_discover_tests(${T})
+# endforeach()
