@@ -418,7 +418,6 @@ struct AsyncTask
     struct promise_type
     {
         std::coroutine_handle<> continuation_;
-        handle_type self_;
 
         AsyncTask get_return_object() noexcept
         {
@@ -471,9 +470,10 @@ struct AsyncTask
     {
     }
 
-    void await_suspend(std::coroutine_handle<> coroutine) noexcept
+    auto await_suspend(std::coroutine_handle<> coroutine) noexcept
     {
         coro_.promise().setContinuation(coroutine);
+        return coro_;
     }
 
     handle_type coro_;
@@ -614,15 +614,13 @@ auto sync_wait(Await &&await)
 
 // Converts a task (or task like) promise into std::future for old-style async
 template <typename Await>
-inline auto co_future(Await await) noexcept
+inline auto co_future(Await&& await) noexcept
     -> std::future<await_result_t<Await>>
 {
     using Result = await_result_t<Await>;
     std::promise<Result> prom;
     auto fut = prom.get_future();
-    [](std::promise<Result> prom,
-       Await await,
-       std::future<AsyncTask *> selfFut) mutable -> AsyncTask {
+    [](std::promise<Result> prom, Await await) -> AsyncTask {
         try
         {
             if constexpr (std::is_void_v<Result>)
@@ -637,7 +635,7 @@ inline auto co_future(Await await) noexcept
         {
             prom.set_exception(std::current_exception());
         }
-    }();
+    }(std::move(prom), std::move(await));
     return fut;
 }
 

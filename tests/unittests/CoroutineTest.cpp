@@ -88,7 +88,7 @@ DROGON_TEST(CroutineBasics)
 
     // Test co_awaiting non-copyable object works
     auto await_non_copyable = [TEST_CTX]() -> Task<> {
-        auto return_unique_ptr = [TEST_CTX]() -> Task<std::unique_ptr<int>> {
+        auto return_unique_ptr = []() -> Task<std::unique_ptr<int>> {
             co_return std::make_unique<int>(123);
         };
         auto ptr = co_await return_unique_ptr();
