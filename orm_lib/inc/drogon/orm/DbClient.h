@@ -112,7 +112,7 @@ class DROGON_EXPORT DbClient : public trantor::NonCopyable
      * - client_encoding: The character set to be used on database connections.
      *
      * For other key words on PostgreSQL, see the PostgreSQL documentation.
-     * Only a pair of key values ​​is valid for Sqlite3, and its keyword is
+     * Only a pair of key values is valid for Sqlite3, and its keyword is
      * 'filename'.
      *
      * @param connNum: The number of connections to database server;
