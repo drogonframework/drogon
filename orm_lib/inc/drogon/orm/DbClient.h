@@ -54,13 +54,11 @@ struct SqlAwaiter : public CallbackAwaiter<Result>
 
     void await_suspend(std::coroutine_handle<> handle)
     {
-        binder_ >> [handle, this](const drogon::orm::Result &result)
-        {
+        binder_ >> [handle, this](const drogon::orm::Result &result) {
             setValue(result);
             handle.resume();
         };
-        binder_ >> [handle, this](const std::exception_ptr &e)
-        {
+        binder_ >> [handle, this](const std::exception_ptr &e) {
             setException(e);
             handle.resume();
         };
@@ -176,8 +174,8 @@ class DROGON_EXPORT DbClient : public trantor::NonCopyable
         std::shared_ptr<std::promise<Result> > prom =
             std::make_shared<std::promise<Result> >();
         binder >> [prom](const Result &r) { prom->set_value(r); };
-        binder >> [prom](const std::exception_ptr &e)
-        { prom->set_exception(e); };
+        binder >>
+            [prom](const std::exception_ptr &e) { prom->set_exception(e); };
         binder.exec();
         return prom->get_future();
     }
@@ -322,8 +320,7 @@ inline void internal::TrasactionAwaiter::await_suspend(
 {
     assert(client_ != nullptr);
     client_->newTransactionAsync(
-        [this, handle](const std::shared_ptr<Transaction> &transaction)
-        {
+        [this, handle](const std::shared_ptr<Transaction> &transaction) {
             if (transaction == nullptr)
                 setException(std::make_exception_ptr(TimeoutError(
                     "Timeout, no connection available for transaction")));
