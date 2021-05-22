@@ -1,4 +1,4 @@
-﻿/**
+/**
  *
  *  @file test.cc
  *  @author An Tao
@@ -18,11 +18,12 @@
 #include <drogon/drogon.h>
 #include <trantor/net/EventLoopThread.h>
 #include <trantor/net/TcpClient.h>
+#include <drogon/HttpAppFramework.h>
 #include <drogon/drogon_test.h>
 
 #include <mutex>
-#include <future>
 #include <algorithm>
+#include <atomic>
 
 #ifndef _WIN32
 #include <unistd.h>
@@ -49,13 +50,13 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
         std::promise<int> waitCookie;
         auto f = waitCookie.get_future();
         client->sendRequest(req,
-                            [client, &waitCookie, TEST_CTX](ReqResult result,
-                                                  const HttpResponsePtr &resp) {
+                            [client, &waitCookie, TEST_CTX](
+                                ReqResult result, const HttpResponsePtr &resp) {
                                 REQUIRE(result == ReqResult::Ok);
 
                                 auto &id = resp->getCookie("JSESSIONID");
                                 REQUIRE(id);
-                                
+
                                 sessionID = id;
                                 client->addCookie(id);
                                 waitCookie.set_value(1);
@@ -64,7 +65,6 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
     }
     else
         client->addCookie(sessionID);
-    
 
     /// Test session
     auto req = HttpRequest::newHttpRequest();
@@ -81,16 +81,15 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
             client->sendRequest(
                 req1,
                 [req1, TEST_CTX](ReqResult result,
-                                const HttpResponsePtr &resp1) {
+                                 const HttpResponsePtr &resp1) {
                     REQUIRE(result == ReqResult::Ok);
 
                     auto &json = resp1->jsonObject();
                     REQUIRE(json != nullptr);
-                    REQUIRE(json->get("message", std::string(""))
-                                        .asString() ==
-                                    "Access interval should be "
-                                    "at least 10 "
-                                    "seconds");
+                    REQUIRE(json->get("message", std::string("")).asString() ==
+                            "Access interval should be "
+                            "at least 10 "
+                            "seconds");
                 });
         });
     /// Test gzip
@@ -100,7 +99,7 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
     req->setPath("/api/v1/apitest/get/111");
     client->sendRequest(req,
                         [req, TEST_CTX](ReqResult result,
-                                       const HttpResponsePtr &resp) {
+                                        const HttpResponsePtr &resp) {
                             REQUIRE(result == ReqResult::Ok);
                             CHECK(resp->getBody().length() == 4994);
                         });
@@ -112,7 +111,7 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
     req->setPath("/api/v1/apitest/get/111");
     client->sendRequest(req,
                         [req, TEST_CTX](ReqResult result,
-                                       const HttpResponsePtr &resp) {
+                                        const HttpResponsePtr &resp) {
                             REQUIRE(result == ReqResult::Ok);
                             CHECK(resp->getBody().length() == 4994);
                         });
@@ -125,9 +124,9 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
     req->setPath("/api/v1/apitest/json");
     client->sendRequest(req,
                         [req, TEST_CTX](ReqResult result,
-                                       const HttpResponsePtr &resp) {
+                                        const HttpResponsePtr &resp) {
                             REQUIRE(result == ReqResult::Ok);
-                            
+
                             std::shared_ptr<Json::Value> ret = *resp;
                             REQUIRE(resp != nullptr);
                             CHECK((*ret)["result"].asString() == "ok");
@@ -139,9 +138,9 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
     req->setPath("/api/v1/apitest/json");
     client->sendRequest(req,
                         [req, TEST_CTX](ReqResult result,
-                                       const HttpResponsePtr &resp) {
+                                        const HttpResponsePtr &resp) {
                             REQUIRE(result == ReqResult::Ok);
-                            
+
                             std::shared_ptr<Json::Value> ret = *resp;
                             REQUIRE(resp != nullptr);
                             CHECK((*ret)["result"].asString() == "ok");
@@ -153,9 +152,9 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
     req->setPath("/api/v1/apitest/json");
     client->sendRequest(req,
                         [req, TEST_CTX](ReqResult result,
-                                       const HttpResponsePtr &resp) {
+                                        const HttpResponsePtr &resp) {
                             REQUIRE(result == ReqResult::Ok);
-                            
+
                             std::shared_ptr<Json::Value> ret = *resp;
                             REQUIRE(resp != nullptr);
                             CHECK((*ret)["result"].asString() == "ok");
@@ -167,7 +166,7 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
     req->setPath("/api/v1/apitest/notFoundRouting");
     client->sendRequest(req,
                         [req, TEST_CTX](ReqResult result,
-                                       const HttpResponsePtr &resp) {
+                                        const HttpResponsePtr &resp) {
                             REQUIRE(result == ReqResult::Ok);
                             CHECK(resp->getStatusCode() == k404NotFound);
                         });
@@ -177,7 +176,7 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
     req->setPath("/");
     client->sendRequest(req,
                         [req, TEST_CTX](ReqResult result,
-                                       const HttpResponsePtr &resp) {
+                                        const HttpResponsePtr &resp) {
                             REQUIRE(result == ReqResult::Ok);
                             CHECK(resp->getBody() == "<p>Hello, world!</p>");
                             // LOG_DEBUG << resp->getBody();
@@ -186,19 +185,18 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
     req = HttpRequest::newHttpRequest();
     req->setMethod(drogon::Get);
     req->setPath("/tpost");
-    client->sendRequest(req,
-                        [req, TEST_CTX](ReqResult result,
-                                       const HttpResponsePtr &resp) {
-                            REQUIRE(result == ReqResult::Ok);
-                            CHECK(resp->getStatusCode() == k405MethodNotAllowed);
-                        });
+    client->sendRequest(
+        req, [req, TEST_CTX](ReqResult result, const HttpResponsePtr &resp) {
+            REQUIRE(result == ReqResult::Ok);
+            CHECK(resp->getStatusCode() == k405MethodNotAllowed);
+        });
 
     req = HttpRequest::newHttpRequest();
     req->setMethod(drogon::Post);
     req->setPath("/tpost");
     client->sendRequest(req,
                         [req, TEST_CTX](ReqResult result,
-                                       const HttpResponsePtr &resp) {
+                                        const HttpResponsePtr &resp) {
                             REQUIRE(result == ReqResult::Ok);
                             CHECK(resp->getBody() == "<p>Hello, world!</p>");
                         });
@@ -209,7 +207,7 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
     req->setPath("/tpost");
     client->sendRequest(req,
                         [req, TEST_CTX](ReqResult result,
-                                       const HttpResponsePtr &resp) {
+                                        const HttpResponsePtr &resp) {
                             REQUIRE(result == ReqResult::Ok);
                             CHECK(resp->statusCode() == k200OK);
                             auto allow = resp->getHeader("allow");
@@ -221,7 +219,7 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
     req->setPath("/api/v1/apitest");
     client->sendRequest(req,
                         [req, TEST_CTX](ReqResult result,
-                                       const HttpResponsePtr &resp) {
+                                        const HttpResponsePtr &resp) {
                             REQUIRE(result == ReqResult::Ok);
                             CHECK(resp->statusCode() == k200OK);
                             auto allow = resp->getHeader("allow");
@@ -233,7 +231,7 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
     req->setPath("/slow");
     client->sendRequest(req,
                         [req, TEST_CTX](ReqResult result,
-                                       const HttpResponsePtr &resp) {
+                                        const HttpResponsePtr &resp) {
                             REQUIRE(result == ReqResult::Ok);
                             CHECK(resp->statusCode() == k403Forbidden);
                         });
@@ -252,13 +250,14 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
     req = HttpRequest::newHttpRequest();
     req->setMethod(drogon::Options);
     req->setPath("/api/v1/apitest/static");
-    client->sendRequest(
-        req, [req, TEST_CTX](ReqResult result, const HttpResponsePtr &resp) {
-            REQUIRE(result == ReqResult::Ok);
-            CHECK(resp->statusCode() == k200OK);
-            auto allow = resp->getHeader("allow");
-            CHECK(allow == "OPTIONS,GET,HEAD");
-        });
+    client->sendRequest(req,
+                        [req, TEST_CTX](ReqResult result,
+                                        const HttpResponsePtr &resp) {
+                            REQUIRE(result == ReqResult::Ok);
+                            CHECK(resp->statusCode() == k200OK);
+                            auto allow = resp->getHeader("allow");
+                            CHECK(allow == "OPTIONS,GET,HEAD");
+                        });
 
     /// 4. Test HttpController
     req = HttpRequest::newHttpRequest();
@@ -266,7 +265,7 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
     req->setPath("/api/v1/apitest");
     client->sendRequest(req,
                         [req, TEST_CTX](ReqResult result,
-                                       const HttpResponsePtr &resp) {
+                                        const HttpResponsePtr &resp) {
                             REQUIRE(result == ReqResult::Ok);
                             CHECK(resp->getBody() == "ROOT Post!!!");
                         });
@@ -276,7 +275,7 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
     req->setPath("/api/v1/apitest");
     client->sendRequest(req,
                         [req, TEST_CTX](ReqResult result,
-                                       const HttpResponsePtr &resp) {
+                                        const HttpResponsePtr &resp) {
                             REQUIRE(result == ReqResult::Ok);
                             CHECK(resp->getBody() == "ROOT Get!!!");
                         });
@@ -288,8 +287,10 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
         req, [req, TEST_CTX](ReqResult result, const HttpResponsePtr &resp) {
             REQUIRE(result == ReqResult::Ok);
             auto body = resp->getBody();
-            CHECK(body.find("<td>p1</td>\n        <td>123</td>") != std::string::npos);
-            CHECK(body.find("<td>p2</td>\n        <td>abc</td>") != std::string::npos);
+            CHECK(body.find("<td>p1</td>\n        <td>123</td>") !=
+                  std::string::npos);
+            CHECK(body.find("<td>p2</td>\n        <td>abc</td>") !=
+                  std::string::npos);
         });
 
     req = HttpRequest::newHttpRequest();
@@ -300,8 +301,10 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
         req, [req, TEST_CTX](ReqResult result, const HttpResponsePtr &resp) {
             REQUIRE(result == ReqResult::Ok);
             auto body = resp->getBody();
-            CHECK(body.find("<td>p1</td>\n        <td>3.140000</td>") != std::string::npos);
-            CHECK(body.find("<td>p2</td>\n        <td>1234</td>") != std::string::npos);
+            CHECK(body.find("<td>p1</td>\n        <td>3.140000</td>") !=
+                  std::string::npos);
+            CHECK(body.find("<td>p2</td>\n        <td>1234</td>") !=
+                  std::string::npos);
         });
 
     req = HttpRequest::newHttpRequest();
@@ -324,7 +327,7 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
     req->setPath("/api/v1/apitest/static");
     client->sendRequest(req,
                         [req, TEST_CTX](ReqResult result,
-                                       const HttpResponsePtr &resp) {
+                                        const HttpResponsePtr &resp) {
                             REQUIRE(result == ReqResult::Ok);
                             CHECK(resp->getBody() == "staticApi,hello!!");
                         });
@@ -336,7 +339,7 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
     req->setPath("/api/v1/apitest/static");
     client->sendRequest(req,
                         [req, TEST_CTX](ReqResult result,
-                                       const HttpResponsePtr &resp) {
+                                        const HttpResponsePtr &resp) {
                             REQUIRE(result == ReqResult::Ok);
                             CHECK(resp->getBody() == "staticApi,hello!!");
                         });
@@ -346,7 +349,7 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
     req->setPath("/api/v1/apitest/get/111");
     client->sendRequest(req,
                         [req, TEST_CTX](ReqResult result,
-                                       const HttpResponsePtr &resp) {
+                                        const HttpResponsePtr &resp) {
                             REQUIRE(result == ReqResult::Ok);
                             CHECK(resp->getBody().length() == 4994);
                         });
@@ -360,10 +363,14 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
         req, [req, TEST_CTX](ReqResult result, const HttpResponsePtr &resp) {
             REQUIRE(result == ReqResult::Ok);
             auto body = resp->getBody();
-            CHECK(body.find("<td>int p1</td>\n        <td>11</td>") != std::string::npos);
-            CHECK(body.find("<td>int p4</td>\n        <td>44</td>") != std::string::npos);
-            CHECK(body.find("<td>string p2</td>\n        <td>2 2</td>") != std::string::npos);
-            CHECK(body.find("<td>string p3</td>\n        <td>3 x</td>") != std::string::npos);
+            CHECK(body.find("<td>int p1</td>\n        <td>11</td>") !=
+                  std::string::npos);
+            CHECK(body.find("<td>int p4</td>\n        <td>44</td>") !=
+                  std::string::npos);
+            CHECK(body.find("<td>string p2</td>\n        <td>2 2</td>") !=
+                  std::string::npos);
+            CHECK(body.find("<td>string p3</td>\n        <td>3 x</td>") !=
+                  std::string::npos);
         });
     /// Test Incomplete URL
     req = HttpRequest::newHttpRequest();
@@ -373,10 +380,14 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
         req, [req, TEST_CTX](ReqResult result, const HttpResponsePtr &resp) {
             REQUIRE(result == ReqResult::Ok);
             auto body = resp->getBody();
-            CHECK(body.find("<td>int p1</td>\n        <td>11</td>") != std::string::npos);
-            CHECK(body.find("<td>int p4</td>\n        <td>0</td>") != std::string::npos);
-            CHECK(body.find("<td>string p2</td>\n        <td>2 2</td>") != std::string::npos);
-            CHECK(body.find("<td>string p3</td>\n        <td></td>") != std::string::npos);
+            CHECK(body.find("<td>int p1</td>\n        <td>11</td>") !=
+                  std::string::npos);
+            CHECK(body.find("<td>int p4</td>\n        <td>0</td>") !=
+                  std::string::npos);
+            CHECK(body.find("<td>string p2</td>\n        <td>2 2</td>") !=
+                  std::string::npos);
+            CHECK(body.find("<td>string p3</td>\n        <td></td>") !=
+                  std::string::npos);
         });
     /// Test lambda
     req = HttpRequest::newHttpRequest();
@@ -386,8 +397,10 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
         req, [req, TEST_CTX](ReqResult result, const HttpResponsePtr &resp) {
             REQUIRE(result == ReqResult::Ok);
             auto body = resp->getBody();
-            CHECK(body.find("<td>a</td>\n        <td>111</td>") != std::string::npos);
-            CHECK(body.find("<td>b</td>\n        <td>222.000000</td>") != std::string::npos);
+            CHECK(body.find("<td>a</td>\n        <td>111</td>") !=
+                  std::string::npos);
+            CHECK(body.find("<td>b</td>\n        <td>222.000000</td>") !=
+                  std::string::npos);
         });
 
     /// Test std::bind and std::function
@@ -398,10 +411,14 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
         req, [req, TEST_CTX](ReqResult result, const HttpResponsePtr &resp) {
             REQUIRE(result == ReqResult::Ok);
             auto body = resp->getBody();
-            CHECK(body.find("<td>int p1</td>\n        <td>111</td>") != std::string::npos);
-            CHECK(body.find("<td>int p4</td>\n        <td>444</td>") != std::string::npos);
-            CHECK(body.find("<td>string p2</td>\n        <td></td>") != std::string::npos);
-            CHECK(body.find("<td>string p3</td>\n        <td>333</td>") != std::string::npos);
+            CHECK(body.find("<td>int p1</td>\n        <td>111</td>") !=
+                  std::string::npos);
+            CHECK(body.find("<td>int p4</td>\n        <td>444</td>") !=
+                  std::string::npos);
+            CHECK(body.find("<td>string p2</td>\n        <td></td>") !=
+                  std::string::npos);
+            CHECK(body.find("<td>string p3</td>\n        <td>333</td>") !=
+                  std::string::npos);
         });
     /// Test gzip_static
     req = HttpRequest::newHttpRequest();
@@ -409,7 +426,7 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
     req->setPath("/index.html");
     client->sendRequest(req,
                         [req, TEST_CTX](ReqResult result,
-                                       const HttpResponsePtr &resp) {
+                                        const HttpResponsePtr &resp) {
                             REQUIRE(result == ReqResult::Ok);
                             CHECK(resp->getBody().length() == indexLen);
                         });
@@ -419,7 +436,7 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
     req->addHeader("accept-encoding", "gzip");
     client->sendRequest(req,
                         [req, TEST_CTX](ReqResult result,
-                                       const HttpResponsePtr &resp) {
+                                        const HttpResponsePtr &resp) {
                             REQUIRE(result == ReqResult::Ok);
                             CHECK(resp->getBody().length() == indexLen);
                         });
@@ -427,21 +444,20 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
     req = HttpRequest::newHttpRequest();
     req->setMethod(drogon::Post);
     req->setPath("/drogon.jpg");
-    client->sendRequest(
-        req,
-        [req, client, TEST_CTX](ReqResult result,
-                                     const HttpResponsePtr &resp) {
-            REQUIRE(result == ReqResult::Ok);
-            CHECK(resp->getStatusCode() == k405MethodNotAllowed);
-        });
+    client->sendRequest(req,
+                        [req, client, TEST_CTX](ReqResult result,
+                                                const HttpResponsePtr &resp) {
+                            REQUIRE(result == ReqResult::Ok);
+                            CHECK(resp->getStatusCode() ==
+                                  k405MethodNotAllowed);
+                        });
     /// Test file download
     req = HttpRequest::newHttpRequest();
     req->setMethod(drogon::Get);
     req->setPath("/drogon.jpg");
     client->sendRequest(
         req,
-        [req, client, TEST_CTX](ReqResult result,
-                                     const HttpResponsePtr &resp) {
+        [req, client, TEST_CTX](ReqResult result, const HttpResponsePtr &resp) {
             REQUIRE(result == ReqResult::Ok);
             REQUIRE(resp->getBody().length() == JPG_LEN);
             auto &lastModified = resp->getHeader("last-modified");
@@ -451,14 +467,14 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
             req->setMethod(drogon::Get);
             req->setPath("/drogon.jpg");
             req->addHeader("If-Modified-Since", lastModified);
-            client->sendRequest(
-                req,
-                [req, TEST_CTX](ReqResult result,
-                                        const HttpResponsePtr &resp) {
-                    REQUIRE(result == ReqResult::Ok);
-                    REQUIRE(resp->statusCode() == k304NotModified);
-                    //pro.set_value(1);
-                });
+            client->sendRequest(req,
+                                [req, TEST_CTX](ReqResult result,
+                                                const HttpResponsePtr &resp) {
+                                    REQUIRE(result == ReqResult::Ok);
+                                    REQUIRE(resp->statusCode() ==
+                                            k304NotModified);
+                                    // pro.set_value(1);
+                                });
         });
 
     /// Test file download, It is forbidden to download files from the
@@ -468,7 +484,7 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
     req->setPath("/../../drogon.jpg");
     client->sendRequest(req,
                         [req, TEST_CTX](ReqResult result,
-                                       const HttpResponsePtr &resp) {
+                                        const HttpResponsePtr &resp) {
                             REQUIRE(result == ReqResult::Ok);
                             CHECK(resp->statusCode() == k403Forbidden);
                         });
@@ -478,7 +494,7 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
     req->addHeader("custom_header", "yes");
     client->sendRequest(req,
                         [req, TEST_CTX](ReqResult result,
-                                       const HttpResponsePtr &resp) {
+                                        const HttpResponsePtr &resp) {
                             REQUIRE(result == ReqResult::Ok);
                             CHECK(resp->getBody() == "<P>Hi, antao</P>");
                         });
@@ -487,7 +503,7 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
     req->setPath("/absolute/123");
     client->sendRequest(req,
                         [req, TEST_CTX](ReqResult result,
-                                       const HttpResponsePtr &resp) {
+                                        const HttpResponsePtr &resp) {
                             REQUIRE(result == ReqResult::Ok);
                             CHECK(resp->statusCode() == k200OK);
                         });
@@ -496,7 +512,7 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
     req->setPath("/plaintext");
     client->sendRequest(req,
                         [req, TEST_CTX](ReqResult result,
-                                       const HttpResponsePtr &resp) {
+                                        const HttpResponsePtr &resp) {
                             REQUIRE(result == ReqResult::Ok);
                             CHECK(resp->getBody() == "Hello, World!");
                         });
@@ -508,7 +524,7 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
     req->setParameter("k3", "test@example.com");
     client->sendRequest(req,
                         [req, TEST_CTX](ReqResult result,
-                                       const HttpResponsePtr &resp) {
+                                        const HttpResponsePtr &resp) {
                             REQUIRE(result == ReqResult::Ok);
                             auto ret = resp->getJsonObject();
                             CHECK(ret != nullptr);
@@ -521,7 +537,7 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
     req->setPath("/api/v1/apitest/attrs");
     client->sendRequest(req,
                         [req, TEST_CTX](ReqResult result,
-                                       const HttpResponsePtr &resp) {
+                                        const HttpResponsePtr &resp) {
                             REQUIRE(result == ReqResult::Ok);
                             auto ret = resp->getJsonObject();
                             CHECK(ret != nullptr);
@@ -534,7 +550,7 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
     req->setPath("/api/attachment/download");
     client->sendRequest(req,
                         [req, TEST_CTX](ReqResult result,
-                                       const HttpResponsePtr &resp) {
+                                        const HttpResponsePtr &resp) {
                             REQUIRE(result == ReqResult::Ok);
                             CHECK(resp->getBody().length() == JPG_LEN);
                         });
@@ -543,14 +559,14 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
     req = HttpRequest::newHttpRequest();
     req->setMethod(drogon::Get);
     req->setPath("/a-directory");
-    client->sendRequest(
-        req,
-        [req, TEST_CTX, body](ReqResult result, const HttpResponsePtr &resp) {
-            REQUIRE(result == ReqResult::Ok);
-            CHECK(resp->getBody().length() == indexImplicitLen);
-            *body = std::string(resp->getBody().data(),
-                               resp->getBody().length());
-        });
+    client->sendRequest(req,
+                        [req, TEST_CTX, body](ReqResult result,
+                                              const HttpResponsePtr &resp) {
+                            REQUIRE(result == ReqResult::Ok);
+                            CHECK(resp->getBody().length() == indexImplicitLen);
+                            *body = std::string(resp->getBody().data(),
+                                                resp->getBody().length());
+                        });
     req = HttpRequest::newHttpRequest();
     req->setMethod(drogon::Get);
     req->setPath("/a-directory/page.html");
@@ -560,8 +576,8 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
                             REQUIRE(result == ReqResult::Ok);
                             CHECK(resp->getBody().length() == indexImplicitLen);
                             CHECK(std::equal(body->begin(),
-                                               body->end(),
-                                               resp->getBody().begin()));
+                                             body->end(),
+                                             resp->getBody().begin()));
                         });
     // return;
     // Test file upload
@@ -572,15 +588,16 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
     req->setPath("/api/attachment/upload");
     req->setParameter("P1", "upload");
     req->setParameter("P2", "test");
-    client->sendRequest(
-        req, [req, TEST_CTX](ReqResult result, const HttpResponsePtr &resp) {
-            REQUIRE(result == ReqResult::Ok);
-            auto json = resp->getJsonObject();
-            CHECK(json != nullptr);
-            CHECK((*json)["result"].asString() == "ok");
-            CHECK((*json)["P1"] == "upload");
-            CHECK((*json)["P2"] == "test");
-        });
+    client->sendRequest(req,
+                        [req, TEST_CTX](ReqResult result,
+                                        const HttpResponsePtr &resp) {
+                            REQUIRE(result == ReqResult::Ok);
+                            auto json = resp->getJsonObject();
+                            CHECK(json != nullptr);
+                            CHECK((*json)["result"].asString() == "ok");
+                            CHECK((*json)["P1"] == "upload");
+                            CHECK((*json)["P2"] == "test");
+                        });
 
     // return;
     // Test file upload, file type and extension interface.
@@ -589,14 +606,15 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
     req->setPath("/api/attachment/uploadImage");
     req->setParameter("P1", "upload");
     req->setParameter("P2", "test");
-    client->sendRequest(
-        req, [req, TEST_CTX](ReqResult result, const HttpResponsePtr &resp) {
-            REQUIRE(result == ReqResult::Ok);
-            auto json = resp->getJsonObject();
-            CHECK(json != nullptr);
-            CHECK((*json)["P1"] == "upload");
-            CHECK((*json)["P2"] == "test");
-        });
+    client->sendRequest(req,
+                        [req, TEST_CTX](ReqResult result,
+                                        const HttpResponsePtr &resp) {
+                            REQUIRE(result == ReqResult::Ok);
+                            auto json = resp->getJsonObject();
+                            CHECK(json != nullptr);
+                            CHECK((*json)["P1"] == "upload");
+                            CHECK((*json)["P2"] == "test");
+                        });
 
     req = HttpRequest::newHttpRequest();
     req->setMethod(drogon::Get);
@@ -606,7 +624,6 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
             REQUIRE(result == ReqResult::Ok);
             CHECK(resp->getStatusCode() == k500InternalServerError);
         });
-
 
 #if defined(__cpp_impl_coroutine)
     sync_wait([client, TEST_CTX]() -> Task<> {
@@ -682,22 +699,22 @@ void loadFileLengths()
     indexImplicitLen = filestat.st_size;
 }
 
-trantor::EventLoopThread loop;
 DROGON_TEST(HttpTest)
 {
-    auto client = HttpClient::newHttpClient("http://127.0.0.1:8848",
-                                                loop.getLoop());
+    auto client = HttpClient::newHttpClient("http://127.0.0.1:8848");
     client->setPipeliningDepth(10);
     doTest(client, TEST_CTX);
 }
 
 DROGON_TEST(HttpsTest)
 {
-    if(!app().supportSSL())
+    if (!app().supportSSL())
         return;
-    
+
     auto client = HttpClient::newHttpClient("https://127.0.0.1:8849",
-                                                loop.getLoop(), false, false);
+                                            app().getLoop(),
+                                            false,
+                                            false);
     client->setPipeliningDepth(10);
     doTest(client, TEST_CTX);
 }
@@ -711,13 +728,15 @@ int main(int argc, char *argv[])
     if (argc > 1 && std::string(argv[1]) == "-f")
         ever = true;
 
-    int testStatus;
-    loop.run();
-    do
-    {
-        testStatus = drogon::test::run(argc, argv);
-    } while (ever);
+    std::atomic<int> testStatus;
+    std::thread thr([&]() {
+        testStatus = test::run(argc, argv);
+        // Workarround not quiting when there's 0 test to run
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        app().quit();
+    });
 
-    loop.getLoop()->quit();
+    app().run();
+    thr.join();
     return testStatus;
 }

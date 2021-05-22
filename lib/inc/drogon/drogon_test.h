@@ -362,8 +362,23 @@ static std::string leftpad(const std::string& str, size_t len)
 }
 }  // namespace internal
 
+static void printHelp(string_view argv0)
+{
+    print() << "A Drogon Test application:\n\n"
+        << "Usage: " << argv0 << " [options]\n"
+        << "options:\n"
+        << "    -r        Run a specific test\n"
+        << "    -h        Print this help message\n";
+}
+
 int run(int argc, char** argv)
 {
+    std::string targetTest;
+    for(int i=1;i<argc;i++) {
+        std::string param = argv[i];
+        if(param == "-r" && i+1 < argc) { targetTest = argv[i+1]; i++; }
+        if(param == "-h") { printHelp(argv[0]); exit(0); }
+    }
     using internal::leftpad;
     auto classNames = DrClassMap::getAllClassName();
     std::vector<std::unique_ptr<DrObjectBase>> testCases;
@@ -378,9 +393,11 @@ int run(int argc, char** argv)
                 LOG_WARN << "Class " << name << " seems to be a test case. But type information disagrees.";
                 continue;
             }
-            ptr->doTest_(std::move(std::make_shared<Case>(ptr->name())));
-            internal::numTestCases++;
-            testCases.emplace_back(std::move(test));
+            if(targetTest.empty() || ptr->name() == targetTest) {
+                ptr->doTest_(std::move(std::make_shared<Case>(ptr->name())));
+                internal::numTestCases++;
+                testCases.emplace_back(std::move(test));
+            }
         }
     }
     if (internal::registeredTests.empty() == false)
@@ -664,7 +681,7 @@ inline std::shared_ptr<Case> newTest(const std::string& name)
         drogon::test::printErr() << "\x1B[0;37m" << __FILE__ << ":" << __LINE__ << " \x1B[0;31m FAILED:\x1B[0m\n" \
                                  << "  " << message << "\n\n";                                                    \
         drogon::test::internal::numAssertions++;                                                                  \
-    } while (0);
+    } while (0)
 
 #define SUCCESS()                                       \
     do                                                  \
@@ -672,7 +689,7 @@ inline std::shared_ptr<Case> newTest(const std::string& name)
         TEST_CTX;                                       \
         drogon::test::internal::numAssertions++;        \
         drogon::test::internal::numCorrectAssertions++; \
-    } while (0);
+    } while (0)
 
 #define DROGON_TEST_STRINGIFY__(x) #x
 #define DROGON_TEST_STRINGIFY(x) DROGON_TEST_STRINGIFY__(x)

@@ -46,3 +46,4 @@ latex/
 CMakeSettings.json
 install
 trace.json
+.cache
