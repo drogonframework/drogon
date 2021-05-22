@@ -19,7 +19,7 @@ else
   export PATH=$PATH:$src_dir/install/bin
 fi
 echo ${drogon_ctl_exec}
-cd build/examples/
+cd build/tests/
 
 if [ $os = "windows" ]; then
   cd Debug
@@ -50,7 +50,7 @@ if [ $os = "linux" ]; then
   fi
 fi
 
-#Make webapp run as a daemon
+#Make integration_test_server run as a daemon
 if [ $os = "linux" ]; then
   sed -i -e "s/\"run_as_daemon.*$/\"run_as_daemon\": true\,/" config.example.json
 fi
@@ -58,59 +58,33 @@ sed -i -e "s/\"relaunch_on_error.*$/\"relaunch_on_error\": true\,/" config.examp
 sed -i -e "s/\"threads_num.*$/\"threads_num\": 0\,/" config.example.json
 sed -i -e "s/\"use_brotli.*$/\"use_brotli\": true\,/" config.example.json
 
-if [ ! -f "webapp" ]; then
+if [ ! -f "integration_test_client" ]; then
     echo "Build failed"
     exit -1
 fi
-if [ ! -f "webapp_test" ]; then
+if [ ! -f "integration_test_server" ]; then
     echo "Build failed"
     exit -1
 fi
 
-killall -9 webapp
-./webapp &
-webapppid=$!
+killall -9 integration_test_server
+./integration_test_server &
+serverpid=$!
 
 sleep 4
 
-echo "Test http requests and responses."
-./webapp_test
+echo "Running the integration test"
+./integration_test_client
 
 if [ $? -ne 0 ]; then
-    echo "Error in testing http requests"
+    echo "Integration test failed"
     exit -1
 fi
 
-#Test WebSocket
-echo "Test the WebSocket"
-./websocket_test -t
-if [ $? -ne 0 ]; then
-    echo "Error in testing WebSocket"
-    exit -1
-fi
-
-# Test websocket client coroutine
-if [ -f ./websocket_coro_test ]; then
-    echo "Test WebSocket w/ coroutine"
-    ./websocket_coro_test -t
-    if [ $? -ne 0 ]; then
-        echo "Error in testing WebSocket with coroutine"
-        exit -1
-    fi
-fi
-
-#Test pipelining
-echo "Test the pipelining"
-./pipelining_test
-if [ $? -ne 0 ]; then
-    echo "Error in testing pipelining"
-    exit -1
-fi
-
-kill -9 $webapppid
+kill -9 $serverpid
 
 #Test drogon_ctl
-echo "Test the drogon_ctl"
+echo "Testing drogon_ctl"
 rm -rf drogon_test
 
 ${drogon_ctl_exec} create project drogon_test
@@ -165,7 +139,7 @@ fi
 cmake .. $cmake_gen
 
 if [ $? -ne 0 ]; then
-    echo "Error in testing"
+    echo "Failed to run CMake for example project"
     exit -1
 fi
 
