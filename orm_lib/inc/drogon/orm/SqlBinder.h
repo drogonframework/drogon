@@ -496,6 +496,15 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
         return *this << nullptr;
     }
     template <typename T>
+    self &operator<<(optional<T> &parameter)
+    {
+        if (parameter)
+        {
+            return *this << parameter.value();
+        }
+        return *this << nullptr;
+    }
+    template <typename T>
     self &operator<<(optional<T> &&parameter)
     {
         if (parameter)
@@ -535,6 +544,10 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
         }
     }
     self &operator<<(Json::Value &j) noexcept(true)
+    {
+        return *this << static_cast<const Json::Value &>(j);
+    }
+    self &operator<<(Json::Value &&j) noexcept(true)
     {
         return *this << static_cast<const Json::Value &>(j);
     }
