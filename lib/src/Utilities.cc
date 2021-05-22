@@ -355,7 +355,7 @@ std::string getUuid()
 #endif
 #if _BYTE_ORDER == _LITTLE_ENDIAN
     uuid_enc_le(binstr, uuid);
-#else /* _BYTE_ORDER != _LITTLE_ENDIAN */
+#else  /* _BYTE_ORDER != _LITTLE_ENDIAN */
     uuid_enc_be(binstr, uuid);
 #endif /* _BYTE_ORDER == _LITTLE_ENDIAN */
     delete uuid;
