@@ -429,12 +429,6 @@ if (BUILD_TESTING)
         add_subdirectory(${PROJECT_SOURCE_DIR}/orm_lib/src/sqlite3_impl/test)
     endif (SQLite3_FOUND)
     add_subdirectory(${PROJECT_SOURCE_DIR}/orm_lib/tests)
-    find_package(GTest)
-    if (GTest_FOUND)
-        message(STATUS "gtest found")
-        # enable_testing()
-        # add_subdirectory(unittest)
-    endif (GTest_FOUND)
 endif (BUILD_TESTING)
 
 # Installation
