@@ -1,7 +1,7 @@
 /**
  *
- *  Utilities.cc
- *  An Tao
+ *  @file Utilities.cc
+ *  @author An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon

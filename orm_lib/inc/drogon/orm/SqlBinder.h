@@ -25,6 +25,7 @@
 #include <drogon/utils/optional.h>
 #include <trantor/utils/Logger.h>
 #include <trantor/utils/NonCopyable.h>
+#include <json/json.h>
 #include <functional>
 #include <iostream>
 #include <map>
@@ -214,7 +215,7 @@ class CallbackHolder : public CallbackHolderBase
     typename std::enable_if<(sizeof...(Values) < Boundary), void>::type run(
         const Row *const row,
         bool isNull,
-        Values &&... values)
+        Values &&...values)
     {
         // call this function recursively until parameter's count equals to the
         // count of target function parameters
@@ -245,7 +246,7 @@ class CallbackHolder : public CallbackHolderBase
     typename std::enable_if<(sizeof...(Values) == Boundary), void>::type run(
         const Row *const,
         bool isNull,
-        Values &&... values)
+        Values &&...values)
     {
         function_(isNull, std::move(values)...);
     }
@@ -502,6 +503,40 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
             return *this << std::move(parameter.value());
         }
         return *this << nullptr;
+    }
+    self &operator<<(const Json::Value &j) noexcept(true)
+    {
+        switch (j.type())
+        {
+            case Json::nullValue:
+                return *this << nullptr;
+                break;
+            case Json::intValue:
+                return *this << j.asInt64();
+                break;
+            case Json::uintValue:
+                return *this << j.asUInt64();
+                break;
+            case Json::realValue:
+                return *this << j.asDouble();
+                break;
+            case Json::stringValue:
+                return *this << j.asString();
+                break;
+            case Json::booleanValue:
+                return *this << j.asBool();
+                break;
+            case Json::arrayValue:
+            case Json::objectValue:
+            default:
+                LOG_ERROR << "Bad Json type";
+                return *this << nullptr;
+                break;
+        }
+    }
+    self &operator<<(Json::Value &j) noexcept(true)
+    {
+        return *this << static_cast<const Json::Value &>(j);
     }
     void exec() noexcept(false);
 

@@ -69,9 +69,10 @@ struct SqlAwaiter : public CallbackAwaiter<Result>
     internal::SqlBinder binder_;
 };
 
-struct TrasactionAwaiter : public CallbackAwaiter<std::shared_ptr<Transaction> >
+struct TransactionAwaiter
+    : public CallbackAwaiter<std::shared_ptr<Transaction> >
 {
-    TrasactionAwaiter(DbClient *client) : client_(client)
+    TransactionAwaiter(DbClient *client) : client_(client)
     {
     }
 
@@ -111,7 +112,7 @@ class DROGON_EXPORT DbClient : public trantor::NonCopyable
      * - client_encoding: The character set to be used on database connections.
      *
      * For other key words on PostgreSQL, see the PostgreSQL documentation.
-     * Only a pair of key values ​​is valid for Sqlite3, and its keyword is
+     * Only a pair of key values is valid for Sqlite3, and its keyword is
      * 'filename'.
      *
      * @param connNum: The number of connections to database server;
@@ -154,7 +155,7 @@ class DROGON_EXPORT DbClient : public trantor::NonCopyable
     void execSqlAsync(const std::string &sql,
                       FUNCTION1 &&rCallback,
                       FUNCTION2 &&exceptCallback,
-                      Arguments &&... args) noexcept
+                      Arguments &&...args) noexcept
     {
         auto binder = *this << sql;
         (void)std::initializer_list<int>{
@@ -166,7 +167,7 @@ class DROGON_EXPORT DbClient : public trantor::NonCopyable
     /// Async and nonblocking method
     template <typename... Arguments>
     std::future<Result> execSqlAsyncFuture(const std::string &sql,
-                                           Arguments &&... args) noexcept
+                                           Arguments &&...args) noexcept
     {
         auto binder = *this << sql;
         (void)std::initializer_list<int>{
@@ -183,7 +184,7 @@ class DROGON_EXPORT DbClient : public trantor::NonCopyable
     // Sync and blocking method
     template <typename... Arguments>
     const Result execSqlSync(const std::string &sql,
-                             Arguments &&... args) noexcept(false)
+                             Arguments &&...args) noexcept(false)
     {
         Result r(nullptr);
         {
@@ -201,8 +202,8 @@ class DROGON_EXPORT DbClient : public trantor::NonCopyable
 
 #ifdef __cpp_impl_coroutine
     template <typename... Arguments>
-    internal::SqlAwaiter execSqlCoro(const std::string sql,
-                                     Arguments... args) noexcept
+    internal::SqlAwaiter execSqlCoro(const std::string &sql,
+                                     Arguments &&...args) noexcept
     {
         auto binder = *this << sql;
         (void)std::initializer_list<int>{
@@ -252,9 +253,9 @@ class DROGON_EXPORT DbClient : public trantor::NonCopyable
             &callback) = 0;
 
 #ifdef __cpp_impl_coroutine
-    orm::internal::TrasactionAwaiter newTransactionCoro()
+    orm::internal::TransactionAwaiter newTransactionCoro()
     {
-        return orm::internal::TrasactionAwaiter(this);
+        return orm::internal::TransactionAwaiter(this);
     }
 #endif
 
@@ -315,7 +316,7 @@ class Transaction : public DbClient
 };
 
 #ifdef __cpp_impl_coroutine
-inline void internal::TrasactionAwaiter::await_suspend(
+inline void internal::TransactionAwaiter::await_suspend(
     std::coroutine_handle<> handle)
 {
     assert(client_ != nullptr);
