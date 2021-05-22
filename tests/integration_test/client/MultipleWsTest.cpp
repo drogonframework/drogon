@@ -39,9 +39,9 @@ DROGON_TEST(MultipleWsTest)
             [TEST_CTX, i](ReqResult r,
                           const HttpResponsePtr &resp,
                           const WebSocketClientPtr &wsPtr) mutable {
+                CHECK(r == ReqResult::Ok);
                 if (r != ReqResult::Ok)
                     app().getLoop()->queueInLoop([i]() { wsClients_[i] = {}; });
-                REQUIRE(r == ReqResult::Ok);
                 REQUIRE(wsPtr != nullptr);
                 REQUIRE(resp != nullptr);
 

@@ -28,6 +28,8 @@ namespace internal
 {
 extern std::mutex mtxRegister;
 extern std::mutex mtxRunning;
+extern std::mutex mtxTestStats;
+extern bool testHasPrinted;
 extern std::set<Case*> registeredTests;
 extern std::condition_variable allTestRan;
 extern std::atomic<size_t> numAssertions;
@@ -350,6 +352,8 @@ struct TestCase : public CaseBase
     virtual void doTest_(std::shared_ptr<Case>) = 0;
 };
 
+void printTestStats();
+
 #ifdef DROGON_TEST_MAIN
 
 namespace internal
@@ -371,43 +375,11 @@ static void printHelp(string_view argv0)
         << "    -h        Print this help message\n";
 }
 
-int run(int argc, char** argv)
+void printTestStats()
 {
-    std::string targetTest;
-    for(int i=1;i<argc;i++) {
-        std::string param = argv[i];
-        if(param == "-r" && i+1 < argc) { targetTest = argv[i+1]; i++; }
-        if(param == "-h") { printHelp(argv[0]); exit(0); }
-    }
-    using internal::leftpad;
-    auto classNames = DrClassMap::getAllClassName();
-    std::vector<std::unique_ptr<DrObjectBase>> testCases;
-    for (const auto& name : classNames)
-    {
-        if (name.find("drtest__") == 0)
-        {
-            auto test = std::unique_ptr<DrObjectBase>(DrClassMap::newObject(name));
-            auto ptr = dynamic_cast<TestCase*>(test.get());
-            if (ptr == nullptr)
-            {
-                LOG_WARN << "Class " << name << " seems to be a test case. But type information disagrees.";
-                continue;
-            }
-            if(targetTest.empty() || ptr->name() == targetTest) {
-                ptr->doTest_(std::move(std::make_shared<Case>(ptr->name())));
-                internal::numTestCases++;
-                testCases.emplace_back(std::move(test));
-            }
-        }
-    }
-    if (internal::registeredTests.empty() == false)
-    {
-        std::unique_lock l(internal::mtxRunning);
-        internal::allTestRan.wait(l);
-        assert(internal::registeredTests.empty());
-    }
-    testCases.clear();
-
+    std::unique_lock lk(internal::mtxTestStats);
+    if(internal::testHasPrinted)
+        return;
     const size_t successAssertions = internal::numCorrectAssertions;
     const size_t totalAssertions = internal::numAssertions;
     const size_t successTests = internal::numTestCases - internal::numFailedTestCases;
@@ -441,7 +413,6 @@ int run(int argc, char** argv)
     {
         print() << "\x1B[1;32m  All tests passed\x1B[0m (" << totalAssertions << " assertions in " << totalTests
                 << " tests cases).\n";
-        return 0;
     }
     else
     {
@@ -454,14 +425,55 @@ int run(int argc, char** argv)
         const size_t totalLen = std::max(totalAssertsionStr.size(), totalTestsStr.size());
         const size_t successLen = std::max(successAssertionsStr.size(), successTestsStr.size());
         const size_t failedLen = std::max(failedAssertsionStr.size(), failedTestsStr.size());
+        using internal::leftpad;
         print() << "assertions: " << leftpad(totalAssertsionStr, totalLen) << " | \x1B[0;32m"
                 << leftpad(totalAssertsionStr, successLen) << " passed\x1B[0m | \x1B[0;31m"
                 << leftpad(failedAssertsionStr, failedLen) << " failed\x1B[0m\n"
                 << "test cases: " << leftpad(totalTestsStr, totalLen) << " | \x1B[0;32m"
                 << leftpad(successTestsStr, successLen) << " passed\x1B[0m | \x1B[0;31m"
                 << leftpad(failedTestsStr, failedLen) << " failed\x1B[0m\n";
-        return 1;
     }
+    internal::testHasPrinted = true;
+}
+
+static int run(int argc, char** argv)
+{
+    std::string targetTest;
+    for(int i=1;i<argc;i++) {
+        std::string param = argv[i];
+        if(param == "-r" && i+1 < argc) { targetTest = argv[i+1]; i++; }
+        if(param == "-h") { printHelp(argv[0]); exit(0); }
+    }
+    auto classNames = DrClassMap::getAllClassName();
+    std::vector<std::unique_ptr<DrObjectBase>> testCases;
+    for (const auto& name : classNames)
+    {
+        if (name.find("drtest__") == 0)
+        {
+            auto test = std::unique_ptr<DrObjectBase>(DrClassMap::newObject(name));
+            auto ptr = dynamic_cast<TestCase*>(test.get());
+            if (ptr == nullptr)
+            {
+                LOG_WARN << "Class " << name << " seems to be a test case. But type information disagrees.";
+                continue;
+            }
+            if(targetTest.empty() || ptr->name() == targetTest) {
+                ptr->doTest_(std::move(std::make_shared<Case>(ptr->name())));
+                internal::numTestCases++;
+                testCases.emplace_back(std::move(test));
+            }
+        }
+    }
+    if (internal::registeredTests.empty() == false)
+    {
+        std::unique_lock l(internal::mtxRunning);
+        internal::allTestRan.wait(l);
+        assert(internal::registeredTests.empty());
+    }
+    testCases.clear();
+    printTestStats();
+
+    return internal::numCorrectAssertions == internal::numAssertions;
 }
 #endif
 inline std::shared_ptr<Case> newTest(std::shared_ptr<Case> parent, const std::string& name)
@@ -476,8 +488,8 @@ inline std::shared_ptr<Case> newTest(const std::string& name)
 
 }  // namespace drogon::test
 
-#define ERROR_MSG(func_name, expr)                                                              \
-    printErr() << "\x1B[1;37mIn test case " << TEST_CTX->fullname() << "\n"                     \
+#define ERROR_MSG(func_name, expr)                                                                 \
+        printErr() << "\x1B[1;37mIn test case " << TEST_CTX->fullname() << "\n"                    \
                << "\x1B[0;37m↳ " <<  __FILE__ << ":" << __LINE__ << " \x1B[0;31m FAILED:\x1B[0m\n" \
                << "  \033[0;34m" << stringifyFuncCall(func_name, expr) << "\x1B[0m\n"
 
@@ -545,6 +557,17 @@ inline std::shared_ptr<Case> newTest(const std::string& name)
     {                          \
         if (!TEST_FLAG_)       \
             co_return;         \
+    } while (0);
+
+#define DIE_ON_FAILURE__ \
+    do                         \
+    {                          \
+        using namespace drogon::test;\
+        if (!TEST_FLAG_) {     \
+            printTestStats();  \
+            printErr() << "Force exiting due to a mandation failed.\n";\
+            exit(1);\
+        }\
     } while (0);
 
 #define PRINT_NONSTANDARD_EXCEPTION__(func_name, expr)                                \
@@ -665,6 +688,12 @@ inline std::shared_ptr<Case> newTest(const std::string& name)
 #define CO_REQUIRE_THROWS_AS(expr, except_type) \
     CHECK_THROWS_AS_INTERNAL__(expr, "CO_REQUIRE_THROWS_AS", except_type, CO_RETURN_ON_FAILURE__)
 
+#define MANDATE(expr) CHECK_INTERNAL__(expr, "MANDATE", DIE_ON_FAILURE__)
+#define MANDATE_THROWS(expr) CHECK_THROWS_INTERNAL__(expr, "MANDATE_THROWS", DIE_ON_FAILURE__)
+#define MANDATE_NOTHROW(expr) CHECK_NOTHROW_INTERNAL__(expr, "MANDATE_NOTHROW", DIE_ON_FAILURE__)
+#define MANDATE_THROWS_AS(expr, except_type) \
+    CHECK_THROWS_AS_INTERNAL__(expr, "MANDATE_THROWS_AS", except_type, DIE_ON_FAILURE__)
+
 #define STATIC_REQUIRE(expr)                            \
     do                                                  \
     {                                                   \
@@ -682,6 +711,14 @@ inline std::shared_ptr<Case> newTest(const std::string& name)
                                  << "  " << message << "\n\n";                                                    \
         drogon::test::internal::numAssertions++;                                                                  \
     } while (0)
+#define FAULT(message) \
+    do {\
+        using namespace drogon::test;\
+        FAIL(message);\
+        printTestStats();  \
+        printErr() << "Force exiting due to a fault.\n";\
+        exit(1);\
+    } while(0)
 
 #define SUCCESS()                                       \
     do                                                  \
@@ -722,6 +759,8 @@ namespace internal
 {
 std::mutex mtxRegister;
 std::mutex mtxRunning;
+std::mutex mtxTestStats;
+bool testHasPrinted = false;
 std::set<Case*> registeredTests;
 std::condition_variable allTestRan;
 std::atomic<size_t> numAssertions = 0;
