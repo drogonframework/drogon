@@ -427,7 +427,7 @@ void printTestStats()
         const size_t failedLen = std::max(failedAssertsionStr.size(), failedTestsStr.size());
         using internal::leftpad;
         print() << "assertions: " << leftpad(totalAssertsionStr, totalLen) << " | \x1B[0;32m"
-                << leftpad(totalAssertsionStr, successLen) << " passed\x1B[0m | \x1B[0;31m"
+                << leftpad(successAssertionsStr, successLen) << " passed\x1B[0m | \x1B[0;31m"
                 << leftpad(failedAssertsionStr, failedLen) << " failed\x1B[0m\n"
                 << "test cases: " << leftpad(totalTestsStr, totalLen) << " | \x1B[0;32m"
                 << leftpad(successTestsStr, successLen) << " passed\x1B[0m | \x1B[0;31m"
@@ -458,8 +458,8 @@ static int run(int argc, char** argv)
                 continue;
             }
             if(targetTest.empty() || ptr->name() == targetTest) {
-                ptr->doTest_(std::move(std::make_shared<Case>(ptr->name())));
                 internal::numTestCases++;
+                ptr->doTest_(std::move(std::make_shared<Case>(ptr->name())));
                 testCases.emplace_back(std::move(test));
             }
         }
