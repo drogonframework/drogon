@@ -706,9 +706,11 @@ inline std::shared_ptr<Case> newTest(const std::string& name)
 #define FAIL(message)                                                                                             \
     do                                                                                                            \
     {                                                                                                             \
+        using namespace drogon::test;\
         TEST_CTX->setFailed();                                                                                    \
-        drogon::test::printErr() << "\x1B[0;37m" << __FILE__ << ":" << __LINE__ << " \x1B[0;31m FAILED:\x1B[0m\n" \
-                                 << "  " << message << "\n\n";                                                    \
+        printErr() << "\x1B[1;37mIn test case " << TEST_CTX->fullname() << "\n"                    \
+                    << "\x1B[0;37m" << __FILE__ << ":" << __LINE__ << " \x1B[0;31m FAILED:\x1B[0m\n" \
+                    << "  Reason: " << message << "\n\n";                                            \
         drogon::test::internal::numAssertions++;                                                                  \
     } while (0)
 #define FAULT(message) \
@@ -716,7 +718,7 @@ inline std::shared_ptr<Case> newTest(const std::string& name)
         using namespace drogon::test;\
         FAIL(message);\
         printTestStats();  \
-        printErr() << "Force exiting due to a fault.\n";\
+        printErr() << "Force exiting due to a FAULT statement.\n";\
         exit(1);\
     } while(0)
 

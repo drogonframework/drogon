@@ -12,11 +12,14 @@
  *  Drogon database test program
  *
  */
+#define DROGON_TEST_MAIN
 #include <drogon/config.h>
 #include <drogon/orm/DbClient.h>
 #include <drogon/orm/DbTypes.h>
 #include <drogon/orm/CoroMapper.h>
 #include <trantor/utils/Logger.h>
+#include <drogon/drogon_test.h>
+#include <drogon/HttpAppFramework.h>
 #include <chrono>
 #include <iostream>
 #include <thread>
@@ -78,7 +81,7 @@ void testOutput(bool isGood, const std::string &testMessage)
         exit(1);
     }
 }
-
+/*
 void doPostgreTest(const drogon::orm::DbClientPtr &clientPtr)
 {
     // Prepare the test environment
@@ -1474,7 +1477,7 @@ void doMysqlTest(const drogon::orm::DbClientPtr &clientPtr)
     };
     drogon::sync_wait(coro_test());
 #endif
-}
+}*/
 
 void doSqliteTest(const drogon::orm::DbClientPtr &clientPtr)
 {
@@ -2195,58 +2198,101 @@ void doSqliteTest(const drogon::orm::DbClientPtr &clientPtr)
 #endif
 }
 
+#if USE_SQLITE3
+DbClientPtr sqlite3Client;
+DROGON_TEST(Sqlite3Test)
+{
+    // auto& clientPtr = sqlite3Client;
+    auto clientPtr = DbClient::newSqlite3Client("filename=:memory:", 1);
+    REQUIRE(clientPtr != nullptr);
+
+    // Prepare the test environment
+    *clientPtr << "DROP TABLE IF EXISTS users" >> [TEST_CTX](const Result &r) {
+        SUCCESS();
+    } >> [TEST_CTX](const DrogonDbException &e) {
+        FAULT("sqlite3 - Prepare the test environment(0): " + std::string(e.base().what()));
+    };
+}
+#endif
+
+using namespace drogon;
+int main(int argc, char *argv[])
+{
+    trantor::Logger::setLogLevel(trantor::Logger::LogLevel::kDebug);
+    int loopCount = 1;
+    if (argc == 2)
+        loopCount = atoi(argv[1]);
+    
+#if USE_SQLITE3
+    sqlite3Client = DbClient::newSqlite3Client("filename=:memory:", 1);
+#endif
+
+    std::atomic<int> testStatus;
+    std::thread thr([&]() {
+        for(int i=0;i<loopCount;i++)
+            testStatus = test::run(argc, argv);
+        // Workarround not quiting when there's 0 test to run
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        app().quit();
+    });
+
+    app().run();
+    thr.join();
+    return testStatus;
+}
+/*
 int main(int argc, char *argv[])
 {
     trantor::Logger::setLogLevel(trantor::Logger::kDebug);
-#if USE_POSTGRESQL
-    auto postgre_client = DbClient::newPgClient(
-        "host=127.0.0.1 port=5432 dbname=postgres user=postgres password=12345 "
-        "client_encoding=utf8",
-        1);
-#endif
-#if USE_MYSQL
-    auto mysql_client = DbClient::newMysqlClient(
-        "host=localhost port=3306 user=root client_encoding=utf8mb4", 1);
-#endif
-#if USE_SQLITE3
+// #if USE_POSTGRESQL
+//     // auto postgre_client = DbClient::newPgClient(
+//     //     "host=127.0.0.1 port=5432 dbname=postgres user=postgres password=12345 "
+//     //     "client_encoding=utf8",
+//     //     1);
+// #endif
+// #if USE_MYSQL
+//     // auto mysql_client = DbClient::newMysqlClient(
+//     //     "host=localhost port=3306 user=root client_encoding=utf8mb4", 1);
+// #endif
+// #if USE_SQLITE3
     auto sqlite_client = DbClient::newSqlite3Client("filename=:memory:", 1);
-#endif
+// #endif
     LOG_DEBUG << "start!";
-    std::this_thread::sleep_for(1s);
-    if (argc == 2)
-    {
-        gLoops = atoi(argv[1]);
-    }
+    // std::this_thread::sleep_for(1s);
+//     if (argc == 2)
+//     {
+//         gLoops = atoi(argv[1]);
+//     }
     test_count = get_test_count();
-    for (int i = 0; i < gLoops; ++i)
-    {
-#if USE_POSTGRESQL
-        doPostgreTest(postgre_client);
-#endif
-#if USE_MYSQL
-        doMysqlTest(mysql_client);
-#endif
-#if USE_SQLITE3
+//     for (int i = 0; i < gLoops; ++i)
+//     {
+// #if USE_POSTGRESQL
+//         //doPostgreTest(postgre_client);
+// #endif
+// #if USE_MYSQL
+//         //doMysqlTest(mysql_client);
+// #endif
+// #if USE_SQLITE3
         doSqliteTest(sqlite_client);
-#endif
-    }
-#if !USE_POSTGRESQL && !USE_MYSQL && !USE_SQLITE3
-    pro.set_value(0);
-    LOG_DEBUG << "Drogon is built with no ORM support.";
-#endif
+// #endif
+//     }
+// #if !USE_POSTGRESQL && !USE_MYSQL && !USE_SQLITE3
+//     pro.set_value(0);
+//     LOG_DEBUG << "Drogon is built with no ORM support.";
+// #endif
     globalf.get();
-    std::this_thread::sleep_for(0.008s);
+    // std::this_thread::sleep_for(0.008s);
     return 0;
-}
+}*/
 
 int get_test_count()
 {
     int test_count = 0;
 #if USE_POSTGRESQL
-    test_count += postgre_tests * gLoops;
+    //test_count += postgre_tests * gLoops;
 #endif
 #if USE_MYSQL
-    test_count += mysql_tests * gLoops;
+    //test_count += mysql_tests * gLoops;
 #endif
 #if USE_SQLITE3
     test_count += sqlite_tests * gLoops;
