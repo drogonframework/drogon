@@ -2224,7 +2224,7 @@ int main(int argc, char *argv[])
         loopCount = atoi(argv[1]);
     
 #if USE_SQLITE3
-    sqlite3Client = DbClient::newSqlite3Client("filename=:memory:", 1);
+    // sqlite3Client = DbClient::newSqlite3Client("filename=:memory:", 1);
 #endif
 
     std::atomic<int> testStatus;
