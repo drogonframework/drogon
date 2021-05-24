@@ -43,13 +43,13 @@ extern size_t numTestCases;
 extern std::atomic<size_t> numFailedTestCases;
 inline void registerCase(Case* test)
 {
-    std::unique_lock l(mtxRegister);
+    std::unique_lock<std::mutex> l(mtxRegister);
     registeredTests.insert(test);
 }
 
 inline void unregisterCase(Case* test)
 {
-    std::unique_lock l(mtxRegister);
+    std::unique_lock<std::mutex> l(mtxRegister);
     registeredTests.erase(test);
 
     if (registeredTests.empty())
@@ -64,7 +64,7 @@ struct is_printable : std::false_type
 template <typename _Tp>
 struct is_printable<
     _Tp,
-    typename std::enable_if_t<std::is_same_v<decltype(std::cout << std::declval<_Tp>()), std::ostream&>>>
+    typename std::enable_if<std::is_same<decltype(std::cout << std::declval<_Tp>()), std::ostream&>::value>::type>
     : std::true_type
 {
 };
@@ -97,7 +97,7 @@ inline std::string escapeString(const string_view sv)
     return result;
 }
 
-inline std::string prettifyString(const std::string_view sv, size_t maxLength = 120)
+inline std::string prettifyString(const string_view sv, size_t maxLength = 120)
 {
     if(sv.size() <= maxLength)
         return "\"" + escapeString(sv) + "\"";
@@ -106,31 +106,51 @@ inline std::string prettifyString(const std::string_view sv, size_t maxLength = 
     return "\"" + escapeString(sv.substr(0, maxLength)) + msg;
 }
 
-template <typename T>
-std::string attemptPtrint(const T& v)
+template <bool P>
+struct AttemptPrintViaStream
 {
-    using RealType = std::remove_cv_t<T>;
-
-    if constexpr (std::is_same_v<RealType, bool>)
+    template <typename T>
+    std::string operator ()(const T& v)
     {
-        std::stringstream ss;
-        ss << std::boolalpha << v;
-        return ss.str();
+        return "{un-printable}";
     }
-    else if constexpr (std::is_same_v<RealType, std::nullptr_t>)
-        return "nullptr";
-    else if constexpr (std::is_convertible_v<RealType, std::string> || std::is_same_v<RealType, std::string_view>)
-        return prettifyString(string_view(v));
-    else if constexpr (std::is_same_v<RealType, char>)
-        return "'" + std::string(1, v) + "'";
-    else if constexpr (is_printable<RealType>::value)
+};
+
+template <>
+struct AttemptPrintViaStream<true>
+{
+    template <typename T>
+    std::string operator ()(const T& v)
     {
         std::stringstream ss;
         ss << v;
         return ss.str();
     }
-    else
-        return "{un-printable}";
+};
+
+template <typename T>
+inline std::string attemptPrint(const T& v)
+{
+    AttemptPrintViaStream<is_printable<T>::value> a;
+    return a(v);
+}
+
+template <>
+inline std::string attemptPrint(const string_view& v)
+{
+    return prettifyString(v);
+}
+
+template <>
+inline std::string attemptPrint(const std::nullptr_t& v)
+{
+    return "nullptr";
+}
+
+template <>
+inline std::string attemptPrint(const char& v)
+{
+    return "'" + std::string(1, v) + "'";
 }
 
 template <typename... Args>
@@ -159,7 +179,7 @@ struct Lhs
     template <typename _ = void>  // HACK: prevent this function to be evaulated when not invoked
     std::pair<bool, std::string> result() const
     {
-        return {(bool)ref_, attemptPtrint(ref_)};
+        return {(bool)ref_, attemptPrint(ref_)};
     }
 
     Lhs(const T& lhs) : ref_(lhs)
@@ -170,64 +190,64 @@ struct Lhs
     template <typename RhsType>
     ComparsionResult operator<(const RhsType& rhs)
     {
-        return ComparsionResult{ref_ < rhs, attemptPtrint(ref_) + " < " + attemptPtrint(ref_)};
+        return ComparsionResult{ref_ < rhs, attemptPrint(ref_) + " < " + attemptPrint(ref_)};
     }
 
     template <typename RhsType>
     ComparsionResult operator>(const RhsType& rhs)
     {
-        return ComparsionResult{ref_ > rhs, attemptPtrint(ref_) + " > " + attemptPtrint(rhs)};
+        return ComparsionResult{ref_ > rhs, attemptPrint(ref_) + " > " + attemptPrint(rhs)};
     }
 
     template <typename RhsType>
     ComparsionResult operator<=(const RhsType& rhs)
     {
-        return ComparsionResult{ref_ <= rhs, attemptPtrint(ref_) + " <= " + attemptPtrint(rhs)};
+        return ComparsionResult{ref_ <= rhs, attemptPrint(ref_) + " <= " + attemptPrint(rhs)};
     }
 
     template <typename RhsType>
     ComparsionResult operator>=(const RhsType& rhs)
     {
-        return ComparsionResult{ref_ >= rhs, attemptPtrint(ref_) + " >= " + attemptPtrint(rhs)};
+        return ComparsionResult{ref_ >= rhs, attemptPrint(ref_) + " >= " + attemptPrint(rhs)};
     }
 
     template <typename RhsType>
     ComparsionResult operator==(const RhsType& rhs)
     {
-        return ComparsionResult{ref_ == rhs, attemptPtrint(ref_) + " == " + attemptPtrint(rhs)};
+        return ComparsionResult{ref_ == rhs, attemptPrint(ref_) + " == " + attemptPrint(rhs)};
     }
 
     template <typename RhsType>
     ComparsionResult operator!=(const RhsType& rhs)
     {
-        return ComparsionResult{ref_ != rhs, attemptPtrint(ref_) + " != " + attemptPtrint(rhs)};
+        return ComparsionResult{ref_ != rhs, attemptPrint(ref_) + " != " + attemptPrint(rhs)};
     }
 
     template <typename RhsType>
     ComparsionResult operator&&(const RhsType& rhs)
     {
-        static_assert(!std::is_same_v<RhsType, void>, " && is not supported in expression decomposition");
+        static_assert(!std::is_same<RhsType, void>::value, " && is not supported in expression decomposition");
         return {};
     }
 
     template <typename RhsType>
     ComparsionResult operator||(const RhsType& rhs)
     {
-        static_assert(!std::is_same_v<RhsType, void>, " || is not supported in expression decomposition");
+        static_assert(!std::is_same<RhsType, void>::value, " || is not supported in expression decomposition");
         return {};
     }
 
     template <typename RhsType>
     ComparsionResult operator|(const RhsType& rhs)
     {
-        static_assert(!std::is_same_v<RhsType, void>, " | is not supported in expression decomposition");
+        static_assert(!std::is_same<RhsType, void>::value, " | is not supported in expression decomposition");
         return {};
     }
 
     template <typename RhsType>
     ComparsionResult operator&(const RhsType& rhs)
     {
-        static_assert(!std::is_same_v<RhsType, void>, " & is not supported in expression decomposition");
+        static_assert(!std::is_same<RhsType, void>::value, " & is not supported in expression decomposition");
         return {};
     }
 };
@@ -382,7 +402,7 @@ static void printHelp(string_view argv0)
 
 void printTestStats()
 {
-    std::unique_lock lk(internal::mtxTestStats);
+    std::unique_lock<std::mutex> lk(internal::mtxTestStats);
     if(internal::testHasPrinted)
         return;
     const size_t successAssertions = internal::numCorrectAssertions;
@@ -443,6 +463,11 @@ void printTestStats()
 
 static int run(int argc, char** argv)
 {
+    internal::numCorrectAssertions = 0;
+    internal::numAssertions = 0;
+    internal::numFailedTestCases = 0;
+    internal::numTestCases = 0;
+
     std::string targetTest;
     for(int i=1;i<argc;i++) {
         std::string param = argv[i];
@@ -471,7 +496,7 @@ static int run(int argc, char** argv)
     }
     if (internal::registeredTests.empty() == false)
     {
-        std::unique_lock l(internal::mtxRunning);
+        std::unique_lock<std::mutex> l(internal::mtxRunning);
         internal::allTestRan.wait(l);
         assert(internal::registeredTests.empty());
     }
@@ -533,7 +558,9 @@ inline std::shared_ptr<Case> newTest(const std::string& name)
 #define EVAL_AND_CHECK_TRUE__(func_name, expr)                                              \
     do                                                                                      \
     {                                                                                       \
-        auto [drresult__, drexpansion__] = (drogon::test::internal::Decomposer() <= expr).result(); \
+        bool drresult__;\
+        std::string drexpansion__;\
+        std::tie(drresult__, drexpansion__) = (drogon::test::internal::Decomposer() <= expr).result(); \
         if (!drresult__)                                                                        \
         {                                                                                   \
             ERROR_MSG(func_name, #expr) << "With expansion\n"                               \
@@ -765,10 +792,10 @@ std::mutex mtxTestStats;
 bool testHasPrinted = false;
 std::set<Case*> registeredTests;
 std::condition_variable allTestRan;
-std::atomic<size_t> numAssertions = 0;
-std::atomic<size_t> numCorrectAssertions = 0;
-size_t numTestCases = 0;
-std::atomic<size_t> numFailedTestCases = 0;
+std::atomic<size_t> numAssertions;
+std::atomic<size_t> numCorrectAssertions;
+size_t numTestCases;
+std::atomic<size_t> numFailedTestCases;
 }  // namespace internal
 }  // namespace drogon::test
 
