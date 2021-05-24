@@ -41,6 +41,7 @@ extern std::atomic<size_t> numAssertions;
 extern std::atomic<size_t> numCorrectAssertions;
 extern size_t numTestCases;
 extern std::atomic<size_t> numFailedTestCases;
+extern bool printSuccessfulTests;
 inline void registerCase(Case* test)
 {
     std::unique_lock<std::mutex> l(mtxRegister);
@@ -397,6 +398,7 @@ static void printHelp(string_view argv0)
         << "Usage: " << argv0 << " [options]\n"
         << "options:\n"
         << "    -r        Run a specific test\n"
+        << "    -s        Print successful tests\n"
         << "    -h        Print this help message\n";
 }
 
@@ -467,12 +469,14 @@ static int run(int argc, char** argv)
     internal::numAssertions = 0;
     internal::numFailedTestCases = 0;
     internal::numTestCases = 0;
+    internal::printSuccessfulTests = false;
 
     std::string targetTest;
     for(int i=1;i<argc;i++) {
         std::string param = argv[i];
         if(param == "-r" && i+1 < argc) { targetTest = argv[i+1]; i++; }
         if(param == "-h") { printHelp(argv[0]); exit(0); }
+        if(param == "-s") { internal::printSuccessfulTests = true; }
     }
     auto classNames = DrClassMap::getAllClassName();
     std::vector<std::unique_ptr<DrObjectBase>> testCases;
@@ -503,7 +507,7 @@ static int run(int argc, char** argv)
     testCases.clear();
     printTestStats();
 
-    return internal::numCorrectAssertions == internal::numAssertions;
+    return internal::numCorrectAssertions != internal::numAssertions;
 }
 #endif
 inline std::shared_ptr<Case> newTest(std::shared_ptr<Case> parent, const std::string& name)
@@ -519,9 +523,16 @@ inline std::shared_ptr<Case> newTest(const std::string& name)
 }  // namespace drogon::test
 
 #define ERROR_MSG(func_name, expr)                                                                 \
-        printErr() << "\x1B[1;37mIn test case " << TEST_CTX->fullname() << "\n"                    \
+        drogon::test::printErr() \
+            << "\x1B[1;37mIn test case " << TEST_CTX->fullname() << "\n"                    \
                << "\x1B[0;37m↳ " <<  __FILE__ << ":" << __LINE__ << " \x1B[0;31m FAILED:\x1B[0m\n" \
-               << "  \033[0;34m" << stringifyFuncCall(func_name, expr) << "\x1B[0m\n"
+               << "  \033[0;34m" << drogon::test::internal::stringifyFuncCall(func_name, expr) << "\x1B[0m\n"
+
+#define PASSED_MSG(func_name, expr)                                                                 \
+        drogon::test::print()\
+             << "\x1B[1;37mIn test case " << TEST_CTX->fullname() << "\n"                    \
+               << "\x1B[0;37m↳ " <<  __FILE__ << ":" << __LINE__ << " \x1B[0;32m PASSED:\x1B[0m\n" \
+               << "  \033[0;34m" << drogon::test::internal::stringifyFuncCall(func_name, expr) << "\x1B[0m\n"
 
 #define SET_TEST_SUCCESS__ \
     do                     \
@@ -575,6 +586,14 @@ inline std::shared_ptr<Case> newTest(const std::string& name)
     {                                                                                 \
         ERROR_MSG(func_name, #expr) << "An unexpected exception is thrown. what():\n" \
                                     << "  \033[0;33m" << e.what() << "\x1B[0m\n\n";   \
+    } while (0);
+
+#define PRINT_PASSED__(func_name, expr)\
+    do                                                                                \
+    {                                                                                 \
+        if(drogon::test::internal::printSuccessfulTests == true) {\
+            PASSED_MSG(func_name, #expr);                                             \
+        }\
     } while (0);
 
 #define RETURN_ON_FAILURE__ \
@@ -661,7 +680,7 @@ inline std::shared_ptr<Case> newTest(const std::string& name)
                         EVAL_AND_CHECK_TRUE__(func_name, expr),         \
                         PRINT_UNEXPECTED_EXCEPTION__(func_name, expr),  \
                         PRINT_NONSTANDARD_EXCEPTION__(func_name, expr), \
-                        on_leave);                                      \
+                        on_leave PRINT_PASSED__(func_name, expr));                                      \
     } while (0);
 
 #define CHECK_THROWS_INTERNAL__(expr, func_name, on_leave)                  \
@@ -672,7 +691,8 @@ inline std::shared_ptr<Case> newTest(const std::string& name)
                         EVAL__(expr),                                       \
                         SET_TEST_SUCCESS__,                                 \
                         SET_TEST_SUCCESS__,                                 \
-                        PRINT_ERR_NOEXCEPTION__(expr, func_name) on_leave); \
+                        PRINT_ERR_NOEXCEPTION__(expr, func_name)            \
+                        on_leave PRINT_PASSED__(func_name, expr)); \
     } while (0);
 
 #define CHECK_THROWS_AS_INTERNAL__(expr, func_name, except_type, on_leave)                                  \
@@ -689,7 +709,7 @@ inline std::shared_ptr<Case> newTest(const std::string& name)
                     SET_TEST_SUCCESS__;                                                                     \
             },                                                                                              \
             { exceptionThrown = true; },                                                                    \
-            PRINT_ERR_BAD_EXCEPTION__(expr, func_name, except_type, exceptionThrown, TEST_FLAG_) on_leave); \
+            PRINT_ERR_BAD_EXCEPTION__(expr, func_name, except_type, exceptionThrown, TEST_FLAG_) on_leave PRINT_PASSED__(func_name, expr)); \
     } while (0);
 
 #define CHECK_NOTHROW_INTERNAL__(expr, func_name, on_leave)                   \
@@ -700,7 +720,7 @@ inline std::shared_ptr<Case> newTest(const std::string& name)
                         EVAL__(expr) SET_TEST_SUCCESS__,                      \
                         NOTHING__,                                            \
                         NOTHING__,                                            \
-                        PRINT_ERR_WITHEXCEPTION__(expr, func_name) on_leave); \
+                        PRINT_ERR_WITHEXCEPTION__(expr, func_name) on_leave PRINT_PASSED__(func_name, expr)); \
     } while (0);
 
 #define CHECK(expr) CHECK_INTERNAL__(expr, "CHECK", NOTHING__)
@@ -757,6 +777,11 @@ inline std::shared_ptr<Case> newTest(const std::string& name)
 #define SUCCESS()                                       \
     do                                                  \
     {                                                   \
+        if(drogon::test::internal::printSuccessfulTests)\
+            drogon::test::print()\
+             << "\x1B[1;37mIn test case " << TEST_CTX->fullname() << "\n"                    \
+               << "\x1B[0;37m↳ " <<  __FILE__ << ":" << __LINE__ << " \x1B[0;32m PASSED:\x1B[0m\n" \
+               << "  \033[0;34mSUCCESS()\x1B[0m\n";\
         TEST_CTX;                                       \
         drogon::test::internal::numAssertions++;        \
         drogon::test::internal::numCorrectAssertions++; \
@@ -796,6 +821,7 @@ std::atomic<size_t> numAssertions;
 std::atomic<size_t> numCorrectAssertions;
 size_t numTestCases;
 std::atomic<size_t> numFailedTestCases;
+bool printSuccessfulTests;
 }  // namespace internal
 }  // namespace drogon::test
 
