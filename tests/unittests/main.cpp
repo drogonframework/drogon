@@ -36,5 +36,15 @@ DROGON_TEST(TestFrameworkSelfTest)
 
 int main(int argc, char** argv)
 {
-    return drogon::test::run(argc, argv);
+    std::atomic<int> testStatus;
+    std::thread thr([&]() {
+        testStatus = test::run(argc, argv);
+        // Workarround not quiting when there's 0 test to run
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        app().quit();
+    });
+
+    app().run();
+    thr.join();
+    return testStatus;
 }

@@ -15,7 +15,9 @@ set(UNITTEST_SOURCES unittests/main.cpp
                         unittests/Sha1Test.cpp
                         ../lib/src/ssl_funcs/Sha1.cc
                         unittests/FileTypeTest.cpp
-                        unittests/DrObjectTest.cpp)
+                        unittests/DrObjectTest.cpp
+                        unittests/HttpFullDateTest.cpp
+                        unittests/MainLoopTest.cpp)
 
 if(DROGON_CXX_STANDARD GREATER_EQUAL 20 AND HAS_COROUTINE)
     set(UNITTEST_SOURCES ${UNITTEST_SOURCES} unittests/CoroutineTest.cpp)
