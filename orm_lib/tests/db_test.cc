@@ -1918,14 +1918,10 @@ using namespace drogon;
 int main(int argc, char *argv[])
 {
     trantor::Logger::setLogLevel(trantor::Logger::LogLevel::kDebug);
-    int loopCount = 1;
-    if (argc == 2)
-        loopCount = atoi(argv[1]);
 
     std::atomic<int> testStatus;
     std::thread thr([&]() {
-        for (int i = 0; i < loopCount; i++)
-            testStatus = test::run(argc, argv);
+        testStatus = test::run(argc, argv);
         // Workarround not quiting when there's 0 test to run
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
         app().quit();
