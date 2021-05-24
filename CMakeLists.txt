@@ -418,7 +418,6 @@ configure_file(${PROJECT_SOURCE_DIR}/cmake/templates/config.h.in
 if (BUILD_TESTING)
     message(STATUS "Building tests")
     add_subdirectory(tests)
-    add_subdirectory(lib/tests)
     if (pg_FOUND)
         add_subdirectory(${PROJECT_SOURCE_DIR}/orm_lib/src/postgresql_impl/test)
     endif (pg_FOUND)
