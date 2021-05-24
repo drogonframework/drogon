@@ -6,7 +6,7 @@
 using namespace drogon;
 DROGON_TEST(HttpFullDateTest)
 {
-	auto str = utils::getHttpFullDate();
+    auto str = utils::getHttpFullDate();
     auto date = utils::getHttpDate(str);
-	CHECK(utils::getHttpFullDate(date) == str);
+    CHECK(utils::getHttpFullDate(date) == str);
 }

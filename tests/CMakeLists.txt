@@ -17,7 +17,8 @@ set(UNITTEST_SOURCES unittests/main.cpp
                         unittests/FileTypeTest.cpp
                         unittests/DrObjectTest.cpp
                         unittests/HttpFullDateTest.cpp
-                        unittests/MainLoopTest.cpp)
+                        unittests/MainLoopTest.cpp
+                        unittests/CacheMapTest.cpp)
 
 if(DROGON_CXX_STANDARD GREATER_EQUAL 20 AND HAS_COROUTINE)
     set(UNITTEST_SOURCES ${UNITTEST_SOURCES} unittests/CoroutineTest.cpp)

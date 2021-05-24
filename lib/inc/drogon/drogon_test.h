@@ -591,8 +591,8 @@ inline std::shared_ptr<Case> newTest(const std::string& name)
 #define PRINT_PASSED__(func_name, expr)\
     do                                                                                \
     {                                                                                 \
-        if(drogon::test::internal::printSuccessfulTests == true) {\
-            PASSED_MSG(func_name, #expr);                                             \
+        if(drogon::test::internal::printSuccessfulTests == true) {                    \
+            PASSED_MSG(func_name, #expr) << "\n";                                     \
         }\
     } while (0);
 
@@ -781,7 +781,7 @@ inline std::shared_ptr<Case> newTest(const std::string& name)
             drogon::test::print()\
              << "\x1B[1;37mIn test case " << TEST_CTX->fullname() << "\n"                    \
                << "\x1B[0;37m↳ " <<  __FILE__ << ":" << __LINE__ << " \x1B[0;32m PASSED:\x1B[0m\n" \
-               << "  \033[0;34mSUCCESS()\x1B[0m\n";\
+               << "  \033[0;34mSUCCESS()\x1B[0m\n\n";\
         TEST_CTX;                                       \
         drogon::test::internal::numAssertions++;        \
         drogon::test::internal::numCorrectAssertions++; \
