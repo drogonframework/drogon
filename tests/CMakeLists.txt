@@ -91,4 +91,4 @@ set_property(TARGET ${tests}
 set_property(TARGET ${tests} PROPERTY CXX_STANDARD_REQUIRED ON)
 set_property(TARGET ${tests} PROPERTY CXX_EXTENSIONS OFF)
 
-add_custom_target(test COMMAND unittest)
+add_custom_target(test COMMAND unittest -s)

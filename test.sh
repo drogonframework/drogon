@@ -74,7 +74,7 @@ serverpid=$!
 sleep 4
 
 echo "Running the integration test"
-./integration_test_client
+./integration_test_client -s
 
 if [ $? -ne 0 ]; then
     echo "Integration test failed"
@@ -176,7 +176,7 @@ if [ "$1" = "-t" ]; then
     fi
     if [ -f "./orm_lib/tests/db_test" ]; then
         echo "Test database"
-        ./orm_lib/tests/db_test
+        ./orm_lib/tests/db_test -s
         if [ $? -ne 0 ]; then
             echo "Error in testing"
             exit -1
@@ -184,7 +184,7 @@ if [ "$1" = "-t" ]; then
     fi
     if [ -f "./nosql_lib/redis/tests/redis_test" ]; then
         echo "Test redis"
-        ./nosql_lib/redis/tests/redis_test
+        ./nosql_lib/redis/tests/redis_test -s
         if [ $? -ne 0 ]; then
             echo "Error in testing"
             exit -1
