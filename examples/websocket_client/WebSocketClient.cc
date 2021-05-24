@@ -23,9 +23,9 @@ int main(int argc, char *argv[])
         port = 8848;
         path = "/chat";
     }
-    
+
     WebSocketClientPtr wsPtr;
-    if(port.has_value())
+    if (port.has_value())
         wsPtr = WebSocketClient::newWebSocketClient(server, port.value());
     else
         wsPtr = WebSocketClient::newWebSocketClient(server);

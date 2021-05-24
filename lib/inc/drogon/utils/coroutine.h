@@ -108,7 +108,7 @@ struct [[nodiscard]] Task
     {
     }
     Task(const Task &) = delete;
-    Task(Task && other)
+    Task(Task &&other)
     {
         coro_ = other.coro_;
         other.coro_ = nullptr;
@@ -264,7 +264,7 @@ struct [[nodiscard]] Task<void>
     {
     }
     Task(const Task &) = delete;
-    Task(Task && other)
+    Task(Task &&other)
     {
         coro_ = other.coro_;
         other.coro_ = nullptr;
@@ -449,14 +449,20 @@ struct AsyncTask
             // Can't simply use suspend_never because we need symmetric transfer
             struct awaiter final
             {
-                bool await_ready() const noexcept { return true; }
+                bool await_ready() const noexcept
+                {
+                    return true;
+                }
 
-                auto await_suspend(std::coroutine_handle<promise_type> coro) const noexcept
+                auto await_suspend(
+                    std::coroutine_handle<promise_type> coro) const noexcept
                 {
                     return coro.promise().continuation_;
                 }
 
-                void await_resume() const noexcept {}
+                void await_resume() const noexcept
+                {
+                }
             };
             return awaiter{};
         }
@@ -607,14 +613,14 @@ auto sync_wait(Await &&await)
 
         if (exception_ptr)
             std::rethrow_exception(exception_ptr);
-        
+
         return std::move(value.value());
     }
 }
 
 // Converts a task (or task like) promise into std::future for old-style async
 template <typename Await>
-inline auto co_future(Await&& await) noexcept
+inline auto co_future(Await &&await) noexcept
     -> std::future<await_result_t<Await>>
 {
     using Result = await_result_t<Await>;

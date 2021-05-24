@@ -15,26 +15,21 @@ DROGON_TEST(RedisTest)
         trantor::InetAddress("127.0.0.1", 6379), 1);
     REQUIRE(redisClient != nullptr);
     // std::this_thread::sleep_for(1s);
-    redisClient->newTransactionAsync([TEST_CTX](const RedisTransactionPtr &transPtr) {
-        // 1
-        transPtr->execCommandAsync(
-            [TEST_CTX](const drogon::nosql::RedisResult &r) {
-                SUCCESS();
-            },
-            [TEST_CTX](const std::exception &err) { MANDATE(err.what()); },
-            "ping");
-        // 2
-        transPtr->execute(
-            [TEST_CTX](const drogon::nosql::RedisResult &r) {
-                SUCCESS();
-            },
-            [TEST_CTX](const std::exception &err) { MANDATE(err.what()); });
-    });
+    redisClient->newTransactionAsync(
+        [TEST_CTX](const RedisTransactionPtr &transPtr) {
+            // 1
+            transPtr->execCommandAsync(
+                [TEST_CTX](const drogon::nosql::RedisResult &r) { SUCCESS(); },
+                [TEST_CTX](const std::exception &err) { MANDATE(err.what()); },
+                "ping");
+            // 2
+            transPtr->execute(
+                [TEST_CTX](const drogon::nosql::RedisResult &r) { SUCCESS(); },
+                [TEST_CTX](const std::exception &err) { MANDATE(err.what()); });
+        });
     // 3
     redisClient->execCommandAsync(
-        [TEST_CTX](const drogon::nosql::RedisResult &r) {
-            SUCCESS();
-        },
+        [TEST_CTX](const drogon::nosql::RedisResult &r) { SUCCESS(); },
         [TEST_CTX](const std::exception &err) { MANDATE(err.what()); },
         "set %s %s",
         "id_123",
@@ -57,9 +52,7 @@ DROGON_TEST(RedisTest)
         "hello");
     // 6
     redisClient->execCommandAsync(
-        [TEST_CTX](const drogon::nosql::RedisResult &r) {
-            SUCCESS();
-        },
+        [TEST_CTX](const drogon::nosql::RedisResult &r) { SUCCESS(); },
         [TEST_CTX](const RedisException &err) { MANDATE(err.what()); },
         "flushall");
     // 7
@@ -89,7 +82,7 @@ DROGON_TEST(RedisTest)
 #endif
 }
 
-int main(int argc, char** argv)
+int main(int argc, char **argv)
 {
 #ifndef USE_REDIS
     LOG_DEBUG << "Drogon is built without Redis. No tests executed.";

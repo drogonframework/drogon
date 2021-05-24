@@ -21,8 +21,8 @@ DROGON_TEST(MultipleWsTest)
         req->setPath("/chat");
         wsPtr->setMessageHandler(
             [TEST_CTX, i](const std::string &message,
-                       const WebSocketClientPtr &wsPtr,
-                       const WebSocketMessageType &type) mutable {
+                          const WebSocketClientPtr &wsPtr,
+                          const WebSocketMessageType &type) mutable {
                 CHECK((type == WebSocketMessageType::Text ||
                        type == WebSocketMessageType::Pong));
                 if (type == WebSocketMessageType::Pong)

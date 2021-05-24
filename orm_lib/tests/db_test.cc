@@ -549,8 +549,9 @@ DROGON_TEST(PostgreTest)
     }
     catch (const DrogonDbException &e)
     {
-        FAULT("postgresql - ORM mapper asynchronous future interface(0) what():" +
-              std::string(e.base().what()));
+        FAULT(
+            "postgresql - ORM mapper asynchronous future interface(0) what():" +
+            std::string(e.base().what()));
     }
 
     /// 6.2 insert
@@ -670,8 +671,10 @@ DROGON_TEST(PostgreTest)
         }
         catch (const DrogonDbException &e)
         {
-            FAULT("postgresql - DbClient coroutine transaction interface(0) what():" +
-                  std::string(e.base().what()));
+            FAULT(
+                "postgresql - DbClient coroutine transaction interface(0) "
+                "what():" +
+                std::string(e.base().what()));
         }
     };
     drogon::sync_wait(coro_test());
@@ -1097,7 +1100,7 @@ DROGON_TEST(MySQLTest)
     catch (const DrogonDbException &e)
     {
         FAULT("mysql - DbClient future interface(5) what():" +
-                std::string(e.base().what()));
+              std::string(e.base().what()));
     }
 
     /// 5 Test Result and Row exception throwing
@@ -1691,7 +1694,7 @@ DROGON_TEST(SQLite3Test)
     catch (const DrogonDbException &e)
     {
         FAULT("sqlite3 - DbClient future interface(5.1) what():" +
-                std::string(e.base().what()));
+              std::string(e.base().what()));
     }
     f = clientPtr->execSqlAsyncFuture("UPDATE sqlite_sequence SET seq = 0");
     try
@@ -1702,7 +1705,7 @@ DROGON_TEST(SQLite3Test)
     catch (const DrogonDbException &e)
     {
         FAULT("sqlite3 - DbClient future interface(5.2) what():" +
-                std::string(e.base().what()));
+              std::string(e.base().what()));
     }
 
     /// 5 Test Result and Row exception throwing

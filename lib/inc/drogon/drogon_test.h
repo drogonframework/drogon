@@ -13,8 +13,9 @@
 #include <iomanip>
 #include <cstddef>
 /**
- * @brief Drogon Test is a minimal effost test framework developed because the major C++ test frameworks
- * doesn't handle async programs well. Drogon Test's syntax is inspired by both Google Test and Catch2
+ * @brief Drogon Test is a minimal effost test framework developed because the
+ * major C++ test frameworks doesn't handle async programs well. Drogon Test's
+ * syntax is inspired by both Google Test and Catch2
  */
 namespace drogon::test
 {
@@ -63,9 +64,10 @@ struct is_printable : std::false_type
 };
 
 template <typename _Tp>
-struct is_printable<
-    _Tp,
-    typename std::enable_if<std::is_same<decltype(std::cout << std::declval<_Tp>()), std::ostream&>::value>::type>
+struct is_printable<_Tp,
+                    typename std::enable_if<
+                        std::is_same<decltype(std::cout << std::declval<_Tp>()),
+                                     std::ostream&>::value>::type>
     : std::true_type
 {
 };
@@ -100,9 +102,9 @@ inline std::string escapeString(const string_view sv)
 
 inline std::string prettifyString(const string_view sv, size_t maxLength = 120)
 {
-    if(sv.size() <= maxLength)
+    if (sv.size() <= maxLength)
         return "\"" + escapeString(sv) + "\"";
-    
+
     const std::string msg = "...\" (truncated)";
     return "\"" + escapeString(sv.substr(0, maxLength)) + msg;
 }
@@ -111,7 +113,7 @@ template <bool P>
 struct AttemptPrintViaStream
 {
     template <typename T>
-    std::string operator ()(const T& v)
+    std::string operator()(const T& v)
     {
         return "{un-printable}";
     }
@@ -121,7 +123,7 @@ template <>
 struct AttemptPrintViaStream<true>
 {
     template <typename T>
-    std::string operator ()(const T& v)
+    std::string operator()(const T& v)
     {
         std::stringstream ss;
         ss << v;
@@ -155,7 +157,8 @@ inline std::string attemptPrint(const char& v)
 }
 
 template <typename... Args>
-inline std::string stringifyFuncCall(const std::string& funcName, const Args&... args)
+inline std::string stringifyFuncCall(const std::string& funcName,
+                                     const Args&... args)
 {
     std::string result = funcName + "(" + ((std::string(args) + ", ") + ...);
     result.resize(result.size() - 2);
@@ -177,8 +180,9 @@ struct ComparsionResult
 template <typename T>
 struct Lhs
 {
-    template <typename _ = void>  // HACK: prevent this function to be evaulated when not invoked
-    std::pair<bool, std::string> result() const
+    template <typename _ = void>  // HACK: prevent this function to be evaulated
+                                  // when not invoked
+                                  std::pair<bool, std::string> result() const
     {
         return {(bool)ref_, attemptPrint(ref_)};
     }
@@ -191,64 +195,79 @@ struct Lhs
     template <typename RhsType>
     ComparsionResult operator<(const RhsType& rhs)
     {
-        return ComparsionResult{ref_ < rhs, attemptPrint(ref_) + " < " + attemptPrint(ref_)};
+        return ComparsionResult{ref_ < rhs,
+                                attemptPrint(ref_) + " < " +
+                                    attemptPrint(ref_)};
     }
 
     template <typename RhsType>
     ComparsionResult operator>(const RhsType& rhs)
     {
-        return ComparsionResult{ref_ > rhs, attemptPrint(ref_) + " > " + attemptPrint(rhs)};
+        return ComparsionResult{ref_ > rhs,
+                                attemptPrint(ref_) + " > " + attemptPrint(rhs)};
     }
 
     template <typename RhsType>
     ComparsionResult operator<=(const RhsType& rhs)
     {
-        return ComparsionResult{ref_ <= rhs, attemptPrint(ref_) + " <= " + attemptPrint(rhs)};
+        return ComparsionResult{ref_ <= rhs,
+                                attemptPrint(ref_) +
+                                    " <= " + attemptPrint(rhs)};
     }
 
     template <typename RhsType>
     ComparsionResult operator>=(const RhsType& rhs)
     {
-        return ComparsionResult{ref_ >= rhs, attemptPrint(ref_) + " >= " + attemptPrint(rhs)};
+        return ComparsionResult{ref_ >= rhs,
+                                attemptPrint(ref_) +
+                                    " >= " + attemptPrint(rhs)};
     }
 
     template <typename RhsType>
     ComparsionResult operator==(const RhsType& rhs)
     {
-        return ComparsionResult{ref_ == rhs, attemptPrint(ref_) + " == " + attemptPrint(rhs)};
+        return ComparsionResult{ref_ == rhs,
+                                attemptPrint(ref_) +
+                                    " == " + attemptPrint(rhs)};
     }
 
     template <typename RhsType>
     ComparsionResult operator!=(const RhsType& rhs)
     {
-        return ComparsionResult{ref_ != rhs, attemptPrint(ref_) + " != " + attemptPrint(rhs)};
+        return ComparsionResult{ref_ != rhs,
+                                attemptPrint(ref_) +
+                                    " != " + attemptPrint(rhs)};
     }
 
     template <typename RhsType>
     ComparsionResult operator&&(const RhsType& rhs)
     {
-        static_assert(!std::is_same<RhsType, void>::value, " && is not supported in expression decomposition");
+        static_assert(!std::is_same<RhsType, void>::value,
+                      " && is not supported in expression decomposition");
         return {};
     }
 
     template <typename RhsType>
     ComparsionResult operator||(const RhsType& rhs)
     {
-        static_assert(!std::is_same<RhsType, void>::value, " || is not supported in expression decomposition");
+        static_assert(!std::is_same<RhsType, void>::value,
+                      " || is not supported in expression decomposition");
         return {};
     }
 
     template <typename RhsType>
     ComparsionResult operator|(const RhsType& rhs)
     {
-        static_assert(!std::is_same<RhsType, void>::value, " | is not supported in expression decomposition");
+        static_assert(!std::is_same<RhsType, void>::value,
+                      " | is not supported in expression decomposition");
         return {};
     }
 
     template <typename RhsType>
     ComparsionResult operator&(const RhsType& rhs)
     {
-        static_assert(!std::is_same<RhsType, void>::value, " & is not supported in expression decomposition");
+        static_assert(!std::is_same<RhsType, void>::value,
+                      " & is not supported in expression decomposition");
         return {};
     }
 };
@@ -299,14 +318,15 @@ inline ThreadSafeStream printErr()
 
 class CaseBase : public trantor::NonCopyable
 {
-public:
+  public:
     CaseBase() = default;
-    CaseBase(const std::string& name)
-        : name_(name)
-    {}
+    CaseBase(const std::string& name) : name_(name)
+    {
+    }
     CaseBase(std::shared_ptr<CaseBase> parent, const std::string& name)
         : parent_(parent), name_(name)
-    {}
+    {
+    }
     virtual ~CaseBase() = default;
 
     std::string fullname() const
@@ -351,8 +371,7 @@ public:
 class Case : public CaseBase
 {
   public:
-    Case(const std::string& name)
-        : CaseBase(name)
+    Case(const std::string& name) : CaseBase(name)
     {
         internal::registerCase(this);
     }
@@ -371,9 +390,9 @@ class Case : public CaseBase
 
 struct TestCase : public CaseBase
 {
-    TestCase(const std::string& name)
-        : CaseBase(name)
-    {}
+    TestCase(const std::string& name) : CaseBase(name)
+    {
+    }
     virtual ~TestCase() = default;
     virtual void doTest_(std::shared_ptr<Case>) = 0;
 };
@@ -395,21 +414,22 @@ static std::string leftpad(const std::string& str, size_t len)
 static void printHelp(string_view argv0)
 {
     print() << "A Drogon Test application:\n\n"
-        << "Usage: " << argv0 << " [options]\n"
-        << "options:\n"
-        << "    -r        Run a specific test\n"
-        << "    -s        Print successful tests\n"
-        << "    -h        Print this help message\n";
+            << "Usage: " << argv0 << " [options]\n"
+            << "options:\n"
+            << "    -r        Run a specific test\n"
+            << "    -s        Print successful tests\n"
+            << "    -h        Print this help message\n";
 }
 
 void printTestStats()
 {
     std::unique_lock<std::mutex> lk(internal::mtxTestStats);
-    if(internal::testHasPrinted)
+    if (internal::testHasPrinted)
         return;
     const size_t successAssertions = internal::numCorrectAssertions;
     const size_t totalAssertions = internal::numAssertions;
-    const size_t successTests = internal::numTestCases - internal::numFailedTestCases;
+    const size_t successTests =
+        internal::numTestCases - internal::numFailedTestCases;
     const size_t totalTests = internal::numTestCases;
 
     float ratio;
@@ -434,30 +454,37 @@ void printTestStats()
         greenBar--;
     }
 
-    print() << "\n\x1B[0;31m" << std::string(redBar, '=') << "\x1B[0;32m" << std::string(greenBar, '=') << "\x1B[0m\n";
+    print() << "\n\x1B[0;31m" << std::string(redBar, '=') << "\x1B[0;32m"
+            << std::string(greenBar, '=') << "\x1B[0m\n";
 
     if (successAssertions == totalAssertions)
     {
-        print() << "\x1B[1;32m  All tests passed\x1B[0m (" << totalAssertions << " assertions in " << totalTests
-                << " tests cases).\n";
+        print() << "\x1B[1;32m  All tests passed\x1B[0m (" << totalAssertions
+                << " assertions in " << totalTests << " tests cases).\n";
     }
     else
     {
         std::string totalAssertsionStr = std::to_string(totalAssertions);
         std::string successAssertionsStr = std::to_string(successAssertions);
-        std::string failedAssertsionStr = std::to_string(totalAssertions - successAssertions);
+        std::string failedAssertsionStr =
+            std::to_string(totalAssertions - successAssertions);
         std::string totalTestsStr = std::to_string(totalTests);
         std::string successTestsStr = std::to_string(successTests);
         std::string failedTestsStr = std::to_string(totalTests - successTests);
-        const size_t totalLen = std::max(totalAssertsionStr.size(), totalTestsStr.size());
-        const size_t successLen = std::max(successAssertionsStr.size(), successTestsStr.size());
-        const size_t failedLen = std::max(failedAssertsionStr.size(), failedTestsStr.size());
+        const size_t totalLen =
+            std::max(totalAssertsionStr.size(), totalTestsStr.size());
+        const size_t successLen =
+            std::max(successAssertionsStr.size(), successTestsStr.size());
+        const size_t failedLen =
+            std::max(failedAssertsionStr.size(), failedTestsStr.size());
         using internal::leftpad;
-        print() << "assertions: " << leftpad(totalAssertsionStr, totalLen) << " | \x1B[0;32m"
-                << leftpad(successAssertionsStr, successLen) << " passed\x1B[0m | \x1B[0;31m"
+        print() << "assertions: " << leftpad(totalAssertsionStr, totalLen)
+                << " | \x1B[0;32m" << leftpad(successAssertionsStr, successLen)
+                << " passed\x1B[0m | \x1B[0;31m"
                 << leftpad(failedAssertsionStr, failedLen) << " failed\x1B[0m\n"
-                << "test cases: " << leftpad(totalTestsStr, totalLen) << " | \x1B[0;32m"
-                << leftpad(successTestsStr, successLen) << " passed\x1B[0m | \x1B[0;31m"
+                << "test cases: " << leftpad(totalTestsStr, totalLen)
+                << " | \x1B[0;32m" << leftpad(successTestsStr, successLen)
+                << " passed\x1B[0m | \x1B[0;31m"
                 << leftpad(failedTestsStr, failedLen) << " failed\x1B[0m\n";
     }
     internal::testHasPrinted = true;
@@ -472,11 +499,23 @@ static int run(int argc, char** argv)
     internal::printSuccessfulTests = false;
 
     std::string targetTest;
-    for(int i=1;i<argc;i++) {
+    for (int i = 1; i < argc; i++)
+    {
         std::string param = argv[i];
-        if(param == "-r" && i+1 < argc) { targetTest = argv[i+1]; i++; }
-        if(param == "-h") { printHelp(argv[0]); exit(0); }
-        if(param == "-s") { internal::printSuccessfulTests = true; }
+        if (param == "-r" && i + 1 < argc)
+        {
+            targetTest = argv[i + 1];
+            i++;
+        }
+        if (param == "-h")
+        {
+            printHelp(argv[0]);
+            exit(0);
+        }
+        if (param == "-s")
+        {
+            internal::printSuccessfulTests = true;
+        }
     }
     auto classNames = DrClassMap::getAllClassName();
     std::vector<std::unique_ptr<DrObjectBase>> testCases;
@@ -484,14 +523,18 @@ static int run(int argc, char** argv)
     {
         if (name.find(DROGON_TESTCASE_PREIX_STR_) == 0)
         {
-            auto test = std::unique_ptr<DrObjectBase>(DrClassMap::newObject(name));
+            auto test =
+                std::unique_ptr<DrObjectBase>(DrClassMap::newObject(name));
             auto ptr = dynamic_cast<TestCase*>(test.get());
             if (ptr == nullptr)
             {
-                LOG_WARN << "Class " << name << " seems to be a test case. But type information disagrees.";
+                LOG_WARN << "Class " << name
+                         << " seems to be a test case. But type information "
+                            "disagrees.";
                 continue;
             }
-            if(targetTest.empty() || ptr->name() == targetTest) {
+            if (targetTest.empty() || ptr->name() == targetTest)
+            {
                 internal::numTestCases++;
                 ptr->doTest_(std::move(std::make_shared<Case>(ptr->name())));
                 testCases.emplace_back(std::move(test));
@@ -510,7 +553,8 @@ static int run(int argc, char** argv)
     return internal::numCorrectAssertions != internal::numAssertions;
 }
 #endif
-inline std::shared_ptr<Case> newTest(std::shared_ptr<Case> parent, const std::string& name)
+inline std::shared_ptr<Case> newTest(std::shared_ptr<Case> parent,
+                                     const std::string& name)
 {
     return std::make_shared<Case>(parent, name);
 }
@@ -522,17 +566,23 @@ inline std::shared_ptr<Case> newTest(const std::string& name)
 
 }  // namespace drogon::test
 
-#define ERROR_MSG(func_name, expr)                                                                 \
-        drogon::test::printErr() \
-            << "\x1B[1;37mIn test case " << TEST_CTX->fullname() << "\n"                    \
-               << "\x1B[0;37m↳ " <<  __FILE__ << ":" << __LINE__ << " \x1B[0;31m FAILED:\x1B[0m\n" \
-               << "  \033[0;34m" << drogon::test::internal::stringifyFuncCall(func_name, expr) << "\x1B[0m\n"
+#define ERROR_MSG(func_name, expr)                                    \
+    drogon::test::printErr()                                          \
+        << "\x1B[1;37mIn test case " << TEST_CTX->fullname() << "\n"  \
+        << "\x1B[0;37m↳ " << __FILE__ << ":" << __LINE__              \
+        << " \x1B[0;31m FAILED:\x1B[0m\n"                             \
+        << "  \033[0;34m"                                             \
+        << drogon::test::internal::stringifyFuncCall(func_name, expr) \
+        << "\x1B[0m\n"
 
-#define PASSED_MSG(func_name, expr)                                                                 \
-        drogon::test::print()\
-             << "\x1B[1;37mIn test case " << TEST_CTX->fullname() << "\n"                    \
-               << "\x1B[0;37m↳ " <<  __FILE__ << ":" << __LINE__ << " \x1B[0;32m PASSED:\x1B[0m\n" \
-               << "  \033[0;34m" << drogon::test::internal::stringifyFuncCall(func_name, expr) << "\x1B[0m\n"
+#define PASSED_MSG(func_name, expr)                                   \
+    drogon::test::print()                                             \
+        << "\x1B[1;37mIn test case " << TEST_CTX->fullname() << "\n"  \
+        << "\x1B[0;37m↳ " << __FILE__ << ":" << __LINE__              \
+        << " \x1B[0;32m PASSED:\x1B[0m\n"                             \
+        << "  \033[0;34m"                                             \
+        << drogon::test::internal::stringifyFuncCall(func_name, expr) \
+        << "\x1B[0m\n"
 
 #define SET_TEST_SUCCESS__ \
     do                     \
@@ -540,60 +590,69 @@ inline std::shared_ptr<Case> newTest(const std::string& name)
         TEST_FLAG_ = true; \
     } while (0);
 
-#define TEST_INTERNAL__(func_name, expr, eval, on_exception, on_non_standard_exception, on_leaving) \
-    do                                                                                              \
-    {                                                                                               \
-        bool TEST_FLAG_ = false;                                                                    \
-        using drogon::test::internal::stringifyFuncCall;                                            \
-        using drogon::test::printErr;                                                               \
-        drogon::test::internal::numAssertions++;                                                    \
-        try                                                                                         \
-        {                                                                                           \
-            eval;                                                                                   \
-        }                                                                                           \
-        catch (const std::exception& e)                                                             \
-        {                                                                                           \
-            on_exception;                                                                           \
-        }                                                                                           \
-        catch (...)                                                                                 \
-        {                                                                                           \
-            on_non_standard_exception;                                                              \
-        }                                                                                           \
-        if (TEST_FLAG_)                                                                             \
-            drogon::test::internal::numCorrectAssertions++;                                         \
-        else                                                                                        \
-            TEST_CTX->setFailed();                                                                  \
-        on_leaving;                                                                                 \
+#define TEST_INTERNAL__(func_name,                          \
+                        expr,                               \
+                        eval,                               \
+                        on_exception,                       \
+                        on_non_standard_exception,          \
+                        on_leaving)                         \
+    do                                                      \
+    {                                                       \
+        bool TEST_FLAG_ = false;                            \
+        using drogon::test::internal::stringifyFuncCall;    \
+        using drogon::test::printErr;                       \
+        drogon::test::internal::numAssertions++;            \
+        try                                                 \
+        {                                                   \
+            eval;                                           \
+        }                                                   \
+        catch (const std::exception& e)                     \
+        {                                                   \
+            on_exception;                                   \
+        }                                                   \
+        catch (...)                                         \
+        {                                                   \
+            on_non_standard_exception;                      \
+        }                                                   \
+        if (TEST_FLAG_)                                     \
+            drogon::test::internal::numCorrectAssertions++; \
+        else                                                \
+            TEST_CTX->setFailed();                          \
+        on_leaving;                                         \
     } while (0);
 
-#define EVAL_AND_CHECK_TRUE__(func_name, expr)                                              \
-    do                                                                                      \
-    {                                                                                       \
-        bool drresult__;\
-        std::string drexpansion__;\
-        std::tie(drresult__, drexpansion__) = (drogon::test::internal::Decomposer() <= expr).result(); \
-        if (!drresult__)                                                                        \
-        {                                                                                   \
-            ERROR_MSG(func_name, #expr) << "With expansion\n"                               \
-                                        << "  \033[0;33m" << drexpansion__ << "\x1B[0m\n\n";    \
-        }                                                                                   \
-        else                                                                                \
-            SET_TEST_SUCCESS__;                                                             \
+#define EVAL_AND_CHECK_TRUE__(func_name, expr)                       \
+    do                                                               \
+    {                                                                \
+        bool drresult__;                                             \
+        std::string drexpansion__;                                   \
+        std::tie(drresult__, drexpansion__) =                        \
+            (drogon::test::internal::Decomposer() <= expr).result(); \
+        if (!drresult__)                                             \
+        {                                                            \
+            ERROR_MSG(func_name, #expr)                              \
+                << "With expansion\n"                                \
+                << "  \033[0;33m" << drexpansion__ << "\x1B[0m\n\n"; \
+        }                                                            \
+        else                                                         \
+            SET_TEST_SUCCESS__;                                      \
     } while (0);
 
-#define PRINT_UNEXPECTED_EXCEPTION__(func_name, expr)                                 \
-    do                                                                                \
-    {                                                                                 \
-        ERROR_MSG(func_name, #expr) << "An unexpected exception is thrown. what():\n" \
-                                    << "  \033[0;33m" << e.what() << "\x1B[0m\n\n";   \
+#define PRINT_UNEXPECTED_EXCEPTION__(func_name, expr)         \
+    do                                                        \
+    {                                                         \
+        ERROR_MSG(func_name, #expr)                           \
+            << "An unexpected exception is thrown. what():\n" \
+            << "  \033[0;33m" << e.what() << "\x1B[0m\n\n";   \
     } while (0);
 
-#define PRINT_PASSED__(func_name, expr)\
-    do                                                                                \
-    {                                                                                 \
-        if(drogon::test::internal::printSuccessfulTests == true) {                    \
-            PASSED_MSG(func_name, #expr) << "\n";                                     \
-        }\
+#define PRINT_PASSED__(func_name, expr)                           \
+    do                                                            \
+    {                                                             \
+        if (drogon::test::internal::printSuccessfulTests == true) \
+        {                                                         \
+            PASSED_MSG(func_name, #expr) << "\n";                 \
+        }                                                         \
     } while (0);
 
 #define RETURN_ON_FAILURE__ \
@@ -610,21 +669,23 @@ inline std::shared_ptr<Case> newTest(const std::string& name)
             co_return;         \
     } while (0);
 
-#define DIE_ON_FAILURE__ \
-    do                         \
-    {                          \
-        using namespace drogon::test;\
-        if (!TEST_FLAG_) {     \
-            printTestStats();  \
-            printErr() << "Force exiting due to a mandation failed.\n";\
-            exit(1);\
-        }\
+#define DIE_ON_FAILURE__                                                \
+    do                                                                  \
+    {                                                                   \
+        using namespace drogon::test;                                   \
+        if (!TEST_FLAG_)                                                \
+        {                                                               \
+            printTestStats();                                           \
+            printErr() << "Force exiting due to a mandation failed.\n"; \
+            exit(1);                                                    \
+        }                                                               \
     } while (0);
 
-#define PRINT_NONSTANDARD_EXCEPTION__(func_name, expr)                                \
-    do                                                                                \
-    {                                                                                 \
-        ERROR_MSG(func_name, #expr) << "Unexpected unknown exception is thrown.\n\n"; \
+#define PRINT_NONSTANDARD_EXCEPTION__(func_name, expr)        \
+    do                                                        \
+    {                                                         \
+        ERROR_MSG(func_name, #expr)                           \
+            << "Unexpected unknown exception is thrown.\n\n"; \
     } while (0);
 
 #define EVAL__(expr) \
@@ -637,39 +698,46 @@ inline std::shared_ptr<Case> newTest(const std::string& name)
     {             \
     }
 
-#define PRINT_ERR_NOEXCEPTION__(expr, func_name)                                                        \
-    do                                                                                                  \
-    {                                                                                                   \
-        if (!TEST_FLAG_)                                                                                \
-            ERROR_MSG(func_name, #expr) << "With expecitation\n"                                        \
-                                        << "  Expected to throw an exception. But non are thrown.\n\n"; \
+#define PRINT_ERR_NOEXCEPTION__(expr, func_name)                    \
+    do                                                              \
+    {                                                               \
+        if (!TEST_FLAG_)                                            \
+            ERROR_MSG(func_name, #expr)                             \
+                << "With expecitation\n"                            \
+                << "  Expected to throw an exception. But non are " \
+                   "thrown.\n\n";                                   \
     } while (0);
 
-#define PRINT_ERR_WITHEXCEPTION__(expr, func_name)                                                       \
-    do                                                                                                   \
-    {                                                                                                    \
-        if (!TEST_FLAG_)                                                                                 \
-            ERROR_MSG(func_name, #expr) << "With expecitation\n"                                         \
-                                        << "  Should to not throw an exception. But one is thrown.\n\n"; \
+#define PRINT_ERR_WITHEXCEPTION__(expr, func_name)                   \
+    do                                                               \
+    {                                                                \
+        if (!TEST_FLAG_)                                             \
+            ERROR_MSG(func_name, #expr)                              \
+                << "With expecitation\n"                             \
+                << "  Should to not throw an exception. But one is " \
+                   "thrown.\n\n";                                    \
     } while (0);
 
-#define PRINT_ERR_BAD_EXCEPTION__(expr, func_name, excep_type, exceptionThrown, correctExceptionType)           \
-    do                                                                                                          \
-    {                                                                                                           \
-        assert((exceptionThrown && correctExceptionType) || !exceptionThrown);                                  \
-        if (exceptionThrown == true && correctExceptionType == false)                                           \
-        {                                                                                                       \
-            ERROR_MSG(func_name, #expr) << "With expecitation\n"                                                \
-                                        << "  Exception have been throw but not of type \033[1m" << #excep_type \
-                                        << "\033[0m.\n\n";                                                      \
-        }                                                                                                       \
-        else if (exceptionThrown == false)                                                                      \
-        {                                                                                                       \
-            ERROR_MSG(func_name, #expr) << "With expecitation\n"                                                \
-                                        << "  A \033[1m " << #excep_type                                        \
-                                        << " \033[0m exception is expected. But nothing was thrown"             \
-                                        << "\033[0m.\n\n";                                                      \
-        }                                                                                                       \
+#define PRINT_ERR_BAD_EXCEPTION__(                                             \
+    expr, func_name, excep_type, exceptionThrown, correctExceptionType)        \
+    do                                                                         \
+    {                                                                          \
+        assert((exceptionThrown && correctExceptionType) || !exceptionThrown); \
+        if (exceptionThrown == true && correctExceptionType == false)          \
+        {                                                                      \
+            ERROR_MSG(func_name, #expr)                                        \
+                << "With expecitation\n"                                       \
+                << "  Exception have been throw but not of type \033[1m"       \
+                << #excep_type << "\033[0m.\n\n";                              \
+        }                                                                      \
+        else if (exceptionThrown == false)                                     \
+        {                                                                      \
+            ERROR_MSG(func_name, #expr)                                        \
+                << "With expecitation\n"                                       \
+                << "  A \033[1m " << #excep_type                               \
+                << " \033[0m exception is expected. But nothing was thrown"    \
+                << "\033[0m.\n\n";                                             \
+        }                                                                      \
     } while (0);
 
 #define CHECK_INTERNAL__(expr, func_name, on_leave)                     \
@@ -680,71 +748,93 @@ inline std::shared_ptr<Case> newTest(const std::string& name)
                         EVAL_AND_CHECK_TRUE__(func_name, expr),         \
                         PRINT_UNEXPECTED_EXCEPTION__(func_name, expr),  \
                         PRINT_NONSTANDARD_EXCEPTION__(func_name, expr), \
-                        on_leave PRINT_PASSED__(func_name, expr));                                      \
+                        on_leave PRINT_PASSED__(func_name, expr));      \
     } while (0);
 
-#define CHECK_THROWS_INTERNAL__(expr, func_name, on_leave)                  \
-    do                                                                      \
-    {                                                                       \
-        TEST_INTERNAL__(func_name,                                          \
-                        expr,                                               \
-                        EVAL__(expr),                                       \
-                        SET_TEST_SUCCESS__,                                 \
-                        SET_TEST_SUCCESS__,                                 \
-                        PRINT_ERR_NOEXCEPTION__(expr, func_name)            \
-                        on_leave PRINT_PASSED__(func_name, expr)); \
+#define CHECK_THROWS_INTERNAL__(expr, func_name, on_leave)             \
+    do                                                                 \
+    {                                                                  \
+        TEST_INTERNAL__(func_name,                                     \
+                        expr,                                          \
+                        EVAL__(expr),                                  \
+                        SET_TEST_SUCCESS__,                            \
+                        SET_TEST_SUCCESS__,                            \
+                        PRINT_ERR_NOEXCEPTION__(expr, func_name)       \
+                            on_leave PRINT_PASSED__(func_name, expr)); \
     } while (0);
 
-#define CHECK_THROWS_AS_INTERNAL__(expr, func_name, except_type, on_leave)                                  \
-    do                                                                                                      \
-    {                                                                                                       \
-        bool exceptionThrown = false;                                                                       \
-        TEST_INTERNAL__(                                                                                    \
-            func_name,                                                                                      \
-            expr,                                                                                           \
-            EVAL__(expr),                                                                                   \
-            {                                                                                               \
-                exceptionThrown = true;                                                                     \
-                if (dynamic_cast<const except_type*>(&e) != nullptr)                                        \
-                    SET_TEST_SUCCESS__;                                                                     \
-            },                                                                                              \
-            { exceptionThrown = true; },                                                                    \
-            PRINT_ERR_BAD_EXCEPTION__(expr, func_name, except_type, exceptionThrown, TEST_FLAG_) on_leave PRINT_PASSED__(func_name, expr)); \
+#define CHECK_THROWS_AS_INTERNAL__(expr, func_name, except_type, on_leave) \
+    do                                                                     \
+    {                                                                      \
+        bool exceptionThrown = false;                                      \
+        TEST_INTERNAL__(                                                   \
+            func_name,                                                     \
+            expr,                                                          \
+            EVAL__(expr),                                                  \
+            {                                                              \
+                exceptionThrown = true;                                    \
+                if (dynamic_cast<const except_type*>(&e) != nullptr)       \
+                    SET_TEST_SUCCESS__;                                    \
+            },                                                             \
+            { exceptionThrown = true; },                                   \
+            PRINT_ERR_BAD_EXCEPTION__(                                     \
+                expr, func_name, except_type, exceptionThrown, TEST_FLAG_) \
+                on_leave PRINT_PASSED__(func_name, expr));                 \
     } while (0);
 
-#define CHECK_NOTHROW_INTERNAL__(expr, func_name, on_leave)                   \
-    do                                                                        \
-    {                                                                         \
-        TEST_INTERNAL__(func_name,                                            \
-                        expr,                                                 \
-                        EVAL__(expr) SET_TEST_SUCCESS__,                      \
-                        NOTHING__,                                            \
-                        NOTHING__,                                            \
-                        PRINT_ERR_WITHEXCEPTION__(expr, func_name) on_leave PRINT_PASSED__(func_name, expr)); \
+#define CHECK_NOTHROW_INTERNAL__(expr, func_name, on_leave)            \
+    do                                                                 \
+    {                                                                  \
+        TEST_INTERNAL__(func_name,                                     \
+                        expr,                                          \
+                        EVAL__(expr) SET_TEST_SUCCESS__,               \
+                        NOTHING__,                                     \
+                        NOTHING__,                                     \
+                        PRINT_ERR_WITHEXCEPTION__(expr, func_name)     \
+                            on_leave PRINT_PASSED__(func_name, expr)); \
     } while (0);
 
 #define CHECK(expr) CHECK_INTERNAL__(expr, "CHECK", NOTHING__)
-#define CHECK_THROWS(expr) CHECK_THROWS_INTERNAL__(expr, "CHECK_THROWS", NOTHING__)
-#define CHECK_NOTHROW(expr) CHECK_NOTHROW_INTERNAL__(expr, "CHECK_NOTHROW", NOTHING__)
-#define CHECK_THROWS_AS(expr, except_type) CHECK_THROWS_AS_INTERNAL__(expr, "CHECK_THROWS_AS", except_type, NOTHING__)
+#define CHECK_THROWS(expr) \
+    CHECK_THROWS_INTERNAL__(expr, "CHECK_THROWS", NOTHING__)
+#define CHECK_NOTHROW(expr) \
+    CHECK_NOTHROW_INTERNAL__(expr, "CHECK_NOTHROW", NOTHING__)
+#define CHECK_THROWS_AS(expr, except_type) \
+    CHECK_THROWS_AS_INTERNAL__(expr, "CHECK_THROWS_AS", except_type, NOTHING__)
 
 #define REQUIRE(expr) CHECK_INTERNAL__(expr, "REQUIRE", RETURN_ON_FAILURE__)
-#define REQUIRE_THROWS(expr) CHECK_THROWS_INTERNAL__(expr, "REQUIRE_THROWS", RETURN_ON_FAILURE__)
-#define REQUIRE_NOTHROW(expr) CHECK_NOTHROW_INTERNAL__(expr, "REQUIRE_NOTHROW", RETURN_ON_FAILURE__)
-#define REQUIRE_THROWS_AS(expr, except_type) \
-    CHECK_THROWS_AS_INTERNAL__(expr, "REQUIRE_THROWS_AS", except_type, RETURN_ON_FAILURE__)
+#define REQUIRE_THROWS(expr) \
+    CHECK_THROWS_INTERNAL__(expr, "REQUIRE_THROWS", RETURN_ON_FAILURE__)
+#define REQUIRE_NOTHROW(expr) \
+    CHECK_NOTHROW_INTERNAL__(expr, "REQUIRE_NOTHROW", RETURN_ON_FAILURE__)
+#define REQUIRE_THROWS_AS(expr, except_type)        \
+    CHECK_THROWS_AS_INTERNAL__(expr,                \
+                               "REQUIRE_THROWS_AS", \
+                               except_type,         \
+                               RETURN_ON_FAILURE__)
 
-#define CO_REQUIRE(expr) CHECK_INTERNAL__(expr, "CO_REQUIRE", CO_RETURN_ON_FAILURE__)
-#define CO_REQUIRE_THROWS(expr) CHECK_THROWS_INTERNAL__(expr, "CO_REQUIRE_THROWS", CO_RETURN_ON_FAILURE__)
-#define CO_REQUIRE_NOTHROW(expr) CHECK_NOTHROW_INTERNAL__(expr, "CO_REQUIRE_NOTHROW", CO_RETURN_ON_FAILURE__)
-#define CO_REQUIRE_THROWS_AS(expr, except_type) \
-    CHECK_THROWS_AS_INTERNAL__(expr, "CO_REQUIRE_THROWS_AS", except_type, CO_RETURN_ON_FAILURE__)
+#define CO_REQUIRE(expr) \
+    CHECK_INTERNAL__(expr, "CO_REQUIRE", CO_RETURN_ON_FAILURE__)
+#define CO_REQUIRE_THROWS(expr) \
+    CHECK_THROWS_INTERNAL__(expr, "CO_REQUIRE_THROWS", CO_RETURN_ON_FAILURE__)
+#define CO_REQUIRE_NOTHROW(expr) \
+    CHECK_NOTHROW_INTERNAL__(expr, "CO_REQUIRE_NOTHROW", CO_RETURN_ON_FAILURE__)
+#define CO_REQUIRE_THROWS_AS(expr, except_type)        \
+    CHECK_THROWS_AS_INTERNAL__(expr,                   \
+                               "CO_REQUIRE_THROWS_AS", \
+                               except_type,            \
+                               CO_RETURN_ON_FAILURE__)
 
 #define MANDATE(expr) CHECK_INTERNAL__(expr, "MANDATE", DIE_ON_FAILURE__)
-#define MANDATE_THROWS(expr) CHECK_THROWS_INTERNAL__(expr, "MANDATE_THROWS", DIE_ON_FAILURE__)
-#define MANDATE_NOTHROW(expr) CHECK_NOTHROW_INTERNAL__(expr, "MANDATE_NOTHROW", DIE_ON_FAILURE__)
-#define MANDATE_THROWS_AS(expr, except_type) \
-    CHECK_THROWS_AS_INTERNAL__(expr, "MANDATE_THROWS_AS", except_type, DIE_ON_FAILURE__)
+#define MANDATE_THROWS(expr) \
+    CHECK_THROWS_INTERNAL__(expr, "MANDATE_THROWS", DIE_ON_FAILURE__)
+#define MANDATE_NOTHROW(expr) \
+    CHECK_NOTHROW_INTERNAL__(expr, "MANDATE_NOTHROW", DIE_ON_FAILURE__)
+#define MANDATE_THROWS_AS(expr, except_type)        \
+    CHECK_THROWS_AS_INTERNAL__(expr,                \
+                               "MANDATE_THROWS_AS", \
+                               except_type,         \
+                               DIE_ON_FAILURE__)
 
 #define STATIC_REQUIRE(expr)                            \
     do                                                  \
@@ -755,54 +845,65 @@ inline std::shared_ptr<Case> newTest(const std::string& name)
         drogon::test::internal::numCorrectAssertions++; \
     } while (0);
 
-#define FAIL(message)                                                                                             \
-    do                                                                                                            \
-    {                                                                                                             \
-        using namespace drogon::test;\
-        TEST_CTX->setFailed();                                                                                    \
-        printErr() << "\x1B[1;37mIn test case " << TEST_CTX->fullname() << "\n"                    \
-                    << "\x1B[0;37m" << __FILE__ << ":" << __LINE__ << " \x1B[0;31m FAILED:\x1B[0m\n" \
-                    << "  Reason: " << message << "\n\n";                                            \
-        drogon::test::internal::numAssertions++;                                                                  \
+#define FAIL(message)                                                   \
+    do                                                                  \
+    {                                                                   \
+        using namespace drogon::test;                                   \
+        TEST_CTX->setFailed();                                          \
+        printErr() << "\x1B[1;37mIn test case " << TEST_CTX->fullname() \
+                   << "\n"                                              \
+                   << "\x1B[0;37m" << __FILE__ << ":" << __LINE__       \
+                   << " \x1B[0;31m FAILED:\x1B[0m\n"                    \
+                   << "  Reason: " << message << "\n\n";                \
+        drogon::test::internal::numAssertions++;                        \
     } while (0)
-#define FAULT(message) \
-    do {\
-        using namespace drogon::test;\
-        FAIL(message);\
-        printTestStats();  \
-        printErr() << "Force exiting due to a FAULT statement.\n";\
-        exit(1);\
-    } while(0)
-
-#define SUCCESS()                                       \
-    do                                                  \
-    {                                                   \
-        if(drogon::test::internal::printSuccessfulTests)\
-            drogon::test::print()\
-             << "\x1B[1;37mIn test case " << TEST_CTX->fullname() << "\n"                    \
-               << "\x1B[0;37m↳ " <<  __FILE__ << ":" << __LINE__ << " \x1B[0;32m PASSED:\x1B[0m\n" \
-               << "  \033[0;34mSUCCESS()\x1B[0m\n\n";\
-        TEST_CTX;                                       \
-        drogon::test::internal::numAssertions++;        \
-        drogon::test::internal::numCorrectAssertions++; \
+#define FAULT(message)                                             \
+    do                                                             \
+    {                                                              \
+        using namespace drogon::test;                              \
+        FAIL(message);                                             \
+        printTestStats();                                          \
+        printErr() << "Force exiting due to a FAULT statement.\n"; \
+        exit(1);                                                   \
     } while (0)
 
-#define DROGON_TEST_CLASS_NAME_(test_name) DROGON_TEST_CONCAT(DROGON_TESTCASE_PREIX_, test_name)
+#define SUCCESS()                                                            \
+    do                                                                       \
+    {                                                                        \
+        if (drogon::test::internal::printSuccessfulTests)                    \
+            drogon::test::print()                                            \
+                << "\x1B[1;37mIn test case " << TEST_CTX->fullname() << "\n" \
+                << "\x1B[0;37m↳ " << __FILE__ << ":" << __LINE__             \
+                << " \x1B[0;32m PASSED:\x1B[0m\n"                            \
+                << "  \033[0;34mSUCCESS()\x1B[0m\n\n";                       \
+        TEST_CTX;                                                            \
+        drogon::test::internal::numAssertions++;                             \
+        drogon::test::internal::numCorrectAssertions++;                      \
+    } while (0)
 
-#define DROGON_TEST(test_name)                                                                       \
-    struct DROGON_TEST_CLASS_NAME_(test_name)                                                        \
-        : public drogon::DrObject<DROGON_TEST_CLASS_NAME_(test_name)>, public drogon::test::TestCase \
-    {                                                                                                \
-        DROGON_TEST_CLASS_NAME_(test_name)() :                                                       \
-            drogon::test::TestCase(#test_name)                                                       \
-        {                                                                                            \
-        }                                                                                            \
-        inline void doTest_(std::shared_ptr<drogon::test::Case>) override;                           \
-    };                                                                                               \
-    void DROGON_TEST_CLASS_NAME_(test_name)::doTest_(std::shared_ptr<drogon::test::Case> TEST_CTX)
+#define DROGON_TEST_CLASS_NAME_(test_name) \
+    DROGON_TEST_CONCAT(DROGON_TESTCASE_PREIX_, test_name)
+
+#define DROGON_TEST(test_name)                                             \
+    struct DROGON_TEST_CLASS_NAME_(test_name)                              \
+        : public drogon::DrObject<DROGON_TEST_CLASS_NAME_(test_name)>,     \
+          public drogon::test::TestCase                                    \
+    {                                                                      \
+        DROGON_TEST_CLASS_NAME_(test_name)                                 \
+        () : drogon::test::TestCase(#test_name)                            \
+        {                                                                  \
+        }                                                                  \
+        inline void doTest_(std::shared_ptr<drogon::test::Case>) override; \
+    };                                                                     \
+    void DROGON_TEST_CLASS_NAME_(test_name)::doTest_(                      \
+        std::shared_ptr<drogon::test::Case> TEST_CTX)
 #define SUBTEST(name) (std::make_shared<drogon::test::Case>(TEST_CTX, name))
-#define SUBSECTION(name) for(std::shared_ptr<drogon::test::Case> ctx_hold__ = TEST_CTX, ctx_tmp__ = SUBTEST(#name); ctx_tmp__ != nullptr; TEST_CTX = ctx_hold__, ctx_tmp__ = nullptr)\
-                        if(TEST_CTX = ctx_tmp__, TEST_CTX != nullptr)
+#define SUBSECTION(name)                                                 \
+    for (std::shared_ptr<drogon::test::Case> ctx_hold__ = TEST_CTX,      \
+                                             ctx_tmp__ = SUBTEST(#name); \
+         ctx_tmp__ != nullptr;                                           \
+         TEST_CTX = ctx_hold__, ctx_tmp__ = nullptr)                     \
+        if (TEST_CTX = ctx_tmp__, TEST_CTX != nullptr)
 
 #ifdef DROGON_TEST_MAIN
 namespace drogon::test

@@ -19,7 +19,7 @@ std::string Cookie::cookieString() const
 {
     std::string ret = "Set-Cookie: ";
     // reserve space to reduce frequency allocation
-    ret.reserve(ret.size() + key_.size()+value_.size()+30); 
+    ret.reserve(ret.size() + key_.size() + value_.size() + 30);
     ret.append(key_).append("=").append(value_).append("; ");
     if (expiresDate_.microSecondsSinceEpoch() !=
             (std::numeric_limits<int64_t>::max)() &&
