@@ -20,8 +20,13 @@ namespace drogon::test
 {
 #define TEST_CTX drogon_test_ctx_
 #define DROGON_TESTCASE_PREIX_ drtest__
+#define DROGON_TESTCASE_PREIX_STR_ "drtest__"
 #define TEST_FLAG_ drgood__
 
+#define DROGON_TEST_STRINGIFY__(x) #x
+#define DROGON_TEST_STRINGIFY(x) DROGON_TEST_STRINGIFY__(x)
+#define DROGON_TEST_CONCAT__(a, b) a##b
+#define DROGON_TEST_CONCAT(a, b) DROGON_TEST_CONCAT__(a, b)
 class Case;
 
 namespace internal
@@ -448,7 +453,7 @@ static int run(int argc, char** argv)
     std::vector<std::unique_ptr<DrObjectBase>> testCases;
     for (const auto& name : classNames)
     {
-        if (name.find("drtest__") == 0)
+        if (name.find(DROGON_TESTCASE_PREIX_STR_) == 0)
         {
             auto test = std::unique_ptr<DrObjectBase>(DrClassMap::newObject(name));
             auto ptr = dynamic_cast<TestCase*>(test.get());
@@ -729,11 +734,6 @@ inline std::shared_ptr<Case> newTest(const std::string& name)
         drogon::test::internal::numAssertions++;        \
         drogon::test::internal::numCorrectAssertions++; \
     } while (0)
-
-#define DROGON_TEST_STRINGIFY__(x) #x
-#define DROGON_TEST_STRINGIFY(x) DROGON_TEST_STRINGIFY__(x)
-#define DROGON_TEST_CONCAT__(a, b) a##b
-#define DROGON_TEST_CONCAT(a, b) DROGON_TEST_CONCAT__(a, b)
 
 #define DROGON_TEST_CLASS_NAME_(test_name) DROGON_TEST_CONCAT(DROGON_TESTCASE_PREIX_, test_name)
 
