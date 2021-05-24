@@ -134,26 +134,29 @@ struct AttemptPrintViaStream<true>
 template <typename T>
 inline std::string attemptPrint(const T& v)
 {
-    AttemptPrintViaStream<is_printable<T>::value> a;
-    return a(v);
-}
+    auto stringPrinter = [](const string_view& v) { return prettifyString(v); };
+    auto nullptrPrinter = [](const std::nullptr_t& v) { return "nullptr"; };
+    auto charPrinter = [](const char& v) {
+        return "'" + std::string(1, v) + "'";
+    };
+    using StringPrinter = decltype(stringPrinter);
+    using NullptrPrinter = decltype(nullptrPrinter);
+    using CharPrinter = decltype(charPrinter);
+    using DefaultPrinter = AttemptPrintViaStream<is_printable<T>::value>;
 
-template <>
-inline std::string attemptPrint(const string_view& v)
-{
-    return prettifyString(v);
-}
-
-template <>
-inline std::string attemptPrint(const std::nullptr_t& v)
-{
-    return "nullptr";
-}
-
-template <>
-inline std::string attemptPrint(const char& v)
-{
-    return "'" + std::string(1, v) + "'";
+    // Poor man's if constexpr because SFINAE don't disambiguate between
+    // possible resolutions
+    return typename std::conditional<
+        std::is_same<T, std::nullptr_t>::value,
+        NullptrPrinter,
+        typename std::conditional<
+            std::is_same<T, char>::value,
+            CharPrinter,
+            typename std::conditional<std::is_same<T, std::string>::value ||
+                                          std::is_same<T, string_view>::value ||
+                                          std::is_same<T, char*>::value,
+                                      StringPrinter,
+                                      DefaultPrinter>::type>::type>::type()(v);
 }
 
 template <typename... Args>
@@ -182,7 +185,7 @@ struct Lhs
 {
     template <typename _ = void>  // HACK: prevent this function to be evaulated
                                   // when not invoked
-                                  std::pair<bool, std::string> result() const
+    std::pair<bool, std::string> result() const
     {
         return {(bool)ref_, attemptPrint(ref_)};
     }
@@ -630,7 +633,7 @@ static int run(int argc, char** argv)
 #define PRINT_UNEXPECTED_EXCEPTION__(func_name, expr)         \
     do                                                        \
     {                                                         \
-        ERROR_MSG(func_name, #expr)                           \
+        ERROR_MSG(func_name, expr)                            \
             << "An unexpected exception is thrown. what():\n" \
             << "  \033[0;33m" << e.what() << "\x1B[0m\n\n";   \
     } while (0);
@@ -640,7 +643,7 @@ static int run(int argc, char** argv)
     {                                                             \
         if (drogon::test::internal::printSuccessfulTests == true) \
         {                                                         \
-            PASSED_MSG(func_name, #expr) << "\n";                 \
+            PASSED_MSG(func_name, expr) << "\n";                  \
         }                                                         \
     } while (0);
 
@@ -673,7 +676,7 @@ static int run(int argc, char** argv)
 #define PRINT_NONSTANDARD_EXCEPTION__(func_name, expr)        \
     do                                                        \
     {                                                         \
-        ERROR_MSG(func_name, #expr)                           \
+        ERROR_MSG(func_name, expr)                            \
             << "Unexpected unknown exception is thrown.\n\n"; \
     } while (0);
 
@@ -691,7 +694,7 @@ static int run(int argc, char** argv)
     do                                                              \
     {                                                               \
         if (!TEST_FLAG_)                                            \
-            ERROR_MSG(func_name, #expr)                             \
+            ERROR_MSG(func_name, expr)                              \
                 << "With expecitation\n"                            \
                 << "  Expected to throw an exception. But non are " \
                    "thrown.\n\n";                                   \
@@ -701,7 +704,7 @@ static int run(int argc, char** argv)
     do                                                               \
     {                                                                \
         if (!TEST_FLAG_)                                             \
-            ERROR_MSG(func_name, #expr)                              \
+            ERROR_MSG(func_name, expr)                               \
                 << "With expecitation\n"                             \
                 << "  Should to not throw an exception. But one is " \
                    "thrown.\n\n";                                    \
@@ -714,73 +717,76 @@ static int run(int argc, char** argv)
         assert((exceptionThrown && correctExceptionType) || !exceptionThrown); \
         if (exceptionThrown == true && correctExceptionType == false)          \
         {                                                                      \
-            ERROR_MSG(func_name, #expr)                                        \
+            ERROR_MSG(func_name, expr)                                         \
                 << "With expecitation\n"                                       \
-                << "  Exception have been throw but not of type \033[1m"       \
+                << "  Exception have been throw but not of type \033[0;33m"    \
                 << #excep_type << "\033[0m.\n\n";                              \
         }                                                                      \
         else if (exceptionThrown == false)                                     \
         {                                                                      \
-            ERROR_MSG(func_name, #expr)                                        \
+            ERROR_MSG(func_name, expr)                                         \
                 << "With expecitation\n"                                       \
-                << "  A \033[1m " << #excep_type                               \
-                << " \033[0m exception is expected. But nothing was thrown"    \
+                << "  A \033[0;33m" << #excep_type                             \
+                << "\033[0m exception is expected. But nothing was thrown"     \
                 << "\033[0m.\n\n";                                             \
         }                                                                      \
     } while (0);
 
-#define CHECK_INTERNAL__(expr, func_name, on_leave)                     \
+#define CHECK_INTERNAL__(expr, func_name, on_leave)                      \
+    do                                                                   \
+    {                                                                    \
+        TEST_INTERNAL__(func_name,                                       \
+                        expr,                                            \
+                        EVAL_AND_CHECK_TRUE__(func_name, expr),          \
+                        PRINT_UNEXPECTED_EXCEPTION__(func_name, #expr),  \
+                        PRINT_NONSTANDARD_EXCEPTION__(func_name, #expr), \
+                        on_leave PRINT_PASSED__(func_name, #expr));      \
+    } while (0)
+
+#define CHECK_THROWS_INTERNAL__(expr, func_name, on_leave)              \
     do                                                                  \
     {                                                                   \
         TEST_INTERNAL__(func_name,                                      \
                         expr,                                           \
-                        EVAL_AND_CHECK_TRUE__(func_name, expr),         \
-                        PRINT_UNEXPECTED_EXCEPTION__(func_name, expr),  \
-                        PRINT_NONSTANDARD_EXCEPTION__(func_name, expr), \
-                        on_leave PRINT_PASSED__(func_name, expr));      \
+                        EVAL__(expr),                                   \
+                        SET_TEST_SUCCESS__,                             \
+                        SET_TEST_SUCCESS__,                             \
+                        PRINT_ERR_NOEXCEPTION__(#expr, func_name)       \
+                            on_leave PRINT_PASSED__(func_name, #expr)); \
     } while (0)
 
-#define CHECK_THROWS_INTERNAL__(expr, func_name, on_leave)             \
-    do                                                                 \
-    {                                                                  \
-        TEST_INTERNAL__(func_name,                                     \
-                        expr,                                          \
-                        EVAL__(expr),                                  \
-                        SET_TEST_SUCCESS__,                            \
-                        SET_TEST_SUCCESS__,                            \
-                        PRINT_ERR_NOEXCEPTION__(expr, func_name)       \
-                            on_leave PRINT_PASSED__(func_name, expr)); \
+#define CHECK_THROWS_AS_INTERNAL__(expr, func_name, except_type, on_leave)    \
+    do                                                                        \
+    {                                                                         \
+        bool exceptionThrown = false;                                         \
+        TEST_INTERNAL__(                                                      \
+            func_name,                                                        \
+            expr,                                                             \
+            EVAL__(expr),                                                     \
+            {                                                                 \
+                exceptionThrown = true;                                       \
+                if (dynamic_cast<const except_type*>(&e) != nullptr)          \
+                    SET_TEST_SUCCESS__;                                       \
+            },                                                                \
+            { exceptionThrown = true; },                                      \
+            PRINT_ERR_BAD_EXCEPTION__(#expr ", " #except_type,                \
+                                      func_name,                              \
+                                      except_type,                            \
+                                      exceptionThrown,                        \
+                                      TEST_FLAG_)                             \
+                on_leave PRINT_PASSED__(func_name, #expr ", " #except_type)); \
     } while (0)
 
-#define CHECK_THROWS_AS_INTERNAL__(expr, func_name, except_type, on_leave) \
-    do                                                                     \
-    {                                                                      \
-        bool exceptionThrown = false;                                      \
-        TEST_INTERNAL__(                                                   \
-            func_name,                                                     \
-            expr,                                                          \
-            EVAL__(expr),                                                  \
-            {                                                              \
-                exceptionThrown = true;                                    \
-                if (dynamic_cast<const except_type*>(&e) != nullptr)       \
-                    SET_TEST_SUCCESS__;                                    \
-            },                                                             \
-            { exceptionThrown = true; },                                   \
-            PRINT_ERR_BAD_EXCEPTION__(                                     \
-                expr, func_name, except_type, exceptionThrown, TEST_FLAG_) \
-                on_leave PRINT_PASSED__(func_name, expr));                 \
-    } while (0)
-
-#define CHECK_NOTHROW_INTERNAL__(expr, func_name, on_leave)            \
-    do                                                                 \
-    {                                                                  \
-        TEST_INTERNAL__(func_name,                                     \
-                        expr,                                          \
-                        EVAL__(expr) SET_TEST_SUCCESS__,               \
-                        NOTHING__,                                     \
-                        NOTHING__,                                     \
-                        PRINT_ERR_WITHEXCEPTION__(expr, func_name)     \
-                            on_leave PRINT_PASSED__(func_name, expr)); \
+#define CHECK_NOTHROW_INTERNAL__(expr, func_name, on_leave)             \
+    do                                                                  \
+    {                                                                   \
+        TEST_INTERNAL__(func_name,                                      \
+                        expr,                                           \
+                        EVAL__(expr) SET_TEST_SUCCESS__,                \
+                        NOTHING__,                                      \
+                        NOTHING__,                                      \
+                        PRINT_ERR_WITHEXCEPTION__(#expr, func_name)     \
+                            on_leave PRINT_PASSED__(func_name, #expr)); \
     } while (0)
 
 #define CHECK(expr) CHECK_INTERNAL__(expr, "CHECK", NOTHING__)
