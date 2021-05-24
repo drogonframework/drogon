@@ -553,17 +553,6 @@ static int run(int argc, char** argv)
     return internal::numCorrectAssertions != internal::numAssertions;
 }
 #endif
-inline std::shared_ptr<Case> newTest(std::shared_ptr<Case> parent,
-                                     const std::string& name)
-{
-    return std::make_shared<Case>(parent, name);
-}
-
-inline std::shared_ptr<Case> newTest(const std::string& name)
-{
-    return std::make_shared<Case>(nullptr, name);
-}
-
 }  // namespace drogon::test
 
 #define ERROR_MSG(func_name, expr)                                    \
@@ -749,7 +738,7 @@ inline std::shared_ptr<Case> newTest(const std::string& name)
                         PRINT_UNEXPECTED_EXCEPTION__(func_name, expr),  \
                         PRINT_NONSTANDARD_EXCEPTION__(func_name, expr), \
                         on_leave PRINT_PASSED__(func_name, expr));      \
-    } while (0);
+    } while (0)
 
 #define CHECK_THROWS_INTERNAL__(expr, func_name, on_leave)             \
     do                                                                 \
@@ -761,7 +750,7 @@ inline std::shared_ptr<Case> newTest(const std::string& name)
                         SET_TEST_SUCCESS__,                            \
                         PRINT_ERR_NOEXCEPTION__(expr, func_name)       \
                             on_leave PRINT_PASSED__(func_name, expr)); \
-    } while (0);
+    } while (0)
 
 #define CHECK_THROWS_AS_INTERNAL__(expr, func_name, except_type, on_leave) \
     do                                                                     \
@@ -780,7 +769,7 @@ inline std::shared_ptr<Case> newTest(const std::string& name)
             PRINT_ERR_BAD_EXCEPTION__(                                     \
                 expr, func_name, except_type, exceptionThrown, TEST_FLAG_) \
                 on_leave PRINT_PASSED__(func_name, expr));                 \
-    } while (0);
+    } while (0)
 
 #define CHECK_NOTHROW_INTERNAL__(expr, func_name, on_leave)            \
     do                                                                 \
@@ -792,7 +781,7 @@ inline std::shared_ptr<Case> newTest(const std::string& name)
                         NOTHING__,                                     \
                         PRINT_ERR_WITHEXCEPTION__(expr, func_name)     \
                             on_leave PRINT_PASSED__(func_name, expr)); \
-    } while (0);
+    } while (0)
 
 #define CHECK(expr) CHECK_INTERNAL__(expr, "CHECK", NOTHING__)
 #define CHECK_THROWS(expr) \

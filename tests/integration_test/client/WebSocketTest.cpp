@@ -30,7 +30,7 @@ DROGON_TEST(WebSocketTest)
     wsPtr_->setConnectionClosedHandler(
         [TEST_CTX](const WebSocketClientPtr &wsPtr) mutable {
             // Gracefully destruct the client from outside
-            CHECK(wsPtr_ == wsPtr)
+            CHECK(wsPtr_ == wsPtr);
             TEST_CTX = {};
             app().getLoop()->queueInLoop([]() { wsPtr_ = {}; });
         });

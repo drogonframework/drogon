@@ -137,5 +137,5 @@ DROGON_TEST(CoroutineDestruction)
         co_await awaitNothing();
     };
     sync_wait(destruct());
-    CHECK(internal::SomeStruct::beenDestructed == true)
+    CHECK(internal::SomeStruct::beenDestructed == true);
 }
