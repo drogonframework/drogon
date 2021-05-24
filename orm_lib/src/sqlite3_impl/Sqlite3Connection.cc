@@ -39,7 +39,11 @@ Sqlite3Connection::Sqlite3Connection(
     trantor::EventLoop *loop,
     const std::string &connInfo,
     const std::shared_ptr<SharedMutex> &sharedMutex)
-    : DbConnection(loop), sharedMutexPtr_(sharedMutex)
+    : DbConnection(loop), sharedMutexPtr_(sharedMutex), connInfo_(connInfo)
+{
+}
+
+void Sqlite3Connection::init()
 {
     loopThread_.run();
     loop_ = loopThread_.getLoop();
@@ -51,7 +55,7 @@ Sqlite3Connection::Sqlite3Connection(
         }
     });
     // Get the key and value
-    auto connParams = parseConnString(connInfo);
+    auto connParams = parseConnString(connInfo_);
     std::string filename;
     for (auto const &kv : connParams)
     {
