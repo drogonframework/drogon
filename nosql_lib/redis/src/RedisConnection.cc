@@ -265,7 +265,6 @@ void RedisConnection::sendCommandInLoop(
 
 void RedisConnection::handleResult(redisReply *result)
 {
-    
     auto commandCallback = std::move(resultCallbacks_.front());
     resultCallbacks_.pop();
     auto exceptionCallback = std::move(exceptionCallbacks_.front());
@@ -276,18 +275,17 @@ void RedisConnection::handleResult(redisReply *result)
     }
     else
     {
-        if(result)
+        if (result)
         {
-        exceptionCallback(
-            RedisException(RedisErrorCode::kRedisError,
-                           std::string{result->str, result->len}));            
-        }
-        else{
             exceptionCallback(
-            RedisException(RedisErrorCode::kConnectionBroken,
-                           "Network failure"));  
+                RedisException(RedisErrorCode::kRedisError,
+                               std::string{result->str, result->len}));
         }
-
+        else
+        {
+            exceptionCallback(RedisException(RedisErrorCode::kConnectionBroken,
+                                             "Network failure"));
+        }
     }
     if (resultCallbacks_.empty())
     {
