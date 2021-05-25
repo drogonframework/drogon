@@ -342,7 +342,7 @@ DROGON_TEST(PostgreTest)
     }
     catch (const DrogonDbException &e)
     {
-        //         SUCCESS();
+        SUCCESS();
     }
     /// 3.6 clean up
     try
@@ -435,7 +435,7 @@ DROGON_TEST(PostgreTest)
     }
     catch (const DrogonDbException &e)
     {
-        //         SUCCESS();
+        SUCCESS();
     }
     /// 4.6 clean up
     f = clientPtr->execSqlAsyncFuture("truncate table users restart identity");
@@ -997,7 +997,7 @@ DROGON_TEST(MySQLTest)
     }
     catch (const DrogonDbException &e)
     {
-        //        SUCCESS();
+        SUCCESS();
     }
     /// 3.6 truncate
     try
@@ -1007,7 +1007,7 @@ DROGON_TEST(MySQLTest)
     }
     catch (const DrogonDbException &e)
     {
-        //        SUCCESS();
+        SUCCESS();
     }
     /// Test future interface
     /// 4.1 insert
@@ -1088,7 +1088,7 @@ DROGON_TEST(MySQLTest)
     }
     catch (const DrogonDbException &e)
     {
-        //        SUCCESS();
+        SUCCESS();
     }
     /// 4.6 truncate
     f = clientPtr->execSqlAsyncFuture("truncate table users");
@@ -1581,7 +1581,7 @@ DROGON_TEST(SQLite3Test)
     }
     catch (const DrogonDbException &e)
     {
-        // SUCCESS();
+        SUCCESS();
     }
     /// 3.6 clean up
     try
@@ -1591,7 +1591,7 @@ DROGON_TEST(SQLite3Test)
     }
     catch (const DrogonDbException &e)
     {
-        // SUCCESS();
+        SUCCESS();
     }
     try
     {
@@ -1600,7 +1600,7 @@ DROGON_TEST(SQLite3Test)
     }
     catch (const DrogonDbException &e)
     {
-        // SUCCESS();
+        SUCCESS();
     }
 
     /// Test future interface
