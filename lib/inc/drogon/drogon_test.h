@@ -17,7 +17,9 @@
  * major C++ test frameworks doesn't handle async programs well. Drogon Test's
  * syntax is inspired by both Google Test and Catch2
  */
-namespace drogon::test
+namespace drogon
+{
+namespace test
 {
 #define TEST_CTX drogon_test_ctx_
 #define DROGON_TESTCASE_PREIX_ drtest__
@@ -168,7 +170,6 @@ inline std::string attemptPrint(const char& v)
 {
     return "'" + std::string(1, v) + "'";
 }
-
 
 template <typename... Args>
 inline std::string stringifyFuncCall(const std::string& funcName,
@@ -599,7 +600,8 @@ static int run(int argc, char** argv)
     return internal::numCorrectAssertions != internal::numAssertions;
 }
 #endif
-}  // namespace drogon::test
+}  // namespace test
+}  // namespace drogon
 
 #define ERROR_MSG(func_name, expr)                                    \
     drogon::test::printErr()                                          \
@@ -944,7 +946,9 @@ static int run(int argc, char** argv)
         if (TEST_CTX = ctx_tmp__, TEST_CTX != nullptr)
 
 #ifdef DROGON_TEST_MAIN
-namespace drogon::test
+namespace drogon
+{
+namespace test
 {
 std::mutex ThreadSafeStream::mtx_;
 
@@ -962,6 +966,7 @@ size_t numTestCases;
 std::atomic<size_t> numFailedTestCases;
 bool printSuccessfulTests;
 }  // namespace internal
-}  // namespace drogon::test
+}  // namespace test
+}  // namespace drogon
 
 #endif

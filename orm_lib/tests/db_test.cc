@@ -32,7 +32,7 @@
 using namespace std::chrono_literals;
 using namespace drogon::orm;
 
-#ifdef USE_POSTGRESQL
+#if USE_POSTGRESQL
 DbClientPtr pgClient;
 DROGON_TEST(PostgreTest)
 {
@@ -682,7 +682,7 @@ DROGON_TEST(PostgreTest)
 }
 #endif
 
-#ifdef USE_MYSQL
+#if USE_MYSQL
 DbClientPtr mysqlClient;
 DROGON_TEST(MySQLTest)
 {
