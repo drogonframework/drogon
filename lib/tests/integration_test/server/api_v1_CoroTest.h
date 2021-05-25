@@ -18,8 +18,9 @@ class CoroTest : public drogon::HttpController<CoroTest>
     Task<> get(HttpRequestPtr req,
                std::function<void(const HttpResponsePtr &)> callback);
     Task<HttpResponsePtr> get2(HttpRequestPtr req);
-    Task<> this_will_fail(HttpRequestPtr req,
-               std::function<void(const HttpResponsePtr &)> callback);
+    Task<> this_will_fail(
+        HttpRequestPtr req,
+        std::function<void(const HttpResponsePtr &)> callback);
     Task<HttpResponsePtr> this_will_fail2(HttpRequestPtr req);
 };
 }  // namespace v1
