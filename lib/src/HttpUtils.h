@@ -67,4 +67,3 @@ inline constexpr const char *contentLengthFormatString<unsigned long long>()
     return "content-length: %llu\r\n";
 }
 }  // namespace drogon
-
