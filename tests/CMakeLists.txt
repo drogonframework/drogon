@@ -1,39 +1,39 @@
 link_libraries(${PROJECT_NAME})
-set(UNITTEST_SOURCES unittests/main.cpp
-                        unittests/Base64Test.cpp
-                        unittests/UrlCodecTest.cpp
-                        unittests/GzipTest.cpp
-                        unittests/HttpViewDataTest.cpp
-                        unittests/CookieTest.cpp
-                        unittests/ClassNameTest.cpp
-                        unittests/HttpDateTest.cpp
-                        unittests/HttpHeaderTest.cpp
-                        unittests/MD5Test.cpp
-                        unittests/MsgBufferTest.cpp
-                        unittests/OStringStreamTest.cpp
-                        unittests/PubSubServiceUnittest.cpp
-                        unittests/Sha1Test.cpp
+set(UNITTEST_SOURCES unittests/main.cc
+                        unittests/Base64Test.cc
+                        unittests/UrlCodecTest.cc
+                        unittests/GzipTest.cc
+                        unittests/HttpViewDataTest.cc
+                        unittests/CookieTest.cc
+                        unittests/ClassNameTest.cc
+                        unittests/HttpDateTest.cc
+                        unittests/HttpHeaderTest.cc
+                        unittests/MD5Test.cc
+                        unittests/MsgBufferTest.cc
+                        unittests/OStringStreamTest.cc
+                        unittests/PubSubServiceUnittest.cc
+                        unittests/Sha1Test.cc
                         ../lib/src/ssl_funcs/Sha1.cc
-                        unittests/FileTypeTest.cpp
-                        unittests/DrObjectTest.cpp
-                        unittests/HttpFullDateTest.cpp
-                        unittests/MainLoopTest.cpp
-                        unittests/CacheMapTest.cpp)
+                        unittests/FileTypeTest.cc
+                        unittests/DrObjectTest.cc
+                        unittests/HttpFullDateTest.cc
+                        unittests/MainLoopTest.cc
+                        unittests/CacheMapTest.cc)
 
 if(DROGON_CXX_STANDARD GREATER_EQUAL 20 AND HAS_COROUTINE)
-    set(UNITTEST_SOURCES ${UNITTEST_SOURCES} unittests/CoroutineTest.cpp)
+    set(UNITTEST_SOURCES ${UNITTEST_SOURCES} unittests/CoroutineTest.cc)
 endif()
 
 if(Brotli_FOUND)
-    set(UNITTEST_SOURCES ${UNITTEST_SOURCES} unittests/BrotliTest.cpp)
+    set(UNITTEST_SOURCES ${UNITTEST_SOURCES} unittests/BrotliTest.cc)
 endif()
 
 add_executable(unittest ${UNITTEST_SOURCES})
 
-set(INTEGRATION_TEST_CLIENT_SOURCES integration_test/client/main.cpp
-                                    integration_test/client/WebSocketTest.cpp
-                                    integration_test/client/MultipleWsTest.cpp
-                                    integration_test/client/HttpPipeliningTest.cpp)
+set(INTEGRATION_TEST_CLIENT_SOURCES integration_test/client/main.cc
+                                    integration_test/client/WebSocketTest.cc
+                                    integration_test/client/MultipleWsTest.cc
+                                    integration_test/client/HttpPipeliningTest.cc)
 add_executable(integration_test_client ${INTEGRATION_TEST_CLIENT_SOURCES})
 
 set(INTEGRATION_TEST_SERVER_SOURCES
