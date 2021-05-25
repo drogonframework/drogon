@@ -18,14 +18,16 @@
 #include <drogon/HttpTypes.h>
 #include <string>
 #include <trantor/utils/MsgBuffer.h>
+// To export symbol to unit tests
+#include <drogon/exports.h>
 
 namespace drogon
 {
 const string_view &webContentTypeToString(ContentType contenttype);
 const string_view &statusCodeToString(int code);
 ContentType getContentType(const std::string &fileName);
-ContentType parseContentType(const string_view &contentType);
-FileType parseFileType(const string_view &fileExtension);
+DROGON_EXPORT ContentType parseContentType(const string_view &contentType);
+DROGON_EXPORT FileType parseFileType(const string_view &fileExtension);
 inline string_view getFileExtension(const std::string &fileName)
 {
     auto pos = fileName.rfind('.');
@@ -65,3 +67,4 @@ inline constexpr const char *contentLengthFormatString<unsigned long long>()
     return "content-length: %llu\r\n";
 }
 }  // namespace drogon
+
