@@ -171,14 +171,22 @@ inline std::string attemptPrint(const char& v)
     return "'" + std::string(1, v) + "'";
 }
 
-template <typename... Args>
-inline std::string stringifyFuncCall(const std::string& funcName,
-                                     const Args&... args)
+inline std::string stringifyFuncCall(const std::string& funcName)
 {
-    std::string result = funcName + "(" + ((std::string(args) + ", ") + ...);
-    result.resize(result.size() - 2);
-    result.push_back(')');
-    return result;
+    return funcName + "()";
+}
+
+inline std::string stringifyFuncCall(const std::string& funcName,
+                                     const std::string& param1)
+{
+    return funcName + "(" + param1 + ")";
+}
+
+inline std::string stringifyFuncCall(const std::string& funcName,
+                                     const std::string& param1,
+                                     const std::string& param2)
+{
+    return funcName + "(" + param1 + ", " + param2 + ")";
 }
 
 struct ComparsionResult
