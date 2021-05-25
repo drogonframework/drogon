@@ -25,7 +25,7 @@ int main(int argc, char *argv[])
     }
 
     WebSocketClientPtr wsPtr;
-    if (port.has_value())
+    if (port.value_or(0) != 0)
         wsPtr = WebSocketClient::newWebSocketClient(server, port.value());
     else
         wsPtr = WebSocketClient::newWebSocketClient(server);
