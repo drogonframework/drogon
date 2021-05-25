@@ -5,7 +5,10 @@
     //ssl:The global ssl files setting
     "ssl": {
         "cert": "../../trantor/trantor/tests/server.pem",
-        "key": "../../trantor/trantor/tests/server.pem"
+        "key": "../../trantor/trantor/tests/server.pem",
+        "conf": [
+            ["min_protocol", "TLSv1.2"]
+        ]
     },
     "listeners": [
         {

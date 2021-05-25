@@ -63,6 +63,8 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     {
         return threadNum_;
     }
+    HttpAppFramework &setSSLConfigCommands(
+        const std::vector<std::pair<std::string, std::string>> &sslConfCmds) override;
     HttpAppFramework &setSSLFiles(const std::string &certPath,
                                   const std::string &keyPath) override;
     void run() override;
@@ -575,6 +577,7 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     std::unique_ptr<SharedLibManager> sharedLibManagerPtr_;
 #endif
 
+    std::vector<std::pair<std::string, std::string>> sslConfCmds_;
     std::string sslCertPath_;
     std::string sslKeyPath_;
 

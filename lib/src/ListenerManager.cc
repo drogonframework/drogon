@@ -52,12 +52,14 @@ class DrogonFileLocker : public trantor::NonCopyable
 using namespace trantor;
 using namespace drogon;
 
-void ListenerManager::addListener(const std::string &ip,
-                                  uint16_t port,
-                                  bool useSSL,
-                                  const std::string &certFile,
-                                  const std::string &keyFile,
-                                  bool useOldTLS)
+void ListenerManager::addListener(
+    const std::string &ip,
+    uint16_t port,
+    bool useSSL,
+    const std::string &certFile,
+    const std::string &keyFile,
+    bool useOldTLS,
+    const std::vector<std::pair<std::string, std::string>> &sslConfCmds)
 {
 #ifndef OpenSSL_FOUND
     if (useSSL)
@@ -65,7 +67,8 @@ void ListenerManager::addListener(const std::string &ip,
         LOG_ERROR << "Can't use SSL without OpenSSL found in your system";
     }
 #endif
-    listeners_.emplace_back(ip, port, useSSL, certFile, keyFile, useOldTLS);
+    listeners_.emplace_back(
+        ip, port, useSSL, certFile, keyFile, useOldTLS, sslConfCmds);
 }
 
 std::vector<trantor::EventLoop *> ListenerManager::createListeners(
@@ -144,7 +147,10 @@ std::vector<trantor::EventLoop *> ListenerManager::createListeners(
                         << std::endl;
                     exit(1);
                 }
-                serverPtr->enableSSL(cert, key, listener.useOldTLS_);
+                serverPtr->enableSSL(cert,
+                                     key,
+                                     listener.useOldTLS_,
+                                     listener.sslConfCmds_);
 #endif
             }
             serverPtr->setHttpAsyncCallback(httpCallback);

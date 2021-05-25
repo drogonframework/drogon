@@ -572,13 +572,19 @@ static void loadListeners(const Json::Value &listeners)
         drogon::app().addListener(addr, port, useSSL, cert, key, useOldTLS);
     }
 }
-static void loadSSL(const Json::Value &sslFiles)
+static void loadSSL(const Json::Value &sslConf)
 {
-    if (!sslFiles)
+    if (!sslConf)
         return;
-    auto key = sslFiles.get("key", "").asString();
-    auto cert = sslFiles.get("cert", "").asString();
+    auto key = sslConf.get("key", "").asString();
+    auto cert = sslConf.get("cert", "").asString();
     drogon::app().setSSLFiles(cert, key);
+    std::vector<std::pair<std::string, std::string>> conf;
+    for (auto opt : sslConf["conf"])
+    {
+        conf.emplace_back(opt[0].asString(), opt[1].asString());
+    }
+    drogon::app().setSSLConfigCommands(conf);
 }
 void ConfigLoader::load()
 {

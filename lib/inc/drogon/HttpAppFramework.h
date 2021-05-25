@@ -658,6 +658,11 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
     virtual HttpAppFramework &setSSLFiles(const std::string &certPath,
                                           const std::string &keyPath) = 0;
 
+    /// Set the ssl config as listed in openssl's SSL_CONF_cmd for https
+    /// These options can be configured in the configuration file.
+    virtual HttpAppFramework &setSSLConfigCommands(
+        const std::vector<std::pair<std::string, std::string>> &sslConfCmds) = 0;
+
     /// Add a listener for http or https service
     /**
      * @param ip is the ip that the listener listens on.

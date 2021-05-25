@@ -418,6 +418,12 @@ HttpAppFramework &HttpAppFrameworkImpl::setLogLevel(
     trantor::Logger::setLogLevel(level);
     return *this;
 }
+HttpAppFramework &HttpAppFrameworkImpl::setSSLConfigCommands(
+    const std::vector<std::pair<std::string, std::string>> &sslConfCmds)
+{
+    sslConfCmds_ = sslConfCmds;
+    return *this;
+}
 HttpAppFramework &HttpAppFrameworkImpl::setSSLFiles(const std::string &certPath,
                                                     const std::string &keyPath)
 {
