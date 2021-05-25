@@ -13,7 +13,7 @@ set(UNITTEST_SOURCES unittests/main.cc
                         unittests/OStringStreamTest.cc
                         unittests/PubSubServiceUnittest.cc
                         unittests/Sha1Test.cc
-                        ../lib/src/ssl_funcs/Sha1.cc
+                        ../src/ssl_funcs/Sha1.cc
                         unittests/FileTypeTest.cc
                         unittests/DrObjectTest.cc
                         unittests/HttpFullDateTest.cc
