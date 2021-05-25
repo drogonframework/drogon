@@ -45,7 +45,7 @@ DROGON_TEST(MultipleWsTest)
                 REQUIRE(wsPtr != nullptr);
                 REQUIRE(resp != nullptr);
 
-                wsPtr->getConnection()->setPingMessage(std::to_string(i), 1s);
+                wsPtr->getConnection()->setPingMessage(std::to_string(i), 1.5s);
                 wsPtr->getConnection()->send("hello!");
                 CHECK(wsPtr->getConnection()->connected());
 
