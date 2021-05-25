@@ -19,7 +19,7 @@ else
   export PATH=$PATH:$src_dir/install/bin
 fi
 echo ${drogon_ctl_exec}
-cd build/tests/
+cd build/lib/tests/
 
 if [ $os = "windows" ]; then
   cd Debug
@@ -167,7 +167,7 @@ rm -rf drogon_test
 
 if [ "$1" = "-t" ]; then
     #unit testing
-    cd ../
+    cd ../../
     echo "Unit testing"
     cmake --build . --target test -- $make_flags
     if [ $? -ne 0 ]; then
