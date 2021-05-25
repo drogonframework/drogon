@@ -29,6 +29,10 @@ if(Brotli_FOUND)
     set(UNITTEST_SOURCES ${UNITTEST_SOURCES} unittests/BrotliTest.cc)
 endif()
 
+if (CMAKE_CXX_COMPILER_ID MATCHES "MSVC" AND BUILD_DROGON_SHARED)
+    set(UNITTEST_SOURCES ${UNITTEST_SOURCES} ../src/HttpUtils.cc)
+endif()
+
 add_executable(unittest ${UNITTEST_SOURCES})
 
 set(INTEGRATION_TEST_CLIENT_SOURCES integration_test/client/main.cc
