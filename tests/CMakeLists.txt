@@ -18,7 +18,8 @@ set(UNITTEST_SOURCES unittests/main.cc
                         unittests/DrObjectTest.cc
                         unittests/HttpFullDateTest.cc
                         unittests/MainLoopTest.cc
-                        unittests/CacheMapTest.cc)
+                        unittests/CacheMapTest.cc
+                        unittests/StringOpsTest.cc)
 
 if(DROGON_CXX_STANDARD GREATER_EQUAL 20 AND HAS_COROUTINE)
     set(UNITTEST_SOURCES ${UNITTEST_SOURCES} unittests/CoroutineTest.cc)
