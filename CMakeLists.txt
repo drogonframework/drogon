@@ -41,6 +41,14 @@ set(DEF_INSTALL_DROGON_CMAKE_DIR lib/cmake/Drogon)
 set(INSTALL_DROGON_CMAKE_DIR ${DEF_INSTALL_DROGON_CMAKE_DIR}
     CACHE PATH "Installation directory for cmake files")
 
+if (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+    # Force MSVC to use UTF-8 because that's what we use. Otherwise it uses
+    # the default of whatever Windows sets and causes encoding issues.
+    message(STATUS "You are using MSVC. Forceing to use UTF-8")
+    add_compile_options("$<$<C_COMPILER_ID:MSVC>:/utf-8>")
+    add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
+endif ()
+
 if (BUILD_DROGON_SHARED)
     set(BUILD_TRANTOR_SHARED TRUE)
     set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
@@ -560,3 +568,4 @@ install(EXPORT DrogonTargets
     DESTINATION "${INSTALL_DROGON_CMAKE_DIR}"
     NAMESPACE Drogon::
     COMPONENT dev)
+
