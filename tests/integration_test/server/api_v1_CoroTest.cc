@@ -21,3 +21,16 @@ Task<HttpResponsePtr> CoroTest::get2(HttpRequestPtr req)
     resp->setBody("BADDBEEF");
     co_return resp;
 }
+
+Task<> CoroTest::this_will_fail(HttpRequestPtr req,
+                     std::function<void(const HttpResponsePtr &)> callback)
+{
+    throw std::runtime_error("This is an excpected exception");
+    callback(HttpResponse::newHttpResponse());
+}
+
+Task<HttpResponsePtr> CoroTest::this_will_fail2(HttpRequestPtr req)
+{
+    throw std::runtime_error("This is an excpected exception");
+    co_return HttpResponse::newHttpResponse();
+}

@@ -653,7 +653,7 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
             FAIL("Unexpected exception, what()" + std::string(e.what()));
         }
 
-        // Test Coroutine excaption
+        // Test Coroutine exception
         try
         {
             auto req = HttpRequest::newHttpRequest();
@@ -666,7 +666,7 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
             FAIL("Unexpected exception, what()" + std::string(e.what()));
         }
 
-        // Test Coroutine excaption with co_return
+        // Test Coroutine exception with co_return
         try
         {
             auto req = HttpRequest::newHttpRequest();
