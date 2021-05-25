@@ -496,11 +496,11 @@ void printTestStats()
         std::string successTestsStr = std::to_string(successTests);
         std::string failedTestsStr = std::to_string(totalTests - successTests);
         const size_t totalLen =
-            std::max(totalAssertsionStr.size(), totalTestsStr.size());
+            (std::max)(totalAssertsionStr.size(), totalTestsStr.size());
         const size_t successLen =
-            std::max(successAssertionsStr.size(), successTestsStr.size());
+            (std::max)(successAssertionsStr.size(), successTestsStr.size());
         const size_t failedLen =
-            std::max(failedAssertsionStr.size(), failedTestsStr.size());
+            (std::max)(failedAssertsionStr.size(), failedTestsStr.size());
         using internal::leftpad;
         print() << "assertions: " << leftpad(totalAssertsionStr, totalLen)
                 << " | \x1B[0;32m" << leftpad(successAssertionsStr, successLen)
