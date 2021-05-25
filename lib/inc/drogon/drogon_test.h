@@ -109,6 +109,8 @@ inline std::string prettifyString(const string_view sv, size_t maxLength = 120)
     return "\"" + escapeString(sv.substr(0, maxLength)) + msg;
 }
 
+namespace internal
+{
 template <bool P>
 struct AttemptPrintViaStream
 {
@@ -131,33 +133,42 @@ struct AttemptPrintViaStream<true>
     }
 };
 
-template <typename T>
-inline std::string attemptPrint(const T& v)
+struct StringPrinter
 {
-    auto stringPrinter = [](const string_view& v) { return prettifyString(v); };
-    auto nullptrPrinter = [](const std::nullptr_t& v) { return "nullptr"; };
-    auto charPrinter = [](const char& v) {
-        return "'" + std::string(1, v) + "'";
-    };
-    using StringPrinter = decltype(stringPrinter);
-    using NullptrPrinter = decltype(nullptrPrinter);
-    using CharPrinter = decltype(charPrinter);
-    using DefaultPrinter = AttemptPrintViaStream<is_printable<T>::value>;
+    std::string operator()(const string_view& v)
+    {
+        return prettifyString(v);
+    }
+};
+
+}  // namespace internal
+
+template <typename T>
+inline std::string attemptPrint(T&& v)
+{
+    using DefaultPrinter =
+        internal::AttemptPrintViaStream<is_printable<T>::value>;
 
     // Poor man's if constexpr because SFINAE don't disambiguate between
     // possible resolutions
-    return typename std::conditional<
-        std::is_same<T, std::nullptr_t>::value,
-        NullptrPrinter,
-        typename std::conditional<
-            std::is_same<T, char>::value,
-            CharPrinter,
-            typename std::conditional<std::is_same<T, std::string>::value ||
-                                          std::is_same<T, string_view>::value ||
-                                          std::is_same<T, char*>::value,
-                                      StringPrinter,
-                                      DefaultPrinter>::type>::type>::type()(v);
+    return typename std::conditional<std::is_convertible<T, string_view>::value,
+                                     internal::StringPrinter,
+                                     DefaultPrinter>::type()(v);
 }
+
+// Specializations to reduce template construction
+template <>
+inline std::string attemptPrint(const std::nullptr_t& v)
+{
+    return "nullptr";
+}
+
+template <>
+inline std::string attemptPrint(const char& v)
+{
+    return "'" + std::string(1, v) + "'";
+}
+
 
 template <typename... Args>
 inline std::string stringifyFuncCall(const std::string& funcName,
@@ -421,6 +432,7 @@ static void printHelp(string_view argv0)
             << "options:\n"
             << "    -r        Run a specific test\n"
             << "    -s        Print successful tests\n"
+            << "    -l        List avaliable tests\n"
             << "    -h        Print this help message\n";
 }
 
@@ -502,6 +514,7 @@ static int run(int argc, char** argv)
     internal::printSuccessfulTests = false;
 
     std::string targetTest;
+    bool listTests = false;
     for (int i = 1; i < argc; i++)
     {
         std::string param = argv[i];
@@ -519,8 +532,31 @@ static int run(int argc, char** argv)
         {
             internal::printSuccessfulTests = true;
         }
+        if (param == "-l")
+        {
+            listTests = true;
+        }
     }
     auto classNames = DrClassMap::getAllClassName();
+
+    if (listTests)
+    {
+        print() << "Avaliable Tests:\n";
+        for (const auto& name : classNames)
+        {
+            if (name.find(DROGON_TESTCASE_PREIX_STR_) == 0)
+            {
+                auto test =
+                    std::unique_ptr<DrObjectBase>(DrClassMap::newObject(name));
+                auto ptr = dynamic_cast<TestCase*>(test.get());
+                if (ptr == nullptr)
+                    continue;
+                print() << "  " << ptr->name() << "\n";
+            }
+        }
+        exit(0);
+    }
+
     std::vector<std::unique_ptr<DrObjectBase>> testCases;
     for (const auto& name : classNames)
     {
@@ -544,6 +580,12 @@ static int run(int argc, char** argv)
             }
         }
     }
+    if (targetTest != "" && internal::numTestCases == 0)
+    {
+        printErr() << "Cannot find test named " << targetTest << "\n";
+        exit(1);
+    }
+
     if (internal::registeredTests.empty() == false)
     {
         std::unique_lock<std::mutex> l(internal::mtxRunning);
@@ -551,6 +593,7 @@ static int run(int argc, char** argv)
         assert(internal::registeredTests.empty());
     }
     testCases.clear();
+
     printTestStats();
 
     return internal::numCorrectAssertions != internal::numAssertions;
