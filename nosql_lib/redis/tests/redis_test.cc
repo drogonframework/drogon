@@ -75,7 +75,7 @@ DROGON_TEST(RedisTest)
         }
         catch (const RedisException &err)
         {
-            MANDATE(err.what());
+            FAULT(err.what());
         }
     };
     drogon::sync_wait(coro_test());
