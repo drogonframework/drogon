@@ -59,7 +59,7 @@ inline void unregisterCase(Case* test)
 
     if (registeredTests.empty())
     {
-        std::unique_lock lk(mtxRunning);
+        std::unique_lock<std::mutex> lk(mtxRunning);
         allTestRanFlag = true;
         allTestRan.notify_all();
     }
