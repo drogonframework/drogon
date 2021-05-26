@@ -21,7 +21,7 @@
 #include <vector>
 
 #ifdef _WIN32
-using ssize_t = std::intptr_t;
+using ssize_t = long long;
 #endif
 
 namespace drogon

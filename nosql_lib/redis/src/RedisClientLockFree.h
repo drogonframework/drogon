@@ -35,7 +35,8 @@ class RedisClientLockFree final
     RedisClientLockFree(const trantor::InetAddress &serverAddress,
                         size_t numberOfConnections,
                         trantor::EventLoop *loop,
-                        std::string password = "");
+                        std::string password = "",
+                        unsigned int db = 0);
     void execCommandAsync(RedisResultCallback &&resultCallback,
                           RedisExceptionCallback &&exceptionCallback,
                           string_view command,
@@ -67,6 +68,7 @@ class RedisClientLockFree final
     RedisConnectionPtr newConnection();
     const trantor::InetAddress serverAddr_;
     const std::string password_;
+    const unsigned int db_;
     const size_t numberOfConnections_;
     std::list<std::shared_ptr<std::function<void(const RedisConnectionPtr &)>>>
         tasks_;

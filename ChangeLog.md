@@ -4,6 +4,62 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.6.0] - 2021-05-15
+
+### API changes list
+
+- Add option to set default handler.
+
+- Add the setTimeout() method to the DbClient class and the RedisClient class.
+
+- Add the validateCert parameter to the newWebSocketClient method.
+
+### Changed
+
+- A few mini changes to drogon_ctl command.
+
+- Improve the MultiPartParser class.
+
+- Add GNU -Werror & fix warnings.
+
+- Enhancements on files part.
+
+- Add version/soversion to shared library.
+
+- Disallow coroutines to be resolved as plain subroutine handlers.
+
+- Send the content-length header even if the body(POST,PUT,OPTIONS,PATCH) is empty.
+
+- Use make_exception_ptr instead of throw/catch when possible.
+
+- Remove duplicated inclusion.
+
+- Print error before terminating in AsyncTask.
+
+- Allow users to override drogon Find modules.
+
+- Use two-phase construction for the DbClientImpl and the RedisClientImpl.
+
+- Add support 'select <db>' for redis.
+
+### Fixed
+
+- Fix a bug of the Transaction class.
+
+- Copy CoroMapper.h to installation location.
+
+- Remove the related request from the buffer if it's not sent after the timeout.
+
+- Fix ORM with SQLite3 not compiling on Arch Linux.
+
+- Fix an error when constructing RedisClientImpl objects.
+
+- Fix coroutine frame leak upon assigning to awaitable.
+
+- Set running flag to true before installing plugins.
+
+- Fix double free in coroutine exception handling.
+
 ## [1.5.1] - 2021-04-10
 
 ### Fixed
@@ -718,7 +774,9 @@ All notable changes to this project will be documented in this file.
 
 ## [1.0.0-beta1] - 2019-06-11
 
-[Unreleased]: https://github.com/an-tao/drogon/compare/v1.5.1...HEAD
+[Unreleased]: https://github.com/an-tao/drogon/compare/v1.6.0...HEAD
+
+[1.6.0]: https://github.com/an-tao/drogon/compare/v1.5.1...v1.6.0
 
 [1.5.1]: https://github.com/an-tao/drogon/compare/v1.5.0...v1.5.1
 

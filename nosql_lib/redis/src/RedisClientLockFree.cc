@@ -21,10 +21,12 @@ RedisClientLockFree::RedisClientLockFree(
     const trantor::InetAddress &serverAddress,
     size_t numberOfConnections,
     trantor::EventLoop *loop,
-    std::string password)
+    std::string password,
+    unsigned int db)
     : loop_(loop),
       serverAddr_(serverAddress),
       password_(std::move(password)),
+      db_(db),
       numberOfConnections_(numberOfConnections)
 {
     assert(loop_);
@@ -38,7 +40,7 @@ RedisConnectionPtr RedisClientLockFree::newConnection()
 {
     loop_->assertInLoopThread();
     auto conn =
-        std::make_shared<RedisConnection>(serverAddr_, password_, loop_);
+        std::make_shared<RedisConnection>(serverAddr_, password_, db_, loop_);
     std::weak_ptr<RedisClientLockFree> thisWeakPtr = shared_from_this();
     conn->setConnectCallback([thisWeakPtr](RedisConnectionPtr &&conn) {
         auto thisPtr = thisWeakPtr.lock();

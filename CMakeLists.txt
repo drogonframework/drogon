@@ -26,8 +26,8 @@ CMAKE_DEPENDENT_OPTION(BUILD_SQLITE "Build with sqlite3 support" ON "BUILD_ORM" 
 CMAKE_DEPENDENT_OPTION(BUILD_REDIS "Build with redis support" ON "BUILD_ORM" OFF)
 
 set(DROGON_MAJOR_VERSION 1)
-set(DROGON_MINOR_VERSION 5)
-set(DROGON_PATCH_VERSION 1)
+set(DROGON_MINOR_VERSION 6)
+set(DROGON_PATCH_VERSION 0)
 set(DROGON_VERSION
     ${DROGON_MAJOR_VERSION}.${DROGON_MINOR_VERSION}.${DROGON_PATCH_VERSION})
 set(DROGON_VERSION_STRING "${DROGON_VERSION}")
@@ -55,23 +55,23 @@ if (BUILD_DROGON_SHARED)
         VERSION ${DROGON_VERSION}
         SOVERSION ${DROGON_MAJOR_VERSION})
     target_link_libraries(${PROJECT_NAME} PUBLIC Threads::Threads)
-    if(WIN32)
-      target_link_libraries(${PROJECT_NAME} PUBLIC Rpcrt4 ws2_32)
-      if(CMAKE_CXX_COMPILER_ID MATCHES MSVC)
-          # Ignore MSVC C4251 and C4275 warning of exporting std objects with no dll export
-          # We export class to facilitate maintenance, thus if you compile
-          # drogon on windows as a shared library, you will need to use
-          # exact same compiler for drogon and your app.
-          target_compile_options(${PROJECT_NAME} PUBLIC /wd4251 /wd4275)
-      endif()
-    endif()
+    if (WIN32)
+        target_link_libraries(${PROJECT_NAME} PUBLIC Rpcrt4 ws2_32)
+        if (CMAKE_CXX_COMPILER_ID MATCHES MSVC)
+            # Ignore MSVC C4251 and C4275 warning of exporting std objects with no dll export
+            # We export class to facilitate maintenance, thus if you compile
+            # drogon on windows as a shared library, you will need to use
+            # exact same compiler for drogon and your app.
+            target_compile_options(${PROJECT_NAME} PUBLIC /wd4251 /wd4275)
+        endif ()
+    endif ()
 else (BUILD_DROGON_SHARED)
     add_library(${PROJECT_NAME} STATIC)
 endif (BUILD_DROGON_SHARED)
 
 if (CMAKE_CXX_COMPILER_ID MATCHES GNU)
     target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Werror)
-endif()
+endif ()
 
 include(GenerateExportHeader)
 generate_export_header(${PROJECT_NAME} EXPORT_FILE_NAME ${CMAKE_CURRENT_BINARY_DIR}/exports/drogon/exports.h)
@@ -131,7 +131,7 @@ else ()
     message(STATUS "use c++20")
 endif ()
 
-set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules/)
+list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules/)
 
 # jsoncpp
 find_package(Jsoncpp REQUIRED)
@@ -197,6 +197,7 @@ set(DROGON_SOURCES
     lib/src/NotFound.cc
     lib/src/PluginsManager.cc
     lib/src/SecureSSLRedirector.cc
+    lib/src/AccessLogger.cc
     lib/src/SessionManager.cc
     lib/src/StaticFileRouter.cc
     lib/src/TaskTimeoutFlag.cc
@@ -281,10 +282,10 @@ endif (BUILD_REDIS)
 
 if (NOT Hiredis_FOUND)
     set(DROGON_SOURCES
-            ${DROGON_SOURCES}
-            lib/src/RedisClientSkipped.cc
-            lib/src/RedisResultSkipped.cc
-            lib/src/RedisClientManagerSkipped.cc)
+        ${DROGON_SOURCES}
+        lib/src/RedisClientSkipped.cc
+        lib/src/RedisResultSkipped.cc
+        lib/src/RedisClientManagerSkipped.cc)
 endif (NOT Hiredis_FOUND)
 
 if (BUILD_TESTING)
@@ -334,24 +335,24 @@ if (COZ_PROFILING)
 endif (COZ_PROFILING)
 
 set(DROGON_SOURCES
-        ${DROGON_SOURCES}
-        orm_lib/src/ArrayParser.cc
-        orm_lib/src/Criteria.cc
-        orm_lib/src/DbClient.cc
-        orm_lib/src/DbClientImpl.cc
-        orm_lib/src/DbClientLockFree.cc
-        orm_lib/src/DbConnection.cc
-        orm_lib/src/Exception.cc
-        orm_lib/src/Field.cc
-        orm_lib/src/Result.cc
-        orm_lib/src/Row.cc
-        orm_lib/src/SqlBinder.cc
-        orm_lib/src/TransactionImpl.cc
-        orm_lib/src/RestfulController.cc)
+    ${DROGON_SOURCES}
+    orm_lib/src/ArrayParser.cc
+    orm_lib/src/Criteria.cc
+    orm_lib/src/DbClient.cc
+    orm_lib/src/DbClientImpl.cc
+    orm_lib/src/DbClientLockFree.cc
+    orm_lib/src/DbConnection.cc
+    orm_lib/src/Exception.cc
+    orm_lib/src/Field.cc
+    orm_lib/src/Result.cc
+    orm_lib/src/Row.cc
+    orm_lib/src/SqlBinder.cc
+    orm_lib/src/TransactionImpl.cc
+    orm_lib/src/RestfulController.cc)
 if (pg_FOUND OR MySQL_FOUND OR SQLite3_FOUND)
     set(DROGON_SOURCES
-            ${DROGON_SOURCES}
-            orm_lib/src/DbClientManager.cc)
+        ${DROGON_SOURCES}
+        orm_lib/src/DbClientManager.cc)
 else (pg_FOUND OR MySQL_FOUND OR SQLite3_FOUND)
     set(DROGON_SOURCES ${DROGON_SOURCES} lib/src/DbClientManagerSkipped.cc)
 endif (pg_FOUND OR MySQL_FOUND OR SQLite3_FOUND)
@@ -512,7 +513,8 @@ install(FILES ${DROGON_UTIL_HEADERS}
     DESTINATION ${INSTALL_INCLUDE_DIR}/drogon/utils)
 
 set(DROGON_PLUGIN_HEADERS lib/inc/drogon/plugins/Plugin.h
-    lib/inc/drogon/plugins/SecureSSLRedirector.h)
+    lib/inc/drogon/plugins/SecureSSLRedirector.h
+    lib/inc/drogon/plugins/AccessLogger.h)
 install(FILES ${DROGON_PLUGIN_HEADERS}
     DESTINATION ${INSTALL_INCLUDE_DIR}/drogon/plugins)
 

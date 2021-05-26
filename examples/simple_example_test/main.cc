@@ -1361,7 +1361,7 @@ void doTest(const HttpClientPtr &client,
 
 #ifdef __cpp_impl_coroutine
     // Test coroutine requests
-    [client, isHttps]() -> AsyncTask {
+    sync_wait([client, isHttps]() -> Task<> {
         try
         {
             auto req = HttpRequest::newHttpRequest();
@@ -1381,10 +1381,10 @@ void doTest(const HttpClientPtr &client,
             LOG_ERROR << "Error!";
             exit(1);
         }
-    }();
+    }());
 
     // Test coroutine request with co_return
-    [client, isHttps]() -> AsyncTask {
+    sync_wait([client, isHttps]() -> Task<> {
         try
         {
             auto req = HttpRequest::newHttpRequest();
@@ -1404,7 +1404,7 @@ void doTest(const HttpClientPtr &client,
             LOG_ERROR << "Error!";
             exit(1);
         }
-    }();
+    }());
 #endif
 }
 void loadFileLengths()

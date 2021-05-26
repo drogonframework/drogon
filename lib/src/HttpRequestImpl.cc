@@ -350,7 +350,7 @@ void HttpRequestImpl::appendToBuffer(trantor::MsgBuffer *output) const
         for (auto it = cookies_.begin(); it != cookies_.end(); ++it)
         {
             output->append(it->first);
-            output->append("= ");
+            output->append("=");
             output->append(it->second);
             output->append(";");
         }
@@ -399,6 +399,11 @@ void HttpRequestImpl::addHeader(const char *start,
                     ++cpos;
                 cookie_name = cookie_name.substr(cpos);
                 std::string cookie_value = coo.substr(epos + 1);
+                cpos = 0;
+                while (cpos < cookie_value.length() &&
+                       isspace(cookie_value[cpos]))
+                    ++cpos;
+                cookie_value = cookie_value.substr(cpos);
                 cookies_[std::move(cookie_name)] = std::move(cookie_value);
             }
             value = value.substr(pos + 1);
@@ -416,6 +421,11 @@ void HttpRequestImpl::addHeader(const char *start,
                     ++cpos;
                 cookie_name = cookie_name.substr(cpos);
                 std::string cookie_value = coo.substr(epos + 1);
+                cpos = 0;
+                while (cpos < cookie_value.length() &&
+                       isspace(cookie_value[cpos]))
+                    ++cpos;
+                cookie_value = cookie_value.substr(cpos);
                 cookies_[std::move(cookie_name)] = std::move(cookie_value);
             }
         }

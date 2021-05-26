@@ -238,7 +238,7 @@ HttpClientImpl::~HttpClientImpl()
     if (resolverPtr_ && !(loop_->isInLoopThread()))
     {
         // Make sure the resolverPtr_ is destroyed in the correct thread.
-        loop_->queueInLoop([reolverPtr = resolverPtr_]() {});
+        loop_->queueInLoop([resolverPtr = std::move(resolverPtr_)]() {});
     }
 }
 

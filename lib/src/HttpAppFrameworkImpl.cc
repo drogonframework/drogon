@@ -21,7 +21,6 @@
 #include "HttpSimpleControllersRouter.h"
 #include "HttpControllersRouter.h"
 #include "WebsocketControllersRouter.h"
-#include "HttpClientImpl.h"
 #include "AOPAdvice.h"
 #include "ConfigLoader.h"
 #include "HttpServer.h"
@@ -123,8 +122,11 @@ void defaultExceptionHandler(
     const HttpRequestPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback)
 {
-    LOG_ERROR << "Unhandled exception in " << req->query()
-              << ", what():" << e.what();
+    std::string pathWithQuery = req->path();
+    if (req->query().empty() == false)
+        pathWithQuery += "?" + req->query();
+    LOG_ERROR << "Unhandled exception in " << pathWithQuery
+              << ", what(): " << e.what();
     const auto &handler = app().getCustomErrorHandler();
     callback(handler(k500InternalServerError));
 }
@@ -537,7 +539,8 @@ void HttpAppFrameworkImpl::run()
         sslCertPath_,
         sslKeyPath_,
         threadNum_,
-        syncAdvices_);
+        syncAdvices_,
+        preSendingAdvices_);
     assert(ioLoops.size() == threadNum_);
     for (size_t i = 0; i < threadNum_; ++i)
     {
@@ -554,7 +557,8 @@ void HttpAppFrameworkImpl::run()
         sessionManagerPtr_ =
             std::make_unique<SessionManager>(getLoop(), sessionTimeout_);
     }
-
+    // now start runing!!
+    running_ = true;
     // Initialize plugins
     const auto &pluginConfig = jsonConfig_["plugins"];
     if (!pluginConfig.isNull())
@@ -567,9 +571,6 @@ void HttpAppFrameworkImpl::run()
                                                      // TODO: new plugin
                                                  });
     }
-
-    // now start runing!!
-    running_ = true;
     httpCtrlsRouterPtr_->init(ioLoops);
     httpSimpleCtrlsRouterPtr_->init(ioLoops);
     staticFileRouterPtr_->init(ioLoops);
@@ -990,11 +991,12 @@ HttpAppFramework &HttpAppFrameworkImpl::createRedisClient(
     const std::string &password,
     size_t connectionNum,
     bool isFast,
-    double timeout)
+    double timeout,
+    unsigned int db)
 {
     assert(!running_);
     redisClientManagerPtr_->createRedisClient(
-        name, ip, port, password, connectionNum, isFast, timeout);
+        name, ip, port, password, connectionNum, isFast, timeout, db);
     return *this;
 }
 void HttpAppFrameworkImpl::quit()
