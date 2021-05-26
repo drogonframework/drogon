@@ -22,17 +22,8 @@ DROGON_TEST(WebSocketTest)
             if (type == WebSocketMessageType::Pong)
             {
                 CHECK(message.empty());
-                wsPtr->getConnection()->shutdown();
                 TEST_CTX = {};
             }
-        });
-
-    wsPtr_->setConnectionClosedHandler(
-        [TEST_CTX](const WebSocketClientPtr &wsPtr) mutable {
-            // Gracefully destruct the client from outside
-            CHECK(wsPtr_ == wsPtr);
-            TEST_CTX = {};
-            app().getLoop()->queueInLoop([]() { wsPtr_ = {}; });
         });
 
     wsPtr_->connectToServer(

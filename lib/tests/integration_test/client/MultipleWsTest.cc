@@ -29,7 +29,6 @@ DROGON_TEST(MultipleWsTest)
                 {
                     // Check if the correct connection got the result
                     CHECK(message == std::to_string(i));
-                    wsPtr->getConnection()->shutdown();
                     TEST_CTX = {};
                 }
             });
