@@ -719,22 +719,21 @@ DROGON_TEST(HttpsTest)
     doTest(client, TEST_CTX);
 }
 
-int main(int argc, char *argv[])
+int main(int argc, char **argv)
 {
     trantor::Logger::setLogLevel(trantor::Logger::LogLevel::kDebug);
 
-    loadFileLengths();
-    bool ever = false;
-    if (argc > 1 && std::string(argv[1]) == "-f")
-        ever = true;
-
     std::atomic<int> testStatus;
+    std::promise<int> p1;
+    std::future<int> f1 = p1.get_future();
+
     std::thread thr([&]() {
         testStatus = test::run(argc, argv);
-        // Workarround not quiting when there's 0 test to run
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        f1.get();
         app().quit();
     });
+
+    app().getLoop()->queueInLoop([&]() { p1.set_value(1); });
 
     app().run();
     thr.join();
