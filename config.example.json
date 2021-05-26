@@ -2,12 +2,17 @@
  */
 {
     /*
-    //ssl:The global ssl files setting
+    //ssl:The global ssl setting including ssl files and
+    //commands used for SSL_CONF_cmd
     "ssl": {
         "cert": "../../trantor/trantor/tests/server.pem",
         "key": "../../trantor/trantor/tests/server.pem",
         "conf": [
-            ["min_protocol", "TLSv1.2"]
+            /*
+            ["Options", "-SessionTicket"], 
+            ["Options", "Compression"]
+            */
+            []
         ]
     },
     "listeners": [
