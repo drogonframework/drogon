@@ -65,7 +65,7 @@ class DROGON_EXPORT Result
     Result &operator=(const Result &r) noexcept;
     Result &operator=(Result &&) noexcept;
     using DifferenceType = long;
-    using SizeType = unsigned long;
+    using SizeType = size_t;
     using Reference = Row;
     using ConstIterator = ConstResultIterator;
     using Iterator = ConstIterator;

@@ -45,7 +45,7 @@ class ConstReverseRowIterator;
 class DROGON_EXPORT Row
 {
   public:
-    using SizeType = unsigned long;
+    using SizeType = size_t;
     using Reference = Field;
     using ConstIterator = ConstRowIterator;
     using Iterator = ConstIterator;
