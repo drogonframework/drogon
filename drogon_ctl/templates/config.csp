@@ -8,10 +8,8 @@
         "cert": "../../trantor/trantor/tests/server.pem",
         "key": "../../trantor/trantor/tests/server.pem",
         "conf": [
-            /*
-            ["Options", "-SessionTicket"], 
-            ["Options", "Compression"]
-            */
+            //["Options", "-SessionTicket"], 
+            //["Options", "Compression"]
         ]
     },
     "listeners": [
