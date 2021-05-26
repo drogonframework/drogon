@@ -10,6 +10,7 @@
 #include <mutex>
 #include <sstream>
 #include <atomic>
+#include <future>
 #include <iomanip>
 #include <cstddef>
 /**
@@ -35,12 +36,10 @@ class Case;
 namespace internal
 {
 extern std::mutex mtxRegister;
-extern std::mutex mtxRunning;
+extern std::promise<void> allTestRan;
 extern std::mutex mtxTestStats;
 extern bool testHasPrinted;
 extern std::set<Case*> registeredTests;
-extern std::condition_variable allTestRan;
-extern std::atomic<bool> allTestRanFlag;
 extern std::atomic<size_t> numAssertions;
 extern std::atomic<size_t> numCorrectAssertions;
 extern size_t numTestCases;
@@ -54,15 +53,16 @@ inline void registerCase(Case* test)
 
 inline void unregisterCase(Case* test)
 {
-    std::unique_lock<std::mutex> l(mtxRegister);
-    registeredTests.erase(test);
+    bool isEmpty = false;
 
-    if (registeredTests.empty())
     {
-        std::unique_lock<std::mutex> lk(mtxRunning);
-        allTestRanFlag = true;
-        allTestRan.notify_all();
+        std::unique_lock<std::mutex> l(mtxRegister);
+        registeredTests.erase(test);
+        isEmpty = registeredTests.empty();
     }
+
+    if (isEmpty)
+        allTestRan.set_value();
 }
 
 template <typename _Tp, typename dummy = void>
@@ -526,7 +526,6 @@ static int run(int argc, char** argv)
     internal::numFailedTestCases = 0;
     internal::numTestCases = 0;
     internal::printSuccessfulTests = false;
-    internal::allTestRanFlag = false;
 
     std::string targetTest;
     bool listTests = false;
@@ -603,10 +602,8 @@ static int run(int argc, char** argv)
 
     if (internal::registeredTests.empty() == false)
     {
-        std::unique_lock<std::mutex> l(internal::mtxRunning);
-        internal::allTestRan.wait(l, []() -> bool {
-            return internal::allTestRanFlag;
-        });
+        auto fut = internal::allTestRan.get_future();
+        fut.get();
         assert(internal::registeredTests.empty());
     }
     testCases.clear();
@@ -971,12 +968,10 @@ std::mutex ThreadSafeStream::mtx_;
 namespace internal
 {
 std::mutex mtxRegister;
-std::mutex mtxRunning;
 std::mutex mtxTestStats;
 bool testHasPrinted = false;
 std::set<Case*> registeredTests;
-std::condition_variable allTestRan;
-std::atomic<bool> allTestRanFlag;
+std::promise<void> allTestRan;
 std::atomic<size_t> numAssertions;
 std::atomic<size_t> numCorrectAssertions;
 size_t numTestCases;

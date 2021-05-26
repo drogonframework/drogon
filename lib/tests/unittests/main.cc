@@ -37,8 +37,8 @@ DROGON_TEST(TestFrameworkSelfTest)
 int main(int argc, char** argv)
 {
     std::atomic<int> testStatus;
-    std::promise<int> p1;
-    std::future<int> f1 = p1.get_future();
+    std::promise<void> p1;
+    std::future<void> f1 = p1.get_future();
 
     std::thread thr([&]() {
         testStatus = test::run(argc, argv);
@@ -46,7 +46,7 @@ int main(int argc, char** argv)
         app().quit();
     });
 
-    app().getLoop()->queueInLoop([&]() { p1.set_value(1); });
+    app().getLoop()->queueInLoop([&]() { p1.set_value(); });
 
     app().run();
     thr.join();
