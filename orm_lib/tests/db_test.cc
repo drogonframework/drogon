@@ -33,14 +33,12 @@ using namespace std::chrono_literals;
 using namespace drogon::orm;
 
 #if USE_POSTGRESQL
-DbClientPtr pgClient;
 DROGON_TEST(PostgreTest)
 {
-    pgClient = DbClient::newPgClient(
+    auto clientPtr = DbClient::newPgClient(
         "host=127.0.0.1 port=5432 dbname=postgres user=postgres password=12345 "
         "client_encoding=utf8",
         1);
-    auto &clientPtr = pgClient;
     // Prepare the test environment
     *clientPtr << "DROP TABLE IF EXISTS USERS" >> [TEST_CTX](const Result &r) {
         SUCCESS();
@@ -683,12 +681,12 @@ DROGON_TEST(PostgreTest)
 #endif
 
 #if USE_MYSQL
-DbClientPtr mysqlClient;
 DROGON_TEST(MySQLTest)
 {
-    mysqlClient = DbClient::newMysqlClient(
-        "host=localhost port=3306 user=root client_encoding=utf8mb4", 1);
-    auto clientPtr = mysqlClient;
+    auto clientPtr = DbClient::newMysqlClient(
+        "host=localhost port=3306 user=root client_encoding=utf8mb4 "
+        "password=marty1885",
+        1);
     REQUIRE(clientPtr != nullptr);
     // Prepare the test environment
     *clientPtr << "CREATE DATABASE IF NOT EXISTS drogonTestMysql" >>
@@ -1271,11 +1269,9 @@ DROGON_TEST(MySQLTest)
 #endif
 
 #if USE_SQLITE3
-DbClientPtr sqlite3Client;
 DROGON_TEST(SQLite3Test)
 {
-    sqlite3Client = DbClient::newSqlite3Client("filename=:memory:", 1);
-    auto &clientPtr = sqlite3Client;
+    auto clientPtr = DbClient::newSqlite3Client("filename=:memory:", 1);
     REQUIRE(clientPtr != nullptr);
 
     // Prepare the test environment
