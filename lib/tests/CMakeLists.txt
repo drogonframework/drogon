@@ -1,4 +1,5 @@
 link_libraries(${PROJECT_NAME})
+include(ParseAndAddDrogonTests)
 set(UNITTEST_SOURCES unittests/main.cc
                         unittests/Base64Test.cc
                         unittests/UrlCodecTest.cc
@@ -96,4 +97,4 @@ set_property(TARGET ${tests}
 set_property(TARGET ${tests} PROPERTY CXX_STANDARD_REQUIRED ON)
 set_property(TARGET ${tests} PROPERTY CXX_EXTENSIONS OFF)
 
-add_custom_target(test COMMAND unittest -s)
+ParseAndAddDrogonTests(unittest)

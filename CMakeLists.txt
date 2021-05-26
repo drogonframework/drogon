@@ -425,6 +425,7 @@ configure_file(${PROJECT_SOURCE_DIR}/cmake/templates/config.h.in
 
 if (BUILD_TESTING)
     message(STATUS "Building tests")
+    enable_testing()
     add_subdirectory(lib/tests)
     if (pg_FOUND)
         add_subdirectory(${PROJECT_SOURCE_DIR}/orm_lib/src/postgresql_impl/test)
@@ -551,6 +552,7 @@ write_basic_package_version_file(
 # Install the DrogonConfig.cmake and DrogonConfigVersion.cmake
 install(FILES
     "${CMAKE_CURRENT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/DrogonConfig.cmake"
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules/ParseAndAddDrogonTests.cmake"
     "${CMAKE_CURRENT_BINARY_DIR}/DrogonConfigVersion.cmake"
     "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules/FindUUID.cmake"
     "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules/FindJsoncpp.cmake"
