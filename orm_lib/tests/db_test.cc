@@ -684,9 +684,7 @@ DROGON_TEST(PostgreTest)
 DROGON_TEST(MySQLTest)
 {
     auto clientPtr = DbClient::newMysqlClient(
-        "host=localhost port=3306 user=root client_encoding=utf8mb4 "
-        "password=marty1885",
-        1);
+        "host=localhost port=3306 user=root client_encoding=utf8mb4", 1);
     REQUIRE(clientPtr != nullptr);
     // Prepare the test environment
     *clientPtr << "CREATE DATABASE IF NOT EXISTS drogonTestMysql" >>
