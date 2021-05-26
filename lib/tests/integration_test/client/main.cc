@@ -722,6 +722,7 @@ DROGON_TEST(HttpsTest)
 int main(int argc, char **argv)
 {
     trantor::Logger::setLogLevel(trantor::Logger::LogLevel::kDebug);
+    loadFileLengths();
 
     std::atomic<int> testStatus;
     std::promise<int> p1;
