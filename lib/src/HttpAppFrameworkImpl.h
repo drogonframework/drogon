@@ -64,7 +64,8 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
         return threadNum_;
     }
     HttpAppFramework &setSSLConfigCommands(
-        const std::vector<std::pair<std::string, std::string>> &sslConfCmds) override;
+        const std::vector<std::pair<std::string, std::string>> &sslConfCmds)
+        override;
     HttpAppFramework &setSSLFiles(const std::string &certPath,
                                   const std::string &keyPath) override;
     void run() override;

@@ -30,14 +30,14 @@ namespace drogon
 class ListenerManager : public trantor::NonCopyable
 {
   public:
-    void addListener(
-        const std::string &ip,
-        uint16_t port,
-        bool useSSL = false,
-        const std::string &certFile = "",
-        const std::string &keyFile = "",
-        bool useOldTLS = false,
-        const std::vector<std::pair<std::string, std::string>> &sslConfCmds = {});
+    void addListener(const std::string &ip,
+                     uint16_t port,
+                     bool useSSL = false,
+                     const std::string &certFile = "",
+                     const std::string &keyFile = "",
+                     bool useOldTLS = false,
+                     const std::vector<std::pair<std::string, std::string>>
+                         &sslConfCmds = {});
     std::vector<trantor::EventLoop *> createListeners(
         const HttpAsyncCallback &httpCallback,
         const WebSocketNewAsyncCallback &webSocketCallback,
