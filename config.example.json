@@ -12,7 +12,6 @@
             ["Options", "-SessionTicket"], 
             ["Options", "Compression"]
             */
-            []
         ]
     },
     "listeners": [
