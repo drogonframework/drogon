@@ -85,6 +85,7 @@ include(GenerateExportHeader)
 generate_export_header(${PROJECT_NAME} EXPORT_FILE_NAME ${CMAKE_CURRENT_BINARY_DIR}/exports/drogon/exports.h)
 
 include(cmake/DrogonUtilities.cmake)
+include(cmake/ParseAndAddDrogonTests.cmake)
 include(CheckIncludeFileCXX)
 
 check_include_file_cxx(any HAS_ANY)
@@ -551,7 +552,6 @@ write_basic_package_version_file(
 # Install the DrogonConfig.cmake and DrogonConfigVersion.cmake
 install(FILES
     "${CMAKE_CURRENT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/DrogonConfig.cmake"
-    "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules/ParseAndAddDrogonTests.cmake"
     "${CMAKE_CURRENT_BINARY_DIR}/DrogonConfigVersion.cmake"
     "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules/FindUUID.cmake"
     "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules/FindJsoncpp.cmake"
@@ -562,6 +562,7 @@ install(FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules/Findcoz-profiler.cmake"
     "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules/FindHiredis.cmake"
     "${CMAKE_CURRENT_SOURCE_DIR}/cmake/DrogonUtilities.cmake"
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/ParseAndAddDrogonTests.cmake"
     DESTINATION "${INSTALL_DROGON_CMAKE_DIR}"
     COMPONENT dev)
 

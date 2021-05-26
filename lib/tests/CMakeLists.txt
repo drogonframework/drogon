@@ -1,5 +1,4 @@
 link_libraries(${PROJECT_NAME})
-include(ParseAndAddDrogonTests)
 set(UNITTEST_SOURCES unittests/main.cc
                         unittests/Base64Test.cc
                         unittests/UrlCodecTest.cc
