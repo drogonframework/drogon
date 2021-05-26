@@ -25,7 +25,7 @@ DROGON_TEST(MultipleWsTest)
                           const WebSocketMessageType &type) mutable {
                 CHECK((type == WebSocketMessageType::Text ||
                        type == WebSocketMessageType::Pong));
-                if (type == WebSocketMessageType::Pong)
+                if (type == WebSocketMessageType::Pong && TEST_CTX != nullptr)
                 {
                     // Check if the correct connection got the result
                     CHECK(message == std::to_string(i));
