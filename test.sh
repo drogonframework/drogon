@@ -69,7 +69,6 @@ fi
 
 killall -9 integration_test_server
 ./integration_test_server &
-serverpid=$!
 
 sleep 4
 
@@ -81,7 +80,7 @@ if [ $? -ne 0 ]; then
     exit -1
 fi
 
-kill -9 $serverpid
+killall -9 integration_test_server
 
 #Test drogon_ctl
 echo "Testing drogon_ctl"
