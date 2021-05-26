@@ -8,13 +8,12 @@
 #    enable_testing()                                                                              #
 # 3. add the lines to the script for testing target (sample CMakeLists.txt):                       #
 #        project(testing_target)                                                                   #
-#        set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake_modules/")          #
 #        enable_testing()                                                                          #
 #                                                                                                  #
 #        file(GLOB SOURCE_FILES "*.cpp")                                                           #
 #        add_executable(${PROJECT_NAME} ${SOURCE_FILES})                                           #
 #                                                                                                  #
-#        include(ParseAndAddDrogonTests()                                                          #
+#        include(ParseAndAddDrogonTests)                                                          #
 #        ParseAndAddDrogonTests(${PROJECT_NAME})                                                   #
 #==================================================================================================#
 

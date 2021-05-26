@@ -14,7 +14,7 @@
 #include <iomanip>
 #include <cstddef>
 /**
- * @brief Drogon Test is a minimal effost test framework developed because the
+ * @brief Drogon Test is a minimal effort test framework developed because the
  * major C++ test frameworks doesn't handle async programs well. Drogon Test's
  * syntax is inspired by both Google Test and Catch2
  */
