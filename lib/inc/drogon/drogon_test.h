@@ -53,15 +53,10 @@ inline void registerCase(Case* test)
 
 inline void unregisterCase(Case* test)
 {
-    bool isEmpty = false;
+    std::unique_lock<std::mutex> l(mtxRegister);
+    registeredTests.erase(test);
 
-    {
-        std::unique_lock<std::mutex> l(mtxRegister);
-        registeredTests.erase(test);
-        isEmpty = registeredTests.empty();
-    }
-
-    if (isEmpty)
+    if (registeredTests.empty())
         allTestRan.set_value();
 }
 
@@ -571,29 +566,34 @@ static int run(int argc, char** argv)
         exit(0);
     }
 
-    std::vector<std::unique_ptr<DrObjectBase>> testCases;
+    std::vector<std::shared_ptr<TestCase>> testCases;
+    // NOTE: Registering a dummy case prevents the test-end signal to be
+    // emited too early as there's always an case that hasn't finish
+    std::shared_ptr<Case> dummyCase = std::make_shared<Case>("__dummy_dummy_");
     for (const auto& name : classNames)
     {
         if (name.find(DROGON_TESTCASE_PREIX_STR_) == 0)
         {
-            auto test =
-                std::unique_ptr<DrObjectBase>(DrClassMap::newObject(name));
-            auto ptr = dynamic_cast<TestCase*>(test.get());
-            if (ptr == nullptr)
+            auto obj =
+                std::shared_ptr<DrObjectBase>(DrClassMap::newObject(name));
+            auto test = std::dynamic_pointer_cast<TestCase>(obj);
+            if (test == nullptr)
             {
                 LOG_WARN << "Class " << name
                          << " seems to be a test case. But type information "
                             "disagrees.";
                 continue;
             }
-            if (targetTest.empty() || ptr->name() == targetTest)
+            if (targetTest.empty() || test->name() == targetTest)
             {
                 internal::numTestCases++;
-                ptr->doTest_(std::move(std::make_shared<Case>(ptr->name())));
+                test->doTest_(std::make_shared<Case>(test->name()));
                 testCases.emplace_back(std::move(test));
             }
         }
     }
+    dummyCase = {};
+
     if (targetTest != "" && internal::numTestCases == 0)
     {
         printErr() << "Cannot find test named " << targetTest << "\n";
