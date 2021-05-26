@@ -694,7 +694,8 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
                                           bool useSSL = false,
                                           const std::string &certFile = "",
                                           const std::string &keyFile = "",
-                                          bool useOldTLS = false) = 0;
+                                          bool useOldTLS = false,
+                                          const std::vector<std::pair<std::string, std::string>> &sslConfCmds = {}) = 0;
 
     /// Enable sessions supporting.
     /**

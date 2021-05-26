@@ -201,7 +201,7 @@ std::vector<trantor::EventLoop *> ListenerManager::createListeners(
                         << std::endl;
                     exit(1);
                 }
-                serverPtr->enableSSL(cert, key, listener.useOldTLS_);
+                serverPtr->enableSSL(cert, key, listener.useOldTLS_, listener.sslConfCmds_);
 #endif
             }
             serverPtr->setIoLoopThreadPool(ioLoopThreadPoolPtr_);

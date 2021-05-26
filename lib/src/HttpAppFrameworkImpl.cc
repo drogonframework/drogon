@@ -343,11 +343,12 @@ HttpAppFramework &HttpAppFrameworkImpl::addListener(const std::string &ip,
                                                     bool useSSL,
                                                     const std::string &certFile,
                                                     const std::string &keyFile,
-                                                    bool useOldTLS)
+                                                    bool useOldTLS,
+                                                    const std::vector<std::pair<std::string, std::string>> &sslConfCmds)
 {
     assert(!running_);
     listenerManagerPtr_->addListener(
-        ip, port, useSSL, certFile, keyFile, useOldTLS);
+        ip, port, useSSL, certFile, keyFile, useOldTLS, sslConfCmds);
     return *this;
 }
 HttpAppFramework &HttpAppFrameworkImpl::setMaxConnectionNum(

@@ -57,7 +57,8 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
                                   bool useSSL,
                                   const std::string &certFile,
                                   const std::string &keyFile,
-                                  bool useOldTLS) override;
+                                  bool useOldTLS,
+                                  const std::vector<std::pair<std::string, std::string>> &sslConfCmds) override;
     HttpAppFramework &setThreadNum(size_t threadNum) override;
     size_t getThreadNum() const override
     {

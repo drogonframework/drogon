@@ -31,6 +31,9 @@
             "key": "",
             //use_old_tls: enable the TLS1.0/1.1, false by default
             "use_old_tls": false
+            "ssl_conf": [
+                //["min_protocol", "TLSv1.2"]
+            ]
         }
     ],
     "db_clients": [
