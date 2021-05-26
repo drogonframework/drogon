@@ -59,6 +59,7 @@ inline void unregisterCase(Case* test)
 
     if (registeredTests.empty())
     {
+        std::unique_lock lk(mtxRunning);
         allTestRanFlag = true;
         allTestRan.notify_all();
     }
@@ -603,7 +604,9 @@ static int run(int argc, char** argv)
     if (internal::registeredTests.empty() == false)
     {
         std::unique_lock<std::mutex> l(internal::mtxRunning);
-        internal::allTestRan.wait(l, []() { return internal::allTestRanFlag; });
+        internal::allTestRan.wait(l, []() -> bool {
+            return internal::allTestRanFlag;
+        });
         assert(internal::registeredTests.empty());
     }
     testCases.clear();
