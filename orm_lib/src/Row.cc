@@ -35,6 +35,14 @@ Row::Reference Row::operator[](SizeType index) const noexcept
     return Field(*this, index);
 }
 
+Row::Reference Row::operator[](int index) const noexcept
+{
+    assert(index >= 0);
+    auto i = static_cast<SizeType>(index);
+    assert(i < end_);
+    return Field(*this, i);
+}
+
 Row::Reference Row::operator[](const char columnName[]) const
 {
     auto N = result_.columnNumber(columnName);

@@ -54,6 +54,7 @@ class DROGON_EXPORT Row
     using DifferenceType = long;
 
     Reference operator[](SizeType index) const noexcept;
+    Reference operator[](int index) const noexcept;
     Reference operator[](const char columnName[]) const;
     Reference operator[](const std::string &columnName) const;
 
