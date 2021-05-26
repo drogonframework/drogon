@@ -52,13 +52,15 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     }
 
     PluginBase *getPlugin(const std::string &name) override;
-    HttpAppFramework &addListener(const std::string &ip,
-                                  uint16_t port,
-                                  bool useSSL,
-                                  const std::string &certFile,
-                                  const std::string &keyFile,
-                                  bool useOldTLS,
-                                  const std::vector<std::pair<std::string, std::string>> &sslConfCmds) override;
+    HttpAppFramework &addListener(
+        const std::string &ip,
+        uint16_t port,
+        bool useSSL,
+        const std::string &certFile,
+        const std::string &keyFile,
+        bool useOldTLS,
+        const std::vector<std::pair<std::string, std::string>> &sslConfCmds)
+        override;
     HttpAppFramework &setThreadNum(size_t threadNum) override;
     size_t getThreadNum() const override
     {

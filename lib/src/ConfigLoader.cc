@@ -575,7 +575,8 @@ static void loadListeners(const Json::Value &listeners)
         {
             conf.emplace_back(opt[0].asString(), opt[1].asString());
         }
-        drogon::app().addListener(addr, port, useSSL, cert, key, useOldTLS, conf);
+        drogon::app().addListener(
+            addr, port, useSSL, cert, key, useOldTLS, conf);
     }
 }
 static void loadSSL(const Json::Value &sslConf)

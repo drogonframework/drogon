@@ -689,13 +689,15 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
      * @note
      * This operation can be performed by an option in the configuration file.
      */
-    virtual HttpAppFramework &addListener(const std::string &ip,
-                                          uint16_t port,
-                                          bool useSSL = false,
-                                          const std::string &certFile = "",
-                                          const std::string &keyFile = "",
-                                          bool useOldTLS = false,
-                                          const std::vector<std::pair<std::string, std::string>> &sslConfCmds = {}) = 0;
+    virtual HttpAppFramework &addListener(
+        const std::string &ip,
+        uint16_t port,
+        bool useSSL = false,
+        const std::string &certFile = "",
+        const std::string &keyFile = "",
+        bool useOldTLS = false,
+        const std::vector<std::pair<std::string, std::string>> &sslConfCmds =
+            {}) = 0;
 
     /// Enable sessions supporting.
     /**
