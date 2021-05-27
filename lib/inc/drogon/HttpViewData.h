@@ -24,6 +24,7 @@
 #include <unordered_map>
 #include <stdarg.h>
 #include <stdio.h>
+#include <type_traits>
 
 namespace drogon
 {
@@ -141,31 +142,11 @@ class DROGON_EXPORT HttpViewData
        @endcode
      */
     static std::string htmlTranslate(const char *str, size_t length);
-    static std::string htmlTranslate(const std::string &str)
-    {
-        return htmlTranslate(str.data(), str.length());
-    }
     static std::string htmlTranslate(const string_view &str)
     {
         return htmlTranslate(str.data(), str.length());
     }
-    static bool needTranslation(const std::string &str)
-    {
-        for (auto const &c : str)
-        {
-            switch (c)
-            {
-                case '"':
-                case '&':
-                case '<':
-                case '>':
-                    return true;
-                default:
-                    continue;
-            }
-        }
-        return false;
-    }
+
     static bool needTranslation(const string_view &str)
     {
         for (auto const &c : str)

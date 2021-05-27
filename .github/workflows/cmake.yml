@@ -127,15 +127,6 @@ jobs:
       run: |
         sudo apt install postgresql-all
 
-    - name: install gtest
-      run: |
-        wget https://github.com/google/googletest/archive/release-1.10.0.tar.gz
-        tar xf release-1.10.0.tar.gz
-        cd googletest-release-1.10.0
-        cmake .
-        make
-        sudo make install
-
     - name: Create build directory
       run: |
         mkdir build

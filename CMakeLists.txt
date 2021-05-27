@@ -40,6 +40,14 @@ set(DEF_INSTALL_DROGON_CMAKE_DIR lib/cmake/Drogon)
 set(INSTALL_DROGON_CMAKE_DIR ${DEF_INSTALL_DROGON_CMAKE_DIR}
     CACHE PATH "Installation directory for cmake files")
 
+if (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+    # Force MSVC to use UTF-8 because that's what we use. Otherwise it uses
+    # the default of whatever Windows sets and causes encoding issues.
+    message(STATUS "You are using MSVC. Forceing to use UTF-8")
+    add_compile_options("$<$<C_COMPILER_ID:MSVC>:/utf-8>")
+    add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
+endif ()
+
 if (BUILD_DROGON_SHARED)
     set(BUILD_TRANTOR_SHARED TRUE)
     set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
@@ -77,6 +85,7 @@ include(GenerateExportHeader)
 generate_export_header(${PROJECT_NAME} EXPORT_FILE_NAME ${CMAKE_CURRENT_BINARY_DIR}/exports/drogon/exports.h)
 
 include(cmake/DrogonUtilities.cmake)
+include(cmake/ParseAndAddDrogonTests.cmake)
 include(CheckIncludeFileCXX)
 
 check_include_file_cxx(any HAS_ANY)
@@ -415,6 +424,8 @@ configure_file(${PROJECT_SOURCE_DIR}/cmake/templates/config.h.in
     ${PROJECT_BINARY_DIR}/drogon/config.h @ONLY)
 
 if (BUILD_TESTING)
+    message(STATUS "Building tests")
+    enable_testing()
     add_subdirectory(lib/tests)
     if (pg_FOUND)
         add_subdirectory(${PROJECT_SOURCE_DIR}/orm_lib/src/postgresql_impl/test)
@@ -426,12 +437,6 @@ if (BUILD_TESTING)
         add_subdirectory(${PROJECT_SOURCE_DIR}/orm_lib/src/sqlite3_impl/test)
     endif (SQLite3_FOUND)
     add_subdirectory(${PROJECT_SOURCE_DIR}/orm_lib/tests)
-    find_package(GTest)
-    if (GTest_FOUND)
-        message(STATUS "gtest found")
-        enable_testing()
-        add_subdirectory(unittest)
-    endif (GTest_FOUND)
 endif (BUILD_TESTING)
 
 # Installation
@@ -474,6 +479,7 @@ set(DROGON_HEADERS
     lib/inc/drogon/version.h
     lib/inc/drogon/drogon_callbacks.h
     lib/inc/drogon/PubSubService.h
+    lib/inc/drogon/drogon_test.h
     ${CMAKE_CURRENT_BINARY_DIR}/exports/drogon/exports.h)
 install(FILES ${DROGON_HEADERS} DESTINATION ${INSTALL_INCLUDE_DIR}/drogon)
 
@@ -556,6 +562,7 @@ install(FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules/Findcoz-profiler.cmake"
     "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules/FindHiredis.cmake"
     "${CMAKE_CURRENT_SOURCE_DIR}/cmake/DrogonUtilities.cmake"
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/ParseAndAddDrogonTests.cmake"
     DESTINATION "${INSTALL_DROGON_CMAKE_DIR}"
     COMPONENT dev)
 
@@ -564,3 +571,4 @@ install(EXPORT DrogonTargets
     DESTINATION "${INSTALL_DROGON_CMAKE_DIR}"
     NAMESPACE Drogon::
     COMPONENT dev)
+
