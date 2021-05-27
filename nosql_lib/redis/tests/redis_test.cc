@@ -88,19 +88,17 @@ int main(int argc, char **argv)
     LOG_DEBUG << "Drogon is built without Redis. No tests executed.";
     return 0;
 #endif
-    std::atomic<int> testStatus;
     std::promise<void> p1;
     std::future<void> f1 = p1.get_future();
 
     std::thread thr([&]() {
-        testStatus = drogon::test::run(argc, argv);
-        f1.get();
-        drogon::app().quit();
+        p1.set_value();
+        drogon::app().run();
     });
 
-    drogon::app().getLoop()->queueInLoop([&]() { p1.set_value(); });
-
-    drogon::app().run();
+    f1.get();
+    int testStatus = drogon::test::run(argc, argv);
+    drogon::app().quit();
     thr.join();
     return testStatus;
 }

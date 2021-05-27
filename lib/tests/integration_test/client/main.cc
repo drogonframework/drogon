@@ -724,19 +724,17 @@ int main(int argc, char **argv)
     trantor::Logger::setLogLevel(trantor::Logger::LogLevel::kDebug);
     loadFileLengths();
 
-    std::atomic<int> testStatus;
     std::promise<void> p1;
     std::future<void> f1 = p1.get_future();
 
     std::thread thr([&]() {
-        testStatus = test::run(argc, argv);
-        f1.get();
-        app().quit();
+        p1.set_value();
+        app().run();
     });
 
-    app().getLoop()->queueInLoop([&]() { p1.set_value(); });
-
-    app().run();
+    f1.get();
+    int testStatus = test::run(argc, argv);
+    app().quit();
     thr.join();
     return testStatus;
 }
