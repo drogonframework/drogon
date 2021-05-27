@@ -33,12 +33,10 @@ using namespace std::chrono_literals;
 using namespace drogon::orm;
 
 #if USE_POSTGRESQL
+DbClientPtr postgreClient;
 DROGON_TEST(PostgreTest)
 {
-    auto clientPtr = DbClient::newPgClient(
-        "host=127.0.0.1 port=5432 dbname=postgres user=postgres password=12345 "
-        "client_encoding=utf8",
-        1);
+    auto &clientPtr = postgreClient;
     // Prepare the test environment
     *clientPtr << "DROP TABLE IF EXISTS USERS" >> [TEST_CTX](const Result &r) {
         SUCCESS();
@@ -681,10 +679,10 @@ DROGON_TEST(PostgreTest)
 #endif
 
 #if USE_MYSQL
+DbClientPtr mysqlClient;
 DROGON_TEST(MySQLTest)
 {
-    auto clientPtr = DbClient::newMysqlClient(
-        "host=localhost port=3306 user=root client_encoding=utf8mb4", 1);
+    auto &clientPtr = mysqlClient;
     REQUIRE(clientPtr != nullptr);
     // Prepare the test environment
     *clientPtr << "CREATE DATABASE IF NOT EXISTS drogonTestMysql" >>
@@ -1267,9 +1265,10 @@ DROGON_TEST(MySQLTest)
 #endif
 
 #if USE_SQLITE3
+DbClientPtr sqlite3Client;
 DROGON_TEST(SQLite3Test)
 {
-    auto clientPtr = DbClient::newSqlite3Client("filename=:memory:", 1);
+    auto &clientPtr = sqlite3Client;
     REQUIRE(clientPtr != nullptr);
 
     // Prepare the test environment
@@ -1920,6 +1919,20 @@ int main(int argc, char **argv)
     std::promise<void> p1;
     std::future<void> f1 = p1.get_future();
 
+#if USE_MYSQL
+    mysqlClient = DbClient::newMysqlClient(
+        "host=localhost port=3306 user=root client_encoding=utf8mb4", 1);
+#endif
+#ifdef USE_POSTGRESQL
+    postgreClient = DbClient::newPgClient(
+        "host=127.0.0.1 port=5432 dbname=postgres user=postgres password=12345 "
+        "client_encoding=utf8",
+        1);
+#endif
+#ifdef USE_SQLITE3
+    sqlite3Client = DbClient::newSqlite3Client("filename=:memory:", 1);
+#endif
+
     std::thread thr([&]() {
         testStatus = test::run(argc, argv);
         f1.get();
@@ -1930,5 +1943,17 @@ int main(int argc, char **argv)
 
     app().run();
     thr.join();
+
+    // Destruct the clients before event loop shutdown
+#if USE_MYSQL
+    mysqlClient = {};
+#endif
+#ifdef USE_POSTGRESQL
+    postgreClient = {};
+#endif
+#ifdef USE_SQLITE3
+    sqlite3Client = {};
+#endif
+
     return testStatus;
 }
