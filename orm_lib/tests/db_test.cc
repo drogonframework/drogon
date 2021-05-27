@@ -1915,10 +1915,6 @@ int main(int argc, char **argv)
 {
     trantor::Logger::setLogLevel(trantor::Logger::LogLevel::kDebug);
 
-    std::atomic<int> testStatus;
-    std::promise<void> p1;
-    std::future<void> f1 = p1.get_future();
-
 #if USE_MYSQL
     mysqlClient = DbClient::newMysqlClient(
         "host=localhost port=3306 user=root client_encoding=utf8mb4", 1);
@@ -1933,16 +1929,8 @@ int main(int argc, char **argv)
     sqlite3Client = DbClient::newSqlite3Client("filename=:memory:", 1);
 #endif
 
-    std::thread thr([&]() {
-        testStatus = test::run(argc, argv);
-        f1.get();
-        app().quit();
-    });
-
-    app().getLoop()->queueInLoop([&]() { p1.set_value(); });
-
-    app().run();
-    thr.join();
+    int testStatus = test::run(argc, argv);
+    std::this_thread::sleep_for(0.008s);
 
     // Destruct the clients before event loop shutdown
 #if USE_MYSQL

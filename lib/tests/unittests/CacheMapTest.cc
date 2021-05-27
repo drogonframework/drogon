@@ -38,5 +38,4 @@ DROGON_TEST(CacheMapTest)
     CHECK(content == "-");
 
     loopThread.getLoop()->quit();
-    loopThread.wait();
 }
