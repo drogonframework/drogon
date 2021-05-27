@@ -734,7 +734,7 @@ int main(int argc, char **argv)
 
     f1.get();
     int testStatus = test::run(argc, argv);
-    app().quit();
+    app().getLoop()->queueInLoop([]() { app().quit(); });
     thr.join();
     return testStatus;
 }
