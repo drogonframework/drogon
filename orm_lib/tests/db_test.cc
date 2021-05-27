@@ -1946,13 +1946,13 @@ int main(int argc, char **argv)
 
     // Destruct the clients before event loop shutdown
 #if USE_MYSQL
-    mysqlClient = {};
+    mysqlClient.reset();
 #endif
 #ifdef USE_POSTGRESQL
-    postgreClient = {};
+    postgreClient.reset();
 #endif
 #ifdef USE_SQLITE3
-    sqlite3Client = {};
+    sqlite3Client.reset();
 #endif
 
     return testStatus;
