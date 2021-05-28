@@ -569,7 +569,6 @@ static void loadListeners(const Json::Value &listeners)
         auto cert = listener.get("cert", "").asString();
         auto key = listener.get("key", "").asString();
         auto useOldTLS = listener.get("use_old_tls", false).asBool();
-        LOG_TRACE << "Add listener:" << addr << ":" << port;
         std::vector<std::pair<std::string, std::string>> sslConfCmds;
         if (listener.isMember("ssl_conf"))
         {
@@ -585,6 +584,7 @@ static void loadListeners(const Json::Value &listeners)
                                          opt.get(1, "").asString());
             }
         }
+        LOG_TRACE << "Add listener:" << addr << ":" << port;
         drogon::app().addListener(
             addr, port, useSSL, cert, key, useOldTLS, sslConfCmds);
     }
