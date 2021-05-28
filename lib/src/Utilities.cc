@@ -29,6 +29,7 @@
 #include <Rpc.h>
 #include <direct.h>
 #include <io.h>
+#include <Wincrypt.h>
 #else
 #include <uuid.h>
 #endif
@@ -47,7 +48,6 @@
 #include <string.h>
 #ifndef _WIN32
 #include <unistd.h>
-#include <Wincrypt.h>
 #endif
 #include <sys/stat.h>
 #include <fcntl.h>
