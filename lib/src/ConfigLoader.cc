@@ -571,15 +571,18 @@ static void loadListeners(const Json::Value &listeners)
         auto useOldTLS = listener.get("use_old_tls", false).asBool();
         LOG_TRACE << "Add listener:" << addr << ":" << port;
         std::vector<std::pair<std::string, std::string>> sslConfCmds;
-        if (listener.isMember("ssl_conf")) {
+        if (listener.isMember("ssl_conf"))
+        {
             for (const auto &opt : listener["ssl_conf"])
             {
                 if (opt.size() == 0 || opt.size() > 2)
                 {
-                    LOG_FATAL << "SSL configuration option should be an 1 or 2-element array";
+                    LOG_FATAL << "SSL configuration option should be an 1 or "
+                                 "2-element array";
                     abort();
                 }
-                sslConfCmds.emplace_back(opt[0].asString(), opt.get(1, "").asString());
+                sslConfCmds.emplace_back(opt[0].asString(),
+                                         opt.get(1, "").asString());
             }
         }
         drogon::app().addListener(
@@ -594,15 +597,18 @@ static void loadSSL(const Json::Value &sslConf)
     auto cert = sslConf.get("cert", "").asString();
     drogon::app().setSSLFiles(cert, key);
     std::vector<std::pair<std::string, std::string>> sslConfCmds;
-    if (sslConf.isMember("conf")) {
+    if (sslConf.isMember("conf"))
+    {
         for (const auto &opt : sslConf["conf"])
         {
             if (opt.size() == 0 || opt.size() > 2)
             {
-                LOG_FATAL << "SSL configuration option should be an 1 or 2-element array";
+                LOG_FATAL << "SSL configuration option should be an 1 or "
+                             "2-element array";
                 abort();
             }
-            sslConfCmds.emplace_back(opt[0].asString(), opt.get(1, "").asString());
+            sslConfCmds.emplace_back(opt[0].asString(),
+                                     opt.get(1, "").asString());
         }
     }
     drogon::app().setSSLConfigCommands(sslConfCmds);

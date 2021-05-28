@@ -155,11 +155,10 @@ std::vector<trantor::EventLoop *> ListenerManager::createListeners(
                     exit(1);
                 }
                 auto cmds = sslConfCmds;
-                std::copy(listener.sslConfCmds_.begin(), listener.sslConfCmds_.end(), std::back_inserter(cmds));
-                serverPtr->enableSSL(cert,
-                                     key,
-                                     listener.useOldTLS_,
-                                     cmds);
+                std::copy(listener.sslConfCmds_.begin(),
+                          listener.sslConfCmds_.end(),
+                          std::back_inserter(cmds));
+                serverPtr->enableSSL(cert, key, listener.useOldTLS_, cmds);
 #endif
             }
             serverPtr->setHttpAsyncCallback(httpCallback);
@@ -206,11 +205,10 @@ std::vector<trantor::EventLoop *> ListenerManager::createListeners(
                     exit(1);
                 }
                 auto cmds = sslConfCmds;
-                std::copy(listenr.sslConfCmds_.begin(), listener.sslConfCmds_.end(), std::back_inserter(cmds));
-                serverPtr->enableSSL(cert,
-                                     key,
-                                     listener.useOldTLS_,
-                                     cmds);
+                std::copy(listenr.sslConfCmds_.begin(),
+                          listener.sslConfCmds_.end(),
+                          std::back_inserter(cmds));
+                serverPtr->enableSSL(cert, key, listener.useOldTLS_, cmds);
 #endif
             }
             serverPtr->setIoLoopThreadPool(ioLoopThreadPoolPtr_);
