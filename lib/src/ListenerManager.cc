@@ -205,7 +205,7 @@ std::vector<trantor::EventLoop *> ListenerManager::createListeners(
                     exit(1);
                 }
                 auto cmds = sslConfCmds;
-                std::copy(listenr.sslConfCmds_.begin(),
+                std::copy(listener.sslConfCmds_.begin(),
                           listener.sslConfCmds_.end(),
                           std::back_inserter(cmds));
                 serverPtr->enableSSL(cert, key, listener.useOldTLS_, cmds);
