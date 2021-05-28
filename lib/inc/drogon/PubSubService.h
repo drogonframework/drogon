@@ -19,6 +19,7 @@
 #include <mutex>
 #include <shared_mutex>
 #include <string>
+#include <memory>
 #include <unordered_map>
 
 namespace drogon

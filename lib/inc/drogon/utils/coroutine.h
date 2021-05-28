@@ -145,6 +145,10 @@ struct [[nodiscard]] Task
         {
             value = v;
         }
+        void return_value(T &&v)
+        {
+            value = std::move(v);
+        }
 
         auto final_suspend() noexcept
         {
@@ -211,7 +215,7 @@ struct [[nodiscard]] Task
             T await_resume()
             {
                 auto &&v = coro_.promise().result();
-                return v;
+                return std::move(v);
             }
 
           private:
@@ -396,14 +400,10 @@ struct AsyncTask
 
     AsyncTask(handle_type h) : coro_(h)
     {
-        if (coro_)
-            coro_.promise().setSelf(coro_);
     }
+
     AsyncTask(const AsyncTask &) = delete;
 
-    ~AsyncTask()
-    {
-    }
     AsyncTask &operator=(const AsyncTask &) = delete;
     AsyncTask &operator=(AsyncTask &&other)
     {
@@ -418,7 +418,6 @@ struct AsyncTask
     struct promise_type
     {
         std::coroutine_handle<> continuation_;
-        handle_type self_;
 
         AsyncTask get_return_object() noexcept
         {
@@ -432,8 +431,8 @@ struct AsyncTask
 
         void unhandled_exception()
         {
-            LOG_FATAL << "Unhandled exception in AsyncTask.";
-            abort();
+            LOG_FATAL << "Exception escaping AsyncTask.";
+            std::terminate();
         }
 
         void return_void() noexcept
@@ -445,51 +444,27 @@ struct AsyncTask
             continuation_ = handle;
         }
 
-        void setSelf(handle_type handle)
-        {
-            self_ = handle;
-        }
-
         auto final_suspend() const noexcept
         {
+            // Can't simply use suspend_never because we need symmetric transfer
             struct awaiter final
             {
-                awaiter(handle_type h) : self_(h)
-                {
-                }
-
-                awaiter(const awaiter &) = delete;
-                awaiter &operator=(const awaiter &) = delete;
-
-                ~awaiter()
-                {
-                    if (self_)
-                        self_.destroy();
-                }
-
                 bool await_ready() const noexcept
                 {
-                    return false;
+                    return true;
+                }
+
+                auto await_suspend(
+                    std::coroutine_handle<promise_type> coro) const noexcept
+                {
+                    return coro.promise().continuation_;
                 }
 
                 void await_resume() const noexcept
                 {
                 }
-
-                std::coroutine_handle<> await_suspend(
-                    std::coroutine_handle<promise_type> handle) noexcept
-                {
-                    auto coro = handle.promise().continuation_;
-                    if (coro)
-                        return coro;
-
-                    return std::noop_coroutine();
-                }
-
-                handle_type self_;
             };
-
-            return awaiter(self_);
+            return awaiter{};
         }
     };
     bool await_ready() const noexcept
@@ -501,9 +476,10 @@ struct AsyncTask
     {
     }
 
-    void await_suspend(std::coroutine_handle<> coroutine) noexcept
+    auto await_suspend(std::coroutine_handle<> coroutine) noexcept
     {
         coro_.promise().setContinuation(coroutine);
+        return coro_;
     }
 
     handle_type coro_;
@@ -637,21 +613,20 @@ auto sync_wait(Await &&await)
 
         if (exception_ptr)
             std::rethrow_exception(exception_ptr);
-        return value.value();
+
+        return std::move(value.value());
     }
 }
 
 // Converts a task (or task like) promise into std::future for old-style async
 template <typename Await>
-inline auto co_future(Await await) noexcept
+inline auto co_future(Await &&await) noexcept
     -> std::future<await_result_t<Await>>
 {
     using Result = await_result_t<Await>;
     std::promise<Result> prom;
     auto fut = prom.get_future();
-    [](std::promise<Result> prom,
-       Await await,
-       std::future<AsyncTask *> selfFut) mutable -> AsyncTask {
+    [](std::promise<Result> prom, Await await) -> AsyncTask {
         try
         {
             if constexpr (std::is_void_v<Result>)
@@ -666,7 +641,7 @@ inline auto co_future(Await await) noexcept
         {
             prom.set_exception(std::current_exception());
         }
-    }();
+    }(std::move(prom), std::move(await));
     return fut;
 }
 

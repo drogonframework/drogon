@@ -45,7 +45,7 @@ class ConstReverseRowIterator;
 class DROGON_EXPORT Row
 {
   public:
-    using SizeType = unsigned long;
+    using SizeType = size_t;
     using Reference = Field;
     using ConstIterator = ConstRowIterator;
     using Iterator = ConstIterator;
@@ -54,6 +54,7 @@ class DROGON_EXPORT Row
     using DifferenceType = long;
 
     Reference operator[](SizeType index) const noexcept;
+    Reference operator[](int index) const noexcept;
     Reference operator[](const char columnName[]) const;
     Reference operator[](const std::string &columnName) const;
 
