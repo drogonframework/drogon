@@ -1930,7 +1930,6 @@ int main(int argc, char **argv)
 #endif
 
     int testStatus = test::run(argc, argv);
-    std::this_thread::sleep_for(0.008s);
 
     // Destruct the clients before event loop shutdown
 #if USE_MYSQL
@@ -1942,6 +1941,7 @@ int main(int argc, char **argv)
 #ifdef USE_SQLITE3
     sqlite3Client.reset();
 #endif
+    std::this_thread::sleep_for(0.008s);
 
     return testStatus;
 }
