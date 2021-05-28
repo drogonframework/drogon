@@ -114,7 +114,7 @@ void WebSocketConnectionImpl::sendWsData(const char *msg,
 
         bytesFormatted[1] = (bytesFormatted[1] | 0x80);
         bytesFormatted.resize(indexStartRawData + 4 + len);
-        *((int *)&bytesFormatted[indexStartRawData]) = random;
+        memcpy(&bytesFormatted[indexStartRawData], &random, sizeof(random));
         for (size_t i = 0; i < len; ++i)
         {
             bytesFormatted[indexStartRawData + 4 + i] =
