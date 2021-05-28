@@ -1218,7 +1218,7 @@ static bool systemRandomBytes(void *ptr, size_t size)
         LOG_FATAL << "Failed to open /dev/urandom for randomness";
         abort();
     }
-    if (fread(ptr, size, 1, fptr.get()) != 0)
+    if (fread(ptr, 1, size, fptr.get()) != 0)
         return true;
 #elif defined(_WIN32)  // Windows
     auto createCryptContext = []() {
