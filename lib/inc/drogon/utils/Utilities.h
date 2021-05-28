@@ -171,7 +171,7 @@ DROGON_EXPORT void replaceAll(std::string &s,
  *
  * @return true if generation is successfull. False otherwise
  *
- * @note DO NOT abuse this function. Espically if Drogon is built without
+ * @note DO NOT abuse this function. Especially if Drogon is built without
  * OpenSSL. Entropy running low is a real issue.
  */
 DROGON_EXPORT bool secureRandomBytes(void *ptr, size_t size);
