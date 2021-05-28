@@ -1919,13 +1919,13 @@ int main(int argc, char **argv)
     mysqlClient = DbClient::newMysqlClient(
         "host=localhost port=3306 user=root client_encoding=utf8mb4", 1);
 #endif
-#ifdef USE_POSTGRESQL
+#if USE_POSTGRESQL
     postgreClient = DbClient::newPgClient(
         "host=127.0.0.1 port=5432 dbname=postgres user=postgres password=12345 "
         "client_encoding=utf8",
         1);
 #endif
-#ifdef USE_SQLITE3
+#if USE_SQLITE3
     sqlite3Client = DbClient::newSqlite3Client("filename=:memory:", 1);
 #endif
 
@@ -1936,10 +1936,10 @@ int main(int argc, char **argv)
 #if USE_MYSQL
     mysqlClient.reset();
 #endif
-#ifdef USE_POSTGRESQL
+#if USE_POSTGRESQL
     postgreClient.reset();
 #endif
-#ifdef USE_SQLITE3
+#if USE_SQLITE3
     sqlite3Client.reset();
 #endif
 
