@@ -108,6 +108,8 @@ class WebSocketConnectionImpl final
     bool isServer_{true};
     WebSocketMessageParser parser_;
     trantor::TimerId pingTimerId_{trantor::InvalidTimerId};
+    std::vector<uint32_t> masks_;
+    std::atomic<bool> usingMask_;
 
     std::function<void(std::string &&,
                        const WebSocketConnectionImplPtr &,

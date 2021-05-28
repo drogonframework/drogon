@@ -23,7 +23,8 @@ WebSocketConnectionImpl::WebSocketConnectionImpl(
     : tcpConnectionPtr_(conn),
       localAddr_(conn->localAddr()),
       peerAddr_(conn->peerAddr()),
-      isServer_(isServer)
+      isServer_(isServer),
+      usingMask_(false)
 {
 }
 WebSocketConnectionImpl::~WebSocketConnectionImpl()
@@ -105,12 +106,24 @@ void WebSocketConnectionImpl::sendWsData(const char *msg,
     }
     if (!isServer_)
     {
-        // Add masking key;
-        static std::once_flag once;
-        std::call_once(once, []() {
-            std::srand(static_cast<unsigned int>(time(nullptr)));
-        });
-        int random = std::rand();
+        int random;
+        // Use the cached randomness if no one else is also using it. Otherwise
+        // generate one from scratch.
+        if (!usingMask_.exchange(true))
+        {
+            if (masks_.empty())
+            {
+                masks_.resize(16);
+                utils::secureRandomBytes(masks_.data(), masks_.size());
+            }
+            random = masks_.back();
+            masks_.pop_back();
+            usingMask_ = false;
+        }
+        else
+        {
+            utils::secureRandomBytes(&random, sizeof(random));
+        }
 
         bytesFormatted[1] = (bytesFormatted[1] | 0x80);
         bytesFormatted.resize(indexStartRawData + 4 + len);
