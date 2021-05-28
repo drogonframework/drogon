@@ -1221,23 +1221,26 @@ static bool systemRandomBytes(void *ptr, size_t size)
     if (fread(ptr, size, 1, fptr.get()) != 0)
         return true;
 #elif defined(_WIN32) // Windows
-    auto createCryptContext =
-        []() {
-            HCRYPTPROV hProvider = 0;
-            if (!CryptAcquireContextW(&hProvider,
-                                      0,
-                                      0,
-                                      PROV_RSA_FULL,
-                                      CRYPT_VERIFYCONTEXT | CRYPT_SILENT))
-            {
-                LOG_FATAL << "Failed to create crypto service context";
-                abort();
-            }
-            return hProvider;
-        } static std::unique_ptr<HCRYPTPROV, std::function<void(HCRYPTPROV *)>>
-            fptr(createCryptContext(),
-                 [](HCRYPTPROV *ptr) { CryptReleaseContext(*ptr, 0); });
-    if (CryptGenRandom(hProvider, size, ptr))
+    auto createCryptContext = []() {
+        HCRYPTPROV *pProvider = new HCRYPTPROV;
+        if (!CryptAcquireContextW(pProvider,
+                                  0,
+                                  0,
+                                  PROV_RSA_FULL,
+                                  CRYPT_VERIFYCONTEXT | CRYPT_SILENT))
+        {
+            LOG_FATAL << "Failed to create crypto service context";
+            delete pProvider;
+            abort();
+        }
+        return pProvider;
+    };
+    static std::unique_ptr<HCRYPTPROV, std::function<void(HCRYPTPROV *)>>
+            cryptCtxPtr(createCryptContext(), [](HCRYPTPROV *ptr) {
+            CryptReleaseContext(*ptr, 0);
+            delete ptr;
+        });
+    if (CryptGenRandom(*cryptCtxPtr, size, (BYTE*) ptr))
         return true;
 #endif
     return false;
@@ -1256,3 +1259,4 @@ bool secureRandomBytes(void *ptr, size_t size)
 
 }  // namespace utils
 }  // namespace drogon
+
