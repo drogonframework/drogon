@@ -114,7 +114,12 @@ void WebSocketConnectionImpl::sendWsData(const char *msg,
             if (masks_.empty())
             {
                 masks_.resize(16);
-                utils::secureRandomBytes(masks_.data(), masks_.size());
+                bool status = utils::secureRandomBytes(masks_.data(), masks_.size()*sizeof(uint32_t));
+                if (status == false)
+                {
+                    LOG_ERROR << "Failed to generate random numbers for WebSocket mask";
+                    abort();
+                }
             }
             random = masks_.back();
             masks_.pop_back();
@@ -122,7 +127,13 @@ void WebSocketConnectionImpl::sendWsData(const char *msg,
         }
         else
         {
-            utils::secureRandomBytes(&random, sizeof(random));
+            bool status = utils::secureRandomBytes(&random, sizeof(random));
+            if (status == false)
+            {
+                LOG_ERROR
+                    << "Failed to generate random numbers for WebSocket mask";
+                abort();
+            }
         }
 
         bytesFormatted[1] = (bytesFormatted[1] | 0x80);
@@ -423,3 +434,4 @@ void WebSocketConnectionImpl::setPingMessageInLoop(
             }
         });
 }
+
