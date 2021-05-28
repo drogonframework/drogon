@@ -47,6 +47,7 @@
 #include <string.h>
 #ifndef _WIN32
 #include <unistd.h>
+#include <Wincrypt.h>
 #endif
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -1219,7 +1220,7 @@ static bool systemRandomBytes(void *ptr, size_t size)
     }
     if (fread(ptr, size, 1, fptr.get()) != 0)
         return true;
-#else  // Windows
+#elif defined(_WIN32) // Windows
     auto createCryptContext =
         []() {
             HCRYPTPROV hProvider = 0;
