@@ -1220,7 +1220,7 @@ static bool systemRandomBytes(void *ptr, size_t size)
     }
     if (fread(ptr, size, 1, fptr.get()) != 0)
         return true;
-#elif defined(_WIN32) // Windows
+#elif defined(_WIN32)  // Windows
     auto createCryptContext = []() {
         HCRYPTPROV *pProvider = new HCRYPTPROV;
         if (!CryptAcquireContextW(pProvider,
@@ -1236,11 +1236,11 @@ static bool systemRandomBytes(void *ptr, size_t size)
         return pProvider;
     };
     static std::unique_ptr<HCRYPTPROV, std::function<void(HCRYPTPROV *)>>
-            cryptCtxPtr(createCryptContext(), [](HCRYPTPROV *ptr) {
+        cryptCtxPtr(createCryptContext(), [](HCRYPTPROV *ptr) {
             CryptReleaseContext(*ptr, 0);
             delete ptr;
         });
-    if (CryptGenRandom(*cryptCtxPtr, size, (BYTE*) ptr))
+    if (CryptGenRandom(*cryptCtxPtr, size, (BYTE *)ptr))
         return true;
 #endif
     return false;
@@ -1259,4 +1259,3 @@ bool secureRandomBytes(void *ptr, size_t size)
 
 }  // namespace utils
 }  // namespace drogon
-

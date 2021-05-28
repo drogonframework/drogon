@@ -114,10 +114,13 @@ void WebSocketConnectionImpl::sendWsData(const char *msg,
             if (masks_.empty())
             {
                 masks_.resize(16);
-                bool status = utils::secureRandomBytes(masks_.data(), masks_.size()*sizeof(uint32_t));
+                bool status =
+                    utils::secureRandomBytes(masks_.data(),
+                                             masks_.size() * sizeof(uint32_t));
                 if (status == false)
                 {
-                    LOG_ERROR << "Failed to generate random numbers for WebSocket mask";
+                    LOG_ERROR << "Failed to generate random numbers for "
+                                 "WebSocket mask";
                     abort();
                 }
             }
@@ -434,4 +437,3 @@ void WebSocketConnectionImpl::setPingMessageInLoop(
             }
         });
 }
-
