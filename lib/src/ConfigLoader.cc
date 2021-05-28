@@ -570,13 +570,13 @@ static void loadListeners(const Json::Value &listeners)
         auto key = listener.get("key", "").asString();
         auto useOldTLS = listener.get("use_old_tls", false).asBool();
         LOG_TRACE << "Add listener:" << addr << ":" << port;
-        std::vector<std::pair<std::string, std::string>> conf;
+        std::vector<std::pair<std::string, std::string>> sslConfCmds;
         for (const auto &opt : listener["ssl_conf"])
         {
-            conf.emplace_back(opt[0].asString(), opt[1].asString());
+            sslConfCmds.emplace_back(opt[0].asString(), opt[1].asString());
         }
         drogon::app().addListener(
-            addr, port, useSSL, cert, key, useOldTLS, conf);
+            addr, port, useSSL, cert, key, useOldTLS, sslConfCmds);
     }
 }
 static void loadSSL(const Json::Value &sslConf)
@@ -586,12 +586,12 @@ static void loadSSL(const Json::Value &sslConf)
     auto key = sslConf.get("key", "").asString();
     auto cert = sslConf.get("cert", "").asString();
     drogon::app().setSSLFiles(cert, key);
-    std::vector<std::pair<std::string, std::string>> conf;
+    std::vector<std::pair<std::string, std::string>> sslConfCmds;
     for (const auto &opt : sslConf["conf"])
     {
         conf.emplace_back(opt[0].asString(), opt[1].asString());
     }
-    drogon::app().setSSLConfigCommands(conf);
+    drogon::app().setSSLConfigCommands(sslConfCmds);
 }
 void ConfigLoader::load()
 {

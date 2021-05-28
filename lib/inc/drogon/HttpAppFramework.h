@@ -667,8 +667,9 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
     virtual HttpAppFramework &setSSLFiles(const std::string &certPath,
                                           const std::string &keyPath) = 0;
 
-    /// Set the ssl config as listed in openssl's SSL_CONF_cmd for https
-    /// These options can be configured in the configuration file.
+    /// Supplies file style SSL options to `SSL_CONF_cmd`. Valid options are
+    /// available at
+    /// https://www.openssl.org/docs/manmaster/man3/SSL_CONF_cmd.html
     virtual HttpAppFramework &setSSLConfigCommands(
         const std::vector<std::pair<std::string, std::string>>
             &sslConfCmds) = 0;

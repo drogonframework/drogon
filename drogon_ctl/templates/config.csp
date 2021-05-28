@@ -2,8 +2,8 @@
  */
 {
     /*
-    //ssl:The global ssl setting including ssl files and
-    //commands used for SSL_CONF_cmd
+    //ssl:The global SSL settings. "key" and "cert" are the path to the SSL key and certificate. While
+    //    "conf" is an array of 1 or 2-element tuples that supplies file style options for `SSL_CONF_cmd`.
     "ssl": {
         "cert": "../../trantor/trantor/tests/server.pem",
         "key": "../../trantor/trantor/tests/server.pem",
@@ -23,7 +23,7 @@
         },
         {
             "address": "0.0.0.0",
-            "port": 443,
+            port": 443,
             "https": true,
             //cert,key: Cert file path and key file path, empty by default,
             //if empty, use the global setting
@@ -32,7 +32,7 @@
             //use_old_tls: enable the TLS1.0/1.1, false by default
             "use_old_tls": false,
             "ssl_conf": [
-                //["min_protocol", "TLSv1.2"]
+                //["MinProtocol", "TLSv1.3"]
             ]
         }
     ],
