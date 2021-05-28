@@ -540,6 +540,7 @@ void HttpAppFrameworkImpl::run()
         idleConnectionTimeout_,
         sslCertPath_,
         sslKeyPath_,
+        sslConfCmds_,
         threadNum_,
         syncAdvices_,
         preSendingAdvices_);
