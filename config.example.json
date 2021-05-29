@@ -30,7 +30,7 @@
             "cert": "",
             "key": "",
             //use_old_tls: enable the TLS1.0/1.1, false by default
-            "use_old_tls": false
+            "use_old_tls": false,
             "ssl_conf": [
                 //["MinProtocol", "TLSv1.3"]
             ]
