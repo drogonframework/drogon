@@ -308,8 +308,14 @@ void Sqlite3Connection::disconnect()
     std::promise<int> pro;
     auto f = pro.get_future();
     auto thisPtr = shared_from_this();
-    loopThread_.getLoop()->runInLoop([thisPtr, &pro]() {
-        thisPtr->connectionPtr_.reset();
+    std::weak_ptr<Sqlite3Connection> weakPtr = thisPtr;
+    loopThread_.getLoop()->runInLoop([weakPtr, &pro]() {
+        {
+            auto thisPtr = weakPtr.lock();
+            if (!thisPtr)
+                return;
+            thisPtr->connectionPtr_.reset();
+        }
         pro.set_value(1);
     });
     f.get();
