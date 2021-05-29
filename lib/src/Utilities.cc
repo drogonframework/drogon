@@ -46,7 +46,9 @@
 #include <cstdlib>
 #include <stdio.h>
 #include <string.h>
-#ifndef _WIN32
+#ifdef __linux__
+#include <sys/random.h>
+#else
 #include <unistd.h>
 #endif
 #include <sys/stat.h>
@@ -1211,7 +1213,16 @@ static bool systemRandomBytes(void *ptr, size_t size)
     arc4random_buf(ptr, size);
     return true;
 #elif defined(__linux__)
-    return getentropy(ptr, size) == 0;
+    char *buf = (char *)ptr;
+    size_t writeOffset = 0;
+    while (writeOffset != size)
+    {
+        int bytesWritten = getrandom(buf + writeOffset, size - writeOffset, 0);
+        if (bytesWritten == -1)
+            return false;
+        writeOffset += bytesWritten;
+    }
+    return true;
 #elif defined(_WIN32)    // Windows
     return RtlGenRandom(ptr, size);
 #elif defined(__unix__)  // fallback to /dev/urandom for other UNIX

@@ -178,7 +178,7 @@ if [ "$1" = "-t" ]; then
         ./orm_lib/tests/db_test -s
 	#HACK: Workarround db_test crash on Ubuntu 16.04.
 	#      Assume crashed db_test is good.
-        if [ $? -ne 0 -a $? -ne 255 ]; then
+        if [ $? -ne 0 -a $? -ne 134 ]; then
             echo "Error in testing"
             exit -1
         fi
