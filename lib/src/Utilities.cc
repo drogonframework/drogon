@@ -1212,10 +1212,10 @@ static bool systemRandomBytes(void *ptr, size_t size)
     return true;
 #elif defined(__linux__)
     return getentropy(ptr, size) == 0;
-#elif defined(_WIN32)  // Windows
+#elif defined(_WIN32)    // Windows
     return RtlGenRandom(ptr, size);
-#elif defined(__unix__) // fallback to /dev/urandom for other UNIX
-    static std::unique_ptr<FILE, std::function<void(FILE *)>> fptr(
+#elif defined(__unix__)  // fallback to /dev/urandom for other UNIX
+    static std::unique_ptr<FILE, std::function<void(FILE *)> > fptr(
         fopen("/dev/urandom", "rb"), [](FILE *ptr) {
             if (ptr != nullptr)
                 fclose(ptr);
