@@ -29,7 +29,7 @@
 #include <Rpc.h>
 #include <direct.h>
 #include <io.h>
-#include <Wincrypt.h>
+#include <ntsecapi.h>
 #else
 #include <uuid.h>
 #endif
@@ -1207,7 +1207,14 @@ void replaceAll(std::string &s, const std::string &from, const std::string &to)
  */
 static bool systemRandomBytes(void *ptr, size_t size)
 {
-#if defined(__unix__) || defined(__linux__) || defined(__APPLE__)
+#if defined(__BSD__) || defined(__APPLE__)
+    arc4random_buf(ptr, size);
+    return true;
+#elif defined(__linux__)
+    return getentropy(ptr, size) == 0;
+#elif defined(_WIN32)  // Windows
+    return RtlGenRandom(ptr, size);
+#elif defined(__unix__) // fallback to /dev/urandom for other UNIX
     static std::unique_ptr<FILE, std::function<void(FILE *)>> fptr(
         fopen("/dev/urandom", "rb"), [](FILE *ptr) {
             if (ptr != nullptr)
@@ -1219,28 +1226,6 @@ static bool systemRandomBytes(void *ptr, size_t size)
         abort();
     }
     if (fread(ptr, 1, size, fptr.get()) != 0)
-        return true;
-#elif defined(_WIN32)  // Windows
-    auto createCryptContext = []() {
-        HCRYPTPROV *pProvider = new HCRYPTPROV;
-        if (!CryptAcquireContextW(pProvider,
-                                  0,
-                                  0,
-                                  PROV_RSA_FULL,
-                                  CRYPT_VERIFYCONTEXT | CRYPT_SILENT))
-        {
-            LOG_FATAL << "Failed to create crypto service context";
-            delete pProvider;
-            abort();
-        }
-        return pProvider;
-    };
-    static std::unique_ptr<HCRYPTPROV, std::function<void(HCRYPTPROV *)>>
-        cryptCtxPtr(createCryptContext(), [](HCRYPTPROV *ptr) {
-            CryptReleaseContext(*ptr, 0);
-            delete ptr;
-        });
-    if (CryptGenRandom(*cryptCtxPtr, size, (BYTE *)ptr))
         return true;
 #endif
     return false;
