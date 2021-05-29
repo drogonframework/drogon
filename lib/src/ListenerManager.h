@@ -35,7 +35,9 @@ class ListenerManager : public trantor::NonCopyable
                      bool useSSL = false,
                      const std::string &certFile = "",
                      const std::string &keyFile = "",
-                     bool useOldTLS = false);
+                     bool useOldTLS = false,
+                     const std::vector<std::pair<std::string, std::string>>
+                         &sslConfCmds = {});
     std::vector<trantor::EventLoop *> createListeners(
         const HttpAsyncCallback &httpCallback,
         const WebSocketNewAsyncCallback &webSocketCallback,
@@ -43,6 +45,7 @@ class ListenerManager : public trantor::NonCopyable
         size_t connectionTimeout,
         const std::string &globalCertFile,
         const std::string &globalKeyFile,
+        const std::vector<std::pair<std::string, std::string>> &sslConfCmds,
         size_t threadNum,
         const std::vector<
             std::function<HttpResponsePtr(const HttpRequestPtr &)>>
@@ -61,18 +64,21 @@ class ListenerManager : public trantor::NonCopyable
   private:
     struct ListenerInfo
     {
-        ListenerInfo(const std::string &ip,
-                     uint16_t port,
-                     bool useSSL,
-                     const std::string &certFile,
-                     const std::string &keyFile,
-                     bool useOldTLS)
+        ListenerInfo(
+            const std::string &ip,
+            uint16_t port,
+            bool useSSL,
+            const std::string &certFile,
+            const std::string &keyFile,
+            bool useOldTLS,
+            const std::vector<std::pair<std::string, std::string>> &sslConfCmds)
             : ip_(ip),
               port_(port),
               useSSL_(useSSL),
               certFile_(certFile),
               keyFile_(keyFile),
-              useOldTLS_(useOldTLS)
+              useOldTLS_(useOldTLS),
+              sslConfCmds_(sslConfCmds)
         {
         }
         std::string ip_;
@@ -81,6 +87,7 @@ class ListenerManager : public trantor::NonCopyable
         std::string certFile_;
         std::string keyFile_;
         bool useOldTLS_;
+        std::vector<std::pair<std::string, std::string>> sslConfCmds_;
     };
     std::vector<ListenerInfo> listeners_;
     std::vector<std::shared_ptr<HttpServer>> servers_;

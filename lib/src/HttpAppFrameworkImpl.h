@@ -52,17 +52,23 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     }
 
     PluginBase *getPlugin(const std::string &name) override;
-    HttpAppFramework &addListener(const std::string &ip,
-                                  uint16_t port,
-                                  bool useSSL,
-                                  const std::string &certFile,
-                                  const std::string &keyFile,
-                                  bool useOldTLS) override;
+    HttpAppFramework &addListener(
+        const std::string &ip,
+        uint16_t port,
+        bool useSSL,
+        const std::string &certFile,
+        const std::string &keyFile,
+        bool useOldTLS,
+        const std::vector<std::pair<std::string, std::string>> &sslConfCmds)
+        override;
     HttpAppFramework &setThreadNum(size_t threadNum) override;
     size_t getThreadNum() const override
     {
         return threadNum_;
     }
+    HttpAppFramework &setSSLConfigCommands(
+        const std::vector<std::pair<std::string, std::string>> &sslConfCmds)
+        override;
     HttpAppFramework &setSSLFiles(const std::string &certPath,
                                   const std::string &keyPath) override;
     void run() override;
@@ -582,6 +588,7 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     std::unique_ptr<SharedLibManager> sharedLibManagerPtr_;
 #endif
 
+    std::vector<std::pair<std::string, std::string>> sslConfCmds_;
     std::string sslCertPath_;
     std::string sslKeyPath_;
 

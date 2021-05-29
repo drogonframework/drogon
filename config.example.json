@@ -2,10 +2,15 @@
  */
 {
     /*
-    //ssl:The global ssl files setting
+    //ssl:The global SSL settings. "key" and "cert" are the path to the SSL key and certificate. While
+    //    "conf" is an array of 1 or 2-element tuples that supplies file style options for `SSL_CONF_cmd`.
     "ssl": {
         "cert": "../../trantor/trantor/tests/server.pem",
-        "key": "../../trantor/trantor/tests/server.pem"
+        "key": "../../trantor/trantor/tests/server.pem",
+        "conf": [
+            //["Options", "-SessionTicket"], 
+            //["Options", "Compression"]
+        ]
     },
     "listeners": [
         {
@@ -25,7 +30,10 @@
             "cert": "",
             "key": "",
             //use_old_tls: enable the TLS1.0/1.1, false by default
-            "use_old_tls": false
+            "use_old_tls": false,
+            "ssl_conf": [
+                //["MinProtocol", "TLSv1.3"]
+            ]
         }
     ],
     "db_clients": [

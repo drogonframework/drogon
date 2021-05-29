@@ -338,16 +338,18 @@ PluginBase *HttpAppFrameworkImpl::getPlugin(const std::string &name)
 {
     return pluginsManagerPtr_->getPlugin(name);
 }
-HttpAppFramework &HttpAppFrameworkImpl::addListener(const std::string &ip,
-                                                    uint16_t port,
-                                                    bool useSSL,
-                                                    const std::string &certFile,
-                                                    const std::string &keyFile,
-                                                    bool useOldTLS)
+HttpAppFramework &HttpAppFrameworkImpl::addListener(
+    const std::string &ip,
+    uint16_t port,
+    bool useSSL,
+    const std::string &certFile,
+    const std::string &keyFile,
+    bool useOldTLS,
+    const std::vector<std::pair<std::string, std::string>> &sslConfCmds)
 {
     assert(!running_);
     listenerManagerPtr_->addListener(
-        ip, port, useSSL, certFile, keyFile, useOldTLS);
+        ip, port, useSSL, certFile, keyFile, useOldTLS, sslConfCmds);
     return *this;
 }
 HttpAppFramework &HttpAppFrameworkImpl::setMaxConnectionNum(
@@ -418,6 +420,12 @@ HttpAppFramework &HttpAppFrameworkImpl::setLogLevel(
     trantor::Logger::LogLevel level)
 {
     trantor::Logger::setLogLevel(level);
+    return *this;
+}
+HttpAppFramework &HttpAppFrameworkImpl::setSSLConfigCommands(
+    const std::vector<std::pair<std::string, std::string>> &sslConfCmds)
+{
+    sslConfCmds_ = sslConfCmds;
     return *this;
 }
 HttpAppFramework &HttpAppFrameworkImpl::setSSLFiles(const std::string &certPath,
@@ -532,6 +540,7 @@ void HttpAppFrameworkImpl::run()
         idleConnectionTimeout_,
         sslCertPath_,
         sslKeyPath_,
+        sslConfCmds_,
         threadNum_,
         syncAdvices_,
         preSendingAdvices_);

@@ -569,17 +569,49 @@ static void loadListeners(const Json::Value &listeners)
         auto cert = listener.get("cert", "").asString();
         auto key = listener.get("key", "").asString();
         auto useOldTLS = listener.get("use_old_tls", false).asBool();
+        std::vector<std::pair<std::string, std::string>> sslConfCmds;
+        if (listener.isMember("ssl_conf"))
+        {
+            for (const auto &opt : listener["ssl_conf"])
+            {
+                if (opt.size() == 0 || opt.size() > 2)
+                {
+                    LOG_FATAL << "SSL configuration option should be an 1 or "
+                                 "2-element array";
+                    abort();
+                }
+                sslConfCmds.emplace_back(opt[0].asString(),
+                                         opt.get(1, "").asString());
+            }
+        }
         LOG_TRACE << "Add listener:" << addr << ":" << port;
-        drogon::app().addListener(addr, port, useSSL, cert, key, useOldTLS);
+        drogon::app().addListener(
+            addr, port, useSSL, cert, key, useOldTLS, sslConfCmds);
     }
 }
-static void loadSSL(const Json::Value &sslFiles)
+static void loadSSL(const Json::Value &sslConf)
 {
-    if (!sslFiles)
+    if (!sslConf)
         return;
-    auto key = sslFiles.get("key", "").asString();
-    auto cert = sslFiles.get("cert", "").asString();
+    auto key = sslConf.get("key", "").asString();
+    auto cert = sslConf.get("cert", "").asString();
     drogon::app().setSSLFiles(cert, key);
+    std::vector<std::pair<std::string, std::string>> sslConfCmds;
+    if (sslConf.isMember("conf"))
+    {
+        for (const auto &opt : sslConf["conf"])
+        {
+            if (opt.size() == 0 || opt.size() > 2)
+            {
+                LOG_FATAL << "SSL configuration option should be an 1 or "
+                             "2-element array";
+                abort();
+            }
+            sslConfCmds.emplace_back(opt[0].asString(),
+                                     opt.get(1, "").asString());
+        }
+    }
+    drogon::app().setSSLConfigCommands(sslConfCmds);
 }
 void ConfigLoader::load()
 {

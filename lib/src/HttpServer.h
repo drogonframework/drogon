@@ -81,11 +81,13 @@ class HttpServer : trantor::NonCopyable
     void start();
     void stop();
 
-    void enableSSL(const std::string &certPath,
-                   const std::string &keyPath,
-                   bool useOldTLS)
+    void enableSSL(
+        const std::string &certPath,
+        const std::string &keyPath,
+        bool useOldTLS,
+        const std::vector<std::pair<std::string, std::string>> &sslConfCmds)
     {
-        server_.enableSSL(certPath, keyPath, useOldTLS);
+        server_.enableSSL(certPath, keyPath, useOldTLS, sslConfCmds);
     }
 
     const trantor::InetAddress &address() const
