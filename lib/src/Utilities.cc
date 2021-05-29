@@ -32,6 +32,7 @@
 #include <ntsecapi.h>
 #else
 #include <uuid.h>
+#include <unistd.h>
 #endif
 #include <zlib.h>
 #include <iomanip>
@@ -46,11 +47,6 @@
 #include <cstdlib>
 #include <stdio.h>
 #include <string.h>
-#ifdef __linux__
-#include <sys/random.h>
-#else
-#include <unistd.h>
-#endif
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <stdarg.h>
@@ -1212,20 +1208,13 @@ static bool systemRandomBytes(void *ptr, size_t size)
 #if defined(__BSD__) || defined(__APPLE__)
     arc4random_buf(ptr, size);
     return true;
-#elif defined(__linux__)
-    char *buf = (char *)ptr;
-    size_t writeOffset = 0;
-    while (writeOffset != size)
-    {
-        int bytesWritten = getrandom(buf + writeOffset, size - writeOffset, 0);
-        if (bytesWritten == -1)
-            return false;
-        writeOffset += bytesWritten;
-    }
-    return true;
+#elif defined(__linux__) && \
+    ((defined(__GLIBC__) && \
+      (__GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 25))))
+    return getentropy(ptr, size) != -1;
 #elif defined(_WIN32)    // Windows
     return RtlGenRandom(ptr, size);
-#elif defined(__unix__)  // fallback to /dev/urandom for other UNIX
+#elif defined(__unix__)  // fallback to /dev/urandom for other/old UNIX
     static std::unique_ptr<FILE, std::function<void(FILE *)> > fptr(
         fopen("/dev/urandom", "rb"), [](FILE *ptr) {
             if (ptr != nullptr)
