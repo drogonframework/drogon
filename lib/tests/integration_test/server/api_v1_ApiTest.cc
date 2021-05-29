@@ -1,4 +1,4 @@
-﻿#include "api_v1_ApiTest.h"
+#include "api_v1_ApiTest.h"
 using namespace api::v1;
 // add definition of your processing function here
 void ApiTest::rootGet(const HttpRequestPtr &req,
