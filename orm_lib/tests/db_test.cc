@@ -1917,7 +1917,7 @@ int main(int argc, char **argv)
 
 #if USE_MYSQL
     mysqlClient = DbClient::newMysqlClient(
-        "host=localhost port=3306 user=root client_encoding=utf8mb4 password=marty1885", 1);
+        "host=localhost port=3306 user=root client_encoding=utf8mb4", 1);
 #endif
 #ifdef USE_POSTGRESQL
     postgreClient = DbClient::newPgClient(
