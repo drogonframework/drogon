@@ -105,6 +105,11 @@ class DROGON_EXPORT HttpResponse
     /// Set the status code of the response.
     virtual void setStatusCode(HttpStatusCode code) = 0;
 
+    void setCustomStatusCode(int code, string_view message = string_view{})
+    {
+        setCustomStatusCode(code, message.data(), message.length());
+    }
+
     /// Get the creation timestamp of the response.
     virtual const trantor::Date &creationDate() const = 0;
     const trantor::Date &getCreationDate() const
@@ -391,6 +396,9 @@ class DROGON_EXPORT HttpResponse
     virtual void setContentTypeCodeAndCustomString(ContentType type,
                                                    const char *typeString,
                                                    size_t typeStringLength) = 0;
+    virtual void setCustomStatusCode(int code,
+                                     const char *message,
+                                     size_t messageLength) = 0;
 };
 template <>
 inline HttpResponsePtr toResponse<const Json::Value &>(const Json::Value &pJson)

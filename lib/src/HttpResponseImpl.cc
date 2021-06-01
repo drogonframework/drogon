@@ -19,7 +19,7 @@
 #include <drogon/IOThreadStorage.h>
 #include <fstream>
 #include <memory>
-#include <stdio.h>
+#include <cstdio>
 #include <sys/stat.h>
 #include <trantor/utils/Logger.h>
 #ifdef _WIN32
@@ -159,8 +159,7 @@ HttpResponsePtr HttpResponse::newNotFoundResponse()
         {
             if (HttpAppFrameworkImpl::instance().isUsingCustomErrorHandler())
             {
-                auto resp = app().getCustomErrorHandler()(k404NotFound);
-                return resp;
+                return app().getCustomErrorHandler()(k404NotFound);
             }
             HttpViewData data;
             data.insert("version", drogon::getVersion());
@@ -245,8 +244,8 @@ HttpResponsePtr HttpResponse::newFileResponse(
     }
     auto resp = std::make_shared<HttpResponseImpl>();
     std::streambuf *pbuf = infile.rdbuf();
-    std::streamsize filesize = pbuf->pubseekoff(0, infile.end);
-    pbuf->pubseekoff(0, infile.beg);  // rewind
+    std::streamsize filesize = pbuf->pubseekoff(0, std::ifstream::end);
+    pbuf->pubseekoff(0, std::ifstream::beg);  // rewind
     if (HttpAppFrameworkImpl::instance().useSendfile() && filesize > 1024 * 200)
     // TODO : Is 200k an appropriate value? Or set it to be configurable
     {
@@ -295,17 +294,37 @@ void HttpResponseImpl::makeHeaderString(trantor::MsgBuffer &buffer)
     int len{0};
     if (version_ == Version::kHttp11)
     {
-        len = snprintf(buffer.beginWrite(),
-                       buffer.writableBytes(),
-                       "HTTP/1.1 %d ",
-                       statusCode_);
+        if (customStatusCode_ >= 0)
+        {
+            len = snprintf(buffer.beginWrite(),
+                           buffer.writableBytes(),
+                           "HTTP/1.1 %d ",
+                           customStatusCode_);
+        }
+        else
+        {
+            len = snprintf(buffer.beginWrite(),
+                           buffer.writableBytes(),
+                           "HTTP/1.1 %d ",
+                           statusCode_);
+        }
     }
     else
     {
-        len = snprintf(buffer.beginWrite(),
-                       buffer.writableBytes(),
-                       "HTTP/1.0 %d ",
-                       statusCode_);
+        if (customStatusCode_ >= 0)
+        {
+            len = snprintf(buffer.beginWrite(),
+                           buffer.writableBytes(),
+                           "HTTP/1.0 %d ",
+                           customStatusCode_);
+        }
+        else
+        {
+            len = snprintf(buffer.beginWrite(),
+                           buffer.writableBytes(),
+                           "HTTP/1.0 %d ",
+                           statusCode_);
+        }
     }
     buffer.hasWritten(len);
 
@@ -326,7 +345,9 @@ void HttpResponseImpl::makeHeaderString(trantor::MsgBuffer &buffer)
         }
         else
         {
-            struct stat filestat;
+            struct stat filestat
+            {
+            };
             if (stat(sendfileName_.data(), &filestat) < 0)
             {
                 LOG_SYSERR << sendfileName_ << " stat error";
@@ -385,7 +406,7 @@ void HttpResponseImpl::renderToBuffer(trantor::MsgBuffer &buffer)
     }
 
     // output cookies
-    if (cookies_.size() > 0)
+    if (!cookies_.empty())
     {
         for (auto it = cookies_.begin(); it != cookies_.end(); ++it)
         {
@@ -457,7 +478,7 @@ std::shared_ptr<trantor::MsgBuffer> HttpResponseImpl::renderToBuffer()
     }
 
     // output cookies
-    if (cookies_.size() > 0)
+    if (!cookies_.empty())
     {
         for (auto it = cookies_.begin(); it != cookies_.end(); ++it)
         {
@@ -506,7 +527,7 @@ std::shared_ptr<trantor::MsgBuffer> HttpResponseImpl::
     }
 
     // output cookies
-    if (cookies_.size() > 0)
+    if (!cookies_.empty())
     {
         for (auto it = cookies_.begin(); it != cookies_.end(); ++it)
         {
@@ -696,10 +717,6 @@ void HttpResponseImpl::parseJson() const
         jsonParsingErrorPtr_ =
             std::make_shared<std::string>("empty response body");
     }
-}
-
-HttpResponseImpl::~HttpResponseImpl()
-{
 }
 
 bool HttpResponseImpl::shouldBeCompressed() const
