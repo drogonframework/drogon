@@ -26,7 +26,8 @@ set(example_targets
     client
     websocket_client
     helloworld
-    file_upload)
+    file_upload
+    login_session)
 
 set_property(TARGET ${example_targets}
              PROPERTY CXX_STANDARD ${DROGON_CXX_STANDARD})
