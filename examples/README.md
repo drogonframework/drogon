@@ -2,11 +2,13 @@
 
 The following examples can help you understand how to use Drogon:
 
-1. [benchmark](https://github.com/an-tao/drogon/tree/master/examples/benchmark) - Basic benchmark example. see [wiki benchmarks](https://github.com/an-tao/drogon/wiki/13-Benchmarks)
+1. [hellowrold](https://github.com/an-tao/drogon/tree/master/examples/hellowrold) - The multuple ways of "Hello, World!"
 2. [client_example](https://github.com/an-tao/drogon/tree/master/examples/client_example/main.cc) - A client example.
-3. [simple_reverse_proxy](https://github.com/an-tao/drogon/tree/master/examples/simple_reverse_proxy) - A Example showing how to use drogon as a http reverse proxy with a simple round robin.
-4. [websocket_client](https://github.com/an-tao/drogon/tree/master/examples/websocket_client/WebSocketClient.cc) - An example on how to use the WebSocket client
-4. [hellowrold](https://github.com/an-tao/drogon/tree/master/examples/hellowrold/main.cc) - The multuple ways of "Hello, World!"
+3. [websocket_client](https://github.com/an-tao/drogon/tree/master/examples/websocket_client/WebSocketClient.cc) - An example on how to use the WebSocket client
+4. [benchmark](https://github.com/an-tao/drogon/tree/master/examples/benchmark) - Basic benchmark example. see [wiki benchmarks](https://github.com/an-tao/drogon/wiki/13-Benchmarks)
+5. [file_upload](https://github.com/an-tao/drogon/tree/master/examples/file_upload) - How to handle file uploads in Drogon
+6. [simple_reverse_proxy](https://github.com/an-tao/drogon/tree/master/examples/simple_reverse_proxy) - A Example showing how to use drogon as a http reverse proxy with a simple round robin.
+
 
 ### [TechEmpower Framework Benchmarks](https://github.com/TechEmpower/FrameworkBenchmarks) test suite
 
