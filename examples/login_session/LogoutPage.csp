@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>session example</title>
+</head>
+	<body>
+	<form action="/logout" method="post">
+		<div class="container">
+			<button type="submit">Logout</button>
+		</div>
+	</form> 
+
+	<p>You can logout now</p>
+</body>
+</html>
