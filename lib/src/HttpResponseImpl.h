@@ -47,27 +47,27 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
           contentTypeString_(webContentTypeToString(type))
     {
     }
-    virtual void setPassThrough(bool flag) override
+    void setPassThrough(bool flag) override
     {
         passThrough_ = flag;
     }
-    virtual HttpStatusCode statusCode() const override
+    HttpStatusCode statusCode() const override
     {
         return statusCode_;
     }
 
-    virtual const trantor::Date &creationDate() const override
+    const trantor::Date &creationDate() const override
     {
         return creationDate_;
     }
 
-    virtual void setStatusCode(HttpStatusCode code) override
+    void setStatusCode(HttpStatusCode code) override
     {
         statusCode_ = code;
         setStatusMessage(statusCodeToString(code));
     }
 
-    virtual void setVersion(const Version v) override
+    void setVersion(const Version v) override
     {
         version_ = v;
         if (version_ == Version::kHttp10)
@@ -76,42 +76,42 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
         }
     }
 
-    virtual Version version() const override
+    Version version() const override
     {
         return version_;
     }
 
-    virtual void setCloseConnection(bool on) override
+    void setCloseConnection(bool on) override
     {
         closeConnection_ = on;
     }
 
-    virtual bool ifCloseConnection() const override
+    bool ifCloseConnection() const override
     {
         return closeConnection_;
     }
 
-    virtual void setContentTypeCode(ContentType type) override
+    void setContentTypeCode(ContentType type) override
     {
         contentType_ = type;
         setContentType(webContentTypeToString(type));
         flagForParsingContentType_ = true;
     }
 
-    // virtual void setContentTypeCodeAndCharacterSet(ContentType type, const
+    //  void setContentTypeCodeAndCharacterSet(ContentType type, const
     // std::string &charSet = "utf-8") override
     // {
     //     contentType_ = type;
     //     setContentType(webContentTypeAndCharsetToString(type, charSet));
     // }
 
-    virtual ContentType contentType() const override
+    ContentType contentType() const override
     {
         if (!flagForParsingContentType_)
         {
             flagForParsingContentType_ = true;
             auto &contentTypeString = getHeaderBy("content-type");
-            if (contentTypeString == "")
+            if (contentTypeString.empty())
             {
                 contentType_ = CT_NONE;
             }
@@ -133,20 +133,19 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
         return contentType_;
     }
 
-    virtual const std::string &getHeader(std::string key) const override
+    const std::string &getHeader(std::string key) const override
     {
         transform(key.begin(), key.end(), key.begin(), ::tolower);
         return getHeaderBy(key);
     }
 
-    virtual void removeHeader(std::string key) override
+    void removeHeader(std::string key) override
     {
         transform(key.begin(), key.end(), key.begin(), ::tolower);
         removeHeaderBy(key);
     }
 
-    virtual const std::unordered_map<std::string, std::string> &headers()
-        const override
+    const std::unordered_map<std::string, std::string> &headers() const override
     {
         return headers_;
     }
@@ -168,14 +167,14 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
         headers_.erase(lowerKey);
     }
 
-    virtual void addHeader(std::string field, const std::string &value) override
+    void addHeader(std::string field, const std::string &value) override
     {
         fullHeaderString_.reset();
         transform(field.begin(), field.end(), field.begin(), ::tolower);
         headers_[std::move(field)] = value;
     }
 
-    virtual void addHeader(std::string field, std::string &&value) override
+    void addHeader(std::string field, std::string &&value) override
     {
         fullHeaderString_.reset();
         transform(field.begin(), field.end(), field.begin(), ::tolower);
@@ -184,23 +183,22 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
 
     void addHeader(const char *start, const char *colon, const char *end);
 
-    virtual void addCookie(const std::string &key,
-                           const std::string &value) override
+    void addCookie(const std::string &key, const std::string &value) override
     {
         cookies_[key] = Cookie(key, value);
     }
 
-    virtual void addCookie(const Cookie &cookie) override
+    void addCookie(const Cookie &cookie) override
     {
         cookies_[cookie.key()] = cookie;
     }
 
-    virtual void addCookie(Cookie &&cookie) override
+    void addCookie(Cookie &&cookie) override
     {
         cookies_[cookie.key()] = std::move(cookie);
     }
 
-    virtual const Cookie &getCookie(const std::string &key) const override
+    const Cookie &getCookie(const std::string &key) const override
     {
         static const Cookie defaultCookie;
         auto it = cookies_.find(key);
@@ -211,18 +209,17 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
         return defaultCookie;
     }
 
-    virtual const std::unordered_map<std::string, Cookie> &cookies()
-        const override
+    const std::unordered_map<std::string, Cookie> &cookies() const override
     {
         return cookies_;
     }
 
-    virtual void removeCookie(const std::string &key) override
+    void removeCookie(const std::string &key) override
     {
         cookies_.erase(key);
     }
 
-    virtual void setBody(const std::string &body) override
+    void setBody(const std::string &body) override
     {
         bodyPtr_ = std::make_shared<HttpMessageStringBody>(body);
         if (passThrough_)
@@ -230,7 +227,7 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
             addHeader("content-length", std::to_string(bodyPtr_->length()));
         }
     }
-    virtual void setBody(std::string &&body) override
+    void setBody(std::string &&body) override
     {
         bodyPtr_ = std::make_shared<HttpMessageStringBody>(std::move(body));
         if (passThrough_)
@@ -246,9 +243,9 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
     std::shared_ptr<trantor::MsgBuffer> renderToBuffer();
     void renderToBuffer(trantor::MsgBuffer &buffer);
     std::shared_ptr<trantor::MsgBuffer> renderHeaderForHeadMethod();
-    virtual void clear() override;
+    void clear() override;
 
-    virtual void setExpiredTime(ssize_t expiredTime) override
+    void setExpiredTime(ssize_t expiredTime) override
     {
         expriedTime_ = expiredTime;
         datePos_ = std::string::npos;
@@ -258,12 +255,12 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
         }
     }
 
-    virtual ssize_t expiredTime() const override
+    ssize_t expiredTime() const override
     {
         return expriedTime_;
     }
 
-    virtual const char *getBodyData() const override
+    const char *getBodyData() const override
     {
         if (!flagForSerializingJson_ && jsonPtr_)
         {
@@ -275,7 +272,7 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
         }
         return bodyPtr_->data();
     }
-    virtual size_t getBodyLength() const override
+    size_t getBodyLength() const override
     {
         if (bodyPtr_)
             return bodyPtr_->length();
@@ -284,7 +281,7 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
 
     void swap(HttpResponseImpl &that) noexcept;
     void parseJson() const;
-    virtual const std::shared_ptr<Json::Value> &jsonObject() const override
+    const std::shared_ptr<Json::Value> &jsonObject() const override
     {
         // Not multi-thread safe but good, because we basically call this
         // function in a single thread
@@ -295,9 +292,9 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
         }
         return jsonPtr_;
     }
-    virtual const std::string &getJsonError() const override
+    const std::string &getJsonError() const override
     {
-        const static std::string none{""};
+        const static std::string none;
         if (jsonParsingErrorPtr_)
             return *jsonParsingErrorPtr_;
         return none;
@@ -356,13 +353,13 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
         }
     }
 #endif
-    ~HttpResponseImpl();
+    ~HttpResponseImpl() override = default;
 
   protected:
     void makeHeaderString(trantor::MsgBuffer &headerString);
 
   private:
-    virtual void setBody(const char *body, size_t len) override
+    void setBody(const char *body, size_t len) override
     {
         bodyPtr_ = std::make_shared<HttpMessageStringViewBody>(body, len);
         if (passThrough_)
@@ -370,19 +367,28 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
             addHeader("content-length", std::to_string(bodyPtr_->length()));
         }
     }
-    virtual void setContentTypeCodeAndCustomString(
-        ContentType type,
-        const char *typeString,
-        size_t typeStringLength) override
+    void setContentTypeCodeAndCustomString(ContentType type,
+                                           const char *typeString,
+                                           size_t typeStringLength) override
     {
         contentType_ = type;
         flagForParsingContentType_ = true;
         setContentType(string_view{typeString, typeStringLength});
     }
 
+    void setCustomStatusCode(int code,
+                             const char *message,
+                             size_t messageLength) override
+    {
+        assert(code >= 0);
+        customStatusCode_ = code;
+        statusMessage_ = string_view{message, messageLength};
+    }
+
     std::unordered_map<std::string, std::string> headers_;
     std::unordered_map<std::string, Cookie> cookies_;
 
+    int customStatusCode_{-1};
     HttpStatusCode statusCode_{kUnknown};
     string_view statusMessage_;
 
