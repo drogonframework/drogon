@@ -5,7 +5,7 @@
     <title>session example</title>
 </head>
 	<body>
-	<form action="/login" method="get">
+	<form action="/login" method="post">
 		<div class="container">
 			<label for="user"><b>Username</b></label>
 			<input type="text" placeholder="Enter Username" name="user" required>

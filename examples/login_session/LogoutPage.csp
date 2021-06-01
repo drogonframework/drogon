@@ -5,7 +5,7 @@
     <title>session example</title>
 </head>
 	<body>
-	<form action="/logout" method="get">
+	<form action="/logout" method="post">
 		<div class="container">
 			<button type="submit">Logout</button>
 		</div>
