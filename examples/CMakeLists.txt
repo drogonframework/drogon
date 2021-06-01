@@ -6,9 +6,13 @@ set(benchmark_sources benchmark/BenchmarkCtrl.cc benchmark/JsonCtrl.cc
 add_executable(client client_example/main.cc)
 add_executable(websocket_client websocket_client/WebSocketClient.cc)
 add_executable(benchmark ${benchmark_sources})
-add_executable(helloworld helloworld/main.cc helloworld/HelloController.cc)
+add_executable(helloworld helloworld/main.cc
+                          helloworld/HelloController.cc
+                          helloworld/HelloViewController.cc)
+drogon_create_views(helloworld
+                    ${CMAKE_CURRENT_SOURCE_DIR}/helloworld
+                    ${CMAKE_CURRENT_BINARY_DIR})
 add_executable(file_upload file_upload/file_upload.cc)
-
 drogon_create_views(file_upload
                     ${CMAKE_CURRENT_SOURCE_DIR}/file_upload
                     ${CMAKE_CURRENT_BINARY_DIR})
