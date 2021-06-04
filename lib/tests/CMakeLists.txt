@@ -14,6 +14,7 @@ set(UNITTEST_SOURCES unittests/main.cc
                         unittests/PubSubServiceUnittest.cc
                         unittests/Sha1Test.cc
                         ../src/ssl_funcs/Sha1.cc
+                        ../src/HttpUtils.cc
                         unittests/FileTypeTest.cc
                         unittests/DrObjectTest.cc
                         unittests/HttpFullDateTest.cc
