@@ -128,7 +128,7 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
                             REQUIRE(result == ReqResult::Ok);
 
                             std::shared_ptr<Json::Value> ret = *resp;
-                            REQUIRE(resp != nullptr);
+                            REQUIRE(ret != nullptr);
                             CHECK((*ret)["result"].asString() == "ok");
                         });
     // Post json again
@@ -142,7 +142,7 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
                             REQUIRE(result == ReqResult::Ok);
 
                             std::shared_ptr<Json::Value> ret = *resp;
-                            REQUIRE(resp != nullptr);
+                            REQUIRE(ret != nullptr);
                             CHECK((*ret)["result"].asString() == "ok");
                         });
 
@@ -156,7 +156,7 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
                             REQUIRE(result == ReqResult::Ok);
 
                             std::shared_ptr<Json::Value> ret = *resp;
-                            REQUIRE(resp != nullptr);
+                            REQUIRE(ret != nullptr);
                             CHECK((*ret)["result"].asString() == "ok");
                         });
 
@@ -527,7 +527,7 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
                                         const HttpResponsePtr &resp) {
                             REQUIRE(result == ReqResult::Ok);
                             auto ret = resp->getJsonObject();
-                            CHECK(ret != nullptr);
+                            REQUIRE(ret != nullptr);
                             CHECK((*ret)["result"].asString() == "ok");
                         });
 
@@ -540,7 +540,7 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
                                         const HttpResponsePtr &resp) {
                             REQUIRE(result == ReqResult::Ok);
                             auto ret = resp->getJsonObject();
-                            CHECK(ret != nullptr);
+                            REQUIRE(ret != nullptr);
                             CHECK((*ret)["result"].asString() == "ok");
                         });
 
@@ -593,7 +593,7 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
                                         const HttpResponsePtr &resp) {
                             REQUIRE(result == ReqResult::Ok);
                             auto json = resp->getJsonObject();
-                            CHECK(json != nullptr);
+                            REQUIRE(json != nullptr);
                             CHECK((*json)["result"].asString() == "ok");
                             CHECK((*json)["P1"] == "upload");
                             CHECK((*json)["P2"] == "test");
@@ -611,7 +611,7 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
                                         const HttpResponsePtr &resp) {
                             REQUIRE(result == ReqResult::Ok);
                             auto json = resp->getJsonObject();
-                            CHECK(json != nullptr);
+                            REQUIRE(json != nullptr);
                             CHECK((*json)["P1"] == "upload");
                             CHECK((*json)["P2"] == "test");
                         });
