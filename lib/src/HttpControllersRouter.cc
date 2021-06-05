@@ -493,7 +493,10 @@ void HttpControllersRouter::route(
 
     // No handler found
     if (routerItemPtr == nullptr)
+    {
         doWhenNoHandlerFound(req, std::move(callback));
+        return;
+    }
 
     HttpControllerRouterItem &routerItem = *routerItemPtr;
     assert(Invalid > req->method());
