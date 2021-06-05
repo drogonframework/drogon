@@ -123,7 +123,7 @@ void HttpControllersRouter::addHttpRegex(
         {
             if (router.pathParameterPattern_ == regExp)
             {
-                if (validMethods.size() > 0)
+                if (!validMethods.empty())
                 {
                     for (auto const &method : validMethods)
                     {
@@ -145,7 +145,7 @@ void HttpControllersRouter::addHttpRegex(
     struct HttpControllerRouterItem router;
     router.pathParameterPattern_ = regExp;
     router.pathPattern_ = regExp;
-    if (validMethods.size() > 0)
+    if (!validMethods.empty())
     {
         for (auto const &method : validMethods)
         {
@@ -172,7 +172,7 @@ void HttpControllersRouter::addHttpPath(
     // Path is like /api/v1/service/method/{1}/{2}/xxx...
     std::vector<size_t> places;
     std::string tmpPath = path;
-    std::string paras = "";
+    std::string paras;
     static const std::regex regex("\\{([^/]*)\\}");
     std::smatch results;
     auto pos = tmpPath.find('?');
@@ -193,7 +193,7 @@ void HttpControllersRouter::addHttpPath(
                     return std::isdigit(c);
                 }))
             {
-                size_t place = (size_t)std::stoi(result);
+                auto place = (size_t)std::stoi(result);
                 if (place > binder->paramCount() || place == 0)
                 {
                     LOG_ERROR << "Parameter placeholder(value=" << place
@@ -221,7 +221,7 @@ void HttpControllersRouter::addHttpPath(
                 {
                     assert(regexResult.size() == 2 && regexResult[1].matched);
                     auto num = regexResult[1].str();
-                    size_t place = (size_t)std::stoi(num);
+                    auto place = (size_t)std::stoi(num);
                     if (place > binder->paramCount() || place == 0)
                     {
                         LOG_ERROR << "Parameter placeholder(value=" << place
@@ -277,7 +277,7 @@ void HttpControllersRouter::addHttpPath(
                         return std::isdigit(c);
                     }))
                 {
-                    size_t place = (size_t)std::stoi(result);
+                    auto place = (size_t)std::stoi(result);
                     if (place > binder->paramCount() || place == 0)
                     {
                         LOG_ERROR << "Parameter placeholder(value=" << place
@@ -315,7 +315,7 @@ void HttpControllersRouter::addHttpPath(
                         assert(regexResult.size() == 2 &&
                                regexResult[1].matched);
                         auto num = regexResult[1].str();
-                        size_t place = (size_t)std::stoi(num);
+                        auto place = (size_t)std::stoi(num);
                         if (place > binder->paramCount() || place == 0)
                         {
                             LOG_ERROR << "Parameter placeholder(value=" << place
@@ -411,7 +411,7 @@ void HttpControllersRouter::addHttpPath(
     if (existingRouterItemPtr != nullptr)
     {
         auto &router = *existingRouterItemPtr;
-        if (validMethods.size() > 0)
+        if (!validMethods.empty())
         {
             for (auto const &method : validMethods)
             {
@@ -432,7 +432,7 @@ void HttpControllersRouter::addHttpPath(
     struct HttpControllerRouterItem router;
     router.pathParameterPattern_ = pathParameterPattern;
     router.pathPattern_ = path;
-    if (validMethods.size() > 0)
+    if (!validMethods.empty())
     {
         for (auto const &method : validMethods)
         {
@@ -690,7 +690,6 @@ void HttpControllersRouter::doControllerHandler(
             }
             invokeCallback(callback, req, resp);
         });
-    return;
 }
 
 void HttpControllersRouter::doPreHandlingAdvices(
