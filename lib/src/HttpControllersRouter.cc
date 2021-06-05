@@ -96,9 +96,9 @@ HttpControllersRouter::getHandlersInfo() const
     {
         gatherInfo(item);
     }
-    for (auto &[_, item] : ctrlMap_)
+    for (auto &data : ctrlMap_)
     {
-        gatherInfo(item);
+        gatherInfo(data.second);
     }
     return ret;
 }
