@@ -173,7 +173,7 @@ void HttpControllersRouter::addHttpPath(
     std::vector<size_t> places;
     std::string tmpPath = path;
     std::string paras = "";
-    std::regex regex = std::regex("\\{([^/]*)\\}");
+    static const std::regex regex("\\{([^/]*)\\}");
     std::smatch results;
     auto pos = tmpPath.find('?');
     if (pos != std::string::npos)
@@ -215,7 +215,7 @@ void HttpControllersRouter::addHttpPath(
             }
             else
             {
-                std::regex regNumberAndName("([0-9]+):.*");
+                static const std::regex regNumberAndName("([0-9]+):.*");
                 std::smatch regexResult;
                 if (std::regex_match(result, regexResult, regNumberAndName))
                 {
@@ -266,7 +266,7 @@ void HttpControllersRouter::addHttpPath(
     std::vector<std::pair<std::string, size_t>> parametersPlaces;
     if (!paras.empty())
     {
-        std::regex pregex("([^&]*)=\\{([^&]*)\\}&*");
+        static const std::regex pregex("([^&]*)=\\{([^&]*)\\}&*");
         while (std::regex_search(paras, results, pregex))
         {
             if (results.size() > 2)
@@ -389,6 +389,7 @@ void HttpControllersRouter::addHttpPath(
     bool routingRequiresRegex = (path != pathParameterPattern);
     HttpControllerRouterItem *existingRouterItemPtr = nullptr;
 
+    // If exists another controllers on the same route. Updathe them then exit
     if (routingRequiresRegex)
     {
         for (auto &router : ctrlVector_)
