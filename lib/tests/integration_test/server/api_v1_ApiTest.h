@@ -37,6 +37,8 @@ class ApiTest : public drogon::HttpController<ApiTest>
     METHOD_ADD(ApiTest::formTest, "/form", Post);
     METHOD_ADD(ApiTest::attributesTest, "/attrs", Get);
     ADD_METHOD_VIA_REGEX(ApiTest::regexTest, "/reg/([0-9]*)/(.*)", Get);
+    METHOD_ADD(ApiTest::cacheTest, "/cacheTest", Get);
+    METHOD_ADD(ApiTest::cacheTest2, "/cacheTest2", Get);
     METHOD_LIST_END
 
     void get(const HttpRequestPtr &req,
@@ -73,6 +75,10 @@ class ApiTest : public drogon::HttpController<ApiTest>
     {
         app().quit();
     }
+    void cacheTest(const HttpRequestPtr &req,
+                   std::function<void(const HttpResponsePtr &)> &&callback);
+    void cacheTest2(const HttpRequestPtr &req,
+                    std::function<void(const HttpResponsePtr &)> &&callback);
 
   public:
     ApiTest()

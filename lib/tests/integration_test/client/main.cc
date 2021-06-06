@@ -579,7 +579,6 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
                                              body->end(),
                                              resp->getBody().begin()));
                         });
-    // return;
     // Test file upload
     UploadFile file1("./drogon.jpg");
     UploadFile file2("./drogon.jpg", "drogon1.jpg");
@@ -599,7 +598,6 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
                             CHECK((*json)["P2"] == "test");
                         });
 
-    // return;
     // Test file upload, file type and extension interface.
     UploadFile image("./drogon.jpg");
     req = HttpRequest::newFileUploadRequest({image});
@@ -616,6 +614,7 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
                             CHECK((*json)["P2"] == "test");
                         });
 
+    // Test exception handling
     req = HttpRequest::newHttpRequest();
     req->setMethod(drogon::Get);
     req->setPath("/api/v1/this_will_fail");
@@ -624,6 +623,82 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
             REQUIRE(result == ReqResult::Ok);
             CHECK(resp->getStatusCode() == k500InternalServerError);
         });
+
+    // The result of this API is cached for (almost) forever. And the endpoing
+    // inrements a internal counter on each invoke. This test if the respond
+    // is taken from the cache after the first invoke.
+    // Try poking the cache test endpoint 3 times. They should all respond 0
+    // since the first respond is cached by the server.
+    req = HttpRequest::newHttpRequest();
+    req->setMethod(drogon::Get);
+    req->setPath("/api/v1/ApiTest/cacheTest");
+    client->sendRequest(req,
+                        [req, TEST_CTX](ReqResult result,
+                                        const HttpResponsePtr &resp) {
+                            REQUIRE(result == ReqResult::Ok);
+                            CHECK(resp->getStatusCode() == k200OK);
+                            CHECK(resp->body() == "0");
+                        });
+
+    req = HttpRequest::newHttpRequest();
+    req->setMethod(drogon::Get);
+    req->setPath("/api/v1/ApiTest/cacheTest");
+    client->sendRequest(req,
+                        [req, TEST_CTX](ReqResult result,
+                                        const HttpResponsePtr &resp) {
+                            REQUIRE(result == ReqResult::Ok);
+                            CHECK(resp->getStatusCode() == k200OK);
+                            CHECK(resp->body() == "0");
+                        });
+
+    req = HttpRequest::newHttpRequest();
+    req->setMethod(drogon::Get);
+    req->setPath("/api/v1/ApiTest/cacheTest");
+    client->sendRequest(req,
+                        [req, TEST_CTX](ReqResult result,
+                                        const HttpResponsePtr &resp) {
+                            REQUIRE(result == ReqResult::Ok);
+                            CHECK(resp->getStatusCode() == k200OK);
+                            CHECK(resp->body() == "0");
+                        });
+
+    // This API caches it's result on the third (counting from 1) calls. Thus
+    // we expect to always see 2 upon the third call. And all previous calls
+    // sould be less than or equal to 2, as another test is also poking the API
+    req = HttpRequest::newHttpRequest();
+    req->setMethod(drogon::Get);
+    req->setPath("/api/v1/ApiTest/cacheTest2");
+    client->sendRequest(
+        req, [req, TEST_CTX](ReqResult result, const HttpResponsePtr &resp) {
+            REQUIRE(result == ReqResult::Ok);
+            CHECK(resp->getStatusCode() == k200OK);
+            int n;
+            CHECK_NOTHROW(n = std::stoi(std::string(resp->body())));
+            CHECK(n <= 2);
+        });
+
+    req = HttpRequest::newHttpRequest();
+    req->setMethod(drogon::Get);
+    req->setPath("/api/v1/ApiTest/cacheTest2");
+    client->sendRequest(
+        req, [req, TEST_CTX](ReqResult result, const HttpResponsePtr &resp) {
+            REQUIRE(result == ReqResult::Ok);
+            CHECK(resp->getStatusCode() == k200OK);
+            int n;
+            CHECK_NOTHROW(n = std::stoi(std::string(resp->body())));
+            CHECK(n <= 2);
+        });
+
+    req = HttpRequest::newHttpRequest();
+    req->setMethod(drogon::Get);
+    req->setPath("/api/v1/ApiTest/cacheTest2");
+    client->sendRequest(req,
+                        [req, TEST_CTX](ReqResult result,
+                                        const HttpResponsePtr &resp) {
+                            REQUIRE(result == ReqResult::Ok);
+                            CHECK(resp->getStatusCode() == k200OK);
+                            CHECK(resp->body() == "2");
+                        });
 
 #if defined(__cpp_impl_coroutine)
     sync_wait([client, TEST_CTX]() -> Task<> {
