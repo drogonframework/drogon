@@ -455,11 +455,11 @@ void ApiTest::regexTest(const HttpRequestPtr &req,
     callback(resp);
 }
 
-static std::mutex cacheApiMtx;
+static std::mutex cacheTestMtx;
 void ApiTest::cacheTest(const HttpRequestPtr &req,
                         std::function<void(const HttpResponsePtr &)> &&callback)
 {
-    std::unique_lock<std::mutex> lk(cacheApiMtx);
+    std::unique_lock<std::mutex> lk(cacheTestMtx);
     static size_t callCount = 0;
 
     auto resp = HttpResponse::newHttpResponse();
@@ -472,12 +472,32 @@ void ApiTest::cacheTest(const HttpRequestPtr &req,
     callCount++;
 }
 
-static std::mutex cacheApi2Mtx;
+static std::mutex cacheTest2Mtx;
 void ApiTest::cacheTest2(
     const HttpRequestPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback)
 {
-    std::unique_lock<std::mutex> lk(cacheApi2Mtx);
+    std::unique_lock<std::mutex> lk(cacheTest2Mtx);
+    static size_t callCount = 0;
+
+    auto resp = HttpResponse::newHttpResponse();
+    LOG_ERROR << callCount;
+    resp->setBody(std::to_string(callCount));
+    resp->setContentTypeCode(CT_TEXT_PLAIN);
+    // Expire at 3500-Dec-30 00:00:0 midnight
+    if (callCount >= 2)
+        resp->setExpiredTime(
+            trantor::Date(3500, 12, 30, 0, 0, 0).secondsSinceEpoch());
+    callback(resp);
+    callCount++;
+}
+
+static std::mutex regexCacheApiMtx;
+void ApiTest::cacheTestRegex(
+    const HttpRequestPtr &req,
+    std::function<void(const HttpResponsePtr &)> &&callback)
+{
+    std::unique_lock<std::mutex> lk(regexCacheApiMtx);
     static size_t callCount = 0;
 
     auto resp = HttpResponse::newHttpResponse();

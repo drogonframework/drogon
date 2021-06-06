@@ -700,6 +700,53 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
                             CHECK(resp->body() == "2");
                         });
 
+    // Same as cacheTest2. But the server has to handle this API through regex.
+    // it is intentionally made that the final part of the path can't conatin
+    // a "z" character
+    req = HttpRequest::newHttpRequest();
+    req->setMethod(drogon::Get);
+    req->setPath("/cacheTestRegex/foobar");
+    client->sendRequest(
+        req, [req, TEST_CTX](ReqResult result, const HttpResponsePtr &resp) {
+            REQUIRE(result == ReqResult::Ok);
+            CHECK(resp->getStatusCode() == k200OK);
+            int n;
+            CHECK_NOTHROW(n = std::stoi(std::string(resp->body())));
+            CHECK(n <= 2);
+        });
+
+    req = HttpRequest::newHttpRequest();
+    req->setMethod(drogon::Get);
+    req->setPath("/cacheTestRegex/deadbeef");
+    client->sendRequest(
+        req, [req, TEST_CTX](ReqResult result, const HttpResponsePtr &resp) {
+            REQUIRE(result == ReqResult::Ok);
+            CHECK(resp->getStatusCode() == k200OK);
+            int n;
+            CHECK_NOTHROW(n = std::stoi(std::string(resp->body())));
+            CHECK(n <= 2);
+        });
+
+    req = HttpRequest::newHttpRequest();
+    req->setMethod(drogon::Get);
+    req->setPath("/cacheTestRegex/leet");
+    client->sendRequest(req,
+                        [req, TEST_CTX](ReqResult result,
+                                        const HttpResponsePtr &resp) {
+                            REQUIRE(result == ReqResult::Ok);
+                            CHECK(resp->getStatusCode() == k200OK);
+                            CHECK(resp->body() == "2");
+                        });
+    req = HttpRequest::newHttpRequest();
+    req->setMethod(drogon::Get);
+    req->setPath("/cacheTestRegex/zebra");
+    client->sendRequest(req,
+                        [req, TEST_CTX](ReqResult result,
+                                        const HttpResponsePtr &resp) {
+                            REQUIRE(result == ReqResult::Ok);
+                            CHECK(resp->getStatusCode() == k404NotFound);
+                        });
+
 #if defined(__cpp_impl_coroutine)
     sync_wait([client, TEST_CTX]() -> Task<> {
         // Test coroutine requests
