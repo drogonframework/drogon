@@ -624,8 +624,8 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
             CHECK(resp->getStatusCode() == k500InternalServerError);
         });
 
-    // The result of this API is cached for (almost) forever. And the endpoing
-    // inrements a internal counter on each invoke. This test if the respond
+    // The result of this API is cached for (almost) forever. And the endpoint
+    // increments a internal counter on each invoke. This tests if the respond
     // is taken from the cache after the first invoke.
     // Try poking the cache test endpoint 3 times. They should all respond 0
     // since the first respond is cached by the server.
@@ -664,7 +664,7 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
 
     // This API caches it's result on the third (counting from 1) calls. Thus
     // we expect to always see 2 upon the third call. And all previous calls
-    // sould be less than or equal to 2, as another test is also poking the API
+    // should be less than or equal to 2, as another test is also poking the API
     req = HttpRequest::newHttpRequest();
     req->setMethod(drogon::Get);
     req->setPath("/api/v1/ApiTest/cacheTest2");

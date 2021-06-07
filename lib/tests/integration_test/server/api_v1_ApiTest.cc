@@ -465,9 +465,8 @@ void ApiTest::cacheTest(const HttpRequestPtr &req,
     auto resp = HttpResponse::newHttpResponse();
     resp->setBody(std::to_string(callCount));
     resp->setContentTypeCode(CT_TEXT_PLAIN);
-    // Expire at 3500-Dec-30 00:00:0 midnight
-    resp->setExpiredTime(
-        trantor::Date(3500, 12, 30, 0, 0, 0).secondsSinceEpoch());
+    // Expire after a millennia
+    resp->setExpiredTime(31536000000);
     callback(resp);
     callCount++;
 }
@@ -486,8 +485,7 @@ void ApiTest::cacheTest2(
     resp->setContentTypeCode(CT_TEXT_PLAIN);
     // Expire at 3500-Dec-30 00:00:0 midnight
     if (callCount >= 2)
-        resp->setExpiredTime(
-            trantor::Date(3500, 12, 30, 0, 0, 0).secondsSinceEpoch());
+        resp->setExpiredTime(31536000000);
     callback(resp);
     callCount++;
 }
@@ -506,8 +504,7 @@ void ApiTest::cacheTestRegex(
     resp->setContentTypeCode(CT_TEXT_PLAIN);
     // Expire at 3500-Dec-30 00:00:0 midnight
     if (callCount >= 2)
-        resp->setExpiredTime(
-            trantor::Date(3500, 12, 30, 0, 0, 0).secondsSinceEpoch());
+        resp->setExpiredTime(31536000000);
     callback(resp);
     callCount++;
 }
