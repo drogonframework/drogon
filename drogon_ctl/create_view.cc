@@ -390,7 +390,7 @@ void create_view::newViewHeaderFile(std::ofstream &file,
          << "(){};\n\t"
             "virtual std::string genText(const drogon::DrTemplateData &) "
             "override;\n};\n";
-    for (auto i = 0; i < namespaces_.size(); ++i)
+    for (std::size_t i = 0; i < namespaces_.size(); ++i)
     {
         file << "}\n";
     }
@@ -489,7 +489,7 @@ void create_view::newViewSourceFile(std::ofstream &file,
     if (!namespaces_.empty())
     {
         file << "using namespace ";
-        for (int i = 0; i < namespaces_.size(); ++i)
+        for (std::size_t i = 0; i < namespaces_.size(); ++i)
         {
             if (i != namespaces_.size() - 1)
             {

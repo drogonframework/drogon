@@ -739,7 +739,7 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
         req, [req, TEST_CTX](ReqResult result, const HttpResponsePtr &resp) {
             REQUIRE(result == ReqResult::Ok);
             CHECK(resp->getStatusCode() == k200OK);
-            int n;
+            int n = 0;
             CHECK_NOTHROW(n = std::stoi(std::string(resp->body())));
             CHECK(n <= 2);
         });
@@ -751,7 +751,7 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
         req, [req, TEST_CTX](ReqResult result, const HttpResponsePtr &resp) {
             REQUIRE(result == ReqResult::Ok);
             CHECK(resp->getStatusCode() == k200OK);
-            int n;
+            int n = 0;
             CHECK_NOTHROW(n = std::stoi(std::string(resp->body())));
             CHECK(n <= 2);
         });
@@ -777,7 +777,7 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
         req, [req, TEST_CTX](ReqResult result, const HttpResponsePtr &resp) {
             REQUIRE(result == ReqResult::Ok);
             CHECK(resp->getStatusCode() == k200OK);
-            int n;
+            int n = 0;
             CHECK_NOTHROW(n = std::stoi(std::string(resp->body())));
             CHECK(n <= 2);
         });
@@ -789,7 +789,7 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
         req, [req, TEST_CTX](ReqResult result, const HttpResponsePtr &resp) {
             REQUIRE(result == ReqResult::Ok);
             CHECK(resp->getStatusCode() == k200OK);
-            int n;
+            int n = 0;
             CHECK_NOTHROW(n = std::stoi(std::string(resp->body())));
             CHECK(n <= 2);
         });

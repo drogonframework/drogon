@@ -387,8 +387,8 @@ class CaseBase : public trantor::NonCopyable
 
   protected:
     bool failed_ = false;
-    std::string name_;
     std::shared_ptr<CaseBase> parent_ = nullptr;
+    std::string name_;
 };
 
 class Case : public CaseBase
@@ -677,7 +677,7 @@ static int run(int argc, char** argv)
         bool drresult__;                                             \
         std::string drexpansion__;                                   \
         std::tie(drresult__, drexpansion__) =                        \
-            (drogon::test::internal::Decomposer() <= expr).result(); \
+            (drogon::test::internal::Decomposer() <= (expr)).result(); \
         if (!drresult__)                                             \
         {                                                            \
             ERROR_MSG(func_name, #expr)                              \
@@ -892,7 +892,6 @@ static int run(int argc, char** argv)
 #define STATIC_REQUIRE(expr)                            \
     do                                                  \
     {                                                   \
-        TEST_CTX;                                       \
         drogon::test::internal::numAssertions++;        \
         static_assert((expr), #expr " failed.");        \
         drogon::test::internal::numCorrectAssertions++; \
@@ -929,7 +928,6 @@ static int run(int argc, char** argv)
                 << "\x1B[0;37m↳ " << __FILE__ << ":" << __LINE__             \
                 << " \x1B[0;32m PASSED:\x1B[0m\n"                            \
                 << "  \033[0;34mSUCCESS()\x1B[0m\n\n";                       \
-        TEST_CTX;                                                            \
         drogon::test::internal::numAssertions++;                             \
         drogon::test::internal::numCorrectAssertions++;                      \
     } while (0)
