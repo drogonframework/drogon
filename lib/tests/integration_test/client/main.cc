@@ -354,6 +354,73 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
                             CHECK(resp->getBody().length() == 4994);
                         });
 
+    /// Test method routing, see MethodTest.h
+    req = HttpRequest::newHttpRequest();
+    req->setMethod(drogon::Post);
+    req->setPath("/api/method/regex/drogon/test?test=drogon");
+    client->sendRequest(req,
+                        [req, TEST_CTX](ReqResult result,
+                                        const HttpResponsePtr &resp) {
+                            REQUIRE(result == ReqResult::Ok);
+                            auto jsonPtr = resp->getJsonObject();
+                            CHECK(jsonPtr);
+                            CHECK(jsonPtr->asString() == "POST");
+                        });
+    req = HttpRequest::newHttpRequest();
+    req->setMethod(drogon::Get);
+    req->setPath("/api/method/regex/drogon/test");
+    client->sendRequest(req,
+                        [req, TEST_CTX](ReqResult result,
+                                        const HttpResponsePtr &resp) {
+                            REQUIRE(result == ReqResult::Ok);
+                            auto jsonPtr = resp->getJsonObject();
+                            CHECK(jsonPtr);
+                            CHECK(jsonPtr->asString() == "GET");
+                        });
+    req = HttpRequest::newHttpRequest();
+    req->setMethod(drogon::Post);
+    req->setPath("/api/method/drogon/test?test=drogon");
+    client->sendRequest(req,
+                        [req, TEST_CTX](ReqResult result,
+                                        const HttpResponsePtr &resp) {
+                            REQUIRE(result == ReqResult::Ok);
+                            auto jsonPtr = resp->getJsonObject();
+                            CHECK(jsonPtr);
+                            CHECK(jsonPtr->asString() == "POST");
+                        });
+    req = HttpRequest::newHttpRequest();
+    req->setMethod(drogon::Get);
+    req->setPath("/api/method/drogon/test");
+    client->sendRequest(req,
+                        [req, TEST_CTX](ReqResult result,
+                                        const HttpResponsePtr &resp) {
+                            REQUIRE(result == ReqResult::Ok);
+                            auto jsonPtr = resp->getJsonObject();
+                            CHECK(jsonPtr);
+                            CHECK(jsonPtr->asString() == "GET");
+                        });
+    req = HttpRequest::newHttpRequest();
+    req->setMethod(drogon::Post);
+    req->setPath("/api/method/test?test=drogon");
+    client->sendRequest(req,
+                        [req, TEST_CTX](ReqResult result,
+                                        const HttpResponsePtr &resp) {
+                            REQUIRE(result == ReqResult::Ok);
+                            auto jsonPtr = resp->getJsonObject();
+                            CHECK(jsonPtr);
+                            CHECK(jsonPtr->asString() == "POST");
+                        });
+    req = HttpRequest::newHttpRequest();
+    req->setMethod(drogon::Get);
+    req->setPath("/api/method/test");
+    client->sendRequest(req,
+                        [req, TEST_CTX](ReqResult result,
+                                        const HttpResponsePtr &resp) {
+                            REQUIRE(result == ReqResult::Ok);
+                            auto jsonPtr = resp->getJsonObject();
+                            CHECK(jsonPtr);
+                            CHECK(jsonPtr->asString() == "GET");
+                        });
     /// Test static function
     req = HttpRequest::newHttpRequest();
     req->setMethod(drogon::Get);
