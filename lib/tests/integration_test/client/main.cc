@@ -128,7 +128,7 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
                             REQUIRE(result == ReqResult::Ok);
 
                             std::shared_ptr<Json::Value> ret = *resp;
-                            REQUIRE(resp != nullptr);
+                            REQUIRE(ret != nullptr);
                             CHECK((*ret)["result"].asString() == "ok");
                         });
     // Post json again
@@ -142,7 +142,7 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
                             REQUIRE(result == ReqResult::Ok);
 
                             std::shared_ptr<Json::Value> ret = *resp;
-                            REQUIRE(resp != nullptr);
+                            REQUIRE(ret != nullptr);
                             CHECK((*ret)["result"].asString() == "ok");
                         });
 
@@ -156,7 +156,7 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
                             REQUIRE(result == ReqResult::Ok);
 
                             std::shared_ptr<Json::Value> ret = *resp;
-                            REQUIRE(resp != nullptr);
+                            REQUIRE(ret != nullptr);
                             CHECK((*ret)["result"].asString() == "ok");
                         });
 
@@ -527,7 +527,7 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
                                         const HttpResponsePtr &resp) {
                             REQUIRE(result == ReqResult::Ok);
                             auto ret = resp->getJsonObject();
-                            CHECK(ret != nullptr);
+                            REQUIRE(ret != nullptr);
                             CHECK((*ret)["result"].asString() == "ok");
                         });
 
@@ -540,7 +540,7 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
                                         const HttpResponsePtr &resp) {
                             REQUIRE(result == ReqResult::Ok);
                             auto ret = resp->getJsonObject();
-                            CHECK(ret != nullptr);
+                            REQUIRE(ret != nullptr);
                             CHECK((*ret)["result"].asString() == "ok");
                         });
 
@@ -579,7 +579,6 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
                                              body->end(),
                                              resp->getBody().begin()));
                         });
-    // return;
     // Test file upload
     UploadFile file1("./drogon.jpg");
     UploadFile file2("./drogon.jpg", "drogon1.jpg");
@@ -593,13 +592,12 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
                                         const HttpResponsePtr &resp) {
                             REQUIRE(result == ReqResult::Ok);
                             auto json = resp->getJsonObject();
-                            CHECK(json != nullptr);
+                            REQUIRE(json != nullptr);
                             CHECK((*json)["result"].asString() == "ok");
                             CHECK((*json)["P1"] == "upload");
                             CHECK((*json)["P2"] == "test");
                         });
 
-    // return;
     // Test file upload, file type and extension interface.
     UploadFile image("./drogon.jpg");
     req = HttpRequest::newFileUploadRequest({image});
@@ -611,11 +609,12 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
                                         const HttpResponsePtr &resp) {
                             REQUIRE(result == ReqResult::Ok);
                             auto json = resp->getJsonObject();
-                            CHECK(json != nullptr);
+                            REQUIRE(json != nullptr);
                             CHECK((*json)["P1"] == "upload");
                             CHECK((*json)["P2"] == "test");
                         });
 
+    // Test exception handling
     req = HttpRequest::newHttpRequest();
     req->setMethod(drogon::Get);
     req->setPath("/api/v1/this_will_fail");
@@ -624,6 +623,129 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
             REQUIRE(result == ReqResult::Ok);
             CHECK(resp->getStatusCode() == k500InternalServerError);
         });
+
+    // The result of this API is cached for (almost) forever. And the endpoint
+    // increments a internal counter on each invoke. This tests if the respond
+    // is taken from the cache after the first invoke.
+    // Try poking the cache test endpoint 3 times. They should all respond 0
+    // since the first respond is cached by the server.
+    req = HttpRequest::newHttpRequest();
+    req->setMethod(drogon::Get);
+    req->setPath("/api/v1/ApiTest/cacheTest");
+    client->sendRequest(req,
+                        [req, TEST_CTX](ReqResult result,
+                                        const HttpResponsePtr &resp) {
+                            REQUIRE(result == ReqResult::Ok);
+                            CHECK(resp->getStatusCode() == k200OK);
+                            CHECK(resp->body() == "0");
+                        });
+
+    req = HttpRequest::newHttpRequest();
+    req->setMethod(drogon::Get);
+    req->setPath("/api/v1/ApiTest/cacheTest");
+    client->sendRequest(req,
+                        [req, TEST_CTX](ReqResult result,
+                                        const HttpResponsePtr &resp) {
+                            REQUIRE(result == ReqResult::Ok);
+                            CHECK(resp->getStatusCode() == k200OK);
+                            CHECK(resp->body() == "0");
+                        });
+
+    req = HttpRequest::newHttpRequest();
+    req->setMethod(drogon::Get);
+    req->setPath("/api/v1/ApiTest/cacheTest");
+    client->sendRequest(req,
+                        [req, TEST_CTX](ReqResult result,
+                                        const HttpResponsePtr &resp) {
+                            REQUIRE(result == ReqResult::Ok);
+                            CHECK(resp->getStatusCode() == k200OK);
+                            CHECK(resp->body() == "0");
+                        });
+
+    // This API caches it's result on the third (counting from 1) calls. Thus
+    // we expect to always see 2 upon the third call. And all previous calls
+    // should be less than or equal to 2, as another test is also poking the API
+    req = HttpRequest::newHttpRequest();
+    req->setMethod(drogon::Get);
+    req->setPath("/api/v1/ApiTest/cacheTest2");
+    client->sendRequest(
+        req, [req, TEST_CTX](ReqResult result, const HttpResponsePtr &resp) {
+            REQUIRE(result == ReqResult::Ok);
+            CHECK(resp->getStatusCode() == k200OK);
+            int n;
+            CHECK_NOTHROW(n = std::stoi(std::string(resp->body())));
+            CHECK(n <= 2);
+        });
+
+    req = HttpRequest::newHttpRequest();
+    req->setMethod(drogon::Get);
+    req->setPath("/api/v1/ApiTest/cacheTest2");
+    client->sendRequest(
+        req, [req, TEST_CTX](ReqResult result, const HttpResponsePtr &resp) {
+            REQUIRE(result == ReqResult::Ok);
+            CHECK(resp->getStatusCode() == k200OK);
+            int n;
+            CHECK_NOTHROW(n = std::stoi(std::string(resp->body())));
+            CHECK(n <= 2);
+        });
+
+    req = HttpRequest::newHttpRequest();
+    req->setMethod(drogon::Get);
+    req->setPath("/api/v1/ApiTest/cacheTest2");
+    client->sendRequest(req,
+                        [req, TEST_CTX](ReqResult result,
+                                        const HttpResponsePtr &resp) {
+                            REQUIRE(result == ReqResult::Ok);
+                            CHECK(resp->getStatusCode() == k200OK);
+                            CHECK(resp->body() == "2");
+                        });
+
+    // Same as cacheTest2. But the server has to handle this API through regex.
+    // it is intentionally made that the final part of the path can't conatin
+    // a "z" character
+    req = HttpRequest::newHttpRequest();
+    req->setMethod(drogon::Get);
+    req->setPath("/cacheTestRegex/foobar");
+    client->sendRequest(
+        req, [req, TEST_CTX](ReqResult result, const HttpResponsePtr &resp) {
+            REQUIRE(result == ReqResult::Ok);
+            CHECK(resp->getStatusCode() == k200OK);
+            int n;
+            CHECK_NOTHROW(n = std::stoi(std::string(resp->body())));
+            CHECK(n <= 2);
+        });
+
+    req = HttpRequest::newHttpRequest();
+    req->setMethod(drogon::Get);
+    req->setPath("/cacheTestRegex/deadbeef");
+    client->sendRequest(
+        req, [req, TEST_CTX](ReqResult result, const HttpResponsePtr &resp) {
+            REQUIRE(result == ReqResult::Ok);
+            CHECK(resp->getStatusCode() == k200OK);
+            int n;
+            CHECK_NOTHROW(n = std::stoi(std::string(resp->body())));
+            CHECK(n <= 2);
+        });
+
+    req = HttpRequest::newHttpRequest();
+    req->setMethod(drogon::Get);
+    req->setPath("/cacheTestRegex/leet");
+    client->sendRequest(req,
+                        [req, TEST_CTX](ReqResult result,
+                                        const HttpResponsePtr &resp) {
+                            REQUIRE(result == ReqResult::Ok);
+                            CHECK(resp->getStatusCode() == k200OK);
+                            CHECK(resp->body() == "2");
+                        });
+    req = HttpRequest::newHttpRequest();
+    req->setMethod(drogon::Get);
+    req->setPath("/cacheTestRegex/zebra");
+    client->sendRequest(req,
+                        [req, TEST_CTX](ReqResult result,
+                                        const HttpResponsePtr &resp) {
+                            REQUIRE(result == ReqResult::Ok);
+                            CHECK(resp->getStatusCode() == k404NotFound);
+                        });
 
 #if defined(__cpp_impl_coroutine)
     sync_wait([client, TEST_CTX]() -> Task<> {

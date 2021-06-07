@@ -454,3 +454,57 @@ void ApiTest::regexTest(const HttpRequestPtr &req,
     auto resp = HttpResponse::newHttpJsonResponse(std::move(ret));
     callback(resp);
 }
+
+static std::mutex cacheTestMtx;
+void ApiTest::cacheTest(const HttpRequestPtr &req,
+                        std::function<void(const HttpResponsePtr &)> &&callback)
+{
+    std::unique_lock<std::mutex> lk(cacheTestMtx);
+    static size_t callCount = 0;
+
+    auto resp = HttpResponse::newHttpResponse();
+    resp->setBody(std::to_string(callCount));
+    resp->setContentTypeCode(CT_TEXT_PLAIN);
+    // Expire after a millennia
+    resp->setExpiredTime(31536000000);
+    callback(resp);
+    callCount++;
+}
+
+static std::mutex cacheTest2Mtx;
+void ApiTest::cacheTest2(
+    const HttpRequestPtr &req,
+    std::function<void(const HttpResponsePtr &)> &&callback)
+{
+    std::unique_lock<std::mutex> lk(cacheTest2Mtx);
+    static size_t callCount = 0;
+
+    auto resp = HttpResponse::newHttpResponse();
+    LOG_ERROR << callCount;
+    resp->setBody(std::to_string(callCount));
+    resp->setContentTypeCode(CT_TEXT_PLAIN);
+    // Expire after a millennia
+    if (callCount >= 2)
+        resp->setExpiredTime(31536000000);
+    callback(resp);
+    callCount++;
+}
+
+static std::mutex regexCacheApiMtx;
+void ApiTest::cacheTestRegex(
+    const HttpRequestPtr &req,
+    std::function<void(const HttpResponsePtr &)> &&callback)
+{
+    std::unique_lock<std::mutex> lk(regexCacheApiMtx);
+    static size_t callCount = 0;
+
+    auto resp = HttpResponse::newHttpResponse();
+    LOG_ERROR << callCount;
+    resp->setBody(std::to_string(callCount));
+    resp->setContentTypeCode(CT_TEXT_PLAIN);
+    // Expire after a millennia
+    if (callCount >= 2)
+        resp->setExpiredTime(31536000000);
+    callback(resp);
+    callCount++;
+}
