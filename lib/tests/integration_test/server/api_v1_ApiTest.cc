@@ -483,7 +483,7 @@ void ApiTest::cacheTest2(
     LOG_ERROR << callCount;
     resp->setBody(std::to_string(callCount));
     resp->setContentTypeCode(CT_TEXT_PLAIN);
-    // Expire at 3000-Dec-30 00:00:0 midnight
+    // Expire after a millennia
     if (callCount >= 2)
         resp->setExpiredTime(31536000000);
     callback(resp);
@@ -502,7 +502,7 @@ void ApiTest::cacheTestRegex(
     LOG_ERROR << callCount;
     resp->setBody(std::to_string(callCount));
     resp->setContentTypeCode(CT_TEXT_PLAIN);
-    // Expire at 3000-Dec-30 00:00:0 midnight
+    // Expire after a millennia
     if (callCount >= 2)
         resp->setExpiredTime(31536000000);
     callback(resp);
