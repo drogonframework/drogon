@@ -386,7 +386,7 @@ void HttpControllersRouter::addHttpPath(
         // Recreate this with the correct number of threads.
         binderInfo->responseCache_ = IOThreadStorage<HttpResponsePtr>();
     });
-    bool routingRequiresRegex = (path != pathParameterPattern);
+    bool routingRequiresRegex = (originPath != pathParameterPattern);
     HttpControllerRouterItem *existingRouterItemPtr = nullptr;
 
     // If exists another controllers on the same route. Updathe them then exit
@@ -401,8 +401,11 @@ void HttpControllersRouter::addHttpPath(
     else
     {
         std::string loweredPath;
-        loweredPath.resize(path.size());
-        std::transform(path.begin(), path.end(), loweredPath.begin(), tolower);
+        loweredPath.resize(originPath.size());
+        std::transform(originPath.begin(),
+                       originPath.end(),
+                       loweredPath.begin(),
+                       tolower);
         auto it = ctrlMap_.find(loweredPath);
         if (it != ctrlMap_.end())
             existingRouterItemPtr = &it->second;
@@ -453,8 +456,11 @@ void HttpControllersRouter::addHttpPath(
     else
     {
         std::string loweredPath;
-        loweredPath.resize(path.size());
-        std::transform(path.begin(), path.end(), loweredPath.begin(), tolower);
+        loweredPath.resize(originPath.size());
+        std::transform(originPath.begin(),
+                       originPath.end(),
+                       loweredPath.begin(),
+                       tolower);
         ctrlMap_[loweredPath] = std::move(router);
     }
 }
