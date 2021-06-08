@@ -65,17 +65,17 @@ DROGON_TEST(StringOpsTest)
         // splitStringToSet ignores empty strings
         std::string str = "1,2,3,3,,4";
         auto s = utils::splitStringToSet(str, ",");
-        CHECK(s.size() == 4);
-        CHECK(s.count("1") == 1);
-        CHECK(s.count("2") == 1);
-        CHECK(s.count("3") == 1);
-        CHECK(s.count("4") == 1);
+        CHECK(s.size() == 4UL);
+        CHECK(s.count("1") == 1UL);
+        CHECK(s.count("2") == 1UL);
+        CHECK(s.count("3") == 1UL);
+        CHECK(s.count("4") == 1UL);
 
         str = "a|||a";
         s = utils::splitStringToSet(str, "||");
-        CHECK(s.size() == 2);
-        CHECK(s.count("a") == 1);
-        CHECK(s.count("|a") == 1);
+        CHECK(s.size() == 2UL);
+        CHECK(s.count("a") == 1UL);
+        CHECK(s.count("|a") == 1UL);
     }
 
     SUBSECTION(ReplaceAll)

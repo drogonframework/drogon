@@ -1305,7 +1305,7 @@ DROGON_TEST(SQLite3Test)
                << "postgresql"
                << "123"
                << "default" >>
-        [TEST_CTX](const Result &r) { MANDATE(r.insertId() == 1); } >>
+        [TEST_CTX](const Result &r) { MANDATE(r.insertId() == 1ULL); } >>
         [TEST_CTX](const DrogonDbException &e) {
             FAULT("sqlite3 - DbClient streaming-type interface(0) what():" +
                   std::string(e.base().what()));
@@ -1317,21 +1317,21 @@ DROGON_TEST(SQLite3Test)
                << "postgresql1"
                << "123"
                << "default" << Mode::Blocking >>
-        [TEST_CTX](const Result &r) { MANDATE(r.insertId() == 2); } >>
+        [TEST_CTX](const Result &r) { MANDATE(r.insertId() == 2ULL); } >>
         [TEST_CTX](const DrogonDbException &e) {
             FAULT("sqlite3 - DbClient streaming-type interface(1) what():" +
                   std::string(e.base().what()));
         };
     /// 1.3 query,no-blocking
     *clientPtr << "select * from users where 1 = 1" << Mode::NonBlocking >>
-        [TEST_CTX](const Result &r) { MANDATE(r.size() == 2); } >>
+        [TEST_CTX](const Result &r) { MANDATE(r.size() == 2UL); } >>
         [TEST_CTX](const DrogonDbException &e) {
             FAULT("sqlite3 - DbClient streaming-type interface(2) what():" +
                   std::string(e.base().what()));
         };
     /// 1.4 query,blocking
     *clientPtr << "select * from users where 1 = 1" << Mode::Blocking >>
-        [TEST_CTX](const Result &r) { MANDATE(r.size() == 2); } >>
+        [TEST_CTX](const Result &r) { MANDATE(r.size() == 2UL); } >>
         [TEST_CTX](const DrogonDbException &e) {
             FAULT("sqlite3 - DbClient streaming-type interface(3) what():" +
                   std::string(e.base().what()));
@@ -1357,7 +1357,7 @@ DROGON_TEST(SQLite3Test)
         };
     /// 1.6 query, parameter binding
     *clientPtr << "select * from users where id = ?" << 1 >>
-        [TEST_CTX](const Result &r) { MANDATE(r.size() == 1); } >>
+        [TEST_CTX](const Result &r) { MANDATE(r.size() == 1UL); } >>
         [TEST_CTX](const DrogonDbException &e) {
             FAULT("sqlite3 - DbClient streaming-type interface(5) what():" +
                   std::string(e.base().what()));
@@ -1366,7 +1366,7 @@ DROGON_TEST(SQLite3Test)
     *clientPtr << "select * from users where user_id = ? and user_name = ?"
                << "pg1"
                << "postgresql1" >>
-        [TEST_CTX](const Result &r) { MANDATE(r.size() == 1); } >>
+        [TEST_CTX](const Result &r) { MANDATE(r.size() == 1UL); } >>
         [TEST_CTX](const DrogonDbException &e) {
             FAULT("sqlite3 - DbClient streaming-type interface(6) what():" +
                   std::string(e.base().what()));
@@ -1375,7 +1375,7 @@ DROGON_TEST(SQLite3Test)
     *clientPtr << "delete from users where user_id = ? and user_name = ?"
                << "pg1"
                << "postgresql1" >>
-        [TEST_CTX](const Result &r) { MANDATE(r.affectedRows() == 1); } >>
+        [TEST_CTX](const Result &r) { MANDATE(r.affectedRows() == 1UL); } >>
         [TEST_CTX](const DrogonDbException &e) {
             FAULT("sqlite3 - DbClient streaming-type interface(7) what():" +
                   std::string(e.base().what()));
@@ -1387,7 +1387,7 @@ DROGON_TEST(SQLite3Test)
                << "postgresql1"
                << "pg"
                << "postgresql" >>
-        [TEST_CTX](const Result &r) { MANDATE(r.affectedRows() == 1); } >>
+        [TEST_CTX](const Result &r) { MANDATE(r.affectedRows() == 1UL); } >>
         [TEST_CTX](const DrogonDbException &e) {
             FAULT("sqlite3 - DbClient streaming-type interface(8) what():" +
                   std::string(e.base().what()));
@@ -1411,7 +1411,7 @@ DROGON_TEST(SQLite3Test)
         "insert into users \
         (user_id,user_name,password,org_name) \
         values(?,?,?,?)",
-        [TEST_CTX](const Result &r) { MANDATE(r.insertId() == 1); },
+        [TEST_CTX](const Result &r) { MANDATE(r.insertId() == 1ULL); },
         [TEST_CTX](const DrogonDbException &e) {
             FAULT("sqlite3 - DbClient asynchronous interface(0) what():" +
                   std::string(e.base().what()));
@@ -1425,7 +1425,7 @@ DROGON_TEST(SQLite3Test)
         "insert into users \
         (user_id,user_name,password,org_name) \
         values(?,?,?,?)",
-        [TEST_CTX](const Result &r) { MANDATE(r.affectedRows() == 1); },
+        [TEST_CTX](const Result &r) { MANDATE(r.affectedRows() == 1UL); },
         [TEST_CTX](const DrogonDbException &e) {
             FAULT("sqlite3 - DbClient asynchronous interface(1) what():" +
                   std::string(e.base().what()));
@@ -1437,7 +1437,7 @@ DROGON_TEST(SQLite3Test)
     /// 2.3 query
     clientPtr->execSqlAsync(
         "select * from users where 1 = 1",
-        [TEST_CTX](const Result &r) { MANDATE(r.size() == 2); },
+        [TEST_CTX](const Result &r) { MANDATE(r.size() == 2UL); },
         [TEST_CTX](const DrogonDbException &e) {
             FAULT("sqlite3 - DbClient asynchronous interface(2) what():" +
                   std::string(e.base().what()));
@@ -1445,7 +1445,7 @@ DROGON_TEST(SQLite3Test)
     /// 2.2 query, parameter binding
     clientPtr->execSqlAsync(
         "select * from users where id = ?",
-        [TEST_CTX](const Result &r) { MANDATE(r.size() == 1); },
+        [TEST_CTX](const Result &r) { MANDATE(r.size() == 1UL); },
         [TEST_CTX](const DrogonDbException &e) {
             FAULT("sqlite3 - DbClient asynchronous interface(3) what():" +
                   std::string(e.base().what()));
@@ -1454,7 +1454,7 @@ DROGON_TEST(SQLite3Test)
     /// 2.3 query, parameter binding
     clientPtr->execSqlAsync(
         "select * from users where user_id = ? and user_name = ?",
-        [TEST_CTX](const Result &r) { MANDATE(r.size() == 1); },
+        [TEST_CTX](const Result &r) { MANDATE(r.size() == 1UL); },
         [TEST_CTX](const DrogonDbException &e) {
             FAULT("sqlite3 - DbClient asynchronous interface(4) what():" +
                   std::string(e.base().what()));
@@ -1464,7 +1464,7 @@ DROGON_TEST(SQLite3Test)
     /// 2.4 delete
     clientPtr->execSqlAsync(
         "delete from users where user_id = ? and user_name = ?",
-        [TEST_CTX](const Result &r) { MANDATE(r.affectedRows() == 1); },
+        [TEST_CTX](const Result &r) { MANDATE(r.affectedRows() == 1UL); },
         [TEST_CTX](const DrogonDbException &e) {
             FAULT("sqlite3 - DbClient asynchronous interface(5) what():" +
                   std::string(e.base().what()));
@@ -1475,7 +1475,7 @@ DROGON_TEST(SQLite3Test)
     clientPtr->execSqlAsync(
         "update users set user_id = ?, user_name = ? where user_id "
         "= ? and user_name = ?",
-        [TEST_CTX](const Result &r) { MANDATE(r.affectedRows() == 1); },
+        [TEST_CTX](const Result &r) { MANDATE(r.affectedRows() == 1UL); },
         [TEST_CTX](const DrogonDbException &e) {
             FAULT("sqlite3 - DbClient asynchronous interface(6) what():" +
                   std::string(e.base().what()));
@@ -1511,7 +1511,7 @@ DROGON_TEST(SQLite3Test)
             "postgresql",
             "123",
             "default");
-        MANDATE(r.insertId() == 1);
+        MANDATE(r.insertId() == 1ULL);
     }
     catch (const DrogonDbException &e)
     {
@@ -1528,7 +1528,7 @@ DROGON_TEST(SQLite3Test)
             "postgresql1",
             "123",
             "default");
-        MANDATE(r.affectedRows() == 1);
+        MANDATE(r.affectedRows() == 1UL);
     }
     catch (const DrogonDbException &e)
     {
@@ -1542,7 +1542,7 @@ DROGON_TEST(SQLite3Test)
             "select * from users where user_id=? and user_name=?",
             "pg1",
             "postgresql1");
-        MANDATE(r.size() == 1);
+        MANDATE(r.size() == 1UL);
     }
     catch (const DrogonDbException &e)
     {
@@ -1556,7 +1556,7 @@ DROGON_TEST(SQLite3Test)
             "select * from users where user_id=? and user_name=?",
             "pg111",
             "postgresql1");
-        MANDATE(r.size() == 0);
+        MANDATE(r.size() == 0UL);
     }
     catch (const DrogonDbException &e)
     {
@@ -1570,7 +1570,7 @@ DROGON_TEST(SQLite3Test)
             "select * from users where user_id=? and user_name='1234'",
             "pg111",
             "postgresql1");
-        MANDATE(r.size() == 0);
+        MANDATE(r.size() == 0UL);
     }
     catch (const DrogonDbException &e)
     {
@@ -1608,7 +1608,7 @@ DROGON_TEST(SQLite3Test)
     try
     {
         auto r = f.get();
-        MANDATE(r.insertId() == 1);
+        MANDATE(r.insertId() == 1ULL);
     }
     catch (const DrogonDbException &e)
     {
@@ -1626,7 +1626,7 @@ DROGON_TEST(SQLite3Test)
     try
     {
         auto r = f.get();
-        MANDATE(r.affectedRows() == 1);
+        MANDATE(r.affectedRows() == 1UL);
     }
     catch (const DrogonDbException &e)
     {
@@ -1641,7 +1641,7 @@ DROGON_TEST(SQLite3Test)
     try
     {
         auto r = f.get();
-        MANDATE(r.size() == 1);
+        MANDATE(r.size() == 1UL);
     }
     catch (const DrogonDbException &e)
     {
@@ -1656,7 +1656,7 @@ DROGON_TEST(SQLite3Test)
     try
     {
         auto r = f.get();
-        MANDATE(r.size() == 0);
+        MANDATE(r.size() == 0UL);
     }
     catch (const DrogonDbException &e)
     {
@@ -1671,7 +1671,7 @@ DROGON_TEST(SQLite3Test)
     try
     {
         auto r = f.get();
-        MANDATE(r.size() == 0);
+        MANDATE(r.size() == 0UL);
     }
     catch (const DrogonDbException &e)
     {
@@ -1726,7 +1726,7 @@ DROGON_TEST(SQLite3Test)
             "postgresql",
             "123",
             "default");
-        MANDATE(r.insertId() == 1);
+        MANDATE(r.insertId() == 1ULL);
     }
     catch (const DrogonDbException &e)
     {
@@ -1793,7 +1793,7 @@ DROGON_TEST(SQLite3Test)
     user.setOrgName("default");
     mapper.insert(
         user,
-        [TEST_CTX](Users ret) { MANDATE(ret.getPrimaryKey() == 1); },
+        [TEST_CTX](Users ret) { MANDATE(ret.getPrimaryKey() == 1UL); },
         [TEST_CTX](const DrogonDbException &e) {
             FAULT("sqlite3 - ORM mapper asynchronous interface(0) what():" +
                   std::string(e.base().what()));
@@ -1803,7 +1803,7 @@ DROGON_TEST(SQLite3Test)
     user.setUserName("postgres1");
     mapper.insert(
         user,
-        [TEST_CTX](Users ret) { MANDATE(ret.getPrimaryKey() == 2); },
+        [TEST_CTX](Users ret) { MANDATE(ret.getPrimaryKey() == 2UL); },
         [TEST_CTX](const DrogonDbException &e) {
             FAULT("sqlite3 - ORM mapper asynchronous interface(1) what():" +
                   std::string(e.base().what()));
@@ -1813,7 +1813,7 @@ DROGON_TEST(SQLite3Test)
         Criteria(Users::Cols::_id,
                  CompareOperator::In,
                  std::vector<int32_t>{2, 200}),
-        [TEST_CTX](std::vector<Users> users) { MANDATE(users.size() == 1); },
+        [TEST_CTX](std::vector<Users> users) { MANDATE(users.size() == 1UL); },
         [TEST_CTX](const DrogonDbException &e) {
             FAULT("sqlite3 - ORM mapper asynchronous interface(2) what():" +
                   std::string(e.base().what()));
@@ -1821,7 +1821,7 @@ DROGON_TEST(SQLite3Test)
     /// 5.3.5 count
     mapper.count(
         drogon::orm::Criteria(Users::Cols::_id, CompareOperator::EQ, 2),
-        [TEST_CTX](const size_t c) { MANDATE(c == 1); },
+        [TEST_CTX](const size_t c) { MANDATE(c == 1UL); },
         [TEST_CTX](const DrogonDbException &e) {
             FAULT("sqlite3 - ORM mapper asynchronous interface(3) what():" +
                   std::string(e.base().what()));
@@ -1847,7 +1847,7 @@ DROGON_TEST(SQLite3Test)
         {
             auto result =
                 co_await clientPtr->execSqlCoro("select * from users;");
-            MANDATE(result.size() != 0);
+            MANDATE(result.size() != 0UL);
         }
         catch (const DrogonDbException &e)
         {
@@ -1859,7 +1859,7 @@ DROGON_TEST(SQLite3Test)
         {
             auto result = co_await clientPtr->execSqlCoro(
                 "select * from users where 1=?;", 1);
-            MANDATE(result.size() != 0);
+            MANDATE(result.size() != 0UL);
         }
         catch (const DrogonDbException &e)
         {
@@ -1884,7 +1884,7 @@ DROGON_TEST(SQLite3Test)
             auto mapper = CoroMapper<Users>(clientPtr);
             auto users = co_await mapper.findBy(
                 Criteria(Users::Cols::_id, CompareOperator::EQ, 1));
-            MANDATE(users.size() == 1);
+            MANDATE(users.size() == 1UL);
         }
         catch (const DrogonDbException &e)
         {
