@@ -2,7 +2,7 @@
 
 The following examples can help you understand how to use Drogon:
 
-1. [hellowrold](https://github.com/an-tao/drogon/tree/master/examples/hellowrold) - The multuple ways of "Hello, World!"
+1. [helloworld](https://github.com/an-tao/drogon/tree/master/examples/helloworld) - The multuple ways of "Hello, World!"
 2. [client_example](https://github.com/an-tao/drogon/tree/master/examples/client_example/main.cc) - A client example.
 3. [websocket_client](https://github.com/an-tao/drogon/tree/master/examples/websocket_client/WebSocketClient.cc) - An example on how to use the WebSocket client
 4. [login_session](https://github.com/an-tao/drogon/tree/master/examples/login_session) - How to use the built-in session system to handle login and out
