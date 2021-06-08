@@ -442,6 +442,8 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
         binder = std::make_shared<internal::HttpBinder<FUNCTION>>(
             std::forward<FUNCTION>(function));
 
+        getLoop()->queueInLoop([binder]() { binder->createHandlerInstance(); });
+
         std::vector<HttpMethod> validMethods;
         std::vector<std::string> filters;
         for (auto const &filterOrMethod : filtersAndMethods)
