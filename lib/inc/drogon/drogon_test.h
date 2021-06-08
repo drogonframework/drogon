@@ -677,7 +677,7 @@ static int run(int argc, char** argv)
         bool drresult__;                                               \
         std::string drexpansion__;                                     \
         std::tie(drresult__, drexpansion__) =                          \
-            (drogon::test::internal::Decomposer() <= (expr)).result(); \
+              (drogon::test::internal::Decomposer() <= expr).result(); \
         if (!drresult__)                                               \
         {                                                              \
             ERROR_MSG(func_name, #expr)                                \
