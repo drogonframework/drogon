@@ -671,21 +671,21 @@ static int run(int argc, char** argv)
         on_leaving;                                         \
     } while (0);
 
-#define EVAL_AND_CHECK_TRUE__(func_name, expr)                         \
-    do                                                                 \
-    {                                                                  \
-        bool drresult__;                                               \
-        std::string drexpansion__;                                     \
-        std::tie(drresult__, drexpansion__) =                          \
-            (drogon::test::internal::Decomposer() <= expr).result();   \
-        if (!drresult__)                                               \
-        {                                                              \
-            ERROR_MSG(func_name, #expr)                                \
-                << "With expansion\n"                                  \
-                << "  \033[0;33m" << drexpansion__ << "\x1B[0m\n\n";   \
-        }                                                              \
-        else                                                           \
-            SET_TEST_SUCCESS__;                                        \
+#define EVAL_AND_CHECK_TRUE__(func_name, expr)                       \
+    do                                                               \
+    {                                                                \
+        bool drresult__;                                             \
+        std::string drexpansion__;                                   \
+        std::tie(drresult__, drexpansion__) =                        \
+            (drogon::test::internal::Decomposer() <= expr).result(); \
+        if (!drresult__)                                             \
+        {                                                            \
+            ERROR_MSG(func_name, #expr)                              \
+                << "With expansion\n"                                \
+                << "  \033[0;33m" << drexpansion__ << "\x1B[0m\n\n"; \
+        }                                                            \
+        else                                                         \
+            SET_TEST_SUCCESS__;                                      \
     } while (0);
 
 #define PRINT_UNEXPECTED_EXCEPTION__(func_name, expr)         \
