@@ -99,6 +99,7 @@ template <typename FUNCTION>
 class HttpBinder : public HttpBinderBase
 {
   public:
+    using traits = FunctionTraits<FUNCTION>;
     using FunctionType = FUNCTION;
     void handleHttpRequest(
         std::deque<std::string> &pathArguments,
@@ -126,28 +127,31 @@ class HttpBinder : public HttpBinderBase
     {
         return handlerName_;
     }
-    void createHandlerInstance()
+    template <bool isClassFunction = traits::isClassFunction,
+              bool isDrObjectClass = traits::isDrObjectClass>
+    typename std::enable_if<isDrObjectClass && isClassFunction, void>::type
+    createHandlerInstance()
     {
-        if (traits::isClassFunction)
-        {
-            if (traits::isDrObjectClass)
-            {
-                auto objPtr = DrClassMap::getSingleInstance<
-                    typename traits::class_type>();
-                LOG_TRACE << "create handler class object: " << objPtr.get();
-            }
-            else
-            {
-                auto &obj = getControllerObj<typename traits::class_type>();
-                LOG_TRACE << "create handler class object: " << &obj;
-            }
-        }
+        auto objPtr =
+            DrClassMap::getSingleInstance<typename traits::class_type>();
+        LOG_TRACE << "create handler class object: " << objPtr.get();
+    }
+    template <bool isClassFunction = traits::isClassFunction,
+              bool isDrObjectClass = traits::isDrObjectClass>
+    typename std::enable_if<!isDrObjectClass && isClassFunction, void>::type
+    createHandlerInstance()
+    {
+        auto &obj = getControllerObj<typename traits::class_type>();
+        LOG_TRACE << "create handler class object: " << &obj;
+    }
+    template <bool isClassFunction = traits::isClassFunction>
+    typename std::enable_if<!isClassFunction, void>::type
+    createHandlerInstance()
+    {
     }
 
   private:
     FUNCTION func_;
-
-    using traits = FunctionTraits<FUNCTION>;
     template <std::size_t Index>
     using nth_argument_type = typename traits::template argument<Index>;
 
