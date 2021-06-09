@@ -12,7 +12,7 @@ DROGON_TEST(PubSubServiceTest)
                                 });
     service.publish("topic1", "hello world");
     service.publish("topic2", "hello world");
-    CHECK(service.size() == 1);
+    CHECK(service.size() == 1UL);
     service.unsubscribe("topic1", id);
-    CHECK(service.size() == 0);
+    CHECK(service.size() == 0UL);
 }

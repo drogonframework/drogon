@@ -35,7 +35,7 @@ DROGON_TEST(HttpPipeliningTest)
     client->sendRequest(request2,
                         [TEST_CTX](ReqResult r, const HttpResponsePtr &resp) {
                             REQUIRE(r == ReqResult::Ok);
-                            REQUIRE(resp->getBody().length() == 44618);
+                            REQUIRE(resp->getBody().length() == 44618UL);
                         });
 
     auto request = HttpRequest::newHttpRequest();

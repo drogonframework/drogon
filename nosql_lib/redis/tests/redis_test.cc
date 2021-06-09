@@ -38,7 +38,7 @@ DROGON_TEST(RedisTest)
     redisClient->execCommandAsync(
         [TEST_CTX](const drogon::nosql::RedisResult &r) {
             MANDATE(r.type() == RedisResultType::kArray);
-            MANDATE(r.asArray().size() == 1);
+            MANDATE(r.asArray().size() == 1UL);
         },
         [TEST_CTX](const std::exception &err) { MANDATE(err.what()); },
         "keys *");

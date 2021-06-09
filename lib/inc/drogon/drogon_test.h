@@ -31,6 +31,29 @@ namespace test
 #define DROGON_TEST_STRINGIFY(x) DROGON_TEST_STRINGIFY__(x)
 #define DROGON_TEST_CONCAT__(a, b) a##b
 #define DROGON_TEST_CONCAT(a, b) DROGON_TEST_CONCAT__(a, b)
+
+#if defined(__GNUC__) && !defined(__clang__) && !defined(__ICC)
+#define DROGON_TEST_START_SUPRESSION_ _Pragma("GCC diagnostic push")
+#define DROGON_TEST_END_SUPRESSION_ _Pragma("GCC diagnostic pop")
+#define DROGON_TEST_SUPPRESS_PARENTHESES_WARNING_ \
+    _Pragma("GCC diagnostic ignored \"-Wparentheses\"")
+#define DROGON_TEST_SUPPRESS_UNUSED_VALUE_WARNING_ \
+    _Pragma("GCC diagnostic ignored \"-Wunused-value\"")
+#elif defined(__clang__) && !defined(_MSC_VER)
+#define DROGON_TEST_START_SUPRESSION_ _Pragma("clang diagnostic push")
+#define DROGON_TEST_END_SUPRESSION_ _Pragma("clang diagnostic pop")
+#define DROGON_TEST_SUPPRESS_PARENTHESES_WARNING_ \
+    _Pragma("clang diagnostic ignored \"-Wparentheses\"")
+#define DROGON_TEST_SUPPRESS_UNUSED_VALUE_WARNING_ \
+    _Pragma("clang diagnostic ignored \"-Wunused-value\"")
+// MSVC don't have an equlivent. Add other compilers here
+#else
+#define DROGON_TEST_START_SUPRESSION_
+#define DROGON_TEST_END_SUPRESSION_
+#define DROGON_TEST_SUPPRESS_PARENTHESES_WARNING_
+#define DROGON_TEST_SUPPRESS_UNUSED_VALUE_WARNING_
+#endif
+
 class Case;
 
 namespace internal
@@ -387,8 +410,8 @@ class CaseBase : public trantor::NonCopyable
 
   protected:
     bool failed_ = false;
-    std::string name_;
     std::shared_ptr<CaseBase> parent_ = nullptr;
+    std::string name_;
 };
 
 class Case : public CaseBase
@@ -676,8 +699,11 @@ static int run(int argc, char** argv)
     {                                                                \
         bool drresult__;                                             \
         std::string drexpansion__;                                   \
+        DROGON_TEST_START_SUPRESSION_                                \
+        DROGON_TEST_SUPPRESS_PARENTHESES_WARNING_                    \
         std::tie(drresult__, drexpansion__) =                        \
             (drogon::test::internal::Decomposer() <= expr).result(); \
+        DROGON_TEST_END_SUPRESSION_                                  \
         if (!drresult__)                                             \
         {                                                            \
             ERROR_MSG(func_name, #expr)                              \
@@ -892,7 +918,10 @@ static int run(int argc, char** argv)
 #define STATIC_REQUIRE(expr)                            \
     do                                                  \
     {                                                   \
+        DROGON_TEST_START_SUPRESSION_                   \
+        DROGON_TEST_SUPPRESS_UNUSED_VALUE_WARNING_      \
         TEST_CTX;                                       \
+        DROGON_TEST_END_SUPRESSION_                     \
         drogon::test::internal::numAssertions++;        \
         static_assert((expr), #expr " failed.");        \
         drogon::test::internal::numCorrectAssertions++; \
@@ -923,13 +952,16 @@ static int run(int argc, char** argv)
 #define SUCCESS()                                                            \
     do                                                                       \
     {                                                                        \
+        DROGON_TEST_START_SUPRESSION_                                        \
+        DROGON_TEST_SUPPRESS_UNUSED_VALUE_WARNING_                           \
+        TEST_CTX;                                                            \
+        DROGON_TEST_END_SUPRESSION_                                          \
         if (drogon::test::internal::printSuccessfulTests)                    \
             drogon::test::print()                                            \
                 << "\x1B[1;37mIn test case " << TEST_CTX->fullname() << "\n" \
                 << "\x1B[0;37m↳ " << __FILE__ << ":" << __LINE__             \
                 << " \x1B[0;32m PASSED:\x1B[0m\n"                            \
                 << "  \033[0;34mSUCCESS()\x1B[0m\n\n";                       \
-        TEST_CTX;                                                            \
         drogon::test::internal::numAssertions++;                             \
         drogon::test::internal::numCorrectAssertions++;                      \
     } while (0)
