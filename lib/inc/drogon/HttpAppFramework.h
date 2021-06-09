@@ -437,10 +437,10 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
         const std::string &handlerName = "")
     {
         LOG_TRACE << "pathPattern:" << pathPattern;
-        internal::HttpBinderBasePtr binder;
-
-        binder = std::make_shared<internal::HttpBinder<FUNCTION>>(
+        auto binder = std::make_shared<internal::HttpBinder<FUNCTION>>(
             std::forward<FUNCTION>(function));
+
+        getLoop()->queueInLoop([binder]() { binder->createHandlerInstance(); });
 
         std::vector<HttpMethod> validMethods;
         std::vector<std::string> filters;

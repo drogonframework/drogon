@@ -99,15 +99,16 @@ template <typename FUNCTION>
 class HttpBinder : public HttpBinderBase
 {
   public:
+    using traits = FunctionTraits<FUNCTION>;
     using FunctionType = FUNCTION;
-    virtual void handleHttpRequest(
+    void handleHttpRequest(
         std::deque<std::string> &pathArguments,
         const HttpRequestPtr &req,
         std::function<void(const HttpResponsePtr &)> &&callback) override
     {
         run(pathArguments, req, std::move(callback));
     }
-    virtual size_t paramCount() override
+    size_t paramCount() override
     {
         return traits::arity;
     }
@@ -122,15 +123,35 @@ class HttpBinder : public HttpBinderBase
         std::cout << "argument_count=" << argument_count << " "
                   << traits::isHTTPFunction << std::endl;
     }
-    virtual const std::string &handlerName() const override
+    const std::string &handlerName() const override
     {
         return handlerName_;
+    }
+    template <bool isClassFunction = traits::isClassFunction,
+              bool isDrObjectClass = traits::isDrObjectClass>
+    typename std::enable_if<isDrObjectClass && isClassFunction, void>::type
+    createHandlerInstance()
+    {
+        auto objPtr =
+            DrClassMap::getSingleInstance<typename traits::class_type>();
+        LOG_TRACE << "create handler class object: " << objPtr.get();
+    }
+    template <bool isClassFunction = traits::isClassFunction,
+              bool isDrObjectClass = traits::isDrObjectClass>
+    typename std::enable_if<!isDrObjectClass && isClassFunction, void>::type
+    createHandlerInstance()
+    {
+        auto &obj = getControllerObj<typename traits::class_type>();
+        LOG_TRACE << "create handler class object: " << &obj;
+    }
+    template <bool isClassFunction = traits::isClassFunction>
+    typename std::enable_if<!isClassFunction, void>::type
+    createHandlerInstance()
+    {
     }
 
   private:
     FUNCTION func_;
-
-    using traits = FunctionTraits<FUNCTION>;
     template <std::size_t Index>
     using nth_argument_type = typename traits::template argument<Index>;
 
