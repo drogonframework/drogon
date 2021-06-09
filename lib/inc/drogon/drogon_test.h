@@ -37,11 +37,15 @@ namespace test
 #define DROGON_TEST_END_SUPRESSION_ _Pragma("GCC diagnostic pop")
 #define DROGON_TEST_SUPPRESS_PARENTHESES_WARNING_ \
     _Pragma("GCC diagnostic ignored \"-Wparentheses\"")
+#define DROGON_TEST_SUPPRESS_UNUSED_VALUE_WARNING_ \
+    _Pragma("GCC diagnostic ignored \"-Wunused-value\"")
 #elif defined(__clang__) && !defined(_MSC_VER)
 #define DROGON_TEST_START_SUPRESSION_ _Pragma("clang diagnostic push")
 #define DROGON_TEST_END_SUPRESSION_ _Pragma("clang diagnostic pop")
 #define DROGON_TEST_SUPPRESS_PARENTHESES_WARNING_ \
     _Pragma("clang diagnostic ignored \"-Wparentheses\"")
+#define DROGON_TEST_SUPPRESS_UNUSED_VALUE_WARNING_ \
+    _Pragma("clang diagnostic ignored \"-Wunused-value\"")
 // MSVC don't have an equlivent. Add other compilers here
 #else
 #define DROGON_TEST_START_SUPRESSION_
@@ -913,6 +917,10 @@ static int run(int argc, char** argv)
 #define STATIC_REQUIRE(expr)                            \
     do                                                  \
     {                                                   \
+        DROGON_TEST_START_SUPRESSION_                   \
+        DROGON_TEST_SUPPRESS_UNUSED_VALUE_WARNING_      \
+        TEST_CTX;                                       \
+        DROGON_TEST_END_SUPRESSION_                     \
         drogon::test::internal::numAssertions++;        \
         static_assert((expr), #expr " failed.");        \
         drogon::test::internal::numCorrectAssertions++; \
@@ -943,6 +951,10 @@ static int run(int argc, char** argv)
 #define SUCCESS()                                                            \
     do                                                                       \
     {                                                                        \
+        DROGON_TEST_START_SUPRESSION_                                        \
+        DROGON_TEST_SUPPRESS_UNUSED_VALUE_WARNING_                           \
+        TEST_CTX;                                                            \
+        DROGON_TEST_END_SUPRESSION_                                          \
         if (drogon::test::internal::printSuccessfulTests)                    \
             drogon::test::print()                                            \
                 << "\x1B[1;37mIn test case " << TEST_CTX->fullname() << "\n" \
