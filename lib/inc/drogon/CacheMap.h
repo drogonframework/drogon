@@ -129,7 +129,6 @@ class CacheMap
     {
         loop_->invalidateTimer(timerId_);
         map_.clear();
-        std::lock_guard<std::mutex> lock(bucketMutex_);
         for (auto iter = wheels_.rbegin(); iter != wheels_.rend(); ++iter)
         {
             iter->clear();
