@@ -102,6 +102,7 @@ class CacheMap
             timerId_ = loop_->runEvery(tickInterval_, [this]() {
                 size_t t = ++ticksCounter_;
                 size_t pow = 1;
+                std::lock_guard<std::mutex> lock(bucketQueueMutex_);
                 for (size_t i = 0; i < wheelsNumber_; ++i)
                 {
                     if ((t % pow) == 0)
@@ -129,6 +130,7 @@ class CacheMap
     {
         loop_->invalidateTimer(timerId_);
         map_.clear();
+        std::lock_guard<std::mutex> lock(bucketQueueMutex_);
         for (auto iter = wheels_.rbegin(); iter != wheels_.rend(); ++iter)
         {
             iter->clear();
@@ -385,6 +387,7 @@ class CacheMap
 
     std::mutex mtx_;
     std::mutex bucketMutex_;
+    std::mutex bucketQueueMutex_;
     trantor::TimerId timerId_;
     trantor::EventLoop *loop_;
 

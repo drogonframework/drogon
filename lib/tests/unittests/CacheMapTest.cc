@@ -36,6 +36,4 @@ DROGON_TEST(CacheMapTest)
     std::string content;
     cache.findAndFetch("zzz", content);
     CHECK(content == "-");
-
-    loopThread.getLoop()->quit();
 }
