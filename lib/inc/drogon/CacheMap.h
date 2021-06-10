@@ -92,8 +92,7 @@ class CacheMap
           wheelsNumber_(wheelsNum),
           bucketsNumPerWheel_(bucketsNumPerWheel)
     {
-        ctrlBlock_ = std::make_shared<ControlBlock>();
-        ctrlBlock_->cacheMapDestructed = false;
+        destructed_ = std::make_shared<std::atomic<bool>>(false);
         wheels_.resize(wheelsNumber_);
         for (size_t i = 0; i < wheelsNumber_; ++i)
         {
@@ -101,13 +100,13 @@ class CacheMap
         }
         if (tickInterval_ > 0 && wheelsNumber_ > 0 && bucketsNumPerWheel_ > 0)
         {
-            timerId_ = loop_->runEvery(tickInterval_, [this, ctrlBlock=ctrlBlock_]() {
-                // 2-phase check to ensure the CacheMap didn't restruct after the last check
+            timerId_ = loop_->runEvery(tickInterval_, [this, destructed=destructed_]() {
+                // 2-phase check to ensure the CacheMap didn't destruct after the 1st check
                 // and before the mutex
-                if(ctrlBlock_->cacheMapDestructed)
+                if(*destructed)
                     return;
                 std::lock_guard<std::mutex> lock(bucketQueueMutex_);
-                if(ctrlBlock_->cacheMapDestructed)
+                if(*destructed)
                     return;
 
                 size_t t = ++ticksCounter_;
@@ -137,7 +136,7 @@ class CacheMap
     };
     ~CacheMap()
     {
-        ctrlBlock_->cacheMapDestructed = true;
+        *destructed_ = true;
         loop_->invalidateTimer(timerId_);
         map_.clear();
         std::lock_guard<std::mutex> lock(bucketQueueMutex_);
@@ -182,11 +181,6 @@ class CacheMap
         size_t timeout_{0};
         std::function<void()> timeoutCallback_;
         WeakCallbackEntryPtr weakEntryPtr_;
-    };
-
-    struct ControlBlock
-    {
-        std::atomic<bool> cacheMapDestructed;
     };
 
     /**
@@ -405,7 +399,7 @@ class CacheMap
     std::mutex bucketQueueMutex_;
     trantor::TimerId timerId_;
     trantor::EventLoop *loop_;
-    std::shared_ptr<ControlBlock> ctrlBlock_;
+    std::shared_ptr<std::atomic<bool>> destructed_;
 
     float tickInterval_;
     size_t wheelsNumber_;
