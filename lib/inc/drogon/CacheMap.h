@@ -92,6 +92,8 @@ class CacheMap
           wheelsNumber_(wheelsNum),
           bucketsNumPerWheel_(bucketsNumPerWheel)
     {
+        ctrlBlock_ = std::make_shared<ControlBlock>();
+        ctrlBlock_->cacheMapDestructed = false;
         wheels_.resize(wheelsNumber_);
         for (size_t i = 0; i < wheelsNumber_; ++i)
         {
@@ -99,10 +101,17 @@ class CacheMap
         }
         if (tickInterval_ > 0 && wheelsNumber_ > 0 && bucketsNumPerWheel_ > 0)
         {
-            timerId_ = loop_->runEvery(tickInterval_, [this]() {
+            timerId_ = loop_->runEvery(tickInterval_, [this, ctrlBlock=ctrlBlock_]() {
+                // 2-phase check to ensure the CacheMap didn't restruct after the last check
+                // and before the mutex
+                if(ctrlBlock_->cacheMapDestructed)
+                    return;
+                std::lock_guard<std::mutex> lock(bucketQueueMutex_);
+                if(ctrlBlock_->cacheMapDestructed)
+                    return;
+
                 size_t t = ++ticksCounter_;
                 size_t pow = 1;
-                std::lock_guard<std::mutex> lock(bucketQueueMutex_);
                 for (size_t i = 0; i < wheelsNumber_; ++i)
                 {
                     if ((t % pow) == 0)
@@ -128,6 +137,7 @@ class CacheMap
     };
     ~CacheMap()
     {
+        ctrlBlock_->cacheMapDestructed = true;
         loop_->invalidateTimer(timerId_);
         map_.clear();
         std::lock_guard<std::mutex> lock(bucketQueueMutex_);
@@ -172,6 +182,11 @@ class CacheMap
         size_t timeout_{0};
         std::function<void()> timeoutCallback_;
         WeakCallbackEntryPtr weakEntryPtr_;
+    };
+
+    struct ControlBlock
+    {
+        std::atomic<bool> cacheMapDestructed;
     };
 
     /**
@@ -390,6 +405,7 @@ class CacheMap
     std::mutex bucketQueueMutex_;
     trantor::TimerId timerId_;
     trantor::EventLoop *loop_;
+    std::shared_ptr<ControlBlock> ctrlBlock_;
 
     float tickInterval_;
     size_t wheelsNumber_;
