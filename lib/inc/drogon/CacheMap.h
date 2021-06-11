@@ -90,9 +90,9 @@ class CacheMap
         : loop_(loop),
           tickInterval_(tickInterval),
           wheelsNumber_(wheelsNum),
-          bucketsNumPerWheel_(bucketsNumPerWheel)
+          bucketsNumPerWheel_(bucketsNumPerWheel),
+          ctrlBlockPtr_(std::make_shared<ControlBlock>())
     {
-        destructed_ = std::make_shared<std::atomic<bool>>(false);
         wheels_.resize(wheelsNumber_);
         for (size_t i = 0; i < wheelsNumber_; ++i)
         {
@@ -102,14 +102,14 @@ class CacheMap
         {
             timerId_ = loop_->runEvery(
                 tickInterval_,
-                [this, destructed = destructed_]()
+                [this, ctrlBlockPtr = ctrlBlockPtr_]()
                 {
                     // 2-phase check to ensure the CacheMap didn't destruct
                     // after the 1st check and before the mutex
-                    if (*destructed)
+                    if (ctrlBlockPtr->destructed)
                         return;
-                    std::lock_guard<std::mutex> lock(bucketQueueMutex_);
-                    if (*destructed)
+                    std::lock_guard<std::mutex> lock(ctrlBlockPtr->mtx);
+                    if (ctrlBlockPtr->destructed)
                         return;
 
                     size_t t = ++ticksCounter_;
@@ -131,6 +131,12 @@ class CacheMap
                         pow = pow * bucketsNumPerWheel_;
                     }
                 });
+            loop_->runOnQuit(
+                [ctrlBlockPtr = ctrlBlockPtr_]
+                {
+                    std::lock_guard<std::mutex> lock(ctrlBlockPtr->mtx);
+                    ctrlBlockPtr->loopEnded = true;
+                });
         }
         else
         {
@@ -139,9 +145,13 @@ class CacheMap
     };
     ~CacheMap()
     {
-        *destructed_ = true;
+        ctrlBlockPtr_->destructed = true;
         map_.clear();
-        std::lock_guard<std::mutex> lock(bucketQueueMutex_);
+        std::lock_guard<std::mutex> lock(ctrlBlockPtr_->mtx);
+        if (!ctrlBlockPtr_->loopEnded)
+        {
+            loop_->invalidateTimer(timerId_);
+        }
         for (auto iter = wheels_.rbegin(); iter != wheels_.rend(); ++iter)
         {
             iter->clear();
@@ -390,6 +400,24 @@ class CacheMap
     }
 
   private:
+    /**
+     * @brief ControlBlock in a internal structure that deals with synchronizing
+     * CacheMap destructing, event loop destructing and updating the CacheMap.
+     * It is possible that the EventLoop destructed before the CacheMap (ex:
+     * both CacheMap and the EventLoop being globals, the order of destruction
+     * is not defined), thus we shouldn't invalidate the time. Or CacheMap
+     * destructed before the event loop but the timer is still active. Thus we
+     * should avoid updating the CacheMap.
+     */
+    struct ControlBlock
+    {
+        ControlBlock() : destructed(false), loopEnded(false)
+        {
+        }
+        std::atomic<bool> destructed;
+        std::atomic<bool> loopEnded;
+        std::mutex mtx;
+    };
     std::unordered_map<T1, MapValue> map_;
 
     std::vector<CallbackBucketQueue> wheels_;
@@ -398,10 +426,9 @@ class CacheMap
 
     std::mutex mtx_;
     std::mutex bucketMutex_;
-    std::mutex bucketQueueMutex_;
     trantor::TimerId timerId_;
     trantor::EventLoop *loop_;
-    std::shared_ptr<std::atomic<bool>> destructed_;
+    std::shared_ptr<ControlBlock> ctrlBlockPtr_;
 
     float tickInterval_;
     size_t wheelsNumber_;
