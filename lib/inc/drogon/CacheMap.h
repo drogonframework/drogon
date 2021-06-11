@@ -90,8 +90,8 @@ class CacheMap
         : loop_(loop),
           tickInterval_(tickInterval),
           wheelsNumber_(wheelsNum),
-          ctrlBlockPtr_(std::make_shared<ControlBlock>()),
-          bucketsNumPerWheel_(bucketsNumPerWheel)
+          bucketsNumPerWheel_(bucketsNumPerWheel),
+          ctrlBlockPtr_(std::make_shared<ControlBlock>())
     {
         wheels_.resize(wheelsNumber_);
         for (size_t i = 0; i < wheelsNumber_; ++i)
@@ -428,11 +428,11 @@ class CacheMap
     std::mutex bucketMutex_;
     trantor::TimerId timerId_;
     trantor::EventLoop *loop_;
-    std::shared_ptr<ControlBlock> ctrlBlockPtr_;
 
     float tickInterval_;
     size_t wheelsNumber_;
     size_t bucketsNumPerWheel_;
+    std::shared_ptr<ControlBlock> ctrlBlockPtr_;
 
     bool noWheels_{false};
 
