@@ -100,34 +100,37 @@ class CacheMap
         }
         if (tickInterval_ > 0 && wheelsNumber_ > 0 && bucketsNumPerWheel_ > 0)
         {
-            timerId_ = loop_->runEvery(tickInterval_, [this, destructed=destructed_]() {
-                // 2-phase check to ensure the CacheMap didn't destruct after the 1st check
-                // and before the mutex
-                if(*destructed)
-                    return;
-                std::lock_guard<std::mutex> lock(bucketQueueMutex_);
-                if(*destructed)
-                    return;
-
-                size_t t = ++ticksCounter_;
-                size_t pow = 1;
-                for (size_t i = 0; i < wheelsNumber_; ++i)
+            timerId_ = loop_->runEvery(
+                tickInterval_,
+                [this, destructed = destructed_]()
                 {
-                    if ((t % pow) == 0)
+                    // 2-phase check to ensure the CacheMap didn't destruct
+                    // after the 1st check and before the mutex
+                    if (*destructed)
+                        return;
+                    std::lock_guard<std::mutex> lock(bucketQueueMutex_);
+                    if (*destructed)
+                        return;
+
+                    size_t t = ++ticksCounter_;
+                    size_t pow = 1;
+                    for (size_t i = 0; i < wheelsNumber_; ++i)
                     {
-                        CallbackBucket tmp;
+                        if ((t % pow) == 0)
                         {
-                            std::lock_guard<std::mutex> lock(bucketMutex_);
-                            // use tmp val to make this critical area as short
-                            // as possible.
-                            wheels_[i].front().swap(tmp);
-                            wheels_[i].pop_front();
-                            wheels_[i].push_back(CallbackBucket());
+                            CallbackBucket tmp;
+                            {
+                                std::lock_guard<std::mutex> lock(bucketMutex_);
+                                // use tmp val to make this critical area as
+                                // short as possible.
+                                wheels_[i].front().swap(tmp);
+                                wheels_[i].pop_front();
+                                wheels_[i].push_back(CallbackBucket());
+                            }
                         }
+                        pow = pow * bucketsNumPerWheel_;
                     }
-                    pow = pow * bucketsNumPerWheel_;
-                }
-            });
+                });
         }
         else
         {
@@ -423,7 +426,8 @@ class CacheMap
             if (i < (wheelsNumber_ - 1))
             {
                 entryPtr = std::make_shared<CallbackEntry>(
-                    [this, delay, i, t, entryPtr]() {
+                    [this, delay, i, t, entryPtr]()
+                    {
                         if (delay > 0)
                         {
                             std::lock_guard<std::mutex> lock(bucketMutex_);
@@ -463,7 +467,8 @@ class CacheMap
         }
         else
         {
-            std::function<void()> cb = [this, key]() {
+            std::function<void()> cb = [this, key]()
+            {
                 std::lock_guard<std::mutex> lock(mtx_);
                 if (map_.find(key) != map_.end())
                 {
