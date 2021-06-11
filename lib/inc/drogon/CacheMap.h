@@ -90,8 +90,8 @@ class CacheMap
         : loop_(loop),
           tickInterval_(tickInterval),
           wheelsNumber_(wheelsNum),
-          bucketsNumPerWheel_(bucketsNumPerWheel),
-          ctrlBlockPtr_(std::make_shared<ControlBlock>())
+          ctrlBlockPtr_(std::make_shared<ControlBlock>()),
+          bucketsNumPerWheel_(bucketsNumPerWheel)
     {
         wheels_.resize(wheelsNumber_);
         for (size_t i = 0; i < wheelsNumber_; ++i)
