@@ -101,9 +101,7 @@ class CacheMap
         if (tickInterval_ > 0 && wheelsNumber_ > 0 && bucketsNumPerWheel_ > 0)
         {
             timerId_ = loop_->runEvery(
-                tickInterval_,
-                [this, ctrlBlockPtr = ctrlBlockPtr_]()
-                {
+                tickInterval_, [this, ctrlBlockPtr = ctrlBlockPtr_]() {
                     // 2-phase check to ensure the CacheMap didn't destruct
                     // after the 1st check and before the mutex
                     if (ctrlBlockPtr->destructed)
@@ -131,12 +129,10 @@ class CacheMap
                         pow = pow * bucketsNumPerWheel_;
                     }
                 });
-            loop_->runOnQuit(
-                [ctrlBlockPtr = ctrlBlockPtr_]
-                {
-                    std::lock_guard<std::mutex> lock(ctrlBlockPtr->mtx);
-                    ctrlBlockPtr->loopEnded = true;
-                });
+            loop_->runOnQuit([ctrlBlockPtr = ctrlBlockPtr_] {
+                std::lock_guard<std::mutex> lock(ctrlBlockPtr->mtx);
+                ctrlBlockPtr->loopEnded = true;
+            });
         }
         else
         {
@@ -453,8 +449,7 @@ class CacheMap
             if (i < (wheelsNumber_ - 1))
             {
                 entryPtr = std::make_shared<CallbackEntry>(
-                    [this, delay, i, t, entryPtr]()
-                    {
+                    [this, delay, i, t, entryPtr]() {
                         if (delay > 0)
                         {
                             std::lock_guard<std::mutex> lock(bucketMutex_);
@@ -494,8 +489,7 @@ class CacheMap
         }
         else
         {
-            std::function<void()> cb = [this, key]()
-            {
+            std::function<void()> cb = [this, key]() {
                 std::lock_guard<std::mutex> lock(mtx_);
                 if (map_.find(key) != map_.end())
                 {
