@@ -137,7 +137,6 @@ class CacheMap
     ~CacheMap()
     {
         *destructed_ = true;
-        loop_->invalidateTimer(timerId_);
         map_.clear();
         std::lock_guard<std::mutex> lock(bucketQueueMutex_);
         for (auto iter = wheels_.rbegin(); iter != wheels_.rend(); ++iter)
