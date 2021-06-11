@@ -102,10 +102,6 @@ class CacheMap
         {
             timerId_ = loop_->runEvery(
                 tickInterval_, [this, ctrlBlockPtr = ctrlBlockPtr_]() {
-                    // 2-phase check to ensure the CacheMap didn't destruct
-                    // after the 1st check and before the mutex
-                    if (ctrlBlockPtr->destructed)
-                        return;
                     std::lock_guard<std::mutex> lock(ctrlBlockPtr->mtx);
                     if (ctrlBlockPtr->destructed)
                         return;
