@@ -1,6 +1,7 @@
 version: 1.6.0.{build}
 configuration:
 - Release
+- Debug
 
 environment:
   matrix:
