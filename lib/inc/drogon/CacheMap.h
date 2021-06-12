@@ -137,8 +137,8 @@ class CacheMap
     };
     ~CacheMap()
     {
-        ctrlBlockPtr_->destructed = true;
         std::lock_guard<std::mutex> lock(ctrlBlockPtr_->mtx);
+        ctrlBlockPtr_->destructed = true;
         map_.clear();
         if (!ctrlBlockPtr_->loopEnded)
         {
@@ -406,8 +406,8 @@ class CacheMap
         ControlBlock() : destructed(false), loopEnded(false)
         {
         }
-        std::atomic<bool> destructed;
-        std::atomic<bool> loopEnded;
+        bool destructed;
+        bool loopEnded;
         std::mutex mtx;
     };
     std::unordered_map<T1, MapValue> map_;
