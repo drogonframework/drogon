@@ -1,7 +1,6 @@
 version: 1.6.0.{build}
 configuration:
 - Release
-- Debug
 
 environment:
   matrix:
@@ -23,12 +22,8 @@ install:
 - vcpkg install jsoncpp:x64-windows
 - vcpkg install zlib:x86-windows
 - vcpkg install zlib:x64-windows
-- vcpkg install sqlite3:x86-windows
-- vcpkg install sqlite3:x64-windows
-#- vcpkg install libpq:x86-windows
-#- vcpkg install libpq:x64-windows
-#- vcpkg install openssl:x86-windows
-#- vcpkg install openssl:x64-windows
+- vcpkg install libpq:x86-windows
+- vcpkg install libpq:x64-windows
 - vcpkg integrate install
 - cd %APPVEYOR_BUILD_FOLDER%
 before_build:
