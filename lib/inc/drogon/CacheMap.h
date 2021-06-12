@@ -138,8 +138,8 @@ class CacheMap
     ~CacheMap()
     {
         ctrlBlockPtr_->destructed = true;
-        map_.clear();
         std::lock_guard<std::mutex> lock(ctrlBlockPtr_->mtx);
+        map_.clear();
         if (!ctrlBlockPtr_->loopEnded)
         {
             loop_->invalidateTimer(timerId_);
