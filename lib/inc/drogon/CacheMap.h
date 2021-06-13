@@ -90,7 +90,8 @@ class CacheMap
         : loop_(loop),
           tickInterval_(tickInterval),
           wheelsNumber_(wheelsNum),
-          bucketsNumPerWheel_(bucketsNumPerWheel)
+          bucketsNumPerWheel_(bucketsNumPerWheel),
+          ctrlBlockPtr_(std::make_shared<ControlBlock>())
     {
         wheels_.resize(wheelsNumber_);
         for (size_t i = 0; i < wheelsNumber_; ++i)
@@ -99,25 +100,34 @@ class CacheMap
         }
         if (tickInterval_ > 0 && wheelsNumber_ > 0 && bucketsNumPerWheel_ > 0)
         {
-            timerId_ = loop_->runEvery(tickInterval_, [this]() {
-                size_t t = ++ticksCounter_;
-                size_t pow = 1;
-                for (size_t i = 0; i < wheelsNumber_; ++i)
-                {
-                    if ((t % pow) == 0)
+            timerId_ = loop_->runEvery(
+                tickInterval_, [this, ctrlBlockPtr = ctrlBlockPtr_]() {
+                    std::lock_guard<std::mutex> lock(ctrlBlockPtr->mtx);
+                    if (ctrlBlockPtr->destructed)
+                        return;
+
+                    size_t t = ++ticksCounter_;
+                    size_t pow = 1;
+                    for (size_t i = 0; i < wheelsNumber_; ++i)
                     {
-                        CallbackBucket tmp;
+                        if ((t % pow) == 0)
                         {
-                            std::lock_guard<std::mutex> lock(bucketMutex_);
-                            // use tmp val to make this critical area as short
-                            // as possible.
-                            wheels_[i].front().swap(tmp);
-                            wheels_[i].pop_front();
-                            wheels_[i].push_back(CallbackBucket());
+                            CallbackBucket tmp;
+                            {
+                                std::lock_guard<std::mutex> lock(bucketMutex_);
+                                // use tmp val to make this critical area as
+                                // short as possible.
+                                wheels_[i].front().swap(tmp);
+                                wheels_[i].pop_front();
+                                wheels_[i].push_back(CallbackBucket());
+                            }
                         }
+                        pow = pow * bucketsNumPerWheel_;
                     }
-                    pow = pow * bucketsNumPerWheel_;
-                }
+                });
+            loop_->runOnQuit([ctrlBlockPtr = ctrlBlockPtr_] {
+                std::lock_guard<std::mutex> lock(ctrlBlockPtr->mtx);
+                ctrlBlockPtr->loopEnded = true;
             });
         }
         else
@@ -127,7 +137,13 @@ class CacheMap
     };
     ~CacheMap()
     {
+        std::lock_guard<std::mutex> lock(ctrlBlockPtr_->mtx);
+        ctrlBlockPtr_->destructed = true;
         map_.clear();
+        if (!ctrlBlockPtr_->loopEnded)
+        {
+            loop_->invalidateTimer(timerId_);
+        }
         for (auto iter = wheels_.rbegin(); iter != wheels_.rend(); ++iter)
         {
             iter->clear();
@@ -376,6 +392,24 @@ class CacheMap
     }
 
   private:
+    /**
+     * @brief ControlBlock in a internal structure that deals with synchronizing
+     * CacheMap destructing, event loop destructing and updating the CacheMap.
+     * It is possible that the EventLoop destructed before the CacheMap (ex:
+     * both CacheMap and the EventLoop being globals, the order of destruction
+     * is not defined), thus we shouldn't invalidate the time. Or CacheMap
+     * destructed before the event loop but the timer is still active. Thus we
+     * should avoid updating the CacheMap.
+     */
+    struct ControlBlock
+    {
+        ControlBlock() : destructed(false), loopEnded(false)
+        {
+        }
+        bool destructed;
+        bool loopEnded;
+        std::mutex mtx;
+    };
     std::unordered_map<T1, MapValue> map_;
 
     std::vector<CallbackBucketQueue> wheels_;
@@ -390,6 +424,7 @@ class CacheMap
     float tickInterval_;
     size_t wheelsNumber_;
     size_t bucketsNumPerWheel_;
+    std::shared_ptr<ControlBlock> ctrlBlockPtr_;
 
     bool noWheels_{false};
 
