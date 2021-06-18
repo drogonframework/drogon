@@ -4,6 +4,54 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.7.0] - 2021-06-18
+
+### API changes list
+
+- Add the PreSendingAdvice to AOP.
+
+- Make Json::Value as a SQL parameters type.
+
+- Add the int type for the Row index parameter.
+
+- Add SSL_CONF_cmd support.
+
+- Add the setCustomStatusCode method.
+
+### Changes
+
+- Fix sync_wait/co_future use-after-free.
+
+- Add the AccessLogger plugin.
+
+- Make AsyncTask only destruct when the coroutine reaches end of executions.
+
+- Add Drogon test framework.
+
+- Improve WebSocket mask handling.
+
+- Add minimal server side examples.
+
+- Optimize HttpControllersRouter for cases where regex is not needed.
+
+- Create controller instances after running instead of after being called.
+
+### Fixed
+
+- Move resolverPtr when destroying an HttpClientImpl object.
+
+- Modify the way to create sqlite3 client.
+
+- Fix a bug when a network failure occurs on Redis connections.
+
+- Fix a bug of string_view for MSVC.
+
+- Fix 'build.sh -tshared'.
+
+- Fix compiler warnings.
+
+- Fix CacheMap crash in CI tests.
+
 ## [1.6.0] - 2021-05-15
 
 ### API changes list
@@ -774,7 +822,9 @@ All notable changes to this project will be documented in this file.
 
 ## [1.0.0-beta1] - 2019-06-11
 
-[Unreleased]: https://github.com/an-tao/drogon/compare/v1.6.0...HEAD
+[Unreleased]: https://github.com/an-tao/drogon/compare/v1.7.0...HEAD
+
+[1.7.0]: https://github.com/an-tao/drogon/compare/v1.6.0...v1.7.0
 
 [1.6.0]: https://github.com/an-tao/drogon/compare/v1.5.1...v1.6.0
 
