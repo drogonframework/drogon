@@ -21,13 +21,16 @@ drogon_create_views(login_session
                     ${CMAKE_CURRENT_SOURCE_DIR}/login_session
                     ${CMAKE_CURRENT_BINARY_DIR})
 
+add_executable(jsonstore jsonstore/main.cc)
+
 set(example_targets
     benchmark
     client
     websocket_client
     helloworld
     file_upload
-    login_session)
+    login_session
+    jsonstore)
 
 set_property(TARGET ${example_targets}
              PROPERTY CXX_STANDARD ${DROGON_CXX_STANDARD})
