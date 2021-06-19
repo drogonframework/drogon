@@ -65,8 +65,7 @@ class JsonStore : public HttpController<JsonStore>
                  const std::string& token,
                  const std::string& path)
     {
-        auto itemPtr = [this, &token]() -> std::shared_ptr<DataItem>
-        {
+        auto itemPtr = [this, &token]() -> std::shared_ptr<DataItem> {
             // It is possible that the item being removed while another thread
             // tries to look it up. The mutex here prevents that from happening.
             std::lock_guard<std::mutex> lock(storageMtx_);
@@ -104,8 +103,7 @@ class JsonStore : public HttpController<JsonStore>
                     const std::string& path)
     {
         auto jsonPtr = req->jsonObject();
-        auto itemPtr = [this, &token]() -> std::shared_ptr<DataItem>
-        {
+        auto itemPtr = [this, &token]() -> std::shared_ptr<DataItem> {
             // It is possible that the item being removed while another thread
             // tries to look it up. The mutex here prevents that from happening.
             std::lock_guard<std::mutex> lock(storageMtx_);
