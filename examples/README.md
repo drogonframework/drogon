@@ -10,6 +10,7 @@ The following examples can help you understand how to use Drogon:
 6. [simple_reverse_proxy](https://github.com/an-tao/drogon/tree/master/examples/simple_reverse_proxy) - A Example showing how to use drogon as a http reverse 
 proxy with a simple round robin.
 7. [benchmark](https://github.com/an-tao/drogon/tree/master/examples/benchmark) - Basic benchmark example. see [wiki benchmarks](https://github.com/an-tao/drogon/wiki/13-Benchmarks)
+8. [jsonstore](https://github.com/an-tao/drogon/tree/master/examples/jsonstore) - Implementation of a [jsonstore](https://github.com/bluzi/jsonstore)-like storage service that is concurrent and stores in memory. Serving as a showcase on how to build a minimally useful RESTful APIs in Drogon.
 
 
 ### [TechEmpower Framework Benchmarks](https://github.com/TechEmpower/FrameworkBenchmarks) test suite
