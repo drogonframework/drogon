@@ -1,6 +1,6 @@
 FROM archlinux:base-20210307.0.16708
 
-RUN pacman -Syu --noconfirm && pacman -S wget sudo cmake make git gcc jsoncpp postgresql mariadb-clients --noconfirm
+RUN pacman -Syu --noconfirm && pacman -S wget sudo cmake make git gcc jsoncpp postgresql mariadb-clients hiredis --noconfirm
 
 ENV LANG=en_US.UTF-8 \
     LANGUAGE=en_US:en \
