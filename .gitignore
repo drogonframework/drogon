@@ -31,9 +31,9 @@
 *.out
 *.app
 
-build
-cmake-build-debug
-.idea
+build/
+cmake-build-debug/
+.idea/
 lib/inc/drogon/version.h
 html/
 latex/
@@ -46,4 +46,4 @@ latex/
 CMakeSettings.json
 install
 trace.json
-.cache
+.cache/

@@ -32,7 +32,7 @@ int main()
         },
         {Get});
 
-    // You can aslo specsify that the parameter is in the query section of the
+    // You can aslo specify that the parameter is in the query section of the
     // URL!
     app().registerHandler(
         "/hello?user={user-name}",
