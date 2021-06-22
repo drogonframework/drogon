@@ -2,7 +2,7 @@
  */
 {
     /*
-    //ssl:The global ssl files setting
+    //ssl: The global ssl files setting
     "ssl": {
         "cert": "../../trantor/trantor/tests/server.pem",
         "key": "../../trantor/trantor/tests/server.pem"
@@ -40,7 +40,7 @@
         //it is relative path of document_root path
         "upload_path": "uploads",
         /* file_types:
-         * HTTP download file types,The file types supported by drogon
+         * HTTP download file types, The file types supported by drogon
          * by default are "html", "js", "css", "xml", "xsl", "txt", "svg",
          * "ttf", "otf", "woff2", "woff" , "eot", "png", "jpg", "jpeg",
          * "gif", "bmp", "ico", "icns", etc. */

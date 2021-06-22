@@ -20,7 +20,7 @@ Generates a token that the user can use to create, read, modify and delete recor
 
 #### /{token}
 
-Create a new JSON object associated with the token
+Creates a new JSON object associated with the token
 
 * **method**: POST
 * **URL params**: None
@@ -40,7 +40,7 @@ Create a new JSON object associated with the token
 {"ok":true}
 ```
 
-Delete the JSON object associated with the token
+Deletes the JSON object associated with the token
 
 * **method**: DELETE
 * **URL params**: None
@@ -57,7 +57,7 @@ Delete the JSON object associated with the token
 
 #### /{token}/{some/path/to/data}
 
-Retrieve data at and below the specsifed path
+Retrieves data at and below the specsifed path
 * **method**: GET
 * **URL params**: None
 * **Body**: None
@@ -75,7 +75,7 @@ Retrieve data at and below the specsifed path
 {"foo":{"bar":42}}
 ```
 
-Update data at the specsifed path
+Updates data at the specsifed path
 * **method**: PUT
 * **URL params**: None
 * **Body**: The JSON object you wish to replace to
