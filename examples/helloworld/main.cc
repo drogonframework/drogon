@@ -16,9 +16,9 @@ int main()
         },
         {Get});
 
-    // `registrHandler()` also supports parsing and passing the path as
+    // `registerHandler()` also supports parsing and passing the path as
     // parameters to the handler. Parameters are specified using {}. The text
-    // indide {} does not correspond to the index of parameter passed to the
+    // inside the {} does not correspond to the index of parameter passed to the
     // handler (nor it has any meaning). Instead, it is only to make it easier
     // for users to recognize the function of each parameter.
     app().registerHandler(
@@ -32,7 +32,7 @@ int main()
         },
         {Get});
 
-    // You can aslo specify that the parameter is in the query section of the
+    // You can also specify that the parameter is in the query section of the
     // URL!
     app().registerHandler(
         "/hello?user={user-name}",
@@ -45,7 +45,7 @@ int main()
         },
         {Get});
 
-    // Or, if you want to, instead of asking drogon to parse it fot you. You can
+    // Or, if you want to, instead of asking drogon to parse it for you. You can
     // parse the request yourselves.
     app().registerHandler(
         "/hello_user",
@@ -61,9 +61,9 @@ int main()
         },
         {Get});
 
-    // Ask Drogon to listern on 127.0.0.1 port 8848. Drogon supports listerning
-    // on multuiple IP addresses by adding multiple listeners. For example, if
-    // you want the server also Listen on 127.0.0.1 port 5555. Just add another
+    // Ask Drogon to listen on 127.0.0.1 port 8848. Drogon supports listening
+    // on multiple IP addresses by adding multiple listeners. For example, if
+    // you want the server also listen on 127.0.0.1 port 5555. Just add another
     // line of addListener("127.0.0.1", 5555)
     LOG_INFO << "Server running on 127.0.0.1:8848";
     app().addListener("127.0.0.1", 8848).run();
