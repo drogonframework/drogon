@@ -384,7 +384,7 @@ if (pg_FOUND OR MySQL_FOUND OR SQLite3_FOUND)
     if (MySQL_FOUND)
         option(USE_MYSQL "Enable Mysql" ON)
     else (MySQL_FOUND)
-        option(USE_MYSQL "DisableMysql" OFF)
+        option(USE_MYSQL "Disable Mysql" OFF)
     endif (MySQL_FOUND)
 
     if (SQLite3_FOUND)
