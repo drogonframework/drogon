@@ -7,7 +7,7 @@ class SayHello : public HttpController<SayHello>
 {
   public:
     METHOD_LIST_BEGIN
-    // Drogon automatically appends the namespce and name of the controller to
+    // Drogon automatically appends the namespace and name of the controller to
     // the handlers of the controller. In this example, although we are adding
     // a handler to /. But because it is a part of the SayHello controller. It
     // ends up in path /SayHello/ (IMPORTANT! It is /SayHello/ not /SayHello

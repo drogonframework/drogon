@@ -29,7 +29,7 @@
 
         function uploadComplete(evt) {
             var data = evt.target.responseText;
-            alert("File have been uploaded.\n" + data);
+            alert("File has been uploaded.\n" + data);
         }
         
         function uploadFailed(evt) {

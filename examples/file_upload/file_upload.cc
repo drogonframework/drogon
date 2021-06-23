@@ -19,7 +19,7 @@ int main()
             if (fileUpload.parse(req) != 0 || fileUpload.getFiles().size() != 1)
             {
                 auto resp = HttpResponse::newHttpResponse();
-                resp->setBody("Must only be 1 file");
+                resp->setBody("Must only be one file");
                 resp->setStatusCode(k403Forbidden);
                 callback(resp);
                 return;
@@ -31,7 +31,7 @@ int main()
             resp->setBody(
                 "The server has calculated the file's MD5 hash to be " + md5);
             file.save();
-            LOG_INFO << "The uploaded file have been saved to the ./uploads "
+            LOG_INFO << "The uploaded file has been saved to the ./uploads "
                         "directory";
             callback(resp);
         },
