@@ -38,11 +38,11 @@ int main()
             std::string user = req->getParameter("user");
             std::string passwd = req->getParameter("passwd");
 
-            // NOTE: Do not use MD5 for the password hash under any circumstances.
-            // We only use it because Drogon is not a cryptography library, so it 
-            // does not include a better hash algorithm. Use Argon2 or BCrypt in 
-            // a real product.
-            // username: user, password: password123
+            // NOTE: Do not use MD5 for the password hash under any
+            // circumstances. We only use it because Drogon is not a
+            // cryptography library, so it does not include a better hash
+            // algorithm. Use Argon2 or BCrypt in a real product. username:
+            // user, password: password123
             if (user == "user" && utils::getMd5("jadsjhdsajkh" + passwd) ==
                                       "5B5299CF4CEAE2D523315694B82573C9")
             {
