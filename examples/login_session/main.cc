@@ -9,10 +9,10 @@ int main()
         "/",
         [](const HttpRequestPtr &req,
            std::function<void(const HttpResponsePtr &)> &&callback) {
-            bool logined =
-                req->session()->getOptional<bool>("logined").value_or(false);
+            bool loggedIn =
+                req->session()->getOptional<bool>("loggedIn").value_or(false);
             HttpResponsePtr resp;
-            if (logined == false)
+            if (loggedIn == false)
                 resp = HttpResponse::newHttpViewResponse("LoginPage");
             else
                 resp = HttpResponse::newHttpViewResponse("LogoutPage");
@@ -24,7 +24,7 @@ int main()
         [](const HttpRequestPtr &req,
            std::function<void(const HttpResponsePtr &)> &&callback) {
             HttpResponsePtr resp = HttpResponse::newHttpResponse();
-            req->session()->erase("logined");
+            req->session()->erase("loggedIn");
             resp->setBody("<script>window.location.href = \"/\";</script>");
             callback(resp);
         },
@@ -38,14 +38,15 @@ int main()
             std::string user = req->getParameter("user");
             std::string passwd = req->getParameter("passwd");
 
-            // NOTE: Do not, ever, use MD5 for password hash. We only use it
-            // because Drogon is not a cryptography library, so doesn't come
-            // with a better hash. Use Argon2 or BCrypt in a real product.
-            // username: user, pasword: password123
+            // NOTE: Do not use MD5 for the password hash under any
+            // circumstances. We only use it because Drogon is not a
+            // cryptography library, so it does not include a better hash
+            // algorithm. Use Argon2 or BCrypt in a real product. username:
+            // user, password: password123
             if (user == "user" && utils::getMd5("jadsjhdsajkh" + passwd) ==
                                       "5B5299CF4CEAE2D523315694B82573C9")
             {
-                req->session()->insert("logined", true);
+                req->session()->insert("loggedIn", true);
                 resp->setBody("<script>window.location.href = \"/\";</script>");
                 callback(resp);
             }
@@ -60,7 +61,7 @@ int main()
 
     LOG_INFO << "Server running on 127.0.0.1:8848";
     app()
-        // All sessions are good for 24 Hrs
+        // All sessions are stored for 24 Hours
         .enableSession(24h)
         .addListener("127.0.0.1", 8848)
         .run();

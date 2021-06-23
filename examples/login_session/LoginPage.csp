@@ -17,6 +17,6 @@
 		</div>
 	</form> 
 
-	<p>Please login with the credential<br>Username: user<br>Password: password123</p>
+	<p>Please login with the credentials <br>Username: user<br>Password: password123</p>
 </body>
 </html>
