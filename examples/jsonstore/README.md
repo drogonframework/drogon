@@ -3,7 +3,7 @@ This folder contains a [jsonstore](https://github.com/bluzi/jsonstore)-like stor
 ## API
 
 #### /get-token
-Generates a token that the user can use to create, read, modify and delete records.
+Generate a token that the user can use to create, read, modify and delete records.
 
 * **method**: GET
 * **URL params**: None
@@ -20,7 +20,7 @@ Generates a token that the user can use to create, read, modify and delete recor
 
 #### /{token}
 
-Creates a new JSON object associated with the token
+Create a new JSON object associated with the token
 
 * **method**: POST
 * **URL params**: None
@@ -30,7 +30,7 @@ Creates a new JSON object associated with the token
   * **Content**: `{"ok":true}`
 * **Failed response**:
   * **Code**: 500
-  * **Why**: Either the token already are associated with data or request body/content-type is not JSON.
+  * **Why**: Either the token already is associated with the data or request body/content-type is not JSON.
   * **Content**: `{"ok":false}`
 * **Sample call**
 
@@ -40,7 +40,7 @@ Creates a new JSON object associated with the token
 {"ok":true}
 ```
 
-Deletes the JSON object associated with the token
+Delete the JSON object associated with the token
 
 * **method**: DELETE
 * **URL params**: None
@@ -57,7 +57,7 @@ Deletes the JSON object associated with the token
 
 #### /{token}/{some/path/to/data}
 
-Retrieves data at and below the specsifed path
+Retrieve data at and below the specified path
 * **method**: GET
 * **URL params**: None
 * **Body**: None
@@ -66,7 +66,7 @@ Retrieves data at and below the specsifed path
   * **Content**: `{"foo":{"bar":42}}`
 * **Failed response**:
   * **Code**: 500
-  * **Why**: No data associated with provided token or the does not exist in the JSON object.
+  * **Why**: No data associated with the provided token, or it does not exist in the JSON object.
   * **Content**: `{"ok":false}`
 * **Sample call**
 
@@ -75,7 +75,7 @@ Retrieves data at and below the specsifed path
 {"foo":{"bar":42}}
 ```
 
-Updates data at the specsifed path
+Update data at the specified path
 * **method**: PUT
 * **URL params**: None
 * **Body**: The JSON object you wish to replace to
@@ -84,7 +84,7 @@ Updates data at the specsifed path
   * **Content**: `{"ok":true}`
 * **Failed response**:
   * **Code**: 500
-  * **Why**: No data associated with provided token or the does not exist in the JSON object.
+  * **Why**: No data associated with the provided token or it does not exist in the JSON object.
   * **Content**: `{"ok":false}`
 * **Sample call**
 

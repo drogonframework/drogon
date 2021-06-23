@@ -40,7 +40,7 @@ int main()
 
             // NOTE: Do not use MD5 for the password hash under any circumstances.
             // We only use it because Drogon is not a cryptography library, so it 
-            // does not have a with a better hash value. Use Argon2 or BCrypt in 
+            // does not include a better hash algorithm. Use Argon2 or BCrypt in 
             // a real product.
             // username: user, password: password123
             if (user == "user" && utils::getMd5("jadsjhdsajkh" + passwd) ==
