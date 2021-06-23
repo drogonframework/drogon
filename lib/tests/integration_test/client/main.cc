@@ -681,7 +681,8 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
                             CHECK((*json)["P2"] == "test");
                         });
 
-    // Using .. to access a upper directory should be permitted as long as it never leaves the document root
+    // Using .. to access a upper directory should be permitted as long as
+    // it never leaves the document root
     req = HttpRequest::newHttpRequest();
     req->setMethod(drogon::Get);
     req->setPath("/a-directory/../index.html");
