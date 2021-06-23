@@ -692,7 +692,7 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
                             REQUIRE(result == ReqResult::Ok);
                             CHECK(resp->getBody().length() == indexLen);
                         });
-    
+
     // . (current directory) shall also be allowed
     req = HttpRequest::newHttpRequest();
     req->setMethod(drogon::Get);

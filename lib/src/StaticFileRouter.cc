@@ -59,22 +59,22 @@ void StaticFileRouter::route(
     std::function<void(const HttpResponsePtr &)> &&callback)
 {
     const std::string &path = req->path();
-    if(path.find("..") != std::string::npos)
+    if (path.find("..") != std::string::npos)
     {
         auto directories = utils::splitString(path, "/");
         int traversalDepth = 0;
-        for(const auto& dir : directories)
+        for (const auto &dir : directories)
         {
-            if(dir == "..")
+            if (dir == "..")
             {
                 traversalDepth--;
             }
-            else
+            else if (dir != ".")
             {
                 traversalDepth++;
             }
 
-            if(traversalDepth < 0)
+            if (traversalDepth < 0)
             {
                 // Downloading files from the parent folder is forbidden.
                 callback(app().getCustomErrorHandler()(k403Forbidden));
