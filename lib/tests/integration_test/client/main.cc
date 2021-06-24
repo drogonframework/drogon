@@ -696,7 +696,7 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
     // . (current directory) shall also be allowed
     req = HttpRequest::newHttpRequest();
     req->setMethod(drogon::Get);
-    req->setPath("/a-directory./page.html");
+    req->setPath("/a-directory/page.html");
     client->sendRequest(req,
                         [req, TEST_CTX, body](ReqResult result,
                                               const HttpResponsePtr &resp) {
