@@ -59,11 +59,28 @@ void StaticFileRouter::route(
     std::function<void(const HttpResponsePtr &)> &&callback)
 {
     const std::string &path = req->path();
-    if (path.find("/../") != std::string::npos)
+    if (path.find("..") != std::string::npos)
     {
-        // Downloading files from the parent folder is forbidden.
-        callback(app().getCustomErrorHandler()(k403Forbidden));
-        return;
+        auto directories = utils::splitString(path, "/");
+        int traversalDepth = 0;
+        for (const auto &dir : directories)
+        {
+            if (dir == "..")
+            {
+                traversalDepth--;
+            }
+            else if (dir != ".")
+            {
+                traversalDepth++;
+            }
+
+            if (traversalDepth < 0)
+            {
+                // Downloading files from the parent folder is forbidden.
+                callback(app().getCustomErrorHandler()(k403Forbidden));
+                return;
+            }
+        }
     }
 
     auto lPath = path;
