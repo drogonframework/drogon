@@ -24,11 +24,12 @@ int main(int argc, char *argv[])
         path = "/chat";
     }
 
-    WebSocketClientPtr wsPtr;
+    std::string serverString;
     if (port.value_or(0) != 0)
-        wsPtr = WebSocketClient::newWebSocketClient(server, port.value());
+        serverString = server + ":" + std::to_string(port.value());
     else
-        wsPtr = WebSocketClient::newWebSocketClient(server);
+        serverString = server;
+    auto wsPtr = WebSocketClient::newWebSocketClient(serverString);
     auto req = HttpRequest::newHttpRequest();
     req->setPath(path);
 
