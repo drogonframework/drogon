@@ -291,6 +291,8 @@ WebSocketClientImpl::WebSocketClientImpl(trantor::EventLoop *loop,
       useOldTLS_(useOldTLS),
       validateCert_(validateCert)
 {
+    if (addr.isUnspecified())
+        LOG_ERROR << "Bad IP passed to WebSocket client";
 }
 
 WebSocketClientImpl::WebSocketClientImpl(trantor::EventLoop *loop,
