@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.7.1] - 2021-06-24
+
+### Changes
+
+- Updated Dockerfile to Ubuntu 20.04 & Fixed Timezone Hangup.
+
+- Add jsonstore example.
+
+- Fix some typos.
+
+### Fixed
+
+- Fix single layer directory traversal in StaticFileRouter.
+
 ## [1.7.0] - 2021-06-18
 
 ### API changes list
@@ -822,7 +836,9 @@ All notable changes to this project will be documented in this file.
 
 ## [1.0.0-beta1] - 2019-06-11
 
-[Unreleased]: https://github.com/an-tao/drogon/compare/v1.7.0...HEAD
+[Unreleased]: https://github.com/an-tao/drogon/compare/v1.7.1...HEAD
+
+[1.7.1]: https://github.com/an-tao/drogon/compare/v1.7.0...v1.7.1
 
 [1.7.0]: https://github.com/an-tao/drogon/compare/v1.6.0...v1.7.0
 
