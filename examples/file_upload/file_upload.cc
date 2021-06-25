@@ -5,7 +5,7 @@ int main()
 {
     app().registerHandler(
         "/",
-        [](const HttpRequestPtr &req,
+        [](const HttpRequestPtr &,
            std::function<void(const HttpResponsePtr &)> &&callback) {
             auto resp = HttpResponse::newHttpViewResponse("FileUpload");
             callback(resp);

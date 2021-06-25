@@ -18,7 +18,7 @@ class SayHello : public HttpController<SayHello>
     METHOD_LIST_END
 
   protected:
-    void genericHello(const HttpRequestPtr &req,
+    void genericHello(const HttpRequestPtr &,
                       std::function<void(const HttpResponsePtr &)> &&callback)
     {
         auto resp = HttpResponse::newHttpResponse();
@@ -29,7 +29,7 @@ class SayHello : public HttpController<SayHello>
     }
 
     void personalizedHello(
-        const HttpRequestPtr &req,
+        const HttpRequestPtr &,
         std::function<void(const HttpResponsePtr &)> &&callback)
     {
         auto resp = HttpResponse::newHttpResponse();
