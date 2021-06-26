@@ -534,9 +534,16 @@ void HttpAppFrameworkImpl::run()
 #endif
     // Create all listeners.
     auto ioLoops = listenerManagerPtr_->createListeners(
-        std::bind(&HttpAppFrameworkImpl::onAsyncRequest, this, _1, _2),
-        std::bind(&HttpAppFrameworkImpl::onNewWebsockRequest, this, _1, _2, _3),
-        std::bind(&HttpAppFrameworkImpl::onConnection, this, _1),
+        [this](const HttpRequestImplPtr &req,
+               std::function<void(const HttpResponsePtr &)> &&callback) {
+            onAsyncRequest(req, std::move(callback));
+        },
+        [this](const HttpRequestImplPtr &req,
+               std::function<void(const HttpResponsePtr &)> &&callback,
+               const WebSocketConnectionImplPtr &wsConnPtr) {
+            onNewWebsockRequest(req, std::move(callback), wsConnPtr);
+        },
+        [this](const trantor::TcpConnectionPtr &conn) { onConnection(conn); },
         idleConnectionTimeout_,
         sslCertPath_,
         sslKeyPath_,
