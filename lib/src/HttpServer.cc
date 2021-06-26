@@ -385,7 +385,8 @@ void HttpServer::onRequests(
                 continue;
         }
 
-        // Avoids dynamic allocation when copying the callback in handlers
+        // Optimization: Avoids dynamic allocation when copying the callback in
+        // handlers (ex: copying callback into lambda captures in DB calls)
         auto paramPack = std::make_shared<CallBackParamPack>();
         paramPack->conn = conn;
         paramPack->close_ = close_;

@@ -11,7 +11,7 @@ int main()
         [](const HttpRequestPtr &req,
            std::function<void(const HttpResponsePtr &)> &&callback) {
             auto resp = HttpResponse::newHttpResponse();
-            // resp->setBody("Hello, World!");
+            resp->setBody("Hello, World!");
             callback(resp);
         },
         {Get});
