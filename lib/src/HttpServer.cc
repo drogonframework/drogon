@@ -299,6 +299,17 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn, MsgBuffer *buf)
     }
 }
 
+struct CallBackParamPack
+{
+    trantor::TcpConnectionPtr conn;
+    HttpRequestImplPtr req;
+    std::shared_ptr<bool> loopFlag_;
+    std::shared_ptr<HttpRequestParser> requestParser;
+    bool *syncFlagPtr;
+    bool close_;
+    bool isHeadMethod;
+};
+
 void HttpServer::onRequests(
     const TcpConnectionPtr &conn,
     const std::vector<HttpRequestImplPtr> &requests,
@@ -373,16 +384,28 @@ void HttpServer::onRequests(
             if (adviceFlag)
                 continue;
         }
+
+        // Avoids dynamic allocation when copying the callback in handlers
+        auto paramPack = std::make_shared<CallBackParamPack>();
+        paramPack->conn = conn;
+        paramPack->close_ = close_;
+        paramPack->req = req;
+        paramPack->syncFlagPtr = &syncFlag;
+        paramPack->isHeadMethod = isHeadMethod;
+        paramPack->loopFlag_ = loopFlagPtr;
+        paramPack->requestParser = requestParser;
         httpAsyncCallback_(
             req,
-            [conn,
-             close_,
-             req,
-             loopFlagPtr,
-             &syncFlag,
-             isHeadMethod,
-             this,
-             requestParser](const HttpResponsePtr &response) {
+            [paramPack = std::move(paramPack),
+             this](const HttpResponsePtr &response) {
+                auto &conn = paramPack->conn;
+                auto &close_ = paramPack->close_;
+                auto &req = paramPack->req;
+                auto &syncFlag = *paramPack->syncFlagPtr;
+                auto &isHeadMethod = paramPack->isHeadMethod;
+                auto &loopFlagPtr = paramPack->loopFlag_;
+                auto &requestParser = paramPack->requestParser;
+
                 if (!response)
                     return;
                 if (!conn->connected())
