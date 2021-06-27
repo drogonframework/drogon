@@ -38,7 +38,7 @@ using HttpRequestPtr = std::shared_ptr<HttpRequest>;
  * type object. Users must specialize the template for a particular type.
  */
 template <typename T>
-T fromRequest(const HttpRequest &req)
+T fromRequest(const HttpRequest &)
 {
     LOG_ERROR << "You must specialize the fromRequest template for the type of "
               << DrClassMap::demangle(typeid(T).name());

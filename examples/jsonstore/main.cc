@@ -50,7 +50,7 @@ class JsonStore : public HttpController<JsonStore>
     ADD_METHOD_VIA_REGEX(JsonStore::updateItem, "/([a-f0-9]{64})/(.*)", Put);
     METHOD_LIST_END
 
-    void getToken(const HttpRequestPtr& req,
+    void getToken(const HttpRequestPtr&,
                   std::function<void(const HttpResponsePtr&)>&& callback)
     {
         std::string randomString = getRandomString(64);
@@ -60,7 +60,7 @@ class JsonStore : public HttpController<JsonStore>
         callback(HttpResponse::newHttpJsonResponse(std::move(res)));
     }
 
-    void getItem(const HttpRequestPtr& req,
+    void getItem(const HttpRequestPtr&,
                  std::function<void(const HttpResponsePtr&)>&& callback,
                  const std::string& token,
                  const std::string& path)
@@ -163,7 +163,7 @@ class JsonStore : public HttpController<JsonStore>
         }
     }
 
-    void deleteItem(const HttpRequestPtr& req,
+    void deleteItem(const HttpRequestPtr&,
                     std::function<void(const HttpResponsePtr&)>&& callback,
                     const std::string& token)
     {

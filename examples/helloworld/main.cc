@@ -8,7 +8,7 @@ int main()
     // sent to Drogon
     app().registerHandler(
         "/",
-        [](const HttpRequestPtr &req,
+        [](const HttpRequestPtr &,
            std::function<void(const HttpResponsePtr &)> &&callback) {
             auto resp = HttpResponse::newHttpResponse();
             resp->setBody("Hello, World!");
@@ -23,7 +23,7 @@ int main()
     // for users to recognize the function of each parameter.
     app().registerHandler(
         "/user/{user-name}",
-        [](const HttpRequestPtr &req,
+        [](const HttpRequestPtr &,
            std::function<void(const HttpResponsePtr &)> &&callback,
            const std::string &name) {
             auto resp = HttpResponse::newHttpResponse();
@@ -36,7 +36,7 @@ int main()
     // URL!
     app().registerHandler(
         "/hello?user={user-name}",
-        [](const HttpRequestPtr &req,
+        [](const HttpRequestPtr &,
            std::function<void(const HttpResponsePtr &)> &&callback,
            const std::string &name) {
             auto resp = HttpResponse::newHttpResponse();

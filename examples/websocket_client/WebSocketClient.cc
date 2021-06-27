@@ -34,7 +34,7 @@ int main(int argc, char *argv[])
     req->setPath(path);
 
     wsPtr->setMessageHandler([](const std::string &message,
-                                const WebSocketClientPtr &wsPtr,
+                                const WebSocketClientPtr &,
                                 const WebSocketMessageType &type) {
         std::string messageType = "Unknown";
         if (type == WebSocketMessageType::Text)
@@ -51,7 +51,7 @@ int main(int argc, char *argv[])
         LOG_INFO << "new message (" << messageType << "): " << message;
     });
 
-    wsPtr->setConnectionClosedHandler([](const WebSocketClientPtr &wsPtr) {
+    wsPtr->setConnectionClosedHandler([](const WebSocketClientPtr &) {
         LOG_INFO << "WebSocket connection closed!";
     });
 
@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
     wsPtr->connectToServer(
         req,
         [](ReqResult r,
-           const HttpResponsePtr &resp,
+           const HttpResponsePtr &,
            const WebSocketClientPtr &wsPtr) {
             if (r != ReqResult::Ok)
             {
