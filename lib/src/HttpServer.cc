@@ -299,6 +299,34 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn, MsgBuffer *buf)
     }
 }
 
+struct CallBackParamPack
+{
+    CallBackParamPack() = default;
+    CallBackParamPack(const trantor::TcpConnectionPtr &conn_,
+                      const HttpRequestImplPtr &req_,
+                      const std::shared_ptr<bool> &loopFlag_,
+                      const std::shared_ptr<HttpRequestParser> &requestParser_,
+                      bool *syncFlagPtr_,
+                      bool close_,
+                      bool isHeadMethod_)
+        : conn(conn_),
+          req(req_),
+          loopFlag(loopFlag_),
+          requestParser(requestParser_),
+          syncFlagPtr(syncFlagPtr_),
+          close(close_),
+          isHeadMethod(isHeadMethod_)
+    {
+    }
+    trantor::TcpConnectionPtr conn;
+    HttpRequestImplPtr req;
+    std::shared_ptr<bool> loopFlag;
+    std::shared_ptr<HttpRequestParser> requestParser;
+    bool *syncFlagPtr;
+    bool close;
+    bool isHeadMethod;
+};
+
 void HttpServer::onRequests(
     const TcpConnectionPtr &conn,
     const std::vector<HttpRequestImplPtr> &requests,
@@ -373,16 +401,28 @@ void HttpServer::onRequests(
             if (adviceFlag)
                 continue;
         }
+
+        // Optimization: Avoids dynamic allocation when copying the callback in
+        // handlers (ex: copying callback into lambda captures in DB calls)
+        auto paramPack = std::make_shared<CallBackParamPack>(conn,
+                                                             req,
+                                                             loopFlagPtr,
+                                                             requestParser,
+                                                             &syncFlag,
+                                                             close_,
+                                                             isHeadMethod);
         httpAsyncCallback_(
             req,
-            [conn,
-             close_,
-             req,
-             loopFlagPtr,
-             &syncFlag,
-             isHeadMethod,
-             this,
-             requestParser](const HttpResponsePtr &response) {
+            [paramPack = std::move(paramPack),
+             this](const HttpResponsePtr &response) {
+                auto &conn = paramPack->conn;
+                auto &close_ = paramPack->close;
+                auto &req = paramPack->req;
+                auto &syncFlag = *paramPack->syncFlagPtr;
+                auto &isHeadMethod = paramPack->isHeadMethod;
+                auto &loopFlagPtr = paramPack->loopFlag;
+                auto &requestParser = paramPack->requestParser;
+
                 if (!response)
                     return;
                 if (!conn->connected())
