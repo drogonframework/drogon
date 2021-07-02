@@ -66,7 +66,11 @@ void CacheFile::append(const char *data, size_t length)
 size_t CacheFile::length()
 {
     if (file_)
+#ifdef _WIN32
+        return _ftelli64(file_);
+#else
         return ftell(file_);
+#endif
     return 0;
 }
 
