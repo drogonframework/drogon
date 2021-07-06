@@ -45,3 +45,32 @@ void Client::get(const HttpRequestPtr& req, std::function<void (const HttpRespon
     },
     "get %s", key.c_str());
 }
+
+void Client::post(const HttpRequestPtr& req, std::function<void (const HttpResponsePtr &)> &&callback, std::string key)
+{
+  nosql::RedisClientPtr redisClient = app().getRedisClient();
+  auto json = req->getJsonObject();
+
+  if (!json) {
+    auto resp = HttpResponse::newHttpResponse();
+    resp->setBody("missing 'value' in body");
+    resp->setStatusCode(k400BadRequest);
+    callback(resp);
+    return;
+  }
+
+  std::string value = (*json)["value"].asString();
+
+  redisClient->execCommandAsync(
+    [callback](const nosql::RedisResult &r) {
+      auto resp = HttpResponse::newHttpResponse();
+
+      resp->setStatusCode(k201Created);
+
+      callback(resp);
+    },
+    [](const std::exception &err) {
+      LOG_ERROR << "something failed!!! " << err.what();
+    },
+    "set %s %s", key.c_str(), value.c_str());
+}
