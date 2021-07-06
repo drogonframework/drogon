@@ -1,0 +1,297 @@
+/* This is a JSON format configuration file
+ */
+{
+    /*
+    //ssl:The global SSL settings. "key" and "cert" are the path to the SSL key and certificate. While
+    //    "conf" is an array of 1 or 2-element tuples that supplies file style options for `SSL_CONF_cmd`.
+    "ssl": {
+        "cert": "../../trantor/trantor/tests/server.pem",
+        "key": "../../trantor/trantor/tests/server.pem",
+        "conf": [
+            //["Options", "-SessionTicket"], 
+            //["Options", "Compression"]
+        ]
+    },
+    "listeners": [
+        {
+            //address: Ip address,0.0.0.0 by default
+            "address": "0.0.0.0",
+            //port: Port number
+            "port": 80,
+            //https: If true, use https for security,false by default
+            "https": false
+        },
+        {
+            "address": "0.0.0.0",
+            "port": 443,
+            "https": true,
+            //cert,key: Cert file path and key file path, empty by default,
+            //if empty, use the global setting
+            "cert": "",
+            "key": "",
+            //use_old_tls: enable the TLS1.0/1.1, false by default
+            "use_old_tls": false,
+            "ssl_conf": [
+                //["MinProtocol", "TLSv1.3"]
+            ]
+        }
+    ],
+    "db_clients": [
+        {
+            //name: Name of the client,'default' by default
+            //"name":"",
+            //rdbms: Server type, postgresql,mysql or sqlite3, "postgresql" by default
+            "rdbms": "postgresql",
+            //filename: Sqlite3 db file name
+            //"filename":"",
+            //host: Server address,localhost by default
+            "host": "127.0.0.1",
+            //port: Server port, 5432 by default
+            "port": 5432,
+            //dbname: Database name
+            "dbname": "test",
+            //user: 'postgres' by default
+            "user": "",
+            //passwd: '' by default
+            "passwd": "",
+            //is_fast: false by default, if it is true, the client is faster but user can't call
+            //any synchronous interface of it.
+            "is_fast": false,
+            //client_encoding: The character set used by the client. it is empty string by default which 
+            //means use the default character set.
+            //"client_encoding": "",
+            //number_of_connections: 1 by default, if the 'is_fast' is true, the number is the number of  
+            //connections per IO thread, otherwise it is the total number of all connections.  
+            "number_of_connections": 1,
+            //timeout: -1.0 by default, in seconds, the timeout for executing a SQL query.
+            //zero or negative value means no timeout.
+            "timeout": -1.0
+        }
+    ],
+    "redis_clients": [
+        {
+            //name: Name of the client,'default' by default
+            //"name":"",
+            //host: Server IP, 127.0.0.1 by default
+            "host": "127.0.0.1",
+            //port: Server port, 6379 by default
+            "port": 6379,
+            //passwd: '' by default
+            "passwd": "",
+            //db index: 0 by default
+            "db": 0,
+            //is_fast: false by default, if it is true, the client is faster but user can't call
+            //any synchronous interface of it.
+            "is_fast": false,
+            //number_of_connections: 1 by default, if the 'is_fast' is true, the number is the number of  
+            //connections per IO thread, otherwise it is the total number of all connections.  
+            "number_of_connections": 1,
+            //timeout: -1.0 by default, in seconds, the timeout for executing a command.
+            //zero or negative value means no timeout.
+            "timeout": -1.0
+        }
+    ],*/
+    "app": {
+        //number_of_threads: The number of IO threads, 1 by default, if the value is set to 0, the number of threads
+        //is the number of CPU cores
+        "number_of_threads": 1,
+        //enable_session: False by default
+        "enable_session": false,
+        "session_timeout": 0,
+        //document_root: Root path of HTTP document, defaut path is ./
+        "document_root": "./",
+        //home_page: Set the HTML file of the home page, the default value is "index.html"
+        //If there isn't any handler registered to the path "/", the home page file in the "document_root" is send to clients as a response
+        //to the request for "/".
+        "home_page": "index.html",
+        //use_implicit_page: enable implicit pages if true, true by default
+        "use_implicit_page": true,
+        //implicit_page: Set the file which would the server access in a directory that a user accessed.
+        //For example, by default, http://localhost/a-directory resolves to http://localhost/a-directory/index.html.
+        "implicit_page": "index.html",
+        //static_file_headers: Headers for static files
+        /*"static_file_headers": [
+          {
+                "name": "field-name",
+                "value": "field-value"
+          }
+        ],*/
+        //upload_path: The path to save the uploaded file. "uploads" by default. 
+        //If the path isn't prefixed with /, ./ or ../,
+        //it is relative path of document_root path
+        "upload_path": "uploads",
+        /* file_types:
+         * HTTP download file types,The file types supported by drogon
+         * by default are "html", "js", "css", "xml", "xsl", "txt", "svg",
+         * "ttf", "otf", "woff2", "woff" , "eot", "png", "jpg", "jpeg",
+         * "gif", "bmp", "ico", "icns", etc. */
+        "file_types": [
+            "gif",
+            "png",
+            "jpg",
+            "js",
+            "css",
+            "html",
+            "ico",
+            "swf",
+            "xap",
+            "apk",
+            "cur",
+            "xml"
+        ],
+        //locations: An array of locations of static files for GET requests.
+        "locations": [
+            {
+                //uri_prefix: The URI prefix of the location prefixed with "/", the default value is "" that disables the location.
+                //"uri_prefix": "/.well-known/acme-challenge/",
+                //default_content_type: The default content type of the static files without
+                //an extension. empty string by default.
+                "default_content_type": "text/plain",
+                //alias: The location in file system, if it is prefixed with "/", it 
+                //presents an absolute path, otherwise it presents a relative path to 
+                //the document_root path. 
+                //The default value is "" which means use the document root path as the location base path.
+                "alias": "",
+                //is_case_sensitive: indicates whether the URI prefix is case sensitive.
+                "is_case_sensitive": false,
+                //allow_all: true by default. If it is set to false, only static files with a valid extension can be accessed.
+                "allow_all": true,
+                //is_recursive: true by default. If it is set to false, files in sub directories can't be accessed.
+                "is_recursive": true,
+                //filters: string array, the filters applied to the location.
+                "filters": []
+            }
+        ],
+        //max_connections: maximum number of connections, 100000 by default
+        "max_connections": 100000,
+        //max_connections_per_ip: maximum number of connections per clinet, 0 by default which means no limit
+        "max_connections_per_ip": 0,
+        //Load_dynamic_views: False by default, when set to true, drogon
+        //compiles and loads dynamically "CSP View Files" in directories defined
+        //by "dynamic_views_path"
+        "load_dynamic_views": false,
+        //dynamic_views_path: If the path isn't prefixed with /, ./ or ../,
+        //it is relative path of document_root path
+        "dynamic_views_path": [
+            "./views"
+        ],
+        //dynamic_views_output_path: Default by an empty string which means the output path of source 
+        //files is the path where the csp files locate. If the path isn't prefixed with /, it is relative 
+        //path of the current working directory.
+        "dynamic_views_output_path": "",
+        //enable_unicode_escaping_in_json: true by default, enable unicode escaping in json.
+        "enable_unicode_escaping_in_json": true,
+        //float_precision_in_json: set precision of float number in json. 
+        "float_precision_in_json": {
+            //precision: 0 by default, 0 means use the default precision of the jsoncpp lib. 
+            "precision": 0,
+            //precision_type: must be "significant" or "decimal", defaults to "significant" that means 
+            //setting max number of significant digits in string, "decimal" means setting max number of 
+            //digits after "." in string
+            "precision_type": "significant"
+        },
+        //log: Set log output, drogon output logs to stdout by default
+        "log": {
+            //log_path: Log file path,empty by default,in which case,logs are output to the stdout
+            //"log_path": "./",
+            //logfile_base_name: Log file base name,empty by default which means drogon names logfile as
+            //drogon.log ...
+            "logfile_base_name": "",
+            //log_size_limit: 100000000 bytes by default,
+            //When the log file size reaches "log_size_limit", the log file is switched.
+            "log_size_limit": 100000000,
+            //log_level: "DEBUG" by default,options:"TRACE","DEBUG","INFO","WARN"
+            //The TRACE level is only valid when built in DEBUG mode.
+            "log_level": "DEBUG"
+        },
+        //run_as_daemon: False by default
+        "run_as_daemon": false,
+        //handle_sig_term: True by default
+        "handle_sig_term": true,
+        //relaunch_on_error: False by default, if true, the program will be restart by the parent after exiting;
+        "relaunch_on_error": false,
+        //use_sendfile: True by default, if true, the program 
+        //uses sendfile() system-call to send static files to clients;
+        "use_sendfile": true,
+        //use_gzip: True by default, use gzip to compress the response body's content;
+        "use_gzip": true,
+        //use_brotli: False by default, use brotli to compress the response body's content;
+        "use_brotli": false,
+        //static_files_cache_time: 5 (seconds) by default, the time in which the static file response is cached,
+        //0 means cache forever, the negative value means no cache
+        "static_files_cache_time": 5,
+        //simple_controllers_map: Used to configure mapping from path to simple controller
+        "simple_controllers_map": [
+            {
+                "path": "/path/name",
+                "controller": "controllerClassName",
+                "http_methods": [
+                    "get",
+                    "post"
+                ],
+                "filters": [
+                    "FilterClassName"
+                ]
+            }
+        ],
+        //idle_connection_timeout: Defaults to 60 seconds, the lifetime 
+        //of the connection without read or write
+        "idle_connection_timeout": 60,
+        //server_header_field: Set the 'Server' header field in each response sent by drogon,
+        //empty string by default with which the 'Server' header field is set to "Server: drogon/version string\r\n"
+        "server_header_field": "",
+        //enable_server_header: Set true to force drogon to add a 'Server' header to each HTTP response. The default 
+        //value is true.
+        "enable_server_header": true,
+        //enable_date_header: Set true to force drogon to add a 'Date' header to each HTTP response. The default 
+        //value is true.
+        "enable_date_header": true,
+        //keepalive_requests: Set the maximum number of requests that can be served through one keep-alive connection. 
+        //After the maximum number of requests are made, the connection is closed.
+        //The default value of 0 means no limit.
+        "keepalive_requests": 0,
+        //pipelining_requests: Set the maximum number of unhandled requests that can be cached in pipelining buffer. 
+        //After the maximum number of requests are made, the connection is closed.
+        //The default value of 0 means no limit.
+        "pipelining_requests": 0,
+        //gzip_static: If it is set to true, when the client requests a static file, drogon first finds the compressed 
+        //file with the extension ".gz" in the same path and send the compressed file to the client.
+        //The default value of gzip_static is true.
+        "gzip_static": true,
+        //br_static: If it is set to true, when the client requests a static file, drogon first finds the compressed 
+        //file with the extension ".br" in the same path and send the compressed file to the client.
+        //The default value of br_static is true.
+        "br_static": true,
+        //client_max_body_size: Set the maximum body size of HTTP requests received by drogon. The default value is "1M".
+        //One can set it to "1024", "1k", "10M", "1G", etc. Setting it to "" means no limit.
+        "client_max_body_size": "1M",
+        //max_memory_body_size: Set the maximum body size in memory of HTTP requests received by drogon. The default value is "64K" bytes.
+        //If the body size of a HTTP request exceeds this limit, the body is stored to a temporary file for processing.
+        //Setting it to "" means no limit.
+        "client_max_memory_body_size": "64K",
+        //client_max_websocket_message_size: Set the maximum size of messages sent by WebSocket client. The default value is "128K".
+        //One can set it to "1024", "1k", "10M", "1G", etc. Setting it to "" means no limit.
+        "client_max_websocket_message_size": "128K",
+        //reuse_port: Defaults to false, users can run multiple processes listening on the same port at the same time.
+        "reuse_port": false
+    },
+    //plugins: Define all plugins running in the application
+    "plugins": [
+        {
+            //name: The class name of the plugin
+            //"name": "drogon::plugin::SecureSSLRedirector",
+            //dependencies: Plugins that the plugin depends on. It can be commented out
+            "dependencies": [],
+            //config: The configuration of the plugin. This json object is the parameter to initialize the plugin.
+            //It can be commented out
+            "config": {
+                "ssl_redirect_exempt": [
+                    ".*\\.jpg"
+                ],
+                "secure_ssl_host": "localhost:8849"
+            }
+        }
+    ],
+    //custom_config: custom configuration for users. This object can be get by the app().getCustomConfig() method. 
+    "custom_config": {}
+}
