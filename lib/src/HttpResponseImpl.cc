@@ -22,9 +22,22 @@
 #include <cstdio>
 #include <sys/stat.h>
 #include <trantor/utils/Logger.h>
-#ifdef _WIN32
-#define stat _stati64
-#endif
+//#ifdef _WIN32
+//#define stat _wstati64
+//#endif
+// Switch between native c++17 or boost for c++14
+#ifdef USE_BOOST_FILESYSTEM
+#include <boost/system/error_code.hpp>
+#include <boost/filesystem.hpp>
+namespace fs = boost::filesystem;
+namespace sys = boost::system;
+#else   // USE_BOOST_FILESYSTEM
+#include <system_error>
+#include <filesystem>
+namespace fs = std::filesystem;
+namespace sys = std;
+#endif  // USE_BOOST_FILESYSTEM
+
 using namespace trantor;
 using namespace drogon;
 
@@ -235,7 +248,7 @@ HttpResponsePtr HttpResponse::newFileResponse(
     const std::string &attachmentFileName,
     ContentType type)
 {
-    std::ifstream infile(fullPath, std::ifstream::binary);
+    std::ifstream infile(utils::toNativePath(fullPath), std::ifstream::binary);
     LOG_TRACE << "send http file:" << fullPath;
     if (!infile)
     {
@@ -345,19 +358,19 @@ void HttpResponseImpl::makeHeaderString(trantor::MsgBuffer &buffer)
         }
         else
         {
-            struct stat filestat
+            sys::error_code err;
+            fs::path fsSendfile(utils::toNativePath(sendfileName_));
+            auto fileSize = fs::file_size(fsSendfile, err);
+            if (err)
             {
-            };
-            if (stat(sendfileName_.data(), &filestat) < 0)
-            {
-                LOG_SYSERR << sendfileName_ << " stat error";
+                LOG_SYSERR << sendfileName_ << " stat error" << err.value() << ": " << err.message();
                 return;
             }
             len = snprintf(
                 buffer.beginWrite(),
                 buffer.writableBytes(),
-                contentLengthFormatString<decltype(filestat.st_size)>(),
-                filestat.st_size);
+                contentLengthFormatString<decltype(fileSize)>(),
+                fileSize);
         }
         buffer.hasWritten(len);
         if (headers_.find("connection") == headers_.end())

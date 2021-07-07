@@ -99,6 +99,15 @@ else ()
     set(DROGON_CXX_STANDARD 14)
 endif ()
 
+if(DROGON_CXX_STANDARD GREATER_EQUAL 17)
+    add_definitions(-DUSE_CPP17_FILESYSTEM)
+    message(STATUS "Using c++17 std::filesytem")
+else()
+    find_package(BOOST COMPONENTS filesystem system REQUIRED)
+    add_definitions(-DUSE_BOOST_FILESYSTEM)
+    message(STATUS "Using Boost filesytem")
+endif()
+
 target_include_directories(
     ${PROJECT_NAME}
     PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/lib/inc>

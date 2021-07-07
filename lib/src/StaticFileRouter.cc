@@ -23,11 +23,23 @@
 #ifndef _WIN32
 #include <sys/file.h>
 #else
-#define stat _stati64
+#define stat _wstati64
 #define S_ISREG(m) (((m)&0170000) == (0100000))
 #define S_ISDIR(m) (((m)&0170000) == (0040000))
 #endif
 #include <sys/stat.h>
+// Switch between native c++17 or boost for c++14
+#ifdef USE_BOOST_FILESYSTEM
+#include <boost/system/error_code.hpp>
+#include <boost/filesystem.hpp>
+namespace fs = boost::filesystem;
+namespace sys = boost::system;
+#else   // USE_BOOST_FILESYSTEM
+#include <system_error>
+#include <filesystem>
+namespace fs = std::filesystem;
+namespace sys = std;
+#endif  // USE_BOOST_FILESYSTEM
 
 using namespace drogon;
 
@@ -137,13 +149,14 @@ void StaticFileRouter::route(
             std::string filePath =
                 location.realLocation_ +
                 std::string{restOfThePath.data(), restOfThePath.length()};
-            struct stat fileStat;
-            if (stat(filePath.c_str(), &fileStat) != 0)
+            fs::path fsFilePath(utils::toNativePath(filePath));
+            sys::error_code err;
+            if (!fs::exists(fsFilePath, err))
             {
                 defaultHandler_(req, std::move(callback));
                 return;
             }
-            if (S_ISDIR(fileStat.st_mode))
+            if (fs::is_directory(fsFilePath, err))
             {
                 // Check if path is eligible for an implicit index.html
                 if (implicitPageEnable_)
@@ -213,12 +226,12 @@ void StaticFileRouter::route(
         }
     }
 
-    std::string directoryPath =
-        HttpAppFrameworkImpl::instance().getDocumentRoot() + path;
-    struct stat fileStat;
-    if (stat(directoryPath.c_str(), &fileStat) == 0)
+    std::string directoryPath = HttpAppFrameworkImpl::instance().getDocumentRoot() + path;
+    fs::path fsDirectoryPath(utils::toNativePath(directoryPath));
+    sys::error_code err;
+    if (fs::exists(fsDirectoryPath, err))
     {
-        if (S_ISDIR(fileStat.st_mode))
+        if (fs::is_directory(fsDirectoryPath, err))
         {
             // Check if path is eligible for an implicit index.html
             if (implicitPageEnable_)
@@ -299,9 +312,14 @@ void StaticFileRouter::sendStaticFileResponse(
         }
         else
         {
-            struct stat fileStat;
             LOG_TRACE << "enabled LastModify";
-            if (stat(filePath.c_str(), &fileStat) == 0 &&
+            // std::filesystem::file_time_type::clock::to_time_t still not implemented by M$, even in c++20, so keep calls to stat()
+#ifdef _WIN32
+            struct _stati64 fileStat;
+#else  // _WIN32
+            struct stat fileStat;
+#endif  // _WIN32
+            if (stat(utils::toNativePath(filePath).c_str(), &fileStat) == 0 &&
                 S_ISREG(fileStat.st_mode))
             {
                 fileExists = true;
@@ -361,9 +379,10 @@ void StaticFileRouter::sendStaticFileResponse(
     }
     if (!fileExists)
     {
-        struct stat fileStat;
-        if (stat(filePath.c_str(), &fileStat) != 0 ||
-            !S_ISREG(fileStat.st_mode))
+        fs::path fsFilePath(utils::toNativePath(filePath));
+        sys::error_code err;
+        if (!fs::exists(fsFilePath, err) ||
+            !fs::is_regular_file(fsFilePath, err))
         {
             defaultHandler_(req, std::move(callback));
             return;
@@ -383,9 +402,10 @@ void StaticFileRouter::sendStaticFileResponse(
     {
         // Find compressed file first.
         auto brFileName = filePath + ".br";
-        struct stat filestat;
-        if (stat(brFileName.c_str(), &filestat) == 0 &&
-            S_ISREG(filestat.st_mode))
+        fs::path fsBrFile(utils::toNativePath(brFileName));
+        sys::error_code err;
+        if (fs::exists(fsBrFile, err) &&
+            fs::is_regular_file(fsBrFile, err))
         {
             resp =
                 HttpResponse::newFileResponse(brFileName,
@@ -399,9 +419,10 @@ void StaticFileRouter::sendStaticFileResponse(
     {
         // Find compressed file first.
         auto gzipFileName = filePath + ".gz";
-        struct stat filestat;
-        if (stat(gzipFileName.c_str(), &filestat) == 0 &&
-            S_ISREG(filestat.st_mode))
+        fs::path fsGzipFile(utils::toNativePath(gzipFileName));
+        sys::error_code err;
+        if (fs::exists(fsGzipFile, err) &&
+            fs::is_regular_file(fsGzipFile, err))
         {
             resp =
                 HttpResponse::newFileResponse(gzipFileName,
