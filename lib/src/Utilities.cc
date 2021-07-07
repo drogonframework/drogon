@@ -1096,10 +1096,11 @@ std::string fromNativePath(std::wstring wstrPath)
 
 int createPath(const std::string &path)
 {
+    if (path.empty())
+        return 0;
     auto osPath{ toNativePath(path) };
-    if (!osPath.ends_with(fs::path::preferred_separator))
+    if (osPath.back() != fs::path::preferred_separator)
         osPath.push_back(fs::path::preferred_separator);
-//    std::filesystem::path fsPath(osPath, std::filesystem::path::native_format);
     fs::path fsPath(osPath);
     sys::error_code err;
     fs::create_directories(fsPath, err);

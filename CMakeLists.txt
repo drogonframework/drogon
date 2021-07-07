@@ -99,15 +99,6 @@ else ()
     set(DROGON_CXX_STANDARD 14)
 endif ()
 
-if(DROGON_CXX_STANDARD GREATER_EQUAL 17)
-    add_definitions(-DUSE_CPP17_FILESYSTEM)
-    message(STATUS "Using c++17 std::filesytem")
-else()
-    find_package(BOOST COMPONENTS filesystem system REQUIRED)
-    add_definitions(-DUSE_BOOST_FILESYSTEM)
-    message(STATUS "Using Boost filesytem")
-endif()
-
 target_include_directories(
     ${PROJECT_NAME}
     PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/lib/inc>
@@ -140,13 +131,26 @@ if (DROGON_CXX_STANDARD EQUAL 14)
     # With C++14, use boost to support any and string_view
     message(STATUS "use c++14")
     find_package(Boost 1.61.0 REQUIRED)
-    message(STATUS "boost include dir:" ${Boost_INCLUDE_DIR})
+    message(STATUS "Using Boost filesytem and string_view")
+    message(STATUS "Boost include dir: " ${Boost_INCLUDE_DIR})
+    include_directories(${BOOST_INCLUDE_DIRS})
     target_link_libraries(${PROJECT_NAME} PUBLIC Boost::boost)
     list(APPEND INCLUDE_DIRS_FOR_DYNAMIC_VIEW ${Boost_INCLUDE_DIR})
+    add_definitions(-DUSE_BOOST_FILESYSTEM)
 elseif (DROGON_CXX_STANDARD EQUAL 17)
+    # With C++17, use boost to filesystem::path
     message(STATUS "use c++17")
+    find_package(Boost COMPONENTS filesystem system REQUIRED)
+    message(STATUS "Using Boost filesytem")
+    message(STATUS "Boost include dir: " ${Boost_INCLUDE_DIR})
+    include_directories(${BOOST_INCLUDE_DIRS})
+    message(STATUS "Boost libraries: " ${Boost_LIBRARIES})
+    target_link_libraries(${PROJECT_NAME} PUBLIC Boost::filesystem Boost::system)
+    list(APPEND INCLUDE_DIRS_FOR_DYNAMIC_VIEW ${Boost_INCLUDE_DIR})
+    add_definitions(-DUSE_BOOST_FILESYSTEM)
 else ()
     message(STATUS "use c++20")
+    add_definitions(-DUSE_CPP20_FILESYSTEM)
 endif ()
 
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules/)
