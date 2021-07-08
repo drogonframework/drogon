@@ -156,12 +156,15 @@ DROGON_EXPORT int createPath(const std::string &path);
 
 #ifdef _WIN32
 /**
- * @brief Convert a UTF-8 path with arbitrary directory separator to a standard Windows UCS2 path.
- * @note Although windows accept both slash and backslash as directory separator, it is better to stick to its standard.
+ * @brief Convert a UTF-8 path with arbitrary directory separator to a standard
+ * Windows UCS2 path.
+ * @note Although windows accept both slash and backslash as directory
+ * separator, it is better to stick to its standard.
  *
  * @param strUtf8Path Ascii path considered as being UTF-8
  *
- * @return std::wstring path, with windows standard backslash directory separator.
+ * @return std::wstring path, with windows standard backslash directory
+ * separator.
  */
 DROGON_EXPORT std::wstring toNativePath(const std::string &strPath);
 /**
@@ -174,8 +177,14 @@ DROGON_EXPORT std::wstring toNativePath(const std::string &strPath);
  */
 DROGON_EXPORT std::string fromNativePath(std::wstring strPath);
 #else  // _WIN32
-inline const std::string& toNativePath(const std::string& strPath) { return strPath; }
-inline const std::string& fromNativePath(const std::string& strPath) { return strPath; }
+inline const std::string &toNativePath(const std::string &strPath)
+{
+    return strPath;
+}
+inline const std::string &fromNativePath(const std::string &strPath)
+{
+    return strPath;
+}
 #endif  // _WIN32
 
 /// Replace all occurances of from to to inplace

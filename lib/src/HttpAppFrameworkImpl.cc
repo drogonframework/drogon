@@ -398,7 +398,8 @@ HttpAppFramework &HttpAppFrameworkImpl::setLogPath(
 {
     if (logPath.empty())
         return *this;
-    // std::filesystem does not provide a method to check access permissions, so keep existing code
+    // std::filesystem does not provide a method to check access permissions, so
+    // keep existing code
     if (os_access(utils::toNativePath(logPath).c_str(), 0) != 0)
     {
         std::cerr << "Log path does not exist!\n";
@@ -491,7 +492,8 @@ void HttpAppFrameworkImpl::run()
     // set logger
     if (!logPath_.empty())
     {
-        // std::filesystem does not provide a method to check access permissions, so keep existing code
+        // std::filesystem does not provide a method to check access
+        // permissions, so keep existing code
         if (os_access(utils::toNativePath(logPath_).c_str(), R_OK | W_OK) != 0)
         {
             LOG_ERROR << "log file path not exist";
@@ -657,7 +659,8 @@ void HttpAppFrameworkImpl::onConnection(const trantor::TcpConnectionPtr &conn)
     }
 }
 
-HttpAppFramework &HttpAppFrameworkImpl::setUploadPath(const std::string &uploadPath)
+HttpAppFramework &HttpAppFrameworkImpl::setUploadPath(
+    const std::string &uploadPath)
 {
     assert(!uploadPath.empty());
 

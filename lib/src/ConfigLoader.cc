@@ -111,7 +111,8 @@ ConfigLoader::ConfigLoader(const std::string &configFile)
         exit(1);
     }
     configFile_ = configFile;
-    std::ifstream infile(drogon::utils::toNativePath(configFile).c_str(), std::ifstream::in);
+    std::ifstream infile(drogon::utils::toNativePath(configFile).c_str(),
+                         std::ifstream::in);
     if (infile)
     {
         try

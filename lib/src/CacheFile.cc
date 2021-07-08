@@ -30,7 +30,7 @@ CacheFile::CacheFile(const std::string &path, bool autoDelete)
 #ifndef _MSC_VER
     file_ = fopen(path_.data(), "wb+");
 #else
-    auto wPath{ drogon::utils::toNativePath(path) };
+    auto wPath{drogon::utils::toNativePath(path)};
     if (_wfopen_s(&file_, wPath.c_str(), L"wb+") != 0)
     {
         file_ = nullptr;
@@ -48,7 +48,7 @@ CacheFile::~CacheFile()
     {
         fclose(file_);
 #ifdef _WIN32
-        auto wPath{ drogon::utils::toNativePath(path_) };
+        auto wPath{drogon::utils::toNativePath(path_)};
         _wunlink(wPath.c_str());
 #else
         unlink(path_.data());

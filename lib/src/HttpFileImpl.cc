@@ -21,7 +21,7 @@
 #ifdef HAS_STD_FILESYSTEM_PATH
 #include <system_error>
 namespace stl = std;
-#else   // HAS_STD_FILESYSTEM_PATH
+#else  // HAS_STD_FILESYSTEM_PATH
 #include <boost/system/error_code.hpp>
 namespace stl = boost::system;
 #endif  // HAS_STD_FILESYSTEM_PATH
@@ -39,7 +39,9 @@ int HttpFileImpl::save(const std::string &path) const
     if (fileName_.empty())
         return -1;
     filesystem::path fsPath(utils::toNativePath(path));
-    if (!fsPath.is_absolute())
+    if (!fsPath.is_absolute() &&
+        (!fsPath.has_parent_path() ||
+         (fsPath.begin()->string() != "." && fsPath.begin()->string() != "..")))
     {
         filesystem::path fsUploadPath(utils::toNativePath(
             HttpAppFrameworkImpl::instance().getUploadPath()));
@@ -52,7 +54,9 @@ int HttpFileImpl::saveAs(const std::string &fileName) const
 {
     assert(!fileName.empty());
     filesystem::path fsFileName(utils::toNativePath(fileName));
-    if (!fsFileName.is_absolute())
+    if (!fsFileName.is_absolute() && (!fsFileName.has_parent_path() ||
+                                      (fsFileName.begin()->string() != "." &&
+                                       fsFileName.begin()->string() != "..")))
     {
         filesystem::path fsUploadPath(utils::toNativePath(
             HttpAppFrameworkImpl::instance().getUploadPath()));

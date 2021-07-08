@@ -223,7 +223,8 @@ void StaticFileRouter::route(
         }
     }
 
-    std::string directoryPath = HttpAppFrameworkImpl::instance().getDocumentRoot() + path;
+    std::string directoryPath =
+        HttpAppFrameworkImpl::instance().getDocumentRoot() + path;
     filesystem::path fsDirectoryPath(utils::toNativePath(directoryPath));
     std::error_code err;
     if (filesystem::exists(fsDirectoryPath, err))
@@ -310,7 +311,8 @@ void StaticFileRouter::sendStaticFileResponse(
         else
         {
             LOG_TRACE << "enabled LastModify";
-            // std::filesystem::file_time_type::clock::to_time_t still not implemented by M$, even in c++20, so keep calls to stat()
+            // std::filesystem::file_time_type::clock::to_time_t still not
+            // implemented by M$, even in c++20, so keep calls to stat()
 #ifdef _WIN32
             struct _stati64 fileStat;
 #else  // _WIN32

@@ -365,7 +365,7 @@ std::string getUuid()
 #endif
 #if _BYTE_ORDER == _LITTLE_ENDIAN
     uuid_enc_le(binstr, uuid);
-#else  /* _BYTE_ORDER != _LITTLE_ENDIAN */
+#else /* _BYTE_ORDER != _LITTLE_ENDIAN */
     uuid_enc_be(binstr, uuid);
 #endif /* _BYTE_ORDER == _LITTLE_ENDIAN */
     delete uuid;
@@ -1054,29 +1054,39 @@ std::string formattedString(const char *format, ...)
 }
 
 #ifdef _WIN32
-std::string utf8_encode(const std::wstring& wstr)
+std::string utf8_encode(const std::wstring &wstr)
 {
     if (wstr.empty())
         return {};
-    int nSizeNeeded = ::WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)wstr.size(), NULL, 0, NULL, NULL);
+    int nSizeNeeded = ::WideCharToMultiByte(
+        CP_UTF8, 0, &wstr[0], (int)wstr.size(), NULL, 0, NULL, NULL);
     std::string strTo(nSizeNeeded, 0);
-    ::WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)wstr.size(), &strTo[0], nSizeNeeded, NULL, NULL);
+    ::WideCharToMultiByte(CP_UTF8,
+                          0,
+                          &wstr[0],
+                          (int)wstr.size(),
+                          &strTo[0],
+                          nSizeNeeded,
+                          NULL,
+                          NULL);
     return strTo;
 }
-std::wstring utf8_decode(const std::string& str)
+std::wstring utf8_decode(const std::string &str)
 {
     if (str.empty())
         return {};
-    int nSizeNeeded = ::MultiByteToWideChar(CP_UTF8, 0, &str[0], (int)str.size(), NULL, 0);
+    int nSizeNeeded =
+        ::MultiByteToWideChar(CP_UTF8, 0, &str[0], (int)str.size(), NULL, 0);
     std::wstring wstrTo(nSizeNeeded, 0);
-    ::MultiByteToWideChar(CP_UTF8, 0, &str[0], (int)str.size(), &wstrTo[0], nSizeNeeded);
+    ::MultiByteToWideChar(
+        CP_UTF8, 0, &str[0], (int)str.size(), &wstrTo[0], nSizeNeeded);
     return wstrTo;
 }
 
-std::wstring toNativePath(const std::string& strUtf8Path)
+std::wstring toNativePath(const std::string &strUtf8Path)
 {
     // Consider path to be utf-8, to allow using paths with unicode characters
-    auto wPath{ utf8_decode(strUtf8Path) };
+    auto wPath{utf8_decode(strUtf8Path)};
     // Not needed: normalize path (just replaces '/' with '\')
     filesystem::path fsPath(wPath);
     // Not needed: normalize path (just replaces '/' with '\')
@@ -1087,7 +1097,7 @@ std::wstring toNativePath(const std::string& strUtf8Path)
 std::string fromNativePath(std::wstring wstrPath)
 {
     std::replace(wstrPath.begin(), wstrPath.end(), L'\\', L'/');
-    auto strPath{ utf8_encode(wstrPath) };
+    auto strPath{utf8_encode(wstrPath)};
     return strPath;
 }
 #endif  // _WIN32
@@ -1096,7 +1106,7 @@ int createPath(const std::string &path)
 {
     if (path.empty())
         return 0;
-    auto osPath{ toNativePath(path) };
+    auto osPath{toNativePath(path)};
     if (osPath.back() != filesystem::path::preferred_separator)
         osPath.push_back(filesystem::path::preferred_separator);
     filesystem::path fsPath(osPath);
@@ -1104,7 +1114,8 @@ int createPath(const std::string &path)
     filesystem::create_directories(fsPath, err);
     if (err)
     {
-        LOG_ERROR << "Error " << err.value() << " creating path " << osPath << ": " << err.message();
+        LOG_ERROR << "Error " << err.value() << " creating path " << osPath
+                  << ": " << err.message();
         return -1;
     }
     return 0;
@@ -1220,7 +1231,7 @@ static bool systemRandomBytes(void *ptr, size_t size)
     ((defined(__GLIBC__) && \
       (__GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 25))))
     return getentropy(ptr, size) != -1;
-#elif defined(_WIN32)    // Windows
+#elif defined(_WIN32)  // Windows
     return RtlGenRandom(ptr, size);
 #elif defined(__unix__)  // fallback to /dev/urandom for other/old UNIX
     static std::unique_ptr<FILE, std::function<void(FILE *)> > fptr(

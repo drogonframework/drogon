@@ -355,14 +355,14 @@ void HttpResponseImpl::makeHeaderString(trantor::MsgBuffer &buffer)
             auto fileSize = filesystem::file_size(fsSendfile, err);
             if (err)
             {
-                LOG_SYSERR << fsSendfile << " stat error " << err.value() << ": " << err.message();
+                LOG_SYSERR << fsSendfile << " stat error " << err.value()
+                           << ": " << err.message();
                 return;
             }
-            len = snprintf(
-                buffer.beginWrite(),
-                buffer.writableBytes(),
-                contentLengthFormatString<decltype(fileSize)>(),
-                fileSize);
+            len = snprintf(buffer.beginWrite(),
+                           buffer.writableBytes(),
+                           contentLengthFormatString<decltype(fileSize)>(),
+                           fileSize);
         }
         buffer.hasWritten(len);
         if (headers_.find("connection") == headers_.end())

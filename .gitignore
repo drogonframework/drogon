@@ -35,6 +35,7 @@ build/
 cmake-build-debug/
 .idea/
 lib/inc/drogon/version.h
+lib/inc/drogon/utils/filesystem.h
 html/
 latex/
 .vscode
