@@ -146,7 +146,6 @@ elseif (DROGON_CXX_STANDARD EQUAL 17)
         CXX_STANDARD 17)
     if (check_filesystem_path)
         message(STATUS "Using c++17 filesytem::path")
-        set(HAS_STD_FILESYSTEM_PATH ON)
     else()
         find_package(Boost 1.49.0 COMPONENTS filesystem system REQUIRED)
         message(STATUS "Using Boost filesytem::path")
@@ -158,10 +157,7 @@ elseif (DROGON_CXX_STANDARD EQUAL 17)
     endif()
 else ()
     message(STATUS "use c++20")
-    set(HAS_STD_FILESYSTEM_PATH ON)
 endif ()
-configure_file("${PROJECT_SOURCE_DIR}/cmake/templates/filesystem.h.in"
-    "${PROJECT_SOURCE_DIR}/lib/inc/drogon/utils/filesystem.h" @ONLY)
 
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules/)
 
