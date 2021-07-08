@@ -40,6 +40,7 @@
 #include <drogon/HttpTypes.h>
 #include <drogon/Session.h>
 #include <drogon/utils/Utilities.h>
+#include <drogon/utils/filesystem.h>
 #include <trantor/utils/AsyncFileLogger.h>
 #include <json/json.h>
 
@@ -65,14 +66,6 @@
 #define R_OK 04
 #define W_OK 02
 #endif
-// Switch between native c++17 or boost for c++14
-#ifdef USE_BOOST_FILESYSTEM
-#include <boost/filesystem.hpp>
-namespace fs = boost::filesystem;
-#else   // USE_BOOST_FILESYSTEM
-#include <filesystem>
-namespace fs = std::filesystem;
-#endif  // USE_BOOST_FILESYSTEM
 
 using namespace drogon;
 using namespace std::placeholders;
@@ -668,10 +661,10 @@ HttpAppFramework &HttpAppFrameworkImpl::setUploadPath(const std::string &uploadP
 {
     assert(!uploadPath.empty());
 
-    fs::path fsUploadPath(utils::toNativePath(uploadPath));
+    filesystem::path fsUploadPath(utils::toNativePath(uploadPath));
     if (!fsUploadPath.is_absolute())
     {
-        fs::path fsRoot(utils::toNativePath(rootPath_));
+        filesystem::path fsRoot(utils::toNativePath(rootPath_));
         fsUploadPath = fsRoot / fsUploadPath;
     }
     uploadPath_ = utils::fromNativePath(fsUploadPath.native());

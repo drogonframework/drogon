@@ -29,17 +29,14 @@
 #endif
 #include <sys/stat.h>
 // Switch between native c++17 or boost for c++14
-#ifdef USE_BOOST_FILESYSTEM
-#include <boost/system/error_code.hpp>
-#include <boost/filesystem.hpp>
-namespace fs = boost::filesystem;
-namespace sys = boost::system;
-#else   // USE_BOOST_FILESYSTEM
+#include <drogon/utils/filesystem.h>
+#ifdef HAS_STD_FILESYSTEM_PATH
 #include <system_error>
-#include <filesystem>
-namespace fs = std::filesystem;
-namespace sys = std;
-#endif  // USE_BOOST_FILESYSTEM
+namespace stl = std;
+#else
+#include <boost/system/error_code.hpp>
+namespace stl = boost::system;
+#endif
 
 using namespace drogon;
 
@@ -149,14 +146,14 @@ void StaticFileRouter::route(
             std::string filePath =
                 location.realLocation_ +
                 std::string{restOfThePath.data(), restOfThePath.length()};
-            fs::path fsFilePath(utils::toNativePath(filePath));
-            sys::error_code err;
-            if (!fs::exists(fsFilePath, err))
+            filesystem::path fsFilePath(utils::toNativePath(filePath));
+            std::error_code err;
+            if (!filesystem::exists(fsFilePath, err))
             {
                 defaultHandler_(req, std::move(callback));
                 return;
             }
-            if (fs::is_directory(fsFilePath, err))
+            if (filesystem::is_directory(fsFilePath, err))
             {
                 // Check if path is eligible for an implicit index.html
                 if (implicitPageEnable_)
@@ -227,11 +224,11 @@ void StaticFileRouter::route(
     }
 
     std::string directoryPath = HttpAppFrameworkImpl::instance().getDocumentRoot() + path;
-    fs::path fsDirectoryPath(utils::toNativePath(directoryPath));
-    sys::error_code err;
-    if (fs::exists(fsDirectoryPath, err))
+    filesystem::path fsDirectoryPath(utils::toNativePath(directoryPath));
+    std::error_code err;
+    if (filesystem::exists(fsDirectoryPath, err))
     {
-        if (fs::is_directory(fsDirectoryPath, err))
+        if (filesystem::is_directory(fsDirectoryPath, err))
         {
             // Check if path is eligible for an implicit index.html
             if (implicitPageEnable_)
@@ -379,10 +376,10 @@ void StaticFileRouter::sendStaticFileResponse(
     }
     if (!fileExists)
     {
-        fs::path fsFilePath(utils::toNativePath(filePath));
-        sys::error_code err;
-        if (!fs::exists(fsFilePath, err) ||
-            !fs::is_regular_file(fsFilePath, err))
+        filesystem::path fsFilePath(utils::toNativePath(filePath));
+        std::error_code err;
+        if (!filesystem::exists(fsFilePath, err) ||
+            !filesystem::is_regular_file(fsFilePath, err))
         {
             defaultHandler_(req, std::move(callback));
             return;
@@ -402,10 +399,10 @@ void StaticFileRouter::sendStaticFileResponse(
     {
         // Find compressed file first.
         auto brFileName = filePath + ".br";
-        fs::path fsBrFile(utils::toNativePath(brFileName));
-        sys::error_code err;
-        if (fs::exists(fsBrFile, err) &&
-            fs::is_regular_file(fsBrFile, err))
+        filesystem::path fsBrFile(utils::toNativePath(brFileName));
+        std::error_code err;
+        if (filesystem::exists(fsBrFile, err) &&
+            filesystem::is_regular_file(fsBrFile, err))
         {
             resp =
                 HttpResponse::newFileResponse(brFileName,
@@ -419,10 +416,10 @@ void StaticFileRouter::sendStaticFileResponse(
     {
         // Find compressed file first.
         auto gzipFileName = filePath + ".gz";
-        fs::path fsGzipFile(utils::toNativePath(gzipFileName));
-        sys::error_code err;
-        if (fs::exists(fsGzipFile, err) &&
-            fs::is_regular_file(fsGzipFile, err))
+        filesystem::path fsGzipFile(utils::toNativePath(gzipFileName));
+        std::error_code err;
+        if (filesystem::exists(fsGzipFile, err) &&
+            filesystem::is_regular_file(fsGzipFile, err))
         {
             resp =
                 HttpResponse::newFileResponse(gzipFileName,

@@ -15,20 +15,13 @@
 #pragma once
 #include "HttpUtils.h"
 #include <drogon/utils/string_view.h>
+#include <drogon/utils/filesystem.h>
 #include <drogon/HttpRequest.h>
 
 #include <map>
 #include <string>
 #include <vector>
 #include <memory>
-// Switch between native c++17 or boost for c++14
-#ifdef USE_BOOST_FILESYSTEM
-#include <boost/filesystem.hpp>
-namespace fs = boost::filesystem;
-#else   // USE_BOOST_FILESYSTEM
-#include <filesystem>
-namespace fs = std::filesystem;
-#endif  // USE_BOOST_FILESYSTEM
 
 namespace drogon
 {
@@ -120,7 +113,7 @@ class HttpFileImpl
     /// Return the md5 string of the file
     std::string getMd5() const;
 //    int saveTo(const std::string &pathAndFileName) const;
-    int saveTo(const fs::path &pathAndFileName) const;
+    int saveTo(const filesystem::path &pathAndFileName) const;
     void setRequest(const HttpRequestPtr &req)
     {
         requestPtr_ = req;

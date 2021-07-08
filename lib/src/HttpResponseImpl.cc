@@ -17,26 +17,18 @@
 #include "HttpUtils.h"
 #include <drogon/HttpViewData.h>
 #include <drogon/IOThreadStorage.h>
+#include <drogon/utils/filesystem.h>
 #include <fstream>
 #include <memory>
 #include <cstdio>
 #include <sys/stat.h>
 #include <trantor/utils/Logger.h>
-//#ifdef _WIN32
-//#define stat _wstati64
-//#endif
 // Switch between native c++17 or boost for c++14
-#ifdef USE_BOOST_FILESYSTEM
-#include <boost/system/error_code.hpp>
-#include <boost/filesystem.hpp>
-namespace fs = boost::filesystem;
-namespace sys = boost::system;
-#else   // USE_BOOST_FILESYSTEM
-#include <system_error>
-#include <filesystem>
-namespace fs = std::filesystem;
-namespace sys = std;
-#endif  // USE_BOOST_FILESYSTEM
+#ifdef HAS_STD_FILESYSTEM_PATH
+namespace stl = std;
+#else
+namespace stl = boost::system;
+#endif
 
 using namespace trantor;
 using namespace drogon;
@@ -358,12 +350,12 @@ void HttpResponseImpl::makeHeaderString(trantor::MsgBuffer &buffer)
         }
         else
         {
-            sys::error_code err;
-            fs::path fsSendfile(utils::toNativePath(sendfileName_));
-            auto fileSize = fs::file_size(fsSendfile, err);
+            stl::error_code err;
+            filesystem::path fsSendfile(utils::toNativePath(sendfileName_));
+            auto fileSize = filesystem::file_size(fsSendfile, err);
             if (err)
             {
-                LOG_SYSERR << sendfileName_ << " stat error" << err.value() << ": " << err.message();
+                LOG_SYSERR << fsSendfile << " stat error " << err.value() << ": " << err.message();
                 return;
             }
             len = snprintf(

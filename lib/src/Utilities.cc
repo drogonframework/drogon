@@ -13,6 +13,7 @@
  */
 
 #include <drogon/utils/Utilities.h>
+#include <drogon/utils/filesystem.h>
 #include <trantor/utils/Logger.h>
 #include <drogon/config.h>
 #ifdef OpenSSL_FOUND
@@ -52,17 +53,13 @@
 #include <stdarg.h>
 
 // Switch between native c++17 or boost for c++14
-#ifdef USE_BOOST_FILESYSTEM
-#include <boost/system/error_code.hpp>
-#include <boost/filesystem.hpp>
-namespace fs = boost::filesystem;
-namespace sys = boost::system;
-#else   // USE_BOOST_FILESYSTEM
+#ifdef HAS_STD_FILESYSTEM_PATH
 #include <system_error>
-#include <filesystem>
-namespace fs = std::filesystem;
-namespace sys = std;
-#endif  // USE_BOOST_FILESYSTEM
+namespace stl = std;
+#else
+#include <boost/system/error_code.hpp>
+namespace stl = boost::system;
+#endif
 
 #ifdef _WIN32
 char *strptime(const char *s, const char *f, struct tm *tm)
@@ -1081,9 +1078,10 @@ std::wstring toNativePath(const std::string& strUtf8Path)
     // Consider path to be utf-8, to allow using paths with unicode characters
     auto wPath{ utf8_decode(strUtf8Path) };
     // Not needed: normalize path (just replaces '/' with '\')
-//    std::filesystem::path fsPath(wPath, std::filesystem::path::auto_format);
-    fs::path fsPath(wPath);
-    return fsPath.make_preferred().native();
+    filesystem::path fsPath(wPath);
+    // Not needed: normalize path (just replaces '/' with '\')
+    fsPath.make_preferred();
+    return fsPath.native();
 }
 
 std::string fromNativePath(std::wstring wstrPath)
@@ -1099,14 +1097,14 @@ int createPath(const std::string &path)
     if (path.empty())
         return 0;
     auto osPath{ toNativePath(path) };
-    if (osPath.back() != fs::path::preferred_separator)
-        osPath.push_back(fs::path::preferred_separator);
-    fs::path fsPath(osPath);
-    sys::error_code err;
-    fs::create_directories(fsPath, err);
+    if (osPath.back() != filesystem::path::preferred_separator)
+        osPath.push_back(filesystem::path::preferred_separator);
+    filesystem::path fsPath(osPath);
+    stl::error_code err;
+    filesystem::create_directories(fsPath, err);
     if (err)
     {
-        LOG_ERROR << "Error" << err.value() << "creating path" << path << ":" << err.message();
+        LOG_ERROR << "Error " << err.value() << " creating path " << osPath << ": " << err.message();
         return -1;
     }
     return 0;

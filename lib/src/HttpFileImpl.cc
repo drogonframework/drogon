@@ -18,13 +18,13 @@
 #include <fstream>
 #include <iostream>
 // Switch between native c++17 or boost for c++14
-#ifdef USE_BOOST_FILESYSTEM
-#include <boost/system/error_code.hpp>
-namespace stl = boost::system;
-#else   // USE_BOOST_FILESYSTEM
+#ifdef HAS_STD_FILESYSTEM_PATH
 #include <system_error>
 namespace stl = std;
-#endif  // USE_BOOST_FILESYSTEM
+#else   // HAS_STD_FILESYSTEM_PATH
+#include <boost/system/error_code.hpp>
+namespace stl = boost::system;
+#endif  // HAS_STD_FILESYSTEM_PATH
 
 using namespace drogon;
 
@@ -38,36 +38,38 @@ int HttpFileImpl::save(const std::string &path) const
     assert(!path.empty());
     if (fileName_.empty())
         return -1;
-    fs::path fsPath(utils::toNativePath(path));
+    filesystem::path fsPath(utils::toNativePath(path));
     if (!fsPath.is_absolute())
     {
-        fs::path fsUploadPath(utils::toNativePath(HttpAppFrameworkImpl::instance().getUploadPath()));
+        filesystem::path fsUploadPath(utils::toNativePath(
+            HttpAppFrameworkImpl::instance().getUploadPath()));
         fsPath = fsUploadPath / fsPath;
     }
-    fs::path fsFileName(utils::toNativePath(fileName_));
+    filesystem::path fsFileName(utils::toNativePath(fileName_));
     return saveTo(fsPath / fsFileName);
 }
 int HttpFileImpl::saveAs(const std::string &fileName) const
 {
     assert(!fileName.empty());
-    fs::path fsFileName(utils::toNativePath(fileName));
+    filesystem::path fsFileName(utils::toNativePath(fileName));
     if (!fsFileName.is_absolute())
     {
-        fs::path fsUploadPath(utils::toNativePath(HttpAppFrameworkImpl::instance().getUploadPath()));
+        filesystem::path fsUploadPath(utils::toNativePath(
+            HttpAppFrameworkImpl::instance().getUploadPath()));
         fsFileName = fsUploadPath / fsFileName;
     }
     if (fsFileName.has_parent_path())
     {
         stl::error_code err;
-        fs::create_directories(fsFileName.parent_path(), err);
+        filesystem::create_directories(fsFileName.parent_path(), err);
         if (err)
             return -1;
     }
     return saveTo(fsFileName);
 }
-int HttpFileImpl::saveTo(const fs::path &pathAndFileName) const
+int HttpFileImpl::saveTo(const filesystem::path &pathAndFileName) const
 {
-    LOG_TRACE << "save uploaded file:" << pathAndFileName.string();
+    LOG_TRACE << "save uploaded file:" << pathAndFileName;
     std::ofstream file(pathAndFileName.native(), std::ios::binary);
     if (file.is_open())
     {
