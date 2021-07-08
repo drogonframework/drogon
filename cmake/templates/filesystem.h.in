@@ -16,7 +16,7 @@
 #ifdef HAS_STD_FILESYSTEM_PATH
 #include <filesystem>
 #else
-#include <boost/filesystem>
+#include <boost/filesystem.hpp>
 #endif
 
 namespace drogon {
