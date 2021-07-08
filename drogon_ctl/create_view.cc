@@ -291,7 +291,8 @@ void create_view::createViewFiles(std::vector<std::string> &cspFileNames)
     for (auto const &file : cspFileNames)
     {
         std::cout << "create view:" << file << std::endl;
-        createViewFile(file);
+        if (createViewFile(file) != 0)
+            exit(1);
     }
 }
 int create_view::createViewFile(const std::string &script_filename)
