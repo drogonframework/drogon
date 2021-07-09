@@ -365,7 +365,7 @@ std::string getUuid()
 #endif
 #if _BYTE_ORDER == _LITTLE_ENDIAN
     uuid_enc_le(binstr, uuid);
-#else /* _BYTE_ORDER != _LITTLE_ENDIAN */
+#else  /* _BYTE_ORDER != _LITTLE_ENDIAN */
     uuid_enc_be(binstr, uuid);
 #endif /* _BYTE_ORDER == _LITTLE_ENDIAN */
     delete uuid;
@@ -1231,7 +1231,7 @@ static bool systemRandomBytes(void *ptr, size_t size)
     ((defined(__GLIBC__) && \
       (__GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 25))))
     return getentropy(ptr, size) != -1;
-#elif defined(_WIN32)  // Windows
+#elif defined(_WIN32)    // Windows
     return RtlGenRandom(ptr, size);
 #elif defined(__unix__)  // fallback to /dev/urandom for other/old UNIX
     static std::unique_ptr<FILE, std::function<void(FILE *)> > fptr(

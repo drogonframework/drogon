@@ -176,7 +176,7 @@ DROGON_EXPORT std::wstring toNativePath(const std::string &strPath);
  * separator.
  */
 DROGON_EXPORT std::string fromNativePath(std::wstring strPath);
-#else  // _WIN32
+#else   // _WIN32
 inline const std::string &toNativePath(const std::string &strPath)
 {
     return strPath;

@@ -315,7 +315,7 @@ void StaticFileRouter::sendStaticFileResponse(
             // implemented by M$, even in c++20, so keep calls to stat()
 #ifdef _WIN32
             struct _stati64 fileStat;
-#else  // _WIN32
+#else   // _WIN32
             struct stat fileStat;
 #endif  // _WIN32
             if (stat(utils::toNativePath(filePath).c_str(), &fileStat) == 0 &&
