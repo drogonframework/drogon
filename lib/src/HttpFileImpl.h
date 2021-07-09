@@ -126,4 +126,3 @@ class HttpFileImpl
     HttpRequestPtr requestPtr_;
 };
 }  // namespace drogon
-
