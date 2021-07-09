@@ -29,7 +29,7 @@
 #endif
 #include <sys/stat.h>
 // Switch between native c++17 or boost for c++14
-#include <drogon/utils/filesystem.h>
+#include "filesystem.h"
 #ifdef HAS_STD_FILESYSTEM_PATH
 #include <system_error>
 namespace stl = std;

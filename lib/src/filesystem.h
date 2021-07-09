@@ -16,7 +16,7 @@
  * - Windows: Visual Studio >= 2019 (c++20)
  * - Others: should already have it in c++17
  */
-#if (defined(__APPLE__) && __cplusplus > 201707L) ||              \
+#if (defined(__APPLE__) && __MAC_OS_X_VERSION_MAX_ALLOWED >= 101500L) ||              \
     (defined(_WIN32) && defined(_MSC_VER) && _MSC_VER >= 1920) || \
     (!defined(__APPLE__) && !defined(_WIN32) && __cplusplus >= 201703L)
 #define HAS_STD_FILESYSTEM_PATH
