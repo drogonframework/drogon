@@ -121,6 +121,9 @@ jobs:
         sudo add-apt-repository ppa:mhier/libboost-latest
         sudo apt update
         sudo apt install boost1.67
+        sudo apt remove cmake
+        sudo apt install -y python-pip
+        pip install cmake --upgrade
 
     - name: (Linux) Install postgresql
       if: matrix.os == 'ubuntu-20.04'

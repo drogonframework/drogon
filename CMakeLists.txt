@@ -136,7 +136,6 @@ if (DROGON_CXX_STANDARD EQUAL 14)
     message(STATUS "Boost include dir: " ${Boost_INCLUDE_DIR})
     include_directories(${BOOST_INCLUDE_DIRS})
     target_link_libraries(${PROJECT_NAME} PUBLIC Boost::boost)
-    target_link_libraries(${PROJECT_NAME} PUBLIC Boost::system)
     list(APPEND INCLUDE_DIRS_FOR_DYNAMIC_VIEW ${Boost_INCLUDE_DIR})
 elseif (DROGON_CXX_STANDARD EQUAL 17)
     # With C++17, use Boost if std::filesystem::path is missing
