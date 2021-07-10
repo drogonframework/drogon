@@ -132,10 +132,12 @@ if (DROGON_CXX_STANDARD EQUAL 14)
     # With C++14, use Boost to support any and string_view
     message(STATUS "use c++14")
     find_package(Boost 1.61.0 REQUIRED)
+    find_package(Boost 1.61.0 REQUIRED COMPONENTS filesystem)
     message(STATUS "Using Boost filesytem and string_view")
     message(STATUS "Boost include dir: " ${Boost_INCLUDE_DIR})
     include_directories(${BOOST_INCLUDE_DIRS})
     target_link_libraries(${PROJECT_NAME} PUBLIC Boost::boost)
+    target_link_libraries(${PROJECT_NAME} PUBLIC Boost::filesystem)
     list(APPEND INCLUDE_DIRS_FOR_DYNAMIC_VIEW ${Boost_INCLUDE_DIR})
 elseif (DROGON_CXX_STANDARD EQUAL 17)
     # With C++17, use Boost if std::filesystem::path is missing
