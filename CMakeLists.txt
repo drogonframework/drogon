@@ -77,7 +77,7 @@ else (BUILD_DROGON_SHARED)
     add_library(${PROJECT_NAME} STATIC)
 endif (BUILD_DROGON_SHARED)
 
-if (CMAKE_CXX_COMPILER_ID MATCHES GNU)
+if (NOT ${CMAKE_PLATFORM_NAME} STREQUAL "Windows" AND CMAKE_CXX_COMPILER_ID MATCHES GNU)
     target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Werror)
 endif ()
 
