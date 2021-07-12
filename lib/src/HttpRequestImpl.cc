@@ -287,7 +287,8 @@ void HttpRequestImpl::appendToBuffer(trantor::MsgBuffer *output) const
                 content.append("\"; filename=\"");
                 content.append(file.fileName());
                 content.append("\"\r\n\r\n");
-                std::ifstream infile(file.path(), std::ifstream::binary);
+                std::ifstream infile(utils::toNativePath(file.path()),
+                                     std::ifstream::binary);
                 if (!infile)
                 {
                     LOG_ERROR << file.path() << " not found";

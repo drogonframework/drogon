@@ -13,6 +13,7 @@
  */
 
 #include <drogon/utils/Utilities.h>
+#include "filesystem.h"
 #include <trantor/utils/Logger.h>
 #include <drogon/config.h>
 #ifdef OpenSSL_FOUND
@@ -50,6 +51,15 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <stdarg.h>
+
+// Switch between native c++17 or boost for c++14
+#ifdef HAS_STD_FILESYSTEM_PATH
+#include <system_error>
+namespace stl = std;
+#else
+#include <boost/system/error_code.hpp>
+namespace stl = boost::system;
+#endif
 
 #ifdef _WIN32
 char *strptime(const char *s, const char *f, struct tm *tm)
@@ -1043,61 +1053,70 @@ std::string formattedString(const char *format, ...)
     return strBuffer;
 }
 
+#ifdef _WIN32
+std::string utf8_encode(const std::wstring &wstr)
+{
+    if (wstr.empty())
+        return {};
+    int nSizeNeeded = ::WideCharToMultiByte(
+        CP_UTF8, 0, &wstr[0], (int)wstr.size(), NULL, 0, NULL, NULL);
+    std::string strTo(nSizeNeeded, 0);
+    ::WideCharToMultiByte(CP_UTF8,
+                          0,
+                          &wstr[0],
+                          (int)wstr.size(),
+                          &strTo[0],
+                          nSizeNeeded,
+                          NULL,
+                          NULL);
+    return strTo;
+}
+std::wstring utf8_decode(const std::string &str)
+{
+    if (str.empty())
+        return {};
+    int nSizeNeeded =
+        ::MultiByteToWideChar(CP_UTF8, 0, &str[0], (int)str.size(), NULL, 0);
+    std::wstring wstrTo(nSizeNeeded, 0);
+    ::MultiByteToWideChar(
+        CP_UTF8, 0, &str[0], (int)str.size(), &wstrTo[0], nSizeNeeded);
+    return wstrTo;
+}
+
+std::wstring toNativePath(const std::string &strUtf8Path)
+{
+    // Consider path to be utf-8, to allow using paths with unicode characters
+    auto wPath{utf8_decode(strUtf8Path)};
+    // Not needed: normalize path (just replaces '/' with '\')
+    filesystem::path fsPath(wPath);
+    // Not needed: normalize path (just replaces '/' with '\')
+    fsPath.make_preferred();
+    return fsPath.native();
+}
+
+std::string fromNativePath(std::wstring wstrPath)
+{
+    std::replace(wstrPath.begin(), wstrPath.end(), L'\\', L'/');
+    auto strPath{utf8_encode(wstrPath)};
+    return strPath;
+}
+#endif  // _WIN32
+
 int createPath(const std::string &path)
 {
-    auto tmpPath = path;
-    std::stack<std::string> pathStack;
-#ifdef _WIN32
-    while (_access(tmpPath.c_str(), 06) != 0)
-#else
-    while (access(tmpPath.c_str(), F_OK) != 0)
-#endif
+    if (path.empty())
+        return 0;
+    auto osPath{toNativePath(path)};
+    if (osPath.back() != filesystem::path::preferred_separator)
+        osPath.push_back(filesystem::path::preferred_separator);
+    filesystem::path fsPath(osPath);
+    stl::error_code err;
+    filesystem::create_directories(fsPath, err);
+    if (err)
     {
-        if (tmpPath == "./" || tmpPath == "/")
-            return -1;
-        while (tmpPath[tmpPath.length() - 1] == '/')
-            tmpPath.resize(tmpPath.length() - 1);
-        auto pos = tmpPath.rfind('/');
-        if (pos != std::string::npos)
-        {
-            pathStack.push(tmpPath.substr(pos));
-            tmpPath = tmpPath.substr(0, pos + 1);
-        }
-        else
-        {
-            pathStack.push(tmpPath);
-            tmpPath.clear();
-            break;
-        }
-    }
-    while (pathStack.size() > 0)
-    {
-        if (tmpPath.empty())
-        {
-            tmpPath = pathStack.top();
-        }
-        else
-        {
-            if (tmpPath[tmpPath.length() - 1] == '/')
-            {
-                tmpPath.append(pathStack.top());
-            }
-            else
-            {
-                tmpPath.append("/").append(pathStack.top());
-            }
-        }
-        pathStack.pop();
-
-#ifdef _WIN32
-        if (_mkdir(tmpPath.c_str()) == -1)
-#else
-        if (mkdir(tmpPath.c_str(), 0755) == -1)
-#endif
-        {
-            LOG_ERROR << "Can't create path:" << path;
-            return -1;
-        }
+        LOG_ERROR << "Error " << err.value() << " creating path " << osPath
+                  << ": " << err.message();
+        return -1;
     }
     return 0;
 }

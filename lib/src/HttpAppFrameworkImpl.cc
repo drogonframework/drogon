@@ -40,6 +40,7 @@
 #include <drogon/HttpTypes.h>
 #include <drogon/Session.h>
 #include <drogon/utils/Utilities.h>
+#include "filesystem.h"
 #include <trantor/utils/AsyncFileLogger.h>
 #include <json/json.h>
 
@@ -58,8 +59,12 @@
 #include <sys/file.h>
 #include <uuid.h>
 #include <unistd.h>
+#define os_access access
 #else
 #include <io.h>
+#define os_access _waccess
+#define R_OK 04
+#define W_OK 02
 #endif
 
 using namespace drogon;
@@ -393,20 +398,14 @@ HttpAppFramework &HttpAppFrameworkImpl::setLogPath(
 {
     if (logPath.empty())
         return *this;
-#ifdef _WIN32
-    if (_access(logPath.c_str(), 0) != 0)
-#else
-    if (access(logPath.c_str(), 0) != 0)
-#endif
+    // std::filesystem does not provide a method to check access permissions, so
+    // keep existing code
+    if (os_access(utils::toNativePath(logPath).c_str(), 0) != 0)
     {
         std::cerr << "Log path does not exist!\n";
         exit(1);
     }
-#ifdef _WIN32
-    if (_access(logPath.c_str(), 06) != 0)
-#else
-    if (access(logPath.c_str(), R_OK | W_OK) != 0)
-#endif
+    if (os_access(utils::toNativePath(logPath).c_str(), R_OK | W_OK) != 0)
     {
         std::cerr << "Unable to access log path!\n";
         exit(1);
@@ -493,11 +492,9 @@ void HttpAppFrameworkImpl::run()
     // set logger
     if (!logPath_.empty())
     {
-#ifdef _WIN32
-        if (_access(logPath_.c_str(), 06) != 0)
-#else
-        if (access(logPath_.c_str(), R_OK | W_OK) != 0)
-#endif
+        // std::filesystem does not provide a method to check access
+        // permissions, so keep existing code
+        if (os_access(utils::toNativePath(logPath_).c_str(), R_OK | W_OK) != 0)
         {
             LOG_ERROR << "log file path not exist";
             abort();
@@ -666,22 +663,14 @@ HttpAppFramework &HttpAppFrameworkImpl::setUploadPath(
     const std::string &uploadPath)
 {
     assert(!uploadPath.empty());
-    if (uploadPath[0] == '/' ||
-        (uploadPath.length() >= 2 && uploadPath[0] == '.' &&
-         uploadPath[1] == '/') ||
-        (uploadPath.length() >= 3 && uploadPath[0] == '.' &&
-         uploadPath[1] == '.' && uploadPath[2] == '/') ||
-        uploadPath == "." || uploadPath == "..")
+
+    filesystem::path fsUploadPath(utils::toNativePath(uploadPath));
+    if (!fsUploadPath.is_absolute())
     {
-        uploadPath_ = uploadPath;
+        filesystem::path fsRoot(utils::toNativePath(rootPath_));
+        fsUploadPath = fsRoot / fsUploadPath;
     }
-    else
-    {
-        if (rootPath_[rootPath_.length() - 1] == '/')
-            uploadPath_ = rootPath_ + uploadPath;
-        else
-            uploadPath_ = rootPath_ + "/" + uploadPath;
-    }
+    uploadPath_ = utils::fromNativePath(fsUploadPath.native());
     return *this;
 }
 void HttpAppFrameworkImpl::findSessionForRequest(const HttpRequestImplPtr &req)

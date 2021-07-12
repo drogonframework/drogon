@@ -17,14 +17,19 @@
 #include "HttpUtils.h"
 #include <drogon/HttpViewData.h>
 #include <drogon/IOThreadStorage.h>
+#include "filesystem.h"
 #include <fstream>
 #include <memory>
 #include <cstdio>
 #include <sys/stat.h>
 #include <trantor/utils/Logger.h>
-#ifdef _WIN32
-#define stat _stati64
+// Switch between native c++17 or boost for c++14
+#ifdef HAS_STD_FILESYSTEM_PATH
+namespace stl = std;
+#else
+namespace stl = boost::system;
 #endif
+
 using namespace trantor;
 using namespace drogon;
 
@@ -235,7 +240,7 @@ HttpResponsePtr HttpResponse::newFileResponse(
     const std::string &attachmentFileName,
     ContentType type)
 {
-    std::ifstream infile(fullPath, std::ifstream::binary);
+    std::ifstream infile(utils::toNativePath(fullPath), std::ifstream::binary);
     LOG_TRACE << "send http file:" << fullPath;
     if (!infile)
     {
@@ -345,19 +350,19 @@ void HttpResponseImpl::makeHeaderString(trantor::MsgBuffer &buffer)
         }
         else
         {
-            struct stat filestat
+            stl::error_code err;
+            filesystem::path fsSendfile(utils::toNativePath(sendfileName_));
+            auto fileSize = filesystem::file_size(fsSendfile, err);
+            if (err)
             {
-            };
-            if (stat(sendfileName_.data(), &filestat) < 0)
-            {
-                LOG_SYSERR << sendfileName_ << " stat error";
+                LOG_SYSERR << fsSendfile << " stat error " << err.value()
+                           << ": " << err.message();
                 return;
             }
-            len = snprintf(
-                buffer.beginWrite(),
-                buffer.writableBytes(),
-                contentLengthFormatString<decltype(filestat.st_size)>(),
-                filestat.st_size);
+            len = snprintf(buffer.beginWrite(),
+                           buffer.writableBytes(),
+                           contentLengthFormatString<decltype(fileSize)>(),
+                           fileSize);
         }
         buffer.hasWritten(len);
         if (headers_.find("connection") == headers_.end())
