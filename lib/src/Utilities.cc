@@ -1053,55 +1053,6 @@ std::string formattedString(const char *format, ...)
     return strBuffer;
 }
 
-#ifdef _WIN32
-std::string utf8_encode(const std::wstring &wstr)
-{
-    if (wstr.empty())
-        return {};
-    int nSizeNeeded = ::WideCharToMultiByte(
-        CP_UTF8, 0, &wstr[0], (int)wstr.size(), NULL, 0, NULL, NULL);
-    std::string strTo(nSizeNeeded, 0);
-    ::WideCharToMultiByte(CP_UTF8,
-                          0,
-                          &wstr[0],
-                          (int)wstr.size(),
-                          &strTo[0],
-                          nSizeNeeded,
-                          NULL,
-                          NULL);
-    return strTo;
-}
-std::wstring utf8_decode(const std::string &str)
-{
-    if (str.empty())
-        return {};
-    int nSizeNeeded =
-        ::MultiByteToWideChar(CP_UTF8, 0, &str[0], (int)str.size(), NULL, 0);
-    std::wstring wstrTo(nSizeNeeded, 0);
-    ::MultiByteToWideChar(
-        CP_UTF8, 0, &str[0], (int)str.size(), &wstrTo[0], nSizeNeeded);
-    return wstrTo;
-}
-
-std::wstring toNativePath(const std::string &strUtf8Path)
-{
-    // Consider path to be utf-8, to allow using paths with unicode characters
-    auto wPath{utf8_decode(strUtf8Path)};
-    // Not needed: normalize path (just replaces '/' with '\')
-    filesystem::path fsPath(wPath);
-    // Not needed: normalize path (just replaces '/' with '\')
-    fsPath.make_preferred();
-    return fsPath.native();
-}
-
-std::string fromNativePath(std::wstring wstrPath)
-{
-    std::replace(wstrPath.begin(), wstrPath.end(), L'\\', L'/');
-    auto strPath{utf8_encode(wstrPath)};
-    return strPath;
-}
-#endif  // _WIN32
-
 int createPath(const std::string &path)
 {
     if (path.empty())

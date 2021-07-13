@@ -17,6 +17,7 @@
 #include <drogon/exports.h>
 #include <trantor/utils/Date.h>
 #include <trantor/utils/Funcs.h>
+#include <trantor/utils/Utilities.h>
 #include <drogon/utils/string_view.h>
 #include <memory>
 #include <string>
@@ -154,38 +155,110 @@ DROGON_EXPORT std::string formattedString(const char *format, ...);
  */
 DROGON_EXPORT int createPath(const std::string &path);
 
+/**
+ * @details Convert a wide string path with arbitrary directory separators
+ * to a UTF-8 portable path for use with trantor.
+ *
+ * This is a helper, mainly for Windows and multi-platform projects.
+ *
+ * @note On Windows, backslash directory separators are converted to slash to
+ * keep portable paths.
+ *
+ * @remarks On other OSes, backslashes are not converted to slash, since they
+ * are valid characters for directory/file names.
+ *
+ * @param strPath Wide string path.
+ *
+ * @return std::string UTF-8 path, with slash directory separator.
+ */
+inline std::string fromWidePath(const std::wstring &strPath)
+{
+    return trantor::utils::fromWidePath(strPath);
+}
+
+/**
+ * @details Convert a UTF-8 path with arbitrary directory separator to a wide
+ * string path.
+ *
+ * This is a helper, mainly for Windows and multi-platform projects.
+ *
+ * @note On Windows, slash directory separators are converted to backslash.
+ * Although it accepts both slash and backslash as directory separator in its
+ * API, it is better to stick to its standard.
+
+ * @remarks On other OSes, slashes are not converted to backslashes, since they
+ * are not interpreted as directory separators and are valid characters for
+ * directory/file names.
+ *
+ * @param strUtf8Path Ascii path considered as being UTF-8.
+ *
+ * @return std::wstring path with, on windows, standard backslash directory
+ * separator to stick to its standard.
+ */
+inline std::wstring toWidePath(const std::string &strUtf8Path)
+{
+    return trantor::utils::toWidePath(strUtf8Path);
+}
+
+/**
+ * @brief Convert a generic (UTF-8) path with to an OS native path.
+ * @details This is a helper, mainly for Windows and multi-platform projects.
+ *
+ * On Windows, slash directory separators are converted to backslash, and a
+ * wide string is returned.
+ *
+ * On other OSes, returns an UTF-8 string _without_ altering the directory
+ * separators.
+ *
+ * @param strPath Wide string or UTF-8 path.
+ *
+ * @return An OS path, suitable for use with the OS API.
+ */
 #ifdef _WIN32
-/**
- * @brief Convert a UTF-8 path with arbitrary directory separator to a standard
- * Windows UCS2 path.
- * @note Although windows accept both slash and backslash as directory
- * separator, it is better to stick to its standard.
- *
- * @param strUtf8Path Ascii path considered as being UTF-8
- *
- * @return std::wstring path, with windows standard backslash directory
- * separator.
- */
-DROGON_EXPORT std::wstring toNativePath(const std::string &strPath);
-/**
- * @brief Convert a UCS2 to an UTF-8 path.
- *
- * @param strPath Wide char unicode path
- *
- * @return std::string path in UTF-8 unicode, with standard '/' directory
- * separator.
- */
-DROGON_EXPORT std::string fromNativePath(std::wstring strPath);
-#else   // _WIN32
+inline std::wstring toNativePath(const std::string &strPath)
+{
+    return trantor::utils::toNativePath(strPath);
+}
+inline const std::wstring &toNativePath(const std::wstring &strPath)
+{
+    return trantor::utils::toNativePath(strPath);
+}
+#else   // __WIN32
 inline const std::string &toNativePath(const std::string &strPath)
 {
-    return strPath;
+    return trantor::utils::toNativePath(strPath);
 }
-inline const std::string &fromNativePath(const std::string &strPath)
+inline std::string toNativePath(const std::wstring &strPath)
 {
-    return strPath;
+    return trantor::utils::toNativePath(strPath);
 }
 #endif  // _WIN32
+/**
+ * @brief Convert a OS native path (wide string on Windows) to a generic UTF-8
+ * path.
+ * @details This is a helper, mainly for Windows and multi-platform projects.
+ *
+ * On Windows, backslash directory separators are converted to slash, and a
+ * a UTF-8 string is returned, suitable for libraries that supports UTF-8 paths
+ * like OpenSSL or drogon.
+ *
+ * On other OSes, returns an UTF-8 string without altering the directory
+ * separators (backslashes are *NOT* replaced with slashes, since they
+ * are valid characters for directory/file names).
+ *
+ * @param strPath Wide string or UTF-8 path.
+ *
+ * @return A generic path.
+ */
+inline const std::string &fromNativePath(const std::string &strPath)
+{
+    return trantor::utils::fromNativePath(strPath);
+}
+// Convert on all systems
+inline std::string fromNativePath(const std::wstring &strPath)
+{
+    return trantor::utils::fromNativePath(strPath);
+}
 
 /// Replace all occurances of from to to inplace
 /**
