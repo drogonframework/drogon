@@ -17,7 +17,7 @@ option(BUILD_EXAMPLES "Build examples" ${BUILD_PROGRAMS})
 option(BUILD_ORM "Build orm" ON)
 option(COZ_PROFILING "Use coz for profiling" OFF)
 option(BUILD_DROGON_SHARED "Build drogon as a shared lib" OFF)
-option(BUILD_DOC "Build Doxygen documentation" FALSE)
+option(BUILD_DOC "Build Doxygen documentation" OFF)
 
 include(CMakeDependentOption)
 CMAKE_DEPENDENT_OPTION(BUILD_POSTGRESQL "Build with postgresql support" ON "BUILD_ORM" OFF)
