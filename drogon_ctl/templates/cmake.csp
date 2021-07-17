@@ -77,6 +77,3 @@ target_sources(${PROJECT_NAME}_test
                PRIVATE
                ${TEST_SRC})
 ParseAndAddDrogonTests(${PROJECT_NAME}_test)
-target_include_directories(${PROJECT_NAME}_test
-                           PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-                                   ${CMAKE_CURRENT_SOURCE_DIR}/models)
