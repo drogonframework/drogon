@@ -67,6 +67,11 @@ static void newModelConfigFile(std::ofstream &configFile)
     auto templ = DrTemplateBase::newTemplate("model_json");
     configFile << templ->genText();
 }
+static void newTestMainFile(std::ofstream &mainFile)
+{
+    auto templ = DrTemplateBase::newTemplate("test_main");
+    mainFile << templ->genText();
+}
 void create_project::createProject(const std::string &projectName)
 {
 #ifdef _WIN32
@@ -100,6 +105,7 @@ void create_project::createProject(const std::string &projectName)
     drogon::utils::createPath("plugins");
     drogon::utils::createPath("build");
     drogon::utils::createPath("models");
+    drogon::utils::createPath("test");
 
     std::ofstream gitFile(".gitignore", std::ofstream::out);
     newGitIgFile(gitFile);
@@ -107,4 +113,6 @@ void create_project::createProject(const std::string &projectName)
     newConfigFile(configFile);
     std::ofstream modelConfigFile("models/model.json", std::ofstream::out);
     newModelConfigFile(modelConfigFile);
+    std::ofstream testMainFile("test/test_main.cc", std::ofstream::out);
+    newTestMainFile(testMainFile);
 }
