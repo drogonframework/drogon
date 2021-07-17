@@ -18,16 +18,19 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_executable(${PROJECT_NAME} main.cc)
+add_executable(${PROJECT_NAME}_test)
 
 # ##############################################################################
 # If you include the drogon source code locally in your project, use this method
 # to add drogon 
 # add_subdirectory(drogon) 
 # target_link_libraries(${PROJECT_NAME} PRIVATE drogon)
+# target_link_libraries(${PROJECT_NAME}_test PRIVATE drogon)
 #
 # and comment out the following lines
 find_package(Drogon CONFIG REQUIRED)
 target_link_libraries(${PROJECT_NAME} PRIVATE Drogon::Drogon)
+target_link_libraries(${PROJECT_NAME}_test PRIVATE Drogon::Drogon)
 
 # ##############################################################################
 
@@ -68,3 +71,11 @@ target_sources(${PROJECT_NAME}
 # ##############################################################################
 # uncomment the following line for dynamically loading views 
 # set_property(TARGET ${PROJECT_NAME} PROPERTY ENABLE_EXPORTS ON)
+
+# ##############################################################################
+
+aux_source_directory(test TEST_SRC)
+target_sources(${PROJECT_NAME}_test
+               PRIVATE
+               ${TEST_SRC})
+ParseAndAddDrogonTests(${PROJECT_NAME}_test)
