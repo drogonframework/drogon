@@ -14,9 +14,10 @@
 
 #include "HttpResponseParser.h"
 #include "HttpResponseImpl.h"
-#include <iostream>
 #include <trantor/utils/Logger.h>
 #include <trantor/utils/MsgBuffer.h>
+#include <algorithm>
+
 using namespace trantor;
 using namespace drogon;
 
@@ -142,9 +143,16 @@ bool HttpResponseParser::parseResponse(MsgBuffer *buf)
                         {
                             if (responsePtr_->statusCode() == k204NoContent ||
                                 (responsePtr_->statusCode() ==
-                                     k101SwitchingProtocols &&
-                                 responsePtr_->getHeaderBy("upgrade") ==
-                                     "websocket"))
+                                         k101SwitchingProtocols &&
+                                     [this]() -> bool {
+                                    std::string upgradeValue =
+                                        responsePtr_->getHeaderBy("upgrade");
+                                    std::transform(upgradeValue.begin(),
+                                                   upgradeValue.end(),
+                                                   upgradeValue.begin(),
+                                                   tolower);
+                                    return upgradeValue == "websocket";
+                                }()))
                             {
                                 // The Websocket response may not have a
                                 // content-length header.
