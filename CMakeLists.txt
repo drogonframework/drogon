@@ -17,6 +17,7 @@ option(BUILD_EXAMPLES "Build examples" ${BUILD_PROGRAMS})
 option(BUILD_ORM "Build orm" ON)
 option(COZ_PROFILING "Use coz for profiling" OFF)
 option(BUILD_DROGON_SHARED "Build drogon as a shared lib" OFF)
+option(BUILD_DOC "Build Doxygen documentation" OFF)
 
 include(CMakeDependentOption)
 CMAKE_DEPENDENT_OPTION(BUILD_POSTGRESQL "Build with postgresql support" ON "BUILD_ORM" OFF)
@@ -685,4 +686,43 @@ install(EXPORT DrogonTargets
     DESTINATION "${INSTALL_DROGON_CMAKE_DIR}"
     NAMESPACE Drogon::
     COMPONENT dev)
+
+# Doxygen documentation
+find_package(Doxygen OPTIONAL_COMPONENTS dot dia)
+if(DOXYGEN_FOUND)
+  set(DOXYGEN_PROJECT_BRIEF "C++14/17-based HTTP application framework")
+  set(DOXYGEN_OUTPUT_DIRECTORY docs/${PROJECT_NAME})
+  set(DOXYGEN_GENERATE_LATEX NO)
+  set(DOXYGEN_BUILTIN_STL_SUPPORT YES)
+  set(DOXYGEN_USE_MDFILE_AS_MAINPAGE README.md)
+  set(DOXYGEN_STRIP_FROM_INC_PATH ${PROJECT_SOURCE_DIR}/lib/inc
+                                  ${PROJECT_SOURCE_DIR}/orm_lib/inc
+                                  ${CMAKE_CURRENT_BINARY_DIR}/exports)
+  set(DOXYGEN_EXAMPLE_PATTERNS *)
+  if(WIN32)
+    set(DOXYGEN_PREDEFINED _WIN32)
+  endif(WIN32)
+  doxygen_add_docs(doc_${PROJECT_NAME}
+                   README.md
+                   README.zh-CN.md
+                   README.zh-TW.md
+                   ChangeLog.md
+                   CONTRIBUTING.md
+                   ${DROGON_HEADERS}
+                   ${DROGON_UTIL_HEADERS}
+                   ${DROGON_PLUGIN_HEADERS}
+                   ${ORM_HEADERS}
+                   COMMENT "Generate documentation")
+  if(NOT TARGET doc)
+    add_custom_target(doc)
+  endif()
+  add_dependencies(doc doc_${PROJECT_NAME})
+  if (BUILD_DOC)
+    add_dependencies(${PROJECT_NAME} doc_${PROJECT_NAME})
+    # Don't install twice, so limit to Debug (assume developer)
+    install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/docs/${PROJECT_NAME}
+            TYPE DOC
+            CONFIGURATIONS Debug)
+  endif(BUILD_DOC)
+endif(DOXYGEN_FOUND)
 
