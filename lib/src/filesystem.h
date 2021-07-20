@@ -22,6 +22,8 @@
 #define HAS_STD_FILESYSTEM_PATH
 #endif
 
+#include <trantor/utils/LogStream.h>
+
 #ifdef HAS_STD_FILESYSTEM_PATH
 #include <filesystem>
 #else
