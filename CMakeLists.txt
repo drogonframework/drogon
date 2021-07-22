@@ -143,11 +143,16 @@ elseif (DROGON_CXX_STANDARD EQUAL 17)
     # With C++17, use Boost if std::filesystem::path is missing
     message(STATUS "use c++17")
     # Check for partial implementation of c++17 (Windows/OSX only?)
+    set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
     try_compile(check_filesystem_path ${CMAKE_BINARY_DIR}/cmaketest
         ${PROJECT_SOURCE_DIR}/cmake/tests/check_has_std_filesystem_path.cc
         CXX_STANDARD 17)
+    set(CMAKE_TRY_COMPILE_TARGET_TYPE)
     if (check_filesystem_path)
         message(STATUS "Using c++17 filesytem::path")
+        if (CMAKE_CXX_COMPILER_ID MATCHES GNU)
+            target_link_libraries(${PROJECT_NAME} PUBLIC stdc++fs)
+        endif()
     else()
         find_package(Boost 1.49.0 COMPONENTS filesystem system REQUIRED)
         message(STATUS "Using Boost filesytem::path")
