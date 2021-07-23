@@ -72,6 +72,14 @@ static void newTestMainFile(std::ofstream &mainFile)
     auto templ = DrTemplateBase::newTemplate("test_main");
     mainFile << templ->genText();
 }
+static void newTestCmakeFile(std::ofstream &testCmakeFile,
+                             const std::string &projectName)
+{
+    HttpViewData data;
+    data.insert("ProjectName", projectName);
+    auto templ = DrTemplateBase::newTemplate("test_cmake");
+    testCmakeFile << templ->genText(data);
+}
 void create_project::createProject(const std::string &projectName)
 {
 #ifdef _WIN32
@@ -115,4 +123,6 @@ void create_project::createProject(const std::string &projectName)
     newModelConfigFile(modelConfigFile);
     std::ofstream testMainFile("test/test_main.cc", std::ofstream::out);
     newTestMainFile(testMainFile);
+    std::ofstream testCmakeFile("test/CMakeLists.txt", std::ofstream::out);
+    newTestCmakeFile(testCmakeFile, projectName);
 }
