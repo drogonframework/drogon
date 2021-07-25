@@ -31,7 +31,6 @@
 #include <fstream>
 
 using namespace drogon_ctl;
-using drogon::filesystem;
 
 static void forEachControllerHeaderIn(
     std::string strPath,
@@ -54,20 +53,24 @@ static void forEachControllerHeaderIn(
         return;
 
     std::error_code ec;
-    filesystem::path fsPath(strPath);
-    if (!filesystem::exists(strPath, ec))
+    drogon::filesystem::path fsPath(strPath);
+    if (!drogon::filesystem::exists(strPath, ec))
     {
         return;
     }
-    for (auto &itr : filesystem::directory_iterator(fsPath))
+    for (auto &itr : drogon::filesystem::directory_iterator(fsPath))
     {
-        if (filesystem::is_directory(itr.status()))
+        if (drogon::filesystem::is_directory(itr.status()))
         {
             forEachControllerHeaderIn(itr.path().string(), cb);
         }
         else
         {
-            cb(itr.path().string());
+            auto fileName = itr.path().string();
+            if (fileName.find(".h") == fileName.length() - 2)
+            {
+                cb(fileName);
+            }
         }
     }
     return;
