@@ -14,17 +14,10 @@
 
 #include "HttpFileImpl.h"
 #include "HttpAppFrameworkImpl.h"
+#include "filesystem.h"
 #include <drogon/MultiPart.h>
 #include <fstream>
 #include <iostream>
-// Switch between native c++17 or boost for c++14
-#ifdef HAS_STD_FILESYSTEM_PATH
-#include <system_error>
-namespace stl = std;
-#else  // HAS_STD_FILESYSTEM_PATH
-#include <boost/system/error_code.hpp>
-namespace stl = boost::system;
-#endif  // HAS_STD_FILESYSTEM_PATH
 
 using namespace drogon;
 
@@ -64,7 +57,7 @@ int HttpFileImpl::saveAs(const std::string &fileName) const
     }
     if (fsFileName.has_parent_path())
     {
-        stl::error_code err;
+        drogon::error_code err;
         filesystem::create_directories(fsFileName.parent_path(), err);
         if (err)
             return -1;
