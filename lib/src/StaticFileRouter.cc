@@ -30,13 +30,6 @@
 #include <sys/stat.h>
 // Switch between native c++17 or boost for c++14
 #include "filesystem.h"
-#ifdef HAS_STD_FILESYSTEM_PATH
-#include <system_error>
-namespace stl = std;
-#else
-#include <boost/system/error_code.hpp>
-namespace stl = boost::system;
-#endif
 
 using namespace drogon;
 
@@ -147,7 +140,7 @@ void StaticFileRouter::route(
                 location.realLocation_ +
                 std::string{restOfThePath.data(), restOfThePath.length()};
             filesystem::path fsFilePath(utils::toNativePath(filePath));
-            stl::error_code err;
+            drogon::error_code err;
             if (!filesystem::exists(fsFilePath, err))
             {
                 defaultHandler_(req, std::move(callback));
@@ -226,7 +219,7 @@ void StaticFileRouter::route(
     std::string directoryPath =
         HttpAppFrameworkImpl::instance().getDocumentRoot() + path;
     filesystem::path fsDirectoryPath(utils::toNativePath(directoryPath));
-    stl::error_code err;
+    drogon::error_code err;
     if (filesystem::exists(fsDirectoryPath, err))
     {
         if (filesystem::is_directory(fsDirectoryPath, err))
@@ -379,7 +372,7 @@ void StaticFileRouter::sendStaticFileResponse(
     if (!fileExists)
     {
         filesystem::path fsFilePath(utils::toNativePath(filePath));
-        stl::error_code err;
+        drogon::error_code err;
         if (!filesystem::exists(fsFilePath, err) ||
             !filesystem::is_regular_file(fsFilePath, err))
         {
@@ -402,7 +395,7 @@ void StaticFileRouter::sendStaticFileResponse(
         // Find compressed file first.
         auto brFileName = filePath + ".br";
         filesystem::path fsBrFile(utils::toNativePath(brFileName));
-        stl::error_code err;
+        drogon::error_code err;
         if (filesystem::exists(fsBrFile, err) &&
             filesystem::is_regular_file(fsBrFile, err))
         {
@@ -419,7 +412,7 @@ void StaticFileRouter::sendStaticFileResponse(
         // Find compressed file first.
         auto gzipFileName = filePath + ".gz";
         filesystem::path fsGzipFile(utils::toNativePath(gzipFileName));
-        stl::error_code err;
+        drogon::error_code err;
         if (filesystem::exists(fsGzipFile, err) &&
             filesystem::is_regular_file(fsGzipFile, err))
         {
