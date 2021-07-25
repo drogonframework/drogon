@@ -4,6 +4,7 @@
 #cmakedefine01 LIBPQ_SUPPORTS_BATCH_MODE
 #cmakedefine01 USE_MYSQL
 #cmakedefine01 USE_SQLITE3
+#cmakedefine01 HAS_STD_FILESYSTEM_PATH
 #cmakedefine OpenSSL_FOUND
 #cmakedefine Boost_FOUND
 

@@ -23,12 +23,6 @@
 #include <cstdio>
 #include <sys/stat.h>
 #include <trantor/utils/Logger.h>
-// Switch between native c++17 or boost for c++14
-#ifdef HAS_STD_FILESYSTEM_PATH
-namespace stl = std;
-#else
-namespace stl = boost::system;
-#endif
 
 using namespace trantor;
 using namespace drogon;
@@ -350,7 +344,7 @@ void HttpResponseImpl::makeHeaderString(trantor::MsgBuffer &buffer)
         }
         else
         {
-            stl::error_code err;
+            drogon::error_code err;
             filesystem::path fsSendfile(utils::toNativePath(sendfileName_));
             auto fileSize = filesystem::file_size(fsSendfile, err);
             if (err)

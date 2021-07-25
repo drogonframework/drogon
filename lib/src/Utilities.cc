@@ -52,15 +52,6 @@
 #include <fcntl.h>
 #include <stdarg.h>
 
-// Switch between native c++17 or boost for c++14
-#ifdef HAS_STD_FILESYSTEM_PATH
-#include <system_error>
-namespace stl = std;
-#else
-#include <boost/system/error_code.hpp>
-namespace stl = boost::system;
-#endif
-
 #ifdef _WIN32
 char *strptime(const char *s, const char *f, struct tm *tm)
 {
@@ -1061,7 +1052,7 @@ int createPath(const std::string &path)
     if (osPath.back() != filesystem::path::preferred_separator)
         osPath.push_back(filesystem::path::preferred_separator);
     filesystem::path fsPath(osPath);
-    stl::error_code err;
+    drogon::error_code err;
     filesystem::create_directories(fsPath, err);
     if (err)
     {
