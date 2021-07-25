@@ -51,7 +51,7 @@ uint32_t Md5Encode::fillData(const char *inDataPtr,
     // int grop_num = bitNum / BIT_OF_GROUP;
     int modBitNum = bitNum % BIT_OF_GROUP;
     int bitNeedFill = 0;
-    if (modBitNum > (BIT_OF_GROUP - SRC_DATA_LEN))
+    if (modBitNum >= (BIT_OF_GROUP - SRC_DATA_LEN))
     {
         bitNeedFill = (BIT_OF_GROUP - modBitNum);
         bitNeedFill += (BIT_OF_GROUP - SRC_DATA_LEN);
