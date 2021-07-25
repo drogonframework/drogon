@@ -12,6 +12,7 @@
  *
  */
 
+#include "../lib/src/filesystem.h"
 #include "create_swagger.h"
 #include <drogon/DrTemplateBase.h>
 #include <drogon/utils/Utilities.h>
@@ -30,55 +31,45 @@
 #include <fstream>
 
 using namespace drogon_ctl;
+using drogon::filesystem;
 
 static void forEachControllerHeaderIn(
-    const std::string &path,
+    std::string strPath,
     const std::function<void(const std::string &)> &cb)
 {
-    DIR *dp;
-    struct dirent *dirp;
-    struct stat st;
-
-    /* open dirent directory */
-    if ((dp = opendir(path.c_str())) == NULL)
+    while (1)
     {
-        // perror("opendir:");
-        LOG_ERROR << "can't open dir,path:" << path;
-        return;
-    }
-
-    /**
-     * read all files in this dir
-     **/
-    while ((dirp = readdir(dp)) != NULL)
-    {
-        /* ignore hidden files */
-        if (dirp->d_name[0] == '.')
-            continue;
-        /* get dirent status */
-        std::string filename = dirp->d_name;
-        if (filename.find(".h") != filename.length() - 2)
-            continue;
-        std::string fullname = path;
-        fullname.append("/").append(filename);
-        if (stat(fullname.c_str(), &st) == -1)
+        char cEnd = *strPath.rbegin();
+        if (cEnd == '\\' || cEnd == '/')
         {
-            perror("stat");
-            closedir(dp);
-            return;
-        }
-
-        /* if dirent is a directory, find files recursively */
-        if (S_ISDIR(st.st_mode))
-        {
-            forEachControllerHeaderIn(fullname, cb);
+            strPath = strPath.substr(0, strPath.length() - 1);
         }
         else
         {
-            cb(fullname);
+            break;
         }
     }
-    closedir(dp);
+
+    if (strPath.empty() || strPath == (".") || strPath == (".."))
+        return;
+
+    std::error_code ec;
+    filesystem::path fsPath(strPath);
+    if (!filesystem::exists(strPath, ec))
+    {
+        return;
+    }
+    for (auto &itr : filesystem::directory_iterator(fsPath))
+    {
+        if (filesystem::is_directory(itr.status()))
+        {
+            forEachControllerHeaderIn(itr.path().string(), cb);
+        }
+        else
+        {
+            cb(itr.path().string());
+        }
+    }
     return;
 }
 static void parseControllerHeader(const std::string &headerFile,
