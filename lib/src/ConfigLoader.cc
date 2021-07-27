@@ -20,7 +20,7 @@
 #include <sstream>
 #include <thread>
 #include <trantor/utils/Logger.h>
-#ifndef _WIN32
+#if !defined(_WIN32) || defined(__MINGW32__)
 #include <unistd.h>
 #define os_access access
 #else

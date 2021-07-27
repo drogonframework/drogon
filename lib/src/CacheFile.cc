@@ -47,7 +47,7 @@ CacheFile::~CacheFile()
     if (autoDelete_ && file_)
     {
         fclose(file_);
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(__MINGW32__)
         auto wPath{drogon::utils::toNativePath(path_)};
         _wunlink(wPath.c_str());
 #else
