@@ -507,6 +507,16 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
                             REQUIRE(result == ReqResult::Ok);
                             CHECK(resp->getBody().length() == indexLen);
                         });
+    /// Test serving file with non-ASCII files
+    req->setPath("/中文.txt");
+    client->sendRequest(req,
+                        [req, TEST_CTX](ReqResult result,
+                                        const HttpResponsePtr &resp) {
+                            REQUIRE(result == ReqResult::Ok);
+                            // Only tests for serving a file, not the content
+                            // since no good way to read it on Windows witout
+                            // using the wild-char API
+                        });
     // Test 405
     req = HttpRequest::newHttpRequest();
     req->setMethod(drogon::Post);

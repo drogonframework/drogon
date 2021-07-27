@@ -67,7 +67,8 @@ int HttpFileImpl::saveAs(const std::string &fileName) const
 int HttpFileImpl::saveTo(const filesystem::path &pathAndFileName) const
 {
     LOG_TRACE << "save uploaded file:" << pathAndFileName;
-    std::ofstream file(pathAndFileName.native(), std::ios::binary);
+    auto wPath = utils::toNativePath(pathAndFileName.native());
+    std::ofstream file(wPath, std::ios::binary);
     if (file.is_open())
     {
         file.write(fileContent_.data(), fileContent_.size());

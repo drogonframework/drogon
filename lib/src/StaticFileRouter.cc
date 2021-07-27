@@ -22,7 +22,7 @@
 #include <fcntl.h>
 #ifndef _WIN32
 #include <sys/file.h>
-#else
+#elif !defined(__MINGW32__)
 #define stat _wstati64
 #define S_ISREG(m) (((m)&0170000) == (0100000))
 #define S_ISDIR(m) (((m)&0170000) == (0040000))
@@ -306,7 +306,7 @@ void StaticFileRouter::sendStaticFileResponse(
             LOG_TRACE << "enabled LastModify";
             // std::filesystem::file_time_type::clock::to_time_t still not
             // implemented by M$, even in c++20, so keep calls to stat()
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(__MINGW32__)
             struct _stati64 fileStat;
 #else   // _WIN32
             struct stat fileStat;

@@ -214,7 +214,7 @@ inline std::wstring toWidePath(const std::string &strUtf8Path)
  *
  * @return An OS path, suitable for use with the OS API.
  */
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(__MINGW32__)
 inline std::wstring toNativePath(const std::string &strPath)
 {
     return trantor::utils::toNativePath(strPath);

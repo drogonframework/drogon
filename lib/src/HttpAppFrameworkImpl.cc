@@ -60,6 +60,10 @@
 #include <uuid.h>
 #include <unistd.h>
 #define os_access access
+#elif !defined(_WIN32) || defined(__MINGW32__)
+#include <sys/file.h>
+#include <unistd.h>
+#define os_access access
 #else
 #include <io.h>
 #define os_access _waccess
