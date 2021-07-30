@@ -52,7 +52,7 @@ static void forEachControllerHeaderIn(
     if (strPath.empty() || strPath == (".") || strPath == (".."))
         return;
 
-    std::error_code ec;
+    drogon::error_code ec;
     drogon::filesystem::path fsPath(strPath);
     if (!drogon::filesystem::exists(strPath, ec))
     {
