@@ -79,6 +79,17 @@ else(WIN32)
   install(FILES "${CMAKE_CURRENT_BINARY_DIR}/dg_ctl"
           DESTINATION ${INSTALL_BIN_DIR})
 endif(WIN32)
+find_package(Clang REQUIRED)
+include_directories(${LLVM_INCLUDE_DIRS})
+separate_arguments(LLVM_DEFINITIONS_LIST NATIVE_COMMAND ${LLVM_DEFINITIONS})
+add_definitions(${LLVM_DEFINITIONS_LIST})
+# Find the libraries that correspond to the LLVM components
+# that we wish to use
+llvm_map_components_to_libnames(llvm_libs support core irreader)
+
+# Link against LLVM libraries
+target_link_libraries(drogon_ctl PRIVATE ${llvm_libs})
+
 set(ctl_targets _drogon_ctl drogon_ctl)
 set_property(TARGET ${ctl_targets} PROPERTY CXX_STANDARD ${DROGON_CXX_STANDARD})
 set_property(TARGET ${ctl_targets} PROPERTY CXX_STANDARD_REQUIRED ON)

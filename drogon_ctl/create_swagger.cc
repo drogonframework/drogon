@@ -30,6 +30,8 @@
 #endif
 #include <fstream>
 
+#include <clang-c/Index.h>
+
 using namespace drogon_ctl;
 
 static void forEachControllerHeaderIn(
@@ -78,11 +80,20 @@ static void forEachControllerHeaderIn(
 static void parseControllerHeader(const std::string &headerFile,
                                   Json::Value &docs)
 {
-    std::ifstream infile(headerFile);
-
-    for (std::string buffer; std::getline(infile, buffer);)
+    CXIndex index = clang_createIndex(0, 0);
+    CXTranslationUnit unit = clang_parseTranslationUnit(
+        index,
+        headerFile.c_str(), nullptr, 0,
+        nullptr, 0,
+        CXTranslationUnit_None);
+    if (unit == nullptr)
     {
+        std::cerr << "Unable to parse translation unit. Quitting." << std::endl;
+        exit(-1);
     }
+
+    clang_disposeTranslationUnit(unit);
+    clang_disposeIndex(index);
 }
 static std::string makeSwaggerDocument(const Json::Value &config)
 {
