@@ -5,6 +5,7 @@ set(benchmark_sources benchmark/BenchmarkCtrl.cc benchmark/JsonCtrl.cc
 
 add_executable(client client_example/main.cc)
 add_executable(websocket_client websocket_client/WebSocketClient.cc)
+add_executable(websocket_server websocket_server/WebSocketServer.cc)
 add_executable(benchmark ${benchmark_sources})
 add_executable(helloworld helloworld/main.cc
                           helloworld/HelloController.cc
@@ -27,6 +28,7 @@ set(example_targets
     benchmark
     client
     websocket_client
+    websocket_server
     helloworld
     file_upload
     login_session
