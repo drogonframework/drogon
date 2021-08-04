@@ -59,6 +59,8 @@ void WebSocketChat::handleNewConnection(const HttpRequestPtr &req,
     s.id_ = chatRooms_.subscribe(s.chatRoomName_,
                                  [conn](const std::string &topic,
                                         const std::string &message) {
+									 // Supress unused variable warning
+									 (void)topic;
                                      conn->send(message);
                                  });
     conn->setContext(std::make_shared<Subscriber>(std::move(s)));
