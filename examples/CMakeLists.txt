@@ -28,6 +28,7 @@ set(example_targets
     benchmark
     client
     websocket_client
+    websocket_server
     helloworld
     file_upload
     login_session
