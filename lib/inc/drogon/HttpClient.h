@@ -238,10 +238,16 @@ class DROGON_EXPORT HttpClient : public trantor::NonCopyable
     virtual size_t bytesReceived() const = 0;
 
     virtual std::string host() const = 0;
-    std::string getHost() const { return host(); }
+    std::string getHost() const
+    {
+        return host();
+    }
 
     virtual uint16_t port() const = 0;
-    uint16_t getPort() const { return port(); }
+    uint16_t getPort() const
+    {
+        return port();
+    }
 
     virtual bool secure() const = 0;
 

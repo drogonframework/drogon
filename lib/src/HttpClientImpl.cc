@@ -319,13 +319,13 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
             req->addHeader("user-agent", userAgent_);
     }
     // Set the host header.
-    if(onDefaultPort())
+    if (onDefaultPort())
     {
         req->addHeader("host", host());
     }
-    else 
+    else
     {
-        req->addHeader("host", host()+":"+std::to_string(port()));
+        req->addHeader("host", host() + ":" + std::to_string(port()));
     }
 
     for (auto &cookie : validCookies_)

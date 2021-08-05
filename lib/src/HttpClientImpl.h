@@ -91,7 +91,7 @@ class HttpClientImpl final : public HttpClient,
 
     std::string host() const override
     {
-        if(domain_.empty())
+        if (domain_.empty())
             return serverAddr_.toIp();
         return domain_;
     }
