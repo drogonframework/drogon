@@ -237,6 +237,27 @@ class DROGON_EXPORT HttpClient : public trantor::NonCopyable
     virtual size_t bytesSent() const = 0;
     virtual size_t bytesReceived() const = 0;
 
+    virtual std::string host() const = 0;
+    std::string getHost() const
+    {
+        return host();
+    }
+
+    virtual uint16_t port() const = 0;
+    uint16_t getPort() const
+    {
+        return port();
+    }
+
+    virtual bool secure() const = 0;
+
+    bool onDefaultPort() const
+    {
+        if (secure())
+            return port() == 443;
+        return port() == 80;
+    }
+
     /// Create a Http client using the hostString to connect to server
     /**
      *

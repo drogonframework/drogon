@@ -319,32 +319,15 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
             req->addHeader("user-agent", userAgent_);
     }
     // Set the host header.
-    if (!domain_.empty())
+    if (onDefaultPort())
     {
-        if ((useSSL_ && serverAddr_.toPort() != 443) ||
-            (!useSSL_ && serverAddr_.toPort() != 80))
-        {
-            std::string host =
-                domain_ + ":" + std::to_string(serverAddr_.toPort());
-            req->addHeader("host", host);
-        }
-        else
-        {
-            req->addHeader("host", domain_);
-        }
+        req->addHeader("host", host());
     }
     else
     {
-        if ((useSSL_ && serverAddr_.toPort() != 443) ||
-            (!useSSL_ && serverAddr_.toPort() != 80))
-        {
-            req->addHeader("host", serverAddr_.toIpPort());
-        }
-        else
-        {
-            req->addHeader("host", serverAddr_.toIp());
-        }
+        req->addHeader("host", host() + ":" + std::to_string(port()));
     }
+
     for (auto &cookie : validCookies_)
     {
         if ((cookie.expiresDate().microSecondsSinceEpoch() == 0 ||

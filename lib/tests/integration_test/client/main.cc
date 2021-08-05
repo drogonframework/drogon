@@ -928,6 +928,11 @@ DROGON_TEST(HttpTest)
 {
     auto client = HttpClient::newHttpClient("http://127.0.0.1:8848");
     client->setPipeliningDepth(10);
+    REQUIRE(client->secure() == false);
+    REQUIRE(client->port() == 8848);
+    REQUIRE(client->host() == "127.0.0.1");
+    REQUIRE(client->onDefaultPort() == false);
+
     doTest(client, TEST_CTX);
 }
 
@@ -941,6 +946,11 @@ DROGON_TEST(HttpsTest)
                                             false,
                                             false);
     client->setPipeliningDepth(10);
+    REQUIRE(client->secure() == true);
+    REQUIRE(client->port() == 8849);
+    REQUIRE(client->host() == "127.0.0.1");
+    REQUIRE(client->onDefaultPort() == false);
+
     doTest(client, TEST_CTX);
 }
 

@@ -84,6 +84,23 @@ class HttpClientImpl final : public HttpClient,
         userAgent_ = userAgent;
     }
 
+    uint16_t port() const override
+    {
+        return serverAddr_.toPort();
+    }
+
+    std::string host() const override
+    {
+        if (domain_.empty())
+            return serverAddr_.toIp();
+        return domain_;
+    }
+
+    bool secure() const override
+    {
+        return useSSL_;
+    }
+
   private:
     std::shared_ptr<trantor::TcpClient> tcpClientPtr_;
     trantor::EventLoop *loop_;
