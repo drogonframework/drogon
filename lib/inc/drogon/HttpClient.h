@@ -253,7 +253,7 @@ class DROGON_EXPORT HttpClient : public trantor::NonCopyable
 
     bool onDefaultPort() const
     {
-        if(secure())
+        if (secure())
             return port() == 443;
         return port() == 80;
     }
