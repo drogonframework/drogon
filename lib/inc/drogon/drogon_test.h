@@ -722,13 +722,13 @@ static int run(int argc, char** argv)
             << "  \033[0;33m" << e.what() << "\x1B[0m\n\n";   \
     } while (0);
 
-#define PRINT_PASSED__(func_name, expr)                           \
-    do                                                            \
-    {                                                             \
-        if (drogon::test::internal::printSuccessfulTests == true) \
-        {                                                         \
-            PASSED_MSG(func_name, expr) << "\n";                  \
-        }                                                         \
+#define PRINT_PASSED__(func_name, expr)                                 \
+    do                                                                  \
+    {                                                                   \
+        if (drogon::test::internal::printSuccessfulTests && TEST_FLAG_) \
+        {                                                               \
+            PASSED_MSG(func_name, expr) << "\n";                        \
+        }                                                               \
     } while (0);
 
 #define RETURN_ON_FAILURE__ \
