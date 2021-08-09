@@ -134,7 +134,7 @@ if (DROGON_CXX_STANDARD EQUAL 14)
     # With C++14, use Boost to support any and string_view
     message(STATUS "use c++14")
     find_package(Boost 1.61.0 REQUIRED)
-    message(STATUS "Using Boost filesytem, string_view and any")
+    message(STATUS "Using Boost filesystem, string_view and any")
     message(STATUS "Boost include dir: " ${Boost_INCLUDE_DIR})
     target_link_libraries(${PROJECT_NAME} PUBLIC Boost::boost)
     list(APPEND INCLUDE_DIRS_FOR_DYNAMIC_VIEW ${Boost_INCLUDE_DIR})
@@ -148,8 +148,8 @@ elseif (DROGON_CXX_STANDARD EQUAL 17)
         ${PROJECT_SOURCE_DIR}/cmake/tests/check_has_std_filesystem_path.cc
         CXX_STANDARD 17)
     set(CMAKE_TRY_COMPILE_TARGET_TYPE)
-    # HACK: 2021-Aug-9 Android NDK does not provide proper std::filesystem.
-    #       Force boost.
+    # Workaround: 2021-08-09 Android NDK does not provide proper std::filesystem
+    # support. Force boost::filesystem instead.
     if (check_filesystem_path AND NOT ${CMAKE_SYSTEM_NAME} STREQUAL "Android")
         message(STATUS "Using c++17 filesytem::path")
         if (CMAKE_CXX_COMPILER_ID MATCHES GNU)
@@ -157,12 +157,13 @@ elseif (DROGON_CXX_STANDARD EQUAL 17)
         endif()
         option(HAS_STD_FILESYSTEM_PATH "use std::filesystem" ON)
     else()
-        message(STATUS "WORKARROUND: Forcing boost::filesystem on Android")
+        message(STATUS "WORKAROUND: Forcing boost::filesystem on Android")
         set(NEED_BOOST_FS 1)
     endif()
 else ()
     message(STATUS "use c++20")
-    # HACK: 2021-Aug-9 Android NDK does not provide proper std::filesystem. Force boost.
+    # Workaround: 2021-08-09 Android NDK does not provide proper std::filesystem
+    # support. Force boost::filesystem instead.
     if (NOT ${CMAKE_SYSTEM_NAME} STREQUAL "Android")
         option(HAS_STD_FILESYSTEM_PATH "use std::filesystem" ON)
     else ()
