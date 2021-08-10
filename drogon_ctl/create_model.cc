@@ -43,6 +43,26 @@ static std::string toLower(const std::string &str)
     return ret;
 }
 
+static std::string escapeConnString(const std::string &str)
+{
+    bool beQuoted = str.empty() || (str.find(' ') != std::string::npos);
+
+    std::string escaped;
+    escaped.reserve(str.size());
+    for (auto ch : str)
+    {
+        if (ch == '\'')
+            escaped.push_back('\\');
+        else if (ch == '\\')
+            escaped.push_back('\\');
+        escaped.push_back(ch);
+    }
+
+    if (beQuoted)
+        return "'" + escaped + "'";
+    return escaped;
+}
+
 static std::map<std::string, std::vector<ConvertMethod>> getConvertMethods(
     const Json::Value &convertColumns)
 {
@@ -795,20 +815,20 @@ void create_model::createModel(const std::string &path,
 
         auto connStr =
             utils::formattedString("host=%s port=%u dbname=%s user=%s",
-                                   host.c_str(),
+                                   escapeConnString(host).c_str(),
                                    port,
-                                   dbname.c_str(),
-                                   user.c_str());
+                                   escapeConnString(dbname).c_str(),
+                                   escapeConnString(user).c_str());
         if (!password.empty())
         {
             connStr += " password=";
-            connStr += password;
+            connStr += escapeConnString(password);
         }
         auto characterSet = config.get("client_encoding", "").asString();
         if (!characterSet.empty())
         {
             connStr += " client_encoding=";
-            connStr += characterSet;
+            connStr += escapeConnString(characterSet);
         }
 
         auto schema = config.get("schema", "public").asString();
@@ -907,20 +927,20 @@ void create_model::createModel(const std::string &path,
 
         auto connStr =
             utils::formattedString("host=%s port=%u dbname=%s user=%s",
-                                   host.c_str(),
+                                   escapeConnString(host).c_str(),
                                    port,
-                                   dbname.c_str(),
-                                   user.c_str());
+                                   escapeConnString(dbname).c_str(),
+                                   escapeConnString(user).c_str());
         if (!password.empty())
         {
             connStr += " password=";
-            connStr += password;
+            connStr += escapeConnString(password);
         }
         auto characterSet = config.get("client_encoding", "").asString();
         if (!characterSet.empty())
         {
             connStr += " client_encoding=";
-            connStr += characterSet;
+            connStr += escapeConnString(characterSet);
         }
         DbClientPtr client = drogon::orm::DbClient::newMysqlClient(connStr, 1);
         std::cout << "Connect to server..." << std::endl;
@@ -995,7 +1015,7 @@ void create_model::createModel(const std::string &path,
                       << "/model.json " << std::endl;
             exit(1);
         }
-        std::string connStr = "filename=" + filename;
+        std::string connStr = "filename=" + escapeConnString(filename);
         DbClientPtr client =
             drogon::orm::DbClient::newSqlite3Client(connStr, 1);
         std::cout << "Connect..." << std::endl;
