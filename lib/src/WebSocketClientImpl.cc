@@ -38,6 +38,11 @@ WebSocketConnectionPtr WebSocketClientImpl::getConnection()
 {
     return websockConnPtr_;
 }
+void WebSocketClientImpl::stop()
+{
+    stop_ = true;
+    tcpClientPtr_.reset();
+}
 void WebSocketClientImpl::createTcpClient()
 {
     LOG_TRACE << "New TcpClient," << serverAddr_.toIpPort();
@@ -68,8 +73,12 @@ void WebSocketClientImpl::createTcpClient()
                 LOG_TRACE << "connection disconnect";
                 thisPtr->connectionClosedCallback_(thisPtr);
                 thisPtr->websockConnPtr_.reset();
-                thisPtr->loop_->runAfter(1.0,
-                                         [thisPtr]() { thisPtr->reconnect(); });
+                if (!thisPtr->stop_)
+                {
+                    thisPtr->loop_->runAfter(1.0, [thisPtr]() {
+                        thisPtr->reconnect();
+                    });
+                }
             }
         });
     tcpClientPtr_->setConnectionErrorCallback([weakPtr]() {
@@ -77,8 +86,13 @@ void WebSocketClientImpl::createTcpClient()
         if (!thisPtr)
             return;
         // can't connect to server
+        LOG_TRACE << "error connecting to server";
         thisPtr->requestCallback_(ReqResult::NetworkFailure, nullptr, thisPtr);
-        thisPtr->loop_->runAfter(1.0, [thisPtr]() { thisPtr->reconnect(); });
+        if (!thisPtr->stop_)
+        {
+            thisPtr->loop_->runAfter(1.0,
+                                     [thisPtr]() { thisPtr->reconnect(); });
+        }
     });
     tcpClientPtr_->setMessageCallback(
         [weakPtr](const trantor::TcpConnectionPtr &connPtr,
