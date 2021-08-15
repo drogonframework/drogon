@@ -29,8 +29,7 @@
 #include <direct.h>
 #endif
 #include <fstream>
-
-#include <clang-c/Index.h>
+#include <regex>
 
 using namespace drogon_ctl;
 
@@ -69,7 +68,8 @@ static void forEachControllerHeaderIn(
         else
         {
             auto fileName = itr.path().string();
-            if (fileName.find(".h") == fileName.length() - 2)
+            if (fileName.find(".h") == fileName.length() - 2 ||
+                fileName.find(".hpp") == fileName.length() - 4)
             {
                 cb(fileName);
             }
@@ -80,20 +80,32 @@ static void forEachControllerHeaderIn(
 static void parseControllerHeader(const std::string &headerFile,
                                   Json::Value &docs)
 {
-    CXIndex index = clang_createIndex(0, 0);
-    CXTranslationUnit unit = clang_parseTranslationUnit(
-        index,
-        headerFile.c_str(), nullptr, 0,
-        nullptr, 0,
-        CXTranslationUnit_None);
-    if (unit == nullptr)
+    std::ifstream infile(utils::toNativePath(headerFile),
+                         std::ifstream::binary);
+    if (!infile)
     {
-        std::cerr << "Unable to parse translation unit. Quitting." << std::endl;
-        exit(-1);
+        std::cout << "can't open the header file:" << headerFile << "\n";
+        return;
     }
+    std::streambuf *pbuf = infile.rdbuf();
+    std::streamsize filesize = pbuf->pubseekoff(0, std::ifstream::end);
+    pbuf->pubseekoff(0, std::ifstream::beg);  // rewind
+    std::string fileContent;
+    fileContent.resize(filesize);
+    pbuf->sgetn(&fileContent[0], filesize);
+    std::cout << fileContent;
 
-    clang_disposeTranslationUnit(unit);
-    clang_disposeIndex(index);
+    std::regex rx(R"(namespace[ \r\n]+([^ \r\n]+)[ \r\n]*\{)");
+    std::smatch results;
+    while (std::regex_search(fileContent, results, rx))
+    {
+        if (results.size() > 1)
+        {
+            for (int i = 1; i < results.size(); i++)
+                std::cout << "nnn:" << i << results[i] << std::endl;
+        }
+        fileContent = results.suffix();
+    }
 }
 static std::string makeSwaggerDocument(const Json::Value &config)
 {
