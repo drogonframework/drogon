@@ -8,13 +8,14 @@ using namespace drogon;
 using namespace std::chrono_literals;
 
 static std::vector<WebSocketClientPtr> wsClients_;
+static const int kClientCount = 100;
 
 DROGON_TEST(MultipleWsTest)
 {
     // NOTE: The original test was for 1000 clients. But that seems to be
     //       causing memory leak.
-    wsClients_.reserve(20);
-    for (size_t i = 0; i < 20; i++)
+    wsClients_.reserve(kClientCount);
+    for (size_t i = 0; i < kClientCount; i++)
     {
         auto wsPtr = WebSocketClient::newWebSocketClient("127.0.0.1", 8848);
         auto req = HttpRequest::newHttpRequest();
@@ -29,6 +30,7 @@ DROGON_TEST(MultipleWsTest)
                 {
                     // Check if the correct connection got the result
                     CHECK(message == std::to_string(i));
+		    wsClients_[i].reset();
                     TEST_CTX = {};
                 }
             });
