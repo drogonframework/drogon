@@ -21,6 +21,7 @@ DROGON_TEST(WebSocketTest)
                    type == WebSocketMessageType::Pong));
             if (type == WebSocketMessageType::Pong)
             {
+                wsPtr_->stop();
                 CHECK(message.empty());
                 TEST_CTX = {};
             }
