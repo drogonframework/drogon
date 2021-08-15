@@ -268,13 +268,17 @@ void WebSocketClientImpl::onRecvMessage(
             std::make_shared<WebSocketConnectionImpl>(connPtr, false);
         websockConnPtr_->setPingMessage("", std::chrono::seconds{30});
         auto thisPtr = shared_from_this();
+        std::weak_ptr<WebSocketClientImpl> weakPtr = thisPtr;
         websockConnPtr_->setMessageCallback(
-            [thisPtr](std::string &&message,
+            [weakPtr](std::string &&message,
                       const WebSocketConnectionImplPtr &,
                       const WebSocketMessageType &type) {
+                auto thisPtr = weakPtr.lock();
+                if(!thisPtr)
+                    return;
                 thisPtr->messageCallback_(std::move(message), thisPtr, type);
             });
-        requestCallback_(ReqResult::Ok, resp, shared_from_this());
+        requestCallback_(ReqResult::Ok, resp, thisPtr);
         if (msgBuffer->readableBytes() > 0)
         {
             onRecvWsMessage(connPtr, msgBuffer);
