@@ -104,13 +104,15 @@ class StructNode
                 }
             }
         }
-        return {content.substr(pos1, pos2 - pos1), content.substr(pos2 + 1)};
+        return std::pair<std::string, std::string>(content.substr(pos1,
+                                                                  pos2 - pos1),
+                                                   content.substr(pos2 + 1));
     }
     std::pair<StructNodePtr, std::string> findClass(const std::string &content)
     {
         LOG_DEBUG << "findClass: " << content;
         if (content.empty())
-            return {nullptr, ""};
+            return std::pair<StructNodePtr, std::string>(nullptr, "");
         std::regex rx(R"(class[ \r\n]+([^ \r\n\{]+)[ \r\n\{:]+)");
         std::smatch results;
         if (std::regex_search(content, results, rx))
@@ -118,19 +120,22 @@ class StructNode
             assert(results.size() > 1);
             auto nextPart =
                 findContentOfClassOrNameSpace(content, results.position());
-            return {std::make_shared<StructNode>(nextPart.first,
-                                                 results[1].str(),
-                                                 kClass),
-                    nextPart.second};
+            return std::pair<StructNodePtr, std::string>(
+                std::make_shared<StructNode>(nextPart.first,
+                                             results[1].str(),
+                                             kClass),
+                nextPart.second);
         }
-        return {nullptr, ""};
+        return std::pair<StructNodePtr, std::string>(nullptr, "");
     }
     std::tuple<std::string, StructNodePtr, std::string> findNameSpace(
         const std::string &content)
     {
         LOG_DEBUG << "findNameSpace";
         if (content.empty())
-            return {"", nullptr, ""};
+            return std::tuple<std::string, StructNodePtr, std::string>("",
+                                                                       nullptr,
+                                                                       "");
         std::regex rx(R"(namespace[ \r\n]+([^ \r\n]+)[ \r\n]*\{)");
         std::smatch results;
         if (std::regex_search(content, results, rx))
@@ -143,11 +148,14 @@ class StructNode
                                                           results[1].str(),
                                                           kNameSpace);
 
-            return {first, npNodePtr, nextPart.second};
+            return std::tuple<std::string, StructNodePtr, std::string>(
+                first, npNodePtr, nextPart.second);
         }
         else
         {
-            return {"", nullptr, ""};
+            return std::tuple<std::string, StructNodePtr, std::string>("",
+                                                                       nullptr,
+                                                                       "");
         }
     }
     std::vector<StructNodePtr> parse(const std::string &content)
@@ -220,6 +228,10 @@ class StructNode
         for (auto child : children_)
         {
             child->print(indent + 2);
+        }
+        if (type_ == kClass)
+        {
+            std::cout << content_ << "\n";
         }
         std::cout << ind << "}";
         if (type_ == kClass)
