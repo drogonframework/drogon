@@ -8,17 +8,14 @@ using namespace drogon;
 using namespace std::chrono_literals;
 
 static std::vector<WebSocketClientPtr> wsClients_;
+static const int kClientCount = 100;
 
 DROGON_TEST(MultipleWsTest)
 {
-    // NOTE: The original test was for 1000 clients. But that seems to be
-    //       causing memory leak.
-    wsClients_.reserve(20);
-    for (size_t i = 0; i < 20; i++)
+    wsClients_.reserve(kClientCount);
+    for (size_t i = 0; i < kClientCount; i++)
     {
         auto wsPtr = WebSocketClient::newWebSocketClient("127.0.0.1", 8848);
-        auto req = HttpRequest::newHttpRequest();
-        req->setPath("/chat");
         wsPtr->setMessageHandler(
             [TEST_CTX, i](const std::string &message,
                           const WebSocketClientPtr &wsPtr,
@@ -28,19 +25,29 @@ DROGON_TEST(MultipleWsTest)
                 if (type == WebSocketMessageType::Pong && TEST_CTX != nullptr)
                 {
                     // Check if the correct connection got the result
+                    wsPtr->stop();
+                    wsClients_[i].reset();
                     CHECK(message == std::to_string(i));
                     TEST_CTX = {};
                 }
             });
-
-        wsPtr->connectToServer(
+        wsClients_.emplace_back(std::move(wsPtr));
+    }
+    for (size_t i = 0; i < kClientCount; i++)
+    {
+        auto req = HttpRequest::newHttpRequest();
+        req->setPath("/chat");
+        wsClients_[i]->connectToServer(
             req,
             [TEST_CTX, i](ReqResult r,
                           const HttpResponsePtr &resp,
                           const WebSocketClientPtr &wsPtr) mutable {
                 CHECK(r == ReqResult::Ok);
                 if (r != ReqResult::Ok)
-                    app().getLoop()->queueInLoop([i]() { wsClients_[i] = {}; });
+                {
+                    wsPtr->stop();
+                    wsClients_[i].reset();
+                }
                 REQUIRE(wsPtr != nullptr);
                 REQUIRE(resp != nullptr);
 
@@ -50,6 +57,5 @@ DROGON_TEST(MultipleWsTest)
 
                 TEST_CTX = {};
             });
-        wsClients_.emplace_back(std::move(wsPtr));
     }
 }

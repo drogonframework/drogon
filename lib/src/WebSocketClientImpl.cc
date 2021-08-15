@@ -38,6 +38,16 @@ WebSocketConnectionPtr WebSocketClientImpl::getConnection()
 {
     return websockConnPtr_;
 }
+void WebSocketClientImpl::stop()
+{
+    stop_ = true;
+    if (websockConnPtr_)
+    {
+        websockConnPtr_->shutdown();
+        websockConnPtr_.reset();
+    }
+    tcpClientPtr_.reset();
+}
 void WebSocketClientImpl::createTcpClient()
 {
     LOG_TRACE << "New TcpClient," << serverAddr_.toIpPort();
@@ -68,8 +78,12 @@ void WebSocketClientImpl::createTcpClient()
                 LOG_TRACE << "connection disconnect";
                 thisPtr->connectionClosedCallback_(thisPtr);
                 thisPtr->websockConnPtr_.reset();
-                thisPtr->loop_->runAfter(1.0,
-                                         [thisPtr]() { thisPtr->reconnect(); });
+                if (!thisPtr->stop_)
+                {
+                    thisPtr->loop_->runAfter(1.0, [thisPtr]() {
+                        thisPtr->reconnect();
+                    });
+                }
             }
         });
     tcpClientPtr_->setConnectionErrorCallback([weakPtr]() {
@@ -77,8 +91,13 @@ void WebSocketClientImpl::createTcpClient()
         if (!thisPtr)
             return;
         // can't connect to server
+        LOG_TRACE << "error connecting to server";
         thisPtr->requestCallback_(ReqResult::NetworkFailure, nullptr, thisPtr);
-        thisPtr->loop_->runAfter(1.0, [thisPtr]() { thisPtr->reconnect(); });
+        if (!thisPtr->stop_)
+        {
+            thisPtr->loop_->runAfter(1.0,
+                                     [thisPtr]() { thisPtr->reconnect(); });
+        }
     });
     tcpClientPtr_->setMessageCallback(
         [weakPtr](const trantor::TcpConnectionPtr &connPtr,
@@ -254,13 +273,17 @@ void WebSocketClientImpl::onRecvMessage(
             std::make_shared<WebSocketConnectionImpl>(connPtr, false);
         websockConnPtr_->setPingMessage("", std::chrono::seconds{30});
         auto thisPtr = shared_from_this();
+        std::weak_ptr<WebSocketClientImpl> weakPtr = thisPtr;
         websockConnPtr_->setMessageCallback(
-            [thisPtr](std::string &&message,
+            [weakPtr](std::string &&message,
                       const WebSocketConnectionImplPtr &,
                       const WebSocketMessageType &type) {
+                auto thisPtr = weakPtr.lock();
+                if (!thisPtr)
+                    return;
                 thisPtr->messageCallback_(std::move(message), thisPtr, type);
             });
-        requestCallback_(ReqResult::Ok, resp, shared_from_this());
+        requestCallback_(ReqResult::Ok, resp, thisPtr);
         if (msgBuffer->readableBytes() > 0)
         {
             onRecvWsMessage(connPtr, msgBuffer);

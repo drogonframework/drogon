@@ -64,7 +64,8 @@ int main(int argc, char *argv[])
             if (r != ReqResult::Ok)
             {
                 LOG_ERROR << "Failed to establish WebSocket connection!";
-                exit(1);
+                wsPtr->stop();
+                return;
             }
             LOG_INFO << "WebSocket connected!";
             wsPtr->getConnection()->setPingMessage("", 2s);
