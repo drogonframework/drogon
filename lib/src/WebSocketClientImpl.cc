@@ -274,7 +274,7 @@ void WebSocketClientImpl::onRecvMessage(
                       const WebSocketConnectionImplPtr &,
                       const WebSocketMessageType &type) {
                 auto thisPtr = weakPtr.lock();
-                if(!thisPtr)
+                if (!thisPtr)
                     return;
                 thisPtr->messageCallback_(std::move(message), thisPtr, type);
             });

@@ -30,7 +30,7 @@ DROGON_TEST(MultipleWsTest)
                 {
                     // Check if the correct connection got the result
                     CHECK(message == std::to_string(i));
-		    wsClients_[i].reset();
+                    wsClients_[i].reset();
                     TEST_CTX = {};
                 }
             });
