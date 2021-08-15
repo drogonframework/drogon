@@ -41,6 +41,11 @@ WebSocketConnectionPtr WebSocketClientImpl::getConnection()
 void WebSocketClientImpl::stop()
 {
     stop_ = true;
+    if (websockConnPtr_)
+    {
+        websockConnPtr_->shutdown();
+        websockConnPtr_.reset();
+    }
     tcpClientPtr_.reset();
 }
 void WebSocketClientImpl::createTcpClient()
