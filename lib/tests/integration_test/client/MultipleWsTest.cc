@@ -25,9 +25,9 @@ DROGON_TEST(MultipleWsTest)
                 if (type == WebSocketMessageType::Pong && TEST_CTX != nullptr)
                 {
                     // Check if the correct connection got the result
-                    CHECK(message == std::to_string(i));
-
+                    wsPtr->stop();
                     wsClients_[i].reset();
+                    CHECK(message == std::to_string(i));
                     TEST_CTX = {};
                 }
             });

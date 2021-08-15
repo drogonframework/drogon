@@ -23,6 +23,7 @@ DROGON_TEST(WebSocketTest)
             {
                 wsPtr_->stop();
                 CHECK(message.empty());
+                wsPtr->stop();
                 TEST_CTX = {};
             }
         });
@@ -33,15 +34,19 @@ DROGON_TEST(WebSocketTest)
                    const HttpResponsePtr &resp,
                    const WebSocketClientPtr &wsPtr) mutable {
             if (r != ReqResult::Ok)
-                app().getLoop()->queueInLoop([]() { wsPtr_ = {}; });
+            {
+                wsPtr_->stop();
+                wsPtr_.reset();
+            }
+            else
+            {
+                wsPtr->getConnection()->setPingMessage("", 1s);
+                wsPtr->getConnection()->send("hello!");
+                CHECK(wsPtr->getConnection()->connected());
+            }
             REQUIRE(r == ReqResult::Ok);
             REQUIRE(wsPtr != nullptr);
             REQUIRE(resp != nullptr);
-
-            wsPtr->getConnection()->setPingMessage("", 1s);
-            wsPtr->getConnection()->send("hello!");
-            CHECK(wsPtr->getConnection()->connected());
-
             // Drop the testing context as WS controllers stores the lambda and
             // never release it. Causing a dead lock later.
             TEST_CTX = {};
