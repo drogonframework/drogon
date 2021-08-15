@@ -111,7 +111,7 @@ class StructNode
         LOG_DEBUG << "findClass: " << content;
         if (content.empty())
             return {nullptr, ""};
-        std::regex rx(R"(class[ \r\n]+([^ \r\n]+)[ \r\n]+)");
+        std::regex rx(R"(class[ \r\n]+([^ \r\n\{]+)[ \r\n\{:]+)");
         std::smatch results;
         if (std::regex_search(content, results, rx))
         {
