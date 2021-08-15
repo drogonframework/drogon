@@ -12,8 +12,6 @@ static const int kClientCount = 100;
 
 DROGON_TEST(MultipleWsTest)
 {
-    // NOTE: The original test was for 1000 clients. But that seems to be
-    //       causing memory leak.
     wsClients_.reserve(kClientCount);
     for (size_t i = 0; i < kClientCount; i++)
     {
