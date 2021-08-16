@@ -33,11 +33,12 @@ set(DROGON_VERSION
     ${DROGON_MAJOR_VERSION}.${DROGON_MINOR_VERSION}.${DROGON_PATCH_VERSION})
 set(DROGON_VERSION_STRING "${DROGON_VERSION}")
 
+include(GNUInstallDirs)
 # Offer the user the choice of overriding the installation directories
-set(INSTALL_LIB_DIR lib CACHE PATH "Installation directory for libraries")
-set(INSTALL_BIN_DIR bin CACHE PATH "Installation directory for executables")
-set(INSTALL_INCLUDE_DIR include CACHE PATH "Installation directory for header files")
-set(DEF_INSTALL_DROGON_CMAKE_DIR lib/cmake/Drogon)
+set(INSTALL_LIB_DIR ${CMAKE_INSTALL_LIBDIR} CACHE PATH "Installation directory for libraries")
+set(INSTALL_BIN_DIR ${CMAKE_INSTALL_BINDIR} CACHE PATH "Installation directory for executables")
+set(INSTALL_INCLUDE_DIR ${CMAKE_INSTALL_INCLUDEDIR} CACHE PATH "Installation directory for header files")
+set(DEF_INSTALL_DROGON_CMAKE_DIR ${CMAKE_INSTALL_LIBDIR}/cmake/Drogon)
 set(INSTALL_DROGON_CMAKE_DIR ${DEF_INSTALL_DROGON_CMAKE_DIR}
     CACHE PATH "Installation directory for cmake files")
 
