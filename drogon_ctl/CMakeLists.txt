@@ -7,6 +7,7 @@ set(ctl_sources
     create_plugin.cc
     create_project.cc
     create_view.cc
+    HandlerParser.cc
     create_swagger.cc
     help.cc
     main.cc
