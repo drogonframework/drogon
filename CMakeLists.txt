@@ -748,3 +748,4 @@ if(DOXYGEN_FOUND)
   endif(BUILD_DOC)
 endif(DOXYGEN_FOUND)
 
+include(cmake/Packages.cmake)
