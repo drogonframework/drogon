@@ -150,8 +150,6 @@ elseif (DROGON_CXX_STANDARD EQUAL 17)
         ${PROJECT_SOURCE_DIR}/cmake/tests/check_has_std_filesystem_path.cc
         CXX_STANDARD 17)
     set(CMAKE_TRY_COMPILE_TARGET_TYPE)
-    # Workaround: 2021-08-09 Android NDK does not provide proper std::filesystem
-    # support. Force boost::filesystem instead.
     if (check_filesystem_path)
         message(STATUS "Using c++17 filesytem::path")
         if (CMAKE_CXX_COMPILER_ID MATCHES GNU)
@@ -165,7 +163,7 @@ endif ()
 
 # Workaround: 2021-08-09 Android NDK does not provide proper std::filesystem
 # support. Force boost::filesystem instead.
-if (NOT ${CMAKE_SYSTEM_NAME} STREQUAL "Android")
+if (${CMAKE_SYSTEM_NAME} STREQUAL "Android")
     message(STATUS "WORKAROUND: Forcing boost::filesystem on Android")
     set(NEED_BOOST_FS 1)
 endif ()
