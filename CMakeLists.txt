@@ -92,7 +92,6 @@ include(CheckIncludeFileCXX)
 check_include_file_cxx(any HAS_ANY)
 check_include_file_cxx(string_view HAS_STRING_VIEW)
 check_include_file_cxx(coroutine HAS_COROUTINE)
-check_include_file_cxx(filesystem HAS_FILESYSTEM)
 if (NOT "${CMAKE_CXX_STANDARD}" STREQUAL "")
     set(DROGON_CXX_STANDARD ${CMAKE_CXX_STANDARD})
 elseif (HAS_ANY AND HAS_STRING_VIEW AND HAS_COROUTINE)
@@ -131,6 +130,14 @@ else (NOT WIN32)
     target_link_libraries(${PROJECT_NAME} PRIVATE shlwapi)
 endif (NOT WIN32)
 
+list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules/)
+
+find_package(Filesystem COMPONENTS Final)
+if(CXX_FILESYSTEM_HAVE_FS)
+    message(STATUS "Found std::filesystem")
+endif()
+
+# Check for C++ filesystem support
 set(NEED_BOOST_FS 0)
 if (DROGON_CXX_STANDARD EQUAL 14)
     # With C++14, use Boost to support any and string_view
@@ -144,18 +151,16 @@ if (DROGON_CXX_STANDARD EQUAL 14)
 elseif (DROGON_CXX_STANDARD EQUAL 17)
     # With C++17, use Boost if std::filesystem::path is missing
     message(STATUS "use c++17")
+
     # Check for partial implementation of c++17 (Windows/OSX only?)
     set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
     try_compile(check_filesystem_path ${CMAKE_BINARY_DIR}/cmaketest
         ${PROJECT_SOURCE_DIR}/cmake/tests/check_has_std_filesystem_path.cc
         CXX_STANDARD 17)
     set(CMAKE_TRY_COMPILE_TARGET_TYPE)
-    if (check_filesystem_path)
-        message(STATUS "Using c++17 filesytem::path")
-        if (CMAKE_CXX_COMPILER_ID MATCHES GNU)
-            target_link_libraries(${PROJECT_NAME} PUBLIC stdc++fs)
-        endif()
-    else()
+    if (NOT check_filesystem_path OR NOT CXX_FILESYSTEM_HAVE_FS)
+      message(STATUS "Don't have std::filesystem or is a partial implementation."
+        " Falling back to boost::filesystem")
         set(NEED_BOOST_FS 1)
     endif()
 else ()
@@ -167,6 +172,9 @@ endif ()
 if (${CMAKE_SYSTEM_NAME} STREQUAL "Android")
     message(STATUS "WORKAROUND: Forcing boost::filesystem on Android")
     set(NEED_BOOST_FS 1)
+else ()
+    message(STATUS "Using c++17 filesytem::path")
+    target_link_libraries(${PROJECT_NAME} PUBLIC std::filesystem)
 endif ()
 
 if(NEED_BOOST_FS)
@@ -181,8 +189,6 @@ if(NEED_BOOST_FS)
 else()
     option(HAS_STD_FILESYSTEM_PATH "use std::filesystem" ON)
 endif()
-
-list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules/)
 
 # jsoncpp
 find_package(Jsoncpp REQUIRED)
