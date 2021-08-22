@@ -176,9 +176,6 @@ endif ()
 if (${CMAKE_SYSTEM_NAME} STREQUAL "Android")
     message(STATUS "WORKAROUND: Forcing boost::filesystem on Android")
     set(NEED_BOOST_FS 1)
-else ()
-    message(STATUS "Using c++17 filesytem::path")
-    target_link_libraries(${PROJECT_NAME} PUBLIC std::filesystem)
 endif ()
 
 if(NEED_BOOST_FS)
@@ -192,6 +189,7 @@ if(NEED_BOOST_FS)
     option(HAS_STD_FILESYSTEM_PATH "use boost::filesystem" OFF)
 else()
     option(HAS_STD_FILESYSTEM_PATH "use std::filesystem" ON)
+    target_link_libraries(${PROJECT_NAME} PUBLIC std::filesystem)
 endif()
 
 # jsoncpp
