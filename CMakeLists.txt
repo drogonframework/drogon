@@ -153,14 +153,18 @@ elseif (DROGON_CXX_STANDARD EQUAL 17)
     message(STATUS "use c++17")
 
     # Check for partial implementation of c++17 (Windows/OSX only?)
-    set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
-    try_compile(check_filesystem_path ${CMAKE_BINARY_DIR}/cmaketest
-        ${PROJECT_SOURCE_DIR}/cmake/tests/check_has_std_filesystem_path.cc
-        CXX_STANDARD 17)
-    set(CMAKE_TRY_COMPILE_TARGET_TYPE)
-    if (NOT check_filesystem_path OR NOT CXX_FILESYSTEM_HAVE_FS)
-      message(STATUS "Don't have std::filesystem or is a partial implementation."
-        " Falling back to boost::filesystem")
+    if (CXX_FILESYSTEM_HAVE_FS)
+        set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
+        try_compile(check_filesystem_path ${CMAKE_BINARY_DIR}/cmaketest
+            ${PROJECT_SOURCE_DIR}/cmake/tests/check_has_std_filesystem_path.cc
+            CXX_STANDARD 17)
+        set(CMAKE_TRY_COMPILE_TARGET_TYPE)
+        if (NOT check_filesystem_path)
+          message(STATUS "The std::filesystem seems to be a partial implementation"
+            " Falling back to boost::filesystem")
+            set(NEED_BOOST_FS 1)
+        endif()
+    else()
         set(NEED_BOOST_FS 1)
     endif()
 else ()
