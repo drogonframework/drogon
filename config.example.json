@@ -205,18 +205,18 @@
             "log_level": "DEBUG"
         },
         //run_as_daemon: False by default
-        "run_as_daemon": true,
+        "run_as_daemon": false,
         //handle_sig_term: True by default
         "handle_sig_term": true,
         //relaunch_on_error: False by default, if true, the program will be restart by the parent after exiting;
-        "relaunch_on_error": true,
+        "relaunch_on_error": false,
         //use_sendfile: True by default, if true, the program 
         //uses sendfile() system-call to send static files to clients;
         "use_sendfile": true,
         //use_gzip: True by default, use gzip to compress the response body's content;
         "use_gzip": true,
         //use_brotli: False by default, use brotli to compress the response body's content;
-        "use_brotli": true,
+        "use_brotli": false,
         //static_files_cache_time: 5 (seconds) by default, the time in which the static file response is cached,
         //0 means cache forever, the negative value means no cache
         "static_files_cache_time": 5,
