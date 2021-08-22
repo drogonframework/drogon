@@ -8,7 +8,7 @@ using namespace drogon;
 using namespace std::chrono_literals;
 
 static std::vector<WebSocketClientPtr> wsClients_;
-static const int kClientCount = 20;
+static const int kClientCount = 100;
 
 DROGON_TEST(MultipleWsTest)
 {
