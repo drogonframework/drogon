@@ -4,6 +4,58 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.7.2] - 2021-08-24
+
+### API Change List
+
+- Add port() and host() to HttpClient
+
+- Add stop() method to the WebSocketClient class
+
+### Changes
+
+- Enables higher level of warnings when building on UNIX with GCC
+
+- Generic optimizations
+
+- Add redis example
+
+- Added support for paths containing unicode characters on Windows
+
+- Load ParseAndAddDrogonTests in DrogonConfig
+
+- Add BUILD_DOC to cmake options
+
+- Add websocket server example
+
+- CMake: Add CPack for .deb and .rpm package generation
+
+- cmake: Use GNUInstallDirs to figure out install dirs.
+
+### Fixed
+
+- Fix WS client example not working with integration_test
+
+- Fix WS client example error when encountering bad IP addresses
+
+- CacheFile supports >2GB files on 64-bit Windows
+
+- `drogon_ctl` now emits error on failing to create view from CSP
+
+- Added the `make` program to Ubuntu docker environment
+
+- Correctly check the case-insensitive value of the upgrade header of responses in websocket connections
+
+- Fix incorrect MD5 hash when using internal MD5 implementation when input size == block size+1
+
+- Fix test success message incorrectly shown for a failed test when -s is flag present
+
+- Force using boost::filesystem when building for Android
+
+- Escape connection string in drogon_ctl create model
+
+- Fix some memory leak and race conditions in WebSocketClient
+
 ## [1.7.1] - 2021-06-24
 
 ### Changes
