@@ -43,6 +43,10 @@ endif()
 if(@BUILD_DROGON_SHARED@)
 find_dependency(Threads)
 endif()
+if(@HAS_STD_FILESYSTEM_PATH@)
+find_dependency(Filesystem)
+find_package(Filesystem COMPONENTS Final REQUIRED)
+endif()
 
 # Our library dependencies (contains definitions for IMPORTED targets)
 

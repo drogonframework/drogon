@@ -93,10 +93,11 @@ include(CheckIncludeFileCXX)
 check_include_file_cxx(any HAS_ANY)
 check_include_file_cxx(string_view HAS_STRING_VIEW)
 check_include_file_cxx(coroutine HAS_COROUTINE)
-check_include_file_cxx(filesystem HAS_FILESYSTEM)
-if (HAS_ANY AND HAS_STRING_VIEW AND HAS_COROUTINE AND HAS_FILESYSTEM)
+if (NOT "${CMAKE_CXX_STANDARD}" STREQUAL "")
+    set(DROGON_CXX_STANDARD ${CMAKE_CXX_STANDARD})
+elseif (HAS_ANY AND HAS_STRING_VIEW AND HAS_COROUTINE)
     set(DROGON_CXX_STANDARD 20)
-elseif (HAS_ANY AND HAS_STRING_VIEW AND HAS_FILESYSTEM)
+elseif (HAS_ANY AND HAS_STRING_VIEW)
     set(DROGON_CXX_STANDARD 17)
 else ()
     set(DROGON_CXX_STANDARD 14)
@@ -130,6 +131,14 @@ else (NOT WIN32)
     target_link_libraries(${PROJECT_NAME} PRIVATE shlwapi)
 endif (NOT WIN32)
 
+list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules/)
+
+find_package(Filesystem COMPONENTS Final)
+if(CXX_FILESYSTEM_HAVE_FS)
+    message(STATUS "Found std::filesystem")
+endif()
+
+# Check for C++ filesystem support
 set(NEED_BOOST_FS 0)
 if (DROGON_CXX_STANDARD EQUAL 14)
     # With C++14, use Boost to support any and string_view
@@ -143,34 +152,31 @@ if (DROGON_CXX_STANDARD EQUAL 14)
 elseif (DROGON_CXX_STANDARD EQUAL 17)
     # With C++17, use Boost if std::filesystem::path is missing
     message(STATUS "use c++17")
+
     # Check for partial implementation of c++17 (Windows/OSX only?)
-    set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
-    try_compile(check_filesystem_path ${CMAKE_BINARY_DIR}/cmaketest
-        ${PROJECT_SOURCE_DIR}/cmake/tests/check_has_std_filesystem_path.cc
-        CXX_STANDARD 17)
-    set(CMAKE_TRY_COMPILE_TARGET_TYPE)
-    # Workaround: 2021-08-09 Android NDK does not provide proper std::filesystem
-    # support. Force boost::filesystem instead.
-    if (check_filesystem_path AND NOT ${CMAKE_SYSTEM_NAME} STREQUAL "Android")
-        message(STATUS "Using c++17 filesytem::path")
-        if (CMAKE_CXX_COMPILER_ID MATCHES GNU)
-            target_link_libraries(${PROJECT_NAME} PUBLIC stdc++fs)
+    if (CXX_FILESYSTEM_HAVE_FS)
+        set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
+        try_compile(check_filesystem_path ${CMAKE_BINARY_DIR}/cmaketest
+            ${PROJECT_SOURCE_DIR}/cmake/tests/check_has_std_filesystem_path.cc
+            CXX_STANDARD 17)
+        set(CMAKE_TRY_COMPILE_TARGET_TYPE)
+        if (NOT check_filesystem_path)
+          message(STATUS "The std::filesystem seems to be a partial implementation"
+            " Falling back to boost::filesystem")
+            set(NEED_BOOST_FS 1)
         endif()
-        option(HAS_STD_FILESYSTEM_PATH "use std::filesystem" ON)
     else()
-        message(STATUS "WORKAROUND: Forcing boost::filesystem on Android")
         set(NEED_BOOST_FS 1)
     endif()
 else ()
     message(STATUS "use c++20")
-    # Workaround: 2021-08-09 Android NDK does not provide proper std::filesystem
-    # support. Force boost::filesystem instead.
-    if (NOT ${CMAKE_SYSTEM_NAME} STREQUAL "Android")
-        option(HAS_STD_FILESYSTEM_PATH "use std::filesystem" ON)
-    else ()
-        message(STATUS "WORKAROUND: Forcing boost::filesystem on Android")
-        set(NEED_BOOST_FS 1)
-    endif ()
+endif ()
+
+# Workaround: 2021-08-09 Android NDK does not provide proper std::filesystem
+# support. Force boost::filesystem instead.
+if (${CMAKE_SYSTEM_NAME} STREQUAL "Android")
+    message(STATUS "WORKAROUND: Forcing boost::filesystem on Android")
+    set(NEED_BOOST_FS 1)
 endif ()
 
 if(NEED_BOOST_FS)
@@ -182,9 +188,10 @@ if(NEED_BOOST_FS)
     target_link_libraries(${PROJECT_NAME} PUBLIC Boost::filesystem Boost::system)
     list(APPEND INCLUDE_DIRS_FOR_DYNAMIC_VIEW ${Boost_INCLUDE_DIR})
     option(HAS_STD_FILESYSTEM_PATH "use boost::filesystem" OFF)
+else()
+    option(HAS_STD_FILESYSTEM_PATH "use std::filesystem" ON)
+    target_link_libraries(${PROJECT_NAME} PUBLIC std::filesystem)
 endif()
-
-list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules/)
 
 # jsoncpp
 find_package(Jsoncpp REQUIRED)
@@ -699,6 +706,7 @@ install(FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules/FindBrotli.cmake"
     "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules/Findcoz-profiler.cmake"
     "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules/FindHiredis.cmake"
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules/FindFilesystem.cmake"
     "${CMAKE_CURRENT_SOURCE_DIR}/cmake/DrogonUtilities.cmake"
     "${CMAKE_CURRENT_SOURCE_DIR}/cmake/ParseAndAddDrogonTests.cmake"
     DESTINATION "${INSTALL_DROGON_CMAKE_DIR}"
