@@ -888,7 +888,9 @@ All notable changes to this project will be documented in this file.
 
 ## [1.0.0-beta1] - 2019-06-11
 
-[Unreleased]: https://github.com/an-tao/drogon/compare/v1.7.1...HEAD
+[Unreleased]: https://github.com/an-tao/drogon/compare/v1.7.2...HEAD
+
+[1.7.2]: https://github.com/an-tao/drogon/compare/v1.7.1...v1.7.2
 
 [1.7.1]: https://github.com/an-tao/drogon/compare/v1.7.0...v1.7.1
 
