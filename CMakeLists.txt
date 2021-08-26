@@ -127,7 +127,7 @@ if(${CMAKE_SYSTEM_NAME} STREQUAL "Haiku")
     target_link_libraries(${PROJECT_NAME} PRIVATE network)
 elseif (NOT WIN32 AND NOT ${CMAKE_SYSTEM_NAME} STREQUAL "OpenBSD")
     target_link_libraries(${PROJECT_NAME} PRIVATE dl)
-else ()
+elseif (WIN32)
     target_link_libraries(${PROJECT_NAME} PRIVATE shlwapi)
 endif ()
 
