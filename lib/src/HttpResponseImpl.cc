@@ -283,7 +283,14 @@ HttpResponsePtr HttpResponse::newFileResponse(
         resp->setBody(std::move(str));
         resp->setSendfileRange(offset, length);
     }
-    resp->setStatusCode(k200OK);
+    if (length == 0)
+    {
+        resp->setStatusCode(k204NoContent);
+    }
+    else
+    {
+        resp->setStatusCode(k200OK);
+    }
 
     if (type == CT_NONE)
     {
