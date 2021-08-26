@@ -691,6 +691,57 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
                             CHECK((*json)["P2"] == "test");
                         });
 
+    // Test send file by range
+    req = HttpRequest::newHttpRequest();
+    req->setPath("/RangeTestController/");
+    client->sendRequest(req,
+                        [req, TEST_CTX](ReqResult result,
+                                        const HttpResponsePtr &resp) {
+                            REQUIRE(result == ReqResult::Ok);
+                            CHECK(resp->getStatusCode() == k200OK);
+                            CHECK(resp->getBody().size() == 100);
+                            CHECK(resp->getHeader("Content-Length") == "100");
+                        });
+
+    req = HttpRequest::newHttpRequest();
+    req->setPath("/RangeTestController/80/0");
+    client->sendRequest(req,
+                        [req, TEST_CTX](ReqResult result,
+                                        const HttpResponsePtr &resp) {
+                            REQUIRE(result == ReqResult::Ok);
+                            CHECK(resp->getStatusCode() == k206PartialContent);
+                            CHECK(resp->getBody() == "01234567890123456789");
+                        });
+
+    req = HttpRequest::newHttpRequest();
+    req->setPath("/RangeTestController/0/100");
+    client->sendRequest(
+        req, [req, TEST_CTX](ReqResult result, const HttpResponsePtr &resp) {
+            REQUIRE(result == ReqResult::Ok);
+            CHECK(resp->getBody().size() == 100);
+            CHECK(resp->getHeader("Content-Length") == "100");
+            CHECK(resp->getHeader("Content-Range") == "bytes 0-99/100");
+        });
+
+    req = HttpRequest::newHttpRequest();
+    req->setPath("/RangeTestController/10/20");
+    client->sendRequest(
+        req, [req, TEST_CTX](ReqResult result, const HttpResponsePtr &resp) {
+            REQUIRE(result == ReqResult::Ok);
+            CHECK(resp->getStatusCode() == k206PartialContent);
+            CHECK(resp->getBody() == "01234567890123456789");
+            CHECK(resp->getHeader("Content-Length") == "20");
+            CHECK(resp->getHeader("Content-Range") == "bytes 10-29/100");
+        });
+
+    req = HttpRequest::newHttpRequest();
+    req->setPath("/RangeTestController/0/1000");
+    client->sendRequest(
+        req, [req, TEST_CTX](ReqResult result, const HttpResponsePtr &resp) {
+            REQUIRE(result == ReqResult::Ok);
+            CHECK(resp->getStatusCode() == k416RequestedRangeNotSatisfiable);
+        });
+
     // Using .. to access a upper directory should be permitted as long as
     // it never leaves the document root
     req = HttpRequest::newHttpRequest();
