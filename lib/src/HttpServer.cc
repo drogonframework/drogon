@@ -560,7 +560,8 @@ void HttpServer::sendResponse(const TcpConnectionPtr &conn,
         auto &sendfileName = respImplPtr->sendfileName();
         if (!sendfileName.empty())
         {
-            conn->sendFile(sendfileName.c_str());
+            auto &range = respImplPtr->sendfileRange();
+            conn->sendFile(sendfileName.c_str(), range.first, range.second);
         }
         COZ_PROGRESS
     }
@@ -601,9 +602,10 @@ void HttpServer::sendResponses(
             auto &sendfileName = respImplPtr->sendfileName();
             if (!sendfileName.empty())
             {
+                auto &range = respImplPtr->sendfileRange();
                 conn->send(buffer);
                 buffer.retrieveAll();
-                conn->sendFile(sendfileName.c_str());
+                conn->sendFile(sendfileName.c_str(), range.first, range.second);
                 COZ_PROGRESS
             }
         }

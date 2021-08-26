@@ -359,6 +359,26 @@ class DROGON_EXPORT HttpResponse
         const std::string &attachmentFileName = "",
         ContentType type = CT_NONE);
 
+    /// Create a response that returns part of a file to the client.
+    /**
+     * @brief If offset and length can not be satisfied, statusCode will be set
+     * to k416RequestedRangeNotSatisfiable, and nothing else will be modified.
+     *
+     * @param fullPath is the full path to the file.
+     * @param offset is the offset to begin sending, in bytes.
+     * @param length is the total length to send, in bytes.
+     * @param attachmentFileName if the parameter is not empty, the browser
+     * does not open the file, but saves it as an attachment.
+     * @param type if the parameter is CT_NONE, the content type is set by
+     * drogon based on the file extension.
+     */
+    static HttpResponsePtr newFileResponse(
+        const std::string &fullPath,
+        size_t offset,
+        size_t length,
+        const std::string &attachmentFileName = "",
+        ContentType type = CT_NONE);
+
     /// Create a response that returns a file to the client from buffer in
     /// memory/stack
     /**
