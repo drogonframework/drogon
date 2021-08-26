@@ -317,7 +317,7 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
     {
         return sendfileName_;
     }
-    using SendfileRange = std::pair<size_t, size_t>;
+    using SendfileRange = std::pair<size_t, size_t>;  // { offset, length }
     const SendfileRange &sendfileRange() const
     {
         return sendfileRange_;

@@ -274,6 +274,8 @@ HttpResponsePtr HttpResponse::newFileResponse(
         // The advantages of sendfile() can only be reflected in sending large
         // files.
         resp->setSendfile(fullPath);
+        // Must set length with the right value! Content-Length header relys on
+        // this value.
         resp->setSendfileRange(offset, length);
     }
     else
@@ -391,19 +393,11 @@ void HttpResponseImpl::makeHeaderString(trantor::MsgBuffer &buffer)
         }
         else
         {
-            drogon::error_code err;
-            filesystem::path fsSendfile(utils::toNativePath(sendfileName_));
-            auto fileSize = filesystem::file_size(fsSendfile, err);
-            if (err)
-            {
-                LOG_SYSERR << fsSendfile << " stat error " << err.value()
-                           << ": " << err.message();
-                return;
-            }
+            auto bodyLength = sendfileRange_.second;
             len = snprintf(buffer.beginWrite(),
                            buffer.writableBytes(),
-                           contentLengthFormatString<decltype(fileSize)>(),
-                           fileSize);
+                           contentLengthFormatString<decltype(bodyLength)>(),
+                           bodyLength);
         }
         buffer.hasWritten(len);
         if (headers_.find("connection") == headers_.end())
