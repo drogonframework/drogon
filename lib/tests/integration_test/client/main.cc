@@ -739,6 +739,7 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
     client->sendRequest(
         req, [req, TEST_CTX](ReqResult result, const HttpResponsePtr &resp) {
             REQUIRE(result == ReqResult::Ok);
+            CHECK(resp->getHeader("Content-Range") == "bytes */100");
             CHECK(resp->getStatusCode() == k416RequestedRangeNotSatisfiable);
         });
 

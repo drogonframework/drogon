@@ -14,7 +14,8 @@ class RangeTestController : public drogon::HttpController<RangeTestController>
     void getFile(const HttpRequestPtr &req,
                  std::function<void(const HttpResponsePtr &)> &&callback) const;
 
-    // We do not provide 'Range' header decoding, simply use path as range parameter.
+    // We do not provide 'Range' header decoding, simply use path as range
+    // parameter.
     void getFileByRange(const HttpRequestPtr &req,
                         std::function<void(const HttpResponsePtr &)> &&callback,
                         size_t offset,
