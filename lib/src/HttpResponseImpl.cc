@@ -260,6 +260,12 @@ HttpResponsePtr HttpResponse::newFileResponse(
         offset + length > filesize)
     {
         resp->setStatusCode(k416RequestedRangeNotSatisfiable);
+        if (setContentRange)
+        {
+            char buf[64];
+            snprintf(buf, sizeof(buf), "bytes */%zu", filesize);
+            resp->addHeader("Content-Range", std::string(buf));
+        }
         return resp;
     }
     if (length == 0)
@@ -286,11 +292,9 @@ HttpResponsePtr HttpResponse::newFileResponse(
         resp->setBody(std::move(str));
         resp->setSendfileRange(offset, length);
     }
-    if (length == 0)
-    {
-        resp->setStatusCode(k204NoContent);
-    }
-    else if (length < filesize)
+
+    // Set correct status code
+    if (length < filesize)
     {
         resp->setStatusCode(k206PartialContent);
     }
@@ -299,6 +303,7 @@ HttpResponsePtr HttpResponse::newFileResponse(
         resp->setStatusCode(k200OK);
     }
 
+    // Infer content type
     if (type == CT_NONE)
     {
         if (!attachmentFileName.empty())
@@ -316,6 +321,7 @@ HttpResponsePtr HttpResponse::newFileResponse(
         resp->setContentTypeCode(type);
     }
 
+    // Set headers
     if (!attachmentFileName.empty())
     {
         resp->addHeader("Content-Disposition",
