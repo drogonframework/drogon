@@ -234,13 +234,14 @@ HttpResponsePtr HttpResponse::newFileResponse(
     const std::string &attachmentFileName,
     ContentType type)
 {
-    return newFileResponse(fullPath, 0, 0, attachmentFileName, type);
+    return newFileResponse(fullPath, 0, 0, false, attachmentFileName, type);
 }
 
 HttpResponsePtr HttpResponse::newFileResponse(
     const std::string &fullPath,
     size_t offset,
     size_t length,
+    bool setContentRange,
     const std::string &attachmentFileName,
     ContentType type)
 {
@@ -317,6 +318,17 @@ HttpResponsePtr HttpResponse::newFileResponse(
     {
         resp->addHeader("Content-Disposition",
                         "attachment; filename=" + attachmentFileName);
+    }
+    if (setContentRange && length > 0)
+    {
+        char buf[128];
+        snprintf(buf,
+                 sizeof(buf),
+                 "bytes %zu-%zu/%zu",
+                 offset,
+                 offset + length - 1,
+                 filesize);
+        resp->addHeader("Content-Range", std::string(buf));
     }
     doResponseCreateAdvices(resp);
     return resp;

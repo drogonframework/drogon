@@ -367,6 +367,7 @@ class DROGON_EXPORT HttpResponse
      * @param fullPath is the full path to the file.
      * @param offset is the offset to begin sending, in bytes.
      * @param length is the total length to send, in bytes.
+     * @param setContentRange whether set 'Content-Range' header automatically.
      * @param attachmentFileName if the parameter is not empty, the browser
      * does not open the file, but saves it as an attachment.
      * @param type if the parameter is CT_NONE, the content type is set by
@@ -376,6 +377,7 @@ class DROGON_EXPORT HttpResponse
         const std::string &fullPath,
         size_t offset,
         size_t length,
+        bool setContentRange = true,
         const std::string &attachmentFileName = "",
         ContentType type = CT_NONE);
 
