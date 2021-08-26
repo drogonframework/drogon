@@ -287,6 +287,10 @@ HttpResponsePtr HttpResponse::newFileResponse(
     {
         resp->setStatusCode(k204NoContent);
     }
+    else if (length < filesize)
+    {
+        resp->setStatusCode(k206PartialContent);
+    }
     else
     {
         resp->setStatusCode(k200OK);
