@@ -12,7 +12,7 @@
 **Drogon**是一個基於C++14/17的Http應用框架，使用Drogon可以方便的使用C++構建各種類型的Web App伺服器程式。
 本版本庫是github上[Drogon](https://github.com/an-tao/drogon)的鏡像庫。 **Drogon**是作者非常喜歡的美劇《冰與火之歌：權力遊戲》中的一條龍的名字(漢譯作卓耿)，和龍有關但並不是dragon的誤寫，為了不至於引起不必要的誤會這裡說明一下。
 
-Drogon是一個跨平台框架，它支援Linux，也支援macOS、FreeBSD/OpenBSD和Windows。它的主要特點如下：
+Drogon是一個跨平台框架，它支援Linux，也支援macOS、FreeBSD/OpenBSD、HaikuOS和Windows。它的主要特點如下：
 
 * 網路層使用基於epoll(macOS/FreeBSD下是kqueue)的非阻塞IO框架，提供高並發、高性能的網路IO。詳細請見[TFB Tests Results](https://www.techempower.com/benchmarks/#section=data-r19&hw=ph&test=composite)；
 * 全異步程式設計；
