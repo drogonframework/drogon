@@ -234,8 +234,20 @@ HttpResponsePtr HttpResponse::newFileResponse(
     const std::string &attachmentFileName,
     ContentType type)
 {
+    return newFileResponse(fullPath, 0, 0, false, attachmentFileName, type);
+}
+
+HttpResponsePtr HttpResponse::newFileResponse(
+    const std::string &fullPath,
+    size_t offset,
+    size_t length,
+    bool setContentRange,
+    const std::string &attachmentFileName,
+    ContentType type)
+{
     std::ifstream infile(utils::toNativePath(fullPath), std::ifstream::binary);
-    LOG_TRACE << "send http file:" << fullPath;
+    LOG_TRACE << "send http file:" << fullPath << " offset " << offset
+              << " length " << length;
     if (!infile)
     {
         auto resp = HttpResponse::newNotFoundResponse();
@@ -244,23 +256,54 @@ HttpResponsePtr HttpResponse::newFileResponse(
     auto resp = std::make_shared<HttpResponseImpl>();
     std::streambuf *pbuf = infile.rdbuf();
     std::streamsize filesize = pbuf->pubseekoff(0, std::ifstream::end);
-    pbuf->pubseekoff(0, std::ifstream::beg);  // rewind
-    if (HttpAppFrameworkImpl::instance().useSendfile() && filesize > 1024 * 200)
+    if (offset > filesize || length > filesize ||  // in case of overflow
+        offset + length > filesize)
+    {
+        resp->setStatusCode(k416RequestedRangeNotSatisfiable);
+        if (setContentRange)
+        {
+            char buf[64];
+            snprintf(buf, sizeof(buf), "bytes */%zu", filesize);
+            resp->addHeader("Content-Range", std::string(buf));
+        }
+        return resp;
+    }
+    if (length == 0)
+    {
+        length = filesize - offset;
+    }
+    pbuf->pubseekoff(offset, std::ifstream::beg);  // rewind
+
+    if (HttpAppFrameworkImpl::instance().useSendfile() && length > 1024 * 200)
     // TODO : Is 200k an appropriate value? Or set it to be configurable
     {
         // The advantages of sendfile() can only be reflected in sending large
         // files.
         resp->setSendfile(fullPath);
+        // Must set length with the right value! Content-Length header relys on
+        // this value.
+        resp->setSendfileRange(offset, length);
     }
     else
     {
         std::string str;
-        str.resize(filesize);
-        pbuf->sgetn(&str[0], filesize);
+        str.resize(length);
+        pbuf->sgetn(&str[0], length);
         resp->setBody(std::move(str));
+        resp->setSendfileRange(offset, length);
     }
-    resp->setStatusCode(k200OK);
 
+    // Set correct status code
+    if (length < filesize)
+    {
+        resp->setStatusCode(k206PartialContent);
+    }
+    else
+    {
+        resp->setStatusCode(k200OK);
+    }
+
+    // Infer content type
     if (type == CT_NONE)
     {
         if (!attachmentFileName.empty())
@@ -278,10 +321,22 @@ HttpResponsePtr HttpResponse::newFileResponse(
         resp->setContentTypeCode(type);
     }
 
+    // Set headers
     if (!attachmentFileName.empty())
     {
         resp->addHeader("Content-Disposition",
                         "attachment; filename=" + attachmentFileName);
+    }
+    if (setContentRange && length > 0)
+    {
+        char buf[128];
+        snprintf(buf,
+                 sizeof(buf),
+                 "bytes %zu-%zu/%zu",
+                 offset,
+                 offset + length - 1,
+                 filesize);
+        resp->addHeader("Content-Range", std::string(buf));
     }
     doResponseCreateAdvices(resp);
     return resp;
@@ -344,19 +399,11 @@ void HttpResponseImpl::makeHeaderString(trantor::MsgBuffer &buffer)
         }
         else
         {
-            drogon::error_code err;
-            filesystem::path fsSendfile(utils::toNativePath(sendfileName_));
-            auto fileSize = filesystem::file_size(fsSendfile, err);
-            if (err)
-            {
-                LOG_SYSERR << fsSendfile << " stat error " << err.value()
-                           << ": " << err.message();
-                return;
-            }
+            auto bodyLength = sendfileRange_.second;
             len = snprintf(buffer.beginWrite(),
                            buffer.writableBytes(),
-                           contentLengthFormatString<decltype(fileSize)>(),
-                           fileSize);
+                           contentLengthFormatString<decltype(bodyLength)>(),
+                           bodyLength);
         }
         buffer.hasWritten(len);
         if (headers_.find("connection") == headers_.end())

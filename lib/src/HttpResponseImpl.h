@@ -317,9 +317,19 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
     {
         return sendfileName_;
     }
+    using SendfileRange = std::pair<size_t, size_t>;  // { offset, length }
+    const SendfileRange &sendfileRange() const
+    {
+        return sendfileRange_;
+    }
     void setSendfile(const std::string &filename)
     {
         sendfileName_ = filename;
+    }
+    void setSendfileRange(size_t offset, size_t len)
+    {
+        sendfileRange_.first = offset;
+        sendfileRange_.second = len;
     }
     void makeHeaderString()
     {
@@ -398,6 +408,8 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
     mutable std::shared_ptr<HttpMessageBody> bodyPtr_;
     ssize_t expriedTime_{-1};
     std::string sendfileName_;
+    SendfileRange sendfileRange_{0, 0};
+
     mutable std::shared_ptr<Json::Value> jsonPtr_;
 
     std::shared_ptr<trantor::MsgBuffer> fullHeaderString_;
