@@ -366,7 +366,8 @@ class DROGON_EXPORT HttpResponse
      *
      * @param fullPath is the full path to the file.
      * @param offset is the offset to begin sending, in bytes.
-     * @param length is the total length to send, in bytes.
+     * @param length is the total length to send, in bytes. In particular,
+     * length = 0 means send all content from offset till end of file.
      * @param setContentRange whether set 'Content-Range' header automatically.
      * @param attachmentFileName if the parameter is not empty, the browser
      * does not open the file, but saves it as an attachment.
