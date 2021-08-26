@@ -557,10 +557,10 @@ void HttpServer::sendResponse(const TcpConnectionPtr &conn,
     {
         auto httpString = respImplPtr->renderToBuffer();
         conn->send(httpString);
-        auto &sendfileName = respImplPtr->sendfileName();
+        const std::string &sendfileName = respImplPtr->sendfileName();
         if (!sendfileName.empty())
         {
-            auto &range = respImplPtr->sendfileRange();
+            const auto &range = respImplPtr->sendfileRange();
             conn->sendFile(sendfileName.c_str(), range.first, range.second);
         }
         COZ_PROGRESS
@@ -599,10 +599,10 @@ void HttpServer::sendResponses(
         {
             // Not HEAD method
             respImplPtr->renderToBuffer(buffer);
-            auto &sendfileName = respImplPtr->sendfileName();
+            const std::string &sendfileName = respImplPtr->sendfileName();
             if (!sendfileName.empty())
             {
-                auto &range = respImplPtr->sendfileRange();
+                const auto &range = respImplPtr->sendfileRange();
                 conn->send(buffer);
                 buffer.retrieveAll();
                 conn->sendFile(sendfileName.c_str(), range.first, range.second);
