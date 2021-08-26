@@ -17,9 +17,11 @@
 #include <drogon/plugins/AccessLogger.h>
 #include <regex>
 #include <thread>
-#ifndef _WIN32
+#if !defined _WIN32 && !defined __HAIKU__
 #include <unistd.h>
 #include <sys/syscall.h>
+#elif defined __HAIKU__
+#include <unistd.h>
 #else
 #include <sstream>
 #endif
@@ -343,7 +345,7 @@ void AccessLogger::outputThreadNumber(trantor::LogStream &stream,
     {
         threadId_ = getthrid();
     }
-#elif defined _WIN32
+#elif defined _WIN32 || defined __HAIKU__
     if (threadId_ == 0)
     {
         std::stringstream ss;
