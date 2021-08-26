@@ -694,17 +694,16 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
     // Test send file by range
     req = HttpRequest::newHttpRequest();
     req->setPath("/RangeTestController/");
-    client->sendRequest(req,
-                        [req, TEST_CTX](ReqResult result,
-                                        const HttpResponsePtr &resp) {
-                            REQUIRE(result == ReqResult::Ok);
-                            CHECK(resp->getStatusCode() == k200OK);
-                            CHECK(resp->getBody().size() == 100);
-                            CHECK(resp->getHeader("Content-Length") == "100");
-                        });
+    client->sendRequest(
+        req, [req, TEST_CTX](ReqResult result, const HttpResponsePtr &resp) {
+            REQUIRE(result == ReqResult::Ok);
+            CHECK(resp->getStatusCode() == k200OK);
+            CHECK(resp->getBody().size() == 1'000'000);
+            CHECK(resp->getHeader("Content-Length") == "1000000");
+        });
 
     req = HttpRequest::newHttpRequest();
-    req->setPath("/RangeTestController/80/0");
+    req->setPath("/RangeTestController/999980/0");
     client->sendRequest(req,
                         [req, TEST_CTX](ReqResult result,
                                         const HttpResponsePtr &resp) {
@@ -713,14 +712,15 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
                             CHECK(resp->getBody() == "01234567890123456789");
                         });
 
+    // Test > 200k
     req = HttpRequest::newHttpRequest();
-    req->setPath("/RangeTestController/0/100");
+    req->setPath("/RangeTestController/1/500000");
     client->sendRequest(
         req, [req, TEST_CTX](ReqResult result, const HttpResponsePtr &resp) {
             REQUIRE(result == ReqResult::Ok);
-            CHECK(resp->getBody().size() == 100);
-            CHECK(resp->getHeader("Content-Length") == "100");
-            CHECK(resp->getHeader("Content-Range") == "bytes 0-99/100");
+            CHECK(resp->getBody().size() == 500'000);
+            CHECK(resp->getHeader("Content-Length") == "500000");
+            CHECK(resp->getHeader("Content-Range") == "bytes 1-500000/1000000");
         });
 
     req = HttpRequest::newHttpRequest();
@@ -731,15 +731,16 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
             CHECK(resp->getStatusCode() == k206PartialContent);
             CHECK(resp->getBody() == "01234567890123456789");
             CHECK(resp->getHeader("Content-Length") == "20");
-            CHECK(resp->getHeader("Content-Range") == "bytes 10-29/100");
+            CHECK(resp->getHeader("Content-Range") == "bytes 10-29/1000000");
         });
 
+    // Test invalid range
     req = HttpRequest::newHttpRequest();
-    req->setPath("/RangeTestController/0/1000");
+    req->setPath("/RangeTestController/0/2000000");
     client->sendRequest(
         req, [req, TEST_CTX](ReqResult result, const HttpResponsePtr &resp) {
             REQUIRE(result == ReqResult::Ok);
-            CHECK(resp->getHeader("Content-Range") == "bytes */100");
+            CHECK(resp->getHeader("Content-Range") == "bytes */1000000");
             CHECK(resp->getStatusCode() == k416RequestedRangeNotSatisfiable);
         });
 

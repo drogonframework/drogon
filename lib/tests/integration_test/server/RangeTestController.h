@@ -11,6 +11,8 @@ class RangeTestController : public drogon::HttpController<RangeTestController>
     METHOD_ADD(RangeTestController::getFileByRange, "/{offset}/{length}", Get);
     METHOD_LIST_END
 
+    RangeTestController();
+
     void getFile(const HttpRequestPtr &req,
                  std::function<void(const HttpResponsePtr &)> &&callback) const;
 
@@ -21,6 +23,11 @@ class RangeTestController : public drogon::HttpController<RangeTestController>
                         size_t offset,
                         size_t length) const;
 
+    static size_t getFileSize()
+    {
+        return fileSize_;
+    }
+
   private:
-    std::string greetings_;
+    static size_t fileSize_;
 };
