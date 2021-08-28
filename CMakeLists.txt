@@ -123,13 +123,13 @@ add_subdirectory(trantor)
 
 target_link_libraries(${PROJECT_NAME} PUBLIC trantor)
 
-if (NOT WIN32)
-    if (NOT ${CMAKE_SYSTEM_NAME} STREQUAL "OpenBSD")
-        target_link_libraries(${PROJECT_NAME} PRIVATE dl)
-    endif (NOT ${CMAKE_SYSTEM_NAME} STREQUAL "OpenBSD")
-else (NOT WIN32)
+if(${CMAKE_SYSTEM_NAME} STREQUAL "Haiku")
+    target_link_libraries(${PROJECT_NAME} PRIVATE network)
+elseif (NOT WIN32 AND NOT ${CMAKE_SYSTEM_NAME} STREQUAL "OpenBSD")
+    target_link_libraries(${PROJECT_NAME} PRIVATE dl)
+elseif (WIN32)
     target_link_libraries(${PROJECT_NAME} PRIVATE shlwapi)
-endif (NOT WIN32)
+endif ()
 
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules/)
 

@@ -41,7 +41,7 @@
 #endif
 
 #if defined __linux__ || defined __FreeBSD__ || defined __OpenBSD__ || \
-    defined __MINGW32__
+    defined __MINGW32__ || defined __HAIKU__
 
 #ifdef __linux__
 #include <endian.h>  // __BYTE_ORDER __LITTLE_ENDIAN

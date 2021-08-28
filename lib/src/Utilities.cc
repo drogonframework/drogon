@@ -53,6 +53,7 @@
 #include <stdarg.h>
 
 #ifdef _WIN32
+
 char *strptime(const char *s, const char *f, struct tm *tm)
 {
     // std::get_time is defined such that its
@@ -77,6 +78,11 @@ time_t timegm(struct tm *tm)
      */
     return _mkgmtime(&my_tm);
 }
+#endif
+
+#ifdef __HAIKU__
+// HACK: Haiku has a timegm implementation. But it is not exposed
+extern "C" time_t timegm(struct tm *tm);
 #endif
 
 namespace drogon
@@ -1173,10 +1179,11 @@ static bool systemRandomBytes(void *ptr, size_t size)
     ((defined(__GLIBC__) && \
       (__GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 25))))
     return getentropy(ptr, size) != -1;
-#elif defined(_WIN32)    // Windows
+#elif defined(_WIN32)  // Windows
     return RtlGenRandom(ptr, size);
-#elif defined(__unix__)  // fallback to /dev/urandom for other/old UNIX
-    static std::unique_ptr<FILE, std::function<void(FILE *)> > fptr(
+#elif defined(__unix__) || defined(__HAIKU__)
+    // fallback to /dev/urandom for other/old UNIX
+    thread_local std::unique_ptr<FILE, std::function<void(FILE *)> > fptr(
         fopen("/dev/urandom", "rb"), [](FILE *ptr) {
             if (ptr != nullptr)
                 fclose(ptr);
