@@ -192,12 +192,14 @@ std::vector<trantor::EventLoop *> ListenerManager::createListeners(
             LOG_TRACE << "thread num=" << threadNum;
             auto ip = listener.ip_;
             bool isIpv6 = ip.find(':') == std::string::npos ? false : true;
+            bool trustProxy = listener.trustProxy_;
             auto serverPtr = std::make_shared<HttpServer>(
                 loopThreadPtr->getLoop(),
                 InetAddress(ip, listener.port_, isIpv6),
                 "drogon",
                 syncAdvices,
-                preSendingAdvices);
+                preSendingAdvices,
+                trustProxy);
             if (listener.useSSL_)
             {
 #ifdef OpenSSL_FOUND
