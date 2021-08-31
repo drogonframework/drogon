@@ -33,7 +33,11 @@
             "use_old_tls": false,
             "ssl_conf": [
                 //["MinProtocol", "TLSv1.3"]
-            ]
+            ],
+            // trust that a proxy sets `X-Forwarded-For` header and use it as the
+            // source IP. Only turn this on when behind a trusted proxy. Otherwise
+            // clients can easily fool their IP address, false by default
+            "trust_proxy": false
         }
     ],
     "db_clients": [

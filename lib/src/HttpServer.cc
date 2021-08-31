@@ -157,7 +157,8 @@ HttpServer::HttpServer(
         &syncAdvices,
     const std::vector<
         std::function<void(const HttpRequestPtr &, const HttpResponsePtr &)>>
-        &preSendingAdvices)
+        &preSendingAdvices,
+    bool trustProxy)
 #ifdef __linux__
     : server_(loop, listenAddr, name.c_str()),
 #else
@@ -167,7 +168,8 @@ HttpServer::HttpServer(
       newWebsocketCallback_(defaultWebSockAsyncCallback),
       connectionCallback_(defaultConnectionCallback),
       syncAdvices_(syncAdvices),
-      preSendingAdvices_(preSendingAdvices)
+      preSendingAdvices_(preSendingAdvices),
+      trustProxy_(trustProxy)
 {
     server_.setConnectionCallback(
         [this](const auto &conn) { this->onConnection(conn); });
@@ -248,7 +250,43 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn, MsgBuffer *buf)
             }
             if (requestParser->gotAll())
             {
-                requestParser->requestImpl()->setPeerAddr(conn->peerAddr());
+                if (!trustProxy_)
+                {
+                    requestParser->requestImpl()->setPeerAddr(conn->peerAddr());
+                }
+                else
+                {
+                    const std::string &forwarfedFor =
+                        requestParser->requestImpl()->getHeaderBy(
+                            "x-forwarded-for");
+                    if (forwarfedFor.empty())
+                    {
+                        requestParser->requestImpl()->setPeerAddr(
+                            conn->peerAddr());
+                    }
+                    else
+                    {
+                        auto idx = forwarfedFor.find(",");
+                        if (idx == std::string::npos)
+                            idx = forwarfedFor.size();
+                        std::string ipStr(forwarfedFor.begin(),
+                                          forwarfedFor.begin() + idx);
+                        bool isIpv6 = ipStr.find(':') != std::string::npos;
+                        trantor::InetAddress addr(ipStr, 0, isIpv6);
+                        if (addr.isUnspecified())
+                        {
+                            LOG_WARN << "Trying to use `X-Forwarded-For` for "
+                                        "source IP address. But "
+                                     << ipStr << " is not a valid IP address";
+                            requestParser->requestImpl()->setPeerAddr(
+                                conn->peerAddr());
+                        }
+                        else
+                        {
+                            requestParser->requestImpl()->setPeerAddr(addr);
+                        }
+                    }
+                }
                 requestParser->requestImpl()->setLocalAddr(conn->localAddr());
                 requestParser->requestImpl()->setCreationDate(
                     trantor::Date::date());

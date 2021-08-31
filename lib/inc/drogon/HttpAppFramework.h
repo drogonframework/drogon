@@ -686,6 +686,11 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
      * method is used.
      * @param useOldTLS If true, the TLS1.0/1.1 are enabled for HTTPS
      * connections.
+     * @param sslConfCmds Options for the underlying SSL library. See
+     * https://www.openssl.org/docs/man1.1.1/man3/SSL_CONF_cmd.html for detail
+     * @param trustProxy If true, trust that a proxy sets `X-Forwarded-For`
+     * header and use it as the source IP. Only turn this on when behind a
+     * trusted proxy. Otherwise clients can easily fool their IP address.
      *
      * @note
      * This operation can be performed by an option in the configuration file.
@@ -698,7 +703,8 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
         const std::string &keyFile = "",
         bool useOldTLS = false,
         const std::vector<std::pair<std::string, std::string>> &sslConfCmds =
-            {}) = 0;
+            {},
+        bool trustProxy = false) = 0;
 
     /// Enable sessions supporting.
     /**

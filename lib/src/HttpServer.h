@@ -35,7 +35,8 @@ class HttpServer : trantor::NonCopyable
                    &syncAdvices,
                const std::vector<std::function<void(const HttpRequestPtr &,
                                                     const HttpResponsePtr &)>>
-                   &preSendingAdvices);
+                   &preSendingAdvices,
+               bool trustProxy);
 
     ~HttpServer();
 
@@ -117,6 +118,7 @@ class HttpServer : trantor::NonCopyable
     const std::vector<
         std::function<void(const HttpRequestPtr &, const HttpResponsePtr &)>>
         &preSendingAdvices_;
+    const bool trustProxy_;
 };
 
 }  // namespace drogon

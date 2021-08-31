@@ -59,7 +59,8 @@ void ListenerManager::addListener(
     const std::string &certFile,
     const std::string &keyFile,
     bool useOldTLS,
-    const std::vector<std::pair<std::string, std::string>> &sslConfCmds)
+    const std::vector<std::pair<std::string, std::string>> &sslConfCmds,
+    bool trustProxy)
 {
 #ifndef OpenSSL_FOUND
     if (useSSL)
@@ -67,8 +68,14 @@ void ListenerManager::addListener(
         LOG_ERROR << "Can't use SSL without OpenSSL found in your system";
     }
 #endif
-    listeners_.emplace_back(
-        ip, port, useSSL, certFile, keyFile, useOldTLS, sslConfCmds);
+    listeners_.emplace_back(ip,
+                            port,
+                            useSSL,
+                            certFile,
+                            keyFile,
+                            useOldTLS,
+                            sslConfCmds,
+                            trustProxy);
 }
 
 std::vector<trantor::EventLoop *> ListenerManager::createListeners(
@@ -103,6 +110,7 @@ std::vector<trantor::EventLoop *> ListenerManager::createListeners(
         {
             auto const &ip = listener.ip_;
             bool isIpv6 = ip.find(':') == std::string::npos ? false : true;
+            bool trustProxy = listener.trustProxy_;
             std::shared_ptr<HttpServer> serverPtr;
             InetAddress listenAddress(ip, listener.port_, isIpv6);
             if (listenAddress.isUnspecified())
@@ -126,7 +134,8 @@ std::vector<trantor::EventLoop *> ListenerManager::createListeners(
                                                  std::move(listenAddress),
                                                  "drogon",
                                                  syncAdvices,
-                                                 preSendingAdvices);
+                                                 preSendingAdvices,
+                                                 trustProxy);
             }
             else
             {
@@ -135,7 +144,8 @@ std::vector<trantor::EventLoop *> ListenerManager::createListeners(
                                                  std::move(listenAddress),
                                                  "drogon",
                                                  syncAdvices,
-                                                 preSendingAdvices);
+                                                 preSendingAdvices,
+                                                 trustProxy);
             }
 
             if (listener.useSSL_)
