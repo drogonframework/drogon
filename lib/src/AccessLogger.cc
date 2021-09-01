@@ -108,6 +108,10 @@ void AccessLogger::initAndStart(const Json::Value &config)
         auto sizeLimit = config.get("log_size_limit", 0).asUInt64();
         if (sizeLimit == 0)
         {
+            // In earlier code, "size_limit" is taken instead of
+            // "log_size_limit" as it said in the comment in AccessLogger.h.
+            // In order to ensure backward compatibility we still take this
+            // field as a fallback.
             sizeLimit = config.get("size_limit", 0).asUInt64();
         }
         if (sizeLimit > 0)
