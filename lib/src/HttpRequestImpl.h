@@ -86,6 +86,8 @@ class HttpRequestImpl : public HttpRequest
         return version_;
     }
 
+    virtual const char *versionString() const override;
+
     bool setMethod(const char *start, const char *end);
     void setSecure(bool secure)
     {

@@ -254,6 +254,14 @@ class DROGON_EXPORT HttpResponse
         return body();
     }
 
+    /// Return the string of http version of request, such as HTTP/1.0,
+    /// HTTP/1.1, etc.
+    virtual const char *versionString() const = 0;
+    const char *getVersionString() const
+    {
+        return versionString();
+    }
+
     /// Return the enum type version of the response.
     /**
      * kHttp10 means Http version is 1.0
