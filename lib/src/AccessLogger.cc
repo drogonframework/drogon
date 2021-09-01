@@ -53,6 +53,9 @@ void AccessLogger::initAndStart(const Json::Value &config)
                        {"$request_url", outputReqURL},
                        {"$query", outputReqQuery},
                        {"$url", outputReqURL},
+                       {"$request_version", outputVersion},
+                       {"$version", outputVersion},
+                       {"$request", outputReqLine},
                        {"$remote_addr", outputRemoteAddr},
                        {"$local_addr", outputLocalAddr},
                        {"$request_len", outputReqLength},
@@ -290,6 +293,32 @@ void AccessLogger::outputReqURL(trantor::LogStream &stream,
     else
     {
         stream << req->path() << '?' << query;
+    }
+}
+
+//$request_version
+void AccessLogger::outputVersion(trantor::LogStream &stream,
+                                 const drogon::HttpRequestPtr &req,
+                                 const drogon::HttpResponsePtr &)
+{
+    stream << req->versionString();
+}
+
+//$request
+void AccessLogger::outputReqLine(trantor::LogStream &stream,
+                                 const drogon::HttpRequestPtr &req,
+                                 const drogon::HttpResponsePtr &)
+{
+    auto &query = req->query();
+    if (query.empty())
+    {
+        stream << req->methodString() << " " << req->path() << " "
+               << req->versionString();
+    }
+    else
+    {
+        stream << req->methodString() << " " << req->path() << '?' << query
+               << " " << req->versionString();
     }
 }
 

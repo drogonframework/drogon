@@ -44,6 +44,8 @@ namespace plugin
  *     $request_query|$query: the query string of the request.
  *     $request_url|$url: the URL of the request, equals to
  *                   $request_path+"?"+$request_query.
+ *     $request_version|$version: the http version string.
+ *     $request: the full request line.
  *     $remote_addr: the remote address
  *     $local_addr: the local address
  *     $request_len|$body_bytes_received: the content length of the request.
@@ -113,6 +115,14 @@ class DROGON_EXPORT AccessLogger : public drogon::Plugin<AccessLogger>
     static void outputReqURL(trantor::LogStream &,
                              const drogon::HttpRequestPtr &,
                              const drogon::HttpResponsePtr &);
+    //$version
+    static void outputVersion(trantor::LogStream &,
+                              const drogon::HttpRequestPtr &,
+                              const drogon::HttpResponsePtr &);
+    //$request
+    static void outputReqLine(trantor::LogStream &,
+                              const drogon::HttpRequestPtr &,
+                              const drogon::HttpResponsePtr &);
     //$date
     void outputDate(trantor::LogStream &,
                     const drogon::HttpRequestPtr &,
