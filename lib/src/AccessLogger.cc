@@ -36,7 +36,7 @@ void AccessLogger::initAndStart(const Json::Value &config)
 {
     useLocalTime_ = config.get("use_local_time", true).asBool();
     showMicroseconds_ = config.get("show_microseconds", true).asBool();
-    timeFormat_ = config.get("custom_time_format", "").as<std::string>();
+    timeFormat_ = config.get("custom_time_format", "").asString();
     useCustomTimeFormat_ = !timeFormat_.empty();
 
     logFunctionMap_ = {{"$request_path", outputReqPath},
