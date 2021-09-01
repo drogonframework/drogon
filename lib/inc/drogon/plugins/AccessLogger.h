@@ -31,7 +31,8 @@ namespace plugin
             "log_file": "access.log",
             "log_size_limit": 0,
             "use_local_time": true,
-            "show_microseconds": true,
+            // "show_microseconds": true,
+            // "custom_time_format": "",
             "log_index": 0
       }
    }
@@ -79,6 +80,11 @@ namespace plugin
  *
  * show_microseconds: Whether print microsecond in time. True by default.
  *
+ * custom_time_format: Provide a custom format for time. If not provided or
+ * empty, the default format is "%Y%m%d %H:%M:%S", with microseonds followed if
+ * show_microseconds is true. For detailed information about formats, please
+ * refer to cpp reference about strftime().
+ *
  * Enable the plugin by adding the configuration to the list of plugins in the
  * configuration file.
  *
@@ -97,6 +103,9 @@ class DROGON_EXPORT AccessLogger : public drogon::Plugin<AccessLogger>
     int logIndex_{0};
     bool useLocalTime_{true};
     bool showMicroseconds_{true};
+    bool useCustomTimeFormat_{false};
+    std::string timeFormat_;
+
     using LogFunction = std::function<void(trantor::LogStream &,
                                            const drogon::HttpRequestPtr &,
                                            const drogon::HttpResponsePtr &)>;

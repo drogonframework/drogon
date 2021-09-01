@@ -36,6 +36,8 @@ void AccessLogger::initAndStart(const Json::Value &config)
 {
     useLocalTime_ = config.get("use_local_time", true).asBool();
     showMicroseconds_ = config.get("show_microseconds", true).asBool();
+    timeFormat_ = config.get("custom_time_format", "").as<std::string>();
+    useCustomTimeFormat_ = !timeFormat_.empty();
 
     logFunctionMap_ = {{"$request_path", outputReqPath},
                        {"$path", outputReqPath},
@@ -251,13 +253,30 @@ void AccessLogger::outputDate(trantor::LogStream &stream,
                               const drogon::HttpRequestPtr &,
                               const drogon::HttpResponsePtr &) const
 {
-    if (useLocalTime_)
+    if (useCustomTimeFormat_)
     {
-        stream << trantor::Date::now().toFormattedStringLocal(showMicroseconds_);
+        if (useLocalTime_)
+        {
+            stream << trantor::Date::now().toCustomedFormattedStringLocal(
+                timeFormat_, showMicroseconds_);
+        }
+        else
+        {
+            stream << trantor::Date::now().toCustomedFormattedString(
+                timeFormat_, showMicroseconds_);
+        }
     }
     else
     {
-        stream << trantor::Date::now().toFormattedString(showMicroseconds_);
+        if (useLocalTime_)
+        {
+            stream << trantor::Date::now().toFormattedStringLocal(
+                showMicroseconds_);
+        }
+        else
+        {
+            stream << trantor::Date::now().toFormattedString(showMicroseconds_);
+        }
     }
 }
 
@@ -265,13 +284,30 @@ void AccessLogger::outputReqDate(trantor::LogStream &stream,
                                  const drogon::HttpRequestPtr &req,
                                  const drogon::HttpResponsePtr &) const
 {
-    if (useLocalTime_)
+    if (useCustomTimeFormat_)
     {
-        stream << req->creationDate().toFormattedStringLocal(showMicroseconds_);
+        if (useLocalTime_)
+        {
+            stream << req->creationDate().toCustomedFormattedStringLocal(
+                timeFormat_, showMicroseconds_);
+        }
+        else
+        {
+            stream << req->creationDate().toCustomedFormattedString(
+                timeFormat_, showMicroseconds_);
+        }
     }
     else
     {
-        stream << req->creationDate().toFormattedString(showMicroseconds_);
+        if (useLocalTime_)
+        {
+            stream << req->creationDate().toFormattedStringLocal(
+                showMicroseconds_);
+        }
+        else
+        {
+            stream << req->creationDate().toFormattedString(showMicroseconds_);
+        }
     }
 }
 
