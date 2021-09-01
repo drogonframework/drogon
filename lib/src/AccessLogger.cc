@@ -98,7 +98,11 @@ void AccessLogger::initAndStart(const Json::Value &config)
             },
             [&]() { asyncFileLogger_.flush(); },
             logIndex_);
-        auto sizeLimit = config.get("size_limit", 0).asUInt64();
+        auto sizeLimit = config.get("log_size_limit", 0).asUInt64();
+        if (sizeLimit == 0)
+        {
+            sizeLimit = config.get("size_limit", 0).asUInt64();
+        }
         if (sizeLimit > 0)
         {
             asyncFileLogger_.setFileSizeLimit(sizeLimit);
