@@ -35,6 +35,8 @@ using namespace drogon::plugin;
 void AccessLogger::initAndStart(const Json::Value &config)
 {
     useLocalTime_ = config.get("use_local_time", true).asBool();
+    showMicroseconds_ = config.get("show_microseconds", true).asBool();
+
     logFunctionMap_ = {{"$request_path", outputReqPath},
                        {"$path", outputReqPath},
                        {"$date",
@@ -251,11 +253,11 @@ void AccessLogger::outputDate(trantor::LogStream &stream,
 {
     if (useLocalTime_)
     {
-        stream << trantor::Date::now().toFormattedStringLocal(true);
+        stream << trantor::Date::now().toFormattedStringLocal(showMicroseconds_);
     }
     else
     {
-        stream << trantor::Date::now().toFormattedString(true);
+        stream << trantor::Date::now().toFormattedString(showMicroseconds_);
     }
 }
 
@@ -265,11 +267,11 @@ void AccessLogger::outputReqDate(trantor::LogStream &stream,
 {
     if (useLocalTime_)
     {
-        stream << req->creationDate().toFormattedStringLocal(true);
+        stream << req->creationDate().toFormattedStringLocal(showMicroseconds_);
     }
     else
     {
-        stream << req->creationDate().toFormattedString(true);
+        stream << req->creationDate().toFormattedString(showMicroseconds_);
     }
 }
 

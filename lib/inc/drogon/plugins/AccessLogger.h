@@ -31,6 +31,7 @@ namespace plugin
             "log_file": "access.log",
             "log_size_limit": 0,
             "use_local_time": true,
+            "show_microseconds": true,
             "log_index": 0
       }
    }
@@ -76,6 +77,8 @@ namespace plugin
  *
  * log_index: The index of log output, 0 by default.
  *
+ * show_microseconds: Whether print microsecond in time. True by default.
+ *
  * Enable the plugin by adding the configuration to the list of plugins in the
  * configuration file.
  *
@@ -93,6 +96,7 @@ class DROGON_EXPORT AccessLogger : public drogon::Plugin<AccessLogger>
     trantor::AsyncFileLogger asyncFileLogger_;
     int logIndex_{0};
     bool useLocalTime_{true};
+    bool showMicroseconds_{true};
     using LogFunction = std::function<void(trantor::LogStream &,
                                            const drogon::HttpRequestPtr &,
                                            const drogon::HttpResponsePtr &)>;
