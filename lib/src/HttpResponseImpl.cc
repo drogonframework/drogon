@@ -81,6 +81,25 @@ HttpResponsePtr HttpResponse::newHttpJsonResponse(Json::Value &&data)
     return res;
 }
 
+const char *HttpResponseImpl::versionString() const
+{
+    const char *result = "UNKNOWN";
+    switch (version_)
+    {
+        case Version::kHttp10:
+            result = "HTTP/1.0";
+            break;
+
+        case Version::kHttp11:
+            result = "HTTP/1.1";
+            break;
+
+        default:
+            break;
+    }
+    return result;
+}
+
 void HttpResponseImpl::generateBodyFromJson() const
 {
     if (!jsonPtr_ || flagForSerializingJson_)

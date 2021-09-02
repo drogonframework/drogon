@@ -548,6 +548,25 @@ void HttpRequestImpl::swap(HttpRequestImpl &that) noexcept
     swap(jsonParsingErrorPtr_, that.jsonParsingErrorPtr_);
 }
 
+const char *HttpRequestImpl::versionString() const
+{
+    const char *result = "UNKNOWN";
+    switch (version_)
+    {
+        case Version::kHttp10:
+            result = "HTTP/1.0";
+            break;
+
+        case Version::kHttp11:
+            result = "HTTP/1.1";
+            break;
+
+        default:
+            break;
+    }
+    return result;
+}
+
 const char *HttpRequestImpl::methodString() const
 {
     const char *result = "UNKNOWN";

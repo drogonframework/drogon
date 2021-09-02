@@ -31,6 +31,8 @@ namespace plugin
             "log_file": "access.log",
             "log_size_limit": 0,
             "use_local_time": true,
+            // "show_microseconds": true,
+            // "custom_time_format": "",
             "log_index": 0
       }
    }
@@ -44,6 +46,8 @@ namespace plugin
  *     $request_query|$query: the query string of the request.
  *     $request_url|$url: the URL of the request, equals to
  *                   $request_path+"?"+$request_query.
+ *     $request_version|$version: the http version string.
+ *     $request: the full request line.
  *     $remote_addr: the remote address
  *     $local_addr: the local address
  *     $request_len|$body_bytes_received: the content length of the request.
@@ -74,6 +78,13 @@ namespace plugin
  *
  * log_index: The index of log output, 0 by default.
  *
+ * show_microseconds: Whether print microsecond in time. True by default.
+ *
+ * custom_time_format: Provide a custom format for time. If not provided or
+ * empty, the default format is "%Y%m%d %H:%M:%S", with microseonds followed if
+ * show_microseconds is true. For detailed information about formats, please
+ * refer to cpp reference about strftime().
+ *
  * Enable the plugin by adding the configuration to the list of plugins in the
  * configuration file.
  *
@@ -91,6 +102,10 @@ class DROGON_EXPORT AccessLogger : public drogon::Plugin<AccessLogger>
     trantor::AsyncFileLogger asyncFileLogger_;
     int logIndex_{0};
     bool useLocalTime_{true};
+    bool showMicroseconds_{true};
+    bool useCustomTimeFormat_{false};
+    std::string timeFormat_;
+
     using LogFunction = std::function<void(trantor::LogStream &,
                                            const drogon::HttpRequestPtr &,
                                            const drogon::HttpResponsePtr &)>;
@@ -113,6 +128,14 @@ class DROGON_EXPORT AccessLogger : public drogon::Plugin<AccessLogger>
     static void outputReqURL(trantor::LogStream &,
                              const drogon::HttpRequestPtr &,
                              const drogon::HttpResponsePtr &);
+    //$version
+    static void outputVersion(trantor::LogStream &,
+                              const drogon::HttpRequestPtr &,
+                              const drogon::HttpResponsePtr &);
+    //$request
+    static void outputReqLine(trantor::LogStream &,
+                              const drogon::HttpRequestPtr &,
+                              const drogon::HttpResponsePtr &);
     //$date
     void outputDate(trantor::LogStream &,
                     const drogon::HttpRequestPtr &,

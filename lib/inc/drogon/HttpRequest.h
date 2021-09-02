@@ -223,6 +223,14 @@ class DROGON_EXPORT HttpRequest
     virtual const char *matchedPathPatternData() const = 0;
     virtual size_t matchedPathPatternLength() const = 0;
 
+    /// Return the string of http version of request, such as HTTP/1.0,
+    /// HTTP/1.1, etc.
+    virtual const char *versionString() const = 0;
+    const char *getVersionString() const
+    {
+        return versionString();
+    }
+
     /// Return the enum type version of the request.
     /**
      * kHttp10 means Http version is 1.0
