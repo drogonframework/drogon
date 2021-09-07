@@ -239,7 +239,11 @@ void ListenerManager::startListening()
 
 trantor::EventLoop *ListenerManager::getIOLoop(size_t id) const
 {
+#ifdef __linux__
     auto const n = listeningloopThreads_.size();
+#else
+    auto const n = ioLoopThreadPoolPtr_->size();
+#endif
     if (0 == n)
     {
         LOG_WARN << "Please call getIOLoop() after drogon::app().run()";
