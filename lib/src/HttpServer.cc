@@ -256,36 +256,7 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn, MsgBuffer *buf)
                 }
                 else
                 {
-                    const std::string &forwarfedFor =
-                        requestParser->requestImpl()->getHeaderBy(
-                            "x-forwarded-for");
-                    if (forwarfedFor.empty())
-                    {
-                        requestParser->requestImpl()->setPeerAddr(
-                            conn->peerAddr());
-                    }
-                    else
-                    {
-                        auto idx = forwarfedFor.find(",");
-                        if (idx == std::string::npos)
-                            idx = forwarfedFor.size();
-                        std::string ipStr(forwarfedFor.begin(),
-                                          forwarfedFor.begin() + idx);
-                        bool isIpv6 = ipStr.find(':') != std::string::npos;
-                        trantor::InetAddress addr(ipStr, 0, isIpv6);
-                        if (addr.isUnspecified())
-                        {
-                            LOG_WARN << "Trying to use `X-Forwarded-For` for "
-                                        "source IP address. But "
-                                     << ipStr << " is not a valid IP address";
-                            requestParser->requestImpl()->setPeerAddr(
-                                conn->peerAddr());
-                        }
-                        else
-                        {
-                            requestParser->requestImpl()->setPeerAddr(addr);
-                        }
-                    }
+                    parseForwardHeader(conn, requestParser);
                 }
                 requestParser->requestImpl()->setLocalAddr(conn->localAddr());
                 requestParser->requestImpl()->setCreationDate(
@@ -670,4 +641,146 @@ void HttpServer::sendResponses(
         COZ_PROGRESS
     }
     buffer.retrieveAll();
+}
+
+static std::pair<bool, std::multimap<std::string, std::string>> parseKVPairs(
+    const std::string &str)
+{
+    if (str.empty())
+        return {false, {}};
+    std::multimap<std::string, std::string> map;
+
+    std::string key;
+    std::string value;
+    std::string tmp;
+    bool inQuotes = false;
+    for (size_t i = 0; i < str.size(); i++)
+    {
+        char ch = str[i];
+        if (inQuotes == true)
+        {
+            if (ch != '=')
+            {
+                tmp.push_back(ch);
+            }
+            else
+            {
+                inQuotes = false;
+            }
+        }
+        else
+        {
+            if (ch == '=')
+            {
+                key = tmp;
+                tmp.clear();
+            }
+            else if (ch == ',')
+            {
+                value = tmp;
+                tmp.clear();
+                map.insert(std::pair<std::string, std::string>(key, value));
+                key.clear();
+                value.clear();
+            }
+            else if (ch == '"')
+            {
+                inQuotes = true;
+            }
+            else
+            {
+                tmp.push_back(ch);
+            }
+        }
+    }
+    if (inQuotes == true)
+    {
+        return {false, {}};
+    }
+    if (!key.empty() && !tmp.empty())
+    {
+        map.insert(std::pair<std::string, std::string>(key, tmp));
+    }
+
+    return {true, map};
+}
+
+void HttpServer::parseForwardHeader(
+    const TcpConnectionPtr &conn,
+    const std::shared_ptr<HttpRequestParser> &requestParser)
+{
+    // TODO: Make this a config
+    bool preferForwarded = true;
+    if (!preferForwarded)
+    {
+        const std::string &forwardedFor =
+            requestParser->requestImpl()->getHeaderBy("x-forwarded-for");
+        if (forwardedFor.empty())
+        {
+            requestParser->requestImpl()->setPeerAddr(conn->peerAddr());
+        }
+        else
+        {
+            auto idx = forwardedFor.find(",");
+            if (idx == std::string::npos)
+                idx = forwardedFor.size();
+            std::string ipStr(forwardedFor.begin(), forwardedFor.begin() + idx);
+            bool isIpv6 = ipStr.find(':') != std::string::npos;
+            trantor::InetAddress addr(ipStr, 0, isIpv6);
+            if (addr.isUnspecified())
+            {
+                LOG_WARN << "Trying to use `X-Forwarded-For` for "
+                            "source IP address. But "
+                         << ipStr << " is not a valid IP address";
+                requestParser->requestImpl()->setPeerAddr(conn->peerAddr());
+            }
+            else
+            {
+                requestParser->requestImpl()->setPeerAddr(addr);
+            }
+        }
+    }
+    else
+    {
+        const auto &headers = requestParser->requestImpl()->getHeaders();
+        auto range = headers.equal_range("forwarded");
+        LOG_WARN << "Start searching header";
+        // Iterate through all Forarded header. Find the first `for` field
+        for (auto it = range.first; it != range.second; ++it)
+        {
+            const auto &headerStr = it->second;
+            LOG_DEBUG << "Searching " << headerStr;
+            bool success;
+            std::multimap<std::string, std::string> fields;
+            std::tie(success, fields) = parseKVPairs(headerStr);
+            if (!success)
+            {
+                LOG_WARN
+                    << "Failed to parse `Forwarded` header. This may cause IP "
+                       "associated with the request to be incorrect";
+                requestParser->requestImpl()->setPeerAddr(conn->peerAddr());
+            }
+            auto forIt = fields.find("for");
+            if (forIt != fields.end())
+            {
+                const std::string &ipStr = forIt->second;
+                bool isIpv6 = ipStr.find(':') != std::string::npos;
+                trantor::InetAddress addr(ipStr, 0, isIpv6);
+                if (addr.isUnspecified())
+                {
+                    LOG_WARN << "Trying to use `Forwarded For` header for "
+                                "source IP address. But "
+                             << ipStr
+                             << " is not a IP address (drogon does not support "
+                                "domain lookup for forward)";
+                    requestParser->requestImpl()->setPeerAddr(conn->peerAddr());
+                }
+                else
+                {
+                    requestParser->requestImpl()->setPeerAddr(addr);
+                }
+                break;
+            }
+        }
+    }
 }
