@@ -644,6 +644,18 @@ void HttpServer::sendResponses(
     buffer.retrieveAll();
 }
 
+static void trim(std::string &s)
+{
+    s.erase(std::find_if(s.rbegin(),
+                         s.rend(),
+                         [](unsigned char ch) { return !std::isspace(ch); })
+                .base(),
+            s.end());
+    s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch) {
+                return !std::isspace(ch);
+            }));
+}
+
 static std::pair<bool, std::multimap<std::string, std::string>> parseKVPairs(
     const std::string &str)
 {
@@ -652,7 +664,6 @@ static std::pair<bool, std::multimap<std::string, std::string>> parseKVPairs(
     std::multimap<std::string, std::string> map;
 
     std::string key;
-    std::string value;
     std::string tmp;
     bool inQuotes = false;
     for (size_t i = 0; i < str.size(); i++)
@@ -675,19 +686,19 @@ static std::pair<bool, std::multimap<std::string, std::string>> parseKVPairs(
             {
                 if (!key.empty())
                     return {false, {}};
-                key = tmp;
+                trim(tmp);
+                key.resize(tmp.size());
+                std::transform(tmp.begin(), tmp.end(), key.begin(), ::tolower);
                 tmp.clear();
             }
             else if (ch == ',')
             {
                 if (key.empty())
                     return {false, {}};
-                std::transform(key.begin(), key.end(), key.begin(), ::tolower);
-                value = tmp;
+                trim(tmp);
+                map.insert(std::pair<std::string, std::string>(key, tmp));
                 tmp.clear();
-                map.insert(std::pair<std::string, std::string>(key, value));
                 key.clear();
-                value.clear();
             }
             else if (ch == '"')
             {
@@ -705,6 +716,7 @@ static std::pair<bool, std::multimap<std::string, std::string>> parseKVPairs(
     }
     if (!key.empty() && !tmp.empty())
     {
+        trim(tmp);
         map.insert(std::pair<std::string, std::string>(key, tmp));
     }
 
