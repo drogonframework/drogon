@@ -110,8 +110,8 @@ class HttpServer : trantor::NonCopyable
         const std::vector<std::pair<HttpResponsePtr, bool>> &responses,
         trantor::MsgBuffer &buffer);
     void parseForwardHeader(
-      const trantor::TcpConnectionPtr &conn,
-      const std::shared_ptr<HttpRequestParser> &requestParser);
+        const trantor::TcpConnectionPtr &conn,
+        const std::shared_ptr<HttpRequestParser> &requestParser);
     trantor::TcpServer server_;
     HttpAsyncCallback httpAsyncCallback_;
     WebSocketNewAsyncCallback newWebsocketCallback_;
