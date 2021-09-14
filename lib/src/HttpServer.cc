@@ -762,12 +762,10 @@ void HttpServer::parseForwardHeader(
     {
         const auto &headers = requestParser->requestImpl()->getHeaders();
         auto range = headers.equal_range("forwarded");
-        LOG_WARN << "Start searching header";
         // Iterate through all Forarded header. Find the first `for` field
         for (auto it = range.first; it != range.second; ++it)
         {
             const auto &headerStr = it->second;
-            LOG_DEBUG << "Searching " << headerStr;
             bool success;
             std::multimap<std::string, std::string> fields;
             std::tie(success, fields) = parseKVPairs(headerStr);
