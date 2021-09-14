@@ -21,6 +21,7 @@
 #include <drogon/HttpRequest.h>
 #include <drogon/HttpResponse.h>
 #include <drogon/utils/Utilities.h>
+#include <algorithm>
 #include <functional>
 #include <trantor/utils/Logger.h>
 
@@ -659,7 +660,7 @@ static std::pair<bool, std::multimap<std::string, std::string>> parseKVPairs(
         char ch = str[i];
         if (inQuotes == true)
         {
-            if (ch != '=')
+            if (ch != '"')
             {
                 tmp.push_back(ch);
             }
@@ -672,11 +673,16 @@ static std::pair<bool, std::multimap<std::string, std::string>> parseKVPairs(
         {
             if (ch == '=')
             {
+                if (!key.empty())
+                    return {false, {}};
                 key = tmp;
                 tmp.clear();
             }
             else if (ch == ',')
             {
+                if (key.empty())
+                    return {false, {}};
+                std::transform(key.begin(), key.end(), key.begin(), ::tolower);
                 value = tmp;
                 tmp.clear();
                 map.insert(std::pair<std::string, std::string>(key, value));
@@ -763,8 +769,13 @@ void HttpServer::parseForwardHeader(
             auto forIt = fields.find("for");
             if (forIt != fields.end())
             {
-                const std::string &ipStr = forIt->second;
+                std::string ipStr = forIt->second;
                 bool isIpv6 = ipStr.find(':') != std::string::npos;
+                // IPv6 address may (required by RFC) be wrapped in []s.
+                if (isIpv6 && ipStr[0] == '[' && ipStr.back() == ']')
+                {
+                    ipStr = ipStr.substr(1, ipStr.size() - 2);
+                }
                 trantor::InetAddress addr(ipStr, 0, isIpv6);
                 if (addr.isUnspecified())
                 {
