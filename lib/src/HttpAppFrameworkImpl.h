@@ -535,6 +535,10 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
         return exceptionHandler_;
     }
 
+    void handleAsyncRequest(
+        const HttpRequestPtr &req,
+        std::function<void(const HttpResponsePtr &)> &&callback) override;
+
   private:
     void registerHttpController(const std::string &pathPattern,
                                 const internal::HttpBinderBasePtr &binder,

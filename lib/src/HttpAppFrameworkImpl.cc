@@ -1095,3 +1095,17 @@ HttpAppFramework &HttpAppFrameworkImpl::setDefaultHandler(
     staticFileRouterPtr_->setDefaultHandler(std::move(handler));
     return *this;
 }
+
+void HttpAppFrameworkImpl::handleAsyncRequest(
+    const HttpRequestPtr &req,
+    std::function<void(const HttpResponsePtr &)> &&callback)
+{
+    auto ptr = std::dynamic_pointer_cast<HttpRequestImpl>(req);
+    if (!ptr)
+    {
+        LOG_ERROR << "Req is not HttpRequestPtr. Ignoring.";
+        return;
+    }
+
+    onAsyncRequest(ptr, std::move(callback));
+}

@@ -1346,6 +1346,17 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
      */
     virtual const ExceptionHandler &getExceptionHandler() const = 0;
 
+    /**
+     * @brief routes the HttpRequest and calls the callback once finised
+     * processing
+     * @param req A request
+     * @param callback A callable object that gets called when a response is
+     * generated
+     */
+    virtual void handleAsyncRequest(
+        const HttpRequestPtr &req,
+        std::function<void(const HttpResponsePtr &)> &&callback) = 0;
+
   private:
     virtual void registerHttpController(
         const std::string &pathPattern,
