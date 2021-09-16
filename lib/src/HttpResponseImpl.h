@@ -315,12 +315,11 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
     }
     bool shouldBeCompressed() const;
     void generateBodyFromJson() const;
-    const std::string &sendfileName() const
+    const std::string &sendfileName() const override
     {
         return sendfileName_;
     }
-    using SendfileRange = std::pair<size_t, size_t>;  // { offset, length }
-    const SendfileRange &sendfileRange() const
+    const SendfileRange &sendfileRange() const override
     {
         return sendfileRange_;
     }

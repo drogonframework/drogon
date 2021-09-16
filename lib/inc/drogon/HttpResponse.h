@@ -416,6 +416,21 @@ class DROGON_EXPORT HttpResponse
         return toResponse(std::forward<T>(obj));
     }
 
+    /**
+     * @brief If the response is a file response (i.e. created by
+     * newHttpFileResponse) returns the path on the filesystem. Otherwise a
+     * empty string.
+     */
+    virtual const std::string &sendfileName() const = 0;
+
+    /**
+     * @brief Returns the range of the file response as a pair ot size_t
+     * (offset, length). Length of 0 means the entire file is sent. Behaivor of
+     * this function is undefined if the response if not a file response
+     */
+    using SendfileRange = std::pair<size_t, size_t>;  // { offset, length }
+    virtual const SendfileRange &sendfileRange() const = 0;
+
     virtual ~HttpResponse()
     {
     }
