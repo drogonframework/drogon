@@ -431,6 +431,11 @@ class DROGON_EXPORT HttpResponse
     using SendfileRange = std::pair<size_t, size_t>;  // { offset, length }
     virtual const SendfileRange &sendfileRange() const = 0;
 
+    /**
+     * @brief Rreturns the content type associated with the response
+     */
+    virtual std::string contentTypeString() const = 0;
+
     virtual ~HttpResponse()
     {
     }

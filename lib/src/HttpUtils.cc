@@ -684,4 +684,157 @@ FileType parseFileType(const string_view &fileExtension)
         return FT_CUSTOM;
     return iter->second;
 }
+
+const string_view &contentTypeToMime(ContentType contenttype)
+{
+    switch (contenttype)
+    {
+        case CT_TEXT_HTML:
+        {
+            static string_view sv =
+                "text/html; charset=utf-8";
+            return sv;
+        }
+        case CT_APPLICATION_X_FORM:
+        {
+            static string_view sv =
+                "application/x-www-form-urlencoded";
+            return sv;
+        }
+        case CT_APPLICATION_XML:
+        {
+            static string_view sv =
+                "application/xml; charset=utf-8";
+            return sv;
+        }
+        case CT_APPLICATION_JSON:
+        {
+            static string_view sv =
+                "application/json; charset=utf-8";
+            return sv;
+        }
+        case CT_APPLICATION_X_JAVASCRIPT:
+        {
+            static string_view sv =
+                "application/x-javascript; charset=utf-8";
+            return sv;
+        }
+        case CT_TEXT_CSS:
+        {
+            static string_view sv = "text/css; charset=utf-8";
+            return sv;
+        }
+        case CT_TEXT_XML:
+        {
+            static string_view sv = "text/xml; charset=utf-8";
+            return sv;
+        }
+        case CT_TEXT_XSL:
+        {
+            static string_view sv = "text/xsl; charset=utf-8";
+            return sv;
+        }
+        case CT_APPLICATION_OCTET_STREAM:
+        {
+            static string_view sv =
+                "application/octet-stream";
+            return sv;
+        }
+        case CT_IMAGE_SVG_XML:
+        {
+            static string_view sv = "image/svg+xml";
+            return sv;
+        }
+        case CT_APPLICATION_X_FONT_TRUETYPE:
+        {
+            static string_view sv =
+                "application/x-font-truetype";
+            return sv;
+        }
+        case CT_APPLICATION_X_FONT_OPENTYPE:
+        {
+            static string_view sv =
+                "application/x-font-opentype";
+            return sv;
+        }
+        case CT_APPLICATION_FONT_WOFF:
+        {
+            static string_view sv = "application/font-woff";
+            return sv;
+        }
+        case CT_APPLICATION_FONT_WOFF2:
+        {
+            static string_view sv = "application/font-woff2";
+            return sv;
+        }
+        case CT_APPLICATION_VND_MS_FONTOBJ:
+        {
+            static string_view sv =
+                "application/vnd.ms-fontobject";
+            return sv;
+        }
+        case CT_APPLICATION_PDF:
+        {
+            static string_view sv = "application/pdf";
+            return sv;
+        }
+        case CT_IMAGE_PNG:
+        {
+            static string_view sv = "image/png";
+            return sv;
+        }
+        case CT_IMAGE_AVIF:
+        {
+            static string_view sv = "image/avif";
+            return sv;
+        }
+        case CT_IMAGE_WEBP:
+        {
+            static string_view sv = "image/webp";
+            return sv;
+        }
+        case CT_IMAGE_JPG:
+        {
+            static string_view sv = "image/jpeg";
+            return sv;
+        }
+        case CT_IMAGE_GIF:
+        {
+            static string_view sv = "image/gif";
+            return sv;
+        }
+        case CT_IMAGE_XICON:
+        {
+            static string_view sv = "image/x-icon";
+            return sv;
+        }
+        case CT_IMAGE_BMP:
+        {
+            static string_view sv = "image/bmp";
+            return sv;
+        }
+        case CT_IMAGE_ICNS:
+        {
+            static string_view sv = "image/icns";
+            return sv;
+        }
+        case CT_APPLICATION_WASM:
+        {
+            static string_view sv = "application/wasm";
+            return sv;
+        }
+        case CT_NONE:
+        {
+            static string_view sv = "";
+            return sv;
+        }
+        default:
+        case CT_TEXT_PLAIN:
+        {
+            static string_view sv =
+                "text/plain; charset=utf-8";
+            return sv;
+        }
+    }
+}
 }  // namespace drogon

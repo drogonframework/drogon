@@ -44,7 +44,7 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
           creationDate_(trantor::Date::now()),
           contentType_(type),
           flagForParsingContentType_(true),
-          contentTypeString_(webContentTypeToString(type))
+          contentTypeString_(contentTypeToMime(type))
     {
     }
     void setPassThrough(bool flag) override
@@ -96,7 +96,7 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
     void setContentTypeCode(ContentType type) override
     {
         contentType_ = type;
-        setContentType(webContentTypeToString(type));
+        auto ct = contentTypeToMime(type); 
         flagForParsingContentType_ = true;
     }
 
@@ -338,6 +338,11 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
         makeHeaderString(*fullHeaderString_);
     }
 
+    std::string contentTypeString() const override
+    {
+        return contentTypeString_;
+    }
+
     void gunzip()
     {
         if (bodyPtr_)
@@ -384,7 +389,17 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
     {
         contentType_ = type;
         flagForParsingContentType_ = true;
-        setContentType(string_view{typeString, typeStringLength});
+
+        string_view sv(typeString, typeStringLength);
+        bool haveHeader = sv.find("content-type: ") == 0;
+        bool haveCRLF = sv.rfind("\r\n") == sv.size()-2;
+
+        size_t endOffset = 0;
+        if(haveHeader)
+          endOffset += 14;
+        if(haveCRLF)
+          endOffset += 2;
+        setContentType(string_view{typeString + (haveHeader ? 14 : 0), typeStringLength - endOffset});
     }
 
     void setCustomStatusCode(int code,
@@ -422,8 +437,7 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
     mutable ContentType contentType_{CT_TEXT_PLAIN};
     mutable bool flagForParsingContentType_{false};
     mutable std::shared_ptr<std::string> jsonParsingErrorPtr_;
-    string_view contentTypeString_{
-        "content-type: text/html; charset=utf-8\r\n"};
+    std::string contentTypeString_{"text/html; charset=utf-8"};
     bool passThrough_{false};
     void setContentType(const string_view &contentType)
     {
