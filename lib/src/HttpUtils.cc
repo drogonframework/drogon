@@ -19,6 +19,7 @@
 
 namespace drogon
 {
+static std::unordered_map<std::string, std::string> customMime;
 const string_view &webContentTypeToString(ContentType contenttype)
 {
     switch (contenttype)
@@ -691,32 +692,27 @@ const string_view &contentTypeToMime(ContentType contenttype)
     {
         case CT_TEXT_HTML:
         {
-            static string_view sv =
-                "text/html; charset=utf-8";
+            static string_view sv = "text/html; charset=utf-8";
             return sv;
         }
         case CT_APPLICATION_X_FORM:
         {
-            static string_view sv =
-                "application/x-www-form-urlencoded";
+            static string_view sv = "application/x-www-form-urlencoded";
             return sv;
         }
         case CT_APPLICATION_XML:
         {
-            static string_view sv =
-                "application/xml; charset=utf-8";
+            static string_view sv = "application/xml; charset=utf-8";
             return sv;
         }
         case CT_APPLICATION_JSON:
         {
-            static string_view sv =
-                "application/json; charset=utf-8";
+            static string_view sv = "application/json; charset=utf-8";
             return sv;
         }
         case CT_APPLICATION_X_JAVASCRIPT:
         {
-            static string_view sv =
-                "application/x-javascript; charset=utf-8";
+            static string_view sv = "application/x-javascript; charset=utf-8";
             return sv;
         }
         case CT_TEXT_CSS:
@@ -736,8 +732,7 @@ const string_view &contentTypeToMime(ContentType contenttype)
         }
         case CT_APPLICATION_OCTET_STREAM:
         {
-            static string_view sv =
-                "application/octet-stream";
+            static string_view sv = "application/octet-stream";
             return sv;
         }
         case CT_IMAGE_SVG_XML:
@@ -747,14 +742,12 @@ const string_view &contentTypeToMime(ContentType contenttype)
         }
         case CT_APPLICATION_X_FONT_TRUETYPE:
         {
-            static string_view sv =
-                "application/x-font-truetype";
+            static string_view sv = "application/x-font-truetype";
             return sv;
         }
         case CT_APPLICATION_X_FONT_OPENTYPE:
         {
-            static string_view sv =
-                "application/x-font-opentype";
+            static string_view sv = "application/x-font-opentype";
             return sv;
         }
         case CT_APPLICATION_FONT_WOFF:
@@ -769,8 +762,7 @@ const string_view &contentTypeToMime(ContentType contenttype)
         }
         case CT_APPLICATION_VND_MS_FONTOBJ:
         {
-            static string_view sv =
-                "application/vnd.ms-fontobject";
+            static string_view sv = "application/vnd.ms-fontobject";
             return sv;
         }
         case CT_APPLICATION_PDF:
@@ -831,10 +823,42 @@ const string_view &contentTypeToMime(ContentType contenttype)
         default:
         case CT_TEXT_PLAIN:
         {
-            static string_view sv =
-                "text/plain; charset=utf-8";
+            static string_view sv = "text/plain; charset=utf-8";
             return sv;
         }
     }
+}
+
+void registerCustomExtensionMime(const std::string &ext,
+                                 const std::string &mime)
+{
+    if (ext.empty())
+        return;
+    auto &mimeStr = customMime[ext];
+    if (!mimeStr.empty())
+    {
+        LOG_WARN << ext << " has already been registered as type " << mime
+                 << ". Overwriting.";
+    }
+    mimeStr = mime;
+}
+
+std::string fileNameToMime(const std::string &fileName)
+{
+    ContentType intenalContentType = parseContentType(fileName);
+    if (intenalContentType == CT_NONE)
+        return std::string(contentTypeToMime(intenalContentType));
+
+    std::string extName;
+    auto pos = fileName.rfind('.');
+    if (pos != std::string::npos)
+    {
+        extName = fileName.substr(pos + 1);
+        transform(extName.begin(), extName.end(), extName.begin(), tolower);
+    }
+    auto it = customMime.find(extName);
+    if (it == customMime.end())
+        return "";
+    return it->second;
 }
 }  // namespace drogon

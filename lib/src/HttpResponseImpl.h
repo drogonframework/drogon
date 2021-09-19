@@ -96,7 +96,7 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
     void setContentTypeCode(ContentType type) override
     {
         contentType_ = type;
-        auto ct = contentTypeToMime(type); 
+        auto ct = contentTypeToMime(type);
         flagForParsingContentType_ = true;
     }
 
@@ -392,14 +392,15 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
 
         string_view sv(typeString, typeStringLength);
         bool haveHeader = sv.find("content-type: ") == 0;
-        bool haveCRLF = sv.rfind("\r\n") == sv.size()-2;
+        bool haveCRLF = sv.rfind("\r\n") == sv.size() - 2;
 
         size_t endOffset = 0;
-        if(haveHeader)
-          endOffset += 14;
-        if(haveCRLF)
-          endOffset += 2;
-        setContentType(string_view{typeString + (haveHeader ? 14 : 0), typeStringLength - endOffset});
+        if (haveHeader)
+            endOffset += 14;
+        if (haveCRLF)
+            endOffset += 2;
+        setContentType(string_view{typeString + (haveHeader ? 14 : 0),
+                                   typeStringLength - endOffset});
     }
 
     void setCustomStatusCode(int code,
@@ -442,6 +443,11 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
     void setContentType(const string_view &contentType)
     {
         contentTypeString_ = contentType;
+        ContentType ct = parseContentType(contentType);
+        if (ct != CT_NONE)
+            contentType_ = ct;
+        else
+            contentType_ = CT_CUSTOM;
     }
     void setStatusMessage(const string_view &message)
     {

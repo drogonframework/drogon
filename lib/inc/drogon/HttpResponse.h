@@ -365,7 +365,8 @@ class DROGON_EXPORT HttpResponse
     static HttpResponsePtr newFileResponse(
         const std::string &fullPath,
         const std::string &attachmentFileName = "",
-        ContentType type = CT_NONE);
+        ContentType type = CT_NONE,
+        const std::string &typeString = "");
 
     /// Create a response that returns part of a file to the client.
     /**
@@ -388,7 +389,8 @@ class DROGON_EXPORT HttpResponse
         size_t length,
         bool setContentRange = true,
         const std::string &attachmentFileName = "",
-        ContentType type = CT_NONE);
+        ContentType type = CT_NONE,
+        const std::string &typeString = "");
 
     /// Create a response that returns a file to the client from buffer in
     /// memory/stack
@@ -404,7 +406,8 @@ class DROGON_EXPORT HttpResponse
         const unsigned char *pBuffer,
         size_t bufferLength,
         const std::string &attachmentFileName = "",
-        ContentType type = CT_NONE);
+        ContentType type = CT_NONE,
+        const std::string &typeString = "");
 
     /**
      * @brief Create a custom HTTP response object. For using this template,
@@ -418,7 +421,7 @@ class DROGON_EXPORT HttpResponse
 
     /**
      * @brief If the response is a file response (i.e. created by
-     * newHttpFileResponse) returns the path on the filesystem. Otherwise a
+     * newFileResponse) returns the path on the filesystem. Otherwise a
      * empty string.
      */
     virtual const std::string &sendfileName() const = 0;
