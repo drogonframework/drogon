@@ -362,7 +362,7 @@ int main()
         }
     });
     app().registerCustomExtensionMime("md", "text/markdown");
-    app().setFileTypes({"md", "html"});
+    app().setFileTypes({"md", "html", "jpg"});
     std::cout << "Date: "
               << std::string{drogon::utils::getHttpFullDate(
                      trantor::Date::now())}
