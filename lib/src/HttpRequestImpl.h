@@ -411,29 +411,7 @@ class HttpRequestImpl : public HttpRequest
 
     virtual ContentType contentType() const override
     {
-        if (!flagForParsingContentType_)
-        {
-            flagForParsingContentType_ = true;
-            auto &contentTypeString = getHeaderBy("content-type");
-            if (contentTypeString == "")
-            {
-                contentType_ = CT_NONE;
-            }
-            else
-            {
-                auto pos = contentTypeString.find(';');
-                if (pos != std::string::npos)
-                {
-                    contentType_ = parseContentType(
-                        string_view(contentTypeString.data(), pos));
-                }
-                else
-                {
-                    contentType_ =
-                        parseContentType(string_view(contentTypeString));
-                }
-            }
-        }
+        parseContentTypeAndString();
         return contentType_;
     }
 
@@ -486,6 +464,37 @@ class HttpRequestImpl : public HttpRequest
         contentTypeString_ = std::move(contentType);
     }
 
+    void parseContentTypeAndString() const
+    {
+        if (!flagForParsingContentType_)
+        {
+            flagForParsingContentType_ = true;
+            auto &contentTypeString = getHeaderBy("content-type");
+            if (contentTypeString == "")
+            {
+                contentType_ = CT_NONE;
+            }
+            else
+            {
+                auto pos = contentTypeString.find(';');
+                if (pos != std::string::npos)
+                {
+                    contentType_ = parseContentType(
+                        string_view(contentTypeString.data(), pos));
+                }
+                else
+                {
+                    contentType_ =
+                        parseContentType(string_view(contentTypeString));
+                }
+
+                if (contentType_ == CT_NONE)
+                    contentType_ = CT_CUSTOM;
+                contentTypeString_ = contentTypeString;
+            }
+        }
+    }
+
   private:
     void parseParameters() const;
     void parseParametersOnce() const
@@ -529,7 +538,7 @@ class HttpRequestImpl : public HttpRequest
     trantor::EventLoop *loop_;
     mutable ContentType contentType_{CT_TEXT_PLAIN};
     mutable bool flagForParsingContentType_{false};
-    std::string contentTypeString_;
+    mutable std::string contentTypeString_;
 };
 
 using HttpRequestImplPtr = std::shared_ptr<HttpRequestImpl>;

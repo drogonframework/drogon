@@ -139,6 +139,12 @@
             "cur",
             "xml"
         ],
+        // mime: A dictionary that extends the internal MIME type support. Maps extensions into new MIME types
+        // note: This option only adds MIME to the sever. `file_types` above have to be set for the server to serve them.
+        "mime": {
+            // "text/markdown": "md",
+            // "text/gemini": ["gmi", "gemini"]
+        },
         //locations: An array of locations of static files for GET requests.
         "locations": [
             {

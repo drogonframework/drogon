@@ -109,29 +109,7 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
 
     ContentType contentType() const override
     {
-        if (!flagForParsingContentType_)
-        {
-            flagForParsingContentType_ = true;
-            auto &contentTypeString = getHeaderBy("content-type");
-            if (contentTypeString.empty())
-            {
-                contentType_ = CT_NONE;
-            }
-            else
-            {
-                auto pos = contentTypeString.find(';');
-                if (pos != std::string::npos)
-                {
-                    contentType_ = parseContentType(
-                        string_view(contentTypeString.data(), pos));
-                }
-                else
-                {
-                    contentType_ =
-                        parseContentType(string_view(contentTypeString));
-                }
-            }
-        }
+        parseContentTypeAndString();
         return contentType_;
     }
 
@@ -340,6 +318,7 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
 
     std::string contentTypeString() const override
     {
+        parseContentTypeAndString();
         return contentTypeString_;
     }
 
@@ -373,6 +352,37 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
 
   protected:
     void makeHeaderString(trantor::MsgBuffer &headerString);
+
+    void parseContentTypeAndString() const
+    {
+        if (!flagForParsingContentType_)
+        {
+            flagForParsingContentType_ = true;
+            auto &contentTypeString = getHeaderBy("content-type");
+            if (contentTypeString == "")
+            {
+                contentType_ = CT_NONE;
+            }
+            else
+            {
+                auto pos = contentTypeString.find(';');
+                if (pos != std::string::npos)
+                {
+                    contentType_ = parseContentType(
+                        string_view(contentTypeString.data(), pos));
+                }
+                else
+                {
+                    contentType_ =
+                        parseContentType(string_view(contentTypeString));
+                }
+
+                if (contentType_ == CT_NONE)
+                    contentType_ = CT_CUSTOM;
+                contentTypeString_ = contentTypeString;
+            }
+        }
+    }
 
   private:
     void setBody(const char *body, size_t len) override
@@ -438,7 +448,7 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
     mutable ContentType contentType_{CT_TEXT_PLAIN};
     mutable bool flagForParsingContentType_{false};
     mutable std::shared_ptr<std::string> jsonParsingErrorPtr_;
-    std::string contentTypeString_{"text/html; charset=utf-8"};
+    mutable std::string contentTypeString_{"text/html; charset=utf-8"};
     bool passThrough_{false};
     void setContentType(const string_view &contentType)
     {
