@@ -398,7 +398,7 @@ class HttpRequestImpl : public HttpRequest
     {
         contentType_ = type;
         flagForParsingContentType_ = true;
-        auto &typeStr = webContentTypeToString(type);
+        auto &typeStr = contentTypeToMime(type);
         setContentType(std::string(typeStr.data(), typeStr.length()));
     }
 

@@ -324,8 +324,10 @@ void HttpRequestImpl::appendToBuffer(trantor::MsgBuffer *output) const
             output->append(buf, len);
             if (contentTypeString_.empty())
             {
-                auto &type = webContentTypeToString(contentType_);
+                auto &type = contentTypeToMime(contentType_);
+                output->append("content-type: ");
                 output->append(type.data(), type.length());
+                output->append("\r\n");
             }
         }
         else if (method_ == Post || method_ == Put || method_ == Options ||
