@@ -491,12 +491,13 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
     req = HttpRequest::newHttpRequest();
     req->setMethod(drogon::Get);
     req->setPath("/index.html");
-    client->sendRequest(req,
-                        [req, TEST_CTX](ReqResult result,
-                                        const HttpResponsePtr &resp) {
-                            REQUIRE(result == ReqResult::Ok);
-                            CHECK(resp->getBody().length() == indexLen);
-                        });
+    client->sendRequest(
+        req, [req, TEST_CTX](ReqResult result, const HttpResponsePtr &resp) {
+            REQUIRE(result == ReqResult::Ok);
+            CHECK(resp->getBody().length() == indexLen);
+            CHECK(resp->contentType() == CT_TEXT_HTML);
+            CHECK(resp->contentTypeString().find("text/html") == 0);
+        });
     req = HttpRequest::newHttpRequest();
     req->setMethod(drogon::Get);
     req->setPath("/index.html");
@@ -505,6 +506,7 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
                         [req, TEST_CTX](ReqResult result,
                                         const HttpResponsePtr &resp) {
                             REQUIRE(result == ReqResult::Ok);
+                            CHECK(resp->contentType() == CT_TEXT_HTML);
                             CHECK(resp->getBody().length() == indexLen);
                         });
     /// Test serving file with non-ASCII files
@@ -517,6 +519,22 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
                             // since no good way to read it on Windows witout
                             // using the wild-char API
                         });
+    /// Test custom content types
+    req->setPath("/test.md");
+    client->sendRequest(req,
+                        [req, TEST_CTX](ReqResult result,
+                                        const HttpResponsePtr &resp) {
+                            REQUIRE(result == ReqResult::Ok);
+                            CHECK(resp->contentType() == CT_CUSTOM);
+                            CHECK(resp->contentTypeString() == "text/markdown");
+                        });
+    /// Unknown files shoul be application/octet-stream
+    req->setPath("/main.cc");
+    client->sendRequest(
+        req, [req, TEST_CTX](ReqResult result, const HttpResponsePtr &resp) {
+            REQUIRE(result == ReqResult::Ok);
+            REQUIRE(resp->contentType() == CT_APPLICATION_OCTET_STREAM);
+        });
     // Test 405
     req = HttpRequest::newHttpRequest();
     req->setMethod(drogon::Post);
