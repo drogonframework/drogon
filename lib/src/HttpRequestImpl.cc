@@ -335,7 +335,9 @@ void HttpRequestImpl::appendToBuffer(trantor::MsgBuffer *output) const
         }
         if (!contentTypeString_.empty())
         {
+            output->append("content-type: ");
             output->append(contentTypeString_);
+            output->append("\r\n");
         }
     }
     for (auto it = headers_.begin(); it != headers_.end(); ++it)

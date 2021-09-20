@@ -361,6 +361,8 @@ int main()
             LOG_INFO << address.toIpPort() << " LISTEN";
         }
     });
+    app().registerCustomExtensionMime("md", "text/markdown");
+    app().setFileTypes({"md", "html"});
     std::cout << "Date: "
               << std::string{drogon::utils::getHttpFullDate(
                      trantor::Date::now())}

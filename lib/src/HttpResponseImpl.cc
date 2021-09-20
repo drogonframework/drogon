@@ -473,9 +473,13 @@ void HttpResponseImpl::makeHeaderString(trantor::MsgBuffer &buffer)
                 buffer.append("connection: Keep-Alive\r\n");
             }
         }
-        buffer.append("content-type: ");
-        buffer.append(contentTypeString_);
-        buffer.append("\r\n");
+
+        if (!contentTypeString_.empty())
+        {
+            buffer.append("content-type: ");
+            buffer.append(contentTypeString_);
+            buffer.append("\r\n");
+        }
         if (HttpAppFrameworkImpl::instance().sendServerHeader())
         {
             buffer.append(

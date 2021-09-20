@@ -1346,6 +1346,13 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
      */
     virtual const ExceptionHandler &getExceptionHandler() const = 0;
 
+    /**
+     * @brief Adds a new custom extension to MIME type mapping
+     */
+    virtual HttpAppFramework &registerCustomExtensionMime(
+        const std::string &ext,
+        const std::string &mime) = 0;
+
   private:
     virtual void registerHttpController(
         const std::string &pathPattern,

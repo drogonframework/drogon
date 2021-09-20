@@ -846,7 +846,7 @@ void registerCustomExtensionMime(const std::string &ext,
 std::string fileNameToMime(const std::string &fileName)
 {
     ContentType intenalContentType = parseContentType(fileName);
-    if (intenalContentType == CT_NONE)
+    if (intenalContentType != CT_NONE)
         return std::string(contentTypeToMime(intenalContentType));
 
     std::string extName;

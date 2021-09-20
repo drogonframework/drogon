@@ -383,7 +383,16 @@ class HttpRequestImpl : public HttpRequest
     {
         contentType_ = CT_NONE;
         flagForParsingContentType_ = true;
-        contentTypeString_ = type;
+        bool haveHeader = type.find("content-type: ") == 0;
+        bool haveCRLF = type.rfind("\r\n") == type.size() - 2;
+
+        size_t endOffset = 0;
+        if (haveHeader)
+            endOffset += 14;
+        if (haveCRLF)
+            endOffset += 2;
+        contentTypeString_ = std::string(type.begin() + (haveHeader ? 14 : 0),
+                                         type.end() - endOffset);
     }
     virtual void setContentTypeCode(const ContentType type) override
     {
