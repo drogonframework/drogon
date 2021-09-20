@@ -96,7 +96,7 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
     void setContentTypeCode(ContentType type) override
     {
         contentType_ = type;
-        auto ct = contentTypeToMime(type);
+        contentTypeString_ = contentTypeToMime(type);
         flagForParsingContentType_ = true;
     }
 

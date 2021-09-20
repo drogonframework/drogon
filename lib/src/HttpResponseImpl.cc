@@ -348,8 +348,8 @@ HttpResponsePtr HttpResponse::newFileResponse(
             if (type == CT_NONE)
                 type = parseContentType(typeString);
             if (type == CT_NONE)
-                type = CT_APPLICATION_OCTET_STREAM;  // XXX: Is this Ok?
-            r->setContentTypeCodeAndCustomString(contentType, typeString);
+                type = CT_CUSTOM;  // XXX: Is this Ok?
+            r->setContentTypeCodeAndCustomString(type, typeString);
         }
         else if (!attachmentFileName.empty())
         {
@@ -372,8 +372,8 @@ HttpResponsePtr HttpResponse::newFileResponse(
             if (type == CT_NONE)
                 type = parseContentType(typeString);
             if (type == CT_NONE)
-                type = CT_APPLICATION_OCTET_STREAM;  // XXX: Is this Ok?
-            r->setContentTypeCodeAndCustomString(contentType, typeString);
+                type = CT_CUSTOM;  // XXX: Is this Ok?
+            r->setContentTypeCodeAndCustomString(type, typeString);
         }
     }
 

@@ -510,6 +510,7 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
                             CHECK(resp->getBody().length() == indexLen);
                         });
     /// Test serving file with non-ASCII files
+    req = HttpRequest::newHttpRequest();
     req->setPath("/中文.txt");
     client->sendRequest(req,
                         [req, TEST_CTX](ReqResult result,
@@ -520,6 +521,7 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
                             // using the wild-char API
                         });
     /// Test custom content types
+    req = HttpRequest::newHttpRequest();
     req->setPath("/test.md");
     client->sendRequest(req,
                         [req, TEST_CTX](ReqResult result,
@@ -529,6 +531,7 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
                             CHECK(resp->contentTypeString() == "text/markdown");
                         });
     /// Unknown files shoul be application/octet-stream
+    req = HttpRequest::newHttpRequest();
     req->setPath("/main.cc");
     client->sendRequest(
         req, [req, TEST_CTX](ReqResult result, const HttpResponsePtr &resp) {
