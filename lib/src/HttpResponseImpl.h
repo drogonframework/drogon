@@ -453,7 +453,8 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
     bool passThrough_{false};
     void setContentType(const string_view &contentType)
     {
-        contentTypeString_ = std::string(contentType.data(), contentType.size());
+        contentTypeString_ =
+            std::string(contentType.data(), contentType.size());
         ContentType ct = parseContentType(contentType);
         if (ct != CT_NONE)
             contentType_ = ct;
