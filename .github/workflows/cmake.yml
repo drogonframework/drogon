@@ -79,8 +79,8 @@ jobs:
             buildname: 'ubuntu-20.04/gcc-10'
             link: STATIC
             triplet: x64-linux
-          - os: ubuntu-16.04
-            buildname: 'ubuntu-16.04/gcc'
+          - os: ubuntu-20.04
+            buildname: 'ubuntu-20.04/c++14'
             link: STATIC
             triplet: x64-linux
             compiler: gcc_64
@@ -116,11 +116,10 @@ jobs:
       run: |
         sudo apt install gcc-10 g++-10
     - name: (Linux) Install boost
-      if: matrix.os == 'ubuntu-16.04'
+      if: matrix.buildname == 'ubuntu-20.04/c++14'
       run: |
-        sudo add-apt-repository ppa:mhier/libboost-latest
         sudo apt update
-        sudo apt install boost1.67
+        sudo apt install libboost-all-dev
 
     - name: (Linux) Install postgresql
       if: matrix.os == 'ubuntu-20.04'
@@ -136,7 +135,7 @@ jobs:
       # We'll use this as our working directory for all subsequent commands
       shell: bash
       working-directory: ./build
-      if: matrix.buildname != 'ubuntu-20.04/gcc-10'
+      if: matrix.buildname != 'ubuntu-20.04/gcc-10' && matrix.buildname != 'ubuntu-20.04/c++14'
       run: |
         [[ ${{ matrix.link }} == "SHARED" ]] && shared="ON" || shared="OFF"
         cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_TESTING=on -DBUILD_DROGON_SHARED=$shared
@@ -153,6 +152,16 @@ jobs:
       env:
         CC: gcc-10
         CXX: g++-10
+
+    - name: Create Build Environment & Configure Cmake (C++14)
+      # Some projects don't allow in-source building, so create a separate build directory
+      # We'll use this as our working directory for all subsequent commands
+      shell: bash
+      working-directory: ./build
+      if: matrix.buildname == 'ubuntu-20.04/C++14'
+      run: |
+        [[ ${{ matrix.link }} == "SHARED" ]] && shared="ON" || shared="OFF"
+        cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_TESTING=on -DCMAKE_CXX_VERSION=14 -DBUILD_DROGON_SHARED=$shared
 
     - name: (Linux) Build
       working-directory: ./build
