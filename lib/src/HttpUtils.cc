@@ -481,21 +481,6 @@ ContentType getContentType(const std::string &fileName)
     }
 }
 
-// Taken and modified from https://stackoverflow.com/a/8317622/3687637
-struct ShortStringViewHasher
-{
-    size_t operator()(const string_view &sv) const
-    {
-        const size_t initValue = 1049039;
-        const size_t A = 6665339;
-        const size_t B = 2534641;
-        size_t h = initValue;
-        for (char ch : sv)
-            h = (h * A) ^ (ch * B);
-        return h;
-    }
-};
-
 ContentType parseContentType(const string_view &contentType)
 {
     // When using C++14. boost::string_view have a different idea of hashing.
