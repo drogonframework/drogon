@@ -403,7 +403,8 @@ void StaticFileRouter::sendStaticFileResponse(
                 HttpResponse::newFileResponse(brFileName,
                                               "",
                                               drogon::getContentType(filePath),
-                                              fileNameToMime(filePath));
+                                              std::string(
+                                                  fileNameToMime(filePath)));
             resp->addHeader("Content-Encoding", "br");
         }
     }
@@ -421,7 +422,8 @@ void StaticFileRouter::sendStaticFileResponse(
                 HttpResponse::newFileResponse(gzipFileName,
                                               "",
                                               drogon::getContentType(filePath),
-                                              fileNameToMime(filePath));
+                                              std::string(
+                                                  fileNameToMime(filePath)));
             resp->addHeader("Content-Encoding", "gzip");
         }
     }
@@ -429,7 +431,8 @@ void StaticFileRouter::sendStaticFileResponse(
         resp = HttpResponse::newFileResponse(filePath,
                                              "",
                                              drogon::getContentType(filePath),
-                                             fileNameToMime(filePath));
+                                             std::string(
+                                                 fileNameToMime(filePath)));
     if (resp->statusCode() != k404NotFound)
     {
         if (resp->getContentType() == CT_APPLICATION_OCTET_STREAM &&

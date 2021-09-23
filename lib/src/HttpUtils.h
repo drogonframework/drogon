@@ -28,7 +28,7 @@ ContentType parseContentType(const string_view &contentType);
 FileType parseFileType(const string_view &fileExtension);
 void registerCustomExtensionMime(const std::string &ext,
                                  const std::string &mime);
-std::string fileNameToMime(const std::string &fileName);
+const string_view fileNameToMime(const std::string &fileName);
 inline string_view getFileExtension(const std::string &fileName)
 {
     auto pos = fileName.rfind('.');

@@ -711,11 +711,11 @@ void registerCustomExtensionMime(const std::string &ext,
     mimeStr = mime;
 }
 
-std::string fileNameToMime(const std::string &fileName)
+const string_view fileNameToMime(const std::string &fileName)
 {
-    ContentType intenalContentType = parseContentType(fileName);
-    if (intenalContentType != CT_NONE)
-        return std::string(contentTypeToMime(intenalContentType));
+    ContentType intenalContentType = getContentType(fileName);
+    if (intenalContentType != CT_APPLICATION_OCTET_STREAM)
+        return contentTypeToMime(intenalContentType);
 
     std::string extName;
     auto pos = fileName.rfind('.');
