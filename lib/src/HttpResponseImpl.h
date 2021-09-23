@@ -455,11 +455,6 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
     {
         contentTypeString_ =
             std::string(contentType.data(), contentType.size());
-        ContentType ct = parseContentType(contentType);
-        if (ct != CT_NONE)
-            contentType_ = ct;
-        else
-            contentType_ = CT_CUSTOM;
     }
     void setStatusMessage(const string_view &message)
     {
