@@ -41,13 +41,14 @@ inline LogStream &operator<<(LogStream &ls, const drogon::string_view &v)
 }  // namespace trantor
 
 #if __cplusplus < 201703L && !(defined _MSC_VER && _MSC_VER > 1900)
-namespace std
+namespace drogon
 {
+template <size_t N>
+struct StringViewHasher;
+
 template <>
-struct hash<drogon::string_view>
+struct StringViewHasher<4>
 {
-// Murmur2 on 32bit
-#if UINTPTR_MAX == 0xFFFFFFFF
     size_t operator()(const drogon::string_view &__str) const noexcept
     {
         // Take from the memory header file
@@ -89,7 +90,11 @@ struct hash<drogon::string_view>
         __h ^= __h >> 15;
         return __h;
     }
-#elif UINTPTR_MAX == 0xFFFFFFFFFFFFFFFFu
+};
+
+template <>
+struct StringViewHasher<8>
+{
     static const size_t __k0 = 0xc3a5c85c97cb3127ULL;
     static const size_t __k1 = 0xb492b66fbe98f273ULL;
     static const size_t __k2 = 0x9ae16a3b2f90404fULL;
@@ -170,12 +175,12 @@ struct hash<drogon::string_view>
 
     // Return a 16-byte hash for 48 bytes.  Quick and dirty.
     // Callers do best to use "random-looking" values for a and b.
-    static pair<size_t, size_t> __weak_hash_len_32_with_seeds(size_t __w,
-                                                              size_t __x,
-                                                              size_t __y,
-                                                              size_t __z,
-                                                              size_t __a,
-                                                              size_t __b)
+    static std::pair<size_t, size_t> __weak_hash_len_32_with_seeds(size_t __w,
+                                                                   size_t __x,
+                                                                   size_t __y,
+                                                                   size_t __z,
+                                                                   size_t __a,
+                                                                   size_t __b)
     {
         __a += __w;
         __b = __rotate(__b + __a + __z, 21);
@@ -183,13 +188,14 @@ struct hash<drogon::string_view>
         __a += __x;
         __a += __y;
         __b += __rotate(__a, 44);
-        return pair<size_t, size_t>(__a + __z, __b + __c);
+        return std::pair<size_t, size_t>(__a + __z, __b + __c);
     }
 
     // Return a 16-byte hash for s[0] ... s[31], a, and b.  Quick and dirty.
-    static pair<size_t, size_t> __weak_hash_len_32_with_seeds(const char *__s,
-                                                              size_t __a,
-                                                              size_t __b)
+    static std::pair<size_t, size_t> __weak_hash_len_32_with_seeds(
+        const char *__s,
+        size_t __a,
+        size_t __b)
     {
         return __weak_hash_len_32_with_seeds(__loadword<size_t>(__s),
                                              __loadword<size_t>(__s + 8),
@@ -252,9 +258,9 @@ struct hash<drogon::string_view>
                      __loadword<size_t>(__s + __len - 56);
         size_t __z = __hash_len_16(__loadword<size_t>(__s + __len - 48) + __len,
                                    __loadword<size_t>(__s + __len - 24));
-        pair<size_t, size_t> __v =
+        std::pair<size_t, size_t> __v =
             __weak_hash_len_32_with_seeds(__s + __len - 64, __len, __z);
-        pair<size_t, size_t> __w =
+        std::pair<size_t, size_t> __w =
             __weak_hash_len_32_with_seeds(__s + __len - 32, __y + __k1, __x);
         __x = __x * __k1 + __loadword<size_t>(__s);
 
@@ -285,9 +291,17 @@ struct hash<drogon::string_view>
                                  __shift_mix(__y) * __k1 + __z,
                              __hash_len_16(__v.second, __w.second) + __x);
     }
-#else
-#pragma error Drogon only support 32 or 64 bit systems
-#endif
+};
+}  // namespace drogon
+namespace std
+{
+template <>
+struct hash<drogon::string_view>
+{
+    size_t operator()(const drogon::string_view &__str) const noexcept
+    {
+        return drogon::StringViewHasher<sizeof(size_t)>()(__str);
+    }
 };
 }  // namespace std
 
