@@ -481,39 +481,56 @@ ContentType getContentType(const std::string &fileName)
     }
 }
 
+// Taken and modified from https://stackoverflow.com/a/8317622/3687637
+struct ShortStringViewHasher
+{
+    size_t operator()(const string_view &sv) const
+    {
+        const size_t initValue = 1049039;
+        const size_t A = 6665339;
+        const size_t B = 2534641;
+        size_t h = initValue;
+        for (char ch : sv)
+            h = (h * A) ^ (ch * B);
+        return h;
+    }
+};
+
 ContentType parseContentType(const string_view &contentType)
 {
     // When using C++14. boost::string_view have a different idea of hashing.
     // For boost. only string_view referencing the same underlying string and
     // range have the same hash. Use a custom hash to avoid it
-    static const std::unordered_map<string_view, ContentType> map_{
-        {"text/html", CT_TEXT_HTML},
-        {"application/x-www-form-urlencoded", CT_APPLICATION_X_FORM},
-        {"application/xml", CT_APPLICATION_XML},
-        {"application/json", CT_APPLICATION_JSON},
-        {"application/x-javascript", CT_APPLICATION_X_JAVASCRIPT},
-        {"text/css", CT_TEXT_CSS},
-        {"text/xml", CT_TEXT_XML},
-        {"text/xsl", CT_TEXT_XSL},
-        {"application/octet-stream", CT_APPLICATION_OCTET_STREAM},
-        {"image/svg+xml", CT_IMAGE_SVG_XML},
-        {"application/x-font-truetype", CT_APPLICATION_X_FONT_TRUETYPE},
-        {"application/x-font-opentype", CT_APPLICATION_X_FONT_OPENTYPE},
-        {"application/font-woff", CT_APPLICATION_FONT_WOFF},
-        {"application/font-woff2", CT_APPLICATION_FONT_WOFF2},
-        {"application/vnd.ms-fontobject", CT_APPLICATION_VND_MS_FONTOBJ},
-        {"application/pdf", CT_APPLICATION_PDF},
-        {"image/png", CT_IMAGE_PNG},
-        {"image/webp", CT_IMAGE_WEBP},
-        {"image/avif", CT_IMAGE_AVIF},
-        {"image/jpeg", CT_IMAGE_JPG},
-        {"image/gif", CT_IMAGE_GIF},
-        {"image/x-icon", CT_IMAGE_XICON},
-        {"image/bmp", CT_IMAGE_BMP},
-        {"image/icns", CT_IMAGE_ICNS},
-        {"application/wasm", CT_APPLICATION_WASM},
-        {"text/plain", CT_TEXT_PLAIN},
-        {"multipart/form-data", CT_MULTIPART_FORM_DATA}};
+    static const std::unordered_map<string_view,
+                                    ContentType,
+                                    ShortStringViewHasher>
+        map_{{"text/html", CT_TEXT_HTML},
+             {"application/x-www-form-urlencoded", CT_APPLICATION_X_FORM},
+             {"application/xml", CT_APPLICATION_XML},
+             {"application/json", CT_APPLICATION_JSON},
+             {"application/x-javascript", CT_APPLICATION_X_JAVASCRIPT},
+             {"text/css", CT_TEXT_CSS},
+             {"text/xml", CT_TEXT_XML},
+             {"text/xsl", CT_TEXT_XSL},
+             {"application/octet-stream", CT_APPLICATION_OCTET_STREAM},
+             {"image/svg+xml", CT_IMAGE_SVG_XML},
+             {"application/x-font-truetype", CT_APPLICATION_X_FONT_TRUETYPE},
+             {"application/x-font-opentype", CT_APPLICATION_X_FONT_OPENTYPE},
+             {"application/font-woff", CT_APPLICATION_FONT_WOFF},
+             {"application/font-woff2", CT_APPLICATION_FONT_WOFF2},
+             {"application/vnd.ms-fontobject", CT_APPLICATION_VND_MS_FONTOBJ},
+             {"application/pdf", CT_APPLICATION_PDF},
+             {"image/png", CT_IMAGE_PNG},
+             {"image/webp", CT_IMAGE_WEBP},
+             {"image/avif", CT_IMAGE_AVIF},
+             {"image/jpeg", CT_IMAGE_JPG},
+             {"image/gif", CT_IMAGE_GIF},
+             {"image/x-icon", CT_IMAGE_XICON},
+             {"image/bmp", CT_IMAGE_BMP},
+             {"image/icns", CT_IMAGE_ICNS},
+             {"application/wasm", CT_APPLICATION_WASM},
+             {"text/plain", CT_TEXT_PLAIN},
+             {"multipart/form-data", CT_MULTIPART_FORM_DATA}};
     auto iter = map_.find(contentType);
     if (iter == map_.end())
         return CT_NONE;
