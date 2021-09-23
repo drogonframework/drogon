@@ -38,7 +38,6 @@ void RedisConnection::startConnectionInLoop()
     if (redisContext_->err)
     {
         LOG_ERROR << "Error: " << redisContext_->errstr;
-        redisAsyncDisconnect(redisContext_);
 
         if (disconnectCallback_)
         {
