@@ -734,3 +734,15 @@ void HttpRequestImpl::createTmpFile()
         .append(fileName);
     cacheFilePtr_ = std::make_unique<CacheFile>(tmpfile);
 }
+
+void HttpRequestImpl::setContentTypeString(const char *typeString,
+                                           size_t typeStringLength)
+{
+    std::string sv(typeString, typeStringLength);
+    auto contentType = parseContentType(sv);
+    if (contentType == CT_NONE)
+        contentType = CT_CUSTOM;
+    contentType_ = contentType;
+    contentTypeString_ = std::string(sv);
+    flagForParsingContentType_ = true;
+}

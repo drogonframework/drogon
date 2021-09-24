@@ -21,6 +21,7 @@
 #include <fstream>
 #include <memory>
 #include <cstdio>
+#include <string>
 #include <sys/stat.h>
 #include <trantor/utils/Logger.h>
 
@@ -836,4 +837,16 @@ bool HttpResponseImpl::shouldBeCompressed() const
         return false;
     }
     return true;
+}
+
+void HttpResponseImpl::setContentTypeString(const char *typeString,
+                                            size_t typeStringLength)
+{
+    std::string sv(typeString, typeStringLength);
+    auto contentType = parseContentType(sv);
+    if (contentType == CT_NONE)
+        contentType = CT_CUSTOM;
+    contentType_ = contentType;
+    contentTypeString_ = std::string(sv);
+    flagForParsingContentType_ = true;
 }

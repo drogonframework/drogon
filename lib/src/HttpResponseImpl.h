@@ -414,6 +414,9 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
                                    typeStringLength - endOffset});
     }
 
+    void setContentTypeString(const char *typeString,
+                              size_t typeStringLength) override;
+
     void setCustomStatusCode(int code,
                              const char *message,
                              size_t messageLength) override

@@ -402,6 +402,9 @@ class HttpRequestImpl : public HttpRequest
         setContentType(std::string(typeStr.data(), typeStr.length()));
     }
 
+    void setContentTypeString(const char *typeString,
+                              size_t typeStringLength) override;
+
     // virtual void setContentTypeCodeAndCharacterSet(ContentType type, const
     // std::string &charSet = "utf-8") override
     // {

@@ -137,9 +137,17 @@ class DROGON_EXPORT HttpResponse
     /// is a text type, the character set is utf8.
     virtual void setContentTypeCode(ContentType type) = 0;
 
+    /// Set the content-type string, The string may contain the header name and
+    /// CRLF. Or just the MIME type For example, "content-type: text/plain\r\n"
+    /// or "text/plain"
+    void setContentTypeString(const string_view &typeString)
+    {
+        setContentTypeString(typeString.data(), typeString.size());
+    }
+
     /// Set the response content type and the content-type string, The string
-    /// must contain the header name and CRLF.
-    /// For example, "content-type: text/plain\r\n"
+    /// may contain the header name and CRLF. Or just the MIME type
+    /// For example, "content-type: text/plain\r\n" or "text/plain"
     void setContentTypeCodeAndCustomString(ContentType type,
                                            const string_view &typeString)
     {
@@ -450,6 +458,8 @@ class DROGON_EXPORT HttpResponse
     virtual void setContentTypeCodeAndCustomString(ContentType type,
                                                    const char *typeString,
                                                    size_t typeStringLength) = 0;
+    virtual void setContentTypeString(const char *typeString,
+                                      size_t typeStringLength) = 0;
     virtual void setCustomStatusCode(int code,
                                      const char *message,
                                      size_t messageLength) = 0;
