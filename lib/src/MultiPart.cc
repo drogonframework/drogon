@@ -77,7 +77,7 @@ int MultiPartParser::parse(const HttpRequestPtr &req)
 int MultiPartParser::parseEntity(const char *begin, const char *end)
 {
     static const char entityName[] = "name=";
-    static const char quotationMark[] = ";";
+    static const char semiColon[] = ";";
     static const char fileName[] = "filename=";
     static const char CRLF[] = "\r\n\r\n";
 
@@ -85,11 +85,17 @@ int MultiPartParser::parseEntity(const char *begin, const char *end)
     if (pos == end)
         return -1;
     pos += 5;
-    auto pos1 = std::search(pos, end, quotationMark, quotationMark + 1);
+    auto pos1 = std::search(pos, end, semiColon, semiColon + 1);
     if (pos1 == end)
-        return -1;
-    if (*pos == '"') pos++;
-    if (*(pos1-1) == '"') pos1--;
+    {
+        pos1 = std::search(pos, end, CRLF, CRLF + 2);
+        if (pos1 == end)
+            return -1;
+    }
+    if (*pos == '"')
+        pos++;
+    if (*(pos1 - 1) == '"')
+        pos1--;
     std::string name(pos, pos1);
     pos = std::search(pos1, end, fileName, fileName + 9);
     if (pos == end)
@@ -103,15 +109,23 @@ int MultiPartParser::parseEntity(const char *begin, const char *end)
     else
     {
         pos += 9;
-        pos1 = std::search(pos, end, quotationMark, quotationMark + 1);
+        pos1 = std::search(pos, end, semiColon, semiColon + 1);
         if (pos1 == end)
         {
             pos1 = std::search(pos, end, CRLF, CRLF + 2);
             if (pos1 == end)
                 return -1;
         }
-        if (*pos == '"') pos++;
-        if (*(pos1-1) == '"') pos1--;
+        else
+        {
+            auto pos2 = std::search(pos, pos1, CRLF, CRLF + 2);
+            if (pos2 != end)
+                pos1 = pos2;
+        }
+        if (*pos == '"')
+            pos++;
+        if (*(pos1 - 1) == '"')
+            pos1--;
         auto filePtr = std::make_shared<HttpFileImpl>();
         filePtr->setRequest(requestPtr_);
         filePtr->setItemName(name);
