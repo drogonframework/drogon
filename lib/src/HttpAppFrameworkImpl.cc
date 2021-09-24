@@ -16,6 +16,7 @@
 #include "HttpRequestImpl.h"
 #include "HttpClientImpl.h"
 #include "HttpResponseImpl.h"
+#include "HttpUtils.h"
 #include "WebSocketConnectionImpl.h"
 #include "StaticFileRouter.h"
 #include "HttpSimpleControllersRouter.h"
@@ -1093,5 +1094,13 @@ HttpAppFramework &HttpAppFrameworkImpl::setDefaultHandler(
     DefaultHandler handler)
 {
     staticFileRouterPtr_->setDefaultHandler(std::move(handler));
+    return *this;
+}
+
+HttpAppFramework &HttpAppFrameworkImpl::registerCustomExtensionMime(
+    const std::string &ext,
+    const std::string &mime)
+{
+    drogon::registerCustomExtensionMime(ext, mime);
     return *this;
 }

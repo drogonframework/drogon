@@ -324,8 +324,10 @@ void HttpRequestImpl::appendToBuffer(trantor::MsgBuffer *output) const
             output->append(buf, len);
             if (contentTypeString_.empty())
             {
-                auto &type = webContentTypeToString(contentType_);
+                auto &type = contentTypeToMime(contentType_);
+                output->append("content-type: ");
                 output->append(type.data(), type.length());
+                output->append("\r\n");
             }
         }
         else if (method_ == Post || method_ == Put || method_ == Options ||
@@ -335,7 +337,9 @@ void HttpRequestImpl::appendToBuffer(trantor::MsgBuffer *output) const
         }
         if (!contentTypeString_.empty())
         {
+            output->append("content-type: ");
             output->append(contentTypeString_);
+            output->append("\r\n");
         }
     }
     for (auto it = headers_.begin(); it != headers_.end(); ++it)
@@ -729,4 +733,16 @@ void HttpRequestImpl::createTmpFile()
         .append("/")
         .append(fileName);
     cacheFilePtr_ = std::make_unique<CacheFile>(tmpfile);
+}
+
+void HttpRequestImpl::setContentTypeString(const char *typeString,
+                                           size_t typeStringLength)
+{
+    std::string sv(typeString, typeStringLength);
+    auto contentType = parseContentType(sv);
+    if (contentType == CT_NONE)
+        contentType = CT_CUSTOM;
+    contentType_ = contentType;
+    contentTypeString_ = std::string(sv);
+    flagForParsingContentType_ = true;
 }

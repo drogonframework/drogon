@@ -493,21 +493,5 @@ void AccessLogger::outputRespContentType(trantor::LogStream &stream,
                                          const drogon::HttpRequestPtr &,
                                          const drogon::HttpResponsePtr &resp)
 {
-    auto typeStr = webContentTypeToString(resp->contentType());
-    if (typeStr.empty())
-    {
-        stream << "content-type: ";
-    }
-    else
-    {
-        if (typeStr.size() >= 2 && typeStr[typeStr.size() - 1] == '\n' &&
-            typeStr[typeStr.size() - 2] == '\r')
-        {
-            stream << string_view{typeStr.data(), typeStr.size() - 2};
-        }
-        else
-        {
-            stream << typeStr;
-        }
-    }
+    stream << resp->contentTypeString();
 }

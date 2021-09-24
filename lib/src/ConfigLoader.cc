@@ -474,6 +474,26 @@ static void loadApp(const Json::Value &app)
         app.get("use_implicit_page", true).asBool());
     drogon::app().setImplicitPage(
         app.get("implicit_page", "index.html").asString());
+    auto mimes = app["mime"];
+    if (!mimes.isNull())
+    {
+        auto names = mimes.getMemberNames();
+        for (const auto &mime : names)
+        {
+            auto ext = mimes[mime];
+            std::vector<std::string> exts;
+            if (ext.isString())
+                exts.push_back(ext.asString());
+            else if (ext.isArray())
+            {
+                for (const auto &extension : ext)
+                    exts.push_back(extension.asString());
+            }
+
+            for (const auto &extension : exts)
+                drogon::app().registerCustomExtensionMime(extension, mime);
+        }
+    }
 }
 static void loadDbClients(const Json::Value &dbClients)
 {

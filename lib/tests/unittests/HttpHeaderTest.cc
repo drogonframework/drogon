@@ -35,3 +35,33 @@ DROGON_TEST(HttpHeaderResponse)
     CHECK(str.find("abc") == std::string::npos);
     CHECK(resp->getHeader("abc") == "");
 }
+
+DROGON_TEST(ResponseSetCustomContentTypeString)
+{
+    auto resp = HttpResponse::newHttpResponse();
+    resp->setContentTypeString("text/html");
+    CHECK(resp->getContentType() == CT_TEXT_HTML);
+
+    resp = HttpResponse::newHttpResponse();
+    resp->setContentTypeString("image/bmp");
+    CHECK(resp->getContentType() == CT_IMAGE_BMP);
+
+    resp = HttpResponse::newHttpResponse();
+    resp->setContentTypeString("thisdoesnotexist/unknown");
+    CHECK(resp->getContentType() == CT_CUSTOM);
+}
+
+DROGON_TEST(ResquestSetCustomContentTypeString)
+{
+    auto req = HttpRequest::newHttpRequest();
+    req->setContentTypeString("text/html");
+    CHECK(req->getContentType() == CT_TEXT_HTML);
+
+    req = HttpRequest::newHttpRequest();
+    req->setContentTypeString("image/bmp");
+    CHECK(req->getContentType() == CT_IMAGE_BMP);
+
+    req = HttpRequest::newHttpRequest();
+    req->setContentTypeString("thisdoesnotexist/unknown");
+    CHECK(req->getContentType() == CT_CUSTOM);
+}

@@ -351,6 +351,15 @@ class DROGON_EXPORT HttpRequest
     /// Set or get the content type
     virtual void setContentTypeCode(const ContentType type) = 0;
 
+    /// Set the content-type string, The string may contain the header name and
+    /// CRLF. Or just the MIME type
+    //
+    /// For example, "content-type: text/plain\r\n" or "text/plain"
+    void setContentTypeString(const string_view &typeString)
+    {
+        setContentTypeString(typeString.data(), typeString.size());
+    }
+
     /// Set the request content-type string, The string
     /// must contain the header name and CRLF.
     /// For example, "content-type: text/plain\r\n"
@@ -410,6 +419,8 @@ class DROGON_EXPORT HttpRequest
     }
 
     virtual bool isOnSecureConnection() const noexcept = 0;
+    virtual void setContentTypeString(const char *typeString,
+                                      size_t typeStringLength) = 0;
 
     virtual ~HttpRequest()
     {

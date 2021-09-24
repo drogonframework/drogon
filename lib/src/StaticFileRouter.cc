@@ -399,10 +399,11 @@ void StaticFileRouter::sendStaticFileResponse(
         if (filesystem::exists(fsBrFile, err) &&
             filesystem::is_regular_file(fsBrFile, err))
         {
-            resp =
-                HttpResponse::newFileResponse(brFileName,
-                                              "",
-                                              drogon::getContentType(filePath));
+            auto ct = fileNameToContentTypeAndMime(filePath);
+            resp = HttpResponse::newFileResponse(brFileName,
+                                                 "",
+                                                 ct.first,
+                                                 std::string(ct.second));
             resp->addHeader("Content-Encoding", "br");
         }
     }
@@ -416,15 +417,22 @@ void StaticFileRouter::sendStaticFileResponse(
         if (filesystem::exists(fsGzipFile, err) &&
             filesystem::is_regular_file(fsGzipFile, err))
         {
-            resp =
-                HttpResponse::newFileResponse(gzipFileName,
-                                              "",
-                                              drogon::getContentType(filePath));
+            auto ct = fileNameToContentTypeAndMime(filePath);
+            resp = HttpResponse::newFileResponse(gzipFileName,
+                                                 "",
+                                                 ct.first,
+                                                 std::string(ct.second));
             resp->addHeader("Content-Encoding", "gzip");
         }
     }
     if (!resp)
-        resp = HttpResponse::newFileResponse(filePath);
+    {
+        auto ct = fileNameToContentTypeAndMime(filePath);
+        resp = HttpResponse::newFileResponse(filePath,
+                                             "",
+                                             ct.first,
+                                             std::string(ct.second));
+    }
     if (resp->statusCode() != k404NotFound)
     {
         if (resp->getContentType() == CT_APPLICATION_OCTET_STREAM &&

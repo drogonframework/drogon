@@ -19,158 +19,7 @@
 
 namespace drogon
 {
-const string_view &webContentTypeToString(ContentType contenttype)
-{
-    switch (contenttype)
-    {
-        case CT_TEXT_HTML:
-        {
-            static string_view sv =
-                "content-type: text/html; charset=utf-8\r\n";
-            return sv;
-        }
-        case CT_APPLICATION_X_FORM:
-        {
-            static string_view sv =
-                "content-type: application/x-www-form-urlencoded\r\n";
-            return sv;
-        }
-        case CT_APPLICATION_XML:
-        {
-            static string_view sv =
-                "content-type: application/xml; charset=utf-8\r\n";
-            return sv;
-        }
-        case CT_APPLICATION_JSON:
-        {
-            static string_view sv =
-                "content-type: application/json; charset=utf-8\r\n";
-            return sv;
-        }
-        case CT_APPLICATION_X_JAVASCRIPT:
-        {
-            static string_view sv =
-                "content-type: application/x-javascript; charset=utf-8\r\n";
-            return sv;
-        }
-        case CT_TEXT_CSS:
-        {
-            static string_view sv = "content-type: text/css; charset=utf-8\r\n";
-            return sv;
-        }
-        case CT_TEXT_XML:
-        {
-            static string_view sv = "content-type: text/xml; charset=utf-8\r\n";
-            return sv;
-        }
-        case CT_TEXT_XSL:
-        {
-            static string_view sv = "content-type: text/xsl; charset=utf-8\r\n";
-            return sv;
-        }
-        case CT_APPLICATION_OCTET_STREAM:
-        {
-            static string_view sv =
-                "content-type: application/octet-stream\r\n";
-            return sv;
-        }
-        case CT_IMAGE_SVG_XML:
-        {
-            static string_view sv = "content-type: image/svg+xml\r\n";
-            return sv;
-        }
-        case CT_APPLICATION_X_FONT_TRUETYPE:
-        {
-            static string_view sv =
-                "content-type: application/x-font-truetype\r\n";
-            return sv;
-        }
-        case CT_APPLICATION_X_FONT_OPENTYPE:
-        {
-            static string_view sv =
-                "content-type: application/x-font-opentype\r\n";
-            return sv;
-        }
-        case CT_APPLICATION_FONT_WOFF:
-        {
-            static string_view sv = "content-type: application/font-woff\r\n";
-            return sv;
-        }
-        case CT_APPLICATION_FONT_WOFF2:
-        {
-            static string_view sv = "content-type: application/font-woff2\r\n";
-            return sv;
-        }
-        case CT_APPLICATION_VND_MS_FONTOBJ:
-        {
-            static string_view sv =
-                "content-type: application/vnd.ms-fontobject\r\n";
-            return sv;
-        }
-        case CT_APPLICATION_PDF:
-        {
-            static string_view sv = "content-type: application/pdf\r\n";
-            return sv;
-        }
-        case CT_IMAGE_PNG:
-        {
-            static string_view sv = "content-type: image/png\r\n";
-            return sv;
-        }
-        case CT_IMAGE_AVIF:
-        {
-            static string_view sv = "content-type: image/avif\r\n";
-            return sv;
-        }
-        case CT_IMAGE_WEBP:
-        {
-            static string_view sv = "content-type: image/webp\r\n";
-            return sv;
-        }
-        case CT_IMAGE_JPG:
-        {
-            static string_view sv = "content-type: image/jpeg\r\n";
-            return sv;
-        }
-        case CT_IMAGE_GIF:
-        {
-            static string_view sv = "content-type: image/gif\r\n";
-            return sv;
-        }
-        case CT_IMAGE_XICON:
-        {
-            static string_view sv = "content-type: image/x-icon\r\n";
-            return sv;
-        }
-        case CT_IMAGE_BMP:
-        {
-            static string_view sv = "content-type: image/bmp\r\n";
-            return sv;
-        }
-        case CT_IMAGE_ICNS:
-        {
-            static string_view sv = "content-type: image/icns\r\n";
-            return sv;
-        }
-        case CT_APPLICATION_WASM:
-        {
-            static string_view sv = "content-type: application/wasm\r\n";
-            return sv;
-        }
-        case CT_NONE:
-        {
-            static string_view sv = "";
-            return sv;
-        }
-        default:
-        case CT_TEXT_PLAIN:
-        {
-            static string_view sv =
-                "content-type: text/plain; charset=utf-8\r\n";
-            return sv;
-        }
-    }
-}
+static std::unordered_map<std::string, std::string> customMime;
 
 const string_view &statusCodeToString(int code)
 {
@@ -634,6 +483,9 @@ ContentType getContentType(const std::string &fileName)
 
 ContentType parseContentType(const string_view &contentType)
 {
+    // When using C++14. boost::string_view have a different idea of hashing.
+    // For boost. only string_view referencing the same underlying string and
+    // range have the same hash. Use a custom hash to avoid it
     static const std::unordered_map<string_view, ContentType> map_{
         {"text/html", CT_TEXT_HTML},
         {"application/x-www-form-urlencoded", CT_APPLICATION_X_FORM},
@@ -683,5 +535,200 @@ FileType parseFileType(const string_view &fileExtension)
     if (iter == map_.end())
         return FT_CUSTOM;
     return iter->second;
+}
+
+const string_view &contentTypeToMime(ContentType contenttype)
+{
+    switch (contenttype)
+    {
+        case CT_TEXT_HTML:
+        {
+            static string_view sv = "text/html; charset=utf-8";
+            return sv;
+        }
+        case CT_APPLICATION_X_FORM:
+        {
+            static string_view sv = "application/x-www-form-urlencoded";
+            return sv;
+        }
+        case CT_APPLICATION_XML:
+        {
+            static string_view sv = "application/xml; charset=utf-8";
+            return sv;
+        }
+        case CT_APPLICATION_JSON:
+        {
+            static string_view sv = "application/json; charset=utf-8";
+            return sv;
+        }
+        case CT_APPLICATION_X_JAVASCRIPT:
+        {
+            static string_view sv = "application/x-javascript; charset=utf-8";
+            return sv;
+        }
+        case CT_TEXT_CSS:
+        {
+            static string_view sv = "text/css; charset=utf-8";
+            return sv;
+        }
+        case CT_TEXT_XML:
+        {
+            static string_view sv = "text/xml; charset=utf-8";
+            return sv;
+        }
+        case CT_TEXT_XSL:
+        {
+            static string_view sv = "text/xsl; charset=utf-8";
+            return sv;
+        }
+        case CT_APPLICATION_OCTET_STREAM:
+        {
+            static string_view sv = "application/octet-stream";
+            return sv;
+        }
+        case CT_IMAGE_SVG_XML:
+        {
+            static string_view sv = "image/svg+xml";
+            return sv;
+        }
+        case CT_APPLICATION_X_FONT_TRUETYPE:
+        {
+            static string_view sv = "application/x-font-truetype";
+            return sv;
+        }
+        case CT_APPLICATION_X_FONT_OPENTYPE:
+        {
+            static string_view sv = "application/x-font-opentype";
+            return sv;
+        }
+        case CT_APPLICATION_FONT_WOFF:
+        {
+            static string_view sv = "application/font-woff";
+            return sv;
+        }
+        case CT_APPLICATION_FONT_WOFF2:
+        {
+            static string_view sv = "application/font-woff2";
+            return sv;
+        }
+        case CT_APPLICATION_VND_MS_FONTOBJ:
+        {
+            static string_view sv = "application/vnd.ms-fontobject";
+            return sv;
+        }
+        case CT_APPLICATION_PDF:
+        {
+            static string_view sv = "application/pdf";
+            return sv;
+        }
+        case CT_IMAGE_PNG:
+        {
+            static string_view sv = "image/png";
+            return sv;
+        }
+        case CT_IMAGE_AVIF:
+        {
+            static string_view sv = "image/avif";
+            return sv;
+        }
+        case CT_IMAGE_WEBP:
+        {
+            static string_view sv = "image/webp";
+            return sv;
+        }
+        case CT_IMAGE_JPG:
+        {
+            static string_view sv = "image/jpeg";
+            return sv;
+        }
+        case CT_IMAGE_GIF:
+        {
+            static string_view sv = "image/gif";
+            return sv;
+        }
+        case CT_IMAGE_XICON:
+        {
+            static string_view sv = "image/x-icon";
+            return sv;
+        }
+        case CT_IMAGE_BMP:
+        {
+            static string_view sv = "image/bmp";
+            return sv;
+        }
+        case CT_IMAGE_ICNS:
+        {
+            static string_view sv = "image/icns";
+            return sv;
+        }
+        case CT_APPLICATION_WASM:
+        {
+            static string_view sv = "application/wasm";
+            return sv;
+        }
+        case CT_NONE:
+        {
+            static string_view sv = "";
+            return sv;
+        }
+        default:
+        case CT_TEXT_PLAIN:
+        {
+            static string_view sv = "text/plain; charset=utf-8";
+            return sv;
+        }
+    }
+}
+
+void registerCustomExtensionMime(const std::string &ext,
+                                 const std::string &mime)
+{
+    if (ext.empty())
+        return;
+    auto &mimeStr = customMime[ext];
+    if (!mimeStr.empty())
+    {
+        LOG_WARN << ext << " has already been registered as type " << mime
+                 << ". Overwriting.";
+    }
+    mimeStr = mime;
+}
+
+const string_view fileNameToMime(const std::string &fileName)
+{
+    ContentType intenalContentType = getContentType(fileName);
+    if (intenalContentType != CT_APPLICATION_OCTET_STREAM)
+        return contentTypeToMime(intenalContentType);
+
+    std::string extName;
+    auto pos = fileName.rfind('.');
+    if (pos != std::string::npos)
+    {
+        extName = fileName.substr(pos + 1);
+        transform(extName.begin(), extName.end(), extName.begin(), tolower);
+    }
+    auto it = customMime.find(extName);
+    if (it == customMime.end())
+        return "";
+    return it->second;
+}
+std::pair<ContentType, const string_view> fileNameToContentTypeAndMime(
+    const std::string &fileName)
+{
+    ContentType intenalContentType = getContentType(fileName);
+    if (intenalContentType != CT_APPLICATION_OCTET_STREAM)
+        return {intenalContentType, contentTypeToMime(intenalContentType)};
+
+    std::string extName;
+    auto pos = fileName.rfind('.');
+    if (pos != std::string::npos)
+    {
+        extName = fileName.substr(pos + 1);
+        transform(extName.begin(), extName.end(), extName.begin(), tolower);
+    }
+    auto it = customMime.find(extName);
+    if (it == customMime.end())
+        return {CT_NONE, ""};
+    return {CT_CUSTOM, it->second};
 }
 }  // namespace drogon

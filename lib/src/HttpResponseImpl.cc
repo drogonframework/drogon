@@ -21,6 +21,7 @@
 #include <fstream>
 #include <memory>
 #include <cstdio>
+#include <string>
 #include <sys/stat.h>
 #include <trantor/utils/Logger.h>
 
@@ -209,7 +210,8 @@ HttpResponsePtr HttpResponse::newFileResponse(
     const unsigned char *pBuffer,
     size_t bufferLength,
     const std::string &attachmentFileName,
-    ContentType type)
+    ContentType type,
+    const std::string &typeString)
 {
     // Make Raw HttpResponse
     auto resp = std::make_shared<HttpResponseImpl>();
@@ -222,7 +224,19 @@ HttpResponsePtr HttpResponse::newFileResponse(
     resp->setStatusCode(k200OK);
 
     // Check for type and assign proper content type in header
-    if (type != CT_NONE)
+    if (!typeString.empty())
+    {
+        auto contentType = type;
+        if (type == CT_NONE)
+            type = parseContentType(typeString);
+        if (type == CT_NONE)
+            type = CT_APPLICATION_OCTET_STREAM;  // XXX: Is this Ok?
+        static_cast<HttpResponse *>(resp.get())
+            ->setContentTypeCodeAndCustomString(type,
+                                                typeString.c_str(),
+                                                typeString.size());
+    }
+    else if (type != CT_NONE)
     {
         resp->setContentTypeCode(type);
     }
@@ -251,9 +265,11 @@ HttpResponsePtr HttpResponse::newFileResponse(
 HttpResponsePtr HttpResponse::newFileResponse(
     const std::string &fullPath,
     const std::string &attachmentFileName,
-    ContentType type)
+    ContentType type,
+    const std::string &typeString)
 {
-    return newFileResponse(fullPath, 0, 0, false, attachmentFileName, type);
+    return newFileResponse(
+        fullPath, 0, 0, false, attachmentFileName, type, typeString);
 }
 
 HttpResponsePtr HttpResponse::newFileResponse(
@@ -262,7 +278,8 @@ HttpResponsePtr HttpResponse::newFileResponse(
     size_t length,
     bool setContentRange,
     const std::string &attachmentFileName,
-    ContentType type)
+    ContentType type,
+    const std::string &typeString)
 {
     std::ifstream infile(utils::toNativePath(fullPath), std::ifstream::binary);
     LOG_TRACE << "send http file:" << fullPath << " offset " << offset
@@ -325,7 +342,17 @@ HttpResponsePtr HttpResponse::newFileResponse(
     // Infer content type
     if (type == CT_NONE)
     {
-        if (!attachmentFileName.empty())
+        if (!typeString.empty())
+        {
+            auto r = static_cast<HttpResponse *>(resp.get());
+            auto contentType = type;
+            if (type == CT_NONE)
+                type = parseContentType(typeString);
+            if (type == CT_NONE)
+                type = CT_CUSTOM;  // XXX: Is this Ok?
+            r->setContentTypeCodeAndCustomString(type, typeString);
+        }
+        else if (!attachmentFileName.empty())
         {
             resp->setContentTypeCode(
                 drogon::getContentType(attachmentFileName));
@@ -337,7 +364,18 @@ HttpResponsePtr HttpResponse::newFileResponse(
     }
     else
     {
-        resp->setContentTypeCode(type);
+        if (typeString.empty())
+            resp->setContentTypeCode(type);
+        else
+        {
+            auto r = static_cast<HttpResponse *>(resp.get());
+            auto contentType = type;
+            if (type == CT_NONE)
+                type = parseContentType(typeString);
+            if (type == CT_NONE)
+                type = CT_CUSTOM;  // XXX: Is this Ok?
+            r->setContentTypeCodeAndCustomString(type, typeString);
+        }
     }
 
     // Set headers
@@ -436,7 +474,13 @@ void HttpResponseImpl::makeHeaderString(trantor::MsgBuffer &buffer)
                 buffer.append("connection: Keep-Alive\r\n");
             }
         }
-        buffer.append(contentTypeString_.data(), contentTypeString_.length());
+
+        if (!contentTypeString_.empty())
+        {
+            buffer.append("content-type: ");
+            buffer.append(contentTypeString_);
+            buffer.append("\r\n");
+        }
         if (HttpAppFrameworkImpl::instance().sendServerHeader())
         {
             buffer.append(
@@ -793,4 +837,16 @@ bool HttpResponseImpl::shouldBeCompressed() const
         return false;
     }
     return true;
+}
+
+void HttpResponseImpl::setContentTypeString(const char *typeString,
+                                            size_t typeStringLength)
+{
+    std::string sv(typeString, typeStringLength);
+    auto contentType = parseContentType(sv);
+    if (contentType == CT_NONE)
+        contentType = CT_CUSTOM;
+    contentType_ = contentType;
+    contentTypeString_ = std::string(sv);
+    flagForParsingContentType_ = true;
 }

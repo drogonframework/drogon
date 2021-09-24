@@ -535,6 +535,10 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
         return exceptionHandler_;
     }
 
+    HttpAppFramework &registerCustomExtensionMime(
+        const std::string &ext,
+        const std::string &mime) override;
+
   private:
     void registerHttpController(const std::string &pathPattern,
                                 const internal::HttpBinderBasePtr &binder,
