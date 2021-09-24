@@ -367,8 +367,10 @@ class DROGON_EXPORT HttpResponse
      * @param fullPath is the full path to the file.
      * @param attachmentFileName if the parameter is not empty, the browser
      * does not open the file, but saves it as an attachment.
-     * @param type if the parameter is CT_NONE, the content type is set by
-     * drogon based on the file extension.
+     * @param type the content type code. If the parameter is CT_NONE, the
+     * content type is set by drogon based on the file extension and typeString.
+     * Set it to CT_CUSTOM when no drogon internal content type matches.
+     * @param typeString the MIME string of the content type.
      */
     static HttpResponsePtr newFileResponse(
         const std::string &fullPath,
@@ -388,8 +390,10 @@ class DROGON_EXPORT HttpResponse
      * @param setContentRange whether set 'Content-Range' header automatically.
      * @param attachmentFileName if the parameter is not empty, the browser
      * does not open the file, but saves it as an attachment.
-     * @param type if the parameter is CT_NONE, the content type is set by
-     * drogon based on the file extension.
+     * @param type the content type code. If the parameter is CT_NONE, the
+     * content type is set by drogon based on the file extension and typeString.
+     * Set it to CT_CUSTOM when no drogon internal content type matches.
+     * @param typeString the MIME string of the content type.
      */
     static HttpResponsePtr newFileResponse(
         const std::string &fullPath,
@@ -407,8 +411,10 @@ class DROGON_EXPORT HttpResponse
      * @param bufferLength is the length of the expected buffer
      * @param attachmentFileName if the parameter is not empty, the browser
      * does not open the file, but saves it as an attachment.
-     * @param type if the parameter is CT_NONE, the content type is set by
-     * drogon based on the file extension.
+     * @param type the content type code. If the parameter is CT_NONE, the
+     * content type is set by drogon based on the file extension and typeString.
+     * Set it to CT_CUSTOM when no drogon internal content type matches.
+     * @param typeString the MIME string of the content type.
      */
     static HttpResponsePtr newFileResponse(
         const unsigned char *pBuffer,
