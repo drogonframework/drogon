@@ -729,4 +729,23 @@ const string_view fileNameToMime(const std::string &fileName)
         return "";
     return it->second;
 }
+std::pair<ContentType, const string_view> fileNameToContentTypeAndMime(
+    const std::string &fileName)
+{
+    ContentType intenalContentType = getContentType(fileName);
+    if (intenalContentType != CT_APPLICATION_OCTET_STREAM)
+        return {intenalContentType, contentTypeToMime(intenalContentType)};
+
+    std::string extName;
+    auto pos = fileName.rfind('.');
+    if (pos != std::string::npos)
+    {
+        extName = fileName.substr(pos + 1);
+        transform(extName.begin(), extName.end(), extName.begin(), tolower);
+    }
+    auto it = customMime.find(extName);
+    if (it == customMime.end())
+        return {CT_NONE, ""};
+    return {CT_CUSTOM, it->second};
+}
 }  // namespace drogon
