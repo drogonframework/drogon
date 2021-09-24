@@ -43,6 +43,7 @@ inline LogStream &operator<<(LogStream &ls, const drogon::string_view &v)
 #if __cplusplus < 201703L && !(defined _MSC_VER && _MSC_VER > 1900)
 namespace drogon
 {
+#ifndef _MSC_VER
 template <size_t N>
 struct StringViewHasher;
 
@@ -292,6 +293,23 @@ struct StringViewHasher<8>
                              __hash_len_16(__v.second, __w.second) + __x);
     }
 };
+#else
+
+// Taken and modified from https://stackoverflow.com/a/8317622/3687637
+struct ShortStringViewHasher
+{
+    size_t operator()(const string_view &sv) const
+    {
+        const size_t initValue = 1049039;
+        const size_t A = 6665339;
+        const size_t B = 2534641;
+        size_t h = initValue;
+        for (char ch : sv)
+            h = (h * A) ^ (ch * B);
+        return h;
+    }
+};
+#endif
 }  // namespace drogon
 namespace std
 {
@@ -300,7 +318,12 @@ struct hash<drogon::string_view>
 {
     size_t operator()(const drogon::string_view &__str) const noexcept
     {
+        // MSVC is having problems with non-aligned strings
+#ifndef _MSC_VER
         return drogon::StringViewHasher<sizeof(size_t)>()(__str);
+#else
+        return drogon::ShortStringViewHasher(__str);
+#endif
     }
 };
 }  // namespace std
