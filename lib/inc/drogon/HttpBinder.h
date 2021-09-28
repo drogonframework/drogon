@@ -21,6 +21,7 @@
 #include <drogon/DrClassMap.h>
 #include <drogon/DrObject.h>
 #include <drogon/utils/FunctionTraits.h>
+#include <drogon/utils/Utilities.h>
 #include <drogon/HttpRequest.h>
 #include <deque>
 #include <memory>
@@ -159,27 +160,8 @@ class HttpBinder : public HttpBinderBase
     std::string handlerName_;
 
     template <typename T>
-    struct CanConvertFromStringStream
-    {
-      private:
-        using yes = std::true_type;
-        using no = std::false_type;
-
-        template <typename U>
-        static auto test(U *p, std::stringstream &&ss)
-            -> decltype((ss >> *p), yes());
-
-        template <typename>
-        static no test(...);
-
-      public:
-        static constexpr bool value =
-            std::is_same<decltype(test<T>(nullptr, std::stringstream())),
-                         yes>::value;
-    };
-
-    template <typename T>
-    typename std::enable_if<CanConvertFromStringStream<T>::value, void>::type
+    typename std::enable_if<internal::CanConvertFromStringStream<T>::value,
+                            void>::type
     getHandlerArgumentValue(T &value, std::string &&p)
     {
         if (!p.empty())
@@ -190,7 +172,8 @@ class HttpBinder : public HttpBinderBase
     }
 
     template <typename T>
-    typename std::enable_if<!(CanConvertFromStringStream<T>::value), void>::type
+    typename std::enable_if<!(internal::CanConvertFromStringStream<T>::value),
+                            void>::type
     getHandlerArgumentValue(T &value, std::string &&p)
     {
     }
