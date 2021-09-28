@@ -199,7 +199,7 @@ if(CXX_FILESYSTEM_HAVE_FS)
 
         int main() {
             auto cwd = @CXX_FILESYSTEM_NAMESPACE@::current_path();
-            printf("%s", cwd.c_str());
+            printf("%s", cwd.generic_string().c_str());
             return EXIT_SUCCESS;
         }
     ]] code @ONLY)
