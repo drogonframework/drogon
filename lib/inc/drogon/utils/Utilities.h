@@ -390,6 +390,10 @@ inline bool fromString<bool>(const std::string &p) noexcept(false)
     {
         return true;
     }
+    if (p == "0")
+    {
+        return false;
+    }
     std::string l{p};
     std::transform(p.begin(), p.end(), l.begin(), tolower);
     if (l == "true")
