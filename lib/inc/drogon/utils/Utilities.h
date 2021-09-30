@@ -24,6 +24,8 @@
 #include <vector>
 #include <set>
 #include <limits>
+#include <sstream>
+#include <algorithm>
 #ifdef _WIN32
 #include <time.h>
 char *strptime(const char *s, const char *f, struct tm *tm);
@@ -31,6 +33,28 @@ time_t timegm(struct tm *tm);
 #endif
 namespace drogon
 {
+namespace internal
+{
+template <typename T>
+struct CanConvertFromStringStream
+{
+  private:
+    using yes = std::true_type;
+    using no = std::false_type;
+
+    template <typename U>
+    static auto test(U *p, std::stringstream &&ss)
+        -> decltype((ss >> *p), yes());
+
+    template <typename>
+    static no test(...);
+
+  public:
+    static constexpr bool value =
+        std::is_same<decltype(test<T>(nullptr, std::stringstream())),
+                     yes>::value;
+};
+}  // namespace internal
 namespace utils
 {
 /// Determine if the string is an integer
@@ -282,5 +306,105 @@ DROGON_EXPORT void replaceAll(std::string &s,
  */
 DROGON_EXPORT bool secureRandomBytes(void *ptr, size_t size);
 
+template <typename T>
+typename std::enable_if<internal::CanConvertFromStringStream<T>::value, T>::type
+fromString(const std::string &p) noexcept(false)
+{
+    T value{};
+    if (!p.empty())
+    {
+        std::stringstream ss(p);
+        ss >> value;
+    }
+    return value;
+}
+
+template <typename T>
+typename std::enable_if<!(internal::CanConvertFromStringStream<T>::value),
+                        T>::type
+fromString(const std::string &) noexcept(false)
+{
+    throw std::runtime_error("Bad type conversion");
+}
+
+template <>
+inline std::string fromString<std::string>(const std::string &p) noexcept(false)
+{
+    return p;
+}
+
+template <>
+inline int fromString<int>(const std::string &p) noexcept(false)
+{
+    return std::stoi(p);
+}
+
+template <>
+inline long fromString<long>(const std::string &p) noexcept(false)
+{
+    return std::stol(p);
+}
+
+template <>
+inline long long fromString<long long>(const std::string &p) noexcept(false)
+{
+    return std::stoll(p);
+}
+
+template <>
+inline unsigned long fromString<unsigned long>(const std::string &p) noexcept(
+    false)
+{
+    return std::stoul(p);
+}
+
+template <>
+inline unsigned long long fromString<unsigned long long>(
+    const std::string &p) noexcept(false)
+{
+    return std::stoull(p);
+}
+
+template <>
+inline float fromString<float>(const std::string &p) noexcept(false)
+{
+    return std::stof(p);
+}
+
+template <>
+inline double fromString<double>(const std::string &p) noexcept(false)
+{
+    return std::stod(p);
+}
+
+template <>
+inline long double fromString<long double>(const std::string &p) noexcept(false)
+{
+    return std::stold(p);
+}
+
+template <>
+inline bool fromString<bool>(const std::string &p) noexcept(false)
+{
+    if (p == "1")
+    {
+        return true;
+    }
+    if (p == "0")
+    {
+        return false;
+    }
+    std::string l{p};
+    std::transform(p.begin(), p.end(), l.begin(), tolower);
+    if (l == "true")
+    {
+        return true;
+    }
+    else if (l == "false")
+    {
+        return false;
+    }
+    throw std::runtime_error("Can't convert from string '" + p + "' to bool");
+}
 }  // namespace utils
 }  // namespace drogon

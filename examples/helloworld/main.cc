@@ -52,11 +52,11 @@ int main()
         [](const HttpRequestPtr &req,
            std::function<void(const HttpResponsePtr &)> &&callback) {
             auto resp = HttpResponse::newHttpResponse();
-            std::string name = req->getParameter("user");
-            if (name == "")
+            auto name = req->getOptionalParameter<std::string>("user");
+            if (!name)
                 resp->setBody("Please tell me your name");
             else
-                resp->setBody("Hello, " + name + "!");
+                resp->setBody("Hello, " + name.value() + "!");
             callback(resp);
         },
         {Get});

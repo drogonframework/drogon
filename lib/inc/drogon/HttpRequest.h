@@ -16,6 +16,8 @@
 
 #include <drogon/exports.h>
 #include <drogon/utils/string_view.h>
+#include <drogon/utils/optional.h>
+#include <drogon/utils/Utilities.h>
 #include <drogon/DrClassMap.h>
 #include <drogon/HttpTypes.h>
 #include <drogon/Session.h>
@@ -276,6 +278,38 @@ class DROGON_EXPORT HttpRequest
 
     /// Get a parameter identified by the @param key
     virtual const std::string &getParameter(const std::string &key) const = 0;
+
+    /**
+     * @brief Get the optional parameter identified by the @param key. if the
+     * parameter doesn't exist, or the original parameter can't be converted to
+     * a T type object, an empty optional object is returned.
+     *
+     * @tparam T
+     * @param key
+     * @return optional<T>
+     */
+    template <typename T>
+    optional<T> getOptionalParameter(const std::string &key)
+    {
+        auto &params = getParameters();
+        auto it = params.find(key);
+        if (it != params.end())
+        {
+            try
+            {
+                return optional<T>(drogon::utils::fromString<T>(it->second));
+            }
+            catch (const std::exception &e)
+            {
+                LOG_ERROR << e.what();
+                return optional<T>{};
+            }
+        }
+        else
+        {
+            return optional<T>{};
+        }
+    }
 
     /// Return the remote IP address and port
     virtual const trantor::InetAddress &peerAddr() const = 0;
