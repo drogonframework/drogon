@@ -1036,8 +1036,8 @@ int main(int argc, char **argv)
     std::promise<void> p1;
     std::future<void> f1 = p1.get_future();
 
-    std::thread thr([&]() {
-        p1.set_value();
+    std::thread thr([&p1]() {
+        app().getLoop()->queueInLoop([&p1]() { p1.set_value(); });
         app().run();
     });
 
