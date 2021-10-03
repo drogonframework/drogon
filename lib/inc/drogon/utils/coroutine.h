@@ -715,7 +715,9 @@ void async_run(Coro &&coro)
     if constexpr (std::is_invocable_v<Coro>)
         async_run(std::move(coro()));
     else if constexpr (std::is_same_v<Coro, AsyncTask>)
-        return;  // Do nothing. AsyncTask runs on it's own.
+    {
+        // Do nothing. AsyncTask runs on it's own.
+    }
     else
     {
         using Awaiter = decltype(std::declval<Coro>().operator co_await());
