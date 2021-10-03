@@ -95,6 +95,37 @@ DROGON_TEST(CroutineBasics)
         CHECK(*ptr == 123);
     };
     sync_wait(await_non_copyable());
+
+    // TEST launching coroutine via the async_run API
+    // async_run should run the coroutine wthout waiting for anything else
+    int testVar = 0;
+    async_run([&testVar]() -> AsyncTask {
+        testVar = 1;
+        co_return;
+    }());
+    CHECK(testVar == 1);  // This only works because neither async_run nor the
+                          // coroutine within awaits
+
+    testVar = 0;
+    async_run([&testVar]() -> AsyncTask {
+        testVar = 1;
+        co_return;
+    });  // invoke coroutines with no parameters
+    CHECK(testVar == 1);
+
+    testVar = 0;
+    async_run([&testVar]() -> Task<void> {
+        testVar = 1;
+        co_return;
+    }());
+    CHECK(testVar == 1);
+
+    testVar = 0;
+    async_run([&testVar]() -> Task<void> {
+        testVar = 1;
+        co_return;
+    });
+    CHECK(testVar == 1);
 }
 
 DROGON_TEST(CompilcatedCoroutineLifetime)
