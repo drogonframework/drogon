@@ -748,6 +748,7 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
     req->setPath("/RangeTestController/10/20");
     client->sendRequest(
         req, [req, TEST_CTX](ReqResult result, const HttpResponsePtr &resp) {
+            LOG_DEBUG << "result=" << (int)result;
             REQUIRE(result == ReqResult::Ok);
             CHECK(resp->getStatusCode() == k206PartialContent);
             CHECK(resp->getBody() == "01234567890123456789");
