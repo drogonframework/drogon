@@ -705,4 +705,26 @@ struct is_resumable<AsyncTask, std::void_t<AsyncTask>> : std::true_type
 template <typename T>
 constexpr bool is_resumable_v = is_resumable<T>::value;
 
+/**
+ * @brief Runs a coroutine from a regular function
+ * @param coro an resubmable object or a coroutine that takes no parameters
+ */
+template <typename Coro>
+void async_run(Coro &&coro)
+{
+    if constexpr (std::is_invocable_v<Coro>)
+        async_run(std::move(coro()));
+    else if constexpr (std::is_same_v<Coro, AsyncTask>)
+    {
+        // Do nothing. AsyncTask runs on it's own.
+    }
+    else
+    {
+        using Awaiter = decltype(std::declval<Coro>().operator co_await());
+        using ResultType = decltype(std::declval<Awaiter>().await_resume());
+        static_assert(std::is_same_v<ResultType, void>);
+        [coro = std::move(coro)]() -> AsyncTask { co_await coro; }();
+    }
+}
+
 }  // namespace drogon
