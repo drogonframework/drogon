@@ -18,6 +18,7 @@ option(BUILD_ORM "Build orm" ON)
 option(COZ_PROFILING "Use coz for profiling" OFF)
 option(BUILD_DROGON_SHARED "Build drogon as a shared lib" OFF)
 option(BUILD_DOC "Build Doxygen documentation" OFF)
+option(BUILD_BROTLI "Build Brotli" ON)
 
 include(CMakeDependentOption)
 CMAKE_DEPENDENT_OPTION(BUILD_POSTGRESQL "Build with postgresql support" ON "BUILD_ORM" OFF)
@@ -221,12 +222,14 @@ endif (NOT ${CMAKE_SYSTEM_NAME} STREQUAL "FreeBSD"
     AND NOT ${CMAKE_SYSTEM_NAME} STREQUAL "OpenBSD"
     AND NOT WIN32)
 
-find_package(Brotli)
-if (Brotli_FOUND)
-    message(STATUS "Brotli found")
-    add_definitions(-DUSE_BROTLI)
-    target_link_libraries(${PROJECT_NAME} PRIVATE Brotli_lib)
-endif (Brotli_FOUND)
+if (BUILD_BROTLI)
+    find_package(Brotli)
+    if (Brotli_FOUND)
+        message(STATUS "Brotli found")
+        add_definitions(-DUSE_BROTLI)
+        target_link_libraries(${PROJECT_NAME} PRIVATE Brotli_lib)
+    endif (Brotli_FOUND)
+endif (BUILD_BROTLI)
 
 set(DROGON_SOURCES
     lib/src/AOPAdvice.cc
