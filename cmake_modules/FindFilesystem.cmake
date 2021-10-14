@@ -194,7 +194,7 @@ set(_found FALSE)
 if(CXX_FILESYSTEM_HAVE_FS)
     # We have some filesystem library available. Do link checks
     string(CONFIGURE [[
-        #include <cstdlib>
+        #include <cstdio>
         #include <@CXX_FILESYSTEM_HEADER@>
 
         int main() {
