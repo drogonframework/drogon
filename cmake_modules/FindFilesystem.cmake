@@ -204,6 +204,11 @@ if(CXX_FILESYSTEM_HAVE_FS)
         }
     ]] code @ONLY)
 
+    # HACK: Needed to compile correctly on Yocto Linux
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "GCC" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang"
+        OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
+        set(CMAKE_REQUIRED_FLAGS ${prev_req_flags} -std=c++17)
+    endif ()
     # Check a simple filesystem program without any linker flags
     _cmcm_check_cxx_source("${code}" CXX_FILESYSTEM_NO_LINK_NEEDED)
 
