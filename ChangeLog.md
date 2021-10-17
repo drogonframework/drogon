@@ -4,6 +4,44 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.7.3] - 2021-10-17
+
+### API Change List
+
+- Support sending files by range
+
+- Allow outside access to the file path of an HTTP response
+
+- Support custom MIME types and extensions
+
+- Add the getOptionalParameter method
+
+- Add async_run
+
+### Changes
+
+- Experimental HaikuOS Support
+
+- Improve AccessLogger
+
+- Add Alpine Dockerfile
+
+- Add option to disable brotli if desired by the builder
+
+### Fixed
+
+- Fix a bug in the getIOLoop method
+
+- Return on redis connection errors
+
+- Fix(MutliPart): Does not respect quotes in Content-Disposition header
+
+- Fix(cmake): error in FindFilesystem
+
+- Fix(style): Change the NotFound page text color
+
+- Fix a race condition in testing
+
 ## [1.7.2] - 2021-08-24
 
 ### API Change List
@@ -888,7 +926,9 @@ All notable changes to this project will be documented in this file.
 
 ## [1.0.0-beta1] - 2019-06-11
 
-[Unreleased]: https://github.com/an-tao/drogon/compare/v1.7.2...HEAD
+[Unreleased]: https://github.com/an-tao/drogon/compare/v1.7.3...HEAD
+
+[1.7.3]: https://github.com/an-tao/drogon/compare/v1.7.2...v1.7.3
 
 [1.7.2]: https://github.com/an-tao/drogon/compare/v1.7.1...v1.7.2
 
