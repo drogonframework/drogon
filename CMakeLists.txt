@@ -191,7 +191,11 @@ if(NEED_BOOST_FS)
     option(HAS_STD_FILESYSTEM_PATH "use boost::filesystem" OFF)
 else()
     option(HAS_STD_FILESYSTEM_PATH "use std::filesystem" ON)
-    target_link_libraries(${PROJECT_NAME} PUBLIC std::filesystem)
+    # HACK: Needed to be compiled on Yocto Linux
+    get_property(CAN_LINK_FS TARGET std::filesystem PROPERTY INTERFACE_LINK_LIBRARIES DEFINED)
+    if ( CAN_LINK_FS )
+      target_link_libraries(${PROJECT_NAME} PUBLIC std::filesystem)
+    endif()
 endif()
 
 # jsoncpp
