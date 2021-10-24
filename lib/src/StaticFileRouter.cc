@@ -264,7 +264,14 @@ void StaticFileRouter::sendStaticFileResponse(
     const HttpRequestImplPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback,
     const string_view &defaultContentType)
-{  // find cached response
+{
+    if (req->method() != Get)
+    {
+        callback(app().getCustomErrorHandler()(k405MethodNotAllowed));
+        return;
+    }
+
+    // find cached response
     HttpResponsePtr cachedResp;
     auto &cacheMap = staticFilesCache_->getThreadData();
     auto iter = cacheMap.find(filePath);
@@ -282,11 +289,6 @@ void StaticFileRouter::sendStaticFileResponse(
     {
         if (cachedResp)
         {
-            if (req->method() != Get)
-            {
-                callback(app().getCustomErrorHandler()(k405MethodNotAllowed));
-                return;
-            }
             if (static_cast<HttpResponseImpl *>(cachedResp.get())
                     ->getHeaderBy("last-modified") ==
                 req->getHeaderBy("if-modified-since"))
@@ -316,12 +318,7 @@ void StaticFileRouter::sendStaticFileResponse(
             {
                 fileExists = true;
                 LOG_TRACE << "last modify time:" << fileStat.st_mtime;
-                if (req->method() != Get)
-                {
-                    callback(
-                        app().getCustomErrorHandler()(k405MethodNotAllowed));
-                    return;
-                }
+
                 struct tm tm1;
 #ifdef _WIN32
                 gmtime_s(&tm1, &fileStat.st_mtime);
@@ -358,11 +355,6 @@ void StaticFileRouter::sendStaticFileResponse(
     }
     if (cachedResp)
     {
-        if (req->method() != Get)
-        {
-            callback(app().getCustomErrorHandler()(k405MethodNotAllowed));
-            return;
-        }
         LOG_TRACE << "Using file cache";
         HttpAppFrameworkImpl::instance().callCallback(req,
                                                       cachedResp,
@@ -379,12 +371,6 @@ void StaticFileRouter::sendStaticFileResponse(
             defaultHandler_(req, std::move(callback));
             return;
         }
-    }
-
-    if (req->method() != Get)
-    {
-        callback(app().getCustomErrorHandler()(k405MethodNotAllowed));
-        return;
     }
 
     HttpResponsePtr resp;
