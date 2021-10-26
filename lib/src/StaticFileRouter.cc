@@ -314,19 +314,22 @@ void StaticFileRouter::sendStaticFileResponse(
         return;
     }
 
-    // Head method, response accept-range and content-length
-    if (req->method() == Head)
-    {
-        auto resp = HttpResponse::newHttpResponse();
-        resp->addHeader("accept-range", "bytes");
-        resp->addHeader("content-length", std::to_string(fileStat.fileSize_));
-        if (enableLastModify_)
-        {
-            resp->addHeader("last-modified", fileStat.modifiedTimeStr_);
-        }
-        HttpAppFrameworkImpl::instance().callCallback(req, resp, callback);
-        return;
-    }
+    /** Head method, response accept-range and content-length.
+     * Doesn't work in this way now(2021.10.26), because method has been
+     * replaced by HttpServer::onRequests
+     */
+    // if (req->method() == Head)
+    // {
+    //     auto resp = HttpResponse::newHttpResponse();
+    //     resp->addHeader("accept-range", "bytes");
+    //     resp->addHeader("content-length",
+    //     std::to_string(fileStat.fileSize_)); if (enableLastModify_)
+    //     {
+    //         resp->addHeader("last-modified", fileStat.modifiedTimeStr_);
+    //     }
+    //     HttpAppFrameworkImpl::instance().callCallback(req, resp, callback);
+    //     return;
+    // }
 
     if (req->method() != Get)
     {
@@ -482,6 +485,7 @@ void StaticFileRouter::sendStaticFileResponse(
                                              "",
                                              ct.first,
                                              std::string(ct.second));
+        resp->addHeader("accept-range", "bytes");
     }
     if (resp->statusCode() != k404NotFound)
     {
