@@ -346,7 +346,7 @@ void StaticFileRouter::sendStaticFileResponse(
         switch (parseRangeHeader(rangeStr, fileStat.fileSize_, ranges))
         {
             // TODO: support only single range now
-            // You are welcomed to contribute.
+            // Contributions are welcomed.
             case FileRangeParseResult::SinglePart:
             case FileRangeParseResult::MultiPart:
             {
