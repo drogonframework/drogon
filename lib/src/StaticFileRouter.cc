@@ -318,7 +318,7 @@ void StaticFileRouter::sendStaticFileResponse(
      * Doesn't work in this way now(2021.10.26), because method has been
      * replaced by HttpServer::onRequests
      */
-    // if (req->method() == Head)
+    // if (enableRange_ && req->method() == Head)
     // {
     //     auto resp = HttpResponse::newHttpResponse();
     //     resp->addHeader("accept-range", "bytes");
@@ -337,48 +337,54 @@ void StaticFileRouter::sendStaticFileResponse(
         return;
     }
 
-    const std::string &rangeStr = req->getHeaderBy("range");
-    const std::string &ifRange = req->getHeaderBy("if-range");
-    if (!rangeStr.empty() &&
-        (ifRange.empty() || ifRange == fileStat.modifiedTimeStr_))
+    if (enableRange_)
     {
-        std::vector<FileRange> ranges;
-        switch (parseRangeHeader(rangeStr, fileStat.fileSize_, ranges))
+        const std::string &rangeStr = req->getHeaderBy("range");
+        const std::string &ifRange = req->getHeaderBy("if-range");
+
+        if (!rangeStr.empty() &&
+            (ifRange.empty() || ifRange == fileStat.modifiedTimeStr_))
         {
-            // TODO: support only single range now
-            // Contributions are welcomed.
-            case FileRangeParseResult::SinglePart:
-            case FileRangeParseResult::MultiPart:
+            std::vector<FileRange> ranges;
+            switch (parseRangeHeader(rangeStr, fileStat.fileSize_, ranges))
             {
-                auto firstRange = ranges.front();
-                auto ct = fileNameToContentTypeAndMime(filePath);
-                auto resp =
-                    HttpResponse::newFileResponse(filePath,
-                                                  firstRange.start,
-                                                  firstRange.end -
-                                                      firstRange.start,
-                                                  true,
-                                                  "",
-                                                  ct.first,
-                                                  std::string(ct.second));
-                if (!fileStat.modifiedTimeStr_.empty())
+                // TODO: support only single range now
+                // You are welcomed to contribute.
+                case FileRangeParseResult::SinglePart:
+                case FileRangeParseResult::MultiPart:
                 {
-                    resp->addHeader("Last-Modified", fileStat.modifiedTimeStr_);
-                    resp->addHeader("Expires", "Thu, 01 Jan 1970 00:00:00 GMT");
+                    auto firstRange = ranges.front();
+                    auto ct = fileNameToContentTypeAndMime(filePath);
+                    auto resp =
+                        HttpResponse::newFileResponse(filePath,
+                                                      firstRange.start,
+                                                      firstRange.end -
+                                                          firstRange.start,
+                                                      true,
+                                                      "",
+                                                      ct.first,
+                                                      std::string(ct.second));
+                    if (!fileStat.modifiedTimeStr_.empty())
+                    {
+                        resp->addHeader("Last-Modified",
+                                        fileStat.modifiedTimeStr_);
+                        resp->addHeader("Expires",
+                                        "Thu, 01 Jan 1970 00:00:00 GMT");
+                    }
+                    HttpAppFrameworkImpl::instance().callCallback(req,
+                                                                  resp,
+                                                                  callback);
+                    return;
                 }
-                HttpAppFrameworkImpl::instance().callCallback(req,
-                                                              resp,
-                                                              callback);
-                return;
+                /** rfc7233 3.1.
+                 * > An origin server MUST ignore a Range header field that
+                 * contains a range unit it does not understand.  A proxy MAY
+                 * discard a Range header field that contains a range unit it
+                 * does not understand.
+                 */
+                default:
+                    break;
             }
-            /** rfc7233 3.1.
-             * > An origin server MUST ignore a Range header field that
-             * contains a range unit it does not understand.  A proxy MAY
-             * discard a Range header field that contains a range unit it does
-             * not understand.
-             */
-            default:
-                break;
         }
     }
 
@@ -485,7 +491,6 @@ void StaticFileRouter::sendStaticFileResponse(
                                              "",
                                              ct.first,
                                              std::string(ct.second));
-        resp->addHeader("accept-range", "bytes");
     }
     if (resp->statusCode() != k404NotFound)
     {
@@ -499,6 +504,10 @@ void StaticFileRouter::sendStaticFileResponse(
         {
             resp->addHeader("Last-Modified", fileStat.modifiedTimeStr_);
             resp->addHeader("Expires", "Thu, 01 Jan 1970 00:00:00 GMT");
+        }
+        if (enableRange_)
+        {
+            resp->addHeader("accept-range", "bytes");
         }
         if (!headers_.empty())
         {
