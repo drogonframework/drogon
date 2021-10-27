@@ -392,6 +392,18 @@ void StaticFileRouter::sendStaticFileResponse(
                                                               callback);
                 return;
             }
+            case FileRangeParseResult::NotSatisfiable:
+            {
+                auto resp = HttpResponse::newHttpResponse();
+                resp->setStatusCode(k416RequestedRangeNotSatisfiable);
+                char buf[64];
+                snprintf(buf, sizeof(buf), "bytes */%zu", fileStat.fileSize_);
+                resp->addHeader("Content-Range", std::string(buf));
+                HttpAppFrameworkImpl::instance().callCallback(req,
+                                                              resp,
+                                                              callback);
+                return;
+            }
             /** rfc7233 4.4.
              * > Note: Because servers are free to ignore Range, many
              * implementations will simply respond with the entire selected

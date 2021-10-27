@@ -43,7 +43,7 @@ FileRangeParseResult drogon::parseRangeHeader(const std::string &rangeStr,
 {
     if (rangeStr.size() < 7 || rangeStr.compare(0, 6, "bytes=") != 0)
     {
-        return NotSatisfiable;
+        return InvalidRange;
     }
     const char *iter = rangeStr.c_str() + 6;
 
@@ -67,7 +67,7 @@ FileRangeParseResult drogon::parseRangeHeader(const std::string &rangeStr,
         {
             if (!DR_ISDIGIT(iter))
             {
-                return NotSatisfiable;
+                return InvalidRange;
             }
             while (DR_ISDIGIT(iter))
             {
@@ -82,7 +82,7 @@ FileRangeParseResult drogon::parseRangeHeader(const std::string &rangeStr,
             // should be separator now
             if (*iter++ != '-')
             {
-                return NotSatisfiable;
+                return InvalidRange;
             }
             DR_SKIP_WHITESPACE(iter);
             // If this is a prefix range <unit>=<range-start>-
@@ -110,7 +110,7 @@ FileRangeParseResult drogon::parseRangeHeader(const std::string &rangeStr,
         // Parse end
         if (!DR_ISDIGIT(iter))
         {
-            return NotSatisfiable;
+            return InvalidRange;
         }
         while (DR_ISDIGIT(iter))
         {
@@ -124,7 +124,7 @@ FileRangeParseResult drogon::parseRangeHeader(const std::string &rangeStr,
 
         if (*iter != ',' && *iter != '\0')
         {
-            return NotSatisfiable;
+            return InvalidRange;
         }
         if (isSuffix)
         {
@@ -150,6 +150,14 @@ FileRangeParseResult drogon::parseRangeHeader(const std::string &rangeStr,
                 return NotSatisfiable;
             }
             totalSize += end - start;
+            // We restrict the number to be under 100, to avoid malicious
+            // requests.
+            // Though rfc does not say anything about max number of ranges,
+            // it does mention that server can ignore range header freely.
+            if (ranges.size() > 100)
+            {
+                return InvalidRange;
+            }
         }
         if (*iter++ != ',')
         {

@@ -27,6 +27,7 @@ struct FileRange
 
 enum FileRangeParseResult
 {
+    InvalidRange = -1,
     NotSatisfiable = 0,
     SinglePart = 1,
     MultiPart = 2
