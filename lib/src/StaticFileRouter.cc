@@ -308,24 +308,6 @@ void StaticFileRouter::sendStaticFileResponse(
     std::function<void(const HttpResponsePtr &)> &&callback,
     const string_view &defaultContentType)
 {
-    /** Head method, response accept-range and content-length.
-     * Doesn't work in this way now(2021.10.26), because method has been
-     * replaced by HttpServer::onRequests
-     */
-    // if (enableRange_ && req->method() == Head)
-    // {
-    //     auto resp = HttpResponse::newHttpResponse();
-    //     resp->addHeader("accept-range", "bytes");
-    //     resp->addHeader("content-length",
-    //     std::to_string(fileStat.fileSize_));
-    //     if (enableLastModify_)
-    //     {
-    //         resp->addHeader("last-modified", fileStat.modifiedTimeStr_);
-    //     }
-    //     HttpAppFrameworkImpl::instance().callCallback(req, resp, callback);
-    //     return;
-    // }
-
     if (req->method() != Get)
     {
         callback(app().getCustomErrorHandler()(k405MethodNotAllowed));
@@ -462,7 +444,7 @@ void StaticFileRouter::sendStaticFileResponse(
             }
             fileExists = true;
             const std::string &modiStr = req->getHeaderBy("if-modified-since");
-            if (!modiStr.empty() && modiStr == fileStat.modifiedTimeStr_)
+            if (modiStr == fileStat.modifiedTimeStr_ && !modiStr.empty())
             {
                 LOG_TRACE << "not Modified!";
                 std::shared_ptr<HttpResponseImpl> resp =
