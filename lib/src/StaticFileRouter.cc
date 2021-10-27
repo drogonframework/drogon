@@ -269,6 +269,8 @@ struct FileStat
 };
 
 // A wrapper to call stat()
+// std::filesystem::file_time_type::clock::to_time_t still not
+// implemented by M$, even in c++20, so keep calls to stat()
 static bool getFileStat(const std::string &filePath, FileStat &myStat)
 {
 #if defined(_WIN32) && !defined(__MINGW32__)
@@ -287,7 +289,7 @@ static bool getFileStat(const std::string &filePath, FileStat &myStat)
 #endif
         std::string &timeStr = myStat.modifiedTimeStr_;
         timeStr.resize(64);
-        size_t len = strftime((char *)timeStr.c_str(),
+        size_t len = strftime(timeStr.data(),
                               timeStr.size(),
                               "%a, %d %b %Y %H:%M:%S GMT",
                               &myStat.modifiedTime_);
@@ -323,7 +325,8 @@ void StaticFileRouter::sendStaticFileResponse(
     //     auto resp = HttpResponse::newHttpResponse();
     //     resp->addHeader("accept-range", "bytes");
     //     resp->addHeader("content-length",
-    //     std::to_string(fileStat.fileSize_)); if (enableLastModify_)
+    //     std::to_string(fileStat.fileSize_));
+    //     if (enableLastModify_)
     //     {
     //         resp->addHeader("last-modified", fileStat.modifiedTimeStr_);
     //     }
@@ -337,54 +340,71 @@ void StaticFileRouter::sendStaticFileResponse(
         return;
     }
 
-    if (enableRange_)
+    // Check last modified time, rfc2616-14.25
+    // If-Modified-Since: Mon, 15 Oct 2018 06:26:33 GMT
+    // According to rfc 7233-3.1, preconditions must be evaluated before
+    // parsing ranges
+    const std::string &ifModSinceStr = req->getHeaderBy("if-modified-since");
+    if (enableLastModify_ && !ifModSinceStr.empty() &&
+        ifModSinceStr == fileStat.modifiedTimeStr_)
     {
-        const std::string &rangeStr = req->getHeaderBy("range");
-        const std::string &ifRange = req->getHeaderBy("if-range");
+        // LOG_TRACE << "enabled LastModify";
+        LOG_TRACE << "Not modified!";
+        std::shared_ptr<HttpResponseImpl> resp =
+            std::make_shared<HttpResponseImpl>();
+        resp->setStatusCode(k304NotModified);
+        resp->setContentTypeCode(CT_NONE);
+        HttpAppFrameworkImpl::instance().callCallback(req, resp, callback);
+        return;
+    }
 
-        if (!rangeStr.empty() &&
-            (ifRange.empty() || ifRange == fileStat.modifiedTimeStr_))
+    const std::string &rangeStr = req->getHeaderBy("range");
+    const std::string &ifRange = req->getHeaderBy("if-range");
+    if (enableRange_ && !rangeStr.empty() &&
+        (ifRange.empty() || ifRange == fileStat.modifiedTimeStr_))
+    {
+        std::vector<FileRange> ranges;
+        switch (parseRangeHeader(rangeStr, fileStat.fileSize_, ranges))
         {
-            std::vector<FileRange> ranges;
-            switch (parseRangeHeader(rangeStr, fileStat.fileSize_, ranges))
+            // TODO: support only single range now
+            // Contributions are welcomed.
+            case FileRangeParseResult::SinglePart:
+            case FileRangeParseResult::MultiPart:
             {
-                // TODO: support only single range now
-                // You are welcomed to contribute.
-                case FileRangeParseResult::SinglePart:
-                case FileRangeParseResult::MultiPart:
-                {
-                    auto firstRange = ranges.front();
-                    auto ct = fileNameToContentTypeAndMime(filePath);
-                    auto resp =
-                        HttpResponse::newFileResponse(filePath,
+                auto firstRange = ranges.front();
+                auto ct = fileNameToContentTypeAndMime(filePath);
+                auto resp =
+                    HttpResponse::newFileResponse(filePath,
+                                                  firstRange.start,
+                                                  firstRange.end -
                                                       firstRange.start,
-                                                      firstRange.end -
-                                                          firstRange.start,
-                                                      true,
-                                                      "",
-                                                      ct.first,
-                                                      std::string(ct.second));
-                    if (!fileStat.modifiedTimeStr_.empty())
-                    {
-                        resp->addHeader("Last-Modified",
-                                        fileStat.modifiedTimeStr_);
-                        resp->addHeader("Expires",
-                                        "Thu, 01 Jan 1970 00:00:00 GMT");
-                    }
-                    HttpAppFrameworkImpl::instance().callCallback(req,
-                                                                  resp,
-                                                                  callback);
-                    return;
+                                                  true,
+                                                  "",
+                                                  ct.first,
+                                                  std::string(ct.second));
+                if (!fileStat.modifiedTimeStr_.empty())
+                {
+                    resp->addHeader("Last-Modified", fileStat.modifiedTimeStr_);
+                    resp->addHeader("Expires", "Thu, 01 Jan 1970 00:00:00 GMT");
                 }
-                /** rfc7233 3.1.
-                 * > An origin server MUST ignore a Range header field that
-                 * contains a range unit it does not understand.  A proxy MAY
-                 * discard a Range header field that contains a range unit it
-                 * does not understand.
-                 */
-                default:
-                    break;
+                HttpAppFrameworkImpl::instance().callCallback(req,
+                                                              resp,
+                                                              callback);
+                return;
             }
+            /** rfc7233 4.4.
+             * > Note: Because servers are free to ignore Range, many
+             * implementations will simply respond with the entire selected
+             * representation in a 200 (OK) response.  That is partly because
+             * most clients are prepared to receive a 200 (OK) to complete the
+             * task (albeit less efficiently) and partly because clients might
+             * not stop making an invalid partial request until they have
+             * received a complete representation.  Thus, clients cannot depend
+             * on receiving a 416 (Range Not Satisfiable) response even when it
+             * is most appropriate.
+             */
+            default:
+                break;
         }
     }
 
@@ -395,55 +415,21 @@ void StaticFileRouter::sendStaticFileResponse(
     if (iter != cacheMap.end())
     {
         cachedResp = iter->second;
-    }
-
-    // check last modified time,rfc2616-14.25
-    // If-Modified-Since: Mon, 15 Oct 2018 06:26:33 GMT
-    if (enableLastModify_)
-    {
-        if (cachedResp)
+        // If local file is unchanged, 304 will be returned in
+        // previous check.
+        // If local file has been changed, we shouldn't return cached
+        // response either.
+        // Either way, we don't need to check Last-Modified in cache.
+        // We should return cached response only if requests do not
+        // contain a If-Modified-Since precondition.
+        if (!enableLastModify_ || ifModSinceStr.empty())
         {
-            if (static_cast<HttpResponseImpl *>(cachedResp.get())
-                    ->getHeaderBy("last-modified") ==
-                req->getHeaderBy("if-modified-since"))
-            {
-                std::shared_ptr<HttpResponseImpl> resp =
-                    std::make_shared<HttpResponseImpl>();
-                resp->setStatusCode(k304NotModified);
-                resp->setContentTypeCode(CT_NONE);
-                HttpAppFrameworkImpl::instance().callCallback(req,
-                                                              resp,
-                                                              callback);
-                return;
-            }
+            LOG_TRACE << "Using file cache";
+            HttpAppFrameworkImpl::instance().callCallback(req,
+                                                          cachedResp,
+                                                          callback);
+            return;
         }
-        else
-        {
-            LOG_TRACE << "enabled LastModify";
-            // std::filesystem::file_time_type::clock::to_time_t still not
-            // implemented by M$, even in c++20, so keep calls to stat()
-            const std::string &modiStr = req->getHeaderBy("if-modified-since");
-            if (modiStr == fileStat.modifiedTimeStr_ && !modiStr.empty())
-            {
-                LOG_TRACE << "not Modified!";
-                std::shared_ptr<HttpResponseImpl> resp =
-                    std::make_shared<HttpResponseImpl>();
-                resp->setStatusCode(k304NotModified);
-                resp->setContentTypeCode(CT_NONE);
-                HttpAppFrameworkImpl::instance().callCallback(req,
-                                                              resp,
-                                                              callback);
-                return;
-            }
-        }
-    }
-    if (cachedResp)
-    {
-        LOG_TRACE << "Using file cache";
-        HttpAppFrameworkImpl::instance().callCallback(req,
-                                                      cachedResp,
-                                                      callback);
-        return;
     }
 
     HttpResponsePtr resp;
