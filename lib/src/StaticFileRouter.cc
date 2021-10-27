@@ -329,8 +329,7 @@ void StaticFileRouter::sendStaticFileResponse(
         // If-Modified-Since: Mon, 15 Oct 2018 06:26:33 GMT
         // According to rfc 7233-3.1, preconditions must be evaluated before
         const std::string &modiStr = req->getHeaderBy("if-modified-since");
-        if (enableLastModify_ && !modiStr.empty() &&
-            modiStr == fileStat.modifiedTimeStr_)
+        if (enableLastModify_ && modiStr == fileStat.modifiedTimeStr_)
         {
             LOG_TRACE << "Not modified!";
             std::shared_ptr<HttpResponseImpl> resp =
@@ -342,7 +341,7 @@ void StaticFileRouter::sendStaticFileResponse(
         }
         // Check If-Range precondition
         const std::string &ifRange = req->getHeaderBy("if-range");
-        if ((ifRange.empty() || ifRange == fileStat.modifiedTimeStr_))
+        if (ifRange.empty() || ifRange == fileStat.modifiedTimeStr_)
         {
             std::vector<FileRange> ranges;
             switch (parseRangeHeader(rangeStr, fileStat.fileSize_, ranges))
@@ -444,7 +443,7 @@ void StaticFileRouter::sendStaticFileResponse(
             }
             fileExists = true;
             const std::string &modiStr = req->getHeaderBy("if-modified-since");
-            if (modiStr == fileStat.modifiedTimeStr_ && !modiStr.empty())
+            if (modiStr == fileStat.modifiedTimeStr_)
             {
                 LOG_TRACE << "not Modified!";
                 std::shared_ptr<HttpResponseImpl> resp =
