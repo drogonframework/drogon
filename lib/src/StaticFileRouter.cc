@@ -16,6 +16,7 @@
 #include "HttpAppFrameworkImpl.h"
 #include "HttpRequestImpl.h"
 #include "HttpResponseImpl.h"
+#include "RangeParser.h"
 #include <fstream>
 #include <iostream>
 #include <algorithm>
@@ -259,12 +260,153 @@ void StaticFileRouter::route(
     defaultHandler_(req, std::move(callback));
 }
 
+// Expand this struct as you need, nothing to worry about
+struct FileStat
+{
+    size_t fileSize_;
+    struct tm modifiedTime_;
+    std::string modifiedTimeStr_;
+};
+
+// A wrapper to call stat()
+// std::filesystem::file_time_type::clock::to_time_t still not
+// implemented by M$, even in c++20, so keep calls to stat()
+static bool getFileStat(const std::string &filePath, FileStat &myStat)
+{
+#if defined(_WIN32) && !defined(__MINGW32__)
+    struct _stati64 fileStat;
+#else   // _WIN32
+    struct stat fileStat;
+#endif  // _WIN32
+    if (stat(utils::toNativePath(filePath).c_str(), &fileStat) == 0 &&
+        S_ISREG(fileStat.st_mode))
+    {
+        LOG_TRACE << "last modify time:" << fileStat.st_mtime;
+#ifdef _WIN32
+        gmtime_s(&myStat.modifiedTime_, &fileStat.st_mtime);
+#else
+        gmtime_r(&fileStat.st_mtime, &myStat.modifiedTime_);
+#endif
+        std::string &timeStr = myStat.modifiedTimeStr_;
+        timeStr.resize(64);
+        size_t len = strftime(timeStr.data(),
+                              timeStr.size(),
+                              "%a, %d %b %Y %H:%M:%S GMT",
+                              &myStat.modifiedTime_);
+        timeStr.resize(len);
+
+        myStat.fileSize_ = fileStat.st_size;
+        return true;
+    }
+
+    return false;
+}
+
 void StaticFileRouter::sendStaticFileResponse(
     const std::string &filePath,
     const HttpRequestImplPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback,
     const string_view &defaultContentType)
-{  // find cached response
+{
+    if (req->method() != Get)
+    {
+        callback(app().getCustomErrorHandler()(k405MethodNotAllowed));
+        return;
+    }
+
+    FileStat fileStat;
+    bool fileExists = false;
+    const std::string &rangeStr = req->getHeaderBy("range");
+    if (enableRange_ && !rangeStr.empty())
+    {
+        if (!getFileStat(filePath, fileStat))
+        {
+            defaultHandler_(req, std::move(callback));
+            return;
+        }
+        fileExists = true;
+        // Check last modified time, rfc2616-14.25
+        // If-Modified-Since: Mon, 15 Oct 2018 06:26:33 GMT
+        // According to rfc 7233-3.1, preconditions must be evaluated before
+        const std::string &modiStr = req->getHeaderBy("if-modified-since");
+        if (enableLastModify_ && modiStr == fileStat.modifiedTimeStr_)
+        {
+            LOG_TRACE << "Not modified!";
+            std::shared_ptr<HttpResponseImpl> resp =
+                std::make_shared<HttpResponseImpl>();
+            resp->setStatusCode(k304NotModified);
+            resp->setContentTypeCode(CT_NONE);
+            HttpAppFrameworkImpl::instance().callCallback(req, resp, callback);
+            return;
+        }
+        // Check If-Range precondition
+        const std::string &ifRange = req->getHeaderBy("if-range");
+        if (ifRange.empty() || ifRange == fileStat.modifiedTimeStr_)
+        {
+            std::vector<FileRange> ranges;
+            switch (parseRangeHeader(rangeStr, fileStat.fileSize_, ranges))
+            {
+                // TODO: support only single range now
+                // Contributions are welcomed.
+                case FileRangeParseResult::SinglePart:
+                case FileRangeParseResult::MultiPart:
+                {
+                    auto firstRange = ranges.front();
+                    auto ct = fileNameToContentTypeAndMime(filePath);
+                    auto resp =
+                        HttpResponse::newFileResponse(filePath,
+                                                      firstRange.start,
+                                                      firstRange.end -
+                                                          firstRange.start,
+                                                      true,
+                                                      "",
+                                                      ct.first,
+                                                      std::string(ct.second));
+                    if (!fileStat.modifiedTimeStr_.empty())
+                    {
+                        resp->addHeader("Last-Modified",
+                                        fileStat.modifiedTimeStr_);
+                        resp->addHeader("Expires",
+                                        "Thu, 01 Jan 1970 00:00:00 GMT");
+                    }
+                    HttpAppFrameworkImpl::instance().callCallback(req,
+                                                                  resp,
+                                                                  callback);
+                    return;
+                }
+                case FileRangeParseResult::NotSatisfiable:
+                {
+                    auto resp = HttpResponse::newHttpResponse();
+                    resp->setStatusCode(k416RequestedRangeNotSatisfiable);
+                    char buf[64];
+                    snprintf(buf,
+                             sizeof(buf),
+                             "bytes */%zu",
+                             fileStat.fileSize_);
+                    resp->addHeader("Content-Range", std::string(buf));
+                    HttpAppFrameworkImpl::instance().callCallback(req,
+                                                                  resp,
+                                                                  callback);
+                    return;
+                }
+                /** rfc7233 4.4.
+                 * > Note: Because servers are free to ignore Range, many
+                 * implementations will simply respond with the entire selected
+                 * representation in a 200 (OK) response.  That is partly
+                 * because most clients are prepared to receive a 200 (OK) to
+                 * complete the task (albeit less efficiently) and partly
+                 * because clients might not stop making an invalid partial
+                 * request until they have received a complete representation.
+                 * Thus, clients cannot depend on receiving a 416 (Range Not
+                 * Satisfiable) response even when it is most appropriate.
+                 */
+                default:
+                    break;
+            }
+        }
+    }
+
+    // find cached response
     HttpResponsePtr cachedResp;
     auto &cacheMap = staticFilesCache_->getThreadData();
     auto iter = cacheMap.find(filePath);
@@ -273,20 +415,10 @@ void StaticFileRouter::sendStaticFileResponse(
         cachedResp = iter->second;
     }
 
-    // check last modified time,rfc2616-14.25
-    // If-Modified-Since: Mon, 15 Oct 2018 06:26:33 GMT
-
-    std::string timeStr;
-    bool fileExists{false};
     if (enableLastModify_)
     {
         if (cachedResp)
         {
-            if (req->method() != Get)
-            {
-                callback(app().getCustomErrorHandler()(k405MethodNotAllowed));
-                return;
-            }
             if (static_cast<HttpResponseImpl *>(cachedResp.get())
                     ->getHeaderBy("last-modified") ==
                 req->getHeaderBy("if-modified-since"))
@@ -304,71 +436,36 @@ void StaticFileRouter::sendStaticFileResponse(
         else
         {
             LOG_TRACE << "enabled LastModify";
-            // std::filesystem::file_time_type::clock::to_time_t still not
-            // implemented by M$, even in c++20, so keep calls to stat()
-#if defined(_WIN32) && !defined(__MINGW32__)
-            struct _stati64 fileStat;
-#else   // _WIN32
-            struct stat fileStat;
-#endif  // _WIN32
-            if (stat(utils::toNativePath(filePath).c_str(), &fileStat) == 0 &&
-                S_ISREG(fileStat.st_mode))
-            {
-                fileExists = true;
-                LOG_TRACE << "last modify time:" << fileStat.st_mtime;
-                if (req->method() != Get)
-                {
-                    callback(
-                        app().getCustomErrorHandler()(k405MethodNotAllowed));
-                    return;
-                }
-                struct tm tm1;
-#ifdef _WIN32
-                gmtime_s(&tm1, &fileStat.st_mtime);
-#else
-                gmtime_r(&fileStat.st_mtime, &tm1);
-#endif
-                timeStr.resize(64);
-                auto len = strftime((char *)timeStr.data(),
-                                    timeStr.size(),
-                                    "%a, %d %b %Y %H:%M:%S GMT",
-                                    &tm1);
-                timeStr.resize(len);
-                const std::string &modiStr =
-                    req->getHeaderBy("if-modified-since");
-                if (modiStr == timeStr && !modiStr.empty())
-                {
-                    LOG_TRACE << "not Modified!";
-                    std::shared_ptr<HttpResponseImpl> resp =
-                        std::make_shared<HttpResponseImpl>();
-                    resp->setStatusCode(k304NotModified);
-                    resp->setContentTypeCode(CT_NONE);
-                    HttpAppFrameworkImpl::instance().callCallback(req,
-                                                                  resp,
-                                                                  callback);
-                    return;
-                }
-            }
-            else
+            if (!fileExists && !getFileStat(filePath, fileStat))
             {
                 defaultHandler_(req, std::move(callback));
+                return;
+            }
+            fileExists = true;
+            const std::string &modiStr = req->getHeaderBy("if-modified-since");
+            if (modiStr == fileStat.modifiedTimeStr_)
+            {
+                LOG_TRACE << "not Modified!";
+                std::shared_ptr<HttpResponseImpl> resp =
+                    std::make_shared<HttpResponseImpl>();
+                resp->setStatusCode(k304NotModified);
+                resp->setContentTypeCode(CT_NONE);
+                HttpAppFrameworkImpl::instance().callCallback(req,
+                                                              resp,
+                                                              callback);
                 return;
             }
         }
     }
     if (cachedResp)
     {
-        if (req->method() != Get)
-        {
-            callback(app().getCustomErrorHandler()(k405MethodNotAllowed));
-            return;
-        }
         LOG_TRACE << "Using file cache";
         HttpAppFrameworkImpl::instance().callCallback(req,
                                                       cachedResp,
                                                       callback);
         return;
     }
+    // Check existence
     if (!fileExists)
     {
         filesystem::path fsFilePath(utils::toNativePath(filePath));
@@ -379,12 +476,6 @@ void StaticFileRouter::sendStaticFileResponse(
             defaultHandler_(req, std::move(callback));
             return;
         }
-    }
-
-    if (req->method() != Get)
-    {
-        callback(app().getCustomErrorHandler()(k405MethodNotAllowed));
-        return;
     }
 
     HttpResponsePtr resp;
@@ -441,10 +532,14 @@ void StaticFileRouter::sendStaticFileResponse(
             resp->setContentTypeCodeAndCustomString(CT_CUSTOM,
                                                     defaultContentType);
         }
-        if (!timeStr.empty())
+        if (!fileStat.modifiedTimeStr_.empty())
         {
-            resp->addHeader("Last-Modified", timeStr);
+            resp->addHeader("Last-Modified", fileStat.modifiedTimeStr_);
             resp->addHeader("Expires", "Thu, 01 Jan 1970 00:00:00 GMT");
+        }
+        if (enableRange_)
+        {
+            resp->addHeader("accept-range", "bytes");
         }
         if (!headers_.empty())
         {
@@ -474,6 +569,7 @@ void StaticFileRouter::sendStaticFileResponse(
     callback(resp);
     return;
 }
+
 void StaticFileRouter::setFileTypes(const std::vector<std::string> &types)
 {
     fileTypeSet_.clear();
@@ -482,6 +578,7 @@ void StaticFileRouter::setFileTypes(const std::vector<std::string> &types)
         fileTypeSet_.insert(type);
     }
 }
+
 void StaticFileRouter::defaultHandler(
     const HttpRequestPtr & /*req*/,
     std::function<void(const HttpResponsePtr &)> &&callback)

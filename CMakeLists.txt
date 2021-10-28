@@ -263,6 +263,7 @@ set(DROGON_SOURCES
     lib/src/MultiPart.cc
     lib/src/NotFound.cc
     lib/src/PluginsManager.cc
+    lib/src/RangeParser.cc
     lib/src/SecureSSLRedirector.cc
     lib/src/AccessLogger.cc
     lib/src/SessionManager.cc
