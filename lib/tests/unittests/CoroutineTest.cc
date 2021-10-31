@@ -1,5 +1,6 @@
 #include <drogon/drogon_test.h>
 #include <drogon/utils/coroutine.h>
+#include <drogon/HttpAppFramework.h>
 
 using namespace drogon;
 
@@ -169,4 +170,35 @@ DROGON_TEST(CoroutineDestruction)
     };
     sync_wait(destruct());
     CHECK(internal::SomeStruct::beenDestructed == true);
+}
+
+DROGON_TEST(AsyncWaitLifetime)
+{
+    app().getLoop()->queueInLoop([TEST_CTX]() {
+        async_run([TEST_CTX]() -> AsyncTask {
+            auto ptr = std::make_shared<std::string>("test");
+            CHECK(ptr.use_count() == 1);
+            co_await sleepCoro(drogon::app().getLoop(), 0.01);
+            CHECK(ptr.use_count() == 1);
+        });
+    });
+
+    app().getLoop()->queueInLoop([TEST_CTX]() {
+        async_run([TEST_CTX]() -> AsyncTask {
+            auto ptr = std::make_shared<std::string>("test");
+            CHECK(ptr.use_count() == 1);
+            co_await sleepCoro(drogon::app().getLoop(), 0.01);
+            CHECK(ptr.use_count() == 1);
+        });
+    });
+
+    app().getLoop()->queueInLoop([TEST_CTX]() {
+        auto ptr = std::make_shared<std::string>("test");
+        async_run([ptr, TEST_CTX]() -> AsyncTask {
+            CHECK(ptr.use_count() == 2);
+            co_await sleepCoro(drogon::app().getLoop(), 0.01);
+            // CHECK(ptr.use_count() == 1); // This line crash due to stack
+            // buffer underflow
+        });
+    });
 }
