@@ -725,22 +725,11 @@ void async_run(Coro &&coro)
         using ResultType = decltype(std::declval<Awaiter>().await_resume());
         static_assert(std::is_same_v<ResultType, void>);
 
-        // Stores the corotuine frame in a shared_ptr. Then store that pointer
-        // in a buffer whom's lifetime is definatelly longer than the coroutine
-        // . Finally release the pointer after await is finished. Note: Can't
-        // just pass the shared_ptr into the coroutine since the coroutine
-        // feame is destructed immidatelly after call. Destructing all lambda
-        // captures with it. Need a way to keep it alive. Also coroutines does
-        // maintaince afetr co_return. Thus can't just use a raw ptr and delete
-        // at the very end of function all.
-        thread_local static std::list<std::shared_ptr<AsyncTask>> coroInFlight;
+        // Stores the corotuine frame in a shared_ptr. Then use that pointer
+        // to keep the corouine alive
         std::shared_ptr<AsyncTask> ptr = std::make_shared<AsyncTask>();
-        coroInFlight.push_back(ptr);
-        *ptr = [coro = std::move(coro),
-                ptr,
-                coroIt = coroInFlight.rbegin()]() mutable -> AsyncTask {
+        *ptr = [coro = std::move(coro), ptr]() mutable -> AsyncTask {
             co_await coro;
-            coroIt->reset();
         }();
     }
 }
