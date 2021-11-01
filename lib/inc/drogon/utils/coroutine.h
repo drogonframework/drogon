@@ -708,7 +708,7 @@ constexpr bool is_resumable_v = is_resumable<T>::value;
 
 /**
  * @brief Runs a coroutine from a regular function
- * @param coro an resubmable object or a coroutine that takes no parameters
+ * @param coro A coroutine that is awaitable
  */
 template <typename Coro>
 void async_run(Coro &&coro)
@@ -723,6 +723,16 @@ void async_run(Coro &&coro)
         co_return;
     };
     functor(std::move(coro));
+}
+
+/**
+ * @brief returns a function that calls a coroutine
+ * @param Coro A coroutine that is awaitable
+ */
+template <typename Coro>
+std::function<void()> async_wrap(Coro &&coro)
+{
+    return [coro = std::move(coro)]() { async_run(std::move(coro)); };
 }
 
 }  // namespace drogon
