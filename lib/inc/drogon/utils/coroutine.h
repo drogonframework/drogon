@@ -730,7 +730,7 @@ void async_run(Coro &&coro)
  * @param Coro A coroutine that is awaitable
  */
 template <typename Coro>
-std::function<void()> async_wrap(Coro &&coro)
+std::function<void()> async_func(Coro &&coro)
 {
     return [coro = std::move(coro)]() { async_run(std::move(coro)); };
 }

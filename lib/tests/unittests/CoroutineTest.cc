@@ -180,7 +180,7 @@ DROGON_TEST(AsyncWaitLifetime)
     });
 
     auto ptr2 = std::make_shared<std::string>("test");
-    app().getLoop()->queueInLoop(async_wrap([ptr2, TEST_CTX]() -> Task<> {
+    app().getLoop()->queueInLoop(async_func([ptr2, TEST_CTX]() -> Task<> {
         co_await sleepCoro(drogon::app().getLoop(), 0.01);
         CHECK(ptr2.use_count() == 1);
     }));
