@@ -713,25 +713,16 @@ constexpr bool is_resumable_v = is_resumable<T>::value;
 template <typename Coro>
 void async_run(Coro &&coro)
 {
-    if constexpr (std::is_invocable_v<Coro>)
-        async_run(std::move(coro()));
-    else if constexpr (std::is_same_v<Coro, AsyncTask>)
-    {
-        // Do nothing. AsyncTask runs on it's own.
-    }
-    else
-    {
-        using Awaiter = decltype(std::declval<Coro>().operator co_await());
-        using ResultType = decltype(std::declval<Awaiter>().await_resume());
-        static_assert(std::is_same_v<ResultType, void>);
+    auto functor = [](Coro coro) -> AsyncTask {
+        auto frame = coro();
 
-        // Stores the corotuine frame in a shared_ptr. Then use that pointer
-        // to keep the corouine alive
-        std::shared_ptr<AsyncTask> ptr = std::make_shared<AsyncTask>();
-        *ptr = [coro = std::move(coro), ptr]() mutable -> AsyncTask {
-            co_await coro;
-        }();
-    }
+        using FrameType = std::decay_t<decltype(frame)>;
+        static_assert(std::is_same_v<FrameType, AsyncTask> == false);
+
+        co_await frame;
+        co_return;
+    };
+    functor(std::move(coro));
 }
 
 }  // namespace drogon
