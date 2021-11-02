@@ -719,7 +719,7 @@ void async_run(Coro &&coro)
         auto frame = coro();
 
         using FrameType = std::decay_t<decltype(frame)>;
-        static_assert(std::is_same_v<FrameType, AsyncTask> == false);
+        static_assert(is_awaitable_v<FrameType>);
 
         co_await frame;
         co_return;
@@ -736,7 +736,7 @@ std::function<void()> async_func(Coro &&coro)
 {
     static_assert(std::is_lvalue_reference_v<Coro> == false);
     static_assert(std::is_invocable_v<Coro>);
-    return [coro = std::move(coro)]() { async_run(std::move(coro)); };
+    return [coro = std::move(coro)]() mutable { async_run(std::move(coro)); };
 }
 
 }  // namespace drogon
