@@ -24,6 +24,7 @@
 #include <exception>
 #include <future>
 #include <mutex>
+#include <list>
 #include <type_traits>
 
 namespace drogon
@@ -707,24 +708,34 @@ constexpr bool is_resumable_v = is_resumable<T>::value;
 
 /**
  * @brief Runs a coroutine from a regular function
- * @param coro an resubmable object or a coroutine that takes no parameters
+ * @param coro A coroutine that is awaitable
  */
 template <typename Coro>
 void async_run(Coro &&coro)
 {
-    if constexpr (std::is_invocable_v<Coro>)
-        async_run(std::move(coro()));
-    else if constexpr (std::is_same_v<Coro, AsyncTask>)
-    {
-        // Do nothing. AsyncTask runs on it's own.
-    }
-    else
-    {
-        using Awaiter = decltype(std::declval<Coro>().operator co_await());
-        using ResultType = decltype(std::declval<Awaiter>().await_resume());
-        static_assert(std::is_same_v<ResultType, void>);
-        [coro = std::move(coro)]() -> AsyncTask { co_await coro; }();
-    }
+    using CoroValueType = std::remove_cvref_t<Coro>;
+    auto functor = [](CoroValueType coro) -> AsyncTask {
+        auto frame = coro();
+
+        using FrameType = std::decay_t<decltype(frame)>;
+        static_assert(is_awaitable_v<FrameType>);
+
+        co_await frame;
+        co_return;
+    };
+    functor(std::forward<Coro>(coro));
+}
+
+/**
+ * @brief returns a function that calls a coroutine
+ * @param Coro A coroutine that is awaitable
+ */
+template <typename Coro>
+std::function<void()> async_func(Coro &&coro)
+{
+    return [coro = std::forward<Coro>(coro)]() mutable {
+        async_run(std::move(coro));
+    };
 }
 
 }  // namespace drogon

@@ -1,5 +1,7 @@
 #include <drogon/drogon_test.h>
 #include <drogon/utils/coroutine.h>
+#include <drogon/HttpAppFramework.h>
+#include <type_traits>
 
 using namespace drogon;
 
@@ -96,31 +98,9 @@ DROGON_TEST(CroutineBasics)
     };
     sync_wait(await_non_copyable());
 
-    // TEST launching coroutine via the async_run API
-    // async_run should run the coroutine wthout waiting for anything else
+    // This only works because async_run tries to run the corouine as soon as
+    // possible and the coroutine does not wait
     int testVar = 0;
-    async_run([&testVar]() -> AsyncTask {
-        testVar = 1;
-        co_return;
-    }());
-    CHECK(testVar == 1);  // This only works because neither async_run nor the
-                          // coroutine within awaits
-
-    testVar = 0;
-    async_run([&testVar]() -> AsyncTask {
-        testVar = 1;
-        co_return;
-    });  // invoke coroutines with no parameters
-    CHECK(testVar == 1);
-
-    testVar = 0;
-    async_run([&testVar]() -> Task<void> {
-        testVar = 1;
-        co_return;
-    }());
-    CHECK(testVar == 1);
-
-    testVar = 0;
     async_run([&testVar]() -> Task<void> {
         testVar = 1;
         co_return;
@@ -169,4 +149,39 @@ DROGON_TEST(CoroutineDestruction)
     };
     sync_wait(destruct());
     CHECK(internal::SomeStruct::beenDestructed == true);
+}
+
+DROGON_TEST(AsyncWaitLifetime)
+{
+    app().getLoop()->queueInLoop([TEST_CTX]() {
+        async_run([TEST_CTX]() -> Task<> {
+            auto ptr = std::make_shared<std::string>("test");
+            CHECK(ptr.use_count() == 1);
+            co_await sleepCoro(drogon::app().getLoop(), 0.01);
+            CHECK(ptr.use_count() == 1);
+        });
+    });
+
+    app().getLoop()->queueInLoop([TEST_CTX]() {
+        auto ptr = std::make_shared<std::string>("test");
+        async_run([ptr, TEST_CTX]() -> Task<> {
+            CHECK(ptr.use_count() == 2);
+            co_await sleepCoro(drogon::app().getLoop(), 0.01);
+            CHECK(ptr.use_count() == 1);
+        });
+    });
+
+    auto ptr = std::make_shared<std::string>("test");
+    app().getLoop()->queueInLoop([ptr, TEST_CTX]() {
+        async_run([ptr, TEST_CTX]() -> Task<> {
+            co_await sleepCoro(drogon::app().getLoop(), 0.01);
+            CHECK(ptr.use_count() == 1);
+        });
+    });
+
+    auto ptr2 = std::make_shared<std::string>("test");
+    app().getLoop()->queueInLoop(async_func([ptr2, TEST_CTX]() -> Task<> {
+        co_await sleepCoro(drogon::app().getLoop(), 0.01);
+        CHECK(ptr2.use_count() == 1);
+    }));
 }
