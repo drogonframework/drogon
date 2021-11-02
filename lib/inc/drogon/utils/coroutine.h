@@ -713,7 +713,7 @@ constexpr bool is_resumable_v = is_resumable<T>::value;
 template <typename Coro>
 void async_run(Coro &&coro)
 {
-    using CoroValueType = std::remove_cvref_t<Coro>;
+    using CoroValueType = std::decay_t<Coro>;
     auto functor = [](CoroValueType coro) -> AsyncTask {
         auto frame = coro();
 
