@@ -713,6 +713,8 @@ constexpr bool is_resumable_v = is_resumable<T>::value;
 template <typename Coro>
 void async_run(Coro &&coro)
 {
+    static_assert(std::is_lvalue_reference_v<Coro> == false);
+    static_assert(std::is_invocable_v<Coro>);
     auto functor = [](Coro coro) -> AsyncTask {
         auto frame = coro();
 
@@ -722,7 +724,7 @@ void async_run(Coro &&coro)
         co_await frame;
         co_return;
     };
-    functor(std::move(coro));
+    functor(std::forward<Coro>(coro));
 }
 
 /**
@@ -732,6 +734,8 @@ void async_run(Coro &&coro)
 template <typename Coro>
 std::function<void()> async_func(Coro &&coro)
 {
+    static_assert(std::is_lvalue_reference_v<Coro> == false);
+    static_assert(std::is_invocable_v<Coro>);
     return [coro = std::move(coro)]() { async_run(std::move(coro)); };
 }
 
