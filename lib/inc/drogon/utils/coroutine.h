@@ -713,9 +713,8 @@ constexpr bool is_resumable_v = is_resumable<T>::value;
 template <typename Coro>
 void async_run(Coro &&coro)
 {
-    static_assert(std::is_lvalue_reference_v<Coro> == false);
-    static_assert(std::is_invocable_v<Coro>);
-    auto functor = [](Coro coro) -> AsyncTask {
+    using CoroValueType = std::remove_cvref_t<Coro>;
+    auto functor = [](CoroValueType coro) -> AsyncTask {
         auto frame = coro();
 
         using FrameType = std::decay_t<decltype(frame)>;
@@ -734,9 +733,9 @@ void async_run(Coro &&coro)
 template <typename Coro>
 std::function<void()> async_func(Coro &&coro)
 {
-    static_assert(std::is_lvalue_reference_v<Coro> == false);
-    static_assert(std::is_invocable_v<Coro>);
-    return [coro = std::move(coro)]() mutable { async_run(std::move(coro)); };
+    return [coro = std::forward<Coro>(coro)]() mutable {
+        async_run(std::move(coro));
+    };
 }
 
 }  // namespace drogon
