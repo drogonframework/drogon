@@ -118,7 +118,7 @@ static void parseLine(std::ofstream &oSrcFile,
     {
         // std::cout<<"blank line!"<<std::endl;
         // std::cout<<streamName<<"<<\"\\n\";\n";
-        if (returnFlag)
+        if (returnFlag && !cxx_flag)
             oSrcFile << streamName << "<<\"\\n\";\n";
         return;
     }
