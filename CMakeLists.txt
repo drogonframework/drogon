@@ -192,7 +192,7 @@ if(NEED_BOOST_FS)
 else()
     option(HAS_STD_FILESYSTEM_PATH "use std::filesystem" ON)
     # HACK: Needed to be compiled on Yocto Linux
-    get_property(CAN_LINK_FS TARGET std::filesystem PROPERTY INTERFACE_LINK_LIBRARIES DEFINED)
+    get_property(CAN_LINK_FS TARGET std::filesystem PROPERTY INTERFACE_LINK_LIBRARIES SET)
     if ( CAN_LINK_FS )
       target_link_libraries(${PROJECT_NAME} PUBLIC std::filesystem)
     endif()
