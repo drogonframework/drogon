@@ -13,7 +13,7 @@ proxy with a simple round robin.
 8. [jsonstore](https://github.com/an-tao/drogon/tree/master/examples/jsonstore) - Implementation of a [jsonstore](https://github.com/bluzi/jsonstore)-like storage service that is concurrent and stores in memory. Serving as a showcase on how to build a minimally useful RESTful APIs in Drogon.
 9. [redis](https://github.com/an-tao/drogon/tree/master/examples/redis) - A simple example of Redis
 10. [websocket_server](https://github.com/drogonframework/drogon/tree/master/examples/websocket_server) - Example WebSocker chat room server
-
+11. [redis_cache](https://github.com/an-tao/drogon/tree/master/examples/redis_cache) - An example for using coroutines of redis clients
 
 ### [TechEmpower Framework Benchmarks](https://github.com/TechEmpower/FrameworkBenchmarks) test suite
 
