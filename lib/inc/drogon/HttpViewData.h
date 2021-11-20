@@ -107,10 +107,10 @@ class DROGON_EXPORT HttpViewData
                 }
 
                 va_copy(backup_ap, ap);
-                auto result = vsnprintf((char *)strBuffer.data(),
-                                        strBuffer.size(),
-                                        format,
-                                        backup_ap);
+                result = vsnprintf((char *)strBuffer.data(),
+                                   strBuffer.size(),
+                                   format,
+                                   backup_ap);
                 va_end(backup_ap);
 
                 if ((result >= 0) &&
