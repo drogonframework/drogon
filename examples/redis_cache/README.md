@@ -7,7 +7,7 @@ the [local sessions example](https://github.com/drogonframework/drogon/wiki/ENG-
 
 First of all you need redis running on the port 6379;
 
-Please use new compilers that support coroutines. For the gcc compiler, configure the project with the following
+Please use new compilers that support coroutines. Configure the project with the following
 command:
 
 ```shell
