@@ -7,19 +7,9 @@
 #include <drogon/drogon.h>
 #include <string>
 #include "RedisCache.h"
-
+#include "DateFuncs.h"
 #define VDate "visitDate"
 
-template <>
-trantor::Date fromString<trantor::Date>(const std::string &str)
-{
-    return trantor::Date(std::atoll(str.data()));
-}
-template <>
-std::string toString<trantor::Date>(const trantor::Date &date)
-{
-    return std::to_string(date.microSecondsSinceEpoch());
-}
 void TimeFilter::doFilter(const HttpRequestPtr &req,
                           FilterCallback &&cb,
                           FilterChainCallback &&ccb)
