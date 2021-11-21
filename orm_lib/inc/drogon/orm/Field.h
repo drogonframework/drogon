@@ -225,7 +225,7 @@ inline int8_t Field::as<int8_t>() const
 {
     if (isNull())
         return 0;
-    return atoi(result_.getValue(row_, column_));
+    return static_cast<int8_t>(atoi(result_.getValue(row_, column_)));
 }
 
 template <>
