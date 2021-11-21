@@ -12,6 +12,6 @@ command:
 
 ```shell
 cmake .. -DCMAKE_CXX_FLAGS="-std=c++20 -fcoroutines" //for GCC 10
-cmake .. -DCMAKE_CXX_FLAGS="-std=c++20" //for GCC 11
+cmake .. -DCMAKE_CXX_FLAGS="-std=c++20" //for GCC >= 11
 cmake .. -DCMAKE_CXX_FLAGS="/std:c++20" //for MSVC >= 16.25
 ```
