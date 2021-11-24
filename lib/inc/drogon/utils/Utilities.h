@@ -28,8 +28,8 @@
 #include <algorithm>
 #ifdef _WIN32
 #include <time.h>
-char *strptime(const char *s, const char *f, struct tm *tm);
-time_t timegm(struct tm *tm);
+DROGON_EXPORT char *strptime(const char *s, const char *f, struct tm *tm);
+DROGON_EXPORT time_t timegm(struct tm *tm);
 #endif
 namespace drogon
 {
