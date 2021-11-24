@@ -14,6 +14,7 @@
 #pragma once
 #include <atomic>
 #include <thread>
+#include <iostream>
 
 namespace drogon
 {
@@ -168,5 +169,26 @@ enum class WebSocketMessageType
     Close,
     Unknown
 };
-
+inline std::ostream &operator<<(std::ostream &out, drogon::ReqResult result)
+{
+    switch (result)
+    {
+        case ReqResult::Ok:
+            return out << "OK";
+        case ReqResult::BadResponse:
+            return out << "Bad response from server";
+        case ReqResult::NetworkFailure:
+            return out << "Network failure";
+        case ReqResult::BadServerAddress:
+            return out << "Bad server address";
+        case ReqResult::Timeout:
+            return out << "Timeout";
+        case ReqResult::HandshakeError:
+            return out << "Handshake error";
+        case ReqResult::InvalidCertificate:
+            return out << "Invalid certificate";
+        default:
+            return out << "Unknown error";
+    }
+}
 }  // namespace drogon

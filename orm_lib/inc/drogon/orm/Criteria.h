@@ -256,15 +256,17 @@ class DROGON_EXPORT Criteria
     }
 
   private:
-    friend const Criteria operator&&(Criteria cond1, Criteria cond2);
+    friend DROGON_EXPORT const Criteria operator&&(Criteria cond1,
+                                                   Criteria cond2);
 
-    friend const Criteria operator||(Criteria cond1, Criteria cond2);
+    friend DROGON_EXPORT const Criteria operator||(Criteria cond1,
+                                                   Criteria cond2);
     std::string conditionString_;
     std::function<void(internal::SqlBinder &)> outputArgumentsFunc_;
 };  // namespace orm
 
-const Criteria operator&&(Criteria cond1, Criteria cond2);
-const Criteria operator||(Criteria cond1, Criteria cond2);
+DROGON_EXPORT const Criteria operator&&(Criteria cond1, Criteria cond2);
+DROGON_EXPORT const Criteria operator||(Criteria cond1, Criteria cond2);
 
 }  // namespace orm
 }  // namespace drogon
