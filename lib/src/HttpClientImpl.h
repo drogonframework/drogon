@@ -102,6 +102,8 @@ class HttpClientImpl final : public HttpClient,
     }
 
     void setCertPath(const std::string &cert, const std::string &key) override;
+    void addSSLConfigs(const std::vector<std::pair<std::string, std::string>>
+                           &sslConfCmds) override;
 
   private:
     std::shared_ptr<trantor::TcpClient> tcpClientPtr_;
@@ -135,8 +137,7 @@ class HttpClientImpl final : public HttpClient,
     std::shared_ptr<trantor::Resolver> resolverPtr_;
     bool useOldTLS_{false};
     std::string userAgent_{"DrogonClient"};
-    std::string clientCertPath_;
-    std::string clientKeyPath_;
+    std::vector<std::pair<std::string, std::string>> sslConfCmds_;
 };
 using HttpClientImplPtr = std::shared_ptr<HttpClientImpl>;
 }  // namespace drogon
