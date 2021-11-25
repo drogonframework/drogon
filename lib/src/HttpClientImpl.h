@@ -138,6 +138,8 @@ class HttpClientImpl final : public HttpClient,
     bool useOldTLS_{false};
     std::string userAgent_{"DrogonClient"};
     std::vector<std::pair<std::string, std::string>> sslConfCmds_;
+    std::string clientCertPath_;
+    std::string clientKeyPath_;
 };
 using HttpClientImplPtr = std::shared_ptr<HttpClientImpl>;
 }  // namespace drogon
