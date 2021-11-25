@@ -464,6 +464,10 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
         return operator<<(date.toDbStringLocal());
     }
     self &operator<<(const std::vector<char> &v);
+    self &operator<<(std::vector<char> &v)
+    {
+        return operator<<((const std::vector<char> &)v);
+    }
     self &operator<<(std::vector<char> &&v);
     self &operator<<(float f)
     {
@@ -477,6 +481,11 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
     self &operator<<(std::nullptr_t nullp);
     self &operator<<(DefaultValue dv);
     self &operator<<(const Mode &mode)
+    {
+        mode_ = mode;
+        return *this;
+    }
+    self &operator<<(Mode &mode)
     {
         mode_ = mode;
         return *this;
