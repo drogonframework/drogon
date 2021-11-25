@@ -218,6 +218,106 @@ void MysqlConnection::handleTimeout()
     {
     }
 }
+void MysqlConnection::handleCmd(int status)
+{
+    switch (execStatus_)
+    {
+        case ExecStatus::RealQuery:
+        {
+            int err = 0;
+            waitStatus_ = mysql_real_query_cont(&err, mysqlPtr_.get(), status);
+            LOG_TRACE << "real_query:" << waitStatus_;
+            if (waitStatus_ == 0)
+            {
+                if (err)
+                {
+                    execStatus_ = ExecStatus::None;
+                    LOG_ERROR << "error:" << err << " status:" << status;
+                    outputError();
+                    return;
+                }
+                execStatus_ = ExecStatus::StoreResult;
+                MYSQL_RES *ret;
+                waitStatus_ = mysql_store_result_start(&ret, mysqlPtr_.get());
+                LOG_TRACE << "store_result_start:" << waitStatus_;
+                if (waitStatus_ == 0)
+                {
+                    execStatus_ = ExecStatus::None;
+                    if (!ret && mysql_errno(mysqlPtr_.get()))
+                    {
+                        LOG_ERROR << "error in: " << sql_;
+                        outputError();
+                        return;
+                    }
+                    getResult(ret);
+                }
+            }
+            setChannel();
+            break;
+        }
+        case ExecStatus::StoreResult:
+        {
+            MYSQL_RES *ret;
+            waitStatus_ =
+                mysql_store_result_cont(&ret, mysqlPtr_.get(), status);
+            LOG_TRACE << "store_result:" << waitStatus_;
+            if (waitStatus_ == 0)
+            {
+                if (!ret && mysql_errno(mysqlPtr_.get()))
+                {
+                    execStatus_ = ExecStatus::None;
+                    LOG_ERROR << "error";
+                    outputError();
+                    return;
+                }
+                getResult(ret);
+            }
+            setChannel();
+            break;
+        }
+        case ExecStatus::NextResult:
+        {
+            int err;
+            waitStatus_ = mysql_next_result_cont(&err, mysqlPtr_.get(), status);
+            if (waitStatus_ == 0)
+            {
+                if (err)
+                {
+                    execStatus_ = ExecStatus::None;
+                    LOG_ERROR << "error:" << err << " status:" << status;
+                    outputError();
+                    return;
+                }
+                execStatus_ = ExecStatus::StoreResult;
+                MYSQL_RES *ret;
+                waitStatus_ = mysql_store_result_start(&ret, mysqlPtr_.get());
+                LOG_TRACE << "store_result_start:" << waitStatus_;
+                if (waitStatus_ == 0)
+                {
+                    execStatus_ = ExecStatus::None;
+                    if (!ret && mysql_errno(mysqlPtr_.get()))
+                    {
+                        LOG_ERROR << "error in: " << sql_;
+                        outputError();
+                        return;
+                    }
+                    getResult(ret);
+                }
+            }
+            setChannel();
+            break;
+        }
+        case ExecStatus::None:
+        {
+            // Connection closed!
+            if (waitStatus_ == 0)
+                handleClosed();
+            break;
+        }
+        default:
+            return;
+    }
+}
 void MysqlConnection::handleEvent()
 {
     int status = 0;
@@ -263,73 +363,7 @@ void MysqlConnection::handleEvent()
     }
     else if (status_ == ConnectStatus::Ok)
     {
-        switch (execStatus_)
-        {
-            case ExecStatus::RealQuery:
-            {
-                int err = 0;
-                waitStatus_ =
-                    mysql_real_query_cont(&err, mysqlPtr_.get(), status);
-                LOG_TRACE << "real_query:" << waitStatus_;
-                if (waitStatus_ == 0)
-                {
-                    if (err)
-                    {
-                        execStatus_ = ExecStatus::None;
-                        LOG_ERROR << "error:" << err << " status:" << status;
-                        outputError();
-                        return;
-                    }
-                    execStatus_ = ExecStatus::StoreResult;
-                    MYSQL_RES *ret;
-                    waitStatus_ =
-                        mysql_store_result_start(&ret, mysqlPtr_.get());
-                    LOG_TRACE << "store_result_start:" << waitStatus_;
-                    if (waitStatus_ == 0)
-                    {
-                        execStatus_ = ExecStatus::None;
-                        if (!ret && mysql_errno(mysqlPtr_.get()))
-                        {
-                            LOG_ERROR << "error in: " << sql_;
-                            outputError();
-                            return;
-                        }
-                        getResult(ret);
-                    }
-                }
-                setChannel();
-                break;
-            }
-            case ExecStatus::StoreResult:
-            {
-                MYSQL_RES *ret;
-                waitStatus_ =
-                    mysql_store_result_cont(&ret, mysqlPtr_.get(), status);
-                LOG_TRACE << "store_result:" << waitStatus_;
-                if (waitStatus_ == 0)
-                {
-                    if (!ret && mysql_errno(mysqlPtr_.get()))
-                    {
-                        execStatus_ = ExecStatus::None;
-                        LOG_ERROR << "error";
-                        outputError();
-                        return;
-                    }
-                    getResult(ret);
-                }
-                setChannel();
-                break;
-            }
-            case ExecStatus::None:
-            {
-                // Connection closed!
-                if (waitStatus_ == 0)
-                    handleClosed();
-                break;
-            }
-            default:
-                return;
-        }
+        handleCmd(status);
     }
     else if (status_ == ConnectStatus::SettingCharacterSet)
     {
@@ -563,9 +597,43 @@ void MysqlConnection::getResult(MYSQL_RES *res)
     if (isWorking_)
     {
         callback_(Result);
-        callback_ = nullptr;
-        exceptionCallback_ = nullptr;
-        isWorking_ = false;
-        idleCb_();
+        if (!mysql_more_results(mysqlPtr_.get()))
+        {
+            callback_ = nullptr;
+            exceptionCallback_ = nullptr;
+            isWorking_ = false;
+            idleCb_();
+        }
+        else
+        {
+            execStatus_ = ExecStatus::NextResult;
+            int err;
+            waitStatus_ = mysql_next_result_start(&err, mysqlPtr_.get());
+            if (waitStatus_ == 0)
+            {
+                if (err)
+                {
+                    execStatus_ = ExecStatus::None;
+                    LOG_ERROR << "error:" << err;
+                    outputError();
+                    return;
+                }
+                execStatus_ = ExecStatus::StoreResult;
+                MYSQL_RES *ret;
+                waitStatus_ = mysql_store_result_start(&ret, mysqlPtr_.get());
+                LOG_TRACE << "store_result_start:" << waitStatus_;
+                if (waitStatus_ == 0)
+                {
+                    execStatus_ = ExecStatus::None;
+                    if (!ret && mysql_errno(mysqlPtr_.get()))
+                    {
+                        LOG_ERROR << "error in: " << sql_;
+                        outputError();
+                        return;
+                    }
+                    getResult(ret);
+                }
+            }
+        }
     }
 }
