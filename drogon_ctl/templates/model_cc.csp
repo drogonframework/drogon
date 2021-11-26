@@ -118,7 +118,7 @@ const std::string &[[className]]::getColumnName(size_t index) noexcept(false)
     assert(index < metaData_.size());
     return metaData_[index].colName_;
 }
-[[className]]::[[className]](const Row &r, const ssize_t indexOffset) noexcept
+[[className]]::[[className]](const drogon::orm::Row &r, const ssize_t indexOffset) noexcept
 {
     if(indexOffset < 0)
     {

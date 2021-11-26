@@ -27,7 +27,6 @@ using namespace drogon_ctl;
 #include <stdint.h>
 #include <iostream>
 
-using namespace drogon::orm;
 namespace drogon
 {
 namespace orm
@@ -129,7 +128,7 @@ auto cols=@@.get<std::vector<ColumnInfo>>("columns");
      * @note If the SQL is not a style of 'select * from table_name ...' (select all 
      * columns by an asterisk), please set the offset to -1.
      */
-    explicit [[className]](const Row &r, const ssize_t indexOffset = 0) noexcept;
+    explicit [[className]](const drogon::orm::Row &r, const ssize_t indexOffset = 0) noexcept;
 
     /**
      * @brief constructor
@@ -297,9 +296,9 @@ auto cols=@@.get<std::vector<ColumnInfo>>("columns");
     }
 %>
   private:
-    friend Mapper<[[className]]>;
+    friend drogon::orm::Mapper<[[className]]>;
 #ifdef __cpp_impl_coroutine
-    friend CoroMapper<[[className]]>;
+    friend drogon::orm::CoroMapper<[[className]]>;
 #endif
     static const std::vector<std::string> &insertColumns() noexcept;
     void outputArgs(drogon::orm::internal::SqlBinder &binder) const;
