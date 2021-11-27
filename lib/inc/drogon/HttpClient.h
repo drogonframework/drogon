@@ -270,11 +270,14 @@ class DROGON_EXPORT HttpClient : public trantor::NonCopyable
                              const std::string &key) = 0;
 
     /**
-     * @brief Supplies file style options for `SSL_CONF_cmd`
+     * @brief Supplies command style options for `SSL_CONF_cmd`
      *
      * @param sslConfCmds options for SSL_CONF_cmd
      * @note this method has no effect if the HTTP client is communicating via
      * unencrypted HTTP
+     * @code
+     * addSSLConfigs({{"-dhparam", "/path/to/dhparam"}, {"-strict", ""}});
+     * @endcode
      */
     virtual void addSSLConfigs(
         const std::vector<std::pair<std::string, std::string>>
