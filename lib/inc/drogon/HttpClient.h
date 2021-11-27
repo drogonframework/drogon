@@ -258,6 +258,31 @@ class DROGON_EXPORT HttpClient : public trantor::NonCopyable
         return port() == 80;
     }
 
+    /**
+     * @brief Set the client certificate used by the HTTP connection
+     *
+     * @param cert Path to the certificate
+     * @param key Path to the certificate's private key
+     * @note this method has no effect if the HTTP client is communicating via
+     * unencrypted HTTP
+     */
+    virtual void setCertPath(const std::string &cert,
+                             const std::string &key) = 0;
+
+    /**
+     * @brief Supplies command style options for `SSL_CONF_cmd`
+     *
+     * @param sslConfCmds options for SSL_CONF_cmd
+     * @note this method has no effect if the HTTP client is communicating via
+     * unencrypted HTTP
+     * @code
+     * addSSLConfigs({{"-dhparam", "/path/to/dhparam"}, {"-strict", ""}});
+     * @endcode
+     */
+    virtual void addSSLConfigs(
+        const std::vector<std::pair<std::string, std::string>>
+            &sslConfCmds) = 0;
+
     /// Create a Http client using the hostString to connect to server
     /**
      *

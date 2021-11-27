@@ -39,7 +39,12 @@ void HttpClientImpl::createTcpClient()
     {
         LOG_TRACE << "useOldTLS=" << useOldTLS_;
         LOG_TRACE << "domain=" << domain_;
-        tcpClientPtr_->enableSSL(useOldTLS_, validateCert_, domain_);
+        tcpClientPtr_->enableSSL(useOldTLS_,
+                                 validateCert_,
+                                 domain_,
+                                 sslConfCmds_,
+                                 clientCertPath_,
+                                 clientKeyPath_);
     }
 #endif
     auto thisPtr = shared_from_this();
@@ -643,5 +648,21 @@ void HttpClientImpl::handleCookies(const HttpResponseImplPtr &resp)
         {
             validCookies_.emplace_back(cookie);
         }
+    }
+}
+
+void HttpClientImpl::setCertPath(const std::string &cert,
+                                 const std::string &key)
+{
+    clientCertPath_ = cert;
+    clientKeyPath_ = key;
+}
+
+void HttpClientImpl::addSSLConfigs(
+    const std::vector<std::pair<std::string, std::string>> &sslConfCmds)
+{
+    for (const auto &cmd : sslConfCmds)
+    {
+        sslConfCmds_.push_back(cmd);
     }
 }
