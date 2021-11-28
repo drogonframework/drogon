@@ -40,8 +40,7 @@ Result makeResult(
     Result::SizeType affectedRows = 0,
     unsigned long long insertId = 0)
 {
-    return Result(std::shared_ptr<MysqlResultImpl>(
-        new MysqlResultImpl(r, affectedRows, insertId)));
+    return Result{std::make_shared<MysqlResultImpl>(r, affectedRows, insertId)};
 }
 
 }  // namespace orm
@@ -56,7 +55,7 @@ MysqlConnection::MysqlConnection(trantor::EventLoop *loop,
       }))
 {
     mysql_init(mysqlPtr_.get());
-    mysql_options(mysqlPtr_.get(), MYSQL_OPT_NONBLOCK, 0);
+    mysql_options(mysqlPtr_.get(), MYSQL_OPT_NONBLOCK, nullptr);
 
     // Get the key and value
     auto connParams = parseConnString(connInfo);
@@ -99,12 +98,14 @@ MysqlConnection::MysqlConnection(trantor::EventLoop *loop,
         waitStatus_ =
             mysql_real_connect_start(&ret,
                                      mysqlPtr_.get(),
-                                     host_.empty() ? NULL : host_.c_str(),
-                                     user_.empty() ? NULL : user_.c_str(),
-                                     passwd_.empty() ? NULL : passwd_.c_str(),
-                                     dbname_.empty() ? NULL : dbname_.c_str(),
+                                     host_.empty() ? nullptr : host_.c_str(),
+                                     user_.empty() ? nullptr : user_.c_str(),
+                                     passwd_.empty() ? nullptr
+                                                     : passwd_.c_str(),
+                                     dbname_.empty() ? nullptr
+                                                     : dbname_.c_str(),
                                      port_.empty() ? 3306 : atol(port_.c_str()),
-                                     NULL,
+                                     nullptr,
                                      0);
         // LOG_DEBUG << ret;
         auto fd = mysql_get_socket(mysqlPtr_.get());
@@ -115,8 +116,7 @@ MysqlConnection::MysqlConnection(trantor::EventLoop *loop,
                          "limit. Please use the ulimit command to check.";
             exit(1);
         }
-        channelPtr_ =
-            std::unique_ptr<trantor::Channel>(new trantor::Channel(loop_, fd));
+        channelPtr_ = std::make_unique<trantor::Channel>(loop_, fd);
         channelPtr_->setEventCallback([this]() { handleEvent(); });
         setChannel();
     });
@@ -421,7 +421,7 @@ void MysqlConnection::execSqlInLoop(
         std::string::size_type seekPos = std::string::npos;
         for (size_t i = 0; i < paraNum; ++i)
         {
-            seekPos = sql.find("?", pos);
+            seekPos = sql.find('?', pos);
             if (seekPos == std::string::npos)
             {
                 auto sub = sql.substr(pos);
@@ -487,10 +487,8 @@ void MysqlConnection::execSqlInLoop(
     {
         sql_ = std::string(sql.data(), sql.length());
     }
-    LOG_TRACE << sql_;
     startQuery();
     setChannel();
-    return;
 }
 
 void MysqlConnection::outputError()
@@ -554,7 +552,6 @@ void MysqlConnection::startStoreResult(bool queueInLoop)
         execStatus_ = ExecStatus::None;
         if (!ret && mysql_errno(mysqlPtr_.get()))
         {
-            LOG_ERROR << "error in: " << sql_;
             if (queueInLoop)
             {
                 loop_->queueInLoop(
