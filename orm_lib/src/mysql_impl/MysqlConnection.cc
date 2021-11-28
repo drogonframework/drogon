@@ -499,7 +499,7 @@ void MysqlConnection::outputError()
     auto errorNo = mysql_errno(mysqlPtr_.get());
     LOG_ERROR << "Error(" << errorNo << ") [" << mysql_sqlstate(mysqlPtr_.get())
               << "] \"" << mysql_error(mysqlPtr_.get()) << "\"";
-
+    LOG_ERROR << "sql:" << sql_;
     if (isWorking_)
     {
         // TODO: exception type
