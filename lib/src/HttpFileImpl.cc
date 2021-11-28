@@ -122,7 +122,7 @@ int HttpFileImpl::saveTo(
     }
     else
     {
-        LOG_ERROR << "save failed! file=" << pathAndFileName;
+        LOG_SYSERR << "save failed! file=" << pathAndFileName;
         return -1;
     }
 }
