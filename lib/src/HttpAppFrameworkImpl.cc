@@ -500,11 +500,13 @@ void HttpAppFrameworkImpl::run()
         struct sigaction sa;
         sa.sa_handler = TERMFunction;
         sigemptyset(&sa.sa_mask);
-        if (sigaction(SIGINT, &sa, NULL) == -1) {
+        if (sigaction(SIGINT, &sa, NULL) == -1)
+        {
             LOG_ERROR << "sigaction() failed, can't set SIGINT handler";
             abort();
         }
-        if (sigaction(SIGTERM, &sa, NULL) == -1) {
+        if (sigaction(SIGTERM, &sa, NULL) == -1)
+        {
             LOG_ERROR << "sigaction() failed, can't set SIGINT handler";
             abort();
         }
