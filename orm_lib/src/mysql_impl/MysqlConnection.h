@@ -107,6 +107,8 @@ class MysqlConnection : public DbConnection,
     void handleEvent();
     void setChannel();
     void getResult(MYSQL_RES *res);
+    void startQuery();
+    void startStoreResult(bool queueInLoop);
     int waitStatus_;
     enum class ExecStatus
     {

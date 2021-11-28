@@ -236,21 +236,7 @@ void MysqlConnection::handleCmd(int status)
                     outputError();
                     return;
                 }
-                execStatus_ = ExecStatus::StoreResult;
-                MYSQL_RES *ret;
-                waitStatus_ = mysql_store_result_start(&ret, mysqlPtr_.get());
-                LOG_TRACE << "store_result_start:" << waitStatus_;
-                if (waitStatus_ == 0)
-                {
-                    execStatus_ = ExecStatus::None;
-                    if (!ret && mysql_errno(mysqlPtr_.get()))
-                    {
-                        LOG_ERROR << "error in: " << sql_;
-                        outputError();
-                        return;
-                    }
-                    getResult(ret);
-                }
+                startStoreResult(false);
             }
             setChannel();
             break;
@@ -288,21 +274,7 @@ void MysqlConnection::handleCmd(int status)
                     outputError();
                     return;
                 }
-                execStatus_ = ExecStatus::StoreResult;
-                MYSQL_RES *ret;
-                waitStatus_ = mysql_store_result_start(&ret, mysqlPtr_.get());
-                LOG_TRACE << "store_result_start:" << waitStatus_;
-                if (waitStatus_ == 0)
-                {
-                    execStatus_ = ExecStatus::None;
-                    if (!ret && mysql_errno(mysqlPtr_.get()))
-                    {
-                        LOG_ERROR << "error in: " << sql_;
-                        outputError();
-                        return;
-                    }
-                    getResult(ret);
-                }
+                startStoreResult(false);
             }
             setChannel();
             break;
@@ -516,44 +488,7 @@ void MysqlConnection::execSqlInLoop(
         sql_ = std::string(sql.data(), sql.length());
     }
     LOG_TRACE << sql_;
-    int err;
-    // int mysql_real_query_start(int *ret, MYSQL *mysql, const char *q,
-    // unsigned long length)
-    waitStatus_ = mysql_real_query_start(&err,
-                                         mysqlPtr_.get(),
-                                         sql_.c_str(),
-                                         sql_.length());
-    LOG_TRACE << "real_query:" << waitStatus_;
-    execStatus_ = ExecStatus::RealQuery;
-    if (waitStatus_ == 0)
-    {
-        if (err)
-        {
-            LOG_ERROR << "error";
-            loop_->queueInLoop(
-                [thisPtr = shared_from_this()] { thisPtr->outputError(); });
-            return;
-        }
-
-        MYSQL_RES *ret;
-        waitStatus_ = mysql_store_result_start(&ret, mysqlPtr_.get());
-        LOG_TRACE << "store_result:" << waitStatus_;
-        execStatus_ = ExecStatus::StoreResult;
-        if (waitStatus_ == 0)
-        {
-            execStatus_ = ExecStatus::None;
-            if (!ret && mysql_errno(mysqlPtr_.get()))
-            {
-                LOG_ERROR << "error in: " << sql_;
-                loop_->queueInLoop(
-                    [thisPtr = shared_from_this()] { thisPtr->outputError(); });
-                return;
-            }
-            loop_->queueInLoop([thisPtr = shared_from_this(), ret] {
-                thisPtr->getResult(ret);
-            });
-        }
-    }
+    startQuery();
     setChannel();
     return;
 }
@@ -585,7 +520,64 @@ void MysqlConnection::outputError()
         handleClosed();
     }
 }
-
+void MysqlConnection::startQuery()
+{
+    int err;
+    // int mysql_real_query_start(int *ret, MYSQL *mysql, const char *q,
+    // unsigned long length)
+    waitStatus_ = mysql_real_query_start(&err,
+                                         mysqlPtr_.get(),
+                                         sql_.c_str(),
+                                         sql_.length());
+    LOG_TRACE << "real_query:" << waitStatus_;
+    execStatus_ = ExecStatus::RealQuery;
+    if (waitStatus_ == 0)
+    {
+        if (err)
+        {
+            LOG_ERROR << "error";
+            loop_->queueInLoop(
+                [thisPtr = shared_from_this()] { thisPtr->outputError(); });
+            return;
+        }
+        startStoreResult(true);
+    }
+}
+void MysqlConnection::startStoreResult(bool queueInLoop)
+{
+    MYSQL_RES *ret;
+    execStatus_ = ExecStatus::StoreResult;
+    waitStatus_ = mysql_store_result_start(&ret, mysqlPtr_.get());
+    LOG_TRACE << "store_result:" << waitStatus_;
+    if (waitStatus_ == 0)
+    {
+        execStatus_ = ExecStatus::None;
+        if (!ret && mysql_errno(mysqlPtr_.get()))
+        {
+            LOG_ERROR << "error in: " << sql_;
+            if (queueInLoop)
+            {
+                loop_->queueInLoop(
+                    [thisPtr = shared_from_this()] { thisPtr->outputError(); });
+            }
+            else
+            {
+                outputError();
+            }
+            return;
+        }
+        if (queueInLoop)
+        {
+            loop_->queueInLoop([thisPtr = shared_from_this(), ret] {
+                thisPtr->getResult(ret);
+            });
+        }
+        else
+        {
+            getResult(ret);
+        }
+    }
+}
 void MysqlConnection::getResult(MYSQL_RES *res)
 {
     auto resultPtr = std::shared_ptr<MYSQL_RES>(res, [](MYSQL_RES *r) {
@@ -618,21 +610,7 @@ void MysqlConnection::getResult(MYSQL_RES *res)
                     outputError();
                     return;
                 }
-                execStatus_ = ExecStatus::StoreResult;
-                MYSQL_RES *ret;
-                waitStatus_ = mysql_store_result_start(&ret, mysqlPtr_.get());
-                LOG_TRACE << "store_result_start:" << waitStatus_;
-                if (waitStatus_ == 0)
-                {
-                    execStatus_ = ExecStatus::None;
-                    if (!ret && mysql_errno(mysqlPtr_.get()))
-                    {
-                        LOG_ERROR << "error in: " << sql_;
-                        outputError();
-                        return;
-                    }
-                    getResult(ret);
-                }
+                startStoreResult(false);
             }
         }
     }
