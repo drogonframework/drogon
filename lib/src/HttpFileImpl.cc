@@ -93,7 +93,7 @@ int HttpFileImpl::saveTo(const filesystem::path &pathAndFileName) const
     }
     else
     {
-        LOG_ERROR << "save failed! file=" << pathAndFileName;
+        LOG_SYSERR << "save failed! file=" << pathAndFileName;
         return -1;
     }
 }
