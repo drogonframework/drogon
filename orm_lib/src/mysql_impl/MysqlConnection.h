@@ -102,17 +102,20 @@ class MysqlConnection : public DbConnection,
     std::shared_ptr<MYSQL> mysqlPtr_;
     std::string characterSet_;
     void handleTimeout();
-
+    void handleCmd(int status);
     void handleClosed();
     void handleEvent();
     void setChannel();
     void getResult(MYSQL_RES *res);
+    void startQuery();
+    void startStoreResult(bool queueInLoop);
     int waitStatus_;
     enum class ExecStatus
     {
         None = 0,
         RealQuery,
-        StoreResult
+        StoreResult,
+        NextResult
     };
     ExecStatus execStatus_{ExecStatus::None};
 
