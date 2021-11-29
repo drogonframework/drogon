@@ -41,6 +41,17 @@ int HttpFileImpl::save(const std::string &path) const
         fsPath = fsUploadPath / fsPath;
     }
     filesystem::path fsFileName(utils::toNativePath(fileName_));
+    if (!filesystem::exists(fsPath))
+    {
+        LOG_TRACE << "create path:" << fsPath;
+        drogon::error_code err;
+        filesystem::create_directories(fsPath, err);
+        if (err)
+        {
+            LOG_SYSERR;
+            return -1;
+        }
+    }
     return saveTo(fsPath / fsFileName);
 }
 int HttpFileImpl::saveAs(const std::string &fileName) const
@@ -55,12 +66,17 @@ int HttpFileImpl::saveAs(const std::string &fileName) const
             HttpAppFrameworkImpl::instance().getUploadPath()));
         fsFileName = fsUploadPath / fsFileName;
     }
-    if (fsFileName.has_parent_path())
+    if (fsFileName.has_parent_path() &&
+        !filesystem::exists(fsFileName.parent_path()))
     {
+        LOG_TRACE << "create path:" << fsFileName.parent_path();
         drogon::error_code err;
         filesystem::create_directories(fsFileName.parent_path(), err);
         if (err)
+        {
+            LOG_SYSERR;
             return -1;
+        }
     }
     return saveTo(fsFileName);
 }
