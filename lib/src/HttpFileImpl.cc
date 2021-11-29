@@ -67,7 +67,7 @@ int HttpFileImpl::saveAs(const std::string &fileName) const
         fsFileName = fsUploadPath / fsFileName;
     }
     if (fsFileName.has_parent_path() &&
-        !filesystem::exist(fsFileName.parent_path()))
+        !filesystem::exists(fsFileName.parent_path()))
     {
         LOG_TRACE << "create path:" << fsFileName.parent_path();
         drogon::error_code err;
