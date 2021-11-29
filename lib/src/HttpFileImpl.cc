@@ -73,7 +73,10 @@ int HttpFileImpl::saveAs(const std::string &fileName) const
         drogon::error_code err;
         filesystem::create_directories(fsFileName.parent_path(), err);
         if (err)
+        {
+            LOG_SYSERR;
             return -1;
+        }
     }
     return saveTo(fsFileName);
 }
