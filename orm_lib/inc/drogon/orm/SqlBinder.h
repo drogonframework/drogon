@@ -176,8 +176,8 @@ class CallbackHolder : public CallbackHolderBase
         run(result);
     }
 
-    CallbackHolder(Function &&function)
-        : function_(std::forward<Function>(function))
+    template <typename T>
+    CallbackHolder(T &&function) : function_(std::forward<T>(function))
     {
         static_assert(traits::isSqlCallback,
                       "Your sql callback function type is wrong!");
@@ -351,7 +351,7 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
         CallbackType &&callback)
     {
         callbackHolder_ = std::shared_ptr<CallbackHolderBase>(
-            new CallbackHolder<CallbackType>(
+            new CallbackHolder<std::decay_t<CallbackType>>(
                 std::forward<CallbackType>(callback)));
         return *this;
     }
