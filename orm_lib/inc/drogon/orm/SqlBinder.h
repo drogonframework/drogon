@@ -323,7 +323,8 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
     SqlBinder &operator=(SqlBinder &&that) = delete;
     ~SqlBinder();
     template <typename CallbackType,
-              typename traits = FunctionTraits<std::decay_t<CallbackType>>>
+              typename traits =
+                  FunctionTraits<typename std::decay<CallbackType>::type>>
     typename std::enable_if<traits::isExceptCallback && traits::isPtr,
                             self>::type &
     operator>>(CallbackType &&callback)
@@ -335,7 +336,8 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
     }
 
     template <typename CallbackType,
-              typename traits = FunctionTraits<std::decay_t<CallbackType>>>
+              typename traits =
+                  FunctionTraits<typename std::decay<CallbackType>::type>>
     typename std::enable_if<traits::isExceptCallback && !traits::isPtr,
                             self>::type &
     operator>>(CallbackType &&callback)
@@ -346,12 +348,13 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
     }
 
     template <typename CallbackType,
-              typename traits = FunctionTraits<std::decay_t<CallbackType>>>
+              typename traits =
+                  FunctionTraits<typename std::decay<CallbackType>::type>>
     typename std::enable_if<traits::isSqlCallback, self>::type &operator>>(
         CallbackType &&callback)
     {
         callbackHolder_ = std::shared_ptr<CallbackHolderBase>(
-            new CallbackHolder<std::decay_t<CallbackType>>(
+            new CallbackHolder<typename std::decay<CallbackType>::type>(
                 std::forward<CallbackType>(callback)));
         return *this;
     }
