@@ -23,7 +23,7 @@ namespace orm
 namespace internal
 {
 template <typename ReturnType>
-struct MapperAwaiter : public CallbackAwaiter<ReturnType>
+struct [[nodiscard]] MapperAwaiter : public CallbackAwaiter<ReturnType>
 {
     using MapperFunction =
         std::function<void(std::function<void(ReturnType result)> &&,

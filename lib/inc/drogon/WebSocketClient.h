@@ -36,7 +36,8 @@ using WebSocketRequestCallback = std::function<
 #ifdef __cpp_impl_coroutine
 namespace internal
 {
-struct WebSocketConnectionAwaiter : public CallbackAwaiter<HttpResponsePtr>
+struct [[nodiscard]] WebSocketConnectionAwaiter
+    : public CallbackAwaiter<HttpResponsePtr>
 {
     WebSocketConnectionAwaiter(WebSocketClient *client, HttpRequestPtr req)
         : client_(client), req_(std::move(req))

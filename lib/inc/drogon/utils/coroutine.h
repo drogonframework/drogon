@@ -648,7 +648,7 @@ inline auto co_future(Await &&await) noexcept
 
 namespace internal
 {
-struct TimerAwaiter : CallbackAwaiter<void>
+struct [[nodiscard]] TimerAwaiter : CallbackAwaiter<void>
 {
     TimerAwaiter(trantor::EventLoop *loop,
                  const std::chrono::duration<double> &delay)
