@@ -176,8 +176,8 @@ class CallbackHolder : public CallbackHolderBase
         run(result);
     }
 
-    CallbackHolder(Function &&function)
-        : function_(std::forward<Function>(function))
+    template <typename T>
+    CallbackHolder(T &&function) : function_(std::forward<T>(function))
     {
         static_assert(traits::isSqlCallback,
                       "Your sql callback function type is wrong!");
@@ -323,7 +323,8 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
     SqlBinder &operator=(SqlBinder &&that) = delete;
     ~SqlBinder();
     template <typename CallbackType,
-              typename traits = FunctionTraits<CallbackType>>
+              typename traits =
+                  FunctionTraits<typename std::decay<CallbackType>::type>>
     typename std::enable_if<traits::isExceptCallback && traits::isPtr,
                             self>::type &
     operator>>(CallbackType &&callback)
@@ -335,7 +336,8 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
     }
 
     template <typename CallbackType,
-              typename traits = FunctionTraits<CallbackType>>
+              typename traits =
+                  FunctionTraits<typename std::decay<CallbackType>::type>>
     typename std::enable_if<traits::isExceptCallback && !traits::isPtr,
                             self>::type &
     operator>>(CallbackType &&callback)
@@ -346,12 +348,13 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
     }
 
     template <typename CallbackType,
-              typename traits = FunctionTraits<CallbackType>>
+              typename traits =
+                  FunctionTraits<typename std::decay<CallbackType>::type>>
     typename std::enable_if<traits::isSqlCallback, self>::type &operator>>(
         CallbackType &&callback)
     {
         callbackHolder_ = std::shared_ptr<CallbackHolderBase>(
-            new CallbackHolder<CallbackType>(
+            new CallbackHolder<typename std::decay<CallbackType>::type>(
                 std::forward<CallbackType>(callback)));
         return *this;
     }

@@ -32,6 +32,9 @@
 using namespace std::chrono_literals;
 using namespace drogon::orm;
 
+void expFunction(const DrogonDbException &e)
+{
+}
 #if USE_POSTGRESQL
 DbClientPtr postgreClient;
 DROGON_TEST(PostgreTest)
@@ -40,6 +43,12 @@ DROGON_TEST(PostgreTest)
     // Prepare the test environment
     *clientPtr << "DROP TABLE IF EXISTS USERS" >> [TEST_CTX](const Result &r) {
         SUCCESS();
+        clientPtr->execSqlAsync(
+            "select 1 as result",
+            [TEST_CTX](const drogon::orm::Result &r) {
+                MANDATE(r.size() == 1);
+            },
+            expFunction);
     } >> [TEST_CTX](const DrogonDbException &e) {
         FAULT("postgresql - Prepare the test environment(0) what():" +
               std::string(e.base().what()));
@@ -674,6 +683,7 @@ DROGON_TEST(PostgreTest)
         }
     };
     drogon::sync_wait(coro_test());
+
 #endif
 }
 #endif
@@ -686,7 +696,15 @@ DROGON_TEST(MySQLTest)
     REQUIRE(clientPtr != nullptr);
     // Prepare the test environment
     *clientPtr << "CREATE DATABASE IF NOT EXISTS drogonTestMysql" >>
-        [TEST_CTX](const Result &r) { SUCCESS(); } >>
+        [TEST_CTX](const Result &r) {
+            SUCCESS();
+            clientPtr->execSqlAsync(
+                "select 1 as result",
+                [TEST_CTX](const drogon::orm::Result &r) {
+                    MANDATE(r.size() == 1);
+                },
+                expFunction);
+        } >>
         [TEST_CTX](const DrogonDbException &e) {
             FAULT("mysql - Prepare the test environment(0) what():" +
                   std::string(e.base().what()));
@@ -1260,6 +1278,7 @@ DROGON_TEST(MySQLTest)
         }
     };
     drogon::sync_wait(coro_test());
+
 #endif
 }
 #endif
@@ -1274,6 +1293,12 @@ DROGON_TEST(SQLite3Test)
     // Prepare the test environment
     *clientPtr << "DROP TABLE IF EXISTS users" >> [TEST_CTX](const Result &r) {
         SUCCESS();
+        clientPtr->execSqlAsync(
+            "select 1 as result",
+            [TEST_CTX](const drogon::orm::Result &r) {
+                MANDATE(r.size() == 1);
+            },
+            expFunction);
     } >> [TEST_CTX](const DrogonDbException &e) {
         FAULT("sqlite3 - Prepare the test environment(0):  what():" +
               std::string(e.base().what()));
@@ -1906,6 +1931,7 @@ DROGON_TEST(SQLite3Test)
             trantor::EventLoop::getEventLoopOfCurrentThread(), 1.0s);
     };
     drogon::sync_wait(coro_test());
+
 #endif
 }
 #endif
