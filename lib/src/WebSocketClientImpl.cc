@@ -208,8 +208,10 @@ void WebSocketClientImpl::onRecvWsMessage(
     const trantor::TcpConnectionPtr &connPtr,
     trantor::MsgBuffer *msgBuffer)
 {
-    assert(websockConnPtr_);
-    websockConnPtr_->onNewMessage(connPtr, msgBuffer);
+    if (websockConnPtr_)
+    {
+        websockConnPtr_->onNewMessage(connPtr, msgBuffer);
+    }
 }
 
 void WebSocketClientImpl::onRecvMessage(
