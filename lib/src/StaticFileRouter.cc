@@ -289,7 +289,7 @@ static bool getFileStat(const std::string &filePath, FileStat &myStat)
 #endif
         std::string &timeStr = myStat.modifiedTimeStr_;
         timeStr.resize(64);
-        size_t len = strftime(timeStr.data(),
+        size_t len = strftime((char *)timeStr.data(),
                               timeStr.size(),
                               "%a, %d %b %Y %H:%M:%S GMT",
                               &myStat.modifiedTime_);
