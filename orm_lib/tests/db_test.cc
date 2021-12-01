@@ -41,7 +41,8 @@ DROGON_TEST(PostgreTest)
 {
     auto &clientPtr = postgreClient;
     // Prepare the test environment
-    *clientPtr << "DROP TABLE IF EXISTS USERS" >> [TEST_CTX](const Result &r) {
+    *clientPtr << "DROP TABLE IF EXISTS USERS" >> [TEST_CTX,
+                                                   clientPtr](const Result &r) {
         SUCCESS();
         clientPtr->execSqlAsync(
             "select 1 as result",
@@ -696,7 +697,7 @@ DROGON_TEST(MySQLTest)
     REQUIRE(clientPtr != nullptr);
     // Prepare the test environment
     *clientPtr << "CREATE DATABASE IF NOT EXISTS drogonTestMysql" >>
-        [TEST_CTX](const Result &r) {
+        [TEST_CTX, clientPtr](const Result &r) {
             SUCCESS();
             clientPtr->execSqlAsync(
                 "select 1 as result",
@@ -1291,7 +1292,8 @@ DROGON_TEST(SQLite3Test)
     REQUIRE(clientPtr != nullptr);
 
     // Prepare the test environment
-    *clientPtr << "DROP TABLE IF EXISTS users" >> [TEST_CTX](const Result &r) {
+    *clientPtr << "DROP TABLE IF EXISTS users" >> [TEST_CTX,
+                                                   clientPtr](const Result &r) {
         SUCCESS();
         clientPtr->execSqlAsync(
             "select 1 as result",
