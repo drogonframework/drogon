@@ -161,7 +161,7 @@ jobs:
       if: matrix.buildname == 'ubuntu-20.04/C++14'
       run: |
         [[ ${{ matrix.link }} == "SHARED" ]] && shared="ON" || shared="OFF"
-        cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_TESTING=on -DCMAKE_CXX_VERSION=14 -DBUILD_DROGON_SHARED=$shared
+        cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_TESTING=on -DCMAKE_CXX_STANDARD=14 -DBUILD_DROGON_SHARED=$shared
 
     - name: (Linux) Build
       working-directory: ./build
