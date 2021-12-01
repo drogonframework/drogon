@@ -46,7 +46,7 @@ class DbClient;
 namespace internal
 {
 #ifdef __cpp_impl_coroutine
-struct SqlAwaiter : public CallbackAwaiter<Result>
+struct [[nodiscard]] SqlAwaiter : public CallbackAwaiter<Result>
 {
     SqlAwaiter(internal::SqlBinder &&binder) : binder_(std::move(binder))
     {
@@ -69,7 +69,7 @@ struct SqlAwaiter : public CallbackAwaiter<Result>
     internal::SqlBinder binder_;
 };
 
-struct TransactionAwaiter
+struct [[nodiscard]] TransactionAwaiter
     : public CallbackAwaiter<std::shared_ptr<Transaction> >
 {
     TransactionAwaiter(DbClient *client) : client_(client)

@@ -34,7 +34,7 @@ class RedisClient;
 class RedisTransaction;
 namespace internal
 {
-struct RedisAwaiter : public CallbackAwaiter<RedisResult>
+struct [[nodiscard]] RedisAwaiter : public CallbackAwaiter<RedisResult>
 {
     using RedisFunction =
         std::function<void(RedisResultCallback &&, RedisExceptionCallback &&)>;
@@ -60,7 +60,7 @@ struct RedisAwaiter : public CallbackAwaiter<RedisResult>
     RedisFunction function_;
 };
 
-struct RedisTransactionAwaiter
+struct [[nodiscard]] RedisTransactionAwaiter
     : public CallbackAwaiter<std::shared_ptr<RedisTransaction> >
 {
     RedisTransactionAwaiter(RedisClient *client) : client_(client)
