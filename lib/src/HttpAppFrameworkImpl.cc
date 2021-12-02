@@ -186,6 +186,11 @@ static void TERMFunction(int sig)
         LOG_WARN << "SIGTERM signal received.";
         HttpAppFrameworkImpl::instance().getTermSignalHandler()();
     }
+    else if (sig == SIGINT)
+    {
+        LOG_WARN << "SIGINT signal received.";
+        HttpAppFrameworkImpl::instance().getTermSignalHandler()();
+    }
 }
 
 }  // namespace drogon
@@ -492,7 +497,24 @@ void HttpAppFrameworkImpl::run()
     }
     if (handleSigterm_)
     {
+#ifdef WIN32
         signal(SIGTERM, TERMFunction);
+        signal(SIGINT, TERMFunction);
+#else
+        struct sigaction sa;
+        sa.sa_handler = TERMFunction;
+        sigemptyset(&sa.sa_mask);
+        if (sigaction(SIGINT, &sa, NULL) == -1)
+        {
+            LOG_ERROR << "sigaction() failed, can't set SIGINT handler";
+            abort();
+        }
+        if (sigaction(SIGTERM, &sa, NULL) == -1)
+        {
+            LOG_ERROR << "sigaction() failed, can't set SIGTERM handler";
+            abort();
+        }
+#endif
     }
     // set logger
     if (!logPath_.empty())
