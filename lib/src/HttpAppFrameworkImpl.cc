@@ -497,6 +497,10 @@ void HttpAppFrameworkImpl::run()
     }
     if (handleSigterm_)
     {
+#ifdef WIN32
+        signal(SIGTERM, TERMFunction);
+        signal(SIGINT, TERMFunction);
+#else
         struct sigaction sa;
         sa.sa_handler = TERMFunction;
         sigemptyset(&sa.sa_mask);
@@ -510,6 +514,7 @@ void HttpAppFrameworkImpl::run()
             LOG_ERROR << "sigaction() failed, can't set SIGTERM handler";
             abort();
         }
+#endif
     }
     // set logger
     if (!logPath_.empty())
