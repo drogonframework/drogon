@@ -507,7 +507,7 @@ void HttpAppFrameworkImpl::run()
         }
         if (sigaction(SIGTERM, &sa, NULL) == -1)
         {
-            LOG_ERROR << "sigaction() failed, can't set SIGINT handler";
+            LOG_ERROR << "sigaction() failed, can't set SIGTERM handler";
             abort();
         }
     }
