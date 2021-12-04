@@ -119,6 +119,74 @@ class CoroMapper : public Mapper<T>
             abort();
         }
     }
+
+    // Query condition overrides
+
+    /**
+     * @brief Add a limit to the query.
+     *
+     * @param limit The limit
+     * @return CoroMapper<T>& The CoroMapper itself.
+     */
+    CoroMapper<T> &limit(size_t limit)
+    {
+        Mapper<T>::limit(limit);
+        return *this;
+    }
+
+    /**
+     * @brief Add a offset to the query.
+     *
+     * @param offset The offset.
+     * @return CoroMapper<T>& The CoroMapper itself.
+     */
+    CoroMapper<T> &offset(size_t offset)
+    {
+        Mapper<T>::offset(offset);
+        return *this;
+    }
+
+    /**
+     * @brief Set the order of the results.
+     *
+     * @param colName the column name, the results are sorted by that column
+     * @param order Ascending or descending order
+     * @return CoroMapper<T>& The CoroMapper itself.
+     */
+    CoroMapper<T> &orderBy(const std::string &colName,
+                           const SortOrder &order = SortOrder::ASC)
+    {
+        Mapper<T>::orderBy(colName, order);
+        return *this;
+    }
+
+    /**
+     * @brief Set the order of the results.
+     *
+     * @param colIndex the column index, the results are sorted by that column
+     * @param order Ascending or descending order
+     * @return CoroMapper<T>& The CoroMapper itself.
+     */
+    CoroMapper<T> &orderBy(size_t colIndex,
+                           const SortOrder &order = SortOrder::ASC)
+    {
+        Mapper<T>::orderBy(colIndex, order);
+        return *this;
+    }
+
+    /**
+     * @brief Lock the result for updating.
+     *
+     * @return CoroMapper<T>& The CoroMapper itself.
+     */
+    CoroMapper<T> &forUpdate()
+    {
+        Mapper<T>::forUpdate();
+        return *this;
+    }
+
+    // Read api for coroutines
+
     inline internal::MapperAwaiter<std::vector<T>> findAll()
     {
         return findBy(Criteria());
