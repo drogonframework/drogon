@@ -666,6 +666,20 @@ DROGON_TEST(PostgreTest)
         {
             SUCCESS();
         }
+        try
+        {
+            CoroMapper<Users> mapper(clientPtr);
+            auto users = co_await mapper.orderBy(Users::Cols::_user_id)
+                             .limit(2)
+                             .findAll();
+            MANDATE(users.size() == 2);
+            SUCCESS();
+        }
+        catch (const DrogonDbException &e)
+        {
+            FAULT("postgresql - ORM mapper coroutine  interface(2) what():" +
+                  std::string(e.base().what()));
+        }
         /// 7.4 Transactions
         try
         {
