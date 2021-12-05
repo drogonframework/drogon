@@ -546,6 +546,35 @@ if(cols[i].hasDefaultVal_&&@@.get<std::string>("rdbms")!="sqlite3")
         LOG_TRACE << sql;
         return sql;
     }
+	
+    template <class T>
+    std::shared_ptr<Json::Value> paginate(const drogon::orm::Criteria &criteria, int limit, int page)
+    {
+        if (page <= 0)
+        {
+            page = 1;
+        }
+        auto resJson = std::make_shared<Json::Value>();
+
+        auto dbClientPtr = drogon::app().getDbClient()->newTransaction();
+        drogon::orm::Mapper<T> tblMapper(dbClientPtr);
+        (*resJson)["current_page"] = page;
+        (*resJson)["total"] = static_cast<uint>(tblMapper.count(criteria));
+        (*resJson)["per_page"] = limit;
+        (*resJson)["data"] = Json::Value(Json::arrayValue);
+        auto &resJsonData = (*resJson)["data"];
+        auto rcb = tblMapper
+                        .orderBy(T::Cols::_created_at, drogon::orm::SortOrder::DESC)
+                        .limit(limit)
+                        .offset(limit * (page - 1))
+                        .findBy(criteria);
+        for (const auto &row : rcb)
+        {
+            resJsonData.append(row.toJson());
+        }
+
+        return resJson;
+    }
 };
 <%c++
 if(!schema.empty())
