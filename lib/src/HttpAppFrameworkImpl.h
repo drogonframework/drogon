@@ -357,6 +357,16 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     {
         return termSignalHandler_;
     }
+    HttpAppFramework &setIntSignalHandler(
+        const std::function<void()> &handler) override
+    {
+        intSignalHandler_ = handler;
+        return *this;
+    }
+    const std::function<void()> &getIntSignalHandler() const
+    {
+        return intSignalHandler_;
+    }
     HttpAppFramework &setImplicitPageEnable(bool useImplicitPage) override;
     bool isImplicitPageEnabled() const override;
     HttpAppFramework &setImplicitPage(
@@ -622,6 +632,7 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     size_t clientMaxWebSocketMessageSize_{128 * 1024};
     std::string homePageFile_{"index.html"};
     std::function<void()> termSignalHandler_{[]() { app().quit(); }};
+    std::function<void()> intSignalHandler_{[]() { app().quit(); }};
     std::unique_ptr<SessionManager> sessionManagerPtr_;
     Json::Value jsonConfig_;
     HttpResponsePtr custom404_;

@@ -189,7 +189,7 @@ static void TERMFunction(int sig)
     else if (sig == SIGINT)
     {
         LOG_WARN << "SIGINT signal received.";
-        HttpAppFrameworkImpl::instance().getTermSignalHandler()();
+        HttpAppFrameworkImpl::instance().getIntSignalHandler()();
     }
 }
 
@@ -504,6 +504,7 @@ void HttpAppFrameworkImpl::run()
         struct sigaction sa;
         sa.sa_handler = TERMFunction;
         sigemptyset(&sa.sa_mask);
+        sa.sa_flags = 0;
         if (sigaction(SIGINT, &sa, NULL) == -1)
         {
             LOG_ERROR << "sigaction() failed, can't set SIGINT handler";
