@@ -37,7 +37,7 @@ using DbClientPtr = std::shared_ptr<DbClient>;
 }
 namespace drogon_model
 {
-namespace [[dbName]] 
+namespace [[dbName]]
 {
 <%c++
 auto &schema=@@.get<std::string>("schema");
@@ -97,7 +97,7 @@ auto cols=@@.get<std::vector<ColumnInfo>>("columns");
     int getPrimaryKey() const { assert(false); return 0; }
 <%c++}%>
 <%c++}else{
-    auto pkTypes=@@.get<std::vector<std::string>>("primaryKeyType");   
+    auto pkTypes=@@.get<std::vector<std::string>>("primaryKeyType");
     std::string typelist;
     for(size_t i=0;i<pkTypes.size();i++)
     {
@@ -117,15 +117,15 @@ auto cols=@@.get<std::vector<ColumnInfo>>("columns");
     }
 %>
 
-    PrimaryKeyType getPrimaryKey() const; 
+    PrimaryKeyType getPrimaryKey() const;
 <%c++}%>
 
     /**
      * @brief constructor
      * @param r One row of records in the SQL query result.
-     * @param indexOffset Set the offset to -1 to access all columns by column names, 
+     * @param indexOffset Set the offset to -1 to access all columns by column names,
      * otherwise access all columns by offsets.
-     * @note If the SQL is not a style of 'select * from table_name ...' (select all 
+     * @note If the SQL is not a style of 'select * from table_name ...' (select all
      * columns by an asterisk), please set the offset to -1.
      */
     explicit [[className]](const drogon::orm::Row &r, const ssize_t indexOffset = 0) noexcept;
@@ -144,7 +144,7 @@ auto cols=@@.get<std::vector<ColumnInfo>>("columns");
     [[className]](const Json::Value &pJson, const std::vector<std::string> &pMasqueradingVector) noexcept(false);
 
     [[className]]() = default;
-    
+
     void updateByJson(const Json::Value &pJson) noexcept(false);
     void updateByMasqueradedJson(const Json::Value &pJson,
                                  const std::vector<std::string> &pMasqueradingVector) noexcept(false);
@@ -158,8 +158,8 @@ auto cols=@@.get<std::vector<ColumnInfo>>("columns");
                                           std::string &err);
     static bool validJsonOfField(size_t index,
                           const std::string &fieldName,
-                          const Json::Value &pJson, 
-                          std::string &err, 
+                          const Json::Value &pJson,
+                          std::string &err,
                           bool isForCreation);
 
 <%c++
@@ -194,7 +194,7 @@ auto cols=@@.get<std::vector<ColumnInfo>>("columns");
         }
         else
             $$<<"    //FIXME!!"<<" getValueOf"<<col.colTypeName_<<"() const noexcept;\n";
-        $$<<"\n";    
+        $$<<"\n";
     }
 %>
 
@@ -204,7 +204,7 @@ auto cols=@@.get<std::vector<ColumnInfo>>("columns");
     Json::Value toJson() const;
     Json::Value toMasqueradedJson(const std::vector<std::string> &pMasqueradingVector) const;
     /// Relationship interfaces
-<%c++ 
+<%c++
     for(auto &relationship : relationships)
     {
         if(relationship.targetKey().empty() || relationship.originalKey().empty())
@@ -226,18 +226,18 @@ auto cols=@@.get<std::vector<ColumnInfo>>("columns");
                 }
                 std::string alind(alias.length(), ' ');
 %>
-    void get{%alias%}(const DbClientPtr &clientPtr, 
+    void get{%alias%}(const drogon::orm::DbClientPtr &clientPtr,
             {%alind%} const std::function<void({%relationshipClassName%})> &rcb,
-            {%alind%} const ExceptionCallback &ecb) const;
+            {%alind%} const drogon::orm::ExceptionCallback &ecb) const;
 <%c++
             }
             else
             {
                 std::string relationshipClassInde(relationshipClassName.length(), ' ');
 %>
-    void get{%relationshipClassName%}(const DbClientPtr &clientPtr, 
+    void get{%relationshipClassName%}(const drogon::orm::DbClientPtr &clientPtr,
             {%relationshipClassInde%} const std::function<void({%relationshipClassName%})> &rcb,
-            {%relationshipClassInde%} const ExceptionCallback &ecb) const;
+            {%relationshipClassInde%} const drogon::orm::ExceptionCallback &ecb) const;
 <%c++
             }
         }
@@ -251,18 +251,18 @@ auto cols=@@.get<std::vector<ColumnInfo>>("columns");
                 }
                 std::string alind(alias.length(), ' ');
 %>
-    void get{%alias%}(const DbClientPtr &clientPtr, 
+    void get{%alias%}(const drogon::orm::DbClientPtr &clientPtr,
             {%alind%} const std::function<void(std::vector<{%relationshipClassName%}>)> &rcb,
-            {%alind%} const ExceptionCallback &ecb) const;
+            {%alind%} const drogon::orm::ExceptionCallback &ecb) const;
 <%c++
             }
             else
             {
                 std::string relationshipClassInde(relationshipClassName.length(), ' ');
 %>
-    void get{%relationshipClassName%}(const DbClientPtr &clientPtr, 
+    void get{%relationshipClassName%}(const drogon::orm::DbClientPtr &clientPtr,
             {%relationshipClassInde%} const std::function<void(std::vector<{%relationshipClassName%}>)> &rcb,
-            {%relationshipClassInde%} const ExceptionCallback &ecb) const;
+            {%relationshipClassInde%} const drogon::orm::ExceptionCallback &ecb) const;
 <%c++
             }
         }
@@ -278,18 +278,18 @@ auto cols=@@.get<std::vector<ColumnInfo>>("columns");
                 }
                 std::string alind(alias.length(), ' ');
 %>
-    void get{%alias%}(const DbClientPtr &clientPtr, 
+    void get{%alias%}(const drogon::orm::DbClientPtr &clientPtr,
             {%alind%} const std::function<void(std::vector<std::pair<{%relationshipClassName%},{%pivotTableClassName%}>>)> &rcb,
-            {%alind%} const ExceptionCallback &ecb) const;
+            {%alind%} const drogon::orm::ExceptionCallback &ecb) const;
 <%c++
             }
             else
             {
                 std::string relationshipClassInde(relationshipClassName.length(), ' ');
 %>
-    void get{%relationshipClassName%}(const DbClientPtr &clientPtr, 
+    void get{%relationshipClassName%}(const drogon::orm::DbClientPtr &clientPtr,
             {%relationshipClassInde%} const std::function<void(std::vector<std::pair<{%relationshipClassName%},{%pivotTableClassName%}>>)> &rcb,
-            {%relationshipClassInde%} const ExceptionCallback &ecb) const;
+            {%relationshipClassInde%} const drogon::orm::ExceptionCallback &ecb) const;
 <%c++
             }
         }
@@ -356,7 +356,7 @@ if(@@.get<int>("hasPrimaryKey")<=1){
         $$<<"\";\n";
     }
 %>
-        return sql;                   
+        return sql;
     }
 
     static const std::string &sqlForDeletingByPrimaryKey()
@@ -388,7 +388,7 @@ if(@@.get<int>("hasPrimaryKey")<=1){
         $$<<"\";\n";
     }
 %>
-        return sql;                   
+        return sql;
     }
     std::string sqlForInserting(bool &needSelection) const
     {
@@ -412,7 +412,7 @@ if(@@.get<int>("hasPrimaryKey")<=1){
                 $$<<"            sql += \""<<cols[i].colName_<<",\";\n";
                 $$<<"            ++parametersCount;\n";
                 continue;
-            } 
+            }
             if(cols[i].colType_.empty())
                 continue;
             if(cols[i].hasDefaultVal_)
@@ -433,13 +433,13 @@ if(@@.get<int>("hasPrimaryKey")<=1){
 <%c++
                 }
                 if(@@.get<int>("hasPrimaryKey")>0||@@.get<std::string>("rdbms")=="postgresql")
-                {        
+                {
 %>
         if(!dirtyFlag_[{%i%}])
         {
             needSelection=true;
         }
-<%c++       
+<%c++
                 }
             }
             else
@@ -450,7 +450,7 @@ if(@@.get<int>("hasPrimaryKey")<=1){
             sql += "{%cols[i].colName_%},";
             ++parametersCount;
         }
-<%c++    
+<%c++
             }
         }
         if(selFlag)
@@ -465,7 +465,7 @@ if(@@.get<int>("hasPrimaryKey")<=1){
         }
         else
             sql += ") values (";
-        
+
 <%c++
 if(@@.get<std::string>("rdbms")=="postgresql")
 {
@@ -473,8 +473,8 @@ if(@@.get<std::string>("rdbms")=="postgresql")
         int placeholder=1;
         char placeholderStr[64];
         size_t n=0;
-<%c++    
-}        
+<%c++
+}
         for(size_t i=0;i<cols.size();i++)
         {
         if(cols[i].isAutoVal_)
@@ -486,7 +486,7 @@ if(@@.get<std::string>("rdbms")=="postgresql")
 <%c++
             }
             continue;
-        } 
+        }
         if(cols[i].colType_.empty())
         continue;
 %>
@@ -507,7 +507,7 @@ if(@@.get<std::string>("rdbms")=="postgresql")
 <%c++
                 }
 %>
-        } 
+        }
 <%c++
 if(cols[i].hasDefaultVal_&&@@.get<std::string>("rdbms")!="sqlite3")
 {
@@ -544,7 +544,7 @@ if(cols[i].hasDefaultVal_&&@@.get<std::string>("rdbms")!="sqlite3")
         }
 %>
         LOG_TRACE << sql;
-        return sql;   
+        return sql;
     }
 };
 <%c++
