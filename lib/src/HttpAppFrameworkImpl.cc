@@ -189,7 +189,7 @@ static void TERMFunction(int sig)
     else if (sig == SIGINT)
     {
         LOG_WARN << "SIGINT signal received.";
-        HttpAppFrameworkImpl::instance().getTermSignalHandler()();
+        HttpAppFrameworkImpl::instance().getIntSignalHandler()();
     }
 }
 
