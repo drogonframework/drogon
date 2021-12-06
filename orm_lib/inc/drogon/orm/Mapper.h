@@ -159,6 +159,17 @@ class Mapper
                        const SortOrder &order = SortOrder::ASC);
 
     /**
+     * @brief Set limit and offset to achieve pagination.
+     * This method will override limit() and offset(), and will be overriden by
+     * them.
+     *
+     * @param page The page number
+     * @param perPage The number of columns per page
+     * @return Mapper<T>& The Mapper itself.
+     */
+    Mapper<T> &paginate(size_t page, size_t perPage);
+
+    /**
      * @brief Lock the result for updating.
      *
      * @return Mapper<T>& The Mapper itself.
@@ -1517,6 +1528,12 @@ inline Mapper<T> &Mapper<T>::orderBy(size_t colIndex, const SortOrder &order)
     std::string colName = T::getColumnName(colIndex);
     assert(!colName.empty());
     return orderBy(colName, order);
+}
+template <typename T>
+inline Mapper<T> &Mapper<T>::paginate(size_t page, size_t perPage)
+{
+    assert(page > 0 && perPage > 0);
+    return limit(perPage).offset((page - 1) * perPage);
 }
 template <typename T>
 inline Mapper<T> &Mapper<T>::forUpdate()

@@ -175,6 +175,21 @@ class CoroMapper : public Mapper<T>
     }
 
     /**
+     * @brief Set limit and offset to achieve pagination.
+     * This method will override limit() and offset(), and will be overriden by
+     * them.
+     *
+     * @param page The page number
+     * @param perPage The number of columns per page
+     * @return CoroMapper<T>& The CoroMapper itself.
+     */
+    CoroMapper<T> &paginate(size_t page, size_t perPage)
+    {
+        Mapper<T>::paginate(page, perPage);
+        return *this;
+    }
+
+    /**
      * @brief Lock the result for updating.
      *
      * @return CoroMapper<T>& The CoroMapper itself.
