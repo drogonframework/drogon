@@ -762,10 +762,12 @@ DROGON_TEST(PostgreTest)
                                          "salt of none");
             MANDATE(c == 0);
             auto count = co_await mapper.count();
-            c = co_await mapper.updateBy(updateFields,
-                                         Criteria(),
-                                         "avatar",
-                                         "salt");
+            // Use std::make_tuple to as an alternative to initializer_list
+            c = co_await mapper.updateBy(
+                std::make_tuple(Users::Cols::_avatar_id, Users::Cols::_salt),
+                Criteria(),
+                "avatar",
+                "salt");
             MANDATE(c == count);
             SUCCESS();
         }

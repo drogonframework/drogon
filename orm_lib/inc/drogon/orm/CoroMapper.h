@@ -14,6 +14,7 @@
 #pragma once
 
 #include <functional>
+#include <tuple>
 
 #ifdef __cpp_impl_coroutine
 #include <drogon/orm/Mapper.h>
@@ -432,42 +433,66 @@ class CoroMapper : public Mapper<T>
         return internal::MapperAwaiter<size_t>(std::move(lb));
     }
 
-    template <typename... Arguments>
+    template <typename... TupleArgs, typename... Arguments>
     inline internal::MapperAwaiter<size_t> updateBy(
-        const std::vector<std::string> &colNames,
+        const std::tuple<TupleArgs...> &colNames,
         const Criteria &criteria,
         Arguments &&...args)
     {
-        return updateBy(std::vector<std::string>(colNames),
-                        criteria,
-                        std::forward<Arguments>(args)...);
+        static_assert(sizeof...(args) > 0);
+        static_assert(sizeof...(args) ==
+                      std::tuple_size_v<std::tuple<TupleArgs...>>);
+        std::string sql = "update ";
+        sql += T::tableName;
+        sql += " set ";
+        std::apply(
+            [&sql](auto &&...name) {
+                ((sql += std::string(name) + " = $?,"), ...);
+            },
+            colNames);
+        sql[sql.length() - 1] = ' ';  // Replace the last ','
+
+        return updateByHelper(std::move(sql),
+                              criteria,
+                              std::forward<Arguments>(args)...);
     }
 
     template <typename... Arguments>
     internal::MapperAwaiter<size_t> updateBy(
-        std::vector<std::string> &&colNames,
+        const std::vector<std::string> &colNames,
         const Criteria &criteria,
         Arguments &&...args)
     {
         static_assert(sizeof...(args) > 0);
         assert(colNames.size() == sizeof...(args));
+        std::string sql = "update ";
+        sql += T::tableName;
+        sql += " set ";
+        for (auto const &colName : colNames)
+        {
+            sql += colName;
+            sql += " = $?,";
+        }
+        sql[sql.length() - 1] = ' ';  // Replace the last ','
+
+        return updateByHelper(std::move(sql),
+                              criteria,
+                              std::forward<Arguments>(args)...);
+    }
+
+  private:
+    template <typename... Arguments>
+    internal::MapperAwaiter<size_t> updateByHelper(std::string &&sql,
+                                                   const Criteria &criteria,
+                                                   Arguments &&...args)
+    {
         auto lb = [this,
-                   colNames = std::move(colNames),
+                   sql = std::move(sql),
                    criteria,
                    ... args = std::forward<Arguments>(
                        args)](CountCallback &&callback,
-                              ExceptPtrCallback &&errCallback) {
+                              ExceptPtrCallback &&errCallback) mutable {
             this->clear();
-
-            std::string sql = "update ";
-            sql += T::tableName;
-            sql += " set ";
-            for (auto const &colName : colNames)
-            {
-                sql += colName;
-                sql += " = $?,";
-            }
-            sql[sql.length() - 1] = ' ';  // Replace the last ','
 
             if (criteria)
             {
@@ -487,6 +512,8 @@ class CoroMapper : public Mapper<T>
         };
         return internal::MapperAwaiter<size_t>(std::move(lb));
     }
+
+  public:
     inline internal::MapperAwaiter<size_t> deleteOne(const T &obj)
     {
         auto lb = [this, obj](CountCallback &&callback,
