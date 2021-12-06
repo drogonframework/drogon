@@ -24,6 +24,8 @@
 #include <iostream>
 #include <thread>
 #include <stdlib.h>
+#include <vector>
+#include <string>
 
 #include "mysql/Users.h"
 #include "postgresql/Users.h"
@@ -611,6 +613,37 @@ DROGON_TEST(PostgreTest)
         FAULT("postgresql - ORM mapper synchronous interface(0) what():" +
               std::string(e.base().what()));
     }
+    /// 6.5 update by criteria. blocking
+    try
+    {
+        auto user = mapper.findByPrimaryKey(2);
+        SUCCESS();
+        Users newUser;
+        newUser.setId(user.getValueOfId());
+        newUser.setSalt("xxx");
+        newUser.setUserName(user.getValueOfUserName());
+        auto c = mapper.update(newUser);
+        MANDATE(c == 1);
+        c = mapper.updateBy({Users::Cols::_avatar_id, Users::Cols::_salt},
+                            Criteria(Users::Cols::_user_id,
+                                     CompareOperator::EQ,
+                                     "pg"),
+                            "avatar of pg",
+                            "salt of pg");
+        MANDATE(c == 1);
+        c = mapper.updateBy({Users::Cols::_avatar_id, Users::Cols::_salt},
+                            Criteria(Users::Cols::_user_id,
+                                     CompareOperator::EQ,
+                                     "none"),
+                            "avatar of none",
+                            "salt of none");
+        MANDATE(c == 0);
+    }
+    catch (const DrogonDbException &e)
+    {
+        FAULT("postgresql - ORM mapper synchronous interface(1) what():" +
+              std::string(e.base().what()));
+    }
 #ifdef __cpp_impl_coroutine
     auto coro_test = [clientPtr, TEST_CTX]() -> drogon::Task<> {
         /// 7 Test coroutines.
@@ -649,7 +682,7 @@ DROGON_TEST(PostgreTest)
         }
         catch (const DrogonDbException &e)
         {
-            FAULT("postgresql - ORM mapper coroutine  interface(0) what():" +
+            FAULT("postgresql - ORM mapper coroutine interface(0) what():" +
                   std::string(e.base().what()));
         }
         try
@@ -684,7 +717,60 @@ DROGON_TEST(PostgreTest)
         }
         catch (const DrogonDbException &e)
         {
-            FAULT("postgresql - ORM mapper coroutine  interface(2) what():" +
+            FAULT("postgresql - ORM mapper coroutine interface(2) what():" +
+                  std::string(e.base().what()));
+        }
+        // CoroMapper::update
+        try
+        {
+            CoroMapper<Users> mapper(clientPtr);
+            auto user = co_await mapper.findByPrimaryKey(2);
+            SUCCESS();
+            Users newUser;
+            newUser.setId(user.getValueOfId());
+            newUser.setSalt("xxx");
+            size_t c = co_await mapper.update(newUser);
+            MANDATE(c == 1);
+            SUCCESS();
+        }
+        catch (const DrogonDbException &e)
+        {
+            FAULT("postgresql - ORM mapper coroutine interface(3) what():" +
+                  std::string(e.base().what()));
+        }
+        // CoroMapper::updateBy
+        try
+        {
+            CoroMapper<Users> mapper(clientPtr);
+            auto awaiter = mapper.updateBy(
+                {Users::Cols::_avatar_id, Users::Cols::_salt},
+                Criteria(Users::Cols::_user_id, CompareOperator::EQ, "pg"),
+                "avatar of pg",
+                "salt of pg");
+            size_t c = co_await awaiter;
+            MANDATE(c == 1);
+            // Can not compile if use co_await and initilizer_list together.
+            // Seems to be a bug in gcc.
+            std::vector<std::string> updateFields{Users::Cols::_avatar_id,
+                                                  Users::Cols::_salt};
+            c = co_await mapper.updateBy(updateFields,
+                                         Criteria(Users::Cols::_user_id,
+                                                  CompareOperator::EQ,
+                                                  "none"),
+                                         "avatar of none",
+                                         "salt of none");
+            MANDATE(c == 0);
+            auto count = co_await mapper.count();
+            c = co_await mapper.updateBy(updateFields,
+                                         Criteria(),
+                                         "avatar",
+                                         "salt");
+            MANDATE(c == count);
+            SUCCESS();
+        }
+        catch (const DrogonDbException &e)
+        {
+            FAULT("postgresql - ORM mapper coroutine interface(4) what():" +
                   std::string(e.base().what()));
         }
         /// 7.4 Transactions
@@ -1267,6 +1353,37 @@ DROGON_TEST(MySQLTest)
     catch (const DrogonDbException &e)
     {
         FAULT("mysql - ORM mapper synchronous interface(0) what():" +
+              std::string(e.base().what()));
+    }
+    /// 6.5 update by criteria. blocking
+    try
+    {
+        auto user = mapper.findByPrimaryKey(2);
+        SUCCESS();
+        Users newUser;
+        newUser.setId(user.getValueOfId());
+        newUser.setSalt("xxx");
+        newUser.setUserName(user.getValueOfUserName());
+        auto c = mapper.update(newUser);
+        MANDATE(c == 1);
+        c = mapper.updateBy({Users::Cols::_avatar_id, Users::Cols::_salt},
+                            Criteria(Users::Cols::_user_id,
+                                     CompareOperator::EQ,
+                                     "pg"),
+                            "avatar of pg",
+                            "salt of pg");
+        MANDATE(c == 1);
+        c = mapper.updateBy({Users::Cols::_avatar_id, Users::Cols::_salt},
+                            Criteria(Users::Cols::_user_id,
+                                     CompareOperator::EQ,
+                                     "none"),
+                            "avatar of none",
+                            "salt of none");
+        MANDATE(c == 0);
+    }
+    catch (const DrogonDbException &e)
+    {
+        FAULT("mysql - ORM mapper synchronous interface(1) what():" +
               std::string(e.base().what()));
     }
 #ifdef __cpp_impl_coroutine
