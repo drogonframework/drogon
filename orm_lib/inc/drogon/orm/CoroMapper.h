@@ -13,6 +13,8 @@
  */
 #pragma once
 
+#include <functional>
+
 #ifdef __cpp_impl_coroutine
 #include <drogon/utils/coroutine.h>
 #include <drogon/orm/Mapper.h>
@@ -429,6 +431,63 @@ class CoroMapper : public Mapper<T>
                 auto binder = *(this->client_) << std::move(sql);
                 obj.updateArgs(binder);
                 this->outputPrimeryKeyToBinder(obj.getPrimaryKey(), binder);
+                binder >> [callback = std::move(callback)](const Result &r) {
+                    callback(r.affectedRows());
+                };
+                binder >> std::move(errCallback);
+            };
+        return internal::MapperAwaiter<size_t>(std::move(lb));
+    }
+
+    template <typename... Arguments>
+    inline internal::MapperAwaiter<size_t> updateBy(
+        const std::vector<std::string> &colNames,
+        const Criteria &criteria,
+        Arguments &&...args)
+    {
+        return updateBy(std::vector<std::string>(colNames),
+                        criteria,
+                        std::forward<Arguments>(args)...);
+    }
+
+    template <typename... Arguments>
+    internal::MapperAwaiter<size_t> updateBy(
+        std::vector<std::string> &&colNames,
+        const Criteria &criteria,
+        Arguments &&...args)
+    {
+        static_assert(sizeof...(args) > 0);
+        assert(colNames.size() == sizeof...(args));
+        auto lb =
+            [this,
+             colNames = std::move(colNames),
+             criteria,
+             ... args = std::forward<Arguments>(args)](
+                std::function<void(const size_t)> &&callback,
+                std::function<void(const std::exception_ptr &)> &&errCallback) {
+                this->clear();
+
+                std::string sql = "update ";
+                sql += T::tableName;
+                sql += " set ";
+                for (auto const &colName : colNames)
+                {
+                    sql += colName;
+                    sql += " = $?,";
+                }
+                sql[sql.length() - 1] = ' ';  // Replace the last ','
+
+                if (criteria)
+                {
+                    sql += " where ";
+                    sql += criteria.criteriaString();
+                }
+
+                sql = this->replaceSqlPlaceHolder(sql, "$?");
+                auto binder = *(this->client_) << std::move(sql);
+                (void)std::initializer_list<int>{(binder << args, 0)...};
+                if (criteria)
+                    criteria.outputArgs(binder);
                 binder >> [callback = std::move(callback)](const Result &r) {
                     callback(r.affectedRows());
                 };
