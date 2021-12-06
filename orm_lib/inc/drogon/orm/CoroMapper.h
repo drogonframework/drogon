@@ -16,8 +16,8 @@
 #include <functional>
 
 #ifdef __cpp_impl_coroutine
-#include <drogon/utils/coroutine.h>
 #include <drogon/orm/Mapper.h>
+#include <drogon/utils/coroutine.h>
 namespace drogon
 {
 namespace orm
@@ -62,6 +62,11 @@ template <typename T>
 class CoroMapper : public Mapper<T>
 {
   public:
+    using SingleRowCallback = Mapper<T>::SingleRowCallback;
+    using MultipleRowsCallback = Mapper<T>::MultipleRowsCallback;
+    using CountCallback = Mapper<T>::CountCallback;
+    using ExceptPtrCallback = std::function<void(const std::exception_ptr &)>;
+
     CoroMapper(const DbClientPtr &client) : Mapper<T>(client)
     {
     }
@@ -70,10 +75,8 @@ class CoroMapper : public Mapper<T>
     {
         if constexpr (!std::is_same<typename T::PrimaryKeyType, void>::value)
         {
-            auto lb = [this,
-                       key](std::function<void(T)> &&callback,
-                            std::function<void(const std::exception_ptr &)>
-                                &&errCallback) mutable {
+            auto lb = [this, key](SingleRowCallback &&callback,
+                                  ExceptPtrCallback &&errCallback) mutable {
                 static_assert(
                     !std::is_same<typename T::PrimaryKeyType, void>::value,
                     "No primary key in the table!");
@@ -211,72 +214,68 @@ class CoroMapper : public Mapper<T>
     inline internal::MapperAwaiter<size_t> count(
         const Criteria &criteria = Criteria())
     {
-        auto lb =
-            [this, criteria](
-                std::function<void(const size_t)> &&callback,
-                std::function<void(const std::exception_ptr &)> &&errCallback) {
-                std::string sql = "select count(*) from ";
-                sql += T::tableName;
-                if (criteria)
-                {
-                    sql += " where ";
-                    sql += criteria.criteriaString();
-                    sql = this->replaceSqlPlaceHolder(sql, "$?");
-                }
-                this->clear();
-                auto binder = *(this->client_) << std::move(sql);
-                if (criteria)
-                    criteria.outputArgs(binder);
-                binder >> [callback = std::move(callback)](const Result &r) {
-                    assert(r.size() == 1);
-                    callback(r[0][(Row::SizeType)0].as<size_t>());
-                };
-                binder >> std::move(errCallback);
+        auto lb = [this, criteria](CountCallback &&callback,
+                                   ExceptPtrCallback &&errCallback) {
+            std::string sql = "select count(*) from ";
+            sql += T::tableName;
+            if (criteria)
+            {
+                sql += " where ";
+                sql += criteria.criteriaString();
+                sql = this->replaceSqlPlaceHolder(sql, "$?");
+            }
+            this->clear();
+            auto binder = *(this->client_) << std::move(sql);
+            if (criteria)
+                criteria.outputArgs(binder);
+            binder >> [callback = std::move(callback)](const Result &r) {
+                assert(r.size() == 1);
+                callback(r[0][(Row::SizeType)0].as<size_t>());
             };
+            binder >> std::move(errCallback);
+        };
         return internal::MapperAwaiter<size_t>(std::move(lb));
     }
     inline internal::MapperAwaiter<T> findOne(const Criteria &criteria)
     {
-        auto lb =
-            [this, criteria](
-                std::function<void(T)> &&callback,
-                std::function<void(const std::exception_ptr &)> &&errCallback) {
-                std::string sql = "select * from ";
-                sql += T::tableName;
-                bool hasParameters = false;
-                if (criteria)
-                {
-                    sql += " where ";
-                    sql += criteria.criteriaString();
-                    hasParameters = true;
-                }
-                sql.append(this->orderByString_);
-                if (this->limit_ > 0)
-                {
-                    hasParameters = true;
-                    sql.append(" limit $?");
-                }
-                if (this->offset_ > 0)
-                {
-                    hasParameters = true;
-                    sql.append(" offset $?");
-                }
-                if (hasParameters)
-                    sql = this->replaceSqlPlaceHolder(sql, "$?");
-                if (this->forUpdate_)
-                {
-                    sql += " for update";
-                }
-                auto binder = *(this->client_) << std::move(sql);
-                if (criteria)
-                    criteria.outputArgs(binder);
-                if (this->limit_ > 0)
-                    binder << this->limit_;
-                if (this->offset_)
-                    binder << this->offset_;
-                this->clear();
-                binder >> [errCallback,
-                           callback = std::move(callback)](const Result &r) {
+        auto lb = [this, criteria](SingleRowCallback &&callback,
+                                   ExceptPtrCallback &&errCallback) {
+            std::string sql = "select * from ";
+            sql += T::tableName;
+            bool hasParameters = false;
+            if (criteria)
+            {
+                sql += " where ";
+                sql += criteria.criteriaString();
+                hasParameters = true;
+            }
+            sql.append(this->orderByString_);
+            if (this->limit_ > 0)
+            {
+                hasParameters = true;
+                sql.append(" limit $?");
+            }
+            if (this->offset_ > 0)
+            {
+                hasParameters = true;
+                sql.append(" offset $?");
+            }
+            if (hasParameters)
+                sql = this->replaceSqlPlaceHolder(sql, "$?");
+            if (this->forUpdate_)
+            {
+                sql += " for update";
+            }
+            auto binder = *(this->client_) << std::move(sql);
+            if (criteria)
+                criteria.outputArgs(binder);
+            if (this->limit_ > 0)
+                binder << this->limit_;
+            if (this->offset_)
+                binder << this->offset_;
+            this->clear();
+            binder >>
+                [errCallback, callback = std::move(callback)](const Result &r) {
                     if (r.size() == 0)
                     {
                         errCallback(std::make_exception_ptr(
@@ -292,150 +291,144 @@ class CoroMapper : public Mapper<T>
                         callback(T(r[0]));
                     }
                 };
-                binder >> std::move(errCallback);
-            };
+            binder >> std::move(errCallback);
+        };
         return internal::MapperAwaiter<T>(std::move(lb));
     }
     inline internal::MapperAwaiter<std::vector<T>> findBy(
         const Criteria &criteria)
     {
-        auto lb =
-            [this, criteria](
-                std::function<void(std::vector<T>)> &&callback,
-                std::function<void(const std::exception_ptr &)> &&errCallback) {
-                std::string sql = "select * from ";
-                sql += T::tableName;
-                bool hasParameters = false;
-                if (criteria)
+        auto lb = [this, criteria](MultipleRowsCallback &&callback,
+                                   ExceptPtrCallback &&errCallback) {
+            std::string sql = "select * from ";
+            sql += T::tableName;
+            bool hasParameters = false;
+            if (criteria)
+            {
+                hasParameters = true;
+                sql += " where ";
+                sql += criteria.criteriaString();
+            }
+            sql.append(this->orderByString_);
+            if (this->limit_ > 0)
+            {
+                hasParameters = true;
+                sql.append(" limit $?");
+            }
+            if (this->offset_ > 0)
+            {
+                hasParameters = true;
+                sql.append(" offset $?");
+            }
+            if (hasParameters)
+                sql = this->replaceSqlPlaceHolder(sql, "$?");
+            if (this->forUpdate_)
+            {
+                sql += " for update";
+            }
+            auto binder = *(this->client_) << std::move(sql);
+            if (criteria)
+                criteria.outputArgs(binder);
+            if (this->limit_ > 0)
+                binder << this->limit_;
+            if (this->offset_)
+                binder << this->offset_;
+            this->clear();
+            binder >> [callback = std::move(callback)](const Result &r) {
+                std::vector<T> ret;
+                for (auto const &row : r)
                 {
-                    hasParameters = true;
-                    sql += " where ";
-                    sql += criteria.criteriaString();
+                    ret.push_back(T(row));
                 }
-                sql.append(this->orderByString_);
-                if (this->limit_ > 0)
-                {
-                    hasParameters = true;
-                    sql.append(" limit $?");
-                }
-                if (this->offset_ > 0)
-                {
-                    hasParameters = true;
-                    sql.append(" offset $?");
-                }
-                if (hasParameters)
-                    sql = this->replaceSqlPlaceHolder(sql, "$?");
-                if (this->forUpdate_)
-                {
-                    sql += " for update";
-                }
-                auto binder = *(this->client_) << std::move(sql);
-                if (criteria)
-                    criteria.outputArgs(binder);
-                if (this->limit_ > 0)
-                    binder << this->limit_;
-                if (this->offset_)
-                    binder << this->offset_;
-                this->clear();
-                binder >> [callback = std::move(callback)](const Result &r) {
-                    std::vector<T> ret;
-                    for (auto const &row : r)
-                    {
-                        ret.push_back(T(row));
-                    }
-                    callback(ret);
-                };
-                binder >> std::move(errCallback);
+                callback(ret);
             };
+            binder >> std::move(errCallback);
+        };
         return internal::MapperAwaiter<std::vector<T>>(std::move(lb));
     }
     inline internal::MapperAwaiter<T> insert(const T &obj)
     {
-        auto lb =
-            [this, obj](
-                std::function<void(T)> &&callback,
-                std::function<void(const std::exception_ptr &)> &&errCallback) {
-                this->clear();
-                bool needSelection = false;
-                auto binder = *(this->client_)
-                              << obj.sqlForInserting(needSelection);
-                obj.outputArgs(binder);
-                auto client = this->client_;
-                binder >> [client,
-                           callback = std::move(callback),
-                           obj,
-                           needSelection,
-                           errCallback](const Result &r) {
-                    assert(r.affectedRows() == 1);
-                    if (client->type() == ClientType::PostgreSQL)
+        auto lb = [this, obj](SingleRowCallback &&callback,
+                              ExceptPtrCallback &&errCallback) {
+            this->clear();
+            bool needSelection = false;
+            auto binder = *(this->client_)
+                          << obj.sqlForInserting(needSelection);
+            obj.outputArgs(binder);
+            auto client = this->client_;
+            binder >> [client,
+                       callback = std::move(callback),
+                       obj,
+                       needSelection,
+                       errCallback](const Result &r) {
+                assert(r.affectedRows() == 1);
+                if (client->type() == ClientType::PostgreSQL)
+                {
+                    if (needSelection)
                     {
-                        if (needSelection)
-                        {
-                            assert(r.size() == 1);
-                            callback(T(r[0]));
-                        }
-                        else
-                        {
-                            callback(obj);
-                        }
+                        assert(r.size() == 1);
+                        callback(T(r[0]));
                     }
-                    else  // Mysql or Sqlite3
+                    else
                     {
-                        auto id = r.insertId();
-                        auto newObj = obj;
-                        newObj.updateId(id);
-                        if (needSelection)
-                        {
-                            auto tmp = Mapper<T>(client);
-                            tmp.findByPrimaryKey(
-                                newObj.getPrimaryKey(),
-                                callback,
-                                [errCallback](const DrogonDbException &err) {
-                                    errCallback(std::make_exception_ptr(
-                                        Failure(err.base().what())));
-                                });
-                        }
-                        else
-                        {
-                            callback(newObj);
-                        }
+                        callback(obj);
                     }
-                };
-                binder >> std::move(errCallback);
+                }
+                else  // Mysql or Sqlite3
+                {
+                    auto id = r.insertId();
+                    auto newObj = obj;
+                    newObj.updateId(id);
+                    if (needSelection)
+                    {
+                        auto tmp = Mapper<T>(client);
+                        tmp.findByPrimaryKey(
+                            newObj.getPrimaryKey(),
+                            callback,
+                            [errCallback](const DrogonDbException &err) {
+                                errCallback(std::make_exception_ptr(
+                                    Failure(err.base().what())));
+                            });
+                    }
+                    else
+                    {
+                        callback(newObj);
+                    }
+                }
             };
+            binder >> std::move(errCallback);
+        };
         return internal::MapperAwaiter<T>(std::move(lb));
     }
     inline internal::MapperAwaiter<size_t> update(const T &obj)
     {
-        auto lb =
-            [this, obj](
-                std::function<void(const size_t)> &&callback,
-                std::function<void(const std::exception_ptr &)> &&errCallback) {
-                this->clear();
-                static_assert(
-                    !std::is_same<typename T::PrimaryKeyType, void>::value,
-                    "No primary key in the table!");
-                std::string sql = "update ";
-                sql += T::tableName;
-                sql += " set ";
-                for (auto const &colName : obj.updateColumns())
-                {
-                    sql += colName;
-                    sql += " = $?,";
-                }
-                sql[sql.length() - 1] = ' ';  // Replace the last ','
+        auto lb = [this, obj](CountCallback &&callback,
+                              ExceptPtrCallback &&errCallback) {
+            this->clear();
+            static_assert(
+                !std::is_same<typename T::PrimaryKeyType, void>::value,
+                "No primary key in the table!");
+            std::string sql = "update ";
+            sql += T::tableName;
+            sql += " set ";
+            for (auto const &colName : obj.updateColumns())
+            {
+                sql += colName;
+                sql += " = $?,";
+            }
+            sql[sql.length() - 1] = ' ';  // Replace the last ','
 
-                this->makePrimaryKeyCriteria(sql);
+            this->makePrimaryKeyCriteria(sql);
 
-                sql = this->replaceSqlPlaceHolder(sql, "$?");
-                auto binder = *(this->client_) << std::move(sql);
-                obj.updateArgs(binder);
-                this->outputPrimeryKeyToBinder(obj.getPrimaryKey(), binder);
-                binder >> [callback = std::move(callback)](const Result &r) {
-                    callback(r.affectedRows());
-                };
-                binder >> std::move(errCallback);
+            sql = this->replaceSqlPlaceHolder(sql, "$?");
+            auto binder = *(this->client_) << std::move(sql);
+            obj.updateArgs(binder);
+            this->outputPrimeryKeyToBinder(obj.getPrimaryKey(), binder);
+            binder >> [callback = std::move(callback)](const Result &r) {
+                callback(r.affectedRows());
             };
+            binder >> std::move(errCallback);
+        };
         return internal::MapperAwaiter<size_t>(std::move(lb));
     }
 
@@ -458,99 +451,94 @@ class CoroMapper : public Mapper<T>
     {
         static_assert(sizeof...(args) > 0);
         assert(colNames.size() == sizeof...(args));
-        auto lb =
-            [this,
-             colNames = std::move(colNames),
-             criteria,
-             ... args = std::forward<Arguments>(args)](
-                std::function<void(const size_t)> &&callback,
-                std::function<void(const std::exception_ptr &)> &&errCallback) {
-                this->clear();
+        auto lb = [this,
+                   colNames = std::move(colNames),
+                   criteria,
+                   ... args = std::forward<Arguments>(
+                       args)](CountCallback &&callback,
+                              ExceptPtrCallback &&errCallback) {
+            this->clear();
 
-                std::string sql = "update ";
-                sql += T::tableName;
-                sql += " set ";
-                for (auto const &colName : colNames)
-                {
-                    sql += colName;
-                    sql += " = $?,";
-                }
-                sql[sql.length() - 1] = ' ';  // Replace the last ','
+            std::string sql = "update ";
+            sql += T::tableName;
+            sql += " set ";
+            for (auto const &colName : colNames)
+            {
+                sql += colName;
+                sql += " = $?,";
+            }
+            sql[sql.length() - 1] = ' ';  // Replace the last ','
 
-                if (criteria)
-                {
-                    sql += " where ";
-                    sql += criteria.criteriaString();
-                }
+            if (criteria)
+            {
+                sql += " where ";
+                sql += criteria.criteriaString();
+            }
 
-                sql = this->replaceSqlPlaceHolder(sql, "$?");
-                auto binder = *(this->client_) << std::move(sql);
-                (void)std::initializer_list<int>{(binder << args, 0)...};
-                if (criteria)
-                    criteria.outputArgs(binder);
-                binder >> [callback = std::move(callback)](const Result &r) {
-                    callback(r.affectedRows());
-                };
-                binder >> std::move(errCallback);
+            sql = this->replaceSqlPlaceHolder(sql, "$?");
+            auto binder = *(this->client_) << std::move(sql);
+            (void)std::initializer_list<int>{(binder << args, 0)...};
+            if (criteria)
+                criteria.outputArgs(binder);
+            binder >> [callback = std::move(callback)](const Result &r) {
+                callback(r.affectedRows());
             };
+            binder >> std::move(errCallback);
+        };
         return internal::MapperAwaiter<size_t>(std::move(lb));
     }
     inline internal::MapperAwaiter<size_t> deleteOne(const T &obj)
     {
-        auto lb =
-            [this, obj](
-                std::function<void(const size_t)> &&callback,
-                std::function<void(const std::exception_ptr &)> &&errCallback) {
-                this->clear();
-                static_assert(
-                    !std::is_same<typename T::PrimaryKeyType, void>::value,
-                    "No primary key in the table!");
-                std::string sql = "delete from ";
-                sql += T::tableName;
-                sql += " ";
+        auto lb = [this, obj](CountCallback &&callback,
+                              ExceptPtrCallback &&errCallback) {
+            this->clear();
+            static_assert(
+                !std::is_same<typename T::PrimaryKeyType, void>::value,
+                "No primary key in the table!");
+            std::string sql = "delete from ";
+            sql += T::tableName;
+            sql += " ";
 
-                this->makePrimaryKeyCriteria(sql);
+            this->makePrimaryKeyCriteria(sql);
 
-                sql = this->replaceSqlPlaceHolder(sql, "$?");
-                auto binder = *(this->client_) << std::move(sql);
-                this->outputPrimeryKeyToBinder(obj.getPrimaryKey(), binder);
-                binder >> [callback = std::move(callback)](const Result &r) {
-                    callback(r.affectedRows());
-                };
-                binder >> std::move(errCallback);
+            sql = this->replaceSqlPlaceHolder(sql, "$?");
+            auto binder = *(this->client_) << std::move(sql);
+            this->outputPrimeryKeyToBinder(obj.getPrimaryKey(), binder);
+            binder >> [callback = std::move(callback)](const Result &r) {
+                callback(r.affectedRows());
             };
+            binder >> std::move(errCallback);
+        };
         return internal::MapperAwaiter<size_t>(std::move(lb));
     }
     inline internal::MapperAwaiter<size_t> deleteBy(const Criteria &criteria)
     {
-        auto lb =
-            [this, criteria](
-                std::function<void(const size_t)> &&callback,
-                std::function<void(const std::exception_ptr &)> &&errCallback) {
-                this->clear();
-                static_assert(
-                    !std::is_same<typename T::PrimaryKeyType, void>::value,
-                    "No primary key in the table!");
-                std::string sql = "delete from ";
-                sql += T::tableName;
+        auto lb = [this, criteria](CountCallback &&callback,
+                                   ExceptPtrCallback &&errCallback) {
+            this->clear();
+            static_assert(
+                !std::is_same<typename T::PrimaryKeyType, void>::value,
+                "No primary key in the table!");
+            std::string sql = "delete from ";
+            sql += T::tableName;
 
-                if (criteria)
-                {
-                    sql += " where ";
-                    sql += criteria.criteriaString();
-                    sql = this->replaceSqlPlaceHolder(sql, "$?");
-                }
+            if (criteria)
+            {
+                sql += " where ";
+                sql += criteria.criteriaString();
+                sql = this->replaceSqlPlaceHolder(sql, "$?");
+            }
 
-                auto binder = *(this->client_) << std::move(sql);
-                if (criteria)
-                {
-                    criteria.outputArgs(binder);
-                }
-                binder >> [callback = std::move(callback)](const Result &r) {
-                    callback(r.affectedRows());
-                };
-                binder >> std::move(errCallback);
+            auto binder = *(this->client_) << std::move(sql);
+            if (criteria)
+            {
+                criteria.outputArgs(binder);
+            }
+            binder >> [callback = std::move(callback)](const Result &r) {
+                callback(r.affectedRows());
             };
+            binder >> std::move(errCallback);
+        };
         return internal::MapperAwaiter<size_t>(std::move(lb));
     }
     inline internal::MapperAwaiter<size_t> deleteByPrimaryKey(
@@ -563,9 +551,8 @@ class CoroMapper : public Mapper<T>
             "No function member named sqlForDeletingByPrimaryKey, please "
             "make sure that the model class is generated by the latest "
             "version of drogon_ctl");
-        auto lb = [this, key](std::function<void(const size_t)> &&callback,
-                              std::function<void(const std::exception_ptr &)>
-                                  &&errCallback) {
+        auto lb = [this, key](CountCallback &&callback,
+                              ExceptPtrCallback &&errCallback) {
             this->clear();
             auto binder = *(this->client_) << T::sqlForDeletingByPrimaryKey();
             this->outputPrimeryKeyToBinder(key, binder);

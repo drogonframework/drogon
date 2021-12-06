@@ -13,19 +13,20 @@
  *
  */
 #define DROGON_TEST_MAIN
+#include <drogon/HttpAppFramework.h>
 #include <drogon/config.h>
+#include <drogon/drogon_test.h>
+#include <drogon/orm/CoroMapper.h>
 #include <drogon/orm/DbClient.h>
 #include <drogon/orm/DbTypes.h>
-#include <drogon/orm/CoroMapper.h>
 #include <trantor/utils/Logger.h>
-#include <drogon/drogon_test.h>
-#include <drogon/HttpAppFramework.h>
+
+#include <stdlib.h>
 #include <chrono>
 #include <iostream>
-#include <thread>
-#include <stdlib.h>
-#include <vector>
 #include <string>
+#include <thread>
+#include <vector>
 
 #include "mysql/Users.h"
 #include "postgresql/Users.h"
