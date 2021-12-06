@@ -588,6 +588,13 @@ DROGON_TEST(PostgreTest)
             FAULT("postgresql - ORM mapper asynchronous interface(3) what():" +
                   std::string(e.base().what()));
         });
+    /// 6.3.6 pagination
+    mapper.paginate(2, 1).findAll(
+        [TEST_CTX](std::vector<Users> users) { MANDATE(users.size() == 1); },
+        [TEST_CTX](const DrogonDbException &e) {
+            FAULT("postgresql - ORM mapper asynchronous interface(4) what():" +
+                  std::string(e.base().what()));
+        });
     /// 6.4 find by primary key. blocking
     try
     {
