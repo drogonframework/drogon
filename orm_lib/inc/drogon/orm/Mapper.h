@@ -159,6 +159,17 @@ class Mapper
                        const SortOrder &order = SortOrder::ASC);
 
     /**
+     * @brief Set limit and offset to achieve pagination.
+     * This method will override limit() and offset(), and will be overriden by
+     * them.
+     *
+     * @param page The page number
+     * @param perPage The number of columns per page
+     * @return Mapper<T>& The Mapper itself.
+     */
+    Mapper<T> &paginate(size_t page, size_t perPage);
+
+    /**
      * @brief Lock the result for updating.
      *
      * @return Mapper<T>& The Mapper itself.
@@ -530,6 +541,54 @@ class Mapper
      * @note The table must have a primary key.
      */
     std::future<size_t> updateFuture(const T &obj) noexcept;
+
+    /**
+     * @brief Update a record that match both the primary key and the given
+     * criteria.
+     *
+     * @param colNames Columns to update.
+     * @param criteria The criteria.
+     * @param args New value of target columns.
+     * @return size_t The number of updated records. It only could be 0 or 1.
+     * @note The table must have a primary key.
+     */
+    template <typename... Arguments>
+    size_t updateBy(const std::vector<std::string> &colNames,
+                    const Criteria &criteria,
+                    Arguments &&...args) noexcept(false);
+
+    /**
+     * @brief Asynchronously select the rows that match both the primary key and
+     * the given criteria.
+     *
+     * @param colNames Columns to update.
+     * @param criteria The criteria.
+     * @param rcb is called with the result.
+     * @param ecb is called when an error occurs.
+     * @param args New value of target columns.
+     */
+    template <typename... Arguments>
+    void updateBy(const std::vector<std::string> &colNames,
+                  const Criteria &criteria,
+                  const CountCallback &rcb,
+                  const ExceptionCallback &ecb,
+                  Arguments &&...args) noexcept;
+
+    /**
+     * @brief Asynchronously update a record that match both the primary key and
+     * the given criteria.
+     *
+     * @param colNames Columns to update.
+     * @param criteria The criteria.
+     * @param args New value of target columns.
+     * @return std::future<size_t> The future object with which user can get the
+     * number of updated records.
+     * @note The table must have a primary key.
+     */
+    template <typename... Arguments>
+    std::future<size_t> updateFutureBy(const std::vector<std::string> &colNames,
+                                       const Criteria &criteria,
+                                       Arguments &&...args) noexcept;
 
     /**
      * @brief Delete a record from the table.
@@ -1234,6 +1293,7 @@ inline std::future<T> Mapper<T>::insertFuture(const T &obj) noexcept
     binder.exec();
     return prom->get_future();
 }
+
 template <typename T>
 inline size_t Mapper<T>::update(const T &obj) noexcept(false)
 {
@@ -1265,6 +1325,46 @@ inline size_t Mapper<T>::update(const T &obj) noexcept(false)
     return r.affectedRows();
 }
 template <typename T>
+template <typename... Arguments>
+size_t Mapper<T>::updateBy(const std::vector<std::string> &colNames,
+                           const Criteria &criteria,
+                           Arguments &&...args) noexcept(false)
+{
+    static_assert(sizeof...(args) > 0);
+    assert(colNames.size() == sizeof...(args));
+    clear();
+    std::string sql = "update ";
+    sql += T::tableName;
+    sql += " set ";
+    for (auto const &colName : colNames)
+    {
+        sql += colName;
+        sql += " = $?,";
+    }
+    sql[sql.length() - 1] = ' ';  // Replace the last ','
+
+    if (criteria)
+    {
+        sql += " where ";
+        sql += criteria.criteriaString();
+    }
+
+    sql = replaceSqlPlaceHolder(sql, "$?");
+    Result r(nullptr);
+    {
+        auto binder = *client_ << std::move(sql);
+        (void)std::initializer_list<int>{
+            (binder << std::forward<Arguments>(args), 0)...};
+        if (criteria)
+            criteria.outputArgs(binder);
+        binder << Mode::Blocking;
+        binder >> [&r](const Result &result) { r = result; };
+        binder.exec();  // Maybe throw exception;
+    }
+    return r.affectedRows();
+}
+
+template <typename T>
 inline void Mapper<T>::update(const T &obj,
                               const CountCallback &rcb,
                               const ExceptionCallback &ecb) noexcept
@@ -1292,6 +1392,43 @@ inline void Mapper<T>::update(const T &obj,
     binder >> ecb;
 }
 template <typename T>
+template <typename... Arguments>
+void Mapper<T>::updateBy(const std::vector<std::string> &colNames,
+                         const Criteria &criteria,
+                         const CountCallback &rcb,
+                         const ExceptionCallback &ecb,
+                         Arguments &&...args) noexcept
+{
+    static_assert(sizeof...(args) > 0);
+    assert(colNames.size() == sizeof...(args));
+    clear();
+    std::string sql = "update ";
+    sql += T::tableName;
+    sql += " set ";
+    for (auto const &colName : colNames)
+    {
+        sql += colName;
+        sql += " = $?,";
+    }
+    sql[sql.length() - 1] = ' ';  // Replace the last ','
+
+    if (criteria)
+    {
+        sql += " where ";
+        sql += criteria.criteriaString();
+    }
+
+    sql = replaceSqlPlaceHolder(sql, "$?");
+    auto binder = *client_ << std::move(sql);
+    (void)std::initializer_list<int>{
+        (binder << std::forward<Arguments>(args), 0)...};
+    if (criteria)
+        criteria.outputArgs(binder);
+    binder >> [rcb](const Result &r) { rcb(r.affectedRows()); };
+    binder >> ecb;
+}
+
+template <typename T>
 inline std::future<size_t> Mapper<T>::updateFuture(const T &obj) noexcept
 {
     clear();
@@ -1313,6 +1450,46 @@ inline std::future<size_t> Mapper<T>::updateFuture(const T &obj) noexcept
     auto binder = *client_ << std::move(sql);
     obj.updateArgs(binder);
     outputPrimeryKeyToBinder(obj.getPrimaryKey(), binder);
+
+    std::shared_ptr<std::promise<size_t>> prom =
+        std::make_shared<std::promise<size_t>>();
+    binder >> [prom](const Result &r) { prom->set_value(r.affectedRows()); };
+    binder >> [prom](const std::exception_ptr &e) { prom->set_exception(e); };
+    binder.exec();
+    return prom->get_future();
+}
+template <typename T>
+template <typename... Arguments>
+inline std::future<size_t> Mapper<T>::updateFutureBy(
+    const std::vector<std::string> &colNames,
+    const Criteria &criteria,
+    Arguments &&...args) noexcept
+{
+    static_assert(sizeof...(args) > 0);
+    assert(colNames.size() == sizeof...(args));
+    clear();
+    std::string sql = "update ";
+    sql += T::tableName;
+    sql += " set ";
+    for (auto const &colName : colNames)
+    {
+        sql += colName;
+        sql += " = $?,";
+    }
+    sql[sql.length() - 1] = ' ';  // Replace the last ','
+
+    if (criteria)
+    {
+        sql += " where ";
+        sql += criteria.criteriaString();
+    }
+
+    sql = replaceSqlPlaceHolder(sql, "$?");
+    auto binder = *client_ << std::move(sql);
+    (void)std::initializer_list<int>{
+        (binder << std::forward<Arguments>(args), 0)...};
+    if (criteria)
+        criteria.outputArgs(binder);
 
     std::shared_ptr<std::promise<size_t>> prom =
         std::make_shared<std::promise<size_t>>();
@@ -1517,6 +1694,12 @@ inline Mapper<T> &Mapper<T>::orderBy(size_t colIndex, const SortOrder &order)
     std::string colName = T::getColumnName(colIndex);
     assert(!colName.empty());
     return orderBy(colName, order);
+}
+template <typename T>
+inline Mapper<T> &Mapper<T>::paginate(size_t page, size_t perPage)
+{
+    assert(page > 0 && perPage > 0);
+    return limit(perPage).offset((page - 1) * perPage);
 }
 template <typename T>
 inline Mapper<T> &Mapper<T>::forUpdate()
