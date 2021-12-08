@@ -345,12 +345,13 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
 
     if (!tcpClientPtr_)
     {
+        auto callbackPtr =
+            std::make_shared<drogon::HttpReqCallback>(std::move(callback));
         requestsBuffer_.push_back(
             {req,
              [thisPtr = shared_from_this(),
-              callback = std::move(callback)](ReqResult result,
-                                              const HttpResponsePtr &response) {
-                 callback(result, response);
+              callbackPtr](ReqResult result, const HttpResponsePtr &response) {
+                 (*callbackPtr)(result, response);
              }});
         if (!dns_)
         {
@@ -422,7 +423,7 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
             else
             {
                 requestsBuffer_.pop_front();
-                callback(ReqResult::BadServerAddress, nullptr);
+                (*callbackPtr)(ReqResult::BadServerAddress, nullptr);
                 assert(requestsBuffer_.empty());
                 return;
             }
