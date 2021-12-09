@@ -4,7 +4,7 @@ zlib/1.2.11
 gtest/1.10.0
 sqlite3/3.34.1
 #libpq/13.2
-openssl/1.1.1j
+openssl/1.1.1l
 hiredis/1.0.0
 brotli/1.0.9
 
