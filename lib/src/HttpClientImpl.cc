@@ -548,6 +548,13 @@ void HttpClientImpl::onRecvMessage(const trantor::TcpConnectionPtr &connPtr,
     auto msgSize = msg->readableBytes();
     while (msg->readableBytes() > 0)
     {
+        LOG_ERROR << "msgSize:" << msgSize;
+        LOG_ERROR << msg->readableBytes();
+        LOG_ERROR << "msg:"
+                  << string_view(msg->peek(),
+                                 msg->readableBytes() > 20
+                                     ? 20
+                                     : msg->readableBytes());
         if (pipeliningCallbacks_.empty())
         {
             LOG_ERROR << "More responses than expected!";
@@ -561,6 +568,7 @@ void HttpClientImpl::onRecvMessage(const trantor::TcpConnectionPtr &connPtr,
         }
         if (!responseParser->parseResponse(msg))
         {
+            LOG_ERROR;
             onError(ReqResult::BadResponse);
             bytesReceived_ += (msgSize - msg->readableBytes());
             return;
