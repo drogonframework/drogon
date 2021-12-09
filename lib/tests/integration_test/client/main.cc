@@ -1045,7 +1045,7 @@ void loadFileLengths()
     }
     indexImplicitLen = filestat.st_size;
 }
-
+#ifndef _WIN32
 DROGON_TEST(HttpTest)
 {
     auto client = HttpClient::newHttpClient("http://127.0.0.1:8848");
@@ -1057,7 +1057,7 @@ DROGON_TEST(HttpTest)
 
     doTest(client, TEST_CTX);
 }
-
+#endif
 DROGON_TEST(HttpsTest)
 {
     if (!app().supportSSL())
