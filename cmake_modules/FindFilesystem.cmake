@@ -102,8 +102,14 @@ if(TARGET std::filesystem)
     return()
 endif()
 
-cmake_minimum_required(VERSION 3.10)
+# Ignore fileystem check if version too low 
+if(CMAKE_VERSION VERSION_LESS 3.10)
+    set(CXX_FILESYSTEM_HAVE_FS FALSE CACHE BOOL "TRUE if we have the C++ filesystem headers")
+    set(Filesystem_FOUND FALSE CACHE BOOL "TRUE if we can run a program using std::filesystem" FORCE)
+    return()
+endif()
 
+cmake_minimum_required(VERSION 3.10)
 include(CMakePushCheckState)
 include(CheckIncludeFileCXX)
 
@@ -126,6 +132,7 @@ cmake_push_check_state()
 set(CMAKE_REQUIRED_QUIET ${Filesystem_FIND_QUIETLY})
 
 # All of our tests required C++17 or later
+set(BACKUP_CXX_STANDARD "${CMAKE_CXX_STANDARD}")
 set(CMAKE_CXX_STANDARD 17)
 
 # Normalize and check the component list we were given
@@ -251,3 +258,4 @@ if(Filesystem_FIND_REQUIRED AND NOT Filesystem_FOUND)
     message(FATAL_ERROR "Cannot run simple program using std::filesystem")
 endif()
 
+set(CMAKE_CXX_STANDARD "${BACKUP_CXX_STANDARD}")
