@@ -4,6 +4,60 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.7.4] - 2021-12-11
+
+### API Change List
+
+- Support setting client certificate and SSL options on HTTP client
+
+- Add more method for mapper
+
+- Add overloads for SqlBinder::operator<< with non-const ref parameter
+
+### Changes
+
+- Use decay_t instead of remove_cvref_t
+
+- Prevent `drogon_ctl create_view` appending empty new lines to resulting
+
+- Add an example for using coroutines of redis clients
+
+- Export some symbols for Windows
+
+- Mark all awaiters as nodiscard
+
+- Handle SIGINT too
+
+- Support CoroMapper method chaining
+
+- Remove setting c++17 in FindFilesystem
+
+### Fixed
+
+- Fix Drogon not building caused by FindFilesystem
+
+- Fix deprecated warning when using openssl 3
+
+- Fix coroutine object destructing before coroutine ends in async_run
+
+- Fix build fail on CentOS8
+
+- Fix some compiler warnings
+
+- Fix the error with multiple results when calling a procedure in mysql
+
+- Fix an error when binding a function pointer to SqlBinder
+
+- Fix orm tests
+
+- Fix CI to actually build in C++14
+
+- Fix a race condition when resetting ws
+
+- Fix an error of std::bad_function_call
+
+- Update Trantor (fix sending partial files)
+
 ## [1.7.3] - 2021-10-17
 
 ### API Change List
@@ -926,7 +980,9 @@ All notable changes to this project will be documented in this file.
 
 ## [1.0.0-beta1] - 2019-06-11
 
-[Unreleased]: https://github.com/an-tao/drogon/compare/v1.7.3...HEAD
+[Unreleased]: https://github.com/an-tao/drogon/compare/v1.7.4...HEAD
+
+[1.7.4]: https://github.com/an-tao/drogon/compare/v1.7.3...v1.7.4
 
 [1.7.3]: https://github.com/an-tao/drogon/compare/v1.7.2...v1.7.3
 
