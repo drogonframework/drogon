@@ -102,7 +102,14 @@ if(TARGET std::filesystem)
     return()
 endif()
 
-cmake_minimum_required(VERSION 3.5)
+# Ignore fileystem check if version too low 
+if(CMAKE_VERSION VERSION_LESS 3.10)
+    set(CXX_FILESYSTEM_HAVE_FS FALSE CACHE BOOL "TRUE if we have the C++ filesystem headers")
+    set(Filesystem_FOUND FALSE CACHE BOOL "TRUE if we can run a program using std::filesystem" FORCE)
+    return()
+endif()
+
+cmake_minimum_required(VERSION 3.10)
 include(CMakePushCheckState)
 include(CheckIncludeFileCXX)
 
