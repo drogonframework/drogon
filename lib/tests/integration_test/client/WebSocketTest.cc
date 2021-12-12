@@ -17,23 +17,28 @@ static WebSocketClientPtr wsPtr_;
 DROGON_TEST(WebSocketTest)
 {
     wsPtr_ = WebSocketClient::newWebSocketClient("127.0.0.1", 8848);
-    auto pack = std::make_shared<DataPack>({wsPtr_, TEST_CTX});
+    auto pack = std::make_shared<DataPack>(DataPack{wsPtr_, TEST_CTX});
     auto req = HttpRequest::newHttpRequest();
     req->setPath("/chat");
     wsPtr_->setMessageHandler(
         [pack](const std::string &message,
                    const WebSocketClientPtr &wsPtr,
                    const WebSocketMessageType &type) mutable {
-            CHECK(type == WebSocketMessageType::Text ||
-                   type == WebSocketMessageType::Pong);
-            if (type == WebSocketMessageType::Pong && pack != nullptr)
+            if(pack != nullptr) 
             {
                 auto TEST_CTX = pack->TEST_CTX;
-                auto wsPtr = pack->wsPtr;
+                if (type == WebSocketMessageType::Pong)
+                {
+                    auto wsPtr = pack->wsPtr;
 
-                wsPtr_->stop();
-                CHECK(message.empty());
-                pack.reset();
+                    wsPtr_->stop();
+                    CHECK(message.empty());
+                    pack.reset();
+                }
+                else
+                {
+                    CHECK(type == WebSocketMessageType::Text);
+                }
             }
         });
 
