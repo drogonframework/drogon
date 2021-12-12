@@ -7,46 +7,56 @@
 using namespace drogon;
 using namespace std::chrono_literals;
 
-static std::vector<WebSocketClientPtr> wsClients_;
+struct DataPack
+{
+    WebSocketClientPtr wsPtr;
+    std::shared_ptr<drogon::test::CaseBase> TEST_CTX;
+};
+
 static const int kClientCount = 100;
 
 DROGON_TEST(MultipleWsTest)
 {
-    wsClients_.reserve(kClientCount);
     for (size_t i = 0; i < kClientCount; i++)
     {
         auto wsPtr = WebSocketClient::newWebSocketClient("127.0.0.1", 8848);
+        auto pack = std::make_shared<DataPack *>(new DataPack{wsPtr, TEST_CTX});
+
         wsPtr->setMessageHandler(
-            [TEST_CTX, i](const std::string &message,
-                          const WebSocketClientPtr &wsPtr,
-                          const WebSocketMessageType &type) mutable {
+            [pack, i](const std::string &message,
+                      const WebSocketClientPtr &wsPtr,
+                      const WebSocketMessageType &type) mutable {
+                if (pack == nullptr)
+                    return;
+                auto TEST_CTX = (*pack)->TEST_CTX;
                 CHECK((type == WebSocketMessageType::Text ||
                        type == WebSocketMessageType::Pong));
                 if (type == WebSocketMessageType::Pong && TEST_CTX != nullptr)
                 {
+                    auto wsPtr = (*pack)->wsPtr;
+
                     // Check if the correct connection got the result
                     wsPtr->stop();
-                    wsClients_[i].reset();
                     CHECK(message == std::to_string(i));
-                    TEST_CTX = {};
+                    delete *pack;
+                    pack = nullptr;
                 }
             });
-        wsClients_.emplace_back(std::move(wsPtr));
-    }
-    for (size_t i = 0; i < kClientCount; i++)
-    {
         auto req = HttpRequest::newHttpRequest();
         req->setPath("/chat");
-        wsClients_[i]->connectToServer(
+        wsPtr->connectToServer(
             req,
-            [TEST_CTX, i](ReqResult r,
-                          const HttpResponsePtr &resp,
-                          const WebSocketClientPtr &wsPtr) mutable {
+            [pack, i](ReqResult r,
+                      const HttpResponsePtr &resp,
+                      const WebSocketClientPtr &wsPtr) mutable {
+                auto TEST_CTX = (*pack)->TEST_CTX;
+                CHECK((*pack)->wsPtr == wsPtr);
                 CHECK(r == ReqResult::Ok);
                 if (r != ReqResult::Ok)
                 {
                     wsPtr->stop();
-                    wsClients_[i].reset();
+                    delete *pack;
+                    pack = nullptr;
                 }
                 REQUIRE(wsPtr != nullptr);
                 REQUIRE(resp != nullptr);
