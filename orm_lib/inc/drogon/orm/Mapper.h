@@ -1305,7 +1305,9 @@ inline size_t Mapper<T>::update(const T &obj) noexcept(false)
     sql += " set ";
     for (auto const &colName : obj.updateColumns())
     {
+        sql += '`'
         sql += colName;
+        sql += '`'
         sql += " = $?,";
     }
     sql[sql.length() - 1] = ' ';  // Replace the last ','
@@ -1338,7 +1340,9 @@ size_t Mapper<T>::updateBy(const std::vector<std::string> &colNames,
     sql += " set ";
     for (auto const &colName : colNames)
     {
+        sql += '`'
         sql += colName;
+        sql += '`'
         sql += " = $?,";
     }
     sql[sql.length() - 1] = ' ';  // Replace the last ','
@@ -1377,7 +1381,9 @@ inline void Mapper<T>::update(const T &obj,
     sql += " set ";
     for (auto const &colName : obj.updateColumns())
     {
+        sql += '`'
         sql += colName;
+        sql += '`'
         sql += " = $?,";
     }
     sql[sql.length() - 1] = ' ';  // Replace the last ','
@@ -1407,7 +1413,9 @@ void Mapper<T>::updateBy(const std::vector<std::string> &colNames,
     sql += " set ";
     for (auto const &colName : colNames)
     {
+        sql += '`'
         sql += colName;
+        sql += '`'
         sql += " = $?,";
     }
     sql[sql.length() - 1] = ' ';  // Replace the last ','
@@ -1439,7 +1447,9 @@ inline std::future<size_t> Mapper<T>::updateFuture(const T &obj) noexcept
     sql += " set ";
     for (auto const &colName : obj.updateColumns())
     {
+        sql += '`'
         sql += colName;
+        sql += '`'
         sql += " = $?,";
     }
     sql[sql.length() - 1] = ' ';  // Replace the last ','
@@ -1473,7 +1483,9 @@ inline std::future<size_t> Mapper<T>::updateFutureBy(
     sql += " set ";
     for (auto const &colName : colNames)
     {
+        sql += '`'
         sql += colName;
+        sql += '`'
         sql += " = $?,";
     }
     sql[sql.length() - 1] = ' ';  // Replace the last ','
@@ -1671,7 +1683,7 @@ inline Mapper<T> &Mapper<T>::orderBy(const std::string &colName,
     if (orderByString_.empty())
     {
         orderByString_ =
-            utils::formattedString(" order by %s", colName.c_str());
+            utils::formattedString(" order by `%s`", colName.c_str());
         if (order == SortOrder::DESC)
         {
             orderByString_ += " desc";

@@ -83,7 +83,9 @@ class DROGON_EXPORT Criteria
     {
         assert(opera != CompareOperator::IsNotNull &&
                opera != CompareOperator::IsNull);
-        conditionString_ = colName;
+        conditionString_ = '`';
+        conditionString_ += colName;
+        conditionString_ += '`';
         switch (opera)
         {
             case CompareOperator::EQ:
@@ -124,7 +126,8 @@ class DROGON_EXPORT Criteria
              const std::vector<T> &args)
     {
         assert(opera == CompareOperator::In && args.size() > 0);
-        conditionString_ = colName + " in (";
+        conditionString_ = '`';
+        conditionString_ += colName + "` in (";
         for (size_t i = 0; i < args.size(); ++i)
         {
             if (i < args.size() - 1)
@@ -147,7 +150,8 @@ class DROGON_EXPORT Criteria
              std::vector<T> &&args)
     {
         assert(opera == CompareOperator::In && args.size() > 0);
-        conditionString_ = colName + " in (";
+        conditionString_ = '`';
+        conditionString_ += colName + "` in (";
         for (size_t i = 0; i < args.size(); ++i)
         {
             if (i < args.size() - 1)
@@ -201,7 +205,9 @@ class DROGON_EXPORT Criteria
     {
         assert(opera == CompareOperator::IsNotNull ||
                opera == CompareOperator::IsNull);
-        conditionString_ = colName;
+        conditionString_ = '`';
+        conditionString_ += colName;
+        conditionString_ += '`';
         switch (opera)
         {
             case CompareOperator::IsNull:
