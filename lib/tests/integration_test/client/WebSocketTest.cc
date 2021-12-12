@@ -27,7 +27,7 @@ DROGON_TEST(WebSocketTest)
             if(pack != nullptr) 
             {
                 auto TEST_CTX = pack->TEST_CTX;
-                if (type == WebSocketMessageType::Pong)
+                if (type == WebSocketMessageType::Pong )
                 {
                     auto wsPtr = pack->wsPtr;
 
@@ -38,6 +38,8 @@ DROGON_TEST(WebSocketTest)
                 else
                 {
                     CHECK(type == WebSocketMessageType::Text);
+                    wsPtr_->stop();
+                    pack.reset();
                 }
             }
         });
@@ -62,5 +64,6 @@ DROGON_TEST(WebSocketTest)
             // Drop the testing context as WS controllers stores the lambda and
             // never release it. Causing a dead lock later.
             TEST_CTX = {};
+            pack.reset();
         });
 }
