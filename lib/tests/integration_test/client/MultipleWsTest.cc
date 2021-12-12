@@ -20,13 +20,13 @@ DROGON_TEST(MultipleWsTest)
     for (size_t i = 0; i < kClientCount; i++)
     {
         auto wsPtr = WebSocketClient::newWebSocketClient("127.0.0.1", 8848);
-        auto pack = std::make_shared<DataPack*>(new DataPack{wsPtr, TEST_CTX});
+        auto pack = std::make_shared<DataPack *>(new DataPack{wsPtr, TEST_CTX});
 
         wsPtr->setMessageHandler(
             [pack, i](const std::string &message,
-                          const WebSocketClientPtr &wsPtr,
-                          const WebSocketMessageType &type) mutable {
-                if(pack == nullptr)
+                      const WebSocketClientPtr &wsPtr,
+                      const WebSocketMessageType &type) mutable {
+                if (pack == nullptr)
                     return;
                 auto TEST_CTX = (*pack)->TEST_CTX;
                 CHECK((type == WebSocketMessageType::Text ||
@@ -47,8 +47,8 @@ DROGON_TEST(MultipleWsTest)
         wsPtr->connectToServer(
             req,
             [pack, i](ReqResult r,
-                          const HttpResponsePtr &resp,
-                          const WebSocketClientPtr &wsPtr) mutable {
+                      const HttpResponsePtr &resp,
+                      const WebSocketClientPtr &wsPtr) mutable {
                 auto TEST_CTX = (*pack)->TEST_CTX;
                 CHECK((*pack)->wsPtr == wsPtr);
                 CHECK(r == ReqResult::Ok);
