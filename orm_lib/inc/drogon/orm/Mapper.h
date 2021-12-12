@@ -699,7 +699,9 @@ class Mapper
     makePrimaryKeyCriteria(std::string &sql)
     {
         sql += " where ";
+        sql += '`';
         sql += T::primaryKeyName;
+        sql += '`';
         sql += " = $?";
     }
     template <typename PKType = decltype(T::primaryKeyName)>
@@ -708,14 +710,15 @@ class Mapper
         void>::type
     makePrimaryKeyCriteria(std::string &sql)
     {
-        sql += " where ";
+        sql += " where `";
         for (size_t i = 0; i < T::primaryKeyName.size(); ++i)
         {
             sql += T::primaryKeyName[i];
+            sql += '`';
             sql += " = $?";
             if (i < (T::primaryKeyName.size() - 1))
             {
-                sql += " and ";
+                sql += " and `";
             }
         }
     }
@@ -761,7 +764,9 @@ template <typename T>
 inline T Mapper<T>::findOne(const Criteria &criteria) noexcept(false)
 {
     std::string sql = "select * from ";
+    sql += '`';
     sql += T::tableName;
+    sql += '`';
     bool hasParameters = false;
     if (criteria)
     {
@@ -818,7 +823,9 @@ inline void Mapper<T>::findOne(const Criteria &criteria,
                                const ExceptionCallback &ecb) noexcept
 {
     std::string sql = "select * from ";
+    sql += '`';
     sql += T::tableName;
+    sql += '`';
     bool hasParameters = false;
     if (criteria)
     {
@@ -873,7 +880,9 @@ inline std::future<T> Mapper<T>::findFutureOne(
     const Criteria &criteria) noexcept
 {
     std::string sql = "select * from ";
+    sql += '`';
     sql += T::tableName;
+    sql += '`';
     bool hasParameters = false;
     if (criteria)
     {
@@ -932,7 +941,9 @@ inline std::vector<T> Mapper<T>::findBy(const Criteria &criteria) noexcept(
     false)
 {
     std::string sql = "select * from ";
+    sql += '`';
     sql += T::tableName;
+    sql += '`';
     bool hasParameters = false;
     if (criteria)
     {
@@ -984,7 +995,9 @@ inline void Mapper<T>::findBy(const Criteria &criteria,
                               const ExceptionCallback &ecb) noexcept
 {
     std::string sql = "select * from ";
+    sql += '`';
     sql += T::tableName;
+    sql += '`';
     bool hasParameters = false;
     if (criteria)
     {
@@ -1032,7 +1045,9 @@ inline std::future<std::vector<T>> Mapper<T>::findFutureBy(
     const Criteria &criteria) noexcept
 {
     std::string sql = "select * from ";
+    sql += '`';
     sql += T::tableName;
+    sql += '`';
     bool hasParameters = false;
     if (criteria)
     {
@@ -1099,7 +1114,9 @@ template <typename T>
 inline size_t Mapper<T>::count(const Criteria &criteria) noexcept(false)
 {
     std::string sql = "select count(*) from ";
+    sql += '`';
     sql += T::tableName;
+    sql += '`';
     if (criteria)
     {
         sql += " where ";
@@ -1125,7 +1142,9 @@ inline void Mapper<T>::count(const Criteria &criteria,
                              const ExceptionCallback &ecb) noexcept
 {
     std::string sql = "select count(*) from ";
+    sql += '`';
     sql += T::tableName;
+    sql += '`';
     if (criteria)
     {
         sql += " where ";
@@ -1147,7 +1166,9 @@ inline std::future<size_t> Mapper<T>::countFuture(
     const Criteria &criteria) noexcept
 {
     std::string sql = "select count(*) from ";
+    sql += '`';
     sql += T::tableName;
+    sql += '`';
     if (criteria)
     {
         sql += " where ";
@@ -1301,7 +1322,9 @@ inline size_t Mapper<T>::update(const T &obj) noexcept(false)
     static_assert(!std::is_same<typename T::PrimaryKeyType, void>::value,
                   "No primary key in the table!");
     std::string sql = "update ";
+    sql += '`';
     sql += T::tableName;
+    sql += '`';
     sql += " set ";
     for (auto const &colName : obj.updateColumns())
     {
@@ -1336,7 +1359,9 @@ size_t Mapper<T>::updateBy(const std::vector<std::string> &colNames,
     assert(colNames.size() == sizeof...(args));
     clear();
     std::string sql = "update ";
+    sql += '`';
     sql += T::tableName;
+    sql += '`';
     sql += " set ";
     for (auto const &colName : colNames)
     {
@@ -1377,7 +1402,9 @@ inline void Mapper<T>::update(const T &obj,
     static_assert(!std::is_same<typename T::PrimaryKeyType, void>::value,
                   "No primary key in the table!");
     std::string sql = "update ";
+    sql += '`';
     sql += T::tableName;
+    sql += '`';
     sql += " set ";
     for (auto const &colName : obj.updateColumns())
     {
@@ -1409,7 +1436,9 @@ void Mapper<T>::updateBy(const std::vector<std::string> &colNames,
     assert(colNames.size() == sizeof...(args));
     clear();
     std::string sql = "update ";
+    sql += '`';
     sql += T::tableName;
+    sql += '`';
     sql += " set ";
     for (auto const &colName : colNames)
     {
@@ -1443,7 +1472,9 @@ inline std::future<size_t> Mapper<T>::updateFuture(const T &obj) noexcept
     static_assert(!std::is_same<typename T::PrimaryKeyType, void>::value,
                   "No primary key in the table!");
     std::string sql = "update ";
+    sql += '`';
     sql += T::tableName;
+    sql += '`';
     sql += " set ";
     for (auto const &colName : obj.updateColumns())
     {
@@ -1479,7 +1510,9 @@ inline std::future<size_t> Mapper<T>::updateFutureBy(
     assert(colNames.size() == sizeof...(args));
     clear();
     std::string sql = "update ";
+    sql += '`';
     sql += T::tableName;
+    sql += '`';
     sql += " set ";
     for (auto const &colName : colNames)
     {
@@ -1518,7 +1551,9 @@ inline size_t Mapper<T>::deleteOne(const T &obj) noexcept(false)
     static_assert(!std::is_same<typename T::PrimaryKeyType, void>::value,
                   "No primary key in the table!");
     std::string sql = "delete from ";
+    sql += '`';
     sql += T::tableName;
+    sql += '`';
 
     sql += " ";  // Replace the last ','
 
@@ -1544,7 +1579,9 @@ inline void Mapper<T>::deleteOne(const T &obj,
     static_assert(!std::is_same<typename T::PrimaryKeyType, void>::value,
                   "No primary key in the table!");
     std::string sql = "delete from ";
+    sql += '`';
     sql += T::tableName;
+    sql += '`';
     sql += " ";
 
     makePrimaryKeyCriteria(sql);
@@ -1562,7 +1599,9 @@ inline std::future<size_t> Mapper<T>::deleteFutureOne(const T &obj) noexcept
     static_assert(!std::is_same<typename T::PrimaryKeyType, void>::value,
                   "No primary key in the table!");
     std::string sql = "delete from ";
+    sql += '`';
     sql += T::tableName;
+    sql += '`';
     sql += " ";
 
     makePrimaryKeyCriteria(sql);
@@ -1586,7 +1625,9 @@ inline size_t Mapper<T>::deleteBy(const Criteria &criteria) noexcept(false)
     static_assert(!std::is_same<typename T::PrimaryKeyType, void>::value,
                   "No primary key in the table!");
     std::string sql = "delete from ";
+    sql += '`';
     sql += T::tableName;
+    sql += '`';
 
     if (criteria)
     {
@@ -1617,7 +1658,9 @@ inline void Mapper<T>::deleteBy(const Criteria &criteria,
     static_assert(!std::is_same<typename T::PrimaryKeyType, void>::value,
                   "No primary key in the table!");
     std::string sql = "delete from ";
+    sql += '`';
     sql += T::tableName;
+    sql += '`';
 
     if (criteria)
     {
@@ -1642,7 +1685,9 @@ inline std::future<size_t> Mapper<T>::deleteFutureBy(
     static_assert(!std::is_same<typename T::PrimaryKeyType, void>::value,
                   "No primary key in the table!");
     std::string sql = "delete from ";
+    sql += '`';
     sql += T::tableName;
+    sql += '`';
     if (criteria)
     {
         sql += " where ";

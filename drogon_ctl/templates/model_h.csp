@@ -332,14 +332,14 @@ auto cols=@@.get<std::vector<ColumnInfo>>("columns");
 auto rdbms=@@.get<std::string>("rdbms");
 if(@@.get<int>("hasPrimaryKey")<=1){
         if(!@@.get<std::string>("primaryKeyType").empty()){%>
-        static const std::string sql="select * from " + tableName + " where `[[primaryKeyName]]` = {%(rdbms=="postgresql"?"$1":"?")%}";
+        static const std::string sql="select * from `" + tableName + "` where `[[primaryKeyName]]` = {%(rdbms=="postgresql"?"$1":"?")%}";
 <%c++}else{%>
         static const std::string sql="";
 <%c++}%>
 <%c++}else{
         auto pkName=@@.get<std::vector<std::string>>("primaryKeyName");
 %>
-        static const std::string sql="select * from " + tableName + " where <%c++
+        static const std::string sql="select * from `" + tableName + "` where <%c++
         for(size_t i=0;i<pkName.size();i++)
         {
             if(rdbms=="postgresql")
@@ -364,14 +364,14 @@ if(@@.get<int>("hasPrimaryKey")<=1){
 <%c++
 if(@@.get<int>("hasPrimaryKey")<=1){
         if(!@@.get<std::string>("primaryKeyType").empty()){%>
-        static const std::string sql="delete from " + tableName + " where `[[primaryKeyName]]` = {%(rdbms=="postgresql"?"$1":"?")%}";
+        static const std::string sql="delete from `" + tableName + "` where `[[primaryKeyName]]` = {%(rdbms=="postgresql"?"$1":"?")%}";
 <%c++}else{%>
         static const std::string sql="";
 <%c++}%>
 <%c++}else{
         auto pkName=@@.get<std::vector<std::string>>("primaryKeyName");
 %>
-        static const std::string sql="delete from " + tableName + " where `<%c++
+        static const std::string sql="delete from `" + tableName + "` where `<%c++
         for(size_t i=0;i<pkName.size();i++)
         {
             if(rdbms=="postgresql")
@@ -383,7 +383,7 @@ if(@@.get<int>("hasPrimaryKey")<=1){
                 $$<<pkName[i]<<"` = ?";
             }
             if(i<(pkName.size()-1))
-                $$<<"` and `";
+                $$<<" and `";
         }
         $$<<"`\";\n";
     }
@@ -392,7 +392,7 @@ if(@@.get<int>("hasPrimaryKey")<=1){
     }
     std::string sqlForInserting(bool &needSelection) const
     {
-        std::string sql="insert into " + tableName + " (";
+        std::string sql="insert into `" + tableName + "` (";
         size_t parametersCount = 0;
         needSelection = false;
 <%c++
