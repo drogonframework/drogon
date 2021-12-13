@@ -341,17 +341,10 @@ inline void internal::HttpRespAwaiter::await_suspend(
                 setValue(resp);
             else
             {
-                std::string reason;
-                if (result == ReqResult::BadResponse)
-                    reason = "BadResponse";
-                else if (result == ReqResult::NetworkFailure)
-                    reason = "NetworkFailure";
-                else if (result == ReqResult::BadServerAddress)
-                    reason = "BadServerAddress";
-                else if (result == ReqResult::Timeout)
-                    reason = "Timeout";
+                std::stringstream ss;
+                ss << result;
                 setException(
-                    std::make_exception_ptr(std::runtime_error(reason)));
+                    std::make_exception_ptr(std::runtime_error(ss.str())));
             }
             handle.resume();
         },
