@@ -5,7 +5,7 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 RUN apt-get update -yqq \
     && apt-get install -yqq --no-install-recommends software-properties-common \
-    sudo curl wget cmake make pkg-config locales git gcc-10 g++-10 \
+    curl wget cmake make pkg-config locales git gcc-10 g++-10 \
     openssl libssl-dev libjsoncpp-dev uuid-dev zlib1g-dev libc-ares-dev\
     postgresql-server-dev-all libmariadbclient-dev libsqlite3-dev libhiredis-dev\
     && rm -rf /var/lib/apt/lists/* \
