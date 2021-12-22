@@ -199,7 +199,8 @@ inline std::ostream &operator<<(std::ostream &out, drogon::ReqResult result)
     return out << toString(result);
 }
 
-inline trantor::LogStream &operator<<(trantor::LogStream &out, drogon::ReqResult result)
+inline trantor::LogStream &operator<<(trantor::LogStream &out,
+                                      drogon::ReqResult result)
 {
     return out << toString(result);
 }
