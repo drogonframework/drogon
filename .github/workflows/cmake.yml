@@ -206,4 +206,6 @@ jobs:
       if: matrix.os == 'ubuntu-20.04'
       working-directory: ${{env.GITHUB_WORKSPACE}}
       shell: bash
-      run: ./format.sh && git diff --exit-code
+      run: |
+        sudo apt install -y dos2unix
+        ./format.sh && git diff --exit-code
