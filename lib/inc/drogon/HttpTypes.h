@@ -15,6 +15,7 @@
 #include <atomic>
 #include <thread>
 #include <iostream>
+#include <drogon/utils/string_view.h>
 #include <trantor/utils/LogStream.h>
 
 namespace drogon
@@ -171,7 +172,7 @@ enum class WebSocketMessageType
     Unknown
 };
 
-inline std::string toString(drogon::ReqResult result)
+inline string_view to_string(drogon::ReqResult result)
 {
     switch (result)
     {
@@ -196,12 +197,12 @@ inline std::string toString(drogon::ReqResult result)
 
 inline std::ostream &operator<<(std::ostream &out, drogon::ReqResult result)
 {
-    return out << toString(result);
+    return out << to_string(result);
 }
 
 inline trantor::LogStream &operator<<(trantor::LogStream &out,
                                       drogon::ReqResult result)
 {
-    return out << toString(result);
+    return out << to_string(result);
 }
 }  // namespace drogon
