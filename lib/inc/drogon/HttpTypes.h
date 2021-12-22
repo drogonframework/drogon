@@ -15,6 +15,7 @@
 #include <atomic>
 #include <thread>
 #include <iostream>
+#include <trantor/utils/LogStream.h>
 
 namespace drogon
 {
@@ -169,26 +170,37 @@ enum class WebSocketMessageType
     Close,
     Unknown
 };
-inline std::ostream &operator<<(std::ostream &out, drogon::ReqResult result)
+
+inline std::string toString(drogon::ReqResult result)
 {
     switch (result)
     {
         case ReqResult::Ok:
-            return out << "OK";
+            return "OK";
         case ReqResult::BadResponse:
-            return out << "Bad response from server";
+            return "Bad response from server";
         case ReqResult::NetworkFailure:
-            return out << "Network failure";
+            return "Network failure";
         case ReqResult::BadServerAddress:
-            return out << "Bad server address";
+            return "Bad server address";
         case ReqResult::Timeout:
-            return out << "Timeout";
+            return "Timeout";
         case ReqResult::HandshakeError:
-            return out << "Handshake error";
+            return "Handshake error";
         case ReqResult::InvalidCertificate:
-            return out << "Invalid certificate";
+            return "Invalid certificate";
         default:
-            return out << "Unknown error";
+            return "Unknown error";
     }
+}
+
+inline std::ostream &operator<<(std::ostream &out, drogon::ReqResult result)
+{
+    return out << toString(result);
+}
+
+inline trantor::LogStream &operator<<(trantor::LogStream &out, drogon::ReqResult result)
+{
+    return out << toString(result);
 }
 }  // namespace drogon
