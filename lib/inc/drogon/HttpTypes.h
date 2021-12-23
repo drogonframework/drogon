@@ -172,7 +172,7 @@ enum class WebSocketMessageType
     Unknown
 };
 
-inline string_view to_string(drogon::ReqResult result)
+inline string_view to_string_view(drogon::ReqResult result)
 {
     switch (result)
     {
@@ -195,14 +195,19 @@ inline string_view to_string(drogon::ReqResult result)
     }
 }
 
+inline std::string to_string(drogon::ReqResult result)
+{
+    return to_string_view(result).data();
+}
+
 inline std::ostream &operator<<(std::ostream &out, drogon::ReqResult result)
 {
-    return out << to_string(result);
+    return out << to_string_view(result);
 }
 
 inline trantor::LogStream &operator<<(trantor::LogStream &out,
                                       drogon::ReqResult result)
 {
-    return out << to_string(result);
+    return out << to_string_view(result);
 }
 }  // namespace drogon
