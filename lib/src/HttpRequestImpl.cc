@@ -44,7 +44,6 @@ void HttpRequestImpl::parseJson() const
                            jsonPtr_.get(),
                            &errs))
         {
-            LOG_ERROR << errs;
             jsonPtr_.reset();
             jsonParsingErrorPtr_ =
                 std::make_unique<std::string>(std::move(errs));
