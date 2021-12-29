@@ -350,6 +350,17 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
         const std::function<void(const HttpRequestPtr &,
                                  const HttpResponsePtr &)> &advice) = 0;
 
+    /// Setup output of logs to files
+    /**
+     * @note
+     * Logs are output to the standard output by default.
+     * Logging is setuped only if output path of logs is defined.
+     * This method is called in run() function, hence use this method only if
+     * you want to setup logging earlier.
+     * @return HttpAppFramework&
+     */
+    virtual HttpAppFramework &setupFileLogger() = 0;
+
     /* End of AOP methods */
 
     /// Load the configuration file with json format.

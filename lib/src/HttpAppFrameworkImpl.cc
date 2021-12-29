@@ -452,7 +452,6 @@ void HttpAppFrameworkImpl::run()
         getLoop()->moveToCurrentThread();
     }
     LOG_TRACE << "Start to run...";
-    trantor::AsyncFileLogger asyncFileLogger;
     // Create dirs for cache files
     for (int i = 0; i < 256; ++i)
     {
@@ -517,33 +516,7 @@ void HttpAppFrameworkImpl::run()
         }
 #endif
     }
-    // set logger
-    if (!logPath_.empty())
-    {
-        // std::filesystem does not provide a method to check access
-        // permissions, so keep existing code
-        if (os_access(utils::toNativePath(logPath_).c_str(), R_OK | W_OK) != 0)
-        {
-            LOG_ERROR << "log file path not exist";
-            abort();
-        }
-        else
-        {
-            std::string baseName = logfileBaseName_;
-            if (baseName.empty())
-            {
-                baseName = "drogon";
-            }
-            asyncFileLogger.setFileName(baseName, ".log", logPath_);
-            asyncFileLogger.startLogging();
-            trantor::Logger::setOutputFunction(
-                [&](const char *msg, const uint64_t len) {
-                    asyncFileLogger.output(msg, len);
-                },
-                [&]() { asyncFileLogger.flush(); });
-            asyncFileLogger.setFileSizeLimit(logfileSize_);
-        }
-    }
+    setupFileLogger();
     if (relaunchOnError_)
     {
         LOG_INFO << "Start child process";
@@ -1117,6 +1090,38 @@ HttpAppFramework &HttpAppFrameworkImpl::setDefaultHandler(
     DefaultHandler handler)
 {
     staticFileRouterPtr_->setDefaultHandler(std::move(handler));
+    return *this;
+}
+
+HttpAppFramework &HttpAppFrameworkImpl::setupFileLogger()
+{
+    if (!logPath_.empty() && !asyncFileLoggerPtr_)
+    {
+        // std::filesystem does not provide a method to check access
+        // permissions, so keep existing code
+        if (os_access(utils::toNativePath(logPath_).c_str(), R_OK | W_OK) != 0)
+        {
+            LOG_ERROR << "log file path not exist";
+            abort();
+        }
+        else
+        {
+            std::string baseName = logfileBaseName_;
+            if (baseName.empty())
+            {
+                baseName = "drogon";
+            }
+            asyncFileLoggerPtr_ = std::make_unique<trantor::AsyncFileLogger>();
+            asyncFileLoggerPtr_->setFileName(baseName, ".log", logPath_);
+            asyncFileLoggerPtr_->startLogging();
+            trantor::Logger::setOutputFunction(
+                [this](const char *msg, const uint64_t len) {
+                    asyncFileLoggerPtr_->output(msg, len);
+                },
+                [this]() { asyncFileLoggerPtr_->flush(); });
+            asyncFileLoggerPtr_->setFileSizeLimit(logfileSize_);
+        }
+    }
     return *this;
 }
 
