@@ -1663,7 +1663,7 @@ void [[className]]::get{%relationshipClassName%}(const DbClientPtr &clientPtr,
                << *{%nameTransform(relationship.originalKey(), false)%}_
                >> [rcb = std::move(rcb)](const Result &r){
                    std::vector<{%relationshipClassName%}> ret;
-                   ret.reserve(ret.size());
+                   ret.reserve(r.size());
                    for (auto const &row : r)
                    {
                        ret.emplace_back({%relationshipClassName%}(row));
@@ -1717,7 +1717,7 @@ void [[className]]::get{%relationshipClassName%}(const DbClientPtr &clientPtr,
                << *{%nameTransform(relationship.originalKey(), false)%}_
                >> [rcb = std::move(rcb)](const Result &r){
                    std::vector<std::pair<{%relationshipClassName%},{%pivotTableClassName%}>> ret;
-                   ret.reserve(ret.size());
+                   ret.reserve(r.size());
                    for (auto const &row : r)
                    {
                        ret.emplace_back(std::pair<{%relationshipClassName%},{%pivotTableClassName%}>(
