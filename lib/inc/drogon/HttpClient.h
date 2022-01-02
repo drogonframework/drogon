@@ -129,6 +129,9 @@ class DROGON_EXPORT HttpClient : public trantor::NonCopyable
     std::pair<ReqResult, HttpResponsePtr> sendRequest(const HttpRequestPtr &req,
                                                       double timeout = 0)
     {
+        assert(!getLoop()->isInLoopThread() &&
+               "Deadlock detected! Using a sync API in it's own event loop "
+               "will deadlock the event loop");
         std::promise<std::pair<ReqResult, HttpResponsePtr>> prom;
         auto f = prom.get_future();
         sendRequest(
