@@ -58,7 +58,9 @@ if(Jsoncpp_FOUND)
         )
     endif(jsoncpp_ver LESS 1.7)
   endif()
-  add_library(Jsoncpp_lib INTERFACE IMPORTED)
+  if (NOT TARGET Jsoncpp_lib)
+          add_library(Jsoncpp_lib INTERFACE IMPORTED)
+  endif()
   set_target_properties(Jsoncpp_lib
                         PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
                                    "${JSONCPP_INCLUDE_DIRS}"
