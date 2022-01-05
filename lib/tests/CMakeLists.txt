@@ -60,6 +60,7 @@ set(INTEGRATION_TEST_SERVER_SOURCES
     integration_test/server/DigestAuthFilter.cc
     integration_test/server/MethodTest.cc
     integration_test/server/RangeTestController.cc
+    integration_test/server/BeginAdviceTest.cc
     integration_test/server/main.cc)
 
 if(DROGON_CXX_STANDARD GREATER_EQUAL 20 AND HAS_COROUTINE)

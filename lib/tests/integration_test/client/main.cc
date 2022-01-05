@@ -66,8 +66,19 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
     else
         client->addCookie(sessionID);
 
-    /// Test session
+    /// Test begin advice
     auto req = HttpRequest::newHttpRequest();
+    req->setMethod(drogon::Get);
+    req->setPath("/test_begin_advice");
+    client->sendRequest(req,
+                        [req, client, TEST_CTX](ReqResult result,
+                                                const HttpResponsePtr &resp) {
+                            REQUIRE(result == ReqResult::Ok);
+                            CHECK(resp->getBody() == "DrogonReady");
+                        });
+
+    /// Test session
+    req = HttpRequest::newHttpRequest();
     req->setMethod(drogon::Get);
     req->setPath("/slow");
     client->sendRequest(
