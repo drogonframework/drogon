@@ -584,13 +584,13 @@ void HttpAppFrameworkImpl::run()
     staticFileRouterPtr_->init(ioLoops);
     websockCtrlsRouterPtr_->init();
     getLoop()->queueInLoop([this]() {
-        // Let listener event loops run when everything is ready.
-        listenerManagerPtr_->startListening();
         for (auto &adv : beginningAdvices_)
         {
             adv();
         }
         beginningAdvices_.clear();
+        // Let listener event loops run when everything is ready.
+        listenerManagerPtr_->startListening();
     });
     getLoop()->loop();
 }
