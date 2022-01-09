@@ -99,7 +99,7 @@ jobs:
     - name: (macOS) Install dependencies
       if: runner.os == 'macOS'
       run: |
-        brew install jsoncpp ossp-uuid brotli zlib
+        brew install jsoncpp brotli zlib
         brew install openssl lz4 mariadb sqlite3 postgresql hiredis
         brew install redis
 
