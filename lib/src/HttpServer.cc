@@ -557,11 +557,21 @@ void HttpServer::sendResponse(const TcpConnectionPtr &conn,
     {
         auto httpString = respImplPtr->renderToBuffer();
         conn->send(httpString);
+        auto& streamCallback = respImplPtr->streamCallback();
         const std::string &sendfileName = respImplPtr->sendfileName();
-        if (!sendfileName.empty())
+        if (streamCallback || !sendfileName.empty())
         {
-            const auto &range = respImplPtr->sendfileRange();
-            conn->sendFile(sendfileName.c_str(), range.first, range.second);
+            if (streamCallback)
+            {
+                auto &headers = respImplPtr->headers();
+                auto bChunked = !respImplPtr->ifCloseConnection() && (headers.find("content-length") == headers.end());
+                conn->sendStream(streamCallback, bChunked);
+            }
+            else
+            {
+                const auto &range = respImplPtr->sendfileRange();
+                conn->sendFile(sendfileName.c_str(), range.first, range.second);
+            }
         }
         COZ_PROGRESS
     }
@@ -599,13 +609,24 @@ void HttpServer::sendResponses(
         {
             // Not HEAD method
             respImplPtr->renderToBuffer(buffer);
+            auto &streamCallback = respImplPtr->streamCallback();
             const std::string &sendfileName = respImplPtr->sendfileName();
-            if (!sendfileName.empty())
+            if (streamCallback  || !sendfileName.empty())
             {
-                const auto &range = respImplPtr->sendfileRange();
                 conn->send(buffer);
                 buffer.retrieveAll();
-                conn->sendFile(sendfileName.c_str(), range.first, range.second);
+                if (streamCallback)
+                {
+                    auto bChunked = !respImplPtr->ifCloseConnection();
+                    conn->sendStream(streamCallback, bChunked);
+                }
+                else
+                {
+                    const auto &range = respImplPtr->sendfileRange();
+                    conn->sendFile(sendfileName.c_str(),
+                                   range.first,
+                                   range.second);
+                }
                 COZ_PROGRESS
             }
         }
