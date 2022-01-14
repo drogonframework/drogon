@@ -113,6 +113,24 @@ class DROGON_EXPORT Cookie
     {
         value_ = std::move(value);
     }
+    /**
+     * @brief Set the max-age of the cookie.
+     */
+    void setMaxAge(const int value)
+    {
+        maxAge_ = std::to_string(value);
+    }
+    /**
+     * @brief Set the max-age of the cookie.
+     */
+    void setSameSite(const std::string &value)
+    {
+        sameSite_ = value;
+    }
+    void setSameSite(int &&value)
+    {
+        sameSite_ = std::move(value);
+    }
 
     /**
      * @brief Get the string value of the cookie
@@ -240,6 +258,38 @@ class DROGON_EXPORT Cookie
         return secure_;
     }
 
+    /**
+     * @brief Get the max-age of the cookie
+     */
+    int maxAge() const
+    {
+        return std::stoi(maxAge_);
+    }
+
+    /**
+     * @brief Get the max-age of the cookie
+     */
+    int getMaxAge() const
+    {
+        return std::stoi(maxAge_);
+    }
+
+    /**
+     * @brief Get the same site of the cookie
+     */
+    const std::string &sameSite() const
+    {
+        return sameSite_;
+    }
+
+    /**
+     * @brief Get the same site of the cookie
+     */
+    const std::string &getSameSite() const
+    {
+        return sameSite_;
+    }
+
   private:
     trantor::Date expiresDate_{(std::numeric_limits<int64_t>::max)()};
     bool httpOnly_{true};
@@ -248,6 +298,8 @@ class DROGON_EXPORT Cookie
     std::string path_;
     std::string key_;
     std::string value_;
+    std::string maxAge_;
+    std::string sameSite_;
 };
 
 }  // namespace drogon

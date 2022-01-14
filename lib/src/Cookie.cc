@@ -29,6 +29,10 @@ std::string Cookie::cookieString() const
             .append(utils::getHttpFullDate(expiresDate_))
             .append("; ");
     }
+    if(!maxAge_.empty()) 
+    {
+        ret.append("Max-Age=").append(maxAge_).append("; ");
+    }
     if (!domain_.empty())
     {
         ret.append("Domain=").append(domain_).append("; ");
@@ -36,6 +40,10 @@ std::string Cookie::cookieString() const
     if (!path_.empty())
     {
         ret.append("Path=").append(path_).append("; ");
+    }
+    if (!sameSite_.empty())
+    {
+        ret.append("SameSite=").append(sameSite_).append("; ");
     }
     if (secure_)
     {
