@@ -14,6 +14,7 @@
 #pragma once
 
 #include <drogon/exports.h>
+#include <drogon/utils/optional.h>
 #include <trantor/utils/Date.h>
 #include <string>
 #include <limits>
@@ -263,7 +264,7 @@ class DROGON_EXPORT Cookie
     /**
      * @brief Get the max-age of the cookie
      */
-    int maxAge() const
+    optional<int> maxAge() const
     {
         return maxAge_;
     }
@@ -271,7 +272,7 @@ class DROGON_EXPORT Cookie
     /**
      * @brief Get the max-age of the cookie
      */
-    int getMaxAge() const
+    optional<int> getMaxAge() const
     {
         return maxAge_;
     }
@@ -300,7 +301,7 @@ class DROGON_EXPORT Cookie
     std::string path_;
     std::string key_;
     std::string value_;
-    int maxAge_{-1};
+    optional<int> maxAge_;
     SameSite sameSite_{SameSite::kNull};
 };
 
