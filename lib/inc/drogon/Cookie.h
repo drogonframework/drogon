@@ -19,6 +19,7 @@
 #include <limits>
 
 namespace drogon
+
 {
 /**
  * @brief this class represents a cookie entity.
@@ -40,6 +41,13 @@ class DROGON_EXPORT Cookie
     {
     }
     Cookie() = default;
+
+    enum class SameSite
+    {
+        kLax,
+        kStrict,
+        kNone
+    };
 
     /**
      * @brief Set the Expires Date
@@ -121,13 +129,28 @@ class DROGON_EXPORT Cookie
         maxAge_ = std::to_string(value);
     }
     /**
-     * @brief Set the max-age of the cookie.
+     * @brief Set the same site of the cookie.
      */
-    void setSameSite(const std::string &value)
+    void setSameSite(SameSite sameSite)
     {
-        sameSite_ = value;
+        switch (sameSite)
+        {
+            case SameSite::kLax:
+                sameSite_ = "Lax";
+                break;
+            case SameSite::kStrict:
+                sameSite_ = "Strict";
+                break;
+            case SameSite::kNone:
+                sameSite_ = "None";
+                break;
+            default:
+                // Lax replaced None as the default value to ensure that users
+                // have reasonably robust defense against some CSRF attacks
+                sameSite_ = "Lax";
+        }
     }
-    void setSameSite(int &&value)
+    void setSameSite(std::string &&value)
     {
         sameSite_ = std::move(value);
     }

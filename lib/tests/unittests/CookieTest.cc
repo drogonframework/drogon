@@ -19,8 +19,8 @@ DROGON_TEST(CookieTest)
 
     drogon::Cookie cookie4("test", "4");
     cookie4.setMaxAge(3600);
-    cookie4.setSameSite("Lax");
+    cookie4.setSameSite(drogon::Cookie::SameSite::kStrict);
     CHECK(cookie4.cookieString() ==
           "Set-Cookie: test=4; Max-Age=3600; "
-          "SameSite=Lax; HttpOnly\r\n");
+          "SameSite=Strict; HttpOnly\r\n");
 }
