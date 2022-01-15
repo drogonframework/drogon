@@ -555,7 +555,7 @@ class Mapper
     template <typename... Arguments>
     size_t updateBy(const std::vector<std::string> &colNames,
                     const Criteria &criteria,
-                    Arguments &&...args) noexcept(false);
+                    Arguments &&... args) noexcept(false);
 
     /**
      * @brief Asynchronously select the rows that match both the primary key and
@@ -572,7 +572,7 @@ class Mapper
                   const Criteria &criteria,
                   const CountCallback &rcb,
                   const ExceptionCallback &ecb,
-                  Arguments &&...args) noexcept;
+                  Arguments &&... args) noexcept;
 
     /**
      * @brief Asynchronously update a record that match both the primary key and
@@ -588,7 +588,7 @@ class Mapper
     template <typename... Arguments>
     std::future<size_t> updateFutureBy(const std::vector<std::string> &colNames,
                                        const Criteria &criteria,
-                                       Arguments &&...args) noexcept;
+                                       Arguments &&... args) noexcept;
 
     /**
      * @brief Delete a record from the table.
@@ -1328,7 +1328,7 @@ template <typename T>
 template <typename... Arguments>
 size_t Mapper<T>::updateBy(const std::vector<std::string> &colNames,
                            const Criteria &criteria,
-                           Arguments &&...args) noexcept(false)
+                           Arguments &&... args) noexcept(false)
 {
     static_assert(sizeof...(args) > 0);
     assert(colNames.size() == sizeof...(args));
@@ -1397,7 +1397,7 @@ void Mapper<T>::updateBy(const std::vector<std::string> &colNames,
                          const Criteria &criteria,
                          const CountCallback &rcb,
                          const ExceptionCallback &ecb,
-                         Arguments &&...args) noexcept
+                         Arguments &&... args) noexcept
 {
     static_assert(sizeof...(args) > 0);
     assert(colNames.size() == sizeof...(args));
@@ -1463,7 +1463,7 @@ template <typename... Arguments>
 inline std::future<size_t> Mapper<T>::updateFutureBy(
     const std::vector<std::string> &colNames,
     const Criteria &criteria,
-    Arguments &&...args) noexcept
+    Arguments &&... args) noexcept
 {
     static_assert(sizeof...(args) > 0);
     assert(colNames.size() == sizeof...(args));

@@ -38,7 +38,7 @@ struct [[nodiscard]] RedisAwaiter : public CallbackAwaiter<RedisResult>
 {
     using RedisFunction =
         std::function<void(RedisResultCallback &&, RedisExceptionCallback &&)>;
-    explicit RedisAwaiter(RedisFunction &&function)
+    explicit RedisAwaiter(RedisFunction && function)
         : function_(std::move(function))
     {
     }
@@ -63,7 +63,7 @@ struct [[nodiscard]] RedisAwaiter : public CallbackAwaiter<RedisResult>
 struct [[nodiscard]] RedisTransactionAwaiter
     : public CallbackAwaiter<std::shared_ptr<RedisTransaction> >
 {
-    RedisTransactionAwaiter(RedisClient *client) : client_(client)
+    RedisTransactionAwaiter(RedisClient * client) : client_(client)
     {
     }
 

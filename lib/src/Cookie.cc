@@ -29,7 +29,7 @@ std::string Cookie::cookieString() const
             .append(utils::getHttpFullDate(expiresDate_))
             .append("; ");
     }
-    if(!maxAge_.empty()) 
+    if (!maxAge_.empty())
     {
         ret.append("Max-Age=").append(maxAge_).append("; ");
     }

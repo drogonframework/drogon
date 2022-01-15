@@ -48,7 +48,7 @@ namespace internal
 #ifdef __cpp_impl_coroutine
 struct [[nodiscard]] SqlAwaiter : public CallbackAwaiter<Result>
 {
-    SqlAwaiter(internal::SqlBinder &&binder) : binder_(std::move(binder))
+    SqlAwaiter(internal::SqlBinder && binder) : binder_(std::move(binder))
     {
     }
 
@@ -72,7 +72,7 @@ struct [[nodiscard]] SqlAwaiter : public CallbackAwaiter<Result>
 struct [[nodiscard]] TransactionAwaiter
     : public CallbackAwaiter<std::shared_ptr<Transaction> >
 {
-    TransactionAwaiter(DbClient *client) : client_(client)
+    TransactionAwaiter(DbClient * client) : client_(client)
     {
     }
 
@@ -155,7 +155,7 @@ class DROGON_EXPORT DbClient : public trantor::NonCopyable
     void execSqlAsync(const std::string &sql,
                       FUNCTION1 &&rCallback,
                       FUNCTION2 &&exceptCallback,
-                      Arguments &&...args) noexcept
+                      Arguments &&... args) noexcept
     {
         auto binder = *this << sql;
         (void)std::initializer_list<int>{
@@ -167,7 +167,7 @@ class DROGON_EXPORT DbClient : public trantor::NonCopyable
     /// Async and nonblocking method
     template <typename... Arguments>
     std::future<Result> execSqlAsyncFuture(const std::string &sql,
-                                           Arguments &&...args) noexcept
+                                           Arguments &&... args) noexcept
     {
         auto binder = *this << sql;
         (void)std::initializer_list<int>{
@@ -184,7 +184,7 @@ class DROGON_EXPORT DbClient : public trantor::NonCopyable
     // Sync and blocking method
     template <typename... Arguments>
     const Result execSqlSync(const std::string &sql,
-                             Arguments &&...args) noexcept(false)
+                             Arguments &&... args) noexcept(false)
     {
         Result r(nullptr);
         {
@@ -203,7 +203,7 @@ class DROGON_EXPORT DbClient : public trantor::NonCopyable
 #ifdef __cpp_impl_coroutine
     template <typename... Arguments>
     internal::SqlAwaiter execSqlCoro(const std::string &sql,
-                                     Arguments &&...args) noexcept
+                                     Arguments &&... args) noexcept
     {
         auto binder = *this << sql;
         (void)std::initializer_list<int>{

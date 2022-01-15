@@ -109,7 +109,7 @@ struct [[nodiscard]] Task
     {
     }
     Task(const Task &) = delete;
-    Task(Task &&other)
+    Task(Task && other)
     {
         coro_ = other.coro_;
         other.coro_ = nullptr;
@@ -265,7 +265,7 @@ struct [[nodiscard]] Task<void>
     {
     }
     Task(const Task &) = delete;
-    Task(Task &&other)
+    Task(Task && other)
     {
         coro_ = other.coro_;
         other.coro_ = nullptr;
@@ -650,12 +650,12 @@ namespace internal
 {
 struct [[nodiscard]] TimerAwaiter : CallbackAwaiter<void>
 {
-    TimerAwaiter(trantor::EventLoop *loop,
+    TimerAwaiter(trantor::EventLoop * loop,
                  const std::chrono::duration<double> &delay)
         : loop_(loop), delay_(delay.count())
     {
     }
-    TimerAwaiter(trantor::EventLoop *loop, double delay)
+    TimerAwaiter(trantor::EventLoop * loop, double delay)
         : loop_(loop), delay_(delay)
     {
     }
