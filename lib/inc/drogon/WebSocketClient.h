@@ -39,7 +39,7 @@ namespace internal
 struct [[nodiscard]] WebSocketConnectionAwaiter
     : public CallbackAwaiter<HttpResponsePtr>
 {
-    WebSocketConnectionAwaiter(WebSocketClient * client, HttpRequestPtr req)
+    WebSocketConnectionAwaiter(WebSocketClient *client, HttpRequestPtr req)
         : client_(client), req_(std::move(req))
     {
     }

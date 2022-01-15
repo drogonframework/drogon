@@ -31,7 +31,7 @@ struct [[nodiscard]] MapperAwaiter : public CallbackAwaiter<ReturnType>
     using MapperFunction =
         std::function<void(std::function<void(ReturnType result)> &&,
                            std::function<void(const std::exception_ptr &)> &&)>;
-    MapperAwaiter(MapperFunction && function) : function_(std::move(function))
+    MapperAwaiter(MapperFunction &&function) : function_(std::move(function))
     {
     }
     void await_suspend(std::coroutine_handle<> handle)
@@ -437,7 +437,7 @@ class CoroMapper : public Mapper<T>
     inline internal::MapperAwaiter<size_t> updateBy(
         const std::tuple<TupleArgs...> &colNames,
         const Criteria &criteria,
-        Arguments &&... args)
+        Arguments &&...args)
     {
         static_assert(sizeof...(args) > 0);
         static_assert(sizeof...(args) ==
@@ -446,7 +446,7 @@ class CoroMapper : public Mapper<T>
         sql += T::tableName;
         sql += " set ";
         std::apply(
-            [&sql](auto &&... name) {
+            [&sql](auto &&...name) {
                 ((sql += std::string(name) + " = $?,"), ...);
             },
             colNames);
@@ -461,7 +461,7 @@ class CoroMapper : public Mapper<T>
     internal::MapperAwaiter<size_t> updateBy(
         const std::vector<std::string> &colNames,
         const Criteria &criteria,
-        Arguments &&... args)
+        Arguments &&...args)
     {
         static_assert(sizeof...(args) > 0);
         assert(colNames.size() == sizeof...(args));
@@ -484,7 +484,7 @@ class CoroMapper : public Mapper<T>
     template <typename... Arguments>
     internal::MapperAwaiter<size_t> updateByHelper(std::string &&sql,
                                                    const Criteria &criteria,
-                                                   Arguments &&... args)
+                                                   Arguments &&...args)
     {
         auto lb = [this,
                    sql = std::move(sql),
