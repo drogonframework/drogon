@@ -19,7 +19,6 @@
 #include <limits>
 
 namespace drogon
-
 {
 /**
  * @brief this class represents a cookie entity.
@@ -41,14 +40,13 @@ class DROGON_EXPORT Cookie
     {
     }
     Cookie() = default;
-
     enum class SameSite
     {
+        kNull,
         kLax,
         kStrict,
         kNone
     };
-
     /**
      * @brief Set the Expires Date
      *
@@ -124,35 +122,16 @@ class DROGON_EXPORT Cookie
     /**
      * @brief Set the max-age of the cookie.
      */
-    void setMaxAge(const int value)
+    void setMaxAge(int value)
     {
-        maxAge_ = std::to_string(value);
+        maxAge_ = value;
     }
     /**
      * @brief Set the same site of the cookie.
      */
     void setSameSite(SameSite sameSite)
     {
-        switch (sameSite)
-        {
-            case SameSite::kLax:
-                sameSite_ = "Lax";
-                break;
-            case SameSite::kStrict:
-                sameSite_ = "Strict";
-                break;
-            case SameSite::kNone:
-                sameSite_ = "None";
-                break;
-            default:
-                // Lax replaced None as the default value to ensure that users
-                // have reasonably robust defense against some CSRF attacks
-                sameSite_ = "Lax";
-        }
-    }
-    void setSameSite(std::string &&value)
-    {
-        sameSite_ = std::move(value);
+        sameSite_ = sameSite;
     }
 
     /**
@@ -286,7 +265,7 @@ class DROGON_EXPORT Cookie
      */
     int maxAge() const
     {
-        return std::stoi(maxAge_);
+        return maxAge_;
     }
 
     /**
@@ -294,13 +273,13 @@ class DROGON_EXPORT Cookie
      */
     int getMaxAge() const
     {
-        return std::stoi(maxAge_);
+        return maxAge_;
     }
 
     /**
      * @brief Get the same site of the cookie
      */
-    const std::string &sameSite() const
+    SameSite sameSite() const
     {
         return sameSite_;
     }
@@ -308,7 +287,7 @@ class DROGON_EXPORT Cookie
     /**
      * @brief Get the same site of the cookie
      */
-    const std::string &getSameSite() const
+    SameSite getSameSite() const
     {
         return sameSite_;
     }
@@ -321,8 +300,8 @@ class DROGON_EXPORT Cookie
     std::string path_;
     std::string key_;
     std::string value_;
-    std::string maxAge_;
-    std::string sameSite_;
+    int maxAge_{-1};
+    SameSite sameSite_{SameSite::kNull};
 };
 
 }  // namespace drogon

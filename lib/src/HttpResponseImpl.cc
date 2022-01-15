@@ -742,6 +742,25 @@ void HttpResponseImpl::addHeader(const char *start,
                 {
                     cookie.setHttpOnly(true);
                 }
+                else if (cookie_name == "samesite")
+                {
+                    if (cookie_value == "Lax")
+                    {
+                        cookie.setSameSite(Cookie::SameSite::kLax);
+                    }
+                    else if (cookie_value == "Strict")
+                    {
+                        cookie.setSameSite(Cookie::SameSite::kStrict);
+                    }
+                    else if (cookie_value == "None")
+                    {
+                        cookie.setSameSite(Cookie::SameSite::kNone);
+                    }
+                }
+                else if (cookie_name == "max-age")
+                {
+                    cookie.setMaxAge(std::stoi(cookie_value));
+                }
             }
         }
         if (!cookie.key().empty())
