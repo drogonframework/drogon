@@ -66,6 +66,14 @@ int HttpFileImpl::saveAs(const std::string &fileName) const
             HttpAppFrameworkImpl::instance().getUploadPath()));
         fsFileName = fsUploadPath / fsFileName;
     }
+    fsFileName = fsFileName.lexically_normal();
+    if (fsFileName.is_relative())
+    {
+        LOG_ERROR
+            << "Attempt writing outside of upload directory detected. Path: "
+            << fileName;
+        return -1;
+    }
     if (fsFileName.has_parent_path() &&
         !filesystem::exists(fsFileName.parent_path()))
     {
