@@ -246,7 +246,18 @@ static void loadApp(const Json::Value &app)
     auto enableSession = app.get("enable_session", false).asBool();
     auto timeout = app.get("session_timeout", 0).asUInt64();
     if (enableSession)
+    {
         drogon::app().enableSession(timeout);
+        auto saveAnonSession = app.get("session_save_anon", true).asBool();
+        if (saveAnonSession)
+        {
+            drogon::app().enableSaveAnonSession();
+        }
+        else
+        {
+            drogon::app().disableSaveAnonSession();
+        }
+    }
     else
         drogon::app().disableSession();
     // document root

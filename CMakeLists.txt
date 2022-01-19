@@ -297,7 +297,6 @@ set(private_headers
     lib/src/impl_forwards.h
     lib/src/ListenerManager.h
     lib/src/PluginsManager.h
-    lib/src/SessionManager.h
     lib/src/SpinLock.h
     lib/src/StaticFileRouter.h
     lib/src/TaskTimeoutFlag.h
@@ -537,6 +536,7 @@ set(DROGON_HEADERS
     lib/inc/drogon/MultiPart.h
     lib/inc/drogon/NotFound.h
     lib/inc/drogon/Session.h
+    lib/inc/drogon/SessionManager.h
     lib/inc/drogon/UploadFile.h
     lib/inc/drogon/WebSocketClient.h
     lib/inc/drogon/WebSocketConnection.h

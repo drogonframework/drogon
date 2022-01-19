@@ -218,6 +218,16 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
         useSession_ = false;
         return *this;
     }
+    HttpAppFramework &enableSaveAnonSession() override
+    {
+        saveAnonSession_ = true;
+        return *this;
+    }
+    HttpAppFramework &disableSaveAnonSession() override
+    {
+        saveAnonSession_ = false;
+        return *this;
+    }
     const std::string &getDocumentRoot() const override
     {
         return rootPath_;
@@ -580,6 +590,7 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     size_t sessionTimeout_{0};
     size_t idleConnectionTimeout_{60};
     bool useSession_{false};
+    bool saveAnonSession_{true};
     std::string serverHeader_{"server: drogon/" + drogon::getVersion() +
                               "\r\n"};
 

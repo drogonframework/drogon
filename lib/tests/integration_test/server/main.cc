@@ -216,6 +216,7 @@ int main()
 
     app().setDocumentRoot("./");
     app().enableSession(60);
+    app().enableSaveAnonSession();
 
     std::map<std::string, std::string> config_credentials;
     std::string realm("drogonRealm");

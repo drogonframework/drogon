@@ -19,6 +19,7 @@
 #include <drogon/utils/Utilities.h>
 #include <drogon/HttpRequest.h>
 #include <drogon/utils/Utilities.h>
+#include <drogon/SessionManager.h>
 #include <trantor/net/EventLoop.h>
 #include <trantor/net/InetAddress.h>
 #include <trantor/utils/Logger.h>
@@ -358,6 +359,24 @@ class HttpRequestImpl : public HttpRequest
         sessionPtr_ = session;
     }
 
+    bool setSession()
+    {
+        if (sessionManagerPtr_)
+        {
+            std::string sessionId = utils::getUuid();
+            bool needSetJsessionid = true;
+            sessionPtr_ =
+                sessionManagerPtr_->getSession(sessionId, needSetJsessionid);
+            return true;
+        }
+        return false;
+    }
+
+    void setSessionManager(SessionManager *sessionManagerPtr)
+    {
+        sessionManagerPtr_ = sessionManagerPtr;
+    }
+
     virtual const AttributesPtr &attributes() const override
     {
         if (!attributesPtr_)
@@ -542,6 +561,7 @@ class HttpRequestImpl : public HttpRequest
     mutable ContentType contentType_{CT_TEXT_PLAIN};
     mutable bool flagForParsingContentType_{false};
     mutable std::string contentTypeString_;
+    SessionManager *sessionManagerPtr_;
 };
 
 using HttpRequestImplPtr = std::shared_ptr<HttpRequestImpl>;

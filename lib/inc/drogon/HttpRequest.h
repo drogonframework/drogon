@@ -21,6 +21,7 @@
 #include <drogon/DrClassMap.h>
 #include <drogon/HttpTypes.h>
 #include <drogon/Session.h>
+#include <drogon/SessionManager.h>
 #include <drogon/Attribute.h>
 #include <drogon/UploadFile.h>
 #include <json/json.h>
@@ -254,6 +255,13 @@ class DROGON_EXPORT HttpRequest
     {
         return session();
     }
+
+    /// Set the session to request through access to session manager unique
+    /// pointer
+    virtual void setSession(const SessionPtr &session) = 0;
+    virtual bool setSession() = 0;
+    // (httpappframework lives longer than httresponse)
+    virtual void setSessionManager(SessionManager *sessionManagerPtr_) = 0;
 
     /// Get the attributes store, users can add/get any type of data to/from
     /// this store

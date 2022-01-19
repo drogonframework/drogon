@@ -11,10 +11,14 @@ void TimeFilter::doFilter(const HttpRequestPtr &req,
     trantor::Date now = trantor::Date::date();
     if (!req->session())
     {
-        // no session support by framework,pls enable session
-        auto resp = HttpResponse::newNotFoundResponse();
-        cb(resp);
-        return;
+        bool is_session_set = req->setSession();
+        if (!is_session_set)
+        {
+            // no session support by framework,pls enable session
+            auto resp = HttpResponse::newNotFoundResponse();
+            cb(resp);
+            return;
+        }
     }
     auto lastDate = req->session()->getOptional<trantor::Date>(VDate);
     if (lastDate)
