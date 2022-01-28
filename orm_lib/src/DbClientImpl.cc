@@ -49,8 +49,16 @@ using namespace drogon::orm;
 
 DbClientImpl::DbClientImpl(const std::string &connInfo,
                            const size_t connNum,
+#if LIBPQ_SUPPORTS_BATCH_MODE
+                           ClientType type,
+                           bool autoBatch)
+#else
                            ClientType type)
+#endif
     : numberOfConnections_(connNum),
+#if LIBPQ_SUPPORTS_BATCH_MODE
+      autoBatch_(autoBatch),
+#endif
       loops_(type == ClientType::Sqlite3
                  ? 1
                  : (connNum < std::thread::hardware_concurrency()
@@ -90,6 +98,7 @@ void DbClientImpl::init()
         }
     }
 }
+
 DbClientImpl::~DbClientImpl() noexcept
 {
     closeAll();
@@ -389,7 +398,12 @@ DbConnectionPtr DbClientImpl::newConnection(trantor::EventLoop *loop)
     if (type_ == ClientType::PostgreSQL)
     {
 #if USE_POSTGRESQL
-        connPtr = std::make_shared<PgConnection>(loop, connectionInfo_);
+#if LIBPQ_SUPPORTS_BATCH_MODE
+        connPtr =
+            std::make_shared<PgConnection>(loop, connectionInfo_, autoBatch_);
+#else
+        connPtr = std::make_shared<PgConnection>(loop, connectionInfo_, false);
+#endif
 #else
         return nullptr;
 #endif

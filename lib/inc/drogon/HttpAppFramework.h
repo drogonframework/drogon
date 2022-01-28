@@ -1289,7 +1289,8 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
         const std::string &name = "default",
         const bool isFast = false,
         const std::string &characterSet = "",
-        double timeout = -1.0) = 0;
+        double timeout = -1.0,
+        const bool autoBatch = false) = 0;
 
     /// Create a redis client
     /**

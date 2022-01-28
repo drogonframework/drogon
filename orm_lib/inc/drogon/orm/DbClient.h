@@ -118,7 +118,8 @@ class DROGON_EXPORT DbClient : public trantor::NonCopyable
      * @param connNum: The number of connections to database server;
      */
     static std::shared_ptr<DbClient> newPgClient(const std::string &connInfo,
-                                                 const size_t connNum);
+                                                 const size_t connNum,
+                                                 bool autoBatch = false);
     static std::shared_ptr<DbClient> newMysqlClient(const std::string &connInfo,
                                                     const size_t connNum);
     static std::shared_ptr<DbClient> newSqlite3Client(
@@ -292,6 +293,47 @@ class DROGON_EXPORT DbClient : public trantor::NonCopyable
      * quit() method.
      * */
     virtual void closeAll() = 0;
+
+    /**
+     * @brief Enable auto-batch mode.
+     * This feature is available only for PostgreSQL 14+ version and the
+     * LIBPQ_BATCH_MODE option is CMakeLists.txt is ON.
+     * When auto-batch mode is disabled (by default), every SQL query
+     * pipelined in a connection is automatically executed in an individual
+     * implicit transaction, this behavior ensures that SQL queries cannot make
+     * side-effects to each other. Most databases client drivers execute SQL
+     * queries in this way.
+     * When auto-batch mode is enabled, SQL queries are batched automatically to
+     * an implicit transaction, the synchronization point as the end of the
+     * transaction is inserted when:
+     * 1. The number of queries in the transaction has reached the upper limit;
+     * 2. The last SQL query in the transaction contains some key words shows
+     * that the query make some changes on the database server;
+     * 3. All SQL queries that are in the same call stack of the current
+     * event-loop are sent to the server;
+     * @note the auto-batch mode is unsafe for general purpose scenarios.
+     * While the framework is doing its best to reduce the side effects of this
+     * implicit transaction, there are some risks that cannot be avoided, for
+     * example:
+     * if a command is executed which happens to SELECT from a function (it
+     * makes some changes but don't cause a synchronization point), and around
+     * the same time another unrelated command is executed which produces an
+     * error (e.g. unique constraint violation), then any side-effects from the
+     * function may get rolled back, without any indication to the program that
+     * this happened. That is, the user code executing the function will
+     * continue as if the function completed successfully and its side effects
+     * were committed, when in fact they were silently rolled back.
+     *
+     * So, users should ensure that all SQL requests sent by database clients
+     * with auto-batch mode are mutually safe, a viable strategy is to ensure
+     * that all SQL is read-only and does not interrupt the current transaction.
+     * Benefiting from the reduction in the number of transactions, the
+     * automatic batch mode has a certain performance improvement for some
+     * high-concurrency scenarios. The auto-batch mode can only be enabled
+     * before the client is used, and enabling it during use will have uncertain
+     * side effects. This feature can be enabled in the configuration file.
+     * */
+    // virtual void enableAutoBatch() = 0;
 
   private:
     friend internal::SqlBinder;

@@ -57,7 +57,8 @@ int PgConnection::flush()
     return ret;
 }
 PgConnection::PgConnection(trantor::EventLoop *loop,
-                           const std::string &connInfo)
+                           const std::string &connInfo,
+                           bool)
     : DbConnection(loop),
       connectionPtr_(
           std::shared_ptr<PGconn>(PQconnectStart(connInfo.c_str()),

@@ -36,7 +36,13 @@ class DbClientLockFree : public DbClient,
     DbClientLockFree(const std::string &connInfo,
                      trantor::EventLoop *loop,
                      ClientType type,
+#if LIBPQ_SUPPORTS_BATCH_MODE
+                     size_t connectionNumberPerLoop,
+                     bool autoBatch);
+#else
                      size_t connectionNumberPerLoop);
+#endif
+
     ~DbClientLockFree() noexcept override;
     void execSql(const char *sql,
                  size_t sqlLength,
@@ -91,6 +97,7 @@ class DbClientLockFree : public DbClient,
     void handleNewTask(const DbConnectionPtr &conn);
 #if LIBPQ_SUPPORTS_BATCH_MODE
     size_t connectionPos_{0};  // Used for pg batch mode.
+    bool autoBatch_{false};
 #endif
 };
 
