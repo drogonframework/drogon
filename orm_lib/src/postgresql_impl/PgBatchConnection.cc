@@ -51,6 +51,7 @@ bool checkSql(const string_view &sql_)
             sql.find("truncate") != std::string::npos ||
             sql.find("lock") != std::string::npos ||
             sql.find("create") != std::string::npos ||
+            sql.find("call") != std::string::npos ||
             sql.find("alter") != std::string::npos);
 }
 
@@ -188,7 +189,7 @@ void PgConnection::pgPoll()
             if (status_ != ConnectStatus::Ok)
             {
                 status_ = ConnectStatus::Ok;
-                if (!PQbeginBatchMode(connectionPtr_.get()))
+                if (!PQenterPipelineMode(connectionPtr_.get()))
                 {
                     handleClosed();
                     return;
@@ -236,7 +237,7 @@ void PgConnection::execSqlInLoop(
 }
 int PgConnection::sendBatchEnd()
 {
-    if (!PQsendEndBatch(connectionPtr_.get()))
+    if (!PQpipelineSync(connectionPtr_.get()))
     {
         isWorking_ = false;
         handleFatalError(true);
@@ -388,10 +389,9 @@ void PgConnection::handleRead()
         if (!res)
         {
             /*
-             * No more results from this query, advance to
-             * the next result
+             * No more results currtently available.
              */
-            if (!PQgetNextQuery(connectionPtr_.get()))
+            if (!PQsendFlushRequest(connectionPtr_.get()))
             {
                 return;
             }
@@ -399,12 +399,12 @@ void PgConnection::handleRead()
         }
         auto type = PQresultStatus(res.get());
         if (type == PGRES_BAD_RESPONSE || type == PGRES_FATAL_ERROR ||
-            type == PGRES_BATCH_ABORTED)
+            type == PGRES_PIPELINE_ABORTED)
         {
             handleFatalError(false);
             continue;
         }
-        if (type == PGRES_BATCH_END)
+        if (type == PGRES_PIPELINE_SYNC)
         {
             if (batchCommandsForWaitingResults_.empty() &&
                 batchSqlCommands_.empty())
