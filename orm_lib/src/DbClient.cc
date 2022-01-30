@@ -57,8 +57,12 @@ std::shared_ptr<DbClient> DbClient::newMysqlClient(const std::string &connInfo,
 #if USE_MYSQL
     auto client = std::make_shared<DbClientImpl>(connInfo,
                                                  connNum,
+#if LIBPQ_SUPPORTS_BATCH_MODE
                                                  ClientType::Mysql,
                                                  false);
+#else
+                                                 ClientType::Mysql);
+#endif
     client->init();
     return client;
 #else
@@ -76,8 +80,12 @@ std::shared_ptr<DbClient> DbClient::newSqlite3Client(
 #if USE_SQLITE3
     auto client = std::make_shared<DbClientImpl>(connInfo,
                                                  connNum,
+#if LIBPQ_SUPPORTS_BATCH_MODE
                                                  ClientType::Sqlite3,
                                                  false);
+#else
+                                                 ClientType::Sqlite3);
+#endif
     client->init();
     return client;
 #else
