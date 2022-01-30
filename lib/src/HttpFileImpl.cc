@@ -38,9 +38,12 @@ int HttpFileImpl::save(const std::string &path) const
     {
         filesystem::path fsUploadPath(utils::toNativePath(
             HttpAppFrameworkImpl::instance().getUploadPath()));
-        fsPath = fsUploadPath / fsPath;
+        fsPath = (fsUploadPath / fsPath).lexically_normal();
     }
-    filesystem::path fsFileName(utils::toNativePath(fileName_));
+    auto fsFileName =
+        filesystem::path(utils::toNativePath(fileName_)).lexically_normal();
+    if (fsFileName.is_relative())
+        return -1;
     if (!filesystem::exists(fsPath))
     {
         LOG_TRACE << "create path:" << fsPath;
