@@ -60,6 +60,13 @@ bool checkSql(const string_view &sql_)
 
 int PgConnection::flush()
 {
+    if (!autoBatch_)
+    {
+        if (!sendBatchEnd())
+        {
+            return 1;
+        }
+    }
     auto ret = PQflush(connectionPtr_.get());
     if (ret == 1)
     {
@@ -78,8 +85,10 @@ int PgConnection::flush()
     return ret;
 }
 PgConnection::PgConnection(trantor::EventLoop *loop,
-                           const std::string &connInfo)
+                           const std::string &connInfo,
+                           bool autoBatch)
     : DbConnection(loop),
+      autoBatch_(autoBatch),
       connectionPtr_(
           std::shared_ptr<PGconn>(PQconnectStart(connInfo.c_str()),
                                   [](PGconn *conn) { PQfinish(conn); })),
@@ -295,7 +304,10 @@ void PgConnection::sendBatchedSql()
                     return;
                 }
                 cmd->preparingStatement_ = statName;
-                cmd->isChanging_ = checkSql(cmd->sql_);
+                if (autoBatch_)
+                {
+                    cmd->isChanging_ = checkSql(cmd->sql_);
+                }
                 if (flush())
                 {
                     return;
@@ -304,25 +316,31 @@ void PgConnection::sendBatchedSql()
             else
             {
                 statName = iter->second.first;
-                cmd->isChanging_ = iter->second.second;
+                if (autoBatch_)
+                {
+                    cmd->isChanging_ = iter->second.second;
+                }
             }
         }
         else
         {
             statName = cmd->preparingStatement_;
         }
-        if (batchSqlCommands_.size() == 1 || cmd->sql_.length() > 1024 ||
-            batchCount_ > maxBatchCount)
+        if (autoBatch_)
         {
-            sendBatchEnd_ = true;
-            batchCount_ = 0;
+            if (batchSqlCommands_.size() == 1 || cmd->sql_.length() > 1024 ||
+                batchCount_ > maxBatchCount)
+            {
+                sendBatchEnd_ = true;
+                batchCount_ = 0;
+            }
+            else if (cmd->isChanging_)
+            {
+                sendBatchEnd_ = true;
+                batchCount_ = 0;
+            }
+            ++batchCount_;
         }
-        else if (cmd->isChanging_)
-        {
-            sendBatchEnd_ = true;
-            batchCount_ = 0;
-        }
-        ++batchCount_;
         if (PQsendQueryPrepared(connectionPtr_.get(),
                                 statName.c_str(),
                                 cmd->parametersNumber_,
@@ -342,7 +360,7 @@ void PgConnection::sendBatchedSql()
         {
             return;
         }
-        if (sendBatchEnd_)
+        if (autoBatch_ && sendBatchEnd_)
         {
             sendBatchEnd_ = false;
             if (!sendBatchEnd())

@@ -53,7 +53,8 @@ class DbClientManager : public trantor::NonCopyable
                         const std::string &name,
                         const bool isFast,
                         const std::string &characterSet,
-                        double timeout);
+                        double timeout,
+                        const bool autoBatch);
     bool areAllDbClientsAvailable() const noexcept;
 
   private:
@@ -66,6 +67,7 @@ class DbClientManager : public trantor::NonCopyable
         bool isFast_;
         size_t connectionNumber_;
         double timeout_;
+        bool autoBatch_;
     };
     std::vector<DbInfo> dbInfos_;
     std::map<std::string, IOThreadStorage<orm::DbClientPtr>> dbFastClientsMap_;
