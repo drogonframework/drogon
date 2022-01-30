@@ -71,8 +71,12 @@ void DbClientManager::createDbClients(
                             dbInfo.connectionInfo_,
                             ioloops[idx],
                             dbInfo.dbType_,
+#if LIBPQ_SUPPORTS_BATCH_MODE
                             dbInfo.connectionNumber_,
                             dbInfo.autoBatch_));
+#else
+                            dbInfo.connectionNumber_));
+#endif
                     if (dbInfo.timeout_ > 0.0)
                     {
                         c->setTimeout(dbInfo.timeout_);
