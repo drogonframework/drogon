@@ -26,7 +26,9 @@ static constexpr size_t MAX_DIGIT = MAX_SIZE % 10;
 #define DR_SKIP_WHITESPACE(p) while (*p == ' ') { ++(p); }
 #define DR_ISDIGIT(p) ('0' <= *(p) && *(p) <= '9')
 #define DR_WOULD_OVERFLOW(base, digit) \
-    ((base) > MAX_TEN || (base >= MAX_TEN && (digit) - '0' > MAX_DIGIT))
+    (static_cast<size_t>(base) > MAX_TEN || \
+    (static_cast<size_t>(base) >= MAX_TEN && \
+    static_cast<size_t>(digit) - '0' > MAX_DIGIT))
 // clang-format on
 
 /** Following formats are valid range header according to rfc7233`
