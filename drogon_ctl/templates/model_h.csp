@@ -332,14 +332,14 @@ auto cols=@@.get<std::vector<ColumnInfo>>("columns");
 auto rdbms=@@.get<std::string>("rdbms");
 if(@@.get<int>("hasPrimaryKey")<=1){
         if(!@@.get<std::string>("primaryKeyType").empty()){%>
-        static const std::string sql="select * from " + tableName + " where [[primaryKeyName]] = {%(rdbms=="postgresql"?"$1":"?")%}";
+        static const std::string sql="select * from `" + tableName + "` where `[[primaryKeyName]]` = {%(rdbms=="postgresql"?"$1":"?")%}";
 <%c++}else{%>
         static const std::string sql="";
 <%c++}%>
 <%c++}else{
         auto pkName=@@.get<std::vector<std::string>>("primaryKeyName");
 %>
-        static const std::string sql="select * from " + tableName + " where <%c++
+        static const std::string sql="select * from `" + tableName + "` where <%c++
         for(size_t i=0;i<pkName.size();i++)
         {
             if(rdbms=="postgresql")
@@ -364,35 +364,35 @@ if(@@.get<int>("hasPrimaryKey")<=1){
 <%c++
 if(@@.get<int>("hasPrimaryKey")<=1){
         if(!@@.get<std::string>("primaryKeyType").empty()){%>
-        static const std::string sql="delete from " + tableName + " where [[primaryKeyName]] = {%(rdbms=="postgresql"?"$1":"?")%}";
+        static const std::string sql="delete from `" + tableName + "` where `[[primaryKeyName]]` = {%(rdbms=="postgresql"?"$1":"?")%}";
 <%c++}else{%>
         static const std::string sql="";
 <%c++}%>
 <%c++}else{
         auto pkName=@@.get<std::vector<std::string>>("primaryKeyName");
 %>
-        static const std::string sql="delete from " + tableName + " where <%c++
+        static const std::string sql="delete from `" + tableName + "` where `<%c++
         for(size_t i=0;i<pkName.size();i++)
         {
             if(rdbms=="postgresql")
             {
-                $$<<pkName[i]<<" = $"<<i+1;
+                $$<<pkName[i]<<"` = $"<<i+1;
             }
             else
             {
-                $$<<pkName[i]<<" = ?";
+                $$<<pkName[i]<<"` = ?";
             }
             if(i<(pkName.size()-1))
-                $$<<" and ";
+                $$<<" and `";
         }
-        $$<<"\";\n";
+        $$<<"`\";\n";
     }
 %>
         return sql;
     }
     std::string sqlForInserting(bool &needSelection) const
     {
-        std::string sql="insert into " + tableName + " (";
+        std::string sql="insert into `" + tableName + "` (";
         size_t parametersCount = 0;
         needSelection = false;
 <%c++
@@ -409,7 +409,7 @@ if(@@.get<int>("hasPrimaryKey")<=1){
                 {
                     selFlag = true;
                 }
-                $$<<"            sql += \""<<cols[i].colName_<<",\";\n";
+                $$<<"            sql += \"`"<<cols[i].colName_<<"`,\";\n";
                 $$<<"            ++parametersCount;\n";
                 continue;
             }
@@ -419,7 +419,7 @@ if(@@.get<int>("hasPrimaryKey")<=1){
             {
                 if(@@.get<std::string>("rdbms")!="sqlite3")
                 {
-                    $$<<"        sql += \""<<cols[i].colName_<<",\";\n";
+                    $$<<"        sql += \"`"<<cols[i].colName_<<"`,\";\n";
                     $$<<"        ++parametersCount;\n";
                 }
                 else
@@ -427,7 +427,7 @@ if(@@.get<int>("hasPrimaryKey")<=1){
 %>
         if(dirtyFlag_[{%i%}])
         {
-            sql += "{%cols[i].colName_%},";
+            sql += "`{%cols[i].colName_%}`,";
             ++parametersCount;
         }
 <%c++
@@ -447,7 +447,7 @@ if(@@.get<int>("hasPrimaryKey")<=1){
 %>
         if(dirtyFlag_[{%i%}])
         {
-            sql += "{%cols[i].colName_%},";
+            sql += "`{%cols[i].colName_%}`,";
             ++parametersCount;
         }
 <%c++
