@@ -7,6 +7,8 @@ set(UNITTEST_SOURCES unittests/main.cc
                         unittests/CookieTest.cc
                         unittests/ClassNameTest.cc
                         unittests/HttpDateTest.cc
+                        ../src/HttpFileImpl.cc
+                        unittests/HttpFileTest.cc
                         unittests/HttpHeaderTest.cc
                         unittests/MD5Test.cc
                         unittests/MsgBufferTest.cc
