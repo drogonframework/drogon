@@ -38,7 +38,7 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
     add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
 
     # warning level 4 and all warnings as errors
-    add_compile_options(/W4 /WX)
+    # add_compile_options(/W4 /WX)
 endif ()
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
    # lots of warnings and all warnings as errors
