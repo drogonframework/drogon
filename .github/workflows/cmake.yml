@@ -2,7 +2,7 @@ name: Build Drogon
 
 on:
   push:
-    branches: [master]
+    branches: [newCMakeLists]
   pull_request:
   workflow_dispatch:
 
