@@ -602,6 +602,7 @@ void create_model::createModelFromMysql(
     };
 }
 #endif
+
 #if USE_SQLITE3
 void create_model::createModelClassFromSqlite3(
     const std::string &path,
@@ -782,10 +783,11 @@ void create_model::createModel(const std::string &path,
                                const std::string &singleModelName)
 {
     auto dbType = config.get("rdbms", "no dbms").asString();
-    std::transform(dbType.begin(), dbType.end(), dbType.begin(), tolower);
+    dbType = toLower(dbType);
     auto restfulApiConfig = config["restful_api_controllers"];
     auto relationships = getRelationships(config["relationships"]);
     auto convertMethods = getConvertMethods(config["convert"]);
+#if USE_POSTGRESQL || USE_MYSQL || USE_SQLITE3
     if (dbType == "postgresql")
     {
 #if USE_POSTGRESQL
@@ -1091,7 +1093,18 @@ void create_model::createModel(const std::string &path,
         std::cerr << "Does not support " << dbType << std::endl;
         exit(1);
     }
+#else
+    std::cerr << "No dbms libs:" << std::endl;
+    // these std::cerr codes below are avoiding unused parameter and unused
+    // functions error:
+    std::cerr << "path:" << path << std::endl;
+    std::cerr << "singleModelName:" << singleModelName << std::endl;
+    std::cerr << "escapeConnString:"
+              << escapeConnString(singleModelName).c_str() << std::endl;
+    exit(1);
+#endif
 }
+
 void create_model::createModel(const std::string &path,
                                const std::string &singleModelName)
 {

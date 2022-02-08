@@ -1,22 +1,14 @@
-set(ctl_sources
-    cmd.cc
-    create.cc
-    create_controller.cc
-    create_filter.cc
-    create_model.cc
-    create_plugin.cc
-    create_project.cc
-    create_view.cc
-    help.cc
-    main.cc
-    press.cc
-    version.cc)
-add_executable(_drogon_ctl
-               main.cc
-               cmd.cc
-               create.cc
-               create_view.cc)
-target_link_libraries(_drogon_ctl ${PROJECT_NAME})
+# executable _drogon_ctl for create csp views
+ add_executable(_drogon_ctl
+                main.cc
+                cmd.cc
+                create.cc
+                create_view.cc)
+
+ target_link_libraries(_drogon_ctl ${PROJECT_NAME})
+
+# if WIN32 AND build Shared
+# copy drogon/trantor dlls to INSTALL_BIN_DIR after build _drogon_ctl
 if (WIN32 AND BUILD_DROGON_SHARED)
   set(DROGON_FILE $<TARGET_FILE:drogon>)
   set(TRANTOR_FILE $<TARGET_FILE:trantor>)
@@ -33,6 +25,12 @@ if (WIN32 AND BUILD_DROGON_SHARED)
           -P
           ${CMAKE_CURRENT_SOURCE_DIR}/CopyDlls.cmake)
 endif()
+
+# ########################################################################
+# include function drogon_create_views
+# and use _drogon_ctl to make csp templates to c++ source files
+include(${CMAKE_CURRENT_SOURCE_DIR}/../cmake/DrogonUtilities.cmake)
+
 file(GLOB SCP_LIST ${CMAKE_CURRENT_SOURCE_DIR}/templates/*.csp)
 foreach(cspFile ${SCP_LIST})
   message(STATUS "cspFile:" ${cspFile})
@@ -48,18 +46,39 @@ foreach(cspFile ${SCP_LIST})
                      VERBATIM)
   set(TEMPL_SRC ${TEMPL_SRC} ${classname}.cc)
 endforeach()
-add_executable(drogon_ctl ${ctl_sources} ${TEMPL_SRC})
-target_link_libraries(drogon_ctl PRIVATE ${PROJECT_NAME})
-target_include_directories(drogon_ctl PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-add_dependencies(drogon_ctl _drogon_ctl)
+
+# executable drogon_ctl
+add_executable(drogon_ctl 
+    cmd.cc
+    create.cc
+    create_controller.cc
+    create_filter.cc
+    create_model.cc
+    create_plugin.cc
+    create_project.cc
+    create_view.cc
+    help.cc
+    main.cc
+    press.cc
+    version.cc
+    ${TEMPL_SRC})
+
 if(WIN32)
   target_link_libraries(drogon_ctl PRIVATE ws2_32 Rpcrt4)
 endif(WIN32)
 if(APPLE)
   target_link_libraries(drogon_ctl PRIVATE resolv)
 endif()
-message(STATUS "bin:" ${INSTALL_BIN_DIR})
+target_link_libraries(drogon_ctl PRIVATE ${PROJECT_NAME})
+target_include_directories(drogon_ctl PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+add_dependencies(drogon_ctl _drogon_ctl)
+
+# ########################################################################
+# install drogon_ctl
 install(TARGETS drogon_ctl RUNTIME DESTINATION ${INSTALL_BIN_DIR})
+
+# if WIN32, rename drogon_ctl to dg_ctl after build drogon_ctl
+# otherwise, create symlink dg_ctl to drogon_ctl
 if(WIN32)
   set(CTL_FILE $<TARGET_FILE:drogon_ctl>)
   add_custom_command(TARGET drogon_ctl POST_BUILD
@@ -69,7 +88,7 @@ if(WIN32)
                              -DRENAME_EXE=ON
                              -P
                              ${CMAKE_CURRENT_SOURCE_DIR}/CopyDlls.cmake)
-else(WIN32)
+else()
   install(CODE "execute_process( \
     COMMAND ${CMAKE_COMMAND} -E create_symlink \
     ./drogon_ctl \
@@ -77,7 +96,10 @@ else(WIN32)
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})")
   install(FILES "${CMAKE_CURRENT_BINARY_DIR}/dg_ctl"
           DESTINATION ${INSTALL_BIN_DIR})
-endif(WIN32)
+endif()
+
+# ########################################################################
+# set CXX_STANDARD for all target
 set(ctl_targets _drogon_ctl drogon_ctl)
 set_property(TARGET ${ctl_targets} PROPERTY CXX_STANDARD ${DROGON_CXX_STANDARD})
 set_property(TARGET ${ctl_targets} PROPERTY CXX_STANDARD_REQUIRED ON)

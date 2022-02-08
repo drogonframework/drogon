@@ -1,4 +1,6 @@
 link_libraries(${PROJECT_NAME})
+
+# ########################################################################
 set(UNITTEST_SOURCES unittests/main.cc
                         unittests/Base64Test.cc
                         unittests/UrlCodecTest.cc
@@ -36,12 +38,14 @@ endif()
 
 add_executable(unittest ${UNITTEST_SOURCES})
 
+# ########################################################################
 set(INTEGRATION_TEST_CLIENT_SOURCES integration_test/client/main.cc
                                     integration_test/client/WebSocketTest.cc
                                     integration_test/client/MultipleWsTest.cc
                                     integration_test/client/HttpPipeliningTest.cc)
 add_executable(integration_test_client ${INTEGRATION_TEST_CLIENT_SOURCES})
 
+# ########################################################################
 set(INTEGRATION_TEST_SERVER_SOURCES
     integration_test/server/CustomCtrl.cc
     integration_test/server/CustomHeaderFilter.cc
@@ -97,10 +101,12 @@ add_custom_command(
           ${CMAKE_CURRENT_SOURCE_DIR}/integration_test/server/a-directory
           $<TARGET_FILE_DIR:integration_test_server>/a-directory)
 
+# ########################################################################
+# set CXX_STANDARD for all target
 set(tests unittest integration_test_server integration_test_client)
-set_property(TARGET ${tests}
-             PROPERTY CXX_STANDARD ${DROGON_CXX_STANDARD})
+set_property(TARGET ${tests} PROPERTY CXX_STANDARD ${DROGON_CXX_STANDARD})
 set_property(TARGET ${tests} PROPERTY CXX_STANDARD_REQUIRED ON)
 set_property(TARGET ${tests} PROPERTY CXX_EXTENSIONS OFF)
 
+# ########################################################################
 ParseAndAddDrogonTests(unittest)

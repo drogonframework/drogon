@@ -27,7 +27,7 @@ static const char banner[] =
     " \\__,_|_|  \\___/ \\__, |\\___/|_| |_|\n"
     "                 |___/             \n";
 
-void version::handleCommand(std::vector<std::string> &parameters)
+void version::handleCommand(std::vector<std::string> &)
 {
     std::cout << banner << std::endl;
     std::cout << "A utility for drogon" << std::endl;

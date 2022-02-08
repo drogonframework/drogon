@@ -120,7 +120,7 @@ class Base64CharMap
             index++;
         charMap_[static_cast<int>('/')] = charMap_[static_cast<int>('_')] =
             index;
-        charMap_[0] = 0xff;
+        charMap_[0] = static_cast<char>(0xff);
     }
     char getIndex(const char c) const noexcept
     {
