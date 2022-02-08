@@ -749,14 +749,14 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
     /**
      *
      * @note
-     * Saving of anonymous sessions is disabled by default
+     * Saving of anonymous sessions is enabled by default
      */
     virtual HttpAppFramework &enableSaveAnonSession() = 0;
 
     /// Disable saving of anonymous sessions.
     /**
      * @note
-     * Saving of anonymous sessions is disabled by default
+     * Saving of anonymous sessions is enabled by default
      */
     virtual HttpAppFramework &disableSaveAnonSession() = 0;
 

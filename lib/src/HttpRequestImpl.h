@@ -349,17 +349,21 @@ class HttpRequestImpl : public HttpRequest
 
     void appendToBuffer(trantor::MsgBuffer *output) const;
 
-    virtual const SessionPtr &session() const override
+    virtual SessionPtr &session() override
     {
+        if (!sessionPtr_)
+        {
+            setSession();
+        }
         return sessionPtr_;
     }
 
-    void setSession(const SessionPtr &session)
+    virtual void setSession(const SessionPtr &session) override
     {
         sessionPtr_ = session;
     }
 
-    bool setSession()
+    virtual bool setSession() override
     {
         if (sessionManagerPtr_)
         {
@@ -372,9 +376,12 @@ class HttpRequestImpl : public HttpRequest
         return false;
     }
 
-    void setSessionManager(SessionManager *sessionManagerPtr)
+    virtual void setSessionManager(SessionManager *sessionManagerPtr)
     {
-        sessionManagerPtr_ = sessionManagerPtr;
+        if (sessionManagerPtr)
+        {
+            sessionManagerPtr_ = sessionManagerPtr;
+        }
     }
 
     virtual const AttributesPtr &attributes() const override
@@ -561,7 +568,7 @@ class HttpRequestImpl : public HttpRequest
     mutable ContentType contentType_{CT_TEXT_PLAIN};
     mutable bool flagForParsingContentType_{false};
     mutable std::string contentTypeString_;
-    SessionManager *sessionManagerPtr_;
+    SessionManager *sessionManagerPtr_{nullptr};
 };
 
 using HttpRequestImplPtr = std::shared_ptr<HttpRequestImpl>;

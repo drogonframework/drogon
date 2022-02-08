@@ -250,13 +250,9 @@ static void loadApp(const Json::Value &app)
         drogon::app().enableSession(timeout);
         auto saveAnonSession = app.get("session_save_anon", true).asBool();
         if (saveAnonSession)
-        {
             drogon::app().enableSaveAnonSession();
-        }
         else
-        {
             drogon::app().disableSaveAnonSession();
-        }
     }
     else
         drogon::app().disableSession();

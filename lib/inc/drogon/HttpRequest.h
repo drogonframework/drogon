@@ -248,10 +248,10 @@ class DROGON_EXPORT HttpRequest
     }
 
     /// Get the session to which the request belongs.
-    virtual const SessionPtr &session() const = 0;
+    virtual SessionPtr &session() = 0;
 
     /// Get the session to which the request belongs.
-    const SessionPtr &getSession() const
+    SessionPtr &getSession()
     {
         return session();
     }
