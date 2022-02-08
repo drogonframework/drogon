@@ -27,7 +27,7 @@ DROGON_TEST(HttpFile)
         HttpFileImpl file;
         file.setFileName("../test_malicious_file_name");
         file.setFile("test", 4);
-        auto out = file.save(uploadPath);
+        auto out = file.save(uploadPath.string());
 
         CHECK(out == -1);
         CHECK(!filesystem::exists(uploadPath / "../test_malicious_file_name"));
