@@ -42,7 +42,7 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
 endif ()
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
    # lots of warnings and all warnings as errors
-   add_compile_options(-Wall -Wextra -Werror)
+   # add_compile_options(-Wall -Wextra -Werror)
 endif ()
 
 # Cxx_standard checking 
