@@ -1,45 +1,49 @@
 link_libraries(${PROJECT_NAME})
-set(UNITTEST_SOURCES unittests/main.cc
-                        unittests/Base64Test.cc
-                        unittests/UrlCodecTest.cc
-                        unittests/GzipTest.cc
-                        unittests/HttpViewDataTest.cc
-                        unittests/CookieTest.cc
-                        unittests/ClassNameTest.cc
-                        unittests/HttpDateTest.cc
-                        unittests/HttpHeaderTest.cc
-                        unittests/MD5Test.cc
-                        unittests/MsgBufferTest.cc
-                        unittests/OStringStreamTest.cc
-                        unittests/PubSubServiceUnittest.cc
-                        unittests/Sha1Test.cc
-                        ../src/ssl_funcs/Sha1.cc
-                        ../src/HttpUtils.cc
-                        unittests/FileTypeTest.cc
-                        unittests/DrObjectTest.cc
-                        unittests/HttpFullDateTest.cc
-                        unittests/MainLoopTest.cc
-                        unittests/CacheMapTest.cc
-                        unittests/StringOpsTest.cc)
+set(UNITTEST_SOURCES
+    unittests/main.cc
+    unittests/Base64Test.cc
+    unittests/UrlCodecTest.cc
+    unittests/GzipTest.cc
+    unittests/HttpViewDataTest.cc
+    unittests/CookieTest.cc
+    unittests/ClassNameTest.cc
+    unittests/HttpDateTest.cc
+    unittests/HttpHeaderTest.cc
+    unittests/MD5Test.cc
+    unittests/MsgBufferTest.cc
+    unittests/OStringStreamTest.cc
+    unittests/PubSubServiceUnittest.cc
+    unittests/Sha1Test.cc
+    ../src/ssl_funcs/Sha1.cc
+    unittests/FileTypeTest.cc
+    unittests/DrObjectTest.cc
+    unittests/HttpFullDateTest.cc
+    unittests/MainLoopTest.cc
+    unittests/CacheMapTest.cc
+    unittests/StringOpsTest.cc)
 
 if(DROGON_CXX_STANDARD GREATER_EQUAL 20 AND HAS_COROUTINE)
-    set(UNITTEST_SOURCES ${UNITTEST_SOURCES} unittests/CoroutineTest.cc)
+  set(UNITTEST_SOURCES ${UNITTEST_SOURCES} unittests/CoroutineTest.cc)
 endif()
 
 if(Brotli_FOUND)
-    set(UNITTEST_SOURCES ${UNITTEST_SOURCES} unittests/BrotliTest.cc)
+  set(UNITTEST_SOURCES ${UNITTEST_SOURCES} unittests/BrotliTest.cc)
 endif()
 
-if (CMAKE_CXX_COMPILER_ID MATCHES "MSVC" AND BUILD_DROGON_SHARED)
-    set(UNITTEST_SOURCES ${UNITTEST_SOURCES} ../src/HttpUtils.cc)
+if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC" AND BUILD_DROGON_SHARED)
+  set(UNITTEST_SOURCES ${UNITTEST_SOURCES} ../src/HttpUtils.cc)
+else()
+  set(UNITTEST_SOURCES ${UNITTEST_SOURCES} ../src/HttpFileImpl.cc
+                       unittests/HttpFileTest.cc)
 endif()
 
 add_executable(unittest ${UNITTEST_SOURCES})
 
-set(INTEGRATION_TEST_CLIENT_SOURCES integration_test/client/main.cc
-                                    integration_test/client/WebSocketTest.cc
-                                    integration_test/client/MultipleWsTest.cc
-                                    integration_test/client/HttpPipeliningTest.cc)
+set(INTEGRATION_TEST_CLIENT_SOURCES
+    integration_test/client/main.cc
+    integration_test/client/WebSocketTest.cc
+    integration_test/client/MultipleWsTest.cc
+    integration_test/client/HttpPipeliningTest.cc)
 add_executable(integration_test_client ${INTEGRATION_TEST_CLIENT_SOURCES})
 
 set(INTEGRATION_TEST_SERVER_SOURCES
@@ -64,10 +68,11 @@ set(INTEGRATION_TEST_SERVER_SOURCES
     integration_test/server/main.cc)
 
 if(DROGON_CXX_STANDARD GREATER_EQUAL 20 AND HAS_COROUTINE)
-    set(INTEGRATION_TEST_SERVER_SOURCES ${INTEGRATION_TEST_SERVER_SOURCES}
-        integration_test/server/api_v1_CoroTest.cc)
-    set(CMAKE_CXX_STANDARD 20)
-    set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
+  set(INTEGRATION_TEST_SERVER_SOURCES
+      ${INTEGRATION_TEST_SERVER_SOURCES}
+      integration_test/server/api_v1_CoroTest.cc)
+  set(CMAKE_CXX_STANDARD 20)
+  set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 endif(DROGON_CXX_STANDARD GREATER_EQUAL 20 AND HAS_COROUTINE)
 
 add_executable(integration_test_server ${INTEGRATION_TEST_SERVER_SOURCES})
@@ -98,9 +103,8 @@ add_custom_command(
           $<TARGET_FILE_DIR:integration_test_server>/a-directory)
 
 set(tests unittest integration_test_server integration_test_client)
-set_property(TARGET ${tests}
-             PROPERTY CXX_STANDARD ${DROGON_CXX_STANDARD})
+set_property(TARGET ${tests} PROPERTY CXX_STANDARD ${DROGON_CXX_STANDARD})
 set_property(TARGET ${tests} PROPERTY CXX_STANDARD_REQUIRED ON)
 set_property(TARGET ${tests} PROPERTY CXX_EXTENSIONS OFF)
 
-ParseAndAddDrogonTests(unittest)
+parseandadddrogontests(unittest)

@@ -18,6 +18,7 @@
 #include <drogon/MultiPart.h>
 #include <fstream>
 #include <iostream>
+#include <algorithm>
 
 using namespace drogon;
 
@@ -31,28 +32,45 @@ int HttpFileImpl::save(const std::string &path) const
     assert(!path.empty());
     if (fileName_.empty())
         return -1;
-    filesystem::path fsPath(utils::toNativePath(path));
-    if (!fsPath.is_absolute() &&
-        (!fsPath.has_parent_path() ||
-         (fsPath.begin()->string() != "." && fsPath.begin()->string() != "..")))
+    filesystem::path fsUploadDir(utils::toNativePath(path));
+
+    if (!fsUploadDir.is_absolute() && (!fsUploadDir.has_parent_path() ||
+                                       (fsUploadDir.begin()->string() != "." &&
+                                        fsUploadDir.begin()->string() != "..")))
     {
-        filesystem::path fsUploadPath(utils::toNativePath(
-            HttpAppFrameworkImpl::instance().getUploadPath()));
-        fsPath = fsUploadPath / fsPath;
+        fsUploadDir = utils::toNativePath(
+                          HttpAppFrameworkImpl::instance().getUploadPath()) /
+                      fsUploadDir;
     }
-    filesystem::path fsFileName(utils::toNativePath(fileName_));
-    if (!filesystem::exists(fsPath))
+
+    fsUploadDir = filesystem::weakly_canonical(fsUploadDir);
+
+    if (!filesystem::exists(fsUploadDir))
     {
-        LOG_TRACE << "create path:" << fsPath;
+        LOG_TRACE << "create path:" << fsUploadDir;
         drogon::error_code err;
-        filesystem::create_directories(fsPath, err);
+        filesystem::create_directories(fsUploadDir, err);
         if (err)
         {
             LOG_SYSERR;
             return -1;
         }
     }
-    return saveTo(fsPath / fsFileName);
+
+    filesystem::path fsSaveToPath(filesystem::weakly_canonical(
+        fsUploadDir / utils::toNativePath(fileName_)));
+
+    if (!std::equal(fsUploadDir.begin(),
+                    fsUploadDir.end(),
+                    fsSaveToPath.begin()))
+    {
+        LOG_ERROR
+            << "Attempt writing outside of upload directory detected. Path: "
+            << fileName_;
+        return -1;
+    }
+
+    return saveTo(fsSaveToPath);
 }
 int HttpFileImpl::saveAs(const std::string &fileName) const
 {
