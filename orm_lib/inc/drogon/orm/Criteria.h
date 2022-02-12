@@ -123,7 +123,8 @@ class DROGON_EXPORT Criteria
              const std::vector<T> &args)
     {
         const auto argsSize = args.size();
-        assert(((opera == CompareOperator::In) || (opera == CompareOperator::NotIn)) &&
+        assert(((opera == CompareOperator::In) ||
+                (opera == CompareOperator::NotIn)) &&
                (argsSize > 0));
         if (opera == CompareOperator::In)
         {
@@ -155,7 +156,8 @@ class DROGON_EXPORT Criteria
              std::vector<T> &&args)
     {
         const auto argsSize = args.size();
-        assert(((opera == CompareOperator::In) || (opera == CompareOperator::NotIn)) &&
+        assert(((opera == CompareOperator::In) ||
+                (opera == CompareOperator::NotIn)) &&
                (argsSize > 0));
         if (opera == CompareOperator::In)
         {
