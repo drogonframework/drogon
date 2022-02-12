@@ -137,7 +137,7 @@ class DROGON_EXPORT Criteria
         }
         for (size_t i = 0; i < argsSize; ++i)
         {
-            if ((i < argsSize) - 1)
+            if (i < (argsSize - 1))
                 conditionString_.append("$?,");
             else
                 conditionString_.append("$?");
@@ -169,7 +169,7 @@ class DROGON_EXPORT Criteria
         }
         for (size_t i = 0; i < argsSize; ++i)
         {
-            if (i < argsSize - 1)
+            if (i < (argsSize - 1))
                 conditionString_.append("$?,");
             else
                 conditionString_.append("$?");
