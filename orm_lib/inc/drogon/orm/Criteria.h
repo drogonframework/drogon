@@ -108,8 +108,6 @@ class DROGON_EXPORT Criteria
             case CompareOperator::Like:
                 conditionString_ += " like $?";
                 break;
-            case CompareOperator::IsNull:
-            case CompareOperator::IsNotNull:
             default:
                 break;
         }
