@@ -39,6 +39,7 @@ enum class CompareOperator
     LT,
     LE,
     Like,
+    NotLike,
     In,
     NotIn,
     IsNull,
@@ -107,6 +108,9 @@ class DROGON_EXPORT Criteria
                 break;
             case CompareOperator::Like:
                 conditionString_ += " like $?";
+                break;
+            case CompareOperator::NotLike:
+                conditionString_ += " not like $?";
                 break;
             default:
                 break;
