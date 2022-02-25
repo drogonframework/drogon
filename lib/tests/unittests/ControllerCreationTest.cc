@@ -5,42 +5,40 @@
 
 class Ctrl : public drogon::HttpController<Ctrl, false>
 {
-public:
-	static void initPathRouting()
+  public:
+    static void initPathRouting()
     {
         created = true;
-	};
+    };
 
     static bool created;
 };
 
 class SimpleCtrl : public drogon::HttpController<Ctrl, false>
 {
-public:
-	static void initPathRouting()
+  public:
+    static void initPathRouting()
     {
         created = true;
-	};
+    };
 
     static bool created;
 };
 
 class WsCtrl : public drogon::WebSocketController<WsCtrl, false>
 {
- public:
+  public:
     static void initPathRouting()
     {
         created = true;
-	};
+    };
 
     static bool created;
 };
 
-
 bool Ctrl::created = false;
 bool SimpleCtrl::created = false;
 bool WsCtrl::created = false;
-
 
 DROGON_TEST(ControllerCreation)
 {
