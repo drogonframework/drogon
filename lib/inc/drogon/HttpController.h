@@ -74,8 +74,9 @@ class HttpController : public DrObject<T>, public HttpControllerBase
         if (classNameInPath)
         {
             std::string path = "/";
-            path.append(HttpController<T>::classTypeName());
-            LOG_TRACE << "classname:" << HttpController<T>::classTypeName();
+            path.append(HttpController<T, AutoCreation>::classTypeName());
+            LOG_TRACE << "classname:"
+                      << HttpController<T, AutoCreation>::classTypeName();
 
             // transform(path.begin(), path.end(), path.begin(), tolower);
             std::string::size_type pos;
