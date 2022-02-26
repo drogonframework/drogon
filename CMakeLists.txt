@@ -242,6 +242,7 @@ set(DROGON_SOURCES
     lib/src/CacheFile.cc
     lib/src/ConfigLoader.cc
     lib/src/Cookie.cc
+    lib/src/DotenvParser.cc
     lib/src/DrClassMap.cc
     lib/src/DrTemplateBase.cc
     lib/src/FiltersFunction.cc

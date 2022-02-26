@@ -386,6 +386,16 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
      */
     virtual HttpAppFramework &loadConfigJson(Json::Value &&data) = 0;
 
+    /// Load the configuration file with dotenv format
+    /// defaults to filename ".env" in the current working directory.
+    virtual HttpAppFramework &loadConfigDotenv() = 0;
+
+    /// Load the configuration file with dotenv format.
+    /**
+     * @param filename the configuration file
+     */
+    virtual HttpAppFramework &loadConfigDotenv(const std::string &fileName) = 0;
+
     /// Register a HttpSimpleController object into the framework.
     /**
      * @param pathName When the path of a http request is equal to the

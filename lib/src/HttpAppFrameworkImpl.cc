@@ -401,6 +401,19 @@ HttpAppFramework &HttpAppFrameworkImpl::loadConfigJson(Json::Value &&data)
     jsonConfig_ = loader.jsonValue();
     return *this;
 }
+HttpAppFramework &HttpAppFrameworkImpl::loadConfigDotenv()
+{
+    loadConfigDotenv(".env");
+    return *this;
+}
+HttpAppFramework &HttpAppFrameworkImpl::loadConfigDotenv(
+    const std::string &fileName)
+{
+    ConfigLoader loader(fileName, kDotENV);
+    loader.load();
+    jsonConfig_ = loader.jsonValue();
+    return *this;
+}
 HttpAppFramework &HttpAppFrameworkImpl::setLogPath(
     const std::string &logPath,
     const std::string &logfileBaseName,

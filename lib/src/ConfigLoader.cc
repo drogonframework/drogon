@@ -13,6 +13,7 @@
  */
 
 #include "ConfigLoader.h"
+#include "DotenvParser.h"
 #include "HttpAppFrameworkImpl.h"
 #include <drogon/config.h>
 #include <fstream>
@@ -118,6 +119,46 @@ ConfigLoader::ConfigLoader(const std::string &configFile)
         try
         {
             infile >> configJsonRoot_;
+        }
+        catch (const std::exception &exception)
+        {
+            std::cerr << "Configuration file format error! in " << configFile
+                      << ":" << std::endl;
+            std::cerr << exception.what() << std::endl;
+            exit(1);
+        }
+    }
+}
+ConfigLoader::ConfigLoader(const std::string &configFile, ConfigSyntax syntax)
+{
+    if (os_access(drogon::utils::toNativePath(configFile).c_str(), 0) != 0)
+    {
+        std::cerr << "Config file " << configFile << " not found!" << std::endl;
+        exit(1);
+    }
+    if (os_access(drogon::utils::toNativePath(configFile).c_str(), R_OK) != 0)
+    {
+        std::cerr << "No permission to read config file " << configFile
+                  << std::endl;
+        exit(1);
+    }
+    configFile_ = configFile;
+    std::ifstream infile(drogon::utils::toNativePath(configFile).c_str(),
+                         std::ifstream::in);
+    if (infile)
+    {
+        try
+        {
+            if (syntax == kDotENV)
+            {
+                DotenvParser parser;
+                parser.parse(infile);
+                configJsonRoot_ = parser.jsonValue();
+            }
+            else
+            {
+                infile >> configJsonRoot_;
+            }
         }
         catch (const std::exception &exception)
         {
