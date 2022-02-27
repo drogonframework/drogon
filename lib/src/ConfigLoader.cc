@@ -616,7 +616,8 @@ static void loadListeners(const Json::Value &listeners)
             {
                 if (opt.size() == 0 || opt.size() > 2)
                 {
-                    LOG_FATAL << "SSL configuration option should be an 1 or 2-element array";
+                    LOG_FATAL << "SSL configuration option should be an 1 or "
+                                 "2-element array";
                     abort();
                 }
                 sslConfCmds.emplace_back(opt[0].asString(),
@@ -642,7 +643,8 @@ static void loadSSL(const Json::Value &sslConf)
         {
             if (opt.size() == 0 || opt.size() > 2)
             {
-                LOG_FATAL << "SSL configuration option should be an 1 or 2-element array";
+                LOG_FATAL << "SSL configuration option should be an 1 or "
+                             "2-element array";
                 abort();
             }
             sslConfCmds.emplace_back(opt[0].asString(),

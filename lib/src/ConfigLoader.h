@@ -22,7 +22,8 @@ namespace drogon
 {
 enum ConfigSyntax
 {
-    kJSON, kDotENV
+    kJSON,
+    kDotENV
 };
 
 class ConfigLoader : public trantor::NonCopyable
