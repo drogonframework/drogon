@@ -13,6 +13,7 @@
  */
 
 #include "DotenvParser.h"
+#include "drogon/utils/Utilities.h"
 
 #include <iostream>
 
@@ -24,25 +25,14 @@ DotenvParser::DotenvParser()
 DotenvParser::~DotenvParser()
 {
 }
-std::string trim(const std::string &s, const char *c)
+static std::string trim(const std::string &s, const char *c)
 {
     std::string ss = s;
     ss.erase(s.find_last_not_of(c) + 1);
     ss.erase(0, s.find_first_not_of(c));
     return ss;
 }
-std::vector<std::string> splitBy(const std::string &str, const char dlm)
-{
-    std::vector<std::string> parts;
-    std::stringstream stream(str);
-    std::string part;
-    while (std::getline(stream, part, dlm))
-    {
-        parts.push_back(trim(part, " \"'"));
-    }
-    return parts;
-}
-std::string parseNamespace(const std::string &line)
+static std::string parseNamespace(const std::string &line)
 {
     std::string ns;
     for (const auto &c : line)
@@ -59,20 +49,20 @@ std::string parseNamespace(const std::string &line)
     }
     return ns;
 }
-std::string removeInlineComments(const std::string &value)
+static std::string removeInlineComments(const std::string &value)
 {
-    return splitBy(value, '#')[0];
+    return drogon::utils::splitString(value, "#")[0];
 }
-std::pair<std::string, std::string> parseKeyValue(const std::string &line)
+static std::pair<std::string, std::string> parseKeyValue(const std::string &line)
 {
-    auto parts = splitBy(line, '=');
+    auto parts = drogon::utils::splitString(line, "=");
     if (parts.size() < 2)
     {
         return {"", ""};
     }
     return {parts[0], removeInlineComments(parts[1])};
 }
-bool isEqual(const std::string &a, const std::string &b)
+static bool isEqual(const std::string &a, const std::string &b)
 {
     std::string upperA = a;
     std::string upperB = b;
@@ -89,7 +79,7 @@ void DotenvParser::parse(std::ifstream &infile)
     }
     infile.close();
 
-    std::vector<std::string> lines = splitBy(content.str(), '\n');
+    std::vector<std::string> lines = drogon::utils::splitString(content.str(), "\n");
     std::string ns;
 
     int listenersIndex = -1;
