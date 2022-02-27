@@ -32,6 +32,7 @@ test.ps1 -BUILD_TYPE Debug -COMPILER_VERSION 16 -VS_VERSION 2019
  '
 $src_dir=$PWD
 # set arch to x64
+Import-Module ("C:\Program Files (x86)\Microsoft Visual Studio\$VS_VERSION\Enterprise\Common7\Tools\Microsoft.VisualStudio.DevShell.dll")
 Enter-VsDevShell -VsInstallPath "C:\Program Files (x86)\Microsoft Visual Studio\$VS_VERSION\Professional" -DevCmdArguments "-arch=x64 -host_arch=x64" -SkipAutomaticLocation
 
 $make_flags=''
