@@ -1,9 +1,16 @@
 ---
 name: Bug report
 about: Create a report to help us improve
-labels: 
+title: ''
+labels: ''
+assignees: ''
 
 ---
+
+**Notice**
+If you need support or clarification regarding the usage of Drogon in your project, visit the official Drogon support channel at [gitter](https://gitter.im/drogon-web/community)
+
+Please create a new issue only if you think you have found a bug or if have a feature request/enhancement.
 
 **Describe the bug**
 A clear and concise description of what the bug is.
