@@ -4,22 +4,21 @@
 
 param(
     [string]$BUILD_TYPE = 'Debug',
-    [Int]$COMPILER_VERSION = 16,
-    [Int]$VS_VERSION = 2019
+    [string]$COMPILER = 'Visual Studio',
+    [Int]$COMPILER_VERSION = 16
 )
 
-Write-Host -ForegroundColor:Yellow "BUILD_TYPE:$BUILD_TYPE"
-Write-Host -ForegroundColor:Yellow "VS COMPILER_VERSION:$COMPILER_VERSION"
-Write-Host -ForegroundColor:Yellow "VS VERSION:$VS_VERSION"
+Write-Host -ForegroundColor:Magenta "BUILD_TYPE:$BUILD_TYPE"
+Write-Host -ForegroundColor:Magenta "VS COMPILER_VERSION:$COMPILER_VERSION"
 $OS=$env:OS
-Write-Host -ForegroundColor:Yellow "OS:$OS"
+Write-Host -ForegroundColor:Magenta "OS:$OS"
 if ($OS -ne "Windows_NT"){
-	Write-Host -ForegroundColor:Yellow "This script is for windows, please use test.sh for other OS"
+	Write-Host -ForegroundColor:Red "This script is for windows, please use test.sh for other OS"
 	exit -1
 }
 
 Write-Host -ForegroundColor:Green '
-# Install conan first, download dependencies(only support x64), then build project as bellow:
+# Install conan for Visual Studio first, download dependencies(only support x64), then build project as bellow:
 mkdir build
 cd build
 conan install .. -s compiler="Visual Studio" -s compiler.version=16 -s build_type=Debug -g cmake_paths
@@ -27,30 +26,49 @@ cmake .. -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON -DBUILD_DROGON_SHARED=ON -D
 cmake --build . --parallel --target install
 
 # Using params for this script as bellow: 
-test.ps1 Debug 16 2019
-test.ps1 -BUILD_TYPE Debug -COMPILER_VERSION 16 -VS_VERSION 2019
+test.ps1 Debug 16
+test.ps1 -BUILD_TYPE Debug -COMPILER "Visual Studio" -COMPILER_VERSION 16
  '
 $src_dir=$PWD
-# set arch to x64
-Import-Module ("C:\Program Files (x86)\Microsoft Visual Studio\$VS_VERSION\Enterprise\Common7\Tools\Microsoft.VisualStudio.DevShell.dll")
-Enter-VsDevShell -VsInstallPath "C:\Program Files (x86)\Microsoft Visual Studio\$VS_VERSION\Professional" -DevCmdArguments "-arch=x64 -host_arch=x64" -SkipAutomaticLocation
+# set arch to x64, if compiler is Visual Studio, due to conan package manager only provide x64 packages currently.
+if ("$COMPILER" -eq "Visual Studio") {
+    Write-Host -ForegroundColor:Magenta "Setting Visual Studio to arch x64"
+    if (Test-Path -Path "C:\Program Files (x86)\Microsoft Visual Studio\2022\Enterprise") {
+        $VsInstallPath="C:\Program Files (x86)\Microsoft Visual Studio\2022\Enterprise"
+    } elseif (Test-Path -Path "C:\Program Files (x86)\Microsoft Visual Studio\2022\Professional"){
+        $VsInstallPath="C:\Program Files (x86)\Microsoft Visual Studio\2022\Professional"
+    } elseif (Test-Path -Path "C:\Program Files (x86)\Microsoft Visual Studio\2022\Community"){
+        $VsInstallPath="C:\Program Files (x86)\Microsoft Visual Studio\2022\Community"
+    } elseif (Test-Path -Path "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise") {
+        $VsInstallPath="C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise"
+    } elseif (Test-Path -Path "C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional"){
+        $VsInstallPath="C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional"
+    } elseif (Test-Path -Path "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community"){
+        $VsInstallPath="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community"
+    } else {
+        Write-Host -ForegroundColor:Red "Error in found Visual Studio install path"
+        exit -1
+    }
+    Import-Module ("$VsInstallPath\Common7\Tools\Microsoft.VisualStudio.DevShell.dll")
+    Enter-VsDevShell -VsInstallPath "$VsInstallPath" -DevCmdArguments "-arch=x64 -host_arch=x64" -SkipAutomaticLocation
+} else {
+    Write-Host -ForegroundColor:Magenta "Please confirm all dependencies have been installed."
+}
 
-$make_flags=''
 $cmake_gen=''
 $cmake_test_target='test'
 $parallel=$env:NUMBER_OF_PROCESSORS
 
-if ((Test-Path -IsValid "Ninja")) {
-	$cmake_gen='-GNinja'
-} else{
-    $make_flags="$make_flags -j$parallel"
+if ( "1" -eq (Select-String "CMAKE_GENERATOR:INTERNAL=Ninja" $src_dir/build/CMakeCache.txt).count ) {
+    $cmake_gen='-G Ninja'
+} elseif ( "1" -eq (Select-String "CMAKE_GENERATOR:INTERNAL=Visual Studio" $src_dir/build/CMakeCache.txt).count ) {
     $cmake_test_target='RUN_TESTS'
-}
+} else {}
 
 # Unit testing
 cd $src_dir/build
 Write-Host -ForegroundColor:Cyan "Unit testing"
-cmake --build .  --target $cmake_test_target $make_flags
+cmake --build .  --target "$cmake_test_target"
 
 if ( !$? ) {
     Write-Host -ForegroundColor:Red "Error in unit testing"
@@ -115,7 +133,9 @@ Remove-item $src_dir/build/$BUILD_TYPE/drogon_test -recurse -ErrorAction Silentl
 
 & $drogon_ctl_exec create project drogon_test
 
-Get-Item .
+Get-ChildItem .
+Get-ChildItem ./drogon_test
+
 cd drogon_test/controllers
 
 & $drogon_ctl_exec create controller Test::SimpleCtrl
@@ -156,21 +176,26 @@ cd ../views
 "Hello World" | Out-File hello.csp -Encoding utf8
 
 cd ../build
-conan install $src_dir -s compiler="Visual Studio" -s compiler.version=$COMPILER_VERSION -s build_type=$BUILD_TYPE -g cmake_paths
-$test_conan_paths_cmake="$PWD/conan_paths.cmake"
-
+if ("$COMPILER" -eq "Visual Studio") {
+   conan install $src_dir -s compiler=$COMPILER -s compiler.version=$COMPILER_VERSION -s build_type=$BUILD_TYPE -g cmake_paths
+}
 # passing path
 $env:path+=";$src_dir/build/install/bin"
 $env:path+=";$src_dir/build/install/lib/cmake/Drogon"
 $env:path+=";$src_dir/build/install/lib/cmake/Trantor"
 
-cmake .. "-DCMAKE_TOOLCHAIN_FILE=$test_conan_paths_cmake" "$cmake_gen"
+if ("$COMPILER" -eq "Visual Studio") {
+   cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_TOOLCHAIN_FILE="conan_paths.cmake" -DCMAKE_INSTALL_PREFIX="$src_dir/build/install" "$cmake_gen"
+} else {
+   cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_INSTALL_PREFIX="$src_dir/build/install" "$cmake_gen"
+}
+
 if ( !$? ) {
     Write-Host -ForegroundColor:Red "Failed to run CMake for example project"
     exit -1
 }
 
-cmake --build . $make_flags
+cmake --build .
 if ( !$? ) {
     Write-Host -ForegroundColor:Red "Error in drogon_test build"
     exit -1

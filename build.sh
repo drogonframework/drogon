@@ -86,8 +86,10 @@ case nproc in
 esac
 
 if [ -f /bin/ninja ]; then
-    make_program=ninja
-    cmake_gen='-GNinja'
+    #make_program=ninja
+    #cmake_gen='-GNinja'
+    echo "XX"
+    make_flags="$make_flags -j$parallel"
 else
     make_flags="$make_flags -j$parallel"
 fi

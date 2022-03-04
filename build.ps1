@@ -4,29 +4,54 @@
 
 param(
     [string]$BUILD_PARA = '',
-    [Int]$COMPILER_VERSION = 16,
-    [Int]$VS_VERSION = 2019
+    [string]$COMPILER = 'Visual Studio',
+    [Int]$COMPILER_VERSION = 16
 )
 
-Write-Host -ForegroundColor:Yellow "BUILD_PARA:$BUILD_PARA"
-Write-Host -ForegroundColor:Yellow "VS COMPILER_VERSION:$COMPILER_VERSION"
-Write-Host -ForegroundColor:Yellow "VS VERSION:$VS_VERSION"
 $OS=$env:OS
-Write-Host -ForegroundColor:Yellow "OS:$OS"
+Write-Host -ForegroundColor:Magenta "OS:$OS"
 if ($OS -ne "Windows_NT"){
 	Write-Host -ForegroundColor:Yellow "This script is for windows, please use build.sh for other OS"
 	exit -1
 }
+Write-Host -ForegroundColor:Magenta "BUILD_PARA:$BUILD_PARA"
+Write-Host -ForegroundColor:Magenta "VS COMPILER:$COMPILER"
+Write-Host -ForegroundColor:Magenta "VS COMPILER_VERSION:$COMPILER_VERSION"
 
 Write-Host -ForegroundColor:Green '
-# Using params for this script as bellow: 
-build.ps1 -t
-build.ps1 -tshared
+# Using params for this script as bellow:
+# no arg: no test, release
+# arg t: with test, debug
+# arg tshared: with test, shared, debug
+build.ps1 t
+build.ps1 tshared
  '
 
 $src_dir=$PWD
-# set arch to x64
-Enter-VsDevShell -VsInstallPath "C:\Program Files (x86)\Microsoft Visual Studio\$VS_VERSION\Professional" -DevCmdArguments "-arch=x64 -host_arch=x64" -SkipAutomaticLocation
+# set arch to x64, if compiler is Visual Studio, due to conan package manager only provide x64 packages currently.
+if ("$COMPILER" -eq "Visual Studio") {
+    Write-Host -ForegroundColor:Magenta "Setting Visual Studio to arch x64"
+    if (Test-Path -Path "C:\Program Files (x86)\Microsoft Visual Studio\2022\Enterprise") {
+        $VsInstallPath="C:\Program Files (x86)\Microsoft Visual Studio\2022\Enterprise"
+    } elseif (Test-Path -Path "C:\Program Files (x86)\Microsoft Visual Studio\2022\Professional"){
+        $VsInstallPath="C:\Program Files (x86)\Microsoft Visual Studio\2022\Professional"
+    } elseif (Test-Path -Path "C:\Program Files (x86)\Microsoft Visual Studio\2022\Community"){
+        $VsInstallPath="C:\Program Files (x86)\Microsoft Visual Studio\2022\Community"
+    } elseif (Test-Path -Path "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise") {
+        $VsInstallPath="C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise"
+    } elseif (Test-Path -Path "C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional"){
+        $VsInstallPath="C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional"
+    } elseif (Test-Path -Path "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community"){
+        $VsInstallPath="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community"
+    } else {
+        Write-Host -ForegroundColor:Red "Error in found Visual Studio install path"
+        exit -1
+    }
+    Import-Module ("$VsInstallPath\Common7\Tools\Microsoft.VisualStudio.DevShell.dll")
+    Enter-VsDevShell -VsInstallPath "$VsInstallPath" -DevCmdArguments "-arch=x64 -host_arch=x64" -SkipAutomaticLocation
+} else {
+    Write-Host -ForegroundColor:Magenta "Please confirm all dependencies have been installed."
+}
 
 #build drogon
 function build_drogon($para){
@@ -46,32 +71,37 @@ function build_drogon($para){
         Remove-item $build_dir -recurse -ErrorAction SilentlyContinue
     }
 
-    #Create building folder
-    echo "Created building folder: $build_dir"
-    mkdir $build_dir
+    #Create building and install folder
+    echo "Created building and install folder: $build_dir"
+    mkdir -p $build_dir/install
 
     echo "Entering folder: $build_dir"
     cd $build_dir
 
+    # if test, not using Ninja
     echo "Start building drogon ..."
-    if ( $para -eq 1 ) {
-        conan install .. -s compiler="Visual Studio" -s compiler.version=$COMPILER_VERSION -s build_type=Debug -g cmake_paths
-        cmake .. -DBUILD_TESTING=YES "-DCMAKE_TOOLCHAIN_FILE=$build_dir/conan_paths.cmake" $cmake_gen
-    } elseif ( $para -eq 2 ) {
-        conan install .. -s compiler="Visual Studio" -s compiler.version=$COMPILER_VERSION -s build_type=Debug -g cmake_paths
-        cmake .. -DBUILD_TESTING=YES -DBUILD_DROGON_SHARED=ON -DCMAKE_CXX_VISIBILITY_PRESET=hidden -DCMAKE_VISIBILITY_INLINES_HIDDEN=1 "-DCMAKE_TOOLCHAIN_FILE=$build_dir/conan_paths.cmake" $cmake_gen
-    } else {
-        conan install .. -s compiler="Visual Studio" -s compiler.version=$COMPILER_VERSION -s build_type=Release -g cmake_paths
-        cmake .. -DCMAKE_BUILD_TYPE=Release "-DCMAKE_TOOLCHAIN_FILE=$build_dir/conan_paths.cmake" $cmake_gen
+    if ("$COMPILER" -eq "Visual Studio") {
+        if ( $para -eq 1 ) {
+            
+                conan install .. -s compiler=$COMPILER -s compiler.version=$COMPILER_VERSION -s build_type=Debug -g cmake_paths
+                cmake .. -DBUILD_TESTING=YES -DCMAKE_INSTALL_PREFIX="install" -DCMAKE_TOOLCHAIN_FILE="conan_paths.cmake"
+          
+            cmake --build . "$make_flags" --target install
+        } elseif ( $para -eq 2 ) {
+            
+                conan install .. -s compiler=$COMPILER -s compiler.version=$COMPILER_VERSION -s build_type=Debug -g cmake_paths
+                cmake .. -DBUILD_TESTING=YES -DBUILD_DROGON_SHARED=ON -DCMAKE_CXX_VISIBILITY_PRESET=hidden -DCMAKE_VISIBILITY_INLINES_HIDDEN=1 -DCMAKE_INSTALL_PREFIX="install" -DCMAKE_TOOLCHAIN_FILE="conan_paths.cmake"
+          
+            cmake --build . "$make_flags" --target install
+        } else {
+            
+                conan install .. -s compiler=$COMPILER -s compiler.version=$COMPILER_VERSION -s build_type=Release -g cmake_paths
+                cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE="$build_dir/conan_paths.cmake" $cmake_gen
+            
+                & $make_program "install"
+            
+        }
     }
-
-    #If errors then exit
-    if ( !$? ) {
-        exit -1
-    }
-    
-    echo "Build and Installing ..."
-    cmake --build .  --parallel --target install "$make_flags"
     
     #If errors then exit
     if ( !$? ) {
@@ -83,19 +113,20 @@ function build_drogon($para){
     #Ok!
 }
 
-$make_flags=''
+$make_program='cmake'
 $cmake_gen=''
-$parallel=$env:NUMBER_OF_PROCESSORS
+$make_flags=''
 
-if ((Test-Path -IsValid "Ninja")) {
+if ((where.exe "Ninja") -And ($BUILD_PARA -ne "t") -And ($BUILD_PARA -ne "tshared")) {
+    $make_program='ninja'
 	$cmake_gen='-GNinja'
-} else{
-    $make_flags="$make_flags -j$parallel"
+} else {
+    $make_flags="$make_flags --parallel"
 }
 
-if ($BUILD_PARA -eq "-t"){
+if ($BUILD_PARA -eq "t") {
     build_drogon 1
-} elseif ($BUILD_PARA -eq "-tshared"){
+} elseif ($BUILD_PARA -eq "tshared") {
     build_drogon 2
 } else {
     build_drogon 0
