@@ -34,13 +34,20 @@ int HttpFileImpl::save(const std::string &path) const
         return -1;
     filesystem::path fsUploadDir(utils::toNativePath(path));
 
-    if (!fsUploadDir.is_absolute() && (!fsUploadDir.has_parent_path() ||
-                                       (fsUploadDir.begin()->string() != "." &&
-                                        fsUploadDir.begin()->string() != "..")))
+    if (fsUploadDir.is_absolute())
+    {  // do nothing
+    }
+    else if ((!fsUploadDir.has_parent_path() ||
+              (fsUploadDir.begin()->string() != "." &&
+               fsUploadDir.begin()->string() != "..")))
     {
         fsUploadDir = utils::toNativePath(
                           HttpAppFrameworkImpl::instance().getUploadPath()) /
                       fsUploadDir;
+    }
+    else
+    {
+        fsUploadDir = filesystem::current_path() / fsUploadDir;
     }
 
     fsUploadDir = filesystem::weakly_canonical(fsUploadDir);
@@ -59,7 +66,7 @@ int HttpFileImpl::save(const std::string &path) const
 
     filesystem::path fsSaveToPath(filesystem::weakly_canonical(
         fsUploadDir / utils::toNativePath(fileName_)));
-
+    LOG_TRACE << "save to path:" << fsSaveToPath;
     if (!std::equal(fsUploadDir.begin(),
                     fsUploadDir.end(),
                     fsSaveToPath.begin()))
