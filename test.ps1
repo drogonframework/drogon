@@ -1,6 +1,6 @@
 # This script is used for windows only,
 # if you are using linux/macOS, please use test.sh instead of it.
-# conan only provide all x64 dependencies, so all test need baseded on x64.
+# conan only provide all x64 dependencies, so all test needs baseded on x64.
 
 param(
     [string]$BUILD_TYPE = 'Debug',
@@ -8,25 +8,28 @@ param(
     [Int]$COMPILER_VERSION = 16
 )
 
-Write-Host -ForegroundColor:Magenta "BUILD_TYPE:$BUILD_TYPE"
-Write-Host -ForegroundColor:Magenta "VS COMPILER_VERSION:$COMPILER_VERSION"
 $OS=$env:OS
 Write-Host -ForegroundColor:Magenta "OS:$OS"
 if ($OS -ne "Windows_NT"){
-	Write-Host -ForegroundColor:Red "This script is for windows, please use test.sh for other OS"
+	Write-Host -ForegroundColor:Red "This script is for windows, please use build.sh for other OS"
 	exit -1
 }
+Write-Host -ForegroundColor:Magenta "BUILD_TYPE:$BUILD_TYPE"
+Write-Host -ForegroundColor:Magenta "COMPILER:$COMPILER"
+Write-Host -ForegroundColor:Magenta "COMPILER_VERSION:$COMPILER_VERSION"
 
 Write-Host -ForegroundColor:Green '
-# Install conan for Visual Studio first, download dependencies(only support x64), then build project as bellow:
+# Install conan for Visual Studio first, then call
+buils.ps1
+# or download dependencies(only support x64) maually, then build project as bellow:
 mkdir build
 cd build
 conan install .. -s compiler="Visual Studio" -s compiler.version=16 -s build_type=Debug -g cmake_paths
 cmake .. -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON -DBUILD_DROGON_SHARED=ON -DBUILD_CTL=ON -DBUILD_EXAMPLES=ON -DCMAKE_INSTALL_PREFIX=$ABSOLUTE_PATH/install -DCMAKE_TOOLCHAIN_FILE=$ABSOLUTE_PATH/conan_paths.cmake
-cmake --build . --parallel --target install
+cmake --build . --parallel --target install --config Debug
 
-# Using params for this script as bellow: 
-test.ps1 Debug 16
+# Using params for this script as bellow:
+test.ps1 Debug "Visual Studio" 16
 test.ps1 -BUILD_TYPE Debug -COMPILER "Visual Studio" -COMPILER_VERSION 16
  '
 $src_dir=$PWD
@@ -52,23 +55,35 @@ if ("$COMPILER" -eq "Visual Studio") {
     Import-Module ("$VsInstallPath\Common7\Tools\Microsoft.VisualStudio.DevShell.dll")
     Enter-VsDevShell -VsInstallPath "$VsInstallPath" -DevCmdArguments "-arch=x64 -host_arch=x64" -SkipAutomaticLocation
 } else {
-    Write-Host -ForegroundColor:Magenta "Please confirm all dependencies have been installed."
+    Write-Host -ForegroundColor:Yellow "Suggest you using Visual Studio and conan package management."
+    exit -1
 }
 
+$ignore_lnk4099='-DCMAKE_EXE_LINKER_FLAGS="/ignore:4099" -DCMAKE_SHARED_LINKER_FLAGS="/ignore:4099" -DCMAKE_STATIC_LINKER_FLAGS="/ignore:4099"'
+$make_program='cmake'
 $cmake_gen=''
-$cmake_test_target='test'
-$parallel=$env:NUMBER_OF_PROCESSORS
+$test_flags='--build . --target RUN_TESTS'
+$make_flags='--build . --parallel'
+$BUILD_TYPE_FOLDER=$BUILD_TYPE
 
+# Check the generator from CMakeCache
 if ( "1" -eq (Select-String "CMAKE_GENERATOR:INTERNAL=Ninja" $src_dir/build/CMakeCache.txt).count ) {
-    $cmake_gen='-G Ninja'
-} elseif ( "1" -eq (Select-String "CMAKE_GENERATOR:INTERNAL=Visual Studio" $src_dir/build/CMakeCache.txt).count ) {
-    $cmake_test_target='RUN_TESTS'
-} else {}
+    $make_program='Ninja'
+    $cmake_gen='-GNinja'
+    $test_flags='test'
+    $make_flags=''
+    $BUILD_TYPE_FOLDER='.'
+}
+
+# set path for test
+$env:path+=";$src_dir/build/install/bin"
+#$env:path+=";$src_dir/build/install/lib/cmake/Drogon"
+#$env:path+=";$src_dir/build/install/lib/cmake/Trantor"
 
 # Unit testing
 cd $src_dir/build
 Write-Host -ForegroundColor:Cyan "Unit testing"
-cmake --build .  --target "$cmake_test_target"
+#& $make_program $test_flags.Split(" ")
 
 if ( !$? ) {
     Write-Host -ForegroundColor:Red "Error in unit testing"
@@ -76,7 +91,7 @@ if ( !$? ) {
 }
 
 # Prepare for integration test
-cd $src_dir/build/$BUILD_TYPE
+cd $src_dir/build/lib/tests/$BUILD_TYPE_FOLDER
 (Get-Content config.example.json) -replace '"relaunch_on_error.*$', '"relaunch_on_error": true,' | Out-File config.example.json -Encoding utf8
 (Get-Content config.example.json) -replace '"threads_num.*$', '"threads_num": 0,' | Out-File config.example.json -Encoding utf8
 (Get-Content config.example.json) -replace '"use_brotli.*$', '"use_brotli": true,' | Out-File config.example.json -Encoding utf8
@@ -92,45 +107,47 @@ if (!(Test-Path -Path "integration_test_server.exe")) {
 
 # Do integration test
 Get-process -Name "integration_test_server" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
-#Start-Process -FilePath "./integration_test_server.exe"
+Start-Process -FilePath "./integration_test_server.exe"
 
 sleep 4
 
 Write-Host -ForegroundColor:Cyan "Running the integration test"
-#./integration_test_client.exe -s
+./integration_test_client.exe -s
 
 if ( !$? ) {
     Write-Host -ForegroundColor:Red "Integration test failed"
     exit -1
-} 
+}
 Get-process -Name "integration_test_server" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
-
-# Db and redies Test
-cd $src_dir/build/$BUILD_TYPE
+exit 0
+# Db Test
+cd $src_dir/build/orm_lib/tests/$BUILD_TYPE_FOLDER
 if ((Test-Path -Path "db_test")) {
     Write-Host -ForegroundColor:Cyan "Test database"
-    ./db_test -s
-    if ( !$? ) { 
+    ./db_test.exe -s
+    if ( !$? ) {
         Write-Host -ForegroundColor:Red "Error in db testing"
         exit -1
     }
 }
+# Redies Test
+cd $src_dir/build/nosql_lib/redis/tests/$BUILD_TYPE_FOLDER
 if ((Test-Path -Path "redis_test")) {
     Write-Host -ForegroundColor:Cyan "Test redis"
-    ./redis_test -s
+    ./redis_test.exe -s
     if ( !$? ) {
         Write-Host -ForegroundColor:Red "Error in redis testing"
         exit -1
     }
 }
 
-# Test drogon_ctl, run at build/$BUILD_TYPE
-cd $src_dir/build/$BUILD_TYPE
+# Test drogon_ctl
 Write-Host -ForegroundColor:Cyan "Testing drogon_ctl"
-$drogon_ctl_exec="$src_dir/build/$BUILD_TYPE/drogon_ctl.exe"
 
-Remove-item $src_dir/build/$BUILD_TYPE/drogon_test -recurse -ErrorAction SilentlyContinue
+cd $src_dir/build/drogon_ctl/$BUILD_TYPE_FOLDER
+Remove-item $src_dir/build/drogon_ctl/$BUILD_TYPE_FOLDER/drogon_test -recurse -ErrorAction SilentlyContinue
 
+$drogon_ctl_exec="$src_dir/build/drogon_ctl/$BUILD_TYPE_FOLDER/drogon_ctl.exe"
 & $drogon_ctl_exec create project drogon_test
 
 Get-ChildItem .
@@ -176,32 +193,22 @@ cd ../views
 "Hello World" | Out-File hello.csp -Encoding utf8
 
 cd ../build
-if ("$COMPILER" -eq "Visual Studio") {
-   conan install $src_dir -s compiler=$COMPILER -s compiler.version=$COMPILER_VERSION -s build_type=$BUILD_TYPE -g cmake_paths
-}
-# passing path
-$env:path+=";$src_dir/build/install/bin"
-$env:path+=";$src_dir/build/install/lib/cmake/Drogon"
-$env:path+=";$src_dir/build/install/lib/cmake/Trantor"
+& conan install $src_dir -s compiler=$COMPILER -s compiler.version=$COMPILER_VERSION -s build_type=$BUILD_TYPE -g cmake_paths
 
-if ("$COMPILER" -eq "Visual Studio") {
-   cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_TOOLCHAIN_FILE="conan_paths.cmake" -DCMAKE_INSTALL_PREFIX="$src_dir/build/install" "$cmake_gen"
-} else {
-   cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_INSTALL_PREFIX="$src_dir/build/install" "$cmake_gen"
-}
+cmake .. -DCMAKE_BUILD_TYPE="$BUILD_TYPE" -DCMAKE_TOOLCHAIN_FILE="conan_paths.cmake" -DCMAKE_INSTALL_PREFIX="$src_dir/build/install" $ignore_lnk4099.Split() $cmake_gen
 
 if ( !$? ) {
     Write-Host -ForegroundColor:Red "Failed to run CMake for example project"
     exit -1
 }
 
-cmake --build .
+& $make_program $make_flags.Split(" ")
 if ( !$? ) {
     Write-Host -ForegroundColor:Red "Error in drogon_test build"
     exit -1
 }
 
-if (!(Test-Path -Path "drogon_test.exe")) {
+if (!(Test-Path -Path "$BUILD_TYPE_FOLDER/drogon_test.exe")) {
 	Write-Host -ForegroundColor:Red "Failed to build drogon_test"
     exit -1
 }
