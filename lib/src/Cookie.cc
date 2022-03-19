@@ -29,6 +29,12 @@ std::string Cookie::cookieString() const
             .append(utils::getHttpFullDate(expiresDate_))
             .append("; ");
     }
+    if (maxAge_.has_value())
+    {
+        ret.append("Max-Age=")
+            .append(std::to_string(maxAge_.value()))
+            .append("; ");
+    }
     if (!domain_.empty())
     {
         ret.append("Domain=").append(domain_).append("; ");
@@ -37,7 +43,29 @@ std::string Cookie::cookieString() const
     {
         ret.append("Path=").append(path_).append("; ");
     }
-    if (secure_)
+    if (sameSite_ != SameSite::kNull)
+    {
+        switch (sameSite_)
+        {
+            case SameSite::kLax:
+                ret.append("SameSite=Lax; ");
+                break;
+            case SameSite::kStrict:
+                ret.append("SameSite=Strict; ");
+                break;
+            case SameSite::kNone:
+                ret.append("SameSite=None; ");
+                // Cookies with SameSite=None must now also specify the Secure
+                // attribute (they require a secure context/HTTPS).
+                ret.append("Secure; ");
+                break;
+            default:
+                // Lax replaced None as the default value to ensure that users
+                // have reasonably robust defense against some CSRF attacks
+                ret.append("SameSite=Lax; ");
+        }
+    }
+    if (secure_ && sameSite_ != SameSite::kNone)
     {
         ret.append("Secure; ");
     }

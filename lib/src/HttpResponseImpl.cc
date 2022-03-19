@@ -226,7 +226,7 @@ HttpResponsePtr HttpResponse::newFileResponse(
     // Check for type and assign proper content type in header
     if (!typeString.empty())
     {
-        auto contentType = type;
+        // auto contentType = type;
         if (type == CT_NONE)
             type = parseContentType(typeString);
         if (type == CT_NONE)
@@ -291,7 +291,8 @@ HttpResponsePtr HttpResponse::newFileResponse(
     }
     auto resp = std::make_shared<HttpResponseImpl>();
     std::streambuf *pbuf = infile.rdbuf();
-    std::streamsize filesize = pbuf->pubseekoff(0, std::ifstream::end);
+    size_t filesize =
+        static_cast<size_t>(pbuf->pubseekoff(0, std::ifstream::end));
     if (offset > filesize || length > filesize ||  // in case of overflow
         offset + length > filesize)
     {
@@ -345,7 +346,7 @@ HttpResponsePtr HttpResponse::newFileResponse(
         if (!typeString.empty())
         {
             auto r = static_cast<HttpResponse *>(resp.get());
-            auto contentType = type;
+            // auto contentType = type;
             if (type == CT_NONE)
                 type = parseContentType(typeString);
             if (type == CT_NONE)
@@ -369,7 +370,7 @@ HttpResponsePtr HttpResponse::newFileResponse(
         else
         {
             auto r = static_cast<HttpResponse *>(resp.get());
-            auto contentType = type;
+            // auto contentType = type;
             if (type == CT_NONE)
                 type = parseContentType(typeString);
             if (type == CT_NONE)
@@ -807,6 +808,25 @@ void HttpResponseImpl::addHeader(const char *start,
                 else if (cookie_name == "httponly")
                 {
                     cookie.setHttpOnly(true);
+                }
+                else if (cookie_name == "samesite")
+                {
+                    if (cookie_value == "Lax")
+                    {
+                        cookie.setSameSite(Cookie::SameSite::kLax);
+                    }
+                    else if (cookie_value == "Strict")
+                    {
+                        cookie.setSameSite(Cookie::SameSite::kStrict);
+                    }
+                    else if (cookie_value == "None")
+                    {
+                        cookie.setSameSite(Cookie::SameSite::kNone);
+                    }
+                }
+                else if (cookie_name == "max-age")
+                {
+                    cookie.setMaxAge(std::stoi(cookie_value));
                 }
             }
         }

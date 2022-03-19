@@ -16,4 +16,16 @@ DROGON_TEST(CookieTest)
     CHECK(cookie3.cookieString() ==
           "Set-Cookie: test=3; Expires=Fri, 21 May 2021 01:45:57 GMT; "
           "Domain=drogon.org; HttpOnly\r\n");
+
+    drogon::Cookie cookie4("test", "4");
+    cookie4.setMaxAge(3600);
+    cookie4.setSameSite(drogon::Cookie::SameSite::kStrict);
+    CHECK(cookie4.cookieString() ==
+          "Set-Cookie: test=4; Max-Age=3600; "
+          "SameSite=Strict; HttpOnly\r\n");
+    drogon::Cookie cookie5("test", "5");
+    cookie5.setSameSite(drogon::Cookie::SameSite::kNone);
+    CHECK(cookie5.cookieString() ==
+          "Set-Cookie: test=5; "
+          "SameSite=None; Secure; HttpOnly\r\n");
 }
