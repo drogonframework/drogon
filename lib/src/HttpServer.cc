@@ -603,7 +603,8 @@ static std::size_t chunkingCallback(std::shared_ptr<CallbackParams> cbParams,
 #else
         memcpy(pBuffer, "0\r\n\r\n", 5);
 #endif
-        LOG_TRACE << "Chunking callback: no more data, return last chunk of size 0 & end of message";
+        LOG_TRACE << "Chunking callback: no more data, return last chunk of "
+                     "size 0 & end of message";
         return 5;
     }
     // Non-terminal chunks
@@ -625,31 +626,33 @@ static std::size_t chunkingCallback(std::shared_ptr<CallbackParams> cbParams,
     cbParams->nDataReturned += nDataSize;
 #endif
     return nHeaderSize + nDataSize + 2;
-    // Alternative code if there are client softwares that do not support chunk size with leading zeroes
-//    auto nHeaderLen =
-//#ifdef _WIN32
-//    sprintf_s(pBuffer,
-//    nHeaderSize, "%llx\r",
-//    nDataSize);
-//#else
-//    sprintf(pBuffer, "%lx\r",
-//    nDataSize);
-//#endif
-//    pBuffer[nHeaderLen++] = '\n';
-//    if (nHeaderLen < nHeaderSize)  // smaller that what was reserved -> move data
-//#ifdef _WIN32
-//    memmove_s(pBuffer +
-//    nHeaderLen,
-//              nSize - nHeaderLen,
-//              pBuffer +
-//              nHeaderSize,
-//              nDataSize + 2);
-//#else
-//    memmove(pBuffer + nHeaderLen,
-//            pBuffer + nHeaderSize,
-//            nDataSize + 2);
-//#endif
-//    return nHeaderLen + nDataSize + 2;
+    // Alternative code if there are client softwares that do not support chunk
+    // size with leading zeroes
+    //    auto nHeaderLen =
+    //#ifdef _WIN32
+    //    sprintf_s(pBuffer,
+    //    nHeaderSize, "%llx\r",
+    //    nDataSize);
+    //#else
+    //    sprintf(pBuffer, "%lx\r",
+    //    nDataSize);
+    //#endif
+    //    pBuffer[nHeaderLen++] = '\n';
+    //    if (nHeaderLen < nHeaderSize)  // smaller that what was reserved ->
+    //    move data
+    //#ifdef _WIN32
+    //    memmove_s(pBuffer +
+    //    nHeaderLen,
+    //              nSize - nHeaderLen,
+    //              pBuffer +
+    //              nHeaderSize,
+    //              nDataSize + 2);
+    //#else
+    //    memmove(pBuffer + nHeaderLen,
+    //            pBuffer + nHeaderSize,
+    //            nDataSize + 2);
+    //#endif
+    //    return nHeaderLen + nDataSize + 2;
 }
 
 void HttpServer::sendResponse(const TcpConnectionPtr &conn,
@@ -662,14 +665,15 @@ void HttpServer::sendResponse(const TcpConnectionPtr &conn,
     {
         auto httpString = respImplPtr->renderToBuffer();
         conn->send(httpString);
-        auto& streamCallback = respImplPtr->streamCallback();
+        auto &streamCallback = respImplPtr->streamCallback();
         const std::string &sendfileName = respImplPtr->sendfileName();
         if (streamCallback || !sendfileName.empty())
         {
             if (streamCallback)
             {
                 auto &headers = respImplPtr->headers();
-                // When the transfer-encoding is chunked, wrap data callback in chunking callback
+                // When the transfer-encoding is chunked, wrap data callback in
+                // chunking callback
                 auto bChunked =
                     !respImplPtr->ifCloseConnection() &&
                     (headers.find("transfer-encoding") != headers.end()) &&
@@ -738,7 +742,7 @@ void HttpServer::sendResponses(
             respImplPtr->renderToBuffer(buffer);
             auto &streamCallback = respImplPtr->streamCallback();
             const std::string &sendfileName = respImplPtr->sendfileName();
-            if (streamCallback  || !sendfileName.empty())
+            if (streamCallback || !sendfileName.empty())
             {
                 conn->send(buffer);
                 buffer.retrieveAll();

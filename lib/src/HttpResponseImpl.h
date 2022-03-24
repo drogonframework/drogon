@@ -311,11 +311,13 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
         sendfileRange_.first = offset;
         sendfileRange_.second = len;
     }
-    const std::function<std::size_t(char*, std::size_t)>& streamCallback() const override
+    const std::function<std::size_t(char *, std::size_t)> &streamCallback()
+        const override
     {
         return streamCallback_;
     }
-    void setStreamCallback(const std::function<std::size_t(char*, std::size_t)>& callback)
+    void setStreamCallback(
+        const std::function<std::size_t(char *, std::size_t)> &callback)
     {
         streamCallback_ = callback;
     }

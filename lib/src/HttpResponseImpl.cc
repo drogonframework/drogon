@@ -406,7 +406,7 @@ HttpResponsePtr HttpResponse::newFileResponse(
 }
 
 HttpResponsePtr HttpResponse::newStreamResponse(
-    const std::function<std::size_t(char *, std::size_t)>& callback,
+    const std::function<std::size_t(char *, std::size_t)> &callback,
     const std::string &attachmentFileName,
     ContentType type,
     const std::string &typeString)
@@ -428,7 +428,7 @@ HttpResponsePtr HttpResponse::newStreamResponse(
     {
         if (!typeString.empty())
         {
-            auto r = static_cast<HttpResponse*>(resp.get());
+            auto r = static_cast<HttpResponse *>(resp.get());
             auto contentType = type;
             if (type == CT_NONE)
                 type = parseContentType(typeString);
@@ -438,7 +438,8 @@ HttpResponsePtr HttpResponse::newStreamResponse(
         }
         else if (!attachmentFileName.empty())
         {
-            resp->setContentTypeCode(drogon::getContentType(attachmentFileName));
+            resp->setContentTypeCode(
+                drogon::getContentType(attachmentFileName));
         }
     }
     else
@@ -447,7 +448,7 @@ HttpResponsePtr HttpResponse::newStreamResponse(
             resp->setContentTypeCode(type);
         else
         {
-            auto r = static_cast<HttpResponse*>(resp.get());
+            auto r = static_cast<HttpResponse *>(resp.get());
             auto contentType = type;
             if (type == CT_NONE)
                 type = parseContentType(typeString);
@@ -936,8 +937,7 @@ void HttpResponseImpl::parseJson() const
 
 bool HttpResponseImpl::shouldBeCompressed() const
 {
-    if (streamCallback_ ||
-        !sendfileName_.empty() ||
+    if (streamCallback_ || !sendfileName_.empty() ||
         contentType() >= CT_APPLICATION_OCTET_STREAM ||
         getBody().length() < 1024 || !(getHeaderBy("content-encoding").empty()))
     {

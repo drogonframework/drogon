@@ -423,21 +423,25 @@ class DROGON_EXPORT HttpResponse
         ContentType type = CT_NONE,
         const std::string &typeString = "");
 
-    /// Create a response that returns a file to the client from a callback function
+    /// Create a response that returns a file to the client from a callback
+    /// function
     /**
-     * @note if the Connection is keep-alive and the Content-Length header is not set,
-     *       the stream data is sent with Transfer-Encoding: chunked.
-     * @param function to retrieve the stream data (stream ends when a zero size is returned)
-     *                 the callback will be called with nullptr when the send is finished/interruped so that it cleans up its internals.
+     * @note if the Connection is keep-alive and the Content-Length header is
+     * not set, the stream data is sent with Transfer-Encoding: chunked.
+     * @param function to retrieve the stream data (stream ends when a zero size
+     * is returned) the callback will be called with nullptr when the send is
+     * finished/interruped so that it cleans up its internals.
      * @param attachmentFileName if the parameter is not empty, the browser
-     *                           does not open the file, but saves it as an attachment.
+     *                           does not open the file, but saves it as an
+     * attachment.
      * @param type the content type code. If the parameter is CT_NONE, the
-     *             content type is set by drogon based on the file extension and typeString.
-     *             Set it to CT_CUSTOM when no drogon internal content type matches.
+     *             content type is set by drogon based on the file extension and
+     * typeString. Set it to CT_CUSTOM when no drogon internal content type
+     * matches.
      * @param typeString the MIME string of the content type.
      */
     static HttpResponsePtr newStreamResponse(
-        const std::function<std::size_t(char*, std::size_t)>& callback,
+        const std::function<std::size_t(char *, std::size_t)> &callback,
         const std::string &attachmentFileName = "",
         ContentType type = CT_NONE,
         const std::string &typeString = "");
@@ -472,7 +476,8 @@ class DROGON_EXPORT HttpResponse
      * newStreamResponse) returns the callback function. Otherwise a
      * null function.
      */
-    virtual const std::function<std::size_t(char*, std::size_t)>& streamCallback() const = 0;
+    virtual const std::function<std::size_t(char *, std::size_t)>
+        &streamCallback() const = 0;
 
     /**
      * @brief Returns the content type associated with the response
