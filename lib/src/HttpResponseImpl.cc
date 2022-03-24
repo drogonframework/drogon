@@ -27,6 +27,11 @@
 
 using namespace trantor;
 using namespace drogon;
+using namespace std::literals::string_literals;
+using namespace std::placeholders;
+#ifdef _WIN32
+#undef max
+#endif
 
 namespace drogon
 {
@@ -406,7 +411,9 @@ HttpResponsePtr HttpResponse::newStreamResponse(
     ContentType type,
     const std::string &typeString)
 {
-    LOG_TRACE << "send stream as file:" << attachmentFileName;
+    LOG_TRACE << "send stream as "s
+              << (attachmentFileName.empty() ? "raw data"s
+                                             : "file: "s + attachmentFileName);
     if (!callback)
     {
         auto resp = HttpResponse::newNotFoundResponse();
@@ -509,8 +516,14 @@ void HttpResponseImpl::makeHeaderString(trantor::MsgBuffer &buffer)
         buffer.ensureWritableBytes(64);
         if (streamCallback_)
         {
-            if (!ifCloseConnection() && headers_.find("content-length") == headers_.end())
-                buffer.append("transfer-encoding: chunked\r\n");
+            // When the headers are created, it is time to set the transfer
+            // encoding to chunked if the contents size is not specified
+            if (!ifCloseConnection() &&
+                headers_.find("content-length") == headers_.end())
+            {
+                LOG_DEBUG << "send stream with transfer-encoding chunked";
+                headers_["transfer-encoding"] = "chunked";
+            }
             len = 0;
         }
         else if (sendfileName_.empty())
@@ -871,7 +884,12 @@ void HttpResponseImpl::clear()
     fullHeaderString_.reset();
     jsonParsingErrorPtr_.reset();
     sendfileName_.clear();
-    streamCallback_ = {};
+    if (streamCallback_)
+    {
+        LOG_TRACE << "Cleanup HttpResponse stream callback";
+        streamCallback_(nullptr, 0);  // callback internal cleanup
+        streamCallback_ = {};
+    }
     headers_.clear();
     cookies_.clear();
     bodyPtr_.reset();
