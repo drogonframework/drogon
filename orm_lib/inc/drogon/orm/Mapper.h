@@ -428,7 +428,7 @@ class Mapper
      * @param criteria The criteria.
      * @return size_t The sum result.
      */
-    size_t sum(const std::string& columnOrRaw,
+    size_t sum(const std::string &columnOrRaw,
                const Criteria &criteria = Criteria()) noexcept(false);
 
     /**
@@ -1180,7 +1180,7 @@ inline std::future<size_t> Mapper<T>::countFuture(
     return prom->get_future();
 }
 template <typename T>
-inline size_t Mapper<T>::sum(const std::string& columnOrRaw,
+inline size_t Mapper<T>::sum(const std::string &columnOrRaw,
                              const Criteria &criteria) noexcept(false)
 {
     std::string sql = "select SUM(" + columnOrRaw + ") from ";
