@@ -422,6 +422,15 @@ class Mapper
         const Criteria &criteria = Criteria()) noexcept;
 
     /**
+     * @brief Get the sum of rows that match the given criteria.
+     *
+     * @param columnOrRaw Columns or raw math (likes colA * colB).
+     * @param criteria The criteria.
+     * @return size_t The sum result.
+     */
+    size_t sum(const std::string& columnOrRaw, const Criteria &criteria = Criteria()) noexcept(false);
+
+    /**
      * @brief Find one record that matches the given criteria.
      *
      * @param criteria The criteria.
@@ -1168,6 +1177,30 @@ inline std::future<size_t> Mapper<T>::countFuture(
     binder >> [prom](const std::exception_ptr &e) { prom->set_exception(e); };
     binder.exec();
     return prom->get_future();
+}
+template <typename T>
+inline size_t Mapper<T>::sum(const std::string& columnOrRaw, const Criteria &criteria) noexcept(false);
+{
+    std::string sql = "select SUM(" + columnOrRaw + ") from ";
+    sql += T::tableName;
+    if (criteria)
+    {
+        sql += " where ";
+        sql += criteria.criteriaString();
+        sql = replaceSqlPlaceHolder(sql, "$?");
+    }
+    clear();
+    Result r(nullptr);
+    {
+        auto binder = *client_ << std::move(sql);
+        if (criteria)
+            criteria.outputArgs(binder);
+        binder << Mode::Blocking;
+        binder >> [&r](const Result &result) { r = result; };
+        binder.exec();  // exec may be throw exception;
+    }
+    assert(r.size() == 1);
+    return r[0][(Row::SizeType)0].as<size_t>();
 }
 template <typename T>
 inline void Mapper<T>::insert(T &obj) noexcept(false)
