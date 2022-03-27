@@ -241,16 +241,18 @@ void RedisConnection::cleanup(void * /*userData*/)
 
 void RedisConnection::handleRedisRead()
 {
-    redisAsyncHandleRead(redisContext_);
+    if (status_ != ConnectStatus::kEnd)
+    {
+        redisAsyncHandleRead(redisContext_);
+    }
 }
+
 void RedisConnection::handleRedisWrite()
 {
-    if (redisContext_->c.flags == REDIS_DISCONNECTING)
+    if (status_ != ConnectStatus::kEnd)
     {
-        channel_->disableAll();
-        channel_->remove();
+        redisAsyncHandleWrite(redisContext_);
     }
-    redisAsyncHandleWrite(redisContext_);
 }
 
 void RedisConnection::sendCommandInLoop(
