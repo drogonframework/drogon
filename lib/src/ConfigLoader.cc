@@ -186,7 +186,7 @@ static void loadControllers(const Json::Value &controllers)
                 std::transform(strMethod.begin(),
                                strMethod.end(),
                                strMethod.begin(),
-                               tolower);
+                               [](unsigned char c) { return tolower(c); });
                 if (strMethod == "get")
                 {
                     constraints.push_back(Get);
@@ -502,7 +502,10 @@ static void loadDbClients(const Json::Value &dbClients)
     for (auto const &client : dbClients)
     {
         auto type = client.get("rdbms", "postgresql").asString();
-        std::transform(type.begin(), type.end(), type.begin(), ::tolower);
+        std::transform(type.begin(),
+                       type.end(),
+                       type.begin(),
+                       [](unsigned char c) { return tolower(c); });
         auto host = client.get("host", "127.0.0.1").asString();
         auto port = client.get("port", 5432).asUInt();
         auto dbname = client.get("dbname", "").asString();

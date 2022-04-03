@@ -78,7 +78,8 @@ class HttpController : public DrObject<T>, public HttpControllerBase
             LOG_TRACE << "classname:"
                       << HttpController<T, AutoCreation>::classTypeName();
 
-            // transform(path.begin(), path.end(), path.begin(), tolower);
+            // transform(path.begin(), path.end(), path.begin(), [](unsigned
+            // char c){ return tolower(c); });
             std::string::size_type pos;
             while ((pos = path.find("::")) != std::string::npos)
             {

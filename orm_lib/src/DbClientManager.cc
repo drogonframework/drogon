@@ -153,7 +153,9 @@ void DbClientManager::createDbClient(const std::string &dbType,
         connStr += escapeConnString(password);
     }
     std::string type = dbType;
-    std::transform(type.begin(), type.end(), type.begin(), tolower);
+    std::transform(type.begin(), type.end(), type.begin(), [](unsigned char c) {
+        return tolower(c);
+    });
     if (!characterSet.empty())
     {
         connStr += " client_encoding=";

@@ -457,7 +457,9 @@ void HttpAppFrameworkImpl::run()
     {
         char dirName[4];
         snprintf(dirName, sizeof(dirName), "%02x", i);
-        std::transform(dirName, dirName + 2, dirName, toupper);
+        std::transform(dirName, dirName + 2, dirName, [](unsigned char c) {
+            return toupper(c);
+        });
         utils::createPath(getUploadPath() + "/tmp/" + dirName);
     }
     if (runAsDaemon_)

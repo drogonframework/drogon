@@ -64,7 +64,10 @@ MysqlConnection::MysqlConnection(trantor::EventLoop *loop,
         auto key = kv.first;
         auto value = kv.second;
 
-        std::transform(key.begin(), key.end(), key.begin(), tolower);
+        std::transform(key.begin(),
+                       key.end(),
+                       key.begin(),
+                       [](unsigned char c) { return tolower(c); });
         // LOG_TRACE << key << "=" << value;
         if (key == "host")
         {

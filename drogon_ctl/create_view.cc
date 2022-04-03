@@ -446,7 +446,7 @@ void create_view::newViewSourceFile(std::ofstream &file,
             std::transform(lowerBuffer.begin(),
                            lowerBuffer.end(),
                            lowerBuffer.begin(),
-                           ::tolower);
+                           [](unsigned char c) { return tolower(c); });
             if ((pos = lowerBuffer.find(cxx_include)) != std::string::npos)
             {
                 // std::cout<<"haha find it!"<<endl;

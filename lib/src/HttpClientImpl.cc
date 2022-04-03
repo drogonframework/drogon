@@ -152,7 +152,7 @@ HttpClientImpl::HttpClientImpl(trantor::EventLoop *loop,
     std::transform(lowerHost.begin(),
                    lowerHost.end(),
                    lowerHost.begin(),
-                   tolower);
+                   [](unsigned char c) { return tolower(c); });
     if (lowerHost.find("https://") != std::string::npos)
     {
         useSSL_ = true;
