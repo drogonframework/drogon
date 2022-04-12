@@ -14,16 +14,16 @@
 
 #pragma once
 
-#include "impl_forwards.h"
-#include <drogon/HttpClient.h>
 #include <drogon/Cookie.h>
+#include <drogon/HttpClient.h>
 #include <trantor/net/EventLoop.h>
-#include <trantor/net/TcpClient.h>
 #include <trantor/net/Resolver.h>
+#include <trantor/net/TcpClient.h>
+#include <list>
 #include <mutex>
 #include <queue>
-#include <list>
 #include <vector>
+#include "impl_forwards.h"
 
 namespace drogon
 {
@@ -128,6 +128,7 @@ class HttpClientImpl final : public HttpClient,
     void onRecvMessage(const trantor::TcpConnectionPtr &, trantor::MsgBuffer *);
     void onError(ReqResult result);
     std::string domain_;
+    bool isDomainName_{true};  // true if domain_ is name
     size_t pipeliningDepth_{0};
     bool enableCookies_{false};
     std::vector<Cookie> validCookies_;

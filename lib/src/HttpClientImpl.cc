@@ -237,6 +237,10 @@ HttpClientImpl::HttpClientImpl(trantor::EventLoop *loop,
             }
         }
     }
+    if (serverAddr_.isUnspecified())
+    {
+        isDomainName_ = true;
+    }
     LOG_TRACE << "userSSL=" << useSSL_ << " domain=" << domain_;
 }
 
@@ -378,27 +382,30 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
                  (*callbackPtr)(result, response);
              }});
 
+        if (domain_.empty() || !isDomainName_)
+        {
+            // Valid ip address, no domain, connect directly
+            if (isValidIpAddr(serverAddr_))
+            {
+                createTcpClient();
+            }
+            // No ip address and no domain, respond with BadServerAddress
+            else
+            {
+                requestsBuffer_.pop_front();
+                (*callbackPtr)(ReqResult::BadServerAddress, nullptr);
+                assert(requestsBuffer_.empty());
+            }
+            return;
+        }
+
         // A dns query is on going.
         if (dns_)
         {
             return;
         }
 
-        if (isValidIpAddr(serverAddr_))
-        {
-            createTcpClient();
-            return;
-        }
-        // No ip address and no domain, response with BadServerAddress
-        if (domain_.empty())
-        {
-            requestsBuffer_.pop_front();
-            (*callbackPtr)(ReqResult::BadServerAddress, nullptr);
-            assert(requestsBuffer_.empty());
-            return;
-        }
-
-        // Do not have an ip address, but has domain name, do dns query
+        // Always do dns query when (re)connects a domain.
         dns_ = true;
         if (!resolverPtr_)
         {
@@ -424,7 +431,7 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
                     }
 
                     // DNS fail to get valid ip address,
-                    // response all requests with BadServerAddress
+                    // respond all requests with BadServerAddress
                     while (!(thisPtr->requestsBuffer_).empty())
                     {
                         auto &reqAndCb = (thisPtr->requestsBuffer_).front();
