@@ -477,7 +477,8 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
                                      const std::string &name,
                                      bool isFast,
                                      const std::string &characterSet,
-                                     double timeout) override;
+                                     double timeout,
+                                     double keepalive) override;
     HttpAppFramework &createRedisClient(const std::string &ip,
                                         unsigned short port,
                                         const std::string &name,

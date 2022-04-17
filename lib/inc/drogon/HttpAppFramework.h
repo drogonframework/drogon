@@ -1268,6 +1268,9 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
      * @param characterSet The character set of the database server.
      * @param timeout The timeout in seconds for executing SQL queries. zero or
      * negative value means no timeout.
+     * @param keepalive the interval in seconds at which the connection to the
+     * database is checked to prevent it from being terminated. zero or -1 means
+     * use the database wait_timeout setting (only for mysql).
      *
      * @note
      * This operation can be performed by an option in the configuration file.
@@ -1284,7 +1287,8 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
         const std::string &name = "default",
         const bool isFast = false,
         const std::string &characterSet = "",
-        double timeout = -1.0) = 0;
+        double timeout = -1.0,
+        const double keepalive = -1.0) = 0;
 
     /// Create a redis client
     /**

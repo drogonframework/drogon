@@ -139,7 +139,8 @@ void DbClientManager::createDbClient(const std::string &dbType,
                                      const std::string &name,
                                      const bool isFast,
                                      const std::string &characterSet,
-                                     double timeout)
+                                     double timeout,
+                                     double keepalive)
 {
     auto connStr =
         utils::formattedString("host=%s port=%u dbname=%s user=%s",
@@ -182,6 +183,8 @@ void DbClientManager::createDbClient(const std::string &dbType,
     else if (type == "mysql")
     {
 #if USE_MYSQL
+        if (keepalive > 0.0)
+            connStr += " keepalive=" + std::to_string(keepalive);
         info.dbType_ = orm::ClientType::Mysql;
         dbInfos_.push_back(info);
 #else

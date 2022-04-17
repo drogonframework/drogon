@@ -65,7 +65,10 @@
             "number_of_connections": 1,
             //timeout: -1.0 by default, in seconds, the timeout for executing a SQL query.
             //zero or negative value means no timeout.
-            "timeout": -1.0
+            "timeout": -1.0,
+            //keepalive: the interval in seconds at which the connection to the database is checked to prevent
+            // it from being terminated. zero or -1 means use the database wait_timeout setting (only for mysql).
+            "keepalive": -1.0
         }
     ],
     "redis_clients": [

@@ -91,6 +91,10 @@ MysqlConnection::MysqlConnection(trantor::EventLoop *loop,
         {
             characterSet_ = value;
         }
+        else if (key == "keepalive")
+        {
+            keepalive_ = value;
+        }
     }
     loop_->queueInLoop([this]() {
         MYSQL *ret;
@@ -143,7 +147,15 @@ void MysqlConnection::setChannel()
     {
         auto timeout = mysql_get_timeout_value(mysqlPtr_.get());
         auto thisPtr = shared_from_this();
-        loop_->runAfter(timeout, [thisPtr]() { thisPtr->handleTimeout(); });
+        if (!keepalive_.empty())
+        {
+            loop_->runAfter(std::min(timeout, unsigned(std::stoi(keepalive_))),
+                            [thisPtr]() { thisPtr->handleTimeout(); });
+        }
+        else
+        {
+            loop_->runAfter(timeout, [thisPtr]() { thisPtr->handleTimeout(); });
+        }
     }
 }
 

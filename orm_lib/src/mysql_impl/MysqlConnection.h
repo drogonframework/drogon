@@ -121,7 +121,7 @@ class MysqlConnection : public DbConnection,
 
     void outputError();
     std::string sql_;
-    std::string host_, user_, passwd_, dbname_, port_;
+    std::string host_, user_, passwd_, dbname_, port_, keepalive_;
 };
 
 }  // namespace orm
