@@ -21,6 +21,7 @@
 #include <trantor/utils/Logger.h>
 #include <memory>
 #include <functional>
+#include <future>
 #ifdef __cpp_impl_coroutine
 #include <drogon/utils/coroutine.h>
 #endif
