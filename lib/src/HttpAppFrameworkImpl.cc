@@ -988,6 +988,7 @@ HttpAppFramework &HttpAppFrameworkImpl::createRedisClient(
     const std::string &ip,
     unsigned short port,
     const std::string &name,
+    const std::string &username,
     const std::string &password,
     size_t connectionNum,
     bool isFast,
@@ -996,7 +997,7 @@ HttpAppFramework &HttpAppFrameworkImpl::createRedisClient(
 {
     assert(!running_);
     redisClientManagerPtr_->createRedisClient(
-        name, ip, port, password, connectionNum, isFast, timeout, db);
+        name, ip, port, username, password, connectionNum, isFast, timeout, db);
     return *this;
 }
 void HttpAppFrameworkImpl::quit()

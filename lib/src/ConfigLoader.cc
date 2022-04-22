@@ -555,6 +555,7 @@ static void loadRedisClients(const Json::Value &redisClients)
     {
         auto host = client.get("host", "127.0.0.1").asString();
         auto port = client.get("port", 6379).asUInt();
+        auto username = client.get("username", "").asString();
         auto password = client.get("passwd", "").asString();
         if (password.empty())
         {
@@ -570,7 +571,7 @@ static void loadRedisClients(const Json::Value &redisClients)
         auto timeout = client.get("timeout", -1.0).asDouble();
         auto db = client.get("db", 0).asUInt();
         drogon::app().createRedisClient(
-            host, port, name, password, connNum, isFast, timeout, db);
+            host, port, name, username, password, connNum, isFast, timeout, db);
     }
 }
 

@@ -18,10 +18,15 @@
 
 using namespace drogon::nosql;
 RedisConnection::RedisConnection(const trantor::InetAddress &serverAddress,
+                                 const std::string &username,
                                  const std::string &password,
                                  const unsigned int db,
                                  trantor::EventLoop *loop)
-    : serverAddr_(serverAddress), password_(password), db_(db), loop_(loop)
+    : serverAddr_(serverAddress),
+      username_(username),
+      password_(password),
+      db_(db),
+      loop_(loop)
 {
     assert(loop_);
     loop_->queueInLoop([this]() { startConnectionInLoop(); });
@@ -127,7 +132,8 @@ void RedisConnection::startConnectionInLoop()
                             thisPtr->disconnect();
                             thisPtr->status_ = ConnectStatus::kEnd;
                         },
-                        "auth %s",
+                        "auth %s %s",
+                        thisPtr->username_.data(),
                         thisPtr->password_.data());
                 }
 

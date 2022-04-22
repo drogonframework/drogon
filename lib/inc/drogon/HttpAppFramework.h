@@ -1291,6 +1291,7 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
      * @param ip IP of redis server.
      * @param port The port on which the redis server is listening.
      * @param name The client name.
+     * @param username Username for redis server
      * @param password Password for the redis server
      * @param connectionNum The number of connections to the redis server.
      * @param isFast Indicates if the client is a fast database client.
@@ -1302,6 +1303,7 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
         const std::string &ip,
         unsigned short port,
         const std::string &name = "default",
+        const std::string &username = "",
         const std::string &password = "",
         size_t connectionNum = 1,
         bool isFast = false,
