@@ -23,11 +23,8 @@ std::shared_ptr<RedisClient> RedisClient::newRedisClient(
     const std::string &password,
     const unsigned int db)
 {
-    auto client = std::make_shared<RedisClientImpl>(serverAddress,
-                                                    connectionNumber,
-                                                    username,
-                                                    password,
-                                                    db);
+    auto client = std::make_shared<RedisClientImpl>(
+        serverAddress, connectionNumber, username, password, db);
     client->init();
     return client;
 }
@@ -63,8 +60,8 @@ void RedisClientImpl::init()
 }
 RedisConnectionPtr RedisClientImpl::newConnection(trantor::EventLoop *loop)
 {
-    auto conn =
-        std::make_shared<RedisConnection>(serverAddr_, username_, password_, db_, loop);
+    auto conn = std::make_shared<RedisConnection>(
+        serverAddr_, username_, password_, db_, loop);
     std::weak_ptr<RedisClientImpl> thisWeakPtr = shared_from_this();
     conn->setConnectCallback([thisWeakPtr](RedisConnectionPtr &&conn) {
         auto thisPtr = thisWeakPtr.lock();
