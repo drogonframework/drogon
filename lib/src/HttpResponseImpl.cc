@@ -668,7 +668,9 @@ void HttpResponseImpl::addHeader(const char *start,
 {
     fullHeaderString_.reset();
     std::string field(start, colon);
-    transform(field.begin(), field.end(), field.begin(), ::tolower);
+    transform(field.begin(), field.end(), field.begin(), [](unsigned char c) {
+        return tolower(c);
+    });
     ++colon;
     while (colon < end && isspace(*colon))
     {
@@ -722,7 +724,7 @@ void HttpResponseImpl::addHeader(const char *start,
                 std::transform(cookie_name.begin(),
                                cookie_name.end(),
                                cookie_name.begin(),
-                               tolower);
+                               [](unsigned char c) { return tolower(c); });
                 if (cookie_name == "path")
                 {
                     cookie.setPath(cookie_value);

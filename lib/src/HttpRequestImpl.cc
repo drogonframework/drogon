@@ -114,7 +114,9 @@ void HttpRequestImpl::parseParameters() const
     if (input.empty())
         return;
     std::string type = getHeaderBy("content-type");
-    std::transform(type.begin(), type.end(), type.begin(), tolower);
+    std::transform(type.begin(), type.end(), type.begin(), [](unsigned char c) {
+        return tolower(c);
+    });
     if (type.empty() ||
         type.find("application/x-www-form-urlencoded") != std::string::npos)
     {
@@ -376,7 +378,10 @@ void HttpRequestImpl::addHeader(const char *start,
 {
     std::string field(start, colon);
     // Field name is case-insensitive.so we transform it to lower;(rfc2616-4.2)
-    std::transform(field.begin(), field.end(), field.begin(), ::tolower);
+    std::transform(field.begin(),
+                   field.end(),
+                   field.begin(),
+                   [](unsigned char c) { return tolower(c); });
     ++colon;
     while (colon < end && isspace(*colon))
     {

@@ -87,7 +87,10 @@ void StaticFileRouter::route(
     }
 
     auto lPath = path;
-    std::transform(lPath.begin(), lPath.end(), lPath.begin(), tolower);
+    std::transform(lPath.begin(),
+                   lPath.end(),
+                   lPath.begin(),
+                   [](unsigned char c) { return tolower(c); });
 
     for (auto &location : **ioLocationsPtr_)
     {
@@ -120,7 +123,10 @@ void StaticFileRouter::route(
             }
             if (!location.isCaseSensitive_)
             {
-                std::transform(URI.begin(), URI.end(), URI.begin(), tolower);
+                std::transform(URI.begin(),
+                               URI.end(),
+                               URI.begin(),
+                               [](unsigned char c) { return tolower(c); });
             }
         }
         auto &tmpPath = location.isCaseSensitive_ ? path : lPath;
@@ -175,7 +181,7 @@ void StaticFileRouter::route(
                     std::transform(extension.begin(),
                                    extension.end(),
                                    extension.begin(),
-                                   tolower);
+                                   [](unsigned char c) { return tolower(c); });
                     if (fileTypeSet_.find(extension) == fileTypeSet_.end())
                     {
                         callback(app().getCustomErrorHandler()(k403Forbidden));

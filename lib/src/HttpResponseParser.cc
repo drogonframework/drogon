@@ -150,7 +150,9 @@ bool HttpResponseParser::parseResponse(MsgBuffer *buf)
                                     std::transform(upgradeValue.begin(),
                                                    upgradeValue.end(),
                                                    upgradeValue.begin(),
-                                                   tolower);
+                                                   [](unsigned char c) {
+                                                       return tolower(c);
+                                                   });
                                     return upgradeValue == "websocket";
                                 }()))
                             {

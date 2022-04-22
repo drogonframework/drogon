@@ -39,7 +39,9 @@ using namespace drogon_ctl;
 static std::string toLower(const std::string &str)
 {
     auto ret = str;
-    std::transform(ret.begin(), ret.end(), ret.begin(), tolower);
+    std::transform(ret.begin(), ret.end(), ret.begin(), [](unsigned char c) {
+        return tolower(c);
+    });
     return ret;
 }
 
@@ -630,7 +632,10 @@ void create_model::createModelClassFromSqlite3(
             bool notnull = row["notnull"].as<bool>();
             bool primary = row["pk"].as<int>();
             auto type = row["type"].as<std::string>();
-            std::transform(type.begin(), type.end(), type.begin(), tolower);
+            std::transform(type.begin(),
+                           type.end(),
+                           type.begin(),
+                           [](unsigned char c) { return tolower(c); });
             ColumnInfo info;
             info.index_ = index++;
             info.dbType_ = "sqlite3";
@@ -657,7 +662,9 @@ void create_model::createModelClassFromSqlite3(
                                 std::transform(sql.begin(),
                                                sql.end(),
                                                sql.begin(),
-                                               tolower);
+                                               [](unsigned char c) {
+                                                   return tolower(c);
+                                               });
                                 if (sql.find("autoincrement") !=
                                     std::string::npos)
                                 {
@@ -782,7 +789,10 @@ void create_model::createModel(const std::string &path,
                                const std::string &singleModelName)
 {
     auto dbType = config.get("rdbms", "no dbms").asString();
-    std::transform(dbType.begin(), dbType.end(), dbType.begin(), tolower);
+    std::transform(dbType.begin(),
+                   dbType.end(),
+                   dbType.begin(),
+                   [](unsigned char c) { return tolower(c); });
     auto restfulApiConfig = config["restful_api_controllers"];
     auto relationships = getRelationships(config["relationships"]);
     auto convertMethods = getConvertMethods(config["convert"]);
@@ -869,7 +879,7 @@ void create_model::createModel(const std::string &path,
                     std::transform(tableName.begin(),
                                    tableName.end(),
                                    tableName.begin(),
-                                   tolower);
+                                   [](unsigned char c) { return tolower(c); });
                     std::cout << "table name:" << tableName << std::endl;
                     createModelClassFromPG(path,
                                            client,
@@ -978,7 +988,7 @@ void create_model::createModel(const std::string &path,
                     std::transform(tableName.begin(),
                                    tableName.end(),
                                    tableName.begin(),
-                                   tolower);
+                                   [](unsigned char c) { return tolower(c); });
                     std::cout << "table name:" << tableName << std::endl;
                     createModelClassFromMysql(path,
                                               client,
@@ -1053,7 +1063,7 @@ void create_model::createModel(const std::string &path,
                     std::transform(tableName.begin(),
                                    tableName.end(),
                                    tableName.begin(),
-                                   tolower);
+                                   [](unsigned char c) { return tolower(c); });
                     std::cout << "table name:" << tableName << std::endl;
                     createModelClassFromSqlite3(path,
                                                 client,
@@ -1194,7 +1204,10 @@ void create_model::createRestfulAPIController(
         restfulApiConfig.get("resource_uri", "/*").asString(),
         regex,
         modelClassName);
-    std::transform(resource.begin(), resource.end(), resource.begin(), tolower);
+    std::transform(resource.begin(),
+                   resource.end(),
+                   resource.begin(),
+                   [](unsigned char c) { return tolower(c); });
     auto ctrlClassName =
         std::regex_replace(restfulApiConfig.get("class_name", "/*").asString(),
                            regex,
