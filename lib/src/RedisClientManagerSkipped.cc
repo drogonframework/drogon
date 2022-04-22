@@ -30,6 +30,7 @@ void RedisClientManager::createRedisClients(
 void RedisClientManager::createRedisClient(const std::string & /*name*/,
                                            const std::string & /*host*/,
                                            unsigned short /*port*/,
+                                           const std::string & /*username*/,
                                            const std::string & /*password*/,
                                            size_t /*connectionNum*/,
                                            bool /*isFast*/,

@@ -21,6 +21,7 @@ namespace nosql
 std::shared_ptr<RedisClient> RedisClient::newRedisClient(
     const trantor::InetAddress& /*serverAddress*/,
     size_t /*numberOfConnections*/,
+    const std::string& /*username*/,
     const std::string& /*password*/,
     const unsigned int /*db*/)
 {
