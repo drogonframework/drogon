@@ -404,6 +404,11 @@ struct AsyncTask
     }
 
     AsyncTask(const AsyncTask &) = delete;
+    AsyncTask(AsyncTask &&other)
+    {
+        coro_ = other.coro_;
+        other.coro_ = nullptr;
+    }
 
     AsyncTask &operator=(const AsyncTask &) = delete;
     AsyncTask &operator=(AsyncTask &&other)
