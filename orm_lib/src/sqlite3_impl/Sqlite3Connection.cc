@@ -61,7 +61,10 @@ void Sqlite3Connection::init()
     {
         auto key = kv.first;
         auto value = kv.second;
-        std::transform(key.begin(), key.end(), key.begin(), tolower);
+        std::transform(key.begin(),
+                       key.end(),
+                       key.begin(),
+                       [](unsigned char c) { return tolower(c); });
         if (key == "filename")
         {
             filename = value;
@@ -216,7 +219,10 @@ void Sqlite3Connection::execSqlInQueue(
     for (int i = 0; i < columnNum; ++i)
     {
         auto name = std::string(sqlite3_column_name(stmt, i));
-        std::transform(name.begin(), name.end(), name.begin(), tolower);
+        std::transform(name.begin(),
+                       name.end(),
+                       name.begin(),
+                       [](unsigned char c) { return tolower(c); });
         LOG_TRACE << "column name:" << name;
         resultPtr->columnNames_.push_back(name);
         resultPtr->columnNamesMap_.insert({name, i});

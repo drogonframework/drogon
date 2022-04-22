@@ -32,7 +32,10 @@ void HttpSimpleControllersRouter::registerHttpSimpleController(
     assert(!pathName.empty());
     assert(!ctrlName.empty());
     std::string path(pathName);
-    std::transform(pathName.begin(), pathName.end(), path.begin(), tolower);
+    std::transform(pathName.begin(),
+                   pathName.end(),
+                   path.begin(),
+                   [](unsigned char c) { return tolower(c); });
     std::lock_guard<std::mutex> guard(simpleCtrlMutex_);
     std::vector<HttpMethod> validMethods;
     std::vector<std::string> filters;
@@ -95,7 +98,7 @@ void HttpSimpleControllersRouter::route(
     std::transform(req->path().begin(),
                    req->path().end(),
                    pathLower.begin(),
-                   tolower);
+                   [](unsigned char c) { return tolower(c); });
     auto iter = simpleCtrlMap_.find(pathLower);
     if (iter != simpleCtrlMap_.end())
     {

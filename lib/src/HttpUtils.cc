@@ -381,7 +381,10 @@ ContentType getContentType(const std::string &fileName)
     if (pos != std::string::npos)
     {
         extName = fileName.substr(pos + 1);
-        transform(extName.begin(), extName.end(), extName.begin(), tolower);
+        transform(extName.begin(),
+                  extName.end(),
+                  extName.begin(),
+                  [](unsigned char c) { return tolower(c); });
     }
     switch (extName.length())
     {
@@ -705,7 +708,10 @@ const string_view fileNameToMime(const std::string &fileName)
     if (pos != std::string::npos)
     {
         extName = fileName.substr(pos + 1);
-        transform(extName.begin(), extName.end(), extName.begin(), tolower);
+        transform(extName.begin(),
+                  extName.end(),
+                  extName.begin(),
+                  [](unsigned char c) { return tolower(c); });
     }
     auto it = customMime.find(extName);
     if (it == customMime.end())
@@ -724,7 +730,10 @@ std::pair<ContentType, const string_view> fileNameToContentTypeAndMime(
     if (pos != std::string::npos)
     {
         extName = fileName.substr(pos + 1);
-        transform(extName.begin(), extName.end(), extName.begin(), tolower);
+        transform(extName.begin(),
+                  extName.end(),
+                  extName.begin(),
+                  [](unsigned char c) { return tolower(c); });
     }
     auto it = customMime.find(extName);
     if (it == customMime.end())
