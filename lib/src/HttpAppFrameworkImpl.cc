@@ -988,12 +988,12 @@ HttpAppFramework &HttpAppFrameworkImpl::createRedisClient(
     const std::string &ip,
     unsigned short port,
     const std::string &name,
-    const std::string &username,
     const std::string &password,
     size_t connectionNum,
     bool isFast,
     double timeout,
-    unsigned int db)
+    unsigned int db,
+    const std::string &username)
 {
     assert(!running_);
     redisClientManagerPtr_->createRedisClient(
