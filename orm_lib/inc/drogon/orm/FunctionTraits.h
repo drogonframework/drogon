@@ -41,9 +41,8 @@ struct FunctionTraits<void (*)()>
 };
 // functor,lambda
 template <typename Function>
-struct FunctionTraits
-    : public FunctionTraits<
-          decltype(&std::remove_reference<Function>::type::operator())>
+struct FunctionTraits : public FunctionTraits<decltype(
+                            &std::remove_reference<Function>::type::operator())>
 {
 };
 
