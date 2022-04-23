@@ -47,7 +47,9 @@ Result::RowSizeType MysqlResultImpl::columnNumber(const char colName[]) const
     if (!fieldsMapPtr_)
         return -1;
     std::string col(colName);
-    std::transform(col.begin(), col.end(), col.begin(), tolower);
+    std::transform(col.begin(), col.end(), col.begin(), [](unsigned char c) {
+        return tolower(c);
+    });
     if (fieldsMapPtr_->find(col) != fieldsMapPtr_->end())
         return (*fieldsMapPtr_)[col];
     throw RangeError(std::string("no column named ") + colName);

@@ -2,7 +2,6 @@
 
 [![Build Status](https://travis-ci.com/an-tao/drogon.svg?branch=master)](https://travis-ci.com/an-tao/drogon)
 ![Build Status](https://github.com/an-tao/drogon/workflows/Build%20Drogon/badge.svg?branch=master)
-[![Build status](https://ci.appveyor.com/api/projects/status/12ffuf6j5vankgyb/branch/master?svg=true)](https://ci.appveyor.com/project/an-tao/drogon/branch/master)
 [![Total alerts](https://img.shields.io/lgtm/alerts/g/an-tao/drogon.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/an-tao/drogon/alerts/)
 [![Join the chat at https://gitter.im/drogon-web/community](https://badges.gitter.im/drogon-web/community.svg)](https://gitter.im/drogon-web/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Join the telegram group at https://t.me/joinchat/_mMNGv0748ZkMDAx](https://img.shields.io/badge/Telegram-2CA5E0?style=flat&logo=telegram&logoColor=white)](https://t.me/joinchat/_mMNGv0748ZkMDAx)
@@ -13,7 +12,7 @@
 **Drogon**是一個基於C++14/17的Http應用框架，使用Drogon可以方便的使用C++構建各種類型的Web App伺服器程式。
 本版本庫是github上[Drogon](https://github.com/an-tao/drogon)的鏡像庫。 **Drogon**是作者非常喜歡的美劇《冰與火之歌：權力遊戲》中的一條龍的名字(漢譯作卓耿)，和龍有關但並不是dragon的誤寫，為了不至於引起不必要的誤會這裡說明一下。
 
-Drogon是一個跨平台框架，它支援Linux，也支援macOS、FreeBSD/OpenBSD和Windows。它的主要特點如下：
+Drogon是一個跨平台框架，它支援Linux，也支援macOS、FreeBSD/OpenBSD、HaikuOS和Windows。它的主要特點如下：
 
 * 網路層使用基於epoll(macOS/FreeBSD下是kqueue)的非阻塞IO框架，提供高並發、高性能的網路IO。詳細請見[TFB Tests Results](https://www.techempower.com/benchmarks/#section=data-r19&hw=ph&test=composite)；
 * 全異步程式設計；

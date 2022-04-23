@@ -1,7 +1,7 @@
 /**
  *
- *  Utilities.cc
- *  An Tao
+ *  @file Utilities.cc
+ *  @author An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
@@ -13,10 +13,12 @@
  */
 
 #include <drogon/utils/Utilities.h>
+#include "filesystem.h"
 #include <trantor/utils/Logger.h>
 #include <drogon/config.h>
 #ifdef OpenSSL_FOUND
 #include <openssl/md5.h>
+#include <openssl/rand.h>
 #else
 #include "ssl_funcs/Md5.h"
 #endif
@@ -28,8 +30,10 @@
 #include <Rpc.h>
 #include <direct.h>
 #include <io.h>
+#include <ntsecapi.h>
 #else
 #include <uuid.h>
+#include <unistd.h>
 #endif
 #include <zlib.h>
 #include <iomanip>
@@ -44,14 +48,12 @@
 #include <cstdlib>
 #include <stdio.h>
 #include <string.h>
-#ifndef _WIN32
-#include <unistd.h>
-#endif
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <stdarg.h>
 
 #ifdef _WIN32
+
 char *strptime(const char *s, const char *f, struct tm *tm)
 {
     // std::get_time is defined such that its
@@ -76,6 +78,11 @@ time_t timegm(struct tm *tm)
      */
     return _mkgmtime(&my_tm);
 }
+#endif
+
+#ifdef __HAIKU__
+// HACK: Haiku has a timegm implementation. But it is not exposed
+extern "C" time_t timegm(struct tm *tm);
 #endif
 
 namespace drogon
@@ -1045,59 +1052,19 @@ std::string formattedString(const char *format, ...)
 
 int createPath(const std::string &path)
 {
-    auto tmpPath = path;
-    std::stack<std::string> pathStack;
-#ifdef _WIN32
-    while (_access(tmpPath.c_str(), 06) != 0)
-#else
-    while (access(tmpPath.c_str(), F_OK) != 0)
-#endif
+    if (path.empty())
+        return 0;
+    auto osPath{toNativePath(path)};
+    if (osPath.back() != filesystem::path::preferred_separator)
+        osPath.push_back(filesystem::path::preferred_separator);
+    filesystem::path fsPath(osPath);
+    drogon::error_code err;
+    filesystem::create_directories(fsPath, err);
+    if (err)
     {
-        if (tmpPath == "./" || tmpPath == "/")
-            return -1;
-        while (tmpPath[tmpPath.length() - 1] == '/')
-            tmpPath.resize(tmpPath.length() - 1);
-        auto pos = tmpPath.rfind('/');
-        if (pos != std::string::npos)
-        {
-            pathStack.push(tmpPath.substr(pos));
-            tmpPath = tmpPath.substr(0, pos + 1);
-        }
-        else
-        {
-            pathStack.push(tmpPath);
-            tmpPath.clear();
-            break;
-        }
-    }
-    while (pathStack.size() > 0)
-    {
-        if (tmpPath.empty())
-        {
-            tmpPath = pathStack.top();
-        }
-        else
-        {
-            if (tmpPath[tmpPath.length() - 1] == '/')
-            {
-                tmpPath.append(pathStack.top());
-            }
-            else
-            {
-                tmpPath.append("/").append(pathStack.top());
-            }
-        }
-        pathStack.pop();
-
-#ifdef _WIN32
-        if (_mkdir(tmpPath.c_str()) == -1)
-#else
-        if (mkdir(tmpPath.c_str(), 0755) == -1)
-#endif
-        {
-            LOG_ERROR << "Can't create path:" << path;
-            return -1;
-        }
+        LOG_ERROR << "Error " << err.value() << " creating path " << osPath
+                  << ": " << err.message();
+        return -1;
     }
     return 0;
 }
@@ -1177,12 +1144,23 @@ std::string brotliDecompress(const char * /*data*/, const size_t /*ndata*/)
 
 std::string getMd5(const char *data, const size_t dataLen)
 {
-#ifdef OpenSSL_FOUND
+#if defined(OpenSSL_FOUND) && OPENSSL_VERSION_MAJOR < 3
     MD5_CTX c;
     unsigned char md5[16] = {0};
     MD5_Init(&c);
     MD5_Update(&c, data, dataLen);
     MD5_Final(md5, &c);
+    return utils::binaryStringToHex(md5, 16);
+#elif defined(OpenSSL_FOUND)
+    unsigned char md5[16] = {0};
+    const EVP_MD *md = EVP_get_digestbyname("md5");
+    assert(md != nullptr);
+
+    EVP_MD_CTX *mdctx = EVP_MD_CTX_new();
+    EVP_DigestInit_ex2(mdctx, md, NULL);
+    EVP_DigestUpdate(mdctx, data, dataLen);
+    EVP_DigestFinal_ex(mdctx, md5, NULL);
+    EVP_MD_CTX_free(mdctx);
     return utils::binaryStringToHex(md5, 16);
 #else
     return Md5Encode::encode(data, dataLen);
@@ -1197,6 +1175,50 @@ void replaceAll(std::string &s, const std::string &from, const std::string &to)
         s.replace(pos, from.size(), to);
         pos += to.size();
     }
+}
+
+/**
+ * @brief Generates `size` random bytes from the systems random source and
+ * stores them into `ptr`.
+ */
+static bool systemRandomBytes(void *ptr, size_t size)
+{
+#if defined(__BSD__) || defined(__APPLE__)
+    arc4random_buf(ptr, size);
+    return true;
+#elif defined(__linux__) && \
+    ((defined(__GLIBC__) && \
+      (__GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 25))))
+    return getentropy(ptr, size) != -1;
+#elif defined(_WIN32)  // Windows
+    return RtlGenRandom(ptr, size);
+#elif defined(__unix__) || defined(__HAIKU__)
+    // fallback to /dev/urandom for other/old UNIX
+    thread_local std::unique_ptr<FILE, std::function<void(FILE *)> > fptr(
+        fopen("/dev/urandom", "rb"), [](FILE *ptr) {
+            if (ptr != nullptr)
+                fclose(ptr);
+        });
+    if (fptr == nullptr)
+    {
+        LOG_FATAL << "Failed to open /dev/urandom for randomness";
+        abort();
+    }
+    if (fread(ptr, 1, size, fptr.get()) != 0)
+        return true;
+#endif
+    return false;
+}
+
+bool secureRandomBytes(void *ptr, size_t size)
+{
+#ifdef OpenSSL_FOUND
+    if (RAND_bytes((unsigned char *)ptr, size) == 0)
+        return true;
+#endif
+    if (systemRandomBytes(ptr, size))
+        return true;
+    return false;
 }
 
 }  // namespace utils

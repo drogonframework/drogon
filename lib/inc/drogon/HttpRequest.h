@@ -16,6 +16,8 @@
 
 #include <drogon/exports.h>
 #include <drogon/utils/string_view.h>
+#include <drogon/utils/optional.h>
+#include <drogon/utils/Utilities.h>
 #include <drogon/DrClassMap.h>
 #include <drogon/HttpTypes.h>
 #include <drogon/Session.h>
@@ -38,7 +40,7 @@ using HttpRequestPtr = std::shared_ptr<HttpRequest>;
  * type object. Users must specialize the template for a particular type.
  */
 template <typename T>
-T fromRequest(const HttpRequest &req)
+T fromRequest(const HttpRequest &)
 {
     LOG_ERROR << "You must specialize the fromRequest template for the type of "
               << DrClassMap::demangle(typeid(T).name());
@@ -223,6 +225,14 @@ class DROGON_EXPORT HttpRequest
     virtual const char *matchedPathPatternData() const = 0;
     virtual size_t matchedPathPatternLength() const = 0;
 
+    /// Return the string of http version of request, such as HTTP/1.0,
+    /// HTTP/1.1, etc.
+    virtual const char *versionString() const = 0;
+    const char *getVersionString() const
+    {
+        return versionString();
+    }
+
     /// Return the enum type version of the request.
     /**
      * kHttp10 means Http version is 1.0
@@ -269,6 +279,38 @@ class DROGON_EXPORT HttpRequest
     /// Get a parameter identified by the @param key
     virtual const std::string &getParameter(const std::string &key) const = 0;
 
+    /**
+     * @brief Get the optional parameter identified by the @param key. if the
+     * parameter doesn't exist, or the original parameter can't be converted to
+     * a T type object, an empty optional object is returned.
+     *
+     * @tparam T
+     * @param key
+     * @return optional<T>
+     */
+    template <typename T>
+    optional<T> getOptionalParameter(const std::string &key)
+    {
+        auto &params = getParameters();
+        auto it = params.find(key);
+        if (it != params.end())
+        {
+            try
+            {
+                return optional<T>(drogon::utils::fromString<T>(it->second));
+            }
+            catch (const std::exception &e)
+            {
+                LOG_ERROR << e.what();
+                return optional<T>{};
+            }
+        }
+        else
+        {
+            return optional<T>{};
+        }
+    }
+
     /// Return the remote IP address and port
     virtual const trantor::InetAddress &peerAddr() const = 0;
     const trantor::InetAddress &getPeerAddr() const
@@ -292,8 +334,7 @@ class DROGON_EXPORT HttpRequest
 
     /// Get the Json object of the request
     /**
-     * The content type of the request must be 'application/json', and the query
-     * string (the part after the question mark in the URI) must be empty,
+     * The content type of the request must be 'application/json',
      * otherwise the method returns an empty shared_ptr object.
      */
     virtual const std::shared_ptr<Json::Value> &jsonObject() const = 0;
@@ -343,6 +384,15 @@ class DROGON_EXPORT HttpRequest
 
     /// Set or get the content type
     virtual void setContentTypeCode(const ContentType type) = 0;
+
+    /// Set the content-type string, The string may contain the header name and
+    /// CRLF. Or just the MIME type
+    //
+    /// For example, "content-type: text/plain\r\n" or "text/plain"
+    void setContentTypeString(const string_view &typeString)
+    {
+        setContentTypeString(typeString.data(), typeString.size());
+    }
 
     /// Set the request content-type string, The string
     /// must contain the header name and CRLF.
@@ -403,6 +453,8 @@ class DROGON_EXPORT HttpRequest
     }
 
     virtual bool isOnSecureConnection() const noexcept = 0;
+    virtual void setContentTypeString(const char *typeString,
+                                      size_t typeStringLength) = 0;
 
     virtual ~HttpRequest()
     {

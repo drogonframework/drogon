@@ -19,6 +19,7 @@ auto modelName = tableInfo.get<std::string>("className");
 $$<<"#include \""<<modelName<<".h\"\n";
 bool hasPrimaryKey = (tableInfo.get<int>("hasPrimaryKey")==1);
 $$<<"using namespace drogon;\n";
+$$<<"using namespace drogon::orm;\n";
 
 $$<<"using namespace drogon_model::"<<tableInfo.get<std::string>("dbName");
 auto &schema=tableInfo.get<std::string>("schema");

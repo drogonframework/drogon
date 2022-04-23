@@ -82,14 +82,12 @@ void DbClientImpl::init()
     {
         sharedMutexPtr_ = std::make_shared<SharedMutex>();
         assert(sharedMutexPtr_);
-        auto loop = loops_.getNextLoop();
-        loop->runInLoop([this]() {
-            std::lock_guard<std::mutex> lock(connectionsMutex_);
-            for (size_t i = 0; i < numberOfConnections_; ++i)
-            {
-                connections_.insert(newConnection(nullptr));
-            }
-        });
+
+        std::lock_guard<std::mutex> lock(connectionsMutex_);
+        for (size_t i = 0; i < numberOfConnections_; ++i)
+        {
+            connections_.insert(newConnection(nullptr));
+        }
     }
 }
 DbClientImpl::~DbClientImpl() noexcept
@@ -402,9 +400,12 @@ DbConnectionPtr DbClientImpl::newConnection(trantor::EventLoop *loop)
     else if (type_ == ClientType::Sqlite3)
     {
 #if USE_SQLITE3
-        connPtr = std::make_shared<Sqlite3Connection>(loop,
-                                                      connectionInfo_,
-                                                      sharedMutexPtr_);
+        auto sqlite3ConnPtr =
+            std::make_shared<Sqlite3Connection>(loop,
+                                                connectionInfo_,
+                                                sharedMutexPtr_);
+        sqlite3ConnPtr->init();
+        connPtr = sqlite3ConnPtr;
 #else
         return nullptr;
 #endif
@@ -414,7 +415,6 @@ DbConnectionPtr DbClientImpl::newConnection(trantor::EventLoop *loop)
         return nullptr;
         (void)(loop);
     }
-
     std::weak_ptr<DbClientImpl> weakPtr = shared_from_this();
     connPtr->setCloseCallback([weakPtr](const DbConnectionPtr &closeConnPtr) {
         // Erase the connection

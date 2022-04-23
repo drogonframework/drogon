@@ -32,7 +32,10 @@ class HttpServer : trantor::NonCopyable
                const std::string &name,
                const std::vector<
                    std::function<HttpResponsePtr(const HttpRequestPtr &)>>
-                   &syncAdvices);
+                   &syncAdvices,
+               const std::vector<std::function<void(const HttpRequestPtr &,
+                                                    const HttpResponsePtr &)>>
+                   &preSendingAdvices);
 
     ~HttpServer();
 
@@ -45,6 +48,7 @@ class HttpServer : trantor::NonCopyable
     {
         httpAsyncCallback_ = cb;
     }
+
     void setNewWebsocketCallback(const WebSocketNewAsyncCallback &cb)
     {
         newWebsocketCallback_ = cb;
@@ -77,11 +81,13 @@ class HttpServer : trantor::NonCopyable
     void start();
     void stop();
 
-    void enableSSL(const std::string &certPath,
-                   const std::string &keyPath,
-                   bool useOldTLS)
+    void enableSSL(
+        const std::string &certPath,
+        const std::string &keyPath,
+        bool useOldTLS,
+        const std::vector<std::pair<std::string, std::string>> &sslConfCmds)
     {
-        server_.enableSSL(certPath, keyPath, useOldTLS);
+        server_.enableSSL(certPath, keyPath, useOldTLS, sslConfCmds);
     }
 
     const trantor::InetAddress &address() const
@@ -108,6 +114,9 @@ class HttpServer : trantor::NonCopyable
     trantor::ConnectionCallback connectionCallback_;
     const std::vector<std::function<HttpResponsePtr(const HttpRequestPtr &)>>
         &syncAdvices_;
+    const std::vector<
+        std::function<void(const HttpRequestPtr &, const HttpResponsePtr &)>>
+        &preSendingAdvices_;
 };
 
 }  // namespace drogon

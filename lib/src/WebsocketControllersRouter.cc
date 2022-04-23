@@ -36,7 +36,10 @@ void WebsocketControllersRouter::registerWebSocketController(
     assert(!pathName.empty());
     assert(!ctrlName.empty());
     std::string path(pathName);
-    std::transform(pathName.begin(), pathName.end(), path.begin(), tolower);
+    std::transform(pathName.begin(),
+                   pathName.end(),
+                   path.begin(),
+                   [](unsigned char c) { return tolower(c); });
     std::vector<HttpMethod> validMethods;
     std::vector<std::string> filters;
     for (auto const &filterOrMethod : filtersAndMethods)
@@ -100,7 +103,7 @@ void WebsocketControllersRouter::route(
         std::transform(req->path().begin(),
                        req->path().end(),
                        pathLower.begin(),
-                       tolower);
+                       [](unsigned char c) { return tolower(c); });
         auto iter = wsCtrlMap_.find(pathLower);
         if (iter != wsCtrlMap_.end())
         {

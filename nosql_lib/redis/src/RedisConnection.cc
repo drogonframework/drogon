@@ -38,11 +38,20 @@ void RedisConnection::startConnectionInLoop()
     if (redisContext_->err)
     {
         LOG_ERROR << "Error: " << redisContext_->errstr;
+
         if (disconnectCallback_)
         {
             disconnectCallback_(shared_from_this());
         }
+
+        // Strange things have happend. In some kinds of connection errors, such
+        // as setsockopt errors, hiredis already set redisContext_->c.fd to -1,
+        // but the tcp connection stays in ESTABLISHED status. And there is no
+        // way for us to obtain the fd of that socket nor close it. This
+        // probably is a bug of hiredis.
+        return;
     }
+
     redisContext_->ev.addWrite = addWrite;
     redisContext_->ev.delWrite = delWrite;
     redisContext_->ev.addRead = addRead;
@@ -232,16 +241,18 @@ void RedisConnection::cleanup(void * /*userData*/)
 
 void RedisConnection::handleRedisRead()
 {
-    redisAsyncHandleRead(redisContext_);
+    if (status_ != ConnectStatus::kEnd)
+    {
+        redisAsyncHandleRead(redisContext_);
+    }
 }
+
 void RedisConnection::handleRedisWrite()
 {
-    if (redisContext_->c.flags == REDIS_DISCONNECTING)
+    if (status_ != ConnectStatus::kEnd)
     {
-        channel_->disableAll();
-        channel_->remove();
+        redisAsyncHandleWrite(redisContext_);
     }
-    redisAsyncHandleWrite(redisContext_);
 }
 
 void RedisConnection::sendCommandInLoop(
@@ -265,20 +276,27 @@ void RedisConnection::sendCommandInLoop(
 
 void RedisConnection::handleResult(redisReply *result)
 {
-    LOG_TRACE << "redis reply: " << result->type;
     auto commandCallback = std::move(resultCallbacks_.front());
     resultCallbacks_.pop();
     auto exceptionCallback = std::move(exceptionCallbacks_.front());
     exceptionCallbacks_.pop();
-    if (result->type != REDIS_REPLY_ERROR)
+    if (result && result->type != REDIS_REPLY_ERROR)
     {
         commandCallback(RedisResult(result));
     }
     else
     {
-        exceptionCallback(
-            RedisException(RedisErrorCode::kRedisError,
-                           std::string{result->str, result->len}));
+        if (result)
+        {
+            exceptionCallback(
+                RedisException(RedisErrorCode::kRedisError,
+                               std::string{result->str, result->len}));
+        }
+        else
+        {
+            exceptionCallback(RedisException(RedisErrorCode::kConnectionBroken,
+                                             "Network failure"));
+        }
     }
     if (resultCallbacks_.empty())
     {

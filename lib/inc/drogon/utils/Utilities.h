@@ -17,19 +17,44 @@
 #include <drogon/exports.h>
 #include <trantor/utils/Date.h>
 #include <trantor/utils/Funcs.h>
+#include <trantor/utils/Utilities.h>
 #include <drogon/utils/string_view.h>
 #include <memory>
 #include <string>
 #include <vector>
 #include <set>
 #include <limits>
+#include <sstream>
+#include <algorithm>
 #ifdef _WIN32
 #include <time.h>
-char *strptime(const char *s, const char *f, struct tm *tm);
-time_t timegm(struct tm *tm);
+DROGON_EXPORT char *strptime(const char *s, const char *f, struct tm *tm);
+DROGON_EXPORT time_t timegm(struct tm *tm);
 #endif
 namespace drogon
 {
+namespace internal
+{
+template <typename T>
+struct CanConvertFromStringStream
+{
+  private:
+    using yes = std::true_type;
+    using no = std::false_type;
+
+    template <typename U>
+    static auto test(U *p, std::stringstream &&ss)
+        -> decltype((ss >> *p), yes());
+
+    template <typename>
+    static no test(...);
+
+  public:
+    static constexpr bool value =
+        std::is_same<decltype(test<T>(nullptr, std::stringstream())),
+                     yes>::value;
+};
+}  // namespace internal
 namespace utils
 {
 /// Determine if the string is an integer
@@ -154,6 +179,111 @@ DROGON_EXPORT std::string formattedString(const char *format, ...);
  */
 DROGON_EXPORT int createPath(const std::string &path);
 
+/**
+ * @details Convert a wide string path with arbitrary directory separators
+ * to a UTF-8 portable path for use with trantor.
+ *
+ * This is a helper, mainly for Windows and multi-platform projects.
+ *
+ * @note On Windows, backslash directory separators are converted to slash to
+ * keep portable paths.
+ *
+ * @remarks On other OSes, backslashes are not converted to slash, since they
+ * are valid characters for directory/file names.
+ *
+ * @param strPath Wide string path.
+ *
+ * @return std::string UTF-8 path, with slash directory separator.
+ */
+inline std::string fromWidePath(const std::wstring &strPath)
+{
+    return trantor::utils::fromWidePath(strPath);
+}
+
+/**
+ * @details Convert a UTF-8 path with arbitrary directory separator to a wide
+ * string path.
+ *
+ * This is a helper, mainly for Windows and multi-platform projects.
+ *
+ * @note On Windows, slash directory separators are converted to backslash.
+ * Although it accepts both slash and backslash as directory separator in its
+ * API, it is better to stick to its standard.
+
+ * @remarks On other OSes, slashes are not converted to backslashes, since they
+ * are not interpreted as directory separators and are valid characters for
+ * directory/file names.
+ *
+ * @param strUtf8Path Ascii path considered as being UTF-8.
+ *
+ * @return std::wstring path with, on windows, standard backslash directory
+ * separator to stick to its standard.
+ */
+inline std::wstring toWidePath(const std::string &strUtf8Path)
+{
+    return trantor::utils::toWidePath(strUtf8Path);
+}
+
+/**
+ * @brief Convert a generic (UTF-8) path with to an OS native path.
+ * @details This is a helper, mainly for Windows and multi-platform projects.
+ *
+ * On Windows, slash directory separators are converted to backslash, and a
+ * wide string is returned.
+ *
+ * On other OSes, returns an UTF-8 string _without_ altering the directory
+ * separators.
+ *
+ * @param strPath Wide string or UTF-8 path.
+ *
+ * @return An OS path, suitable for use with the OS API.
+ */
+#if defined(_WIN32) && !defined(__MINGW32__)
+inline std::wstring toNativePath(const std::string &strPath)
+{
+    return trantor::utils::toNativePath(strPath);
+}
+inline const std::wstring &toNativePath(const std::wstring &strPath)
+{
+    return trantor::utils::toNativePath(strPath);
+}
+#else   // __WIN32
+inline const std::string &toNativePath(const std::string &strPath)
+{
+    return trantor::utils::toNativePath(strPath);
+}
+inline std::string toNativePath(const std::wstring &strPath)
+{
+    return trantor::utils::toNativePath(strPath);
+}
+#endif  // _WIN32
+/**
+ * @brief Convert a OS native path (wide string on Windows) to a generic UTF-8
+ * path.
+ * @details This is a helper, mainly for Windows and multi-platform projects.
+ *
+ * On Windows, backslash directory separators are converted to slash, and a
+ * a UTF-8 string is returned, suitable for libraries that supports UTF-8 paths
+ * like OpenSSL or drogon.
+ *
+ * On other OSes, returns an UTF-8 string without altering the directory
+ * separators (backslashes are *NOT* replaced with slashes, since they
+ * are valid characters for directory/file names).
+ *
+ * @param strPath Wide string or UTF-8 path.
+ *
+ * @return A generic path.
+ */
+inline const std::string &fromNativePath(const std::string &strPath)
+{
+    return trantor::utils::fromNativePath(strPath);
+}
+// Convert on all systems
+inline std::string fromNativePath(const std::wstring &strPath)
+{
+    return trantor::utils::fromNativePath(strPath);
+}
+
 /// Replace all occurances of from to to inplace
 /**
  * @param from string to replace
@@ -163,5 +293,120 @@ DROGON_EXPORT void replaceAll(std::string &s,
                               const std::string &from,
                               const std::string &to);
 
+/**
+ * @brief Generates cryptographically secure random bytes.
+ *
+ * @param ptr the pointer which the random bytes are stored to
+ * @param size number of bytes to generate
+ *
+ * @return true if generation is successfull. False otherwise
+ *
+ * @note DO NOT abuse this function. Especially if Drogon is built without
+ * OpenSSL. Entropy running low is a real issue.
+ */
+DROGON_EXPORT bool secureRandomBytes(void *ptr, size_t size);
+
+template <typename T>
+typename std::enable_if<internal::CanConvertFromStringStream<T>::value, T>::type
+fromString(const std::string &p) noexcept(false)
+{
+    T value{};
+    if (!p.empty())
+    {
+        std::stringstream ss(p);
+        ss >> value;
+    }
+    return value;
+}
+
+template <typename T>
+typename std::enable_if<!(internal::CanConvertFromStringStream<T>::value),
+                        T>::type
+fromString(const std::string &) noexcept(false)
+{
+    throw std::runtime_error("Bad type conversion");
+}
+
+template <>
+inline std::string fromString<std::string>(const std::string &p) noexcept(false)
+{
+    return p;
+}
+
+template <>
+inline int fromString<int>(const std::string &p) noexcept(false)
+{
+    return std::stoi(p);
+}
+
+template <>
+inline long fromString<long>(const std::string &p) noexcept(false)
+{
+    return std::stol(p);
+}
+
+template <>
+inline long long fromString<long long>(const std::string &p) noexcept(false)
+{
+    return std::stoll(p);
+}
+
+template <>
+inline unsigned long fromString<unsigned long>(const std::string &p) noexcept(
+    false)
+{
+    return std::stoul(p);
+}
+
+template <>
+inline unsigned long long fromString<unsigned long long>(
+    const std::string &p) noexcept(false)
+{
+    return std::stoull(p);
+}
+
+template <>
+inline float fromString<float>(const std::string &p) noexcept(false)
+{
+    return std::stof(p);
+}
+
+template <>
+inline double fromString<double>(const std::string &p) noexcept(false)
+{
+    return std::stod(p);
+}
+
+template <>
+inline long double fromString<long double>(const std::string &p) noexcept(false)
+{
+    return std::stold(p);
+}
+
+template <>
+inline bool fromString<bool>(const std::string &p) noexcept(false)
+{
+    if (p == "1")
+    {
+        return true;
+    }
+    if (p == "0")
+    {
+        return false;
+    }
+    std::string l{p};
+    std::transform(p.begin(), p.end(), l.begin(), [](unsigned char c) {
+        return tolower(c);
+    });
+    if (l == "true")
+    {
+        return true;
+    }
+    else if (l == "false")
+    {
+        return false;
+    }
+    throw std::runtime_error("Can't convert from string '" + p + "' to bool");
+}
 }  // namespace utils
 }  // namespace drogon

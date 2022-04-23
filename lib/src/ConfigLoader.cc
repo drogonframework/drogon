@@ -20,11 +20,16 @@
 #include <sstream>
 #include <thread>
 #include <trantor/utils/Logger.h>
-#ifndef _WIN32
+#if !defined(_WIN32) || defined(__MINGW32__)
 #include <unistd.h>
+#define os_access access
 #else
 #include <io.h>
+#define os_access _waccess
+#define R_OK 04
+#define W_OK 02
 #endif
+#include <drogon/utils/Utilities.h>
 
 using namespace drogon;
 static bool bytesSize(std::string &sizeStr, size_t &size)
@@ -94,27 +99,20 @@ static bool bytesSize(std::string &sizeStr, size_t &size)
 }
 ConfigLoader::ConfigLoader(const std::string &configFile)
 {
-#ifdef _WIN32
-    if (_access(configFile.c_str(), 0) != 0)
-#else
-    if (access(configFile.c_str(), 0) != 0)
-#endif
+    if (os_access(drogon::utils::toNativePath(configFile).c_str(), 0) != 0)
     {
         std::cerr << "Config file " << configFile << " not found!" << std::endl;
         exit(1);
     }
-#ifdef _WIN32
-    if (_access(configFile.c_str(), 04) != 0)
-#else
-    if (access(configFile.c_str(), R_OK) != 0)
-#endif
+    if (os_access(drogon::utils::toNativePath(configFile).c_str(), R_OK) != 0)
     {
         std::cerr << "No permission to read config file " << configFile
                   << std::endl;
         exit(1);
     }
     configFile_ = configFile;
-    std::ifstream infile(configFile.c_str(), std::ifstream::in);
+    std::ifstream infile(drogon::utils::toNativePath(configFile).c_str(),
+                         std::ifstream::in);
     if (infile)
     {
         try
@@ -188,7 +186,7 @@ static void loadControllers(const Json::Value &controllers)
                 std::transform(strMethod.begin(),
                                strMethod.end(),
                                strMethod.begin(),
-                               tolower);
+                               [](unsigned char c) { return tolower(c); });
                 if (strMethod == "get")
                 {
                     constraints.push_back(Get);
@@ -476,6 +474,26 @@ static void loadApp(const Json::Value &app)
         app.get("use_implicit_page", true).asBool());
     drogon::app().setImplicitPage(
         app.get("implicit_page", "index.html").asString());
+    auto mimes = app["mime"];
+    if (!mimes.isNull())
+    {
+        auto names = mimes.getMemberNames();
+        for (const auto &mime : names)
+        {
+            auto ext = mimes[mime];
+            std::vector<std::string> exts;
+            if (ext.isString())
+                exts.push_back(ext.asString());
+            else if (ext.isArray())
+            {
+                for (const auto &extension : ext)
+                    exts.push_back(extension.asString());
+            }
+
+            for (const auto &extension : exts)
+                drogon::app().registerCustomExtensionMime(extension, mime);
+        }
+    }
 }
 static void loadDbClients(const Json::Value &dbClients)
 {
@@ -484,7 +502,10 @@ static void loadDbClients(const Json::Value &dbClients)
     for (auto const &client : dbClients)
     {
         auto type = client.get("rdbms", "postgresql").asString();
-        std::transform(type.begin(), type.end(), type.begin(), ::tolower);
+        std::transform(type.begin(),
+                       type.end(),
+                       type.begin(),
+                       [](unsigned char c) { return tolower(c); });
         auto host = client.get("host", "127.0.0.1").asString();
         auto port = client.get("port", 5432).asUInt();
         auto dbname = client.get("dbname", "").asString();
@@ -569,17 +590,49 @@ static void loadListeners(const Json::Value &listeners)
         auto cert = listener.get("cert", "").asString();
         auto key = listener.get("key", "").asString();
         auto useOldTLS = listener.get("use_old_tls", false).asBool();
+        std::vector<std::pair<std::string, std::string>> sslConfCmds;
+        if (listener.isMember("ssl_conf"))
+        {
+            for (const auto &opt : listener["ssl_conf"])
+            {
+                if (opt.size() == 0 || opt.size() > 2)
+                {
+                    LOG_FATAL << "SSL configuration option should be an 1 or "
+                                 "2-element array";
+                    abort();
+                }
+                sslConfCmds.emplace_back(opt[0].asString(),
+                                         opt.get(1, "").asString());
+            }
+        }
         LOG_TRACE << "Add listener:" << addr << ":" << port;
-        drogon::app().addListener(addr, port, useSSL, cert, key, useOldTLS);
+        drogon::app().addListener(
+            addr, port, useSSL, cert, key, useOldTLS, sslConfCmds);
     }
 }
-static void loadSSL(const Json::Value &sslFiles)
+static void loadSSL(const Json::Value &sslConf)
 {
-    if (!sslFiles)
+    if (!sslConf)
         return;
-    auto key = sslFiles.get("key", "").asString();
-    auto cert = sslFiles.get("cert", "").asString();
+    auto key = sslConf.get("key", "").asString();
+    auto cert = sslConf.get("cert", "").asString();
     drogon::app().setSSLFiles(cert, key);
+    std::vector<std::pair<std::string, std::string>> sslConfCmds;
+    if (sslConf.isMember("conf"))
+    {
+        for (const auto &opt : sslConf["conf"])
+        {
+            if (opt.size() == 0 || opt.size() > 2)
+            {
+                LOG_FATAL << "SSL configuration option should be an 1 or "
+                             "2-element array";
+                abort();
+            }
+            sslConfCmds.emplace_back(opt[0].asString(),
+                                     opt.get(1, "").asString());
+        }
+    }
+    drogon::app().setSSLConfigCommands(sslConfCmds);
 }
 void ConfigLoader::load()
 {

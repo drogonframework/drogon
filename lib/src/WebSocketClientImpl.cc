@@ -38,6 +38,16 @@ WebSocketConnectionPtr WebSocketClientImpl::getConnection()
 {
     return websockConnPtr_;
 }
+void WebSocketClientImpl::stop()
+{
+    stop_ = true;
+    if (websockConnPtr_)
+    {
+        websockConnPtr_->shutdown();
+        websockConnPtr_.reset();
+    }
+    tcpClientPtr_.reset();
+}
 void WebSocketClientImpl::createTcpClient()
 {
     LOG_TRACE << "New TcpClient," << serverAddr_.toIpPort();
@@ -68,8 +78,12 @@ void WebSocketClientImpl::createTcpClient()
                 LOG_TRACE << "connection disconnect";
                 thisPtr->connectionClosedCallback_(thisPtr);
                 thisPtr->websockConnPtr_.reset();
-                thisPtr->loop_->runAfter(1.0,
-                                         [thisPtr]() { thisPtr->reconnect(); });
+                if (!thisPtr->stop_)
+                {
+                    thisPtr->loop_->runAfter(1.0, [thisPtr]() {
+                        thisPtr->reconnect();
+                    });
+                }
             }
         });
     tcpClientPtr_->setConnectionErrorCallback([weakPtr]() {
@@ -77,8 +91,13 @@ void WebSocketClientImpl::createTcpClient()
         if (!thisPtr)
             return;
         // can't connect to server
+        LOG_TRACE << "error connecting to server";
         thisPtr->requestCallback_(ReqResult::NetworkFailure, nullptr, thisPtr);
-        thisPtr->loop_->runAfter(1.0, [thisPtr]() { thisPtr->reconnect(); });
+        if (!thisPtr->stop_)
+        {
+            thisPtr->loop_->runAfter(1.0,
+                                     [thisPtr]() { thisPtr->reconnect(); });
+        }
     });
     tcpClientPtr_->setMessageCallback(
         [weakPtr](const trantor::TcpConnectionPtr &connPtr,
@@ -189,8 +208,10 @@ void WebSocketClientImpl::onRecvWsMessage(
     const trantor::TcpConnectionPtr &connPtr,
     trantor::MsgBuffer *msgBuffer)
 {
-    assert(websockConnPtr_);
-    websockConnPtr_->onNewMessage(connPtr, msgBuffer);
+    if (websockConnPtr_)
+    {
+        websockConnPtr_->onNewMessage(connPtr, msgBuffer);
+    }
 }
 
 void WebSocketClientImpl::onRecvMessage(
@@ -254,13 +275,17 @@ void WebSocketClientImpl::onRecvMessage(
             std::make_shared<WebSocketConnectionImpl>(connPtr, false);
         websockConnPtr_->setPingMessage("", std::chrono::seconds{30});
         auto thisPtr = shared_from_this();
+        std::weak_ptr<WebSocketClientImpl> weakPtr = thisPtr;
         websockConnPtr_->setMessageCallback(
-            [thisPtr](std::string &&message,
+            [weakPtr](std::string &&message,
                       const WebSocketConnectionImplPtr &,
                       const WebSocketMessageType &type) {
+                auto thisPtr = weakPtr.lock();
+                if (!thisPtr)
+                    return;
                 thisPtr->messageCallback_(std::move(message), thisPtr, type);
             });
-        requestCallback_(ReqResult::Ok, resp, shared_from_this());
+        requestCallback_(ReqResult::Ok, resp, thisPtr);
         if (msgBuffer->readableBytes() > 0)
         {
             onRecvWsMessage(connPtr, msgBuffer);
@@ -291,6 +316,8 @@ WebSocketClientImpl::WebSocketClientImpl(trantor::EventLoop *loop,
       useOldTLS_(useOldTLS),
       validateCert_(validateCert)
 {
+    if (addr.isUnspecified())
+        LOG_ERROR << "Bad IP passed to WebSocket client";
 }
 
 WebSocketClientImpl::WebSocketClientImpl(trantor::EventLoop *loop,
@@ -303,7 +330,7 @@ WebSocketClientImpl::WebSocketClientImpl(trantor::EventLoop *loop,
     std::transform(lowerHost.begin(),
                    lowerHost.end(),
                    lowerHost.begin(),
-                   tolower);
+                   [](unsigned char c) { return tolower(c); });
     if (lowerHost.find("wss://") != std::string::npos)
     {
         useSSL_ = true;

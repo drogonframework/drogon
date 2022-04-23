@@ -39,7 +39,9 @@ enum class CompareOperator
     LT,
     LE,
     Like,
+    NotLike,
     In,
+    NotIn,
     IsNull,
     IsNotNull
 };
@@ -107,8 +109,9 @@ class DROGON_EXPORT Criteria
             case CompareOperator::Like:
                 conditionString_ += " like $?";
                 break;
-            case CompareOperator::IsNull:
-            case CompareOperator::IsNotNull:
+            case CompareOperator::NotLike:
+                conditionString_ += " not like $?";
+                break;
             default:
                 break;
         }
@@ -123,11 +126,21 @@ class DROGON_EXPORT Criteria
              const CompareOperator &opera,
              const std::vector<T> &args)
     {
-        assert(opera == CompareOperator::In && args.size() > 0);
-        conditionString_ = colName + " in (";
-        for (size_t i = 0; i < args.size(); ++i)
+        const auto argsSize = args.size();
+        assert(((opera == CompareOperator::In) ||
+                (opera == CompareOperator::NotIn)) &&
+               (argsSize > 0));
+        if (opera == CompareOperator::In)
         {
-            if (i < args.size() - 1)
+            conditionString_ = colName + " in (";
+        }
+        else if (opera == CompareOperator::NotIn)
+        {
+            conditionString_ = colName + " not in (";
+        }
+        for (size_t i = 0; i < argsSize; ++i)
+        {
+            if (i < (argsSize - 1))
                 conditionString_.append("$?,");
             else
                 conditionString_.append("$?");
@@ -146,11 +159,21 @@ class DROGON_EXPORT Criteria
              const CompareOperator &opera,
              std::vector<T> &&args)
     {
-        assert(opera == CompareOperator::In && args.size() > 0);
-        conditionString_ = colName + " in (";
-        for (size_t i = 0; i < args.size(); ++i)
+        const auto argsSize = args.size();
+        assert(((opera == CompareOperator::In) ||
+                (opera == CompareOperator::NotIn)) &&
+               (argsSize > 0));
+        if (opera == CompareOperator::In)
         {
-            if (i < args.size() - 1)
+            conditionString_ = colName + " in (";
+        }
+        else if (opera == CompareOperator::NotIn)
+        {
+            conditionString_ = colName + " not in (";
+        }
+        for (size_t i = 0; i < argsSize; ++i)
+        {
+            if (i < (argsSize - 1))
                 conditionString_.append("$?,");
             else
                 conditionString_.append("$?");
@@ -256,15 +279,17 @@ class DROGON_EXPORT Criteria
     }
 
   private:
-    friend const Criteria operator&&(Criteria cond1, Criteria cond2);
+    friend DROGON_EXPORT const Criteria operator&&(Criteria cond1,
+                                                   Criteria cond2);
 
-    friend const Criteria operator||(Criteria cond1, Criteria cond2);
+    friend DROGON_EXPORT const Criteria operator||(Criteria cond1,
+                                                   Criteria cond2);
     std::string conditionString_;
     std::function<void(internal::SqlBinder &)> outputArgumentsFunc_;
 };  // namespace orm
 
-const Criteria operator&&(Criteria cond1, Criteria cond2);
-const Criteria operator||(Criteria cond1, Criteria cond2);
+DROGON_EXPORT const Criteria operator&&(Criteria cond1, Criteria cond2);
+DROGON_EXPORT const Criteria operator||(Criteria cond1, Criteria cond2);
 
 }  // namespace orm
 }  // namespace drogon

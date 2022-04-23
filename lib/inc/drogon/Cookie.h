@@ -14,6 +14,7 @@
 #pragma once
 
 #include <drogon/exports.h>
+#include <drogon/utils/optional.h>
 #include <trantor/utils/Date.h>
 #include <string>
 #include <limits>
@@ -40,7 +41,13 @@ class DROGON_EXPORT Cookie
     {
     }
     Cookie() = default;
-
+    enum class SameSite
+    {
+        kNull,
+        kLax,
+        kStrict,
+        kNone
+    };
     /**
      * @brief Set the Expires Date
      *
@@ -112,6 +119,20 @@ class DROGON_EXPORT Cookie
     void setValue(std::string &&value)
     {
         value_ = std::move(value);
+    }
+    /**
+     * @brief Set the max-age of the cookie.
+     */
+    void setMaxAge(int value)
+    {
+        maxAge_ = value;
+    }
+    /**
+     * @brief Set the same site of the cookie.
+     */
+    void setSameSite(SameSite sameSite)
+    {
+        sameSite_ = sameSite;
     }
 
     /**
@@ -240,6 +261,38 @@ class DROGON_EXPORT Cookie
         return secure_;
     }
 
+    /**
+     * @brief Get the max-age of the cookie
+     */
+    optional<int> maxAge() const
+    {
+        return maxAge_;
+    }
+
+    /**
+     * @brief Get the max-age of the cookie
+     */
+    optional<int> getMaxAge() const
+    {
+        return maxAge_;
+    }
+
+    /**
+     * @brief Get the same site of the cookie
+     */
+    SameSite sameSite() const
+    {
+        return sameSite_;
+    }
+
+    /**
+     * @brief Get the same site of the cookie
+     */
+    SameSite getSameSite() const
+    {
+        return sameSite_;
+    }
+
   private:
     trantor::Date expiresDate_{(std::numeric_limits<int64_t>::max)()};
     bool httpOnly_{true};
@@ -248,6 +301,8 @@ class DROGON_EXPORT Cookie
     std::string path_;
     std::string key_;
     std::string value_;
+    optional<int> maxAge_;
+    SameSite sameSite_{SameSite::kNull};
 };
 
 }  // namespace drogon

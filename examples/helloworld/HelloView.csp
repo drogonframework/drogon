@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<%c++
+    auto name=@@.get<std::string>("name");
+	bool nameIsEmpty = name == "";
+	if (nameIsEmpty)
+		name = "anonymous";
+	auto message = "Hello, " + name + " from a CSP template";
+%>
+<head>
+    <meta charset="UTF-8">
+    <title>[[ name ]]</title>
+</head>
+<body>
+    <%c++ $$<<message; %>
+	<%c++
+	if (nameIsEmpty)
+	{
+		$$ << "<br>"
+			<< "You can revisit the same page and append ?name=<i>your_name</i> to change the name";
+	}
+	%>
+</body>
+</html>

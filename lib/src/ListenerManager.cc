@@ -52,12 +52,14 @@ class DrogonFileLocker : public trantor::NonCopyable
 using namespace trantor;
 using namespace drogon;
 
-void ListenerManager::addListener(const std::string &ip,
-                                  uint16_t port,
-                                  bool useSSL,
-                                  const std::string &certFile,
-                                  const std::string &keyFile,
-                                  bool useOldTLS)
+void ListenerManager::addListener(
+    const std::string &ip,
+    uint16_t port,
+    bool useSSL,
+    const std::string &certFile,
+    const std::string &keyFile,
+    bool useOldTLS,
+    const std::vector<std::pair<std::string, std::string>> &sslConfCmds)
 {
 #ifndef OpenSSL_FOUND
     if (useSSL)
@@ -65,7 +67,8 @@ void ListenerManager::addListener(const std::string &ip,
         LOG_ERROR << "Can't use SSL without OpenSSL found in your system";
     }
 #endif
-    listeners_.emplace_back(ip, port, useSSL, certFile, keyFile, useOldTLS);
+    listeners_.emplace_back(
+        ip, port, useSSL, certFile, keyFile, useOldTLS, sslConfCmds);
 }
 
 std::vector<trantor::EventLoop *> ListenerManager::createListeners(
@@ -76,13 +79,18 @@ std::vector<trantor::EventLoop *> ListenerManager::createListeners(
 #ifdef OpenSSL_FOUND
     const std::string &globalCertFile,
     const std::string &globalKeyFile,
+    const std::vector<std::pair<std::string, std::string>> &sslConfCmds,
 #else
     const std::string & /*globalCertFile*/,
     const std::string & /*globalKeyFile*/,
+    const std::vector<std::pair<std::string, std::string>> & /*sslConfCmds*/,
 #endif
     size_t threadNum,
     const std::vector<std::function<HttpResponsePtr(const HttpRequestPtr &)>>
-        &syncAdvices)
+        &syncAdvices,
+    const std::vector<
+        std::function<void(const HttpRequestPtr &, const HttpResponsePtr &)>>
+        &preSendingAdvices)
 {
 #ifdef __linux__
     for (size_t i = 0; i < threadNum; ++i)
@@ -117,7 +125,8 @@ std::vector<trantor::EventLoop *> ListenerManager::createListeners(
                     std::make_shared<HttpServer>(loopThreadPtr->getLoop(),
                                                  std::move(listenAddress),
                                                  "drogon",
-                                                 syncAdvices);
+                                                 syncAdvices,
+                                                 preSendingAdvices);
             }
             else
             {
@@ -125,7 +134,8 @@ std::vector<trantor::EventLoop *> ListenerManager::createListeners(
                     std::make_shared<HttpServer>(loopThreadPtr->getLoop(),
                                                  std::move(listenAddress),
                                                  "drogon",
-                                                 syncAdvices);
+                                                 syncAdvices,
+                                                 preSendingAdvices);
             }
 
             if (listener.useSSL_)
@@ -144,7 +154,11 @@ std::vector<trantor::EventLoop *> ListenerManager::createListeners(
                         << std::endl;
                     exit(1);
                 }
-                serverPtr->enableSSL(cert, key, listener.useOldTLS_);
+                auto cmds = sslConfCmds;
+                std::copy(listener.sslConfCmds_.begin(),
+                          listener.sslConfCmds_.end(),
+                          std::back_inserter(cmds));
+                serverPtr->enableSSL(cert, key, listener.useOldTLS_, cmds);
 #endif
             }
             serverPtr->setHttpAsyncCallback(httpCallback);
@@ -172,24 +186,29 @@ std::vector<trantor::EventLoop *> ListenerManager::createListeners(
                 loopThreadPtr->getLoop(),
                 InetAddress(ip, listener.port_, isIpv6),
                 "drogon",
-                syncAdvices);
+                syncAdvices,
+                preSendingAdvices);
             if (listener.useSSL_)
             {
 #ifdef OpenSSL_FOUND
                 auto cert = listener.certFile_;
                 auto key = listener.keyFile_;
-                if (cert == "")
+                if (cert.empty())
                     cert = globalCertFile;
-                if (key == "")
+                if (key.empty())
                     key = globalKeyFile;
-                if (cert == "" || key == "")
+                if (cert.empty() || key.empty())
                 {
                     std::cerr
                         << "You can't use https without cert file or key file"
                         << std::endl;
                     exit(1);
                 }
-                serverPtr->enableSSL(cert, key, listener.useOldTLS_);
+                auto cmds = sslConfCmds;
+                std::copy(listener.sslConfCmds_.begin(),
+                          listener.sslConfCmds_.end(),
+                          std::back_inserter(cmds));
+                serverPtr->enableSSL(cert, key, listener.useOldTLS_, cmds);
 #endif
             }
             serverPtr->setIoLoopThreadPool(ioLoopThreadPoolPtr_);
@@ -218,13 +237,13 @@ void ListenerManager::startListening()
     }
 }
 
-ListenerManager::~ListenerManager()
-{
-}
-
 trantor::EventLoop *ListenerManager::getIOLoop(size_t id) const
 {
+#ifdef __linux__
     auto const n = listeningloopThreads_.size();
+#else
+    auto const n = ioLoopThreadPoolPtr_->size();
+#endif
     if (0 == n)
     {
         LOG_WARN << "Please call getIOLoop() after drogon::app().run()";

@@ -15,12 +15,14 @@
 #pragma once
 #include "HttpUtils.h"
 #include <drogon/utils/string_view.h>
+#include "filesystem.h"
 #include <drogon/HttpRequest.h>
 
 #include <map>
 #include <string>
 #include <vector>
 #include <memory>
+
 namespace drogon
 {
 class HttpFileImpl
@@ -110,7 +112,8 @@ class HttpFileImpl
 
     /// Return the md5 string of the file
     std::string getMd5() const;
-    int saveTo(const std::string &pathAndFileName) const;
+    //    int saveTo(const std::string &pathAndFileName) const;
+    int saveTo(const filesystem::path &pathAndFileName) const;
     void setRequest(const HttpRequestPtr &req)
     {
         requestPtr_ = req;

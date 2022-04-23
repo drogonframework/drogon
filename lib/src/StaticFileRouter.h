@@ -125,6 +125,7 @@ class StaticFileRouter
 
     int staticFilesCacheTime_{5};
     bool enableLastModify_{true};
+    bool enableRange_{true};
     bool gzipStaticFlag_{true};
     bool brStaticFlag_{true};
     std::unique_ptr<

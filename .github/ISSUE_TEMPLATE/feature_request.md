@@ -1,9 +1,16 @@
 ---
 name: Feature request
 about: Suggest an idea for this project
-labels: 
+title: ''
+labels: ''
+assignees: ''
 
 ---
+
+**Notice**
+If you need support or clarification regarding the usage of Drogon in your project, visit the official Drogon support channel at [gitter](https://gitter.im/drogon-web/community)
+
+Please create a new issue only if you think you have found a bug or if have a feature request/enhancement.
 
 **Is your feature request related to a problem? Please describe.**
 A clear and concise description of what the problem is. Ex. I'm always frustrated when [...]

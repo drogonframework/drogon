@@ -36,7 +36,8 @@ using WebSocketRequestCallback = std::function<
 #ifdef __cpp_impl_coroutine
 namespace internal
 {
-struct WebSocketConnectionAwaiter : public CallbackAwaiter<HttpResponsePtr>
+struct [[nodiscard]] WebSocketConnectionAwaiter
+    : public CallbackAwaiter<HttpResponsePtr>
 {
     WebSocketConnectionAwaiter(WebSocketClient *client, HttpRequestPtr req)
         : client_(client), req_(std::move(req))
@@ -141,6 +142,9 @@ class DROGON_EXPORT WebSocketClient
 
     /// Get the event loop of the client;
     virtual trantor::EventLoop *getLoop() = 0;
+
+    /// Stop trying to connect to the server or close the connection.
+    virtual void stop() = 0;
 
     /**
      * @brief Create a websocket client using the given ip and port to connect

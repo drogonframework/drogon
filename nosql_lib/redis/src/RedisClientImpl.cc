@@ -93,6 +93,7 @@ RedisConnectionPtr RedisClientImpl::newConnection(trantor::EventLoop *loop)
             auto loop = trantor::EventLoop::getEventLoopOfCurrentThread();
             assert(loop);
             loop->runAfter(2.0, [thisPtr, loop, conn]() {
+                std::lock_guard<std::mutex> lock(thisPtr->connectionsMutex_);
                 thisPtr->connections_.insert(thisPtr->newConnection(loop));
             });
         }

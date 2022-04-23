@@ -39,8 +39,30 @@ using namespace drogon_ctl;
 static std::string toLower(const std::string &str)
 {
     auto ret = str;
-    std::transform(ret.begin(), ret.end(), ret.begin(), tolower);
+    std::transform(ret.begin(), ret.end(), ret.begin(), [](unsigned char c) {
+        return tolower(c);
+    });
     return ret;
+}
+
+static std::string escapeConnString(const std::string &str)
+{
+    bool beQuoted = str.empty() || (str.find(' ') != std::string::npos);
+
+    std::string escaped;
+    escaped.reserve(str.size());
+    for (auto ch : str)
+    {
+        if (ch == '\'')
+            escaped.push_back('\\');
+        else if (ch == '\\')
+            escaped.push_back('\\');
+        escaped.push_back(ch);
+    }
+
+    if (beQuoted)
+        return "'" + escaped + "'";
+    return escaped;
 }
 
 static std::map<std::string, std::vector<ConvertMethod>> getConvertMethods(
@@ -610,7 +632,10 @@ void create_model::createModelClassFromSqlite3(
             bool notnull = row["notnull"].as<bool>();
             bool primary = row["pk"].as<int>();
             auto type = row["type"].as<std::string>();
-            std::transform(type.begin(), type.end(), type.begin(), tolower);
+            std::transform(type.begin(),
+                           type.end(),
+                           type.begin(),
+                           [](unsigned char c) { return tolower(c); });
             ColumnInfo info;
             info.index_ = index++;
             info.dbType_ = "sqlite3";
@@ -637,7 +662,9 @@ void create_model::createModelClassFromSqlite3(
                                 std::transform(sql.begin(),
                                                sql.end(),
                                                sql.begin(),
-                                               tolower);
+                                               [](unsigned char c) {
+                                                   return tolower(c);
+                                               });
                                 if (sql.find("autoincrement") !=
                                     std::string::npos)
                                 {
@@ -762,7 +789,10 @@ void create_model::createModel(const std::string &path,
                                const std::string &singleModelName)
 {
     auto dbType = config.get("rdbms", "no dbms").asString();
-    std::transform(dbType.begin(), dbType.end(), dbType.begin(), tolower);
+    std::transform(dbType.begin(),
+                   dbType.end(),
+                   dbType.begin(),
+                   [](unsigned char c) { return tolower(c); });
     auto restfulApiConfig = config["restful_api_controllers"];
     auto relationships = getRelationships(config["relationships"]);
     auto convertMethods = getConvertMethods(config["convert"]);
@@ -795,20 +825,20 @@ void create_model::createModel(const std::string &path,
 
         auto connStr =
             utils::formattedString("host=%s port=%u dbname=%s user=%s",
-                                   host.c_str(),
+                                   escapeConnString(host).c_str(),
                                    port,
-                                   dbname.c_str(),
-                                   user.c_str());
+                                   escapeConnString(dbname).c_str(),
+                                   escapeConnString(user).c_str());
         if (!password.empty())
         {
             connStr += " password=";
-            connStr += password;
+            connStr += escapeConnString(password);
         }
         auto characterSet = config.get("client_encoding", "").asString();
         if (!characterSet.empty())
         {
             connStr += " client_encoding=";
-            connStr += characterSet;
+            connStr += escapeConnString(characterSet);
         }
 
         auto schema = config.get("schema", "public").asString();
@@ -849,7 +879,7 @@ void create_model::createModel(const std::string &path,
                     std::transform(tableName.begin(),
                                    tableName.end(),
                                    tableName.begin(),
-                                   tolower);
+                                   [](unsigned char c) { return tolower(c); });
                     std::cout << "table name:" << tableName << std::endl;
                     createModelClassFromPG(path,
                                            client,
@@ -907,20 +937,20 @@ void create_model::createModel(const std::string &path,
 
         auto connStr =
             utils::formattedString("host=%s port=%u dbname=%s user=%s",
-                                   host.c_str(),
+                                   escapeConnString(host).c_str(),
                                    port,
-                                   dbname.c_str(),
-                                   user.c_str());
+                                   escapeConnString(dbname).c_str(),
+                                   escapeConnString(user).c_str());
         if (!password.empty())
         {
             connStr += " password=";
-            connStr += password;
+            connStr += escapeConnString(password);
         }
         auto characterSet = config.get("client_encoding", "").asString();
         if (!characterSet.empty())
         {
             connStr += " client_encoding=";
-            connStr += characterSet;
+            connStr += escapeConnString(characterSet);
         }
         DbClientPtr client = drogon::orm::DbClient::newMysqlClient(connStr, 1);
         std::cout << "Connect to server..." << std::endl;
@@ -958,7 +988,7 @@ void create_model::createModel(const std::string &path,
                     std::transform(tableName.begin(),
                                    tableName.end(),
                                    tableName.begin(),
-                                   tolower);
+                                   [](unsigned char c) { return tolower(c); });
                     std::cout << "table name:" << tableName << std::endl;
                     createModelClassFromMysql(path,
                                               client,
@@ -995,7 +1025,7 @@ void create_model::createModel(const std::string &path,
                       << "/model.json " << std::endl;
             exit(1);
         }
-        std::string connStr = "filename=" + filename;
+        std::string connStr = "filename=" + escapeConnString(filename);
         DbClientPtr client =
             drogon::orm::DbClient::newSqlite3Client(connStr, 1);
         std::cout << "Connect..." << std::endl;
@@ -1033,7 +1063,7 @@ void create_model::createModel(const std::string &path,
                     std::transform(tableName.begin(),
                                    tableName.end(),
                                    tableName.begin(),
-                                   tolower);
+                                   [](unsigned char c) { return tolower(c); });
                     std::cout << "table name:" << tableName << std::endl;
                     createModelClassFromSqlite3(path,
                                                 client,
@@ -1174,7 +1204,10 @@ void create_model::createRestfulAPIController(
         restfulApiConfig.get("resource_uri", "/*").asString(),
         regex,
         modelClassName);
-    std::transform(resource.begin(), resource.end(), resource.begin(), tolower);
+    std::transform(resource.begin(),
+                   resource.end(),
+                   resource.begin(),
+                   [](unsigned char c) { return tolower(c); });
     auto ctrlClassName =
         std::regex_replace(restfulApiConfig.get("class_name", "/*").asString(),
                            regex,

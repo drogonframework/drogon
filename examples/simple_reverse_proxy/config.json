@@ -2,7 +2,7 @@
  */
 {
     /*
-    //ssl:The global ssl files setting
+    //ssl: The global ssl files setting
     "ssl": {
         "cert": "../../trantor/trantor/tests/server.pem",
         "key": "../../trantor/trantor/tests/server.pem"
@@ -12,7 +12,7 @@
         "address": "0.0.0.0",
         //port: Port number
         "port": 8088,
-        //https: If true, use https for security,false by default
+        //https: If true, use https for security, false by default
         "https": false
     }],
     "app": {
@@ -40,7 +40,7 @@
         //it is relative path of document_root path
         "upload_path": "uploads",
         /* file_types:
-         * HTTP download file types,The file types supported by drogon
+         * HTTP download file types, the file types supported by drogon
          * by default are "html", "js", "css", "xml", "xsl", "txt", "svg",
          * "ttf", "otf", "woff2", "woff" , "eot", "png", "jpg", "jpeg",
          * "gif", "bmp", "ico", "icns", etc. */
@@ -58,7 +58,7 @@
             "cur",
             "xml"
         ],
-        //max_connections: maximum connections number,100000 by default
+        //max_connections: maximum connections number, 100000 by default
         "max_connections": 100000,
         //max_connections_per_ip: maximum connections number per clinet,0 by default which means no limit
         "max_connections_per_ip": 0,

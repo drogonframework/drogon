@@ -21,11 +21,16 @@
 
 namespace drogon
 {
-const string_view &webContentTypeToString(ContentType contenttype);
+const string_view &contentTypeToMime(ContentType contentType);
 const string_view &statusCodeToString(int code);
 ContentType getContentType(const std::string &fileName);
 ContentType parseContentType(const string_view &contentType);
 FileType parseFileType(const string_view &fileExtension);
+void registerCustomExtensionMime(const std::string &ext,
+                                 const std::string &mime);
+const string_view fileNameToMime(const std::string &fileName);
+std::pair<ContentType, const string_view> fileNameToContentTypeAndMime(
+    const std::string &filename);
 inline string_view getFileExtension(const std::string &fileName)
 {
     auto pos = fileName.rfind('.');

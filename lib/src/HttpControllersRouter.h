@@ -96,6 +96,7 @@ class HttpControllersRouter : public trantor::NonCopyable
         CtrlBinderPtr binders_[Invalid]{
             nullptr};  // The enum value of Invalid is the http methods number
     };
+    std::unordered_map<std::string, HttpControllerRouterItem> ctrlMap_;
     std::vector<HttpControllerRouterItem> ctrlVector_;
 
     const std::vector<std::function<void(const HttpRequestPtr &,
