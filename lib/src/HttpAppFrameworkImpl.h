@@ -43,7 +43,7 @@ struct InitBeforeMainFunction
 
 class HttpAppFrameworkImpl final : public HttpAppFramework
 {
-public:
+  public:
     HttpAppFrameworkImpl();
 
     const Json::Value &getCustomConfig() const override
@@ -60,7 +60,7 @@ public:
         const std::string &keyFile,
         bool useOldTLS,
         const std::vector<std::pair<std::string, std::string>> &sslConfCmds)
-    override;
+        override;
     HttpAppFramework &setThreadNum(size_t threadNum) override;
     size_t getThreadNum() const override
     {
@@ -68,7 +68,7 @@ public:
     }
     HttpAppFramework &setSSLConfigCommands(
         const std::vector<std::pair<std::string, std::string>> &sslConfCmds)
-    override;
+        override;
     HttpAppFramework &setSSLFiles(const std::string &certPath,
                                   const std::string &keyPath) override;
     void run() override;
@@ -76,12 +76,12 @@ public:
         const std::string &pathName,
         const std::string &ctrlName,
         const std::vector<internal::HttpConstraint> &filtersAndMethods)
-    override;
+        override;
     HttpAppFramework &registerHttpSimpleController(
         const std::string &pathName,
         const std::string &ctrlName,
         const std::vector<internal::HttpConstraint> &filtersAndMethods)
-    override;
+        override;
 
     HttpAppFramework &setCustom404Page(const HttpResponsePtr &resp,
                                        bool set404) override
@@ -96,7 +96,7 @@ public:
 
     HttpAppFramework &setCustomErrorHandler(
         std::function<HttpResponsePtr(HttpStatusCode)> &&resp_generator)
-    override;
+        override;
 
     const HttpResponsePtr &getCustom404Page();
 
@@ -120,7 +120,7 @@ public:
     HttpAppFramework &registerNewConnectionAdvice(
         const std::function<bool(const trantor::InetAddress &,
                                  const trantor::InetAddress &)> &advice)
-    override
+        override
     {
         newConnectionAdvices_.emplace_back(advice);
         return *this;
@@ -134,14 +134,14 @@ public:
     }
 
     const std::vector<std::function<void(const HttpResponsePtr &)>>
-            &getResponseCreationAdvices() const
+        &getResponseCreationAdvices() const
     {
         return responseCreationAdvices_;
     }
 
     HttpAppFramework &registerSyncAdvice(
         const std::function<HttpResponsePtr(const HttpRequestPtr &)> &advice)
-    override
+        override
     {
         syncAdvices_.emplace_back(advice);
         return *this;
@@ -207,7 +207,9 @@ public:
 
     HttpAppFramework &setupFileLogger() override;
 
-    HttpAppFramework &enableSession(const size_t timeout, Cookie::SameSite sameSite=Cookie::SameSite::kNull) override
+    HttpAppFramework &enableSession(
+        const size_t timeout,
+        Cookie::SameSite sameSite = Cookie::SameSite::kNull) override
     {
         useSession_ = true;
         sessionTimeout_ = timeout;
@@ -231,7 +233,7 @@ public:
 
     HttpAppFramework &setStaticFileHeaders(
         const std::vector<std::pair<std::string, std::string>> &headers)
-    override;
+        override;
 
     HttpAppFramework &addALocation(
         const std::string &uriPrefix,
@@ -388,7 +390,7 @@ public:
         return clientMaxWebSocketMessageSize_;
     }
     std::vector<std::tuple<std::string, HttpMethod, std::string>>
-            getHandlersInfo() const override;
+    getHandlersInfo() const override;
 
     size_t keepaliveRequestsNumber() const
     {
@@ -424,7 +426,7 @@ public:
     }
 
     const std::pair<unsigned int, std::string> &getFloatPrecisionInJson()
-    const noexcept override
+        const noexcept override
     {
         return floatPrecisionInJson_;
     }
@@ -524,7 +526,7 @@ public:
 
     bool areAllDbClientsAvailable() const noexcept override;
     const std::function<HttpResponsePtr(HttpStatusCode)>
-    &getCustomErrorHandler() const override;
+        &getCustomErrorHandler() const override;
     bool isUsingCustomErrorHandler() const
     {
         return usingCustomErrorHandler_;
@@ -552,7 +554,7 @@ public:
         const std::string &ext,
         const std::string &mime) override;
 
-private:
+  private:
     void registerHttpController(const std::string &pathPattern,
                                 const internal::HttpBinderBasePtr &binder,
                                 const std::vector<HttpMethod> &validMethods,
@@ -579,16 +581,16 @@ private:
     // set sessionTimeout_=0 to make location session valid forever based on
     // cookies;
     size_t sessionTimeout_{0};
-    Cookie::SameSite sessionSameSite_ {Cookie::SameSite::kNull};
+    Cookie::SameSite sessionSameSite_{Cookie::SameSite::kNull};
     size_t idleConnectionTimeout_{60};
     bool useSession_{false};
     std::string serverHeader_{"server: drogon/" + drogon::getVersion() +
-        "\r\n"};
+                              "\r\n"};
 
     const std::unique_ptr<StaticFileRouter> staticFileRouterPtr_;
     const std::unique_ptr<HttpControllersRouter> httpCtrlsRouterPtr_;
     const std::unique_ptr<HttpSimpleControllersRouter>
-    httpSimpleCtrlsRouterPtr_;
+        httpSimpleCtrlsRouterPtr_;
     const std::unique_ptr<WebsocketControllersRouter> websockCtrlsRouterPtr_;
 
     const std::unique_ptr<ListenerManager> listenerManagerPtr_;
@@ -629,18 +631,14 @@ private:
     bool useBrotli_{false};
     bool usingUnicodeEscaping_{true};
     std::pair<unsigned int, std::string> floatPrecisionInJson_{0,
-            "significant"};
+                                                               "significant"};
     bool usingCustomErrorHandler_{false};
     size_t clientMaxBodySize_{1024 * 1024};
     size_t clientMaxMemoryBodySize_{64 * 1024};
     size_t clientMaxWebSocketMessageSize_{128 * 1024};
     std::string homePageFile_{"index.html"};
-    std::function<void()> termSignalHandler_{[]() {
-            app().quit();
-        }};
-    std::function<void()> intSignalHandler_{[]() {
-            app().quit();
-        }};
+    std::function<void()> termSignalHandler_{[]() { app().quit(); }};
+    std::function<void()> intSignalHandler_{[]() { app().quit(); }};
     std::unique_ptr<SessionManager> sessionManagerPtr_;
     std::unique_ptr<trantor::AsyncFileLogger> asyncFileLoggerPtr_;
     Json::Value jsonConfig_;
@@ -654,35 +652,35 @@ private:
     std::vector<std::function<void()>> beginningAdvices_;
     std::vector<std::function<bool(const trantor::InetAddress &,
                                    const trantor::InetAddress &)>>
-                                           newConnectionAdvices_;
+        newConnectionAdvices_;
     std::vector<std::function<void(const HttpResponsePtr &)>>
-            responseCreationAdvices_;
+        responseCreationAdvices_;
     std::vector<std::function<HttpResponsePtr(const HttpRequestPtr &)>>
-            syncAdvices_;
+        syncAdvices_;
     std::vector<std::function<void(const HttpRequestPtr &,
                                    AdviceCallback &&,
                                    AdviceChainCallback &&)>>
-                                           preRoutingAdvices_;
+        preRoutingAdvices_;
     std::vector<std::function<void(const HttpRequestPtr &,
                                    AdviceCallback &&,
                                    AdviceChainCallback &&)>>
-                                           postRoutingAdvices_;
+        postRoutingAdvices_;
     std::vector<std::function<void(const HttpRequestPtr &,
                                    AdviceCallback &&,
                                    AdviceChainCallback &&)>>
-                                           preHandlingAdvices_;
+        preHandlingAdvices_;
     std::vector<
-    std::function<void(const HttpRequestPtr &, const HttpResponsePtr &)>>
-            postHandlingAdvices_;
+        std::function<void(const HttpRequestPtr &, const HttpResponsePtr &)>>
+        postHandlingAdvices_;
     std::vector<
-    std::function<void(const HttpRequestPtr &, const HttpResponsePtr &)>>
-            preSendingAdvices_;
+        std::function<void(const HttpRequestPtr &, const HttpResponsePtr &)>>
+        preSendingAdvices_;
     std::vector<std::function<void(const HttpRequestPtr &)>>
-            preRoutingObservers_;
+        preRoutingObservers_;
     std::vector<std::function<void(const HttpRequestPtr &)>>
-            postRoutingObservers_;
+        postRoutingObservers_;
     std::vector<std::function<void(const HttpRequestPtr &)>>
-            preHandlingObservers_;
+        preHandlingObservers_;
     ExceptionHandler exceptionHandler_{defaultExceptionHandler};
 };
 
