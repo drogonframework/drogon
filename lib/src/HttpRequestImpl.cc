@@ -44,7 +44,7 @@ void HttpRequestImpl::parseJson() const
                            jsonPtr_.get(),
                            &errs))
         {
-            LOG_DEBUG << errs;
+            LOG_ERROR << errs;
             jsonPtr_.reset();
             jsonParsingErrorPtr_ =
                 std::make_unique<std::string>(std::move(errs));
@@ -114,9 +114,7 @@ void HttpRequestImpl::parseParameters() const
     if (input.empty())
         return;
     std::string type = getHeaderBy("content-type");
-    std::transform(type.begin(), type.end(), type.begin(), [](unsigned char c) {
-        return tolower(c);
-    });
+    std::transform(type.begin(), type.end(), type.begin(), tolower);
     if (type.empty() ||
         type.find("application/x-www-form-urlencoded") != std::string::npos)
     {
@@ -289,8 +287,7 @@ void HttpRequestImpl::appendToBuffer(trantor::MsgBuffer *output) const
                 content.append("\"; filename=\"");
                 content.append(file.fileName());
                 content.append("\"\r\n\r\n");
-                std::ifstream infile(utils::toNativePath(file.path()),
-                                     std::ifstream::binary);
+                std::ifstream infile(file.path(), std::ifstream::binary);
                 if (!infile)
                 {
                     LOG_ERROR << file.path() << " not found";
@@ -326,10 +323,8 @@ void HttpRequestImpl::appendToBuffer(trantor::MsgBuffer *output) const
             output->append(buf, len);
             if (contentTypeString_.empty())
             {
-                auto &type = contentTypeToMime(contentType_);
-                output->append("content-type: ");
+                auto &type = webContentTypeToString(contentType_);
                 output->append(type.data(), type.length());
-                output->append("\r\n");
             }
         }
         else if (method_ == Post || method_ == Put || method_ == Options ||
@@ -339,9 +334,7 @@ void HttpRequestImpl::appendToBuffer(trantor::MsgBuffer *output) const
         }
         if (!contentTypeString_.empty())
         {
-            output->append("content-type: ");
             output->append(contentTypeString_);
-            output->append("\r\n");
         }
     }
     for (auto it = headers_.begin(); it != headers_.end(); ++it)
@@ -357,7 +350,7 @@ void HttpRequestImpl::appendToBuffer(trantor::MsgBuffer *output) const
         for (auto it = cookies_.begin(); it != cookies_.end(); ++it)
         {
             output->append(it->first);
-            output->append("=");
+            output->append("= ");
             output->append(it->second);
             output->append(";");
         }
@@ -378,10 +371,7 @@ void HttpRequestImpl::addHeader(const char *start,
 {
     std::string field(start, colon);
     // Field name is case-insensitive.so we transform it to lower;(rfc2616-4.2)
-    std::transform(field.begin(),
-                   field.end(),
-                   field.begin(),
-                   [](unsigned char c) { return tolower(c); });
+    std::transform(field.begin(), field.end(), field.begin(), ::tolower);
     ++colon;
     while (colon < end && isspace(*colon))
     {
@@ -409,11 +399,6 @@ void HttpRequestImpl::addHeader(const char *start,
                     ++cpos;
                 cookie_name = cookie_name.substr(cpos);
                 std::string cookie_value = coo.substr(epos + 1);
-                cpos = 0;
-                while (cpos < cookie_value.length() &&
-                       isspace(cookie_value[cpos]))
-                    ++cpos;
-                cookie_value = cookie_value.substr(cpos);
                 cookies_[std::move(cookie_name)] = std::move(cookie_value);
             }
             value = value.substr(pos + 1);
@@ -431,11 +416,6 @@ void HttpRequestImpl::addHeader(const char *start,
                     ++cpos;
                 cookie_name = cookie_name.substr(cpos);
                 std::string cookie_value = coo.substr(epos + 1);
-                cpos = 0;
-                while (cpos < cookie_value.length() &&
-                       isspace(cookie_value[cpos]))
-                    ++cpos;
-                cookie_value = cookie_value.substr(cpos);
                 cookies_[std::move(cookie_name)] = std::move(cookie_value);
             }
         }
@@ -555,25 +535,6 @@ void HttpRequestImpl::swap(HttpRequestImpl &that) noexcept
     swap(loop_, that.loop_);
     swap(flagForParsingContentType_, that.flagForParsingContentType_);
     swap(jsonParsingErrorPtr_, that.jsonParsingErrorPtr_);
-}
-
-const char *HttpRequestImpl::versionString() const
-{
-    const char *result = "UNKNOWN";
-    switch (version_)
-    {
-        case Version::kHttp10:
-            result = "HTTP/1.0";
-            break;
-
-        case Version::kHttp11:
-            result = "HTTP/1.1";
-            break;
-
-        default:
-            break;
-    }
-    return result;
 }
 
 const char *HttpRequestImpl::methodString() const
@@ -738,16 +699,4 @@ void HttpRequestImpl::createTmpFile()
         .append("/")
         .append(fileName);
     cacheFilePtr_ = std::make_unique<CacheFile>(tmpfile);
-}
-
-void HttpRequestImpl::setContentTypeString(const char *typeString,
-                                           size_t typeStringLength)
-{
-    std::string sv(typeString, typeStringLength);
-    auto contentType = parseContentType(sv);
-    if (contentType == CT_NONE)
-        contentType = CT_CUSTOM;
-    contentType_ = contentType;
-    contentTypeString_ = std::string(sv);
-    flagForParsingContentType_ = true;
 }

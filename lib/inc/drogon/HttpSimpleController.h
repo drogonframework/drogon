@@ -75,12 +75,10 @@ class HttpSimpleController : public DrObject<T>, public HttpSimpleControllerBase
         const std::vector<internal::HttpConstraint> &filtersAndMethods)
     {
         LOG_TRACE << "register simple controller("
-                  << HttpSimpleController<T, AutoCreation>::classTypeName()
+                  << HttpSimpleController<T>::classTypeName()
                   << ") on path:" << path;
         app().registerHttpSimpleController(
-            path,
-            HttpSimpleController<T, AutoCreation>::classTypeName(),
-            filtersAndMethods);
+            path, HttpSimpleController<T>::classTypeName(), filtersAndMethods);
     }
 
   private:

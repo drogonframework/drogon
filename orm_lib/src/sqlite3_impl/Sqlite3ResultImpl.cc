@@ -43,9 +43,7 @@ Result::SizeType Sqlite3ResultImpl::affectedRows() const noexcept
 Result::RowSizeType Sqlite3ResultImpl::columnNumber(const char colName[]) const
 {
     auto name = std::string(colName);
-    std::transform(name.begin(), name.end(), name.begin(), [](unsigned char c) {
-        return tolower(c);
-    });
+    std::transform(name.begin(), name.end(), name.begin(), tolower);
     auto iter = columnNamesMap_.find(name);
     if (iter != columnNamesMap_.end())
     {

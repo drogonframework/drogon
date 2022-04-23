@@ -118,7 +118,7 @@ static void parseLine(std::ofstream &oSrcFile,
     {
         // std::cout<<"blank line!"<<std::endl;
         // std::cout<<streamName<<"<<\"\\n\";\n";
-        if (returnFlag && !cxx_flag)
+        if (returnFlag)
             oSrcFile << streamName << "<<\"\\n\";\n";
         return;
     }
@@ -291,8 +291,7 @@ void create_view::createViewFiles(std::vector<std::string> &cspFileNames)
     for (auto const &file : cspFileNames)
     {
         std::cout << "create view:" << file << std::endl;
-        if (createViewFile(file) != 0)
-            exit(1);
+        createViewFile(file);
     }
 }
 int create_view::createViewFile(const std::string &script_filename)
@@ -391,7 +390,7 @@ void create_view::newViewHeaderFile(std::ofstream &file,
          << "(){};\n\t"
             "virtual std::string genText(const drogon::DrTemplateData &) "
             "override;\n};\n";
-    for (std::size_t i = 0; i < namespaces_.size(); ++i)
+    for (auto i = 0; i < namespaces_.size(); ++i)
     {
         file << "}\n";
     }
@@ -446,7 +445,7 @@ void create_view::newViewSourceFile(std::ofstream &file,
             std::transform(lowerBuffer.begin(),
                            lowerBuffer.end(),
                            lowerBuffer.begin(),
-                           [](unsigned char c) { return tolower(c); });
+                           ::tolower);
             if ((pos = lowerBuffer.find(cxx_include)) != std::string::npos)
             {
                 // std::cout<<"haha find it!"<<endl;
@@ -490,7 +489,7 @@ void create_view::newViewSourceFile(std::ofstream &file,
     if (!namespaces_.empty())
     {
         file << "using namespace ";
-        for (std::size_t i = 0; i < namespaces_.size(); ++i)
+        for (int i = 0; i < namespaces_.size(); ++i)
         {
             if (i != namespaces_.size() - 1)
             {

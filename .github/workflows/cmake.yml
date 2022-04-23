@@ -79,8 +79,8 @@ jobs:
             buildname: 'ubuntu-20.04/gcc-10'
             link: STATIC
             triplet: x64-linux
-          - os: ubuntu-20.04
-            buildname: 'ubuntu-20.04/c++14'
+          - os: ubuntu-16.04
+            buildname: 'ubuntu-16.04/gcc'
             link: STATIC
             triplet: x64-linux
             compiler: gcc_64
@@ -99,7 +99,7 @@ jobs:
     - name: (macOS) Install dependencies
       if: runner.os == 'macOS'
       run: |
-        brew install jsoncpp brotli zlib
+        brew install jsoncpp ossp-uuid brotli zlib
         brew install openssl lz4 mariadb sqlite3 postgresql hiredis
         brew install redis
 
@@ -116,15 +116,25 @@ jobs:
       run: |
         sudo apt install gcc-10 g++-10
     - name: (Linux) Install boost
-      if: matrix.buildname == 'ubuntu-20.04/c++14'
+      if: matrix.os == 'ubuntu-16.04'
       run: |
+        sudo add-apt-repository ppa:mhier/libboost-latest
         sudo apt update
-        sudo apt install libboost-all-dev
+        sudo apt install boost1.67
 
     - name: (Linux) Install postgresql
       if: matrix.os == 'ubuntu-20.04'
       run: |
         sudo apt install postgresql-all
+
+    - name: install gtest
+      run: |
+        wget https://github.com/google/googletest/archive/release-1.10.0.tar.gz
+        tar xf release-1.10.0.tar.gz
+        cd googletest-release-1.10.0
+        cmake .
+        make
+        sudo make install
 
     - name: Create build directory
       run: |
@@ -135,7 +145,7 @@ jobs:
       # We'll use this as our working directory for all subsequent commands
       shell: bash
       working-directory: ./build
-      if: matrix.buildname != 'ubuntu-20.04/gcc-10' && matrix.buildname != 'ubuntu-20.04/c++14'
+      if: matrix.buildname != 'ubuntu-20.04/gcc-10'
       run: |
         [[ ${{ matrix.link }} == "SHARED" ]] && shared="ON" || shared="OFF"
         cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_TESTING=on -DBUILD_DROGON_SHARED=$shared
@@ -153,16 +163,6 @@ jobs:
         CC: gcc-10
         CXX: g++-10
 
-    - name: Create Build Environment & Configure Cmake (C++14)
-      # Some projects don't allow in-source building, so create a separate build directory
-      # We'll use this as our working directory for all subsequent commands
-      shell: bash
-      working-directory: ./build
-      if: matrix.buildname == 'ubuntu-20.04/C++14'
-      run: |
-        [[ ${{ matrix.link }} == "SHARED" ]] && shared="ON" || shared="OFF"
-        cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_TESTING=on -DCMAKE_CXX_STANDARD=14 -DBUILD_DROGON_SHARED=$shared
-
     - name: (Linux) Build
       working-directory: ./build
       shell: bash
@@ -173,9 +173,6 @@ jobs:
     - name: Prepare for testing (macOS)
       if: runner.os == 'macOS'
       run: |
-        cd $(brew --prefix)/Homebrew/Library/Taps/homebrew/homebrew-services
-        git reset --hard 5f2fe01
-        cd ~
         brew tap homebrew/services;
         brew services restart postgresql;
         brew services start mariadb;
@@ -206,6 +203,4 @@ jobs:
       if: matrix.os == 'ubuntu-20.04'
       working-directory: ${{env.GITHUB_WORKSPACE}}
       shell: bash
-      run: |
-        sudo apt install -y dos2unix
-        ./format.sh && git diff --exit-code
+      run: ./format.sh && git diff --exit-code

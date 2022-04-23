@@ -341,26 +341,6 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
         const std::function<void(const HttpRequestPtr &,
                                  const HttpResponsePtr &)> &advice) = 0;
 
-    /// Register an advice called before a response is sent to the client.
-    /**
-     * @note This advice is different from the PostHandlingAdvice, responses to
-     * static resources are also handled here.
-     */
-    virtual HttpAppFramework &registerPreSendingAdvice(
-        const std::function<void(const HttpRequestPtr &,
-                                 const HttpResponsePtr &)> &advice) = 0;
-
-    /// Setup output of logs to files
-    /**
-     * @note
-     * Logs are output to the standard output by default.
-     * Logging is setuped only if output path of logs is defined.
-     * This method is called in run() function, hence use this method only if
-     * you want to setup logging earlier.
-     * @return HttpAppFramework&
-     */
-    virtual HttpAppFramework &setupFileLogger() = 0;
-
     /* End of AOP methods */
 
     /// Load the configuration file with json format.
@@ -448,10 +428,10 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
         const std::string &handlerName = "")
     {
         LOG_TRACE << "pathPattern:" << pathPattern;
-        auto binder = std::make_shared<internal::HttpBinder<FUNCTION>>(
-            std::forward<FUNCTION>(function));
+        internal::HttpBinderBasePtr binder;
 
-        getLoop()->queueInLoop([binder]() { binder->createHandlerInstance(); });
+        binder = std::make_shared<internal::HttpBinder<FUNCTION>>(
+            std::forward<FUNCTION>(function));
 
         std::vector<HttpMethod> validMethods;
         std::vector<std::string> filters;
@@ -678,13 +658,6 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
     virtual HttpAppFramework &setSSLFiles(const std::string &certPath,
                                           const std::string &keyPath) = 0;
 
-    /// Supplies file style SSL options to `SSL_CONF_cmd`. Valid options are
-    /// available at
-    /// https://www.openssl.org/docs/manmaster/man3/SSL_CONF_cmd.html
-    virtual HttpAppFramework &setSSLConfigCommands(
-        const std::vector<std::pair<std::string, std::string>>
-            &sslConfCmds) = 0;
-
     /// Add a listener for http or https service
     /**
      * @param ip is the ip that the listener listens on.
@@ -701,15 +674,12 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
      * @note
      * This operation can be performed by an option in the configuration file.
      */
-    virtual HttpAppFramework &addListener(
-        const std::string &ip,
-        uint16_t port,
-        bool useSSL = false,
-        const std::string &certFile = "",
-        const std::string &keyFile = "",
-        bool useOldTLS = false,
-        const std::vector<std::pair<std::string, std::string>> &sslConfCmds =
-            {}) = 0;
+    virtual HttpAppFramework &addListener(const std::string &ip,
+                                          uint16_t port,
+                                          bool useSSL = false,
+                                          const std::string &certFile = "",
+                                          const std::string &keyFile = "",
+                                          bool useOldTLS = false) = 0;
 
     /// Enable sessions supporting.
     /**
@@ -1119,19 +1089,6 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
     virtual HttpAppFramework &setTermSignalHandler(
         const std::function<void()> &handler) = 0;
 
-    /**
-     * @brief Set the INT Signal Handler. This method provides a way to users
-     * for exiting program gracefully. When the INT signal is received after
-     * app().run() is called, the handler is invoked. Drogon uses a default
-     * signal handler for the INT signal, which calls the 'app().quit()' method
-     * when the INT signal is received.
-     *
-     * @param handler
-     * @return HttpAppFramework&
-     */
-    virtual HttpAppFramework &setIntSignalHandler(
-        const std::function<void()> &handler) = 0;
-
     /// Get homepage, default is "index.html"
     /**
      * @note
@@ -1369,13 +1326,6 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
      * @brief returns the excaption handler
      */
     virtual const ExceptionHandler &getExceptionHandler() const = 0;
-
-    /**
-     * @brief Adds a new custom extension to MIME type mapping
-     */
-    virtual HttpAppFramework &registerCustomExtensionMime(
-        const std::string &ext,
-        const std::string &mime) = 0;
 
   private:
     virtual void registerHttpController(

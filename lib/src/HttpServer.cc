@@ -109,12 +109,12 @@ static bool isWebSocket(const HttpRequestImplPtr &req)
     std::transform(connectionField.begin(),
                    connectionField.end(),
                    connectionField.begin(),
-                   [](unsigned char c) { return tolower(c); });
+                   tolower);
     auto upgradeField = req->getHeaderBy("upgrade");
     std::transform(upgradeField.begin(),
                    upgradeField.end(),
                    upgradeField.begin(),
-                   [](unsigned char c) { return tolower(c); });
+                   tolower);
     if (connectionField.find("upgrade") != std::string::npos &&
         upgradeField == "websocket")
     {
@@ -154,10 +154,7 @@ HttpServer::HttpServer(
     const InetAddress &listenAddr,
     const std::string &name,
     const std::vector<std::function<HttpResponsePtr(const HttpRequestPtr &)>>
-        &syncAdvices,
-    const std::vector<
-        std::function<void(const HttpRequestPtr &, const HttpResponsePtr &)>>
-        &preSendingAdvices)
+        &syncAdvices)
 #ifdef __linux__
     : server_(loop, listenAddr, name.c_str()),
 #else
@@ -166,8 +163,7 @@ HttpServer::HttpServer(
       httpAsyncCallback_(defaultHttpAsyncCallback),
       newWebsocketCallback_(defaultWebSockAsyncCallback),
       connectionCallback_(defaultConnectionCallback),
-      syncAdvices_(syncAdvices),
-      preSendingAdvices_(preSendingAdvices)
+      syncAdvices_(syncAdvices)
 {
     server_.setConnectionCallback(
         [this](const auto &conn) { this->onConnection(conn); });
@@ -260,17 +256,12 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn, MsgBuffer *buf)
                     auto wsConn =
                         std::make_shared<WebSocketConnectionImpl>(conn);
                     wsConn->setPingMessage("", std::chrono::seconds{30});
-                    auto req = requestParser->requestImpl();
                     newWebsocketCallback_(
-                        req,
-                        [conn, wsConn, requestParser, this, req](
+                        requestParser->requestImpl(),
+                        [conn, wsConn, requestParser](
                             const HttpResponsePtr &resp) mutable {
                             if (conn->connected())
                             {
-                                for (auto &advice : preSendingAdvices_)
-                                {
-                                    advice(req, resp);
-                                }
                                 if (resp->statusCode() ==
                                     k101SwitchingProtocols)
                                 {
@@ -298,34 +289,6 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn, MsgBuffer *buf)
         requests.clear();
     }
 }
-
-struct CallBackParamPack
-{
-    CallBackParamPack() = default;
-    CallBackParamPack(const trantor::TcpConnectionPtr &conn_,
-                      const HttpRequestImplPtr &req_,
-                      const std::shared_ptr<bool> &loopFlag_,
-                      const std::shared_ptr<HttpRequestParser> &requestParser_,
-                      bool *syncFlagPtr_,
-                      bool close_,
-                      bool isHeadMethod_)
-        : conn(conn_),
-          req(req_),
-          loopFlag(loopFlag_),
-          requestParser(requestParser_),
-          syncFlagPtr(syncFlagPtr_),
-          close(close_),
-          isHeadMethod(isHeadMethod_)
-    {
-    }
-    trantor::TcpConnectionPtr conn;
-    HttpRequestImplPtr req;
-    std::shared_ptr<bool> loopFlag;
-    std::shared_ptr<HttpRequestParser> requestParser;
-    bool *syncFlagPtr;
-    bool close;
-    bool isHeadMethod;
-};
 
 void HttpServer::onRequests(
     const TcpConnectionPtr &conn,
@@ -401,28 +364,16 @@ void HttpServer::onRequests(
             if (adviceFlag)
                 continue;
         }
-
-        // Optimization: Avoids dynamic allocation when copying the callback in
-        // handlers (ex: copying callback into lambda captures in DB calls)
-        auto paramPack = std::make_shared<CallBackParamPack>(conn,
-                                                             req,
-                                                             loopFlagPtr,
-                                                             requestParser,
-                                                             &syncFlag,
-                                                             close_,
-                                                             isHeadMethod);
         httpAsyncCallback_(
             req,
-            [paramPack = std::move(paramPack),
-             this](const HttpResponsePtr &response) {
-                auto &conn = paramPack->conn;
-                auto &close_ = paramPack->close;
-                auto &req = paramPack->req;
-                auto &syncFlag = *paramPack->syncFlagPtr;
-                auto &isHeadMethod = paramPack->isHeadMethod;
-                auto &loopFlagPtr = paramPack->loopFlag;
-                auto &requestParser = paramPack->requestParser;
-
+            [conn,
+             close_,
+             req,
+             loopFlagPtr,
+             &syncFlag,
+             isHeadMethod,
+             this,
+             requestParser](const HttpResponsePtr &response) {
                 if (!response)
                     return;
                 if (!conn->connected())
@@ -430,10 +381,6 @@ void HttpServer::onRequests(
 
                 response->setVersion(req->getVersion());
                 response->setCloseConnection(close_);
-                for (auto &advice : preSendingAdvices_)
-                {
-                    advice(req, response);
-                }
                 auto newResp =
                     getCompressedResponse(req, response, isHeadMethod);
                 if (conn->getLoop()->isInLoopThread())
@@ -557,11 +504,10 @@ void HttpServer::sendResponse(const TcpConnectionPtr &conn,
     {
         auto httpString = respImplPtr->renderToBuffer();
         conn->send(httpString);
-        const std::string &sendfileName = respImplPtr->sendfileName();
+        auto &sendfileName = respImplPtr->sendfileName();
         if (!sendfileName.empty())
         {
-            const auto &range = respImplPtr->sendfileRange();
-            conn->sendFile(sendfileName.c_str(), range.first, range.second);
+            conn->sendFile(sendfileName.c_str());
         }
         COZ_PROGRESS
     }
@@ -599,13 +545,12 @@ void HttpServer::sendResponses(
         {
             // Not HEAD method
             respImplPtr->renderToBuffer(buffer);
-            const std::string &sendfileName = respImplPtr->sendfileName();
+            auto &sendfileName = respImplPtr->sendfileName();
             if (!sendfileName.empty())
             {
-                const auto &range = respImplPtr->sendfileRange();
                 conn->send(buffer);
                 buffer.retrieveAll();
-                conn->sendFile(sendfileName.c_str(), range.first, range.second);
+                conn->sendFile(sendfileName.c_str());
                 COZ_PROGRESS
             }
         }

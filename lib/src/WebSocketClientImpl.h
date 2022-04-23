@@ -67,8 +67,6 @@ class WebSocketClientImpl
                         bool useOldTLS = false,
                         bool validateCert = true);
 
-    void stop() override;
-
     ~WebSocketClientImpl() override;
 
   private:
@@ -80,7 +78,6 @@ class WebSocketClientImpl
     bool useOldTLS_{false};
     bool validateCert_{true};
     bool upgraded_{false};
-    bool stop_{false};
     std::string wsKey_;
     std::string wsAccept_;
 

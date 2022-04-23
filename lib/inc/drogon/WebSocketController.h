@@ -84,12 +84,10 @@ class WebSocketController : public DrObject<T>, public WebSocketControllerBase
         const std::vector<internal::HttpConstraint> &filtersAndMethods)
     {
         LOG_TRACE << "register websocket controller("
-                  << WebSocketController<T, AutoCreation>::classTypeName()
+                  << WebSocketController<T>::classTypeName()
                   << ") on path:" << path;
         app().registerWebSocketController(
-            path,
-            WebSocketController<T, AutoCreation>::classTypeName(),
-            filtersAndMethods);
+            path, WebSocketController<T>::classTypeName(), filtersAndMethods);
     }
 
   private:

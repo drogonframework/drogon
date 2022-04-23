@@ -14,7 +14,7 @@
 if(UUID_LIBRARIES AND UUID_INCLUDE_DIRS)
   # in cache already
   set(UUID_FOUND TRUE)
-else()
+else(UUID_LIBRARIES AND UUID_INCLUDE_DIRS)
   find_path(
     UUID_INCLUDE_DIR
     NAMES uuid.h
@@ -76,34 +76,34 @@ else()
                      /opt/lib
                      /usr/freeware/lib64)
 
-  if(NOT UUID_LIBRARY AND (BSD OR APPLE))
+  if(NOT UUID_LIBRARY AND BSD)
     set(UUID_LIBRARY "")
-  endif()
+  endif(NOT UUID_LIBRARY AND BSD)
 
   set(UUID_INCLUDE_DIRS ${UUID_INCLUDE_DIR})
   set(UUID_LIBRARIES ${UUID_LIBRARY})
 
   if(UUID_INCLUDE_DIRS)
-    if((BSD OR APPLE) OR UUID_LIBRARIES)
+    if(BSD OR UUID_LIBRARIES)
       set(UUID_FOUND TRUE)
-    endif()
-  endif()
+    endif(BSD OR UUID_LIBRARIES)
+  endif(UUID_INCLUDE_DIRS)
 
   if(UUID_FOUND)
     if(NOT UUID_FIND_QUIETLY)
       message(STATUS "Found UUID: ${UUID_LIBRARIES}")
-    endif()
-  else()
+    endif(NOT UUID_FIND_QUIETLY)
+  else(UUID_FOUND)
     if(UUID_FIND_REQUIRED)
       message(FATAL_ERROR "Could not find UUID")
-    endif()
-  endif()
+    endif(UUID_FIND_REQUIRED)
+  endif(UUID_FOUND)
 
   # show the UUID_INCLUDE_DIRS and UUID_LIBRARIES variables only in the advanced
   # view
   mark_as_advanced(UUID_INCLUDE_DIRS UUID_LIBRARIES)
 
-endif()
+endif(UUID_LIBRARIES AND UUID_INCLUDE_DIRS)
 
 if(UUID_FOUND)
   add_library(UUID_lib INTERFACE IMPORTED)
@@ -112,7 +112,7 @@ if(UUID_FOUND)
                                    "${UUID_INCLUDE_DIRS}"
                                    INTERFACE_LINK_LIBRARIES
                                    "${UUID_LIBRARIES}")
-else()
+else(UUID_FOUND)
   set(UUID_LIBRARIES)
   set(UUID_INCLUDE_DIRS)
-endif()
+endif(UUID_FOUND)

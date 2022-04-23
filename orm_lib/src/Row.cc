@@ -1,7 +1,7 @@
 /**
  *
- *  @file Row.cc
- *  @author An Tao
+ *  Row.cc
+ *  An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
@@ -33,14 +33,6 @@ Row::Reference Row::operator[](SizeType index) const noexcept
 {
     assert(index < end_);
     return Field(*this, index);
-}
-
-Row::Reference Row::operator[](int index) const noexcept
-{
-    assert(index >= 0);
-    auto i = static_cast<SizeType>(index);
-    assert(i < end_);
-    return Field(*this, i);
 }
 
 Row::Reference Row::operator[](const char columnName[]) const

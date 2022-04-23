@@ -105,11 +105,6 @@ class DROGON_EXPORT HttpResponse
     /// Set the status code of the response.
     virtual void setStatusCode(HttpStatusCode code) = 0;
 
-    void setCustomStatusCode(int code, string_view message = string_view{})
-    {
-        setCustomStatusCode(code, message.data(), message.length());
-    }
-
     /// Get the creation timestamp of the response.
     virtual const trantor::Date &creationDate() const = 0;
     const trantor::Date &getCreationDate() const
@@ -137,17 +132,9 @@ class DROGON_EXPORT HttpResponse
     /// is a text type, the character set is utf8.
     virtual void setContentTypeCode(ContentType type) = 0;
 
-    /// Set the content-type string, The string may contain the header name and
-    /// CRLF. Or just the MIME type For example, "content-type: text/plain\r\n"
-    /// or "text/plain"
-    void setContentTypeString(const string_view &typeString)
-    {
-        setContentTypeString(typeString.data(), typeString.size());
-    }
-
     /// Set the response content type and the content-type string, The string
-    /// may contain the header name and CRLF. Or just the MIME type
-    /// For example, "content-type: text/plain\r\n" or "text/plain"
+    /// must contain the header name and CRLF.
+    /// For example, "content-type: text/plain\r\n"
     void setContentTypeCodeAndCustomString(ContentType type,
                                            const string_view &typeString)
     {
@@ -262,14 +249,6 @@ class DROGON_EXPORT HttpResponse
         return body();
     }
 
-    /// Return the string of http version of request, such as HTTP/1.0,
-    /// HTTP/1.1, etc.
-    virtual const char *versionString() const = 0;
-    const char *getVersionString() const
-    {
-        return versionString();
-    }
-
     /// Return the enum type version of the response.
     /**
      * kHttp10 means Http version is 1.0
@@ -367,42 +346,13 @@ class DROGON_EXPORT HttpResponse
      * @param fullPath is the full path to the file.
      * @param attachmentFileName if the parameter is not empty, the browser
      * does not open the file, but saves it as an attachment.
-     * @param type the content type code. If the parameter is CT_NONE, the
-     * content type is set by drogon based on the file extension and typeString.
-     * Set it to CT_CUSTOM when no drogon internal content type matches.
-     * @param typeString the MIME string of the content type.
+     * @param type if the parameter is CT_NONE, the content type is set by
+     * drogon based on the file extension.
      */
     static HttpResponsePtr newFileResponse(
         const std::string &fullPath,
         const std::string &attachmentFileName = "",
-        ContentType type = CT_NONE,
-        const std::string &typeString = "");
-
-    /// Create a response that returns part of a file to the client.
-    /**
-     * @brief If offset and length can not be satisfied, statusCode will be set
-     * to k416RequestedRangeNotSatisfiable, and nothing else will be modified.
-     *
-     * @param fullPath is the full path to the file.
-     * @param offset is the offset to begin sending, in bytes.
-     * @param length is the total length to send, in bytes. In particular,
-     * length = 0 means send all content from offset till end of file.
-     * @param setContentRange whether set 'Content-Range' header automatically.
-     * @param attachmentFileName if the parameter is not empty, the browser
-     * does not open the file, but saves it as an attachment.
-     * @param type the content type code. If the parameter is CT_NONE, the
-     * content type is set by drogon based on the file extension and typeString.
-     * Set it to CT_CUSTOM when no drogon internal content type matches.
-     * @param typeString the MIME string of the content type.
-     */
-    static HttpResponsePtr newFileResponse(
-        const std::string &fullPath,
-        size_t offset,
-        size_t length,
-        bool setContentRange = true,
-        const std::string &attachmentFileName = "",
-        ContentType type = CT_NONE,
-        const std::string &typeString = "");
+        ContentType type = CT_NONE);
 
     /// Create a response that returns a file to the client from buffer in
     /// memory/stack
@@ -411,17 +361,14 @@ class DROGON_EXPORT HttpResponse
      * @param bufferLength is the length of the expected buffer
      * @param attachmentFileName if the parameter is not empty, the browser
      * does not open the file, but saves it as an attachment.
-     * @param type the content type code. If the parameter is CT_NONE, the
-     * content type is set by drogon based on the file extension and typeString.
-     * Set it to CT_CUSTOM when no drogon internal content type matches.
-     * @param typeString the MIME string of the content type.
+     * @param type if the parameter is CT_NONE, the content type is set by
+     * drogon based on the file extension.
      */
     static HttpResponsePtr newFileResponse(
         const unsigned char *pBuffer,
         size_t bufferLength,
         const std::string &attachmentFileName = "",
-        ContentType type = CT_NONE,
-        const std::string &typeString = "");
+        ContentType type = CT_NONE);
 
     /**
      * @brief Create a custom HTTP response object. For using this template,
@@ -432,26 +379,6 @@ class DROGON_EXPORT HttpResponse
     {
         return toResponse(std::forward<T>(obj));
     }
-
-    /**
-     * @brief If the response is a file response (i.e. created by
-     * newFileResponse) returns the path on the filesystem. Otherwise a
-     * empty string.
-     */
-    virtual const std::string &sendfileName() const = 0;
-
-    /**
-     * @brief Returns the range of the file response as a pair ot size_t
-     * (offset, length). Length of 0 means the entire file is sent. Behaivor of
-     * this function is undefined if the response if not a file response
-     */
-    using SendfileRange = std::pair<size_t, size_t>;  // { offset, length }
-    virtual const SendfileRange &sendfileRange() const = 0;
-
-    /**
-     * @brief Rreturns the content type associated with the response
-     */
-    virtual std::string contentTypeString() const = 0;
 
     virtual ~HttpResponse()
     {
@@ -464,11 +391,6 @@ class DROGON_EXPORT HttpResponse
     virtual void setContentTypeCodeAndCustomString(ContentType type,
                                                    const char *typeString,
                                                    size_t typeStringLength) = 0;
-    virtual void setContentTypeString(const char *typeString,
-                                      size_t typeStringLength) = 0;
-    virtual void setCustomStatusCode(int code,
-                                     const char *message,
-                                     size_t messageLength) = 0;
 };
 template <>
 inline HttpResponsePtr toResponse<const Json::Value &>(const Json::Value &pJson)

@@ -1,7 +1,7 @@
 /**
  *
- *  @file Sqlite3Connection.h
- *  @author An Tao
+ *  Sqlite3Connection.h
+ *  An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
@@ -43,21 +43,20 @@ class Sqlite3Connection : public DbConnection,
                       const std::string &connInfo,
                       const std::shared_ptr<SharedMutex> &sharedMutex);
 
-    void execSql(string_view &&sql,
-                 size_t paraNum,
-                 std::vector<const char *> &&parameters,
-                 std::vector<int> &&length,
-                 std::vector<int> &&format,
-                 ResultCallback &&rcb,
-                 std::function<void(const std::exception_ptr &)>
-                     &&exceptCallback) override;
-    void batchSql(std::deque<std::shared_ptr<SqlCmd>> &&) override
+    virtual void execSql(string_view &&sql,
+                         size_t paraNum,
+                         std::vector<const char *> &&parameters,
+                         std::vector<int> &&length,
+                         std::vector<int> &&format,
+                         ResultCallback &&rcb,
+                         std::function<void(const std::exception_ptr &)>
+                             &&exceptCallback) override;
+    virtual void batchSql(std::deque<std::shared_ptr<SqlCmd>> &&) override
     {
         LOG_FATAL << "The mysql library does not support batch mode";
         exit(1);
     }
-    void disconnect() override;
-    void init();
+    virtual void disconnect() override;
 
   private:
     static std::once_flag once_;
@@ -80,7 +79,6 @@ class Sqlite3Connection : public DbConnection,
     std::shared_ptr<SharedMutex> sharedMutexPtr_;
     std::unordered_map<string_view, std::shared_ptr<sqlite3_stmt>> stmtsMap_;
     std::set<std::string> stmts_;
-    std::string connInfo_;
 };
 
 }  // namespace orm

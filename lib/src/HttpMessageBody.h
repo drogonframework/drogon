@@ -14,7 +14,6 @@
 
 #pragma once
 #include <drogon/utils/string_view.h>
-#include <memory>
 #include <string>
 
 namespace drogon

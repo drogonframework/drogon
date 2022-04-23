@@ -2,21 +2,10 @@
  */
 {
     /*
-    //ssl:The global SSL settings. "key" and "cert" are the path to the SSL key and certificate. While
-    //    "conf" is an array of 1 or 2-element tuples that supplies file style options for `SSL_CONF_cmd`.
+    //ssl:The global ssl files setting
     "ssl": {
         "cert": "../../trantor/trantor/tests/server.pem",
-        "key": "../../trantor/trantor/tests/server.pem",
-        "conf": [
-            //["Options", "-SessionTicket"], 
-            //["Options", "Compression"]
-        ]
-    },
-    // mime: A dictionary that extends the internal MIME type support. Maps extensions into new MIME types
-    // note: This option only adds MIME to the sever. `file_types` above have to be set for the server to serve them.
-    "mime": {
-        // "text/markdown": "md",
-        // "text/gemini": ["gmi", "gemini"]
+        "key": "../../trantor/trantor/tests/server.pem"
     },
     "listeners": [
         {
@@ -36,10 +25,7 @@
             "cert": "",
             "key": "",
             //use_old_tls: enable the TLS1.0/1.1, false by default
-            "use_old_tls": false,
-            "ssl_conf": [
-                //["MinProtocol", "TLSv1.3"]
-            ]
+            "use_old_tls": false
         }
     ],
     "db_clients": [

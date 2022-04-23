@@ -76,9 +76,6 @@ void DbClientManager::createDbClients(
                     {
                         c->setTimeout(dbInfo.timeout_);
                     }
-                    ioloops[idx]->runOnQuit([&, name = dbInfo.name_]() {
-                        dbFastClientsMap_[name].getThreadData().reset();
-                    });
                 });
             }
         }
@@ -153,9 +150,7 @@ void DbClientManager::createDbClient(const std::string &dbType,
         connStr += escapeConnString(password);
     }
     std::string type = dbType;
-    std::transform(type.begin(), type.end(), type.begin(), [](unsigned char c) {
-        return tolower(c);
-    });
+    std::transform(type.begin(), type.end(), type.begin(), tolower);
     if (!characterSet.empty())
     {
         connStr += " client_encoding=";

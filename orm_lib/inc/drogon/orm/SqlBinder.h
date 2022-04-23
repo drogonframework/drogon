@@ -25,7 +25,6 @@
 #include <drogon/utils/optional.h>
 #include <trantor/utils/Logger.h>
 #include <trantor/utils/NonCopyable.h>
-#include <json/json.h>
 #include <functional>
 #include <iostream>
 #include <map>
@@ -41,7 +40,7 @@
 #endif
 
 #if defined __linux__ || defined __FreeBSD__ || defined __OpenBSD__ || \
-    defined __MINGW32__ || defined __HAIKU__
+    defined __MINGW32__
 
 #ifdef __linux__
 #include <endian.h>  // __BYTE_ORDER __LITTLE_ENDIAN
@@ -176,8 +175,8 @@ class CallbackHolder : public CallbackHolderBase
         run(result);
     }
 
-    template <typename T>
-    CallbackHolder(T &&function) : function_(std::forward<T>(function))
+    CallbackHolder(Function &&function)
+        : function_(std::forward<Function>(function))
     {
         static_assert(traits::isSqlCallback,
                       "Your sql callback function type is wrong!");
@@ -215,7 +214,7 @@ class CallbackHolder : public CallbackHolderBase
     typename std::enable_if<(sizeof...(Values) < Boundary), void>::type run(
         const Row *const row,
         bool isNull,
-        Values &&...values)
+        Values &&... values)
     {
         // call this function recursively until parameter's count equals to the
         // count of target function parameters
@@ -246,7 +245,7 @@ class CallbackHolder : public CallbackHolderBase
     typename std::enable_if<(sizeof...(Values) == Boundary), void>::type run(
         const Row *const,
         bool isNull,
-        Values &&...values)
+        Values &&... values)
     {
         function_(isNull, std::move(values)...);
     }
@@ -323,8 +322,7 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
     SqlBinder &operator=(SqlBinder &&that) = delete;
     ~SqlBinder();
     template <typename CallbackType,
-              typename traits =
-                  FunctionTraits<typename std::decay<CallbackType>::type>>
+              typename traits = FunctionTraits<CallbackType>>
     typename std::enable_if<traits::isExceptCallback && traits::isPtr,
                             self>::type &
     operator>>(CallbackType &&callback)
@@ -336,8 +334,7 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
     }
 
     template <typename CallbackType,
-              typename traits =
-                  FunctionTraits<typename std::decay<CallbackType>::type>>
+              typename traits = FunctionTraits<CallbackType>>
     typename std::enable_if<traits::isExceptCallback && !traits::isPtr,
                             self>::type &
     operator>>(CallbackType &&callback)
@@ -348,13 +345,12 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
     }
 
     template <typename CallbackType,
-              typename traits =
-                  FunctionTraits<typename std::decay<CallbackType>::type>>
+              typename traits = FunctionTraits<CallbackType>>
     typename std::enable_if<traits::isSqlCallback, self>::type &operator>>(
         CallbackType &&callback)
     {
         callbackHolder_ = std::shared_ptr<CallbackHolderBase>(
-            new CallbackHolder<typename std::decay<CallbackType>::type>(
+            new CallbackHolder<CallbackType>(
                 std::forward<CallbackType>(callback)));
         return *this;
     }
@@ -467,10 +463,6 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
         return operator<<(date.toDbStringLocal());
     }
     self &operator<<(const std::vector<char> &v);
-    self &operator<<(std::vector<char> &v)
-    {
-        return operator<<((const std::vector<char> &)v);
-    }
     self &operator<<(std::vector<char> &&v);
     self &operator<<(float f)
     {
@@ -484,11 +476,6 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
     self &operator<<(std::nullptr_t nullp);
     self &operator<<(DefaultValue dv);
     self &operator<<(const Mode &mode)
-    {
-        mode_ = mode;
-        return *this;
-    }
-    self &operator<<(Mode &mode)
     {
         mode_ = mode;
         return *this;
@@ -508,15 +495,6 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
         return *this << nullptr;
     }
     template <typename T>
-    self &operator<<(optional<T> &parameter)
-    {
-        if (parameter)
-        {
-            return *this << parameter.value();
-        }
-        return *this << nullptr;
-    }
-    template <typename T>
     self &operator<<(optional<T> &&parameter)
     {
         if (parameter)
@@ -524,44 +502,6 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
             return *this << std::move(parameter.value());
         }
         return *this << nullptr;
-    }
-    self &operator<<(const Json::Value &j) noexcept(true)
-    {
-        switch (j.type())
-        {
-            case Json::nullValue:
-                return *this << nullptr;
-                break;
-            case Json::intValue:
-                return *this << j.asInt64();
-                break;
-            case Json::uintValue:
-                return *this << j.asUInt64();
-                break;
-            case Json::realValue:
-                return *this << j.asDouble();
-                break;
-            case Json::stringValue:
-                return *this << j.asString();
-                break;
-            case Json::booleanValue:
-                return *this << j.asBool();
-                break;
-            case Json::arrayValue:
-            case Json::objectValue:
-            default:
-                LOG_ERROR << "Bad Json type";
-                return *this << nullptr;
-                break;
-        }
-    }
-    self &operator<<(Json::Value &j) noexcept(true)
-    {
-        return *this << static_cast<const Json::Value &>(j);
-    }
-    self &operator<<(Json::Value &&j) noexcept(true)
-    {
-        return *this << static_cast<const Json::Value &>(j);
     }
     void exec() noexcept(false);
 

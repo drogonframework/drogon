@@ -39,11 +39,7 @@ Sqlite3Connection::Sqlite3Connection(
     trantor::EventLoop *loop,
     const std::string &connInfo,
     const std::shared_ptr<SharedMutex> &sharedMutex)
-    : DbConnection(loop), sharedMutexPtr_(sharedMutex), connInfo_(connInfo)
-{
-}
-
-void Sqlite3Connection::init()
+    : DbConnection(loop), sharedMutexPtr_(sharedMutex)
 {
     loopThread_.run();
     loop_ = loopThread_.getLoop();
@@ -55,16 +51,13 @@ void Sqlite3Connection::init()
         }
     });
     // Get the key and value
-    auto connParams = parseConnString(connInfo_);
+    auto connParams = parseConnString(connInfo);
     std::string filename;
     for (auto const &kv : connParams)
     {
         auto key = kv.first;
         auto value = kv.second;
-        std::transform(key.begin(),
-                       key.end(),
-                       key.begin(),
-                       [](unsigned char c) { return tolower(c); });
+        std::transform(key.begin(), key.end(), key.begin(), tolower);
         if (key == "filename")
         {
             filename = value;
@@ -219,10 +212,7 @@ void Sqlite3Connection::execSqlInQueue(
     for (int i = 0; i < columnNum; ++i)
     {
         auto name = std::string(sqlite3_column_name(stmt, i));
-        std::transform(name.begin(),
-                       name.end(),
-                       name.begin(),
-                       [](unsigned char c) { return tolower(c); });
+        std::transform(name.begin(), name.end(), name.begin(), tolower);
         LOG_TRACE << "column name:" << name;
         resultPtr->columnNames_.push_back(name);
         resultPtr->columnNamesMap_.insert({name, i});
@@ -314,14 +304,8 @@ void Sqlite3Connection::disconnect()
     std::promise<int> pro;
     auto f = pro.get_future();
     auto thisPtr = shared_from_this();
-    std::weak_ptr<Sqlite3Connection> weakPtr = thisPtr;
-    loopThread_.getLoop()->runInLoop([weakPtr, &pro]() {
-        {
-            auto thisPtr = weakPtr.lock();
-            if (!thisPtr)
-                return;
-            thisPtr->connectionPtr_.reset();
-        }
+    loopThread_.getLoop()->runInLoop([thisPtr, &pro]() {
+        thisPtr->connectionPtr_.reset();
         pro.set_value(1);
     });
     f.get();

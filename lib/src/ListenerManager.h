@@ -35,9 +35,7 @@ class ListenerManager : public trantor::NonCopyable
                      bool useSSL = false,
                      const std::string &certFile = "",
                      const std::string &keyFile = "",
-                     bool useOldTLS = false,
-                     const std::vector<std::pair<std::string, std::string>>
-                         &sslConfCmds = {});
+                     bool useOldTLS = false);
     std::vector<trantor::EventLoop *> createListeners(
         const HttpAsyncCallback &httpCallback,
         const WebSocketNewAsyncCallback &webSocketCallback,
@@ -45,17 +43,13 @@ class ListenerManager : public trantor::NonCopyable
         size_t connectionTimeout,
         const std::string &globalCertFile,
         const std::string &globalKeyFile,
-        const std::vector<std::pair<std::string, std::string>> &sslConfCmds,
         size_t threadNum,
         const std::vector<
             std::function<HttpResponsePtr(const HttpRequestPtr &)>>
-            &syncAdvices,
-        const std::vector<std::function<void(const HttpRequestPtr &,
-                                             const HttpResponsePtr &)>>
-            &preSendingAdvices);
+            &syncAdvices);
     void startListening();
     std::vector<trantor::InetAddress> getListeners() const;
-    ~ListenerManager() = default;
+    ~ListenerManager();
 
     trantor::EventLoop *getIOLoop(size_t id) const;
     void stopListening();
@@ -64,21 +58,18 @@ class ListenerManager : public trantor::NonCopyable
   private:
     struct ListenerInfo
     {
-        ListenerInfo(
-            const std::string &ip,
-            uint16_t port,
-            bool useSSL,
-            const std::string &certFile,
-            const std::string &keyFile,
-            bool useOldTLS,
-            const std::vector<std::pair<std::string, std::string>> &sslConfCmds)
+        ListenerInfo(const std::string &ip,
+                     uint16_t port,
+                     bool useSSL,
+                     const std::string &certFile,
+                     const std::string &keyFile,
+                     bool useOldTLS)
             : ip_(ip),
               port_(port),
               useSSL_(useSSL),
               certFile_(certFile),
               keyFile_(keyFile),
-              useOldTLS_(useOldTLS),
-              sslConfCmds_(sslConfCmds)
+              useOldTLS_(useOldTLS)
         {
         }
         std::string ip_;
@@ -87,7 +78,6 @@ class ListenerManager : public trantor::NonCopyable
         std::string certFile_;
         std::string keyFile_;
         bool useOldTLS_;
-        std::vector<std::pair<std::string, std::string>> sslConfCmds_;
     };
     std::vector<ListenerInfo> listeners_;
     std::vector<std::shared_ptr<HttpServer>> servers_;

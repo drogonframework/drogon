@@ -16,7 +16,6 @@
 #include "HttpRequestImpl.h"
 #include "HttpClientImpl.h"
 #include "HttpResponseImpl.h"
-#include "HttpUtils.h"
 #include "WebSocketConnectionImpl.h"
 #include "StaticFileRouter.h"
 #include "HttpSimpleControllersRouter.h"
@@ -41,7 +40,6 @@
 #include <drogon/HttpTypes.h>
 #include <drogon/Session.h>
 #include <drogon/utils/Utilities.h>
-#include "filesystem.h"
 #include <trantor/utils/AsyncFileLogger.h>
 #include <json/json.h>
 
@@ -60,16 +58,8 @@
 #include <sys/file.h>
 #include <uuid.h>
 #include <unistd.h>
-#define os_access access
-#elif !defined(_WIN32) || defined(__MINGW32__)
-#include <sys/file.h>
-#include <unistd.h>
-#define os_access access
 #else
 #include <io.h>
-#define os_access _waccess
-#define R_OK 04
-#define W_OK 02
 #endif
 
 using namespace drogon;
@@ -185,11 +175,6 @@ static void TERMFunction(int sig)
     {
         LOG_WARN << "SIGTERM signal received.";
         HttpAppFrameworkImpl::instance().getTermSignalHandler()();
-    }
-    else if (sig == SIGINT)
-    {
-        LOG_WARN << "SIGINT signal received.";
-        HttpAppFrameworkImpl::instance().getIntSignalHandler()();
     }
 }
 
@@ -353,18 +338,16 @@ PluginBase *HttpAppFrameworkImpl::getPlugin(const std::string &name)
 {
     return pluginsManagerPtr_->getPlugin(name);
 }
-HttpAppFramework &HttpAppFrameworkImpl::addListener(
-    const std::string &ip,
-    uint16_t port,
-    bool useSSL,
-    const std::string &certFile,
-    const std::string &keyFile,
-    bool useOldTLS,
-    const std::vector<std::pair<std::string, std::string>> &sslConfCmds)
+HttpAppFramework &HttpAppFrameworkImpl::addListener(const std::string &ip,
+                                                    uint16_t port,
+                                                    bool useSSL,
+                                                    const std::string &certFile,
+                                                    const std::string &keyFile,
+                                                    bool useOldTLS)
 {
     assert(!running_);
     listenerManagerPtr_->addListener(
-        ip, port, useSSL, certFile, keyFile, useOldTLS, sslConfCmds);
+        ip, port, useSSL, certFile, keyFile, useOldTLS);
     return *this;
 }
 HttpAppFramework &HttpAppFrameworkImpl::setMaxConnectionNum(
@@ -408,14 +391,20 @@ HttpAppFramework &HttpAppFrameworkImpl::setLogPath(
 {
     if (logPath.empty())
         return *this;
-    // std::filesystem does not provide a method to check access permissions, so
-    // keep existing code
-    if (os_access(utils::toNativePath(logPath).c_str(), 0) != 0)
+#ifdef _WIN32
+    if (_access(logPath.c_str(), 0) != 0)
+#else
+    if (access(logPath.c_str(), 0) != 0)
+#endif
     {
         std::cerr << "Log path does not exist!\n";
         exit(1);
     }
-    if (os_access(utils::toNativePath(logPath).c_str(), R_OK | W_OK) != 0)
+#ifdef _WIN32
+    if (_access(logPath.c_str(), 06) != 0)
+#else
+    if (access(logPath.c_str(), R_OK | W_OK) != 0)
+#endif
     {
         std::cerr << "Unable to access log path!\n";
         exit(1);
@@ -429,12 +418,6 @@ HttpAppFramework &HttpAppFrameworkImpl::setLogLevel(
     trantor::Logger::LogLevel level)
 {
     trantor::Logger::setLogLevel(level);
-    return *this;
-}
-HttpAppFramework &HttpAppFrameworkImpl::setSSLConfigCommands(
-    const std::vector<std::pair<std::string, std::string>> &sslConfCmds)
-{
-    sslConfCmds_ = sslConfCmds;
     return *this;
 }
 HttpAppFramework &HttpAppFrameworkImpl::setSSLFiles(const std::string &certPath,
@@ -452,14 +435,13 @@ void HttpAppFrameworkImpl::run()
         getLoop()->moveToCurrentThread();
     }
     LOG_TRACE << "Start to run...";
+    trantor::AsyncFileLogger asyncFileLogger;
     // Create dirs for cache files
     for (int i = 0; i < 256; ++i)
     {
         char dirName[4];
         snprintf(dirName, sizeof(dirName), "%02x", i);
-        std::transform(dirName, dirName + 2, dirName, [](unsigned char c) {
-            return toupper(c);
-        });
+        std::transform(dirName, dirName + 2, dirName, toupper);
         utils::createPath(getUploadPath() + "/tmp/" + dirName);
     }
     if (runAsDaemon_)
@@ -498,27 +480,37 @@ void HttpAppFrameworkImpl::run()
     }
     if (handleSigterm_)
     {
-#ifdef WIN32
         signal(SIGTERM, TERMFunction);
-        signal(SIGINT, TERMFunction);
-#else
-        struct sigaction sa;
-        sa.sa_handler = TERMFunction;
-        sigemptyset(&sa.sa_mask);
-        sa.sa_flags = 0;
-        if (sigaction(SIGINT, &sa, NULL) == -1)
-        {
-            LOG_ERROR << "sigaction() failed, can't set SIGINT handler";
-            abort();
-        }
-        if (sigaction(SIGTERM, &sa, NULL) == -1)
-        {
-            LOG_ERROR << "sigaction() failed, can't set SIGTERM handler";
-            abort();
-        }
-#endif
     }
-    setupFileLogger();
+    // set logger
+    if (!logPath_.empty())
+    {
+#ifdef _WIN32
+        if (_access(logPath_.c_str(), 06) != 0)
+#else
+        if (access(logPath_.c_str(), R_OK | W_OK) != 0)
+#endif
+        {
+            LOG_ERROR << "log file path not exist";
+            abort();
+        }
+        else
+        {
+            std::string baseName = logfileBaseName_;
+            if (baseName.empty())
+            {
+                baseName = "drogon";
+            }
+            asyncFileLogger.setFileName(baseName, ".log", logPath_);
+            asyncFileLogger.startLogging();
+            trantor::Logger::setOutputFunction(
+                [&](const char *msg, const uint64_t len) {
+                    asyncFileLogger.output(msg, len);
+                },
+                [&]() { asyncFileLogger.flush(); });
+            asyncFileLogger.setFileSizeLimit(logfileSize_);
+        }
+    }
     if (relaunchOnError_)
     {
         LOG_INFO << "Start child process";
@@ -534,23 +526,14 @@ void HttpAppFrameworkImpl::run()
 #endif
     // Create all listeners.
     auto ioLoops = listenerManagerPtr_->createListeners(
-        [this](const HttpRequestImplPtr &req,
-               std::function<void(const HttpResponsePtr &)> &&callback) {
-            onAsyncRequest(req, std::move(callback));
-        },
-        [this](const HttpRequestImplPtr &req,
-               std::function<void(const HttpResponsePtr &)> &&callback,
-               const WebSocketConnectionImplPtr &wsConnPtr) {
-            onNewWebsockRequest(req, std::move(callback), wsConnPtr);
-        },
-        [this](const trantor::TcpConnectionPtr &conn) { onConnection(conn); },
+        std::bind(&HttpAppFrameworkImpl::onAsyncRequest, this, _1, _2),
+        std::bind(&HttpAppFrameworkImpl::onNewWebsockRequest, this, _1, _2, _3),
+        std::bind(&HttpAppFrameworkImpl::onConnection, this, _1),
         idleConnectionTimeout_,
         sslCertPath_,
         sslKeyPath_,
-        sslConfCmds_,
         threadNum_,
-        syncAdvices_,
-        preSendingAdvices_);
+        syncAdvices_);
     assert(ioLoops.size() == threadNum_);
     for (size_t i = 0; i < threadNum_; ++i)
     {
@@ -586,13 +569,13 @@ void HttpAppFrameworkImpl::run()
     staticFileRouterPtr_->init(ioLoops);
     websockCtrlsRouterPtr_->init();
     getLoop()->queueInLoop([this]() {
+        // Let listener event loops run when everything is ready.
+        listenerManagerPtr_->startListening();
         for (auto &adv : beginningAdvices_)
         {
             adv();
         }
         beginningAdvices_.clear();
-        // Let listener event loops run when everything is ready.
-        listenerManagerPtr_->startListening();
     });
     getLoop()->loop();
 }
@@ -666,14 +649,22 @@ HttpAppFramework &HttpAppFrameworkImpl::setUploadPath(
     const std::string &uploadPath)
 {
     assert(!uploadPath.empty());
-
-    filesystem::path fsUploadPath(utils::toNativePath(uploadPath));
-    if (!fsUploadPath.is_absolute())
+    if (uploadPath[0] == '/' ||
+        (uploadPath.length() >= 2 && uploadPath[0] == '.' &&
+         uploadPath[1] == '/') ||
+        (uploadPath.length() >= 3 && uploadPath[0] == '.' &&
+         uploadPath[1] == '.' && uploadPath[2] == '/') ||
+        uploadPath == "." || uploadPath == "..")
     {
-        filesystem::path fsRoot(utils::toNativePath(rootPath_));
-        fsUploadPath = fsRoot / fsUploadPath;
+        uploadPath_ = uploadPath;
     }
-    uploadPath_ = utils::fromNativePath(fsUploadPath.native());
+    else
+    {
+        if (rootPath_[rootPath_.length() - 1] == '/')
+            uploadPath_ = rootPath_ + uploadPath;
+        else
+            uploadPath_ = rootPath_ + "/" + uploadPath;
+    }
     return *this;
 }
 void HttpAppFrameworkImpl::findSessionForRequest(const HttpRequestImplPtr &req)
@@ -1092,45 +1083,5 @@ HttpAppFramework &HttpAppFrameworkImpl::setDefaultHandler(
     DefaultHandler handler)
 {
     staticFileRouterPtr_->setDefaultHandler(std::move(handler));
-    return *this;
-}
-
-HttpAppFramework &HttpAppFrameworkImpl::setupFileLogger()
-{
-    if (!logPath_.empty() && !asyncFileLoggerPtr_)
-    {
-        // std::filesystem does not provide a method to check access
-        // permissions, so keep existing code
-        if (os_access(utils::toNativePath(logPath_).c_str(), R_OK | W_OK) != 0)
-        {
-            LOG_ERROR << "log file path not exist";
-            abort();
-        }
-        else
-        {
-            std::string baseName = logfileBaseName_;
-            if (baseName.empty())
-            {
-                baseName = "drogon";
-            }
-            asyncFileLoggerPtr_ = std::make_unique<trantor::AsyncFileLogger>();
-            asyncFileLoggerPtr_->setFileName(baseName, ".log", logPath_);
-            asyncFileLoggerPtr_->startLogging();
-            trantor::Logger::setOutputFunction(
-                [this](const char *msg, const uint64_t len) {
-                    asyncFileLoggerPtr_->output(msg, len);
-                },
-                [this]() { asyncFileLoggerPtr_->flush(); });
-            asyncFileLoggerPtr_->setFileSizeLimit(logfileSize_);
-        }
-    }
-    return *this;
-}
-
-HttpAppFramework &HttpAppFrameworkImpl::registerCustomExtensionMime(
-    const std::string &ext,
-    const std::string &mime)
-{
-    drogon::registerCustomExtensionMime(ext, mime);
     return *this;
 }

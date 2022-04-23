@@ -48,7 +48,7 @@ function build_drogon() {
     fi
 
     echo "Installing ..."
-    $make_program install
+    sudo $make_program install
 
     #Go back to the current directory
     cd $current_dir

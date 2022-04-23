@@ -41,9 +41,7 @@ bool checkSql(const string_view &sql_)
     if (sql_.length() > 1024)
         return true;
     std::string sql{sql_.data(), sql_.length()};
-    std::transform(sql.begin(), sql.end(), sql.begin(), [](unsigned char c) {
-        return tolower(c);
-    });
+    std::transform(sql.begin(), sql.end(), sql.begin(), tolower);
     return (sql.find("update") != std::string::npos ||
             sql.find("into") != std::string::npos ||
             sql.find("delete") != std::string::npos ||

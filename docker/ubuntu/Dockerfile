@@ -1,23 +1,20 @@
-FROM ubuntu:20.04
-
-ENV TZ=UTC
-RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+FROM ubuntu:18.04
 
 RUN apt-get update -yqq \
     && apt-get install -yqq --no-install-recommends software-properties-common \
-    curl wget cmake make pkg-config locales git gcc-10 g++-10 \
+    sudo curl wget cmake pkg-config locales git gcc-8 g++-8 \
     openssl libssl-dev libjsoncpp-dev uuid-dev zlib1g-dev libc-ares-dev\
-    postgresql-server-dev-all libmariadbclient-dev libsqlite3-dev libhiredis-dev\
+    postgresql-server-dev-all libmariadbclient-dev libsqlite3-dev \
     && rm -rf /var/lib/apt/lists/* \
     && locale-gen en_US.UTF-8
 
 ENV LANG=en_US.UTF-8 \
     LANGUAGE=en_US:en \
     LC_ALL=en_US.UTF-8 \
-    CC=gcc-10 \
-    CXX=g++-10 \
-    AR=gcc-ar-10 \
-    RANLIB=gcc-ranlib-10 \
+    CC=gcc-8 \
+    CXX=g++-8 \
+    AR=gcc-ar-8 \
+    RANLIB=gcc-ranlib-8 \
     IROOT=/install
 
 ENV DROGON_ROOT="$IROOT/drogon"

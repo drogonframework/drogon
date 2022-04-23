@@ -16,7 +16,6 @@
 #include <trantor/utils/Logger.h>
 #ifdef _WIN32
 #include <mman.h>
-#include <drogon/utils/Utilities.h>
 #else
 #include <unistd.h>
 #include <sys/mman.h>
@@ -30,8 +29,7 @@ CacheFile::CacheFile(const std::string &path, bool autoDelete)
 #ifndef _MSC_VER
     file_ = fopen(path_.data(), "wb+");
 #else
-    auto wPath{drogon::utils::toNativePath(path)};
-    if (_wfopen_s(&file_, wPath.c_str(), L"wb+") != 0)
+    if (fopen_s(&file_, path_.data(), "wb+") != 0)
     {
         file_ = nullptr;
     }
@@ -47,9 +45,8 @@ CacheFile::~CacheFile()
     if (autoDelete_ && file_)
     {
         fclose(file_);
-#if defined(_WIN32) && !defined(__MINGW32__)
-        auto wPath{drogon::utils::toNativePath(path_)};
-        _wunlink(wPath.c_str());
+#ifdef _WIN32
+        _unlink(path_.data());
 #else
         unlink(path_.data());
 #endif
@@ -69,11 +66,7 @@ void CacheFile::append(const char *data, size_t length)
 size_t CacheFile::length()
 {
     if (file_)
-#ifdef _WIN32
-        return _ftelli64(file_);
-#else
         return ftell(file_);
-#endif
     return 0;
 }
 

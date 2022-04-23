@@ -19,7 +19,7 @@ else
   export PATH=$PATH:$src_dir/install/bin
 fi
 echo ${drogon_ctl_exec}
-cd build/lib/tests/
+cd build/examples/
 
 if [ $os = "windows" ]; then
   cd Debug
@@ -50,7 +50,7 @@ if [ $os = "linux" ]; then
   fi
 fi
 
-#Make integration_test_server run as a daemon
+#Make webapp run as a daemon
 if [ $os = "linux" ]; then
   sed -i -e "s/\"run_as_daemon.*$/\"run_as_daemon\": true\,/" config.example.json
 fi
@@ -58,32 +58,59 @@ sed -i -e "s/\"relaunch_on_error.*$/\"relaunch_on_error\": true\,/" config.examp
 sed -i -e "s/\"threads_num.*$/\"threads_num\": 0\,/" config.example.json
 sed -i -e "s/\"use_brotli.*$/\"use_brotli\": true\,/" config.example.json
 
-if [ ! -f "integration_test_client" ]; then
+if [ ! -f "webapp" ]; then
     echo "Build failed"
     exit -1
 fi
-if [ ! -f "integration_test_server" ]; then
+if [ ! -f "webapp_test" ]; then
     echo "Build failed"
     exit -1
 fi
 
-killall -9 integration_test_server
-./integration_test_server &
+killall -9 webapp
+./webapp &
+webapppid=$!
 
 sleep 4
 
-echo "Running the integration test"
-./integration_test_client -s
+echo "Test http requests and responses."
+./webapp_test
 
 if [ $? -ne 0 ]; then
-    echo "Integration test failed"
+    echo "Error in testing http requests"
     exit -1
 fi
 
-killall -9 integration_test_server
+#Test WebSocket
+echo "Test the WebSocket"
+./websocket_test -t
+if [ $? -ne 0 ]; then
+    echo "Error in testing WebSocket"
+    exit -1
+fi
+
+# Test websocket client coroutine
+if [ -f ./websocket_coro_test ]; then
+    echo "Test WebSocket w/ coroutine"
+    ./websocket_coro_test -t
+    if [ $? -ne 0 ]; then
+        echo "Error in testing WebSocket with coroutine"
+        exit -1
+    fi
+fi
+
+#Test pipelining
+echo "Test the pipelining"
+./pipelining_test
+if [ $? -ne 0 ]; then
+    echo "Error in testing pipelining"
+    exit -1
+fi
+
+kill -9 $webapppid
 
 #Test drogon_ctl
-echo "Testing drogon_ctl"
+echo "Test the drogon_ctl"
 rm -rf drogon_test
 
 ${drogon_ctl_exec} create project drogon_test
@@ -138,7 +165,7 @@ fi
 cmake .. $cmake_gen
 
 if [ $? -ne 0 ]; then
-    echo "Failed to run CMake for example project"
+    echo "Error in testing"
     exit -1
 fi
 
@@ -166,7 +193,7 @@ rm -rf drogon_test
 
 if [ "$1" = "-t" ]; then
     #unit testing
-    cd ../../
+    cd ../
     echo "Unit testing"
     cmake --build . --target test -- $make_flags
     if [ $? -ne 0 ]; then
@@ -175,7 +202,7 @@ if [ "$1" = "-t" ]; then
     fi
     if [ -f "./orm_lib/tests/db_test" ]; then
         echo "Test database"
-        ./orm_lib/tests/db_test -s
+        ./orm_lib/tests/db_test
         if [ $? -ne 0 ]; then
             echo "Error in testing"
             exit -1
@@ -183,7 +210,7 @@ if [ "$1" = "-t" ]; then
     fi
     if [ -f "./nosql_lib/redis/tests/redis_test" ]; then
         echo "Test redis"
-        ./nosql_lib/redis/tests/redis_test -s
+        ./nosql_lib/redis/tests/redis_test
         if [ $? -ne 0 ]; then
             echo "Error in testing"
             exit -1

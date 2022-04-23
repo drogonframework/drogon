@@ -14,16 +14,16 @@
 
 #pragma once
 
-#include <drogon/Cookie.h>
+#include "impl_forwards.h"
 #include <drogon/HttpClient.h>
+#include <drogon/Cookie.h>
 #include <trantor/net/EventLoop.h>
-#include <trantor/net/Resolver.h>
 #include <trantor/net/TcpClient.h>
-#include <list>
+#include <trantor/net/Resolver.h>
 #include <mutex>
 #include <queue>
+#include <list>
 #include <vector>
-#include "impl_forwards.h"
 
 namespace drogon
 {
@@ -84,27 +84,6 @@ class HttpClientImpl final : public HttpClient,
         userAgent_ = userAgent;
     }
 
-    uint16_t port() const override
-    {
-        return serverAddr_.toPort();
-    }
-
-    std::string host() const override
-    {
-        if (domain_.empty())
-            return serverAddr_.toIp();
-        return domain_;
-    }
-
-    bool secure() const override
-    {
-        return useSSL_;
-    }
-
-    void setCertPath(const std::string &cert, const std::string &key) override;
-    void addSSLConfigs(const std::vector<std::pair<std::string, std::string>>
-                           &sslConfCmds) override;
-
   private:
     std::shared_ptr<trantor::TcpClient> tcpClientPtr_;
     trantor::EventLoop *loop_;
@@ -128,7 +107,6 @@ class HttpClientImpl final : public HttpClient,
     void onRecvMessage(const trantor::TcpConnectionPtr &, trantor::MsgBuffer *);
     void onError(ReqResult result);
     std::string domain_;
-    bool isDomainName_{true};  // true if domain_ is name
     size_t pipeliningDepth_{0};
     bool enableCookies_{false};
     std::vector<Cookie> validCookies_;
@@ -138,9 +116,6 @@ class HttpClientImpl final : public HttpClient,
     std::shared_ptr<trantor::Resolver> resolverPtr_;
     bool useOldTLS_{false};
     std::string userAgent_{"DrogonClient"};
-    std::vector<std::pair<std::string, std::string>> sslConfCmds_;
-    std::string clientCertPath_;
-    std::string clientKeyPath_;
 };
 using HttpClientImplPtr = std::shared_ptr<HttpClientImpl>;
 }  // namespace drogon

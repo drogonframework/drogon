@@ -86,8 +86,6 @@ class HttpRequestImpl : public HttpRequest
         return version_;
     }
 
-    virtual const char *versionString() const override;
-
     bool setMethod(const char *start, const char *end);
     void setSecure(bool secure)
     {
@@ -242,9 +240,7 @@ class HttpRequestImpl : public HttpRequest
 
     virtual void removeHeader(std::string key) override
     {
-        transform(key.begin(), key.end(), key.begin(), [](unsigned char c) {
-            return tolower(c);
-        });
+        transform(key.begin(), key.end(), key.begin(), ::tolower);
         removeHeaderBy(key);
     }
 
@@ -255,10 +251,7 @@ class HttpRequestImpl : public HttpRequest
 
     const std::string &getHeader(std::string field) const override
     {
-        std::transform(field.begin(),
-                       field.end(),
-                       field.begin(),
-                       [](unsigned char c) { return tolower(c); });
+        std::transform(field.begin(), field.end(), field.begin(), tolower);
         return getHeaderBy(field);
     }
 
@@ -325,19 +318,13 @@ class HttpRequestImpl : public HttpRequest
 
     virtual void addHeader(std::string field, const std::string &value) override
     {
-        transform(field.begin(),
-                  field.end(),
-                  field.begin(),
-                  [](unsigned char c) { return tolower(c); });
+        transform(field.begin(), field.end(), field.begin(), ::tolower);
         headers_[std::move(field)] = value;
     }
 
     virtual void addHeader(std::string field, std::string &&value) override
     {
-        transform(field.begin(),
-                  field.end(),
-                  field.begin(),
-                  [](unsigned char c) { return tolower(c); });
+        transform(field.begin(), field.end(), field.begin(), ::tolower);
         headers_[std::move(field)] = std::move(value);
     }
 
@@ -394,27 +381,15 @@ class HttpRequestImpl : public HttpRequest
     {
         contentType_ = CT_NONE;
         flagForParsingContentType_ = true;
-        bool haveHeader = type.find("content-type: ") == 0;
-        bool haveCRLF = type.rfind("\r\n") == type.size() - 2;
-
-        size_t endOffset = 0;
-        if (haveHeader)
-            endOffset += 14;
-        if (haveCRLF)
-            endOffset += 2;
-        contentTypeString_ = std::string(type.begin() + (haveHeader ? 14 : 0),
-                                         type.end() - endOffset);
+        contentTypeString_ = type;
     }
     virtual void setContentTypeCode(const ContentType type) override
     {
         contentType_ = type;
         flagForParsingContentType_ = true;
-        auto &typeStr = contentTypeToMime(type);
+        auto &typeStr = webContentTypeToString(type);
         setContentType(std::string(typeStr.data(), typeStr.length()));
     }
-
-    void setContentTypeString(const char *typeString,
-                              size_t typeStringLength) override;
 
     // virtual void setContentTypeCodeAndCharacterSet(ContentType type, const
     // std::string &charSet = "utf-8") override
@@ -425,7 +400,29 @@ class HttpRequestImpl : public HttpRequest
 
     virtual ContentType contentType() const override
     {
-        parseContentTypeAndString();
+        if (!flagForParsingContentType_)
+        {
+            flagForParsingContentType_ = true;
+            auto &contentTypeString = getHeaderBy("content-type");
+            if (contentTypeString == "")
+            {
+                contentType_ = CT_NONE;
+            }
+            else
+            {
+                auto pos = contentTypeString.find(';');
+                if (pos != std::string::npos)
+                {
+                    contentType_ = parseContentType(
+                        string_view(contentTypeString.data(), pos));
+                }
+                else
+                {
+                    contentType_ =
+                        parseContentType(string_view(contentTypeString));
+                }
+            }
+        }
         return contentType_;
     }
 
@@ -478,37 +475,6 @@ class HttpRequestImpl : public HttpRequest
         contentTypeString_ = std::move(contentType);
     }
 
-    void parseContentTypeAndString() const
-    {
-        if (!flagForParsingContentType_)
-        {
-            flagForParsingContentType_ = true;
-            auto &contentTypeString = getHeaderBy("content-type");
-            if (contentTypeString == "")
-            {
-                contentType_ = CT_NONE;
-            }
-            else
-            {
-                auto pos = contentTypeString.find(';');
-                if (pos != std::string::npos)
-                {
-                    contentType_ = parseContentType(
-                        string_view(contentTypeString.data(), pos));
-                }
-                else
-                {
-                    contentType_ =
-                        parseContentType(string_view(contentTypeString));
-                }
-
-                if (contentType_ == CT_NONE)
-                    contentType_ = CT_CUSTOM;
-                contentTypeString_ = contentTypeString;
-            }
-        }
-    }
-
   private:
     void parseParameters() const;
     void parseParametersOnce() const
@@ -552,7 +518,7 @@ class HttpRequestImpl : public HttpRequest
     trantor::EventLoop *loop_;
     mutable ContentType contentType_{CT_TEXT_PLAIN};
     mutable bool flagForParsingContentType_{false};
-    mutable std::string contentTypeString_;
+    std::string contentTypeString_;
 };
 
 using HttpRequestImplPtr = std::shared_ptr<HttpRequestImpl>;

@@ -56,7 +56,6 @@ class EventLoop;
 class TcpConnection;
 using TcpConnectionPtr = std::shared_ptr<TcpConnection>;
 class Resolver;
-class AsyncFileLogger;
 }  // namespace trantor
 
 namespace drogon

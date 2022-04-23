@@ -44,8 +44,11 @@ void HttpControllersRouter::doWhenNoHandlerFound(
 void HttpControllersRouter::init(
     const std::vector<trantor::EventLoop *> & /*ioLoops*/)
 {
-    auto initFilters = [](auto &binders) {
-        for (auto &binder : binders)
+    for (auto &router : ctrlVector_)
+    {
+        router.regex_ = std::regex(router.pathParameterPattern_,
+                                   std::regex_constants::icase);
+        for (auto &binder : router.binders_)
         {
             if (binder)
             {
@@ -53,21 +56,6 @@ void HttpControllersRouter::init(
                     filters_function::createFilters(binder->filterNames_);
             }
         }
-    };
-
-    for (auto &router : ctrlVector_)
-    {
-        router.regex_ = std::regex(router.pathParameterPattern_,
-                                   std::regex_constants::icase);
-        initFilters(router.binders_);
-    }
-
-    for (auto &p : ctrlMap_)
-    {
-        auto &router = p.second;
-        router.regex_ = std::regex(router.pathParameterPattern_,
-                                   std::regex_constants::icase);
-        initFilters(router.binders_);
     }
 }
 
@@ -75,7 +63,8 @@ std::vector<std::tuple<std::string, HttpMethod, std::string>>
 HttpControllersRouter::getHandlersInfo() const
 {
     std::vector<std::tuple<std::string, HttpMethod, std::string>> ret;
-    auto gatherInfo = [&](const auto &item) {
+    for (auto &item : ctrlVector_)
+    {
         for (size_t i = 0; i < Invalid; ++i)
         {
             if (item.binders_[i])
@@ -91,14 +80,6 @@ HttpControllersRouter::getHandlersInfo() const
                 ret.emplace_back(std::move(info));
             }
         }
-    };
-    for (auto &item : ctrlVector_)
-    {
-        gatherInfo(item);
-    }
-    for (auto &data : ctrlMap_)
-    {
-        gatherInfo(data.second);
     }
     return ret;
 }
@@ -123,7 +104,7 @@ void HttpControllersRouter::addHttpRegex(
         {
             if (router.pathParameterPattern_ == regExp)
             {
-                if (!validMethods.empty())
+                if (validMethods.size() > 0)
                 {
                     for (auto const &method : validMethods)
                     {
@@ -145,7 +126,7 @@ void HttpControllersRouter::addHttpRegex(
     struct HttpControllerRouterItem router;
     router.pathParameterPattern_ = regExp;
     router.pathPattern_ = regExp;
-    if (!validMethods.empty())
+    if (validMethods.size() > 0)
     {
         for (auto const &method : validMethods)
         {
@@ -172,8 +153,8 @@ void HttpControllersRouter::addHttpPath(
     // Path is like /api/v1/service/method/{1}/{2}/xxx...
     std::vector<size_t> places;
     std::string tmpPath = path;
-    std::string paras;
-    static const std::regex regex("\\{([^/]*)\\}");
+    std::string paras = "";
+    std::regex regex = std::regex("\\{([^/]*)\\}");
     std::smatch results;
     auto pos = tmpPath.find('?');
     if (pos != std::string::npos)
@@ -193,7 +174,7 @@ void HttpControllersRouter::addHttpPath(
                     return std::isdigit(c);
                 }))
             {
-                auto place = (size_t)std::stoi(result);
+                size_t place = (size_t)std::stoi(result);
                 if (place > binder->paramCount() || place == 0)
                 {
                     LOG_ERROR << "Parameter placeholder(value=" << place
@@ -215,13 +196,13 @@ void HttpControllersRouter::addHttpPath(
             }
             else
             {
-                static const std::regex regNumberAndName("([0-9]+):.*");
+                std::regex regNumberAndName("([0-9]+):.*");
                 std::smatch regexResult;
                 if (std::regex_match(result, regexResult, regNumberAndName))
                 {
                     assert(regexResult.size() == 2 && regexResult[1].matched);
                     auto num = regexResult[1].str();
-                    auto place = (size_t)std::stoi(num);
+                    size_t place = (size_t)std::stoi(num);
                     if (place > binder->paramCount() || place == 0)
                     {
                         LOG_ERROR << "Parameter placeholder(value=" << place
@@ -266,7 +247,7 @@ void HttpControllersRouter::addHttpPath(
     std::vector<std::pair<std::string, size_t>> parametersPlaces;
     if (!paras.empty())
     {
-        static const std::regex pregex("([^&]*)=\\{([^&]*)\\}&*");
+        std::regex pregex("([^&]*)=\\{([^&]*)\\}&*");
         while (std::regex_search(paras, results, pregex))
         {
             if (results.size() > 2)
@@ -277,7 +258,7 @@ void HttpControllersRouter::addHttpPath(
                         return std::isdigit(c);
                     }))
                 {
-                    auto place = (size_t)std::stoi(result);
+                    size_t place = (size_t)std::stoi(result);
                     if (place > binder->paramCount() || place == 0)
                     {
                         LOG_ERROR << "Parameter placeholder(value=" << place
@@ -315,7 +296,7 @@ void HttpControllersRouter::addHttpPath(
                         assert(regexResult.size() == 2 &&
                                regexResult[1].matched);
                         auto num = regexResult[1].str();
-                        auto place = (size_t)std::stoi(num);
+                        size_t place = (size_t)std::stoi(num);
                         if (place > binder->paramCount() || place == 0)
                         {
                             LOG_ERROR << "Parameter placeholder(value=" << place
@@ -386,56 +367,34 @@ void HttpControllersRouter::addHttpPath(
         // Recreate this with the correct number of threads.
         binderInfo->responseCache_ = IOThreadStorage<HttpResponsePtr>();
     });
-    bool routingRequiresRegex = (originPath != pathParameterPattern);
-    HttpControllerRouterItem *existingRouterItemPtr = nullptr;
-
-    // If exists another controllers on the same route. Updathe them then exit
-    if (routingRequiresRegex)
     {
         for (auto &router : ctrlVector_)
         {
             if (router.pathParameterPattern_ == pathParameterPattern)
-                existingRouterItemPtr = &router;
-        }
-    }
-    else
-    {
-        std::string loweredPath;
-        loweredPath.resize(originPath.size());
-        std::transform(originPath.begin(),
-                       originPath.end(),
-                       loweredPath.begin(),
-                       [](unsigned char c) { return tolower(c); });
-        auto it = ctrlMap_.find(loweredPath);
-        if (it != ctrlMap_.end())
-            existingRouterItemPtr = &it->second;
-    }
-
-    if (existingRouterItemPtr != nullptr)
-    {
-        auto &router = *existingRouterItemPtr;
-        if (!validMethods.empty())
-        {
-            for (auto const &method : validMethods)
             {
-                router.binders_[method] = binderInfo;
-                if (method == Options)
+                if (validMethods.size() > 0)
+                {
+                    for (auto const &method : validMethods)
+                    {
+                        router.binders_[method] = binderInfo;
+                        if (method == Options)
+                            binderInfo->isCORS_ = true;
+                    }
+                }
+                else
+                {
                     binderInfo->isCORS_ = true;
+                    for (int i = 0; i < Invalid; ++i)
+                        router.binders_[i] = binderInfo;
+                }
+                return;
             }
         }
-        else
-        {
-            binderInfo->isCORS_ = true;
-            for (int i = 0; i < Invalid; ++i)
-                router.binders_[i] = binderInfo;
-        }
-        return;
     }
-
     struct HttpControllerRouterItem router;
     router.pathParameterPattern_ = pathParameterPattern;
     router.pathPattern_ = path;
-    if (!validMethods.empty())
+    if (validMethods.size() > 0)
     {
         for (auto const &method : validMethods)
         {
@@ -450,19 +409,7 @@ void HttpControllersRouter::addHttpPath(
         for (int i = 0; i < Invalid; ++i)
             router.binders_[i] = binderInfo;
     }
-
-    if (routingRequiresRegex)
-        ctrlVector_.push_back(std::move(router));
-    else
-    {
-        std::string loweredPath;
-        loweredPath.resize(originPath.size());
-        std::transform(originPath.begin(),
-                       originPath.end(),
-                       loweredPath.begin(),
-                       [](unsigned char c) { return tolower(c); });
-        ctrlMap_[loweredPath] = std::move(router);
-    }
+    ctrlVector_.push_back(std::move(router));
 }
 
 void HttpControllersRouter::route(
@@ -470,145 +417,122 @@ void HttpControllersRouter::route(
     std::function<void(const HttpResponsePtr &)> &&callback)
 {
     // Find http controller
-    HttpControllerRouterItem *routerItemPtr = nullptr;
-    std::smatch result;
-    std::string loweredPath = req->path();
-    std::transform(loweredPath.begin(),
-                   loweredPath.end(),
-                   loweredPath.begin(),
-                   [](unsigned char c) { return tolower(c); });
-
-    auto it = ctrlMap_.find(loweredPath);
-    // Try to find a controller in the hash map. If can't linear search
-    // with regex.
-    if (it != ctrlMap_.end())
+    for (auto &routerItem : ctrlVector_)
     {
-        routerItemPtr = &it->second;
-    }
-    else
-    {
-        for (auto &item : ctrlVector_)
+        std::smatch result;
+        auto const &ctrlRegex = routerItem.regex_;
+        if (std::regex_match(req->path(), result, ctrlRegex))
         {
-            auto const &ctrlRegex = item.regex_;
-            if (std::regex_match(req->path(), result, ctrlRegex))
+            assert(Invalid > req->method());
+            req->setMatchedPathPattern(routerItem.pathPattern_);
+            auto &binder = routerItem.binders_[req->method()];
+            if (!binder)
             {
-                routerItemPtr = &item;
-                break;
+                // Invalid Http Method
+                if (req->method() != Options)
+                {
+                    callback(
+                        app().getCustomErrorHandler()(k405MethodNotAllowed));
+                }
+                else
+                {
+                    callback(app().getCustomErrorHandler()(k403Forbidden));
+                }
+                return;
             }
-        }
-    }
-
-    // No handler found
-    if (routerItemPtr == nullptr)
-    {
-        doWhenNoHandlerFound(req, std::move(callback));
-        return;
-    }
-
-    HttpControllerRouterItem &routerItem = *routerItemPtr;
-    assert(Invalid > req->method());
-    req->setMatchedPathPattern(routerItem.pathPattern_);
-    auto &binder = routerItem.binders_[req->method()];
-    if (!binder)
-    {
-        // Invalid Http Method
-        if (req->method() != Options)
-        {
-            callback(app().getCustomErrorHandler()(k405MethodNotAllowed));
-        }
-        else
-        {
-            callback(app().getCustomErrorHandler()(k403Forbidden));
-        }
-        return;
-    }
-    if (!postRoutingObservers_.empty())
-    {
-        for (auto &observer : postRoutingObservers_)
-        {
-            observer(req);
-        }
-    }
-    if (postRoutingAdvices_.empty())
-    {
-        if (!binder->filters_.empty())
-        {
-            auto &filters = binder->filters_;
-            auto callbackPtr =
-                std::make_shared<std::function<void(const HttpResponsePtr &)>>(
-                    std::move(callback));
-            filters_function::doFilters(filters,
-                                        req,
-                                        callbackPtr,
-                                        [req,
-                                         callbackPtr,
-                                         this,
-                                         &binder,
-                                         &routerItem,
-                                         result = std::move(result)]() mutable {
-                                            doPreHandlingAdvices(
-                                                binder,
-                                                routerItem,
-                                                req,
-                                                std::move(result),
-                                                std::move(*callbackPtr));
-                                        });
-        }
-        else
-        {
-            doPreHandlingAdvices(binder,
-                                 routerItem,
-                                 req,
-                                 std::move(result),
-                                 std::move(callback));
-        }
-    }
-    else
-    {
-        auto callbackPtr =
-            std::make_shared<std::function<void(const HttpResponsePtr &)>>(
-                std::move(callback));
-        doAdvicesChain(postRoutingAdvices_,
-                       0,
-                       req,
-                       callbackPtr,
-                       [&binder,
-                        callbackPtr,
+            if (!postRoutingObservers_.empty())
+            {
+                for (auto &observer : postRoutingObservers_)
+                {
+                    observer(req);
+                }
+            }
+            if (postRoutingAdvices_.empty())
+            {
+                if (!binder->filters_.empty())
+                {
+                    auto &filters = binder->filters_;
+                    auto callbackPtr = std::make_shared<
+                        std::function<void(const HttpResponsePtr &)>>(
+                        std::move(callback));
+                    filters_function::doFilters(
+                        filters,
                         req,
-                        this,
-                        &routerItem,
-                        result = std::move(result)]() mutable {
-                           if (!binder->filters_.empty())
-                           {
-                               auto &filters = binder->filters_;
-                               filters_function::doFilters(
-                                   filters,
-                                   req,
-                                   callbackPtr,
-                                   [this,
-                                    req,
-                                    callbackPtr,
-                                    &binder,
-                                    &routerItem,
-                                    result = std::move(result)]() mutable {
-                                       doPreHandlingAdvices(binder,
-                                                            routerItem,
-                                                            req,
-                                                            std::move(result),
-                                                            std::move(
-                                                                *callbackPtr));
-                                   });
-                           }
-                           else
-                           {
-                               doPreHandlingAdvices(binder,
-                                                    routerItem,
-                                                    req,
-                                                    std::move(result),
-                                                    std::move(*callbackPtr));
-                           }
-                       });
+                        callbackPtr,
+                        [req,
+                         callbackPtr,
+                         this,
+                         &binder,
+                         &routerItem,
+                         result = std::move(result)]() mutable {
+                            doPreHandlingAdvices(binder,
+                                                 routerItem,
+                                                 req,
+                                                 std::move(result),
+                                                 std::move(*callbackPtr));
+                        });
+                }
+                else
+                {
+                    doPreHandlingAdvices(binder,
+                                         routerItem,
+                                         req,
+                                         std::move(result),
+                                         std::move(callback));
+                }
+            }
+            else
+            {
+                auto callbackPtr = std::make_shared<
+                    std::function<void(const HttpResponsePtr &)>>(
+                    std::move(callback));
+                doAdvicesChain(
+                    postRoutingAdvices_,
+                    0,
+                    req,
+                    callbackPtr,
+                    [&binder,
+                     callbackPtr,
+                     req,
+                     this,
+                     &routerItem,
+                     result = std::move(result)]() mutable {
+                        if (!binder->filters_.empty())
+                        {
+                            auto &filters = binder->filters_;
+                            filters_function::doFilters(
+                                filters,
+                                req,
+                                callbackPtr,
+                                [this,
+                                 req,
+                                 callbackPtr,
+                                 &binder,
+                                 &routerItem,
+                                 result = std::move(result)]() mutable {
+                                    doPreHandlingAdvices(binder,
+                                                         routerItem,
+                                                         req,
+                                                         std::move(result),
+                                                         std::move(
+                                                             *callbackPtr));
+                                });
+                        }
+                        else
+                        {
+                            doPreHandlingAdvices(binder,
+                                                 routerItem,
+                                                 req,
+                                                 std::move(result),
+                                                 std::move(*callbackPtr));
+                        }
+                    });
+            }
+            return;
+        }
     }
+    // No handler found
+    doWhenNoHandlerFound(req, std::move(callback));
 }
 
 void HttpControllersRouter::doControllerHandler(
@@ -696,6 +620,7 @@ void HttpControllersRouter::doControllerHandler(
             }
             invokeCallback(callback, req, resp);
         });
+    return;
 }
 
 void HttpControllersRouter::doPreHandlingAdvices(

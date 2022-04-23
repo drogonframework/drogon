@@ -52,23 +52,17 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     }
 
     PluginBase *getPlugin(const std::string &name) override;
-    HttpAppFramework &addListener(
-        const std::string &ip,
-        uint16_t port,
-        bool useSSL,
-        const std::string &certFile,
-        const std::string &keyFile,
-        bool useOldTLS,
-        const std::vector<std::pair<std::string, std::string>> &sslConfCmds)
-        override;
+    HttpAppFramework &addListener(const std::string &ip,
+                                  uint16_t port,
+                                  bool useSSL,
+                                  const std::string &certFile,
+                                  const std::string &keyFile,
+                                  bool useOldTLS) override;
     HttpAppFramework &setThreadNum(size_t threadNum) override;
     size_t getThreadNum() const override
     {
         return threadNum_;
     }
-    HttpAppFramework &setSSLConfigCommands(
-        const std::vector<std::pair<std::string, std::string>> &sslConfCmds)
-        override;
     HttpAppFramework &setSSLFiles(const std::string &certPath,
                                   const std::string &keyPath) override;
     void run() override;
@@ -196,16 +190,8 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
         postHandlingAdvices_.emplace_back(advice);
         return *this;
     }
-    HttpAppFramework &registerPreSendingAdvice(
-        const std::function<void(const HttpRequestPtr &,
-                                 const HttpResponsePtr &)> &advice) override
-    {
-        preSendingAdvices_.emplace_back(advice);
-        return *this;
-    }
-    HttpAppFramework &setDefaultHandler(DefaultHandler handler) override;
 
-    HttpAppFramework &setupFileLogger() override;
+    HttpAppFramework &setDefaultHandler(DefaultHandler handler) override;
 
     HttpAppFramework &enableSession(const size_t timeout) override
     {
@@ -358,16 +344,6 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     const std::function<void()> &getTermSignalHandler() const
     {
         return termSignalHandler_;
-    }
-    HttpAppFramework &setIntSignalHandler(
-        const std::function<void()> &handler) override
-    {
-        intSignalHandler_ = handler;
-        return *this;
-    }
-    const std::function<void()> &getIntSignalHandler() const
-    {
-        return intSignalHandler_;
     }
     HttpAppFramework &setImplicitPageEnable(bool useImplicitPage) override;
     bool isImplicitPageEnabled() const override;
@@ -547,10 +523,6 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
         return exceptionHandler_;
     }
 
-    HttpAppFramework &registerCustomExtensionMime(
-        const std::string &ext,
-        const std::string &mime) override;
-
   private:
     void registerHttpController(const std::string &pathPattern,
                                 const internal::HttpBinderBasePtr &binder,
@@ -604,7 +576,6 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     std::unique_ptr<SharedLibManager> sharedLibManagerPtr_;
 #endif
 
-    std::vector<std::pair<std::string, std::string>> sslConfCmds_;
     std::string sslCertPath_;
     std::string sslKeyPath_;
 
@@ -634,9 +605,7 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     size_t clientMaxWebSocketMessageSize_{128 * 1024};
     std::string homePageFile_{"index.html"};
     std::function<void()> termSignalHandler_{[]() { app().quit(); }};
-    std::function<void()> intSignalHandler_{[]() { app().quit(); }};
     std::unique_ptr<SessionManager> sessionManagerPtr_;
-    std::unique_ptr<trantor::AsyncFileLogger> asyncFileLoggerPtr_;
     Json::Value jsonConfig_;
     HttpResponsePtr custom404_;
     std::function<HttpResponsePtr(HttpStatusCode)> customErrorHandler_ =
@@ -668,9 +637,7 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     std::vector<
         std::function<void(const HttpRequestPtr &, const HttpResponsePtr &)>>
         postHandlingAdvices_;
-    std::vector<
-        std::function<void(const HttpRequestPtr &, const HttpResponsePtr &)>>
-        preSendingAdvices_;
+
     std::vector<std::function<void(const HttpRequestPtr &)>>
         preRoutingObservers_;
     std::vector<std::function<void(const HttpRequestPtr &)>>

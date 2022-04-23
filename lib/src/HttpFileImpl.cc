@@ -14,13 +14,17 @@
 
 #include "HttpFileImpl.h"
 #include "HttpAppFrameworkImpl.h"
-#include "filesystem.h"
 #include <drogon/MultiPart.h>
 #include <fstream>
 #include <iostream>
-#include <algorithm>
 
 using namespace drogon;
+// Verify if last char of path is a slash, otherwise, add the slash
+static inline void ensureSlashPostfix(std::string &path)
+{
+    if (path[path.length() - 1] != '/')
+        path += '/';
+}
 
 int HttpFileImpl::save() const
 {
@@ -32,77 +36,59 @@ int HttpFileImpl::save(const std::string &path) const
     assert(!path.empty());
     if (fileName_.empty())
         return -1;
-    filesystem::path fsUploadDir(utils::toNativePath(path));
-
-    if (!fsUploadDir.is_absolute() && (!fsUploadDir.has_parent_path() ||
-                                       (fsUploadDir.begin()->string() != "." &&
-                                        fsUploadDir.begin()->string() != "..")))
+    std::string fileName;
+    if (path[0] == '/' ||
+        (path.length() >= 2 && path[0] == '.' && path[1] == '/') ||
+        (path.length() >= 3 && path[0] == '.' && path[1] == '.' &&
+         path[2] == '/') ||
+        path == "." || path == "..")
     {
-        fsUploadDir = utils::toNativePath(
-                          HttpAppFrameworkImpl::instance().getUploadPath()) /
-                      fsUploadDir;
+        // Absolute or relative path
+        fileName = path;
     }
-
-    fsUploadDir = filesystem::weakly_canonical(fsUploadDir);
-
-    if (!filesystem::exists(fsUploadDir))
+    else
     {
-        LOG_TRACE << "create path:" << fsUploadDir;
-        drogon::error_code err;
-        filesystem::create_directories(fsUploadDir, err);
-        if (err)
-        {
-            LOG_SYSERR;
-            return -1;
-        }
+        fileName = HttpAppFrameworkImpl::instance().getUploadPath();
+        ensureSlashPostfix(fileName);
+        fileName += path;
     }
-
-    filesystem::path fsSaveToPath(filesystem::weakly_canonical(
-        fsUploadDir / utils::toNativePath(fileName_)));
-
-    if (!std::equal(fsUploadDir.begin(),
-                    fsUploadDir.end(),
-                    fsSaveToPath.begin()))
-    {
-        LOG_ERROR
-            << "Attempt writing outside of upload directory detected. Path: "
-            << fileName_;
+    if (utils::createPath(fileName) < 0)
         return -1;
-    }
-
-    return saveTo(fsSaveToPath);
+    ensureSlashPostfix(fileName);
+    fileName += fileName_;
+    return saveTo(fileName);
 }
 int HttpFileImpl::saveAs(const std::string &fileName) const
 {
     assert(!fileName.empty());
-    filesystem::path fsFileName(utils::toNativePath(fileName));
-    if (!fsFileName.is_absolute() && (!fsFileName.has_parent_path() ||
-                                      (fsFileName.begin()->string() != "." &&
-                                       fsFileName.begin()->string() != "..")))
+    std::string pathAndFileName;
+    if (fileName[0] == '/' ||
+        (fileName.length() >= 2 && fileName[0] == '.' && fileName[1] == '/') ||
+        (fileName.length() >= 3 && fileName[0] == '.' && fileName[1] == '.' &&
+         fileName[2] == '/'))
     {
-        filesystem::path fsUploadPath(utils::toNativePath(
-            HttpAppFrameworkImpl::instance().getUploadPath()));
-        fsFileName = fsUploadPath / fsFileName;
+        // Absolute or relative path
+        pathAndFileName = fileName;
     }
-    if (fsFileName.has_parent_path() &&
-        !filesystem::exists(fsFileName.parent_path()))
+    else
     {
-        LOG_TRACE << "create path:" << fsFileName.parent_path();
-        drogon::error_code err;
-        filesystem::create_directories(fsFileName.parent_path(), err);
-        if (err)
-        {
-            LOG_SYSERR;
+        pathAndFileName = HttpAppFrameworkImpl::instance().getUploadPath();
+        ensureSlashPostfix(pathAndFileName);
+        pathAndFileName += fileName;
+    }
+    auto pathPos = pathAndFileName.rfind('/');
+    if (pathPos != std::string::npos)
+    {
+        std::string path = pathAndFileName.substr(0, pathPos);
+        if (utils::createPath(path) < 0)
             return -1;
-        }
     }
-    return saveTo(fsFileName);
+    return saveTo(pathAndFileName);
 }
-int HttpFileImpl::saveTo(const filesystem::path &pathAndFileName) const
+int HttpFileImpl::saveTo(const std::string &pathAndFileName) const
 {
     LOG_TRACE << "save uploaded file:" << pathAndFileName;
-    auto wPath = utils::toNativePath(pathAndFileName.native());
-    std::ofstream file(wPath, std::ios::binary);
+    std::ofstream file(pathAndFileName, std::ios::binary);
     if (file.is_open())
     {
         file.write(fileContent_.data(), fileContent_.size());
@@ -115,7 +101,6 @@ int HttpFileImpl::saveTo(const filesystem::path &pathAndFileName) const
         return -1;
     }
 }
-
 std::string HttpFileImpl::getMd5() const
 {
     return utils::getMd5(fileContent_.data(), fileContent_.size());

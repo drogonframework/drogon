@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<pre id="log"></pre>
+<script>
+  // helper function: log message to screen
+  function log(msg) {
+    document.getElementById('log').textContent += msg + '\n';
+  }
+
+  // setup websocket with callbacks
+  var ws = new WebSocket("ws://127.0.0.1:8848/chat");
+  ws.onopen = function() {
+    log('CONNECT');
+    ws.send("hello!!!");
+  };
+  ws.onclose = function() {
+    log('DISCONNECT');
+  };
+  ws.onmessage = function(event) {
+    log('MESSAGE: ' + event.data);
+    // ws.send(event.data);
+    // ws.send(event.data);
+  };
+</script>

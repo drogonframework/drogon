@@ -61,7 +61,6 @@ for(auto convertMethod : convertMethods ) {
 %>
 
 using namespace drogon;
-using namespace drogon::orm;
 using namespace drogon_model::[[dbName]]<%c++
 auto &schema=@@.get<std::string>("schema");
 if(!schema.empty())
@@ -177,7 +176,7 @@ const std::string &[[className]]::getColumnName(size_t index) noexcept(false)
                 $$<<"            }\n";
                 $$<<"        }\n";
                 continue;
-            }
+            } 
             else if(col.colDatabaseType_=="bytea")
             {
                 $$<<"            auto str = r[\""<<col.colName_<<"\"].as<string_view>();\n";
@@ -192,7 +191,7 @@ const std::string &[[className]]::getColumnName(size_t index) noexcept(false)
                 $$<<"            }\n";
                 $$<<"        }\n";
                 continue;
-            }
+            }           
 %>
             {%col.colValName_%}_=std::make_shared<{%col.colType_%}>(r["{%col.colName_%}"].as<{%col.colType_%}>());
 <%c++
@@ -268,7 +267,7 @@ const std::string &[[className]]::getColumnName(size_t index) noexcept(false)
                 $$<<"            }\n";
                 $$<<"        }\n";
                 continue;
-            }
+            } 
             else if(col.colDatabaseType_=="bytea")
             {
                 $$<<"            auto str = r[index].as<string_view>();\n";
@@ -283,7 +282,7 @@ const std::string &[[className]]::getColumnName(size_t index) noexcept(false)
                 $$<<"            }\n";
                 $$<<"        }\n";
                 continue;
-            }
+            }           
 %>
             {%col.colValName_%}_=std::make_shared<{%col.colType_%}>(r[index].as<{%col.colType_%}>());
 <%c++
@@ -307,7 +306,7 @@ const std::string &[[className]]::getColumnName(size_t index) noexcept(false)
 <%c++
     for(size_t i=0; i<cols.size(); ++i)
     {
-        auto &col = cols[i];
+        auto &col = cols[i];        
         if(col.colType_.empty())
             continue;
 %>
@@ -379,7 +378,7 @@ const std::string &[[className]]::getColumnName(size_t index) noexcept(false)
                 $$<<"        }\n";
                 $$<<"    }\n";
                 continue;
-            }
+            } 
             else if(col.colDatabaseType_=="bytea" || col.colDatabaseType_.find("blob") != std::string::npos)
             {
                 $$<<"        if(!pJson[pMasqueradingVector["<<i<<"]].isNull())\n";
@@ -393,7 +392,7 @@ const std::string &[[className]]::getColumnName(size_t index) noexcept(false)
                 $$<<"        }\n";
                 $$<<"    }\n";
                 continue;
-            }
+            } 
             else if(col.colType_.find("uint") == 0 || col.colType_ == "unsigned short")
             {
                 $$<<"        if(!pJson[pMasqueradingVector["<<i<<"]].isNull())\n";
@@ -458,10 +457,10 @@ const std::string &[[className]]::getColumnName(size_t index) noexcept(false)
                 $$<<"        }\n";
                 $$<<"    }\n";
                 continue;
-            }
+            }      
 %>
         }
-<%c++
+<%c++   
     }
 %>
 }
@@ -539,10 +538,10 @@ const std::string &[[className]]::getColumnName(size_t index) noexcept(false)
                     $$<<"            "<< convertMethod->methodBeforeDbWrite() << "(" << col.colValName_ << "_);\n";
                 } //endif
                 $$<<"            }\n";
-                 $$<<"        }\n";
+                 $$<<"        }\n";               
                 $$<<"    }\n";
                 continue;
-            }
+            } 
             else if(col.colDatabaseType_=="bytea" || col.colDatabaseType_.find("blob") != std::string::npos)
             {
                 $$<<"        if(!pJson[\""<<col.colName_<<"\"].isNull())\n";
@@ -553,10 +552,10 @@ const std::string &[[className]]::getColumnName(size_t index) noexcept(false)
                 if (convertMethod != convertMethods.end() && convertMethod->methodBeforeDbWrite() != "") {
                     $$<<"            "<< convertMethod->methodBeforeDbWrite() << "(" << col.colValName_ << "_);\n";
                 } //endif
-                $$<<"        }\n";
+                $$<<"        }\n";                
                 $$<<"    }\n";
                 continue;
-            }
+            } 
             else if(col.colType_.find("uint") == 0 || col.colType_ == "unsigned short")
             {
                 $$<<"        if(!pJson[\""<<col.colName_<<"\"].isNull())\n";
@@ -566,7 +565,7 @@ const std::string &[[className]]::getColumnName(size_t index) noexcept(false)
                 if (convertMethod != convertMethods.end() && convertMethod->methodBeforeDbWrite() != "") {
                     $$<<"            "<< convertMethod->methodBeforeDbWrite() << "(" << col.colValName_ << "_);\n";
                 } //endif
-                $$<<"        }\n";
+                $$<<"        }\n";                 
                 $$<<"    }\n";
                 continue;
             }
@@ -579,7 +578,7 @@ const std::string &[[className]]::getColumnName(size_t index) noexcept(false)
                 if (convertMethod != convertMethods.end() && convertMethod->methodBeforeDbWrite() != "") {
                     $$<<"            "<< convertMethod->methodBeforeDbWrite() << "(" << col.colValName_ << "_);\n";
                 } //endif
-                $$<<"        }\n";
+                $$<<"        }\n";                  
                 $$<<"    }\n";
                 continue;
             }
@@ -592,7 +591,7 @@ const std::string &[[className]]::getColumnName(size_t index) noexcept(false)
                 if (convertMethod != convertMethods.end() && convertMethod->methodBeforeDbWrite() != "") {
                     $$<<"            "<< convertMethod->methodBeforeDbWrite() << "(" << col.colValName_ << "_);\n";
                 } //endif
-                $$<<"        }\n";
+                $$<<"        }\n";                 
                 $$<<"     }\n";
                 continue;
             }
@@ -605,7 +604,7 @@ const std::string &[[className]]::getColumnName(size_t index) noexcept(false)
                 if (convertMethod != convertMethods.end() && convertMethod->methodBeforeDbWrite() != "") {
                     $$<<"            "<< convertMethod->methodBeforeDbWrite() << "(" << col.colValName_ << "_);\n";
                 } //endif
-                $$<<"        }\n";
+                $$<<"        }\n";                 
                 $$<<"    }\n";
                 continue;
             }
@@ -618,10 +617,10 @@ const std::string &[[className]]::getColumnName(size_t index) noexcept(false)
                 if (convertMethod != convertMethods.end() && convertMethod->methodBeforeDbWrite() != "") {
                     $$<<"            "<< convertMethod->methodBeforeDbWrite() << "(" << col.colValName_ << "_);\n";
                 } //endif
-                $$<<"        }\n";
+                $$<<"        }\n";  
                 $$<<"    }\n";
                 continue;
-            }
+            }      
 %>
     }
 <%c++
@@ -714,7 +713,7 @@ void [[className]]::updateByMasqueradedJson(const Json::Value &pJson,
                 $$<<"        }\n";
                 $$<<"    }\n";
                 continue;
-            }
+            } 
             else if(col.colDatabaseType_=="bytea" || col.colDatabaseType_.find("blob") != std::string::npos)
             {
                 $$<<"        if(!pJson[pMasqueradingVector["<<i<<"]].isNull())\n";
@@ -728,7 +727,7 @@ void [[className]]::updateByMasqueradedJson(const Json::Value &pJson,
                 $$<<"        }\n";
                 $$<<"    }\n";
                 continue;
-            }
+            } 
             else if(col.colType_.find("uint") == 0 || col.colType_ == "unsigned short")
             {
                 $$<<"        if(!pJson[pMasqueradingVector["<<i<<"]].isNull())\n";
@@ -793,14 +792,14 @@ void [[className]]::updateByMasqueradedJson(const Json::Value &pJson,
                 $$<<"        }\n";
                 $$<<"    }\n";
                 continue;
-            }
+            }      
 %>
         }
 <%c++
     }
     %>
 }
-
+                                                                    
 void [[className]]::updateByJson(const Json::Value &pJson) noexcept(false)
 {
 <%c++
@@ -880,7 +879,7 @@ void [[className]]::updateByJson(const Json::Value &pJson) noexcept(false)
                 $$<<"        }\n";
                 $$<<"    }\n";
                 continue;
-            }
+            } 
             else if(col.colDatabaseType_=="bytea" || col.colDatabaseType_.find("blob") != std::string::npos)
             {
                 $$<<"        if(!pJson[\""<<col.colName_<<"\"].isNull())\n";
@@ -894,7 +893,7 @@ void [[className]]::updateByJson(const Json::Value &pJson) noexcept(false)
                 $$<<"        }\n";
                 $$<<"    }\n";
                 continue;
-            }
+            } 
             else if(col.colType_.find("uint") == 0 || col.colType_ == "unsigned short")
             {
                 $$<<"        if(!pJson[\""<<col.colName_<<"\"].isNull())\n";
@@ -959,7 +958,7 @@ void [[className]]::updateByJson(const Json::Value &pJson) noexcept(false)
                 $$<<"        }\n";
                 $$<<"    }\n";
                 continue;
-            }
+            }      
 %>
         }
 <%c++
@@ -994,7 +993,7 @@ void [[className]]::updateByJson(const Json::Value &pJson) noexcept(false)
             $$<<"{\n";
             $$<<"    return "<<col.colValName_<<"_;\n";
             $$<<"}\n";
-
+ 
                 $$<<"void "<<className<<"::set"<<col.colTypeName_<<"(const "<<col.colType_<<" &p"<<col.colTypeName_<<") noexcept\n";
                 $$<<"{\n";
                 if(col.colDatabaseType_=="date")
@@ -1007,7 +1006,7 @@ void [[className]]::updateByJson(const Json::Value &pJson) noexcept(false)
                 }
                 $$<<"    dirtyFlag_["<<i<<"] = true;\n";
                 $$<<"}\n";
-
+                
                 if(col.colType_=="std::string")
                 {
                     $$<<"void "<<className<<"::set"<<col.colTypeName_<<"("<<col.colType_<<" &&p"<<col.colTypeName_<<") noexcept\n";
@@ -1044,7 +1043,7 @@ void [[className]]::updateByJson(const Json::Value &pJson) noexcept(false)
                 $$<<"}\n";
             }
         }
-        $$<<"\n";
+        $$<<"\n";    
     }
     if(@@.get<std::string>("rdbms")=="postgresql"||@@.get<int>("hasPrimaryKey")!=1)
     {
@@ -1329,7 +1328,7 @@ bool [[className]]::validateMasqueradedJsonForCreation(const Json::Value &pJson,
       }
 <%c++}%>
     }
-    catch(const Json::LogicError &e)
+    catch(const Json::LogicError &e) 
     {
       err = e.what();
       return false;
@@ -1359,7 +1358,7 @@ bool [[className]]::validateJsonForUpdate(const Json::Value &pJson, std::string 
         err = "The value of primary key must be set in the json object for update";
         return false;
     }
-<%c++
+<%c++        
     }
 }%>
     return true;
@@ -1386,7 +1385,7 @@ bool [[className]]::validateMasqueradedJsonForUpdate(const Json::Value &pJson,
           if(!validJsonOfField({%i%}, pMasqueradingVector[{%i%}], pJson[pMasqueradingVector[{%i%}]], err, false))
               return false;
       }
-<%c++
+<%c++    
     if(col.isPrimaryKey_)
     {
 %>
@@ -1395,11 +1394,11 @@ bool [[className]]::validateMasqueradedJsonForUpdate(const Json::Value &pJson,
         err = "The value of primary key must be set in the json object for update";
         return false;
     }
-<%c++
+<%c++        
     }
 }%>
     }
-    catch(const Json::LogicError &e)
+    catch(const Json::LogicError &e) 
     {
       err = e.what();
       return false;
@@ -1408,8 +1407,8 @@ bool [[className]]::validateMasqueradedJsonForUpdate(const Json::Value &pJson,
 }
 bool [[className]]::validJsonOfField(size_t index,
      {%indentStr%}                   const std::string &fieldName,
-     {%indentStr%}                   const Json::Value &pJson,
-     {%indentStr%}                   std::string &err,
+     {%indentStr%}                   const Json::Value &pJson, 
+     {%indentStr%}                   std::string &err, 
      {%indentStr%}                   bool isForCreation)
 {
     switch(index)
@@ -1430,7 +1429,7 @@ bool [[className]]::validJsonOfField(size_t index,
             }
 <%c++}
             if(col.isAutoVal_)
-            {
+            {  
                 if(col.isPrimaryKey_)
                 {
 %>
@@ -1438,8 +1437,8 @@ bool [[className]]::validJsonOfField(size_t index,
             {
                 err="The automatic primary key cannot be set";
                 return false;
-            }
-<%c++
+            }        
+<%c++                    
                 }else
                 {
 %>
@@ -1453,15 +1452,15 @@ bool [[className]]::validJsonOfField(size_t index,
                 err="The automatic primary key cannot be update";
                 return false;
             }
-<%c++
+<%c++                    
                 }
-            }
+            } 
 if(!col.notNull_){%>
             if(pJson.isNull())
             {
                 return true;
             }
-<%c++}
+<%c++}            
             if(col.colType_ == "uint64_t")
             {
 %>
@@ -1520,7 +1519,7 @@ if(!col.notNull_){%>
                 err="Type error in the "+fieldName+" field";
                 return false;
             }
-<%c++
+<%c++               
             }
             else
             {
@@ -1528,7 +1527,7 @@ if(!col.notNull_){%>
             if(!pJson.isString())
             {
                 err="Type error in the "+fieldName+" field";
-                return false;
+                return false;                
             }
 <%c++
                 if(col.colType_ == "std::string" && col.colLength_>0)
@@ -1540,7 +1539,7 @@ if(!col.notNull_){%>
                 err="String length exceeds limit for the " +
                     fieldName +
                     " field (the maximum value is {%col.colLength_%})";
-                return false;
+                return false;               
             }
 
 <%c++
@@ -1549,7 +1548,7 @@ if(!col.notNull_){%>
 %>
             break;
 <%c++
-}%>
+}%>     
         default:
             err="Internal error in the server";
             return false;
@@ -1579,7 +1578,7 @@ for(auto &relationship : relationships)
                 }
                 std::string alind(alias.length(), ' ');
 %>
-void [[className]]::get{%alias%}(const DbClientPtr &clientPtr,
+void [[className]]::get{%alias%}(const DbClientPtr &clientPtr, 
      {%indentStr%}     {%alind%} const std::function<void({%relationshipClassName%})> &rcb,
      {%indentStr%}     {%alind%} const ExceptionCallback &ecb) const
 <%c++
@@ -1588,7 +1587,7 @@ void [[className]]::get{%alias%}(const DbClientPtr &clientPtr,
             {
                 std::string relationshipClassInde(relationshipClassName.length(), ' ');
 %>
-void [[className]]::get{%relationshipClassName%}(const DbClientPtr &clientPtr,
+void [[className]]::get{%relationshipClassName%}(const DbClientPtr &clientPtr, 
      {%indentStr%}     {%relationshipClassInde%} const std::function<void({%relationshipClassName%})> &rcb,
      {%indentStr%}     {%relationshipClassInde%} const ExceptionCallback &ecb) const
 <%c++
@@ -1605,7 +1604,7 @@ void [[className]]::get{%relationshipClassName%}(const DbClientPtr &clientPtr,
                 $$<<"?";
             }%>";
     *clientPtr << sql
-               << *{%nameTransform(relationship.originalKey(), false)%}_
+               << *{%nameTransform(relationship.originalKey(), false)%}_ 
                >> [rcb = std::move(rcb), ecb](const Result &r){
                     if (r.size() == 0)
                     {
@@ -1634,7 +1633,7 @@ void [[className]]::get{%relationshipClassName%}(const DbClientPtr &clientPtr,
                 }
                 std::string alind(alias.length(), ' ');
 %>
-void [[className]]::get{%alias%}(const DbClientPtr &clientPtr,
+void [[className]]::get{%alias%}(const DbClientPtr &clientPtr, 
      {%indentStr%}     {%alind%} const std::function<void(std::vector<{%relationshipClassName%}>)> &rcb,
      {%indentStr%}     {%alind%} const ExceptionCallback &ecb) const
 <%c++
@@ -1643,7 +1642,7 @@ void [[className]]::get{%alias%}(const DbClientPtr &clientPtr,
             {
                 std::string relationshipClassInde(relationshipClassName.length(), ' ');
 %>
-void [[className]]::get{%relationshipClassName%}(const DbClientPtr &clientPtr,
+void [[className]]::get{%relationshipClassName%}(const DbClientPtr &clientPtr, 
      {%indentStr%}     {%relationshipClassInde%} const std::function<void(std::vector<{%relationshipClassName%}>)> &rcb,
      {%indentStr%}     {%relationshipClassInde%} const ExceptionCallback &ecb) const
 <%c++
@@ -1660,10 +1659,10 @@ void [[className]]::get{%relationshipClassName%}(const DbClientPtr &clientPtr,
                 $$<<"?";
             }%>";
     *clientPtr << sql
-               << *{%nameTransform(relationship.originalKey(), false)%}_
+               << *{%nameTransform(relationship.originalKey(), false)%}_ 
                >> [rcb = std::move(rcb)](const Result &r){
                    std::vector<{%relationshipClassName%}> ret;
-                   ret.reserve(r.size());
+                   ret.reserve(ret.size());
                    for (auto const &row : r)
                    {
                        ret.emplace_back({%relationshipClassName%}(row));
@@ -1688,7 +1687,7 @@ void [[className]]::get{%relationshipClassName%}(const DbClientPtr &clientPtr,
                 }
                 std::string alind(alias.length(), ' ');
 %>
-void [[className]]::get{%alias%}(const DbClientPtr &clientPtr,
+void [[className]]::get{%alias%}(const DbClientPtr &clientPtr, 
      {%indentStr%}     {%alind%} const std::function<void(std::vector<std::pair<{%relationshipClassName%},{%pivotTableClassName%}>>)> &rcb,
      {%indentStr%}     {%alind%} const ExceptionCallback &ecb) const
 <%c++
@@ -1697,7 +1696,7 @@ void [[className]]::get{%alias%}(const DbClientPtr &clientPtr,
             {
                 std::string relationshipClassInde(relationshipClassName.length(), ' ');
 %>
-void [[className]]::get{%relationshipClassName%}(const DbClientPtr &clientPtr,
+void [[className]]::get{%relationshipClassName%}(const DbClientPtr &clientPtr, 
      {%indentStr%}     {%relationshipClassInde%} const std::function<void(std::vector<std::pair<{%relationshipClassName%},{%pivotTableClassName%}>>)> &rcb,
      {%indentStr%}     {%relationshipClassInde%} const ExceptionCallback &ecb) const
 <%c++
@@ -1714,10 +1713,10 @@ void [[className]]::get{%relationshipClassName%}(const DbClientPtr &clientPtr,
                 $$<<"?";
             }%> and {%pivotTableName%}.{%pivotTargetKey%} = {%name%}.{%relationship.targetKey()%}";
     *clientPtr << sql
-               << *{%nameTransform(relationship.originalKey(), false)%}_
+               << *{%nameTransform(relationship.originalKey(), false)%}_ 
                >> [rcb = std::move(rcb)](const Result &r){
                    std::vector<std::pair<{%relationshipClassName%},{%pivotTableClassName%}>> ret;
-                   ret.reserve(r.size());
+                   ret.reserve(ret.size());
                    for (auto const &row : r)
                    {
                        ret.emplace_back(std::pair<{%relationshipClassName%},{%pivotTableClassName%}>(

@@ -2,6 +2,7 @@
 
 [![Build Status](https://travis-ci.com/an-tao/drogon.svg?branch=master)](https://travis-ci.com/an-tao/drogon)
 ![Build Status](https://github.com/an-tao/drogon/workflows/Build%20Drogon/badge.svg?branch=master)
+[![Build status](https://ci.appveyor.com/api/projects/status/12ffuf6j5vankgyb/branch/master?svg=true)](https://ci.appveyor.com/project/an-tao/drogon/branch/master)
 [![Total alerts](https://img.shields.io/lgtm/alerts/g/an-tao/drogon.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/an-tao/drogon/alerts/)
 [![Join the chat at https://gitter.im/drogon-web/community](https://badges.gitter.im/drogon-web/community.svg)](https://gitter.im/drogon-web/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Join the telegram group at https://t.me/joinchat/_mMNGv0748ZkMDAx](https://img.shields.io/badge/Telegram-2CA5E0?style=flat&logo=telegram&logoColor=white)](https://t.me/joinchat/_mMNGv0748ZkMDAx)
@@ -11,7 +12,7 @@ English | [简体中文](./README.zh-CN.md) | [繁體中文](./README.zh-TW.md)
 ### Overview
 **Drogon** is a C++14/17-based HTTP application framework. Drogon can be used to easily build various types of web application server programs using C++. **Drogon** is the name of a dragon in the American TV series "Game of Thrones" that I really like.
 
-Drogon is a cross-platform framework, It supports Linux, macOS, FreeBSD, OpenBSD, HaikuOS, and Windows. Its main features are as follows:
+Drogon is a cross-platform framework, It supports Linux, macOS, FreeBSD, OpenBSD, and Windows. Its main features are as follows:
 
 * Use a non-blocking I/O network lib based on epoll (kqueue under macOS/FreeBSD) to provide high-concurrency, high-performance network IO, please visit the [TFB Tests Results](https://www.techempower.com/benchmarks/#section=data-r19&hw=ph&test=composite) for more details;
 * Provide a completely asynchronous programming mode;
