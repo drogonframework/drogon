@@ -14,6 +14,7 @@
 
 #include <drogon/Cookie.h>
 #include <drogon/utils/Utilities.h>
+#include <trantor/utils/Logger.h>
 using namespace drogon;
 std::string Cookie::cookieString() const
 {
@@ -76,4 +77,25 @@ std::string Cookie::cookieString() const
     ret.resize(ret.length() - 2);  // delete last semicolon
     ret.append("\r\n");
     return ret;
+}
+
+Cookie::SameSite Cookie::convertString2SameSite(const std::string sameSite)
+{
+    if (sameSite == "Lax")
+    {
+        return Cookie::SameSite::kLax;
+    }
+    else if (sameSite == "Strict")
+    {
+        return Cookie::SameSite::kStrict;
+    }
+    else if (sameSite == "None")
+    {
+        return Cookie::SameSite::kNone;
+    }
+
+    LOG_WARN << sameSite
+             << " is not a valie SameSite policy. 'Null', 'Lax', 'Strict' or "
+                "'None' are proper values. Return value is SameSite::kNull.";
+    return Cookie::SameSite::kNull;
 }

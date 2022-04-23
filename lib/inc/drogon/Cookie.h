@@ -293,6 +293,11 @@ class DROGON_EXPORT Cookie
         return sameSite_;
     }
 
+    /**
+     * @brief convert a string value to class SameSite
+     */
+    static SameSite convertString2SameSite(const std::string sameSite);
+
   private:
     trantor::Date expiresDate_{(std::numeric_limits<int64_t>::max)()};
     bool httpOnly_{true};
