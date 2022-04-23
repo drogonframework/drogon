@@ -46,7 +46,7 @@ static inline void doResponseCreateAdvices(
     }
 }
 static inline HttpResponsePtr genHttpResponse(const std::string &viewName,
-        const HttpViewData &data)
+                                              const HttpViewData &data)
 {
     auto templ = DrTemplateBase::newTemplate(viewName);
     if (templ)
@@ -87,16 +87,16 @@ const char *HttpResponseImpl::versionString() const
     const char *result = "UNKNOWN";
     switch (version_)
     {
-    case Version::kHttp10:
-        result = "HTTP/1.0";
-        break;
+        case Version::kHttp10:
+            result = "HTTP/1.0";
+            break;
 
-    case Version::kHttp11:
-        result = "HTTP/1.1";
-        break;
+        case Version::kHttp11:
+            result = "HTTP/1.1";
+            break;
 
-    default:
-        break;
+        default:
+            break;
     }
     return result;
 }
@@ -125,7 +125,7 @@ void HttpResponseImpl::generateBodyFromJson() const
         }
     });
     bodyPtr_ = std::make_shared<HttpMessageStringBody>(
-                   writeString(builder, *jsonPtr_));
+        writeString(builder, *jsonPtr_));
 }
 
 HttpResponsePtr HttpResponse::newNotFoundResponse()
@@ -141,7 +141,7 @@ HttpResponsePtr HttpResponse::newNotFoundResponse()
         else
         {
             return HttpResponsePtr{new HttpResponseImpl(
-                    *static_cast<HttpResponseImpl *>(resp.get()))};
+                *static_cast<HttpResponseImpl *>(resp.get()))};
         }
     }
     else
@@ -153,23 +153,23 @@ HttpResponsePtr HttpResponse::newNotFoundResponse()
             static IOThreadStorage<HttpResponsePtr> thread404Pages;
             std::call_once(threadOnce, [] {
                 thread404Pages.init(
-                [](drogon::HttpResponsePtr &resp, size_t /*index*/) {
-                    if (HttpAppFrameworkImpl::instance()
-                            .isUsingCustomErrorHandler())
-                    {
-                        resp = app().getCustomErrorHandler()(k404NotFound);
-                        resp->setExpiredTime(0);
-                    }
-                    else
-                    {
-                        HttpViewData data;
-                        data.insert("version", drogon::getVersion());
-                        resp = HttpResponse::newHttpViewResponse(
-                                   "drogon::NotFound", data);
-                        resp->setStatusCode(k404NotFound);
-                        resp->setExpiredTime(0);
-                    }
-                });
+                    [](drogon::HttpResponsePtr &resp, size_t /*index*/) {
+                        if (HttpAppFrameworkImpl::instance()
+                                .isUsingCustomErrorHandler())
+                        {
+                            resp = app().getCustomErrorHandler()(k404NotFound);
+                            resp->setExpiredTime(0);
+                        }
+                        else
+                        {
+                            HttpViewData data;
+                            data.insert("version", drogon::getVersion());
+                            resp = HttpResponse::newHttpViewResponse(
+                                "drogon::NotFound", data);
+                            resp->setStatusCode(k404NotFound);
+                            resp->setExpiredTime(0);
+                        }
+                    });
             });
             LOG_TRACE << "Use cached 404 response";
             return thread404Pages.getThreadData();
@@ -201,7 +201,7 @@ HttpResponsePtr HttpResponse::newRedirectionResponse(
 }
 
 HttpResponsePtr HttpResponse::newHttpViewResponse(const std::string &viewName,
-        const HttpViewData &data)
+                                                  const HttpViewData &data)
 {
     return genHttpResponse(viewName, data);
 }
@@ -232,9 +232,9 @@ HttpResponsePtr HttpResponse::newFileResponse(
         if (type == CT_NONE)
             type = CT_APPLICATION_OCTET_STREAM;  // XXX: Is this Ok?
         static_cast<HttpResponse *>(resp.get())
-        ->setContentTypeCodeAndCustomString(type,
-                                            typeString.c_str(),
-                                            typeString.size());
+            ->setContentTypeCodeAndCustomString(type,
+                                                typeString.c_str(),
+                                                typeString.size());
     }
     else if (type != CT_NONE)
     {
@@ -269,7 +269,7 @@ HttpResponsePtr HttpResponse::newFileResponse(
     const std::string &typeString)
 {
     return newFileResponse(
-               fullPath, 0, 0, false, attachmentFileName, type, typeString);
+        fullPath, 0, 0, false, attachmentFileName, type, typeString);
 }
 
 HttpResponsePtr HttpResponse::newFileResponse(
@@ -294,7 +294,7 @@ HttpResponsePtr HttpResponse::newFileResponse(
     size_t filesize =
         static_cast<size_t>(pbuf->pubseekoff(0, std::ifstream::end));
     if (offset > filesize || length > filesize ||  // in case of overflow
-            offset + length > filesize)
+        offset + length > filesize)
     {
         resp->setStatusCode(k416RequestedRangeNotSatisfiable);
         if (setContentRange)
@@ -312,7 +312,7 @@ HttpResponsePtr HttpResponse::newFileResponse(
     pbuf->pubseekoff(offset, std::ifstream::beg);  // rewind
 
     if (HttpAppFrameworkImpl::instance().useSendfile() && length > 1024 * 200)
-        // TODO : Is 200k an appropriate value? Or set it to be configurable
+    // TODO : Is 200k an appropriate value? Or set it to be configurable
     {
         // The advantages of sendfile() can only be reflected in sending large
         // files.
@@ -526,7 +526,7 @@ void HttpResponseImpl::renderToBuffer(trantor::MsgBuffer &buffer)
 
     // output Date header
     if (!passThrough_ &&
-            drogon::HttpAppFrameworkImpl::instance().sendDateHeader())
+        drogon::HttpAppFrameworkImpl::instance().sendDateHeader())
     {
         buffer.append("date: ");
         buffer.append(utils::getHttpFullDate(trantor::Date::date()),
@@ -545,7 +545,7 @@ std::shared_ptr<trantor::MsgBuffer> HttpResponseImpl::renderToBuffer()
     if (expriedTime_ >= 0)
     {
         if (!passThrough_ &&
-                drogon::HttpAppFrameworkImpl::instance().sendDateHeader())
+            drogon::HttpAppFrameworkImpl::instance().sendDateHeader())
         {
             if (datePos_ != static_cast<size_t>(-1))
             {
@@ -598,7 +598,7 @@ std::shared_ptr<trantor::MsgBuffer> HttpResponseImpl::renderToBuffer()
 
     // output Date header
     if (!passThrough_ &&
-            drogon::HttpAppFrameworkImpl::instance().sendDateHeader())
+        drogon::HttpAppFrameworkImpl::instance().sendDateHeader())
     {
         httpString->append("date: ");
         auto datePos = httpString->readableBytes();
@@ -624,7 +624,7 @@ std::shared_ptr<trantor::MsgBuffer> HttpResponseImpl::renderToBuffer()
 }
 
 std::shared_ptr<trantor::MsgBuffer> HttpResponseImpl::
-renderHeaderForHeadMethod()
+    renderHeaderForHeadMethod()
 {
     auto httpString = std::make_shared<trantor::MsgBuffer>(256);
     if (!fullHeaderString_)
@@ -647,7 +647,7 @@ renderHeaderForHeadMethod()
 
     // output Date header
     if (!passThrough_ &&
-            drogon::HttpAppFrameworkImpl::instance().sendDateHeader())
+        drogon::HttpAppFrameworkImpl::instance().sendDateHeader())
     {
         httpString->append("date: ");
         httpString->append(utils::getHttpFullDate(trantor::Date::date()),
@@ -699,7 +699,7 @@ void HttpResponseImpl::addHeader(const char *start,
                 cookie_name = coo.substr(0, epos);
                 std::string::size_type cpos = 0;
                 while (cpos < cookie_name.length() &&
-                        isspace(cookie_name[cpos]))
+                       isspace(cookie_name[cpos]))
                     ++cpos;
                 cookie_name = cookie_name.substr(cpos);
                 ++epos;
@@ -724,9 +724,7 @@ void HttpResponseImpl::addHeader(const char *start,
                 std::transform(cookie_name.begin(),
                                cookie_name.end(),
                                cookie_name.begin(),
-                [](unsigned char c) {
-                    return tolower(c);
-                });
+                               [](unsigned char c) { return tolower(c); });
                 if (cookie_name == "path")
                 {
                     cookie.setPath(cookie_value);
@@ -749,7 +747,8 @@ void HttpResponseImpl::addHeader(const char *start,
                 }
                 else if (cookie_name == "samesite")
                 {
-                    cookie.setSameSite( cookie.convertString2SameSite(cookie_name));
+                    cookie.setSameSite(
+                        cookie.convertString2SameSite(cookie_name));
                 }
                 else if (cookie_name == "max-age")
                 {
@@ -811,9 +810,7 @@ void HttpResponseImpl::parseJson() const
 {
     static std::once_flag once;
     static Json::CharReaderBuilder builder;
-    std::call_once(once, []() {
-        builder["collectComments"] = false;
-    });
+    std::call_once(once, []() { builder["collectComments"] = false; });
     JSONCPP_STRING errs;
     std::unique_ptr<Json::CharReader> reader(builder.newCharReader());
     if (bodyPtr_)
@@ -846,8 +843,8 @@ void HttpResponseImpl::parseJson() const
 bool HttpResponseImpl::shouldBeCompressed() const
 {
     if (!sendfileName_.empty() ||
-            contentType() >= CT_APPLICATION_OCTET_STREAM ||
-            getBody().length() < 1024 || !(getHeaderBy("content-encoding").empty()))
+        contentType() >= CT_APPLICATION_OCTET_STREAM ||
+        getBody().length() < 1024 || !(getHeaderBy("content-encoding").empty()))
     {
         return false;
     }
@@ -855,7 +852,7 @@ bool HttpResponseImpl::shouldBeCompressed() const
 }
 
 void HttpResponseImpl::setContentTypeString(const char *typeString,
-        size_t typeStringLength)
+                                            size_t typeStringLength)
 {
     std::string sv(typeString, typeStringLength);
     auto contentType = parseContentType(sv);
