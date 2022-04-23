@@ -79,7 +79,8 @@ std::string Cookie::cookieString() const
     return ret;
 }
 
-Cookie::SameSite Cookie::convertString2SameSite(const std::string sameSite)
+Cookie::SameSite Cookie::convertString2SameSite(
+    const drogon::string_view& sameSite)
 {
     if (sameSite == "Lax")
     {
@@ -94,8 +95,8 @@ Cookie::SameSite Cookie::convertString2SameSite(const std::string sameSite)
         return Cookie::SameSite::kNone;
     }
 
-    LOG_WARN << sameSite
-             << " is not a valie SameSite policy. 'Null', 'Lax', 'Strict' or "
+    LOG_WARN << "'" << sameSite
+             << "' is not a valie SameSite policy. 'Null', 'Lax', 'Strict' or "
                 "'None' are proper values. Return value is SameSite::kNull.";
     return Cookie::SameSite::kNull;
 }

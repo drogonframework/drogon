@@ -737,9 +737,10 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
        @endcode
      */
     inline HttpAppFramework &enableSession(
-        const std::chrono::duration<double> &timeout)
+        const std::chrono::duration<double> &timeout,
+        Cookie::SameSite sameSite = Cookie::SameSite::kNull)
     {
-        return enableSession((size_t)timeout.count());
+        return enableSession((size_t)timeout.count(), sameSite);
     }
 
     /// Disable sessions supporting.
