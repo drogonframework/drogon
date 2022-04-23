@@ -79,8 +79,7 @@ std::string Cookie::cookieString() const
     return ret;
 }
 
-Cookie::SameSite Cookie::convertString2SameSite(
-    const drogon::string_view& sameSite)
+Cookie::SameSite Cookie::convertString2SameSite(const string_view& sameSite)
 {
     if (sameSite == "Lax")
     {
