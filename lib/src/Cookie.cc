@@ -93,9 +93,13 @@ Cookie::SameSite Cookie::convertString2SameSite(const string_view& sameSite)
     {
         return Cookie::SameSite::kNone;
     }
+    else if (sameSite != "Null")
+    {
+        LOG_WARN
+            << "'" << sameSite
+            << "' is not a valid SameSite policy. 'Null', 'Lax', 'Strict' or "
+               "'None' are proper values. Return value is SameSite::kNull.";
+    }
 
-    LOG_WARN << "'" << sameSite
-             << "' is not a valie SameSite policy. 'Null', 'Lax', 'Strict' or "
-                "'None' are proper values. Return value is SameSite::kNull.";
     return Cookie::SameSite::kNull;
 }
