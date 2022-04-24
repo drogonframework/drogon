@@ -748,7 +748,7 @@ void HttpResponseImpl::addHeader(const char *start,
                 else if (cookie_name == "samesite")
                 {
                     cookie.setSameSite(
-                        cookie.convertString2SameSite(cookie_name));
+                        cookie.convertString2SameSite(cookie_value));
                 }
                 else if (cookie_name == "max-age")
                 {

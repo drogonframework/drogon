@@ -103,9 +103,16 @@ add_custom_command(
           ${CMAKE_CURRENT_SOURCE_DIR}/integration_test/server/a-directory
           $<TARGET_FILE_DIR:integration_test_server>/a-directory)
 
-set(tests unittest integration_test_server integration_test_client)
+set(COOKIE_SAME_SITE 
+  main_CookieSameSite.cc
+  CookieSameSite.cc
+)
+add_executable(cookie_same_site ${COOKIE_SAME_SITE})
+
+set(tests unittest integration_test_server integration_test_client cookie_same_site)
 set_property(TARGET ${tests} PROPERTY CXX_STANDARD ${DROGON_CXX_STANDARD})
 set_property(TARGET ${tests} PROPERTY CXX_STANDARD_REQUIRED ON)
 set_property(TARGET ${tests} PROPERTY CXX_EXTENSIONS OFF)
 
-parseandadddrogontests(unittest)
+ParseAndAddDrogonTests(unittest)
+ParseAndAddDrogonTests(cookie_same_site)

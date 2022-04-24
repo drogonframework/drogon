@@ -762,6 +762,7 @@ void HttpAppFrameworkImpl::callCallback(
                 newResp->setExpiredTime(-1);  // make it temporary
                 auto jsessionid = Cookie("JSESSIONID", sessionPtr->sessionId());
                 jsessionid.setPath("/");
+                jsessionid.setSameSite(sessionSameSite_);
                 newResp->addCookie(std::move(jsessionid));
                 sessionPtr->hasSet();
                 callback(newResp);
@@ -771,6 +772,7 @@ void HttpAppFrameworkImpl::callCallback(
             {
                 auto jsessionid = Cookie("JSESSIONID", sessionPtr->sessionId());
                 jsessionid.setPath("/");
+                jsessionid.setSameSite(sessionSameSite_);
                 resp->addCookie(std::move(jsessionid));
                 sessionPtr->hasSet();
                 callback(resp);
