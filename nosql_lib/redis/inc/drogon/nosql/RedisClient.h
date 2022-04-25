@@ -21,6 +21,7 @@
 #include <trantor/utils/Logger.h>
 #include <memory>
 #include <functional>
+#include <future>
 #ifdef __cpp_impl_coroutine
 #include <drogon/utils/coroutine.h>
 #endif
@@ -61,7 +62,7 @@ struct [[nodiscard]] RedisAwaiter : public CallbackAwaiter<RedisResult>
 };
 
 struct [[nodiscard]] RedisTransactionAwaiter
-    : public CallbackAwaiter<std::shared_ptr<RedisTransaction> >
+    : public CallbackAwaiter<std::shared_ptr<RedisTransaction>>
 {
     RedisTransactionAwaiter(RedisClient *client) : client_(client)
     {
@@ -121,6 +122,62 @@ class DROGON_EXPORT RedisClient
                                   RedisExceptionCallback &&exceptionCallback,
                                   string_view command,
                                   ...) noexcept = 0;
+
+    /**
+     * @brief Execute a redis command synchronously
+     *
+     * @param processFunc Function to extract data from redis result.
+     * received successfully.
+     * @param command The command to be executed. the command string can contain
+     * some placeholders for parameters, such as '%s', '%d', etc.
+     * @param ... The command parameters.
+     * @return Returns the same value as process callback.
+     * For example:
+     * @code
+       try
+       {
+           std::string res = redisClientPtr->execCommandSync<std::string>(
+               [](const RedisResult &r){
+                   return r.asString();
+               },
+               "get %s",
+               key.data()
+           );
+       }
+       catch (const RedisException & err)
+       {
+       }
+       catch (const std::exception & err)
+       {
+       }
+       @endcode
+     */
+    template <typename T, typename... Args>
+    T execCommandSync(std::function<T(const RedisResult &)> &&processFunc,
+                      string_view command,
+                      Args &&...args)
+    {
+        std::shared_ptr<std::promise<T>> pro(new std::promise<T>);
+        std::future<T> f = pro->get_future();
+        execCommandAsync(
+            [process = std::move(processFunc), pro](const RedisResult &result) {
+                try
+                {
+                    pro->set_value(process(result));
+                }
+                catch (...)
+                {
+                    pro->set_exception(std::current_exception());
+                }
+            },
+            [pro](const RedisException &err) {
+                pro->set_exception(std::make_exception_ptr(err));
+            },
+            command,
+            std::forward<Args>(args)...);
+
+        return f.get();
+    }
 
     /**
      * @brief Create a redis transaction object.
