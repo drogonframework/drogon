@@ -557,7 +557,8 @@ static void loadRedisClients(const Json::Value &redisClients)
     for (auto const &client : redisClients)
     {
         auto host = client.get("host", "127.0.0.1").asString();
-        auto hostIp = drogon::utils::resolveHost(host)[0].toIp();
+        auto hostIps = drogon::utils::resolveHost(host);
+        auto hostIp = hostIps.empty() ? "127.0.0.1" : hostIps[0].toIp();
         auto port = client.get("port", 6379).asUInt();
         auto password = client.get("passwd", "").asString();
         if (password.empty())
