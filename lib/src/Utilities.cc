@@ -1221,5 +1221,54 @@ bool secureRandomBytes(void *ptr, size_t size)
     return false;
 }
 
+std::vector<trantor::InetAddress> resolveHost(const std::string &host)
+{
+    std::vector<trantor::InetAddress> addresses;
+
+    int err{0};
+    struct addrinfo hints
+    {
+        0
+    };
+    struct addrinfo *results;
+    hints.ai_family = AF_INET;  // no ipv6
+
+#ifdef _WIN32
+    WSADATA wsaData;
+    if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0)
+        return addresses;
+#endif
+
+    if ((err = getaddrinfo(host.c_str(), nullptr, &hints, &results)) != 0)
+    {
+        LOG_ERROR << "Failed to resolve host (" << host
+                  << "): " << gai_strerror(err);
+#ifdef _WIN32
+        WSACleanup();
+#endif
+        return addresses;
+    }
+
+    for (auto r = results; r != nullptr; r = r->ai_next)
+    {
+        if (r->ai_family == AF_INET)
+        {
+            struct sockaddr_in addr = *(struct sockaddr_in *)r->ai_addr;
+            addresses.emplace_back(addr);
+        }
+        //        else if (r->ai_family == AF_INET6)
+        //        {
+        //            struct sockaddr_in6 addr = *(struct sockaddr_in6
+        //            *)r->ai_addr; addresses.emplace_back(addr);
+        //        }
+    }
+
+#ifdef _WIN32
+    WSACleanup();
+#endif
+    freeaddrinfo(results);
+    return addresses;
+};
+
 }  // namespace utils
 }  // namespace drogon

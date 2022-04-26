@@ -26,8 +26,16 @@
 #include <limits>
 #include <sstream>
 #include <algorithm>
+#include "trantor/net/InetAddress.h"
+#if defined(__linux__) || defined(__APPLE__)
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
+#endif
 #ifdef _WIN32
 #include <time.h>
+#include <winsock2.h>
+#include <ws2tcpip.h>
 DROGON_EXPORT char *strptime(const char *s, const char *f, struct tm *tm);
 DROGON_EXPORT time_t timegm(struct tm *tm);
 #endif
@@ -134,7 +142,7 @@ inline std::string getMd5(const std::string &originalString)
     return getMd5(originalString.data(), originalString.length());
 }
 
-/// Commpress or decompress data using gzip lib.
+/// Compress or decompress data using gzip lib.
 /**
  * @param data the input data
  * @param ndata the input data length
@@ -142,7 +150,7 @@ inline std::string getMd5(const std::string &originalString)
 DROGON_EXPORT std::string gzipCompress(const char *data, const size_t ndata);
 DROGON_EXPORT std::string gzipDecompress(const char *data, const size_t ndata);
 
-/// Commpress or decompress data using brotli lib.
+/// Compress or decompress data using brotli lib.
 /**
  * @param data the input data
  * @param ndata the input data length
@@ -284,7 +292,7 @@ inline std::string fromNativePath(const std::wstring &strPath)
     return trantor::utils::fromNativePath(strPath);
 }
 
-/// Replace all occurances of from to to inplace
+/// Replace all occurrences of from to to inplace
 /**
  * @param from string to replace
  * @param to string to replace with
@@ -299,12 +307,22 @@ DROGON_EXPORT void replaceAll(std::string &s,
  * @param ptr the pointer which the random bytes are stored to
  * @param size number of bytes to generate
  *
- * @return true if generation is successfull. False otherwise
+ * @return true if generation is successful. False otherwise
  *
  * @note DO NOT abuse this function. Especially if Drogon is built without
  * OpenSSL. Entropy running low is a real issue.
  */
 DROGON_EXPORT bool secureRandomBytes(void *ptr, size_t size);
+
+/**
+ * @brief Resolves the host to ip addresses
+ *
+ * @param host the host to be resolved
+ *
+ * @return a vector of ip addresses for the host
+ */
+DROGON_EXPORT std::vector<trantor::InetAddress> resolveHost(
+    const std::string &host);
 
 template <typename T>
 typename std::enable_if<internal::CanConvertFromStringStream<T>::value, T>::type
