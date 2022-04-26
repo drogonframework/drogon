@@ -19,9 +19,9 @@ using namespace drogon::nosql;
 std::shared_ptr<RedisClient> RedisClient::newRedisClient(
     const trantor::InetAddress &serverAddress,
     size_t connectionNumber,
-    const std::string &username,
     const std::string &password,
-    const unsigned int db)
+    const unsigned int db,
+    const std::string &username)
 {
     auto client = std::make_shared<RedisClientImpl>(
         serverAddress, connectionNumber, username, password, db);

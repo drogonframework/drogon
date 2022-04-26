@@ -96,9 +96,9 @@ class DROGON_EXPORT RedisClient
     static std::shared_ptr<RedisClient> newRedisClient(
         const trantor::InetAddress &serverAddress,
         size_t numberOfConnections = 1,
-        const std::string &username = "",
         const std::string &password = "",
-        const unsigned int db = 0);
+        const unsigned int db = 0,
+        const std::string &username = "");
     /**
      * @brief Execute a redis command
      *
