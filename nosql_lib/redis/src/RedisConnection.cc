@@ -99,6 +99,7 @@ void RedisConnection::startConnectionInLoop()
                 }
                 else
                 {
+                    std::string cmd = "auth " + thisPtr->username_ + " %s";
                     std::weak_ptr<RedisConnection> weakThisPtr =
                         thisPtr->shared_from_this();
                     thisPtr->sendCommand(
@@ -132,8 +133,7 @@ void RedisConnection::startConnectionInLoop()
                             thisPtr->disconnect();
                             thisPtr->status_ = ConnectStatus::kEnd;
                         },
-                        "auth %s %s",
-                        thisPtr->username_.data(),
+                        cmd,
                         thisPtr->password_.data());
                 }
 
