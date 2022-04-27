@@ -19,6 +19,10 @@
 #include <trantor/utils/Logger.h>
 #include <trantor/utils/NonCopyable.h>
 
+#ifdef _MSC_VER
+#pragma warning(disable : 4275)
+#endif
+
 namespace drogon
 {
 enum class PluginStatus
