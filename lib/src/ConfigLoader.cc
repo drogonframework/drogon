@@ -554,30 +554,33 @@ static void loadRedisClients(const Json::Value &redisClients)
 {
     if (!redisClients)
         return;
+    std::promise<std::string> promise;
+    auto future = promise.get_future();
     for (auto const &client : redisClients)
     {
         auto host = client.get("host", "127.0.0.1").asString();
         trantor::Resolver::newResolver()->resolve(
-            host, [client](const trantor::InetAddress &address) {
-                auto hostIp = address.toIp();
-                auto port = client.get("port", 6379).asUInt();
-                auto password = client.get("passwd", "").asString();
-                if (password.empty())
-                {
-                    password = client.get("password", "").asString();
-                }
-                auto connNum = client.get("connection_number", 1).asUInt();
-                if (connNum == 1)
-                {
-                    connNum = client.get("number_of_connections", 1).asUInt();
-                }
-                auto name = client.get("name", "default").asString();
-                auto isFast = client.get("is_fast", false).asBool();
-                auto timeout = client.get("timeout", -1.0).asDouble();
-                auto db = client.get("db", 0).asUInt();
-                drogon::app().createRedisClient(
-                    hostIp, port, name, password, connNum, isFast, timeout, db);
+            host, [&promise](const trantor::InetAddress &address) {
+                promise.set_value(address.toIp());
             });
+        auto port = client.get("port", 6379).asUInt();
+        auto password = client.get("passwd", "").asString();
+        if (password.empty())
+        {
+            password = client.get("password", "").asString();
+        }
+        auto connNum = client.get("connection_number", 1).asUInt();
+        if (connNum == 1)
+        {
+            connNum = client.get("number_of_connections", 1).asUInt();
+        }
+        auto name = client.get("name", "default").asString();
+        auto isFast = client.get("is_fast", false).asBool();
+        auto timeout = client.get("timeout", -1.0).asDouble();
+        auto db = client.get("db", 0).asUInt();
+        auto hostIp = future.get();
+        drogon::app().createRedisClient(
+            hostIp, port, name, password, connNum, isFast, timeout, db);
     }
 }
 
