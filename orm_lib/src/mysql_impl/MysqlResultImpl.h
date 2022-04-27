@@ -49,7 +49,7 @@ class MysqlResultImpl : public ResultImpl
                 std::transform(fieldName.begin(),
                                fieldName.end(),
                                fieldName.begin(),
-                               tolower);
+                               [](unsigned char c) { return tolower(c); });
                 (*fieldsMapPtr_)[fieldName] = i;
             }
         }

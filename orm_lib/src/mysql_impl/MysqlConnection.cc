@@ -56,6 +56,7 @@ MysqlConnection::MysqlConnection(trantor::EventLoop *loop,
 {
     mysql_init(mysqlPtr_.get());
     mysql_options(mysqlPtr_.get(), MYSQL_OPT_NONBLOCK, nullptr);
+    mysql_optionsv(mysqlPtr_.get(), MYSQL_OPT_RECONNECT, &reconnect_);
 
     // Get the key and value
     auto connParams = parseConnString(connInfo);
@@ -64,7 +65,10 @@ MysqlConnection::MysqlConnection(trantor::EventLoop *loop,
         auto key = kv.first;
         auto value = kv.second;
 
-        std::transform(key.begin(), key.end(), key.begin(), tolower);
+        std::transform(key.begin(),
+                       key.end(),
+                       key.begin(),
+                       [](unsigned char c) { return tolower(c); });
         // LOG_TRACE << key << "=" << value;
         if (key == "host")
         {

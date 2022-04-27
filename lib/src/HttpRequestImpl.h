@@ -242,7 +242,9 @@ class HttpRequestImpl : public HttpRequest
 
     virtual void removeHeader(std::string key) override
     {
-        transform(key.begin(), key.end(), key.begin(), ::tolower);
+        transform(key.begin(), key.end(), key.begin(), [](unsigned char c) {
+            return tolower(c);
+        });
         removeHeaderBy(key);
     }
 
@@ -253,7 +255,10 @@ class HttpRequestImpl : public HttpRequest
 
     const std::string &getHeader(std::string field) const override
     {
-        std::transform(field.begin(), field.end(), field.begin(), tolower);
+        std::transform(field.begin(),
+                       field.end(),
+                       field.begin(),
+                       [](unsigned char c) { return tolower(c); });
         return getHeaderBy(field);
     }
 
@@ -320,13 +325,19 @@ class HttpRequestImpl : public HttpRequest
 
     virtual void addHeader(std::string field, const std::string &value) override
     {
-        transform(field.begin(), field.end(), field.begin(), ::tolower);
+        transform(field.begin(),
+                  field.end(),
+                  field.begin(),
+                  [](unsigned char c) { return tolower(c); });
         headers_[std::move(field)] = value;
     }
 
     virtual void addHeader(std::string field, std::string &&value) override
     {
-        transform(field.begin(), field.end(), field.begin(), ::tolower);
+        transform(field.begin(),
+                  field.end(),
+                  field.begin(),
+                  [](unsigned char c) { return tolower(c); });
         headers_[std::move(field)] = std::move(value);
     }
 

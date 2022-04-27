@@ -110,6 +110,7 @@ class MysqlConnection : public DbConnection,
     void startQuery();
     void startStoreResult(bool queueInLoop);
     int waitStatus_;
+    unsigned int reconnect_{1};
     enum class ExecStatus
     {
         None = 0,

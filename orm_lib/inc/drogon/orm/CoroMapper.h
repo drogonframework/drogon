@@ -63,9 +63,9 @@ template <typename T>
 class CoroMapper : public Mapper<T>
 {
   public:
-    using SingleRowCallback = Mapper<T>::SingleRowCallback;
-    using MultipleRowsCallback = Mapper<T>::MultipleRowsCallback;
-    using CountCallback = Mapper<T>::CountCallback;
+    using SingleRowCallback = typename Mapper<T>::SingleRowCallback;
+    using MultipleRowsCallback = typename Mapper<T>::MultipleRowsCallback;
+    using CountCallback = typename Mapper<T>::CountCallback;
     using ExceptPtrCallback = std::function<void(const std::exception_ptr &)>;
 
     CoroMapper(const DbClientPtr &client) : Mapper<T>(client)

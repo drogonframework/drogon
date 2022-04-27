@@ -405,7 +405,7 @@ void HttpControllersRouter::addHttpPath(
         std::transform(originPath.begin(),
                        originPath.end(),
                        loweredPath.begin(),
-                       tolower);
+                       [](unsigned char c) { return tolower(c); });
         auto it = ctrlMap_.find(loweredPath);
         if (it != ctrlMap_.end())
             existingRouterItemPtr = &it->second;
@@ -460,7 +460,7 @@ void HttpControllersRouter::addHttpPath(
         std::transform(originPath.begin(),
                        originPath.end(),
                        loweredPath.begin(),
-                       tolower);
+                       [](unsigned char c) { return tolower(c); });
         ctrlMap_[loweredPath] = std::move(router);
     }
 }
@@ -476,7 +476,7 @@ void HttpControllersRouter::route(
     std::transform(loweredPath.begin(),
                    loweredPath.end(),
                    loweredPath.begin(),
-                   tolower);
+                   [](unsigned char c) { return tolower(c); });
 
     auto it = ctrlMap_.find(loweredPath);
     // Try to find a controller in the hash map. If can't linear search
