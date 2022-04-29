@@ -45,6 +45,7 @@ class RedisClientManager : public trantor::NonCopyable
     void createRedisClient(const std::string &name,
                            const std::string &host,
                            unsigned short port,
+                           const std::string &username,
                            const std::string &password,
                            size_t connectionNum,
                            bool isFast,
@@ -59,6 +60,7 @@ class RedisClientManager : public trantor::NonCopyable
     {
         std::string name_;
         std::string addr_;
+        std::string username_;
         std::string password_;
         unsigned short port_;
         bool isFast_;

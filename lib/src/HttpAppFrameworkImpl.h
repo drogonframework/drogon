@@ -485,7 +485,8 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
                                         size_t connectionNum,
                                         bool isFast,
                                         double timeout,
-                                        unsigned int db) override;
+                                        unsigned int db,
+                                        const std::string &username) override;
     nosql::RedisClientPtr getRedisClient(const std::string &name) override;
     nosql::RedisClientPtr getFastRedisClient(const std::string &name) override;
     std::vector<trantor::InetAddress> getListeners() const override;

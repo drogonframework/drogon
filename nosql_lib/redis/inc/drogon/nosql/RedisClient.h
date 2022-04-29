@@ -90,6 +90,7 @@ class DROGON_EXPORT RedisClient
      *
      * @param serverAddress The server address.
      * @param numberOfConnections The number of connections. 1 by default.
+     * @param username The username to authenticate if necessary.
      * @param password The password to authenticate if necessary.
      * @return std::shared_ptr<RedisClient>
      */
@@ -97,7 +98,8 @@ class DROGON_EXPORT RedisClient
         const trantor::InetAddress &serverAddress,
         size_t numberOfConnections = 1,
         const std::string &password = "",
-        const unsigned int db = 0);
+        const unsigned int db = 0,
+        const std::string &username = "");
     /**
      * @brief Execute a redis command
      *

@@ -564,6 +564,7 @@ static void loadRedisClients(const Json::Value &redisClients)
                 promise.set_value(address.toIp());
             });
         auto port = client.get("port", 6379).asUInt();
+        auto username = client.get("username", "").asString();
         auto password = client.get("passwd", "").asString();
         if (password.empty())
         {
@@ -579,8 +580,15 @@ static void loadRedisClients(const Json::Value &redisClients)
         auto timeout = client.get("timeout", -1.0).asDouble();
         auto db = client.get("db", 0).asUInt();
         auto hostIp = future.get();
-        drogon::app().createRedisClient(
-            hostIp, port, name, password, connNum, isFast, timeout, db);
+        drogon::app().createRedisClient(hostIp,
+                                        port,
+                                        name,
+                                        password,
+                                        connNum,
+                                        isFast,
+                                        timeout,
+                                        db,
+                                        username);
     }
 }
 

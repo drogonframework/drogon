@@ -41,6 +41,7 @@ class RedisConnection : public trantor::NonCopyable,
 {
   public:
     RedisConnection(const trantor::InetAddress &serverAddress,
+                    const std::string &username,
                     const std::string &password,
                     const unsigned int db,
                     trantor::EventLoop *loop);
@@ -171,6 +172,7 @@ class RedisConnection : public trantor::NonCopyable,
   private:
     redisAsyncContext *redisContext_{nullptr};
     const trantor::InetAddress serverAddr_;
+    const std::string username_;
     const std::string password_;
     const unsigned int db_;
     trantor::EventLoop *loop_{nullptr};

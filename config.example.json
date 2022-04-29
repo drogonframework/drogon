@@ -76,6 +76,8 @@
             "host": "127.0.0.1",
             //port: Server port, 6379 by default
             "port": 6379,
+            //username: '' by default which means 'default' in redis ACL
+            "username": "",
             //passwd: '' by default
             "passwd": "",
             //db index: 0 by default
