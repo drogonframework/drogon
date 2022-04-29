@@ -493,6 +493,9 @@ void HttpAppFrameworkImpl::run()
             sleep(1);
             LOG_INFO << "start new process";
         }
+#ifdef __linux__
+        getLoop()->resetTimerQueue();
+#endif
         getLoop()->resetAfterFork();
 #endif
     }
