@@ -19,6 +19,7 @@
 #include <drogon/utils/Utilities.h>
 #include <drogon/HttpRequest.h>
 #include <drogon/utils/Utilities.h>
+#include <drogon/SessionManager.h>
 #include <trantor/net/EventLoop.h>
 #include <trantor/net/InetAddress.h>
 #include <trantor/utils/Logger.h>
@@ -359,14 +360,39 @@ class HttpRequestImpl : public HttpRequest
 
     void appendToBuffer(trantor::MsgBuffer *output) const;
 
-    virtual const SessionPtr &session() const override
+    virtual SessionPtr &session() override
     {
+        if (!sessionPtr_)
+        {
+            setSession();
+        }
         return sessionPtr_;
     }
 
-    void setSession(const SessionPtr &session)
+    virtual void setSession(const SessionPtr &session) override
     {
         sessionPtr_ = session;
+    }
+
+    virtual bool setSession() override
+    {
+        if (sessionManagerPtr_)
+        {
+            std::string sessionId = utils::getUuid();
+            bool needSetJsessionid = true;
+            sessionPtr_ =
+                sessionManagerPtr_->getSession(sessionId, needSetJsessionid);
+            return true;
+        }
+        return false;
+    }
+
+    virtual void setSessionManager(SessionManager *sessionManagerPtr)
+    {
+        if (sessionManagerPtr)
+        {
+            sessionManagerPtr_ = sessionManagerPtr;
+        }
     }
 
     virtual const AttributesPtr &attributes() const override
@@ -553,6 +579,7 @@ class HttpRequestImpl : public HttpRequest
     mutable ContentType contentType_{CT_TEXT_PLAIN};
     mutable bool flagForParsingContentType_{false};
     mutable std::string contentTypeString_;
+    SessionManager *sessionManagerPtr_{nullptr};
 };
 
 using HttpRequestImplPtr = std::shared_ptr<HttpRequestImpl>;

@@ -28,7 +28,7 @@
 #include "PluginsManager.h"
 #include "ListenerManager.h"
 #include "SharedLibManager.h"
-#include "SessionManager.h"
+#include <drogon/SessionManager.h>
 #include "DbClientManager.h"
 #include "RedisClientManager.h"
 #include <drogon/config.h>
@@ -687,8 +687,18 @@ void HttpAppFrameworkImpl::findSessionForRequest(const HttpRequestImplPtr &req)
         bool needSetJsessionid = false;
         if (sessionId.empty())
         {
-            sessionId = utils::getUuid();
-            needSetJsessionid = true;
+            if (saveAnonSession_)
+            {
+                sessionId = utils::getUuid();
+                needSetJsessionid = true;
+            }
+            else
+            {
+                // attach SessionManagerPtr to allow possibility of creating
+                // session
+                req->setSessionManager(sessionManagerPtr_.get());
+                return;
+            }
         }
         req->setSession(
             sessionManagerPtr_->getSession(sessionId, needSetJsessionid));
@@ -751,48 +761,69 @@ void HttpAppFrameworkImpl::callCallback(
     if (useSession_)
     {
         auto &sessionPtr = req->getSession();
-        assert(sessionPtr);
-        if (sessionPtr->needToChangeSessionId())
+        if (sessionPtr)
         {
-            sessionManagerPtr_->changeSessionId(sessionPtr);
-        }
-        if (sessionPtr->needSetToClient())
-        {
-            if (resp->expiredTime() >= 0)
+            if (sessionPtr->needToChangeSessionId())
+            {
+                sessionManagerPtr_->changeSessionId(sessionPtr);
+            }
+            if (sessionPtr->needSetToClient())
+            {
+                if (resp->expiredTime() >= 0)
+                {
+                    auto newResp = std::make_shared<HttpResponseImpl>(
+                        *static_cast<HttpResponseImpl *>(resp.get()));
+                    newResp->setExpiredTime(-1);  // make it temporary
+                    auto jsessionid =
+                        Cookie("JSESSIONID", sessionPtr->sessionId());
+                    jsessionid.setPath("/");
+                    newResp->addCookie(std::move(jsessionid));
+                    sessionPtr->hasSet();
+                    callback(newResp);
+                    return;
+                }
+                else
+                {
+                    auto jsessionid =
+                        Cookie("JSESSIONID", sessionPtr->sessionId());
+                    jsessionid.setPath("/");
+                    resp->addCookie(std::move(jsessionid));
+                    sessionPtr->hasSet();
+                    callback(resp);
+                    return;
+                }
+            }
+            else if (resp->version() != req->version())
             {
                 auto newResp = std::make_shared<HttpResponseImpl>(
                     *static_cast<HttpResponseImpl *>(resp.get()));
+                newResp->setVersion(req->version());
                 newResp->setExpiredTime(-1);  // make it temporary
-                auto jsessionid = Cookie("JSESSIONID", sessionPtr->sessionId());
-                jsessionid.setPath("/");
-                newResp->addCookie(std::move(jsessionid));
-                sessionPtr->hasSet();
                 callback(newResp);
                 return;
             }
             else
             {
-                auto jsessionid = Cookie("JSESSIONID", sessionPtr->sessionId());
-                jsessionid.setPath("/");
-                resp->addCookie(std::move(jsessionid));
-                sessionPtr->hasSet();
                 callback(resp);
                 return;
             }
         }
-        else if (resp->version() != req->version())
-        {
-            auto newResp = std::make_shared<HttpResponseImpl>(
-                *static_cast<HttpResponseImpl *>(resp.get()));
-            newResp->setVersion(req->version());
-            newResp->setExpiredTime(-1);  // make it temporary
-            callback(newResp);
-            return;
-        }
         else
         {
-            callback(resp);
-            return;
+            if (resp->expiredTime() >= 0 && resp->version() != req->version())
+            {
+                auto newResp = std::make_shared<HttpResponseImpl>(
+                    *static_cast<HttpResponseImpl *>(resp.get()));
+                newResp->setVersion(req->version());
+                newResp->setExpiredTime(-1);  // make it temporary
+                callback(newResp);
+                return;
+            }
+            else
+            {
+                callback(resp);
+                return;
+            }
         }
     }
     else

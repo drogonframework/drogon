@@ -745,6 +745,21 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
      */
     virtual HttpAppFramework &disableSession() = 0;
 
+    /// Enable saving of anonymous sessions.
+    /**
+     *
+     * @note
+     * Saving of anonymous sessions is enabled by default
+     */
+    virtual HttpAppFramework &enableSaveAnonSession() = 0;
+
+    /// Disable saving of anonymous sessions.
+    /**
+     * @note
+     * Saving of anonymous sessions is enabled by default
+     */
+    virtual HttpAppFramework &disableSaveAnonSession() = 0;
+
     /// Set the root path of HTTP document, default path is ./
     /**
      * @note

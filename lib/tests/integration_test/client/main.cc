@@ -41,31 +41,6 @@ Cookie sessionID;
 
 void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
 {
-    /// Get cookie
-    if (!sessionID)
-    {
-        auto req = HttpRequest::newHttpRequest();
-        req->setMethod(drogon::Get);
-        req->setPath("/");
-        std::promise<int> waitCookie;
-        auto f = waitCookie.get_future();
-        client->sendRequest(req,
-                            [client, &waitCookie, TEST_CTX](
-                                ReqResult result, const HttpResponsePtr &resp) {
-                                REQUIRE(result == ReqResult::Ok);
-
-                                auto &id = resp->getCookie("JSESSIONID");
-                                REQUIRE(id);
-
-                                sessionID = id;
-                                client->addCookie(id);
-                                waitCookie.set_value(1);
-                            });
-        f.get();
-    }
-    else
-        client->addCookie(sessionID);
-
     /// Test begin advice
     auto req = HttpRequest::newHttpRequest();
     req->setMethod(drogon::Get);
@@ -85,6 +60,13 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
         req,
         [req, client, TEST_CTX](ReqResult result, const HttpResponsePtr &resp) {
             REQUIRE(result == ReqResult::Ok);
+
+            /// Get cookie
+            auto &id = resp->getCookie("JSESSIONID");
+            REQUIRE(id);
+
+            sessionID = id;
+            client->addCookie(id);
 
             auto req1 = HttpRequest::newHttpRequest();
             req1->setMethod(drogon::Get);

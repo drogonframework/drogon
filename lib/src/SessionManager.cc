@@ -12,7 +12,7 @@
  *
  */
 
-#include "SessionManager.h"
+#include <drogon/SessionManager.h>
 #include <drogon/utils/Utilities.h>
 
 using namespace drogon;
