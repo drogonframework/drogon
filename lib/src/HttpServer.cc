@@ -547,6 +547,114 @@ void HttpServer::onRequests(
     }
 }
 
+using CallbackParams = struct
+{
+    std::function<std::size_t(char *, std::size_t)> dataCallback;
+    bool bFinished;
+#ifndef NDEBUG  // defined by CMake for release build
+    std::size_t nDataReturned;
+#endif
+};
+static std::size_t chunkingCallback(std::shared_ptr<CallbackParams> cbParams,
+                                    char *pBuffer,
+                                    std::size_t nSize)
+{
+    if (!cbParams)
+        return 0;
+    // Cleanup
+    if (pBuffer == nullptr)
+    {
+        LOG_TRACE << "Chunking callback cleanup";
+        if (cbParams && cbParams->dataCallback)
+        {
+            cbParams->dataCallback(pBuffer, nSize);
+            cbParams->dataCallback = {};
+            cbParams.reset();
+        }
+        return 0;
+    }
+    // Terminal chunk already returned
+    if (cbParams->bFinished)
+    {
+        LOG_TRACE << "Chunking callback has no more data";
+#ifndef NDEBUG  // defined by CMake for release build
+        LOG_TRACE << "Chunking callback: total data returned: "
+                  << cbParams->nDataReturned << " bytes";
+#endif
+        return 0;
+    }
+    // Reserve size to prepend the chunk size & append cr/lf, and get data
+    struct
+    {
+        std::size_t operator()(std::size_t n)
+        {
+            return n == 0 ? 0 : 1 + (*this)(n >> 4);
+        }
+    } neededDigits;
+    auto nHeaderSize = neededDigits(nSize) + 2;
+    auto nDataSize =
+        cbParams->dataCallback(pBuffer + nHeaderSize, nSize - nHeaderSize - 2);
+    if (nDataSize == 0)
+    {
+        // Terminal chunk + cr/lf
+        cbParams->bFinished = true;
+#ifdef _WIN32
+        memcpy_s(pBuffer, nSize, "0\r\n\r\n", 5);
+#else
+        memcpy(pBuffer, "0\r\n\r\n", 5);
+#endif
+        LOG_TRACE << "Chunking callback: no more data, return last chunk of "
+                     "size 0 & end of message";
+        return 5;
+    }
+    // Non-terminal chunks
+    pBuffer[nHeaderSize + nDataSize] = '\r';
+    pBuffer[nHeaderSize + nDataSize + 1] = '\n';
+    // The spec does not say if the chunk size is allowed tohave leading zeroes
+    // Use a fixed size header with leading zeroes
+    // (tested to work with Chrome, Firefox, Safari, Edge, wget, curl and VLC)
+#ifdef _WIN32
+    char pszFormat[]{"%04llx\r"};
+#else
+    char pszFormat[]{"%04lx\r"};
+#endif
+    pszFormat[2] = '0' + char(nHeaderSize - 2);
+    snprintf(pBuffer, nHeaderSize, pszFormat, nDataSize);
+    pBuffer[nHeaderSize - 1] = '\n';
+    LOG_TRACE << "Chunking callback: return chunk of size " << nDataSize;
+#ifndef NDEBUG  // defined by CMake for release build
+    cbParams->nDataReturned += nDataSize;
+#endif
+    return nHeaderSize + nDataSize + 2;
+    // Alternative code if there are client softwares that do not support chunk
+    // size with leading zeroes
+    //    auto nHeaderLen =
+    //#ifdef _WIN32
+    //    sprintf_s(pBuffer,
+    //    nHeaderSize, "%llx\r",
+    //    nDataSize);
+    //#else
+    //    sprintf(pBuffer, "%lx\r",
+    //    nDataSize);
+    //#endif
+    //    pBuffer[nHeaderLen++] = '\n';
+    //    if (nHeaderLen < nHeaderSize)  // smaller that what was reserved ->
+    //    move data
+    //#ifdef _WIN32
+    //    memmove_s(pBuffer +
+    //    nHeaderLen,
+    //              nSize - nHeaderLen,
+    //              pBuffer +
+    //              nHeaderSize,
+    //              nDataSize + 2);
+    //#else
+    //    memmove(pBuffer + nHeaderLen,
+    //            pBuffer + nHeaderSize,
+    //            nDataSize + 2);
+    //#endif
+    //    return nHeaderLen + nDataSize + 2;
+}
+
 void HttpServer::sendResponse(const TcpConnectionPtr &conn,
                               const HttpResponsePtr &response,
                               bool isHeadMethod)
@@ -557,11 +665,44 @@ void HttpServer::sendResponse(const TcpConnectionPtr &conn,
     {
         auto httpString = respImplPtr->renderToBuffer();
         conn->send(httpString);
+        auto &streamCallback = respImplPtr->streamCallback();
         const std::string &sendfileName = respImplPtr->sendfileName();
-        if (!sendfileName.empty())
+        if (streamCallback || !sendfileName.empty())
         {
-            const auto &range = respImplPtr->sendfileRange();
-            conn->sendFile(sendfileName.c_str(), range.first, range.second);
+            if (streamCallback)
+            {
+                auto &headers = respImplPtr->headers();
+                // When the transfer-encoding is chunked, wrap data callback in
+                // chunking callback
+                auto bChunked =
+                    !respImplPtr->ifCloseConnection() &&
+                    (headers.find("transfer-encoding") != headers.end()) &&
+                    (headers.at("transfer-encoding") == "chunked");
+                if (bChunked)
+                {
+                    auto chunkCallback =
+                        std::bind(chunkingCallback,
+                                  std::shared_ptr<CallbackParams>(
+                                      new CallbackParams{streamCallback,
+#ifndef NDEBUG  // defined by CMake for release build
+                                                         false,
+                                                         0}),
+#else
+                                                         false}),
+#endif
+
+                                  _1,
+                                  _2);
+                    conn->sendStream(chunkCallback);
+                }
+                else
+                    conn->sendStream(streamCallback);
+            }
+            else
+            {
+                const auto &range = respImplPtr->sendfileRange();
+                conn->sendFile(sendfileName.c_str(), range.first, range.second);
+            }
         }
         COZ_PROGRESS
     }
@@ -599,13 +740,47 @@ void HttpServer::sendResponses(
         {
             // Not HEAD method
             respImplPtr->renderToBuffer(buffer);
+            auto &streamCallback = respImplPtr->streamCallback();
             const std::string &sendfileName = respImplPtr->sendfileName();
-            if (!sendfileName.empty())
+            if (streamCallback || !sendfileName.empty())
             {
-                const auto &range = respImplPtr->sendfileRange();
                 conn->send(buffer);
                 buffer.retrieveAll();
-                conn->sendFile(sendfileName.c_str(), range.first, range.second);
+                if (streamCallback)
+                {
+                    auto &headers = respImplPtr->headers();
+                    // When the transfer-encoding is chunked, encapsulate data
+                    // callback in chunking callback
+                    auto bChunked =
+                        !respImplPtr->ifCloseConnection() &&
+                        (headers.find("transfer-encoding") != headers.end()) &&
+                        (headers.at("transfer-encoding") == "chunked");
+                    if (bChunked)
+                    {
+                        auto chunkCallback =
+                            std::bind(chunkingCallback,
+                                      std::shared_ptr<CallbackParams>(
+                                          new CallbackParams{streamCallback,
+#ifndef NDEBUG  // defined by CMake for release build
+                                                             false,
+                                                             0}),
+#else
+                                                             false}),
+#endif
+                                      _1,
+                                      _2);
+                        conn->sendStream(chunkCallback);
+                    }
+                    else
+                        conn->sendStream(streamCallback);
+                }
+                else
+                {
+                    const auto &range = respImplPtr->sendfileRange();
+                    conn->sendFile(sendfileName.c_str(),
+                                   range.first,
+                                   range.second);
+                }
                 COZ_PROGRESS
             }
         }

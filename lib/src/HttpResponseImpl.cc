@@ -27,6 +27,11 @@
 
 using namespace trantor;
 using namespace drogon;
+using namespace std::literals::string_literals;
+using namespace std::placeholders;
+#ifdef _WIN32
+#undef max
+#endif
 
 namespace drogon
 {
@@ -400,6 +405,69 @@ HttpResponsePtr HttpResponse::newFileResponse(
     return resp;
 }
 
+HttpResponsePtr HttpResponse::newStreamResponse(
+    const std::function<std::size_t(char *, std::size_t)> &callback,
+    const std::string &attachmentFileName,
+    ContentType type,
+    const std::string &typeString)
+{
+    LOG_TRACE << "send stream as "s
+              << (attachmentFileName.empty() ? "raw data"s
+                                             : "file: "s + attachmentFileName);
+    if (!callback)
+    {
+        auto resp = HttpResponse::newNotFoundResponse();
+        return resp;
+    }
+    auto resp = std::make_shared<HttpResponseImpl>();
+    resp->setStreamCallback(callback);
+    resp->setStatusCode(k200OK);
+
+    // Infer content type
+    if (type == CT_NONE)
+    {
+        if (!typeString.empty())
+        {
+            auto r = static_cast<HttpResponse *>(resp.get());
+            auto contentType = type;
+            if (type == CT_NONE)
+                type = parseContentType(typeString);
+            if (type == CT_NONE)
+                type = CT_CUSTOM;  // XXX: Is this Ok?
+            r->setContentTypeCodeAndCustomString(type, typeString);
+        }
+        else if (!attachmentFileName.empty())
+        {
+            resp->setContentTypeCode(
+                drogon::getContentType(attachmentFileName));
+        }
+    }
+    else
+    {
+        if (typeString.empty())
+            resp->setContentTypeCode(type);
+        else
+        {
+            auto r = static_cast<HttpResponse *>(resp.get());
+            auto contentType = type;
+            if (type == CT_NONE)
+                type = parseContentType(typeString);
+            if (type == CT_NONE)
+                type = CT_CUSTOM;  // XXX: Is this Ok?
+            r->setContentTypeCodeAndCustomString(type, typeString);
+        }
+    }
+
+    // Set headers
+    if (!attachmentFileName.empty())
+    {
+        resp->addHeader("Content-Disposition",
+                        "attachment; filename=" + attachmentFileName);
+    }
+    doResponseCreateAdvices(resp);
+    return resp;
+}
+
 void HttpResponseImpl::makeHeaderString(trantor::MsgBuffer &buffer)
 {
     buffer.ensureWritableBytes(128);
@@ -447,7 +515,19 @@ void HttpResponseImpl::makeHeaderString(trantor::MsgBuffer &buffer)
     if (!passThrough_)
     {
         buffer.ensureWritableBytes(64);
-        if (sendfileName_.empty())
+        if (streamCallback_)
+        {
+            // When the headers are created, it is time to set the transfer
+            // encoding to chunked if the contents size is not specified
+            if (!ifCloseConnection() &&
+                headers_.find("content-length") == headers_.end())
+            {
+                LOG_DEBUG << "send stream with transfer-encoding chunked";
+                headers_["transfer-encoding"] = "chunked";
+            }
+            len = 0;
+        }
+        else if (sendfileName_.empty())
         {
             auto bodyLength = bodyPtr_ ? bodyPtr_->length() : 0;
             len = snprintf(buffer.beginWrite(),
@@ -791,6 +871,7 @@ void HttpResponseImpl::swap(HttpResponseImpl &that) noexcept
     swap(flagForParsingContentType_, that.flagForParsingContentType_);
     swap(flagForParsingJson_, that.flagForParsingJson_);
     swap(sendfileName_, that.sendfileName_);
+    swap(streamCallback_, that.streamCallback_);
     jsonPtr_.swap(that.jsonPtr_);
     fullHeaderString_.swap(that.fullHeaderString_);
     httpString_.swap(that.httpString_);
@@ -806,6 +887,12 @@ void HttpResponseImpl::clear()
     fullHeaderString_.reset();
     jsonParsingErrorPtr_.reset();
     sendfileName_.clear();
+    if (streamCallback_)
+    {
+        LOG_TRACE << "Cleanup HttpResponse stream callback";
+        streamCallback_(nullptr, 0);  // callback internal cleanup
+        streamCallback_ = {};
+    }
     headers_.clear();
     cookies_.clear();
     bodyPtr_.reset();
@@ -852,7 +939,7 @@ void HttpResponseImpl::parseJson() const
 
 bool HttpResponseImpl::shouldBeCompressed() const
 {
-    if (!sendfileName_.empty() ||
+    if (streamCallback_ || !sendfileName_.empty() ||
         contentType() >= CT_APPLICATION_OCTET_STREAM ||
         getBody().length() < 1024 || !(getHeaderBy("content-encoding").empty()))
     {

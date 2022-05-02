@@ -129,10 +129,10 @@ class DROGON_EXPORT HttpResponse
      */
     virtual void setCloseConnection(bool on) = 0;
 
-    /// Get the status set by the setCloseConnetion() method.
+    /// Get the status set by the setCloseConnection() method.
     virtual bool ifCloseConnection() const = 0;
 
-    /// Set the response content type, such as text/html, text/plaint, image/png
+    /// Set the response content type, such as text/html, text/plain, image/png
     /// and so on. If the content type
     /// is a text type, the character set is utf8.
     virtual void setContentTypeCode(ContentType type) = 0;
@@ -423,6 +423,29 @@ class DROGON_EXPORT HttpResponse
         ContentType type = CT_NONE,
         const std::string &typeString = "");
 
+    /// Create a response that returns a file to the client from a callback
+    /// function
+    /**
+     * @note if the Connection is keep-alive and the Content-Length header is
+     * not set, the stream data is sent with Transfer-Encoding: chunked.
+     * @param function to retrieve the stream data (stream ends when a zero size
+     * is returned) the callback will be called with nullptr when the send is
+     * finished/interruped so that it cleans up its internals.
+     * @param attachmentFileName if the parameter is not empty, the browser
+     *                           does not open the file, but saves it as an
+     * attachment.
+     * @param type the content type code. If the parameter is CT_NONE, the
+     *             content type is set by drogon based on the file extension and
+     * typeString. Set it to CT_CUSTOM when no drogon internal content type
+     * matches.
+     * @param typeString the MIME string of the content type.
+     */
+    static HttpResponsePtr newStreamResponse(
+        const std::function<std::size_t(char *, std::size_t)> &callback,
+        const std::string &attachmentFileName = "",
+        ContentType type = CT_NONE,
+        const std::string &typeString = "");
+
     /**
      * @brief Create a custom HTTP response object. For using this template,
      * users must specialize the toResponse template.
@@ -449,7 +472,15 @@ class DROGON_EXPORT HttpResponse
     virtual const SendfileRange &sendfileRange() const = 0;
 
     /**
-     * @brief Rreturns the content type associated with the response
+     * @brief If the response is a stream response (i.e. created by
+     * newStreamResponse) returns the callback function. Otherwise a
+     * null function.
+     */
+    virtual const std::function<std::size_t(char *, std::size_t)>
+        &streamCallback() const = 0;
+
+    /**
+     * @brief Returns the content type associated with the response
      */
     virtual std::string contentTypeString() const = 0;
 
