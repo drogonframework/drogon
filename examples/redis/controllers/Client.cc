@@ -2,7 +2,7 @@
 
 using namespace drogon;
 
-void Client::get(const HttpRequestPtr &req,
+void Client::get(const HttpRequestPtr &,
                  std::function<void(const HttpResponsePtr &)> &&callback,
                  std::string key)
 {
@@ -69,7 +69,7 @@ void Client::post(const HttpRequestPtr &req,
     std::string value = (*json)["value"].asString();
 
     redisClient->execCommandAsync(
-        [callback](const nosql::RedisResult &r) {
+        [callback](const nosql::RedisResult &) {
             auto resp = HttpResponse::newHttpResponse();
 
             resp->setStatusCode(k201Created);

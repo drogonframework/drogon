@@ -16,6 +16,7 @@
 #include <drogon/exports.h>
 #include <drogon/nosql/RedisResult.h>
 #include <drogon/nosql/RedisException.h>
+#include <drogon/nosql/RedisSubscriber.h>
 #include <drogon/utils/string_view.h>
 #include <trantor/net/InetAddress.h>
 #include <trantor/utils/Logger.h>
@@ -98,7 +99,7 @@ class DROGON_EXPORT RedisClient
         const trantor::InetAddress &serverAddress,
         size_t numberOfConnections = 1,
         const std::string &password = "",
-        const unsigned int db = 0,
+        unsigned int db = 0,
         const std::string &username = "");
     /**
      * @brief Execute a redis command
@@ -182,6 +183,15 @@ class DROGON_EXPORT RedisClient
     }
 
     /**
+     * @brief Create a subscriber for redis subscribe commands.
+     *
+     * @return std::shared_ptr<RedisSubscriber>
+     * @note This subscriber creates a new redis connection dedicated to
+     * subscribe commands. This connection is managed by RedisClient.
+     */
+    virtual std::shared_ptr<RedisSubscriber> newSubscriber() noexcept = 0;
+
+    /**
      * @brief Create a redis transaction object.
      *
      * @return std::shared_ptr<RedisTransaction>
@@ -207,9 +217,9 @@ class DROGON_EXPORT RedisClient
      * @param timeout in seconds, if the result is not returned from the
      * server within the timeout, a RedisException with "Command execution
      * timeout" string is generated and returned to the caller.
-     * @note set the timeout value to zero or negative for no limit on time. The
-     * default value is -1.0, this means there is no time limit if this method
-     * is not called.
+     * @note set the timeout value to zero or negative for no limit on time.
+     * The default value is -1.0, this means there is no time limit if this
+     * method is not called.
      */
     virtual void setTimeout(double timeout) = 0;
 

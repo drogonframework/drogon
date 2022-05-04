@@ -20,7 +20,7 @@ using namespace drogon::nosql;
 RedisConnection::RedisConnection(const trantor::InetAddress &serverAddress,
                                  const std::string &username,
                                  const std::string &password,
-                                 const unsigned int db,
+                                 unsigned int db,
                                  trantor::EventLoop *loop)
     : serverAddr_(serverAddress),
       username_(username),
@@ -360,4 +360,134 @@ void RedisConnection::disconnect()
     auto thisPtr = shared_from_this();
     loop_->queueInLoop(
         [thisPtr]() { redisAsyncDisconnect(thisPtr->redisContext_); });
+}
+
+void RedisConnection::sendSubscribe(
+    const std::shared_ptr<SubscribeContext> &subCtx,
+    bool subscribe)
+{
+    if (loop_->isInLoopThread())
+    {
+        sendSubscribeInLoop(subCtx, subscribe);
+    }
+    else
+    {
+        loop_->queueInLoop([this, subCtx, subscribe]() {
+            sendSubscribeInLoop(subCtx, subscribe);
+        });
+    }
+}
+
+void RedisConnection::sendSubscribeInLoop(
+    const std::shared_ptr<SubscribeContext> &subCtx,
+    bool subscribe)
+{
+    if (subscribe)
+    {
+        if (!subCtx->alive())
+        {
+            // Unsub-ed by somewhere else
+            return;
+        }
+        redisAsyncFormattedCommand(
+            redisContext_,
+            [](redisAsyncContext *context, void *r, void *subCtx) {
+                auto thisPtr = static_cast<RedisConnection *>(context->ev.data);
+                thisPtr->handleSubscribeResult(static_cast<redisReply *>(r),
+                                               static_cast<SubscribeContext *>(
+                                                   subCtx));
+            },
+            subCtx.get(),
+            subCtx->subscribeCommand().c_str(),
+            subCtx->subscribeCommand().size());
+    }
+    else
+    {
+        // There is a Hiredis issue here
+        // The un-sub callback will not be called, sub callback will be called
+        // instead, with first element in result as "unsubscribe".
+        // This problem is fixed in 2021-12-02 commit da5a4ff, but
+        // have not been released as a tag.
+        // Here we just register a same function to deal with both situation.
+        redisAsyncFormattedCommand(
+            redisContext_,
+            [](redisAsyncContext *context, void *r, void *subCtx) {
+                auto thisPtr = static_cast<RedisConnection *>(context->ev.data);
+                thisPtr->handleSubscribeResult(static_cast<redisReply *>(r),
+                                               static_cast<SubscribeContext *>(
+                                                   subCtx));
+            },
+            subCtx.get(),
+            subCtx->unsubscribeCommand().c_str(),
+            subCtx->unsubscribeCommand().size());
+    }
+}
+
+void RedisConnection::handleSubscribeResult(redisReply *result,
+                                            SubscribeContext *subCtx)
+{
+    if (!result)
+    {
+        // When connection close, if a channel has been subscribed,
+        // this callback will be called with empty result.
+        LOG_DEBUG << "Empty result (connection lost)";
+    }
+    else if (result->type == REDIS_REPLY_ERROR)
+    {
+        LOG_ERROR << "Subscribe callback receive error result: " << result->str;
+    }
+    else
+    {
+        assert(result->type == REDIS_REPLY_ARRAY && result->elements == 3);
+
+        // On channel message
+        if (strcmp(result->element[0]->str, "message") == 0)
+        {
+            std::string channel(result->element[1]->str,
+                                result->element[1]->len);
+            std::string message(result->element[2]->str,
+                                result->element[2]->len);
+            if (!subCtx->alive())
+            {
+                LOG_DEBUG
+                    << "Subscribe callback receive message, but context is no "
+                       "longer alive"
+                    << ", channel: " << channel << ", message: " << message;
+            }
+            else
+            {
+                subCtx->onMessage(channel, message);
+            }
+            // Message callback, no need to call idleCallback_
+            return;
+        }
+
+        std::string channel(result->element[1]->str, result->element[1]->len);
+        long long number = result->element[2]->integer;
+
+        // On channel subscribed
+        if (strcmp(result->element[0]->str, "subscribe") == 0)
+        {
+            LOG_DEBUG << "Subscribe success to [" << channel << "], total "
+                      << number;
+            subCtx->onSubscribe();
+        }
+        // On channel unsubscribed
+        else if (strcmp(result->element[0]->str, "unsubscribe") == 0)
+        {
+            LOG_DEBUG << "Unsubscribe success from [" << channel << "], total "
+                      << number;
+            subCtx->onUnsubscribe();
+        }
+        // Should not happen
+        else
+        {
+            LOG_ERROR << "Unknown redis response: " << result->element[0]->str;
+        }
+    }
+
+    if (idleCallback_)
+    {
+        idleCallback_(shared_from_this());
+    }
 }
