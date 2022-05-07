@@ -205,6 +205,14 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
                 const char *colon = std::find(buf->peek(), crlf, ':');
                 if (colon != crlf)
                 {
+                    string_view value(colon + 1,
+                                      std::distance(colon + 1, crlf));
+                    if (value.find(':') != string_view::npos)
+                    {
+                        buf->retrieveAll();
+                        shutdownConnection(k400BadRequest);
+                        return false;
+                    }
                     request_->addHeader(buf->peek(), colon, crlf);
                 }
                 else
