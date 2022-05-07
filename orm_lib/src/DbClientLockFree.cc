@@ -95,7 +95,8 @@ void DbClientLockFree::execSql(
     std::vector<int> &&format,
     int resultFormat,
     ResultCallback &&rcb,
-    std::function<void(const std::exception_ptr &)> &&exceptCallback)
+    std::function<void(const std::exception_ptr &)> &&exceptCallback,
+    bool usePreparedStmt)
 {
     assert(paraNum == parameters.size());
     assert(paraNum == length.size());
@@ -112,7 +113,8 @@ void DbClientLockFree::execSql(
                            std::move(format),
                            resultFormat,
                            std::move(rcb),
-                           std::move(exceptCallback));
+                           std::move(exceptCallback),
+                           usePreparedStmt);
         return;
     }
     if (!connections_.empty() && sqlCmdBuffer_.empty() &&
@@ -143,7 +145,7 @@ void DbClientLockFree::execSql(
                         }
                     },
                     std::move(exceptCallback),
-                    true);
+                    usePreparedStmt);
                 return;
             }
         }
@@ -175,7 +177,7 @@ void DbClientLockFree::execSql(
                             }
                         },
                         std::move(exceptCallback),
-                        true);
+                        usePreparedStmt);
                     return;
                 }
             }
@@ -199,7 +201,7 @@ void DbClientLockFree::execSql(
                                   resultFormat,
                                   std::move(rcb),
                                   std::move(exceptCallback),
-                                  true);
+                                  usePreparedStmt);
                     return;
                 }
             }
@@ -218,7 +220,7 @@ void DbClientLockFree::execSql(
     }
 
     // LOG_TRACE << "Push query to buffer";
-    sqlCmdBuffer_.emplace_back(std::make_shared<SqlCmd>(
+    auto cmdPtr = std::make_shared<SqlCmd>(
         std::string_view{sql, sqlLength},
         paraNum,
         std::move(parameters),
@@ -235,7 +237,9 @@ void DbClientLockFree::execSql(
                 loop_->queueInLoop([rcb = std::move(rcb), r]() { rcb(r); });
             }
         },
-        std::move(exceptCallback)));
+        std::move(exceptCallback));
+    cmdPtr->usePreparedStatement_ = usePreparedStmt;
+    sqlCmdBuffer_.emplace_back(std::move(cmdPtr));
 }
 
 std::shared_ptr<Transaction> DbClientLockFree::newTransaction(
@@ -408,7 +412,7 @@ void DbClientLockFree::handleNewTask(const DbConnectionPtr &conn)
                       cmd->resultFormat_,
                       std::move(cmd->callback_),
                       std::move(cmd->exceptionCallback_),
-                      true);
+                      cmd->usePreparedStatement_);
 #endif
         return;
     }
@@ -514,7 +518,8 @@ void DbClientLockFree::execSqlWithTimeout(
     std::vector<int> &&format,
     int resultFormat,
     ResultCallback &&rcb,
-    std::function<void(const std::exception_ptr &)> &&ecb)
+    std::function<void(const std::exception_ptr &)> &&ecb,
+    bool usePreparedStmt)
 {
     auto commandPtr = std::make_shared<std::weak_ptr<SqlCmd>>();
     auto ecpPtr =
@@ -584,7 +589,7 @@ void DbClientLockFree::execSqlWithTimeout(
                         }
                     },
                     std::move(exceptionCallback),
-                    true);
+                    usePreparedStmt);
                 timeoutFlagPtr->runTimer();
                 return;
             }
@@ -619,7 +624,7 @@ void DbClientLockFree::execSqlWithTimeout(
                             }
                         },
                         std::move(exceptionCallback),
-                        true);
+                        usePreparedStmt);
                     timeoutFlagPtr->runTimer();
                     return;
                 }
@@ -644,7 +649,7 @@ void DbClientLockFree::execSqlWithTimeout(
                                   resultFormat,
                                   std::move(resultCallback),
                                   std::move(exceptionCallback),
-                                  true);
+                                  usePreparedStmt);
                     timeoutFlagPtr->runTimer();
                     return;
                 }
@@ -682,6 +687,7 @@ void DbClientLockFree::execSqlWithTimeout(
             }
         },
         std::move(exceptionCallback));
+    cmdPtr->usePreparedStatement_ = usePreparedStmt;
     sqlCmdBuffer_.emplace_back(cmdPtr);
     *commandPtr = cmdPtr;
     timeoutFlagPtr->runTimer();

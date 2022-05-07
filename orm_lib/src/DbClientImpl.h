@@ -41,16 +41,17 @@ class DbClientImpl : public DbClient,
                  ClientType type);
 #endif
     ~DbClientImpl() noexcept override;
-    void execSql(const char *sql,
-                 size_t sqlLength,
-                 size_t paraNum,
-                 std::vector<const char *> &&parameters,
-                 std::vector<int> &&length,
-                 std::vector<int> &&format,
-                 int resultFormat,
-                 ResultCallback &&rcb,
-                 std::function<void(const std::exception_ptr &)>
-                     &&exceptCallback) override;
+    void execSql(
+        const char *sql,
+        size_t sqlLength,
+        size_t paraNum,
+        std::vector<const char *> &&parameters,
+        std::vector<int> &&length,
+        std::vector<int> &&format,
+        int resultFormat,
+        ResultCallback &&rcb,
+        std::function<void(const std::exception_ptr &)> &&exceptCallback,
+        bool usePreparedStmt) override;
     std::shared_ptr<Transaction> newTransaction(
         const std::function<void(bool)> &commitCallback =
             std::function<void(bool)>()) noexcept(false) override;
@@ -102,7 +103,8 @@ class DbClientImpl : public DbClient,
         std::vector<int> &&format,
         int resultFormat,
         ResultCallback &&rcb,
-        std::function<void(const std::exception_ptr &)> &&exceptCallback);
+        std::function<void(const std::exception_ptr &)> &&exceptCallback,
+        bool usePreparedStmt);
 };
 
 }  // namespace orm

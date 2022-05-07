@@ -44,16 +44,17 @@ class DbClientLockFree : public DbClient,
 #endif
 
     ~DbClientLockFree() noexcept override;
-    void execSql(const char *sql,
-                 size_t sqlLength,
-                 size_t paraNum,
-                 std::vector<const char *> &&parameters,
-                 std::vector<int> &&length,
-                 std::vector<int> &&format,
-                 int resultFormat,
-                 ResultCallback &&rcb,
-                 std::function<void(const std::exception_ptr &)>
-                     &&exceptCallback) override;
+    void execSql(
+        const char *sql,
+        size_t sqlLength,
+        size_t paraNum,
+        std::vector<const char *> &&parameters,
+        std::vector<int> &&length,
+        std::vector<int> &&format,
+        int resultFormat,
+        ResultCallback &&rcb,
+        std::function<void(const std::exception_ptr &)> &&exceptCallback,
+        bool usePreparedStmt) override;
     std::shared_ptr<Transaction> newTransaction(
         const std::function<void(bool)> &commitCallback =
             std::function<void(bool)>()) noexcept(false) override;
@@ -97,7 +98,8 @@ class DbClientLockFree : public DbClient,
         std::vector<int> &&format,
         int resultFormat,
         ResultCallback &&rcb,
-        std::function<void(const std::exception_ptr &)> &&ecb);
+        std::function<void(const std::exception_ptr &)> &&ecb,
+        bool usePreparedStmt);
     void handleNewTask(const DbConnectionPtr &conn);
 #if LIBPQ_SUPPORTS_BATCH_MODE
     size_t connectionPos_{0};  // Used for pg batch mode.

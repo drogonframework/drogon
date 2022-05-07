@@ -95,7 +95,8 @@ void TransactionImpl::execSqlInLoop(
     std::vector<int> &&format,
     int resultFormat,
     ResultCallback &&rcb,
-    std::function<void(const std::exception_ptr &)> &&exceptCallback)
+    std::function<void(const std::exception_ptr &)> &&exceptCallback,
+    bool usePreparedStmt)
 {
     loop_->assertInLoopThread();
     if (!isCommitedOrRolledback_)
@@ -109,7 +110,8 @@ void TransactionImpl::execSqlInLoop(
                                      std::move(format),
                                      resultFormat,
                                      std::move(rcb),
-                                     std::move(exceptCallback));
+                                     std::move(exceptCallback),
+                                     usePreparedStmt);
             return;
         }
         auto thisPtr = shared_from_this();
@@ -130,7 +132,7 @@ void TransactionImpl::execSqlInLoop(
                     if (exceptCallback)
                         exceptCallback(ePtr);
                 },
-                true);
+                usePreparedStmt);
         }
         else
         {
@@ -144,6 +146,7 @@ void TransactionImpl::execSqlInLoop(
             cmdPtr->resultFormat_ = resultFormat;
             cmdPtr->callback_ = std::move(rcb);
             cmdPtr->exceptionCallback_ = std::move(exceptCallback);
+            cmdPtr->usePreparedStmt_ = usePreparedStmt;
             cmdPtr->thisPtr_ = thisPtr;
             thisPtr->sqlCmdBuffer_.push_back(std::move(cmdPtr));
         }
@@ -247,7 +250,7 @@ void TransactionImpl::execNewTask()
                     if (cmd->exceptionCallback_)
                         cmd->exceptionCallback_(ePtr);
                 },
-                true);
+                cmd->usePreparedStmt_);
             return;
         }
         isWorking_ = false;
@@ -314,7 +317,8 @@ void TransactionImpl::execSqlInLoopWithTimeout(
     std::vector<int> &&format,
     int resultFormat,
     ResultCallback &&rcb,
-    std::function<void(const std::exception_ptr &)> &&ecb)
+    std::function<void(const std::exception_ptr &)> &&ecb,
+    bool usePreparedStmt)
 {
     auto thisPtr = shared_from_this();
     std::weak_ptr<TransactionImpl> weakPtr = thisPtr;
@@ -377,7 +381,7 @@ void TransactionImpl::execSqlInLoopWithTimeout(
                     (*ecpPtr)(ePtr);
                 }
             },
-            true);
+            usePreparedStmt);
     }
     else
     {
@@ -399,7 +403,7 @@ void TransactionImpl::execSqlInLoopWithTimeout(
                     (*ecpPtr)(ePtr);
                 }
             };
-
+        cmdPtr->usePreparedStmt_ = usePreparedStmt;
         cmdPtr->thisPtr_ = thisPtr;
         thisPtr->sqlCmdBuffer_.push_back(cmdPtr);
         *commandPtr = cmdPtr;

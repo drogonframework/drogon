@@ -53,16 +53,17 @@ class TransactionImpl : public Transaction,
   private:
     DbConnectionPtr connectionPtr_;
 
-    void execSql(const char *sql,
-                 size_t sqlLength,
-                 size_t paraNum,
-                 std::vector<const char *> &&parameters,
-                 std::vector<int> &&length,
-                 std::vector<int> &&format,
-                 int resultFormat,
-                 ResultCallback &&rcb,
-                 std::function<void(const std::exception_ptr &)>
-                     &&exceptCallback) override
+    void execSql(
+        const char *sql,
+        size_t sqlLength,
+        size_t paraNum,
+        std::vector<const char *> &&parameters,
+        std::vector<int> &&length,
+        std::vector<int> &&format,
+        int resultFormat,
+        ResultCallback &&rcb,
+        std::function<void(const std::exception_ptr &)> &&exceptCallback,
+        bool usePreparedStmt) override
     {
         if (loop_->isInLoopThread())
         {
@@ -73,7 +74,8 @@ class TransactionImpl : public Transaction,
                           std::move(format),
                           resultFormat,
                           std::move(rcb),
-                          std::move(exceptCallback));
+                          std::move(exceptCallback),
+                          usePreparedStmt);
         }
         else
         {
@@ -85,6 +87,7 @@ class TransactionImpl : public Transaction,
                  length = std::move(length),
                  format = std::move(format),
                  resultFormat,
+                 usePreparedStmt,
                  rcb = std::move(rcb),
                  exceptCallback = std::move(exceptCallback)]() mutable {
                     thisPtr->execSqlInLoop(std::move(sql),
@@ -94,7 +97,8 @@ class TransactionImpl : public Transaction,
                                            std::move(format),
                                            resultFormat,
                                            std::move(rcb),
-                                           std::move(exceptCallback));
+                                           std::move(exceptCallback),
+                                           usePreparedStmt);
                 });
         }
     }
@@ -107,7 +111,8 @@ class TransactionImpl : public Transaction,
         std::vector<int> &&format,
         int resultFormat,
         ResultCallback &&rcb,
-        std::function<void(const std::exception_ptr &)> &&exceptCallback);
+        std::function<void(const std::exception_ptr &)> &&exceptCallback,
+        bool usePreparedStmt);
     void execSqlInLoopWithTimeout(
         std::string_view &&sql,
         size_t paraNum,
@@ -116,8 +121,8 @@ class TransactionImpl : public Transaction,
         std::vector<int> &&format,
         int resultFormat,
         ResultCallback &&rcb,
-        std::function<void(const std::exception_ptr &)> &&exceptCallback);
-
+        std::function<void(const std::exception_ptr &)> &&exceptCallback,
+        bool usePreparedStmt);
     std::shared_ptr<Transaction> newTransaction(
         const std::function<void(bool)> &) noexcept(false) override
     {
@@ -147,6 +152,7 @@ class TransactionImpl : public Transaction,
         QueryCallback callback_;
         ExceptPtrCallback exceptionCallback_;
         bool isRollbackCmd_{false};
+        bool usePreparedStmt_{true};
         std::shared_ptr<TransactionImpl> thisPtr_;
     };
 

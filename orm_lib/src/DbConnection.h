@@ -55,6 +55,7 @@ struct SqlCmd
     int resultFormat_{0};
     QueryCallback callback_;
     ExceptPtrCallback exceptionCallback_;
+    bool usePreparedStatement_{true};
     std::string preparingStatement_;
 #if LIBPQ_SUPPORTS_BATCH_MODE
     bool isChanging_{false};

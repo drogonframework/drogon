@@ -125,7 +125,8 @@ void DbClientImpl::execSql(
     std::vector<int> &&format,
     int resultFormat,
     ResultCallback &&rcb,
-    std::function<void(const std::exception_ptr &)> &&exceptCallback)
+    std::function<void(const std::exception_ptr &)> &&exceptCallback,
+    bool usePreparedStmt)
 {
     assert(paraNum == parameters.size());
     assert(paraNum == length.size());
@@ -141,7 +142,8 @@ void DbClientImpl::execSql(
                            std::move(format),
                            resultFormat,
                            std::move(rcb),
-                           std::move(exceptCallback));
+                           std::move(exceptCallback),
+                           usePreparedStmt);
         return;
     }
     DbConnectionPtr conn;
@@ -189,7 +191,7 @@ void DbClientImpl::execSql(
                       resultFormat,
                       std::move(rcb),
                       std::move(exceptCallback),
-                      true);
+                      usePreparedStmt);
         return;
     }
     if (busy)
@@ -376,7 +378,7 @@ void DbClientImpl::handleNewTask(const DbConnectionPtr &connPtr)
                          cmd->resultFormat_,
                          std::move(cmd->callback_),
                          std::move(cmd->exceptionCallback_),
-                         true);
+                         cmd->usePreparedStatement_);
         return;
     }
 }
@@ -496,7 +498,8 @@ void DbClientImpl::execSqlWithTimeout(
     std::vector<int> &&format,
     int resultFormat,
     ResultCallback &&rcb,
-    std::function<void(const std::exception_ptr &)> &&ecb)
+    std::function<void(const std::exception_ptr &)> &&ecb,
+    bool usePreparedStmt)
 {
     DbConnectionPtr conn;
     assert(timeout_ > 0.0);
@@ -563,6 +566,7 @@ void DbClientImpl::execSqlWithTimeout(
                                              resultFormat,
                                              std::move(resultCallback),
                                              std::move(exceptionCallback));
+                command->usePreparedStatement_ = usePreparedStmt;
                 sqlCmdBuffer_.emplace_back(command);
                 *cmd = command;
             }
@@ -585,7 +589,7 @@ void DbClientImpl::execSqlWithTimeout(
                       resultFormat,
                       std::move(resultCallback),
                       std::move(exceptionCallback),
-                      true);
+                      usePreparedStmt);
         timeoutFlagPtr->runTimer();
         return;
     }
