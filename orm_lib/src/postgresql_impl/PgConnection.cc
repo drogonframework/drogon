@@ -222,7 +222,14 @@ void PgConnection::execSqlInLoop(
     if (paraNum == 0)
     {
         isPreparingStatement_ = false;
-        if (PQsendQuery(connectionPtr_.get(), sql_.data()) == 0)
+        if (PQsendQueryParams(connectionPtr_.get(),
+                              sql_.data(),
+                              0,
+                              nullptr,
+                              nullptr,
+                              nullptr,
+                              nullptr,
+                              resultFormat) == 0)
         {
             LOG_ERROR << "send query error: "
                       << PQerrorMessage(connectionPtr_.get());
