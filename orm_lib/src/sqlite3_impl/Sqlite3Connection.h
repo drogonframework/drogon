@@ -43,14 +43,16 @@ class Sqlite3Connection : public DbConnection,
                       const std::string &connInfo,
                       const std::shared_ptr<SharedMutex> &sharedMutex);
 
-    void execSql(string_view &&sql,
-                 size_t paraNum,
-                 std::vector<const char *> &&parameters,
-                 std::vector<int> &&length,
-                 std::vector<int> &&format,
-                 ResultCallback &&rcb,
-                 std::function<void(const std::exception_ptr &)>
-                     &&exceptCallback) override;
+    void execSql(
+        string_view &&sql,
+        size_t paraNum,
+        std::vector<const char *> &&parameters,
+        std::vector<int> &&length,
+        std::vector<int> &&format,
+        int /* resultFormat */,
+        ResultCallback &&rcb,
+        std::function<void(const std::exception_ptr &)> &&exceptCallback,
+        bool /* usePreparedStmt */) override;
     void batchSql(std::deque<std::shared_ptr<SqlCmd>> &&) override
     {
         LOG_FATAL << "The mysql library does not support batch mode";

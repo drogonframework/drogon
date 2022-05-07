@@ -52,6 +52,7 @@ TransactionImpl::~TransactionImpl()
                 {},
                 {},
                 {},
+                0,
                 [commitCb](const Result &) {
                     LOG_TRACE << "Transaction committed!";
                     if (commitCb)
@@ -73,7 +74,8 @@ TransactionImpl::~TransactionImpl()
                             commitCb(false);
                         }
                     }
-                });
+                },
+                true);
         });
     }
     else
@@ -90,6 +92,7 @@ void TransactionImpl::execSqlInLoop(
     std::vector<const char *> &&parameters,
     std::vector<int> &&length,
     std::vector<int> &&format,
+    int resultFormat,
     ResultCallback &&rcb,
     std::function<void(const std::exception_ptr &)> &&exceptCallback)
 {
@@ -103,6 +106,7 @@ void TransactionImpl::execSqlInLoop(
                                      std::move(parameters),
                                      std::move(length),
                                      std::move(format),
+                                     resultFormat,
                                      std::move(rcb),
                                      std::move(exceptCallback));
             return;
@@ -112,18 +116,20 @@ void TransactionImpl::execSqlInLoop(
         {
             isWorking_ = true;
             thisPtr_ = thisPtr;
-            connectionPtr_->execSql(std::move(sql),
-                                    paraNum,
-                                    std::move(parameters),
-                                    std::move(length),
-                                    std::move(format),
-                                    std::move(rcb),
-                                    [exceptCallback,
-                                     thisPtr](const std::exception_ptr &ePtr) {
-                                        thisPtr->rollback();
-                                        if (exceptCallback)
-                                            exceptCallback(ePtr);
-                                    });
+            connectionPtr_->execSql(
+                std::move(sql),
+                paraNum,
+                std::move(parameters),
+                std::move(length),
+                std::move(format),
+                resultFormat,
+                std::move(rcb),
+                [exceptCallback, thisPtr](const std::exception_ptr &ePtr) {
+                    thisPtr->rollback();
+                    if (exceptCallback)
+                        exceptCallback(ePtr);
+                },
+                true);
         }
         else
         {
@@ -134,6 +140,7 @@ void TransactionImpl::execSqlInLoop(
             cmdPtr->parameters_ = std::move(parameters);
             cmdPtr->lengths_ = std::move(length);
             cmdPtr->formats_ = std::move(format);
+            cmdPtr->resultFormat_ = resultFormat;
             cmdPtr->callback_ = std::move(rcb);
             cmdPtr->exceptionCallback_ = std::move(exceptCallback);
             cmdPtr->thisPtr_ = thisPtr;
@@ -185,6 +192,7 @@ void TransactionImpl::rollback()
             {},
             {},
             {},
+            0,
             [thisPtr](const Result &) {
                 LOG_TRACE << "Transaction roll back!";
                 thisPtr->isCommitedOrRolledback_ = true;
@@ -194,7 +202,8 @@ void TransactionImpl::rollback()
                 // clearupCb();
                 LOG_ERROR << "Transaction roll back error";
                 thisPtr->isCommitedOrRolledback_ = true;
-            });
+            },
+            true);
     });
 }
 
@@ -217,6 +226,7 @@ void TransactionImpl::execNewTask()
                 std::move(cmd->parameters_),
                 std::move(cmd->lengths_),
                 std::move(cmd->formats_),
+                cmd->resultFormat_,
                 [callback = std::move(cmd->callback_), cmd, thisPtr](
                     const Result &r) {
                     if (cmd->isRollbackCmd_)
@@ -235,7 +245,8 @@ void TransactionImpl::execNewTask()
                     }
                     if (cmd->exceptionCallback_)
                         cmd->exceptionCallback_(ePtr);
-                });
+                },
+                true);
             return;
         }
         isWorking_ = false;
@@ -284,11 +295,13 @@ void TransactionImpl::doBegin()
             {},
             {},
             {},
+            0,
             [](const Result &) { LOG_TRACE << "Transaction begin!"; },
             [thisPtr](const std::exception_ptr &) {
                 LOG_ERROR << "Error occurred in transaction begin";
                 thisPtr->isCommitedOrRolledback_ = true;
-            });
+            },
+            true);
     });
 }
 
@@ -298,6 +311,7 @@ void TransactionImpl::execSqlInLoopWithTimeout(
     std::vector<const char *> &&parameters,
     std::vector<int> &&length,
     std::vector<int> &&format,
+    int resultFormat,
     ResultCallback &&rcb,
     std::function<void(const std::exception_ptr &)> &&ecb)
 {
@@ -345,22 +359,24 @@ void TransactionImpl::execSqlInLoopWithTimeout(
     {
         isWorking_ = true;
         thisPtr_ = thisPtr;
-        connectionPtr_->execSql(std::move(sql),
-                                paraNum,
-                                std::move(parameters),
-                                std::move(length),
-                                std::move(format),
-                                std::move(resultCallback),
-                                [ecpPtr, timeoutFlagPtr, thisPtr](
-                                    const std::exception_ptr &ePtr) {
-                                    thisPtr->rollback();
-                                    if (timeoutFlagPtr->done())
-                                        return;
-                                    if (*ecpPtr)
-                                    {
-                                        (*ecpPtr)(ePtr);
-                                    }
-                                });
+        connectionPtr_->execSql(
+            std::move(sql),
+            paraNum,
+            std::move(parameters),
+            std::move(length),
+            std::move(format),
+            resultFormat,
+            std::move(resultCallback),
+            [ecpPtr, timeoutFlagPtr, thisPtr](const std::exception_ptr &ePtr) {
+                thisPtr->rollback();
+                if (timeoutFlagPtr->done())
+                    return;
+                if (*ecpPtr)
+                {
+                    (*ecpPtr)(ePtr);
+                }
+            },
+            true);
     }
     else
     {
@@ -371,6 +387,7 @@ void TransactionImpl::execSqlInLoopWithTimeout(
         cmdPtr->parameters_ = std::move(parameters);
         cmdPtr->lengths_ = std::move(length);
         cmdPtr->formats_ = std::move(format);
+        cmdPtr->resultFormat_ = resultFormat;
         cmdPtr->callback_ = std::move(resultCallback);
         cmdPtr->exceptionCallback_ =
             [ecpPtr, timeoutFlagPtr](const std::exception_ptr &ePtr) {

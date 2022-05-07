@@ -39,6 +39,7 @@ void SqlBinder::exec()
             std::move(parameters_),
             std::move(lengths_),
             std::move(formats_),
+            (int)resultFormat_,
             [holder = std::move(callbackHolder_),
              objs = std::move(objs_),
              sqlptr = std::move(sqlPtr_)](const Result &r) mutable {
@@ -87,6 +88,7 @@ void SqlBinder::exec()
             std::move(parameters_),
             std::move(lengths_),
             std::move(formats_),
+            (int)resultFormat_,
             [pro](const Result &r) { pro->set_value(r); },
             [pro](const std::exception_ptr &exception) {
                 try

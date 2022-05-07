@@ -93,6 +93,7 @@ void DbClientLockFree::execSql(
     std::vector<const char *> &&parameters,
     std::vector<int> &&length,
     std::vector<int> &&format,
+    int resultFormat,
     ResultCallback &&rcb,
     std::function<void(const std::exception_ptr &)> &&exceptCallback)
 {
@@ -109,6 +110,7 @@ void DbClientLockFree::execSql(
                            std::move(parameters),
                            std::move(length),
                            std::move(format),
+                           resultFormat,
                            std::move(rcb),
                            std::move(exceptCallback));
         return;
@@ -128,6 +130,7 @@ void DbClientLockFree::execSql(
                     std::move(parameters),
                     std::move(length),
                     std::move(format),
+                    resultFormat,
                     [rcb = std::move(rcb), this](const Result &r) {
                         if (sqlCmdBuffer_.empty())
                         {
@@ -139,7 +142,8 @@ void DbClientLockFree::execSql(
                                 [rcb = std::move(rcb), r]() { rcb(r); });
                         }
                     },
-                    std::move(exceptCallback));
+                    std::move(exceptCallback),
+                    true);
                 return;
             }
         }
@@ -158,6 +162,7 @@ void DbClientLockFree::execSql(
                         std::move(parameters),
                         std::move(length),
                         std::move(format),
+                        resultFormat,
                         [rcb = std::move(rcb), this](const Result &r) {
                             if (sqlCmdBuffer_.empty())
                             {
@@ -169,7 +174,8 @@ void DbClientLockFree::execSql(
                                     [rcb = std::move(rcb), r]() { rcb(r); });
                             }
                         },
-                        std::move(exceptCallback));
+                        std::move(exceptCallback),
+                        true);
                     return;
                 }
             }
@@ -190,8 +196,10 @@ void DbClientLockFree::execSql(
                                   std::move(parameters),
                                   std::move(length),
                                   std::move(format),
+                                  resultFormat,
                                   std::move(rcb),
-                                  std::move(exceptCallback));
+                                  std::move(exceptCallback),
+                                  true);
                     return;
                 }
             }
@@ -216,6 +224,7 @@ void DbClientLockFree::execSql(
         std::move(parameters),
         std::move(length),
         std::move(format),
+        resultFormat,
         [rcb = std::move(rcb), this](const Result &r) {
             if (sqlCmdBuffer_.empty())
             {
@@ -396,8 +405,10 @@ void DbClientLockFree::handleNewTask(const DbConnectionPtr &conn)
                       std::move(cmd->parameters_),
                       std::move(cmd->lengths_),
                       std::move(cmd->formats_),
+                      cmd->resultFormat_,
                       std::move(cmd->callback_),
-                      std::move(cmd->exceptionCallback_));
+                      std::move(cmd->exceptionCallback_),
+                      true);
 #endif
         return;
     }
@@ -503,6 +514,7 @@ void DbClientLockFree::execSqlWithTimeout(
     std::vector<const char *> &&parameters,
     std::vector<int> &&length,
     std::vector<int> &&format,
+    int resultFormat,
     ResultCallback &&rcb,
     std::function<void(const std::exception_ptr &)> &&ecb)
 {
@@ -559,6 +571,7 @@ void DbClientLockFree::execSqlWithTimeout(
                     std::move(parameters),
                     std::move(length),
                     std::move(format),
+                    resultFormat,
                     [resultCallback = std::move(resultCallback),
                      this](const Result &r) {
                         if (sqlCmdBuffer_.empty())
@@ -572,7 +585,8 @@ void DbClientLockFree::execSqlWithTimeout(
                                  r]() { resultCallback(r); });
                         }
                     },
-                    std::move(exceptionCallback));
+                    std::move(exceptionCallback),
+                    true);
                 timeoutFlagPtr->runTimer();
                 return;
             }
@@ -592,6 +606,7 @@ void DbClientLockFree::execSqlWithTimeout(
                         std::move(parameters),
                         std::move(length),
                         std::move(format),
+                        resultFormat,
                         [resultCallback = std::move(resultCallback),
                          this](const Result &r) {
                             if (sqlCmdBuffer_.empty())
@@ -605,7 +620,8 @@ void DbClientLockFree::execSqlWithTimeout(
                                      r]() { resultCallback(r); });
                             }
                         },
-                        std::move(exceptionCallback));
+                        std::move(exceptionCallback),
+                        true);
                     timeoutFlagPtr->runTimer();
                     return;
                 }
@@ -627,8 +643,10 @@ void DbClientLockFree::execSqlWithTimeout(
                                   std::move(parameters),
                                   std::move(length),
                                   std::move(format),
+                                  resultFormat,
                                   std::move(resultCallback),
-                                  std::move(exceptionCallback));
+                                  std::move(exceptionCallback),
+                                  true);
                     timeoutFlagPtr->runTimer();
                     return;
                 }
@@ -653,6 +671,7 @@ void DbClientLockFree::execSqlWithTimeout(
         std::move(parameters),
         std::move(length),
         std::move(format),
+        resultFormat,
         [resultCallback = std::move(resultCallback), this](const Result &r) {
             if (sqlCmdBuffer_.empty())
             {

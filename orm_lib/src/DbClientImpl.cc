@@ -126,6 +126,7 @@ void DbClientImpl::execSql(
     std::vector<const char *> &&parameters,
     std::vector<int> &&length,
     std::vector<int> &&format,
+    int resultFormat,
     ResultCallback &&rcb,
     std::function<void(const std::exception_ptr &)> &&exceptCallback)
 {
@@ -141,6 +142,7 @@ void DbClientImpl::execSql(
                            std::move(parameters),
                            std::move(length),
                            std::move(format),
+                           resultFormat,
                            std::move(rcb),
                            std::move(exceptCallback));
         return;
@@ -150,7 +152,7 @@ void DbClientImpl::execSql(
     {
         std::lock_guard<std::mutex> guard(connectionsMutex_);
 
-        if (readyConnections_.size() == 0)
+        if (readyConnections_.empty())
         {
             if (sqlCmdBuffer_.size() > 200000)
             {
@@ -166,6 +168,7 @@ void DbClientImpl::execSql(
                                              std::move(parameters),
                                              std::move(length),
                                              std::move(format),
+                                             resultFormat,
                                              std::move(rcb),
                                              std::move(exceptCallback));
                 sqlCmdBuffer_.push_back(std::move(cmd));
@@ -186,8 +189,10 @@ void DbClientImpl::execSql(
                       std::move(parameters),
                       std::move(length),
                       std::move(format),
+                      resultFormat,
                       std::move(rcb),
-                      std::move(exceptCallback));
+                      std::move(exceptCallback),
+                      true);
         return;
     }
     if (busy)
@@ -368,8 +373,10 @@ void DbClientImpl::handleNewTask(const DbConnectionPtr &connPtr)
                          std::move(cmd->parameters_),
                          std::move(cmd->lengths_),
                          std::move(cmd->formats_),
+                         cmd->resultFormat_,
                          std::move(cmd->callback_),
-                         std::move(cmd->exceptionCallback_));
+                         std::move(cmd->exceptionCallback_),
+                         true);
         return;
     }
 }
@@ -480,6 +487,7 @@ void DbClientImpl::execSqlWithTimeout(
     std::vector<const char *> &&parameters,
     std::vector<int> &&length,
     std::vector<int> &&format,
+    int resultFormat,
     ResultCallback &&rcb,
     std::function<void(const std::exception_ptr &)> &&ecb)
 {
@@ -529,7 +537,7 @@ void DbClientImpl::execSqlWithTimeout(
     {
         std::lock_guard<std::mutex> guard(connectionsMutex_);
 
-        if (readyConnections_.size() == 0)
+        if (readyConnections_.empty())
         {
             if (sqlCmdBuffer_.size() > 200000)
             {
@@ -545,6 +553,7 @@ void DbClientImpl::execSqlWithTimeout(
                                              std::move(parameters),
                                              std::move(length),
                                              std::move(format),
+                                             resultFormat,
                                              std::move(resultCallback),
                                              std::move(exceptionCallback));
                 sqlCmdBuffer_.emplace_back(command);
@@ -566,8 +575,10 @@ void DbClientImpl::execSqlWithTimeout(
                       std::move(parameters),
                       std::move(length),
                       std::move(format),
+                      resultFormat,
                       std::move(resultCallback),
-                      std::move(exceptionCallback));
+                      std::move(exceptionCallback),
+                      true);
         timeoutFlagPtr->runTimer();
         return;
     }

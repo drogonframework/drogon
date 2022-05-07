@@ -55,6 +55,7 @@ class TransactionImpl : public Transaction,
                  std::vector<const char *> &&parameters,
                  std::vector<int> &&length,
                  std::vector<int> &&format,
+                 int resultFormat,
                  ResultCallback &&rcb,
                  std::function<void(const std::exception_ptr &)>
                      &&exceptCallback) override
@@ -66,6 +67,7 @@ class TransactionImpl : public Transaction,
                           std::move(parameters),
                           std::move(length),
                           std::move(format),
+                          resultFormat,
                           std::move(rcb),
                           std::move(exceptCallback));
         }
@@ -78,6 +80,7 @@ class TransactionImpl : public Transaction,
                  parameters = std::move(parameters),
                  length = std::move(length),
                  format = std::move(format),
+                 resultFormat,
                  rcb = std::move(rcb),
                  exceptCallback = std::move(exceptCallback)]() mutable {
                     thisPtr->execSqlInLoop(std::move(sql),
@@ -85,6 +88,7 @@ class TransactionImpl : public Transaction,
                                            std::move(parameters),
                                            std::move(length),
                                            std::move(format),
+                                           resultFormat,
                                            std::move(rcb),
                                            std::move(exceptCallback));
                 });
@@ -97,6 +101,7 @@ class TransactionImpl : public Transaction,
         std::vector<const char *> &&parameters,
         std::vector<int> &&length,
         std::vector<int> &&format,
+        int resultFormat,
         ResultCallback &&rcb,
         std::function<void(const std::exception_ptr &)> &&exceptCallback);
     void execSqlInLoopWithTimeout(
@@ -105,6 +110,7 @@ class TransactionImpl : public Transaction,
         std::vector<const char *> &&parameters,
         std::vector<int> &&length,
         std::vector<int> &&format,
+        int resultFormat,
         ResultCallback &&rcb,
         std::function<void(const std::exception_ptr &)> &&exceptCallback);
     std::shared_ptr<Transaction> newTransaction(
@@ -126,10 +132,11 @@ class TransactionImpl : public Transaction,
     struct SqlCmd
     {
         string_view sql_;
-        size_t parametersNumber_;
+        size_t parametersNumber_{0};
         std::vector<const char *> parameters_;
         std::vector<int> lengths_;
         std::vector<int> formats_;
+        int resultFormat_{0};
         QueryCallback callback_;
         ExceptPtrCallback exceptionCallback_;
         bool isRollbackCmd_{false};
