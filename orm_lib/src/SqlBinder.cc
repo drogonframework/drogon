@@ -73,7 +73,8 @@ void SqlBinder::exec()
                     if (exceptPtrCb)
                         exceptPtrCb(exception);
                 }
-            });
+            },
+            usePreparedStmt_);
     }
     else
     {
@@ -99,7 +100,8 @@ void SqlBinder::exec()
                 {
                     assert(0);
                 }
-            });
+            },
+            usePreparedStmt_);
 
         try
         {

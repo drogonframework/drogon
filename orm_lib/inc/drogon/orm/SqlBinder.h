@@ -114,6 +114,10 @@ enum class ResultFormat
     Text = 0,
     Binary = 1
 };
+enum class SqlOption
+{
+    DisablePreparedStmt
+};
 
 namespace internal
 {
@@ -511,6 +515,28 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
         resultFormat_ = resultFormat;
         return *this;
     }
+    self &setSqlOption(SqlOption option)
+    {
+        switch (option)
+        {
+            case SqlOption::DisablePreparedStmt:
+                usePreparedStmt_ = false;
+                break;
+        }
+        return *this;
+    }
+    self &operator<<(const SqlOption &option)
+    {
+        return setSqlOption(option);
+    }
+    self &operator<<(SqlOption &option)
+    {
+        return setSqlOption(option);
+    }
+    self &operator<<(SqlOption &&option)
+    {
+        return setSqlOption(option);
+    }
     template <typename T>
     self &operator<<(const optional<T> &parameter)
     {
@@ -593,6 +619,7 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
     bool execed_{false};
     bool destructed_{false};
     bool isExceptionPtr_{false};
+    bool usePreparedStmt_{true};
     ClientType type_;
 };
 
