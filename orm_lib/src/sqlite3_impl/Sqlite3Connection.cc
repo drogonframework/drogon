@@ -96,8 +96,10 @@ void Sqlite3Connection::execSql(
     std::vector<const char *> &&parameters,
     std::vector<int> &&length,
     std::vector<int> &&format,
+    int /* resultFormat */,
     ResultCallback &&rcb,
-    std::function<void(const std::exception_ptr &)> &&exceptCallback)
+    std::function<void(const std::exception_ptr &)> &&exceptCallback,
+    bool /* usePreparedStmt */)
 {
     auto thisPtr = shared_from_this();
     loopThread_.getLoop()->queueInLoop(

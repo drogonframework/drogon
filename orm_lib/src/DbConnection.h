@@ -52,6 +52,7 @@ struct SqlCmd
     std::vector<const char *> parameters_;
     std::vector<int> lengths_;
     std::vector<int> formats_;
+    int resultFormat_{0};
     QueryCallback callback_;
     ExceptPtrCallback exceptionCallback_;
     std::string preparingStatement_;
@@ -63,6 +64,7 @@ struct SqlCmd
            std::vector<const char *> &&parameters,
            std::vector<int> &&length,
            std::vector<int> &&format,
+           int resultFormat,
            QueryCallback &&cb,
            ExceptPtrCallback &&exceptCb)
         : sql_(std::move(sql)),
@@ -70,6 +72,7 @@ struct SqlCmd
           parameters_(std::move(parameters)),
           lengths_(std::move(length)),
           formats_(std::move(format)),
+          resultFormat_(resultFormat),
           callback_(std::move(cb)),
           exceptionCallback_(std::move(exceptCb))
     {
@@ -111,8 +114,11 @@ class DbConnection : public trantor::NonCopyable
         std::vector<const char *> &&parameters,
         std::vector<int> &&length,
         std::vector<int> &&format,
+        int resultFormat,
         ResultCallback &&rcb,
-        std::function<void(const std::exception_ptr &)> &&exceptCallback) = 0;
+        std::function<void(const std::exception_ptr &)> &&exceptCallback,
+        bool usePreparedStmt) = 0;
+
     virtual void batchSql(
         std::deque<std::shared_ptr<SqlCmd>> &&sqlCommands) = 0;
 

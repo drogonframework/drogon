@@ -50,6 +50,7 @@ class DbClientLockFree : public DbClient,
                  std::vector<const char *> &&parameters,
                  std::vector<int> &&length,
                  std::vector<int> &&format,
+                 int resultFormat,
                  ResultCallback &&rcb,
                  std::function<void(const std::exception_ptr &)>
                      &&exceptCallback) override;
@@ -94,6 +95,7 @@ class DbClientLockFree : public DbClient,
         std::vector<const char *> &&parameters,
         std::vector<int> &&length,
         std::vector<int> &&format,
+        int resultFormat,
         ResultCallback &&rcb,
         std::function<void(const std::exception_ptr &)> &&ecb);
     void handleNewTask(const DbConnectionPtr &conn);

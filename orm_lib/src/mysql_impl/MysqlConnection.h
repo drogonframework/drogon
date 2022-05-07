@@ -44,14 +44,16 @@ class MysqlConnection : public DbConnection,
     {
     }
 
-    void execSql(std::string_view &&sql,
-                 size_t paraNum,
-                 std::vector<const char *> &&parameters,
-                 std::vector<int> &&length,
-                 std::vector<int> &&format,
-                 ResultCallback &&rcb,
-                 std::function<void(const std::exception_ptr &)>
-                     &&exceptCallback) override
+    void execSql(
+        std::string_view &&sql,
+        size_t paraNum,
+        std::vector<const char *> &&parameters,
+        std::vector<int> &&length,
+        std::vector<int> &&format,
+        int /* resultFormat */,
+        ResultCallback &&rcb,
+        std::function<void(const std::exception_ptr &)> &&exceptCallback,
+        bool /* usePreparedStmt */) override
     {
         if (loop_->isInLoopThread())
         {

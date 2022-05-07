@@ -115,6 +115,11 @@ enum class Mode
     NonBlocking,
     Blocking
 };
+enum class ResultFormat
+{
+    Text = 0,
+    Binary = 1
+};
 
 namespace internal
 {
@@ -511,6 +516,22 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
         return *this;
     }
 
+    self &operator<<(const ResultFormat &resultFormat)
+    {
+        resultFormat_ = resultFormat;
+        return *this;
+    }
+    self &operator<<(ResultFormat &resultFormat)
+    {
+        resultFormat_ = resultFormat;
+        return *this;
+    }
+    self &operator<<(ResultFormat &&resultFormat)
+    {
+        resultFormat_ = resultFormat;
+        return *this;
+    }
+
     template <typename T>
     self &operator<<(const std::optional<T> &parameter)
     {
@@ -592,6 +613,7 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
     std::vector<int> formats_;
     std::vector<std::shared_ptr<void>> objs_;
     Mode mode_{Mode::NonBlocking};
+    ResultFormat resultFormat_{ResultFormat::Text};
     std::shared_ptr<CallbackHolderBase> callbackHolder_;
     DrogonDbExceptionCallback exceptionCallback_;
     ExceptPtrCallback exceptionPtrCallback_;

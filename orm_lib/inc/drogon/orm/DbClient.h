@@ -350,6 +350,7 @@ class DROGON_EXPORT DbClient : public trantor::NonCopyable
         std::vector<const char *> &&parameters,
         std::vector<int> &&length,
         std::vector<int> &&format,
+        int resultFormat,
         ResultCallback &&rcb,
         std::function<void(const std::exception_ptr &)> &&exceptCallback) = 0;
 

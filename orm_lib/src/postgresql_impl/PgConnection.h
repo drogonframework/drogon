@@ -47,14 +47,16 @@ class PgConnection : public DbConnection,
 
     void init() override;
 
-    void execSql(std::string_view &&sql,
-                 size_t paraNum,
-                 std::vector<const char *> &&parameters,
-                 std::vector<int> &&length,
-                 std::vector<int> &&format,
-                 ResultCallback &&rcb,
-                 std::function<void(const std::exception_ptr &)>
-                     &&exceptCallback) override
+    void execSql(
+        std::string_view &&sql,
+        size_t paraNum,
+        std::vector<const char *> &&parameters,
+        std::vector<int> &&length,
+        std::vector<int> &&format,
+        int resultFormat,
+        ResultCallback &&rcb,
+        std::function<void(const std::exception_ptr &)> &&exceptCallback,
+        bool usePreparedStmt) override
     {
         if (loop_->isInLoopThread())
         {
@@ -64,28 +66,33 @@ class PgConnection : public DbConnection,
                           std::move(length),
                           std::move(format),
                           std::move(rcb),
-                          std::move(exceptCallback));
+                          std::move(exceptCallback),
+                          resultFormat,
+                          usePreparedStmt);
         }
         else
         {
             auto thisPtr = shared_from_this();
-            loop_->queueInLoop(
-                [thisPtr,
-                 sql = std::move(sql),
-                 paraNum,
-                 parameters = std::move(parameters),
-                 length = std::move(length),
-                 format = std::move(format),
-                 rcb = std::move(rcb),
-                 exceptCallback = std::move(exceptCallback)]() mutable {
-                    thisPtr->execSqlInLoop(std::move(sql),
-                                           paraNum,
-                                           std::move(parameters),
-                                           std::move(length),
-                                           std::move(format),
-                                           std::move(rcb),
-                                           std::move(exceptCallback));
-                });
+            loop_->queueInLoop([thisPtr,
+                                sql = std::move(sql),
+                                paraNum,
+                                parameters = std::move(parameters),
+                                length = std::move(length),
+                                format = std::move(format),
+                                rcb = std::move(rcb),
+                                exceptCallback = std::move(exceptCallback),
+                                resultFormat,
+                                usePreparedStmt]() mutable {
+                thisPtr->execSqlInLoop(std::move(sql),
+                                       paraNum,
+                                       std::move(parameters),
+                                       std::move(length),
+                                       std::move(format),
+                                       std::move(rcb),
+                                       std::move(exceptCallback),
+                                       resultFormat,
+                                       usePreparedStmt);
+            });
         }
     }
 
@@ -126,13 +133,16 @@ class PgConnection : public DbConnection,
         std::vector<int> &&length,
         std::vector<int> &&format,
         ResultCallback &&rcb,
-        std::function<void(const std::exception_ptr &)> &&exceptCallback);
+        std::function<void(const std::exception_ptr &)> &&exceptCallback,
+        int resultFormat = 0,
+        bool usePreparedStmt = true);
     void doAfterPreparing();
     std::string statementName_;
     int parametersNumber_{0};
     std::vector<const char *> parameters_;
     std::vector<int> lengths_;
     std::vector<int> formats_;
+    int resultFormat_{0};
     int flush();
     void handleFatalError();
     std::set<std::string> preparedStatements_;
