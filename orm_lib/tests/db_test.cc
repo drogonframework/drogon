@@ -379,7 +379,45 @@ DROGON_TEST(PostgreTest)
         "postgresql1",
         "pg",
         "postgresql");
-    /// 2.6 clean up
+
+    /// 2.6. Test pg options with plain sql
+    clientPtr->execSqlAsync(
+        "select 12345::int",
+        [TEST_CTX](const Result &r) {
+            MANDATE(r[0][0].length() == sizeof(int));
+            int i = *(int *)r[0][0].c_str();
+            MANDATE(ntohl(i) == 12345);
+            SUCCESS();
+        },
+        [TEST_CTX](const DrogonDbException &e) {
+            FAULT(
+                "postgresql - DbClient pg special options"
+                "what():" +
+                std::string(e.base().what()));
+        },
+        ResultFormat::Binary,
+        SqlOption::DisablePreparedStmt);
+
+    /// 2.7. Test pg options
+    clientPtr->execSqlAsync(
+        "select $1::int",
+        [TEST_CTX](const Result &r) {
+            MANDATE(r[0][0].length() == sizeof(int));
+            int i = *(int *)r[0][0].c_str();
+            MANDATE(ntohl(i) == 12345);
+            SUCCESS();
+        },
+        [TEST_CTX](const DrogonDbException &e) {
+            FAULT(
+                "postgresql - DbClient pg special options"
+                "what():" +
+                std::string(e.base().what()));
+        },
+        12345,
+        ResultFormat::Binary,
+        SqlOption::DisablePreparedStmt);
+
+    /// 2.8 clean up
     clientPtr->execSqlAsync(
         "truncate table users restart identity",
         [TEST_CTX](const Result &r) { SUCCESS(); },
@@ -464,7 +502,27 @@ DROGON_TEST(PostgreTest)
     {
         SUCCESS();
     }
-    /// 3.6 clean up
+
+    /// 3.6. Test pg options
+    try
+    {
+        auto r = clientPtr->execSqlSync("select $1::int",
+                                        12345,
+                                        ResultFormat::Binary,
+                                        SqlOption::DisablePreparedStmt);
+        MANDATE(r[0][0].length() == sizeof(int));
+        int i = *(int *)r[0][0].c_str();
+        MANDATE(ntohl(i) == 12345);
+    }
+    catch (const DrogonDbException &e)
+    {
+        FAULT(
+            "postgresql - DbClient pg special options"
+            "what():" +
+            std::string(e.base().what()));
+    }
+
+    /// 3.7 clean up
     try
     {
         auto r =
@@ -557,7 +615,28 @@ DROGON_TEST(PostgreTest)
     {
         SUCCESS();
     }
-    /// 4.6 clean up
+
+    /// 4.6. Test pg options
+    f = clientPtr->execSqlAsyncFuture("select $1::int",
+                                      12345,
+                                      ResultFormat::Binary,
+                                      SqlOption::DisablePreparedStmt);
+    try
+    {
+        auto r = f.get();
+        MANDATE(r[0][0].length() == sizeof(int));
+        int i = *(int *)r[0][0].c_str();
+        MANDATE(ntohl(i) == 12345);
+    }
+    catch (const DrogonDbException &e)
+    {
+        FAULT(
+            "postgresql - DbClient pg special options"
+            "what():" +
+            std::string(e.base().what()));
+    }
+
+    /// 4.7 clean up
     f = clientPtr->execSqlAsyncFuture("truncate table users restart identity");
     try
     {
