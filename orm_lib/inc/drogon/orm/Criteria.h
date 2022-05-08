@@ -101,19 +101,13 @@ class DROGON_EXPORT Criteria
     /**
      * @brief Construct a new custom Criteria object
      *
-     * @tparam T the type of the object to be operated with.
-     * @param target The custom operation target.
-     * @param opera The custom operator.
-     * @param arg The object to be operated with.
+     * @param lValue The string before operand.
+     * @param opera The custom operand.
+     * @param rValue The string after operand.
      */
-    template <typename T>
-    Criteria(const std::string &target, const std::string &opera, T &&arg)
+    Criteria(const std::string &lValue, const std::string &opera, const std::string &rValue)
     {
-        conditionString_ = target + " " + opera + " $?";
-        outputArgumentsFunc_ =
-            [arg = std::forward<T>(arg)](internal::SqlBinder &binder) {
-                binder << arg;
-            };
+        conditionString_ = lValue + " " + opera + " " + rValue;
     }
 
     /**
