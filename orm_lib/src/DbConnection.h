@@ -55,7 +55,7 @@ struct SqlCmd
     int resultFormat_{0};
     QueryCallback callback_;
     ExceptPtrCallback exceptionCallback_;
-    bool usePreparedStatement_{true};
+    bool usePreparedStmt_{true};
     std::string preparingStatement_;
 #if LIBPQ_SUPPORTS_BATCH_MODE
     bool isChanging_{false};
@@ -67,7 +67,8 @@ struct SqlCmd
            std::vector<int> &&format,
            int resultFormat,
            QueryCallback &&cb,
-           ExceptPtrCallback &&exceptCb)
+           ExceptPtrCallback &&exceptCb,
+           bool usePreparedStmt = true)
         : sql_(std::move(sql)),
           parametersNumber_(paraNum),
           parameters_(std::move(parameters)),
@@ -75,7 +76,8 @@ struct SqlCmd
           formats_(std::move(format)),
           resultFormat_(resultFormat),
           callback_(std::move(cb)),
-          exceptionCallback_(std::move(exceptCb))
+          exceptionCallback_(std::move(exceptCb)),
+          usePreparedStmt_(usePreparedStmt)
     {
     }
 };
