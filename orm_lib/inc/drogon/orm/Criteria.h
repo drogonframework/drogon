@@ -43,7 +43,12 @@ enum class CompareOperator
     In,
     NotIn,
     IsNull,
-    IsNotNull
+    IsNotNull,
+
+    /// For postgresql
+    Subset,
+    Superset,
+    Overlap,
 };
 /**
  * @brief this class represents a comparison condition.
@@ -70,6 +75,24 @@ class DROGON_EXPORT Criteria
     std::string criteriaString() const
     {
         return conditionString_;
+    }
+
+    /**
+     * @brief Construct a new custom Criteria object
+     *
+     * @tparam T the type of the object to be operated with.
+     * @param target The custom operation target.
+     * @param opera The custom operator.
+     * @param arg The object to be operated with.
+     */
+    template <typename T>
+    Criteria(const std::string &target, const std::string &opera, T &&arg)
+    {
+        conditionString_ = target + " " + opera + " $?";
+        outputArgumentsFunc_ =
+            [arg = std::forward<T>(arg)](internal::SqlBinder &binder) {
+                binder << arg;
+            };
     }
 
     /**
@@ -111,6 +134,15 @@ class DROGON_EXPORT Criteria
                 break;
             case CompareOperator::NotLike:
                 conditionString_ += " not like $?";
+                break;
+            case CompareOperator::Subset:
+                conditionString_ += " <@ $?";
+                break;
+            case CompareOperator::Superset:
+                conditionString_ += " @> $?";
+                break;
+            case CompareOperator::Overlap:
+                conditionString_ += " && $?";
                 break;
             default:
                 break;
