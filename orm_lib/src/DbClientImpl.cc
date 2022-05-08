@@ -169,7 +169,8 @@ void DbClientImpl::execSql(
                                              std::move(format),
                                              resultFormat,
                                              std::move(rcb),
-                                             std::move(exceptCallback));
+                                             std::move(exceptCallback),
+                                             usePreparedStmt);
                 sqlCmdBuffer_.push_back(std::move(cmd));
             }
         }
@@ -378,7 +379,7 @@ void DbClientImpl::handleNewTask(const DbConnectionPtr &connPtr)
                          cmd->resultFormat_,
                          std::move(cmd->callback_),
                          std::move(cmd->exceptionCallback_),
-                         cmd->usePreparedStatement_);
+                         cmd->usePreparedStmt_);
         return;
     }
 }
@@ -565,8 +566,8 @@ void DbClientImpl::execSqlWithTimeout(
                                              std::move(format),
                                              resultFormat,
                                              std::move(resultCallback),
-                                             std::move(exceptionCallback));
-                command->usePreparedStatement_ = usePreparedStmt;
+                                             std::move(exceptionCallback),
+                                             usePreparedStmt);
                 sqlCmdBuffer_.emplace_back(command);
                 *cmd = command;
             }
