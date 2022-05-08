@@ -28,4 +28,11 @@ DROGON_TEST(CookieTest)
     CHECK(cookie5.cookieString() ==
           "Set-Cookie: test=5; "
           "SameSite=None; Secure; HttpOnly\r\n");
+
+    CHECK(drogon::Cookie::SameSite::kLax ==
+          drogon::Cookie::convertString2SameSite("Lax"));
+    CHECK(drogon::Cookie::SameSite::kStrict ==
+          drogon::Cookie::convertString2SameSite("Strict"));
+    CHECK(drogon::Cookie::SameSite::kNone ==
+          drogon::Cookie::convertString2SameSite("None"));
 }

@@ -207,10 +207,13 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
 
     HttpAppFramework &setupFileLogger() override;
 
-    HttpAppFramework &enableSession(const size_t timeout) override
+    HttpAppFramework &enableSession(
+        const size_t timeout,
+        Cookie::SameSite sameSite = Cookie::SameSite::kNull) override
     {
         useSession_ = true;
         sessionTimeout_ = timeout;
+        sessionSameSite_ = sameSite;
         return *this;
     }
     HttpAppFramework &disableSession() override
@@ -579,6 +582,7 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     // set sessionTimeout_=0 to make location session valid forever based on
     // cookies;
     size_t sessionTimeout_{0};
+    Cookie::SameSite sessionSameSite_{Cookie::SameSite::kNull};
     size_t idleConnectionTimeout_{60};
     bool useSession_{false};
     std::string serverHeader_{"server: drogon/" + drogon::getVersion() +

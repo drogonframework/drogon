@@ -30,6 +30,7 @@
 #include <drogon/HttpResponse.h>
 #include <drogon/orm/DbClient.h>
 #include <drogon/nosql/RedisClient.h>
+#include <drogon/Cookie.h>
 #include <trantor/net/Resolver.h>
 #include <trantor/net/EventLoop.h>
 #include <trantor/utils/NonCopyable.h>
@@ -714,6 +715,7 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
     /// Enable sessions supporting.
     /**
      * @param timeout The number of seconds which is the timeout of a session
+     * @param sameSite The default value of SameSite attribute
      *
      * @note
      * Session support is disabled by default.
@@ -722,7 +724,9 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
      * If the timeout parameter is equal to 0, sessions will remain permanently
      * This operation can be performed by an option in the configuration file.
      */
-    virtual HttpAppFramework &enableSession(const size_t timeout = 0) = 0;
+    virtual HttpAppFramework &enableSession(
+        const size_t timeout = 0,
+        Cookie::SameSite sameSite = Cookie::SameSite::kNull) = 0;
 
     /// A wrapper of the above method.
     /**
@@ -733,9 +737,10 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
        @endcode
      */
     inline HttpAppFramework &enableSession(
-        const std::chrono::duration<double> &timeout)
+        const std::chrono::duration<double> &timeout,
+        Cookie::SameSite sameSite = Cookie::SameSite::kNull)
     {
-        return enableSession((size_t)timeout.count());
+        return enableSession((size_t)timeout.count(), sameSite);
     }
 
     /// Disable sessions supporting.

@@ -827,18 +827,8 @@ void HttpResponseImpl::addHeader(const char *start,
                 }
                 else if (cookie_name == "samesite")
                 {
-                    if (cookie_value == "Lax")
-                    {
-                        cookie.setSameSite(Cookie::SameSite::kLax);
-                    }
-                    else if (cookie_value == "Strict")
-                    {
-                        cookie.setSameSite(Cookie::SameSite::kStrict);
-                    }
-                    else if (cookie_value == "None")
-                    {
-                        cookie.setSameSite(Cookie::SameSite::kNone);
-                    }
+                    cookie.setSameSite(
+                        cookie.convertString2SameSite(cookie_value));
                 }
                 else if (cookie_name == "max-age")
                 {

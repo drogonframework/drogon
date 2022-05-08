@@ -15,6 +15,7 @@
 
 #include <drogon/exports.h>
 #include <drogon/utils/optional.h>
+#include <drogon/utils/string_view.h>
 #include <trantor/utils/Date.h>
 #include <string>
 #include <limits>
@@ -292,6 +293,11 @@ class DROGON_EXPORT Cookie
     {
         return sameSite_;
     }
+
+    /**
+     * @brief convert a string value to class SameSite
+     */
+    static SameSite convertString2SameSite(const string_view &sameSite);
 
   private:
     trantor::Date expiresDate_{(std::numeric_limits<int64_t>::max)()};
