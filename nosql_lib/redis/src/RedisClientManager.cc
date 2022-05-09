@@ -47,6 +47,9 @@ void RedisClientManager::createRedisClients(
                 {
                     c->setTimeout(redisInfo.timeout_);
                 }
+                ioLoops[idx]->runOnQuit([&, name = redisInfo.name_]() {
+                    redisFastClientsMap_[name].getThreadData().reset();
+                });
             });
         }
         else
