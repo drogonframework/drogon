@@ -43,33 +43,7 @@ enum class CompareOperator
     In,
     NotIn,
     IsNull,
-    IsNotNull,
-
-    /// For postgresql generic
-    And,
-    Or,
-    GG,
-    GGE,
-    LL,
-    LLE,
-
-    /// For postgresql ranges
-    Subset,
-    Superset,
-    Adjacent,
-
-    /// For postgresql patterns
-    Similar,
-    NotSimilar,
-
-    /// For postgresql search
-    Match,
-
-    /// For postgresql jsonb
-    IsElem,
-    AnyAreElem,
-    AllAreElem,
-    PathToItem,
+    IsNotNull
 };
 /**
  * @brief this class represents a comparison condition.
@@ -149,54 +123,6 @@ class DROGON_EXPORT Criteria
                 break;
             case CompareOperator::NotLike:
                 conditionString_ += " not like $?";
-                break;
-            case CompareOperator::And:
-                conditionString_ += " && $?";
-                break;
-            case CompareOperator::Or:
-                conditionString_ += " || $?";
-                break;
-            case CompareOperator::GG:
-                conditionString_ += " >> $?";
-                break;
-            case CompareOperator::GGE:
-                conditionString_ += " &> $?";
-                break;
-            case CompareOperator::LL:
-                conditionString_ += " << $?";
-                break;
-            case CompareOperator::LLE:
-                conditionString_ += " &< $?";
-                break;
-            case CompareOperator::Subset:
-                conditionString_ += " <@ $?";
-                break;
-            case CompareOperator::Superset:
-                conditionString_ += " @> $?";
-                break;
-            case CompareOperator::Adjacent:
-                conditionString_ += " -|- $?";
-                break;
-            case CompareOperator::Similar:
-                conditionString_ += " similar to $?";
-                break;
-            case CompareOperator::NotSimilar:
-                conditionString_ += " not similar to $?";
-                break;
-            case CompareOperator::Match:
-                conditionString_ += " @@ $?";
-                break;
-            case CompareOperator::IsElem:
-                conditionString_ += " ? $?";
-                break;
-            case CompareOperator::AnyAreElem:
-                conditionString_ += " ?| $?";
-                break;
-            case CompareOperator::AllAreElem:
-                conditionString_ += " ?& $?";
-                break;
-            case CompareOperator::PathToItem:
-                conditionString_ += " @? $?";
                 break;
             default:
                 break;
