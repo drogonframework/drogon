@@ -29,7 +29,8 @@ class CookieSameSiteController
             old_session_same_site =
                 req->session()->get<std::string>(SESSION_SAME_SITE);
         }
-        LOG_TRACE << "Server: new sameSite == " << newSameSite << ", old sameSite == " << old_session_same_site;
+        LOG_TRACE << "Server: new sameSite == " << newSameSite
+                  << ", old sameSite == " << old_session_same_site;
         drogon::HttpAppFramework::instance().enableSession(
             0, Cookie::convertString2SameSite(newSameSite));
 
