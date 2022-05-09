@@ -21,6 +21,7 @@
 #include <string>
 #include <tuple>
 #include <type_traits>
+#include <utility>
 
 namespace Json
 {
@@ -45,6 +46,21 @@ enum class CompareOperator
     IsNull,
     IsNotNull
 };
+
+/**
+ * @brief Wrapper for custom SQL string
+ */
+struct CustomSql
+{
+    explicit CustomSql(std::string content) : content(std::move(content)) {}
+    std::string content;
+};
+
+/**
+ * @brief User-defined literal to convert a string to CustomSql
+ */
+CustomSql operator ""_sql(const char *str, size_t);
+
 /**
  * @brief this class represents a comparison condition.
  */
@@ -75,13 +91,22 @@ class DROGON_EXPORT Criteria
     /**
      * @brief Construct a new custom Criteria object
      *
-     * @param lValue The string before operand.
-     * @param opera The custom operand.
-     * @param rValue The string after operand.
+     * @param sql The SQL statement to be executed.
+     * @param args The parameters to be passed to the placeholders.
+     *
+     * @note
+     *
+     * Use $? as placeholders in the SQL statement.
+     *
      */
-    Criteria(const std::string &lValue, const std::string &opera, const std::string &rValue)
+    template <typename... Arguments>
+    explicit Criteria(const CustomSql &sql, Arguments &&...args)
     {
-        conditionString_ = lValue + " " + opera + " " + rValue;
+        conditionString_ = sql.content;
+        outputArgumentsFunc_ =
+                [&args...](internal::SqlBinder &binder) {
+                    (void)std::initializer_list<int>{(binder << std::forward<Arguments>(args), 0)...};
+                };
     }
 
     /**
