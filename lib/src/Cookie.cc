@@ -104,7 +104,7 @@ Cookie::SameSite Cookie::convertString2SameSite(const string_view& sameSite)
     return Cookie::SameSite::kNull;
 }
 
-std::string Cookie::convertSameSite2String(const SameSite& sameSite)
+std::string_view Cookie::convertSameSite2String(const SameSite& sameSite)
 {
     switch (sameSite)
     {
