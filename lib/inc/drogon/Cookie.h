@@ -304,7 +304,7 @@ class DROGON_EXPORT Cookie
      * @brief Converts an enum class SameSite value to its associated string
      * value
      */
-    static std::string_view convertSameSite2String(const SameSite &sameSite);
+    static string_view convertSameSite2String(const SameSite &sameSite);
 
   private:
     trantor::Date expiresDate_{(std::numeric_limits<int64_t>::max)()};
