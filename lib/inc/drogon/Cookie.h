@@ -295,12 +295,14 @@ class DROGON_EXPORT Cookie
     }
 
     /**
-     * @brief Converts a string value to its associated enum class SameSite value
+     * @brief Converts a string value to its associated enum class SameSite
+     * value
      */
     static SameSite convertString2SameSite(const string_view &sameSite);
 
     /**
-     * @brief Converts an enum class SameSite value to its associated string value
+     * @brief Converts an enum class SameSite value to its associated string
+     * value
      */
     static std::string_view convertSameSite2String(const SameSite &sameSite);
 
