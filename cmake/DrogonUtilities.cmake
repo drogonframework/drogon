@@ -27,6 +27,13 @@ function(drogon_create_views arg)
                      ""
                      outputFile
                      ${f2})
+      if( "${ARGV3}" EQUAL "TRUE")
+        set(ns "")
+      else()
+        string(REPLACE "::" "_" nSpace ${ARGV3})
+        set(ns -n ${nSpace})
+        set(outputFile "${nSpace}_${outputFile}")
+      endif()
       add_custom_command(OUTPUT ${ARGV2}/${outputFile}.h ${ARGV2}/${outputFile}.cc
                          COMMAND drogon_ctl
                                  ARGS
@@ -36,6 +43,7 @@ function(drogon_create_views arg)
                                  --path-to-namespace
                                  -o
                                  ${ARGV2}
+                                 ${ns}
                          DEPENDS ${cspFile}
                          WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
                          VERBATIM)
