@@ -15,6 +15,11 @@
 #include "RedisConnection.h"
 #include <drogon/nosql/RedisResult.h>
 #include <future>
+#include <string.h>
+
+#ifdef _MSC_VER
+#define strcasecmp _stricmp
+#endif
 
 using namespace drogon::nosql;
 RedisConnection::RedisConnection(const trantor::InetAddress &serverAddress,
@@ -439,12 +444,12 @@ void RedisConnection::handleSubscribeResult(redisReply *result,
         result->element[0]->type == REDIS_REPLY_STRING)
     {
         const char *type = result->element[0]->str;
-        int isPattern = std::tolower(type[0]) == 'p' ? 1 : 0;
+        int isPattern = (type[0] == 'p' || type[0] == 'P') ? 1 : 0;
         if (isPattern)
         {
             type += 1;
         }
-        if (strcmp(type, "message") == 0)
+        if (strcasecmp(type, "message") == 0)
         {
             std::string channel(result->element[1 + isPattern]->str,
                                 result->element[1 + isPattern]->len);
@@ -470,12 +475,12 @@ void RedisConnection::handleSubscribeResult(redisReply *result,
         long long number = result->element[2]->integer;
 
         // On channel subscribed
-        if (strcmp(type, "subscribe") == 0)
+        if (strcasecmp(type, "subscribe") == 0)
         {
             subCtx->onSubscribe(channel, number);
         }
         // On channel unsubscribed
-        else if (strcmp(type, "unsubscribe") == 0)
+        else if (strcasecmp(type, "unsubscribe") == 0)
         {
             subCtx->onUnsubscribe(channel, number);
             subContexts_.erase(subCtx->contextId());
