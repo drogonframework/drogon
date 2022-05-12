@@ -19,11 +19,10 @@ DROGON_TEST(RedisSubscriberTest)
 
     auto subscriber = redisClient->newSubscriber();
     subscriber->subscribe(
-        [](const std::string &channel, const std::string &message) {
+        "test_sub", [](const std::string &channel, const std::string &message) {
             ++nMsgRecv;
             LOG_INFO << "Channel test_sub receive " << nMsgRecv << " messages";
-        },
-        "test_sub");
+        });
     std::this_thread::sleep_for(1s);
 
     auto fnPublish = [TEST_CTX](int i) {

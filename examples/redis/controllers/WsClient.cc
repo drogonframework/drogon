@@ -83,6 +83,7 @@ void WsClient::handleNewMessage(const WebSocketConnectionPtr& wsConnPtr,
         }
 
         context->subscriber_->subscribe(
+            channel,
             [channel, wsConnPtr](const std::string& subChannel,
                                  const std::string& subMessage) {
                 assert(subChannel == channel);
@@ -90,8 +91,7 @@ void WsClient::handleNewMessage(const WebSocketConnectionPtr& wsConnPtr,
                 std::string resp = "{\"channel\":\"" + subChannel +
                                    "\",\"message\":\"" + subMessage + "\"}";
                 wsConnPtr->send(resp);
-            },
-            channel);
+            });
 
         context->channels_.insert(channel);
         wsConnPtr->send("Subscribe to channel: " + channel);

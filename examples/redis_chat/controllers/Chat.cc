@@ -133,10 +133,9 @@ void Chat::handleNewMessage(const WebSocketConnectionPtr& wsConnPtr,
             }
             wsConnPtr->send("INFO: Enter room " + room);
             context->subscriber_->subscribe(
-                [wsConnPtr](const std::string&, const std::string& msg) {
+                room, [wsConnPtr](const std::string&, const std::string& msg) {
                     wsConnPtr->send(msg);
-                },
-                room);
+                });
             context->room_ = room;
             break;
         }

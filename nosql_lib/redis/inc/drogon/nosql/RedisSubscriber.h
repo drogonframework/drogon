@@ -35,8 +35,8 @@ class RedisSubscriber
      * message callbacks will be called in subscription order.
      * One unsubscribe() call will remove all callbacks.
      */
-    virtual void subscribe(RedisMessageCallback &&messageCallback,
-                           const std::string &channel) noexcept = 0;
+    virtual void subscribe(const std::string &channel,
+                           RedisMessageCallback &&messageCallback) noexcept = 0;
 
     /**
      * @brief Unsubscribe from a channel. Once this function returns, the
