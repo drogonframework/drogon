@@ -19,6 +19,8 @@
 
 using namespace drogon::nosql;
 
+std::atomic<unsigned long long> SubscribeContext::maxContextId_{0};
+
 static std::string formatSubscribeCommand(const std::string &channel,
                                           bool subscribe)
 {
@@ -61,7 +63,8 @@ static std::string formatSubscribeCommand(const std::string &channel,
 
 SubscribeContext::SubscribeContext(std::weak_ptr<RedisSubscriber> &&weakSub,
                                    const std::string &channel)
-    : weakSub_(std::move(weakSub)),
+    : contextId_(++maxContextId_),
+      weakSub_(std::move(weakSub)),
       channel_(channel),
       subscribeCommand_(formatSubscribeCommand(channel, true)),
       unsubscribeCommand_(formatSubscribeCommand(channel, false))
@@ -84,9 +87,4 @@ void SubscribeContext::onSubscribe()
 
 void SubscribeContext::onUnsubscribe()
 {
-    auto subPtr =
-        std::static_pointer_cast<RedisSubscriberImpl>(weakSub_.lock());
-    if (!subPtr)
-        return;
-    subPtr->removeContext(channel_);
 }

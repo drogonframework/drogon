@@ -15,6 +15,7 @@
 
 #include <drogon/nosql/RedisClient.h>
 #include <list>
+#include <atomic>
 #include <mutex>
 #include <utility>
 
@@ -29,6 +30,11 @@ class SubscribeContext
     {
         return std::shared_ptr<SubscribeContext>(
             new SubscribeContext(std::move(weakSub), channel));
+    }
+
+    unsigned long long contextId() const
+    {
+        return contextId_;
     }
 
     const std::string& channel() const
@@ -65,8 +71,22 @@ class SubscribeContext
         messageCallbacks_.clear();
     }
 
+    /**
+     * Message callback called by RedisConnection, whenever a message is
+     * published in target channel
+     * @param channel : target channel name
+     * @param message : message from channel
+     */
     void onMessage(const std::string& channel, const std::string& message);
+
+    /**
+     * Callback called by RedisConnection, whenever a sub or re-sub is success
+     */
     void onSubscribe();
+
+    /**
+     * Callback called by RedisConnection, when unsubscription success.
+     */
     void onUnsubscribe();
 
     bool alive() const
@@ -75,9 +95,11 @@ class SubscribeContext
     }
 
   private:
-    explicit SubscribeContext(std::weak_ptr<RedisSubscriber>&& weakSub,
-                              const std::string& channel);
+    SubscribeContext(std::weak_ptr<RedisSubscriber>&& weakSub,
+                     const std::string& channel);
+    static std::atomic<unsigned long long> maxContextId_;
 
+    unsigned long long contextId_;
     std::weak_ptr<RedisSubscriber> weakSub_;
     std::string channel_;
     std::string subscribeCommand_;

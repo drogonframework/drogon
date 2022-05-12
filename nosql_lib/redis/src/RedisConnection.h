@@ -190,6 +190,10 @@ class RedisConnection : public trantor::NonCopyable,
     std::queue<RedisExceptionCallback> exceptionCallbacks_;
     ConnectStatus status_{ConnectStatus::kNone};
 
+    // used to keep the lifetime of context object
+    std::unordered_map<unsigned long long, std::shared_ptr<SubscribeContext>>
+        subContexts_;
+
     void startConnectionInLoop();
     static void addWrite(void *userData);
     static void delWrite(void *userData);

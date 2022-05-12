@@ -84,7 +84,6 @@ void RedisSubscriberImpl::unsubscribe(const std::string &channel) noexcept
         }
         subCtx = std::move(iter->second);
         subscribeContexts_.erase(iter);
-        unsubContexts_.emplace(subCtx->channel(), subCtx);
     }
     subCtx->disable();
 
@@ -151,10 +150,4 @@ void RedisSubscriberImpl::subscribeAll()
         }
     }
     subscribeNext();
-}
-
-void RedisSubscriberImpl::removeContext(const std::string &channel)
-{
-    std::lock_guard<std::mutex> lock(mutex_);
-    unsubContexts_.erase(channel);
 }

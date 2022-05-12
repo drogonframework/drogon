@@ -44,15 +44,11 @@ class RedisSubscriberImpl
     void subscribeNext();
     // Subscribe all channels.
     void subscribeAll();
-    // Remove unsub-ed channel context
-    void removeContext(const std::string &channel);
 
   private:
     RedisConnectionPtr conn_;
     std::unordered_map<std::string, std::shared_ptr<SubscribeContext>>
         subscribeContexts_;
-    std::unordered_map<std::string, std::shared_ptr<SubscribeContext>>
-        unsubContexts_;
     std::list<std::shared_ptr<std::function<void(const RedisConnectionPtr &)>>>
         tasks_;
     std::mutex mutex_;

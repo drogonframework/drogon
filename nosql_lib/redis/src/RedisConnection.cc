@@ -389,6 +389,7 @@ void RedisConnection::sendSubscribeInLoop(
             // Unsub-ed by somewhere else
             return;
         }
+        subContexts_.emplace(subCtx->contextId(), subCtx);
         redisAsyncFormattedCommand(
             redisContext_,
             [](redisAsyncContext *context, void *r, void *subCtx) {
@@ -478,11 +479,14 @@ void RedisConnection::handleSubscribeResult(redisReply *result,
             LOG_DEBUG << "Unsubscribe success from [" << channel << "], total "
                       << number;
             subCtx->onUnsubscribe();
+            subContexts_.erase(subCtx->contextId());
         }
         // Should not happen
         else
         {
             LOG_ERROR << "Unknown redis response: " << result->element[0]->str;
+            // Shouldn't let message from another endpoint to abort this
+            // program. So no assert(false) here.
         }
     }
 
