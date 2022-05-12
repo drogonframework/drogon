@@ -8,6 +8,7 @@
 using namespace std::chrono_literals;
 using namespace drogon::nosql;
 static std::atomic_int nMsgRecv{0};
+static std::atomic_int nPmsgRecv{0};
 static std::atomic_int nMsgSent{0};
 
 RedisClientPtr redisClient;
@@ -18,14 +19,24 @@ DROGON_TEST(RedisSubscriberTest)
     REQUIRE(redisClient != nullptr);
 
     auto subscriber = redisClient->newSubscriber();
-    subscriber->subscribe(
-        "test_sub", [](const std::string &channel, const std::string &message) {
-            ++nMsgRecv;
-            LOG_INFO << "Channel test_sub receive " << nMsgRecv << " messages";
-        });
+    subscriber->subscribe("test_sub",
+                          [](const std::string &channel,
+                             const std::string &message) {
+                              ++nMsgRecv;
+                              LOG_INFO << "Channel test_sub receive "
+                                       << nMsgRecv << " messages: " << message;
+                          });
+    subscriber->psubscribe("test_*",
+                           [](const std::string &channel,
+                              const std::string &message) {
+                               ++nPmsgRecv;
+                               LOG_INFO << "Channel " << channel << " receive "
+                                        << nPmsgRecv
+                                        << " pmessages: " << message;
+                           });
     std::this_thread::sleep_for(1s);
 
-    auto fnPublish = [TEST_CTX](int i) {
+    auto fnPublish = [TEST_CTX](const char *channel, int i) {
         redisClient->execCommandAsync(
             [TEST_CTX](const drogon::nosql::RedisResult &r) {
                 SUCCESS();
@@ -37,14 +48,18 @@ DROGON_TEST(RedisSubscriberTest)
                 ++nMsgSent;
             },
             "publish %s %s%d",
-            "test_sub",
+            channel,
             "drogon",
             i);
     };
 
-    for (int i = 0; i < 10; ++i)
+    for (int i = 0; i < 5; ++i)
     {
-        fnPublish(i);
+        fnPublish("test_sub", i);
+    }
+    for (int i = 5; i < 10; ++i)
+    {
+        fnPublish("test_test", i);
     }
 
     while (nMsgSent < 10)
@@ -53,16 +68,30 @@ DROGON_TEST(RedisSubscriberTest)
     }
     std::this_thread::sleep_for(1s);
 
-    MANDATE(nMsgRecv == 10);
+    MANDATE(nMsgRecv == 5);
+    MANDATE(nPmsgRecv == 10);
 
+    // Unsub from channel
     subscriber->unsubscribe("test_sub");
-    std::this_thread::sleep_for(1s);
-    fnPublish(11);
+    fnPublish("test_sub", 11);
     while (nMsgSent < 11)
     {
         std::this_thread::sleep_for(100ms);
     }
-    MANDATE(nMsgRecv == 10);
+    std::this_thread::sleep_for(1s);
+    MANDATE(nMsgRecv == 5);
+    MANDATE(nPmsgRecv == 11);
+
+    // Unsub from pattern
+    subscriber->punsubscribe("test_*");
+    fnPublish("test_sub", 12);
+    while (nMsgSent < 12)
+    {
+        std::this_thread::sleep_for(100ms);
+    }
+    std::this_thread::sleep_for(1s);
+    MANDATE(nMsgRecv == 5);
+    MANDATE(nPmsgRecv == 11);
 }
 
 int main(int argc, char **argv)

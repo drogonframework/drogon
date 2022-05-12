@@ -146,8 +146,8 @@ class RedisConnection : public trantor::NonCopyable,
         }
     }
 
-    void sendSubscribe(const std::shared_ptr<SubscribeContext> &subCtx,
-                       bool subscribe = true);
+    void sendSubscribe(const std::shared_ptr<SubscribeContext> &subCtx);
+    void sendUnsubscribe(const std::shared_ptr<SubscribeContext> &subCtx);
 
     ~RedisConnection()
     {
@@ -206,8 +206,8 @@ class RedisConnection : public trantor::NonCopyable,
     void sendCommandInLoop(const std::string &command,
                            RedisResultCallback &&resultCallback,
                            RedisExceptionCallback &&exceptionCallback);
-    void sendSubscribeInLoop(const std::shared_ptr<SubscribeContext> &subCtx,
-                             bool subscribe);
+    void sendSubscribeInLoop(const std::shared_ptr<SubscribeContext> &subCtx);
+    void sendUnsubscribeInLoop(const std::shared_ptr<SubscribeContext> &subCtx);
     void handleSubscribeResult(redisReply *result, SubscribeContext *subCtx);
 
     void handleDisconnect();

@@ -26,10 +26,11 @@ class SubscribeContext
   public:
     static std::shared_ptr<SubscribeContext> newContext(
         std::weak_ptr<RedisSubscriber>&& weakSub,
-        const std::string& channel)
+        const std::string& channel,
+        bool isPattern = false)
     {
         return std::shared_ptr<SubscribeContext>(
-            new SubscribeContext(std::move(weakSub), channel));
+            new SubscribeContext(std::move(weakSub), channel, isPattern));
     }
 
     unsigned long long contextId() const
@@ -82,12 +83,12 @@ class SubscribeContext
     /**
      * Callback called by RedisConnection, whenever a sub or re-sub is success
      */
-    void onSubscribe();
+    void onSubscribe(const std::string& channel, long long numChannels);
 
     /**
      * Callback called by RedisConnection, when unsubscription success.
      */
-    void onUnsubscribe();
+    void onUnsubscribe(const std::string& channel, long long numChannels);
 
     bool alive() const
     {
@@ -96,12 +97,14 @@ class SubscribeContext
 
   private:
     SubscribeContext(std::weak_ptr<RedisSubscriber>&& weakSub,
-                     const std::string& channel);
+                     const std::string& channel,
+                     bool isPattern);
     static std::atomic<unsigned long long> maxContextId_;
 
     unsigned long long contextId_;
     std::weak_ptr<RedisSubscriber> weakSub_;
     std::string channel_;
+    bool isPattern_{false};
     std::string subscribeCommand_;
     std::string unsubscribeCommand_;
     std::mutex mutex_;

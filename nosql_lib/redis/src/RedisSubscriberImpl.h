@@ -33,8 +33,11 @@ class RedisSubscriberImpl
 
     void subscribe(const std::string &channel,
                    RedisMessageCallback &&messageCallback) noexcept override;
+    void psubscribe(const std::string &pattern,
+                    RedisMessageCallback &&messageCallback) noexcept override;
 
     void unsubscribe(const std::string &channel) noexcept override;
+    void punsubscribe(const std::string &pattern) noexcept override;
 
     // Set a connected connection to subscriber.
     void setConnection(const RedisConnectionPtr &conn);
@@ -48,7 +51,9 @@ class RedisSubscriberImpl
   private:
     RedisConnectionPtr conn_;
     std::unordered_map<std::string, std::shared_ptr<SubscribeContext>>
-        subscribeContexts_;
+        subContexts_;
+    std::unordered_map<std::string, std::shared_ptr<SubscribeContext>>
+        psubContexts_;
     std::list<std::shared_ptr<std::function<void(const RedisConnectionPtr &)>>>
         tasks_;
     std::mutex mutex_;

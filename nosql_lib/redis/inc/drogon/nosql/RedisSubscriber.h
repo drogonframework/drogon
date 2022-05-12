@@ -38,6 +38,11 @@ class RedisSubscriber
     virtual void subscribe(const std::string &channel,
                            RedisMessageCallback &&messageCallback) noexcept = 0;
 
+    // Subscribe to channel pattern
+    virtual void psubscribe(
+        const std::string &pattern,
+        RedisMessageCallback &&messageCallback) noexcept = 0;
+
     /**
      * @brief Unsubscribe from a channel. Once this function returns, the
      * messageCallback registered through subscribe() will no longer be called.
@@ -46,6 +51,9 @@ class RedisSubscriber
      * @param channel The channel to subscribe to.
      */
     virtual void unsubscribe(const std::string &channel) noexcept = 0;
+
+    // Unsubscribe from channel pattern
+    virtual void punsubscribe(const std::string &pattern) noexcept = 0;
 
     virtual ~RedisSubscriber() = default;
 };

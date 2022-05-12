@@ -12,7 +12,6 @@
  *
  */
 #include "SubscribeContext.h"
-#include "RedisSubscriberImpl.h"
 #include <stdio.h>
 #include <string>
 #include <utility>
@@ -21,16 +20,43 @@ using namespace drogon::nosql;
 
 std::atomic<unsigned long long> SubscribeContext::maxContextId_{0};
 
+enum class SubCommandType
+{
+    Subscribe,
+    Unsubscribe,
+    Psubscribe,
+    Punsubscribe
+};
+
 static std::string formatSubscribeCommand(const std::string &channel,
-                                          bool subscribe)
+                                          SubCommandType type)
 {
     // Avoid using redisvFormatCommand, we don't want to emit unknown error
     static const char *redisSubFmt =
         "*2\r\n$9\r\nsubscribe\r\n$%zu\r\n%.*s\r\n";
     static const char *redisUnsubFmt =
         "*2\r\n$11\r\nunsubscribe\r\n$%zu\r\n%.*s\r\n";
+    static const char *redisPsubFmt =
+        "*2\r\n$10\r\npsubscribe\r\n$%zu\r\n%.*s\r\n";
+    static const char *redisPunsubFmt =
+        "*2\r\n$12\r\npunsubscribe\r\n$%zu\r\n%.*s\r\n";
 
-    const char *fmt = subscribe ? redisSubFmt : redisUnsubFmt;
+    const char *fmt;
+    switch (type)
+    {
+        case SubCommandType::Subscribe:
+            fmt = redisSubFmt;
+            break;
+        case SubCommandType::Unsubscribe:
+            fmt = redisUnsubFmt;
+            break;
+        case SubCommandType::Psubscribe:
+            fmt = redisPsubFmt;
+            break;
+        case SubCommandType::Punsubscribe:
+            fmt = redisPunsubFmt;
+            break;
+    }
 
     std::string command;
     if (channel.size() < 32)
@@ -62,13 +88,27 @@ static std::string formatSubscribeCommand(const std::string &channel,
 }
 
 SubscribeContext::SubscribeContext(std::weak_ptr<RedisSubscriber> &&weakSub,
-                                   const std::string &channel)
+                                   const std::string &channel,
+                                   bool isPattern)
     : contextId_(++maxContextId_),
       weakSub_(std::move(weakSub)),
       channel_(channel),
-      subscribeCommand_(formatSubscribeCommand(channel, true)),
-      unsubscribeCommand_(formatSubscribeCommand(channel, false))
+      isPattern_(isPattern)
 {
+    if (isPattern)
+    {
+        subscribeCommand_ =
+            formatSubscribeCommand(channel, SubCommandType::Psubscribe);
+        unsubscribeCommand_ =
+            formatSubscribeCommand(channel, SubCommandType::Punsubscribe);
+    }
+    else
+    {
+        subscribeCommand_ =
+            formatSubscribeCommand(channel, SubCommandType::Subscribe);
+        unsubscribeCommand_ =
+            formatSubscribeCommand(channel, SubCommandType::Unsubscribe);
+    }
 }
 
 void SubscribeContext::onMessage(const std::string &channel,
@@ -81,10 +121,16 @@ void SubscribeContext::onMessage(const std::string &channel,
     }
 }
 
-void SubscribeContext::onSubscribe()
+void SubscribeContext::onSubscribe(const std::string &channel,
+                                   long long numChannels)
 {
+    LOG_DEBUG << "Subscribe success to [" << channel << "], total "
+              << numChannels;
 }
 
-void SubscribeContext::onUnsubscribe()
+void SubscribeContext::onUnsubscribe(const std::string &channel,
+                                     long long numChannels)
 {
+    LOG_DEBUG << "Unsubscribe success from [" << channel << "], total "
+              << numChannels;
 }

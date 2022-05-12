@@ -363,97 +363,100 @@ void RedisConnection::disconnect()
 }
 
 void RedisConnection::sendSubscribe(
-    const std::shared_ptr<SubscribeContext> &subCtx,
-    bool subscribe)
+    const std::shared_ptr<SubscribeContext> &subCtx)
 {
     if (loop_->isInLoopThread())
     {
-        sendSubscribeInLoop(subCtx, subscribe);
+        sendSubscribeInLoop(subCtx);
     }
     else
     {
-        loop_->queueInLoop([this, subCtx, subscribe]() {
-            sendSubscribeInLoop(subCtx, subscribe);
-        });
+        loop_->queueInLoop([this, subCtx]() { sendSubscribeInLoop(subCtx); });
+    }
+}
+
+void RedisConnection::sendUnsubscribe(
+    const std::shared_ptr<SubscribeContext> &subCtx)
+{
+    if (loop_->isInLoopThread())
+    {
+        sendUnsubscribeInLoop(subCtx);
+    }
+    else
+    {
+        loop_->queueInLoop([this, subCtx]() { sendUnsubscribeInLoop(subCtx); });
     }
 }
 
 void RedisConnection::sendSubscribeInLoop(
-    const std::shared_ptr<SubscribeContext> &subCtx,
-    bool subscribe)
+    const std::shared_ptr<SubscribeContext> &subCtx)
 {
-    if (subscribe)
+    if (!subCtx->alive())
     {
-        if (!subCtx->alive())
-        {
-            // Unsub-ed by somewhere else
-            return;
-        }
-        subContexts_.emplace(subCtx->contextId(), subCtx);
-        redisAsyncFormattedCommand(
-            redisContext_,
-            [](redisAsyncContext *context, void *r, void *subCtx) {
-                auto thisPtr = static_cast<RedisConnection *>(context->ev.data);
-                thisPtr->handleSubscribeResult(static_cast<redisReply *>(r),
-                                               static_cast<SubscribeContext *>(
-                                                   subCtx));
-            },
-            subCtx.get(),
-            subCtx->subscribeCommand().c_str(),
-            subCtx->subscribeCommand().size());
+        // Unsub-ed by somewhere else
+        return;
     }
-    else
-    {
-        // There is a Hiredis issue here
-        // The un-sub callback will not be called, sub callback will be called
-        // instead, with first element in result as "unsubscribe".
-        // This problem is fixed in 2021-12-02 commit da5a4ff, but
-        // have not been released as a tag.
-        // Here we just register a same function to deal with both situation.
-        redisAsyncFormattedCommand(
-            redisContext_,
-            [](redisAsyncContext *context, void *r, void *subCtx) {
-                auto thisPtr = static_cast<RedisConnection *>(context->ev.data);
-                thisPtr->handleSubscribeResult(static_cast<redisReply *>(r),
-                                               static_cast<SubscribeContext *>(
-                                                   subCtx));
-            },
-            subCtx.get(),
-            subCtx->unsubscribeCommand().c_str(),
-            subCtx->unsubscribeCommand().size());
-    }
+    subContexts_.emplace(subCtx->contextId(), subCtx);
+    redisAsyncFormattedCommand(
+        redisContext_,
+        [](redisAsyncContext *context, void *r, void *subCtx) {
+            auto thisPtr = static_cast<RedisConnection *>(context->ev.data);
+            thisPtr->handleSubscribeResult(static_cast<redisReply *>(r),
+                                           static_cast<SubscribeContext *>(
+                                               subCtx));
+        },
+        subCtx.get(),
+        subCtx->subscribeCommand().c_str(),
+        subCtx->subscribeCommand().size());
+}
+
+void RedisConnection::sendUnsubscribeInLoop(
+    const std::shared_ptr<SubscribeContext> &subCtx)
+{
+    // There is a Hiredis issue here
+    // The un-sub callback will not be called, sub callback will be called
+    // instead, with first element in result as "unsubscribe".
+    // This problem is fixed in 2021-12-02 commit da5a4ff, but
+    // have not been released as a tag.
+    // Here we just register a same function to deal with both situation.
+    redisAsyncFormattedCommand(
+        redisContext_,
+        [](redisAsyncContext *context, void *r, void *subCtx) {
+            auto thisPtr = static_cast<RedisConnection *>(context->ev.data);
+            thisPtr->handleSubscribeResult(static_cast<redisReply *>(r),
+                                           static_cast<SubscribeContext *>(
+                                               subCtx));
+        },
+        subCtx.get(),
+        subCtx->unsubscribeCommand().c_str(),
+        subCtx->unsubscribeCommand().size());
 }
 
 void RedisConnection::handleSubscribeResult(redisReply *result,
                                             SubscribeContext *subCtx)
 {
-    if (!result)
+    if (result && result->type == REDIS_REPLY_ARRAY && result->elements >= 3 &&
+        result->element[0]->type == REDIS_REPLY_STRING)
     {
-        // When connection close, if a channel has been subscribed,
-        // this callback will be called with empty result.
-        LOG_DEBUG << "Empty result (connection lost)";
-    }
-    else if (result->type == REDIS_REPLY_ERROR)
-    {
-        LOG_ERROR << "Subscribe callback receive error result: " << result->str;
-    }
-    else
-    {
-        assert(result->type == REDIS_REPLY_ARRAY && result->elements == 3);
-
-        // On channel message
-        if (strcmp(result->element[0]->str, "message") == 0)
+        const char *type = result->element[0]->str;
+        int isPattern = std::tolower(type[0]) == 'p' ? 1 : 0;
+        if (isPattern)
         {
-            std::string channel(result->element[1]->str,
-                                result->element[1]->len);
-            std::string message(result->element[2]->str,
-                                result->element[2]->len);
+            type += 1;
+        }
+        if (strcmp(type, "message") == 0)
+        {
+            std::string channel(result->element[1 + isPattern]->str,
+                                result->element[1 + isPattern]->len);
+            std::string message(result->element[2 + isPattern]->str,
+                                result->element[2 + isPattern]->len);
             if (!subCtx->alive())
             {
-                LOG_DEBUG
-                    << "Subscribe callback receive message, but context is no "
-                       "longer alive"
-                    << ", channel: " << channel << ", message: " << message;
+                LOG_DEBUG << "Subscribe callback receive message, but "
+                             "context is no "
+                             "longer alive"
+                          << ", channel: " << channel
+                          << ", message: " << message;
             }
             else
             {
@@ -467,18 +470,14 @@ void RedisConnection::handleSubscribeResult(redisReply *result,
         long long number = result->element[2]->integer;
 
         // On channel subscribed
-        if (strcmp(result->element[0]->str, "subscribe") == 0)
+        if (strcmp(type, "subscribe") == 0)
         {
-            LOG_DEBUG << "Subscribe success to [" << channel << "], total "
-                      << number;
-            subCtx->onSubscribe();
+            subCtx->onSubscribe(channel, number);
         }
         // On channel unsubscribed
-        else if (strcmp(result->element[0]->str, "unsubscribe") == 0)
+        else if (strcmp(type, "unsubscribe") == 0)
         {
-            LOG_DEBUG << "Unsubscribe success from [" << channel << "], total "
-                      << number;
-            subCtx->onUnsubscribe();
+            subCtx->onUnsubscribe(channel, number);
             subContexts_.erase(subCtx->contextId());
         }
         // Should not happen
@@ -488,6 +487,21 @@ void RedisConnection::handleSubscribeResult(redisReply *result,
             // Shouldn't let message from another endpoint to abort this
             // program. So no assert(false) here.
         }
+    }
+    else if (!result)
+    {
+        // When connection close, if a channel has been subscribed,
+        // this callback will be called with empty result.
+        LOG_DEBUG << "Empty result (connection lost)";
+    }
+    else if (result->type == REDIS_REPLY_ERROR)
+    {
+        LOG_ERROR << "Subscribe callback receive error result: " << result->str;
+    }
+    else
+    {
+        LOG_ERROR << "Subscribe callback receive error result type: "
+                  << result->type;
     }
 
     if (idleCallback_)
