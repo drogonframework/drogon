@@ -58,10 +58,18 @@ DROGON_TEST(CookieSameSite)
                 CHECK(resp->contentType() == CT_APPLICATION_JSON);
 
                 auto json = resp->getJsonObject();
+                auto cookie = resp->getCookie("JSESSIONID");
+
+                LOG_INFO << "Client: cookie-value == " << cookie.value()
+                         << ", requested value == " << (*seq.i)
+                         << ", new  value == "
+                         << (*json)["new value"].asString()
+                         << ", received value == "
+                         << Cookie::convertSameSite2String(
+                                cookie.getSameSite());
                 seq.sessionCookie = resp->getCookie("JSESSIONID");
-                CHECK((*json)["new value"].asString() ==
-                      Cookie::convertSameSite2String(
-                          seq.sessionCookie.getSameSite()));
+                CHECK(*seq.i ==
+                      Cookie::convertSameSite2String(cookie.getSameSite()));
 
                 p1.set_value();
             });

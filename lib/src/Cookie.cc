@@ -104,18 +104,33 @@ Cookie::SameSite Cookie::convertString2SameSite(const string_view& sameSite)
     return Cookie::SameSite::kNull;
 }
 
-string_view Cookie::convertSameSite2String(const SameSite& sameSite)
+string_view& Cookie::convertSameSite2String(const SameSite& sameSite)
 {
     switch (sameSite)
     {
         case SameSite::kLax:
-            return "Lax";
+        {
+            static string_view sv{"Lax"};
+            return sv;
+        }
         case SameSite::kStrict:
-            return "Strict";
+        {
+            static string_view sv{"Strict"};
+            return sv;
+        }
         case SameSite::kNone:
-            return "None";
+        {
+            static string_view sv{"None"};
+            return sv;
+        }
         case SameSite::kNull:
-            return "Null";
+        {
+            static string_view sv{"Null"};
+            return sv;
+        }
     }
-    return "UNDEFINED";
+    {
+        static string_view sv{"UNDEFINED"};
+        return sv;
+    }
 }

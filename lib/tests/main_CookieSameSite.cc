@@ -29,8 +29,8 @@ class CookieSameSiteController
             old_session_same_site =
                 req->session()->get<std::string>(SESSION_SAME_SITE);
         }
-        LOG_TRACE << "Server: new sameSite == " << newSameSite
-                  << ", old sameSite == " << old_session_same_site;
+        LOG_INFO << "Server: new sameSite == " << newSameSite
+                 << ", old sameSite == " << old_session_same_site;
         drogon::HttpAppFramework::instance().enableSession(
             0, Cookie::convertString2SameSite(newSameSite));
 
@@ -54,7 +54,7 @@ const char *CookieSameSiteController::SESSION_SAME_SITE{"session_same_site"};
 // -- main
 int main(int argc, char **argv)
 {
-    trantor::Logger::setLogLevel(trantor::Logger::kTrace);
+    trantor::Logger::setLogLevel(trantor::Logger::kInfo);
     std::promise<void> p1;
     std::future<void> f1 = p1.get_future();
 
