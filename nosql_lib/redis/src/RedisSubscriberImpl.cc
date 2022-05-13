@@ -184,9 +184,11 @@ void RedisSubscriberImpl::setConnection(const RedisConnectionPtr &conn)
 void RedisSubscriberImpl::clearConnection()
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    assert(conn_);
-    conn_ = nullptr;
-    tasks_.clear();
+    if (conn_)
+    {
+        conn_ = nullptr;
+        tasks_.clear();
+    }
 }
 
 void RedisSubscriberImpl::subscribeNext()
