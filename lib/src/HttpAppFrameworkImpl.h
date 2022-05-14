@@ -588,11 +588,10 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     std::string serverHeader_{"server: drogon/" + drogon::getVersion() +
                               "\r\n"};
 
-    const std::unique_ptr<StaticFileRouter> staticFileRouterPtr_;
-    const std::unique_ptr<HttpControllersRouter> httpCtrlsRouterPtr_;
-    const std::unique_ptr<HttpSimpleControllersRouter>
-        httpSimpleCtrlsRouterPtr_;
-    const std::unique_ptr<WebsocketControllersRouter> websockCtrlsRouterPtr_;
+    std::unique_ptr<StaticFileRouter> staticFileRouterPtr_;
+    std::unique_ptr<HttpControllersRouter> httpCtrlsRouterPtr_;
+    std::unique_ptr<HttpSimpleControllersRouter> httpSimpleCtrlsRouterPtr_;
+    std::unique_ptr<WebsocketControllersRouter> websockCtrlsRouterPtr_;
 
     std::unique_ptr<ListenerManager> listenerManagerPtr_;
     std::unique_ptr<PluginsManager> pluginsManagerPtr_;
