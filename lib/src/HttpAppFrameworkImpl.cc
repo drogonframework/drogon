@@ -1012,16 +1012,15 @@ void HttpAppFrameworkImpl::quit()
     if (getLoop()->isRunning())
     {
         getLoop()->queueInLoop([this]() mutable {
-            // Release thread-related managers
+            // Release members in the reverse order of initialization
             listenerManagerPtr_->stopListening();
-            dbClientManagerPtr_.reset();
-            redisClientManagerPtr_.reset();
-            pluginsManagerPtr_.reset();
-            // Release other members
-            staticFileRouterPtr_.reset();
-            httpCtrlsRouterPtr_.reset();
-            httpSimpleCtrlsRouterPtr_.reset();
             websockCtrlsRouterPtr_.reset();
+            staticFileRouterPtr_.reset();
+            httpSimpleCtrlsRouterPtr_.reset();
+            httpCtrlsRouterPtr_.reset();
+            pluginsManagerPtr_.reset();
+            redisClientManagerPtr_.reset();
+            dbClientManagerPtr_.reset();
             // TODO: let HttpAppFrameworkImpl manage IO loops
             // and reset listenerManagerPtr_ before IO loops quit.
             listenerManagerPtr_->stopIoLoops();
