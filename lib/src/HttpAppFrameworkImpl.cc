@@ -1119,15 +1119,16 @@ HttpAppFramework &HttpAppFrameworkImpl::setupFileLogger()
             {
                 baseName = "drogon";
             }
-            asyncFileLoggerPtr_ = std::make_unique<trantor::AsyncFileLogger>();
+            asyncFileLoggerPtr_ = std::make_shared<trantor::AsyncFileLogger>();
             asyncFileLoggerPtr_->setFileName(baseName, ".log", logPath_);
             asyncFileLoggerPtr_->startLogging();
-            trantor::Logger::setOutputFunction(
-                [this](const char *msg, const uint64_t len) {
-                    asyncFileLoggerPtr_->output(msg, len);
-                },
-                [this]() { asyncFileLoggerPtr_->flush(); });
             asyncFileLoggerPtr_->setFileSizeLimit(logfileSize_);
+            trantor::Logger::setOutputFunction(
+                [loggerPtr = asyncFileLoggerPtr_](const char *msg,
+                                                  const uint64_t len) {
+                    loggerPtr->output(msg, len);
+                },
+                [loggerPtr = asyncFileLoggerPtr_]() { loggerPtr->flush(); });
         }
     }
     return *this;
