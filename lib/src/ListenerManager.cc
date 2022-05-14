@@ -268,21 +268,8 @@ void ListenerManager::stopListening()
     {
         serverPtr->stop();
     }
-    for (auto loop : ioLoops_)
-    {
-        assert(!loop->isInLoopThread());
-        if (loop->isRunning())
-        {
-            std::promise<int> pro;
-            auto f = pro.get_future();
-            loop->queueInLoop([loop, &pro]() {
-                loop->quit();
-                pro.set_value(1);
-            });
-            (void)f.get();
-        }
-    }
 #ifndef __linux__
+    assert(listeningloopThreads_.size() == 1);
     for (auto &listenerLoopPtr : listeningloopThreads_)
     {
         auto loop = listenerLoopPtr->getLoop();
@@ -299,6 +286,24 @@ void ListenerManager::stopListening()
         }
     }
 #endif
+}
+
+void ListenerManager::stopIoLoops()
+{
+    for (auto loop : ioLoops_)
+    {
+        assert(!loop->isInLoopThread());
+        if (loop->isRunning())
+        {
+            std::promise<int> pro;
+            auto f = pro.get_future();
+            loop->queueInLoop([loop, &pro]() {
+                loop->quit();
+                pro.set_value(1);
+            });
+            (void)f.get();
+        }
+    }
 }
 
 std::vector<trantor::InetAddress> ListenerManager::getListeners() const

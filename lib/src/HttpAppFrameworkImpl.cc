@@ -1011,8 +1011,16 @@ void HttpAppFrameworkImpl::quit()
 {
     if (getLoop()->isRunning())
     {
-        getLoop()->queueInLoop([this]() {
+        getLoop()->queueInLoop([this]() mutable {
+            // Release thread-related managers
             listenerManagerPtr_->stopListening();
+            dbClientManagerPtr_.reset();
+            redisClientManagerPtr_.reset();
+            pluginsManagerPtr_.reset();
+            // TODO: let HttpAppFrameworkImpl manage IO loops
+            // and reset listenerManagerPtr_ before IO loops quit.
+            listenerManagerPtr_->stopIoLoops();
+            listenerManagerPtr_.reset();
             getLoop()->quit();
         });
     }

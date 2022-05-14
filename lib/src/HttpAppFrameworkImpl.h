@@ -594,10 +594,11 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
         httpSimpleCtrlsRouterPtr_;
     const std::unique_ptr<WebsocketControllersRouter> websockCtrlsRouterPtr_;
 
-    const std::unique_ptr<ListenerManager> listenerManagerPtr_;
-    const std::unique_ptr<PluginsManager> pluginsManagerPtr_;
-    const std::unique_ptr<orm::DbClientManager> dbClientManagerPtr_;
-    const std::unique_ptr<nosql::RedisClientManager> redisClientManagerPtr_;
+    std::unique_ptr<ListenerManager> listenerManagerPtr_;
+    std::unique_ptr<PluginsManager> pluginsManagerPtr_;
+    std::unique_ptr<orm::DbClientManager> dbClientManagerPtr_;
+    std::unique_ptr<nosql::RedisClientManager> redisClientManagerPtr_;
+
     std::string rootPath_{"./"};
     std::string uploadPath_;
     std::atomic_bool running_{false};
