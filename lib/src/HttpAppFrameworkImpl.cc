@@ -1011,7 +1011,7 @@ void HttpAppFrameworkImpl::quit()
 {
     if (getLoop()->isRunning())
     {
-        getLoop()->queueInLoop([this]() mutable {
+        getLoop()->queueInLoop([this]() {
             // Release members in the reverse order of initialization
             listenerManagerPtr_->stopListening();
             websockCtrlsRouterPtr_.reset();
