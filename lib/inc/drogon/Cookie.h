@@ -17,6 +17,7 @@
 #include <drogon/utils/optional.h>
 #include <drogon/utils/string_view.h>
 #include <trantor/utils/Date.h>
+#include <trantor/utils/Logger.h>
 #include <string>
 #include <limits>
 
