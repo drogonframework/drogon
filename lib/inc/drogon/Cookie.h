@@ -298,13 +298,66 @@ class DROGON_EXPORT Cookie
      * @brief Converts a string value to its associated enum class SameSite
      * value
      */
-    static SameSite convertString2SameSite(const string_view &sameSite);
+    static SameSite Cookie::convertString2SameSite(const string_view &sameSite)
+    {
+        if (sameSite == "Lax")
+        {
+            return Cookie::SameSite::kLax;
+        }
+        else if (sameSite == "Strict")
+        {
+            return Cookie::SameSite::kStrict;
+        }
+        else if (sameSite == "None")
+        {
+            return Cookie::SameSite::kNone;
+        }
+        else if (sameSite != "Null")
+        {
+            LOG_WARN
+                << "'" << sameSite
+                << "' is not a valid SameSite policy. 'Null', 'Lax', 'Strict' "
+                   "or "
+                   "'None' are proper values. Return value is SameSite::kNull.";
+        }
+
+        return Cookie::SameSite::kNull;
+    }
 
     /**
      * @brief Converts an enum class SameSite value to its associated string
      * value
      */
-    static string_view &convertSameSite2String(const SameSite &sameSite);
+    static const string_view &Cookie::convertSameSite2String(SameSite sameSite)
+    {
+        switch (sameSite)
+        {
+            case SameSite::kLax:
+            {
+                constexpr static string_view sv{"Lax"};
+                return sv;
+            }
+            case SameSite::kStrict:
+            {
+                constexpr static string_view sv{"Strict"};
+                return sv;
+            }
+            case SameSite::kNone:
+            {
+                constexpr static string_view sv{"None"};
+                return sv;
+            }
+            case SameSite::kNull:
+            {
+                constexpr static string_view sv{"Null"};
+                return sv;
+            }
+        }
+        {
+            constexpr static string_view sv{"UNDEFINED"};
+            return sv;
+        }
+    }
 
   private:
     trantor::Date expiresDate_{(std::numeric_limits<int64_t>::max)()};
