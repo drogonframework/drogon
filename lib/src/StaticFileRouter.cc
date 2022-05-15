@@ -50,10 +50,13 @@ void StaticFileRouter::init(const std::vector<trantor::EventLoop *> &ioloops)
         new IOThreadStorage<
             std::unordered_map<std::string, HttpResponsePtr>>{});
     ioLocationsPtr_ =
-        decltype(ioLocationsPtr_)(new IOThreadStorage<std::vector<Location>>);
+        std::make_shared<IOThreadStorage<std::vector<Location>>>();
     for (auto *loop : ioloops)
     {
-        loop->queueInLoop([this] { **ioLocationsPtr_ = locations_; });
+        loop->queueInLoop(
+            [ioLocationsPtr = ioLocationsPtr_, locations = locations_] {
+                **ioLocationsPtr = locations;
+            });
     }
 }
 

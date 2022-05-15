@@ -169,7 +169,7 @@ class StaticFileRouter
             }
         }
     };
-    std::unique_ptr<IOThreadStorage<std::vector<Location>>> ioLocationsPtr_;
+    std::shared_ptr<IOThreadStorage<std::vector<Location>>> ioLocationsPtr_;
     std::vector<Location> locations_;
 };
 }  // namespace drogon
