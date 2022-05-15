@@ -298,7 +298,7 @@ class DROGON_EXPORT Cookie
      * @brief Converts a string value to its associated enum class SameSite
      * value
      */
-    static SameSite Cookie::convertString2SameSite(const string_view &sameSite)
+    static SameSite convertString2SameSite(const string_view &sameSite)
     {
         if (sameSite == "Lax")
         {
@@ -328,7 +328,7 @@ class DROGON_EXPORT Cookie
      * @brief Converts an enum class SameSite value to its associated string
      * value
      */
-    static const string_view &Cookie::convertSameSite2String(SameSite sameSite)
+    static const string_view &convertSameSite2String(SameSite sameSite)
     {
         switch (sameSite)
         {
