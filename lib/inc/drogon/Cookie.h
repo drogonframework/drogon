@@ -335,27 +335,27 @@ class DROGON_EXPORT Cookie
         {
             case SameSite::kLax:
             {
-                constexpr static string_view sv{"Lax"};
+                static string_view sv{"Lax"};
                 return sv;
             }
             case SameSite::kStrict:
             {
-                constexpr static string_view sv{"Strict"};
+                static string_view sv{"Strict"};
                 return sv;
             }
             case SameSite::kNone:
             {
-                constexpr static string_view sv{"None"};
+                static string_view sv{"None"};
                 return sv;
             }
             case SameSite::kNull:
             {
-                constexpr static string_view sv{"Null"};
+                static string_view sv{"Null"};
                 return sv;
             }
         }
         {
-            constexpr static string_view sv{"UNDEFINED"};
+            static string_view sv{"UNDEFINED"};
             return sv;
         }
     }
