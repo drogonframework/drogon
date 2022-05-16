@@ -32,7 +32,7 @@ class PluginsManager : trantor::NonCopyable
     ~PluginsManager();
 
   private:
-    PluginBase *getPluginOrNewOne(const std::string &pluginName);
+    void createPlugin(const std::string &pluginName);
     std::map<std::string, PluginBasePtr> pluginsMap_;
     std::vector<PluginBase *> initializedPlugins_;
 };

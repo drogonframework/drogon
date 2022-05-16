@@ -39,9 +39,8 @@ void PluginsManager::initializeAllPlugins(
         auto name = config.get("name", "").asString();
         if (name.empty())
             continue;
-        (void)getPluginOrNewOne(name);
+        createPlugin(name);
     }
-
     for (auto &config : configs)
     {
         auto name = config.get("name", "").asString();
@@ -61,7 +60,7 @@ void PluginsManager::initializeAllPlugins(
             // Is not null and is an array
             for (auto &depName : dependencies)
             {
-                auto *dp = getPluginOrNewOne(depName.asString());
+                auto *dp = getPlugin(depName.asString());
                 if (dp)
                 {
                     pluginPtr->addDependency(dp);
@@ -87,28 +86,18 @@ void PluginsManager::initializeAllPlugins(
         forEachCallback(plugin);
     }
 }
-PluginBase *PluginsManager::getPluginOrNewOne(const std::string &pluginName)
+void PluginsManager::createPlugin(const std::string &pluginName)
 {
-    auto iter = pluginsMap_.find(pluginName);
-    if (iter == pluginsMap_.end())
+    auto *p = DrClassMap::newObject(pluginName);
+    auto *pluginPtr = dynamic_cast<PluginBase *>(p);
+    if (!pluginPtr)
     {
-        auto *p = DrClassMap::newObject(pluginName);
-        auto *pluginPtr = dynamic_cast<PluginBase *>(p);
-        if (!pluginPtr)
-        {
-            if (p)
-                delete p;
-            LOG_ERROR << "Plugin " << pluginName << " undefined!";
-            return nullptr;
-        }
-        pluginsMap_[pluginName].reset(pluginPtr);
-        return pluginPtr;
+        if (p)
+            delete p;
+        LOG_ERROR << "Plugin " << pluginName << " undefined!";
+        return;
     }
-    else
-    {
-        return iter->second.get();
-    }
-    return nullptr;
+    pluginsMap_[pluginName].reset(pluginPtr);
 }
 PluginBase *PluginsManager::getPlugin(const std::string &pluginName)
 {
