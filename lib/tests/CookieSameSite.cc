@@ -51,7 +51,6 @@ DROGON_TEST(CookieSameSite)
         client->sendRequest(
             req,
             [TEST_CTX, &seq, &p1](ReqResult res, const HttpResponsePtr &resp) {
-                LOG_INFO << "sameCookie value == " << *seq.i;
                 REQUIRE(res == ReqResult::Ok);
                 REQUIRE(resp != nullptr);
 
@@ -59,12 +58,18 @@ DROGON_TEST(CookieSameSite)
                 CHECK(resp->contentType() == CT_APPLICATION_JSON);
 
                 auto json = resp->getJsonObject();
-                LOG_INFO << "BODY\n\t" << resp->getBody() << "\n\t"
-                         << (*json)["result"].asString() << "\n\t"
-                         << (*json)["new value"].asString() << "\n\t"
-                         << (*json)["old value"].asString();
+                auto cookie = resp->getCookie("JSESSIONID");
 
+                LOG_INFO << "Client: cookie-value == " << cookie.value()
+                         << ", requested value == " << (*seq.i)
+                         << ", new  value == "
+                         << (*json)["new value"].asString()
+                         << ", received value == "
+                         << Cookie::convertSameSite2String(
+                                cookie.getSameSite());
                 seq.sessionCookie = resp->getCookie("JSESSIONID");
+                CHECK(*seq.i ==
+                      Cookie::convertSameSite2String(cookie.getSameSite()));
 
                 p1.set_value();
             });
