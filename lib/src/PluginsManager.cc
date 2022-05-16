@@ -39,10 +39,19 @@ void PluginsManager::initializeAllPlugins(
         auto name = config.get("name", "").asString();
         if (name.empty())
             continue;
-        auto pluginPtr = getPluginOrNewOne(name);
-        assert(pluginPtr);
-        if (!pluginPtr)
+        (void)getPluginOrNewOne(name);
+    }
+
+    for (auto &config : configs)
+    {
+        auto name = config.get("name", "").asString();
+        if (name.empty())
             continue;
+        auto pluginPtr = getPlugin(name);
+        if (!pluginPtr)
+        {
+            continue;
+        }
         auto configuration = config["config"];
         auto dependencies = config["dependencies"];
         pluginPtr->setConfig(configuration);
@@ -59,8 +68,8 @@ void PluginsManager::initializeAllPlugins(
                 }
                 else
                 {
-                    LOG_FATAL << "Plugin " << depName.asString()
-                              << " not defined";
+                    LOG_FATAL << "Dependent plugin " << depName.asString()
+                              << " is not loaded";
                     abort();
                 }
             }
