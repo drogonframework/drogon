@@ -28,9 +28,11 @@ class PluginsManager : trantor::NonCopyable
         const std::function<void(PluginBase *)> &forEachCallback);
 
     PluginBase *getPlugin(const std::string &pluginName);
+
     ~PluginsManager();
 
   private:
+    PluginBase *getPluginOrNewOne(const std::string &pluginName);
     std::map<std::string, PluginBasePtr> pluginsMap_;
     std::vector<PluginBase *> initializedPlugins_;
 };

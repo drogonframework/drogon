@@ -39,7 +39,7 @@ void PluginsManager::initializeAllPlugins(
         auto name = config.get("name", "").asString();
         if (name.empty())
             continue;
-        auto pluginPtr = getPlugin(name);
+        auto pluginPtr = getPluginOrNewOne(name);
         assert(pluginPtr);
         if (!pluginPtr)
             continue;
@@ -52,7 +52,7 @@ void PluginsManager::initializeAllPlugins(
             // Is not null and is an array
             for (auto &depName : dependencies)
             {
-                auto *dp = getPlugin(depName.asString());
+                auto *dp = getPluginOrNewOne(depName.asString());
                 if (dp)
                 {
                     pluginPtr->addDependency(dp);
@@ -78,8 +78,7 @@ void PluginsManager::initializeAllPlugins(
         forEachCallback(plugin);
     }
 }
-
-PluginBase *PluginsManager::getPlugin(const std::string &pluginName)
+PluginBase *PluginsManager::getPluginOrNewOne(const std::string &pluginName)
 {
     auto iter = pluginsMap_.find(pluginName);
     if (iter == pluginsMap_.end())
@@ -97,6 +96,15 @@ PluginBase *PluginsManager::getPlugin(const std::string &pluginName)
         return pluginPtr;
     }
     else
+    {
+        return iter->second.get();
+    }
+    return nullptr;
+}
+PluginBase *PluginsManager::getPlugin(const std::string &pluginName)
+{
+    auto iter = pluginsMap_.find(pluginName);
+    if (iter != pluginsMap_.end())
     {
         return iter->second.get();
     }
