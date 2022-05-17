@@ -269,7 +269,6 @@ void ListenerManager::stopListening()
         serverPtr->stop();
     }
 #ifndef __linux__
-    assert(listeningloopThreads_.size() == 1);
     for (auto &listenerLoopPtr : listeningloopThreads_)
     {
         auto loop = listenerLoopPtr->getLoop();
