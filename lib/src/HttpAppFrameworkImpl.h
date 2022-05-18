@@ -588,16 +588,16 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     std::string serverHeader_{"server: drogon/" + drogon::getVersion() +
                               "\r\n"};
 
-    const std::unique_ptr<StaticFileRouter> staticFileRouterPtr_;
-    const std::unique_ptr<HttpControllersRouter> httpCtrlsRouterPtr_;
-    const std::unique_ptr<HttpSimpleControllersRouter>
-        httpSimpleCtrlsRouterPtr_;
-    const std::unique_ptr<WebsocketControllersRouter> websockCtrlsRouterPtr_;
+    std::unique_ptr<StaticFileRouter> staticFileRouterPtr_;
+    std::unique_ptr<HttpControllersRouter> httpCtrlsRouterPtr_;
+    std::unique_ptr<HttpSimpleControllersRouter> httpSimpleCtrlsRouterPtr_;
+    std::unique_ptr<WebsocketControllersRouter> websockCtrlsRouterPtr_;
 
-    const std::unique_ptr<ListenerManager> listenerManagerPtr_;
-    const std::unique_ptr<PluginsManager> pluginsManagerPtr_;
-    const std::unique_ptr<orm::DbClientManager> dbClientManagerPtr_;
-    const std::unique_ptr<nosql::RedisClientManager> redisClientManagerPtr_;
+    std::unique_ptr<ListenerManager> listenerManagerPtr_;
+    std::unique_ptr<PluginsManager> pluginsManagerPtr_;
+    std::unique_ptr<orm::DbClientManager> dbClientManagerPtr_;
+    std::unique_ptr<nosql::RedisClientManager> redisClientManagerPtr_;
+
     std::string rootPath_{"./"};
     std::string uploadPath_;
     std::atomic_bool running_{false};
@@ -641,7 +641,7 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     std::function<void()> termSignalHandler_{[]() { app().quit(); }};
     std::function<void()> intSignalHandler_{[]() { app().quit(); }};
     std::unique_ptr<SessionManager> sessionManagerPtr_;
-    std::unique_ptr<trantor::AsyncFileLogger> asyncFileLoggerPtr_;
+    std::shared_ptr<trantor::AsyncFileLogger> asyncFileLoggerPtr_;
     Json::Value jsonConfig_;
     HttpResponsePtr custom404_;
     std::function<HttpResponsePtr(HttpStatusCode)> customErrorHandler_ =
