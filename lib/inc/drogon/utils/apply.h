@@ -36,7 +36,7 @@ namespace drogon
     template<typename F, typename Tuple>
     constexpr decltype(auto) apply(F &&f, Tuple &&t)
     {
-        return apply_impl(static_cast<F &&>(f),static_cast<Tuple &&>(t),
+        return apply_impl(std::forward<F>(f), std::forward<Tuple>(t),
                 std::make_index_sequence<std::tuple_size<std::remove_reference_t<Tuple>>::value>{});
     }
 #endif
