@@ -16,7 +16,16 @@
 #if __cplusplus >= 201703L || (defined _MSC_VER && _MSC_VER > 1900)
 #include <tuple>
 #else
-#include <boost/hana/fwd/unpack.hpp>
+#include <utility>
+namespace
+{
+    template<typename F, typename Tuple, std::size_t... I>
+    constexpr decltype(auto)
+    apply_impl(F &&f, Tuple &&t, std::index_sequence<I...>)
+    {
+        return static_cast<F &&>(f)(std::get<I>(static_cast<Tuple &&>(t))...);
+    }
+}  // anonymous namespace
 #endif
 
 namespace drogon
@@ -24,10 +33,13 @@ namespace drogon
 #if __cplusplus >= 201703L || (defined _MSC_VER && _MSC_VER > 1900)
     using std::apply;
 #else
-    template <class F, class Tuple>
-    constexpr decltype(auto) apply(F&& f, Tuple&& t)
+
+    template<typename F, typename Tuple>
+    constexpr decltype(auto) apply(F &&f, Tuple &&t)
     {
-        return boost::hana::unpack(std::move(t), std::move(f));
+        return apply_impl(static_cast<F &&>(f),static_cast<Tuple &&>(t),
+                std::make_index_sequence<std::tuple_size<std::remove_reference_t<Tuple>>::value>{});
     }
+
 #endif
 }  // namespace drogon
