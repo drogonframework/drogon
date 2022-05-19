@@ -98,6 +98,12 @@ class DROGON_EXPORT Criteria
      *
      * Use $? as placeholders in the SQL statement.
      *
+     * Be careful that the placeholders are not the same as the ones in functions
+     * such as drogon::orm::DbClient::execSqlAsync. Which means you couldn't use
+     * numeric placeholders such as $1, $2 to represent the order of the arguments.
+     *
+     * The arguments should be in the same order as the placeholders.
+     *
      */
     template <typename... Arguments>
     explicit Criteria(const CustomSql &sql, Arguments &&...args)
