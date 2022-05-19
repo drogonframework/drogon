@@ -1356,7 +1356,7 @@ DROGON_TEST(MySQLTest)
                  2, 200),
         [TEST_CTX](std::vector<Users> users) { MANDATE(users.size() == 1); },
         [TEST_CTX](const DrogonDbException &e) {
-            FAULT("postgresql - ORM mapper asynchronous interface(4) what():" +
+            FAULT("mysql - ORM mapper asynchronous interface(4) what():" +
                   std::string(e.base().what()));
         });
     /// 6.4 find by primary key. blocking
@@ -2014,9 +2014,9 @@ DROGON_TEST(SQLite3Test)
     /// 5.3.6 custom where query
     mapper.findBy(
         Criteria("password is not null"_sql),
-        [TEST_CTX](std::vector<Users> users) { MANDATE(users.size() == 1); },
+        [TEST_CTX](std::vector<Users> users) { MANDATE(users.size() == 2); },
         [TEST_CTX](const DrogonDbException &e) {
-            FAULT("postgresql - ORM mapper asynchronous interface(4) what():" +
+            FAULT("sqlite3 - ORM mapper asynchronous interface(4) what():" +
                   std::string(e.base().what()));
         });
     /// 5.4 find by primary key. blocking
