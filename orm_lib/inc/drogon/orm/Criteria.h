@@ -52,16 +52,16 @@ enum class CompareOperator
  */
 struct CustomSql
 {
-    explicit CustomSql(std::string content) : content(std::move(content)) {}
-    std::string content;
+    explicit CustomSql(std::string content) : content_(std::move(content)) {}
+    std::string content_;
 };
 
 /**
  * @brief User-defined literal to convert a string to CustomSql
  */
-CustomSql operator ""_sql(const char *str, size_t);
+inline CustomSql operator ""_sql(const char *str, size_t){ return CustomSql(str); }
 
-/**
+    /**
  * @brief this class represents a comparison condition.
  */
 class DROGON_EXPORT Criteria
@@ -102,7 +102,7 @@ class DROGON_EXPORT Criteria
     template <typename... Arguments>
     explicit Criteria(const CustomSql &sql, Arguments &&...args)
     {
-        conditionString_ = sql.content;
+        conditionString_ = sql.content_;
         outputArgumentsFunc_ =
                 [&args...](internal::SqlBinder &binder) {
                     (void)std::initializer_list<int>{(binder << std::forward<Arguments>(args), 0)...};
