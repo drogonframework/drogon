@@ -16,6 +16,7 @@
 
 #include <drogon/exports.h>
 #include <drogon/orm/SqlBinder.h>
+#include <drogon/utils/apply.h>
 #include <assert.h>
 #include <memory>
 #include <string>
@@ -104,8 +105,10 @@ class DROGON_EXPORT Criteria
     {
         conditionString_ = sql.content_;
         outputArgumentsFunc_ =
-                [&args...](internal::SqlBinder &binder) {
-                    (void)std::initializer_list<int>{(binder << std::forward<Arguments>(args), 0)...};
+                [args = std::make_tuple(std::forward<Arguments>(args) ...)](internal::SqlBinder &binder)mutable {
+                    return apply([&binder](auto&& ... args){
+                        (void) std::initializer_list<int>{(binder << std::forward<Arguments>(args), 0)...};
+                    }, std::move(args));
                 };
     }
 
