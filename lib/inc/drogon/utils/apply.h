@@ -33,13 +33,11 @@ namespace drogon
 #if __cplusplus >= 201703L || (defined _MSC_VER && _MSC_VER > 1900)
     using std::apply;
 #else
-
     template<typename F, typename Tuple>
     constexpr decltype(auto) apply(F &&f, Tuple &&t)
     {
         return apply_impl(static_cast<F &&>(f),static_cast<Tuple &&>(t),
                 std::make_index_sequence<std::tuple_size<std::remove_reference_t<Tuple>>::value>{});
     }
-
 #endif
 }  // namespace drogon
