@@ -19,7 +19,6 @@ namespace drogon
 {
 namespace orm
 {
-CustomSql operator ""_sql(const char *str, size_t) { return CustomSql(str); }
 const Criteria operator&&(Criteria cond1, Criteria cond2)
 {
     assert(cond1);
