@@ -52,16 +52,21 @@ enum class CompareOperator
  */
 struct CustomSql
 {
-    explicit CustomSql(std::string content) : content_(std::move(content)) {}
+    explicit CustomSql(std::string content) : content_(std::move(content))
+    {
+    }
     std::string content_;
 };
 
 /**
  * @brief User-defined literal to convert a string to CustomSql
  */
-inline CustomSql operator ""_sql(const char *str, size_t){ return CustomSql(str); }
+inline CustomSql operator""_sql(const char *str, size_t)
+{
+    return CustomSql(str);
+}
 
-    /**
+/**
  * @brief this class represents a comparison condition.
  */
 class DROGON_EXPORT Criteria
@@ -98,9 +103,10 @@ class DROGON_EXPORT Criteria
      *
      * Use $? as placeholders in the SQL statement.
      *
-     * Be careful that the placeholders are not the same as the ones in functions
-     * such as drogon::orm::DbClient::execSqlAsync. Which means you couldn't use
-     * numeric placeholders such as $1, $2 to represent the order of the arguments.
+     * Be careful that the placeholders are not the same as the ones in
+     * functions such as drogon::orm::DbClient::execSqlAsync. Which means you
+     * couldn't use numeric placeholders such as $1, $2 to represent the order
+     * of the arguments.
      *
      * The arguments should be in the same order as the placeholders.
      *
@@ -110,11 +116,15 @@ class DROGON_EXPORT Criteria
     {
         conditionString_ = sql.content_;
         outputArgumentsFunc_ =
-                [args = std::make_tuple(std::forward<Arguments>(args) ...)](internal::SqlBinder &binder)mutable {
-                    return apply([&binder](auto&& ... args){
-                        (void) std::initializer_list<int>{(binder << std::forward<Arguments>(args), 0)...};
-                    }, std::move(args));
-                };
+            [args = std::make_tuple(std::forward<Arguments>(args)...)](
+                internal::SqlBinder &binder) mutable {
+                return apply(
+                    [&binder](auto &&...args) {
+                        (void)std::initializer_list<int>{
+                            (binder << std::forward<Arguments>(args), 0)...};
+                    },
+                    std::move(args));
+            };
     }
 
     /**

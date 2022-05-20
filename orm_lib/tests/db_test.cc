@@ -593,8 +593,7 @@ DROGON_TEST(PostgreTest)
         });
     /// 6.3.6 custom where query
     mapper.findBy(
-        Criteria("id <@ int4range($?, null)"_sql,
-                 3),
+        Criteria("id <@ int4range($?, null)"_sql, 3),
         [TEST_CTX](std::vector<Users> users) { MANDATE(users.size() == 1); },
         [TEST_CTX](const DrogonDbException &e) {
             FAULT("postgresql - ORM mapper asynchronous interface(4) what():" +
@@ -1352,8 +1351,7 @@ DROGON_TEST(MySQLTest)
         });
     /// 6.3.6 custom where query
     mapper.findBy(
-        Criteria("id between $? and $?"_sql,
-                 2, 200),
+        Criteria("id between $? and $?"_sql, 2, 200),
         [TEST_CTX](std::vector<Users> users) { MANDATE(users.size() == 1); },
         [TEST_CTX](const DrogonDbException &e) {
             FAULT("mysql - ORM mapper asynchronous interface(4) what():" +
