@@ -127,6 +127,22 @@ class DROGON_EXPORT Criteria
             };
     }
 
+    template <typename... Arguments>
+    explicit Criteria(CustomSql &&sql, Arguments &&...args)
+    {
+        conditionString_ = std::move(sql.content_);
+        outputArgumentsFunc_ =
+            [args = std::make_tuple(std::forward<Arguments>(args)...)](
+                internal::SqlBinder &binder) mutable {
+                return apply(
+                    [&binder](auto &&...args) {
+                        (void)std::initializer_list<int>{
+                            (binder << std::forward<Arguments>(args), 0)...};
+                    },
+                    std::move(args));
+            };
+    }
+
     /**
      * @brief Construct a new Criteria object
      *
