@@ -591,11 +591,19 @@ DROGON_TEST(PostgreTest)
             FAULT("postgresql - ORM mapper asynchronous interface(3) what():" +
                   std::string(e.base().what()));
         });
-    /// 6.3.6 pagination
-    mapper.paginate(2, 1).findAll(
+    /// 6.3.6 custom where query
+    mapper.findBy(
+        Criteria("id <@ int4range($?, null)"_sql, 3),
         [TEST_CTX](std::vector<Users> users) { MANDATE(users.size() == 1); },
         [TEST_CTX](const DrogonDbException &e) {
             FAULT("postgresql - ORM mapper asynchronous interface(4) what():" +
+                  std::string(e.base().what()));
+        });
+    /// 6.3.7 pagination
+    mapper.paginate(2, 1).findAll(
+        [TEST_CTX](std::vector<Users> users) { MANDATE(users.size() == 1); },
+        [TEST_CTX](const DrogonDbException &e) {
+            FAULT("postgresql - ORM mapper asynchronous interface(5) what():" +
                   std::string(e.base().what()));
         });
     /// 6.4 find by primary key. blocking
@@ -1341,7 +1349,14 @@ DROGON_TEST(MySQLTest)
             FAULT("mysql - ORM mapper asynchronous interface(3) what():" +
                   std::string(e.base().what()));
         });
-
+    /// 6.3.6 custom where query
+    mapper.findBy(
+        Criteria("id between $? and $?"_sql, 2, 200),
+        [TEST_CTX](std::vector<Users> users) { MANDATE(users.size() == 1); },
+        [TEST_CTX](const DrogonDbException &e) {
+            FAULT("mysql - ORM mapper asynchronous interface(4) what():" +
+                  std::string(e.base().what()));
+        });
     /// 6.4 find by primary key. blocking
     try
     {
@@ -1992,6 +2007,14 @@ DROGON_TEST(SQLite3Test)
         [TEST_CTX](const size_t c) { MANDATE(c == 1UL); },
         [TEST_CTX](const DrogonDbException &e) {
             FAULT("sqlite3 - ORM mapper asynchronous interface(3) what():" +
+                  std::string(e.base().what()));
+        });
+    /// 5.3.6 custom where query
+    mapper.findBy(
+        Criteria("password is not null"_sql),
+        [TEST_CTX](std::vector<Users> users) { MANDATE(users.size() == 2); },
+        [TEST_CTX](const DrogonDbException &e) {
+            FAULT("sqlite3 - ORM mapper asynchronous interface(4) what():" +
                   std::string(e.base().what()));
         });
     /// 5.4 find by primary key. blocking
