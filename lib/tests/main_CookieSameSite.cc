@@ -23,20 +23,21 @@ class CookieSameSiteController
              std::function<void(const HttpResponsePtr &)> &&callback,
              std::string &&newSameSite)
     {
-        LOG_TRACE << "new sameSite == " << newSameSite;
         std::string old_session_same_site = "Null";
         if (req->session()->find(SESSION_SAME_SITE))
         {
             old_session_same_site =
                 req->session()->get<std::string>(SESSION_SAME_SITE);
-            LOG_TRACE << "old value: " << old_session_same_site;
         }
+        LOG_INFO << "Server: new sameSite == " << newSameSite
+                 << ", old sameSite == " << old_session_same_site;
         drogon::HttpAppFramework::instance().enableSession(
             0, Cookie::convertString2SameSite(newSameSite));
 
         req->session()->modify<std::string>(
             SESSION_SAME_SITE,
             [newSameSite](std::string &sameSite) { sameSite = newSameSite; });
+        req->session()->changeSessionIdToClient();
 
         Json::Value json;
         json["result"] = "ok";
@@ -53,7 +54,7 @@ const char *CookieSameSiteController::SESSION_SAME_SITE{"session_same_site"};
 // -- main
 int main(int argc, char **argv)
 {
-    trantor::Logger::setLogLevel(trantor::Logger::kTrace);
+    trantor::Logger::setLogLevel(trantor::Logger::kInfo);
     std::promise<void> p1;
     std::future<void> f1 = p1.get_future();
 

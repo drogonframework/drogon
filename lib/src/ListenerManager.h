@@ -59,6 +59,7 @@ class ListenerManager : public trantor::NonCopyable
 
     trantor::EventLoop *getIOLoop(size_t id) const;
     void stopListening();
+    void stopIoLoops();
     std::vector<trantor::EventLoop *> ioLoops_;
 
   private:

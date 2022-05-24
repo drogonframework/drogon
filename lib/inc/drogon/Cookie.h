@@ -17,6 +17,7 @@
 #include <drogon/utils/optional.h>
 #include <drogon/utils/string_view.h>
 #include <trantor/utils/Date.h>
+#include <trantor/utils/Logger.h>
 #include <string>
 #include <limits>
 
@@ -295,9 +296,69 @@ class DROGON_EXPORT Cookie
     }
 
     /**
-     * @brief convert a string value to class SameSite
+     * @brief Converts a string value to its associated enum class SameSite
+     * value
      */
-    static SameSite convertString2SameSite(const string_view &sameSite);
+    static SameSite convertString2SameSite(const string_view &sameSite)
+    {
+        if (sameSite == "Lax")
+        {
+            return Cookie::SameSite::kLax;
+        }
+        else if (sameSite == "Strict")
+        {
+            return Cookie::SameSite::kStrict;
+        }
+        else if (sameSite == "None")
+        {
+            return Cookie::SameSite::kNone;
+        }
+        else if (sameSite != "Null")
+        {
+            LOG_WARN
+                << "'" << sameSite
+                << "' is not a valid SameSite policy. 'Null', 'Lax', 'Strict' "
+                   "or "
+                   "'None' are proper values. Return value is SameSite::kNull.";
+        }
+
+        return Cookie::SameSite::kNull;
+    }
+
+    /**
+     * @brief Converts an enum class SameSite value to its associated string
+     * value
+     */
+    static const string_view &convertSameSite2String(SameSite sameSite)
+    {
+        switch (sameSite)
+        {
+            case SameSite::kLax:
+            {
+                static string_view sv{"Lax"};
+                return sv;
+            }
+            case SameSite::kStrict:
+            {
+                static string_view sv{"Strict"};
+                return sv;
+            }
+            case SameSite::kNone:
+            {
+                static string_view sv{"None"};
+                return sv;
+            }
+            case SameSite::kNull:
+            {
+                static string_view sv{"Null"};
+                return sv;
+            }
+        }
+        {
+            static string_view sv{"UNDEFINED"};
+            return sv;
+        }
+    }
 
   private:
     trantor::Date expiresDate_{(std::numeric_limits<int64_t>::max)()};

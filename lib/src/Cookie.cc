@@ -78,28 +78,3 @@ std::string Cookie::cookieString() const
     ret.append("\r\n");
     return ret;
 }
-
-Cookie::SameSite Cookie::convertString2SameSite(const string_view& sameSite)
-{
-    if (sameSite == "Lax")
-    {
-        return Cookie::SameSite::kLax;
-    }
-    else if (sameSite == "Strict")
-    {
-        return Cookie::SameSite::kStrict;
-    }
-    else if (sameSite == "None")
-    {
-        return Cookie::SameSite::kNone;
-    }
-    else if (sameSite != "Null")
-    {
-        LOG_WARN
-            << "'" << sameSite
-            << "' is not a valid SameSite policy. 'Null', 'Lax', 'Strict' or "
-               "'None' are proper values. Return value is SameSite::kNull.";
-    }
-
-    return Cookie::SameSite::kNull;
-}
