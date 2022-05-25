@@ -601,6 +601,7 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     std::string rootPath_{"./"};
     std::string uploadPath_;
     std::atomic_bool running_{false};
+    std::atomic_bool routersInit_{false};
 
     size_t threadNum_{1};
 #ifndef _WIN32
