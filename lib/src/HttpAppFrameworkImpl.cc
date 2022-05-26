@@ -293,7 +293,7 @@ HttpAppFramework &HttpAppFrameworkImpl::registerWebSocketController(
     const std::string &ctrlName,
     const std::vector<internal::HttpConstraint> &filtersAndMethods)
 {
-    assert(!running_);
+    assert(!routersInit_);
     websockCtrlsRouterPtr_->registerWebSocketController(pathName,
                                                         ctrlName,
                                                         filtersAndMethods);
@@ -304,7 +304,7 @@ HttpAppFramework &HttpAppFrameworkImpl::registerHttpSimpleController(
     const std::string &ctrlName,
     const std::vector<internal::HttpConstraint> &filtersAndMethods)
 {
-    assert(!running_);
+    assert(!routersInit_);
     httpSimpleCtrlsRouterPtr_->registerHttpSimpleController(pathName,
                                                             ctrlName,
                                                             filtersAndMethods);
@@ -320,7 +320,7 @@ void HttpAppFrameworkImpl::registerHttpController(
 {
     assert(!pathPattern.empty());
     assert(binder);
-    assert(!running_);
+    assert(!routersInit_);
     httpCtrlsRouterPtr_->addHttpPath(
         pathPattern, binder, validMethods, filters, handlerName);
 }
@@ -334,7 +334,7 @@ void HttpAppFrameworkImpl::registerHttpControllerViaRegex(
 {
     assert(!regExp.empty());
     assert(binder);
-    assert(!running_);
+    assert(!routersInit_);
     httpCtrlsRouterPtr_->addHttpRegex(
         regExp, binder, validMethods, filters, handlerName);
 }
@@ -570,7 +570,7 @@ void HttpAppFrameworkImpl::run()
         sessionManagerPtr_ =
             std::make_unique<SessionManager>(getLoop(), sessionTimeout_);
     }
-    // now start runing!!
+    // now start running!!
     running_ = true;
     // Initialize plugins
     const auto &pluginConfig = jsonConfig_["plugins"];
@@ -584,6 +584,7 @@ void HttpAppFrameworkImpl::run()
                                                      // TODO: new plugin
                                                  });
     }
+    routersInit_ = true;
     httpCtrlsRouterPtr_->init(ioLoops);
     httpSimpleCtrlsRouterPtr_->init(ioLoops);
     staticFileRouterPtr_->init(ioLoops);

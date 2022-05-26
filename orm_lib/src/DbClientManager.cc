@@ -76,9 +76,6 @@ void DbClientManager::createDbClients(
                     {
                         c->setTimeout(dbInfo.timeout_);
                     }
-                    ioloops[idx]->runOnQuit([&, name = dbInfo.name_]() {
-                        dbFastClientsMap_[name].getThreadData().reset();
-                    });
                 });
             }
         }
