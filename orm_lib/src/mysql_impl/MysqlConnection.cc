@@ -56,8 +56,9 @@ MysqlConnection::MysqlConnection(trantor::EventLoop *loop,
 {
     mysql_init(mysqlPtr_.get());
     mysql_options(mysqlPtr_.get(), MYSQL_OPT_NONBLOCK, nullptr);
+#ifdef HAS_MYSQL_OPTIONSV
     mysql_optionsv(mysqlPtr_.get(), MYSQL_OPT_RECONNECT, &reconnect_);
-
+#endif
     // Get the key and value
     auto connParams = parseConnString(connInfo);
     for (auto const &kv : connParams)
