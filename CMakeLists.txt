@@ -365,13 +365,22 @@ if (BUILD_MYSQL)
     if (MySQL_FOUND)
         target_link_libraries(${PROJECT_NAME} PRIVATE MySQL_lib)
         set(DROGON_FOUND_MYSQL TRUE)
+        set(MYSQL_LIB_NAME MySQL_lib)
     elseif (unofficial-libmariadb_FOUND)
         target_link_libraries(${PROJECT_NAME} PRIVATE unofficial::libmariadb)
         set(DROGON_FOUND_MYSQL TRUE)
+        set(MYSQL_LIB_NAME unofficial::libmariadb)
     endif ()
 
     if (DROGON_FOUND_MYSQL)
         message(STATUS "Ok! We find mariadb!")
+        include(CheckLibraryExists)
+        check_library_exists(${MYSQL_LIB_NAME} mysql_optionsv "" HAS_MYSQL_OPTIONSV)
+        if (HAS_MYSQL_OPTIONSV)
+            message(STATUS "Mariadb support mysql_optionsv")
+            add_definitions(-DHAS_MYSQL_OPTIONSV)
+        endif(HAS_MYSQL_OPTIONSV)
+
         set(DROGON_SOURCES
             ${DROGON_SOURCES}
             orm_lib/src/mysql_impl/MysqlConnection.cc
