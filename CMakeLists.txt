@@ -679,14 +679,15 @@ set(NOSQL_HEADERS
 install(FILES ${NOSQL_HEADERS} DESTINATION ${INSTALL_INCLUDE_DIR}/drogon/nosql)
 
 set(DROGON_UTIL_HEADERS
-    lib/inc/drogon/utils/FunctionTraits.h
-    lib/inc/drogon/utils/Utilities.h
     lib/inc/drogon/utils/any.h
-    lib/inc/drogon/utils/string_view.h
-    lib/inc/drogon/utils/optional.h
+    lib/inc/drogon/utils/apply.h
     lib/inc/drogon/utils/coroutine.h
+    lib/inc/drogon/utils/FunctionTraits.h
     lib/inc/drogon/utils/HttpConstraint.h
-    lib/inc/drogon/utils/OStringStream.h)
+    lib/inc/drogon/utils/optional.h
+    lib/inc/drogon/utils/OStringStream.h
+    lib/inc/drogon/utils/string_view.h
+    lib/inc/drogon/utils/Utilities.h)
 install(FILES ${DROGON_UTIL_HEADERS}
     DESTINATION ${INSTALL_INCLUDE_DIR}/drogon/utils)
 
