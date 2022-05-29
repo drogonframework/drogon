@@ -24,7 +24,7 @@ std::string create::detail()
            "Usage:drogon_ctl create <view|controller|filter|project|model> "
            "[-options] <object name>\n\n"
            "drogon_ctl create view <csp file name> [-o <output path>] [-n "
-           "<namespace>]|[--path-to-namespace]//create HttpView source files "
+           "<namespace>]|[--path-to-namespace] //create HttpView source files "
            "from csp files\n\n"
            "drogon_ctl create controller [-s] <[namespace::]class_name> //"
            "create HttpSimpleController source files\n\n"
