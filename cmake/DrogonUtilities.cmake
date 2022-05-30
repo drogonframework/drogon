@@ -1,6 +1,6 @@
 # ##############################################################################
 # function drogon_create_views(target source_path output_path
-# [use_path_as_namespace])
+# [TRUE to use_path_as_namespace] [prefixed namespace])
 # ##############################################################################
 function(drogon_create_views arg)
   if(ARGC LESS 3)
@@ -27,12 +27,16 @@ function(drogon_create_views arg)
                      ""
                      outputFile
                      ${f2})
-      if( "${ARGV3}" EQUAL "TRUE")
-        set(ns "")
-      elseif( NOT "${ARGV3}")
-        string(REPLACE "::" "_" nSpace ${ARGV3})
+      set(p2ns "")
+      if("${ARGV3}" STREQUAL "TRUE")
+        set(p2ns "--path-to-namespace")
+      endif()
+      if ( (ARGC EQUAL 5) AND ( NOT "${ARGV4}" STREQUAL "") )
+        string(REPLACE "::" "_" nSpace ${ARGV4})
         set(outputFile "${nSpace}_${outputFile}")
-        set(ns -n ${ARGV3})
+        set(ns -n ${ARGV4})
+      else()
+        set(ns "")
       endif()
       add_custom_command(OUTPUT ${ARGV2}/${outputFile}.h ${ARGV2}/${outputFile}.cc
                          COMMAND drogon_ctl
@@ -40,7 +44,7 @@ function(drogon_create_views arg)
                                  create
                                  view
                                  ${inFile}
-                                 --path-to-namespace
+                                 ${p2ns}
                                  -o
                                  ${ARGV2}
                                  ${ns}
