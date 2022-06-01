@@ -67,7 +67,7 @@
             //zero or negative value means no timeout.
             "timeout": -1.0,
             //"auto_batch": this feature is only available for the PostgreSQL driver(version >= 14.0), see
-            // ... for more details.
+            // the wiki for more details.
             "auto_batch": false
         }
     ],
