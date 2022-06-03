@@ -57,7 +57,7 @@ class DbClientImpl : public DbClient,
         timeout_ = timeout;
     }
     void init();
-
+    void closeAll() override;
   private:
     size_t numberOfConnections_;
     trantor::EventLoopThreadPool loops_;

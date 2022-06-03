@@ -51,3 +51,7 @@ bool DbClientManager::areAllDbClientsAvailable() const noexcept
                  "database development library first.";
     abort();
 }
+
+DbClientManager::~DbClientManager()
+{
+}

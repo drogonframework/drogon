@@ -69,10 +69,16 @@ DbClientLockFree::DbClientLockFree(const std::string &connInfo,
 
 DbClientLockFree::~DbClientLockFree() noexcept
 {
+    closeAll();
+}
+
+void DbClientLockFree::closeAll()
+{
     for (auto &conn : connections_)
     {
         conn->disconnect();
     }
+    connections_.clear();
 }
 
 void DbClientLockFree::execSql(

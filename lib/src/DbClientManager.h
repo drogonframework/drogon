@@ -35,7 +35,7 @@ class DbClientManager : public trantor::NonCopyable
         assert(dbClientsMap_.find(name) != dbClientsMap_.end());
         return dbClientsMap_[name];
     }
-
+    ~DbClientManager();
     DbClientPtr getFastDbClient(const std::string &name)
     {
         auto iter = dbFastClientsMap_.find(name);

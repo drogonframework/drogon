@@ -287,6 +287,11 @@ class DROGON_EXPORT DbClient : public trantor::NonCopyable
      * is not called.
      */
     virtual void setTimeout(double timeout) = 0;
+    /**
+     * @brief Close all connections in the client. usually used by Drogon in the
+     * quit() method.
+     * */
+    virtual void closeAll() = 0;
 
   private:
     friend internal::SqlBinder;
@@ -313,6 +318,9 @@ class Transaction : public DbClient
     // virtual void commit() = 0;
     virtual void setCommitCallback(
         const std::function<void(bool)> &commitCallback) = 0;
+    void closeAll() override
+    {
+    }
 };
 
 #ifdef __cpp_impl_coroutine
