@@ -1813,7 +1813,8 @@ inline std::future<size_t> Mapper<T>::deleteFutureByPrimaryKey(
     auto binder = *client_ << T::sqlForDeletingByPrimaryKey();
     outputPrimeryKeyToBinder(key, binder);
 
-    std::shared_ptr<std::promise<T>> prom = std::make_shared<std::promise<T>>();
+    std::shared_ptr<std::promise<size_t>> prom =
+        std::make_shared<std::promise<size_t>>();
     binder >> [prom](const Result &r) { prom->set_value(r.affectedRows()); };
     binder >> [prom](const std::exception_ptr &e) { prom->set_exception(e); };
     binder.exec();
