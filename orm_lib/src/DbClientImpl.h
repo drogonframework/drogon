@@ -58,6 +58,7 @@ class DbClientImpl : public DbClient,
     }
     void init();
     void closeAll() override;
+
   private:
     size_t numberOfConnections_;
     trantor::EventLoopThreadPool loops_;
