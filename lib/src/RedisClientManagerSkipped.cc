@@ -48,3 +48,7 @@ void RedisClientManager::createRedisClient(const std::string & /*name*/,
 //                  "hiredis library first.";
 //     abort();
 // }
+
+RedisClientManager::~RedisClientManager()
+{
+}

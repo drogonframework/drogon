@@ -175,6 +175,11 @@ void RedisClientImpl::execCommandAsync(
 
 RedisClientImpl::~RedisClientImpl()
 {
+    closeAll();
+}
+
+void RedisClientImpl::closeAll()
+{
     std::lock_guard<std::mutex> lock(connectionsMutex_);
     for (auto &conn : connections_)
     {
@@ -183,7 +188,6 @@ RedisClientImpl::~RedisClientImpl()
     readyConnections_.clear();
     connections_.clear();
 }
-
 void RedisClientImpl::newTransactionAsync(
     const std::function<void(const std::shared_ptr<RedisTransaction> &)>
         &callback)

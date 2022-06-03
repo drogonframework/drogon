@@ -92,6 +92,11 @@ void DbClientImpl::init()
 }
 DbClientImpl::~DbClientImpl() noexcept
 {
+    closeAll();
+}
+
+void DbClientImpl::closeAll()
+{
     std::lock_guard<std::mutex> lock(connectionsMutex_);
     for (auto const &conn : connections_)
     {

@@ -225,3 +225,25 @@ bool DbClientManager::areAllDbClientsAvailable() const noexcept
     }
     return true;
 }
+
+DbClientManager::~DbClientManager()
+{
+    for (auto &pair : dbClientsMap_)
+    {
+        pair.second->closeAll();
+    }
+    for (auto &pair : dbFastClientsMap_)
+    {
+        pair.second.init([](DbClientPtr &clientPtr, size_t index) {
+            // the main loop;
+            std::promise<void> p;
+            auto f = p.get_future();
+            drogon::getIOThreadStorageLoop(index)->runInLoop(
+                [&clientPtr, &p]() {
+                    clientPtr->closeAll();
+                    p.set_value();
+                });
+            f.get();
+        });
+    }
+}

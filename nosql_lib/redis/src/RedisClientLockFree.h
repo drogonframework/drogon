@@ -61,6 +61,8 @@ class RedisClientLockFree final
         timeout_ = timeout;
     }
 
+    void closeAll() override;
+
   private:
     trantor::EventLoop *loop_;
     std::unordered_set<RedisConnectionPtr> connections_;

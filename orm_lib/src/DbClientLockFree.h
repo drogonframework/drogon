@@ -58,6 +58,7 @@ class DbClientLockFree : public DbClient,
     {
         timeout_ = timeout;
     }
+    void closeAll() override;
 
   private:
     std::string connectionInfo_;
