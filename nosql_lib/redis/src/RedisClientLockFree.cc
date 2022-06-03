@@ -150,6 +150,11 @@ void RedisClientLockFree::execCommandAsync(
 
 RedisClientLockFree::~RedisClientLockFree()
 {
+    closeAll();
+}
+
+void RedisClientLockFree::closeAll()
+{
     for (auto &conn : connections_)
     {
         conn->disconnect();

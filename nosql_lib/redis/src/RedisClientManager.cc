@@ -109,3 +109,25 @@ void RedisClientManager::createRedisClient(const std::string &name,
 //    }
 //    return true;
 //}
+
+RedisClientManager::~RedisClientManager()
+{
+    for (auto &pair : redisClientsMap_)
+    {
+        pair.second->closeAll();
+    }
+    for (auto &pair : redisFastClientsMap_)
+    {
+        pair.second.init([](RedisClientPtr &clientPtr, size_t index) {
+            // the main loop;
+            std::promise<void> p;
+            auto f = p.get_future();
+            drogon::getIOThreadStorageLoop(index)->runInLoop(
+                [&clientPtr, &p]() {
+                    clientPtr->closeAll();
+                    p.set_value();
+                });
+            f.get();
+        });
+    }
+}

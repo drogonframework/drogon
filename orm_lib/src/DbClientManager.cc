@@ -235,28 +235,15 @@ DbClientManager::~DbClientManager()
     for (auto &pair : dbFastClientsMap_)
     {
         pair.second.init([](DbClientPtr &clientPtr, size_t index) {
-            if (index == app().getThreadNum())
-            {
-                // the main loop;
-                std::promise<void> p;
-                auto f = p.get_future();
-                app().getLoop()->runInLoop([&clientPtr, &p]() {
+            // the main loop;
+            std::promise<void> p;
+            auto f = p.get_future();
+            drogon::getIOThreadStorageLoop(index)->runInLoop(
+                [&clientPtr, &p]() {
                     clientPtr->closeAll();
                     p.set_value();
                 });
-                f.get();
-            }
-            else
-            {
-                // IO loops;
-                std::promise<void> p;
-                auto f = p.get_future();
-                app().getIOLoop(index)->runInLoop([&clientPtr, &p]() {
-                    clientPtr->closeAll();
-                    p.set_value();
-                });
-                f.get();
-            }
+            f.get();
         });
     }
 }

@@ -53,6 +53,8 @@ class RedisClientManager : public trantor::NonCopyable
                            unsigned int db);
     // bool areAllRedisClientsAvailable() const noexcept;
 
+    ~RedisClientManager();
+
   private:
     std::map<std::string, RedisClientPtr> redisClientsMap_;
     std::map<std::string, IOThreadStorage<RedisClientPtr>> redisFastClientsMap_;

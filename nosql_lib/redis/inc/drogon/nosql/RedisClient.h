@@ -214,6 +214,13 @@ class DROGON_EXPORT RedisClient
     virtual void setTimeout(double timeout) = 0;
 
     virtual ~RedisClient() = default;
+
+    /**
+     * @brief Close all connections in the client. usually used by Drogon in the
+     * quit() method.
+     * */
+    virtual void closeAll() = 0;
+
 #ifdef __cpp_impl_coroutine
     /**
      * @brief Send a Redis command and await the RedisResult in a coroutine.
@@ -312,6 +319,9 @@ class DROGON_EXPORT RedisTransaction : public RedisClient
             });
     }
 #endif
+    void closeAll() override
+    {
+    }
 };
 using RedisClientPtr = std::shared_ptr<RedisClient>;
 using RedisTransactionPtr = std::shared_ptr<RedisTransaction>;
