@@ -237,11 +237,11 @@ int main(int argc, char **argv)
     app().setThreadNum(1);
     app().createDbClient(  //
         "postgresql",      // dbType
-        "192.168.66.66",   // host
-        21001,             // port
-        "test",            // dbname
-        "test",            // username
-        "",                // password
+        "127.0.0.1",       // host
+        5432,              // port
+        "postgres",        // dbname
+        "postgres",        // username
+        "12345",           // password
         1,                 // connectionNum
         "",                // filename
         "default",         // name
