@@ -34,7 +34,12 @@ class DbClientImpl : public DbClient,
   public:
     DbClientImpl(const std::string &connInfo,
                  const size_t connNum,
+#if LIBPQ_SUPPORTS_BATCH_MODE
+                 ClientType type,
+                 bool autoBatch);
+#else
                  ClientType type);
+#endif
     ~DbClientImpl() noexcept override;
     void execSql(const char *sql,
                  size_t sqlLength,
@@ -64,6 +69,9 @@ class DbClientImpl : public DbClient,
     trantor::EventLoopThreadPool loops_;
     std::shared_ptr<SharedMutex> sharedMutexPtr_;
     double timeout_{-1.0};
+#if LIBPQ_SUPPORTS_BATCH_MODE
+    bool autoBatch_{false};
+#endif
     void execSql(
         const DbConnectionPtr &conn,
         string_view &&sql,

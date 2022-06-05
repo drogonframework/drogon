@@ -65,7 +65,10 @@
             "number_of_connections": 1,
             //timeout: -1.0 by default, in seconds, the timeout for executing a SQL query.
             //zero or negative value means no timeout.
-            "timeout": -1.0
+            "timeout": -1.0,
+            //"auto_batch": this feature is only available for the PostgreSQL driver(version >= 14.0), see
+            // the wiki for more details.
+            "auto_batch": false
         }
     ],
     "redis_clients": [

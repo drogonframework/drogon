@@ -537,6 +537,7 @@ static void loadDbClients(const Json::Value &dbClients)
             characterSet = client.get("client_encoding", "").asString();
         }
         auto timeout = client.get("timeout", -1.0).asDouble();
+        auto autoBatch = client.get("auto_batch", false).asBool();
         drogon::app().createDbClient(type,
                                      host,
                                      (unsigned short)port,
@@ -548,7 +549,8 @@ static void loadDbClients(const Json::Value &dbClients)
                                      name,
                                      isFast,
                                      characterSet,
-                                     timeout);
+                                     timeout,
+                                     autoBatch);
     }
 }
 

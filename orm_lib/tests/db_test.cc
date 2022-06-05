@@ -2115,7 +2115,8 @@ int main(int argc, char **argv)
     postgreClient = DbClient::newPgClient(
         "host=127.0.0.1 port=5432 dbname=postgres user=postgres password=12345 "
         "client_encoding=utf8",
-        1);
+        1,
+        true);
 #endif
 #if USE_SQLITE3
     sqlite3Client = DbClient::newSqlite3Client("filename=:memory:", 1);

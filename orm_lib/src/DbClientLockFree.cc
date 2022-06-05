@@ -47,9 +47,17 @@ using namespace drogon::orm;
 DbClientLockFree::DbClientLockFree(const std::string &connInfo,
                                    trantor::EventLoop *loop,
                                    ClientType type,
+#if LIBPQ_SUPPORTS_BATCH_MODE
+                                   size_t connectionNumberPerLoop,
+                                   bool autoBatch)
+#else
                                    size_t connectionNumberPerLoop)
+#endif
     : connectionInfo_(connInfo),
       loop_(loop),
+#if LIBPQ_SUPPORTS_BATCH_MODE
+      autoBatch_(autoBatch),
+#endif
       numberOfConnections_(connectionNumberPerLoop)
 {
     type_ = type;
@@ -404,7 +412,12 @@ DbConnectionPtr DbClientLockFree::newConnection()
     if (type_ == ClientType::PostgreSQL)
     {
 #if USE_POSTGRESQL
-        connPtr = std::make_shared<PgConnection>(loop_, connectionInfo_);
+#if LIBPQ_SUPPORTS_BATCH_MODE
+        connPtr =
+            std::make_shared<PgConnection>(loop_, connectionInfo_, autoBatch_);
+#else
+        connPtr = std::make_shared<PgConnection>(loop_, connectionInfo_, false);
+#endif
 #else
         return nullptr;
 #endif

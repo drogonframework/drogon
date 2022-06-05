@@ -29,12 +29,18 @@ orm::internal::SqlBinder DbClient::operator<<(std::string &&sql)
 }
 
 std::shared_ptr<DbClient> DbClient::newPgClient(const std::string &connInfo,
-                                                const size_t connNum)
+                                                const size_t connNum,
+                                                bool autoBatch)
 {
 #if USE_POSTGRESQL
     auto client = std::make_shared<DbClientImpl>(connInfo,
                                                  connNum,
+#if LIBPQ_SUPPORTS_BATCH_MODE
+                                                 ClientType::PostgreSQL,
+                                                 autoBatch);
+#else
                                                  ClientType::PostgreSQL);
+#endif
     client->init();
     return client;
 #else
@@ -49,8 +55,14 @@ std::shared_ptr<DbClient> DbClient::newMysqlClient(const std::string &connInfo,
                                                    const size_t connNum)
 {
 #if USE_MYSQL
-    auto client =
-        std::make_shared<DbClientImpl>(connInfo, connNum, ClientType::Mysql);
+    auto client = std::make_shared<DbClientImpl>(connInfo,
+                                                 connNum,
+#if LIBPQ_SUPPORTS_BATCH_MODE
+                                                 ClientType::Mysql,
+                                                 false);
+#else
+                                                 ClientType::Mysql);
+#endif
     client->init();
     return client;
 #else
@@ -66,8 +78,14 @@ std::shared_ptr<DbClient> DbClient::newSqlite3Client(
     const size_t connNum)
 {
 #if USE_SQLITE3
-    auto client =
-        std::make_shared<DbClientImpl>(connInfo, connNum, ClientType::Sqlite3);
+    auto client = std::make_shared<DbClientImpl>(connInfo,
+                                                 connNum,
+#if LIBPQ_SUPPORTS_BATCH_MODE
+                                                 ClientType::Sqlite3,
+                                                 false);
+#else
+                                                 ClientType::Sqlite3);
+#endif
     client->init();
     return client;
 #else

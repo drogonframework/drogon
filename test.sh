@@ -181,6 +181,14 @@ if [ "$1" = "-t" ]; then
             exit -1
         fi
     fi
+    if [ -f "./orm_lib/tests/pipeline_test" ]; then
+            echo "Test pipeline mode"
+            ./orm_lib/tests/pipeline_test -s
+            if [ $? -ne 0 ]; then
+                echo "Error in testing"
+                exit -1
+            fi
+        fi
     if [ -f "./nosql_lib/redis/tests/redis_test" ]; then
         echo "Test redis"
         ./nosql_lib/redis/tests/redis_test -s

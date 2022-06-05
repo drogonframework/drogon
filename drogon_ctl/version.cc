@@ -38,7 +38,7 @@ void version::handleCommand(std::vector<std::string> &parameters)
               << "\n  Compilation flags: " << COMPILATION_FLAGS
               << INCLUDING_DIRS << std::endl;
     std::cout << "Libraries: \n  postgresql: "
-              << (USE_POSTGRESQL ? "yes" : "no") << "  (batch mode: "
+              << (USE_POSTGRESQL ? "yes" : "no") << "  (pipeline mode: "
               << (LIBPQ_SUPPORTS_BATCH_MODE ? "yes)\n" : "no)\n")
               << "  mariadb: " << (USE_MYSQL ? "yes\n" : "no\n")
               << "  sqlite3: " << (USE_SQLITE3 ? "yes\n" : "no\n");

@@ -38,7 +38,9 @@ class PgConnection : public DbConnection,
                      public std::enable_shared_from_this<PgConnection>
 {
   public:
-    PgConnection(trantor::EventLoop *loop, const std::string &connInfo);
+    PgConnection(trantor::EventLoop *loop,
+                 const std::string &connInfo,
+                 bool autoBatch);
 
     virtual void execSql(string_view &&sql,
                          size_t paraNum,
@@ -126,6 +128,7 @@ class PgConnection : public DbConnection,
     void sendBatchedSql();
     int sendBatchEnd();
     bool sendBatchEnd_{false};
+    bool autoBatch_{false};
     unsigned int batchCount_{0};
     std::unordered_map<string_view, std::pair<std::string, bool>>
         preparedStatementsMap_;
