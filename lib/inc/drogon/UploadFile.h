@@ -31,11 +31,13 @@ class UploadFile
      * default, the file name in the @param filePath
      * is provided to the server.
      * @param itemName The item name on the browser form.
+     * @param contentType The Mime content type for the part
      */
     explicit UploadFile(const std::string &filePath,
                         const std::string &fileName = "",
-                        const std::string &itemName = "file")
-        : path_(filePath), itemName_(itemName)
+                        const std::string &itemName = "file",
+                        ContentType contentType = CT_NONE)
+        : path_(filePath), itemName_(itemName), contentType_(contentType)
     {
         if (!fileName.empty())
         {
@@ -66,10 +68,15 @@ class UploadFile
     {
         return itemName_;
     }
+    ContentType contentType() const
+    {
+        return contentType_;
+    }
 
   private:
     std::string path_;
     std::string fileName_;
     std::string itemName_;
+    ContentType contentType_;
 };
 }  // namespace drogon

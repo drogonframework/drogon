@@ -288,7 +288,16 @@ void HttpRequestImpl::appendToBuffer(trantor::MsgBuffer *output) const
                 content.append(file.itemName());
                 content.append("\"; filename=\"");
                 content.append(file.fileName());
-                content.append("\"\r\n\r\n");
+                content.append("\"");
+                if (file.contentType() != CT_NONE)
+                {
+                    content.append("\r\n");
+
+                    auto &type = contentTypeToMime(file.contentType());
+                    content.append("content-type: ");
+                    content.append(type.data(), type.length());
+                }
+                content.append("\r\n\r\n");
                 std::ifstream infile(utils::toNativePath(file.path()),
                                      std::ifstream::binary);
                 if (!infile)
