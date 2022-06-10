@@ -85,9 +85,15 @@ case nproc in
     ;;
 esac
 
+if [ -f /bin/clang++ ]; then
+    cmake_gen="$cmake_gen -D CMAKE_C_COMPILER=clang -D CMAKE_CXX_COMPILER=clang++"
+else
+    cmake_gen="$cmake_gen -D CMAKE_C_COMPILER=gcc -D CMAKE_CXX_COMPILER=g++"
+fi
+
 if [ -f /bin/ninja ]; then
     make_program=ninja
-    cmake_gen='-GNinja'
+    cmake_gen="$cmake_gen -GNinja"
 else
     make_flags="$make_flags -j$parallel"
 fi
