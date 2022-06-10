@@ -47,3 +47,4 @@ CMakeSettings.json
 install
 trace.json
 .cache/
+.secret
