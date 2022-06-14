@@ -267,6 +267,8 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     HttpAppFramework &loadConfigFile(const std::string &fileName) override;
     HttpAppFramework &loadConfigJson(const Json::Value &data) override;
     HttpAppFramework &loadConfigJson(Json::Value &&data) override;
+    HttpAppFramework &loadConfigDotenv() override;
+    HttpAppFramework &loadConfigDotenv(const std::string &fileName) override;
     HttpAppFramework &enableRunAsDaemon() override
     {
         runAsDaemon_ = true;

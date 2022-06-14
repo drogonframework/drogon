@@ -20,10 +20,17 @@
 
 namespace drogon
 {
+enum ConfigSyntax
+{
+    kJSON,
+    kDotENV
+};
+
 class ConfigLoader : public trantor::NonCopyable
 {
   public:
     explicit ConfigLoader(const std::string &configFile);
+    explicit ConfigLoader(const std::string &configFile, ConfigSyntax syntax);
     explicit ConfigLoader(const Json::Value &data);
     explicit ConfigLoader(Json::Value &&data);
     ~ConfigLoader();
