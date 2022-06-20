@@ -983,6 +983,21 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
                             CHECK(resp->getStatusCode() == k404NotFound);
                         });
 
+    // Post compressed data
+    req = HttpRequest::newHttpRequest();
+    std::string deadbeef = "deadbeef";
+    req->setPath("/api/v1/ApiTest/gzipCompressedTest");
+    req->addHeader("Content-Encoding", "gzip");
+    req->setMethod(drogon::Post);
+    req->setBody(utils::gzipCompress(deadbeef.c_str(), deadbeef.size()));
+    client->sendRequest(req,
+                        [deadbeef, TEST_CTX](ReqResult result,
+                                        const HttpResponsePtr &resp) {
+                            REQUIRE(result == ReqResult::Ok);
+                            CHECK(resp->getStatusCode() == k200OK);
+                            CHECK(resp->body() == deadbeef);
+                        });
+
 #if defined(__cpp_impl_coroutine)
     sync_wait([client, TEST_CTX]() -> Task<> {
         // Test coroutine requests

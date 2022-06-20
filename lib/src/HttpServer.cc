@@ -536,14 +536,22 @@ void HttpServer::onRequests(
         {
             auto contentEncoding = req->getHeaderBy("content-encoding");
             auto body = req->getBody();
-            if (contentEncoding == "gzip")
+            if(contentEncoding == "")
+            {
+                // NoOP
+            }
+            else if (contentEncoding == "gzip")
             {
                 req->setBody(utils::gzipDecompress(body.data(), body.size()));
+                req->removeHeader("content-encoding");
             }
 #ifdef USE_BROTLI
-            else if (contentEncoding == "br")
+            // only enable brotli decompression if over secure connection. Same logic as browsers only accept
+            // brotli over HTTPS. There are past issues with brotli over plain http.
+            else if (contentEncoding == "br" && req->isOnSecureConnection())
             {
                 req->setBody(utils::brotliDecompress(body.data(), body.size()));
+                req->removeHeader("content-encoding");
             }
 #endif
             else

@@ -42,6 +42,7 @@ class ApiTest : public drogon::HttpController<ApiTest>
     ADD_METHOD_VIA_REGEX(ApiTest::cacheTestRegex,
                          "/cacheTestRegex/[a-y]+",
                          Get);
+    METHOD_ADD(ApiTest::gzipRequestTest, "/gzipCompressedTest", Post);
     METHOD_LIST_END
 
     void get(const HttpRequestPtr &req,
@@ -85,7 +86,8 @@ class ApiTest : public drogon::HttpController<ApiTest>
     void cacheTestRegex(
         const HttpRequestPtr &req,
         std::function<void(const HttpResponsePtr &)> &&callback);
-
+    void gzipRequestTest(const HttpRequestPtr &req,
+                         std::function<void(const HttpResponsePtr &)> &&callback);
   public:
     ApiTest()
     {
