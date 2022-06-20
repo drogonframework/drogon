@@ -509,8 +509,8 @@ void ApiTest::cacheTestRegex(
     callCount++;
 }
 
-void ApiTest::gzipRequestTest(const HttpRequestPtr &req,
-                              std::function<void(const HttpResponsePtr &)> &&callback)
+void ApiTest::echoBody(const HttpRequestPtr &req,
+                       std::function<void(const HttpResponsePtr &)> &&callback)
 {
     auto resp = HttpResponse::newHttpResponse();
     resp->setBody(std::string(req->body()));

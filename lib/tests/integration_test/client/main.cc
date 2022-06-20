@@ -986,17 +986,33 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
     // Post compressed data
     req = HttpRequest::newHttpRequest();
     std::string deadbeef = "deadbeef";
-    req->setPath("/api/v1/ApiTest/gzipCompressedTest");
+    req->setPath("/api/v1/ApiTest/echoBody");
     req->addHeader("Content-Encoding", "gzip");
     req->setMethod(drogon::Post);
     req->setBody(utils::gzipCompress(deadbeef.c_str(), deadbeef.size()));
     client->sendRequest(req,
                         [deadbeef, TEST_CTX](ReqResult result,
-                                        const HttpResponsePtr &resp) {
+                                             const HttpResponsePtr &resp) {
                             REQUIRE(result == ReqResult::Ok);
                             CHECK(resp->getStatusCode() == k200OK);
                             CHECK(resp->body() == deadbeef);
                         });
+
+#ifdef USE_BROTLI
+    // Post compressed data
+    req = HttpRequest::newHttpRequest();
+    req->setPath("/api/v1/ApiTest/echoBody");
+    req->addHeader("Content-Encoding", "br");
+    req->setMethod(drogon::Post);
+    req->setBody(utils::brotliCompress(deadbeef.c_str(), deadbeef.size()));
+    client->sendRequest(req,
+                        [deadbeef, TEST_CTX](ReqResult result,
+                                             const HttpResponsePtr &resp) {
+                            REQUIRE(result == ReqResult::Ok);
+                            CHECK(resp->getStatusCode() == k200OK);
+                            CHECK(resp->body() == deadbeef);
+                        });
+#endif
 
 #if defined(__cpp_impl_coroutine)
     sync_wait([client, TEST_CTX]() -> Task<> {

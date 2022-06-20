@@ -536,7 +536,7 @@ void HttpServer::onRequests(
         {
             auto contentEncoding = req->getHeaderBy("content-encoding");
             auto body = req->getBody();
-            if(contentEncoding == "")
+            if (contentEncoding == "")
             {
                 // NoOP
             }
@@ -546,9 +546,7 @@ void HttpServer::onRequests(
                 req->removeHeader("content-encoding");
             }
 #ifdef USE_BROTLI
-            // only enable brotli decompression if over secure connection. Same logic as browsers only accept
-            // brotli over HTTPS. There are past issues with brotli over plain http.
-            else if (contentEncoding == "br" && req->isOnSecureConnection())
+            else if (contentEncoding == "br")
             {
                 req->setBody(utils::brotliDecompress(body.data(), body.size()));
                 req->removeHeader("content-encoding");
