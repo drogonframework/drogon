@@ -356,6 +356,7 @@ int main()
     resp->setExpiredTime(0);
     app().setCustom404Page(resp);
     app().addListener("0.0.0.0", 0);
+    app().enableCompressedRequest(true);
     app().registerBeginningAdvice([]() {
         auto addresses = app().getListeners();
         for (auto &address : addresses)

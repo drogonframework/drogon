@@ -530,9 +530,9 @@ void HttpServer::onRequests(
             }
         };
 
-        const bool decompress = true;
+        const bool enableDecompression = app().isCompressedRequestEnabled();
         bool sendForProcessing = true;
-        if (decompress)
+        if (enableDecompression)
         {
             auto contentEncoding = req->getHeaderBy("content-encoding");
             auto body = req->getBody();

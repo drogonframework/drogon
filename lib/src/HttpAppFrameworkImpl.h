@@ -555,6 +555,17 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
         return exceptionHandler_;
     }
 
+    HttpAppFramework &enableCompressedRequest(bool enable) override
+    {
+        enableCompressedRequest_ = enable;
+        return *this;
+    }
+
+    bool isCompressedRequestEnabled() const override
+    {
+        return enableCompressedRequest_;
+    }
+
     HttpAppFramework &registerCustomExtensionMime(
         const std::string &ext,
         const std::string &mime) override;
@@ -688,6 +699,7 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     std::vector<std::function<void(const HttpRequestPtr &)>>
         preHandlingObservers_;
     ExceptionHandler exceptionHandler_{defaultExceptionHandler};
+    bool enableCompressedRequest_{false};
 };
 
 }  // namespace drogon
