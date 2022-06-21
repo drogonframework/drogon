@@ -569,9 +569,9 @@ class Mapper
      */
     template <typename... Arguments>
     void updateBy(const std::vector<std::string> &colNames,
-                  const Criteria &criteria,
                   const CountCallback &rcb,
                   const ExceptionCallback &ecb,
+                  const Criteria &criteria,
                   Arguments &&...args) noexcept;
 
     /**
@@ -1394,9 +1394,9 @@ inline void Mapper<T>::update(const T &obj,
 template <typename T>
 template <typename... Arguments>
 void Mapper<T>::updateBy(const std::vector<std::string> &colNames,
-                         const Criteria &criteria,
                          const CountCallback &rcb,
                          const ExceptionCallback &ecb,
+                         const Criteria &criteria,
                          Arguments &&...args) noexcept
 {
     static_assert(sizeof...(args) > 0);

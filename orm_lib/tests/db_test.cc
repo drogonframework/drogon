@@ -622,7 +622,7 @@ DROGON_TEST(PostgreTest)
         FAULT("postgresql - ORM mapper synchronous interface(0) what():" +
               std::string(e.base().what()));
     }
-    /// 6.5 update by criteria. blocking
+    /// 6.5.1 update by criteria. blocking
     try
     {
         auto user = mapper.findByPrimaryKey(2);
@@ -653,6 +653,26 @@ DROGON_TEST(PostgreTest)
         FAULT("postgresql - ORM mapper synchronous interface(1) what():" +
               std::string(e.base().what()));
     }
+
+    /// 6.5.2 update by criteria. asynchronous
+    {
+        std::vector<std::string> cols{Users::Cols::_avatar_id,
+                                      Users::Cols::_salt};
+        mapper.updateBy(
+            cols,
+            [TEST_CTX](const size_t c) { MANDATE(c == 1); },
+            [TEST_CTX](const DrogonDbException &e) {
+                FAULT(
+                    "postgresql - ORM mapper asynchronous updateBy "
+                    "interface(0) "
+                    "what():" +
+                    std::string(e.base().what()));
+            },
+            Criteria(Users::Cols::_user_id, CompareOperator::EQ, "pg"),
+            "avatar of pg",
+            "salt of pg");
+    }
+
 #ifdef __cpp_impl_coroutine
     auto coro_test = [clientPtr, TEST_CTX]() -> drogon::Task<> {
         /// 7 Test coroutines.
