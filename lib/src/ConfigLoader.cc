@@ -109,11 +109,19 @@ ConfigLoader::ConfigLoader(const std::string &configFile)
                                  configFile);
     }
     configFile_ = configFile;
-    std::ifstream infile(drogon::utils::toNativePath(configFile).c_str(),
-                         std::ifstream::in);
-    if (infile)
+    try
     {
-        infile >> configJsonRoot_;
+        std::ifstream infile(drogon::utils::toNativePath(configFile).c_str(),
+                             std::ifstream::in);
+        if (infile)
+        {
+            infile >> configJsonRoot_;
+        }
+    }
+    catch (std::exception &e)
+    {
+        throw std::runtime_error("Error reading config file " + configFile +
+                                 ": " + e.what());
     }
 }
 ConfigLoader::ConfigLoader(const Json::Value &data) : configJsonRoot_(data)
