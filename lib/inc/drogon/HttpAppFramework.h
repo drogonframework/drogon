@@ -368,7 +368,8 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
     /**
      * @param filename the configuration file
      */
-    virtual HttpAppFramework &loadConfigFile(const std::string &fileName) = 0;
+    virtual HttpAppFramework &loadConfigFile(
+        const std::string &fileName) noexcept(false) = 0;
 
     /// Load the configuration from a Json::Value Object.
     /**
@@ -376,7 +377,8 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
      * @note Please refer to the configuration file for the content of the json
      * object.
      */
-    virtual HttpAppFramework &loadConfigJson(const Json::Value &data) = 0;
+    virtual HttpAppFramework &loadConfigJson(const Json::Value &data) noexcept(
+        false) = 0;
 
     /// Load the configuration from a Json::Value Object.
     /**
@@ -385,7 +387,8 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
      * @note Please refer to the configuration file for the content of the json
      * object.
      */
-    virtual HttpAppFramework &loadConfigJson(Json::Value &&data) = 0;
+    virtual HttpAppFramework &loadConfigJson(Json::Value &&data) noexcept(
+        false) = 0;
 
     /// Register a HttpSimpleController object into the framework.
     /**

@@ -101,31 +101,27 @@ ConfigLoader::ConfigLoader(const std::string &configFile)
 {
     if (os_access(drogon::utils::toNativePath(configFile).c_str(), 0) != 0)
     {
-        std::cerr << "Config file " << configFile << " not found!" << std::endl;
-        exit(1);
+        throw std::runtime_error("Config file " + configFile + " not found!");
     }
     if (os_access(drogon::utils::toNativePath(configFile).c_str(), R_OK) != 0)
     {
-        std::cerr << "No permission to read config file " << configFile
-                  << std::endl;
-        exit(1);
+        throw std::runtime_error("No permission to read config file " +
+                                 configFile);
     }
     configFile_ = configFile;
-    std::ifstream infile(drogon::utils::toNativePath(configFile).c_str(),
-                         std::ifstream::in);
-    if (infile)
+    try
     {
-        try
+        std::ifstream infile(drogon::utils::toNativePath(configFile).c_str(),
+                             std::ifstream::in);
+        if (infile)
         {
             infile >> configJsonRoot_;
         }
-        catch (const std::exception &exception)
-        {
-            std::cerr << "Configuration file format error! in " << configFile
-                      << ":" << std::endl;
-            std::cerr << exception.what() << std::endl;
-            exit(1);
-        }
+    }
+    catch (std::exception &e)
+    {
+        throw std::runtime_error("Error reading config file " + configFile +
+                                 ": " + e.what());
     }
 }
 ConfigLoader::ConfigLoader(const Json::Value &data) : configJsonRoot_(data)
@@ -271,8 +267,8 @@ static void loadApp(const Json::Value &app)
         }
         else
         {
-            std::cerr << "The static_file_headers option must be an array\n";
-            exit(1);
+            throw std::runtime_error(
+                "The static_file_headers option must be an array");
         }
     }
     // upload path
@@ -296,8 +292,7 @@ static void loadApp(const Json::Value &app)
         auto &locations = app["locations"];
         if (!locations.isArray())
         {
-            std::cerr << "The locations option must be an array\n";
-            exit(1);
+            throw std::runtime_error("The locations option must be an array");
         }
         for (auto &location : locations)
         {
@@ -330,9 +325,8 @@ static void loadApp(const Json::Value &app)
                 }
                 else
                 {
-                    std::cerr << "the filters of location '" << uri
-                              << "' should be an array" << std::endl;
-                    exit(1);
+                    throw std::runtime_error("the filters of location '" + uri +
+                                             "' should be an array");
                 }
             }
             else
@@ -444,8 +438,7 @@ static void loadApp(const Json::Value &app)
     }
     else
     {
-        std::cerr << "Error format of client_max_body_size" << std::endl;
-        exit(1);
+        throw std::runtime_error("Error format of client_max_body_size");
     }
     auto maxMemoryBodySize =
         app.get("client_max_memory_body_size", "64K").asString();
@@ -455,8 +448,7 @@ static void loadApp(const Json::Value &app)
     }
     else
     {
-        std::cerr << "Error format of client_max_memory_body_size" << std::endl;
-        exit(1);
+        throw std::runtime_error("Error format of client_max_memory_body_size");
     }
     auto maxWsMsgSize =
         app.get("client_max_websocket_message_size", "128K").asString();
@@ -466,9 +458,8 @@ static void loadApp(const Json::Value &app)
     }
     else
     {
-        std::cerr << "Error format of client_max_websocket_message_size"
-                  << std::endl;
-        exit(1);
+        throw std::runtime_error(
+            "Error format of client_max_websocket_message_size");
     }
     drogon::app().enableReusePort(app.get("reuse_port", false).asBool());
     drogon::app().setHomePage(app.get("home_page", "index.html").asString());
@@ -513,9 +504,8 @@ static void loadDbClients(const Json::Value &dbClients)
         auto dbname = client.get("dbname", "").asString();
         if (dbname == "" && type != "sqlite3")
         {
-            std::cerr << "Please configure dbname in the configuration file"
-                      << std::endl;
-            exit(1);
+            throw std::runtime_error(
+                "Please configure dbname in the configuration file");
         }
         auto user = client.get("user", "postgres").asString();
         auto password = client.get("passwd", "").asString();
