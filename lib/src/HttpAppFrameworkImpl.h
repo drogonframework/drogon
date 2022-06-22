@@ -264,9 +264,12 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     HttpAppFramework &setMaxConnectionNum(size_t maxConnections) override;
     HttpAppFramework &setMaxConnectionNumPerIP(
         size_t maxConnectionsPerIP) override;
-    HttpAppFramework &loadConfigFile(const std::string &fileName) override;
-    HttpAppFramework &loadConfigJson(const Json::Value &data) override;
-    HttpAppFramework &loadConfigJson(Json::Value &&data) override;
+    HttpAppFramework &loadConfigFile(const std::string &fileName) noexcept(
+        false) override;
+    HttpAppFramework &loadConfigJson(const Json::Value &data) noexcept(
+        false) override;
+    HttpAppFramework &loadConfigJson(Json::Value &&data) noexcept(
+        false) override;
     HttpAppFramework &enableRunAsDaemon() override
     {
         runAsDaemon_ = true;
