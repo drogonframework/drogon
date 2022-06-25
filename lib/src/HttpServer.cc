@@ -548,7 +548,15 @@ void HttpServer::onRequests(
 #ifdef USE_BROTLI
             else if (contentEncoding == "br")
             {
-                req->setBody(utils::brotliDecompress(body.data(), body.size()));
+                size_t resultingSize = req->decompressBody();
+                // Cannot decompress or the resulting size is too large.
+                if (resultingSize == 0)
+                {
+                    sendForProcessing = false;
+                    auto resp = HttpResponse::newHttpResponse();
+                    resp->setStatusCode(k413RequestEntityTooLarge);
+                    handleResponse(resp);
+                }
                 req->removeHeader("content-encoding");
             }
 #endif

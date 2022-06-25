@@ -23,6 +23,10 @@
 #include <unistd.h>
 #endif
 
+#ifdef USE_BROTLI
+#include <brotli/decode.h>
+#endif
+
 using namespace drogon;
 void HttpRequestImpl::parseJson() const
 {
@@ -760,3 +764,88 @@ void HttpRequestImpl::setContentTypeString(const char *typeString,
     contentTypeString_ = std::string(sv);
     flagForParsingContentType_ = true;
 }
+
+size_t HttpRequestImpl::decompressBody()
+{
+    auto contentEncoding = getHeaderBy("content-encoding");
+    if (contentEncoding.empty())
+        return bodyView().size();
+#ifdef USE_BROTLI
+    else if (contentEncoding == "br")
+    {
+        decompressBodyBrotli();
+        return bodyView().size();
+    }
+#endif
+    return 0;
+}
+
+#ifdef USE_BROTLI
+void HttpRequestImpl::decompressBodyBrotli()
+{
+    std::unique_ptr<CacheFile> cacheFileHolder;
+    std::string contentHolder;
+    string_view compressed;
+    if (cacheFilePtr_)
+    {
+        cacheFileHolder = std::move(cacheFilePtr_);
+        compressed = cacheFileHolder->getStringView();
+    }
+    else
+    {
+        contentHolder = std::move(content_);
+        compressed = contentHolder;
+    }
+
+    setBody("");
+    const size_t maxBodySize =
+        HttpAppFrameworkImpl::instance().getClientMaxBodySize();
+    const size_t maxMemorySize =
+        HttpAppFrameworkImpl::instance().getClientMaxMemoryBodySize();
+
+    size_t availableIn = compressed.size();
+    auto nextIn = (const uint8_t *)(compressed.data());
+    auto decompressed =
+        std::string(std::min(maxMemorySize, availableIn * 3), 0);
+    auto nextOut = (uint8_t *)(decompressed.data());
+    size_t totalOut{0};
+    bool done = false;
+    auto s = BrotliDecoderCreateInstance(nullptr, nullptr, nullptr);
+    size_t lastOut = 0;
+    while (true)
+    {
+        uint8_t *outPtr = (uint8_t *)decompressed.data();
+        size_t availableOut = decompressed.size();
+        auto result = BrotliDecoderDecompressStream(
+            s, &availableIn, &nextIn, &availableOut, &outPtr, &totalOut);
+        size_t outSize = totalOut - lastOut;
+        lastOut = totalOut;
+
+        if (totalOut > maxBodySize)
+        {
+            setBody("");
+            break;
+        }
+
+        if (result == BROTLI_DECODER_RESULT_SUCCESS)
+        {
+            appendToBody(decompressed.data(), outSize);
+            break;
+        }
+        else if (result == BROTLI_DECODER_RESULT_NEEDS_MORE_OUTPUT)
+        {
+            appendToBody(decompressed.data(), outSize);
+            size_t currentSize = decompressed.size();
+            decompressed.clear();
+            decompressed.resize(std::min(currentSize * 2, maxMemorySize));
+        }
+        else
+        {
+            setBody("");
+            break;
+        }
+    }
+    BrotliDecoderDestroyInstance(s);
+    return;
+}
+#endif
