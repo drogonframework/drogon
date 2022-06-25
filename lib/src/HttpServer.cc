@@ -535,25 +535,18 @@ void HttpServer::onRequests(
         if (enableDecompression)
         {
             auto status = req->decompressBody();
-            if (status == StreamDecompressStatus::DecompressError)
+            if (status != StreamDecompressStatus::Ok)
             {
                 sendForProcessing = false;
                 auto resp = HttpResponse::newHttpResponse();
-                resp->setStatusCode(k422UnprocessableEntity);
-                handleResponse(resp);
-            }
-            else if (status == StreamDecompressStatus::TooLarge)
-            {
-                sendForProcessing = false;
-                auto resp = HttpResponse::newHttpResponse();
-                resp->setStatusCode(k413RequestEntityTooLarge);
-                handleResponse(resp);
-            }
-            else if (status == StreamDecompressStatus::NotSupported)
-            {
-                sendForProcessing = false;
-                auto resp = HttpResponse::newHttpResponse();
-                resp->setStatusCode(k415UnsupportedMediaType);
+                if (status == StreamDecompressStatus::DecompressError)
+                    resp->setStatusCode(k422UnprocessableEntity);
+                else if (status == StreamDecompressStatus::NotSupported)
+                    resp->setStatusCode(k415UnsupportedMediaType);
+                else if (status == StreamDecompressStatus::TooLarge)
+                    resp->setStatusCode(k413RequestEntityTooLarge);
+                else  // Should not happen
+                    resp->setStatusCode(k422UnprocessableEntity);
                 handleResponse(resp);
             }
         }
