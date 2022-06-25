@@ -778,6 +778,11 @@ size_t HttpRequestImpl::decompressBody()
         return bodyView().size();
     }
 #endif
+    else if (contentEncoding == "gzip")
+    {
+        decompressBodyGzip();
+        return bodyView().size();
+    }
     return 0;
 }
 
@@ -851,3 +856,98 @@ void HttpRequestImpl::decompressBodyBrotli()
     return;
 }
 #endif
+
+void HttpRequestImpl::decompressBodyGzip()
+{
+    // Workaround for Windows min and max are macros
+    auto minVal = [](size_t a, size_t b) { return a < b ? a : b; };
+    std::unique_ptr<CacheFile> cacheFileHolder;
+    std::string contentHolder;
+    string_view compressed;
+    if (cacheFilePtr_)
+    {
+        cacheFileHolder = std::move(cacheFilePtr_);
+        compressed = cacheFileHolder->getStringView();
+    }
+    else
+    {
+        contentHolder = std::move(content_);
+        compressed = contentHolder;
+    }
+
+    auto full_length = compressed.size();
+
+    bool done = false;
+
+    z_stream strm = {nullptr,
+                     0,
+                     0,
+                     nullptr,
+                     0,
+                     0,
+                     nullptr,
+                     nullptr,
+                     nullptr,
+                     nullptr,
+                     nullptr,
+                     0,
+                     0,
+                     0};
+    strm.next_in = (Bytef *)compressed.data();
+    strm.avail_in = static_cast<uInt>(compressed.size());
+    strm.total_out = 0;
+    strm.zalloc = Z_NULL;
+    strm.zfree = Z_NULL;
+    setBody("");
+    const size_t maxBodySize =
+        HttpAppFrameworkImpl::instance().getClientMaxBodySize();
+    const size_t maxMemorySize =
+        HttpAppFrameworkImpl::instance().getClientMaxMemoryBodySize();
+    auto decompressed = std::string(minVal(full_length * 2, maxMemorySize), 0);
+    strm.next_out = (Bytef *)decompressed.data();
+    strm.avail_out = static_cast<uInt>(decompressed.size());
+    size_t lastOut = 0;
+    if (inflateInit2(&strm, (15 + 32)) != Z_OK)
+    {
+        LOG_ERROR << "inflateInit2 error!";
+        return;
+    }
+    while (true)
+    {
+        // Inflate another chunk.
+        int status = inflate(&strm, Z_SYNC_FLUSH);
+
+        if (strm.total_out > maxBodySize)
+        {
+            setBody("");
+            break;
+        }
+
+        size_t outSize = strm.total_out - lastOut;
+        lastOut = strm.total_out;
+        if (status == Z_STREAM_END)
+        {
+            appendToBody(decompressed.data(), outSize);
+            break;
+        }
+        else if (status != Z_OK)
+        {
+            setBody("");
+            break;
+        }
+        else
+        {
+            appendToBody(decompressed.data(), outSize);
+            size_t currentSize = decompressed.size();
+            decompressed.clear();
+            decompressed.resize(minVal(currentSize * 2, maxMemorySize));
+            strm.next_out = (Bytef *)decompressed.data();
+            strm.avail_out = static_cast<uInt>(decompressed.size());
+        }
+    }
+    if (inflateEnd(&strm) != Z_OK)
+    {
+        setBody("");
+        return;
+    }
+}

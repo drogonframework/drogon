@@ -527,6 +527,7 @@ class HttpRequestImpl : public HttpRequest
 #ifdef USE_BROTLI
     void decompressBodyBrotli();
 #endif
+    void decompressBodyGzip();
     mutable bool flagForParsingParameters_{false};
     mutable bool flagForParsingJson_{false};
     HttpMethod method_{Invalid};

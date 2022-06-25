@@ -998,6 +998,19 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
                             CHECK(resp->body() == deadbeef);
                         });
 
+    std::string largeString(128 * 1024, 'a');  // 128KB of 'a'
+    req = HttpRequest::newHttpRequest();
+    req->setPath("/api/v1/ApiTest/echoBody");
+    req->addHeader("Content-Encoding", "gzip");
+    req->setMethod(drogon::Post);
+    req->setBody(utils::gzipCompress(largeString.c_str(), largeString.size()));
+    client->sendRequest(req,
+                        [largeString, TEST_CTX](ReqResult result,
+                                                const HttpResponsePtr &resp) {
+                            REQUIRE(result == ReqResult::Ok);
+                            CHECK(resp->getStatusCode() == k200OK);
+                            CHECK(resp->body() == largeString);
+                        });
 #ifdef USE_BROTLI
     // Post compressed data
     req = HttpRequest::newHttpRequest();
@@ -1011,6 +1024,19 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
                             REQUIRE(result == ReqResult::Ok);
                             CHECK(resp->getStatusCode() == k200OK);
                             CHECK(resp->body() == deadbeef);
+                        });
+    req = HttpRequest::newHttpRequest();
+    req->setPath("/api/v1/ApiTest/echoBody");
+    req->addHeader("Content-Encoding", "br");
+    req->setMethod(drogon::Post);
+    req->setBody(
+        utils::brotliCompress(largeString.c_str(), largeString.size()));
+    client->sendRequest(req,
+                        [largeString, TEST_CTX](ReqResult result,
+                                                const HttpResponsePtr &resp) {
+                            REQUIRE(result == ReqResult::Ok);
+                            CHECK(resp->getStatusCode() == k200OK);
+                            CHECK(resp->body() == largeString);
                         });
 #endif
 
