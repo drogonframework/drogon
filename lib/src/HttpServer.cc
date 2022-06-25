@@ -534,41 +534,22 @@ void HttpServer::onRequests(
         bool sendForProcessing = true;
         if (enableDecompression)
         {
-            auto contentEncoding = req->getHeaderBy("content-encoding");
-            auto body = req->getBody();
-            if (contentEncoding == "")
+            auto status = req->decompressBody();
+            if (status == StreamDecompressStatus::DecompressError)
             {
-                // NoOP
+                sendForProcessing = false;
+                auto resp = HttpResponse::newHttpResponse();
+                resp->setStatusCode(k422UnprocessableEntity);
+                handleResponse(resp);
             }
-            else if (contentEncoding == "gzip")
+            else if (status == StreamDecompressStatus::TooLarge)
             {
-                size_t resultingSize = req->decompressBody();
-                // Cannot decompress or the resulting size is too large.
-                if (resultingSize == 0)
-                {
-                    sendForProcessing = false;
-                    auto resp = HttpResponse::newHttpResponse();
-                    resp->setStatusCode(k413RequestEntityTooLarge);
-                    handleResponse(resp);
-                }
-                req->removeHeader("content-encoding");
+                sendForProcessing = false;
+                auto resp = HttpResponse::newHttpResponse();
+                resp->setStatusCode(k413RequestEntityTooLarge);
+                handleResponse(resp);
             }
-#ifdef USE_BROTLI
-            else if (contentEncoding == "br")
-            {
-                size_t resultingSize = req->decompressBody();
-                // Cannot decompress or the resulting size is too large.
-                if (resultingSize == 0)
-                {
-                    sendForProcessing = false;
-                    auto resp = HttpResponse::newHttpResponse();
-                    resp->setStatusCode(k413RequestEntityTooLarge);
-                    handleResponse(resp);
-                }
-                req->removeHeader("content-encoding");
-            }
-#endif
-            else
+            else if (status == StreamDecompressStatus::NotSupported)
             {
                 sendForProcessing = false;
                 auto resp = HttpResponse::newHttpResponse();

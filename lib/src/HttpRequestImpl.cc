@@ -766,28 +766,28 @@ void HttpRequestImpl::setContentTypeString(const char *typeString,
     flagForParsingContentType_ = true;
 }
 
-size_t HttpRequestImpl::decompressBody()
+StreamDecompressStatus HttpRequestImpl::decompressBody()
 {
     auto contentEncoding = getHeaderBy("content-encoding");
     if (contentEncoding.empty())
-        return bodyView().size();
+    {
+        return StreamDecompressStatus::Ok;
+    }
 #ifdef USE_BROTLI
     else if (contentEncoding == "br")
     {
-        decompressBodyBrotli();
-        return bodyView().size();
+        return decompressBodyBrotli();
     }
 #endif
     else if (contentEncoding == "gzip")
     {
-        decompressBodyGzip();
-        return bodyView().size();
+        return decompressBodyGzip();
     }
-    return 0;
+    return StreamDecompressStatus::NotSupported;
 }
 
 #ifdef USE_BROTLI
-void HttpRequestImpl::decompressBodyBrotli()
+StreamDecompressStatus HttpRequestImpl::decompressBodyBrotli()
 {
     // Workaround for Windows min and max are macros
     auto minVal = [](size_t a, size_t b) { return a < b ? a : b; };
@@ -819,6 +819,7 @@ void HttpRequestImpl::decompressBodyBrotli()
     bool done = false;
     auto s = BrotliDecoderCreateInstance(nullptr, nullptr, nullptr);
     size_t lastOut = 0;
+    StreamDecompressStatus status = StreamDecompressStatus::Ok;
     while (true)
     {
         uint8_t *outPtr = (uint8_t *)decompressed.data();
@@ -831,6 +832,7 @@ void HttpRequestImpl::decompressBodyBrotli()
         if (totalOut > maxBodySize)
         {
             setBody("");
+            status = StreamDecompressStatus::TooLarge;
             break;
         }
 
@@ -849,15 +851,16 @@ void HttpRequestImpl::decompressBodyBrotli()
         else
         {
             setBody("");
+            status = StreamDecompressStatus::DecompressError;
             break;
         }
     }
     BrotliDecoderDestroyInstance(s);
-    return;
+    return StreamDecompressStatus::Ok;
 }
 #endif
 
-void HttpRequestImpl::decompressBodyGzip()
+StreamDecompressStatus HttpRequestImpl::decompressBodyGzip()
 {
     // Workaround for Windows min and max are macros
     auto minVal = [](size_t a, size_t b) { return a < b ? a : b; };
@@ -909,30 +912,33 @@ void HttpRequestImpl::decompressBodyGzip()
     size_t lastOut = 0;
     if (inflateInit2(&strm, (15 + 32)) != Z_OK)
     {
-        LOG_ERROR << "inflateInit2 error!";
-        return;
+        return StreamDecompressStatus::DecompressError;
     }
+
+    StreamDecompressStatus status = StreamDecompressStatus::Ok;
     while (true)
     {
         // Inflate another chunk.
-        int status = inflate(&strm, Z_SYNC_FLUSH);
+        int decompressStatus = inflate(&strm, Z_SYNC_FLUSH);
 
         if (strm.total_out > maxBodySize)
         {
             setBody("");
+            status = StreamDecompressStatus::TooLarge;
             break;
         }
 
         size_t outSize = strm.total_out - lastOut;
         lastOut = strm.total_out;
-        if (status == Z_STREAM_END)
+        if (decompressStatus == Z_STREAM_END)
         {
             appendToBody(decompressed.data(), outSize);
             break;
         }
-        else if (status != Z_OK)
+        else if (decompressStatus != Z_OK)
         {
             setBody("");
+            status = StreamDecompressStatus::DecompressError;
             break;
         }
         else
@@ -948,6 +954,9 @@ void HttpRequestImpl::decompressBodyGzip()
     if (inflateEnd(&strm) != Z_OK)
     {
         setBody("");
-        return;
+        if (status == StreamDecompressStatus::Ok)
+            status = StreamDecompressStatus::DecompressError;
+        return status;
     }
+    return status;
 }
