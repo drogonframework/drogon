@@ -289,8 +289,9 @@
         //reuse_port: Defaults to false, users can run multiple processes listening on the same port at the same time.
         "reuse_port": false, 
         // enabled_compresed_request: Defaults to false. If true the server will automatically decompress compressed request bodies.
-        // Currently only gzip and br are supported. _IMPORTANT_: Only use this under safe conditions. We can't know the size of the
-        // uncompressed body without actually decompressing it. It can lead to memory exhaustion and denial of service.
+        // Currently only gzip and br are supported. Note: max_memory_body_size and max_body_size applies twice to compressed requests.
+        // Once when receiving the request and once when decompressing. i.e. if the decompressed body is larger than max_body_size,
+        // the request will be rejected.
         "enabled_compresed_request": false
     },
     //plugins: Define all plugins running in the application
