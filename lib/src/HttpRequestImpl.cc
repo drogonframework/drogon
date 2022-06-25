@@ -776,11 +776,13 @@ StreamDecompressStatus HttpRequestImpl::decompressBody()
 #ifdef USE_BROTLI
     else if (contentEncoding == "br")
     {
+        removeHeaderBy("content-encoding");
         return decompressBodyBrotli();
     }
 #endif
     else if (contentEncoding == "gzip")
     {
+        removeHeaderBy("content-encoding");
         return decompressBodyGzip();
     }
     return StreamDecompressStatus::NotSupported;
