@@ -808,8 +808,7 @@ void HttpRequestImpl::decompressBodyBrotli()
 
     size_t availableIn = compressed.size();
     auto nextIn = (const uint8_t *)(compressed.data());
-    auto decompressed =
-        std::string(minVal(maxMemorySize, availableIn * 3), 0);
+    auto decompressed = std::string(minVal(maxMemorySize, availableIn * 3), 0);
     auto nextOut = (uint8_t *)(decompressed.data());
     size_t totalOut{0};
     bool done = false;
