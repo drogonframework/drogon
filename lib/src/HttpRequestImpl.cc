@@ -23,6 +23,7 @@
 #include <unistd.h>
 #endif
 
+#include <zlib.h>
 #ifdef USE_BROTLI
 #include <brotli/decode.h>
 #endif
@@ -783,6 +784,8 @@ size_t HttpRequestImpl::decompressBody()
 #ifdef USE_BROTLI
 void HttpRequestImpl::decompressBodyBrotli()
 {
+    // Workaround for Windows min and max are macros
+    auto minVal = [](size_t a, size_t b) { return a < b ? a : b; };
     std::unique_ptr<CacheFile> cacheFileHolder;
     std::string contentHolder;
     string_view compressed;
@@ -806,7 +809,7 @@ void HttpRequestImpl::decompressBodyBrotli()
     size_t availableIn = compressed.size();
     auto nextIn = (const uint8_t *)(compressed.data());
     auto decompressed =
-        std::string(std::min(maxMemorySize, availableIn * 3), 0);
+        std::string(minVal(maxMemorySize, availableIn * 3), 0);
     auto nextOut = (uint8_t *)(decompressed.data());
     size_t totalOut{0};
     bool done = false;
@@ -837,7 +840,7 @@ void HttpRequestImpl::decompressBodyBrotli()
             appendToBody(decompressed.data(), outSize);
             size_t currentSize = decompressed.size();
             decompressed.clear();
-            decompressed.resize(std::min(currentSize * 2, maxMemorySize));
+            decompressed.resize(minVal(currentSize * 2, maxMemorySize));
         }
         else
         {
