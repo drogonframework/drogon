@@ -168,7 +168,7 @@ if [ "$1" = "-t" ]; then
     #unit testing
     cd ../../
     echo "Unit testing"
-    cmake --build . --target test -- $make_flags
+    ctest . --output-on-failure
     if [ $? -ne 0 ]; then
         echo "Error in unit testing"
         exit -1

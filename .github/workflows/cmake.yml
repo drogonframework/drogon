@@ -44,7 +44,7 @@ jobs:
         working-directory: ./build
         run: |
           [[ ${{ matrix.link }} == "SHARED" ]] && shared="ON" || shared="OFF"
-          cmake .. -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=on -DBUILD_DROGON_SHARED=$shared -DCMAKE_TOOLCHAIN_FILE="conan_paths.cmake" -DBUILD_CTL=ON -DBUILD_EXAMPLES=ON -DCMAKE_INSTALL_PREFIX=../install
+          cmake .. -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=on -DBUILD_SHARED_LIBS=$shared -DCMAKE_TOOLCHAIN_FILE="conan_paths.cmake" -DBUILD_CTL=ON -DBUILD_EXAMPLES=ON -DCMAKE_INSTALL_PREFIX=../install
 
       - name: Build
         working-directory: ${{env.GITHUB_WORKSPACE}}
@@ -138,7 +138,7 @@ jobs:
       if: matrix.buildname != 'ubuntu-20.04/gcc-10' && matrix.buildname != 'ubuntu-20.04/c++14'
       run: |
         [[ ${{ matrix.link }} == "SHARED" ]] && shared="ON" || shared="OFF"
-        cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_TESTING=on -DBUILD_DROGON_SHARED=$shared
+        cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_TESTING=on -DBUILD_SHARED_LIBS=$shared
 
     - name: Create Build Environment & Configure Cmake (gcc-10)
       # Some projects don't allow in-source building, so create a separate build directory
@@ -148,7 +148,7 @@ jobs:
       if: matrix.buildname == 'ubuntu-20.04/gcc-10'
       run: |
         [[ ${{ matrix.link }} == "SHARED" ]] && shared="ON" || shared="OFF"
-        cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_TESTING=on -DCMAKE_CXX_FLAGS="-fcoroutines" -DBUILD_DROGON_SHARED=$shared
+        cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_TESTING=on -DCMAKE_CXX_FLAGS="-fcoroutines" -DBUILD_SHARED_LIBS=$shared
       env:
         CC: gcc-10
         CXX: g++-10
@@ -161,7 +161,7 @@ jobs:
       if: matrix.buildname == 'ubuntu-20.04/C++14'
       run: |
         [[ ${{ matrix.link }} == "SHARED" ]] && shared="ON" || shared="OFF"
-        cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_TESTING=on -DCMAKE_CXX_STANDARD=14 -DBUILD_DROGON_SHARED=$shared
+        cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_TESTING=on -DCMAKE_CXX_STANDARD=14 -DBUILD_SHARED_LIBS=$shared
 
     - name: (Linux) Build
       working-directory: ./build

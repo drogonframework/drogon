@@ -17,7 +17,7 @@ add_executable(_drogon_ctl
                create.cc
                create_view.cc)
 target_link_libraries(_drogon_ctl ${PROJECT_NAME})
-if (WIN32 AND BUILD_DROGON_SHARED)
+if (WIN32 AND BUILD_SHARED_LIBS)
   set(DROGON_FILE $<TARGET_FILE:drogon>)
   set(TRANTOR_FILE $<TARGET_FILE:trantor>)
   add_custom_command(TARGET _drogon_ctl POST_BUILD
