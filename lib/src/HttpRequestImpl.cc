@@ -789,7 +789,7 @@ StreamDecompressStatus HttpRequestImpl::decompressBody()
 }
 
 #ifdef USE_BROTLI
-StreamDecompressStatus HttpRequestImpl::decompressBodyBrotli()
+StreamDecompressStatus HttpRequestImpl::decompressBodyBrotli() noexcept
 {
     // Workaround for Windows min and max are macros
     auto minVal = [](size_t a, size_t b) { return a < b ? a : b; };
@@ -818,7 +818,6 @@ StreamDecompressStatus HttpRequestImpl::decompressBodyBrotli()
     auto decompressed = std::string(minVal(maxMemorySize, availableIn * 3), 0);
     auto nextOut = (uint8_t *)(decompressed.data());
     size_t totalOut{0};
-    bool done = false;
     auto s = BrotliDecoderCreateInstance(nullptr, nullptr, nullptr);
     size_t lastOut = 0;
     StreamDecompressStatus status = StreamDecompressStatus::Ok;
@@ -862,7 +861,7 @@ StreamDecompressStatus HttpRequestImpl::decompressBodyBrotli()
 }
 #endif
 
-StreamDecompressStatus HttpRequestImpl::decompressBodyGzip()
+StreamDecompressStatus HttpRequestImpl::decompressBodyGzip() noexcept
 {
     // Workaround for Windows min and max are macros
     auto minVal = [](size_t a, size_t b) { return a < b ? a : b; };
@@ -879,10 +878,6 @@ StreamDecompressStatus HttpRequestImpl::decompressBodyGzip()
         contentHolder = std::move(content_);
         compressed = contentHolder;
     }
-
-    auto full_length = compressed.size();
-
-    bool done = false;
 
     z_stream strm = {nullptr,
                      0,
@@ -908,7 +903,8 @@ StreamDecompressStatus HttpRequestImpl::decompressBodyGzip()
         HttpAppFrameworkImpl::instance().getClientMaxBodySize();
     const size_t maxMemorySize =
         HttpAppFrameworkImpl::instance().getClientMaxMemoryBodySize();
-    auto decompressed = std::string(minVal(full_length * 2, maxMemorySize), 0);
+    auto decompressed =
+        std::string(minVal(compressed.size() * 2, maxMemorySize), 0);
     strm.next_out = (Bytef *)decompressed.data();
     strm.avail_out = static_cast<uInt>(decompressed.size());
     size_t lastOut = 0;
