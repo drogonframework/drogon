@@ -396,7 +396,7 @@ inline bool fromString<bool>(const std::string &p) noexcept(false)
     }
     std::string l{p};
     std::transform(p.begin(), p.end(), l.begin(), [](unsigned char c) {
-        return tolower(c);
+        return static_cast<char>(tolower(c));
     });
     if (l == "true")
     {
