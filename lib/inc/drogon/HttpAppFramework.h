@@ -1388,6 +1388,9 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
         const std::string &ext,
         const std::string &mime) = 0;
 
+    virtual HttpAppFramework &enableCompressedRequest(bool enable = true) = 0;
+    virtual bool isCompressedRequestEnabled() const = 0;
+
   private:
     virtual void registerHttpController(
         const std::string &pathPattern,

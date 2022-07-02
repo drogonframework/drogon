@@ -487,6 +487,9 @@ static void loadApp(const Json::Value &app)
                 drogon::app().registerCustomExtensionMime(extension, mime);
         }
     }
+    bool enableCompressedRequests =
+        app.get("enabled_compresed_request", false).asBool();
+    drogon::app().enableCompressedRequest(enableCompressedRequests);
 }
 static void loadDbClients(const Json::Value &dbClients)
 {

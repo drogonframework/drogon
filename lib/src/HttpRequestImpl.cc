@@ -23,6 +23,11 @@
 #include <unistd.h>
 #endif
 
+#include <zlib.h>
+#ifdef USE_BROTLI
+#include <brotli/decode.h>
+#endif
+
 using namespace drogon;
 void HttpRequestImpl::parseJson() const
 {
@@ -759,4 +764,198 @@ void HttpRequestImpl::setContentTypeString(const char *typeString,
     contentType_ = contentType;
     contentTypeString_ = std::string(sv);
     flagForParsingContentType_ = true;
+}
+
+StreamDecompressStatus HttpRequestImpl::decompressBody()
+{
+    auto &contentEncoding = getHeaderBy("content-encoding");
+    if (contentEncoding.empty() || contentEncoding == "identity")
+    {
+        removeHeaderBy("content-encoding");
+        return StreamDecompressStatus::Ok;
+    }
+#ifdef USE_BROTLI
+    else if (contentEncoding == "br")
+    {
+        removeHeaderBy("content-encoding");
+        return decompressBodyBrotli();
+    }
+#endif
+    else if (contentEncoding == "gzip")
+    {
+        removeHeaderBy("content-encoding");
+        return decompressBodyGzip();
+    }
+    return StreamDecompressStatus::NotSupported;
+}
+
+#ifdef USE_BROTLI
+StreamDecompressStatus HttpRequestImpl::decompressBodyBrotli() noexcept
+{
+    // Workaround for Windows min and max are macros
+    auto minVal = [](size_t a, size_t b) { return a < b ? a : b; };
+    std::unique_ptr<CacheFile> cacheFileHolder;
+    std::string contentHolder;
+    string_view compressed;
+    if (cacheFilePtr_)
+    {
+        cacheFileHolder = std::move(cacheFilePtr_);
+        compressed = cacheFileHolder->getStringView();
+    }
+    else
+    {
+        contentHolder = std::move(content_);
+        compressed = contentHolder;
+    }
+
+    setBody("");
+    const size_t maxBodySize =
+        HttpAppFrameworkImpl::instance().getClientMaxBodySize();
+    const size_t maxMemorySize =
+        HttpAppFrameworkImpl::instance().getClientMaxMemoryBodySize();
+
+    size_t availableIn = compressed.size();
+    auto nextIn = (const uint8_t *)(compressed.data());
+    auto decompressed = std::string(minVal(maxMemorySize, availableIn * 3), 0);
+    auto nextOut = (uint8_t *)(decompressed.data());
+    size_t totalOut{0};
+    auto s = BrotliDecoderCreateInstance(nullptr, nullptr, nullptr);
+    size_t lastOut = 0;
+    StreamDecompressStatus status = StreamDecompressStatus::Ok;
+    while (true)
+    {
+        uint8_t *outPtr = (uint8_t *)decompressed.data();
+        size_t availableOut = decompressed.size();
+        auto result = BrotliDecoderDecompressStream(
+            s, &availableIn, &nextIn, &availableOut, &outPtr, &totalOut);
+        size_t outSize = totalOut - lastOut;
+        lastOut = totalOut;
+
+        if (totalOut > maxBodySize)
+        {
+            setBody("");
+            status = StreamDecompressStatus::TooLarge;
+            break;
+        }
+
+        if (result == BROTLI_DECODER_RESULT_SUCCESS)
+        {
+            appendToBody(decompressed.data(), outSize);
+            break;
+        }
+        else if (result == BROTLI_DECODER_RESULT_NEEDS_MORE_OUTPUT)
+        {
+            appendToBody(decompressed.data(), outSize);
+            size_t currentSize = decompressed.size();
+            decompressed.clear();
+            decompressed.resize(minVal(currentSize * 2, maxMemorySize));
+        }
+        else
+        {
+            setBody("");
+            status = StreamDecompressStatus::DecompressError;
+            break;
+        }
+    }
+    BrotliDecoderDestroyInstance(s);
+    return StreamDecompressStatus::Ok;
+}
+#endif
+
+StreamDecompressStatus HttpRequestImpl::decompressBodyGzip() noexcept
+{
+    // Workaround for Windows min and max are macros
+    auto minVal = [](size_t a, size_t b) { return a < b ? a : b; };
+    std::unique_ptr<CacheFile> cacheFileHolder;
+    std::string contentHolder;
+    string_view compressed;
+    if (cacheFilePtr_)
+    {
+        cacheFileHolder = std::move(cacheFilePtr_);
+        compressed = cacheFileHolder->getStringView();
+    }
+    else
+    {
+        contentHolder = std::move(content_);
+        compressed = contentHolder;
+    }
+
+    z_stream strm = {nullptr,
+                     0,
+                     0,
+                     nullptr,
+                     0,
+                     0,
+                     nullptr,
+                     nullptr,
+                     nullptr,
+                     nullptr,
+                     nullptr,
+                     0,
+                     0,
+                     0};
+    strm.next_in = (Bytef *)compressed.data();
+    strm.avail_in = static_cast<uInt>(compressed.size());
+    strm.total_out = 0;
+    strm.zalloc = Z_NULL;
+    strm.zfree = Z_NULL;
+    setBody("");
+    const size_t maxBodySize =
+        HttpAppFrameworkImpl::instance().getClientMaxBodySize();
+    const size_t maxMemorySize =
+        HttpAppFrameworkImpl::instance().getClientMaxMemoryBodySize();
+    auto decompressed =
+        std::string(minVal(compressed.size() * 2, maxMemorySize), 0);
+    strm.next_out = (Bytef *)decompressed.data();
+    strm.avail_out = static_cast<uInt>(decompressed.size());
+    size_t lastOut = 0;
+    if (inflateInit2(&strm, (15 + 32)) != Z_OK)
+    {
+        return StreamDecompressStatus::DecompressError;
+    }
+
+    StreamDecompressStatus status = StreamDecompressStatus::Ok;
+    while (true)
+    {
+        // Inflate another chunk.
+        int decompressStatus = inflate(&strm, Z_SYNC_FLUSH);
+
+        if (strm.total_out > maxBodySize)
+        {
+            setBody("");
+            status = StreamDecompressStatus::TooLarge;
+            break;
+        }
+
+        size_t outSize = strm.total_out - lastOut;
+        lastOut = strm.total_out;
+        if (decompressStatus == Z_STREAM_END)
+        {
+            appendToBody(decompressed.data(), outSize);
+            break;
+        }
+        else if (decompressStatus != Z_OK)
+        {
+            setBody("");
+            status = StreamDecompressStatus::DecompressError;
+            break;
+        }
+        else
+        {
+            appendToBody(decompressed.data(), outSize);
+            size_t currentSize = decompressed.size();
+            decompressed.clear();
+            decompressed.resize(minVal(currentSize * 2, maxMemorySize));
+            strm.next_out = (Bytef *)decompressed.data();
+            strm.avail_out = static_cast<uInt>(decompressed.size());
+        }
+    }
+    if (inflateEnd(&strm) != Z_OK)
+    {
+        setBody("");
+        if (status == StreamDecompressStatus::Ok)
+            status = StreamDecompressStatus::DecompressError;
+        return status;
+    }
+    return status;
 }

@@ -42,6 +42,7 @@ class ApiTest : public drogon::HttpController<ApiTest>
     ADD_METHOD_VIA_REGEX(ApiTest::cacheTestRegex,
                          "/cacheTestRegex/[a-y]+",
                          Get);
+    METHOD_ADD(ApiTest::echoBody, "/echoBody", Post);
     METHOD_LIST_END
 
     void get(const HttpRequestPtr &req,
@@ -85,6 +86,8 @@ class ApiTest : public drogon::HttpController<ApiTest>
     void cacheTestRegex(
         const HttpRequestPtr &req,
         std::function<void(const HttpResponsePtr &)> &&callback);
+    void echoBody(const HttpRequestPtr &req,
+                  std::function<void(const HttpResponsePtr &)> &&callback);
 
   public:
     ApiTest()

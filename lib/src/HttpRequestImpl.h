@@ -33,6 +33,14 @@
 
 namespace drogon
 {
+enum class StreamDecompressStatus
+{
+    TooLarge,
+    DecompressError,
+    NotSupported,
+    Ok
+};
+
 class HttpRequestImpl : public HttpRequest
 {
   public:
@@ -464,6 +472,7 @@ class HttpRequestImpl : public HttpRequest
             return *jsonParsingErrorPtr_;
         return none;
     }
+    StreamDecompressStatus decompressBody();
 
     ~HttpRequestImpl();
 
@@ -523,6 +532,10 @@ class HttpRequestImpl : public HttpRequest
     }
     void createTmpFile();
     void parseJson() const;
+#ifdef USE_BROTLI
+    StreamDecompressStatus decompressBodyBrotli() noexcept;
+#endif
+    StreamDecompressStatus decompressBodyGzip() noexcept;
     mutable bool flagForParsingParameters_{false};
     mutable bool flagForParsingJson_{false};
     HttpMethod method_{Invalid};

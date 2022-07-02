@@ -287,7 +287,12 @@
         //One can set it to "1024", "1k", "10M", "1G", etc. Setting it to "" means no limit.
         "client_max_websocket_message_size": "128K",
         //reuse_port: Defaults to false, users can run multiple processes listening on the same port at the same time.
-        "reuse_port": false
+        "reuse_port": false, 
+        // enabled_compresed_request: Defaults to false. If true the server will automatically decompress compressed request bodies.
+        // Currently only gzip and br are supported. Note: max_memory_body_size and max_body_size applies twice for compressed requests.
+        // Once when receiving and once when decompressing. i.e. if the decompressed body is larger than max_body_size, the request
+        // will be rejected.
+        "enabled_compresed_request": false
     },
     //plugins: Define all plugins running in the application
     "plugins": [

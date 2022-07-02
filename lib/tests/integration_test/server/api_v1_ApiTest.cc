@@ -508,3 +508,11 @@ void ApiTest::cacheTestRegex(
     callback(resp);
     callCount++;
 }
+
+void ApiTest::echoBody(const HttpRequestPtr &req,
+                       std::function<void(const HttpResponsePtr &)> &&callback)
+{
+    auto resp = HttpResponse::newHttpResponse();
+    resp->setBody(std::string(req->body()));
+    callback(resp);
+}
