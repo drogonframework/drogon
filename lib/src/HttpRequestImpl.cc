@@ -768,7 +768,7 @@ void HttpRequestImpl::setContentTypeString(const char *typeString,
 
 StreamDecompressStatus HttpRequestImpl::decompressBody()
 {
-    auto& contentEncoding = getHeaderBy("content-encoding");
+    auto &contentEncoding = getHeaderBy("content-encoding");
     if (contentEncoding.empty() || contentEncoding == "identity")
     {
         removeHeaderBy("content-encoding");
