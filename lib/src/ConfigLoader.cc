@@ -551,10 +551,10 @@ static void loadRedisClients(const Json::Value &redisClients)
 {
     if (!redisClients)
         return;
-    std::promise<std::string> promise;
-    auto future = promise.get_future();
     for (auto const &client : redisClients)
     {
+        std::promise<std::string> promise;
+        auto future = promise.get_future();
         auto host = client.get("host", "127.0.0.1").asString();
         trantor::Resolver::newResolver()->resolve(
             host, [&promise](const trantor::InetAddress &address) {

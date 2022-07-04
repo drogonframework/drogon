@@ -357,12 +357,7 @@ void RedisConnection::handleResult(redisReply *result)
 
 void RedisConnection::disconnect()
 {
-    std::promise<int> pro;
-    auto f = pro.get_future();
     auto thisPtr = shared_from_this();
-    loop_->runInLoop([thisPtr, &pro]() {
-        redisAsyncDisconnect(thisPtr->redisContext_);
-        pro.set_value(1);
-    });
-    f.get();
+    loop_->queueInLoop(
+        [thisPtr]() { redisAsyncDisconnect(thisPtr->redisContext_); });
 }
