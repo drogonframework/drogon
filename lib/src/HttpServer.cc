@@ -414,7 +414,7 @@ void HttpServer::onRequests(
 
         auto handleResponse = [paramPack = std::move(paramPack),
                                this](const HttpResponsePtr &response) {
-            static std::atomic<bool> requestSent = false;
+            static std::atomic<bool> requestSent(false);
             if(requestSent.exchange(true) == false)
                 return;
 
