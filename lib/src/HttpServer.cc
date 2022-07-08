@@ -415,9 +415,10 @@ void HttpServer::onRequests(
         auto handleResponse = [paramPack = std::move(paramPack),
                                this](const HttpResponsePtr &response) {
             static std::atomic<bool> requestSent(false);
-            if(requestSent.exchange(true) == true)
+            if (requestSent.exchange(true) == true)
             {
-                LOG_ERROR << "Sending more than 1 response for request. Ignoring later response";
+                LOG_ERROR << "Sending more than 1 response for request. "
+                             "Ignoring later response";
                 return;
             }
 
