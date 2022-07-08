@@ -414,6 +414,10 @@ void HttpServer::onRequests(
 
         auto handleResponse = [paramPack = std::move(paramPack),
                                this](const HttpResponsePtr &response) {
+            static std::atomic<bool> requestSent = false;
+            if(requestSent.exchange(true) == false)
+                return;
+
             auto &conn = paramPack->conn;
             auto &close_ = paramPack->close;
             auto &req = paramPack->req;
