@@ -429,7 +429,9 @@ void HttpServer::onRequests(
             if (!conn->connected())
                 return;
 
-            if (paramPack->responseSent.exchange(true) == true)
+            if (paramPack->responseSent.exchange(true,
+                                                 std::memory_order_acq_rel) ==
+                true)
             {
                 LOG_ERROR << "Sending more than 1 response for request. "
                              "Ignoring later response";
