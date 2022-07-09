@@ -740,7 +740,8 @@ void create_model::createModelClassFromSqlite3(
     }
     else if (pkNames.size() > 1)
     {
-        for (auto &col : cols) {
+        for (auto &col : cols) 
+        {
             col.isAutoVal_ = false;
         }
 
