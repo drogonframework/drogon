@@ -117,13 +117,13 @@ std::vector<trantor::EventLoop *> ListenerManager::createListeners(
                 DrogonFileLocker lock;
                 // Check whether the port is in use.
                 TcpServer server(HttpAppFrameworkImpl::instance().getLoop(),
-                                 std::move(listenAddress),
+                                 listenAddress,
                                  "drogonPortTest",
                                  true,
                                  false);
                 serverPtr =
                     std::make_shared<HttpServer>(loopThreadPtr->getLoop(),
-                                                 std::move(listenAddress),
+                                                 listenAddress,
                                                  "drogon",
                                                  syncAdvices,
                                                  preSendingAdvices);
@@ -132,7 +132,7 @@ std::vector<trantor::EventLoop *> ListenerManager::createListeners(
             {
                 serverPtr =
                     std::make_shared<HttpServer>(loopThreadPtr->getLoop(),
-                                                 std::move(listenAddress),
+                                                 listenAddress,
                                                  "drogon",
                                                  syncAdvices,
                                                  preSendingAdvices);
