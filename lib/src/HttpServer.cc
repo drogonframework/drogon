@@ -315,7 +315,8 @@ struct CallBackParamPack
           requestParser(requestParser_),
           syncFlagPtr(syncFlagPtr_),
           close(close_),
-          isHeadMethod(isHeadMethod_)
+          isHeadMethod(isHeadMethod_),
+          responseSent(false)
     {
     }
     trantor::TcpConnectionPtr conn;
@@ -325,6 +326,7 @@ struct CallBackParamPack
     bool *syncFlagPtr;
     bool close;
     bool isHeadMethod;
+    std::atomic<bool> responseSent;
 };
 
 void HttpServer::onRequests(
@@ -426,6 +428,15 @@ void HttpServer::onRequests(
                 return;
             if (!conn->connected())
                 return;
+
+            if (paramPack->responseSent.exchange(true,
+                                                 std::memory_order_acq_rel) ==
+                true)
+            {
+                LOG_ERROR << "Sending more than 1 response for request. "
+                             "Ignoring later response";
+                return;
+            }
 
             response->setVersion(req->getVersion());
             response->setCloseConnection(close_);

@@ -109,7 +109,7 @@ void WebSocketConnectionImpl::sendWsData(const char *msg,
         int random;
         // Use the cached randomness if no one else is also using it. Otherwise
         // generate one from scratch.
-        if (!usingMask_.exchange(true))
+        if (!usingMask_.exchange(true, std::memory_order_acq_rel))
         {
             if (masks_.empty())
             {
@@ -126,7 +126,7 @@ void WebSocketConnectionImpl::sendWsData(const char *msg,
             }
             random = masks_.back();
             masks_.pop_back();
-            usingMask_ = false;
+            usingMask_.store(false, std::memory_order_release);
         }
         else
         {
