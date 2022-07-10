@@ -740,6 +740,11 @@ void create_model::createModelClassFromSqlite3(
     }
     else if (pkNames.size() > 1)
     {
+        for (auto &col : cols)
+        {
+            col.isAutoVal_ = false;
+        }
+
         data["primaryKeyName"] = pkNames;
         data["primaryKeyType"] = pkTypes;
         data["primaryKeyValNames"] = pkValNames;
