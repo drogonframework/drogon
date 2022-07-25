@@ -2,7 +2,7 @@ name: Build Drogon
 
 on:
   push:
-    branches: [master]
+    branches: [ master ]
   pull_request:
   workflow_dispatch:
 
@@ -12,7 +12,7 @@ env:
 
 jobs:
   windows:
-    name: 'windows/msvc - ${{matrix.link}}'
+    name: windows/msvc - ${{ matrix.link }}
     runs-on: windows-latest
     strategy:
       fail-fast: false
@@ -26,41 +26,39 @@ jobs:
           fetch-depth: 0
 
       - name: Install dependencies
-        run: |
-          pip install conan
+        run: pip install conan
 
       - name: Create build directory
-        run: |
-          mkdir build
+        run: mkdir build
 
       - name: Install conan packages
-        shell: pwsh
         working-directory: ./build
-        run: |
-          conan install .. -s compiler="Visual Studio" -s compiler.version=16 -sbuild_type=Debug -g cmake_paths
+        run: conan install .. -s compiler="Visual Studio" -s compiler.version=16 -sbuild_type=Debug -g cmake_paths
 
       - name: Create Build Environment & Configure Cmake
         shell: bash
         working-directory: ./build
         run: |
           [[ ${{ matrix.link }} == "SHARED" ]] && shared="ON" || shared="OFF"
-          cmake .. -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=on -DBUILD_SHARED_LIBS=$shared -DCMAKE_TOOLCHAIN_FILE="conan_paths.cmake" -DBUILD_CTL=ON -DBUILD_EXAMPLES=ON -DCMAKE_INSTALL_PREFIX=../install
+          cmake ..                                     \
+            -DCMAKE_BUILD_TYPE=Debug                   \
+            -DBUILD_TESTING=on                         \
+            -DBUILD_SHARED_LIBS=$shared                \
+            -DCMAKE_TOOLCHAIN_FILE="conan_paths.cmake" \
+            -DBUILD_CTL=ON                             \
+            -DBUILD_EXAMPLES=ON                        \
+            -DCMAKE_INSTALL_PREFIX=../install
 
       - name: Build
-        working-directory: ${{env.GITHUB_WORKSPACE}}
-        shell: bash
-        run: |
-          cd build
-          cmake --build . --target install --parallel
+        run: cmake --build build --target install --parallel
 
       - name: Test
-        working-directory: ${{env.GITHUB_WORKSPACE}}
         shell: bash
         run: ./test.sh -w
 
   unix:
-    name: ${{matrix.buildname}}
-    runs-on: ${{matrix.os}}
+    name: ${{ matrix.buildname }}
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
@@ -100,7 +98,7 @@ jobs:
       if: runner.os == 'macOS'
       run: |
         brew install jsoncpp brotli zlib
-        brew install openssl lz4 mariadb sqlite3 postgresql hiredis
+        brew install lz4 mariadb sqlite3 postgresql hiredis
         brew install redis
 
     - name: (Linux) Install dependencies
@@ -109,46 +107,46 @@ jobs:
         # Installing packages might fail as the github image becomes outdated
         sudo apt update
         # These aren't available or don't work well in vcpkg
-        sudo apt install libjsoncpp-dev uuid-dev openssl libssl-dev zlib1g-dev libsqlite3-dev
-        sudo apt install libbrotli-dev
+        sudo apt-get install -y libjsoncpp-dev uuid-dev libssl-dev zlib1g-dev libsqlite3-dev
+        sudo apt-get install -y libbrotli-dev
     - name: (Linux) Install gcc-10
       if: matrix.buildname == 'ubuntu-20.04/gcc-10'
-      run: |
-        sudo apt install gcc-10 g++-10
+      run: sudo apt-get install -y gcc-10 g++-10
     - name: (Linux) Install boost
       if: matrix.buildname == 'ubuntu-20.04/c++14'
       run: |
-        sudo apt update
-        sudo apt install libboost-all-dev
+        sudo apt-get update
+        sudo apt-get -y install libboost-all-dev
 
     - name: (Linux) Install postgresql
       if: matrix.os == 'ubuntu-20.04'
-      run: |
-        sudo apt install postgresql-all
+      run: sudo apt-get -y install postgresql-all
 
-    - name: Create build directory
+    - name: Export `shared`
       run: |
-        mkdir build
+        [[ ${{ matrix.link }} == "SHARED" ]] && shared="ON" || shared="OFF"
+        echo "shared=$shared" >> $GITHUB_ENV
 
     - name: Create Build Environment & Configure Cmake
       # Some projects don't allow in-source building, so create a separate build directory
       # We'll use this as our working directory for all subsequent commands
-      shell: bash
-      working-directory: ./build
       if: matrix.buildname != 'ubuntu-20.04/gcc-10' && matrix.buildname != 'ubuntu-20.04/c++14'
       run: |
-        [[ ${{ matrix.link }} == "SHARED" ]] && shared="ON" || shared="OFF"
-        cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_TESTING=on -DBUILD_SHARED_LIBS=$shared
+        cmake -B build                   \
+          -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
+          -DBUILD_TESTING=on             \
+          -DBUILD_SHARED_LIBS=$shared
 
     - name: Create Build Environment & Configure Cmake (gcc-10)
       # Some projects don't allow in-source building, so create a separate build directory
       # We'll use this as our working directory for all subsequent commands
-      shell: bash
-      working-directory: ./build
       if: matrix.buildname == 'ubuntu-20.04/gcc-10'
       run: |
-        [[ ${{ matrix.link }} == "SHARED" ]] && shared="ON" || shared="OFF"
-        cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_TESTING=on -DCMAKE_CXX_FLAGS="-fcoroutines" -DBUILD_SHARED_LIBS=$shared
+        cmake -B build                     \
+          -DCMAKE_BUILD_TYPE=$BUILD_TYPE   \
+          -DBUILD_TESTING=on               \
+          -DCMAKE_CXX_FLAGS="-fcoroutines" \
+          -DBUILD_SHARED_LIBS=$shared
       env:
         CC: gcc-10
         CXX: g++-10
@@ -156,39 +154,38 @@ jobs:
     - name: Create Build Environment & Configure Cmake (C++14)
       # Some projects don't allow in-source building, so create a separate build directory
       # We'll use this as our working directory for all subsequent commands
-      shell: bash
-      working-directory: ./build
       if: matrix.buildname == 'ubuntu-20.04/C++14'
       run: |
-        [[ ${{ matrix.link }} == "SHARED" ]] && shared="ON" || shared="OFF"
-        cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_TESTING=on -DCMAKE_CXX_STANDARD=14 -DBUILD_SHARED_LIBS=$shared
+        cmake -B build                   \
+          -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
+          -DBUILD_TESTING=on             \
+          -DCMAKE_CXX_STANDARD=14        \
+          -DBUILD_SHARED_LIBS=$shared
 
-    - name: (Linux) Build
+    - name: Build
       working-directory: ./build
-      shell: bash
       # Execute the build.  You can specify a specific target with "--target <NAME>"
-      run: |
-        sudo make -j $(nproc) && sudo make install
+      run: make -j $(nproc) && sudo make install
 
-    - name: Prepare for testing (macOS)
+    - name: (macOS) Prepare for testing
       if: runner.os == 'macOS'
       run: |
         cd $(brew --prefix)/Homebrew/Library/Taps/homebrew/homebrew-services
         git reset --hard 5f2fe01
         cd ~
-        brew tap homebrew/services;
-        brew services restart postgresql;
-        brew services start mariadb;
-        brew services start redis;
-        sleep 4;
-        mariadb -e "SET PASSWORD FOR 'root'@'localhost' = PASSWORD('')";
-        mariadb -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost'";
-        mariadb -e "FLUSH PRIVILEGES";
-        brew services restart mariadb;
-        sleep 4;
-        psql -c 'create user postgres superuser;' postgres;
+        brew tap homebrew/services
+        brew services restart postgresql
+        brew services start mariadb
+        brew services start redis
+        sleep 4
+        mariadb -e "SET PASSWORD FOR 'root'@'localhost' = PASSWORD('')"
+        mariadb -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost'"
+        mariadb -e "FLUSH PRIVILEGES"
+        brew services restart mariadb
+        sleep 4
+        psql -c 'create user postgres superuser;' postgres
 
-    - name: Prepare for testing (Linux)
+    - name: (Linux) Prepare for testing
       if: runner.os == 'Linux'
       run: |
         sudo systemctl start postgresql
@@ -196,16 +193,12 @@ jobs:
         sudo -u postgres psql -c "ALTER USER postgres WITH PASSWORD '12345'" postgres
 
     - name: Test
-      working-directory: ${{env.GITHUB_WORKSPACE}}
-      shell: bash
       # Execute tests defined by the CMake configuration.
       # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
       run: ./test.sh -t
 
     - name: Lint
       if: matrix.os == 'ubuntu-20.04'
-      working-directory: ${{env.GITHUB_WORKSPACE}}
-      shell: bash
       run: |
         sudo apt install -y dos2unix
         ./format.sh && git diff --exit-code
