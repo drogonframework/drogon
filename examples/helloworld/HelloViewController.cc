@@ -14,7 +14,7 @@ class HelloViewController : public HttpSimpleController<HelloViewController>
     // Also unlike HttpContoller, HttpSimpleController does not automatically
     // prepend the namespace and class name to the path. Thus the path of this
     // controller is at "/view".
-    PATH_ADD("/view")
+    PATH_ADD("/view");
     PATH_LIST_END
 
     void asyncHandleHttpRequest(

@@ -27,7 +27,7 @@
 #define WS_PATH_LIST_BEGIN        \
     static void initPathRouting() \
     {
-#define WS_PATH_ADD(path, ...) registerSelf__(path, {__VA_ARGS__});
+#define WS_PATH_ADD(path, ...) registerSelf__(path, {__VA_ARGS__})
 #define WS_PATH_LIST_END }
 
 namespace drogon
