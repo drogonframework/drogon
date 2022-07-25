@@ -22,8 +22,8 @@ namespace drogon_ctl
 class create_filter : public DrObject<create_filter>, public CommandHandler
 {
   public:
-    virtual void handleCommand(std::vector<std::string> &parameters) override;
-    virtual std::string script() override
+    void handleCommand(std::vector<std::string> &parameters) override;
+    std::string script() override
     {
         return "create filter class files";
     }

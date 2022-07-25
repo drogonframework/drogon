@@ -71,27 +71,27 @@ class HttpMessageStringBody : public HttpMessageBody
     {
         type_ = BodyType::kString;
     }
-    virtual const char *data() const override
+    const char *data() const override
     {
         return body_.data();
     }
-    virtual char *data() override
+    char *data() override
     {
         return const_cast<char *>(body_.data());
     }
-    virtual size_t length() const override
+    size_t length() const override
     {
         return body_.length();
     }
-    virtual const std::string &getString() const override
+    const std::string &getString() const override
     {
         return body_;
     }
-    virtual std::string &getString() override
+    std::string &getString() override
     {
         return body_;
     }
-    virtual void append(const char *buf, size_t len) override
+    void append(const char *buf, size_t len) override
     {
         body_.append(buf, len);
     }
@@ -107,19 +107,19 @@ class HttpMessageStringViewBody : public HttpMessageBody
     {
         type_ = BodyType::kStringView;
     }
-    virtual const char *data() const override
+    const char *data() const override
     {
         return body_.data();
     }
-    virtual char *data() override
+    char *data() override
     {
         return const_cast<char *>(body_.data());
     }
-    virtual size_t length() const override
+    size_t length() const override
     {
         return body_.length();
     }
-    virtual const std::string &getString() const override
+    const std::string &getString() const override
     {
         if (!bodyString_)
         {
@@ -135,7 +135,7 @@ class HttpMessageStringViewBody : public HttpMessageBody
         }
         return *bodyString_;
     }
-    virtual std::string &getString() override
+    std::string &getString() override
     {
         if (!bodyString_)
         {

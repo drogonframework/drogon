@@ -337,8 +337,8 @@ class Relationship
 class create_model : public DrObject<create_model>, public CommandHandler
 {
   public:
-    virtual void handleCommand(std::vector<std::string> &parameters) override;
-    virtual std::string script() override
+    void handleCommand(std::vector<std::string> &parameters) override;
+    std::string script() override
     {
         return "create Model classes files";
     }

@@ -81,7 +81,7 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
         return version_;
     }
 
-    virtual const char *versionString() const override;
+    const char *versionString() const override;
 
     void setCloseConnection(bool on) override
     {

@@ -91,7 +91,7 @@ class DROGON_EXPORT DrogonDbException
 /// std::runtime_error
 class Failure : public DrogonDbException, public std::runtime_error
 {
-    virtual const std::exception &base() const noexcept override
+    const std::exception &base() const noexcept override
     {
         return *this;
     }
@@ -200,7 +200,7 @@ class DeadlockDetected : public TransactionRollback
 /// Internal error in internal library
 class InternalError : public DrogonDbException, public std::logic_error
 {
-    virtual const std::exception &base() const noexcept override
+    const std::exception &base() const noexcept override
     {
         return *this;
     }
@@ -212,7 +212,7 @@ class InternalError : public DrogonDbException, public std::logic_error
 /// Timeout error in when executing the SQL statement.
 class TimeoutError : public DrogonDbException, public std::logic_error
 {
-    virtual const std::exception &base() const noexcept override
+    const std::exception &base() const noexcept override
     {
         return *this;
     }
@@ -224,7 +224,7 @@ class TimeoutError : public DrogonDbException, public std::logic_error
 /// Error in usage of drogon orm library, similar to std::logic_error
 class UsageError : public DrogonDbException, public std::logic_error
 {
-    virtual const std::exception &base() const noexcept override
+    const std::exception &base() const noexcept override
     {
         return *this;
     }
@@ -236,7 +236,7 @@ class UsageError : public DrogonDbException, public std::logic_error
 /// Invalid argument passed to drogon orm lib, similar to std::invalid_argument
 class ArgumentError : public DrogonDbException, public std::invalid_argument
 {
-    virtual const std::exception &base() const noexcept override
+    const std::exception &base() const noexcept override
     {
         return *this;
     }
@@ -248,7 +248,7 @@ class ArgumentError : public DrogonDbException, public std::invalid_argument
 /// Value conversion failed, e.g. when converting "Hello" to int.
 class ConversionError : public DrogonDbException, public std::domain_error
 {
-    virtual const std::exception &base() const noexcept override
+    const std::exception &base() const noexcept override
     {
         return *this;
     }
@@ -260,7 +260,7 @@ class ConversionError : public DrogonDbException, public std::domain_error
 /// Something is out of range, similar to std::out_of_range
 class RangeError : public DrogonDbException, public std::out_of_range
 {
-    virtual const std::exception &base() const noexcept override
+    const std::exception &base() const noexcept override
     {
         return *this;
     }
@@ -272,7 +272,7 @@ class RangeError : public DrogonDbException, public std::out_of_range
 /// Query returned an unexpected number of rows.
 class UnexpectedRows : public RangeError
 {
-    virtual const std::exception &base() const noexcept override
+    const std::exception &base() const noexcept override
     {
         return *this;
     }

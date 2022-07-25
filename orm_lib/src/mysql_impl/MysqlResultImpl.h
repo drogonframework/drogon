@@ -70,17 +70,15 @@ class MysqlResultImpl : public ResultImpl
             }
         }
     }
-    virtual SizeType size() const noexcept override;
-    virtual RowSizeType columns() const noexcept override;
-    virtual const char *columnName(RowSizeType number) const override;
-    virtual SizeType affectedRows() const noexcept override;
-    virtual RowSizeType columnNumber(const char colName[]) const override;
-    virtual const char *getValue(SizeType row,
-                                 RowSizeType column) const override;
-    virtual bool isNull(SizeType row, RowSizeType column) const override;
-    virtual FieldSizeType getLength(SizeType row,
-                                    RowSizeType column) const override;
-    virtual unsigned long long insertId() const noexcept override;
+    SizeType size() const noexcept override;
+    RowSizeType columns() const noexcept override;
+    const char *columnName(RowSizeType number) const override;
+    SizeType affectedRows() const noexcept override;
+    RowSizeType columnNumber(const char colName[]) const override;
+    const char *getValue(SizeType row, RowSizeType column) const override;
+    bool isNull(SizeType row, RowSizeType column) const override;
+    FieldSizeType getLength(SizeType row, RowSizeType column) const override;
+    unsigned long long insertId() const noexcept override;
 
   private:
     const std::shared_ptr<MYSQL_RES> result_;

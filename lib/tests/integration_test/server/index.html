@@ -127,7 +127,7 @@ using namespace drogon;
 class JsonCtrl : public drogon::HttpSimpleController<jsonctrl>
 {
   public:
-    virtual void asyncHandleHttpRequest(const HttpRequestPtr &amp;req, const std::function&lt;void(const HttpResponsePtr &amp;)&gt; &amp;callback) override;
+    void asyncHandleHttpRequest(const HttpRequestPtr &amp;req, const std::function&lt;void(const HttpResponsePtr &amp;)&gt; &amp;callback) override;
     PATH_LIST_BEGIN
     //list path definitions here;
     PATH_ADD("/json", Get);

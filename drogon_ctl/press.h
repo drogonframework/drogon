@@ -42,17 +42,17 @@ struct Statistics
 class press : public DrObject<press>, public CommandHandler
 {
   public:
-    virtual void handleCommand(std::vector<std::string> &parameters) override;
-    virtual std::string script() override
+    void handleCommand(std::vector<std::string> &parameters) override;
+    std::string script() override
     {
         return "Do stress testing(Use 'drogon_ctl help press' for more "
                "information)";
     }
-    virtual bool isTopCommand() override
+    bool isTopCommand() override
     {
         return true;
     }
-    virtual std::string detail() override;
+    std::string detail() override;
 
   private:
     size_t numOfThreads_{1};
