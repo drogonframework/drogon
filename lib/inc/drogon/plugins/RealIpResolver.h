@@ -30,7 +30,8 @@ namespace plugin
         // Which header to parse ip form. Default is x-forwarded-for
         "from_header": "x-forwarded-for",
         // The result will be inserted to HttpRequest attribute map with this
-key. Default is "real-ip" "attribute_key": "real-ip"
+        // key. Default is "real-ip"
+        "attribute_key": "real-ip"
      }
   }
   @endcode

@@ -29,6 +29,7 @@
 #include <drogon/plugins/Plugin.h>
 #include <drogon/plugins/SecureSSLRedirector.h>
 #include <drogon/plugins/AccessLogger.h>
+#include <drogon/plugins/RealIpResolver.h>
 #include <drogon/Cookie.h>
 #include <drogon/Session.h>
 #include <drogon/IOThreadStorage.h>
