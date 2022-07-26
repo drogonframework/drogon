@@ -87,7 +87,7 @@ class PgConnection : public DbConnection,
     virtual void batchSql(
         std::deque<std::shared_ptr<SqlCmd>> &&sqlCommands) override;
 
-    virtual void disconnect() override;
+    void disconnect() override;
 
   private:
     std::shared_ptr<PGconn> connectionPtr_;

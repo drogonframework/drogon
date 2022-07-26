@@ -64,7 +64,7 @@ template <typename T>
 class DrObject : public virtual DrObjectBase
 {
   public:
-    virtual const std::string &className() const override
+    const std::string &className() const override
     {
         return alloc_.className();
     }
@@ -73,7 +73,7 @@ class DrObject : public virtual DrObjectBase
         return alloc_.className();
     }
 
-    virtual bool isClass(const std::string &class_name) const override
+    bool isClass(const std::string &class_name) const override
     {
         return (className() == class_name);
     }

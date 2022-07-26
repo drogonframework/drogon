@@ -21,8 +21,8 @@ namespace drogon_ctl
 class create_project : public DrObject<create_project>, public CommandHandler
 {
   public:
-    virtual void handleCommand(std::vector<std::string> &parameters) override;
-    virtual std::string script() override
+    void handleCommand(std::vector<std::string> &parameters) override;
+    std::string script() override
     {
         return "create a project";
     }

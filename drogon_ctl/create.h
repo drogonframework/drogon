@@ -22,16 +22,16 @@ namespace drogon_ctl
 class create : public DrObject<create>, public CommandHandler
 {
   public:
-    virtual void handleCommand(std::vector<std::string> &parameters) override;
-    virtual std::string script() override
+    void handleCommand(std::vector<std::string> &parameters) override;
+    std::string script() override
     {
         return "create some source files(Use 'drogon_ctl help create' for more "
                "information)";
     }
-    virtual bool isTopCommand() override
+    bool isTopCommand() override
     {
         return true;
     }
-    virtual std::string detail() override;
+    std::string detail() override;
 };
 }  // namespace drogon_ctl

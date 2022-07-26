@@ -89,12 +89,12 @@ class HttpRequestImpl : public HttpRequest
         }
     }
 
-    virtual Version version() const override
+    Version version() const override
     {
         return version_;
     }
 
-    virtual const char *versionString() const override;
+    const char *versionString() const override;
 
     bool setMethod(const char *start, const char *end);
     void setSecure(bool secure)
@@ -102,18 +102,18 @@ class HttpRequestImpl : public HttpRequest
         isOnSecureConnection_ = secure;
     }
 
-    virtual void setMethod(const HttpMethod method) override
+    void setMethod(const HttpMethod method) override
     {
         method_ = method;
         return;
     }
 
-    virtual HttpMethod method() const override
+    HttpMethod method() const override
     {
         return method_;
     }
 
-    virtual const char *methodString() const override;
+    const char *methodString() const override;
 
     void setPath(const char *start, const char *end)
     {
@@ -127,7 +127,7 @@ class HttpRequestImpl : public HttpRequest
         }
     }
 
-    virtual void setPath(const std::string &path) override
+    void setPath(const std::string &path) override
     {
         path_ = path;
     }
@@ -137,15 +137,14 @@ class HttpRequestImpl : public HttpRequest
         pathEncode_ = pathEncode;
     }
 
-    virtual const std::unordered_map<std::string, std::string> &parameters()
+    const std::unordered_map<std::string, std::string> &parameters()
         const override
     {
         parseParametersOnce();
         return parameters_;
     }
 
-    virtual const std::string &getParameter(
-        const std::string &key) const override
+    const std::string &getParameter(const std::string &key) const override
     {
         const static std::string defaultVal;
         parseParametersOnce();
@@ -155,7 +154,7 @@ class HttpRequestImpl : public HttpRequest
         return defaultVal;
     }
 
-    virtual const std::string &path() const override
+    const std::string &path() const override
     {
         return path_;
     }
@@ -178,7 +177,7 @@ class HttpRequestImpl : public HttpRequest
         }
         return content_;
     }
-    virtual const char *bodyData() const override
+    const char *bodyData() const override
     {
         if (cacheFilePtr_)
         {
@@ -186,7 +185,7 @@ class HttpRequestImpl : public HttpRequest
         }
         return content_.data();
     }
-    virtual size_t bodyLength() const override
+    size_t bodyLength() const override
     {
         if (cacheFilePtr_)
         {
@@ -211,22 +210,22 @@ class HttpRequestImpl : public HttpRequest
         return content_;
     }
 
-    virtual const std::string &query() const override
+    const std::string &query() const override
     {
         return query_;
     }
 
-    virtual const trantor::InetAddress &peerAddr() const override
+    const trantor::InetAddress &peerAddr() const override
     {
         return peer_;
     }
 
-    virtual const trantor::InetAddress &localAddr() const override
+    const trantor::InetAddress &localAddr() const override
     {
         return local_;
     }
 
-    virtual const trantor::Date &creationDate() const override
+    const trantor::Date &creationDate() const override
     {
         return creationDate_;
     }
@@ -248,7 +247,7 @@ class HttpRequestImpl : public HttpRequest
 
     void addHeader(const char *start, const char *colon, const char *end);
 
-    virtual void removeHeader(std::string key) override
+    void removeHeader(std::string key) override
     {
         transform(key.begin(), key.end(), key.begin(), [](unsigned char c) {
             return tolower(c);
@@ -302,8 +301,7 @@ class HttpRequestImpl : public HttpRequest
         return cookies_;
     }
 
-    virtual void setParameter(const std::string &key,
-                              const std::string &value) override
+    void setParameter(const std::string &key, const std::string &value) override
     {
         flagForParsingParameters_ = true;
         parameters_[key] = value;
@@ -321,17 +319,17 @@ class HttpRequestImpl : public HttpRequest
         content_ = content;
     }
 
-    virtual void setBody(const std::string &body) override
+    void setBody(const std::string &body) override
     {
         content_ = body;
     }
 
-    virtual void setBody(std::string &&body) override
+    void setBody(std::string &&body) override
     {
         content_ = std::move(body);
     }
 
-    virtual void addHeader(std::string field, const std::string &value) override
+    void addHeader(std::string field, const std::string &value) override
     {
         transform(field.begin(),
                   field.end(),
@@ -340,7 +338,7 @@ class HttpRequestImpl : public HttpRequest
         headers_[std::move(field)] = value;
     }
 
-    virtual void addHeader(std::string field, std::string &&value) override
+    void addHeader(std::string field, std::string &&value) override
     {
         transform(field.begin(),
                   field.end(),
@@ -349,13 +347,12 @@ class HttpRequestImpl : public HttpRequest
         headers_[std::move(field)] = std::move(value);
     }
 
-    virtual void addCookie(const std::string &key,
-                           const std::string &value) override
+    void addCookie(const std::string &key, const std::string &value) override
     {
         cookies_[key] = value;
     }
 
-    virtual void setPassThrough(bool flag) override
+    void setPassThrough(bool flag) override
     {
         passThrough_ = flag;
     }
@@ -367,7 +364,7 @@ class HttpRequestImpl : public HttpRequest
 
     void appendToBuffer(trantor::MsgBuffer *output) const;
 
-    virtual const SessionPtr &session() const override
+    const SessionPtr &session() const override
     {
         return sessionPtr_;
     }
@@ -377,7 +374,7 @@ class HttpRequestImpl : public HttpRequest
         sessionPtr_ = session;
     }
 
-    virtual const AttributesPtr &attributes() const override
+    const AttributesPtr &attributes() const override
     {
         if (!attributesPtr_)
         {
@@ -386,7 +383,7 @@ class HttpRequestImpl : public HttpRequest
         return attributesPtr_;
     }
 
-    virtual const std::shared_ptr<Json::Value> &jsonObject() const override
+    const std::shared_ptr<Json::Value> &jsonObject() const override
     {
         // Not multi-thread safe but good, because we basically call this
         // function in a single thread
@@ -398,7 +395,7 @@ class HttpRequestImpl : public HttpRequest
         return jsonPtr_;
     }
 
-    virtual void setCustomContentTypeString(const std::string &type) override
+    void setCustomContentTypeString(const std::string &type) override
     {
         contentType_ = CT_NONE;
         flagForParsingContentType_ = true;
@@ -413,7 +410,7 @@ class HttpRequestImpl : public HttpRequest
         contentTypeString_ = std::string(type.begin() + (haveHeader ? 14 : 0),
                                          type.end() - endOffset);
     }
-    virtual void setContentTypeCode(const ContentType type) override
+    void setContentTypeCode(const ContentType type) override
     {
         contentType_ = type;
         flagForParsingContentType_ = true;
@@ -424,24 +421,24 @@ class HttpRequestImpl : public HttpRequest
     void setContentTypeString(const char *typeString,
                               size_t typeStringLength) override;
 
-    // virtual void setContentTypeCodeAndCharacterSet(ContentType type, const
+    // void setContentTypeCodeAndCharacterSet(ContentType type, const
     // std::string &charSet = "utf-8") override
     // {
     //     contentType_ = type;
     //     setContentType(webContentTypeAndCharsetToString(type, charSet));
     // }
 
-    virtual ContentType contentType() const override
+    ContentType contentType() const override
     {
         parseContentTypeAndString();
         return contentType_;
     }
 
-    virtual const char *matchedPathPatternData() const override
+    const char *matchedPathPatternData() const override
     {
         return matchedPathPattern_.data();
     }
-    virtual size_t matchedPathPatternLength() const override
+    size_t matchedPathPatternLength() const override
     {
         return matchedPathPattern_.length();
     }
@@ -461,11 +458,11 @@ class HttpRequestImpl : public HttpRequest
     {
         return keepAlive_;
     }
-    virtual bool isOnSecureConnection() const noexcept override
+    bool isOnSecureConnection() const noexcept override
     {
         return isOnSecureConnection_;
     }
-    virtual const std::string &getJsonError() const override
+    const std::string &getJsonError() const override
     {
         const static std::string none{""};
         if (jsonParsingErrorPtr_)

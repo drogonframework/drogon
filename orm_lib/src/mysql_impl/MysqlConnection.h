@@ -80,12 +80,12 @@ class MysqlConnection : public DbConnection,
                 });
         }
     }
-    virtual void batchSql(std::deque<std::shared_ptr<SqlCmd>> &&) override
+    void batchSql(std::deque<std::shared_ptr<SqlCmd>> &&) override
     {
         LOG_FATAL << "The mysql library does not support batch mode";
         exit(1);
     }
-    virtual void disconnect() override;
+    void disconnect() override;
 
   private:
     void execSqlInLoop(

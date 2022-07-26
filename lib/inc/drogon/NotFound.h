@@ -29,6 +29,6 @@ class DROGON_EXPORT NotFound final : public drogon::DrTemplate<NotFound>
     NotFound()
     {
     }
-    virtual std::string genText(const drogon::HttpViewData &) override;
+    std::string genText(const drogon::HttpViewData &) override;
 };
 }  // namespace drogon
