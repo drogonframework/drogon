@@ -925,7 +925,7 @@ static int run(int argc, char** argv)
         drogon::test::internal::numAssertions++;        \
         static_assert((expr), #expr " failed.");        \
         drogon::test::internal::numCorrectAssertions++; \
-    } while (0);
+    } while (0)
 
 #define FAIL(message)                                                   \
     do                                                                  \

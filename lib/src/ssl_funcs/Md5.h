@@ -34,13 +34,13 @@
 #define DEF_I(X, Y, Z) ((Y) ^ ((X) | (~Z)))
 
 #define FF(a, b, c, d, Mj, s, ti) \
-    (a = b + cycleMoveLeft((a + DEF_F(b, c, d) + Mj + ti), s));
+    (a = b + cycleMoveLeft((a + DEF_F(b, c, d) + Mj + ti), s))
 #define GG(a, b, c, d, Mj, s, ti) \
-    (a = b + cycleMoveLeft((a + DEF_G(b, c, d) + Mj + ti), s));
+    (a = b + cycleMoveLeft((a + DEF_G(b, c, d) + Mj + ti), s))
 #define HH(a, b, c, d, Mj, s, ti) \
-    (a = b + cycleMoveLeft((a + DEF_H(b, c, d) + Mj + ti), s));
+    (a = b + cycleMoveLeft((a + DEF_H(b, c, d) + Mj + ti), s))
 #define II(a, b, c, d, Mj, s, ti) \
-    (a = b + cycleMoveLeft((a + DEF_I(b, c, d) + Mj + ti), s));
+    (a = b + cycleMoveLeft((a + DEF_I(b, c, d) + Mj + ti), s))
 
 class Md5Encode
 {
