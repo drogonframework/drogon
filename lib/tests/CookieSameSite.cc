@@ -76,4 +76,4 @@ DROGON_TEST(CookieSameSite)
         f1.get();
         seq.i++;
     }
-};
+}
