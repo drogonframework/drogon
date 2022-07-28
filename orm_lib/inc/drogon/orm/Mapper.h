@@ -1821,5 +1821,22 @@ inline std::future<size_t> Mapper<T>::deleteFutureByPrimaryKey(
     return prom->get_future();
 }
 
+/**
+ * @brief Convert std::vector<Value> where Value can be JSON to JSON.
+ *
+ * @param container The container to be converted.
+ * @return Json::Value The JSON value converted.
+ */
+template <typename Value>
+inline Json::Value toJson(const std::vector<Value> &container)
+{
+    Json::Value values(Json::arrayValue);
+    for (const Value &c : container)
+    {
+        values.append(c.toJson());
+    }
+    return values;
+}
+
 }  // namespace orm
 }  // namespace drogon
