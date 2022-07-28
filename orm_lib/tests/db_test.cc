@@ -20,6 +20,7 @@
 #include <drogon/orm/DbClient.h>
 #include <drogon/orm/DbTypes.h>
 #include <drogon/utils/string_view.h>
+#include <drogon/orm/QueryBuilder.h>
 #include <trantor/utils/Logger.h>
 
 #include <stdlib.h>
@@ -682,6 +683,152 @@ DROGON_TEST(PostgreTest)
             "salt of pg");
     }
 
+    /// Test ORM QueryBuilder
+    /// execSync
+    try
+    {
+        const std::vector<Users> users =
+            QueryBuilder<Users>{}.from("users").selectAll().execSync(clientPtr);
+        MANDATE(users.size() == 3);
+    }
+    catch (const DrogonDbException &e)
+    {
+        FAULT("postgresql - ORM QueryBuilder synchronous interface(0) what():",
+              e.base().what());
+    }
+    try
+    {
+        const Result users =
+            QueryBuilder<Users>{}.from("users").select("id").execSync(
+                clientPtr);
+        MANDATE(users.size() == 3);
+        for (const Row &u : users)
+        {
+            MANDATE(!u["id"].isNull());
+        }
+    }
+    catch (const DrogonDbException &e)
+    {
+        FAULT("postgresql - ORM QueryBuilder synchronous interface(1) what():",
+              e.base().what());
+    }
+    try
+    {
+        const Users user = QueryBuilder<Users>{}
+                               .from("users")
+                               .selectAll()
+                               .eq("id", "3")
+                               .limit(1)
+                               .single()
+                               .order("id", false)
+                               .execSync(clientPtr);
+        MANDATE(user.getPrimaryKey() == 3);
+    }
+    catch (const DrogonDbException &e)
+    {
+        FAULT("postgresql - ORM QueryBuilder synchronous interface(2) what():",
+              e.base().what());
+    }
+    try
+    {
+        const Row user = QueryBuilder<Users>{}
+                             .from("users")
+                             .select("id")
+                             .limit(1)
+                             .single()
+                             .order("id", false)
+                             .execSync(clientPtr);
+        MANDATE(user["id"].as<int32_t>() == 3);
+    }
+    catch (const DrogonDbException &e)
+    {
+        FAULT("postgresql - ORM QueryBuilder synchronous interface(3) what():",
+              e.base().what());
+    }
+
+    /// execAsyncFuture
+    {
+        std::future<std::vector<Users>> users =
+            QueryBuilder<Users>{}.from("users").selectAll().execAsyncFuture(
+                clientPtr);
+        try
+        {
+            const std::vector<Users> r = users.get();
+            MANDATE(r.size() == 3);
+        }
+        catch (const DrogonDbException &e)
+        {
+            FAULT(
+                "postgresql - ORM QueryBuilder asynchronous interface(0) "
+                "what():",
+                e.base().what());
+        }
+    }
+    {
+        std::future<Result> users =
+            QueryBuilder<Users>{}.from("users").select("id").execAsyncFuture(
+                clientPtr);
+        try
+        {
+            const Result r = users.get();
+            MANDATE(r.size() == 3);
+            for (const Row &u : r)
+            {
+                MANDATE(!u["id"].isNull());
+            }
+        }
+        catch (const DrogonDbException &e)
+        {
+            FAULT(
+                "postgresql - ORM QueryBuilder asynchronous interface(1) "
+                "what():",
+                e.base().what());
+        }
+    }
+    {
+        std::future<Users> user = QueryBuilder<Users>{}
+                                      .from("users")
+                                      .selectAll()
+                                      .eq("id", "3")
+                                      .limit(1)
+                                      .single()
+                                      .order("id", false)
+                                      .execAsyncFuture(clientPtr);
+        try
+        {
+            const Users r = user.get();
+            MANDATE(r.getPrimaryKey() == 3);
+        }
+        catch (const DrogonDbException &e)
+        {
+            FAULT(
+                "postgresql - ORM QueryBuilder asynchronous interface(2) "
+                "what():",
+                e.base().what());
+        }
+    }
+    {
+        std::future<Row> users = QueryBuilder<Users>{}
+                                     .from("users")
+                                     .select("id")
+                                     .limit(1)
+                                     .single()
+                                     .order("id", false)
+                                     .execAsyncFuture(clientPtr);
+        try
+        {
+            const Row r = users.get();
+            MANDATE(r["id"].as<int32_t>() == 3);
+        }
+        catch (const DrogonDbException &e)
+        {
+            FAULT(
+                "postgresql - ORM QueryBuilder asynchronous interface(3) "
+                "what():",
+                e.base().what());
+        }
+    }
+
 #ifdef __cpp_impl_coroutine
     auto coro_test = [clientPtr, TEST_CTX]() -> drogon::Task<> {
         /// 7 Test coroutines.
@@ -827,6 +974,75 @@ DROGON_TEST(PostgreTest)
             FAULT(
                 "postgresql - DbClient coroutine transaction interface(0) "
                 "what():",
+                e.base().what());
+        }
+
+        /// execCoro
+        try
+        {
+            const std::vector<Users> users = co_await QueryBuilder<Users>{}
+                                                 .from("users")
+                                                 .selectAll()
+                                                 .execCoro(clientPtr);
+            MANDATE(users.size() == 3);
+        }
+        catch (const DrogonDbException &e)
+        {
+            FAULT(
+                "postgresql - ORM QueryBuilder coroutine interface(0) what():",
+                e.base().what());
+        }
+        try
+        {
+            const Result users = co_await QueryBuilder<Users>{}
+                                     .from("users")
+                                     .select("id")
+                                     .execCoro(clientPtr);
+            MANDATE(users.size() == 3);
+            for (const Row &u : users)
+            {
+                MANDATE(!u["id"].isNull());
+            }
+        }
+        catch (const DrogonDbException &e)
+        {
+            FAULT(
+                "postgresql - ORM QueryBuilder coroutine interface(1) what():",
+                e.base().what());
+        }
+        try
+        {
+            const Users user = co_await QueryBuilder<Users>{}
+                                   .from("users")
+                                   .selectAll()
+                                   .eq("id", "3")
+                                   .limit(1)
+                                   .single()
+                                   .order("id", false)
+                                   .execCoro(clientPtr);
+            MANDATE(user.getPrimaryKey() == 3);
+        }
+        catch (const DrogonDbException &e)
+        {
+            FAULT(
+                "postgresql - ORM QueryBuilder coroutine interface(2) what():",
+                e.base().what());
+        }
+        try
+        {
+            const Row user = co_await QueryBuilder<Users>{}
+                                 .from("users")
+                                 .select("id")
+                                 .limit(1)
+                                 .single()
+                                 .order("id", false)
+                                 .execCoro(clientPtr);
+            MANDATE(user["id"].as<int32_t>() == 3);
+        }
+        catch (const DrogonDbException &e)
+        {
+            FAULT(
+                "postgresql - ORM QueryBuilder coroutine interface(3) what():",
                 e.base().what());
         }
     };
@@ -1422,6 +1638,153 @@ DROGON_TEST(MySQLTest)
         FAULT("mysql - ORM mapper synchronous interface(1) what():",
               e.base().what());
     }
+
+    /// Test ORM QueryBuilder
+    /// execSync
+    try
+    {
+        const std::vector<Users> users =
+            QueryBuilder<Users>{}.from("users").selectAll().execSync(clientPtr);
+        MANDATE(users.size() == 2);
+    }
+    catch (const DrogonDbException &e)
+    {
+        FAULT("mysql - ORM QueryBuilder synchronous interface(0) what():",
+              e.base().what());
+    }
+    try
+    {
+        const Result users =
+            QueryBuilder<Users>{}.from("users").select("id").execSync(
+                clientPtr);
+        MANDATE(users.size() == 2);
+        for (const Row &u : users)
+        {
+            MANDATE(!u["id"].isNull());
+        }
+    }
+    catch (const DrogonDbException &e)
+    {
+        FAULT("mysql - ORM QueryBuilder synchronous interface(1) what():",
+              e.base().what());
+    }
+    try
+    {
+        const Users user = QueryBuilder<Users>{}
+                               .from("users")
+                               .selectAll()
+                               .eq("id", "2")
+                               .limit(1)
+                               .single()
+                               .order("id", false)
+                               .execSync(clientPtr);
+        MANDATE(user.getPrimaryKey() == 2);
+    }
+    catch (const DrogonDbException &e)
+    {
+        FAULT("mysql - ORM QueryBuilder synchronous interface(2) what():",
+              e.base().what());
+    }
+    try
+    {
+        const Row user = QueryBuilder<Users>{}
+                             .from("users")
+                             .select("id")
+                             .limit(1)
+                             .single()
+                             .order("id", false)
+                             .execSync(clientPtr);
+        MANDATE(user["id"].as<int32_t>() == 2);
+    }
+    catch (const DrogonDbException &e)
+    {
+        FAULT("mysql - ORM QueryBuilder synchronous interface(3) what():",
+              e.base().what());
+    }
+
+    /// execAsyncFuture
+    {
+        std::future<std::vector<Users>> users =
+            QueryBuilder<Users>{}.from("users").selectAll().execAsyncFuture(
+                clientPtr);
+        try
+        {
+            const std::vector<Users> r = users.get();
+            MANDATE(r.size() == 2);
+        }
+        catch (const DrogonDbException &e)
+        {
+            FAULT(
+                "mysql - ORM QueryBuilder asynchronous interface(0) "
+                "what():",
+                e.base().what());
+        }
+    }
+    {
+        std::future<Result> users =
+            QueryBuilder<Users>{}.from("users").select("id").execAsyncFuture(
+                clientPtr);
+        try
+        {
+            const Result r = users.get();
+            MANDATE(r.size() == 2);
+            for (const Row &u : r)
+            {
+                MANDATE(!u["id"].isNull());
+            }
+        }
+        catch (const DrogonDbException &e)
+        {
+            FAULT(
+                "mysql - ORM QueryBuilder asynchronous interface(1) "
+                "what():",
+                e.base().what());
+        }
+    }
+    {
+        std::future<Users> user = QueryBuilder<Users>{}
+                                      .from("users")
+                                      .selectAll()
+                                      .eq("id", "2")
+                                      .limit(1)
+                                      .single()
+                                      .order("id", false)
+                                      .execAsyncFuture(clientPtr);
+        try
+        {
+            const Users r = user.get();
+            MANDATE(r.getPrimaryKey() == 2);
+        }
+        catch (const DrogonDbException &e)
+        {
+            FAULT(
+                "mysql - ORM QueryBuilder asynchronous interface(2) "
+                "what():",
+                e.base().what());
+        }
+    }
+    {
+        std::future<Row> users = QueryBuilder<Users>{}
+                                     .from("users")
+                                     .select("id")
+                                     .limit(1)
+                                     .single()
+                                     .order("id", false)
+                                     .execAsyncFuture(clientPtr);
+        try
+        {
+            const Row r = users.get();
+            MANDATE(r["id"].as<int32_t>() == 2);
+        }
+        catch (const DrogonDbException &e)
+        {
+            FAULT(
+                "mysql - ORM QueryBuilder asynchronous interface(3) "
+                "what():",
+                e.base().what());
+        }
+    }
+
 #ifdef __cpp_impl_coroutine
     auto coro_test = [clientPtr, TEST_CTX]() -> drogon::Task<> {
         /// 7 Test coroutines.
@@ -1449,6 +1812,71 @@ DROGON_TEST(MySQLTest)
         catch (const DrogonDbException &e)
         {
             FAULT("mysql - DbClient coroutine interface(1) what():",
+                  e.base().what());
+        }
+
+        /// execCoro
+        try
+        {
+            const std::vector<Users> users = co_await QueryBuilder<Users>{}
+                                                 .from("users")
+                                                 .selectAll()
+                                                 .execCoro(clientPtr);
+            MANDATE(users.size() == 2);
+        }
+        catch (const DrogonDbException &e)
+        {
+            FAULT("mysql - ORM QueryBuilder coroutine interface(0) what():",
+                  e.base().what());
+        }
+        try
+        {
+            const Result users = co_await QueryBuilder<Users>{}
+                                     .from("users")
+                                     .select("id")
+                                     .execCoro(clientPtr);
+            MANDATE(users.size() == 2);
+            for (const Row &u : users)
+            {
+                MANDATE(!u["id"].isNull());
+            }
+        }
+        catch (const DrogonDbException &e)
+        {
+            FAULT("mysql - ORM QueryBuilder coroutine interface(1) what():",
+                  e.base().what());
+        }
+        try
+        {
+            const Users user = co_await QueryBuilder<Users>{}
+                                   .from("users")
+                                   .selectAll()
+                                   .eq("id", "2")
+                                   .limit(1)
+                                   .single()
+                                   .order("id", false)
+                                   .execCoro(clientPtr);
+            MANDATE(user.getPrimaryKey() == 2);
+        }
+        catch (const DrogonDbException &e)
+        {
+            FAULT("mysql - ORM QueryBuilder coroutine interface(2) what():",
+                  e.base().what());
+        }
+        try
+        {
+            const Row user = co_await QueryBuilder<Users>{}
+                                 .from("users")
+                                 .select("id")
+                                 .limit(1)
+                                 .single()
+                                 .order("id", false)
+                                 .execCoro(clientPtr);
+            MANDATE(user["id"].as<int32_t>() == 2);
+        }
+        catch (const DrogonDbException &e)
+        {
+            FAULT("mysql - ORM QueryBuilder coroutine interface(3) what():",
                   e.base().what());
         }
     };
@@ -2076,6 +2504,153 @@ DROGON_TEST(SQLite3Test)
         FAULT("sqlite3 - ORM mapper synchronous interface(0) what():",
               e.base().what());
     }
+
+    /// Test ORM QueryBuilder
+    /// execSync
+    try
+    {
+        const std::vector<Users> users =
+            QueryBuilder<Users>{}.from("users").selectAll().execSync(clientPtr);
+        MANDATE(users.size() == 2);
+    }
+    catch (const DrogonDbException &e)
+    {
+        FAULT("sqlite3 - ORM QueryBuilder synchronous interface(0) what():",
+              e.base().what());
+    }
+    try
+    {
+        const Result users =
+            QueryBuilder<Users>{}.from("users").select("id").execSync(
+                clientPtr);
+        MANDATE(users.size() == 2);
+        for (const Row &u : users)
+        {
+            MANDATE(!u["id"].isNull());
+        }
+    }
+    catch (const DrogonDbException &e)
+    {
+        FAULT("sqlite3 - ORM QueryBuilder synchronous interface(1) what():",
+              e.base().what());
+    }
+    try
+    {
+        const Users user = QueryBuilder<Users>{}
+                               .from("users")
+                               .selectAll()
+                               .eq("id", "2")
+                               .limit(1)
+                               .single()
+                               .order("id", false)
+                               .execSync(clientPtr);
+        MANDATE(user.getPrimaryKey() == 2);
+    }
+    catch (const DrogonDbException &e)
+    {
+        FAULT("sqlite3 - ORM QueryBuilder synchronous interface(2) what():",
+              e.base().what());
+    }
+    try
+    {
+        const Row user = QueryBuilder<Users>{}
+                             .from("users")
+                             .select("id")
+                             .limit(1)
+                             .single()
+                             .order("id", false)
+                             .execSync(clientPtr);
+        MANDATE(user["id"].as<int32_t>() == 2);
+    }
+    catch (const DrogonDbException &e)
+    {
+        FAULT("sqlite3 - ORM QueryBuilder synchronous interface(3) what():",
+              e.base().what());
+    }
+
+    /// execAsyncFuture
+    {
+        std::future<std::vector<Users>> users =
+            QueryBuilder<Users>{}.from("users").selectAll().execAsyncFuture(
+                clientPtr);
+        try
+        {
+            const std::vector<Users> r = users.get();
+            MANDATE(r.size() == 2);
+        }
+        catch (const DrogonDbException &e)
+        {
+            FAULT(
+                "sqlite3 - ORM QueryBuilder asynchronous interface(0) "
+                "what():",
+                e.base().what());
+        }
+    }
+    {
+        std::future<Result> users =
+            QueryBuilder<Users>{}.from("users").select("id").execAsyncFuture(
+                clientPtr);
+        try
+        {
+            const Result r = users.get();
+            MANDATE(r.size() == 2);
+            for (const Row &u : r)
+            {
+                MANDATE(!u["id"].isNull());
+            }
+        }
+        catch (const DrogonDbException &e)
+        {
+            FAULT(
+                "sqlite3 - ORM QueryBuilder asynchronous interface(1) "
+                "what():",
+                e.base().what());
+        }
+    }
+    {
+        std::future<Users> user = QueryBuilder<Users>{}
+                                      .from("users")
+                                      .selectAll()
+                                      .eq("id", "2")
+                                      .limit(1)
+                                      .single()
+                                      .order("id", false)
+                                      .execAsyncFuture(clientPtr);
+        try
+        {
+            const Users r = user.get();
+            MANDATE(r.getPrimaryKey() == 2);
+        }
+        catch (const DrogonDbException &e)
+        {
+            FAULT(
+                "sqlite3 - ORM QueryBuilder asynchronous interface(2) "
+                "what():",
+                e.base().what());
+        }
+    }
+    {
+        std::future<Row> users = QueryBuilder<Users>{}
+                                     .from("users")
+                                     .select("id")
+                                     .limit(1)
+                                     .single()
+                                     .order("id", false)
+                                     .execAsyncFuture(clientPtr);
+        try
+        {
+            const Row r = users.get();
+            MANDATE(r["id"].as<int32_t>() == 2);
+        }
+        catch (const DrogonDbException &e)
+        {
+            FAULT(
+                "sqlite3 - ORM QueryBuilder asynchronous interface(3) "
+                "what():",
+                e.base().what());
+        }
+    }
+
 #ifdef __cpp_impl_coroutine
     auto coro_test = [clientPtr, TEST_CTX]() -> drogon::Task<> {
         /// 7 Test coroutines.
@@ -2143,6 +2718,71 @@ DROGON_TEST(SQLite3Test)
         }
         co_await drogon::sleepCoro(
             trantor::EventLoop::getEventLoopOfCurrentThread(), 1.0s);
+
+        /// execCoro
+        try
+        {
+            const std::vector<Users> users = co_await QueryBuilder<Users>{}
+                                                 .from("users")
+                                                 .selectAll()
+                                                 .execCoro(clientPtr);
+            MANDATE(users.size() == 2);
+        }
+        catch (const DrogonDbException &e)
+        {
+            FAULT("sqlite3 - ORM QueryBuilder coroutine interface(0) what():",
+                  e.base().what());
+        }
+        try
+        {
+            const Result users = co_await QueryBuilder<Users>{}
+                                     .from("users")
+                                     .select("id")
+                                     .execCoro(clientPtr);
+            MANDATE(users.size() == 2);
+            for (const Row &u : users)
+            {
+                MANDATE(!u["id"].isNull());
+            }
+        }
+        catch (const DrogonDbException &e)
+        {
+            FAULT("sqlite3 - ORM QueryBuilder coroutine interface(1) what():",
+                  e.base().what());
+        }
+        try
+        {
+            const Users user = co_await QueryBuilder<Users>{}
+                                   .from("users")
+                                   .selectAll()
+                                   .eq("id", "2")
+                                   .limit(1)
+                                   .single()
+                                   .order("id", false)
+                                   .execCoro(clientPtr);
+            MANDATE(user.getPrimaryKey() == 2);
+        }
+        catch (const DrogonDbException &e)
+        {
+            FAULT("sqlite3 - ORM QueryBuilder coroutine interface(2) what():",
+                  e.base().what());
+        }
+        try
+        {
+            const Row user = co_await QueryBuilder<Users>{}
+                                 .from("users")
+                                 .select("id")
+                                 .limit(1)
+                                 .single()
+                                 .order("id", false)
+                                 .execCoro(clientPtr);
+            MANDATE(user["id"].as<int32_t>() == 2);
+        }
+        catch (const DrogonDbException &e)
+        {
+            FAULT("sqlite3 - ORM QueryBuilder coroutine interface(3) what():",
+                  e.base().what());
+        }
     };
     drogon::sync_wait(coro_test());
 
