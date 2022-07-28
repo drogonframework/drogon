@@ -133,7 +133,7 @@ class DROGON_EXPORT Field
             if (arrVal.first == ArrayParser::juncture::string_value)
             {
                 T val;
-                std::stringstream ss(std::move(arrVal.second));
+                std::stringstream ss(arrVal.second);
                 ss >> val;
                 ret.push_back(std::shared_ptr<T>(new T(val)));
             }
