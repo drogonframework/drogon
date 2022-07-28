@@ -17,14 +17,14 @@
 #include <drogon/orm/SqlBinder.h>
 #include <drogon/utils/Utilities.h>
 #include <future>
-#include <iostream>
 #include <regex>
-#include <stdio.h>
 #if USE_MYSQL
 #include <mysql.h>
 #endif
+
 using namespace drogon::orm;
 using namespace drogon::orm::internal;
+
 void SqlBinder::exec()
 {
     execed_ = true;
@@ -239,11 +239,10 @@ SqlBinder &SqlBinder::operator<<(double f)
     return operator<<(std::to_string(f));
 }
 
-SqlBinder &SqlBinder::operator<<(std::nullptr_t nullp)
+SqlBinder &SqlBinder::operator<<(std::nullptr_t)
 {
-    (void)nullp;
     ++parametersNumber_;
-    parameters_.push_back(NULL);
+    parameters_.push_back(nullptr);
     lengths_.push_back(0);
     if (type_ == ClientType::PostgreSQL)
     {
@@ -291,7 +290,7 @@ SqlBinder &SqlBinder::operator<<(DefaultValue dv)
     else if (type_ == ClientType::Mysql)
     {
         ++parametersNumber_;
-        parameters_.push_back(NULL);
+        parameters_.push_back(nullptr);
         lengths_.push_back(0);
         formats_.push_back(DrogonDefaultValue);
     }
@@ -324,9 +323,8 @@ int SqlBinder::getMysqlTypeBySize(size_t size)
             return 0;
     }
 #else
+    static_cast<void>(size);
     LOG_FATAL << "Mysql is not supported!";
     exit(1);
-    return 0;
-    (void)(size);
 #endif
 }

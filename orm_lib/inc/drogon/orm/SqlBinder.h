@@ -162,22 +162,20 @@ struct CallbackArgTypeTraits<const T &>
 class CallbackHolderBase
 {
   public:
-    virtual ~CallbackHolderBase()
-    {
-    }
+    virtual ~CallbackHolderBase() = default;
     virtual void execCallback(const Result &result) = 0;
 };
 template <typename Function>
 class CallbackHolder : public CallbackHolderBase
 {
   public:
-    virtual void execCallback(const Result &result)
+    void execCallback(const Result &result) override
     {
         run(result);
     }
 
     template <typename T>
-    CallbackHolder(T &&function) : function_(std::forward<T>(function))
+    explicit CallbackHolder(T &&function) : function_(std::forward<T>(function))
     {
         static_assert(traits::isSqlCallback,
                       "Your sql callback function type is wrong!");
@@ -193,7 +191,7 @@ class CallbackHolder : public CallbackHolderBase
     template <bool isStep = traits::isStepResultCallback>
     typename std::enable_if<isStep, void>::type run(const Result &result)
     {
-        if (result.size() == 0)
+        if (result.empty())
         {
             run(nullptr, true);
             return;
@@ -373,21 +371,6 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
         std::shared_ptr<void> obj = std::make_shared<ParaType>(parameter);
         if (type_ == ClientType::PostgreSQL)
         {
-#if __cplusplus >= 201703L || (defined _MSC_VER && _MSC_VER > 1900)
-            const size_t size = sizeof(T);
-            if constexpr (size == 2)
-            {
-                *std::static_pointer_cast<uint16_t>(obj) = htons(parameter);
-            }
-            else if constexpr (size == 4)
-            {
-                *std::static_pointer_cast<uint32_t>(obj) = htonl(parameter);
-            }
-            else if constexpr (size == 8)
-            {
-                *std::static_pointer_cast<uint64_t>(obj) = htonll(parameter);
-            }
-#else
             switch (sizeof(T))
             {
                 case 2:
@@ -402,10 +385,8 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
                     break;
                 case 1:
                 default:
-
                     break;
             }
-#endif
             objs_.push_back(obj);
             parameters_.push_back((char *)obj.get());
             lengths_.push_back(sizeof(T));
@@ -481,7 +462,7 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
         return operator<<(std::to_string(f));
     }
     self &operator<<(double f);
-    self &operator<<(std::nullptr_t nullp);
+    self &operator<<(std::nullptr_t);
     self &operator<<(DefaultValue dv);
     self &operator<<(const Mode &mode)
     {
@@ -531,28 +512,21 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
         {
             case Json::nullValue:
                 return *this << nullptr;
-                break;
             case Json::intValue:
                 return *this << j.asInt64();
-                break;
             case Json::uintValue:
                 return *this << j.asUInt64();
-                break;
             case Json::realValue:
                 return *this << j.asDouble();
-                break;
             case Json::stringValue:
                 return *this << j.asString();
-                break;
             case Json::booleanValue:
                 return *this << j.asBool();
-                break;
             case Json::arrayValue:
             case Json::objectValue:
             default:
                 LOG_ERROR << "Bad Json type";
                 return *this << nullptr;
-                break;
         }
     }
     self &operator<<(Json::Value &j) noexcept(true)
@@ -566,7 +540,7 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
     void exec() noexcept(false);
 
   private:
-    int getMysqlTypeBySize(size_t size);
+    static int getMysqlTypeBySize(size_t size);
     std::shared_ptr<std::string> sqlPtr_;
     const char *sqlViewPtr_;
     size_t sqlViewLength_;
