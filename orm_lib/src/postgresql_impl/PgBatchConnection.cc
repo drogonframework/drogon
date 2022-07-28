@@ -81,7 +81,9 @@ PgConnection::PgConnection(trantor::EventLoop *loop,
                            const std::string &connInfo,
                            bool autoBatch)
     : DbConnection(loop),
+#if LIBPQ_SUPPORTS_BATCH_MODE
       autoBatch_(autoBatch),
+#endif
       connectionPtr_(
           std::shared_ptr<PGconn>(PQconnectStart(connInfo.c_str()),
                                   [](PGconn *conn) { PQfinish(conn); })),
@@ -111,7 +113,9 @@ PgConnection::PgConnection(trantor::EventLoop *loop,
             auto ret = PQflush(connectionPtr_.get());
             if (ret == 0)
             {
+#if LIBPQ_SUPPORTS_BATCH_MODE
                 sendBatchedSql();
+#endif
                 return;
             }
             else if (ret < 0)
@@ -223,6 +227,7 @@ void PgConnection::execSqlInLoop(
 {
     LOG_TRACE << sql;
     isWorking_ = true;
+#if LIBPQ_SUPPORTS_BATCH_MODE
     batchSqlCommands_.emplace_back(
         std::make_shared<SqlCmd>(std::move(sql),
                                  paraNum,
@@ -236,7 +241,10 @@ void PgConnection::execSqlInLoop(
         loop_->queueInLoop(
             [thisPtr = shared_from_this()]() { thisPtr->sendBatchedSql(); });
     }
+#endif
 }
+
+#if LIBPQ_SUPPORTS_BATCH_MODE
 int PgConnection::sendBatchEnd()
 {
     if (!PQpipelineSync(connectionPtr_.get()))
@@ -375,6 +383,7 @@ void PgConnection::sendBatchedSql()
         }
     }
 }
+#endif
 
 void PgConnection::handleRead()
 {
@@ -388,7 +397,9 @@ void PgConnection::handleRead()
         if (isWorking_)
         {
             isWorking_ = false;
+#if LIBPQ_SUPPORTS_BATCH_MODE
             handleFatalError(true);
+#endif
         }
         handleClosed();
         return;
@@ -427,11 +438,14 @@ void PgConnection::handleRead()
         if (type == PGRES_BAD_RESPONSE || type == PGRES_FATAL_ERROR ||
             type == PGRES_PIPELINE_ABORTED)
         {
+#if LIBPQ_SUPPORTS_BATCH_MODE
             handleFatalError(false);
+#endif
             continue;
         }
         if (type == PGRES_PIPELINE_SYNC)
         {
+#if LIBPQ_SUPPORTS_BATCH_MODE
             if (batchCommandsForWaitingResults_.empty() &&
                 batchSqlCommands_.empty())
             {
@@ -439,8 +453,10 @@ void PgConnection::handleRead()
                 idleCb_();
                 return;
             }
+#endif
             continue;
         }
+#if LIBPQ_SUPPORTS_BATCH_MODE
         if (!batchCommandsForWaitingResults_.empty())
         {
             auto &cmd = batchCommandsForWaitingResults_.front();
@@ -462,6 +478,7 @@ void PgConnection::handleRead()
         assert(!batchSqlCommands_.empty());
         assert(!batchSqlCommands_.front()->preparingStatement_.empty());
         auto &cmd = batchSqlCommands_.front();
+
         if (!cmd->preparingStatement_.empty())
         {
             auto r = preparedStatements_.insert(
@@ -472,6 +489,7 @@ void PgConnection::handleRead()
             cmd->preparingStatement_.clear();
             continue;
         }
+#endif
     }
 }
 
@@ -479,6 +497,7 @@ void PgConnection::doAfterPreparing()
 {
 }
 
+#if LIBPQ_SUPPORTS_BATCH_MODE
 void PgConnection::handleFatalError(bool clearAll)
 {
     LOG_ERROR << PQerrorMessage(connectionPtr_.get());
@@ -524,10 +543,13 @@ void PgConnection::handleFatalError(bool clearAll)
         }
     }
 }
+#endif
 
 void PgConnection::batchSql(std::deque<std::shared_ptr<SqlCmd>> &&sqlCommands)
 {
     loop_->assertInLoopThread();
+#if LIBPQ_SUPPORTS_BATCH_MODE
     batchSqlCommands_ = std::move(sqlCommands);
     sendBatchedSql();
+#endif
 }
