@@ -264,6 +264,7 @@ set(DROGON_SOURCES
     lib/src/RangeParser.cc
     lib/src/SecureSSLRedirector.cc
     lib/src/AccessLogger.cc
+    lib/src/RealIpResolver.cc
     lib/src/SessionManager.cc
     lib/src/StaticFileRouter.cc
     lib/src/TaskTimeoutFlag.cc
@@ -690,7 +691,8 @@ install(FILES ${DROGON_UTIL_HEADERS}
 set(DROGON_PLUGIN_HEADERS
     lib/inc/drogon/plugins/Plugin.h
     lib/inc/drogon/plugins/SecureSSLRedirector.h
-    lib/inc/drogon/plugins/AccessLogger.h)
+    lib/inc/drogon/plugins/AccessLogger.h
+    lib/inc/drogon/plugins/RealIpResolver.h)
 install(FILES ${DROGON_PLUGIN_HEADERS}
     DESTINATION ${INSTALL_INCLUDE_DIR}/drogon/plugins)
 
