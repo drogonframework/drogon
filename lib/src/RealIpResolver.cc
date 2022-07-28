@@ -19,7 +19,7 @@
 using namespace drogon;
 using namespace drogon::plugin;
 
-struct XForwardedForParser
+struct XForwardedForParser : public trantor::NonCopyable
 {
     explicit XForwardedForParser(std::string value)
         : value_(std::move(value)), start_(value_.c_str()), len_(value_.size())
