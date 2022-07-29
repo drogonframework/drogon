@@ -391,8 +391,10 @@ void DbClientLockFree::handleNewTask(const DbConnectionPtr &conn)
                           std::move(cmd->parameters_),
                           std::move(cmd->lengths_),
                           std::move(cmd->formats_),
+                          cmd->resultFormat_,
                           std::move(cmd->callback_),
-                          std::move(cmd->exceptionCallback_));
+                          std::move(cmd->exceptionCallback_),
+                          cmd->usePreparedStmt_);
         }
         else
         {
