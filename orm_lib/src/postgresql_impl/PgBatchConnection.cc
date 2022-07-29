@@ -352,7 +352,7 @@ void PgConnection::sendBatchedSql()
                                 cmd->parameters_.data(),
                                 cmd->lengths_.data(),
                                 cmd->formats_.data(),
-                                cmd->resultFormat) == 0)
+                                cmd->resultFormat_) == 0)
         {
             isWorking_ = false;
             handleFatalError(true);
