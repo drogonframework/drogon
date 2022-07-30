@@ -195,8 +195,11 @@ jobs:
     - name: Test
       # Execute tests defined by the CMake configuration.
       # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
+      if: runner.os == 'Linux'
       run: |
-        ulimit -c unlimited
+        sudo mkdir /cores
+        sudo sysctl -w kernel.core_pattern=/cores/core-%e-%p-%t
+        sudo ulimit -c unlimited
         sudo ./test.sh -t
         sudo chmod -R +rwx /cores
     - uses: actions/upload-artifact@master # capture all crashes as build artifacts
