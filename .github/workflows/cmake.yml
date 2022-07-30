@@ -198,7 +198,7 @@ jobs:
       run: |
         ulimit -c unlimited
         sudo ./test.sh -t
-        sudo chmod -R +rwx /cores/*
+        sudo chmod -R +rwx /cores
     - uses: actions/upload-artifact@master # capture all crashes as build artifacts
       with:
         name: crashes
