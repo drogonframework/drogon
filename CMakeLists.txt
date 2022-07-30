@@ -43,6 +43,24 @@ set(DEF_INSTALL_DROGON_CMAKE_DIR ${CMAKE_INSTALL_LIBDIR}/cmake/Drogon)
 set(INSTALL_DROGON_CMAKE_DIR ${DEF_INSTALL_DROGON_CMAKE_DIR}
     CACHE PATH "Installation directory for cmake files")
 
+if (CMAKE_BUILD_TYPE)
+    string(TOLOWER ${CMAKE_BUILD_TYPE} _type)
+    if (_type STREQUAL release)
+        set(COMPILATION_FLAGS "${CMAKE_CXX_FLAGS_RELEASE} -std=c++")
+    elseif (_type STREQUAL debug)
+        if (NOT MSVC)
+            message(STATUS "Address sanitizer is enabled.")
+            # ref: https://github.com/google/sanitizers/wiki/AddressSanitizer#using-addresssanitizer
+            set(CMAKE_CXX_FLAGS_DEBUG "-g -O1 -fsanitize=address -fno-omit-frame-pointer")
+        endif ()
+        set(COMPILATION_FLAGS "${CMAKE_CXX_FLAGS_DEBUG} -std=c++")
+    else ()
+        set(COMPILATION_FLAGS "-std=c++")
+    endif ()
+else (CMAKE_BUILD_TYPE)
+    set(COMPILATION_FLAGS "-std=c++")
+endif (CMAKE_BUILD_TYPE)
+
 if (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
     # Force MSVC to use UTF-8 because that's what we use. Otherwise it uses
     # the default of whatever Windows sets and causes encoding issues.
@@ -598,19 +616,6 @@ endif (pg_FOUND OR DROGON_FOUND_MYSQL OR DROGON_FOUND_SQLite3)
 
 set(COMPILER_COMMAND ${CMAKE_CXX_COMPILER})
 set(COMPILER_ID ${CMAKE_CXX_COMPILER_ID})
-
-if (CMAKE_BUILD_TYPE)
-    string(TOLOWER ${CMAKE_BUILD_TYPE} _type)
-    if (_type STREQUAL release)
-        set(COMPILATION_FLAGS "${CMAKE_CXX_FLAGS_RELEASE} -std=c++")
-    elseif (_type STREQUAL debug)
-        set(COMPILATION_FLAGS "${CMAKE_CXX_FLAGS_DEBUG} -std=c++")
-    else ()
-        set(COMPILATION_FLAGS "-std=c++")
-    endif ()
-else (CMAKE_BUILD_TYPE)
-    set(COMPILATION_FLAGS "-std=c++")
-endif (CMAKE_BUILD_TYPE)
 
 list(APPEND INCLUDE_DIRS_FOR_DYNAMIC_VIEW
     "${CMAKE_INSTALL_PREFIX}/${INSTALL_INCLUDE_DIR}")

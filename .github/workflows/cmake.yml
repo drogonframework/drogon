@@ -6,10 +6,6 @@ on:
   pull_request:
   workflow_dispatch:
 
-env:
-  # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
-  BUILD_TYPE: Release
-
 jobs:
   windows:
     name: windows/msvc - ${{ matrix.link }}
@@ -57,11 +53,13 @@ jobs:
         run: ./test.sh -w
 
   unix:
-    name: ${{ matrix.buildname }}
+    name: ${{ matrix.buildname }} - ${{ matrix.build_type }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
+        # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
+        build_type: [ Debug, Release ]
         include:
           - os: ubuntu-20.04
             buildname: 'ubuntu-20.04/gcc'
@@ -132,10 +130,10 @@ jobs:
       # We'll use this as our working directory for all subsequent commands
       if: matrix.buildname != 'ubuntu-20.04/gcc-10' && matrix.buildname != 'ubuntu-20.04/c++14'
       run: |
-        cmake -B build                   \
-          -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
-          -DBUILD_TESTING=on             \
-          -DBUILD_SHARED_LIBS=$shared
+        cmake -B build                \
+          -DBUILD_TESTING=on          \
+          -DBUILD_SHARED_LIBS=$shared \
+          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
 
     - name: Create Build Environment & Configure Cmake (gcc-10)
       # Some projects don't allow in-source building, so create a separate build directory
@@ -143,10 +141,10 @@ jobs:
       if: matrix.buildname == 'ubuntu-20.04/gcc-10'
       run: |
         cmake -B build                     \
-          -DCMAKE_BUILD_TYPE=$BUILD_TYPE   \
           -DBUILD_TESTING=on               \
           -DCMAKE_CXX_FLAGS="-fcoroutines" \
-          -DBUILD_SHARED_LIBS=$shared
+          -DBUILD_SHARED_LIBS=$shared      \
+          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
       env:
         CC: gcc-10
         CXX: g++-10
@@ -156,11 +154,11 @@ jobs:
       # We'll use this as our working directory for all subsequent commands
       if: matrix.buildname == 'ubuntu-20.04/C++14'
       run: |
-        cmake -B build                   \
-          -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
-          -DBUILD_TESTING=on             \
-          -DCMAKE_CXX_STANDARD=14        \
-          -DBUILD_SHARED_LIBS=$shared
+        cmake -B build                \
+          -DBUILD_SHARED_LIBS=$shared \
+          -DBUILD_TESTING=on          \
+          -DCMAKE_CXX_STANDARD=14     \
+          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
 
     - name: Build
       working-directory: ./build

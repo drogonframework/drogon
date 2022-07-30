@@ -134,8 +134,10 @@ cd ../build
 if [ $os = "windows" ]; then
   conan install $src_dir -s compiler="Visual Studio" -s compiler.version=16 -sbuild_type=Debug -g cmake_paths
   cmake_gen="$cmake_gen -DCMAKE_TOOLCHAIN_FILE=conan_paths.cmake -DCMAKE_INSTALL_PREFIX=$src_dir/install"
+  cmake .. $cmake_gen
+else
+  cmake .. $cmake_gen -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS_DEBUG='-g -O1 -fsanitize=address -fno-omit-frame-pointer'
 fi
-cmake .. $cmake_gen
 
 if [ $? -ne 0 ]; then
     echo "Failed to run CMake for example project"
