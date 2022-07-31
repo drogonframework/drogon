@@ -198,7 +198,7 @@ jobs:
       if: runner.os == 'Linux'
       run: |
         sudo mkdir /cores
-        sysctl -w kernel.core_pattern=/cores/core-%e-%p-%t
+        sudo sysctl -w kernel.core_pattern=/cores/core-%e-%p-%t
         ulimit -c unlimited
         sudo build/lib/tests/cookie_same_site
         sudo chmod -R +rwx /cores
