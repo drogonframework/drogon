@@ -198,8 +198,8 @@ jobs:
       if: runner.os == 'Linux'
       run: |
         sudo mkdir /cores
-        sudo sysctl -w kernel.core_pattern=/cores/core-%e-%p-%t
-        sudo ulimit -c unlimited
+        sysctl -w kernel.core_pattern=/cores/core-%e-%p-%t
+        ulimit -c unlimited
         sudo ./test.sh -t
         sudo chmod -R +rwx /cores
     - uses: actions/upload-artifact@master # capture all crashes as build artifacts
