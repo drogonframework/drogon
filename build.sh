@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
 #build drogon
 function build_drogon() {
@@ -48,7 +48,7 @@ function build_drogon() {
     fi
 
     echo "Installing ..."
-    $make_program install
+    sudo $make_program install
 
     #Go back to the current directory
     cd $current_dir
@@ -85,9 +85,15 @@ case nproc in
     ;;
 esac
 
-if [ -f /bin/ninja ]; then
+if [ -f /usr/bin/clang++ ]; then
+    cmake_gen="$cmake_gen -D CMAKE_C_COMPILER=clang -D CMAKE_CXX_COMPILER=clang++"
+else
+    cmake_gen="$cmake_gen -D CMAKE_C_COMPILER=gcc -D CMAKE_CXX_COMPILER=g++"
+fi
+
+if [ -f /usr/bin/ninja ]; then
     make_program=ninja
-    cmake_gen='-GNinja'
+    cmake_gen="$cmake_gen -GNinja"
 else
     make_flags="$make_flags -j$parallel"
 fi
