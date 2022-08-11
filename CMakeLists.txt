@@ -459,8 +459,18 @@ endif (BUILD_TESTING)
 find_package(ZLIB REQUIRED)
 target_link_libraries(${PROJECT_NAME} PRIVATE ZLIB::ZLIB)
 
+if (APPLE)
+  if (EXISTS /usr/local/opt/openssl)
+    # Homebrew on Intel
+    set(OPENSSL_ROOT_DIR "/usr/local/opt/openssl")
+  elseif (EXISTS /opt/homebrew/opt/openssl)
+    # Homebrew on Apple Silicon
+    set(OPENSSL_ROOT_DIR "/opt/homebrew/opt/openssl")
+  endif ()
+endif ()
 find_package(OpenSSL)
 if (OpenSSL_FOUND)
+    message(STATUS "OpenSSL found!")
     target_link_libraries(${PROJECT_NAME} PRIVATE OpenSSL::SSL OpenSSL::Crypto)
 else (OpenSSL_FOUND)
     set(DROGON_SOURCES
