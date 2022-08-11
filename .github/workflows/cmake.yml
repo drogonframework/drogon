@@ -64,27 +64,18 @@ jobs:
           - os: ubuntu-20.04
             buildname: 'ubuntu-20.04/gcc'
             link: SHARED
-            triplet: x64-linux
-            compiler: gcc_64
           - os: ubuntu-20.04
             buildname: 'ubuntu-20.04/gcc'
             link: STATIC
-            triplet: x64-linux
-            compiler: gcc_64
           - os: ubuntu-20.04
             buildname: 'ubuntu-20.04/gcc-10'
             link: STATIC
-            triplet: x64-linux
           - os: ubuntu-20.04
             buildname: 'ubuntu-20.04/c++14'
             link: STATIC
-            triplet: x64-linux
-            compiler: gcc_64
           - os: macos-latest
             buildname: 'macos/clang'
             link: STATIC
-            triplet: x64-osx
-            compiler: clang_64
     steps:
     - name: Checkout Drogon source code
       uses: actions/checkout@v2
