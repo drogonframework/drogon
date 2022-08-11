@@ -59,23 +59,51 @@ jobs:
       fail-fast: false
       matrix:
         # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
-        build_type: [ Debug, Release ]
         include:
           - os: ubuntu-20.04
             buildname: 'ubuntu-20.04/gcc'
             link: SHARED
+            build_type: Debug
+          - os: ubuntu-20.04
+            buildname: 'ubuntu-20.04/gcc'
+            link: SHARED
+            build_type: Release
+
           - os: ubuntu-20.04
             buildname: 'ubuntu-20.04/gcc'
             link: STATIC
+            build_type: Debug
+          - os: ubuntu-20.04
+            buildname: 'ubuntu-20.04/gcc'
+            link: STATIC
+            build_type: Release
+
           - os: ubuntu-20.04
             buildname: 'ubuntu-20.04/gcc-10'
             link: STATIC
+            build_type: Debug
+          - os: ubuntu-20.04
+            buildname: 'ubuntu-20.04/gcc-10'
+            link: STATIC
+            build_type: Release
+
           - os: ubuntu-20.04
             buildname: 'ubuntu-20.04/c++14'
             link: STATIC
+            build_type: Debug
+          - os: ubuntu-20.04
+            buildname: 'ubuntu-20.04/c++14'
+            link: STATIC
+            build_type: Release
+
           - os: macos-latest
             buildname: 'macos/clang'
             link: STATIC
+            build_type: Debug
+          - os: macos-latest
+            buildname: 'macos/clang'
+            link: STATIC
+            build_type: Release
     steps:
     - name: Checkout Drogon source code
       uses: actions/checkout@v2
