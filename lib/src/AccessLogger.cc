@@ -374,7 +374,7 @@ void AccessLogger::outputRemoteAddr(trantor::LogStream &stream,
 {
     if (useRealIp_)
     {
-        stream << RealIpResolver::GetRealAddr(req);
+        stream << RealIpResolver::GetRealAddr(req).toIpPort();
     }
     else
     {

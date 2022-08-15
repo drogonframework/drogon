@@ -49,10 +49,12 @@ class DROGON_EXPORT RealIpResolver : public drogon::Plugin<RealIpResolver>
     void initAndStart(const Json::Value &config) override;
     void shutdown() override;
 
-    static std::string GetRealAddr(const drogon::HttpRequestPtr &req);
+    static const trantor::InetAddress &GetRealAddr(
+        const drogon::HttpRequestPtr &req);
 
   private:
-    std::string getRealAddr(const drogon::HttpRequestPtr &req) const;
+    const trantor::InetAddress &getRealAddr(
+        const drogon::HttpRequestPtr &req) const;
     bool matchCidr(const trantor::InetAddress &addr) const;
 
     struct CIDR
