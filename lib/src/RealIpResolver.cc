@@ -152,6 +152,26 @@ void RealIpResolver::shutdown()
 {
 }
 
+std::string RealIpResolver::GetRealAddr(const HttpRequestPtr& req)
+{
+    auto* plugin = app().getPlugin<drogon::plugin::RealIpResolver>();
+    if (!plugin)
+    {
+        return req->getPeerAddr().toIpPort();
+    }
+    return plugin->getRealAddr(req);
+}
+
+std::string RealIpResolver::getRealAddr(const HttpRequestPtr& req) const
+{
+    const std::shared_ptr<Attributes>& attributesPtr = req->getAttributes();
+    if (!attributesPtr->find(attributeKey_))
+    {
+        return req->getPeerAddr().toIpPort();
+    }
+    return attributesPtr->get<trantor::InetAddress>(attributeKey_).toIpPort();
+}
+
 bool RealIpResolver::matchCidr(const trantor::InetAddress& addr) const
 {
     for (auto& cidr : trustCIDRs_)
