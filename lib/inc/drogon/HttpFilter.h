@@ -76,19 +76,18 @@ class HttpCoroFilter : public DrObject<T>, public HttpFilterBase
                   FilterCallback &&fcb,
                   FilterChainCallback &&fccb) final
     {
-        [this](const HttpRequestPtr &req,
-               FilterCallback &&fcb,
-               FilterChainCallback &&fccb) -> AsyncTask {
-            HttpResponsePtr resp = co_await doFilter(req);
-            if (resp)
-            {
-                fcb(resp);
-            }
-            else
-            {
-                fccb();
-            }
-        }(req, std::move(fcb), std::move(fccb));
+        drogon::async_run(
+            [this, req, fcb = std::move(fcb), fccb = std::move(fccb)]() {
+                HttpResponsePtr resp = co_await doFilter(req);
+                if (resp)
+                {
+                    fcb(resp);
+                }
+                else
+                {
+                    fccb();
+                }
+            });
     }
 
     virtual Task<HttpResponsePtr> doFilter(const HttpRequestPtr &req) = 0;
