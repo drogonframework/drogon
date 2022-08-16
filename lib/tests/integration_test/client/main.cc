@@ -1103,7 +1103,7 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
             auto start = std::chrono::system_clock::now();
             req->setPath("/api/v1/corotest/delay?secs=2");
             auto resp = co_await client->sendRequestCoro(req);
-            CHECK(resp->getStatusCode() != k200OK);
+            CHECK(resp->getStatusCode() == k200OK);
             auto end = std::chrono::system_clock::now();
             std::chrono::duration<double, std::milli> duration = end - start;
             CHECK(duration.count() >= 2000);
