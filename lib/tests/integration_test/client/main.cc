@@ -24,6 +24,7 @@
 #include <mutex>
 #include <algorithm>
 #include <atomic>
+#include <chrono>
 
 #ifndef _WIN32
 #include <unistd.h>
@@ -1011,6 +1012,22 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
                             CHECK(resp->getStatusCode() == k200OK);
                             CHECK(resp->body() == largeString);
                         });
+
+    //
+    // Test coroutine filter
+    //
+    req = HttpRequest::newHttpRequest();
+    req->setPath("/delay?secs=2");
+    auto start = std::chrono::system_clock::now();
+    client->sendRequest(
+        req, [start, TEST_CTX](ReqResult result, const HttpResponsePtr &resp) {
+            REQUIRE(result == ReqResult::Ok);
+            CHECK(resp->getStatusCode() == k200OK);
+            auto end = std::chrono::system_clock::now();
+            std::chrono::duration<double, std::milli> duration = end - start;
+            CHECK(duration.count() > 1500);
+        });
+
 #ifdef USE_BROTLI
     // Post compressed data
     req = HttpRequest::newHttpRequest();

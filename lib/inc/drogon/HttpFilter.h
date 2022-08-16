@@ -18,6 +18,7 @@
 #include <drogon/drogon_callbacks.h>
 #include <drogon/HttpRequest.h>
 #include <drogon/HttpResponse.h>
+#include <drogon/utils/coroutine.h>
 #include <memory>
 
 namespace drogon
@@ -43,9 +44,7 @@ class DROGON_EXPORT HttpFilterBase : public virtual DrObjectBase
     virtual void doFilter(const HttpRequestPtr &req,
                           FilterCallback &&fcb,
                           FilterChainCallback &&fccb) = 0;
-    virtual ~HttpFilterBase()
-    {
-    }
+    ~HttpFilterBase() override = default;
 };
 
 /**
@@ -60,8 +59,34 @@ class HttpFilter : public DrObject<T>, public HttpFilterBase
 {
   public:
     static constexpr bool isAutoCreation{AutoCreation};
-    virtual ~HttpFilter()
+    ~HttpFilter() override = default;
+};
+
+template <typename T, bool AutoCreation = true>
+class HttpCoroFilter : public DrObject<T>, public HttpFilterBase
+{
+  public:
+    static constexpr bool isAutoCreation{AutoCreation};
+    ~HttpCoroFilter() override = default;
+    void doFilter(const HttpRequestPtr &req,
+                  FilterCallback &&fcb,
+                  FilterChainCallback &&fccb) final
     {
+        [this](const HttpRequestPtr &req,
+               FilterCallback &&fcb,
+               FilterChainCallback &&fccb) -> AsyncTask {
+            HttpResponsePtr resp = co_await doFilter(req);
+            if (resp)
+            {
+                fcb(resp);
+            }
+            else
+            {
+                fccb();
+            }
+        }(req, std::move(fcb), std::move(fccb));
     }
+
+    virtual Task<HttpResponsePtr> doFilter(const HttpRequestPtr &req) = 0;
 };
 }  // namespace drogon
