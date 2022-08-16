@@ -17,7 +17,6 @@ class TestController : public drogon::HttpSimpleController<TestController>
     PATH_ADD("/Test", "nonFilter");
     PATH_ADD("/tpost", Post, Options);
     PATH_ADD("/slow", "TimeFilter", Get);
-    PATH_ADD("/delay", "CoroFilter", Get);
     PATH_LIST_END
     TestController()
     {

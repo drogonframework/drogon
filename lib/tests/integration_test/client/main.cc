@@ -1013,21 +1013,6 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
                             CHECK(resp->body() == largeString);
                         });
 
-    //
-    // Test coroutine filter
-    //
-    req = HttpRequest::newHttpRequest();
-    req->setPath("/delay?secs=2");
-    auto start = std::chrono::system_clock::now();
-    client->sendRequest(
-        req, [start, TEST_CTX](ReqResult result, const HttpResponsePtr &resp) {
-            REQUIRE(result == ReqResult::Ok);
-            CHECK(resp->getStatusCode() == k200OK);
-            auto end = std::chrono::system_clock::now();
-            std::chrono::duration<double, std::milli> duration = end - start;
-            CHECK(duration.count() > 1500);
-        });
-
 #ifdef USE_BROTLI
     // Post compressed data
     req = HttpRequest::newHttpRequest();
@@ -1105,6 +1090,23 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
             req->setPath("/api/v1/corotest/this_will_fail2");
             auto resp = co_await client->sendRequestCoro(req);
             CHECK(resp->getStatusCode() != k200OK);
+        }
+        catch (const std::exception &e)
+        {
+            FAIL("Unexpected exception, what()" + std::string(e.what()));
+        }
+
+        // Test coroutine filter
+        try
+        {
+            auto req = HttpRequest::newHttpRequest();
+            auto start = std::chrono::system_clock::now();
+            req->setPath("/api/v1/corotest/delay?secs=2");
+            auto resp = co_await client->sendRequestCoro(req);
+            CHECK(resp->getStatusCode() != k200OK);
+            auto end = std::chrono::system_clock::now();
+            std::chrono::duration<double, std::milli> duration = end - start;
+            CHECK(duration.count() >= 2000);
         }
         catch (const std::exception &e)
         {

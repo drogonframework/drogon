@@ -18,8 +18,11 @@
 #include <drogon/drogon_callbacks.h>
 #include <drogon/HttpRequest.h>
 #include <drogon/HttpResponse.h>
-#include <drogon/utils/coroutine.h>
 #include <memory>
+
+#ifdef __cpp_impl_coroutine
+#include <drogon/utils/coroutine.h>
+#endif
 
 namespace drogon
 {
@@ -62,6 +65,7 @@ class HttpFilter : public DrObject<T>, public HttpFilterBase
     ~HttpFilter() override = default;
 };
 
+#ifdef __cpp_impl_coroutine
 template <typename T, bool AutoCreation = true>
 class HttpCoroFilter : public DrObject<T>, public HttpFilterBase
 {
@@ -89,4 +93,6 @@ class HttpCoroFilter : public DrObject<T>, public HttpFilterBase
 
     virtual Task<HttpResponsePtr> doFilter(const HttpRequestPtr &req) = 0;
 };
+#endif
+
 }  // namespace drogon
