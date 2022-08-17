@@ -65,6 +65,13 @@ class HttpFilter : public DrObject<T>, public HttpFilterBase
     ~HttpFilter() override = default;
 };
 
+namespace internal
+{
+void handleException(const std::exception &,
+                     const HttpRequestPtr &,
+                     std::function<void(const HttpResponsePtr &)> &&);
+}
+
 #ifdef __cpp_impl_coroutine
 template <typename T, bool AutoCreation = true>
 class HttpCoroFilter : public DrObject<T>, public HttpFilterBase
@@ -79,8 +86,23 @@ class HttpCoroFilter : public DrObject<T>, public HttpFilterBase
         drogon::async_run([this,
                            req,
                            fcb = std::move(fcb),
-                           fccb = std::move(fccb)]() -> drogon::Task<> {
-            HttpResponsePtr resp = co_await doFilter(req);
+                           fccb = std::move(fccb)]() mutable -> drogon::Task<> {
+            HttpResponsePtr resp;
+            try
+            {
+                resp = co_await doFilter(req);
+            }
+            catch (const std::exception &ex)
+            {
+                internal::handleException(ex, req, std::move(fcb));
+                co_return;
+            }
+            catch (...)
+            {
+                LOG_ERROR << "Exception not derived from std::exception";
+                co_return;
+            }
+
             if (resp)
             {
                 fcb(resp);
