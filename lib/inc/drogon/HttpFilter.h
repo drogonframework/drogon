@@ -67,9 +67,10 @@ class HttpFilter : public DrObject<T>, public HttpFilterBase
 
 namespace internal
 {
-void handleException(const std::exception &,
-                     const HttpRequestPtr &,
-                     std::function<void(const HttpResponsePtr &)> &&);
+DROGON_EXPORT void handleException(
+    const std::exception &,
+    const HttpRequestPtr &,
+    std::function<void(const HttpResponsePtr &)> &&);
 }
 
 #ifdef __cpp_impl_coroutine
