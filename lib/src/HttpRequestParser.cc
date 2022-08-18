@@ -216,7 +216,9 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
                     {
                         try
                         {
-                            currentContentLength_ = static_cast<size_t>(std::stoull(len));;
+                            currentContentLength_ =
+                                static_cast<size_t>(std::stoull(len));
+                            ;
                         }
                         catch (...)
                         {
