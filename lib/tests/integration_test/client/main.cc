@@ -24,6 +24,7 @@
 #include <mutex>
 #include <algorithm>
 #include <atomic>
+#include <chrono>
 
 #ifndef _WIN32
 #include <unistd.h>
@@ -1011,6 +1012,7 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
                             CHECK(resp->getStatusCode() == k200OK);
                             CHECK(resp->body() == largeString);
                         });
+
 #ifdef USE_BROTLI
     // Post compressed data
     req = HttpRequest::newHttpRequest();
@@ -1088,6 +1090,23 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
             req->setPath("/api/v1/corotest/this_will_fail2");
             auto resp = co_await client->sendRequestCoro(req);
             CHECK(resp->getStatusCode() != k200OK);
+        }
+        catch (const std::exception &e)
+        {
+            FAIL("Unexpected exception, what()" + std::string(e.what()));
+        }
+
+        // Test coroutine filter
+        try
+        {
+            auto req = HttpRequest::newHttpRequest();
+            auto start = std::chrono::system_clock::now();
+            req->setPath("/api/v1/corotest/delay?secs=2");
+            auto resp = co_await client->sendRequestCoro(req);
+            CHECK(resp->getStatusCode() == k200OK);
+            auto end = std::chrono::system_clock::now();
+            std::chrono::duration<double, std::milli> duration = end - start;
+            CHECK(duration.count() >= 2000);
         }
         catch (const std::exception &e)
         {

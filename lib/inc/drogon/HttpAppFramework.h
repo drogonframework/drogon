@@ -19,8 +19,7 @@
 #include <drogon/CacheMap.h>
 #include <drogon/DrObject.h>
 #include <drogon/HttpBinder.h>
-#include <drogon/IntranetIpFilter.h>
-#include <drogon/LocalHostFilter.h>
+#include <drogon/HttpFilter.h>
 #include <drogon/MultiPart.h>
 #include <drogon/NotFound.h>
 #include <drogon/drogon_callbacks.h>

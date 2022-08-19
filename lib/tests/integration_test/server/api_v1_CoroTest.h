@@ -11,6 +11,7 @@ class CoroTest : public drogon::HttpController<CoroTest>
     METHOD_LIST_BEGIN
     METHOD_ADD(CoroTest::get, "/get", Get);
     METHOD_ADD(CoroTest::get2, "/get2", Get);
+    METHOD_ADD(CoroTest::get2, "/delay", Get, "CoroFilter");
     METHOD_ADD(CoroTest::this_will_fail, "/this_will_fail", Get);
     METHOD_ADD(CoroTest::this_will_fail2, "/this_will_fail2", Get);
     METHOD_LIST_END
