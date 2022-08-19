@@ -927,7 +927,36 @@ static int run(int argc, char** argv)
         drogon::test::internal::numCorrectAssertions++; \
     } while (0)
 
-#define FAIL(message)                                                   \
+namespace drogon
+{
+namespace test
+{
+namespace internal
+{
+#ifdef __cpp_fold_expressions
+template <typename... Args>
+inline void outputReason(Args&&... args)
+{
+    (std::cout << ... << std::forward<Args>(args));
+}
+#else
+template <typename Head>
+inline void outputReason(Head&& head)
+{
+    std::cout << std::forward<Head>(head);
+}
+template <typename Head, typename... Tail>
+inline void outputReason(Head&& head, Tail&&... tail)
+{
+    std::cout << std::forward<Head>(head);
+    outputReason(std::forward<Tail>(tail)...);
+}
+#endif
+}  // namespace internal
+}  // namespace test
+}  // namespace drogon
+
+#define FAIL(...)                                                       \
     do                                                                  \
     {                                                                   \
         using namespace drogon::test;                                   \
@@ -936,14 +965,16 @@ static int run(int argc, char** argv)
                    << "\n"                                              \
                    << "\x1B[0;37m" << __FILE__ << ":" << __LINE__       \
                    << " \x1B[0;31m FAILED:\x1B[0m\n"                    \
-                   << "  Reason: " << message << "\n\n";                \
+                   << "  Reason: ";                                     \
+        drogon::test::internal::outputReason(__VA_ARGS__);              \
+        printErr() << "\n\n";                                           \
         drogon::test::internal::numAssertions++;                        \
     } while (0)
-#define FAULT(message)                                             \
+#define FAULT(...)                                                 \
     do                                                             \
     {                                                              \
         using namespace drogon::test;                              \
-        FAIL(message);                                             \
+        FAIL(__VA_ARGS__);                                         \
         printTestStats();                                          \
         printErr() << "Force exiting due to a FAULT statement.\n"; \
         exit(1);                                                   \
