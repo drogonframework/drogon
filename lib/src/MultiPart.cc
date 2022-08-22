@@ -95,7 +95,7 @@ int MultiPartParser::parseEntity(const char *begin, const char *end)
 
     auto pos2 = std::search(pos, headEnd, CRLF, CRLF + 2);
     auto pos1 = std::search(pos, pos2, semiColon, semiColon + 1);
-    pos1 = std::min(pos1, pos2);
+    pos1 = (std::min)(pos1, pos2);
     if (*pos == '"')
         pos++;
     if (*(pos1 - 1) == '"')
@@ -112,7 +112,7 @@ int MultiPartParser::parseEntity(const char *begin, const char *end)
         pos += 9;
         pos2 = std::search(pos, headEnd, CRLF, CRLF + 2);
         pos1 = std::search(pos, pos2, semiColon, semiColon + 1);
-        pos1 = std::min(pos1, pos2);
+        pos1 = (std::min)(pos1, pos2);
         if (*pos == '"')
             pos++;
         if (*(pos1 - 1) == '"')
