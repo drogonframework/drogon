@@ -82,48 +82,36 @@ int MultiPartParser::parseEntity(const char *begin, const char *end)
     static const char semiColon[] = ";";
     static const char fileName[] = "filename=";
     static const char CRLF[] = "\r\n\r\n";
-
-    auto pos = std::search(begin, end, entityName, entityName + 5);
-    if (pos == end)
+    auto headEnd = std::search(begin, end, CRLF, CRLF + 4);
+    if (headEnd == end)
+    {
+        return -1;
+    }
+    auto pos = std::search(begin, headEnd, entityName, entityName + 5);
+    if (pos == headEnd)
         return -1;
     pos += 5;
-    auto pos1 = std::search(pos, end, semiColon, semiColon + 1);
-    if (pos1 == end)
-    {
-        pos1 = std::search(pos, end, CRLF, CRLF + 2);
-        if (pos1 == end)
-            return -1;
-    }
+
+    auto pos2 = std::search(pos, headEnd, CRLF, CRLF + 2);
+    auto pos1 = std::search(pos, pos2, semiColon, semiColon + 1);
+    pos1 = std::min(pos1, pos2);
     if (*pos == '"')
         pos++;
     if (*(pos1 - 1) == '"')
         pos1--;
     std::string name(pos, pos1);
-    pos = std::search(pos1, end, fileName, fileName + 9);
-    if (pos == end)
+    pos = std::search(pos1, headEnd, fileName, fileName + 9);
+    if (pos == headEnd)
     {
-        pos1 = std::search(pos1, end, CRLF, CRLF + 4);
-        if (pos1 == end)
-            return -1;
-        parameters_[name] = std::string(pos1 + 4, end);
+        parameters_[name] = std::string(headEnd + 4, end);
         return 0;
     }
     else
     {
         pos += 9;
-        pos1 = std::search(pos, end, semiColon, semiColon + 1);
-        if (pos1 == end)
-        {
-            pos1 = std::search(pos, end, CRLF, CRLF + 2);
-            if (pos1 == end)
-                return -1;
-        }
-        else
-        {
-            auto pos2 = std::search(pos, pos1, CRLF, CRLF + 2);
-            if (pos2 != end)
-                pos1 = pos2;
-        }
+        pos2 = std::search(pos, headEnd, CRLF, CRLF + 2);
+        pos1 = std::search(pos, pos2, semiColon, semiColon + 1);
+        pos1 = std::min(pos1, pos2);
         if (*pos == '"')
             pos++;
         if (*(pos1 - 1) == '"')
@@ -132,10 +120,7 @@ int MultiPartParser::parseEntity(const char *begin, const char *end)
         filePtr->setRequest(requestPtr_);
         filePtr->setItemName(name);
         filePtr->setFileName(std::string(pos, pos1));
-        pos1 = std::search(pos1, end, CRLF, CRLF + 4);
-        if (pos1 == end)
-            return -1;
-        filePtr->setFile(pos1 + 4, static_cast<size_t>(end - pos1 - 4));
+        filePtr->setFile(headEnd + 4, static_cast<size_t>(end - headEnd - 4));
         files_.emplace_back(std::move(filePtr));
         return 0;
     }
