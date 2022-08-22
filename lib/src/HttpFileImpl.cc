@@ -173,6 +173,11 @@ size_t HttpFile::fileLength() const noexcept
     return implPtr_->fileLength();
 }
 
+drogon::ContentType HttpFile::getContentType() const noexcept
+{
+    return implPtr_->getContentType();
+}
+
 const char *HttpFile::fileData() const noexcept
 {
     return implPtr_->fileData();

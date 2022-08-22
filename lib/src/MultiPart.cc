@@ -81,6 +81,7 @@ int MultiPartParser::parseEntity(const char *begin, const char *end)
     static const char entityName[] = "name=";
     static const char semiColon[] = ";";
     static const char fileName[] = "filename=";
+    static const char contentType[] = "Content-Type: ";
     static const char CRLF[] = "\r\n\r\n";
     auto headEnd = std::search(begin, end, CRLF, CRLF + 4);
     if (headEnd == end)
@@ -121,6 +122,14 @@ int MultiPartParser::parseEntity(const char *begin, const char *end)
         filePtr->setItemName(name);
         filePtr->setFileName(std::string(pos, pos1));
         filePtr->setFile(headEnd + 4, static_cast<size_t>(end - headEnd - 4));
+        pos = std::search(begin, headEnd, contentType, contentType + 14);
+        if (pos != headEnd)
+        {
+            pos += 14;
+            pos1 = std::search(pos, headEnd, CRLF, CRLF + 2);
+            filePtr->setContentType(
+                parseContentType(string_view(pos, pos1 - pos)));
+        }
         files_.emplace_back(std::move(filePtr));
         return 0;
     }

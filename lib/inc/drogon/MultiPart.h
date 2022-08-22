@@ -92,6 +92,8 @@ class DROGON_EXPORT HttpFile
     /// Return the file length.
     size_t fileLength() const noexcept;
 
+    /// Return the content-type of the file.
+    drogon::ContentType getContentType() const noexcept;
     /**
      * @brief return the pointer of the file data.
      *

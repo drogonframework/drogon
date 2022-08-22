@@ -44,4 +44,6 @@ DROGON_TEST(MultiPartParser)
     CHECK(filesMap.size() == 1);
     CHECK(filesMap.at("name of pdf").getFileName() == "pdf-file.pdf");
     CHECK(filesMap.at("name of pdf").fileContent() == "bytes of pdf file");
+    CHECK(filesMap.at("name of pdf").getContentType() ==
+          drogon::CT_APPLICATION_OCTET_STREAM);
 }

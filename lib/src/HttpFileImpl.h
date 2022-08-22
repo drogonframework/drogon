@@ -118,11 +118,20 @@ class HttpFileImpl
     {
         requestPtr_ = req;
     }
+    drogon::ContentType getContentType() const noexcept
+    {
+        return contentType_;
+    }
+    void setContentType(drogon::ContentType contentType) noexcept
+    {
+        contentType_ = contentType;
+    }
 
   private:
     std::string fileName_;
     std::string itemName_;
     string_view fileContent_;
     HttpRequestPtr requestPtr_;
+    drogon::ContentType contentType_{drogon::CT_NONE};
 };
 }  // namespace drogon
