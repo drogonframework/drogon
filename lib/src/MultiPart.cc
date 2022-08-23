@@ -226,13 +226,17 @@ int MultiPartParser::parse(const HttpRequestPtr &req,
         pos2 = content.find(boundary, pos1);
         if (pos2 == string_view::npos)
             break;
-        //    std::cout<<"pos1="<<pos1<<" pos2="<<pos2<<std::endl;
+        bool flag = false;
         if (content[pos2 - 4] == '\r' && content[pos2 - 3] == '\n' &&
             content[pos2 - 2] == '-' && content[pos2 - 1] == '-')
+        {
             pos2 -= 4;
+            flag = true;
+        }
         if (parseEntity(content.data() + pos1, content.data() + pos2) != 0)
             return -1;
-        // pos2+=boundary.length();
+        if (flag)
+            pos2 += 4;
     }
     return 0;
 }
