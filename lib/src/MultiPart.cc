@@ -116,6 +116,10 @@ int MultiPartParser::parseEntity(const char *begin, const char *end)
     {
         auto lineEnd = std::search(pos, headEnd, CRLF, CRLF + 2);
         auto keyAndValue = parseLine(pos, lineEnd);
+        if (keyAndValue.first.empty() || keyAndValue.second.empty())
+        {
+            return -1;
+        }
         pos = lineEnd + 2;
         std::string key{keyAndValue.first.data(), keyAndValue.first.size()};
         std::transform(key.begin(),
@@ -174,9 +178,7 @@ int MultiPartParser::parseEntity(const char *begin, const char *end)
                                             semiColon,
                                             semiColon + 1);
             filePtr->setContentType(parseContentType(
-                string_view(value.begin(),
-                            static_cast<string_view::size_type>(
-                                semiColonPos - value.begin()))));
+                string_view(value.begin(), semiColonPos - value.begin())));
         }
         else if (key == "content-transfer-encoding")
         {
