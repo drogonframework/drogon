@@ -174,9 +174,9 @@ int MultiPartParser::parseEntity(const char *begin, const char *end)
                                             semiColon,
                                             semiColon + 1);
             filePtr->setContentType(parseContentType(
-                string_view{value.begin(),
+                string_view(value.begin(),
                             static_cast<string_view::size_type>(
-                                semiColonPos - value.begin())}));
+                                semiColonPos - value.begin()))));
         }
         else if (key == "content-transfer-encoding")
         {
