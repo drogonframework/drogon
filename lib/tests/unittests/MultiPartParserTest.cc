@@ -35,6 +35,7 @@ DROGON_TEST(MultiPartParser)
         "Content-Disposition: form-data; name=\"name of pdf\"; "
         "filename=\"pdf-file.pdf\"\r\n"
         "Content-Type: application/octet-stream\r\n"
+        "content-transfer-encoding: quoted-printable\r\n"
         "\r\n"
         "bytes of pdf file\r\n"
         "--12345--");
@@ -46,4 +47,6 @@ DROGON_TEST(MultiPartParser)
     CHECK(filesMap.at("name of pdf").fileContent() == "bytes of pdf file");
     CHECK(filesMap.at("name of pdf").getContentType() ==
           drogon::CT_APPLICATION_OCTET_STREAM);
+    CHECK(filesMap.at("name of pdf").getContentTransferEncoding() ==
+          "quoted-printable");
 }

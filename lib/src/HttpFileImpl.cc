@@ -187,7 +187,10 @@ std::string HttpFile::getMd5() const
 {
     return implPtr_->getMd5();
 }
-
+const std::string &HttpFile::getContentTransferEncoding() const
+{
+    return implPtr_->getContentTransferEncoding();
+}
 HttpFile::HttpFile(std::shared_ptr<HttpFileImpl> &&implPtr)
     : implPtr_(std::move(implPtr))
 {

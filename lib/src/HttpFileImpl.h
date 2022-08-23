@@ -39,7 +39,10 @@ class HttpFileImpl
     {
         fileName_ = fileName;
     }
-
+    void setFileName(std::string &&fileName)
+    {
+        fileName_ = std::move(fileName);
+    }
     /// Return the file extension;
     string_view getFileExtension() const
     {
@@ -103,7 +106,10 @@ class HttpFileImpl
     {
         itemName_ = itemName;
     }
-
+    void setItemName(std::string &&itemName)
+    {
+        itemName_ = std::move(itemName);
+    }
     /// Return the type of file.
     FileType getFileType() const
     {
@@ -126,10 +132,23 @@ class HttpFileImpl
     {
         contentType_ = contentType;
     }
+    void setContentTransferEncoding(const std::string &contentTransferEncoding)
+    {
+        transferEncoding_ = contentTransferEncoding;
+    }
+    void setContentTransferEncoding(std::string &&contentTransferEncoding)
+    {
+        transferEncoding_ = std::move(contentTransferEncoding);
+    }
+    const std::string &getContentTransferEncoding() const
+    {
+        return transferEncoding_;
+    }
 
   private:
     std::string fileName_;
     std::string itemName_;
+    std::string transferEncoding_;
     string_view fileContent_;
     HttpRequestPtr requestPtr_;
     drogon::ContentType contentType_{drogon::CT_NONE};

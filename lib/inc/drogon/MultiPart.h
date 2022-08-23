@@ -109,6 +109,9 @@ class DROGON_EXPORT HttpFile
     /// Return the md5 string of the file
     std::string getMd5() const;
 
+    /// Return the content transfer encoding of the file.
+    const std::string &getContentTransferEncoding() const;
+
   private:
     std::shared_ptr<HttpFileImpl> implPtr_;
 };
