@@ -128,11 +128,10 @@ int MultiPartParser::parseEntity(const char *begin, const char *end)
         if (key == "content-disposition")
         {
             auto value = keyAndValue.second;
-            auto namePos = std::search(value.begin(),
-                                       value.end(),
-                                       entityName,
-                                       entityName + 5);
-            if (namePos == value.end())
+            auto valueEnd = value.data() + value.length();
+            auto namePos =
+                std::search(value.data(), valueEnd, entityName, entityName + 5);
+            if (namePos == valueEnd)
             {
                 return -1;
             }
@@ -141,20 +140,16 @@ int MultiPartParser::parseEntity(const char *begin, const char *end)
             if (*namePos == '"')
             {
                 ++namePos;
-                nameEnd =
-                    std::find(namePos, value.data() + value.length(), '"');
+                nameEnd = std::find(namePos, valueEnd, '"');
             }
             else
             {
-                nameEnd =
-                    std::find(namePos, value.data() + value.length(), ';');
+                nameEnd = std::find(namePos, valueEnd, ';');
             }
             std::string name(namePos, nameEnd);
-            auto fileNamePos = std::search(nameEnd,
-                                           value.data() + value.length(),
-                                           fileName,
-                                           fileName + 9);
-            if (fileNamePos == value.end())
+            auto fileNamePos =
+                std::search(nameEnd, valueEnd, fileName, fileName + 9);
+            if (fileNamePos == valueEnd)
             {
                 parameters_.emplace(name, std::string(headEnd + 2, end));
                 return 0;
@@ -166,15 +161,11 @@ int MultiPartParser::parseEntity(const char *begin, const char *end)
                 if (*fileNamePos == '"')
                 {
                     ++fileNamePos;
-                    fileNameEnd = std::find(fileNamePos,
-                                            value.data() + value.length(),
-                                            '"');
+                    fileNameEnd = std::find(fileNamePos, valueEnd, '"');
                 }
                 else
                 {
-                    fileNameEnd = std::find(fileNamePos,
-                                            value.data() + value.length(),
-                                            ';');
+                    fileNameEnd = std::find(fileNamePos, valueEnd, ';');
                 }
                 std::string fName{fileNamePos, fileNameEnd};
                 filePtr->setRequest(requestPtr_);
