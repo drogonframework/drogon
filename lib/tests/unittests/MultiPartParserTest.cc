@@ -49,4 +49,14 @@ DROGON_TEST(MultiPartParser)
           drogon::CT_APPLICATION_OCTET_STREAM);
     CHECK(filesMap.at("name of pdf").getContentTransferEncoding() ==
           "quoted-printable");
+    req->setBody(
+        "--12345\r\n"
+        "Content-Disposition: form-data; name=\"some;key\"\r\n"
+        "\r\n"
+        "Hello; World\r\n"
+        "--12345--");
+    drogon::MultiPartParser parser4;
+    CHECK(0 == parser4.parse(req));
+    CHECK(parser4.getParameters().size() == 1);
+    CHECK(parser4.getParameters().at("some;key") == "Hello; World");
 }
