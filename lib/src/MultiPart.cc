@@ -141,15 +141,19 @@ int MultiPartParser::parseEntity(const char *begin, const char *end)
             if (*namePos == '"')
             {
                 ++namePos;
-                nameEnd = std::find(namePos, value.end(), '"');
+                nameEnd =
+                    std::find(namePos, value.data() + value.length(), '"');
             }
             else
             {
-                nameEnd = std::find(namePos, value.end(), ';');
+                nameEnd =
+                    std::find(namePos, value.data() + value.length(), ';');
             }
-            std::string name{namePos, nameEnd};
-            auto fileNamePos =
-                std::search(nameEnd, value.end(), fileName, fileName + 9);
+            std::string name(namePos, nameEnd);
+            auto fileNamePos = std::search(nameEnd,
+                                           value.data() + value.length(),
+                                           fileName,
+                                           fileName + 9);
             if (fileNamePos == value.end())
             {
                 parameters_.emplace(name, std::string(headEnd + 2, end));
@@ -162,11 +166,15 @@ int MultiPartParser::parseEntity(const char *begin, const char *end)
                 if (*fileNamePos == '"')
                 {
                     ++fileNamePos;
-                    fileNameEnd = std::find(fileNamePos, value.end(), '"');
+                    fileNameEnd = std::find(fileNamePos,
+                                            value.data() + value.length(),
+                                            '"');
                 }
                 else
                 {
-                    fileNameEnd = std::find(fileNamePos, value.end(), ';');
+                    fileNameEnd = std::find(fileNamePos,
+                                            value.data() + value.length(),
+                                            ';');
                 }
                 std::string fName{fileNamePos, fileNameEnd};
                 filePtr->setRequest(requestPtr_);
@@ -179,17 +187,19 @@ int MultiPartParser::parseEntity(const char *begin, const char *end)
         else if (key == "content-type")
         {
             auto value = keyAndValue.second;
-            auto semiColonPos = std::find(value.begin(), value.end(), ';');
+            auto semiColonPos =
+                std::find(value.data(), value.data() + value.length(), ';');
             string_view contentType(value.data(), semiColonPos - value.data());
             filePtr->setContentType(parseContentType(contentType));
         }
         else if (key == "content-transfer-encoding")
         {
             auto value = keyAndValue.second;
-            auto semiColonPos = std::find(value.begin(), value.end(), ';');
+            auto semiColonPos =
+                std::find(value.data(), value.data() + value.length(), ';');
 
             filePtr->setContentTransferEncoding(
-                std::string{value.begin(), semiColonPos});
+                std::string{value.data(), semiColonPos});
         }
     }
     if (!filePtr->getFileName().empty())
