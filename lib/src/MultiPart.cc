@@ -173,12 +173,11 @@ int MultiPartParser::parseEntity(const char *begin, const char *end)
         else if (key == "content-type")
         {
             auto value = keyAndValue.second;
-            auto semiColonPos = std::search(value.begin(),
-                                            value.end(),
+            auto semiColonPos = std::search(value.data(),
+                                            value.data() + value.length(),
                                             semiColon,
                                             semiColon + 1);
-            string_view contentType(value.begin(),
-                                    semiColonPos - value.begin());
+            string_view contentType(value.data(), semiColonPos - value.data());
             filePtr->setContentType(parseContentType(contentType));
         }
         else if (key == "content-transfer-encoding")
