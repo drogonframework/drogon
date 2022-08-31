@@ -4,6 +4,149 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.8.0] - 2022-07-09
+
+### API changes list
+
+- Add ‘not like‘ criteria.
+
+- Add HttpResponse::newStreamResponse().
+
+- Add the same site option for session cookie.
+
+- Add support for custom SQL query.
+
+### Changed
+
+- Update issue templates.
+
+- Enable automatic reconnect in mysql.
+
+- Add typename for clang-14.
+
+- A workaround for redis sync exec.
+
+- Resolve redis server hostname from config file.
+
+- Add username option to redis databases.
+
+- Return nullptr if a plugin is not loaded when getting it.
+
+- Support controller registration in plugin.
+
+- Check mysql-optionsv support in cmake.
+
+- Check if host header is set before setting.
+
+- Clear all database connections before quitting.
+
+- Add namespace to views when using drogon_ctl.
+
+- Support pipeline mode on PostgreSQL 14+.
+
+- Add content type to multipart file upload.
+
+- Make orm::Result compatible with C++ STL container concepts.
+
+- Throw exceptions instead of exiting when loading configuration fails.
+
+- Rename BUILD_TRANTOR_SHARED to BUILD_SHARED_LIBS.
+
+- Support compressed request.
+
+- Prevent sending multiple responses for a single request.
+
+- Remove the virtual specifier from functions marked with override.
+
+- Remove redundancies from the CMake action.
+
+- Ensure requiring a semi-colon after macros.
+
+- Omit redundant virtual specifiers.
+
+- Refactor orm::SqlBinder.
+
+- Implement toJson to convert std::vector to Json::Value.
+
+- Resolve real ip from HttpRequest.
+
+- Delete the unmaintained test script.
+
+- Change the listener port of the cookie test.
+
+- Use a raw string literal for the drogon banner.
+
+- Change timeout of pipeline test for the CI environment.
+
+- Accept "postgres" for DbClient type as well.
+
+- Log remote real address in AccessLogger.
+
+- Support coroutine filter.
+
+- Refactor db_test.cc.
+
+- Use nullopt instead of the no-argument constructor.
+
+- Set the running flag to false after calling the quit() method.
+
+- Fix doc link in README files.
+
+### Fixed
+
+- Fix XXXControllers created on MSVC even if specified not to do so.
+
+- To avoid accessing a null point, make sure `result == OK` before accessing the response ptr.
+
+- Fix a bug when stopping redis service.
+
+- Fix mutex lock missing.
+
+- Fix tolower with cfi sanitizer.
+
+- Add move constructor to fix clang-14 compile error.
+
+- Fix HttpClient dns cache.
+
+- Fix bug when resolving redis server hostname.
+
+- Reset timer afters relaunching on Linux.
+
+- Fix some configuration file issues.
+
+- Fix HttpFile unittest error on Windows.
+
+- Fix core dump causing by logging in destructor.
+
+- Fixing link error when linking with static c-ares.
+
+- Remove redundant resource release.
+
+- Install missing header file apply.h.
+
+- Fix deleteFutureByPrimaryKey compile fail.
+
+- Fix compilation failure without database support.
+
+- Fix Mapper::updateBy() async api.
+
+- Fix no BUILD_CTL with tests.
+
+- Fix some bugs in RedisClient.
+
+- Fix a misuse of std::move.
+
+- Fix a bug when creating models with composite keys in sqlite3.
+
+- Fix a bug when converting the content-length string to size_t.
+
+- Fix a bug when parsing multipart/form-data.
+
+- Export the getVersion method for Windows.
+
+- Add a pre-compilation macro in the pg pipeline test code.
+
+
 ## [1.7.5] - 2022-02-19
 
 ### API changes list
@@ -1022,7 +1165,9 @@ All notable changes to this project will be documented in this file.
 
 ## [1.0.0-beta1] - 2019-06-11
 
-[Unreleased]: https://github.com/an-tao/drogon/compare/v1.7.5...HEAD
+[Unreleased]: https://github.com/an-tao/drogon/compare/v1.8.0...HEAD
+
+[1.8.0]: https://github.com/an-tao/drogon/compare/v1.7.5...v1.8.0
 
 [1.7.5]: https://github.com/an-tao/drogon/compare/v1.7.4...v1.7.5
 
