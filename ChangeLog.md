@@ -144,6 +144,8 @@ All notable changes to this project will be documented in this file.
 
 - Export the getVersion method for Windows.
 
+- Add a pre-compilation macro in the pg pipeline test code.
+
 
 ## [1.7.5] - 2022-02-19
 
