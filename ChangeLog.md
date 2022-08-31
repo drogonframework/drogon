@@ -40,13 +40,13 @@ All notable changes to this project will be documented in this file.
 
 - Clear all database connections before quitting.
 
-- Add namespce to views when using drogon_ctl.
+- Add namespace to views when using drogon_ctl.
 
 - Support pipeline mode on PostgreSQL 14+.
 
 - Add content type to multipart file upload.
 
-- Make orm::Result compatiable with C++ STL container concepts.
+- Make orm::Result compatible with C++ STL container concepts.
 
 - Throw exceptions instead of exiting when loading configuration fails.
 
@@ -55,6 +55,42 @@ All notable changes to this project will be documented in this file.
 - Support compressed request.
 
 - Prevent sending multiple responses for a single request.
+
+- Remove the virtual specifier from functions marked with override.
+
+- Remove redundancies from the CMake action.
+
+- Ensure requiring a semi-colon after macros.
+
+- Omit redundant virtual specifiers.
+
+- Refactor orm::SqlBinder.
+
+- Implement toJson to convert std::vector to Json::Value.
+
+- Resolve real ip from HttpRequest.
+
+- Delete the unmaintained test script.
+
+- Change the listener port of the cookie test.
+
+- Use a raw string literal for the drogon banner.
+
+- Change timeout of pipeline test for the CI environment.
+
+- Accept "postgres" for DbClient type as well.
+
+- Log remote real address in AccessLogger.
+
+- Support coroutine filter.
+
+- Refactor db_test.cc.
+
+- Use nullopt instead of the no-argument constructor.
+
+- Set the running flag to false after calling the quit() method.
+
+- Fix doc link in README files.
 
 ### Fixed
 
@@ -101,6 +137,12 @@ All notable changes to this project will be documented in this file.
 - Fix a misuse of std::move.
 
 - Fix a bug when creating models with composite keys in sqlite3.
+
+- Fix a bug when converting the content-length string to size_t.
+
+- Fix a bug when parsing multipart/form-data.
+
+- Export the getVersion method for Windows.
 
 
 ## [1.7.5] - 2022-02-19
