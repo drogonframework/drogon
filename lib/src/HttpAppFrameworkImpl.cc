@@ -1028,6 +1028,7 @@ void HttpAppFrameworkImpl::quit()
             // and reset listenerManagerPtr_ before IO loops quit.
             listenerManagerPtr_->stopIoLoops();
             listenerManagerPtr_.reset();
+            running_ = false;
             getLoop()->quit();
         });
     }

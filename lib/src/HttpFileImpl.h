@@ -29,26 +29,29 @@ class HttpFileImpl
 {
   public:
     /// Return the file name;
-    const std::string &getFileName() const
+    const std::string &getFileName() const noexcept
     {
         return fileName_;
     }
 
     /// Set the file name, usually called by the MultiPartParser parser.
-    void setFileName(const std::string &fileName)
+    void setFileName(const std::string &fileName) noexcept
     {
         fileName_ = fileName;
     }
-
+    void setFileName(std::string &&fileName) noexcept
+    {
+        fileName_ = std::move(fileName);
+    }
     /// Return the file extension;
-    string_view getFileExtension() const
+    string_view getFileExtension() const noexcept
     {
         return drogon::getFileExtension(fileName_);
     }
 
     /// Set the contents of the file, usually called by the MultiPartParser
     /// parser.
-    void setFile(const char *data, size_t length)
+    void setFile(const char *data, size_t length) noexcept
     {
         fileContent_ = string_view{data, length};
     }
@@ -58,7 +61,7 @@ class HttpFileImpl
      * The folder saving the file is app().getUploadPath().
      * The full path is app().getUploadPath()+"/"+this->getFileName()
      */
-    int save() const;
+    int save() const noexcept;
 
     /// Save the file to @param path
     /**
@@ -67,7 +70,7 @@ class HttpFileImpl
      * otherwise the file is saved as
      * app().getUploadPath()+"/"+path+"/"+this->getFileName()
      */
-    int save(const std::string &path) const;
+    int save(const std::string &path) const noexcept;
 
     /// Save the file to file system with a new name
     /**
@@ -75,7 +78,7 @@ class HttpFileImpl
      * the full path is app().getUploadPath()+"/"+filename, otherwise the file
      * is saved as the filename
      */
-    int saveAs(const std::string &fileName) const;
+    int saveAs(const std::string &fileName) const noexcept;
 
     /// Return the file length.
     size_t fileLength() const noexcept
@@ -94,35 +97,62 @@ class HttpFileImpl
     }
 
     /// Return the name of the item in multiple parts.
-    const std::string &getItemName() const
+    const std::string &getItemName() const noexcept
     {
         return itemName_;
     }
 
-    void setItemName(const std::string &itemName)
+    void setItemName(const std::string &itemName) noexcept
     {
         itemName_ = itemName;
     }
-
+    void setItemName(std::string &&itemName) noexcept
+    {
+        itemName_ = std::move(itemName);
+    }
     /// Return the type of file.
-    FileType getFileType() const
+    FileType getFileType() const noexcept
     {
         return parseFileType(getFileExtension());
     }
 
     /// Return the md5 string of the file
-    std::string getMd5() const;
+    std::string getMd5() const noexcept;
     //    int saveTo(const std::string &pathAndFileName) const;
-    int saveTo(const filesystem::path &pathAndFileName) const;
-    void setRequest(const HttpRequestPtr &req)
+    int saveTo(const filesystem::path &pathAndFileName) const noexcept;
+    void setRequest(const HttpRequestPtr &req) noexcept
     {
         requestPtr_ = req;
+    }
+    drogon::ContentType getContentType() const noexcept
+    {
+        return contentType_;
+    }
+    void setContentType(drogon::ContentType contentType) noexcept
+    {
+        contentType_ = contentType;
+    }
+    void setContentTransferEncoding(
+        const std::string &contentTransferEncoding) noexcept
+    {
+        transferEncoding_ = contentTransferEncoding;
+    }
+    void setContentTransferEncoding(
+        std::string &&contentTransferEncoding) noexcept
+    {
+        transferEncoding_ = std::move(contentTransferEncoding);
+    }
+    const std::string &getContentTransferEncoding() const noexcept
+    {
+        return transferEncoding_;
     }
 
   private:
     std::string fileName_;
     std::string itemName_;
+    std::string transferEncoding_;
     string_view fileContent_;
     HttpRequestPtr requestPtr_;
+    drogon::ContentType contentType_{drogon::CT_NONE};
 };
 }  // namespace drogon

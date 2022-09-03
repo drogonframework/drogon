@@ -51,8 +51,8 @@ const char banner[] =
     " \\__,_|_|  \\___/ \\__, |\\___/|_| |_|\n"
     "                 |___/             \n";
 
-std::string getVersion();
-std::string getGitCommit();
+DROGON_EXPORT std::string getVersion();
+DROGON_EXPORT std::string getGitCommit();
 
 class HttpControllerBase;
 class HttpSimpleControllerBase;

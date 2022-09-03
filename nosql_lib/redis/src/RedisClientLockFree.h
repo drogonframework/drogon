@@ -13,7 +13,6 @@
  */
 #pragma once
 
-#include "RedisConnection.h"
 #include <drogon/nosql/RedisClient.h>
 #include <trantor/utils/NonCopyable.h>
 #include <trantor/net/EventLoopThreadPool.h>
@@ -26,6 +25,8 @@ namespace drogon
 {
 namespace nosql
 {
+class RedisConnection;
+using RedisConnectionPtr = std::shared_ptr<RedisConnection>;
 class RedisClientLockFree final
     : public RedisClient,
       public trantor::NonCopyable,
