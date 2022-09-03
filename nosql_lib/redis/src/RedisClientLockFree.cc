@@ -12,6 +12,7 @@
  *
  */
 
+#include "RedisConnection.h"
 #include "RedisClientLockFree.h"
 #include "RedisTransactionImpl.h"
 #include "../../lib/src/TaskTimeoutFlag.h"
