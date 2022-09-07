@@ -208,7 +208,7 @@ void PgConnection::execSqlInLoop(
     exceptionCallback_ = std::move(exceptCallback);
     if (paraNum == 0)
     {
-        isRreparingStatement_ = false;
+        isPreparingStatement_ = false;
         if (PQsendQuery(connectionPtr_.get(), sql_.data()) == 0)
         {
             LOG_ERROR << "send query error: "
@@ -216,7 +216,7 @@ void PgConnection::execSqlInLoop(
             if (isWorking_)
             {
                 isWorking_ = false;
-                isRreparingStatement_ = false;
+                isPreparingStatement_ = false;
                 handleFatalError();
                 callback_ = nullptr;
                 idleCb_();
@@ -230,7 +230,7 @@ void PgConnection::execSqlInLoop(
         auto iter = preparedStatementsMap_.find(sql_);
         if (iter != preparedStatementsMap_.end())
         {
-            isRreparingStatement_ = false;
+            isPreparingStatement_ = false;
             if (PQsendQueryPrepared(connectionPtr_.get(),
                                     iter->second.c_str(),
                                     static_cast<int>(paraNum),
@@ -244,7 +244,7 @@ void PgConnection::execSqlInLoop(
                 if (isWorking_)
                 {
                     isWorking_ = false;
-                    isRreparingStatement_ = false;
+                    isPreparingStatement_ = false;
                     handleFatalError();
                     callback_ = nullptr;
                     idleCb_();
@@ -254,7 +254,7 @@ void PgConnection::execSqlInLoop(
         }
         else
         {
-            isRreparingStatement_ = true;
+            isPreparingStatement_ = true;
             statementName_ = newStmtName();
             if (PQsendPrepare(connectionPtr_.get(),
                               statementName_.c_str(),
@@ -322,7 +322,7 @@ void PgConnection::handleRead()
         {
             if (isWorking_)
             {
-                if (!isRreparingStatement_)
+                if (!isPreparingStatement_)
                 {
                     auto r = makeResult(res);
                     callback_(r);
@@ -334,14 +334,14 @@ void PgConnection::handleRead()
     }
     if (isWorking_)
     {
-        if (isRreparingStatement_ && callback_)
+        if (isPreparingStatement_ && callback_)
         {
             doAfterPreparing();
         }
         else
         {
             isWorking_ = false;
-            isRreparingStatement_ = false;
+            isPreparingStatement_ = false;
             idleCb_();
         }
     }
@@ -349,7 +349,7 @@ void PgConnection::handleRead()
 
 void PgConnection::doAfterPreparing()
 {
-    isRreparingStatement_ = false;
+    isPreparingStatement_ = false;
     auto r = preparedStatements_.insert(std::string{sql_});
     preparedStatementsMap_[string_view{r.first->data(), r.first->length()}] =
         statementName_;

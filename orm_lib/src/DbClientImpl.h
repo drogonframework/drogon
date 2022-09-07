@@ -33,7 +33,7 @@ class DbClientImpl : public DbClient,
 {
   public:
     DbClientImpl(const std::string &connInfo,
-                 const size_t connNum,
+                 size_t connNum,
 #if LIBPQ_SUPPORTS_BATCH_MODE
                  ClientType type,
                  bool autoBatch);

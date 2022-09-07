@@ -48,7 +48,8 @@ namespace internal
 #ifdef __cpp_impl_coroutine
 struct [[nodiscard]] SqlAwaiter : public CallbackAwaiter<Result>
 {
-    SqlAwaiter(internal::SqlBinder &&binder) : binder_(std::move(binder))
+    explicit SqlAwaiter(internal::SqlBinder &&binder)
+        : binder_(std::move(binder))
     {
     }
 
@@ -72,7 +73,7 @@ struct [[nodiscard]] SqlAwaiter : public CallbackAwaiter<Result>
 struct [[nodiscard]] TransactionAwaiter
     : public CallbackAwaiter<std::shared_ptr<Transaction> >
 {
-    TransactionAwaiter(DbClient *client) : client_(client)
+    explicit TransactionAwaiter(DbClient *client) : client_(client)
     {
     }
 
@@ -90,7 +91,7 @@ struct [[nodiscard]] TransactionAwaiter
 class DROGON_EXPORT DbClient : public trantor::NonCopyable
 {
   public:
-    virtual ~DbClient(){};
+    virtual ~DbClient();
     /// Create a new database client with multiple connections;
     /**
      * @param connInfo: Connection string with some parameters,
@@ -118,13 +119,13 @@ class DROGON_EXPORT DbClient : public trantor::NonCopyable
      * @param connNum: The number of connections to database server;
      */
     static std::shared_ptr<DbClient> newPgClient(const std::string &connInfo,
-                                                 const size_t connNum,
+                                                 size_t connNum,
                                                  bool autoBatch = false);
     static std::shared_ptr<DbClient> newMysqlClient(const std::string &connInfo,
-                                                    const size_t connNum);
+                                                    size_t connNum);
     static std::shared_ptr<DbClient> newSqlite3Client(
         const std::string &connInfo,
-        const size_t connNum);
+        size_t connNum);
 
     /// Async and nonblocking method
     /**
@@ -184,8 +185,8 @@ class DROGON_EXPORT DbClient : public trantor::NonCopyable
 
     // Sync and blocking method
     template <typename... Arguments>
-    const Result execSqlSync(const std::string &sql,
-                             Arguments &&...args) noexcept(false)
+    Result execSqlSync(const std::string &sql,
+                       Arguments &&...args) noexcept(false)
     {
         Result r(nullptr);
         {

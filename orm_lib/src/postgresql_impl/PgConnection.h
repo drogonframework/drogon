@@ -42,14 +42,14 @@ class PgConnection : public DbConnection,
                  const std::string &connInfo,
                  bool autoBatch);
 
-    virtual void execSql(string_view &&sql,
-                         size_t paraNum,
-                         std::vector<const char *> &&parameters,
-                         std::vector<int> &&length,
-                         std::vector<int> &&format,
-                         ResultCallback &&rcb,
-                         std::function<void(const std::exception_ptr &)>
-                             &&exceptCallback) override
+    void execSql(string_view &&sql,
+                 size_t paraNum,
+                 std::vector<const char *> &&parameters,
+                 std::vector<int> &&length,
+                 std::vector<int> &&format,
+                 ResultCallback &&rcb,
+                 std::function<void(const std::exception_ptr &)>
+                     &&exceptCallback) override
     {
         if (loop_->isInLoopThread())
         {
@@ -84,15 +84,14 @@ class PgConnection : public DbConnection,
         }
     }
 
-    virtual void batchSql(
-        std::deque<std::shared_ptr<SqlCmd>> &&sqlCommands) override;
+    void batchSql(std::deque<std::shared_ptr<SqlCmd>> &&sqlCommands) override;
 
     void disconnect() override;
 
   private:
     std::shared_ptr<PGconn> connectionPtr_;
     trantor::Channel channel_;
-    bool isRreparingStatement_{false};
+    bool isPreparingStatement_{false};
     size_t preparedStatementsID_{0};
     std::string newStmtName()
     {
