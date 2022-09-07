@@ -59,7 +59,7 @@ struct SqlCmd
     bool isChanging_{false};
 #endif
     SqlCmd(string_view &&sql,
-           const size_t paraNum,
+           size_t paraNum,
            std::vector<const char *> &&parameters,
            std::vector<int> &&length,
            std::vector<int> &&format,
@@ -82,7 +82,7 @@ class DbConnection : public trantor::NonCopyable
 {
   public:
     using DbConnectionCallback = std::function<void(const DbConnectionPtr &)>;
-    DbConnection(trantor::EventLoop *loop) : loop_(loop)
+    explicit DbConnection(trantor::EventLoop *loop) : loop_(loop)
     {
     }
     void setOkCallback(const DbConnectionCallback &cb)
@@ -120,7 +120,7 @@ class DbConnection : public trantor::NonCopyable
         return loop_;
     }
     virtual void disconnect() = 0;
-    bool isWorking()
+    bool isWorking() const
     {
         return isWorking_;
     }

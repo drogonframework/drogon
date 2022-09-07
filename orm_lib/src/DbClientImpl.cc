@@ -48,7 +48,7 @@ using namespace drogon;
 using namespace drogon::orm;
 
 DbClientImpl::DbClientImpl(const std::string &connInfo,
-                           const size_t connNum,
+                           size_t connNum,
 #if LIBPQ_SUPPORTS_BATCH_MODE
                            ClientType type,
                            bool autoBatch)
@@ -285,7 +285,7 @@ void DbClientImpl::makeTrans(
     std::function<void(const std::shared_ptr<Transaction> &)> &&callback)
 {
     std::weak_ptr<DbClientImpl> weakThis = shared_from_this();
-    auto trans = std::shared_ptr<TransactionImpl>(new TransactionImpl(
+    auto trans = std::make_shared<TransactionImpl>(
         type_, conn, std::function<void(bool)>(), [weakThis, conn]() {
             auto thisPtr = weakThis.lock();
             if (!thisPtr)
@@ -324,7 +324,7 @@ void DbClientImpl::makeTrans(
                 });
                 thisPtr->handleNewTask(conn);
             });
-        }));
+        });
     trans->doBegin();
     if (timeout_ > 0.0)
     {
