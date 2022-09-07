@@ -117,25 +117,6 @@ void DbClientImpl::closeAll()
 }
 
 void DbClientImpl::execSql(
-    const DbConnectionPtr &conn,
-    string_view &&sql,
-    size_t paraNum,
-    std::vector<const char *> &&parameters,
-    std::vector<int> &&length,
-    std::vector<int> &&format,
-    ResultCallback &&rcb,
-    std::function<void(const std::exception_ptr &)> &&exceptCallback)
-{
-    assert(conn);
-    conn->execSql(std::move(sql),
-                  paraNum,
-                  std::move(parameters),
-                  std::move(length),
-                  std::move(format),
-                  std::move(rcb),
-                  std::move(exceptCallback));
-}
-void DbClientImpl::execSql(
     const char *sql,
     size_t sqlLength,
     size_t paraNum,
@@ -197,14 +178,13 @@ void DbClientImpl::execSql(
     }
     if (conn)
     {
-        execSql(conn,
-                string_view{sql, sqlLength},
-                paraNum,
-                std::move(parameters),
-                std::move(length),
-                std::move(format),
-                std::move(rcb),
-                std::move(exceptCallback));
+        conn->execSql({sql, sqlLength},
+                      paraNum,
+                      std::move(parameters),
+                      std::move(length),
+                      std::move(format),
+                      std::move(rcb),
+                      std::move(exceptCallback));
         return;
     }
     if (busy)
@@ -380,14 +360,13 @@ void DbClientImpl::handleNewTask(const DbConnectionPtr &connPtr)
     }
     if (cmd)
     {
-        execSql(connPtr,
-                std::move(cmd->sql_),
-                cmd->parametersNumber_,
-                std::move(cmd->parameters_),
-                std::move(cmd->lengths_),
-                std::move(cmd->formats_),
-                std::move(cmd->callback_),
-                std::move(cmd->exceptionCallback_));
+        connPtr->execSql(std::move(cmd->sql_),
+                         cmd->parametersNumber_,
+                         std::move(cmd->parameters_),
+                         std::move(cmd->lengths_),
+                         std::move(cmd->formats_),
+                         std::move(cmd->callback_),
+                         std::move(cmd->exceptionCallback_));
         return;
     }
 }
@@ -579,14 +558,13 @@ void DbClientImpl::execSqlWithTimeout(
     }
     if (conn)
     {
-        execSql(conn,
-                string_view{sql, sqlLength},
-                paraNum,
-                std::move(parameters),
-                std::move(length),
-                std::move(format),
-                std::move(resultCallback),
-                std::move(exceptionCallback));
+        conn->execSql(string_view{sql, sqlLength},
+                      paraNum,
+                      std::move(parameters),
+                      std::move(length),
+                      std::move(format),
+                      std::move(resultCallback),
+                      std::move(exceptionCallback));
         timeoutFlagPtr->runTimer();
         return;
     }
