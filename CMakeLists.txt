@@ -430,13 +430,17 @@ if (BUILD_REDIS)
             nosql_lib/redis/src/RedisClientManager.cc
             nosql_lib/redis/src/RedisConnection.cc
             nosql_lib/redis/src/RedisResult.cc
-            nosql_lib/redis/src/RedisTransactionImpl.cc)
+            nosql_lib/redis/src/RedisTransactionImpl.cc
+            nosql_lib/redis/src/SubscribeContext.cc
+            nosql_lib/redis/src/RedisSubscriberImpl.cc)
         set(private_headers
             ${private_headers}
             nosql_lib/redis/src/RedisClientImpl.h
             nosql_lib/redis/src/RedisClientLockFree.h
             nosql_lib/redis/src/RedisConnection.h
-            nosql_lib/redis/src/RedisTransactionImpl.h)
+            nosql_lib/redis/src/RedisTransactionImpl.h
+            nosql_lib/redis/src/SubscribeContext.h
+            nosql_lib/redis/src/RedisSubscriberImpl.h)
 
     endif (Hiredis_FOUND)
 endif (BUILD_REDIS)
@@ -672,6 +676,7 @@ install(FILES ${ORM_HEADERS} DESTINATION ${INSTALL_INCLUDE_DIR}/drogon/orm)
 set(NOSQL_HEADERS
     nosql_lib/redis/inc/drogon/nosql/RedisClient.h
     nosql_lib/redis/inc/drogon/nosql/RedisResult.h
+    nosql_lib/redis/inc/drogon/nosql/RedisSubscriber.h
     nosql_lib/redis/inc/drogon/nosql/RedisException.h)
 install(FILES ${NOSQL_HEADERS} DESTINATION ${INSTALL_INCLUDE_DIR}/drogon/nosql)
 
