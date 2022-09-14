@@ -186,15 +186,6 @@ struct [[nodiscard]] Task
         std::exception_ptr exception_;
         std::coroutine_handle<> continuation_;
     };
-    bool await_ready() const
-    {
-        return !coro_ || coro_.done();
-    }
-    std::coroutine_handle<> await_suspend(std::coroutine_handle<> awaiting)
-    {
-        coro_.promise().setContinuation(awaiting);
-        return coro_;
-    }
 
     auto operator co_await() const &noexcept
     {
@@ -321,15 +312,7 @@ struct [[nodiscard]] Task<void>
         std::exception_ptr exception_;
         std::coroutine_handle<> continuation_;
     };
-    bool await_ready()
-    {
-        return coro_.done();
-    }
-    std::coroutine_handle<> await_suspend(std::coroutine_handle<> awaiting)
-    {
-        coro_.promise().setContinuation(awaiting);
-        return coro_;
-    }
+
     auto operator co_await() const &noexcept
     {
         struct awaiter
