@@ -26,6 +26,7 @@
 #if USE_SQLITE3
 #include "sqlite3_impl/Sqlite3Connection.h"
 #endif
+#include "DbSubscriberImpl.h"
 #include "TransactionImpl.h"
 #include <drogon/drogon.h>
 #include <drogon/orm/DbClient.h>
@@ -579,8 +580,6 @@ void DbClientImpl::execSqlWithTimeout(
     timeoutFlagPtr->runTimer();
 }
 
-#include "DbSubscriberImpl.h"
-
 std::shared_ptr<DbSubscriber> DbClientImpl::newSubscriber() noexcept
 {
     if (type_ != ClientType::PostgreSQL)
@@ -679,9 +678,7 @@ DbConnectionPtr DbClientImpl::newSubscribeConnection(
         auto subPtr = weakSub.lock();
         if (!subPtr)
             return;
-        // TODO
         subPtr->subscribeNext();
     });
-    // std::cout<<"newConn end"<<connPtr<<std::endl;
     return connPtr;
 }

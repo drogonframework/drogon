@@ -29,6 +29,8 @@ namespace drogon
 {
 namespace orm
 {
+class DbSubscriberImpl;
+
 class DbClientLockFree : public DbClient,
                          public std::enable_shared_from_this<DbClientLockFree>
 {
@@ -59,6 +61,7 @@ class DbClientLockFree : public DbClient,
     void newTransactionAsync(
         const std::function<void(const std::shared_ptr<Transaction> &)>
             &callback) override;
+    std::shared_ptr<DbSubscriber> newSubscriber() noexcept override;
     bool hasAvailableConnections() const noexcept override;
     void setTimeout(double timeout) override
     {
@@ -70,6 +73,9 @@ class DbClientLockFree : public DbClient,
     std::string connectionInfo_;
     trantor::EventLoop *loop_;
     DbConnectionPtr newConnection();
+    DbConnectionPtr newSubscribeConnection(
+        const std::shared_ptr<DbSubscriberImpl> &);
+
     const size_t numberOfConnections_;
     std::vector<DbConnectionPtr> connections_;
     std::vector<DbConnectionPtr> connectionHolders_;

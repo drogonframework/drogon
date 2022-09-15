@@ -24,6 +24,7 @@
 #if USE_MYSQL
 #include "mysql_impl/MysqlConnection.h"
 #endif
+#include "DbSubscriberImpl.h"
 #include "TransactionImpl.h"
 #include <drogon/drogon.h>
 #include <drogon/orm/DbClient.h>
@@ -671,4 +672,114 @@ void DbClientLockFree::execSqlWithTimeout(
     sqlCmdBuffer_.emplace_back(cmdPtr);
     *commandPtr = cmdPtr;
     timeoutFlagPtr->runTimer();
+}
+
+std::shared_ptr<DbSubscriber> DbClientLockFree::newSubscriber() noexcept
+{
+    if (type_ != ClientType::PostgreSQL)
+    {
+        return nullptr;
+    }
+
+    auto subscriber = std::make_shared<DbSubscriberImpl>();
+    loop_->queueInLoop([this, subscriber]() {
+        connectionHolders_.push_back(newSubscribeConnection(subscriber));
+    });
+
+    return subscriber;
+}
+
+DbConnectionPtr DbClientLockFree::newSubscribeConnection(
+    const std::shared_ptr<DbSubscriberImpl> &subscriber)
+{
+    DbConnectionPtr connPtr;
+    if (type_ == ClientType::PostgreSQL)
+    {
+#if USE_POSTGRESQL
+        connPtr = std::make_shared<PgConnection>(loop_, connectionInfo_, false);
+#else
+        return nullptr;
+#endif
+    }
+    else
+    {
+        return nullptr;
+    }
+    std::weak_ptr<DbClientLockFree> weakPtr = shared_from_this();
+    std::weak_ptr<DbSubscriberImpl> weakSub(subscriber);
+
+    connPtr->setCloseCallback(
+        [weakPtr, weakSub](const DbConnectionPtr &closeConnPtr) {
+            // Erase the connection
+            auto thisPtr = weakPtr.lock();
+            if (!thisPtr)
+                return;
+
+            for (auto iter = thisPtr->connectionHolders_.begin();
+                 iter != thisPtr->connectionHolders_.end();
+                 iter++)
+            {
+                if (closeConnPtr == *iter)
+                {
+                    thisPtr->connectionHolders_.erase(iter);
+                    break;
+                }
+            }
+            auto subPtr = weakSub.lock();
+            if (!subPtr)
+                return;
+            subPtr->clearConnection();
+
+            // Reconnect after 1 second
+            thisPtr->loop_->runAfter(1, [weakPtr, weakSub] {
+                auto thisPtr = weakPtr.lock();
+                if (!thisPtr)
+                    return;
+                auto subPtr = weakSub.lock();
+                if (!subPtr)
+                    return;
+                thisPtr->connectionHolders_.push_back(
+                    thisPtr->newSubscribeConnection(subPtr));
+            });
+        });
+    connPtr->setOkCallback(
+        [weakPtr, weakSub](const DbConnectionPtr &okConnPtr) {
+            LOG_TRACE << "connected!";
+            auto thisPtr = weakPtr.lock();
+            if (!thisPtr)
+                return;
+            auto subPtr = weakSub.lock();
+
+            if (subPtr)
+            {
+                subPtr->setConnection(okConnPtr);
+                subPtr->subscribeAll();
+                return;
+            }
+            // Subscriber destructed
+            for (auto iter = thisPtr->connectionHolders_.begin();
+                 iter != thisPtr->connectionHolders_.end();
+                 iter++)
+            {
+                if (okConnPtr == *iter)
+                {
+                    thisPtr->connectionHolders_.erase(iter);
+                    break;
+                }
+            }
+        });
+    std::weak_ptr<DbConnection> weakConn = connPtr;
+    connPtr->setIdleCallback([weakPtr, weakConn, weakSub]() {
+        auto thisPtr = weakPtr.lock();
+        if (!thisPtr)
+            return;
+        auto connPtr = weakConn.lock();
+        if (!connPtr)
+            return;
+        auto subPtr = weakSub.lock();
+        if (!subPtr)
+            return;
+        subPtr->subscribeNext();
+    });
+    return connPtr;
 }

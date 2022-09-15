@@ -68,6 +68,8 @@ void DbConnection::sendSubscribe(
         {},
         {},
         [subCtx, this](const Result& r) {
+            // NOTE: we don't necessarily need to store subCtx in DbConnection,
+            // but doing so will save the locks when receiving message.
             setSubscribeContext(subCtx);
             LOG_DEBUG << "Subscribe success to " << subCtx->channel();
         },
