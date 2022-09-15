@@ -11,6 +11,10 @@ add_executable(pipeline_test
         pipeline_test.cpp
 )
 
+add_executable(listen_notify_test
+        listen_notify_test.cc
+)
+
 set_property(TARGET db_test PROPERTY CXX_STANDARD ${DROGON_CXX_STANDARD})
 set_property(TARGET db_test PROPERTY CXX_STANDARD_REQUIRED ON)
 set_property(TARGET db_test PROPERTY CXX_EXTENSIONS OFF)
@@ -18,3 +22,7 @@ set_property(TARGET db_test PROPERTY CXX_EXTENSIONS OFF)
 set_property(TARGET pipeline_test PROPERTY CXX_STANDARD ${DROGON_CXX_STANDARD})
 set_property(TARGET pipeline_test PROPERTY CXX_STANDARD_REQUIRED ON)
 set_property(TARGET pipeline_test PROPERTY CXX_EXTENSIONS OFF)
+
+set_property(TARGET listen_notify_test PROPERTY CXX_STANDARD ${DROGON_CXX_STANDARD})
+set_property(TARGET listen_notify_test PROPERTY CXX_STANDARD_REQUIRED ON)
+set_property(TARGET listen_notify_test PROPERTY CXX_EXTENSIONS OFF)
