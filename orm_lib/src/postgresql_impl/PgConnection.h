@@ -15,6 +15,7 @@
 #pragma once
 
 #include "../DbConnection.h"
+#include "../DbSubscribeContext.h"
 #include <drogon/orm/DbClient.h>
 #include <trantor/net/EventLoop.h>
 #include <trantor/net/Channel.h>
@@ -89,11 +90,35 @@ class PgConnection : public DbConnection,
     void disconnect() override;
 
     void onSubscribeMessage(std::string &&channel,
-                            std::string &&message) override;
+                            std::string &&message) override
+    {
+        auto iter = subContexts_.find(channel);
+        if (iter != subContexts_.end())
+        {
+            auto &subCtx = iter->second;
+            if (!subCtx->alive())
+            {
+                LOG_DEBUG << "Subscribe callback receive message, but "
+                             "context is no longer alive"
+                          << ", channel: " << channel
+                          << ", message: " << message;
+            }
+            else
+            {
+                subCtx->onMessage(channel, message);
+            }
+        }
+    }
     void setSubscribeContext(
-        const std::shared_ptr<DbSubscribeContext> &subCtx) override;
+        const std::shared_ptr<DbSubscribeContext> &subCtx) override
+    {
+        subContexts_[subCtx->channel()] = subCtx;
+    }
     void delSubscribeContext(
-        const std::shared_ptr<DbSubscribeContext> &subCtx) override;
+        const std::shared_ptr<DbSubscribeContext> &subCtx) override
+    {
+        subContexts_.erase(subCtx->channel());
+    }
 
   private:
     std::shared_ptr<PGconn> connectionPtr_;

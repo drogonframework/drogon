@@ -14,7 +14,6 @@
 
 #include "PgConnection.h"
 #include "PostgreSQLResultImpl.h"
-#include "../DbSubscribeContext.h"
 #include <drogon/orm/Exception.h>
 #include <drogon/utils/Utilities.h>
 #include <drogon/utils/string_view.h>
@@ -394,39 +393,4 @@ void PgConnection::handleFatalError()
 void PgConnection::batchSql(std::deque<std::shared_ptr<SqlCmd>> &&)
 {
     assert(false);
-}
-
-void PgConnection::onSubscribeMessage(std::string &&channel,
-                                      std::string &&message)
-{
-    // TODO: lock or assert access in loop
-    auto iter = subContexts_.find(channel);
-    if (iter != subContexts_.end())
-    {
-        auto &subCtx = iter->second;
-        if (!subCtx->alive())
-        {
-            LOG_DEBUG << "Subscribe callback receive message, but "
-                         "context is no longer alive"
-                      << ", channel: " << channel << ", message: " << message;
-        }
-        else
-        {
-            subCtx->onMessage(channel, message);
-        }
-    }
-}
-
-void PgConnection::setSubscribeContext(
-    const std::shared_ptr<DbSubscribeContext> &subCtx)
-{
-    // TODO: lock or assert access in loop
-    subContexts_[subCtx->channel()] = subCtx;
-}
-
-void PgConnection::delSubscribeContext(
-    const std::shared_ptr<DbSubscribeContext> &subCtx)
-{
-    // TODO: lock or assert access in loop
-    subContexts_.erase(subCtx->channel());
 }
