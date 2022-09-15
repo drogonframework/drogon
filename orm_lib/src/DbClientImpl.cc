@@ -578,3 +578,110 @@ void DbClientImpl::execSqlWithTimeout(
 
     timeoutFlagPtr->runTimer();
 }
+
+#include "DbSubscriberImpl.h"
+
+std::shared_ptr<DbSubscriber> DbClientImpl::newSubscriber() noexcept
+{
+    if (type_ != ClientType::PostgreSQL)
+    {
+        return nullptr;
+    }
+
+    auto subscriber = std::make_shared<DbSubscriberImpl>();
+    auto loop = loops_.getNextLoop();
+    loop->queueInLoop([this, loop, subscriber]() {
+        std::lock_guard<std::mutex> lock(connectionsMutex_);
+        connections_.insert(newSubscribeConnection(loop, subscriber));
+    });
+
+    return subscriber;
+}
+
+DbConnectionPtr DbClientImpl::newSubscribeConnection(
+    trantor::EventLoop *loop,
+    const std::shared_ptr<DbSubscriberImpl> &subscriber)
+{
+    DbConnectionPtr connPtr;
+    if (type_ == ClientType::PostgreSQL)
+    {
+#if USE_POSTGRESQL
+        connPtr = std::make_shared<PgConnection>(loop, connectionInfo_, false);
+#else
+        return nullptr;
+#endif
+    }
+    else
+    {
+        return nullptr;
+    }
+    std::weak_ptr<DbClientImpl> weakPtr = shared_from_this();
+    std::weak_ptr<DbSubscriberImpl> weakSub(subscriber);
+
+    connPtr->setCloseCallback(
+        [weakPtr, weakSub](const DbConnectionPtr &closeConnPtr) {
+            // Erase the connection
+            auto thisPtr = weakPtr.lock();
+            if (!thisPtr)
+                return;
+            {
+                std::lock_guard<std::mutex> guard(thisPtr->connectionsMutex_);
+                assert(thisPtr->connections_.find(closeConnPtr) !=
+                       thisPtr->connections_.end());
+                thisPtr->connections_.erase(closeConnPtr);
+            }
+            auto subPtr = weakSub.lock();
+            if (!subPtr)
+                return;
+            subPtr->clearConnection();
+
+            // Reconnect after 1 second
+            auto loop = closeConnPtr->loop();
+            loop->runAfter(1, [weakPtr, loop, weakSub] {
+                auto thisPtr = weakPtr.lock();
+                if (!thisPtr)
+                    return;
+                auto subPtr = weakSub.lock();
+                if (!subPtr)
+                    return;
+                std::lock_guard<std::mutex> guard(thisPtr->connectionsMutex_);
+                thisPtr->connections_.insert(
+                    thisPtr->newSubscribeConnection(loop, subPtr));
+            });
+        });
+    connPtr->setOkCallback(
+        [weakPtr, weakSub](const DbConnectionPtr &okConnPtr) {
+            LOG_TRACE << "connected!";
+            auto thisPtr = weakPtr.lock();
+            if (!thisPtr)
+                return;
+            auto subPtr = weakSub.lock();
+
+            if (subPtr)
+            {
+                subPtr->setConnection(okConnPtr);
+                subPtr->subscribeAll();
+            }
+            else
+            {
+                std::lock_guard<std::mutex> guard(thisPtr->connectionsMutex_);
+                thisPtr->connections_.erase(okConnPtr);
+            }
+        });
+    std::weak_ptr<DbConnection> weakConn = connPtr;
+    connPtr->setIdleCallback([weakPtr, weakConn, weakSub]() {
+        auto thisPtr = weakPtr.lock();
+        if (!thisPtr)
+            return;
+        auto connPtr = weakConn.lock();
+        if (!connPtr)
+            return;
+        auto subPtr = weakSub.lock();
+        if (!subPtr)
+            return;
+        // TODO
+        subPtr->subscribeNext();
+    });
+    // std::cout<<"newConn end"<<connPtr<<std::endl;
+    return connPtr;
+}

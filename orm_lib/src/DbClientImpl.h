@@ -28,6 +28,8 @@ namespace drogon
 {
 namespace orm
 {
+class DbSubscriberImpl;
+
 class DbClientImpl : public DbClient,
                      public std::enable_shared_from_this<DbClientImpl>
 {
@@ -56,6 +58,9 @@ class DbClientImpl : public DbClient,
     void newTransactionAsync(
         const std::function<void(const std::shared_ptr<Transaction> &)>
             &callback) override;
+
+    std::shared_ptr<DbSubscriber> newSubscriber() noexcept override;
+
     bool hasAvailableConnections() const noexcept override;
     void setTimeout(double timeout) override
     {
@@ -73,6 +78,9 @@ class DbClientImpl : public DbClient,
     bool autoBatch_{false};
 #endif
     DbConnectionPtr newConnection(trantor::EventLoop *loop);
+    DbConnectionPtr newSubscribeConnection(
+        trantor::EventLoop *loop,
+        const std::shared_ptr<DbSubscriberImpl> &);
 
     void makeTrans(
         const DbConnectionPtr &conn,

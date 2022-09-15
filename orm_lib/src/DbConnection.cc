@@ -13,6 +13,7 @@
  */
 
 #include "DbConnection.h"
+#include "DbSubscribeContext.h"
 
 #include <regex>
 
@@ -54,4 +55,42 @@ std::map<std::string, std::string> DbConnection::parseConnString(
         str = what.suffix().str();
     }
     return params;
+}
+
+void DbConnection::sendSubscribe(
+    const std::shared_ptr<DbSubscribeContext>& subCtx)
+{
+    // Note: Can not use placeholders in LISTEN or NOTIFY command!!!
+    execSql(
+        subCtx->subscribeCommand(),
+        0,
+        {},
+        {},
+        {},
+        [subCtx, this](const Result& r) {
+            setSubscribeContext(subCtx);
+            LOG_DEBUG << "Subscribe success to " << subCtx->channel();
+        },
+        [subCtx](const std::exception_ptr& ex) {
+            LOG_ERROR << "Failed to subscribe to " << subCtx->channel();
+        });
+}
+
+void DbConnection::sendUnsubscribe(
+    const std::shared_ptr<DbSubscribeContext>& subCtx)
+{
+    execSql(
+        subCtx->unsubscribeCommand(),
+        0,
+        {},
+        {},
+        {},
+        [subCtx, this](const Result& r) {
+            delSubscribeContext(subCtx);
+            LOG_DEBUG << "Subscribe success to " << subCtx->channel();
+        },
+        [subCtx](const std::exception_ptr& ex) {
+            // TODO: did not handle exceptions caused by query buffer full
+            LOG_ERROR << "Failed to subscribe to " << subCtx->channel();
+        });
 }

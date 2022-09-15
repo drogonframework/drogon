@@ -515,6 +515,8 @@ set(DROGON_SOURCES
     orm_lib/src/DbClient.cc
     orm_lib/src/DbClientImpl.cc
     orm_lib/src/DbClientLockFree.cc
+    orm_lib/src/DbSubscriberImpl.cc
+    orm_lib/src/DbSubscribeContext.cc
     orm_lib/src/DbConnection.cc
     orm_lib/src/Exception.cc
     orm_lib/src/Field.cc

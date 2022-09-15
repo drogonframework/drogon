@@ -42,6 +42,7 @@ using ExceptionCallback = std::function<void(const DrogonDbException &)>;
 
 class Transaction;
 class DbClient;
+class DbSubscriber;
 
 namespace internal
 {
@@ -200,6 +201,11 @@ class DROGON_EXPORT DbClient : public trantor::NonCopyable
             binder.exec();  // exec may be throw exception;
         }
         return r;
+    }
+
+    virtual std::shared_ptr<DbSubscriber> newSubscriber() noexcept
+    {
+        return nullptr;
     }
 
 #ifdef __cpp_impl_coroutine

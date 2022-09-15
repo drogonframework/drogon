@@ -88,6 +88,13 @@ class PgConnection : public DbConnection,
 
     void disconnect() override;
 
+    void onSubscribeMessage(std::string &&channel,
+                            std::string &&message) override;
+    void setSubscribeContext(
+        const std::shared_ptr<DbSubscribeContext> &subCtx) override;
+    void delSubscribeContext(
+        const std::shared_ptr<DbSubscribeContext> &subCtx) override;
+
   private:
     std::shared_ptr<PGconn> connectionPtr_;
     trantor::Channel channel_;
@@ -120,6 +127,10 @@ class PgConnection : public DbConnection,
     void handleFatalError();
     std::set<std::string> preparedStatements_;
     string_view sql_;
+
+    std::unordered_map<std::string, std::shared_ptr<DbSubscribeContext>>
+        subContexts_;
+
 #if LIBPQ_SUPPORTS_BATCH_MODE
     void handleFatalError(bool clearAll);
     std::list<std::shared_ptr<SqlCmd>> batchCommandsForWaitingResults_;

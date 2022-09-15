@@ -76,6 +76,7 @@ struct SqlCmd
     }
 };
 
+class DbSubscribeContext;
 class DbConnection;
 using DbConnectionPtr = std::shared_ptr<DbConnection>;
 class DbConnection : public trantor::NonCopyable
@@ -105,6 +106,24 @@ class DbConnection : public trantor::NonCopyable
         std::vector<int> &&format,
         ResultCallback &&rcb,
         std::function<void(const std::exception_ptr &)> &&exceptCallback) = 0;
+    void sendSubscribe(const std::shared_ptr<DbSubscribeContext> &subCtx);
+    void sendUnsubscribe(const std::shared_ptr<DbSubscribeContext> &subCtx);
+    virtual void onSubscribeMessage(std::string &&channel,
+                                    std::string &&message)
+    {
+        // do nothing for non-postgres
+    }
+    virtual void setSubscribeContext(
+        const std::shared_ptr<DbSubscribeContext> &subCtx)
+    {
+        // do nothing for non-postgres
+    }
+    virtual void delSubscribeContext(
+        const std::shared_ptr<DbSubscribeContext> &subCtx)
+    {
+        // do nothing for non-postgres
+    }
+
     virtual void batchSql(
         std::deque<std::shared_ptr<SqlCmd>> &&sqlCommands) = 0;
     virtual ~DbConnection()
