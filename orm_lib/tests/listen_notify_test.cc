@@ -3,10 +3,12 @@
 #include <drogon/HttpAppFramework.h>
 #include <drogon/config.h>
 #include <drogon/orm/DbSubscriber.h>
+#include <chrono>
 
 using namespace drogon;
 using namespace drogon::orm;
 using namespace trantor;
+using namespace std::chrono_literals;
 
 static const std::string LISTEN_CHANNEL = "listen_test";
 
@@ -29,7 +31,7 @@ DROGON_TEST(ListenNotifyTest)
                           });
 
     std::thread t([TEST_CTX, clientPtr, subscriber]() {
-        sleep(1);
+        std::this_thread::sleep_for(1s);
         for (int i = 0; i < 10; ++i)
         {
             // Can not use placeholders in LISTEN or NOTIFY command!!!
@@ -44,7 +46,7 @@ DROGON_TEST(ListenNotifyTest)
                     LOG_ERROR << "Failed to notify " << ex.base().what();
                 });
         }
-        sleep(5);
+        std::this_thread::sleep_for(5s);
         subscriber->unsubscribe("listen_test");
     });
 

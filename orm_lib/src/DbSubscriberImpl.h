@@ -4,8 +4,10 @@
 
 #pragma once
 
-#include <drogon/orm/DbSubscriber.h>
+#include <list>
 #include <mutex>
+#include <unordered_map>
+#include <drogon/orm/DbSubscriber.h>
 #include "DbSubscribeContext.h"
 
 namespace drogon
