@@ -1553,7 +1553,6 @@ if(!col.notNull_){%>
         default:
             err="Internal error in the server";
             return false;
-            break;
     }
     return true;
 }
