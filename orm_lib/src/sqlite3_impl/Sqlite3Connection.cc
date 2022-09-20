@@ -261,7 +261,7 @@ void Sqlite3Connection::execSqlInQueue(
         auto r = stmts_.insert(std::string{sql});
         stmtsMap_[string_view{r.first->data(), r.first->length()}] = stmtPtr;
     }
-    rcb(Result(resultPtr));
+    rcb(Result(std::move(resultPtr)));
     idleCb_();
 }
 

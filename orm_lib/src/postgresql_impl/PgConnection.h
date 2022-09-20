@@ -112,7 +112,7 @@ class PgConnection : public DbConnection,
         std::function<void(const std::exception_ptr &)> &&exceptCallback);
     void doAfterPreparing();
     std::string statementName_;
-    int parametersNumber_;
+    int parametersNumber_{0};
     std::vector<const char *> parameters_;
     std::vector<int> lengths_;
     std::vector<int> formats_;

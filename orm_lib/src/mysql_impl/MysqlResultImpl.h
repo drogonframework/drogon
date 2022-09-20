@@ -29,10 +29,10 @@ namespace orm
 class MysqlResultImpl : public ResultImpl
 {
   public:
-    MysqlResultImpl(const std::shared_ptr<MYSQL_RES> &r,
+    MysqlResultImpl(std::shared_ptr<MYSQL_RES> r,
                     SizeType affectedRows,
                     unsigned long long insertId) noexcept
-        : result_(r),
+        : result_(std::move(r)),
           rowsNumber_(result_ ? mysql_num_rows(result_.get()) : 0),
           fieldArray_(r ? mysql_fetch_fields(r.get()) : nullptr),
           fieldsNumber_(r ? mysql_num_fields(r.get()) : 0),

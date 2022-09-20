@@ -28,11 +28,9 @@ namespace drogon
 {
 namespace orm
 {
-Result makeResult(
-    const std::shared_ptr<PGresult> &r = std::shared_ptr<PGresult>(nullptr))
+Result makeResult(std::shared_ptr<PGresult> &&r = nullptr)
 {
-    return Result(
-        std::shared_ptr<PostgreSQLResultImpl>(new PostgreSQLResultImpl(r)));
+    return Result(std::make_shared<PostgreSQLResultImpl>(std::move(r)));
 }
 
 }  // namespace orm
@@ -324,7 +322,7 @@ void PgConnection::handleRead()
             {
                 if (!isPreparingStatement_)
                 {
-                    auto r = makeResult(res);
+                    auto r = makeResult(std::move(res));
                     callback_(r);
                     callback_ = nullptr;
                     exceptionCallback_ = nullptr;
