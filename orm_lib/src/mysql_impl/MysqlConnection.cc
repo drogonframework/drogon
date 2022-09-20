@@ -54,6 +54,8 @@ MysqlConnection::MysqlConnection(trantor::EventLoop *loop,
           delete p;
       }))
 {
+    static MysqlEnv env;
+    static thread_local MysqlThreadEnv threadEnv;
     mysql_init(mysqlPtr_.get());
     mysql_options(mysqlPtr_.get(), MYSQL_OPT_NONBLOCK, nullptr);
 #ifdef HAS_MYSQL_OPTIONSV
