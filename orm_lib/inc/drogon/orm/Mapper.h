@@ -118,7 +118,7 @@ class Mapper
      *
      * @param client The smart pointer to the database client object.
      */
-    Mapper(const DbClientPtr &client) : client_(client)
+    explicit Mapper(DbClientPtr client) : client_(std::move(client))
     {
     }
 

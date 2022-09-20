@@ -273,7 +273,7 @@ class DROGON_EXPORT DbClient : public trantor::NonCopyable
     {
         return type_;
     }
-    const std::string &connectionInfo()
+    const std::string &connectionInfo() const
     {
         return connectionInfo_;
     }
