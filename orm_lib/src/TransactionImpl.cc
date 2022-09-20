@@ -20,18 +20,18 @@
 using namespace drogon::orm;
 using namespace drogon;
 
-TransactionImpl::TransactionImpl(
-    ClientType type,
-    const DbConnectionPtr &connPtr,
-    const std::function<void(bool)> &commitCallback,
-    const std::function<void()> &usedUpCallback)
+TransactionImpl::TransactionImpl(ClientType type,
+                                 const DbConnectionPtr &connPtr,
+                                 std::function<void(bool)> commitCallback,
+                                 std::function<void()> usedUpCallback)
     : connectionPtr_(connPtr),
-      usedUpCallback_(usedUpCallback),
+      usedUpCallback_(std::move(usedUpCallback)),
       loop_(connPtr->loop()),
-      commitCallback_(commitCallback)
+      commitCallback_(std::move(commitCallback))
 {
     type_ = type;
 }
+
 TransactionImpl::~TransactionImpl()
 {
     LOG_TRACE << "Destruct";
