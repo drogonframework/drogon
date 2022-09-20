@@ -88,6 +88,30 @@ class MysqlConnection : public DbConnection,
     void disconnect() override;
 
   private:
+    class MysqlEnv
+    {
+      public:
+        MysqlEnv()
+        {
+            mysql_library_init(0, nullptr, nullptr);
+        }
+        ~MysqlEnv()
+        {
+            mysql_library_end();
+        }
+    };
+    class MysqlThreadEnv
+    {
+      public:
+        MysqlThreadEnv()
+        {
+            mysql_thread_init();
+        }
+        ~MysqlThreadEnv()
+        {
+            mysql_thread_end();
+        }
+    };
     void execSqlInLoop(
         string_view &&sql,
         size_t paraNum,
