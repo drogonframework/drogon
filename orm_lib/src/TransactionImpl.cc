@@ -60,16 +60,16 @@ TransactionImpl::~TransactionImpl()
                     }
                 },
                 [commitCb](const std::exception_ptr &ePtr) {
-                    if (commitCb)
+                    try
                     {
-                        try
+                        std::rethrow_exception(ePtr);
+                    }
+                    catch (const DrogonDbException &e)
+                    {
+                        LOG_ERROR << "Transaction submission failed:"
+                                  << e.base().what();
+                        if (commitCb)
                         {
-                            std::rethrow_exception(ePtr);
-                        }
-                        catch (const DrogonDbException &e)
-                        {
-                            LOG_ERROR << "Transaction submission failed:"
-                                      << e.base().what();
                             commitCb(false);
                         }
                     }
