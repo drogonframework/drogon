@@ -19,6 +19,7 @@
 #include <drogon/orm/CoroMapper.h>
 #include <drogon/orm/DbClient.h>
 #include <drogon/orm/DbTypes.h>
+#include <drogon/utils/string_view.h>
 #include <trantor/utils/Logger.h>
 
 #include <stdlib.h>
@@ -1704,16 +1705,16 @@ DROGON_TEST(SQLite3Test)
         FAULT("sqlite3 - DbClient asynchronous interface(0) what():",
               e.base().what());
     }
-    /// 3.2 insert
+    /// 3.2 insert,(string_view)
     try
     {
         auto r = clientPtr->execSqlSync(
             "insert into users  (user_id,user_name,password,org_name) "
             "values(?,?,?,?)",
-            "pg1",
-            "postgresql1",
-            "123",
-            "default");
+            drogon::string_view("pg1"),
+            drogon::string_view("postgresql1"),
+            drogon::string_view("123"),
+            drogon::string_view("default"));
         MANDATE(r.affectedRows() == 1UL);
     }
     catch (const DrogonDbException &e)
