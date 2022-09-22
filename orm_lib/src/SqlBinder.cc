@@ -134,8 +134,10 @@ SqlBinder::~SqlBinder()
 }
 SqlBinder &SqlBinder::operator<<(const string_view &str)
 {
-    parameters_.push_back(str.data());
-    lengths_.push_back(str.length());
+    auto obj = std::make_shared<std::string>(str.data(), str.length());
+    parameters_.push_back(obj->data());
+    lengths_.push_back(static_cast<int>(obj->length()));
+    objs_.push_back(obj);
     ++parametersNumber_;
     if (type_ == ClientType::PostgreSQL)
     {
@@ -153,10 +155,10 @@ SqlBinder &SqlBinder::operator<<(const string_view &str)
 }
 SqlBinder &SqlBinder::operator<<(const std::string &str)
 {
-    std::shared_ptr<std::string> obj = std::make_shared<std::string>(str);
+    auto obj = std::make_shared<std::string>(str);
     objs_.push_back(obj);
     ++parametersNumber_;
-    parameters_.push_back((char *)obj->c_str());
+    parameters_.push_back(obj->data());
     lengths_.push_back(static_cast<int>(obj->length()));
     if (type_ == ClientType::PostgreSQL)
     {
