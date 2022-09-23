@@ -132,13 +132,33 @@ SqlBinder::~SqlBinder()
         exec();
     }
 }
-
-SqlBinder &SqlBinder::operator<<(const std::string &str)
+SqlBinder &SqlBinder::operator<<(const string_view &str)
 {
-    std::shared_ptr<std::string> obj = std::make_shared<std::string>(str);
+    auto obj = std::make_shared<std::string>(str.data(), str.length());
+    parameters_.push_back(obj->data());
+    lengths_.push_back(static_cast<int>(obj->length()));
     objs_.push_back(obj);
     ++parametersNumber_;
-    parameters_.push_back((char *)obj->c_str());
+    if (type_ == ClientType::PostgreSQL)
+    {
+        formats_.push_back(0);
+    }
+    else if (type_ == ClientType::Mysql)
+    {
+        formats_.push_back(MySqlString);
+    }
+    else if (type_ == ClientType::Sqlite3)
+    {
+        formats_.push_back(Sqlite3TypeText);
+    }
+    return *this;
+}
+SqlBinder &SqlBinder::operator<<(const std::string &str)
+{
+    auto obj = std::make_shared<std::string>(str);
+    objs_.push_back(obj);
+    ++parametersNumber_;
+    parameters_.push_back(obj->data());
     lengths_.push_back(static_cast<int>(obj->length()));
     if (type_ == ClientType::PostgreSQL)
     {
