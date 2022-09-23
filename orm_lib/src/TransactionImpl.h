@@ -29,9 +29,9 @@ class TransactionImpl : public Transaction,
   public:
     TransactionImpl(ClientType type,
                     const DbConnectionPtr &connPtr,
-                    const std::function<void(bool)> &commitCallback,
-                    const std::function<void()> &usedUpCallback);
-    ~TransactionImpl();
+                    std::function<void(bool)> commitCallback,
+                    std::function<void()> usedUpCallback);
+    ~TransactionImpl() override;
     void rollback() override;
     void setCommitCallback(
         const std::function<void(bool)> &commitCallback) override

@@ -57,7 +57,7 @@ enum class SqlStatus
 class DROGON_EXPORT Result
 {
   public:
-    Result(const ResultImplPtr &ptr) : resultPtr_(ptr)
+    explicit Result(ResultImplPtr ptr) : resultPtr_(std::move(ptr))
     {
     }
     Result(const Result &r) noexcept = default;

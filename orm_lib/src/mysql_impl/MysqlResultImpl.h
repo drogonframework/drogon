@@ -29,13 +29,13 @@ namespace orm
 class MysqlResultImpl : public ResultImpl
 {
   public:
-    MysqlResultImpl(const std::shared_ptr<MYSQL_RES> &r,
+    MysqlResultImpl(std::shared_ptr<MYSQL_RES> r,
                     SizeType affectedRows,
                     unsigned long long insertId) noexcept
-        : result_(r),
+        : result_(std::move(r)),
           rowsNumber_(result_ ? mysql_num_rows(result_.get()) : 0),
-          fieldArray_(r ? mysql_fetch_fields(r.get()) : nullptr),
-          fieldsNumber_(r ? mysql_num_fields(r.get()) : 0),
+          fieldArray_(result_ ? mysql_fetch_fields(result_.get()) : nullptr),
+          fieldsNumber_(result_ ? mysql_num_fields(result_.get()) : 0),
           affectedRows_(affectedRows),
           insertId_(insertId)
     {
@@ -60,9 +60,9 @@ class MysqlResultImpl : public ResultImpl
             MYSQL_ROW row;
             std::vector<unsigned long> vLens;
             vLens.resize(fieldsNumber_);
-            while ((row = mysql_fetch_row(r.get())) != NULL)
+            while ((row = mysql_fetch_row(result_.get())) != NULL)
             {
-                auto lengths = mysql_fetch_lengths(r.get());
+                auto lengths = mysql_fetch_lengths(result_.get());
                 memcpy(vLens.data(),
                        lengths,
                        sizeof(unsigned long) * fieldsNumber_);
