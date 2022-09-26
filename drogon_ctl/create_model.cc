@@ -481,6 +481,11 @@ void create_model::createModelClassFromMysql(
                     info.colType_ = "int16_t";
                     info.colLength_ = 2;
                 }
+                else if (type.find("mediumint") == 0)
+                {
+                    info.colType_ = "int32_t";
+                    info.colLength_ = 3;
+                }
                 else if (type.find("int") == 0)
                 {
                     info.colType_ = "int32_t";
