@@ -268,8 +268,6 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
     using self = SqlBinder;
 
   public:
-    friend class Dbclient;
-
     SqlBinder(const std::string &sql, DbClient &client, ClientType type)
         : sqlPtr_(std::make_shared<std::string>(sql)),
           sqlViewPtr_(sqlPtr_->data()),
@@ -296,7 +294,7 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
           type_(type)
     {
     }
-    SqlBinder(SqlBinder &&that)
+    SqlBinder(SqlBinder &&that) noexcept
         : sqlPtr_(std::move(that.sqlPtr_)),
           sqlViewPtr_(that.sqlViewPtr_),
           sqlViewLength_(that.sqlViewLength_),
@@ -432,6 +430,15 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
     self &operator<<(char str[])
     {
         return operator<<(std::string(str));
+    }
+    self &operator<<(const string_view &str);
+    self &operator<<(string_view &&str)
+    {
+        return operator<<((const string_view &)str);
+    }
+    self &operator<<(string_view &str)
+    {
+        return operator<<((const string_view &)str);
     }
     self &operator<<(const std::string &str);
     self &operator<<(std::string &str)

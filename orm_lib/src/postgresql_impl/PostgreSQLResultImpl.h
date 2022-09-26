@@ -27,8 +27,8 @@ namespace orm
 class PostgreSQLResultImpl : public ResultImpl
 {
   public:
-    PostgreSQLResultImpl(const std::shared_ptr<PGresult> &r) noexcept
-        : result_(r)
+    explicit PostgreSQLResultImpl(std::shared_ptr<PGresult> r) noexcept
+        : result_(std::move(r))
     {
     }
     SizeType size() const noexcept override;

@@ -19,6 +19,7 @@
 #include <drogon/orm/CoroMapper.h>
 #include <drogon/orm/DbClient.h>
 #include <drogon/orm/DbTypes.h>
+#include <drogon/utils/string_view.h>
 #include <trantor/utils/Logger.h>
 
 #include <stdlib.h>
@@ -231,7 +232,7 @@ DROGON_TEST(PostgreTest)
                   e.base().what());
         },
         1);
-    /// 2.3 query, parameter binding
+    /// 2.3 query, parameter binding (string_view)
     clientPtr->execSqlAsync(
         "select * from users where user_id = $1 and user_name = $2",
         [TEST_CTX](const Result &r) { MANDATE(r.size() == 1); },
@@ -239,7 +240,7 @@ DROGON_TEST(PostgreTest)
             FAULT("postgresql - DbClient asynchronous interface(4) what():",
                   e.base().what());
         },
-        "pg1",
+        drogon::string_view("pg1"),
         "postgresql1");
     /// 2.4 delete
     clientPtr->execSqlAsync(
@@ -1704,16 +1705,19 @@ DROGON_TEST(SQLite3Test)
         FAULT("sqlite3 - DbClient asynchronous interface(0) what():",
               e.base().what());
     }
-    /// 3.2 insert
+    /// 3.2 insert,(string_view)
     try
     {
+        drogon::string_view sv("pg1");
+        drogon::string_view sv1("postgresql1");
+        drogon::string_view sv2("123");
         auto r = clientPtr->execSqlSync(
             "insert into users  (user_id,user_name,password,org_name) "
             "values(?,?,?,?)",
-            "pg1",
-            "postgresql1",
-            "123",
-            "default");
+            sv,
+            (const drogon::string_view &)sv1,
+            std::move(sv2),
+            drogon::string_view("default"));
         MANDATE(r.affectedRows() == 1UL);
     }
     catch (const DrogonDbException &e)

@@ -276,7 +276,7 @@ class DROGON_EXPORT Criteria
      */
     template <typename T>
     Criteria(const std::string &colName, T &&arg)
-        : Criteria(colName, CompareOperator::EQ, arg)
+        : Criteria(colName, CompareOperator::EQ, std::forward<T>(arg))
     {
     }
 
@@ -331,11 +331,8 @@ class DROGON_EXPORT Criteria
      * ["user_name","in",["Tom","Bob"]] means 'user_name in ('Tom', 'Bob')'
      * ["price","<",1000] means 'price < 1000'
      */
-    Criteria(const Json::Value &json) noexcept(false);
-
-    Criteria()
-    {
-    }
+    explicit Criteria(const Json::Value &json) noexcept(false);
+    Criteria() = default;
 
     /**
      * @brief Output arguments to the SQL binder object.

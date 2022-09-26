@@ -18,6 +18,8 @@
 using namespace drogon::orm;
 using namespace drogon;
 
+DbClient::~DbClient() = default;
+
 orm::internal::SqlBinder DbClient::operator<<(const std::string &sql)
 {
     return orm::internal::SqlBinder(sql, *this, type_);
@@ -29,7 +31,7 @@ orm::internal::SqlBinder DbClient::operator<<(std::string &&sql)
 }
 
 std::shared_ptr<DbClient> DbClient::newPgClient(const std::string &connInfo,
-                                                const size_t connNum,
+                                                size_t connNum,
                                                 bool autoBatch)
 {
 #if USE_POSTGRESQL
@@ -52,7 +54,7 @@ std::shared_ptr<DbClient> DbClient::newPgClient(const std::string &connInfo,
 }
 
 std::shared_ptr<DbClient> DbClient::newMysqlClient(const std::string &connInfo,
-                                                   const size_t connNum)
+                                                   size_t connNum)
 {
 #if USE_MYSQL
     auto client = std::make_shared<DbClientImpl>(connInfo,
@@ -75,7 +77,7 @@ std::shared_ptr<DbClient> DbClient::newMysqlClient(const std::string &connInfo,
 
 std::shared_ptr<DbClient> DbClient::newSqlite3Client(
     const std::string &connInfo,
-    const size_t connNum)
+    size_t connNum)
 {
 #if USE_SQLITE3
     auto client = std::make_shared<DbClientImpl>(connInfo,

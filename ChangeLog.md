@@ -4,7 +4,31 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
-## [1.8.0] - 2022-07-09
+## [1.8.1] - 2022-09-25
+
+### API changes list
+
+- Support redis subscription.
+
+### Changed
+
+- Remove redundant member functions of drogon::Task.
+
+- Small patches on orm_lib.
+
+- Add support for the string_view type to SqlBinder in orm.
+
+### Fixed
+
+- Fix a conflict of ssize_t type with hiredis.
+
+- Fix a test bug when clients start before servers.
+
+- Fix model template file Unreachable code.
+
+- Use the mysql_library_end() function to avoid memory leaks.
+
+## [1.8.0] - 2022-09-01
 
 ### API changes list
 
@@ -1165,7 +1189,9 @@ All notable changes to this project will be documented in this file.
 
 ## [1.0.0-beta1] - 2019-06-11
 
-[Unreleased]: https://github.com/an-tao/drogon/compare/v1.8.0...HEAD
+[Unreleased]: https://github.com/an-tao/drogon/compare/v1.8.1...HEAD
+
+[1.8.1]: https://github.com/an-tao/drogon/compare/v1.8.0...v1.8.1
 
 [1.8.0]: https://github.com/an-tao/drogon/compare/v1.7.5...v1.8.0
 
