@@ -105,7 +105,7 @@ void RealIpResolver::initAndStart(const Json::Value& config)
         trustCIDRs_.emplace_back(ipOrCidr);
     }
 
-    drogon::app().registerPreHandlingAdvice([this](const HttpRequestPtr& req) {
+    drogon::app().registerPreRoutingAdvice([this](const HttpRequestPtr& req) {
         const std::string& ipHeader = req->getHeader(fromHeader_);
         const trantor::InetAddress& peerAddr = req->getPeerAddr();
         if (ipHeader.empty() || !matchCidr(peerAddr))
@@ -145,6 +145,7 @@ void RealIpResolver::initAndStart(const Json::Value& config)
         }
         // No match, use peerAddr
         req->attributes()->insert(attributeKey_, peerAddr);
+        return;
     });
 }
 
