@@ -37,19 +37,19 @@ namespace plugin
         // The default value is "token_bucket". other values are "fixed_window"
 or "sliding_window".
         "algorithm": "token_bucket",
-        // a regular expression (for matching the path of a
-        // * request) list for URLs that have to be limited. if the list is
-empty, all URLs are limited. "urls": ["^/api/.*", ...],
+        // a regular expression (for matching the path of a request) list for
+URLs that have to be limited. if the list is empty, all URLs are limited.
+        "urls": ["^/api/.*", ...],
+        // The time unit in seconds. the default value is 60.
+        "time_unit": 60,
         // The maximum number of requests in a time unit. the default value 0
 means no limit.
         "capacity": 1000,
-        // The time unit in seconds. the default value is 60.
-        "time_unit": 60,
         // The maximum number of requests in a time unit for a single IP. the
 default value 0 means no limit.
         "ip_capacity": 100,
         // The maximum number of requests in a time unit for a single user.
-a function must be prided to the plugin to get the user id from the request. the
+a function must be provided to the plugin to get the user id from the request. the
 default value 0 means no limit.
         "user_capacity": 100,
         // Use the RealIpResolver plugin to get the real IP address of the
