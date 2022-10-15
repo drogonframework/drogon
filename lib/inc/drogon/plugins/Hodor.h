@@ -44,13 +44,14 @@ URLs that have to be limited. if the list is empty, all URLs are limited.
         "time_unit": 60,
         // The maximum number of requests in a time unit. the default value 0
 means no limit.
-        "capacity": 1000,
+        "capacity": 0,
         // The maximum number of requests in a time unit for a single IP. the
 default value 0 means no limit.
-        "ip_capacity": 100,
+        "ip_capacity": 0,
         // The maximum number of requests in a time unit for a single user.
 a function must be provided to the plugin to get the user id from the request.
-the default value 0 means no limit. "user_capacity": 100,
+the default value 0 means no limit.
+        "user_capacity": 0,
         // Use the RealIpResolver plugin to get the real IP address of the
 request. if this option is true, the RealIpResolver plugin should be added to
 the dependencies list. the default value is false.
