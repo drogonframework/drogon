@@ -109,25 +109,30 @@ void Hodor::onHttpRequest(const drogon::HttpRequestPtr &req,
             ip = req->peerAddr().toIp();
         }
         RateLimiterPtr limiterPtr;
-        ipLimiterMapPtr_->modify(ip, [this, &limiterPtr](RateLimiterPtr &ptr) {
-            if (!ptr)
-            {
-                if (multiThreads_)
+        ipLimiterMapPtr_->modify(
+            ip,
+            [this, &limiterPtr](RateLimiterPtr &ptr) {
+                if (!ptr)
                 {
-                    ptr = std::make_shared<SafeRateLimiter>(
-                        RateLimiter::newRateLimiter(algorithm_,
-                                                    ipCapacity_,
-                                                    timeUnit_));
+                    if (multiThreads_)
+                    {
+                        ptr = std::make_shared<SafeRateLimiter>(
+                            RateLimiter::newRateLimiter(algorithm_,
+                                                        ipCapacity_,
+                                                        timeUnit_));
+                    }
+                    else
+                    {
+                        ptr = RateLimiter::newRateLimiter(algorithm_,
+                                                          ipCapacity_,
+                                                          timeUnit_);
+                    }
                 }
-                else
-                {
-                    ptr = RateLimiter::newRateLimiter(algorithm_,
-                                                      ipCapacity_,
-                                                      timeUnit_);
-                }
-            }
-            limiterPtr = ptr;
-        });
+                limiterPtr = ptr;
+            },
+            timeUnit_.count() * 3 < 600
+                ? 600
+                : static_cast<size_t>(timeUnit_.count() * 3));
         if (!limiterPtr->isAllowed())
         {
             adviceCallback(rejectResponse_);
@@ -147,7 +152,8 @@ void Hodor::onHttpRequest(const drogon::HttpRequestPtr &req,
         {
             RateLimiterPtr limiterPtr;
             userLimiterMapPtr_->modify(
-                *userId, [this, &limiterPtr](RateLimiterPtr &ptr) {
+                *userId,
+                [this, &limiterPtr](RateLimiterPtr &ptr) {
                     if (!ptr)
                     {
                         if (multiThreads_)
@@ -165,7 +171,10 @@ void Hodor::onHttpRequest(const drogon::HttpRequestPtr &req,
                         }
                     }
                     limiterPtr = ptr;
-                });
+                },
+                timeUnit_.count() * 3 < 600
+                    ? 600
+                    : static_cast<size_t>(timeUnit_.count() * 3));
             if (!limiterPtr->isAllowed())
             {
                 adviceCallback(rejectResponse_);

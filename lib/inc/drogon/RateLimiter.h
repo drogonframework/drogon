@@ -38,7 +38,7 @@ class DROGON_EXPORT RateLimiter
     static RateLimiterPtr newRateLimiter(
         RateLimiterType type,
         size_t capacity,
-        std::chrono::duration<double> timeUnit = std::chrono::seconds(1));
+        std::chrono::duration<double> timeUnit = std::chrono::seconds(60));
     /**
      * @brief Check if a request is allowed
      *

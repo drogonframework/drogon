@@ -49,9 +49,8 @@ means no limit.
 default value 0 means no limit.
         "ip_capacity": 100,
         // The maximum number of requests in a time unit for a single user.
-a function must be provided to the plugin to get the user id from the request. the
-default value 0 means no limit.
-        "user_capacity": 100,
+a function must be provided to the plugin to get the user id from the request.
+the default value 0 means no limit. "user_capacity": 100,
         // Use the RealIpResolver plugin to get the real IP address of the
 request. if this option is true, the RealIpResolver plugin should be added to
 the dependencies list. the default value is false.

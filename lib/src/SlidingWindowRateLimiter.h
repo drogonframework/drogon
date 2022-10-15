@@ -9,7 +9,7 @@ class SlidingWindowRateLimiter : public RateLimiter
   public:
     SlidingWindowRateLimiter(size_t capacity,
                              std::chrono::duration<double> timeUnit);
-    virtual bool isAllowed() override;
+    bool isAllowed() override;
 
   private:
     size_t capacity_;
@@ -20,4 +20,3 @@ class SlidingWindowRateLimiter : public RateLimiter
     std::chrono::duration<double> timeUnit_;
 };
 }  // namespace drogon
-}
