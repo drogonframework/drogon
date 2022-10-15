@@ -2,6 +2,7 @@
 #include <drogon/exports.h>
 #include <memory>
 #include <chrono>
+#include <mutex>
 
 namespace drogon
 {

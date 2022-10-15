@@ -17,11 +17,15 @@ bool SlidingWindowRateLimiter::isAllowed()
 {
     auto now = std::chrono::steady_clock::now();
     unitStartTime_ =
-        (uint64_t)(std::chrono::duration_cast<std::chrono::duration<double>>(
-                       now - unitStartTime_) /
-                   timeUnit_) *
-            timeUnit_ +
-        unitStartTime_;
+        unitStartTime_ +
+        std::chrono::duration<double>(
+            static_cast<double>((uint64_t)(
+                std::chrono::duration_cast<std::chrono::duration<double>>(
+                    now - unitStartTime_)
+                    .count() /
+                timeUnit_.count())) *
+            timeUnit_.count());
+
     if (unitStartTime_ > lastTime_)
     {
         auto duration =
