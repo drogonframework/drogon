@@ -71,6 +71,9 @@ true, some mutexes are used for thread-safe.
 class DROGON_EXPORT Hodor : public drogon::Plugin<Hodor>
 {
   public:
+    Hodor()
+    {
+    }
     void initAndStart(const Json::Value &config) override;
     void shutdown() override;
     /**
