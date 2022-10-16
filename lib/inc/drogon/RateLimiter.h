@@ -12,7 +12,7 @@ enum class DROGON_EXPORT RateLimiterType
     kSlidingWindow,
     kTokenBucket
 };
-inline RateLimiterType stringToReateLimiterType(const std::string &type)
+inline RateLimiterType stringToRateLimiterType(const std::string &type)
 {
     if (type == "fixedWindow" || type == "fixed_window")
         return RateLimiterType::kFixedWindow;

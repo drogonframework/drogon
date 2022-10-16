@@ -19,7 +19,7 @@ void Hodor::initAndStart(const Json::Value &config)
             regexFlag_ = true;
         }
     }
-    algorithm_ = stringToReateLimiterType(
+    algorithm_ = stringToRateLimiterType(
         config.get("algorithm", "token_bucket").asString());
     timeUnit_ = std::chrono::seconds(config.get("time_unit", 60).asUInt());
     capacity_ = config.get("capacity", 0).asUInt();

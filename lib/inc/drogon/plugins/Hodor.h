@@ -57,7 +57,7 @@ request. if this option is true, the RealIpResolver plugin should be added to
 the dependencies list. the default value is false.
         "use_real_ip_resolver": false,
         // Multiple threads mode: the default value is true. if this option is
-true, some mutexes are used to make it thread-safe.
+true, some mutexes are used for thread-safe.
         "multi_threads": true,
         // The message body of the response when the request is rejected.
         "rejection_message": "Too many requests"
