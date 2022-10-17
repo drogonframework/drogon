@@ -32,23 +32,6 @@
 
 namespace drogon
 {
-namespace internal
-{
-struct SafeStringHash
-{
-    size_t operator()(const std::string &str) const
-    {
-        static size_t fixedRandomNumber = []() {
-            size_t result;
-            utils::secureRandomBytes(&result, sizeof(result));
-            return result;
-        }();
-        std::hash<std::string> hash;
-        return hash(str) ^ fixedRandomNumber;
-    }
-};
-}  // namespace internal
-
 class HttpRequest;
 using HttpRequestPtr = std::shared_ptr<HttpRequest>;
 

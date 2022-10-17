@@ -409,4 +409,21 @@ inline bool fromString<bool>(const std::string &p) noexcept(false)
     throw std::runtime_error("Can't convert from string '" + p + "' to bool");
 }
 }  // namespace utils
+
+namespace internal
+{
+const size_t fixedRandomNumber = []() {
+    size_t res;
+    utils::secureRandomBytes(&res, sizeof(res));
+    return res;
+}();
+struct SafeStringHash
+{
+    size_t operator()(const std::string &str) const
+    {
+        std::hash<std::string> hasher;
+        return hasher(str) ^ fixedRandomNumber;
+    }
+};
+}  // namespace internal
 }  // namespace drogon

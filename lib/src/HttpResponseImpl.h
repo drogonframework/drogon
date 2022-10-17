@@ -130,7 +130,8 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
         removeHeaderBy(key);
     }
 
-    const std::unordered_map<std::string, std::string> &headers() const override
+    const std::unordered_map<std::string, std::string, internal::SafeStringHash>
+        &headers() const override
     {
         return headers_;
     }
@@ -200,7 +201,8 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
         return defaultCookie;
     }
 
-    const std::unordered_map<std::string, Cookie> &cookies() const override
+    const std::unordered_map<std::string, Cookie, internal::SafeStringHash>
+        &cookies() const override
     {
         return cookies_;
     }
@@ -446,8 +448,9 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
         statusMessage_ = string_view{message, messageLength};
     }
 
-    std::unordered_map<std::string, std::string> headers_;
-    std::unordered_map<std::string, Cookie> cookies_;
+    std::unordered_map<std::string, std::string, internal::SafeStringHash>
+        headers_;
+    std::unordered_map<std::string, Cookie, internal::SafeStringHash> cookies_;
 
     int customStatusCode_{-1};
     HttpStatusCode statusCode_{kUnknown};
