@@ -32,6 +32,23 @@
 
 namespace drogon
 {
+namespace internal
+{
+struct SafeStringHash
+{
+    size_t operator()(const std::string &str) const
+    {
+        static size_t fixedRandomNumber = []() {
+            size_t result;
+            utils::secureRandomBytes(&result, sizeof(result));
+            return result;
+        }();
+        std::hash<std::string> hash;
+        return hash(str) ^ fixedRandomNumber;
+    }
+};
+}  // namespace internal
+
 class HttpRequest;
 using HttpRequestPtr = std::shared_ptr<HttpRequest>;
 
@@ -148,21 +165,25 @@ class DROGON_EXPORT HttpRequest
     virtual const std::string &getCookie(const std::string &field) const = 0;
 
     /// Get all headers of the request
-    virtual const std::unordered_map<std::string, std::string> &headers()
-        const = 0;
+    virtual const std::
+        unordered_map<std::string, std::string, internal::SafeStringHash>
+            &headers() const = 0;
 
     /// Get all headers of the request
-    const std::unordered_map<std::string, std::string> &getHeaders() const
+    const std::unordered_map<std::string, std::string, internal::SafeStringHash>
+        &getHeaders() const
     {
         return headers();
     }
 
     /// Get all cookies of the request
-    virtual const std::unordered_map<std::string, std::string> &cookies()
-        const = 0;
+    virtual const std::
+        unordered_map<std::string, std::string, internal::SafeStringHash>
+            &cookies() const = 0;
 
     /// Get all cookies of the request
-    const std::unordered_map<std::string, std::string> &getCookies() const
+    const std::unordered_map<std::string, std::string, internal::SafeStringHash>
+        &getCookies() const
     {
         return cookies();
     }
@@ -267,11 +288,13 @@ class DROGON_EXPORT HttpRequest
     }
 
     /// Get parameters of the request.
-    virtual const std::unordered_map<std::string, std::string> &parameters()
-        const = 0;
+    virtual const std::
+        unordered_map<std::string, std::string, internal::SafeStringHash>
+            &parameters() const = 0;
 
     /// Get parameters of the request.
-    const std::unordered_map<std::string, std::string> &getParameters() const
+    const std::unordered_map<std::string, std::string, internal::SafeStringHash>
+        &getParameters() const
     {
         return parameters();
     }
