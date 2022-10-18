@@ -60,7 +60,10 @@ the dependencies list. the default value is false.
 true, some mutexes are used for thread-safe.
         "multi_threads": true,
         // The message body of the response when the request is rejected.
-        "rejection_message": "Too many requests"
+        "rejection_message": "Too many requests",
+        // In seconds, the minimum expiration time of the limiters for different
+IPs or users. the default value is 600.
+        "limiter_expire_time": 600
      }
   }
   @endcode
@@ -82,9 +85,19 @@ class DROGON_EXPORT Hodor : public drogon::Plugin<Hodor>
      * method. etc. use the beginning advice of AOP.
      * */
     void setUserIdGetter(
-        std::function<optional<std::string>(const HttpRequestPtr)> func)
+        std::function<optional<std::string>(const HttpRequestPtr &)> func)
     {
         userIdGetter_ = std::move(func);
+    }
+    /**
+     * @brief the method is used to set a function to create the response when
+     * the rate limit is exceeded. users should call this method after calling
+     * the app().run() method. etc. use the beginning advice of AOP.
+     * */
+    void setRejectResponseFactory(
+        std::function<HttpResponsePtr(const HttpRequestPtr &)> func)
+    {
+        rejectResponseFactory_ = std::move(func);
     }
 
   private:
@@ -98,8 +111,11 @@ class DROGON_EXPORT Hodor : public drogon::Plugin<Hodor>
     size_t userCapacity_{0};
     bool multiThreads_{true};
     bool useRealIpResolver_{false};
+    size_t limiterExpireTime_{600};
     std::function<optional<std::string>(const drogon::HttpRequestPtr &)>
         userIdGetter_;
+    std::function<HttpResponsePtr(const HttpRequestPtr &)>
+        rejectResponseFactory_;
     std::unique_ptr<CacheMap<std::string, RateLimiterPtr>> ipLimiterMapPtr_;
     std::unique_ptr<CacheMap<std::string, RateLimiterPtr>> userLimiterMapPtr_;
     void onHttpRequest(const HttpRequestPtr &,

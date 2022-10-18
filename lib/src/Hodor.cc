@@ -65,6 +65,10 @@ void Hodor::initAndStart(const Json::Value &config)
     rejectResponse_->setBody(
         config.get("rejection_message", "Too many requests").asString());
     rejectResponse_->setCloseConnection(true);
+    limiterExpireTime_ =
+        (std::min)(static_cast<size_t>(
+                       config.get("limiter_expire_time", 600).asUInt()),
+                   static_cast<size_t>(timeUnit_.count() * 3));
     app().registerPreHandlingAdvice([this](const HttpRequestPtr &req,
                                            AdviceCallback &&acb,
                                            AdviceChainCallback &&accb) {
@@ -93,7 +97,14 @@ void Hodor::onHttpRequest(const drogon::HttpRequestPtr &req,
     {
         if (!globalLimiterPtr_->isAllowed())
         {
-            adviceCallback(rejectResponse_);
+            if (rejectResponseFactory_)
+            {
+                adviceCallback(rejectResponseFactory_(req));
+            }
+            else
+            {
+                adviceCallback(rejectResponse_);
+            }
             return;
         }
     }
@@ -130,12 +141,17 @@ void Hodor::onHttpRequest(const drogon::HttpRequestPtr &req,
                 }
                 limiterPtr = ptr;
             },
-            timeUnit_.count() * 3 < 600
-                ? 600
-                : static_cast<size_t>(timeUnit_.count() * 3));
+            limiterExpireTime_);
         if (!limiterPtr->isAllowed())
         {
-            adviceCallback(rejectResponse_);
+            if (rejectResponseFactory_)
+            {
+                adviceCallback(rejectResponseFactory_(req));
+            }
+            else
+            {
+                adviceCallback(rejectResponse_);
+            }
             return;
         }
     }
@@ -172,12 +188,17 @@ void Hodor::onHttpRequest(const drogon::HttpRequestPtr &req,
                     }
                     limiterPtr = ptr;
                 },
-                timeUnit_.count() * 3 < 600
-                    ? 600
-                    : static_cast<size_t>(timeUnit_.count() * 3));
+                limiterExpireTime_);
             if (!limiterPtr->isAllowed())
             {
-                adviceCallback(rejectResponse_);
+                if (rejectResponseFactory_)
+                {
+                    adviceCallback(rejectResponseFactory_(req));
+                }
+                else
+                {
+                    adviceCallback(rejectResponse_);
+                }
                 return;
             }
         }
