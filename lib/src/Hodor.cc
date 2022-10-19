@@ -2,8 +2,10 @@
 #include <drogon/plugins/RealIpResolver.h>
 
 using namespace drogon::plugin;
-void Hodor::initAndStart(const Json::Value &config)
+Hodor::LimitStrategy Hodor::makeLimitStrategy(const Json::Value &config)
 {
+    LimitStrategy strategy;
+    strategy.capacity = config.get("capacity", 0).asUInt();
     if (config.isMember("urls") && config["urls"].isArray())
     {
         std::string regexString;
@@ -15,32 +17,32 @@ void Hodor::initAndStart(const Json::Value &config)
         if (!regexString.empty())
         {
             regexString.resize(regexString.length() - 1);
-            regex_ = std::regex(regexString);
-            regexFlag_ = true;
+            strategy.urlsRegex = std::regex(regexString);
+            strategy.regexFlag = true;
         }
     }
-    algorithm_ = stringToRateLimiterType(
-        config.get("algorithm", "token_bucket").asString());
-    timeUnit_ = std::chrono::seconds(config.get("time_unit", 60).asUInt());
-    capacity_ = config.get("capacity", 0).asUInt();
-    multiThreads_ = config.get("multi_threads", true).asBool();
-    if (capacity_ > 0)
+
+    if (strategy.capacity > 0)
     {
         if (multiThreads_)
         {
-            globalLimiterPtr_ = std::make_shared<SafeRateLimiter>(
-                RateLimiter::newRateLimiter(algorithm_, capacity_, timeUnit_));
+            strategy.globalLimiterPtr = std::make_shared<SafeRateLimiter>(
+                RateLimiter::newRateLimiter(algorithm_,
+                                            strategy.capacity,
+                                            timeUnit_));
         }
         else
         {
-            globalLimiterPtr_ =
-                RateLimiter::newRateLimiter(algorithm_, capacity_, timeUnit_);
+            strategy.globalLimiterPtr =
+                RateLimiter::newRateLimiter(algorithm_,
+                                            strategy.capacity,
+                                            timeUnit_);
         }
     }
-    ipCapacity_ = config.get("ip_capacity", 0).asUInt();
-    if (ipCapacity_ > 0)
+    strategy.ipCapacity = config.get("ip_capacity", 0).asUInt();
+    if (strategy.ipCapacity > 0)
     {
-        ipLimiterMapPtr_ =
+        strategy.ipLimiterMapPtr =
             std::make_unique<CacheMap<std::string, RateLimiterPtr>>(
                 drogon::app().getLoop(),
                 timeUnit_.count() / 60 < 1 ? 1 : timeUnit_.count() / 60,
@@ -48,16 +50,25 @@ void Hodor::initAndStart(const Json::Value &config)
                 100);
     }
 
-    userCapacity_ = config.get("user_capacity", 0).asUInt();
-    if (userCapacity_ > 0)
+    strategy.userCapacity = config.get("user_capacity", 0).asUInt();
+    if (strategy.userCapacity > 0)
     {
-        userLimiterMapPtr_ =
+        strategy.userLimiterMapPtr =
             std::make_unique<CacheMap<std::string, RateLimiterPtr>>(
                 drogon::app().getLoop(),
                 timeUnit_.count() / 60 < 1 ? 1 : timeUnit_.count() / 60,
                 2,
                 100);
     }
+    return strategy;
+}
+void Hodor::initAndStart(const Json::Value &config)
+{
+    algorithm_ = stringToRateLimiterType(
+        config.get("algorithm", "token_bucket").asString());
+    timeUnit_ = std::chrono::seconds(config.get("time_unit", 60).asUInt());
+
+    multiThreads_ = config.get("multi_threads", true).asBool();
 
     useRealIpResolver_ = config.get("use_real_ip_resolver", false).asBool();
     rejectResponse_ = HttpResponse::newHttpResponse();
@@ -69,6 +80,29 @@ void Hodor::initAndStart(const Json::Value &config)
         (std::min)(static_cast<size_t>(
                        config.get("limiter_expire_time", 600).asUInt()),
                    static_cast<size_t>(timeUnit_.count() * 3));
+    limitStrategies_.emplace_back(makeLimitStrategy(config));
+    if (config.isMember("sub_limits") && config["sub_limits"].isArray())
+    {
+        for (auto &subLimit : config["sub_limits"])
+        {
+            assert(subLimit.isObject());
+            if (!subLimit["urls"].isArray() || subLimit["urls"].size() == 0)
+            {
+                LOG_ERROR
+                    << "The urls of sub_limits must be an array and not empty!";
+                continue;
+            }
+            if (subLimit["capacity"].asUInt() == 0 &&
+                subLimit["ip_capacity"].asUInt() == 0 &&
+                subLimit["user_capacity"].asUInt() == 0)
+            {
+                LOG_ERROR << "At least one capacity of sub_limits must be "
+                             "greater than 0!";
+                continue;
+            }
+            limitStrategies_.emplace_back(makeLimitStrategy(subLimit));
+        }
+    }
     app().registerPreHandlingAdvice([this](const HttpRequestPtr &req,
                                            AdviceCallback &&acb,
                                            AdviceChainCallback &&accb) {
@@ -80,62 +114,44 @@ void Hodor::shutdown()
 {
     LOG_TRACE << "Hodor plugin is shutdown!";
 }
-
-void Hodor::onHttpRequest(const drogon::HttpRequestPtr &req,
-                          drogon::AdviceCallback &&adviceCallback,
-                          drogon::AdviceChainCallback &&chainCallback)
+bool Hodor::checkLimit(const HttpRequestPtr &req,
+                       const LimitStrategy &strategy,
+                       const std::string &ip,
+                       const optional<std::string> &userId)
 {
-    if (regexFlag_)
+    if (strategy.regexFlag)
     {
-        if (!std::regex_match(req->path(), regex_))
+        if (!std::regex_match(req->path(), strategy.urlsRegex))
         {
-            chainCallback();
-            return;
+            return true;
         }
     }
-    if (globalLimiterPtr_)
+    if (strategy.globalLimiterPtr)
     {
-        if (!globalLimiterPtr_->isAllowed())
+        if (!strategy.globalLimiterPtr->isAllowed())
         {
-            if (rejectResponseFactory_)
-            {
-                adviceCallback(rejectResponseFactory_(req));
-            }
-            else
-            {
-                adviceCallback(rejectResponse_);
-            }
-            return;
+            return false;
         }
     }
-    if (ipCapacity_ > 0)
+    if (strategy.ipCapacity > 0)
     {
-        std::string ip;
-        if (useRealIpResolver_)
-        {
-            ip = drogon::plugin::RealIpResolver::GetRealAddr(req).toIp();
-        }
-        else
-        {
-            ip = req->peerAddr().toIp();
-        }
         RateLimiterPtr limiterPtr;
-        ipLimiterMapPtr_->modify(
+        strategy.ipLimiterMapPtr->modify(
             ip,
-            [this, &limiterPtr](RateLimiterPtr &ptr) {
+            [this, &limiterPtr, &strategy](RateLimiterPtr &ptr) {
                 if (!ptr)
                 {
                     if (multiThreads_)
                     {
                         ptr = std::make_shared<SafeRateLimiter>(
                             RateLimiter::newRateLimiter(algorithm_,
-                                                        ipCapacity_,
+                                                        strategy.ipCapacity,
                                                         timeUnit_));
                     }
                     else
                     {
                         ptr = RateLimiter::newRateLimiter(algorithm_,
-                                                          ipCapacity_,
+                                                          strategy.ipCapacity,
                                                           timeUnit_);
                     }
                 }
@@ -144,6 +160,67 @@ void Hodor::onHttpRequest(const drogon::HttpRequestPtr &req,
             limiterExpireTime_);
         if (!limiterPtr->isAllowed())
         {
+            return false;
+        }
+    }
+    if (strategy.userCapacity > 0)
+    {
+        if (!userId.has_value())
+        {
+            return true;
+        }
+
+        RateLimiterPtr limiterPtr;
+        strategy.userLimiterMapPtr->modify(
+            *userId,
+            [this, &strategy, &limiterPtr](RateLimiterPtr &ptr) {
+                if (!ptr)
+                {
+                    if (multiThreads_)
+                    {
+                        ptr = std::make_shared<SafeRateLimiter>(
+                            RateLimiter::newRateLimiter(algorithm_,
+                                                        strategy.userCapacity,
+                                                        timeUnit_));
+                    }
+                    else
+                    {
+                        ptr = RateLimiter::newRateLimiter(algorithm_,
+                                                          strategy.userCapacity,
+                                                          timeUnit_);
+                    }
+                }
+                limiterPtr = ptr;
+            },
+            limiterExpireTime_);
+        if (!limiterPtr->isAllowed())
+        {
+            return false;
+        }
+    }
+}
+void Hodor::onHttpRequest(const drogon::HttpRequestPtr &req,
+                          drogon::AdviceCallback &&adviceCallback,
+                          drogon::AdviceChainCallback &&chainCallback)
+{
+    std::string ip;
+    if (useRealIpResolver_)
+    {
+        ip = drogon::plugin::RealIpResolver::GetRealAddr(req).toIp();
+    }
+    else
+    {
+        ip = req->peerAddr().toIp();
+    }
+    optional<std::string> userId;
+    if (userIdGetter_)
+    {
+        userId = userIdGetter_(req);
+    }
+    for (auto &strategy : limitStrategies_)
+    {
+        if (!checkLimit(req, strategy, ip, userId))
+        {
             if (rejectResponseFactory_)
             {
                 adviceCallback(rejectResponseFactory_(req));
@@ -153,54 +230,6 @@ void Hodor::onHttpRequest(const drogon::HttpRequestPtr &req,
                 adviceCallback(rejectResponse_);
             }
             return;
-        }
-    }
-    if (userCapacity_ > 0)
-    {
-        if (!userIdGetter_)
-        {
-            LOG_ERROR << "The user id getter is not set!";
-            chainCallback();
-            return;
-        }
-        auto userId = userIdGetter_(req);
-        if (userId)
-        {
-            RateLimiterPtr limiterPtr;
-            userLimiterMapPtr_->modify(
-                *userId,
-                [this, &limiterPtr](RateLimiterPtr &ptr) {
-                    if (!ptr)
-                    {
-                        if (multiThreads_)
-                        {
-                            ptr = std::make_shared<SafeRateLimiter>(
-                                RateLimiter::newRateLimiter(algorithm_,
-                                                            userCapacity_,
-                                                            timeUnit_));
-                        }
-                        else
-                        {
-                            ptr = RateLimiter::newRateLimiter(algorithm_,
-                                                              userCapacity_,
-                                                              timeUnit_);
-                        }
-                    }
-                    limiterPtr = ptr;
-                },
-                limiterExpireTime_);
-            if (!limiterPtr->isAllowed())
-            {
-                if (rejectResponseFactory_)
-                {
-                    adviceCallback(rejectResponseFactory_(req));
-                }
-                else
-                {
-                    adviceCallback(rejectResponse_);
-                }
-                return;
-            }
         }
     }
     chainCallback();

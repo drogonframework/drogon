@@ -63,7 +63,15 @@ true, some mutexes are used for thread-safe.
         "rejection_message": "Too many requests",
         // In seconds, the minimum expiration time of the limiters for different
 IPs or users. the default value is 600.
-        "limiter_expire_time": 600
+        "limiter_expire_time": 600,
+        "sub_limits": [
+            {
+                "urls": ["^/api/1/.*", ...],
+                "capacity": 0,
+                "ip_capacity": 0,
+                "user_capacity": 0
+            },...
+         ]
      }
   }
   @endcode
@@ -101,14 +109,22 @@ class DROGON_EXPORT Hodor : public drogon::Plugin<Hodor>
     }
 
   private:
-    RateLimiterPtr globalLimiterPtr_;
-    std::regex regex_;
-    bool regexFlag_{false};
+    struct LimitStrategy
+    {
+        std::regex urlsRegex;
+        size_t capacity{0};
+        size_t ipCapacity{0};
+        size_t userCapacity{0};
+        bool regexFlag{false};
+        RateLimiterPtr globalLimiterPtr;
+        std::unique_ptr<CacheMap<std::string, RateLimiterPtr>> ipLimiterMapPtr;
+        std::unique_ptr<CacheMap<std::string, RateLimiterPtr>>
+            userLimiterMapPtr;
+    };
+    LimitStrategy makeLimitStrategy(const Json::Value &config);
+    std::vector<LimitStrategy> limitStrategies_;
     RateLimiterType algorithm_{RateLimiterType::kTokenBucket};
     std::chrono::duration<double> timeUnit_{1.0};
-    size_t capacity_{0};
-    size_t ipCapacity_{0};
-    size_t userCapacity_{0};
     bool multiThreads_{true};
     bool useRealIpResolver_{false};
     size_t limiterExpireTime_{600};
@@ -116,11 +132,14 @@ class DROGON_EXPORT Hodor : public drogon::Plugin<Hodor>
         userIdGetter_;
     std::function<HttpResponsePtr(const HttpRequestPtr &)>
         rejectResponseFactory_;
-    std::unique_ptr<CacheMap<std::string, RateLimiterPtr>> ipLimiterMapPtr_;
-    std::unique_ptr<CacheMap<std::string, RateLimiterPtr>> userLimiterMapPtr_;
+
     void onHttpRequest(const HttpRequestPtr &,
                        AdviceCallback &&,
                        AdviceChainCallback &&);
+    bool checkLimit(const HttpRequestPtr &req,
+                    const LimitStrategy &strategy,
+                    const std::string &ip,
+                    const optional<std::string> &userId);
     HttpResponsePtr rejectResponse_;
 };
 }  // namespace plugin
