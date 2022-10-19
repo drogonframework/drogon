@@ -442,8 +442,8 @@ class CacheMap
     size_t wheelsNumber_;
     size_t bucketsNumPerWheel_;
     std::shared_ptr<ControlBlock> ctrlBlockPtr_;
-    std::function<void(T1)> fnOnInsert_;
-    std::function<void(T1)> fnOnErase_;
+    std::function<void(const T1&)> fnOnInsert_;
+    std::function<void(const T1&)> fnOnErase_;
 
     bool noWheels_{false};
 
