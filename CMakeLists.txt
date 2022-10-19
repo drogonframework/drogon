@@ -547,6 +547,7 @@ set(DROGON_HEADERS
     lib/inc/drogon/MultiPart.h
     lib/inc/drogon/NotFound.h
     lib/inc/drogon/Session.h
+    lib/inc/drogon/SessionEvents.h
     lib/inc/drogon/UploadFile.h
     lib/inc/drogon/WebSocketClient.h
     lib/inc/drogon/WebSocketConnection.h

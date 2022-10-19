@@ -86,12 +86,17 @@ class CacheMap
     CacheMap(trantor::EventLoop *loop,
              float tickInterval = TICK_INTERVAL,
              size_t wheelsNum = WHEELS_NUM,
-             size_t bucketsNumPerWheel = BUCKET_NUM_PER_WHEEL)
+             size_t bucketsNumPerWheel = BUCKET_NUM_PER_WHEEL,
+             std::function<void(const T1&)> fnOnInsert = [](const T1&){},
+             std::function<void(const T1&)> fnOnErase  = [](const T1&){}
+            )
         : loop_(loop),
           tickInterval_(tickInterval),
           wheelsNumber_(wheelsNum),
           bucketsNumPerWheel_(bucketsNumPerWheel),
-          ctrlBlockPtr_(std::make_shared<ControlBlock>())
+          ctrlBlockPtr_(std::make_shared<ControlBlock>()),
+          fnOnInsert_(fnOnInsert),
+          fnOnErase_(fnOnErase)
     {
         wheels_.resize(wheelsNumber_);
         for (size_t i = 0; i < wheelsNumber_; ++i)
@@ -202,6 +207,8 @@ class CacheMap
                 size_t timeout = 0,
                 std::function<void()> timeoutCallback = std::function<void()>())
     {
+        fnOnInsert_(key);
+
         if (timeout > 0)
         {
             MapValue v{std::move(value), timeout, std::move(timeoutCallback)};
@@ -231,6 +238,8 @@ class CacheMap
                 size_t timeout = 0,
                 std::function<void()> timeoutCallback = std::function<void()>())
     {
+        fnOnInsert_(key);
+
         if (timeout > 0)
         {
             MapValue v{value, timeout, std::move(timeoutCallback)};
@@ -284,6 +293,7 @@ class CacheMap
      * the key doesn't exist, a new one is created and passed to the handler and
      * stored in the cache with the timeout parameter. The changing of the data
      * is protected by the mutex of the cache.
+     * 
      */
     template <typename Callable>
     void modify(const T1 &key, Callable &&handler, size_t timeout = 0)
@@ -298,6 +308,9 @@ class CacheMap
                 eraseAfter(timeout, key);
             return;
         }
+
+        fnOnInsert_(key);
+
         MapValue v{T2(), timeout};
         handler(v.value_);
         map_.insert(std::make_pair(key, std::move(v)));
@@ -306,6 +319,7 @@ class CacheMap
             eraseAfter(timeout, key);
         }
     }
+
     /// Check if the value of the keyword exists
     bool find(const T1 &key)
     {
@@ -359,6 +373,9 @@ class CacheMap
     {
         // in this case,we don't evoke the timeout callback;
         std::lock_guard<std::mutex> lock(mtx_);
+        
+        fnOnErase_(key);
+
         map_.erase(key);
     }
     /**
@@ -425,6 +442,8 @@ class CacheMap
     size_t wheelsNumber_;
     size_t bucketsNumPerWheel_;
     std::shared_ptr<ControlBlock> ctrlBlockPtr_;
+    std::function<void(T1)> fnOnInsert_;
+    std::function<void(T1)> fnOnErase_;
 
     bool noWheels_{false};
 
@@ -498,6 +517,9 @@ class CacheMap
                         {
                             value.timeoutCallback_();
                         }
+
+                        fnOnErase_(key);
+
                         map_.erase(key);
                     }
                 }

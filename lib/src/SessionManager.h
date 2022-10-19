@@ -15,6 +15,7 @@
 #pragma once
 
 #include <drogon/Session.h>
+#include <drogon/SessionEvents.h>
 #include <drogon/CacheMap.h>
 #include <trantor/utils/NonCopyable.h>
 #include <trantor/net/EventLoop.h>
@@ -27,7 +28,9 @@ namespace drogon
 class SessionManager : public trantor::NonCopyable
 {
   public:
-    SessionManager(trantor::EventLoop *loop, size_t timeout);
+    SessionManager( trantor::EventLoop *loop, size_t timeout, 
+                    SessionEventsPtr sessionEventsPtr = std::make_unique<SessionEvents>()
+                  );
     ~SessionManager()
     {
         sessionMapPtr_.reset();
@@ -35,9 +38,13 @@ class SessionManager : public trantor::NonCopyable
     SessionPtr getSession(const std::string &sessionID, bool needToSet);
     void changeSessionId(const SessionPtr &sessionPtr);
 
+    void setEventsHandler( SessionEventsPtr sessionEventsPtr )
+    { sessionEventsPtr_ = std::move(sessionEventsPtr); }
+
   private:
     std::unique_ptr<CacheMap<std::string, SessionPtr>> sessionMapPtr_;
     trantor::EventLoop *loop_;
     size_t timeout_;
+    SessionEventsPtr sessionEventsPtr_;
 };
 }  // namespace drogon

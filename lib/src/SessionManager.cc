@@ -17,8 +17,8 @@
 
 using namespace drogon;
 
-SessionManager::SessionManager(trantor::EventLoop *loop, size_t timeout)
-    : loop_(loop), timeout_(timeout)
+SessionManager::SessionManager(trantor::EventLoop *loop, size_t timeout, SessionEventsPtr sessionEventsPtr )
+    : loop_(loop), timeout_(timeout), sessionEventsPtr_( std::move(sessionEventsPtr) )
 {
     if (timeout_ > 0)
     {
@@ -40,12 +40,16 @@ SessionManager::SessionManager(trantor::EventLoop *loop, size_t timeout)
         }
         sessionMapPtr_ = std::unique_ptr<CacheMap<std::string, SessionPtr>>(
             new CacheMap<std::string, SessionPtr>(
-                loop_, 1.0, wheelNum, bucketNum));
+                loop_, 1.0, wheelNum, bucketNum,
+                [this](const std::string& key){ sessionEventsPtr_->onSessionStart(key); }, 
+                [this](const std::string& key){ sessionEventsPtr_->onSessionDestroy(key); } ));
     }
     else if (timeout_ == 0)
     {
         sessionMapPtr_ = std::unique_ptr<CacheMap<std::string, SessionPtr>>(
-            new CacheMap<std::string, SessionPtr>(loop_, 0, 0, 0));
+            new CacheMap<std::string, SessionPtr>(loop_, 0, 0, 0,
+                [this](const std::string& key){ sessionEventsPtr_->onSessionStart(key); }, 
+                [this](const std::string& key){ sessionEventsPtr_->onSessionDestroy(key); } ));
     }
 }
 
@@ -69,6 +73,7 @@ SessionPtr SessionManager::getSession(const std::string &sessionID,
             }
         },
         timeout_);
+
     return sessionPtr;
 }
 
