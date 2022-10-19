@@ -169,7 +169,6 @@ bool Hodor::checkLimit(const HttpRequestPtr &req,
         {
             return true;
         }
-
         RateLimiterPtr limiterPtr;
         strategy.userLimiterMapPtr->modify(
             *userId,
@@ -198,6 +197,7 @@ bool Hodor::checkLimit(const HttpRequestPtr &req,
             return false;
         }
     }
+    return true;
 }
 void Hodor::onHttpRequest(const drogon::HttpRequestPtr &req,
                           drogon::AdviceCallback &&adviceCallback,
