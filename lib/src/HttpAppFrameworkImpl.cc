@@ -97,7 +97,7 @@ HttpAppFrameworkImpl::HttpAppFrameworkImpl()
       pluginsManagerPtr_(new PluginsManager),
       dbClientManagerPtr_(new orm::DbClientManager),
       redisClientManagerPtr_(new nosql::RedisClientManager),
-      sessionEventsPtr_( std::make_unique<SessionEvents>() ),
+      sessionEventsPtr_( nullptr ),
       uploadPath_(rootPath_ + "uploads")
 {
 }

@@ -87,8 +87,8 @@ class CacheMap
              float tickInterval = TICK_INTERVAL,
              size_t wheelsNum = WHEELS_NUM,
              size_t bucketsNumPerWheel = BUCKET_NUM_PER_WHEEL,
-             std::function<void(const T1&)> fnOnInsert = [](const T1&){},
-             std::function<void(const T1&)> fnOnErase  = [](const T1&){}
+             std::function<void(const T1&)> fnOnInsert = nullptr,
+             std::function<void(const T1&)> fnOnErase  = nullptr
             )
         : loop_(loop),
           tickInterval_(tickInterval),
@@ -207,7 +207,9 @@ class CacheMap
                 size_t timeout = 0,
                 std::function<void()> timeoutCallback = std::function<void()>())
     {
-        fnOnInsert_(key);
+        if (fnOnInsert_!=nullptr)
+            fnOnInsert_(key);
+
 
         if (timeout > 0)
         {
@@ -238,7 +240,8 @@ class CacheMap
                 size_t timeout = 0,
                 std::function<void()> timeoutCallback = std::function<void()>())
     {
-        fnOnInsert_(key);
+        if (fnOnInsert_!=nullptr)
+            fnOnInsert_(key);
 
         if (timeout > 0)
         {
@@ -309,7 +312,9 @@ class CacheMap
             return;
         }
 
-        fnOnInsert_(key);
+        if (fnOnInsert_!=nullptr)
+            fnOnInsert_(key);
+
 
         MapValue v{T2(), timeout};
         handler(v.value_);
@@ -374,7 +379,8 @@ class CacheMap
         // in this case,we don't evoke the timeout callback;
         std::lock_guard<std::mutex> lock(mtx_);
         
-        fnOnErase_(key);
+        if (fnOnErase_!=nullptr)
+            fnOnErase_(key);
 
         map_.erase(key);
     }
@@ -518,7 +524,8 @@ class CacheMap
                             value.timeoutCallback_();
                         }
 
-                        fnOnErase_(key);
+                        if (fnOnErase_!=nullptr)
+                            fnOnErase_(key);
 
                         map_.erase(key);
                     }

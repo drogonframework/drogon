@@ -29,7 +29,7 @@ class SessionManager : public trantor::NonCopyable
 {
   public:
     SessionManager( trantor::EventLoop *loop, size_t timeout, 
-                    SessionEventsPtr sessionEventsPtr = std::make_unique<SessionEvents>()
+                    SessionEventsPtr sessionEventsPtr = nullptr
                   );
     ~SessionManager()
     {

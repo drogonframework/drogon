@@ -22,8 +22,8 @@ namespace drogon
 class SessionEvents 
 {
 public:
-  virtual void onSessionStart( const std::string& sessionId ) noexcept { (void)sessionId; };
-  virtual void onSessionDestroy( const std::string& sessionId ) noexcept { (void)sessionId; };
+  virtual void onSessionStart( const std::string& sessionId ) noexcept = 0;
+  virtual void onSessionDestroy( const std::string& sessionId ) noexcept = 0;
 };
 
 using SessionEventsPtr = std::unique_ptr<SessionEvents>;
