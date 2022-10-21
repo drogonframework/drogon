@@ -17,8 +17,12 @@
 
 using namespace drogon;
 
-SessionManager::SessionManager(trantor::EventLoop *loop, size_t timeout, SessionEventsPtr sessionEventsPtr )
-    : loop_(loop), timeout_(timeout), sessionEventsPtr_( std::move(sessionEventsPtr) )
+SessionManager::SessionManager(trantor::EventLoop* loop,
+                               size_t timeout,
+                               SessionEventsPtr sessionEventsPtr)
+    : loop_(loop),
+      timeout_(timeout),
+      sessionEventsPtr_(std::move(sessionEventsPtr))
 {
     if (timeout_ > 0)
     {
@@ -39,46 +43,61 @@ SessionManager::SessionManager(trantor::EventLoop *loop, size_t timeout, Session
             }
         }
 
-        if (sessionEventsPtr_!=nullptr)
+        if (sessionEventsPtr_ != nullptr)
         {
             sessionMapPtr_ = std::unique_ptr<CacheMap<std::string, SessionPtr>>(
                 new CacheMap<std::string, SessionPtr>(
-                    loop_, 1.0, wheelNum, bucketNum,
-                    [this](const std::string& key){ sessionEventsPtr_->onSessionStart(key); }, 
-                    [this](const std::string& key){ sessionEventsPtr_->onSessionDestroy(key); } ));
+                    loop_,
+                    1.0,
+                    wheelNum,
+                    bucketNum,
+                    [this](const std::string& key) {
+                        sessionEventsPtr_->onSessionStart(key);
+                    },
+                    [this](const std::string& key) {
+                        sessionEventsPtr_->onSessionDestroy(key);
+                    }));
         }
         else
         {
             sessionMapPtr_ = std::unique_ptr<CacheMap<std::string, SessionPtr>>(
-                new CacheMap<std::string, SessionPtr>( loop_, 1.0, wheelNum, bucketNum ));
+                new CacheMap<std::string, SessionPtr>(
+                    loop_, 1.0, wheelNum, bucketNum));
         }
-
     }
     else if (timeout_ == 0)
     {
-        if (sessionEventsPtr_!=nullptr)
+        if (sessionEventsPtr_ != nullptr)
         {
             sessionMapPtr_ = std::unique_ptr<CacheMap<std::string, SessionPtr>>(
-                new CacheMap<std::string, SessionPtr>(loop_, 0, 0, 0,
-                    [this](const std::string& key){ sessionEventsPtr_->onSessionStart(key); }, 
-                    [this](const std::string& key){ sessionEventsPtr_->onSessionDestroy(key); } ));
+                new CacheMap<std::string, SessionPtr>(
+                    loop_,
+                    0,
+                    0,
+                    0,
+                    [this](const std::string& key) {
+                        sessionEventsPtr_->onSessionStart(key);
+                    },
+                    [this](const std::string& key) {
+                        sessionEventsPtr_->onSessionDestroy(key);
+                    }));
         }
         else
         {
             sessionMapPtr_ = std::unique_ptr<CacheMap<std::string, SessionPtr>>(
-                new CacheMap<std::string, SessionPtr>(loop_, 0, 0, 0 ));
+                new CacheMap<std::string, SessionPtr>(loop_, 0, 0, 0));
         }
     }
 }
 
-SessionPtr SessionManager::getSession(const std::string &sessionID,
+SessionPtr SessionManager::getSession(const std::string& sessionID,
                                       bool needToSet)
 {
     assert(!sessionID.empty());
     SessionPtr sessionPtr;
     sessionMapPtr_->modify(
         sessionID,
-        [&sessionPtr, &sessionID, needToSet](SessionPtr &sessionInCache) {
+        [&sessionPtr, &sessionID, needToSet](SessionPtr& sessionInCache) {
             if (sessionInCache)
             {
                 sessionPtr = sessionInCache;
@@ -95,7 +114,7 @@ SessionPtr SessionManager::getSession(const std::string &sessionID,
     return sessionPtr;
 }
 
-void SessionManager::changeSessionId(const SessionPtr &sessionPtr)
+void SessionManager::changeSessionId(const SessionPtr& sessionPtr)
 {
     auto oldId = sessionPtr->sessionId();
     auto newId = utils::getUuid();

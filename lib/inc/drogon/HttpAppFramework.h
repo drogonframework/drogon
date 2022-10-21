@@ -746,9 +746,10 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
         return enableSession((size_t)timeout.count(), sameSite);
     }
 
-    /// Register a specialized instance for SessionEvents in order to handle both session_start and session_destroy.
+    /// Register a specialized instance for SessionEvents in order to handle
+    /// both session_start and session_destroy.
     /***/
-    virtual HttpAppFramework &setSessionEventsHandler( SessionEventsPtr seh ) = 0;
+    virtual HttpAppFramework &setSessionEventsHandler(SessionEventsPtr seh) = 0;
 
     /// Disable sessions supporting.
     /**

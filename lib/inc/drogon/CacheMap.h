@@ -87,9 +87,8 @@ class CacheMap
              float tickInterval = TICK_INTERVAL,
              size_t wheelsNum = WHEELS_NUM,
              size_t bucketsNumPerWheel = BUCKET_NUM_PER_WHEEL,
-             std::function<void(const T1&)> fnOnInsert = nullptr,
-             std::function<void(const T1&)> fnOnErase  = nullptr
-            )
+             std::function<void(const T1 &)> fnOnInsert = nullptr,
+             std::function<void(const T1 &)> fnOnErase = nullptr)
         : loop_(loop),
           tickInterval_(tickInterval),
           wheelsNumber_(wheelsNum),
@@ -207,9 +206,8 @@ class CacheMap
                 size_t timeout = 0,
                 std::function<void()> timeoutCallback = std::function<void()>())
     {
-        if (fnOnInsert_!=nullptr)
+        if (fnOnInsert_ != nullptr)
             fnOnInsert_(key);
-
 
         if (timeout > 0)
         {
@@ -240,7 +238,7 @@ class CacheMap
                 size_t timeout = 0,
                 std::function<void()> timeoutCallback = std::function<void()>())
     {
-        if (fnOnInsert_!=nullptr)
+        if (fnOnInsert_ != nullptr)
             fnOnInsert_(key);
 
         if (timeout > 0)
@@ -296,7 +294,7 @@ class CacheMap
      * the key doesn't exist, a new one is created and passed to the handler and
      * stored in the cache with the timeout parameter. The changing of the data
      * is protected by the mutex of the cache.
-     * 
+     *
      */
     template <typename Callable>
     void modify(const T1 &key, Callable &&handler, size_t timeout = 0)
@@ -312,9 +310,8 @@ class CacheMap
             return;
         }
 
-        if (fnOnInsert_!=nullptr)
+        if (fnOnInsert_ != nullptr)
             fnOnInsert_(key);
-
 
         MapValue v{T2(), timeout};
         handler(v.value_);
@@ -378,8 +375,8 @@ class CacheMap
     {
         // in this case,we don't evoke the timeout callback;
         std::lock_guard<std::mutex> lock(mtx_);
-        
-        if (fnOnErase_!=nullptr)
+
+        if (fnOnErase_ != nullptr)
             fnOnErase_(key);
 
         map_.erase(key);
@@ -448,8 +445,8 @@ class CacheMap
     size_t wheelsNumber_;
     size_t bucketsNumPerWheel_;
     std::shared_ptr<ControlBlock> ctrlBlockPtr_;
-    std::function<void(const T1&)> fnOnInsert_;
-    std::function<void(const T1&)> fnOnErase_;
+    std::function<void(const T1 &)> fnOnInsert_;
+    std::function<void(const T1 &)> fnOnErase_;
 
     bool noWheels_{false};
 
@@ -524,7 +521,7 @@ class CacheMap
                             value.timeoutCallback_();
                         }
 
-                        if (fnOnErase_!=nullptr)
+                        if (fnOnErase_ != nullptr)
                             fnOnErase_(key);
 
                         map_.erase(key);

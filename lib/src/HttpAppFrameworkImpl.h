@@ -222,7 +222,7 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
         return *this;
     }
 
-    HttpAppFramework &setSessionEventsHandler( SessionEventsPtr seh ) override;
+    HttpAppFramework &setSessionEventsHandler(SessionEventsPtr seh) override;
 
     const std::string &getDocumentRoot() const override
     {
