@@ -776,7 +776,7 @@ static int run(int argc, char** argv)
 
 #define PRINT_ERR_NOEXCEPTION__(expr, func_name)                     \
     do                                                               \
-    {                                                                \ 
+    {                                                                \
         if (!TEST_FLAG_)                                             \
             ERROR_MSG(func_name, expr)                               \
                 << "With expecitation\n"                             \
