@@ -780,7 +780,7 @@ static int run(int argc, char** argv)
         if (!TEST_FLAG_)                                            \
             ERROR_MSG(func_name, expr)                              \
                 << "With expecitation\n"                            \
-                << "  Expected to throw an exception. But non are " \
+                << "  Expected to throw an exception. But none are " \
                    "thrown.\n\n";                                   \
     } while (0);
 
