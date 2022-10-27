@@ -271,7 +271,12 @@ set(DROGON_SOURCES
     lib/src/Utilities.cc
     lib/src/WebSocketClientImpl.cc
     lib/src/WebSocketConnectionImpl.cc
-    lib/src/WebsocketControllersRouter.cc)
+    lib/src/WebsocketControllersRouter.cc
+    lib/src/RateLimiter.cc
+    lib/src/FixedWindowRateLimiter.cc
+    lib/src/SlidingWindowRateLimiter.cc
+    lib/src/TokenBucketRateLimiter.cc
+    lib/src/Hodor.cc)
 set(private_headers
     lib/src/AOPAdvice.h
     lib/src/CacheFile.h
@@ -300,7 +305,10 @@ set(private_headers
     lib/src/TaskTimeoutFlag.h
     lib/src/WebSocketClientImpl.h
     lib/src/WebSocketConnectionImpl.h
-    lib/src/WebsocketControllersRouter.h)
+    lib/src/WebsocketControllersRouter.h
+    lib/src/FixedWindowRateLimiter.h
+    lib/src/SlidingWindowRateLimiter.h
+    lib/src/TokenBucketRateLimiter.h)
 
 if (NOT WIN32)
     set(DROGON_SOURCES
@@ -556,6 +564,7 @@ set(DROGON_HEADERS
     lib/inc/drogon/drogon_callbacks.h
     lib/inc/drogon/PubSubService.h
     lib/inc/drogon/drogon_test.h
+    lib/inc/drogon/RateLimiter.h
     ${CMAKE_CURRENT_BINARY_DIR}/exports/drogon/exports.h)
 set(private_headers
     ${private_headers}
@@ -697,7 +706,8 @@ set(DROGON_PLUGIN_HEADERS
     lib/inc/drogon/plugins/Plugin.h
     lib/inc/drogon/plugins/SecureSSLRedirector.h
     lib/inc/drogon/plugins/AccessLogger.h
-    lib/inc/drogon/plugins/RealIpResolver.h)
+    lib/inc/drogon/plugins/RealIpResolver.h
+    lib/inc/drogon/plugins/Hodor.h)
 install(FILES ${DROGON_PLUGIN_HEADERS}
     DESTINATION ${INSTALL_INCLUDE_DIR}/drogon/plugins)
 
