@@ -623,9 +623,11 @@ static int run(int argc, char** argv)
         exit(1);
     }
 
+    std::unique_lock<std::mutex> l(internal::mtxRegister);
     if (internal::registeredTests.empty() == false)
     {
         auto fut = internal::allTestRan.get_future();
+        l.unlock();
         fut.get();
         assert(internal::registeredTests.empty());
     }
