@@ -663,8 +663,8 @@ struct [[nodiscard]] LoopAwaiter : CallbackAwaiter<void>
                 std::function<void()> &&taskFunc,
                 trantor::EventLoop *resumeLoop = nullptr)
         : workLoop_(workLoop),
-          taskFunc_(std::move(taskFunc)),
-          resumeLoop_(resumeLoop)
+          resumeLoop_(resumeLoop),
+          taskFunc_(std::move(taskFunc))
     {
         assert(workLoop);
     }
