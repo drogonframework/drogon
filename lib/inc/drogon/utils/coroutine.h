@@ -671,11 +671,22 @@ struct [[nodiscard]] LoopAwaiter : CallbackAwaiter<void>
     void await_suspend(std::coroutine_handle<> handle)
     {
         workLoop_->queueInLoop([handle, this]() {
-            taskFunc_();
-            if (resumeLoop_)
-                resumeLoop_->runInLoop([handle]() { handle.resume(); });
-            else
-                handle.resume();
+            try
+            {
+                taskFunc_();
+                if (resumeLoop_ && resumeLoop_ != workLoop_)
+                    resumeLoop_->queueInLoop([handle]() { handle.resume(); });
+                else
+                    handle.resume();
+            }
+            catch (...)
+            {
+                setException(std::current_exception());
+                if (resumeLoop_ && resumeLoop_ != workLoop_)
+                    resumeLoop_->queueInLoop([handle]() { handle.resume(); });
+                else
+                    handle.resume();
+            }
         });
     }
 
