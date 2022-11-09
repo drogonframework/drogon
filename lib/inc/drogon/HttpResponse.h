@@ -19,6 +19,7 @@
 #include <drogon/Cookie.h>
 #include <drogon/HttpTypes.h>
 #include <drogon/HttpViewData.h>
+#include <drogon/utils/Utilities.h>
 #include <json/json.h>
 #include <memory>
 #include <string>
@@ -190,11 +191,14 @@ class DROGON_EXPORT HttpResponse
     virtual void removeHeader(std::string key) = 0;
 
     /// Get all headers of the response
-    virtual const std::unordered_map<std::string, std::string> &headers()
-        const = 0;
+    virtual const std::
+        unordered_map<std::string, std::string, utils::internal::SafeStringHash>
+            &headers() const = 0;
 
     /// Get all headers of the response
-    const std::unordered_map<std::string, std::string> &getHeaders() const
+    const std::
+        unordered_map<std::string, std::string, utils::internal::SafeStringHash>
+            &getHeaders() const
     {
         return headers();
     }
@@ -222,10 +226,14 @@ class DROGON_EXPORT HttpResponse
     virtual const Cookie &getCookie(const std::string &key) const = 0;
 
     /// Get all cookies.
-    virtual const std::unordered_map<std::string, Cookie> &cookies() const = 0;
+    virtual const std::
+        unordered_map<std::string, Cookie, utils::internal::SafeStringHash>
+            &cookies() const = 0;
 
     /// Get all cookies.
-    const std::unordered_map<std::string, Cookie> &getCookies() const
+    const std::
+        unordered_map<std::string, Cookie, utils::internal::SafeStringHash>
+            &getCookies() const
     {
         return cookies();
     }
