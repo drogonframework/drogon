@@ -623,9 +623,11 @@ static int run(int argc, char** argv)
         exit(1);
     }
 
+    std::unique_lock<std::mutex> l(internal::mtxRegister);
     if (internal::registeredTests.empty() == false)
     {
         auto fut = internal::allTestRan.get_future();
+        l.unlock();
         fut.get();
         assert(internal::registeredTests.empty());
     }
@@ -774,14 +776,14 @@ static int run(int argc, char** argv)
     {             \
     }
 
-#define PRINT_ERR_NOEXCEPTION__(expr, func_name)                    \
-    do                                                              \
-    {                                                               \
-        if (!TEST_FLAG_)                                            \
-            ERROR_MSG(func_name, expr)                              \
-                << "With expecitation\n"                            \
-                << "  Expected to throw an exception. But non are " \
-                   "thrown.\n\n";                                   \
+#define PRINT_ERR_NOEXCEPTION__(expr, func_name)                     \
+    do                                                               \
+    {                                                                \
+        if (!TEST_FLAG_)                                             \
+            ERROR_MSG(func_name, expr)                               \
+                << "With expecitation\n"                             \
+                << "  Expected to throw an exception. But none are " \
+                   "thrown.\n\n";                                    \
     } while (0);
 
 #define PRINT_ERR_WITHEXCEPTION__(expr, func_name)                   \
