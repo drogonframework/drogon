@@ -411,7 +411,7 @@ inline bool fromString<bool>(const std::string &p) noexcept(false)
 
 namespace internal
 {
-extern const size_t fixedRandomNumber;
+DROGON_EXPORT extern const size_t fixedRandomNumber;
 struct SafeStringHash
 {
     size_t operator()(const std::string &str) const
