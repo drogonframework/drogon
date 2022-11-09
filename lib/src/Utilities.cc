@@ -1221,5 +1221,13 @@ bool secureRandomBytes(void *ptr, size_t size)
     return false;
 }
 
+namespace internal
+{
+const size_t fixedRandomNumber = []() {
+    size_t res;
+    utils::secureRandomBytes(&res, sizeof(res));
+    return res;
+}();
+}  // namespace internal
 }  // namespace utils
 }  // namespace drogon
