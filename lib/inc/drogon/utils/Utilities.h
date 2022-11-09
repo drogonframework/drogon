@@ -411,22 +411,17 @@ inline bool fromString<bool>(const std::string &p) noexcept(false)
 
 namespace internal
 {
-const size_t fixedRandomNumber = []() {
-    size_t res;
-    utils::secureRandomBytes(&res, sizeof(res));
-    return res;
-}();
+extern const size_t fixedRandomNumber;
 struct SafeStringHash
 {
     size_t operator()(const std::string &str) const
     {
-        // const size_t A = 6665339;
-        // const size_t B = 2534641;
-        // size_t h = fixedRandomNumber;
-        // for (char ch : str)
-        //     h = (h * A) ^ (ch * B);
-        // return h;
-        return std::hash<std::string>{}(str);
+        const size_t A = 6665339;
+        const size_t B = 2534641;
+        size_t h = fixedRandomNumber;
+        for (char ch : str)
+            h = (h * A) ^ (ch * B);
+        return h;
     }
 };
 }  // namespace internal
