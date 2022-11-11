@@ -4,6 +4,32 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.8.2] - 2022-11-11
+
+### API changes list
+
+- Add the queueInLoopCoro function.
+
+- Avoid HashDoS attacks via random per-session hash initial state.
+
+### Changed
+
+- Support the mediumint column when generate the mysql model.
+
+- Set Hiredis_FOUND to true when finding Hiredis library.
+
+- Add rate limiter.
+
+- Add some test cases for the sqlite datetime type.
+
+### Fixed
+
+- Fix typo in drogon_test.h.
+
+- Fix a date race in drogon_test.
+
+- Fix a deadlock bug when closing all database connections.
+
 ## [1.8.1] - 2022-09-25
 
 ### API changes list
@@ -1189,7 +1215,9 @@ All notable changes to this project will be documented in this file.
 
 ## [1.0.0-beta1] - 2019-06-11
 
-[Unreleased]: https://github.com/an-tao/drogon/compare/v1.8.1...HEAD
+[Unreleased]: https://github.com/an-tao/drogon/compare/v1.8.2...HEAD
+
+[1.8.2]: https://github.com/an-tao/drogon/compare/v1.8.1...v1.8.2
 
 [1.8.1]: https://github.com/an-tao/drogon/compare/v1.8.0...v1.8.1
 
