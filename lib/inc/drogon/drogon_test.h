@@ -5,14 +5,10 @@
 #include <drogon/exports.h>
 
 #include <iostream>
-#include <set>
 #include <memory>
-#include <condition_variable>
 #include <mutex>
 #include <sstream>
 #include <atomic>
-#include <future>
-#include <iomanip>
 #include <cstddef>
 /**
  * @brief Drogon Test is a minimal effort test framework developed because the
@@ -60,29 +56,16 @@ class Case;
 namespace internal
 {
 extern std::mutex mtxRegister;
-extern std::promise<void> allTestRan;
 extern std::mutex mtxTestStats;
 extern bool testHasPrinted;
-extern std::set<Case*> registeredTests;
 extern std::atomic<size_t> numAssertions;
 extern std::atomic<size_t> numCorrectAssertions;
 extern size_t numTestCases;
 extern std::atomic<size_t> numFailedTestCases;
 extern bool printSuccessfulTests;
-inline void registerCase(Case* test)
-{
-    std::unique_lock<std::mutex> l(mtxRegister);
-    registeredTests.insert(test);
-}
 
-inline void unregisterCase(Case* test)
-{
-    std::unique_lock<std::mutex> l(mtxRegister);
-    registeredTests.erase(test);
-
-    if (registeredTests.empty())
-        allTestRan.set_value();
-}
+DROGON_EXPORT void registerCase(Case* test);
+DROGON_EXPORT void unregisterCase(Case* test);
 
 template <typename _Tp, typename dummy = void>
 struct is_printable : std::false_type

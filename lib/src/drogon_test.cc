@@ -1,5 +1,9 @@
 #include <drogon/drogon_test.h>
 
+#include <set>
+#include <future>
+#include <condition_variable>
+
 namespace drogon
 {
 namespace test
@@ -18,6 +22,21 @@ std::atomic<size_t> numCorrectAssertions;
 size_t numTestCases;
 std::atomic<size_t> numFailedTestCases;
 bool printSuccessfulTests;
+
+void registerCase(Case* test)
+{
+    std::unique_lock<std::mutex> l(mtxRegister);
+    registeredTests.insert(test);
+}
+
+void unregisterCase(Case* test)
+{
+    std::unique_lock<std::mutex> l(mtxRegister);
+    registeredTests.erase(test);
+
+    if (registeredTests.empty())
+        allTestRan.set_value();
+}
 
 static std::string leftpad(const std::string& str, size_t len)
 {
