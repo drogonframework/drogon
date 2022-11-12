@@ -276,7 +276,8 @@ set(DROGON_SOURCES
     lib/src/FixedWindowRateLimiter.cc
     lib/src/SlidingWindowRateLimiter.cc
     lib/src/TokenBucketRateLimiter.cc
-    lib/src/Hodor.cc)
+    lib/src/Hodor.cc
+    lib/src/drogon_test.cc)
 set(private_headers
     lib/src/AOPAdvice.h
     lib/src/CacheFile.h
