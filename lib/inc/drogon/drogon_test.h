@@ -318,7 +318,7 @@ struct Decomposer
 
 }  // namespace internal
 
-DROGON_EXPORT class ThreadSafeStream final
+class DROGON_EXPORT ThreadSafeStream final
 {
   public:
     ThreadSafeStream(std::ostream& os) : os_(os)
