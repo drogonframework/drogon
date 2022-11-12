@@ -15,7 +15,7 @@
 #pragma once
 
 #include <drogon/Session.h>
-#include <drogon/SessionEvents.h>
+#include <drogon/drogon_callbacks.h>
 #include <drogon/CacheMap.h>
 #include <trantor/utils/NonCopyable.h>
 #include <trantor/net/EventLoop.h>
@@ -30,7 +30,9 @@ class SessionManager : public trantor::NonCopyable
   public:
     SessionManager(trantor::EventLoop *loop,
                    size_t timeout,
-                   SessionEventsPtr sessionEventsPtr = nullptr);
+                   AdviceStartSessionCallback startAdvice = { [](const std::string &){} },
+                   AdviceDestroySessionCallback destroyAdvice = { [](const std::string &){} }
+                  );
     ~SessionManager()
     {
         sessionMapPtr_.reset();
@@ -38,15 +40,20 @@ class SessionManager : public trantor::NonCopyable
     SessionPtr getSession(const std::string &sessionID, bool needToSet);
     void changeSessionId(const SessionPtr &sessionPtr);
 
-    void setEventsHandler(SessionEventsPtr sessionEventsPtr)
+    void registerSessionAdvices( 
+                                AdviceStartSessionCallback startAdvice,
+                                AdviceDestroySessionCallback destroyAdvice
+                               )
     {
-        sessionEventsPtr_ = std::move(sessionEventsPtr);
+        sessionStartAdviceHandler_ = startAdvice;
+        sessionDestroyAdviceHandler_ = destroyAdvice;
     }
 
   private:
     std::unique_ptr<CacheMap<std::string, SessionPtr>> sessionMapPtr_;
     trantor::EventLoop *loop_;
     size_t timeout_;
-    SessionEventsPtr sessionEventsPtr_;
+    AdviceStartSessionCallback   sessionStartAdviceHandler_;
+    AdviceDestroySessionCallback sessionDestroyAdviceHandler_;
 };
 }  // namespace drogon

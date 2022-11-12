@@ -27,7 +27,6 @@
 #include <drogon/plugins/Plugin.h>
 #include <drogon/HttpRequest.h>
 #include <drogon/HttpResponse.h>
-#include <drogon/SessionEvents.h>
 #include <drogon/orm/DbClient.h>
 #include <drogon/nosql/RedisClient.h>
 #include <drogon/Cookie.h>
@@ -749,7 +748,10 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
     /// Register a specialized instance for SessionEvents in order to handle
     /// both session_start and session_destroy.
     /***/
-    virtual HttpAppFramework &setSessionEventsHandler(SessionEventsPtr seh) = 0;
+    virtual HttpAppFramework &registerSessionStartAdvice( 
+        const AdviceStartSessionCallback &advice) = 0;
+    virtual HttpAppFramework &registerSessionDetroyAdvice( 
+        const AdviceDestroySessionCallback &advice ) = 0;
 
     /// Disable sessions supporting.
     /**

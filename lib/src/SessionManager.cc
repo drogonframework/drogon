@@ -19,10 +19,13 @@ using namespace drogon;
 
 SessionManager::SessionManager(trantor::EventLoop* loop,
                                size_t timeout,
-                               SessionEventsPtr sessionEventsPtr)
+                               AdviceStartSessionCallback startAdvice,
+                               AdviceDestroySessionCallback destroyAdvice
+                              )
     : loop_(loop),
       timeout_(timeout),
-      sessionEventsPtr_(std::move(sessionEventsPtr))
+      sessionStartAdviceHandler_( startAdvice ),
+      sessionDestroyAdviceHandler_( destroyAdvice )
 {
     if (timeout_ > 0)
     {
@@ -43,50 +46,33 @@ SessionManager::SessionManager(trantor::EventLoop* loop,
             }
         }
 
-        if (sessionEventsPtr_ != nullptr)
-        {
-            sessionMapPtr_ = std::unique_ptr<CacheMap<std::string, SessionPtr>>(
-                new CacheMap<std::string, SessionPtr>(
-                    loop_,
-                    1.0,
-                    wheelNum,
-                    bucketNum,
-                    [this](const std::string& key) {
-                        sessionEventsPtr_->onSessionStart(key);
-                    },
-                    [this](const std::string& key) {
-                        sessionEventsPtr_->onSessionDestroy(key);
-                    }));
-        }
-        else
-        {
-            sessionMapPtr_ = std::unique_ptr<CacheMap<std::string, SessionPtr>>(
-                new CacheMap<std::string, SessionPtr>(
-                    loop_, 1.0, wheelNum, bucketNum));
-        }
+        sessionMapPtr_ = std::unique_ptr<CacheMap<std::string, SessionPtr>>(
+            new CacheMap<std::string, SessionPtr>(
+                loop_,
+                1.0,
+                wheelNum,
+                bucketNum,
+                [this](const std::string& key) {
+                    sessionStartAdviceHandler_(key);
+                },
+                [this](const std::string& key) {
+                    sessionDestroyAdviceHandler_(key);
+                }));
     }
     else if (timeout_ == 0)
     {
-        if (sessionEventsPtr_ != nullptr)
-        {
-            sessionMapPtr_ = std::unique_ptr<CacheMap<std::string, SessionPtr>>(
-                new CacheMap<std::string, SessionPtr>(
-                    loop_,
-                    0,
-                    0,
-                    0,
-                    [this](const std::string& key) {
-                        sessionEventsPtr_->onSessionStart(key);
-                    },
-                    [this](const std::string& key) {
-                        sessionEventsPtr_->onSessionDestroy(key);
-                    }));
-        }
-        else
-        {
-            sessionMapPtr_ = std::unique_ptr<CacheMap<std::string, SessionPtr>>(
-                new CacheMap<std::string, SessionPtr>(loop_, 0, 0, 0));
-        }
+        sessionMapPtr_ = std::unique_ptr<CacheMap<std::string, SessionPtr>>(
+            new CacheMap<std::string, SessionPtr>(
+                loop_,
+                0,
+                0,
+                0,
+                [this](const std::string& key) {
+                    sessionStartAdviceHandler_(key);
+                },
+                [this](const std::string& key) {
+                    sessionDestroyAdviceHandler_(key);
+                }));
     }
 }
 

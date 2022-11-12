@@ -26,6 +26,8 @@ class HttpRequest;
 using HttpRequestPtr = std::shared_ptr<HttpRequest>;
 using AdviceCallback = std::function<void(const HttpResponsePtr &)>;
 using AdviceChainCallback = std::function<void()>;
+using AdviceStartSessionCallback = std::function<void(const std::string &)>;
+using AdviceDestroySessionCallback = std::function<void(const std::string &)>;
 using FilterCallback = std::function<void(const HttpResponsePtr &)>;
 using FilterChainCallback = std::function<void()>;
 using HttpReqCallback = std::function<void(ReqResult, const HttpResponsePtr &)>;

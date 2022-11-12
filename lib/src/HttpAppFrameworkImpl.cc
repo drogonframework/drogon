@@ -100,7 +100,6 @@ HttpAppFrameworkImpl::HttpAppFrameworkImpl()
       pluginsManagerPtr_(new PluginsManager),
       dbClientManagerPtr_(new orm::DbClientManager),
       redisClientManagerPtr_(new nosql::RedisClientManager),
-      sessionEventsPtr_(nullptr),
       uploadPath_(rootPath_ + "uploads")
 {
 }
@@ -574,7 +573,9 @@ void HttpAppFrameworkImpl::run()
         sessionManagerPtr_ =
             std::make_unique<SessionManager>(getLoop(),
                                              sessionTimeout_,
-                                             std::move(sessionEventsPtr_));
+                                             sessionStartHandler_,
+                                             sessionDestroyHandler_
+                                            );
     }
     // now start running!!
     running_ = true;
@@ -1153,18 +1154,6 @@ HttpAppFramework &HttpAppFrameworkImpl::setupFileLogger()
                 [loggerPtr = asyncFileLoggerPtr_]() { loggerPtr->flush(); });
         }
     }
-    return *this;
-}
-
-HttpAppFramework &HttpAppFrameworkImpl::setSessionEventsHandler(
-    SessionEventsPtr seh)
-{
-    if (sessionManagerPtr_ != nullptr)
-        sessionManagerPtr_->setEventsHandler(
-            std::forward<SessionEventsPtr>(seh));
-    else
-        sessionEventsPtr_ = std::move(seh);
-
     return *this;
 }
 

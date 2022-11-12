@@ -222,7 +222,17 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
         return *this;
     }
 
-    HttpAppFramework &setSessionEventsHandler(SessionEventsPtr seh) override;
+    HttpAppFramework &registerSessionStartAdvice( const AdviceStartSessionCallback &advice) override
+    {
+        sessionStartHandler_ = advice;
+        return *this;
+    }
+
+    HttpAppFramework &registerSessionDetroyAdvice( const AdviceDestroySessionCallback &advice ) override
+    {
+        sessionDestroyHandler_ = advice;
+        return *this;
+    }
 
     const std::string &getDocumentRoot() const override
     {
@@ -660,7 +670,8 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     std::function<void()> termSignalHandler_{[]() { app().quit(); }};
     std::function<void()> intSignalHandler_{[]() { app().quit(); }};
     std::unique_ptr<SessionManager> sessionManagerPtr_;
-    SessionEventsPtr sessionEventsPtr_;
+    AdviceStartSessionCallback   sessionStartHandler_{ []( const std::string &){} };
+    AdviceDestroySessionCallback sessionDestroyHandler_{ []( const std::string &){} };
     std::shared_ptr<trantor::AsyncFileLogger> asyncFileLoggerPtr_;
     Json::Value jsonConfig_;
     HttpResponsePtr custom404_;
