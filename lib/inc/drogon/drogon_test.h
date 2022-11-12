@@ -104,7 +104,7 @@ inline std::string escapeString(const string_view sv)
     return result;
 }
 
-std::string prettifyString(const string_view sv, size_t maxLength = 120);
+DROGON_EXPORT std::string prettifyString(const string_view sv, size_t maxLength = 120);
 
 #ifdef __cpp_fold_expressions
 template <typename... Args>
@@ -317,7 +317,7 @@ struct Decomposer
 
 }  // namespace internal
 
-class ThreadSafeStream final
+DROGON_EXPORT class ThreadSafeStream final
 {
   public:
     ThreadSafeStream(std::ostream& os) : os_(os)
