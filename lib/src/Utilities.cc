@@ -1223,7 +1223,7 @@ bool secureRandomBytes(void *ptr, size_t size)
 
 namespace internal
 {
-DROGON_EXPORT const size_t fixedRandomNumber = []() {
+const size_t fixedRandomNumber = []() {
     size_t res;
     utils::secureRandomBytes(&res, sizeof(res));
     return res;
