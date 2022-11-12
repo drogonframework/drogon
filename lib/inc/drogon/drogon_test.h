@@ -104,7 +104,8 @@ inline std::string escapeString(const string_view sv)
     return result;
 }
 
-DROGON_EXPORT std::string prettifyString(const string_view sv, size_t maxLength = 120);
+DROGON_EXPORT std::string prettifyString(const string_view sv,
+                                         size_t maxLength = 120);
 
 #ifdef __cpp_fold_expressions
 template <typename... Args>
