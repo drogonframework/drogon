@@ -106,14 +106,17 @@ DbClientImpl::~DbClientImpl() noexcept
 
 void DbClientImpl::closeAll()
 {
-    std::lock_guard<std::mutex> lock(connectionsMutex_);
-    for (auto const &conn : connections_)
+    decltype(connections_) connections;
+    {
+        std::lock_guard<std::mutex> lock(connectionsMutex_);
+        connections.swap(connections_);
+        readyConnections_.clear();
+        busyConnections_.clear();
+    }
+    for (auto const &conn : connections)
     {
         conn->disconnect();
     }
-    connections_.clear();
-    readyConnections_.clear();
-    busyConnections_.clear();
 }
 
 void DbClientImpl::execSql(

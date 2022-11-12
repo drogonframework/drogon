@@ -408,5 +408,22 @@ inline bool fromString<bool>(const std::string &p) noexcept(false)
     }
     throw std::runtime_error("Can't convert from string '" + p + "' to bool");
 }
+
+namespace internal
+{
+DROGON_EXPORT extern const size_t fixedRandomNumber;
+struct SafeStringHash
+{
+    size_t operator()(const std::string &str) const
+    {
+        const size_t A = 6665339;
+        const size_t B = 2534641;
+        size_t h = fixedRandomNumber;
+        for (char ch : str)
+            h = (h * A) ^ (ch * B);
+        return h;
+    }
+};
+}  // namespace internal
 }  // namespace utils
 }  // namespace drogon

@@ -656,6 +656,46 @@ struct [[nodiscard]] TimerAwaiter : CallbackAwaiter<void>
     trantor::EventLoop *loop_;
     double delay_;
 };
+
+struct [[nodiscard]] LoopAwaiter : CallbackAwaiter<void>
+{
+    LoopAwaiter(trantor::EventLoop *workLoop,
+                std::function<void()> &&taskFunc,
+                trantor::EventLoop *resumeLoop = nullptr)
+        : workLoop_(workLoop),
+          resumeLoop_(resumeLoop),
+          taskFunc_(std::move(taskFunc))
+    {
+        assert(workLoop);
+    }
+    void await_suspend(std::coroutine_handle<> handle)
+    {
+        workLoop_->queueInLoop([handle, this]() {
+            try
+            {
+                taskFunc_();
+                if (resumeLoop_ && resumeLoop_ != workLoop_)
+                    resumeLoop_->queueInLoop([handle]() { handle.resume(); });
+                else
+                    handle.resume();
+            }
+            catch (...)
+            {
+                setException(std::current_exception());
+                if (resumeLoop_ && resumeLoop_ != workLoop_)
+                    resumeLoop_->queueInLoop([handle]() { handle.resume(); });
+                else
+                    handle.resume();
+            }
+        });
+    }
+
+  private:
+    trantor::EventLoop *workLoop_{nullptr};
+    trantor::EventLoop *resumeLoop_{nullptr};
+    std::function<void()> taskFunc_;
+};
+
 }  // namespace internal
 
 inline internal::TimerAwaiter sleepCoro(
@@ -663,14 +703,23 @@ inline internal::TimerAwaiter sleepCoro(
     const std::chrono::duration<double> &delay) noexcept
 {
     assert(loop);
-    return internal::TimerAwaiter(loop, delay);
+    return {loop, delay};
 }
 
 inline internal::TimerAwaiter sleepCoro(trantor::EventLoop *loop,
                                         double delay) noexcept
 {
     assert(loop);
-    return internal::TimerAwaiter(loop, delay);
+    return {loop, delay};
+}
+
+inline internal::LoopAwaiter queueInLoopCoro(
+    trantor::EventLoop *workLoop,
+    std::function<void()> taskFunc,
+    trantor::EventLoop *resumeLoop = nullptr)
+{
+    assert(workLoop);
+    return {workLoop, std::move(taskFunc), resumeLoop};
 }
 
 template <typename T, typename = std::void_t<>>

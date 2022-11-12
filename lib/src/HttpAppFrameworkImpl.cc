@@ -92,7 +92,10 @@ HttpAppFrameworkImpl::HttpAppFrameworkImpl()
                                           postHandlingAdvices_)),
       websockCtrlsRouterPtr_(
           new WebsocketControllersRouter(postRoutingAdvices_,
-                                         postRoutingObservers_)),
+                                         postRoutingObservers_,
+                                         preHandlingAdvices_,
+                                         preHandlingObservers_,
+                                         postHandlingAdvices_)),
       listenerManagerPtr_(new ListenerManager),
       pluginsManagerPtr_(new PluginsManager),
       dbClientManagerPtr_(new orm::DbClientManager),

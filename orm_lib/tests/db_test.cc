@@ -1477,6 +1477,7 @@ DROGON_TEST(SQLite3Test)
                   "    avatar_id varchar(32),"
                   "    salt character varchar(20),"
                   "    admin boolean DEFAULT false,"
+                  "    create_time datetime,"
                   "    CONSTRAINT user_id_org UNIQUE(user_id, org_name)"
                   ")" >>
         [TEST_CTX](const Result &r) { SUCCESS(); } >>
@@ -1486,29 +1487,49 @@ DROGON_TEST(SQLite3Test)
         };
     /// Test1:DbClient streaming-type interface
     /// 1.1 insert,non-blocking
-    *clientPtr << "insert into users (user_id,user_name,password,org_name) "
-                  "values(?,?,?,?)"
+    *clientPtr << "insert into users "
+                  "(user_id,user_name,password,org_name,create_time) "
+                  "values(?,?,?,?,?)"
                << "pg"
                << "postgresql"
                << "123"
-               << "default" >>
+               << "default" << trantor::Date::now() >>
         [TEST_CTX](const Result &r) { MANDATE(r.insertId() == 1ULL); } >>
         [TEST_CTX](const DrogonDbException &e) {
             FAULT("sqlite3 - DbClient streaming-type interface(0) what():",
                   e.base().what());
         };
     /// 1.2 insert,blocking
-    *clientPtr << "insert into users (user_id,user_name,password,org_name) "
-                  "values(?,?,?,?)"
+    *clientPtr << "insert into users "
+                  "(user_id,user_name,password,org_name,create_time) "
+                  "values(?,?,?,?,?)"
                << "pg1"
                << "postgresql1"
                << "123"
-               << "default" << Mode::Blocking >>
+               << "default" << trantor::Date::now() << Mode::Blocking >>
         [TEST_CTX](const Result &r) { MANDATE(r.insertId() == 2ULL); } >>
         [TEST_CTX](const DrogonDbException &e) {
             FAULT("sqlite3 - DbClient streaming-type interface(1) what():",
                   e.base().what());
         };
+    *clientPtr << "select * from users where user_id=?;"
+               << "pg1" << Mode::Blocking >>
+        [TEST_CTX](const Result &r) {
+            MANDATE(r.size() == 1);
+            MANDATE(r[0]["user_id"].as<std::string>() == "pg1");
+            using namespace drogon_model::sqlite3;
+            Users user(r[0]);
+            MANDATE(user.getValueOfUserId() == "pg1");
+            // LOG_INFO << "user:" << user.toJson().toStyledString();
+            MANDATE(trantor::Date::now().secondsSinceEpoch() -
+                        user.getValueOfCreateTime().secondsSinceEpoch() <=
+                    1);
+        } >>
+        [TEST_CTX](const DrogonDbException &e) {
+            FAULT("sqlite3 - DbClient streaming-type interface(2) what():",
+                  e.base().what());
+        };
+
     /// 1.3 query,no-blocking
     *clientPtr << "select * from users where 1 = 1" << Mode::NonBlocking >>
         [TEST_CTX](const Result &r) { MANDATE(r.size() == 2UL); } >>
@@ -1596,8 +1617,8 @@ DROGON_TEST(SQLite3Test)
     /// 2.1 insert
     clientPtr->execSqlAsync(
         "insert into users "
-        "(user_id,user_name,password,org_name) "
-        "values(?,?,?,?)",
+        "(user_id,user_name,password,org_name,create_time) "
+        "values(?,?,?,?,?)",
         [TEST_CTX](const Result &r) { MANDATE(r.insertId() == 1ULL); },
         [TEST_CTX](const DrogonDbException &e) {
             FAULT("sqlite3 - DbClient asynchronous interface(0) what():",
@@ -1606,12 +1627,13 @@ DROGON_TEST(SQLite3Test)
         "pg",
         "postgresql",
         "123",
-        "default");
+        "default",
+        trantor::Date::now());
     /// 2.2 insert
     clientPtr->execSqlAsync(
         "insert into users "
-        "(user_id,user_name,password,org_name) "
-        "values(?,?,?,?)",
+        "(user_id,user_name,password,org_name,create_time) "
+        "values(?,?,?,?,?)",
         [TEST_CTX](const Result &r) { MANDATE(r.affectedRows() == 1UL); },
         [TEST_CTX](const DrogonDbException &e) {
             FAULT("sqlite3 - DbClient asynchronous interface(1) what():",
@@ -1620,7 +1642,8 @@ DROGON_TEST(SQLite3Test)
         "pg1",
         "postgresql1",
         "123",
-        "default");
+        "default",
+        trantor::Date::now());
     /// 2.3 query
     clientPtr->execSqlAsync(
         "select * from users where 1 = 1",
@@ -1692,12 +1715,14 @@ DROGON_TEST(SQLite3Test)
     try
     {
         auto r = clientPtr->execSqlSync(
-            "insert into users  (user_id,user_name,password,org_name) "
-            "values(?,?,?,?)",
+            "insert into users  "
+            "(user_id,user_name,password,org_name,create_time) "
+            "values(?,?,?,?,?)",
             "pg",
             "postgresql",
             "123",
-            "default");
+            "default",
+            trantor::Date::now());
         MANDATE(r.insertId() == 1ULL);
     }
     catch (const DrogonDbException &e)
@@ -1712,12 +1737,14 @@ DROGON_TEST(SQLite3Test)
         drogon::string_view sv1("postgresql1");
         drogon::string_view sv2("123");
         auto r = clientPtr->execSqlSync(
-            "insert into users  (user_id,user_name,password,org_name) "
-            "values(?,?,?,?)",
+            "insert into users  "
+            "(user_id,user_name,password,org_name,create_time) "
+            "values(?,?,?,?,?)",
             sv,
             (const drogon::string_view &)sv1,
             std::move(sv2),
-            drogon::string_view("default"));
+            drogon::string_view("default"),
+            trantor::Date::now());
         MANDATE(r.affectedRows() == 1UL);
     }
     catch (const DrogonDbException &e)
@@ -1789,12 +1816,13 @@ DROGON_TEST(SQLite3Test)
     /// Test future interface
     /// 4.1 insert
     auto f = clientPtr->execSqlAsyncFuture(
-        "insert into users  (user_id,user_name,password,org_name) "
-        "values(?,?,?,?) ",
+        "insert into users  (user_id,user_name,password,org_name,create_time) "
+        "values(?,?,?,?,?) ",
         "pg",
         "postgresql",
         "123",
-        "default");
+        "default",
+        trantor::Date::now());
     try
     {
         auto r = f.get();
@@ -1807,12 +1835,13 @@ DROGON_TEST(SQLite3Test)
     }
     /// 4.2 insert
     f = clientPtr->execSqlAsyncFuture(
-        "insert into users  (user_id,user_name,password,org_name) "
-        "values(?,?,?,?)",
+        "insert into users  (user_id,user_name,password,org_name,create_time) "
+        "values(?,?,?,?,?)",
         "pg1",
         "postgresql1",
         "123",
-        "default");
+        "default",
+        trantor::Date::now());
     try
     {
         auto r = f.get();
@@ -1910,12 +1939,14 @@ DROGON_TEST(SQLite3Test)
     try
     {
         auto r = clientPtr->execSqlSync(
-            "insert into users  (user_id,user_name,password,org_name) "
-            "values(?,?,?,?)",
+            "insert into users  "
+            "(user_id,user_name,password,org_name,create_time) "
+            "values(?,?,?,?,?)",
             "pg",
             "postgresql",
             "123",
-            "default");
+            "default",
+            trantor::Date::now());
         MANDATE(r.insertId() == 1ULL);
     }
     catch (const DrogonDbException &e)
@@ -1978,6 +2009,7 @@ DROGON_TEST(SQLite3Test)
     user.setUserName("postgres");
     user.setPassword("123");
     user.setOrgName("default");
+    user.setCreateTime(trantor::Date::now());
     mapper.insert(
         user,
         [TEST_CTX](Users ret) { MANDATE(ret.getPrimaryKey() == 1UL); },
