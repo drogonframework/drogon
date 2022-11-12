@@ -4,7 +4,6 @@
 #include <drogon/utils/string_view.h>
 #include <drogon/exports.h>
 
-#include <iostream>
 #include <memory>
 #include <mutex>
 #include <sstream>
@@ -55,14 +54,10 @@ class Case;
 
 namespace internal
 {
-extern std::mutex mtxRegister;
-extern std::mutex mtxTestStats;
-extern bool testHasPrinted;
-extern std::atomic<size_t> numAssertions;
-extern std::atomic<size_t> numCorrectAssertions;
-extern size_t numTestCases;
-extern std::atomic<size_t> numFailedTestCases;
-extern bool printSuccessfulTests;
+DROGON_EXPORT extern std::atomic<size_t> numAssertions;
+DROGON_EXPORT extern std::atomic<size_t> numCorrectAssertions;
+DROGON_EXPORT extern std::atomic<size_t> numFailedTestCases;
+DROGON_EXPORT extern bool printSuccessfulTests;
 
 DROGON_EXPORT void registerCase(Case* test);
 DROGON_EXPORT void unregisterCase(Case* test);
@@ -345,15 +340,8 @@ class ThreadSafeStream final
     std::ostream& os_;
 };
 
-inline ThreadSafeStream print()
-{
-    return ThreadSafeStream(std::cout);
-}
-
-inline ThreadSafeStream printErr()
-{
-    return ThreadSafeStream(std::cerr);
-}
+DROGON_EXPORT ThreadSafeStream print();
+DROGON_EXPORT ThreadSafeStream printErr();
 
 class CaseBase : public trantor::NonCopyable
 {

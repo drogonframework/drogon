@@ -236,5 +236,16 @@ int run(int argc, char** argv)
 
     return internal::numCorrectAssertions != internal::numAssertions;
 }
+
+ThreadSafeStream print()
+{
+    return ThreadSafeStream(std::cout);
+}
+
+ThreadSafeStream printErr()
+{
+    return ThreadSafeStream(std::cerr);
+}
+
 }  // namespace test
 }  // namespace drogon
