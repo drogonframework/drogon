@@ -206,9 +206,6 @@ class CacheMap
                 size_t timeout = 0,
                 std::function<void()> timeoutCallback = std::function<void()>())
     {
-        if (fnOnInsert_)
-            fnOnInsert_(key);
-
         if (timeout > 0)
         {
             MapValue v{std::move(value), timeout, std::move(timeoutCallback)};
@@ -222,6 +219,8 @@ class CacheMap
             std::lock_guard<std::mutex> lock(mtx_);
             map_.insert(std::make_pair(key, std::move(v)));
         }
+        if (fnOnInsert_)
+            fnOnInsert_(key);
     }
     /**
      * @brief Insert a key-value pair into the cache.
@@ -238,9 +237,6 @@ class CacheMap
                 size_t timeout = 0,
                 std::function<void()> timeoutCallback = std::function<void()>())
     {
-        if (fnOnInsert_)
-            fnOnInsert_(key);
-
         if (timeout > 0)
         {
             MapValue v{value, timeout, std::move(timeoutCallback)};
@@ -254,6 +250,8 @@ class CacheMap
             std::lock_guard<std::mutex> lock(mtx_);
             map_.insert(std::make_pair(key, std::move(v)));
         }
+        if (fnOnInsert_)
+            fnOnInsert_(key);
     }
 
     /**
@@ -299,27 +297,28 @@ class CacheMap
     template <typename Callable>
     void modify(const T1 &key, Callable &&handler, size_t timeout = 0)
     {
-        std::lock_guard<std::mutex> lock(mtx_);
-        auto iter = map_.find(key);
-        if (iter != map_.end())
         {
-            timeout = iter->second.timeout_;
-            handler(iter->second.value_);
-            if (timeout > 0)
-                eraseAfter(timeout, key);
-            return;
-        }
+            std::lock_guard<std::mutex> lock(mtx_);
+            auto iter = map_.find(key);
+            if (iter != map_.end())
+            {
+                timeout = iter->second.timeout_;
+                handler(iter->second.value_);
+                if (timeout > 0)
+                    eraseAfter(timeout, key);
+                return;
+            }
 
+            MapValue v{T2(), timeout};
+            handler(v.value_);
+            map_.insert(std::make_pair(key, std::move(v)));
+            if (timeout > 0)
+            {
+                eraseAfter(timeout, key);
+            }
+        }
         if (fnOnInsert_)
             fnOnInsert_(key);
-
-        MapValue v{T2(), timeout};
-        handler(v.value_);
-        map_.insert(std::make_pair(key, std::move(v)));
-        if (timeout > 0)
-        {
-            eraseAfter(timeout, key);
-        }
     }
 
     /// Check if the value of the keyword exists
@@ -374,12 +373,12 @@ class CacheMap
     void erase(const T1 &key)
     {
         // in this case,we don't evoke the timeout callback;
-        std::lock_guard<std::mutex> lock(mtx_);
-
+        {
+            std::lock_guard<std::mutex> lock(mtx_);
+            map_.erase(key);
+        }
         if (fnOnErase_)
             fnOnErase_(key);
-
-        map_.erase(key);
     }
     /**
      * @brief Get the event loop object
@@ -508,25 +507,28 @@ class CacheMap
         else
         {
             std::function<void()> cb = [this, key]() {
-                std::lock_guard<std::mutex> lock(mtx_);
-                if (map_.find(key) != map_.end())
+                bool erased{false};
+                std::function<void()> timeoutCallback;
                 {
-                    auto &value = map_[key];
-                    auto entryPtr = value.weakEntryPtr_.lock();
-                    // entryPtr is used to avoid race conditions
-                    if (value.timeout_ > 0 && !entryPtr)
+                    std::lock_guard<std::mutex> lock(mtx_);
+                    auto iter = map_.find(key);
+                    if (iter != map_.end())
                     {
-                        if (value.timeoutCallback_)
+                        auto &value = iter->second;
+                        auto entryPtr = value.weakEntryPtr_.lock();
+                        // entryPtr is used to avoid race conditions
+                        if (value.timeout_ > 0 && !entryPtr)
                         {
-                            value.timeoutCallback_();
+                            erased = true;
+                            timeoutCallback = std::move(value.timeoutCallback_);
+                            map_.erase(key);
                         }
-
-                        if (fnOnErase_)
-                            fnOnErase_(key);
-
-                        map_.erase(key);
                     }
                 }
+                if (erased && fnOnErase_)
+                    fnOnErase_(key);
+                if (erased && timeoutCallback)
+                    timeoutCallback();
             };
             entryPtr = std::make_shared<CallbackEntry>(std::move(cb));
             map_[key].weakEntryPtr_ = entryPtr;
