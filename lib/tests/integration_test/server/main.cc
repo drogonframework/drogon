@@ -319,6 +319,12 @@ int main()
         }
         return nullResp;
     });
+    app().registerSessionStartAdvice([](const std::string &sessionId) {
+        LOG_DEBUG << "session start:" << sessionId;
+    });
+    app().registerSessionDestroyAdvice([](const std::string &sessionId) {
+        LOG_DEBUG << "session destroy:" << sessionId;
+    });
     // Output information of all handlers
     auto handlerInfo = app().getHandlersInfo();
     for (auto &info : handlerInfo)
