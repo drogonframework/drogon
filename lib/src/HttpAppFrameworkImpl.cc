@@ -573,9 +573,8 @@ void HttpAppFrameworkImpl::run()
         sessionManagerPtr_ =
             std::make_unique<SessionManager>(getLoop(),
                                              sessionTimeout_,
-                                             sessionStartHandler_,
-                                             sessionDestroyHandler_
-                                            );
+                                             sessionStartAdvices_,
+                                             sessionDestroyAdvices_);
     }
     // now start running!!
     running_ = true;

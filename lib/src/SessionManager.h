@@ -22,17 +22,18 @@
 #include <memory>
 #include <string>
 #include <mutex>
+#include <vector>
 
 namespace drogon
 {
 class SessionManager : public trantor::NonCopyable
 {
   public:
-    SessionManager(trantor::EventLoop *loop,
-                   size_t timeout,
-                   AdviceStartSessionCallback startAdvice = { [](const std::string &){} },
-                   AdviceDestroySessionCallback destroyAdvice = { [](const std::string &){} }
-                  );
+    SessionManager(
+        trantor::EventLoop *loop,
+        size_t timeout,
+        const std::vector<AdviceStartSessionCallback> &startAdvices,
+        const std::vector<AdviceDestroySessionCallback> &destroyAdvices);
     ~SessionManager()
     {
         sessionMapPtr_.reset();
@@ -40,20 +41,11 @@ class SessionManager : public trantor::NonCopyable
     SessionPtr getSession(const std::string &sessionID, bool needToSet);
     void changeSessionId(const SessionPtr &sessionPtr);
 
-    void registerSessionAdvices( 
-                                AdviceStartSessionCallback startAdvice,
-                                AdviceDestroySessionCallback destroyAdvice
-                               )
-    {
-        sessionStartAdviceHandler_ = startAdvice;
-        sessionDestroyAdviceHandler_ = destroyAdvice;
-    }
-
   private:
     std::unique_ptr<CacheMap<std::string, SessionPtr>> sessionMapPtr_;
     trantor::EventLoop *loop_;
     size_t timeout_;
-    AdviceStartSessionCallback   sessionStartAdviceHandler_;
-    AdviceDestroySessionCallback sessionDestroyAdviceHandler_;
+    const std::vector<AdviceStartSessionCallback> &sessionStartAdvices_;
+    const std::vector<AdviceDestroySessionCallback> &sessionDestroyAdvices_;
 };
 }  // namespace drogon

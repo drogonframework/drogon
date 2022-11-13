@@ -17,15 +17,15 @@
 
 using namespace drogon;
 
-SessionManager::SessionManager(trantor::EventLoop* loop,
-                               size_t timeout,
-                               AdviceStartSessionCallback startAdvice,
-                               AdviceDestroySessionCallback destroyAdvice
-                              )
+SessionManager::SessionManager(
+    trantor::EventLoop* loop,
+    size_t timeout,
+    const std::vector<AdviceStartSessionCallback>& startAdvices,
+    const std::vector<AdviceDestroySessionCallback>& destroyAdvices)
     : loop_(loop),
       timeout_(timeout),
-      sessionStartAdviceHandler_( startAdvice ),
-      sessionDestroyAdviceHandler_( destroyAdvice )
+      sessionStartAdvices_(startAdvices),
+      sessionDestroyAdvices_(destroyAdvices)
 {
     if (timeout_ > 0)
     {
@@ -53,10 +53,16 @@ SessionManager::SessionManager(trantor::EventLoop* loop,
                 wheelNum,
                 bucketNum,
                 [this](const std::string& key) {
-                    sessionStartAdviceHandler_(key);
+                    for (auto& advice : sessionStartAdvices_)
+                    {
+                        advice(key);
+                    }
                 },
                 [this](const std::string& key) {
-                    sessionDestroyAdviceHandler_(key);
+                    for (auto& advice : sessionDestroyAdvices_)
+                    {
+                        advice(key);
+                    }
                 }));
     }
     else if (timeout_ == 0)
@@ -68,10 +74,16 @@ SessionManager::SessionManager(trantor::EventLoop* loop,
                 0,
                 0,
                 [this](const std::string& key) {
-                    sessionStartAdviceHandler_(key);
+                    for (auto& advice : sessionStartAdvices_)
+                    {
+                        advice(key);
+                    }
                 },
                 [this](const std::string& key) {
-                    sessionDestroyAdviceHandler_(key);
+                    for (auto& advice : sessionDestroyAdvices_)
+                    {
+                        advice(key);
+                    }
                 }));
     }
 }

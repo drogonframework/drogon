@@ -745,13 +745,19 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
         return enableSession((size_t)timeout.count(), sameSite);
     }
 
-    /// Register a specialized instance for SessionEvents in order to handle
-    /// both session_start and session_destroy.
-    /***/
-    virtual HttpAppFramework &registerSessionStartAdvice( 
+    /// Register an advice called when starting a new session.
+    /**
+     * @param advice is called with the session id.
+     */
+    virtual HttpAppFramework &registerSessionStartAdvice(
         const AdviceStartSessionCallback &advice) = 0;
-    virtual HttpAppFramework &registerSessionDetroyAdvice( 
-        const AdviceDestroySessionCallback &advice ) = 0;
+
+    /// Register an advice called when destroying a session.
+    /**
+     * @param advice is called with the session id.
+     */
+    virtual HttpAppFramework &registerSessionDestroyAdvice(
+        const AdviceDestroySessionCallback &advice) = 0;
 
     /// Disable sessions supporting.
     /**

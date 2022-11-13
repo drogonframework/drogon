@@ -206,7 +206,7 @@ class CacheMap
                 size_t timeout = 0,
                 std::function<void()> timeoutCallback = std::function<void()>())
     {
-        if (fnOnInsert_ != nullptr)
+        if (fnOnInsert_)
             fnOnInsert_(key);
 
         if (timeout > 0)
@@ -238,7 +238,7 @@ class CacheMap
                 size_t timeout = 0,
                 std::function<void()> timeoutCallback = std::function<void()>())
     {
-        if (fnOnInsert_ != nullptr)
+        if (fnOnInsert_)
             fnOnInsert_(key);
 
         if (timeout > 0)
@@ -310,7 +310,7 @@ class CacheMap
             return;
         }
 
-        if (fnOnInsert_ != nullptr)
+        if (fnOnInsert_)
             fnOnInsert_(key);
 
         MapValue v{T2(), timeout};
@@ -376,7 +376,7 @@ class CacheMap
         // in this case,we don't evoke the timeout callback;
         std::lock_guard<std::mutex> lock(mtx_);
 
-        if (fnOnErase_ != nullptr)
+        if (fnOnErase_)
             fnOnErase_(key);
 
         map_.erase(key);
@@ -521,7 +521,7 @@ class CacheMap
                             value.timeoutCallback_();
                         }
 
-                        if (fnOnErase_ != nullptr)
+                        if (fnOnErase_)
                             fnOnErase_(key);
 
                         map_.erase(key);

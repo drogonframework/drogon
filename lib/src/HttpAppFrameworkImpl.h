@@ -222,15 +222,17 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
         return *this;
     }
 
-    HttpAppFramework &registerSessionStartAdvice( const AdviceStartSessionCallback &advice) override
+    HttpAppFramework &registerSessionStartAdvice(
+        const AdviceStartSessionCallback &advice) override
     {
-        sessionStartHandler_ = advice;
+        sessionStartAdvices_.emplace_back(advice);
         return *this;
     }
 
-    HttpAppFramework &registerSessionDetroyAdvice( const AdviceDestroySessionCallback &advice ) override
+    HttpAppFramework &registerSessionDestroyAdvice(
+        const AdviceDestroySessionCallback &advice) override
     {
-        sessionDestroyHandler_ = advice;
+        sessionDestroyAdvices_.emplace_back(advice);
         return *this;
     }
 
@@ -670,8 +672,8 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     std::function<void()> termSignalHandler_{[]() { app().quit(); }};
     std::function<void()> intSignalHandler_{[]() { app().quit(); }};
     std::unique_ptr<SessionManager> sessionManagerPtr_;
-    AdviceStartSessionCallback   sessionStartHandler_{ []( const std::string &){} };
-    AdviceDestroySessionCallback sessionDestroyHandler_{ []( const std::string &){} };
+    std::vector<AdviceStartSessionCallback> sessionStartAdvices_;
+    std::vector<AdviceDestroySessionCallback> sessionDestroyAdvices_;
     std::shared_ptr<trantor::AsyncFileLogger> asyncFileLoggerPtr_;
     Json::Value jsonConfig_;
     HttpResponsePtr custom404_;
