@@ -74,6 +74,7 @@ static trantor::InetAddress parseAddress(const std::string& addr)
     }
     catch (const std::exception& ex)
     {
+        (void)ex;
         LOG_ERROR << "Error in ipv4 address: " + addr;
         port = 0;
     }

@@ -45,7 +45,7 @@ Hodor::LimitStrategy Hodor::makeLimitStrategy(const Json::Value &config)
         strategy.ipLimiterMapPtr =
             std::make_unique<CacheMap<std::string, RateLimiterPtr>>(
                 drogon::app().getLoop(),
-                timeUnit_.count() / 60 < 1 ? 1 : timeUnit_.count() / 60,
+                float(timeUnit_.count() / 60 < 1 ? 1 : timeUnit_.count() / 60),
                 2,
                 100);
     }
@@ -56,7 +56,7 @@ Hodor::LimitStrategy Hodor::makeLimitStrategy(const Json::Value &config)
         strategy.userLimiterMapPtr =
             std::make_unique<CacheMap<std::string, RateLimiterPtr>>(
                 drogon::app().getLoop(),
-                timeUnit_.count() / 60 < 1 ? 1 : timeUnit_.count() / 60,
+                float(timeUnit_.count() / 60 < 1 ? 1 : timeUnit_.count() / 60),
                 2,
                 100);
     }

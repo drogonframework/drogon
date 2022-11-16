@@ -381,7 +381,7 @@ static void loadApp(const Json::Value &app)
         auto precisionLength = precision.get("precision", 0).asUInt64();
         auto precisionType =
             precision.get("precision_type", "significant").asString();
-        drogon::app().setFloatPrecisionInJson(precisionLength, precisionType);
+        drogon::app().setFloatPrecisionInJson((unsigned int)precisionLength, precisionType);
     }
     // log
     loadLogSetting(app["log"]);

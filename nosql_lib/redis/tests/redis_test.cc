@@ -158,6 +158,7 @@ DROGON_TEST(RedisTest)
     }
     catch (const RedisException &err)
     {
+        (void)err;
         MANDATE(false);
     }
     catch (const std::runtime_error &err)
