@@ -84,8 +84,8 @@ void printTestStats()
     else
         ratio = 1;
     const size_t barSize = 80;
-    size_t greenBar = barSize * ratio;
-    size_t redBar = barSize * (1 - ratio);
+    auto greenBar = size_t(barSize * ratio);
+    auto redBar = size_t(barSize * (1 - ratio));
     if (greenBar + redBar != barSize)
     {
         float fraction = (ratio * barSize) - (size_t)(ratio * barSize);

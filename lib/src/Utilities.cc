@@ -120,7 +120,7 @@ class Base64CharMap
             index++;
         charMap_[static_cast<int>('/')] = charMap_[static_cast<int>('_')] =
             index;
-        charMap_[0] = 0xff;
+        charMap_[0] = char(0xff);
     }
     char getIndex(const char c) const noexcept
     {
@@ -1191,7 +1191,7 @@ static bool systemRandomBytes(void *ptr, size_t size)
       (__GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 25))))
     return getentropy(ptr, size) != -1;
 #elif defined(_WIN32)  // Windows
-    return RtlGenRandom(ptr, size);
+    return RtlGenRandom(ptr, (ULONG)size);
 #elif defined(__unix__) || defined(__HAIKU__)
     // fallback to /dev/urandom for other/old UNIX
     thread_local std::unique_ptr<FILE, std::function<void(FILE *)> > fptr(
@@ -1213,7 +1213,7 @@ static bool systemRandomBytes(void *ptr, size_t size)
 bool secureRandomBytes(void *ptr, size_t size)
 {
 #ifdef OpenSSL_FOUND
-    if (RAND_bytes((unsigned char *)ptr, size) == 0)
+    if (RAND_bytes((unsigned char *)ptr, (int)size) == 0)
         return true;
 #endif
     if (systemRandomBytes(ptr, size))

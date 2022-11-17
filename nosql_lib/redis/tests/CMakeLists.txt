@@ -1,4 +1,7 @@
 link_libraries(${PROJECT_NAME})
+if(WIN32)
+  link_libraries(iphlpapi)
+endif(WIN32)
 
 add_executable(redis_test
         redis_test.cc

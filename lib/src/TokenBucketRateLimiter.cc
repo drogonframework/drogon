@@ -19,7 +19,7 @@ bool TokenBucketRateLimiter::isAllowed()
         now - lastTime_);
     tokens_ += capacity_ * (duration / timeUnit_);
     if (tokens_ > capacity_)
-        tokens_ = capacity_;
+        tokens_ = (double)capacity_;
     lastTime_ = now;
     if (tokens_ > 1.0)
     {

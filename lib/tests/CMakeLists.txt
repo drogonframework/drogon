@@ -1,4 +1,7 @@
 link_libraries(${PROJECT_NAME})
+if(WIN32)
+  link_libraries(iphlpapi)
+endif(WIN32)
 set(UNITTEST_SOURCES
     unittests/main.cc
     unittests/Base64Test.cc

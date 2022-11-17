@@ -84,7 +84,7 @@ Row::ConstIterator Row::cbegin() const noexcept
 
 Row::ConstIterator Row::end() const noexcept
 {
-    return ConstIterator(*this, size());
+    return ConstIterator(*this, (Field::SizeType)size());
 }
 
 Row::ConstIterator Row::cend() const noexcept

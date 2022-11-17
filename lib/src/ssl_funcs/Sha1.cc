@@ -44,7 +44,7 @@ unsigned char *SHA1(const unsigned char *dataIn,
                     unsigned char *dataOut)
 {
     unsigned char *pbytes = (unsigned char *)dataIn;
-    unsigned int nbyte = dataLen;
+    unsigned int nbyte = (unsigned int)dataLen;
 
     static unsigned int words[80];
     unsigned int H[5] = {

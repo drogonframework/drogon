@@ -265,7 +265,7 @@ class CacheMap
      */
     T2 operator[](const T1 &key)
     {
-        int timeout = 0;
+        size_t timeout = 0;
         std::lock_guard<std::mutex> lock(mtx_);
         auto iter = map_.find(key);
         if (iter != map_.end())
@@ -324,7 +324,7 @@ class CacheMap
     /// Check if the value of the keyword exists
     bool find(const T1 &key)
     {
-        int timeout = 0;
+        size_t timeout = 0;
         bool flag = false;
 
         std::lock_guard<std::mutex> lock(mtx_);

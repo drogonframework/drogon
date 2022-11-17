@@ -372,14 +372,16 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
             switch (sizeof(T))
             {
                 case 2:
-                    *std::static_pointer_cast<uint16_t>(obj) = htons(parameter);
+                    *std::static_pointer_cast<uint16_t>(obj) =
+                        htons((uint16_t)parameter);
                     break;
                 case 4:
-                    *std::static_pointer_cast<uint32_t>(obj) = htonl(parameter);
+                    *std::static_pointer_cast<uint32_t>(obj) =
+                        htonl((uint32_t)parameter);
                     break;
                 case 8:
                     *std::static_pointer_cast<uint64_t>(obj) =
-                        htonll(parameter);
+                        htonll((uint64_t)parameter);
                     break;
                 case 1:
                 default:

@@ -215,7 +215,7 @@ struct ComparsionResult
 template <typename T>
 struct Lhs
 {
-    template <typename _ = void>  // HACK: prevent this function to be evaulated
+    template <typename _ = void>  // HACK: prevent this function to be evaluated
                                   // when not invoked
     std::pair<bool, std::string> result() const
     {
@@ -472,6 +472,7 @@ DROGON_EXPORT int run(int argc, char** argv);
         }                                                   \
         catch (const std::exception& e)                     \
         {                                                   \
+            (void)e;                                        \
             on_exception;                                   \
         }                                                   \
         catch (...)                                         \
