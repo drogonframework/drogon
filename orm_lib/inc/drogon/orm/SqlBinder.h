@@ -23,6 +23,7 @@
 #include <drogon/orm/RowIterator.h>
 #include <drogon/utils/string_view.h>
 #include <drogon/utils/optional.h>
+#include <json/writer.h>
 #include <trantor/utils/Logger.h>
 #include <trantor/utils/NonCopyable.h>
 #include <json/json.h>
@@ -30,6 +31,7 @@
 #include <iostream>
 #include <map>
 #include <memory>
+#include <mutex>
 #include <sstream>
 #include <string.h>
 #include <string>
@@ -534,8 +536,11 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
             case Json::arrayValue:
             case Json::objectValue:
             default:
-                LOG_ERROR << "Bad Json type";
-                return *this << nullptr;
+                static Json::StreamWriterBuilder jsonBuilder;
+                std::once_flag once_json;
+                std::call_once(once_json,
+                               []() { jsonBuilder["indentation"] = ""; });
+                return *this << Json::writeString(jsonBuilder, j);
         }
     }
     self &operator<<(Json::Value &j) noexcept(true)
