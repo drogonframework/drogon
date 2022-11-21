@@ -1,4 +1,7 @@
 link_libraries(${PROJECT_NAME})
+if(WIN32)
+  link_libraries(iphlpapi)
+endif(WIN32)
 set(UNITTEST_SOURCES
     unittests/main.cc
     unittests/Base64Test.cc
@@ -21,7 +24,8 @@ set(UNITTEST_SOURCES
     unittests/MainLoopTest.cc
     unittests/CacheMapTest.cc
     unittests/StringOpsTest.cc
-    unittests/ControllerCreationTest.cc)
+    unittests/ControllerCreationTest.cc
+    unittests/MultiPartParserTest.cc)
 
 if(DROGON_CXX_STANDARD GREATER_EQUAL 20 AND HAS_COROUTINE)
   set(UNITTEST_SOURCES ${UNITTEST_SOURCES} unittests/CoroutineTest.cc)
@@ -72,6 +76,7 @@ if (BUILD_CTL)
   if(DROGON_CXX_STANDARD GREATER_EQUAL 20 AND HAS_COROUTINE)
     set(INTEGRATION_TEST_SERVER_SOURCES
         ${INTEGRATION_TEST_SERVER_SOURCES}
+        integration_test/server/CoroFilter.cpp
         integration_test/server/api_v1_CoroTest.cc)
     set(CMAKE_CXX_STANDARD 20)
     set(CMAKE_CXX_STANDARD_REQUIRED TRUE)

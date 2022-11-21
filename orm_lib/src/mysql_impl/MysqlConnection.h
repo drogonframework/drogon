@@ -39,14 +39,14 @@ class MysqlConnection : public DbConnection,
     ~MysqlConnection()
     {
     }
-    virtual void execSql(string_view &&sql,
-                         size_t paraNum,
-                         std::vector<const char *> &&parameters,
-                         std::vector<int> &&length,
-                         std::vector<int> &&format,
-                         ResultCallback &&rcb,
-                         std::function<void(const std::exception_ptr &)>
-                             &&exceptCallback) override
+    void execSql(string_view &&sql,
+                 size_t paraNum,
+                 std::vector<const char *> &&parameters,
+                 std::vector<int> &&length,
+                 std::vector<int> &&format,
+                 ResultCallback &&rcb,
+                 std::function<void(const std::exception_ptr &)>
+                     &&exceptCallback) override
     {
         if (loop_->isInLoopThread())
         {
@@ -88,6 +88,30 @@ class MysqlConnection : public DbConnection,
     void disconnect() override;
 
   private:
+    class MysqlEnv
+    {
+      public:
+        MysqlEnv()
+        {
+            mysql_library_init(0, nullptr, nullptr);
+        }
+        ~MysqlEnv()
+        {
+            mysql_library_end();
+        }
+    };
+    class MysqlThreadEnv
+    {
+      public:
+        MysqlThreadEnv()
+        {
+            mysql_thread_init();
+        }
+        ~MysqlThreadEnv()
+        {
+            mysql_thread_end();
+        }
+    };
     void execSqlInLoop(
         string_view &&sql,
         size_t paraNum,

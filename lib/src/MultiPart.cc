@@ -75,69 +75,132 @@ int MultiPartParser::parse(const HttpRequestPtr &req)
                  contentType.data() + (pos + 9),
                  contentType.size() - (pos + 9));
 }
-
+static std::pair<string_view, string_view> parseLine(const char *begin,
+                                                     const char *end)
+{
+    auto p = begin;
+    while (p != end)
+    {
+        if (*p == ':')
+        {
+            if (p + 1 != end && *(p + 1) == ' ')
+            {
+                return std::make_pair(string_view(begin, p - begin),
+                                      string_view(p + 2, end - p - 2));
+            }
+            else
+            {
+                return std::make_pair(string_view(begin, p - begin),
+                                      string_view(p + 1, end - p - 1));
+            }
+        }
+        ++p;
+    }
+    return std::make_pair(string_view(), string_view());
+}
 int MultiPartParser::parseEntity(const char *begin, const char *end)
 {
     static const char entityName[] = "name=";
-    static const char semiColon[] = ";";
     static const char fileName[] = "filename=";
     static const char CRLF[] = "\r\n\r\n";
-
-    auto pos = std::search(begin, end, entityName, entityName + 5);
-    if (pos == end)
+    auto headEnd = std::search(begin, end, CRLF, CRLF + 4);
+    if (headEnd == end)
+    {
         return -1;
-    pos += 5;
-    auto pos1 = std::search(pos, end, semiColon, semiColon + 1);
-    if (pos1 == end)
-    {
-        pos1 = std::search(pos, end, CRLF, CRLF + 2);
-        if (pos1 == end)
-            return -1;
     }
-    if (*pos == '"')
-        pos++;
-    if (*(pos1 - 1) == '"')
-        pos1--;
-    std::string name(pos, pos1);
-    pos = std::search(pos1, end, fileName, fileName + 9);
-    if (pos == end)
+    headEnd += 2;
+    auto pos = begin;
+    std::shared_ptr<HttpFileImpl> filePtr = std::make_shared<HttpFileImpl>();
+    while (pos != headEnd)
     {
-        pos1 = std::search(pos1, end, CRLF, CRLF + 4);
-        if (pos1 == end)
+        auto lineEnd = std::search(pos, headEnd, CRLF, CRLF + 2);
+        auto keyAndValue = parseLine(pos, lineEnd);
+        if (keyAndValue.first.empty() || keyAndValue.second.empty())
+        {
             return -1;
-        parameters_[name] = std::string(pos1 + 4, end);
+        }
+        pos = lineEnd + 2;
+        std::string key{keyAndValue.first.data(), keyAndValue.first.size()};
+        std::transform(key.begin(),
+                       key.end(),
+                       key.begin(),
+                       [](unsigned char c) { return tolower(c); });
+        if (key == "content-disposition")
+        {
+            auto value = keyAndValue.second;
+            auto valueEnd = value.data() + value.length();
+            auto namePos =
+                std::search(value.data(), valueEnd, entityName, entityName + 5);
+            if (namePos == valueEnd)
+            {
+                return -1;
+            }
+            namePos += 5;
+            const char *nameEnd;
+            if (*namePos == '"')
+            {
+                ++namePos;
+                nameEnd = std::find(namePos, valueEnd, '"');
+            }
+            else
+            {
+                nameEnd = std::find(namePos, valueEnd, ';');
+            }
+            std::string name(namePos, nameEnd);
+            auto fileNamePos =
+                std::search(nameEnd, valueEnd, fileName, fileName + 9);
+            if (fileNamePos == valueEnd)
+            {
+                parameters_.emplace(name, std::string(headEnd + 2, end));
+                return 0;
+            }
+            else
+            {
+                fileNamePos += 9;
+                const char *fileNameEnd;
+                if (*fileNamePos == '"')
+                {
+                    ++fileNamePos;
+                    fileNameEnd = std::find(fileNamePos, valueEnd, '"');
+                }
+                else
+                {
+                    fileNameEnd = std::find(fileNamePos, valueEnd, ';');
+                }
+                std::string fName{fileNamePos, fileNameEnd};
+                filePtr->setRequest(requestPtr_);
+                filePtr->setItemName(std::move(name));
+                filePtr->setFileName(std::move(fName));
+                filePtr->setFile(headEnd + 2,
+                                 static_cast<size_t>(end - headEnd - 2));
+            }
+        }
+        else if (key == "content-type")
+        {
+            auto value = keyAndValue.second;
+            auto semiColonPos =
+                std::find(value.data(), value.data() + value.length(), ';');
+            string_view contentType(value.data(), semiColonPos - value.data());
+            filePtr->setContentType(parseContentType(contentType));
+        }
+        else if (key == "content-transfer-encoding")
+        {
+            auto value = keyAndValue.second;
+            auto semiColonPos =
+                std::find(value.data(), value.data() + value.length(), ';');
+
+            filePtr->setContentTransferEncoding(
+                std::string{value.data(), semiColonPos});
+        }
+    }
+    if (!filePtr->getFileName().empty())
+    {
+        files_.emplace_back(std::move(filePtr));
         return 0;
     }
     else
     {
-        pos += 9;
-        pos1 = std::search(pos, end, semiColon, semiColon + 1);
-        if (pos1 == end)
-        {
-            pos1 = std::search(pos, end, CRLF, CRLF + 2);
-            if (pos1 == end)
-                return -1;
-        }
-        else
-        {
-            auto pos2 = std::search(pos, pos1, CRLF, CRLF + 2);
-            if (pos2 != end)
-                pos1 = pos2;
-        }
-        if (*pos == '"')
-            pos++;
-        if (*(pos1 - 1) == '"')
-            pos1--;
-        auto filePtr = std::make_shared<HttpFileImpl>();
-        filePtr->setRequest(requestPtr_);
-        filePtr->setItemName(name);
-        filePtr->setFileName(std::string(pos, pos1));
-        pos1 = std::search(pos1, end, CRLF, CRLF + 4);
-        if (pos1 == end)
-            return -1;
-        filePtr->setFile(pos1 + 4, static_cast<size_t>(end - pos1 - 4));
-        files_.emplace_back(std::move(filePtr));
-        return 0;
+        return -1;
     }
 }
 
@@ -153,7 +216,7 @@ int MultiPartParser::parse(const HttpRequestPtr &req,
     pos1 = 0;
     auto content = static_cast<HttpRequestImpl *>(req.get())->bodyView();
     pos2 = content.find(boundary);
-    while (1)
+    while (true)
     {
         pos1 = pos2;
         if (pos1 == string_view::npos)
@@ -164,13 +227,17 @@ int MultiPartParser::parse(const HttpRequestPtr &req,
         pos2 = content.find(boundary, pos1);
         if (pos2 == string_view::npos)
             break;
-        //    std::cout<<"pos1="<<pos1<<" pos2="<<pos2<<std::endl;
+        bool flag = false;
         if (content[pos2 - 4] == '\r' && content[pos2 - 3] == '\n' &&
             content[pos2 - 2] == '-' && content[pos2 - 1] == '-')
+        {
             pos2 -= 4;
+            flag = true;
+        }
         if (parseEntity(content.data() + pos1, content.data() + pos2) != 0)
             return -1;
-        // pos2+=boundary.length();
+        if (flag)
+            pos2 += 4;
     }
     return 0;
 }

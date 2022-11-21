@@ -34,6 +34,12 @@ class RedisTransactionImpl final
                           RedisExceptionCallback &&exceptionCallback,
                           string_view command,
                           ...) noexcept override;
+    std::shared_ptr<RedisSubscriber> newSubscriber() noexcept override
+    {
+        LOG_ERROR << "You can't create subscriber from redis transaction";
+        assert(0);
+        return nullptr;
+    }
     std::shared_ptr<RedisTransaction> newTransaction() override
     {
         return shared_from_this();

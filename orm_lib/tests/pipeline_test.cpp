@@ -235,6 +235,7 @@ int main(int argc, char **argv)
     std::promise<void> p1;
     std::future<void> f1 = p1.get_future();
     app().setThreadNum(1);
+#if LIBPQ_SUPPORTS_BATCH_MODE
     app().createDbClient(  //
         "postgresql",      // dbType
         "127.0.0.1",       // host
@@ -250,7 +251,7 @@ int main(int argc, char **argv)
         10,                 // timeout
         true               // autobatch
     );
-
+#endif
     std::thread thr([&]() {
         app().getLoop()->queueInLoop([&]() { p1.set_value(); });
         app().run();

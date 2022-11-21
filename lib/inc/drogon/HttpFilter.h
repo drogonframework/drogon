@@ -20,6 +20,10 @@
 #include <drogon/HttpResponse.h>
 #include <memory>
 
+#ifdef __cpp_impl_coroutine
+#include <drogon/utils/coroutine.h>
+#endif
+
 namespace drogon
 {
 /**
@@ -43,9 +47,7 @@ class DROGON_EXPORT HttpFilterBase : public virtual DrObjectBase
     virtual void doFilter(const HttpRequestPtr &req,
                           FilterCallback &&fcb,
                           FilterChainCallback &&fccb) = 0;
-    virtual ~HttpFilterBase()
-    {
-    }
+    ~HttpFilterBase() override = default;
 };
 
 /**
@@ -60,8 +62,61 @@ class HttpFilter : public DrObject<T>, public HttpFilterBase
 {
   public:
     static constexpr bool isAutoCreation{AutoCreation};
-    virtual ~HttpFilter()
-    {
-    }
+    ~HttpFilter() override = default;
 };
+
+namespace internal
+{
+DROGON_EXPORT void handleException(
+    const std::exception &,
+    const HttpRequestPtr &,
+    std::function<void(const HttpResponsePtr &)> &&);
+}
+
+#ifdef __cpp_impl_coroutine
+template <typename T, bool AutoCreation = true>
+class HttpCoroFilter : public DrObject<T>, public HttpFilterBase
+{
+  public:
+    static constexpr bool isAutoCreation{AutoCreation};
+    ~HttpCoroFilter() override = default;
+    void doFilter(const HttpRequestPtr &req,
+                  FilterCallback &&fcb,
+                  FilterChainCallback &&fccb) final
+    {
+        drogon::async_run([this,
+                           req,
+                           fcb = std::move(fcb),
+                           fccb = std::move(fccb)]() mutable -> drogon::Task<> {
+            HttpResponsePtr resp;
+            try
+            {
+                resp = co_await doFilter(req);
+            }
+            catch (const std::exception &ex)
+            {
+                internal::handleException(ex, req, std::move(fcb));
+                co_return;
+            }
+            catch (...)
+            {
+                LOG_ERROR << "Exception not derived from std::exception";
+                co_return;
+            }
+
+            if (resp)
+            {
+                fcb(resp);
+            }
+            else
+            {
+                fccb();
+            }
+        });
+    }
+
+    virtual Task<HttpResponsePtr> doFilter(const HttpRequestPtr &req) = 0;
+};
+#endif
+
 }  // namespace drogon

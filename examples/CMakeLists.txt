@@ -24,6 +24,13 @@ drogon_create_views(login_session
 
 add_executable(jsonstore jsonstore/main.cc)
 
+add_executable(redis_simple redis/main.cc
+                            redis/controllers/Client.cc
+                            redis/controllers/WsClient.cc)
+
+add_executable(redis_chat redis_chat/main.cc
+                          redis_chat/controllers/Chat.cc)
+
 set(example_targets
     benchmark
     client
@@ -32,7 +39,9 @@ set(example_targets
     helloworld
     file_upload
     login_session
-    jsonstore)
+    jsonstore
+    redis_simple
+    redis_chat)
 
 # Add warnings for our example targets--some warnings (such as -Wunused-parameter) only appear
 # when the templated functions are instantiated at their point of use.

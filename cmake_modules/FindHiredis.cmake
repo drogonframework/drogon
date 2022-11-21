@@ -7,6 +7,7 @@
 
 if (HIREDIS_INCLUDE_DIRS AND HIREDIS_LIBRARIES)
     set(HIREDIS_FIND_QUIETLY TRUE)
+    set(Hiredis_FOUND TRUE)
 else ()
     find_path(
             HIREDIS_INCLUDE_DIR

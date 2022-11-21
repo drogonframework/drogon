@@ -23,6 +23,7 @@
 #include <drogon/orm/RowIterator.h>
 #include <drogon/utils/string_view.h>
 #include <drogon/utils/optional.h>
+#include <json/writer.h>
 #include <trantor/utils/Logger.h>
 #include <trantor/utils/NonCopyable.h>
 #include <json/json.h>
@@ -30,6 +31,7 @@
 #include <iostream>
 #include <map>
 #include <memory>
+#include <mutex>
 #include <sstream>
 #include <string.h>
 #include <string>
@@ -268,8 +270,6 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
     using self = SqlBinder;
 
   public:
-    friend class Dbclient;
-
     SqlBinder(const std::string &sql, DbClient &client, ClientType type)
         : sqlPtr_(std::make_shared<std::string>(sql)),
           sqlViewPtr_(sqlPtr_->data()),
@@ -296,7 +296,7 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
           type_(type)
     {
     }
-    SqlBinder(SqlBinder &&that)
+    SqlBinder(SqlBinder &&that) noexcept
         : sqlPtr_(std::move(that.sqlPtr_)),
           sqlViewPtr_(that.sqlViewPtr_),
           sqlViewLength_(that.sqlViewLength_),
@@ -374,14 +374,16 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
             switch (sizeof(T))
             {
                 case 2:
-                    *std::static_pointer_cast<uint16_t>(obj) = htons(parameter);
+                    *std::static_pointer_cast<uint16_t>(obj) =
+                        htons((uint16_t)parameter);
                     break;
                 case 4:
-                    *std::static_pointer_cast<uint32_t>(obj) = htonl(parameter);
+                    *std::static_pointer_cast<uint32_t>(obj) =
+                        htonl((uint32_t)parameter);
                     break;
                 case 8:
                     *std::static_pointer_cast<uint64_t>(obj) =
-                        htonll(parameter);
+                        htonll((uint64_t)parameter);
                     break;
                 case 1:
                 default:
@@ -432,6 +434,15 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
     self &operator<<(char str[])
     {
         return operator<<(std::string(str));
+    }
+    self &operator<<(const string_view &str);
+    self &operator<<(string_view &&str)
+    {
+        return operator<<((const string_view &)str);
+    }
+    self &operator<<(string_view &str)
+    {
+        return operator<<((const string_view &)str);
     }
     self &operator<<(const std::string &str);
     self &operator<<(std::string &str)
@@ -525,8 +536,11 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
             case Json::arrayValue:
             case Json::objectValue:
             default:
-                LOG_ERROR << "Bad Json type";
-                return *this << nullptr;
+                static Json::StreamWriterBuilder jsonBuilder;
+                std::once_flag once_json;
+                std::call_once(once_json,
+                               []() { jsonBuilder["indentation"] = ""; });
+                return *this << Json::writeString(jsonBuilder, j);
         }
     }
     self &operator<<(Json::Value &j) noexcept(true)

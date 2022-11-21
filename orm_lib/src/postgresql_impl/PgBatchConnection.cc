@@ -29,11 +29,9 @@ namespace drogon
 namespace orm
 {
 static const unsigned int maxBatchCount = 256;
-Result makeResult(
-    const std::shared_ptr<PGresult> &r = std::shared_ptr<PGresult>(nullptr))
+Result makeResult(std::shared_ptr<PGresult> &&r = nullptr)
 {
-    return Result(
-        std::shared_ptr<PostgreSQLResultImpl>(new PostgreSQLResultImpl(r)));
+    return Result(std::make_shared<PostgreSQLResultImpl>(std::move(r)));
 }
 
 bool checkSql(const string_view &sql_)
@@ -454,7 +452,7 @@ void PgConnection::handleRead()
                 cmd->preparingStatement_.clear();
                 continue;
             }
-            auto r = makeResult(res);
+            auto r = makeResult(std::move(res));
             cmd->callback_(r);
             batchCommandsForWaitingResults_.pop_front();
             continue;

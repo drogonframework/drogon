@@ -31,7 +31,8 @@ struct [[nodiscard]] MapperAwaiter : public CallbackAwaiter<ReturnType>
     using MapperFunction =
         std::function<void(std::function<void(ReturnType result)> &&,
                            std::function<void(const std::exception_ptr &)> &&)>;
-    MapperAwaiter(MapperFunction &&function) : function_(std::move(function))
+    explicit MapperAwaiter(MapperFunction &&function)
+        : function_(std::move(function))
     {
     }
     void await_suspend(std::coroutine_handle<> handle)
@@ -68,7 +69,7 @@ class CoroMapper : public Mapper<T>
     using CountCallback = typename Mapper<T>::CountCallback;
     using ExceptPtrCallback = std::function<void(const std::exception_ptr &)>;
 
-    CoroMapper(const DbClientPtr &client) : Mapper<T>(client)
+    explicit CoroMapper(DbClientPtr client) : Mapper<T>(std::move(client))
     {
     }
     using TraitsPKType = typename Mapper<T>::TraitsPKType;
@@ -182,7 +183,7 @@ class CoroMapper : public Mapper<T>
 
     /**
      * @brief Set limit and offset to achieve pagination.
-     * This method will override limit() and offset(), and will be overriden by
+     * This method will override limit() and offset(), and will be override by
      * them.
      *
      * @param page The page number

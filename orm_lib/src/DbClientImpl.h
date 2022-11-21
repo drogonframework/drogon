@@ -33,7 +33,7 @@ class DbClientImpl : public DbClient,
 {
   public:
     DbClientImpl(const std::string &connInfo,
-                 const size_t connNum,
+                 size_t connNum,
 #if LIBPQ_SUPPORTS_BATCH_MODE
                  ClientType type,
                  bool autoBatch);
@@ -72,16 +72,6 @@ class DbClientImpl : public DbClient,
 #if LIBPQ_SUPPORTS_BATCH_MODE
     bool autoBatch_{false};
 #endif
-    void execSql(
-        const DbConnectionPtr &conn,
-        string_view &&sql,
-        size_t paraNum,
-        std::vector<const char *> &&parameters,
-        std::vector<int> &&length,
-        std::vector<int> &&format,
-        ResultCallback &&rcb,
-        std::function<void(const std::exception_ptr &)> &&exceptCallback);
-
     DbConnectionPtr newConnection(trantor::EventLoop *loop);
 
     void makeTrans(

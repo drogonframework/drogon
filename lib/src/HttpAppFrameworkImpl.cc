@@ -92,7 +92,10 @@ HttpAppFrameworkImpl::HttpAppFrameworkImpl()
                                           postHandlingAdvices_)),
       websockCtrlsRouterPtr_(
           new WebsocketControllersRouter(postRoutingAdvices_,
-                                         postRoutingObservers_)),
+                                         postRoutingObservers_,
+                                         preHandlingAdvices_,
+                                         preHandlingObservers_,
+                                         postHandlingAdvices_)),
       listenerManagerPtr_(new ListenerManager),
       pluginsManagerPtr_(new PluginsManager),
       dbClientManagerPtr_(new orm::DbClientManager),
@@ -568,7 +571,10 @@ void HttpAppFrameworkImpl::run()
     if (useSession_)
     {
         sessionManagerPtr_ =
-            std::make_unique<SessionManager>(getLoop(), sessionTimeout_);
+            std::make_unique<SessionManager>(getLoop(),
+                                             sessionTimeout_,
+                                             sessionStartAdvices_,
+                                             sessionDestroyAdvices_);
     }
     // now start running!!
     running_ = true;
@@ -1028,6 +1034,7 @@ void HttpAppFrameworkImpl::quit()
             // and reset listenerManagerPtr_ before IO loops quit.
             listenerManagerPtr_->stopIoLoops();
             listenerManagerPtr_.reset();
+            running_ = false;
             getLoop()->quit();
         });
     }

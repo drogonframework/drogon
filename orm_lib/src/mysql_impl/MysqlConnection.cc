@@ -35,12 +35,13 @@ namespace drogon
 {
 namespace orm
 {
-Result makeResult(
-    const std::shared_ptr<MYSQL_RES> &r = std::shared_ptr<MYSQL_RES>(nullptr),
-    Result::SizeType affectedRows = 0,
-    unsigned long long insertId = 0)
+Result makeResult(std::shared_ptr<MYSQL_RES> &&r = nullptr,
+                  Result::SizeType affectedRows = 0,
+                  unsigned long long insertId = 0)
 {
-    return Result{std::make_shared<MysqlResultImpl>(r, affectedRows, insertId)};
+    return Result{std::make_shared<MysqlResultImpl>(std::move(r),
+                                                    affectedRows,
+                                                    insertId)};
 }
 
 }  // namespace orm
@@ -54,6 +55,8 @@ MysqlConnection::MysqlConnection(trantor::EventLoop *loop,
           delete p;
       }))
 {
+    static MysqlEnv env;
+    static thread_local MysqlThreadEnv threadEnv;
     mysql_init(mysqlPtr_.get());
     mysql_options(mysqlPtr_.get(), MYSQL_OPT_NONBLOCK, nullptr);
 #ifdef HAS_MYSQL_OPTIONSV
@@ -585,7 +588,7 @@ void MysqlConnection::getResult(MYSQL_RES *res)
     auto resultPtr = std::shared_ptr<MYSQL_RES>(res, [](MYSQL_RES *r) {
         mysql_free_result(r);
     });
-    auto Result = makeResult(resultPtr,
+    auto Result = makeResult(std::move(resultPtr),
                              mysql_affected_rows(mysqlPtr_.get()),
                              mysql_insert_id(mysqlPtr_.get()));
     if (isWorking_)

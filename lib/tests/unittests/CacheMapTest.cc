@@ -13,7 +13,7 @@ DROGON_TEST(CacheMapTest)
     trantor::EventLoopThread loopThread;
     loopThread.run();
     drogon::CacheMap<std::string, std::string> cache(loopThread.getLoop(),
-                                                     0.1,
+                                                     0.1f,
                                                      4,
                                                      30);
 

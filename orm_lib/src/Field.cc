@@ -20,7 +20,7 @@
 using namespace drogon::orm;
 Field::Field(const Row &row, Row::SizeType columnNum) noexcept
     : row_(Result::SizeType(row.index_)),
-      column_(columnNum),
+      column_((long)columnNum),
       result_(row.result_)
 {
 }

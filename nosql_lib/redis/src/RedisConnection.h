@@ -25,6 +25,8 @@
 #include <memory>
 #include <queue>
 
+#include "SubscribeContext.h"
+
 namespace drogon
 {
 namespace nosql
@@ -43,7 +45,7 @@ class RedisConnection : public trantor::NonCopyable,
     RedisConnection(const trantor::InetAddress &serverAddress,
                     const std::string &username,
                     const std::string &password,
-                    const unsigned int db,
+                    unsigned int db,
                     trantor::EventLoop *loop);
     void setConnectCallback(
         const std::function<void(std::shared_ptr<RedisConnection> &&)>
@@ -144,6 +146,9 @@ class RedisConnection : public trantor::NonCopyable,
         }
     }
 
+    void sendSubscribe(const std::shared_ptr<SubscribeContext> &subCtx);
+    void sendUnsubscribe(const std::shared_ptr<SubscribeContext> &subCtx);
+
     ~RedisConnection()
     {
         LOG_TRACE << (int)status_;
@@ -184,6 +189,11 @@ class RedisConnection : public trantor::NonCopyable,
     std::queue<RedisResultCallback> resultCallbacks_;
     std::queue<RedisExceptionCallback> exceptionCallbacks_;
     ConnectStatus status_{ConnectStatus::kNone};
+
+    // used to keep the lifetime of context object
+    std::unordered_map<unsigned long long, std::shared_ptr<SubscribeContext>>
+        subContexts_;
+
     void startConnectionInLoop();
     static void addWrite(void *userData);
     static void delWrite(void *userData);
@@ -196,6 +206,10 @@ class RedisConnection : public trantor::NonCopyable,
     void sendCommandInLoop(const std::string &command,
                            RedisResultCallback &&resultCallback,
                            RedisExceptionCallback &&exceptionCallback);
+    void sendSubscribeInLoop(const std::shared_ptr<SubscribeContext> &subCtx);
+    void sendUnsubscribeInLoop(const std::shared_ptr<SubscribeContext> &subCtx);
+    void handleSubscribeResult(redisReply *result, SubscribeContext *subCtx);
+
     void handleDisconnect();
 };
 using RedisConnectionPtr = std::shared_ptr<RedisConnection>;

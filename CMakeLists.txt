@@ -28,8 +28,8 @@ CMAKE_DEPENDENT_OPTION(BUILD_SQLITE "Build with sqlite3 support" ON "BUILD_ORM" 
 CMAKE_DEPENDENT_OPTION(BUILD_REDIS "Build with redis support" ON "BUILD_ORM" OFF)
 
 set(DROGON_MAJOR_VERSION 1)
-set(DROGON_MINOR_VERSION 7)
-set(DROGON_PATCH_VERSION 5)
+set(DROGON_MINOR_VERSION 8)
+set(DROGON_PATCH_VERSION 2)
 set(DROGON_VERSION
     ${DROGON_MAJOR_VERSION}.${DROGON_MINOR_VERSION}.${DROGON_PATCH_VERSION})
 set(DROGON_VERSION_STRING "${DROGON_VERSION}")
@@ -271,7 +271,13 @@ set(DROGON_SOURCES
     lib/src/Utilities.cc
     lib/src/WebSocketClientImpl.cc
     lib/src/WebSocketConnectionImpl.cc
-    lib/src/WebsocketControllersRouter.cc)
+    lib/src/WebsocketControllersRouter.cc
+    lib/src/RateLimiter.cc
+    lib/src/FixedWindowRateLimiter.cc
+    lib/src/SlidingWindowRateLimiter.cc
+    lib/src/TokenBucketRateLimiter.cc
+    lib/src/Hodor.cc
+    lib/src/drogon_test.cc)
 set(private_headers
     lib/src/AOPAdvice.h
     lib/src/CacheFile.h
@@ -300,7 +306,10 @@ set(private_headers
     lib/src/TaskTimeoutFlag.h
     lib/src/WebSocketClientImpl.h
     lib/src/WebSocketConnectionImpl.h
-    lib/src/WebsocketControllersRouter.h)
+    lib/src/WebsocketControllersRouter.h
+    lib/src/FixedWindowRateLimiter.h
+    lib/src/SlidingWindowRateLimiter.h
+    lib/src/TokenBucketRateLimiter.h)
 
 if (NOT WIN32)
     set(DROGON_SOURCES
@@ -430,13 +439,17 @@ if (BUILD_REDIS)
             nosql_lib/redis/src/RedisClientManager.cc
             nosql_lib/redis/src/RedisConnection.cc
             nosql_lib/redis/src/RedisResult.cc
-            nosql_lib/redis/src/RedisTransactionImpl.cc)
+            nosql_lib/redis/src/RedisTransactionImpl.cc
+            nosql_lib/redis/src/SubscribeContext.cc
+            nosql_lib/redis/src/RedisSubscriberImpl.cc)
         set(private_headers
             ${private_headers}
             nosql_lib/redis/src/RedisClientImpl.h
             nosql_lib/redis/src/RedisClientLockFree.h
             nosql_lib/redis/src/RedisConnection.h
-            nosql_lib/redis/src/RedisTransactionImpl.h)
+            nosql_lib/redis/src/RedisTransactionImpl.h
+            nosql_lib/redis/src/SubscribeContext.h
+            nosql_lib/redis/src/RedisSubscriberImpl.h)
 
     endif (Hiredis_FOUND)
 endif (BUILD_REDIS)
@@ -562,6 +575,7 @@ set(DROGON_HEADERS
     lib/inc/drogon/drogon_callbacks.h
     lib/inc/drogon/PubSubService.h
     lib/inc/drogon/drogon_test.h
+    lib/inc/drogon/RateLimiter.h
     ${CMAKE_CURRENT_BINARY_DIR}/exports/drogon/exports.h)
 set(private_headers
     ${private_headers}
@@ -682,6 +696,7 @@ install(FILES ${ORM_HEADERS} DESTINATION ${INSTALL_INCLUDE_DIR}/drogon/orm)
 set(NOSQL_HEADERS
     nosql_lib/redis/inc/drogon/nosql/RedisClient.h
     nosql_lib/redis/inc/drogon/nosql/RedisResult.h
+    nosql_lib/redis/inc/drogon/nosql/RedisSubscriber.h
     nosql_lib/redis/inc/drogon/nosql/RedisException.h)
 install(FILES ${NOSQL_HEADERS} DESTINATION ${INSTALL_INCLUDE_DIR}/drogon/nosql)
 
@@ -702,7 +717,8 @@ set(DROGON_PLUGIN_HEADERS
     lib/inc/drogon/plugins/Plugin.h
     lib/inc/drogon/plugins/SecureSSLRedirector.h
     lib/inc/drogon/plugins/AccessLogger.h
-    lib/inc/drogon/plugins/RealIpResolver.h)
+    lib/inc/drogon/plugins/RealIpResolver.h
+    lib/inc/drogon/plugins/Hodor.h)
 install(FILES ${DROGON_PLUGIN_HEADERS}
     DESTINATION ${INSTALL_INCLUDE_DIR}/drogon/plugins)
 

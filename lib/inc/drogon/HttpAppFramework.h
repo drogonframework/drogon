@@ -19,8 +19,7 @@
 #include <drogon/CacheMap.h>
 #include <drogon/DrObject.h>
 #include <drogon/HttpBinder.h>
-#include <drogon/IntranetIpFilter.h>
-#include <drogon/LocalHostFilter.h>
+#include <drogon/HttpFilter.h>
 #include <drogon/MultiPart.h>
 #include <drogon/NotFound.h>
 #include <drogon/drogon_callbacks.h>
@@ -52,8 +51,8 @@ const char banner[] =
     " \\__,_|_|  \\___/ \\__, |\\___/|_| |_|\n"
     "                 |___/             \n";
 
-std::string getVersion();
-std::string getGitCommit();
+DROGON_EXPORT std::string getVersion();
+DROGON_EXPORT std::string getGitCommit();
 
 class HttpControllerBase;
 class HttpSimpleControllerBase;
@@ -745,6 +744,20 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
     {
         return enableSession((size_t)timeout.count(), sameSite);
     }
+
+    /// Register an advice called when starting a new session.
+    /**
+     * @param advice is called with the session id.
+     */
+    virtual HttpAppFramework &registerSessionStartAdvice(
+        const AdviceStartSessionCallback &advice) = 0;
+
+    /// Register an advice called when destroying a session.
+    /**
+     * @param advice is called with the session id.
+     */
+    virtual HttpAppFramework &registerSessionDestroyAdvice(
+        const AdviceDestroySessionCallback &advice) = 0;
 
     /// Disable sessions supporting.
     /**

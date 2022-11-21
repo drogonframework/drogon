@@ -15,6 +15,7 @@
 #include "HttpUtils.h"
 #include <drogon/drogon.h>
 #include <drogon/plugins/AccessLogger.h>
+#include <drogon/plugins/RealIpResolver.h>
 #include <regex>
 #include <thread>
 #if !defined _WIN32 && !defined __HAIKU__
@@ -32,12 +33,15 @@
 using namespace drogon;
 using namespace drogon::plugin;
 
+bool AccessLogger::useRealIp_ = false;
+
 void AccessLogger::initAndStart(const Json::Value &config)
 {
     useLocalTime_ = config.get("use_local_time", true).asBool();
     showMicroseconds_ = config.get("show_microseconds", true).asBool();
     timeFormat_ = config.get("custom_time_format", "").asString();
     useCustomTimeFormat_ = !timeFormat_.empty();
+    useRealIp_ = config.get("use_real_ip", false).asBool();
 
     logFunctionMap_ = {{"$request_path", outputReqPath},
                        {"$path", outputReqPath},
@@ -368,7 +372,14 @@ void AccessLogger::outputRemoteAddr(trantor::LogStream &stream,
                                     const drogon::HttpRequestPtr &req,
                                     const drogon::HttpResponsePtr &)
 {
-    stream << req->peerAddr().toIpPort();
+    if (useRealIp_)
+    {
+        stream << RealIpResolver::GetRealAddr(req).toIpPort();
+    }
+    else
+    {
+        stream << req->peerAddr().toIpPort();
+    }
 }
 
 void AccessLogger::outputLocalAddr(trantor::LogStream &stream,
