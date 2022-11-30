@@ -33,6 +33,8 @@ void Client::get(const HttpRequestPtr &,
                               &json,
                               &errors);
 
+            delete reader;
+
             response["response"] = redisResponse;
             if (parsingSuccessful)
             {
