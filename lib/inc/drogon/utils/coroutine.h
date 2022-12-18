@@ -14,6 +14,7 @@
 #pragma once
 
 #include <drogon/utils/optional.h>
+#include <trantor/utils/NonCopyable.h>
 #include <trantor/net/EventLoop.h>
 #include <trantor/utils/Logger.h>
 #include <algorithm>
@@ -478,7 +479,7 @@ struct AsyncTask
 /// coroutines
 // The user is responsible to fill in `await_suspend()` and constructors.
 template <typename T = void>
-struct CallbackAwaiter
+struct CallbackAwaiter : public trantor::NonCopyable
 {
     bool await_ready() noexcept
     {
@@ -520,7 +521,7 @@ struct CallbackAwaiter
 };
 
 template <>
-struct CallbackAwaiter<void>
+struct CallbackAwaiter<void> : public trantor::NonCopyable
 {
     bool await_ready() noexcept
     {
