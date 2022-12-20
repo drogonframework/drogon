@@ -49,10 +49,14 @@ class TransactionImpl : public Transaction,
     {
         timeout_ = timeout;
     }
-
+    void setAutoCommit(bool autoCommit) override
+    {
+        autoCommit_ = autoCommit;
+    }
+    void commit(std::function<void(bool)> callback) override;
   private:
     DbConnectionPtr connectionPtr_;
-
+    bool autoCommit_{true};
     void execSql(const char *sql,
                  size_t sqlLength,
                  size_t paraNum,
@@ -139,7 +143,7 @@ class TransactionImpl : public Transaction,
         std::vector<int> formats_;
         QueryCallback callback_;
         ExceptPtrCallback exceptionCallback_;
-        bool isRollbackCmd_{false};
+        bool isRollbackOrCommitCmd_{false};
         std::shared_ptr<TransactionImpl> thisPtr_;
     };
 

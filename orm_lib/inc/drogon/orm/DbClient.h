@@ -362,9 +362,15 @@ class Transaction : public DbClient
 {
   public:
     virtual void rollback() = 0;
-    // virtual void commit() = 0;
+    virtual void commit(std::function<void(bool)> commitCallback) = 0;
     virtual void setCommitCallback(
         const std::function<void(bool)> &commitCallback) = 0;
+
+    /**
+     * @pref auto-commit or auto-rollback when the transaction object is
+     * destroyed; the default behavior is to commit.
+     */
+    virtual void setAutoCommit(bool) = 0;
 
     void closeAll() override
     {
