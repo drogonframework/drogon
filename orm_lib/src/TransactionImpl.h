@@ -54,6 +54,7 @@ class TransactionImpl : public Transaction,
         autoCommit_ = autoCommit;
     }
     void commit(std::function<void(bool)> callback) override;
+
   private:
     DbConnectionPtr connectionPtr_;
     bool autoCommit_{true};
