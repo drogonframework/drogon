@@ -336,10 +336,12 @@ if (BUILD_POSTGRESQL)
         target_link_libraries(${PROJECT_NAME} PRIVATE pg_lib)
         set(DROGON_SOURCES
             ${DROGON_SOURCES}
-            orm_lib/src/postgresql_impl/PostgreSQLResultImpl.cc)
+            orm_lib/src/postgresql_impl/PostgreSQLResultImpl.cc
+            orm_lib/src/postgresql_impl/PgListener.cc)
         set(private_headers
             ${private_headers}
-            orm_lib/src/postgresql_impl/PostgreSQLResultImpl.h)
+            orm_lib/src/postgresql_impl/PostgreSQLResultImpl.h
+            orm_lib/src/postgresql_impl/PgListener.h)
         if (LIBPQ_BATCH_MODE)
             try_compile(libpq_supports_batch ${CMAKE_BINARY_DIR}/cmaketest
                 ${PROJECT_SOURCE_DIR}/cmake/tests/test_libpq_batch_mode.cc
@@ -525,6 +527,7 @@ set(DROGON_SOURCES
     orm_lib/src/DbClientImpl.cc
     orm_lib/src/DbClientLockFree.cc
     orm_lib/src/DbConnection.cc
+    orm_lib/src/DbListener.cc
     orm_lib/src/Exception.cc
     orm_lib/src/Field.cc
     orm_lib/src/Result.cc
@@ -669,6 +672,7 @@ set(ORM_HEADERS
     orm_lib/inc/drogon/orm/ArrayParser.h
     orm_lib/inc/drogon/orm/Criteria.h
     orm_lib/inc/drogon/orm/DbClient.h
+    orm_lib/inc/drogon/orm/DbListener.h
     orm_lib/inc/drogon/orm/DbTypes.h
     orm_lib/inc/drogon/orm/Exception.h
     orm_lib/inc/drogon/orm/Field.h
