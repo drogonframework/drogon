@@ -27,8 +27,8 @@ using namespace std::chrono_literals;
 
 static const std::string LISTEN_CHANNEL = "listen_test";
 
+#if USE_POSTGRESQL
 orm::DbClientPtr postgreClient;
-
 DROGON_TEST(ListenNotifyTest)
 {
     auto clientPtr = postgreClient;
@@ -69,6 +69,7 @@ DROGON_TEST(ListenNotifyTest)
     t.join();
     CHECK(numNotifications == 10);
 }
+#endif
 
 int main(int argc, char **argv)
 {
@@ -84,7 +85,7 @@ int main(int argc, char **argv)
     {
         dbConnInfo =
             "host=127.0.0.1 port=5432 dbname=postgres user=postgres "
-            "password=12345"
+            "password=12345 "
             "client_encoding=utf8";
     }
     LOG_INFO << "Database conn info: " << dbConnInfo;
