@@ -417,6 +417,7 @@ DbConnectionPtr DbClientImpl::newConnection(trantor::EventLoop *loop)
         (void)(loop);
     }
     std::weak_ptr<DbClientImpl> weakPtr = shared_from_this();
+    connPtr->setDbClient(weakPtr);
     connPtr->setCloseCallback([weakPtr](const DbConnectionPtr &closeConnPtr) {
         // Erase the connection
         auto thisPtr = weakPtr.lock();

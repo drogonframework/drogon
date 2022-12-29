@@ -17,13 +17,26 @@
 using namespace drogon;
 using namespace drogon::orm;
 
-PgListener::PgListener(DbClientPtr dbClient) : dbClient_(std::move(dbClient))
+PgListener::PgListener(DbClientPtr dbClient) : DbListener(std::move(dbClient))
 {
 }
 
-DbClientPtr PgListener::dbClient() const
+PgListener::~PgListener()
 {
-    return dbClient_;
+    std::lock_guard<std::mutex> lock(mutex_);
+    for (auto& item : listenChannels_)
+    {
+        std::string channel = item.first;
+        std::string sql = "UNLISTEN " + channel;
+        dbClient_->execSqlAsync(
+            sql,
+            [channel](const Result& r) { LOG_DEBUG << "Unlisten " << channel; },
+            [channel](const DrogonDbException& ex) {
+                LOG_ERROR << "Failed to unlisten " << channel
+                          << ", error: " << ex.base().what();
+                // ignore error?
+            });
+    }
 }
 
 void PgListener::listen(
@@ -36,8 +49,7 @@ void PgListener::listen(
         listenChannels_[channel].push_back(std::move(messageCallback));
     }
 
-    // TODO: escape special chars
-    std::string sql = "LISTEN " + channel;
+    std::string sql = formatListenCommand(channel);
     dbClient_->execSqlAsync(
         sql,
         [channel](const Result& r) {
@@ -58,8 +70,7 @@ void PgListener::unlisten(const std::string& channel) noexcept
         listenChannels_.erase(channel);
     }
 
-    // TODO: escape special chars
-    std::string sql = "UNLISTEN " + channel;
+    std::string sql = formatUnlistenCommand(channel);
     dbClient_->execSqlAsync(
         sql,
         [channel](const Result& r) { LOG_DEBUG << "Unlisten " << channel; },
@@ -87,4 +98,16 @@ void PgListener::onMessage(const std::string& channel,
                 [cb, channel, message]() { cb(channel, message); });
         }
     }
+}
+
+std::string PgListener::formatListenCommand(const std::string& channel)
+{
+    // TODO: escape special chars
+    return "LISTEN " + channel;
+}
+
+std::string PgListener::formatUnlistenCommand(const std::string& channel)
+{
+    // TODO: escape special chars
+    return "UNLISTEN " + channel;
 }

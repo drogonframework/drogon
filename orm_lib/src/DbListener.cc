@@ -17,6 +17,7 @@
 #include <drogon/orm/DbClient.h>
 #include <trantor/utils/Logger.h>
 #include <mutex>
+#include <unordered_map>
 
 #if USE_POSTGRESQL
 #include "postgresql_impl/PgListener.h"
@@ -25,16 +26,43 @@
 using namespace drogon;
 using namespace drogon::orm;
 
-DbListener::~DbListener() = default;
+// NOTE: listeners are stored in a centralized way.
+// In this case we have minimal invasion on DbClient implementations,
+// but the defect is that we have to use lock.
+static std::mutex clientListenerMutex;
+static std::unordered_map<DbClientPtr, DbListenerPtr> clientListener;
+
+DbListener::DbListener(std::shared_ptr<DbClient> dbClient)
+    : dbClient_(std::move(dbClient))
+{
+}
+
+DbListener::~DbListener()
+{
+    std::lock_guard<std::mutex> lock(clientListenerMutex);
+    if (clientListener.erase(dbClient_) == 0)
+    {
+        LOG_FATAL << "DbClient of DbListener was not found in map!";
+    }
+}
 
 std::shared_ptr<DbListener> DbListener::newDbListener(DbClientPtr dbClient)
 {
+    std::lock_guard<std::mutex> lock(clientListenerMutex);
+    if (clientListener.contains(dbClient))
+    {
+        LOG_ERROR << "Given DbClient is already used by another dbListener";
+        return nullptr;
+    }
+
+    DbListenerPtr dbListener;
     switch (dbClient->type())
     {
         case ClientType::PostgreSQL:
         {
 #if USE_POSTGRESQL
-            return std::make_shared<PgListener>(std::move(dbClient));
+            dbListener = std::make_shared<PgListener>(std::move(dbClient));
+            break;
 #else
             LOG_ERROR << "Postgresql is not supported by current drogon build";
             return nullptr;
@@ -51,4 +79,21 @@ std::shared_ptr<DbListener> DbListener::newDbListener(DbClientPtr dbClient)
             return nullptr;
         }
     }
+    if (dbListener)
+    {
+        clientListener.emplace(dbListener->dbClient_, dbListener);
+    }
+    return dbListener;
+}
+
+std::shared_ptr<DbListener> DbListener::getDbClientListener(
+    const std::shared_ptr<DbClient>& dbClient)
+{
+    std::lock_guard<std::mutex> lock(clientListenerMutex);
+    auto iter = clientListener.find(dbClient);
+    if (iter == clientListener.end())
+    {
+        return nullptr;
+    }
+    return iter->second;
 }

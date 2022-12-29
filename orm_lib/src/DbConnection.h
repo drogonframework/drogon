@@ -97,6 +97,10 @@ class DbConnection : public trantor::NonCopyable
     {
         idleCb_ = cb;
     }
+    void setDbClient(std::weak_ptr<DbClient> weakDbClient)
+    {
+        weakDbClient_ = std::move(weakDbClient);
+    }
     virtual void execSql(
         string_view &&sql,
         size_t paraNum,
@@ -137,6 +141,8 @@ class DbConnection : public trantor::NonCopyable
 
     static std::map<std::string, std::string> parseConnString(
         const std::string &);
+
+    std::weak_ptr<DbClient> weakDbClient_;
 };
 
 }  // namespace orm

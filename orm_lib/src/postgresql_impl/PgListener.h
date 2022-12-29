@@ -24,11 +24,9 @@ namespace orm
 
 class PgListener : public DbListener
 {
-    using MessageCallback = std::function<void(std::string, std::string)>;
-
   public:
     explicit PgListener(DbClientPtr dbClient);
-    std::shared_ptr<DbClient> dbClient() const override;
+    ~PgListener() override;
 
     void listen(const std::string& channel,
                 MessageCallback messageCallback) override;
@@ -39,7 +37,8 @@ class PgListener : public DbListener
                    trantor::EventLoop* loop) const;
 
   private:
-    DbClientPtr dbClient_;
+    static std::string formatListenCommand(const std::string& channel);
+    static std::string formatUnlistenCommand(const std::string& channel);
 
     mutable std::mutex mutex_;
     std::unordered_map<std::string, std::vector<MessageCallback>>

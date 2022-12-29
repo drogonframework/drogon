@@ -23,11 +23,16 @@ namespace drogon
 namespace orm
 {
 class DbClient;
+class DbListener;
+using DbListenerPtr = std::shared_ptr<DbListener>;
 
 /// Database asynchronous notification listener abstract class
 class DROGON_EXPORT DbListener
 {
   public:
+    using MessageCallback = std::function<void(std::string, std::string)>;
+
+    explicit DbListener(std::shared_ptr<DbClient> dbClient);
     virtual ~DbListener();
 
     /// Create a new notification listener upon a DbClient
@@ -38,22 +43,28 @@ class DROGON_EXPORT DbListener
      * Currently only postgresql supports asynchronous notification
      *
      */
-    static std::shared_ptr<DbListener> newDbListener(
-        std::shared_ptr<DbClient> dbClient);
+    static DbListenerPtr newDbListener(std::shared_ptr<DbClient> dbClient);
+    static DbListenerPtr getDbClientListener(
+        const std::shared_ptr<DbClient> &dbClient);
 
     /// Get the underlying DbClient
-    virtual std::shared_ptr<DbClient> dbClient() const = 0;
+    std::shared_ptr<DbClient> dbClient() const
+    {
+        return dbClient_;
+    }
 
     /// Listen to a channel
     /**
      * @param channel channel name to listen
      * @param messageCallback callback when notification arrives on channel
      */
-    virtual void listen(
-        const std::string &channel,
-        std::function<void(std::string, std::string)> messageCallback) = 0;
+    virtual void listen(const std::string &channel,
+                        MessageCallback messageCallback) = 0;
 
-    virtual void unlisten(const std::string &channel) noexcept;
+    virtual void unlisten(const std::string &channel) noexcept = 0;
+
+  protected:
+    std::shared_ptr<DbClient> dbClient_;
 };
 
 }  // namespace orm

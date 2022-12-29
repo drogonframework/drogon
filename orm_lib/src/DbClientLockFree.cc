@@ -433,6 +433,7 @@ DbConnectionPtr DbClientLockFree::newConnection()
     }
 
     std::weak_ptr<DbClientLockFree> weakPtr = shared_from_this();
+    connPtr->setDbClient(weakPtr);
     connPtr->setCloseCallback([weakPtr](const DbConnectionPtr &closeConnPtr) {
         // Erase the connection
         auto thisPtr = weakPtr.lock();

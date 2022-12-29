@@ -15,7 +15,9 @@
 #pragma once
 
 #include "../DbConnection.h"
+#include "PgListener.h"
 #include <drogon/orm/DbClient.h>
+#include <drogon/orm/DbListener.h>
 #include <trantor/net/EventLoop.h>
 #include <trantor/net/Channel.h>
 #include <trantor/utils/NonCopyable.h>
@@ -111,6 +113,18 @@ class PgConnection : public DbConnection,
         ResultCallback &&rcb,
         std::function<void(const std::exception_ptr &)> &&exceptCallback);
     void doAfterPreparing();
+    void onNotification(const std::string &channel, const std::string &message)
+    {
+        DbClientPtr dbClient = weakDbClient_.lock();
+        if (!dbClient)
+            return;
+        DbListenerPtr dbListener = DbListener::getDbClientListener(dbClient);
+        if (!dbListener)
+            return;
+        auto pgListener = std::dynamic_pointer_cast<PgListener>(dbListener);
+        pgListener->onMessage(channel, message, loop_);
+    }
+
     std::string statementName_;
     int parametersNumber_{0};
     std::vector<const char *> parameters_;
