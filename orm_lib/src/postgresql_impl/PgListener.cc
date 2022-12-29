@@ -13,35 +13,39 @@
  */
 
 #include "PgListener.h"
+#include "../DbClientLockFree.h"
+#include <drogon/orm/DbClient.h>
 
 using namespace drogon;
 using namespace drogon::orm;
 
-PgListener::PgListener(DbClientPtr dbClient) : DbListener(std::move(dbClient))
+PgListener::PgListener(trantor::EventLoop* loop)
 {
+    if (loop)
+    {
+        loop_ = loop;
+    }
+    else
+    {
+        threadPtr_ = std::make_unique<trantor::EventLoopThread>();
+        threadPtr_->run();
+        loop_ = threadPtr_->getLoop();
+    }
 }
 
 PgListener::~PgListener()
 {
-    std::lock_guard<std::mutex> lock(mutex_);
-    for (auto& item : listenChannels_)
-    {
-        std::string channel = item.first;
-        std::string sql = "UNLISTEN " + channel;
-        dbClient_->execSqlAsync(
-            sql,
-            [channel](const Result& r) { LOG_DEBUG << "Unlisten " << channel; },
-            [channel](const DrogonDbException& ex) {
-                LOG_ERROR << "Failed to unlisten " << channel
-                          << ", error: " << ex.base().what();
-                // ignore error?
-            });
-    }
+    // Need unlisten all?
+}
+
+void PgListener::setDbClient(DbClientPtr dbClient)
+{
+    dbClient_ = std::move(dbClient);
 }
 
 void PgListener::listen(
     const std::string& channel,
-    std::function<void(std::string, std::string)> messageCallback)
+    std::function<void(std::string, std::string)> messageCallback) noexcept
 {
     // save message callback
     {
@@ -49,19 +53,7 @@ void PgListener::listen(
         listenChannels_[channel].push_back(std::move(messageCallback));
     }
 
-    std::string sql = formatListenCommand(channel);
-    dbClient_->execSqlAsync(
-        sql,
-        [channel](const Result& r) {
-            LOG_DEBUG << "Subscribe success to " << channel;
-        },
-        [channel](const DrogonDbException& ex) {
-            LOG_ERROR << "Failed to subscribe to " << channel
-                      << ", error: " << ex.base().what();
-            // TODO: keep trying?
-        });
-
-    // TODO: listen again when re-connect
+    doListen(channel);
 }
 
 void PgListener::unlisten(const std::string& channel) noexcept
@@ -72,20 +64,27 @@ void PgListener::unlisten(const std::string& channel) noexcept
         listenChannels_.erase(channel);
     }
 
-    std::string sql = formatUnlistenCommand(channel);
-    dbClient_->execSqlAsync(
-        sql,
-        [channel](const Result& r) { LOG_DEBUG << "Unlisten " << channel; },
-        [channel](const DrogonDbException& ex) {
-            LOG_ERROR << "Failed to unlisten " << channel
-                      << ", error: " << ex.base().what();
-            // TODO: keep trying?
-        });
+    std::weak_ptr<PgListener> weakThis = shared_from_this();
+    loop_->runInLoop([channel, weakThis]() {
+        auto thisPtr = weakThis.lock();
+        if (!thisPtr)
+        {
+            return;
+        }
+        std::string sql = formatUnlistenCommand(channel);
+        thisPtr->dbClient_->execSqlAsync(
+            sql,
+            [channel](const Result& r) { LOG_DEBUG << "Unlisten " << channel; },
+            [channel](const DrogonDbException& ex) {
+                LOG_ERROR << "Failed to unlisten " << channel
+                          << ", error: " << ex.base().what();
+                // TODO: keep trying?
+            });
+    });
 }
 
 void PgListener::onMessage(const std::string& channel,
-                           const std::string& message,
-                           trantor::EventLoop* loop) const
+                           const std::string& message) const noexcept
 {
     {
         std::lock_guard<std::mutex> lock(mutex_);
@@ -96,9 +95,19 @@ void PgListener::onMessage(const std::string& channel,
         }
         for (auto& cb : iter->second)
         {
-            loop->queueInLoop(
+            loop_->queueInLoop(
                 [cb, channel, message]() { cb(channel, message); });
         }
+    }
+}
+
+void PgListener::listenAll() noexcept
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    for (auto& item : listenChannels_)
+    {
+        std::string channel = item.first;
+        doListen(channel);
     }
 }
 
@@ -112,4 +121,46 @@ std::string PgListener::formatUnlistenCommand(const std::string& channel)
 {
     // TODO: escape special chars
     return "UNLISTEN " + channel;
+}
+
+void PgListener::doListen(const std::string& channel)
+{
+    if (loop_->isInLoopThread())
+    {
+        doListenInLoop(channel);
+    }
+    else
+    {
+        std::weak_ptr<PgListener> weakThis = shared_from_this();
+        loop_->queueInLoop([weakThis, channel]() {
+            auto thisPtr = weakThis.lock();
+            if (thisPtr)
+            {
+                thisPtr->doListenInLoop(channel);
+            }
+        });
+    }
+}
+
+void PgListener::doListenInLoop(const std::string& channel)
+{
+    std::string sql = formatListenCommand(channel);
+    std::weak_ptr<PgListener> weakThis = shared_from_this();
+    dbClient_->execSqlAsync(
+        sql,
+        [channel](const Result& r) {
+            LOG_DEBUG << "Listen channel " << channel;
+        },
+        [channel, weakThis, loop = loop_](const DrogonDbException& ex) {
+            LOG_ERROR << "Failed to listen channel " << channel
+                      << ", error: " << ex.base().what();
+            // TODO: max retry?
+            loop->runAfter(1.0, [channel, weakThis]() {
+                auto thisPtr = weakThis.lock();
+                if (thisPtr)
+                {
+                    thisPtr->doListenInLoop(channel);
+                }
+            });
+        });
 }

@@ -32,7 +32,7 @@ orm::DbClientPtr postgreClient;
 DROGON_TEST(ListenNotifyTest)
 {
     auto clientPtr = postgreClient;
-    auto dbListener = DbListener::newDbListener(clientPtr);
+    auto dbListener = DbListener::newPgListener(clientPtr->connectionInfo());
     MANDATE(dbListener);
 
     int numNotifications = 0;

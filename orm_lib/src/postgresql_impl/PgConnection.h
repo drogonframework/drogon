@@ -113,17 +113,6 @@ class PgConnection : public DbConnection,
         ResultCallback &&rcb,
         std::function<void(const std::exception_ptr &)> &&exceptCallback);
     void doAfterPreparing();
-    void onNotification(const std::string &channel, const std::string &message)
-    {
-        DbClientPtr dbClient = weakDbClient_.lock();
-        if (!dbClient)
-            return;
-        DbListenerPtr dbListener = DbListener::getDbClientListener(dbClient);
-        if (!dbListener)
-            return;
-        auto pgListener = std::dynamic_pointer_cast<PgListener>(dbListener);
-        pgListener->onMessage(channel, message, loop_);
-    }
 
     std::string statementName_;
     int parametersNumber_{0};

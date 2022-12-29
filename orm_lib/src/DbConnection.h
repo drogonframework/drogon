@@ -82,6 +82,8 @@ class DbConnection : public trantor::NonCopyable
 {
   public:
     using DbConnectionCallback = std::function<void(const DbConnectionPtr &)>;
+    using MessageCallback =
+        std::function<void(const std::string &, const std::string &)>;
     explicit DbConnection(trantor::EventLoop *loop) : loop_(loop)
     {
     }
@@ -97,9 +99,9 @@ class DbConnection : public trantor::NonCopyable
     {
         idleCb_ = cb;
     }
-    void setDbClient(std::weak_ptr<DbClient> weakDbClient)
+    void setMessageCallback(MessageCallback cb)
     {
-        weakDbClient_ = std::move(weakDbClient);
+        messageCallback_ = std::move(cb);
     }
     virtual void execSql(
         string_view &&sql,
@@ -142,7 +144,7 @@ class DbConnection : public trantor::NonCopyable
     static std::map<std::string, std::string> parseConnString(
         const std::string &);
 
-    std::weak_ptr<DbClient> weakDbClient_;
+    MessageCallback messageCallback_;
 };
 
 }  // namespace orm

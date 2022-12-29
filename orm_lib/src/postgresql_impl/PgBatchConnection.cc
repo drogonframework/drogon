@@ -409,7 +409,7 @@ void PgConnection::handleRead()
                  std::shared_ptr<PGnotify>(PQnotifies(connectionPtr_.get()),
                                            [](PGnotify *p) { PQfreemem(p); })))
         {
-            onNotification({notify->relname}, {notify->extra});
+            messageCallback_({notify->relname}, {notify->extra});
         }
 
         // Check query result

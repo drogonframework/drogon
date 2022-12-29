@@ -19,6 +19,11 @@
 #include <string>
 #include <memory>
 
+namespace trantor
+{
+class EventLoop;
+}
+
 namespace drogon
 {
 namespace orm
@@ -33,26 +38,17 @@ class DROGON_EXPORT DbListener
   public:
     using MessageCallback = std::function<void(std::string, std::string)>;
 
-    explicit DbListener(std::shared_ptr<DbClient> dbClient);
     virtual ~DbListener();
 
-    /// Create a new notification listener upon a DbClient
+    /// Create a new postgresql notification listener
     /**
-     * @param dbClient: DbClient instance the listener relies on
-     *
-     * @note
-     * Currently only postgresql supports asynchronous notification
+     * @param connInfo: Connection string, the same as DbClient::newPgClient()
+     * @param loop: The eventloop this DbListener runs in.
+     * If empty, a new thread will be created.
      *
      */
-    static DbListenerPtr newDbListener(std::shared_ptr<DbClient> dbClient);
-    static DbListenerPtr getDbClientListener(
-        const std::shared_ptr<DbClient> &dbClient);
-
-    /// Get the underlying DbClient
-    std::shared_ptr<DbClient> dbClient() const
-    {
-        return dbClient_;
-    }
+    static DbListenerPtr newPgListener(const std::string &connInfo,
+                                       trantor::EventLoop *loop = nullptr);
 
     /// Listen to a channel
     /**
@@ -60,12 +56,12 @@ class DROGON_EXPORT DbListener
      * @param messageCallback callback when notification arrives on channel
      */
     virtual void listen(const std::string &channel,
-                        MessageCallback messageCallback) = 0;
-
+                        MessageCallback messageCallback) noexcept = 0;
+    /// Stop listening to channel
+    /**
+     * @param channel channel to stop listening
+     */
     virtual void unlisten(const std::string &channel) noexcept = 0;
-
-  protected:
-    std::shared_ptr<DbClient> dbClient_;
 };
 
 }  // namespace orm

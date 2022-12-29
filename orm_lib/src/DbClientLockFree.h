@@ -29,6 +29,8 @@ namespace drogon
 {
 namespace orm
 {
+class DbListenerMixin;
+
 class DbClientLockFree : public DbClient,
                          public std::enable_shared_from_this<DbClientLockFree>
 {
@@ -42,6 +44,11 @@ class DbClientLockFree : public DbClient,
 #else
                      size_t connectionNumberPerLoop);
 #endif
+
+    DbClientLockFree(const std::string &connInfo,
+                     trantor::EventLoop *loop,
+                     ClientType type,
+                     std::weak_ptr<DbListenerMixin> weakListener);
 
     ~DbClientLockFree() noexcept override;
     void execSql(const char *sql,
@@ -99,6 +106,10 @@ class DbClientLockFree : public DbClient,
     size_t connectionPos_{0};  // Used for pg batch mode.
     bool autoBatch_{false};
 #endif
+
+    // for DbListener
+    bool isListenerClient_{false};
+    std::weak_ptr<DbListenerMixin> weakListener_;
 };
 
 }  // namespace orm
