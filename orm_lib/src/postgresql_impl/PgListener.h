@@ -16,12 +16,15 @@
 
 #include <drogon/orm/DbListener.h>
 #include <drogon/orm/DbClient.h>
+#include <trantor/net/EventLoop.h>
+#include <mutex>
+#include <string>
+#include <unordered_map>
 
 namespace drogon
 {
 namespace orm
 {
-
 class PgListener : public DbListener
 {
   public:
@@ -46,5 +49,4 @@ class PgListener : public DbListener
 };
 
 }  // namespace orm
-
 }  // namespace drogon

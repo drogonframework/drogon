@@ -49,7 +49,7 @@ DbListener::~DbListener()
 std::shared_ptr<DbListener> DbListener::newDbListener(DbClientPtr dbClient)
 {
     std::lock_guard<std::mutex> lock(clientListenerMutex);
-    if (clientListener.contains(dbClient))
+    if (clientListener.find(dbClient) != clientListener.end())
     {
         LOG_ERROR << "Given DbClient is already used by another dbListener";
         return nullptr;

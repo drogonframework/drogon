@@ -343,7 +343,7 @@ void PgConnection::handleRead()
             idleCb_();
         }
     }
-    
+
     // Check notification
     std::shared_ptr<PGnotify> notify;
     while (

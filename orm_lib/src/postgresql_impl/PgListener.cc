@@ -60,6 +60,8 @@ void PgListener::listen(
                       << ", error: " << ex.base().what();
             // TODO: keep trying?
         });
+
+    // TODO: listen again when re-connect
 }
 
 void PgListener::unlisten(const std::string& channel) noexcept
