@@ -35,10 +35,8 @@ std::shared_ptr<DbListener> DbListener::newPgListener(
     trantor::EventLoop* loop)
 {
 #if USE_POSTGRESQL
-    std::shared_ptr<PgListener> pgListener = std::make_shared<PgListener>(loop);
-    std::shared_ptr<DbClientLockFree> dbClient(new DbClientLockFree(
-        connInfo, pgListener->getLoop(), ClientType::PostgreSQL, pgListener));
-    pgListener->setDbClient(dbClient);
+    std::shared_ptr<PgListener> pgListener =
+        std::make_shared<PgListener>(connInfo, loop);
     return pgListener;
 #else
     LOG_ERROR << "Postgresql is not supported by current drogon build";

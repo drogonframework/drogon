@@ -15,11 +15,12 @@
 #pragma once
 
 #include <drogon/orm/DbListener.h>
-#include <drogon/orm/DbClient.h>
 #include <trantor/net/EventLoopThread.h>
+#include <deque>
 #include <mutex>
 #include <string>
 #include <unordered_map>
+#include "./PgConnection.h"
 #include "../DbListenerMixin.h"
 
 namespace drogon
@@ -31,11 +32,9 @@ class PgListener : public DbListener,
                    public std::enable_shared_from_this<PgListener>
 {
   public:
-    explicit PgListener(trantor::EventLoop* loop);
+    PgListener(std::string connInfo, trantor::EventLoop* loop);
     ~PgListener() override;
-
-    void setDbClient(DbClientPtr dbClient);
-    trantor::EventLoop* getLoop() const
+    trantor::EventLoop* loop() const
     {
         return loop_;
     }
@@ -47,17 +46,40 @@ class PgListener : public DbListener,
     void onMessage(const std::string& channel,
                    const std::string& message) const noexcept override;
     void listenAll() noexcept override;
+    void listenNext() noexcept override;
 
   private:
-    static std::string formatListenCommand(const std::string& channel);
-    static std::string formatUnlistenCommand(const std::string& channel);
+    /// Escapes a string for use as an SQL identifier, such as a table, column,
+    /// or function name. This is useful when a user-supplied identifier might
+    /// contain special characters that would otherwise not be interpreted as
+    /// part of the identifier by the SQL parser, or when the identifier might
+    /// contain upper case characters whose case should be preserved.
+    /**
+     * @param str: c-style string to escape. A terminating zero byte is not
+     * required, and should not be counted in length(If a terminating zero byte
+     * is found before length bytes are processed, PQescapeIdentifier stops at
+     * the zero; the behavior is thus rather like strncpy).
+     * @param length: length of the c-style string
+     * @return:  The return string has all special characters replaced so that
+     * it will be properly processed as an SQL identifier. A terminating zero
+     * byte is also added. The return string will also be surrounded by double
+     * quotes.
+     */
+    static std::string escapeIdentifier(const PgConnectionPtr& conn,
+                                        const char* str,
+                                        size_t length);
 
-    void doListen(const std::string& channel);
-    void doListenInLoop(const std::string& channel);
+    void doListen(const std::string& channel, bool listen);
+    void doListenInLoop(const std::string& channel, bool listen);
 
+    PgConnectionPtr newConnection();
+
+    std::string connectionInfo_;
     std::unique_ptr<trantor::EventLoopThread> threadPtr_;
     trantor::EventLoop* loop_;
-    DbClientPtr dbClient_;
+    DbConnectionPtr connHolder_;
+    DbConnectionPtr conn_;
+    std::deque<std::pair<bool, std::string>> listenTasks_;
 
     mutable std::mutex mutex_;
     std::unordered_map<std::string, std::vector<MessageCallback>>

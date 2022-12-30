@@ -14,7 +14,6 @@
 
 #include "DbClientLockFree.h"
 #include "DbConnection.h"
-#include "DbListenerMixin.h"
 #include "TransactionImpl.h"
 #include "../../lib/src/TaskTimeoutFlag.h"
 #include <drogon/config.h>
@@ -71,20 +70,6 @@ DbClientLockFree::DbClientLockFree(const std::string &connInfo,
     {
         LOG_ERROR << "No supported database type:" << (int)type;
     }
-}
-
-DbClientLockFree::DbClientLockFree(const std::string &connInfo,
-                                   trantor::EventLoop *loop,
-                                   ClientType type,
-                                   std::weak_ptr<DbListenerMixin> weakListener)
-#if LIBPQ_SUPPORTS_BATCH_MODE
-    : DbClientLockFree(connInfo, loop, type, 1, false)
-#else
-    : DbClientLockFree(connInfo, loop, type, 1)
-#endif
-{
-    isListenerClient_ = true;
-    weakListener_ = std::move(weakListener);
 }
 
 DbClientLockFree::~DbClientLockFree() noexcept
@@ -491,15 +476,6 @@ DbConnectionPtr DbClientLockFree::newConnection()
             return;
         thisPtr->connections_.push_back(okConnPtr);
         thisPtr->handleNewTask(okConnPtr);
-        if (thisPtr->isListenerClient_)
-        {
-            std::shared_ptr<DbListenerMixin> listenerPtr =
-                thisPtr->weakListener_.lock();
-            if (listenerPtr)
-            {
-                listenerPtr->listenAll();
-            }
-        }
     });
     std::weak_ptr<DbConnection> weakConnPtr = connPtr;
     connPtr->setIdleCallback([weakPtr, weakConnPtr]() {
@@ -511,19 +487,6 @@ DbConnectionPtr DbClientLockFree::newConnection()
             return;
         thisPtr->handleNewTask(connPtr);
     });
-    if (isListenerClient_)
-    {
-        connPtr->setMessageCallback(
-            [weakListener = weakListener_](const std::string &channel,
-                                           const std::string &message) {
-                std::shared_ptr<DbListenerMixin> listenerPtr =
-                    weakListener.lock();
-                if (listenerPtr)
-                {
-                    listenerPtr->onMessage(channel, message);
-                }
-            });
-    }
     // std::cout<<"newConn end"<<connPtr<<std::endl;
     return connPtr;
 }

@@ -14,6 +14,7 @@ class DbListenerMixin
     virtual void onMessage(const std::string& channel,
                            const std::string& message) const noexcept = 0;
     virtual void listenAll() noexcept = 0;
+    virtual void listenNext() noexcept = 0;
 };
 
 }  // namespace orm

@@ -13,34 +13,30 @@
  */
 
 #include "PgListener.h"
-#include "../DbClientLockFree.h"
-#include <drogon/orm/DbClient.h>
+#include "PgConnection.h"
 
 using namespace drogon;
 using namespace drogon::orm;
 
-PgListener::PgListener(trantor::EventLoop* loop)
+PgListener::PgListener(std::string connInfo, trantor::EventLoop* loop)
+    : connectionInfo_(std::move(connInfo)), loop_(loop)
 {
-    if (loop)
-    {
-        loop_ = loop;
-    }
-    else
+    if (!loop)
     {
         threadPtr_ = std::make_unique<trantor::EventLoopThread>();
         threadPtr_->run();
         loop_ = threadPtr_->getLoop();
     }
+    loop_->queueInLoop([this]() { connHolder_ = newConnection(); });
 }
 
 PgListener::~PgListener()
 {
-    // Need unlisten all?
-}
-
-void PgListener::setDbClient(DbClientPtr dbClient)
-{
-    dbClient_ = std::move(dbClient);
+    if (conn_)
+    {
+        conn_->disconnect();
+        conn_ = nullptr;
+    }
 }
 
 void PgListener::listen(
@@ -53,7 +49,7 @@ void PgListener::listen(
         listenChannels_[channel].push_back(std::move(messageCallback));
     }
 
-    doListen(channel);
+    doListen(channel, true);
 }
 
 void PgListener::unlisten(const std::string& channel) noexcept
@@ -64,23 +60,7 @@ void PgListener::unlisten(const std::string& channel) noexcept
         listenChannels_.erase(channel);
     }
 
-    std::weak_ptr<PgListener> weakThis = shared_from_this();
-    loop_->runInLoop([channel, weakThis]() {
-        auto thisPtr = weakThis.lock();
-        if (!thisPtr)
-        {
-            return;
-        }
-        std::string sql = formatUnlistenCommand(channel);
-        thisPtr->dbClient_->execSqlAsync(
-            sql,
-            [channel](const Result& r) { LOG_DEBUG << "Unlisten " << channel; },
-            [channel](const DrogonDbException& ex) {
-                LOG_ERROR << "Failed to unlisten " << channel
-                          << ", error: " << ex.base().what();
-                // TODO: keep trying?
-            });
-    });
+    doListen(channel, false);
 }
 
 void PgListener::onMessage(const std::string& channel,
@@ -103,64 +83,212 @@ void PgListener::onMessage(const std::string& channel,
 
 void PgListener::listenAll() noexcept
 {
-    std::lock_guard<std::mutex> lock(mutex_);
+    loop_->assertInLoopThread();
+
+    listenTasks_.clear();
     for (auto& item : listenChannels_)
     {
-        std::string channel = item.first;
-        doListen(channel);
+        listenTasks_.emplace_back(true, item.first);
     }
+    listenNext();
 }
 
-std::string PgListener::formatListenCommand(const std::string& channel)
+void PgListener::listenNext() noexcept
 {
-    // TODO: escape special chars
-    return "LISTEN " + channel;
+    loop_->assertInLoopThread();
+
+    if (listenTasks_.empty())
+    {
+        return;
+    }
+    auto [listen, channel] = listenTasks_.front();
+    listenTasks_.pop_front();
+    doListenInLoop(channel, listen);
 }
 
-std::string PgListener::formatUnlistenCommand(const std::string& channel)
-{
-    // TODO: escape special chars
-    return "UNLISTEN " + channel;
-}
-
-void PgListener::doListen(const std::string& channel)
+void PgListener::doListen(const std::string& channel, bool listen)
 {
     if (loop_->isInLoopThread())
     {
-        doListenInLoop(channel);
+        doListenInLoop(channel, listen);
     }
     else
     {
         std::weak_ptr<PgListener> weakThis = shared_from_this();
-        loop_->queueInLoop([weakThis, channel]() {
+        loop_->queueInLoop([weakThis, channel, listen]() {
             auto thisPtr = weakThis.lock();
             if (thisPtr)
             {
-                thisPtr->doListenInLoop(channel);
+                thisPtr->doListenInLoop(channel, listen);
             }
         });
     }
 }
 
-void PgListener::doListenInLoop(const std::string& channel)
+void PgListener::doListenInLoop(const std::string& channel, bool listen)
 {
-    std::string sql = formatListenCommand(channel);
-    std::weak_ptr<PgListener> weakThis = shared_from_this();
-    dbClient_->execSqlAsync(
-        sql,
-        [channel](const Result& r) {
-            LOG_DEBUG << "Listen channel " << channel;
-        },
-        [channel, weakThis, loop = loop_](const DrogonDbException& ex) {
-            LOG_ERROR << "Failed to listen channel " << channel
-                      << ", error: " << ex.base().what();
-            // TODO: max retry?
-            loop->runAfter(1.0, [channel, weakThis]() {
-                auto thisPtr = weakThis.lock();
-                if (thisPtr)
-                {
-                    thisPtr->doListenInLoop(channel);
-                }
+    loop_->assertInLoopThread();
+    if (conn_ && listenTasks_.empty())
+    {
+        if (!conn_->isWorking())
+        {
+            auto pgConn = std::dynamic_pointer_cast<PgConnection>(conn_);
+            std::string escapedChannel =
+                escapeIdentifier(pgConn, channel.c_str(), channel.size());
+            if (escapedChannel.empty())
+            {
+                LOG_ERROR << "Failed to escape pg identifier, stop listen";
+                // Stop here?
+                return;
+            }
+
+            // Because DbConnection::execSql() takes string_view as parameter,
+            // sql must be hold until query finish.
+            auto sql = std::make_shared<std::string>(
+                (listen ? "LISTEN " : "UNLISTEN ") + escapedChannel);
+            std::weak_ptr<PgListener> weakThis = shared_from_this();
+            conn_->execSql(
+                *sql,
+                0,
+                {},
+                {},
+                {},
+                [listen, channel, sql](const Result& r) {
+                    if (listen)
+                    {
+                        LOG_DEBUG << "Listen channel " << channel;
+                    }
+                    else
+                    {
+                        LOG_DEBUG << "Unlisten channel " << channel;
+                    }
+                },
+                [listen, channel, weakThis, sql, loop = loop_](
+                    const std::exception_ptr& exception) {
+                    try
+                    {
+                        std::rethrow_exception(exception);
+                    }
+                    catch (const DrogonDbException& ex)
+                    {
+                        if (listen)
+                        {
+                            LOG_ERROR << "Failed to listen channel " << channel
+                                      << ", error: " << ex.base().what();
+                            // TODO: max retry?
+                            loop->runAfter(1.0, [=]() {
+                                auto thisPtr = weakThis.lock();
+                                if (thisPtr)
+                                {
+                                    thisPtr->doListenInLoop(channel, listen);
+                                }
+                            });
+                        }
+                        else
+                        {
+                            LOG_ERROR << "Failed to unlisten " << channel
+                                      << ", error: " << ex.base().what();
+                            // TODO: need retry unlisten?
+                        }
+                    }
+                });
+            return;
+        }
+    }
+
+    if (listenTasks_.size() > 20000)
+    {
+        LOG_WARN << "Too many queries in listen buffer";
+        // TODO: do what?
+        return;
+    }
+
+    listenTasks_.emplace_back(listen, channel);
+}
+
+PgConnectionPtr PgListener::newConnection()
+{
+    PgConnectionPtr connPtr =
+        std::make_shared<PgConnection>(loop_, connectionInfo_, false);
+
+    std::weak_ptr<PgListener> weakPtr = shared_from_this();
+    auto retryCount = std::make_shared<unsigned int>(0);
+    connPtr->setCloseCallback(
+        [weakPtr, retryCount](const DbConnectionPtr& closeConnPtr) {
+            auto thisPtr = weakPtr.lock();
+            if (!thisPtr)
+                return;
+            // Erase the connection
+            if (closeConnPtr == thisPtr->conn_)
+            {
+                thisPtr->conn_.reset();
+            }
+            if (closeConnPtr == thisPtr->connHolder_)
+            {
+                thisPtr->connHolder_.reset();
+            }
+            // Reconnect after 1 second
+            ++(*retryCount);
+            unsigned int delay = (*retryCount) < 5 ? (*retryCount * 2) : 10;
+            thisPtr->loop_->runAfter(delay, [weakPtr, closeConnPtr] {
+                auto thisPtr = weakPtr.lock();
+                if (!thisPtr)
+                    return;
+                assert(!thisPtr->connHolder_);
+                thisPtr->connHolder_ = thisPtr->newConnection();
             });
         });
+    connPtr->setOkCallback(
+        [weakPtr, retryCount](const DbConnectionPtr& okConnPtr) {
+            LOG_TRACE << "connected after " << *retryCount << " tries";
+            (*retryCount) = 0;
+            auto thisPtr = weakPtr.lock();
+            if (!thisPtr)
+                return;
+            assert(!thisPtr->conn_);
+            assert(thisPtr->connHolder_ == okConnPtr);
+            thisPtr->conn_ = okConnPtr;
+            thisPtr->listenAll();
+        });
+    std::weak_ptr<DbConnection> weakConnPtr = connPtr;
+    connPtr->setIdleCallback([weakPtr, weakConnPtr]() {
+        auto thisPtr = weakPtr.lock();
+        if (!thisPtr)
+            return;
+        auto connPtr = weakConnPtr.lock();
+        if (!connPtr)
+            return;
+        thisPtr->listenNext();
+    });
+
+    connPtr->setMessageCallback(
+        [weakPtr](const std::string& channel, const std::string& message) {
+            auto thisPtr = weakPtr.lock();
+            if (thisPtr)
+            {
+                thisPtr->onMessage(channel, message);
+            }
+        });
+    return connPtr;
+}
+
+std::string PgListener::escapeIdentifier(const PgConnectionPtr& conn,
+                                         const char* str,
+                                         size_t length)
+{
+    auto res = std::unique_ptr<char, std::function<void(char*)>>(
+        PQescapeIdentifier(conn->pgConn().get(), str, length), [](char* res) {
+            if (res)
+            {
+                PQfreemem(res);
+            }
+        });
+    if (!res)
+    {
+        LOG_ERROR << "Error when escaping identifier ["
+                  << std::string(str, length) << "]. "
+                  << PQerrorMessage(conn->pgConn().get());
+        return {};
+    }
+    return std::string{res.get()};
 }
