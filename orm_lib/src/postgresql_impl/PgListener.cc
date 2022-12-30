@@ -18,6 +18,9 @@
 using namespace drogon;
 using namespace drogon::orm;
 
+#define MAX_UNLISTEN_RETRY 3
+#define MAX_LISTEN_RETRY 10
+
 PgListener::PgListener(std::string connInfo, trantor::EventLoop* loop)
     : connectionInfo_(std::move(connInfo)), loop_(loop)
 {
@@ -125,9 +128,13 @@ void PgListener::doListen(const std::string& channel, bool listen)
     }
 }
 
-void PgListener::doListenInLoop(const std::string& channel, bool listen)
+void PgListener::doListenInLoop(const std::string& channel,
+                                bool listen,
+                                std::shared_ptr<unsigned int> retryCnt)
 {
     loop_->assertInLoopThread();
+    if (!retryCnt)
+        retryCnt = std::make_shared<unsigned int>(0);
     if (conn_ && listenTasks_.empty())
     {
         if (!conn_->isWorking())
@@ -138,7 +145,7 @@ void PgListener::doListenInLoop(const std::string& channel, bool listen)
             if (escapedChannel.empty())
             {
                 LOG_ERROR << "Failed to escape pg identifier, stop listen";
-                // Stop here?
+                // Consider add an error callback in future
                 return;
             }
 
@@ -163,7 +170,7 @@ void PgListener::doListenInLoop(const std::string& channel, bool listen)
                         LOG_DEBUG << "Unlisten channel " << channel;
                     }
                 },
-                [listen, channel, weakThis, sql, loop = loop_](
+                [listen, channel, weakThis, sql, retryCnt, loop = loop_](
                     const std::exception_ptr& exception) {
                     try
                     {
@@ -171,25 +178,35 @@ void PgListener::doListenInLoop(const std::string& channel, bool listen)
                     }
                     catch (const DrogonDbException& ex)
                     {
+                        ++(*retryCnt);
                         if (listen)
                         {
                             LOG_ERROR << "Failed to listen channel " << channel
                                       << ", error: " << ex.base().what();
-                            // TODO: max retry?
-                            loop->runAfter(1.0, [=]() {
-                                auto thisPtr = weakThis.lock();
-                                if (thisPtr)
-                                {
-                                    thisPtr->doListenInLoop(channel, listen);
-                                }
-                            });
+                            if (*retryCnt > MAX_LISTEN_RETRY)
+                            {
+                                return;
+                            }
                         }
                         else
                         {
                             LOG_ERROR << "Failed to unlisten " << channel
                                       << ", error: " << ex.base().what();
-                            // TODO: need retry unlisten?
+                            if (*retryCnt > MAX_UNLISTEN_RETRY)
+                            {
+                                return;
+                            }
                         }
+                        auto delay = (*retryCnt) < 5 ? (*retryCnt * 2) : 10;
+                        loop->runAfter(delay, [=]() {
+                            auto thisPtr = weakThis.lock();
+                            if (thisPtr)
+                            {
+                                thisPtr->doListenInLoop(channel,
+                                                        listen,
+                                                        retryCnt);
+                            }
+                        });
                     }
                 });
             return;
@@ -206,15 +223,16 @@ void PgListener::doListenInLoop(const std::string& channel, bool listen)
     listenTasks_.emplace_back(listen, channel);
 }
 
-PgConnectionPtr PgListener::newConnection()
+PgConnectionPtr PgListener::newConnection(
+    std::shared_ptr<unsigned int> retryCnt)
 {
     PgConnectionPtr connPtr =
         std::make_shared<PgConnection>(loop_, connectionInfo_, false);
-
     std::weak_ptr<PgListener> weakPtr = shared_from_this();
-    auto retryCount = std::make_shared<unsigned int>(0);
+    if (!retryCnt)
+        retryCnt = std::make_shared<unsigned int>(0);
     connPtr->setCloseCallback(
-        [weakPtr, retryCount](const DbConnectionPtr& closeConnPtr) {
+        [weakPtr, retryCnt](const DbConnectionPtr& closeConnPtr) {
             auto thisPtr = weakPtr.lock();
             if (!thisPtr)
                 return;
@@ -227,21 +245,21 @@ PgConnectionPtr PgListener::newConnection()
             {
                 thisPtr->connHolder_.reset();
             }
-            // Reconnect after 1 second
-            ++(*retryCount);
-            unsigned int delay = (*retryCount) < 5 ? (*retryCount * 2) : 10;
-            thisPtr->loop_->runAfter(delay, [weakPtr, closeConnPtr] {
+            // Reconnect after delay
+            ++(*retryCnt);
+            unsigned int delay = (*retryCnt) < 5 ? (*retryCnt * 2) : 10;
+            thisPtr->loop_->runAfter(delay, [weakPtr, closeConnPtr, retryCnt] {
                 auto thisPtr = weakPtr.lock();
                 if (!thisPtr)
                     return;
                 assert(!thisPtr->connHolder_);
-                thisPtr->connHolder_ = thisPtr->newConnection();
+                thisPtr->connHolder_ = thisPtr->newConnection(retryCnt);
             });
         });
     connPtr->setOkCallback(
-        [weakPtr, retryCount](const DbConnectionPtr& okConnPtr) {
-            LOG_TRACE << "connected after " << *retryCount << " tries";
-            (*retryCount) = 0;
+        [weakPtr, retryCnt](const DbConnectionPtr& okConnPtr) {
+            LOG_TRACE << "connected after " << *retryCnt << " tries";
+            (*retryCnt) = 0;
             auto thisPtr = weakPtr.lock();
             if (!thisPtr)
                 return;
@@ -250,13 +268,9 @@ PgConnectionPtr PgListener::newConnection()
             thisPtr->conn_ = okConnPtr;
             thisPtr->listenAll();
         });
-    std::weak_ptr<DbConnection> weakConnPtr = connPtr;
-    connPtr->setIdleCallback([weakPtr, weakConnPtr]() {
+    connPtr->setIdleCallback([weakPtr]() {
         auto thisPtr = weakPtr.lock();
         if (!thisPtr)
-            return;
-        auto connPtr = weakConnPtr.lock();
-        if (!connPtr)
             return;
         thisPtr->listenNext();
     });

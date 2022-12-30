@@ -70,9 +70,11 @@ class PgListener : public DbListener,
                                         size_t length);
 
     void doListen(const std::string& channel, bool listen);
-    void doListenInLoop(const std::string& channel, bool listen);
+    void doListenInLoop(const std::string& channel,
+                        bool listen,
+                        std::shared_ptr<unsigned int> = nullptr);
 
-    PgConnectionPtr newConnection();
+    PgConnectionPtr newConnection(std::shared_ptr<unsigned int> = nullptr);
 
     std::string connectionInfo_;
     std::unique_ptr<trantor::EventLoopThread> threadPtr_;
