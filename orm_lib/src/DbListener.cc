@@ -14,12 +14,8 @@
 
 #include <drogon/config.h>
 #include <drogon/orm/DbListener.h>
-#include <drogon/orm/DbClient.h>
-#include <trantor/net/EventLoop.h>
 #include <trantor/utils/Logger.h>
 #include <mutex>
-#include <unordered_map>
-#include "DbClientLockFree.h"
 
 #if USE_POSTGRESQL
 #include "postgresql_impl/PgListener.h"
