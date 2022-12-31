@@ -575,7 +575,6 @@ set(private_headers
     lib/src/DbClientManager.h
     orm_lib/src/DbClientImpl.h
     orm_lib/src/DbConnection.h
-    orm_lib/src/DbListenerMixin.h
     orm_lib/src/ResultImpl.h
     orm_lib/src/TransactionImpl.h)
 if (pg_FOUND OR DROGON_FOUND_MYSQL OR DROGON_FOUND_SQLite3)

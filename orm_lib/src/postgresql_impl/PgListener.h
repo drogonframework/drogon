@@ -21,14 +21,12 @@
 #include <string>
 #include <unordered_map>
 #include "./PgConnection.h"
-#include "../DbListenerMixin.h"
 
 namespace drogon
 {
 namespace orm
 {
 class PgListener : public DbListener,
-                   public DbListenerMixin,
                    public std::enable_shared_from_this<PgListener>
 {
   public:
@@ -44,9 +42,9 @@ class PgListener : public DbListener,
     void unlisten(const std::string& channel) noexcept override;
 
     void onMessage(const std::string& channel,
-                   const std::string& message) const noexcept override;
-    void listenAll() noexcept override;
-    void listenNext() noexcept override;
+                   const std::string& message) const noexcept;
+    void listenAll() noexcept;
+    void listenNext() noexcept;
 
   private:
     /// Escapes a string for use as an SQL identifier, such as a table, column,
