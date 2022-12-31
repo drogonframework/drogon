@@ -91,6 +91,9 @@ int main(int argc, char **argv)
     LOG_INFO << "Database conn info: " << dbConnInfo;
 #if USE_POSTGRESQL
     postgreClient = orm::DbClient::newPgClient(dbConnInfo, 2, true);
+#else
+    LOG_DEBUG << "Drogon is built without Postgresql. No tests executed.";
+    return 0;
 #endif
 
     int testStatus = test::run(argc, argv);
