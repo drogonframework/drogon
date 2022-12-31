@@ -191,7 +191,7 @@ if [ "$1" = "-t" ]; then
     fi
     if [ -f "./orm_lib/tests/db_listener_test" ]; then
         echo "Test DbListener"
-        ./orm_lib/tests/db_listener_test
+        ./orm_lib/tests/db_listener_test -s
         if [ $? -ne 0 ]; then
             echo "Error in testing"
             exit -1
