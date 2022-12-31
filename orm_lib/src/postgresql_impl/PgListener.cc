@@ -175,16 +175,23 @@ void PgListener::listenInLoop(const std::string& channel,
                                       << ", error: " << ex.base().what();
                             if (*retryCnt > MAX_LISTEN_RETRY)
                             {
+                                LOG_ERROR << "Failed to listen channel "
+                                          << channel
+                                          << " after max attempt. Stop trying.";
                                 // TODO: report
                                 return;
                             }
                         }
                         else
                         {
-                            LOG_ERROR << "Failed to unlisten " << channel
+                            LOG_ERROR << "Failed to unlisten channel "
+                                      << channel
                                       << ", error: " << ex.base().what();
                             if (*retryCnt > MAX_UNLISTEN_RETRY)
                             {
+                                LOG_ERROR << "Failed to unlisten channel "
+                                          << channel
+                                          << " after max attempt. Stop trying.";
                                 // TODO: report?
                                 return;
                             }
@@ -207,7 +214,8 @@ void PgListener::listenInLoop(const std::string& channel,
 
     if (listenTasks_.size() > 20000)
     {
-        LOG_WARN << "Too many queries in listen buffer";
+        LOG_WARN << "Too many queries in listen buffer. Stop listen channel "
+                 << channel;
         // TODO: report
         return;
     }
