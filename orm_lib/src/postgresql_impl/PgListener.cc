@@ -46,41 +46,50 @@ void PgListener::listen(
     const std::string& channel,
     std::function<void(std::string, std::string)> messageCallback) noexcept
 {
-    // save message callback
+    if (loop_->isInLoopThread())
     {
-        std::lock_guard<std::mutex> lock(mutex_);
         listenChannels_[channel].push_back(std::move(messageCallback));
+        listenInLoop(channel, true);
     }
-
-    doListen(channel, true);
+    else
+    {
+        loop_->queueInLoop(
+            [this, channel, cb = std::move(messageCallback)]() mutable {
+                listenChannels_[channel].push_back(std::move(cb));
+                listenInLoop(channel, true);
+            });
+    }
 }
 
 void PgListener::unlisten(const std::string& channel) noexcept
 {
-    // delete callbacks
+    if (loop_->isInLoopThread())
     {
-        std::lock_guard<std::mutex> lock(mutex_);
         listenChannels_.erase(channel);
+        listenInLoop(channel, false);
     }
-
-    doListen(channel, false);
+    else
+    {
+        loop_->queueInLoop([this, channel]() {
+            listenChannels_.erase(channel);
+            listenInLoop(channel, false);
+        });
+    }
 }
 
 void PgListener::onMessage(const std::string& channel,
                            const std::string& message) const noexcept
 {
+    loop_->assertInLoopThread();
+
+    auto iter = listenChannels_.find(channel);
+    if (iter == listenChannels_.end())
     {
-        std::lock_guard<std::mutex> lock(mutex_);
-        auto iter = listenChannels_.find(channel);
-        if (iter == listenChannels_.end())
-        {
-            return;
-        }
-        for (auto& cb : iter->second)
-        {
-            loop_->queueInLoop(
-                [cb, channel, message]() { cb(channel, message); });
-        }
+        return;
+    }
+    for (auto& cb : iter->second)
+    {
+        cb(channel, message);
     }
 }
 
@@ -106,31 +115,12 @@ void PgListener::listenNext() noexcept
     }
     auto [listen, channel] = listenTasks_.front();
     listenTasks_.pop_front();
-    doListenInLoop(channel, listen);
+    listenInLoop(channel, listen);
 }
 
-void PgListener::doListen(const std::string& channel, bool listen)
-{
-    if (loop_->isInLoopThread())
-    {
-        doListenInLoop(channel, listen);
-    }
-    else
-    {
-        std::weak_ptr<PgListener> weakThis = shared_from_this();
-        loop_->queueInLoop([weakThis, channel, listen]() {
-            auto thisPtr = weakThis.lock();
-            if (thisPtr)
-            {
-                thisPtr->doListenInLoop(channel, listen);
-            }
-        });
-    }
-}
-
-void PgListener::doListenInLoop(const std::string& channel,
-                                bool listen,
-                                std::shared_ptr<unsigned int> retryCnt)
+void PgListener::listenInLoop(const std::string& channel,
+                              bool listen,
+                              std::shared_ptr<unsigned int> retryCnt)
 {
     loop_->assertInLoopThread();
     if (!retryCnt)
@@ -145,7 +135,7 @@ void PgListener::doListenInLoop(const std::string& channel,
             if (escapedChannel.empty())
             {
                 LOG_ERROR << "Failed to escape pg identifier, stop listen";
-                // Consider add an error callback in future
+                // TODO: report
                 return;
             }
 
@@ -185,6 +175,7 @@ void PgListener::doListenInLoop(const std::string& channel,
                                       << ", error: " << ex.base().what();
                             if (*retryCnt > MAX_LISTEN_RETRY)
                             {
+                                // TODO: report
                                 return;
                             }
                         }
@@ -194,6 +185,7 @@ void PgListener::doListenInLoop(const std::string& channel,
                                       << ", error: " << ex.base().what();
                             if (*retryCnt > MAX_UNLISTEN_RETRY)
                             {
+                                // TODO: report?
                                 return;
                             }
                         }
@@ -202,9 +194,9 @@ void PgListener::doListenInLoop(const std::string& channel,
                             auto thisPtr = weakThis.lock();
                             if (thisPtr)
                             {
-                                thisPtr->doListenInLoop(channel,
-                                                        listen,
-                                                        retryCnt);
+                                thisPtr->listenInLoop(channel,
+                                                      listen,
+                                                      retryCnt);
                             }
                         });
                     }
@@ -216,7 +208,7 @@ void PgListener::doListenInLoop(const std::string& channel,
     if (listenTasks_.size() > 20000)
     {
         LOG_WARN << "Too many queries in listen buffer";
-        // TODO: do what?
+        // TODO: report
         return;
     }
 

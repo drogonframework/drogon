@@ -55,6 +55,10 @@ class DROGON_EXPORT DbListener
      * @param channel channel name to listen
      * @param messageCallback callback when notification arrives on channel
      *
+     * @note `listen()` can be called on the same channel multiple times.
+     * In this case, each `messageCallback` will be called when message arrives.
+     * However, a single `unlisten()` call will cancel all the callbacks.
+     *
      * @note If has connection issues, the listener will keep retrying until
      * listen success. The listener will also re-listen to all channels after
      * re-connection.

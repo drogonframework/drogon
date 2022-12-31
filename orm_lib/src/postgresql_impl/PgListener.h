@@ -41,6 +41,8 @@ class PgListener : public DbListener,
                 MessageCallback messageCallback) noexcept override;
     void unlisten(const std::string& channel) noexcept override;
 
+    // methods below should be called in loop
+
     void onMessage(const std::string& channel,
                    const std::string& message) const noexcept;
     void listenAll() noexcept;
@@ -67,10 +69,9 @@ class PgListener : public DbListener,
                                         const char* str,
                                         size_t length);
 
-    void doListen(const std::string& channel, bool listen);
-    void doListenInLoop(const std::string& channel,
-                        bool listen,
-                        std::shared_ptr<unsigned int> = nullptr);
+    void listenInLoop(const std::string& channel,
+                      bool listen,
+                      std::shared_ptr<unsigned int> = nullptr);
 
     PgConnectionPtr newConnection(std::shared_ptr<unsigned int> = nullptr);
 
@@ -80,8 +81,6 @@ class PgListener : public DbListener,
     DbConnectionPtr connHolder_;
     DbConnectionPtr conn_;
     std::deque<std::pair<bool, std::string>> listenTasks_;
-
-    mutable std::mutex mutex_;
     std::unordered_map<std::string, std::vector<MessageCallback>>
         listenChannels_;
 };
