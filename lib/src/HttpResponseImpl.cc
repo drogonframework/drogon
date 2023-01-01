@@ -316,7 +316,7 @@ HttpResponsePtr HttpResponse::newFileResponse(
     }
     pbuf->pubseekoff(offset, std::ifstream::beg);  // rewind
 
-    if (HttpAppFrameworkImpl::instance().useSendfile() && length > 1024 * 200)
+    if (HttpAppFrameworkImpl::instance().useSendfile() && length > HttpAppFrameworkImpl::instance().getSendfileMaxSize())
     // TODO : Is 200k an appropriate value? Or set it to be configurable
     {
         // The advantages of sendfile() can only be reflected in sending large

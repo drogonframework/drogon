@@ -431,6 +431,12 @@ static void loadApp(const Json::Value &app)
     drogon::app().setGzipStatic(useGzipStatic);
     auto useBrStatic = app.get("br_static", true).asBool();
     drogon::app().setBrStatic(useBrStatic);
+    auto maxSendfileSize = app.get("sendfile_max_size", "200K").asString();
+    size_t sfSize;
+    if(bytesSize(maxSendfileSize, sfSize))
+    {
+        drogon::app().setSendfileMaxSize(sfSize);
+    }
     auto maxBodySize = app.get("client_max_body_size", "1M").asString();
     size_t size;
     if (bytesSize(maxBodySize, size))

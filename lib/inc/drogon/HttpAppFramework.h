@@ -1089,6 +1089,7 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
      */
     virtual HttpAppFramework &setBrStatic(bool useGzipStatic) = 0;
 
+    virtual HttpAppFramework &setSendfileMaxSize(size_t maxSize) = 0;
     /// Set the max body size of the requests received by drogon.
     /**
      * The default value is 1M.

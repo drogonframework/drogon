@@ -346,6 +346,11 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     }
     HttpAppFramework &setGzipStatic(bool useGzipStatic) override;
     HttpAppFramework &setBrStatic(bool useGzipStatic) override;
+    HttpAppFramework &setSendfileMaxSize(size_t maxSize) override
+    {
+        sendFileMaxSize_ = maxSize;
+        return *this;
+    }
     HttpAppFramework &setClientMaxBodySize(size_t maxSize) override
     {
         clientMaxBodySize_ = maxSize;
@@ -395,6 +400,10 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     HttpAppFramework &setImplicitPage(
         const std::string &implicitPageFile) override;
     const std::string &getImplicitPage() const override;
+    size_t getSendfileMaxSize() const
+    {
+      return sendFileMaxSize_;
+    }
     size_t getClientMaxBodySize() const
     {
         return clientMaxBodySize_;
@@ -665,6 +674,7 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     std::pair<unsigned int, std::string> floatPrecisionInJson_{0,
                                                                "significant"};
     bool usingCustomErrorHandler_{false};
+    size_t sendFileMaxSize_{1024 * 200};
     size_t clientMaxBodySize_{1024 * 1024};
     size_t clientMaxMemoryBodySize_{64 * 1024};
     size_t clientMaxWebSocketMessageSize_{128 * 1024};
