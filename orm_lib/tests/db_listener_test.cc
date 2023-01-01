@@ -35,38 +35,35 @@ DROGON_TEST(ListenNotifyTest)
     auto dbListener = DbListener::newPgListener(clientPtr->connectionInfo());
     MANDATE(dbListener);
 
-    int numNotifications = 0;
+    static int numNotifications = 0;
+    LOG_INFO << "Start listen.";
     dbListener->listen(LISTEN_CHANNEL,
-                       [TEST_CTX,
-                        &numNotifications](const std::string &channel,
-                                           const std::string &message) {
+                       [TEST_CTX](const std::string &channel,
+                                  const std::string &message) {
                            MANDATE(channel == LISTEN_CHANNEL);
                            LOG_INFO << "Message from " << LISTEN_CHANNEL << ": "
                                     << message;
                            ++numNotifications;
                        });
 
-    std::thread t([TEST_CTX, clientPtr, dbListener]() {
-        std::this_thread::sleep_for(1s);
-        for (int i = 0; i < 10; ++i)
-        {
-            // Can not use placeholders in LISTEN or NOTIFY command!!!
-            std::string cmd =
-                "NOTIFY " + LISTEN_CHANNEL + ", '" + std::to_string(i) + "'";
-            clientPtr->execSqlAsync(
-                cmd,
-                [i](const orm::Result &result) {
-                    LOG_INFO << "Notified " << i;
-                },
-                [](const orm::DrogonDbException &ex) {
-                    LOG_ERROR << "Failed to notify " << ex.base().what();
-                });
-        }
-        std::this_thread::sleep_for(5s);
-        dbListener->unlisten("listen_test");
-    });
+    std::this_thread::sleep_for(1s);
+    LOG_INFO << "Start sending notifications.";
+    for (int i = 0; i < 10; ++i)
+    {
+        // Can not use placeholders in LISTEN or NOTIFY command!!!
+        std::string cmd =
+            "NOTIFY " + LISTEN_CHANNEL + ", '" + std::to_string(i) + "'";
+        clientPtr->execSqlAsync(
+            cmd,
+            [i](const orm::Result &result) { LOG_INFO << "Notified " << i; },
+            [](const orm::DrogonDbException &ex) {
+                LOG_ERROR << "Failed to notify " << ex.base().what();
+            });
+    }
+    std::this_thread::sleep_for(5s);
+    LOG_INFO << "Unlisten.";
+    dbListener->unlisten("listen_test");
 
-    t.join();
     CHECK(numNotifications == 10);
 }
 #endif
