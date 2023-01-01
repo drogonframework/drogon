@@ -30,7 +30,6 @@ PgListener::PgListener(std::string connInfo, trantor::EventLoop* loop)
         threadPtr_->run();
         loop_ = threadPtr_->getLoop();
     }
-    loop_->queueInLoop([this]() { connHolder_ = newConnection(); });
 }
 
 PgListener::~PgListener()
@@ -40,6 +39,20 @@ PgListener::~PgListener()
         conn_->disconnect();
         conn_ = nullptr;
     }
+}
+
+void PgListener::init() noexcept
+{
+    // shared_from_this() can not be called in constructor
+    std::weak_ptr<PgListener> weakThis = shared_from_this();
+    loop_->queueInLoop([weakThis]() {
+        auto thisPtr = weakThis.lock();
+        if (!thisPtr)
+        {
+            return;
+        }
+        thisPtr->connHolder_ = thisPtr->newConnection();
+    });
 }
 
 void PgListener::listen(
@@ -53,10 +66,16 @@ void PgListener::listen(
     }
     else
     {
+        std::weak_ptr<PgListener> weakThis = shared_from_this();
         loop_->queueInLoop(
-            [this, channel, cb = std::move(messageCallback)]() mutable {
-                listenChannels_[channel].push_back(std::move(cb));
-                listenInLoop(channel, true);
+            [weakThis, channel, cb = std::move(messageCallback)]() mutable {
+                auto thisPtr = weakThis.lock();
+                if (!thisPtr)
+                {
+                    return;
+                }
+                thisPtr->listenChannels_[channel].push_back(std::move(cb));
+                thisPtr->listenInLoop(channel, true);
             });
     }
 }
@@ -70,9 +89,15 @@ void PgListener::unlisten(const std::string& channel) noexcept
     }
     else
     {
-        loop_->queueInLoop([this, channel]() {
-            listenChannels_.erase(channel);
-            listenInLoop(channel, false);
+        std::weak_ptr<PgListener> weakThis = shared_from_this();
+        loop_->queueInLoop([weakThis, channel]() {
+            auto thisPtr = weakThis.lock();
+            if (!thisPtr)
+            {
+                return;
+            }
+            thisPtr->listenChannels_.erase(channel);
+            thisPtr->listenInLoop(channel, false);
         });
     }
 }

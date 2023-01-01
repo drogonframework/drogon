@@ -33,6 +33,7 @@ std::shared_ptr<DbListener> DbListener::newPgListener(
 #if USE_POSTGRESQL
     std::shared_ptr<PgListener> pgListener =
         std::make_shared<PgListener>(connInfo, loop);
+    pgListener->init();
     return pgListener;
 #else
     LOG_ERROR << "Postgresql is not supported by current drogon build";
