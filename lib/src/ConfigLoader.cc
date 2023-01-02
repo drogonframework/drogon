@@ -20,14 +20,18 @@
 #include <sstream>
 #include <thread>
 #include <trantor/utils/Logger.h>
-#if !defined(_WIN32) || defined(__MINGW32__)
+#if !defined(_WIN32)
 #include <unistd.h>
 #define os_access access
 #else
 #include <io.h>
+#ifndef __MINGW32__
 #define os_access _waccess
 #define R_OK 04
 #define W_OK 02
+#else
+#define os_access access
+#endif
 #endif
 #include <drogon/utils/Utilities.h>
 
