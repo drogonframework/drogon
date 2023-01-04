@@ -38,6 +38,8 @@ class PgConnection : public DbConnection,
                      public std::enable_shared_from_this<PgConnection>
 {
   public:
+    using MessageCallback =
+        std::function<void(const std::string &, const std::string &)>;
     PgConnection(trantor::EventLoop *loop,
                  const std::string &connInfo,
                  bool autoBatch);
@@ -88,6 +90,15 @@ class PgConnection : public DbConnection,
 
     void disconnect() override;
 
+    const std::shared_ptr<PGconn> &pgConn() const
+    {
+        return connectionPtr_;
+    }
+    void setMessageCallback(MessageCallback cb)
+    {
+        messageCallback_ = std::move(cb);
+    }
+
   private:
     std::shared_ptr<PGconn> connectionPtr_;
     trantor::Channel channel_;
@@ -134,6 +145,8 @@ class PgConnection : public DbConnection,
 #else
     std::unordered_map<string_view, std::string> preparedStatementsMap_;
 #endif
+
+    MessageCallback messageCallback_;
 };
 
 }  // namespace orm
