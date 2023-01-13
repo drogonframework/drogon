@@ -25,8 +25,6 @@ using namespace drogon::orm;
 using namespace trantor;
 using namespace std::chrono_literals;
 
-static const std::string LISTEN_CHANNEL = "listen_test";
-
 #if USE_POSTGRESQL
 orm::DbClientPtr postgreClient;
 DROGON_TEST(ListenNotifyTest)
@@ -35,36 +33,51 @@ DROGON_TEST(ListenNotifyTest)
     auto dbListener = DbListener::newPgListener(clientPtr->connectionInfo());
     MANDATE(dbListener);
 
+    std::vector<std::string> channels{"listen_test_0",
+                                      "listen_test_1",
+                                      "listen_test_2"};
+
     static int numNotifications = 0;
     LOG_INFO << "Start listen.";
-    dbListener->listen(LISTEN_CHANNEL,
-                       [TEST_CTX](const std::string &channel,
-                                  const std::string &message) {
-                           MANDATE(channel == LISTEN_CHANNEL);
-                           LOG_INFO << "Message from " << LISTEN_CHANNEL << ": "
-                                    << message;
-                           ++numNotifications;
-                       });
-
-    std::this_thread::sleep_for(1s);
-    LOG_INFO << "Start sending notifications.";
-    for (int i = 0; i < 10; ++i)
+    for (auto &chan : channels)
     {
-        // Can not use placeholders in LISTEN or NOTIFY command!!!
-        std::string cmd =
-            "NOTIFY " + LISTEN_CHANNEL + ", '" + std::to_string(i) + "'";
-        clientPtr->execSqlAsync(
-            cmd,
-            [i](const orm::Result &result) { LOG_INFO << "Notified " << i; },
-            [](const orm::DrogonDbException &ex) {
-                LOG_ERROR << "Failed to notify " << ex.base().what();
-            });
+        dbListener->listen(chan,
+                           [TEST_CTX, chan](const std::string &channel,
+                                            const std::string &message) {
+                               MANDATE(channel == chan);
+                               LOG_INFO << "Message from " << channel << ": "
+                                        << message;
+                               ++numNotifications;
+                           });
     }
+
+    std::this_thread::sleep_for(1s);  // ensure listen success
+    LOG_INFO << "Start sending notifications.";
+    for (int i = 0; i < 5; ++i)
+    {
+        for (auto &chan : channels)
+        {
+            // Can not use placeholders in LISTEN or NOTIFY command!!!
+            std::string cmd =
+                "NOTIFY " + chan + ", '" + std::to_string(i) + "'";
+            clientPtr->execSqlAsync(
+                cmd,
+                [i, chan](const orm::Result &result) {
+                    LOG_INFO << chan << " notified " << i;
+                },
+                [](const orm::DrogonDbException &ex) {
+                    LOG_ERROR << "Failed to notify " << ex.base().what();
+                });
+        }
+    }
+
     std::this_thread::sleep_for(5s);
     LOG_INFO << "Unlisten.";
-    dbListener->unlisten("listen_test");
-
-    CHECK(numNotifications == 10);
+    for (auto &chan : channels)
+    {
+        dbListener->unlisten(chan);
+    }
+    CHECK(numNotifications == 15);
 }
 #endif
 
