@@ -150,91 +150,84 @@ void PgListener::listenInLoop(const std::string& channel,
     loop_->assertInLoopThread();
     if (!retryCnt)
         retryCnt = std::make_shared<unsigned int>(0);
-    if (conn_ && listenTasks_.empty())
+    if (conn_ && !conn_->isWorking())
     {
-        if (!conn_->isWorking())
+        auto pgConn = std::dynamic_pointer_cast<PgConnection>(conn_);
+        std::string escapedChannel =
+            escapeIdentifier(pgConn, channel.c_str(), channel.size());
+        if (escapedChannel.empty())
         {
-            auto pgConn = std::dynamic_pointer_cast<PgConnection>(conn_);
-            std::string escapedChannel =
-                escapeIdentifier(pgConn, channel.c_str(), channel.size());
-            if (escapedChannel.empty())
-            {
-                LOG_ERROR << "Failed to escape pg identifier, stop listen";
-                // TODO: report
-                return;
-            }
+            LOG_ERROR << "Failed to escape pg identifier, stop listen";
+            // TODO: report
+            return;
+        }
 
-            // Because DbConnection::execSql() takes string_view as parameter,
-            // sql must be hold until query finish.
-            auto sql = std::make_shared<std::string>(
-                (listen ? "LISTEN " : "UNLISTEN ") + escapedChannel);
-            std::weak_ptr<PgListener> weakThis = shared_from_this();
-            conn_->execSql(
-                *sql,
-                0,
-                {},
-                {},
-                {},
-                [listen, channel, sql](const Result& r) {
+        // Because DbConnection::execSql() takes string_view as parameter,
+        // sql must be hold until query finish.
+        auto sql = std::make_shared<std::string>(
+            (listen ? "LISTEN " : "UNLISTEN ") + escapedChannel);
+        std::weak_ptr<PgListener> weakThis = shared_from_this();
+        conn_->execSql(
+            *sql,
+            0,
+            {},
+            {},
+            {},
+            [listen, channel, sql](const Result& r) {
+                if (listen)
+                {
+                    LOG_TRACE << "Listen channel " << channel;
+                }
+                else
+                {
+                    LOG_TRACE << "Unlisten channel " << channel;
+                }
+            },
+            [listen, channel, weakThis, sql, retryCnt, loop = loop_](
+                const std::exception_ptr& exception) {
+                try
+                {
+                    std::rethrow_exception(exception);
+                }
+                catch (const DrogonDbException& ex)
+                {
+                    ++(*retryCnt);
                     if (listen)
                     {
-                        LOG_DEBUG << "Listen channel " << channel;
+                        LOG_ERROR << "Failed to listen channel " << channel
+                                  << ", error: " << ex.base().what();
+                        if (*retryCnt > MAX_LISTEN_RETRY)
+                        {
+                            LOG_ERROR << "Failed to listen channel " << channel
+                                      << " after max attempt. Stop trying.";
+                            // TODO: report
+                            return;
+                        }
                     }
                     else
                     {
-                        LOG_DEBUG << "Unlisten channel " << channel;
-                    }
-                },
-                [listen, channel, weakThis, sql, retryCnt, loop = loop_](
-                    const std::exception_ptr& exception) {
-                    try
-                    {
-                        std::rethrow_exception(exception);
-                    }
-                    catch (const DrogonDbException& ex)
-                    {
-                        ++(*retryCnt);
-                        if (listen)
-                        {
-                            LOG_ERROR << "Failed to listen channel " << channel
-                                      << ", error: " << ex.base().what();
-                            if (*retryCnt > MAX_LISTEN_RETRY)
-                            {
-                                LOG_ERROR << "Failed to listen channel "
-                                          << channel
-                                          << " after max attempt. Stop trying.";
-                                // TODO: report
-                                return;
-                            }
-                        }
-                        else
+                        LOG_ERROR << "Failed to unlisten channel " << channel
+                                  << ", error: " << ex.base().what();
+                        if (*retryCnt > MAX_UNLISTEN_RETRY)
                         {
                             LOG_ERROR << "Failed to unlisten channel "
                                       << channel
-                                      << ", error: " << ex.base().what();
-                            if (*retryCnt > MAX_UNLISTEN_RETRY)
-                            {
-                                LOG_ERROR << "Failed to unlisten channel "
-                                          << channel
-                                          << " after max attempt. Stop trying.";
-                                // TODO: report?
-                                return;
-                            }
+                                      << " after max attempt. Stop trying.";
+                            // TODO: report?
+                            return;
                         }
-                        auto delay = (*retryCnt) < 5 ? (*retryCnt * 2) : 10;
-                        loop->runAfter(delay, [=]() {
-                            auto thisPtr = weakThis.lock();
-                            if (thisPtr)
-                            {
-                                thisPtr->listenInLoop(channel,
-                                                      listen,
-                                                      retryCnt);
-                            }
-                        });
                     }
-                });
-            return;
-        }
+                    auto delay = (*retryCnt) < 5 ? (*retryCnt * 2) : 10;
+                    loop->runAfter(delay, [=]() {
+                        auto thisPtr = weakThis.lock();
+                        if (thisPtr)
+                        {
+                            thisPtr->listenInLoop(channel, listen, retryCnt);
+                        }
+                    });
+                }
+            });
+        return;
     }
 
     if (listenTasks_.size() > 20000)
@@ -245,6 +238,7 @@ void PgListener::listenInLoop(const std::string& channel,
         return;
     }
 
+    LOG_TRACE << "Add to task queue, channel " << channel;
     listenTasks_.emplace_back(listen, channel);
 }
 
