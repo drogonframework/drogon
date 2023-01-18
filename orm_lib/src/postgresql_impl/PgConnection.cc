@@ -343,6 +343,15 @@ void PgConnection::handleRead()
             idleCb_();
         }
     }
+
+    // Check notification
+    std::shared_ptr<PGnotify> notify;
+    while (
+        (notify = std::shared_ptr<PGnotify>(PQnotifies(connectionPtr_.get()),
+                                            [](PGnotify *p) { PQfreemem(p); })))
+    {
+        messageCallback_({notify->relname}, {notify->extra});
+    }
 }
 
 void PgConnection::doAfterPreparing()

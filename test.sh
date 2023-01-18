@@ -182,13 +182,21 @@ if [ "$1" = "-t" ]; then
         fi
     fi
     if [ -f "./orm_lib/tests/pipeline_test" ]; then
-            echo "Test pipeline mode"
-            ./orm_lib/tests/pipeline_test -s
-            if [ $? -ne 0 ]; then
-                echo "Error in testing"
-                exit -1
-            fi
+        echo "Test pipeline mode"
+        ./orm_lib/tests/pipeline_test -s
+        if [ $? -ne 0 ]; then
+            echo "Error in testing"
+            exit -1
         fi
+    fi
+    if [ -f "./orm_lib/tests/db_listener_test" ]; then
+        echo "Test DbListener"
+        ./orm_lib/tests/db_listener_test -s
+        if [ $? -ne 0 ]; then
+            echo "Error in testing"
+            exit -1
+        fi
+    fi
     if [ -f "./nosql_lib/redis/tests/redis_test" ]; then
         echo "Test redis"
         ./nosql_lib/redis/tests/redis_test -s

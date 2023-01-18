@@ -401,6 +401,18 @@ void PgConnection::handleRead()
 
     while (!PQisBusy(connectionPtr_.get()))
     {
+        // TODO: should optimize order of checking
+        // Check notification
+        std::shared_ptr<PGnotify> notify;
+        while (
+            (notify =
+                 std::shared_ptr<PGnotify>(PQnotifies(connectionPtr_.get()),
+                                           [](PGnotify *p) { PQfreemem(p); })))
+        {
+            messageCallback_({notify->relname}, {notify->extra});
+        }
+
+        // Check query result
         res = std::shared_ptr<PGresult>(PQgetResult(connectionPtr_.get()),
                                         [](PGresult *p) { PQclear(p); });
         if (!res)
