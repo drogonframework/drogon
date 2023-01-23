@@ -122,6 +122,26 @@ class DbConnection : public trantor::NonCopyable
         std::function<void(const std::exception_ptr &)> &&exceptCallback,
         bool usePreparedStmt) = 0;
 
+    void execSql(
+        string_view &&sql,
+        size_t paraNum,
+        std::vector<const char *> &&parameters,
+        std::vector<int> &&length,
+        std::vector<int> &&format,
+        ResultCallback &&rcb,
+        std::function<void(const std::exception_ptr &)> &&exceptCallback)
+    {
+        execSql(std::move(sql),
+                paraNum,
+                std::move(parameters),
+                std::move(length),
+                std::move(format),
+                0,
+                std::move(rcb),
+                std::move(exceptCallback),
+                true);
+    }
+
     virtual void batchSql(
         std::deque<std::shared_ptr<SqlCmd>> &&sqlCommands) = 0;
 
