@@ -4,6 +4,32 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.8.3] - 2023-01-23
+
+### API changes list
+
+- Add onSessionStart() and onSessionDestroy() events
+
+- Support postgresql asynchronous notification (LISTEN/NOTIFY).
+
+### Changed
+
+- Update Utilities.cc
+
+- Drogon test refactor
+
+- Enable json entry as string
+
+- Mark awaiters as non-copyable
+
+### Fixed
+
+- Fix HttpController regex path matching
+
+- Fix a memory leak in the redis example
+
+- Partial fix for MSYS2 compat
+
 ## [1.8.2] - 2022-11-11
 
 ### API changes list
@@ -1215,7 +1241,9 @@ All notable changes to this project will be documented in this file.
 
 ## [1.0.0-beta1] - 2019-06-11
 
-[Unreleased]: https://github.com/an-tao/drogon/compare/v1.8.2...HEAD
+[Unreleased]: https://github.com/an-tao/drogon/compare/v1.8.3...HEAD
+
+[1.8.3]: https://github.com/an-tao/drogon/compare/v1.8.2...v1.8.3
 
 [1.8.2]: https://github.com/an-tao/drogon/compare/v1.8.1...v1.8.2
 
