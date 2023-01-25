@@ -7,7 +7,8 @@ TokenBucketRateLimiter::TokenBucketRateLimiter(
     std::chrono::duration<double> timeUnit)
     : capacity_(capacity),
       lastTime_(std::chrono::steady_clock::now()),
-      timeUnit_(timeUnit)
+      timeUnit_(timeUnit),
+      tokens_((double)capacity_)
 {
 }
 

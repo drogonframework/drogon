@@ -15,6 +15,6 @@ class TokenBucketRateLimiter : public RateLimiter
     size_t capacity_;
     std::chrono::steady_clock::time_point lastTime_;
     std::chrono::duration<double> timeUnit_;
-    double tokens_{0};
+    double tokens_;
 };
 }  // namespace drogon
