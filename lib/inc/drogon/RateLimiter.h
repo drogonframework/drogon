@@ -47,6 +47,7 @@ class DROGON_EXPORT RateLimiter
      * @return false The request is not allowed
      */
     virtual bool isAllowed() = 0;
+    virtual ~RateLimiter() noexcept = default;
 };
 class DROGON_EXPORT SafeRateLimiter : public RateLimiter
 {
@@ -59,6 +60,7 @@ class DROGON_EXPORT SafeRateLimiter : public RateLimiter
         std::lock_guard<std::mutex> lock(mutex_);
         return limiter_->isAllowed();
     }
+    ~SafeRateLimiter() noexcept override = default;
 
   private:
     RateLimiterPtr limiter_;

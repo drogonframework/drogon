@@ -10,6 +10,7 @@ class SlidingWindowRateLimiter : public RateLimiter
     SlidingWindowRateLimiter(size_t capacity,
                              std::chrono::duration<double> timeUnit);
     bool isAllowed() override;
+    ~SlidingWindowRateLimiter() noexcept override = default;
 
   private:
     size_t capacity_;
