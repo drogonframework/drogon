@@ -10,6 +10,7 @@ class TokenBucketRateLimiter : public RateLimiter
     TokenBucketRateLimiter(size_t capacity,
                            std::chrono::duration<double> timeUnit);
     bool isAllowed() override;
+    ~TokenBucketRateLimiter() noexcept override = default;
 
   private:
     size_t capacity_;

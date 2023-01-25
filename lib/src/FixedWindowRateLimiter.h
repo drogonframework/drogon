@@ -10,6 +10,7 @@ class FixedWindowRateLimiter : public RateLimiter
     FixedWindowRateLimiter(size_t capacity,
                            std::chrono::duration<double> timeUnit);
     bool isAllowed() override;
+    ~FixedWindowRateLimiter() noexcept override = default;
 
   private:
     size_t capacity_;
