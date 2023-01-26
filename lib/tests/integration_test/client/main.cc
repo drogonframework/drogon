@@ -1043,7 +1043,7 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
 #endif
 
 #if defined(__cpp_impl_coroutine)
-    sync_wait([client, TEST_CTX]() -> Task<> {
+    async_run([client, TEST_CTX]() -> Task<> {
         // Test coroutine requests
         try
         {
@@ -1112,7 +1112,33 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
         {
             FAIL("Unexpected exception, what()" + std::string(e.what()));
         }
-    }());
+
+        // Test coroutine handler with parameters
+        try
+        {
+            auto req = HttpRequest::newHttpRequest();
+            req->setPath("/api/v1/corotest/get_with_param/some_data");
+            auto resp = co_await client->sendRequestCoro(req);
+            CHECK(resp->getStatusCode() == k200OK);
+            CHECK(resp->getBody() == "some_data");
+        }
+        catch (const std::exception &e)
+        {
+            FAIL("Unexpected exception, what()" + std::string(e.what()));
+        }
+        try
+        {
+            auto req = HttpRequest::newHttpRequest();
+            req->setPath("/api/v1/corotest/get_with_param2/some_data");
+            auto resp = co_await client->sendRequestCoro(req);
+            CHECK(resp->getStatusCode() == k200OK);
+            CHECK(resp->getBody() == "some_data");
+        }
+        catch (const std::exception &e)
+        {
+            FAIL("Unexpected exception, what()" + std::string(e.what()));
+        }
+    });
 #endif
 }
 
@@ -1165,7 +1191,7 @@ DROGON_TEST(HttpsTest)
 
 int main(int argc, char **argv)
 {
-    trantor::Logger::setLogLevel(trantor::Logger::LogLevel::kTrace);
+    trantor::Logger::setLogLevel(trantor::Logger::LogLevel::kDebug);
     loadFileLengths();
 
     std::promise<void> p1;
