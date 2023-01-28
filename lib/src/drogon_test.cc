@@ -167,6 +167,12 @@ int run(int argc, char** argv)
         {
             listTests = true;
         }
+        else
+        {
+            printErr() << "Unknown parameter: " << param << "\n";
+            printHelp(argv[0]);
+            exit(1);
+        }
     }
     auto classNames = DrClassMap::getAllClassName();
 
