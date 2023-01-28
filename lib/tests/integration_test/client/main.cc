@@ -690,7 +690,7 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
                                              resp->getBody().begin()));
                         });
     // Test file upload
-    UploadFile file1("./drogon.jpg");
+    UploadFile file1("./中文.txt");
     UploadFile file2("./drogon.jpg", "drogon1.jpg");
     UploadFile file3("./config.example.json", "config.json", "file3");
     req = HttpRequest::newFileUploadRequest({file1, file2, file3});
