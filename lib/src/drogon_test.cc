@@ -154,16 +154,16 @@ int run(int argc, char** argv)
             targetTest = argv[i + 1];
             i++;
         }
-        if (param == "-h")
+        else if (param == "-h")
         {
             printHelp(argv[0]);
             exit(0);
         }
-        if (param == "-s")
+        else if (param == "-s")
         {
             internal::printSuccessfulTests = true;
         }
-        if (param == "-l")
+        else if (param == "-l")
         {
             listTests = true;
         }
