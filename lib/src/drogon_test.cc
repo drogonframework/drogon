@@ -61,10 +61,10 @@ static void printHelp(string_view argv0)
     print() << "A Drogon Test application:\n\n"
             << "Usage: " << argv0 << " [options]\n"
             << "options:\n"
-            << "    -r        Run a specific test\n"
-            << "    -s        Print successful tests\n"
-            << "    -l        List avaliable tests\n"
-            << "    -h        Print this help message\n";
+            << "    -r            Run a specific test\n"
+            << "    -s            Print successful tests\n"
+            << "    -l            List avaliable tests\n"
+            << "    -h | --help   Print this help message\n";
 }
 
 void printTestStats()
@@ -148,13 +148,24 @@ int run(int argc, char** argv)
     bool listTests = false;
     for (int i = 1; i < argc; i++)
     {
-        std::string param = argv[i];
-        if (param == "-r" && i + 1 < argc)
+        const std::string param = argv[i];
+        if (param == "-r")
         {
+            if (!targetTest.empty())
+            {
+                printErr() << "Only one test can be specified to run\n";
+                exit(1);
+            }
+            else if (i + 1 >= argc)
+            {
+                printErr() << "Missing test name after -r.\n";
+                exit(1);
+            }
+
             targetTest = argv[i + 1];
             i++;
         }
-        else if (param == "-h")
+        else if (param == "-h" || param == "--help")
         {
             printHelp(argv[0]);
             exit(0);
