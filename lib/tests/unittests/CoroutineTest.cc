@@ -1,6 +1,7 @@
 #include <drogon/drogon_test.h>
 #include <drogon/utils/coroutine.h>
 #include <drogon/HttpAppFramework.h>
+#include <trantor/net/EventLoopThread.h>
 #include <type_traits>
 
 using namespace drogon;
@@ -184,4 +185,21 @@ DROGON_TEST(AsyncWaitLifetime)
         co_await sleepCoro(drogon::app().getLoop(), 0.01);
         CHECK(ptr2.use_count() == 1);
     }));
+}
+
+DROGON_TEST(SwitchThread)
+{
+    thread_local int num{0};
+    trantor::EventLoopThread thread;
+    thread.run();
+    thread.getLoop()->queueInLoop([]() { num = 100; });
+
+    auto switch_thread = [TEST_CTX, &thread]() -> Task<> {
+        CHECK(num == 0);
+        co_await switchThreadCoro(thread.getLoop());
+        CHECK(num == 100);
+        thread.getLoop()->quit();
+    };
+    sync_wait(switch_thread());
+    thread.wait();
 }
