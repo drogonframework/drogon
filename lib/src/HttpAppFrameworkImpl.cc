@@ -533,7 +533,8 @@ void HttpAppFrameworkImpl::run()
 
     // Create IO threads
     ioLoopThreadPool_ =
-        std::make_unique<trantor::EventLoopThreadPool>(threadNum_);
+        std::make_unique<trantor::EventLoopThreadPool>(threadNum_,
+                                                       "DrogonIoLoop");
     std::vector<trantor::EventLoop *> ioLoops = ioLoopThreadPool_->getLoops();
     for (size_t i = 0; i < threadNum_; ++i)
     {
