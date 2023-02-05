@@ -13,16 +13,16 @@
  */
 
 #include "HttpServer.h"
-#include "HttpRequestImpl.h"
-#include "HttpRequestParser.h"
-#include "HttpAppFrameworkImpl.h"
-#include "HttpResponseImpl.h"
-#include "WebSocketConnectionImpl.h"
-#include <drogon/HttpRequest.h>
 #include <drogon/HttpResponse.h>
 #include <drogon/utils/Utilities.h>
-#include <functional>
 #include <trantor/utils/Logger.h>
+#include <functional>
+#include <utility>
+#include "HttpAppFrameworkImpl.h"
+#include "HttpRequestImpl.h"
+#include "HttpRequestParser.h"
+#include "HttpResponseImpl.h"
+#include "WebSocketConnectionImpl.h"
 
 #if COZ_PROFILING
 #include <coz.h>
@@ -152,16 +152,16 @@ static void defaultConnectionCallback(const trantor::TcpConnectionPtr &)
 HttpServer::HttpServer(
     EventLoop *loop,
     const InetAddress &listenAddr,
-    const std::string &name,
+    std::string name,
     const std::vector<std::function<HttpResponsePtr(const HttpRequestPtr &)>>
         &syncAdvices,
     const std::vector<
         std::function<void(const HttpRequestPtr &, const HttpResponsePtr &)>>
         &preSendingAdvices)
 #ifdef __linux__
-    : server_(loop, listenAddr, name.c_str()),
+    : server_(loop, listenAddr, std::move(name)),
 #else
-    : server_(loop, listenAddr, name.c_str(), true, app().reusePort()),
+    : server_(loop, listenAddr, std::move(name), true, app().reusePort()),
 #endif
       httpAsyncCallback_(defaultHttpAsyncCallback),
       newWebsocketCallback_(defaultWebSockAsyncCallback),
@@ -175,13 +175,11 @@ HttpServer::HttpServer(
         [this](const auto &conn, auto buff) { this->onMessage(conn, buff); });
 }
 
-HttpServer::~HttpServer()
-{
-}
+HttpServer::~HttpServer() = default;
 
 void HttpServer::start()
 {
-    LOG_TRACE << "HttpServer[" << server_.name() << "] starts listenning on "
+    LOG_TRACE << "HttpServer[" << server_.name() << "] starts listening on "
               << server_.ipPort();
     server_.start();
 }
@@ -221,98 +219,90 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn, MsgBuffer *buf)
     auto requestParser = conn->getContext<HttpRequestParser>();
     if (!requestParser)
         return;
-    // With the pipelining feature or web socket, it is possible to receice
-    // multiple messages at once, so
-    // the while loop is necessary
     if (requestParser->webSocketConn())
     {
         // Websocket payload
         requestParser->webSocketConn()->onNewMessage(conn, buf);
+        return;
     }
-    else
+
+    auto &requests = requestParser->getRequestBuffer();
+    // With the pipelining feature or web socket, it is possible to receive
+    // multiple messages at once, so the while loop is necessary
+    while (buf->readableBytes() > 0)
     {
-        auto &requests = requestParser->getRequestBuffer();
-        while (buf->readableBytes() > 0)
+        if (requestParser->isStop())
         {
-            if (requestParser->isStop())
-            {
-                // The number of requests has reached the limit.
-                buf->retrieveAll();
-                return;
-            }
-            if (!requestParser->parseRequest(buf))
-            {
-                requestParser->reset();
-                conn->forceClose();
-                return;
-            }
-            if (requestParser->gotAll())
-            {
-                requestParser->requestImpl()->setPeerAddr(conn->peerAddr());
-                requestParser->requestImpl()->setLocalAddr(conn->localAddr());
-                requestParser->requestImpl()->setCreationDate(
-                    trantor::Date::date());
-                requestParser->requestImpl()->setSecure(
-                    conn->isSSLConnection());
-                if (requestParser->firstReq() &&
-                    isWebSocket(requestParser->requestImpl()))
-                {
-                    auto wsConn =
-                        std::make_shared<WebSocketConnectionImpl>(conn);
-                    wsConn->setPingMessage("", std::chrono::seconds{30});
-                    auto req = requestParser->requestImpl();
-                    newWebsocketCallback_(
-                        req,
-                        [conn, wsConn, requestParser, this, req](
-                            const HttpResponsePtr &resp) mutable {
-                            if (conn->connected())
-                            {
-                                for (auto &advice : preSendingAdvices_)
-                                {
-                                    advice(req, resp);
-                                }
-                                if (resp->statusCode() ==
-                                    k101SwitchingProtocols)
-                                {
-                                    requestParser->setWebsockConnection(wsConn);
-                                }
-                                auto httpString =
-                                    ((HttpResponseImpl *)resp.get())
-                                        ->renderToBuffer();
-                                conn->send(httpString);
-                                COZ_PROGRESS
-                            }
-                        },
-                        wsConn);
-                }
-                else
-                    requests.push_back(requestParser->requestImpl());
-                requestParser->reset();
-            }
-            else
-            {
-                break;
-            }
+            // The number of requests has reached the limit.
+            buf->retrieveAll();
+            return;
         }
-        onRequests(conn, requests, requestParser);
-        requests.clear();
+        if (!requestParser->parseRequest(buf))
+        {
+            requestParser->reset();
+            conn->forceClose();
+            return;
+        }
+        if (!requestParser->gotAll())
+        {
+            break;
+        }
+        HttpRequestImplPtr req = requestParser->requestImpl();
+        req->setPeerAddr(conn->peerAddr());
+        req->setLocalAddr(conn->localAddr());
+        req->setCreationDate(trantor::Date::date());
+        req->setSecure(conn->isSSLConnection());
+
+        // Handle websocket connection request
+        if (requestParser->firstReq() && isWebSocket(req))
+        {
+            auto wsConn = std::make_shared<WebSocketConnectionImpl>(conn);
+            wsConn->setPingMessage("", std::chrono::seconds{30});
+            newWebsocketCallback_(
+                req,
+                [conn, wsConn, requestParser, this, req](
+                    const HttpResponsePtr &resp) mutable {
+                    if (conn->connected())
+                    {
+                        for (auto &advice : preSendingAdvices_)
+                        {
+                            advice(req, resp);
+                        }
+                        if (resp->statusCode() == k101SwitchingProtocols)
+                        {
+                            requestParser->setWebsockConnection(wsConn);
+                        }
+                        auto httpString =
+                            ((HttpResponseImpl *)resp.get())->renderToBuffer();
+                        conn->send(httpString);
+                        COZ_PROGRESS
+                    }
+                },
+                wsConn);
+        }
+        else
+        {
+            requests.push_back(req);
+        }
+        requestParser->reset();
     }
+    onRequests(conn, requests, requestParser);
+    requests.clear();
 }
 
 struct CallBackParamPack
 {
-    CallBackParamPack() = default;
-    CallBackParamPack(const trantor::TcpConnectionPtr &conn_,
-                      const HttpRequestImplPtr &req_,
-                      const std::shared_ptr<bool> &loopFlag_,
-                      const std::shared_ptr<HttpRequestParser> &requestParser_,
+    CallBackParamPack(trantor::TcpConnectionPtr conn_,
+                      HttpRequestImplPtr req_,
+                      std::shared_ptr<bool> loopFlag_,
+                      std::shared_ptr<HttpRequestParser> requestParser_,
                       bool *syncFlagPtr_,
                       bool close_,
                       bool isHeadMethod_)
-        : conn(conn_),
-          req(req_),
-          loopFlag(loopFlag_),
-          requestParser(requestParser_),
+        : conn(std::move(conn_)),
+          req(std::move(req_)),
+          loopFlag(std::move(loopFlag_)),
+          requestParser(std::move(requestParser_)),
           syncFlagPtr(syncFlagPtr_),
           close(close_),
           isHeadMethod(isHeadMethod_),
@@ -323,9 +313,9 @@ struct CallBackParamPack
     HttpRequestImplPtr req;
     std::shared_ptr<bool> loopFlag;
     std::shared_ptr<HttpRequestParser> requestParser;
-    bool *syncFlagPtr;
-    bool close;
-    bool isHeadMethod;
+    bool *syncFlagPtr{};
+    bool close{};
+    bool isHeadMethod{};
     std::atomic<bool> responseSent;
 };
 
@@ -344,9 +334,9 @@ void HttpServer::onRequests(
         conn->shutdown();
         return;
     }
-    else if (HttpAppFrameworkImpl::instance().pipeliningRequestsNumber() > 0 &&
-             requestParser->numberOfRequestsInPipelining() + requests.size() >=
-                 HttpAppFrameworkImpl::instance().pipeliningRequestsNumber())
+    if (HttpAppFrameworkImpl::instance().pipeliningRequestsNumber() > 0 &&
+        requestParser->numberOfRequestsInPipelining() + requests.size() >=
+            HttpAppFrameworkImpl::instance().pipeliningRequestsNumber())
     {
         requestParser->stop();
         conn->shutdown();
@@ -430,8 +420,7 @@ void HttpServer::onRequests(
                 return;
 
             if (paramPack->responseSent.exchange(true,
-                                                 std::memory_order_acq_rel) ==
-                true)
+                                                 std::memory_order_acq_rel))
             {
                 LOG_ERROR << "Sending more than 1 response for request. "
                              "Ignoring later response";
@@ -578,14 +567,20 @@ void HttpServer::onRequests(
     }
 }
 
-using CallbackParams = struct
+struct CallbackParams
 {
+    explicit CallbackParams(std::function<std::size_t(char *, std::size_t)> cb)
+        : dataCallback(std::move(cb))
+    {
+    }
+
     std::function<std::size_t(char *, std::size_t)> dataCallback;
-    bool bFinished;
+    bool bFinished{false};
 #ifndef NDEBUG  // defined by CMake for release build
-    std::size_t nDataReturned;
+    std::size_t nDataReturned{0};
 #endif
 };
+
 static std::size_t chunkingCallback(std::shared_ptr<CallbackParams> cbParams,
                                     char *pBuffer,
                                     std::size_t nSize)
@@ -711,19 +706,13 @@ void HttpServer::sendResponse(const TcpConnectionPtr &conn,
                     (headers.at("transfer-encoding") == "chunked");
                 if (bChunked)
                 {
+                    auto cbParams =
+                        std::make_shared<CallbackParams>(streamCallback);
                     auto chunkCallback =
-                        std::bind(chunkingCallback,
-                                  std::shared_ptr<CallbackParams>(
-                                      new CallbackParams{streamCallback,
-#ifndef NDEBUG  // defined by CMake for release build
-                                                         false,
-                                                         0}),
-#else
-                                                         false}),
-#endif
-
-                                  _1,
-                                  _2);
+                        [cbParams = std::move(cbParams)](char *pBuffer,
+                                                         std::size_t nSize) {
+                            return chunkingCallback(cbParams, pBuffer, nSize);
+                        };
                     conn->sendStream(chunkCallback);
                 }
                 else
@@ -788,18 +777,13 @@ void HttpServer::sendResponses(
                         (headers.at("transfer-encoding") == "chunked");
                     if (bChunked)
                     {
-                        auto chunkCallback =
-                            std::bind(chunkingCallback,
-                                      std::shared_ptr<CallbackParams>(
-                                          new CallbackParams{streamCallback,
-#ifndef NDEBUG  // defined by CMake for release build
-                                                             false,
-                                                             0}),
-#else
-                                                             false}),
-#endif
-                                      _1,
-                                      _2);
+                        auto cbParams =
+                            std::make_shared<CallbackParams>(streamCallback);
+                        auto chunkCallback = [cbParams = std::move(cbParams)](
+                                                 char *pBuffer,
+                                                 std::size_t nSize) {
+                            return chunkingCallback(cbParams, pBuffer, nSize);
+                        };
                         conn->sendStream(chunkCallback);
                     }
                     else

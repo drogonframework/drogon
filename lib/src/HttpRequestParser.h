@@ -14,13 +14,14 @@
 
 #pragma once
 
-#include "impl_forwards.h"
 #include <drogon/HttpTypes.h>
-#include <trantor/utils/NonCopyable.h>
 #include <trantor/net/TcpConnection.h>
 #include <trantor/utils/MsgBuffer.h>
-#include <mutex>
+#include <trantor/utils/NonCopyable.h>
 #include <deque>
+#include <memory>
+#include <mutex>
+#include "impl_forwards.h"
 
 namespace drogon
 {
@@ -111,9 +112,8 @@ class HttpRequestParser : public trantor::NonCopyable,
         assert(loop_->isInLoopThread());
         if (!responseBuffer_)
         {
-            responseBuffer_ =
-                std::unique_ptr<std::vector<std::pair<HttpResponsePtr, bool>>>(
-                    new std::vector<std::pair<HttpResponsePtr, bool>>);
+            responseBuffer_ = std::make_unique<
+                std::vector<std::pair<HttpResponsePtr, bool>>>();
         }
         return *responseBuffer_;
     }
@@ -122,8 +122,8 @@ class HttpRequestParser : public trantor::NonCopyable,
         assert(loop_->isInLoopThread());
         if (!requestBuffer_)
         {
-            requestBuffer_ = std::unique_ptr<std::vector<HttpRequestImplPtr>>(
-                new std::vector<HttpRequestImplPtr>);
+            requestBuffer_ =
+                std::make_unique<std::vector<HttpRequestImplPtr>>();
         }
         return *requestBuffer_;
     }
@@ -147,7 +147,7 @@ class HttpRequestParser : public trantor::NonCopyable,
         responseBuffer_;
     std::unique_ptr<std::vector<HttpRequestImplPtr>> requestBuffer_;
     std::vector<HttpRequestImplPtr> requestsPool_;
-    size_t currentChunkLength_;
+    size_t currentChunkLength_{0};
     size_t currentContentLength_{0};
 };
 

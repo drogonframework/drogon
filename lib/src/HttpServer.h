@@ -14,13 +14,13 @@
 
 #pragma once
 
-#include "impl_forwards.h"
 #include <trantor/net/TcpServer.h>
 #include <trantor/net/callbacks.h>
 #include <trantor/utils/NonCopyable.h>
 #include <functional>
 #include <string>
 #include <vector>
+#include "impl_forwards.h"
 
 namespace drogon
 {
@@ -29,7 +29,7 @@ class HttpServer : trantor::NonCopyable
   public:
     HttpServer(trantor::EventLoop *loop,
                const trantor::InetAddress &listenAddr,
-               const std::string &name,
+               std::string name,
                const std::vector<
                    std::function<HttpResponsePtr(const HttpRequestPtr &)>>
                    &syncAdvices,
