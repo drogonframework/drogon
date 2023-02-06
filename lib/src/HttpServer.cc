@@ -286,8 +286,11 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn, MsgBuffer *buf)
         }
         requestParser->reset();
     }
-    onRequests(conn, requests, requestParser);
-    requests.clear();
+    if (!requests.empty())
+    {
+        onRequests(conn, requests, requestParser);
+        requests.clear();
+    }
 }
 
 struct CallBackParamPack
@@ -324,8 +327,8 @@ void HttpServer::onRequests(
     const std::vector<HttpRequestImplPtr> &requests,
     const std::shared_ptr<HttpRequestParser> &requestParser)
 {
-    if (requests.empty())
-        return;
+    assert(!requests.empty());
+    // check keepalive limit
     if (HttpAppFrameworkImpl::instance().keepaliveRequestsNumber() > 0 &&
         requestParser->numberOfRequestsParsed() >=
             HttpAppFrameworkImpl::instance().keepaliveRequestsNumber())
@@ -334,6 +337,7 @@ void HttpServer::onRequests(
         conn->shutdown();
         return;
     }
+    // check pipeline limit
     if (HttpAppFrameworkImpl::instance().pipeliningRequestsNumber() > 0 &&
         requestParser->numberOfRequestsInPipelining() + requests.size() >=
             HttpAppFrameworkImpl::instance().pipeliningRequestsNumber())
@@ -362,36 +366,10 @@ void HttpServer::onRequests(
             requestParser->pushRequestToPipelining(req);
             syncFlag = true;
         }
-        if (!syncAdvices_.empty())
+        if (!passSyncAdvices(
+                req, requestParser, syncFlag, close_, isHeadMethod))
         {
-            bool adviceFlag = false;
-            for (auto &advice : syncAdvices_)
-            {
-                auto resp = advice(req);
-                if (resp)
-                {
-                    resp->setVersion(req->getVersion());
-                    resp->setCloseConnection(close_);
-                    if (!syncFlag)
-                    {
-                        requestParser->getResponseBuffer().emplace_back(
-                            getCompressedResponse(req, resp, isHeadMethod),
-                            isHeadMethod);
-                    }
-                    else
-                    {
-                        requestParser->pushResponseToPipelining(
-                            req,
-                            getCompressedResponse(req, resp, isHeadMethod),
-                            isHeadMethod);
-                    }
-
-                    adviceFlag = true;
-                    break;
-                }
-            }
-            if (adviceFlag)
-                continue;
+            continue;
         }
 
         // Optimization: Avoids dynamic allocation when copying the callback in
@@ -565,6 +543,48 @@ void HttpServer::onRequests(
                       requestParser->getBuffer());
         requestParser->getResponseBuffer().clear();
     }
+}
+
+/**
+ * @brief Check request against each sync advice, generate response if request
+ * is rejected by any one of them.
+ *
+ * @return true if all sync advices are passed.
+ * @return false if rejected by any sync advice.
+ */
+bool HttpServer::passSyncAdvices(
+    const HttpRequestImplPtr &req,
+    const std::shared_ptr<HttpRequestParser> &requestParser,
+    bool syncFlag,
+    bool closeConnection,
+    bool isHeadMethod)
+{
+    for (auto &advice : syncAdvices_)
+    {
+        auto resp = advice(req);
+        if (resp)
+        {
+            // Rejected by sync advice
+            resp->setVersion(req->getVersion());
+            resp->setCloseConnection(closeConnection);
+            if (!syncFlag)
+            {
+                requestParser->getResponseBuffer().emplace_back(
+                    getCompressedResponse(req, resp, isHeadMethod),
+                    isHeadMethod);
+            }
+            else
+            {
+                requestParser->pushResponseToPipelining(
+                    req,
+                    getCompressedResponse(req, resp, isHeadMethod),
+                    isHeadMethod);
+            }
+
+            return false;
+        }
+    }
+    return true;
 }
 
 struct CallbackParams
