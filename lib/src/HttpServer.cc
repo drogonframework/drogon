@@ -322,6 +322,40 @@ struct CallBackParamPack
     std::atomic<bool> responseSent;
 };
 
+/**
+ * @brief calling req->decompressBody(), if not success, generate corresponding
+ * error response
+ */
+static HttpResponsePtr tryDecompressRequest(const HttpRequestImplPtr &req)
+{
+    static const bool enableDecompression = app().isCompressedRequestEnabled();
+    if (!enableDecompression)
+    {
+        return nullptr;
+    }
+    auto status = req->decompressBody();
+    if (status == StreamDecompressStatus::Ok)
+    {
+        return nullptr;
+    }
+    auto resp = HttpResponse::newHttpResponse();
+    switch (status)
+    {
+        case StreamDecompressStatus::TooLarge:
+            resp->setStatusCode(k413RequestEntityTooLarge);
+            break;
+        case StreamDecompressStatus::DecompressError:
+            resp->setStatusCode(k422UnprocessableEntity);
+            break;
+        case StreamDecompressStatus::NotSupported:
+            resp->setStatusCode(k415UnsupportedMediaType);
+            break;
+        case StreamDecompressStatus::Ok:
+            return nullptr;
+    }
+    return resp;
+}
+
 void HttpServer::onRequests(
     const TcpConnectionPtr &conn,
     const std::vector<HttpRequestImplPtr> &requests,
@@ -381,156 +415,22 @@ void HttpServer::onRequests(
                                                              &syncFlag,
                                                              close_,
                                                              isHeadMethod);
-
         auto handleResponse = [paramPack = std::move(paramPack),
                                this](const HttpResponsePtr &response) {
-            auto &conn = paramPack->conn;
-            auto &close_ = paramPack->close;
-            auto &req = paramPack->req;
-            auto &syncFlag = *paramPack->syncFlagPtr;
-            auto &isHeadMethod = paramPack->isHeadMethod;
-            auto &loopFlagPtr = paramPack->loopFlag;
-            auto &requestParser = paramPack->requestParser;
-
-            if (!response)
-                return;
-            if (!conn->connected())
-                return;
-
-            if (paramPack->responseSent.exchange(true,
-                                                 std::memory_order_acq_rel))
-            {
-                LOG_ERROR << "Sending more than 1 response for request. "
-                             "Ignoring later response";
-                return;
-            }
-
-            response->setVersion(req->getVersion());
-            response->setCloseConnection(close_);
-            for (auto &advice : preSendingAdvices_)
-            {
-                advice(req, response);
-            }
-            auto newResp = getCompressedResponse(req, response, isHeadMethod);
-            if (conn->getLoop()->isInLoopThread())
-            {
-                /*
-                 * A client that supports persistent connections MAY
-                 * "pipeline" its requests (i.e., send multiple requests
-                 * without waiting for each response). A server MUST send
-                 * its responses to those requests in the same order that
-                 * the requests were received. rfc2616-8.1.1.2
-                 */
-                if (!conn->connected())
-                    return;
-                if (*loopFlagPtr)
-                {
-                    syncFlag = true;
-                    if (requestParser->emptyPipelining())
-                    {
-                        requestParser->getResponseBuffer().emplace_back(
-                            newResp, isHeadMethod);
-                    }
-                    else
-                    {
-                        // some earlier requests are waiting for responses;
-                        requestParser->pushResponseToPipelining(req,
-                                                                newResp,
-                                                                isHeadMethod);
-                    }
-                }
-                else if (requestParser->getFirstRequest() == req)
-                {
-                    requestParser->popFirstRequest();
-
-                    std::vector<std::pair<HttpResponsePtr, bool>> resps;
-                    resps.emplace_back(newResp, isHeadMethod);
-                    while (!requestParser->emptyPipelining())
-                    {
-                        auto resp = requestParser->getFirstResponse();
-                        if (resp.first)
-                        {
-                            requestParser->popFirstRequest();
-                            resps.push_back(std::move(resp));
-                        }
-                        else
-                            break;
-                    }
-                    sendResponses(conn, resps, requestParser->getBuffer());
-                }
-                else
-                {
-                    // some earlier requests are waiting for responses;
-                    requestParser->pushResponseToPipelining(req,
-                                                            newResp,
-                                                            isHeadMethod);
-                }
-            }
-            else
-            {
-                conn->getLoop()->queueInLoop([conn,
-                                              req,
-                                              newResp,
-                                              this,
-                                              isHeadMethod,
-                                              requestParser]() {
-                    if (conn->connected())
-                    {
-                        if (requestParser->getFirstRequest() == req)
-                        {
-                            requestParser->popFirstRequest();
-                            std::vector<std::pair<HttpResponsePtr, bool>> resps;
-                            resps.emplace_back(newResp, isHeadMethod);
-                            while (!requestParser->emptyPipelining())
-                            {
-                                auto resp = requestParser->getFirstResponse();
-                                if (resp.first)
-                                {
-                                    requestParser->popFirstRequest();
-                                    resps.push_back(std::move(resp));
-                                }
-                                else
-                                    break;
-                            }
-                            sendResponses(conn,
-                                          resps,
-                                          requestParser->getBuffer());
-                        }
-                        else
-                        {
-                            // some earlier requests are waiting for
-                            // responses;
-                            requestParser->pushResponseToPipelining(
-                                req, newResp, isHeadMethod);
-                        }
-                    }
-                });
-            }
+            this->handleResponse(paramPack, response);
         };
 
-        const bool enableDecompression = app().isCompressedRequestEnabled();
-        bool sendForProcessing = true;
-        if (enableDecompression)
+        auto errResp = tryDecompressRequest(req);
+        if (errResp)
         {
-            auto status = req->decompressBody();
-            if (status != StreamDecompressStatus::Ok)
-            {
-                sendForProcessing = false;
-                auto resp = HttpResponse::newHttpResponse();
-                if (status == StreamDecompressStatus::DecompressError)
-                    resp->setStatusCode(k422UnprocessableEntity);
-                else if (status == StreamDecompressStatus::NotSupported)
-                    resp->setStatusCode(k415UnsupportedMediaType);
-                else if (status == StreamDecompressStatus::TooLarge)
-                    resp->setStatusCode(k413RequestEntityTooLarge);
-                else  // Should not happen
-                    resp->setStatusCode(k422UnprocessableEntity);
-                handleResponse(resp);
-            }
+            handleResponse(errResp);
         }
-        if (sendForProcessing)
+        else
+        {
             httpAsyncCallback_(req, std::move(handleResponse));
-        if (syncFlag == false)
+        }
+
+        if (!syncFlag)
         {
             requestParser->pushRequestToPipelining(req);
         }
@@ -542,6 +442,126 @@ void HttpServer::onRequests(
                       requestParser->getResponseBuffer(),
                       requestParser->getBuffer());
         requestParser->getResponseBuffer().clear();
+    }
+}
+
+void HttpServer::handleResponse(
+    const std::shared_ptr<CallBackParamPack> &paramPack,
+    const HttpResponsePtr &response)
+{
+    auto &conn = paramPack->conn;
+    auto &close_ = paramPack->close;
+    auto &req = paramPack->req;
+    auto &syncFlag = *paramPack->syncFlagPtr;
+    auto &isHeadMethod = paramPack->isHeadMethod;
+    auto &loopFlagPtr = paramPack->loopFlag;
+    auto &requestParser = paramPack->requestParser;
+
+    if (!response)
+        return;
+    if (!conn->connected())
+        return;
+
+    if (paramPack->responseSent.exchange(true, std::memory_order_acq_rel))
+    {
+        LOG_ERROR << "Sending more than 1 response for request. "
+                     "Ignoring later response";
+        return;
+    }
+
+    response->setVersion(req->getVersion());
+    response->setCloseConnection(close_);
+    for (auto &advice : preSendingAdvices_)
+    {
+        advice(req, response);
+    }
+    auto newResp = getCompressedResponse(req, response, isHeadMethod);
+    if (conn->getLoop()->isInLoopThread())
+    {
+        /*
+         * A client that supports persistent connections MAY
+         * "pipeline" its requests (i.e., send multiple requests
+         * without waiting for each response). A server MUST send
+         * its responses to those requests in the same order that
+         * the requests were received. rfc2616-8.1.1.2
+         */
+        if (!conn->connected())
+            return;
+        if (*loopFlagPtr)
+        {
+            syncFlag = true;
+            if (requestParser->emptyPipelining())
+            {
+                requestParser->getResponseBuffer().emplace_back(newResp,
+                                                                isHeadMethod);
+            }
+            else
+            {
+                // some earlier requests are waiting for responses;
+                requestParser->pushResponseToPipelining(req,
+                                                        newResp,
+                                                        isHeadMethod);
+            }
+        }
+        else if (requestParser->getFirstRequest() == req)
+        {
+            requestParser->popFirstRequest();
+
+            std::vector<std::pair<HttpResponsePtr, bool>> resps;
+            resps.emplace_back(newResp, isHeadMethod);
+            while (!requestParser->emptyPipelining())
+            {
+                auto resp = requestParser->getFirstResponse();
+                if (resp.first)
+                {
+                    requestParser->popFirstRequest();
+                    resps.push_back(std::move(resp));
+                }
+                else
+                    break;
+            }
+            sendResponses(conn, resps, requestParser->getBuffer());
+        }
+        else
+        {
+            // some earlier requests are waiting for responses;
+            requestParser->pushResponseToPipelining(req, newResp, isHeadMethod);
+        }
+    }
+    else
+    {
+        conn->getLoop()->queueInLoop(
+            [conn, req, newResp, this, isHeadMethod, requestParser]() {
+                if (conn->connected())
+                {
+                    if (requestParser->getFirstRequest() == req)
+                    {
+                        requestParser->popFirstRequest();
+                        std::vector<std::pair<HttpResponsePtr, bool>> resps;
+                        resps.emplace_back(newResp, isHeadMethod);
+                        while (!requestParser->emptyPipelining())
+                        {
+                            auto resp = requestParser->getFirstResponse();
+                            if (resp.first)
+                            {
+                                requestParser->popFirstRequest();
+                                resps.push_back(std::move(resp));
+                            }
+                            else
+                                break;
+                        }
+                        sendResponses(conn, resps, requestParser->getBuffer());
+                    }
+                    else
+                    {
+                        // some earlier requests are waiting for
+                        // responses;
+                        requestParser->pushResponseToPipelining(req,
+                                                                newResp,
+                                                                isHeadMethod);
+                    }
+                }
+            });
     }
 }
 
