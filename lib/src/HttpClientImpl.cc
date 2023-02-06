@@ -289,20 +289,24 @@ void HttpClientImpl::sendRequestInLoop(const HttpRequestPtr &req,
     auto callbackPtr =
         std::make_shared<drogon::HttpReqCallback>(std::move(callback));
     auto thisPtr = shared_from_this();
-    loop_->runAfter(timeout, [timeoutFlag, callbackPtr, req, thisPtr] {
+    loop_->runAfter(timeout, [timeoutFlag, callbackPtr, reqPtr = std::weak_ptr(req), thisPtr] {
         if (*timeoutFlag)
         {
             return;
         }
         *timeoutFlag = true;
-        for (auto iter = thisPtr->requestsBuffer_.begin();
-             iter != thisPtr->requestsBuffer_.end();
-             ++iter)
-        {
-            if (iter->first == req)
+
+        auto req = reqPtr.lock();
+        if (req != nullptr) {
+            for (auto iter = thisPtr->requestsBuffer_.begin();
+                iter != thisPtr->requestsBuffer_.end();
+                ++iter)
             {
-                thisPtr->requestsBuffer_.erase(iter);
-                break;
+                if (iter->first == req)
+                {
+                    thisPtr->requestsBuffer_.erase(iter);
+                    break;
+                }
             }
         }
         (*callbackPtr)(ReqResult::Timeout, nullptr);
