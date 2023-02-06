@@ -293,22 +293,22 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn, MsgBuffer *buf)
     }
 }
 
-struct CallBackParamPack
+struct CallbackParamPack
 {
-    CallBackParamPack(trantor::TcpConnectionPtr conn_,
-                      HttpRequestImplPtr req_,
-                      std::shared_ptr<bool> loopFlag_,
-                      std::shared_ptr<HttpRequestParser> requestParser_,
-                      bool *syncFlagPtr_,
+    CallbackParamPack(trantor::TcpConnectionPtr conn,
+                      HttpRequestImplPtr req,
+                      std::shared_ptr<bool> loopFlag,
+                      std::shared_ptr<HttpRequestParser> requestParser,
+                      bool *respReady,
                       bool close_,
-                      bool isHeadMethod_)
-        : conn(std::move(conn_)),
-          req(std::move(req_)),
-          loopFlag(std::move(loopFlag_)),
-          requestParser(std::move(requestParser_)),
-          syncFlagPtr(syncFlagPtr_),
+                      bool isHeadMethod)
+        : conn(std::move(conn)),
+          req(std::move(req)),
+          loopFlag(std::move(loopFlag)),
+          requestParser(std::move(requestParser)),
+          respReady(respReady),
           close(close_),
-          isHeadMethod(isHeadMethod_),
+          isHeadMethod(isHeadMethod),
           responseSent(false)
     {
     }
@@ -316,9 +316,9 @@ struct CallBackParamPack
     HttpRequestImplPtr req;
     std::shared_ptr<bool> loopFlag;
     std::shared_ptr<HttpRequestParser> requestParser;
-    bool *syncFlagPtr{};
-    bool close{};
-    bool isHeadMethod{};
+    bool *respReady;
+    bool close;
+    bool isHeadMethod;
     std::atomic<bool> responseSent;
 };
 
@@ -394,43 +394,44 @@ void HttpServer::onRequests(
         {
             req->setMethod(Get);
         }
-        bool syncFlag = false;
+
+        bool reqPipelined = false;
         if (!requestParser->emptyPipelining())
         {
             requestParser->pushRequestToPipelining(req);
-            syncFlag = true;
+            reqPipelined = true;
         }
         if (!passSyncAdvices(
-                req, requestParser, syncFlag, close_, isHeadMethod))
+                req, requestParser, reqPipelined, close_, isHeadMethod))
         {
             continue;
         }
 
+        bool respReady = false;
         // Optimization: Avoids dynamic allocation when copying the callback in
         // handlers (ex: copying callback into lambda captures in DB calls)
-        auto paramPack = std::make_shared<CallBackParamPack>(conn,
+        auto paramPack = std::make_shared<CallbackParamPack>(conn,
                                                              req,
                                                              loopFlagPtr,
                                                              requestParser,
-                                                             &syncFlag,
+                                                             &respReady,
                                                              close_,
                                                              isHeadMethod);
-        auto handleResponse = [paramPack = std::move(paramPack),
-                               this](const HttpResponsePtr &response) {
-            this->handleResponse(paramPack, response);
-        };
-
         auto errResp = tryDecompressRequest(req);
         if (errResp)
         {
-            handleResponse(errResp);
+            handleResponse(paramPack, errResp);
         }
         else
         {
-            httpAsyncCallback_(req, std::move(handleResponse));
+            httpAsyncCallback_(req,
+                               [paramPack = std::move(paramPack),
+                                this](const HttpResponsePtr &response) {
+                                   handleResponse(paramPack, response);
+                               });
         }
 
-        if (!syncFlag)
+        if (!reqPipelined && !respReady)
         {
             requestParser->pushRequestToPipelining(req);
         }
@@ -446,13 +447,13 @@ void HttpServer::onRequests(
 }
 
 void HttpServer::handleResponse(
-    const std::shared_ptr<CallBackParamPack> &paramPack,
+    const std::shared_ptr<CallbackParamPack> &paramPack,
     const HttpResponsePtr &response)
 {
     auto &conn = paramPack->conn;
     auto &close_ = paramPack->close;
     auto &req = paramPack->req;
-    auto &syncFlag = *paramPack->syncFlagPtr;
+    auto &respReady = *paramPack->respReady;
     auto &isHeadMethod = paramPack->isHeadMethod;
     auto &loopFlagPtr = paramPack->loopFlag;
     auto &requestParser = paramPack->requestParser;
@@ -489,7 +490,7 @@ void HttpServer::handleResponse(
             return;
         if (*loopFlagPtr)
         {
-            syncFlag = true;
+            respReady = true;
             if (requestParser->emptyPipelining())
             {
                 requestParser->getResponseBuffer().emplace_back(newResp,
@@ -569,13 +570,14 @@ void HttpServer::handleResponse(
  * @brief Check request against each sync advice, generate response if request
  * is rejected by any one of them.
  *
+ * @param  whether the request is pipelined
  * @return true if all sync advices are passed.
  * @return false if rejected by any sync advice.
  */
 bool HttpServer::passSyncAdvices(
     const HttpRequestImplPtr &req,
     const std::shared_ptr<HttpRequestParser> &requestParser,
-    bool syncFlag,
+    bool needPipelining,
     bool closeConnection,
     bool isHeadMethod)
 {
@@ -587,7 +589,7 @@ bool HttpServer::passSyncAdvices(
             // Rejected by sync advice
             resp->setVersion(req->getVersion());
             resp->setCloseConnection(closeConnection);
-            if (!syncFlag)
+            if (!needPipelining)
             {
                 requestParser->getResponseBuffer().emplace_back(
                     getCompressedResponse(req, resp, isHeadMethod),

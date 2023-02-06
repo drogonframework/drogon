@@ -22,7 +22,7 @@
 #include <vector>
 #include "impl_forwards.h"
 
-struct CallBackParamPack;
+struct CallbackParamPack;
 namespace drogon
 {
 class HttpServer : trantor::NonCopyable
@@ -108,10 +108,10 @@ class HttpServer : trantor::NonCopyable
                     const std::shared_ptr<HttpRequestParser> &);
     bool passSyncAdvices(const HttpRequestImplPtr &,
                          const std::shared_ptr<HttpRequestParser> &,
-                         bool syncFlag,
+                         bool needPipelining,
                          bool closeConnection,
                          bool isHeadMethod);
-    void handleResponse(const std::shared_ptr<CallBackParamPack> &,
+    void handleResponse(const std::shared_ptr<CallbackParamPack> &,
                         const HttpResponsePtr &);
     void sendResponse(const trantor::TcpConnectionPtr &,
                       const HttpResponsePtr &,
