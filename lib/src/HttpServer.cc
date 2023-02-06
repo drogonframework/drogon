@@ -297,27 +297,21 @@ struct CallbackParamPack
 {
     CallbackParamPack(trantor::TcpConnectionPtr conn,
                       HttpRequestImplPtr req,
-                      std::shared_ptr<bool> loopFlag,
                       std::shared_ptr<HttpRequestParser> requestParser,
-                      bool *respReady,
-                      bool close_,
+                      bool closeConnection,
                       bool isHeadMethod)
         : conn(std::move(conn)),
           req(std::move(req)),
-          loopFlag(std::move(loopFlag)),
           requestParser(std::move(requestParser)),
-          respReady(respReady),
-          close(close_),
+          closeConnection(closeConnection),
           isHeadMethod(isHeadMethod),
           responseSent(false)
     {
     }
     trantor::TcpConnectionPtr conn;
     HttpRequestImplPtr req;
-    std::shared_ptr<bool> loopFlag;
     std::shared_ptr<HttpRequestParser> requestParser;
-    bool *respReady;
-    bool close;
+    bool closeConnection;
     bool isHeadMethod;
     std::atomic<bool> responseSent;
 };
@@ -384,11 +378,9 @@ void HttpServer::onRequests(
     {
         return;
     }
-    auto loopFlagPtr = std::make_shared<bool>(true);
-
     for (auto &req : requests)
     {
-        bool close_ = (!req->keepAlive());
+        bool closeConnection = (!req->keepAlive());
         bool isHeadMethod = (req->method() == Head);
         if (isHeadMethod)
         {
@@ -401,42 +393,42 @@ void HttpServer::onRequests(
             requestParser->pushRequestToPipelining(req);
             reqPipelined = true;
         }
-        if (!passSyncAdvices(
-                req, requestParser, reqPipelined, close_, isHeadMethod))
+        if (!passSyncAdvices(req,
+                             requestParser,
+                             reqPipelined,
+                             closeConnection,
+                             isHeadMethod))
         {
             continue;
         }
 
-        bool respReady = false;
+        auto respReady = std::make_shared<bool>(false);
         // Optimization: Avoids dynamic allocation when copying the callback in
         // handlers (ex: copying callback into lambda captures in DB calls)
-        auto paramPack = std::make_shared<CallbackParamPack>(conn,
-                                                             req,
-                                                             loopFlagPtr,
-                                                             requestParser,
-                                                             &respReady,
-                                                             close_,
-                                                             isHeadMethod);
+        auto paramPack = std::make_shared<CallbackParamPack>(
+            conn, req, requestParser, closeConnection, isHeadMethod);
         auto errResp = tryDecompressRequest(req);
         if (errResp)
         {
-            handleResponse(paramPack, errResp);
+            handleResponse(paramPack, errResp, respReady);
         }
         else
         {
             httpAsyncCallback_(req,
                                [paramPack = std::move(paramPack),
+                                weakRespReady = std::weak_ptr<bool>(respReady),
                                 this](const HttpResponsePtr &response) {
-                                   handleResponse(paramPack, response);
+                                   handleResponse(paramPack,
+                                                  response,
+                                                  weakRespReady);
                                });
         }
 
-        if (!reqPipelined && !respReady)
+        if (!reqPipelined && !(*respReady))
         {
             requestParser->pushRequestToPipelining(req);
         }
     }
-    *loopFlagPtr = false;
     if (conn->connected() && !requestParser->getResponseBuffer().empty())
     {
         sendResponses(conn,
@@ -448,15 +440,14 @@ void HttpServer::onRequests(
 
 void HttpServer::handleResponse(
     const std::shared_ptr<CallbackParamPack> &paramPack,
-    const HttpResponsePtr &response)
+    const HttpResponsePtr &response,
+    const std::weak_ptr<bool> &respReady)
 {
     auto &conn = paramPack->conn;
-    auto &close_ = paramPack->close;
     auto &req = paramPack->req;
-    auto &respReady = *paramPack->respReady;
-    auto &isHeadMethod = paramPack->isHeadMethod;
-    auto &loopFlagPtr = paramPack->loopFlag;
     auto &requestParser = paramPack->requestParser;
+    bool closeConnection = paramPack->closeConnection;
+    bool isHeadMethod = paramPack->isHeadMethod;
 
     if (!response)
         return;
@@ -471,7 +462,7 @@ void HttpServer::handleResponse(
     }
 
     response->setVersion(req->getVersion());
-    response->setCloseConnection(close_);
+    response->setCloseConnection(closeConnection);
     for (auto &advice : preSendingAdvices_)
     {
         advice(req, response);
@@ -488,9 +479,11 @@ void HttpServer::handleResponse(
          */
         if (!conn->connected())
             return;
-        if (*loopFlagPtr)
+        auto respReadyPtr = respReady.lock();
+        if (respReadyPtr)
         {
-            respReady = true;
+            // resp was generated synchronously
+            *respReadyPtr = true;
             if (requestParser->emptyPipelining())
             {
                 requestParser->getResponseBuffer().emplace_back(newResp,

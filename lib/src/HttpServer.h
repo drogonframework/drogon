@@ -111,8 +111,9 @@ class HttpServer : trantor::NonCopyable
                          bool needPipelining,
                          bool closeConnection,
                          bool isHeadMethod);
-    void handleResponse(const std::shared_ptr<CallbackParamPack> &,
-                        const HttpResponsePtr &);
+    void handleResponse(const std::shared_ptr<CallbackParamPack> &paramPack,
+                        const HttpResponsePtr &response,
+                        const std::weak_ptr<bool> &respReady);
     void sendResponse(const trantor::TcpConnectionPtr &,
                       const HttpResponsePtr &,
                       bool isHeadMethod);
