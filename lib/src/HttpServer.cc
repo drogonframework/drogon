@@ -525,7 +525,10 @@ bool HttpServer::passSyncAdvices(
                 req,
                 getCompressedResponse(req, resp, isHeadMethod),
                 isHeadMethod);
-
+            if (req == requestParser->getFirstRequest())
+            {
+                requestParser->popReadyResponse();
+            }
             return false;
         }
     }
