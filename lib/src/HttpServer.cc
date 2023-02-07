@@ -310,7 +310,7 @@ struct CallbackParamPack
     HttpRequestImplPtr req;
     std::shared_ptr<HttpRequestParser> requestParser;
     bool isHeadMethod;
-    std::atomic_flag responseSent{false};
+    std::atomic_bool responseSent{false};
 };
 
 /**
@@ -413,12 +413,19 @@ void HttpServer::onRequests(
         // By doing this, we could reduce some system calls when sending through
         // socket.
         // In order to achieve this, we create a `sendIfReady` variable.
-        httpAsyncCallback_(req,
-                           [paramPack = std::move(paramPack),
-                            sendIfReady,
-                            this](const HttpResponsePtr &response) mutable {
-                               handleResponse(paramPack, response, sendIfReady);
-                           });
+        httpAsyncCallback_(
+            req,
+            [paramPack = std::move(paramPack), sendIfReady, this](
+                const HttpResponsePtr &response) {
+                if (paramPack->responseSent.exchange(true,
+                                                     std::memory_order_acq_rel))
+                {
+                    LOG_ERROR << "Sending more than 1 response for request. "
+                                 "Ignoring later response";
+                    return;
+                }
+                handleResponse(paramPack, response, sendIfReady);
+            });
     }
     *sendIfReady = true;
     if (conn->connected() && !requestParser->getResponseBuffer().empty())
@@ -441,13 +448,6 @@ void HttpServer::handleResponse(
 
     if (!response || !conn->connected())
         return;
-
-    if (paramPack->responseSent.test_and_set(std::memory_order_acq_rel))
-    {
-        LOG_ERROR << "Sending more than 1 response for request. "
-                     "Ignoring later response";
-        return;
-    }
 
     assert(!requestParser->emptyPipelining());
     response->setVersion(req->getVersion());
