@@ -494,7 +494,7 @@ void HttpRequestParser::popReadyResponse()
 {
     while (!requestPipelining_.empty())
     {
-        if (!requestPipelining_.front().second.second)
+        if (!requestPipelining_.front().second.first)
         {
             break;
         }
