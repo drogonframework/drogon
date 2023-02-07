@@ -433,6 +433,7 @@ void HttpServer::onRequests(
         sendResponses(conn,
                       requestParser->getResponseBuffer(),
                       requestParser->getBuffer());
+        requestParser->getResponseBuffer().clear();
     }
 }
 
@@ -478,6 +479,7 @@ void HttpServer::handleResponse(
                 sendResponses(conn,
                               requestParser->getResponseBuffer(),
                               requestParser->getBuffer());
+                requestParser->getResponseBuffer().clear();
                 return;
             }
         }
@@ -497,6 +499,7 @@ void HttpServer::handleResponse(
                 sendResponses(conn,
                               requestParser->getResponseBuffer(),
                               requestParser->getBuffer());
+                requestParser->getResponseBuffer().clear();
             }
         });
 }
