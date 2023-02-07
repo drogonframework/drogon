@@ -217,7 +217,13 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
                     buf->retrieveUntil(crlf + CRLF_LEN);
                     continue;
                 }
-
+                // end of headers
+                status_ = HttpRequestParseStatus::kProcessHeaders;
+                buf->retrieveUntil(crlf + CRLF_LEN);
+                continue;
+            }
+            case HttpRequestParseStatus::kProcessHeaders:
+            {
                 // empty line, end of header
                 // process header information
                 auto &len = request_->getHeaderBy("content-length");
@@ -266,6 +272,7 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
                         return false;
                     }
                 }
+
                 auto &expect = request_->expect();
                 if (expect == "100-continue" &&
                     request_->getVersion() >= Version::kHttp11)
@@ -279,43 +286,37 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
                     }
                     // rfc2616-8.2.3
                     auto connPtr = conn_.lock();
-                    if (connPtr)
+                    if (!connPtr)
                     {
-                        auto resp = HttpResponse::newHttpResponse();
-                        if (currentContentLength_ >
-                            HttpAppFrameworkImpl::instance()
-                                .getClientMaxBodySize())
-                        {
-                            resp->setStatusCode(k413RequestEntityTooLarge);
-                            auto httpString =
-                                static_cast<HttpResponseImpl *>(resp.get())
-                                    ->renderToBuffer();
-                            reset();
-                            connPtr->send(std::move(*httpString));
-                            // TODO: missing logic here
-                        }
-                        else
-                        {
-                            resp->setStatusCode(k100Continue);
-                            auto httpString =
-                                static_cast<HttpResponseImpl *>(resp.get())
-                                    ->renderToBuffer();
-                            connPtr->send(std::move(*httpString));
-                        }
+                        return false;
                     }
-                    // TODO: missing logic here, connection is already lost
+                    auto resp = HttpResponse::newHttpResponse();
+                    if (currentContentLength_ >
+                        HttpAppFrameworkImpl::instance().getClientMaxBodySize())
+                    {
+                        resp->setStatusCode(k413RequestEntityTooLarge);
+                        auto httpString =
+                            static_cast<HttpResponseImpl *>(resp.get())
+                                ->renderToBuffer();
+                        reset();
+                        connPtr->send(std::move(*httpString));
+                        // TODO: missing logic here
+                    }
+                    else
+                    {
+                        resp->setStatusCode(k100Continue);
+                        auto httpString =
+                            static_cast<HttpResponseImpl *>(resp.get())
+                                ->renderToBuffer();
+                        connPtr->send(std::move(*httpString));
+                    }
                 }
                 else if (!expect.empty())
                 {
                     LOG_WARN << "417ExpectationFailed for \"" << expect << "\"";
-                    auto connPtr = conn_.lock();
-                    if (connPtr)
-                    {
-                        buf->retrieveAll();
-                        shutdownConnection(k417ExpectationFailed);
-                        return false;
-                    }
-                    // TODO: missing logic here, connection is already lost
+                    buf->retrieveAll();
+                    shutdownConnection(k417ExpectationFailed);
+                    return false;
                 }
                 else if (currentContentLength_ >
                          HttpAppFrameworkImpl::instance()
@@ -326,7 +327,6 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
                     return false;
                 }
                 request_->reserveBodySize(currentContentLength_);
-                buf->retrieveUntil(crlf + CRLF_LEN);
                 continue;
             }
             case HttpRequestParseStatus::kExpectBody:
