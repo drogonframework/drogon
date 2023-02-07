@@ -466,34 +466,6 @@ HttpRequestPtr HttpRequestParser::getFirstRequest() const
     return nullptr;
 }
 
-std::pair<HttpResponsePtr, bool> HttpRequestParser::getFirstResponse() const
-{
-#ifndef NDEBUG
-    auto conn = conn_.lock();
-    if (conn)
-    {
-        conn->getLoop()->assertInLoopThread();
-    }
-#endif
-    if (!requestPipelining_.empty())
-    {
-        return requestPipelining_.front().second;
-    }
-    return {nullptr, false};
-}
-
-void HttpRequestParser::popFirstRequest()
-{
-#ifndef NDEBUG
-    auto conn = conn_.lock();
-    if (conn)
-    {
-        conn->getLoop()->assertInLoopThread();
-    }
-#endif
-    requestPipelining_.pop_front();
-}
-
 void HttpRequestParser::pushResponseToPipelining(const HttpRequestPtr &req,
                                                  const HttpResponsePtr &resp,
                                                  bool isHeadMethod)
@@ -512,5 +484,22 @@ void HttpRequestParser::pushResponseToPipelining(const HttpRequestPtr &req,
             iter.second = {resp, isHeadMethod};
             return;
         }
+    }
+}
+
+/**
+ * @brief Pop ready responses to `responseBuffer_`
+ */
+void HttpRequestParser::popReadyResponse()
+{
+    while (!requestPipelining_.empty())
+    {
+        if (!requestPipelining_.front().second.second)
+        {
+            break;
+        }
+        auto item = std::move(requestPipelining_.front());
+        getResponseBuffer().push_back(std::move(item.second));
+        requestPipelining_.pop_front();
     }
 }

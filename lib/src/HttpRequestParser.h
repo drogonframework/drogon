@@ -78,11 +78,10 @@ class HttpRequestParser : public trantor::NonCopyable,
     // to support request pipelining(rfc2616-8.1.2.2)
     void pushRequestToPipelining(const HttpRequestPtr &req);
     HttpRequestPtr getFirstRequest() const;
-    std::pair<HttpResponsePtr, bool> getFirstResponse() const;
-    void popFirstRequest();
     void pushResponseToPipelining(const HttpRequestPtr &req,
                                   const HttpResponsePtr &resp,
                                   bool isHeadMethod);
+    void popReadyResponse();
     size_t numberOfRequestsInPipelining() const
     {
         return requestPipelining_.size();

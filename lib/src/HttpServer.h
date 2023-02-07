@@ -108,12 +108,10 @@ class HttpServer : trantor::NonCopyable
                     const std::shared_ptr<HttpRequestParser> &);
     bool passSyncAdvices(const HttpRequestImplPtr &,
                          const std::shared_ptr<HttpRequestParser> &,
-                         bool needPipelining,
-                         bool closeConnection,
                          bool isHeadMethod);
     void handleResponse(const std::shared_ptr<CallbackParamPack> &paramPack,
                         const HttpResponsePtr &response,
-                        const std::weak_ptr<bool> &respReady);
+                        const std::shared_ptr<bool> &sendIfReady = nullptr);
     void sendResponse(const trantor::TcpConnectionPtr &,
                       const HttpResponsePtr &,
                       bool isHeadMethod);
