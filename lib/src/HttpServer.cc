@@ -760,8 +760,9 @@ static inline HttpResponsePtr getCompressedResponse(
         req->getHeaderBy("accept-encoding").find("br") != std::string::npos)
     {
         auto newResp = response;
-        auto strCompress = utils::brotliCompress(response->getBody().data(),
-                                                 response->getBody().length());
+        auto strCompress =
+            drogon::utils::brotliCompress(response->getBody().data(),
+                                          response->getBody().length());
         if (!strCompress.empty())
         {
             if (response->expiredTime() >= 0)
