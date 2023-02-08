@@ -467,8 +467,9 @@ void HttpServer::handleResponse(
          * its responses to those requests in the same order that
          * the requests were received. rfc2616-8.1.1.2
          */
-        requestParser->pushResponseToPipelining(req, newResp, isHeadMethod);
-        if (req == requestParser->getFirstRequest())
+        if (requestParser->pushResponseToPipelining(req,
+                                                    newResp,
+                                                    isHeadMethod) == 0)
         {
             requestParser->popReadyResponse();
             if (sendIfReady && *sendIfReady)
@@ -491,8 +492,9 @@ void HttpServer::handleResponse(
             {
                 return;
             }
-            requestParser->pushResponseToPipelining(req, newResp, isHeadMethod);
-            if (req == requestParser->getFirstRequest())
+            if (requestParser->pushResponseToPipelining(req,
+                                                        newResp,
+                                                        isHeadMethod) == 0)
             {
                 // Send ready responses from the beginning of pipeline queue.
                 requestParser->popReadyResponse();
@@ -524,11 +526,10 @@ bool HttpServer::passSyncAdvices(
             // Rejected by sync advice
             resp->setVersion(req->getVersion());
             resp->setCloseConnection(!req->keepAlive());
-            requestParser->pushResponseToPipelining(
-                req,
-                getCompressedResponse(req, resp, isHeadMethod),
-                isHeadMethod);
-            if (req == requestParser->getFirstRequest())
+            if (requestParser->pushResponseToPipelining(
+                    req,
+                    getCompressedResponse(req, resp, isHeadMethod),
+                    isHeadMethod) == 0)
             {
                 requestParser->popReadyResponse();
             }

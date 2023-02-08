@@ -444,29 +444,24 @@ void HttpRequestParser::pushRequestToPipelining(const HttpRequestPtr &req)
     requestPipelining_.push_back({req, {nullptr, false}});
 }
 
-HttpRequestPtr HttpRequestParser::getFirstRequest() const
+/**
+ * @return current index of the response in the pipeline
+ */
+size_t HttpRequestParser::pushResponseToPipelining(const HttpRequestPtr &req,
+                                                   const HttpResponsePtr &resp,
+                                                   bool isHeadMethod)
 {
     assert(loop_->isInLoopThread());
-    if (!requestPipelining_.empty())
+    for (size_t i = 0; i != requestPipelining_.size(); ++i)
     {
-        return requestPipelining_.front().first;
-    }
-    return nullptr;
-}
-
-void HttpRequestParser::pushResponseToPipelining(const HttpRequestPtr &req,
-                                                 const HttpResponsePtr &resp,
-                                                 bool isHeadMethod)
-{
-    assert(loop_->isInLoopThread());
-    for (auto &iter : requestPipelining_)
-    {
-        if (iter.first == req)
+        if (requestPipelining_[i].first == req)
         {
-            iter.second = {resp, isHeadMethod};
-            return;
+            requestPipelining_[i].second = {resp, isHeadMethod};
+            return i;
         }
     }
+    assert(false);
+    return static_cast<size_t>(-1);
 }
 
 /**
