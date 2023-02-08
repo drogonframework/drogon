@@ -217,14 +217,16 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
                     buf->retrieveUntil(crlf + CRLF_LEN);
                     continue;
                 }
-                // end of headers
-                status_ = HttpRequestParseStatus::kProcessHeaders;
                 buf->retrieveUntil(crlf + CRLF_LEN);
+                // end of headers
+
+                // 'kProcessHeaders' is not necessary, but we might need it
+                // for code readability and maintainability.
+                status_ = HttpRequestParseStatus::kProcessHeaders;
                 continue;
             }
             case HttpRequestParseStatus::kProcessHeaders:
             {
-                // empty line, end of header
                 // process header information
                 auto &len = request_->getHeaderBy("content-length");
                 if (!len.empty())
