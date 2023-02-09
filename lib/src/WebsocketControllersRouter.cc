@@ -21,11 +21,7 @@
 #include <drogon/HttpFilter.h>
 #include <drogon/WebSocketController.h>
 #include <drogon/config.h>
-#ifdef OpenSSL_FOUND
-#include <openssl/sha.h>
-#else
-#include "ssl_funcs/Sha1.h"
-#endif
+#include <trantor/utils/Utilities.h>
 using namespace drogon;
 
 void WebsocketControllersRouter::registerWebSocketController(
@@ -338,11 +334,10 @@ void WebsocketControllersRouter::doControllerHandler(
     const WebSocketConnectionImplPtr &wsConnPtr)
 {
     wsKey.append("258EAFA5-E914-47DA-95CA-C5AB0DC85B11");
-    unsigned char accKey[SHA_DIGEST_LENGTH];
-    SHA1(reinterpret_cast<const unsigned char *>(wsKey.c_str()),
-         wsKey.length(),
-         accKey);
-    auto base64Key = utils::base64Encode(accKey, SHA_DIGEST_LENGTH);
+    unsigned char accKey[20];
+    auto sha1 = trantor::utils::sha1(wsKey.c_str(), wsKey.length());
+    memcpy(accKey, &sha1, sizeof(sha1));
+    auto base64Key = utils::base64Encode(accKey, sizeof(accKey));
     auto resp = HttpResponse::newHttpResponse();
     resp->setStatusCode(k101SwitchingProtocols);
     resp->addHeader("Upgrade", "websocket");

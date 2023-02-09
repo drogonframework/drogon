@@ -22,11 +22,7 @@
 #include <drogon/utils/Utilities.h>
 #include <drogon/config.h>
 #include <trantor/net/InetAddress.h>
-#ifdef OpenSSL_FOUND
-#include <openssl/sha.h>
-#else
-#include "ssl_funcs/Sha1.h"
-#endif
+#include <trantor/utils/Utilities.h>
 
 using namespace drogon;
 using namespace trantor;
@@ -130,11 +126,11 @@ void WebSocketClientImpl::connectToServerInLoop()
 
     auto wsKey = wsKey_;
     wsKey.append("258EAFA5-E914-47DA-95CA-C5AB0DC85B11");
-    unsigned char accKey[SHA_DIGEST_LENGTH];
-    SHA1(reinterpret_cast<const unsigned char *>(wsKey.c_str()),
-         wsKey.length(),
-         accKey);
-    wsAccept_ = utils::base64Encode(accKey, SHA_DIGEST_LENGTH);
+    unsigned char accKey[20];
+    static_assert(sizeof(accKey) == sizeof(trantor::utils::Hash160));
+    auto sha1 = trantor::utils::sha1(wsKey);
+    memcpy(accKey, &sha1, sizeof(sha1));
+    wsAccept_ = utils::base64Encode(accKey, 20);
 
     upgradeRequest_->addHeader("Sec-WebSocket-Key", wsKey_);
     // upgradeRequest_->addHeader("Sec-WebSocket-Version","13");

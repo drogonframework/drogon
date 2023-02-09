@@ -1067,7 +1067,7 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
         }
         catch (const std::exception &e)
         {
-            FAIL("Unexpected exception, what()" + std::string(e.what()));
+            FAIL("Unexpected exception, what(): " + std::string(e.what()));
         }
 
         // Test Coroutine exception
@@ -1080,7 +1080,7 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
         }
         catch (const std::exception &e)
         {
-            FAIL("Unexpected exception, what()" + std::string(e.what()));
+            FAIL("Unexpected exception, what(): " + std::string(e.what()));
         }
 
         // Test Coroutine exception with co_return
@@ -1093,7 +1093,7 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
         }
         catch (const std::exception &e)
         {
-            FAIL("Unexpected exception, what()" + std::string(e.what()));
+            FAIL("Unexpected exception, what(): " + std::string(e.what()));
         }
 
         // Test coroutine filter
@@ -1110,7 +1110,7 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
         }
         catch (const std::exception &e)
         {
-            FAIL("Unexpected exception, what()" + std::string(e.what()));
+            FAIL("Unexpected exception, what(): " + std::string(e.what()));
         }
 
         // Test coroutine handler with parameters
@@ -1124,7 +1124,7 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
         }
         catch (const std::exception &e)
         {
-            FAIL("Unexpected exception, what()" + std::string(e.what()));
+            FAIL("Unexpected exception, what(): " + std::string(e.what()));
         }
         try
         {
@@ -1136,7 +1136,7 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
         }
         catch (const std::exception &e)
         {
-            FAIL("Unexpected exception, what()" + std::string(e.what()));
+            FAIL("Unexpected exception, what(): " + std::string(e.what()));
         }
     });
 #endif

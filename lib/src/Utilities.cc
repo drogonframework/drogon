@@ -15,13 +15,8 @@
 #include <drogon/utils/Utilities.h>
 #include "filesystem.h"
 #include <trantor/utils/Logger.h>
+#include <trantor/utils/Utilities.h>
 #include <drogon/config.h>
-#ifdef OpenSSL_FOUND
-#include <openssl/md5.h>
-#include <openssl/rand.h>
-#else
-#include "ssl_funcs/Md5.h"
-#endif
 #ifdef USE_BROTLI
 #include <brotli/decode.h>
 #include <brotli/encode.h>
@@ -1144,27 +1139,22 @@ std::string brotliDecompress(const char * /*data*/, const size_t /*ndata*/)
 
 std::string getMd5(const char *data, const size_t dataLen)
 {
-#if defined(OpenSSL_FOUND) && OPENSSL_VERSION_MAJOR < 3
-    MD5_CTX c;
-    unsigned char md5[16] = {0};
-    MD5_Init(&c);
-    MD5_Update(&c, data, dataLen);
-    MD5_Final(md5, &c);
-    return utils::binaryStringToHex(md5, 16);
-#elif defined(OpenSSL_FOUND)
-    unsigned char md5[16] = {0};
-    const EVP_MD *md = EVP_get_digestbyname("md5");
-    assert(md != nullptr);
+    return trantor::utils::toHexString(trantor::utils::md5(data, dataLen));
+}
 
-    EVP_MD_CTX *mdctx = EVP_MD_CTX_new();
-    EVP_DigestInit_ex2(mdctx, md, NULL);
-    EVP_DigestUpdate(mdctx, data, dataLen);
-    EVP_DigestFinal_ex(mdctx, md5, NULL);
-    EVP_MD_CTX_free(mdctx);
-    return utils::binaryStringToHex(md5, 16);
-#else
-    return Md5Encode::encode(data, dataLen);
-#endif
+std::string getSha1(const char *data, const size_t dataLen)
+{
+    return trantor::utils::toHexString(trantor::utils::sha1(data, dataLen));
+}
+
+std::string getSha256(const char *data, const size_t dataLen)
+{
+    return trantor::utils::toHexString(trantor::utils::sha256(data, dataLen));
+}
+
+std::string getSha3(const char *data, const size_t dataLen)
+{
+    return trantor::utils::toHexString(trantor::utils::sha3(data, dataLen));
 }
 
 void replaceAll(std::string &s, const std::string &from, const std::string &to)

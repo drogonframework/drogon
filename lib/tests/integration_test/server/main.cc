@@ -158,7 +158,7 @@ int main()
     if (app().supportSSL())
     {
         drogon::app()
-            .setSSLFiles("server.pem", "server.pem")
+            .setSSLFiles("server.crt", "server.key")
             .addListener("0.0.0.0", 8849, true);
     }
     // Class function example

@@ -134,6 +134,24 @@ inline std::string getMd5(const std::string &originalString)
     return getMd5(originalString.data(), originalString.length());
 }
 
+DROGON_EXPORT std::string getSha1(const char *data, const size_t dataLen);
+inline std::string getSha1(const std::string &originalString)
+{
+    return getSha1(originalString.data(), originalString.length());
+}
+
+DROGON_EXPORT std::string getSha256(const char *data, const size_t dataLen);
+inline std::string getSha256(const std::string &originalString)
+{
+    return getSha256(originalString.data(), originalString.length());
+}
+
+DROGON_EXPORT std::string getSha3(const char *data, const size_t dataLen);
+inline std::string getSha3(const std::string &originalString)
+{
+    return getSha3(originalString.data(), originalString.length());
+}
+
 /// Commpress or decompress data using gzip lib.
 /**
  * @param data the input data
