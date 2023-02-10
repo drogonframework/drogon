@@ -22,6 +22,7 @@
 #include <drogon/HttpResponse.h>
 #include <drogon/utils/Utilities.h>
 #include <functional>
+#include <utility>
 #include <trantor/utils/Logger.h>
 
 #if COZ_PROFILING
@@ -78,16 +79,16 @@ static inline HttpResponsePtr getCompressedResponse(
 HttpServer::HttpServer(
     EventLoop *loop,
     const InetAddress &listenAddr,
-    const std::string &name,
+    std::string name,
     const std::vector<std::function<HttpResponsePtr(const HttpRequestPtr &)>>
         &syncAdvices,
     const std::vector<
         std::function<void(const HttpRequestPtr &, const HttpResponsePtr &)>>
         &preSendingAdvices)
 #ifdef __linux__
-    : server_(loop, listenAddr, name.c_str()),
+    : server_(loop, listenAddr, std::move(name)),
 #else
-    : server_(loop, listenAddr, name.c_str(), true, app().reusePort()),
+    : server_(loop, listenAddr, std::move(name), true, app().reusePort()),
 #endif
       httpAsyncCallback_(defaultHttpAsyncCallback),
       newWebsocketCallback_(defaultWebSockAsyncCallback),
@@ -106,7 +107,7 @@ HttpServer::~HttpServer() = default;
 
 void HttpServer::start()
 {
-    LOG_TRACE << "HttpServer[" << server_.name() << "] starts listenning on "
+    LOG_TRACE << "HttpServer[" << server_.name() << "] starts listening on "
               << server_.ipPort();
     server_.start();
 }
@@ -218,21 +219,20 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn, MsgBuffer *buf)
 
 struct CallbackParamPack
 {
-    CallbackParamPack(const trantor::TcpConnectionPtr &conn_,
-                      const HttpRequestImplPtr &req_,
-                      const std::shared_ptr<bool> &loopFlag_,
-                      const std::shared_ptr<HttpRequestParser> &requestParser_,
+    CallbackParamPack(trantor::TcpConnectionPtr conn,
+                      HttpRequestImplPtr req_,
+                      std::shared_ptr<bool> loopFlag_,
+                      std::shared_ptr<HttpRequestParser> requestParser_,
                       bool *syncFlagPtr_,
                       bool close_,
                       bool isHeadMethod_)
-        : conn(conn_),
-          req(req_),
-          loopFlag(loopFlag_),
-          requestParser(requestParser_),
+        : conn(std::move(conn)),
+          req(std::move(req_)),
+          loopFlag(std::move(loopFlag_)),
+          requestParser(std::move(requestParser_)),
           syncFlagPtr(syncFlagPtr_),
           close(close_),
-          isHeadMethod(isHeadMethod_),
-          responseSent(false)
+          isHeadMethod(isHeadMethod_)
     {
     }
     trantor::TcpConnectionPtr conn;
@@ -242,7 +242,7 @@ struct CallbackParamPack
     bool *syncFlagPtr;
     bool close;
     bool isHeadMethod;
-    std::atomic<bool> responseSent;
+    std::atomic<bool> responseSent{false};
 };
 
 void HttpServer::onRequests(

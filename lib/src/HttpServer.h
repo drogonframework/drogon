@@ -30,7 +30,7 @@ class HttpServer : trantor::NonCopyable
   public:
     HttpServer(trantor::EventLoop *loop,
                const trantor::InetAddress &listenAddr,
-               const std::string &name,
+               std::string name,
                const std::vector<
                    std::function<HttpResponsePtr(const HttpRequestPtr &)>>
                    &syncAdvices,
@@ -49,7 +49,6 @@ class HttpServer : trantor::NonCopyable
     {
         httpAsyncCallback_ = cb;
     }
-
     void setNewWebsocketCallback(const WebSocketNewAsyncCallback &cb)
     {
         newWebsocketCallback_ = cb;

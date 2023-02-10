@@ -446,25 +446,13 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
 void HttpRequestParser::pushRequestToPipelining(const HttpRequestPtr &req,
                                                 bool isHeadMethod)
 {
-#ifndef NDEBUG
-    auto conn = conn_.lock();
-    if (conn)
-    {
-        conn->getLoop()->assertInLoopThread();
-    }
-#endif
+    assert(loop_->isInLoopThread());
     requestPipelining_.push_back({req, {nullptr, isHeadMethod}});
 }
 
 HttpRequestPtr HttpRequestParser::getFirstRequest() const
 {
-#ifndef NDEBUG
-    auto conn = conn_.lock();
-    if (conn)
-    {
-        conn->getLoop()->assertInLoopThread();
-    }
-#endif
+    assert(loop_->isInLoopThread());
     if (!requestPipelining_.empty())
     {
         return requestPipelining_.front().first;
@@ -474,13 +462,7 @@ HttpRequestPtr HttpRequestParser::getFirstRequest() const
 
 std::pair<HttpResponsePtr, bool> HttpRequestParser::getFirstResponse() const
 {
-#ifndef NDEBUG
-    auto conn = conn_.lock();
-    if (conn)
-    {
-        conn->getLoop()->assertInLoopThread();
-    }
-#endif
+    assert(loop_->isInLoopThread());
     if (!requestPipelining_.empty())
     {
         return requestPipelining_.front().second;
@@ -490,26 +472,14 @@ std::pair<HttpResponsePtr, bool> HttpRequestParser::getFirstResponse() const
 
 void HttpRequestParser::popFirstRequest()
 {
-#ifndef NDEBUG
-    auto conn = conn_.lock();
-    if (conn)
-    {
-        conn->getLoop()->assertInLoopThread();
-    }
-#endif
+    assert(loop_->isInLoopThread());
     requestPipelining_.pop_front();
 }
 
 void HttpRequestParser::pushResponseToPipelining(const HttpRequestPtr &req,
                                                  HttpResponsePtr resp)
 {
-#ifndef NDEBUG
-    auto conn = conn_.lock();
-    if (conn)
-    {
-        conn->getLoop()->assertInLoopThread();
-    }
-#endif
+    assert(loop_->isInLoopThread());
     for (auto &iter : requestPipelining_)
     {
         if (iter.first == req)
