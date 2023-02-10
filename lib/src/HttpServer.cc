@@ -61,6 +61,8 @@ static void defaultConnectionCallback(const trantor::TcpConnectionPtr &)
 }
 
 static inline bool isWebSocket(const HttpRequestImplPtr &req);
+static inline HttpResponsePtr tryDecompressRequest(
+    const HttpRequestImplPtr &req);
 static inline bool passSyncAdvices(
     const HttpRequestImplPtr &req,
     const std::shared_ptr<HttpRequestParser> &requestParser,
@@ -303,37 +305,19 @@ void HttpServer::onRequests(
                                                              close_,
                                                              isHeadMethod);
 
-        // auto handleResponse = [paramPack = std::move(paramPack),
-        //                        this](const HttpResponsePtr &response) {
-        //
-        // };
-
-        const bool enableDecompression = app().isCompressedRequestEnabled();
-        bool sendForProcessing = true;
-        if (enableDecompression)
+        auto errResp = tryDecompressRequest(req);
+        if (errResp)
         {
-            auto status = req->decompressBody();
-            if (status != StreamDecompressStatus::Ok)
-            {
-                sendForProcessing = false;
-                auto resp = HttpResponse::newHttpResponse();
-                if (status == StreamDecompressStatus::DecompressError)
-                    resp->setStatusCode(k422UnprocessableEntity);
-                else if (status == StreamDecompressStatus::NotSupported)
-                    resp->setStatusCode(k415UnsupportedMediaType);
-                else if (status == StreamDecompressStatus::TooLarge)
-                    resp->setStatusCode(k413RequestEntityTooLarge);
-                else  // Should not happen
-                    resp->setStatusCode(k422UnprocessableEntity);
-                handleResponse(resp, paramPack);
-            }
+            handleResponse(errResp, paramPack);
         }
-        if (sendForProcessing)
+        else
+        {
             httpAsyncCallback_(req,
                                [this, paramPack = std::move(paramPack)](
                                    const HttpResponsePtr &response) {
                                    handleResponse(response, paramPack);
                                });
+        }
         if (syncFlag == false)
         {
             requestParser->pushRequestToPipelining(req);
@@ -755,6 +739,41 @@ static inline bool isWebSocket(const HttpRequestImplPtr &req)
         return true;
     }
     return false;
+}
+
+/**
+ * @brief calling req->decompressBody(), if not success, generate corresponding
+ * error response
+ */
+static inline HttpResponsePtr tryDecompressRequest(
+    const HttpRequestImplPtr &req)
+{
+    static const bool enableDecompression = app().isCompressedRequestEnabled();
+    if (!enableDecompression)
+    {
+        return nullptr;
+    }
+    auto status = req->decompressBody();
+    if (status == StreamDecompressStatus::Ok)
+    {
+        return nullptr;
+    }
+    auto resp = HttpResponse::newHttpResponse();
+    switch (status)
+    {
+        case StreamDecompressStatus::TooLarge:
+            resp->setStatusCode(k413RequestEntityTooLarge);
+            break;
+        case StreamDecompressStatus::DecompressError:
+            resp->setStatusCode(k422UnprocessableEntity);
+            break;
+        case StreamDecompressStatus::NotSupported:
+            resp->setStatusCode(k415UnsupportedMediaType);
+            break;
+        case StreamDecompressStatus::Ok:
+            return nullptr;
+    }
+    return resp;
 }
 
 /**
