@@ -61,6 +61,13 @@ static void defaultConnectionCallback(const trantor::TcpConnectionPtr &)
 }
 
 static inline bool isWebSocket(const HttpRequestImplPtr &req);
+static inline bool passSyncAdvices(
+    const HttpRequestImplPtr &req,
+    const std::shared_ptr<HttpRequestParser> &requestParser,
+    const std::vector<std::function<HttpResponsePtr(const HttpRequestPtr &)>>
+        &syncAdvices,
+    bool syncFlag,
+    bool isHeadMethod);
 static inline HttpResponsePtr getCompressedResponse(
     const HttpRequestImplPtr &req,
     const HttpResponsePtr &response,
@@ -84,6 +91,7 @@ HttpServer::HttpServer(
       newWebsocketCallback_(defaultWebSockAsyncCallback),
       connectionCallback_(defaultConnectionCallback),
       syncAdvices_(syncAdvices),
+      hasSyncAdvices_(!syncAdvices.empty()),
       preSendingAdvices_(preSendingAdvices)
 {
     server_.setConnectionCallback(
@@ -279,36 +287,11 @@ void HttpServer::onRequests(
             requestParser->pushRequestToPipelining(req);
             syncFlag = true;
         }
-        if (!syncAdvices_.empty())
+        if (hasSyncAdvices_ &&
+            !passSyncAdvices(
+                req, requestParser, syncAdvices_, syncFlag, isHeadMethod))
         {
-            bool adviceFlag = false;
-            for (auto &advice : syncAdvices_)
-            {
-                auto resp = advice(req);
-                if (resp)
-                {
-                    resp->setVersion(req->getVersion());
-                    resp->setCloseConnection(close_);
-                    if (!syncFlag)
-                    {
-                        requestParser->getResponseBuffer().emplace_back(
-                            getCompressedResponse(req, resp, isHeadMethod),
-                            isHeadMethod);
-                    }
-                    else
-                    {
-                        requestParser->pushResponseToPipelining(
-                            req,
-                            getCompressedResponse(req, resp, isHeadMethod),
-                            isHeadMethod);
-                    }
-
-                    adviceFlag = true;
-                    break;
-                }
-            }
-            if (adviceFlag)
-                continue;
+            continue;
         }
 
         // Optimization: Avoids dynamic allocation when copying the callback in
@@ -770,6 +753,48 @@ static inline bool isWebSocket(const HttpRequestImplPtr &req)
         return true;
     }
     return false;
+}
+
+/**
+ * @brief Check request against each sync advice, generate response if request
+ * is rejected by any one of them.
+ *
+ * @return true if all sync advices are passed.
+ * @return false if rejected by any sync advice.
+ */
+static inline bool passSyncAdvices(
+    const HttpRequestImplPtr &req,
+    const std::shared_ptr<HttpRequestParser> &requestParser,
+    const std::vector<std::function<HttpResponsePtr(const HttpRequestPtr &)>>
+        &syncAdvices,
+    bool syncFlag,
+    bool isHeadMethod)
+{
+    for (auto &advice : syncAdvices)
+    {
+        auto resp = advice(req);
+        if (resp)
+        {
+            // Rejected by sync advice
+            resp->setVersion(req->getVersion());
+            resp->setCloseConnection(!req->keepAlive());
+            if (!syncFlag)
+            {
+                requestParser->getResponseBuffer().emplace_back(
+                    getCompressedResponse(req, resp, isHeadMethod),
+                    isHeadMethod);
+            }
+            else
+            {
+                requestParser->pushResponseToPipelining(
+                    req,
+                    getCompressedResponse(req, resp, isHeadMethod),
+                    isHeadMethod);
+            }
+            return false;
+        }
+    }
+    return true;
 }
 
 static inline HttpResponsePtr getCompressedResponse(
