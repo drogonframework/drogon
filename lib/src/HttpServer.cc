@@ -175,9 +175,7 @@ HttpServer::HttpServer(
         [this](const auto &conn, auto buff) { this->onMessage(conn, buff); });
 }
 
-HttpServer::~HttpServer()
-{
-}
+HttpServer::~HttpServer() = default;
 
 void HttpServer::start()
 {
@@ -228,75 +226,65 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn, MsgBuffer *buf)
     {
         // Websocket payload
         requestParser->webSocketConn()->onNewMessage(conn, buf);
+        return;
     }
-    else
+    auto &requests = requestParser->getRequestBuffer();
+    while (buf->readableBytes() > 0)
     {
-        auto &requests = requestParser->getRequestBuffer();
-        while (buf->readableBytes() > 0)
+        if (requestParser->isStop())
         {
-            if (requestParser->isStop())
-            {
-                // The number of requests has reached the limit.
-                buf->retrieveAll();
-                return;
-            }
-            if (!requestParser->parseRequest(buf))
-            {
-                requestParser->reset();
-                conn->forceClose();
-                return;
-            }
-            if (requestParser->gotAll())
-            {
-                requestParser->requestImpl()->setPeerAddr(conn->peerAddr());
-                requestParser->requestImpl()->setLocalAddr(conn->localAddr());
-                requestParser->requestImpl()->setCreationDate(
-                    trantor::Date::date());
-                requestParser->requestImpl()->setSecure(
-                    conn->isSSLConnection());
-                if (requestParser->firstReq() &&
-                    isWebSocket(requestParser->requestImpl()))
-                {
-                    auto wsConn =
-                        std::make_shared<WebSocketConnectionImpl>(conn);
-                    wsConn->setPingMessage("", std::chrono::seconds{30});
-                    auto req = requestParser->requestImpl();
-                    newWebsocketCallback_(
-                        req,
-                        [conn, wsConn, requestParser, this, req](
-                            const HttpResponsePtr &resp) mutable {
-                            if (conn->connected())
-                            {
-                                for (auto &advice : preSendingAdvices_)
-                                {
-                                    advice(req, resp);
-                                }
-                                if (resp->statusCode() ==
-                                    k101SwitchingProtocols)
-                                {
-                                    requestParser->setWebsockConnection(wsConn);
-                                }
-                                auto httpString =
-                                    ((HttpResponseImpl *)resp.get())
-                                        ->renderToBuffer();
-                                conn->send(httpString);
-                                COZ_PROGRESS
-                            }
-                        },
-                        wsConn);
-                }
-                else
-                    requests.push_back(requestParser->requestImpl());
-                requestParser->reset();
-            }
-            else
-            {
-                break;
-            }
+            // The number of requests has reached the limit.
+            buf->retrieveAll();
+            return;
         }
-        onRequests(conn, requests, requestParser);
-        requests.clear();
+        if (!requestParser->parseRequest(buf))
+        {
+            requestParser->reset();
+            conn->forceClose();
+            return;
+        }
+        if (!requestParser->gotAll())
+        {
+            break;
+        }
+        requestParser->requestImpl()->setPeerAddr(conn->peerAddr());
+        requestParser->requestImpl()->setLocalAddr(conn->localAddr());
+        requestParser->requestImpl()->setCreationDate(trantor::Date::date());
+        requestParser->requestImpl()->setSecure(conn->isSSLConnection());
+        if (requestParser->firstReq() &&
+            isWebSocket(requestParser->requestImpl()))
+        {
+            auto wsConn = std::make_shared<WebSocketConnectionImpl>(conn);
+            wsConn->setPingMessage("", std::chrono::seconds{30});
+            auto req = requestParser->requestImpl();
+            newWebsocketCallback_(
+                req,
+                [conn, wsConn, requestParser, this, req](
+                    const HttpResponsePtr &resp) mutable {
+                    if (conn->connected())
+                    {
+                        for (auto &advice : preSendingAdvices_)
+                        {
+                            advice(req, resp);
+                        }
+                        if (resp->statusCode() == k101SwitchingProtocols)
+                        {
+                            requestParser->setWebsockConnection(wsConn);
+                        }
+                        auto httpString =
+                            ((HttpResponseImpl *)resp.get())->renderToBuffer();
+                        conn->send(httpString);
+                        COZ_PROGRESS
+                    }
+                },
+                wsConn);
+        }
+        else
+            requests.push_back(requestParser->requestImpl());
+        requestParser->reset();
     }
+    onRequests(conn, requests, requestParser);
+    requests.clear();
 }
 
 struct CallBackParamPack
@@ -344,9 +332,9 @@ void HttpServer::onRequests(
         conn->shutdown();
         return;
     }
-    else if (HttpAppFrameworkImpl::instance().pipeliningRequestsNumber() > 0 &&
-             requestParser->numberOfRequestsInPipelining() + requests.size() >=
-                 HttpAppFrameworkImpl::instance().pipeliningRequestsNumber())
+    if (HttpAppFrameworkImpl::instance().pipeliningRequestsNumber() > 0 &&
+        requestParser->numberOfRequestsInPipelining() + requests.size() >=
+            HttpAppFrameworkImpl::instance().pipeliningRequestsNumber())
     {
         requestParser->stop();
         conn->shutdown();
