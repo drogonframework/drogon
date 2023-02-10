@@ -289,35 +289,38 @@ void HttpClientImpl::sendRequestInLoop(const HttpRequestPtr &req,
     auto callbackPtr =
         std::make_shared<drogon::HttpReqCallback>(std::move(callback));
     auto thisPtr = shared_from_this();
-    loop_->runAfter(
-        timeout,
-        [timeoutFlag, weakCallbackPtr = std::weak_ptr(callbackPtr) ,
-            reqPtr = std::weak_ptr(req), thisPtr] {
-            if (*timeoutFlag)
-            {
-                return;
-            }
-            *timeoutFlag = true;
+    loop_->runAfter(timeout,
+                    [timeoutFlag,
+                     weakCallbackPtr = std::weak_ptr(callbackPtr),
+                     reqPtr = std::weak_ptr(req),
+                     thisPtr] {
+                        if (*timeoutFlag)
+                        {
+                            return;
+                        }
+                        *timeoutFlag = true;
 
-            auto req = reqPtr.lock();
-            if (req != nullptr) {
-                for (auto iter = thisPtr->requestsBuffer_.begin();
-                    iter != thisPtr->requestsBuffer_.end();
-                    ++iter)
-                {
-                    if (iter->first == req)
-                    {
-                        thisPtr->requestsBuffer_.erase(iter);
-                        break;
-                    }
-                }
-            }
+                        auto req = reqPtr.lock();
+                        if (req != nullptr)
+                        {
+                            for (auto iter = thisPtr->requestsBuffer_.begin();
+                                 iter != thisPtr->requestsBuffer_.end();
+                                 ++iter)
+                            {
+                                if (iter->first == req)
+                                {
+                                    thisPtr->requestsBuffer_.erase(iter);
+                                    break;
+                                }
+                            }
+                        }
 
-            auto callbackPtr = weakCallbackPtr.lock();
-            if (callbackPtr != nullptr) {
-                (*callbackPtr)(ReqResult::Timeout, nullptr);
-            }
-        });
+                        auto callbackPtr = weakCallbackPtr.lock();
+                        if (callbackPtr != nullptr)
+                        {
+                            (*callbackPtr)(ReqResult::Timeout, nullptr);
+                        }
+                    });
     sendRequestInLoop(req,
                       [timeoutFlag, callbackPtr](ReqResult r,
                                                  const HttpResponsePtr &resp) {
