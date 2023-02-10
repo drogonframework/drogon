@@ -36,94 +36,6 @@
 using namespace std::placeholders;
 using namespace drogon;
 using namespace trantor;
-namespace drogon
-{
-static HttpResponsePtr getCompressedResponse(const HttpRequestImplPtr &req,
-                                             const HttpResponsePtr &response,
-                                             bool isHeadMethod)
-{
-    if (isHeadMethod ||
-        !static_cast<HttpResponseImpl *>(response.get())->shouldBeCompressed())
-    {
-        return response;
-    }
-#ifdef USE_BROTLI
-    if (app().isBrotliEnabled() &&
-        req->getHeaderBy("accept-encoding").find("br") != std::string::npos)
-    {
-        auto newResp = response;
-        auto strCompress = utils::brotliCompress(response->getBody().data(),
-                                                 response->getBody().length());
-        if (!strCompress.empty())
-        {
-            if (response->expiredTime() >= 0)
-            {
-                // cached response,we need to make a clone
-                newResp = std::make_shared<HttpResponseImpl>(
-                    *static_cast<HttpResponseImpl *>(response.get()));
-                newResp->setExpiredTime(-1);
-            }
-            newResp->setBody(std::move(strCompress));
-            newResp->addHeader("Content-Encoding", "br");
-        }
-        else
-        {
-            LOG_ERROR << "brotli got 0 length result";
-        }
-        return newResp;
-    }
-#endif
-    if (app().isGzipEnabled() &&
-        req->getHeaderBy("accept-encoding").find("gzip") != std::string::npos)
-    {
-        auto newResp = response;
-        auto strCompress = utils::gzipCompress(response->getBody().data(),
-                                               response->getBody().length());
-        if (!strCompress.empty())
-        {
-            if (response->expiredTime() >= 0)
-            {
-                // cached response,we need to make a clone
-                newResp = std::make_shared<HttpResponseImpl>(
-                    *static_cast<HttpResponseImpl *>(response.get()));
-                newResp->setExpiredTime(-1);
-            }
-            newResp->setBody(std::move(strCompress));
-            newResp->addHeader("Content-Encoding", "gzip");
-        }
-        else
-        {
-            LOG_ERROR << "gzip got 0 length result";
-        }
-        return newResp;
-    }
-    return response;
-}
-static bool isWebSocket(const HttpRequestImplPtr &req)
-{
-    auto &headers = req->headers();
-    if (headers.find("upgrade") == headers.end() ||
-        headers.find("connection") == headers.end())
-        return false;
-    auto connectionField = req->getHeaderBy("connection");
-    std::transform(connectionField.begin(),
-                   connectionField.end(),
-                   connectionField.begin(),
-                   [](unsigned char c) { return tolower(c); });
-    auto upgradeField = req->getHeaderBy("upgrade");
-    std::transform(upgradeField.begin(),
-                   upgradeField.end(),
-                   upgradeField.begin(),
-                   [](unsigned char c) { return tolower(c); });
-    if (connectionField.find("upgrade") != std::string::npos &&
-        upgradeField == "websocket")
-    {
-        LOG_TRACE << "new websocket request";
-
-        return true;
-    }
-    return false;
-}
 
 static void defaultHttpAsyncCallback(
     const HttpRequestPtr &,
@@ -146,9 +58,14 @@ static void defaultWebSockAsyncCallback(
 
 static void defaultConnectionCallback(const trantor::TcpConnectionPtr &)
 {
-    return;
 }
-}  // namespace drogon
+
+static inline bool isWebSocket(const HttpRequestImplPtr &req);
+static inline HttpResponsePtr getCompressedResponse(
+    const HttpRequestImplPtr &req,
+    const HttpResponsePtr &response,
+    bool isHeadMethod);
+
 HttpServer::HttpServer(
     EventLoop *loop,
     const InetAddress &listenAddr,
@@ -828,4 +745,94 @@ void HttpServer::sendResponses(
         COZ_PROGRESS
     }
     buffer.retrieveAll();
+}
+
+static inline bool isWebSocket(const HttpRequestImplPtr &req)
+{
+    auto &headers = req->headers();
+    if (headers.find("upgrade") == headers.end() ||
+        headers.find("connection") == headers.end())
+        return false;
+    auto connectionField = req->getHeaderBy("connection");
+    std::transform(connectionField.begin(),
+                   connectionField.end(),
+                   connectionField.begin(),
+                   [](unsigned char c) { return tolower(c); });
+    auto upgradeField = req->getHeaderBy("upgrade");
+    std::transform(upgradeField.begin(),
+                   upgradeField.end(),
+                   upgradeField.begin(),
+                   [](unsigned char c) { return tolower(c); });
+    if (connectionField.find("upgrade") != std::string::npos &&
+        upgradeField == "websocket")
+    {
+        LOG_TRACE << "new websocket request";
+        return true;
+    }
+    return false;
+}
+
+static inline HttpResponsePtr getCompressedResponse(
+    const HttpRequestImplPtr &req,
+    const HttpResponsePtr &response,
+    bool isHeadMethod)
+{
+    if (isHeadMethod ||
+        !static_cast<HttpResponseImpl *>(response.get())->shouldBeCompressed())
+    {
+        return response;
+    }
+#ifdef USE_BROTLI
+    if (app().isBrotliEnabled() &&
+        req->getHeaderBy("accept-encoding").find("br") != std::string::npos)
+    {
+        auto newResp = response;
+        auto strCompress =
+            drogon::utils::brotliCompress(response->getBody().data(),
+                                          response->getBody().length());
+        if (!strCompress.empty())
+        {
+            if (response->expiredTime() >= 0)
+            {
+                // cached response,we need to make a clone
+                newResp = std::make_shared<HttpResponseImpl>(
+                    *static_cast<HttpResponseImpl *>(response.get()));
+                newResp->setExpiredTime(-1);
+            }
+            newResp->setBody(std::move(strCompress));
+            newResp->addHeader("Content-Encoding", "br");
+        }
+        else
+        {
+            LOG_ERROR << "brotli got 0 length result";
+        }
+        return newResp;
+    }
+#endif
+    if (app().isGzipEnabled() &&
+        req->getHeaderBy("accept-encoding").find("gzip") != std::string::npos)
+    {
+        auto newResp = response;
+        auto strCompress =
+            drogon::utils::gzipCompress(response->getBody().data(),
+                                        response->getBody().length());
+        if (!strCompress.empty())
+        {
+            if (response->expiredTime() >= 0)
+            {
+                // cached response,we need to make a clone
+                newResp = std::make_shared<HttpResponseImpl>(
+                    *static_cast<HttpResponseImpl *>(response.get()));
+                newResp->setExpiredTime(-1);
+            }
+            newResp->setBody(std::move(strCompress));
+            newResp->addHeader("Content-Encoding", "gzip");
+        }
+        else
+        {
+            LOG_ERROR << "gzip got 0 length result";
+        }
+        return newResp;
+    }
+    return response;
 }
