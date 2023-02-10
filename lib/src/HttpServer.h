@@ -66,6 +66,10 @@ class HttpServer : trantor::NonCopyable
     {
         server_.setIoLoopNum(numThreads);
     }
+    void setIoLoops(const std::vector<trantor::EventLoop *> &ioLoops)
+    {
+        server_.setIoLoops(ioLoops);
+    }
     void kickoffIdleConnections(size_t timeout)
     {
         server_.kickoffIdleConnections(timeout);
