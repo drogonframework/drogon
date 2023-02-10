@@ -285,7 +285,7 @@ void HttpServer::onRequests(
         bool syncFlag = false;
         if (!requestParser->emptyPipelining())
         {
-            requestParser->pushRequestToPipelining(req);
+            requestParser->pushRequestToPipelining(req, isHeadMethod);
             syncFlag = true;
         }
         if (hasSyncAdvices_ &&
@@ -320,7 +320,7 @@ void HttpServer::onRequests(
         }
         if (syncFlag == false)
         {
-            requestParser->pushRequestToPipelining(req);
+            requestParser->pushRequestToPipelining(req, isHeadMethod);
         }
     }
     *loopFlagPtr = false;
@@ -381,15 +381,15 @@ void HttpServer::handleResponse(
             syncFlag = true;
             if (requestParser->emptyPipelining())
             {
-                requestParser->getResponseBuffer().emplace_back(newResp,
+                requestParser->getResponseBuffer().emplace_back(std::move(
+                                                                    newResp),
                                                                 isHeadMethod);
             }
             else
             {
                 // some earlier requests are waiting for responses;
                 requestParser->pushResponseToPipelining(req,
-                                                        newResp,
-                                                        isHeadMethod);
+                                                        std::move(newResp));
             }
         }
         else if (requestParser->getFirstRequest() == req)
@@ -397,7 +397,7 @@ void HttpServer::handleResponse(
             requestParser->popFirstRequest();
 
             std::vector<std::pair<HttpResponsePtr, bool>> resps;
-            resps.emplace_back(newResp, isHeadMethod);
+            resps.emplace_back(std::move(newResp), isHeadMethod);
             while (!requestParser->emptyPipelining())
             {
                 auto resp = requestParser->getFirstResponse();
@@ -414,43 +414,46 @@ void HttpServer::handleResponse(
         else
         {
             // some earlier requests are waiting for responses;
-            requestParser->pushResponseToPipelining(req, newResp, isHeadMethod);
+            requestParser->pushResponseToPipelining(req, std::move(newResp));
         }
     }
     else
     {
-        conn->getLoop()->queueInLoop(
-            [conn, req, newResp, this, isHeadMethod, requestParser]() {
-                if (conn->connected())
+        conn->getLoop()->queueInLoop([this,
+                                      conn,
+                                      req,
+                                      requestParser,
+                                      newResp = std::move(newResp),
+                                      isHeadMethod]() mutable {
+            if (conn->connected())
+            {
+                if (requestParser->getFirstRequest() == req)
                 {
-                    if (requestParser->getFirstRequest() == req)
+                    requestParser->popFirstRequest();
+                    std::vector<std::pair<HttpResponsePtr, bool>> resps;
+                    resps.emplace_back(newResp, isHeadMethod);
+                    while (!requestParser->emptyPipelining())
                     {
-                        requestParser->popFirstRequest();
-                        std::vector<std::pair<HttpResponsePtr, bool>> resps;
-                        resps.emplace_back(newResp, isHeadMethod);
-                        while (!requestParser->emptyPipelining())
+                        auto resp = requestParser->getFirstResponse();
+                        if (resp.first)
                         {
-                            auto resp = requestParser->getFirstResponse();
-                            if (resp.first)
-                            {
-                                requestParser->popFirstRequest();
-                                resps.push_back(std::move(resp));
-                            }
-                            else
-                                break;
+                            requestParser->popFirstRequest();
+                            resps.push_back(std::move(resp));
                         }
-                        sendResponses(conn, resps, requestParser->getBuffer());
+                        else
+                            break;
                     }
-                    else
-                    {
-                        // some earlier requests are waiting for
-                        // responses;
-                        requestParser->pushResponseToPipelining(req,
-                                                                newResp,
-                                                                isHeadMethod);
-                    }
+                    sendResponses(conn, resps, requestParser->getBuffer());
                 }
-            });
+                else
+                {
+                    // some earlier requests are waiting for
+                    // responses;
+                    requestParser->pushResponseToPipelining(req,
+                                                            std::move(newResp));
+                }
+            }
+        });
     }
 }
 
@@ -808,9 +811,7 @@ static inline bool passSyncAdvices(
             else
             {
                 requestParser->pushResponseToPipelining(
-                    req,
-                    getCompressedResponse(req, resp, isHeadMethod),
-                    isHeadMethod);
+                    req, getCompressedResponse(req, resp, isHeadMethod));
             }
             return false;
         }

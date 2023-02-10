@@ -21,6 +21,7 @@
 #include <trantor/utils/MsgBuffer.h>
 #include <mutex>
 #include <deque>
+#include <memory>
 
 namespace drogon
 {
@@ -75,13 +76,12 @@ class HttpRequestParser : public trantor::NonCopyable,
         websockConnPtr_ = conn;
     }
     // to support request pipelining(rfc2616-8.1.2.2)
-    void pushRequestToPipelining(const HttpRequestPtr &req);
+    void pushRequestToPipelining(const HttpRequestPtr &req, bool isHeadMethod);
     HttpRequestPtr getFirstRequest() const;
     std::pair<HttpResponsePtr, bool> getFirstResponse() const;
     void popFirstRequest();
     void pushResponseToPipelining(const HttpRequestPtr &req,
-                                  const HttpResponsePtr &resp,
-                                  bool isHeadMethod);
+                                  HttpResponsePtr resp);
     size_t numberOfRequestsInPipelining() const
     {
         return requestPipelining_.size();

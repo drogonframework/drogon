@@ -443,7 +443,8 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf)
     return -1;
 }
 
-void HttpRequestParser::pushRequestToPipelining(const HttpRequestPtr &req)
+void HttpRequestParser::pushRequestToPipelining(const HttpRequestPtr &req,
+                                                bool isHeadMethod)
 {
 #ifndef NDEBUG
     auto conn = conn_.lock();
@@ -452,7 +453,7 @@ void HttpRequestParser::pushRequestToPipelining(const HttpRequestPtr &req)
         conn->getLoop()->assertInLoopThread();
     }
 #endif
-    requestPipelining_.push_back({req, {nullptr, false}});
+    requestPipelining_.push_back({req, {nullptr, isHeadMethod}});
 }
 
 HttpRequestPtr HttpRequestParser::getFirstRequest() const
@@ -500,8 +501,7 @@ void HttpRequestParser::popFirstRequest()
 }
 
 void HttpRequestParser::pushResponseToPipelining(const HttpRequestPtr &req,
-                                                 const HttpResponsePtr &resp,
-                                                 bool isHeadMethod)
+                                                 HttpResponsePtr resp)
 {
 #ifndef NDEBUG
     auto conn = conn_.lock();
@@ -514,7 +514,7 @@ void HttpRequestParser::pushResponseToPipelining(const HttpRequestPtr &req,
     {
         if (iter.first == req)
         {
-            iter.second = {resp, isHeadMethod};
+            iter.second.first = std::move(resp);
             return;
         }
     }
