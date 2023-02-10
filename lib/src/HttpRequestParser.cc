@@ -133,9 +133,11 @@ void HttpRequestParser::reset()
 }
 
 /**
- * @return return false if encounters any error in request
+ * @return return -1 if encounters any error in request
+ * @return return 0 if request is not ready
+ * @return return 1 if request is ready
  */
-bool HttpRequestParser::parseRequest(MsgBuffer *buf)
+int HttpRequestParser::parseRequest(MsgBuffer *buf)
 {
     while (true)
     {
@@ -153,16 +155,16 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
                     {
                         buf->retrieveAll();
                         shutdownConnection(k400BadRequest);
-                        return false;
+                        return -1;
                     }
-                    return true;
+                    return 0;
                 }
                 // try read method
                 if (!request_->setMethod(buf->peek(), space))
                 {
                     buf->retrieveAll();
                     shutdownConnection(k405MethodNotAllowed);
-                    return false;
+                    return -1;
                 }
                 status_ = HttpRequestParseStatus::kExpectRequestLine;
                 buf->retrieveUntil(space + 1);
@@ -180,16 +182,16 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
                         /// TODO: Make this configurable?
                         buf->retrieveAll();
                         shutdownConnection(k414RequestURITooLarge);
-                        return false;
+                        return -1;
                     }
-                    return true;
+                    return 0;
                 }
                 if (!processRequestLine(buf->peek(), crlf))
                 {
                     // error
                     buf->retrieveAll();
                     shutdownConnection(k400BadRequest);
-                    return false;
+                    return -1;
                 }
                 buf->retrieveUntil(crlf + CRLF_LEN);
                 status_ = HttpRequestParseStatus::kExpectHeaders;
@@ -206,9 +208,9 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
                         /// TODO: Make this configurable?
                         buf->retrieveAll();
                         shutdownConnection(k400BadRequest);
-                        return false;
+                        return -1;
                     }
-                    return true;
+                    return 0;
                 }
 
                 const char *colon = std::find(buf->peek(), crlf, ':');
@@ -238,14 +240,14 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
                     {
                         buf->retrieveAll();
                         shutdownConnection(k400BadRequest);
-                        return false;
+                        return -1;
                     }
                     if (currentContentLength_ == 0)
                     {
                         // content-length = 0, request is over.
                         status_ = HttpRequestParseStatus::kGotAll;
                         ++requestsCounter_;
-                        return true;
+                        return 1;
                     }
                     else
                     {
@@ -262,7 +264,7 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
                         // request is over.
                         status_ = HttpRequestParseStatus::kGotAll;
                         ++requestsCounter_;
-                        return true;
+                        return 1;
                     }
                     else if (encode == "chunked")
                     {
@@ -272,7 +274,7 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
                     {
                         buf->retrieveAll();
                         shutdownConnection(k501NotImplemented);
-                        return false;
+                        return -1;
                     }
                 }
 
@@ -285,13 +287,13 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
                         // error
                         buf->retrieveAll();
                         shutdownConnection(k400BadRequest);
-                        return false;
+                        return -1;
                     }
                     // rfc2616-8.2.3
                     auto connPtr = conn_.lock();
                     if (!connPtr)
                     {
-                        return false;
+                        return -1;
                     }
                     auto resp = HttpResponse::newHttpResponse();
                     if (currentContentLength_ >
@@ -319,7 +321,7 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
                     LOG_WARN << "417ExpectationFailed for \"" << expect << "\"";
                     buf->retrieveAll();
                     shutdownConnection(k417ExpectationFailed);
-                    return false;
+                    return -1;
                 }
                 else if (currentContentLength_ >
                          HttpAppFrameworkImpl::instance()
@@ -327,7 +329,7 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
                 {
                     buf->retrieveAll();
                     shutdownConnection(k413RequestEntityTooLarge);
-                    return false;
+                    return -1;
                 }
                 request_->reserveBodySize(currentContentLength_);
                 continue;
@@ -349,10 +351,10 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
                 {
                     status_ = HttpRequestParseStatus::kGotAll;
                     ++requestsCounter_;
+                    return 1;
                 }
-                // Either currentContentLength_ == 0, or readableBytes() == 0,
-                // or both are zero. In each case, function should return.
-                return true;
+                // readableBytes() == 0, function should return.
+                return 0;
             }
             case HttpRequestParseStatus::kExpectChunkLen:
             {
@@ -363,9 +365,9 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
                     {
                         buf->retrieveAll();
                         shutdownConnection(k400BadRequest);
-                        return false;
+                        return -1;
                     }
-                    return true;
+                    return 0;
                 }
                 // chunk length line
                 std::string len(buf->peek(), crlf - buf->peek());
@@ -378,7 +380,7 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
                     {
                         buf->retrieveAll();
                         shutdownConnection(k413RequestEntityTooLarge);
-                        return false;
+                        return -1;
                     }
                     status_ = HttpRequestParseStatus::kExpectChunkBody;
                 }
@@ -393,7 +395,7 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
             {
                 if (buf->readableBytes() < (currentChunkLength_ + CRLF_LEN))
                 {
-                    return true;
+                    return 0;
                 }
                 if (*(buf->peek() + currentChunkLength_) != '\r' ||
                     *(buf->peek() + currentChunkLength_ + 1) != '\n')
@@ -401,7 +403,7 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
                     // error!
                     buf->retrieveAll();
                     shutdownConnection(k400BadRequest);
-                    return false;
+                    return -1;
                 }
                 request_->appendToBody(buf->peek(), currentChunkLength_);
                 buf->retrieve(currentChunkLength_ + CRLF_LEN);
@@ -415,14 +417,14 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
                 // last empty chunk
                 if (buf->readableBytes() < CRLF_LEN)
                 {
-                    return true;
+                    return 0;
                 }
                 if (*(buf->peek()) != '\r' || *(buf->peek() + 1) != '\n')
                 {
                     // error!
                     buf->retrieveAll();
                     shutdownConnection(k400BadRequest);
-                    return false;
+                    return -1;
                 }
                 buf->retrieve(CRLF_LEN);
                 status_ = HttpRequestParseStatus::kGotAll;
@@ -430,15 +432,15 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
                                     std::to_string(request_->bodyLength()));
                 request_->removeHeaderBy("transfer-encoding");
                 ++requestsCounter_;
-                return true;
+                return 1;
             }
             case HttpRequestParseStatus::kGotAll:
             {
-                return true;
+                return 1;
             }
         }
     }
-    return true;
+    return -1;
 }
 
 void HttpRequestParser::pushRequestToPipelining(const HttpRequestPtr &req)

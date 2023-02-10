@@ -43,7 +43,7 @@ class HttpRequestParser : public trantor::NonCopyable,
     explicit HttpRequestParser(const trantor::TcpConnectionPtr &connPtr);
 
     // return false if any error
-    bool parseRequest(trantor::MsgBuffer *buf);
+    int parseRequest(trantor::MsgBuffer *buf);
 
     bool gotAll() const
     {
