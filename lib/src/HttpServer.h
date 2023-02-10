@@ -22,6 +22,7 @@
 #include <string>
 #include <vector>
 
+struct CallbackParamPack;
 namespace drogon
 {
 class HttpServer : trantor::NonCopyable
@@ -105,6 +106,8 @@ class HttpServer : trantor::NonCopyable
     void onRequests(const trantor::TcpConnectionPtr &,
                     const std::vector<HttpRequestImplPtr> &,
                     const std::shared_ptr<HttpRequestParser> &);
+    void handleResponse(const HttpResponsePtr &response,
+                        const std::shared_ptr<CallbackParamPack> &paramPack);
     void sendResponse(const trantor::TcpConnectionPtr &,
                       const HttpResponsePtr &,
                       bool isHeadMethod);
