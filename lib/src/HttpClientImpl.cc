@@ -291,7 +291,8 @@ void HttpClientImpl::sendRequestInLoop(const HttpRequestPtr &req,
     auto thisPtr = shared_from_this();
     loop_->runAfter(timeout,
                     [timeoutFlag,
-                     weakCallbackPtr = std::weak_ptr<HttpReqCallback>(callbackPtr),
+                     weakCallbackPtr =
+                         std::weak_ptr<HttpReqCallback>(callbackPtr),
                      reqPtr = std::weak_ptr<HttpRequest>(req),
                      thisPtr] {
                         if (*timeoutFlag)
