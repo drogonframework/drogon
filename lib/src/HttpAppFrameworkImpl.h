@@ -528,10 +528,7 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
 
     bool supportSSL() const override
     {
-#ifdef OpenSSL_FOUND
-        return true;
-#endif
-        return false;
+        return trantor::utils::tlsBackend() != "None";
     }
 
     size_t getCurrentThreadIndex() const override
