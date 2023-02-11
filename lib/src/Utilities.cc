@@ -1167,6 +1167,11 @@ void replaceAll(std::string &s, const std::string &from, const std::string &to)
     }
 }
 
+bool supportsTls() noexcept
+{
+    return trantor::utils::tlsBackend() != "None";
+}
+
 /**
  * @brief Generates `size` random bytes from the systems random source and
  * stores them into `ptr`.
@@ -1202,6 +1207,7 @@ static bool systemRandomBytes(void *ptr, size_t size)
 
 bool secureRandomBytes(void *ptr, size_t size)
 {
+// TODO: Make trantor expose a secure random number generator
 #ifdef OpenSSL_FOUND
     if (RAND_bytes((unsigned char *)ptr, (int)size) == 0)
         return true;

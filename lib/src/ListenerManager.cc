@@ -61,12 +61,8 @@ void ListenerManager::addListener(
     bool useOldTLS,
     const std::vector<std::pair<std::string, std::string>> &sslConfCmds)
 {
-#ifndef OpenSSL_FOUND
-    if (useSSL)
-    {
+    if (useSSL && !utils::supportsTls())
         LOG_ERROR << "Can't use SSL without OpenSSL found in your system";
-    }
-#endif
     listeners_.emplace_back(
         ip, port, useSSL, certFile, keyFile, useOldTLS, sslConfCmds);
 }
@@ -76,15 +72,9 @@ std::vector<trantor::EventLoop *> ListenerManager::createListeners(
     const WebSocketNewAsyncCallback &webSocketCallback,
     const ConnectionCallback &connectionCallback,
     size_t connectionTimeout,
-#ifdef OpenSSL_FOUND
     const std::string &globalCertFile,
     const std::string &globalKeyFile,
     const std::vector<std::pair<std::string, std::string>> &sslConfCmds,
-#else
-    const std::string & /*globalCertFile*/,
-    const std::string & /*globalKeyFile*/,
-    const std::vector<std::pair<std::string, std::string>> & /*sslConfCmds*/,
-#endif
     size_t threadNum,
     const std::vector<std::function<HttpResponsePtr(const HttpRequestPtr &)>>
         &syncAdvices,
@@ -138,9 +128,8 @@ std::vector<trantor::EventLoop *> ListenerManager::createListeners(
                                                  preSendingAdvices);
             }
 
-            if (listener.useSSL_)
+            if (listener.useSSL_ && !utils::supportsTls())
             {
-#ifdef OpenSSL_FOUND
                 auto cert = listener.certFile_;
                 auto key = listener.keyFile_;
                 if (cert == "")
@@ -159,7 +148,6 @@ std::vector<trantor::EventLoop *> ListenerManager::createListeners(
                           listener.sslConfCmds_.end(),
                           std::back_inserter(cmds));
                 serverPtr->enableSSL(cert, key, listener.useOldTLS_, cmds);
-#endif
             }
             serverPtr->setHttpAsyncCallback(httpCallback);
             serverPtr->setNewWebsocketCallback(webSocketCallback);
@@ -188,9 +176,8 @@ std::vector<trantor::EventLoop *> ListenerManager::createListeners(
                 "drogon",
                 syncAdvices,
                 preSendingAdvices);
-            if (listener.useSSL_)
+            if (listener.useSSL_ && !utils::supportsTls()
             {
-#ifdef OpenSSL_FOUND
                 auto cert = listener.certFile_;
                 auto key = listener.keyFile_;
                 if (cert.empty())
@@ -209,7 +196,6 @@ std::vector<trantor::EventLoop *> ListenerManager::createListeners(
                           listener.sslConfCmds_.end(),
                           std::back_inserter(cmds));
                 serverPtr->enableSSL(cert, key, listener.useOldTLS_, cmds);
-#endif
             }
             serverPtr->setIoLoopThreadPool(ioLoopThreadPoolPtr_);
             serverPtr->setHttpAsyncCallback(httpCallback);

@@ -427,6 +427,8 @@ inline bool fromString<bool>(const std::string &p) noexcept(false)
     throw std::runtime_error("Can't convert from string '" + p + "' to bool");
 }
 
+bool supportsTls() noexcept;
+
 namespace internal
 {
 DROGON_EXPORT extern const size_t fixedRandomNumber;

@@ -37,8 +37,7 @@ void HttpClientImpl::createTcpClient()
     tcpClientPtr_ =
         std::make_shared<trantor::TcpClient>(loop_, serverAddr_, "httpClient");
 
-#ifdef OpenSSL_FOUND
-    if (useSSL_)
+    if (useSSL_ && utils::supportsTls())
     {
         LOG_TRACE << "useOldTLS=" << useOldTLS_;
         LOG_TRACE << "domain=" << domain_;
@@ -49,7 +48,7 @@ void HttpClientImpl::createTcpClient()
                                  clientCertPath_,
                                  clientKeyPath_);
     }
-#endif
+
     auto thisPtr = shared_from_this();
     std::weak_ptr<HttpClientImpl> weakPtr = thisPtr;
 

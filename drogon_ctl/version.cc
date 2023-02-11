@@ -32,7 +32,7 @@ static const char banner[] =
 void version::handleCommand(std::vector<std::string> &parameters)
 {
     const auto tlsBackend = trantor::utils::tlsBackend();
-    const bool tlsSupported = tlsBackend != "None";
+    const bool tlsSupported = utils::supportsTls();
     std::cout << banner << std::endl;
     std::cout << "A utility for drogon" << std::endl;
     std::cout << "Version: " << DROGON_VERSION << std::endl;
