@@ -5,8 +5,8 @@
     //ssl:The global SSL settings. "key" and "cert" are the path to the SSL key and certificate. While
     //    "conf" is an array of 1 or 2-element tuples that supplies file style options for `SSL_CONF_cmd`.
     "ssl": {
-        "cert": "../../trantor/trantor/tests/server.pem",
-        "key": "../../trantor/trantor/tests/server.pem",
+        "cert": "../../trantor/trantor/tests/server.crt",
+        "key": "../../trantor/trantor/tests/server.key",
         "conf": [
             //["Options", "-SessionTicket"], 
             //["Options", "Compression"]
