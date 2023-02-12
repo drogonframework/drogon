@@ -128,7 +128,7 @@ std::vector<trantor::EventLoop *> ListenerManager::createListeners(
                                                  preSendingAdvices);
             }
 
-            if (listener.useSSL_ && !utils::supportsTls())
+            if (listener.useSSL_ && utils::supportsTls())
             {
                 auto cert = listener.certFile_;
                 auto key = listener.keyFile_;
@@ -176,7 +176,7 @@ std::vector<trantor::EventLoop *> ListenerManager::createListeners(
                 "drogon",
                 syncAdvices,
                 preSendingAdvices);
-            if (listener.useSSL_ && !utils::supportsTls())
+            if (listener.useSSL_ && utils::supportsTls())
             {
                 auto cert = listener.certFile_;
                 auto key = listener.keyFile_;
