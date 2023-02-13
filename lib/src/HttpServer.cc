@@ -223,13 +223,11 @@ struct CallbackParamPack
                       HttpRequestImplPtr req,
                       std::shared_ptr<bool> loopFlag,
                       std::shared_ptr<HttpRequestParser> requestParser,
-                      bool *respReadyPtr,
                       bool isHeadMethod)
         : conn_(std::move(conn)),
           req_(std::move(req)),
           loopFlag_(std::move(loopFlag)),
           requestParser_(std::move(requestParser)),
-          respReadyPtr_(respReadyPtr),
           isHeadMethod_(isHeadMethod)
     {
     }
@@ -237,7 +235,6 @@ struct CallbackParamPack
     HttpRequestImplPtr req_;
     std::shared_ptr<bool> loopFlag_;
     std::shared_ptr<HttpRequestParser> requestParser_;
-    bool *respReadyPtr_;
     bool isHeadMethod_;
     std::atomic<bool> responseSent_{false};
 };
@@ -295,19 +292,23 @@ void HttpServer::onRequests(
         // handlers (ex: copying callback into lambda captures in DB calls)
         bool respReady{false};
         auto paramPack = std::make_shared<CallbackParamPack>(
-            conn, req, loopFlagPtr, requestParser, &respReady, isHeadMethod);
+            conn, req, loopFlagPtr, requestParser, isHeadMethod);
 
         auto errResp = tryDecompressRequest(req);
         if (errResp)
         {
-            handleResponse(errResp, paramPack);
+            handleResponse(errResp, paramPack, &respReady);
         }
         else
         {
             httpAsyncCallback_(req,
-                               [this, paramPack = std::move(paramPack)](
+                               [this,
+                                respReadyPtr = &respReady,
+                                paramPack = std::move(paramPack)](
                                    const HttpResponsePtr &response) {
-                                   handleResponse(response, paramPack);
+                                   handleResponse(response,
+                                                  paramPack,
+                                                  respReadyPtr);
                                });
         }
         if (!reqPipelined && !respReady)
@@ -327,13 +328,13 @@ void HttpServer::onRequests(
 
 void HttpServer::handleResponse(
     const HttpResponsePtr &response,
-    const std::shared_ptr<CallbackParamPack> &paramPack)
+    const std::shared_ptr<CallbackParamPack> &paramPack,
+    bool *respReadyPtr)
 {
     auto &conn = paramPack->conn_;
     auto &req = paramPack->req_;
     auto &requestParser = paramPack->requestParser_;
     auto &loopFlagPtr = paramPack->loopFlag_;
-    bool &respReady = *paramPack->respReadyPtr_;
     const bool isHeadMethod = paramPack->isHeadMethod_;
 
     if (!response)
@@ -364,44 +365,35 @@ void HttpServer::handleResponse(
          * its responses to those requests in the same order that
          * the requests were received. rfc2616-8.1.1.2
          */
-        if (!conn->connected())
-            return;
-        if (*loopFlagPtr)
+        if (requestParser->emptyPipelining())
         {
-            // TODO: maybe invalid, but should be valid according to framework
-            // logic
-            respReady = true;
-            if (requestParser->emptyPipelining())
-            {
-                requestParser->getResponseBuffer().emplace_back(std::move(
-                                                                    newResp),
-                                                                isHeadMethod);
-            }
-            else
-            {
-                // some earlier requests are waiting for responses;
-                requestParser->pushResponseToPipelining(req,
-                                                        std::move(newResp));
-            }
+            // response must arrive synchronously
+            assert(*loopFlagPtr);
+            *respReadyPtr = true;
+            requestParser->getResponseBuffer().emplace_back(std::move(newResp),
+                                                            isHeadMethod);
         }
         else if (requestParser->getFirstRequest() == req)
         {
+            auto &responseBuffer = requestParser->getResponseBuffer();
             requestParser->popFirstRequest();
-
-            std::vector<std::pair<HttpResponsePtr, bool>> resps;
-            resps.emplace_back(std::move(newResp), isHeadMethod);
+            responseBuffer.emplace_back(std::move(newResp), isHeadMethod);
             while (!requestParser->emptyPipelining())
             {
                 auto resp = requestParser->getFirstResponse();
                 if (resp.first)
                 {
                     requestParser->popFirstRequest();
-                    resps.push_back(std::move(resp));
+                    responseBuffer.push_back(std::move(resp));
                 }
                 else
                     break;
             }
-            sendResponses(conn, resps, requestParser->getBuffer());
+            if (!*loopFlagPtr)
+            {
+                sendResponses(conn, responseBuffer, requestParser->getBuffer());
+                responseBuffer.clear();
+            }
         }
         else
         {
