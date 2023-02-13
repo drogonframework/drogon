@@ -427,7 +427,7 @@ inline bool fromString<bool>(const std::string &p) noexcept(false)
     throw std::runtime_error("Can't convert from string '" + p + "' to bool");
 }
 
-bool supportsTls() noexcept;
+DROGON_EXPORT bool supportsTls() noexcept;
 
 namespace internal
 {
