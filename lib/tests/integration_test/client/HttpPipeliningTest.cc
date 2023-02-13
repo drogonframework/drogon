@@ -38,8 +38,6 @@ DROGON_TEST(HttpPipeliningTest)
                             REQUIRE(resp->getBody().length() == 44618UL);
                         });
 
-    auto request = HttpRequest::newHttpRequest();
-    request->setPath("/pipe");
     for (int i = 0; i < 19; ++i)
     {
         client->sendRequest(
@@ -54,5 +52,41 @@ DROGON_TEST(HttpPipeliningTest)
                 counter = c;
                 REQUIRE(resp->body().empty());
             });
+    }
+}
+
+DROGON_TEST(HttpPipeliningStrangeTest1)
+{
+    auto client = HttpClient::newHttpClient("127.0.0.1", 8848);
+    client->setPipeliningDepth(64);
+    for (int i = 0; i < 4; ++i)
+    {
+        auto request = HttpRequest::newHttpRequest();
+        request->setPath("/pipe/strange-1");
+        request->setBody(std::to_string(i));
+        client->sendRequest(request,
+                            [TEST_CTX, i](ReqResult r,
+                                          const HttpResponsePtr &resp) {
+                                REQUIRE(r == ReqResult::Ok);
+                                REQUIRE(resp->body() == std::to_string(i));
+                            });
+    }
+}
+
+DROGON_TEST(HttpPipeliningStrangeTest2)
+{
+    auto client = HttpClient::newHttpClient("127.0.0.1", 8848);
+    client->setPipeliningDepth(64);
+    for (int i = 0; i < 6; ++i)
+    {
+        auto request = HttpRequest::newHttpRequest();
+        request->setPath("/pipe/strange-2");
+        request->setBody(std::to_string(i));
+        client->sendRequest(request,
+                            [TEST_CTX, i](ReqResult r,
+                                          const HttpResponsePtr &resp) {
+                                REQUIRE(r == ReqResult::Ok);
+                                REQUIRE(resp->body() == std::to_string(i));
+                            });
     }
 }
