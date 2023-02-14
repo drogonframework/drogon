@@ -301,6 +301,15 @@ void HttpServer::onRequests(
         }
         else
         {
+            // Although the function has 'async' in its name, the
+            // handleResponse() callback may be called synchronously. In this
+            // case, the generated response should not be sent right away, but
+            // be queued in buffer instead. Those ready responses will be sent
+            // together after the end of the for loop.
+            //
+            // By doing this, we could reduce some system calls when sending
+            // through socket. In order to achieve this, we create a
+            // `respReady` variable.
             httpAsyncCallback_(req,
                                [this,
                                 respReadyPtr = &respReady,
@@ -367,38 +376,26 @@ void HttpServer::handleResponse(
          */
         if (requestParser->emptyPipelining())
         {
-            // response must arrive synchronously
+            // response must have arrived synchronously
             assert(*loopFlagPtr);
+            // TODO: change to weakPtr to be sure. But may drop performance.
             *respReadyPtr = true;
             requestParser->getResponseBuffer().emplace_back(std::move(newResp),
                                                             isHeadMethod);
+            return;
         }
-        else if (requestParser->getFirstRequest() == req)
+        if (requestParser->pushResponseToPipelining(req, std::move(newResp)))
         {
             auto &responseBuffer = requestParser->getResponseBuffer();
-            requestParser->popFirstRequest();
-            responseBuffer.emplace_back(std::move(newResp), isHeadMethod);
-            while (!requestParser->emptyPipelining())
-            {
-                auto resp = requestParser->getFirstResponse();
-                if (resp.first)
-                {
-                    requestParser->popFirstRequest();
-                    responseBuffer.push_back(std::move(resp));
-                }
-                else
-                    break;
-            }
+            requestParser->popReadyResponses(responseBuffer);
             if (!*loopFlagPtr)
             {
+                // We have passed the point where `onRequests()` sends
+                // responses. So, at here we should send ready responses from
+                // the beginning of pipeline queue.
                 sendResponses(conn, responseBuffer, requestParser->getBuffer());
                 responseBuffer.clear();
             }
-        }
-        else
-        {
-            // some earlier requests are waiting for responses;
-            requestParser->pushResponseToPipelining(req, std::move(newResp));
         }
     }
     else
@@ -407,35 +404,17 @@ void HttpServer::handleResponse(
                                       conn,
                                       req,
                                       requestParser,
-                                      newResp = std::move(newResp),
-                                      isHeadMethod]() mutable {
-            if (conn->connected())
+                                      newResp = std::move(newResp)]() mutable {
+            if (!conn->connected())
             {
-                if (requestParser->getFirstRequest() == req)
-                {
-                    requestParser->popFirstRequest();
-                    std::vector<std::pair<HttpResponsePtr, bool>> resps;
-                    resps.emplace_back(newResp, isHeadMethod);
-                    while (!requestParser->emptyPipelining())
-                    {
-                        auto resp = requestParser->getFirstResponse();
-                        if (resp.first)
-                        {
-                            requestParser->popFirstRequest();
-                            resps.push_back(std::move(resp));
-                        }
-                        else
-                            break;
-                    }
-                    sendResponses(conn, resps, requestParser->getBuffer());
-                }
-                else
-                {
-                    // some earlier requests are waiting for
-                    // responses;
-                    requestParser->pushResponseToPipelining(req,
-                                                            std::move(newResp));
-                }
+                return;
+            }
+            if (requestParser->pushResponseToPipelining(req,
+                                                        std::move(newResp)))
+            {
+                std::vector<std::pair<HttpResponsePtr, bool>> responses;
+                requestParser->popReadyResponses(responses);
+                sendResponses(conn, responses, requestParser->getBuffer());
             }
         });
     }

@@ -76,12 +76,9 @@ class HttpRequestParser : public trantor::NonCopyable,
         websockConnPtr_ = conn;
     }
     // to support request pipelining(rfc2616-8.1.2.2)
-    void pushRequestToPipelining(const HttpRequestPtr &req, bool isHeadMethod);
-    HttpRequestPtr getFirstRequest() const;
-    std::pair<HttpResponsePtr, bool> getFirstResponse() const;
-    void popFirstRequest();
-    void pushResponseToPipelining(const HttpRequestPtr &req,
-                                  HttpResponsePtr resp);
+    void pushRequestToPipelining(const HttpRequestPtr &, bool isHeadMethod);
+    bool pushResponseToPipelining(const HttpRequestPtr &, HttpResponsePtr);
+    void popReadyResponses(std::vector<std::pair<HttpResponsePtr, bool>> &);
     size_t numberOfRequestsInPipelining() const
     {
         return requestPipelining_.size();

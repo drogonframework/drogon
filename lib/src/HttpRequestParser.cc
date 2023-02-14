@@ -450,42 +450,32 @@ void HttpRequestParser::pushRequestToPipelining(const HttpRequestPtr &req,
     requestPipelining_.push_back({req, {nullptr, isHeadMethod}});
 }
 
-HttpRequestPtr HttpRequestParser::getFirstRequest() const
-{
-    assert(loop_->isInLoopThread());
-    if (!requestPipelining_.empty())
-    {
-        return requestPipelining_.front().first;
-    }
-    return nullptr;
-}
-
-std::pair<HttpResponsePtr, bool> HttpRequestParser::getFirstResponse() const
-{
-    assert(loop_->isInLoopThread());
-    if (!requestPipelining_.empty())
-    {
-        return requestPipelining_.front().second;
-    }
-    return {nullptr, false};
-}
-
-void HttpRequestParser::popFirstRequest()
-{
-    assert(loop_->isInLoopThread());
-    requestPipelining_.pop_front();
-}
-
-void HttpRequestParser::pushResponseToPipelining(const HttpRequestPtr &req,
+/**
+ * @return returns true if the the response is the first in pipeline
+ */
+bool HttpRequestParser::pushResponseToPipelining(const HttpRequestPtr &req,
                                                  HttpResponsePtr resp)
 {
     assert(loop_->isInLoopThread());
-    for (auto &iter : requestPipelining_)
+    for (size_t i = 0; i != requestPipelining_.size(); ++i)
     {
-        if (iter.first == req)
+        if (requestPipelining_[i].first == req)
         {
-            iter.second.first = std::move(resp);
-            return;
+            requestPipelining_[i].second.first = std::move(resp);
+            return i == 0;
         }
+    }
+    assert(false);  // Should always find a match
+    return false;
+}
+
+void HttpRequestParser::popReadyResponses(
+    std::vector<std::pair<HttpResponsePtr, bool>> &buffer)
+{
+    while (!requestPipelining_.empty() &&
+           requestPipelining_.front().second.first)
+    {
+        buffer.push_back(std::move(requestPipelining_.front().second));
+        requestPipelining_.pop_front();
     }
 }
