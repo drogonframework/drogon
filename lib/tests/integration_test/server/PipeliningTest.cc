@@ -69,7 +69,7 @@ void PipeliningTest::strangePipe1(
         cb1 = std::move(item.first);
         body1 = std::move(item.second);
         cb2 = std::move(callback);
-        body2 = req->body();
+        body2 = std::string{req->body()};
     }
     if (cb1)
     {
@@ -103,8 +103,6 @@ void PipeliningTest::strangePipe2(
     std::string body1;
     std::function<void(const HttpResponsePtr &)> cb2;
     std::string body2;
-
-    std::string lastBody;
     {
         std::lock_guard<std::mutex> lock(mtx);
         ++idx;
@@ -130,7 +128,7 @@ void PipeliningTest::strangePipe2(
             body1 = std::move(item.second);
             callbacks.pop_back();
             cb2 = std::move(callback);
-            body2 = req->getBody();
+            body2 = std::string{req->body()};
         }
     }
     if (cb1)
