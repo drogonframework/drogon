@@ -13,17 +13,16 @@
  */
 
 #include "HttpServer.h"
-#include "HttpRequestImpl.h"
-#include "HttpRequestParser.h"
-#include "HttpAppFrameworkImpl.h"
-#include "HttpResponseImpl.h"
-#include "WebSocketConnectionImpl.h"
-#include <drogon/HttpRequest.h>
 #include <drogon/HttpResponse.h>
 #include <drogon/utils/Utilities.h>
+#include <trantor/utils/Logger.h>
 #include <functional>
 #include <utility>
-#include <trantor/utils/Logger.h>
+#include "HttpAppFrameworkImpl.h"
+#include "HttpRequestImpl.h"
+#include "HttpRequestParser.h"
+#include "HttpResponseImpl.h"
+#include "WebSocketConnectionImpl.h"
 
 #if COZ_PROFILING
 #include <coz.h>
