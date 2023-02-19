@@ -166,6 +166,8 @@ static void loadLogSetting(const Json::Value &log)
     {
         trantor::Logger::setLogLevel(trantor::Logger::kWarn);
     }
+    auto localTime = log.get("display_local_time", false).asBool();
+    trantor::Logger::setDisplayLocalTime(localTime);
 }
 static void loadControllers(const Json::Value &controllers)
 {
