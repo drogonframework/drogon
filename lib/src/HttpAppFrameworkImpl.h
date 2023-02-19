@@ -304,6 +304,7 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
                                  const std::string &logfileBaseName,
                                  size_t logfileSize) override;
     HttpAppFramework &setLogLevel(trantor::Logger::LogLevel level) override;
+    HttpAppFramework &setLogLocalTime(bool on) override;
     HttpAppFramework &enableSendfile(bool sendFile) override
     {
         useSendfile_ = sendFile;

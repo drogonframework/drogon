@@ -929,6 +929,16 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
      */
     virtual HttpAppFramework &setLogLevel(trantor::Logger::LogLevel level) = 0;
 
+    /// Set the log time display
+    /**
+     * @param on is true to display local time, false to display UTC time. The
+     * Default value is false.
+     *
+     * @note
+     * This operation can be performed by an option in the configuration file.
+     */
+    virtual HttpAppFramework &setLogLocalTime(bool on) = 0;
+
     /// Enable the sendfile system call in linux.
     /**
      * @param sendFile if the parameter is true, sendfile() system-call is used

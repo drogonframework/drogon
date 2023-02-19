@@ -434,6 +434,11 @@ HttpAppFramework &HttpAppFrameworkImpl::setLogLevel(
     trantor::Logger::setLogLevel(level);
     return *this;
 }
+HttpAppFramework &HttpAppFrameworkImpl::setLogLocalTime(bool on)
+{
+    trantor::Logger::setDisplayLocalTime(on);
+    return *this;
+}
 HttpAppFramework &HttpAppFrameworkImpl::setSSLConfigCommands(
     const std::vector<std::pair<std::string, std::string>> &sslConfCmds)
 {
