@@ -13,7 +13,7 @@ env:
 jobs:
   windows:
     name: windows/msvc - ${{ matrix.link }}
-    runs-on: windows-2019
+    runs-on: windows-latest
     strategy:
       fail-fast: false
       matrix:
@@ -35,7 +35,7 @@ jobs:
         working-directory: ./build
         run: |
           conan profile detect
-          conan install .. -s compiler="msvc" -sbuild_type=Debug --build=missing
+          conan install .. -s compiler="msvc" -sbuild_type=Debug --build=missing -s compiler.cppstd=17
 
       - name: Create Build Environment & Configure Cmake
         shell: bash
