@@ -36,6 +36,7 @@ jobs:
         run: |
           conan profile detect
           conan install .. -s compiler="msvc" -s compiler.version=193 -sbuild_type=Debug --build=missing
+          conan install boost/1.76.0
 
       - name: Create Build Environment & Configure Cmake
         shell: bash
