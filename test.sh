@@ -134,7 +134,7 @@ cd ../build
 if [ $os = "windows" ]; then
   conan profile detect
   conan install $src_dir -s compiler="msvc" -s build_type=Debug --build=missing -s compiler.cppstd=17
-  cmake_gen="$cmake_gen -DCMAKE_BUILD_TYPE=Debug -DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake -DCMAKE_INSTALL_PREFIX=$src_dir/install -DBUILD_CTL=ON -DBUILD_EXAMPLES=ON -DCMAKE_POLICY_DEFAULT_CMP0091=NEW -DCMAKE_CXX_STANDARD=17"
+  cmake_gen="$cmake_gen -DCMAKE_BUILD_TYPE=Debug --preset conan-default -DCMAKE_INSTALL_PREFIX=$src_dir/install -DBUILD_CTL=ON -DBUILD_EXAMPLES=ON -DCMAKE_POLICY_DEFAULT_CMP0091=NEW -DCMAKE_CXX_STANDARD=17"
 fi
 cmake .. $cmake_gen
 
