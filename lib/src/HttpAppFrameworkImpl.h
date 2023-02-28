@@ -431,13 +431,13 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
         return running_;
     }
 
-    HttpAppFramework &setJsonParserStackLimit(uint64_t limit) noexcept override
+    HttpAppFramework &setJsonParserStackLimit(size_t limit) noexcept override
     {
         jsonStackLimit_ = limit;
         return *this;
     }
 
-    uint64_t getJsonParserStackLimit() const noexcept override
+    size_t getJsonParserStackLimit() const noexcept override
     {
         return jsonStackLimit_;
     }
@@ -677,7 +677,7 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     size_t logfileSize_{100000000};
     size_t keepaliveRequestsNumber_{0};
     size_t pipeliningRequestsNumber_{0};
-    uint64_t jsonStackLimit_{1000};
+    size_t jsonStackLimit_{1000};
     bool useSendfile_{true};
     bool useGzip_{true};
     bool useBrotli_{false};

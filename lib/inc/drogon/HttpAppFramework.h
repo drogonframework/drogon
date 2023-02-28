@@ -1255,13 +1255,13 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
      * This operation can be performed by an option in the configuration file.
      */
     virtual HttpAppFramework &setJsonParserStackLimit(
-        uint64_t limit) noexcept = 0;
+        size_t limit) noexcept = 0;
 
     /**
      * @brief Get the maximum stack depth of the json parser when reading a json
      * string.
      */
-    virtual uint64_t getJsonParserStackLimit() const noexcept = 0;
+    virtual size_t getJsonParserStackLimit() const noexcept = 0;
     /**
      * @brief This method is to enable or disable the unicode escaping (\u) in
      * the json string of HTTP responses or requests. it works (disable
