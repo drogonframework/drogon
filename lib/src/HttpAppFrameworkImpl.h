@@ -14,17 +14,22 @@
 
 #pragma once
 
-#include "impl_forwards.h"
 #include <drogon/HttpAppFramework.h>
 #include <drogon/config.h>
 #include <json/json.h>
+#include <functional>
+#include <limits>
 #include <memory>
 #include <mutex>
 #include <regex>
 #include <string>
 #include <vector>
-#include <functional>
-#include <limits>
+#include "impl_forwards.h"
+
+namespace trantor
+{
+class EventLoopThreadPool;
+}
 
 namespace drogon
 {
@@ -635,6 +640,8 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     std::atomic_bool routersInit_{false};
 
     size_t threadNum_{1};
+    std::unique_ptr<trantor::EventLoopThreadPool> ioLoopThreadPool_;
+
 #ifndef _WIN32
     std::vector<std::string> libFilePaths_;
     std::string libFileOutputPath_;
