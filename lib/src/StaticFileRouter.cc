@@ -20,6 +20,7 @@
 #include <fstream>
 #include <iostream>
 #include <algorithm>
+#include <memory>
 #include <fcntl.h>
 #ifndef _WIN32
 #include <sys/file.h>
@@ -34,23 +35,25 @@
 
 using namespace drogon;
 
-void StaticFileRouter::init(const std::vector<trantor::EventLoop *> &ioloops)
+void StaticFileRouter::init(const std::vector<trantor::EventLoop *> &ioLoops)
 {
     // Max timeout up to about 70 days;
     staticFilesCacheMap_ = std::make_unique<
         IOThreadStorage<std::unique_ptr<CacheMap<std::string, char>>>>();
     staticFilesCacheMap_->init(
-        [&ioloops](std::unique_ptr<CacheMap<std::string, char>> &mapPtr,
+        [&ioLoops](std::unique_ptr<CacheMap<std::string, char>> &mapPtr,
                    size_t i) {
-            assert(i == ioloops[i]->index());
-            mapPtr = std::unique_ptr<CacheMap<std::string, char>>(
-                new CacheMap<std::string, char>(ioloops[i], 1.0, 4, 50));
+            assert(i == ioLoops[i]->index());
+            mapPtr = std::make_unique<CacheMap<std::string, char>>(ioLoops[i],
+                                                                   1.0,
+                                                                   4,
+                                                                   50);
         });
     staticFilesCache_ = std::make_unique<
         IOThreadStorage<std::unordered_map<std::string, HttpResponsePtr>>>();
     ioLocationsPtr_ =
         std::make_shared<IOThreadStorage<std::vector<Location>>>();
-    for (auto *loop : ioloops)
+    for (auto *loop : ioLoops)
     {
         loop->queueInLoop(
             [ioLocationsPtr = ioLocationsPtr_, locations = locations_] {

@@ -14,14 +14,15 @@
 
 #pragma once
 
-#include "impl_forwards.h"
 #include <trantor/net/TcpServer.h>
 #include <trantor/net/callbacks.h>
 #include <trantor/utils/NonCopyable.h>
 #include <functional>
 #include <string>
 #include <vector>
+#include "impl_forwards.h"
 
+struct CallbackParamPack;
 namespace drogon
 {
 class HttpServer : trantor::NonCopyable
@@ -29,7 +30,7 @@ class HttpServer : trantor::NonCopyable
   public:
     HttpServer(trantor::EventLoop *loop,
                const trantor::InetAddress &listenAddr,
-               const std::string &name,
+               std::string name,
                const std::vector<
                    std::function<HttpResponsePtr(const HttpRequestPtr &)>>
                    &syncAdvices,
@@ -48,7 +49,6 @@ class HttpServer : trantor::NonCopyable
     {
         httpAsyncCallback_ = cb;
     }
-
     void setNewWebsocketCallback(const WebSocketNewAsyncCallback &cb)
     {
         newWebsocketCallback_ = cb;
@@ -65,6 +65,10 @@ class HttpServer : trantor::NonCopyable
     void setIoLoopNum(int numThreads)
     {
         server_.setIoLoopNum(numThreads);
+    }
+    void setIoLoops(const std::vector<trantor::EventLoop *> &ioLoops)
+    {
+        server_.setIoLoops(ioLoops);
     }
     void kickoffIdleConnections(size_t timeout)
     {
@@ -101,6 +105,9 @@ class HttpServer : trantor::NonCopyable
     void onRequests(const trantor::TcpConnectionPtr &,
                     const std::vector<HttpRequestImplPtr> &,
                     const std::shared_ptr<HttpRequestParser> &);
+    void handleResponse(const HttpResponsePtr &response,
+                        const std::shared_ptr<CallbackParamPack> &paramPack,
+                        bool *respReadyPtr);
     void sendResponse(const trantor::TcpConnectionPtr &,
                       const HttpResponsePtr &,
                       bool isHeadMethod);
@@ -114,6 +121,7 @@ class HttpServer : trantor::NonCopyable
     trantor::ConnectionCallback connectionCallback_;
     const std::vector<std::function<HttpResponsePtr(const HttpRequestPtr &)>>
         &syncAdvices_;
+    const bool hasSyncAdvices_;
     const std::vector<
         std::function<void(const HttpRequestPtr &, const HttpResponsePtr &)>>
         &preSendingAdvices_;
