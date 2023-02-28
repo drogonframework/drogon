@@ -42,7 +42,8 @@ void HttpRequestImpl::parseJson() const
         static Json::CharReaderBuilder builder;
         std::call_once(once, []() {
             builder["collectComments"] = false;
-            builder["stackLimit"] = drogon::app().getJsonParserStackLimit();
+            builder["stackLimit"] = static_cast<Json::UInt>(
+                drogon::app().getJsonParserStackLimit());
         });
         jsonPtr_ = std::make_shared<Json::Value>();
         JSONCPP_STRING errs;

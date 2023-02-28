@@ -899,7 +899,8 @@ void HttpResponseImpl::parseJson() const
     static Json::CharReaderBuilder builder;
     std::call_once(once, []() {
         builder["collectComments"] = false;
-        builder["stackLimit"] = drogon::app().getJsonParserStackLimit();
+        builder["stackLimit"] =
+            static_cast<Json::UInt>(drogon::app().getJsonParserStackLimit());
     });
     JSONCPP_STRING errs;
     std::unique_ptr<Json::CharReader> reader(builder.newCharReader());
