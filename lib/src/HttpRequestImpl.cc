@@ -40,7 +40,11 @@ void HttpRequestImpl::parseJson() const
     {
         static std::once_flag once;
         static Json::CharReaderBuilder builder;
-        std::call_once(once, []() { builder["collectComments"] = false; });
+        std::call_once(once, []() {
+            builder["collectComments"] = false;
+            builder["stackLimit"] = static_cast<Json::UInt>(
+                drogon::app().getJsonParserStackLimit());
+        });
         jsonPtr_ = std::make_shared<Json::Value>();
         JSONCPP_STRING errs;
         std::unique_ptr<Json::CharReader> reader(builder.newCharReader());
