@@ -97,12 +97,7 @@ class HttpServer : trantor::NonCopyable
         server_.enableSSL(std::move(policy));
     }
 
-    void enableSSL(const trantor::TLSPolicyPtr &policy)
-    {
-        server_.enableSSL(policy);
-    }
-
-    void enableSSL(trantor::TLSPolicyPtr &&policy)
+    void enableSSL(trantor::TLSPolicyPtr policy)
     {
         server_.enableSSL(std::move(policy));
     }
