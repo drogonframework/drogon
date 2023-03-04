@@ -1172,49 +1172,9 @@ bool supportsTls() noexcept
     return trantor::utils::tlsBackend() != "None";
 }
 
-/**
- * @brief Generates `size` random bytes from the systems random source and
- * stores them into `ptr`.
- */
-static bool systemRandomBytes(void *ptr, size_t size)
-{
-#if defined(__BSD__) || defined(__APPLE__)
-    arc4random_buf(ptr, size);
-    return true;
-#elif defined(__linux__) && \
-    ((defined(__GLIBC__) && \
-      (__GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 25))))
-    return getentropy(ptr, size) != -1;
-#elif defined(_WIN32)  // Windows
-    return RtlGenRandom(ptr, (ULONG)size);
-#elif defined(__unix__) || defined(__HAIKU__)
-    // fallback to /dev/urandom for other/old UNIX
-    thread_local std::unique_ptr<FILE, std::function<void(FILE *)> > fptr(
-        fopen("/dev/urandom", "rb"), [](FILE *ptr) {
-            if (ptr != nullptr)
-                fclose(ptr);
-        });
-    if (fptr == nullptr)
-    {
-        LOG_FATAL << "Failed to open /dev/urandom for randomness";
-        abort();
-    }
-    if (fread(ptr, 1, size, fptr.get()) != 0)
-        return true;
-#endif
-    return false;
-}
-
 bool secureRandomBytes(void *ptr, size_t size)
 {
-// TODO: Make trantor expose a secure random number generator
-#ifdef OpenSSL_FOUND
-    if (RAND_bytes((unsigned char *)ptr, (int)size) == 0)
-        return true;
-#endif
-    if (systemRandomBytes(ptr, size))
-        return true;
-    return false;
+    return trantor::utils::secureRandomBytes(ptr, size);
 }
 
 namespace internal
