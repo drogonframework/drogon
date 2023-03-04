@@ -201,6 +201,16 @@ find_package(Jsoncpp REQUIRED)
 target_link_libraries(${PROJECT_NAME} PUBLIC Jsoncpp_lib)
 list(APPEND INCLUDE_DIRS_FOR_DYNAMIC_VIEW ${JSONCPP_INCLUDE_DIRS})
 
+# yamlcpp
+find_package(yaml-cpp QUIET)
+if(yaml-cpp_FOUND)
+message(STATUS "yaml-cpp found")
+target_link_libraries(${PROJECT_NAME} PUBLIC ${YAML_CPP_LIBRARIES})
+target_compile_definitions(${PROJECT_NAME} PUBLIC HAS_YAML_CPP)
+else()
+message(STATUS "yaml-cpp not used")
+endif()
+
 if (NOT ${CMAKE_SYSTEM_NAME} STREQUAL "FreeBSD"
     AND NOT ${CMAKE_SYSTEM_NAME} STREQUAL "OpenBSD"
     AND NOT WIN32)

@@ -33,7 +33,11 @@
 #define os_access access
 #endif
 #endif
+#ifdef HAS_YAML_CPP
+#include <yaml-cpp/yaml.h>
+#endif
 #include <drogon/utils/Utilities.h>
+#include "filesystem.h"
 
 using namespace drogon;
 static bool bytesSize(std::string &sizeStr, size_t &size)
@@ -101,6 +105,101 @@ static bool bytesSize(std::string &sizeStr, size_t &size)
         return true;
     }
 }
+
+#ifdef HAS_YAML_CPP
+namespace YAML
+{
+
+static bool yaml2json(const Node &node, Json::Value &jsonValue)
+{
+    if (node.IsNull())
+    {
+        return false;
+    }
+    else if (node.IsScalar())
+    {
+        if (node.Tag() != "!")
+        {
+            try
+            {
+                jsonValue = node.as<int64_t>();
+                return true;
+            }
+            catch (const YAML::BadConversion &e)
+            {
+            }
+            try
+            {
+                jsonValue = node.as<double>();
+                return true;
+            }
+            catch (const YAML::BadConversion &e)
+            {
+            }
+            try
+            {
+                jsonValue = node.as<bool>();
+                return true;
+            }
+            catch (const YAML::BadConversion &e)
+            {
+            }
+        }
+
+        Json::Value v(node.Scalar());
+        jsonValue.swapPayload(v);
+        return true;
+    }
+    else if (node.IsSequence())
+    {
+        for (std::size_t i = 0; i < node.size(); i++)
+        {
+            Json::Value v;
+            if (yaml2json(node[i], v))
+            {
+                jsonValue.append(v);
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+    else if (node.IsMap())
+    {
+        for (YAML::const_iterator it = node.begin(); it != node.end(); ++it)
+        {
+            Json::Value v;
+            if (yaml2json(it->second, v))
+            {
+                jsonValue[it->first.Scalar()] = v;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    return false;
+}
+
+template <>
+struct convert<Json::Value>
+{
+    static bool decode(const Node &node, Json::Value &rhs)
+    {
+        return yaml2json(node, rhs);
+    };
+};
+}  // namespace YAML
+
+#endif
+
 ConfigLoader::ConfigLoader(const std::string &configFile)
 {
     if (os_access(drogon::utils::toNativePath(configFile).c_str(), 0) != 0)
@@ -115,11 +214,34 @@ ConfigLoader::ConfigLoader(const std::string &configFile)
     configFile_ = configFile;
     try
     {
-        std::ifstream infile(drogon::utils::toNativePath(configFile).c_str(),
-                             std::ifstream::in);
-        if (infile)
+        auto filename = drogon::utils::toNativePath(configFile);
+        auto extension = filesystem::path(filename).extension();
+
+        if (extension == ".json")
         {
-            infile >> configJsonRoot_;
+            // parse json file
+            std::ifstream infile(filename.c_str(), std::ifstream::in);
+            if (infile)
+            {
+                infile >> configJsonRoot_;
+            }
+        }
+        else if (extension == ".yaml" || extension == ".yml")
+        {
+#if HAS_YAML_CPP
+            // parse yaml file
+            YAML::Node config = YAML::LoadFile(filename);
+            if (!config.IsNull())
+            {
+                configJsonRoot_ = config.as<Json::Value>();
+            }
+#else
+            throw new std::runtime_error("please install yaml-cpp lib");
+#endif
+        }
+        else
+        {
+            throw new std::runtime_error("config file format not support");
         }
     }
     catch (std::exception &e)
