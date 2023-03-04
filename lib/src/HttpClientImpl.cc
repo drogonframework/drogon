@@ -124,6 +124,8 @@ void HttpClientImpl::createTcpClient()
             thisPtr->onError(ReqResult::HandshakeError);
         else if (err == trantor::SSLError::kSSLInvalidCertificate)
             thisPtr->onError(ReqResult::InvalidCertificate);
+        else if (err == trantor::SSLError::kSSLProtocolError)
+            thisPtr->onError(ReqResult::EncryptionFailure);
         else
         {
             LOG_FATAL << "Invalid value for SSLError";
@@ -157,12 +159,12 @@ HttpClientImpl::HttpClientImpl(trantor::EventLoop *loop,
                    lowerHost.end(),
                    lowerHost.begin(),
                    [](unsigned char c) { return tolower(c); });
-    if (lowerHost.find("https://") != std::string::npos)
+    if (lowerHost.find("https://") == 0)
     {
         useSSL_ = true;
         lowerHost = lowerHost.substr(8);
     }
-    else if (lowerHost.find("http://") != std::string::npos)
+    else if (lowerHost.find("http://") == 0)
     {
         useSSL_ = false;
         lowerHost = lowerHost.substr(7);

@@ -1,5 +1,3 @@
 [submodule "trantor"]
 	path = trantor
 	url = https://github.com/an-tao/trantor.git
-	commit = 8bf4ebae0e6e6f5f27e4a41e99bf7ae5b850a55
-

@@ -30,20 +30,18 @@
 #include <unistd.h>
 #endif
 #include <zlib.h>
-#include <iomanip>
-#include <mutex>
 #include <sstream>
-#include <stack>
 #include <string>
-#include <thread>
+#include <mutex>
 #include <algorithm>
 #include <array>
+#include <locale>
+#include <clocale>
 #include <cctype>
 #include <cstdlib>
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
-#include <fcntl.h>
 #include <stdarg.h>
 
 #ifdef _WIN32
