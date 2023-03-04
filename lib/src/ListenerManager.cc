@@ -141,7 +141,10 @@ void ListenerManager::createListeners(
                 std::copy(listener.sslConfCmds_.begin(),
                           listener.sslConfCmds_.end(),
                           std::back_inserter(cmds));
-                serverPtr->enableSSL(cert, key, listener.useOldTLS_, cmds);
+                auto policy =
+                    trantor::TLSPolicy::defaultServerPolicy(cert, key);
+                policy->setConfCmds(cmds).setUseOldTLS(listener.useOldTLS_);
+                serverPtr->enableSSL(std::move(policy));
             }
             serverPtr->setHttpAsyncCallback(httpCallback);
             serverPtr->setNewWebsocketCallback(webSocketCallback);
@@ -183,10 +186,10 @@ void ListenerManager::createListeners(
                     exit(1);
                 }
                 auto cmds = sslConfCmds;
-                std::copy(listener.sslConfCmds_.begin(),
-                          listener.sslConfCmds_.end(),
-                          std::back_inserter(cmds));
-                serverPtr->enableSSL(cert, key, listener.useOldTLS_, cmds);
+                auto policy =
+                    trantor::TLSPolicy::defaultServerPolicy(cert, key);
+                policy->setConfCmds(cmds).setUseOldTLS(listener.useOldTLS_);
+                serverPtr->enableSSL(std::move(policy));
             }
             serverPtr->setIoLoops(ioLoops);
             serverPtr->setHttpAsyncCallback(httpCallback);

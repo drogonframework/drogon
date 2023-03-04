@@ -51,7 +51,11 @@ void WebSocketClientImpl::createTcpClient()
         std::make_shared<trantor::TcpClient>(loop_, serverAddr_, "httpClient");
     if (useSSL_)
     {
-        tcpClientPtr_->enableSSL(useOldTLS_, validateCert_, domain_);
+        auto policy = trantor::TLSPolicy::defaultClientPolicy();
+        policy->setUseOldTLS(useOldTLS_)
+            .setValidate(validateCert_)
+            .setHostname(domain_);
+        tcpClientPtr_->enableSSL(std::move(policy));
     }
     auto thisPtr = shared_from_this();
     std::weak_ptr<WebSocketClientImpl> weakPtr = thisPtr;

@@ -91,7 +91,20 @@ class HttpServer : trantor::NonCopyable
         bool useOldTLS,
         const std::vector<std::pair<std::string, std::string>> &sslConfCmds)
     {
-        server_.enableSSL(certPath, keyPath, useOldTLS, sslConfCmds);
+        auto policy =
+            trantor::TLSPolicy::defaultServerPolicy(certPath, keyPath);
+        policy->setConfCmds(sslConfCmds).setUseOldTLS(useOldTLS);
+        server_.enableSSL(std::move(policy));
+    }
+
+    void enableSSL(const trantor::TLSPolicyPtr &policy)
+    {
+        server_.enableSSL(policy);
+    }
+
+    void enableSSL(trantor::TLSPolicyPtr &&policy)
+    {
+        server_.enableSSL(std::move(policy));
     }
 
     const trantor::InetAddress &address() const

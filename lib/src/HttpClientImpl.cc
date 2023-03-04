@@ -41,12 +41,14 @@ void HttpClientImpl::createTcpClient()
     {
         LOG_TRACE << "useOldTLS=" << useOldTLS_;
         LOG_TRACE << "domain=" << domain_;
-        tcpClientPtr_->enableSSL(useOldTLS_,
-                                 validateCert_,
-                                 domain_,
-                                 sslConfCmds_,
-                                 clientCertPath_,
-                                 clientKeyPath_);
+        auto policy = trantor::TLSPolicy::defaultClientPolicy();
+        policy->setUseOldTLS(useOldTLS_)
+            .setValidate(validateCert_)
+            .setHostname(domain_)
+            .setConfCmds(sslConfCmds_)
+            .setCertPath(clientCertPath_)
+            .setKeyPath(clientKeyPath_);
+        tcpClientPtr_->enableSSL(std::move(policy));
     }
 
     auto thisPtr = shared_from_this();
