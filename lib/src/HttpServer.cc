@@ -180,6 +180,7 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn, MsgBuffer *buf)
         req->setLocalAddr(conn->localAddr());
         req->setCreationDate(trantor::Date::date());
         req->setSecure(conn->isSSLConnection());
+        req->setPeerCertificate(conn->peerCertificate());
         if (requestParser->firstReq() && isWebSocket(req))
         {
             auto wsConn = std::make_shared<WebSocketConnectionImpl>(conn);
@@ -506,29 +507,29 @@ static std::size_t chunkingCallback(
     // Alternative code if there are client softwares that do not support chunk
     // size with leading zeroes
     //    auto nHeaderLen =
-    //#ifdef _WIN32
+    // #ifdef _WIN32
     //    sprintf_s(pBuffer,
     //    nHeaderSize, "%llx\r",
     //    nDataSize);
-    //#else
+    // #else
     //    sprintf(pBuffer, "%lx\r",
     //    nDataSize);
-    //#endif
+    // #endif
     //    pBuffer[nHeaderLen++] = '\n';
     //    if (nHeaderLen < nHeaderSize)  // smaller that what was reserved ->
     //    move data
-    //#ifdef _WIN32
+    // #ifdef _WIN32
     //    memmove_s(pBuffer +
     //    nHeaderLen,
     //              nSize - nHeaderLen,
     //              pBuffer +
     //              nHeaderSize,
     //              nDataSize + 2);
-    //#else
+    // #else
     //    memmove(pBuffer + nHeaderLen,
     //            pBuffer + nHeaderSize,
     //            nDataSize + 2);
-    //#endif
+    // #endif
     //    return nHeaderLen + nDataSize + 2;
 }
 

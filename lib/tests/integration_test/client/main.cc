@@ -49,9 +49,10 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
         req->setMethod(drogon::Get);
         req->setPath("/");
         std::promise<int> waitCookie;
+        bool haveCert = false;
         auto f = waitCookie.get_future();
         client->sendRequest(req,
-                            [client, &waitCookie, TEST_CTX](
+                            [client, &waitCookie, &haveCert, TEST_CTX](
                                 ReqResult result, const HttpResponsePtr &resp) {
                                 REQUIRE(result == ReqResult::Ok);
 
@@ -61,8 +62,11 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
                                 sessionID = id;
                                 client->addCookie(id);
                                 waitCookie.set_value(1);
+
+                                haveCert = resp->peerCertificate() != nullptr;
                             });
         f.get();
+        CHECK(haveCert == client->secure());
     }
     else
         client->addCookie(sessionID);
