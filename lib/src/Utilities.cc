@@ -25,7 +25,6 @@
 #include <Rpc.h>
 #include <direct.h>
 #include <io.h>
-#include <ntsecapi.h>
 #else
 #include <uuid.h>
 #include <unistd.h>
