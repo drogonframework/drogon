@@ -109,7 +109,6 @@ static bool bytesSize(std::string &sizeStr, size_t &size)
 #ifdef HAS_YAML_CPP
 namespace YAML
 {
-
 static bool yaml2json(const Node &node, Json::Value &jsonValue)
 {
     if (node.IsNull())
