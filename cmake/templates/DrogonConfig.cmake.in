@@ -40,6 +40,9 @@ endif()
 if(@Hiredis_FOUND@)
 find_dependency(Hiredis)
 endif()
+if(@yaml-cpp_FOUND)
+find_dependency(yaml-cpp)
+endif()
 if(@BUILD_SHARED_LIBS@)
 find_dependency(Threads)
 endif()
@@ -47,6 +50,7 @@ if(@HAS_STD_FILESYSTEM_PATH@)
 find_dependency(Filesystem)
 find_package(Filesystem COMPONENTS Final REQUIRED)
 endif()
+
 
 # Our library dependencies (contains definitions for IMPORTED targets)
 
