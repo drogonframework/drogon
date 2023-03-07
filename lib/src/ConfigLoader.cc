@@ -378,7 +378,7 @@ static void loadApp(const Json::Value &app)
         }
     }
 #endif
-    auto stackLimit = app.get("json_parser_stack_limit", 0).asUInt64();
+    auto stackLimit = app.get("json_parser_stack_limit", 1000).asUInt64();
     drogon::app().setJsonParserStackLimit(stackLimit);
     auto unicodeEscaping =
         app.get("enable_unicode_escaping_in_json", true).asBool();
