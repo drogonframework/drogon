@@ -107,7 +107,7 @@ static bool bytesSize(std::string &sizeStr, size_t &size)
 }
 
 #ifdef HAS_YAML_CPP
-namespace yaml
+namespace YAML
 {
 static bool yaml2json(const Node &node, Json::Value &jsonValue)
 {
@@ -124,7 +124,7 @@ static bool yaml2json(const Node &node, Json::Value &jsonValue)
                 jsonValue = node.as<int64_t>();
                 return true;
             }
-            catch (const yaml::BadConversion &e)
+            catch (const YAML::BadConversion &e)
             {
             }
             try
@@ -132,7 +132,7 @@ static bool yaml2json(const Node &node, Json::Value &jsonValue)
                 jsonValue = node.as<double>();
                 return true;
             }
-            catch (const yaml::BadConversion &e)
+            catch (const YAML::BadConversion &e)
             {
             }
             try
@@ -140,7 +140,7 @@ static bool yaml2json(const Node &node, Json::Value &jsonValue)
                 jsonValue = node.as<bool>();
                 return true;
             }
-            catch (const yaml::BadConversion &e)
+            catch (const YAML::BadConversion &e)
             {
             }
         }
@@ -168,7 +168,7 @@ static bool yaml2json(const Node &node, Json::Value &jsonValue)
     }
     else if (node.IsMap())
     {
-        for (yaml::const_iterator it = node.begin(); it != node.end(); ++it)
+        for (YAML::const_iterator it = node.begin(); it != node.end(); ++it)
         {
             Json::Value v;
             if (yaml2json(it->second, v))
@@ -195,7 +195,7 @@ struct convert<Json::Value>
         return yaml2json(node, rhs);
     };
 };
-}  // namespace yaml
+}  // namespace YAML
 
 #endif
 
@@ -229,7 +229,7 @@ ConfigLoader::ConfigLoader(const std::string &configFile)
         {
 #if HAS_YAML_CPP
             // parse yaml file
-            yaml::Node config = yaml::LoadFile(filename);
+            YAML::Node config = YAML::LoadFile(filename);
             if (!config.IsNull())
             {
                 configJsonRoot_ = config.as<Json::Value>();
