@@ -287,7 +287,10 @@ set(DROGON_SOURCES
     lib/src/SlidingWindowRateLimiter.cc
     lib/src/TokenBucketRateLimiter.cc
     lib/src/Hodor.cc
-    lib/src/drogon_test.cc)
+    lib/src/drogon_test.cc
+    lib/src/ConfigAdapterManager.cc
+    lib/src/JsonConfigAdapter.cc
+    lib/src/YamlConfigAdapter.cc)
 set(private_headers
     lib/src/AOPAdvice.h
     lib/src/CacheFile.h
@@ -319,7 +322,11 @@ set(private_headers
     lib/src/WebsocketControllersRouter.h
     lib/src/FixedWindowRateLimiter.h
     lib/src/SlidingWindowRateLimiter.h
-    lib/src/TokenBucketRateLimiter.h)
+    lib/src/TokenBucketRateLimiter.h
+    lib/src/ConfigAdapterManager.h
+    lib/src/JsonConfigAdapter.h
+    lib/src/YamlConfigAdapter.h
+    lib/src/ConfigAdapter.h)
 
 if (NOT WIN32)
     set(DROGON_SOURCES
