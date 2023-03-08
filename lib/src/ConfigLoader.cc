@@ -33,7 +33,10 @@
 #define os_access access
 #endif
 #endif
+
 #include <drogon/utils/Utilities.h>
+#include "filesystem.h"
+#include "ConfigAdapterManager.h"
 
 using namespace drogon;
 static bool bytesSize(std::string &sizeStr, size_t &size)
@@ -101,6 +104,7 @@ static bool bytesSize(std::string &sizeStr, size_t &size)
         return true;
     }
 }
+
 ConfigLoader::ConfigLoader(const std::string &configFile)
 {
     if (os_access(drogon::utils::toNativePath(configFile).c_str(), 0) != 0)
@@ -115,12 +119,8 @@ ConfigLoader::ConfigLoader(const std::string &configFile)
     configFile_ = configFile;
     try
     {
-        std::ifstream infile(drogon::utils::toNativePath(configFile).c_str(),
-                             std::ifstream::in);
-        if (infile)
-        {
-            infile >> configJsonRoot_;
-        }
+        auto filename = drogon::utils::toNativePath(configFile);
+        configJsonRoot_ = ConfigAdapterManager::instance().getJson(configFile);
     }
     catch (std::exception &e)
     {
