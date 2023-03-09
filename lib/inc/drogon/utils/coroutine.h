@@ -816,5 +816,55 @@ std::function<void()> async_func(Coro &&coro)
         async_run(std::move(coro));
     };
 }
+namespace internal
+{
+template <typename T>
+struct [[nodiscard]] EventLoopAwaiter : public drogon::CallbackAwaiter<T>
+{
+    EventLoopAwaiter(std::function<T()> &&task, trantor::EventLoop *loop)
+        : task_(std::move(task)), loop_(loop)
+    {
+    }
+    void await_suspend(std::coroutine_handle<> handle)
+    {
+        loop_->queueInLoop([this, handle]() {
+            try
+            {
+                if constexpr (!std::is_same_v<T, void>)
+                {
+                    this->setValue(task_());
+                    handle.resume();
+                }
+                else
+                {
+                    task_();
+                    handle.resume();
+                }
+            }
+            catch (const std::exception &err)
+            {
+                LOG_ERROR << err.what();
+                this->setException(std::current_exception());
+                handle.resume();
+            }
+        });
+    }
+
+  private:
+    std::function<T()> task_;
+    trantor::EventLoop *loop_;
+};
+}  // namespace internal
+
+/**
+ * @brief Run a task in a given event loop and returns a resumable object that
+ * can be co_awaited in a coroutine.
+ */
+template <typename T>
+inline internal::EventLoopAwaiter<T> queueInLoopCoro(trantor::EventLoop *loop,
+                                                     std::function<T()> task)
+{
+    return internal::EventLoopAwaiter<T>(std::move(task), loop);
+}
 
 }  // namespace drogon

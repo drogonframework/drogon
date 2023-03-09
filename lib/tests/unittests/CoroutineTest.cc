@@ -107,6 +107,14 @@ DROGON_TEST(CroutineBasics)
         co_return;
     });
     CHECK(testVar == 1);
+    async_run([TEST_CTX]() -> Task<void> {
+        auto val =
+            co_await queueInLoopCoro<int>(app().getLoop(), []() { return 42; });
+        CHECK(val == 42);
+    });
+    async_run([TEST_CTX]() -> Task<void> {
+        co_await queueInLoopCoro<void>(app().getLoop(), []() { LOG_DEBUG; });
+    });
 }
 
 DROGON_TEST(CompilcatedCoroutineLifetime)
