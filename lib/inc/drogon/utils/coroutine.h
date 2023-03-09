@@ -238,7 +238,6 @@ struct [[nodiscard]] Task
             {
                 return std::move(coro_.promise().result());
             }
-
           private:
             handle_type coro_;
         };
