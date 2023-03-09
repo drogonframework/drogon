@@ -238,6 +238,7 @@ struct [[nodiscard]] Task
             {
                 return std::move(coro_.promise().result());
             }
+
           private:
             handle_type coro_;
         };
@@ -695,7 +696,6 @@ struct [[nodiscard]] LoopAwaiter : CallbackAwaiter<void>
     trantor::EventLoop *resumeLoop_{nullptr};
     std::function<void()> taskFunc_;
 };
-
 
 struct [[nodiscard]] SwitchThreadAwaiter : CallbackAwaiter<void>
 {
