@@ -71,9 +71,10 @@ int MultiPartParser::parse(const HttpRequestPtr &req)
     pos = contentType.find("boundary=");
     if (pos == std::string::npos)
         return -1;
-    return parse(req,
-                 contentType.data() + (pos + 9),
-                 contentType.size() - (pos + 9));
+    auto pos2 = contentType.find(';', pos);
+    if (pos2 == std::string::npos)
+        pos2 = contentType.size();
+    return parse(req, contentType.data() + (pos + 9), pos2 - (pos + 9));
 }
 static std::pair<string_view, string_view> parseLine(const char *begin,
                                                      const char *end)

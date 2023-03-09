@@ -14,17 +14,22 @@
 
 #pragma once
 
-#include "impl_forwards.h"
 #include <drogon/HttpAppFramework.h>
 #include <drogon/config.h>
 #include <json/json.h>
+#include <functional>
+#include <limits>
 #include <memory>
 #include <mutex>
 #include <regex>
 #include <string>
 #include <vector>
-#include <functional>
-#include <limits>
+#include "impl_forwards.h"
+
+namespace trantor
+{
+class EventLoopThreadPool;
+}
 
 namespace drogon
 {
@@ -304,6 +309,7 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
                                  const std::string &logfileBaseName,
                                  size_t logfileSize) override;
     HttpAppFramework &setLogLevel(trantor::Logger::LogLevel level) override;
+    HttpAppFramework &setLogLocalTime(bool on) override;
     HttpAppFramework &enableSendfile(bool sendFile) override
     {
         useSendfile_ = sendFile;
@@ -423,6 +429,17 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     bool isRunning() override
     {
         return running_;
+    }
+
+    HttpAppFramework &setJsonParserStackLimit(size_t limit) noexcept override
+    {
+        jsonStackLimit_ = limit;
+        return *this;
+    }
+
+    size_t getJsonParserStackLimit() const noexcept override
+    {
+        return jsonStackLimit_;
     }
 
     HttpAppFramework &setUnicodeEscapingInJson(bool enable) noexcept override
@@ -634,6 +651,8 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     std::atomic_bool routersInit_{false};
 
     size_t threadNum_{1};
+    std::unique_ptr<trantor::EventLoopThreadPool> ioLoopThreadPool_;
+
 #ifndef _WIN32
     std::vector<std::string> libFilePaths_;
     std::string libFileOutputPath_;
@@ -658,6 +677,7 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     size_t logfileSize_{100000000};
     size_t keepaliveRequestsNumber_{0};
     size_t pipeliningRequestsNumber_{0};
+    size_t jsonStackLimit_{1000};
     bool useSendfile_{true};
     bool useGzip_{true};
     bool useBrotli_{false};

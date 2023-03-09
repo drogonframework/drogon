@@ -697,6 +697,7 @@ struct [[nodiscard]] LoopAwaiter : CallbackAwaiter<void>
     std::function<void()> taskFunc_;
 };
 
+
 struct [[nodiscard]] SwitchThreadAwaiter : CallbackAwaiter<void>
 {
     explicit SwitchThreadAwaiter(trantor::EventLoop *loop) : loop_(loop)
@@ -709,6 +710,20 @@ struct [[nodiscard]] SwitchThreadAwaiter : CallbackAwaiter<void>
 
   private:
     trantor::EventLoop *loop_;
+};
+struct [[nodiscard]] EndAwaiter : CallbackAwaiter<void>
+{
+    EndAwaiter(trantor::EventLoop *loop) : loop_(loop)
+    {
+        assert(loop);
+    }
+    void await_suspend(std::coroutine_handle<> handle)
+    {
+        loop_->runOnQuit([handle]() { handle.resume(); });
+    }
+
+  private:
+    trantor::EventLoop *loop_{nullptr};
 };
 
 }  // namespace internal
@@ -742,6 +757,12 @@ inline internal::SwitchThreadAwaiter switchThreadCoro(
 {
     assert(loop);
     return internal::SwitchThreadAwaiter{loop};
+}
+
+inline internal::EndAwaiter untilQuit(trantor::EventLoop *loop)
+{
+    assert(loop);
+    return {loop};
 }
 
 template <typename T, typename = std::void_t<>>

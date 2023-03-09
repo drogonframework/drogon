@@ -94,6 +94,10 @@ PgConnection::PgConnection(trantor::EventLoop *loop,
         exit(1);
     }
     channel_.setReadCallback([this]() {
+        if (status_ == ConnectStatus::Bad)
+        {
+            return;
+        }
         if (status_ != ConnectStatus::Ok)
         {
             pgPoll();

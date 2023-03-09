@@ -19,6 +19,7 @@ option(COZ_PROFILING "Use coz for profiling" OFF)
 option(BUILD_SHARED_LIBS "Build drogon as a shared lib" OFF)
 option(BUILD_DOC "Build Doxygen documentation" OFF)
 option(BUILD_BROTLI "Build Brotli" ON)
+option(USE_SUBMODULE "Use trantor as a submodule" ON)
 
 include(CMakeDependentOption)
 CMAKE_DEPENDENT_OPTION(BUILD_POSTGRESQL "Build with postgresql support" ON "BUILD_ORM" OFF)
@@ -99,14 +100,18 @@ elseif (HAS_ANY AND HAS_STRING_VIEW)
 else ()
     set(DROGON_CXX_STANDARD 14)
 endif ()
-
+if(USE_SUBMODULE)
+    target_include_directories(
+            ${PROJECT_NAME}
+            PUBLIC
+            $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/trantor>)
+endif()
 target_include_directories(
     ${PROJECT_NAME}
     PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/lib/inc>
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/orm_lib/inc>
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/nosql_lib/redis/inc>
     $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}>
-    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/trantor>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/exports>
     $<INSTALL_INTERFACE:${INSTALL_INCLUDE_DIR}>)
 
@@ -116,9 +121,13 @@ if (WIN32)
         PRIVATE $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/third_party/mman-win32>)
 endif (WIN32)
 
+if(USE_SUBMODULE)
 add_subdirectory(trantor)
-
 target_link_libraries(${PROJECT_NAME} PUBLIC trantor)
+else()
+find_package(Trantor CONFIG REQUIRED)
+target_link_libraries(${PROJECT_NAME} PUBLIC Trantor::Trantor)
+endif()
 
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Haiku")
     target_link_libraries(${PROJECT_NAME} PRIVATE network)
@@ -201,6 +210,16 @@ find_package(Jsoncpp REQUIRED)
 target_link_libraries(${PROJECT_NAME} PUBLIC Jsoncpp_lib)
 list(APPEND INCLUDE_DIRS_FOR_DYNAMIC_VIEW ${JSONCPP_INCLUDE_DIRS})
 
+# yamlcpp
+find_package(yaml-cpp QUIET)
+if(yaml-cpp_FOUND)
+message(STATUS "yaml-cpp found")
+target_link_libraries(${PROJECT_NAME} PUBLIC ${YAML_CPP_LIBRARIES})
+target_compile_definitions(${PROJECT_NAME} PUBLIC HAS_YAML_CPP)
+else()
+message(STATUS "yaml-cpp not used")
+endif()
+
 if (NOT ${CMAKE_SYSTEM_NAME} STREQUAL "FreeBSD"
     AND NOT ${CMAKE_SYSTEM_NAME} STREQUAL "OpenBSD"
     AND NOT WIN32)
@@ -277,7 +296,10 @@ set(DROGON_SOURCES
     lib/src/SlidingWindowRateLimiter.cc
     lib/src/TokenBucketRateLimiter.cc
     lib/src/Hodor.cc
-    lib/src/drogon_test.cc)
+    lib/src/drogon_test.cc
+    lib/src/ConfigAdapterManager.cc
+    lib/src/JsonConfigAdapter.cc
+    lib/src/YamlConfigAdapter.cc)
 set(private_headers
     lib/src/AOPAdvice.h
     lib/src/CacheFile.h
@@ -309,7 +331,11 @@ set(private_headers
     lib/src/WebsocketControllersRouter.h
     lib/src/FixedWindowRateLimiter.h
     lib/src/SlidingWindowRateLimiter.h
-    lib/src/TokenBucketRateLimiter.h)
+    lib/src/TokenBucketRateLimiter.h
+    lib/src/ConfigAdapterManager.h
+    lib/src/JsonConfigAdapter.h
+    lib/src/YamlConfigAdapter.h
+    lib/src/ConfigAdapter.h)
 
 if (NOT WIN32)
     set(DROGON_SOURCES

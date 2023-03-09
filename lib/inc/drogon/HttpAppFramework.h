@@ -929,6 +929,16 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
      */
     virtual HttpAppFramework &setLogLevel(trantor::Logger::LogLevel level) = 0;
 
+    /// Set the log time display
+    /**
+     * @param on is true to display local time, false to display UTC time. The
+     * Default value is false.
+     *
+     * @note
+     * This operation can be performed by an option in the configuration file.
+     */
+    virtual HttpAppFramework &setLogLocalTime(bool on) = 0;
+
     /// Enable the sendfile system call in linux.
     /**
      * @param sendFile if the parameter is true, sendfile() system-call is used
@@ -1183,7 +1193,7 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
     /// Set the HTML file that a directory would resolve to by default, default
     /// is "index.html"
     /**
-     * @brief Sets the page which would the server load in if it detects that
+     * @brief Set the page which would the server load in if it detects that
      * the user requested a directory
      *
      * @note
@@ -1237,6 +1247,21 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
     virtual nosql::RedisClientPtr getFastRedisClient(
         const std::string &name = "default") = 0;
 
+    /**
+     * @brief Set the maximum stack depth of the json parser when reading a json
+     * string, the default value is 1000.
+     *
+     * @note
+     * This operation can be performed by an option in the configuration file.
+     */
+    virtual HttpAppFramework &setJsonParserStackLimit(
+        size_t limit) noexcept = 0;
+
+    /**
+     * @brief Get the maximum stack depth of the json parser when reading a json
+     * string.
+     */
+    virtual size_t getJsonParserStackLimit() const noexcept = 0;
     /**
      * @brief This method is to enable or disable the unicode escaping (\u) in
      * the json string of HTTP responses or requests. it works (disable
