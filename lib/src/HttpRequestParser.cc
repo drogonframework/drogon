@@ -137,7 +137,7 @@ void HttpRequestParser::reset()
  * @return return 0 if request is not ready
  * @return return 1 if request is ready
  */
-int HttpRequestParser::parseRequest(MsgBuffer *buf)
+int HttpRequestParser::parseRequest(MsgBuffer *buf, size_t ReqLineLim)
 {
     while (true)
     {

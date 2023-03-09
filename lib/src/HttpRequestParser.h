@@ -44,7 +44,8 @@ class HttpRequestParser : public trantor::NonCopyable,
     explicit HttpRequestParser(const trantor::TcpConnectionPtr &connPtr);
 
     // return false if any error
-    int parseRequest(trantor::MsgBuffer *buf);
+    // optional ReqLineLim to set max readable bytes
+    int parseRequest(trantor::MsgBuffer *buf, size_t ReqLineLim = 64 * 1024);
 
     bool gotAll() const
     {
