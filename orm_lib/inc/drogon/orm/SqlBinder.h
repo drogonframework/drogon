@@ -438,9 +438,9 @@ class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
     self &operator<<(const string_view &str);
     self &operator<<(string_view &&str)
     {
-        return operator<<((const string_view &)str);
+        return operator<<((const std::string_view &)str);
     }
-    self &operator<<(string_view &str)
+    self &operator<<(std::string_view &str)
     {
         return operator<<((const string_view &)str);
     }
