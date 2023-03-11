@@ -139,7 +139,7 @@ class DROGON_EXPORT Hodor : public drogon::Plugin<Hodor>
     bool checkLimit(const drogon::HttpRequestPtr &req,
                     const LimitStrategy &strategy,
                     const std::string &ip,
-                    const std::optional<std::string> &userId);
+                    const drogon::optional<std::string> &userId);
     HttpResponsePtr rejectResponse_;
 };
 }  // namespace plugin

@@ -118,7 +118,7 @@ void Hodor::shutdown()
 bool Hodor::checkLimit(const drogon::HttpRequestPtr &req,
                        const LimitStrategy &strategy,
                        const std::string &ip,
-                       const std::optional<std::string> &userId)
+                       const drogon::optional<std::string> &userId)
 {
     if (strategy.regexFlag)
     {
