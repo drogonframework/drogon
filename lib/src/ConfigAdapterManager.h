@@ -8,7 +8,8 @@ class ConfigAdapterManager
 {
   public:
     static ConfigAdapterManager &instance();
-    Json::Value getJson(const std::string &configFile) const noexcept(false);
+    Json::Value getJson(const std::string &content, std::string ext) const
+        noexcept(false);
 
   private:
     ConfigAdapterManager();

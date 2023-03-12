@@ -117,10 +117,21 @@ ConfigLoader::ConfigLoader(const std::string &configFile)
                                  configFile);
     }
     configFile_ = configFile;
+    auto pos = configFile.find_last_of('.');
+    if (pos == std::string::npos)
+    {
+        throw std::runtime_error("Invalid config file name!");
+    }
+    auto ext = configFile.substr(pos + 1);
+    std::ifstream infile(drogon::utils::toNativePath(configFile).c_str(),
+                         std::ifstream::in);
+    // get the content of the infile
+    std::string content((std::istreambuf_iterator<char>(infile)),
+                        std::istreambuf_iterator<char>());
     try
     {
-        auto filename = drogon::utils::toNativePath(configFile);
-        configJsonRoot_ = ConfigAdapterManager::instance().getJson(configFile);
+        configJsonRoot_ =
+            ConfigAdapterManager::instance().getJson(content, std::move(ext));
     }
     catch (std::exception &e)
     {

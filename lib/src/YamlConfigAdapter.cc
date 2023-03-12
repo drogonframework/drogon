@@ -95,12 +95,12 @@ struct convert<Json::Value>
 }  // namespace YAML
 
 #endif
-Json::Value YamlConfigAdapter::getJson(const std::string &configFile) const
+Json::Value YamlConfigAdapter::getJson(const std::string &content) const
     noexcept(false)
 {
 #if HAS_YAML_CPP
     // parse yaml file
-    YAML::Node config = YAML::LoadFile(configFile);
+    YAML::Node config = YAML::Load(content);
     if (!config.IsNull())
     {
         return config.as<Json::Value>();

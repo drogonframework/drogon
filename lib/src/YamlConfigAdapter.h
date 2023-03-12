@@ -7,7 +7,7 @@ class YamlConfigAdapter : public ConfigAdapter
   public:
     YamlConfigAdapter() = default;
     ~YamlConfigAdapter() override = default;
-    Json::Value getJson(const std::string &configFile) const
+    Json::Value getJson(const std::ifstream &configFile) const
         noexcept(false) override;
     std::vector<std::string> getExtensions() const override;
 };
