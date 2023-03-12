@@ -1578,6 +1578,22 @@ for(auto &relationship : relationships)
                 }
                 std::string alind(alias.length(), ' ');
 %>
+
+{%relationshipClassName%} [[className]]::get{%alias%}(const drogon::orm::DbClientPtr &clientPtr) const {
+    std::shared_ptr<std::promise<{%relationshipClassName%}>> pro(new std::promise<{%relationshipClassName%}>);
+    std::future<{%relationshipClassName%}> f = pro->get_future();
+    get{%alias%}(clientPtr, [&pro] ({%relationshipClassName%} result) {
+        try {
+            pro->set_value(result);
+        }
+        catch (...) {
+            pro->set_exception(std::current_exception());
+        }
+    }, [&pro] (const DrogonDbException &err) {
+        pro->set_exception(std::make_exception_ptr(err));
+    });
+    return f.get();
+}
 void [[className]]::get{%alias%}(const DbClientPtr &clientPtr,
      {%indentStr%}     {%alind%} const std::function<void({%relationshipClassName%})> &rcb,
      {%indentStr%}     {%alind%} const ExceptionCallback &ecb) const
@@ -1587,6 +1603,21 @@ void [[className]]::get{%alias%}(const DbClientPtr &clientPtr,
             {
                 std::string relationshipClassInde(relationshipClassName.length(), ' ');
 %>
+{%relationshipClassName%} [[className]]::get{%relationshipClassName%}(const drogon::orm::DbClientPtr &clientPtr) const {
+    std::shared_ptr<std::promise<{%relationshipClassName%}>> pro(new std::promise<{%relationshipClassName%}>);
+    std::future<{%relationshipClassName%}> f = pro->get_future();
+    get{%relationshipClassName%}(clientPtr, [&pro] ({%relationshipClassName%} result) {
+        try {
+            pro->set_value(result);
+        }
+        catch (...) {
+            pro->set_exception(std::current_exception());
+        }
+    }, [&pro] (const DrogonDbException &err) {
+        pro->set_exception(std::make_exception_ptr(err));
+    });
+    return f.get();
+}
 void [[className]]::get{%relationshipClassName%}(const DbClientPtr &clientPtr,
      {%indentStr%}     {%relationshipClassInde%} const std::function<void({%relationshipClassName%})> &rcb,
      {%indentStr%}     {%relationshipClassInde%} const ExceptionCallback &ecb) const
@@ -1633,6 +1664,21 @@ void [[className]]::get{%relationshipClassName%}(const DbClientPtr &clientPtr,
                 }
                 std::string alind(alias.length(), ' ');
 %>
+std::vector<{%relationshipClassName%}> [[className]]::get{%alias%}(const drogon::orm::DbClientPtr &clientPtr) const {
+    std::shared_ptr<std::promise<std::vector<{%relationshipClassName%}>>> pro(new std::promise<std::vector<{%relationshipClassName%}>>);
+    std::future<std::vector<{%relationshipClassName%}>> f = pro->get_future();
+    get{%alias%}(clientPtr, [&pro] (std::vector<{%relationshipClassName%}> result) {
+        try {
+            pro->set_value(result);
+        }
+        catch (...) {
+            pro->set_exception(std::current_exception());
+        }
+    }, [&pro] (const DrogonDbException &err) {
+        pro->set_exception(std::make_exception_ptr(err));
+    });
+    return f.get();
+}
 void [[className]]::get{%alias%}(const DbClientPtr &clientPtr,
      {%indentStr%}     {%alind%} const std::function<void(std::vector<{%relationshipClassName%}>)> &rcb,
      {%indentStr%}     {%alind%} const ExceptionCallback &ecb) const
@@ -1642,6 +1688,21 @@ void [[className]]::get{%alias%}(const DbClientPtr &clientPtr,
             {
                 std::string relationshipClassInde(relationshipClassName.length(), ' ');
 %>
+std::vector<{%relationshipClassName%}> [[className]]::get{%relationshipClassName%}(const drogon::orm::DbClientPtr &clientPtr) const {
+    std::shared_ptr<std::promise<std::vector<{%relationshipClassName%}>>> pro(new std::promise<std::vector<{%relationshipClassName%}>>);
+    std::future<std::vector<{%relationshipClassName%}>> f = pro->get_future();
+    get{%relationshipClassName%}(clientPtr, [&pro] (std::vector<{%relationshipClassName%}> result) {
+        try {
+            pro->set_value(result);
+        }
+        catch (...) {
+            pro->set_exception(std::current_exception());
+        }
+    }, [&pro] (const DrogonDbException &err) {
+        pro->set_exception(std::make_exception_ptr(err));
+    });
+    return f.get();
+}
 void [[className]]::get{%relationshipClassName%}(const DbClientPtr &clientPtr,
      {%indentStr%}     {%relationshipClassInde%} const std::function<void(std::vector<{%relationshipClassName%}>)> &rcb,
      {%indentStr%}     {%relationshipClassInde%} const ExceptionCallback &ecb) const
@@ -1687,6 +1748,21 @@ void [[className]]::get{%relationshipClassName%}(const DbClientPtr &clientPtr,
                 }
                 std::string alind(alias.length(), ' ');
 %>
+std::vector<std::pair<{%relationshipClassName%},{%pivotTableClassName%}>> [[className]]::get{%alias%}(const drogon::orm::DbClientPtr &clientPtr) const {
+    std::shared_ptr<std::promise<std::vector<std::pair<{%relationshipClassName%},{%pivotTableClassName%}>>>> pro(new std::promise<std::vector<std::pair<{%relationshipClassName%},{%pivotTableClassName%}>>>);
+    std::future<std::vector<std::pair<{%relationshipClassName%},{%pivotTableClassName%}>>> f = pro->get_future();
+    get{%alias%}(clientPtr, [&pro] (std::vector<std::pair<{%relationshipClassName%},{%pivotTableClassName%}>> result) {
+        try {
+            pro->set_value(result);
+        }
+        catch (...) {
+            pro->set_exception(std::current_exception());
+        }
+    }, [&pro] (const DrogonDbException &err) {
+        pro->set_exception(std::make_exception_ptr(err));
+    });
+    return f.get();
+}
 void [[className]]::get{%alias%}(const DbClientPtr &clientPtr,
      {%indentStr%}     {%alind%} const std::function<void(std::vector<std::pair<{%relationshipClassName%},{%pivotTableClassName%}>>)> &rcb,
      {%indentStr%}     {%alind%} const ExceptionCallback &ecb) const
@@ -1696,6 +1772,21 @@ void [[className]]::get{%alias%}(const DbClientPtr &clientPtr,
             {
                 std::string relationshipClassInde(relationshipClassName.length(), ' ');
 %>
+std::vector<std::pair<{%relationshipClassName%},{%pivotTableClassName%}>> [[className]]::get{%relationshipClassName%}(const drogon::orm::DbClientPtr &clientPtr) const {
+    std::shared_ptr<std::promise<std::vector<std::pair<{%relationshipClassName%},{%pivotTableClassName%}>>>> pro(new std::promise<std::vector<std::pair<{%relationshipClassName%},{%pivotTableClassName%}>>>);
+    std::future<std::vector<std::pair<{%relationshipClassName%},{%pivotTableClassName%}>>> f = pro->get_future();
+    get{%relationshipClassName%}(clientPtr, [&pro] (std::vector<std::pair<{%relationshipClassName%},{%pivotTableClassName%}>> result) {
+        try {
+            pro->set_value(result);
+        }
+        catch (...) {
+            pro->set_exception(std::current_exception());
+        }
+    }, [&pro] (const DrogonDbException &err) {
+        pro->set_exception(std::make_exception_ptr(err));
+    });
+    return f.get();
+}
 void [[className]]::get{%relationshipClassName%}(const DbClientPtr &clientPtr,
      {%indentStr%}     {%relationshipClassInde%} const std::function<void(std::vector<std::pair<{%relationshipClassName%},{%pivotTableClassName%}>>)> &rcb,
      {%indentStr%}     {%relationshipClassInde%} const ExceptionCallback &ecb) const

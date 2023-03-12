@@ -226,6 +226,7 @@ auto cols=@@.get<std::vector<ColumnInfo>>("columns");
                 }
                 std::string alind(alias.length(), ' ');
 %>
+    {%relationshipClassName%} get{%alias%}(const drogon::orm::DbClientPtr &clientPtr) const;
     void get{%alias%}(const drogon::orm::DbClientPtr &clientPtr,
             {%alind%} const std::function<void({%relationshipClassName%})> &rcb,
             {%alind%} const drogon::orm::ExceptionCallback &ecb) const;
@@ -235,6 +236,7 @@ auto cols=@@.get<std::vector<ColumnInfo>>("columns");
             {
                 std::string relationshipClassInde(relationshipClassName.length(), ' ');
 %>
+    {%relationshipClassName%} get{%relationshipClassName%}(const drogon::orm::DbClientPtr &clientPtr) const;
     void get{%relationshipClassName%}(const drogon::orm::DbClientPtr &clientPtr,
             {%relationshipClassInde%} const std::function<void({%relationshipClassName%})> &rcb,
             {%relationshipClassInde%} const drogon::orm::ExceptionCallback &ecb) const;
@@ -251,6 +253,7 @@ auto cols=@@.get<std::vector<ColumnInfo>>("columns");
                 }
                 std::string alind(alias.length(), ' ');
 %>
+    std::vector<{%relationshipClassName%}> get{%alias%}(const drogon::orm::DbClientPtr &clientPtr) const;
     void get{%alias%}(const drogon::orm::DbClientPtr &clientPtr,
             {%alind%} const std::function<void(std::vector<{%relationshipClassName%}>)> &rcb,
             {%alind%} const drogon::orm::ExceptionCallback &ecb) const;
@@ -260,6 +263,7 @@ auto cols=@@.get<std::vector<ColumnInfo>>("columns");
             {
                 std::string relationshipClassInde(relationshipClassName.length(), ' ');
 %>
+    std::vector<{%relationshipClassName%}> get{%relationshipClassName%}(const drogon::orm::DbClientPtr &clientPtr) const;
     void get{%relationshipClassName%}(const drogon::orm::DbClientPtr &clientPtr,
             {%relationshipClassInde%} const std::function<void(std::vector<{%relationshipClassName%}>)> &rcb,
             {%relationshipClassInde%} const drogon::orm::ExceptionCallback &ecb) const;
@@ -278,6 +282,7 @@ auto cols=@@.get<std::vector<ColumnInfo>>("columns");
                 }
                 std::string alind(alias.length(), ' ');
 %>
+    std::vector<std::pair<{%relationshipClassName%},{%pivotTableClassName%}>> get{%alias%}(const drogon::orm::DbClientPtr &clientPtr) const;
     void get{%alias%}(const drogon::orm::DbClientPtr &clientPtr,
             {%alind%} const std::function<void(std::vector<std::pair<{%relationshipClassName%},{%pivotTableClassName%}>>)> &rcb,
             {%alind%} const drogon::orm::ExceptionCallback &ecb) const;
@@ -287,6 +292,7 @@ auto cols=@@.get<std::vector<ColumnInfo>>("columns");
             {
                 std::string relationshipClassInde(relationshipClassName.length(), ' ');
 %>
+    std::vector<std::pair<{%relationshipClassName%},{%pivotTableClassName%}>> get{%relationshipClassName%}(const drogon::orm::DbClientPtr &clientPtr) const;
     void get{%relationshipClassName%}(const drogon::orm::DbClientPtr &clientPtr,
             {%relationshipClassInde%} const std::function<void(std::vector<std::pair<{%relationshipClassName%},{%pivotTableClassName%}>>)> &rcb,
             {%relationshipClassInde%} const drogon::orm::ExceptionCallback &ecb) const;
