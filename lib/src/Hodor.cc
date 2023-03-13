@@ -103,7 +103,7 @@ void Hodor::initAndStart(const Json::Value &config)
             limitStrategies_.emplace_back(makeLimitStrategy(subLimit));
         }
     }
-    app().registerPreHandlingAdvice([this](const HttpRequestPtr &req,
+    app().registerPreHandlingAdvice([this](const drogon::HttpRequestPtr &req,
                                            AdviceCallback &&acb,
                                            AdviceChainCallback &&accb) {
         onHttpRequest(req, std::move(acb), std::move(accb));
@@ -114,10 +114,11 @@ void Hodor::shutdown()
 {
     LOG_TRACE << "Hodor plugin is shutdown!";
 }
-bool Hodor::checkLimit(const HttpRequestPtr &req,
+
+bool Hodor::checkLimit(const drogon::HttpRequestPtr &req,
                        const LimitStrategy &strategy,
                        const std::string &ip,
-                       const optional<std::string> &userId)
+                       const drogon::optional<std::string> &userId)
 {
     if (strategy.regexFlag)
     {

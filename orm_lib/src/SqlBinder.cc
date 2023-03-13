@@ -132,7 +132,7 @@ SqlBinder::~SqlBinder()
         exec();
     }
 }
-SqlBinder &SqlBinder::operator<<(const string_view &str)
+SqlBinder &SqlBinder::operator<<(const drogon::string_view &str)
 {
     auto obj = std::make_shared<std::string>(str.data(), str.length());
     parameters_.push_back(obj->data());
