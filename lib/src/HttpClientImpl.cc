@@ -280,14 +280,16 @@ struct RequestCallbackParams
     RequestCallbackParams(HttpReqCallback &&cb,
                           HttpClientImplPtr client,
                           HttpRequestPtr req)
-        : callback(cb), clientPtr(client), requestPtr(req)
+        : callback(std::move(cb)),
+          clientPtr(std::move(client)),
+          requestPtr(std::move(req))
     {
     }
 
     const drogon::HttpReqCallback callback;
     const HttpClientImplPtr clientPtr;
     const HttpRequestPtr requestPtr;
-    bool timeoutFlag;
+    bool timeoutFlag{false};
 };
 
 void HttpClientImpl::sendRequestInLoop(const HttpRequestPtr &req,
@@ -312,7 +314,7 @@ void HttpClientImpl::sendRequestInLoop(const HttpRequestPtr &req,
             auto callbackParamsPtr = weakCallbackBackPtr.lock();
             if (callbackParamsPtr != nullptr)
             {
-                auto thisPtr = callbackParamsPtr->clientPtr;
+                auto &thisPtr = callbackParamsPtr->clientPtr;
                 if (callbackParamsPtr->timeoutFlag)
                 {
                     return;
