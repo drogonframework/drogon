@@ -1193,6 +1193,35 @@ DROGON_TEST(HttpsTest)
     doTest(client, TEST_CTX);
 }
 
+DROGON_TEST(HttpsTimeoutTest)
+{
+    if (!app().supportSSL())
+        return;
+
+    auto client = HttpClient::newHttpClient("https://127.0.0.1:8849",
+                                            app().getLoop(),
+                                            false,
+                                            false);
+    auto req = HttpRequest::newHttpRequest();
+    req->setPath("/api/v1/apitest/static");
+    req->setMethod(drogon::Get);
+    auto weakClient = std::weak_ptr<HttpClient>(client);
+    auto weakReq = std::weak_ptr<HttpRequest>(req);
+    client->sendRequest(
+        req,
+        [weakClient, weakReq, TEST_CTX](ReqResult result,
+                                        const HttpResponsePtr &resp) {
+            REQUIRE(result == ReqResult::Ok);
+            CHECK(resp->getStatusCode() == k200OK);
+
+            app().getLoop()->queueInLoop([weakClient, weakReq, TEST_CTX]() {
+                CHECK(weakReq.expired());
+                CHECK(weakClient.expired());
+            });
+        },
+        60);
+}
+
 int main(int argc, char **argv)
 {
     trantor::Logger::setLogLevel(trantor::Logger::LogLevel::kDebug);

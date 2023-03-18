@@ -33,7 +33,10 @@
 #define os_access access
 #endif
 #endif
+
 #include <drogon/utils/Utilities.h>
+#include "filesystem.h"
+#include "ConfigAdapterManager.h"
 
 using namespace drogon;
 static bool bytesSize(std::string &sizeStr, size_t &size)
@@ -101,6 +104,7 @@ static bool bytesSize(std::string &sizeStr, size_t &size)
         return true;
     }
 }
+
 ConfigLoader::ConfigLoader(const std::string &configFile)
 {
     if (os_access(drogon::utils::toNativePath(configFile).c_str(), 0) != 0)
@@ -113,14 +117,21 @@ ConfigLoader::ConfigLoader(const std::string &configFile)
                                  configFile);
     }
     configFile_ = configFile;
+    auto pos = configFile.find_last_of('.');
+    if (pos == std::string::npos)
+    {
+        throw std::runtime_error("Invalid config file name!");
+    }
+    auto ext = configFile.substr(pos + 1);
+    std::ifstream infile(drogon::utils::toNativePath(configFile).c_str(),
+                         std::ifstream::in);
+    // get the content of the infile
+    std::string content((std::istreambuf_iterator<char>(infile)),
+                        std::istreambuf_iterator<char>());
     try
     {
-        std::ifstream infile(drogon::utils::toNativePath(configFile).c_str(),
-                             std::ifstream::in);
-        if (infile)
-        {
-            infile >> configJsonRoot_;
-        }
+        configJsonRoot_ =
+            ConfigAdapterManager::instance().getJson(content, std::move(ext));
     }
     catch (std::exception &e)
     {
@@ -378,6 +389,8 @@ static void loadApp(const Json::Value &app)
         }
     }
 #endif
+    auto stackLimit = app.get("json_parser_stack_limit", 1000).asUInt64();
+    drogon::app().setJsonParserStackLimit(stackLimit);
     auto unicodeEscaping =
         app.get("enable_unicode_escaping_in_json", true).asBool();
     drogon::app().setUnicodeEscapingInJson(unicodeEscaping);
