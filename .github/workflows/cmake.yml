@@ -41,13 +41,13 @@ jobs:
           vcpkg.exe install zlib
           vcpkg.exe install hiredis
           vcpkg.exe install brotli
+          vcpkg.exe install gtest
           cd ..
 
       - name: Create build directory
         run: mkdir build
 
       - name: Create Build Environment & Configure Cmake
-        shell: bash
         working-directory: ./build
         run: |
           [[ ${{ matrix.link }} == "SHARED" ]] && shared="ON" || shared="OFF"
