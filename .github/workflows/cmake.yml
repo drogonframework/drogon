@@ -27,7 +27,6 @@ jobs:
 
       - name: Install dependencies
         shell: bash
-        working-directory: vcpkg
         run: |
           vcpkg.exe install sqlite3:x64-windows
           vcpkg.exe install jsoncpp:x64-windows
