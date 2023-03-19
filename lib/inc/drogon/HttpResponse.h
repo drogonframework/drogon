@@ -15,6 +15,7 @@
 
 #include <drogon/exports.h>
 #include <drogon/utils/string_view.h>
+#include <trantor/net/Certificate.h>
 #include <drogon/DrClassMap.h>
 #include <drogon/Cookie.h>
 #include <drogon/HttpTypes.h>
@@ -335,6 +336,16 @@ class DROGON_EXPORT HttpResponse
      * @param flag
      */
     virtual void setPassThrough(bool flag) = 0;
+
+    /**
+     * @brief Get the certificate of the peer, if any.
+     * @return The certificate of the peer. nullptr is none.
+     */
+    virtual const trantor::CertificatePtr &peerCertificate() const = 0;
+    const trantor::CertificatePtr &getPeerCertificate() const
+    {
+        return peerCertificate();
+    }
 
     /* The following methods are a series of factory methods that help users
      * create response objects. */

@@ -316,6 +316,14 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
     {
         return sendfileRange_;
     }
+    const trantor::CertificatePtr &peerCertificate() const override
+    {
+        return peerCertificate_;
+    }
+    void setPeerCertificate(const trantor::CertificatePtr &cert)
+    {
+        peerCertificate_ = cert;
+    }
     void setSendfile(const std::string &filename)
     {
         sendfileName_ = filename;
@@ -472,6 +480,7 @@ class DROGON_EXPORT HttpResponseImpl : public HttpResponse
     mutable std::shared_ptr<Json::Value> jsonPtr_;
 
     std::shared_ptr<trantor::MsgBuffer> fullHeaderString_;
+    trantor::CertificatePtr peerCertificate_;
     mutable std::shared_ptr<trantor::MsgBuffer> httpString_;
     mutable size_t datePos_{static_cast<size_t>(-1)};
     mutable int64_t httpStringDate_{-1};

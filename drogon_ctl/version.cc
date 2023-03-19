@@ -65,4 +65,9 @@ void version::handleCommand(std::vector<std::string> &parameters)
 #endif
     std::cout << "  c-ares: "
               << (trantor::Resolver::isCAresUsed() ? "yes\n" : "no\n");
+#ifdef HAS_YAML_CPP
+    std::cout << "  yaml-cpp: yes\n";
+#else
+    std::cout << "  yaml-cpp: no\n";
+#endif
 }

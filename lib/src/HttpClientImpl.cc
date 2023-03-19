@@ -41,12 +41,14 @@ void HttpClientImpl::createTcpClient()
     {
         LOG_TRACE << "useOldTLS=" << useOldTLS_;
         LOG_TRACE << "domain=" << domain_;
-        tcpClientPtr_->enableSSL(useOldTLS_,
-                                 validateCert_,
-                                 domain_,
-                                 sslConfCmds_,
-                                 clientCertPath_,
-                                 clientKeyPath_);
+        auto policy = trantor::TLSPolicy::defaultClientPolicy();
+        policy->setUseOldTLS(useOldTLS_)
+            .setValidate(validateCert_)
+            .setHostname(domain_)
+            .setConfCmds(sslConfCmds_)
+            .setCertPath(clientCertPath_)
+            .setKeyPath(clientKeyPath_);
+        tcpClientPtr_->enableSSL(std::move(policy));
     }
 
     auto thisPtr = shared_from_this();
@@ -122,6 +124,8 @@ void HttpClientImpl::createTcpClient()
             thisPtr->onError(ReqResult::HandshakeError);
         else if (err == trantor::SSLError::kSSLInvalidCertificate)
             thisPtr->onError(ReqResult::InvalidCertificate);
+        else if (err == trantor::SSLError::kSSLProtocolError)
+            thisPtr->onError(ReqResult::EncryptionFailure);
         else
         {
             LOG_FATAL << "Invalid value for SSLError";
@@ -155,12 +159,12 @@ HttpClientImpl::HttpClientImpl(trantor::EventLoop *loop,
                    lowerHost.end(),
                    lowerHost.begin(),
                    [](unsigned char c) { return tolower(c); });
-    if (lowerHost.find("https://") != std::string::npos)
+    if (lowerHost.find("https://") == 0)
     {
         useSSL_ = true;
         lowerHost = lowerHost.substr(8);
     }
-    else if (lowerHost.find("http://") != std::string::npos)
+    else if (lowerHost.find("http://") == 0)
     {
         useSSL_ = false;
         lowerHost = lowerHost.substr(7);
@@ -274,6 +278,23 @@ void HttpClientImpl::sendRequest(const drogon::HttpRequestPtr &req,
         });
 }
 
+struct RequestCallbackParams
+{
+    RequestCallbackParams(HttpReqCallback &&cb,
+                          HttpClientImplPtr client,
+                          HttpRequestPtr req)
+        : callback(std::move(cb)),
+          clientPtr(std::move(client)),
+          requestPtr(std::move(req))
+    {
+    }
+
+    const drogon::HttpReqCallback callback;
+    const HttpClientImplPtr clientPtr;
+    const HttpRequestPtr requestPtr;
+    bool timeoutFlag{false};
+};
+
 void HttpClientImpl::sendRequestInLoop(const HttpRequestPtr &req,
                                        HttpReqCallback &&callback,
                                        double timeout)
@@ -284,52 +305,49 @@ void HttpClientImpl::sendRequestInLoop(const HttpRequestPtr &req,
         return;
     }
 
-    auto timeoutFlag = std::make_shared<bool>(false);
-    auto callbackPtr =
-        std::make_shared<drogon::HttpReqCallback>(std::move(callback));
-    auto thisPtr = shared_from_this();
-    loop_->runAfter(timeout,
-                    [timeoutFlag,
-                     weakCallbackPtr =
-                         std::weak_ptr<HttpReqCallback>(callbackPtr),
-                     reqPtr = std::weak_ptr<HttpRequest>(req),
-                     thisPtr] {
-                        if (*timeoutFlag)
-                        {
-                            return;
-                        }
-                        *timeoutFlag = true;
+    auto callbackParamsPtr =
+        std::make_shared<RequestCallbackParams>(std::move(callback),
+                                                shared_from_this(),
+                                                req);
 
-                        auto req = reqPtr.lock();
-                        if (req != nullptr)
-                        {
-                            for (auto iter = thisPtr->requestsBuffer_.begin();
-                                 iter != thisPtr->requestsBuffer_.end();
-                                 ++iter)
-                            {
-                                if (iter->first == req)
-                                {
-                                    thisPtr->requestsBuffer_.erase(iter);
-                                    break;
-                                }
-                            }
-                        }
+    loop_->runAfter(
+        timeout,
+        [weakCallbackBackPtr =
+             std::weak_ptr<RequestCallbackParams>(callbackParamsPtr)] {
+            auto callbackParamsPtr = weakCallbackBackPtr.lock();
+            if (callbackParamsPtr != nullptr)
+            {
+                auto &thisPtr = callbackParamsPtr->clientPtr;
+                if (callbackParamsPtr->timeoutFlag)
+                {
+                    return;
+                }
 
-                        auto callbackPtr = weakCallbackPtr.lock();
-                        if (callbackPtr != nullptr)
-                        {
-                            (*callbackPtr)(ReqResult::Timeout, nullptr);
-                        }
-                    });
+                callbackParamsPtr->timeoutFlag = true;
+
+                for (auto iter = thisPtr->requestsBuffer_.begin();
+                     iter != thisPtr->requestsBuffer_.end();
+                     ++iter)
+                {
+                    if (iter->first == callbackParamsPtr->requestPtr)
+                    {
+                        thisPtr->requestsBuffer_.erase(iter);
+                        break;
+                    }
+                }
+
+                (callbackParamsPtr->callback)(ReqResult::Timeout, nullptr);
+            }
+        });
     sendRequestInLoop(req,
-                      [timeoutFlag, callbackPtr](ReqResult r,
-                                                 const HttpResponsePtr &resp) {
-                          if (*timeoutFlag)
+                      [callbackParamsPtr](ReqResult r,
+                                          const HttpResponsePtr &resp) {
+                          if (callbackParamsPtr->timeoutFlag)
                           {
                               return;
                           }
-                          *timeoutFlag = true;
-                          (*callbackPtr)(r, resp);
+                          callbackParamsPtr->timeoutFlag = true;
+                          (callbackParamsPtr->callback)(r, resp);
                       });
 }
 
@@ -603,6 +621,7 @@ void HttpClientImpl::onRecvMessage(const trantor::TcpConnectionPtr &connPtr,
         if (responseParser->gotAll())
         {
             auto resp = responseParser->responseImpl();
+            resp->setPeerCertificate(connPtr->peerCertificate());
             responseParser->reset();
             bytesReceived_ += (msgSize - msg->readableBytes());
             msgSize = msg->readableBytes();

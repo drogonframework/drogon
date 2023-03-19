@@ -25,26 +25,23 @@
 #include <Rpc.h>
 #include <direct.h>
 #include <io.h>
-#include <ntsecapi.h>
 #else
 #include <uuid.h>
 #include <unistd.h>
 #endif
 #include <zlib.h>
-#include <iomanip>
-#include <mutex>
 #include <sstream>
-#include <stack>
 #include <string>
-#include <thread>
+#include <mutex>
 #include <algorithm>
 #include <array>
+#include <locale>
+#include <clocale>
 #include <cctype>
 #include <cstdlib>
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
-#include <fcntl.h>
 #include <stdarg.h>
 
 #ifdef _WIN32
@@ -1172,49 +1169,45 @@ bool supportsTls() noexcept
     return trantor::utils::tlsBackend() != "None";
 }
 
-/**
- * @brief Generates `size` random bytes from the systems random source and
- * stores them into `ptr`.
- */
-static bool systemRandomBytes(void *ptr, size_t size)
-{
-#if defined(__BSD__) || defined(__APPLE__)
-    arc4random_buf(ptr, size);
-    return true;
-#elif defined(__linux__) && \
-    ((defined(__GLIBC__) && \
-      (__GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 25))))
-    return getentropy(ptr, size) != -1;
-#elif defined(_WIN32)  // Windows
-    return RtlGenRandom(ptr, (ULONG)size);
-#elif defined(__unix__) || defined(__HAIKU__)
-    // fallback to /dev/urandom for other/old UNIX
-    thread_local std::unique_ptr<FILE, std::function<void(FILE *)> > fptr(
-        fopen("/dev/urandom", "rb"), [](FILE *ptr) {
-            if (ptr != nullptr)
-                fclose(ptr);
-        });
-    if (fptr == nullptr)
-    {
-        LOG_FATAL << "Failed to open /dev/urandom for randomness";
-        abort();
-    }
-    if (fread(ptr, 1, size, fptr.get()) != 0)
-        return true;
-#endif
-    return false;
-}
-
 bool secureRandomBytes(void *ptr, size_t size)
 {
-// TODO: Make trantor expose a secure random number generator
-#ifdef OpenSSL_FOUND
-    if (RAND_bytes((unsigned char *)ptr, (int)size) == 0)
-        return true;
-#endif
-    if (systemRandomBytes(ptr, size))
-        return true;
-    return false;
+    return trantor::utils::secureRandomBytes(ptr, size);
+}
+
+std::string secureRandomString(size_t size)
+{
+    if (size == 0)
+        return std::string();
+
+    std::string ret(size, 0);
+    const string_view chars =
+        "0123456789"
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        "abcdefghijklmnopqrstuvwxyz"
+        "+-";
+    assert(chars.size() == 64);
+
+    trantor::utils::Hash256 hash;
+    // batch up to 32 bytes of random data for efficiency. Calling
+    // secureRandomBytes can be expensive.
+    auto randByte = [&hash]() {
+        static size_t i = 0;
+        if (i == 0)
+        {
+            bool ok = trantor::utils::secureRandomBytes(&hash, sizeof(hash));
+            if (!ok)
+                throw std::runtime_error(
+                    "Failed to generate random bytes for secureRandomString");
+        }
+        unsigned char *hashBytes = reinterpret_cast<unsigned char *>(&hash);
+        auto ret = hashBytes[i];
+        i = (i + 1) % sizeof(hash);
+        return ret;
+    };
+
+    for (size_t i = 0; i < size; ++i)
+        ret[i] = chars[randByte() % 64];
+    return ret;
 }
 
 namespace internal
