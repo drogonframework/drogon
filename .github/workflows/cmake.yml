@@ -56,7 +56,7 @@ jobs:
             -DCMAKE_BUILD_TYPE=Debug                                           \
             -DBUILD_TESTING=on                                                 \
             -DBUILD_SHARED_LIBS=$shared                                        \
-            -DCMAKE_TOOLCHAIN_FILE="C:\vcpkg\scripts\buildsystems\vcpkg.cmake" \
+            -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake   \
             -DBUILD_CTL=ON                                                     \
             -DBUILD_EXAMPLES=ON                                                \
             -DCMAKE_INSTALL_PREFIX=../install                                  \
