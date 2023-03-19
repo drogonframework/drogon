@@ -25,14 +25,6 @@ jobs:
           submodules: true
           fetch-depth: 0
 
-      - name: Install vcpkg
-        shell: powershell
-        run: |
-          git clone https://github.com/Microsoft/vcpkg.git
-          cd vcpkg
-          bootstrap-vcpkg.bat
-          cd ..
-
       - name: Install dependencies
         shell: bash
         working-directory: vcpkg
@@ -57,7 +49,6 @@ jobs:
             -DCMAKE_BUILD_TYPE=Debug                                           \
             -DBUILD_TESTING=on                                                 \
             -DBUILD_SHARED_LIBS=$shared                                        \
-            -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake   \
             -DBUILD_CTL=ON                                                     \
             -DBUILD_EXAMPLES=ON                                                \
             -DCMAKE_INSTALL_PREFIX=../install                                  \
