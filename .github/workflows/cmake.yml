@@ -48,6 +48,7 @@ jobs:
         run: mkdir build
 
       - name: Create Build Environment & Configure Cmake
+        shell: pwsh
         working-directory: ./build
         run: |
           [[ ${{ matrix.link }} == "SHARED" ]] && shared="ON" || shared="OFF"
