@@ -1,5 +1,5 @@
 [requires]
-jsoncpp/1.9.4
+jsoncpp/1.9.5
 zlib/1.2.11
 gtest/1.10.0
 sqlite3/3.40.1
