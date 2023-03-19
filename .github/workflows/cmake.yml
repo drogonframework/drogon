@@ -33,14 +33,17 @@ jobs:
           cd ..
 
       - name: Install dependencies
+        shell: bash
+        working-directory: vcpkg
         run: |
-          .\vcpkg\vcpkg.exe install trantor:x64-windows
-          .\vcpkg\vcpkg.exe install sqlite3:x64-windows
-          .\vcpkg\vcpkg.exe install jsoncpp:x64-windows
-          .\vcpkg\vcpkg.exe install zlib:x64-windows
-          .\vcpkg\vcpkg.exe install openssl
-          .\vcpkg\vcpkg.exe install hiredis
-          .\vcpkg\vcpkg.exe install brotli
+          vcpkg.exe install trantor:x64-windows
+          vcpkg.exe install sqlite3:x64-windows
+          vcpkg.exe install jsoncpp:x64-windows
+          vcpkg.exe install zlib:x64-windows
+          vcpkg.exe install openssl
+          vcpkg.exe install hiredis
+          vcpkg.exe install brotli
+          cd ..
 
       - name: Create build directory
         run: mkdir build
@@ -54,7 +57,7 @@ jobs:
             -DCMAKE_BUILD_TYPE=Debug                                           \
             -DBUILD_TESTING=on                                                 \
             -DBUILD_SHARED_LIBS=$shared                                        \
-            -DCMAKE_TOOLCHAIN_FILE="../vcpkg/scripts/buildsystems/vcpkg.cmake" \
+            -DCMAKE_TOOLCHAIN_FILE="C:\vcpkg\scripts\buildsystems\vcpkg.cmake" \
             -DBUILD_CTL=ON                                                     \
             -DBUILD_EXAMPLES=ON                                                \
             -DCMAKE_INSTALL_PREFIX=../install                                  \
