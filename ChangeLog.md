@@ -4,6 +4,52 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.8.4] - 2023-03-19
+
+### API Changes list
+
+- Add a configuration option to display local time in logs.
+
+- Add the stackLimit option for jsoncpp.
+
+- Add coroutine to wait until event loop ends.
+
+- Add switchThreadCoro().
+
+- Add queueInLoopCoro function.
+
+### Changed
+
+- Reduce overhead of constructing string from request status.
+
+- Add coroutine parameter binding test and make tests not blocking.
+
+- Use weakptr instead of shared_ptr in HttpClient.
+
+- Refactor HttpServer codes.
+
+- Add an option in CMakeLists.txt to set how to use trantor.
+
+- Add support to yaml config file.
+
+- Changes to free http client if no request is pending.
+
+- Trigger error message in drogon test when faced with bad parameter.
+
+### Fixed
+
+- Make the token bucket full when it is initialized
+
+- Fix file r/w race condition in integration test.
+
+- Postgresql: don't handle events anymore after connection closing.
+
+- Fix multipart boundary with charset.
+
+- Fix a conan issue in github actions.
+
+- Hold shared pointer from the very beginning in WebSocketConnectionImpl.
+
 ## [1.8.3] - 2023-01-23
 
 ### API changes list
@@ -1241,7 +1287,9 @@ All notable changes to this project will be documented in this file.
 
 ## [1.0.0-beta1] - 2019-06-11
 
-[Unreleased]: https://github.com/an-tao/drogon/compare/v1.8.3...HEAD
+[Unreleased]: https://github.com/an-tao/drogon/compare/v1.8.4...HEAD
+
+[1.8.4]: https://github.com/an-tao/drogon/compare/v1.8.3...v1.8.4
 
 [1.8.3]: https://github.com/an-tao/drogon/compare/v1.8.2...v1.8.3
 
