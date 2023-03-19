@@ -26,6 +26,7 @@ jobs:
           fetch-depth: 0
 
       - name: Install vcpkg
+        shell: powershell
         run: |
           git clone https://github.com/Microsoft/vcpkg.git
           cd vcpkg
