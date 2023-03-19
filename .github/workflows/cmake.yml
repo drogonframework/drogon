@@ -36,11 +36,9 @@ jobs:
         shell: bash
         working-directory: vcpkg
         run: |
-          vcpkg.exe install trantor:x64-windows
-          vcpkg.exe install sqlite3:x64-windows
-          vcpkg.exe install jsoncpp:x64-windows
-          vcpkg.exe install zlib:x64-windows
-          vcpkg.exe install openssl
+          vcpkg.exe install sqlite3
+          vcpkg.exe install jsoncpp
+          vcpkg.exe install zlib
           vcpkg.exe install hiredis
           vcpkg.exe install brotli
           cd ..
