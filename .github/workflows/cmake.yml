@@ -44,15 +44,15 @@ jobs:
         working-directory: ./build
         run: |
           [[ ${{ matrix.link }} == "SHARED" ]] && shared="ON" || shared="OFF"
-          cmake ..                                                                      \
-            -DCMAKE_BUILD_TYPE=Debug                                                    \
-            -DBUILD_TESTING=ON                                                          \
+          cmake ..                                                                             \
+            -DCMAKE_BUILD_TYPE=Debug                                                           \
+            -DBUILD_TESTING=ON                                                                 \
             -DCMAKE_TOOLCHAIN_FILE=${VCPKG_INSTALLATION_ROOT}/scripts/buildsystems/vcpkg.cmake \
-            -DBUILD_SHARED_LIBS=$shared                                                 \
-            -DBUILD_CTL=ON                                                              \
-            -DBUILD_EXAMPLES=ON                                                         \
-            -DCMAKE_INSTALL_PREFIX=../install                                           \
-            -DCMAKE_POLICY_DEFAULT_CMP0091=NEW                                          \
+            -DBUILD_SHARED_LIBS=$shared                                                        \
+            -DBUILD_CTL=ON                                                                     \
+            -DBUILD_EXAMPLES=ON                                                                \
+            -DCMAKE_INSTALL_PREFIX=../install                                                  \
+            -DCMAKE_POLICY_DEFAULT_CMP0091=NEW                                                 \
             -DCMAKE_CXX_STANDARD=17
 
       - name: Build
