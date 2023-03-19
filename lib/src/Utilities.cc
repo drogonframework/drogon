@@ -1174,6 +1174,42 @@ bool secureRandomBytes(void *ptr, size_t size)
     return trantor::utils::secureRandomBytes(ptr, size);
 }
 
+std::string secureRandomString(size_t size)
+{
+    if (size == 0)
+        return std::string();
+
+    std::string ret(size, 0);
+    const string_view chars =
+        "0123456789"
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        "abcdefghijklmnopqrstuvwxyz"
+        "+-";
+    assert(chars.size() == 64);
+
+    trantor::utils::Hash256 hash;
+    // batch up to 32 bytes of random data for efficiency. Calling
+    // secureRandomBytes can be expensive.
+    auto randByte = [&hash]() {
+        static size_t i = 0;
+        if (i == 0)
+        {
+            bool ok = trantor::utils::secureRandomBytes(&hash, sizeof(hash));
+            if (!ok)
+                throw std::runtime_error(
+                    "Failed to generate random bytes for secureRandomString");
+        }
+        unsigned char *hashBytes = reinterpret_cast<unsigned char *>(&hash);
+        auto ret = hashBytes[i];
+        i = (i + 1) % sizeof(hash);
+        return ret;
+    };
+
+    for (size_t i = 0; i < size; ++i)
+        ret[i] = chars[randByte() % 64];
+    return ret;
+}
+
 namespace internal
 {
 const size_t fixedRandomNumber = []() {

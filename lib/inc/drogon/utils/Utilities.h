@@ -318,11 +318,17 @@ DROGON_EXPORT void replaceAll(std::string &s,
  * @param size number of bytes to generate
  *
  * @return true if generation is successfull. False otherwise
- *
- * @note DO NOT abuse this function. Especially if Drogon is built without
- * OpenSSL. Entropy running low is a real issue.
  */
 DROGON_EXPORT bool secureRandomBytes(void *ptr, size_t size);
+
+/**
+ * @brief Generates cryptographically secure random string.
+ *
+ * @param size number of characters to generate
+ *
+ * @return the random string
+ */
+DROGON_EXPORT std::string secureRandomString(size_t size);
 
 template <typename T>
 typename std::enable_if<internal::CanConvertFromStringStream<T>::value, T>::type
