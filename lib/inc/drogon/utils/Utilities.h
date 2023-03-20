@@ -152,6 +152,12 @@ inline std::string getSha3(const std::string &originalString)
     return getSha3(originalString.data(), originalString.length());
 }
 
+DROGON_EXPORT std::string getBlake2b(const char *data, const size_t dataLen);
+inline std::string getBlake2b(const std::string &originalString)
+{
+    return getBlake2b(originalString.data(), originalString.length());
+}
+
 /// Commpress or decompress data using gzip lib.
 /**
  * @param data the input data

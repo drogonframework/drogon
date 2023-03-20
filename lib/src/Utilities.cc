@@ -1154,6 +1154,11 @@ std::string getSha3(const char *data, const size_t dataLen)
     return trantor::utils::toHexString(trantor::utils::sha3(data, dataLen));
 }
 
+std::string getBlake2b(const char *data, const size_t dataLen)
+{
+    return trantor::utils::toHexString(trantor::utils::blake2b(data, dataLen));
+}
+
 void replaceAll(std::string &s, const std::string &from, const std::string &to)
 {
     size_t pos = 0;
