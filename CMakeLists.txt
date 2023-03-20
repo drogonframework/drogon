@@ -19,6 +19,7 @@ option(COZ_PROFILING "Use coz for profiling" OFF)
 option(BUILD_SHARED_LIBS "Build drogon as a shared lib" OFF)
 option(BUILD_DOC "Build Doxygen documentation" OFF)
 option(BUILD_BROTLI "Build Brotli" ON)
+option(BUILD_YAML_CONFIG "Build yaml config" ON)
 option(USE_SUBMODULE "Use trantor as a submodule" ON)
 
 include(CMakeDependentOption)
@@ -211,14 +212,18 @@ target_link_libraries(${PROJECT_NAME} PUBLIC Jsoncpp_lib)
 list(APPEND INCLUDE_DIRS_FOR_DYNAMIC_VIEW ${JSONCPP_INCLUDE_DIRS})
 
 # yamlcpp
-find_package(yaml-cpp QUIET)
-if(yaml-cpp_FOUND)
-message(STATUS "yaml-cpp found")
-target_link_libraries(${PROJECT_NAME} PUBLIC ${YAML_CPP_LIBRARIES})
-target_compile_definitions(${PROJECT_NAME} PUBLIC HAS_YAML_CPP)
+if(BUILD_YAML_CONFIG)
+    find_package(yaml-cpp QUIET)
+    if(yaml-cpp_FOUND)
+    message(STATUS "yaml-cpp found")
+    target_link_libraries(${PROJECT_NAME} PUBLIC ${YAML_CPP_LIBRARIES})
+    target_compile_definitions(${PROJECT_NAME} PUBLIC HAS_YAML_CPP)
+    else()
+    message(STATUS "yaml-cpp not used")
+    endif(yaml-cpp_FOUND)
 else()
-message(STATUS "yaml-cpp not used")
-endif()
+    message(STATUS "yaml-cpp not used")
+endif(BUILD_YAML_CONFIG)
 
 if (NOT ${CMAKE_SYSTEM_NAME} STREQUAL "FreeBSD"
     AND NOT ${CMAKE_SYSTEM_NAME} STREQUAL "OpenBSD"
