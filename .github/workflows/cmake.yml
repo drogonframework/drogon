@@ -59,7 +59,7 @@ jobs:
         run: cmake --build build --target install --parallel
 
       - name: Test
-        shell: bash
+        shell: powershell
         run: ./test.sh -w
 
   unix:
