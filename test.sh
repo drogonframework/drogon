@@ -132,7 +132,7 @@ echo "Hello, world!" >>hello.csp
 
 cd ../build
 if [ $os = "windows" ]; then
-  cmake_gen="$cmake_gen -DCMAKE_TOOLCHAIN_FILE=${VCPKG_INSTALLATION_ROOT}/scripts/buildsystems/vcpkg.cmake \
+  cmake_gen="$cmake_gen -DCMAKE_TOOLCHAIN_FILE=$src_dir/conan_toolchain.cmake \
                         -DCMAKE_PREFIX_PATH=$src_dir/install \
                         -DCMAKE_POLICY_DEFAULT_CMP0091=NEW \
                         -DCMAKE_CXX_STANDARD=17"
