@@ -90,6 +90,9 @@ void HttpClientImpl::createTcpClient()
                     }
                     auto resp = responseParser->responseImpl();
                     responseParser->reset();
+                    // temporary fix of dead tcpClientPtr_
+                    // TODO: fix HttpResponseParser when content-length absence
+                    thisPtr->tcpClientPtr_.reset();
                     thisPtr->handleResponse(resp, std::move(firstReq), connPtr);
                     if (!thisPtr->requestsBuffer_.empty())
                     {
