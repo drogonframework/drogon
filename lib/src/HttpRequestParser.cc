@@ -177,7 +177,8 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf, size_t reqLineLim)
                 {
                     if (buf->readableBytes() >= reqLineLim)
                     {
-                        /// The limit for request line is 64K bytes or reqLineLim if value passed. response
+                        /// The limit for request line is 64K bytes or
+                        /// reqLineLim if value passed. response
                         /// k414RequestURITooLarge
                         /// TODO: Make this configurable?
                         buf->retrieveAll();
@@ -204,7 +205,8 @@ int HttpRequestParser::parseRequest(MsgBuffer *buf, size_t reqLineLim)
                 {
                     if (buf->readableBytes() >= reqLineLim)
                     {
-                        /// The limit for every request header is 64K bytes by default or reqLineLim if value is passed;
+                        /// The limit for every request header is 64K bytes by
+                        /// default or reqLineLim if value is passed;
                         /// TODO: Make this configurable?
                         buf->retrieveAll();
                         shutdownConnection(k400BadRequest);
