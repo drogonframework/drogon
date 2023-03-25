@@ -121,7 +121,6 @@ class HttpServer : trantor::NonCopyable
     trantor::ConnectionCallback connectionCallback_;
     const std::vector<std::function<HttpResponsePtr(const HttpRequestPtr &)>>
         &syncAdvices_;
-    const bool hasSyncAdvices_;
     const std::vector<
         std::function<void(const HttpRequestPtr &, const HttpResponsePtr &)>>
         &preSendingAdvices_;
