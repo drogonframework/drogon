@@ -1492,7 +1492,7 @@ if(!col.notNull_){%>
             }
 <%c++
             }
-            else if(col.colType_.find("int") == 0)
+            else if(col.colType_.find("int") == 0 || col.colType_ == "short")
             {
 %>
             if(!pJson.isInt())
