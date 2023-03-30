@@ -93,7 +93,6 @@ HttpServer::HttpServer(
       newWebsocketCallback_(defaultWebSockAsyncCallback),
       connectionCallback_(defaultConnectionCallback),
       syncAdvices_(syncAdvices),
-      hasSyncAdvices_(!syncAdvices.empty()),
       preSendingAdvices_(preSendingAdvices)
 {
     server_.setConnectionCallback(
@@ -281,7 +280,7 @@ void HttpServer::onRequests(
             requestParser->pushRequestToPipelining(req, isHeadMethod);
             reqPipelined = true;
         }
-        if (hasSyncAdvices_ &&
+        if (!syncAdvices_.empty() &&
             !passSyncAdvices(
                 req, requestParser, syncAdvices_, reqPipelined, isHeadMethod))
         {
