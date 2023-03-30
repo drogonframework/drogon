@@ -116,8 +116,12 @@ class HttpFileImpl
         return parseFileType(getFileExtension());
     }
 
-    /// Return the md5 string of the file
+    /// Return md5 hash of the file
     std::string getMd5() const noexcept;
+    // Return sha1 hash of the file
+    std::string getSha256() const noexcept;
+    // Return sha512 hash of the file
+    std::string getSha3() const noexcept;
     //    int saveTo(const std::string &pathAndFileName) const;
     int saveTo(const filesystem::path &pathAndFileName) const noexcept;
     void setRequest(const HttpRequestPtr &req) noexcept

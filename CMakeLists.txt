@@ -505,20 +505,6 @@ endif (BUILD_TESTING)
 find_package(ZLIB REQUIRED)
 target_link_libraries(${PROJECT_NAME} PRIVATE ZLIB::ZLIB)
 
-find_package(OpenSSL)
-if (OpenSSL_FOUND)
-    target_link_libraries(${PROJECT_NAME} PRIVATE OpenSSL::SSL OpenSSL::Crypto)
-else (OpenSSL_FOUND)
-    set(DROGON_SOURCES
-        ${DROGON_SOURCES}
-        lib/src/ssl_funcs/Md5.cc
-        lib/src/ssl_funcs/Sha1.cc)
-    set(private_headers
-        ${private_headers}
-        lib/src/ssl_funcs/Md5.h
-        lib/src/ssl_funcs/Sha1.h)
-endif (OpenSSL_FOUND)
-
 execute_process(COMMAND "git" rev-parse HEAD
     WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
     OUTPUT_VARIABLE GIT_SHA1

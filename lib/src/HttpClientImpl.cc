@@ -37,19 +37,20 @@ void HttpClientImpl::createTcpClient()
     tcpClientPtr_ =
         std::make_shared<trantor::TcpClient>(loop_, serverAddr_, "httpClient");
 
-#ifdef OpenSSL_FOUND
-    if (useSSL_)
+    if (useSSL_ && utils::supportsTls())
     {
         LOG_TRACE << "useOldTLS=" << useOldTLS_;
         LOG_TRACE << "domain=" << domain_;
-        tcpClientPtr_->enableSSL(useOldTLS_,
-                                 validateCert_,
-                                 domain_,
-                                 sslConfCmds_,
-                                 clientCertPath_,
-                                 clientKeyPath_);
+        auto policy = trantor::TLSPolicy::defaultClientPolicy();
+        policy->setUseOldTLS(useOldTLS_)
+            .setValidate(validateCert_)
+            .setHostname(domain_)
+            .setConfCmds(sslConfCmds_)
+            .setCertPath(clientCertPath_)
+            .setKeyPath(clientKeyPath_);
+        tcpClientPtr_->enableSSL(std::move(policy));
     }
-#endif
+
     auto thisPtr = shared_from_this();
     std::weak_ptr<HttpClientImpl> weakPtr = thisPtr;
 
@@ -126,6 +127,8 @@ void HttpClientImpl::createTcpClient()
             thisPtr->onError(ReqResult::HandshakeError);
         else if (err == trantor::SSLError::kSSLInvalidCertificate)
             thisPtr->onError(ReqResult::InvalidCertificate);
+        else if (err == trantor::SSLError::kSSLProtocolError)
+            thisPtr->onError(ReqResult::EncryptionFailure);
         else
         {
             LOG_FATAL << "Invalid value for SSLError";
@@ -159,12 +162,12 @@ HttpClientImpl::HttpClientImpl(trantor::EventLoop *loop,
                    lowerHost.end(),
                    lowerHost.begin(),
                    [](unsigned char c) { return tolower(c); });
-    if (lowerHost.find("https://") != std::string::npos)
+    if (lowerHost.find("https://") == 0)
     {
         useSSL_ = true;
         lowerHost = lowerHost.substr(8);
     }
-    else if (lowerHost.find("http://") != std::string::npos)
+    else if (lowerHost.find("http://") == 0)
     {
         useSSL_ = false;
         lowerHost = lowerHost.substr(7);
@@ -621,6 +624,7 @@ void HttpClientImpl::onRecvMessage(const trantor::TcpConnectionPtr &connPtr,
         if (responseParser->gotAll())
         {
             auto resp = responseParser->responseImpl();
+            resp->setPeerCertificate(connPtr->peerCertificate());
             responseParser->reset();
             bytesReceived_ += (msgSize - msg->readableBytes());
             msgSize = msg->readableBytes();

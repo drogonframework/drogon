@@ -134,6 +134,30 @@ inline std::string getMd5(const std::string &originalString)
     return getMd5(originalString.data(), originalString.length());
 }
 
+DROGON_EXPORT std::string getSha1(const char *data, const size_t dataLen);
+inline std::string getSha1(const std::string &originalString)
+{
+    return getSha1(originalString.data(), originalString.length());
+}
+
+DROGON_EXPORT std::string getSha256(const char *data, const size_t dataLen);
+inline std::string getSha256(const std::string &originalString)
+{
+    return getSha256(originalString.data(), originalString.length());
+}
+
+DROGON_EXPORT std::string getSha3(const char *data, const size_t dataLen);
+inline std::string getSha3(const std::string &originalString)
+{
+    return getSha3(originalString.data(), originalString.length());
+}
+
+DROGON_EXPORT std::string getBlake2b(const char *data, const size_t dataLen);
+inline std::string getBlake2b(const std::string &originalString)
+{
+    return getBlake2b(originalString.data(), originalString.length());
+}
+
 /// Commpress or decompress data using gzip lib.
 /**
  * @param data the input data
@@ -300,11 +324,17 @@ DROGON_EXPORT void replaceAll(std::string &s,
  * @param size number of bytes to generate
  *
  * @return true if generation is successfull. False otherwise
- *
- * @note DO NOT abuse this function. Especially if Drogon is built without
- * OpenSSL. Entropy running low is a real issue.
  */
 DROGON_EXPORT bool secureRandomBytes(void *ptr, size_t size);
+
+/**
+ * @brief Generates cryptographically secure random string.
+ *
+ * @param size number of characters to generate
+ *
+ * @return the random string
+ */
+DROGON_EXPORT std::string secureRandomString(size_t size);
 
 template <typename T>
 typename std::enable_if<internal::CanConvertFromStringStream<T>::value, T>::type
@@ -408,6 +438,8 @@ inline bool fromString<bool>(const std::string &p) noexcept(false)
     }
     throw std::runtime_error("Can't convert from string '" + p + "' to bool");
 }
+
+DROGON_EXPORT bool supportsTls() noexcept;
 
 namespace internal
 {

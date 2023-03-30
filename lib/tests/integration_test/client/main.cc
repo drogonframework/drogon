@@ -49,9 +49,10 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
         req->setMethod(drogon::Get);
         req->setPath("/");
         std::promise<int> waitCookie;
+        bool haveCert = false;
         auto f = waitCookie.get_future();
         client->sendRequest(req,
-                            [client, &waitCookie, TEST_CTX](
+                            [client, &waitCookie, &haveCert, TEST_CTX](
                                 ReqResult result, const HttpResponsePtr &resp) {
                                 REQUIRE(result == ReqResult::Ok);
 
@@ -61,8 +62,11 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
                                 sessionID = id;
                                 client->addCookie(id);
                                 waitCookie.set_value(1);
+
+                                haveCert = resp->peerCertificate() != nullptr;
                             });
         f.get();
+        CHECK(haveCert == client->secure());
     }
     else
         client->addCookie(sessionID);
@@ -1067,7 +1071,7 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
         }
         catch (const std::exception &e)
         {
-            FAIL("Unexpected exception, what()" + std::string(e.what()));
+            FAIL("Unexpected exception, what(): " + std::string(e.what()));
         }
 
         // Test Coroutine exception
@@ -1080,7 +1084,7 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
         }
         catch (const std::exception &e)
         {
-            FAIL("Unexpected exception, what()" + std::string(e.what()));
+            FAIL("Unexpected exception, what(): " + std::string(e.what()));
         }
 
         // Test Coroutine exception with co_return
@@ -1093,7 +1097,7 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
         }
         catch (const std::exception &e)
         {
-            FAIL("Unexpected exception, what()" + std::string(e.what()));
+            FAIL("Unexpected exception, what(): " + std::string(e.what()));
         }
 
         // Test coroutine filter
@@ -1110,7 +1114,7 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
         }
         catch (const std::exception &e)
         {
-            FAIL("Unexpected exception, what()" + std::string(e.what()));
+            FAIL("Unexpected exception, what(): " + std::string(e.what()));
         }
 
         // Test coroutine handler with parameters
@@ -1124,7 +1128,7 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
         }
         catch (const std::exception &e)
         {
-            FAIL("Unexpected exception, what()" + std::string(e.what()));
+            FAIL("Unexpected exception, what(): " + std::string(e.what()));
         }
         try
         {
@@ -1136,7 +1140,7 @@ void doTest(const HttpClientPtr &client, std::shared_ptr<test::Case> TEST_CTX)
         }
         catch (const std::exception &e)
         {
-            FAIL("Unexpected exception, what()" + std::string(e.what()));
+            FAIL("Unexpected exception, what(): " + std::string(e.what()));
         }
     });
 #endif

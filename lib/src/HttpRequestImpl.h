@@ -21,6 +21,7 @@
 #include <drogon/utils/Utilities.h>
 #include <trantor/net/EventLoop.h>
 #include <trantor/net/InetAddress.h>
+#include <trantor/net/Certificate.h>
 #include <trantor/utils/Logger.h>
 #include <trantor/utils/MsgBuffer.h>
 #include <trantor/utils/NonCopyable.h>
@@ -74,6 +75,7 @@ class HttpRequestImpl : public HttpRequest
         contentTypeString_.clear();
         keepAlive_ = true;
         jsonParsingErrorPtr_.reset();
+        peerCertificate_.reset();
     }
     trantor::EventLoop *getLoop()
     {
@@ -231,6 +233,11 @@ class HttpRequestImpl : public HttpRequest
         return creationDate_;
     }
 
+    const trantor::CertificatePtr &peerCertificate() const override
+    {
+        return peerCertificate_;
+    }
+
     void setCreationDate(const trantor::Date &date)
     {
         creationDate_ = date;
@@ -244,6 +251,11 @@ class HttpRequestImpl : public HttpRequest
     void setLocalAddr(const trantor::InetAddress &local)
     {
         local_ = local;
+    }
+
+    void setPeerCertificate(const trantor::CertificatePtr &cert)
+    {
+        peerCertificate_ = cert;
     }
 
     void addHeader(const char *start, const char *colon, const char *end);
@@ -561,6 +573,7 @@ class HttpRequestImpl : public HttpRequest
     trantor::InetAddress peer_;
     trantor::InetAddress local_;
     trantor::Date creationDate_;
+    trantor::CertificatePtr peerCertificate_;
     std::unique_ptr<CacheFile> cacheFilePtr_;
     mutable std::unique_ptr<std::string> jsonParsingErrorPtr_;
     std::unique_ptr<std::string> expectPtr_;
