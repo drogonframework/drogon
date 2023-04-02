@@ -9,6 +9,7 @@
 #include <drogon/drogon_callbacks.h>
 #include <drogon/plugins/Plugin.h>
 #include <regex>
+#include <memory>
 
 namespace drogon
 {
@@ -32,8 +33,10 @@ namespace plugin
    }
    @endcode
  *
- * ssl_redirect_exempt: a regular expression (for matching the path of a
- * request) list for URLs that don't have to be redirected.
+ * ssl_redirect_exempt: must be a string or a string array, present a regular expression
+ * (for matching the path of a request) or a regular expression list for URLs that don't
+ * have to be redirected.
+ *
  * secure_ssl_host: If this string is not empty, all SSL redirects
  * will be directed to this host rather than the originally-requested host.
  *
@@ -42,7 +45,8 @@ namespace plugin
  *
  */
 class DROGON_EXPORT SecureSSLRedirector
-    : public drogon::Plugin<SecureSSLRedirector>
+    : public drogon::Plugin<SecureSSLRedirector>,
+      public std::enable_shared_from_this<SecureSSLRedirector>
 {
   public:
     SecureSSLRedirector()

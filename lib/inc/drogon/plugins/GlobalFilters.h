@@ -15,21 +15,22 @@ namespace plugin
  * The json configuration is as follows:
  *
  * @code
- {
-    "name": "drogon::plugin::GlobalFilters",
-    "dependencies": [],
-    "config": {
-        // filters: the list of global filter names.
-        "filters": [
-            "FilterName1", "FilterName2",...
-        ],
-        // exempt: the list of regular expressions for URLs that don't have to
- be filtered. "exempt": [
-            "^/static/.*\\.css", "^/images/.*",...
-        ]
-    }
- }
- @endcode
+   {
+        "name": "drogon::plugin::GlobalFilters",
+        "dependencies": [],
+        "config": {
+            // filters: the list of global filter names.
+            "filters": [
+                "FilterName1", "FilterName2",...
+            ],
+            // exempt: exempt must be a string or string array, regular expressions for
+            // URLs that don't have to be filtered.
+            "exempt": [
+                "^/static/.*\\.css", "^/images/.*",...
+            ]
+        }
+   }
+   @endcode
  *
  */
 class GlobalFilters : public drogon::Plugin<GlobalFilters>,
