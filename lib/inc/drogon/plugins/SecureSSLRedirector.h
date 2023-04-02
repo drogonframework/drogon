@@ -33,8 +33,10 @@ namespace plugin
    }
    @endcode
  *
- * ssl_redirect_exempt: must be a string or a string array, present a regular expression
- * (for matching the path of a request) or a regular expression list for URLs that don't
+ * ssl_redirect_exempt: must be a string or a string array, present a regular
+ expression
+ * (for matching the path of a request) or a regular expression list for URLs
+ that don't
  * have to be redirected.
  *
  * secure_ssl_host: If this string is not empty, all SSL redirects

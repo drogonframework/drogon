@@ -23,7 +23,8 @@ namespace plugin
             "filters": [
                 "FilterName1", "FilterName2",...
             ],
-            // exempt: exempt must be a string or string array, regular expressions for
+            // exempt: exempt must be a string or string array, regular
+ expressions for
             // URLs that don't have to be filtered.
             "exempt": [
                 "^/static/.*\\.css", "^/images/.*",...
