@@ -121,40 +121,38 @@ class HttpMessageStringViewBody : public HttpMessageBody
     }
     const std::string &getString() const override
     {
-        if (!bodyString_)
+        if (bodyString_.empty())
         {
             if (!body_.empty())
             {
-                bodyString_ =
-                    std::make_unique<std::string>(body_.data(), body_.length());
+                bodyString_ = body_;
             }
             else
             {
-                bodyString_ = std::make_unique<std::string>();
+                bodyString_.clear();
             }
         }
-        return *bodyString_;
+        return bodyString_;
     }
     std::string &getString() override
     {
-        if (!bodyString_)
+        if (bodyString_.empty())
         {
             if (!body_.empty())
             {
-                bodyString_ =
-                    std::make_unique<std::string>(body_.data(), body_.length());
+                bodyString_ = body_;
             }
             else
             {
-                bodyString_ = std::make_unique<std::string>();
+                bodyString_.clear();
             }
         }
-        return *bodyString_;
+        return bodyString_;
     }
 
   private:
     string_view body_;
-    mutable std::unique_ptr<std::string> bodyString_;
+    mutable std::string bodyString_;
 };
 
 }  // namespace drogon
