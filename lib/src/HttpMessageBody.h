@@ -125,11 +125,7 @@ class HttpMessageStringViewBody : public HttpMessageBody
         {
             if (!body_.empty())
             {
-                bodyString_ = body_;
-            }
-            else
-            {
-                bodyString_.clear();
+                bodyString_ = std::string(body_.begin(), body_.end());
             }
         }
         return bodyString_;
@@ -140,11 +136,7 @@ class HttpMessageStringViewBody : public HttpMessageBody
         {
             if (!body_.empty())
             {
-                bodyString_ = body_;
-            }
-            else
-            {
-                bodyString_.clear();
+                bodyString_ = std::string(body_.begin(), body_.end());
             }
         }
         return bodyString_;
