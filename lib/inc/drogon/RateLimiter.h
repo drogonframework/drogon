@@ -3,6 +3,7 @@
 #include <memory>
 #include <chrono>
 #include <mutex>
+#include <string>
 
 namespace drogon
 {
