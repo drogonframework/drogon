@@ -34,8 +34,9 @@ namespace plugin
    @endcode
  *
  */
-class GlobalFilters : public drogon::Plugin<GlobalFilters>,
-                      public std::enable_shared_from_this<GlobalFilters>
+class DROGON_EXPORT GlobalFilters
+    : public drogon::Plugin<GlobalFilters>,
+      public std::enable_shared_from_this<GlobalFilters>
 {
   public:
     GlobalFilters() = default;
