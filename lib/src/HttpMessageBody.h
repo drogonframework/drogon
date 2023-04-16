@@ -44,8 +44,7 @@ class HttpMessageBody
     {
         return 0;
     }
-    virtual const std::string &getString() const = 0;
-    virtual std::string &getString() = 0;
+    virtual string_view getString() const = 0;
     virtual void append(const char * /*buf*/, size_t /*len*/)
     {
     }
@@ -83,13 +82,9 @@ class HttpMessageStringBody : public HttpMessageBody
     {
         return body_.length();
     }
-    const std::string &getString() const override
+    string_view getString() const override
     {
-        return body_;
-    }
-    std::string &getString() override
-    {
-        return body_;
+        return string_view{body_.data(), body_.length()};
     }
     void append(const char *buf, size_t len) override
     {
@@ -119,42 +114,13 @@ class HttpMessageStringViewBody : public HttpMessageBody
     {
         return body_.length();
     }
-    const std::string &getString() const override
+    string_view getString() const override
     {
-        if (!bodyString_)
-        {
-            if (!body_.empty())
-            {
-                bodyString_ =
-                    std::make_unique<std::string>(body_.data(), body_.length());
-            }
-            else
-            {
-                bodyString_ = std::make_unique<std::string>();
-            }
-        }
-        return *bodyString_;
-    }
-    std::string &getString() override
-    {
-        if (!bodyString_)
-        {
-            if (!body_.empty())
-            {
-                bodyString_ =
-                    std::make_unique<std::string>(body_.data(), body_.length());
-            }
-            else
-            {
-                bodyString_ = std::make_unique<std::string>();
-            }
-        }
-        return *bodyString_;
+        return body_;
     }
 
   private:
     string_view body_;
-    mutable std::unique_ptr<std::string> bodyString_;
 };
 
 }  // namespace drogon
