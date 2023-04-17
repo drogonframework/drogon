@@ -80,7 +80,7 @@ void Chat::handleNewMessage(const WebSocketConnectionPtr& wsConnPtr,
     std::string room;
     if (message.compare(0, 6, "ENTER ") == 0)
     {
-        room = message.substr(6);
+        room = message.substr(6, message.find_last_not_of(" \n") - 5);
         if (!checkRoomNumber(room))
         {
             wsConnPtr->send("ERROR: Invalid room number, should be [0-99].");
