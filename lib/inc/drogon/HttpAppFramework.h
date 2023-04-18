@@ -74,11 +74,14 @@ struct [[nodiscard]] ForwardAwaiter
     : public CallbackAwaiter<drogon::HttpResponsePtr>
 {
   public:
-    ForwardAwaiter(const drogon::HttpRequestPtr &req,
-                   const std::string &host,
+    ForwardAwaiter(drogon::HttpRequestPtr &&req,
+                   std::string &&host,
                    double timeout,
                    HttpAppFramework &app)
-        : req_(req), host_(host), timeout_(timeout), app_(app)
+        : req_(std::move(req)),
+          host_(std::move(host)),
+          timeout_(timeout),
+          app_(app)
     {
     }
     bool await_ready() const noexcept
@@ -682,11 +685,14 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
      * @brief Forward the http request, this is the coroutine version of the
      * above method.
      */
-    internal::ForwardAwaiter forwardCoro(const HttpRequestPtr &req,
-                                         const std::string &hostString = "",
+    internal::ForwardAwaiter forwardCoro(HttpRequestPtr req,
+                                         std::string hostString = "",
                                          double timeout = 0)
     {
-        return internal::ForwardAwaiter(req, hostString, timeout, *this);
+        return internal::ForwardAwaiter(std::move(req),
+                                        std::move(hostString),
+                                        timeout,
+                                        *this);
     }
 #endif
     /// Get information about the handlers registered to drogon
