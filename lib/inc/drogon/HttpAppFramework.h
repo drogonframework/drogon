@@ -84,10 +84,6 @@ struct [[nodiscard]] ForwardAwaiter
           app_(app)
     {
     }
-    bool await_ready() const noexcept
-    {
-        return false;
-    }
     void await_suspend(std::coroutine_handle<> handle) noexcept;
 
   private:
@@ -1505,7 +1501,7 @@ inline void ForwardAwaiter::await_suspend(
     app_.forward(
         req_,
         [this, handle](const drogon::HttpResponsePtr &resp) {
-            setValue(std::move(resp));
+            setValue(resp);
             handle.resume();
         },
         host_,
