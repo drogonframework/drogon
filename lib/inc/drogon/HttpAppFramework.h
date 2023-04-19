@@ -13,7 +13,9 @@
  */
 
 #pragma once
-
+#ifdef __cpp_impl_coroutine
+#include <drogon/utils/coroutine.h>
+#endif
 #include <drogon/exports.h>
 #include <drogon/utils/HttpConstraint.h>
 #include <drogon/CacheMap.h>
@@ -64,7 +66,34 @@ using ExceptionHandler =
 using DefaultHandler =
     std::function<void(const HttpRequestPtr &,
                        std::function<void(const HttpResponsePtr &)> &&)>;
+#ifdef __cpp_impl_coroutine
+class HttpAppFramework;
+namespace internal
+{
+struct [[nodiscard]] ForwardAwaiter
+    : public CallbackAwaiter<drogon::HttpResponsePtr>
+{
+  public:
+    ForwardAwaiter(drogon::HttpRequestPtr &&req,
+                   std::string &&host,
+                   double timeout,
+                   HttpAppFramework &app)
+        : req_(std::move(req)),
+          host_(std::move(host)),
+          timeout_(timeout),
+          app_(app)
+    {
+    }
+    void await_suspend(std::coroutine_handle<> handle) noexcept;
 
+  private:
+    drogon::HttpRequestPtr req_;
+    std::string host_;
+    double timeout_;
+    HttpAppFramework &app_;
+};
+}  // namespace internal
+#endif
 class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
 {
   public:
@@ -647,7 +676,21 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
         std::function<void(const HttpResponsePtr &)> &&callback,
         const std::string &hostString = "",
         double timeout = 0) = 0;
-
+#ifdef __cpp_impl_coroutine
+    /**
+     * @brief Forward the http request, this is the coroutine version of the
+     * above method.
+     */
+    internal::ForwardAwaiter forwardCoro(HttpRequestPtr req,
+                                         std::string hostString = "",
+                                         double timeout = 0)
+    {
+        return internal::ForwardAwaiter(std::move(req),
+                                        std::move(hostString),
+                                        timeout,
+                                        *this);
+    }
+#endif
     /// Get information about the handlers registered to drogon
     /**
      * @return
@@ -1449,5 +1492,21 @@ inline HttpAppFramework &app()
 {
     return HttpAppFramework::instance();
 }
-
+#ifdef __cpp_impl_coroutine
+namespace internal
+{
+inline void ForwardAwaiter::await_suspend(
+    std::coroutine_handle<> handle) noexcept
+{
+    app_.forward(
+        req_,
+        [this, handle](const drogon::HttpResponsePtr &resp) {
+            setValue(resp);
+            handle.resume();
+        },
+        host_,
+        timeout_);
+}
+}  // namespace internal
+#endif
 }  // namespace drogon
