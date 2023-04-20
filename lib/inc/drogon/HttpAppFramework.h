@@ -731,6 +731,26 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
         const std::vector<std::pair<std::string, std::string>>
             &sslConfCmds) = 0;
 
+    /// Add plugins 
+    /**
+     * @param configs The plugins array
+     *
+     * @note
+     * This operation can be performed by an option in the configuration file.
+    */
+    virtual void addPlugins(const Json::Value& configs) = 0;
+
+    /// Add a plugin
+    /**
+     * @param name Name of the plugin
+     * @param dependencies Names of plugins this plugin depends on
+     * @param config Custom config for the plugin
+    */
+    virtual void addPlugin(
+        const std::string& name, 
+        const std::vector<std::string>& dependencies, 
+        const Json::Value& config) = 0;
+
     /// Add a listener for http or https service
     /**
      * @param ip is the ip that the listener listens on.

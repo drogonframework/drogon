@@ -57,6 +57,11 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     }
 
     PluginBase *getPlugin(const std::string &name) override;
+    void addPlugins(const Json::Value& configs);
+    void addPlugin(
+        const std::string& name, 
+        const std::vector<std::string>& dependencies, 
+        const Json::Value& config);
     HttpAppFramework &addListener(
         const std::string &ip,
         uint16_t port,

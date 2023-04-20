@@ -348,6 +348,30 @@ PluginBase *HttpAppFrameworkImpl::getPlugin(const std::string &name)
 {
     return pluginsManagerPtr_->getPlugin(name);
 }
+void HttpAppFrameworkImpl::addPlugin(
+    const std::string& name, 
+    const std::vector<std::string>& dependencies, 
+    const Json::Value& config)
+{
+    Json::Value pluginConfig;
+    pluginConfig["name"] = name;
+    Json::Value deps(Json::arrayValue);
+    for(const auto dep : dependencies) {
+        deps.append(dep);
+    }
+    pluginConfig["dependencies"] = deps;
+    pluginConfig["config"] = config;
+    auto& plugins = jsonConfig_["plugins"];
+    plugins.append(pluginConfig);
+}
+void HttpAppFrameworkImpl::addPlugins(const Json::Value& configs)
+{
+    assert(configs.isArray());
+    auto& plugins = jsonConfig_["plugins"];
+    for(const auto config : configs){
+        plugins.append(config);
+    }
+}
 HttpAppFramework &HttpAppFrameworkImpl::addListener(
     const std::string &ip,
     uint16_t port,
