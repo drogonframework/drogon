@@ -349,29 +349,30 @@ PluginBase *HttpAppFrameworkImpl::getPlugin(const std::string &name)
     return pluginsManagerPtr_->getPlugin(name);
 }
 void HttpAppFrameworkImpl::addPlugin(
-    const std::string& name, 
-    const std::vector<std::string>& dependencies, 
-    const Json::Value& config)
+    const std::string &name,
+    const std::vector<std::string> &dependencies,
+    const Json::Value &config)
 {
     assert(!isRunning());
     Json::Value pluginConfig;
     pluginConfig["name"] = name;
     Json::Value deps(Json::arrayValue);
-    for(const auto dep : dependencies)
+    for (const auto dep : dependencies)
     {
         deps.append(dep);
     }
     pluginConfig["dependencies"] = deps;
     pluginConfig["config"] = config;
-    auto& plugins = jsonRuntimeConfig_["plugins"];
+    auto &plugins = jsonRuntimeConfig_["plugins"];
     plugins.append(pluginConfig);
 }
-void HttpAppFrameworkImpl::addPlugins(const Json::Value& configs)
+void HttpAppFrameworkImpl::addPlugins(const Json::Value &configs)
 {
     assert(!isRunning());
     assert(configs.isArray());
-    auto& plugins = jsonRuntimeConfig_["plugins"];
-    for(const auto config : configs){
+    auto &plugins = jsonRuntimeConfig_["plugins"];
+    for (const auto config : configs)
+    {
         plugins.append(config);
     }
 }
@@ -614,9 +615,9 @@ void HttpAppFrameworkImpl::run()
     const auto &runtumePluginConfig = jsonRuntimeConfig_["plugins"];
     if (!pluginConfig.isNull())
     {
-        if(!runtumePluginConfig.isNull() && runtumePluginConfig.isArray())
+        if (!runtumePluginConfig.isNull() && runtumePluginConfig.isArray())
         {
-            for(const auto& plugin : runtumePluginConfig)
+            for (const auto &plugin : runtumePluginConfig)
             {
                 pluginConfig.append(plugin);
             }
