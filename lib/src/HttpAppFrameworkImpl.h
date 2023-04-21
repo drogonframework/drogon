@@ -698,6 +698,7 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     std::vector<AdviceDestroySessionCallback> sessionDestroyAdvices_;
     std::shared_ptr<trantor::AsyncFileLogger> asyncFileLoggerPtr_;
     Json::Value jsonConfig_;
+    Json::Value jsonRuntimeConfig_;
     HttpResponsePtr custom404_;
     std::function<HttpResponsePtr(HttpStatusCode)> customErrorHandler_ =
         &defaultErrorHandler;
