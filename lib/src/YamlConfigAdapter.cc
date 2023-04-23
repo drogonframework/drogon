@@ -18,7 +18,7 @@ static bool yaml2json(const Node &node, Json::Value &jsonValue)
         {
             try
             {
-                jsonValue = node.as<int64_t>();
+                jsonValue = node.as<Json::Value::Int64>();
                 return true;
             }
             catch (const YAML::BadConversion &e)
