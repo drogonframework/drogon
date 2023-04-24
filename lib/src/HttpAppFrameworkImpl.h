@@ -57,6 +57,10 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     }
 
     PluginBase *getPlugin(const std::string &name) override;
+    void addPlugins(const Json::Value &configs);
+    void addPlugin(const std::string &name,
+                   const std::vector<std::string> &dependencies,
+                   const Json::Value &config);
     HttpAppFramework &addListener(
         const std::string &ip,
         uint16_t port,
@@ -693,6 +697,7 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     std::vector<AdviceDestroySessionCallback> sessionDestroyAdvices_;
     std::shared_ptr<trantor::AsyncFileLogger> asyncFileLoggerPtr_;
     Json::Value jsonConfig_;
+    Json::Value jsonRuntimeConfig_;
     HttpResponsePtr custom404_;
     std::function<HttpResponsePtr(HttpStatusCode)> customErrorHandler_ =
         &defaultErrorHandler;

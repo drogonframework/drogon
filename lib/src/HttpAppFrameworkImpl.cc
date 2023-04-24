@@ -348,6 +348,34 @@ PluginBase *HttpAppFrameworkImpl::getPlugin(const std::string &name)
 {
     return pluginsManagerPtr_->getPlugin(name);
 }
+void HttpAppFrameworkImpl::addPlugin(
+    const std::string &name,
+    const std::vector<std::string> &dependencies,
+    const Json::Value &config)
+{
+    assert(!isRunning());
+    Json::Value pluginConfig;
+    pluginConfig["name"] = name;
+    Json::Value deps(Json::arrayValue);
+    for (const auto dep : dependencies)
+    {
+        deps.append(dep);
+    }
+    pluginConfig["dependencies"] = deps;
+    pluginConfig["config"] = config;
+    auto &plugins = jsonRuntimeConfig_["plugins"];
+    plugins.append(pluginConfig);
+}
+void HttpAppFrameworkImpl::addPlugins(const Json::Value &configs)
+{
+    assert(!isRunning());
+    assert(configs.isArray());
+    auto &plugins = jsonRuntimeConfig_["plugins"];
+    for (const auto config : configs)
+    {
+        plugins.append(config);
+    }
+}
 HttpAppFramework &HttpAppFrameworkImpl::addListener(
     const std::string &ip,
     uint16_t port,
@@ -583,7 +611,22 @@ void HttpAppFrameworkImpl::run()
     // now start running!!
     running_ = true;
     // Initialize plugins
-    const auto &pluginConfig = jsonConfig_["plugins"];
+    auto &pluginConfig = jsonConfig_["plugins"];
+    const auto &runtumePluginConfig = jsonRuntimeConfig_["plugins"];
+    if (!pluginConfig.isNull())
+    {
+        if (!runtumePluginConfig.isNull() && runtumePluginConfig.isArray())
+        {
+            for (const auto &plugin : runtumePluginConfig)
+            {
+                pluginConfig.append(plugin);
+            }
+        }
+    }
+    else
+    {
+        jsonConfig_["plugins"] = runtumePluginConfig;
+    }
     if (!pluginConfig.isNull())
     {
         pluginsManagerPtr_->initializeAllPlugins(pluginConfig,
